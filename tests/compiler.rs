@@ -364,6 +364,12 @@ block
 block
   #test :+= 5", Value::F32(F32::new(12.0)));
 
+test_mech!(math_subtract_update_scalar,"
+block
+  #test = 10
+block
+  #test :-= 3", Value::F32(F32::new(7.0)));
+
 // Quantities
 
 

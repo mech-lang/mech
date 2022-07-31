@@ -205,7 +205,7 @@ impl Compiler {
       }
       // dest :+= src
       // dest{ix} :+= src
-      Node::AddUpdateData{children} => {
+      Node::UpdateData{name, children} => {
         let mut src = self.compile_node(&children[1])?;
         let mut dest = self.compile_node(&children[0])?.clone();
 
@@ -235,7 +235,9 @@ impl Compiler {
             let (dest_row, dest_col) = &indices[0];
             dest.remove(0);
             let (src_row,src_col) = &src_indices[0];
-            tfms.push(Transformation::AddUpdate{
+            let name_hash = hash_chars(name);
+            tfms.push(Transformation::UpdateData{
+              name: name_hash,
               src_id: src_table_id, 
               src_row: src_row.clone(), 
               src_col: src_col.clone(),
@@ -1021,7 +1023,7 @@ impl Compiler {
         tfms.append(&mut result);
       }
       Node::Null => (),
-      x => println!("Unhandled Node {:?}", x),
+      x => println!("Unhandled Node in Compiler {:?}", x),
     }
     Ok(tfms)
   }

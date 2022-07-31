@@ -61,7 +61,7 @@ pub enum Node {
   Index{ children: Vec<Node> },
   Data{ children: Vec<Node> },
   SetData{ children: Vec<Node> },
-  AddUpdateData{ children: Vec<Node> },
+  UpdateData{ children: Vec<Node> },
   SetOperator{ children: Vec<Node> },
   SplitData{ children: Vec<Node> },
   JoinData{ children: Vec<Node> },
@@ -168,6 +168,11 @@ pub enum Node {
   And,
   Or,
   Xor,
+  AddUpdate,
+  SubtractUpdate,
+  MultiplyUpdate,
+  DivideUpdate,
+  ExponentUpdate,
   Empty,
   Null,
   True,
@@ -248,7 +253,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Equality{children} => {print!("Equality\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
     Node::SetData{children} => {print!("SetData\n"); Some(children)},
-    Node::AddUpdateData{children} => {print!("AddUpdateData\n"); Some(children)},
+    Node::UpdateData{children} => {print!("UpdateData\n"); Some(children)},
     Node::SplitData{children} => {print!("SplitData\n"); Some(children)},
     Node::JoinData{children} => {print!("JoinData\n"); Some(children)},
     Node::Wait{children} => {print!("Wait\n"); Some(children)},
@@ -328,6 +333,11 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::And => {print!("And\n",); None},
     Node::Or => {print!("Or\n",); None},
     Node::Xor => {print!("Xor\n",); None},
+    Node::AddUpdate => {print!("AddUpdate\n",); None},
+    Node::SubtractUpdate => {print!("SubtractUpdate\n",); None},
+    Node::MultiplyUpdate => {print!("MultiplyUpdate\n",); None},
+    Node::DivideUpdate => {print!("DivideUpdate\n",); None},
+    Node::ExponentUpdate => {print!("ExponentUpdate\n",); None},
     Node::Empty => {print!("Empty\n",); None},
     Node::Null => {print!("Null\n",); None},
     Node::ReshapeColumn => {print!("ReshapeColumn\n",); None},
@@ -970,34 +980,41 @@ fn add_row(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::AddRow{children: vec![table_id, table]}))
 }
 
-fn update_add_operator(input: ParseString) -> IResult<ParseString, Node> {
+fn add_update_operator(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = tag(":+=")(input)?;
-  Ok((input, Node::Null))
+  Ok((input, Node::AddUpdate))
 }
 
-fn update_subtract_operator(input: ParseString) -> IResult<ParseString, Node> {
+fn subtract_update_operator(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = tag(":-=")(input)?;
-  Ok((input, Node::Null))
+  Ok((input, Node::SubtractUpdate))
 }
 
-fn update_multiply_operator(input: ParseString) -> IResult<ParseString, Node> {
+fn multiply_update_operator(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = tag(":*=")(input)?;
-  Ok((input, Node::Null))
+  Ok((input, Node::MultiplyUpdate))
 }
 
-fn update_divide_operator(input: ParseString) -> IResult<ParseString, Node> {
+fn divide_update_operator(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = tag(":/=")(input)?;
-  Ok((input, Node::Null))
+  Ok((input, Node::DivideUpdate))
 }
 
-fn update_power_operator(input: ParseString) -> IResult<ParseString, Node> {
+fn update_exponent_operator(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = tag(":^=")(input)?;
-  Ok((input, Node::Null))
+  Ok((input, Node::ExponentUpdate))
 }
 
 fn update_matrix_multiply_operator(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = tag(":**=")(input)?;
   Ok((input, Node::Null))
+}
+
+fn update_data(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, table) = data(input)?;
+  let (input, (_,op,_)) = tuple((many1(space), alt((add_update_operator,subtract_update_operator)), many1(space)))(input)?;
+  let (input, expression) = expression(input)?;
+  Ok((input, Node::UpdateData{children: vec![op, table, expression]}))
 }
 
 fn set_operator(input: ParseString) -> IResult<ParseString, Node> {
@@ -1010,13 +1027,6 @@ fn set_data(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = tuple((many1(space), set_operator, many1(space)))(input)?;
   let (input, expression) = expression(input)?;
   Ok((input, Node::SetData{children: vec![table, expression]}))
-}
-
-fn update_data(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, table) = data(input)?;
-  let (input, _) = tuple((many1(space), update_add_operator, many1(space)))(input)?;
-  let (input, expression) = expression(input)?;
-  Ok((input, Node::AddUpdateData{children: vec![table, expression]}))
 }
 
 fn split_data(input: ParseString) -> IResult<ParseString, Node> {
