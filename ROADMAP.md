@@ -1,11 +1,11 @@
 # Mech Project Roadmap
 
-### Stage 1 - Alpha v0.0.1
+### Stage 1 - Alpha v0.0.1 - v0.0.5
 
 Conception: started 2014
 Implementation: started 2018
 
-### Stage 2 - Beta v0.1.0
+### Stage 2 - Beta v0.1.0 - ?
 
 Target release: October 2022
 
@@ -13,14 +13,14 @@ Target release: October 2022
 
 Target release: ???
 
-## Version 0.2
+## Version 0.2.0
 
 - [ ] GPU Processing
 - [ ] Automatic Differentiation
 - [ ] Capability system
 - [ ] User defined functions
 
-## Version 0.1.0 Beta
+## Version 0.1.0
 
 - [x] Errors
 - [x] Distribution
