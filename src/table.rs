@@ -52,11 +52,12 @@ pub enum TableShape {
 
 // ### TableIndex
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TableIndex {
   Index(usize),
   Alias(u64),
-  Table(TableId),
+  Aliases(Vec<u64>),
+  IxTable(TableId),
   ReshapeColumn,
   All,
   None,
@@ -69,7 +70,8 @@ impl TableIndex {
       TableIndex::Alias(alias) => {
         alias.clone() as usize
       },
-      TableIndex::Table(table_id) => *table_id.unwrap() as usize,
+      TableIndex::IxTable(table_id) => *table_id.unwrap() as usize,
+      TableIndex::Aliases(_) |
       TableIndex::ReshapeColumn |
       TableIndex::None |
       TableIndex::All => 0,
@@ -84,7 +86,8 @@ impl fmt::Debug for TableIndex {
     match self {
       &TableIndex::Index(ref ix) => write!(f, "Ix({:?})", ix),
       &TableIndex::Alias(ref alias) => write!(f, "IxAlias({})", humanize(alias)),
-      &TableIndex::Table(ref table_id) => write!(f, "IxTable({:?})", table_id),
+      &TableIndex::Aliases(ref aliases) => write!(f, "IxAliases({:?})", aliases.iter().map(|alias| humanize(alias)).collect::<Vec<String>>()),
+      &TableIndex::IxTable(ref table_id) => write!(f, "IxTable({:?})", table_id),
       &TableIndex::ReshapeColumn => write!(f, "IxReshapeColumn"),
       &TableIndex::All => write!(f, "IxAll"),
       &TableIndex::None => write!(f, "IxNone"),
@@ -194,8 +197,9 @@ impl Table {
           Err(MechError{id: 7005, kind: MechErrorKind::None})
         }
       }
+      TableIndex::Aliases(_) |
       TableIndex::ReshapeColumn |
-      TableIndex::Table(_) |
+      TableIndex::IxTable(_) |
       TableIndex::None => Err(MechError{id: 7006, kind: MechErrorKind::None}), 
     }
   }  
@@ -289,6 +293,12 @@ impl Table {
           let column = ColumnV::<F32>::new(vec![F32::new(0.0);self.rows]);
           self.data[col] = Column::F32(column);
           self.col_kinds[col] = ValueKind::F32;
+        },
+        (Column::F64(_), ValueKind::F64) => (),
+        (Column::Empty, ValueKind::F64) => {
+          let column = ColumnV::<F64>::new(vec![F64::new(0.0);self.rows]);
+          self.data[col] = Column::F64(column);
+          self.col_kinds[col] = ValueKind::F64;
         },
         (Column::f32(_), ValueKind::f32) => (),
         (Column::Empty, ValueKind::f32) => {
@@ -396,9 +406,21 @@ impl Table {
       TableIndex::All => {
         Ok(self.data.iter().cloned().collect())
       },
-      x => {
-        Err(MechError{id: 7014, kind: MechErrorKind::None})
-      }
+      TableIndex::Aliases(aliases) => {
+        let mut ixes = vec![];
+        for alias in aliases {
+          match self.col_map.alias_to_ix.get(alias) {
+            Some(ix) => ixes.push(ix),
+            None => {return Err(MechError{id: 7014, kind: MechErrorKind::None});}
+          }
+        }
+        let mut cols = vec![];
+        for ix in ixes {
+          cols.push(self.data[*ix].clone());
+        }
+        Ok(cols)
+      },
+      x => {Err(MechError{id: 7014, kind: MechErrorKind::GenericError(format!("{:?}",x))})}
     }
   }
 
@@ -414,9 +436,7 @@ impl Table {
       TableIndex::Alias(alias) => {
         match self.col_map.get_index(alias) {
           Ok(ix) => ix,
-          Err(x) => {
-            return Err(MechError{id: 7015, kind: MechErrorKind::None})
-          }
+          Err(x) => {return Err(MechError{id: 7015, kind: MechErrorKind::None})}
         }
       }
       _ => 0,

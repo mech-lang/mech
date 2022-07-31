@@ -13,6 +13,8 @@ use crate::*;
 use crate::function::{
   MechFunction,
   table::*,
+  math::*,
+  math_update::*,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -25,6 +27,7 @@ use std::convert::TryInto;
 lazy_static! {
   pub static ref cF32L: u64 = hash_str("f32-literal");
   pub static ref cF32: u64 = hash_str("f32");
+  pub static ref cF64: u64 = hash_str("f64");
   pub static ref cU8: u64 = hash_str("u8");
   pub static ref cU16: u64 = hash_str("u16");
   pub static ref cU32: u64 = hash_str("u32");
@@ -106,12 +109,12 @@ pub struct Block {
   pub unsatisfied_transformation: Option<(MechError,Transformation)>,
   pub pending_transformations: Vec<Transformation>,
   pub transformations: Vec<Transformation>,
-  pub defined_tables: HashSet<(TableId,TableIndex,TableIndex)>,
+  pub defined_tables: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
   pub required_functions: HashSet<u64>,
   pub strings: StringDictionary,
-  pub triggers: HashSet<(TableId,TableIndex,TableIndex)>,
-  pub input: HashSet<(TableId,TableIndex,TableIndex)>,
-  pub output: HashSet<(TableId,TableIndex,TableIndex)>,
+  pub triggers: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
+  pub input: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
+  pub output: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
 }
 
 impl Block {
@@ -212,7 +215,7 @@ impl Block {
     // This part handles multi-dimensional indexing e.g. {1,2}{3,4}{5,6}
     let mut table_id = *table_id;
     for (row,column) in indices.iter().take(indices.len()-1) {
-      let argument = (0,table_id,vec![(*row,*column)]);
+      let argument = (0,table_id,vec![(row.clone(),column.clone())]);
       match self.get_arg_dim(&argument)? {
         TableShape::Scalar => {
           let arg_col = self.get_arg_column(&argument)?;
@@ -265,8 +268,8 @@ impl Block {
       }
       // x{z,1}
       // x.y{z}
-      (TableIndex::Table(ix_table_id),TableIndex::Index(_)) |
-      (TableIndex::Table(ix_table_id),TableIndex::Alias(_))  => {
+      (TableIndex::IxTable(ix_table_id),TableIndex::Index(_)) |
+      (TableIndex::IxTable(ix_table_id),TableIndex::Alias(_))  => {
         let ix_table = self.get_table(&ix_table_id)?;
         let ix_table_brrw = ix_table.borrow();
         if ix_table_brrw.cols > 1 {
@@ -285,7 +288,7 @@ impl Block {
         Ok((*arg_name,arg_col.clone(),ix))
       }
       // x{z}
-      (TableIndex::Table(ix_table_id),TableIndex::None) => {
+      (TableIndex::IxTable(ix_table_id),TableIndex::None) => {
         let ix_table = self.get_table(&ix_table_id)?;
         let ix_table_brrw = ix_table.borrow();
         match table.borrow().kind() {
@@ -355,7 +358,7 @@ impl Block {
     let (arg_name,table_id,indices) = argument;
     let mut table_id = *table_id;
     for (row,column) in indices.iter().take(indices.len()-1) {
-      let argument = (0,table_id,vec![(*row,*column)]);
+      let argument = (0,table_id,vec![(row.clone(),column.clone())]);
       match self.get_arg_dim(&argument)? {
         TableShape::Scalar => {
           let arg_col = self.get_arg_column(&argument)?;
@@ -393,7 +396,7 @@ impl Block {
       (TableIndex::Alias(alias),_) => {
         return Err(MechError{id: 2114,  kind: MechErrorKind::GenericError("Can't index on row alias yet".to_string())});
       },
-      (TableIndex::Table(ix_table_id),_) => {
+      (TableIndex::IxTable(ix_table_id),_) => {
         let ix_table = self.get_table(&ix_table_id)?;
         let ix_table_brrw = ix_table.borrow();
         let ix = match ix_table_brrw.get_column_unchecked(0) {
@@ -436,7 +439,7 @@ impl Block {
     let (_, table_id, indices) = argument;
     let mut table_id = *table_id;
     for (row,column) in indices.iter().take(indices.len()-1) {
-      let argument = (0,table_id,vec![(*row,*column)]);
+      let argument = (0,table_id,vec![(row.clone(),column.clone())]);
       match self.get_arg_dim(&argument)? {
         TableShape::Scalar => {
           let arg_col = self.get_arg_column(&argument)?;
@@ -470,17 +473,35 @@ impl Block {
       (TableIndex::Index(_),TableIndex::Index(_)) |
       (TableIndex::Index(_),TableIndex::Alias(_)) => (1,1),
       (TableIndex::Index(_),TableIndex::All) => (1,t.cols),
-      (TableIndex::Table(ix_table_id),TableIndex::Alias(_)) |
-      (TableIndex::Table(ix_table_id),TableIndex::None) => {
+      (TableIndex::IxTable(ix_table_id),TableIndex::Alias(_)) |
+      (TableIndex::IxTable(ix_table_id),TableIndex::None) => {
         let ix_table = self.get_table(&ix_table_id)?;
         let rows = ix_table.borrow().len();
         (rows,1)
       },
-      (TableIndex::Table(ix_table_id),TableIndex::All) => {
+      (TableIndex::IxTable(ix_table_id),TableIndex::All) => {
         let ix_table = self.get_table(&ix_table_id)?;
         let rows = ix_table.borrow().len();
         (rows,t.cols)
       },
+      (TableIndex::All,TableIndex::IxTable(ix_table_id)) => {
+        let ix_table = self.get_table(&ix_table_id)?;
+        let ix_table_brrw = ix_table.borrow();
+        let rows = ix_table_brrw.len();
+        let cols = match ix_table_brrw.kind() {
+          ValueKind::Bool => {
+            ix_table_brrw.logical_len()
+          }
+          ValueKind::String => {
+            ix_table_brrw.len()
+          }
+          x => {return Err(MechError{id: 2128, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
+        };
+        (t.rows, cols)
+      }
+      (TableIndex::All,TableIndex::Aliases(aliases)) => {
+        (t.rows,aliases.len())
+      }
       x => {return Err(MechError{id: 2118, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
     };
     let arg_shape = match dim {
@@ -521,32 +542,32 @@ impl Block {
     match tfm {
       Transformation::TableDefine{table_id, indices, out} => {
         if let TableId::Global(_) = table_id { 
-          self.input.insert((*table_id,TableIndex::All,TableIndex::All));
-          self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+          self.input.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
+          self.triggers.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
         }
       }
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
         if let TableId::Global(_) = table_id { 
-          self.triggers.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
-          self.input.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
-          self.output.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
+          self.triggers.insert((*table_id,RegisterIndex::All,RegisterIndex::Alias(*column_alias)));
+          self.input.insert((*table_id,RegisterIndex::All,RegisterIndex::Alias(*column_alias)));
+          self.output.insert((*table_id,RegisterIndex::All,RegisterIndex::Alias(*column_alias)));
         }
       }
       Transformation::Function{name, ref arguments, out} => {
         self.required_functions.insert(*name);
         for (_,table_id,indices) in arguments {
           if let TableId::Global(_) = table_id {
-            self.input.insert((*table_id,TableIndex::All,TableIndex::All));
-            self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+            self.input.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
+            self.triggers.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
           }
         }
         if let (TableId::Global(table_id),_,_) = out {
-          self.output.insert((TableId::Global(*table_id),TableIndex::All,TableIndex::All));
+          self.output.insert((TableId::Global(*table_id),RegisterIndex::All,RegisterIndex::All));
         }
       }
       Transformation::Whenever{table_id, indices} => {
         self.triggers.clear();
-        self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+        self.triggers.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
       }
       _ => (),
     }
@@ -571,8 +592,8 @@ impl Block {
             {
               self.global_database.borrow_mut().insert_table(table);
             }
-            self.output.insert((*table_id,TableIndex::All,TableIndex::All));
-            self.defined_tables.insert((*table_id,TableIndex::All,TableIndex::All));
+            self.output.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
+            self.defined_tables.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
           }
         } 
       },
@@ -619,9 +640,9 @@ impl Block {
       }
       Transformation::ColumnAlias{table_id, column_ix, column_alias} => {
         if let TableId::Global(_) = table_id { 
-          self.triggers.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
-          self.input.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
-          self.output.insert((*table_id,TableIndex::All,TableIndex::Alias(*column_alias)));
+          self.triggers.insert((*table_id,RegisterIndex::All,RegisterIndex::Alias(*column_alias)));
+          self.input.insert((*table_id,RegisterIndex::All,RegisterIndex::Alias(*column_alias)));
+          self.output.insert((*table_id,RegisterIndex::All,RegisterIndex::Alias(*column_alias)));
         }
         let mut table = self.tables.get_table_by_id(table_id.unwrap()).unwrap().borrow_mut();
         if table.cols == 0 || *column_ix > (table.cols - 1)  {
@@ -632,8 +653,8 @@ impl Block {
       },
       Transformation::TableDefine{table_id, indices, out} => {
         if let TableId::Global(_) = table_id { 
-          self.input.insert((*table_id,TableIndex::All,TableIndex::All));
-          self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+          self.input.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
+          self.triggers.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
         }
         self.compile_tfm(Transformation::Function{
           name: *TABLE_DEFINE,
@@ -642,17 +663,31 @@ impl Block {
         })?;
       }
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
-        self.output.insert((*dest_id,TableIndex::All,TableIndex::All));
+        self.output.insert((*dest_id,RegisterIndex::All,RegisterIndex::All));
         match dest_row {
-          TableIndex::Table(TableId::Global(ix_table_id)) => {
-            self.input.insert((TableId::Global(*ix_table_id),TableIndex::All,TableIndex::All));
+          TableIndex::IxTable(TableId::Global(ix_table_id)) => {
+            self.input.insert((TableId::Global(*ix_table_id),RegisterIndex::All,RegisterIndex::All));
           }
           _ => (),
         }
         self.compile_tfm(Transformation::Function{
           name: *TABLE_SET,
-          arguments: vec![(0,*src_id,vec![(*src_row, *src_col)])],
-          out: (*dest_id,*dest_row,*dest_col),
+          arguments: vec![(0,*src_id,vec![(src_row.clone(), src_col.clone())])],
+          out: (*dest_id,dest_row.clone(),dest_col.clone()),
+        })?;
+      }
+      Transformation::UpdateData{name, src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
+        self.output.insert((*dest_id,RegisterIndex::All,RegisterIndex::All));
+        match dest_row {
+          TableIndex::IxTable(TableId::Global(ix_table_id)) => {
+            self.input.insert((TableId::Global(*ix_table_id),RegisterIndex::All,RegisterIndex::All));
+          }
+          _ => (),
+        }
+        self.compile_tfm(Transformation::Function{
+          name: *name,
+          arguments: vec![(0,*src_id,vec![(src_row.clone(), src_col.clone())])],
+          out: (*dest_id,dest_row.clone(),dest_col.clone()),
         })?;
       }
       Transformation::NumberLiteral{kind, bytes} => {
@@ -693,6 +728,10 @@ impl Block {
         else if *kind == *cF32 {
           t.set_kind(ValueKind::F32)?;
           t.set_raw(0,0,Value::F32(F32::new(num.as_f32())))?;
+        } 
+        else if *kind == *cF64 {
+          t.set_kind(ValueKind::F64)?;
+          t.set_raw(0,0,Value::F64(F64::new(num.as_f32() as f64)))?;
         } 
         else if *kind == *cF32L {
           t.set_kind(ValueKind::F32)?;
@@ -764,7 +803,7 @@ impl Block {
       }
       Transformation::Whenever{table_id, indices} => {
         self.triggers.clear();
-        self.triggers.insert((*table_id,TableIndex::All,TableIndex::All));
+        self.triggers.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
       }
       Transformation::Function{name, ref arguments, out} => {        
         // A list of all the functions that are
@@ -800,7 +839,7 @@ impl Block {
       }
       Ok(())
     } else {
-      Err(MechError{id: 2125, kind: MechErrorKind::GenericError("Block not ready".to_string())})
+      Err(MechError{id: 2126, kind: MechErrorKind::GenericError("Block not ready".to_string())})
     }
   }
 
@@ -874,9 +913,42 @@ impl fmt::Debug for Block {
   }
 }
 
+// ### RegisterIndex
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum RegisterIndex {
+  Index(usize),
+  Alias(u64),
+  All,
+}
+
+impl RegisterIndex {
+  pub fn unwrap(&self) -> usize {
+    match self {
+      RegisterIndex::Index(ix) => *ix,
+      RegisterIndex::Alias(alias) => {
+        alias.clone() as usize
+      },
+      RegisterIndex::All => 0,
+    }
+  }
+
+}
+
+impl fmt::Debug for RegisterIndex {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      &RegisterIndex::Index(ref ix) => write!(f, "Ix({:?})", ix),
+      &RegisterIndex::Alias(ref alias) => write!(f, "IxAlias({})", humanize(alias)),
+      &RegisterIndex::All => write!(f, "IxAll"),
+    }
+  }
+}
+
 #[derive(Debug, Copy, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub struct Register {
   pub table_id: TableId,
-  pub row: TableIndex,
-  pub column: TableIndex,
+  pub row: RegisterIndex,
+  pub column: RegisterIndex,
 }

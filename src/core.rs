@@ -13,6 +13,7 @@ use crate::*;
 use crate::function::{
   MechFunction,
   math::*,
+  math_update::*,
   compare::*,
   stats::*,
   table::*,
@@ -67,9 +68,9 @@ pub struct Core {
   pub functions: Rc<RefCell<Functions>>,
   pub required_functions: HashSet<u64>,
   pub errors: HashMap<MechErrorKind,Vec<BlockRef>>,
-  pub input: HashSet<(TableId,TableIndex,TableIndex)>,
-  pub output: HashSet<(TableId,TableIndex,TableIndex)>,
-  pub defined_tables: HashSet<(TableId,TableIndex,TableIndex)>,
+  pub input: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
+  pub output: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
+  pub defined_tables: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
   pub schedule: Schedule,
   pub dictionary: StringDictionary,
 }
@@ -85,6 +86,8 @@ impl Core {
 
     // Math
     functions.insert(*MATH_ADD, Box::new(MathAdd{}));
+    functions.insert(*MATH_ADD__UPDATE, Box::new(MathAddUpdate{}));
+    functions.insert(*MATH_SUBTRACT__UPDATE, Box::new(MathSubtractUpdate{}));    
     functions.insert(*MATH_SUBTRACT, Box::new(MathSub{}));
     functions.insert(*MATH_MULTIPLY, Box::new(MathMul{}));
     functions.insert(*MATH_DIVIDE, Box::new(MathDiv{}));
@@ -138,11 +141,11 @@ impl Core {
     }
   }
 
-  pub fn needed_registers(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+  pub fn needed_registers(&self) -> HashSet<(TableId,RegisterIndex,RegisterIndex)> {
     self.input.difference(&self.defined_tables).cloned().collect()
   }
 
-  pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(Vec<BlockRef>,HashSet<(TableId,TableIndex,TableIndex)>),MechError> {
+  pub fn process_transaction(&mut self, txn: &Transaction) -> Result<(Vec<BlockRef>,HashSet<(TableId,RegisterIndex,RegisterIndex)>),MechError> {
     let mut changed_registers = HashSet::new();
     let mut block_refs = Vec::new();
     for change in txn {
@@ -155,7 +158,7 @@ impl Core {
                 match table_brrw.set(row, col, val.clone()) {
                   Ok(()) => {
                     // TODO This is inserting a {:,:} register instead of the one passed in, and that needs to be fixed.
-                    changed_registers.insert((TableId::Global(*table_id),TableIndex::All,TableIndex::All));
+                    changed_registers.insert((TableId::Global(*table_id),RegisterIndex::All,RegisterIndex::All));
                   },
                   Err(x) => { return Err(MechError{id: 1000, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
                 }
@@ -165,7 +168,7 @@ impl Core {
           }
         }
         Change::NewTable{table_id, rows, columns} => {
-          let table = Table::new(*table_id,*rows,*columns);
+          let table = Table::new(*table_id,rows.clone(),*columns);
           self.database.borrow_mut().insert_table(table)?;
         }
         Change::ColumnAlias{table_id, column_ix, column_alias} => {
@@ -226,7 +229,7 @@ impl Core {
     self.load_block_refs(block_refs.clone());
     self.schedule_blocks();
     let mut graph_output = vec![];
-    match self.schedule.trigger_to_output.get(&(table_id,TableIndex::All,TableIndex::All)) {
+    match self.schedule.trigger_to_output.get(&(table_id,RegisterIndex::All,RegisterIndex::All)) {
       Some(output) => {
         for (table_id,_,_) in output {
           graph_output.push(table_id.clone());
@@ -403,7 +406,7 @@ impl Core {
     (new_block_ids,new_block_errors)
   }
 
-  pub fn get_output_by_block_id(&self, block_id: BlockId) -> Result<HashSet<(TableId,TableIndex,TableIndex)>,MechError> {
+  pub fn get_output_by_block_id(&self, block_id: BlockId) -> Result<HashSet<(TableId,RegisterIndex,RegisterIndex)>,MechError> {
     match self.blocks.get(&block_id) {
       Some(block_ref) => {
         let output = block_ref.borrow().output.clone();
@@ -417,7 +420,7 @@ impl Core {
     self.schedule.schedule_blocks()
   }
 
-  pub fn step(&mut self, register: &(TableId,TableIndex,TableIndex)) -> Result<(),MechError> {
+  pub fn step(&mut self, register: &(TableId,RegisterIndex,RegisterIndex)) -> Result<(),MechError> {
     self.schedule.run_schedule(register)
   }
 }

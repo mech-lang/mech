@@ -18,6 +18,7 @@ pub enum Transformation {
   Constant{table_id: TableId, value: Value},
   ColumnKind{table_id: TableId, column_ix: usize, kind: u64},
   Set{src_id: TableId, src_row: TableIndex, src_col: TableIndex, dest_id: TableId, dest_row: TableIndex, dest_col: TableIndex},
+  UpdateData{name: u64, src_id: TableId, src_row: TableIndex, src_col: TableIndex, dest_id: TableId, dest_row: TableIndex, dest_col: TableIndex},
   ColumnAlias{table_id: TableId, column_ix: usize, column_alias: u64},
   RowAlias{table_id: TableId, row_ix: usize, row_alias: u64},
   Whenever{table_id: TableId, indices: Vec<(TableIndex, TableIndex)>},
@@ -58,6 +59,8 @@ impl fmt::Debug for Transformation {
         write!(f,"🥸 ColumnAlias(table_id: {:?}, column_ix: {}, column_alias: {})",table_id,column_ix,humanize(column_alias))?,
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => 
         write!(f,"♟️ Set(src_id: {:?}, src_indices: ({:?},{:?}),\n    dest_id: {:?}, dest_indices: ({:?},{:?}))",src_id,src_row,src_col,dest_id,dest_row,dest_col)?,
+      Transformation::UpdateData{name, src_id, src_row, src_col, dest_id, dest_row, dest_col} => 
+        write!(f,"♻️ UpdateData(name: {}, src_id: {:?}, src_indices: ({:?},{:?}),\n    dest_id: {:?}, dest_indices: ({:?},{:?}))",humanize(name),src_id,src_row,src_col,dest_id,dest_row,dest_col)?,
     }
     Ok(())
   }
@@ -76,6 +79,12 @@ impl PartialOrd for Transformation {
         return Some(Ordering::Greater);
       }
       (_,Transformation::Whenever{..}) => {
+        return Some(Ordering::Less);
+      }
+      (Transformation::UpdateData{..},_) => {
+        return Some(Ordering::Greater);
+      }
+      (_,Transformation::UpdateData{..}) => {
         return Some(Ordering::Less);
       }
       (Transformation::Set{..},_) => {
@@ -100,7 +109,6 @@ impl PartialOrd for Transformation {
        Transformation::TableReference{..}) => {
         Some(Ordering::Less)
       }
-      
       (Transformation::NewTable{table_id,..},Transformation::NewTable{table_id: table_id2, ..}) => {
         if table_id.unwrap() > table_id2.unwrap() {
           Some(Ordering::Greater)
@@ -120,7 +128,7 @@ impl PartialOrd for Transformation {
       (Transformation::NumberLiteral{..},_) => Some(Ordering::Less),
       (Transformation::Set{src_id,..},_) => Some(Ordering::Greater),
       (_,Transformation::Set{src_id,..}) => Some(Ordering::Less),
-            x => {
+      x => {
         None
       }
     }

@@ -9,6 +9,7 @@ use rayon::prelude::*;
 use std::thread;
 
 pub mod compare;
+pub mod math_update;
 pub mod math;
 pub mod stats;
 pub mod table;
@@ -25,6 +26,8 @@ pub trait MechNumArithmetic<T>: Add<Output = T> +
                                 Div<Output = T> + 
                                 Mul<Output = T> + 
                                 Pow<T, Output = T> + 
+                                AddAssign +
+                                SubAssign +
                                 Sized {}
 
 pub trait MechFunctionCompiler {

@@ -5,11 +5,11 @@ use crate::*;
 
 #[derive(Clone)]
 pub struct Schedule {
-  pub trigger_to_blocks: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
-  pub input_to_blocks: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
-  pub output_to_blocks: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>,
-  pub trigger_to_output: HashMap<(TableId,TableIndex,TableIndex),HashSet<(TableId,TableIndex,TableIndex)>>,
-  pub schedules: HashMap<(TableId,TableIndex,TableIndex),Vec<BlockGraph>>, // Block Graph is list of blocks that will trigger in order when the given register is set
+  pub trigger_to_blocks: HashMap<(TableId,RegisterIndex,RegisterIndex),Vec<BlockGraph>>,
+  pub input_to_blocks: HashMap<(TableId,RegisterIndex,RegisterIndex),Vec<BlockGraph>>,
+  pub output_to_blocks: HashMap<(TableId,RegisterIndex,RegisterIndex),Vec<BlockGraph>>,
+  pub trigger_to_output: HashMap<(TableId,RegisterIndex,RegisterIndex),HashSet<(TableId,RegisterIndex,RegisterIndex)>>,
+  pub schedules: HashMap<(TableId,RegisterIndex,RegisterIndex),Vec<BlockGraph>>, // Block Graph is list of blocks that will trigger in order when the given register is set
   unscheduled_blocks: Vec<BlockRef>,
 }
 
@@ -91,12 +91,12 @@ impl Schedule {
         let mut output = node_brrw.aggregate_output();
         aggregate_output = aggregate_output.union(&mut output).cloned().collect();
       }
-      self.trigger_to_output.insert(*register,aggregate_output);
+      self.trigger_to_output.insert(register.clone(),aggregate_output);
     }
     Ok(())
   }
 
-  pub fn run_schedule(&mut self, register: &(TableId,TableIndex,TableIndex)) -> Result<(),MechError> {
+  pub fn run_schedule(&mut self, register: &(TableId,RegisterIndex,RegisterIndex)) -> Result<(),MechError> {
     match self.schedules.get_mut(register) {
       Some(ref mut block_graphs) => {
         for ref mut block_graph in block_graphs.iter_mut() {
@@ -152,26 +152,26 @@ impl Node {
     }
   }
 
-  pub fn triggers(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+  pub fn triggers(&self) -> HashSet<(TableId,RegisterIndex,RegisterIndex)> {
     self.block.borrow().triggers.clone()
   }
 
-  pub fn input(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+  pub fn input(&self) -> HashSet<(TableId,RegisterIndex,RegisterIndex)> {
     self.block.borrow().input.clone()
   }
 
-  pub fn output(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+  pub fn output(&self) -> HashSet<(TableId,RegisterIndex,RegisterIndex)> {
     self.block.borrow().output.clone()
   }
 
-  pub fn aggregate_output(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+  pub fn aggregate_output(&self) -> HashSet<(TableId,RegisterIndex,RegisterIndex)> {
     let mut aggregate_output = self.output();
     let mut child_output = self.output_recurse();
     aggregate_output = aggregate_output.union(&mut child_output).cloned().collect();
     aggregate_output
   }
 
-  pub fn output_recurse(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+  pub fn output_recurse(&self) -> HashSet<(TableId,RegisterIndex,RegisterIndex)> {
     let mut aggregate_output = HashSet::new();
     for child in &self.children {
       let child_brrw = child.borrow();
@@ -230,15 +230,15 @@ impl BlockGraph {
     self.root.borrow().block.borrow().id
   }
 
-  pub fn triggers(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+  pub fn triggers(&self) -> HashSet<(TableId,RegisterIndex,RegisterIndex)> {
     self.root.borrow().triggers()
   }
 
-  pub fn input(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+  pub fn input(&self) -> HashSet<(TableId,RegisterIndex,RegisterIndex)> {
     self.root.borrow().input()
   }
 
-  pub fn output(&self) -> HashSet<(TableId,TableIndex,TableIndex)> {
+  pub fn output(&self) -> HashSet<(TableId,RegisterIndex,RegisterIndex)> {
     self.root.borrow().output()
   }
 

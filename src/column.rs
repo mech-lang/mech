@@ -20,7 +20,7 @@ pub type TableRef = Rc<RefCell<Table>>;
 pub enum Column {
   f32(ColumnV<f32>),
   F32(ColumnV<F32>),
-  F64(ColumnV<f64>),
+  F64(ColumnV<F64>),
   U8(ColumnV<U8>),
   U16(ColumnV<U16>),
   U32(ColumnV<U32>),
@@ -110,7 +110,7 @@ impl Column {
       Column::Length(col) | Column::Time(col) | Column::Speed(col) |
       Column::Angle(col) |
       Column::F32(col) => col.borrow_mut().resize(rows,F32(0.0)),
-      Column::F64(col) => col.borrow_mut().resize(rows,0.0),
+      Column::F64(col) => col.borrow_mut().resize(rows,F64(0.0)),
       Column::Ref(col) => col.borrow_mut().resize(rows,TableId::Local(0)),
       Column::Index(col) => col.borrow_mut().resize(rows,0),
       Column::Any(col) => col.borrow_mut().resize(rows,Value::Empty),
@@ -219,6 +219,51 @@ mech_type!(I32,i32);
 mech_type!(I64,i64);
 mech_type!(I128,i128);
 
+impl Zero for U8 {
+  fn zero() -> Self {
+    U8::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
+impl Zero for U16 {
+  fn zero() -> Self {
+    U16::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
+impl Zero for U32 {
+  fn zero() -> Self {
+    U32::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
+impl Zero for U64 {
+  fn zero() -> Self {
+    U64::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
+impl Zero for U128 {
+  fn zero() -> Self {
+    U128::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
 impl Zero for F32 {
   fn zero() -> Self {
     F32::new(0.0)
@@ -228,7 +273,17 @@ impl Zero for F32 {
   }
 }
 
+impl Zero for F64 {
+  fn zero() -> Self {
+    F64::new(0.0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0.0
+  }
+}
+
 mech_type_conversion!(U8,F32,f32);
+mech_type_conversion!(U8,F64,f64);
 mech_type_conversion!(U8,U128,u128);
 mech_type_conversion!(U8,U64,u64);
 mech_type_conversion!(U8,U32,u32);
@@ -239,26 +294,37 @@ mech_type_conversion!(F32,U16,u16);
 mech_type_conversion!(F32,U32,u32);
 mech_type_conversion!(F32,U64,u64);
 mech_type_conversion!(F32,U128,u128);
+mech_type_conversion!(F32,F64,f64);
+mech_type_conversion!(F64,U8,u8);
+mech_type_conversion!(F64,U16,u16);
+mech_type_conversion!(F64,U32,u32);
+mech_type_conversion!(F64,U64,u64);
+mech_type_conversion!(F64,U128,u128);
+mech_type_conversion!(F64,F32,f32);
 mech_type_conversion!(U16,U8,u8);
 mech_type_conversion!(U16,U32,u32);
 mech_type_conversion!(U16,U64,u64);
 mech_type_conversion!(U16,U128,u128);
 mech_type_conversion!(U16,F32,f32);
+mech_type_conversion!(U16,F64,f64);
 mech_type_conversion!(U32,U8,u8);
 mech_type_conversion!(U32,U16,u16);
 mech_type_conversion!(U32,U64,u64);
 mech_type_conversion!(U32,U128,u128);
 mech_type_conversion!(U32,F32,f32);
+mech_type_conversion!(U32,F64,f64);
 mech_type_conversion!(U64,U8,u8);
 mech_type_conversion!(U64,U16,u16);
 mech_type_conversion!(U64,U128,u128);
 mech_type_conversion!(U64,U32,u32);
 mech_type_conversion!(U64,F32,f32);
+mech_type_conversion!(U64,F64,f64);
 mech_type_conversion!(U128,F32,f32);
 mech_type_conversion!(U128,U8,u8);
 mech_type_conversion!(U128,U16,u16);
 mech_type_conversion!(U128,U32,u32);
 mech_type_conversion!(U128,U64,u64);
+mech_type_conversion!(U128,F64,f64);
 mech_type_conversion!(I8,F32,f32);
 mech_type_conversion_raw!(U8,u8);
 mech_type_conversion_raw!(U16,u16);
@@ -288,6 +354,7 @@ mech_value_conversion!(U32,U32);
 mech_value_conversion!(U64,U64);
 mech_value_conversion!(U128,U128);
 mech_value_conversion!(F32,F32);
+mech_value_conversion!(F64,F64);
 mech_value_conversion!(MechString,String);
 
 #[macro_export]
@@ -332,6 +399,18 @@ macro_rules! mech_type {
       fn div(self, rhs: $wrapper) -> $wrapper {
         let ($wrapper(lhs),$wrapper(rhs)) = (self,rhs);
         $wrapper(lhs / rhs)
+      }
+    }
+    impl AddAssign for $wrapper {
+      fn add_assign(&mut self, other: Self) {
+        let ($wrapper(lhs),$wrapper(rhs)) = (&self,other);
+        *self = $wrapper(*lhs + rhs);
+      }
+    }
+    impl SubAssign for $wrapper {
+      fn sub_assign(&mut self, other: Self) {
+        let ($wrapper(lhs),$wrapper(rhs)) = (&self,other);
+        *self = $wrapper(*lhs - rhs);
       }
     }
     impl fmt::Debug for $wrapper {
@@ -425,6 +504,7 @@ pow_impl!(I128, U32, u32, i128::pow);
 
 mech_powf!(F32,f32);
 
+
 // These are just to get things compiling. We should
 // to a better job implementing these.
 mech_pow_dummy!(I8,I8);
@@ -434,6 +514,15 @@ mech_pow_dummy!(I64,I64);
 mech_pow_dummy!(I128,I128);
 mech_pow_dummy!(U128,U128);
 mech_pow_dummy!(U64,U64);
+
+// powf64 dummy
+impl<T: Into<F64>> Pow<T> for F64 {
+  type Output = F64;
+  fn pow(self, rhs: T) -> F64 {
+    let (F64(lhs),rhs) = (self,F64);
+    F64(0.0)
+  }
+}
 
 #[macro_export]
 macro_rules! mech_pow_dummy{
