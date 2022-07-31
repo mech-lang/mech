@@ -39,6 +39,7 @@ Target release: ???
     - [ ] Sockets
     - [ ] Serial
     - [ ] Bluetooth
+    - [ ] GUI
 - Editor
     - [ ] Database Explorer
     - [ ] API endpoint server
