@@ -1,6 +1,6 @@
 # Mech Project Roadmap
 
-### Stage 1 - Alpha v0.0.1 - v0.0.5
+### Stage 1 - Alpha v0.0.1 - v0.0.6
 
 Conception: started 2014
 Implementation: started 2018
