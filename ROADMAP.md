@@ -15,7 +15,7 @@ Target release: ???
 
 ## Version 0.2.0 (Spring 2023?)
 
-- [ ] GPU Processing
+- [ ] GPGPU Runtime
 - [ ] Automatic Differentiation
 - [ ] Capability system
 - [ ] User defined functions
