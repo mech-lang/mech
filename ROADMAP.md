@@ -13,14 +13,14 @@ Target release: October 2022
 
 Target release: ???
 
-## Version 0.2.0
+## Version 0.2.0 (Spring 2023?)
 
 - [ ] GPU Processing
 - [ ] Automatic Differentiation
 - [ ] Capability system
 - [ ] User defined functions
 
-## Version 0.1.0
+## Version 0.1.0 (October 2022)
 
 - [x] Errors
 - [x] Distribution
@@ -57,7 +57,7 @@ Target release: ???
     - [ ] Blog
     - [ ] Try
 
-## Version 0.0.6 Alpha
+## Version 0.0.6 Alpha (unreleased)
 
 - [x] Testing
 - Machines 
