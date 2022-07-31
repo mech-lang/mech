@@ -42,6 +42,7 @@ pub enum Node {
   Until{ children: Vec<Node> },
   SelectData{name: Vec<char>, id: TableId, children: Vec<Node> },
   SetData{ children: Vec<Node> },
+  UpdateData{name: Vec<char>, children: Vec<Node> },
   SplitData{ children: Vec<Node> },
   TableColumn{ children: Vec<Node> },
   Binding{ children: Vec<Node> },
@@ -49,6 +50,7 @@ pub enum Node {
   Function{ name: Vec<char>, children: Vec<Node> },
   Define { name: Vec<char>, id: u64},
   DotIndex { children: Vec<Node>},
+  Swizzle { children: Vec<Node>},
   SubscriptIndex { children: Vec<Node> },
   Range,
   VariableDefine {children: Vec<Node> },
@@ -84,6 +86,11 @@ pub enum Node {
   And,
   Or,
   Xor,
+  AddUpdate,
+  SubtractUpdate,
+  MultiplyUpdate,
+  DivideUpdate,
+  ExponentUpdate,
   SelectAll,
   Empty,
   True,
@@ -139,6 +146,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::Block{children, ..} => {write!(f,"Block\n").ok(); Some(children)},
     Node::Statement{children} => {write!(f,"Statement\n").ok(); Some(children)},
     Node::SetData{children} => {write!(f,"SetData\n").ok(); Some(children)},
+    Node::UpdateData{name, children} => {write!(f,"UpdateData({:?})\n", name).ok(); Some(children)},
     Node::SplitData{children} => {write!(f,"SplitData\n").ok(); Some(children)},
     Node::Data{children} => {write!(f,"Data\n").ok(); Some(children)},
     Node::KindAnnotation{children} => {write!(f,"KindAnnotation\n").ok(); Some(children)},
@@ -148,6 +156,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::Until{children} => {write!(f,"Until\n").ok(); Some(children)},
     Node::SelectData{name, id, children} => {write!(f,"SelectData({:?} {:?}))\n", name, id).ok(); Some(children)},
     Node::DotIndex{children} => {write!(f,"DotIndex\n").ok(); Some(children)},
+    Node::Swizzle{children} => {write!(f,"Swizzle\n").ok(); Some(children)},
     Node::SubscriptIndex{children} => {write!(f,"SubscriptIndex\n").ok(); Some(children)},
     Node::Range => {write!(f,"Range\n").ok(); None},
     Node::Expression{children} => {write!(f,"Expression\n").ok(); Some(children)},
@@ -175,12 +184,17 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::True => {write!(f,"True\n").ok(); None},
     Node::False => {write!(f,"False\n").ok(); None},
     Node::Null => {write!(f,"Null\n").ok(); None},
-    Node::Add => {write!(f,"Add\n").ok(); None},
     Node::ReshapeColumn => {write!(f,"ReshapeColumn\n").ok(); None},
+    Node::Add => {write!(f,"Add\n").ok(); None},
     Node::Subtract => {write!(f,"Subtract\n").ok(); None},
     Node::Multiply => {write!(f,"Multiply\n").ok(); None},
     Node::Divide => {write!(f,"Divide\n").ok(); None},
     Node::Exponent => {write!(f,"Exponent\n").ok(); None},
+    Node::AddUpdate => {write!(f,"AddUpdate\n").ok(); None},
+    Node::SubtractUpdate => {write!(f,"SubtractUpdate\n").ok(); None},
+    Node::MultiplyUpdate => {write!(f,"MultiplyUpdate\n").ok(); None},
+    Node::DivideUpdate => {write!(f,"DivideUpdate\n").ok(); None},
+    Node::ExponentUpdate => {write!(f,"ExponentUpdate\n").ok(); None},
     // Markdown Nodes
     Node::Title{text} => {write!(f,"Title({:?})\n", text).ok(); None},
     Node::ParagraphText{text} => {write!(f,"ParagraphText({:?})\n", text).ok(); None},
@@ -270,11 +284,17 @@ impl Ast {
         let mut title = None;
         for node in result {
           match node {
-            Node::Title{text} => title = Some(text),
+            Node::Title{text} => {
+              if !children.is_empty() {
+                compiled.push(Node::Section{title: title.clone(), children: children.clone()});
+                children.clear();
+              }
+              title = Some(text);
+            },
             _ => children.push(node),
           }
         }
-        compiled.push(Node::Section{title, children});
+        compiled.push(Node::Section{title: title.clone(), children: children.clone()});
       },
       parser::Node::Block{children} => compiled.push(Node::Block{children: self.compile_nodes(children)}),
       parser::Node::Data{children} => {
@@ -305,6 +325,9 @@ impl Ast {
                 reversed.reverse();
               }
               select_data_children.push(Node::DotIndex{children: reversed});
+            },
+            Node::Swizzle{..} => {
+              select_data_children.push(node.clone());
             },
             Node::SubscriptIndex{..} => {
               select_data_children.push(node.clone());
@@ -355,6 +378,21 @@ impl Ast {
           }
         }
         compiled.push(Node::SetData{children});
+      },
+      parser::Node::UpdateData{children} => {
+        let result = self.compile_nodes(children);
+        let operator = &result[0].clone();
+        let dest = &result[2].clone();
+        let src = &result[1].clone();
+        let name: Vec<char> = match operator {
+          Node::AddUpdate => "math/add-update".chars().collect(),
+          Node::SubtractUpdate => "math/subtract-update".chars().collect(),
+          Node::MultiplyUpdate => "math/multiply-update".chars().collect(),
+          Node::DivideUpdate => "math/divide-update".chars().collect(),
+          Node::ExponentUpdate => "math/exponent-update".chars().collect(),
+          _ => Vec::new(),
+        };
+        compiled.push(Node::UpdateData{name, children: vec![src.clone(), dest.clone()]});
       },
       parser::Node::SplitData{children} => {
         let result = self.compile_nodes(children);
@@ -576,6 +614,7 @@ impl Ast {
       parser::Node::Index{children} => compiled.append(&mut self.compile_nodes(children)),
       parser::Node::ReshapeColumn => compiled.push(Node::ReshapeColumn),
       parser::Node::DotIndex{children} => compiled.push(Node::DotIndex{children: self.compile_nodes(children)}),
+      parser::Node::Swizzle{children} => compiled.push(Node::Swizzle{children: self.compile_nodes(children)}),
       parser::Node::SubscriptIndex{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
@@ -878,8 +917,8 @@ impl Ast {
       parser::Node::LessThanEqual => compiled.push(Node::LessThanEqual),
       parser::Node::Equal => compiled.push(Node::Equal),
       parser::Node::NotEqual => compiled.push(Node::NotEqual),
-      parser::Node::Add => compiled.push(Node::Add),
       parser::Node::Range => compiled.push(Node::Range),
+      parser::Node::Add => compiled.push(Node::Add),
       parser::Node::Subtract => compiled.push(Node::Subtract),
       parser::Node::Multiply => compiled.push(Node::Multiply),
       parser::Node::Divide => compiled.push(Node::Divide),
@@ -887,6 +926,11 @@ impl Ast {
       parser::Node::And => compiled.push(Node::And),
       parser::Node::Or => compiled.push(Node::Or),
       parser::Node::Xor => compiled.push(Node::Xor),
+      parser::Node::AddUpdate => compiled.push(Node::AddUpdate),
+      parser::Node::SubtractUpdate => compiled.push(Node::SubtractUpdate),
+      parser::Node::MultiplyUpdate => compiled.push(Node::MultiplyUpdate),
+      parser::Node::DivideUpdate => compiled.push(Node::DivideUpdate),
+      parser::Node::ExponentUpdate => compiled.push(Node::ExponentUpdate),
       parser::Node::Comparator{children} => {
         match children[0] {
           parser::Node::LessThan => compiled.push(Node::LessThan),
@@ -950,7 +994,7 @@ impl Ast {
         compiled.push(Node::Token{token: *token, chars: chars.to_vec()});
       },
       parser::Node::Null => (),
-      _ => println!("Unhandled Parser Node in Compiler: {:?}", node),
+      _ => println!("Unhandled Parser Node in AST Compiler: {:?}", node),
     }
 
     //self.constraints = constraints.clone();

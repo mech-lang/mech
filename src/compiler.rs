@@ -160,7 +160,7 @@ impl Compiler {
       // dest{ix} := src
       Node::SetData{children} => {
         let mut src = self.compile_node(&children[1])?;
-        let mut dest = self.compile_node(&children[0])?;
+        let mut dest = self.compile_node(&children[0])?.clone();
 
         let (src_table_id, src_indices) = match &mut src[0] {
           Transformation::NewTable{table_id,..} => {
@@ -181,22 +181,73 @@ impl Compiler {
           },
           _ => None,
         }.unwrap();     
-        match &mut dest[0] {
+        let mut first = dest[0].clone();
+        match first {
           Transformation::Select{table_id, indices} => {
             let dest_id = table_id.clone();
-            let (dest_row, dest_col) = indices[0];
+            let (dest_row, dest_col) = &indices[0];
             dest.remove(0);
-            let (src_row,src_col) = src_indices[0];
-            tfms.push(Transformation::Set{src_id: src_table_id, src_row, src_col, dest_id, dest_row, dest_col});
-            /*tfms.push(Transformation::Function{
-              name: *TABLE_SET,
-              arguments: vec![(0,src_table_id,vec![(src_row, src_col)])],
-              out: (dest_id,dest_row,dest_col),
-            });*/
+            let (src_row,src_col) = &src_indices[0];
+            tfms.push(Transformation::Set{
+              src_id: src_table_id, 
+              src_row: src_row.clone(), 
+              src_col: src_col.clone(),
+              dest_id, 
+              dest_row: dest_row.clone(), 
+              dest_col: dest_col.clone()
+            });
           }
           _ => (),
         }
 
+        tfms.append(&mut dest);
+        tfms.append(&mut src);
+      }
+      // dest :+= src
+      // dest{ix} :+= src
+      Node::UpdateData{name, children} => {
+        let mut src = self.compile_node(&children[1])?;
+        let mut dest = self.compile_node(&children[0])?.clone();
+
+        let (src_table_id, src_indices) = match &mut src[0] {
+          Transformation::NewTable{table_id,..} => {
+            Some((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]))
+          },
+          Transformation::Select{table_id,ref indices} => {
+            let table_id = table_id.clone();
+            let indices = indices.clone();
+            src.remove(0);
+            Some((table_id,indices))
+          },
+          Transformation::TableReference{table_id, reference: Value::Reference(id)} => {
+            let table_id = id.clone();
+            src.remove(0);
+            src.remove(0);
+            src.remove(0);
+            Some((table_id.clone(),vec![(TableIndex::All, TableIndex::All)]))
+          },
+          _ => None,
+        }.unwrap();     
+        let mut first = dest[0].clone();
+        match first {
+          Transformation::Select{table_id, indices} => {
+            let dest_id = table_id.clone();
+            let (dest_row, dest_col) = &indices[0];
+            dest.remove(0);
+            let (src_row,src_col) = &src_indices[0];
+            let name_hash = hash_chars(name);
+            tfms.push(Transformation::UpdateData{
+              name: name_hash,
+              src_id: src_table_id, 
+              src_row: src_row.clone(), 
+              src_col: src_col.clone(),
+              dest_id, 
+              dest_row: dest_row.clone(), 
+              dest_col: dest_col.clone()
+            });
+          }
+          _ => (),
+        }
         tfms.append(&mut dest);
         tfms.append(&mut src);
       }
@@ -670,7 +721,7 @@ impl Compiler {
             }
             Transformation::Select{table_id, indices} => {
               if indices.len() == 1 {
-                match (table_id, indices[0]) {
+                match (table_id, indices[0].clone()) {
                   (TableId::Global(table_id2), (TableIndex::All, TableIndex::All)) => {
                     all = true;
                     all_arg.push(result[0].clone());
@@ -744,12 +795,12 @@ impl Compiler {
         result_tfms.append(&mut result); 
 
         let (_,o,oi) = &args[0];
-        let (or,oc) = oi[0];
+        let (or,oc) = &oi[0];
         tfms.append(&mut result_tfms);
         tfms.push(Transformation::Function{
           name: *TABLE_APPEND,
           arguments: vec![args[1].clone()],
-          out: (*o,or,oc),
+          out: (*o,or.clone(),oc.clone()),
         });
       },
       Node::SplitData{children} => {
@@ -799,6 +850,19 @@ impl Compiler {
               indices.push(TableIndex::ReshapeColumn);
               indices.push(TableIndex::All);
             }
+            Node::Swizzle{children} => {
+              let mut aliases = vec![];
+              for child in children {
+                match child {
+                  Node::Identifier{name,id} => {
+                    aliases.push(*id);
+                  }
+                  _ => (),
+                }
+              }
+              indices.push(TableIndex::All);
+              indices.push(TableIndex::Aliases(aliases));
+            }
             Node::DotIndex{children} => {
               for child in children {
                 match child {
@@ -817,23 +881,23 @@ impl Compiler {
                         Node::WheneverIndex{..} => {
                           let id = hash_str("~");
                           if indices.len() == 2 && indices[0] == TableIndex::All {
-                            indices[0] = TableIndex::Table(TableId::Local(id));
+                            indices[0] = TableIndex::IxTable(TableId::Local(id));
                           } else {
-                            indices.push(TableIndex::Table(TableId::Local(id)));
+                            indices.push(TableIndex::IxTable(TableId::Local(id)));
                           }
                         }
                         Node::SelectData{name, id, children} => {
                           if indices.len() == 2 && indices[0] == TableIndex::All {
-                            indices[0] = TableIndex::Table(*id);
+                            indices[0] = TableIndex::IxTable(*id);
                           } else {
-                            indices.push(TableIndex::Table(*id));
+                            indices.push(TableIndex::IxTable(*id));
                           }
                         }
                         Node::Expression{..} => {
                           let mut result = self.compile_node(child)?;
                           match &result[1] {
                             Transformation::NewTable{table_id, ..} => {
-                              indices.push(TableIndex::Table(*table_id));
+                              indices.push(TableIndex::IxTable(*table_id));
                             }
                             Transformation::NumberLiteral{kind, bytes} => {
                               let mut value = NumberLiteral::new(*kind, bytes.clone());
@@ -846,9 +910,9 @@ impl Compiler {
                             Transformation::Function{name, arguments, out} => {
                               let (output_table_id, output_row, output_col) = out;
                               if indices.len() == 2 && indices[0] == TableIndex::All {
-                                indices[0] = TableIndex::Table(*output_table_id);
+                                indices[0] = TableIndex::IxTable(*output_table_id);
                               } else {
-                                indices.push(TableIndex::Table(*output_table_id));
+                                indices.push(TableIndex::IxTable(*output_table_id));
                               }
                             }
                             _ => (),
@@ -872,23 +936,23 @@ impl Compiler {
                   Node::WheneverIndex{..} => {
                     let id = hash_str("~");
                     if indices.len() == 2 && indices[0] == TableIndex::All {
-                      indices[0] = TableIndex::Table(TableId::Local(id));
+                      indices[0] = TableIndex::IxTable(TableId::Local(id));
                     } else {
-                      indices.push(TableIndex::Table(TableId::Local(id)));
+                      indices.push(TableIndex::IxTable(TableId::Local(id)));
                     }
                   }
                   Node::SelectData{name, id, children} => {
                     if indices.len() == 2 && indices[0] == TableIndex::All {
-                      indices[0] = TableIndex::Table(*id);
+                      indices[0] = TableIndex::IxTable(*id);
                     } else {
-                      indices.push(TableIndex::Table(*id));
+                      indices.push(TableIndex::IxTable(*id));
                     }
                   }
                   Node::Expression{..} => {
                     let mut result = self.compile_node(child)?;
                     match &result[1] {
                       Transformation::NewTable{table_id, ..} => {
-                        indices.push(TableIndex::Table(*table_id));
+                        indices.push(TableIndex::IxTable(*table_id));
                       }
                       Transformation::NumberLiteral{kind, bytes} => {
                         let mut value = NumberLiteral::new(*kind, bytes.clone());
@@ -901,9 +965,9 @@ impl Compiler {
                       Transformation::Function{name, arguments, out} => {
                         let (output_table_id, output_row, output_col) = out;
                         if indices.len() == 2 && indices[0] == TableIndex::All {
-                          indices[0] = TableIndex::Table(*output_table_id);
+                          indices[0] = TableIndex::IxTable(*output_table_id);
                         } else {
-                          indices.push(TableIndex::Table(*output_table_id));
+                          indices.push(TableIndex::IxTable(*output_table_id));
                         }
                       }
                       _ => (),
@@ -923,7 +987,7 @@ impl Compiler {
             },
           }
           if indices.len() == 2 {
-            all_indices.push((indices[0],indices[1]));
+            all_indices.push((indices[0].clone(),indices[1].clone()));
             indices.clear();
           }
         }
@@ -959,7 +1023,7 @@ impl Compiler {
         tfms.append(&mut result);
       }
       Node::Null => (),
-      x => println!("Unhandled Node {:?}", x),
+      x => println!("Unhandled Node in Compiler {:?}", x),
     }
     Ok(tfms)
   }

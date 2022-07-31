@@ -50,6 +50,7 @@ pub enum Node {
   Identifier{ children: Vec<Node> },
   Alpha{ children: Vec<Node> },
   DotIndex{ children: Vec<Node> },
+  Swizzle{ children: Vec<Node> },
   SubscriptIndex{ children: Vec<Node> },
   SubscriptList{ children: Vec<Node> },
   Subscript{ children: Vec<Node> },
@@ -60,6 +61,7 @@ pub enum Node {
   Index{ children: Vec<Node> },
   Data{ children: Vec<Node> },
   SetData{ children: Vec<Node> },
+  UpdateData{ children: Vec<Node> },
   SetOperator{ children: Vec<Node> },
   SplitData{ children: Vec<Node> },
   JoinData{ children: Vec<Node> },
@@ -166,6 +168,11 @@ pub enum Node {
   And,
   Or,
   Xor,
+  AddUpdate,
+  SubtractUpdate,
+  MultiplyUpdate,
+  DivideUpdate,
+  ExponentUpdate,
   Empty,
   Null,
   True,
@@ -234,6 +241,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Identifier{children} => {print!("Identifier\n"); Some(children)},
     Node::TableIdentifier{children} => {print!("TableIdentifier\n"); Some(children)},
     Node::DotIndex{children} => {print!("DotIndex\n"); Some(children)},
+    Node::Swizzle{children} => {print!("Swizzle\n"); Some(children)},
     Node::SubscriptIndex{children} => {print!("SubscriptIndex\n"); Some(children)},
     Node::SubscriptList{children} => {print!("SubscriptList\n"); Some(children)},
     Node::Subscript{children} => {print!("Subscript\n"); Some(children)},
@@ -245,6 +253,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Equality{children} => {print!("Equality\n"); Some(children)},
     Node::Data{children} => {print!("Data\n"); Some(children)},
     Node::SetData{children} => {print!("SetData\n"); Some(children)},
+    Node::UpdateData{children} => {print!("UpdateData\n"); Some(children)},
     Node::SplitData{children} => {print!("SplitData\n"); Some(children)},
     Node::JoinData{children} => {print!("JoinData\n"); Some(children)},
     Node::Wait{children} => {print!("Wait\n"); Some(children)},
@@ -324,6 +333,11 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::And => {print!("And\n",); None},
     Node::Or => {print!("Or\n",); None},
     Node::Xor => {print!("Xor\n",); None},
+    Node::AddUpdate => {print!("AddUpdate\n",); None},
+    Node::SubtractUpdate => {print!("SubtractUpdate\n",); None},
+    Node::MultiplyUpdate => {print!("MultiplyUpdate\n",); None},
+    Node::DivideUpdate => {print!("DivideUpdate\n",); None},
+    Node::ExponentUpdate => {print!("ExponentUpdate\n",); None},
     Node::Empty => {print!("Empty\n",); None},
     Node::Null => {print!("Null\n",); None},
     Node::ReshapeColumn => {print!("ReshapeColumn\n",); None},
@@ -784,6 +798,16 @@ fn dot_index(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::DotIndex{children: index}))
 }
 
+fn swizzle(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = period(input)?;
+  let (input, first) = identifier(input)?;
+  let (input, _) = comma(input)?;
+  let (input, mut rest) = separated_list1(tag(","),identifier)(input)?;
+  let mut cols = vec![first];
+  cols.append(&mut rest);
+  Ok((input, Node::Swizzle{children: cols}))
+}
+
 fn reshape_column(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = left_brace(input)?;
   let (input, _) = colon(input)?;
@@ -792,7 +816,7 @@ fn reshape_column(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 fn index(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, index) = alt((dot_index, reshape_column, subscript_index))(input)?;
+  let (input, index) = alt((swizzle, dot_index, reshape_column, subscript_index))(input)?;
   Ok((input, Node::Index{children: vec![index]}))
 }
 
@@ -956,6 +980,43 @@ fn add_row(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::AddRow{children: vec![table_id, table]}))
 }
 
+fn add_update_operator(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = tag(":+=")(input)?;
+  Ok((input, Node::AddUpdate))
+}
+
+fn subtract_update_operator(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = tag(":-=")(input)?;
+  Ok((input, Node::SubtractUpdate))
+}
+
+fn multiply_update_operator(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = tag(":*=")(input)?;
+  Ok((input, Node::MultiplyUpdate))
+}
+
+fn divide_update_operator(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = tag(":/=")(input)?;
+  Ok((input, Node::DivideUpdate))
+}
+
+fn update_exponent_operator(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = tag(":^=")(input)?;
+  Ok((input, Node::ExponentUpdate))
+}
+
+fn update_matrix_multiply_operator(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = tag(":**=")(input)?;
+  Ok((input, Node::Null))
+}
+
+fn update_data(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, table) = data(input)?;
+  let (input, (_,op,_)) = tuple((many1(space), alt((add_update_operator,subtract_update_operator)), many1(space)))(input)?;
+  let (input, expression) = expression(input)?;
+  Ok((input, Node::UpdateData{children: vec![op, table, expression]}))
+}
+
 fn set_operator(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = tag(":=")(input)?;
   Ok((input, Node::Null))
@@ -1053,7 +1114,7 @@ fn until_data(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 fn statement(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, statement) = alt((table_define, variable_define, split_data, join_data, whenever_data, wait_data, until_data, set_data, add_row, comment))(input)?;
+  let (input, statement) = alt((table_define, variable_define, split_data, join_data, whenever_data, wait_data, until_data, set_data, update_data, add_row, comment))(input)?;
   Ok((input, Node::Statement{children: vec![statement]}))
 }
 
@@ -1327,7 +1388,7 @@ fn expression(input: ParseString) -> IResult<ParseString, Node> {
 
 fn transformation(input: ParseString) -> IResult<ParseString, Node> {
   let (input, statement) = statement(input)?;
-  let (input, _) = tuple((many0(space),opt(newline)))(input)?;
+  let (input, _) = tuple((many0(space),many0(newline)))(input)?;
   Ok((input, Node::Transformation { children: vec![statement] }))
 }
 
@@ -1340,7 +1401,7 @@ fn block(input: ParseString) -> IResult<ParseString, Node> {
 
 // ## Markdown
 
-fn title(input: ParseString) -> IResult<ParseString, Node> {
+fn ht_title(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = hashtag(input)?;
   let (input, _) = many1(space)(input)?;
   let (input, text) = text(input)?;
@@ -1348,12 +1409,45 @@ fn title(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::Title { children: vec![text] }))
 }
 
-fn subtitle(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, _) = many1(hashtag)(input)?;
+fn ul_title(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = many0(space)(input)?;
+  let (input, text) = text(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, _) = newline(input)?;
+  let (input, _) = many1(equal)(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, _) = many0(newline)(input)?;
+  Ok((input, Node::Title { children: vec![text] }))
+}
+
+fn title(input: ParseString) -> IResult<ParseString, Node> {
+  let (input,title) = alt((ht_title,ul_title))(input)?;
+  Ok((input, title))
+}
+
+fn ht_subtitle(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = hashtag(input)?;
+  let (input, _) = hashtag(input)?;
   let (input, _) = many1(space)(input)?;
   let (input, text) = text(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  Ok((input, Node::Subtitle { children: vec![text] }))
+  Ok((input, Node::Title { children: vec![text] }))
+}
+
+fn ul_subtitle(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = many0(space)(input)?;
+  let (input, text) = text(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, _) = newline(input)?;
+  let (input, _) = many1(dash)(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, _) = many0(newline)(input)?;
+  Ok((input, Node::Title { children: vec![text] }))
+}
+
+fn subtitle(input: ParseString) -> IResult<ParseString, Node> {
+  let (input,title) = alt((ht_subtitle,ul_subtitle))(input)?;
+  Ok((input, title))
 }
 
 fn section_title(input: ParseString) -> IResult<ParseString, Node> {
@@ -1386,11 +1480,11 @@ fn paragraph_text(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 fn paragraph(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, (paragraph_elements,_)) = many_till(
-    alt((inline_mech_code, inline_code, paragraph_text)),
-    newline
+  let (input, paragraph_elements) = many1(
+    alt((inline_mech_code, inline_code, paragraph_text))
   )(input)?;
   let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = many0(newline)(input)?;
   Ok((input, Node::Paragraph { children: paragraph_elements }))
 }
 
@@ -1405,7 +1499,7 @@ fn list_item(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = dash(input)?;
   let (input, _) = many1(space)(input)?;
   let (input, list_item) = paragraph(input)?;
-  let (input, _) = opt(newline)(input)?;
+  let (input, _) = many0(newline)(input)?;
   Ok((input, Node::ListItem { children: vec![list_item] }))
 }
 
@@ -1450,18 +1544,13 @@ fn mech_code_block(input: ParseString) -> IResult<ParseString, Node> {
 // ## Start Here
 
 fn section(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, section_title) = opt(subtitle)(input)?;
   let (input, mut section_elements) = many1(
     tuple((
-      alt((block, code_block, mech_code_block, paragraph, statement, unordered_list)),
+      alt((subtitle, block, code_block, mech_code_block, statement, paragraph, unordered_list)),
       opt(whitespace),
     ))
   )(input)?;
   let mut section = vec![];
-  match section_title {
-    Some(subtitle) => section.push(subtitle),
-    _ => (),
-  };
   section.append(&mut section_elements.iter().map(|(x,_)|x).cloned().collect());
   Ok((input, Node::Section{ children: section }))
 }

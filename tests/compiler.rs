@@ -191,6 +191,11 @@ block
 block
   #test = #y{1} + #y{2}", Value::U64(U64::new(5)));
 
+test_mech!(table_swizzle, "
+x = [a: 1, b: 2, c: 3, d: 4]
+y = x.a,c
+#test = stats/sum(row: y)", Value::F32(F32::new(4.0)));
+
 // ## Select
 
 test_mech!(select_table,"  
@@ -352,6 +357,18 @@ block
 test_mech!(math_parenthetical_expression_constants,"
 block
   #test = (1 + 2) * 3", Value::F32(F32::new(9.0)));
+
+test_mech!(math_add_update_scalar,"
+block
+  #test = 7
+block
+  #test :+= 5", Value::F32(F32::new(12.0)));
+
+test_mech!(math_subtract_update_scalar,"
+block
+  #test = 10
+block
+  #test :-= 3", Value::F32(F32::new(7.0)));
 
 // Quantities
 
@@ -1105,6 +1122,18 @@ block
 test_mech!(markdown_program_title, r#"# Title
   #test = 123"#, Value::F32(F32::new(123.0)));
 
+test_mech!(markdown_program_title_underline, r#"
+Title
+======
+#test = 123"#, Value::F32(F32::new(123.0)));
+
+test_mech!(markdown_program_subtitle_underline, r#"
+Title
+======
+SubTitle
+---------
+#test = 123"#, Value::F32(F32::new(123.0)));
+
 test_mech!(markdown_no_program_title, r#"paragraph
   #test = 123"#, Value::F32(F32::new(123.0)));
 
@@ -1190,7 +1219,7 @@ block
 block
   #y = 2
 
-### Subsubtitle
+## Subsubtitle
 
 block 
   #test = #x + #y"#, Value::F32(F32::new(3.0)));
