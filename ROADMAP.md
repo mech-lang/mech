@@ -13,16 +13,19 @@ Target release: October 2022
 
 Target release: ???
 
+## Version 0.2
+
+[ ] GPU Processing
+[ ] Automatic Differentiation
+[ ] Capability system
+[ ] User defined functions
+
 ## Version 0.1.0 Beta
 
 [x] Errors
 [x] Distribution
 [x] Paralell operators
-[ ] GPU Processing
-[ ] Automatic Differentiation
 [x] Async blocks
-[ ] Capability system
-[ ] User defined functions
 [x] Units
 [x] Type checking
 [x] Multiple dispact
