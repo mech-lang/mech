@@ -27,6 +27,7 @@ pub trait MechNumArithmetic<T>: Add<Output = T> +
                                 Mul<Output = T> + 
                                 Pow<T, Output = T> + 
                                 AddAssign +
+                                SubAssign +
                                 Sized {}
 
 pub trait MechFunctionCompiler {

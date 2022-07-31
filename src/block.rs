@@ -676,7 +676,7 @@ impl Block {
           out: (*dest_id,dest_row.clone(),dest_col.clone()),
         })?;
       }
-      Transformation::AddUpdate{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
+      Transformation::UpdateData{name, src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
         self.output.insert((*dest_id,RegisterIndex::All,RegisterIndex::All));
         match dest_row {
           TableIndex::IxTable(TableId::Global(ix_table_id)) => {
@@ -685,7 +685,7 @@ impl Block {
           _ => (),
         }
         self.compile_tfm(Transformation::Function{
-          name: *MATH_ADD__UPDATE,
+          name: *name,
           arguments: vec![(0,*src_id,vec![(src_row.clone(), src_col.clone())])],
           out: (*dest_id,dest_row.clone(),dest_col.clone()),
         })?;

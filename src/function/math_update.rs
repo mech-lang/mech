@@ -10,25 +10,13 @@ use std::thread;
 
 lazy_static! {
   pub static ref MATH_ADD__UPDATE: u64 = hash_str("math/add-update");
+  pub static ref MATH_SUBTRACT__UPDATE: u64 = hash_str("math/subtract-update");
+  pub static ref MATH_MULTIPLY__UPDATE: u64 = hash_str("math/multiply-update");
+  pub static ref MATH_DIVIDE__UPDATE: u64 = hash_str("math/divide-update");
+  pub static ref MATH_EXPONENT__UPDATE: u64 = hash_str("math/exponent-update");
 }
 
 /*
-impl MechNumArithmetic<U8> for U8 {}
-impl MechNumArithmetic<U16> for U16 {}
-impl MechNumArithmetic<U32> for U32 {}
-impl MechNumArithmetic<U64> for U64 {}
-impl MechNumArithmetic<U128> for U128 {}
-impl MechNumArithmetic<I8> for I8 {}
-impl MechNumArithmetic<I16> for I16 {}
-impl MechNumArithmetic<I32> for I32 {}
-impl MechNumArithmetic<I64> for I64 {}
-impl MechNumArithmetic<I128> for I128 {}
-impl MechNumArithmetic<F32> for F32 {}
-impl MechNumArithmetic<F64> for F64 {}
-impl MechNumArithmetic<f32> for f32 {}
-impl MechNumArithmetic<f64> for f64 {}
-
-
 // Scalar : Scalar
 binary_infix_ss!(AddSS,add);
 binary_infix_ss!(SubSS,sub);
@@ -428,33 +416,41 @@ where T: Copy + Debug + Clone + Sync + Send,
 }
 */
 
-// Set Scalar : Scalar
-#[derive(Debug)]
-pub struct MathAddSIxSIx<T,U> {
-  pub arg: ColumnV<T>, pub ix: usize, pub out: ColumnV<U>, pub oix: usize
+// Update Scalar{ix} : Scalar{ix}
+#[macro_export]
+macro_rules! math_update_SIxSIx {
+  ($func_name:ident, $op1:tt) => (
+    #[derive(Debug)]
+    pub struct $func_name<T,U> {
+      pub arg: ColumnV<T>, pub ix: usize, pub out: ColumnV<U>, pub oix: usize
+    }
+    impl<T,U> MechFunction for $func_name<T,U>
+    where T: Clone + Debug + Into<U> + MechNumArithmetic<T>,
+          U: Clone + Debug + Into<T> + MechNumArithmetic<U>
+    {
+      fn solve(&self) {
+        (self.out.borrow_mut())[self.oix] $op1 T::into((self.arg.borrow())[self.ix].clone());
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
 }
-impl<T,U> MechFunction for MathAddSIxSIx<T,U>
-where T: Clone + Debug + Into<U> + std::ops::AddAssign,
-      U: Clone + Debug + Into<T> + std::ops::AddAssign
-{
-  fn solve(&self) {
-    println!("{:?}", self.out);
-    println!("{:?}", self.arg);
-    (self.out.borrow_mut())[self.oix] += T::into((self.arg.borrow())[self.ix].clone());
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
-}
+math_update_SIxSIx!(MathAddSIxSIx,+=);
+math_update_SIxSIx!(MathSubtractSIxSIx,-=);
 
-//#[macro_export]
-//macro_rules! math_update_compiler {
-//  ($func_name:ident, $op1:tt,$op2:tt,$op3:tt,$op4:tt) => (
 
-//    pub struct $func_name {}
+math_update_compiler!(MathAddUpdate,MathAddSIxSIx);
+math_update_compiler!(MathSubtractUpdate,MathSubtractSIxSIx);
 
-//    impl MechFunctionCompiler for $func_name {
-    pub struct MathAddUpdate {}
 
-    impl MechFunctionCompiler for MathAddUpdate {
+
+#[macro_export]
+macro_rules! math_update_compiler {
+  ($func_name:ident, $op1:tt) => ( //,$op2:tt,$op3:tt,$op4:tt) => (
+
+    pub struct $func_name {}
+
+    impl MechFunctionCompiler for $func_name {
       fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
         let (_,src_id,src_indices) = &arguments[0];
         let (dest_id,dest_row,dest_col) = out;
@@ -472,8 +468,8 @@ where T: Clone + Debug + Into<U> + std::ops::AddAssign,
           (TableShape::Scalar,TableShape::Scalar) => {
             let arg_cols = block.get_arg_columns(&arguments)?;
             match (&arg_cols[0],&arg_cols[1]) {
-              ((_,Column::U8(src),ColumnIndex::Index(in_ix)),(_,Column::U8(out),ColumnIndex::Index(out_ix))) => {block.plan.push(MathAddSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
-              ((_,Column::F32(src),ColumnIndex::Index(in_ix)),(_,Column::F32(out),ColumnIndex::Index(out_ix))) => {block.plan.push(MathAddSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+              ((_,Column::U8(src),ColumnIndex::Index(in_ix)),(_,Column::U8(out),ColumnIndex::Index(out_ix))) => {block.plan.push($op1{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+              ((_,Column::F32(src),ColumnIndex::Index(in_ix)),(_,Column::F32(out),ColumnIndex::Index(out_ix))) => {block.plan.push($op1{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
               /*((_,Column::F32(arg),ColumnIndex::Index(ix)),(_,Column::F32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
               ((_,Column::F32(src),ColumnIndex::Index(in_ix)),(_,Column::U8(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
               ((_,Column::F32(src),ColumnIndex::Index(in_ix)),(_,Column::F32(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
@@ -716,5 +712,5 @@ where T: Clone + Debug + Into<U> + std::ops::AddAssign,
         Ok(())
       }
     }
-//  )
-//}
+  )
+}
