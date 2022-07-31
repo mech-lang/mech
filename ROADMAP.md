@@ -15,10 +15,10 @@ Target release: ???
 
 ## Version 0.2
 
-[ ] GPU Processing
-[ ] Automatic Differentiation
-[ ] Capability system
-[ ] User defined functions
+- [ ] GPU Processing
+- [ ] Automatic Differentiation
+- [ ] Capability system
+- [ ] User defined functions
 
 ## Version 0.1.0 Beta
 
