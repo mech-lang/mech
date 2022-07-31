@@ -22,23 +22,23 @@ Target release: ???
 
 ## Version 0.1.0 Beta
 
-[x] Errors
-[x] Distribution
-[x] Paralell operators
-[x] Async blocks
-[x] Units
-[x] Type checking
-[x] Multiple dispact
-[x] JIT Block Compiler
-[ ] Persistence
-[ ] Time travel debugging
-[x] Native executables
-[x] REPL
+- [x] Errors
+- [x] Distribution
+- [x] Paralell operators
+- [x] Async blocks
+- [x] Units
+- [x] Type checking
+- [x] Multiple dispact
+- [x] JIT Block Compiler
+- [ ] Persistence
+- [ ] Time travel debugging
+- [x] Native executables
+- [x] REPL
 - Machines
-    [ ] JSON
-    [ ] Sockets
-    [ ] Serial
-    [ ] Bluetooth
+    - [ ] JSON
+    - [ ] Sockets
+    - [ ] Serial
+    - [ ] Bluetooth
 - Editor
     [ ] Database Explorer
     [ ] API endpoint server
