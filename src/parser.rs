@@ -1012,7 +1012,7 @@ fn update_matrix_multiply_operator(input: ParseString) -> IResult<ParseString, N
 
 fn update_data(input: ParseString) -> IResult<ParseString, Node> {
   let (input, table) = data(input)?;
-  let (input, (_,op,_)) = tuple((many1(space), alt((add_update_operator,subtract_update_operator)), many1(space)))(input)?;
+  let (input, (_,op,_)) = tuple((many1(space), alt((add_update_operator,subtract_update_operator,multiply_update_operator,divide_update_operator)), many1(space)))(input)?;
   let (input, expression) = expression(input)?;
   Ok((input, Node::UpdateData{children: vec![op, table, expression]}))
 }
