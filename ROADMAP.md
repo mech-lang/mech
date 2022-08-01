@@ -1,11 +1,11 @@
 # Mech Project Roadmap
 
-### Stage 1 - Alpha v0.0.1
+### Stage 1 - Alpha v0.0.1 - v0.0.6
 
 Conception: started 2014
 Implementation: started 2018
 
-### Stage 2 - Beta v0.1.0
+### Stage 2 - Beta v0.1.0 - ?
 
 Target release: October 2022
 
@@ -13,67 +13,71 @@ Target release: October 2022
 
 Target release: ???
 
-## Version 0.1.0 Beta
+## Version 0.2.0 (Spring 2023?)
 
-[x] Errors
-[x] Distribution
-[x] Paralell operators
-[ ] GPU Processing
-[ ] Automatic Differentiation
-[x] Async blocks
-[ ] Capability system
-[ ] User defined functions
-[x] Units
-[x] Type checking
-[x] Multiple dispact
-[x] JIT Block Compiler
-[ ] Persistence
-[ ] Time travel debugging
-[x] Native executables
-[x] REPL
+- [ ] GPGPU Runtime
+- [ ] Automatic Differentiation
+- [ ] Capability system
+- [ ] User defined functions
+
+## Version 0.1.0 (October 2022)
+
+- [x] Errors
+- [x] Distribution
+- [x] Paralell operators
+- [x] Async blocks
+- [x] Units
+- [x] Type checking
+- [x] Multiple dispact
+- [x] JIT Block Compiler
+- [ ] Persistence
+- [ ] Time travel debugging
+- [x] Native executables
+- [x] REPL
 - Machines
-    [ ] JSON
-    [ ] Sockets
-    [ ] Serial
-    [ ] Bluetooth
+    - [ ] JSON
+    - [ ] Sockets
+    - [ ] Serial
+    - [ ] Bluetooth
+    - [ ] GUI
 - Editor
-    [ ] Database Explorer
-    [ ] API endpoint server
-    [ ] Source render / edit
+    - [ ] Database Explorer
+    - [ ] API endpoint server
+    - [ ] Source render / edit
 - Docs
     - Mech platform references
-        [ ] Syntax
-        [ ] Ecosystem
-        [ ] Architecture
+        - [ ] Syntax
+        - [ ] Ecosystem
+        - [ ] Architecture
     - User Guides
-        [ ] Tutorials
-        [ ] How-Tos
-        [ ] Mech for X 
+        - [ ] Tutorials
+        - [ ] How-Tos
+        - [ ] Mech for X 
 - Website
-    [ ] Homepage
-    [ ] Blog
-    [ ] Try
+    - [ ] Homepage
+    - [ ] Blog
+    - [ ] Try
 
-## Version 0.0.6 Alpha
+## Version 0.0.6 Alpha (unreleased)
 
-[x] Testing
+- [x] Testing
 - Machines 
     - HTML
-        [x] Mouse
-        [x] Keyboard
-        [x] Canvas Drawing
-    [x] File I/O
-    [x] Standard Streams
-    [x] Strings
-    [x] Number Literals
-    [x] HTTP
-    [x] Math
-    [x] Stats
-    [x] Random
-    [x] Time
-    [x] Set
+        - [x] Mouse
+        - [x] Keyboard
+        - [x] Canvas Drawing
+    - [x] File I/O
+    - [x] Standard Streams
+    - [x] Strings
+    - [x] Number Literals
+    - [x] HTTP
+    - [x] Math
+    - [x] Stats
+    - [x] Random
+    - [x] Time
+    - [x] Set
     - System
-        [x] Input Arguments
-        [x] Exit
-    [x] Mech Compiler
-    [x] Table
+        - [x] Input Arguments
+        - [x] Exit
+    - [x] Mech Compiler
+    - [x] Table
