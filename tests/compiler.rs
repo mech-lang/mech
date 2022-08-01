@@ -370,8 +370,19 @@ block
 block
   #test :-= 3", Value::F32(F32::new(7.0)));
 
-// Quantities
+test_mech!(math_multiply_update_scalar,"
+block
+  #test = 10
+block
+  #test :*= 3", Value::F32(F32::new(30.0)));
 
+test_mech!(math_divide_update_scalar,"
+block
+  #test = 30
+block
+  #test :/= 3", Value::F32(F32::new(10.0)));
+
+// Quantities
 
 test_mech!(quantitiy_add_m_km,"#test = 400<m> + 1<km>", Value::Length(F32::new(1400.0)));
 
