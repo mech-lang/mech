@@ -413,6 +413,18 @@ macro_rules! mech_type {
         *self = $wrapper(*lhs - rhs);
       }
     }
+    impl MulAssign for $wrapper {
+      fn mul_assign(&mut self, other: Self) {
+        let ($wrapper(lhs),$wrapper(rhs)) = (&self,other);
+        *self = $wrapper(*lhs * rhs);
+      }
+    }
+    impl DivAssign for $wrapper {
+      fn div_assign(&mut self, other: Self) {
+        let ($wrapper(lhs),$wrapper(rhs)) = (&self,other);
+        *self = $wrapper(*lhs / rhs);
+      }
+    }
     impl fmt::Debug for $wrapper {
       #[inline]
       fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
