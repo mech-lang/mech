@@ -165,7 +165,7 @@ pub struct WasmCore {
   canvases: HashSet<u64>,
   /*nodes: HashMap<u64, Vec<u64>>,*/
   websocket: Option<web_sys::WebSocket>,
-  remote_tables: HashSet<(TableId,TableIndex,TableIndex)>,
+  remote_tables: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
   event_id: u64,
   timers: HashMap<usize,Closure<dyn FnMut()>>,
   apps: HashSet<u64>,
@@ -372,17 +372,17 @@ Keyboard events
 
   pub fn process_transaction(&mut self) {
     // Collect the new table messages
-    let mut set_tables: Vec<(TableId,TableIndex,TableIndex)> = vec![];
+    let mut set_tables: Vec<(TableId,RegisterIndex,RegisterIndex)> = vec![];
     for change in self.changes.iter() {
       match change {
         // If any new tables are sent, mark them as remote tables
         // Remote tables are any tables that are not defined in the
         // current core, but may be used (written to or read from).
         Change::NewTable{table_id,..} => {
-          self.remote_tables.insert((TableId::Global(*table_id),TableIndex::All,TableIndex::All));
+          self.remote_tables.insert((TableId::Global(*table_id),RegisterIndex::All,RegisterIndex::All));
         }
         Change::Set((table_id,data)) => {
-          set_tables.push((TableId::Global(*table_id),TableIndex::All,TableIndex::All));
+          set_tables.push((TableId::Global(*table_id),RegisterIndex::All,RegisterIndex::All));
         }
         _ => (),
       }
