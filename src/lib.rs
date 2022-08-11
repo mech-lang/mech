@@ -13,6 +13,7 @@ extern crate mech_core;
 extern crate mech_syntax;
 extern crate mech_utilities;
 extern crate mech_math;
+extern crate mech_html;
 extern crate bincode;
 #[macro_use]
 extern crate lazy_static;
@@ -499,7 +500,7 @@ Keyboard events
                   self.apps.insert(root_id.clone());
                   match self.document.get_element_by_id(&root.to_string()) {
                     Some(drawing_area) => {
-                      let app = self.render_value(contents)?;
+                      let app = render_value(contents,&self.document,&self.core)?;
                       drawing_area.append_child(&app)?;
                     }
                     x => log!("4845 {:?}",x),
@@ -520,12 +521,11 @@ Keyboard events
 
   pub fn render(&mut self) -> Result<(), JsValue> {
     let wasm_core = self as *mut WasmCore;
-    self.render_canvases();
+    self.draw_canvases();
     Ok(())
   }
 
-  pub fn render_canvases(&mut self) -> Result<(), JsValue> {
-    let wasm_core = self as *mut WasmCore;
+  pub fn draw_canvases(&mut self) -> Result<(), JsValue> {
     for canvas_id in &self.canvases {
       match self.document.get_element_by_id(&format!("{}",canvas_id)) {
         Some(canvas) => {
@@ -533,52 +533,9 @@ Keyboard events
             .dyn_into::<web_sys::HtmlCanvasElement>()
             .map_err(|_| ())
             .unwrap();
-          unsafe {
-            (*wasm_core).render_canvas(&canvas);
-          }
+          draw_canvas(&canvas,&self.core);
         }
         _ => (),
-      }
-    }
-    Ok(())
-  }
-
-  pub fn render_canvas(&mut self, canvas: &web_sys::HtmlCanvasElement) -> Result<(), JsValue> {
-  
-    let wasm_core = self as *mut WasmCore;
-    let context = canvas
-        .get_context("2d")
-        .unwrap()
-        .unwrap()
-        .dyn_into::<web_sys::CanvasRenderingContext2d>()
-        .unwrap();
-
-    // Get the elements table for this canvas
-    let elements_table_id_string = canvas.get_attribute("elements").unwrap();
-    let elements_table_id: u64 = elements_table_id_string.parse::<u64>().unwrap();
-    let elements_table = self.core.get_table_by_id(elements_table_id).unwrap();
-    let elements_table_brrw = elements_table.borrow();
-    let context = Rc::new(context);
-    context.clear_rect(0.0, 0.0, canvas.width().into(), canvas.height().into());
-    for row in 1..=elements_table_brrw.rows as usize {
-      match (elements_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*SHAPE)),
-      elements_table_brrw.get(&TableIndex::Index(row), &TableIndex::Alias(*PARAMETERS))) {
-        (Ok(Value::String(shape)), Ok(Value::Reference(parameters_table_id))) => {
-          let shape = shape.hash();
-          let parameters_table = self.core.get_table_by_id(*parameters_table_id.unwrap()).unwrap();
-          // Render a shape
-          if shape == *CIRCLE { render_circle(parameters_table,&context)?; }
-          else if shape == *ELLIPSE { render_ellipse(parameters_table,&context)?; }
-          else if shape == *ARC { render_arc(parameters_table,&context)?; }
-          else if shape == *RECTANGLE { render_rectangle(parameters_table,&context)?; } 
-          else if shape == *TEXT { render_text(parameters_table,&context,wasm_core)?; }
-          else if shape == *PATH { render_path(parameters_table,&context,wasm_core)?; }
-          else if shape == *IMAGE { render_image(parameters_table,&context,wasm_core)?; }
-          else {
-            log!("5869");
-          }
-        },
-        x => {log!("5870 {:?}", x);},
       }
     }
     Ok(())
