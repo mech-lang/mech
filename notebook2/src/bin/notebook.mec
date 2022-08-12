@@ -1,4 +1,5 @@
-# Mech Notebook
+Mech Notebook
+==============
 
 Some global values
   #time/timer += [period: 16<ms>]
@@ -29,7 +30,8 @@ Follow Cursor
         fill: 0x3E3848]]]
 
 
-## Panels
+1. Panels
+----------
 
 Panel contents
   opened-files = [
@@ -58,13 +60,15 @@ Panel contents
                    "=========================="]
   #left-contents = [panels]
 
-## Interactions
+2. Interactions
+----------------
 
 When the compile button is clicked, take the contents of the code area
 and compile it.
   #mech/compiler := ""
 
-## Drawing
+3. Drawing
+-----------
 
 #top-panel-height = 25
 #bottom-panel-height = 25
@@ -97,4 +101,5 @@ Add a gui application
     [#bottom-panel]
     [#left-panel]
     [#app-area]
+    [#cursor]
   ]
