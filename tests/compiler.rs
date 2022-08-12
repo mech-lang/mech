@@ -1130,7 +1130,9 @@ block
 
 // ## Markdown
 
-test_mech!(markdown_program_title, r#"# Title
+test_mech!(markdown_program_title, r#"
+Title
+======
   #test = 123"#, Value::F32(F32::new(123.0)));
 
 test_mech!(markdown_program_title_underline, r#"
@@ -1148,23 +1150,31 @@ SubTitle
 test_mech!(markdown_no_program_title, r#"paragraph
   #test = 123"#, Value::F32(F32::new(123.0)));
 
-test_mech!(markdown_section_title, r#"# Title
+test_mech!(markdown_section_title, r#"
+Title
+======
 
 Paragraph
 
-## Section
+Section
+--------
 
   #test = 123"#, Value::F32(F32::new(123.0)));
 
-test_mech!(markdown_inline_code, r#"# Title
+test_mech!(markdown_inline_code, r#"
+Title
+======
 
 Paragraph including `inline code`
 
-## Section
+Section
+--------
 
   #test = 123"#, Value::F32(F32::new(123.0)));
 
-test_mech!(markdown_list, r#"# Title
+test_mech!(markdown_list, r#"
+Title
+======
 
 Paragraph including `inline code`
 
@@ -1176,11 +1186,14 @@ Paragraph including `inline code`
 
   #test = 123"#, Value::F32(F32::new(123.0)));
 
-test_mech!(markdown_list_inline_code, r#"# Title
+test_mech!(markdown_list_inline_code, r#"
+Title
+======
 
 Paragraph including `inline code`
 
-## Section
+Section
+--------
 
 - Item `some code`
 - Item `some code`
@@ -1188,11 +1201,14 @@ Paragraph including `inline code`
 
   #test = 123"#, Value::F32(F32::new(123.0)));
 
-test_mech!(markdown_code_block, r#"# Title
+test_mech!(markdown_code_block, r#"
+Title
+======
 
 Paragraph including `inline code`
 
-## Section
+Section
+--------
 
 ```
 A regular code block
@@ -1202,11 +1218,14 @@ A regular code block
 
 // ## Mechdown (Markdown extensions for Mech)
 
-test_mech!(mechdown_inline_mech_code, r#"# Title
+test_mech!(mechdown_inline_mech_code, r#"
+Title
+======
 
-Paragraph including `inline mech code` is [[#test]]
+Paragraph including `inline mech code` is `#test`
 
-## Section
+Section
+--------
 
   #test = 123"#, Value::F32(F32::new(123.0)));
 
@@ -1220,23 +1239,27 @@ block
 "#, Value::F32(F32::new(1.0)));
 
 test_mech!(mechdown_sub_sub_titles, r#"
-# Title
+Title
+======
 
 block
   #x = 1
   
-## Subtitle
+Subtitle
+---------
 
 block
   #y = 2
 
-## Subsubtitle
+Subsubtitle
+------------
 
 block 
   #test = #x + #y"#, Value::F32(F32::new(3.0)));
 
 test_mech!(mechdown_flat, r#"
-# Hello World
+Hello World
+============
 
 x = 10 + 15
 y = 20
