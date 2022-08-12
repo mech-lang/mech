@@ -64,7 +64,7 @@ pub enum Node {
   UpdateData{ children: Vec<Node> },
   SetOperator{ children: Vec<Node> },
   SplitData{ children: Vec<Node> },
-  JoinData{ children: Vec<Node> },
+  FlattenData{ children: Vec<Node> },
   AddOperator{ children: Vec<Node> },
   WatchOperator {children: Vec<Node>},
   Equality{ children: Vec<Node> },
@@ -255,7 +255,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::SetData{children} => {print!("SetData\n"); Some(children)},
     Node::UpdateData{children} => {print!("UpdateData\n"); Some(children)},
     Node::SplitData{children} => {print!("SplitData\n"); Some(children)},
-    Node::JoinData{children} => {print!("JoinData\n"); Some(children)},
+    Node::FlattenData{children} => {print!("FlattenData\n"); Some(children)},
     Node::Wait{children} => {print!("Wait\n"); Some(children)},
     Node::Until{children} => {print!("Until\n"); Some(children)},
     Node::SetOperator{children} => {print!("SetOperator\n"); Some(children)},
@@ -1048,7 +1048,7 @@ fn flatten_data(input: ParseString) -> IResult<ParseString, Node> {
   let (input, table) = identifier(input)?;
   let (input, _) = tuple((many1(space), flatten_operator, many1(space)))(input)?;
   let (input, expression) = expression(input)?;
-  Ok((input, Node::JoinData{children: vec![table, expression]}))
+  Ok((input, Node::FlattenData{children: vec![table, expression]}))
 }
 
 fn variable_define(input: ParseString) -> IResult<ParseString, Node> {
