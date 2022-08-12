@@ -11,6 +11,7 @@ use std::thread;
 lazy_static! {
   pub static ref TABLE_RANGE: u64 = hash_str("table/range");
   pub static ref TABLE_SPLIT: u64 = hash_str("table/split");
+  pub static ref TABLE_FLATTEN: u64 = hash_str("table/split");
   pub static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_str("table/horizontal-concatenate");
   pub static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_str("table/vertical-concatenate");
   pub static ref TABLE_APPEND: u64 = hash_str("table/append");
