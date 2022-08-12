@@ -15,9 +15,13 @@ all-features = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+mech-core = {git = "https://gitlab.com/mech-lang/core", branch = "v0.1-beta"}
+mech-utilities = {git = "https://gitlab.com/mech-lang/utilities", branch = "v0.1-beta"}
+mech-syntax = {git = "https://gitlab.com/mech-lang/syntax", branch = "v0.1-beta"}
+mech-gui = {git =  "https://gitlab.com/mech-lang/machines/gui", branch = "v0.1-beta"}
+
 lazy_static = "1.4.0"
 eframe = { version = "0.18.0"}
-mech-gui = {git =  "https://gitlab.com/mech-lang/machines/gui", branch = "v0.1-beta"}
 image = { version = "0.24.0", default-features = false, features = [
   "ico",
   "jpeg",
