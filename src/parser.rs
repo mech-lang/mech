@@ -593,7 +593,7 @@ fn number(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 fn punctuation(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, punctuation) = alt((period, exclamation, question, comma, colon, semicolon, dash, apostrophe, left_parenthesis, right_parenthesis, left_angle, right_angle, left_brace, right_brace))(input)?;
+  let (input, punctuation) = alt((period, exclamation, question, comma, colon, semicolon, dash, apostrophe, left_parenthesis, right_parenthesis, left_angle, right_angle, left_brace, right_brace, left_bracket, right_bracket))(input)?;
   Ok((input, Node::Punctuation{children: vec![punctuation]}))
 }
 
@@ -1044,9 +1044,9 @@ fn split_data(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::SplitData{children: vec![table, expression]}))
 }
 
-fn join_data(input: ParseString) -> IResult<ParseString, Node> {
+fn flatten_data(input: ParseString) -> IResult<ParseString, Node> {
   let (input, table) = identifier(input)?;
-  let (input, _) = tuple((many1(space), join_operator, many1(space)))(input)?;
+  let (input, _) = tuple((many1(space), flatten_operator, many1(space)))(input)?;
   let (input, expression) = expression(input)?;
   Ok((input, Node::JoinData{children: vec![table, expression]}))
 }
@@ -1080,7 +1080,7 @@ fn split_operator(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::Null))
 }
 
-fn join_operator(input: ParseString) -> IResult<ParseString, Node> {
+fn flatten_operator(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = tag("-<")(input)?;
   Ok((input, Node::Null))
 }
@@ -1122,7 +1122,7 @@ fn until_data(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 fn statement(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, statement) = alt((table_define, variable_define, split_data, join_data, whenever_data, wait_data, until_data, set_data, update_data, add_row, comment))(input)?;
+  let (input, statement) = alt((table_define, variable_define, split_data, flatten_data, whenever_data, wait_data, until_data, set_data, update_data, add_row, comment))(input)?;
   Ok((input, Node::Statement{children: vec![statement]}))
 }
 
@@ -1489,7 +1489,7 @@ fn paragraph_text(input: ParseString) -> IResult<ParseString, Node> {
 
 fn paragraph(input: ParseString) -> IResult<ParseString, Node> {
   let (input, paragraph_elements) = many1(
-    alt((inline_mech_code, inline_code, paragraph_text))
+    alt((inline_code, paragraph_text))
   )(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let (input, _) = many0(newline)(input)?;
