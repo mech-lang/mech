@@ -164,9 +164,12 @@ block
 block
   #test = #bots.y / #bots.x", Value::F32(F32::new(2.0)));
 
-test_mech!(table_define_program, "# A Working Program
+test_mech!(table_define_program, "
+A Working Program
+==================
 
-## Section Two
+Section Two
+------------
 
   #test = 9", Value::F32(F32::new(9.0)));
 
@@ -1265,6 +1268,21 @@ x = 10 + 15
 y = 20
 z = [1 2 3 4]
 q = z + y + x  
+#test = stats/sum(row: q)"#, Value::F32(F32::new(190.0)));
+
+test_mech!(mechdown_flat_newlines, r#"
+Hello World
+============
+
+x = 10 + 15
+
+y = 20
+
+
+z = [1 2 3 4]
+
+q = z + y + x  
+
 #test = stats/sum(row: q)"#, Value::F32(F32::new(190.0)));
 
 // ## Comments

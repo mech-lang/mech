@@ -664,7 +664,7 @@ fn newline(input: ParseString) -> IResult<ParseString, Node> {
 
 fn whitespace(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = many0(space)(input)?;
-  let (input, _) = newline(input)?;
+  let (input, _) = many1(newline)(input)?;
   Ok((input, Node::Null))
 }
 
@@ -1590,8 +1590,7 @@ fn program(input: ParseString) -> IResult<ParseString, Node> {
 
 pub fn raw_transformation(input: ParseString) -> IResult<ParseString, Node> {
   let (input, statement) = statement(input)?;
-  let (input, _) = many0(space)(input)?;
-  let (input, _) = opt(newline)(input)?;
+  let (input, _) = many0(alt((space,newline,tab)))(input)?;
   Ok((input, Node::Transformation { children:  vec![statement] }))
 }
 
