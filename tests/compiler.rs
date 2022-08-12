@@ -1251,6 +1251,12 @@ block
   -- This is a comment
   #test = 123"#, Value::F32(F32::new(123.0)));
 
+test_mech!(comment_table_row, r#"
+x = [1
+    --2
+      3]
+#test = stats/sum(column: x)"#, Value::F32(F32::new(4.0)));
+
 // ## Table split
 
 test_mech!(table_split, r#"

@@ -400,7 +400,7 @@ pub fn parse(text: &str) -> Result<Node,MechError> {
       }
     },
     Err(q) => {
-      Err(MechError{id: 3303, kind: MechErrorKind::None})
+      Err(MechError{id: 3303, kind: MechErrorKind::GenericError(format!("{:?}",q))})
     }
   }
 }
@@ -904,15 +904,21 @@ fn anonymous_table(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, table_header) = opt(table_header)(input)?;
-  let (input, mut table_rows) = many0(table_row)(input)?;
+  let (input, mut table_rows) = many0(alt((comment,table_row)))(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, _) = right_bracket(input)?;
   let mut table = vec![];
+  let mut just_rows = table_rows.iter().filter(|n| 
+    match n {
+      Node::Comment{..} => false,
+      _ => true
+    }
+  ).cloned().collect();
   match table_header {
     Some(table_header) => table.push(table_header),
     _ => (),
   };
-  table.append(&mut table_rows);
+  table.append(&mut just_rows);
   Ok((input, Node::AnonymousTable{children: table}))
 }
 
@@ -963,8 +969,10 @@ fn comment_sigil(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 fn comment(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, _) = comment_sigil(input)?;
   let (input, comment) = text(input)?;
+  let (input, _) = many0(alt((space, tab, newline)))(input)?;
   Ok((input, Node::Comment{children: vec![comment]}))
 }
 

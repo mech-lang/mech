@@ -9,11 +9,9 @@ use std::rc::Rc;
 fn main() -> Result<(),MechError> {
 
 let input = r#"
-block
-  #x = 10
-block
-  #x :-= 3
-"#;
+#x = [1
+--2
+      3]"#;
 
   let input = String::from(input);
 
