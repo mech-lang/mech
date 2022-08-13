@@ -902,7 +902,6 @@ fn table_header(input: ParseString) -> IResult<ParseString, Node> {
 fn anonymous_table(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = left_bracket(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
-  let (input, _) = many0(space)(input)?;
   let (input, table_header) = opt(table_header)(input)?;
   let (input, mut table_rows) = many0(alt((comment,table_row)))(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
@@ -1409,14 +1408,6 @@ fn block(input: ParseString) -> IResult<ParseString, Node> {
 
 // ## Markdown
 
-fn ht_title(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, _) = hashtag(input)?;
-  let (input, _) = many1(space)(input)?;
-  let (input, text) = text(input)?;
-  let (input, _) = many0(whitespace)(input)?;
-  Ok((input, Node::Title { children: vec![text] }))
-}
-
 fn ul_title(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = many0(space)(input)?;
   let (input, text) = text(input)?;
@@ -1429,17 +1420,8 @@ fn ul_title(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 fn title(input: ParseString) -> IResult<ParseString, Node> {
-  let (input,title) = alt((ht_title,ul_title))(input)?;
+  let (input,title) = ul_title(input)?;
   Ok((input, title))
-}
-
-fn ht_subtitle(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, _) = hashtag(input)?;
-  let (input, _) = hashtag(input)?;
-  let (input, _) = many1(space)(input)?;
-  let (input, text) = text(input)?;
-  let (input, _) = many0(whitespace)(input)?;
-  Ok((input, Node::Title { children: vec![text] }))
 }
 
 fn ul_subtitle(input: ParseString) -> IResult<ParseString, Node> {
@@ -1454,7 +1436,7 @@ fn ul_subtitle(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 fn subtitle(input: ParseString) -> IResult<ParseString, Node> {
-  let (input,title) = alt((ht_subtitle,ul_subtitle))(input)?;
+  let (input,title) = ul_subtitle(input)?;
   Ok((input, title))
 }
 
@@ -1554,7 +1536,7 @@ fn mech_code_block(input: ParseString) -> IResult<ParseString, Node> {
 fn section(input: ParseString) -> IResult<ParseString, Node> {
   let (input, mut section_elements) = many1(
     tuple((
-      alt((subtitle, block, code_block, mech_code_block, statement, paragraph, unordered_list)),
+      alt((block, code_block, mech_code_block, statement, subtitle, paragraph, unordered_list)),
       opt(whitespace),
     ))
   )(input)?;
