@@ -299,7 +299,8 @@ block
 block
   #test = #ball.x + 9", Value::F32(F32::new(24.0)));
 
-test_mech!(partial_bouncing_ball,"# Bouncing Balls
+test_mech!(partial_bouncing_ball,"Bouncing Balls
+===============
 Define the environment
   #ball = [x: 15 y: 9 vx: 18 vy: 9]
   #time/timer = [period: 10]
@@ -1181,7 +1182,8 @@ Title
 
 Paragraph including `inline code`
 
-## Section
+Section
+--------
 
 - Item 1
 - Item 2
