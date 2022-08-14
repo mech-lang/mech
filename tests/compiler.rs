@@ -1327,6 +1327,15 @@ block
   y = #x{2}{1,:}
   #test = stats/sum(row: [x y])"#, Value::F32(F32::new(30.0)));
 
+// ## Table flatten
+
+test_mech!(table_flatten, r#"
+block
+  #y = [[1;2];[3]]
+block
+  x -< #y
+  #test = stats/sum(column: x)"#, Value::F32(F32::new(6.0)));
+
 // ## Boolean values
 
 test_mech!(boolean_anonymous_table, r#"

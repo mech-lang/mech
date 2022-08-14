@@ -9,10 +9,11 @@ use std::rc::Rc;
 fn main() -> Result<(),MechError> {
 
 let input = r#"
-#x = [1
---2
-      3]"#;
-
+block
+  #y = [[1;2];[3]]
+block
+  x -< #y
+  #test = stats/sum(column: x)"#;
   let input = String::from(input);
 
   let mut ast = Ast::new();
