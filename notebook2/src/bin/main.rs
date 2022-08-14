@@ -62,7 +62,7 @@ fn main() {
   let mut native_options = eframe::NativeOptions::default();
   let path = concat!(env!("CARGO_MANIFEST_DIR"), "/mech.ico");
   let icon = load_icon(Path::new(path));
-  let core = load_mech(r#"C:\Users\cmont\mech\mech\notebook2\src\bin\notebook2.mec"#).unwrap();
+  let core = load_mech(r#"src\bin\notebook.mec"#).unwrap();
   native_options.icon_data = Some(icon);
   native_options.min_window_size = Some(Vec2{x: 1480.0, y: 800.0});
   eframe::run_native("Mech Notebook", native_options, Box::new(|cc| 
