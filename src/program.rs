@@ -197,7 +197,7 @@ impl Program {
             None => {return Err(MechError{id: 1246, kind: MechErrorKind::None});},
           }
           // Download registry
-          let registry_url = "https://gitlab.com/mech-lang/machines/mech/-/raw/main/src/registry.mec";
+          let registry_url = "https://gitlab.com/mech-lang/machines/mech/-/raw/v0.1-beta/src/registry.mec";
           let mut response_text = match reqwest::get(registry_url) {
             Ok(mut response) => {
               match response.text() {
