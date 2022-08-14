@@ -381,13 +381,12 @@ impl Block {
     let (row,col) = &indices.last().unwrap();
     let table = self.get_table(&table_id)?;
     let table_brrw = table.borrow();
-
-    match self.get_arg_dim(argument) {
+    /*match self.get_arg_dim(argument) {
       Ok(TableShape::Column(rows)) => {
         return Err(MechError{id: 2113, kind: MechErrorKind::GenericError("Can't handle this unless it's a column vector.".to_string())});
       }
       _ => (),
-    };
+    };*/
     let row_index = match (row,col) {
       (TableIndex::ReshapeColumn,_) => ColumnIndex::ReshapeColumn,
       (TableIndex::All,_) => ColumnIndex::All,

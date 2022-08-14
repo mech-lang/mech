@@ -6,12 +6,13 @@ use num_traits::*;
 use rust_core::iter::FromIterator;
 use rayon::prelude::*;
 use std::thread;
+use hashbrown::HashSet;
 
 
 lazy_static! {
   pub static ref TABLE_RANGE: u64 = hash_str("table/range");
   pub static ref TABLE_SPLIT: u64 = hash_str("table/split");
-  pub static ref TABLE_FLATTEN: u64 = hash_str("table/split");
+  pub static ref TABLE_FLATTEN: u64 = hash_str("table/flatten");
   pub static ref TABLE_HORIZONTAL__CONCATENATE: u64 = hash_str("table/horizontal-concatenate");
   pub static ref TABLE_VERTICAL__CONCATENATE: u64 = hash_str("table/vertical-concatenate");
   pub static ref TABLE_APPEND: u64 = hash_str("table/append");
@@ -39,6 +40,22 @@ where T: Debug + Clone + Into<U> + Sync + Send,
        .iter_mut()
        .zip(arg.borrow()[*asix..=*aeix].iter())
        .for_each(|(out, arg)| *out = T::into(arg.clone())); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// FlatCopy Vector : Vector
+#[derive(Debug)]
+pub struct FlatCopyVV<T,U> {
+  pub arg: ColumnV<T>,
+  pub out: ColumnV<U>,
+}
+impl<T,U> MechFunction for FlatCopyVV<T,U> 
+where T: Debug + Clone + Sync + Send,
+      U: Debug + Clone + Sync + Send,
+{
+  fn solve(&self) {
+    println!("FLAT COPY!!!!!!!!!!!!!!!!");
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
@@ -1017,7 +1034,7 @@ impl MechFunctionCompiler for TableSplit {
                 let dest_col = dest_table.borrow().get_column(&TableIndex::Index(col_ix+1))?;
                 match dest_col {
                   Column::F32(dest_col) => { block.plan.push(SetSIxSIx{arg: src_col.clone(), ix: row, out: dest_col.clone(), oix: 0}); }
-                  x => {return Err(MechError{id: 4904, kind: MechErrorKind::GenericError(format!("{:?}", x))});},                }
+                  x => {return Err(MechError{id: 4933, kind: MechErrorKind::GenericError(format!("{:?}", x))});},                }
               }
             }
             (_,Column::String(src_col),ColumnIndex::All) => {
@@ -1028,7 +1045,7 @@ impl MechFunctionCompiler for TableSplit {
                 let dest_col = dest_table.borrow().get_column(&TableIndex::Index(col_ix+1))?;
                 match dest_col {
                   Column::String(dest_col) => { block.plan.push(SetSIxSIx{arg: src_col.clone(), ix: row, out: dest_col.clone(), oix: 0}); }
-                  x => {return Err(MechError{id: 4904, kind: MechErrorKind::GenericError(format!("{:?}", x))});},                }
+                  x => {return Err(MechError{id: 4934, kind: MechErrorKind::GenericError(format!("{:?}", x))});},                }
               }
             }
             (_,Column::Bool(src_col),ColumnIndex::All) => {
@@ -1039,7 +1056,7 @@ impl MechFunctionCompiler for TableSplit {
                 let dest_col = dest_table.borrow().get_column(&TableIndex::Index(col_ix+1))?;
                 match dest_col {
                   Column::Bool(dest_col) => { block.plan.push(SetSIxSIx{arg: src_col.clone(), ix: row, out: dest_col.clone(), oix: 0}); }
-                  x => {return Err(MechError{id: 4904, kind: MechErrorKind::GenericError(format!("{:?}", x))});},                }
+                  x => {return Err(MechError{id: 4935, kind: MechErrorKind::GenericError(format!("{:?}", x))});},                }
               }
             }
             x => {return Err(MechError{id: 4905, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
@@ -1052,6 +1069,36 @@ impl MechFunctionCompiler for TableSplit {
   }
 }
 
+// Flattens a table of nested table, leverages vertcat
+pub struct TableFlatten{}
+impl MechFunctionCompiler for TableFlatten {
+  fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+    
+    let arg_shapes = block.get_arg_dims(&arguments)?;
+    let arg_cols = block.get_whole_table_arg_cols(&arguments[0])?;
+
+    match arg_shapes[0] {
+      TableShape::Column(rows) => {
+        let mut id_args = vec![];
+        for (_,arg_col,_) in &arg_cols {
+          match arg_col {
+            Column::Ref(table_id_col) => {
+              let table_id_col_brrw = table_id_col.borrow();
+              for i in 0..rows {
+                id_args.push((0,table_id_col_brrw[i].clone(),vec![(TableIndex::All, TableIndex::All)]));
+              }
+            }
+            x => {return Err(MechError{id: 4936, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+          }
+        }
+        let vertcat = TableVerticalConcatenate{};
+        vertcat.compile(block,&id_args,out);
+      }
+      x => {return Err(MechError{id: 4937, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+    }
+    Ok(())
+  }
+}
 
 // A range of values from start to end
 #[derive(Debug)]
