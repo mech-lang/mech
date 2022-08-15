@@ -407,7 +407,6 @@ impl MechFunctionCompiler for MathNegate {
   }
 }
 
-
 #[derive(Debug)]
 pub struct ConcatVV<T,U> {
   pub lhs: (ColumnV<T>, usize, usize),

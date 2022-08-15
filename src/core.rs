@@ -86,13 +86,15 @@ impl Core {
 
     // Math
     functions.insert(*MATH_ADD, Box::new(MathAdd{}));
-    functions.insert(*MATH_ADD__UPDATE, Box::new(MathAddUpdate{}));
-    functions.insert(*MATH_SUBTRACT__UPDATE, Box::new(MathSubtractUpdate{}));    
     functions.insert(*MATH_SUBTRACT, Box::new(MathSub{}));
     functions.insert(*MATH_MULTIPLY, Box::new(MathMul{}));
     functions.insert(*MATH_DIVIDE, Box::new(MathDiv{}));
     functions.insert(*MATH_EXPONENT, Box::new(MathExp{}));
     functions.insert(*MATH_NEGATE, Box::new(MathNegate{}));
+    functions.insert(*MATH_ADD__UPDATE, Box::new(MathAddUpdate{}));
+    functions.insert(*MATH_SUBTRACT__UPDATE, Box::new(MathSubtractUpdate{}));  
+    functions.insert(*MATH_MULTIPLY__UPDATE, Box::new(MathMultiplyUpdate{}));
+    functions.insert(*MATH_DIVIDE__UPDATE, Box::new(MathDivideUpdate{}));
 
     // Logic
     functions.insert(*LOGIC_NOT, Box::new(LogicNot{}));
@@ -112,6 +114,7 @@ impl Core {
     functions.insert(*TABLE_APPEND, Box::new(TableAppend{}));
     functions.insert(*TABLE_RANGE, Box::new(TableRange{}));
     functions.insert(*TABLE_SPLIT, Box::new(TableSplit{}));
+    functions.insert(*TABLE_FLATTEN, Box::new(TableFlatten{}));
     functions.insert(*TABLE_DEFINE, Box::new(TableDefine{}));
     functions.insert(*TABLE_SET, Box::new(TableSet{}));
     functions.insert(*TABLE_HORIZONTAL__CONCATENATE, Box::new(TableHorizontalConcatenate{}));
