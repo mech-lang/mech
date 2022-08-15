@@ -220,8 +220,8 @@ impl Block {
         TableShape::Scalar => {
           let arg_col = self.get_arg_column(&argument)?;
           match (arg_col,row,column) {
-            ((_,Column::Ref(ref_col),_),_,TableIndex::None) => {
-              table_id = ref_col.borrow()[0].clone();
+            ((_,Column::Ref(ref_col),ColumnIndex::Index(row)),_,TableIndex::None) => {
+              table_id = ref_col.borrow()[row].clone();
             }
             ((_,Column::Ref(ref_col),_),TableIndex::Index(row_ix),_) => {
               table_id = ref_col.borrow()[row_ix-1].clone();
@@ -262,9 +262,7 @@ impl Block {
       (TableIndex::Index(ix),TableIndex::None) => {
         let (ix_row,ix_col) = table_brrw.index_to_subscript(ix-1)?;
         let col = table_brrw.get_column(&TableIndex::Index(ix_col + 1))?;
-        let (row,_) = table_brrw.index_to_subscript(ix - 1)?;
-
-        Ok((*arg_name,col.clone(),ColumnIndex::Index(row)))
+        Ok((*arg_name,col.clone(),ColumnIndex::Index(ix_row)))
       }
       // x{z,1}
       // x.y{z}
