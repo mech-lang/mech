@@ -1099,6 +1099,11 @@ block
   x = [1 2 3; 4 5 6]
   #test = stats/sum(table: x)"#, Value::F32(F32::new(21.0)));
 
+test_mech!(function_stats_sum_table_neg,r#"
+block
+  x = [-1 -2 -3; -4 -5 -6]
+  #test = stats/sum(table: x)"#, Value::F32(F32::new(-21.0)));
+
 test_mech!(function_add_functions,r#"
 block
   x = [1 2
