@@ -1056,6 +1056,20 @@ block
 block
   #test = #app2.x.b"#, Value::F32(F32::new(2.0)));
 
+test_mech!(nesting_column_table_select,r#"
+block
+  #x = [[|x y z |
+        1 2 3
+        4 5 6
+        7 8 9],
+      [|x y z |
+        2 3 4
+        5 6 7
+        8 9 10],
+        ]
+block
+  #test = #x{1}{3,3} + #x{2}{1,3}"#, Value::F32(F32::new(13.0)));
+
 // ## Indexing
 
 test_mech!(indexing_global,r#"
