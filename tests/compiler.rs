@@ -1088,6 +1088,11 @@ block
   x = [1 2 3 4 5]
   #test = stats/sum(row: x)"#, Value::F32(F32::new(15.0)));
 
+test_mech!(function_stats_sum_row_neg,r#"
+block
+  x = [-1 -2 -3 -4 -5]
+  #test = stats/sum(row: x)"#, Value::F32(F32::new(-15.0)));
+
 test_mech!(function_stats_sum_row_col,r#"
 block
   x = [1;2;3;4;5]
