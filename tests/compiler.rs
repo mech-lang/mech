@@ -164,9 +164,12 @@ block
 block
   #test = #bots.y / #bots.x", Value::F32(F32::new(2.0)));
 
-test_mech!(table_define_program, "# A Working Program
+test_mech!(table_define_program, "
+A Working Program
+==================
 
-## Section Two
+Section Two
+------------
 
   #test = 9", Value::F32(F32::new(9.0)));
 
@@ -296,7 +299,8 @@ block
 block
   #test = #ball.x + 9", Value::F32(F32::new(24.0)));
 
-test_mech!(partial_bouncing_ball,"# Bouncing Balls
+test_mech!(partial_bouncing_ball,"Bouncing Balls
+===============
 Define the environment
   #ball = [x: 15 y: 9 vx: 18 vy: 9]
   #time/timer = [period: 10]
@@ -1130,7 +1134,9 @@ block
 
 // ## Markdown
 
-test_mech!(markdown_program_title, r#"# Title
+test_mech!(markdown_program_title, r#"
+Title
+======
   #test = 123"#, Value::F32(F32::new(123.0)));
 
 test_mech!(markdown_program_title_underline, r#"
@@ -1148,27 +1154,36 @@ SubTitle
 test_mech!(markdown_no_program_title, r#"paragraph
   #test = 123"#, Value::F32(F32::new(123.0)));
 
-test_mech!(markdown_section_title, r#"# Title
+test_mech!(markdown_section_title, r#"
+Title
+======
 
 Paragraph
 
-## Section
+Section
+--------
 
   #test = 123"#, Value::F32(F32::new(123.0)));
 
-test_mech!(markdown_inline_code, r#"# Title
+test_mech!(markdown_inline_code, r#"
+Title
+======
 
 Paragraph including `inline code`
 
-## Section
+Section
+--------
 
   #test = 123"#, Value::F32(F32::new(123.0)));
 
-test_mech!(markdown_list, r#"# Title
+test_mech!(markdown_list, r#"
+Title
+======
 
 Paragraph including `inline code`
 
-## Section
+Section
+--------
 
 - Item 1
 - Item 2
@@ -1176,11 +1191,14 @@ Paragraph including `inline code`
 
   #test = 123"#, Value::F32(F32::new(123.0)));
 
-test_mech!(markdown_list_inline_code, r#"# Title
+test_mech!(markdown_list_inline_code, r#"
+Title
+======
 
 Paragraph including `inline code`
 
-## Section
+Section
+--------
 
 - Item `some code`
 - Item `some code`
@@ -1188,11 +1206,14 @@ Paragraph including `inline code`
 
   #test = 123"#, Value::F32(F32::new(123.0)));
 
-test_mech!(markdown_code_block, r#"# Title
+test_mech!(markdown_code_block, r#"
+Title
+======
 
 Paragraph including `inline code`
 
-## Section
+Section
+--------
 
 ```
 A regular code block
@@ -1202,11 +1223,14 @@ A regular code block
 
 // ## Mechdown (Markdown extensions for Mech)
 
-test_mech!(mechdown_inline_mech_code, r#"# Title
+test_mech!(mechdown_inline_mech_code, r#"
+Title
+======
 
-Paragraph including `inline mech code` is [[#test]]
+Paragraph including `inline mech code` is `#test`
 
-## Section
+Section
+--------
 
   #test = 123"#, Value::F32(F32::new(123.0)));
 
@@ -1220,28 +1244,47 @@ block
 "#, Value::F32(F32::new(1.0)));
 
 test_mech!(mechdown_sub_sub_titles, r#"
-# Title
+Title
+======
 
 block
   #x = 1
   
-## Subtitle
+Subtitle
+---------
 
 block
   #y = 2
 
-## Subsubtitle
+Subsubtitle
+------------
 
 block 
   #test = #x + #y"#, Value::F32(F32::new(3.0)));
 
 test_mech!(mechdown_flat, r#"
-# Hello World
+Hello World
+============
 
 x = 10 + 15
 y = 20
 z = [1 2 3 4]
 q = z + y + x  
+#test = stats/sum(row: q)"#, Value::F32(F32::new(190.0)));
+
+test_mech!(mechdown_flat_newlines, r#"
+Hello World
+============
+
+x = 10 + 15
+
+y = 20
+
+
+z = [1 2 3 4]
+
+q = z + y + x  
+
 #test = stats/sum(row: q)"#, Value::F32(F32::new(190.0)));
 
 // ## Comments
@@ -1250,6 +1293,18 @@ test_mech!(comment_line, r#"
 block
   -- This is a comment
   #test = 123"#, Value::F32(F32::new(123.0)));
+
+test_mech!(comment_table_row, r#"
+x = [1
+    --2
+      3]
+#test = stats/sum(column: x)"#, Value::F32(F32::new(4.0)));
+
+test_mech!(comment_table_start_row, r#"
+x = [1
+--2
+      3]
+#test = stats/sum(column: x)"#, Value::F32(F32::new(4.0)));
 
 // ## Table split
 
@@ -1271,6 +1326,15 @@ block
   x = #x{1}{1,:}
   y = #x{2}{1,:}
   #test = stats/sum(row: [x y])"#, Value::F32(F32::new(30.0)));
+
+// ## Table flatten
+
+test_mech!(table_flatten, r#"
+block
+  #y = [[1;2];[3]]
+block
+  x -< #y
+  #test = stats/sum(column: x)"#, Value::F32(F32::new(6.0)));
 
 // ## Boolean values
 

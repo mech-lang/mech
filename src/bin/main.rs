@@ -10,11 +10,10 @@ fn main() -> Result<(),MechError> {
 
 let input = r#"
 block
-  #x = 10
+  #y = [[1;2];[3]]
 block
-  #x :-= 3
-"#;
-
+  x -< #y
+  #test = stats/sum(column: x)"#;
   let input = String::from(input);
 
   let mut ast = Ast::new();
