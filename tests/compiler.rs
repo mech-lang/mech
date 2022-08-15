@@ -1094,6 +1094,12 @@ block
   y = stats/sum(row: x)
   #test = y{1} + y{2} + y{3} + y{4} + y{5}"#, Value::F32(F32::new(15.0)));
 
+test_mech!(function_stats_sum_row_col_neg,r#"
+block
+  x = [-1;-2;-3;-4;-5]
+  y = stats/sum(row: x)
+  #test = y{1} + y{2} + y{3} + y{4} + y{5}"#, Value::F32(F32::new(-15.0)));
+
 test_mech!(function_stats_sum_table,r#"
 block
   x = [1 2 3; 4 5 6]
