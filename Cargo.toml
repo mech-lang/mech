@@ -54,7 +54,6 @@ syntect = { version = "4", optional = true, default-features = false, features =
 
 members = [
   "notebook",
-  "notebook2",
 ]
 
 [profile.release]
