@@ -575,7 +575,7 @@ macro_rules! math_compiler {
           }                   
           (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
             if lhs_rows != rhs_rows {
-              return Err(MechError{id: 6007, kind: MechErrorKind::DimensionMismatch(((*lhs_rows,0),(*rhs_rows,0)))});
+              return Err(MechError{id: 6007, kind: MechErrorKind::DimensionMismatch(vec![(*lhs_rows,0),(*rhs_rows,0)])});
             }
             let mut argument_columns = block.get_arg_columns(arguments)?;
             let (_,col,_) = &argument_columns[0];
@@ -657,7 +657,7 @@ macro_rules! math_compiler {
             let rhs_rows = 1;
 
             if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
-              return Err(MechError{id: 6011, kind: MechErrorKind::DimensionMismatch(((lhs_rows,*lhs_cols),(rhs_rows,*rhs_cols)))});
+              return Err(MechError{id: 6011, kind: MechErrorKind::DimensionMismatch(vec![(lhs_rows,*lhs_cols),(rhs_rows,*rhs_cols)])});
             }
 
             let lhs_columns = block.get_whole_table_arg_cols(&arguments[0])?;
@@ -698,7 +698,7 @@ macro_rules! math_compiler {
           (TableShape::Matrix(lhs_rows,lhs_cols), TableShape::Matrix(rhs_rows,rhs_cols)) => {
            
             if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
-              return Err(MechError{id: 6011, kind: MechErrorKind::DimensionMismatch(((*lhs_rows,*lhs_cols),(*rhs_rows,*rhs_cols)))});
+              return Err(MechError{id: 6011, kind: MechErrorKind::DimensionMismatch(vec![(*lhs_rows,*lhs_cols),(*rhs_rows,*rhs_cols)])});
             }
 
             let lhs_columns = block.get_whole_table_arg_cols(&arguments[0])?;

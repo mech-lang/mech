@@ -285,7 +285,7 @@ macro_rules! compare_compiler {
           }
           (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
             if lhs_rows != rhs_rows {
-              return Err(MechError{id: 7103, kind: MechErrorKind::DimensionMismatch(((*lhs_rows,0),(*rhs_rows,0)))});
+              return Err(MechError{id: 7103, kind: MechErrorKind::DimensionMismatch(vec![(*lhs_rows,0),(*rhs_rows,0)])});
             }
             let mut argument_columns = block.get_arg_columns(arguments)?;
             let out_column = block.get_out_column(out, *lhs_rows, ValueKind::Bool)?;
@@ -355,7 +355,7 @@ macro_rules! compare_eq_compiler {
           }
           (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
             if lhs_rows != rhs_rows {
-              return Err(MechError{id: 7109, kind: MechErrorKind::DimensionMismatch(((*lhs_rows,0),(*rhs_rows,0)))});
+              return Err(MechError{id: 7109, kind: MechErrorKind::DimensionMismatch(vec![(*lhs_rows,0),(*rhs_rows,0)])});
             }
             let mut argument_columns = block.get_arg_columns(arguments)?;
             let out_column = block.get_out_column(out, *lhs_rows, ValueKind::Bool)?;

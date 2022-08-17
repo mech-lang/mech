@@ -796,7 +796,7 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
     });
 
     if consistent_rows == false {
-      return Err(MechError{id: 4532, kind: MechErrorKind::None});
+      return Err(MechError{id: 4532, kind: MechErrorKind::DimensionMismatch(arg_dims)});
     }
 
     // Add up the columns
