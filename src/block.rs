@@ -891,7 +891,7 @@ impl fmt::Debug for Block {
         block_drawing.add_line(format!("  - #{}{{{:?}, {:?}}}", table_name,row,col));
       }
     }
-    block_drawing.add_title("🪄","transformations");
+    block_drawing.add_title("🪄",&format!("transformations ({})",self.transformations.len()));
     block_drawing.add_line(format!("{:#?}", &self.transformations));
     if let Some(ut) = &self.unsatisfied_transformation {
       block_drawing.add_title("😔","unsatisfied transformation");
