@@ -1070,6 +1070,11 @@ block
 block
   #test = #x{1}{3,3} + #x{2}{1,3}"#, Value::F32(F32::new(13.0)));
 
+test_mech!(nesting_select_local_nested_column,r#"
+block
+  y = [[1234]]
+  #test = y{1}{1}"#, Value::F32(F32::new(1234.0)));
+
 // ## Indexing
 
 test_mech!(indexing_global,r#"
