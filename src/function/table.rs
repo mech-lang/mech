@@ -44,23 +44,6 @@ where T: Debug + Clone + Into<U> + Sync + Send,
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// FlatCopy Vector : Vector
-#[derive(Debug)]
-pub struct FlatCopyVV<T,U> {
-  pub arg: ColumnV<T>,
-  pub out: ColumnV<U>,
-}
-impl<T,U> MechFunction for FlatCopyVV<T,U> 
-where T: Debug + Clone + Sync + Send,
-      U: Debug + Clone + Sync + Send,
-{
-  fn solve(&self) {
-    println!("FLAT COPY!!!!!!!!!!!!!!!!");
-  }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
-}
-
-
 // Parallel Copy Vector : Vector
 #[derive(Debug)]
 pub struct ParCopyVV<T,U> {
@@ -163,7 +146,7 @@ pub struct CopySSRef {
 impl MechFunction for CopySSRef 
 {
   fn solve(&self) {
-    (self.out.borrow_mut())[0] = TableId::Global(*self.arg.borrow()[self.ix].unwrap())
+    (self.out.borrow_mut())[0] = self.arg.borrow()[self.ix]
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
@@ -586,7 +569,12 @@ impl MechFunction for CopyT {
     out_brrw.row_map = arg_brrw.row_map.clone();
     for col in 0..arg_brrw.cols {
       for row in 0..arg_brrw.rows {
-        let value = arg_brrw.get_raw(row,col).unwrap();
+        let value = match arg_brrw.get_raw(row,col).unwrap() {
+          Value::Reference(TableId::Local(table_id)) => {
+            Value::Reference(TableId::Global(table_id))
+          }
+          value => value,
+        };
         out_brrw.set_raw(row,col,value);
       }
     }
@@ -1652,7 +1640,7 @@ impl MechFunctionCompiler for TableDefine {
           TableId::Global(gid) => {
             block.plan.push(CopyT{arg: src_table.clone(), out: out_table.clone()});
           }
-          _ => (),
+          x => {return Err(MechError{id: 4945, kind: MechErrorKind::GenericError(format!("{:?}", x))});},      
         }
       }
       // Select a column by row index
