@@ -1075,6 +1075,45 @@ block
   y = [[1234]]
   #test = y{1}{1}"#, Value::F32(F32::new(1234.0)));
 
+test_mech!(nesting_access_matrix,"
+block
+  x = [[|x y z |
+        1 2 3
+        4 5 6
+        7 8 9],
+      [|x y z |
+        2 3 4
+        5 6 7
+        8 9 10],
+        ]
+  #test = x{1}{2, 3}", Value::F32(F32::new(6.0)));
+
+test_mech!(nesting_math_add3by3_matrices,"
+block
+  x = [[|x y z |
+        1 2 3
+        4 5 6
+        7 8 9],
+      [|x y z |
+        2 3 4
+        5 6 7
+        8 9 10],
+        ]
+  #test = x{1}{3, 3} + x{2}{1, 3}", Value::F32(F32::new(13.0)));
+  
+test_mech!(nesting_math_dot_index,"
+block
+  x = [[|x y z |
+        1 2 3
+        4 5 6
+        7 8 9],
+      [|x y z |
+        2 3 4
+        5 6 7
+        8 9 10],
+        ]
+  #test = x{1}.z{3} + x{2}.z{1}", Value::F32(F32::new(13.0)));
+
 // ## Indexing
 
 test_mech!(indexing_global,r#"

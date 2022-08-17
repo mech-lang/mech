@@ -318,6 +318,7 @@ impl Ast {
               if select_data_children.is_empty() {
                 select_data_children = vec![Node::Null; 1];
               }
+              select_data_children.reverse();
               compiled.push(Node::SelectData{name, id: TableId::Local(id), children: select_data_children.clone()});
             },
             Node::DotIndex{children} => {

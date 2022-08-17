@@ -10,10 +10,17 @@ fn main() -> Result<(),MechError> {
 
 let input = r#"
 block
-  #y = [[1;2];[3]]
-block
-  x -< #y
-  #test = stats/sum(column: x)"#;
+  x = [[|x y z |
+        1 2 3
+        4 5 6
+        7 8 9],
+      [|x y z |
+        2 3 4
+        5 6 7
+        8 9 10],
+        ]
+
+  #test = x{1}{2, 3}"#;
   let input = String::from(input);
 
   let mut ast = Ast::new();
