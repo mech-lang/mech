@@ -30,3 +30,7 @@
 	path = wasm
 	url = https://gitlab.com/mech-lang/wasm.git
 	branch = v0.1-beta
+[submodule "notebook"]
+	path = notebook
+	url = https://gitlab.com/mech-lang/notebook.git
+	branch = v0.1-beta
