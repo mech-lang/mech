@@ -780,6 +780,16 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
     let mut rows = 0;
     let mut cols = 0;
     let arg_shapes = block.get_arg_dims(&arguments)?;
+
+    for shape in &arg_shapes {
+      match shape {
+        TableShape::Pending(table_id) => {
+          return Err(MechError{id: 4552, kind: MechErrorKind::PendingTable(table_id.clone())});
+        }
+        _ => (),
+      }
+    }
+
     // Each table should have the same number of rows or be scalar
     let arg_dims: Vec<(usize,usize)> = arg_shapes.iter().map(|shape| match shape {
       TableShape::Scalar => (1,1),
