@@ -53,8 +53,7 @@ syntect = { version = "4", optional = true, default-features = false, features =
 [workspace]
 
 members = [
-  "notebook",
-  "notebook2",
+  "wasm-notebook",
 ]
 
 [profile.release]
