@@ -1443,21 +1443,21 @@ block
 block
   #test = #z{1} + #z{2}"#, Value::F32(F32::new(4.0)));
 
-  test_mech!(boolean_literal_true, r#"
-block
-  #test = true"#, Value::Bool(true));
+test_mech!(boolean_literal_true, r#"#test = true"#, Value::Bool(true));
 
-  test_mech!(boolean_literal_false, r#"
-block
-  #test = false"#, Value::Bool(false));
+test_mech!(boolean_literal_true_check, r#"#test = ✓"#, Value::Bool(true));
 
-  test_mech!(boolean_literals_and_operator, r#"
+test_mech!(boolean_literal_false, r#"#test = false"#, Value::Bool(false));
+
+test_mech!(boolean_literal_false_x, r#"#test = ✗"#, Value::Bool(false));
+
+test_mech!(boolean_literals_and_operator, r#"
 block
   x = true
   y = false
   #test = x & y"#, Value::Bool(false));
 
-  test_mech!(boolean_bug, r#"
+test_mech!(boolean_bug, r#"
 block
   t = false
   f = true

@@ -636,6 +636,26 @@ fn boolean_literal(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 fn true_literal(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = alt((english_true_literal,true_symbol))(input)?;
+  Ok((input, Node::True))
+}
+
+fn false_literal(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = alt((english_false_literal,false_symbol))(input)?;
+  Ok((input, Node::False))
+}
+
+fn true_symbol(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = tag("✓")(input)?;
+  Ok((input, Node::False))
+}
+
+fn false_symbol(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = tag("✗")(input)?;
+  Ok((input, Node::False))
+}
+
+fn english_true_literal(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = ascii_tag("t")(input)?;
   let (input, _) = ascii_tag("r")(input)?;
   let (input, _) = ascii_tag("u")(input)?;
@@ -643,7 +663,7 @@ fn true_literal(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::True))
 }
 
-fn false_literal(input: ParseString) -> IResult<ParseString, Node> {
+fn english_false_literal(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = ascii_tag("f")(input)?;
   let (input, _) = ascii_tag("a")(input)?;
   let (input, _) = ascii_tag("l")(input)?;
