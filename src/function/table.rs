@@ -819,10 +819,13 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
       match shape {
         TableShape::Scalar => {
           let (_, arg_col,arg_ix) = block.get_arg_column(&argument)?;
-          let mut o = out_table.borrow_mut();
-          o.resize(*max_rows,cols);
-          o.set_col_kind(out_column_ix, arg_col.kind());
-          let mut out_col = o.get_column_unchecked(out_column_ix);
+
+          let mut out_col = { 
+            let mut o = out_table.borrow_mut();
+            o.resize(*max_rows,cols);
+            o.set_col_kind(out_column_ix, arg_col.kind());
+            o.get_column_unchecked(out_column_ix)
+          };
           match out_col.len() {
             // The input is scalar and the output is scalar
             1 => {
@@ -841,6 +844,9 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
                 (Column::Time(arg), ColumnIndex::Index(ix), Column::Time(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
                 (Column::Length(arg), ColumnIndex::Index(ix), Column::Length(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
                 (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
+                (Column::String(arg), ColumnIndex::Bool(bix), Column::String(out)) => {
+                  block.plan.push(CopyVBT{arg: arg.clone(), bix: bix.clone(), out: out.clone(), table: out_table.clone()});
+                },      
                 (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
                 (Column::Any(arg), ColumnIndex::Index(ix), Column::Any(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
                 (Column::Ref(arg), ColumnIndex::Index(ix), Column::Ref(out)) => block.plan.push(CopySSRef{arg: arg.clone(), ix: *ix, out: out.clone()}),
@@ -1348,6 +1354,12 @@ impl MechFunctionCompiler for TableSize {
     if arg_name == *TABLE {
       let (out_table_id, _, _) = out;
       let arg_table = block.get_table(&arg_table_id)?;
+      let arg_table_brrw = arg_table.borrow();
+
+      if arg_table_brrw.is_empty() {
+        return Err(MechError{id: 4995, kind: MechErrorKind::PendingTable(arg_table_id.clone())});
+      }
+
       let out_table = block.get_table(out_table_id)?;
       {
         let mut out_brrw = out_table.borrow_mut();
