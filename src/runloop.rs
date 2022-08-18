@@ -247,9 +247,16 @@ impl ProgramRunner {
         None => (),
       }
 
-      let resolved_errors: Vec<MechErrorKind> = program.download_dependencies(Some(client_outgoing.clone())).unwrap();
-      program.mech.resolve_errors(&resolved_errors);
-      program.mech.schedule_blocks();
+      match program.download_dependencies(Some(client_outgoing.clone())) {
+        Ok(resolved_errors) => {
+          program.mech.resolve_errors(&resolved_errors);
+          program.mech.schedule_blocks();
+        }
+        Err(err) => {
+          //println!("{:?}", err);
+        }
+      }
+
       // Step cores
       /*program.mech.step();
       for core in program.cores.values_mut() {
@@ -559,9 +566,15 @@ impl ProgramRunner {
             let (mut new_block_ids, new_block_errors) = program.mech.load_blocks(blocks);
 
             if new_block_errors.len() > 0 {
-              let resolved_errors: Vec<MechErrorKind> = program.download_dependencies(Some(client_outgoing.clone())).unwrap();
-              program.mech.resolve_errors(&resolved_errors);
-              program.mech.schedule_blocks();
+              match program.download_dependencies(Some(client_outgoing.clone())) {
+                Ok(resolved_errors) => {
+                  program.mech.resolve_errors(&resolved_errors);
+                  program.mech.schedule_blocks();
+                }
+                Err(err) => {
+                  //println!("{:?}", err);
+                }
+              }
             }
 
             if let Some(last_block_id) = new_block_ids.last() {
