@@ -454,6 +454,15 @@ block
   ix = #x >= #y
   #test = stats/sum(column: #x{ix})", Value::F32(F32::new(5.0))); 
 
+test_mech!(compare_greater_than_equal_alt,"
+block
+  #x = [1; 2; 3]
+  #y = [2; 1; 3]
+  
+block
+  ix = #x ≥ #y
+  #test = stats/sum(column: #x{ix})", Value::F32(F32::new(5.0))); 
+
 test_mech!(compare_less_than_equal,"
 block
   #x = [1; 2; 3]
@@ -461,6 +470,15 @@ block
   
 block
   ix = #x <= #y
+  #test = stats/sum(column: #x{ix})", Value::F32(F32::new(4.0))); 
+
+test_mech!(compare_less_than_equal_alt,"
+block
+  #x = [1; 2; 3]
+  #y = [2; 1; 3]
+  
+block
+  ix = #x ≤ #y
   #test = stats/sum(column: #x{ix})", Value::F32(F32::new(4.0))); 
 
 

@@ -1336,12 +1336,12 @@ fn less_than(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 fn greater_than_equal(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, _) = tag(">=")(input)?;
+  let (input, _) = alt((tag(">="),tag("≥")))(input)?;
   Ok((input, Node::GreaterThanEqual))
 }
 
 fn less_than_equal(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, _) = tag("<=")(input)?;
+  let (input, _) = alt((tag("<="),tag("≤")))(input)?;
   Ok((input, Node::LessThanEqual))
 }
 
