@@ -210,15 +210,16 @@ where T: Debug + Clone + Into<U> + Sync + Send,
       let mut out_brrw = self.out.borrow_mut();
       let rows = filtered.len();
       if rows == 0 {
-        return
+        0
+      } else {
+        if rows != out_brrw.len() {
+          out_brrw.resize(rows,filtered[0].clone());
+        }
+        for row in 0..filtered.len() {
+          out_brrw[row] = filtered[row].clone();
+        }
+        rows
       }
-      if rows != out_brrw.len() {
-        out_brrw.resize(rows,filtered[0].clone());
-      }
-      for row in 0..filtered.len() {
-        out_brrw[row] = filtered[row].clone();
-      }
-      rows
     };
     {
       let mut table_brrw = self.table.borrow_mut();
