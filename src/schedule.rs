@@ -206,7 +206,7 @@ impl fmt::Debug for Node {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f,"[{}]",humanize(&self.block.borrow().id))?;
     for child in &self.children {
-      write!(f,"--->{:?}\n",&child.borrow())?;
+      write!(f,"->{:?}\n",&child.borrow())?;
     }
     Ok(())
   }

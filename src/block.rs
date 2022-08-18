@@ -108,6 +108,7 @@ pub struct Block {
   pub global_database: Rc<RefCell<Database>>,
   pub unsatisfied_transformation: Option<(MechError,Transformation)>,
   pub pending_transformations: Vec<Transformation>,
+  pub pending_global_tables: HashMap<u64,TableRef>,
   pub transformations: Vec<Transformation>,
   pub defined_tables: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
   pub required_functions: HashSet<u64>,
@@ -129,6 +130,7 @@ impl Block {
       global_database: Rc::new(RefCell::new(Database::new())),
       unsatisfied_transformation: None,
       pending_transformations: Vec::new(),
+      pending_global_tables: HashMap::new(),
       defined_tables: HashSet::new(),
       transformations: Vec::new(),
       strings: Rc::new(RefCell::new(HashMap::new())),
@@ -158,7 +160,14 @@ impl Block {
       },
       TableId::Global(id) => match self.global_database.borrow().get_table_by_id(id) {
         Some(table) => Ok(table.clone()),
-        None => Err(MechError{id: 2104, kind: MechErrorKind::MissingTable(*table_id)}),
+        None => {
+          match self.pending_global_tables.get(id) {
+            Some(table) => Ok(table.clone()),
+            None => {
+              Err(MechError{id: 2104, kind: MechErrorKind::MissingTable(*table_id)})
+            }
+          }
+        }
       }
     }
   }
@@ -201,6 +210,9 @@ impl Block {
           }
           None => {
             self.state = BlockState::Ready;
+            for (_,table_ref) in self.pending_global_tables.drain() {
+              self.global_database.borrow_mut().insert_table_ref(table_ref);
+            }
             Ok(())
           }
         }
@@ -586,9 +598,8 @@ impl Block {
           TableId::Global(id) => {
             let mut table = Table::new(*id, 0, 0);
             table.dictionary = self.strings.clone();
-            {
-              self.global_database.borrow_mut().insert_table(table);
-            }
+            let table = Rc::new(RefCell::new(table));
+            self.pending_global_tables.insert(*table_id.unwrap(),table);
             self.output.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
             self.defined_tables.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
           }
@@ -649,7 +660,7 @@ impl Block {
         table.set_col_alias(*column_ix,*column_alias);
       },
       Transformation::TableDefine{table_id, indices, out} => {
-        if let TableId::Global(_) = table_id { 
+        if let TableId::Global(id) = table_id { 
           self.input.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
           self.triggers.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
         }

@@ -73,6 +73,17 @@ impl Database {
     }
   }
 
+  pub fn insert_table_ref(&mut self, table: TableRef) -> Result<Rc<RefCell<Table>>,MechError> {
+    let table_id = {
+      let table_brrw = table.borrow();
+      table_brrw.id
+    };
+    match self.tables.try_insert(table_id, table) {
+      Ok(x) => Ok(x.clone()),
+      Err(x) => {return Err(MechError{id: 1726, kind: MechErrorKind::None});},
+    }
+  }
+
   pub fn get_table(&self, table_name: &str) -> Option<&Rc<RefCell<Table>>> {
     let alias = hash_str(table_name);
     match self.table_alias_to_id.get(&alias) {
