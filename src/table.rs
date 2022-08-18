@@ -142,6 +142,14 @@ impl Table {
     Ok(())
   }
 
+  pub fn is_empty(&self) -> bool {
+    if self.rows == 0 || self.cols == 0 {
+      true
+    } else {
+      false
+    }
+  }
+
   pub fn get_col_raw(&self, col_ix: usize) -> std::result::Result<Column,MechError> {
     if col_ix < self.cols {
       Ok(self.data[col_ix].clone())
