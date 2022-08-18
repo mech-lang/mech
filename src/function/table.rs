@@ -1355,11 +1355,6 @@ impl MechFunctionCompiler for TableSize {
       let (out_table_id, _, _) = out;
       let arg_table = block.get_table(&arg_table_id)?;
       let arg_table_brrw = arg_table.borrow();
-
-      if arg_table_brrw.is_empty() {
-        return Err(MechError{id: 4995, kind: MechErrorKind::PendingTable(arg_table_id.clone())});
-      }
-
       let out_table = block.get_table(out_table_id)?;
       {
         let mut out_brrw = out_table.borrow_mut();
