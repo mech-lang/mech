@@ -491,6 +491,24 @@ block
   ix = #x != #y
   #test = set/all(column: ix)", Value::Bool(true)); 
 
+test_mech!(compare_not_equal_boolean_alt_syntax,"
+block
+  #x = [true; true; true; true]
+  #y = [false; false; false; false]
+  
+block
+  ix = #x ¬= #y
+  #test = set/all(column: ix)", Value::Bool(true));
+
+test_mech!(compare_not_equal_boolean_alt_syntax2,"
+block
+  #x = [true; true; true; true]
+  #y = [false; false; false; false]
+  
+block
+  ix = #x ≠ #y
+  #test = set/all(column: ix)", Value::Bool(true));
+  
 test_mech!(compare_equal_string,r#"
 block
   #x = [1; 2; 3; 4]

@@ -1296,7 +1296,7 @@ fn math_expression(input: ParseString) -> IResult<ParseString, Node> {
 // #### Filter Expressions
 
 fn not_equal(input: ParseString) -> IResult<ParseString, Node> {
-  let (input, _) = tag("!=")(input)?;
+  let (input, _) = alt((tag("!="),tag("¬="),tag("≠")))(input)?;
   Ok((input, Node::NotEqual))
 }
 
