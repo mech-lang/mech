@@ -116,6 +116,7 @@ pub struct Block {
   pub triggers: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
   pub input: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
   pub output: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
+  pub dynamic_tables: HashSet<TableId>,
 }
 
 impl Block {
@@ -137,6 +138,7 @@ impl Block {
       triggers: HashSet::new(),
       input: HashSet::new(),
       output: HashSet::new(),
+      dynamic_tables: HashSet::new(),
     }
   }
 
@@ -179,6 +181,20 @@ impl Block {
 
   pub fn id(&self) -> BlockId {
     self.id
+  }
+
+  pub fn recompile(&mut self) -> Result<(),MechError> {
+
+    let tfms = self.transformations.clone();
+    self.transformations.clear();
+    self.plan = Plan::new();
+    self.tables.clear();
+
+    for tfm in tfms {
+      self.compile_tfm(tfm)?;
+    }
+
+    Ok(())
   }
 
   pub fn ready(&mut self) -> Result<(),MechError> {
@@ -566,8 +582,9 @@ impl Block {
         self.required_functions.insert(*name);
         for (_,table_id,indices) in arguments {
           if let TableId::Global(_) = table_id {
-            self.input.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
-            self.triggers.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
+            let register = (*table_id,RegisterIndex::All,RegisterIndex::All);
+            self.input.insert(register);
+            self.triggers.insert(register);
           }
         }
         if let (TableId::Global(table_id),_,_) = out {

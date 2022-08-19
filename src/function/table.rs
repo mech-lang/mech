@@ -1180,6 +1180,8 @@ impl MechFunctionCompiler for TableAppend {
     let (src_rows,src_cols) = &src_indices[0];
     let (dest_table_id, _, _) = out;
 
+    block.dynamic_tables.insert(dest_table_id.clone());
+
     let src_table = block.get_table(&src_table_id)?;
     let dest_table = block.get_table(dest_table_id)?;
     let dest_shape = {dest_table.borrow().shape()};

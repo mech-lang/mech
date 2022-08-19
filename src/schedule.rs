@@ -78,10 +78,10 @@ impl Schedule {
         }
       }
     }
+    // This collects all of the output that would be changed given a trigger
     // TODO I'd like to do this incrementally instead of redoing it
     // every time blocks are scheduled. But I'm short on time now and 
     // this is all I can think of to do without changing too much.
-    // This collects all of the output that would have been changed given a trigger
     for (register,block_graphs) in self.schedules.iter() {
       let (table_id,row_ix,col_ix) = register;
       let mut aggregate_output = HashSet::new();
@@ -150,6 +150,17 @@ impl Node {
       parents: Vec::new(),
       children: Vec::new(),
     }
+  }
+
+  pub fn recompile(&self) -> Result<(),MechError> {
+    {
+      self.block.borrow_mut().recompile()?;
+    }
+    for child in &self.children {
+      let mut child_brrw = child.borrow_mut();
+      child_brrw.recompile()?;
+    }
+    Ok(())
   }
 
   pub fn triggers(&self) -> HashSet<(TableId,RegisterIndex,RegisterIndex)> {
@@ -228,6 +239,12 @@ impl BlockGraph {
 
   pub fn id(&self) -> u64 {
     self.root.borrow().block.borrow().id
+  }
+
+  pub fn recompile_blocks(&self) -> Result<(),MechError> {
+    let root_brrw = self.root.borrow();
+    root_brrw.recompile()?;
+    Ok(())
   }
 
   pub fn triggers(&self) -> HashSet<(TableId,RegisterIndex,RegisterIndex)> {

@@ -1,5 +1,5 @@
 use crate::*;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
@@ -29,6 +29,7 @@ pub type Transaction = Vec<Change>;
 
 #[derive(Clone)]
 pub struct Database {
+  pub dynamic_tables: HashSet<TableId>,
   pub tables: HashMap<u64,Rc<RefCell<Table>>>,
   pub table_alias_to_id: HashMap<u64,TableId>,
 }
@@ -36,9 +37,16 @@ pub struct Database {
 impl Database {
   pub fn new() -> Database {
     Database {
+      dynamic_tables: HashSet::new(),
       tables: HashMap::new(),
       table_alias_to_id: HashMap::new(),
     }
+  }
+
+  pub fn clear(&mut self) {
+    self.dynamic_tables.clear();
+    self.tables.clear();
+    self.table_alias_to_id.clear();
   }
 
   pub fn union(&mut self, other: &Self) -> Result<(),MechError> {

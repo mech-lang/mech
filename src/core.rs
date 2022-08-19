@@ -270,6 +270,22 @@ impl Core {
     }).collect::<Vec<String>>()
   }
 
+  pub fn recompile_dynamic_tables(&mut self) -> Result<(),MechError> {
+    let database_brrw = self.database.borrow();
+    for table_id in database_brrw.dynamic_tables.iter() {
+      match self.schedule.schedules.get(&(*table_id,RegisterIndex::All,RegisterIndex::All)) {
+        Some(schedules) => {
+          for schedule in schedules {
+            schedule.recompile_blocks();
+          }
+        }
+        None => (),
+      }
+    }
+    
+    Ok(())
+  }
+
   pub fn load_block_refs(&mut self, mut blocks: Vec<BlockRef>) -> (Vec<BlockId>,Vec<MechError>) {
     let mut block_ids = vec![];
     let mut block_errors = vec![];
@@ -281,6 +297,7 @@ impl Core {
         self.step(register);
       }
       self.schedule_blocks();
+      self.recompile_dynamic_tables();
     }
     (block_ids,block_errors)
   }
@@ -296,6 +313,7 @@ impl Core {
         self.step(register);
       }
       self.schedule_blocks();
+      self.recompile_dynamic_tables();
     }
     (block_ids,block_errors)
   }
@@ -338,7 +356,10 @@ impl Core {
           self.input = self.input.union(&mut block_brrw.input).cloned().collect();
           self.output = self.output.union(&mut block_brrw.output).cloned().collect();
           self.defined_tables = self.defined_tables.union(&mut block_brrw.defined_tables).cloned().collect();
-
+          {
+            let mut database_brrw = self.database.borrow_mut();
+            database_brrw.dynamic_tables = database_brrw.dynamic_tables.union(&mut block_brrw.dynamic_tables).cloned().collect();
+          }
           self.schedule.add_block(block_ref.clone());
           self.blocks.insert(id,block_ref_c.clone());
 
@@ -371,10 +392,9 @@ impl Core {
       let state = {
         v.borrow().state.clone()
       };
-
       state == BlockState::Ready
-    
     });
+
     (new_block_ids,new_block_errors,new_block_output)
   }
   
