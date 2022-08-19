@@ -277,6 +277,10 @@ impl Core {
       let (mut new_block_ids, mut new_block_errors, mut new_block_output) = self.load_block(block.clone());
       block_ids.append(&mut new_block_ids);
       block_errors.append(&mut new_block_errors);
+      for register in new_block_output.iter() {
+        self.step(register);
+      }
+      self.schedule_blocks();
     }
     (block_ids,block_errors)
   }
