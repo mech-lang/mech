@@ -1,3 +1,4 @@
+#![allow(warnings)]
 extern crate mech_syntax;
 extern crate mech_core;
 #[macro_use]
@@ -43,7 +44,11 @@ macro_rules! test_mech {
       let blocks = compiler.compile_str(&input)?;
       
       for block in blocks {
-        let (_,errors,_) = core.load_block(Rc::new(RefCell::new(block)));
+        let (_,errors,new_block_output) = core.load_block(Rc::new(RefCell::new(block)));
+        for register in new_block_output.iter() {
+          core.step(register);
+        }
+        core.schedule_blocks();
         assert!(errors.len() == 0);
       }
 
@@ -563,6 +568,7 @@ block
 test_mech!(set_empty_with_index,"
 block
   #foo = [|x y|]
+  #x = true
 
 block
   #foo := [|x y|
@@ -570,6 +576,7 @@ block
           false 2
           true  3]
 block
+  ~ #x
   ix = #foo.x == true
   #foo.y{ix} := 10
 
@@ -646,7 +653,10 @@ block
          1
          4
          7]
+  #x = true
+
 block
+  ~ #x
   x = #q.x
   ix = x > 1
   #q.x{ix} := 10
@@ -660,7 +670,10 @@ block
             1 2 3
             4 5 6
             7 8 9]
+  #x = true
+
 block
+  ~ #x
   x = #ball.y
   ix = x > 5
   #ball.y{ix} := 3
@@ -686,8 +699,10 @@ block
             1 2  3  4
             5 6  7  8
             9 10 11 12]
+  #x = true
 
 block
+  ~ #x
   ix = #ball.vy > 10
   iy = #ball.vy < 5
   ixx = ix | iy
@@ -704,8 +719,10 @@ block
             9 10 11 12]
   #time/timer = [period: 15 tick: 0]
   #gravity = 2
+  #x = true
 
 block
+  ~ #x
   ix = #ball.vy > 10
   iy = #ball.vy < 5
   #ball.y{ix | iy} := #ball.vy * 2
@@ -915,7 +932,18 @@ block
 block
   #test = set/all(column: #x.y == #x.z)"#, Value::Bool(true));
 
+test_mech!(append_unordered,r#"
+block
+  #x = 1
 
+block
+  #y = #x
+
+block
+  #x += 2
+
+block
+  #test = stats/sum(column: #y)"#, Value::F32(F32::new(3.0)));  
 
 // ## Logic
 
