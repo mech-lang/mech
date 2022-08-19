@@ -43,7 +43,7 @@ macro_rules! test_mech {
       let blocks = compiler.compile_str(&input)?;
       
       for block in blocks {
-        let (_,errors) = core.load_block(Rc::new(RefCell::new(block)));
+        let (_,errors,_) = core.load_block(Rc::new(RefCell::new(block)));
         assert!(errors.len() == 0);
       }
 
@@ -864,7 +864,7 @@ block
 block
   #test = #x.y", Value::F32(F32::new(10.0))); 
 
-  test_mech!(append_arbitrary_kinds_types,"
+test_mech!(append_arbitrary_kinds_types,"
 block
   #x = [|x<f32> y<u8>|]
 
@@ -874,7 +874,7 @@ block
 block
   #test = #x.y + #x.x", Value::U8(U8::new(109)));
 
-  test_mech!(append_inline_row_singleton,"
+test_mech!(append_inline_row_singleton,"
 block
   #x = [|x<f32> y<u8>|]
 block
@@ -882,8 +882,7 @@ block
 block
   #test = stats/sum(table: #x)", Value::F32(F32::new(10.0)));
 
-
-  test_mech!(append_inline_row_two_rows,"
+test_mech!(append_inline_row_two_rows,"
 block
   #x = [|x<f32> y<u8>|]
 block
@@ -893,7 +892,7 @@ block
 block
   #test = stats/sum(table: #x)", Value::F32(F32::new(30.0)));
 
-  test_mech!(append_inline_two_rows_set,"
+test_mech!(append_inline_two_rows_set,"
 block
   #x = [|x<f32> y<u8>|]
 block
@@ -906,7 +905,7 @@ block
 block
   #test = stats/sum(table: #x)", Value::F32(F32::new(609.0)));
 
-  test_mech!(append_any_column,r#"
+test_mech!(append_any_column,r#"
 block
   #x = [|x<u64> y<_> z<_>|]
 block
@@ -915,6 +914,8 @@ block
   #x += [x: 456<u64> y: 10, z: 10]
 block
   #test = set/all(column: #x.y == #x.z)"#, Value::Bool(true));
+
+
 
 // ## Logic
 
