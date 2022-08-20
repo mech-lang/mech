@@ -270,17 +270,14 @@ impl Core {
     }).collect::<Vec<String>>()
   }
 
-  pub fn recompile_dynamic_tables(&mut self) -> Result<(),MechError> {
-    let database_brrw = self.database.borrow();
-    for register in database_brrw.dynamic_tables.iter() {
-      match self.schedule.schedules.get(&register) {
-        Some(schedules) => {
-          for schedule in schedules {
-            schedule.recompile_blocks();
-          }
+  pub fn recompile_dynamic_tables(&mut self, register: (TableId, RegisterIndex, RegisterIndex)) -> Result<(),MechError> {
+    match self.schedule.schedules.get(&register) {
+      Some(schedules) => {
+        for schedule in schedules {
+          schedule.recompile_blocks()?;
         }
-        None => (),
       }
+      None => (),
     }
     
     Ok(())
@@ -297,7 +294,7 @@ impl Core {
         self.step(register);
       }
       self.schedule_blocks();
-      self.recompile_dynamic_tables();
+      //self.recompile_dynamic_tables();
     }
     (block_ids,block_errors)
   }
@@ -313,7 +310,8 @@ impl Core {
         self.step(register);
       }
       self.schedule_blocks();
-      self.recompile_dynamic_tables();
+      println!("!!!!!!!!!!!!!!{:?}", new_block_output);
+      //self.recompile_dynamic_tables();
     }
     (block_ids,block_errors)
   }
