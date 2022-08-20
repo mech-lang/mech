@@ -1178,12 +1178,12 @@ impl MechFunctionCompiler for TableAppend {
 
     let (_,src_table_id,src_indices) = &arguments[0];
     let (src_rows,src_cols) = &src_indices[0];
-    let (dest_table_id, _, _) = out;
+    let (out_table_id, _, _) = out;
 
-    block.dynamic_tables.insert(dest_table_id.clone());
+    block.dynamic_tables.insert((out_table_id.clone(),RegisterIndex::All,RegisterIndex::All));
 
     let src_table = block.get_table(&src_table_id)?;
-    let dest_table = block.get_table(dest_table_id)?;
+    let dest_table = block.get_table(out_table_id)?;
     let dest_shape = {dest_table.borrow().shape()};
     match (arg_shape,arow_ix,dest_shape) {
       (TableShape::Scalar,TableIndex::All,TableShape::Pending(_)) |
@@ -1191,6 +1191,7 @@ impl MechFunctionCompiler for TableAppend {
       (TableShape::Scalar,TableIndex::All,TableShape::Scalar) => {
         let arg_col = block.get_arg_column(&arguments[0])?;
         let mut dest_table_brrw = dest_table.borrow_mut();
+        dest_table_brrw.dynamic = true;
         let out_rows = dest_table_brrw.rows;
         let new_rows = out_rows + 1;
         let ocols = dest_table_brrw.cols;
@@ -1633,7 +1634,7 @@ impl MechFunctionCompiler for TableDefine {
 
     //Transformation::TableDefine{table_id, indices, out}'
     let (_,table_id,indices) = &arguments[0];
-    let (out,_,_) = &out;
+    let (out_table_id,_,_) = &out;
     // Iterate through to the last index
     let mut table_id = *table_id;
     for (row,column) in indices.iter().take(indices.len()-1) {
@@ -1650,13 +1651,23 @@ impl MechFunctionCompiler for TableDefine {
         x => {return Err(MechError{id: 4925, kind: MechErrorKind::GenericError(format!("{:?}", x))});},      }
     }
     let src_table = block.get_table(&table_id)?;
-    let out_table = block.get_table(out)?;
+    let out_table = block.get_table(out_table_id)?;
+
+    {
+      let src_table_brrw = src_table.borrow();
+      let mut out_table_brrw = out_table.borrow_mut();
+      if src_table_brrw.dynamic {
+        out_table_brrw.dynamic = true;
+        block.dynamic_tables.insert((out_table_id.clone(),RegisterIndex::All,RegisterIndex::All));
+      }
+    }
+
     let (row, column) = indices.last().unwrap();
     let argument = (0,table_id,vec![(row.clone(),column.clone())]);
     match (row,column) {
       // Select an entire table
       (TableIndex::All, TableIndex::All) => {
-        match out {
+        match out_table_id {
           TableId::Global(gid) => {
             block.plan.push(CopyT{arg: src_table.clone(), out: out_table.clone()});
           }
@@ -1668,7 +1679,7 @@ impl MechFunctionCompiler for TableDefine {
       // Select a column by alias
       (TableIndex::All, TableIndex::Alias(_)) => {
         let (_, arg_col,_) = block.get_arg_column(&(0,table_id,vec![(row.clone(),column.clone())]))?;
-        let out_col = block.get_out_column(&(*out,TableIndex::All,TableIndex::All),arg_col.len(),arg_col.kind())?;
+        let out_col = block.get_out_column(&(*out_table_id,TableIndex::All,TableIndex::All),arg_col.len(),arg_col.kind())?;
         match (&arg_col, &out_col) {
           (Column::U8(arg), Column::U8(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
           (Column::F32(arg), Column::F32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
@@ -1680,7 +1691,7 @@ impl MechFunctionCompiler for TableDefine {
         let src_brrw = src_table.borrow();
         let (row,col) = src_brrw.index_to_subscript(ix-1)?;
         let mut arg_col = src_brrw.get_column_unchecked(col);
-        let out_col = block.get_out_column(&(*out,TableIndex::All,TableIndex::All),1,arg_col.kind())?;
+        let out_col = block.get_out_column(&(*out_table_id,TableIndex::All,TableIndex::All),1,arg_col.kind())?;
         match (&arg_col, &out_col) {
           (Column::U8(arg), Column::U8(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
           (Column::F32(arg), Column::F32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
@@ -1740,7 +1751,7 @@ impl MechFunctionCompiler for TableDefine {
       }
       (TableIndex::Index(row_ix), TableIndex::Alias(column_alias)) => {
         let (_, arg_col,arg_ix) = block.get_arg_column(&(0,table_id,vec![(row.clone(),column.clone())]))?;
-        let out_col = block.get_out_column(&(*out,TableIndex::All,TableIndex::All),1,arg_col.kind())?;
+        let out_col = block.get_out_column(&(*out_table_id,TableIndex::All,TableIndex::All),1,arg_col.kind())?;
         match (&arg_col, &arg_ix, &out_col) {
           (Column::F32(arg), ColumnIndex::Index(ix), Column::F32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
           (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),

@@ -29,7 +29,7 @@ pub type Transaction = Vec<Change>;
 
 #[derive(Clone)]
 pub struct Database {
-  pub dynamic_tables: HashSet<TableId>,
+  pub dynamic_tables: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
   pub tables: HashMap<u64,Rc<RefCell<Table>>>,
   pub table_alias_to_id: HashMap<u64,TableId>,
 }

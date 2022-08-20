@@ -47,6 +47,7 @@ pub enum TableShape {
   Column(usize),
   Row(usize),
   Matrix(usize,usize),
+  Dynamic(usize,usize),
   Pending(TableId),
 }
 
@@ -100,7 +101,8 @@ impl fmt::Debug for TableIndex {
 pub type StringDictionary = Rc<RefCell<HashMap<u64,MechString>>>;
 
 pub struct Table {
-  pub id: u64,                           
+  pub id: u64,     
+  pub dynamic: bool,                      
   pub rows: usize,                       
   pub cols: usize,                       
   pub col_kinds: Vec<ValueKind>,                 
@@ -116,6 +118,7 @@ impl Table {
       id,
       rows,
       cols,
+      dynamic: false,
       col_kinds: Vec::with_capacity(cols),
       col_map: AliasMap::new(cols),
       row_map: AliasMap::new(rows),

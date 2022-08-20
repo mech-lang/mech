@@ -203,7 +203,12 @@ impl BoxTable {
     } else {
       format!("{}", humanize(&table.id))
     };
-    let title = format!("{} ({} x {})", table_name,table.rows,table.cols);
+    let dynamic = if table.dynamic {
+      "+"
+    } else {
+      ""
+    };
+    let title = format!("{}{} ({} x {})", table_name,dynamic,table.rows,table.cols);
     let mut strings: Vec<Vec<String>> = vec![vec!["".to_string(); table.rows]; table.cols];
     let mut column_widths = vec![0; table.cols];
     let mut column_aliases = Vec::new();

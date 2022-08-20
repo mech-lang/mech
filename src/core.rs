@@ -272,8 +272,8 @@ impl Core {
 
   pub fn recompile_dynamic_tables(&mut self) -> Result<(),MechError> {
     let database_brrw = self.database.borrow();
-    for table_id in database_brrw.dynamic_tables.iter() {
-      match self.schedule.schedules.get(&(*table_id,RegisterIndex::All,RegisterIndex::All)) {
+    for register in database_brrw.dynamic_tables.iter() {
+      match self.schedule.schedules.get(&register) {
         Some(schedules) => {
           for schedule in schedules {
             schedule.recompile_blocks();

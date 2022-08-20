@@ -116,7 +116,7 @@ pub struct Block {
   pub triggers: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
   pub input: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
   pub output: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
-  pub dynamic_tables: HashSet<TableId>,
+  pub dynamic_tables: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
 }
 
 impl Block {
@@ -182,18 +182,16 @@ impl Block {
   pub fn id(&self) -> BlockId {
     self.id
   }
-
+  
+  // Clear everything and recompile it all
   pub fn recompile(&mut self) -> Result<(),MechError> {
-
     let tfms = self.transformations.clone();
     self.transformations.clear();
     self.plan = Plan::new();
     self.tables.clear();
-
     for tfm in tfms {
       self.compile_tfm(tfm)?;
     }
-
     Ok(())
   }
 
@@ -487,17 +485,17 @@ impl Block {
     
     let (row,col) = &indices.last().unwrap();
     let table = self.get_table(&table_id)?;
-    let t = table.borrow();
+    let table_brrw = table.borrow();
     let dim = match (row,col) {
-      (TableIndex::ReshapeColumn, TableIndex::All) => (t.rows*t.cols,1),
-      (TableIndex::All, TableIndex::All) => (t.rows, t.cols),
-      (TableIndex::All, TableIndex::None) => (t.rows*t.cols,1),
+      (TableIndex::ReshapeColumn, TableIndex::All) => (table_brrw.rows*table_brrw.cols,1),
+      (TableIndex::All, TableIndex::All) => (table_brrw.rows, table_brrw.cols),
+      (TableIndex::All, TableIndex::None) => (table_brrw.rows*table_brrw.cols,1),
       (TableIndex::All,TableIndex::Index(_)) |
-      (TableIndex::All, TableIndex::Alias(_)) => (t.rows, 1),
+      (TableIndex::All, TableIndex::Alias(_)) => (table_brrw.rows, 1),
       (TableIndex::Index(_),TableIndex::None) |
       (TableIndex::Index(_),TableIndex::Index(_)) |
       (TableIndex::Index(_),TableIndex::Alias(_)) => (1,1),
-      (TableIndex::Index(_),TableIndex::All) => (1,t.cols),
+      (TableIndex::Index(_),TableIndex::All) => (1,table_brrw.cols),
       (TableIndex::IxTable(ix_table_id),TableIndex::Alias(_)) |
       (TableIndex::IxTable(ix_table_id),TableIndex::None) => {
         let ix_table = self.get_table(&ix_table_id)?;
@@ -507,7 +505,7 @@ impl Block {
       (TableIndex::IxTable(ix_table_id),TableIndex::All) => {
         let ix_table = self.get_table(&ix_table_id)?;
         let rows = ix_table.borrow().len();
-        (rows,t.cols)
+        (rows,table_brrw.cols)
       },
       (TableIndex::All,TableIndex::IxTable(ix_table_id)) => {
         let ix_table = self.get_table(&ix_table_id)?;
@@ -522,21 +520,22 @@ impl Block {
           }
           x => {return Err(MechError{id: 2128, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
         };
-        (t.rows, cols)
+        (table_brrw.rows, cols)
       }
       (TableIndex::All,TableIndex::Aliases(aliases)) => {
-        (t.rows,aliases.len())
+        (table_brrw.rows,aliases.len())
       }
       x => {return Err(MechError{id: 2118, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
     };
-    let arg_shape = match dim {
-      (_,0) |
-      (0,_) |
-      (0,0) => TableShape::Pending(table_id),
-      (1,1) => TableShape::Scalar,
-      (1,x) => TableShape::Row(x),
-      (x,1) => TableShape::Column(x),
-      (x,y) => TableShape::Matrix(x,y),
+    let arg_shape = match (dim,table_brrw.dynamic) {
+      ((_,0),_) |
+      ((0,_),_) |
+      ((0,0),_) => TableShape::Pending(table_id),
+      ((1,1),false) => TableShape::Scalar,
+      ((1,x),false) => TableShape::Row(x),
+      ((x,1),false) => TableShape::Column(x),
+      ((x,y),false) => TableShape::Matrix(x,y),
+      ((x,y),true) => TableShape::Dynamic(x,y),
       _ => TableShape::Pending(table_id),
     };
     Ok(arg_shape)
@@ -681,11 +680,22 @@ impl Block {
           self.input.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
           self.triggers.insert((*table_id,RegisterIndex::All,RegisterIndex::All));
         }
-        self.compile_tfm(Transformation::Function{
-          name: *TABLE_DEFINE,
-          arguments: vec![(0,table_id.clone(),indices.clone())],
-          out: (*out, TableIndex::All, TableIndex::All),
-        })?;
+        // Compile a Table Define function
+        let arguments =  vec![(0,table_id.clone(),indices.clone())];
+        let out =  (*out, TableIndex::All, TableIndex::All);
+        let fxns = self.functions.clone();
+        match &fxns {
+          Some(functions) => {
+            let mut fxns = functions.borrow_mut();
+            match fxns.get(*TABLE_DEFINE) {
+              Some(fxn) => {
+                fxn.compile(self,&arguments,&out)?;
+              }
+              None => {return Err(MechError{id: 2223, kind: MechErrorKind::MissingFunction(*TABLE_DEFINE)});},
+            }
+          }
+          None => {return Err(MechError{id: 2224, kind: MechErrorKind::GenericError("No functions are loaded.".to_string())});},
+        }
       }
       Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col} => {
         self.output.insert((*dest_id,RegisterIndex::All,RegisterIndex::All));
@@ -720,88 +730,88 @@ impl Block {
         let mut bytes = bytes.clone();
         let table_id = hash_str(&format!("{:?}{:?}", kind, bytes));
         let table =  self.get_table(&TableId::Local(table_id))?; 
-        let mut t = table.borrow_mut();
-        t.resize(1,1);
+        let mut table_brrw = table.borrow_mut();
+        table_brrw.resize(1,1);
         if *kind == *cU8 {
-          t.set_kind(ValueKind::U8)?;
-          t.set_raw(0,0,Value::U8(U8::new(num.as_u8())))?;
+          table_brrw.set_kind(ValueKind::U8)?;
+          table_brrw.set_raw(0,0,Value::U8(U8::new(num.as_u8())))?;
         } 
         else if *kind == *cU16 {
-          t.set_kind(ValueKind::U16)?;
-          t.set_raw(0,0,Value::U16(U16::new(num.as_u16())))?;
+          table_brrw.set_kind(ValueKind::U16)?;
+          table_brrw.set_raw(0,0,Value::U16(U16::new(num.as_u16())))?;
         } 
         else if *kind == *cU32 {
-          t.set_kind(ValueKind::U32)?;
-          t.set_raw(0,0,Value::U32(U32::new(num.as_u32())))?;
+          table_brrw.set_kind(ValueKind::U32)?;
+          table_brrw.set_raw(0,0,Value::U32(U32::new(num.as_u32())))?;
         } 
         else if *kind == *cU64 {
-          t.set_kind(ValueKind::U64)?;
-          t.set_raw(0,0,Value::U64(U64::new(num.as_u64())))?;
+          table_brrw.set_kind(ValueKind::U64)?;
+          table_brrw.set_raw(0,0,Value::U64(U64::new(num.as_u64())))?;
         } 
         else if *kind == *cU128 {
-          t.set_kind(ValueKind::U128)?;
-          t.set_raw(0,0,Value::U128(U128::new(num.as_u128())))?;
+          table_brrw.set_kind(ValueKind::U128)?;
+          table_brrw.set_raw(0,0,Value::U128(U128::new(num.as_u128())))?;
         } 
         else if *kind == *cMS {
-          t.set_kind(ValueKind::Time)?;
-          t.set_raw(0,0,Value::Time(F32::new(num.as_f32() / 1000.0)))?;
+          table_brrw.set_kind(ValueKind::Time)?;
+          table_brrw.set_raw(0,0,Value::Time(F32::new(num.as_f32() / 1000.0)))?;
         } 
         else if *kind == *cS {
-          t.set_kind(ValueKind::Time)?;
-          t.set_raw(0,0,Value::Time(F32::new(num.as_f32())))?;
+          table_brrw.set_kind(ValueKind::Time)?;
+          table_brrw.set_raw(0,0,Value::Time(F32::new(num.as_f32())))?;
         } 
         else if *kind == *cF32 {
-          t.set_kind(ValueKind::F32)?;
-          t.set_raw(0,0,Value::F32(F32::new(num.as_f32())))?;
+          table_brrw.set_kind(ValueKind::F32)?;
+          table_brrw.set_raw(0,0,Value::F32(F32::new(num.as_f32())))?;
         } 
         else if *kind == *cF64 {
-          t.set_kind(ValueKind::F64)?;
-          t.set_raw(0,0,Value::F64(F64::new(num.as_f32() as f64)))?;
+          table_brrw.set_kind(ValueKind::F64)?;
+          table_brrw.set_raw(0,0,Value::F64(F64::new(num.as_f32() as f64)))?;
         } 
         else if *kind == *cF32L {
-          t.set_kind(ValueKind::F32)?;
-          t.set_raw(0,0,Value::F32(F32::new(num.as_f32())))?;
+          table_brrw.set_kind(ValueKind::F32)?;
+          table_brrw.set_raw(0,0,Value::F32(F32::new(num.as_f32())))?;
         } 
         else if *kind == *cKM {
-          t.set_kind(ValueKind::Length)?;
-          t.set_raw(0,0,Value::Length(F32::new(num.as_f32() * 1000.0)))?;
+          table_brrw.set_kind(ValueKind::Length)?;
+          table_brrw.set_raw(0,0,Value::Length(F32::new(num.as_f32() * 1000.0)))?;
         } 
         else if *kind == *cM {
-          t.set_kind(ValueKind::Length)?;
-          t.set_raw(0,0,Value::Length(F32::new(num.as_f32())))?;
+          table_brrw.set_kind(ValueKind::Length)?;
+          table_brrw.set_raw(0,0,Value::Length(F32::new(num.as_f32())))?;
         }
         else if *kind == *cM_S {
-          t.set_kind(ValueKind::Speed)?;
-          t.set_raw(0,0,Value::Speed(F32::new(num.as_f32())))?;
+          table_brrw.set_kind(ValueKind::Speed)?;
+          table_brrw.set_raw(0,0,Value::Speed(F32::new(num.as_f32())))?;
         }
         else if *kind == *cDEC {
           match bytes.len() {
             1 => {
-              t.set_col_kind(0, ValueKind::U8)?;
-              t.set_raw(0,0,Value::U8(U8::new(num.as_u8())))?;
+              table_brrw.set_col_kind(0, ValueKind::U8)?;
+              table_brrw.set_raw(0,0,Value::U8(U8::new(num.as_u8())))?;
             }
             2 => {
-              t.set_kind(ValueKind::U16)?;
-              t.set_raw(0,0,Value::U16(U16::new(num.as_u16())))?;
+              table_brrw.set_kind(ValueKind::U16)?;
+              table_brrw.set_raw(0,0,Value::U16(U16::new(num.as_u16())))?;
             }
             3 | 4 => {
-              t.set_kind(ValueKind::U32)?;
-              t.set_raw(0,0,Value::U32(U32::new(num.as_u32())))?;
+              table_brrw.set_kind(ValueKind::U32)?;
+              table_brrw.set_raw(0,0,Value::U32(U32::new(num.as_u32())))?;
             }
             5..=8 => {
-              t.set_kind(ValueKind::U64)?;
-              t.set_raw(0,0,Value::U64(U64::new(num.as_u64())))?;
+              table_brrw.set_kind(ValueKind::U64)?;
+              table_brrw.set_raw(0,0,Value::U64(U64::new(num.as_u64())))?;
             }
             9..=16 => {
-              t.set_kind(ValueKind::U128)?;
-              t.set_raw(0,0,Value::U128(U128::new(num.as_u128())))?;
+              table_brrw.set_kind(ValueKind::U128)?;
+              table_brrw.set_raw(0,0,Value::U128(U128::new(num.as_u128())))?;
             }
             _ => {return Err(MechError{id: 2121, kind: MechErrorKind::GenericError("Too many bytes in number".to_string())});},
           }
         } 
         else if *kind == *cHEX {
           let mut x: u128 = 0;
-          t.set_kind(ValueKind::U128)?;
+          table_brrw.set_kind(ValueKind::U128)?;
           while bytes.len() < 16 {
             bytes.insert(0,0);
           }
@@ -809,7 +819,7 @@ impl Block {
             x = x << 4;
             x = x | half_byte as u128;
           }
-          t.set_raw(0,0,Value::U128(U128::new(x)))?;
+          table_brrw.set_raw(0,0,Value::U128(U128::new(x)))?;
         }
         else {
           return Err(MechError{id: 2122, kind: MechErrorKind::UnknownColumnKind(*kind)});
