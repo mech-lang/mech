@@ -310,7 +310,6 @@ impl Core {
         self.step(register);
       }
       self.schedule_blocks();
-      println!("!!!!!!!!!!!!!!{:?}", new_block_output);
       //self.recompile_dynamic_tables();
     }
     (block_ids,block_errors)

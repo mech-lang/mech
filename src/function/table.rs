@@ -1014,10 +1014,8 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
           }
         }
         TableShape::Dynamic(rows,cols) => {
-          println!("{:?}", argument);
           match block.get_arg_column(&argument) {
             Ok((_, arg_col,arg_ix)) => {
-              println!("{:?} {:?}", arg_col,arg_ix);
               let mut out_col = {
                 let mut o = out_table.borrow_mut();
                 o.resize(*max_rows,cols);
@@ -1025,10 +1023,7 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
                 o.get_column_unchecked(out_column_ix)
               };
               match (&arg_col, arg_ix, &out_col) {
-                (Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => {
-                  println!("FASDASDDDDDDDDDDDDDDDD");
-                  block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()})
-                },
+                (Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),
                 (Column::F32(arg), _, Column::F32(out)) => block.plan.push(CopyDD{arg: arg.clone(), out: out.clone(), out_table: out_table.clone()}),
                 (Column::U64(arg), _, Column::U64(out)) => block.plan.push(CopyDD{arg: arg.clone(), out: out.clone(), out_table: out_table.clone()}),
                 x => {return Err(MechError{id: 4997, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
