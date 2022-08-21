@@ -65,13 +65,20 @@ compare_infix_dd!(GreaterEqualDD,>=);
 compare_infix_dd!(EqualDD,==);
 compare_infix_dd!(NotEqualDD,!=);
 
-compare_eq_compiler!(CompareEqual,Foo,EqualVS,EqualSV,EqualVV,EqualDD);
-compare_eq_compiler!(CompareNotEqual,Foo,NotEqualVS,NotEqualSV,NotEqualVV,NotEqualDD);
+compare_infix_ds!(GreaterDS,>);
+compare_infix_ds!(LessDS,<);
+compare_infix_ds!(LessEqualDS,<=);
+compare_infix_ds!(GreaterEqualDS,>=);
+compare_infix_ds!(EqualDS,==);
+compare_infix_ds!(NotEqualDS,!=);
 
-compare_compiler!(CompareGreater,Foo,GreaterVS,GreaterSV,GreaterVV,GreaterDD);
-compare_compiler!(CompareLess,Foo,LessVS,LessSV,LessVV,LessDD);
-compare_compiler!(CompareGreaterEqual,Foo,GreaterEqualVS,GreaterEqualSV,GreaterEqualVV,GreaterEqualDD);
-compare_compiler!(CompareLessEqual,Foo,LessEqualVS,LessEqualSV,LessEqualVV,LessEqualDD);
+compare_eq_compiler!(CompareEqual,Foo,EqualVS,EqualSV,EqualVV,EqualDD,EqualDS);
+compare_eq_compiler!(CompareNotEqual,Foo,NotEqualVS,NotEqualSV,NotEqualVV,NotEqualDD,NotEqualDS);
+
+compare_compiler!(CompareGreater,Foo,GreaterVS,GreaterSV,GreaterVV,GreaterDD,GreaterDS);
+compare_compiler!(CompareLess,Foo,LessVS,LessSV,LessVV,LessDD,LessDS);
+compare_compiler!(CompareGreaterEqual,Foo,GreaterEqualVS,GreaterEqualSV,GreaterEqualVV,GreaterEqualDD,GreaterEqualDS);
+compare_compiler!(CompareLessEqual,Foo,LessEqualVS,LessEqualSV,LessEqualVV,LessEqualDD,LessEqualDS);
 
 // Vector : Vector
 #[macro_export]
@@ -283,9 +290,45 @@ macro_rules! compare_infix_dd {
   )
 }
 
+// Dynamic : Scalar
+#[macro_export]
+macro_rules! compare_infix_ds {
+  ($func_name:ident, $op:tt) => (
+    #[derive(Debug)]
+    pub struct $func_name<T,U> 
+    {
+      pub lhs: ColumnV<T>, 
+      pub rhs: ColumnV<U>, 
+      pub out: OutTable
+    }
+    impl<T,U> MechFunction for $func_name<T,U> 
+    where T: Clone + Debug + PartialEq + PartialOrd + Into<U>,
+          U: Clone + Debug + PartialEq + PartialOrd + Into<T>,
+    {
+      fn solve(&self) {
+        let lhs = &self.lhs.borrow();
+        let rhs = U::into(self.rhs.borrow()[0].clone());
+        let mut out_table_brrw = self.out.borrow_mut();
+        out_table_brrw.resize(lhs.len(),1);
+        let out_col = out_table_brrw.get_column_unchecked(0);
+        match out_col {
+          Column::Bool(out) => {
+            out.borrow_mut()
+                .iter_mut()
+                .zip(lhs.iter())
+                .for_each(|(out, lhs)| *out = *lhs $op rhs);
+          }
+          _ => (),
+        }
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
+}
+
 #[macro_export]
 macro_rules! compare_compiler {
-  ($func_name:ident, $op1:tt,$op2:tt,$op3:tt,$op4:tt,$op5:tt) => (
+  ($func_name:ident, $op1:tt,$op2:tt,$op3:tt,$op4:tt,$op5:tt,$op6:tt) => (
     pub struct $func_name {}
 
     impl MechFunctionCompiler for $func_name {
@@ -358,7 +401,22 @@ macro_rules! compare_compiler {
               x => {return Err(MechError{id: 7204, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }
-          x => {return Err(MechError{id: 7105, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+          (TableShape::Dynamic(lhs_rows,1),TableShape::Scalar) => {
+            let mut argument_columns = block.get_arg_columns(arguments)?;
+            let (out_table_id,_,_) = out;
+            let out_table = block.get_table(out_table_id)?;
+            {
+              let mut out_table_brrw = out_table.borrow_mut();
+              out_table_brrw.resize(*lhs_rows,1);
+              out_table_brrw.set_kind(ValueKind::Bool);
+            }
+            match (&argument_columns[0], &argument_columns[1]) {
+              ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_)) => {block.plan.push($op6{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_)) => {block.plan.push($op6{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              x => {return Err(MechError{id: 7205, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+            }
+          }
+          x => {return Err(MechError{id: 7106, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
         Ok(())
       }
@@ -368,7 +426,7 @@ macro_rules! compare_compiler {
 
 #[macro_export]
 macro_rules! compare_eq_compiler {
-  ($func_name:ident, $op1:tt,$op2:tt,$op3:tt,$op4:tt,$op5:tt) => (
+  ($func_name:ident, $op1:tt,$op2:tt,$op3:tt,$op4:tt,$op5:tt,$op6:tt) => (
     pub struct $func_name {}
 
     impl MechFunctionCompiler for $func_name {
