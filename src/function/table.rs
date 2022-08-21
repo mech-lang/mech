@@ -66,6 +66,33 @@ where T: Debug + Clone + Into<U> + Sync + Send,
 }
 
 
+// Copy Dynamic : Dynamic
+#[derive(Debug)]
+pub struct CopyDD<T,U> {
+  pub arg: ColumnV<T>,
+  pub out: ColumnV<U>,
+  pub out_table: OutTable,
+}
+impl<T,U> MechFunction for CopyDD<T,U> 
+where T: Debug + Clone + Into<U> + Sync + Send,
+      U: Debug + Clone + Sync + Send,
+{
+  fn solve(&self) {
+    let arg = self.arg.borrow();
+    let out = &self.out;
+    {
+      let mut out_table_brrw = self.out_table.borrow_mut();
+      let cols = out_table_brrw.cols;
+      out_table_brrw.resize(arg.len(),cols);
+    }
+    out.borrow_mut()
+       .iter_mut()
+       .zip(arg.iter())
+       .for_each(|(out, arg)| *out = T::into(arg.clone())); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 // Copy Vector : Vector
 #[derive(Debug)]
 pub struct CopyVIV<T,U> {
@@ -977,8 +1004,27 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
             out_column_ix += 1;
           }
         }
-        TableShape::Pending(table_id) => { return Err(MechError{id: 4902, kind: MechErrorKind::PendingTable(table_id)}); },
-        x => {return Err(MechError{id: 4503, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+        TableShape::Dynamic(rows,cols) => {
+          match block.get_arg_column(&argument) {
+            Ok((_, arg_col,arg_ix)) => {
+              let mut out_col = {
+                let mut o = out_table.borrow_mut();
+                o.resize(*max_rows,cols);
+                o.set_col_kind(out_column_ix, arg_col.kind());
+                o.get_column_unchecked(out_column_ix)
+              };
+              match (&arg_col, arg_ix, &out_col) {
+                (Column::F32(arg), _, Column::F32(out)) => block.plan.push(CopyDD{arg: arg.clone(), out: out.clone(), out_table: out_table.clone()}),
+                (Column::U64(arg), _, Column::U64(out)) => block.plan.push(CopyDD{arg: arg.clone(), out: out.clone(), out_table: out_table.clone()}),
+                x => {return Err(MechError{id: 4997, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+              };
+              out_column_ix += 1;
+            } 
+            x => {return Err(MechError{id: 4998, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+          }
+        }
+        TableShape::Pending(table_id) => { return Err(MechError{id: 4903, kind: MechErrorKind::PendingTable(table_id)}); },
+        x => {return Err(MechError{id: 4999, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
       }
     }
     Ok(())

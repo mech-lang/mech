@@ -431,7 +431,7 @@ impl Table {
         }
         Ok(cols)
       },
-      x => {Err(MechError{id: 7014, kind: MechErrorKind::GenericError(format!("{:?}",x))})}
+      x => {Err(MechError{id: 7044, kind: MechErrorKind::GenericError(format!("{:?}",x))})}
     }
   }
 
