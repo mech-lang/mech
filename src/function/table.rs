@@ -185,6 +185,7 @@ pub struct CopyVB<T,U> {
   pub arg: ColumnV<T>,
   pub bix: ColumnV<bool>,
   pub out: ColumnV<U>,
+  pub out_table: OutTable,
 }
 impl<T,U> MechFunction for CopyVB<T,U> 
 where T: Debug + Clone + Into<U> + Sync + Send,
@@ -199,11 +200,15 @@ where T: Debug + Clone + Into<U> + Sync + Send,
          .zip(self.bix.borrow().iter())
          .filter_map(|(x,ix)| if *ix {Some(x.clone())} else {None})
          .collect::<Vec<U>>();
-    let mut out_brrw = self.out.borrow_mut();
     let rows = filtered.len();
-    if rows > out_brrw.len() {
-      out_brrw.resize(rows,filtered[0].clone());
+    {
+      let mut out_table_brrw = self.out_table.borrow_mut();
+      if rows > out_table_brrw.rows {
+        let cols = out_table_brrw.cols;
+        out_table_brrw.resize(rows,cols);
+      }
     }
+    let mut out_brrw = self.out.borrow_mut();
     for row in 0..filtered.len() {
       out_brrw[row] = filtered[row].clone();
     }
@@ -914,33 +919,33 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
               };
               match (&arg_col, arg_ix, &out_col) {
                 (Column::Any(arg), ColumnIndex::All, Column::Any(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
-                (Column::Any(arg), ColumnIndex::Bool(bix), Column::Any(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
+                (Column::Any(arg), ColumnIndex::Bool(bix), Column::Any(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),
                 (Column::Time(arg), ColumnIndex::All, Column::Time(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
-                (Column::Time(arg), ColumnIndex::Bool(bix), Column::Time(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
+                (Column::Time(arg), ColumnIndex::Bool(bix), Column::Time(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),
                 (Column::Speed(arg), ColumnIndex::All, Column::Speed(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
-                (Column::Speed(arg), ColumnIndex::Bool(bix), Column::Speed(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
+                (Column::Speed(arg), ColumnIndex::Bool(bix), Column::Speed(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),
                 (Column::Length(arg), ColumnIndex::All, Column::Length(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
-                (Column::Length(arg), ColumnIndex::Bool(bix), Column::Length(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
+                (Column::Length(arg), ColumnIndex::Bool(bix), Column::Length(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),
                 (Column::F32(arg), ColumnIndex::All, Column::F32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
-                (Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
+                (Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),
                 (Column::F64(arg), ColumnIndex::All, Column::F64(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
-                (Column::F64(arg), ColumnIndex::Bool(bix), Column::F64(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
+                (Column::F64(arg), ColumnIndex::Bool(bix), Column::F64(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),
                 (Column::U8(arg), ColumnIndex::All, Column::U8(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
-                (Column::U8(arg), ColumnIndex::Bool(bix), Column::U8(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),                
+                (Column::U8(arg), ColumnIndex::Bool(bix), Column::U8(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),                
                 (Column::U16(arg), ColumnIndex::All, Column::U16(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
-                (Column::U16(arg), ColumnIndex::Bool(bix), Column::U16(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),                
+                (Column::U16(arg), ColumnIndex::Bool(bix), Column::U16(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),                
                 (Column::U32(arg), ColumnIndex::All, Column::U32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
-                (Column::U32(arg), ColumnIndex::Bool(bix), Column::U32(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),                
+                (Column::U32(arg), ColumnIndex::Bool(bix), Column::U32(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),                
                 (Column::U64(arg), ColumnIndex::All, Column::U64(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
-                (Column::U64(arg), ColumnIndex::Bool(bix), Column::U64(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),        
+                (Column::U64(arg), ColumnIndex::Bool(bix), Column::U64(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),        
                 (Column::U128(arg), ColumnIndex::All, Column::U128(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
-                (Column::U128(arg), ColumnIndex::Bool(bix), Column::U128(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),        
+                (Column::U128(arg), ColumnIndex::Bool(bix), Column::U128(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),        
                 (Column::String(arg), ColumnIndex::All, Column::String(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
                 (Column::String(arg), ColumnIndex::Bool(bix), Column::String(out)) => {
                   block.plan.push(CopyVBT{arg: arg.clone(), bix: bix.clone(), out: out.clone(), table: out_table.clone()});
                 },        
                 (Column::Bool(arg), ColumnIndex::All, Column::Bool(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
-                (Column::Bool(arg), ColumnIndex::Bool(bix), Column::Bool(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),        
+                (Column::Bool(arg), ColumnIndex::Bool(bix), Column::Bool(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),        
                 (Column::Ref(arg), ColumnIndex::All, Column::Ref(out)) => block.plan.push(CopyVVRef{arg: arg.clone(), out: out.clone()}),
                 (Column::F32(arg), ColumnIndex::RealIndex(ix), Column::F32(out)) => {
                   let mut out_col = {
@@ -958,22 +963,24 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
         }
         TableShape::Row(_) => {
           for (_, arg_col,arg_ix) in block.get_whole_table_arg_cols(&argument)? {
-            let mut o = out_table.borrow_mut();
-            o.resize(*max_rows,cols);
-            o.set_col_kind(out_column_ix, arg_col.kind());
-            let mut out_col = o.get_column_unchecked(out_column_ix);
+            let mut out_col = {
+              let mut o = out_table.borrow_mut();
+              o.resize(*max_rows,cols);
+              o.set_col_kind(out_column_ix, arg_col.kind());
+              o.get_column_unchecked(out_column_ix)
+            };
             match (&arg_col, &arg_ix, &out_col) {
               (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
-              (Column::U8(arg), ColumnIndex::Bool(bix), Column::U8(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),                
+              (Column::U8(arg), ColumnIndex::Bool(bix), Column::U8(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),                
               (Column::U8(arg), ColumnIndex::All, Column::U8(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
               (Column::F32(arg), ColumnIndex::Index(ix), Column::F32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
-              (Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),                
+              (Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),                
               (Column::F32(arg), ColumnIndex::All, Column::F32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
               (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
-              (Column::String(arg), ColumnIndex::Bool(bix), Column::String(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),                
+              (Column::String(arg), ColumnIndex::Bool(bix), Column::String(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),                
               (Column::String(arg), ColumnIndex::All, Column::String(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
               (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
-              (Column::Bool(arg), ColumnIndex::Bool(bix), Column::Bool(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),                
+              (Column::Bool(arg), ColumnIndex::Bool(bix), Column::Bool(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),                
               (Column::Bool(arg), ColumnIndex::All, Column::Bool(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
               (Column::Ref(arg), ColumnIndex::All, Column::Ref(out)) => block.plan.push(CopySSRef{arg: arg.clone(), ix: 0, out: out.clone()}),
               (Column::Ref(arg), ColumnIndex::Index(ix), Column::Ref(out)) => block.plan.push(CopySSRef{arg: arg.clone(), ix: *ix, out: out.clone()}),
@@ -985,18 +992,20 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
         }
         TableShape::Matrix(_,_) => {
           for (_, arg_col,arg_ix) in block.get_whole_table_arg_cols(&argument)? {
-            let mut o = out_table.borrow_mut();
-            o.resize(*max_rows,cols);
-            o.set_col_kind(out_column_ix, arg_col.kind());
-            let mut out_col = o.get_column_unchecked(out_column_ix);
+            let mut out_col = {
+              let mut o = out_table.borrow_mut();
+              o.resize(*max_rows,cols);
+              o.set_col_kind(out_column_ix, arg_col.kind());
+              o.get_column_unchecked(out_column_ix)
+            };
             match (&arg_col, &arg_ix, &out_col) {
-              (Column::U8(arg), ColumnIndex::Bool(bix), Column::U8(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
+              (Column::U8(arg), ColumnIndex::Bool(bix), Column::U8(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),
               (Column::U8(arg), ColumnIndex::All, Column::U8(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
-              (Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
+              (Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),
               (Column::F32(arg), ColumnIndex::All, Column::F32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
-              (Column::String(arg), ColumnIndex::Bool(bix), Column::String(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
+              (Column::String(arg), ColumnIndex::Bool(bix), Column::String(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),
               (Column::String(arg), ColumnIndex::All, Column::String(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
-              (Column::Bool(arg), ColumnIndex::Bool(bix), Column::Bool(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
+              (Column::Bool(arg), ColumnIndex::Bool(bix), Column::Bool(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),
               (Column::Bool(arg), ColumnIndex::All, Column::Bool(out)) => block.plan.push(CopyVV{arg: (arg.clone(),0,arg.len()-1), out: (out.clone(),0,arg.len()-1)}),
               (Column::Ref(arg), ColumnIndex::All, Column::Ref(out)) => block.plan.push(CopyVVRef{arg: arg.clone(), out: out.clone()}),
               x => {return Err(MechError{id: 4901, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
@@ -1005,8 +1014,10 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
           }
         }
         TableShape::Dynamic(rows,cols) => {
+          println!("{:?}", argument);
           match block.get_arg_column(&argument) {
             Ok((_, arg_col,arg_ix)) => {
+              println!("{:?} {:?}", arg_col,arg_ix);
               let mut out_col = {
                 let mut o = out_table.borrow_mut();
                 o.resize(*max_rows,cols);
@@ -1014,6 +1025,10 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
                 o.get_column_unchecked(out_column_ix)
               };
               match (&arg_col, arg_ix, &out_col) {
+                (Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => {
+                  println!("FASDASDDDDDDDDDDDDDDDD");
+                  block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()})
+                },
                 (Column::F32(arg), _, Column::F32(out)) => block.plan.push(CopyDD{arg: arg.clone(), out: out.clone(), out_table: out_table.clone()}),
                 (Column::U64(arg), _, Column::U64(out)) => block.plan.push(CopyDD{arg: arg.clone(), out: out.clone(), out_table: out_table.clone()}),
                 x => {return Err(MechError{id: 4997, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
@@ -1772,13 +1787,16 @@ impl MechFunctionCompiler for TableDefine {
           }
           _ => {
             let (_, arg_col,arg_ix) = block.get_arg_column(&argument)?;
-            let mut out_brrw = out_table.borrow_mut();
-            out_brrw.set_kind(arg_col.kind());
-            let out_col = out_brrw.get_column_unchecked(0);    
+            let out_col = {
+              let mut out_brrw = out_table.borrow_mut();
+              out_brrw.set_kind(arg_col.kind());
+              out_brrw.get_column_unchecked(0)
+            };   
             match (&arg_col, &arg_ix, &out_col) {
-              (Column::U8(arg), ColumnIndex::Bool(bix), Column::U8(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
+              (Column::U8(arg), ColumnIndex::Bool(bix), Column::U8(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),
               (Column::U8(arg), ColumnIndex::Index(ix), Column::U8(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
-              (Column::U8(arg), ColumnIndex::IndexCol(ix_col), Column::U8(out)) => block.plan.push(CopyVI{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),(Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
+              (Column::U8(arg), ColumnIndex::IndexCol(ix_col), Column::U8(out)) => block.plan.push(CopyVI{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
+              (Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),
               (Column::F32(arg), ColumnIndex::Index(ix), Column::F32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
               (Column::F32(arg), ColumnIndex::IndexCol(ix_col), Column::F32(out)) => block.plan.push(CopyVI{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
               x => {return Err(MechError{id: 4929, kind: MechErrorKind::GenericError(format!("{:?}", x))});},            }
@@ -1787,16 +1805,19 @@ impl MechFunctionCompiler for TableDefine {
       }
       (TableIndex::IxTable(ix_table_id), TableIndex::All) => {
         let src_brrw = src_table.borrow();
-        let mut out_brrw = out_table.borrow_mut();
-        out_brrw.resize(1,src_brrw.cols);
-        out_brrw.set_kind(src_brrw.kind());
         for col in 0..src_brrw.cols {
           let (_, arg_col,arg_ix) = block.get_arg_column(&(0,table_id,vec![(row.clone(),TableIndex::Index(col+1))]))?;
-          let mut out_col = out_brrw.get_column_unchecked(col); 
+          let mut out_col = {
+            let mut out_brrw = out_table.borrow_mut();
+            out_brrw.resize(1,src_brrw.cols);
+            out_brrw.set_kind(src_brrw.kind());
+            out_brrw.get_column_unchecked(col)
+          };
           match (&arg_col, &arg_ix, &out_col) {
-            (Column::U8(arg), ColumnIndex::Bool(bix), Column::U8(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
-            (Column::U8(arg), ColumnIndex::IndexCol(ix_col), Column::U8(out)) => block.plan.push(CopyVI{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),(Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
-            (Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone()}),
+            (Column::U8(arg), ColumnIndex::Bool(bix), Column::U8(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),
+            (Column::U8(arg), ColumnIndex::IndexCol(ix_col), Column::U8(out)) => block.plan.push(CopyVI{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
+            (Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),
+            (Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),
             (Column::F32(arg), ColumnIndex::IndexCol(ix_col), Column::F32(out)) => block.plan.push(CopyVI{arg: arg.clone(), ix: ix_col.clone(), out: out.clone()}),
             x => {return Err(MechError{id: 4930, kind: MechErrorKind::GenericError(format!("{:?}", x))});},          }
         }
