@@ -804,7 +804,7 @@ block
   
 block
   ix = #foo.x > 50
-  #test = #foo{ix, :}", Value::F32(F32::new(100.0)));
+  #test = #foo.x{ix}", Value::F32(F32::new(100.0)));
 
 test_mech!(append_row_expression,"
 block
@@ -863,13 +863,13 @@ block
 
 test_mech!(append_arbitrary_kinds_x,"
 block
-  #x = [|x<f32> y<f32> z<f32>|]
+  #x = [|x<u64> y<f32> z<f32>|]
 
 block
   #x += [y: 10, x: 99<u64>]
 
 block
-  #test = #x.x", Value::F32(F32::new(99.0))); 
+  #test = #x.x", Value::U64(U64::new(99))); 
     
 test_mech!(append_arbitrary_types_y,"
 block
@@ -911,7 +911,7 @@ block
 
 test_mech!(append_inline_two_rows_set,"
 block
-  #x = [|x<f32> y<u8>|]
+  #x = [|x<f32> y<f32>|]
 block
   #x += [x: 10]
 block
@@ -935,13 +935,10 @@ block
 test_mech!(append_unordered,r#"
 block
   #x = 1
-
 block
   #y = #x
-
 block
   #x += 2
-
 block
   #test = stats/sum(column: #y)"#, Value::F32(F32::new(3.0)));  
 
