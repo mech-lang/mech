@@ -249,8 +249,11 @@ impl ProgramRunner {
 
       match program.download_dependencies(Some(client_outgoing.clone())) {
         Ok(resolved_errors) => {
-          program.mech.resolve_errors(&resolved_errors);
+          let (_,_,nbo) = program.mech.resolve_errors(&resolved_errors);
           program.mech.schedule_blocks();
+          for output in nbo {
+            program.mech.step(&output);
+          }
         }
         Err(err) => {
           //println!("{:?}", err);
@@ -568,8 +571,11 @@ impl ProgramRunner {
             if new_block_errors.len() > 0 {
               match program.download_dependencies(Some(client_outgoing.clone())) {
                 Ok(resolved_errors) => {
-                  program.mech.resolve_errors(&resolved_errors);
+                  let (_,_,nbo) = program.mech.resolve_errors(&resolved_errors);
                   program.mech.schedule_blocks();
+                  for output in nbo {
+                    program.mech.step(&output);
+                  }
                 }
                 Err(err) => {
                   //println!("{:?}", err);
