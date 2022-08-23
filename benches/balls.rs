@@ -26,7 +26,7 @@ use num_traits::*;
 use std::ops::*;
 
 #[bench]
-fn bouncing_ballss(b:&mut Bencher){
+fn bouncing_balls(b:&mut Bencher){
  
   let n = 1e6 as usize;
 

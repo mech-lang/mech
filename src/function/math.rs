@@ -94,11 +94,18 @@ binary_infix_par_sv!(ParMulSV,mul);
 binary_infix_par_sv!(ParDivSV,div);
 binary_infix_par_sv!(ExpParSV,pow);
 
-math_compiler!(MathAdd,AddSS,AddSV,AddVS,AddVV);
-math_compiler!(MathSub,SubSS,SubSV,SubVS,SubVV);
-math_compiler!(MathMul,MulSS,MulSV,MulVS,MulVV);
-math_compiler!(MathDiv,DivSS,DivSV,DivVS,DivVV);
-math_compiler!(MathExp,ExpSS,ExpSV,ExpVS,ExpVV);
+// Dynamic : Dynamic
+binary_infix_dd!(AddDD,add);
+binary_infix_dd!(SubDD,sub);
+binary_infix_dd!(MulDD,mul);
+binary_infix_dd!(DivDD,div);
+binary_infix_dd!(ExpDD,pow);
+
+math_compiler!(MathAdd,AddSS,AddSV,AddVS,AddVV,AddDD);
+math_compiler!(MathSub,SubSS,SubSV,SubVS,SubVV,SubDD);
+math_compiler!(MathMul,MulSS,MulSV,MulVS,MulVV,MulDD);
+math_compiler!(MathDiv,DivSS,DivSV,DivVS,DivVV,DivDD);
+math_compiler!(MathExp,ExpSS,ExpSV,ExpVS,ExpVV,ExpDD);
 
 // Negate Vector
 #[derive(Debug)]
@@ -374,6 +381,38 @@ macro_rules! binary_infix_par_sv {
   )
 }
 
+#[macro_export]
+macro_rules! binary_infix_dd {
+  ($func_name:ident, $op:tt) => (
+
+    #[derive(Debug)]
+    pub struct $func_name<T,U,V> {
+      pub lhs: ColumnV<T>, 
+      pub rhs: ColumnV<U>,
+      pub out_col: ColumnV<V>, 
+      pub out: OutTable,
+    }
+    impl<T,U,V> MechFunction for $func_name<T,U,V> 
+    where T: Copy + Debug + Clone + MechNumArithmetic<T> + Into<V>  + Sync + Send,
+          U: Copy + Debug + Clone + MechNumArithmetic<U> + Into<V> + Sync + Send,
+          V: Copy + Debug + Clone + MechNumArithmetic<V> + Sync + Send,
+    {
+      fn solve(&self) {
+        let lhs = &self.lhs.borrow();
+        let rhs = &self.rhs.borrow();
+        let mut out_table_brrw = self.out.borrow_mut();
+        out_table_brrw.resize(lhs.len(),1);
+        self.out_col.borrow_mut()
+                    .iter_mut()
+                    .zip(lhs.iter().map(|x| T::into(*x)))
+                    .zip(rhs.iter().map(|x| U::into(*x)))
+                    .for_each(|((out, lhs),rhs)| *out = lhs.$op(rhs));   
+      }
+      fn to_string(&self) -> String { format!("{:#?}", self)}
+    }
+  )
+}
+
 pub struct MathNegate{}
 
 impl MechFunctionCompiler for MathNegate {
@@ -407,6 +446,7 @@ impl MechFunctionCompiler for MathNegate {
   }
 }
 
+/*
 #[derive(Debug)]
 pub struct ConcatVV<T,U> {
   pub lhs: (ColumnV<T>, usize, usize),
@@ -428,13 +468,11 @@ where T: Copy + Debug + Clone + Sync + Send,
               *out = MechString::from_string(format!("{:?}{:?}", lhs, *rhs))); 
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
-}
-
-
+}*/
 
 #[macro_export]
 macro_rules! math_compiler {
-  ($func_name:ident, $op1:tt,$op2:tt,$op3:tt,$op4:tt) => (
+  ($func_name:ident, $op1:tt,$op2:tt,$op3:tt,$op4:tt,$op5:tt) => (
 
     pub struct $func_name {}
 
@@ -575,7 +613,7 @@ macro_rules! math_compiler {
           }                   
           (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
             if lhs_rows != rhs_rows {
-              return Err(MechError{id: 6007, kind: MechErrorKind::DimensionMismatch(((*lhs_rows,0),(*rhs_rows,0)))});
+              return Err(MechError{id: 6007, kind: MechErrorKind::DimensionMismatch(vec![(*lhs_rows,0),(*rhs_rows,0)])});
             }
             let mut argument_columns = block.get_arg_columns(arguments)?;
             let (_,col,_) = &argument_columns[0];
@@ -657,7 +695,7 @@ macro_rules! math_compiler {
             let rhs_rows = 1;
 
             if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
-              return Err(MechError{id: 6011, kind: MechErrorKind::DimensionMismatch(((lhs_rows,*lhs_cols),(rhs_rows,*rhs_cols)))});
+              return Err(MechError{id: 6011, kind: MechErrorKind::DimensionMismatch(vec![(lhs_rows,*lhs_cols),(rhs_rows,*rhs_cols)])});
             }
 
             let lhs_columns = block.get_whole_table_arg_cols(&arguments[0])?;
@@ -698,7 +736,7 @@ macro_rules! math_compiler {
           (TableShape::Matrix(lhs_rows,lhs_cols), TableShape::Matrix(rhs_rows,rhs_cols)) => {
            
             if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
-              return Err(MechError{id: 6011, kind: MechErrorKind::DimensionMismatch(((*lhs_rows,*lhs_cols),(*rhs_rows,*rhs_cols)))});
+              return Err(MechError{id: 6011, kind: MechErrorKind::DimensionMismatch(vec![(*lhs_rows,*lhs_cols),(*rhs_rows,*rhs_cols)])});
             }
 
             let lhs_columns = block.get_whole_table_arg_cols(&arguments[0])?;
@@ -729,9 +767,25 @@ macro_rules! math_compiler {
               }
             }
           }
-          (TableShape::Pending(table_id),_) => { return Err(MechError{id: 6013, kind: MechErrorKind::PendingTable(*table_id)}); }
-          (_,TableShape::Pending(table_id)) => {return Err(MechError{id: 6014, kind: MechErrorKind::PendingTable(*table_id)}); },
-          x => {return Err(MechError{id: 6015, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+          (TableShape::Dynamic(lhs_rows,1),TableShape::Dynamic(rhs_rows,1)) => {
+            if lhs_rows != rhs_rows {
+              return Err(MechError{id: 6013, kind: MechErrorKind::DimensionMismatch(vec![(*lhs_rows,0),(*rhs_rows,0)])});
+            }
+            let mut argument_columns = block.get_arg_columns(arguments)?;
+            let (_,col,_) = &argument_columns[0];
+            let (out_table_id,_,_) = out;
+            let out_table = block.get_table(out_table_id)?;
+            let out_column = block.get_out_column(out, *lhs_rows, col.kind())?;
+            match (&argument_columns[0], &argument_columns[1],out_column) {
+              ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_),Column::U8(out)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out_col: out, out: out_table.clone()})}
+              ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_),Column::F32(out)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out_col: out, out: out_table.clone()})}
+              ((_,Column::U8(lhs),_), (_,Column::F32(rhs),_),Column::U8(out)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out_col: out, out: out_table.clone()})}
+              x => {return Err(MechError{id: 6014, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+            }
+          }
+          (TableShape::Pending(table_id),_) => { return Err(MechError{id: 6015, kind: MechErrorKind::PendingTable(*table_id)}); }
+          (_,TableShape::Pending(table_id)) => {return Err(MechError{id: 6016, kind: MechErrorKind::PendingTable(*table_id)}); },
+          x => {return Err(MechError{id: 6017, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
         Ok(())
       }
