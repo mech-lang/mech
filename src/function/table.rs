@@ -784,7 +784,10 @@ impl MechFunctionCompiler for TableVerticalConcatenate {
           let mut out_ix = 0;
           for arg_col in arg_cols {
             match arg_col {
-              Column::String(arg) => {block.plan.push(CopyVV{arg:(arg.clone(),0,arg.len()-1), out: (out.clone(),out_ix,out_ix+arg.len()-1)});out_ix += arg.len();},
+              Column::String(arg) => {
+                if arg.len() == 0 {continue;}
+                block.plan.push(CopyVV{arg:(arg.clone(),0,arg.len()-1), out: (out.clone(),out_ix,out_ix+arg.len()-1)});out_ix += arg.len();
+              },
               x => {return Err(MechError{id: 4893, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }
