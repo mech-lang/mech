@@ -186,6 +186,29 @@ impl MechFunction for NotV {
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+// Not Dynamic
+#[derive(Debug)]
+pub struct NotD {
+  pub arg: ColumnV<bool>, 
+  pub out: ColumnV<bool>,
+  pub out_table: OutTable,
+}
+
+impl MechFunction for NotD {
+  fn solve(&self) {
+    let arg = self.arg.borrow();
+    {
+      let mut out_table_brrw = self.out_table.borrow_mut();
+      out_table_brrw.resize(arg.len(),1);
+    }
+    self.out.borrow_mut()
+            .iter_mut()
+            .zip(arg.iter())
+            .for_each(|(out, arg)| *out = !(*arg)); 
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 // Not Scalar
 #[derive(Debug)]
 pub struct NotS
@@ -224,6 +247,18 @@ impl MechFunctionCompiler for LogicNot {
             block.plan.push(NotS{arg: arg.clone(), out: out.clone() });
           }
           x => {return Err(MechError{id: 8214, kind: MechErrorKind::GenericError(format!("{:?}",x))});},
+        }
+      }
+      TableShape::Dynamic(rows,1) => {
+        let (out_table_id,_,_) = &out;
+        let out_table = block.get_table(out_table_id)?;
+        let mut argument_columns = block.get_arg_columns(arguments)?;
+        let out_column = block.get_out_column(out, *rows, ValueKind::Bool)?;
+        match (&argument_columns[0], &out_column) {
+          ((_,Column::Bool(arg),_), Column::Bool(out)) => {
+            block.plan.push(NotD{arg: arg.clone(), out: out.clone(), out_table: out_table.clone() });
+          }
+          x => {return Err(MechError{id: 8213, kind: MechErrorKind::GenericError(format!("{:?}",x))});},
         }
       }
       TableShape::Pending(table_id) => {return Err(MechError{id: 8215, kind: MechErrorKind::PendingTable(*table_id)});},

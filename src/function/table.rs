@@ -1022,6 +1022,7 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
               let mut out_col = {
                 let mut o = out_table.borrow_mut();
                 o.resize(*max_rows,cols);
+                o.dynamic = true;
                 o.set_col_kind(out_column_ix, arg_col.kind());
                 o.get_column_unchecked(out_column_ix)
               };
@@ -1722,7 +1723,7 @@ impl MechFunctionCompiler for TableDefine {
     {
       let src_table_brrw = src_table.borrow();
       let mut out_table_brrw = out_table.borrow_mut();
-      if src_table_brrw.dynamic && !out_table_brrw.dynamic {
+      if (src_table_brrw.dynamic && !out_table_brrw.dynamic) || (src_table_brrw.rows == 0) {
         out_table_brrw.dynamic = true;
         block.dynamic_tables.insert((out_table_id.clone(),RegisterIndex::All,RegisterIndex::All));
       }
