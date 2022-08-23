@@ -1024,6 +1024,7 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
               };
               match (&arg_col, arg_ix, &out_col) {
                 (Column::F32(arg), ColumnIndex::Bool(bix), Column::F32(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),
+                (Column::String(arg), ColumnIndex::Bool(bix), Column::String(out)) => block.plan.push(CopyVB{arg: arg.clone(), bix: bix.clone(), out: out.clone(), out_table: out_table.clone()}),
                 (Column::F32(arg), _, Column::F32(out)) => block.plan.push(CopyDD{arg: arg.clone(), out: out.clone(), out_table: out_table.clone()}),
                 (Column::U64(arg), _, Column::U64(out)) => block.plan.push(CopyDD{arg: arg.clone(), out: out.clone(), out_table: out_table.clone()}),
                 x => {return Err(MechError{id: 4997, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
