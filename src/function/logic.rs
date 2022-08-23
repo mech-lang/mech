@@ -252,6 +252,10 @@ impl MechFunctionCompiler for LogicNot {
       TableShape::Dynamic(rows,1) => {
         let (out_table_id,_,_) = &out;
         let out_table = block.get_table(out_table_id)?;
+        {
+          let mut out_table_brrw = out_table.borrow_mut();
+          out_table_brrw.dynamic = true;
+        }
         let mut argument_columns = block.get_arg_columns(arguments)?;
         let out_column = block.get_out_column(out, *rows, ValueKind::Bool)?;
         match (&argument_columns[0], &out_column) {
