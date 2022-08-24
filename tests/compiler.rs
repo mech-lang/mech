@@ -41,15 +41,17 @@ macro_rules! test_mech {
       let mut core = Core::new();
 
       let input = String::from($input);
-      let blocks = compiler.compile_str(&input)?;
+      let sections = compiler.compile_str(&input)?;
       
-      for block in blocks {
-        let (_,errors,new_block_output) = core.load_block(Rc::new(RefCell::new(block)));
-        for register in new_block_output.iter() {
-          core.step(register);
+      for section in sections {
+        for block in section {
+          let (_,errors,new_block_output) = core.load_block(Rc::new(RefCell::new(block)));
+          for register in new_block_output.iter() {
+            core.step(register);
+          }
+          core.schedule_blocks();
+          assert!(errors.len() == 0);
         }
-        core.schedule_blocks();
-        assert!(errors.len() == 0);
       }
 
       let test: Value = $test;
@@ -73,9 +75,9 @@ macro_rules! test_mech_txn {
       let mut core = Core::new();
 
       let input = String::from($input);
-      let blocks = compiler.compile_str(&input)?;
+      let sections = compiler.compile_str(&input)?;
       
-      core.load_blocks(blocks);
+      core.load_sections(sections);
       
       core.schedule_blocks()?;
 
