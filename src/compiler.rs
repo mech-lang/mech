@@ -22,14 +22,29 @@ use std::mem;
 fn get_sections(nodes: &Vec<Node>) -> Vec<Vec<Node>> {
   let mut sections: Vec<Vec<Node>> = Vec::new();
   let mut statements = Vec::new();
+  let mut blocks = vec![];
   for n in nodes {
     match n {
+      Node::Section{children,..} => {
+        for child in children {
+          match child {
+            Node::Block{children} => {
+              blocks.push(child.clone());
+            }
+            Node::Statement{children} => {
+              statements.append(&mut children.clone());
+            }
+            _ => (),
+          }
+        }
+        sections.push(blocks.clone());
+        blocks.clear();
+      },
       Node::Root{children} |
       Node::Body{children} |
-      Node::Section{children,..} |
       Node::Program{children,..} |
       Node::Fragment{children} => {
-        sections.push(get_blocks(children));
+        sections.append(&mut get_sections(children));
       }
       _ => (), 
     }
