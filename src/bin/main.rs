@@ -21,11 +21,13 @@ fn main() -> Result<(),MechError> {
 
 let input = r#"
 block
-  #x = 10
+  #foo = [|x y z|
+           5 6 7]
 block
-  #x :-= 3
-"#;
-
+  #foo += [x: 100 y: 110 z: 120]
+block
+  ix = #foo.x > 50
+  #test = #foo.x{ix}"#;
   let input = String::from(input);
 
   let mut ast = Ast::new();
@@ -90,14 +92,14 @@ block
     ];
     core.process_transaction(&txn)?;
     println!("{:#?}", core.get_table("balls").unwrap().borrow());
-  }
-  let txn: Vec<Change> = vec![
-    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Alias(hash_str("ticks")), Value::U64(U64::new(1)))])),
-    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Alias(hash_str("ticks")), Value::U64(U64::new(2)))])),
-  ];
-  println!("Processing Txn...");
-  core.process_transaction(&txn);
-  println!("Done Txn.");*/
+  }*/
+  //let txn: Vec<Change> = vec![
+    //Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Alias(hash_str("ticks")), Value::U64(U64::new(1)))])),
+    //Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Alias(hash_str("ticks")), Value::U64(U64::new(2)))])),
+  //];
+  //println!("Processing Txn...");
+  //core.process_transaction(&txn);
+  //println!("Done Txn.");
   //println!("{:#?}", core.blocks);
 
   //println!("Core:");

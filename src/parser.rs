@@ -65,7 +65,7 @@ pub enum Node {
   UpdateData{ children: Vec<Node> },
   SetOperator{ children: Vec<Node> },
   SplitData{ children: Vec<Node> },
-  JoinData{ children: Vec<Node> },
+  FlattenData{ children: Vec<Node> },
   AddOperator{ children: Vec<Node> },
   WatchOperator {children: Vec<Node>},
   Equality{ children: Vec<Node> },
@@ -258,7 +258,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::SetData{children} => {print!("SetData\n"); Some(children)},
     Node::UpdateData{children} => {print!("UpdateData\n"); Some(children)},
     Node::SplitData{children} => {print!("SplitData\n"); Some(children)},
-    Node::JoinData{children} => {print!("JoinData\n"); Some(children)},
+    Node::FlattenData{children} => {print!("FlattenData\n"); Some(children)},
     Node::Wait{children} => {print!("Wait\n"); Some(children)},
     Node::Until{children} => {print!("Until\n"); Some(children)},
     Node::SetOperator{children} => {print!("SetOperator\n"); Some(children)},
@@ -705,7 +705,7 @@ fn number(input: ParseString) -> ParseResult<Node> {
 }
 
 fn punctuation(input: ParseString) -> ParseResult<Node> {
-  let (input, punctuation) = alt((period, exclamation, question, comma, colon, semicolon, dash, apostrophe, left_parenthesis, right_parenthesis, left_angle, right_angle, left_brace, right_brace))(input)?;
+  let (input, punctuation) = alt((period, exclamation, question, comma, colon, semicolon, dash, apostrophe, left_parenthesis, right_parenthesis, left_angle, right_angle, left_brace, right_brace, left_bracket, right_bracket))(input)?;
   Ok((input, Node::Punctuation{children: vec![punctuation]}))
 }
 
@@ -748,6 +748,26 @@ fn boolean_literal(input: ParseString) -> ParseResult<Node> {
 }
 
 fn true_literal(input: ParseString) -> ParseResult<Node> {
+  let (input, _) = alt((english_true_literal,true_symbol))(input)?;
+  Ok((input, Node::True))
+}
+
+fn false_literal(input: ParseString) -> ParseResult<Node> {
+  let (input, _) = alt((english_false_literal,false_symbol))(input)?;
+  Ok((input, Node::False))
+}
+
+fn true_symbol(input: ParseString) -> ParseResult<Node> {
+  let (input, _) = tag("✓")(input)?;
+  Ok((input, Node::False))
+}
+
+fn false_symbol(input: ParseString) -> ParseResult<Node> {
+  let (input, _) = tag("✗")(input)?;
+  Ok((input, Node::False))
+}
+
+fn english_true_literal(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("t")(input)?;
   let (input, _) = tag("r")(input)?;
   let (input, _) = tag("u")(input)?;
@@ -755,7 +775,7 @@ fn true_literal(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::True))
 }
 
-fn false_literal(input: ParseString) -> ParseResult<Node> {
+fn english_false_literal(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("f")(input)?;
   let (input, _) = tag("a")(input)?;
   let (input, _) = tag("l")(input)?;
@@ -776,7 +796,7 @@ fn newline(input: ParseString) -> ParseResult<Node> {
 
 fn whitespace(input: ParseString) -> ParseResult<Node> {
   let (input, _) = many0(space)(input)?;
-  let (input, _) = newline(input)?;
+  let (input, _) = many1(newline)(input)?;
   Ok((input, Node::Null))
 }
 
@@ -1090,17 +1110,22 @@ fn table_header(input: ParseString) -> ParseResult<Node> {
 fn anonymous_table(input: ParseString) -> ParseResult<Node> {
   let (input, _) = left_bracket(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
-  let (input, _) = many0(space)(input)?;
   let (input, table_header) = opt(table_header)(input)?;
-  let (input, mut table_rows) = many0(table_row)(input)?;
+  let (input, mut table_rows) = many0(alt((comment,table_row)))(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, _) = right_bracket(input)?;
   let mut table = vec![];
+  let mut just_rows = table_rows.iter().filter(|n| 
+    match n {
+      Node::Comment{..} => false,
+      _ => true
+    }
+  ).cloned().collect();
   match table_header {
     Some(table_header) => table.push(table_header),
     _ => (),
   };
-  table.append(&mut table_rows);
+  table.append(&mut just_rows);
   Ok((input, Node::AnonymousTable{children: table}))
 }
 
@@ -1151,8 +1176,10 @@ fn comment_sigil(input: ParseString) -> ParseResult<Node> {
 }
 
 fn comment(input: ParseString) -> ParseResult<Node> {
+  let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, _) = comment_sigil(input)?;
   let (input, comment) = text(input)?;
+  let (input, _) = many0(alt((space, tab, newline)))(input)?;
   Ok((input, Node::Comment{children: vec![comment]}))
 }
 
@@ -1224,11 +1251,11 @@ fn split_data(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::SplitData{children: vec![table, expression]}))
 }
 
-fn join_data(input: ParseString) -> ParseResult<Node> {
+fn flatten_data(input: ParseString) -> ParseResult<Node> {
   let (input, table) = identifier(input)?;
-  let (input, _) = tuple((many1(space), join_operator, many1(space)))(input)?;
+  let (input, _) = tuple((many1(space), flatten_operator, many1(space)))(input)?;
   let (input, expression) = expression(input)?;
-  Ok((input, Node::JoinData{children: vec![table, expression]}))
+  Ok((input, Node::FlattenData{children: vec![table, expression]}))
 }
 
 fn variable_define(input: ParseString) -> ParseResult<Node> {
@@ -1260,7 +1287,7 @@ fn split_operator(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Null))
 }
 
-fn join_operator(input: ParseString) -> ParseResult<Node> {
+fn flatten_operator(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("-<")(input)?;
   Ok((input, Node::Null))
 }
@@ -1302,7 +1329,7 @@ fn until_data(input: ParseString) -> ParseResult<Node> {
 }
 
 fn statement(input: ParseString) -> ParseResult<Node> {
-  let (input, statement) = alt((table_define, variable_define, split_data, join_data, whenever_data, wait_data, until_data, set_data, update_data, add_row, comment))(input)?;
+  let (input, statement) = alt((table_define, variable_define, split_data, flatten_data, whenever_data, wait_data, until_data, set_data, update_data, add_row, comment))(input)?;
   Ok((input, Node::Statement{children: vec![statement]}))
 }
 
@@ -1477,7 +1504,7 @@ fn math_expression(input: ParseString) -> ParseResult<Node> {
 // #### Filter Expressions
 
 fn not_equal(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = tag("!=")(input)?;
+  let (input, _) = alt((tag("!="),tag("¬="),tag("≠")))(input)?;
   Ok((input, Node::NotEqual))
 }
 
@@ -1497,12 +1524,12 @@ fn less_than(input: ParseString) -> ParseResult<Node> {
 }
 
 fn greater_than_equal(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = tag(">=")(input)?;
+  let (input, _) = alt((tag(">="),tag("≥")))(input)?;
   Ok((input, Node::GreaterThanEqual))
 }
 
 fn less_than_equal(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = tag("<=")(input)?;
+  let (input, _) = alt((tag("<="),tag("≤")))(input)?;
   Ok((input, Node::LessThanEqual))
 }
 
@@ -1589,14 +1616,6 @@ fn block(input: ParseString) -> ParseResult<Node> {
 
 // ## Markdown
 
-fn ht_title(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = hashtag(input)?;
-  let (input, _) = many1(space)(input)?;
-  let (input, text) = text(input)?;
-  let (input, _) = many0(whitespace)(input)?;
-  Ok((input, Node::Title { children: vec![text] }))
-}
-
 fn ul_title(input: ParseString) -> ParseResult<Node> {
   let (input, _) = many0(space)(input)?;
   let (input, text) = text(input)?;
@@ -1609,17 +1628,8 @@ fn ul_title(input: ParseString) -> ParseResult<Node> {
 }
 
 fn title(input: ParseString) -> ParseResult<Node> {
-  let (input,title) = alt((ht_title,ul_title))(input)?;
+  let (input,title) = ul_title(input)?;
   Ok((input, title))
-}
-
-fn ht_subtitle(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = hashtag(input)?;
-  let (input, _) = hashtag(input)?;
-  let (input, _) = many1(space)(input)?;
-  let (input, text) = text(input)?;
-  let (input, _) = many0(whitespace)(input)?;
-  Ok((input, Node::Title { children: vec![text] }))
 }
 
 fn ul_subtitle(input: ParseString) -> ParseResult<Node> {
@@ -1634,7 +1644,7 @@ fn ul_subtitle(input: ParseString) -> ParseResult<Node> {
 }
 
 fn subtitle(input: ParseString) -> ParseResult<Node> {
-  let (input,title) = alt((ht_subtitle,ul_subtitle))(input)?;
+  let (input,title) = ul_subtitle(input)?;
   Ok((input, title))
 }
 
@@ -1669,7 +1679,7 @@ fn paragraph_text(input: ParseString) -> ParseResult<Node> {
 
 fn paragraph(input: ParseString) -> ParseResult<Node> {
   let (input, paragraph_elements) = many1(
-    alt((inline_mech_code, inline_code, paragraph_text))
+    alt((inline_code, paragraph_text))
   )(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let (input, _) = many0(newline)(input)?;
@@ -1734,7 +1744,7 @@ fn mech_code_block(input: ParseString) -> ParseResult<Node> {
 fn section(input: ParseString) -> ParseResult<Node> {
   let (input, mut section_elements) = many1(
     tuple((
-      alt((subtitle, block, code_block, mech_code_block, statement, paragraph, unordered_list)),
+      alt((block, code_block, mech_code_block, statement, subtitle, paragraph, unordered_list)),
       opt(whitespace),
     ))
   )(input)?;
@@ -1770,8 +1780,7 @@ fn program(input: ParseString) -> ParseResult<Node> {
 
 pub fn raw_transformation(input: ParseString) -> ParseResult<Node> {
   let (input, statement) = statement(input)?;
-  let (input, _) = many0(space)(input)?;
-  let (input, _) = opt(newline)(input)?;
+  let (input, _) = many0(alt((space,newline,tab)))(input)?;
   Ok((input, Node::Transformation { children:  vec![statement] }))
 }
 

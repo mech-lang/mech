@@ -44,6 +44,7 @@ pub enum Node {
   SetData{ children: Vec<Node> },
   UpdateData{name: Vec<char>, children: Vec<Node> },
   SplitData{ children: Vec<Node> },
+  FlattenData{ children: Vec<Node> },
   TableColumn{ children: Vec<Node> },
   Binding{ children: Vec<Node> },
   FunctionBinding{ children: Vec<Node> },
@@ -148,6 +149,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::SetData{children} => {write!(f,"SetData\n").ok(); Some(children)},
     Node::UpdateData{name, children} => {write!(f,"UpdateData({:?})\n", name).ok(); Some(children)},
     Node::SplitData{children} => {write!(f,"SplitData\n").ok(); Some(children)},
+    Node::FlattenData{children} => {write!(f,"FlattenData\n").ok(); Some(children)},
     Node::Data{children} => {write!(f,"Data\n").ok(); Some(children)},
     Node::KindAnnotation{children} => {write!(f,"KindAnnotation\n").ok(); Some(children)},
     Node::Whenever{children} => {write!(f,"Whenever\n").ok(); Some(children)},
@@ -316,6 +318,7 @@ impl Ast {
               if select_data_children.is_empty() {
                 select_data_children = vec![Node::Null; 1];
               }
+              select_data_children.reverse();
               compiled.push(Node::SelectData{name, id: TableId::Local(id), children: select_data_children.clone()});
             },
             Node::DotIndex{children} => {
@@ -404,6 +407,17 @@ impl Ast {
           }
         }
         compiled.push(Node::SplitData{children});
+      },
+      parser::Node::FlattenData{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<Node> = Vec::new();
+        for node in result {
+          match node {
+            Node::Token{..} => (),
+            _ => children.push(node),
+          }
+        }
+        compiled.push(Node::FlattenData{children});
       },
       parser::Node::Column{children} => {
         let result = self.compile_nodes(children);

@@ -1,3 +1,4 @@
+#![allow(warnings)]
 extern crate mech_syntax;
 extern crate mech_core;
 #[macro_use]
@@ -43,7 +44,11 @@ macro_rules! test_mech {
       let blocks = compiler.compile_str(&input)?;
       
       for block in blocks {
-        let (_,errors) = core.load_block(Rc::new(RefCell::new(block)));
+        let (_,errors,new_block_output) = core.load_block(Rc::new(RefCell::new(block)));
+        for register in new_block_output.iter() {
+          core.step(register);
+        }
+        core.schedule_blocks();
         assert!(errors.len() == 0);
       }
 
@@ -164,9 +169,12 @@ block
 block
   #test = #bots.y / #bots.x", Value::F32(F32::new(2.0)));
 
-test_mech!(table_define_program, "# A Working Program
+test_mech!(table_define_program, "
+A Working Program
+==================
 
-## Section Two
+Section Two
+------------
 
   #test = 9", Value::F32(F32::new(9.0)));
 
@@ -296,7 +304,8 @@ block
 block
   #test = #ball.x + 9", Value::F32(F32::new(24.0)));
 
-test_mech!(partial_bouncing_ball,"# Bouncing Balls
+test_mech!(partial_bouncing_ball,"Bouncing Balls
+===============
 Define the environment
   #ball = [x: 15 y: 9 vx: 18 vy: 9]
   #time/timer = [period: 10]
@@ -450,6 +459,15 @@ block
   ix = #x >= #y
   #test = stats/sum(column: #x{ix})", Value::F32(F32::new(5.0))); 
 
+test_mech!(compare_greater_than_equal_alt,"
+block
+  #x = [1; 2; 3]
+  #y = [2; 1; 3]
+  
+block
+  ix = #x ≥ #y
+  #test = stats/sum(column: #x{ix})", Value::F32(F32::new(5.0))); 
+
 test_mech!(compare_less_than_equal,"
 block
   #x = [1; 2; 3]
@@ -457,6 +475,15 @@ block
   
 block
   ix = #x <= #y
+  #test = stats/sum(column: #x{ix})", Value::F32(F32::new(4.0))); 
+
+test_mech!(compare_less_than_equal_alt,"
+block
+  #x = [1; 2; 3]
+  #y = [2; 1; 3]
+  
+block
+  ix = #x ≤ #y
   #test = stats/sum(column: #x{ix})", Value::F32(F32::new(4.0))); 
 
 
@@ -487,6 +514,24 @@ block
   ix = #x != #y
   #test = set/all(column: ix)", Value::Bool(true)); 
 
+test_mech!(compare_not_equal_boolean_alt_syntax,"
+block
+  #x = [true; true; true; true]
+  #y = [false; false; false; false]
+  
+block
+  ix = #x ¬= #y
+  #test = set/all(column: ix)", Value::Bool(true));
+
+test_mech!(compare_not_equal_boolean_alt_syntax2,"
+block
+  #x = [true; true; true; true]
+  #y = [false; false; false; false]
+  
+block
+  ix = #x ≠ #y
+  #test = set/all(column: ix)", Value::Bool(true));
+  
 test_mech!(compare_equal_string,r#"
 block
   #x = [1; 2; 3; 4]
@@ -523,6 +568,7 @@ block
 test_mech!(set_empty_with_index,"
 block
   #foo = [|x y|]
+  #x = true
 
 block
   #foo := [|x y|
@@ -530,6 +576,7 @@ block
           false 2
           true  3]
 block
+  ~ #x
   ix = #foo.x == true
   #foo.y{ix} := 10
 
@@ -606,7 +653,10 @@ block
          1
          4
          7]
+  #x = true
+
 block
+  ~ #x
   x = #q.x
   ix = x > 1
   #q.x{ix} := 10
@@ -620,7 +670,10 @@ block
             1 2 3
             4 5 6
             7 8 9]
+  #x = true
+
 block
+  ~ #x
   x = #ball.y
   ix = x > 5
   #ball.y{ix} := 3
@@ -646,8 +699,10 @@ block
             1 2  3  4
             5 6  7  8
             9 10 11 12]
+  #x = true
 
 block
+  ~ #x
   ix = #ball.vy > 10
   iy = #ball.vy < 5
   ixx = ix | iy
@@ -664,8 +719,10 @@ block
             9 10 11 12]
   #time/timer = [period: 15 tick: 0]
   #gravity = 2
+  #x = true
 
 block
+  ~ #x
   ix = #ball.vy > 10
   iy = #ball.vy < 5
   #ball.y{ix | iy} := #ball.vy * 2
@@ -747,7 +804,7 @@ block
   
 block
   ix = #foo.x > 50
-  #test = #foo{ix, :}", Value::F32(F32::new(100.0)));
+  #test = #foo.x{ix}", Value::F32(F32::new(100.0)));
 
 test_mech!(append_row_expression,"
 block
@@ -806,13 +863,13 @@ block
 
 test_mech!(append_arbitrary_kinds_x,"
 block
-  #x = [|x<f32> y<f32> z<f32>|]
+  #x = [|x<u64> y<f32> z<f32>|]
 
 block
   #x += [y: 10, x: 99<u64>]
 
 block
-  #test = #x.x", Value::F32(F32::new(99.0))); 
+  #test = #x.x", Value::U64(U64::new(99))); 
     
 test_mech!(append_arbitrary_types_y,"
 block
@@ -824,7 +881,7 @@ block
 block
   #test = #x.y", Value::F32(F32::new(10.0))); 
 
-  test_mech!(append_arbitrary_kinds_types,"
+test_mech!(append_arbitrary_kinds_types,"
 block
   #x = [|x<f32> y<u8>|]
 
@@ -834,7 +891,7 @@ block
 block
   #test = #x.y + #x.x", Value::U8(U8::new(109)));
 
-  test_mech!(append_inline_row_singleton,"
+test_mech!(append_inline_row_singleton,"
 block
   #x = [|x<f32> y<u8>|]
 block
@@ -842,8 +899,7 @@ block
 block
   #test = stats/sum(table: #x)", Value::F32(F32::new(10.0)));
 
-
-  test_mech!(append_inline_row_two_rows,"
+test_mech!(append_inline_row_two_rows,"
 block
   #x = [|x<f32> y<u8>|]
 block
@@ -853,9 +909,9 @@ block
 block
   #test = stats/sum(table: #x)", Value::F32(F32::new(30.0)));
 
-  test_mech!(append_inline_two_rows_set,"
+test_mech!(append_inline_two_rows_set,"
 block
-  #x = [|x<f32> y<u8>|]
+  #x = [|x<f32> y<f32>|]
 block
   #x += [x: 10]
 block
@@ -866,7 +922,7 @@ block
 block
   #test = stats/sum(table: #x)", Value::F32(F32::new(609.0)));
 
-  test_mech!(append_any_column,r#"
+test_mech!(append_any_column,r#"
 block
   #x = [|x<u64> y<_> z<_>|]
 block
@@ -875,6 +931,16 @@ block
   #x += [x: 456<u64> y: 10, z: 10]
 block
   #test = set/all(column: #x.y == #x.z)"#, Value::Bool(true));
+
+test_mech!(append_unordered,r#"
+block
+  #x = 1
+block
+  #y = #x
+block
+  #x += 2
+block
+  #test = stats/sum(column: #y)"#, Value::F32(F32::new(3.0)));  
 
 // ## Logic
 
@@ -1052,6 +1118,64 @@ block
 block
   #test = #app2.x.b"#, Value::F32(F32::new(2.0)));
 
+test_mech!(nesting_column_table_select,r#"
+block
+  #x = [[|x y z |
+        1 2 3
+        4 5 6
+        7 8 9],
+      [|x y z |
+        2 3 4
+        5 6 7
+        8 9 10],
+        ]
+block
+  #test = #x{1}{3,3} + #x{2}{1,3}"#, Value::F32(F32::new(13.0)));
+
+test_mech!(nesting_select_local_nested_column,r#"
+block
+  y = [[1234]]
+  #test = y{1}{1}"#, Value::F32(F32::new(1234.0)));
+
+test_mech!(nesting_access_matrix,"
+block
+  x = [[|x y z |
+        1 2 3
+        4 5 6
+        7 8 9],
+      [|x y z |
+        2 3 4
+        5 6 7
+        8 9 10],
+        ]
+  #test = x{1}{2, 3}", Value::F32(F32::new(6.0)));
+
+test_mech!(nesting_math_add3by3_matrices,"
+block
+  x = [[|x y z |
+        1 2 3
+        4 5 6
+        7 8 9],
+      [|x y z |
+        2 3 4
+        5 6 7
+        8 9 10],
+        ]
+  #test = x{1}{3, 3} + x{2}{1, 3}", Value::F32(F32::new(13.0)));
+  
+test_mech!(nesting_math_dot_index,"
+block
+  x = [[|x y z |
+        1 2 3
+        4 5 6
+        7 8 9],
+      [|x y z |
+        2 3 4
+        5 6 7
+        8 9 10],
+        ]
+  #test = x{1}.z{3} + x{2}.z{1}", Value::F32(F32::new(13.0)));
+
 // ## Indexing
 
 test_mech!(indexing_global,r#"
@@ -1084,16 +1208,32 @@ block
   x = [1 2 3 4 5]
   #test = stats/sum(row: x)"#, Value::F32(F32::new(15.0)));
 
+test_mech!(function_stats_sum_row_neg,r#"
+block
+  x = [-1 -2 -3 -4 -5]
+  #test = stats/sum(row: x)"#, Value::F32(F32::new(-15.0)));
+
 test_mech!(function_stats_sum_row_col,r#"
 block
   x = [1;2;3;4;5]
   y = stats/sum(row: x)
   #test = y{1} + y{2} + y{3} + y{4} + y{5}"#, Value::F32(F32::new(15.0)));
 
+test_mech!(function_stats_sum_row_col_neg,r#"
+block
+  x = [-1;-2;-3;-4;-5]
+  y = stats/sum(row: x)
+  #test = y{1} + y{2} + y{3} + y{4} + y{5}"#, Value::F32(F32::new(-15.0)));
+
 test_mech!(function_stats_sum_table,r#"
 block
   x = [1 2 3; 4 5 6]
   #test = stats/sum(table: x)"#, Value::F32(F32::new(21.0)));
+
+test_mech!(function_stats_sum_table_neg,r#"
+block
+  x = [-1 -2 -3; -4 -5 -6]
+  #test = stats/sum(table: x)"#, Value::F32(F32::new(-21.0)));
 
 test_mech!(function_add_functions,r#"
 block
@@ -1130,7 +1270,9 @@ block
 
 // ## Markdown
 
-test_mech!(markdown_program_title, r#"# Title
+test_mech!(markdown_program_title, r#"
+Title
+======
   #test = 123"#, Value::F32(F32::new(123.0)));
 
 test_mech!(markdown_program_title_underline, r#"
@@ -1148,27 +1290,36 @@ SubTitle
 test_mech!(markdown_no_program_title, r#"paragraph
   #test = 123"#, Value::F32(F32::new(123.0)));
 
-test_mech!(markdown_section_title, r#"# Title
+test_mech!(markdown_section_title, r#"
+Title
+======
 
 Paragraph
 
-## Section
+Section
+--------
 
   #test = 123"#, Value::F32(F32::new(123.0)));
 
-test_mech!(markdown_inline_code, r#"# Title
+test_mech!(markdown_inline_code, r#"
+Title
+======
 
 Paragraph including `inline code`
 
-## Section
+Section
+--------
 
   #test = 123"#, Value::F32(F32::new(123.0)));
 
-test_mech!(markdown_list, r#"# Title
+test_mech!(markdown_list, r#"
+Title
+======
 
 Paragraph including `inline code`
 
-## Section
+Section
+--------
 
 - Item 1
 - Item 2
@@ -1176,11 +1327,14 @@ Paragraph including `inline code`
 
   #test = 123"#, Value::F32(F32::new(123.0)));
 
-test_mech!(markdown_list_inline_code, r#"# Title
+test_mech!(markdown_list_inline_code, r#"
+Title
+======
 
 Paragraph including `inline code`
 
-## Section
+Section
+--------
 
 - Item `some code`
 - Item `some code`
@@ -1188,11 +1342,14 @@ Paragraph including `inline code`
 
   #test = 123"#, Value::F32(F32::new(123.0)));
 
-test_mech!(markdown_code_block, r#"# Title
+test_mech!(markdown_code_block, r#"
+Title
+======
 
 Paragraph including `inline code`
 
-## Section
+Section
+--------
 
 ```
 A regular code block
@@ -1202,11 +1359,14 @@ A regular code block
 
 // ## Mechdown (Markdown extensions for Mech)
 
-test_mech!(mechdown_inline_mech_code, r#"# Title
+test_mech!(mechdown_inline_mech_code, r#"
+Title
+======
 
-Paragraph including `inline mech code` is [[#test]]
+Paragraph including `inline mech code` is `#test`
 
-## Section
+Section
+--------
 
   #test = 123"#, Value::F32(F32::new(123.0)));
 
@@ -1220,28 +1380,47 @@ block
 "#, Value::F32(F32::new(1.0)));
 
 test_mech!(mechdown_sub_sub_titles, r#"
-# Title
+Title
+======
 
 block
   #x = 1
   
-## Subtitle
+Subtitle
+---------
 
 block
   #y = 2
 
-## Subsubtitle
+Subsubtitle
+------------
 
 block 
   #test = #x + #y"#, Value::F32(F32::new(3.0)));
 
 test_mech!(mechdown_flat, r#"
-# Hello World
+Hello World
+============
 
 x = 10 + 15
 y = 20
 z = [1 2 3 4]
 q = z + y + x  
+#test = stats/sum(row: q)"#, Value::F32(F32::new(190.0)));
+
+test_mech!(mechdown_flat_newlines, r#"
+Hello World
+============
+
+x = 10 + 15
+
+y = 20
+
+
+z = [1 2 3 4]
+
+q = z + y + x  
+
 #test = stats/sum(row: q)"#, Value::F32(F32::new(190.0)));
 
 // ## Comments
@@ -1250,6 +1429,18 @@ test_mech!(comment_line, r#"
 block
   -- This is a comment
   #test = 123"#, Value::F32(F32::new(123.0)));
+
+test_mech!(comment_table_row, r#"
+x = [1
+    --2
+      3]
+#test = stats/sum(column: x)"#, Value::F32(F32::new(4.0)));
+
+test_mech!(comment_table_start_row, r#"
+x = [1
+--2
+      3]
+#test = stats/sum(column: x)"#, Value::F32(F32::new(4.0)));
 
 // ## Table split
 
@@ -1272,6 +1463,15 @@ block
   y = #x{2}{1,:}
   #test = stats/sum(row: [x y])"#, Value::F32(F32::new(30.0)));
 
+// ## Table flatten
+
+test_mech!(table_flatten, r#"
+block
+  #y = [[1;2];[3]]
+block
+  x -< #y
+  #test = stats/sum(column: x)"#, Value::F32(F32::new(6.0)));
+
 // ## Boolean values
 
 test_mech!(boolean_anonymous_table, r#"
@@ -1287,21 +1487,21 @@ block
 block
   #test = #z{1} + #z{2}"#, Value::F32(F32::new(4.0)));
 
-  test_mech!(boolean_literal_true, r#"
-block
-  #test = true"#, Value::Bool(true));
+test_mech!(boolean_literal_true, r#"#test = true"#, Value::Bool(true));
 
-  test_mech!(boolean_literal_false, r#"
-block
-  #test = false"#, Value::Bool(false));
+test_mech!(boolean_literal_true_check, r#"#test = ✓"#, Value::Bool(true));
 
-  test_mech!(boolean_literals_and_operator, r#"
+test_mech!(boolean_literal_false, r#"#test = false"#, Value::Bool(false));
+
+test_mech!(boolean_literal_false_x, r#"#test = ✗"#, Value::Bool(false));
+
+test_mech!(boolean_literals_and_operator, r#"
 block
   x = true
   y = false
   #test = x & y"#, Value::Bool(false));
 
-  test_mech!(boolean_bug, r#"
+test_mech!(boolean_bug, r#"
 block
   t = false
   f = true
