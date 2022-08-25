@@ -139,17 +139,17 @@ impl Program {
     Ok(())
   }
 
-  pub fn compile_program(&mut self, input: String) -> Result<Vec<BlockId>,MechError> {
+  pub fn compile_program(&mut self, input: String) -> Result<Vec<((Vec<BlockId>,Vec<MechError>))>,MechError> {
     let mut compiler = Compiler::new();
-    let blocks = compiler.compile_str(&input.clone())?;
-    let (new_block_ids,block_errors) = self.mech.load_blocks(blocks);
+    let sections = compiler.compile_str(&input.clone())?;
+    let result = self.mech.load_sections(sections);
 
     //self.errors.append(&mut self.mech.runtime.errors.clone());
     /*let mech_code = *MECH_CODE;
     self.programs += 1;
     let txn = vec![Change::Set((mech_code, vec![(TableIndex::Index(self.programs),TableIndex::Index(1),Value::from_str(&input.clone()))]))];
     self.outgoing.send(RunLoopMessage::Transaction(txn));*/
-    Ok(new_block_ids)    
+    Ok(result)    
   }
 
   pub fn compile_fragment(&mut self, input: String) {
@@ -222,9 +222,9 @@ impl Program {
       
       // Compile machine registry
       let mut registry_compiler = Compiler::new();
-      let blocks = registry_compiler.compile_str(&registry_file)?;
+      let sections = registry_compiler.compile_str(&registry_file)?;
       let mut registry_core = Core::new();
-      registry_core.load_blocks(blocks);
+      registry_core.load_sections(sections);
 
       // Convert the machine listing into a hash map
       let registry_table = registry_core.get_table("mech/registry")?;
@@ -378,12 +378,14 @@ impl Program {
 
     // Load init code and trigger machines
     for mic in &machine_init_code {
-      let new_block_ids = self.compile_program(mic.to_string())?;
+      let result = self.compile_program(mic.to_string())?;
       self.mech.schedule_blocks();
-      for block_id in new_block_ids {
-        let output = self.mech.get_output_by_block_id(block_id)?;
-        for register in output.iter() {
-          self.trigger_machine(register);
+      for (new_block_ids,block_error) in result {
+        for block_id in new_block_ids {
+          let output = self.mech.get_output_by_block_id(block_id)?;
+          for register in output.iter() {
+            self.trigger_machine(register);
+          }
         }
       }
     }
