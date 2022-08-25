@@ -116,7 +116,7 @@ impl MiniBlock {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MechCode {
   String(String),
-  MiniBlocks(Vec<MiniBlock>),
+  MiniBlocks(Vec<Vec<MiniBlock>>),
 }
 
 #[cfg(not(target_arch = "wasm32"))]
