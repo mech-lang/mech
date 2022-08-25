@@ -569,31 +569,20 @@ block
 
 test_mech!(set_empty_with_index,"
 block
-  #foo = [|x y|]
+  #foo = [|x<bool> y<f32>|]
   #x = true
 
 block
-  #foo := [|x y|
-          true  1
-          false 2
-          true  3]
+  #foo += [true  1
+           false 2
+           true  3]
 block
   ~ #x
-  ix = #foo.x == true
+  ix = #foo.x
   #foo.y{ix} := 10
 
 block
   #test = stats/sum(column: #foo.y)", Value::F32(F32::new(22.0)));
-
-test_mech!(set_multirow_empty,"
-block
-  #x = [|x y|]
-
-Define the environment
-  #x := [|x y| 1 2; 3 4]
-
-block
-  #test = #x.x{1} + #x.x{2} + #x.y{1} + #x.y{2}", Value::F32(F32::new(10.0)));
 
 test_mech!(set_column_alias,"
 block
@@ -862,6 +851,16 @@ block
 block
   #test = stats/sum(table: #x)", Value::F32(F32::new(21.0))); 
   
+test_mech!(append_multirow_empty,"
+block
+  #x = [|x<f32> y<f32>|]
+
+Define the environment
+  #x += [|x y| 1 2; 3 4]
+
+block
+  #test = #x.x{1} + #x.x{2} + #x.y{1} + #x.y{2}", Value::F32(F32::new(10.0)));
+
 
 test_mech!(append_arbitrary_kinds_x,"
 block
