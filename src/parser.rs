@@ -463,75 +463,48 @@ impl<'a> nom::InputLength for ParseString<'a> {
   }
 }
 
-const MaxAnnotations: usize = 3;
+const MAX_ANNOTATIONS: usize = 3;
 
-#[derive(Clone)]
-pub struct ParseErrorContext {
-  message: &'static str,
-  note: &'static str,
-  annotation_rngs: [ParseStringRange; MaxAnnotations],
-  annotation_count: usize,
-}
-
-impl ParseErrorContext {
-  fn new() -> Self {
-    ParseErrorContext {
-      message: "",
-      note: "",
-      annotation_rngs: [(0, 0); MaxAnnotations],
-      annotation_count: 0,
-    }
-  }
-
-  fn set_message(&mut self, msg: &'static str) {
-    self.message = msg;
-  }
-
-  fn set_note(&mut self, note: &'static str) {
-    self.note = note;
-  }
-
-  fn add_annotation(&mut self, rng: ParseStringRange) {
-    let i = if self.annotation_count == MaxAnnotations {
-      MaxAnnotations - 1
-    } else {
-      let t = self.annotation_count;
-      self.annotation_count += 1;
-      t
-    };
-    self.annotation_rngs[i] = rng;
-  }
-}
-
-pub struct ParseError<'a> {
-  raw: bool,
+pub struct ParseErrorInfo {
   cause_row: usize,
   cause_col: usize,
   cause_rng: ParseStringRange,
-  context: ParseErrorContext,
+  message: &'static str,
+  note: &'static str,
+  annotation_rngs: [ParseStringRange; MAX_ANNOTATIONS],
+  annotation_count: usize,
+}
+
+pub struct ParseError<'a> {
   remaining: ParseString<'a>,
+  context: ParseErrorInfo,
 }
 
 impl<'a> ParseError<'a> {
   fn new(input: ParseString<'a>, msg: &'static str) -> Self {
-    let mut ctx = ParseErrorContext::new();
-    ctx.set_message(msg);
     ParseError {
-      raw: true,
-      cause_row: input.cursor_row,
-      cause_col: input.cursor_col,
-      cause_rng: (input.cursor, input.cursor + 1),
-      context: ctx,
+      context: ParseErrorInfo {
+        cause_row: input.cursor_row,
+        cause_col: input.cursor_col,
+        cause_rng: (input.cursor, input.cursor + 1),
+        message: msg,
+        note: "",
+        annotation_rngs: [(0, 0); MAX_ANNOTATIONS],
+        annotation_count: 0,
+      },
       remaining: input,
     }
   }
 
-  fn update(mut self, ctx: ParseErrorContext) -> Self {
-    if self.raw {
-      self.raw = false;
-      self.context = ctx;
-    }
-    self
+  fn update(&mut self,
+            message: &'static str,
+            note: &'static str,
+            annotation_rngs: [ParseStringRange; MAX_ANNOTATIONS],
+            annotation_count: usize) {
+    self.context.message = message;
+    self.context.note = note;
+    self.context.annotation_rngs = annotation_rngs;
+    self.context.annotation_count = annotation_count;
   }
 }
 
@@ -550,8 +523,8 @@ impl<'a> nom::error::ParseError<ParseString<'a>> for ParseError<'a> {
   fn or(self, other: Self) -> Self {
     // Choose the branch with larger depth,
     // while prioritizing self when depths are equal
-    let (a, _) = self.cause_rng;
-    let (b, _) = other.cause_rng;
+    let (a, _) = self.context.cause_rng;
+    let (b, _) = other.context.cause_rng;
     if a >= b {
       self
     } else {
@@ -564,14 +537,41 @@ pub type ParseResult<'a, O> = IResult<ParseString<'a>, O, ParseError<'a>>;
 
 // ## Parser combinators
 
-fn context<F, O>(parser: F, ctx: ParseErrorContext) ->
-  impl Fn(ParseString) -> ParseResult<O>
+fn range<F, O>(mut f: F) ->
+  impl FnMut(ParseString) -> ParseResult<(O, ParseStringRange)>
 where
-  F: Fn(ParseString) -> ParseResult<O>
+  F: FnMut(ParseString) -> ParseResult<O>
+{
+  move |input: ParseString| {
+    let a = input.cursor;
+    match f(input) {
+      Ok((remaining, o)) => {
+        let rng = (a, remaining.cursor);
+        Ok((remaining, (o, rng)))
+      },
+      Err(e) => Err(e),
+    }
+  }
+}
+
+// TODO: add macros here to make calling `context()` easier
+
+fn context<F, O>(
+  mut parser: F,
+  message: &'static str,
+  note: &'static str,
+  annotation_rngs: [ParseStringRange; MAX_ANNOTATIONS],
+  annotation_count: usize,
+) -> impl FnMut(ParseString) -> ParseResult<O>
+where
+  F: FnMut(ParseString) -> ParseResult<O>
 {
   move |input: ParseString| match parser(input) {
-    Err(Err::Error(e)) => Err(Err::Error(e.update(ctx.clone()))),
-    Err(Err::Failure(e)) => Err(Err::Failure(e.update(ctx.clone()))),
+    // Turn recoverable error (nom::Err::Error) into failure
+    Err(Err::Error(mut e)) => {
+      e.update(message, note, annotation_rngs, annotation_count);
+      Err(Err::Failure(e))
+    },
     x => x,
   }
 }
@@ -806,6 +806,20 @@ fn floating_point(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Null))
 }
 
+fn number_literal(input: ParseString) -> ParseResult<Node> {
+  let (input, number_variant) = alt((hexadecimal_literal, octal_literal, binary_literal, decimal_literal, float_literal))(input)?;
+  let (input, kind_id) = opt(kind_annotation)(input)?;
+  let mut children = vec![number_variant];
+  match kind_id {
+    Some(kind_id) => children.push(kind_id),
+    _ => (),
+  }
+  Ok((input, Node::NumberLiteral{children}))
+}
+
+
+
+
 
 // ### Blocks
 
@@ -895,16 +909,6 @@ pub fn parse_fragment(text: &str) -> Result<Node,MechError> {
   Ok((input, Node::Quantity{children: quantity}))
 }*/
 
-fn number_literal(input: ParseString) -> ParseResult<Node> {
-  let (input, number_variant) = alt((hexadecimal_literal, octal_literal, binary_literal, decimal_literal, float_literal))(input)?;
-  let (input, kind_id) = opt(kind_annotation)(input)?;
-  let mut children = vec![number_variant];
-  match kind_id {
-    Some(kind_id) => children.push(kind_id),
-    _ => (),
-  }
-  Ok((input, Node::NumberLiteral{children}))
-}
 
 /*fn rational_number(input: ParseString) -> ParseResult<Node> {
   let (input, numerator) = alt((quantity, number_literal))(input)?;
