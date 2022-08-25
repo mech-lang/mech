@@ -1315,15 +1315,16 @@ impl MechFunctionCompiler for TableAppend {
       x => {
         let arg_col2 = block.get_arg_column(&arguments[0])?;
         match arg_col2 {
-          (_,Column::F32(_),ColumnIndex::All) => {
+          /*(_,Column::F32(_),ColumnIndex::All) => {
             return Err(MechError{id: 4910, kind: MechErrorKind::Unhandled});  
-          }
+          }*/
           (_,Column::String(_),ColumnIndex::Index(_)) |
           (_,Column::String(_),ColumnIndex::All) |
           (_,Column::Bool(_),ColumnIndex::All) |
           (_,Column::Bool(_),ColumnIndex::Index(_)) |
           (_,Column::Time(_),ColumnIndex::Index(_)) |
           (_,Column::F32(_),ColumnIndex::Index(_)) |
+          (_,Column::F32(_),ColumnIndex::All) |
           (_,Column::Reference((_,(ColumnIndex::All,ColumnIndex::All))),ColumnIndex::All) => {
             let (_,arg_table_id,_) = &arguments[0];
             let arg_table = block.get_table(arg_table_id)?;
