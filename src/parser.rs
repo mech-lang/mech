@@ -537,10 +537,10 @@ pub type ParseResult<'a, O> = IResult<ParseString<'a>, O, ParseError<'a>>;
 
 // ## Parser combinators
 
-fn range<F, O>(mut f: F) ->
-  impl FnMut(ParseString) -> ParseResult<(O, ParseStringRange)>
+fn range<'a, F, O>(mut f: F) ->
+  impl FnMut(ParseString<'a>) -> ParseResult<(O, ParseStringRange)>
 where
-  F: FnMut(ParseString) -> ParseResult<O>
+  F: FnMut(ParseString<'a>) -> ParseResult<O>
 {
   move |input: ParseString| {
     let a = input.cursor;
@@ -554,17 +554,23 @@ where
   }
 }
 
-// TODO: add macros here to make calling `context()` easier
+macro_rules! ctx {
+  // is there a better way to do this?
+  ($p:expr, $msg:expr) => (context($p, $msg, "", [(0, 0), (0, 0), (0, 0)], 0));
+  ($p:expr, $msg:expr, $r1: expr) => (context($p, $msg, "", [$r1, (0, 0), (0, 0)], 1));
+  ($p:expr, $msg:expr, $r1: expr, $r2: expr) => (context($p, $msg, "", [$r1, $r2, (0, 0)], 2));
+  ($p:expr, $msg:expr, $r1: expr, $r2: expr, $r3: expr) => (context($p, $msg, "", [$r1, $r2, $r3], 3));
+}
 
-fn context<F, O>(
+fn context<'a, F, O>(
   mut parser: F,
   message: &'static str,
   note: &'static str,
   annotation_rngs: [ParseStringRange; MAX_ANNOTATIONS],
   annotation_count: usize,
-) -> impl FnMut(ParseString) -> ParseResult<O>
+) -> impl FnMut(ParseString<'a>) -> ParseResult<O>
 where
-  F: FnMut(ParseString) -> ParseResult<O>
+  F: FnMut(ParseString<'a>) -> ParseResult<O>
 {
   move |input: ParseString| match parser(input) {
     // Turn recoverable error (nom::Err::Error) into failure
@@ -955,8 +961,8 @@ fn octal_literal(input: ParseString) -> ParseResult<Node> {
 }
 
 fn binary_literal(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = tag("0b")(input)?;
-  let (input, chars) = many1(bin_digit)(input)?;
+  let (input, (_, r)) = range(tag("0b"))(input)?;
+  let (input, chars) = ctx!(many1(bin_digit), "Expect binary digits after '0b'", r)(input)?;
   Ok((input, Node::BinaryLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
 }
 
