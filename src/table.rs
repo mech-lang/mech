@@ -278,27 +278,31 @@ impl Table {
           let column = ColumnV::<I8>::new(vec![I8::new(0);self.rows]);
           self.data[col] = Column::I8(column);
           self.col_kinds[col] = ValueKind::I8;
-        },/*
+        },
+        (Column::I16(_), ValueKind::I16) => (),
         (Column::Empty, ValueKind::I16) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          let column = ColumnV::<I16>::new(vec![I16::new(0);self.rows]);
           self.data[col] = Column::I16(column);
           self.col_kinds[col] = ValueKind::I16;
         },
+        (Column::I32(_), ValueKind::I32) => (),
         (Column::Empty, ValueKind::I32) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          let column = ColumnV::<I32>::new(vec![I32::new(0);self.rows]);
           self.data[col] = Column::I32(column);
           self.col_kinds[col] = ValueKind::I32;
         },
+        (Column::I64(_), ValueKind::I64) => (),
         (Column::Empty, ValueKind::I64) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          let column = ColumnV::<I64>::new(vec![I64::new(0);self.rows]);
           self.data[col] = Column::I64(column);
           self.col_kinds[col] = ValueKind::I64;
         },
+        (Column::I128(_), ValueKind::I128) => (),
         (Column::Empty, ValueKind::I128) => {
-          let column = Rc::new(RefCell::new(vec![0;self.rows]));
+          let column = ColumnV::<I128>::new(vec![I128::new(0);self.rows]);
           self.data[col] = Column::I128(column);
           self.col_kinds[col] = ValueKind::I128;
-        },*/
+        },
         (Column::F32(_), ValueKind::F32) => (),
         (Column::Empty, ValueKind::F32) => {
           let column = ColumnV::<F32>::new(vec![F32::new(0.0);self.rows]);
