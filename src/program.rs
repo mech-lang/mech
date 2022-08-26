@@ -377,14 +377,19 @@ impl Program {
     }
 
     // Load init code and trigger machines
+    let mut already_triggered = HashSet::new();
     for mic in &machine_init_code {
       let result = self.compile_program(mic.to_string())?;
       self.mech.schedule_blocks();
       for (new_block_ids,block_error) in result {
         for block_id in new_block_ids {
+          let block = self.mech.blocks.get(&block_id);
           let output = self.mech.get_output_by_block_id(block_id)?;
           for register in output.iter() {
-            self.trigger_machine(register);
+            if !already_triggered.contains(register) {
+              self.trigger_machine(register);
+            }
+            already_triggered.insert(register.clone());
           }
         }
       }
