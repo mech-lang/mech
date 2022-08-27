@@ -10,6 +10,7 @@ keywords = ["mech"]
 categories = ["science::robotics", "science"]
 license = "Apache-2.0"
 readme = "README.md"
+edition = "2021"
 
 [badges]
 gitlab = { repository = "mech-lang/utilities", branch = "main" }
@@ -19,8 +20,8 @@ maintenance = { status = "actively-developed" }
 mech-core = {git = "https://gitlab.com/mech-lang/core", branch = "v0.1-beta"}
 
 serde = {version = "1.0.133", default-features = false, features = ["alloc"] }
-serde_derive = "1.0.133"
-hashbrown = "0.12.1"
-crossbeam-channel = "0.5.1"
+serde_derive = "1.0.144"
+hashbrown = "0.12.3"
+crossbeam-channel = "0.5.6"
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-websocket = "0.26.2"
+websocket = "0.26.5"
