@@ -56,6 +56,7 @@ impl fmt::Debug for MechSocket {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
+#[repr(C)]
 #[derive(Debug)]
 pub enum RunLoopMessage {
   Ping,
