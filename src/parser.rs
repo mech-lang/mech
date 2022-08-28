@@ -18,6 +18,7 @@ use nom::{
   Err,
 };
 
+use std::collections::HashMap;
 use unicode_segmentation::UnicodeSegmentation;
 
 // ## Parser nodes
@@ -375,21 +376,92 @@ pub fn spacer(width: usize) {
 
 pub type ParseStringRange = (usize, usize);   // [a, b)
 
-#[derive(Debug, Clone)]
+pub type ParseResult<'a, O> = IResult<ParseString<'a>, O, ParseError<'a>>;
+
+#[derive(Clone, Hash, PartialEq, Eq)]
+pub enum LabelId {
+  Invalid,
+  Fail,
+}
+
+lazy_static! {
+  static ref LABEL_ID_TO_STATIC_PAYLOAD: HashMap<LabelId, StaticLabelPayload> = {
+    let mut map = HashMap::new();
+    //---------------------------------------------------------------------------------
+    map.insert(LabelId::Invalid, StaticLabelPayload {
+      message: "Unexpected error",
+      note: "",
+      expected_annotations: 0,
+      annotation_notes: [""; MAX_ANNOTATIONS],
+      recovery_fn: Label::nil_recovery_fn,
+    });
+    //---------------------------------------------------------------------------------
+    map.insert(LabelId::Fail, StaticLabelPayload {
+      message: "Unexpected character",
+      note: "",
+      expected_annotations: 0,
+      annotation_notes: [""; MAX_ANNOTATIONS],
+      recovery_fn: Label::nil_recovery_fn,
+    });
+    //---------------------------------------------------------------------------------
+    map
+  };
+}
+
+const MAX_ANNOTATIONS: usize = 3;
+
+#[derive(Clone)]
+pub struct RuntimeLabelPayload {
+  annotation_rngs: [ParseStringRange; MAX_ANNOTATIONS],
+}
+
+pub struct StaticLabelPayload {
+  message: &'static str,
+  note: &'static str,
+  expected_annotations: usize,
+  annotation_notes: [&'static str; MAX_ANNOTATIONS],
+  recovery_fn: fn(ParseString) -> ParseResult<Node>,
+}
+
+/// Once constructed, a `Label` should be immutable
+#[derive(Clone)]
+pub struct Label {
+  id: LabelId,
+  static_payload: &'static StaticLabelPayload,
+  runtime_payload: RuntimeLabelPayload,
+}
+
+impl Label {
+  fn new(label_id: LabelId, runtime_payload: RuntimeLabelPayload) -> Self {
+    Label {
+      static_payload: LABEL_ID_TO_STATIC_PAYLOAD.get(&label_id).unwrap(),
+      id: label_id,
+      runtime_payload,
+    }
+  }
+
+  fn recovery_fn_is_defined(&self) -> bool {
+    self.static_payload.recovery_fn as usize != Self::nil_recovery_fn as usize
+  }
+
+  fn nil_recovery_fn(_input: ParseString) -> ParseResult<Node> {
+    panic!("The nil recovery function is undefined!");
+  }
+}
+
+#[derive(Clone)]
 pub struct ParseString<'a> {
   graphemes: &'a Vec<&'a str>,
+  error_log: Vec<(usize, Label)>,
   cursor: usize,
-  cursor_row: usize,
-  cursor_col: usize,
 }
 
 impl<'a> ParseString<'a> {
   fn new(graphemes: &'a Vec<&'a str>) -> Self {
     ParseString {
       graphemes,
+      error_log: vec![],
       cursor: 0,
-      cursor_row: 1,
-      cursor_col: 1,
     }
   }
 
@@ -461,78 +533,50 @@ impl<'a> nom::InputLength for ParseString<'a> {
   }
 }
 
-const MAX_ANNOTATIONS: usize = 3;
-
-pub struct ParseErrorInfo {
-  cause_row: usize,
-  cause_col: usize,
-  cause_rng: ParseStringRange,
-  message: &'static str,
-  note: &'static str,
-  annotation_rngs: [ParseStringRange; MAX_ANNOTATIONS],
-  annotation_count: usize,
-}
-
 pub struct ParseError<'a> {
-  context: ParseErrorInfo,
-  remaining: ParseString<'a>,
+  cause_index: usize,
+  remaining_input: ParseString<'a>,
+  label: Label,
 }
 
 impl<'a> ParseError<'a> {
-  fn new(input: ParseString<'a>, msg: &'static str) -> Self {
+  fn new(input: ParseString<'a>, label_id: LabelId) -> Self {
     ParseError {
-      context: ParseErrorInfo {
-        cause_row: input.cursor_row,
-        cause_col: input.cursor_col,
-        cause_rng: (input.cursor, input.cursor + 1),
-        message: msg,
-        note: "",
+      cause_index: input.cursor,
+      label: Label::new(label_id, RuntimeLabelPayload {
         annotation_rngs: [(0, 0); MAX_ANNOTATIONS],
-        annotation_count: 0,
-      },
-      remaining: input,
+      }),
+      remaining_input: input,
     }
   }
 
-  fn update(&mut self,
-            message: &'static str,
-            note: &'static str,
-            annotation_rngs: [ParseStringRange; MAX_ANNOTATIONS],
-            annotation_count: usize) {
-    self.context.message = message;
-    self.context.note = note;
-    self.context.annotation_rngs = annotation_rngs;
-    self.context.annotation_count = annotation_count;
+  fn log(&mut self) {
+    self.remaining_input.error_log.push((self.cause_index, self.label.clone()));
   }
 }
 
 impl<'a> nom::error::ParseError<ParseString<'a>> for ParseError<'a> {
   fn from_error_kind(input: ParseString<'a>,
-                     kind: nom::error::ErrorKind) -> Self {
-    ParseError::new(input, "Unexpected error [1]")
+                     _kind: nom::error::ErrorKind) -> Self {
+    ParseError::new(input, LabelId::Invalid)
   }
 
   fn append(_input: ParseString<'a>,
             _kind: nom::error::ErrorKind,
             other: Self) -> Self {
-      println!("{:?}", _kind);
     other
   }
 
   fn or(self, other: Self) -> Self {
     // Choose the branch with larger depth,
-    // while prioritizing self when depths are equal
-    let (a, _) = self.context.cause_rng;
-    let (b, _) = other.context.cause_rng;
-    if a >= b {
+    // while prioritizing the other one when depths are equal
+    if self.cause_index > other.cause_index {
       self
     } else {
       other
     }
   }
 }
-
-pub type ParseResult<'a, O> = IResult<ParseString<'a>, O, ParseError<'a>>;
 
 // ## Parser combinators
 
@@ -553,29 +597,49 @@ where
   }
 }
 
-macro_rules! ctx {
-  // is there a better way to do this?
-  ($p:expr, $msg:expr) => (context($p, $msg, "", [(0, 0), (0, 0), (0, 0)], 0));
-  ($p:expr, $msg:expr, $r1: expr) => (context($p, $msg, "", [$r1, (0, 0), (0, 0)], 1));
-  ($p:expr, $msg:expr, $r1: expr, $r2: expr) => (context($p, $msg, "", [$r1, $r2, (0, 0)], 2));
-  ($p:expr, $msg:expr, $r1: expr, $r2: expr, $r3: expr) => (context($p, $msg, "", [$r1, $r2, $r3], 3));
+macro_rules! label {
+  ($parser:expr, $id:expr) => {
+    (label($parser, Label::new($id, RuntimeLabelPayload {
+      annotation_rngs: [(0, 0); MAX_ANNOTATIONS]
+    })))
+  };
+
+  ($parser:expr, $id:expr, $r1:expr) => {
+    (label($parser, Label::new($id, RuntimeLabelPayload {
+      annotation_rngs: [$r1, (0, 0), (0, 0)]
+    })))
+  };
+
+  ($parser:expr, $id:expr, $r1:expr, $r2:expr) => {
+    (label($parser, Label::new($id, RuntimeLabelPayload {
+      annotation_rngs: [$r1, $r2, (0, 0)]
+    })))
+  };
+
+  ($parser:expr, $id:expr, $r1:expr, $r2:expr, $r3:expr) => {
+    (label($parser, Label::new($id, RuntimeLabelPayload {
+      annotation_rngs: [$r1, $r2, $r3]
+    })))
+  };
 }
 
-fn context<'a, F, O>(
-  mut parser: F,
-  message: &'static str,
-  note: &'static str,
-  annotation_rngs: [ParseStringRange; MAX_ANNOTATIONS],
-  annotation_count: usize,
-) -> impl FnMut(ParseString<'a>) -> ParseResult<O>
+fn label<'a, F>(mut parser: F, label: Label) ->
+  impl FnMut(ParseString<'a>) -> ParseResult<Node>
 where
-  F: FnMut(ParseString<'a>) -> ParseResult<O>
+  F: FnMut(ParseString<'a>) -> ParseResult<Node>
 {
-  move |input: ParseString| match parser(input) {
-    // Turn recoverable error into failure
-    Err(Err::Error(mut e)) => {
-      e.update(message, note, annotation_rngs, annotation_count);
-      Err(Err::Failure(e))
+  move |mut input: ParseString| match parser(input) {
+    Err(Err::Error(mut e)) |
+    Err(Err::Failure(mut e)) => {
+      if e.label.id == LabelId::Fail {
+        e.label = label.clone();
+      }
+      e.log();
+      if e.label.recovery_fn_is_defined() {
+        (e.label.static_payload.recovery_fn)(e.remaining_input)
+      } else {
+        Err(Err::Failure(e))
+      }
     },
     x => x,
   }
@@ -586,7 +650,7 @@ fn tag(tag: &'static str) -> impl Fn(ParseString) -> ParseResult<String> {
     if let Some(matched) = input.consume_tag(tag) {
       Ok((input, matched))
     } else {
-      Err(nom::Err::Error(ParseError::new(input, "Unexpected character")))
+      Err(nom::Err::Error(ParseError::new(input, LabelId::Fail)))
     }
   }
 }
@@ -597,7 +661,7 @@ fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_emoji() {
     Ok((input, matched))
   } else {
-    Err(nom::Err::Error(ParseError::new(input, "Unexpected character")))
+    Err(nom::Err::Error(ParseError::new(input, LabelId::Fail)))
   }
 }
 
@@ -605,7 +669,7 @@ fn alpha(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_alpha() {
     Ok((input, matched))
   } else {
-    Err(nom::Err::Error(ParseError::new(input, "Unexpected character")))
+    Err(nom::Err::Error(ParseError::new(input, LabelId::Fail)))
   }
 }
 
@@ -613,7 +677,7 @@ fn digit(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_digit() {
     Ok((input, matched))
   } else {
-    Err(nom::Err::Error(ParseError::new(input, "Unexpected character")))
+    Err(nom::Err::Error(ParseError::new(input, LabelId::Fail)))
   }
 }
 
@@ -842,26 +906,26 @@ fn float_literal(input: ParseString) -> ParseResult<Node> {
 }
 
 fn decimal_literal(input: ParseString) -> ParseResult<Node> {
-  let (input, (_, r)) = range(tag("0d"))(input)?;
-  let (input, chars) = ctx!(digit1, "Expect decimal digits after '0d'")(input)?;
+  let (input, _) = tag("0d")(input)?;
+  let (input, chars) = digit1(input)?;
   Ok((input, Node::DecimalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
 }
 
 fn hexadecimal_literal(input: ParseString) -> ParseResult<Node> {
-  let (input, (_, r)) = range(tag("0x"))(input)?;
-  let (input, chars) = ctx!(many1(hex_digit), "Expect hex digits after '0x'")(input)?;
+  let (input, _) = tag("0x")(input)?;
+  let (input, chars) = many1(hex_digit)(input)?;
   Ok((input, Node::HexadecimalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
 }
 
 fn octal_literal(input: ParseString) -> ParseResult<Node> {
-  let (input, (_, r)) = range(tag("0o"))(input)?;
-  let (input, chars) = ctx!(many1(oct_digit), "Expect octal digits after '0o'")(input)?;
+  let (input, _) = tag("0o")(input)?;
+  let (input, chars) = many1(oct_digit)(input)?;
   Ok((input, Node::OctalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
 }
 
 fn binary_literal(input: ParseString) -> ParseResult<Node> {
-  let (input, (_, r)) = range(tag("0b"))(input)?;
-  let (input, chars) = ctx!(many1(bin_digit), "Expect binary digits after '0b'", r)(input)?;
+  let (input, _) = tag("0b")(input)?;
+  let (input, chars) = many1(bin_digit)(input)?;
   Ok((input, Node::BinaryLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
 }
 
@@ -891,22 +955,22 @@ fn subscript(input: ParseString) -> ParseResult<Node> {
 }
 
 fn subscript_index(input: ParseString) -> ParseResult<Node> {
-  let (input, (_, r)) = range(left_brace)(input)?;
-  let (input, subscripts) = ctx!(many1(subscript), "Expect subscripts after '{'", r)(input)?;
-  let (input, _) = ctx!(right_brace, "Missing '}' after subscripts", r)(input)?;
+  let (input, _) = range(left_brace)(input)?;
+  let (input, subscripts) = many1(subscript)(input)?;
+  let (input, _) = right_brace(input)?;
   Ok((input, Node::SubscriptIndex{children: subscripts}))
 }
 
 fn single_subscript_index(input: ParseString) -> ParseResult<Node> {
-  let (input, (_, r)) = range(left_brace)(input)?;
-  let (input, subscript) = ctx!(subscript, "Expect subscript after '{'", r)(input)?;
-  let (input, _) = ctx!(right_brace, "Missing '}' after subscript", r)(input)?;
+  let (input, _) = left_brace(input)?;
+  let (input, subscript) = subscript(input)?;
+  let (input, _) = right_brace(input)?;
   Ok((input, Node::SubscriptIndex{children: vec![subscript]}))
 }
 
 fn dot_index(input: ParseString) -> ParseResult<Node> {
   let (input, _) = period(input)?;
-  let (input, identifier) = ctx!(identifier, "Expect identifier")(input)?;
+  let (input, identifier) = identifier(input)?;
   let (input, subscript) = opt(single_subscript_index)(input)?;
   let index = match subscript {
     Some(subscript) =>vec![subscript, identifier],
@@ -915,21 +979,20 @@ fn dot_index(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::DotIndex{children: index}))
 }
 
-// TODO: paragraph?
 fn swizzle(input: ParseString) -> ParseResult<Node> {
   let (input, _) = period(input)?;
-  let (input, first) = ctx!(identifier, "Expect identifier")(input)?;
+  let (input, first) = identifier(input)?;
   let (input, _) = comma(input)?;
-  let (input, mut rest) = ctx!(separated_list1(tag(","), identifier), "Expect at least another target")(input)?;
+  let (input, mut rest) = separated_list1(tag(","), identifier)(input)?;
   let mut cols = vec![first];
   cols.append(&mut rest);
   Ok((input, Node::Swizzle{children: cols}))
 }
 
 fn reshape_column(input: ParseString) -> ParseResult<Node> {
-  let (input, (_, r)) = range(left_brace)(input)?;
+  let (input, _) = left_brace(input)?;
   let (input, _) = colon(input)?;
-  let (input, _) = ctx!(right_brace, "Missing '}' after ':'", r)(input)?;
+  let (input, _) = right_brace(input)?;
   Ok((input, Node::ReshapeColumn))
 }
 
@@ -953,121 +1016,7 @@ fn kind_annotation(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::KindAnnotation{children: kind_id}))
 }
 
-
-
 // #### Tables
-
-// #### Statements
-
-// #### Expressions
-
-// ##### Math expressions
-
-// ##### Filter expressions
-
-// ##### Logic expressions
-
-// ##### Other expressions
-
-// #### Block basics
-
-// ### Markdown
-
-// ### Start here
-
-// ## Parser interfaces
-
-
-
-
-
-
-
-
-// ## ------------------------------------------------------------------------------
-
-pub fn parse(text: &str) -> Result<Node,MechError> {
-  let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
-  let parse_tree = parse_mech(ParseString::new(&graphemes));
-  match parse_tree {
-    Ok((rest, tree)) => {
-      let unparsed = rest.graphemes[rest.cursor..].iter().map(|s| String::from(*s)).collect::<String>();
-      if unparsed != "" {
-        println!("Unparsed: {}", unparsed);
-        Err(MechError{id: 3302, kind: MechErrorKind::GenericError(unparsed)})
-      } else { 
-        Ok(tree)
-      }
-    },
-    Err(q) => {
-      match q {
-        Err::Error(e) | Err::Failure(e) => {
-          println!("Err: {}", e.context.message);
-        },
-        _ => (),
-      }
-      Err(MechError{id: 3303, kind: MechErrorKind::None})
-    }
-  }
-}
-
-pub fn parse_fragment(text: &str) -> Result<Node,MechError> {
-  let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
-  let parse_tree = parse_mech_fragment(ParseString::new(&graphemes));
-  match parse_tree {
-    Ok((rest, tree)) => {
-      let unparsed = rest.graphemes.iter().map(|s| String::from(*s)).collect::<String>();
-      if unparsed != "" {
-        Err(MechError{id: 3402, kind: MechErrorKind::GenericError(unparsed)})
-      } else { 
-        Ok(tree)
-      }
-    },
-    Err(q) => {
-      Err(MechError{id: 3403, kind: MechErrorKind::None})
-    }
-  }
-}
-
-
-// ## The Basics
-
-/*fn quantity(input: ParseString) -> ParseResult<Node> {
-  let (input, number) = number(input)?;
-  let (input, float) = opt(floating_point)(input)?;
-  let (input, unit) = identifier(input)?;
-  let mut quantity = vec![number];
-  match float {
-    Some(fp) => quantity.push(fp),
-    _ => (),
-  };
-  quantity.push(unit);
-  Ok((input, Node::Quantity{children: quantity}))
-}*/
-
-
-/*fn rational_number(input: ParseString) -> ParseResult<Node> {
-  let (input, numerator) = alt((quantity, number_literal))(input)?;
-  let (input, _) = tag("/")(input)?;
-  let (input, denominator) = alt((quantity, number_literal))(input)?;
-  Ok((input, Node::Null))
-}*/
-
-
-
-
-// ## Blocks
-
-// ### Data
-
-
-
-
-
-
-
-
-// ### Tables
 
 fn table(input: ParseString) -> ParseResult<Node> {
   let (input, _) = hashtag(input)?;
@@ -1192,7 +1141,7 @@ fn inline_table(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::InlineTable{children: bindings}))
 }
 
-// ### Statements
+// #### Statements
 
 fn comment_sigil(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("--")(input)?;
@@ -1357,9 +1306,9 @@ fn statement(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Statement{children: vec![statement]}))
 }
 
-// ### Expressions
+// #### Expressions
 
-// #### Math Expressions
+// ##### Math expressions
 
 fn parenthetical_expression(input: ParseString) -> ParseResult<Node> {
   let (input, _) = left_parenthesis(input)?;
@@ -1525,7 +1474,7 @@ fn math_expression(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::MathExpression { children: vec![l0] }))
 }
 
-// #### Filter Expressions
+// ##### Filter expressions
 
 fn not_equal(input: ParseString) -> ParseResult<Node> {
   let (input, _) = alt((tag("!="),tag("¬="),tag("≠")))(input)?;
@@ -1557,29 +1506,7 @@ fn less_than_equal(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::LessThanEqual))
 }
 
-// State Machine
-
-/*
-named!(state_machine<CompleteStr, Node>, do_parse!(
-  source: data >> question >> whitespace >> transitions: transitions >> whitespace >>
-  (Node::StateMachine { children: vec![source, transitions] })));
-
-fn next_state_operator(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = tag("->")(input)?;
-  Ok((input, Node::Null))
-}
-
-  #timer? x -> x + 1
-
-fn state_transition(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = many1(space)(input)?;
-
-
-  many1!(space) >> state: alt!(identifier, string | constant | empty) >> many1!(space) >>  >> many1!(space) >> next: alt!(identifier | string | constant | empty) >> many0!(space) >> opt!(newline) >>
-  (Node::StateTransition { children: vec![state, next] })));
-}*/
-
-// #### Logic Expressions
+// ##### Logic expressions
 
 fn or(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("|")(input)?;
@@ -1602,14 +1529,7 @@ fn xor(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Xor))
 }
 
-// #### Other Expressions
-
-/*fn string_interpolation(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = tag("{{")(input)?;
-  let (input, expression) = expression(input)?;
-  let (input, _) = tag("}}")(input)?;
-  Ok((input, Node::StringInterpolation { children: vec![expression] }))
-}*/
+// ##### Other expressions
 
 fn string(input: ParseString) -> ParseResult<Node> {
   let (input, _) = quote(input)?;
@@ -1623,7 +1543,7 @@ fn expression(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Expression { children: vec![expression] }))
 }
 
-// ### Block Basics
+// #### Block basics
 
 fn transformation(input: ParseString) -> ParseResult<Node> {
   let (input, statement) = statement(input)?;
@@ -1638,7 +1558,7 @@ fn block(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Block { children: tfms }))
 }
 
-// ## Markdown
+// ### Markdown
 
 fn ul_title(input: ParseString) -> ParseResult<Node> {
   let (input, _) = many0(space)(input)?;
@@ -1737,7 +1657,7 @@ fn code_block(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::CodeBlock { children: vec![text] }))
 }
 
-// Mechdown
+// ### Mechdown
 
 fn inline_mech_code(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tuple((left_bracket,left_bracket))(input)?;
@@ -1763,7 +1683,7 @@ fn mech_code_block(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::MechCodeBlock{ children: elements }))
 }
 
-// ## Start Here
+// ### Start here
 
 fn section(input: ParseString) -> ParseResult<Node> {
   let (input, mut section_elements) = many1(
@@ -1823,3 +1743,49 @@ pub fn parse_mech(input: ParseString) -> ParseResult<Node> {
   let (input, mech) = alt((program,statement))(input)?;
   Ok((input, Node::Root { children: vec![mech] }))
 }
+
+// ## Parser interfaces
+
+pub fn parse(text: &str) -> Result<Node,MechError> {
+  let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
+  let parse_tree = parse_mech(ParseString::new(&graphemes));
+  match parse_tree {
+    Ok((rest, tree)) => {
+      let unparsed = rest.graphemes[rest.cursor..].iter().map(|s| String::from(*s)).collect::<String>();
+      if unparsed != "" {
+        println!("Unparsed: {}", unparsed);
+        Err(MechError{id: 3302, kind: MechErrorKind::GenericError(unparsed)})
+      } else { 
+        Ok(tree)
+      }
+    },
+    Err(q) => {
+      match q {
+        Err::Error(e) | Err::Failure(e) => {
+          println!("Err: {}", e.label.static_payload.message);
+        },
+        _ => (),
+      }
+      Err(MechError{id: 3303, kind: MechErrorKind::None})
+    }
+  }
+}
+
+pub fn parse_fragment(text: &str) -> Result<Node,MechError> {
+  let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
+  let parse_tree = parse_mech_fragment(ParseString::new(&graphemes));
+  match parse_tree {
+    Ok((rest, tree)) => {
+      let unparsed = rest.graphemes.iter().map(|s| String::from(*s)).collect::<String>();
+      if unparsed != "" {
+        Err(MechError{id: 3402, kind: MechErrorKind::GenericError(unparsed)})
+      } else { 
+        Ok(tree)
+      }
+    },
+    Err(q) => {
+      Err(MechError{id: 3403, kind: MechErrorKind::None})
+    }
+  }
+}
+
