@@ -21,7 +21,7 @@ crate-type = ["dylib", "rlib"]
 mech-core = {path = "../../mech/core"}
 mech-utilities = {path = "../../mech/utilities"}
 
-crossbeam-channel = "0.5.1"
+crossbeam-channel = "0.5.6"
 gilrs = {path = "vendor/gilrs/gilrs"}
 lazy_static = "1.4.0"
 
