@@ -10,11 +10,11 @@ use std::fs;
 fn main() -> Result<(),MechError> {
     // before: 17~20s
     // current: 0.17s
-    let s = fs::read_to_string("huge.mec").unwrap();
-    // let s = fs::read_to_string("test.mec").unwrap();
+    // let s = fs::read_to_string("huge.mec").unwrap();
+    let s = fs::read_to_string("test.mec").unwrap();
     match parser::parse(&s) {
-        Ok(tree) => println!("ok!"),
-        // Ok(tree) => println!("{:#?}", tree),
+        // Ok(tree) => println!("ok!"),
+        Ok(tree) => println!("{:#?}", tree),
         _ => println!("err!"),
     }
     return Ok(());

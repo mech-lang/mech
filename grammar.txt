@@ -1,0 +1,179 @@
+
+parse_mech := program | statement
+
+program := whitespace?, title?, body, whitespace?
+
+whitespace := space*, newline+
+
+title := ul_title
+
+ul_title := space*, text, space?, newline, equal+, space*, newline*
+
+newline := new_line_char | carriage_newline
+
+text := (word | space | number | punctuation | symbol | emoji)+
+
+body := whitespace*, section+
+
+section := (block | code_block | mech_code_block | statement | subtitle | paragraph | unordered_list, whitespace?)+
+
+mech_code_block := grave{3}, tag("mech:"), text?, newline, block, grave{3}, newline, whitespace*
+
+subtitle := ul_subtitle
+
+ul_subtitle := space*, text, space*, newline, dash+, space*, newline*
+
+block := (space{2}, transformation)+, whitespace*
+
+unordered_list := list_item+, newline? whitespace*
+
+list_item := dash, space+, paragraph, newline*
+
+code_block := grave{3}, newline, formatted_text, grave{3}, newline, whitespace*
+
+formatted_text := (paragraph_rest | carriage_return | new_line_char)*
+
+paragraph := (inline_code | paragraph_text)+, whitespace*, newline*
+
+paragraph_text := paragraph_starter, paragraph_rest?
+
+paragraph_starter := (word | number | quote | left_angle | right_angle | left_backet | right_bracket | period | exclamation |
+                      question | comma | colon | semicolon | left_parenthesis | right_parenthesis | emoji)+
+
+paragraph_rest := (word, space, number, punctuation, paragraph_symbol, quote, emoji)+
+
+paragraph_symbol := ampersand | at | slash | backslash | asterisk | caret | underscore
+
+transformation := statement, space*, newline*
+
+statement := table_define | variable_define | split_data | flatten_data | whenever_data |
+             wait_data    | until_data      | set_data   | update_data  | add_row       | comment
+
+split_data := identifier | table, space+, split_operator, space+, expression
+
+flatten_data := identifier, space+, flatten_operator, space+, expression
+
+whenever_data := whenever_operator, space, variable_define | expression | data
+
+wait_data := wait_operator, space, variable_define | expression | data
+
+until_data := until_operator, space, variable_define | expression | data
+
+set_data := data, space+, set_opeartor, space+, expression
+
+update_data := data, space+, add_update_operator | subtract_update_oeprator | multiply_update_operator | divide_update_operator, space+, expression
+
+add_row := talbe, space+, add_row_operator, space+, expression | inline_table | anonymous_table
+
+comment := (space | tab)*, comment_sigil, text, (space | tab | newline)*
+
+table_define := table, kind_annotation?, space+, equal, space+, expression
+
+table := hashtag, identifier
+
+kind_annotation := left_angle, (identifier | underscore), (tag(","), (identifier | underscore))*, right_angle
+
+expression := inline_table | math_expression | string | empty_table | anonymous_table
+
+math_expression := l0
+
+l0 := l1, l0_infix*
+
+l0_infix := space*, range_op, space*, l1
+
+l1 := l2, l1_infix*
+
+l1_infix := space*, add | subtract, space*, l2
+
+l2 := l3, l2_infix*
+
+l2_infix := space*, multiply | divide | matrix_multiply, space*, l3
+
+l3 := l4, l3_infix*
+
+l3_infix := space*, exponent, space*, l4
+
+l4 := l5, l4_infix*
+
+l4_infix := space*, and | or | xor, space*, l5
+
+l5 := l6, l5_infix*
+
+l5_infix := space*, not_equal | equal_to | greater_than_equal | greater_than | less_than_equal | less_than, space*, l6
+
+l6 := empty_table | string | anonymous_table | function | value | not | data | negation | parenthetical_expression
+
+parenthetical_expression := left_parenthesis, l0, right_parenthesis
+
+function := identifier, left_parenthesis, function_binding+, right_parenthesis
+
+function_binding := identifier, colon, space*, expression | identifier | value, sapce*, comma?, space*
+
+identifier := space*, (word | emoji), (word | number | dash | slash | emoji)*
+
+number := digit+
+
+word := alpha+
+
+empty_table := left_bracket, s*, space*, table_header?, s*, right_bracket
+    WHERE s: (space | newline | tab)
+
+inline_table := left_bracket, binding+, right_bracket
+
+binding := s*, identifier, kind_annotation?, colon, s*, empty | expression | identifier | value, s*, comma?, s*
+    WHERE s: (space | newline | tab)
+
+variable_define := identifier, space+, equal, space+, expression
+
+anonymous_table := left_bracket, s*, table_header?, (comment | table_row)*, s*, right_bracket
+    WHERE s: (space | newline | tab)
+
+table_row := (space | tab)*, table_column+, semicolon?, newline?     // "5; 7; 8 8" machiens to table row...
+
+table_column := (space | tab)*, expression | value | data, comma?, (space | tab)*
+
+table_header := bar, attribute+, bar, space*, newline?
+
+data := table | identifier, index*
+
+index := swizzle | dot_index | reshape_column | subscript_index
+
+swizzle := period, identifier, comma, identifier, (tag(","), identifier)*
+
+dot_index := period, identifier, single_subscript_index?
+
+reshape_column := left_brace, colon, right_brace
+
+subscript_index := left_brace, subscript+, right_brace
+
+single_subscript_index := left_brace, subscript, right_brace
+
+subscript := select_all | expression | tilde, space*, comma?, space*
+
+select_all := colon
+
+attribute := identifier, kind_annotation?, space*, comma?, space*
+
+value := empty | boolean_literal | number_literal | string
+
+empty := underscore+
+
+string := quote, text*, quote
+
+boolean_literal = true_literal | false_literal
+
+true_literal := english_true_literal | true_symbol
+
+false_literal := english_false_literal | false_symbol
+
+number_literal := hexadecimal_literal | octal_literal | binary_literal | decimal_literal | float_literal
+
+hexadecimal_literal := tag("0x"), hex_digit+
+
+ocatal_literal := tag("0o"), oct_digit+
+
+binary_literal := tag("0b"), bin_digit+
+
+decimal_literal := tag("0d"), digit+
+
+float_literal := tag(".")?, digit+, tag(".")?, digit*     // ".5.7" matches a float literal?

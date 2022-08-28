@@ -381,7 +381,6 @@ pub struct ParseString<'a> {
   cursor: usize,
   cursor_row: usize,
   cursor_col: usize,
-  line_rngs: Vec<ParseStringRange>,
 }
 
 impl<'a> ParseString<'a> {
@@ -391,7 +390,6 @@ impl<'a> ParseString<'a> {
       cursor: 0,
       cursor_row: 1,
       cursor_col: 1,
-      line_rngs: vec![],
     }
   }
 
@@ -476,8 +474,8 @@ pub struct ParseErrorInfo {
 }
 
 pub struct ParseError<'a> {
-  remaining: ParseString<'a>,
   context: ParseErrorInfo,
+  remaining: ParseString<'a>,
 }
 
 impl<'a> ParseError<'a> {
@@ -517,6 +515,7 @@ impl<'a> nom::error::ParseError<ParseString<'a>> for ParseError<'a> {
   fn append(_input: ParseString<'a>,
             _kind: nom::error::ErrorKind,
             other: Self) -> Self {
+      println!("{:?}", _kind);
     other
   }
 
@@ -537,14 +536,14 @@ pub type ParseResult<'a, O> = IResult<ParseString<'a>, O, ParseError<'a>>;
 
 // ## Parser combinators
 
-fn range<'a, F, O>(mut f: F) ->
+fn range<'a, F, O>(mut parser: F) ->
   impl FnMut(ParseString<'a>) -> ParseResult<(O, ParseStringRange)>
 where
   F: FnMut(ParseString<'a>) -> ParseResult<O>
 {
   move |input: ParseString| {
     let a = input.cursor;
-    match f(input) {
+    match parser(input) {
       Ok((remaining, o)) => {
         let rng = (a, remaining.cursor);
         Ok((remaining, (o, rng)))
@@ -573,7 +572,7 @@ where
   F: FnMut(ParseString<'a>) -> ParseResult<O>
 {
   move |input: ParseString| match parser(input) {
-    // Turn recoverable error (nom::Err::Error) into failure
+    // Turn recoverable error into failure
     Err(Err::Error(mut e)) => {
       e.update(message, note, annotation_rngs, annotation_count);
       Err(Err::Failure(e))
@@ -754,12 +753,12 @@ fn boolean_literal(input: ParseString) -> ParseResult<Node> {
 }
 
 fn true_literal(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = alt((english_true_literal,true_symbol))(input)?;
+  let (input, _) = alt((english_true_literal, true_symbol))(input)?;
   Ok((input, Node::True))
 }
 
 fn false_literal(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = alt((english_false_literal,false_symbol))(input)?;
+  let (input, _) = alt((english_false_literal, false_symbol))(input)?;
   Ok((input, Node::False))
 }
 
@@ -823,13 +822,138 @@ fn number_literal(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::NumberLiteral{children}))
 }
 
+fn float_literal(input: ParseString) -> ParseResult<Node> {
+  let (input, p1) = opt(tag("."))(input)?;
+  let (input, p2) = digit1(input)?;
+  let (input, p3) = opt(tag("."))(input)?;
+  let (input, p4) = digit0(input)?;
+  let mut whole: Vec<char> = vec![];
+  if let Some(_) = p1 {
+    whole.push('.');
+  }
+  let mut digits = p2.iter().flat_map(|c| c.chars()).collect::<Vec<char>>();
+  whole.append(&mut digits);
+  if let Some(_) = p3 {
+    whole.push('.');
+  }
+  let mut digits = p4.iter().flat_map(|c| c.chars()).collect::<Vec<char>>();
+  whole.append(&mut digits);
+  Ok((input, Node::FloatLiteral{chars: whole}))
+}
 
+fn decimal_literal(input: ParseString) -> ParseResult<Node> {
+  let (input, (_, r)) = range(tag("0d"))(input)?;
+  let (input, chars) = ctx!(digit1, "Expect decimal digits after '0d'")(input)?;
+  Ok((input, Node::DecimalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
+}
 
+fn hexadecimal_literal(input: ParseString) -> ParseResult<Node> {
+  let (input, (_, r)) = range(tag("0x"))(input)?;
+  let (input, chars) = ctx!(many1(hex_digit), "Expect hex digits after '0x'")(input)?;
+  Ok((input, Node::HexadecimalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
+}
 
+fn octal_literal(input: ParseString) -> ParseResult<Node> {
+  let (input, (_, r)) = range(tag("0o"))(input)?;
+  let (input, chars) = ctx!(many1(oct_digit), "Expect octal digits after '0o'")(input)?;
+  Ok((input, Node::OctalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
+}
+
+fn binary_literal(input: ParseString) -> ParseResult<Node> {
+  let (input, (_, r)) = range(tag("0b"))(input)?;
+  let (input, chars) = ctx!(many1(bin_digit), "Expect binary digits after '0b'", r)(input)?;
+  Ok((input, Node::BinaryLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
+}
+
+fn value(input: ParseString) -> ParseResult<Node> {
+  let (input, value) = alt((empty, boolean_literal, number_literal, string))(input)?;
+  Ok((input, Node::Value{children: vec![value]}))
+}
+
+fn empty(input: ParseString) -> ParseResult<Node> {
+  let (input, _) = many1(underscore)(input)?;
+  Ok((input, Node::Empty))
+}
 
 // ### Blocks
 
 // #### Data
+
+fn select_all(input: ParseString) -> ParseResult<Node> {
+  let (input, _) = colon(input)?;
+  Ok((input, Node::SelectAll))
+}
+
+fn subscript(input: ParseString) -> ParseResult<Node> {
+  let (input, subscript) = alt((select_all, expression, tilde))(input)?;
+  let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
+  Ok((input, Node::Subscript{children: vec![subscript]}))
+}
+
+fn subscript_index(input: ParseString) -> ParseResult<Node> {
+  let (input, (_, r)) = range(left_brace)(input)?;
+  let (input, subscripts) = ctx!(many1(subscript), "Expect subscripts after '{'", r)(input)?;
+  let (input, _) = ctx!(right_brace, "Missing '}' after subscripts", r)(input)?;
+  Ok((input, Node::SubscriptIndex{children: subscripts}))
+}
+
+fn single_subscript_index(input: ParseString) -> ParseResult<Node> {
+  let (input, (_, r)) = range(left_brace)(input)?;
+  let (input, subscript) = ctx!(subscript, "Expect subscript after '{'", r)(input)?;
+  let (input, _) = ctx!(right_brace, "Missing '}' after subscript", r)(input)?;
+  Ok((input, Node::SubscriptIndex{children: vec![subscript]}))
+}
+
+fn dot_index(input: ParseString) -> ParseResult<Node> {
+  let (input, _) = period(input)?;
+  let (input, identifier) = ctx!(identifier, "Expect identifier")(input)?;
+  let (input, subscript) = opt(single_subscript_index)(input)?;
+  let index = match subscript {
+    Some(subscript) =>vec![subscript, identifier],
+    None => vec![Node::Null, identifier],
+  };
+  Ok((input, Node::DotIndex{children: index}))
+}
+
+// TODO: paragraph?
+fn swizzle(input: ParseString) -> ParseResult<Node> {
+  let (input, _) = period(input)?;
+  let (input, first) = ctx!(identifier, "Expect identifier")(input)?;
+  let (input, _) = comma(input)?;
+  let (input, mut rest) = ctx!(separated_list1(tag(","), identifier), "Expect at least another target")(input)?;
+  let mut cols = vec![first];
+  cols.append(&mut rest);
+  Ok((input, Node::Swizzle{children: cols}))
+}
+
+fn reshape_column(input: ParseString) -> ParseResult<Node> {
+  let (input, (_, r)) = range(left_brace)(input)?;
+  let (input, _) = colon(input)?;
+  let (input, _) = ctx!(right_brace, "Missing '}' after ':'", r)(input)?;
+  Ok((input, Node::ReshapeColumn))
+}
+
+fn index(input: ParseString) -> ParseResult<Node> {
+  let (input, index) = alt((swizzle, dot_index, reshape_column, subscript_index))(input)?;
+  Ok((input, Node::Index{children: vec![index]}))
+}
+
+fn data(input: ParseString) -> ParseResult<Node> {
+  let (input, source) = alt((table, identifier))(input)?;
+  let (input, mut indices) = many0(index)(input)?;
+  let mut data = vec![source];
+  data.append(&mut indices);
+  Ok((input, Node::Data{children: data}))
+}
+
+fn kind_annotation(input: ParseString) -> ParseResult<Node> {
+  let (input, _) = left_angle(input)?;
+  let (input, kind_id) = separated_list1(tag(","), alt((identifier, underscore)))(input)?;
+  let (input, _) = right_angle(input)?;
+  Ok((input, Node::KindAnnotation{children: kind_id}))
+}
+
+
 
 // #### Tables
 
@@ -876,6 +1000,12 @@ pub fn parse(text: &str) -> Result<Node,MechError> {
       }
     },
     Err(q) => {
+      match q {
+        Err::Error(e) | Err::Failure(e) => {
+          println!("Err: {}", e.context.message);
+        },
+        _ => (),
+      }
       Err(MechError{id: 3303, kind: MechErrorKind::None})
     }
   }
@@ -923,135 +1053,19 @@ pub fn parse_fragment(text: &str) -> Result<Node,MechError> {
   Ok((input, Node::Null))
 }*/
 
-fn float_literal(input: ParseString) -> ParseResult<Node> {
-  let (input, p1) = opt(tag("."))(input)?;
-  let (input, p2) = digit1(input)?;
-  let (input, p3) = opt(tag("."))(input)?;
-  let (input, p4) = digit0(input)?;
-  let mut whole: Vec<char> = vec![];
-  if let Some(_) = p1 {
-    whole.push('.');
-  }
-  let mut digits = p2.iter().flat_map(|c| c.chars()).collect::<Vec<char>>();
-  whole.append(&mut digits);
-  if let Some(_) = p3 {
-    whole.push('.');
-  }
-  let mut digits = p4.iter().flat_map(|c| c.chars()).collect::<Vec<char>>();
-  whole.append(&mut digits);
-  Ok((input, Node::FloatLiteral{chars: whole}))
-}
 
-fn decimal_literal(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = tag("0d")(input)?;
-  let (input, chars) = digit1(input)?;
-  Ok((input, Node::DecimalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
-}
 
-fn hexadecimal_literal(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = tag("0x")(input)?;
-  let (input, chars) = many1(hex_digit)(input)?;
-  Ok((input, Node::HexadecimalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
-}
-
-fn octal_literal(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = tag("0o")(input)?;
-  let (input, chars) = many1(oct_digit)(input)?;
-  Ok((input, Node::OctalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
-}
-
-fn binary_literal(input: ParseString) -> ParseResult<Node> {
-  let (input, (_, r)) = range(tag("0b"))(input)?;
-  let (input, chars) = ctx!(many1(bin_digit), "Expect binary digits after '0b'", r)(input)?;
-  Ok((input, Node::BinaryLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
-}
-
-fn value(input: ParseString) -> ParseResult<Node> {
-  let (input, value) = alt((empty, boolean_literal, number_literal, string))(input)?;
-  Ok((input, Node::Value{children: vec![value]}))
-}
-
-fn empty(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = many1(underscore)(input)?;
-  Ok((input, Node::Empty))
-}
 
 // ## Blocks
 
 // ### Data
 
-fn select_all(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = colon(input)?;
-  Ok((input, Node::SelectAll))
-}
 
-fn subscript(input: ParseString) -> ParseResult<Node> {
-  let (input, subscript) = alt((select_all, expression, tilde))(input)?;
-  let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
-  Ok((input, Node::Subscript{children: vec![subscript]}))
-}
 
-fn subscript_index(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = left_brace(input)?;
-  let (input, subscripts) = many1(subscript)(input)?;
-  let (input, _) = right_brace(input)?;
-  Ok((input, Node::SubscriptIndex{children: subscripts}))
-}
 
-fn single_subscript_index(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = left_brace(input)?;
-  let (input, subscript) = subscript(input)?;
-  let (input, _) = right_brace(input)?;
-  Ok((input, Node::SubscriptIndex{children: vec![subscript]}))
-}
 
-fn dot_index(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = period(input)?;
-  let (input, identifier) = identifier(input)?;
-  let (input, subscript) = opt(single_subscript_index)(input)?;
-  let index = match subscript {
-    Some(subscript) =>vec![subscript, identifier],
-    None => vec![Node::Null, identifier],
-  };
-  Ok((input, Node::DotIndex{children: index}))
-}
 
-fn swizzle(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = period(input)?;
-  let (input, first) = identifier(input)?;
-  let (input, _) = comma(input)?;
-  let (input, mut rest) = separated_list1(tag(","),identifier)(input)?;
-  let mut cols = vec![first];
-  cols.append(&mut rest);
-  Ok((input, Node::Swizzle{children: cols}))
-}
 
-fn reshape_column(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = left_brace(input)?;
-  let (input, _) = colon(input)?;
-  let (input, _) = right_brace(input)?;
-  Ok((input, Node::ReshapeColumn))
-}
-
-fn index(input: ParseString) -> ParseResult<Node> {
-  let (input, index) = alt((swizzle, dot_index, reshape_column, subscript_index))(input)?;
-  Ok((input, Node::Index{children: vec![index]}))
-}
-
-fn data(input: ParseString) -> ParseResult<Node> {
-  let (input, source) = alt((table, identifier))(input)?;
-  let (input, mut indices) = many0(index)(input)?;
-  let mut data = vec![source];
-  data.append(&mut indices);
-  Ok((input, Node::Data{children: data}))
-}
-
-fn kind_annotation(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = left_angle(input)?;
-  let (input, kind_id) = separated_list1(tag(","),alt((identifier,underscore)))(input)?;
-  let (input, _) = right_angle(input)?;
-  Ok((input, Node::KindAnnotation{children: kind_id}))
-}
 
 // ### Tables
 
