@@ -634,8 +634,8 @@ where
       if e.label.id == LabelId::Fail {
         e.label = label.clone();
       }
-      e.log();
       if e.label.recovery_fn_is_defined() {
+        e.log();
         (e.label.static_payload.recovery_fn)(e.remaining_input)
       } else {
         Err(Err::Failure(e))
