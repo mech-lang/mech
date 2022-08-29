@@ -407,6 +407,7 @@ macro_rules! compare_compiler {
             let out_table = block.get_table(out_table_id)?;
             {
               let mut out_table_brrw = out_table.borrow_mut();
+              out_table_brrw.dynamic = true;
               out_table_brrw.resize(*lhs_rows,1);
               out_table_brrw.set_kind(ValueKind::Bool);
             }
@@ -498,6 +499,7 @@ macro_rules! compare_eq_compiler {
             let out_table = block.get_table(out_table_id)?;
             {
               let mut out_table_brrw = out_table.borrow_mut();
+              out_table_brrw.dynamic = true;
               out_table_brrw.resize(*lhs_rows,1);
               out_table_brrw.set_kind(ValueKind::Bool);
             }

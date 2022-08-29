@@ -62,6 +62,7 @@ impl fmt::Debug for Functions {
 
 
 pub struct Core {
+  pub sections: Vec<HashMap<BlockId,BlockRef>>,
   pub blocks: HashMap<BlockId,BlockRef>,
   unsatisfied_blocks: HashMap<BlockId,BlockRef>,
   database: Rc<RefCell<Database>>,
@@ -130,6 +131,7 @@ impl Core {
     functions.insert(*SET_CARTESIAN, Box::new(SetCartesian{}));
      
     Core {
+      sections: Vec::new(),
       blocks: HashMap::new(),
       unsatisfied_blocks: HashMap::new(),
       database: Rc::new(RefCell::new(Database::new())),
@@ -283,6 +285,10 @@ impl Core {
     Ok(())
   }
 
+  pub fn load_sections(&mut self, sections: Vec<Vec<Block>>) -> Vec<((Vec<BlockId>,Vec<MechError>))> {
+    sections.iter().map(|blocks| self.load_blocks(blocks)).collect()
+  }
+
   pub fn load_block_refs(&mut self, mut blocks: Vec<BlockRef>) -> (Vec<BlockId>,Vec<MechError>) {
     let mut block_ids = vec![];
     let mut block_errors = vec![];
@@ -299,7 +305,7 @@ impl Core {
     (block_ids,block_errors)
   }
 
-  pub fn load_blocks(&mut self, mut blocks: Vec<Block>) -> (Vec<BlockId>,Vec<MechError>) {
+  pub fn load_blocks(&mut self, mut blocks: &Vec<Block>) -> (Vec<BlockId>,Vec<MechError>) {
     let mut block_ids = vec![];
     let mut block_errors = vec![];
     for block in blocks {

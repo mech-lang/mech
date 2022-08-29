@@ -486,6 +486,7 @@ impl Block {
     let (row,col) = &indices.last().unwrap();
     let table = self.get_table(&table_id)?;
     let table_brrw = table.borrow();
+    let mut dynamic = table_brrw.dynamic;
     let dim = match (row,col) {
       (TableIndex::ReshapeColumn, TableIndex::All) => (table_brrw.rows*table_brrw.cols,1),
       (TableIndex::All, TableIndex::All) => (table_brrw.rows, table_brrw.cols),
@@ -494,7 +495,10 @@ impl Block {
       (TableIndex::All, TableIndex::Alias(_)) => (table_brrw.rows, 1),
       (TableIndex::Index(_),TableIndex::None) |
       (TableIndex::Index(_),TableIndex::Index(_)) |
-      (TableIndex::Index(_),TableIndex::Alias(_)) => (1,1),
+      (TableIndex::Index(_),TableIndex::Alias(_)) => {
+        dynamic = false;
+        (1,1)
+      },
       (TableIndex::Index(_),TableIndex::All) => (1,table_brrw.cols),
       (TableIndex::IxTable(ix_table_id),TableIndex::Alias(_)) |
       (TableIndex::IxTable(ix_table_id),TableIndex::None) => {
@@ -527,7 +531,7 @@ impl Block {
       }
       x => {return Err(MechError{id: 2118, kind: MechErrorKind::GenericError(format!("{:?}", x))});},    
     };
-    let arg_shape = match (dim,table_brrw.dynamic) {
+    let arg_shape = match (dim,dynamic) {
       ((_,0),_) |
       ((0,_),_) |
       ((0,0),_) => TableShape::Pending(table_id),
