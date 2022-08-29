@@ -391,16 +391,12 @@ lazy_static! {
     map.insert(LabelId::Invalid, StaticLabelPayload {
       message: "Unexpected error",
       note: "",
-      expected_annotations: 0,
-      annotation_notes: [""; MAX_ANNOTATIONS],
       recovery_fn: Label::nil_recovery_fn,
     });
 
     map.insert(LabelId::Fail, StaticLabelPayload {
       message: "Unexpected character",
       note: "",
-      expected_annotations: 0,
-      annotation_notes: [""; MAX_ANNOTATIONS],
       recovery_fn: Label::nil_recovery_fn,
     });
     //---------------------------------------------------------------------------------
@@ -412,14 +408,13 @@ const MAX_ANNOTATIONS: usize = 3;
 
 #[derive(Clone)]
 struct RuntimeLabelPayload {
+  annotation_count: usize,
   annotation_rngs: [ParseStringRange; MAX_ANNOTATIONS],
 }
 
 struct StaticLabelPayload {
   message: &'static str,
   note: &'static str,
-  expected_annotations: usize,
-  annotation_notes: [&'static str; MAX_ANNOTATIONS],
   recovery_fn: fn(ParseString) -> ParseResult<Node>,
 }
 
@@ -544,6 +539,7 @@ impl<'a> ParseError<'a> {
     ParseError {
       cause_index: input.cursor,
       label: Label::new(label_id, RuntimeLabelPayload {
+        annotation_count: 0,
         annotation_rngs: [(0, 0); MAX_ANNOTATIONS],
       }),
       remaining_input: input,
@@ -600,24 +596,28 @@ where
 macro_rules! label {
   ($parser:expr, $id:expr) => {
     (label($parser, Label::new($id, RuntimeLabelPayload {
+      annotation_count: 0,
       annotation_rngs: [(0, 0); MAX_ANNOTATIONS]
     })))
   };
 
   ($parser:expr, $id:expr, $r1:expr) => {
     (label($parser, Label::new($id, RuntimeLabelPayload {
+      annotation_count: 1,
       annotation_rngs: [$r1, (0, 0), (0, 0)]
     })))
   };
 
   ($parser:expr, $id:expr, $r1:expr, $r2:expr) => {
     (label($parser, Label::new($id, RuntimeLabelPayload {
+      annotation_count: 2,
       annotation_rngs: [$r1, $r2, (0, 0)]
     })))
   };
 
   ($parser:expr, $id:expr, $r1:expr, $r2:expr, $r3:expr) => {
     (label($parser, Label::new($id, RuntimeLabelPayload {
+      annotation_count: 3,
       annotation_rngs: [$r1, $r2, $r3]
     })))
   };
