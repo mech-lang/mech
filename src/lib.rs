@@ -234,15 +234,15 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
   Ok(code)
 }
 
-pub fn compile_code(code: Vec<MechCode>) -> Result<Vec<MiniBlock>,MechError> {
+pub fn compile_code(code: Vec<MechCode>) -> Result<Vec<Vec<MiniBlock>>,MechError> {
   print!("{}", "[Compiling] ".bright_green());
   let mut miniblocks = vec![];
   for c in code {
     match c {
       MechCode::String(c) => {
         let mut compiler = Compiler::new();
-        let blocks = compiler.compile_str(&c)?;
-        let mut mb = minify_blocks(&blocks);
+        let sections = compiler.compile_str(&c)?;
+        let mut mb = minify_blocks(&sections);
         miniblocks.append(&mut mb);
       },
       MechCode::MiniBlocks(mut mb) => {
@@ -254,24 +254,28 @@ pub fn compile_code(code: Vec<MechCode>) -> Result<Vec<MiniBlock>,MechError> {
   Ok(miniblocks)
 }
 
-pub fn minify_blocks(blocks: &Vec<Block>) -> Vec<MiniBlock> {
-  let mut miniblocks = Vec::new();
-  for block in blocks {
-    let mut miniblock = MiniBlock::new();
-    miniblock.transformations = block.transformations.clone();
-    match &block.unsatisfied_transformation {
-      Some((_,tfm)) => miniblock.transformations.push(tfm.clone()),
-      _ => (),
+pub fn minify_blocks(sections: &Vec<Vec<Block>>) -> Vec<Vec<MiniBlock>> {
+  let mut mb_sections = vec![];
+  for section in sections {
+    let mut miniblocks = Vec::new();
+    for block in section {
+      let mut miniblock = MiniBlock::new();
+      miniblock.transformations = block.transformations.clone();
+      match &block.unsatisfied_transformation {
+        Some((_,tfm)) => miniblock.transformations.push(tfm.clone()),
+        _ => (),
+      }
+      miniblock.transformations.append(&mut block.pending_transformations.clone());
+      /*for (k,v) in block.store.number_literals.iter() {
+        miniblock.number_literals.push((k.clone(), v.clone()));
+      }
+      for error in &block.errors {
+        miniblock.errors.push(error.clone());
+      }*/
+      miniblock.id = block.id;
+      miniblocks.push(miniblock);
     }
-    miniblock.transformations.append(&mut block.pending_transformations.clone());
-    /*for (k,v) in block.store.number_literals.iter() {
-      miniblock.number_literals.push((k.clone(), v.clone()));
-    }
-    for error in &block.errors {
-      miniblock.errors.push(error.clone());
-    }*/
-    miniblock.id = block.id;
-    miniblocks.push(miniblock);
+    mb_sections.push(miniblocks);
   }
-  miniblocks
+  mb_sections
 }
