@@ -166,8 +166,8 @@ Keyboard events
   #html/event/key-down = [|key<string> event-id<u64>| "" 0]"#;
 
     let mut compiler = Compiler::new();
-    let blocks = compiler.compile_str(&html_code).unwrap();
-    mech.load_blocks(blocks);
+    let sections = compiler.compile_str(&html_code).unwrap();
+    mech.load_sections(sections);
 
     WasmCore {
       core: mech,
@@ -257,20 +257,25 @@ Keyboard events
   pub fn load_compressed_blocks(&mut self, encoded_miniblocks: String) {
     let compressed_miniblocks = decode(encoded_miniblocks).unwrap();
     let serialized_miniblocks = decompress_to_vec(compressed_miniblocks.as_slice()).expect("Failed to decompress!");
-    self.load_blocks(serialized_miniblocks);
+    self.load_sections(serialized_miniblocks);
   }
 
-  pub fn load_blocks(&mut self, serialized_miniblocks: Vec<u8>) -> Result<(),JsValue> {
-    let miniblocks: Vec<MiniBlock> = match bincode::deserialize(&serialized_miniblocks) {
+  pub fn load_sections(&mut self, serialized_miniblocks: Vec<u8>) -> Result<(),JsValue> {
+    let miniblocks: Vec<Vec<MiniBlock>> = match bincode::deserialize(&serialized_miniblocks) {
       Ok(miniblocks) => miniblocks,
       Err(x) => {
         return Err(JsValue::from_str("5239"));
       }
     };
-    let mut blocks: Vec<Block> = Vec::new();
-    let blocks = miniblocks.iter().map(|b| MiniBlock::maximize_block(&b)).collect::<Vec<Block>>();
-    let len = blocks.len();
-    self.core.load_blocks(blocks);
+    let mut len = 0;
+    let mut sections = vec![];
+    for section in miniblocks {
+      let mut blocks: Vec<Block> = Vec::new();
+      let blocks = section.iter().map(|b| MiniBlock::maximize_block(&b)).collect::<Vec<Block>>();
+      len += blocks.len();
+      sections.push(blocks);
+    }
+    self.core.load_sections(sections);
     self.core.schedule_blocks();
     self.add_timers();
     self.add_apps();
