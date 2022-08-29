@@ -10,7 +10,7 @@ keywords = ["mech", "language", "programming", "dataflow", "runtime"]
 categories = ["science::robotics", "science", "game-engines", "web-programming"]
 license = "Apache-2.0"
 readme = "README.md"
-edition = "2018"
+edition = "2021"
 
 [badges]
 gitlab = { repository = "mech-lang/mech", branch = "main" }
@@ -25,30 +25,21 @@ mech-utilities = {path = "utilities"}
 clap = "2.34.0"
 colored = "2.0.0"
 nom = "7.1.1"
-reqwest = {version = "0.11.3", features = ["blocking"]}
+reqwest = {version = "0.11.11", features = ["blocking"]}
 bincode = "1.3.3"
-serde = "1.0.133"
-serde_derive = "1.0.133"
-serde_json = "1.0.74"
-crossbeam-channel = "0.5.1"
+serde = "1.0.144"
+serde_derive = "1.0.144"
+serde_json = "1.0.85"
+crossbeam-channel = "0.5.6"
 seahash = "4.1.0"
-crossterm = "0.22.1"
+crossterm = "0.25.0"
 lazy_static = "1.4.0"
-tui = { version = "0.10", default-features = false, features = ['crossterm'] }
-tokio = {version = "1.6.1", features = ["full"]}
+tui = { version = "0.19.0", default-features = false, features = ['crossterm'] }
+tokio = {version = "1.20.1", features = ["full"]}
 warp = "0.3.2"
-websocket = "0.26.2"
-miniz_oxide = "0.5.1"
+websocket = "0.26.5"
+miniz_oxide = "0.6.1"
 base64 = "0.13.0"
-eframe = { version = "0.17.0" }
-image = { version = "0.24.0", default-features = false, features = [
-  "ico",
-  "jpeg",
-  "png",
-] }
-syntect = { version = "4", optional = true, default-features = false, features = [
-  "default-fancy",
-] }
 
 [workspace]
 
@@ -65,10 +56,6 @@ winres = "0.1.12"
 [package.metadata.winres]
 OriginalFilename = "MECH.EXE"
 LegalCopyright = "Copyright © 2022"
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-console_error_panic_hook = "0.1.6"
-tracing-wasm = "0.2"
 
 [patch.'https://gitlab.com/mech-lang/core']
 mech-core = { path = 'core' }
