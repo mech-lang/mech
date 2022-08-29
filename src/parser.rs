@@ -191,7 +191,7 @@ impl fmt::Debug for Node {
   }
 }
 
-pub fn print_recurse(node: &Node, level: usize) {
+fn print_recurse(node: &Node, level: usize) {
   spacer(level);
   let children: Option<&Vec<Node>> = match node {
     Node::Root{children} => {print!("Root\n"); Some(children)},
@@ -360,7 +360,7 @@ pub fn print_recurse(node: &Node, level: usize) {
   }
 }
 
-pub fn spacer(width: usize) {
+fn spacer(width: usize) {
   let limit = if width > 0 {
     width - 1
   } else {
@@ -374,12 +374,12 @@ pub fn spacer(width: usize) {
 
 // ## Parser utilities
 
-pub type ParseStringRange = (usize, usize);   // [a, b)
+type ParseStringRange = (usize, usize);   // [a, b)
 
-pub type ParseResult<'a, O> = IResult<ParseString<'a>, O, ParseError<'a>>;
+type ParseResult<'a, O> = IResult<ParseString<'a>, O, ParseError<'a>>;
 
 #[derive(Clone, Hash, PartialEq, Eq)]
-pub enum LabelId {
+enum LabelId {
   Invalid,
   Fail,
 }
@@ -395,7 +395,7 @@ lazy_static! {
       annotation_notes: [""; MAX_ANNOTATIONS],
       recovery_fn: Label::nil_recovery_fn,
     });
-    //---------------------------------------------------------------------------------
+
     map.insert(LabelId::Fail, StaticLabelPayload {
       message: "Unexpected character",
       note: "",
@@ -411,11 +411,11 @@ lazy_static! {
 const MAX_ANNOTATIONS: usize = 3;
 
 #[derive(Clone)]
-pub struct RuntimeLabelPayload {
+struct RuntimeLabelPayload {
   annotation_rngs: [ParseStringRange; MAX_ANNOTATIONS],
 }
 
-pub struct StaticLabelPayload {
+struct StaticLabelPayload {
   message: &'static str,
   note: &'static str,
   expected_annotations: usize,
@@ -425,7 +425,7 @@ pub struct StaticLabelPayload {
 
 /// Once constructed, a `Label` should be immutable
 #[derive(Clone)]
-pub struct Label {
+struct Label {
   id: LabelId,
   static_payload: &'static StaticLabelPayload,
   runtime_payload: RuntimeLabelPayload,
@@ -450,7 +450,7 @@ impl Label {
 }
 
 #[derive(Clone)]
-pub struct ParseString<'a> {
+struct ParseString<'a> {
   graphemes: &'a Vec<&'a str>,
   error_log: Vec<(usize, Label)>,
   cursor: usize,
@@ -522,18 +522,18 @@ impl<'a> ParseString<'a> {
     None
   }
 
-  pub fn len(&self) -> usize {
+  fn len(&self) -> usize {
     self.graphemes.len() - self.cursor
   }
 }
 
 impl<'a> nom::InputLength for ParseString<'a> {
   fn input_len(&self) -> usize {
-    self.graphemes.len() - self.cursor
+    self.len()
   }
 }
 
-pub struct ParseError<'a> {
+struct ParseError<'a> {
   cause_index: usize,
   remaining_input: ParseString<'a>,
   label: Label,
@@ -1722,24 +1722,24 @@ fn program(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Program { children: program }))
 }
 
-pub fn raw_transformation(input: ParseString) -> ParseResult<Node> {
+fn raw_transformation(input: ParseString) -> ParseResult<Node> {
   let (input, statement) = statement(input)?;
   let (input, _) = many0(alt((space,newline,tab)))(input)?;
   Ok((input, Node::Transformation { children:  vec![statement] }))
 }
 
-pub fn parse_block(input: ParseString) -> ParseResult<Node> {
+fn parse_block(input: ParseString) -> ParseResult<Node> {
   let (input, transformations) = many1(raw_transformation)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   Ok((input, Node::Block { children:  transformations }))
 }
 
-pub fn parse_mech_fragment(input: ParseString) -> ParseResult<Node> {
+fn parse_mech_fragment(input: ParseString) -> ParseResult<Node> {
   let (input, statement) = statement(input)?;
   Ok((input, Node::Root { children:  vec![statement] }))
 }
 
-pub fn parse_mech(input: ParseString) -> ParseResult<Node> {
+fn parse_mech(input: ParseString) -> ParseResult<Node> {
   let (input, mech) = alt((program,statement))(input)?;
   Ok((input, Node::Root { children: vec![mech] }))
 }
