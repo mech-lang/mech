@@ -1,4 +1,4 @@
-image: "mechlang/mech:latest"
+image: "rust:latest"
 
 test:cargo:
   script:
