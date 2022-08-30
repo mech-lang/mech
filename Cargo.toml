@@ -9,6 +9,7 @@ repository = "https://github.com/mech-machines/math"
 keywords = ["mech", "language", "programming"]
 license = "Apache-2.0"
 readme = "README.md"
+edition = "2021"
 
 [badges]
 gitlab = { repository = "mech-lang/machines/math", branch = "main" }
@@ -18,8 +19,8 @@ maintenance = { status = "actively-developed" }
 crate-type = ["dylib", "rlib"]
 
 [dependencies]
-mech-core = {git = "https://gitlab.com/mech-lang/core"}
-mech-utilities = {git = "https://gitlab.com/mech-lang/utilities"}
+mech-core = {git = "https://gitlab.com/mech-lang/core", branch = "v0.1-beta"}
+mech-utilities = {git = "https://gitlab.com/mech-lang/utilities", branch = "v0.1-beta"}
 
-libm = "0.1.2"
+libm = "0.2.5"
 lazy_static = "1.4.0"

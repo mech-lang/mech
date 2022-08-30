@@ -1,0 +1,23 @@
+math
+=====
+
+1. Description
+---------------
+
+Provides standard mathematical functions.
+
+2. Provided Functions
+----------------------
+
+- math/sin(angle<f32>)
+- math/sin(angle<degrees>)
+
+3. Info
+--------
+
+#math/machine = [
+  name: "io" 
+  version: "v0.0.1"
+  authors: "Corey Montella" 
+  machine-url: "https://gitlab.com/mech-lang/machines/math"
+  license: "Apache-2.0"]
