@@ -382,6 +382,9 @@ type ParseResult<'a, O> = IResult<ParseString<'a>, O, ParseError<'a>>;
 enum LabelId {
   Invalid,
   Fail,
+
+  IndentedTfm1,
+  IndentedTfm2,
 }
 
 lazy_static! {
@@ -391,12 +394,28 @@ lazy_static! {
     map.insert(LabelId::Invalid, StaticLabelPayload {
       message: "Unexpected error",
       note: "",
+      expected_annotations: 0,
       recovery_fn: Label::nil_recovery_fn,
     });
 
     map.insert(LabelId::Fail, StaticLabelPayload {
       message: "Unexpected character",
       note: "",
+      expected_annotations: 0,
+      recovery_fn: Label::nil_recovery_fn,
+    });
+
+    map.insert(LabelId::IndentedTfm1, StaticLabelPayload {
+      message: "Block indentation has to be exactly 2 spaces",
+      note: "Please do not start a line with space if you wish to enter plain text",
+      expected_annotations: 0,
+      recovery_fn: |input| Ok((input, Node::Token {token: Token::Space, chars: vec![' ']})),
+    });
+
+    map.insert(LabelId::IndentedTfm2, StaticLabelPayload {
+      message: "Expect transformation after indentation",
+      note: "",
+      expected_annotations: 1,
       recovery_fn: Label::nil_recovery_fn,
     });
     //---------------------------------------------------------------------------------
@@ -408,13 +427,13 @@ const MAX_ANNOTATIONS: usize = 3;
 
 #[derive(Clone)]
 struct RuntimeLabelPayload {
-  annotation_count: usize,
   annotation_rngs: [ParseStringRange; MAX_ANNOTATIONS],
 }
 
 struct StaticLabelPayload {
   message: &'static str,
   note: &'static str,
+  expected_annotations: usize,
   recovery_fn: fn(ParseString) -> ParseResult<Node>,
 }
 
@@ -447,7 +466,7 @@ impl Label {
 #[derive(Clone)]
 struct ParseString<'a> {
   graphemes: &'a Vec<&'a str>,
-  error_log: Vec<(usize, Label)>,
+  error_log: ErrorLog,
   cursor: usize,
 }
 
@@ -517,6 +536,10 @@ impl<'a> ParseString<'a> {
     None
   }
 
+  fn had_error(&self) -> bool {
+    self.error_log.len() != 0
+  }
+
   fn len(&self) -> usize {
     self.graphemes.len() - self.cursor
   }
@@ -539,7 +562,6 @@ impl<'a> ParseError<'a> {
     ParseError {
       cause_index: input.cursor,
       label: Label::new(label_id, RuntimeLabelPayload {
-        annotation_count: 0,
         annotation_rngs: [(0, 0); MAX_ANNOTATIONS],
       }),
       remaining_input: input,
@@ -596,28 +618,24 @@ where
 macro_rules! label {
   ($parser:expr, $id:expr) => {
     (label($parser, Label::new($id, RuntimeLabelPayload {
-      annotation_count: 0,
       annotation_rngs: [(0, 0); MAX_ANNOTATIONS]
     })))
   };
 
   ($parser:expr, $id:expr, $r1:expr) => {
     (label($parser, Label::new($id, RuntimeLabelPayload {
-      annotation_count: 1,
       annotation_rngs: [$r1, (0, 0), (0, 0)]
     })))
   };
 
   ($parser:expr, $id:expr, $r1:expr, $r2:expr) => {
     (label($parser, Label::new($id, RuntimeLabelPayload {
-      annotation_count: 2,
       annotation_rngs: [$r1, $r2, (0, 0)]
     })))
   };
 
   ($parser:expr, $id:expr, $r1:expr, $r2:expr, $r3:expr) => {
     (label($parser, Label::new($id, RuntimeLabelPayload {
-      annotation_count: 3,
       annotation_rngs: [$r1, $r2, $r3]
     })))
   };
@@ -729,23 +747,27 @@ leaf!{semicolon, ";", Token::Semicolon}
 leaf!{new_line_char, "\n", Token::Newline}
 leaf!{carriage_return, "\r", Token::CarriageReturn}
 
+// emoji ::= emoji_grapheme+ ;
 fn emoji(input: ParseString) -> ParseResult<Node> {
   let (input, matching) = many1(emoji_grapheme)(input)?;
   let chars: Vec<Node> = matching.iter().map(|b| Node::Token{token: Token::Emoji, chars: b.chars().collect::<Vec<char>>()}).collect();
   Ok((input, Node::Emoji{children: chars}))
 }
 
+// word ::= alpha+ ;
 fn word(input: ParseString) -> ParseResult<Node> {
   let (input, matching) = many1(alpha)(input)?;
   let chars: Vec<Node> = matching.iter().map(|b| Node::Token{token: Token::Alpha, chars: b.chars().collect::<Vec<char>>()}).collect();
   Ok((input, Node::Word{children: chars}))
 }
 
+// digit1 ::= digit+ ;
 fn digit1(input: ParseString) -> ParseResult<Vec<String>> {
   let result = many1(digit)(input)?;
   Ok(result)
 }
 
+// digit0 ::= digit* ;
 fn digit0(input: ParseString) -> ParseResult<Vec<String>> {
   let result = many0(digit)(input)?;
   Ok(result)
@@ -767,17 +789,20 @@ fn oct_digit(input: ParseString) -> ParseResult<String> {
   Ok(result)
 }
 
+// number ::= digit1 ;
 fn number(input: ParseString) -> ParseResult<Node> {
   let (input, matching) = digit1(input)?;
   let chars: Vec<Node> = matching.iter().map(|b| Node::Token{token: Token::Digit, chars: b.chars().collect::<Vec<char>>()}).collect();
   Ok((input, Node::Number{children: chars}))
 }
 
+// punctuation ::= period | exclamation | question | comma | colon | semicolon | dash | apostrophe | left_parenthesis | right_parenthesis | left_angle | right_angle | left_brace | right_brace | left_bracket | right_bracket ;
 fn punctuation(input: ParseString) -> ParseResult<Node> {
   let (input, punctuation) = alt((period, exclamation, question, comma, colon, semicolon, dash, apostrophe, left_parenthesis, right_parenthesis, left_angle, right_angle, left_brace, right_brace, left_bracket, right_bracket))(input)?;
   Ok((input, Node::Punctuation{children: vec![punctuation]}))
 }
 
+// symbol ::= ampersand | bar | at | slash | backslash | hashtag | equal | tilde | plus | asterisk | asterisk | caret | underscore ;
 fn symbol(input: ParseString) -> ParseResult<Node> {
   let (input, symbol) = alt((ampersand, bar, at, slash, backslash, hashtag, equal, tilde, plus, asterisk, caret, underscore))(input)?;
   Ok((input, Node::Symbol{children: vec![symbol]}))
@@ -788,6 +813,7 @@ fn paragraph_symbol(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Symbol{children: vec![symbol]}))
 }
 
+// text ::= (word | space | number | punctuation | symbol | emoji)+ ;
 fn text(input: ParseString) -> ParseResult<Node> {
   let (input, word) = many1(alt((word, space, number, punctuation, symbol, emoji)))(input)?;
   Ok((input, Node::Text{children: word}))
@@ -853,16 +879,19 @@ fn english_false_literal(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::False))
 }
 
+// carriage_newline ::= "\r\n" ;
 fn carriage_newline(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("\r\n")(input)?;
   Ok((input, Node::Null))
 }
 
+// newline ::= new_line_char | carriage_newline ;
 fn newline(input: ParseString) -> ParseResult<Node> {
   let (input, _) = alt((new_line_char, carriage_newline))(input)?;
   Ok((input, Node::Null))
 }
 
+// whitespace ::= space*, newline+ ;
 fn whitespace(input: ParseString) -> ParseResult<Node> {
   let (input, _) = many0(space)(input)?;
   let (input, _) = many1(newline)(input)?;
@@ -1551,15 +1580,23 @@ fn transformation(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Transformation { children: vec![statement] }))
 }
 
+fn indented_tfm(input: ParseString) -> ParseResult<Node> {
+  let (input, (_, r)) = range(tuple((
+    space,
+    label!(space, LabelId::IndentedTfm1)
+  )))(input)?;
+  label!(transformation, LabelId::IndentedTfm2, r)(input)
+}
+
 fn block(input: ParseString) -> ParseResult<Node> {
-  let (input, transformations) = many1(tuple((tuple((space,space)),transformation)))(input)?;
+  let (input, transformations) = many1(indented_tfm)(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  let tfms: Vec<Node> = transformations.iter().map(|(_,tfm)| tfm).cloned().collect();
-  Ok((input, Node::Block { children: tfms }))
+  Ok((input, Node::Block { children: transformations }))
 }
 
 // ### Markdown
 
+// ul_title ::= space*, text, space*, newline, equal+, space*, newline* ;
 fn ul_title(input: ParseString) -> ParseResult<Node> {
   let (input, _) = many0(space)(input)?;
   let (input, text) = text(input)?;
@@ -1571,6 +1608,7 @@ fn ul_title(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Title { children: vec![text] }))
 }
 
+// title ::= ul_title ;
 fn title(input: ParseString) -> ParseResult<Node> {
   let (input,title) = ul_title(input)?;
   Ok((input, title))
@@ -1685,6 +1723,7 @@ fn mech_code_block(input: ParseString) -> ParseResult<Node> {
 
 // ### Start here
 
+// section ::= ((block | code_block | mech_code_block | statement | subtitle | paragraph | unordered_list), whitespace?)+ ;
 fn section(input: ParseString) -> ParseResult<Node> {
   let (input, mut section_elements) = many1(
     tuple((
@@ -1697,6 +1736,7 @@ fn section(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Section{ children: section }))
 }
 
+// body ::= whitespace*, section+ ;
 fn body(input: ParseString) -> ParseResult<Node> {
   let (input, _) = many0(whitespace)(input)?;
   let (input, sections) = many1(section)(input)?;
@@ -1708,6 +1748,7 @@ fn fragment(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Fragment { children:  vec![statement] }))
 }
 
+// program ::= whitespace?, title?, body, whitespace? ;
 fn program(input: ParseString) -> ParseResult<Node> {
   let mut program = vec![];
   let (input, _) = opt(whitespace)(input)?;
@@ -1739,12 +1780,33 @@ fn parse_mech_fragment(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Root { children:  vec![statement] }))
 }
 
+// parse_mech ::= program | statement ;
 fn parse_mech(input: ParseString) -> ParseResult<Node> {
-  let (input, mech) = alt((program,statement))(input)?;
+  let (input, mech) = alt((program, statement))(input)?;
   Ok((input, Node::Root { children: vec![mech] }))
 }
 
 // ## Parser interfaces
+
+pub type ErrorLog = Vec<(usize, Label)>;
+
+pub fn print_error(error_log: &ErrorLog) -> String {
+  let mut result = String::new();
+  for (i, (cause_index, label)) in error_log.iter().enumerate() {
+    let r = label.runtime_payload.annotation_rngs;
+    result.push_str("-------------- Error #{} --------------\n");
+    result.push_str(&format!("index: {}\n", cause_index));
+    result.push_str(&format!("message: {}\n", label.static_payload.message));
+    result.push_str(&format!("note: {}\n", label.static_payload.note));
+    result.push_str(&format!("annotations: {}\n", label.static_payload.expected_annotations));
+    result.push_str("annotations:\n");
+    result.push_str(&format!("    [{}, {})\n", r[0].0, r[0].1));
+    result.push_str(&format!("    [{}, {})\n", r[1].0, r[1].1));
+    result.push_str(&format!("    [{}, {})\n", r[2].0, r[2].1));
+    result.push('\n');
+  }
+  result
+}
 
 pub fn parse(text: &str) -> Result<Node,MechError> {
   let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
@@ -1754,6 +1816,9 @@ pub fn parse(text: &str) -> Result<Node,MechError> {
       let unparsed = rest.graphemes[rest.cursor..].iter().map(|s| String::from(*s)).collect::<String>();
       if unparsed != "" {
         println!("Unparsed: {}", unparsed);
+        if rest.had_error() {
+          println!("Error log: \n{}", print_error(&rest.error_log));
+        }
         Err(MechError{id: 3302, kind: MechErrorKind::GenericError(unparsed)})
       } else { 
         Ok(tree)
@@ -1762,7 +1827,20 @@ pub fn parse(text: &str) -> Result<Node,MechError> {
     Err(q) => {
       match q {
         Err::Error(e) | Err::Failure(e) => {
-          println!("Err: {}", e.label.static_payload.message);
+          if e.remaining_input.had_error() {
+            println!("Error log: \n{}", print_error(&e.remaining_input.error_log));
+          }
+
+          let r = e.label.runtime_payload.annotation_rngs;
+          print!("-------------- Last error --------------\n");
+          print!("{}", &format!("index: {}\n", e.cause_index));
+          print!("{}", &format!("message: {}\n", e.label.static_payload.message));
+          print!("{}", &format!("note: {}\n", e.label.static_payload.note));
+          print!("{}", &format!("annotations: {}\n", e.label.static_payload.expected_annotations));
+          print!("{}", "annotations:\n");
+          print!("{}", &format!("    [{}, {})\n", r[0].0, r[0].1));
+          print!("{}", &format!("    [{}, {})\n", r[1].0, r[1].1));
+          print!("{}", &format!("    [{}, {})\n", r[2].0, r[2].1));
         },
         _ => (),
       }
