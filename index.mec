@@ -45,5 +45,5 @@ Right now blocking behavior has only been added to the Windows gamepad driver.
   name: "io" 
   version: "v0.0.1"
   authors: "Corey Montella" 
-  machine-url: "https://gitlab/com/mech-lang/machines/io"
+  machine-url: "https://gitlab.com/mech-lang/machines/io"
   license: "Apache-2.0"]
