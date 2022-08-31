@@ -58,13 +58,13 @@ OriginalFilename = "MECH.EXE"
 LegalCopyright = "Copyright © 2022"
 
 [patch.'https://gitlab.com/mech-lang/core']
-mech-core = { path = 'core' }
+mech-core = { path = 'src/core' }
 
 [patch.'https://gitlab.com/mech-lang/syntax']
-mech-syntax = { path = 'syntax' }
+mech-syntax = { path = 'src/syntax' }
 
 [patch.'https://gitlab.com/mech-lang/program']
-mech-program = { path = 'program' }
+mech-program = { path = 'src/program' }
 
 [patch.'https://gitlab.com/mech-lang/utilities']
-mech-utilities = { path = 'utilities' }
+mech-utilities = { path = 'src/utilities' }
