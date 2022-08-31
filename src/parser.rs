@@ -1,5 +1,10 @@
 // # Parser
 
+// ## Temp
+macro_rules! error_token {
+    () => (Node::Token {token: Token::Space, chars: vec![' ']})
+}
+
 // ## Prelude
 
 use crate::lexer::Token;
@@ -18,7 +23,6 @@ use nom::{
   Err,
 };
 
-use std::collections::HashMap;
 use unicode_segmentation::UnicodeSegmentation;
 
 // ## Parser nodes
@@ -378,95 +382,10 @@ type ParseStringRange = (usize, usize);   // [a, b)
 
 type ParseResult<'a, O> = IResult<ParseString<'a>, O, ParseError<'a>>;
 
-#[derive(Clone, Hash, PartialEq, Eq)]
-enum LabelId {
-  Invalid,
-  Fail,
-
-  IndentedTfm1,
-  IndentedTfm2,
-}
-
-lazy_static! {
-  static ref LABEL_ID_TO_STATIC_PAYLOAD: HashMap<LabelId, StaticLabelPayload> = {
-    let mut map = HashMap::new();
-    //---------------------------------------------------------------------------------
-    map.insert(LabelId::Invalid, StaticLabelPayload {
-      message: "Unexpected error",
-      note: "",
-      expected_annotations: 0,
-      recovery_fn: Label::nil_recovery_fn,
-    });
-
-    map.insert(LabelId::Fail, StaticLabelPayload {
-      message: "Unexpected character",
-      note: "",
-      expected_annotations: 0,
-      recovery_fn: Label::nil_recovery_fn,
-    });
-
-    map.insert(LabelId::IndentedTfm1, StaticLabelPayload {
-      message: "Block indentation has to be exactly 2 spaces",
-      note: "Please do not start a line with space if you wish to enter plain text",
-      expected_annotations: 0,
-      recovery_fn: |input| Ok((input, Node::Token {token: Token::Space, chars: vec![' ']})),
-    });
-
-    map.insert(LabelId::IndentedTfm2, StaticLabelPayload {
-      message: "Expect transformation after indentation",
-      note: "",
-      expected_annotations: 1,
-      recovery_fn: Label::nil_recovery_fn,
-    });
-    //---------------------------------------------------------------------------------
-    map
-  };
-}
-
-const MAX_ANNOTATIONS: usize = 3;
-
-#[derive(Clone)]
-struct RuntimeLabelPayload {
-  annotation_rngs: [ParseStringRange; MAX_ANNOTATIONS],
-}
-
-struct StaticLabelPayload {
-  message: &'static str,
-  note: &'static str,
-  expected_annotations: usize,
-  recovery_fn: fn(ParseString) -> ParseResult<Node>,
-}
-
-/// Once constructed, a `Label` should be immutable
-#[derive(Clone)]
-struct Label {
-  id: LabelId,
-  static_payload: &'static StaticLabelPayload,
-  runtime_payload: RuntimeLabelPayload,
-}
-
-impl Label {
-  fn new(label_id: LabelId, runtime_payload: RuntimeLabelPayload) -> Self {
-    Label {
-      static_payload: LABEL_ID_TO_STATIC_PAYLOAD.get(&label_id).unwrap(),
-      id: label_id,
-      runtime_payload,
-    }
-  }
-
-  fn recovery_fn_is_defined(&self) -> bool {
-    self.static_payload.recovery_fn as usize != Self::nil_recovery_fn as usize
-  }
-
-  fn nil_recovery_fn(_input: ParseString) -> ParseResult<Node> {
-    panic!("The nil recovery function is undefined!");
-  }
-}
-
 #[derive(Clone)]
 struct ParseString<'a> {
   graphemes: &'a Vec<&'a str>,
-  error_log: ErrorLog,
+  error_log: Vec<(ParseStringRange, ParseErrorDetail)>,
   cursor: usize,
 }
 
@@ -551,32 +470,39 @@ impl<'a> nom::InputLength for ParseString<'a> {
   }
 }
 
+#[derive(Clone)]
+struct ParseErrorDetail {
+  message: &'static str,
+  annotation_rngs: Vec<ParseStringRange>,
+}
+
 struct ParseError<'a> {
-  cause_index: usize,
+  cause_range: ParseStringRange,
   remaining_input: ParseString<'a>,
-  label: Label,
+  error_detail: ParseErrorDetail,
 }
 
 impl<'a> ParseError<'a> {
-  fn new(input: ParseString<'a>, label_id: LabelId) -> Self {
+  fn new(input: ParseString<'a>, msg: &'static str) -> Self {
     ParseError {
-      cause_index: input.cursor,
-      label: Label::new(label_id, RuntimeLabelPayload {
-        annotation_rngs: [(0, 0); MAX_ANNOTATIONS],
-      }),
+      cause_range: (input.cursor, input.cursor + 1),
       remaining_input: input,
+      error_detail: ParseErrorDetail {
+        message: msg,
+        annotation_rngs: vec![],
+      }
     }
   }
 
   fn log(&mut self) {
-    self.remaining_input.error_log.push((self.cause_index, self.label.clone()));
+    self.remaining_input.error_log.push((self.cause_range, self.error_detail.clone()));
   }
 }
 
 impl<'a> nom::error::ParseError<ParseString<'a>> for ParseError<'a> {
   fn from_error_kind(input: ParseString<'a>,
                      _kind: nom::error::ErrorKind) -> Self {
-    ParseError::new(input, LabelId::Invalid)
+    ParseError::new(input, "Unexpected error")
   }
 
   fn append(_input: ParseString<'a>,
@@ -588,7 +514,9 @@ impl<'a> nom::error::ParseError<ParseString<'a>> for ParseError<'a> {
   fn or(self, other: Self) -> Self {
     // Choose the branch with larger depth,
     // while prioritizing the other one when depths are equal
-    if self.cause_index > other.cause_index {
+    let (self_index, _) = self.cause_range;
+    let (other_index, _) = other.cause_range;
+    if self_index > other_index {
       self
     } else {
       other
@@ -616,51 +544,79 @@ where
 }
 
 macro_rules! label {
-  ($parser:expr, $id:expr) => {
-    (label($parser, Label::new($id, RuntimeLabelPayload {
-      annotation_rngs: [(0, 0); MAX_ANNOTATIONS]
-    })))
+  // didn't use the `*` repeater because it still tries to match the ','
+  // when there's no tail. label!(p, msg) would have to be written as label!(p, msg,).
+  // Not sure how to resolve this problem without having a new macro rule.
+
+  ($parser:expr, $msg:expr) => {
+    (label_without_recovery($parser, ParseErrorDetail {
+      message: $msg, annotation_rngs: vec![]
+    }))
   };
 
-  ($parser:expr, $id:expr, $r1:expr) => {
-    (label($parser, Label::new($id, RuntimeLabelPayload {
-      annotation_rngs: [$r1, (0, 0), (0, 0)]
-    })))
-  };
-
-  ($parser:expr, $id:expr, $r1:expr, $r2:expr) => {
-    (label($parser, Label::new($id, RuntimeLabelPayload {
-      annotation_rngs: [$r1, $r2, (0, 0)]
-    })))
-  };
-
-  ($parser:expr, $id:expr, $r1:expr, $r2:expr, $r3:expr) => {
-    (label($parser, Label::new($id, RuntimeLabelPayload {
-      annotation_rngs: [$r1, $r2, $r3]
-    })))
+  ($parser:expr, $msg:expr, $($rngs:expr),+) => {
+    (label_without_recovery($parser, ParseErrorDetail {
+      message: $msg, annotation_rngs: vec![$($rngs),+]
+    }))
   };
 }
 
-fn label<'a, F>(mut parser: F, label: Label) ->
-  impl FnMut(ParseString<'a>) -> ParseResult<Node>
+macro_rules! labelr {
+  ($parser:expr, $recovery_fn:expr, $msg:expr) => {
+    (label_with_recovery($parser, $recovery_fn, ParseErrorDetail {
+      message: $msg, annotation_rngs: vec![]
+    }))
+  };
+
+  ($parser:expr, $recovery_fn:expr, $msg:expr, $($rngs:expr),+) => {
+    (label_with_recovery($parser, $recovery_fn, ParseErrorDetail {
+      message: $msg, annotation_rngs: vec![$($rngs),+]
+    }))
+  };
+}
+
+fn label_without_recovery<'a, F, O>(
+  mut parser: F,
+  error_detail: ParseErrorDetail,
+) ->
+  impl FnMut(ParseString<'a>) -> ParseResult<O>
 where
-  F: FnMut(ParseString<'a>) -> ParseResult<Node>
+  F: FnMut(ParseString<'a>) -> ParseResult<O>
 {
   move |mut input: ParseString| {
-    let index = input.cursor;
+    let index_before_parser = input.cursor;
     match parser(input) {
-      Err(Err::Error(mut e)) |
+      Err(Err::Error(mut e)) => {
+        e.cause_range = (index_before_parser, e.cause_range.1);
+        e.error_detail = error_detail.clone();
+        Err(Err::Failure(e))
+      }
+      x => x,
+    }
+  }
+}
+
+fn label_with_recovery<'a, F, O>(
+  mut parser: F,
+  mut recovery_fn: fn(ParseString<'a>) -> ParseResult<O>,
+  error_detail: ParseErrorDetail,
+) ->
+  impl FnMut(ParseString<'a>) -> ParseResult<O>
+where
+  F: FnMut(ParseString<'a>) -> ParseResult<O>
+{
+  move |mut input: ParseString| {
+    let index_before_parser = input.cursor;
+    match parser(input) {
+      Err(Err::Error(mut e)) => {
+        e.cause_range = (index_before_parser, e.cause_range.1);
+        e.error_detail = error_detail.clone();
+        e.log();
+        recovery_fn(e.remaining_input)
+      }
       Err(Err::Failure(mut e)) => {
-        if e.label.id == LabelId::Fail {
-          e.cause_index = index;
-          e.label = label.clone();
-        }
-        if e.label.recovery_fn_is_defined() {
-          e.log();
-          (e.label.static_payload.recovery_fn)(e.remaining_input)
-        } else {
-          Err(Err::Failure(e))
-        }
+        e.log();
+        recovery_fn(e.remaining_input)
       },
       x => x,
     }
@@ -672,9 +628,15 @@ fn tag(tag: &'static str) -> impl Fn(ParseString) -> ParseResult<String> {
     if let Some(matched) = input.consume_tag(tag) {
       Ok((input, matched))
     } else {
-      Err(nom::Err::Error(ParseError::new(input, LabelId::Fail)))
+      Err(nom::Err::Error(ParseError::new(input, "Unexpected character")))
     }
   }
+}
+
+// ## Recovery functions
+
+fn skip_nil(input: ParseString) -> ParseResult<Node> {
+  Ok((input, error_token!()))
 }
 
 // ## Primitive parsers
@@ -683,7 +645,7 @@ fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_emoji() {
     Ok((input, matched))
   } else {
-    Err(nom::Err::Error(ParseError::new(input, LabelId::Fail)))
+    Err(nom::Err::Error(ParseError::new(input, "Unexpected character")))
   }
 }
 
@@ -691,7 +653,7 @@ fn alpha(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_alpha() {
     Ok((input, matched))
   } else {
-    Err(nom::Err::Error(ParseError::new(input, LabelId::Fail)))
+    Err(nom::Err::Error(ParseError::new(input, "Unexpected character")))
   }
 }
 
@@ -699,7 +661,7 @@ fn digit(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_digit() {
     Ok((input, matched))
   } else {
-    Err(nom::Err::Error(ParseError::new(input, LabelId::Fail)))
+    Err(nom::Err::Error(ParseError::new(input, "Unexpected character")))
   }
 }
 
@@ -1584,14 +1546,18 @@ fn transformation(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Transformation { children: vec![statement] }))
 }
 
+// indented_tfm ::= space, space, transformation ;
 fn indented_tfm(input: ParseString) -> ParseResult<Node> {
+  let msg1 = "Block indentation has to be exactly 2 spaces";
+  let msg2 = "Expect transformation after indentation";
   let (input, (_, r)) = range(tuple((
     space,
-    label!(space, LabelId::IndentedTfm1)
+    labelr!(space, skip_nil, msg1)
   )))(input)?;
-  label!(transformation, LabelId::IndentedTfm2, r)(input)
+  label!(transformation, msg2, r)(input)
 }
 
+// block ::= indented_tfm+, whitespace* ;
 fn block(input: ParseString) -> ParseResult<Node> {
   let (input, transformations) = many1(indented_tfm)(input)?;
   let (input, _) = many0(whitespace)(input)?;
@@ -1693,9 +1659,15 @@ fn formatted_text(input: ParseString) -> ParseResult<Node> {
 }
 
 fn code_block(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = tuple((grave, grave, grave, newline))(input)?;
+  let msg = "";
+  let (input, (_, r)) = range(tuple((
+    grave,
+    label!(grave, msg),
+    label!(grave, msg),
+  )))(input)?;
+  let (input, _) = label!(newline, msg, r)(input)?;
   let (input, text) = formatted_text(input)?;
-  let (input, _) = tuple((grave, grave, grave, newline, many0(whitespace)))(input)?;
+  let (input, _) = label!(tuple((grave, grave, grave, newline, many0(whitespace))), msg, r)(input)?;
   Ok((input, Node::CodeBlock { children: vec![text] }))
 }
 
@@ -1792,21 +1764,16 @@ fn parse_mech(input: ParseString) -> ParseResult<Node> {
 
 // ## Parser interfaces
 
-pub type ErrorLog = Vec<(usize, Label)>;
+pub type ErrorLog = Vec<(ParseStringRange, ParseErrorDetail)>;
 
 pub fn print_error(error_log: &ErrorLog) -> String {
   let mut result = String::new();
-  for (i, (cause_index, label)) in error_log.iter().enumerate() {
-    let r = label.runtime_payload.annotation_rngs;
+  for (i, (cause_range, err_detail)) in error_log.iter().enumerate() {
+    let r = &err_detail.annotation_rngs;
     result.push_str("-------------- Error #{} --------------\n");
-    result.push_str(&format!("index: {}\n", cause_index));
-    result.push_str(&format!("message: {}\n", label.static_payload.message));
-    result.push_str(&format!("note: {}\n", label.static_payload.note));
-    result.push_str(&format!("annotations: {}\n", label.static_payload.expected_annotations));
-    result.push_str("annotations:\n");
-    result.push_str(&format!("    [{}, {})\n", r[0].0, r[0].1));
-    result.push_str(&format!("    [{}, {})\n", r[1].0, r[1].1));
-    result.push_str(&format!("    [{}, {})\n", r[2].0, r[2].1));
+    result.push_str(&format!("range: {}, {}\n", cause_range.0, cause_range.1));
+    result.push_str(&format!("message: {}\n", err_detail.message));
+    result.push_str(&format!("annotations: {:?}\n", err_detail.annotation_rngs));
     result.push('\n');
   }
   result
@@ -1834,17 +1801,10 @@ pub fn parse(text: &str) -> Result<Node,MechError> {
           if e.remaining_input.had_error() {
             println!("Error log: \n{}", print_error(&e.remaining_input.error_log));
           }
-
-          let r = e.label.runtime_payload.annotation_rngs;
           print!("-------------- Last error --------------\n");
-          print!("{}", &format!("index: {}\n", e.cause_index));
-          print!("{}", &format!("message: {}\n", e.label.static_payload.message));
-          print!("{}", &format!("note: {}\n", e.label.static_payload.note));
-          print!("{}", &format!("annotations: {}\n", e.label.static_payload.expected_annotations));
-          print!("{}", "annotations:\n");
-          print!("{}", &format!("    [{}, {})\n", r[0].0, r[0].1));
-          print!("{}", &format!("    [{}, {})\n", r[1].0, r[1].1));
-          print!("{}", &format!("    [{}, {})\n", r[2].0, r[2].1));
+          print!("{}", &format!("range: {}, {}\n", e.cause_range.0, e.cause_range.1));
+          print!("{}", &format!("message: {}\n", e.error_detail.message));
+          print!("{}", &format!("annotations: {:?}\n", e.error_detail.annotation_rngs));
         },
         _ => (),
       }
