@@ -646,20 +646,24 @@ fn label<'a, F>(mut parser: F, label: Label) ->
 where
   F: FnMut(ParseString<'a>) -> ParseResult<Node>
 {
-  move |mut input: ParseString| match parser(input) {
-    Err(Err::Error(mut e)) |
-    Err(Err::Failure(mut e)) => {
-      if e.label.id == LabelId::Fail {
-        e.label = label.clone();
-      }
-      if e.label.recovery_fn_is_defined() {
-        e.log();
-        (e.label.static_payload.recovery_fn)(e.remaining_input)
-      } else {
-        Err(Err::Failure(e))
-      }
-    },
-    x => x,
+  move |mut input: ParseString| {
+    let index = input.cursor;
+    match parser(input) {
+      Err(Err::Error(mut e)) |
+      Err(Err::Failure(mut e)) => {
+        if e.label.id == LabelId::Fail {
+          e.cause_index = index;
+          e.label = label.clone();
+        }
+        if e.label.recovery_fn_is_defined() {
+          e.log();
+          (e.label.static_payload.recovery_fn)(e.remaining_input)
+        } else {
+          Err(Err::Failure(e))
+        }
+      },
+      x => x,
+    }
   }
 }
 
