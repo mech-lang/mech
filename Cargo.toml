@@ -17,7 +17,7 @@ gitlab = { repository = "mech-lang/core", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [features]
-default = ["stdlib", "paralllel"]
+default = ["stdlib", "parallel"]
 stdlib = []
 parallel = ["rayon"]
 no-std = ["rlibc"]
