@@ -1,10 +1,5 @@
 // # Parser
 
-// ## Temp
-macro_rules! error_token {
-    () => (Node::Token {token: Token::Space, chars: vec![' ']})
-}
-
 // ## Prelude
 
 use crate::lexer::Token;
@@ -183,6 +178,7 @@ pub enum Node {
   Null,
   True,
   False,
+  Error,
 }
 
 // ## Debug
@@ -352,6 +348,7 @@ fn print_recurse(node: &Node, level: usize) {
     Node::False => {print!("True\n",); None},
     Node::True => {print!("False\n",); None},
     Node::Alpha{children} => {print!("Alpha\n"); Some(children)},
+    Node::Error => {print!("Error\n"); None},
   };
 
   match children {
@@ -606,10 +603,10 @@ where
   F: FnMut(ParseString<'a>) -> ParseResult<O>
 {
   move |mut input: ParseString| {
-    let index_before_parser = input.cursor;
+    let index_before_parsing = input.cursor;
     match parser(input) {
       Err(Err::Error(mut e)) => {
-        e.cause_range = (index_before_parser, e.cause_range.1);
+        e.cause_range = (index_before_parsing, e.cause_range.1);
         e.error_detail = error_detail.clone();
         e.log();
         recovery_fn(e.remaining_input)
@@ -619,6 +616,21 @@ where
         recovery_fn(e.remaining_input)
       },
       x => x,
+    }
+  }
+}
+
+fn is_not<'a, F, E>(mut parser: F) ->
+  impl FnMut(ParseString<'a>) -> ParseResult<()>
+where
+  F: FnMut(ParseString<'a>) -> ParseResult<E>
+{
+  move |input: ParseString| {
+    let input_clone = input.clone();
+    match parser(input_clone) {
+      Err(Err::Error(_)) |
+      Err(Err::Failure(_)) => Ok((input, ())),
+      _ => Err(Err::Error(ParseError::new(input, "Recover this error")))
     }
   }
 }
@@ -636,7 +648,7 @@ fn tag(tag: &'static str) -> impl Fn(ParseString) -> ParseResult<String> {
 // ## Recovery functions
 
 fn skip_nil(input: ParseString) -> ParseResult<Node> {
-  Ok((input, error_token!()))
+  Ok((input, Node::Error))
 }
 
 // ## Primitive parsers
@@ -1654,20 +1666,32 @@ fn list_item(input: ParseString) -> ParseResult<Node> {
 }
 
 fn formatted_text(input: ParseString) -> ParseResult<Node> {
-  let (input, formatted) = many0(alt((paragraph_rest, carriage_return, new_line_char)))(input)?;
+  let msg = "Character not permitted in formatted text";
+  let (input, result) = many0(tuple((
+    is_not(grave),
+    label!(alt((paragraph_rest, carriage_return, new_line_char)), msg)
+  )))(input)?;
+  let mut formatted = vec![];
+  for (_, node) in result {
+    formatted.push(node);
+  }
+  // let (_, formatted) = result.iter().unzip();
+  //let (input, formatted) = many0(alt((paragraph_rest, carriage_return, new_line_char)))(input)?;
   Ok((input, Node::FormattedText { children: formatted }))
 }
 
 fn code_block(input: ParseString) -> ParseResult<Node> {
-  let msg = "";
-  let (input, (_, r)) = range(tuple((
+  let msg1 = "Expect 3 graves to start a code block";
+  let msg2 = "Expect newline";
+  let msg3 = "Expect 3 graves to terminate a code block";
+  let (input, _) = tuple((
     grave,
-    label!(grave, msg),
-    label!(grave, msg),
-  )))(input)?;
-  let (input, _) = label!(newline, msg, r)(input)?;
+    label!(grave, msg1),
+    label!(grave, msg1),
+  ))(input)?;
+  let (input, _) = label!(newline, msg2)(input)?;
   let (input, text) = formatted_text(input)?;
-  let (input, _) = label!(tuple((grave, grave, grave, newline, many0(whitespace))), msg, r)(input)?;
+  let (input, _) = label!(tuple((grave, grave, grave, newline, many0(whitespace))), msg3)(input)?;
   Ok((input, Node::CodeBlock { children: vec![text] }))
 }
 
