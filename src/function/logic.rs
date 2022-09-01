@@ -4,6 +4,7 @@ use std::rc::Rc;
 use std::fmt::*;
 use num_traits::*;
 
+#[cfg(feature = "parallel")]
 use rayon::prelude::*;
 use std::thread;
 
@@ -22,24 +23,33 @@ logic_infix_vv!(AndVV,&&);
 logic_infix_vv!(OrVV,||);
 logic_infix_vv!(XorVV,^);
 
+#[cfg(feature = "parallel")]
 logic_infix_par_vv!(ParAndVV,&&);
+#[cfg(feature = "parallel")]
 logic_infix_par_vv!(ParOrVV,||);
+#[cfg(feature = "parallel")]
 logic_infix_par_vv!(ParXorVV,^);
 
 logic_infix_vs!(AndVS,&&);
 logic_infix_vs!(OrVS,||);
 logic_infix_vs!(XorVS,^);
 
+#[cfg(feature = "parallel")]
 logic_infix_par_vs!(ParAndVS,&&);
+#[cfg(feature = "parallel")]
 logic_infix_par_vs!(ParOrVS,||);
+#[cfg(feature = "parallel")]
 logic_infix_par_vs!(ParXorVS,^);
 
 logic_infix_sv!(AndSV,&&);
 logic_infix_sv!(OrSV,||);
 logic_infix_sv!(XorSV,^);
 
+#[cfg(feature = "parallel")]
 logic_infix_par_sv!(ParAndSV,&&);
+#[cfg(feature = "parallel")]
 logic_infix_par_sv!(ParOrSV,||);
+#[cfg(feature = "parallel")]
 logic_infix_par_sv!(ParXorSV,^);
 
 logic_compiler!(LogicAnd,AndSS,AndVS,AndSV,AndVV);
@@ -86,6 +96,7 @@ macro_rules! logic_infix_vv {
 #[macro_export]
 macro_rules! logic_infix_par_vv {
   ($func_name:ident, $op:tt) => (
+    #[cfg(feature = "parallel")]
     #[derive(Debug)]
     pub struct $func_name {
       pub lhs: ColumnV<bool>, pub rhs: ColumnV<bool>, pub out: ColumnV<bool>
@@ -121,6 +132,7 @@ macro_rules! logic_infix_vs {
 #[macro_export]
 macro_rules! logic_infix_par_vs {
   ($func_name:ident, $op:tt) => (
+    #[cfg(feature = "parallel")]
     #[derive(Debug)]
     pub struct $func_name {
       pub lhs: ColumnV<bool>, pub rhs: ColumnV<bool>, pub out: ColumnV<bool>
@@ -158,6 +170,7 @@ macro_rules! logic_infix_sv {
 #[macro_export]
 macro_rules! logic_infix_par_sv {
   ($func_name:ident, $op:tt) => (
+    #[cfg(feature = "parallel")]
     #[derive(Debug)]
     pub struct $func_name {
       pub lhs: ColumnV<bool>, pub rhs: ColumnV<bool>, pub out: ColumnV<bool>

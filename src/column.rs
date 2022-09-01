@@ -5,7 +5,6 @@ use std::ptr;
 use std::rc::Rc;
 use hashbrown::{HashMap, HashSet};
 
-use rayon::prelude::*;
 use std::collections::VecDeque;
 use std::thread;
 use crate::*;

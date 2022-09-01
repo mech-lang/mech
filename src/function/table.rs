@@ -4,6 +4,7 @@ use std::rc::Rc;
 use std::fmt::*;
 use num_traits::*;
 use rust_core::iter::FromIterator;
+#[cfg(feature = "parallel")]
 use rayon::prelude::*;
 use std::thread;
 use hashbrown::HashSet;
@@ -45,11 +46,13 @@ where T: Debug + Clone + Into<U> + Sync + Send,
 }
 
 // Parallel Copy Vector : Vector
+#[cfg(feature = "parallel")]
 #[derive(Debug)]
 pub struct ParCopyVV<T,U> {
   pub arg: (ColumnV<T>, usize, usize),
   pub out: (ColumnV<U>, usize, usize),
 }
+#[cfg(feature = "parallel")]
 impl<T,U> MechFunction for ParCopyVV<T,U> 
 where T: Debug + Clone + Into<U> + Sync + Send,
       U: Debug + Clone + Into<T> + Sync + Send,
@@ -447,11 +450,12 @@ where T: Clone + Debug + Into<U>,
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-
+#[cfg(feature = "parallel")]
 #[derive(Debug)]
 pub struct ParSetVVB<T,U> {
   pub arg: ColumnV<T>, pub out: ColumnV<U>, pub oix: ColumnV<bool>
 }
+#[cfg(feature = "parallel")]
 impl<T,U> MechFunction for ParSetVVB<T,U>
 where T: Clone + Debug + Into<U> + Sync + Send,
       U: Clone + Debug + Into<T> + Sync + Send
@@ -489,10 +493,12 @@ where T: Clone + Debug + Into<U>,
 
 
 // Set Vector : Vector
+#[cfg(feature = "parallel")]
 #[derive(Debug)]
 pub struct ParSetVV<T,U> {
   pub arg: ColumnV<T>, pub out: ColumnV<U>
 }
+#[cfg(feature = "parallel")]
 impl<T,U> MechFunction for ParSetVV<T,U>
 where T: Clone + Debug + Into<U> + Sync + Send,
       U: Clone + Debug + Into<T> + Sync + Send
@@ -526,11 +532,12 @@ where T: Clone + Debug + Into<U>,
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-
+#[cfg(feature = "parallel")]
 #[derive(Debug)]
 pub struct ParSetVS<T,U> {
   pub arg: ColumnV<T>, pub ix: usize, pub out: ColumnV<U>
 }
+#[cfg(feature = "parallel")]
 impl<T,U> MechFunction for ParSetVS<T,U>
 where T: Clone + Debug + Into<U> + Sync + Send,
       U: Clone + Debug + Into<T> + Sync + Send
@@ -545,12 +552,12 @@ where T: Clone + Debug + Into<U> + Sync + Send,
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-
+#[cfg(feature = "parallel")]
 #[derive(Debug)]
 pub struct ParSetVSB<T,U>  {
   pub arg: ColumnV<T>, pub ix: usize, pub out: ColumnV<U>, pub oix: ColumnV<bool>
 }
-
+#[cfg(feature = "parallel")]
 impl<T,U>  MechFunction for ParSetVSB<T,U> 
 where T: Clone + Debug + Into<U> + Sync + Send,
       U: Clone + Debug + Into<T> + Sync + Send
