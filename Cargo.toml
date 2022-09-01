@@ -17,7 +17,8 @@ gitlab = { repository = "mech-lang/core", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [features]
-default = []
+default = ["stdlib"]
+stdlib = []
 no-std = ["rlibc"]
 
 [dependencies]

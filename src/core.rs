@@ -85,51 +85,54 @@ impl Core {
     // Standard Machines
     // -----------------
 
-    // Math
-    functions.insert(*MATH_ADD, Box::new(MathAdd{}));
-    functions.insert(*MATH_SUBTRACT, Box::new(MathSub{}));
-    functions.insert(*MATH_MULTIPLY, Box::new(MathMul{}));
-    functions.insert(*MATH_DIVIDE, Box::new(MathDiv{}));
-    functions.insert(*MATH_EXPONENT, Box::new(MathExp{}));
-    functions.insert(*MATH_NEGATE, Box::new(MathNegate{}));
-    functions.insert(*MATH_ADD__UPDATE, Box::new(MathAddUpdate{}));
-    functions.insert(*MATH_SUBTRACT__UPDATE, Box::new(MathSubtractUpdate{}));  
-    functions.insert(*MATH_MULTIPLY__UPDATE, Box::new(MathMultiplyUpdate{}));
-    functions.insert(*MATH_DIVIDE__UPDATE, Box::new(MathDivideUpdate{}));
 
-    // Logic
-    functions.insert(*LOGIC_NOT, Box::new(LogicNot{}));
-    functions.insert(*LOGIC_AND, Box::new(LogicAnd{}));
-    functions.insert(*LOGIC_OR, Box::new(LoigicOr{}));
-    functions.insert(*LOGIC_XOR, Box::new(LogicXor{}));
+    if cfg!(feature = "stdlib") {
+      // Math
+      functions.insert(*MATH_ADD, Box::new(MathAdd{}));
+      functions.insert(*MATH_SUBTRACT, Box::new(MathSub{}));
+      functions.insert(*MATH_MULTIPLY, Box::new(MathMul{}));
+      functions.insert(*MATH_DIVIDE, Box::new(MathDiv{}));
+      functions.insert(*MATH_EXPONENT, Box::new(MathExp{}));
+      functions.insert(*MATH_NEGATE, Box::new(MathNegate{}));
+      functions.insert(*MATH_ADD__UPDATE, Box::new(MathAddUpdate{}));
+      functions.insert(*MATH_SUBTRACT__UPDATE, Box::new(MathSubtractUpdate{}));  
+      functions.insert(*MATH_MULTIPLY__UPDATE, Box::new(MathMultiplyUpdate{}));
+      functions.insert(*MATH_DIVIDE__UPDATE, Box::new(MathDivideUpdate{}));
 
-    // Compare
-    functions.insert(*COMPARE_GREATER__THAN, Box::new(CompareGreater{}));
-    functions.insert(*COMPARE_LESS__THAN, Box::new(CompareLess{}));
-    functions.insert(*COMPARE_GREATER__THAN__EQUAL, Box::new(CompareGreaterEqual{}));
-    functions.insert(*COMPARE_LESS__THAN__EQUAL, Box::new(CompareLessEqual{}));
-    functions.insert(*COMPARE_EQUAL, Box::new(CompareEqual{}));
-    functions.insert(*COMPARE_NOT__EQUAL, Box::new(CompareNotEqual{}));
+      // Logic
+      functions.insert(*LOGIC_NOT, Box::new(LogicNot{}));
+      functions.insert(*LOGIC_AND, Box::new(LogicAnd{}));
+      functions.insert(*LOGIC_OR, Box::new(LoigicOr{}));
+      functions.insert(*LOGIC_XOR, Box::new(LogicXor{}));
 
-    // Table
-    functions.insert(*TABLE_APPEND, Box::new(TableAppend{}));
-    functions.insert(*TABLE_RANGE, Box::new(TableRange{}));
-    functions.insert(*TABLE_SPLIT, Box::new(TableSplit{}));
-    functions.insert(*TABLE_FLATTEN, Box::new(TableFlatten{}));
-    functions.insert(*TABLE_DEFINE, Box::new(TableDefine{}));
-    functions.insert(*TABLE_SET, Box::new(TableSet{}));
-    functions.insert(*TABLE_HORIZONTAL__CONCATENATE, Box::new(TableHorizontalConcatenate{}));
-    functions.insert(*TABLE_VERTICAL__CONCATENATE, Box::new(TableVerticalConcatenate{}));
-    functions.insert(*TABLE_SIZE, Box::new(TableSize{}));
-    
-    // Stats
-    functions.insert(*STATS_SUM, Box::new(StatsSum{}));
+      // Compare
+      functions.insert(*COMPARE_GREATER__THAN, Box::new(CompareGreater{}));
+      functions.insert(*COMPARE_LESS__THAN, Box::new(CompareLess{}));
+      functions.insert(*COMPARE_GREATER__THAN__EQUAL, Box::new(CompareGreaterEqual{}));
+      functions.insert(*COMPARE_LESS__THAN__EQUAL, Box::new(CompareLessEqual{}));
+      functions.insert(*COMPARE_EQUAL, Box::new(CompareEqual{}));
+      functions.insert(*COMPARE_NOT__EQUAL, Box::new(CompareNotEqual{}));
 
-    // Set
-    functions.insert(*SET_ANY, Box::new(SetAny{}));
-    functions.insert(*SET_ALL, Box::new(SetAll{}));
-    functions.insert(*SET_CARTESIAN, Box::new(SetCartesian{}));
-     
+      // Table
+      functions.insert(*TABLE_APPEND, Box::new(TableAppend{}));
+      functions.insert(*TABLE_RANGE, Box::new(TableRange{}));
+      functions.insert(*TABLE_SPLIT, Box::new(TableSplit{}));
+      functions.insert(*TABLE_FLATTEN, Box::new(TableFlatten{}));
+      functions.insert(*TABLE_DEFINE, Box::new(TableDefine{}));
+      functions.insert(*TABLE_SET, Box::new(TableSet{}));
+      functions.insert(*TABLE_HORIZONTAL__CONCATENATE, Box::new(TableHorizontalConcatenate{}));
+      functions.insert(*TABLE_VERTICAL__CONCATENATE, Box::new(TableVerticalConcatenate{}));
+      functions.insert(*TABLE_SIZE, Box::new(TableSize{}));
+      
+      // Stats
+      functions.insert(*STATS_SUM, Box::new(StatsSum{}));
+
+      // Set
+      functions.insert(*SET_ANY, Box::new(SetAny{}));
+      functions.insert(*SET_ALL, Box::new(SetAll{}));
+      functions.insert(*SET_CARTESIAN, Box::new(SetCartesian{}));
+    }
+
     Core {
       sections: Vec::new(),
       blocks: HashMap::new(),
