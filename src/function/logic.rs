@@ -226,7 +226,7 @@ impl MechFunction for NotS
 pub struct LogicNot {}
 
 impl MechFunctionCompiler for LogicNot {
-  fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+  fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &Out) -> std::result::Result<(),MechError> {
     let arg_dims = block.get_arg_dims(&arguments)?;
     match &arg_dims[0] {
       TableShape::Column(rows) => {
@@ -279,7 +279,7 @@ macro_rules! logic_compiler {
     pub struct $func_name {}
 
     impl MechFunctionCompiler for $func_name {
-      fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
+      fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &Out) -> std::result::Result<(),MechError> {
         let arg_dims = block.get_arg_dims(&arguments)?;
         match (&arg_dims[0],&arg_dims[1]) {
           (TableShape::Scalar, TableShape::Scalar) => {

@@ -10,8 +10,8 @@
 // Test
 
 use crate::*;
+#[cfg(feature = "stdlib")]
 use crate::function::{
-  MechFunction,
   math::*,
   math_update::*,
   compare::*,
@@ -28,7 +28,6 @@ use std::cell::RefCell;
 
 pub type BlockRef = Rc<RefCell<Block>>;
 
-
 pub struct Functions{
   pub functions: HashMap<u64,Box<dyn MechFunctionCompiler>>,
 }
@@ -39,7 +38,7 @@ impl Functions {
       functions: HashMap::new(),
     }
   }
-  pub fn get(&mut self, key: u64) -> std::option::Option<&Box<dyn function::MechFunctionCompiler>> {
+  pub fn get(&mut self, key: u64) -> std::option::Option<&Box<dyn MechFunctionCompiler>> {
     self.functions.get(&key)
   }
   pub fn insert(&mut self, key: u64, mut fxn: Box<dyn MechFunctionCompiler>) {
@@ -80,13 +79,14 @@ impl Core {
 
   pub fn new() -> Core {
     
+    
     let mut functions = Functions::new();
     // -----------------
     // Standard Machines
     // -----------------
 
-
-    if cfg!(feature = "stdlib") {
+    #[cfg(feature = "stdlib")]
+    {
       // Math
       functions.insert(*MATH_ADD, Box::new(MathAdd{}));
       functions.insert(*MATH_SUBTRACT, Box::new(MathSub{}));

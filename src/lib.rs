@@ -20,6 +20,9 @@ extern crate num;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
+use num_traits::*;
+use std::ops::*;
+
 
 mod column;
 mod value;
@@ -27,10 +30,12 @@ mod error;
 mod table;
 mod transformation;
 mod database;
+#[cfg(feature = "stdlib")]
 pub mod function;
 mod block;
 mod core;
 mod schedule;
+
 
 
 pub use self::core::Core;
@@ -40,15 +45,49 @@ pub use self::value::*;
 pub use self::error::*;
 pub use self::transformation::Transformation;
 pub use self::database::*;
+#[cfg(feature = "stdlib")]
 pub use self::function::*;
 pub use self::block::*;
 pub use self::schedule::*;
+
 
 pub type BlockId = u64;
 pub type ArgumentName = u64;
 pub type Argument = (ArgumentName, TableId, Vec<(TableIndex, TableIndex)>);
 pub type Out = (TableId, TableIndex, TableIndex);
 
+
+pub type Arg<T> = ColumnV<T>;
+pub type ArgTable = Rc<RefCell<Table>>;
+pub type OutTable = Rc<RefCell<Table>>;
+
+pub trait MechNumArithmetic<T>: Add<Output = T> + 
+                                Sub<Output = T> + 
+                                Div<Output = T> + 
+                                Mul<Output = T> + 
+                                Pow<T, Output = T> + 
+                                AddAssign +
+                                SubAssign +
+                                MulAssign +
+                                DivAssign +
+                                Sized {}
+
+pub trait MechFunctionCompiler {
+  fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &Out) -> std::result::Result<(),MechError>;
+}
+
+pub trait MechFunction {
+  fn solve(&self);
+  fn to_string(&self) -> String;
+}
+
+pub fn resize_one(block: &mut Block, out: &Out) -> std::result::Result<(),MechError> {
+  let (out_table_id,_,_) = out;
+  let out_table = block.get_table(out_table_id)?;
+  let mut out_brrw = out_table.borrow_mut();
+  out_brrw.resize(1,1);
+  Ok(())
+}
 
 pub trait Machine {
   fn name(&self) -> String;
