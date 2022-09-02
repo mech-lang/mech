@@ -42,7 +42,7 @@ block
 
   let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]).unwrap();
   
-  core.load_blocks(blocks);
+  core.load_blocks(&blocks);
   println!("{:#?}", core.blocks);
   println!("{:?}", core);
 

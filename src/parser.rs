@@ -1671,12 +1671,7 @@ fn formatted_text(input: ParseString) -> ParseResult<Node> {
     is_not(grave),
     label!(alt((paragraph_rest, carriage_return, new_line_char)), msg)
   )))(input)?;
-  let mut formatted = vec![];
-  for (_, node) in result {
-    formatted.push(node);
-  }
-  // let (_, formatted) = result.iter().unzip();
-  //let (input, formatted) = many0(alt((paragraph_rest, carriage_return, new_line_char)))(input)?;
+  let (_, formatted): ((), Vec<_>) = result.into_iter().unzip();
   Ok((input, Node::FormattedText { children: formatted }))
 }
 
