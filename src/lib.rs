@@ -34,9 +34,11 @@ pub enum SocketMessage {
 
 // This is dumb that I need to put this on every line :(
 #[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "web")]
 extern crate websocket;
 
 #[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "web")]
 pub enum MechSocket {
   UdpSocket(String),
   WebSocket(websocket::sync::Client<std::net::TcpStream>),
@@ -44,6 +46,7 @@ pub enum MechSocket {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "web")]
 impl fmt::Debug for MechSocket {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -56,6 +59,7 @@ impl fmt::Debug for MechSocket {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "web")]
 #[repr(C)]
 #[derive(Debug)]
 pub enum RunLoopMessage {
@@ -109,10 +113,7 @@ impl MiniBlock {
     }
     block
   }
- 
-
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MechCode {
@@ -121,11 +122,12 @@ pub enum MechCode {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "web")]
 #[derive(Copy, Clone)]
 pub struct MachineDeclaration {
   pub register: unsafe extern "C" fn(&mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>)->String,
 }
-
+#[cfg(feature = "web")]
 pub trait MachineRegistrar {
   fn register_machine(&mut self, machine: Box<dyn Machine>);
 }
@@ -133,6 +135,7 @@ pub trait MachineRegistrar {
 #[macro_export]
 macro_rules! export_machine {
   ($name:ident, $register:expr) => {
+    #[cfg(feature = "web")]
     #[doc(hidden)]
     #[no_mangle]
     pub static $name: $crate::MachineDeclaration =
@@ -162,4 +165,3 @@ macro_rules! export_mech_function {
       };
   };
 }
-
