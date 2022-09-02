@@ -21,9 +21,7 @@ use std::ptr;
 use std::rc::Rc;
 use hashbrown::{HashMap, HashSet};
 
-use rayon::prelude::*;
 use std::collections::VecDeque;
-use std::thread;
 use mech_core::*;
 use mech_core::function::table;
 
@@ -31,11 +29,9 @@ use std::fmt::*;
 use num_traits::*;
 use std::ops::*;
 
-use time::Instant;
-
 fn main() -> std::result::Result<(),MechError> {
  
-  let now = Instant::now();
+  //let now = Instant::now();
   let n = 1e6 as usize;
 
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();

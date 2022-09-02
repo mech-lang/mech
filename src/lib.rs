@@ -15,8 +15,6 @@ extern crate num_traits;
 extern crate lazy_static;
 extern crate seahash;
 extern crate indexmap;
-extern crate bincode;
-extern crate num;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
