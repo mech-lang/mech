@@ -40,9 +40,9 @@ block
 
   println!("{:?}", ast.syntax_tree);
 
-  let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]).unwrap();
+  let sections = compiler.compile_sections(&vec![ast.syntax_tree.clone()]).unwrap();
   
-  core.load_blocks(&blocks);
+  core.load_sections(sections);
   println!("{:#?}", core.blocks);
   println!("{:?}", core);
 
