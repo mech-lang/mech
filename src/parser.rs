@@ -1561,12 +1561,11 @@ fn transformation(input: ParseString) -> ParseResult<Node> {
 // indented_tfm ::= space, space, transformation ;
 fn indented_tfm(input: ParseString) -> ParseResult<Node> {
   let msg1 = "Block indentation has to be exactly 2 spaces";
-  let msg2 = "Expect transformation after indentation";
   let (input, (_, r)) = range(tuple((
     space,
     labelr!(space, skip_nil, msg1)
   )))(input)?;
-  label!(transformation, msg2, r)(input)
+  transformation(input)
 }
 
 // block ::= indented_tfm+, whitespace* ;
@@ -1665,6 +1664,7 @@ fn list_item(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::ListItem { children: vec![list_item] }))
 }
 
+// formatted_text ::= (!grave, (paragraph_rest | carriage_return | new_line_char))* ;
 fn formatted_text(input: ParseString) -> ParseResult<Node> {
   let msg = "Character not permitted in formatted text";
   let (input, result) = many0(tuple((
@@ -1675,10 +1675,11 @@ fn formatted_text(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::FormattedText { children: formatted }))
 }
 
+// code_block ::= grave{3}, newline, formatted_text, grave{3}, newline, whitespace* ;
 fn code_block(input: ParseString) -> ParseResult<Node> {
   let msg1 = "Expect 3 graves to start a code block";
   let msg2 = "Expect newline";
-  let msg3 = "Expect 3 graves to terminate a code block";
+  let msg3 = "Expect 3 graves followed by newline to terminate a code block";
   let (input, _) = tuple((
     grave,
     label!(grave, msg1),
@@ -1718,11 +1719,11 @@ fn mech_code_block(input: ParseString) -> ParseResult<Node> {
 
 // ### Start here
 
-// section ::= ((block | code_block | mech_code_block | statement | subtitle | paragraph | unordered_list), whitespace?)+ ;
+// section ::= ((block | mech_code_block | code_block | statement | subtitle | paragraph | unordered_list), whitespace?)+ ;
 fn section(input: ParseString) -> ParseResult<Node> {
   let (input, mut section_elements) = many1(
     tuple((
-      alt((block, code_block, mech_code_block, statement, subtitle, paragraph, unordered_list)),
+      alt((block, mech_code_block, code_block, statement, subtitle, paragraph, unordered_list)),
       opt(whitespace),
     ))
   )(input)?;
