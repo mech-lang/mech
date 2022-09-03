@@ -452,10 +452,6 @@ impl<'a> ParseString<'a> {
     None
   }
 
-  fn had_error(&self) -> bool {
-    self.error_log.len() != 0
-  }
-
   fn len(&self) -> usize {
     self.graphemes.len() - self.cursor
   }
@@ -1782,72 +1778,144 @@ fn parse_mech(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Root { children: vec![mech] }))
 }
 
-// ## Parser interfaces
+// ## Reporting errors
 
-pub type ErrorLog = Vec<(ParseStringRange, ParseErrorDetail)>;
-
-pub fn print_error(error_log: &ErrorLog) -> String {
-  let mut result = String::new();
-  for (i, (cause_range, err_detail)) in error_log.iter().enumerate() {
-    let r = &err_detail.annotation_rngs;
-    result.push_str("-------------- Error #{} --------------\n");
-    result.push_str(&format!("range: {}, {}\n", cause_range.0, cause_range.1));
-    result.push_str(&format!("message: {}\n", err_detail.message));
-    result.push_str(&format!("annotations: {:?}\n", err_detail.annotation_rngs));
-    result.push('\n');
-  }
-  result
+struct IndexInterpreter {
+  line_beginnings: Vec<usize>
 }
 
-pub fn parse(text: &str) -> Result<Node,MechError> {
-  let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
-  let parse_tree = parse_mech(ParseString::new(&graphemes));
-  match parse_tree {
-    Ok((rest, tree)) => {
-      let unparsed = rest.graphemes[rest.cursor..].iter().map(|s| String::from(*s)).collect::<String>();
-      if unparsed != "" {
-        println!("Unparsed: {}", unparsed);
-        if rest.had_error() {
-          println!("Error log: \n{}", print_error(&rest.error_log));
-        }
-        Err(MechError{id: 3302, kind: MechErrorKind::GenericError(unparsed)})
-      } else { 
-        Ok(tree)
+impl IndexInterpreter {
+  fn new(graphemes: &Vec<&str>) -> Self {
+    let mut line_beginnings = vec![0];
+    for i in 0..graphemes.len() {
+      if Self::is_newline(graphemes[i]) {
+        line_beginnings.push(i + 1);
       }
-    },
-    Err(q) => {
-      match q {
-        Err::Error(e) | Err::Failure(e) => {
-          if e.remaining_input.had_error() {
-            println!("Error log: \n{}", print_error(&e.remaining_input.error_log));
-          }
-          print!("-------------- Last error --------------\n");
-          print!("{}", &format!("range: {}, {}\n", e.cause_range.0, e.cause_range.1));
-          print!("{}", &format!("message: {}\n", e.error_detail.message));
-          print!("{}", &format!("annotations: {:?}\n", e.error_detail.annotation_rngs));
-        },
-        _ => (),
-      }
-      Err(MechError{id: 3303, kind: MechErrorKind::None})
+    }
+    IndexInterpreter {
+      line_beginnings
     }
   }
+
+  fn get_width(grapheme: &str) -> usize {
+    let mut width = 0;
+    for ch in grapheme.chars() {
+      if ch.is_ascii() {
+        if ch == ' ' || ch == '\t' || ch.is_alphanumeric() {
+          width += 1;
+        }  // else width += 0
+      } else if ch.is_alphanumeric() {
+        width += 1;
+      } else {
+        return 1;
+      }
+    }
+    width
+  }
+
+  fn is_newline(grapheme: &str) -> bool {
+    for ch in grapheme.chars() {
+      if ch == '\n' {
+        return true;
+      }
+    }
+    false
+  }
+}
+
+pub struct ParserErrorLog {
+  errors: Vec<(ParseStringRange, ParseErrorDetail)>,
+}
+
+impl ParserErrorLog {
+  pub fn construct_msg(&self, text: &str) -> String {
+    let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
+    let ii = IndexInterpreter::new(&graphemes);
+    let result = String::new();
+    result
+  }
+
+  pub fn has_error(&self) -> bool {
+    self.errors.len() != 0
+  }
+
+  fn new() -> Self {
+    ParserErrorLog { errors: vec![] }
+  }
+
+  fn add_error(&mut self,
+               rng: ParseStringRange,
+               detail: ParseErrorDetail) {
+    self.errors.push((rng, detail));
+  }
+
+  fn add_errors(&mut self,
+                error_log: &mut Vec<(ParseStringRange, ParseErrorDetail)>) {
+    self.errors.append(error_log);
+  }
+}
+
+// ## Parser interfaces
+
+pub fn parse(text: &str) -> Result<Node, MechError> {
+  let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
+  let mut result_node = Node::Error;
+  let mut error_log = ParserErrorLog::new();
+  match parse_mech(ParseString::new(&graphemes)) {
+    // Got a parse tree, however there may be errors
+    Ok((mut remaining_input, parse_tree)) => {
+      error_log.add_errors(&mut remaining_input.error_log);
+      result_node = parse_tree;
+    },
+    // Parsing completely failed, and no parse tree was created
+    Err(err) => match err {
+      Err::Error(mut e) | Err::Failure(mut e) => {
+        error_log.add_errors(&mut e.remaining_input.error_log);
+        error_log.add_error(e.cause_range, e.error_detail);
+      },
+      Err::Incomplete(_) => panic!("nom::Err::Incomplete is not supported!"),
+    },
+  }
+  
+  // +-------------------+
+  //   temporary
+  // +-------------------+
+  if error_log.has_error() {
+    Err(MechError{id: 3202, kind: MechErrorKind::GenericError(error_log.construct_msg(text))})
+  } else {
+    Ok(result_node)
+  }
+  // +-------------------+
 }
 
 pub fn parse_fragment(text: &str) -> Result<Node,MechError> {
   let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
-  let parse_tree = parse_mech_fragment(ParseString::new(&graphemes));
-  match parse_tree {
-    Ok((rest, tree)) => {
-      let unparsed = rest.graphemes.iter().map(|s| String::from(*s)).collect::<String>();
-      if unparsed != "" {
-        Err(MechError{id: 3402, kind: MechErrorKind::GenericError(unparsed)})
-      } else { 
-        Ok(tree)
-      }
+  let mut result_node = Node::Error;
+  let mut error_log = ParserErrorLog::new();
+  match parse_mech_fragment(ParseString::new(&graphemes)) {
+    // Got a parse tree, however there may be errors
+    Ok((mut remaining_input, parse_tree)) => {
+      error_log.add_errors(&mut remaining_input.error_log);
+      result_node = parse_tree;
     },
-    Err(q) => {
-      Err(MechError{id: 3403, kind: MechErrorKind::None})
-    }
+    // Parsing completely failed, and no parse tree was created
+    Err(err) => match err {
+      Err::Error(mut e) | Err::Failure(mut e) => {
+        error_log.add_errors(&mut e.remaining_input.error_log);
+        error_log.add_error(e.cause_range, e.error_detail);
+      },
+      Err::Incomplete(_) => panic!("nom::Err::Incomplete is not supported!"),
+    },
   }
+  
+  // +-------------------+
+  //   temporary
+  // +-------------------+
+  if error_log.has_error() {
+    Err(MechError{id: 3202, kind: MechErrorKind::GenericError(error_log.construct_msg(text))})
+  } else {
+    Ok(result_node)
+  }
+  // +-------------------+
 }
 

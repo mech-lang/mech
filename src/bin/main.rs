@@ -8,6 +8,7 @@ use std::rc::Rc;
 
 use std::fs;
 fn main() -> Result<(),MechError> {
+    // ----------------------------------------------------------------
     // before: 17~20s
     // current: 0.17s
     // let s = fs::read_to_string("huge.mec").unwrap();
@@ -15,9 +16,14 @@ fn main() -> Result<(),MechError> {
     match parser::parse(&s) {
         // Ok(tree) => println!("ok!"),
         Ok(tree) => println!("{:#?}", tree),
-        _ => println!("err!"),
+        Err(err) => if let MechErrorKind::GenericError(msg) = err.kind {
+          println!("{}", msg);
+        } else {
+          panic!("Unexpected error type");
+        },
     }
     return Ok(());
+    // ----------------------------------------------------------------
 
 let input = r#"
 block
