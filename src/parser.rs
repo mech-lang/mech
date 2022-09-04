@@ -178,6 +178,7 @@ pub enum Node {
   Null,
   True,
   False,
+  Dummy,
   Error,
 }
 
@@ -348,6 +349,7 @@ fn print_recurse(node: &Node, level: usize) {
     Node::False => {print!("True\n",); None},
     Node::True => {print!("False\n",); None},
     Node::Alpha{children} => {print!("Alpha\n"); Some(children)},
+    Node::Dummy => {print!("Dummy\n"); None},
     Node::Error => {print!("Error\n"); None},
   };
 
@@ -395,19 +397,28 @@ impl<'a> ParseString<'a> {
     }
   }
 
-  fn consume_tag(&mut self, tag: &'static str) -> Option<String> {
+  fn match_tag(&self, tag: &str) -> (bool, usize) {
     let gs = tag.graphemes(true).collect::<Vec<&str>>();
     let gs_len = gs.len();
     if self.len() < gs_len {
-      return None;
+      return (false, 0);
     }
     for i in 0..gs_len {
       if self.graphemes[self.cursor + i] != gs[i] {
-        return None;
+        return (false, 0);
       }
     }
-    self.cursor += gs_len;
-    return Some(tag.to_string());
+    (true, gs_len)
+  }
+
+  fn consume_tag(&mut self, tag: &str) -> Option<String> {
+    let (matched, gs_len) = self.match_tag(tag);
+    if matched {
+      self.cursor += gs_len;
+      Some(tag.to_string())
+    } else {
+      None
+    }
   }
 
   fn consume_emoji(&mut self) -> Option<String> {
@@ -537,10 +548,6 @@ where
 }
 
 macro_rules! label {
-  // didn't use the `*` repeater because it still tries to match the ','
-  // when there's no tail. label!(p, msg) would have to be written as label!(p, msg,).
-  // Not sure how to resolve this problem without having a new macro rule.
-
   ($parser:expr, $msg:expr) => {
     (label_without_recovery($parser, ParseErrorDetail {
       message: $msg, annotation_rngs: vec![]
@@ -626,7 +633,7 @@ where
     match parser(input_clone) {
       Err(Err::Error(_)) |
       Err(Err::Failure(_)) => Ok((input, ())),
-      _ => Err(Err::Error(ParseError::new(input, "Recover this error")))
+      _ => Err(Err::Error(ParseError::new(input, "Unexpected character")))
     }
   }
 }
@@ -643,8 +650,13 @@ fn tag(tag: &'static str) -> impl Fn(ParseString) -> ParseResult<String> {
 
 // ## Recovery functions
 
+fn skip_spaces(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many0(space)(input)?;
+  Ok((input, ()))
+}
+
 fn skip_nil(input: ParseString) -> ParseResult<Node> {
-  Ok((input, Node::Error))
+  Ok((input, Node::Dummy))
 }
 
 // ## Primitive parsers
@@ -782,6 +794,7 @@ fn symbol(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Symbol{children: vec![symbol]}))
 }
 
+// paragraph_symbol ::= ampersand | at | slash | backslash | asterisk | caret | underscore ;
 fn paragraph_symbol(input: ParseString) -> ParseResult<Node> {
   let (input, symbol) = alt((ampersand, at, slash, backslash, asterisk, caret, underscore))(input)?;
   Ok((input, Node::Symbol{children: vec![symbol]}))
@@ -793,6 +806,7 @@ fn text(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Text{children: word}))
 }
 
+// paragraph_rest ::= (word | space | number | punctuation | paragraph_symbol | quote | emoij)+ ;
 fn paragraph_rest(input: ParseString) -> ParseResult<Node> {
   let (input, word) = many1(alt((word, space, number, punctuation, paragraph_symbol, quote, emoji)))(input)?;
   Ok((input, Node::Text{children: word}))
@@ -1554,14 +1568,23 @@ fn transformation(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Transformation { children: vec![statement] }))
 }
 
+// empty_line ::= space*, newline ;
+fn empty_line(input: ParseString) -> ParseResult<Node> {
+  let (input, _) = tuple((many0(space), newline))(input)?;
+  Ok((input, Node::Dummy))
+}
+
 // indented_tfm ::= space, space, transformation ;
 fn indented_tfm(input: ParseString) -> ParseResult<Node> {
   let msg1 = "Block indentation has to be exactly 2 spaces";
+  let msg2 = "Expect transformation after block indentation";
   let (input, (_, r)) = range(tuple((
+    is_not(empty_line),
     space,
-    labelr!(space, skip_nil, msg1)
+    labelr!(space, skip_nil, msg1),
+    labelr!(is_not(space), skip_spaces, msg1),
   )))(input)?;
-  transformation(input)
+  label!(transformation, msg2, r)(input)
 }
 
 // block ::= indented_tfm+, whitespace* ;
@@ -1696,13 +1719,17 @@ fn inline_mech_code(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::InlineMechCode{ children: vec![expression] }))
 }
 
+// TODO
+// mech_code_block ::= grave{3}, "mech:", text?, newline, block, grave{3}, newline, whitespace* ;
 fn mech_code_block(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = tuple((grave,grave,grave,tag("mech:")))(input)?;
+  let msg1 = "Expect newline";
+  let msg2 = "Expect mech code block";
+  let msg3 = "Expect 3 graves followed by newline to terminate the mech code block";
+  let (input, _) = tuple((grave, grave, grave, tag("mech:")))(input)?;
   let (input, directive) = opt(text)(input)?;
-  let (input, _) = newline(input)?;
+  let (input, _) = label!(newline, msg1)(input)?;
   let (input, mech_block) = block(input)?;
-  let (input, _) = tuple((grave,grave,grave))(input)?;
-  let (input, _) = newline(input)?;
+  let (input, _) = label!(tuple((grave, grave, grave, newline)), msg3)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let mut elements = vec![];
   match directive {
@@ -1831,7 +1858,10 @@ impl ParserErrorLog {
   pub fn construct_msg(&self, text: &str) -> String {
     let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
     let ii = IndexInterpreter::new(&graphemes);
-    let result = String::new();
+    let mut result = String::new();
+    for (rng, detail) in &self.errors {
+      result.push_str(&format!("{}\n", detail.message));
+    }
     result
   }
 
