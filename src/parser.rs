@@ -1838,21 +1838,6 @@ impl ParserErrorLog {
   pub fn has_error(&self) -> bool {
     self.errors.len() != 0
   }
-
-  fn new() -> Self {
-    ParserErrorLog { errors: vec![] }
-  }
-
-  fn add_error(&mut self,
-               rng: ParseStringRange,
-               detail: ParseErrorDetail) {
-    self.errors.push((rng, detail));
-  }
-
-  fn add_errors(&mut self,
-                error_log: &mut Vec<(ParseStringRange, ParseErrorDetail)>) {
-    self.errors.append(error_log);
-  }
 }
 
 // ## Parser interfaces
@@ -1860,18 +1845,18 @@ impl ParserErrorLog {
 pub fn parse(text: &str) -> Result<Node, MechError> {
   let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
   let mut result_node = Node::Error;
-  let mut error_log = ParserErrorLog::new();
+  let mut error_log = ParserErrorLog { errors: vec![] };
   match parse_mech(ParseString::new(&graphemes)) {
     // Got a parse tree, however there may be errors
     Ok((mut remaining_input, parse_tree)) => {
-      error_log.add_errors(&mut remaining_input.error_log);
+      error_log.errors.append(&mut remaining_input.error_log);
       result_node = parse_tree;
     },
     // Parsing completely failed, and no parse tree was created
     Err(err) => match err {
       Err::Error(mut e) | Err::Failure(mut e) => {
-        error_log.add_errors(&mut e.remaining_input.error_log);
-        error_log.add_error(e.cause_range, e.error_detail);
+        error_log.errors.append(&mut e.remaining_input.error_log);
+        error_log.errors.push((e.cause_range, e.error_detail));
       },
       Err::Incomplete(_) => panic!("nom::Err::Incomplete is not supported!"),
     },
@@ -1891,18 +1876,18 @@ pub fn parse(text: &str) -> Result<Node, MechError> {
 pub fn parse_fragment(text: &str) -> Result<Node,MechError> {
   let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
   let mut result_node = Node::Error;
-  let mut error_log = ParserErrorLog::new();
+  let mut error_log = ParserErrorLog { errors: vec![] };
   match parse_mech_fragment(ParseString::new(&graphemes)) {
     // Got a parse tree, however there may be errors
     Ok((mut remaining_input, parse_tree)) => {
-      error_log.add_errors(&mut remaining_input.error_log);
+      error_log.errors.append(&mut remaining_input.error_log);
       result_node = parse_tree;
     },
     // Parsing completely failed, and no parse tree was created
     Err(err) => match err {
       Err::Error(mut e) | Err::Failure(mut e) => {
-        error_log.add_errors(&mut e.remaining_input.error_log);
-        error_log.add_error(e.cause_range, e.error_detail);
+        error_log.errors.append(&mut e.remaining_input.error_log);
+        error_log.errors.push((e.cause_range, e.error_detail));
       },
       Err::Incomplete(_) => panic!("nom::Err::Incomplete is not supported!"),
     },
