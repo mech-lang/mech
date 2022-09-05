@@ -17,10 +17,10 @@ gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = {path = "core"}
-mech-syntax = {path = "syntax"}
-mech-program = {path = "program"}
-mech-utilities = {path = "utilities"}
+mech-core = {path = "src/core"}
+mech-syntax = {path = "src/syntax"}
+mech-program = {path = "src/program"}
+mech-utilities = {path = "src/utilities"}
 
 clap = "2.34.0"
 colored = "2.0.0"
@@ -58,13 +58,16 @@ OriginalFilename = "MECH.EXE"
 LegalCopyright = "Copyright © 2022"
 
 [patch.'https://gitlab.com/mech-lang/core']
-mech-core = { path = 'core' }
+mech-core = { path = 'src/core' }
 
 [patch.'https://gitlab.com/mech-lang/syntax']
-mech-syntax = { path = 'syntax' }
+mech-syntax = { path = 'src/syntax' }
 
 [patch.'https://gitlab.com/mech-lang/program']
-mech-program = { path = 'program' }
+mech-program = { path = 'src/program' }
 
 [patch.'https://gitlab.com/mech-lang/utilities']
-mech-utilities = { path = 'utilities' }
+mech-utilities = { path = 'src/utilities' }
+
+[patch.'https://gitlab.com/mech-lang/wasm']
+mech-wasm = { path = 'src/wasm' }

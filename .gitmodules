@@ -11,23 +11,23 @@
 	url = https://gitlab.com/mech-lang/docs.git
 	branch = v0.1-beta
 [submodule "core"]
-	path = core
+	path = src/core
 	url = https://gitlab.com/mech-lang/core.git
 	branch = v0.1-beta
 [submodule "syntax"]
-	path = syntax
+	path = src/syntax
 	url = https://gitlab.com/mech-lang/syntax.git
 	branch = v0.1-beta
 [submodule "program"]
-	path = program
+	path = src/program
 	url = https://gitlab.com/mech-lang/program.git
 	branch = v0.1-beta
 [submodule "utilities"]
-	path = utilities
+	path = src/utilities
 	url = https://gitlab.com/mech-lang/utilities.git
 	branch = v0.1-beta
 [submodule "wasm"]
-	path = wasm
+	path = src/wasm
 	url = https://gitlab.com/mech-lang/wasm.git
 	branch = v0.1-beta
 [submodule "notebook"]
