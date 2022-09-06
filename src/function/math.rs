@@ -702,6 +702,13 @@ macro_rules! math_compiler {
                     block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
                   }
                 }
+                (Column::U32(rhs), (_,Column::U32(lhs),_)) => { 
+                  out_brrw.set_col_kind(col_ix, ValueKind::U32)?;
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::U32(out) = out_col {
+                    block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
+                  }
+                }
                 (Column::F32(rhs), (_,Column::F32(lhs),_)) => { 
                   out_brrw.set_col_kind(col_ix, ValueKind::F32)?;
                   let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
