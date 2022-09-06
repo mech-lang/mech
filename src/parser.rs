@@ -18,7 +18,10 @@ use nom::{
   Err,
 };
 
+use std::cmp::Ordering;
+use std::collections::HashMap;
 use unicode_segmentation::UnicodeSegmentation;
+use colored::*;
 
 // ## Parser nodes
 
@@ -1699,14 +1702,14 @@ fn code_block(input: ParseString) -> ParseResult<Node> {
   let msg1 = "Expect 3 graves to start a code block";
   let msg2 = "Expect newline";
   let msg3 = "Expect 3 graves followed by newline to terminate a code block";
-  let (input, _) = tuple((
+  let (input, (_, r)) = range(tuple((
     grave,
     label!(grave, msg1),
     label!(grave, msg1),
-  ))(input)?;
+  )))(input)?;
   let (input, _) = label!(newline, msg2)(input)?;
   let (input, text) = formatted_text(input)?;
-  let (input, _) = label!(tuple((grave, grave, grave, newline, many0(whitespace))), msg3)(input)?;
+  let (input, _) = label!(tuple((grave, grave, grave, newline, many0(whitespace))), msg3, r)(input)?;
   Ok((input, Node::CodeBlock { children: vec![text] }))
 }
 
@@ -1807,28 +1810,66 @@ fn parse_mech(input: ParseString) -> ParseResult<Node> {
 
 // ## Reporting errors
 
-struct IndexInterpreter {
-  line_beginnings: Vec<usize>
+struct IndexInterpreter<'a> {
+  graphemes: &'a Vec<&'a str>,
+  line_beginnings: Vec<usize>,
 }
 
-impl IndexInterpreter {
-  fn new(graphemes: &Vec<&str>) -> Self {
+impl<'a> IndexInterpreter<'a> {
+  fn new(graphemes: &'a Vec<&str>) -> Self {
     let mut line_beginnings = vec![0];
     for i in 0..graphemes.len() {
-      if Self::is_newline(graphemes[i]) {
+      if Self::grapheme_is_newline(graphemes[i]) {
         line_beginnings.push(i + 1);
       }
     }
     IndexInterpreter {
-      line_beginnings
+      graphemes,
+      line_beginnings,
     }
   }
 
-  fn get_width(grapheme: &str) -> usize {
+  fn get_text_by_linenum(&self, linenum: usize) -> String {
+    let start = self.line_beginnings[linenum - 1];
+    let end = self.line_beginnings[linenum];
+    let mut s = self.graphemes[start..end].iter().map(|s| *s).collect::<String>();
+    if !s.ends_with("\n") {
+      s.push('\n');
+    }
+    s
+  }
+
+  fn get_textlen_by_linenum(&self, linenum: usize) -> usize {
+    let start = self.line_beginnings[linenum - 1];
+    let end = self.line_beginnings[linenum];
+    let mut len = 0;
+    for i in start..end {
+      len += Self::grapheme_width(self.graphemes[i]);
+    }
+    len
+  }
+
+  fn get_location_by_index(&self, index: usize) -> (usize, usize) {
+    let a = self.line_beginnings.binary_search_by(
+      |n| if n <= &index { Ordering::Equal } else { Ordering::Greater }).unwrap();
+    let mut i = 1;
+    while self.line_beginnings[a + i] <= index {
+      i += 1;
+    }
+    let row = a + i;
+    let row_beginning = self.line_beginnings[a + i - 1];
+    let mut col = 1;
+    for j in row_beginning..index {
+      col += Self::grapheme_width(self.graphemes[j]);
+    }
+    (row, col)
+  }
+
+  fn grapheme_width(grapheme: &str) -> usize {
     let mut width = 0;
     for ch in grapheme.chars() {
       if ch.is_ascii() {
-        if ch == ' ' || ch == '\t' || ch.is_alphanumeric() {
+        if !ch.is_ascii_control() || ch == '\t' {
           width += 1;
         }  // else width += 0
       } else if ch.is_alphanumeric() {
@@ -1840,7 +1881,7 @@ impl IndexInterpreter {
     width
   }
 
-  fn is_newline(grapheme: &str) -> bool {
+  fn grapheme_is_newline(grapheme: &str) -> bool {
     for ch in grapheme.chars() {
       if ch == '\n' {
         return true;
@@ -1850,17 +1891,158 @@ impl IndexInterpreter {
   }
 }
 
-pub struct ParserErrorLog {
+pub struct ParserErrorReport {
   errors: Vec<(ParseStringRange, ParseErrorDetail)>,
 }
 
-impl ParserErrorLog {
+impl ParserErrorReport {
+  fn add_err_heading(result: &mut String, index: usize) {
+    let n = index + 1;
+    let d = "---------------------";
+    let s = format!("{} parser error #{} {}\n", d, n, d);
+    result.push_str(&s.cyan().to_string());
+  }
+
+  fn add_err_location(result: &mut String,
+                      cause_rng: &ParseStringRange,
+                      ii: &IndexInterpreter) {
+    let (row, col) = ii.get_location_by_index(cause_rng.1 - 1);
+    let s = format!("@location {}:{}\n", row, col);
+    result.push_str(&s);
+  }
+
+  fn add_err_context(result: &mut String,
+                     cause_rng: &ParseStringRange,
+                     detail: &ParseErrorDetail,
+                     ii: &IndexInterpreter) {
+    // cloning simplifies things here, and it shouldn't impact performance
+    let mut annotation_rngs = detail.annotation_rngs.clone();
+    annotation_rngs.push(*cause_rng);
+
+    // the lines to print
+    let mut lines_to_print: Vec<usize> = vec![];
+    for (a, b) in &annotation_rngs {
+      let (r1, _) = ii.get_location_by_index(*a);
+      let (r2, _) = ii.get_location_by_index(*b);
+      for i in r1..=r2 {
+        lines_to_print.push(i);
+      }
+    }
+    lines_to_print.sort();
+    lines_to_print.dedup();
+    
+    // the annotations on each line
+    // <linenum, (start_col, end_col, is_major, is_cause)>
+    let mut range_table: HashMap<usize, Vec<(usize, usize, bool, bool)>> = HashMap::new();
+    for line in &lines_to_print {
+      range_table.insert(*line, vec![]);
+    }
+    let n = annotation_rngs.len() - 1;  // if i == n, it's the last rng, thus the cause rng
+    for (i, (a, b)) in annotation_rngs.iter().enumerate() {
+      let (r1, c1) = ii.get_location_by_index(*a);
+      let (r2, c2) = ii.get_location_by_index(*b);
+      if r1 == r2 {  // the entire range is in one line
+        range_table.get_mut(&r1).unwrap().push((c1, c2, true, i == n));
+      } else {  // the range spans over multiple lines
+        range_table.get_mut(&r1).unwrap().push((c1, usize::MAX, true, i == n));
+        for r in r1+1..r2 {
+          range_table.get_mut(&r).unwrap().push((1, usize::MAX, false, i == n));
+        }
+        range_table.get_mut(&r2).unwrap().push((1, c2, false, i == n));
+      }
+    }
+
+    // other data for printing
+    let dots = "...";
+    let indentation = " ";
+    let vert_split1 = " |  ";
+    let vert_split2 = "    ";
+    let arrow = "^";
+    let tilde = "~";
+    let lines_str: Vec<String> = lines_to_print.iter().map(|i| i.to_string()).collect();
+    let row_str_len = usize::max(lines_str.last().unwrap().len(), dots.len());
+
+    // print source code
+    for i in 0..lines_to_print.len() {
+      // [... | ]
+      if i != 0 && (lines_to_print[i] - lines_to_print[i-1] != 1) {
+        result.push_str(indentation);
+        for _ in 3..row_str_len { result.push(' '); }
+        result.push_str(dots);
+        result.push_str(vert_split1);
+        result.push('\n');
+      }
+
+      // [    | ]
+      result.push_str(indentation);
+      for _ in 0..row_str_len { result.push(' '); }
+      result.push_str(vert_split1);
+      result.push('\n');
+
+      // [row |  program text...]
+      result.push_str(indentation);
+      for _ in 0..row_str_len-lines_str[i].len() { result.push(' '); }
+      result.push_str(&lines_str[i]);
+      result.push_str(vert_split1);
+      result.push_str(&ii.get_text_by_linenum(lines_to_print[i]));
+
+      // [    |    ^~~~]
+      result.push_str(indentation);
+      for _ in 0..row_str_len { result.push(' '); }
+      result.push_str(vert_split1);
+      let mut curr_col = 1;
+      let line_len = ii.get_textlen_by_linenum(lines_to_print[i]);
+      let rngs = range_table.get(&lines_to_print[i]).unwrap();
+      for (start, len, major, cause) in rngs {
+        let max_len = usize::max(1, usize::min(*len, line_len - curr_col));
+        for _ in curr_col..*start { result.push(' '); }
+        if *major {
+          if *cause {
+            result.push_str(&arrow.red().to_string());
+          } else {
+            result.push_str(&arrow.bright_purple().to_string());
+          }
+        } else {
+          if *cause {
+            result.push_str(&tilde.red().to_string());
+          } else {
+            result.push_str(&tilde.bright_purple().to_string());
+          }
+        }
+        if *cause {
+          for _ in 0..max_len {
+            result.push_str(&tilde.red().to_string());
+          }
+        } else {
+          for _ in 0..max_len {
+            result.push_str(&tilde.bright_purple().to_string());
+          }
+        }
+        curr_col = start + max_len;
+      }
+      result.push('\n');
+    }
+
+    // print error message
+    let (_cause_row, cause_col) = ii.get_location_by_index(cause_rng.0);
+    result.push_str(indentation);
+    for _ in 0..row_str_len { result.push(' '); }
+    result.push_str(vert_split2);
+    for _ in 0..cause_col-1 { result.push(' '); }
+    result.push_str(&detail.message.red().to_string());
+    result.push('\n');
+  }
+
   pub fn construct_msg(&self, text: &str) -> String {
     let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
     let ii = IndexInterpreter::new(&graphemes);
     let mut result = String::new();
-    for (rng, detail) in &self.errors {
-      result.push_str(&format!("{}\n", detail.message));
+    result.push('\n');
+    for (i, (rng, detail)) in self.errors.iter().enumerate() {
+      Self::add_err_heading(&mut result, i);
+      Self::add_err_location(&mut result, rng, &ii);
+      Self::add_err_context(&mut result, rng, detail, &ii);
+      result.push('\n');
     }
     result
   }
@@ -1875,7 +2057,7 @@ impl ParserErrorLog {
 pub fn parse(text: &str) -> Result<Node, MechError> {
   let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
   let mut result_node = Node::Error;
-  let mut error_log = ParserErrorLog { errors: vec![] };
+  let mut error_log = ParserErrorReport { errors: vec![] };
   match parse_mech(ParseString::new(&graphemes)) {
     // Got a parse tree, however there may be errors
     Ok((mut remaining_input, parse_tree)) => {
@@ -1906,7 +2088,7 @@ pub fn parse(text: &str) -> Result<Node, MechError> {
 pub fn parse_fragment(text: &str) -> Result<Node,MechError> {
   let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
   let mut result_node = Node::Error;
-  let mut error_log = ParserErrorLog { errors: vec![] };
+  let mut error_log = ParserErrorReport { errors: vec![] };
   match parse_mech_fragment(ParseString::new(&graphemes)) {
     // Got a parse tree, however there may be errors
     Ok((mut remaining_input, parse_tree)) => {
