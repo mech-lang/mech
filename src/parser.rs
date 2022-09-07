@@ -1899,7 +1899,7 @@ impl ParserErrorReport {
   fn add_err_heading(result: &mut String, index: usize) {
     let n = index + 1;
     let d = "---------------------";
-    let s = format!("{} parser error #{} {}\n", d, n, d);
+    let s = format!("{} syntax error #{} {}\n", d, n, d);
     result.push_str(&s.cyan().to_string());
   }
 
@@ -1907,7 +1907,7 @@ impl ParserErrorReport {
                       cause_rng: &ParseStringRange,
                       ii: &IndexInterpreter) {
     let (row, col) = ii.get_location_by_index(cause_rng.1 - 1);
-    let s = format!("@location {}:{}\n", row, col);
+    let s = format!("@location:{}:{}\n", row, col);
     result.push_str(&s);
   }
 
@@ -1931,8 +1931,6 @@ impl ParserErrorReport {
     lines_to_print.sort();
     lines_to_print.dedup();
 
-    println!("rngs: {:?}", annotation_rngs);
-    
     // the annotations on each line
     // <linenum, (start_col, rng_len, is_major, is_cause)>
     let mut range_table: HashMap<usize, Vec<(usize, usize, bool, bool)>> = HashMap::new();
@@ -1943,8 +1941,6 @@ impl ParserErrorReport {
     for (i, (a, b)) in annotation_rngs.iter().enumerate() {
       let (r1, c1) = ii.get_location_by_index(*a);
       let (r2, c2) = ii.get_location_by_index(b - 1);
-      println!("r1, c1: ({}, {})", r1, c1);
-      println!("r2, c2: ({}, {})", r2, c2);
       if r1 == r2 {  // the entire range is in one line
         range_table.get_mut(&r1).unwrap().push((c1, c2 - c1 + 1, true, i == n));
       } else {  // the range spans over multiple lines
@@ -1955,8 +1951,6 @@ impl ParserErrorReport {
         range_table.get_mut(&r2).unwrap().push((1, c2, i == n, i == n));
       }
     }
-
-    println!("tab: {:?}", range_table);
 
     // other data for printing
     let dots = "...";
