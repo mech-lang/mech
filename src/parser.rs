@@ -1846,7 +1846,7 @@ impl<'a> IndexInterpreter<'a> {
     for i in start..end {
       len += Self::grapheme_width(self.graphemes[i]);
     }
-    len
+    len + 1
   }
 
   fn get_location_by_index(&self, index: usize) -> (usize, usize) {
@@ -1923,16 +1923,18 @@ impl ParserErrorReport {
     let mut lines_to_print: Vec<usize> = vec![];
     for (a, b) in &annotation_rngs {
       let (r1, _) = ii.get_location_by_index(*a);
-      let (r2, _) = ii.get_location_by_index(*b);
+      let (r2, _) = ii.get_location_by_index(b - 1);
       for i in r1..=r2 {
         lines_to_print.push(i);
       }
     }
     lines_to_print.sort();
     lines_to_print.dedup();
+
+    println!("rngs: {:?}", annotation_rngs);
     
     // the annotations on each line
-    // <linenum, (start_col, end_col, is_major, is_cause)>
+    // <linenum, (start_col, rng_len, is_major, is_cause)>
     let mut range_table: HashMap<usize, Vec<(usize, usize, bool, bool)>> = HashMap::new();
     for line in &lines_to_print {
       range_table.insert(*line, vec![]);
@@ -1940,23 +1942,27 @@ impl ParserErrorReport {
     let n = annotation_rngs.len() - 1;  // if i == n, it's the last rng, thus the cause rng
     for (i, (a, b)) in annotation_rngs.iter().enumerate() {
       let (r1, c1) = ii.get_location_by_index(*a);
-      let (r2, c2) = ii.get_location_by_index(*b);
+      let (r2, c2) = ii.get_location_by_index(b - 1);
+      println!("r1, c1: ({}, {})", r1, c1);
+      println!("r2, c2: ({}, {})", r2, c2);
       if r1 == r2 {  // the entire range is in one line
-        range_table.get_mut(&r1).unwrap().push((c1, c2, true, i == n));
+        range_table.get_mut(&r1).unwrap().push((c1, c2 - c1 + 1, true, i == n));
       } else {  // the range spans over multiple lines
-        range_table.get_mut(&r1).unwrap().push((c1, usize::MAX, true, i == n));
+        range_table.get_mut(&r1).unwrap().push((c1, usize::MAX, i != n, i == n));
         for r in r1+1..r2 {
           range_table.get_mut(&r).unwrap().push((1, usize::MAX, false, i == n));
         }
-        range_table.get_mut(&r2).unwrap().push((1, c2, false, i == n));
+        range_table.get_mut(&r2).unwrap().push((1, c2, i == n, i == n));
       }
     }
+
+    println!("tab: {:?}", range_table);
 
     // other data for printing
     let dots = "...";
     let indentation = " ";
-    let vert_split1 = " |  ";
-    let vert_split2 = "    ";
+    let vert_split1 = " |";
+    let vert_split2 = "  ";
     let arrow = "^";
     let tilde = "~";
     let lines_str: Vec<String> = lines_to_print.iter().map(|i| i.to_string()).collect();
@@ -1996,25 +2002,22 @@ impl ParserErrorReport {
       for (start, len, major, cause) in rngs {
         let max_len = usize::max(1, usize::min(*len, line_len - curr_col));
         for _ in curr_col..*start { result.push(' '); }
-        if *major {
-          if *cause {
+        if *cause {
+          for _ in 0..max_len-1 {
+            result.push_str(&tilde.red().to_string());
+          }
+          if *major {
             result.push_str(&arrow.red().to_string());
           } else {
-            result.push_str(&arrow.bright_purple().to_string());
+            result.push_str(&tilde.red().to_string());
           }
         } else {
-          if *cause {
-            result.push_str(&tilde.red().to_string());
+          if *major {
+            result.push_str(&arrow.bright_purple().to_string());
           } else {
             result.push_str(&tilde.bright_purple().to_string());
           }
-        }
-        if *cause {
-          for _ in 0..max_len {
-            result.push_str(&tilde.red().to_string());
-          }
-        } else {
-          for _ in 0..max_len {
+          for _ in 0..max_len-1 {
             result.push_str(&tilde.bright_purple().to_string());
           }
         }
@@ -2024,7 +2027,7 @@ impl ParserErrorReport {
     }
 
     // print error message
-    let (_cause_row, cause_col) = ii.get_location_by_index(cause_rng.0);
+    let (_cause_row, cause_col) = ii.get_location_by_index(cause_rng.1 - 1);
     result.push_str(indentation);
     for _ in 0..row_str_len { result.push(' '); }
     result.push_str(vert_split2);
