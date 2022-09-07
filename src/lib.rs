@@ -1,3 +1,4 @@
+#![no_main]
 #![allow(warnings)]
 extern crate mech_core;
 extern crate mech_utilities;
