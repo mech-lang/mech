@@ -1722,17 +1722,19 @@ fn inline_mech_code(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::InlineMechCode{ children: vec![expression] }))
 }
 
-// TODO
+// TODO: error location in mech: tag
 // mech_code_block ::= grave{3}, "mech:", text?, newline, block, grave{3}, newline, whitespace* ;
 fn mech_code_block(input: ParseString) -> ParseResult<Node> {
   let msg1 = "Expect newline";
   let msg2 = "Expect mech code block";
-  let msg3 = "Expect 3 graves followed by newline to terminate the mech code block";
-  let (input, _) = tuple((grave, grave, grave, tag("mech:")))(input)?;
+  let msg3 = "Expect the \"mech:\" tag";
+  let msg4 = "Expect 3 graves followed by newline to terminate the mech code block";
+  let (input, _) = tuple((grave, grave, grave, tag("mec")))(input)?;
+  let (input, _) = label!(tag("h:"), msg3)(input)?;
   let (input, directive) = opt(text)(input)?;
   let (input, _) = label!(newline, msg1)(input)?;
-  let (input, mech_block) = block(input)?;
-  let (input, _) = label!(tuple((grave, grave, grave, newline)), msg3)(input)?;
+  let (input, mech_block) = label!(block, msg2)(input)?;
+  let (input, _) = label!(tuple((grave, grave, grave, newline)), msg4)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let mut elements = vec![];
   match directive {
@@ -1896,11 +1898,35 @@ pub struct ParserErrorReport {
 }
 
 impl ParserErrorReport {
+  fn heading_color(s: &str) -> String {
+    s.truecolor(246, 192, 78).bold().to_string()
+  }
+
+  fn location_color(s: &str) -> String {
+    s.blue().bold().to_string()
+  }
+
+  fn linenum_color(s: &str) -> String {
+    s.blue().bold().to_string()
+  }
+
+  fn text_color(s: &str) -> String {
+    s.to_string()
+  }
+
+  fn annotation_color(s: &str) -> String {
+    s.bright_purple().bold().to_string()
+  }
+
+  fn error_color(s: &str) -> String {
+    s.red().bold().to_string()
+  }
+
   fn add_err_heading(result: &mut String, index: usize) {
     let n = index + 1;
     let d = "---------------------";
     let s = format!("{} syntax error #{} {}\n", d, n, d);
-    result.push_str(&s.cyan().to_string());
+    result.push_str(&Self::heading_color(&s));
   }
 
   fn add_err_location(result: &mut String,
@@ -1908,7 +1934,7 @@ impl ParserErrorReport {
                       ii: &IndexInterpreter) {
     let (row, col) = ii.get_location_by_index(cause_rng.1 - 1);
     let s = format!("@location:{}:{}\n", row, col);
-    result.push_str(&s);
+    result.push_str(&Self::location_color(&s));
   }
 
   fn add_err_context(result: &mut String,
@@ -1968,28 +1994,29 @@ impl ParserErrorReport {
       if i != 0 && (lines_to_print[i] - lines_to_print[i-1] != 1) {
         result.push_str(indentation);
         for _ in 3..row_str_len { result.push(' '); }
-        result.push_str(dots);
-        result.push_str(vert_split1);
+        result.push_str(&Self::linenum_color(dots));
+        result.push_str(&Self::linenum_color(vert_split1));
         result.push('\n');
       }
 
       // [    | ]
       result.push_str(indentation);
       for _ in 0..row_str_len { result.push(' '); }
-      result.push_str(vert_split1);
+      result.push_str(&Self::linenum_color(vert_split1));
       result.push('\n');
 
       // [row |  program text...]
+      let text = ii.get_text_by_linenum(lines_to_print[i]);
       result.push_str(indentation);
       for _ in 0..row_str_len-lines_str[i].len() { result.push(' '); }
-      result.push_str(&lines_str[i]);
-      result.push_str(vert_split1);
-      result.push_str(&ii.get_text_by_linenum(lines_to_print[i]));
+      result.push_str(&Self::linenum_color(&lines_str[i]));
+      result.push_str(&Self::linenum_color(vert_split1));
+      result.push_str(&Self::text_color(&text));
 
       // [    |    ^~~~]
       result.push_str(indentation);
       for _ in 0..row_str_len { result.push(' '); }
-      result.push_str(vert_split1);
+      result.push_str(&Self::linenum_color(vert_split1));
       let mut curr_col = 1;
       let line_len = ii.get_textlen_by_linenum(lines_to_print[i]);
       let rngs = range_table.get(&lines_to_print[i]).unwrap();
@@ -1998,21 +2025,21 @@ impl ParserErrorReport {
         for _ in curr_col..*start { result.push(' '); }
         if *cause {
           for _ in 0..max_len-1 {
-            result.push_str(&tilde.red().to_string());
+            result.push_str(&Self::error_color(tilde));
           }
           if *major {
-            result.push_str(&arrow.red().to_string());
+            result.push_str(&Self::error_color(arrow));
           } else {
-            result.push_str(&tilde.red().to_string());
+            result.push_str(&Self::error_color(tilde));
           }
         } else {
           if *major {
-            result.push_str(&arrow.bright_purple().to_string());
+            result.push_str(&Self::annotation_color(arrow));
           } else {
-            result.push_str(&tilde.bright_purple().to_string());
+            result.push_str(&Self::annotation_color(tilde));
           }
           for _ in 0..max_len-1 {
-            result.push_str(&tilde.bright_purple().to_string());
+            result.push_str(&Self::annotation_color(tilde));
           }
         }
         curr_col = start + max_len;
@@ -2026,7 +2053,7 @@ impl ParserErrorReport {
     for _ in 0..row_str_len { result.push(' '); }
     result.push_str(vert_split2);
     for _ in 0..cause_col-1 { result.push(' '); }
-    result.push_str(&detail.message.red().to_string());
+    result.push_str(&Self::error_color(detail.message));
     result.push('\n');
   }
 
