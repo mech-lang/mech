@@ -20,7 +20,7 @@ crate-type = ["dylib", "rlib"]
 
 [dependencies]
 mech-core = {git = "https://gitlab.com/mech-lang/core", branch = "v0.1-beta", default-features = false}
-mech-utilities = {git = "https://gitlab.com/mech-lang/utilities", branch = "v0.1-beta", default-features = false}
+mech-utilities = {git = "https://gitlab.com/mech-lang/utilities", branch = "v0.1-beta"}
 
 crossbeam-channel = "0.5.6"
 gilrs = {path = "vendor/gilrs/gilrs"}
