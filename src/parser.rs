@@ -181,7 +181,6 @@ pub enum Node {
   Null,
   True,
   False,
-  Dummy,
   Error,
 }
 
@@ -352,7 +351,6 @@ fn print_recurse(node: &Node, level: usize) {
     Node::False => {print!("True\n",); None},
     Node::True => {print!("False\n",); None},
     Node::Alpha{children} => {print!("Alpha\n"); Some(children)},
-    Node::Dummy => {print!("Dummy\n"); None},
     Node::Error => {print!("Error\n"); None},
   };
 
@@ -626,6 +624,20 @@ where
   }
 }
 
+fn is<'a, F, O>(mut parser: F) ->
+  impl FnMut(ParseString<'a>) -> ParseResult<()>
+where
+  F: FnMut(ParseString<'a>) -> ParseResult<O>
+{
+  move |input: ParseString| {
+    let input_clone = input.clone();
+    match parser(input_clone) {
+      Ok(_) => Ok((input, ())),
+      x => Err(Err::Error(ParseError::new(input, "Unexpected character"))),
+    }
+  }
+}
+
 fn is_not<'a, F, E>(mut parser: F) ->
   impl FnMut(ParseString<'a>) -> ParseResult<()>
 where
@@ -659,7 +671,7 @@ fn skip_spaces(input: ParseString) -> ParseResult<()> {
 }
 
 fn skip_nil(input: ParseString) -> ParseResult<Node> {
-  Ok((input, Node::Dummy))
+  Ok((input, Node::Null))
 }
 
 // ## Primitive parsers
@@ -762,17 +774,20 @@ fn digit0(input: ParseString) -> ParseResult<Vec<String>> {
   Ok(result)
 }
 
+// bin_digit ::= "0" | "1" ;
 fn bin_digit(input: ParseString) -> ParseResult<String> {
   let result = alt((tag("1"),tag("0")))(input)?;
   Ok(result)
 }
 
+// hex_digit ::= digit | "a" | "b" | "c" | "d" | "e" | "f" | "A" | "B" | "C" | "D" | "E" | "F" ;
 fn hex_digit(input: ParseString) -> ParseResult<String> {
   let result = alt((digit, tag("a"), tag("b"), tag("c"), tag("d"), tag("e"), tag("f"), 
                            tag("A"), tag("B"), tag("C"), tag("D"), tag("E"), tag("F")))(input)?;
   Ok(result)
 }
 
+// oct_digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" ;
 fn oct_digit(input: ParseString) -> ParseResult<String> {
   let result = alt((tag("0"),tag("1"),tag("2"),tag("3"),tag("4"),tag("5"),tag("6"),tag("7")))(input)?;
   Ok(result)
@@ -815,11 +830,13 @@ fn paragraph_rest(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Text{children: word}))
 }
 
+// paragraph_starter ::= (word | number | quote | left_angle | right_angle | left_bracket | right_bracket | period | exclamation | question | comma | colon | semicolon | left_parenthesis | right_parenthesis | emoji)+ ;
 fn paragraph_starter(input: ParseString) -> ParseResult<Node> {
   let (input, word) = many1(alt((word, number, quote, left_angle, right_angle, left_bracket, right_bracket, period, exclamation, question, comma, colon, semicolon, left_parenthesis, right_parenthesis, emoji)))(input)?;
   Ok((input, Node::Text{children: word}))
 }
 
+// identifier ::= space*, (word | emoji), (word | number | dash | slash | emoji)* ;
 fn identifier(input: ParseString) -> ParseResult<Node> {
   let (input, _) = many0(space)(input)?;
   let (input, (word, mut rest)) = tuple((alt((word,emoji)), many0(alt((word, number, dash, slash, emoji)))))(input)?;
@@ -828,45 +845,45 @@ fn identifier(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Identifier{children: id}))
 }
 
+// boolean_literal ::= true_literal | false_literal ;
 fn boolean_literal(input: ParseString) -> ParseResult<Node> {
   let (input, boolean) = alt((true_literal, false_literal))(input)?;
   Ok((input, Node::BooleanLiteral{children: vec![boolean]}))
 }
 
+// true_literal ::= english_true_literal | true_symbol ;
 fn true_literal(input: ParseString) -> ParseResult<Node> {
   let (input, _) = alt((english_true_literal, true_symbol))(input)?;
   Ok((input, Node::True))
 }
 
+// false_literal ::= english_false_literal | false_symbol ;
 fn false_literal(input: ParseString) -> ParseResult<Node> {
   let (input, _) = alt((english_false_literal, false_symbol))(input)?;
   Ok((input, Node::False))
 }
 
+// true_symbol ::= "✓" ;
 fn true_symbol(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("✓")(input)?;
   Ok((input, Node::False))
 }
 
+// false_symbol ::= "✗" ;
 fn false_symbol(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("✗")(input)?;
   Ok((input, Node::False))
 }
 
+// english_true_literal ::= "true" ;
 fn english_true_literal(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = tag("t")(input)?;
-  let (input, _) = tag("r")(input)?;
-  let (input, _) = tag("u")(input)?;
-  let (input, _) = tag("e")(input)?;
+  let (input, _) = tag("true")(input)?;
   Ok((input, Node::True))
 }
 
+// english_false_literal ::= "false" ;
 fn english_false_literal(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = tag("f")(input)?;
-  let (input, _) = tag("a")(input)?;
-  let (input, _) = tag("l")(input)?;
-  let (input, _) = tag("s")(input)?;
-  let (input, _) = tag("e")(input)?;
+  let (input, _) = tag("false")(input)?;
   Ok((input, Node::False))
 }
 
@@ -889,11 +906,24 @@ fn whitespace(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Null))
 }
 
-fn floating_point(input: ParseString) -> ParseResult<Node> {
-  let (input,_) = period(input)?;
-  let (input, chars) = digit1(input)?;
-  Ok((input, Node::Null))
-}
+// fn floating_point(input: ParseString) -> ParseResult<Node> {
+//   let (input,_) = period(input)?;
+//   let (input, chars) = digit1(input)?;
+//   Ok((input, Node::Null))
+// }
+
+// fn quantity(input: ParseString) -> IResult<ParseString, Node> {
+//   let (input, number) = number(input)?;
+//   let (input, float) = opt(floating_point)(input)?;
+//   let (input, unit) = identifier(input)?;
+//   let mut quantity = vec![number];
+//   match float {
+//     Some(fp) => quantity.push(fp),
+//     _ => (),
+//   };
+//   quantity.push(unit);
+//   Ok((input, Node::Quantity{children: quantity}))
+// }
 
 fn number_literal(input: ParseString) -> ParseResult<Node> {
   let (input, number_variant) = alt((hexadecimal_literal, octal_literal, binary_literal, decimal_literal, float_literal))(input)?;
@@ -905,6 +935,13 @@ fn number_literal(input: ParseString) -> ParseResult<Node> {
   }
   Ok((input, Node::NumberLiteral{children}))
 }
+
+// fn rational_number(input: ParseString) -> IResult<ParseString, Node> {
+//   let (input, numerator) = alt((quantity, number_literal))(input)?;
+//   let (input, _) = tag("/")(input)?;
+//   let (input, denominator) = alt((quantity, number_literal))(input)?;
+//   Ok((input, Node::Null))
+// }
 
 fn float_literal(input: ParseString) -> ParseResult<Node> {
   let (input, p1) = opt(tag("."))(input)?;
@@ -1029,10 +1066,13 @@ fn data(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Data{children: data}))
 }
 
+// kind_annotation ::= left_angle, (identifier | underscore), (",", (identifier | underscore))*, right_angle ;
 fn kind_annotation(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = left_angle(input)?;
-  let (input, kind_id) = separated_list1(tag(","), alt((identifier, underscore)))(input)?;
-  let (input, _) = right_angle(input)?;
+  let msg2 = "Expect at least one unit in kind annotation";
+  let msg3 = "Expect right angle";
+  let (input, (_, r)) = range(left_angle)(input)?;
+  let (input, kind_id) = label!(separated_list1(tag(","), alt((identifier, underscore))), msg2)(input)?;
+  let (input, _) = label!(right_angle, msg3, r)(input)?;
   Ok((input, Node::KindAnnotation{children: kind_id}))
 }
 
@@ -1258,6 +1298,8 @@ fn variable_define(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::VariableDefine{children: vec![variable, expression]}))
 }
 
+// TODO
+// table_define ::= table, kind_annotation?, space+, equal, space+, expression ;
 fn table_define(input: ParseString) -> ParseResult<Node> {
   let mut children = vec![];
   let (input, table) = table(input)?;
@@ -1321,6 +1363,7 @@ fn until_data(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Until{children: vec![watch]}))
 }
 
+// statement ::= table_define | variable_define | split_data | flatten_data | whenever_data | wait_data | until_data | set_data | update_data | add_row | comment ;
 fn statement(input: ParseString) -> ParseResult<Node> {
   let (input, statement) = alt((table_define, variable_define, split_data, flatten_data, whenever_data, wait_data, until_data, set_data, update_data, add_row, comment))(input)?;
   Ok((input, Node::Statement{children: vec![statement]}))
@@ -1551,6 +1594,13 @@ fn xor(input: ParseString) -> ParseResult<Node> {
 
 // ##### Other expressions
 
+// fn string_interpolation(input: ParseString) -> IResult<ParseString, Node> {
+//   let (input, _) = tag("{{")(input)?;
+//   let (input, expression) = expression(input)?;
+//   let (input, _) = tag("}}")(input)?;
+//   Ok((input, Node::StringInterpolation { children: vec![expression] }))
+// }
+
 fn string(input: ParseString) -> ParseResult<Node> {
   let (input, _) = quote(input)?;
   let (input, text) = many0(text)(input)?;
@@ -1574,7 +1624,7 @@ fn transformation(input: ParseString) -> ParseResult<Node> {
 // empty_line ::= space*, newline ;
 fn empty_line(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tuple((many0(space), newline))(input)?;
-  Ok((input, Node::Dummy))
+  Ok((input, Node::Null))
 }
 
 // indented_tfm ::= space, space, transformation ;
@@ -1690,10 +1740,10 @@ fn list_item(input: ParseString) -> ParseResult<Node> {
 fn formatted_text(input: ParseString) -> ParseResult<Node> {
   let msg = "Character not permitted in formatted text";
   let (input, result) = many0(tuple((
-    is_not(grave),
+    tuple((is_not(grave), is_not(eof))),
     label!(alt((paragraph_rest, carriage_return, new_line_char)), msg)
   )))(input)?;
-  let (_, formatted): ((), Vec<_>) = result.into_iter().unzip();
+  let (_, formatted): (((), ()), Vec<_>) = result.into_iter().unzip();
   Ok((input, Node::FormattedText { children: formatted }))
 }
 
@@ -1715,26 +1765,25 @@ fn code_block(input: ParseString) -> ParseResult<Node> {
 
 // ### Mechdown
 
-fn inline_mech_code(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = tuple((left_bracket,left_bracket))(input)?;
-  let (input, expression) = expression(input)?;
-  let (input, _) = tuple((right_bracket,right_bracket,opt(space)))(input)?;
-  Ok((input, Node::InlineMechCode{ children: vec![expression] }))
-}
+// fn inline_mech_code(input: ParseString) -> ParseResult<Node> {
+//   let (input, _) = tuple((left_bracket,left_bracket))(input)?;
+//   let (input, expression) = expression(input)?;
+//   let (input, _) = tuple((right_bracket,right_bracket,opt(space)))(input)?;
+//   Ok((input, Node::InlineMechCode{ children: vec![expression] }))
+// }
 
-// TODO: error location in mech: tag
 // mech_code_block ::= grave{3}, "mech:", text?, newline, block, grave{3}, newline, whitespace* ;
 fn mech_code_block(input: ParseString) -> ParseResult<Node> {
   let msg1 = "Expect newline";
   let msg2 = "Expect mech code block";
   let msg3 = "Expect the \"mech:\" tag";
   let msg4 = "Expect 3 graves followed by newline to terminate the mech code block";
-  let (input, _) = tuple((grave, grave, grave, tag("mec")))(input)?;
-  let (input, _) = label!(tag("h:"), msg3)(input)?;
+  let (input, (_, r)) = range(tuple((grave, grave, grave)))(input)?;
+  let (input, _) = tuple((is(tag("mec")), label!(tag("mech:"), msg3)))(input)?;
   let (input, directive) = opt(text)(input)?;
   let (input, _) = label!(newline, msg1)(input)?;
   let (input, mech_block) = label!(block, msg2)(input)?;
-  let (input, _) = label!(tuple((grave, grave, grave, newline)), msg4)(input)?;
+  let (input, _) = label!(tuple((grave, grave, grave, newline)), msg4, r)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let mut elements = vec![];
   match directive {
@@ -1747,6 +1796,7 @@ fn mech_code_block(input: ParseString) -> ParseResult<Node> {
 
 // ### Start here
 
+// TODO
 // section ::= ((block | mech_code_block | code_block | statement | subtitle | paragraph | unordered_list), whitespace?)+ ;
 fn section(input: ParseString) -> ParseResult<Node> {
   let (input, mut section_elements) = many1(
@@ -1767,10 +1817,10 @@ fn body(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Body { children: sections }))
 }
 
-fn fragment(input: ParseString) -> ParseResult<Node> {
-  let (input, statement) = statement(input)?;
-  Ok((input, Node::Fragment { children:  vec![statement] }))
-}
+// fn fragment(input: ParseString) -> ParseResult<Node> {
+//   let (input, statement) = statement(input)?;
+//   Ok((input, Node::Fragment { children:  vec![statement] }))
+// }
 
 // program ::= whitespace?, title?, body, whitespace? ;
 fn program(input: ParseString) -> ParseResult<Node> {
@@ -1787,17 +1837,17 @@ fn program(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Program { children: program }))
 }
 
-fn raw_transformation(input: ParseString) -> ParseResult<Node> {
-  let (input, statement) = statement(input)?;
-  let (input, _) = many0(alt((space,newline,tab)))(input)?;
-  Ok((input, Node::Transformation { children:  vec![statement] }))
-}
+// fn raw_transformation(input: ParseString) -> ParseResult<Node> {
+//   let (input, statement) = statement(input)?;
+//   let (input, _) = many0(alt((space,newline,tab)))(input)?;
+//   Ok((input, Node::Transformation { children:  vec![statement] }))
+// }
 
-fn parse_block(input: ParseString) -> ParseResult<Node> {
-  let (input, transformations) = many1(raw_transformation)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
-  Ok((input, Node::Block { children:  transformations }))
-}
+// fn parse_block(input: ParseString) -> ParseResult<Node> {
+//   let (input, transformations) = many1(raw_transformation)(input)?;
+//   let (input, _) = many0(whitespace)(input)?;
+//   Ok((input, Node::Block { children:  transformations }))
+// }
 
 fn parse_mech_fragment(input: ParseString) -> ParseResult<Node> {
   let (input, statement) = statement(input)?;
@@ -1815,6 +1865,7 @@ fn parse_mech(input: ParseString) -> ParseResult<Node> {
 struct IndexInterpreter<'a> {
   graphemes: &'a Vec<&'a str>,
   line_beginnings: Vec<usize>,
+  end_index: usize,
 }
 
 impl<'a> IndexInterpreter<'a> {
@@ -1825,15 +1876,37 @@ impl<'a> IndexInterpreter<'a> {
         line_beginnings.push(i + 1);
       }
     }
+    line_beginnings.pop();
     IndexInterpreter {
+      end_index: graphemes.len(),
       graphemes,
       line_beginnings,
     }
   }
 
+  fn index_is_at_line(&self, index: usize, linenum: usize) -> bool {
+    let line_index = linenum - 1;
+    let line_rng = self.get_line_range(linenum).unwrap();
+    if line_rng.1 == self.end_index {  // linenum is the last line
+      index >= line_rng.0
+    } else {
+      index >= line_rng.0 && index < line_rng.1
+    }
+  }
+
+  fn get_line_range(&self, linenum: usize) -> Option<(usize, usize)> {
+    let line_index = linenum - 1;
+    if line_index >= self.line_beginnings.len() {
+      return None;
+    }
+    if linenum == self.line_beginnings.len() {  // asking for the last line
+      return Some((self.line_beginnings[line_index], self.end_index));
+    }
+    Some((self.line_beginnings[line_index], self.line_beginnings[linenum]))
+  }
+
   fn get_text_by_linenum(&self, linenum: usize) -> String {
-    let start = self.line_beginnings[linenum - 1];
-    let end = self.line_beginnings[linenum];
+    let (start, end) = self.get_line_range(linenum).unwrap();
     let mut s = self.graphemes[start..end].iter().map(|s| *s).collect::<String>();
     if !s.ends_with("\n") {
       s.push('\n');
@@ -1842,8 +1915,7 @@ impl<'a> IndexInterpreter<'a> {
   }
 
   fn get_textlen_by_linenum(&self, linenum: usize) -> usize {
-    let start = self.line_beginnings[linenum - 1];
-    let end = self.line_beginnings[linenum];
+    let (start, end) = self.get_line_range(linenum).unwrap();
     let mut len = 0;
     for i in start..end {
       len += Self::grapheme_width(self.graphemes[i]);
@@ -1855,11 +1927,11 @@ impl<'a> IndexInterpreter<'a> {
     let a = self.line_beginnings.binary_search_by(
       |n| if n <= &index { Ordering::Equal } else { Ordering::Greater }).unwrap();
     let mut i = 1;
-    while self.line_beginnings[a + i] <= index {
+    while !self.index_is_at_line(index, a + i) {
       i += 1;
     }
     let row = a + i;
-    let row_beginning = self.line_beginnings[a + i - 1];
+    let row_beginning = self.line_beginnings[row - 1];
     let mut col = 1;
     for j in row_beginning..index {
       col += Self::grapheme_width(self.graphemes[j]);
