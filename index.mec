@@ -12,11 +12,20 @@ Provides standard mathematical functions.
 - math/sin(angle<f32>)
 - math/sin(angle<degrees>)
 
+- math/cos(angle<f32>)
+- math/cos(angle<degrees>)
+
+- math/tan(angle<f32>)
+- math/tan(angle<degrees>)
+
+- math/atan(angle<f32>)
+- math/atan(angle<degrees>)
+
 3. Info
 --------
 
 #math/machine = [
-  name: "io" 
+  name: "math" 
   version: "v0.0.1"
   authors: "Corey Montella" 
   machine-url: "https://gitlab.com/mech-lang/machines/math"
