@@ -1,19 +1,7 @@
-```
+block
+  -- tt$
+  #y = 7
+  #x = func(y: #y)
 
-
-
-
-
-
-
-
-
-
-
-
-j~
-
-
-
-hello
-`
+block
+  #test = ["" "World"]

@@ -412,6 +412,15 @@ impl<'a> ParseString<'a> {
     (true, gs_len)
   }
 
+  fn consume_one(&mut self) -> Option<String> {
+    if self.len() == 0 {
+      return None;
+    }
+    let g = self.graphemes[self.cursor];
+    self.cursor += 1;
+    Some(g.to_string())
+  }
+
   fn consume_tag(&mut self, tag: &str) -> Option<String> {
     let (matched, gs_len) = self.match_tag(tag);
     if matched {
@@ -697,6 +706,14 @@ fn digit(mut input: ParseString) -> ParseResult<String> {
     Ok((input, matched))
   } else {
     Err(nom::Err::Error(ParseError::new(input, "Unexpected character")))
+  }
+}
+
+fn any(mut input: ParseString) -> ParseResult<String> {
+  if let Some(matched) = input.consume_one() {
+    Ok((input, matched))
+  } else {
+    Err(nom::Err::Error(ParseError::new(input, "Unexpected eof")))
   }
 }
 
@@ -1101,10 +1118,13 @@ fn binding(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Binding{children}))
 }
 
+// function_binding ::= identifier, colon, space*, (expression | identifier | value), space*, comma?, space* ;
 fn function_binding(input: ParseString) -> ParseResult<Node> {
+  let msg1 = "Expect colon ':'";
+  let msg2 = "Expect expression, identifier, or value";
   let (input, binding_id) = identifier(input)?;
-  let (input, _) = tuple((colon, many0(space)))(input)?;
-  let (input, bound) = alt((expression, identifier, value))(input)?;
+  let (input, _) = label!(tuple((colon, many0(space))), msg1)(input)?;
+  let (input, bound) = label!(alt((expression, identifier, value)), msg2)(input)?;
   let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
   Ok((input, Node::FunctionBinding{children: vec![binding_id, bound]}))
 }
@@ -1203,19 +1223,25 @@ fn inline_table(input: ParseString) -> ParseResult<Node> {
 
 // #### Statements
 
+// comment_sigil ::= "--" ;
 fn comment_sigil(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("--")(input)?;
   Ok((input, Node::Null))
 }
 
+// comment ::= (space | tab)*, comment_sigil, text, (space | tab | newline)* ;
 fn comment(input: ParseString) -> ParseResult<Node> {
+  let msg1 = "Expect comment text";
+  let msg2 = "Character not allowed in comment text";
   let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, _) = comment_sigil(input)?;
-  let (input, comment) = text(input)?;
+  let (input, comment) = label!(text, msg1)(input)?;
+  let (input, _) = label!(is(alt((tab, newline))), msg2)(input)?;
   let (input, _) = many0(alt((space, tab, newline)))(input)?;
   Ok((input, Node::Comment{children: vec![comment]}))
 }
 
+// add_row_operator ::= "+=" ;
 fn add_row_operator(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("+=")(input)?;
   Ok((input, Node::Null))
@@ -1228,35 +1254,39 @@ fn add_row(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::AddRow{children: vec![table_id, table]}))
 }
 
+// add_update_operator ::= ":+=" ;
 fn add_update_operator(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag(":+=")(input)?;
   Ok((input, Node::AddUpdate))
 }
 
+// subtract_update_operator ::= ":-=" ;
 fn subtract_update_operator(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag(":-=")(input)?;
   Ok((input, Node::SubtractUpdate))
 }
 
+// multiply_update_operator ::= ":*=" ;
 fn multiply_update_operator(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag(":*=")(input)?;
   Ok((input, Node::MultiplyUpdate))
 }
 
+// divide_update_operator ::= ":/=" ;
 fn divide_update_operator(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag(":/=")(input)?;
   Ok((input, Node::DivideUpdate))
 }
 
-fn update_exponent_operator(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = tag(":^=")(input)?;
-  Ok((input, Node::ExponentUpdate))
-}
+// fn update_exponent_operator(input: ParseString) -> ParseResult<Node> {
+//   let (input, _) = tag(":^=")(input)?;
+//   Ok((input, Node::ExponentUpdate))
+// }
 
-fn update_matrix_multiply_operator(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = tag(":**=")(input)?;
-  Ok((input, Node::Null))
-}
+// fn update_matrix_multiply_operator(input: ParseString) -> ParseResult<Node> {
+//   let (input, _) = tag(":**=")(input)?;
+//   Ok((input, Node::Null))
+// }
 
 fn update_data(input: ParseString) -> ParseResult<Node> {
   let (input, table) = data(input)?;
@@ -1312,31 +1342,37 @@ fn table_define(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::TableDefine{children}))
 }
 
+// table_select ::= expression ;
 fn table_select(input: ParseString) -> ParseResult<Node> {
   let (input, expression) = expression(input)?;
   Ok((input, Node::TableSelect{children: vec![expression]}))
 }
 
+// split_operator ::= ">-" ;
 fn split_operator(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag(">-")(input)?;
   Ok((input, Node::Null))
 }
 
+// flatten_operator ::= "-<" ;
 fn flatten_operator(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("-<")(input)?;
   Ok((input, Node::Null))
 }
 
+// whenever_oeprator ::= "~" ;
 fn whenever_operator(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("~")(input)?;
   Ok((input, Node::Null))
 }
 
+// until_operator ::= "~|" ;
 fn until_operator(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("~|")(input)?;
   Ok((input, Node::Null))
 }
 
+// wait_operator ::= "|~" ;
 fn wait_operator(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("|~")(input)?;
   Ok((input, Node::Null))
@@ -1373,10 +1409,13 @@ fn statement(input: ParseString) -> ParseResult<Node> {
 
 // ##### Math expressions
 
+// parenthetical_expression ::= left_parenthesis, l0, right_parenthesis ;
 fn parenthetical_expression(input: ParseString) -> ParseResult<Node> {
-  let (input, _) = left_parenthesis(input)?;
-  let (input, l0) = l0(input)?;
-  let (input, _) = right_parenthesis(input)?;
+  let msg1 = "Expect expression";
+  let msg2 = "Expect right parenthesis ')'";
+  let (input, (_, r)) = range(left_parenthesis)(input)?;
+  let (input, l0) = label!(l0, msg1)(input)?;
+  let (input, _) = label!(right_parenthesis, msg2, r)(input)?;
   Ok((input, l0))
 }
 
@@ -1386,51 +1425,62 @@ fn negation(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Negation { children: vec![negated] }))
 }
 
+// function ::= identifier, left_parenthesis, function_binding+, right_parenthesis ;
 fn function(input: ParseString) -> ParseResult<Node> {
+  let msg1 = "Expect function binding, which should start with identifier";
+  let msg2 = "Expect right parenthesis ')'";
   let (input, identifier) = identifier(input)?;
-  let (input, _) = left_parenthesis(input)?;
-  let (input, mut bindings) = many1(function_binding)(input)?;
-  let (input, _) = right_parenthesis(input)?;
+  let (input, (_, r)) = range(left_parenthesis)(input)?;
+  let (input, mut bindings) = label!(many1(function_binding), msg1)(input)?;
+  let (input, _) = label!(right_parenthesis, msg2, r)(input)?;
   let mut function = vec![identifier];
   function.append(&mut bindings);
   Ok((input, Node::Function { children: function }))
 }
 
+// matrix_multiply ::= "**" ;
 fn matrix_multiply(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("**")(input)?;
   Ok((input, Node::Null))
 }
 
+// add ::= "+" ;
 fn add(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("+")(input)?;
   Ok((input, Node::Add))
 }
 
+// subtract ::= "-" ;
 fn subtract(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("-")(input)?;
   Ok((input, Node::Subtract))
 }
 
+// multiply ::= "*" ;
 fn multiply(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("*")(input)?;
   Ok((input, Node::Multiply))
 }
 
+// divide ::= "/" ;
 fn divide(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("/")(input)?;
   Ok((input, Node::Divide))
 }
 
+// exponent ::= "^" ;
 fn exponent(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag("^")(input)?;
   Ok((input, Node::Exponent))
 }
 
+// range_op ::= ":" ;
 fn range_op(input: ParseString) -> ParseResult<Node> {
   let (input, _) = tag(":")(input)?;
   Ok((input, Node::Range))
 }
 
+// l0 ::= l1, l0_infix* ;
 fn l0(input: ParseString) -> ParseResult<Node> {
   let (input, l1) = l1(input)?;
   let (input, mut infix) = many0(l0_infix)(input)?;
@@ -1439,6 +1489,7 @@ fn l0(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::L0 { children: math }))
 }
 
+// l0_infix ::= space*, range_op, space*, l1 ;
 fn l0_infix(input: ParseString) -> ParseResult<Node> {
   let (input, _) = many0(space)(input)?;
   let (input, op) = range_op(input)?;
@@ -1447,6 +1498,7 @@ fn l0_infix(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::L0Infix { children: vec![op, l1] }))
 }
 
+// l1 ::= l2, l1_infix* ;
 fn l1(input: ParseString) -> ParseResult<Node> {
   let (input, l2) = l2(input)?;
   let (input, mut infix) = many0(l1_infix)(input)?;
@@ -1455,6 +1507,7 @@ fn l1(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::L1 { children: math }))
 }
 
+// l1_infix ::= space*, add | subtract, space*, l2 ;
 fn l1_infix(input: ParseString) -> ParseResult<Node> {
   let (input, _) = space(input)?;
   let (input, op) = alt((add, subtract))(input)?;
@@ -1463,6 +1516,7 @@ fn l1_infix(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::L1Infix { children: vec![op, l2] }))
 }
 
+// l2 ::= l3, l2_infix* ;
 fn l2(input: ParseString) -> ParseResult<Node> {
   let (input, l3) = l3(input)?;
   let (input, mut infix) = many0(l2_infix)(input)?;
@@ -1471,6 +1525,7 @@ fn l2(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::L2 { children: math }))
 }
 
+// l2_infix ::= space*, multiply | divide | matrix_multiply, space*, l3 ;
 fn l2_infix(input: ParseString) -> ParseResult<Node> {
   let (input, _) = space(input)?;
   let (input, op) = alt((multiply, divide, matrix_multiply))(input)?;
@@ -1479,6 +1534,7 @@ fn l2_infix(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::L2Infix { children: vec![op, l3] }))
 }
 
+// l3 ::= l4, l3_infix* ;
 fn l3(input: ParseString) -> ParseResult<Node> {
   let (input, l4) = l4(input)?;
   let (input, mut infix) = many0(l3_infix)(input)?;
@@ -1487,6 +1543,7 @@ fn l3(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::L3 { children: math }))
 }
 
+// l3_infix ::= space*, exponent, space*, l4 ;
 fn l3_infix(input: ParseString) -> ParseResult<Node> {
   let (input, _) = space(input)?;
   let (input, op) = exponent(input)?;
@@ -1495,6 +1552,7 @@ fn l3_infix(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::L3Infix { children: vec![op, l4] }))
 }
 
+// l4 ::= l5, l4_infix* ;
 fn l4(input: ParseString) -> ParseResult<Node> {
   let (input, l5) = l5(input)?;
   let (input, mut infix) = many0(l4_infix)(input)?;
@@ -1503,6 +1561,7 @@ fn l4(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::L4 { children: math }))
 }
 
+// l4_infix ::= space*, and | or | xor, space*, l5 ;
 fn l4_infix(input: ParseString) -> ParseResult<Node> {
   let (input, _) = space(input)?;
   let (input, op) = alt((and, or, xor))(input)?;
@@ -1511,6 +1570,7 @@ fn l4_infix(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::L4Infix { children: vec![op, l5] }))
 }
 
+// l5 ::= l6, l5_infix* ;
 fn l5(input: ParseString) -> ParseResult<Node> {
   let (input, l6) = l6(input)?;
   let (input, mut infix) = many0(l5_infix)(input)?;
@@ -1519,6 +1579,7 @@ fn l5(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::L5 { children: math }))
 }
 
+// l5_infix ::= space*, not_equal | equal_to | greater_than_equal | greater_than | less_than_equal | less_than, space*, l6 ;
 fn l5_infix(input: ParseString) -> ParseResult<Node> {
   let (input, _) = space(input)?;
   let (input, op) = alt((not_equal,equal_to, greater_than_equal, greater_than, less_than_equal, less_than))(input)?;
@@ -1527,11 +1588,14 @@ fn l5_infix(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::L5Infix { children: vec![op, l6] }))
 }
 
+// TODO
+// l6 ::= empty_table | string | anonymous_table | function | value | not | data | negation | parenthetical_expression ;
 fn l6(input: ParseString) -> ParseResult<Node> {
   let (input, l6) = alt((empty_table, string, anonymous_table, function, value, not, data, negation, parenthetical_expression))(input)?;
   Ok((input, Node::L6 { children: vec![l6] }))
 }
 
+// math_expression ::= l0 ;
 fn math_expression(input: ParseString) -> ParseResult<Node> {
   let (input, l0) = l0(input)?;
   Ok((input, Node::MathExpression { children: vec![l0] }))
@@ -1608,6 +1672,8 @@ fn string(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::String { children: text }))
 }
 
+// TODO
+// expression ::= inline_table | math_expression | string | empty_table | anonymous_table ;
 fn expression(input: ParseString) -> ParseResult<Node> {
   let (input, expression) = alt((inline_table, math_expression, string, empty_table, anonymous_table))(input)?;
   Ok((input, Node::Expression { children: vec![expression] }))
@@ -1736,7 +1802,7 @@ fn list_item(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::ListItem { children: vec![list_item] }))
 }
 
-// formatted_text ::= (!grave, (paragraph_rest | carriage_return | new_line_char))* ;
+// formatted_text ::= (paragraph_rest | carriage_return | new_line_char)* ;
 fn formatted_text(input: ParseString) -> ParseResult<Node> {
   let msg = "Character not permitted in formatted text";
   let (input, result) = many0(tuple((
