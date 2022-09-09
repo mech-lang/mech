@@ -2093,7 +2093,7 @@ impl ParserErrorReport {
       let line_len = ii.get_textlen_by_linenum(lines_to_print[i]);
       let rngs = range_table.get(&lines_to_print[i]).unwrap();
       for (start, len, major, cause) in rngs {
-        let max_len = usize::max(1, usize::min(*len, line_len - curr_col));
+        let max_len = usize::max(1, usize::min(*len, line_len - curr_col + 1));
         for _ in curr_col..*start { result.push(' '); }
         if *cause {
           for _ in 0..max_len-1 {
