@@ -122,12 +122,11 @@ pub enum MechCode {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-#[cfg(feature = "web")]
 #[derive(Copy, Clone)]
 pub struct MachineDeclaration {
   pub register: unsafe extern "C" fn(&mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>)->String,
 }
-#[cfg(feature = "web")]
+
 pub trait MachineRegistrar {
   fn register_machine(&mut self, machine: Box<dyn Machine>);
 }
@@ -135,7 +134,6 @@ pub trait MachineRegistrar {
 #[macro_export]
 macro_rules! export_machine {
   ($name:ident, $register:expr) => {
-    #[cfg(feature = "web")]
     #[doc(hidden)]
     #[no_mangle]
     pub static $name: $crate::MachineDeclaration =
