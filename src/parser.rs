@@ -1083,7 +1083,7 @@ fn data(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Data{children: data}))
 }
 
-// kind_annotation ::= left_angle, (identifier | underscore), (",", (identifier | underscore))*, right_angle ;
+// kind_annotation ::= left_angle, <(identifier | underscore), (",", (identifier | underscore))*>, <right_angle> ;
 fn kind_annotation(input: ParseString) -> ParseResult<Node> {
   let msg2 = "Expect at least one unit in kind annotation";
   let msg3 = "Expect right angle";
@@ -1118,7 +1118,7 @@ fn binding(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Binding{children}))
 }
 
-// function_binding ::= identifier, colon, space*, (expression | identifier | value), space*, comma?, space* ;
+// function_binding ::= identifier, <colon, space*>, <expression | identifier | value>, space*, comma?, space* ;
 fn function_binding(input: ParseString) -> ParseResult<Node> {
   let msg1 = "Expect colon ':'";
   let msg2 = "Expect expression, identifier, or value";
@@ -1229,14 +1229,14 @@ fn comment_sigil(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Null))
 }
 
-// comment ::= (space | tab)*, comment_sigil, text, (space | tab | newline)* ;
+// comment ::= (space | tab)*, comment_sigil, <text>, <tab | newline>, (space | tab | newline)* ;
 fn comment(input: ParseString) -> ParseResult<Node> {
   let msg1 = "Expect comment text";
   let msg2 = "Character not allowed in comment text";
   let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, _) = comment_sigil(input)?;
   let (input, comment) = label!(text, msg1)(input)?;
-  let (input, _) = label!(is(alt((tab, newline))), msg2)(input)?;
+  let (input, _) = label!(alt((tab, newline)), msg2)(input)?;
   let (input, _) = many0(alt((space, tab, newline)))(input)?;
   Ok((input, Node::Comment{children: vec![comment]}))
 }
@@ -1409,7 +1409,7 @@ fn statement(input: ParseString) -> ParseResult<Node> {
 
 // ##### Math expressions
 
-// parenthetical_expression ::= left_parenthesis, l0, right_parenthesis ;
+// parenthetical_expression ::= left_parenthesis, <l0>, <right_parenthesis> ;
 fn parenthetical_expression(input: ParseString) -> ParseResult<Node> {
   let msg1 = "Expect expression";
   let msg2 = "Expect right parenthesis ')'";
@@ -1425,7 +1425,7 @@ fn negation(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Negation { children: vec![negated] }))
 }
 
-// function ::= identifier, left_parenthesis, function_binding+, right_parenthesis ;
+// function ::= identifier, left_parenthesis, <function_binding+>, <right_parenthesis> ;
 fn function(input: ParseString) -> ParseResult<Node> {
   let msg1 = "Expect function binding, which should start with identifier";
   let msg2 = "Expect right parenthesis ')'";
@@ -1693,7 +1693,7 @@ fn empty_line(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::Null))
 }
 
-// indented_tfm ::= space, space, transformation ;
+// indented_tfm ::= !empty_line, space, <space>, <!space>, <transformation> ;
 fn indented_tfm(input: ParseString) -> ParseResult<Node> {
   let msg1 = "Block indentation has to be exactly 2 spaces";
   let msg2 = "Expect transformation after block indentation";
@@ -1802,7 +1802,7 @@ fn list_item(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::ListItem { children: vec![list_item] }))
 }
 
-// formatted_text ::= (paragraph_rest | carriage_return | new_line_char)* ;
+// formatted_text ::= (!grave, !eof, <paragraph_rest | carriage_return | new_line_char>)* ;
 fn formatted_text(input: ParseString) -> ParseResult<Node> {
   let msg = "Character not permitted in formatted text";
   let (input, result) = many0(tuple((
@@ -1813,7 +1813,7 @@ fn formatted_text(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::FormattedText { children: formatted }))
 }
 
-// code_block ::= grave{3}, newline, formatted_text, grave{3}, newline, whitespace* ;
+// code_block ::= grave, <grave>, <grave>, <newline>, formatted_text, <grave{3}, newline, whitespace*> ;
 fn code_block(input: ParseString) -> ParseResult<Node> {
   let msg1 = "Expect 3 graves to start a code block";
   let msg2 = "Expect newline";
@@ -1838,7 +1838,7 @@ fn code_block(input: ParseString) -> ParseResult<Node> {
 //   Ok((input, Node::InlineMechCode{ children: vec![expression] }))
 // }
 
-// mech_code_block ::= grave{3}, "mech:", text?, newline, block, grave{3}, newline, whitespace* ;
+// mech_code_block ::= grave{3}, !!"mec", <"mech:">, text?, <newline>, <block>, <grave{3}, newline>, whitespace* ;
 fn mech_code_block(input: ParseString) -> ParseResult<Node> {
   let msg1 = "Expect newline";
   let msg2 = "Expect mech code block";
