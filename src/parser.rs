@@ -2030,16 +2030,16 @@ impl ParserErrorReport {
     lines_to_print.dedup();
 
     // the annotations on each line
-    // <linenum, (start_col, rng_len, is_major, is_cause)>
+    // <linenum, Vec<(start_col, rng_len, is_major, is_cause)>>
     let mut range_table: HashMap<usize, Vec<(usize, usize, bool, bool)>> = HashMap::new();
     for line in &lines_to_print {
       range_table.insert(*line, vec![]);
     }
-    let n = annotation_rngs.len() - 1;  // if i == n, it's the last rng, thus the cause rng
+    let n = annotation_rngs.len() - 1;  // if i == n, it's the last rng, i.e. the cause rng
     for (i, (a, b)) in annotation_rngs.iter().enumerate() {
       let (r1, c1) = ii.get_location_by_index(*a);
       let (r2, c2) = ii.get_location_by_index(b - 1);
-      if r1 == r2 {  // the entire range is in one line
+      if r1 == r2 {  // the entire range is on one line
         range_table.get_mut(&r1).unwrap().push((c1, c2 - c1 + 1, true, i == n));
       } else {  // the range spans over multiple lines
         range_table.get_mut(&r1).unwrap().push((c1, usize::MAX, i != n, i == n));
