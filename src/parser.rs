@@ -1681,6 +1681,7 @@ fn expression(input: ParseString) -> ParseResult<Node> {
 
 // #### Block basics
 
+// transformation ::= statement, space*, newline* ;
 fn transformation(input: ParseString) -> ParseResult<Node> {
   let (input, statement) = statement(input)?;
   let (input, _) = tuple((many0(space),many0(newline)))(input)?;
