@@ -1,6 +1,6 @@
 block
   -- tt
-  #y = 7
+  #y
   #x = func(y: #y)
 
 block
