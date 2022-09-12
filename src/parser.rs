@@ -634,15 +634,15 @@ where
 }
 
 fn is<'a, F, O>(mut parser: F) ->
-  impl FnMut(ParseString<'a>) -> ParseResult<()>
+  impl FnMut(ParseString<'a>) -> ParseResult<O>
 where
   F: FnMut(ParseString<'a>) -> ParseResult<O>
 {
   move |input: ParseString| {
     let input_clone = input.clone();
     match parser(input_clone) {
-      Ok(_) => Ok((input, ())),
-      x => Err(Err::Error(ParseError::new(input, "Unexpected character"))),
+      Ok((_, o)) => Ok((input, o)),
+      x => x,
     }
   }
 }
@@ -656,7 +656,7 @@ where
     let input_clone = input.clone();
     match parser(input_clone) {
       Err(Err::Error(_)) => Ok((input, ())),
-      Err(Err::Failure(e)) => Err(Err::Failure(e)),  // switching to input.clone(), which should be fine
+      Err(Err::Failure(e)) => Err(Err::Failure(e)),  // switch to input.clone(), which should be fine
       _ => Err(Err::Error(ParseError::new(input, "Unexpected character")))
     }
   }
