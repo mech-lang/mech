@@ -558,6 +558,12 @@ macro_rules! math_compiler {
                   block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
                 }
               },
+              ((_,Column::F64(lhs),ColumnIndex::Index(lix)), (_,Column::F64(rhs),ColumnIndex::Index(rix))) => { 
+                let mut out_column = block.get_out_column(out, 1, ValueKind::F64)?;
+                if let Column::F64(out) = out_column {
+                  block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
+                }
+              },
               ((_,Column::String(lhs),ColumnIndex::Index(lix)), (_,Column::F32(rhs),ColumnIndex::Index(rix))) => { 
                 let mut out_column = block.get_out_column(out, 1, ValueKind::String)?;
                 if let Column::String(out) = out_column {
@@ -702,6 +708,13 @@ macro_rules! math_compiler {
                     block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
                   }
                 }
+                (Column::U16(rhs), (_,Column::U16(lhs),_)) => { 
+                  out_brrw.set_col_kind(col_ix, ValueKind::U16)?;
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::U16(out) = out_col {
+                    block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
+                  }
+                }
                 (Column::U32(rhs), (_,Column::U32(lhs),_)) => { 
                   out_brrw.set_col_kind(col_ix, ValueKind::U32)?;
                   let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
@@ -709,10 +722,31 @@ macro_rules! math_compiler {
                     block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
                   }
                 }
+                (Column::U64(rhs), (_,Column::U64(lhs),_)) => { 
+                  out_brrw.set_col_kind(col_ix, ValueKind::U64)?;
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::U64(out) = out_col {
+                    block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
+                  }
+                }
+                (Column::U128(rhs), (_,Column::U128(lhs),_)) => { 
+                  out_brrw.set_col_kind(col_ix, ValueKind::U128)?;
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::U128(out) = out_col {
+                    block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
+                  }
+                }
                 (Column::F32(rhs), (_,Column::F32(lhs),_)) => { 
                   out_brrw.set_col_kind(col_ix, ValueKind::F32)?;
                   let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
                   if let Column::F32(out) = out_col {
+                    block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
+                  }
+                }
+                (Column::F64(rhs), (_,Column::F64(lhs),_)) => { 
+                  out_brrw.set_col_kind(col_ix, ValueKind::F64)?;
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::F64(out) = out_col {
                     block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
                   }
                 }
