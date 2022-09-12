@@ -15,8 +15,7 @@ Test scalar math with f64
   #test += ["Add Scalar:Scalar f64"  3<f64>  2<f64> + 1<f64> 
             "Sub Scalar:Scalar f64"  2<f64>  4<f64> - 2<f64>
             "Div Scalar:Scalar f64"  2<f64>  4<f64> / 2<f64>
-            "Mul Scalar:Scalar f64"  6<f64>  2<f64> * 3<f64> 
-            "Exp Scalar:Scalar f64"  9<f64>  3<f64> ^ 2<f64>]
+            "Mul Scalar:Scalar f64"  6<f64>  2<f64> * 3<f64>]
 
 Test scalar math with u16
   #test += ["Add Scalar:Scalar u16"  3<u16>  2<u16> + 1<u16> 
@@ -34,11 +33,10 @@ Test scalar math with u32
 
 
 Test scalar math with u64
-  #test += ["Add Scalar:Scalar u32"  3<u64>  2<u64> + 1<u64>
-            "Sub Scalar:Scalar u32"  2<u64>  4<u64> - 2<u64>
-            "Div Scalar:Scalar u32"  2<u64>  4<u64> / 2<u64>
-            "Mul Scalar:Scalar u32"  6<u64>  2<u64> * 3<u64> 
-            "Exp Scalar:Scalar u32"  9<u64>  3<u64> ^ 2<u64>]
+  #test += ["Add Scalar:Scalar u64"  3<u64>  2<u64> + 1<u64>
+            "Sub Scalar:Scalar u64"  2<u64>  4<u64> - 2<u64>
+            "Div Scalar:Scalar u64"  2<u64>  4<u64> / 2<u64>
+            "Mul Scalar:Scalar u64"  6<u64>  2<u64> * 3<u64>]
 
 Scalar : Column
 ----------------
