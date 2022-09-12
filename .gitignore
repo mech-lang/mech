@@ -27,3 +27,6 @@ Cargo.lock
 # Machines directory
 /machines/
 /notebook/machines
+
+# Mac Files
+.DS_Store
