@@ -1636,6 +1636,7 @@ fn program(input: ParseString) -> IResult<ParseString, Node> {
   let (input, body) = body(input)?;
   program.push(body);
   let (input, _) = opt(whitespace)(input)?;
+  let (input, _) = many0(space)(input)?;
   Ok((input, Node::Program { children: program }))
 }
 
