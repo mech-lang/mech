@@ -136,6 +136,7 @@ pub enum Node {
   FunctionBody{ children: Vec<Node> },
   FunctionArgs{ children: Vec<Node> },
   FunctionInput{ children: Vec<Node> },
+  FunctionOutput{ children: Vec<Node> },
   Negation{ children: Vec<Node> },
   Not{ children: Vec<Node> },
   ParentheticalExpression{ children: Vec<Node> },
@@ -302,6 +303,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::FunctionBody{children} => {print!("FunctionBody\n"); Some(children)},
     Node::FunctionArgs{children} => {print!("FunctionArgs\n"); Some(children)},
     Node::FunctionInput{children} => {print!("FunctionInput\n"); Some(children)},
+    Node::FunctionOutput{children} => {print!("FunctionOutput\n"); Some(children)},
     Node::Negation{children} => {print!("Negation\n"); Some(children)},
     Node::Not{children} => {print!("Not\n"); Some(children)},
     Node::ParentheticalExpression{children} => {print!("ParentheticalExpression\n"); Some(children)},
@@ -1182,7 +1184,7 @@ fn function(input: ParseString) -> IResult<ParseString, Node> {
 
 fn user_function(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = left_bracket(input)?;
-  let (input, return_identifier) = identifier(input)?;
+  let (input, mut output_args) = many0(function_output)(input)?;
   let (input, _) = right_bracket(input)?;
   let (input, _) = many1(space)(input)?;
   let (input, _) = equal(input)?;
@@ -1193,7 +1195,15 @@ fn user_function(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = right_parenthesis(input)?;
   let (input, _) = newline(input)?;
   let (input, function_body) = function_body(input)?;
-  Ok((input, Node::UserFunction { children: vec![return_identifier, function_name, Node::FunctionArgs{children: input_args}, function_body] }))
+  Ok((input, Node::UserFunction { children: vec![Node::FunctionArgs{children: output_args}, function_name, Node::FunctionArgs{children: input_args}, function_body] }))
+}
+
+fn function_output(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, arg_id) = identifier(input)?;
+  let (input, kind) = kind_annotation(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
+  Ok((input, Node::FunctionOutput{children: vec![arg_id, kind]}))
 }
 
 fn function_input(input: ParseString) -> IResult<ParseString, Node> {
