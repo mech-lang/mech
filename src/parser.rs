@@ -1597,7 +1597,7 @@ fn l1(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::L1 { children: math }))
 }
 
-// l1_infix ::= space*, add | subtract, space*, l2 ;
+// l1_infix ::= space, (add | subtract), space, l2 ;
 fn l1_infix(input: ParseString) -> ParseResult<Node> {
   let (input, _) = space(input)?;
   let (input, op) = alt((add, subtract))(input)?;
@@ -1651,7 +1651,7 @@ fn l4(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::L4 { children: math }))
 }
 
-// l4_infix ::= space*, and | or | xor, space*, l5 ;
+// l4_infix ::= space, (and | or | xor), space, l5 ;
 fn l4_infix(input: ParseString) -> ParseResult<Node> {
   let (input, _) = space(input)?;
   let (input, op) = alt((and, or, xor))(input)?;
@@ -1669,7 +1669,7 @@ fn l5(input: ParseString) -> ParseResult<Node> {
   Ok((input, Node::L5 { children: math }))
 }
 
-// l5_infix ::= space*, not_equal | equal_to | greater_than_equal | greater_than | less_than_equal | less_than, space*, l6 ;
+// l5_infix ::= space, (not_equal | equal_to | greater_than_equal | greater_than | less_than_equal | less_than), space, l6 ;
 fn l5_infix(input: ParseString) -> ParseResult<Node> {
   let (input, _) = space(input)?;
   let (input, op) = alt((not_equal,equal_to, greater_than_equal, greater_than, less_than_equal, less_than))(input)?;
@@ -1799,13 +1799,13 @@ fn empty_line(input: ParseString) -> ParseResult<Node> {
 fn indented_tfm(input: ParseString) -> ParseResult<Node> {
   let msg1 = "Block indentation has to be exactly 2 spaces";
   let msg2 = "Expect transformation after block indentation";
-  let (input, (_, r)) = range(tuple((
+  let (input, _) = tuple((
     is_not(empty_line),
     space,
     labelr!(space, skip_nil, msg1),
     labelr!(is_not(space), skip_spaces, msg1),
-  )))(input)?;
-  label!(transformation, msg2, r)(input)
+  ))(input)?;
+  label!(transformation, msg2)(input)
 }
 
 // block ::= indented_tfm+, whitespace* ;
@@ -2115,10 +2115,10 @@ impl<'a> IndexInterpreter<'a> {
         if !ch.is_ascii_control() || ch == '\t' {
           width += 1;
         }  // else width += 0
-      } else if ch.is_alphanumeric() {
-        width += 1;
+      } else if ch.is_alphanumeric() {  // TODO: unicode width?
+        width += 2;
       } else {
-        return 1;
+        return 2;
       }
     }
     width
