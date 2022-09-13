@@ -49,6 +49,11 @@ pub enum Node {
   Binding{ children: Vec<Node> },
   FunctionBinding{ children: Vec<Node> },
   Function{ name: Vec<char>, children: Vec<Node> },
+  UserFunction{ children: Vec<Node> },
+  FunctionBody{ children: Vec<Node> },
+  FunctionArgs{ children: Vec<Node> },
+  FunctionInput{ children: Vec<Node> },
+  FunctionOutput{ children: Vec<Node> },
   Define { name: Vec<char>, id: u64},
   DotIndex { children: Vec<Node>},
   Swizzle { children: Vec<Node>},
@@ -163,6 +168,12 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::Range => {write!(f,"Range\n").ok(); None},
     Node::Expression{children} => {write!(f,"Expression\n").ok(); Some(children)},
     Node::Function{name, children} => {write!(f,"Function({:?})\n", name).ok(); Some(children)},
+    Node::UserFunction{children} => {write!(f,"UserFunction\n").ok(); Some(children)},
+    Node::FunctionBody{children} => {write!(f,"FunctionBody\n").ok(); Some(children)},
+    Node::FunctionArgs{children} => {write!(f,"FunctionArgs\n").ok(); Some(children)},
+    Node::UserFunction{children} => {write!(f,"Expression\n").ok(); Some(children)},
+    Node::FunctionInput{children} => {write!(f,"FunctionInput\n").ok(); Some(children)},
+    Node::FunctionOutput{children} => {write!(f,"FunctionOutput\n").ok(); Some(children)},
     Node::MathExpression{children} => {write!(f,"MathExpression\n").ok(); Some(children)},
     Node::Comment{children} => {write!(f,"Comment\n").ok(); Some(children)},
     Node::SelectExpression{children} => {write!(f,"SelectExpression\n").ok(); Some(children)},
@@ -822,6 +833,26 @@ impl Ast {
         let result = self.compile_nodes(children);
         compiled.push(Node::Function{name: "math/negate".chars().collect(), children: result});
       },
+      parser::Node::UserFunction{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::UserFunction{children: result.clone()});
+      }
+      parser::Node::FunctionArgs{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::FunctionArgs{children: result.clone()});
+      }
+      parser::Node::FunctionInput{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::FunctionInput{children: result.clone()});
+      }
+      parser::Node::FunctionOutput{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::FunctionOutput{children: result.clone()});
+      }
+      parser::Node::FunctionBody{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::FunctionBody{children: result.clone()});
+      }
       parser::Node::Function{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
