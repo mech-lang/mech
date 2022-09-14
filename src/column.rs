@@ -441,6 +441,12 @@ impl From<bool> for MechString {
   } 
 }
 
+impl From<bool> for Value {
+  fn from(n: bool) -> Value {
+    Value::Bool(n)
+  } 
+}
+
 macro_rules! pow_impl {
   ($t:ty) => {
     pow_impl!($t, u8);

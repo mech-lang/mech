@@ -28,6 +28,7 @@ mod error;
 mod table;
 mod transformation;
 mod database;
+mod user_functions;
 #[cfg(feature = "stdlib")]
 pub mod function;
 mod block;
@@ -48,6 +49,7 @@ pub use self::database::*;
 pub use self::function::*;
 pub use self::block::*;
 pub use self::schedule::*;
+pub use self::user_functions::*;
 
 
 pub type BlockId = u64;

@@ -1382,6 +1382,7 @@ impl MechFunctionCompiler for TableAppend {
                   (Column::U32(arg),    Column::Any(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
                   (Column::U64(arg),    Column::Any(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
                   (Column::U128(arg),    Column::Any(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
+                  (Column::Bool(arg),    Column::Any(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
                   (Column::F32(arg),    Column::F32(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
                   (Column::F32(arg),    Column::U8(out))     => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),             
                   (Column::U8(arg),     Column::F32(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
