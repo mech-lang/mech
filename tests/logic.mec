@@ -32,7 +32,7 @@ Test column & with f32
   all = set/all(column: z)
   #test += ["& Column:Column f32 F" false all]
                         
-Test column | with f32
+Test column or with f32
   x = [true;true;true]
   y = [false;false;false]
   z = x | y
@@ -44,4 +44,4 @@ Test column ⊕ with f32
   y = [false;false;false]
   z = x ⊕ y
   all = set/all(column: z)
-  #test += ["| Column:Column f32 F" true all]                      
+  #test += ["| Column:Column f32 F" true all]

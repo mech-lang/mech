@@ -19,4 +19,3 @@ Test column compare with f32
   z = x > y
   all = set/all(column: z)
   #test += ["> Scalar:Scalar f32 F" false all]
-            
