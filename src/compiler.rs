@@ -3,11 +3,11 @@
 // ## Preamble
 
 use mech_core::*;
+use mech_core::node::*;
 use mech_core::function::table::*;
 
-use crate::ast::{Ast, Node};
+use crate::ast::Ast;
 use crate::parser::{parse, parse_fragment};
-use crate::lexer::Token;
 //use super::formatter::Formatter;
 
 #[cfg(not(feature = "no-std"))] use core::fmt;
@@ -19,19 +19,19 @@ use hashbrown::hash_map::{HashMap};
 use std::sync::Arc;
 use std::mem;
 
-fn get_sections(nodes: &Vec<Node>) -> Vec<Vec<Node>> {
-  let mut sections: Vec<Vec<Node>> = Vec::new();
+fn get_sections(nodes: &Vec<AstNode>) -> Vec<Vec<AstNode>> {
+  let mut sections: Vec<Vec<AstNode>> = Vec::new();
   let mut statements = Vec::new();
   let mut blocks = vec![];
   for n in nodes {
     match n {
-      Node::Section{children,..} => {
+      AstNode::Section{children,..} => {
         for child in children {
           match child {
-            Node::Block{children} => {
+            AstNode::Block{children} => {
               blocks.push(child.clone());
             }
-            Node::Statement{children} => {
+            AstNode::Statement{children} => {
               statements.append(&mut children.clone());
             }
             _ => (),
@@ -40,32 +40,32 @@ fn get_sections(nodes: &Vec<Node>) -> Vec<Vec<Node>> {
         sections.push(blocks.clone());
         blocks.clear();
       },
-      Node::Root{children} |
-      Node::Body{children} |
-      Node::Program{children,..} |
-      Node::Fragment{children} => {
+      AstNode::Root{children} |
+      AstNode::Body{children} |
+      AstNode::Program{children,..} |
+      AstNode::Fragment{children} => {
         sections.append(&mut get_sections(children));
       }
       _ => (), 
     }
   }
   if statements.len() > 0 {
-    sections.push(vec![Node::Block{children: statements}]);
+    sections.push(vec![AstNode::Block{children: statements}]);
   }
   sections
 }
 
-fn get_blocks(nodes: &Vec<Node>) -> Vec<Node> {
+fn get_blocks(nodes: &Vec<AstNode>) -> Vec<AstNode> {
   let mut blocks = Vec::new();
   let mut statements = Vec::new();
   for n in nodes {
     match n {
-      Node::Block{..} => blocks.push(n.clone()),
-      Node::MechCodeBlock{children} => {
+      AstNode::Block{..} => blocks.push(n.clone()),
+      AstNode::MechCodeBlock{children} => {
         // Do something with the block state string.
         // ```mech: disabled
         match &children[0] {
-          Node::String{text} => {
+          AstNode::String{text} => {
             let block_state = text.iter().collect::<String>();
             if block_state != "disabled".to_string() {
               blocks.append(&mut get_blocks(children));
@@ -78,7 +78,7 @@ fn get_blocks(nodes: &Vec<Node>) -> Vec<Node> {
     }
   }
   if statements.len() > 0 {
-    blocks.push(Node::Block{children: statements});
+    blocks.push(AstNode::Block{children: statements});
   }
   blocks
 }
@@ -109,7 +109,7 @@ impl Compiler {
     compiler.compile_sections(&vec![ast.syntax_tree.clone()])
   }
 
-  pub fn compile_sections(&mut self, nodes: &Vec<Node>) -> Result<Vec<Vec<Block>>,MechError> {
+  pub fn compile_sections(&mut self, nodes: &Vec<AstNode>) -> Result<Vec<Vec<Block>>,MechError> {
     let mut sections: Vec<Vec<Block>> = Vec::new();
     for section in get_sections(nodes) {
       let mut blocks: Vec<Block> = Vec::new();
@@ -133,7 +133,7 @@ impl Compiler {
     }
   }
 
-  pub fn compile_nodes(&mut self, nodes: &Vec<Node>) -> Result<Vec<Transformation>,MechError> {
+  pub fn compile_nodes(&mut self, nodes: &Vec<AstNode>) -> Result<Vec<Transformation>,MechError> {
     let mut compiled = Vec::new();
     for node in nodes {
       let mut result = self.compile_node(node)?;
@@ -142,33 +142,33 @@ impl Compiler {
     Ok(compiled)
   }
 
-  pub fn compile_node(&mut self, node: &Node) -> Result<Vec<Transformation>,MechError> {
+  pub fn compile_node(&mut self, node: &AstNode) -> Result<Vec<Transformation>,MechError> {
     let mut tfms = vec![];
     match node {
-      Node::Identifier{name, id} => {
+      AstNode::Identifier{name, id} => {
         tfms.push(Transformation::Identifier{name: name.to_vec(), id: *id});
       },
-      Node::Empty => {
+      AstNode::Empty => {
         let table_id = TableId::Local(hash_str("_"));
         tfms.push(Transformation::NewTable{table_id: table_id.clone(), rows: 1, columns: 1 });
         tfms.push(Transformation::Constant{table_id: table_id, value: Value::Empty});
       },
-      Node::True => {
+      AstNode::True => {
         let table_id = TableId::Local(hash_str("true"));
         tfms.push(Transformation::NewTable{table_id: table_id.clone(), rows: 1, columns: 1 });
         tfms.push(Transformation::Constant{table_id: table_id, value: Value::Bool(true)});
       },
-      Node::False => {
+      AstNode::False => {
         let table_id = TableId::Local(hash_str("false"));
         tfms.push(Transformation::NewTable{table_id: table_id.clone(), rows: 1, columns: 1 });
         tfms.push(Transformation::Constant{table_id: table_id, value: Value::Bool(false)});
       },
-      Node::String{text} => {
+      AstNode::String{text} => {
         let table_id = TableId::Local(hash_str(&format!("string: {:?}", text)));
         tfms.push(Transformation::NewTable{table_id: table_id.clone(), rows: 1, columns: 1 });
         tfms.push(Transformation::Constant{table_id: table_id, value: Value::String(MechString::from_chars(text))});
       },
-      Node::NumberLiteral{kind, bytes} => {
+      AstNode::NumberLiteral{kind, bytes} => {
         let string = bytes.iter().cloned().collect::<String>();
         let bytes = if *kind == *cU8 { string.parse::<u8>().unwrap().to_be_bytes().to_vec() }
           else if *kind == *cU16 { string.parse::<u16>().unwrap().to_be_bytes().to_vec() }
@@ -184,13 +184,13 @@ impl Compiler {
         tfms.push(Transformation::NewTable{table_id: table_id, rows: 1, columns: 1 });
         tfms.push(Transformation::NumberLiteral{kind: *kind, bytes: bytes.to_vec()});
       },
-      Node::Table{name, id} => {
+      AstNode::Table{name, id} => {
         tfms.push(Transformation::NewTable{table_id: TableId::Global(*id), rows: 1, columns: 1});
         tfms.push(Transformation::Identifier{name: name.clone(), id: *id});
       }
       // dest := src
       // dest{ix} := src
-      Node::SetData{children} => {
+      AstNode::SetData{children} => {
         let mut src = self.compile_node(&children[1])?;
         let mut dest = self.compile_node(&children[0])?.clone();
 
@@ -237,7 +237,7 @@ impl Compiler {
       }
       // dest :+= src
       // dest{ix} :+= src
-      Node::UpdateData{name, children} => {
+      AstNode::UpdateData{name, children} => {
         let mut src = self.compile_node(&children[1])?;
         let mut dest = self.compile_node(&children[0])?.clone();
 
@@ -283,7 +283,7 @@ impl Compiler {
         tfms.append(&mut dest);
         tfms.append(&mut src);
       }
-      Node::TableDefine{children} => {
+      AstNode::TableDefine{children} => {
         let mut output = self.compile_node(&children[0])?;
         // Get the output table id
         let output_table_id = match &output[0] {
@@ -335,7 +335,7 @@ impl Compiler {
           }
         }
       }
-      Node::TableSelect{children} => {
+      AstNode::TableSelect{children} => {
         let output_table_id = TableId::Local(hash_str(&format!("{:?}", children)));
 
         let mut input = self.compile_node(&children[0])?;
@@ -386,7 +386,7 @@ impl Compiler {
           }
         }
       }
-      Node::VariableDefine{children} => {
+      AstNode::VariableDefine{children} => {
         let mut output = self.compile_node(&children[0])?;
         // Get the output table id
         let output_table_id = match &output[0] {
@@ -450,7 +450,7 @@ impl Compiler {
           }
         }
       }
-      Node::Function{name, children} => {
+      AstNode::Function{name, children} => {
         let mut args: Vec<Argument>  = vec![];
         let mut arg_tfms = vec![];
         let mut identifiers = vec![];
@@ -498,7 +498,7 @@ impl Compiler {
         });
         tfms.append(&mut identifiers);
       },
-      Node::InlineTable{children} => {
+      AstNode::InlineTable{children} => {
         let columns = children.len();
         let mut table_row_children = vec![];
         let mut aliases = vec![];
@@ -507,7 +507,7 @@ impl Compiler {
         // Compile bindings
         for (ix, binding) in children.iter().enumerate() {
           match binding {
-            Node::Binding{children} => {
+            AstNode::Binding{children} => {
               let mut identifier = self.compile_node(&children[0])?;
               match &identifier[0] {
                 Transformation::Identifier{name,id} => {
@@ -536,7 +536,7 @@ impl Compiler {
             _ => (),
           }
         }
-        let table_row = Node::TableRow{children: table_row_children};
+        let table_row = AstNode::TableRow{children: table_row_children};
         let mut compiled_row_tfms = self.compile_node(&table_row)?;
         let mut a_tfms = vec![];
         loop {
@@ -578,14 +578,14 @@ impl Compiler {
         }  
         tfms.append(&mut identifiers);
       }
-      Node::EmptyTable{children} => {
+      AstNode::EmptyTable{children} => {
         let anon_table_id = hash_str(&format!("anonymous-table: {:?}",children));
         let mut table_children = children.clone();
         let mut column_aliases = Vec::new();
         let mut header_tfms = Vec::new();
         let mut columns = 1;
         match table_children.first() {
-          Some(Node::TableHeader{children}) => {
+          Some(AstNode::TableHeader{children}) => {
             let mut ix = 0;
             for child in children {
               let mut result = self.compile_node(child)?;
@@ -622,7 +622,7 @@ impl Compiler {
         header_tfms.insert(0,Transformation::NewTable{table_id: TableId::Local(anon_table_id), rows: 1, columns: 1});
         tfms.append(&mut header_tfms);
       }
-      Node::KindAnnotation{children} => {
+      AstNode::KindAnnotation{children} => {
         let mut result = self.compile_nodes(&children)?;
         for (ix,tfm) in result.iter().enumerate() {
           match tfm {
@@ -635,10 +635,10 @@ impl Compiler {
           }
         }        
       }
-      Node::Token{token, chars} => {
+      AstNode::Token{token, chars} => {
         tfms.push(Transformation::Identifier{name: chars.to_vec(), id: hash_chars(chars)});
       }
-      Node::AnonymousTableDefine{children} => {
+      AstNode::AnonymousTableDefine{children} => {
         let anon_table_id = hash_str(&format!("anonymous-table: {:?}",children));
         let mut table_children = children.clone();
         let mut header_tfms = Vec::new();
@@ -646,7 +646,7 @@ impl Compiler {
         let mut body_tfms = Vec::new();
         let mut columns = 0;
         match table_children.first() {
-          Some(Node::TableHeader{children}) => {
+          Some(AstNode::TableHeader{children}) => {
             let mut ix = 0;
             for child in children {
               let mut result = self.compile_node(child)?;
@@ -735,11 +735,11 @@ impl Compiler {
           _ => (),
         }  
       },
-      Node::TableColumn{children} => {
+      AstNode::TableColumn{children} => {
         let mut result = self.compile_nodes(children)?;
         tfms.append(&mut result);
       },
-      Node::TableRow{children} => {
+      AstNode::TableRow{children} => {
         let mut row_id = hash_str(&format!("horzcat:{:?}", children));
         let mut args: Vec<Argument> = vec![];
         let mut result_tfms = vec![];
@@ -785,7 +785,7 @@ impl Compiler {
           });
         }
       },
-      Node::AddRow{children} => {
+      AstNode::AddRow{children} => {
         let mut result_tfms = Vec::new();
         let mut args: Vec<Argument> = Vec::new();
 
@@ -835,7 +835,7 @@ impl Compiler {
           out: (*o,or.clone(),oc.clone()),
         });
       },
-      Node::SplitData{children} => {
+      AstNode::SplitData{children} => {
         let mut result_tfms = Vec::new();
         let mut args: Vec<Argument> = Vec::new();
         let mut out = self.compile_node(&children[0])?;
@@ -872,7 +872,7 @@ impl Compiler {
           out: (out_id,TableIndex::All,TableIndex::All),
         });
       }
-      Node::FlattenData{children} => {
+      AstNode::FlattenData{children} => {
         let mut result_tfms = Vec::new();
         let mut args: Vec<Argument> = Vec::new();
         let mut out = self.compile_node(&children[0])?;
@@ -909,21 +909,21 @@ impl Compiler {
           out: (out_id,TableIndex::All,TableIndex::All),
         });
       }
-      Node::SelectData{name, id, children} => {
+      AstNode::SelectData{name, id, children} => {
         let mut indices = vec![];
         let mut all_indices = vec![];
         let mut local_tfms = vec![];
         for child in children {
           match child {
-            Node::ReshapeColumn => {
+            AstNode::ReshapeColumn => {
               indices.push(TableIndex::ReshapeColumn);
               indices.push(TableIndex::All);
             }
-            Node::Swizzle{children} => {
+            AstNode::Swizzle{children} => {
               let mut aliases = vec![];
               for child in children {
                 match child {
-                  Node::Identifier{name,id} => {
+                  AstNode::Identifier{name,id} => {
                     aliases.push(*id);
                   }
                   _ => (),
@@ -932,22 +932,22 @@ impl Compiler {
               indices.push(TableIndex::All);
               indices.push(TableIndex::Aliases(aliases));
             }
-            Node::DotIndex{children} => {
+            AstNode::DotIndex{children} => {
               for child in children {
                 match child {
-                  Node::Null => {
+                  AstNode::Null => {
                     indices.push(TableIndex::All);
                   }
-                  Node::Identifier{name, id} => {
+                  AstNode::Identifier{name, id} => {
                     indices.push(TableIndex::Alias(*id));
                   }
-                  Node::SubscriptIndex{children} => {
+                  AstNode::SubscriptIndex{children} => {
                     for child in children {
                       match child {
-                        Node::SelectAll => {
+                        AstNode::SelectAll => {
                           indices.push(TableIndex::All);
                         }
-                        Node::WheneverIndex{..} => {
+                        AstNode::WheneverIndex{..} => {
                           let id = hash_str("~");
                           if indices.len() == 2 && indices[0] == TableIndex::All {
                             indices[0] = TableIndex::IxTable(TableId::Local(id));
@@ -955,14 +955,14 @@ impl Compiler {
                             indices.push(TableIndex::IxTable(TableId::Local(id)));
                           }
                         }
-                        Node::SelectData{name, id, children} => {
+                        AstNode::SelectData{name, id, children} => {
                           if indices.len() == 2 && indices[0] == TableIndex::All {
                             indices[0] = TableIndex::IxTable(*id);
                           } else {
                             indices.push(TableIndex::IxTable(*id));
                           }
                         }
-                        Node::Expression{..} => {
+                        AstNode::Expression{..} => {
                           let mut result = self.compile_node(child)?;
                           match &result[1] {
                             Transformation::NewTable{table_id, ..} => {
@@ -996,13 +996,13 @@ impl Compiler {
                 }
               }
             }
-            Node::SubscriptIndex{children} => {
+            AstNode::SubscriptIndex{children} => {
               for child in children {
                 match child {
-                  Node::SelectAll => {
+                  AstNode::SelectAll => {
                     indices.push(TableIndex::All);
                   }
-                  Node::WheneverIndex{..} => {
+                  AstNode::WheneverIndex{..} => {
                     let id = hash_str("~");
                     if indices.len() == 2 && indices[0] == TableIndex::All {
                       indices[0] = TableIndex::IxTable(TableId::Local(id));
@@ -1010,14 +1010,14 @@ impl Compiler {
                       indices.push(TableIndex::IxTable(TableId::Local(id)));
                     }
                   }
-                  Node::SelectData{name, id, children} => {
+                  AstNode::SelectData{name, id, children} => {
                     if indices.len() == 2 && indices[0] == TableIndex::All {
                       indices[0] = TableIndex::IxTable(*id);
                     } else {
                       indices.push(TableIndex::IxTable(*id));
                     }
                   }
-                  Node::Expression{..} => {
+                  AstNode::Expression{..} => {
                     let mut result = self.compile_node(child)?;
                     match &result[1] {
                       Transformation::NewTable{table_id, ..} => {
@@ -1064,7 +1064,7 @@ impl Compiler {
         tfms.append(&mut local_tfms);
         tfms.push(Transformation::Identifier{name: name.clone(), id: *id.unwrap()});
       }
-      Node::Whenever{children} => {
+      AstNode::Whenever{children} => {
         let mut result = self.compile_nodes(children)?;
         match &result[0] {
           Transformation::Select{table_id, indices} => {
@@ -1074,25 +1074,25 @@ impl Compiler {
         }
         tfms.append(&mut result);
       }
-      Node::Program{children, ..} |
-      Node::Section{children, ..} |
-      Node::Attribute{children} |
-      Node::Transformation{children} |
-      Node::Statement{children} |
-      Node::Fragment{children} |
-      Node::Block{children} |
-      Node::MathExpression{children} |
-      Node::Expression{children} |
-      Node::TableRow{children} |
-      Node::TableColumn{children} |
-      Node::Binding{children} |
-      Node::FunctionBinding{children} |
-      Node::Root{children} => {
+      AstNode::Program{children, ..} |
+      AstNode::Section{children, ..} |
+      AstNode::Attribute{children} |
+      AstNode::Transformation{children} |
+      AstNode::Statement{children} |
+      AstNode::Fragment{children} |
+      AstNode::Block{children} |
+      AstNode::MathExpression{children} |
+      AstNode::Expression{children} |
+      AstNode::TableRow{children} |
+      AstNode::TableColumn{children} |
+      AstNode::Binding{children} |
+      AstNode::FunctionBinding{children} |
+      AstNode::Root{children} => {
         let mut result = self.compile_nodes(children)?;
         tfms.append(&mut result);
       }
-      Node::Null => (),
-      x => println!("Unhandled Node in Compiler {:?}", x),
+      AstNode::Null => (),
+      x => println!("Unhandled AstNode in Compiler {:?}", x),
     }
     Ok(tfms)
   }
