@@ -894,7 +894,7 @@ block
 
 test_mech!(append_inline_row_singleton,"
 block
-  #x = [|x<f32> y<u8>|]
+  #x = [|x<f32> y<f32>|]
 block
   #x += [x: 10]
 block
@@ -902,7 +902,7 @@ block
 
 test_mech!(append_inline_row_two_rows,"
 block
-  #x = [|x<f32> y<u8>|]
+  #x = [|x<f32> y<f32>|]
 block
   #x += [x: 10]
 block
