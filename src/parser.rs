@@ -786,14 +786,16 @@ fn table(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Table{children: vec![table_identifier]}))
 }
 
+// binding ::= (space | newline | tab)*, identifier, kind_annotation?, colon, (space | newline | tab)*, <empty | expression | identifier | value>, (space | tab | newline)*, comma?, (space | tab | newline)* ;
 fn binding(input: ParseString) -> ParseResult<ParserNode> {
+  let msg = "Expect a value";
   let mut children = vec![];
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, binding_id) = identifier(input)?;
   let (input, kind) = opt(kind_annotation)(input)?;
   let (input, _) = colon(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
-  let (input, bound) = alt((empty, expression, identifier, value))(input)?;
+  let (input, bound) = label!(alt((empty, expression, identifier, value)), msg)(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, _) = opt(comma)(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
@@ -805,22 +807,24 @@ fn binding(input: ParseString) -> ParseResult<ParserNode> {
 
 // function_binding ::= identifier, <colon, space*>, <expression | identifier | value>, space*, comma?, space* ;
 fn function_binding(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect colon ':'";
-  let msg2 = "Expect expression, identifier, or value";
-  let (input, binding_id) = identifier(input)?;
+  let msg1 = "Expect colon ':' for function binding";
+  let msg2 = "Expect expression, identifier, or value to bind";
+  let (input, (binding_id, r)) = range(identifier)(input)?;
   let (input, _) = label!(tuple((colon, many0(space))), msg1)(input)?;
-  let (input, bound) = label!(alt((expression, identifier, value)), msg2)(input)?;
+  let (input, bound) = label!(alt((expression, identifier, value)), msg2, r)(input)?;
   let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
   Ok((input, ParserNode::FunctionBinding{children: vec![binding_id, bound]}))
 }
 
+// table_column ::= (space | tab)*, (expression | value | data), comma?, (space | tab)* ;
 fn table_column(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = many0(alt((space, tab)))(input)?;
-  let (input, item) = alt((expression, value, data, ))(input)?;
+  let (input, item) = alt((expression, value, data))(input)?;
   let (input, _) = tuple((opt(comma), many0(alt((space, tab)))))(input)?;
   Ok((input, ParserNode::Column{children: vec![item]}))
 }
 
+// table_row ::= (space | tab)*, table_column+, semicolon?, newline? ;
 fn table_row(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, columns) = many1(table_column)(input)?;
@@ -828,6 +832,7 @@ fn table_row(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::TableRow{children: columns}))
 }
 
+// attribute ::= identifier, kind_annotation?, space*, comma?, space* ;
 fn attribute(input: ParseString) -> ParseResult<ParserNode> {
   let mut children = vec![];
   let (input, identifier) = identifier(input)?;
@@ -838,20 +843,25 @@ fn attribute(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Attribute{children}))
 }
 
+// table_header ::= bar, <attribute+>, <bar>, space*, newline? ;
 fn table_header(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = bar(input)?;
-  let (input, attributes) = many1(attribute)(input)?;
-  let (input, _) = tuple((bar, many0(space), opt(newline)))(input)?;
+  let msg1 = "Expect at least one attribute for table header";
+  let msg2 = "Expect vertical bar to terminate table header";
+  let (input, (_, r)) = range(bar)(input)?;
+  let (input, attributes) = label!(many1(attribute), msg1)(input)?;
+  let (input, _) = tuple((label!(bar, msg2, r), many0(space), opt(newline)))(input)?;
   Ok((input, ParserNode::TableHeader{children: attributes}))
 }
 
+// anonymous_table ::= left_bracket, (space | newline | tab)*, table_header?, (comment | table_row)*, (space | newline | tab)*, <right_bracket> ;
 fn anonymous_table(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = left_bracket(input)?;
+  let msg = "Expect right bracket ']' to finish the table";
+  let (input, (_, r)) = range(left_bracket)(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, table_header) = opt(table_header)(input)?;
-  let (input, mut table_rows) = many0(alt((comment,table_row)))(input)?;
+  let (input, mut table_rows) = many0(alt((comment, table_row)))(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
-  let (input, _) = right_bracket(input)?;
+  let (input, _) = label!(right_bracket, msg, r)(input)?;
   let mut table = vec![];
   let mut just_rows = table_rows.iter().filter(|n| 
     match n {
@@ -867,10 +877,10 @@ fn anonymous_table(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::AnonymousTable{children: table}))
 }
 
+// empty_table ::= left_bracket, (space | newline | tab)*, table_header?, (space | newline | tab)*, right_bracket ;
 fn empty_table(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = left_bracket(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
-  let (input, _) = many0(space)(input)?;
   let (input, table_header) = opt(table_header)(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, _) = right_bracket(input)?;
@@ -882,27 +892,29 @@ fn empty_table(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::EmptyTable{children: table}))
 }
 
-fn anonymous_matrix(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = left_angle(input)?;
-  let (input, _) = many0(alt((space, newline, tab)))(input)?;
-  let (input, _) = many0(space)(input)?;
-  let (input, table_header) = opt(table_header)(input)?;
-  let (input, mut table_rows) = many0(table_row)(input)?;
-  let (input, _) = many0(alt((space, newline, tab)))(input)?;
-  let (input, _) = right_angle(input)?;
-  let mut table = vec![];
-  match table_header {
-    Some(table_header) => table.push(table_header),
-    _ => (),
-  };
-  table.append(&mut table_rows);
-  Ok((input, ParserNode::AnonymousMatrix{children: table}))
-}
+// fn anonymous_matrix(input: ParseString) -> ParseResult<ParserNode> {
+//   let (input, _) = left_angle(input)?;
+//   let (input, _) = many0(alt((space, newline, tab)))(input)?;
+//   let (input, _) = many0(space)(input)?;
+//   let (input, table_header) = opt(table_header)(input)?;
+//   let (input, mut table_rows) = many0(table_row)(input)?;
+//   let (input, _) = many0(alt((space, newline, tab)))(input)?;
+//   let (input, _) = right_angle(input)?;
+//   let mut table = vec![];
+//   match table_header {
+//     Some(table_header) => table.push(table_header),
+//     _ => (),
+//   };
+//   table.append(&mut table_rows);
+//   Ok((input, ParserNode::AnonymousMatrix{children: table}))
+// }
 
+// inline_table ::= left_bracket, binding+, <right_bracket> ;
 fn inline_table(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = left_bracket(input)?;
+  let msg = "Expect right bracket ']' to terminate inline table";
+  let (input, (_, r)) = range(left_bracket)(input)?;
   let (input, bindings) = many1(binding)(input)?;
-  let (input, _) = right_bracket(input)?;
+  let (input, _) = label!(right_bracket, msg, r)(input)?;
   Ok((input, ParserNode::InlineTable{children: bindings}))
 }
 
@@ -1488,9 +1500,9 @@ fn string(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::String { children: text }))
 }
 
-// expression ::= inline_table | math_expression | string | empty_table | anonymous_table ;
+// expression ::= empty_table | inline_table | math_expression | string | anonymous_table ;
 fn expression(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, expression) = alt((inline_table, math_expression, string, empty_table, anonymous_table))(input)?;
+  let (input, expression) = alt((empty_table, inline_table, math_expression, string, anonymous_table))(input)?;
   Ok((input, ParserNode::Expression { children: vec![expression] }))
 }
 
