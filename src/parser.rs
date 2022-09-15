@@ -298,7 +298,7 @@ where
     let input_clone = input.clone();
     match parser(input_clone) {
       Ok((_, o)) => Ok((input, o)),
-      x => x,
+      _ => Err(Err::Error(ParseError::new(input, "Unexpected character"))),
     }
   }
 }
@@ -311,8 +311,8 @@ where
   move |input: ParseString| {
     let input_clone = input.clone();
     match parser(input_clone) {
+      Err(Err::Failure(_)) |
       Err(Err::Error(_)) => Ok((input, ())),
-      Err(Err::Failure(e)) => Err(Err::Failure(e)),  // switch to input.clone(), which should be fine
       _ => Err(Err::Error(ParseError::new(input, "Unexpected character")))
     }
   }
