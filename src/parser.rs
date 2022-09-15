@@ -1233,19 +1233,13 @@ fn l0(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::L0 { children: math }))
 }
 
-// l0_op ::= range_op ;
-fn l0_op(input: ParseString) -> ParseResult<ParserNode> {
-  range_op(input)
-}
-
-// l0_infix ::= space+, range_op, <space+>, <l1> ;
+// l0_infix ::= space*, range_op, space*, <l1> ;
 fn l0_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect space after operator";
-  let msg2 = "Expect expression after operator";
-  let (input, _) = many1(space)(input)?;
-  let (input, op) = l0_op(input)?;
-  let (input, _) = label!(many1(space), msg1)(input)?;
-  let (input, l1) = label!(l1, msg2)(input)?;
+  let msg = "Expect expression after range operator";
+  let (input, _) = many0(space)(input)?;
+  let (input, (op, r)) = range(range_op)(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, l1) = label!(l1, msg, r)(input)?;
   Ok((input, ParserNode::L0Infix { children: vec![op, l1] }))
 }
 
