@@ -698,25 +698,31 @@ fn subscript(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Subscript{children: vec![subscript]}))
 }
 
-// TODO
-// subscript_index ::= left_brace, subscript+, right_brace ;
+// subscript_index ::= left_brace, <subscript+>, <right_brace> ;
 fn subscript_index(input: ParseString) -> ParseResult<ParserNode> {
+  let msg1 = "Expect subscript";
+  let msg2 = "Expect right brace '}'";
   let (input, (_, r)) = range(left_brace)(input)?;
-  let (input, subscripts) = many1(subscript)(input)?;
-  let (input, _) = right_brace(input)?;
+  let (input, subscripts) = label!(many1(subscript), msg1)(input)?;
+  let (input, _) = label!(right_brace, msg2, r)(input)?;
   Ok((input, ParserNode::SubscriptIndex{children: subscripts}))
 }
 
+// single_subscript_index ::= left_brace, <subscript>, <right_brace> ;
 fn single_subscript_index(input: ParseString) -> ParseResult<ParserNode> {
+  let msg1 = "Expect subscript";
+  let msg2 = "Expect right brace '}'";
   let (input, _) = left_brace(input)?;
-  let (input, subscript) = subscript(input)?;
-  let (input, _) = right_brace(input)?;
+  let (input, subscript) = label!(subscript, msg1)(input)?;
+  let (input, _) = label!(right_brace, msg2)(input)?;
   Ok((input, ParserNode::SubscriptIndex{children: vec![subscript]}))
 }
 
+// dot_index ::= period, <identifier>, single_subscript_index? ;
 fn dot_index(input: ParseString) -> ParseResult<ParserNode> {
+  let msg = "Expect identifier";
   let (input, _) = period(input)?;
-  let (input, identifier) = identifier(input)?;
+  let (input, identifier) = label!(identifier, msg)(input)?;
   let (input, subscript) = opt(single_subscript_index)(input)?;
   let index = match subscript {
     Some(subscript) =>vec![subscript, identifier],
@@ -725,16 +731,19 @@ fn dot_index(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::DotIndex{children: index}))
 }
 
+// swizzle ::= period, identifier, comma, <identifier, (",", identifier)*> ;
 fn swizzle(input: ParseString) -> ParseResult<ParserNode> {
+  let msg = "Expect identifier";
   let (input, _) = period(input)?;
   let (input, first) = identifier(input)?;
   let (input, _) = comma(input)?;
-  let (input, mut rest) = separated_list1(tag(","), identifier)(input)?;
+  let (input, mut rest) = label!(separated_list1(tag(","), identifier), msg)(input)?;
   let mut cols = vec![first];
   cols.append(&mut rest);
   Ok((input, ParserNode::Swizzle{children: cols}))
 }
 
+// reshape_column ::= left_brace, colon, right_brace ;
 fn reshape_column(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = left_brace(input)?;
   let (input, _) = colon(input)?;
@@ -742,11 +751,13 @@ fn reshape_column(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::ReshapeColumn))
 }
 
+// index ::= swizzle | dot_index | reshape_column | subscript_index ;
 fn index(input: ParseString) -> ParseResult<ParserNode> {
   let (input, index) = alt((swizzle, dot_index, reshape_column, subscript_index))(input)?;
   Ok((input, ParserNode::Index{children: vec![index]}))
 }
 
+// data ::= (table | identifier), index* ;
 fn data(input: ParseString) -> ParseResult<ParserNode> {
   let (input, source) = alt((table, identifier))(input)?;
   let (input, mut indices) = many0(index)(input)?;
@@ -1163,9 +1174,11 @@ fn parenthetical_expression(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, l0))
 }
 
+// negation ::= dash, <data | value> ;
 fn negation(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = dash(input)?;
-  let (input, negated) = alt((data, value))(input)?;
+  let msg = "Expect a value to immediately follow the negation sign";
+  let (input, (_, r)) = range(dash)(input)?;
+  let (input, negated) = label!(alt((data, value)), msg, r)(input)?;
   Ok((input, ParserNode::Negation { children: vec![negated] }))
 }
 
