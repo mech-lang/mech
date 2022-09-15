@@ -1,21 +1,2 @@
-block
-  -- hello
-  #x = 3
- #y := 3
-
-block
-  #test = ["" "World"]
-  😃 = (3 + 3) * #x
-  var = 😃 + 7
-  大象蛋 = 7
-  -- elephant
-
-```
-abc
-
-
-
-
-
-ade
-``
+Block
+  #y += [x: 10 -1]

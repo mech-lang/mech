@@ -123,6 +123,15 @@ impl<'a> ParseString<'a> {
   fn len(&self) -> usize {
     self.graphemes.len() - self.cursor
   }
+
+  fn output(&self) {
+    println!("-----------------");
+    for i in self.cursor..self.len() {
+      print!("{}", self.graphemes[i]);
+    }
+    println!();
+    println!("-----------------");
+  }
 }
 
 impl<'a> nom::InputLength for ParseString<'a> {
@@ -1215,8 +1224,6 @@ fn range_op(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Range))
 }
 
-// TODO: l0-l6 needs to be fixed
-
 // l0 ::= l1, l0_infix* ;
 fn l0(input: ParseString) -> ParseResult<ParserNode> {
   let (input, l1) = l1(input)?;
@@ -1226,12 +1233,19 @@ fn l0(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::L0 { children: math }))
 }
 
-// l0_infix ::= space*, range_op, space*, l1 ;
+// l0_op ::= range_op ;
+fn l0_op(input: ParseString) -> ParseResult<ParserNode> {
+  range_op(input)
+}
+
+// l0_infix ::= space+, range_op, <space+>, <l1> ;
 fn l0_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = many0(space)(input)?;
-  let (input, op) = range_op(input)?;
-  let (input, _) = many0(space)(input)?;
-  let (input, l1) = l1(input)?;
+  let msg1 = "Expect space after operator";
+  let msg2 = "Expect expression after operator";
+  let (input, _) = many1(space)(input)?;
+  let (input, op) = l0_op(input)?;
+  let (input, _) = label!(many1(space), msg1)(input)?;
+  let (input, l1) = label!(l1, msg2)(input)?;
   Ok((input, ParserNode::L0Infix { children: vec![op, l1] }))
 }
 
@@ -1244,12 +1258,22 @@ fn l1(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::L1 { children: math }))
 }
 
-// l1_infix ::= space, (add | subtract), space, l2 ;
+// l1_op ::= add | subtract ;
+fn l1_op(input: ParseString) -> ParseResult<ParserNode> {
+  alt((add, subtract))(input)
+}
+
+// l1_infix ::= <!l1_op>, space*, !negation, l1_op, <space+>, <l2> ;
 fn l1_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = space(input)?;
-  let (input, op) = alt((add, subtract))(input)?;
-  let (input, _) = space(input)?;
-  let (input, l2) = l2(input)?;
+  let msg1 = "Expect space before opeartor";
+  let msg2 = "Expect space after operator";
+  let msg3 = "Expect expression after operator";
+  let (input, _) = label!(is_not(l1_op), msg1)(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, _) = is_not(negation)(input)?;
+  let (input, op) = l1_op(input)?;
+  let (input, _) = label!(many1(space), msg2)(input)?;
+  let (input, l2) = label!(l2, msg3)(input)?;
   Ok((input, ParserNode::L1Infix { children: vec![op, l2] }))
 }
 
@@ -1262,12 +1286,21 @@ fn l2(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::L2 { children: math }))
 }
 
-// l2_infix ::= space, (multiply | divide | matrix_multiply), space, l3 ;
+// l2_op ::= multiply | divide | matrix_multiply ;
+fn l2_op(input: ParseString) -> ParseResult<ParserNode> {
+  alt((multiply, divide, matrix_multiply))(input)
+}
+
+// l2_infix ::= <!l2_op>, space*, l2_op, <space+>, <l3> ;
 fn l2_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = space(input)?;
-  let (input, op) = alt((multiply, divide, matrix_multiply))(input)?;
-  let (input, _) = space(input)?;
-  let (input, l3) = l3(input)?;
+  let msg1 = "Expect space before opeartor";
+  let msg2 = "Expect space after operator";
+  let msg3 = "Expect expression after operator";
+  let (input, _) = label!(is_not(l2_op), msg1)(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, op) = l2_op(input)?;
+  let (input, _) = label!(many1(space), msg2)(input)?;
+  let (input, l3) = label!(l3, msg3)(input)?;
   Ok((input, ParserNode::L2Infix { children: vec![op, l3] }))
 }
 
@@ -1280,12 +1313,21 @@ fn l3(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::L3 { children: math }))
 }
 
-// l3_infix ::= space, exponent, space, l4 ;
+// l3_op ::= exponent ;
+fn l3_op(input: ParseString) -> ParseResult<ParserNode> {
+  exponent(input)
+}
+
+// l3_infix ::= <!l3_op>, space*, l3_op, <space+>, <l4> ;
 fn l3_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = space(input)?;
-  let (input, op) = exponent(input)?;
-  let (input, _) = space(input)?;
-  let (input, l4) = l4(input)?;
+  let msg1 = "Expect space before opeartor";
+  let msg2 = "Expect space after operator";
+  let msg3 = "Expect expression after operator";
+  let (input, _) = label!(is_not(l3_op), msg1)(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, op) = l3_op(input)?;
+  let (input, _) = label!(many1(space), msg2)(input)?;
+  let (input, l4) = label!(l4, msg3)(input)?;
   Ok((input, ParserNode::L3Infix { children: vec![op, l4] }))
 }
 
@@ -1298,12 +1340,21 @@ fn l4(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::L4 { children: math }))
 }
 
-// l4_infix ::= space, (and | or | xor), space, l5 ;
+// l4_op ::= and | or | xor ;
+fn l4_op(input: ParseString) -> ParseResult<ParserNode> {
+  alt((and, or, xor))(input)
+}
+
+// l4_infix ::= <!l4_op>, space*, l4_op, <space+>, <l5> ;
 fn l4_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = space(input)?;
-  let (input, op) = alt((and, or, xor))(input)?;
-  let (input, _) = space(input)?;
-  let (input, l5) = l5(input)?;
+  let msg1 = "Expect space before opeartor";
+  let msg2 = "Expect space after operator";
+  let msg3 = "Expect expression after operator";
+  let (input, _) = label!(is_not(l4_op), msg1)(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, op) = l4_op(input)?;
+  let (input, _) = label!(many1(space), msg2)(input)?;
+  let (input, l5) = label!(l5, msg3)(input)?;
   Ok((input, ParserNode::L4Infix { children: vec![op, l5] }))
 }
 
@@ -1316,12 +1367,21 @@ fn l5(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::L5 { children: math }))
 }
 
-// l5_infix ::= space, (not_equal | equal_to | greater_than_equal | greater_than | less_than_equal | less_than), space, l6 ;
+// l5_op ::= not_equal | equal_to | greater_than_equal | greater_than | less_than_equal | less_than ;
+fn l5_op(input: ParseString) -> ParseResult<ParserNode> {
+  alt((not_equal, equal_to, greater_than_equal, greater_than, less_than_equal, less_than))(input)
+}
+
+// l5_infix ::= <!l5_op>, space*, l5_op, <space+>, <l6> ;
 fn l5_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = space(input)?;
-  let (input, op) = alt((not_equal,equal_to, greater_than_equal, greater_than, less_than_equal, less_than))(input)?;
-  let (input, _) = space(input)?;
-  let (input, l6) = l6(input)?;
+  let msg1 = "Expect space before opeartor";
+  let msg2 = "Expect space after operator";
+  let msg3 = "Expect expression after operator";
+  let (input, _) = label!(is_not(l5_op), msg1)(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, op) = l5_op(input)?;
+  let (input, _) = label!(many1(space), msg2)(input)?;
+  let (input, l6) = label!(l6, msg3)(input)?;
   Ok((input, ParserNode::L5Infix { children: vec![op, l6] }))
 }
 
