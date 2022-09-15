@@ -9,14 +9,11 @@ use std::rc::Rc;
 fn main() -> Result<(),MechError> {
 
 let input = r#"
+[z<u64>] = add-two(y<u64>, x<u64>)
+  z = y + x
+
 block
-  #foo = [|x y z|
-           5 6 7]
-block
-  #foo += [x: 100 y: 110 z: 120]
-block
-  ix = #foo.x > 50
-  #test = #foo.x{ix}"#;
+  x = add-two(y: 10<u64>, x: 20<u64>)"#;
   let input = String::from(input);
 
   let mut ast = Ast::new();
@@ -31,9 +28,9 @@ block
 
   let sections = compiler.compile_sections(&vec![ast.syntax_tree.clone()]).unwrap();
   
-  core.load_sections(sections);
-  println!("{:#?}", core.blocks);
-  println!("{:?}", core);
+  //core.load_sections(sections);
+  //println!("{:#?}", core.blocks);
+  //println!("{:?}", core);
 
 /*
   let mut code = r#"

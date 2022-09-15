@@ -31,6 +31,9 @@ fn get_sections(nodes: &Vec<Node>) -> Vec<Vec<Node>> {
             Node::Block{children} => {
               blocks.push(child.clone());
             }
+            Node::UserFunction{children} => {
+              blocks.push(child.clone());
+            }
             Node::Statement{children} => {
               statements.append(&mut children.clone());
             }
@@ -114,15 +117,25 @@ impl Compiler {
     for section in get_sections(nodes) {
       let mut blocks: Vec<Block> = Vec::new();
       for node in section {
-        let mut block = Block::new();
-        let mut tfms = self.compile_node(&node)?;
-        let tfms_before = tfms.clone();
-        tfms.sort();
-        tfms.dedup();
-        for tfm in tfms {
-          block.add_tfm(tfm);
+        match node {
+          Node::Block{..} => {
+            let mut block = Block::new();
+            let mut tfms = self.compile_node(&node)?;
+            let tfms_before = tfms.clone();
+            tfms.sort();
+            tfms.dedup();
+            for tfm in tfms {
+              block.add_tfm(tfm);
+            }
+            blocks.push(block);
+          }
+          Node::UserFunction{..} => {
+            let mut user_function = UserFunction::new();
+            println!("{:?}", user_function);
+
+          }
+          _ => (),
         }
-        blocks.push(block);
       }
       sections.push(blocks);
     }
@@ -449,6 +462,16 @@ impl Compiler {
             }
           }
         }
+      }
+      Node::UserFunction{children} => {
+        let output_args = &children[0];
+        let function_name = &children[1];
+        let input_args = &children[2];
+        if let Node::FunctionBody{children} = &children[3] {
+          let mut result = self.compile_nodes(children)?;
+          tfms.append(&mut result);
+        };
+        println!("{:?}", tfms);
       }
       Node::Function{name, children} => {
         let mut args: Vec<Argument>  = vec![];
