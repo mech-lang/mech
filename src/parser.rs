@@ -617,11 +617,11 @@ fn number_literal(input: ParseString) -> ParseResult<ParserNode> {
 //   Ok((input, ParserNode::Null))
 // }
 
-// float_literal ::= "."?, digit1, "."?, digit0 ;
+// float_literal ::= (".", !".")?, digit1, (".", !".")?, digit0 ;
 fn float_literal(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, p1) = opt(tag("."))(input)?;
+  let (input, p1) = opt(tuple((tag("."), is_not(tag(".")))))(input)?;
   let (input, p2) = digit1(input)?;
-  let (input, p3) = opt(tag("."))(input)?;
+  let (input, p3) = opt(tuple((tag("."), is_not(tag(".")))))(input)?;
   let (input, p4) = digit0(input)?;
   let mut whole: Vec<char> = vec![];
   if let Some(_) = p1 {
@@ -1243,9 +1243,9 @@ fn exponent(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Exponent))
 }
 
-// range_op ::= ":" ;
+// range_op ::= ".." ;
 fn range_op(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = tag(":")(input)?;
+  let (input, _) = tag("..")(input)?;
   Ok((input, ParserNode::Range))
 }
 
