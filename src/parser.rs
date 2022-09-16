@@ -932,15 +932,14 @@ fn comment_sigil(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Null))
 }
 
-// comment ::= (space | tab)*, comment_sigil, <text>, <tab | newline>, (space | tab | newline)* ;
+// comment ::= (space | tab)*, comment_sigil, <text>, <newline> ;
 fn comment(input: ParseString) -> ParseResult<ParserNode> {
   let msg1 = "Expect comment text";
   let msg2 = "Character not allowed in comment text";
   let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, _) = comment_sigil(input)?;
   let (input, comment) = label!(text, msg1)(input)?;
-  let (input, _) = label!(alt((tab, newline)), msg2)(input)?;
-  let (input, _) = many0(alt((space, tab, newline)))(input)?;
+  let (input, _) = label!(newline, msg2)(input)?;
   Ok((input, ParserNode::Comment{children: vec![comment]}))
 }
 

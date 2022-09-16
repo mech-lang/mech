@@ -1,7 +1,7 @@
 #!/usr/bin/awk -f
 
 # Generate grammar.md from parser.rs
-# Usage: `./extract_peg.awk < src/parser.rs > grammar.md`
+# Usage: `./grammar.awk < src/parser.rs > grammar.md`
 
 BEGIN {
     TITLE = 0
@@ -17,6 +17,7 @@ BEGIN {
     print "|  p?    | input mathces `p` for 0 or 1 time (optional)        |"
     print "| p1, p2 | input matches `p1` followed by `p2` (sequence)      |"
     print "| p1\\|p2 | input matches `p1` or `p2` (ordered choice)         |"
+    print "|  !!p   | input matches `p`; never consume input (peek)       |"
     print "|  !p    | input doesn't match `p`; never consume input (peek) |"
     print "| (...)  | common grouping                                     |"
     print "| <...>  | labeled grouping                                    |"
