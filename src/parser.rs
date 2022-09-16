@@ -858,22 +858,25 @@ fn anonymous_table(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect right bracket ']' to finish the table";
   let (input, (_, r)) = range(left_bracket)(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
-  let (input, table_header) = opt(table_header)(input)?;
-  let (input, mut table_rows) = many0(alt((comment, table_row)))(input)?;
+  let (mut input, table_header) = opt(table_header)(input)?;
+  let mut table_rows = vec![];
+  loop {
+    let (i, mut rows) = many0(table_row)(input)?;
+    let (i, comments) = many0(tuple((comment, newline)))(i)?;
+    table_rows.append(&mut rows);
+    input = i;
+    if comments.is_empty() {
+      break;
+    }
+  }
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, _) = label!(right_bracket, msg, r)(input)?;
   let mut table = vec![];
-  let mut just_rows = table_rows.iter().filter(|n| 
-    match n {
-      ParserNode::Comment{..} => false,
-      _ => true
-    }
-  ).cloned().collect();
   match table_header {
     Some(table_header) => table.push(table_header),
     _ => (),
   };
-  table.append(&mut just_rows);
+  table.append(&mut table_rows);
   Ok((input, ParserNode::AnonymousTable{children: table}))
 }
 
@@ -932,14 +935,14 @@ fn comment_sigil(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Null))
 }
 
-// comment ::= (space | tab)*, comment_sigil, <text>, <newline> ;
+// comment ::= (space | tab)*, comment_sigil, <text>, <!!newline> ;
 fn comment(input: ParseString) -> ParseResult<ParserNode> {
   let msg1 = "Expect comment text";
   let msg2 = "Character not allowed in comment text";
   let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, _) = comment_sigil(input)?;
   let (input, comment) = label!(text, msg1)(input)?;
-  let (input, _) = label!(newline, msg2)(input)?;
+  let (input, _) = label!(is(newline), msg2)(input)?;
   Ok((input, ParserNode::Comment{children: vec![comment]}))
 }
 
@@ -1185,10 +1188,11 @@ fn parenthetical_expression(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, l0))
 }
 
-// negation ::= dash, <data | value> ;
+// negation ::= dash, !dash, <data | value> ;
 fn negation(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect a value to immediately follow the negation sign";
   let (input, (_, r)) = range(dash)(input)?;
+  let (input, _) = is_not(dash)(input)?;
   let (input, negated) = label!(alt((data, value)), msg, r)(input)?;
   Ok((input, ParserNode::Negation { children: vec![negated] }))
 }
@@ -1489,7 +1493,7 @@ fn xor(input: ParseString) -> ParseResult<ParserNode> {
 //   Ok((input, ParserNode::StringInterpolation { children: vec![expression] }))
 // }
 
-// string ::= quote, (!quote, text)*, quote ;
+// string ::= quote, (!quote, <text>)*, quote ;
 fn string(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Character not allowed in string";
   let (input, _) = quote(input)?;
@@ -1507,10 +1511,12 @@ fn expression(input: ParseString) -> ParseResult<ParserNode> {
 
 // #### Block basics
 
-// transformation ::= statement, space*, newline* ;
+// transformation ::= statement, space*, newline+ ;
 fn transformation(input: ParseString) -> ParseResult<ParserNode> {
+  let msg = "Expect newline to terminate transformtation";
   let (input, statement) = statement(input)?;
-  let (input, _) = tuple((many0(space),many0(newline)))(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, _) = label!(many1(newline), msg)(input)?;
   Ok((input, ParserNode::Transformation { children: vec![statement] }))
 }
 
@@ -2045,9 +2051,10 @@ impl ParserErrorReport {
 // ## Parser interfaces
 
 pub fn parse(text: &str) -> Result<ParserNode, MechError> {
-  let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
+  let mut graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
   let mut result_node = ParserNode::Error;
   let mut error_log = ParserErrorReport { errors: vec![] };
+  graphemes.push("\n");   // make sure source code ends with newline
   match parse_mech(ParseString::new(&graphemes)) {
     // Got a parse tree, however there may be errors
     Ok((mut remaining_input, parse_tree)) => {
@@ -2076,9 +2083,10 @@ pub fn parse(text: &str) -> Result<ParserNode, MechError> {
 }
 
 pub fn parse_fragment(text: &str) -> Result<ParserNode,MechError> {
-  let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
+  let mut graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
   let mut result_node = ParserNode::Error;
   let mut error_log = ParserErrorReport { errors: vec![] };
+  graphemes.push("\n");  // make sure source code ends with newline
   match parse_mech_fragment(ParseString::new(&graphemes)) {
     // Got a parse tree, however there may be errors
     Ok((mut remaining_input, parse_tree)) => {
