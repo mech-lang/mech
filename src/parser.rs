@@ -954,15 +954,14 @@ fn add_row_operator(input: ParseString) -> ParseResult<ParserNode> {
 
 // add_row ::= table, <!stmt_operator>, space+, add_row_operator, <space+>, <expression | inline_table | anonymous_table> ;
 fn add_row(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect space before operator";
-  let msg2 = "Expect space after operator";
-  let msg3 = "Expect expression, inline table, or anonymous table";
+  let msg1 = "Expect spaces around operator";
+  let msg2 = "Expect expression, inline table, or anonymous table";
   let (input, table_id) = table(input)?;
   let (input, _) = label!(is_not(stmt_operator), msg1)(input)?;
   let (input, _) = many1(space)(input)?;
   let (input, _) = add_row_operator(input)?;
-  let (input, _) = label!(many1(space), msg2)(input)?;
-  let (input, table) = label!(alt((expression, inline_table, anonymous_table)), msg3)(input)?;
+  let (input, _) = label!(many1(space), msg1)(input)?;
+  let (input, table) = label!(alt((expression, inline_table, anonymous_table)), msg2)(input)?;
   Ok((input, ParserNode::AddRow{children: vec![table_id, table]}))
 }
 
@@ -1007,15 +1006,14 @@ fn update_operator(input: ParseString) -> ParseResult<ParserNode> {
 
 // update_data ::= data, <!stmt_operator>, space+, update_operator, <space+>, <expression> ;
 fn update_data(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect space before operator";
-  let msg2 = "Expect space after operator";
-  let msg3 = "Expect expression";
+  let msg1 = "Expect spaces around operator";
+  let msg2 = "Expect expression";
   let (input, table) = data(input)?;
   let (input, _) = label!(is_not(stmt_operator), msg1)(input)?;
   let (input, _) = many1(space)(input)?;
   let (input, op) = update_operator(input)?;
-  let (input, _) = label!(many1(space), msg2)(input)?;
-  let (input, expression) = label!(expression, msg3)(input)?;
+  let (input, _) = label!(many1(space), msg1)(input)?;
+  let (input, expression) = label!(expression, msg2)(input)?;
   Ok((input, ParserNode::UpdateData{children: vec![op, table, expression]}))
 }
 
@@ -1027,65 +1025,60 @@ fn set_operator(input: ParseString) -> ParseResult<ParserNode> {
 
 // set_data ::= data, <!stmt_operator>, space+, set_operator, <space+>, <expression> ;
 fn set_data(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect space before operator";
-  let msg2 = "Expect space after operator";
-  let msg3 = "Expect expression";
+  let msg1 = "Expect spaces around operator";
+  let msg2 = "Expect expression";
   let (input, table) = data(input)?;
   let (input, _) = label!(is_not(stmt_operator), msg1)(input)?;
   let (input, _) = many1(space)(input)?;
   let (input, _) = set_operator(input)?;
-  let (input, _) = label!(many1(space), msg2)(input)?;
-  let (input, expression) = label!(expression, msg3)(input)?;
+  let (input, _) = label!(many1(space), msg1)(input)?;
+  let (input, expression) = label!(expression, msg2)(input)?;
   Ok((input, ParserNode::SetData{children: vec![table, expression]}))
 }
 
 // split_data ::= (identifier | table), <!stmt_operator>, space+, split_operator, <space+>, <expression> ;
 fn split_data(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect space before operator";
-  let msg2 = "Expect space after operator";
-  let msg3 = "Expect expression";
+  let msg1 = "Expect spaces around operator";
+  let msg2 = "Expect expression";
   let (input, table) = alt((identifier, table))(input)?;
   let (input, _) = label!(is_not(stmt_operator), msg1)(input)?;
   let (input, _) = many1(space)(input)?;
   let (input, _) = split_operator(input)?;
-  let (input, _) = label!(many1(space), msg2)(input)?;
-  let (input, expression) = label!(expression, msg3)(input)?;
+  let (input, _) = label!(many1(space), msg1)(input)?;
+  let (input, expression) = label!(expression, msg2)(input)?;
   Ok((input, ParserNode::SplitData{children: vec![table, expression]}))
 }
 
 // flatten_data ::= identifier, <!stmt_operator>, space+, flatten_operator, <space+>, <expression> ;
 fn flatten_data(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect space before operator";
-  let msg2 = "Expect space after operator";
-  let msg3 = "Expect expression";
+  let msg1 = "Expect spaces around operator";
+  let msg2 = "Expect expression";
   let (input, table) = identifier(input)?;
   let (input, _) = label!(is_not(stmt_operator), msg1)(input)?;
   let (input, _) = many1(space)(input)?;
   let (input, _) = flatten_operator(input)?;
-  let (input, _) = label!(many1(space), msg2)(input)?;
-  let (input, expression) = label!(expression, msg3)(input)?;
+  let (input, _) = label!(many1(space), msg1)(input)?;
+  let (input, expression) = label!(expression, msg2)(input)?;
   Ok((input, ParserNode::FlattenData{children: vec![table, expression]}))
 }
 
 // variable_define ::= identifier, <!stmt_operator>, space+, equal, <space+>, <expression> ;
 fn variable_define(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect space before operator";
-  let msg2 = "Expect space after operator";
-  let msg3 = "Expect expression";
+  let msg1 = "Expect spaces around operator";
+  let msg2 = "Expect expression";
   let (input, variable) = identifier(input)?;
   let (input, _) = label!(is_not(stmt_operator), msg1)(input)?;
   let (input, _) = many1(space)(input)?;
   let (input, _) = equal(input)?;
-  let (input, _) = label!(many1(space), msg2)(input)?;
-  let (input, expression) = label!(expression, msg3)(input)?;
+  let (input, _) = label!(many1(space), msg1)(input)?;
+  let (input, expression) = label!(expression, msg2)(input)?;
   Ok((input, ParserNode::VariableDefine{children: vec![variable, expression]}))
 }
 
 // table_define ::= table, kind_annotation?, <!stmt_operator>, space+, equal, <space+>, <expression> ;
 fn table_define(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect space before operator";
-  let msg2 = "Expect space after operator";
-  let msg3 = "Expect expression";
+  let msg1 = "Expect spaces around operator";
+  let msg2 = "Expect expression";
   let mut children = vec![];
   let (input, table) = table(input)?;
   children.push(table);
@@ -1094,8 +1087,8 @@ fn table_define(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = label!(is_not(stmt_operator), msg1)(input)?;
   let (input, _) = many1(space)(input)?;
   let (input, _) = equal(input)?;
-  let (input, _) = label!(many1(space), msg2)(input)?;
-  let (input, expression) = label!(expression, msg3)(input)?;
+  let (input, _) = label!(many1(space), msg1)(input)?;
+  let (input, expression) = label!(expression, msg2)(input)?;
   children.push(expression);
   Ok((input, ParserNode::TableDefine{children}))
 }
@@ -1285,17 +1278,17 @@ fn l1_op(input: ParseString) -> ParseResult<ParserNode> {
   alt((add, subtract))(input)
 }
 
-// l1_infix ::= <!l1_op>, space*, !negation, l1_op, <space+>, <l2> ;
+// l1_infix ::= <!l1_op>, space*, !negation, !comment_sigil, l1_op, <space+>, <l2> ;
 fn l1_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect space before opeartor";
-  let msg2 = "Expect space after operator";
-  let msg3 = "Expect expression after operator";
+  let msg1 = "Expect spaces around opeartor";
+  let msg2 = "Expect expression after operator";
   let (input, _) = label!(is_not(l1_op), msg1)(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, _) = is_not(negation)(input)?;
+  let (input, _) = is_not(comment_sigil)(input)?;
   let (input, op) = l1_op(input)?;
-  let (input, _) = label!(many1(space), msg2)(input)?;
-  let (input, l2) = label!(l2, msg3)(input)?;
+  let (input, _) = label!(many1(space), msg1)(input)?;
+  let (input, l2) = label!(l2, msg2)(input)?;
   Ok((input, ParserNode::L1Infix { children: vec![op, l2] }))
 }
 
@@ -1315,14 +1308,13 @@ fn l2_op(input: ParseString) -> ParseResult<ParserNode> {
 
 // l2_infix ::= <!l2_op>, space*, l2_op, <space+>, <l3> ;
 fn l2_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect space before opeartor";
-  let msg2 = "Expect space after operator";
-  let msg3 = "Expect expression after operator";
+  let msg1 = "Expect spaces around opeartor";
+  let msg2 = "Expect expression after operator";
   let (input, _) = label!(is_not(l2_op), msg1)(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, op) = l2_op(input)?;
-  let (input, _) = label!(many1(space), msg2)(input)?;
-  let (input, l3) = label!(l3, msg3)(input)?;
+  let (input, _) = label!(many1(space), msg1)(input)?;
+  let (input, l3) = label!(l3, msg2)(input)?;
   Ok((input, ParserNode::L2Infix { children: vec![op, l3] }))
 }
 
@@ -1342,14 +1334,13 @@ fn l3_op(input: ParseString) -> ParseResult<ParserNode> {
 
 // l3_infix ::= <!l3_op>, space*, l3_op, <space+>, <l4> ;
 fn l3_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect space before opeartor";
-  let msg2 = "Expect space after operator";
-  let msg3 = "Expect expression after operator";
+  let msg1 = "Expect spaces around opeartor";
+  let msg2 = "Expect expression after operator";
   let (input, _) = label!(is_not(l3_op), msg1)(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, op) = l3_op(input)?;
-  let (input, _) = label!(many1(space), msg2)(input)?;
-  let (input, l4) = label!(l4, msg3)(input)?;
+  let (input, _) = label!(many1(space), msg1)(input)?;
+  let (input, l4) = label!(l4, msg2)(input)?;
   Ok((input, ParserNode::L3Infix { children: vec![op, l4] }))
 }
 
@@ -1369,14 +1360,13 @@ fn l4_op(input: ParseString) -> ParseResult<ParserNode> {
 
 // l4_infix ::= <!l4_op>, space*, l4_op, <space+>, <l5> ;
 fn l4_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect space before opeartor";
-  let msg2 = "Expect space after operator";
-  let msg3 = "Expect expression after operator";
+  let msg1 = "Expect spaces around opeartor";
+  let msg2 = "Expect expression after operator";
   let (input, _) = label!(is_not(l4_op), msg1)(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, op) = l4_op(input)?;
-  let (input, _) = label!(many1(space), msg2)(input)?;
-  let (input, l5) = label!(l5, msg3)(input)?;
+  let (input, _) = label!(many1(space), msg1)(input)?;
+  let (input, l5) = label!(l5, msg2)(input)?;
   Ok((input, ParserNode::L4Infix { children: vec![op, l5] }))
 }
 
@@ -1396,14 +1386,13 @@ fn l5_op(input: ParseString) -> ParseResult<ParserNode> {
 
 // l5_infix ::= <!l5_op>, space*, l5_op, <space+>, <l6> ;
 fn l5_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect space before opeartor";
-  let msg2 = "Expect space after operator";
-  let msg3 = "Expect expression after operator";
+  let msg1 = "Expect spaces around opeartor";
+  let msg2 = "Expect expression after operator";
   let (input, _) = label!(is_not(l5_op), msg1)(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, op) = l5_op(input)?;
-  let (input, _) = label!(many1(space), msg2)(input)?;
-  let (input, l6) = label!(l6, msg3)(input)?;
+  let (input, _) = label!(many1(space), msg1)(input)?;
+  let (input, l6) = label!(l6, msg2)(input)?;
   Ok((input, ParserNode::L5Infix { children: vec![op, l6] }))
 }
 
