@@ -13,7 +13,7 @@ use nom::{
   IResult,
   branch::alt,
   sequence::tuple,
-  combinator::{opt,eof},
+  combinator::{opt, eof},
   multi::{many1, many_till, many0, separated_list1},
   Err,
 };
@@ -617,11 +617,11 @@ fn number_literal(input: ParseString) -> ParseResult<ParserNode> {
 //   Ok((input, ParserNode::Null))
 // }
 
-// float_literal ::= (".", !".")?, digit1, (".", !".")?, digit0 ;
+// float_literal ::= "."?, digit1, "."?, digit0 ;
 fn float_literal(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, p1) = opt(tuple((tag("."), is_not(tag(".")))))(input)?;
+  let (input, p1) = opt(tag("."))(input)?;
   let (input, p2) = digit1(input)?;
-  let (input, p3) = opt(tuple((tag("."), is_not(tag(".")))))(input)?;
+  let (input, p3) = opt(tag("."))(input)?;
   let (input, p4) = digit0(input)?;
   let mut whole: Vec<char> = vec![];
   if let Some(_) = p1 {
@@ -786,16 +786,40 @@ fn table(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Table{children: vec![table_identifier]}))
 }
 
-// binding ::= (space | newline | tab)*, identifier, kind_annotation?, colon, (space | newline | tab)*, <empty | expression | identifier | value>, (space | tab | newline)*, comma?, (space | tab | newline)* ;
+// binding ::= (space | newline | tab)*, identifier, kind_annotation?, <!(space+, colon)>, colon, (space | newline | tab)+, <empty | expression | identifier | value>, (space | tab | newline)*, comma?, (space | tab | newline)* ;
 fn binding(input: ParseString) -> ParseResult<ParserNode> {
-  let msg = "Expect a value";
+  let msg1 = "Unexpected space before colon ':'";
+  let msg2 = "Expect a value";
   let mut children = vec![];
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, binding_id) = identifier(input)?;
   let (input, kind) = opt(kind_annotation)(input)?;
+  let (input, _) = label!(is_not(tuple((many1(space), colon))), msg1)(input)?;
   let (input, _) = colon(input)?;
+  let (input, _) = many1(alt((space, newline, tab)))(input)?;
+  let (input, bound) = label!(alt((empty, expression, identifier, value)), msg2)(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
-  let (input, bound) = label!(alt((empty, expression, identifier, value)), msg)(input)?;
+  let (input, _) = opt(comma)(input)?;
+  let (input, _) = many0(alt((space, newline, tab)))(input)?;
+  children.push(binding_id);
+  children.push(bound);
+  if let Some(kind) = kind { children.push(kind); }
+  Ok((input, ParserNode::Binding{children}))
+}
+
+// binding_strict ::= (space | newline | tab)*, identifier, kind_annotation?, <!(space+, colon)>, colon, <(space | newline | tab)+>, <empty | expression | identifier | value>, (space | tab | newline)*, comma?, (space | tab | newline)* ;
+fn binding_strict(input: ParseString) -> ParseResult<ParserNode> {
+  let msg1 = "Unexpected space before colon ':' for binding";
+  let msg2 = "Expect space after ':' for binding";
+  let msg3 = "Expect a value";
+  let mut children = vec![];
+  let (input, _) = many0(alt((space, newline, tab)))(input)?;
+  let (input, binding_id) = identifier(input)?;
+  let (input, kind) = opt(kind_annotation)(input)?;
+  let (input, _) = label!(is_not(tuple((many1(space), colon))), msg1)(input)?;
+  let (input, _) = colon(input)?;
+  let (input, _) = label!(many1(alt((space, newline, tab))), msg2)(input)?;
+  let (input, bound) = label!(alt((empty, expression, identifier, value)), msg3)(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, _) = opt(comma)(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
@@ -912,12 +936,15 @@ fn empty_table(input: ParseString) -> ParseResult<ParserNode> {
 //   Ok((input, ParserNode::AnonymousMatrix{children: table}))
 // }
 
-// inline_table ::= left_bracket, binding+, <right_bracket> ;
+// inline_table ::= left_bracket, binding, <binding_strict*>, <right_bracket> ;
 fn inline_table(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect right bracket ']' to terminate inline table";
   let (input, (_, r)) = range(left_bracket)(input)?;
-  let (input, bindings) = many1(binding)(input)?;
+  let (input, first_binding) = binding(input)?;
+  let (input, mut other_bindings) = many0(binding_strict)(input)?;
   let (input, _) = label!(right_bracket, msg, r)(input)?;
+  let mut bindings = vec![first_binding];
+  bindings.append(&mut other_bindings);
   Ok((input, ParserNode::InlineTable{children: bindings}))
 }
 
@@ -1192,7 +1219,7 @@ fn negation(input: ParseString) -> ParseResult<ParserNode> {
 
 // function ::= identifier, left_parenthesis, <function_binding+>, <right_parenthesis> ;
 fn function(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect function binding, which should start with identifier";
+  let msg1 = "Expect function binding";
   let msg2 = "Expect right parenthesis ')'";
   let (input, identifier) = identifier(input)?;
   let (input, (_, r)) = range(left_parenthesis)(input)?;
@@ -1239,9 +1266,9 @@ fn exponent(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Exponent))
 }
 
-// range_op ::= ".." ;
+// range_op ::= colon ;
 fn range_op(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = tag("..")(input)?;
+  let (input, _) = colon(input)?;
   Ok((input, ParserNode::Range))
 }
 
@@ -1254,13 +1281,14 @@ fn l0(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::L0 { children: math }))
 }
 
-// l0_infix ::= space*, range_op, space*, <l1> ;
+// l0_infix ::= <!(space+, colon)>, range_op, <!space>, <l1> ;
 fn l0_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let msg = "Expect expression after range operator";
-  let (input, _) = many0(space)(input)?;
+  let msg1 = "Unexpected space around range operator";
+  let msg2 = "Expect expression after range operator";
+  let (input, _) = label!(is_not(tuple((many1(space), colon))), msg1)(input)?;
   let (input, (op, r)) = range(range_op)(input)?;
-  let (input, _) = many0(space)(input)?;
-  let (input, l1) = label!(l1, msg, r)(input)?;
+  let (input, _) = label!(is_not(space), msg1)(input)?;
+  let (input, l1) = label!(l1, msg2, r)(input)?;
   Ok((input, ParserNode::L0Infix { children: vec![op, l1] }))
 }
 
@@ -1500,7 +1528,7 @@ fn expression(input: ParseString) -> ParseResult<ParserNode> {
 
 // #### Block basics
 
-// transformation ::= statement, space*, newline+ ;
+// transformation ::= statement, space*, <newline+> ;
 fn transformation(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect newline to terminate transformtation";
   let (input, statement) = statement(input)?;
@@ -2019,7 +2047,7 @@ impl ParserErrorReport {
   }
 
   pub fn construct_msg(&self, text: &str) -> String {
-    let graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
+    let graphemes = get_graphemes(text);
     let ii = IndexInterpreter::new(&graphemes);
     let mut result = String::new();
     result.push('\n');
@@ -2039,11 +2067,20 @@ impl ParserErrorReport {
 
 // ## Parser interfaces
 
-pub fn parse(text: &str) -> Result<ParserNode, MechError> {
+fn get_graphemes(text: &str) -> Vec<&str> {
   let mut graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
+  if let Some(g) = graphemes.last() {
+    if !IndexInterpreter::grapheme_is_newline(g) {
+      graphemes.push("\n");
+    }
+  }
+  graphemes
+}
+
+pub fn parse(text: &str) -> Result<ParserNode, MechError> {
+  let graphemes = get_graphemes(text);
   let mut result_node = ParserNode::Error;
   let mut error_log = ParserErrorReport { errors: vec![] };
-  graphemes.push("\n");   // make sure source code ends with newline
   match parse_mech(ParseString::new(&graphemes)) {
     // Got a parse tree, however there may be errors
     Ok((mut remaining_input, parse_tree)) => {
@@ -2072,10 +2109,9 @@ pub fn parse(text: &str) -> Result<ParserNode, MechError> {
 }
 
 pub fn parse_fragment(text: &str) -> Result<ParserNode,MechError> {
-  let mut graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
+  let graphemes = get_graphemes(text);
   let mut result_node = ParserNode::Error;
   let mut error_log = ParserErrorReport { errors: vec![] };
-  graphemes.push("\n");  // make sure source code ends with newline
   match parse_mech_fragment(ParseString::new(&graphemes)) {
     // Got a parse tree, however there may be errors
     Ok((mut remaining_input, parse_tree)) => {

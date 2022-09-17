@@ -260,8 +260,8 @@ test_mech!(math_multiple_variable_graph_new_ordering,"block
 
   test_mech!(math_add_columns_alias,"
 block
-  x = 1..10
-  y = 1..10
+  x = 1:10
+  y = 1:10
   #ball = [|x y|
             x y]
 block
@@ -269,8 +269,8 @@ block
 
   test_mech!(math_add_columns_indices,"
 block
-  x = 1..10
-  y = 1..10
+  x = 1:10
+  y = 1:10
   #ball = [|x y|
             x y]
 block
@@ -339,7 +339,7 @@ block
 
 test_mech!(math_scalar_plus_vector,"
 block
-  x = 3..6
+  x = 3:6
   y = 5 + x
   #test = y{1} + y{2} + y{3} + y{4}", Value::F32(F32::new(38.0)));
 
@@ -411,14 +411,14 @@ distance-travelled = balls.x + balls.vx * time
 
 test_mech!(range_basic,r#"
 block
-  #range = 5 .. 14
+  #range = 5:14
 block
   #test = stats/sum(column: #range)"#, Value::F32(F32::new(95.0)));
 
 test_mech!(range_and_cat,r#"
 block
-  x = 1..4
-  y = 1..4
+  x = 1:4
+  y = 1:4
   #ball = [x y]
 block
   #test = stats/sum(table: #ball)"#, Value::F32(F32::new(20.0)));
@@ -427,13 +427,13 @@ block
 
 test_mech!(subscript_scalar_math,"
 block
-  x = 3..6
-  y = 10..12
+  x = 3:6
+  y = 10:12
   #test = x{1,1} + y{3,1}", Value::F32(F32::new(15.0)));
 
 test_mech!(subscript_scan,"
 block
-  x = 10..20
+  x = 10:20
   z = 3
   #test = x{z}", Value::F32(F32::new(12.0)));
 
@@ -555,8 +555,8 @@ block
 // ## Set
 
 test_mech!(set_cartesian_product,"
-x = 1..4
-y = 1..4
+x = 1:4
+y = 1:4
 prod = set/cartesian(a: x, b: y)
 #test = stats/sum(table: prod)", Value::F32(F32::new(80.0)));
 
@@ -758,8 +758,8 @@ block
 
 test_mech!(concat_horzcat_data,"
 block
-  x = 1..10
-  y = 11..20
+  x = 1:10
+  y = 11:20
   #z = [x y]
   
 block
@@ -826,7 +826,7 @@ block
   #x = [10 20; 30 40;]
 block
   x = [10 20 30]
-  ix = 1..2
+  ix = 1:2
   #x += x{ix}
 block
   #test = stats/sum(table: #x)", Value::F32(F32::new(130.0)));  
@@ -1265,7 +1265,7 @@ block
 
 test_mech!(function_inside_anonymous_table,r#"
 block
-  #mech/test = ["foo", 3, stats/sum(column: 1..2)]
+  #mech/test = ["foo", 3, stats/sum(column: 1:2)]
 block
   #test = #mech/test{2} == #mech/test{3}"#, Value::Bool(true));
 
