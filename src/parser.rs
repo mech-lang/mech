@@ -725,7 +725,7 @@ fn dot_index(input: ParseString) -> ParseResult<ParserNode> {
   let (input, identifier) = label!(identifier, msg)(input)?;
   let (input, subscript) = opt(single_subscript_index)(input)?;
   let index = match subscript {
-    Some(subscript) =>vec![subscript, identifier],
+    Some(subscript) => vec![subscript, identifier],
     None => vec![ParserNode::Null, identifier],
   };
   Ok((input, ParserNode::DotIndex{children: index}))
@@ -853,7 +853,7 @@ fn table_header(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::TableHeader{children: attributes}))
 }
 
-// anonymous_table ::= left_bracket, (space | newline | tab)*, table_header?, (comment | table_row)*, (space | newline | tab)*, <right_bracket> ;
+// anonymous_table ::= left_bracket, (space | newline | tab)*, table_header?, ((comment, newline) | table_row)*, (space | newline | tab)*, <right_bracket> ;
 fn anonymous_table(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect right bracket ']' to finish the table";
   let (input, (_, r)) = range(left_bracket)(input)?;
