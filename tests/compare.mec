@@ -1,0 +1,21 @@
+Comparator Unit Tests
+======================
+
+Scalar : Scalar
+----------------
+
+Test scalar compare with f32
+  #test += ["> Scalar:Scalar f32 T"  true  2 > 1
+            "> Scalar:Scalar f32 F"  false  1 > 2
+            "< Scalar:Scalar f32 T"  true  1 < 2
+            "< Scalar:Scalar f32 F"  false  2 < 1]
+
+Column : Column
+----------------
+
+Test column compare with f32
+  x = [1;2;3]
+  y = [4;5;6]
+  z = x > y
+  all = set/all(column: z)
+  #test += ["> Scalar:Scalar f32 F" false all]
