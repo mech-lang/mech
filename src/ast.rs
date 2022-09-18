@@ -117,6 +117,7 @@ pub enum Node {
   InlineMechCode{ children: Vec<Node> },
   MechCodeBlock{ children: Vec<Node> },
   Null,
+  Transpose,
 }
 
 impl fmt::Debug for Node {
@@ -208,6 +209,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::MultiplyUpdate => {write!(f,"MultiplyUpdate\n").ok(); None},
     Node::DivideUpdate => {write!(f,"DivideUpdate\n").ok(); None},
     Node::ExponentUpdate => {write!(f,"ExponentUpdate\n").ok(); None},
+    Node::Transpose => {write!(f,"Transpose\n").ok(); None},
     // Markdown Nodes
     Node::Title{text} => {write!(f,"Title({:?})\n", text).ok(); None},
     Node::ParagraphText{text} => {write!(f,"ParagraphText({:?})\n", text).ok(); None},
@@ -904,6 +906,9 @@ impl Ast {
       },
       parser::Node::True => {
         compiled.push(Node::True);
+      },
+      parser::Node::Transpose => {
+        compiled.push(Node::Transpose);
       },
       parser::Node::False => {
         compiled.push(Node::False);
