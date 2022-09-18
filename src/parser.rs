@@ -182,6 +182,7 @@ pub enum Node {
   Null,
   True,
   False,
+  Transpose,
 }
 
 impl fmt::Debug for Node {
@@ -351,9 +352,10 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Empty => {print!("Empty\n",); None},
     Node::Null => {print!("Null\n",); None},
     Node::ReshapeColumn => {print!("ReshapeColumn\n",); None},
-    Node::False => {print!("True\n",); None},
-    Node::True => {print!("False\n",); None},
+    Node::False => {print!("False\n",); None},
+    Node::True => {print!("True\n",); None},
     Node::Alpha{children} => {print!("Alpha\n"); Some(children)},
+    Node::Transpose => {print!("Transpose\n",); None},
   };
 
   match children {
@@ -1455,9 +1457,20 @@ fn string(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::String { children: text }))
 }
 
+fn transpose(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = tag("'")(input)?;
+  Ok((input, Node::Transpose))
+}
+
 fn expression(input: ParseString) -> IResult<ParseString, Node> {
   let (input, expression) = alt((inline_table, math_expression, string, empty_table, anonymous_table))(input)?;
-  Ok((input, Node::Expression { children: vec![expression] }))
+  let (input, transpose) = opt(transpose)(input)?;
+  let mut children = vec![expression];
+  match transpose {
+    Some(transpose) => children.push(transpose),
+    _ => (),
+  }
+  Ok((input, Node::Expression { children }))
 }
 
 // ### Block Basics
