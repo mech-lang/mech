@@ -19,6 +19,7 @@ use crate::function::{
   table::*,
   set::*,
   logic::*,
+  matrix::*,
 };
 
 use hashbrown::{HashMap, HashSet};
@@ -98,6 +99,10 @@ impl Core {
       functions.insert(*MATH_SUBTRACT__UPDATE, Box::new(MathSubtractUpdate{}));  
       functions.insert(*MATH_MULTIPLY__UPDATE, Box::new(MathMultiplyUpdate{}));
       functions.insert(*MATH_DIVIDE__UPDATE, Box::new(MathDivideUpdate{}));
+
+      // Matrix
+      functions.insert(*MATRIX_MULTIPLY, Box::new(MatrixMul{}));
+      functions.insert(*MATRIX_TRANSPOSE, Box::new(MatrixTranspose{}));
 
       // Logic
       functions.insert(*LOGIC_NOT, Box::new(LogicNot{}));
