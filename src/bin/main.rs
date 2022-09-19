@@ -9,11 +9,7 @@ use std::rc::Rc;
 fn main() -> Result<(),MechError> {
 
 let input = r#"
-[z<u64>] = add-two(y<u64>, x<u64>)
-  z = y + x
-
-block
-  x = add-two(y: 10<u64>, x: 20<u64>)"#;
+x = [1 2] ** [3; 4]"#;
   let input = String::from(input);
 
   let mut ast = Ast::new();

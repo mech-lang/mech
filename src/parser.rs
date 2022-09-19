@@ -183,6 +183,7 @@ pub enum Node {
   True,
   False,
   Transpose,
+  MatrixMultiply,
 }
 
 impl fmt::Debug for Node {
@@ -356,6 +357,7 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::True => {print!("True\n",); None},
     Node::Alpha{children} => {print!("Alpha\n"); Some(children)},
     Node::Transpose => {print!("Transpose\n",); None},
+    Node::MatrixMultiply => {print!("MatrixMultiply\n",); None},
   };
 
   match children {
@@ -1225,7 +1227,7 @@ fn function_body(input: ParseString) -> IResult<ParseString, Node> {
 
 fn matrix_multiply(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = tag("**")(input)?;
-  Ok((input, Node::Null))
+  Ok((input, Node::MatrixMultiply))
 }
 
 fn add(input: ParseString) -> IResult<ParseString, Node> {
@@ -1300,7 +1302,7 @@ fn l2(input: ParseString) -> IResult<ParseString, Node> {
 
 fn l2_infix(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = space(input)?;
-  let (input, op) = alt((multiply, divide, matrix_multiply))(input)?;
+  let (input, op) = alt((matrix_multiply, multiply, divide))(input)?;
   let (input, _) = space(input)?;
   let (input, l3) = l3(input)?;
   Ok((input, Node::L2Infix { children: vec![op, l3] }))
