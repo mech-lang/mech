@@ -236,7 +236,11 @@ test_mech!(math_subtract,"#test = 3 - 1", Value::F32(F32::new(2.0)));
 
 test_mech!(math_multiply,"#test = 2 * 2", Value::F32(F32::new(4.0)));
 
-test_mech!(math_matrix_multiply,"#test = [1 2] ** [3;4]", Value::F32(F32::new(11.0)));
+test_mech!(math_matrix_multiply_row_col,"#test = [1 2] ** [3;4]", Value::F32(F32::new(11.0)));
+
+test_mech!(math_matrix_multiply_col_row,"
+x = [1; 2] ** [3 4]
+#test = stats/sum(table: x)", Value::F32(F32::new(21.0)));
 
 test_mech!(math_divide,"#test = 4 / 2", Value::F32(F32::new(2.0)));
 
