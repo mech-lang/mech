@@ -4,7 +4,7 @@
     "description": "Support for the Mech programming language.",
     "version": "0.0.3",
     "publisher": "Mech",
-    "icon": "images/logo.png",
+    "icon": "images/mech-m3.png",
     "engines": {
         "vscode": "^1.13.0"
     },
