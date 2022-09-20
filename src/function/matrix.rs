@@ -61,6 +61,36 @@ where T: Copy + Debug + Clone + MechNumArithmetic<T> + Into<V> + Sync + Send + Z
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+#[derive(Debug)]
+pub struct MatrixMulMM<T,U,V> {
+  pub lhs: Vec<ColumnV<U>>,
+  pub rhs: Vec<ColumnV<T>>,
+  pub out: Vec<ColumnV<V>>
+}
+
+impl<T,U,V> MechFunction for MatrixMulMM<T,U,V> 
+where T: Copy + Debug + Clone + MechNumArithmetic<T> + Into<V> + Sync + Send + Zero,
+      U: Copy + Debug + Clone + MechNumArithmetic<U> + Into<V> + Sync + Send + Zero,
+      V: Copy + Debug + Clone + MechNumArithmetic<V> + Sync + Send + Zero,
+{
+  fn solve(&self) {    
+
+    for i in 0..self.out.len() {
+      let mut out_col = self.out[i].borrow_mut();
+      for j in 0..out_col.len() {
+        let mut result: V = zero();
+        for k in 0..self.lhs.len() {
+          let lhs = self.lhs[k].borrow()[j];
+          let rhs = &self.rhs[i].borrow()[k];
+          result += U::into(lhs) * T::into(*rhs);
+        }
+        out_col[j] = result;
+      }
+    }
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 
 pub struct MatrixMul{}
 impl MechFunctionCompiler for MatrixMul {
@@ -145,7 +175,7 @@ impl MechFunctionCompiler for MatrixMul {
           }
           (k,j) => {
             if (k == j) {
-              out_brrw.resize(2,2);
+              out_brrw.resize(*rows,*columns);
               out_brrw.set_kind(k);
             } else {
               return Err(MechError{id: 9046, kind: MechErrorKind::GenericError("matrix/multiply doesn't support disparate table kinds.".to_string())});
@@ -179,7 +209,82 @@ impl MechFunctionCompiler for MatrixMul {
           x => {return Err(MechError{id: 9047, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }
       }
-      x => {return Err(MechError{id: 9048, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+      (TableShape::Matrix(lhs_rows,lhs_columns),TableShape::Matrix(rhs_rows,rhs_columns)) => {
+        if lhs_columns != rhs_rows {
+          return Err(MechError{id: 9048, kind: MechErrorKind::GenericError("Dimension mismatch".to_string())});
+        }        
+        let (out_table_id, _, _) = out;
+        let out_table = block.get_table(out_table_id)?;
+        let mut out_brrw = out_table.borrow_mut();
+        let (arg_name,arg_table_id,_) = arguments[0];
+        let arg_table = block.get_table(&arg_table_id)?;
+        let lhs_kind = {
+          let arg_table_brrw = arg_table.borrow();
+          arg_table_brrw.kind()
+        }; 
+        let (arg_name,arg_table_id,_) = arguments[1];
+        let arg_table = block.get_table(&arg_table_id)?;
+        let rhs_kind = {
+          let arg_table_brrw = arg_table.borrow();
+          arg_table_brrw.kind()
+        };
+        match (lhs_kind, rhs_kind) {
+          (_,ValueKind::Compound(_)) |
+          (ValueKind::Compound(_),_) => {
+            return Err(MechError{id: 9049, kind: MechErrorKind::GenericError("matrix/multiply doesn't support compound table kinds.".to_string())});
+          }
+          (k,j) => {
+            if (k == j) {
+              out_brrw.resize(*rhs_rows,*lhs_columns);
+              out_brrw.set_kind(k);
+            } else {
+              return Err(MechError{id: 9050, kind: MechErrorKind::GenericError("matrix/multiply doesn't support disparate table kinds.".to_string())});
+            }
+          }
+        }
+        match (out_brrw.get_column_unchecked(0)) {
+          (Column::F32(out_col)) => {
+            let lhs = {
+              let (arg_name,arg_table_id,_) = arguments[0];
+              let arg_table = block.get_table(&arg_table_id)?;
+              let mut cols: Vec<ColumnV<F32>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::F32(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              cols
+            };
+            let rhs = {
+              let (arg_name,arg_table_id,_) = arguments[1];
+              let arg_table = block.get_table(&arg_table_id)?;
+              let mut cols: Vec<ColumnV<F32>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::F32(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              cols
+            };
+            let out_cols = {
+              let mut cols: Vec<ColumnV<F32>> = vec![];
+              for col_ix in 0..out_brrw.cols {
+                if let Column::F32(col) = out_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              cols
+            };
+            block.plan.push(MatrixMulMM{lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
+          }
+          x => {return Err(MechError{id: 9047, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
+        }        
+
+
+      }
+      x => {return Err(MechError{id: 9051, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
     }
     Ok(())
   }
