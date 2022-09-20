@@ -246,6 +246,10 @@ test_mech!(math_matrix_multiply_mat_mat,"
 x = [1 2; 3 4] ** [5 6; 7 8]
 #test = stats/sum(table: x)", Value::F32(F32::new(134.0)));
 
+test_mech!(math_matrix_multiply_mat_mat_2,"
+x = [1 2; 3 4] ** [5 6 7; 8 9 10]
+#test = stats/sum(table: x)", Value::F32(F32::new(234.0)));
+
 test_mech!(math_divide,"#test = 4 / 2", Value::F32(F32::new(2.0)));
 
 test_mech!(math_power,"#test = 3 ^ 2", Value::F32(F32::new(9.0)));
