@@ -7,11 +7,14 @@
 		},
 		{
 			"name": "markup.heading",
-			"match": "^#.+"
+			"match": ".+(\n=+)"
 		},
 		{
 			"name": "markup.heading",
-			"match": "^\\-"
+			"match": ".+(\n-+)"
+		},
+		{	
+			"include": "#outOfBlock"
 		}
 	],
 	"repository": {
@@ -33,8 +36,8 @@
 					"match": "~"
 				},
 				{
-					"name": "entity.name.tag.css",
-					"match": "\\|([A-Z]|[a-z]|/|-| )+\\||([A-Z]|[a-z]|/|-)+: "
+					"name": "variable.function",
+					"match": "\\|([A-Z]|[a-z]|/|-| |[0-9])+\\||([A-Z]|[a-z]|/|-|[0-9])+: "
 				},
 				{
 					"name": "variable.function",
@@ -66,15 +69,73 @@
 					]
 				},
 				{
-					"name": "constant.numeric.integer",
-					"match": "\\b0x([0-9]+)\\b"
+					"name": "constant.language",
+					"match": "[(^#)a-z]+(\/)[a-z]+"
 				},
+
 				{
 					"name": "constant.numeric.integer",
-					"match": "\\b([0-9]+)\\b"
-				},				{
+					"match": "([0-9]+)|([0-9]+(\\.)[0-9]+)|(0x[A-Z0-9]+)"
+				},
+				{
 					"name": "constant.language",
 					"match": "true|false|none"
+				},
+				{
+					"name": "meta.block",
+					"begin": "<",
+					"end": ">",
+					"beginCaptures": {
+						"0": { "name": "keyword.control.mech" }
+					  },
+					  "endCaptures": {
+						"0": { "name": "keyword.control.mech" }
+					  },
+					"patterns": [
+						{
+							"name": "constant.numeric",
+							"match": "((u|i)(8|16|32|64|128))|(f(32|64))|bool|string"
+						}
+					]
+				},
+				{
+					"name": "meta.block",
+					"begin": "([A-Za-z0-9-_]+(\\.))",
+					"end": "\n| |{",
+					"patterns": [
+						{
+							"name": "entity.name.tag.css", 
+							"match": "[A-Za-z][0-9]*" 
+						}
+					]
+				},
+				{
+					"name": "meta.block",
+					"begin": "([A-Za-z_]+)",
+					"end": "[^A-Za-z0-9-_]",
+					"patterns": [
+						{
+							"name": "",
+							"match": "[A-Za-z0-9-_]*" 
+						}
+					]
+				}
+
+			
+				
+			]
+		},
+		"outOfBlock":{
+			"name": "meta.block",
+			"begin": "[A-Z]",
+			"end": "\n",
+			"beginCaptures": {
+				"0": { "name": "entity.name.tag.css" }
+			  },
+			"patterns": [
+				{
+					"name": "entity.name.tag.css",
+					"match": "[a-z0-9_ ]+"
 				}
 			]
 		}
