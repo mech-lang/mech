@@ -9,7 +9,7 @@ use std::rc::Rc;
 fn main() -> Result<(),MechError> {
 
 let input = r#"
-x = [1; 2] ** [3 4]
+x = [1 2; 3 4] ** [5 6; 7 8]
 #test = stats/sum(table: x)"#;
   let input = String::from(input);
 
