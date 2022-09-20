@@ -1,2 +1,12 @@
+
+
+
+
+
+
 block
-  #x = [(a: 5) + 1]
+    x = 5   -- Can I place comment here?
+
+```mec
+  -- Some mech code here
+```Oops

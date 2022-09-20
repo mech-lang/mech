@@ -196,6 +196,19 @@ impl<'a> nom::error::ParseError<ParseString<'a>> for ParseError<'a> {
 
 // ## Parser combinators
 
+fn null<'a, F, O>(mut parser: F) ->
+  impl FnMut(ParseString<'a>) -> ParseResult<ParserNode>
+where
+  F: FnMut(ParseString<'a>) -> ParseResult<O>
+{
+  move |input: ParseString| match parser(input) {
+    Ok((remaining, _)) => Ok((remaining, ParserNode::Null)),
+    Err(Err::Error(e)) => Err(Err::Error(e)),
+    Err(Err::Failure(e)) => Err(Err::Failure(e)),
+    x => panic!("Err::Incomplete is not supported"),
+  }
+}
+
 fn range<'a, F, O>(mut parser: F) ->
   impl FnMut(ParseString<'a>) -> ParseResult<(O, ParseStringRange)>
 where
@@ -337,6 +350,10 @@ fn skip_spaces(input: ParseString) -> ParseResult<()> {
 
 fn skip_nil(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Null))
+}
+
+fn skip_empty_mech_directive(input: ParseString) -> ParseResult<String> {
+  Ok((input, String::from("mech:")))
 }
 
 // ## Primitive parsers
@@ -1533,7 +1550,7 @@ fn transformation(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect newline to terminate transformtation";
   let (input, statement) = statement(input)?;
   let (input, _) = many0(space)(input)?;
-  let (input, _) = label!(many1(newline), msg)(input)?;
+  let (input, _) = labelr!(null(many1(newline)), skip_nil, msg)(input)?;
   Ok((input, ParserNode::Transformation { children: vec![statement] }))
 }
 
@@ -1695,7 +1712,7 @@ fn mech_code_block(input: ParseString) -> ParseResult<ParserNode> {
   let msg3 = "Expect the \"mech:\" tag";
   let msg4 = "Expect 3 graves followed by newline to terminate the mech code block";
   let (input, (_, r)) = range(tuple((grave, grave, grave)))(input)?;
-  let (input, _) = tuple((is(tag("mec")), label!(tag("mech:"), msg3)))(input)?;
+  let (input, _) = tuple((is(tag("mec")), labelr!(tag("mech:"), skip_empty_mech_directive, msg3)))(input)?;
   let (input, directive) = opt(text)(input)?;
   let (input, _) = label!(newline, msg1)(input)?;
   let (input, mech_block) = label!(block, msg2)(input)?;
@@ -2055,7 +2072,7 @@ impl ParserErrorReport {
       Self::add_err_heading(&mut result, i);
       Self::add_err_location(&mut result, rng, &ii);
       Self::add_err_context(&mut result, rng, detail, &ii);
-      result.push('\n');
+      result.push_str("\n\n");
     }
     result
   }
