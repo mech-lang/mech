@@ -1078,6 +1078,10 @@ fn variable_define(input: ParseString) -> IResult<ParseString, Node> {
 }
 
 fn table_define(input: ParseString) -> IResult<ParseString, Node> {
+  alt((raw_table_define, formatted_table_define))(input)
+}
+
+fn raw_table_define(input: ParseString) -> IResult<ParseString, Node> {
   let mut children = vec![];
   let (input, table) = table(input)?;
   children.push(table);
@@ -1088,7 +1092,30 @@ fn table_define(input: ParseString) -> IResult<ParseString, Node> {
   children.push(expression);
   Ok((input, Node::TableDefine{children}))
 }
-
+// parser for table in output format
+fn formatted_table_define(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = table_line(input)?;
+  let (input, name) = opt(table_name)(input)?;
+  let (input, _) = table_line(input)?;
+  Ok((input, Node::Null))
+}
+// parser for any line in the output table
+fn table_line(input: ParseString) -> IResult<ParseString, Node> {
+  let(input, _) = alt((tag("╭"), tag("├"), tag("╰")))(input)?;
+  let(input, _) = many1(tag("─"))(input)?;
+  let(input, _) = alt((tag("╮"), tag("┤"), tag("╯")))(input)?;
+  let(input, _) = newline(input)?;
+  Ok((input, Node::Null))
+}
+// parser for the second line of the output table, generate the 
+// var name if there is one.
+fn table_name(input: ParseString) -> IResult<ParseString, Node> {
+  let(input, _) = tag("│")(input)?;
+  let(input, table_name) = table(input)?;
+  let(input, _) = many_till(text, tag("│"))(input)?;
+  let(input, _) = newline(input)?;
+  Ok((input,table_name))
+}
 fn table_select(input: ParseString) -> IResult<ParseString, Node> {
   let (input, expression) = expression(input)?;
   Ok((input, Node::TableSelect{children: vec![expression]}))
