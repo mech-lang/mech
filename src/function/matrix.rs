@@ -235,7 +235,7 @@ impl MechFunctionCompiler for MatrixMul {
           }
           (k,j) => {
             if (k == j) {
-              out_brrw.resize(*rhs_rows,*lhs_columns);
+              out_brrw.resize(*lhs_rows,*rhs_columns);
               out_brrw.set_kind(k);
             } else {
               return Err(MechError{id: 9050, kind: MechErrorKind::GenericError("matrix/multiply doesn't support disparate table kinds.".to_string())});
