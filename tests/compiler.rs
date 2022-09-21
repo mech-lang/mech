@@ -254,6 +254,11 @@ test_mech!(math_matrix_transpose_row,"
 x = [1 2 3]
 #test = x ** x'", Value::F32(F32::new(14.0)));
 
+test_mech!(math_matrix_transpose_matrix,"
+x = [1 2; 3 4]
+y = x ** x'
+#test = stats/sum(table: y)", Value::F32(F32::new(52.0)));
+
 test_mech!(math_divide,"#test = 4 / 2", Value::F32(F32::new(2.0)));
 
 test_mech!(math_power,"#test = 3 ^ 2", Value::F32(F32::new(9.0)));

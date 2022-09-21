@@ -9,8 +9,9 @@ use std::rc::Rc;
 fn main() -> Result<(),MechError> {
 
 let input = r#"
-x = [1 2 3]
-#test = x ** x'"#;
+x = [1 2; 3 4]
+y = x ** x'
+#test = stats/sum(table: y)"#;
   let input = String::from(input);
 
   let mut ast = Ast::new();
