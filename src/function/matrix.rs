@@ -97,9 +97,9 @@ impl MechFunctionCompiler for MatrixMul {
 
   fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
     let arg_shapes = block.get_arg_dims(&arguments)?;
+    let (lhs_arg_name,lhs_arg_table_id,_) = arguments[0];
+    let (rhs_arg_name,rhs_arg_table_id,_) = arguments[1];
     match (&arg_shapes[0],&arg_shapes[1]) {
-      (TableShape::Scalar, TableShape::Scalar) => {
-      }
       (TableShape::Row(columns), TableShape::Column(rows)) => {
         if columns != rows {
           return Err(MechError{id: 9403, kind: MechErrorKind::GenericError("Dimension mismatch".to_string())});
@@ -108,18 +108,8 @@ impl MechFunctionCompiler for MatrixMul {
         let out_table = block.get_table(out_table_id)?;
         let mut out_brrw = out_table.borrow_mut();
         out_brrw.resize(1,1);    
-        let (arg_name,arg_table_id,_) = arguments[1];
-        let arg_table = block.get_table(&arg_table_id)?;
-        let rhs_kind = {
-          let arg_table_brrw = arg_table.borrow();
-          arg_table_brrw.kind()
-        };
-        let (arg_name,arg_table_id,_) = arguments[0];
-        let arg_table = block.get_table(&arg_table_id)?;
-        let lhs_kind = {
-          let arg_table_brrw = arg_table.borrow();
-          arg_table_brrw.kind()
-        };
+        let lhs_kind = { block.get_table(&lhs_arg_table_id)?.borrow().kind() };
+        let rhs_kind = { block.get_table(&rhs_arg_table_id)?.borrow().kind() };
         match (lhs_kind, rhs_kind) {
           (_,ValueKind::Compound(_)) |
           (ValueKind::Compound(_),_) => {
@@ -127,7 +117,7 @@ impl MechFunctionCompiler for MatrixMul {
           }
           (k,j) => {
             if (k == j) {
-              out_brrw.resize(arg_table.borrow().rows,1);
+              out_brrw.resize(*rows,1);
               out_brrw.set_kind(k);
             } else {
               return Err(MechError{id: 9043, kind: MechErrorKind::GenericError("matrix/multiply doesn't support disparate table kinds.".to_string())});
@@ -137,17 +127,9 @@ impl MechFunctionCompiler for MatrixMul {
         let arg_col = block.get_arg_column(&arguments[1])?;
         match (arg_col,out_brrw.get_column_unchecked(0)) {
           ((_,Column::F32(rhs),_),Column::F32(out_col)) => {
-            let (cols,rows) = {
-              let mut cols: Vec<ColumnV<F32>> = vec![];
-              let arg_table_brrw = arg_table.borrow();
-              for col_ix in 0..arg_table_brrw.cols {
-                if let Column::F32(col) = arg_table_brrw.get_column_unchecked(col_ix) {
-                  cols.push(col);
-                }
-              }
-              (cols,arg_table_brrw.rows)
-            };
-            block.plan.push(MatrixMulRV{lhs: cols.clone(), rhs: rhs.clone(), out: out_col.clone()});
+            let (arg_name,arg_table_id,_) = arguments[0];
+            let lhs = { block.get_table(&arg_table_id)?.borrow().collect_columns_f32() };
+            block.plan.push(MatrixMulRV{lhs: lhs.clone(), rhs: rhs.clone(), out: out_col.clone()});
           }
           x => {return Err(MechError{id: 9044, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }
@@ -156,18 +138,8 @@ impl MechFunctionCompiler for MatrixMul {
         let (out_table_id, _, _) = out;
         let out_table = block.get_table(out_table_id)?;
         let mut out_brrw = out_table.borrow_mut();
-        let (arg_name,arg_table_id,_) = arguments[0];
-        let arg_table = block.get_table(&arg_table_id)?;
-        let lhs_kind = {
-          let arg_table_brrw = arg_table.borrow();
-          arg_table_brrw.kind()
-        }; 
-        let (arg_name,arg_table_id,_) = arguments[1];
-        let arg_table = block.get_table(&arg_table_id)?;
-        let rhs_kind = {
-          let arg_table_brrw = arg_table.borrow();
-          arg_table_brrw.kind()
-        };
+        let lhs_kind = { block.get_table(&lhs_arg_table_id)?.borrow().kind() };
+        let rhs_kind = { block.get_table(&rhs_arg_table_id)?.borrow().kind() };
         match (lhs_kind, rhs_kind) {
           (_,ValueKind::Compound(_)) |
           (ValueKind::Compound(_),_) => {
@@ -185,12 +157,36 @@ impl MechFunctionCompiler for MatrixMul {
         let arg_col = block.get_arg_column(&arguments[0])?;
         match (arg_col,out_brrw.get_column_unchecked(0)) {
           ((_,Column::F32(lhs),_),Column::F32(out_col)) => {
-            let arg_table_brrw = arg_table.borrow();
-            let rhs = arg_table_brrw.collect_columns_f32();
+            let (arg_name,arg_table_id,_) = arguments[1];
+            let rhs = { block.get_table(&arg_table_id)?.borrow().collect_columns_f32() };
             let out_cols = out_brrw.collect_columns_f32();
             block.plan.push(MatrixMulVR{lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
           }
           x => {return Err(MechError{id: 9047, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
+        }
+      }
+      (TableShape::Row(lhs_columns),TableShape::Matrix(rhs_rows,rhs_columns)) => {
+        if lhs_columns != rhs_rows {
+          return Err(MechError{id: 9403, kind: MechErrorKind::GenericError("Dimension mismatch".to_string())});
+        }
+        let (out_table_id, _, _) = out;
+        let out_table = block.get_table(out_table_id)?;
+        let mut out_brrw = out_table.borrow_mut();
+        let lhs_kind = { block.get_table(&lhs_arg_table_id)?.borrow().kind() }; 
+        let rhs_kind = { block.get_table(&rhs_arg_table_id)?.borrow().kind() };
+        match (lhs_kind, rhs_kind) {
+          (_,ValueKind::Compound(_)) |
+          (ValueKind::Compound(_),_) => {
+            return Err(MechError{id: 9045, kind: MechErrorKind::GenericError("matrix/multiply doesn't support compound table kinds.".to_string())});
+          }
+          (k,j) => {
+            if (k == j) {
+              out_brrw.resize(*rhs_rows,*lhs_columns);
+              out_brrw.set_kind(k);
+            } else {
+              return Err(MechError{id: 9046, kind: MechErrorKind::GenericError("matrix/multiply doesn't support disparate table kinds.".to_string())});
+            }
+          }
         }
       }
       (TableShape::Matrix(lhs_rows,lhs_columns),TableShape::Matrix(rhs_rows,rhs_columns)) => {
@@ -200,18 +196,8 @@ impl MechFunctionCompiler for MatrixMul {
         let (out_table_id, _, _) = out;
         let out_table = block.get_table(out_table_id)?;
         let mut out_brrw = out_table.borrow_mut();
-        let (arg_name,arg_table_id,_) = arguments[0];
-        let arg_table = block.get_table(&arg_table_id)?;
-        let lhs_kind = {
-          let arg_table_brrw = arg_table.borrow();
-          arg_table_brrw.kind()
-        }; 
-        let (arg_name,arg_table_id,_) = arguments[1];
-        let arg_table = block.get_table(&arg_table_id)?;
-        let rhs_kind = {
-          let arg_table_brrw = arg_table.borrow();
-          arg_table_brrw.kind()
-        };
+        let lhs_kind = { block.get_table(&lhs_arg_table_id)?.borrow().kind() };
+        let rhs_kind = { block.get_table(&rhs_arg_table_id)?.borrow().kind() };
         match (&lhs_kind, rhs_kind) {
           (_,ValueKind::Compound(_)) |
           (ValueKind::Compound(_),_) => {
@@ -228,14 +214,8 @@ impl MechFunctionCompiler for MatrixMul {
         }
         match lhs_kind {
           ValueKind::F32 => {
-            let lhs = {
-              let (arg_name,arg_table_id,_) = arguments[0];
-              block.get_table(&arg_table_id)?.borrow().collect_columns_f32()
-            };
-            let rhs = {
-              let (arg_name,arg_table_id,_) = arguments[1];
-              block.get_table(&arg_table_id)?.borrow().collect_columns_f32()
-            };
+            let lhs = { block.get_table(&lhs_arg_table_id)?.borrow().collect_columns_f32() };
+            let rhs = { block.get_table(&rhs_arg_table_id)?.borrow().collect_columns_f32() };
             let out_cols = out_brrw.collect_columns_f32();
             block.plan.push(MatrixMulMM{lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
           }
@@ -294,6 +274,7 @@ impl MechFunctionCompiler for MatrixTranspose {
 
   fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
     let arg_shape = block.get_arg_dim(&arguments[0])?;
+    let (arg_name,arg_table_id,_) = arguments[0];
     let (out_table_id,_,_) = out;
     let (out_table_id, _, _) = out;
     let out_table = block.get_table(out_table_id)?;
@@ -302,10 +283,7 @@ impl MechFunctionCompiler for MatrixTranspose {
       TableShape::Row(columns) => {
         let (arg_name,arg_table_id,arg_indices) = &arguments[0];
         let arg_table = block.get_table(&arg_table_id)?;
-        let arg_kind = {
-          let arg_table_brrw = arg_table.borrow();
-          arg_table_brrw.kind()
-        };
+        let arg_kind = { arg_table.borrow().kind() };
         match arg_kind {
           ValueKind::Compound(_) => {
             return Err(MechError{id: 9152, kind: MechErrorKind::GenericError("matrix/transpose doesn't support compound table kinds.".to_string())});
@@ -316,22 +294,14 @@ impl MechFunctionCompiler for MatrixTranspose {
         out_brrw.set_kind(arg_kind);
         match out_brrw.get_column_unchecked(0) {
           Column::F32(out_col) => {
-            let arg = {
-              let (arg_name,arg_table_id,_) = arguments[0];
-              block.get_table(&arg_table_id)?.borrow().collect_columns_f32()
-            };
+            let arg = { block.get_table(&arg_table_id)?.borrow().collect_columns_f32() };
             block.plan.push(MatrixTransposeR{arg: arg.clone(), out: out_col.clone()});
           }
           x => {return Err(MechError{id: 9153, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
       }
       TableShape::Matrix(rows,columns) => {
-        let (arg_name,arg_table_id,arg_indices) = &arguments[0];
-        let arg_table = block.get_table(&arg_table_id)?;
-        let arg_kind = {
-          let arg_table_brrw = arg_table.borrow();
-          arg_table_brrw.kind()
-        };
+        let arg_kind = { block.get_table(&arg_table_id)?.borrow().kind() };
         match arg_kind {
           ValueKind::Compound(_) => {
             return Err(MechError{id: 9154, kind: MechErrorKind::GenericError("matrix/transpose doesn't support compound table kinds.".to_string())});
@@ -342,19 +312,8 @@ impl MechFunctionCompiler for MatrixTranspose {
         out_brrw.set_kind(arg_kind.clone());
         match arg_kind {
           ValueKind::F32 => {
-            let arg = {
-              let (arg_name,arg_table_id,_) = arguments[0];
-              block.get_table(&arg_table_id)?.borrow().collect_columns_f32()
-            };
-            let out_cols = {
-              let mut cols: Vec<ColumnV<F32>> = vec![];
-              for col_ix in 0..out_brrw.cols {
-                if let Column::F32(col) = out_brrw.get_column_unchecked(col_ix) {
-                  cols.push(col);
-                }
-              }
-              cols
-            };
+            let arg = { block.get_table(&arg_table_id)?.borrow().collect_columns_f32() };
+            let out_cols = { out_brrw.collect_columns_f32() };
             block.plan.push(MatrixTransposeM{arg: arg.clone(), out: out_cols.clone()});
           }
           x => {return Err(MechError{id: 9047, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
