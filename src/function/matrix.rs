@@ -228,22 +228,22 @@ impl MechFunctionCompiler for MatrixMul {
           let arg_table_brrw = arg_table.borrow();
           arg_table_brrw.kind()
         };
-        match (lhs_kind, rhs_kind) {
+        match (&lhs_kind, rhs_kind) {
           (_,ValueKind::Compound(_)) |
           (ValueKind::Compound(_),_) => {
             return Err(MechError{id: 9049, kind: MechErrorKind::GenericError("matrix/multiply doesn't support compound table kinds.".to_string())});
           }
           (k,j) => {
-            if (k == j) {
+            if (*k == j) {
               out_brrw.resize(*lhs_rows,*rhs_columns);
-              out_brrw.set_kind(k);
+              out_brrw.set_kind(j);
             } else {
               return Err(MechError{id: 9050, kind: MechErrorKind::GenericError("matrix/multiply doesn't support disparate table kinds.".to_string())});
             }
           }
         }
-        match (out_brrw.get_column_unchecked(0)) {
-          (Column::F32(out_col)) => {
+        match lhs_kind {
+          ValueKind::F32 => {
             let lhs = {
               let (arg_name,arg_table_id,_) = arguments[0];
               let arg_table = block.get_table(&arg_table_id)?;
@@ -307,6 +307,28 @@ where T: Copy + Debug + Clone + MechNumArithmetic<T> + Into<V> + Sync + Send + Z
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+#[derive(Debug)]
+pub struct MatrixTransposeM<T,V> {
+  pub arg: Vec<ColumnV<T>>,
+  pub out: Vec<ColumnV<V>>,
+}
+
+impl<T,V> MechFunction for MatrixTransposeM<T,V> 
+where T: Copy + Debug + Clone + MechNumArithmetic<T> + Into<V> + Sync + Send + Zero,
+      V: Copy + Debug + Clone + MechNumArithmetic<V> + Sync + Send + Zero,
+{
+  fn solve(&self) {    
+    for i in 0..self.arg.len() {
+      let arg_brrw = self.arg[i].borrow();
+      for j in 0..arg_brrw.len() {
+        let mut out_brrw = self.out[j].borrow_mut();
+        out_brrw[i] = T::into(arg_brrw[j]);
+      }
+    }
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 pub struct MatrixTranspose{}
 impl MechFunctionCompiler for MatrixTranspose {
 
@@ -351,7 +373,50 @@ impl MechFunctionCompiler for MatrixTranspose {
           x => {return Err(MechError{id: 9153, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
       }
-      x => {return Err(MechError{id: 9154, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+      TableShape::Matrix(rows,columns) => {
+        let (arg_name,arg_table_id,arg_indices) = &arguments[0];
+        let arg_table = block.get_table(&arg_table_id)?;
+        let arg_kind = {
+          let arg_table_brrw = arg_table.borrow();
+          arg_table_brrw.kind()
+        };
+        match arg_kind {
+          ValueKind::Compound(_) => {
+            return Err(MechError{id: 9154, kind: MechErrorKind::GenericError("matrix/transpose doesn't support compound table kinds.".to_string())});
+          }
+          _ => (),
+        }
+        out_brrw.resize(columns,rows);
+        out_brrw.set_kind(arg_kind.clone());
+        match arg_kind {
+          ValueKind::F32 => {
+            let arg = {
+              let (arg_name,arg_table_id,_) = arguments[0];
+              let arg_table = block.get_table(&arg_table_id)?;
+              let mut cols: Vec<ColumnV<F32>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::F32(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              cols
+            };
+            let out_cols = {
+              let mut cols: Vec<ColumnV<F32>> = vec![];
+              for col_ix in 0..out_brrw.cols {
+                if let Column::F32(col) = out_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              cols
+            };
+            block.plan.push(MatrixTransposeM{arg: arg.clone(), out: out_cols.clone()});
+          }
+          x => {return Err(MechError{id: 9047, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
+        }
+      }
+      x => {return Err(MechError{id: 9156, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
     }
     Ok(())
   }
