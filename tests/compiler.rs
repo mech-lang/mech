@@ -250,6 +250,12 @@ test_mech!(math_matrix_multiply_mat_mat_2,"
 x = [1 2; 3 4] ** [5 6 7; 8 9 10]
 #test = stats/sum(table: x)", Value::F32(F32::new(234.0)));
 
+test_mech!(math_matrix_multiply_row_mat,"
+x = [1 2 3]
+y = [4 5; 6 7; 8 9]
+z = x ** y
+#test = stats/sum(row: z)", Value::F32(F32::new(86.0)));
+
 test_mech!(math_matrix_transpose_row,"
 x = [1 2 3]
 #test = x ** x'", Value::F32(F32::new(14.0)));
