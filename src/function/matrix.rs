@@ -185,26 +185,10 @@ impl MechFunctionCompiler for MatrixMul {
         let arg_col = block.get_arg_column(&arguments[0])?;
         match (arg_col,out_brrw.get_column_unchecked(0)) {
           ((_,Column::F32(lhs),_),Column::F32(out_col)) => {
-            let (cols,rows) = {
-              let mut cols: Vec<ColumnV<F32>> = vec![];
-              let arg_table_brrw = arg_table.borrow();
-              for col_ix in 0..arg_table_brrw.cols {
-                if let Column::F32(col) = arg_table_brrw.get_column_unchecked(col_ix) {
-                  cols.push(col);
-                }
-              }
-              (cols,arg_table_brrw.rows)
-            };
-            let out_cols = {
-              let mut cols: Vec<ColumnV<F32>> = vec![];
-              for col_ix in 0..out_brrw.cols {
-                if let Column::F32(col) = out_brrw.get_column_unchecked(col_ix) {
-                  cols.push(col);
-                }
-              }
-              cols
-            };
-            block.plan.push(MatrixMulVR{lhs: lhs.clone(), rhs: cols.clone(), out: out_cols.clone()});
+            let arg_table_brrw = arg_table.borrow();
+            let rhs = arg_table_brrw.collect_columns_f32();
+            let out_cols = out_brrw.collect_columns_f32();
+            block.plan.push(MatrixMulVR{lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
           }
           x => {return Err(MechError{id: 9047, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }
@@ -246,37 +230,13 @@ impl MechFunctionCompiler for MatrixMul {
           ValueKind::F32 => {
             let lhs = {
               let (arg_name,arg_table_id,_) = arguments[0];
-              let arg_table = block.get_table(&arg_table_id)?;
-              let mut cols: Vec<ColumnV<F32>> = vec![];
-              let arg_table_brrw = arg_table.borrow();
-              for col_ix in 0..arg_table_brrw.cols {
-                if let Column::F32(col) = arg_table_brrw.get_column_unchecked(col_ix) {
-                  cols.push(col);
-                }
-              }
-              cols
+              block.get_table(&arg_table_id)?.borrow().collect_columns_f32()
             };
             let rhs = {
               let (arg_name,arg_table_id,_) = arguments[1];
-              let arg_table = block.get_table(&arg_table_id)?;
-              let mut cols: Vec<ColumnV<F32>> = vec![];
-              let arg_table_brrw = arg_table.borrow();
-              for col_ix in 0..arg_table_brrw.cols {
-                if let Column::F32(col) = arg_table_brrw.get_column_unchecked(col_ix) {
-                  cols.push(col);
-                }
-              }
-              cols
+              block.get_table(&arg_table_id)?.borrow().collect_columns_f32()
             };
-            let out_cols = {
-              let mut cols: Vec<ColumnV<F32>> = vec![];
-              for col_ix in 0..out_brrw.cols {
-                if let Column::F32(col) = out_brrw.get_column_unchecked(col_ix) {
-                  cols.push(col);
-                }
-              }
-              cols
-            };
+            let out_cols = out_brrw.collect_columns_f32();
             block.plan.push(MatrixMulMM{lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
           }
           x => {return Err(MechError{id: 9047, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
@@ -358,15 +318,7 @@ impl MechFunctionCompiler for MatrixTranspose {
           Column::F32(out_col) => {
             let arg = {
               let (arg_name,arg_table_id,_) = arguments[0];
-              let arg_table = block.get_table(&arg_table_id)?;
-              let mut cols: Vec<ColumnV<F32>> = vec![];
-              let arg_table_brrw = arg_table.borrow();
-              for col_ix in 0..arg_table_brrw.cols {
-                if let Column::F32(col) = arg_table_brrw.get_column_unchecked(col_ix) {
-                  cols.push(col);
-                }
-              }
-              cols
+              block.get_table(&arg_table_id)?.borrow().collect_columns_f32()
             };
             block.plan.push(MatrixTransposeR{arg: arg.clone(), out: out_col.clone()});
           }
@@ -392,15 +344,7 @@ impl MechFunctionCompiler for MatrixTranspose {
           ValueKind::F32 => {
             let arg = {
               let (arg_name,arg_table_id,_) = arguments[0];
-              let arg_table = block.get_table(&arg_table_id)?;
-              let mut cols: Vec<ColumnV<F32>> = vec![];
-              let arg_table_brrw = arg_table.borrow();
-              for col_ix in 0..arg_table_brrw.cols {
-                if let Column::F32(col) = arg_table_brrw.get_column_unchecked(col_ix) {
-                  cols.push(col);
-                }
-              }
-              cols
+              block.get_table(&arg_table_id)?.borrow().collect_columns_f32()
             };
             let out_cols = {
               let mut cols: Vec<ColumnV<F32>> = vec![];
