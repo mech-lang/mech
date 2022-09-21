@@ -98,31 +98,29 @@ impl MechFunctionCompiler for MatrixMul {
     let arg_shapes = block.get_arg_dims(&arguments)?;
     let (lhs_arg_name,lhs_arg_table_id,_) = arguments[0];
     let (rhs_arg_name,rhs_arg_table_id,_) = arguments[1];
+    let (out_table_id, _, _) = out;
+    let out_table = block.get_table(out_table_id)?;
+    let mut out_brrw = out_table.borrow_mut();
+    let lhs_kind = { block.get_table(&lhs_arg_table_id)?.borrow().kind() };
+    let rhs_kind = { block.get_table(&rhs_arg_table_id)?.borrow().kind() };
+    match (&lhs_kind, &rhs_kind) {
+      (_,ValueKind::Compound(_)) |
+      (ValueKind::Compound(_),_) => {
+        return Err(MechError{id: 9049, kind: MechErrorKind::GenericError("matrix/multiply doesn't support compound table kinds.".to_string())});
+      }
+      (k,j) => {
+        if (*k != *j) {
+          return Err(MechError{id: 9050, kind: MechErrorKind::GenericError("matrix/multiply doesn't support disparate table kinds.".to_string())});
+        }
+      }
+    }
     match (&arg_shapes[0],&arg_shapes[1]) {
       (TableShape::Row(columns), TableShape::Column(rows)) => {
         if columns != rows {
           return Err(MechError{id: 9403, kind: MechErrorKind::GenericError("Dimension mismatch".to_string())});
         }
-        let (out_table_id, _, _) = out;
-        let out_table = block.get_table(out_table_id)?;
-        let mut out_brrw = out_table.borrow_mut();
         out_brrw.resize(1,1);    
-        let lhs_kind = { block.get_table(&lhs_arg_table_id)?.borrow().kind() };
-        let rhs_kind = { block.get_table(&rhs_arg_table_id)?.borrow().kind() };
-        match (lhs_kind, rhs_kind) {
-          (_,ValueKind::Compound(_)) |
-          (ValueKind::Compound(_),_) => {
-            return Err(MechError{id: 9042, kind: MechErrorKind::GenericError("matrix/multiply doesn't support compound table kinds.".to_string())});
-          }
-          (k,j) => {
-            if (k == j) {
-              out_brrw.resize(*rows,1);
-              out_brrw.set_kind(k);
-            } else {
-              return Err(MechError{id: 9043, kind: MechErrorKind::GenericError("matrix/multiply doesn't support disparate table kinds.".to_string())});
-            }
-          }
-        }
+        out_brrw.set_kind(rhs_kind);
         let arg_col = block.get_arg_column(&arguments[1])?;
         match (arg_col,out_brrw.get_column_unchecked(0)) {
           ((_,Column::F32(rhs),_),Column::F32(out_col)) => {
@@ -134,25 +132,8 @@ impl MechFunctionCompiler for MatrixMul {
         }
       }
       (TableShape::Column(rows),TableShape::Row(columns)) => {
-        let (out_table_id, _, _) = out;
-        let out_table = block.get_table(out_table_id)?;
-        let mut out_brrw = out_table.borrow_mut();
-        let lhs_kind = { block.get_table(&lhs_arg_table_id)?.borrow().kind() };
-        let rhs_kind = { block.get_table(&rhs_arg_table_id)?.borrow().kind() };
-        match (lhs_kind, rhs_kind) {
-          (_,ValueKind::Compound(_)) |
-          (ValueKind::Compound(_),_) => {
-            return Err(MechError{id: 9045, kind: MechErrorKind::GenericError("matrix/multiply doesn't support compound table kinds.".to_string())});
-          }
-          (k,j) => {
-            if (k == j) {
-              out_brrw.resize(*rows,*columns);
-              out_brrw.set_kind(k);
-            } else {
-              return Err(MechError{id: 9046, kind: MechErrorKind::GenericError("matrix/multiply doesn't support disparate table kinds.".to_string())});
-            }
-          }
-        }
+        out_brrw.resize(*rows,*columns);
+        out_brrw.set_kind(rhs_kind);
         let arg_col = block.get_arg_column(&arguments[0])?;
         match (arg_col,out_brrw.get_column_unchecked(0)) {
           ((_,Column::F32(lhs),_),Column::F32(out_col)) => {
@@ -168,25 +149,8 @@ impl MechFunctionCompiler for MatrixMul {
         if lhs_columns != rhs_rows {
           return Err(MechError{id: 9048, kind: MechErrorKind::GenericError("Dimension mismatch".to_string())});
         }        
-        let (out_table_id, _, _) = out;
-        let out_table = block.get_table(out_table_id)?;
-        let mut out_brrw = out_table.borrow_mut();
-        let lhs_kind = { block.get_table(&lhs_arg_table_id)?.borrow().kind() };
-        let rhs_kind = { block.get_table(&rhs_arg_table_id)?.borrow().kind() };
-        match (&lhs_kind, rhs_kind) {
-          (_,ValueKind::Compound(_)) |
-          (ValueKind::Compound(_),_) => {
-            return Err(MechError{id: 9049, kind: MechErrorKind::GenericError("matrix/multiply doesn't support compound table kinds.".to_string())});
-          }
-          (k,j) => {
-            if (*k == j) {
-              out_brrw.resize(1,*rhs_columns);
-              out_brrw.set_kind(j);
-            } else {
-              return Err(MechError{id: 9050, kind: MechErrorKind::GenericError("matrix/multiply doesn't support disparate table kinds.".to_string())});
-            }
-          }
-        }
+        out_brrw.resize(1,*rhs_columns);
+        out_brrw.set_kind(rhs_kind);
         match lhs_kind {
           ValueKind::F32 => {
             let lhs = { block.get_table(&lhs_arg_table_id)?.borrow().collect_columns_f32() };
@@ -201,25 +165,8 @@ impl MechFunctionCompiler for MatrixMul {
         if lhs_columns != rhs_rows {
           return Err(MechError{id: 9048, kind: MechErrorKind::GenericError("Dimension mismatch".to_string())});
         }        
-        let (out_table_id, _, _) = out;
-        let out_table = block.get_table(out_table_id)?;
-        let mut out_brrw = out_table.borrow_mut();
-        let lhs_kind = { block.get_table(&lhs_arg_table_id)?.borrow().kind() };
-        let rhs_kind = { block.get_table(&rhs_arg_table_id)?.borrow().kind() };
-        match (&lhs_kind, rhs_kind) {
-          (_,ValueKind::Compound(_)) |
-          (ValueKind::Compound(_),_) => {
-            return Err(MechError{id: 9049, kind: MechErrorKind::GenericError("matrix/multiply doesn't support compound table kinds.".to_string())});
-          }
-          (k,j) => {
-            if (*k == j) {
-              out_brrw.resize(*lhs_rows,*rhs_columns);
-              out_brrw.set_kind(j);
-            } else {
-              return Err(MechError{id: 9050, kind: MechErrorKind::GenericError("matrix/multiply doesn't support disparate table kinds.".to_string())});
-            }
-          }
-        }
+        out_brrw.resize(*lhs_rows,*rhs_columns);
+        out_brrw.set_kind(rhs_kind);
         match lhs_kind {
           ValueKind::F32 => {
             let lhs = { block.get_table(&lhs_arg_table_id)?.borrow().collect_columns_f32() };
