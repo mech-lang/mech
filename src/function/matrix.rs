@@ -131,6 +131,22 @@ impl MechFunctionCompiler for MatrixMul {
           x => {return Err(MechError{id: 9044, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }
       }
+      (TableShape::Matrix(lhs_rows,lhs_columns), TableShape::Column(rows)) => {
+        if lhs_columns != rows {
+          return Err(MechError{id: 9403, kind: MechErrorKind::GenericError("Dimension mismatch".to_string())});
+        }
+        out_brrw.resize(*rows,1);    
+        out_brrw.set_kind(rhs_kind);
+        match lhs_kind {
+          ValueKind::F32 => {
+            let lhs = { block.get_table(&lhs_arg_table_id)?.borrow().collect_columns_f32() };
+            let rhs = { block.get_table(&rhs_arg_table_id)?.borrow().collect_columns_f32() };
+            let out_cols = out_brrw.collect_columns_f32();
+            block.plan.push(MatrixMulMM{lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
+          }
+          x => {return Err(MechError{id: 9044, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
+        }
+      }
       (TableShape::Column(rows),TableShape::Row(columns)) => {
         out_brrw.resize(*rows,*columns);
         out_brrw.set_kind(rhs_kind);
