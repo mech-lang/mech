@@ -9,8 +9,8 @@ use std::rc::Rc;
 fn main() -> Result<(),MechError> {
 
 let input = r#"
-x = [1 2; 3 4] ** [5 6; 7 8]
-#test = stats/sum(table: x)"#;
+x = [1 2 3]
+#test = x ** x'"#;
   let input = String::from(input);
 
   let mut ast = Ast::new();
@@ -26,7 +26,7 @@ x = [1 2; 3 4] ** [5 6; 7 8]
   let sections = compiler.compile_sections(&vec![ast.syntax_tree.clone()]).unwrap();
   
   core.load_sections(sections);
-  //println!("{:#?}", core.blocks);
+  println!("{:#?}", core.blocks);
   println!("{:?}", core);
 
 /*

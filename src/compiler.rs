@@ -4,6 +4,7 @@
 
 use mech_core::*;
 use mech_core::function::table::*;
+use mech_core::function::matrix::*;
 
 use crate::ast::{Ast, Node};
 use crate::parser::{parse, parse_fragment};
@@ -930,6 +931,25 @@ impl Compiler {
           name: *TABLE_FLATTEN,
           arguments: vec![args[0].clone()],
           out: (out_id,TableIndex::All,TableIndex::All),
+        });
+      }
+      Node::TransposeSelect{children} => {
+        let mut result = self.compile_node(&children[0])?;
+        let mut args = vec![];
+        match &result[0] {
+          Transformation::Select{table_id, indices} => {
+            args.push((0, *table_id, indices.to_vec()));
+            result.remove(0);
+          }
+          _=>(),
+        }
+        let id = hash_str(&format!("transpose{:?}",args));
+        tfms.push(Transformation::NewTable{table_id: TableId::Local(id), rows: 1, columns: 1});
+        tfms.append(&mut result);
+        tfms.push(Transformation::Function{
+          name: *MATRIX_TRANSPOSE,
+          arguments: args,
+          out: (TableId::Local(id),TableIndex::All,TableIndex::All),
         });
       }
       Node::SelectData{name, id, children} => {

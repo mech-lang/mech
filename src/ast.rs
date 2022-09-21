@@ -119,6 +119,7 @@ pub enum Node {
   MechCodeBlock{ children: Vec<Node> },
   Null,
   Transpose,
+  TransposeSelect{children: Vec<Node>},
 }
 
 impl fmt::Debug for Node {
@@ -212,6 +213,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::DivideUpdate => {write!(f,"DivideUpdate\n").ok(); None},
     Node::ExponentUpdate => {write!(f,"ExponentUpdate\n").ok(); None},
     Node::Transpose => {write!(f,"Transpose\n").ok(); None},
+    Node::TransposeSelect{children} => {write!(f,"TransposeSelect\n").ok(); Some(children)},
     // Markdown Nodes
     Node::Title{text} => {write!(f,"Title({:?})\n", text).ok(); None},
     Node::ParagraphText{text} => {write!(f,"ParagraphText({:?})\n", text).ok(); None},
@@ -320,6 +322,8 @@ impl Ast {
         reversed.reverse();
         let mut select_data_children: Vec<Node> = vec![];
 
+        let mut transpose = false;
+
         for node in reversed {
           match node {
             Node::Table{name, id} => {
@@ -334,7 +338,12 @@ impl Ast {
                 select_data_children = vec![Node::Null; 1];
               }
               select_data_children.reverse();
-              compiled.push(Node::SelectData{name, id: TableId::Local(id), children: select_data_children.clone()});
+              let select = Node::SelectData{name, id: TableId::Local(id), children: select_data_children.clone()};
+              if transpose {
+                compiled.push(Node::TransposeSelect{children: vec![select]});
+              } else {
+                compiled.push(select);
+              }
             },
             Node::DotIndex{children} => {
               let mut reversed = children.clone();
@@ -352,6 +361,9 @@ impl Ast {
             }
             Node::ReshapeColumn => {
               select_data_children.push(Node::ReshapeColumn);
+            }
+            Node::Transpose => {
+              transpose = true;
             }
             _ => (),
           }

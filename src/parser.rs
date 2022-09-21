@@ -857,8 +857,15 @@ fn index(input: ParseString) -> IResult<ParseString, Node> {
 fn data(input: ParseString) -> IResult<ParseString, Node> {
   let (input, source) = alt((table, identifier))(input)?;
   let (input, mut indices) = many0(index)(input)?;
+  let (input, transpose) = opt(transpose)(input)?;
   let mut data = vec![source];
   data.append(&mut indices);
+  match transpose {
+    Some(transpose) => {
+      data.push(transpose);
+    }
+    _ => (),
+  }
   Ok((input, Node::Data{children: data}))
 }
 
