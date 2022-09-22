@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::fmt::*;
 use num_traits::*;
-
+#[cfg(feature = "parallel")]
 use rayon::prelude::*;
 use std::thread;
 

@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::fmt::*;
 use num_traits::*;
-
+#[cfg(feature = "parallel")]
 use rayon::prelude::*;
 use std::thread;
 
@@ -23,11 +23,16 @@ compare_infix_vv!(GreaterEqualVV,>=);
 compare_infix_vv!(EqualVV,==);
 compare_infix_vv!(NotEqualVV,!=);
 
+#[cfg(feature = "parallel")]
 par_compare_infix_vv!(ParGreaterVV,>);
 par_compare_infix_vv!(ParLessVV,<);
+#[cfg(feature = "parallel")]
 par_compare_infix_vv!(ParLessEqualVV,<=);
+#[cfg(feature = "parallel")]
 par_compare_infix_vv!(ParGreaterEqualVV,>=);
+#[cfg(feature = "parallel")]
 par_compare_infix_vv!(ParEqualVV,==);
+#[cfg(feature = "parallel")]
 par_compare_infix_vv!(ParNotEqualVV,!=);
 
 compare_infix_vs!(GreaterVS,>);
@@ -37,11 +42,17 @@ compare_infix_vs!(GreaterEqualVS,>=);
 compare_infix_vs!(EqualVS,==);
 compare_infix_vs!(NotEqualVS,!=);
 
+#[cfg(feature = "parallel")]
 par_compare_infix_vs!(ParGreaterVS,>);
+#[cfg(feature = "parallel")]
 par_compare_infix_vs!(ParLessVS,<);
+#[cfg(feature = "parallel")]
 par_compare_infix_vs!(ParLessEqualVS,<=);
+#[cfg(feature = "parallel")]
 par_compare_infix_vs!(ParGreaterEqualVS,>=);
+#[cfg(feature = "parallel")]
 par_compare_infix_vs!(ParEqualVS,==);
+#[cfg(feature = "parallel")]
 par_compare_infix_vs!(ParNotEqualVS,!=);
 
 compare_infix_sv!(GreaterSV,>);
@@ -51,11 +62,17 @@ compare_infix_sv!(GreaterEqualSV,>=);
 compare_infix_sv!(EqualSV,==);
 compare_infix_sv!(NotEqualSV,!=);
 
+#[cfg(feature = "parallel")]
 par_compare_infix_sv!(ParGreaterSV,>);
+#[cfg(feature = "parallel")]
 par_compare_infix_sv!(ParLessSV,<);
+#[cfg(feature = "parallel")]
 par_compare_infix_sv!(ParLessEqualSV,<=);
+#[cfg(feature = "parallel")]
 par_compare_infix_sv!(ParGreaterEqualSV,>=);
+#[cfg(feature = "parallel")]
 par_compare_infix_sv!(ParEqualSV,==);
+#[cfg(feature = "parallel")]
 par_compare_infix_sv!(ParNotEqualSV,!=);
 
 compare_infix_dd!(GreaterDD,>);
@@ -109,9 +126,11 @@ macro_rules! compare_infix_vv {
   )
 }
 
+
 #[macro_export]
 macro_rules! par_compare_infix_vv {
   ($func_name:ident, $op:tt) => (
+    #[cfg(feature = "parallel")]
     #[derive(Debug)]
     pub struct $func_name<T,U> 
     {
@@ -119,6 +138,7 @@ macro_rules! par_compare_infix_vv {
       pub rhs: (ColumnV<U>, usize, usize), 
       pub out: ColumnV<bool>
     }
+    #[cfg(feature = "parallel")]
     impl<T,U> MechFunction for $func_name<T,U> 
     where T: Clone + Debug + PartialEq + PartialOrd + Into<U> + Send + Sync,
           U: Clone + Debug + PartialEq + PartialOrd + Into<T> + Send + Sync,
@@ -170,6 +190,7 @@ macro_rules! compare_infix_vs {
 #[macro_export]
 macro_rules! par_compare_infix_vs {
   ($func_name:ident, $op:tt) => (
+    #[cfg(feature = "parallel")]
     #[derive(Debug)]
     pub struct $func_name<T,U> 
     {
@@ -224,6 +245,7 @@ macro_rules! compare_infix_sv {
   )
 }
 
+#[cfg(feature = "parallel")]
 #[macro_export]
 macro_rules! par_compare_infix_sv {
   ($func_name:ident, $op:tt) => (

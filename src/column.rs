@@ -5,7 +5,6 @@ use std::ptr;
 use std::rc::Rc;
 use hashbrown::{HashMap, HashSet};
 
-use rayon::prelude::*;
 use std::collections::VecDeque;
 use std::thread;
 use crate::*;
@@ -121,7 +120,20 @@ impl Column {
     }
     Ok(())
   }
-  
+
+  unwrap_column!(unwrap_u8,U8);
+  unwrap_column!(unwrap_u16,U16);
+  unwrap_column!(unwrap_u32,U32);
+  unwrap_column!(unwrap_u64,U64);
+  unwrap_column!(unwrap_u128,U128);
+  unwrap_column!(unwrap_i8,I8);
+  unwrap_column!(unwrap_i16,I16);
+  unwrap_column!(unwrap_i32,I32);
+  unwrap_column!(unwrap_i64,I64);
+  unwrap_column!(unwrap_i128,I128);
+  unwrap_column!(unwrap_f32,F32);
+  unwrap_column!(unwrap_f64,F64);
+
   pub fn kind(&self) -> ValueKind {
     match self {
       Column::f32(_) => ValueKind::f32,
@@ -150,6 +162,18 @@ impl Column {
       Column::Empty => ValueKind::Empty,
     }
   }
+}
+
+#[macro_export]
+macro_rules! unwrap_column {
+  ($function_name:tt,$type:tt) => (
+    pub fn $function_name(&self) -> Option<&ColumnV<$type>> {
+      match self {
+        Column::$type(c) => Some(c),
+        _ => None,
+      }
+    }
+  )
 }
 
 #[derive(Clone)]
@@ -369,6 +393,9 @@ macro_rules! mech_type {
       pub fn new(inner: $type) -> $wrapper {
         $wrapper(inner)
       }
+      pub fn kind(&self) -> ValueKind {
+        ValueKind::$wrapper
+      }
       pub fn unwrap(&self) -> $type {
         self.0
       }
@@ -439,6 +466,12 @@ macro_rules! mech_type {
 impl From<bool> for MechString {
   fn from(n: bool) -> MechString {
     MechString{chars: format!("{:?}", n).chars().collect()}
+  } 
+}
+
+impl From<bool> for Value {
+  fn from(n: bool) -> Value {
+    Value::Bool(n)
   } 
 }
 

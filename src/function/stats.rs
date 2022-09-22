@@ -4,7 +4,7 @@ use std::rc::Rc;
 use std::fmt::*;
 use num_traits::{Zero,zero};
 use std::ops::*;
-
+#[cfg(feature = "parallel")]
 use rayon::prelude::*;
 use std::thread;
 
@@ -35,48 +35,50 @@ where T: Copy + Debug + Clone + Add<Output = T> + Into<U> + Sync + Send + Zero,
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-// stats/sum(table: x)
+// stats/sum(table)
 #[derive(Debug)]
-pub struct StatsSumTable {
-  pub table: ArgTable, pub out: ColumnV<F32>
+pub struct StatsSumTable<T,U> {
+  pub cols: Vec<ColumnV<T>>,
+  pub rows: usize,
+  pub out: ColumnV<U>
 }
 
-impl MechFunction for StatsSumTable {
+impl<T,U> MechFunction for StatsSumTable<T,U>
+where T: Copy + Debug + Clone + Add<Output = T> + Into<U> + Sync + Send + Zero,
+      U: Copy + Debug + Clone + Add<Output = U> + Into<T> + Sync + Send + Zero,
+{
   fn solve(&self) {
-    let mut sum = 0.0;
-    let table_brrw = self.table.borrow();
-    let table_els = table_brrw.rows * table_brrw.cols;
-    for i in 0..table_els {
-      match table_brrw.get_linear(i) {
-        Ok(Value::F32(val)) => sum += val.unwrap(),
-        Ok(Value::U8(val)) => sum = sum + val.unwrap() as f32,
-        _ => (),
+    let mut sum: T = zero();
+    for row in 0..self.rows {
+      for col in &self.cols {
+        let col_brrw = col.borrow();
+        sum = sum + col_brrw[row];
       }
     }
-    (*self.out.borrow_mut())[0] = F32::new(sum);
+    (*self.out.borrow_mut())[0] = T::into(sum);
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
 #[derive(Debug)]
-pub struct StatsSumRow {
-  pub table: ArgTable, pub out: ColumnV<F32>
+pub struct StatsSumRow<T,U> {
+  pub cols: Vec<ColumnV<T>>,
+  pub rows: usize,
+  pub out: ColumnV<U>
 }
 
-impl MechFunction for StatsSumRow {
+impl<T,U> MechFunction for StatsSumRow<T,U>
+where T: Copy + Debug + Clone + Add<Output = T> + Into<U> + Sync + Send + Zero,
+      U: Copy + Debug + Clone + Add<Output = U> + Into<T> + Sync + Send + Zero,
+{
   fn solve(&self) {
-    let table_brrw = self.table.borrow();
-    for row in 0..table_brrw.rows {
-      let mut sum = 0.0;
-      for col in 0..table_brrw.cols {
-        match table_brrw.get_raw(row,col) {
-          Ok(Value::F32(val)) => {
-            sum += val.unwrap()
-          },
-          _ => (),
-        }
+    for row in 0..self.rows {
+      let mut sum: T = zero();
+      for col in &self.cols {
+        let col_brrw = col.borrow();
+        sum = sum + col_brrw[row];
       }
-      (*self.out.borrow_mut())[row] = F32::new(sum);
+      (*self.out.borrow_mut())[row] = T::into(sum);
     }
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
@@ -186,23 +188,162 @@ impl MechFunctionCompiler for StatsSum {
       else if *arg_name == *ROW {
         let (arg_name,arg_table_id,_) = arguments[0];
         let arg_table = block.get_table(&arg_table_id)?;
-        out_brrw.resize(arg_table.borrow().rows,1);
-        out_brrw.set_kind(ValueKind::F32);
-        if let Column::F32(out_col) = out_brrw.get_column_unchecked(0) {
-          block.plan.push(StatsSumRow{table: arg_table.clone(), out: out_col.clone()});
+        let kind = {
+          let arg_table_brrw = arg_table.borrow();
+          arg_table_brrw.kind()
+        };
+        match kind {
+          ValueKind::Compound(_) => {
+            return Err(MechError{id: 3042, kind: MechErrorKind::GenericError("stat/sum(row) doesn't support compound table kinds.".to_string())});
+          }
+          k => {
+            out_brrw.resize(arg_table.borrow().rows,1);
+            out_brrw.set_kind(k);
+          }
+        }
+        match out_brrw.get_column_unchecked(0) {
+          Column::U8(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<U8>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::U8(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumRow{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
+          Column::U16(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<U16>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::U16(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumRow{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
+          Column::U32(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<U32>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::U32(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumRow{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
+          Column::U64(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<U64>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::U64(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumRow{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
+          Column::U128(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<U128>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::U128(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumRow{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
+          Column::F32(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<F32>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::F32(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumRow{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }  
+          Column::F64(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<F64>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::F64(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumRow{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }         
+          x => {return Err(MechError{id: 3043, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }
       } 
       else if *arg_name == *TABLE {
         let (arg_name,arg_table_id,_) = arguments[0];
         let arg_table = block.get_table(&arg_table_id)?;
-        out_brrw.resize(1,1);
-        out_brrw.set_kind(ValueKind::F32);
-        if let Column::F32(out_col) = out_brrw.get_column_unchecked(0) {
-          block.plan.push(StatsSumTable{table: arg_table.clone(), out: out_col.clone()});
+        let kind = {
+          let arg_table_brrw = arg_table.borrow();
+          arg_table_brrw.kind()
+        };
+        match kind {
+          ValueKind::Compound(_) => {
+            return Err(MechError{id: 3044, kind: MechErrorKind::GenericError("stat/sum(row) doesn't support compound table kinds.".to_string())});
+          }
+          k => {
+            out_brrw.resize(1,1);
+            out_brrw.set_kind(k);
+          }
+        }
+        match out_brrw.get_column_unchecked(0) {
+          Column::U32(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<U32>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::U32(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumTable{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
+          Column::F32(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<F32>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::F32(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumTable{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }          
+          x => {return Err(MechError{id: 3045, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }
       }
       else {  
-        return Err(MechError{id: 3042, kind: MechErrorKind::UnknownFunctionArgument(*arg_name)});
+        return Err(MechError{id: 3046, kind: MechErrorKind::UnknownFunctionArgument(*arg_name)});
       }
     } 
     Ok(())

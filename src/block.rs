@@ -10,8 +10,8 @@
 // ## Prelude
 
 use crate::*;
+#[cfg(feature = "stdlib")]
 use crate::function::{
-  MechFunction,
   table::*,
   math::*,
   math_update::*,
@@ -691,6 +691,7 @@ impl Block {
         match &fxns {
           Some(functions) => {
             let mut fxns = functions.borrow_mut();
+            #[cfg(feature = "stdlib")]
             match fxns.get(*TABLE_DEFINE) {
               Some(fxn) => {
                 fxn.compile(self,&arguments,&out)?;
@@ -709,6 +710,7 @@ impl Block {
           }
           _ => (),
         }
+        #[cfg(feature = "stdlib")]
         self.compile_tfm(Transformation::Function{
           name: *TABLE_SET,
           arguments: vec![(0,*src_id,vec![(src_row.clone(), src_col.clone())])],

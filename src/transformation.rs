@@ -5,9 +5,6 @@ use std::rc::Rc;
 use std::fmt;
 use std::cmp::Ordering;
 
-use rayon::prelude::*;
-use std::thread;
-
 #[derive(Clone, Serialize, Deserialize)]
 pub enum Transformation {
   Identifier{ name: Vec<char>, id: u64 },

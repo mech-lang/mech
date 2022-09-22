@@ -4,6 +4,7 @@ use std::rc::Rc;
 use std::fmt::*;
 use num_traits::*;
 use rust_core::iter::FromIterator;
+#[cfg(feature = "parallel")]
 use rayon::prelude::*;
 use std::thread;
 use hashbrown::HashSet;
@@ -45,11 +46,13 @@ where T: Debug + Clone + Into<U> + Sync + Send,
 }
 
 // Parallel Copy Vector : Vector
+#[cfg(feature = "parallel")]
 #[derive(Debug)]
 pub struct ParCopyVV<T,U> {
   pub arg: (ColumnV<T>, usize, usize),
   pub out: (ColumnV<U>, usize, usize),
 }
+#[cfg(feature = "parallel")]
 impl<T,U> MechFunction for ParCopyVV<T,U> 
 where T: Debug + Clone + Into<U> + Sync + Send,
       U: Debug + Clone + Into<T> + Sync + Send,
@@ -447,11 +450,12 @@ where T: Clone + Debug + Into<U>,
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-
+#[cfg(feature = "parallel")]
 #[derive(Debug)]
 pub struct ParSetVVB<T,U> {
   pub arg: ColumnV<T>, pub out: ColumnV<U>, pub oix: ColumnV<bool>
 }
+#[cfg(feature = "parallel")]
 impl<T,U> MechFunction for ParSetVVB<T,U>
 where T: Clone + Debug + Into<U> + Sync + Send,
       U: Clone + Debug + Into<T> + Sync + Send
@@ -489,10 +493,12 @@ where T: Clone + Debug + Into<U>,
 
 
 // Set Vector : Vector
+#[cfg(feature = "parallel")]
 #[derive(Debug)]
 pub struct ParSetVV<T,U> {
   pub arg: ColumnV<T>, pub out: ColumnV<U>
 }
+#[cfg(feature = "parallel")]
 impl<T,U> MechFunction for ParSetVV<T,U>
 where T: Clone + Debug + Into<U> + Sync + Send,
       U: Clone + Debug + Into<T> + Sync + Send
@@ -526,11 +532,12 @@ where T: Clone + Debug + Into<U>,
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-
+#[cfg(feature = "parallel")]
 #[derive(Debug)]
 pub struct ParSetVS<T,U> {
   pub arg: ColumnV<T>, pub ix: usize, pub out: ColumnV<U>
 }
+#[cfg(feature = "parallel")]
 impl<T,U> MechFunction for ParSetVS<T,U>
 where T: Clone + Debug + Into<U> + Sync + Send,
       U: Clone + Debug + Into<T> + Sync + Send
@@ -545,12 +552,12 @@ where T: Clone + Debug + Into<U> + Sync + Send,
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
-
+#[cfg(feature = "parallel")]
 #[derive(Debug)]
 pub struct ParSetVSB<T,U>  {
   pub arg: ColumnV<T>, pub ix: usize, pub out: ColumnV<U>, pub oix: ColumnV<bool>
 }
-
+#[cfg(feature = "parallel")]
 impl<T,U>  MechFunction for ParSetVSB<T,U> 
 where T: Clone + Debug + Into<U> + Sync + Send,
       U: Clone + Debug + Into<T> + Sync + Send
@@ -1375,6 +1382,7 @@ impl MechFunctionCompiler for TableAppend {
                   (Column::U32(arg),    Column::Any(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
                   (Column::U64(arg),    Column::Any(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
                   (Column::U128(arg),    Column::Any(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
+                  (Column::Bool(arg),    Column::Any(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
                   (Column::F32(arg),    Column::F32(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
                   (Column::F32(arg),    Column::U8(out))     => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),             
                   (Column::U8(arg),     Column::F32(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),            
@@ -1591,6 +1599,27 @@ impl MechFunctionCompiler for TableSet {
             let mut dest_table_brrw = dest_table.borrow_mut();
             dest_table_brrw.set_col_kind(1,ValueKind::U8);
             if let Column::U8(out) = dest_table_brrw.get_column_unchecked(1) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
+            }
+          }
+          ((_,Column::U64(arg),ColumnIndex::All),(_,Column::U64(out),ColumnIndex::All)) => block.plan.push(SetVV{arg: arg.clone(), out: out.clone()}),
+          ((_,Column::U64(arg),ColumnIndex::Index(ix)),(_,Column::U64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U64(arg),ColumnIndex::Index(ix)), (_,Column::U64(out),ColumnIndex::Index(oix))) => block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
+          ((_,Column::U64(arg),ColumnIndex::All), (_,Column::U64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetVVB{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U64(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::All)) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.resize(1,1);
+            dest_table_brrw.set_kind(ValueKind::U64);
+            if let Column::U64(out) = dest_table_brrw.get_column_unchecked(0) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: 0});
+            }
+          }
+          ((_,Column::U64(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::Index(oix))) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.set_col_kind(1,ValueKind::U64);
+            if let Column::U64(out) = dest_table_brrw.get_column_unchecked(1) {
               block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
             }
           }

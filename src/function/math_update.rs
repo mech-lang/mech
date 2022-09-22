@@ -4,7 +4,7 @@ use std::rc::Rc;
 use std::fmt::*;
 use num_traits::*;
 use std::ops::*;
-
+#[cfg(feature = "parallel")]
 use rayon::prelude::*;
 use std::thread;
 

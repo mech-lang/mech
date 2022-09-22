@@ -5,6 +5,7 @@ use std::fmt::*;
 use num_traits::*;
 use std::ops::*;
 
+#[cfg(feature = "parallel")]
 use rayon::prelude::*;
 use std::thread;
 
@@ -62,36 +63,53 @@ binary_infix_vv!(DivVV,div);
 binary_infix_vv!(ExpVV,pow);
 
 // Parallel Vector : Scalar
+#[cfg(feature = "parallel")]
 binary_infix_par_vs!(ParAddVS,add);
+#[cfg(feature = "parallel")]
 binary_infix_par_vs!(ParSubVS,sub);
+#[cfg(feature = "parallel")]
 binary_infix_par_vs!(ParMulVS,mul);
+#[cfg(feature = "parallel")]
 binary_infix_par_vs!(ParDivVS,div);
+#[cfg(feature = "parallel")]
 binary_infix_par_vs!(ExpParVS,pow);
 
 // Parallel Vector : Vector
+#[cfg(feature = "parallel")]
 binary_infix_par_vv!(ParAddVV,add);
+#[cfg(feature = "parallel")]
 binary_infix_par_vv!(ParSubVV,sub);
+#[cfg(feature = "parallel")]
 binary_infix_par_vv!(ParMulVV,mul);
+#[cfg(feature = "parallel")]
 binary_infix_par_vv!(ParDivVV,div);
+#[cfg(feature = "parallel")]
 binary_infix_par_vv!(ExpParVV,pow);
 
 // Vector : Vector In Place
 binary_infix_vvip!(AddVVIP,add);
 
 // Parallel Vector : Vector In Place
+#[cfg(feature = "parallel")]
 binary_infix_par_vvip!(ParAddVVIP,add);
 
 // Parallel Vector : Scalar In Place
+#[cfg(feature = "parallel")]
 binary_infix_par_vsip!(ParAddVSIP,add);
 
 // Vector : Scalar In Place
 binary_infix_vsip!(AddVSIP,add);
 
 // Parallel Scalar : Vector
+#[cfg(feature = "parallel")]
 binary_infix_par_sv!(ParAddSV,add);
+#[cfg(feature = "parallel")]
 binary_infix_par_sv!(ParSubSV,sub);
+#[cfg(feature = "parallel")]
 binary_infix_par_sv!(ParMulSV,mul);
+#[cfg(feature = "parallel")]
 binary_infix_par_sv!(ParDivSV,div);
+#[cfg(feature = "parallel")]
 binary_infix_par_sv!(ExpParSV,pow);
 
 // Dynamic : Dynamic
@@ -212,7 +230,7 @@ macro_rules! binary_infix_vv {
 #[macro_export]
 macro_rules! binary_infix_par_vv {
   ($func_name:ident, $op:tt) => (
-
+    #[cfg(feature = "parallel")]
     #[derive(Debug)]
     pub struct $func_name<T,U,V> {
       pub lhs: (ColumnV<T>, usize, usize),
@@ -241,7 +259,7 @@ macro_rules! binary_infix_par_vv {
 #[macro_export]
 macro_rules! binary_infix_par_vvip {
   ($func_name:ident, $op:tt) => (
-
+    #[cfg(feature = "parallel")]
     #[derive(Debug)]
     pub struct $func_name<T> {
       pub arg: ColumnV<T>, pub out: ColumnV<T>
@@ -285,7 +303,7 @@ macro_rules! binary_infix_vvip {
 #[macro_export]
 macro_rules! binary_infix_par_vs {
   ($func_name:ident, $op:tt) => (
-
+    #[cfg(feature = "parallel")]
     #[derive(Debug)]
     pub struct $func_name<T> {
       pub lhs: ColumnV<T>, pub rhs: ColumnV<T>, pub out: ColumnV<T>
@@ -305,7 +323,7 @@ macro_rules! binary_infix_par_vs {
 #[macro_export]
 macro_rules! binary_infix_par_vsip {
   ($func_name:ident, $op:tt) => (
-
+    #[cfg(feature = "parallel")]
     #[derive(Debug)]
     pub struct $func_name<T> {
       pub arg: ColumnV<T>, pub out: ColumnV<T>
@@ -365,6 +383,7 @@ macro_rules! binary_infix_ss {
 #[macro_export]
 macro_rules! binary_infix_par_sv {
   ($func_name:ident, $op:tt) => (
+    #[cfg(feature = "parallel")]
     #[derive(Debug)]
     pub struct $func_name<T> {
       pub lhs: ColumnV<T>, pub rhs: ColumnV<T>, pub out: ColumnV<T>
@@ -539,6 +558,12 @@ macro_rules! math_compiler {
                   block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
                 }
               },
+              ((_,Column::F64(lhs),ColumnIndex::Index(lix)), (_,Column::F64(rhs),ColumnIndex::Index(rix))) => { 
+                let mut out_column = block.get_out_column(out, 1, ValueKind::F64)?;
+                if let Column::F64(out) = out_column {
+                  block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()}) 
+                }
+              },
               ((_,Column::String(lhs),ColumnIndex::Index(lix)), (_,Column::F32(rhs),ColumnIndex::Index(rix))) => { 
                 let mut out_column = block.get_out_column(out, 1, ValueKind::String)?;
                 if let Column::String(out) = out_column {
@@ -683,10 +708,45 @@ macro_rules! math_compiler {
                     block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
                   }
                 }
+                (Column::U16(rhs), (_,Column::U16(lhs),_)) => { 
+                  out_brrw.set_col_kind(col_ix, ValueKind::U16)?;
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::U16(out) = out_col {
+                    block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
+                  }
+                }
+                (Column::U32(rhs), (_,Column::U32(lhs),_)) => { 
+                  out_brrw.set_col_kind(col_ix, ValueKind::U32)?;
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::U32(out) = out_col {
+                    block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
+                  }
+                }
+                (Column::U64(rhs), (_,Column::U64(lhs),_)) => { 
+                  out_brrw.set_col_kind(col_ix, ValueKind::U64)?;
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::U64(out) = out_col {
+                    block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
+                  }
+                }
+                (Column::U128(rhs), (_,Column::U128(lhs),_)) => { 
+                  out_brrw.set_col_kind(col_ix, ValueKind::U128)?;
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::U128(out) = out_col {
+                    block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
+                  }
+                }
                 (Column::F32(rhs), (_,Column::F32(lhs),_)) => { 
                   out_brrw.set_col_kind(col_ix, ValueKind::F32)?;
                   let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
                   if let Column::F32(out) = out_col {
+                    block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
+                  }
+                }
+                (Column::F64(rhs), (_,Column::F64(lhs),_)) => { 
+                  out_brrw.set_col_kind(col_ix, ValueKind::F64)?;
+                  let out_col = out_brrw.get_column(&TableIndex::Index(col_ix+1))?;
+                  if let Column::F64(out) = out_col {
                     block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
                   }
                 }
