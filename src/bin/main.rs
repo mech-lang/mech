@@ -9,11 +9,10 @@ use std::rc::Rc;
 fn main() -> Result<(),MechError> {
 
 let input = r#"
-block
-  #y = [[1;2];[3]]
-block
-  x -< #y
-  #test = stats/sum(column: x)"#;
+x = [1 2 3]
+y = [4 5; 6 7; 8 9]
+z = x ** y
+#test = stats/sum(row: z)"#;
   let input = String::from(input);
 
   let mut ast = Ast::new();
@@ -26,9 +25,9 @@ block
 
   println!("{:?}", ast.syntax_tree);
 
-  let blocks = compiler.compile_blocks(&vec![ast.syntax_tree.clone()]).unwrap();
+  let sections = compiler.compile_sections(&vec![ast.syntax_tree.clone()]).unwrap();
   
-  core.load_blocks(blocks);
+  core.load_sections(sections);
   println!("{:#?}", core.blocks);
   println!("{:?}", core);
 
@@ -78,14 +77,14 @@ block
     ];
     core.process_transaction(&txn)?;
     println!("{:#?}", core.get_table("balls").unwrap().borrow());
-  }
-  let txn: Vec<Change> = vec![
-    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Alias(hash_str("ticks")), Value::U64(U64::new(1)))])),
-    Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Alias(hash_str("ticks")), Value::U64(U64::new(2)))])),
-  ];
-  println!("Processing Txn...");
-  core.process_transaction(&txn);
-  println!("Done Txn.");*/
+  }*/
+  //let txn: Vec<Change> = vec![
+    //Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Alias(hash_str("ticks")), Value::U64(U64::new(1)))])),
+    //Change::Set((hash_str("time/timer"), vec![(TableIndex::Index(1), TableIndex::Alias(hash_str("ticks")), Value::U64(U64::new(2)))])),
+  //];
+  //println!("Processing Txn...");
+  //core.process_transaction(&txn);
+  //println!("Done Txn.");
   //println!("{:#?}", core.blocks);
 
   //println!("Core:");

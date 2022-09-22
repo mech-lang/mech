@@ -4,6 +4,7 @@
 
 use mech_core::*;
 use mech_core::function::table::*;
+use mech_core::function::matrix::*;
 
 use crate::ast::{Ast, Node};
 use crate::parser::{parse, parse_fragment};
@@ -19,12 +20,50 @@ use hashbrown::hash_map::{HashMap};
 use std::sync::Arc;
 use std::mem;
 
+fn get_sections(nodes: &Vec<Node>) -> Vec<Vec<Node>> {
+  let mut sections: Vec<Vec<Node>> = Vec::new();
+  let mut statements = Vec::new();
+  let mut blocks = vec![];
+  for n in nodes {
+    match n {
+      Node::Section{children,..} => {
+        for child in children {
+          match child {
+            Node::Block{children} => {
+              blocks.push(child.clone());
+            }
+            Node::UserFunction{children} => {
+              blocks.push(child.clone());
+            }
+            Node::Statement{children} => {
+              statements.append(&mut children.clone());
+            }
+            _ => (),
+          }
+        }
+        sections.push(blocks.clone());
+        blocks.clear();
+      },
+      Node::Root{children} |
+      Node::Body{children} |
+      Node::Program{children,..} |
+      Node::Fragment{children} => {
+        sections.append(&mut get_sections(children));
+      }
+      _ => (), 
+    }
+  }
+  if statements.len() > 0 {
+    sections.push(vec![Node::Block{children: statements}]);
+  }
+  sections
+}
+
 fn get_blocks(nodes: &Vec<Node>) -> Vec<Node> {
   let mut blocks = Vec::new();
   let mut statements = Vec::new();
   for n in nodes {
     match n {
-      Node::Statement{..} => statements.push(n.clone()),
       Node::Block{..} => blocks.push(n.clone()),
       Node::MechCodeBlock{children} => {
         // Do something with the block state string.
@@ -38,13 +77,6 @@ fn get_blocks(nodes: &Vec<Node>) -> Vec<Node> {
           }
           _ => (),
         }
-      }
-      Node::Root{children} |
-      Node::Body{children} |
-      Node::Section{children,..} |
-      Node::Program{children,..} |
-      Node::Fragment{children} => {
-        blocks.append(&mut get_blocks(children));
       }
       _ => (), 
     }
@@ -65,37 +97,51 @@ impl Compiler {
     Compiler{}
   }
 
-  pub fn compile_str(&mut self, code: &str) -> Result<Vec<Block>,MechError> {
+  pub fn compile_str(&mut self, code: &str) -> Result<Vec<Vec<Block>>,MechError> {
     let parse_tree = parse(code)?;
     let mut ast = Ast::new();
     ast.build_syntax_tree(&parse_tree);
     let mut compiler = Compiler::new();
-    compiler.compile_blocks(&vec![ast.syntax_tree.clone()])
+    compiler.compile_sections(&vec![ast.syntax_tree.clone()])
   }
 
-  pub fn compile_fragment(&mut self, code: &str) -> Result<Vec<Block>,MechError> {
+  pub fn compile_fragment(&mut self, code: &str) -> Result<Vec<Vec<Block>>,MechError> {
     let parse_tree = parse_fragment(code)?;
     let mut ast = Ast::new();
     ast.build_syntax_tree(&parse_tree);
     let mut compiler = Compiler::new();
-    compiler.compile_blocks(&vec![ast.syntax_tree.clone()])
+    compiler.compile_sections(&vec![ast.syntax_tree.clone()])
   }
 
-  pub fn compile_blocks(&mut self, nodes: &Vec<Node>) -> Result<Vec<Block>,MechError> {
-    let mut blocks = Vec::new();
-    for b in get_blocks(nodes) {
-      let mut block = Block::new();
-      let mut tfms = self.compile_node(&b)?;
-      let tfms_before = tfms.clone();
-      tfms.sort();
-      tfms.dedup();
-      for tfm in tfms {
-        block.add_tfm(tfm);
+  pub fn compile_sections(&mut self, nodes: &Vec<Node>) -> Result<Vec<Vec<Block>>,MechError> {
+    let mut sections: Vec<Vec<Block>> = Vec::new();
+    for section in get_sections(nodes) {
+      let mut blocks: Vec<Block> = Vec::new();
+      for node in section {
+        match node {
+          Node::Block{..} => {
+            let mut block = Block::new();
+            let mut tfms = self.compile_node(&node)?;
+            let tfms_before = tfms.clone();
+            tfms.sort();
+            tfms.dedup();
+            for tfm in tfms {
+              block.add_tfm(tfm);
+            }
+            blocks.push(block);
+          }
+          Node::UserFunction{..} => {
+            let mut user_function = UserFunction::new();
+            println!("{:?}", user_function);
+
+          }
+          _ => (),
+        }
       }
-      blocks.push(block);
+      sections.push(blocks);
     }
-    if blocks.len() > 0 {
-      Ok(blocks)
+    if sections.len() > 0 {
+      Ok(sections)
     } else {
       Err(MechError{id: 3749, kind: MechErrorKind::None})
     }
@@ -417,6 +463,16 @@ impl Compiler {
             }
           }
         }
+      }
+      Node::UserFunction{children} => {
+        let output_args = &children[0];
+        let function_name = &children[1];
+        let input_args = &children[2];
+        if let Node::FunctionBody{children} = &children[3] {
+          let mut result = self.compile_nodes(children)?;
+          tfms.append(&mut result);
+        };
+        println!("{:?}", tfms);
       }
       Node::Function{name, children} => {
         let mut args: Vec<Argument>  = vec![];
@@ -875,6 +931,25 @@ impl Compiler {
           name: *TABLE_FLATTEN,
           arguments: vec![args[0].clone()],
           out: (out_id,TableIndex::All,TableIndex::All),
+        });
+      }
+      Node::TransposeSelect{children} => {
+        let mut result = self.compile_node(&children[0])?;
+        let mut args = vec![];
+        match &result[0] {
+          Transformation::Select{table_id, indices} => {
+            args.push((0, *table_id, indices.to_vec()));
+            result.remove(0);
+          }
+          _=>(),
+        }
+        let id = hash_str(&format!("transpose{:?}",args));
+        tfms.push(Transformation::NewTable{table_id: TableId::Local(id), rows: 1, columns: 1});
+        tfms.append(&mut result);
+        tfms.push(Transformation::Function{
+          name: *MATRIX_TRANSPOSE,
+          arguments: args,
+          out: (TableId::Local(id),TableIndex::All,TableIndex::All),
         });
       }
       Node::SelectData{name, id, children} => {
