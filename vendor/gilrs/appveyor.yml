@@ -1,0 +1,41 @@
+# Based on the "trust" template v0.1.1
+# https://github.com/japaric/trust/tree/v0.1.1
+
+image:
+  - Visual Studio 2017
+
+environment:
+  global:
+    RUST_VERSION: 1.40.0
+    CRATE_NAME: gilrs
+
+  matrix:
+    - TARGET: i686-pc-windows-gnu
+    - TARGET: x86_64-pc-windows-gnu
+
+    - TARGET: i686-pc-windows-msvc
+    - TARGET: x86_64-pc-windows-msvc
+
+install:
+  - ps: >-
+      If ($Env:TARGET -eq 'x86_64-pc-windows-gnu') {
+        $Env:PATH += ';C:\msys64\mingw64\bin'
+      } ElseIf ($Env:TARGET -eq 'i686-pc-windows-gnu') {
+        $Env:PATH += ';C:\msys64\mingw32\bin'
+      }
+  - curl -sSf -o rustup-init.exe https://win.rustup.rs/
+  - rustup-init.exe -y --default-host %TARGET% --default-toolchain %RUST_VERSION%
+  - set PATH=%PATH%;C:\Users\appveyor\.cargo\bin
+  - rustc -Vv
+  - cargo -V
+  - git submodule update --init --recursive
+
+test_script:
+  - cargo test --verbose --target %TARGET%
+
+cache:
+  - C:\Users\appveyor\.cargo\registry
+  - target
+
+# Building is done in the test phase, so we disable Appveyor's build phase.
+build: false

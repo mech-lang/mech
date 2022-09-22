@@ -1,21 +1,49 @@
-# io
+io
+===
 
-## Description
+1. Description
 
-Read and write data over Unix standard streams.
+Handles various input and output devices, including standard streams, mice, keyboards, gamepads, touch, and digital pens.
 
-## Provided Tables
+2. Provided Tables
 
-- `#io/out[|text color|]` - writes data to stdout
-- `#io/in[|text|]` - reads data from stdin
-- `#io/error[|text|]` - writes data to stderr
-- `#io/keyboard[|code|]` - a list of keyboard keys
+a. Standard Streams
 
-## Info
+- `#io/out[|text<string> color<u32>|]` - writes data to stdout
+- `#io/in[|text<string>|]` - reads data from stdin
+- `#io/error[|text<string>|]` - writes data to stderr
 
-  #io/machine = [
-    name: "io" 
-    version: "v0.0.1"
-    authors: "Corey Montella" 
-    url: "https://gitlab/com/mech-lang/machines/io"
-    license: "Apache-2.0"]
+b. Keyboard
+
+- `#io/keyboard[|code<string>|]` - a list of keyboard keys
+
+c. Gamepad
+
+- `#io/gamepad[|id<u64> left-stick-x<f32> left-stick-y<f32> north<bool> south<bool> east<bool> west<bool>|]
+
+d. Mouse
+
+...
+
+e. Touch
+
+...
+
+f. Pen
+
+...
+
+3. Notes
+
+The `gilrs` Rust crate has been vendored because the code is non-blocking, and we wanted a blocking version.
+
+Right now blocking behavior has only been added to the Windows gamepad driver.
+
+4. Info
+
+#io/machine = [
+  name: "io" 
+  version: "v0.0.1"
+  authors: "Corey Montella" 
+  machine-url: "https://gitlab.com/mech-lang/machines/io"
+  license: "Apache-2.0"]

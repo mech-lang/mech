@@ -1,0 +1,112 @@
+# Gamepad Demo Game
+
+## Player
+
+My is going to have a position and velocity
+
+  #player = [x: 100 y: 100 vx: 0 vy: 0, ax: 0, ay: 0]
+
+Set the global game loop frequency
+  #dt = 16<ms>
+  #ff = 3.0
+  #af = 40.0
+  #gravity = 500
+
+Set a timer to update the game state
+  #time/timer += [period: #dt]
+
+Move the player according to its dynamic model
+  ~ #time/timer.ticks
+  #player.x := #player.x + #player.vx * 0.016
+  #player.y := #player.y + #player.vy * 0.016
+  #player.vx := #player.vx + #player.ax * 0.016
+  #player.vy := #player.vy + #player.ay * 0.016 + #gravity * .016
+
+Keep the balls within the boundary height
+  ~ #time/timer.ticks
+  iy = #player.y > 450
+  iyy = #player.y < 0
+  #player.y{iy} := 450
+  #player.y{iyy} := 0
+  #player.vy{iy | iyy} := 0
+
+Keep the balls within the boundary width
+  ~ #time/timer.ticks
+  ix = #player.x > 500
+  ixx = #player.x < 0
+  #player.x{ix} := 500
+  #player.x{ixx} := 0
+  #player.vx{ix | ixx} := #player.vx * -0.80
+
+Move the character left and right with the left stick
+  ~ #time/timer.ticks
+  #player.ax := #af * #player/controller.left-x - #ff * #player.vx
+
+Bounce with the South button
+  ~ #time/timer.ticks
+  #player.vy := #player.vy - 40 * (1 - #player/controller.south)
+
+## Drawing
+
+Set up drawing elements 
+  #sun = [
+    shape: "text" 
+    parameters: [
+      x: 350
+      y: 100
+      text: "☀️"
+      fill: 0xFF0000    
+      font: [size: 50.0 face: "Arial"]
+    ]
+  ]
+  #tree = [
+    shape: "text" 
+    parameters: [
+      x: 0
+      y: 400
+      text: "🌴"
+      fill: 0xFF0000    
+      font: [size: 50.0 face: "Arial"]
+    ]
+  ]
+  #player/drawing = [
+    shape: "text" 
+    parameters: [
+      x: #player.x
+      y: #player.y
+      text: "🐯"
+      fill: 0xFF0000    
+      font: [size: 50.0 face: "Arial"]
+    ]
+  ]
+
+Draw a circle
+  ground = [
+    shape: "rectangle" 
+    parameters: [
+      x: 0.0   
+      y: 400.0   
+      width: 500.0
+      height: 100.0
+      fill: 0x006400
+    ]
+  ]
+  sky = [
+    shape: "rectangle" 
+    parameters: [
+      x: 0.0   
+      y: 0.0   
+      width: 500.0
+      height: 500.0
+      fill: 0x87CEEB
+    ]
+  ]
+  canvas = [
+    type: "canvas" 
+    contains: [|shape parameters| sky; ground; #sun; #tree; #player/drawing] 
+    parameters: [width: 500 height: 500]
+  ]
+  #html/app = [
+    root: "mech-root" 
+    contains: [|type contains parameters| canvas]
+  ]
