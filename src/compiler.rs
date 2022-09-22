@@ -1117,6 +1117,7 @@ impl Compiler {
         }
         tfms.append(&mut result);
       }
+      Node::Comment{children} |
       Node::Program{children, ..} |
       Node::Section{children, ..} |
       Node::Attribute{children} |
