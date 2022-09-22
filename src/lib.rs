@@ -23,8 +23,8 @@ pub enum SocketMessage {
   Pong,
   RemoteCoreConnect(String),
   RemoteCoreDisconnect(u64),
-  Listening((TableId,TableIndex,TableIndex)),
-  Producing((TableId,TableIndex,TableIndex)),
+  Listening((TableId,RegisterIndex,RegisterIndex)),
+  Producing((TableId,RegisterIndex,RegisterIndex)),
   Code(MechCode),
   RemoveBlock(usize),
   Transaction(Transaction),
@@ -34,9 +34,11 @@ pub enum SocketMessage {
 
 // This is dumb that I need to put this on every line :(
 #[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "web")]
 extern crate websocket;
 
 #[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "web")]
 pub enum MechSocket {
   UdpSocket(String),
   WebSocket(websocket::sync::Client<std::net::TcpStream>),
@@ -44,6 +46,7 @@ pub enum MechSocket {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "web")]
 impl fmt::Debug for MechSocket {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -56,6 +59,8 @@ impl fmt::Debug for MechSocket {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "web")]
+#[repr(C)]
 #[derive(Debug)]
 pub enum RunLoopMessage {
   Ping,
@@ -73,7 +78,7 @@ pub enum RunLoopMessage {
   PrintCore(Option<u64>),
   PrintTable(u64),
   PrintRuntime,
-  Listening((u64,(TableId,TableIndex,TableIndex))),
+  Listening((u64,(TableId,RegisterIndex,RegisterIndex))),
   GetTable(u64),
   GetValue((u64,TableIndex,TableIndex)),
   Transaction(Transaction),
@@ -108,18 +113,16 @@ impl MiniBlock {
     }
     block
   }
- 
-
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MechCode {
   String(String),
-  MiniBlocks(Vec<MiniBlock>),
+  MiniBlocks(Vec<Vec<MiniBlock>>),
 }
 
 #[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "web")]
 #[derive(Copy, Clone)]
 pub struct MachineDeclaration {
   pub register: unsafe extern "C" fn(&mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>)->String,
@@ -161,4 +164,3 @@ macro_rules! export_mech_function {
       };
   };
 }
-
