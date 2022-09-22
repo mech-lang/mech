@@ -122,6 +122,7 @@ pub enum MechCode {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "web")]
 #[derive(Copy, Clone)]
 pub struct MachineDeclaration {
   pub register: unsafe extern "C" fn(&mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>)->String,
