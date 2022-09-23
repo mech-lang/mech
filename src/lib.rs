@@ -38,10 +38,11 @@ use mech_syntax::compiler::{Compiler};
 use mech_core::*;
 use mech_utilities::{SocketMessage, MiniBlock};
 use mech_math::{
-  //math_sin, 
-  //math_cos, 
-  //math_floor,
-  //math_round,
+  sin::*, 
+  cos::*, 
+  tan::*, 
+  atan::*,
+  atan2::*, 
 };
 use mech_html::*;
 use mech_html::{
@@ -87,66 +88,13 @@ impl WasmCore {
   
   pub fn new(capacity: usize, recursion_limit: u64) -> WasmCore {
     let mut mech = mech_core::Core::new();
-    /*
-    mech.load_standard_library();
-    mech.runtime.load_library_function("math/sin",Some(math_sin));
 
-    mech.insert_string("time/timer");
-    mech.insert_string("period");
-    mech.insert_string("ticks");
-    mech.insert_string("html/event/click");
-    mech.insert_string("html/event/pointer-move");
-    mech.insert_string("html/event/pointer-down");
-    mech.insert_string("html/event/pointer-up");
-    mech.insert_string("html/event/key-down");
-    mech.insert_string("html/event/key-up");
-    mech.insert_string("x");
-    mech.insert_string("y");
-    mech.insert_string("target");
-    mech.insert_string("event-id");
-    mech.insert_string("html/location");
-    mech.insert_string("hash");
-    mech.insert_string("host");
-    mech.insert_string("host-name");
-    mech.insert_string("href");
-    mech.insert_string("origin");
-    mech.insert_string("path");
-    mech.insert_string("port");
-    mech.insert_string("protocol");
-    mech.insert_string("search");
+    mech.load_function("math/sin",Box::new(MathSin{}));
+    mech.load_function("math/cos",Box::new(MathCos{}));
+    mech.load_function("math/tan",Box::new(MathTan{}));
+    mech.load_function("math/atan",Box::new(MathAtan{}));
+    mech.load_function("math/atan2",Box::new(MathAtan2{}));
 
-    let new_table = |table_id: u64, rows: usize, a: Vec<u64>, | {
-      let mut changes = Vec::new();
-      changes.push(Change::NewTable{
-        table_id: table_id, 
-        rows: rows,
-        columns: a.len(),
-      });
-      for (ix, alias) in a.iter().enumerate() {
-        changes.push(Change::SetColumnAlias{
-          table_id: table_id,
-          column_ix: (ix + 1) as usize,
-          column_alias: *alias
-        });
-      }
-      changes
-    };
-
-  
-
-
-    let mut changes = vec![];
-    changes.append(&mut new_table(*TIME_TIMER, 0, vec![*PERIOD, *TICKS]));
-    changes.append(&mut new_table(*HTML_EVENT_POINTER__MOVE, 1, vec![*X, *Y, *TARGET, *EVENT__ID]));
-    changes.append(&mut new_table(*HTML_EVENT_POINTER__DOWN, 1, vec![*X, *Y, *TARGET, *EVENT__ID]));
-    changes.append(&mut new_table(*HTML_EVENT_POINTER__UP, 1, vec![*X, *Y, *TARGET, *EVENT__ID]));
-    changes.append(&mut new_table(*HTML_EVENT_KEY__DOWN, 1, vec![*KEY, *EVENT__ID]));
-    changes.append(&mut new_table(*HTML_EVENT_KEY__UP, 1, vec![*KEY, *EVENT__ID]));
-    changes.append(&mut new_table(*HTML_LOCATION, 1, vec![*HASH, *HOST, *HOST__NAME, *HREF, *ORIGIN, *PATH__NAME, *PORT, *PROTOCOL, *SEARCH]));
-
-    let txn = Transaction{changes};
-    mech.process_transaction(&txn);
-*/
     let html_code = r#"
 HTML
 =====
