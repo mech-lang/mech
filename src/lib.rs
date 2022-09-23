@@ -38,7 +38,7 @@ use mech_syntax::compiler::{Compiler};
 use mech_core::*;
 use mech_utilities::{SocketMessage, MiniBlock};
 use mech_math::{
-  math_sin, 
+  //math_sin, 
   //math_cos, 
   //math_floor,
   //math_round,
@@ -531,17 +531,14 @@ Keyboard events
   }
 
   pub fn draw_canvases(&mut self) -> Result<(), JsValue> {
-    for canvas_id in &self.canvases {
-      match self.document.get_element_by_id(&format!("{}",canvas_id)) {
-        Some(canvas) => {
-          let canvas: web_sys::HtmlCanvasElement = canvas
-            .dyn_into::<web_sys::HtmlCanvasElement>()
-            .map_err(|_| ())
-            .unwrap();
-          draw_canvas(&canvas,&self.core);
-        }
-        _ => (),
-      }
+    let canvases = self.document.get_elements_by_tag_name("canvas");
+    for i in 0..canvases.length() {
+      let canvas = canvases.get_with_index(i).unwrap();
+      let canvas: web_sys::HtmlCanvasElement = canvas
+                    .dyn_into::<web_sys::HtmlCanvasElement>()
+                    .map_err(|_| ())
+                    .unwrap();
+      draw_canvas(&canvas,&self.core);
     }
     Ok(())
   }
