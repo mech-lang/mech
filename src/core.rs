@@ -154,6 +154,12 @@ impl Core {
     }
   }
 
+  pub fn load_function(&mut self, name: &str, mut fxn: Box<dyn MechFunctionCompiler>) -> Result<(),MechError> {
+    let mut functions_brrw = self.functions.borrow_mut();
+    functions_brrw.insert(hash_str(name),fxn);
+    Ok(())
+  }
+
   pub fn needed_registers(&self) -> HashSet<(TableId,RegisterIndex,RegisterIndex)> {
     self.input.difference(&self.defined_tables).cloned().collect()
   }
