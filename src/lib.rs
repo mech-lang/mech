@@ -16,3 +16,5 @@ pub mod cos;
 pub mod tan;
 pub mod atan;
 pub mod atan2;
+
+pub use self::sin::*;
