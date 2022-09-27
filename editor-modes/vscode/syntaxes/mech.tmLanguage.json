@@ -28,10 +28,6 @@
 					"match": "//.+"
 				},
 				{
-					"name": "constant.regexp",
-					"match": "#"
-				},
-				{
 					"name": "string.regexp",
 					"match": "~"
 				},
@@ -69,13 +65,23 @@
 					]
 				},
 				{
-					"name": "constant.language",
-					"match": "[(^#)a-z]+(\/)[a-z]+"
-				},
-
-				{
 					"name": "constant.numeric.integer",
-					"match": "([0-9]+)|([0-9]+(\\.)[0-9]+)|(0x[A-Z0-9]+)"
+					"match": "(0x[A-Z0-9]+)"
+				},
+				{
+					"name" : "constant.numeric.integer", 
+					"match": "([0-9]+)|([0-9]+(\\.)[0-9]+)"
+				},
+				{
+					"name": "meta.block",
+					"begin": "([A-Za-z0-9-_]+(\\.))",
+					"end": "\n| |{",
+					"patterns": [
+						{
+							"name": "entity.name.tag.css", 
+							"match": "[A-Za-z][0-9]*" 
+						}
+					]
 				},
 				{
 					"name": "constant.language",
@@ -100,12 +106,29 @@
 				},
 				{
 					"name": "meta.block",
-					"begin": "([A-Za-z0-9-_]+(\\.))",
-					"end": "\n| |{",
+					"begin": "#",
+					"end": " |\\.",
+					"beginCaptures": {
+						"0": { "name": "constant.regexp" }
+					  },
 					"patterns": [
 						{
-							"name": "entity.name.tag.css", 
-							"match": "[A-Za-z][0-9]*" 
+							"name": "",
+							"match": "[a-z0-9-]+"
+						}
+					]
+				},
+				{
+					"name": "meta.block",
+					"begin": "( |\n)[a-z]+\/",
+					"end": "\\(",
+					"beginCaptures": {
+						"0": { "name": "constant.language" }
+					  },
+					"patterns": [
+						{
+							"name": "constant.language", 
+							"match": "[a-z]+" 
 						}
 					]
 				},
@@ -119,25 +142,16 @@
 							"match": "[A-Za-z0-9-_]*" 
 						}
 					]
+				
 				}
+
 
 			
 				
 			]
 		},
 		"outOfBlock":{
-			"name": "meta.block",
-			"begin": "[A-Z]",
-			"end": "\n",
-			"beginCaptures": {
-				"0": { "name": "entity.name.tag.css" }
-			  },
-			"patterns": [
-				{
-					"name": "entity.name.tag.css",
-					"match": "[a-z0-9_ ]+"
-				}
-			]
+			
 		}
 	},
 	"scopeName": "mech"
