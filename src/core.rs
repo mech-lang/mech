@@ -67,6 +67,7 @@ pub struct Core {
   unsatisfied_blocks: HashMap<BlockId,BlockRef>,
   database: Rc<RefCell<Database>>,
   pub functions: Rc<RefCell<Functions>>,
+  pub user_functions: Rc<RefCell<HashMap<u64,UserFunction>>>,
   pub required_functions: HashSet<u64>,
   pub errors: HashMap<MechErrorKind,Vec<BlockRef>>,
   pub input: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
@@ -144,6 +145,7 @@ impl Core {
       unsatisfied_blocks: HashMap::new(),
       database: Rc::new(RefCell::new(Database::new())),
       functions: Rc::new(RefCell::new(functions)),
+      user_functions: Rc::new(RefCell::new(HashMap::new())),
       required_functions: HashSet::new(),
       errors: HashMap::new(),
       schedule: Schedule::new(),
@@ -313,13 +315,22 @@ impl Core {
             errors_agg.append(&mut errors);
           }
           SectionElement::UserFunction(fxn) => {
-            ()
+            self.load_user_function(fxn);
           }
         }
       }
       result.push((block_ids_agg,fxn_ids,errors_agg));
     }
     result
+  }
+
+  pub fn load_user_function(&mut self, user_function: &UserFunction) -> Result<(),MechError> {
+
+    let mut usr_fxns_brrw = self.user_functions.borrow_mut();
+
+    usr_fxns_brrw.insert(user_function.name,user_function.clone());
+
+    Ok(())
   }
 
   pub fn load_block_refs(&mut self, mut blocks: Vec<BlockRef>) -> (Vec<BlockId>,Vec<MechError>) {
@@ -364,6 +375,7 @@ impl Core {
       let temp_db = block_brrw.global_database.clone();
       block_brrw.global_database = self.database.clone();
       block_brrw.functions = Some(self.functions.clone());
+      block_brrw.user_functions = Some(self.user_functions.clone());
       // Merge databases
       {
         let mut temp_db_brrw = temp_db.borrow();
@@ -522,7 +534,10 @@ impl fmt::Debug for Core {
       box_drawing.add_line(format!("{:#?}", &self.unsatisfied_blocks));    
     }
     box_drawing.add_title("💻","functions");
+    box_drawing.add_line("Compiled Functions".to_string());
     box_drawing.add_line(format!("{:#?}", &self.functions.borrow().functions.iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
+    box_drawing.add_line("User Functions".to_string());
+    box_drawing.add_line(format!("{:#?}", &self.user_functions.borrow().iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
     box_drawing.add_title("🗓️","schedule");
     box_drawing.add_line(format!("{:#?}", &self.schedule));
     box_drawing.add_title("💾","database");

@@ -105,6 +105,7 @@ pub struct Block {
   pub tables: Database,
   pub plan: Plan,
   pub functions: Option<Rc<RefCell<core::Functions>>>,
+  pub user_functions: Option<Rc<RefCell<HashMap<u64,UserFunction>>>>,
   pub global_database: Rc<RefCell<Database>>,
   pub unsatisfied_transformation: Option<(MechError,Transformation)>,
   pub pending_transformations: Vec<Transformation>,
@@ -127,6 +128,7 @@ impl Block {
       tables: Database::new(),
       plan: Plan::new(),
       functions: None,
+      user_functions: None,
       required_functions: HashSet::new(),
       global_database: Rc::new(RefCell::new(Database::new())),
       unsatisfied_transformation: None,
@@ -852,8 +854,8 @@ impl Block {
         let fxns = self.functions.clone();
         match &fxns {
           Some(functions) => {
-            let mut fxns = functions.borrow_mut();
-            match fxns.get(*name) {
+            let mut fxns_brrw = functions.borrow_mut();
+            match fxns_brrw.get(*name) {
               Some(fxn) => {
                 // A function knows how to compile itself
                 // based on what arguments are passed.
@@ -861,10 +863,23 @@ impl Block {
                 // case an error is returned.
                 fxn.compile(self,&arguments,&out)?;
               }
-              None => {return Err(MechError{id: 2123, kind: MechErrorKind::MissingFunction(*name)});},
+              None => {
+                // check if it's a user function instead
+                let user_fxns = self.user_functions.clone();
+                match &user_fxns {
+                  Some(user_fxns) => {
+                    let mut user_fxns_brrw = user_fxns.borrow();
+                    match user_fxns_brrw.get(name) {
+                      Some(fxn) => {fxn.compile(self,&arguments,&out)?;},
+                      None => return Err(MechError{id: 2123, kind: MechErrorKind::MissingFunction(*name)}),
+                    }
+                  }
+                  None => return Err(MechError{id: 2124, kind: MechErrorKind::MissingFunction(*name)}),
+                }
+              },
             }
           }
-          None => {return Err(MechError{id: 2124, kind: MechErrorKind::GenericError("No functions are loaded.".to_string())});},
+          None => {return Err(MechError{id: 2125, kind: MechErrorKind::GenericError("No functions are loaded.".to_string())});},
         }
       }
       _ => (),

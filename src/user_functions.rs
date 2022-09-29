@@ -1,6 +1,6 @@
 use crate::*;
 
-use hashbrown::HashSet;
+use hashbrown::{HashSet, HashMap};
 
 // # User-defined Mech Functions
 
@@ -18,6 +18,8 @@ pub struct UserFunction {
     pub name: u64,
     pub inputs: HashSet<(TableId,ValueKind)>,
     pub outputs: HashSet<(TableId,ValueKind)>,
+    pub input_refs: HashMap<TableId,TableRef>,
+    pub output_refs: HashMap<TableId,TableRef>,
     pub transformations: Vec<Transformation>,
     pub plan: Plan,
 }
@@ -28,9 +30,15 @@ impl UserFunction {
         name: 0,
         inputs: HashSet::new(),
         outputs: HashSet::new(),
+        input_refs: HashMap::new(),
+        output_refs: HashMap::new(),
         transformations: Vec::new(),
         plan: Plan::new(),
       }
+    }
+
+    pub fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &Out) -> Result<(),MechError> {
+      Ok(())
     }
 
 }
