@@ -16,10 +16,8 @@ use hashbrown::{HashSet, HashMap};
 #[derive(Clone, Debug)]
 pub struct UserFunction {
     pub name: u64,
-    pub inputs: HashSet<(TableId,ValueKind)>,
-    pub outputs: HashSet<(TableId,ValueKind)>,
-    pub input_refs: HashMap<TableId,TableRef>,
-    pub output_refs: HashMap<TableId,TableRef>,
+    pub inputs: HashMap<u64,ValueKind>,
+    pub outputs: HashMap<u64,ValueKind>,
     pub transformations: Vec<Transformation>,
     pub plan: Plan,
 }
@@ -28,16 +26,30 @@ impl UserFunction {
     pub fn new() -> UserFunction {
       UserFunction {
         name: 0,
-        inputs: HashSet::new(),
-        outputs: HashSet::new(),
-        input_refs: HashMap::new(),
-        output_refs: HashMap::new(),
+        inputs: HashMap::new(),
+        outputs: HashMap::new(),
         transformations: Vec::new(),
         plan: Plan::new(),
       }
     }
 
     pub fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &Out) -> Result<(),MechError> {
+      //println!("{:?}", block);
+      let mut input_refs = HashMap::new();
+
+      for (arg_name, arg_table_id, indices) in arguments {
+        match self.inputs.get(arg_name) {
+          Some(kind) => {
+            let table_ref = block.get_table(arg_table_id)?;
+            input_refs.insert(*arg_name,table_ref.clone());
+          },
+          _ => (),
+        }
+      }
+    
+
+      println!("{:?}", input_refs);
+
       Ok(())
     }
 
