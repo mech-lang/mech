@@ -549,7 +549,7 @@ impl ProgramRunner {
           } 
           (Ok(RunLoopMessage::Code(code)), _) => {
             // Load the program
-            let sections: Vec<Vec<Block>> = match code {
+            let sections: Vec<Vec<SectionElement>> = match code {
               MechCode::String(code) => {
                 let mut compiler = Compiler::new(); 
                 match compiler.compile_str(&code) {
@@ -562,9 +562,9 @@ impl ProgramRunner {
                 }
               },
               MechCode::MiniBlocks(mb_sections) => {
-                let mut sections: Vec<Vec<Block>> = vec![];
+                let mut sections: Vec<Vec<SectionElement>> = vec![];
                 for section in mb_sections {
-                  let section: Vec<Block> = section.iter().map(|mb| MiniBlock::maximize_block(mb)).collect();
+                  let section: Vec<SectionElement> = section.iter().map(|mb| SectionElement::Block(MiniBlock::maximize_block(mb))).collect();
                   sections.push(section);
                 } 
                 sections
@@ -573,7 +573,7 @@ impl ProgramRunner {
 
             let result = program.mech.load_sections(sections);
 
-            for (new_block_ids,new_block_errors) in result {
+            for (new_block_ids,_,new_block_errors) in result {
               if new_block_errors.len() > 0 {
                 match program.download_dependencies(Some(client_outgoing.clone())) {
                   Ok(resolved_errors) => {

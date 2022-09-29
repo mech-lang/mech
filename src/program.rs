@@ -139,7 +139,7 @@ impl Program {
     Ok(())
   }
 
-  pub fn compile_program(&mut self, input: String) -> Result<Vec<((Vec<BlockId>,Vec<MechError>))>,MechError> {
+  pub fn compile_program(&mut self, input: String) -> Result<Vec<((Vec<BlockId>,Vec<u64>,Vec<MechError>))>,MechError> {
     let mut compiler = Compiler::new();
     let sections = compiler.compile_str(&input.clone())?;
     let result = self.mech.load_sections(sections);
@@ -381,7 +381,7 @@ impl Program {
     for mic in &machine_init_code {
       let result = self.compile_program(mic.to_string())?;
       self.mech.schedule_blocks();
-      for (new_block_ids,block_error) in result {
+      for (new_block_ids,_,block_error) in result {
         for block_id in new_block_ids {
           let block = self.mech.blocks.get(&block_id);
           let output = self.mech.get_output_by_block_id(block_id)?;
