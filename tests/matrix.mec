@@ -27,6 +27,17 @@ Test row matrix multiplcation with f64
   mat-result = stats/sum(table: x)
   #test += ["Matrix Mult Column:Row f64" 21.0<f32> mat-result]
 
+Row : Column
+----------------
+
+Test row matrix multiplcation with f32
+  mat-result = [1<f32> 2<f32>] ** [3<f32>;4<f32>]
+  #test += ["Matrix Mult Row:Column f32" 11.0<f32> mat-result]
+
+Test row matrix multiplcation with f64
+  mat-result = [1<f64> 2<f64>] ** [3<f64>;4<f64>]
+  #test += ["Matrix Mult Row:Column f64" 11.0<f64> mat-result]
+
 Transpose Row
 ----------------
 
