@@ -20,17 +20,37 @@ Column : Row
 Test row matrix multiplcation with f32
   x = [1<f32>; 2<f32>] ** [3<f32> 4<f32>]
   mat-result = stats/sum(table: x)
-  #test += ["Matrix Mult Column:Column f32" 21.0<f32> mat-result]
+  #test += ["Matrix Mult Column:Row f32" 21.0<f32> mat-result]
 
 Test row matrix multiplcation with f64
   x = [1<f64>; 2<f64>] ** [3<f64> 4<f64>]
   mat-result = stats/sum(table: x)
-  #test += ["Matrix Mult Column:Column f32" 21.0<f32> mat-result]
+  #test += ["Matrix Mult Column:Row f64" 21.0<f32> mat-result]
 
 Transpose Row
 ----------------
 
-Test transpose row matrix with f32
-  x = [1 2 3]
+Test transpose row with f32
+  x = [1<f32> 2<f32> 3<f32>]
   mat-result = x ** x
-  #test += ["Matrix Mult Column:Column f32" 14.0 mat-result]
+  #test += ["Transpose Matrix Row f32" 14.0<f32> mat-result]
+
+Test transpose row with f64
+  x = [1<f64> 2<f64> 3<f64>]
+  mat-result = x ** x
+  #test += ["Transpose Matrix Row  f64" 14.0<f64> mat-result]
+
+Transpose matrix
+----------------
+
+Test transpose matrix with f32
+  x = [1<f32> 2<f32>; 3<f32> 4<f32>]
+  y = x ** x'
+  mat-result = stats/sum(table: y)
+  #test += ["Matrix Transpose f32" 52.0<f32> mat-result]
+
+Test transpose matrix with f64
+  x = [1<f64> 2<f64>; 3<f64> 4<f64>]
+  y = x ** x'
+  mat-result = stats/sum(table: y)
+  #test += ["Matrix Transpose f64" 52.0<f64> mat-result]
