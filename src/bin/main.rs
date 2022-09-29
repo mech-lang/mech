@@ -9,10 +9,9 @@ use std::rc::Rc;
 fn main() -> Result<(),MechError> {
 
 let input = r#"
-x = [1 2 3]
-y = [4 5; 6 7; 8 9]
-z = x ** y
-#test = stats/sum(row: z)"#;
+[a<f32>,b<f32>] = add-two(x<f32>,y<f32>)
+  a = x
+  b = y"#;
   let input = String::from(input);
 
   let mut ast = Ast::new();
@@ -26,10 +25,10 @@ z = x ** y
   println!("{:?}", ast.syntax_tree);
 
   let sections = compiler.compile_sections(&vec![ast.syntax_tree.clone()]).unwrap();
-  
-  core.load_sections(sections);
-  println!("{:#?}", core.blocks);
-  println!("{:?}", core);
+  println!("{:?}",sections);
+  //core.load_sections(sections);
+  //println!("{:#?}", core.blocks);
+  //println!("{:?}", core);
 
 /*
   let mut code = r#"

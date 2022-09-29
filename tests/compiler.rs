@@ -44,13 +44,18 @@ macro_rules! test_mech {
       let sections = compiler.compile_str(&input)?;
       
       for section in sections {
-        for block in section {
-          let (_,errors,new_block_output) = core.load_block(Rc::new(RefCell::new(block)));
-          for register in new_block_output.iter() {
-            core.step(register);
+        for element in section {
+          match element {
+            SectionElement::Block(block) => {
+              let (_,errors,new_block_output) = core.load_block(Rc::new(RefCell::new(block)));
+              for register in new_block_output.iter() {
+                core.step(register);
+              }
+              core.schedule_blocks();
+              assert!(errors.len() == 0);
+            }
+            _ => (),
           }
-          core.schedule_blocks();
-          assert!(errors.len() == 0);
         }
       }
 

@@ -97,7 +97,7 @@ impl Compiler {
     Compiler{}
   }
 
-  pub fn compile_str(&mut self, code: &str) -> Result<Vec<Vec<Block>>,MechError> {
+  pub fn compile_str(&mut self, code: &str) -> Result<Vec<Vec<SectionElement>>,MechError> {
     let parse_tree = parse(code)?;
     let mut ast = Ast::new();
     ast.build_syntax_tree(&parse_tree);
@@ -105,7 +105,7 @@ impl Compiler {
     compiler.compile_sections(&vec![ast.syntax_tree.clone()])
   }
 
-  pub fn compile_fragment(&mut self, code: &str) -> Result<Vec<Vec<Block>>,MechError> {
+  pub fn compile_fragment(&mut self, code: &str) -> Result<Vec<Vec<SectionElement>>,MechError> {
     let parse_tree = parse_fragment(code)?;
     let mut ast = Ast::new();
     ast.build_syntax_tree(&parse_tree);
@@ -113,10 +113,10 @@ impl Compiler {
     compiler.compile_sections(&vec![ast.syntax_tree.clone()])
   }
 
-  pub fn compile_sections(&mut self, nodes: &Vec<Node>) -> Result<Vec<Vec<Block>>,MechError> {
-    let mut sections: Vec<Vec<Block>> = Vec::new();
+  pub fn compile_sections(&mut self, nodes: &Vec<Node>) -> Result<Vec<Vec<SectionElement>>,MechError> {
+    let mut sections: Vec<Vec<SectionElement>> = Vec::new();
     for section in get_sections(nodes) {
-      let mut blocks: Vec<Block> = Vec::new();
+      let mut elements: Vec<SectionElement> = Vec::new();
       for node in section {
         match node {
           Node::Block{..} => {
@@ -128,17 +128,57 @@ impl Compiler {
             for tfm in tfms {
               block.add_tfm(tfm);
             }
-            blocks.push(block);
+            elements.push(SectionElement::Block(block));
           }
-          Node::UserFunction{..} => {
+          Node::UserFunction{children} => {
             let mut user_function = UserFunction::new();
-            println!("{:?}", user_function);
 
+
+            let mut out_args = self.compile_node(&children[0])?;
+            let mut name = self.compile_node(&children[1])?;
+            let mut in_args = self.compile_node(&children[2])?;
+            let mut body = self.compile_node(&children[3])?;
+
+            // TODO Check that all arguments are used
+            // TODO Check that output arguments are created in body
+            // TODO Check that all variables used in body are sourced in body or inargs
+
+            match &name[0] {
+              Transformation::Identifier{name,id} => {
+                user_function.name = *id;
+              }
+              _ => (),
+            }
+
+            let mut i = 0;
+            while i < out_args.len() {
+              match (&out_args[i],&out_args[i+1]) {
+                (Transformation::Identifier{name,id},Transformation::ColumnKind{table_id,column_ix,kind}) => {
+                  user_function.outputs.insert((TableId::Local(*id),ValueKind::F32));
+                }
+                _ => (),
+              }
+              i += 3;
+            }
+
+            let mut i = 0;
+            while i < in_args.len() {
+              match (&in_args[i],&in_args[i+1]) {
+                (Transformation::Identifier{name,id},Transformation::ColumnKind{table_id,column_ix,kind}) => {
+                  user_function.inputs.insert((TableId::Local(*id),ValueKind::F32));
+                }
+                _ => (),
+              }
+              i += 3;
+            }
+
+            user_function.transformations = body;
+            elements.push(SectionElement::UserFunction(user_function));
           }
           _ => (),
         }
       }
-      sections.push(blocks);
+      sections.push(elements);
     }
     if sections.len() > 0 {
       Ok(sections)
@@ -1117,6 +1157,10 @@ impl Compiler {
         }
         tfms.append(&mut result);
       }
+      Node::FunctionBody{children} |
+      Node::FunctionInput{children} |
+      Node::FunctionOutput{children} |
+      Node::FunctionArgs{children} |
       Node::Comment{children} |
       Node::Program{children, ..} |
       Node::Section{children, ..} |
