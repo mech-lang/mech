@@ -72,6 +72,12 @@ pub trait MechNumArithmetic<T>: Add<Output = T> +
                                 DivAssign +
                                 Sized {}
 
+#[derive(Debug)]
+pub enum SectionElement {
+  Block(Block),
+  UserFunction(UserFunction),
+}
+
 pub trait MechFunctionCompiler {
   fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &Out) -> std::result::Result<(),MechError>;
 }

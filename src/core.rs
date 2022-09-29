@@ -299,8 +299,27 @@ impl Core {
     Ok(())
   }
 
-  pub fn load_sections(&mut self, sections: Vec<Vec<Block>>) -> Vec<((Vec<BlockId>,Vec<MechError>))> {
-    sections.iter().map(|blocks| self.load_blocks(blocks)).collect()
+  pub fn load_sections(&mut self, sections: Vec<Vec<SectionElement>>) -> Vec<((Vec<BlockId>,Vec<u64>,Vec<MechError>))> {
+    let mut result = vec![];
+    for elements in sections.iter() {
+      let mut block_ids_agg = vec![];
+      let mut fxn_ids = vec![];
+      let mut errors_agg = vec![];
+      for section_element in elements.iter() {
+        match section_element {
+          SectionElement::Block(block) => {
+            let (mut block_ids, mut errors) = self.load_blocks(&vec![block.clone()]);
+            block_ids_agg.append(&mut block_ids);
+            errors_agg.append(&mut errors);
+          }
+          SectionElement::UserFunction(fxn) => {
+            ()
+          }
+        }
+      }
+      result.push((block_ids_agg,fxn_ids,errors_agg));
+    }
+    result
   }
 
   pub fn load_block_refs(&mut self, mut blocks: Vec<BlockRef>) -> (Vec<BlockId>,Vec<MechError>) {
