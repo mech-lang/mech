@@ -154,7 +154,7 @@ impl Compiler {
             while i < out_args.len() {
               match (&out_args[i],&out_args[i+1]) {
                 (Transformation::Identifier{name,id},Transformation::ColumnKind{table_id,column_ix,kind}) => {
-                  user_function.outputs.insert((TableId::Local(*id),ValueKind::F32));
+                  user_function.outputs.insert(*id,ValueKind::F32);
                 }
                 _ => (),
               }
@@ -165,7 +165,7 @@ impl Compiler {
             while i < in_args.len() {
               match (&in_args[i],&in_args[i+1]) {
                 (Transformation::Identifier{name,id},Transformation::ColumnKind{table_id,column_ix,kind}) => {
-                  user_function.inputs.insert((TableId::Local(*id),ValueKind::F32));
+                  user_function.inputs.insert(*id,ValueKind::F32);
                 }
                 _ => (),
               }
