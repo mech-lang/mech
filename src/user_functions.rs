@@ -19,7 +19,6 @@ pub struct UserFunction {
     pub inputs: HashMap<u64,ValueKind>,
     pub outputs: HashMap<u64,ValueKind>,
     pub transformations: Vec<Transformation>,
-    pub plan: Plan,
 }
 
 impl UserFunction {
@@ -29,12 +28,10 @@ impl UserFunction {
         inputs: HashMap::new(),
         outputs: HashMap::new(),
         transformations: Vec::new(),
-        plan: Plan::new(),
       }
     }
 
-    pub fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &Out) -> Result<(),MechError> {
-      //println!("{:?}", block);
+    pub fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &Out) -> Result<Block,MechError> {
       let mut input_refs = HashMap::new();
 
       for (arg_name, arg_table_id, indices) in arguments {
@@ -46,11 +43,12 @@ impl UserFunction {
           _ => (),
         }
       }
-    
-
-      println!("{:?}", input_refs);
-
-      Ok(())
+      let mut fxn_block = Block::new();
+      for tfm in &self.transformations {
+        fxn_block.add_tfm(tfm.clone());
+      }
+      fxn_block.id = hash_str(&format!("{:?}{:?}{:?}",block.id,self.name,self.inputs));
+      Ok(fxn_block)
     }
 
 }
