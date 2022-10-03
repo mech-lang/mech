@@ -31,7 +31,7 @@ impl UserFunction {
       }
     }
 
-    pub fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &Out) -> Result<Block,MechError> {
+    pub fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &Out) -> Result<CompiledUserFunction,MechError> {
       let mut input_refs = HashMap::new();
 
       for (arg_name, arg_table_id, indices) in arguments {
@@ -48,7 +48,17 @@ impl UserFunction {
         fxn_block.add_tfm(tfm.clone());
       }
       fxn_block.id = hash_str(&format!("{:?}{:?}{:?}",block.id,self.name,self.inputs));
-      Ok(fxn_block)
+
+      let compiled_fxn = CompiledUserFunction{name: self.name, inputs: self.inputs.clone(), outputs: self.outputs.clone(), block: fxn_block};
+
+      Ok(compiled_fxn)
     }
 
+}
+
+pub struct CompiledUserFunction {
+  pub name: u64,
+  pub inputs: HashMap<u64,ValueKind>,
+  pub outputs: HashMap<u64,ValueKind>,
+  pub block: Block,
 }
