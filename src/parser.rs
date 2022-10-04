@@ -526,9 +526,8 @@ fn paragraph_starter(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Text{children: word}))
 }
 
-// identifier ::= space*, (word | emoji), (word | number | dash | slash | emoji)* ;
+// identifier ::= (word | emoji), (word | number | dash | slash | emoji)* ;
 fn identifier(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = many0(space)(input)?;
   let (input, (word, mut rest)) = tuple((alt((word,emoji)), many0(alt((word, number, dash, slash, emoji)))))(input)?;
   let mut id = vec![word];
   id.append(&mut rest);
@@ -748,12 +747,13 @@ fn dot_index(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::DotIndex{children: index}))
 }
 
-// swizzle ::= period, identifier, comma, <identifier, (",", identifier)*> ;
+// swizzle ::= period, identifier, comma, !space, <identifier, (",", identifier)*> ;
 fn swizzle(input: ParseString) -> ParseResult<ParserNode> {
-  let msg = "Expect identifier";
+  let msg = "Expect identifier for swizzling";
   let (input, _) = period(input)?;
   let (input, first) = identifier(input)?;
   let (input, _) = comma(input)?;
+  let (input, _) = is_not(space)(input)?;  // so that it's not a binding
   let (input, mut rest) = label!(separated_list1(tag(","), identifier), msg)(input)?;
   let mut cols = vec![first];
   cols.append(&mut rest);
@@ -803,10 +803,14 @@ fn table(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Table{children: vec![table_identifier]}))
 }
 
-// binding ::= (space | newline | tab)*, identifier, kind_annotation?, <!(space+, colon)>, colon, (space | newline | tab)+, <empty | expression | identifier | value>, (space | tab | newline)*, comma?, (space | tab | newline)* ;
+// binding ::= s*, identifier, kind_annotation?, <!(space+, colon)>, colon, s+,
+// >>          <empty | expression | identifier | value>, <!!right_bracket | s+ | (s*, comma, <s+>)> ;
+// >> where s ::= space | newline | tab ;
 fn binding(input: ParseString) -> ParseResult<ParserNode> {
   let msg1 = "Unexpected space before colon ':'";
   let msg2 = "Expect a value";
+  let msg3 = "Expect whitespace or comma followed by whitespace";
+  let msg4 = "Expect whitespace";
   let mut children = vec![];
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, binding_id) = identifier(input)?;
@@ -815,20 +819,30 @@ fn binding(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = colon(input)?;
   let (input, _) = many1(alt((space, newline, tab)))(input)?;
   let (input, bound) = label!(alt((empty, expression, identifier, value)), msg2)(input)?;
-  let (input, _) = many0(alt((space, newline, tab)))(input)?;
-  let (input, _) = opt(comma)(input)?;
-  let (input, _) = many0(alt((space, newline, tab)))(input)?;
+  let (input, _) = label!(alt((
+    is(right_bracket),
+    null(many1(alt((space, newline, tab)))),
+    null(tuple((
+      many0(alt((space, newline, tab))),
+      comma,
+      label!(many1(alt((space, newline, tab))), msg4),
+    )))),
+  ), msg3)(input)?;
   children.push(binding_id);
   children.push(bound);
   if let Some(kind) = kind { children.push(kind); }
   Ok((input, ParserNode::Binding{children}))
 }
 
-// binding_strict ::= (space | newline | tab)*, identifier, kind_annotation?, <!(space+, colon)>, colon, <(space | newline | tab)+>, <empty | expression | identifier | value>, (space | tab | newline)*, comma?, (space | tab | newline)* ;
+// binding_strict ::= s*, identifier, kind_annotation?, <!(space+, colon)>, colon, <s+>,
+// >>                 <empty | expression | identifier | value>, <!!right_bracket | s+ | (s*, comma, <s+>)> ;
+// >> where s ::= space | newline | tab ;
 fn binding_strict(input: ParseString) -> ParseResult<ParserNode> {
   let msg1 = "Unexpected space before colon ':' for binding";
   let msg2 = "Expect space after ':' for binding";
   let msg3 = "Expect a value";
+  let msg4 = "Expect whitespace or comma followed by whitespace";
+  let msg5 = "Expect whitespace";
   let mut children = vec![];
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, binding_id) = identifier(input)?;
@@ -837,22 +851,30 @@ fn binding_strict(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = colon(input)?;
   let (input, _) = label!(many1(alt((space, newline, tab))), msg2)(input)?;
   let (input, bound) = label!(alt((empty, expression, identifier, value)), msg3)(input)?;
-  let (input, _) = many0(alt((space, newline, tab)))(input)?;
-  let (input, _) = opt(comma)(input)?;
-  let (input, _) = many0(alt((space, newline, tab)))(input)?;
+  let (input, _) = label!(alt((
+    is(right_bracket),
+    null(many1(alt((space, newline, tab)))),
+    null(tuple((
+      many0(alt((space, newline, tab))),
+      comma,
+      label!(many1(alt((space, newline, tab))), msg5),
+    )))),
+  ), msg4)(input)?;
   children.push(binding_id);
   children.push(bound);
   if let Some(kind) = kind { children.push(kind); }
   Ok((input, ParserNode::Binding{children}))
 }
 
-// function_binding ::= identifier, <colon, space*>, <expression | identifier | value>, space*, comma?, space* ;
+// function_binding ::= identifier, <colon>, <space+>, <expression | identifier | value>, space*, comma?, space* ;
 fn function_binding(input: ParseString) -> ParseResult<ParserNode> {
   let msg1 = "Expect colon ':' for function binding";
-  let msg2 = "Expect expression, identifier, or value to bind";
+  let msg2 = "Expectt space after colon for function binding";
+  let msg3 = "Expect expression, identifier, or value to bind";
   let (input, (binding_id, r)) = range(identifier)(input)?;
-  let (input, _) = label!(tuple((colon, many0(space))), msg1)(input)?;
-  let (input, bound) = label!(alt((expression, identifier, value)), msg2, r)(input)?;
+  let (input, _) = label!(colon, msg1)(input)?;
+  let (input, _) = label!(many1(space), msg2)(input)?;
+  let (input, bound) = label!(alt((expression, identifier, value)), msg3, r)(input)?;
   let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
   Ok((input, ParserNode::FunctionBinding{children: vec![binding_id, bound]}))
 }
@@ -894,7 +916,8 @@ fn table_header(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::TableHeader{children: attributes}))
 }
 
-// anonymous_table ::= left_bracket, (space | newline | tab)*, table_header?, ((comment, newline) | table_row)*, (space | newline | tab)*, <right_bracket> ;
+// anonymous_table ::= left_bracket, (space | newline | tab)*, table_header?,
+// >>                  ((comment, newline) | table_row)*, (space | newline | tab)*, <right_bracket> ;
 fn anonymous_table(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect right bracket ']' to finish the table";
   let (input, (_, r)) = range(left_bracket)(input)?;
@@ -1205,7 +1228,8 @@ fn until_data(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Until{children: vec![watch]}))
 }
 
-// statement ::= table_define | variable_define | split_data | flatten_data | whenever_data | wait_data | until_data | set_data | update_data | add_row | comment ;
+// statement ::= table_define | variable_define | split_data  | flatten_data | whenever_data | wait_data |
+// >>            until_data   | set_data        | update_data | add_row      | comment ;
 fn statement(input: ParseString) -> ParseResult<ParserNode> {
   let (input, statement) = alt((table_define, variable_define, split_data, flatten_data, whenever_data, wait_data, until_data, set_data, update_data, add_row, comment))(input)?;
   Ok((input, ParserNode::Statement{children: vec![statement]}))
@@ -1225,11 +1249,11 @@ fn parenthetical_expression(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, l0))
 }
 
-// negation ::= dash, !dash, <data | value> ;
+// negation ::= dash, !(dash | space), <data | value> ;
 fn negation(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect a value to immediately follow the negation sign";
   let (input, (_, r)) = range(dash)(input)?;
-  let (input, _) = is_not(dash)(input)?;
+  let (input, _) = is_not(alt((dash, space)))(input)?;
   let (input, negated) = label!(alt((data, value)), msg, r)(input)?;
   Ok((input, ParserNode::Negation { children: vec![negated] }))
 }
@@ -1563,7 +1587,7 @@ fn empty_line(input: ParseString) -> ParseResult<ParserNode> {
 // indented_tfm ::= !empty_line, space, <space>, <!space>, <transformation> ;
 fn indented_tfm(input: ParseString) -> ParseResult<ParserNode> {
   let msg1 = "Block indentation has to be exactly 2 spaces";
-  let msg2 = "Expect transformation after block indentation";
+  let msg2 = "Expect transformation";
   let (input, _) = tuple((
     is_not(empty_line),
     space,
@@ -2125,7 +2149,7 @@ pub fn parse(text: &str) -> Result<ParserNode, MechError> {
   // +-------------------+
 }
 
-pub fn parse_fragment(text: &str) -> Result<ParserNode,MechError> {
+pub fn parse_fragment(text: &str) -> Result<ParserNode, MechError> {
   let graphemes = get_graphemes(text);
   let mut result_node = ParserNode::Error;
   let mut error_log = ParserErrorReport { errors: vec![] };

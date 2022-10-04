@@ -44,6 +44,13 @@ BEGIN {
     previous = TITLE
 }
 
+# match against "additional lines"
+/^\/\/\s*>>/ {
+    gsub(/^\/\/\s*/, "")
+    gsub(/>>/, "  ")
+    print
+}
+
 END {
     if (previous == PEG) {
         print "```"
