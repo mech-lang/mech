@@ -197,7 +197,7 @@ pub fn print_ast_node(node: &AstNode, level: usize, f: &mut fmt::Formatter) {
   }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ParserNode {
   Root                    { children: Vec<ParserNode> },
   Fragment                { children: Vec<ParserNode> },
@@ -546,7 +546,7 @@ fn spacer(width: usize, f: &mut fmt::Formatter) {
   write!(f,"├").ok();
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Token {
   Alpha,
   Digit,
