@@ -132,6 +132,11 @@ pub enum Node {
   L5{ children: Vec<Node> },
   L6{ children: Vec<Node> },
   Function{ children: Vec<Node> },
+  UserFunction{ children: Vec<Node> },
+  FunctionBody{ children: Vec<Node> },
+  FunctionArgs{ children: Vec<Node> },
+  FunctionInput{ children: Vec<Node> },
+  FunctionOutput{ children: Vec<Node> },
   Negation{ children: Vec<Node> },
   Not{ children: Vec<Node> },
   ParentheticalExpression{ children: Vec<Node> },
@@ -177,6 +182,8 @@ pub enum Node {
   Null,
   True,
   False,
+  Transpose,
+  MatrixMultiply,
 }
 
 impl fmt::Debug for Node {
@@ -294,6 +301,11 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::L5{children} => {print!("L5\n"); Some(children)},
     Node::L6{children} => {print!("L6\n"); Some(children)},
     Node::Function{children} => {print!("Function\n"); Some(children)},
+    Node::UserFunction{children} => {print!("UserFunction\n"); Some(children)},
+    Node::FunctionBody{children} => {print!("FunctionBody\n"); Some(children)},
+    Node::FunctionArgs{children} => {print!("FunctionArgs\n"); Some(children)},
+    Node::FunctionInput{children} => {print!("FunctionInput\n"); Some(children)},
+    Node::FunctionOutput{children} => {print!("FunctionOutput\n"); Some(children)},
     Node::Negation{children} => {print!("Negation\n"); Some(children)},
     Node::Not{children} => {print!("Not\n"); Some(children)},
     Node::ParentheticalExpression{children} => {print!("ParentheticalExpression\n"); Some(children)},
@@ -341,9 +353,11 @@ pub fn print_recurse(node: &Node, level: usize) {
     Node::Empty => {print!("Empty\n",); None},
     Node::Null => {print!("Null\n",); None},
     Node::ReshapeColumn => {print!("ReshapeColumn\n",); None},
-    Node::False => {print!("True\n",); None},
-    Node::True => {print!("False\n",); None},
+    Node::False => {print!("False\n",); None},
+    Node::True => {print!("True\n",); None},
     Node::Alpha{children} => {print!("Alpha\n"); Some(children)},
+    Node::Transpose => {print!("Transpose\n",); None},
+    Node::MatrixMultiply => {print!("MatrixMultiply\n",); None},
   };
 
   match children {
@@ -843,8 +857,15 @@ fn index(input: ParseString) -> IResult<ParseString, Node> {
 fn data(input: ParseString) -> IResult<ParseString, Node> {
   let (input, source) = alt((table, identifier))(input)?;
   let (input, mut indices) = many0(index)(input)?;
+  let (input, transpose) = opt(transpose)(input)?;
   let mut data = vec![source];
   data.append(&mut indices);
+  match transpose {
+    Some(transpose) => {
+      data.push(transpose);
+    }
+    _ => (),
+  }
   Ok((input, Node::Data{children: data}))
 }
 
@@ -1232,9 +1253,48 @@ fn function(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::Function { children: function }))
 }
 
+fn user_function(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = left_bracket(input)?;
+  let (input, mut output_args) = many0(function_output)(input)?;
+  let (input, _) = right_bracket(input)?;
+  let (input, _) = many1(space)(input)?;
+  let (input, _) = equal(input)?;
+  let (input, _) = many1(space)(input)?;
+  let (input, function_name) = identifier(input)?;
+  let (input, _) = left_parenthesis(input)?;
+  let (input, mut input_args) = many0(function_input)(input)?;
+  let (input, _) = right_parenthesis(input)?;
+  let (input, _) = newline(input)?;
+  let (input, function_body) = function_body(input)?;
+  Ok((input, Node::UserFunction { children: vec![Node::FunctionArgs{children: output_args}, function_name, Node::FunctionArgs{children: input_args}, function_body] }))
+}
+
+fn function_output(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, arg_id) = identifier(input)?;
+  let (input, kind) = kind_annotation(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
+  Ok((input, Node::FunctionOutput{children: vec![arg_id, kind]}))
+}
+
+fn function_input(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, arg_id) = identifier(input)?;
+  let (input, kind) = kind_annotation(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
+  Ok((input, Node::FunctionInput{children: vec![arg_id, kind]}))
+}
+
+fn function_body(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, transformations) = many1(tuple((tuple((space,space)),transformation)))(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  let tfms: Vec<Node> = transformations.iter().map(|(_,tfm)| tfm).cloned().collect();
+  Ok((input, Node::FunctionBody { children: tfms }))
+}
+
 fn matrix_multiply(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = tag("**")(input)?;
-  Ok((input, Node::Null))
+  Ok((input, Node::MatrixMultiply))
 }
 
 fn add(input: ParseString) -> IResult<ParseString, Node> {
@@ -1309,7 +1369,7 @@ fn l2(input: ParseString) -> IResult<ParseString, Node> {
 
 fn l2_infix(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = space(input)?;
-  let (input, op) = alt((multiply, divide, matrix_multiply))(input)?;
+  let (input, op) = alt((matrix_multiply, multiply, divide))(input)?;
   let (input, _) = space(input)?;
   let (input, l3) = l3(input)?;
   Ok((input, Node::L2Infix { children: vec![op, l3] }))
@@ -1466,9 +1526,20 @@ fn string(input: ParseString) -> IResult<ParseString, Node> {
   Ok((input, Node::String { children: text }))
 }
 
+fn transpose(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = tag("'")(input)?;
+  Ok((input, Node::Transpose))
+}
+
 fn expression(input: ParseString) -> IResult<ParseString, Node> {
   let (input, expression) = alt((inline_table, math_expression, string, empty_table, anonymous_table))(input)?;
-  Ok((input, Node::Expression { children: vec![expression] }))
+  let (input, transpose) = opt(transpose)(input)?;
+  let mut children = vec![expression];
+  match transpose {
+    Some(transpose) => children.push(transpose),
+    _ => (),
+  }
+  Ok((input, Node::Expression { children }))
 }
 
 // ### Block Basics
@@ -1616,7 +1687,7 @@ fn mech_code_block(input: ParseString) -> IResult<ParseString, Node> {
 fn section(input: ParseString) -> IResult<ParseString, Node> {
   let (input, mut section_elements) = many1(
     tuple((
-      alt((block, code_block, mech_code_block, statement, subtitle, paragraph, unordered_list)),
+      alt((user_function, block, code_block, mech_code_block, statement, subtitle, paragraph, unordered_list)),
       opt(whitespace),
     ))
   )(input)?;
@@ -1647,6 +1718,7 @@ fn program(input: ParseString) -> IResult<ParseString, Node> {
   let (input, body) = body(input)?;
   program.push(body);
   let (input, _) = opt(whitespace)(input)?;
+  let (input, _) = many0(space)(input)?;
   Ok((input, Node::Program { children: program }))
 }
 

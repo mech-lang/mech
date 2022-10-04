@@ -44,13 +44,18 @@ macro_rules! test_mech {
       let sections = compiler.compile_str(&input)?;
       
       for section in sections {
-        for block in section {
-          let (_,errors,new_block_output) = core.load_block(Rc::new(RefCell::new(block)));
-          for register in new_block_output.iter() {
-            core.step(register);
+        for element in section {
+          match element {
+            SectionElement::Block(block) => {
+              let (_,errors,new_block_output) = core.load_block(Rc::new(RefCell::new(block)));
+              for register in new_block_output.iter() {
+                core.step(register);
+              }
+              core.schedule_blocks();
+              assert!(errors.len() == 0);
+            }
+            _ => (),
           }
-          core.schedule_blocks();
-          assert!(errors.len() == 0);
         }
       }
 
@@ -235,6 +240,39 @@ test_mech!(math_add_f32,"#test = 123.456 + 456.123", Value::F32(F32::new(579.579
 test_mech!(math_subtract,"#test = 3 - 1", Value::F32(F32::new(2.0)));
 
 test_mech!(math_multiply,"#test = 2 * 2", Value::F32(F32::new(4.0)));
+
+test_mech!(math_matrix_multiply_row_col,"#test = [1 2] ** [3;4]", Value::F32(F32::new(11.0)));
+
+test_mech!(math_matrix_multiply_col_row,"
+x = [1; 2] ** [3 4]
+#test = stats/sum(table: x)", Value::F32(F32::new(21.0)));
+
+test_mech!(math_matrix_multiply_mat_mat,"
+x = [1 2; 3 4] ** [5 6; 7 8]
+#test = stats/sum(table: x)", Value::F32(F32::new(134.0)));
+
+test_mech!(math_matrix_multiply_mat_mat_2,"
+x = [1 2; 3 4] ** [5 6 7; 8 9 10]
+#test = stats/sum(table: x)", Value::F32(F32::new(234.0)));
+
+test_mech!(math_matrix_multiply_row_mat,"
+x = [1 2 3]
+y = [4 5; 6 7; 8 9]
+z = x ** y
+#test = stats/sum(row: z)", Value::F32(F32::new(86.0)));
+
+test_mech!(math_matrix_multiply_mat_col,"
+x = [1 2 3; 4 5 6; 7 8 9] ** [1;2;3]
+#test = stats/sum(column: x)", Value::F32(F32::new(96.0)));
+
+test_mech!(math_matrix_transpose_row,"
+x = [1 2 3]
+#test = x ** x'", Value::F32(F32::new(14.0)));
+
+test_mech!(math_matrix_transpose_matrix,"
+x = [1 2; 3 4]
+y = x ** x'
+#test = stats/sum(table: y)", Value::F32(F32::new(52.0)));
 
 test_mech!(math_divide,"#test = 4 / 2", Value::F32(F32::new(2.0)));
 
@@ -894,7 +932,7 @@ block
 
 test_mech!(append_inline_row_singleton,"
 block
-  #x = [|x<f32> y<u8>|]
+  #x = [|x<f32> y<f32>|]
 block
   #x += [x: 10]
 block
@@ -902,7 +940,7 @@ block
 
 test_mech!(append_inline_row_two_rows,"
 block
-  #x = [|x<f32> y<u8>|]
+  #x = [|x<f32> y<f32>|]
 block
   #x += [x: 10]
 block

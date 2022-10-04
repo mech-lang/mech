@@ -4,6 +4,7 @@
 
 use mech_core::*;
 use mech_core::function::table::*;
+use mech_core::function::matrix::*;
 
 use crate::ast::{Ast, Node};
 use crate::parser::{parse, parse_fragment};
@@ -29,6 +30,9 @@ fn get_sections(nodes: &Vec<Node>) -> Vec<Vec<Node>> {
         for child in children {
           match child {
             Node::Block{children} => {
+              blocks.push(child.clone());
+            }
+            Node::UserFunction{children} => {
               blocks.push(child.clone());
             }
             Node::Statement{children} => {
@@ -93,7 +97,7 @@ impl Compiler {
     Compiler{}
   }
 
-  pub fn compile_str(&mut self, code: &str) -> Result<Vec<Vec<Block>>,MechError> {
+  pub fn compile_str(&mut self, code: &str) -> Result<Vec<Vec<SectionElement>>,MechError> {
     let parse_tree = parse(code)?;
     let mut ast = Ast::new();
     ast.build_syntax_tree(&parse_tree);
@@ -101,7 +105,7 @@ impl Compiler {
     compiler.compile_sections(&vec![ast.syntax_tree.clone()])
   }
 
-  pub fn compile_fragment(&mut self, code: &str) -> Result<Vec<Vec<Block>>,MechError> {
+  pub fn compile_fragment(&mut self, code: &str) -> Result<Vec<Vec<SectionElement>>,MechError> {
     let parse_tree = parse_fragment(code)?;
     let mut ast = Ast::new();
     ast.build_syntax_tree(&parse_tree);
@@ -109,22 +113,72 @@ impl Compiler {
     compiler.compile_sections(&vec![ast.syntax_tree.clone()])
   }
 
-  pub fn compile_sections(&mut self, nodes: &Vec<Node>) -> Result<Vec<Vec<Block>>,MechError> {
-    let mut sections: Vec<Vec<Block>> = Vec::new();
+  pub fn compile_sections(&mut self, nodes: &Vec<Node>) -> Result<Vec<Vec<SectionElement>>,MechError> {
+    let mut sections: Vec<Vec<SectionElement>> = Vec::new();
     for section in get_sections(nodes) {
-      let mut blocks: Vec<Block> = Vec::new();
+      let mut elements: Vec<SectionElement> = Vec::new();
       for node in section {
-        let mut block = Block::new();
-        let mut tfms = self.compile_node(&node)?;
-        let tfms_before = tfms.clone();
-        tfms.sort();
-        tfms.dedup();
-        for tfm in tfms {
-          block.add_tfm(tfm);
+        match node {
+          Node::Block{..} => {
+            let mut block = Block::new();
+            let mut tfms = self.compile_node(&node)?;
+            let tfms_before = tfms.clone();
+            tfms.sort();
+            tfms.dedup();
+            for tfm in tfms {
+              block.add_tfm(tfm);
+            }
+            elements.push(SectionElement::Block(block));
+          }
+          Node::UserFunction{children} => {
+            let mut user_function = UserFunction::new();
+
+
+            let mut out_args = self.compile_node(&children[0])?;
+            let mut name = self.compile_node(&children[1])?;
+            let mut in_args = self.compile_node(&children[2])?;
+            let mut body = self.compile_node(&children[3])?;
+
+            // TODO Check that all arguments are used
+            // TODO Check that output arguments are created in body
+            // TODO Check that all variables used in body are sourced in body or inargs
+
+            match &name[0] {
+              Transformation::Identifier{name,id} => {
+                user_function.name = *id;
+              }
+              _ => (),
+            }
+
+            let mut i = 0;
+            while i < out_args.len() {
+              match (&out_args[i],&out_args[i+1]) {
+                (Transformation::Identifier{name,id},Transformation::ColumnKind{table_id,column_ix,kind}) => {
+                  user_function.outputs.insert(*id,ValueKind::F32);
+                }
+                _ => (),
+              }
+              i += 3;
+            }
+
+            let mut i = 0;
+            while i < in_args.len() {
+              match (&in_args[i],&in_args[i+1]) {
+                (Transformation::Identifier{name,id},Transformation::ColumnKind{table_id,column_ix,kind}) => {
+                  user_function.inputs.insert(*id,ValueKind::F32);
+                }
+                _ => (),
+              }
+              i += 3;
+            }
+
+            user_function.transformations = body;
+            elements.push(SectionElement::UserFunction(user_function));
+          }
+          _ => (),
         }
-        blocks.push(block);
       }
-      sections.push(blocks);
+      sections.push(elements);
     }
     if sections.len() > 0 {
       Ok(sections)
@@ -449,6 +503,16 @@ impl Compiler {
             }
           }
         }
+      }
+      Node::UserFunction{children} => {
+        let output_args = &children[0];
+        let function_name = &children[1];
+        let input_args = &children[2];
+        if let Node::FunctionBody{children} = &children[3] {
+          let mut result = self.compile_nodes(children)?;
+          tfms.append(&mut result);
+        };
+        println!("{:?}", tfms);
       }
       Node::Function{name, children} => {
         let mut args: Vec<Argument>  = vec![];
@@ -909,6 +973,25 @@ impl Compiler {
           out: (out_id,TableIndex::All,TableIndex::All),
         });
       }
+      Node::TransposeSelect{children} => {
+        let mut result = self.compile_node(&children[0])?;
+        let mut args = vec![];
+        match &result[0] {
+          Transformation::Select{table_id, indices} => {
+            args.push((0, *table_id, indices.to_vec()));
+            result.remove(0);
+          }
+          _=>(),
+        }
+        let id = hash_str(&format!("transpose{:?}",args));
+        tfms.push(Transformation::NewTable{table_id: TableId::Local(id), rows: 1, columns: 1});
+        tfms.append(&mut result);
+        tfms.push(Transformation::Function{
+          name: *MATRIX_TRANSPOSE,
+          arguments: args,
+          out: (TableId::Local(id),TableIndex::All,TableIndex::All),
+        });
+      }
       Node::SelectData{name, id, children} => {
         let mut indices = vec![];
         let mut all_indices = vec![];
@@ -1074,6 +1157,11 @@ impl Compiler {
         }
         tfms.append(&mut result);
       }
+      Node::FunctionBody{children} |
+      Node::FunctionInput{children} |
+      Node::FunctionOutput{children} |
+      Node::FunctionArgs{children} |
+      Node::Comment{children} |
       Node::Program{children, ..} |
       Node::Section{children, ..} |
       Node::Attribute{children} |

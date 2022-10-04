@@ -49,6 +49,11 @@ pub enum Node {
   Binding{ children: Vec<Node> },
   FunctionBinding{ children: Vec<Node> },
   Function{ name: Vec<char>, children: Vec<Node> },
+  UserFunction{ children: Vec<Node> },
+  FunctionBody{ children: Vec<Node> },
+  FunctionArgs{ children: Vec<Node> },
+  FunctionInput{ children: Vec<Node> },
+  FunctionOutput{ children: Vec<Node> },
   Define { name: Vec<char>, id: u64},
   DotIndex { children: Vec<Node>},
   Swizzle { children: Vec<Node>},
@@ -76,6 +81,7 @@ pub enum Node {
   Add,
   Subtract,
   Multiply,
+  MatrixMultiply,
   Divide,
   Exponent,
   LessThan,
@@ -112,6 +118,8 @@ pub enum Node {
   InlineMechCode{ children: Vec<Node> },
   MechCodeBlock{ children: Vec<Node> },
   Null,
+  Transpose,
+  TransposeSelect{children: Vec<Node>},
 }
 
 impl fmt::Debug for Node {
@@ -163,6 +171,12 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::Range => {write!(f,"Range\n").ok(); None},
     Node::Expression{children} => {write!(f,"Expression\n").ok(); Some(children)},
     Node::Function{name, children} => {write!(f,"Function({:?})\n", name).ok(); Some(children)},
+    Node::UserFunction{children} => {write!(f,"UserFunction\n").ok(); Some(children)},
+    Node::FunctionBody{children} => {write!(f,"FunctionBody\n").ok(); Some(children)},
+    Node::FunctionArgs{children} => {write!(f,"FunctionArgs\n").ok(); Some(children)},
+    Node::UserFunction{children} => {write!(f,"Expression\n").ok(); Some(children)},
+    Node::FunctionInput{children} => {write!(f,"FunctionInput\n").ok(); Some(children)},
+    Node::FunctionOutput{children} => {write!(f,"FunctionOutput\n").ok(); Some(children)},
     Node::MathExpression{children} => {write!(f,"MathExpression\n").ok(); Some(children)},
     Node::Comment{children} => {write!(f,"Comment\n").ok(); Some(children)},
     Node::SelectExpression{children} => {write!(f,"SelectExpression\n").ok(); Some(children)},
@@ -190,6 +204,7 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::Add => {write!(f,"Add\n").ok(); None},
     Node::Subtract => {write!(f,"Subtract\n").ok(); None},
     Node::Multiply => {write!(f,"Multiply\n").ok(); None},
+    Node::MatrixMultiply => {write!(f,"MatrixMultiply\n").ok(); None},
     Node::Divide => {write!(f,"Divide\n").ok(); None},
     Node::Exponent => {write!(f,"Exponent\n").ok(); None},
     Node::AddUpdate => {write!(f,"AddUpdate\n").ok(); None},
@@ -197,6 +212,8 @@ pub fn print_recurse(node: &Node, level: usize, f: &mut fmt::Formatter) {
     Node::MultiplyUpdate => {write!(f,"MultiplyUpdate\n").ok(); None},
     Node::DivideUpdate => {write!(f,"DivideUpdate\n").ok(); None},
     Node::ExponentUpdate => {write!(f,"ExponentUpdate\n").ok(); None},
+    Node::Transpose => {write!(f,"Transpose\n").ok(); None},
+    Node::TransposeSelect{children} => {write!(f,"TransposeSelect\n").ok(); Some(children)},
     // Markdown Nodes
     Node::Title{text} => {write!(f,"Title({:?})\n", text).ok(); None},
     Node::ParagraphText{text} => {write!(f,"ParagraphText({:?})\n", text).ok(); None},
@@ -305,6 +322,8 @@ impl Ast {
         reversed.reverse();
         let mut select_data_children: Vec<Node> = vec![];
 
+        let mut transpose = false;
+
         for node in reversed {
           match node {
             Node::Table{name, id} => {
@@ -319,7 +338,12 @@ impl Ast {
                 select_data_children = vec![Node::Null; 1];
               }
               select_data_children.reverse();
-              compiled.push(Node::SelectData{name, id: TableId::Local(id), children: select_data_children.clone()});
+              let select = Node::SelectData{name, id: TableId::Local(id), children: select_data_children.clone()};
+              if transpose {
+                compiled.push(Node::TransposeSelect{children: vec![select]});
+              } else {
+                compiled.push(select);
+              }
             },
             Node::DotIndex{children} => {
               let mut reversed = children.clone();
@@ -337,6 +361,9 @@ impl Ast {
             }
             Node::ReshapeColumn => {
               select_data_children.push(Node::ReshapeColumn);
+            }
+            Node::Transpose => {
+              transpose = true;
             }
             _ => (),
           }
@@ -797,6 +824,7 @@ impl Ast {
           Node::Add => "math/add".chars().collect(),
           Node::Subtract => "math/subtract".chars().collect(),
           Node::Multiply => "math/multiply".chars().collect(),
+          Node::MatrixMultiply => "matrix/multiply".chars().collect(),
           Node::Divide => "math/divide".chars().collect(),
           Node::Exponent => "math/exponent".chars().collect(),
           Node::GreaterThan => "compare/greater-than".chars().collect(),
@@ -822,6 +850,26 @@ impl Ast {
         let result = self.compile_nodes(children);
         compiled.push(Node::Function{name: "math/negate".chars().collect(), children: result});
       },
+      parser::Node::UserFunction{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::UserFunction{children: result.clone()});
+      }
+      parser::Node::FunctionArgs{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::FunctionArgs{children: result.clone()});
+      }
+      parser::Node::FunctionInput{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::FunctionInput{children: result.clone()});
+      }
+      parser::Node::FunctionOutput{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::FunctionOutput{children: result.clone()});
+      }
+      parser::Node::FunctionBody{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(Node::FunctionBody{children: result.clone()});
+      }
       parser::Node::Function{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<Node> = Vec::new();
@@ -873,6 +921,9 @@ impl Ast {
       },
       parser::Node::True => {
         compiled.push(Node::True);
+      },
+      parser::Node::Transpose => {
+        compiled.push(Node::Transpose);
       },
       parser::Node::False => {
         compiled.push(Node::False);
@@ -935,6 +986,7 @@ impl Ast {
       parser::Node::Add => compiled.push(Node::Add),
       parser::Node::Subtract => compiled.push(Node::Subtract),
       parser::Node::Multiply => compiled.push(Node::Multiply),
+      parser::Node::MatrixMultiply => compiled.push(Node::MatrixMultiply),
       parser::Node::Divide => compiled.push(Node::Divide),
       parser::Node::Exponent => compiled.push(Node::Exponent),
       parser::Node::And => compiled.push(Node::And),
