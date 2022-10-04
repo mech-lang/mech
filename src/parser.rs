@@ -1820,14 +1820,15 @@ fn parse_mech(input: ParseString) -> ParseResult<ParserNode> {
 
 // ## Reporting errors
 
-struct IndexInterpreter<'a> {
-  graphemes: &'a Vec<&'a str>,
+struct ErrorReporter<'a> {
+  graphemes: Vec<&'a str>,
   line_beginnings: Vec<usize>,
   end_index: usize,
 }
 
-impl<'a> IndexInterpreter<'a> {
-  fn new(graphemes: &'a Vec<&str>) -> Self {
+impl<'a> ErrorReporter<'a> {
+  fn new(text: &'a str) -> Self {
+    let graphemes = get_graphemes(text);
     let mut line_beginnings = vec![0];
     for i in 0..graphemes.len() {
       if Self::grapheme_is_newline(graphemes[i]) {
@@ -1835,12 +1836,14 @@ impl<'a> IndexInterpreter<'a> {
       }
     }
     line_beginnings.pop();
-    IndexInterpreter {
+    ErrorReporter {
       end_index: graphemes.len(),
       graphemes,
       line_beginnings,
     }
   }
+
+  // Index interpreter
 
   fn index_is_at_line(&self, index: usize, linenum: usize) -> bool {
     let line_index = linenum - 1;
@@ -1921,13 +1924,9 @@ impl<'a> IndexInterpreter<'a> {
     }
     false
   }
-}
 
-pub struct ParserErrorReport {
-  errors: Vec<(ParseStringRange, ParseErrorDetail)>,
-}
+  // Formatted string printer
 
-impl ParserErrorReport {
   fn heading_color(s: &str) -> String {
     s.truecolor(246, 192, 78).bold().to_string()
   }
@@ -1952,34 +1951,30 @@ impl ParserErrorReport {
     s.red().bold().to_string()
   }
 
-  fn add_err_heading(result: &mut String, index: usize) {
+  fn err_heading(index: usize) -> String {
     let n = index + 1;
     let d = "---------------------";
     let s = format!("{} syntax error #{} {}\n", d, n, d);
-    result.push_str(&Self::heading_color(&s));
+    Self::heading_color(&s)
   }
 
-  fn add_err_location(result: &mut String,
-                      cause_rng: &ParseStringRange,
-                      ii: &IndexInterpreter) {
-    let (row, col) = ii.get_location_by_index(cause_rng.1 - 1);
+  fn err_location(&self, ctx: &ParserErrorContext) -> String {
+    let (row, col) = self.get_location_by_index(ctx.cause_rng.1 - 1);
     let s = format!("@location:{}:{}\n", row, col);
-    result.push_str(&Self::location_color(&s));
+    Self::location_color(&s)
   }
 
-  fn add_err_context(result: &mut String,
-                     cause_rng: &ParseStringRange,
-                     detail: &ParseErrorDetail,
-                     ii: &IndexInterpreter) {
-    // cloning simplifies things here, and it shouldn't impact performance
-    let mut annotation_rngs = detail.annotation_rngs.clone();
-    annotation_rngs.push(*cause_rng);
+  fn err_context(&self, ctx: &ParserErrorContext) -> String {
+    let mut result = String::new();
+
+    let mut annotation_rngs = ctx.annotation_rngs.clone();
+    annotation_rngs.push(ctx.cause_rng);
 
     // the lines to print
     let mut lines_to_print: Vec<usize> = vec![];
     for (a, b) in &annotation_rngs {
-      let (r1, _) = ii.get_location_by_index(*a);
-      let (r2, _) = ii.get_location_by_index(b - 1);
+      let (r1, _) = self.get_location_by_index(*a);
+      let (r2, _) = self.get_location_by_index(b - 1);
       for i in r1..=r2 {
         lines_to_print.push(i);
       }
@@ -1995,8 +1990,8 @@ impl ParserErrorReport {
     }
     let n = annotation_rngs.len() - 1;  // if i == n, it's the last rng, i.e. the cause rng
     for (i, (a, b)) in annotation_rngs.iter().enumerate() {
-      let (r1, c1) = ii.get_location_by_index(*a);
-      let (r2, c2) = ii.get_location_by_index(b - 1);
+      let (r1, c1) = self.get_location_by_index(*a);
+      let (r2, c2) = self.get_location_by_index(b - 1);
       if r1 == r2 {  // the entire range is on one line
         range_table.get_mut(&r1).unwrap().push((c1, c2 - c1 + 1, true, i == n));
       } else {  // the range spans over multiple lines
@@ -2036,7 +2031,7 @@ impl ParserErrorReport {
       result.push('\n');
 
       // [row |  program text...]
-      let text = ii.get_text_by_linenum(lines_to_print[i]);
+      let text = self.get_text_by_linenum(lines_to_print[i]);
       result.push_str(indentation);
       for _ in 0..row_str_len-lines_str[i].len() { result.push(' '); }
       result.push_str(&Self::linenum_color(&lines_str[i]));
@@ -2048,7 +2043,7 @@ impl ParserErrorReport {
       for _ in 0..row_str_len { result.push(' '); }
       result.push_str(&Self::linenum_color(vert_split1));
       let mut curr_col = 1;
-      let line_len = ii.get_textlen_by_linenum(lines_to_print[i]);
+      let line_len = self.get_textlen_by_linenum(lines_to_print[i]);
       let rngs = range_table.get(&lines_to_print[i]).unwrap();
       for (start, len, major, cause) in rngs {
         let max_len = usize::max(1, usize::min(*len, line_len - curr_col + 1));
@@ -2078,32 +2073,33 @@ impl ParserErrorReport {
     }
 
     // print error message
-    let (_cause_row, cause_col) = ii.get_location_by_index(cause_rng.1 - 1);
+    let (_cause_row, cause_col) = self.get_location_by_index(ctx.cause_rng.1 - 1);
     result.push_str(indentation);
     for _ in 0..row_str_len { result.push(' '); }
     result.push_str(vert_split2);
     for _ in 0..cause_col-1 { result.push(' '); }
-    result.push_str(&Self::error_color(detail.message));
+    result.push_str(&Self::error_color(&ctx.err_message));
     result.push('\n');
+
+    result
   }
 
-  pub fn construct_msg(&self, text: &str) -> String {
-    let graphemes = get_graphemes(text);
-    let ii = IndexInterpreter::new(&graphemes);
+  fn construct_formatted_msg(&self, errors: ParserErrorReport) -> String {
     let mut result = String::new();
     result.push('\n');
-    for (i, (rng, detail)) in self.errors.iter().enumerate() {
-      Self::add_err_heading(&mut result, i);
-      Self::add_err_location(&mut result, rng, &ii);
-      Self::add_err_context(&mut result, rng, detail, &ii);
+    for (i, ctx) in errors.iter().enumerate() {
+      result.push_str(&Self::err_heading(i));
+      result.push_str(&self.err_location(&ctx));
+      result.push_str(&self.err_context(&ctx));
       result.push_str("\n\n");
     }
     result
   }
+}
 
-  pub fn has_error(&self) -> bool {
-    self.errors.len() != 0
-  }
+pub fn print_err_report(text: &str, contexts: ParserErrorReport) {
+  let msg = ErrorReporter::new(text).construct_formatted_msg(contexts);
+  println!("{}", msg);
 }
 
 // ## Parser interfaces
@@ -2111,7 +2107,7 @@ impl ParserErrorReport {
 fn get_graphemes(text: &str) -> Vec<&str> {
   let mut graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
   if let Some(g) = graphemes.last() {
-    if !IndexInterpreter::grapheme_is_newline(g) {
+    if !ErrorReporter::grapheme_is_newline(g) {
       graphemes.push("\n");
     }
   }
@@ -2121,62 +2117,64 @@ fn get_graphemes(text: &str) -> Vec<&str> {
 pub fn parse(text: &str) -> Result<ParserNode, MechError> {
   let graphemes = get_graphemes(text);
   let mut result_node = ParserNode::Error;
-  let mut error_log = ParserErrorReport { errors: vec![] };
+  let mut error_log: Vec<(ParseStringRange, ParseErrorDetail)> = vec![];
   match parse_mech(ParseString::new(&graphemes)) {
     // Got a parse tree, however there may be errors
     Ok((mut remaining_input, parse_tree)) => {
-      error_log.errors.append(&mut remaining_input.error_log);
+      error_log.append(&mut remaining_input.error_log);
       result_node = parse_tree;
     },
     // Parsing completely failed, and no parse tree was created
     Err(err) => match err {
       Err::Error(mut e) | Err::Failure(mut e) => {
-        error_log.errors.append(&mut e.remaining_input.error_log);
-        error_log.errors.push((e.cause_range, e.error_detail));
+        error_log.append(&mut e.remaining_input.error_log);
+        error_log.push((e.cause_range, e.error_detail));
       },
       Err::Incomplete(_) => panic!("nom::Err::Incomplete is not supported!"),
     },
   }
   
-  // +-------------------+
-  //   temporary
-  // +-------------------+
-  if error_log.has_error() {
-    Err(MechError{id: 3202, kind: MechErrorKind::GenericError(error_log.construct_msg(text))})
-  } else {
+  if error_log.is_empty() {
     Ok(result_node)
+  } else {
+    let report = error_log.into_iter().map(|e| ParserErrorContext {
+      cause_rng: e.0,
+      err_message: String::from(e.1.message),
+      annotation_rngs: e.1.annotation_rngs,
+    }).collect();
+    Err(MechError{id: 3202, kind: MechErrorKind::ParserError(result_node, report)})
   }
-  // +-------------------+
 }
 
 pub fn parse_fragment(text: &str) -> Result<ParserNode, MechError> {
   let graphemes = get_graphemes(text);
   let mut result_node = ParserNode::Error;
-  let mut error_log = ParserErrorReport { errors: vec![] };
+  let mut error_log: Vec<(ParseStringRange, ParseErrorDetail)> = vec![];
   match parse_mech_fragment(ParseString::new(&graphemes)) {
     // Got a parse tree, however there may be errors
     Ok((mut remaining_input, parse_tree)) => {
-      error_log.errors.append(&mut remaining_input.error_log);
+      error_log.append(&mut remaining_input.error_log);
       result_node = parse_tree;
     },
     // Parsing completely failed, and no parse tree was created
     Err(err) => match err {
       Err::Error(mut e) | Err::Failure(mut e) => {
-        error_log.errors.append(&mut e.remaining_input.error_log);
-        error_log.errors.push((e.cause_range, e.error_detail));
+        error_log.append(&mut e.remaining_input.error_log);
+        error_log.push((e.cause_range, e.error_detail));
       },
       Err::Incomplete(_) => panic!("nom::Err::Incomplete is not supported!"),
     },
   }
   
-  // +-------------------+
-  //   temporary
-  // +-------------------+
-  if error_log.has_error() {
-    Err(MechError{id: 3202, kind: MechErrorKind::GenericError(error_log.construct_msg(text))})
-  } else {
+  if error_log.is_empty() {
     Ok(result_node)
+  } else {
+    let report = error_log.into_iter().map(|e| ParserErrorContext {
+      cause_rng: e.0,
+      err_message: String::from(e.1.message),
+      annotation_rngs: e.1.annotation_rngs,
+    }).collect();
+    Err(MechError{id: 3202, kind: MechErrorKind::ParserError(result_node, report)})
   }
-  // +-------------------+
 }
 

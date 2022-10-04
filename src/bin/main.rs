@@ -26,8 +26,11 @@ fn main() -> Result<(),MechError> {
             // println!("{:#?}", core.blocks);
             // println!("{:?}", core);
         },
-        Err(err) => if let MechErrorKind::GenericError(msg) = err.kind {
-          println!("{}", msg);
+        Err(err) => if let MechErrorKind::ParserError(node, report) = err.kind {
+          println!("----- TREE -----");
+          println!("{:?}", node);
+          println!("----- MESSAGE -----");
+          parser::print_err_report(&s, report);
         } else {
           panic!("Unexpected error type");
         },
