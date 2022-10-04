@@ -1,12 +1,2 @@
-
-
-
-
-
-
 block
-    x = 5   -- Can I place comment here?
-
-```mec
-  -- Some mech code here
-```Oops
+  myvar = [a: x.y  b: 5]

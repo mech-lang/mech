@@ -125,8 +125,8 @@ impl<'a> ParseString<'a> {
   }
 
   fn output(&self) {
-    println!("-----------------");
-    for i in self.cursor..self.len() {
+    println!("-----------------{}", self.len());
+    for i in self.cursor..self.graphemes.len() {
       print!("{}", self.graphemes[i]);
     }
     println!();
@@ -804,7 +804,7 @@ fn table(input: ParseString) -> ParseResult<ParserNode> {
 }
 
 // binding ::= s*, identifier, kind_annotation?, <!(space+, colon)>, colon, s+,
-// >>          <empty | expression | identifier | value>, <!!right_bracket | s+ | (s*, comma, <s+>)> ;
+// >>          <empty | expression | identifier | value>, <!!right_bracket | (s*, comma, <s+>) | s+> ;
 // >> where s ::= space | newline | tab ;
 fn binding(input: ParseString) -> ParseResult<ParserNode> {
   let msg1 = "Unexpected space before colon ':'";
@@ -821,13 +821,13 @@ fn binding(input: ParseString) -> ParseResult<ParserNode> {
   let (input, bound) = label!(alt((empty, expression, identifier, value)), msg2)(input)?;
   let (input, _) = label!(alt((
     is(right_bracket),
-    null(many1(alt((space, newline, tab)))),
     null(tuple((
       many0(alt((space, newline, tab))),
       comma,
       label!(many1(alt((space, newline, tab))), msg4),
-    )))),
-  ), msg3)(input)?;
+    ))),
+    null(many1(alt((space, newline, tab)))),
+  )), msg3)(input)?;
   children.push(binding_id);
   children.push(bound);
   if let Some(kind) = kind { children.push(kind); }
@@ -835,7 +835,7 @@ fn binding(input: ParseString) -> ParseResult<ParserNode> {
 }
 
 // binding_strict ::= s*, identifier, kind_annotation?, <!(space+, colon)>, colon, <s+>,
-// >>                 <empty | expression | identifier | value>, <!!right_bracket | s+ | (s*, comma, <s+>)> ;
+// >>                 <empty | expression | identifier | value>, <!!right_bracket | (s*, comma, <s+>) | s+> ;
 // >> where s ::= space | newline | tab ;
 fn binding_strict(input: ParseString) -> ParseResult<ParserNode> {
   let msg1 = "Unexpected space before colon ':' for binding";
@@ -846,6 +846,7 @@ fn binding_strict(input: ParseString) -> ParseResult<ParserNode> {
   let mut children = vec![];
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, binding_id) = identifier(input)?;
+  let (input, _) = label!(is_not(tuple((many1(space), colon))), msg1)(input)?;
   let (input, kind) = opt(kind_annotation)(input)?;
   let (input, _) = label!(is_not(tuple((many1(space), colon))), msg1)(input)?;
   let (input, _) = colon(input)?;
@@ -853,13 +854,13 @@ fn binding_strict(input: ParseString) -> ParseResult<ParserNode> {
   let (input, bound) = label!(alt((empty, expression, identifier, value)), msg3)(input)?;
   let (input, _) = label!(alt((
     is(right_bracket),
-    null(many1(alt((space, newline, tab)))),
     null(tuple((
       many0(alt((space, newline, tab))),
       comma,
       label!(many1(alt((space, newline, tab))), msg5),
-    )))),
-  ), msg4)(input)?;
+    ))),
+    null(many1(alt((space, newline, tab)))),
+  )), msg4)(input)?;
   children.push(binding_id);
   children.push(bound);
   if let Some(kind) = kind { children.push(kind); }
