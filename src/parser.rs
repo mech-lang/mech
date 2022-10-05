@@ -2125,22 +2125,34 @@ pub fn parse(text: &str) -> Result<ParserNode, MechError> {
   let graphemes = get_graphemes(text);
   let mut result_node = ParserNode::Error;
   let mut error_log: Vec<(ParseStringRange, ParseErrorDetail)> = vec![];
+  let remaining: ParseString;
+
+  // Do parse
   match parse_mech(ParseString::new(&graphemes)) {
     // Got a parse tree, however there may be errors
     Ok((mut remaining_input, parse_tree)) => {
       error_log.append(&mut remaining_input.error_log);
       result_node = parse_tree;
+      remaining = remaining_input;
     },
     // Parsing completely failed, and no parse tree was created
     Err(err) => match err {
       Err::Error(mut e) | Err::Failure(mut e) => {
         error_log.append(&mut e.remaining_input.error_log);
         error_log.push((e.cause_range, e.error_detail));
+        remaining = e.remaining_input;
       },
       Err::Incomplete(_) => panic!("nom::Err::Incomplete is not supported!"),
     },
   }
+
+  // Check if all inputs were parsed
+  if remaining.len() != 0 {
+    let e = ParseError::new(remaining, "Inputs since here are not parsed");
+    error_log.push((e.cause_range, e.error_detail));
+  }
   
+  // Construct result
   if error_log.is_empty() {
     Ok(result_node)
   } else {
@@ -2157,22 +2169,34 @@ pub fn parse_fragment(text: &str) -> Result<ParserNode, MechError> {
   let graphemes = get_graphemes(text);
   let mut result_node = ParserNode::Error;
   let mut error_log: Vec<(ParseStringRange, ParseErrorDetail)> = vec![];
+  let remaining: ParseString;
+
+  // Do parse
   match parse_mech_fragment(ParseString::new(&graphemes)) {
     // Got a parse tree, however there may be errors
     Ok((mut remaining_input, parse_tree)) => {
       error_log.append(&mut remaining_input.error_log);
       result_node = parse_tree;
+      remaining = remaining_input;
     },
     // Parsing completely failed, and no parse tree was created
     Err(err) => match err {
       Err::Error(mut e) | Err::Failure(mut e) => {
         error_log.append(&mut e.remaining_input.error_log);
         error_log.push((e.cause_range, e.error_detail));
+        remaining = e.remaining_input;
       },
       Err::Incomplete(_) => panic!("nom::Err::Incomplete is not supported!"),
     },
   }
   
+  // Check if all inputs were parsed
+  if remaining.len() != 0 {
+    let e = ParseError::new(remaining, "Inputs since here are not parsed");
+    error_log.push((e.cause_range, e.error_detail));
+  }
+  
+  // Construct result
   if error_log.is_empty() {
     Ok(result_node)
   } else {
@@ -2190,51 +2214,54 @@ pub fn parse_fragment(text: &str) -> Result<ParserNode, MechError> {
 #[cfg(test)]
 mod tests {
 
-use crate::parser;
-use mech_core::*;
+  use crate::parser;
+  use mech_core::*;
 
-macro_rules! test_parser {
-  ($func:ident, $input:tt, $($expected_err_loc:expr),*) => (
-    #[test]
-    fn $func() {
-      let text = $input;
-      let err_locations_exp = vec![$($expected_err_loc),*];
-      let parse_result = parser::parse($input);
-  
-      // Parsing should success
-      if (err_locations_exp.is_empty()) {
-        assert!(parse_result.is_ok());
-        return;
-      }
-  
-      // Parsing should fail
-      let error_report = match(parse_result) {
-        Err(e) => match e.kind {
-          MechErrorKind::ParserError(_, report) => report,
-          _ => panic!("Expect mech error kind: ParserError"),
+  macro_rules! test_parser {
+    ($func:ident, $input:tt, $($expected_err_loc:expr),*) => (
+      #[test]
+      fn $func() {
+        let text = $input;
+        let err_locations_exp = vec![$($expected_err_loc),*];
+        let parse_result = parser::parse($input);
+    
+        // Parsing should succeed
+        if (err_locations_exp.is_empty()) {
+          assert!(parse_result.is_ok());
+          return;
         }
-        _ => panic!("Expect parser error"),
-      };
-  
-      // Parser error should match with expected
-      let tf = parser::TextFormatter::new(text);
-      assert_eq!(error_report.len(), err_locations_exp.len());
-      for i in 0..error_report.len() {
-        let rng = error_report[i].cause_rng;
-        let reported_location = tf.get_location_by_cause_range(rng);
-        let expected_location = err_locations_exp[i];
-        assert_eq!(reported_location, expected_location);
+    
+        // Parsing should fail
+        let error_report = match(parse_result) {
+          Err(e) => match e.kind {
+            MechErrorKind::ParserError(_, report) => report,
+            _ => panic!("Expect mech error kind: ParserError"),
+          }
+          _ => panic!("Expect parser error"),
+        };
+    
+        // Parser error should match with expected
+        let tf = parser::TextFormatter::new(text);
+        assert_eq!(error_report.len(), err_locations_exp.len());
+        for i in 0..error_report.len() {
+          let rng = error_report[i].cause_rng;
+          let reported_location = tf.get_location_by_cause_range(rng);
+          let expected_location = err_locations_exp[i];
+          assert_eq!(reported_location, expected_location);
+        }
+
+        // Formatting function doesn't crash
+        let msg = tf.format_error(&error_report);
+        assert_ne!(msg.len(), 0);
       }
+    )
+  }
 
-      // Formatting function doesn't crash
-      let msg = tf.format_error(&error_report);
-      assert_ne!(msg.len(), 0);
-    }
-  )
+/////////////////////////////////////////////////////////////////////////////////
+test_parser!(err_empty_1, "", (1, 1));
+test_parser!(err_empty_2, "\n", (1, 1));
+test_parser!(ok_simple_text, "Paragraph text", );
+test_parser!(err_illegal_text, r#"Paragraph (#) text"#, (1, 11));
+/////////////////////////////////////////////////////////////////////////////////
+
 }
-
-test_parser!(empty1, "", (1, 1));
-test_parser!(empty2, "\n", (1, 1));
-// test_parser!(empty, r#" \ block prog "#, (1, 3));
-
-}  // END UNIT TESTS
