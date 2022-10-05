@@ -30,7 +30,7 @@ fn main() -> Result<(),MechError> {
           println!("----- TREE -----");
           println!("{:?}", node);
           println!("----- MESSAGE -----");
-          parser::print_err_report(&s, report);
+          parser::print_err_report(&s, &report);
         } else {
           panic!("Unexpected error type");
         },

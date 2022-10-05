@@ -1821,13 +1821,13 @@ fn parse_mech(input: ParseString) -> ParseResult<ParserNode> {
 
 // ## Reporting errors
 
-struct ErrorReporter<'a> {
+struct TextFormatter<'a> {
   graphemes: Vec<&'a str>,
   line_beginnings: Vec<usize>,
   end_index: usize,
 }
 
-impl<'a> ErrorReporter<'a> {
+impl<'a> TextFormatter<'a> {
   fn new(text: &'a str) -> Self {
     let graphemes = get_graphemes(text);
     let mut line_beginnings = vec![0];
@@ -1837,7 +1837,7 @@ impl<'a> ErrorReporter<'a> {
       }
     }
     line_beginnings.pop();
-    ErrorReporter {
+    TextFormatter {
       end_index: graphemes.len(),
       graphemes,
       line_beginnings,
@@ -1901,6 +1901,10 @@ impl<'a> ErrorReporter<'a> {
     (row, col)
   }
 
+  fn get_location_by_cause_range(&self, rng: ParseStringRange) -> (usize, usize) {
+    self.get_location_by_index(rng.1 - 1)
+  }
+
   fn grapheme_width(grapheme: &str) -> usize {
     let mut width = 0;
     for ch in grapheme.chars() {
@@ -1960,7 +1964,7 @@ impl<'a> ErrorReporter<'a> {
   }
 
   fn err_location(&self, ctx: &ParserErrorContext) -> String {
-    let (row, col) = self.get_location_by_index(ctx.cause_rng.1 - 1);
+    let (row, col) = self.get_location_by_cause_range(ctx.cause_rng);
     let s = format!("@location:{}:{}\n", row, col);
     Self::location_color(&s)
   }
@@ -2085,7 +2089,7 @@ impl<'a> ErrorReporter<'a> {
     result
   }
 
-  fn construct_formatted_msg(&self, errors: ParserErrorReport) -> String {
+  fn format_error(&self, errors: &ParserErrorReport) -> String {
     let mut result = String::new();
     result.push('\n');
     for (i, ctx) in errors.iter().enumerate() {
@@ -2098,8 +2102,8 @@ impl<'a> ErrorReporter<'a> {
   }
 }
 
-pub fn print_err_report(text: &str, contexts: ParserErrorReport) {
-  let msg = ErrorReporter::new(text).construct_formatted_msg(contexts);
+pub fn print_err_report(text: &str, report: &ParserErrorReport) {
+  let msg = TextFormatter::new(text).format_error(report);
   println!("{}", msg);
 }
 
@@ -2108,9 +2112,11 @@ pub fn print_err_report(text: &str, contexts: ParserErrorReport) {
 fn get_graphemes(text: &str) -> Vec<&str> {
   let mut graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
   if let Some(g) = graphemes.last() {
-    if !ErrorReporter::grapheme_is_newline(g) {
+    if !TextFormatter::grapheme_is_newline(g) {
       graphemes.push("\n");
     }
+  } else {
+    graphemes.push("\n");
   }
   graphemes
 }
@@ -2179,3 +2185,56 @@ pub fn parse_fragment(text: &str) -> Result<ParserNode, MechError> {
   }
 }
 
+// ## Unit tests
+
+#[cfg(test)]
+mod tests {
+
+use crate::parser;
+use mech_core::*;
+
+macro_rules! test_parser {
+  ($func:ident, $input:tt, $($expected_err_loc:expr),*) => (
+    #[test]
+    fn $func() {
+      let text = $input;
+      let err_locations_exp = vec![$($expected_err_loc),*];
+      let parse_result = parser::parse($input);
+  
+      // Parsing should success
+      if (err_locations_exp.is_empty()) {
+        assert!(parse_result.is_ok());
+        return;
+      }
+  
+      // Parsing should fail
+      let error_report = match(parse_result) {
+        Err(e) => match e.kind {
+          MechErrorKind::ParserError(_, report) => report,
+          _ => panic!("Expect mech error kind: ParserError"),
+        }
+        _ => panic!("Expect parser error"),
+      };
+  
+      // Parser error should match with expected
+      let tf = parser::TextFormatter::new(text);
+      assert_eq!(error_report.len(), err_locations_exp.len());
+      for i in 0..error_report.len() {
+        let rng = error_report[i].cause_rng;
+        let reported_location = tf.get_location_by_cause_range(rng);
+        let expected_location = err_locations_exp[i];
+        assert_eq!(reported_location, expected_location);
+      }
+
+      // Formatting function doesn't crash
+      let msg = tf.format_error(&error_report);
+      assert_ne!(msg.len(), 0);
+    }
+  )
+}
+
+test_parser!(empty1, "", (1, 1));
+test_parser!(empty2, "\n", (1, 1));
+// test_parser!(empty, r#" \ block prog "#, (1, 3));
+
+}  // END UNIT TESTS
