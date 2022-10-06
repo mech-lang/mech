@@ -39,7 +39,7 @@ impl Functions {
       functions: HashMap::new(),
     }
   }
-  pub fn get(&mut self, key: u64) -> std::option::Option<&Box<dyn MechFunctionCompiler>> {
+  pub fn get(&self, key: u64) -> std::option::Option<&Box<dyn MechFunctionCompiler>> {
     self.functions.get(&key)
   }
   pub fn insert(&mut self, key: u64, mut fxn: Box<dyn MechFunctionCompiler>) {

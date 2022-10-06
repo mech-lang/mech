@@ -854,7 +854,7 @@ impl Block {
         let fxns = self.functions.clone();
         match &fxns {
           Some(functions) => {
-            let mut fxns_brrw = functions.borrow_mut();
+            let fxns_brrw = functions.borrow();
             match fxns_brrw.get(*name) {
               Some(fxn) => {
                 // A function knows how to compile itself

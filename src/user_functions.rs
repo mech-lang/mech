@@ -33,17 +33,26 @@ impl UserFunction {
 
     pub fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &Out) -> Result<CompiledUserFunction,MechError> {
       let mut input_refs = HashMap::new();
+      let mut fxn_block = Block::new();
+      fxn_block.functions = block.functions.clone();
 
+      // Resolve input arguments
       for (arg_name, arg_table_id, indices) in arguments {
         match self.inputs.get(arg_name) {
           Some(kind) => {
             let table_ref = block.get_table(arg_table_id)?;
+            fxn_block.tables.insert_table_ref(table_ref.clone());
+            fxn_block.add_tfm(Transformation::TableAlias{
+              table_id: *arg_table_id, 
+              alias: *arg_name,
+            });
             input_refs.insert(*arg_name,table_ref.clone());
           },
           _ => (),
         }
       }
-      let mut fxn_block = Block::new();
+
+      // Compile function steps
       for tfm in &self.transformations {
         fxn_block.add_tfm(tfm.clone());
       }
