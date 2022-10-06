@@ -62,3 +62,12 @@ pub struct CompiledUserFunction {
   pub outputs: HashMap<u64,ValueKind>,
   pub block: Block,
 }
+
+impl CompiledUserFunction {
+
+  pub fn solve(&mut self) {
+    self.block.solve();
+  }
+
+
+}
