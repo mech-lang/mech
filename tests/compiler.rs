@@ -1317,6 +1317,13 @@ test_mech!(function_user_defined,r#"
 y = foo(x: 10)
 #test = y"#, Value::F32(F32::new(29.0)));
 
+test_mech!(function_user_defined_multiple,r#"
+[a<f32>] = foo(x<f32>)
+  a = x * 2
+y = foo(x: 20)
+z = foo(x: 10)
+#test = y + z"#, Value::F32(F32::new(60.0)));
+
 // ## Markdown
 
 test_mech!(markdown_program_title, r#"
