@@ -870,7 +870,10 @@ impl Block {
                   Some(user_fxns) => {
                     let mut user_fxns_brrw = user_fxns.borrow();
                     match user_fxns_brrw.get(name) {
-                      Some(fxn) => {fxn.compile(self,&arguments,&out)?;},
+                      Some(fxn) => {
+                        let compiled_fxn = fxn.compile(self,&arguments,&out)?;
+                        self.plan.push(compiled_fxn);
+                      },
                       None => return Err(MechError{id: 2123, kind: MechErrorKind::MissingFunction(*name)}),
                     }
                   }

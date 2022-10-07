@@ -1,4 +1,5 @@
 use crate::*;
+use crate::function::table::*;
 
 use hashbrown::{HashSet, HashMap};
 
@@ -22,49 +23,63 @@ pub struct UserFunction {
 }
 
 impl UserFunction {
-    pub fn new() -> UserFunction {
-      UserFunction {
-        name: 0,
-        inputs: HashMap::new(),
-        outputs: HashMap::new(),
-        transformations: Vec::new(),
+  pub fn new() -> UserFunction {
+    UserFunction {
+      name: 0,
+      inputs: HashMap::new(),
+      outputs: HashMap::new(),
+      transformations: Vec::new(),
+    }
+  }
+
+  pub fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &Out) -> Result<CompiledUserFunction,MechError> {
+    let mut fxn_block = Block::new();
+    fxn_block.functions = block.functions.clone();
+
+    // Resolve input arguments
+    for (arg_name, arg_table_id, indices) in arguments {
+      match self.inputs.get(arg_name) {
+        Some(kind) => {
+          let table_ref = block.get_table(arg_table_id)?;
+          fxn_block.tables.insert_table_ref(table_ref.clone());
+          fxn_block.add_tfm(Transformation::TableAlias{
+            table_id: *arg_table_id, 
+            alias: *arg_name,
+          });
+        },
+        _ => (),
       }
     }
 
-    pub fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &Out) -> Result<CompiledUserFunction,MechError> {
-      let mut input_refs = HashMap::new();
-      let mut fxn_block = Block::new();
-      fxn_block.functions = block.functions.clone();
-
-      // Resolve input arguments
-      for (arg_name, arg_table_id, indices) in arguments {
-        match self.inputs.get(arg_name) {
-          Some(kind) => {
-            let table_ref = block.get_table(arg_table_id)?;
-            fxn_block.tables.insert_table_ref(table_ref.clone());
-            fxn_block.add_tfm(Transformation::TableAlias{
-              table_id: *arg_table_id, 
-              alias: *arg_name,
-            });
-            input_refs.insert(*arg_name,table_ref.clone());
-          },
-          _ => (),
-        }
-      }
-
-      // Compile function steps
-      for tfm in &self.transformations {
-        fxn_block.add_tfm(tfm.clone());
-      }
-      fxn_block.id = hash_str(&format!("{:?}{:?}{:?}",block.id,self.name,self.inputs));
-
-      let compiled_fxn = CompiledUserFunction{name: self.name, inputs: self.inputs.clone(), outputs: self.outputs.clone(), block: fxn_block};
-
-      Ok(compiled_fxn)
+    // Compile function steps
+    for tfm in &self.transformations {
+      fxn_block.add_tfm(tfm.clone());
     }
+
+    // Resolve output arguments
+    for (name,kind) in self.outputs.iter() {
+      let (out_table_id, _, _) = out;
+      let out_table_ref = block.get_table(out_table_id)?;
+      fxn_block.tables.insert_table_ref(out_table_ref.clone());
+      fxn_block.add_tfm(Transformation::Function{
+        name: *TABLE_HORIZONTAL__CONCATENATE,
+        arguments: vec![(0,TableId::Local(*name),vec![(TableIndex::All,TableIndex::All)])],
+        out: (*out_table_id,TableIndex::All,TableIndex::All),
+      });
+    }
+    fxn_block.id = hash_str(&format!("{:?}{:?}{:?}",block.id,self.name,self.inputs));
+    let compiled_fxn = CompiledUserFunction{
+      name: self.name, 
+      inputs: self.inputs.clone(), 
+      outputs: self.outputs.clone(), 
+      block: fxn_block
+    };
+    Ok(compiled_fxn)
+  }
 
 }
 
+#[derive(Clone, Debug)]
 pub struct CompiledUserFunction {
   pub name: u64,
   pub inputs: HashMap<u64,ValueKind>,
@@ -72,11 +87,13 @@ pub struct CompiledUserFunction {
   pub block: Block,
 }
 
-impl CompiledUserFunction {
+impl MechFunction for CompiledUserFunction {
 
-  pub fn solve(&mut self) {
+  fn solve(&self) {
     self.block.solve();
   }
-
+  fn to_string(&self) -> String {
+    humanize(&self.name)
+  }
 
 }
