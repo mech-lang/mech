@@ -54,7 +54,9 @@ macro_rules! test_mech {
               core.schedule_blocks();
               assert!(errors.len() == 0);
             }
-            _ => (),
+            SectionElement::UserFunction(fxn) => {
+              core.load_user_function(&fxn);
+            }
           }
         }
       }
@@ -1306,6 +1308,14 @@ block
   #mech/test = ["foo", 3, stats/sum(column: 1:2)]
 block
   #test = #mech/test{2} == #mech/test{3}"#, Value::Bool(true));
+
+test_mech!(function_user_defined,r#"
+[a<f32>] = foo(x<f32>)
+  y = 3
+  z = x * 2
+  a = z + y * 3
+y = foo(x: 10)
+#test = y"#, Value::F32(F32::new(29.0)));
 
 // ## Markdown
 
