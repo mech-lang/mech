@@ -1324,6 +1324,16 @@ y = foo(x: 20)
 z = foo(x: 10)
 #test = y + z"#, Value::F32(F32::new(60.0)));
 
+test_mech!(function_user_defined_nested,r#"
+[a<f32>] = foo(y<f32>)
+  a = y * 3
+[a<f32>] = bar(b<f32>)
+  a = foo(y: b) + 2
+y = bar(b: 20)
+#test = y"#, Value::F32(F32::new(62.0)));
+
+
+
 // ## Markdown
 
 test_mech!(markdown_program_title, r#"
