@@ -601,64 +601,64 @@ Test column math with u8
   y = [4<u8>; 5<u8>; 6<u8>]
   sum-result = stats/sum(column: 4<u8> + y)
   mul-result = stats/sum(column: 4<u8> * y)
-  sub-result = stats/sum(column: 4<u8> - y)
+  sub-result = stats/sum(column: 10<u8> - y)
   #test += ["Add Scalar:Column u8"  27<u8>  sum-result
             "Mul Scalar:Column u8"  60<u8>  mul-result
-            "Sub Scalar:Column u8"  28<u8>  sub-result]
+            "Sub Scalar:Column u8"  15<u8>  sub-result]
 
 Test column math with u16
   y = [4<u16>; 5<u16>; 6<u16>]
   sum-result = stats/sum(column: 4<u16> + y)
   mul-result = stats/sum(column: 4<u16> * y)
-  sub-result = stats/sum(column: 4<u16> - y)
+  sub-result = stats/sum(column: 10<u16> - y)
   #test += ["Add Scalar:Column u16"  27<u16>  sum-result
             "Mul Scalar:Column u16"  60<u16>  mul-result
-            "Sub Scalar:Column u16"  28<u16>  sub-result]
+            "Sub Scalar:Column u16"  15<u16>  sub-result]
 
 Test column math with u32
   y = [4<u32>; 5<u32>; 6<u32>]
   sum-result = stats/sum(column: 4<u32> + y)
   mul-result = stats/sum(column: 4<u32> * y)
-  sub-result = stats/sum(column: 4<u32> - y)
+  sub-result = stats/sum(column: 10<u32> - y)
   #test += ["Add Scalar:Column u32"  27<u32>  sum-result
             "Mul Scalar:Column u32"  60<u32>  mul-result
-            "Sub Scalar:Column u32"  28<u32>  sub-result]
+            "Sub Scalar:Column u32"  15<u32>  sub-result]
 
 Test column math with u64
   y = [4<u64>; 5<u64>; 6<u64>]
   sum-result = stats/sum(column: 4<u64> + y)
   mul-result = stats/sum(column: 4<u64> * y)
-  sub-result = stats/sum(column: 4<u64> - y)
+  sub-result = stats/sum(column: 10<u64> - y)
   #test += ["Add Scalar:Column u64"  27<u64>  sum-result
             "Mul Scalar:Column u64"  60<u64>  mul-result
-            "Sub Scalar:Column u64"  28<u64>  sub-result]
+            "Sub Scalar:Column u64"  15<u64>  sub-result]
 
 Test column math with u128
   y = [4<u128>; 5<u128>; 6<u128>]
   sum-result = stats/sum(column: 4<u128> + y)
   mul-result = stats/sum(column: 4<u128> * y)
-  sub-result = stats/sum(column: 4<u128> - y)
+  sub-result = stats/sum(column: 10<u128> - y)
   #test += ["Add Scalar:Column u128" 27<u128>  sum-result
             "Mul Scalar:Column u128"  60<u128>  mul-result
-            "Sub Scalar:Column u128"  28<u128>  sub-result]
+            "Sub Scalar:Column u128"  15<u128>  sub-result]
 
 Test column math with f32
   y = [4<f32>; 5<f32>; 6<f32>]
   sum-result = stats/sum(column: 4<f32> + y)
   mul-result = stats/sum(column: 4<f32> * y)
-  sub-result = stats/sum(column: 4<f32> - y)
+  sub-result = stats/sum(column: 10<f32> - y)
   #test += ["Add Scalar:Column f32" 27<f32>  sum-result
             "Mul Scalar:Column f32"  60<f32>  mul-result
-            "Sub Scalar:Column f32"  28<f32>  sub-result]
+            "Sub Scalar:Column f32"  15<f32>  sub-result]
 
 Test column math with f64
   y = [4<f64>; 5<f64>; 6<f64>]
   sum-result = stats/sum(column: 4<f64> + y)
   mul-result = stats/sum(column: 4<f64> * y)
-  sub-result = stats/sum(column: 4<f64> - y)
+  sub-result = stats/sum(column: 10<f64> - y)
   #test += ["Add Scalar:Column f64"  27<f64>  sum-result
             "Mul Scalar:Column f64"  60<f64>  mul-result
-            "Sub Scalar:Column f64"  28<f64>  sub-result]
+            "Sub Scalar:Column f64"  15<f64>  sub-result]
 
 Test column math with i8
   y = [4<i8>; 5<i8>; 6<i8>]
