@@ -230,10 +230,10 @@ async fn main() -> Result<(), MechError> {
 
     let index = warp::get()
                 .and(warp::path::end())
-                .and(warp::fs::dir("./notebook/"));
+                .and(warp::fs::dir("./wasm-notebook/"));
 
     let pkg = warp::path("pkg")
-              .and(warp::fs::dir("./notebook/pkg"));
+              .and(warp::fs::dir("./wasm-notebook/pkg"));
 
     let blocks = warp::path("blocks")
                 .and(warp::addr::remote())
