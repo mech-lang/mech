@@ -444,7 +444,12 @@ impl MechFunctionCompiler for MathNegate {
         let out_column = block.get_out_column(out, *rows, ValueKind::I8)?;
         match (&argument_columns[0], &out_column) {
           ((_,Column::I8(arg),_), Column::I8(out)) => { block.plan.push(NegateV{arg: arg.clone(), out: out.clone() });}
+          ((_,Column::I16(arg),_), Column::I16(out)) => { block.plan.push(NegateV{arg: arg.clone(), out: out.clone() });}
+          ((_,Column::I32(arg),_), Column::I32(out)) => { block.plan.push(NegateV{arg: arg.clone(), out: out.clone() });}
+          ((_,Column::I64(arg),_), Column::I64(out)) => { block.plan.push(NegateV{arg: arg.clone(), out: out.clone() });}
+          ((_,Column::I128(arg),_), Column::I128(out)) => { block.plan.push(NegateV{arg: arg.clone(), out: out.clone() });}
           ((_,Column::F32(arg),_), Column::F32(out)) => { block.plan.push(NegateV{arg: arg.clone(), out: out.clone() });}
+          ((_,Column::F64(arg),_), Column::F64(out)) => { block.plan.push(NegateV{arg: arg.clone(), out: out.clone() });}
           ((_,Column::F32(arg),_), Column::I8(out)) => { block.plan.push(NegateV{arg: arg.clone(), out: out.clone() });}
           x => {return Err(MechError{id: 6001, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
@@ -455,6 +460,11 @@ impl MechFunctionCompiler for MathNegate {
         let out_column = block.get_out_column(out, 1, col.kind())?;
         match (&argument_columns[0], &out_column) {
           ((_,Column::I8(arg),_), Column::I8(out)) => block.plan.push(NegateS{arg: arg.clone(), out: out.clone() }),
+          ((_,Column::I16(arg),_), Column::I16(out)) => block.plan.push(NegateS{arg: arg.clone(), out: out.clone() }),
+          ((_,Column::I32(arg),_), Column::I32(out)) => block.plan.push(NegateS{arg: arg.clone(), out: out.clone() }),
+          ((_,Column::I64(arg),_), Column::I64(out)) => block.plan.push(NegateS{arg: arg.clone(), out: out.clone() }),
+          ((_,Column::I128(arg),_), Column::I128(out)) => block.plan.push(NegateS{arg: arg.clone(), out: out.clone() }),
+          ((_,Column::F64(arg),_), Column::F64(out)) => block.plan.push(NegateS{arg: arg.clone(), out: out.clone() }),
           ((_,Column::F32(arg),_), Column::F32(out)) => block.plan.push(NegateS{arg: arg.clone(), out: out.clone() }),
           x => {return Err(MechError{id: 6002, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
@@ -579,6 +589,7 @@ macro_rules! math_compiler {
             let mut out_column = block.get_out_column(out, *rows, col.kind())?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::F32(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
+              ((_,Column::F64(lhs),_), (_,Column::F64(rhs),_), Column::F64(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::U8(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
               ((_,Column::U16(lhs),_), (_,Column::U16(rhs),_), Column::U16(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
               ((_,Column::U32(lhs),_), (_,Column::U32(rhs),_), Column::U32(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
