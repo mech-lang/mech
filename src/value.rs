@@ -94,8 +94,8 @@ impl fmt::Debug for Value {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match &self {
       Value::U8(v) => write!(f,"{:?}",v)?,
-      Value::U16(v) => write!(f,"{:?}6",v)?, 
-      Value::U32(v) => write!(f,"{:?}2",v)?, 
+      Value::U16(v) => write!(f,"{:?}",v)?, 
+      Value::U32(v) => write!(f,"{:?}",v)?, 
       Value::U64(v) => write!(f,"{:?}",v)?,
       Value::U128(v) => write!(f,"{:?}",v)?, 
       Value::I8(v) => write!(f,"{:?}",v)?, 
