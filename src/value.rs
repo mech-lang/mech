@@ -232,6 +232,66 @@ impl NumberLiteral {
     }
   }
 
+  pub fn as_i8(&mut self) -> i8 {
+    if self.is_float() {
+      self.as_f32() as i8
+    } else {
+      self.bytes.last().unwrap().clone() as i8
+    }
+  }
+
+  pub fn as_i16(&mut self) -> i16 {
+    if self.is_float() {
+      self.as_f32() as i16
+    } else {
+      while self.bytes.len() < 2 {
+        self.bytes.insert(0,0);
+      }
+      let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<i16>());
+      let x = i16::from_be_bytes(fbytes.try_into().unwrap());
+      x
+    }
+  }
+
+  pub fn as_i32(&mut self) -> i32 {
+    if self.is_float() {
+      self.as_f32() as i32
+    } else {
+      while self.bytes.len() < 4 {
+        self.bytes.insert(0,0);
+      }
+      let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<i32>());
+      let x = i32::from_be_bytes(fbytes.try_into().unwrap());
+      x
+    }
+  }
+
+  pub fn as_i64(&mut self) -> i64 {    
+    if self.is_float() {
+      self.as_f32() as i64
+    } else {
+      while self.bytes.len() < 8 {
+        self.bytes.insert(0,0);
+      }
+      let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<i64>());
+      let x = i64::from_be_bytes(fbytes.try_into().unwrap());
+      x
+    }
+  }
+
+  pub fn as_i128(&mut self) -> i128 {    
+    if self.is_float() {
+      self.as_f32() as i128
+    } else {
+      while self.bytes.len() < 16 {
+        self.bytes.insert(0,0);
+      }
+      let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<i128>());
+      let x = i128::from_be_bytes(fbytes.try_into().unwrap());
+      x
+    }
+  }
+
   pub fn as_f32(&mut self) -> f32 {    
     while self.bytes.len() < 4 {
       self.bytes.insert(0,0);
