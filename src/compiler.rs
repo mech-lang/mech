@@ -229,7 +229,13 @@ impl Compiler {
           else if *kind == *cU32 { string.parse::<u32>().unwrap().to_be_bytes().to_vec() }
           else if *kind == *cU64 { string.parse::<u64>().unwrap().to_be_bytes().to_vec() }
           else if *kind == *cU128 { string.parse::<u128>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cI8 { string.parse::<i8>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cI16 { string.parse::<i16>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cI32 { string.parse::<i32>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cI64 { string.parse::<i64>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cI128 { string.parse::<i128>().unwrap().to_be_bytes().to_vec() }
           else if *kind == *cF32 { string.parse::<f32>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cF64 { string.parse::<f64>().unwrap().to_be_bytes().to_vec() }
           else if *kind == *cHEX {
             bytes.iter().map(|c| c.to_digit(16).unwrap() as u8).collect::<Vec<u8>>()
           }
