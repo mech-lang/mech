@@ -659,6 +659,12 @@ impl Block {
         else if *kind == *cU16 { table_brrw.set_col_kind(*column_ix,ValueKind::U16)?; }
         else if *kind == *cU32 { table_brrw.set_col_kind(*column_ix,ValueKind::U32)?; }
         else if *kind == *cU64 { table_brrw.set_col_kind(*column_ix,ValueKind::U64)?; }
+        else if *kind == *cU128 { table_brrw.set_col_kind(*column_ix,ValueKind::U128)?; }
+        else if *kind == *cI8 { table_brrw.set_col_kind(*column_ix,ValueKind::I8)?; }
+        else if *kind == *cI16 { table_brrw.set_col_kind(*column_ix,ValueKind::I16)?; }
+        else if *kind == *cI32 { table_brrw.set_col_kind(*column_ix,ValueKind::I32)?; }
+        else if *kind == *cI64 { table_brrw.set_col_kind(*column_ix,ValueKind::I64)?; }
+        else if *kind == *cI128 { table_brrw.set_col_kind(*column_ix,ValueKind::I128)?; }
         else if *kind == *cF32 { table_brrw.set_col_kind(*column_ix,ValueKind::F32)?; }
         else if *kind == *cF32L { table_brrw.set_col_kind(*column_ix,ValueKind::F32)?; }
         else if *kind == *cM { table_brrw.set_col_kind(*column_ix,ValueKind::Length)?; }
@@ -764,6 +770,26 @@ impl Block {
         else if *kind == *cU128 {
           table_brrw.set_kind(ValueKind::U128)?;
           table_brrw.set_raw(0,0,Value::U128(U128::new(num.as_u128())))?;
+        } 
+        else if *kind == *cI8 {
+          table_brrw.set_kind(ValueKind::I8)?;
+          table_brrw.set_raw(0,0,Value::I8(I8::new(num.as_i8())))?;
+        } 
+        else if *kind == *cI16 {
+          table_brrw.set_kind(ValueKind::I16)?;
+          table_brrw.set_raw(0,0,Value::I16(I16::new(num.as_i16())))?;
+        } 
+        else if *kind == *cI32 {
+          table_brrw.set_kind(ValueKind::I32)?;
+          table_brrw.set_raw(0,0,Value::I32(I32::new(num.as_i32())))?;
+        } 
+        else if *kind == *cI64 {
+          table_brrw.set_kind(ValueKind::I64)?;
+          table_brrw.set_raw(0,0,Value::I64(I64::new(num.as_i64())))?;
+        } 
+        else if *kind == *cI128 {
+          table_brrw.set_kind(ValueKind::I128)?;
+          table_brrw.set_raw(0,0,Value::I128(I128::new(num.as_i128())))?;
         } 
         else if *kind == *cMS {
           table_brrw.set_kind(ValueKind::Time)?;
