@@ -33,6 +33,11 @@ lazy_static! {
   pub static ref cU32: u64 = hash_str("u32");
   pub static ref cU64: u64 = hash_str("u64");
   pub static ref cU128: u64 = hash_str("u128");
+  pub static ref cI8: u64 = hash_str("i8");
+  pub static ref cI16: u64 = hash_str("i16");
+  pub static ref cI32: u64 = hash_str("i32");
+  pub static ref cI64: u64 = hash_str("i64");
+  pub static ref cI128: u64 = hash_str("i128");
   pub static ref cHZ: u64 = hash_str("hz");
   pub static ref cMS: u64 = hash_str("ms");
   pub static ref cS: u64 = hash_str("s");
