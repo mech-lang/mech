@@ -228,7 +228,7 @@ impl Compiler {
           else if *kind == *cU16 { string.parse::<u16>().unwrap().to_be_bytes().to_vec() }
           else if *kind == *cU32 { string.parse::<u32>().unwrap().to_be_bytes().to_vec() }
           else if *kind == *cU64 { string.parse::<u64>().unwrap().to_be_bytes().to_vec() }
-          else if *kind == *cU64 { string.parse::<u128>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cU128 { string.parse::<u128>().unwrap().to_be_bytes().to_vec() }
           else if *kind == *cF32 { string.parse::<f32>().unwrap().to_be_bytes().to_vec() }
           else if *kind == *cHEX {
             bytes.iter().map(|c| c.to_digit(16).unwrap() as u8).collect::<Vec<u8>>()
