@@ -368,9 +368,24 @@ macro_rules! compare_compiler {
               ((_,Column::U16(lhs),ColumnIndex::Index(lix)), (_,Column::U16(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
               ((_,Column::U32(lhs),ColumnIndex::All), (_,Column::U32(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
               ((_,Column::U32(lhs),ColumnIndex::Index(lix)), (_,Column::U32(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
+              ((_,Column::U64(lhs),ColumnIndex::All), (_,Column::U64(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
               ((_,Column::U64(lhs),ColumnIndex::Index(lix)), (_,Column::U64(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
+              ((_,Column::U128(lhs),ColumnIndex::All), (_,Column::U128(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
+              ((_,Column::U128(lhs),ColumnIndex::Index(lix)), (_,Column::U128(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
+              ((_,Column::I8(lhs),ColumnIndex::All), (_,Column::I8(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
+              ((_,Column::I8(lhs),ColumnIndex::Index(lix)), (_,Column::I8(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
+              ((_,Column::I16(lhs),ColumnIndex::All), (_,Column::I16(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
+              ((_,Column::I16(lhs),ColumnIndex::Index(lix)), (_,Column::I16(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
+              ((_,Column::I32(lhs),ColumnIndex::All), (_,Column::I32(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
+              ((_,Column::I32(lhs),ColumnIndex::Index(lix)), (_,Column::I32(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
+              ((_,Column::I64(lhs),ColumnIndex::All), (_,Column::I64(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
+              ((_,Column::I64(lhs),ColumnIndex::Index(lix)), (_,Column::I64(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
+              ((_,Column::I128(lhs),ColumnIndex::All), (_,Column::I128(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
+              ((_,Column::I128(lhs),ColumnIndex::Index(lix)), (_,Column::I128(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
               ((_,Column::F32(lhs),ColumnIndex::All), (_,Column::F32(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
               ((_,Column::F32(lhs),ColumnIndex::Index(lix)), (_,Column::F32(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
+              ((_,Column::F64(lhs),ColumnIndex::All), (_,Column::F64(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
+              ((_,Column::F64(lhs),ColumnIndex::Index(lix)), (_,Column::F64(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
               x => {return Err(MechError{id: 7100, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }
@@ -380,7 +395,16 @@ macro_rules! compare_compiler {
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
               ((_,Column::U16(lhs),_), (_,Column::U16(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
+              ((_,Column::U32(lhs),_), (_,Column::U32(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
+              ((_,Column::U64(lhs),_), (_,Column::U64(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
+              ((_,Column::U128(lhs),_), (_,Column::U128(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
+              ((_,Column::I8(lhs),_), (_,Column::I8(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
+              ((_,Column::I16(lhs),_), (_,Column::I16(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
+              ((_,Column::I32(lhs),_), (_,Column::I32(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
+              ((_,Column::I64(lhs),_), (_,Column::I64(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
+              ((_,Column::I128(lhs),_), (_,Column::I128(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
               ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
+              ((_,Column::F64(lhs),_), (_,Column::F64(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
               x => {return Err(MechError{id: 7101, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }
@@ -389,7 +413,17 @@ macro_rules! compare_compiler {
             let out_column = block.get_out_column(out, *rows, ValueKind::Bool)?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => { block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}) }
+              ((_,Column::U16(lhs),_), (_,Column::U16(rhs),_), Column::Bool(out)) => { block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}) }
+              ((_,Column::U32(lhs),_), (_,Column::U32(rhs),_), Column::Bool(out)) => { block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}) }
+              ((_,Column::U64(lhs),_), (_,Column::U64(rhs),_), Column::Bool(out)) => { block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}) }
+              ((_,Column::U128(lhs),_), (_,Column::U128(rhs),_), Column::Bool(out)) => { block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}) }
+              ((_,Column::I8(lhs),_), (_,Column::I8(rhs),_), Column::Bool(out)) => { block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}) }
+              ((_,Column::I16(lhs),_), (_,Column::I16(rhs),_), Column::Bool(out)) => { block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}) }
+              ((_,Column::I32(lhs),_), (_,Column::I32(rhs),_), Column::Bool(out)) => { block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}) }
+              ((_,Column::I64(lhs),_), (_,Column::I64(rhs),_), Column::Bool(out)) => { block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}) }
+              ((_,Column::I128(lhs),_), (_,Column::I128(rhs),_), Column::Bool(out)) => { block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}) }
               ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::Bool(out)) => { block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}) }
+              ((_,Column::F64(lhs),_), (_,Column::F64(rhs),_), Column::Bool(out)) => { block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}) }
               x => {return Err(MechError{id: 7102, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }
@@ -401,7 +435,17 @@ macro_rules! compare_compiler {
             let out_column = block.get_out_column(out, *lhs_rows, ValueKind::Bool)?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::U16(lhs),_), (_,Column::U16(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::U32(lhs),_), (_,Column::U32(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::U64(lhs),_), (_,Column::U64(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::U128(lhs),_), (_,Column::U128(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::I8(lhs),_), (_,Column::I8(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::I16(lhs),_), (_,Column::I16(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::I32(lhs),_), (_,Column::I32(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::I64(lhs),_), (_,Column::I64(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::I128(lhs),_), (_,Column::I128(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
               ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::F64(lhs),_), (_,Column::F64(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
               x => {return Err(MechError{id: 7104, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }
@@ -419,7 +463,17 @@ macro_rules! compare_compiler {
             }
             match (&argument_columns[0], &argument_columns[1]) {
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::U16(lhs),_), (_,Column::U16(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::U32(lhs),_), (_,Column::U32(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::U64(lhs),_), (_,Column::U64(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::U128(lhs),_), (_,Column::U128(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::I8(lhs),_), (_,Column::I8(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::I16(lhs),_), (_,Column::I16(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::I32(lhs),_), (_,Column::I32(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::I64(lhs),_), (_,Column::I64(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::I128(lhs),_), (_,Column::I128(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
               ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::F64(lhs),_), (_,Column::F64(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
               x => {return Err(MechError{id: 7204, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }
@@ -435,7 +489,17 @@ macro_rules! compare_compiler {
             }
             match (&argument_columns[0], &argument_columns[1]) {
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_)) => {block.plan.push($op6{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::U16(lhs),_), (_,Column::U16(rhs),_)) => {block.plan.push($op6{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::U32(lhs),_), (_,Column::U32(rhs),_)) => {block.plan.push($op6{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::U64(lhs),_), (_,Column::U64(rhs),_)) => {block.plan.push($op6{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::U128(lhs),_), (_,Column::U128(rhs),_)) => {block.plan.push($op6{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::I8(lhs),_), (_,Column::I8(rhs),_)) => {block.plan.push($op6{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::I16(lhs),_), (_,Column::I16(rhs),_)) => {block.plan.push($op6{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::I32(lhs),_), (_,Column::I32(rhs),_)) => {block.plan.push($op6{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::I64(lhs),_), (_,Column::I64(rhs),_)) => {block.plan.push($op6{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::I128(lhs),_), (_,Column::I128(rhs),_)) => {block.plan.push($op6{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
               ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_)) => {block.plan.push($op6{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::F64(lhs),_), (_,Column::F64(rhs),_)) => {block.plan.push($op6{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
               x => {return Err(MechError{id: 7205, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }
@@ -463,10 +527,28 @@ macro_rules! compare_eq_compiler {
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::U8(lhs),ColumnIndex::All), (_,Column::U8(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
               ((_,Column::U8(lhs),ColumnIndex::Index(lix)), (_,Column::U8(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
+              ((_,Column::U16(lhs),ColumnIndex::All), (_,Column::U16(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
+              ((_,Column::U16(lhs),ColumnIndex::Index(lix)), (_,Column::U16(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
+              ((_,Column::U32(lhs),ColumnIndex::All), (_,Column::U32(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
+              ((_,Column::U32(lhs),ColumnIndex::Index(lix)), (_,Column::U32(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
               ((_,Column::U64(lhs),ColumnIndex::All), (_,Column::U64(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
               ((_,Column::U64(lhs),ColumnIndex::Index(lix)), (_,Column::U64(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
+              ((_,Column::U128(lhs),ColumnIndex::All), (_,Column::U128(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
+              ((_,Column::U128(lhs),ColumnIndex::Index(lix)), (_,Column::U128(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
+              ((_,Column::I8(lhs),ColumnIndex::All), (_,Column::I8(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
+              ((_,Column::I8(lhs),ColumnIndex::Index(lix)), (_,Column::I8(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
+              ((_,Column::I16(lhs),ColumnIndex::All), (_,Column::I16(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
+              ((_,Column::I16(lhs),ColumnIndex::Index(lix)), (_,Column::I16(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
+              ((_,Column::I32(lhs),ColumnIndex::All), (_,Column::I32(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
+              ((_,Column::I32(lhs),ColumnIndex::Index(lix)), (_,Column::I32(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
+              ((_,Column::I64(lhs),ColumnIndex::All), (_,Column::I64(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
+              ((_,Column::I64(lhs),ColumnIndex::Index(lix)), (_,Column::I64(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
+              ((_,Column::I128(lhs),ColumnIndex::All), (_,Column::I128(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
+              ((_,Column::I128(lhs),ColumnIndex::Index(lix)), (_,Column::I128(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
               ((_,Column::F32(lhs),ColumnIndex::All), (_,Column::F32(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
               ((_,Column::F32(lhs),ColumnIndex::Index(lix)), (_,Column::F32(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
+              ((_,Column::F64(lhs),ColumnIndex::All), (_,Column::F64(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
+              ((_,Column::F64(lhs),ColumnIndex::Index(lix)), (_,Column::F64(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
               ((_,Column::Bool(lhs),ColumnIndex::All), (_,Column::Bool(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
               ((_,Column::Bool(lhs),ColumnIndex::Index(lix)), (_,Column::Bool(rhs),ColumnIndex::Index(rix)), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),*lix,*lix), rhs: (rhs.clone(),*rix,*rix), out: out.clone()})}
               ((_,Column::String(lhs),ColumnIndex::All), (_,Column::String(rhs),ColumnIndex::All), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,0), out: out.clone()})}
@@ -480,7 +562,17 @@ macro_rules! compare_eq_compiler {
             let out_column = block.get_out_column(out, *rows, ValueKind::Bool)?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
+              ((_,Column::U16(lhs),_), (_,Column::U16(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
+              ((_,Column::U32(lhs),_), (_,Column::U32(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
+              ((_,Column::U64(lhs),_), (_,Column::U64(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
+              ((_,Column::U128(lhs),_), (_,Column::U128(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
+              ((_,Column::I8(lhs),_), (_,Column::I8(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
+              ((_,Column::I16(lhs),_), (_,Column::I16(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
+              ((_,Column::I32(lhs),_), (_,Column::I32(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
+              ((_,Column::I64(lhs),_), (_,Column::I64(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
+              ((_,Column::I128(lhs),_), (_,Column::I128(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
               ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
+              ((_,Column::F64(lhs),_), (_,Column::F64(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
               ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
               ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => { block.plan.push($op2{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,0), out: out.clone()}) }
               x => {return Err(MechError{id: 7107, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
@@ -491,7 +583,17 @@ macro_rules! compare_eq_compiler {
             let out_column = block.get_out_column(out, *rows, ValueKind::Bool)?;
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}),
+              ((_,Column::U16(lhs),_), (_,Column::U16(rhs),_), Column::Bool(out)) => block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}),
+              ((_,Column::U32(lhs),_), (_,Column::U32(rhs),_), Column::Bool(out)) => block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}),
+              ((_,Column::U64(lhs),_), (_,Column::U64(rhs),_), Column::Bool(out)) => block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}),
+              ((_,Column::U128(lhs),_), (_,Column::U128(rhs),_), Column::Bool(out)) => block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}),
+              ((_,Column::I8(lhs),_), (_,Column::I8(rhs),_), Column::Bool(out)) => block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}),
+              ((_,Column::I16(lhs),_), (_,Column::I16(rhs),_), Column::Bool(out)) => block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}),
+              ((_,Column::I32(lhs),_), (_,Column::I32(rhs),_), Column::Bool(out)) => block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}),
+              ((_,Column::I64(lhs),_), (_,Column::I64(rhs),_), Column::Bool(out)) => block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}),
+              ((_,Column::I128(lhs),_), (_,Column::I128(rhs),_), Column::Bool(out)) => block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}),
               ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::Bool(out)) => block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}),
+              ((_,Column::F64(lhs),_), (_,Column::F64(rhs),_), Column::Bool(out)) => block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}),
               ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}),
               ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => block.plan.push($op3{lhs: (lhs.clone(),0,0), rhs: (rhs.clone(),0,lhs.len()-1), out: out.clone()}),
               x => {return Err(MechError{id: 7108, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
@@ -506,7 +608,17 @@ macro_rules! compare_eq_compiler {
             match (&argument_columns[0], &argument_columns[1], &out_column) {
               ((_,Column::Any(lhs),_), (_,Column::Any(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::U16(lhs),_), (_,Column::U16(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::U32(lhs),_), (_,Column::U32(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::U64(lhs),_), (_,Column::U64(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::U128(lhs),_), (_,Column::U128(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::I8(lhs),_), (_,Column::I8(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::I16(lhs),_), (_,Column::I16(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::I32(lhs),_), (_,Column::I32(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::I64(lhs),_), (_,Column::I64(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::I128(lhs),_), (_,Column::I128(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
               ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+              ((_,Column::F64(lhs),_), (_,Column::F64(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
               ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
               ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
               x => {return Err(MechError{id: 7110, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
@@ -528,7 +640,17 @@ macro_rules! compare_eq_compiler {
             match (&argument_columns[0], &argument_columns[1]) {
               ((_,Column::Any(lhs),_), (_,Column::Any(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
               ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::U16(lhs),_), (_,Column::U16(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::U32(lhs),_), (_,Column::U32(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::U64(lhs),_), (_,Column::U64(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::U128(lhs),_), (_,Column::U128(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::I8(lhs),_), (_,Column::I8(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::I16(lhs),_), (_,Column::I16(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::I32(lhs),_), (_,Column::I32(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::I64(lhs),_), (_,Column::I64(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::I128(lhs),_), (_,Column::I128(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
               ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
+              ((_,Column::F64(lhs),_), (_,Column::F64(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
               ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
               ((_,Column::String(lhs),_), (_,Column::String(rhs),_)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out: out_table.clone()})}
               x => {return Err(MechError{id: 7110, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
