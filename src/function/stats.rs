@@ -417,7 +417,20 @@ impl MechFunctionCompiler for StatsSum {
               (cols,arg_table_brrw.rows)
             };
             block.plan.push(StatsSumTable{cols: cols.clone(), rows: rows, out: out_col.clone()});
-          }          
+          }    
+          Column::F64(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<F64>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::F64(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumTable{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }        
           x => {return Err(MechError{id: 3045, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }
       }
