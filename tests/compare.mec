@@ -84,7 +84,6 @@ Test column compare with f32
   y = [4<f32>;5<f32>;6<f32>]
   z = x > y
   all = set/all(column: z)
-<<<<<<< tests/compare.mec
   #test += ["> Scalar:Scalar f32 F" false all]
 
 Test column compare with f64
@@ -415,6 +414,3 @@ Test column compare with i128
   z = x != y
   all = set/all(column: z)
   #test += ["!= Scalar:Scalar i128 F" false all]
-=======
-  #test += ["> Scalar:Scalar f32 F" false all]
->>>>>>> tests/compare.mec
