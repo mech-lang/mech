@@ -79,7 +79,7 @@ Test column math with u8
   sum-result = stats/sum(column: x + y)
   mul-result = stats/sum(column: x * y)
   sub-result = stats/sum(column: x - y)
-  #test += ["Add Column:Column u8"  21<u8>  sum-resul]
+  #test += ["Add Column:Column u8"  21<u8>  sum-result]
 
 Test column math with u8
   x = [1<u8>; 2<u8>; 3<u8>]
