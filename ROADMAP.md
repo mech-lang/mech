@@ -18,28 +18,30 @@ Target release: ???
 - [ ] GPGPU Runtime
 - [ ] Automatic Differentiation
 - [ ] Capability system
-- [ ] User defined functions
+- [ ] Persistence
+- [ ] Time travel debugging
+- Machines
+    - [ ] JSON
+    - [ ] Sockets
+    - [ ] Serial
+    - [ ] Bluetooth
 
-## Version 0.1.0 (October 2022)
+## Version 0.1.0 (Fall 2022)
 
+- [x] User defined functions
 - [x] Errors
 - [x] Distribution
 - [x] Paralell operators
 - [x] Async blocks
 - [x] Units
 - [x] Type checking
-- [x] Multiple dispact
+- [x] Multiple dispatch
 - [x] JIT Block Compiler
-- [ ] Persistence
-- [ ] Time travel debugging
 - [x] Native executables
 - [x] REPL
 - Machines
-    - [ ] JSON
-    - [ ] Sockets
-    - [ ] Serial
-    - [ ] Bluetooth
-    - [ ] GUI
+    - [x] Matrix
+    - [x] GUI
 - Editor
     - [ ] Database Explorer
     - [ ] API endpoint server
