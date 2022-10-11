@@ -46,12 +46,42 @@ Test scalar compare with u128
             "< Scalar:Scalar u128 T"  true  1<u128> < 2<u128> 
             "< Scalar:Scalar u128 F"  false  2<u128> < 1<u128>]
 
+Test scalar compare with i8
+  #test += ["> Scalar:Scalar i8 T"  true  2<i8> > 1<i8> 
+            "> Scalar:Scalar i8 F"  false  1<i8> > 2<i8> 
+            "< Scalar:Scalar i8 T"  true  1<i8> < 2<i8> 
+            "< Scalar:Scalar i8 F"  false  2<i8> < 1<i8>]
+
+Test scalar compare with i16
+  #test += ["> Scalar:Scalar i16 T"  true  2<i16> > 1<i16> 
+            "> Scalar:Scalar i16 F"  false  1<i16> > 2<i16> 
+            "< Scalar:Scalar i16 T"  true  1<i16> < 2<i16> 
+            "< Scalar:Scalar i16 F"  false  2<i16> < 1<i16>]
+
+Test scalar compare with i32
+  #test += ["> Scalar:Scalar i32 T"  true  2<i32> > 1<i32> 
+            "> Scalar:Scalar i32 F"  false  1<i32> > 2<i32> 
+            "< Scalar:Scalar i32 T"  true  1<i32> < 2<i32> 
+            "< Scalar:Scalar i32 F"  false  2<i32> < 1<i32>]
+
+Test scalar compare with i64
+  #test += ["> Scalar:Scalar i64 T"  true  2<i64> > 1<i64> 
+            "> Scalar:Scalar i64 F"  false  1<i64> > 2<i64> 
+            "< Scalar:Scalar i64 T"  true  1<i64> < 2<i64> 
+            "< Scalar:Scalar i64 F"  false  2<i64> < 1<i64>]
+
+Test scalar compare with i128
+  #test += ["> Scalar:Scalar i128 T"  true  2<i128> > 1<i128> 
+            "> Scalar:Scalar i128 F"  false  1<i128> > 2<i128> 
+            "< Scalar:Scalar i128 T"  true  1<i128> < 2<i128> 
+            "< Scalar:Scalar i128 F"  false  2<i128> < 1<i128>]
+
 Column : Column
 ----------------
 
 Test column compare with f32
-  x = [1;2;3]
-  y = [4;5;6]
+  x = [1<f32>;2<f32>;3<f32>]
+  y = [4<f32>;5<f32>;6<f32>]
   z = x > y
   all = set/all(column: z)
   #test += ["> Scalar:Scalar f32 F" false all]

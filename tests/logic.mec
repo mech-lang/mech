@@ -9,12 +9,11 @@ Test scalar logic and with f32
             "& Scalar:Scalar f32"  false  true & false
             "& Scalar:Scalar f32"  false  false & true
             "& Scalar:Scalar f32"  false  false & false]
-
 Test scalar logic or with f32
-  #test += ["| Scalar:Scalar f32"  true  true | true
-            "| Scalar:Scalar f32"  true  true | false
-            "| Scalar:Scalar f32"  true  false | true
-            "| Scalar:Scalar f32"  false  false | false]
+  #test += ["or Scalar:Scalar f32"  true  true | true
+            "or Scalar:Scalar f32"  true  true | false
+            "or Scalar:Scalar f32"  true  false | true
+            "or Scalar:Scalar f32"  false  false | false]
 
 Test scalar logic xor with f32
   #test += ["⊕ Scalar:Scalar f32"  false  true ⊕ true
@@ -22,7 +21,7 @@ Test scalar logic xor with f32
             "⊕ Scalar:Scalar f32"  true  false ⊕ true
             "⊕ Scalar:Scalar f32"  false  false ⊕ false]
 
-Column : Column
+Column : Column (Does not work...)
 ----------------
 
 Test column & with f32
@@ -31,17 +30,17 @@ Test column & with f32
   z = x & y
   all = set/all(column: z)
   #test += ["& Scalar:Scalar f32 F" false all]
-                        
+
 Test column | with f32
   x = [true;true;true]
   y = [false;false;false]
   z = x | y
   all = set/all(column: z)
-  #test += ["| Scalar:Scalar f32 F" true all]    
+  #test += ["or Scalar:Scalar f32 F" true all]
 
 Test column ⊕ with f32
   x = [true;true;true]
   y = [false;false;false]
   z = x ⊕ y
   all = set/all(column: z)
-  #test += ["| Scalar:Scalar f32 F" true all]                      
+  #test += ["or Scalar:Scalar f32 F" true all]
