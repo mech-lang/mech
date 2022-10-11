@@ -542,6 +542,12 @@ impl From<bool> for MechString {
   } 
 }
 
+impl From<TableId> for Value {
+  fn from(n: TableId) -> Value {
+    Value::Reference(n)
+  } 
+}
+
 impl From<bool> for Value {
   fn from(n: bool) -> Value {
     Value::Bool(n)

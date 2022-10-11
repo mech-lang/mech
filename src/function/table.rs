@@ -55,7 +55,7 @@ pub struct ParCopyVV<T,U> {
 #[cfg(feature = "parallel")]
 impl<T,U> MechFunction for ParCopyVV<T,U> 
 where T: Debug + Clone + Into<U> + Sync + Send,
-      U: Debug + Clone + Into<T> + Sync + Send,
+      U: Debug + Clone + Sync + Send,
 {
   fn solve(&self) {
     let (arg,asix,aeix) = &self.arg;
@@ -127,7 +127,7 @@ pub struct CopySV<T,U> {
 }
 impl<T,U> MechFunction for CopySV<T,U>  
 where T: Clone + Debug + Into<U>,
-      U: Clone + Debug + Into<T>
+      U: Clone + Debug
 {
   fn solve(&self) {
     let arg = self.arg.borrow()[self.ix].clone();
@@ -192,7 +192,7 @@ pub struct CopyVB<T,U> {
 }
 impl<T,U> MechFunction for CopyVB<T,U> 
 where T: Debug + Clone + Into<U> + Sync + Send,
-      U: Debug + Clone + Into<T> + Sync + Send,
+      U: Debug + Clone + Sync + Send,
       Vec<U>: FromIterator<T>,
 {
   fn solve(&self) {
@@ -229,7 +229,7 @@ pub struct CopyVBT<T,U> {
 }
 impl<T,U> MechFunction for CopyVBT<T,U> 
 where T: Debug + Clone + Into<U> + Sync + Send,
-      U: Debug + Clone + Into<T> + Sync + Send,
+      U: Debug + Clone + Sync + Send,
       Vec<U>: FromIterator<T>,
 {
   fn solve(&self) {
@@ -272,7 +272,7 @@ pub struct CopyVI<T,U> {
 }
 impl<T,U> MechFunction for CopyVI<T,U> 
 where T: Clone + Debug + Into<U>,
-      U: Clone + Debug + Into<T>
+      U: Clone + Debug
 {
   fn solve(&self) {
     let mut out_brrw = self.out.borrow_mut();
@@ -297,7 +297,7 @@ pub struct CopyVRV<T,U,V> {
 impl<T,U,V> MechFunction for CopyVRV<T,U,V> 
 where T: Clone + Debug + Into<V>,
       U: Clone + Debug + Into<usize>,
-      V: Clone + Debug + Into<V>
+      V: Clone + Debug
 {
   fn solve(&self) {
     let mut out_brrw = self.out.borrow_mut();
@@ -349,7 +349,7 @@ pub struct SetSIxSIx<T,U> {
 }
 impl<T,U> MechFunction for SetSIxSIx<T,U>
 where T: Clone + Debug + Into<U>,
-      U: Clone + Debug + Into<T>
+      U: Clone + Debug
 {
   fn solve(&self) {
     (self.out.borrow_mut())[self.oix] = T::into((self.arg.borrow())[self.ix].clone());
@@ -365,7 +365,7 @@ pub struct SetSIxVB<T,U> {
 }
 impl<T,U> MechFunction for SetSIxVB<T,U>
 where T: Clone + Debug + Into<U>,
-      U: Clone + Debug + Into<T>
+      U: Clone + Debug
 {
   fn solve(&self) {
     let oix_brrw = self.oix.borrow();
@@ -480,7 +480,7 @@ pub struct SetVV<T,U> {
 }
 impl<T,U> MechFunction for SetVV<T,U>
 where T: Clone + Debug + Into<U>,
-      U: Clone + Debug + Into<T>
+      U: Clone + Debug
 {
   fn solve(&self) {
     self.out.borrow_mut()
@@ -2206,8 +2206,74 @@ impl MechFunctionCompiler for TableSet {
             let dest_column = dest_table_brrw.get_column(&TableIndex::Alias(*alias))?;
             let src_column = src_table_brrw.get_column(&TableIndex::Alias(*alias))?;
             match (src_column,dest_column) {
+              (Column::U8(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
               (Column::U8(src),Column::U8(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U8(src),Column::U16(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U8(src),Column::U32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U8(src),Column::U64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U8(src),Column::U128(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U8(src),Column::F32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U8(src),Column::F64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U16(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U16(src),Column::U16(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U16(src),Column::U32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U16(src),Column::U64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U16(src),Column::U128(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U16(src),Column::F32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U16(src),Column::F64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U32(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U32(src),Column::U32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U32(src),Column::U64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U32(src),Column::U128(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U32(src),Column::F32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U32(src),Column::F64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U64(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U64(src),Column::U64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U64(src),Column::U128(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U64(src),Column::F32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U64(src),Column::F64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U128(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U128(src),Column::U128(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U128(src),Column::F32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U128(src),Column::F64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::U8(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::U16(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::U32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::U64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::U128(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}              
+              (Column::F32(src),Column::I8(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::I16(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::I32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::I64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::I128(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
               (Column::F32(src),Column::F32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::F64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::U8(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::U16(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::U32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::U64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::U128(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}              
+              (Column::F64(src),Column::I8(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::I16(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::I32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::I64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::I128(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::F32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::F64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}              
+              (Column::Time(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::Time(src),Column::Time(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::Length(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::Length(src),Column::Length(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::Speed(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::Speed(src),Column::Speed(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::String(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::String(src),Column::String(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::Bool(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::Bool(src),Column::Bool(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::Ref(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::Ref(src),Column::Ref(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
               x => {return Err(MechError{id: 4916, kind: MechErrorKind::GenericError(format!("{:?}", x))});},            
             }
           }
@@ -2225,9 +2291,73 @@ impl MechFunctionCompiler for TableSet {
             dest_table_brrw.set_col_kind(col_ix-1,src_column.kind());
             let dest_column = dest_table_brrw.get_column(&TableIndex::Index(col_ix))?;
             match (src_column,dest_column) {
+              (Column::U8(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
               (Column::U8(src),Column::U8(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U8(src),Column::U16(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U8(src),Column::U32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U8(src),Column::U64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U8(src),Column::U128(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U8(src),Column::F32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U8(src),Column::F64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U16(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U16(src),Column::U16(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U16(src),Column::U32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U16(src),Column::U64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U16(src),Column::U128(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U16(src),Column::F32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U16(src),Column::F64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U32(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U32(src),Column::U32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U32(src),Column::U64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U32(src),Column::U128(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U32(src),Column::F32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U32(src),Column::F64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U64(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U64(src),Column::U64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U64(src),Column::U128(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U64(src),Column::F32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U64(src),Column::F64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U128(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U128(src),Column::U128(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U128(src),Column::F32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::U128(src),Column::F64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::U8(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::U16(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::U32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::U64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::U128(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::I8(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::I16(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::I32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::I64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::I128(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
               (Column::F32(src),Column::F32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F32(src),Column::F64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::U8(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::U16(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::U32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::U64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::U128(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::I8(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::I16(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::I32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::I64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::I128(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::F32(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::F64(src),Column::F64(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::Time(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::Time(src),Column::Time(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::Length(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::Length(src),Column::Length(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::Speed(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::Speed(src),Column::Speed(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::String(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::String(src),Column::String(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::Bool(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
               (Column::Bool(src),Column::Bool(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
+              (Column::Ref(src),Column::Any(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
               (Column::Ref(src),Column::Ref(out)) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: 0, out: out.clone(), oix: 0});}
               x => {return Err(MechError{id: 4919, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
@@ -2245,9 +2375,75 @@ impl MechFunctionCompiler for TableSet {
           let dest_column = dest_table_brrw.get_column(&TableIndex::Index(col_ix))?;
           let src_column = src_table_brrw.get_column(&TableIndex::Index(col_ix))?;
           match (src_column,dest_column) {
+            (Column::U8(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
             (Column::U8(src),Column::U8(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U8(src),Column::U16(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U8(src),Column::U32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U8(src),Column::U64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U8(src),Column::U128(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U8(src),Column::F32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U8(src),Column::F64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U16(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U16(src),Column::U16(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U16(src),Column::U32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U16(src),Column::U64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U16(src),Column::U128(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U16(src),Column::F32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U16(src),Column::F64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U32(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U32(src),Column::U32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U32(src),Column::U64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U32(src),Column::U128(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U32(src),Column::F32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U32(src),Column::F64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U64(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U64(src),Column::U64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U64(src),Column::U128(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U64(src),Column::F32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U64(src),Column::F64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U128(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U128(src),Column::U128(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U128(src),Column::F32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U128(src),Column::F64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::U8(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::U16(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::U32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::U64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::U128(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::I8(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::I16(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::I32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::I64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::I128(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
             (Column::F32(src),Column::F32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::F64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::U8(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::U16(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::U32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::U64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::U128(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::I8(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::I16(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::I32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::I64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::I128(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::F32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::F64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::Time(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::Time(src),Column::Time(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::Length(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::Length(src),Column::Length(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::Speed(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::Speed(src),Column::Speed(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::String(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::String(src),Column::String(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::Bool(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
             (Column::Bool(src),Column::Bool(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::Ref(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::Ref(src),Column::Ref(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+              x => {return Err(MechError{id: 4919, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             x => {return Err(MechError{id: 4920, kind: MechErrorKind::GenericError(format!("{:?}", x))});}      
           }
         }
@@ -2255,18 +2451,105 @@ impl MechFunctionCompiler for TableSet {
       (TableShape::Scalar,TableShape::Scalar) => {
         let arg_cols = block.get_arg_columns(&arguments)?;
         match (&arg_cols[0],&arg_cols[1]) {
+          ((_,Column::U8(src),ColumnIndex::Index(in_ix)),(_,Column::Any(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
           ((_,Column::U8(src),ColumnIndex::Index(in_ix)),(_,Column::U8(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
-          ((_,Column::F32(arg),ColumnIndex::Index(ix)),(_,Column::F32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
-          ((_,Column::F32(src),ColumnIndex::Index(in_ix)),(_,Column::U8(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
-          ((_,Column::F32(src),ColumnIndex::Index(in_ix)),(_,Column::F32(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
-          ((_,Column::U64(arg),ColumnIndex::Index(ix)),(_,Column::U64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U8(src),ColumnIndex::Index(in_ix)),(_,Column::U16(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U8(src),ColumnIndex::Index(in_ix)),(_,Column::U32(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U8(src),ColumnIndex::Index(in_ix)),(_,Column::U64(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U8(src),ColumnIndex::Index(in_ix)),(_,Column::U128(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U8(src),ColumnIndex::Index(in_ix)),(_,Column::F32(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U8(src),ColumnIndex::Index(in_ix)),(_,Column::F64(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U16(src),ColumnIndex::Index(in_ix)),(_,Column::Any(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U16(src),ColumnIndex::Index(in_ix)),(_,Column::U16(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U16(src),ColumnIndex::Index(in_ix)),(_,Column::U32(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U16(src),ColumnIndex::Index(in_ix)),(_,Column::U64(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U16(src),ColumnIndex::Index(in_ix)),(_,Column::U128(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U16(src),ColumnIndex::Index(in_ix)),(_,Column::F32(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U16(src),ColumnIndex::Index(in_ix)),(_,Column::F64(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}((_,Column::U32(src),ColumnIndex::Index(in_ix)),(_,Column::Any(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U32(src),ColumnIndex::Index(in_ix)),(_,Column::U32(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U32(src),ColumnIndex::Index(in_ix)),(_,Column::U64(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U32(src),ColumnIndex::Index(in_ix)),(_,Column::U128(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U32(src),ColumnIndex::Index(in_ix)),(_,Column::F32(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U32(src),ColumnIndex::Index(in_ix)),(_,Column::F64(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}((_,Column::U64(src),ColumnIndex::Index(in_ix)),(_,Column::Any(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
           ((_,Column::U64(src),ColumnIndex::Index(in_ix)),(_,Column::U64(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
-          ((_,Column::U128(arg),ColumnIndex::Index(ix)),(_,Column::U128(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U64(src),ColumnIndex::Index(in_ix)),(_,Column::U128(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U64(src),ColumnIndex::Index(in_ix)),(_,Column::F32(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U64(src),ColumnIndex::Index(in_ix)),(_,Column::F64(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}((_,Column::U128(src),ColumnIndex::Index(in_ix)),(_,Column::Any(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
           ((_,Column::U128(src),ColumnIndex::Index(in_ix)),(_,Column::U128(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
-          ((_,Column::Bool(src),ColumnIndex::Index(in_ix)),(_,Column::Bool(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
-          ((_,Column::Bool(arg),ColumnIndex::Index(ix)),(_,Column::Bool(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
-          ((_,Column::Ref(src),ColumnIndex::Index(in_ix)),(_,Column::Ref(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U128(src),ColumnIndex::Index(in_ix)),(_,Column::F32(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::U128(src),ColumnIndex::Index(in_ix)),(_,Column::F64(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::Time(src),ColumnIndex::Index(in_ix)),(_,Column::Any(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::Time(src),ColumnIndex::Index(in_ix)),(_,Column::Time(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::Speed(src),ColumnIndex::Index(in_ix)),(_,Column::Any(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::Speed(src),ColumnIndex::Index(in_ix)),(_,Column::Speed(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::Length(src),ColumnIndex::Index(in_ix)),(_,Column::Any(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::Length(src),ColumnIndex::Index(in_ix)),(_,Column::Length(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::String(src),ColumnIndex::Index(in_ix)),(_,Column::Any(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
           ((_,Column::String(src),ColumnIndex::Index(in_ix)),(_,Column::String(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::Bool(src),ColumnIndex::Index(in_ix)),(_,Column::Any(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::Bool(src),ColumnIndex::Index(in_ix)),(_,Column::Bool(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::Bool(src),ColumnIndex::Index(in_ix)),(_,Column::Any(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::Bool(src),ColumnIndex::Index(in_ix)),(_,Column::Bool(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+          ((_,Column::Ref(src),ColumnIndex::Index(in_ix)),(_,Column::Any(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}  
+          ((_,Column::Ref(src),ColumnIndex::Index(in_ix)),(_,Column::Ref(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}  
+          
+          ((_,Column::U8(arg),ColumnIndex::Index(ix)),(_,Column::Any(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U8(arg),ColumnIndex::Index(ix)),(_,Column::U8(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U8(arg),ColumnIndex::Index(ix)),(_,Column::U16(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U8(arg),ColumnIndex::Index(ix)),(_,Column::U32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U8(arg),ColumnIndex::Index(ix)),(_,Column::U64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U8(arg),ColumnIndex::Index(ix)),(_,Column::U128(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U8(arg),ColumnIndex::Index(ix)),(_,Column::F32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U8(arg),ColumnIndex::Index(ix)),(_,Column::F64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U16(arg),ColumnIndex::Index(ix)),(_,Column::Any(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U16(arg),ColumnIndex::Index(ix)),(_,Column::U16(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U16(arg),ColumnIndex::Index(ix)),(_,Column::U32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U16(arg),ColumnIndex::Index(ix)),(_,Column::U64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U16(arg),ColumnIndex::Index(ix)),(_,Column::U128(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U16(arg),ColumnIndex::Index(ix)),(_,Column::F32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U16(arg),ColumnIndex::Index(ix)),(_,Column::F64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U32(arg),ColumnIndex::Index(ix)),(_,Column::Any(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U32(arg),ColumnIndex::Index(ix)),(_,Column::U64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U32(arg),ColumnIndex::Index(ix)),(_,Column::U128(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U32(arg),ColumnIndex::Index(ix)),(_,Column::F32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U32(arg),ColumnIndex::Index(ix)),(_,Column::F64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U64(arg),ColumnIndex::Index(ix)),(_,Column::Any(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U64(arg),ColumnIndex::Index(ix)),(_,Column::U64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U64(arg),ColumnIndex::Index(ix)),(_,Column::U128(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U64(arg),ColumnIndex::Index(ix)),(_,Column::F32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U64(arg),ColumnIndex::Index(ix)),(_,Column::F64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U64(arg),ColumnIndex::Index(ix)),(_,Column::Any(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U128(arg),ColumnIndex::Index(ix)),(_,Column::U128(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U128(arg),ColumnIndex::Index(ix)),(_,Column::F32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U128(arg),ColumnIndex::Index(ix)),(_,Column::F64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F32(arg),ColumnIndex::Index(ix)),(_,Column::Any(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F32(arg),ColumnIndex::Index(ix)),(_,Column::U8(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F32(arg),ColumnIndex::Index(ix)),(_,Column::U16(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F32(arg),ColumnIndex::Index(ix)),(_,Column::U32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F32(arg),ColumnIndex::Index(ix)),(_,Column::U64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F32(arg),ColumnIndex::Index(ix)),(_,Column::U128(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F32(arg),ColumnIndex::Index(ix)),(_,Column::F32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F32(arg),ColumnIndex::Index(ix)),(_,Column::F64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F64(arg),ColumnIndex::Index(ix)),(_,Column::Any(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F64(arg),ColumnIndex::Index(ix)),(_,Column::U8(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F64(arg),ColumnIndex::Index(ix)),(_,Column::U16(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F64(arg),ColumnIndex::Index(ix)),(_,Column::U32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F64(arg),ColumnIndex::Index(ix)),(_,Column::U64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F64(arg),ColumnIndex::Index(ix)),(_,Column::U128(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F64(arg),ColumnIndex::Index(ix)),(_,Column::F32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F64(arg),ColumnIndex::Index(ix)),(_,Column::F64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::Time(arg),ColumnIndex::Index(ix)),(_,Column::Any(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::Time(arg),ColumnIndex::Index(ix)),(_,Column::Time(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::Length(arg),ColumnIndex::Index(ix)),(_,Column::Any(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::Length(arg),ColumnIndex::Index(ix)),(_,Column::Length(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::Speed(arg),ColumnIndex::Index(ix)),(_,Column::Any(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::Speed(arg),ColumnIndex::Index(ix)),(_,Column::Speed(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::String(arg),ColumnIndex::Index(ix)),(_,Column::Any(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::String(arg),ColumnIndex::Index(ix)),(_,Column::String(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::Bool(arg),ColumnIndex::Index(ix)),(_,Column::Any(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::Bool(arg),ColumnIndex::Index(ix)),(_,Column::Bool(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::Ref(arg),ColumnIndex::Index(ix)),(_,Column::Any(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::Ref(arg),ColumnIndex::Index(ix)),(_,Column::Ref(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
           x => {return Err(MechError{id: 4921, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
       }
@@ -2296,9 +2579,74 @@ impl MechFunctionCompiler for TableSet {
           let dest_column = dest_table_brrw.get_column(&TableIndex::Index(col_ix))?;
           let src_column = src_table_brrw.get_column(&TableIndex::Index(col_ix))?;
           match (src_column,dest_column) {
+            (Column::U8(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
             (Column::U8(src),Column::U8(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U8(src),Column::U16(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U8(src),Column::U32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U8(src),Column::U64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U8(src),Column::U128(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U8(src),Column::F32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U8(src),Column::F64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U16(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U16(src),Column::U16(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U16(src),Column::U32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U16(src),Column::U64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U16(src),Column::U128(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U16(src),Column::F32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U16(src),Column::F64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U32(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U32(src),Column::U32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U32(src),Column::U64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U32(src),Column::U128(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U32(src),Column::F32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U32(src),Column::F64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U64(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U64(src),Column::U64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U64(src),Column::U128(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U64(src),Column::F32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U64(src),Column::F64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U128(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U128(src),Column::U128(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U128(src),Column::F32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::U128(src),Column::F64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::U8(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::U16(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::U32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::U64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::U128(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::I8(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::I16(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::I32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::I64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::I128(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
             (Column::F32(src),Column::F32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F32(src),Column::F64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::U8(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::U16(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::U32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::U64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::U128(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::I8(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::I16(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::I32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::I64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::I128(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::F32(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::F64(src),Column::F64(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::Time(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::Time(src),Column::Time(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::Length(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::Length(src),Column::Length(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::Speed(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::Speed(src),Column::Speed(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::String(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::String(src),Column::String(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::Bool(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
             (Column::Bool(src),Column::Bool(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::Ref(src),Column::Any(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
+            (Column::Ref(src),Column::Ref(out)) => {block.plan.push(SetVV{arg: src.clone(), out: out.clone()});}
             x => {return Err(MechError{id: 4923, kind: MechErrorKind::GenericError(format!("{:?}", x))});}      
           }
         }
@@ -2326,6 +2674,48 @@ impl MechFunctionCompiler for TableSet {
             let mut dest_table_brrw = dest_table.borrow_mut();
             dest_table_brrw.set_col_kind(1,ValueKind::U8);
             if let Column::U8(out) = dest_table_brrw.get_column_unchecked(1) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
+            }
+          }
+          ((_,Column::U16(arg),ColumnIndex::All),(_,Column::U16(out),ColumnIndex::All)) => block.plan.push(SetVV{arg: arg.clone(), out: out.clone()}),
+          ((_,Column::U16(arg),ColumnIndex::Index(ix)),(_,Column::U16(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U16(arg),ColumnIndex::Index(ix)), (_,Column::U16(out),ColumnIndex::Index(oix))) => block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
+          ((_,Column::U16(arg),ColumnIndex::All), (_,Column::U16(out),ColumnIndex::Bool(oix))) => block.plan.push(SetVVB{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U16(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::All)) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.resize(1,1);
+            dest_table_brrw.set_kind(ValueKind::U16);
+            if let Column::U16(out) = dest_table_brrw.get_column_unchecked(0) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: 0});
+            }
+          }
+          ((_,Column::U16(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::Index(oix))) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.set_col_kind(1,ValueKind::U16);
+            if let Column::U16(out) = dest_table_brrw.get_column_unchecked(1) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
+            }
+          }
+          ((_,Column::U32(arg),ColumnIndex::All),(_,Column::U32(out),ColumnIndex::All)) => block.plan.push(SetVV{arg: arg.clone(), out: out.clone()}),
+          ((_,Column::U32(arg),ColumnIndex::Index(ix)),(_,Column::U32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U32(arg),ColumnIndex::Index(ix)), (_,Column::U32(out),ColumnIndex::Index(oix))) => block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
+          ((_,Column::U32(arg),ColumnIndex::All), (_,Column::U32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetVVB{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
+          ((_,Column::U32(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::All)) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.resize(1,1);
+            dest_table_brrw.set_kind(ValueKind::U32);
+            if let Column::U32(out) = dest_table_brrw.get_column_unchecked(0) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: 0});
+            }
+          }
+          ((_,Column::U32(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::Index(oix))) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.set_col_kind(1,ValueKind::U32);
+            if let Column::U32(out) = dest_table_brrw.get_column_unchecked(1) {
               block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
             }
           }
@@ -2368,6 +2758,145 @@ impl MechFunctionCompiler for TableSet {
             let mut dest_table_brrw = dest_table.borrow_mut();
             dest_table_brrw.set_col_kind(1,ValueKind::Bool);
             if let Column::U128(out) = dest_table_brrw.get_column_unchecked(1) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
+            }
+          }
+          ((_,Column::I8(arg),ColumnIndex::All),(_,Column::I8(out),ColumnIndex::All)) => block.plan.push(SetVV{arg: arg.clone(), out: out.clone()}),
+          ((_,Column::I8(arg),ColumnIndex::Index(ix)),(_,Column::I8(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::I8(arg),ColumnIndex::Index(ix)), (_,Column::I8(out),ColumnIndex::Index(oix))) => block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
+          ((_,Column::I8(arg),ColumnIndex::All), (_,Column::I8(out),ColumnIndex::Bool(oix))) => block.plan.push(SetVVB{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
+          ((_,Column::I8(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::All)) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.resize(1,1);
+            dest_table_brrw.set_kind(ValueKind::I8);
+            if let Column::I8(out) = dest_table_brrw.get_column_unchecked(0) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: 0});
+            }
+          }
+          ((_,Column::I8(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::Index(oix))) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.set_col_kind(1,ValueKind::I8);
+            if let Column::I8(out) = dest_table_brrw.get_column_unchecked(1) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
+            }
+          }
+          ((_,Column::I16(arg),ColumnIndex::All),(_,Column::I16(out),ColumnIndex::All)) => block.plan.push(SetVV{arg: arg.clone(), out: out.clone()}),
+          ((_,Column::I16(arg),ColumnIndex::Index(ix)),(_,Column::I16(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::I16(arg),ColumnIndex::Index(ix)), (_,Column::I16(out),ColumnIndex::Index(oix))) => block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
+          ((_,Column::I16(arg),ColumnIndex::All), (_,Column::I16(out),ColumnIndex::Bool(oix))) => block.plan.push(SetVVB{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
+          ((_,Column::I16(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::All)) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.resize(1,1);
+            dest_table_brrw.set_kind(ValueKind::I16);
+            if let Column::I16(out) = dest_table_brrw.get_column_unchecked(0) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: 0});
+            }
+          }
+          ((_,Column::I16(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::Index(oix))) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.set_col_kind(1,ValueKind::I16);
+            if let Column::I16(out) = dest_table_brrw.get_column_unchecked(1) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
+            }
+          }
+          ((_,Column::I32(arg),ColumnIndex::All),(_,Column::I32(out),ColumnIndex::All)) => block.plan.push(SetVV{arg: arg.clone(), out: out.clone()}),
+          ((_,Column::I32(arg),ColumnIndex::Index(ix)),(_,Column::I32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::I32(arg),ColumnIndex::Index(ix)), (_,Column::I32(out),ColumnIndex::Index(oix))) => block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
+          ((_,Column::I32(arg),ColumnIndex::All), (_,Column::I32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetVVB{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
+          ((_,Column::I32(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::All)) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.resize(1,1);
+            dest_table_brrw.set_kind(ValueKind::I32);
+            if let Column::I32(out) = dest_table_brrw.get_column_unchecked(0) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: 0});
+            }
+          }
+          ((_,Column::I32(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::Index(oix))) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.set_col_kind(1,ValueKind::I32);
+            if let Column::I32(out) = dest_table_brrw.get_column_unchecked(1) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
+            }
+          }
+          ((_,Column::I64(arg),ColumnIndex::All),(_,Column::I64(out),ColumnIndex::All)) => block.plan.push(SetVV{arg: arg.clone(), out: out.clone()}),
+          ((_,Column::I64(arg),ColumnIndex::Index(ix)),(_,Column::I64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::I64(arg),ColumnIndex::Index(ix)), (_,Column::I64(out),ColumnIndex::Index(oix))) => block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
+          ((_,Column::I64(arg),ColumnIndex::All), (_,Column::I64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetVVB{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
+          ((_,Column::I64(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::All)) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.resize(1,1);
+            dest_table_brrw.set_kind(ValueKind::I64);
+            if let Column::I64(out) = dest_table_brrw.get_column_unchecked(0) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: 0});
+            }
+          }
+          ((_,Column::I64(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::Index(oix))) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.set_col_kind(1,ValueKind::I64);
+            if let Column::I64(out) = dest_table_brrw.get_column_unchecked(1) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
+            }
+          }
+          ((_,Column::I128(arg),ColumnIndex::All),(_,Column::I128(out),ColumnIndex::All)) => block.plan.push(SetVV{arg: arg.clone(), out: out.clone()}),
+          ((_,Column::I128(arg),ColumnIndex::Index(ix)),(_,Column::I128(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::I128(arg),ColumnIndex::Index(ix)), (_,Column::I128(out),ColumnIndex::Index(oix))) => block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
+          ((_,Column::I128(arg),ColumnIndex::All), (_,Column::I128(out),ColumnIndex::Bool(oix))) => block.plan.push(SetVVB{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
+          ((_,Column::I128(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::All)) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.resize(1,1);
+            dest_table_brrw.set_kind(ValueKind::I128);
+            if let Column::I128(out) = dest_table_brrw.get_column_unchecked(0) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: 0});
+            }
+          }
+          ((_,Column::I128(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::Index(oix))) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.set_col_kind(1,ValueKind::Bool);
+            if let Column::I128(out) = dest_table_brrw.get_column_unchecked(1) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
+            }
+          }          
+          ((_,Column::Time(arg),ColumnIndex::All),(_,Column::Time(out),ColumnIndex::All)) => block.plan.push(SetVV{arg: arg.clone(), out: out.clone()}),
+          ((_,Column::Time(arg),ColumnIndex::Index(ix)),(_,Column::Time(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::Time(arg),ColumnIndex::Index(ix)), (_,Column::Time(out),ColumnIndex::Index(oix))) => block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
+          ((_,Column::Time(arg),ColumnIndex::All), (_,Column::Time(out),ColumnIndex::Bool(oix))) => block.plan.push(SetVVB{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
+          ((_,Column::Time(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::All)) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.resize(1,1);
+            dest_table_brrw.set_kind(ValueKind::Time);
+            if let Column::Time(out) = dest_table_brrw.get_column_unchecked(0) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: 0});
+            }
+          }          
+          ((_,Column::Speed(arg),ColumnIndex::All),(_,Column::Speed(out),ColumnIndex::All)) => block.plan.push(SetVV{arg: arg.clone(), out: out.clone()}),
+          ((_,Column::Speed(arg),ColumnIndex::Index(ix)),(_,Column::Speed(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::Speed(arg),ColumnIndex::Index(ix)), (_,Column::Speed(out),ColumnIndex::Index(oix))) => block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
+          ((_,Column::Speed(arg),ColumnIndex::All), (_,Column::Speed(out),ColumnIndex::Bool(oix))) => block.plan.push(SetVVB{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
+          ((_,Column::Speed(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::All)) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.resize(1,1);
+            dest_table_brrw.set_kind(ValueKind::Speed);
+            if let Column::Speed(out) = dest_table_brrw.get_column_unchecked(0) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: 0});
+            }
+          }
+          ((_,Column::Length(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::Index(oix))) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.set_col_kind(1,ValueKind::Length);
+            if let Column::Length(out) = dest_table_brrw.get_column_unchecked(1) {
               block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
             }
           }
@@ -2414,6 +2943,28 @@ impl MechFunctionCompiler for TableSet {
               block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
             }
           }
+          ((_,Column::F64(arg),ColumnIndex::All),(_,Column::F64(out),ColumnIndex::All)) => block.plan.push(SetVV{arg: arg.clone(), out: out.clone()}),
+          ((_,Column::F64(arg),ColumnIndex::Index(ix)),(_,Column::F64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F64(arg),ColumnIndex::All), (_,Column::F64(out),ColumnIndex::RealIndex(oix))) => block.plan.push(SetVVRIx{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F64(arg),ColumnIndex::Index(ix)), (_,Column::F64(out),ColumnIndex::Index(oix))) => block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
+          ((_,Column::F64(arg),ColumnIndex::All), (_,Column::F64(out),ColumnIndex::Bool(oix))) => block.plan.push(SetVVB{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
+          ((_,Column::F64(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::All)) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.resize(1,1);
+            dest_table_brrw.set_kind(ValueKind::F64);
+            if let Column::F64(out) = dest_table_brrw.get_column_unchecked(0) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: 0});
+            }
+          }
+          ((_,Column::F64(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::Index(oix))) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.set_col_kind(1,ValueKind::F64);
+            if let Column::F64(out) = dest_table_brrw.get_column_unchecked(1) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
+            }
+          }
           ((_,Column::Bool(arg),ColumnIndex::All),(_,Column::Bool(out),ColumnIndex::All)) => block.plan.push(SetVV{arg: arg.clone(), out: out.clone()}),
           ((_,Column::Bool(arg),ColumnIndex::Index(ix)),(_,Column::Bool(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
           ((_,Column::Bool(arg),ColumnIndex::Index(ix)), (_,Column::Bool(out),ColumnIndex::Index(oix))) => block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
@@ -2433,6 +2984,19 @@ impl MechFunctionCompiler for TableSet {
             dest_table_brrw.set_col_kind(1,ValueKind::Bool);
             if let Column::Bool(out) = dest_table_brrw.get_column_unchecked(1) {
               block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix});
+            }
+          }
+          ((_,Column::Ref(arg),ColumnIndex::All),(_,Column::Ref(out),ColumnIndex::All)) => block.plan.push(SetVV{arg: arg.clone(), out: out.clone()}),
+          ((_,Column::Ref(arg),ColumnIndex::Index(ix)),(_,Column::Ref(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
+          ((_,Column::Ref(arg),ColumnIndex::Index(ix)), (_,Column::Ref(out),ColumnIndex::Index(oix))) => block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: *oix}),
+          ((_,Column::Ref(arg),ColumnIndex::All), (_,Column::Ref(out),ColumnIndex::Bool(oix))) => block.plan.push(SetVVB{arg: arg.clone(), out: out.clone(), oix: oix.clone()}),
+          ((_,Column::Ref(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::All)) => {
+            let src_table_brrw = src_table.borrow();
+            let mut dest_table_brrw = dest_table.borrow_mut();
+            dest_table_brrw.resize(1,1);
+            dest_table_brrw.set_kind(ValueKind::Reference);
+            if let Column::Ref(out) = dest_table_brrw.get_column_unchecked(0) {
+              block.plan.push(SetSIxSIx{arg: arg.clone(), ix: *ix, out: out.clone(), oix: 0});
             }
           }
           ((_,Column::Ref(arg),ColumnIndex::Index(ix)), (_,Column::Empty,ColumnIndex::Index(oix))) => {
