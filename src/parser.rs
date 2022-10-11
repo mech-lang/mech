@@ -1159,16 +1159,17 @@ fn table_kind(input: ParseString) -> IResult<ParseString, Node> {
 }
 fn table_items(input: ParseString) -> IResult<ParseString, Node> {
   let(input, _) = tag("│")(input)?;
-  let (input, mut table_rows) = many1(table_item)(input)?;
+  let (input, mut table_items) = many1(table_item)(input)?;
   let(input, _) = newline(input)?;
-  Ok((input, Node::AnonymousTable{children: table_rows}))
+  let table_rows = Node::TableRow{children:table_items};
+  Ok((input, Node::AnonymousTable{children: vec![table_rows]}))
 }
 fn table_item(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = many0(space)(input)?;
   let (input, item) = expression(input)?;
   let (input, _) = many1(space)(input)?;
   let (input, _) = tag("│")(input)?;
-  Ok((input, Node::Expression { children: (vec![item]) }))
+  Ok((input, Node::Column { children: vec![item] }))
 }
 fn table_select(input: ParseString) -> IResult<ParseString, Node> {
   let (input, expression) = expression(input)?;
