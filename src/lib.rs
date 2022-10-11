@@ -21,7 +21,7 @@ extern crate colored;
 use colored::*;
 
 extern crate bincode;
-use std::io::{Write, BufReader, BufWriter};
+use std::io::{Write, BufReader, BufWriter, stdout};
 use std::fs::{OpenOptions, File, canonicalize, create_dir};
 
 use std::path::{Path, PathBuf};
@@ -236,6 +236,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
 
 pub fn compile_code(code: Vec<MechCode>) -> Result<Vec<Vec<MiniBlock>>,MechError> {
   print!("{}", "[Compiling] ".bright_green());
+  stdout().flush();
   let mut miniblocks = vec![];
   for c in code {
     match c {
