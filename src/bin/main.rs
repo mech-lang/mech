@@ -9,11 +9,12 @@ use std::rc::Rc;
 fn main() -> Result<(),MechError> {
 
 let input = r#"
-[a<f32>,b<f32>] = foo(x<f32>,y<f32>)
-  a = x * 3
-  b = y * 2
-  
-out = foo(x: 2, y: 3)"#;
+[a<f32>] = foo(x<f32>)
+  y = 3
+  z = x * 2
+  a = z + y * 3
+y = foo(x: 10)
+#test = y"#;
   let input = String::from(input);
 
   let mut ast = Ast::new();
@@ -29,8 +30,8 @@ out = foo(x: 2, y: 3)"#;
   let sections = compiler.compile_sections(&vec![ast.syntax_tree.clone()]).unwrap();
   //println!("{:?}",sections);
   core.load_sections(sections);
-  //println!("{:#?}", core.blocks);
-  //println!("{:?}", core);
+  println!("{:#?}", core.blocks);
+  println!("{:?}", core);
 
 /*
   let mut code = r#"
