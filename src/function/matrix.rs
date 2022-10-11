@@ -128,6 +128,11 @@ impl MechFunctionCompiler for MatrixMul {
             let lhs = { block.get_table(&arg_table_id)?.borrow().collect_columns_f32() };
             block.plan.push(MatrixMulRV{lhs: lhs.clone(), rhs: rhs.clone(), out: out_col.clone()});
           }
+          ((_,Column::F64(rhs),_),Column::F64(out_col)) => {
+            let (arg_name,arg_table_id,_) = arguments[0];
+            let lhs = { block.get_table(&arg_table_id)?.borrow().collect_columns_f64() };
+            block.plan.push(MatrixMulRV{lhs: lhs.clone(), rhs: rhs.clone(), out: out_col.clone()});
+          }
           x => {return Err(MechError{id: 9044, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }
       }
@@ -144,6 +149,12 @@ impl MechFunctionCompiler for MatrixMul {
             let out_cols = out_brrw.collect_columns_f32();
             block.plan.push(MatrixMulMM{lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
           }
+          ValueKind::F64 => {
+            let lhs = { block.get_table(&lhs_arg_table_id)?.borrow().collect_columns_f64() };
+            let rhs = { block.get_table(&rhs_arg_table_id)?.borrow().collect_columns_f64() };
+            let out_cols = out_brrw.collect_columns_f64();
+            block.plan.push(MatrixMulMM{lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
+          }
           x => {return Err(MechError{id: 9044, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }
       }
@@ -156,6 +167,12 @@ impl MechFunctionCompiler for MatrixMul {
             let (arg_name,arg_table_id,_) = arguments[1];
             let rhs = { block.get_table(&arg_table_id)?.borrow().collect_columns_f32() };
             let out_cols = out_brrw.collect_columns_f32();
+            block.plan.push(MatrixMulVR{lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
+          }
+          ((_,Column::F64(lhs),_),Column::F64(out_col)) => {
+            let (arg_name,arg_table_id,_) = arguments[1];
+            let rhs = { block.get_table(&arg_table_id)?.borrow().collect_columns_f64() };
+            let out_cols = out_brrw.collect_columns_f64();
             block.plan.push(MatrixMulVR{lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
           }
           x => {return Err(MechError{id: 9047, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
@@ -174,7 +191,13 @@ impl MechFunctionCompiler for MatrixMul {
             let out_cols = out_brrw.collect_columns_f32();
             block.plan.push(MatrixMulMM{lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
           }
-          x => {return Err(MechError{id: 9047, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
+          ValueKind::F64 => {
+            let lhs = { block.get_table(&lhs_arg_table_id)?.borrow().collect_columns_f64() };
+            let rhs = { block.get_table(&rhs_arg_table_id)?.borrow().collect_columns_f64() };
+            let out_cols = out_brrw.collect_columns_f64();
+            block.plan.push(MatrixMulMM{lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
+          }
+          x => {return Err(MechError{id: 9048, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         } 
       }
       (TableShape::Matrix(lhs_rows,lhs_columns),TableShape::Matrix(rhs_rows,rhs_columns)) => {
@@ -190,7 +213,13 @@ impl MechFunctionCompiler for MatrixMul {
             let out_cols = out_brrw.collect_columns_f32();
             block.plan.push(MatrixMulMM{lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
           }
-          x => {return Err(MechError{id: 9047, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
+          ValueKind::F64 => {
+            let lhs = { block.get_table(&lhs_arg_table_id)?.borrow().collect_columns_f64() };
+            let rhs = { block.get_table(&rhs_arg_table_id)?.borrow().collect_columns_f64() };
+            let out_cols = out_brrw.collect_columns_f64();
+            block.plan.push(MatrixMulMM{lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
+          }
+          x => {return Err(MechError{id: 9049, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }        
       }
       x => {return Err(MechError{id: 9051, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
@@ -268,6 +297,10 @@ impl MechFunctionCompiler for MatrixTranspose {
             let arg = { block.get_table(&arg_table_id)?.borrow().collect_columns_f32() };
             block.plan.push(MatrixTransposeR{arg: arg.clone(), out: out_col.clone()});
           }
+          Column::F64(out_col) => {
+            let arg = { block.get_table(&arg_table_id)?.borrow().collect_columns_f64() };
+            block.plan.push(MatrixTransposeR{arg: arg.clone(), out: out_col.clone()});
+          }
           x => {return Err(MechError{id: 9153, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
       }
@@ -285,6 +318,11 @@ impl MechFunctionCompiler for MatrixTranspose {
           ValueKind::F32 => {
             let arg = { block.get_table(&arg_table_id)?.borrow().collect_columns_f32() };
             let out_cols = { out_brrw.collect_columns_f32() };
+            block.plan.push(MatrixTransposeM{arg: arg.clone(), out: out_cols.clone()});
+          }
+          ValueKind::F64 => {
+            let arg = { block.get_table(&arg_table_id)?.borrow().collect_columns_f64() };
+            let out_cols = { out_brrw.collect_columns_f64() };
             block.plan.push(MatrixTransposeM{arg: arg.clone(), out: out_cols.clone()});
           }
           x => {return Err(MechError{id: 9047, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
