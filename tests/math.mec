@@ -15,71 +15,61 @@ Test scalar math with f64
   #test += ["Add Scalar:Scalar f64"  3<f64>  2<f64> + 1<f64> 
             "Sub Scalar:Scalar f64"  2<f64>  4<f64> - 2<f64>
             "Div Scalar:Scalar f64"  2<f64>  4<f64> / 2<f64>
-            "Mul Scalar:Scalar f64"  6<f64>  2<f64> * 3<f64> 
-            "Exp Scalar:Scalar f64"  9<f64>  3<f64> ^ 2<f64>]
+            "Mul Scalar:Scalar f64"  6<f64>  2<f64> * 3<f64>]
 
 Test scalar math with u16
   #test += ["Add Scalar:Scalar u16"  3<u16>  2<u16> + 1<u16> 
             "Sub Scalar:Scalar u16"  2<u16>  4<u16> - 2<u16>
             "Div Scalar:Scalar u16"  2<u16>  4<u16> / 2<u16>
-            "Mul Scalar:Scalar u16"  6<u16>  2<u16> * 3<u16> 
-            "Exp Scalar:Scalar u16"  9<u16>  3<u16> ^ 2<u16>]
+            "Mul Scalar:Scalar u16"  6<u16>  2<u16> * 3<u16>]
 
 Test scalar math with u32
   #test += ["Add Scalar:Scalar u32"  3<u32>  2<u32> + 1<u32> 
             "Sub Scalar:Scalar u32"  2<u32>  4<u32> - 2<u32>
             "Div Scalar:Scalar u32"  2<u32>  4<u32> / 2<u32>
-            "Mul Scalar:Scalar u32"  6<u32>  2<u32> * 3<u32> 
-            "Exp Scalar:Scalar u32"  9<u32>  3<u32> ^ 2<u32>]
+            "Mul Scalar:Scalar u32"  6<u32>  2<u32> * 3<u32>]
 
 Test scalar math with u64
   #test += ["Add Scalar:Scalar u64"  3<u64>  2<u64> + 1<u64>
             "Sub Scalar:Scalar u64"  2<u64>  4<u64> - 2<u64>
             "Div Scalar:Scalar u64"  2<u64>  4<u64> / 2<u64>
-            "Mul Scalar:Scalar u64"  6<u64>  2<u64> * 3<u64> 
-            "Exp Scalar:Scalar u64"  9<u64>  3<u64> ^ 2<u64>]
+            "Mul Scalar:Scalar u64"  6<u64>  2<u64> * 3<u64>]
 
 Test scalar math with u128
   #test += ["Add Scalar:Scalar u128"  3<u128>  2<u128> + 1<u128>
             "Sub Scalar:Scalar u128"  2<u128>  4<u128> - 2<u128>
             "Div Scalar:Scalar u128"  2<u128>  4<u128> / 2<u128>
-            "Mul Scalar:Scalar u128"  6<u128>  2<u128> * 3<u128> 
-            "Exp Scalar:Scalar u128"  9<u128>  3<u128> ^ 2<u128>]
+            "Mul Scalar:Scalar u128"  6<u128>  2<u128> * 3<u128>]
 
 Test scalar math with i8
   #test += ["Add Scalar:Scalar i8"  3<i8>  2<i8> + 1<i8>
             "Sub Scalar:Scalar i8"  2<i8>  4<i8> - 2<i8>
             "Div Scalar:Scalar i8"  2<i8>  4<i8> / 2<i8>
-            "Mul Scalar:Scalar i8"  6<i8>  2<i8> * 3<i8> 
-            "Exp Scalar:Scalar i8"  9<i8>  3<i8> ^ 2<i8>]
+            "Mul Scalar:Scalar i8"  6<i8>  2<i8> * 3<i8>]
             
 Test scalar math with i16
   #test += ["Add Scalar:Scalar i16"  3<i16>  2<i16> + 1<i16>
             "Sub Scalar:Scalar i16"  2<i16>  4<i16> - 2<i16>
             "Div Scalar:Scalar i16"  2<i16>  4<i16> / 2<i16>
-            "Mul Scalar:Scalar i16"  6<i16>  2<i16> * 3<i16> 
-            "Exp Scalar:Scalar i16"  9<i16>  3<i16> ^ 2<i16>]
+            "Mul Scalar:Scalar i16"  6<i16>  2<i16> * 3<i16>]
 
 Test scalar math with i32
   #test += ["Add Scalar:Scalar i32"  3<i32>  2<i32> + 1<i32>
             "Sub Scalar:Scalar i32"  2<i32>  4<i32> - 2<i32>
             "Div Scalar:Scalar i32"  2<i32>  4<i32> / 2<i32>
-            "Mul Scalar:Scalar i32"  6<i32>  2<i32> * 3<i32> 
-            "Exp Scalar:Scalar i32"  9<i32>  3<i32> ^ 2<i32>]
+            "Mul Scalar:Scalar i32"  6<i32>  2<i32> * 3<i32>]
 
 Test scalar math with i64
   #test += ["Add Scalar:Scalar i64"  3<i64>  2<i64> + 1<i64>
             "Sub Scalar:Scalar i64"  2<i64>  4<i64> - 2<i64>
             "Div Scalar:Scalar i64"  2<i64>  4<i64> / 2<i64>
-            "Mul Scalar:Scalar i64"  6<i64>  2<i64> * 3<i64> 
-            "Exp Scalar:Scalar i64"  9<i64>  3<i64> ^ 2<i64>]
+            "Mul Scalar:Scalar i64"  6<i64>  2<i64> * 3<i64>]
 
 Test scalar math with i128
   #test += ["Add Scalar:Scalar i128"  3<i128>  2<i128> + 1<i128>
             "Sub Scalar:Scalar i128"  2<i128>  4<i128> - 2<i128>
             "Div Scalar:Scalar i128"  2<i128>  4<i128> / 2<i128>
-            "Mul Scalar:Scalar i128"  6<i128>  2<i128> * 3<i128> 
-            "Exp Scalar:Scalar i128"  9<i128>  3<i128> ^ 2<i128>]
+            "Mul Scalar:Scalar i128"  6<i128>  2<i128> * 3<i128>]
 
 Column : Column
 ----------------
@@ -109,13 +99,6 @@ Test column math with u8
   div-result = stats/sum(column: x / y)
   #test += ["Div Column:Column u8" 9<u8>  div-result]
 
-Test column math with u8
-  x = [2<u8>; 3<u8>; 4<u8>]
-  y = [2<u8>; 2<u8>; 2<u8>]
-  exp-result = stats/sum(column: x ^ y)
-  #test += ["Exp Column:Column u8" 29<u8>  exp-result]
-
-
 Test column math with u16
   x = [1<u16>; 2<u16>; 3<u16>]
   y = [4<u16>; 5<u16>; 6<u16>]
@@ -139,13 +122,6 @@ Test column math with u16
   y = [4<u16>; 5<u16>; 6<u16>]
   sum-result = stats/sum(column: x / y)
   #test += ["Div Column:Column u16" 9<u16>  sum-result]
-
-Test column math with u16
-  x = [2<u16>; 3<u16>; 4<u16>]
-  y = [2<u16>; 2<u16>; 2<u16>]
-  sum-result = stats/sum(column: x ^ y)
-  #test += ["Exp Column:Column u16" 29<u16>  sum-result]
-
 
 Test column math with u32
   x = [1<u32>; 2<u32>; 3<u32>]
@@ -171,13 +147,6 @@ Test column math with u32
   sum-result = stats/sum(column: x / y)
   #test += ["Div Column:Column u32" 9<u32>  sum-result]
 
-Test column math with u32
-  x = [2<u32>; 3<u32>; 4<u32>]
-  y = [2<u32>; 2<u32>; 2<u32>]
-  sum-result = stats/sum(column: x ^ y)
-  #test += ["Exp Column:Column u32" 29<u32>  sum-result]
-
-  
 Test column math with u64
   x = [1<u64>; 2<u64>; 3<u64>]
   y = [4<u64>; 5<u64>; 6<u64>]
@@ -201,13 +170,6 @@ Test column math with u64
   y = [4<u64>; 5<u64>; 6<u64>]
   sum-result = stats/sum(column: x / y)
   #test += ["Div Column:Column u64" 9<u64>  sum-result]
-
-Test column math with u64
-  x = [2<u64>; 3<u64>; 4<u64>]
-  y = [2<u64>; 2<u64>; 2<u64>]
-  sum-result = stats/sum(column: x ^ y)
-  #test += ["Exp Column:Column u64" 29<u64>  sum-result]
-
 
 Test column math with u128
   x = [1<u128>; 2<u128>; 3<u128>]
@@ -233,12 +195,6 @@ Test column math with u128
   sum-result = stats/sum(column: x / y)
   #test += ["Div Column:Column u128" 9<u128>  sum-result]
 
-Test column math with u128
-  x = [2<u128>; 3<u128>; 4<u128>]
-  y = [2<u128>; 2<u128>; 2<u128>]
-  sum-result = stats/sum(column: x ^ y)
-  #test += ["Exp Column:Column u128" 29<u128>  sum-result]
-
 Test column math with i8
   x = [1<i8>; 2<i8>; 3<i8>]
   y = [4<i8>; 5<i8>; 6<i8>]
@@ -262,13 +218,6 @@ Test column math with i8
   y = [4<i8>; 5<i8>; 6<i8>]
   sum-result = stats/sum(column: x / y)
   #test += ["Div Column:Column i8" 9<i8>  sum-result]
-
-Test column math with i8
-  x = [2<i8>; 3<i8>; 4<i8>]
-  y = [2<i8>; 2<i8>; 2<i8>]
-  sum-result = stats/sum(column: x ^ y)
-  #test += ["Exp Column:Column i8" 29<i8>  sum-result]
-
 
 Test column math with i16
   x = [1<i16>; 2<i16>; 3<i16>]
@@ -294,13 +243,6 @@ Test column math with i16
   sum-result = stats/sum(column: x / y)
   #test += ["Div Column:Column i16" 9<i16>  sum-result]
 
-Test column math with i16
-  x = [2<i16>; 3<i16>; 4<i16>]
-  y = [2<i16>; 2<i16>; 2<i16>]
-  sum-result = stats/sum(column: x ^ y)
-  #test += ["Exp Column:Column i16" 29<i16>  sum-result]
-
-
 Test column math with i32
   x = [1<i32>; 2<i32>; 3<i32>]
   y = [4<i32>; 5<i32>; 6<i32>]
@@ -326,12 +268,6 @@ Test column math with i32
   #test += ["Div Column:Column i32" 9<i32>  sum-result]
 
 Test column math with i32
-  x = [2<i32>; 3<i32>; 4<i32>]
-  y = [2<i32>; 2<i32>; 2<i32>]
-  sum-result = stats/sum(column: x ^ y)
-  #test += ["Exp Column:Column i32" 29<i32>  sum-result]
-
-Test column math with i32
   x = [1<i32>; 2<i32>; 3<i32>]
   y = [4<i32>; 5<i32>; 6<i32>]
   sum-result = stats/sum(column: x + y)
@@ -354,12 +290,6 @@ Test column math with i32
   y = [4<i32>; 5<i32>; 6<i32>]
   sum-result = stats/sum(column: x / y)
   #test += ["Div Column:Column i32" 9<i32>  sum-result]
-
-Test column math with i32
-  x = [2<i32>; 3<i32>; 4<i32>]
-  y = [2<i32>; 2<i32>; 2<i32>]
-  sum-result = stats/sum(column: x ^ y)
-  #test += ["Exp Column:Column i32" 29<i32>  sum-result]
 
 Test column math with i64
   x = [1<i64>; 2<i64>; 3<i64>]
@@ -385,13 +315,6 @@ Test column math with i64
   sum-result = stats/sum(column: x / y)
   #test += ["Div Column:Column i64" 9<i64>  sum-result]
 
-Test column math with i64
-  x = [2<i64>; 3<i64>; 4<i64>]
-  y = [2<i64>; 2<i64>; 2<i64>]
-  sum-result = stats/sum(column: x ^ y)
-  #test += ["Exp Column:Column i64" 29<i64>  sum-result]
-
-
 Test column math with i128
   x = [1<i128>; 2<i128>; 3<i128>]
   y = [4<i128>; 5<i128>; 6<i128>]
@@ -415,13 +338,6 @@ Test column math with i128
   y = [4<i128>; 5<i128>; 6<i128>]
   sum-result = stats/sum(column: x / y)
   #test += ["Div Column:Column i128" 9<i128>  sum-result]
-
-Test column math with i128
-  x = [2<i128>; 3<i128>; 4<i128>]
-  y = [2<i128>; 2<i128>; 2<i128>]
-  sum-result = stats/sum(column: x ^ y)
-  #test += ["Exp Column:Column i128" 29<i128>  sum-result]
-
 
 Test column math with f32
   x = [1<f32>; 2<f32>; 3<f32>]
@@ -447,13 +363,6 @@ Test column math with f32
   sum-result = stats/sum(column: x / y)
   #test += ["Div Column:Column f32" 9<f32>  sum-result]
 
-Test column math with f32
-  x = [2<f32>; 3<f32>; 4<f32>]
-  y = [2<f32>; 2<f32>; 2<f32>]
-  sum-result = stats/sum(column: x ^ y)
-  #test += ["Exp Column:Column f32" 29<f32>  sum-result]
-
-
 Test column math with f64
   x = [1<f64>; 2<f64>; 3<f64>]
   y = [4<f64>; 5<f64>; 6<f64>]
@@ -477,12 +386,6 @@ Test column math with f64
   y = [4<f64>; 5<f64>; 6<f64>]
   sum-result = stats/sum(column: x / y)
   #test += ["Div Column:Column f64" 9<f64>  sum-result]
-
-Test column math with f64
-  x = [2<f64>; 3<f64>; 4<f64>]
-  y = [2<f64>; 2<f64>; 2<f64>]
-  sum-result = stats/sum(column: x ^ y)
-  #test += ["Exp Column:Column f64" 29<f64>  sum-result]
 
 Scalar : Row
 ----------------
@@ -594,6 +497,7 @@ Test row math with i128
   #test += ["Add Scalar:Row i128"  27<i128>  sum-result
             "Mul Scalar:Row i128"  60<i128>  mul-result
             "Sub Scalar:Row i128"  -3<i128>  sub-result]
+            
 Scalar : Column
 ----------------
 
