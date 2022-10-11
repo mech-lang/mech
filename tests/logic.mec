@@ -31,7 +31,7 @@ Test column & with f32
   all = set/all(column: z)
   #test += ["& Scalar:Scalar f32 F" false all]
                         
-Test column | with f32
+Test column or with f32
   x = [true;true;true]
   y = [false;false;false]
   z = x | y
