@@ -300,6 +300,14 @@ impl NumberLiteral {
     f32::from_be_bytes(fbytes.try_into().unwrap())
   }
 
+  pub fn as_f64(&mut self) -> f64 {    
+    while self.bytes.len() < 8 {
+      self.bytes.insert(0,0);
+    }
+    let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<f64>());
+    f64::from_be_bytes(fbytes.try_into().unwrap())
+  }
+
   pub fn as_usize(&mut self) -> usize {    
     if self.is_float() {
       self.as_f32() as usize

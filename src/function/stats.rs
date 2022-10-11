@@ -171,6 +171,20 @@ impl MechFunctionCompiler for StatsSum {
           (Column::U128(col),ColumnIndex::All,Column::U128(out)) => block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()}),
           (Column::U128(col),ColumnIndex::Bool(bix),Column::U128(out)) => block.plan.push(StatsSumVB{col: col.clone(), ix: bix.clone(), out: out.clone()}),
           (Column::U128(col),ColumnIndex::Index(ix),Column::U128(out)) => block.plan.push(StatsSumV{col: (col.clone(),*ix,*ix), out: out.clone()}),
+          (Column::I8(col),ColumnIndex::All,Column::I8(out)) => block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()}),
+          (Column::I8(col),ColumnIndex::Bool(bix),Column::I8(out)) => block.plan.push(StatsSumVB{col: col.clone(), ix: bix.clone(), out: out.clone()}),
+          (Column::I8(col),ColumnIndex::Index(ix),Column::I8(out)) => block.plan.push(StatsSumV{col: (col.clone(),*ix,*ix), out: out.clone()}),
+          (Column::I16(col),ColumnIndex::All,Column::I16(out)) => block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()}),
+          (Column::I16(col),ColumnIndex::Bool(bix),Column::I16(out)) => block.plan.push(StatsSumVB{col: col.clone(), ix: bix.clone(), out: out.clone()}),
+          (Column::I16(col),ColumnIndex::Index(ix),Column::I16(out)) => block.plan.push(StatsSumV{col: (col.clone(),*ix,*ix), out: out.clone()}),
+          (Column::I32(col),ColumnIndex::All,Column::I32(out)) => block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()}),
+          (Column::I32(col),ColumnIndex::Bool(bix),Column::I32(out)) => block.plan.push(StatsSumVB{col: col.clone(), ix: bix.clone(), out: out.clone()}),
+          (Column::I32(col),ColumnIndex::Index(ix),Column::I32(out)) => block.plan.push(StatsSumV{col: (col.clone(),*ix,*ix), out: out.clone()}),
+          (Column::I64(col),ColumnIndex::All,Column::I64(out)) => block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()}),
+          (Column::I64(col),ColumnIndex::Bool(bix),Column::I64(out)) => block.plan.push(StatsSumVB{col: col.clone(), ix: bix.clone(), out: out.clone()}),
+          (Column::I128(col),ColumnIndex::All,Column::I128(out)) => block.plan.push(StatsSumV{col: (col.clone(),0,col.len()-1), out: out.clone()}),
+          (Column::I128(col),ColumnIndex::Bool(bix),Column::I128(out)) => block.plan.push(StatsSumVB{col: col.clone(), ix: bix.clone(), out: out.clone()}),
+          (Column::I128(col),ColumnIndex::Index(ix),Column::I128(out)) => block.plan.push(StatsSumV{col: (col.clone(),*ix,*ix), out: out.clone()}),
           (Column::Reference((ref table, (ColumnIndex::All, ColumnIndex::All))),ColumnIndex::All,Column::F32(out)) => {
             let table_brrw = table.borrow();
             out_brrw.resize(1,table_brrw.cols);
@@ -260,6 +274,71 @@ impl MechFunctionCompiler for StatsSum {
               let arg_table_brrw = arg_table.borrow();
               for col_ix in 0..arg_table_brrw.cols {
                 if let Column::U128(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumRow{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
+          Column::I8(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<I8>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::I8(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumRow{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
+          Column::I16(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<I16>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::I16(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumRow{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
+          Column::I32(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<I32>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::I32(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumRow{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
+          Column::I64(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<I64>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::I64(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumRow{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
+          Column::I128(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<I128>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::I128(col) = arg_table_brrw.get_column_unchecked(col_ix) {
                   cols.push(col);
                 }
               }

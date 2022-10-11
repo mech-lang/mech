@@ -293,6 +293,51 @@ impl Zero for U128 {
   }
 }
 
+impl Zero for I8 {
+  fn zero() -> Self {
+    I8::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
+impl Zero for I16 {
+  fn zero() -> Self {
+    I16::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
+impl Zero for I32 {
+  fn zero() -> Self {
+    I32::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
+impl Zero for I64 {
+  fn zero() -> Self {
+    I64::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
+impl Zero for I128 {
+  fn zero() -> Self {
+    I128::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
 impl Zero for F32 {
   fn zero() -> Self {
     F32::new(0.0)
@@ -382,6 +427,11 @@ mech_value_conversion!(U16,U16);
 mech_value_conversion!(U32,U32);
 mech_value_conversion!(U64,U64);
 mech_value_conversion!(U128,U128);
+mech_value_conversion!(I8,I8);
+mech_value_conversion!(I16,I16);
+mech_value_conversion!(I32,I32);
+mech_value_conversion!(I64,I64);
+mech_value_conversion!(I128,I128);
 mech_value_conversion!(F32,F32);
 mech_value_conversion!(F64,F64);
 mech_value_conversion!(MechString,String);

@@ -805,7 +805,7 @@ impl Block {
         } 
         else if *kind == *cF64 {
           table_brrw.set_kind(ValueKind::F64)?;
-          table_brrw.set_raw(0,0,Value::F64(F64::new(num.as_f32() as f64)))?;
+          table_brrw.set_raw(0,0,Value::F64(F64::new(num.as_f64())))?;
         } 
         else if *kind == *cF32L {
           table_brrw.set_kind(ValueKind::F32)?;

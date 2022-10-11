@@ -778,6 +778,51 @@ impl MechFunctionCompiler for TableVerticalConcatenate {
             }
           }
         }
+        Column::I8(out) => {
+          let mut out_ix = 0;
+          for arg_col in arg_cols {
+            match arg_col {
+              Column::I8(arg) => {block.plan.push(CopyVV{arg:(arg.clone(),0,arg.len()-1), out: (out.clone(),out_ix,out_ix+arg.len()-1)});out_ix += arg.len();},
+              x => {return Err(MechError{id: 4991, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+            }
+          }
+        }
+        Column::I16(out) => {
+          let mut out_ix = 0;
+          for arg_col in arg_cols {
+            match arg_col {
+              Column::I16(arg) => {block.plan.push(CopyVV{arg:(arg.clone(),0,arg.len()-1), out: (out.clone(),out_ix,out_ix+arg.len()-1)});out_ix += arg.len();},
+              x => {return Err(MechError{id: 4992, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+            }
+          }
+        }
+        Column::I32(out) => {
+          let mut out_ix = 0;
+          for arg_col in arg_cols {
+            match arg_col {
+              Column::I32(arg) => {block.plan.push(CopyVV{arg:(arg.clone(),0,arg.len()-1), out: (out.clone(),out_ix,out_ix+arg.len()-1)});out_ix += arg.len();},
+              x => {return Err(MechError{id: 4993, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+            }
+          }
+        }
+        Column::I64(out) => {
+          let mut out_ix = 0;
+          for arg_col in arg_cols {
+            match arg_col {
+              Column::I64(arg) => {block.plan.push(CopyVV{arg:(arg.clone(),0,arg.len()-1), out: (out.clone(),out_ix,out_ix+arg.len()-1)});out_ix += arg.len();},
+              x => {return Err(MechError{id: 4994, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+            }
+          }
+        }
+        Column::I128(out) => {
+          let mut out_ix = 0;
+          for arg_col in arg_cols {
+            match arg_col {
+              Column::I128(arg) => {block.plan.push(CopyVV{arg:(arg.clone(),0,arg.len()-1), out: (out.clone(),out_ix,out_ix+arg.len()-1)});out_ix += arg.len();},
+              x => {return Err(MechError{id: 4995, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+            }
+          }
+        }
         Column::Bool(out) => {
           let mut out_ix = 0;
           for arg_col in arg_cols {
@@ -883,6 +928,11 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
                 (Column::U32(arg), ColumnIndex::Index(ix), Column::U32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
                 (Column::U64(arg), ColumnIndex::Index(ix), Column::U64(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
                 (Column::U128(arg), ColumnIndex::Index(ix), Column::U128(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
+                (Column::I8(arg), ColumnIndex::Index(ix), Column::I8(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
+                (Column::I16(arg), ColumnIndex::Index(ix), Column::I16(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
+                (Column::I32(arg), ColumnIndex::Index(ix), Column::I32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
+                (Column::I64(arg), ColumnIndex::Index(ix), Column::I64(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
+                (Column::I128(arg), ColumnIndex::Index(ix), Column::I128(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
                 (Column::Speed(arg), ColumnIndex::Index(ix), Column::Speed(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
                 (Column::Time(arg), ColumnIndex::Index(ix), Column::Time(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
                 (Column::Length(arg), ColumnIndex::Index(ix), Column::Length(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
@@ -906,7 +956,13 @@ impl MechFunctionCompiler for TableHorizontalConcatenate {
                 (Column::U32(arg), ColumnIndex::Index(ix), Column::U32(out)) => block.plan.push(CopySV{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::U64(arg), ColumnIndex::Index(ix), Column::U64(out)) => block.plan.push(CopySV{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::U128(arg), ColumnIndex::Index(ix), Column::U128(out)) => block.plan.push(CopySV{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                (Column::I8(arg), ColumnIndex::Index(ix), Column::I8(out)) => block.plan.push(CopySV{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                (Column::I16(arg), ColumnIndex::Index(ix), Column::I16(out)) => block.plan.push(CopySV{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                (Column::I32(arg), ColumnIndex::Index(ix), Column::I32(out)) => block.plan.push(CopySV{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                (Column::I64(arg), ColumnIndex::Index(ix), Column::I64(out)) => block.plan.push(CopySV{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                (Column::I128(arg), ColumnIndex::Index(ix), Column::I128(out)) => block.plan.push(CopySV{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::F32(arg), ColumnIndex::Index(ix), Column::F32(out)) => block.plan.push(CopySV{arg: arg.clone(), ix: *ix, out: out.clone()}),
+                (Column::F64(arg), ColumnIndex::Index(ix), Column::F64(out)) => block.plan.push(CopySV{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::String(arg), ColumnIndex::Index(ix), Column::String(out)) => block.plan.push(CopySV{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::Bool(arg), ColumnIndex::Index(ix), Column::Bool(out)) => block.plan.push(CopySV{arg: arg.clone(), ix: *ix, out: out.clone()}),
                 (Column::Ref(arg), ColumnIndex::Index(ix), Column::Ref(out)) => block.plan.push(CopySVRef{arg: arg.clone(), ix: *ix, out: out.clone()}),
@@ -1382,6 +1438,11 @@ impl MechFunctionCompiler for TableAppend {
                   (Column::U32(arg),    Column::Any(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
                   (Column::U64(arg),    Column::Any(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
                   (Column::U128(arg),    Column::Any(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
+                  (Column::I8(arg),    Column::Any(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
+                  (Column::I16(arg),    Column::Any(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
+                  (Column::I32(arg),    Column::Any(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
+                  (Column::I64(arg),    Column::Any(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
+                  (Column::I128(arg),    Column::Any(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
                   (Column::Bool(arg),    Column::Any(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
                   (Column::F32(arg),    Column::F32(out))    => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),           
                   (Column::F32(arg),    Column::U8(out))     => block.plan.push(CopyVV{arg: (arg.clone(),0,arows-1), out: (out.clone(),orows,new_rows-1)}),             
