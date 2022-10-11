@@ -25,10 +25,15 @@ use colored::*;
 
 // ## Parser utilities
 
-type ParseStringRange = (usize, usize);   // [a, b)
+/// Range to a substring from ParseString, [a, b).
+type ParseStringRange = (usize, usize);
 
+/// Just alias
 type ParseResult<'a, O> = IResult<ParseString<'a>, O, ParseError<'a>>;
 
+/// The input type for nom parsers. Instead of holding the actual input
+/// string, this struct only holds a reference to that string so that it
+/// can be cloned at much lower cost.
 #[derive(Clone)]
 struct ParseString<'a> {
   graphemes: &'a Vec<&'a str>,
@@ -37,6 +42,7 @@ struct ParseString<'a> {
 }
 
 impl<'a> ParseString<'a> {
+  /// Must always point a an actual string
   fn new(graphemes: &'a Vec<&'a str>) -> Self {
     ParseString {
       graphemes,
@@ -45,6 +51,7 @@ impl<'a> ParseString<'a> {
     }
   }
 
+  /// Peek at current location and try to match a tag
   fn match_tag(&self, tag: &str) -> (bool, usize) {
     let gs = tag.graphemes(true).collect::<Vec<&str>>();
     let gs_len = gs.len();
@@ -59,6 +66,7 @@ impl<'a> ParseString<'a> {
     (true, gs_len)
   }
 
+  /// Mutate self by consuming one grapheme
   fn consume_one(&mut self) -> Option<String> {
     if self.len() == 0 {
       return None;
@@ -68,6 +76,7 @@ impl<'a> ParseString<'a> {
     Some(g.to_string())
   }
 
+  /// If current location matches the tag, consume the matched string.
   fn consume_tag(&mut self, tag: &str) -> Option<String> {
     let (matched, gs_len) = self.match_tag(tag);
     if matched {
@@ -78,6 +87,7 @@ impl<'a> ParseString<'a> {
     }
   }
 
+  /// If current location matches any emoji, consume the matched string.
   fn consume_emoji(&mut self) -> Option<String> {
     if self.len() == 0 {
       return None;
@@ -92,6 +102,7 @@ impl<'a> ParseString<'a> {
     None
   }
 
+  /// If current location matches any alpha char, consume the matched string.
   fn consume_alpha(&mut self) -> Option<String> {
     if self.len() == 0 {
       return None;
@@ -106,6 +117,7 @@ impl<'a> ParseString<'a> {
     None
   }
 
+  /// If current location matches any digit, consume the matched string.
   fn consume_digit(&mut self) -> Option<String> {
     if self.len() == 0 {
       return None;
@@ -120,10 +132,12 @@ impl<'a> ParseString<'a> {
     None
   }
 
+  /// Get remaining (unparsed) length
   fn len(&self) -> usize {
     self.graphemes.len() - self.cursor
   }
 
+  /// For debug purpose
   fn output(&self) {
     println!("-----------------{}", self.len());
     for i in self.cursor..self.graphemes.len() {
@@ -134,18 +148,22 @@ impl<'a> ParseString<'a> {
   }
 }
 
+/// Required by nom
 impl<'a> nom::InputLength for ParseString<'a> {
   fn input_len(&self) -> usize {
     self.len()
   }
 }
 
+/// The part of error context that's independent to its cause location.
 #[derive(Clone)]
 struct ParseErrorDetail {
   message: &'static str,
   annotation_rngs: Vec<ParseStringRange>,
 }
 
+/// The error type for the nom parser, which handles full error context
+/// (location + detail) and ownership of the input ParseString.
 struct ParseError<'a> {
   cause_range: ParseStringRange,
   remaining_input: ParseString<'a>,
@@ -153,6 +171,9 @@ struct ParseError<'a> {
 }
 
 impl<'a> ParseError<'a> {
+  /// Create a new error at current location of the input, with given message
+  /// and empty annotations.  Ownership of the input is also passed into this
+  /// error object.
   fn new(input: ParseString<'a>, msg: &'static str) -> Self {
     ParseError {
       cause_range: (input.cursor, input.cursor + 1),
@@ -164,26 +185,29 @@ impl<'a> ParseError<'a> {
     }
   }
 
+  /// Add self to the error log of input string.
   fn log(&mut self) {
     self.remaining_input.error_log.push((self.cause_range, self.error_detail.clone()));
   }
 }
 
+/// Required by nom
 impl<'a> nom::error::ParseError<ParseString<'a>> for ParseError<'a> {
+  /// Not used
   fn from_error_kind(input: ParseString<'a>,
                      _kind: nom::error::ErrorKind) -> Self {
     ParseError::new(input, "Unexpected error")
   }
 
+  /// Not used
   fn append(_input: ParseString<'a>,
             _kind: nom::error::ErrorKind,
             other: Self) -> Self {
     other
   }
 
+  /// Barely used, but we do want to keep the error with larger depth.
   fn or(self, other: Self) -> Self {
-    // Choose the branch with larger depth,
-    // while prioritizing the other one when depths are equal
     let (self_index, _) = self.cause_range;
     let (other_index, _) = other.cause_range;
     if self_index > other_index {
@@ -196,6 +220,8 @@ impl<'a> nom::error::ParseError<ParseString<'a>> for ParseError<'a> {
 
 // ## Parser combinators
 
+/// Convert output of any parser into ParserNode::Null.
+/// Useful for working with `alt` combinator and error recovery functions.
 fn null<'a, F, O>(mut parser: F) ->
   impl FnMut(ParseString<'a>) -> ParseResult<ParserNode>
 where
@@ -209,6 +235,8 @@ where
   }
 }
 
+/// For parser p, run p and also output the range that p has matched
+/// upon success.
 fn range<'a, F, O>(mut parser: F) ->
   impl FnMut(ParseString<'a>) -> ParseResult<(O, ParseStringRange)>
 where
@@ -254,6 +282,8 @@ macro_rules! labelr {
   };
 }
 
+/// Label without recovery function. Upgrade Err::Error to Err:Failure
+/// and override its context information.
 fn label_without_recovery<'a, F, O>(
   mut parser: F,
   error_detail: ParseErrorDetail,
@@ -275,6 +305,9 @@ where
   }
 }
 
+/// Label with recovery function. In addition to upgrading errors, the
+/// error is logged and recovery function will be run as an attempt to
+/// synchronize parser state.
 fn label_with_recovery<'a, F, O>(
   mut parser: F,
   mut recovery_fn: fn(ParseString<'a>) -> ParseResult<O>,
@@ -302,6 +335,7 @@ where
   }
 }
 
+/// For parser p, return the `!!p` peek parsing expression.
 fn is<'a, F, O>(mut parser: F) ->
   impl FnMut(ParseString<'a>) -> ParseResult<O>
 where
@@ -316,6 +350,7 @@ where
   }
 }
 
+/// For parser p, return the `!p` peek parsing expression.
 fn is_not<'a, F, E>(mut parser: F) ->
   impl FnMut(ParseString<'a>) -> ParseResult<()>
 where
@@ -331,6 +366,7 @@ where
   }
 }
 
+/// Return a terminal parsing expression that consumes `tag` from input.
 fn tag(tag: &'static str) -> impl Fn(ParseString) -> ParseResult<String> {
   move |mut input: ParseString| {
     if let Some(matched) = input.consume_tag(tag) {
@@ -1821,6 +1857,8 @@ fn parse_mech(input: ParseString) -> ParseResult<ParserNode> {
 
 // ## Reporting errors
 
+/// This struct is responsible for analysing text, interpreting indices
+/// and ranges, and producing formatted messages.
 struct TextFormatter<'a> {
   graphemes: Vec<&'a str>,
   line_beginnings: Vec<usize>,
@@ -2089,6 +2127,7 @@ impl<'a> TextFormatter<'a> {
     result
   }
 
+  /// Get formatted error message.
   fn format_error(&self, errors: &ParserErrorReport) -> String {
     let mut result = String::new();
     result.push('\n');
@@ -2102,6 +2141,7 @@ impl<'a> TextFormatter<'a> {
   }
 }
 
+/// Print formatted error message.
 pub fn print_err_report(text: &str, report: &ParserErrorReport) {
   let msg = TextFormatter::new(text).format_error(report);
   println!("{}", msg);
@@ -2217,6 +2257,7 @@ mod tests {
   use crate::parser;
   use mech_core::*;
 
+  /// Compare error locations (the reported row and col numbers).
   macro_rules! test_parser {
     ($func:ident, $input:tt, $($expected_err_loc:expr),*) => (
       #[test]
