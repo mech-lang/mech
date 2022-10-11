@@ -43,12 +43,12 @@ Transpose Row
 
 Test transpose row with f32
   x = [1<f32> 2<f32> 3<f32>]
-  mat-result = x ** x
+  mat-result = x ** x'
   #test += ["Transpose Matrix Row f32" 14.0<f32> mat-result]
 
 Test transpose row with f64
   x = [1<f64> 2<f64> 3<f64>]
-  mat-result = x ** x
+  mat-result = x ** x'
   #test += ["Transpose Matrix Row  f64" 14.0<f64> mat-result]
 
 Transpose Matrix
