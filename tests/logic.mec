@@ -30,17 +30,17 @@ Test column & with f32
   z = x & y
   all = set/all(column: z)
   #test += ["& Scalar:Scalar f32 F" false all]
-
+                        
 Test column | with f32
   x = [true;true;true]
   y = [false;false;false]
   z = x | y
   all = set/all(column: z)
-  #test += ["or Scalar:Scalar f32 F" true all]
+  #test += ["| Scalar:Scalar f32 F" true all]    
 
 Test column ⊕ with f32
   x = [true;true;true]
   y = [false;false;false]
   z = x ⊕ y
   all = set/all(column: z)
-  #test += ["or Scalar:Scalar f32 F" true all]
+  #test += ["| Scalar:Scalar f32 F" true all]                      
