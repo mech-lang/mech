@@ -1188,8 +1188,8 @@ macro_rules! math_compiler {
               ((_,Column::I8(lhs),_), (_,Column::I8(rhs),_),Column::I8(out)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out_col: out, out: out_table.clone()})}
               ((_,Column::I16(lhs),_), (_,Column::I16(rhs),_),Column::I16(out)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out_col: out, out: out_table.clone()})}
               ((_,Column::I32(lhs),_), (_,Column::I32(rhs),_),Column::I32(out)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out_col: out, out: out_table.clone()})}
-              ((_,Column::I64(lhs),_), (_,Column::I64(rhs),_),Column::I8(out)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out_col: out, out: out_table.clone()})}
-              ((_,Column::I128(lhs),_), (_,Column::I128(rhs),_),Column::I8(out)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out_col: out, out: out_table.clone()})}
+              ((_,Column::I64(lhs),_), (_,Column::I64(rhs),_),Column::I64(out)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out_col: out, out: out_table.clone()})}
+              ((_,Column::I128(lhs),_), (_,Column::I128(rhs),_),Column::I128(out)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out_col: out, out: out_table.clone()})}
               ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_),Column::F32(out)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out_col: out, out: out_table.clone()})}
               ((_,Column::F64(lhs),_), (_,Column::F64(rhs),_),Column::F64(out)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out_col: out, out: out_table.clone()})}
               ((_,Column::U8(lhs),_), (_,Column::F32(rhs),_),Column::U8(out)) => {block.plan.push($op5{lhs: lhs.clone(), rhs: rhs.clone(), out_col: out, out: out_table.clone()})}
