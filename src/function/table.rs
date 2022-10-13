@@ -3265,13 +3265,13 @@ impl MechFunctionCompiler for TableDefine {
           (Column::F64(arg), Column::F32(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
           (Column::F64(arg), Column::F64(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
           (Column::Time(arg), Column::Any(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
-          (Column::Time(arg), Column::Time(out)) => block.planblock.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
+          (Column::Time(arg), Column::Time(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
           (Column::Speed(arg), Column::Any(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
-          (Column::Speed(arg), Column::Speed(out)) => block.planblock.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
+          (Column::Speed(arg), Column::Speed(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
           (Column::Length(arg), Column::Any(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
-          (Column::Length(arg), Column::Length(out)) => block.planblock.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
+          (Column::Length(arg), Column::Length(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
           (Column::String(arg), Column::Any(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
-          (Column::String(arg), Column::String(out)) => block.planblock.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
+          (Column::String(arg), Column::String(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
           (Column::Bool(arg), Column::Any(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
           (Column::Bool(arg), Column::Bool(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
           (Column::Ref(arg), Column::Any(out)) => block.plan.push(CopyVV{arg: (arg.clone(),*ix,*ix), out: (out.clone(),0,0)}),
@@ -3301,7 +3301,7 @@ impl MechFunctionCompiler for TableDefine {
           _ => {
             let (_, arg_col,arg_ix) = block.get_arg_column(&argument)?;
             let out_col = {
-              let mut out_brrw = out_table.borrow_mut();U8
+              let mut out_brrw = out_table.borrow_mut();
               out_brrw.set_kind(arg_col.kind());
               out_brrw.get_column_unchecked(0)
             };   
