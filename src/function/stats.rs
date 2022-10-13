@@ -392,12 +392,129 @@ impl MechFunctionCompiler for StatsSum {
           }
         }
         match out_brrw.get_column_unchecked(0) {
+          Column::U8(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<U8>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::U8(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumTable{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
+          Column::U16(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<U16>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::U16(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumTable{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
           Column::U32(out_col) => {
             let (cols,rows) = {
               let mut cols: Vec<ColumnV<U32>> = vec![];
               let arg_table_brrw = arg_table.borrow();
               for col_ix in 0..arg_table_brrw.cols {
                 if let Column::U32(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumTable{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
+          Column::U64(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<U64>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::U64(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumTable{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
+          Column::U128(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<U128>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::U128(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumTable{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
+          Column::I8(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<I8>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::I8(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumTable{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
+          Column::I16(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<I16>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::I16(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumTable{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
+          Column::I32(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<I32>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::I32(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumTable{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
+          Column::I64(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<I64>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::I64(col) = arg_table_brrw.get_column_unchecked(col_ix) {
+                  cols.push(col);
+                }
+              }
+              (cols,arg_table_brrw.rows)
+            };
+            block.plan.push(StatsSumTable{cols: cols.clone(), rows: rows, out: out_col.clone()});
+          }
+          Column::I128(out_col) => {
+            let (cols,rows) = {
+              let mut cols: Vec<ColumnV<I128>> = vec![];
+              let arg_table_brrw = arg_table.borrow();
+              for col_ix in 0..arg_table_brrw.cols {
+                if let Column::I128(col) = arg_table_brrw.get_column_unchecked(col_ix) {
                   cols.push(col);
                 }
               }
