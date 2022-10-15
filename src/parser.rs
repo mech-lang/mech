@@ -2363,6 +2363,19 @@ test_parser!(err_empty_1, "", (1, 1));
 test_parser!(err_empty_2, "\n", (1, 1));
 test_parser!(ok_simple_text, "Paragraph text", );
 test_parser!(err_illegal_text, r#"Paragraph (#) text"#, (1, 13));
+
+test_parser!(err_comment_missing_content, r#"
+block
+  x = 1
+  --
+  z =2
+"#, (4, 5), (5, 6));
+test_parser!(err_comment_illegal_content, r#"
+block
+  x = 1
+  --abc$def
+  z =2
+"#, (4, 8), (5, 6));
 /////////////////////////////////////////////////////////////////////////////////
 
 }
