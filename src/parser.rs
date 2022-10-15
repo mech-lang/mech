@@ -406,7 +406,7 @@ fn skip_spaces(input: ParseString) -> ParseResult<()> {
 }
 
 fn skip_nil(input: ParseString) -> ParseResult<ParserNode> {
-  Ok((input, ParserNode::Null))
+  Ok((input, ParserNode::Error))
 }
 
 fn skip_empty_mech_directive(input: ParseString) -> ParseResult<String> {
@@ -1828,9 +1828,9 @@ fn section_element(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, element))
 }
 
-// section ::= (!eof, section_element, whitespace?)+ ;
+// section ::= (!eof, <section_element>, whitespace?)+ ;
 fn section(input: ParseString) -> ParseResult<ParserNode> {
-  let msg = "Expect section element, i.e. block, mech code block, code block, statement, subtitle, paragraph, or unordered list";
+  let msg = "Expect block, mech code block, code block, statement, subtitle, paragraph, or unordered list";
   let (input, mut section_elements) = many1(
     tuple((
       is_not(eof),
@@ -1855,8 +1855,9 @@ fn body(input: ParseString) -> ParseResult<ParserNode> {
 //   Ok((input, ParserNode::Fragment { children:  vec![statement] }))
 // }
 
-// program ::= whitespace?, title?, body, whitespace? ;
+// program ::= whitespace?, title?, <body>, whitespace? ;
 fn program(input: ParseString) -> ParseResult<ParserNode> {
+  let msg = "Expect program body";
   let mut program = vec![];
   let (input, _) = opt(whitespace)(input)?;
   let (input, title) = opt(title)(input)?;
@@ -1864,7 +1865,7 @@ fn program(input: ParseString) -> ParseResult<ParserNode> {
     Some(title) => program.push(title),
     None => (),
   };
-  let (input, body) = body(input)?;
+  let (input, body) = labelr!(body, skip_nil, msg)(input)?;
   program.push(body);
   let (input, _) = opt(whitespace)(input)?;
   Ok((input, ParserNode::Program { children: program }))
