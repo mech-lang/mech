@@ -379,6 +379,27 @@ fn tag(tag: &'static str) -> impl Fn(ParseString) -> ParseResult<String> {
 
 // ## Recovery functions
 
+fn skip_till_eol(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many0(tuple((
+    is_not(newline),
+    any,
+  )))(input)?;
+  let (input, _) = newline(input)?;
+  Ok((input, ()))
+}
+
+fn skip_till_section_element(input: ParseString) -> ParseResult<ParserNode> {
+  if input.len() == 0 {
+    return Ok((input, ParserNode::Error));
+  }
+  let (input, _) = skip_till_eol(input)?;
+  let (input, _) = many0(tuple((
+    is_not(section_element),
+    skip_till_eol,
+  )))(input)?;
+  Ok((input, ParserNode::Error))
+}
+
 fn skip_spaces(input: ParseString) -> ParseResult<()> {
   let (input, _) = many0(space)(input)?;
   Ok((input, ()))
@@ -1611,7 +1632,7 @@ fn transformation(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect newline to terminate transformtation";
   let (input, statement) = statement(input)?;
   let (input, _) = many0(space)(input)?;
-  let (input, _) = labelr!(null(many1(newline)), skip_nil, msg)(input)?;
+  let (input, _) = label!(many1(newline), msg)(input)?;
   Ok((input, ParserNode::Transformation { children: vec![statement] }))
 }
 
@@ -1661,6 +1682,7 @@ fn title(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, title))
 }
 
+// ul_subtitle ::= space*, text, space*, newline, dash+, space*, newline* ;
 fn ul_subtitle(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = many0(space)(input)?;
   let (input, text) = text(input)?;
@@ -1672,6 +1694,7 @@ fn ul_subtitle(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Title { children: vec![text] }))
 }
 
+// subtitle ::= ul_subtitle ;
 fn subtitle(input: ParseString) -> ParseResult<ParserNode> {
   let (input,title) = ul_subtitle(input)?;
   Ok((input, title))
@@ -1687,6 +1710,7 @@ fn subtitle(input: ParseString) -> ParseResult<ParserNode> {
 //   Ok((input, ParserNode::SectionTitle { children: vec![text] }))
 // }
 
+// inline_code ::= grave, text, grave, space* ;
 fn inline_code(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = grave(input)?;
   let (input, text) = text(input)?;
@@ -1695,6 +1719,7 @@ fn inline_code(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::InlineCode { children: vec![text] }))
 }
 
+// paragraph_text ::= paragraph_starter, paragraph_rest? ;
 fn paragraph_text(input: ParseString) -> ParseResult<ParserNode> {
   let (input, word) = paragraph_starter(input)?;
   let (input, text) = opt(paragraph_rest)(input)?;
@@ -1706,6 +1731,7 @@ fn paragraph_text(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::ParagraphText { children: paragraph }))
 }
 
+// paragraph ::= (inline_code | paragraph_text)+, whitespace*, newline* ;
 fn paragraph(input: ParseString) -> ParseResult<ParserNode> {
   let (input, paragraph_elements) = many1(
     alt((inline_code, paragraph_text))
@@ -1715,6 +1741,7 @@ fn paragraph(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Paragraph { children: paragraph_elements }))
 }
 
+// unordered_list ::= list_item+, newline?, whitespace* ;
 fn unordered_list(input: ParseString) -> ParseResult<ParserNode> {
   let (input, list_items) = many1(list_item)(input)?;
   let (input, _) = opt(newline)(input)?;
@@ -1722,10 +1749,13 @@ fn unordered_list(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::UnorderedList { children: list_items }))
 }
 
+// list_item ::= dash, <space+>, <paragraph>, newline* ;
 fn list_item(input: ParseString) -> ParseResult<ParserNode> {
+  let msg1 = "Expect space after dash";
+  let msg2 = "Expect paragraph as list item";
   let (input, _) = dash(input)?;
-  let (input, _) = many1(space)(input)?;
-  let (input, list_item) = paragraph(input)?;
+  let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
+  let (input, list_item) = label!(paragraph, msg2)(input)?;
   let (input, _) = many0(newline)(input)?;
   Ok((input, ParserNode::ListItem { children: vec![list_item] }))
 }
@@ -1790,17 +1820,26 @@ fn mech_code_block(input: ParseString) -> ParseResult<ParserNode> {
 
 // ### Start here
 
-// TODO
-// section ::= ((block | mech_code_block | code_block | statement | subtitle | paragraph | unordered_list), whitespace?)+ ;
+// section_element ::= block | mech_code_block | code_block | statement | subtitle | paragraph | unordered_list;
+fn section_element(input: ParseString) -> ParseResult<ParserNode> {
+  let (input, element) = alt((
+    block, mech_code_block, code_block, statement, subtitle, paragraph, unordered_list
+  ))(input)?;
+  Ok((input, element))
+}
+
+// section ::= (!eof, section_element, whitespace?)+ ;
 fn section(input: ParseString) -> ParseResult<ParserNode> {
+  let msg = "Expect section element, i.e. block, mech code block, code block, statement, subtitle, paragraph, or unordered list";
   let (input, mut section_elements) = many1(
     tuple((
-      alt((block, mech_code_block, code_block, statement, subtitle, paragraph, unordered_list)),
+      is_not(eof),
+      labelr!(section_element, skip_till_section_element, msg),
       opt(whitespace),
     ))
   )(input)?;
   let mut section = vec![];
-  section.append(&mut section_elements.iter().map(|(x,_)|x).cloned().collect());
+  section.append(&mut section_elements.iter().map(|(_,x,_)|x).cloned().collect());
   Ok((input, ParserNode::Section{ children: section }))
 }
 
@@ -2175,7 +2214,7 @@ pub fn parse(text: &str) -> Result<ParserNode, MechError> {
       result_node = parse_tree;
       remaining = remaining_input;
     },
-    // Parsing completely failed, and no parse tree was created
+    // Parsing failed and could not be recovered. No parse tree was created in this case
     Err(err) => match err {
       Err::Error(mut e) | Err::Failure(mut e) => {
         error_log.append(&mut e.remaining_input.error_log);
@@ -2219,7 +2258,7 @@ pub fn parse_fragment(text: &str) -> Result<ParserNode, MechError> {
       result_node = parse_tree;
       remaining = remaining_input;
     },
-    // Parsing completely failed, and no parse tree was created
+    // Parsing failed and could not be recovered. No parse tree was created in this case
     Err(err) => match err {
       Err::Error(mut e) | Err::Failure(mut e) => {
         error_log.append(&mut e.remaining_input.error_log);
@@ -2302,7 +2341,7 @@ mod tests {
 test_parser!(err_empty_1, "", (1, 1));
 test_parser!(err_empty_2, "\n", (1, 1));
 test_parser!(ok_simple_text, "Paragraph text", );
-test_parser!(err_illegal_text, r#"Paragraph (#) text"#, (1, 11));
+test_parser!(err_illegal_text, r#"Paragraph (#) text"#, (1, 13));
 /////////////////////////////////////////////////////////////////////////////////
 
 }
