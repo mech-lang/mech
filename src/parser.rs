@@ -2039,6 +2039,10 @@ impl<'a> TextFormatter<'a> {
     s.red().bold().to_string()
   }
 
+  fn ending_color(s: &str) -> String {
+    s.truecolor(246, 192, 78).bold().to_string()
+  }
+
   fn err_heading(index: usize) -> String {
     let n = index + 1;
     let d = "---------------------";
@@ -2172,15 +2176,26 @@ impl<'a> TextFormatter<'a> {
     result
   }
 
+  fn err_ending(d: usize) -> String {
+    let s = format!("... and {} other error{} not shown\n", d, if d == 1 {""} else {"s"});
+    Self::heading_color(&s)
+  }
+
   /// Get formatted error message.
   fn format_error(&self, errors: &ParserErrorReport) -> String {
+    let n = usize::min(errors.len(), 10);
     let mut result = String::new();
     result.push('\n');
-    for (i, ctx) in errors.iter().enumerate() {
+    for i in 0..n {
+      let ctx = &errors[i];
       result.push_str(&Self::err_heading(i));
-      result.push_str(&self.err_location(&ctx));
-      result.push_str(&self.err_context(&ctx));
+      result.push_str(&self.err_location(ctx));
+      result.push_str(&self.err_context(ctx));
       result.push_str("\n\n");
+    }
+    let d = errors.len() - n;
+    if d != 0 {
+      result.push_str(&Self::err_ending(d));
     }
     result
   }
