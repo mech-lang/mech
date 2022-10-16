@@ -49,6 +49,6 @@ pub enum MechErrorKind {
   UnhandledFunctionArgumentKind(ValueKind),
   UnhandledTableShape(TableShape),
   TooManyInputArguments(usize,usize),                // (given,expected)
-  ParserError(node::ParserNode, ParserErrorReport),
+  ParserError(nodes::ParserNode, ParserErrorReport),
   None,
 }
