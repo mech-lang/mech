@@ -33,6 +33,11 @@ lazy_static! {
   pub static ref cU32: u64 = hash_str("u32");
   pub static ref cU64: u64 = hash_str("u64");
   pub static ref cU128: u64 = hash_str("u128");
+  pub static ref cI8: u64 = hash_str("i8");
+  pub static ref cI16: u64 = hash_str("i16");
+  pub static ref cI32: u64 = hash_str("i32");
+  pub static ref cI64: u64 = hash_str("i64");
+  pub static ref cI128: u64 = hash_str("i128");
   pub static ref cHZ: u64 = hash_str("hz");
   pub static ref cMS: u64 = hash_str("ms");
   pub static ref cS: u64 = hash_str("s");
@@ -105,6 +110,7 @@ pub struct Block {
   pub tables: Database,
   pub plan: Plan,
   pub functions: Option<Rc<RefCell<core::Functions>>>,
+  pub user_functions: Option<Rc<RefCell<HashMap<u64,UserFunction>>>>,
   pub global_database: Rc<RefCell<Database>>,
   pub unsatisfied_transformation: Option<(MechError,Transformation)>,
   pub pending_transformations: Vec<Transformation>,
@@ -127,6 +133,7 @@ impl Block {
       tables: Database::new(),
       plan: Plan::new(),
       functions: None,
+      user_functions: None,
       required_functions: HashSet::new(),
       global_database: Rc::new(RefCell::new(Database::new())),
       unsatisfied_transformation: None,
@@ -652,6 +659,12 @@ impl Block {
         else if *kind == *cU16 { table_brrw.set_col_kind(*column_ix,ValueKind::U16)?; }
         else if *kind == *cU32 { table_brrw.set_col_kind(*column_ix,ValueKind::U32)?; }
         else if *kind == *cU64 { table_brrw.set_col_kind(*column_ix,ValueKind::U64)?; }
+        else if *kind == *cU128 { table_brrw.set_col_kind(*column_ix,ValueKind::U128)?; }
+        else if *kind == *cI8 { table_brrw.set_col_kind(*column_ix,ValueKind::I8)?; }
+        else if *kind == *cI16 { table_brrw.set_col_kind(*column_ix,ValueKind::I16)?; }
+        else if *kind == *cI32 { table_brrw.set_col_kind(*column_ix,ValueKind::I32)?; }
+        else if *kind == *cI64 { table_brrw.set_col_kind(*column_ix,ValueKind::I64)?; }
+        else if *kind == *cI128 { table_brrw.set_col_kind(*column_ix,ValueKind::I128)?; }
         else if *kind == *cF32 { table_brrw.set_col_kind(*column_ix,ValueKind::F32)?; }
         else if *kind == *cF32L { table_brrw.set_col_kind(*column_ix,ValueKind::F32)?; }
         else if *kind == *cM { table_brrw.set_col_kind(*column_ix,ValueKind::Length)?; }
@@ -758,6 +771,26 @@ impl Block {
           table_brrw.set_kind(ValueKind::U128)?;
           table_brrw.set_raw(0,0,Value::U128(U128::new(num.as_u128())))?;
         } 
+        else if *kind == *cI8 {
+          table_brrw.set_kind(ValueKind::I8)?;
+          table_brrw.set_raw(0,0,Value::I8(I8::new(num.as_i8())))?;
+        } 
+        else if *kind == *cI16 {
+          table_brrw.set_kind(ValueKind::I16)?;
+          table_brrw.set_raw(0,0,Value::I16(I16::new(num.as_i16())))?;
+        } 
+        else if *kind == *cI32 {
+          table_brrw.set_kind(ValueKind::I32)?;
+          table_brrw.set_raw(0,0,Value::I32(I32::new(num.as_i32())))?;
+        } 
+        else if *kind == *cI64 {
+          table_brrw.set_kind(ValueKind::I64)?;
+          table_brrw.set_raw(0,0,Value::I64(I64::new(num.as_i64())))?;
+        } 
+        else if *kind == *cI128 {
+          table_brrw.set_kind(ValueKind::I128)?;
+          table_brrw.set_raw(0,0,Value::I128(I128::new(num.as_i128())))?;
+        } 
         else if *kind == *cMS {
           table_brrw.set_kind(ValueKind::Time)?;
           table_brrw.set_raw(0,0,Value::Time(F32::new(num.as_f32() / 1000.0)))?;
@@ -772,7 +805,7 @@ impl Block {
         } 
         else if *kind == *cF64 {
           table_brrw.set_kind(ValueKind::F64)?;
-          table_brrw.set_raw(0,0,Value::F64(F64::new(num.as_f32() as f64)))?;
+          table_brrw.set_raw(0,0,Value::F64(F64::new(num.as_f64())))?;
         } 
         else if *kind == *cF32L {
           table_brrw.set_kind(ValueKind::F32)?;
@@ -852,8 +885,8 @@ impl Block {
         let fxns = self.functions.clone();
         match &fxns {
           Some(functions) => {
-            let mut fxns = functions.borrow_mut();
-            match fxns.get(*name) {
+            let fxns_brrw = functions.borrow();
+            match fxns_brrw.get(*name) {
               Some(fxn) => {
                 // A function knows how to compile itself
                 // based on what arguments are passed.
@@ -861,10 +894,26 @@ impl Block {
                 // case an error is returned.
                 fxn.compile(self,&arguments,&out)?;
               }
-              None => {return Err(MechError{id: 2123, kind: MechErrorKind::MissingFunction(*name)});},
+              None => {
+                // check if it's a user function instead
+                let user_fxns = self.user_functions.clone();
+                match &user_fxns {
+                  Some(user_fxns) => {
+                    let mut user_fxns_brrw = user_fxns.borrow();
+                    match user_fxns_brrw.get(name) {
+                      Some(fxn) => {
+                        let compiled_fxn = fxn.compile(self,&arguments,&out)?;
+                        self.plan.push(compiled_fxn);
+                      },
+                      None => return Err(MechError{id: 2123, kind: MechErrorKind::MissingFunction(*name)}),
+                    }
+                  }
+                  None => return Err(MechError{id: 2124, kind: MechErrorKind::MissingFunction(*name)}),
+                }
+              },
             }
           }
-          None => {return Err(MechError{id: 2124, kind: MechErrorKind::GenericError("No functions are loaded.".to_string())});},
+          None => {return Err(MechError{id: 2125, kind: MechErrorKind::GenericError("No functions are loaded.".to_string())});},
         }
       }
       _ => (),

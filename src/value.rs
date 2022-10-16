@@ -93,23 +93,23 @@ impl fmt::Debug for Value {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match &self {
-      Value::U8(v) => write!(f,"{:?}u8",v)?,
-      Value::U16(v) => write!(f,"{:?}u16",v)?, 
-      Value::U32(v) => write!(f,"{:?}u32",v)?, 
-      Value::U64(v) => write!(f,"{:?}u64",v)?,
-      Value::U128(v) => write!(f,"{:?}u128",v)?, 
-      Value::I8(v) => write!(f,"{:?}i8",v)?, 
-      Value::I16(v) => write!(f,"{:?}i16",v)?, 
-      Value::I32(v) => write!(f,"{:?}i32",v)?, 
-      Value::I64(v) => write!(f,"{:?}i64",v)?, 
-      Value::I128(v) => write!(f,"{:?}i128",v)?, 
-      Value::Time(v) => write!(f,"{:?}s",v)?,
-      Value::Length(v) => write!(f,"{:?}m",v)?,
-      Value::Speed(v) => write!(f,"{:?}m/s",v)?,
-      Value::Angle(v) => write!(f,"{:?}rad",v)?,
-      Value::f32(v) => write!(f,"{:?}f32",v)?,
-      Value::F32(v) => write!(f,"{:?}f32",v)?,
-      Value::F64(v) => write!(f,"{:?}f64",v)?, 
+      Value::U8(v) => write!(f,"{:?}",v)?,
+      Value::U16(v) => write!(f,"{:?}",v)?, 
+      Value::U32(v) => write!(f,"{:?}",v)?, 
+      Value::U64(v) => write!(f,"{:?}",v)?,
+      Value::U128(v) => write!(f,"{:?}",v)?, 
+      Value::I8(v) => write!(f,"{:?}",v)?, 
+      Value::I16(v) => write!(f,"{:?}",v)?, 
+      Value::I32(v) => write!(f,"{:?}",v)?, 
+      Value::I64(v) => write!(f,"{:?}",v)?, 
+      Value::I128(v) => write!(f,"{:?}",v)?, 
+      Value::Time(v) => write!(f,"{:?}",v)?,
+      Value::Length(v) => write!(f,"{:?}",v)?,
+      Value::Speed(v) => write!(f,"{:?}",v)?,
+      Value::Angle(v) => write!(f,"{:?}",v)?,
+      Value::f32(v) => write!(f,"{:?}",v)?,
+      Value::F32(v) => write!(f,"{:?}",v)?,
+      Value::F64(v) => write!(f,"{:?}",v)?, 
       Value::Bool(v) => write!(f,"{}",v)?,
       Value::Reference(v) => write!(f,"{:?}",v)?, 
       Value::String(v) => {
@@ -232,12 +232,80 @@ impl NumberLiteral {
     }
   }
 
+  pub fn as_i8(&mut self) -> i8 {
+    if self.is_float() {
+      self.as_f32() as i8
+    } else {
+      self.bytes.last().unwrap().clone() as i8
+    }
+  }
+
+  pub fn as_i16(&mut self) -> i16 {
+    if self.is_float() {
+      self.as_f32() as i16
+    } else {
+      while self.bytes.len() < 2 {
+        self.bytes.insert(0,0);
+      }
+      let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<i16>());
+      let x = i16::from_be_bytes(fbytes.try_into().unwrap());
+      x
+    }
+  }
+
+  pub fn as_i32(&mut self) -> i32 {
+    if self.is_float() {
+      self.as_f32() as i32
+    } else {
+      while self.bytes.len() < 4 {
+        self.bytes.insert(0,0);
+      }
+      let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<i32>());
+      let x = i32::from_be_bytes(fbytes.try_into().unwrap());
+      x
+    }
+  }
+
+  pub fn as_i64(&mut self) -> i64 {    
+    if self.is_float() {
+      self.as_f32() as i64
+    } else {
+      while self.bytes.len() < 8 {
+        self.bytes.insert(0,0);
+      }
+      let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<i64>());
+      let x = i64::from_be_bytes(fbytes.try_into().unwrap());
+      x
+    }
+  }
+
+  pub fn as_i128(&mut self) -> i128 {    
+    if self.is_float() {
+      self.as_f32() as i128
+    } else {
+      while self.bytes.len() < 16 {
+        self.bytes.insert(0,0);
+      }
+      let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<i128>());
+      let x = i128::from_be_bytes(fbytes.try_into().unwrap());
+      x
+    }
+  }
+
   pub fn as_f32(&mut self) -> f32 {    
     while self.bytes.len() < 4 {
       self.bytes.insert(0,0);
     }
     let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<f32>());
     f32::from_be_bytes(fbytes.try_into().unwrap())
+  }
+
+  pub fn as_f64(&mut self) -> f64 {    
+    while self.bytes.len() < 8 {
+      self.bytes.insert(0,0);
+    }
+    let (fbytes, rest) = self.bytes.split_at(std::mem::size_of::<f64>());
+    f64::from_be_bytes(fbytes.try_into().unwrap())
   }
 
   pub fn as_usize(&mut self) -> usize {    

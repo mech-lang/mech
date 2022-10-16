@@ -339,11 +339,6 @@ impl Table {
           self.data[col] = Column::Speed(column);
           self.col_kinds[col] = ValueKind::Speed;
         },
-        /*(Column::Empty, ValueKind::F64) => {
-          let column = Rc::new(RefCell::new(vec![0.0;self.rows]));
-          self.data[col] = Column::F64(column);
-          self.col_kinds[col] = ValueKind::F64;
-        },*/
         (Column::Bool(_), ValueKind::Bool) => (),
         (Column::Empty, ValueKind::Bool) => {
           let column = ColumnV::<bool>::new(vec![false;self.rows]);
@@ -648,7 +643,34 @@ impl Table {
     changes.push(Change::Set((self.id, values)));
     changes
   }
-  
+
+  collect_columns!(collect_columns_u8,unwrap_u8,U8);
+  collect_columns!(collect_columns_u16,unwrap_u16,U16);
+  collect_columns!(collect_columns_u32,unwrap_u32,U32);
+  collect_columns!(collect_columns_u64,unwrap_u64,U64);
+  collect_columns!(collect_columns_u128,unwrap_u128,U128);
+  collect_columns!(collect_columns_i8,unwrap_i8,I8);
+  collect_columns!(collect_columns_i16,unwrap_i16,I16);
+  collect_columns!(collect_columns_i32,unwrap_i32,I32);
+  collect_columns!(collect_columns_i64,unwrap_i64,I64);
+  collect_columns!(collect_columns_i128,unwrap_i128,I128);
+  collect_columns!(collect_columns_f32,unwrap_f32,F32);
+  collect_columns!(collect_columns_f64,unwrap_f64,F64);
+ 
+}
+
+#[macro_export]
+macro_rules! collect_columns {
+  ($function_name:tt,$unwrap:tt,$type:tt) => (
+    pub fn $function_name(&self) -> Vec<ColumnV<$type>> {
+      let mut cols: Vec<ColumnV<$type>> = vec![];
+      for col_ix in 0..self.cols {
+        let col = self.data[col_ix].$unwrap().unwrap();
+        cols.push(col.clone());
+      }
+      cols
+    }
+  )
 }
 
 type TableIx = usize;

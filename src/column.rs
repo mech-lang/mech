@@ -120,7 +120,20 @@ impl Column {
     }
     Ok(())
   }
-  
+
+  unwrap_column!(unwrap_u8,U8);
+  unwrap_column!(unwrap_u16,U16);
+  unwrap_column!(unwrap_u32,U32);
+  unwrap_column!(unwrap_u64,U64);
+  unwrap_column!(unwrap_u128,U128);
+  unwrap_column!(unwrap_i8,I8);
+  unwrap_column!(unwrap_i16,I16);
+  unwrap_column!(unwrap_i32,I32);
+  unwrap_column!(unwrap_i64,I64);
+  unwrap_column!(unwrap_i128,I128);
+  unwrap_column!(unwrap_f32,F32);
+  unwrap_column!(unwrap_f64,F64);
+
   pub fn kind(&self) -> ValueKind {
     match self {
       Column::f32(_) => ValueKind::f32,
@@ -149,6 +162,18 @@ impl Column {
       Column::Empty => ValueKind::Empty,
     }
   }
+}
+
+#[macro_export]
+macro_rules! unwrap_column {
+  ($function_name:tt,$type:tt) => (
+    pub fn $function_name(&self) -> Option<&ColumnV<$type>> {
+      match self {
+        Column::$type(c) => Some(c),
+        _ => None,
+      }
+    }
+  )
 }
 
 #[derive(Clone)]
@@ -204,7 +229,6 @@ impl<T: Debug> fmt::Debug for ColumnV<T> {
 }
 
 mech_type!(F32,f32);
-mech_neg!(F32);
 mech_type!(F64,f64);
 mech_type!(U8,u8);
 mech_type!(U16,u16);
@@ -212,11 +236,17 @@ mech_type!(U32,u32);
 mech_type!(U64,u64);
 mech_type!(U128,u128);
 mech_type!(I8,i8);
-mech_neg!(I8);
 mech_type!(I16,i16);
 mech_type!(I32,i32);
 mech_type!(I64,i64);
 mech_type!(I128,i128);
+mech_neg!(I8);
+mech_neg!(I16);
+mech_neg!(I32);
+mech_neg!(I64);
+mech_neg!(I128);
+mech_neg!(F32);
+mech_neg!(F64);
 
 impl Zero for U8 {
   fn zero() -> Self {
@@ -263,6 +293,51 @@ impl Zero for U128 {
   }
 }
 
+impl Zero for I8 {
+  fn zero() -> Self {
+    I8::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
+impl Zero for I16 {
+  fn zero() -> Self {
+    I16::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
+impl Zero for I32 {
+  fn zero() -> Self {
+    I32::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
+impl Zero for I64 {
+  fn zero() -> Self {
+    I64::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
+impl Zero for I128 {
+  fn zero() -> Self {
+    I128::new(0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0
+  }
+}
+
 impl Zero for F32 {
   fn zero() -> Self {
     F32::new(0.0)
@@ -288,43 +363,61 @@ mech_type_conversion!(U8,U64,u64);
 mech_type_conversion!(U8,U32,u32);
 mech_type_conversion!(U8,U16,u16);
 mech_type_conversion!(F32,U8,u8);
-mech_type_conversion!(F32,I8,i8);
 mech_type_conversion!(F32,U16,u16);
 mech_type_conversion!(F32,U32,u32);
 mech_type_conversion!(F32,U64,u64);
 mech_type_conversion!(F32,U128,u128);
 mech_type_conversion!(F32,F64,f64);
+mech_type_conversion!(F32,I8,i8);
+mech_type_conversion!(F32,I16,i16);
+mech_type_conversion!(F32,I32,i32);
+mech_type_conversion!(F32,I64,i64);
+mech_type_conversion!(F32,I128,i128);
+mech_type_conversion!(I8,I16,i16);
+mech_type_conversion!(I8,I32,i32);
+mech_type_conversion!(I8,I64,i64);
+mech_type_conversion!(I8,I128,i128);
+mech_type_conversion!(I8,F32,f32);
+mech_type_conversion!(I8,F64,f64);
+mech_type_conversion!(I16,I32,i32);
+mech_type_conversion!(I16,I64,i64);
+mech_type_conversion!(I16,I128,i128);
+mech_type_conversion!(I16,F32,f32);
+mech_type_conversion!(I16,F64,f64);
+mech_type_conversion!(I32,I64,i64);
+mech_type_conversion!(I32,I128,i128);
+mech_type_conversion!(I32,F32,f32);
+mech_type_conversion!(I32,F64,f64);
+mech_type_conversion!(I64,F32,f32);
+mech_type_conversion!(I64,I128,i128);
+mech_type_conversion!(I64,F64,f64);
+mech_type_conversion!(I128,F32,f32);
+mech_type_conversion!(I128,F64,f64);
 mech_type_conversion!(F64,U8,u8);
 mech_type_conversion!(F64,U16,u16);
 mech_type_conversion!(F64,U32,u32);
 mech_type_conversion!(F64,U64,u64);
 mech_type_conversion!(F64,U128,u128);
+mech_type_conversion!(F64,I8,i8);
+mech_type_conversion!(F64,I16,i16);
+mech_type_conversion!(F64,I32,i32);
+mech_type_conversion!(F64,I64,i64);
+mech_type_conversion!(F64,I128,i128);
 mech_type_conversion!(F64,F32,f32);
-mech_type_conversion!(U16,U8,u8);
 mech_type_conversion!(U16,U32,u32);
 mech_type_conversion!(U16,U64,u64);
 mech_type_conversion!(U16,U128,u128);
 mech_type_conversion!(U16,F32,f32);
 mech_type_conversion!(U16,F64,f64);
-mech_type_conversion!(U32,U8,u8);
-mech_type_conversion!(U32,U16,u16);
 mech_type_conversion!(U32,U64,u64);
 mech_type_conversion!(U32,U128,u128);
 mech_type_conversion!(U32,F32,f32);
 mech_type_conversion!(U32,F64,f64);
-mech_type_conversion!(U64,U8,u8);
-mech_type_conversion!(U64,U16,u16);
 mech_type_conversion!(U64,U128,u128);
-mech_type_conversion!(U64,U32,u32);
 mech_type_conversion!(U64,F32,f32);
 mech_type_conversion!(U64,F64,f64);
 mech_type_conversion!(U128,F32,f32);
-mech_type_conversion!(U128,U8,u8);
-mech_type_conversion!(U128,U16,u16);
-mech_type_conversion!(U128,U32,u32);
-mech_type_conversion!(U128,U64,u64);
 mech_type_conversion!(U128,F64,f64);
-mech_type_conversion!(I8,F32,f32);
 mech_type_conversion_raw!(U8,u8);
 mech_type_conversion_raw!(U16,u16);
 mech_type_conversion_raw!(U32,u32);
@@ -352,6 +445,11 @@ mech_value_conversion!(U16,U16);
 mech_value_conversion!(U32,U32);
 mech_value_conversion!(U64,U64);
 mech_value_conversion!(U128,U128);
+mech_value_conversion!(I8,I8);
+mech_value_conversion!(I16,I16);
+mech_value_conversion!(I32,I32);
+mech_value_conversion!(I64,I64);
+mech_value_conversion!(I128,I128);
 mech_value_conversion!(F32,F32);
 mech_value_conversion!(F64,F64);
 mech_value_conversion!(MechString,String);
@@ -367,6 +465,9 @@ macro_rules! mech_type {
     impl $wrapper {
       pub fn new(inner: $type) -> $wrapper {
         $wrapper(inner)
+      }
+      pub fn kind(&self) -> ValueKind {
+        ValueKind::$wrapper
       }
       pub fn unwrap(&self) -> $type {
         self.0
@@ -438,6 +539,12 @@ macro_rules! mech_type {
 impl From<bool> for MechString {
   fn from(n: bool) -> MechString {
     MechString{chars: format!("{:?}", n).chars().collect()}
+  } 
+}
+
+impl From<TableId> for Value {
+  fn from(n: TableId) -> Value {
+    Value::Reference(n)
   } 
 }
 

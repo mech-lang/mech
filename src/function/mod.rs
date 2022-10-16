@@ -5,3 +5,4 @@ pub mod stats;
 pub mod table;
 pub mod set;
 pub mod logic;
+pub mod matrix;
