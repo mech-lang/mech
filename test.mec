@@ -1,8 +1,8 @@
-Title
-===========
+block
+  #x = [200; 0; 0]
+ 
+block 
+  #x{3} := 7
 
 block
-  #x = 5
-
-Title2
-===========
+  #test = stats/sum(column: #x)

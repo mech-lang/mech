@@ -3,8 +3,9 @@
 // ## Preamble
 
 use mech_core::*;
-use mech_core::node::*;
+use mech_core::nodes::*;
 use mech_core::function::table::*;
+use mech_core::function::matrix::*;
 
 use crate::ast::Ast;
 use crate::parser::{parse, parse_fragment};
@@ -29,6 +30,9 @@ fn get_sections(nodes: &Vec<AstNode>) -> Vec<Vec<AstNode>> {
         for child in children {
           match child {
             AstNode::Block{children} => {
+              blocks.push(child.clone());
+            }
+            AstNode::UserFunction{children} => {
               blocks.push(child.clone());
             }
             AstNode::Statement{children} => {
@@ -93,7 +97,7 @@ impl Compiler {
     Compiler{}
   }
 
-  pub fn compile_str(&mut self, code: &str) -> Result<Vec<Vec<Block>>,MechError> {
+  pub fn compile_str(&mut self, code: &str) -> Result<Vec<Vec<SectionElement>>,MechError> {
     let parse_tree = parse(code)?;
     let mut ast = Ast::new();
     ast.build_syntax_tree(&parse_tree);
@@ -101,7 +105,7 @@ impl Compiler {
     compiler.compile_sections(&vec![ast.syntax_tree.clone()])
   }
 
-  pub fn compile_fragment(&mut self, code: &str) -> Result<Vec<Vec<Block>>,MechError> {
+  pub fn compile_fragment(&mut self, code: &str) -> Result<Vec<Vec<SectionElement>>,MechError> {
     let parse_tree = parse_fragment(code)?;
     let mut ast = Ast::new();
     ast.build_syntax_tree(&parse_tree);
@@ -109,22 +113,72 @@ impl Compiler {
     compiler.compile_sections(&vec![ast.syntax_tree.clone()])
   }
 
-  pub fn compile_sections(&mut self, nodes: &Vec<AstNode>) -> Result<Vec<Vec<Block>>,MechError> {
-    let mut sections: Vec<Vec<Block>> = Vec::new();
+  pub fn compile_sections(&mut self, nodes: &Vec<AstNode>) -> Result<Vec<Vec<SectionElement>>,MechError> {
+    let mut sections: Vec<Vec<SectionElement>> = Vec::new();
     for section in get_sections(nodes) {
-      let mut blocks: Vec<Block> = Vec::new();
+      let mut elements: Vec<SectionElement> = Vec::new();
       for node in section {
-        let mut block = Block::new();
-        let mut tfms = self.compile_node(&node)?;
-        let tfms_before = tfms.clone();
-        tfms.sort();
-        tfms.dedup();
-        for tfm in tfms {
-          block.add_tfm(tfm);
+        match node {
+          AstNode::Block{..} => {
+            let mut block = Block::new();
+            let mut tfms = self.compile_node(&node)?;
+            let tfms_before = tfms.clone();
+            tfms.sort();
+            tfms.dedup();
+            for tfm in tfms {
+              block.add_tfm(tfm);
+            }
+            elements.push(SectionElement::Block(block));
+          }
+          AstNode::UserFunction{children} => {
+            let mut user_function = UserFunction::new();
+
+
+            let mut out_args = self.compile_node(&children[0])?;
+            let mut name = self.compile_node(&children[1])?;
+            let mut in_args = self.compile_node(&children[2])?;
+            let mut body = self.compile_node(&children[3])?;
+
+            // TODO Check that all arguments are used
+            // TODO Check that output arguments are created in body
+            // TODO Check that all variables used in body are sourced in body or inargs
+
+            match &name[0] {
+              Transformation::Identifier{name,id} => {
+                user_function.name = *id;
+              }
+              _ => (),
+            }
+
+            let mut i = 0;
+            while i < out_args.len() {
+              match (&out_args[i],&out_args[i+1]) {
+                (Transformation::Identifier{name,id},Transformation::ColumnKind{table_id,column_ix,kind}) => {
+                  user_function.outputs.insert(*id,ValueKind::F32);
+                }
+                _ => (),
+              }
+              i += 3;
+            }
+
+            let mut i = 0;
+            while i < in_args.len() {
+              match (&in_args[i],&in_args[i+1]) {
+                (Transformation::Identifier{name,id},Transformation::ColumnKind{table_id,column_ix,kind}) => {
+                  user_function.inputs.insert(*id,ValueKind::F32);
+                }
+                _ => (),
+              }
+              i += 3;
+            }
+
+            user_function.transformations = body;
+            elements.push(SectionElement::UserFunction(user_function));
+          }
+          _ => (),
         }
-        blocks.push(block);
       }
-      sections.push(blocks);
+      sections.push(elements);
     }
     if sections.len() > 0 {
       Ok(sections)
@@ -174,8 +228,14 @@ impl Compiler {
           else if *kind == *cU16 { string.parse::<u16>().unwrap().to_be_bytes().to_vec() }
           else if *kind == *cU32 { string.parse::<u32>().unwrap().to_be_bytes().to_vec() }
           else if *kind == *cU64 { string.parse::<u64>().unwrap().to_be_bytes().to_vec() }
-          else if *kind == *cU64 { string.parse::<u128>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cU128 { string.parse::<u128>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cI8 { string.parse::<i8>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cI16 { string.parse::<i16>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cI32 { string.parse::<i32>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cI64 { string.parse::<i64>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cI128 { string.parse::<i128>().unwrap().to_be_bytes().to_vec() }
           else if *kind == *cF32 { string.parse::<f32>().unwrap().to_be_bytes().to_vec() }
+          else if *kind == *cF64 { string.parse::<f64>().unwrap().to_be_bytes().to_vec() }
           else if *kind == *cHEX {
             bytes.iter().map(|c| c.to_digit(16).unwrap() as u8).collect::<Vec<u8>>()
           }
@@ -449,6 +509,16 @@ impl Compiler {
             }
           }
         }
+      }
+      AstNode::UserFunction{children} => {
+        let output_args = &children[0];
+        let function_name = &children[1];
+        let input_args = &children[2];
+        if let AstNode::FunctionBody{children} = &children[3] {
+          let mut result = self.compile_nodes(children)?;
+          tfms.append(&mut result);
+        };
+        println!("{:?}", tfms);
       }
       AstNode::Function{name, children} => {
         let mut args: Vec<Argument>  = vec![];
@@ -909,6 +979,25 @@ impl Compiler {
           out: (out_id,TableIndex::All,TableIndex::All),
         });
       }
+      AstNode::TransposeSelect{children} => {
+        let mut result = self.compile_node(&children[0])?;
+        let mut args = vec![];
+        match &result[0] {
+          Transformation::Select{table_id, indices} => {
+            args.push((0, *table_id, indices.to_vec()));
+            result.remove(0);
+          }
+          _=>(),
+        }
+        let id = hash_str(&format!("transpose{:?}",args));
+        tfms.push(Transformation::NewTable{table_id: TableId::Local(id), rows: 1, columns: 1});
+        tfms.append(&mut result);
+        tfms.push(Transformation::Function{
+          name: *MATRIX_TRANSPOSE,
+          arguments: args,
+          out: (TableId::Local(id),TableIndex::All,TableIndex::All),
+        });
+      }
       AstNode::SelectData{name, id, children} => {
         let mut indices = vec![];
         let mut all_indices = vec![];
@@ -1074,6 +1163,11 @@ impl Compiler {
         }
         tfms.append(&mut result);
       }
+      AstNode::FunctionBody{children} |
+      AstNode::FunctionInput{children} |
+      AstNode::FunctionOutput{children} |
+      AstNode::FunctionArgs{children} |
+      AstNode::Comment{children} |
       AstNode::Program{children, ..} |
       AstNode::Section{children, ..} |
       AstNode::Attribute{children} |

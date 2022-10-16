@@ -14,7 +14,7 @@
 // ## Prelude
 
 use mech_core::*;
-use mech_core::node::*;
+use mech_core::nodes::*;
 
 #[cfg(not(feature = "no-std"))] use core::fmt;
 #[cfg(feature = "no-std")] use alloc::fmt;
@@ -847,12 +847,19 @@ fn index(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Index{children: vec![index]}))
 }
 
-// data ::= (table | identifier), index* ;
+// data ::= (table | identifier), index*, transpose? ;
 fn data(input: ParseString) -> ParseResult<ParserNode> {
   let (input, source) = alt((table, identifier))(input)?;
   let (input, mut indices) = many0(index)(input)?;
+  let (input, transpose) = opt(transpose)(input)?;
   let mut data = vec![source];
   data.append(&mut indices);
+  match transpose {
+    Some(transpose) => {
+      data.push(transpose);
+    }
+    _ => (),
+  }
   Ok((input, ParserNode::Data{children: data}))
 }
 
@@ -1348,10 +1355,53 @@ fn function(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Function { children: function }))
 }
 
+// TODO
+fn user_function(input: ParseString) -> ParseResult<ParserNode> {
+  let (input, _) = left_bracket(input)?;
+  let (input, mut output_args) = many0(function_output)(input)?;
+  let (input, _) = right_bracket(input)?;
+  let (input, _) = many1(space)(input)?;
+  let (input, _) = equal(input)?;
+  let (input, _) = many1(space)(input)?;
+  let (input, function_name) = identifier(input)?;
+  let (input, _) = left_parenthesis(input)?;
+  let (input, mut input_args) = many0(function_input)(input)?;
+  let (input, _) = right_parenthesis(input)?;
+  let (input, _) = newline(input)?;
+  let (input, function_body) = function_body(input)?;
+  Ok((input, ParserNode::UserFunction { children: vec![ParserNode::FunctionArgs{children: output_args}, function_name, ParserNode::FunctionArgs{children: input_args}, function_body] }))
+}
+
+// TODO
+fn function_output(input: ParseString) -> ParseResult<ParserNode> {
+  let (input, arg_id) = identifier(input)?;
+  let (input, kind) = kind_annotation(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
+  Ok((input, ParserNode::FunctionOutput{children: vec![arg_id, kind]}))
+}
+
+// TODO
+fn function_input(input: ParseString) -> ParseResult<ParserNode> {
+  let (input, arg_id) = identifier(input)?;
+  let (input, kind) = kind_annotation(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
+  Ok((input, ParserNode::FunctionInput{children: vec![arg_id, kind]}))
+}
+
+// TODO
+fn function_body(input: ParseString) -> ParseResult<ParserNode> {
+  let (input, transformations) = many1(tuple((tuple((space,space)),transformation)))(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  let tfms: Vec<ParserNode> = transformations.iter().map(|(_,tfm)| tfm).cloned().collect();
+  Ok((input, ParserNode::FunctionBody { children: tfms }))
+}
+
 // matrix_multiply ::= "**" ;
 fn matrix_multiply(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = tag("**")(input)?;
-  Ok((input, ParserNode::Null))
+  Ok((input, ParserNode::MatrixMultiply))
 }
 
 // add ::= "+" ;
@@ -1447,9 +1497,9 @@ fn l2(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::L2 { children: math }))
 }
 
-// l2_op ::= multiply | divide | matrix_multiply ;
+// l2_op ::= matrix_multiply | multiply | divide ;
 fn l2_op(input: ParseString) -> ParseResult<ParserNode> {
-  alt((multiply, divide, matrix_multiply))(input)
+  alt((matrix_multiply, multiply, divide))(input)
 }
 
 // l2_infix ::= <!l2_op>, space*, l2_op, <space+>, <l3> ;
@@ -1638,10 +1688,22 @@ fn string(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::String { children: text }))
 }
 
-// expression ::= empty_table | inline_table | math_expression | string | anonymous_table ;
+// TODO
+fn transpose(input: ParseString) -> ParseResult<ParserNode> {
+  let (input, _) = tag("'")(input)?;
+  Ok((input, ParserNode::Transpose))
+}
+
+// expression ::= (empty_table | inline_table | math_expression | string | anonymous_table), transpose? ;
 fn expression(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, expression) = alt((empty_table, inline_table, math_expression, string, anonymous_table))(input)?;
-  Ok((input, ParserNode::Expression { children: vec![expression] }))
+  let (input, expression) = alt((inline_table, math_expression, string, empty_table, anonymous_table))(input)?;
+  let (input, transpose) = opt(transpose)(input)?;
+  let mut children = vec![expression];
+  match transpose {
+    Some(transpose) => children.push(transpose),
+    _ => (),
+  }
+  Ok((input, ParserNode::Expression { children }))
 }
 
 // #### Block basics
@@ -1836,10 +1898,10 @@ fn mech_code_block(input: ParseString) -> ParseResult<ParserNode> {
 
 // ### Start here
 
-// section_element ::= block | mech_code_block | code_block | statement | subtitle | paragraph | unordered_list;
+// section_element ::= user_function | block | mech_code_block | code_block | statement | subtitle | paragraph | unordered_list;
 fn section_element(input: ParseString) -> ParseResult<ParserNode> {
   let (input, element) = alt((
-    block, mech_code_block, code_block, statement, subtitle, paragraph, unordered_list
+    user_function, block, mech_code_block, code_block, statement, subtitle, paragraph, unordered_list
   ))(input)?;
   Ok((input, element))
 }
@@ -1871,7 +1933,7 @@ fn body(input: ParseString) -> ParseResult<ParserNode> {
 //   Ok((input, ParserNode::Fragment { children:  vec![statement] }))
 // }
 
-// program ::= whitespace?, title?, <body>, whitespace? ;
+// program ::= whitespace?, title?, <body>, whitespace?, space* ;
 fn program(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect program body";
   let mut program = vec![];
@@ -1884,6 +1946,7 @@ fn program(input: ParseString) -> ParseResult<ParserNode> {
   let (input, body) = labelr!(body, skip_nil, msg)(input)?;
   program.push(body);
   let (input, _) = opt(whitespace)(input)?;
+  let (input, _) = many0(space)(input)?;
   Ok((input, ParserNode::Program { children: program }))
 }
 

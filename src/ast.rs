@@ -4,13 +4,11 @@
 
 // ## Prelude
 
-use crate::parser;
-
 #[cfg(not(feature = "no-std"))] use core::fmt;
 #[cfg(feature = "no-std")] use alloc::fmt;
 
 use mech_core::*;
-use mech_core::node::*;
+use mech_core::nodes::*;
 
 lazy_static! {
   pub static ref U16: u64 = hash_str("u16");
@@ -92,6 +90,8 @@ impl Ast {
         reversed.reverse();
         let mut select_data_children: Vec<AstNode> = vec![];
 
+        let mut transpose = false;
+
         for node in reversed {
           match node {
             AstNode::Table{name, id} => {
@@ -106,7 +106,12 @@ impl Ast {
                 select_data_children = vec![AstNode::Null; 1];
               }
               select_data_children.reverse();
-              compiled.push(AstNode::SelectData{name, id: TableId::Local(id), children: select_data_children.clone()});
+              let select = AstNode::SelectData{name, id: TableId::Local(id), children: select_data_children.clone()};
+              if transpose {
+                compiled.push(AstNode::TransposeSelect{children: vec![select]});
+              } else {
+                compiled.push(select);
+              }
             },
             AstNode::DotIndex{children} => {
               let mut reversed = children.clone();
@@ -124,6 +129,9 @@ impl Ast {
             }
             AstNode::ReshapeColumn => {
               select_data_children.push(AstNode::ReshapeColumn);
+            }
+            AstNode::Transpose => {
+              transpose = true;
             }
             _ => (),
           }
@@ -584,6 +592,7 @@ impl Ast {
           AstNode::Add => "math/add".chars().collect(),
           AstNode::Subtract => "math/subtract".chars().collect(),
           AstNode::Multiply => "math/multiply".chars().collect(),
+          AstNode::MatrixMultiply => "matrix/multiply".chars().collect(),
           AstNode::Divide => "math/divide".chars().collect(),
           AstNode::Exponent => "math/exponent".chars().collect(),
           AstNode::GreaterThan => "compare/greater-than".chars().collect(),
@@ -609,6 +618,26 @@ impl Ast {
         let result = self.compile_nodes(children);
         compiled.push(AstNode::Function{name: "math/negate".chars().collect(), children: result});
       },
+      ParserNode::UserFunction{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(AstNode::UserFunction{children: result.clone()});
+      }
+      ParserNode::FunctionArgs{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(AstNode::FunctionArgs{children: result.clone()});
+      }
+      ParserNode::FunctionInput{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(AstNode::FunctionInput{children: result.clone()});
+      }
+      ParserNode::FunctionOutput{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(AstNode::FunctionOutput{children: result.clone()});
+      }
+      ParserNode::FunctionBody{children} => {
+        let result = self.compile_nodes(children);
+        compiled.push(AstNode::FunctionBody{children: result.clone()});
+      }
       ParserNode::Function{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<AstNode> = Vec::new();
@@ -660,6 +689,9 @@ impl Ast {
       },
       ParserNode::True => {
         compiled.push(AstNode::True);
+      },
+      ParserNode::Transpose => {
+        compiled.push(AstNode::Transpose);
       },
       ParserNode::False => {
         compiled.push(AstNode::False);
@@ -722,6 +754,7 @@ impl Ast {
       ParserNode::Add => compiled.push(AstNode::Add),
       ParserNode::Subtract => compiled.push(AstNode::Subtract),
       ParserNode::Multiply => compiled.push(AstNode::Multiply),
+      ParserNode::MatrixMultiply => compiled.push(AstNode::MatrixMultiply),
       ParserNode::Divide => compiled.push(AstNode::Divide),
       ParserNode::Exponent => compiled.push(AstNode::Exponent),
       ParserNode::And => compiled.push(AstNode::And),

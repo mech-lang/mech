@@ -39,14 +39,12 @@ fn main() -> Result<(),MechError> {
     // ----------------------------------------------------------------
 
 let input = r#"
-block
-  #foo = [|x y z|
-           5 6 7]
-block
-  #foo += [x: 100 y: 110 z: 120]
-block
-  ix = #foo.x > 50
-  #test = #foo.x{ix}"#;
+[a<f32>] = foo(x<f32>)
+  y = 3
+  z = x * 2
+  a = z + y * 3
+y = foo(x: 10)
+#test = y"#;
   let input = String::from(input);
 
   let mut ast = Ast::new();
@@ -60,7 +58,7 @@ block
   println!("{:?}", ast.syntax_tree);
 
   let sections = compiler.compile_sections(&vec![ast.syntax_tree.clone()]).unwrap();
-  
+  //println!("{:?}",sections);
   core.load_sections(sections);
   println!("{:#?}", core.blocks);
   println!("{:?}", core);
