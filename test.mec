@@ -1,8 +1,8 @@
-block
-  #x = [200; 0; 0]
- 
-block 
-  #x{3} := 7
+[a<f32>] = foo(y<f32>)
+  a = y * 3
+
+[a<f32>] = bar(b<f32>)
+  a = foo(y: b) + 2
 
 block
-  #test = stats/sum(column: #x)
+  #y = bar(b: 20)

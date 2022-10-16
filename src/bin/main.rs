@@ -16,15 +16,15 @@ fn main() -> Result<(),MechError> {
     match parser::parse(&s) {
         // Ok(tree) => println!("ok!"),
         Ok(tree) => { 
-            println!("{:#?}", tree);
-            // let mut ast = Ast::new();
-            // ast.build_syntax_tree(&tree);
-            // let mut compiler = Compiler::new();
-            // let sections = compiler.compile_sections(&vec![ast.syntax_tree.clone()]).unwrap();
-            // let mut core = Core::new();
-            // core.load_sections(sections);
-            // println!("{:#?}", core.blocks);
-            // println!("{:?}", core);
+          println!("{:#?}", tree);
+          let mut ast = Ast::new();
+          ast.build_syntax_tree(&tree);
+          let mut compiler = Compiler::new();
+          let sections = compiler.compile_sections(&vec![ast.syntax_tree.clone()]).unwrap();
+          let mut core = Core::new();
+          core.load_sections(sections);
+          println!("{:#?}", core.blocks);
+          println!("{:?}", core);
         },
         Err(err) => if let MechErrorKind::ParserError(node, report) = err.kind {
           println!("----- TREE -----");

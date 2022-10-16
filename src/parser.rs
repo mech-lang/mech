@@ -1355,47 +1355,58 @@ fn function(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Function { children: function }))
 }
 
-// TODO
+// user_function ::= left_bracket, function_output*, <right_bracket>, <space+>, <equal>, <space+>, <identifier>,
+// >>                <left_parenthesis>, <function_input*>, <right_parenthesis>, <newline>, <function_body> ;
 fn user_function(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = left_bracket(input)?;
+  let msg1 = "Expect right bracket for user function definition";
+  let msg2 = "Expect space after output declaration";
+  let msg3 = "Expect equal sign '='";
+  let msg4 = "Expect space after equal sign";
+  let msg5 = "Expect identifier for function name";
+  let msg6 = "Expect left parenthesis '('";
+  let msg7 = "Expect right parenthesis ')'";
+  let msg8 = "Expect newline after user function header";
+  let msg9 = "Expect indented transformations for function body";
+  let a = input.cursor;
+  let (input, (_, r1)) = range(left_bracket)(input)?;
   let (input, mut output_args) = many0(function_output)(input)?;
-  let (input, _) = right_bracket(input)?;
-  let (input, _) = many1(space)(input)?;
-  let (input, _) = equal(input)?;
-  let (input, _) = many1(space)(input)?;
-  let (input, function_name) = identifier(input)?;
-  let (input, _) = left_parenthesis(input)?;
+  let (input, _) = label!(right_bracket, msg1, r1)(input)?;
+  let (input, _) = label!(many1(space), msg2)(input)?;
+  let (input, _) = label!(equal, msg3)(input)?;
+  let (input, _) = label!(many1(space), msg4)(input)?;
+  let (input, function_name) = label!(identifier, msg5)(input)?;
+  let (input, (_, r2)) = label!(range(left_parenthesis), msg6)(input)?;
   let (input, mut input_args) = many0(function_input)(input)?;
-  let (input, _) = right_parenthesis(input)?;
-  let (input, _) = newline(input)?;
-  let (input, function_body) = function_body(input)?;
+  let (input, _) = label!(right_parenthesis, msg7, r2)(input)?;
+  let (input, _) = label!(newline, msg8)(input)?;
+  let b = input.cursor;
+  let (input, function_body) = label!(function_body, msg9, (a, b))(input)?;
   Ok((input, ParserNode::UserFunction { children: vec![ParserNode::FunctionArgs{children: output_args}, function_name, ParserNode::FunctionArgs{children: input_args}, function_body] }))
 }
 
-// TODO
+// function_output ::= identifier, <kind_annotation>, space*, comma?, space* ;
 fn function_output(input: ParseString) -> ParseResult<ParserNode> {
+  let msg = "Expect kind annotation";
   let (input, arg_id) = identifier(input)?;
-  let (input, kind) = kind_annotation(input)?;
-  let (input, _) = many0(space)(input)?;
+  let (input, kind) = label!(kind_annotation, msg)(input)?;
   let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
   Ok((input, ParserNode::FunctionOutput{children: vec![arg_id, kind]}))
 }
 
-// TODO
+// function_input ::= identifier, <kind_annotation>, space*, comma?, space* ;
 fn function_input(input: ParseString) -> ParseResult<ParserNode> {
+  let msg = "Expect kind annotation";
   let (input, arg_id) = identifier(input)?;
-  let (input, kind) = kind_annotation(input)?;
-  let (input, _) = many0(space)(input)?;
+  let (input, kind) = label!(kind_annotation, msg)(input)?;
   let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
   Ok((input, ParserNode::FunctionInput{children: vec![arg_id, kind]}))
 }
 
-// TODO
+// function_body ::= indented_tfm+, whitespace* ;
 fn function_body(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, transformations) = many1(tuple((tuple((space,space)),transformation)))(input)?;
+  let (input, transformations) = many1(indented_tfm)(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  let tfms: Vec<ParserNode> = transformations.iter().map(|(_,tfm)| tfm).cloned().collect();
-  Ok((input, ParserNode::FunctionBody { children: tfms }))
+  Ok((input, ParserNode::FunctionBody { children: transformations }))
 }
 
 // matrix_multiply ::= "**" ;
@@ -1688,7 +1699,7 @@ fn string(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::String { children: text }))
 }
 
-// TODO
+// transpose ::= "'" ;
 fn transpose(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = tag("'")(input)?;
   Ok((input, ParserNode::Transpose))
@@ -1722,7 +1733,7 @@ fn empty_line(input: ParseString) -> ParseResult<ParserNode> {
 
 // indented_tfm ::= !empty_line, space, <space>, <!space>, <transformation> ;
 fn indented_tfm(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Block indentation has to be exactly 2 spaces";
+  let msg1 = "Indentation has to be exactly 2 spaces";
   let msg2 = "Expect transformation";
   let (input, _) = tuple((
     is_not(empty_line),
@@ -1908,7 +1919,7 @@ fn section_element(input: ParseString) -> ParseResult<ParserNode> {
 
 // section ::= (!eof, <section_element>, whitespace?)+ ;
 fn section(input: ParseString) -> ParseResult<ParserNode> {
-  let msg = "Expect block, mech code block, code block, statement, subtitle, paragraph, or unordered list";
+  let msg = "Expect user function, block, mech code block, code block, statement, subtitle, paragraph, or unordered list";
   let (input, mut section_elements) = many1(
     tuple((
       is_not(eof),
@@ -2439,11 +2450,13 @@ test_parser!(err_empty_3, "\n\n  \n\n\n", (5, 1));
 test_parser!(ok_simple_text, "Paragraph text", );
 test_parser!(err_illegal_text, r#"Paragraph (#) text"#, (1, 13));
 
+/////// LITERALS ///////
 test_parser!(err_decimal_literal, r#"x = 0d0f1"#, (1, 8));
 test_parser!(err_hexadecimal_literal, r#"x = 0x0g1"#, (1, 8));
 test_parser!(err_octal_literal, r#"x = 0o081"#, (1, 8));
 test_parser!(err_binary_literal, r#"x = 0b021"#, (1, 8));
 
+///////// SUBSCRIPTS ///////
 test_parser!(err_subscript_missing_index, r#"
 block
   x = y{
@@ -2460,6 +2473,7 @@ block
   z = 7
 "#, (3, 9));
 
+///////// DOT INDEX ///////
 test_parser!(err_dot_index_missing_value, r#"
 block
   x = y.
@@ -2471,6 +2485,7 @@ block
   z = 7
 "#, (3, 9));
 
+///////// SWIZZLE ///////
 test_parser!(err_swizzle_missing_value_1, r#"
 block
   x = a.b,
@@ -2492,6 +2507,7 @@ block
   z = 7
 "#, (3, 12));
 
+///////// KIND ANNOTATION ///////
 test_parser!(err_kind_annotation_missing_value_1, r#"
 block
   #x<> = 7
@@ -2503,12 +2519,14 @@ block
   z = 7
 "#, (3, 13));
 
+///////// TABLE ///////
 test_parser!(err_table_missing_name, r#"
 block
   # = 7
   z = 7
 "#, (3, 4));
 
+///////// TABLE BINDING ///////
 test_parser!(err_binding_extra_space_before_colon, r#"
 block
   x = [a : 7, b: 8]
@@ -2540,6 +2558,7 @@ block
   z = 7
 "#, (3, 19));
 
+///////// FUNCTION BINDING ///////
 test_parser!(err_function_binding_missing_colon, r#"
 block
   x = math/sin(angle 90)
@@ -2556,6 +2575,7 @@ block
   z = 7
 "#, (3, 23));
 
+///////// FUNCTION ///////
 test_parser!(err_function_no_args, r#"
 block
   x = math/sin()
@@ -2567,6 +2587,7 @@ block
   z = 7
 "#, (3, 38));
 
+///////// AMBIGIOUS TABLE ///////
 test_parser!(ok_indexing_complex, r#"
 block
   u = [u1: 1, u2: 2, u3: 3]
@@ -2574,7 +2595,6 @@ block
   x = t.t1,t2,t3
   z = 7
 "#,);
-
 test_parser!(err_ambigious_table_as_annonymous, r#"
 block
   u = [u1:1, u2: 2, u3: 3]
@@ -2603,6 +2623,7 @@ block
   t = [ta: u.ua,tb: u.ub,tc: u.uc]
 "#, (3, 20), (3, 29));
 
+///////// COMMENT ///////
 test_parser!(err_comment_missing_content, r#"
 block
   x = 1
@@ -2616,6 +2637,58 @@ block
   z =2
 "#, (4, 8), (5, 6));
 
+///////// USER FUNCTION ///////
+test_parser!(ok_user_function, r#"
+[a<f32>] = foo(y<f32>)
+  a = y * 3
+
+[a<f32>] = bar(b<f32>)
+  a = foo(y: b) + 2
+
+block
+  #y = bar(b: 20)
+"#, );
+test_parser!(err_user_function_missing_output_kind, r#"
+[a<f32>,b] = foo(y<f32>)
+  a = y * 3
+"#, (2, 10));
+test_parser!(err_user_function_missing_right_bracket, r#"
+[a<f32> = foo(y<f32>)
+  a = y * 3
+"#, (2, 9));
+test_parser!(err_user_function_no_space, r#"
+[a<f32>]=foo(y<f32>)
+  a = y * 3
+"#, (2, 9));
+test_parser!(err_user_function_missing_name, r#"
+[a<f32>] = (y<f32>)
+  a = y * 3
+"#, (2, 12));
+test_parser!(err_user_function_missing_paren, r#"
+[a<f32>] = foo y<f32>
+  a = y * 3
+"#, (2, 15));
+test_parser!(err_user_function_one_line_1, r#"
+[a<f32>] = foo(y<f32>) a = y * 3
+"#, (2, 23));
+test_parser!(err_user_function_one_line_2, r#"
+[a<f32>] bar() = foo(y: b) + 2
+"#, (2, 10));
+test_parser!(err_user_function_missing_body, r#"
+[a<f32>] = foo(y<f32>)
+
+block
+  #y = bar(b: 20)
+"#, (3, 1));
+test_parser!(err_user_function_error_in_body, r#"
+[a<f32>] = foo(y<f32>)
+    a = y + 1
+
+block
+  #y = bar(b: 20)
+"#, (3, 3));
+
+///////// ERROR RECOVERY ///////
 test_parser!(err_section_recovery_too_many_titles_1, r#"
 Title
 ===========
