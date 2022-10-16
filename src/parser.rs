@@ -1333,11 +1333,12 @@ fn parenthetical_expression(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, l0))
 }
 
+// TODO: This won't parse -(5 - 3)
 // negation ::= dash, !(dash | space), <data | value> ;
 fn negation(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect a value to immediately follow the negation sign";
   let (input, (_, r)) = range(dash)(input)?;
-  let (input, _) = is_not(alt((dash, space)))(input)?;
+  let (input, _) = is_not(alt((dash, space)))(input)?;  // so it's not comment sigil
   let (input, negated) = label!(alt((data, value)), msg, r)(input)?;
   Ok((input, ParserNode::Negation { children: vec![negated] }))
 }

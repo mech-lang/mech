@@ -1,8 +1,2 @@
-[a<f32>] = foo(y<f32>)
-  a = y * 3
-
-[a<f32>] = bar(b<f32>)
-  a = foo(y: b) + 2
-
 block
-  #y = bar(b: 20)
+  y = -(3 - 5)
