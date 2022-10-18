@@ -1118,21 +1118,42 @@ fn formatted_table_define(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = table_line(input)?;
   let (input, name) = table_name(input)?;
   let (input, _) = table_line(input)?;
+  let (input, table_header) = opt(formatted_table_columns)(input)?;
+  let (input, _) = opt(table_line)(input)?;
   let (input, _) = table_kinds(input)?;
   let (input, _) = table_line(input)?;
-  let (input, table) = table_items(input)?;
+  let (input, items) = table_items(input)?;
   let mut children = vec![];
   children.push(name); 
-  children.push(table);
+  let mut table = vec![];
+  match table_header {
+    Some(table_header) => table.push(table_header),
+    _ => (),
+  };
+  table.push(items);
+  children.push(Node::AnonymousTable { children: table });
   Ok((input, Node::TableDefine{children}))
 }
 // parser for any line in the output table
 fn table_line(input: ParseString) -> IResult<ParseString, Node> {
   let(input, _) = alt((tag("╭"), tag("├"), tag("╰")))(input)?;
-  let(input, _) = many1(alt((tag("┼"),tag("─"))))(input)?;
+  let(input, _) = many1(alt((tag("┼"),tag("─"),tag("┬"),tag("┴"))))(input)?;
   let(input, _) = alt((tag("╮"), tag("┤"), tag("╯")))(input)?;
   let(input, _) = newline(input)?;
   Ok((input, Node::Null))
+}
+fn formatted_table_columns(input: ParseString) -> IResult<ParseString, Node> {
+  let(input, _) = tag("│")(input)?;
+  let (input, attr) = many1(formatted_table_column)(input)?;
+  let(input, _) = newline(input)?;
+  Ok((input, Node::TableHeader { children: attr }))
+}
+fn formatted_table_column(input: ParseString) -> IResult<ParseString, Node> {
+  let (input, _) = many0(space)(input)?;
+  let (input, item) = identifier(input)?;
+  let (input, _) = many1(space)(input)?;
+  let (input, _) = tag("│")(input)?;
+  Ok((input, Node::Attribute { children: vec![item] }))
 }
 // parser for the second line of the output table, generate the 
 // var name if there is one.
@@ -1161,8 +1182,7 @@ fn table_items(input: ParseString) -> IResult<ParseString, Node> {
   let(input, _) = tag("│")(input)?;
   let (input, mut table_items) = many1(table_item)(input)?;
   let(input, _) = newline(input)?;
-  let table_rows = Node::TableRow{children:table_items};
-  Ok((input, Node::AnonymousTable{children: vec![table_rows]}))
+  Ok((input, Node::TableRow{children:table_items}))
 }
 fn table_item(input: ParseString) -> IResult<ParseString, Node> {
   let (input, _) = many0(space)(input)?;
