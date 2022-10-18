@@ -438,7 +438,10 @@ impl Core {
     }
     self.unsatisfied_blocks.drain_filter(|k,v| { 
       let state = {
-        v.borrow().state.clone()
+        match v.try_borrow() {
+          Ok(brrw) => brrw.state.clone(),
+          Err(_) => BlockState::Pending,
+        }
       };
       state == BlockState::Ready
     });
@@ -459,7 +462,10 @@ impl Core {
               new_block_ids.append(&mut nbids);
               self.unsatisfied_blocks = self.unsatisfied_blocks.drain_filter(|k,v| {
                 let state = {
-                    v.borrow().state.clone()
+                  match v.try_borrow() {
+                    Ok(brrw) => brrw.state.clone(),
+                    Err(_) => BlockState::Pending,
+                  }
                 };
                 state != BlockState::Ready
               }).collect();
