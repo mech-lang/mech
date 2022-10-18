@@ -451,7 +451,7 @@ distance-travelled = balls.x + balls.vx * time
 
 test_mech!(range_basic,r#"
 block
-  #range = 5 : 14
+  #range = 5:14
 block
   #test = stats/sum(column: #range)"#, Value::F32(F32::new(95.0)));
 
