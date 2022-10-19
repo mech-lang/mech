@@ -87,14 +87,23 @@
 
 		{
 			"name": "constant.numeric.integer",
-			"match": "(0x[A-Z0-9]+)"
+			"match": "0x[A-Z0-9]+"
+		},
+		{
+			"name": "meta.block",
+			"begin": "[a-z]+ ",
+			"end": "[A-Za-z]| |\\.",
+			"patterns": [
+				{
+					"name": "", 
+					"match": "[0-9]+" 
+				}
+			]
 		},
 		{
 			"name" : "constant.numeric.integer", 
-			"match": "([0-9]+)"
+			"match": "[0-9]+"
 		},
-
-
 		{
 			"name": "meta.block",
 			"begin": "[a-z]+\\.",
