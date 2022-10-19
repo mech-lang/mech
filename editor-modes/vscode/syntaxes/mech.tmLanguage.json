@@ -13,34 +13,118 @@
 			"name": "markup.heading",
 			"match": ".+(\n-+)"
 		},
-		{	
-			"include": "#outOfBlock"
+		{
+			"name": "markup.inserted",
+			"match": "//.+"
 		},
 		{
-			"name": "meta.block",
-			"begin": "[A-Z]",
-			"end": "(  |~~~|```|`)",
-			"beginCaptures": {
-				"0": { "name": "keyword.control" }
-				},
+			"name": "string.regexp",
+			"match": "~"
+		},
+		{
+			"name": "variable.function",
+			"match": "\\|([A-Z]|[a-z]|/|-| |[0-9])+\\||([A-Z]|[a-z]|/|-|[0-9])+: "
+		},
+		{
+			"name": "variable.function",
+			"match": "\\S+(?=\\[)"
+		},
+		{"name": "constant.regexp",
+		 "match": "\\[|\\]|{|}"
+		},
+		{
+			"name": "string.quoted.double.mech",
+			"begin": "\"",
+			"end": "\"",
 			"patterns": [
 				{
-					"name": "entity.name.tag.css", 
-					"match": ".+\n" 
+					"name": "constant.character.escape.mech",
+					"match": "\\\\."
+				},
+				{
+					"name": "keyword.control.mech",
+					"begin": "{{",
+					"end": "}}",
+					"patterns": [
+						{
+							"name": "constant.numeric.integer",
+							"match": "[^}]*"
+						}
+					]
 				}
 			]
 		},
 		{
+			"name": "constant.language",
+			"match": "true|false|none"
+		},
+		{
+			"name": "variable.function",
+			"match": "< |> |-> |-< "
+		},
+		{
 			"name": "meta.block",
-			"begin": "[A-Z]",
-			"end": "\\n",
+			"begin": "<",
+			"end": ">",
 			"beginCaptures": {
-				"0": { "name": "keyword.control" }
-				},
+				"0": { "name": "keyword.control.mech" }
+			  },
+			  "endCaptures": {
+				"0": { "name": "keyword.control.mech" }
+			  },
+			"patterns": [
+				{
+					"name": "constant.numeric",
+					"match": "[0-9a-z/^]+"
+				}
+			]
+		},
+
+		{
+			"name" : "constant.regexp", 
+			"match": "#"
+		},
+
+		{
+			"name": "constant.numeric.integer",
+			"match": "(0x[A-Z0-9]+)"
+		},
+		{
+			"name" : "constant.numeric.integer", 
+			"match": "([0-9]+)"
+		},
+
+
+		{
+			"name": "meta.block",
+			"begin": "[a-z]+\\.",
+			"end": "\n| |{",
 			"patterns": [
 				{
 					"name": "entity.name.tag.css", 
-					"match": ".+\n" 
+					"match": "[A-Za-z][0-9]*" 
+				}
+			]
+		},
+		{
+			"name" : "constant.numeric.integer", 
+			"match": "([0-9]+(\\.)[0-9]+)"
+		},
+		{
+			"name" : "", 
+			"match": "[a-z]+[0-9-]"
+		},
+		{
+			"name": "meta.block",
+			"begin": "( |\n)[a-z]+\/",
+			"end": "\\(",
+			"beginCaptures": {
+				"0": { "name": "constant.language" }
+			  },
+			"patterns": [
+				{
+					"name": "constant.language", 
+					"match": "[a-z]+" 
 				}
 			]
 		}
@@ -96,7 +180,10 @@
 					"name": "constant.language",
 					"match": "true|false|none"
 				},
-
+				{
+					"name": "variable.function",
+					"match": "< |> |-> |-< "
+				},
 				{
 					"name": "meta.block",
 					"begin": "<",
@@ -110,14 +197,11 @@
 					"patterns": [
 						{
 							"name": "constant.numeric",
-							"match": "((u|i)(8|16|32|64|128))|(f)(64|128)|bool|string"
+							"match": "((u|i)(8|16|32|64|128))|(f)(32|64|128)|bool|string"
 						}
 					]
 				},
-				{
-					"name": "constant.regexp",
-					"match": " < | > | -> | -< "
-				},
+
 				{
 					"name" : "constant.regexp", 
 					"match": "#"
@@ -176,10 +260,6 @@
 			
 				
 			]
-		},
-		"outOfBlock":{
-			
-		
 		}
 	},
 	"scopeName": "mech"
