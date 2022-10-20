@@ -505,6 +505,16 @@ block
   ix = #x >= #y
   #test = stats/sum(column: #x{ix})", Value::F32(F32::new(5.0))); 
 
+test_mech!(compare_scalar_table,"
+x = 15
+y = [11 12; 13 14]
+#test = set/all(table: x > y)", Value::Bool(true)); 
+
+test_mech!(compare_table_scalar,"
+x = 15
+y = [11 12; 13 14]
+#test = set/all(table: y < x)", Value::Bool(true)); 
+
 test_mech!(compare_greater_than_equal_alt,"
 block
   #x = [1; 2; 3]
