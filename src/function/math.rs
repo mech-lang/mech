@@ -762,14 +762,20 @@ macro_rules! math_compiler {
               x => {return Err(MechError{id: 6008, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }
+          (TableShape::Matrix(_,cols), TableShape::Scalar) |
           (TableShape::Row(cols), TableShape::Scalar) => {
             let lhs_columns = block.get_whole_table_arg_cols(&arguments[0])?;
             let rhs_column = block.get_arg_column(&arguments[1])?;
 
+            let rows: usize = match &arg_shapes[0] {
+              TableShape::Matrix(rows,_) => *rows,
+              _ => 1,
+            };
+
             let (out_table_id, _, _) = out;
             let out_table = block.get_table(out_table_id)?;
             let mut out_brrw = out_table.borrow_mut();
-            out_brrw.resize(1,*cols);
+            out_brrw.resize(rows,*cols);
 
             for (col_ix,(_,lhs_column,_)) in lhs_columns.iter().enumerate() {
               match (lhs_column,&rhs_column) {
@@ -861,14 +867,20 @@ macro_rules! math_compiler {
               }
             }
           }
+          (TableShape::Scalar, TableShape::Matrix(_, cols)) |
           (TableShape::Scalar, TableShape::Row(cols)) => {
             let rhs_columns = block.get_whole_table_arg_cols(&arguments[1])?;
             let lhs_column = block.get_arg_column(&arguments[0])?;
 
+            let rows: usize = match &arg_shapes[1] {
+              TableShape::Matrix(rows,_) => *rows,
+              _ => 1,
+            };
+
             let (out_table_id, _, _) = out;
             let out_table = block.get_table(out_table_id)?;
             let mut out_brrw = out_table.borrow_mut();
-            out_brrw.resize(1,*cols);
+            out_brrw.resize(rows,*cols);
 
             for (col_ix,(_,rhs_column,_)) in rhs_columns.iter().enumerate() {
               match (rhs_column,&lhs_column) {
