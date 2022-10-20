@@ -709,6 +709,12 @@ macro_rules! math_compiler {
                   block.plan.push($op3{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
                 }
               }
+              ((_,Column::F64(lhs),_), (_,Column::F64(rhs),_)) => { 
+                let mut out_column = block.get_out_column(out, *rows, ValueKind::F64)?;
+                if let Column::F64(out) = out_column {
+                  block.plan.push($op3{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
+                }
+              }
               ((_,Column::Length(lhs),_), (_,Column::Length(rhs),_)) => { 
                 let mut out_column = block.get_out_column(out, *rows, ValueKind::Length)?;
                 if let Column::Length(out) = out_column {
@@ -724,12 +730,6 @@ macro_rules! math_compiler {
               ((_,Column::Time(lhs),_), (_,Column::Time(rhs),_)) => { 
                 let mut out_column = block.get_out_column(out, *rows, ValueKind::Time)?;
                 if let Column::Time(out) = out_column {
-                  block.plan.push($op3{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
-                }
-              }
-              ((_,Column::Speed(lhs),_), (_,Column::Time(rhs),_)) => { 
-                let mut out_column = block.get_out_column(out, *rows, ValueKind::Length)?;
-                if let Column::Length(out) = out_column {
                   block.plan.push($op3{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
                 }
               }
