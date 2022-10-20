@@ -498,6 +498,111 @@ Test row math with i128
             "Mul Scalar:Row i128"  60<i128>  mul-result
             "Sub Scalar:Row i128"  -3<i128>  sub-result]
             
+Row : Scalar
+----------------
+
+Test row math with u8
+  y = [14<u8> 15<u8> 16<u8>]
+  sum-result = stats/sum(row: y + 4<u8>)
+  mul-result = stats/sum(row: y * 4<u8>)
+  sub-result = stats/sum(row: y - 10<u8>)
+  #test += ["Add Row:Scalar u8"  57<u8>  sum-result
+            "Mul Row:Scalar u8"  180<u8>  mul-result
+            "Sub Row:Scalar u8"  15<u8>  sub-result]
+
+Test row math with u16
+  y = [14<u16> 15<u16> 16<u16>]
+  sum-result = stats/sum(row: y + 4<u16>)
+  mul-result = stats/sum(row: y * 4<u16>)
+  sub-result = stats/sum(row: y - 10<u16>)
+  #test += ["Add Row:Scalar u16"  57<u16>  sum-result
+            "Mul Row:Scalar u16"  180<u16>  mul-result
+            "Sub Row:Scalar u16"  15<u16>  sub-result]
+    
+Test row math with u32
+  y = [14<u32> 15<u32> 16<u32>]
+  sum-result = stats/sum(row: y + 4<u32>)
+  mul-result = stats/sum(row: y * 4<u32>)
+  sub-result = stats/sum(row: y - 10<u32>)
+  #test += ["Add Row:Scalar u32"  57<u32>  sum-result
+            "Mul Row:Scalar u32"  180<u32>  mul-result
+            "Sub Row:Scalar u32"  15<u32>  sub-result]
+
+Test row math with u64
+  y = [14<u64> 15<u64> 16<u64>]
+  sum-result = stats/sum(row: y + 4<u64>)
+  mul-result = stats/sum(row: y * 4<u64>)
+  sub-result = stats/sum(row: y - 10<u64>)
+  #test += ["Add Row:Scalar u64"  57<u64>  sum-result
+            "Mul Row:Scalar u64"  180<u64>  mul-result
+            "Sub Row:Scalar u64"  15<u64>  sub-result]
+
+Test row math with u128
+  y = [14<u128> 15<u128> 16<u128>]
+  sum-result = stats/sum(row: y + 4<u128>)
+  mul-result = stats/sum(row: y * 4<u128>)
+  sub-result = stats/sum(row: y - 10<u128>)
+  #test += ["Add Row:Scalar u128"  57<u128>  sum-result
+            "Mul Row:Scalar u128"  180<u128>  mul-result
+            "Sub Row:Scalar u128"  15<u128>  sub-result]
+
+Test row math with i8
+
+Test row math with i16
+  y = [14<i16> 15<i16> 16<i16>]
+  sum-result = stats/sum(row: y + 4<i16>)
+  mul-result = stats/sum(row: y * 4<i16>)
+  sub-result = stats/sum(row: y - 10<i16>)
+  #test += ["Add Row:Scalar i16"  57<i16>  sum-result
+            "Mul Row:Scalar i16"  180<i16>  mul-result
+            "Sub Row:Scalar i16"  15<i16>  sub-result]
+
+Test row math with i32
+  y = [14<i32> 15<i32> 16<i32>]
+  sum-result = stats/sum(row: y + 4<i32>)
+  mul-result = stats/sum(row: y * 4<i32>)
+  sub-result = stats/sum(row: y - 10<i32>)
+  #test += ["Add Row:Scalar i32"  57<i32>  sum-result
+            "Mul Row:Scalar i32"  180<i32>  mul-result
+            "Sub Row:Scalar i32"  15<i32>  sub-result]
+
+Test row math with i64
+  y = [14<i64> 15<i64> 16<i64>]
+  sum-result = stats/sum(row: y + 4<i64>)
+  mul-result = stats/sum(row: y * 4<i64>)
+  sub-result = stats/sum(row: y - 10<i64>)
+  #test += ["Add Row:Scalar i64"  57<i64>  sum-result
+            "Mul Row:Scalar i64"  180<i64>  mul-result
+            "Sub Row:Scalar i64"  15<i64>  sub-result]
+
+Test row math with i128
+  y = [14<i128> 15<i128> 16<i128>]
+  sum-result = stats/sum(row: y + 4<i128>)
+  mul-result = stats/sum(row: y * 4<i128>)
+  sub-result = stats/sum(row: y - 10<i128>)
+  #test += ["Add Row:Scalar i128"  57<i128>  sum-result
+            "Mul Row:Scalar i128"  180<i128>  mul-result
+            "Sub Row:Scalar i128"  15<i128>  sub-result]
+
+Test row math with f32
+  y = [14<f32> 15<f32> 16<f32>]
+  sum-result = stats/sum(row: y + 4<f32>)
+  mul-result = stats/sum(row: y * 4<f32>)
+  sub-result = stats/sum(row: y - 10<f32>)
+  #test += ["Add Row:Scalar f32"  57<f32>  sum-result
+            "Mul Row:Scalar f32"  180<f32>  mul-result
+            "Sub Row:Scalar f32"  15<f32>  sub-result]
+    
+Test row math with f64
+  y = [14<f64> 15<f64> 16<f64>]
+  sum-result = stats/sum(row: y + 4<f64>)
+  mul-result = stats/sum(row: y * 4<f64>)
+  sub-result = stats/sum(row: y - 10<f64>)
+  #test += ["Add Row:Scalar f64"  57<f64>  sum-result
+            "Mul Row:Scalar f64"  180<f64>  mul-result
+            "Sub Row:Scalar f64"  15<f64>  sub-result]
+
+
 Scalar : Column
 ----------------
 
@@ -704,11 +809,4 @@ Test column math with f32
             "Mul Column:Scalar f32"  180<f32>  mul-result
             "Sub Column:Scalar f32"  15<f32>  sub-result]
 
-Test column math with f64
-  y = [14<f64>; 15<f64>; 16<f64>]
-  sum-result = stats/sum(column: y + 4<f64>)
-  mul-result = stats/sum(column: y * 4<f64>)
-  sub-result = stats/sum(column: y - 10<f64>)
-  #test += ["Add Column:Scalar f64"  57<f64>  sum-result
-            "Mul Column:Scalar f64"  180<f64>  mul-result
-            "Sub Column:Scalar f64"  15<f64>  sub-result]
+  

@@ -8,73 +8,97 @@ Test scalar compare with f32
   #test += ["> Scalar:Scalar f32 T"  true  2 > 1
             "> Scalar:Scalar f32 F"  false  1 > 2
             "< Scalar:Scalar f32 T"  true  1 < 2
-            "< Scalar:Scalar f32 F"  false  2 < 1]
+            "< Scalar:Scalar f32 F"  false  2 < 1
+            "== Scalar:Scalar f32 T" true  2 == 2
+            "== Scalar:Scalar f32 F" false  1 == 2]
 
 Test scalar compare with f64
   #test += ["> Scalar:Scalar f64 T"  true  2<f64> > 1<f64> 
             "> Scalar:Scalar f64 F"  false  1<f64> > 2<f64> 
             "< Scalar:Scalar f64 T"  true  1<f64> < 2<f64> 
-            "< Scalar:Scalar f64 F"  false  2<f64> < 1<f64>]
+            "< Scalar:Scalar f64 F"  false  2<f64> < 1<f64>
+            "== Scalar:Scalar f64 T" true  2<f64> == 2<f64>
+            "== Scalar:Scalar f64 F" false  1<f64> == 2<f64>]
 
 Test scalar compare with u8
   #test += ["> Scalar:Scalar u8 T"  true  2<u8> > 1<u8> 
             "> Scalar:Scalar u8 F"  false  1<u8> > 2<u8> 
             "< Scalar:Scalar u8 T"  true  1<u8> < 2<u8> 
-            "< Scalar:Scalar u8 F"  false  2<u8> < 1<u8>]
+            "< Scalar:Scalar u8 F"  false  2<u8> < 1<u8>
+            "== Scalar:Scalar u8 T" true  2<u8> == 2<u8>
+            "== Scalar:Scalar u8 F" false  1<u8> == 2<u8>]
 
 Test scalar compare with u16
   #test += ["> Scalar:Scalar u16 T"  true  2<u16> > 1<u16> 
             "> Scalar:Scalar u16 F"  false  1<u16> > 2<u16> 
             "< Scalar:Scalar u16 T"  true  1<u16> < 2<u16> 
-            "< Scalar:Scalar u16 F"  false  2<u16> < 1<u16>]
+            "< Scalar:Scalar u16 F"  false  2<u16> < 1<u16>
+            "== Scalar:Scalar u16 T" true  2<u16> == 2<u16>
+            "== Scalar:Scalar u16 F" false  1<u16> == 2<u16>]
 
 Test scalar compare with u32
   #test += ["> Scalar:Scalar u32 T"  true  2<u32> > 1<u32> 
             "> Scalar:Scalar u32 F"  false  1<u32> > 2<u32> 
             "< Scalar:Scalar u32 T"  true  1<u32> < 2<u32> 
-            "< Scalar:Scalar u32 F"  false  2<u32> < 1<u32>]
+            "< Scalar:Scalar u32 F"  false  2<u32> < 1<u32>
+            "== Scalar:Scalar u32 T" true  2<u32> == 2<u32>
+            "== Scalar:Scalar u32 F" false  1<u32> == 2<u32>]
 
 Test scalar compare with u64
   #test += ["> Scalar:Scalar u64 T"  true  2<u64> > 1<u64> 
             "> Scalar:Scalar u64 F"  false  1<u64> > 2<u64> 
             "< Scalar:Scalar u64 T"  true  1<u64> < 2<u64> 
-            "< Scalar:Scalar u64 F"  false  2<u64> < 1<u64>]
+            "< Scalar:Scalar u64 F"  false  2<u64> < 1<u64>
+            "== Scalar:Scalar u64 T" true  2<u64> == 2<u64>
+            "== Scalar:Scalar u64 F" false  1<u64> == 2<u64>]
 
 Test scalar compare with u128
   #test += ["> Scalar:Scalar u128 T"  true  2<u128> > 1<u128> 
             "> Scalar:Scalar u128 F"  false  1<u128> > 2<u128> 
             "< Scalar:Scalar u128 T"  true  1<u128> < 2<u128> 
-            "< Scalar:Scalar u128 F"  false  2<u128> < 1<u128>]
+            "< Scalar:Scalar u128 F"  false  2<u128> < 1<u128>
+            "== Scalar:Scalar u128 T" true  2<u128> == 2<u128>
+            "== Scalar:Scalar u128 F" false  1<u128> == 2<u128>]
 
 Test scalar compare with i8
   #test += ["> Scalar:Scalar i8 T"  true  2<i8> > 1<i8> 
             "> Scalar:Scalar i8 F"  false  1<i8> > 2<i8> 
             "< Scalar:Scalar i8 T"  true  1<i8> < 2<i8> 
-            "< Scalar:Scalar i8 F"  false  2<i8> < 1<i8>]
+            "< Scalar:Scalar i8 F"  false  2<i8> < 1<i8>
+            "== Scalar:Scalar i8 T" true  2<i8> == 2<i8>
+            "== Scalar:Scalar i8 F" false  1<i8> == 2<i8>]
 
 Test scalar compare with i16
   #test += ["> Scalar:Scalar i16 T"  true  2<i16> > 1<i16> 
             "> Scalar:Scalar i16 F"  false  1<i16> > 2<i16> 
             "< Scalar:Scalar i16 T"  true  1<i16> < 2<i16> 
-            "< Scalar:Scalar i16 F"  false  2<i16> < 1<i16>]
+            "< Scalar:Scalar i16 F"  false  2<i16> < 1<i16>
+            "== Scalar:Scalar i16 T" true  2<i16> == 2<i16>
+            "== Scalar:Scalar i16 F" false  1<i16> == 2<i16>]
 
 Test scalar compare with i32
   #test += ["> Scalar:Scalar i32 T"  true  2<i32> > 1<i32> 
             "> Scalar:Scalar i32 F"  false  1<i32> > 2<i32> 
             "< Scalar:Scalar i32 T"  true  1<i32> < 2<i32> 
-            "< Scalar:Scalar i32 F"  false  2<i32> < 1<i32>]
+            "< Scalar:Scalar i32 F"  false  2<i32> < 1<i32>
+            "== Scalar:Scalar i32 T" true  2<i32> == 2<i32>
+            "== Scalar:Scalar i32 F" false  1<i32> == 2<i32>]
 
 Test scalar compare with i64
   #test += ["> Scalar:Scalar i64 T"  true  2<i64> > 1<i64> 
             "> Scalar:Scalar i64 F"  false  1<i64> > 2<i64> 
             "< Scalar:Scalar i64 T"  true  1<i64> < 2<i64> 
-            "< Scalar:Scalar i64 F"  false  2<i64> < 1<i64>]
+            "< Scalar:Scalar i64 F"  false  2<i64> < 1<i64>
+            "== Scalar:Scalar i64 T" true  2<i64> == 2<i64>
+            "== Scalar:Scalar i64 F" false  1<i64> == 2<i64>]
 
 Test scalar compare with i128
   #test += ["> Scalar:Scalar i128 T"  true  2<i128> > 1<i128> 
             "> Scalar:Scalar i128 F"  false  1<i128> > 2<i128> 
             "< Scalar:Scalar i128 T"  true  1<i128> < 2<i128> 
-            "< Scalar:Scalar i128 F"  false  2<i128> < 1<i128>]
+            "< Scalar:Scalar i128 F"  false  2<i128> < 1<i128>
+            "== Scalar:Scalar i128 T" true  2<i128> == 2<i128>
+            "== Scalar:Scalar i128 F" false  1<i128> == 2<i128>]
 
 Column : Column
 ----------------
@@ -84,182 +108,182 @@ Test column compare with f32
   y = [4<f32>;5<f32>;6<f32>]
   z = x > y
   all = set/all(column: z)
-  #test += ["> Scalar:Scalar f32 F" false all]
+  #test += ["> Column:Column f32 F" false all]
 
 Test column compare with f64
   x = [1<f64>;2<f64>;3<f64>]
   y = [4<f64>;5<f64>;6<f64>]
   z = x > y
   all = set/all(column: z)
-  #test += ["> Scalar:Scalar f64 F" false all]
+  #test += ["> Column:Column f64 F" false all]
 
 Test column compare with u8
   x = [1<u8>;2<u8>;3<u8>]
   y = [4<u8>;5<u8>;6<u8>]
   z = x > y
   all = set/all(column: z)
-  #test += ["> Scalar:Scalar u8 F" false all]
+  #test += ["> Column:Column u8 F" false all]
 
 Test column compare with u16
   x = [1<u16>;2<u16>;3<u16>]
   y = [4<u16>;5<u16>;6<u16>]
   z = x > y
   all = set/all(column: z)
-  #test += ["> Scalar:Scalar u16 F" false all]
+  #test += ["> Column:Column u16 F" false all]
 
 Test column compare with u32
   x = [1<u32>;2<u32>;3<u32>]
   y = [4<u32>;5<u32>;6<u32>]
   z = x > y
   all = set/all(column: z)
-  #test += ["> Scalar:Scalar u32 F" false all]
+  #test += ["> Column:Column u32 F" false all]
 
 Test column compare with u64
   x = [1<u64>;2<u64>;3<u64>]
   y = [4<u64>;5<u64>;6<u64>]
   z = x > y
   all = set/all(column: z)
-  #test += ["> Scalar:Scalar u64 F" false all]
+  #test += ["> Column:Column u64 F" false all]
 
 Test column compare with u128
   x = [1<u128>;2<u128>;3<u128>]
   y = [4<u128>;5<u128>;6<u128>]
   z = x > y
   all = set/all(column: z)
-  #test += ["> Scalar:Scalar u128 F" false all]
+  #test += ["> Column:Column u128 F" false all]
 
 Test column compare with i8
   x = [1<i8>;2<i8>;3<i8>]
   y = [4<i8>;5<i8>;6<i8>]
   z = x > y
   all = set/all(column: z)
-  #test += ["> Scalar:Scalar i8 F" false all]
+  #test += ["> Column:Column i8 F" false all]
 
 Test column compare with i16
   x = [1<i16>;2<i16>;3<i16>]
   y = [4<i16>;5<i16>;6<i16>]
   z = x > y
   all = set/all(column: z)
-  #test += ["> Scalar:Scalar i8 F" false all]
+  #test += ["> Column:Column i8 F" false all]
 
 Test column compare with i32
   x = [1<i32>;2<i32>;3<i32>]
   y = [4<i32>;5<i32>;6<i32>]
   z = x > y
   all = set/all(column: z)
-  #test += ["> Scalar:Scalar i32 F" false all]
+  #test += ["> Column:Column i32 F" false all]
 
 Test column compare with i64
   x = [1<i64>;2<i64>;3<i64>]
   y = [4<i64>;5<i64>;6<i64>]
   z = x > y
   all = set/all(column: z)
-  #test += ["> Scalar:Scalar i64 F" false all]
+  #test += ["> Column:Column i64 F" false all]
 
 Test column compare with i128
   x = [1<i128>;2<i128>;3<i128>]
   y = [4<i128>;5<i128>;6<i128>]
   z = x > y
   all = set/all(column: z)
-  #test += ["> Scalar:Scalar i128 F" false all]
+  #test += ["> Column:Column i128 F" false all]
 
 Test column compare with f32
   x = [1;2;3]
   y = [4;5;6]
   z = x < y
   all = set/all(column: z)
-  #test += ["< Scalar:Scalar f32 T" true all]
+  #test += ["< Column:Column f32 T" true all]
 
 Test column compare with f64
   x = [1<f64>;2<f64>;3<f64>]
   y = [4<f64>;5<f64>;6<f64>]
   z = x < y
   all = set/all(column: z)
-  #test += ["< Scalar:Scalar f64 T" true all]
+  #test += ["< Column:Column f64 T" true all]
 
 Test column compare with u8
   x = [1<u8>;2<u8>;3<u8>]
   y = [4<u8>;5<u8>;6<u8>]
   z = x < y
   all = set/all(column: z)
-  #test += ["< Scalar:Scalar u8 T" true all]
+  #test += ["< Column:Column u8 T" true all]
 
 Test column compare with u16
   x = [1<u16>;2<u16>;3<u16>]
   y = [4<u16>;5<u16>;6<u16>]
   z = x < y
   all = set/all(column: z)
-  #test += ["< Scalar:Scalar u16 T" true all]
+  #test += ["< Column:Column u16 T" true all]
 
 Test column compare with u32
   x = [1<u32>;2<u32>;3<u32>]
   y = [4<u32>;5<u32>;6<u32>]
   z = x < y
   all = set/all(column: z)
-  #test += ["< Scalar:Scalar u32 T" true all]
+  #test += ["< Column:Column u32 T" true all]
 
 Test column compare with u64
   x = [1<u64>;2<u64>;3<u64>]
   y = [4<u64>;5<u64>;6<u64>]
   z = x < y
   all = set/all(column: z)
-  #test += ["< Scalar:Scalar u64 T" true all]
+  #test += ["< Column:Column u64 T" true all]
 
 Test column compare with u128
   x = [1<u128>;2<u128>;3<u128>]
   y = [4<u128>;5<u128>;6<u128>]
   z = x < y
   all = set/all(column: z)
-  #test += ["< Scalar:Scalar u128 T" true all]
+  #test += ["< Column:Column u128 T" true all]
 
 Test column compare with i8
   x = [1<i8>;2<i8>;3<i8>]
   y = [4<i8>;5<i8>;6<i8>]
   z = x < y
   all = set/all(column: z)
-  #test += ["< Scalar:Scalar i8 T" true all]
+  #test += ["< Column:Column i8 T" true all]
 
 Test column compare with i16
   x = [1<i16>;2<i16>;3<i16>]
   y = [4<i16>;5<i16>;6<i16>]
   z = x < y
   all = set/all(column: z)
-  #test += ["< Scalar:Scalar i8 T" true all]
+  #test += ["< Column:Column i8 T" true all]
 
 Test column compare with i32
   x = [1<i32>;2<i32>;3<i32>]
   y = [4<i32>;5<i32>;6<i32>]
   z = x < y
   all = set/all(column: z)
-  #test += ["< Scalar:Scalar i32 T" true all]
+  #test += ["< Column:Column i32 T" true all]
 
 Test column compare with i64
   x = [1<i64>;2<i64>;3<i64>]
   y = [4<i64>;5<i64>;6<i64>]
   z = x < y
   all = set/all(column: z)
-  #test += ["< Scalar:Scalar i64 T" true all]
+  #test += ["< Column:Column i64 T" true all]
 
 Test column compare with i128
   x = [1<i128>;2<i128>;3<i128>]
   y = [4<i128>;5<i128>;6<i128>]
   z = x < y
   all = set/all(column: z)
-  #test += ["< Scalar:Scalar i128 T" true all]
+  #test += ["< Column:Column i128 T" true all]
 
 Test column compare with f32
   x = [1;2;3]
   y = [1;2;3]
   z = x == y
   all = set/all(column: z)
-  #test += ["== Scalar:Scalar f32 T" true all]
+  #test += ["== Column:Column f32 T" true all]
 
 Test column compare with f64
   x = [1<f64>;2<f64>;3<f64>]
   y = [1<f64>;2<f64>;3<f64>]
   z = x == y
   all = set/all(column: z)
-  #test += ["== Scalar:Scalar f64 T" true all]
+  #test += ["== Column:Column f64 T" true all]
 
 Test column compare with u8
   x = [1<u8>;2<u8>;3<u8>]
@@ -273,144 +297,144 @@ Test column compare with u16
   y = [1<u16>;2<u16>;3<u16>]
   z = x == y
   all = set/all(column: z)
-  #test += ["== Scalar:Scalar u16 T" true all]
+  #test += ["== Column:Column u16 T" true all]
 
 Test column compare with u32
   x = [1<u32>;2<u32>;3<u32>]
   y = [1<u32>;2<u32>;3<u32>]
   z = x == y
   all = set/all(column: z)
-  #test += ["== Scalar:Scalar u32 T" true all]
+  #test += ["== Column:Column u32 T" true all]
 
 Test column compare with u64
   x = [1<u64>;2<u64>;3<u64>]
   y = [1<u64>;2<u64>;3<u64>]
   z = x == y
   all = set/all(column: z)
-  #test += ["== Scalar:Scalar u64 T" true all]
+  #test += ["== Column:Column u64 T" true all]
 
 Test column compare with u128
   x = [1<u128>;2<u128>;3<u128>]
   y = [1<u128>;2<u128>;3<u128>]
   z = x == y
   all = set/all(column: z)
-  #test += ["== Scalar:Scalar u128 T" true all]
+  #test += ["== Column:Column u128 T" true all]
 
 Test column compare with i8
   x = [1<i8>;2<i8>;3<i8>]
   y = [1<i8>;2<i8>;3<i8>]
   z = x == y
   all = set/all(column: z)
-  #test += ["== Scalar:Scalar i8 T" true all]
+  #test += ["== Column:Column i8 T" true all]
 
 Test column compare with i16
   x = [1<i16>;2<i16>;3<i16>]
   y = [1<i16>;2<i16>;3<i16>]
   z = x == y
   all = set/all(column: z)
-  #test += ["== Scalar:Scalar i8 T" true all]
+  #test += ["== Column:Column i8 T" true all]
 
 Test column compare with i32
   x = [1<i32>;2<i32>;3<i32>]
   y = [1<i32>;2<i32>;3<i32>]
   z = x == y
   all = set/all(column: z)
-  #test += ["== Scalar:Scalar i32 T" true all]
+  #test += ["== Column:Column i32 T" true all]
 
 Test column compare with i64
   x = [1<i64>;2<i64>;3<i64>]
   y = [1<i64>;2<i64>;3<i64>]
   z = x == y
   all = set/all(column: z)
-  #test += ["== Scalar:Scalar i64 T" true all]
+  #test += ["== Column:Column i64 T" true all]
 
 Test column compare with i128
   x = [1<i128>;2<i128>;3<i128>]
   y = [1<i128>;2<i128>;3<i128>]
   z = x == y
   all = set/all(column: z)
-  #test += ["== Scalar:Scalar i128 T" true all]
+  #test += ["== Column:Column i128 T" true all]
 
 Test column compare with f32
   x = [1;2;3]
   y = [1;2;3]
   z = x != y
   all = set/all(column: z)
-  #test += ["!= Scalar:Scalar f32 F" false all]
+  #test += ["!= Column:Column f32 F" false all]
 
 Test column compare with f64
   x = [1<f64>;2<f64>;3<f64>]
   y = [1<f64>;2<f64>;3<f64>]
   z = x != y
   all = set/all(column: z)
-  #test += ["!= Scalar:Scalar f64 F" false all]
+  #test += ["!= Column:Column f64 F" false all]
 
 Test column compare with u8
   x = [1<u8>;2<u8>;3<u8>]
   y = [1<u8>;2<u8>;3<u8>]
   z = x != y
   all = set/all(column: z)
-  #test += ["!= Scalar:Scalar u8 F" false all]
+  #test += ["!= Column:Column u8 F" false all]
 
 Test column compare with u16
   x = [1<u16>;2<u16>;3<u16>]
   y = [1<u16>;2<u16>;3<u16>]
   z = x != y
   all = set/all(column: z)
-  #test += ["!= Scalar:Scalar u16 F" false all]
+  #test += ["!= Column:Column u16 F" false all]
 
 Test column compare with u32
   x = [1<u32>;2<u32>;3<u32>]
   y = [1<u32>;2<u32>;3<u32>]
   z = x != y
   all = set/all(column: z)
-  #test += ["!= Scalar:Scalar u32 F" false all]
+  #test += ["!= Column:Column u32 F" false all]
 
 Test column compare with u64
   x = [1<u64>;2<u64>;3<u64>]
   y = [1<u64>;2<u64>;3<u64>]
   z = x != y
   all = set/all(column: z)
-  #test += ["!= Scalar:Scalar u64 F" false all]
+  #test += ["!= Column:Column u64 F" false all]
 
 Test column compare with u128
   x = [1<u128>;2<u128>;3<u128>]
   y = [1<u128>;2<u128>;3<u128>]
   z = x != y
   all = set/all(column: z)
-  #test += ["!= Scalar:Scalar u128 F" false all]
+  #test += ["!= Column:Column u128 F" false all]
 
 Test column compare with i8
   x = [1<i8>;2<i8>;3<i8>]
   y = [1<i8>;2<i8>;3<i8>]
   z = x != y
   all = set/all(column: z)
-  #test += ["!= Scalar:Scalar i8 F" false all]
+  #test += ["!= Column:Column i8 F" false all]
 
 Test column compare with i16
   x = [1<i16>;2<i16>;3<i16>]
   y = [1<i16>;2<i16>;3<i16>]
   z = x != y
   all = set/all(column: z)
-  #test += ["!= Scalar:Scalar i16 F" false all]
+  #test += ["!= Column:Column i16 F" false all]
 
 Test column compare with i32
   x = [1<i32>;2<i32>;3<i32>]
   y = [1<i32>;2<i32>;3<i32>]
   z = x != y
   all = set/all(column: z)
-  #test += ["!= Scalar:Scalar i32 F" false all]
+  #test += ["!= Column:Column i32 F" false all]
 
 Test column compare with i64
   x = [1<i64>;2<i64>;3<i64>]
   y = [1<i64>;2<i64>;3<i64>]
   z = x != y
   all = set/all(column: z)
-  #test += ["!= Scalar:Scalar i64 F" false all]
+  #test += ["!= Column:Column i64 F" false all]
 
 Test column compare with i128
   x = [1<i128>;2<i128>;3<i128>]
   y = [1<i128>;2<i128>;3<i128>]
   z = x != y
   all = set/all(column: z)
-  #test += ["!= Scalar:Scalar i128 F" false all]
+  #test += ["!= Column:Column i128 F" false all]
