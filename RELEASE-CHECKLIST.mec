@@ -1,0 +1,28 @@
+Release Checklist
+==================
+
+This is a checklist of things to do before releasing a new version of Mech
+
+- [ ] Platform
+  - [ ] All tests pass
+  - [ ] Build for platforms
+    - [ ] Windows x86-64
+    - [ ] MacOS x86-64, Apple Silicon
+    - [ ] Linux x86-64
+    - [ ] Wasm
+- [ ] Docs
+- [ ] Machines
+
+
+- [ ] Crates.io
+
+
+- [ ] Release Post
+    - [ ] Write release post
+    - [ ] Get others to proof read and revise
+    - [ ] Publish!
+        - [ ] Publish link on blog
+        - [ ] Update RSS feed
+        - [ ] Inform mailing list
+        - [ ] Inform Twitter
+        
