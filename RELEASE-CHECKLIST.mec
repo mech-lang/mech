@@ -3,7 +3,26 @@ Release Checklist
 
 This is a checklist of things to do before releasing a new version of Mech
 
+- [ ] Finalize source
+
+
+
 - [ ] Platform
+  - [ ] Core
+    - [ ] All tests pass
+    - [ ] No warnings
+  - [ ] Syntax
+    - [ ] All tests pass
+    - [ ] No warnings
+  - [ ] Utilities
+    - [ ] All tests pass
+    - [ ] No warnings   
+  - [ ] Program
+    - [ ] All tests pass
+    - [ ] No warnings    
+  - [ ] Mech
+    - [ ] All tests pass
+    - [ ] No warnings             
   - [ ] All tests pass
   - [ ] Build for platforms
     - [ ] Windows x86-64
@@ -11,11 +30,17 @@ This is a checklist of things to do before releasing a new version of Mech
     - [ ] Linux x86-64
     - [ ] Wasm
 - [ ] Docs
-- [ ] Machines
 
+- [ ] Machines
+    - [ ] Registry updated and live
+
+- [ ] Repository
+    - [ ] Create release tag
 
 - [ ] Crates.io
-
+  - [ ] Cargo.toml is updated on each repository 
+  - [ ] Version number is updated in each repository
+  - [ ] Upload to Crates.io
 
 - [ ] Release Post
     - [ ] Write release post
