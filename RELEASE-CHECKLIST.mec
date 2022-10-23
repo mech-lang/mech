@@ -5,8 +5,6 @@ This is a checklist of things to do before releasing a new version of Mech
 
 - [ ] Finalize source
 
-
-
 - [ ] Platform
   - [ ] Core
     - [ ] All tests pass
@@ -23,19 +21,24 @@ This is a checklist of things to do before releasing a new version of Mech
   - [ ] Mech
     - [ ] All tests pass
     - [ ] No warnings             
-  - [ ] All tests pass
-  - [ ] Build for platforms
+  - [ ] Build executable for platforms
     - [ ] Windows x86-64
     - [ ] MacOS x86-64, Apple Silicon
     - [ ] Linux x86-64
     - [ ] Wasm
 - [ ] Docs
+  - [ ] Spelling and grammar check
+  - [ ] All links work
+  - [ ] All examples work
+- [ ] Examples
+  - [ ] All examples work
 
 - [ ] Machines
     - [ ] Registry updated and live
 
 - [ ] Repository
     - [ ] Create release tag
+    - [ ] Upload executables as release artifact for repository
 
 - [ ] Crates.io
   - [ ] Cargo.toml is updated on each repository 
