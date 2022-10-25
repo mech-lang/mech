@@ -39,7 +39,7 @@ impl Functions {
       functions: HashMap::new(),
     }
   }
-  pub fn get(&mut self, key: u64) -> std::option::Option<&Box<dyn MechFunctionCompiler>> {
+  pub fn get(&self, key: u64) -> std::option::Option<&Box<dyn MechFunctionCompiler>> {
     self.functions.get(&key)
   }
   pub fn insert(&mut self, key: u64, mut fxn: Box<dyn MechFunctionCompiler>) {
@@ -67,6 +67,7 @@ pub struct Core {
   unsatisfied_blocks: HashMap<BlockId,BlockRef>,
   database: Rc<RefCell<Database>>,
   pub functions: Rc<RefCell<Functions>>,
+  pub user_functions: Rc<RefCell<HashMap<u64,UserFunction>>>,
   pub required_functions: HashSet<u64>,
   pub errors: HashMap<MechErrorKind,Vec<BlockRef>>,
   pub input: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
@@ -144,6 +145,7 @@ impl Core {
       unsatisfied_blocks: HashMap::new(),
       database: Rc::new(RefCell::new(Database::new())),
       functions: Rc::new(RefCell::new(functions)),
+      user_functions: Rc::new(RefCell::new(HashMap::new())),
       required_functions: HashSet::new(),
       errors: HashMap::new(),
       schedule: Schedule::new(),
@@ -152,6 +154,12 @@ impl Core {
       defined_tables: HashSet::new(),
       dictionary: Rc::new(RefCell::new(HashMap::new())),
     }
+  }
+
+  pub fn load_function(&mut self, name: &str, mut fxn: Box<dyn MechFunctionCompiler>) -> Result<(),MechError> {
+    let mut functions_brrw = self.functions.borrow_mut();
+    functions_brrw.insert(hash_str(name),fxn);
+    Ok(())
   }
 
   pub fn needed_registers(&self) -> HashSet<(TableId,RegisterIndex,RegisterIndex)> {
@@ -293,8 +301,36 @@ impl Core {
     Ok(())
   }
 
-  pub fn load_sections(&mut self, sections: Vec<Vec<Block>>) -> Vec<((Vec<BlockId>,Vec<MechError>))> {
-    sections.iter().map(|blocks| self.load_blocks(blocks)).collect()
+  pub fn load_sections(&mut self, sections: Vec<Vec<SectionElement>>) -> Vec<((Vec<BlockId>,Vec<u64>,Vec<MechError>))> {
+    let mut result = vec![];
+    for elements in sections.iter() {
+      let mut block_ids_agg = vec![];
+      let mut fxn_ids = vec![];
+      let mut errors_agg = vec![];
+      for section_element in elements.iter() {
+        match section_element {
+          SectionElement::Block(block) => {
+            let (mut block_ids, mut errors) = self.load_blocks(&vec![block.clone()]);
+            block_ids_agg.append(&mut block_ids);
+            errors_agg.append(&mut errors);
+          }
+          SectionElement::UserFunction(fxn) => {
+            self.load_user_function(fxn);
+          }
+        }
+      }
+      result.push((block_ids_agg,fxn_ids,errors_agg));
+    }
+    result
+  }
+
+  pub fn load_user_function(&mut self, user_function: &UserFunction) -> Result<(),MechError> {
+
+    let mut usr_fxns_brrw = self.user_functions.borrow_mut();
+
+    usr_fxns_brrw.insert(user_function.name,user_function.clone());
+
+    Ok(())
   }
 
   pub fn load_block_refs(&mut self, mut blocks: Vec<BlockRef>) -> (Vec<BlockId>,Vec<MechError>) {
@@ -339,6 +375,7 @@ impl Core {
       let temp_db = block_brrw.global_database.clone();
       block_brrw.global_database = self.database.clone();
       block_brrw.functions = Some(self.functions.clone());
+      block_brrw.user_functions = Some(self.user_functions.clone());
       // Merge databases
       {
         let mut temp_db_brrw = temp_db.borrow();
@@ -401,7 +438,10 @@ impl Core {
     }
     self.unsatisfied_blocks.drain_filter(|k,v| { 
       let state = {
-        v.borrow().state.clone()
+        match v.try_borrow() {
+          Ok(brrw) => brrw.state.clone(),
+          Err(_) => BlockState::Pending,
+        }
       };
       state == BlockState::Ready
     });
@@ -422,7 +462,10 @@ impl Core {
               new_block_ids.append(&mut nbids);
               self.unsatisfied_blocks = self.unsatisfied_blocks.drain_filter(|k,v| {
                 let state = {
-                    v.borrow().state.clone()
+                  match v.try_borrow() {
+                    Ok(brrw) => brrw.state.clone(),
+                    Err(_) => BlockState::Pending,
+                  }
                 };
                 state != BlockState::Ready
               }).collect();
@@ -497,7 +540,10 @@ impl fmt::Debug for Core {
       box_drawing.add_line(format!("{:#?}", &self.unsatisfied_blocks));    
     }
     box_drawing.add_title("💻","functions");
+    box_drawing.add_line("Compiled Functions".to_string());
     box_drawing.add_line(format!("{:#?}", &self.functions.borrow().functions.iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
+    box_drawing.add_line("User Functions".to_string());
+    box_drawing.add_line(format!("{:#?}", &self.user_functions.borrow().iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
     box_drawing.add_title("🗓️","schedule");
     box_drawing.add_line(format!("{:#?}", &self.schedule));
     box_drawing.add_title("💾","database");

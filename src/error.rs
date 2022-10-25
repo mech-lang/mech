@@ -15,6 +15,15 @@ pub struct MechError {
   pub kind: MechErrorKind,
 }
 
+pub type ParserErrorReport = Vec<ParserErrorContext>;
+
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct ParserErrorContext {
+  pub cause_rng: (usize, usize),  // ParseStringRange
+  pub err_message: String,
+  pub annotation_rngs: Vec<(usize, usize)>,  // Vec<ParseStringRange>
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum MechErrorKind {
   MissingTable(TableId),                             // TableId of missing table
@@ -40,5 +49,6 @@ pub enum MechErrorKind {
   UnhandledFunctionArgumentKind(ValueKind),
   UnhandledTableShape(TableShape),
   TooManyInputArguments(usize,usize),                // (given,expected)
+  ParserError(nodes::ParserNode, ParserErrorReport),
   None,
 }

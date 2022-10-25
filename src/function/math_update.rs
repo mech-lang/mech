@@ -75,6 +75,11 @@ macro_rules! math_update_compiler {
               ((_,Column::U32(src),ColumnIndex::Index(in_ix)),(_,Column::U32(out),ColumnIndex::Index(out_ix))) => {block.plan.push($op1{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
               ((_,Column::U64(src),ColumnIndex::Index(in_ix)),(_,Column::U64(out),ColumnIndex::Index(out_ix))) => {block.plan.push($op1{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
               ((_,Column::U128(src),ColumnIndex::Index(in_ix)),(_,Column::U128(out),ColumnIndex::Index(out_ix))) => {block.plan.push($op1{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+              ((_,Column::I8(src),ColumnIndex::Index(in_ix)),(_,Column::I8(out),ColumnIndex::Index(out_ix))) => {block.plan.push($op1{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+              ((_,Column::I16(src),ColumnIndex::Index(in_ix)),(_,Column::I16(out),ColumnIndex::Index(out_ix))) => {block.plan.push($op1{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+              ((_,Column::I32(src),ColumnIndex::Index(in_ix)),(_,Column::I32(out),ColumnIndex::Index(out_ix))) => {block.plan.push($op1{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+              ((_,Column::I64(src),ColumnIndex::Index(in_ix)),(_,Column::I64(out),ColumnIndex::Index(out_ix))) => {block.plan.push($op1{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
+              ((_,Column::I128(src),ColumnIndex::Index(in_ix)),(_,Column::I128(out),ColumnIndex::Index(out_ix))) => {block.plan.push($op1{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
               ((_,Column::F32(src),ColumnIndex::Index(in_ix)),(_,Column::F32(out),ColumnIndex::Index(out_ix))) => {block.plan.push($op1{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
               ((_,Column::F64(src),ColumnIndex::Index(in_ix)),(_,Column::F64(out),ColumnIndex::Index(out_ix))) => {block.plan.push($op1{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
               /*((_,Column::F32(arg),ColumnIndex::Index(ix)),(_,Column::F32(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
