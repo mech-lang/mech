@@ -34,7 +34,11 @@ This is a checklist of things to do before releasing a new version of Mech
   - [ ] All examples work
 
 - [ ] Machines
-    - [ ] Registry updated and live
+    - [ ] Increment version
+    - [ ] Update registry
+    - [ ] Compiled for all platforms
+    - [ ] Binaries uploaded as artifacts to repository
+    - [ ] Binaries uploaded to machine server
 
 - [ ] Repository
     - [ ] Create release tag
