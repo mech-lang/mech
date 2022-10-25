@@ -6,13 +6,41 @@ use mech_core::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use std::fs;
 fn main() -> Result<(),MechError> {
+    // ----------------------------------------------------------------
+    let s = fs::read_to_string("test.mec").unwrap();
+    match parser::parse(&s) {
+        Ok(tree) => { 
+          println!("{:#?}", tree);
+          let mut ast = Ast::new();
+          ast.build_syntax_tree(&tree);
+          let mut compiler = Compiler::new();
+          let sections = compiler.compile_sections(&vec![ast.syntax_tree.clone()]).unwrap();
+          let mut core = Core::new();
+          core.load_sections(sections);
+          println!("{:#?}", core.blocks);
+          println!("{:?}", core);
+        },
+        Err(err) => if let MechErrorKind::ParserError(node, report) = err.kind {
+          println!("----- TREE -----");
+          println!("{:?}", node);
+          println!("----- MESSAGE -----");
+          parser::print_err_report(&s, &report);
+        } else {
+          panic!("Unexpected error type");
+        },
+    }
+    return Ok(());
+    // ----------------------------------------------------------------
 
 let input = r#"
-x = [1 2 3]
-y = [4 5; 6 7; 8 9]
-z = x ** y
-#test = stats/sum(row: z)"#;
+[a<f32>] = foo(x<f32>)
+  y = 3
+  z = x * 2
+  a = z + y * 3
+y = foo(x: 10)
+#test = y"#;
   let input = String::from(input);
 
   let mut ast = Ast::new();
@@ -26,7 +54,7 @@ z = x ** y
   println!("{:?}", ast.syntax_tree);
 
   let sections = compiler.compile_sections(&vec![ast.syntax_tree.clone()]).unwrap();
-  
+  //println!("{:?}",sections);
   core.load_sections(sections);
   println!("{:#?}", core.blocks);
   println!("{:?}", core);

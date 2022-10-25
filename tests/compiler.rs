@@ -44,13 +44,20 @@ macro_rules! test_mech {
       let sections = compiler.compile_str(&input)?;
       
       for section in sections {
-        for block in section {
-          let (_,errors,new_block_output) = core.load_block(Rc::new(RefCell::new(block)));
-          for register in new_block_output.iter() {
-            core.step(register);
+        for element in section {
+          match element {
+            SectionElement::Block(block) => {
+              let (_,errors,new_block_output) = core.load_block(Rc::new(RefCell::new(block)));
+              for register in new_block_output.iter() {
+                core.step(register);
+              }
+              core.schedule_blocks();
+              assert!(errors.len() == 0);
+            }
+            SectionElement::UserFunction(fxn) => {
+              core.load_user_function(&fxn);
+            }
           }
-          core.schedule_blocks();
-          assert!(errors.len() == 0);
         }
       }
 
@@ -315,6 +322,18 @@ block
 block
   #test = #x + 5", Value::F32(F32::new(205.0)));
 
+test_mech!(math_on_scalar_and_table,"
+x = [1 2
+     3 4]
+y = 10
+#test = stats/sum(table: x + y)", Value::F32(F32::new(50.0)));
+
+test_mech!(math_on_table_and_scalar,"
+x = [1 2
+     3 4]
+y = 10
+#test = stats/sum(table: y + x)", Value::F32(F32::new(50.0)));
+
 test_mech!(select_column_by_id,"  
 block
   #ball = [x: 56 y: 2 vx: 3 vy: 4]
@@ -432,19 +451,11 @@ test_mech!(quantitiy_add_m_km,"#test = 400<m> + 1<km>", Value::Length(F32::new(1
 
 test_mech!(quantitiy_add_ms_s,"#test = 4<s> + 100<ms>", Value::Time(F32::new(4.10)));
 
-test_mech!(quantitiy_column_mat,r#"
-balls = [|x<m> vx<m/s>|
-          1    2
-          3    4]
-time = 2<s>
-distance-travelled = balls.x + balls.vx * time
-#test = stats/sum(column: distance-travelled)"#, Value::Length(F32::new(16.0)));
-
 // ## Ranges
 
 test_mech!(range_basic,r#"
 block
-  #range = 5 : 14
+  #range = 5:14
 block
   #test = stats/sum(column: #range)"#, Value::F32(F32::new(95.0)));
 
@@ -493,6 +504,16 @@ block
 block
   ix = #x >= #y
   #test = stats/sum(column: #x{ix})", Value::F32(F32::new(5.0))); 
+
+test_mech!(compare_scalar_table,"
+x = 15
+y = [11 12; 13 14]
+#test = set/all(table: x > y)", Value::Bool(true)); 
+
+test_mech!(compare_table_scalar,"
+x = 15
+y = [11 12; 13 14]
+#test = set/all(table: y < x)", Value::Bool(true)); 
 
 test_mech!(compare_greater_than_equal_alt,"
 block
@@ -1301,6 +1322,31 @@ block
   #mech/test = ["foo", 3, stats/sum(column: 1:2)]
 block
   #test = #mech/test{2} == #mech/test{3}"#, Value::Bool(true));
+
+test_mech!(function_user_defined,r#"
+[a<f32>] = foo(x<f32>)
+  y = 3
+  z = x * 2
+  a = z + y * 3
+y = foo(x: 10)
+#test = y"#, Value::F32(F32::new(29.0)));
+
+test_mech!(function_user_defined_multiple,r#"
+[a<f32>] = foo(x<f32>)
+  a = x * 2
+y = foo(x: 20)
+z = foo(x: 10)
+#test = y + z"#, Value::F32(F32::new(60.0)));
+
+test_mech!(function_user_defined_nested,r#"
+[a<f32>] = foo(y<f32>)
+  a = y * 3
+[a<f32>] = bar(b<f32>)
+  a = foo(y: b) + 2
+y = bar(b: 20)
+#test = y"#, Value::F32(F32::new(62.0)));
+
+
 
 // ## Markdown
 
