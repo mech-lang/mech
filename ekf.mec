@@ -1,0 +1,172 @@
+EKF Localization
+=================
+
+Initialize the simulation
+  #time/timer += [period: 10<ms>]
+  #robot = [x: 45, y: 15, θ: 0]
+  #robot-hat = [x: 55, y: 25, θ: 0.3927]
+  #control = [v: 5, ω: 0.00]
+  #camera = [x: 140 y: 12]
+  #Σ = [100   0 0
+          0 100 0
+          0   0 0.1542]
+  #x = 0
+
+1. Time Update
+---------------
+  
+  ~ #time/timer
+  Δt = 0.1
+  Q = [0.0225 0
+       0      0.0305]
+  v-p = #control.v + Q{1,1}
+  ω-p = #control.ω + Q{2,2}
+  x-p = #robot.x + #control.v * math/cos(angle: #robot.θ) * Δt
+  y-p = #robot.y + #control.v * math/sin(angle: #robot.θ) * Δt
+  θ-p = #robot.θ + #control.ω * Δt
+  x-hat-p = #robot-hat.x + v-p * math/cos(angle: #robot-hat.θ) * Δt
+  y-hat-p = #robot-hat.y + v-p * math/sin(angle: #robot-hat.θ) * Δt
+  θ-hat-p = #robot-hat.θ + ω-p * Δt
+  Gv = [1  0  -v-p * math/sin(angle: θ-p) * Δt
+        0  1   v-p * math/cos(angle: θ-p) * Δt
+        0  0   1]
+
+  Gu = [math/cos(angle: θ-p) * Δt  0
+        math/sin(angle: θ-p) * Δt  0
+        0                          Δt]
+  #robot.x := x-p
+  #robot.y := y-p
+  #robot.θ := θ-p
+  #robot-hat.x := x-hat-p
+  #robot-hat.y := y-hat-p
+  #robot-hat.θ := θ-hat-p
+  #Σ := Gv ** #Σ ** Gv' + Gu ** Q ** Gu'
+
+2. Measurement Update
+----------------------
+
+  ~ #time/timer
+  σ = 0.0524
+  μ = [#robot-hat.x
+       #robot-hat.y 
+       #robot-hat.θ]
+  Δy-p = #camera.y - #robot-hat.y
+  Δx-p = #camera.x - #robot-hat.x
+  z-p = math/atan(angle: Δy-p / Δx-p) - #robot-hat.θ  
+  Δy = #camera.y - #robot.y
+  Δx = #camera.x - #robot.x
+  z = math/atan(angle: Δy / Δx) - #robot.θ  
+  q = Δx-p ^ 2 + Δy-p ^ 2
+  H = [Δy-p / q, -Δx-p / q, -1]                      
+  Z = H ** #Σ ** H' + σ                           
+  K = #Σ ** H' / Z
+  μ-p = μ + K * (z - z-p)
+  #robot-hat.x := μ-p{1}
+  #robot-hat.y := μ-p{2}
+  #robot-hat.θ := μ-p{3}
+  #Σ := ([1 0 0; 0 1 0; 0 0 1] - K ** H) ** #Σ
+
+3. Controller
+--------------
+
+block
+  ~ #time/timer
+  #x :+= 1
+
+block
+  switch = #x > 400 & #x < 700
+  #control.v{switch} := 0.0
+  #control.ω{switch} := 0.05
+
+block
+  switch = #x > 700 & #x < 800
+  #control.v{switch} := 5.0
+  #control.ω{switch} := 0
+
+5. Draw
+--------
+
+Calculate the major and minor axes of the covariance ellipse
+  a = #Σ{1,1}
+  b = #Σ{1,2}
+  c = #Σ{2,2}
+  q = (((a - c) / 2) ^ 2 + b ^ 2) ^ 0.5
+  λ1 = ((a + c) / 2) + q
+  #λ1 = λ1
+  #λ2 = ((a + c) / 2) - q
+  #θ = math/atan2(y: λ1 - a, x: b)
+
+Define the shapes
+  #robot-drawing = [
+    shape: "ellipse" 
+    parameters: [
+      center-x: #robot.x
+      center-y: #robot.y + 200
+      major-axis: 16
+      minor-axis: 8
+      rotate: #robot.θ
+      fill: 0xFF0000    
+      line-width: 1.0
+    ]
+  ]
+  #robot-hat-drawing = [
+    shape: "ellipse" 
+    parameters: [
+      center-x: #robot-hat.x
+      center-y: #robot-hat.y + 200
+      major-axis: 16
+      minor-axis: 8 
+      rotate: #robot-hat.θ
+      fill: 0x00FF00    
+      line-width: 1.0
+    ]
+  ]
+  #camera-drawing = [
+    shape: "circle" 
+    parameters: [
+      center-x: #camera.x
+      center-y: #camera.y + 200
+      radius: 10.0      
+      fill: 0x0000FF    
+      line-width: 1.0
+    ]
+  ]
+  #covariance = [
+    shape: "ellipse" 
+    parameters: [
+      center-x: #robot-hat.x
+      center-y: #robot-hat.y + 200
+      major-axis: #λ1 ^ 0.5
+      minor-axis: #λ2 ^ 0.5
+      radius: 35.0      
+      fill: 0xFFAEC9    
+      line-width: 1.0
+      rotate: #θ
+    ]
+  ]
+  #text = [
+    shape: "text" 
+    parameters: [
+      x: 100.0   
+      y: 200.0   
+      text: #x
+      fill: 0xFF0000    
+      font: [size: 50.0 face: "Arial"]
+    ]
+  ]
+  
+Draw a shape to the canvas
+  shapes = [#covariance
+            #robot-drawing
+            #robot-hat-drawing
+            #camera-drawing
+           ]
+  canvas = [
+    kind: "canvas" 
+    contains: [|shape parameters| shapes] 
+    parameters: [width: 800.0 height: 800.0]
+  ]
+  #html/app = [
+    root: "mech-root" 
+    contains: [|kind contains parameters| canvas]
+  ]
