@@ -45,7 +45,6 @@ Target release: ???
 - Editor
     - [ ] Database Explorer
     - [ ] API endpoint server
-    - [ ] Source render / edit
 - Docs
     - Mech platform references
         - [ ] Syntax
