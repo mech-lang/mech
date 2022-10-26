@@ -7,11 +7,11 @@ Implementation: started 2018
 
 ### Stage 2 - Beta v0.1.0 - ?
 
-Target release: October 2022
+Target release date: Fall 2022
 
 ### Stage 3 - Stable v1.0.0
 
-Target release: ???
+Target release date: ???
 
 ## Version 0.2.0 (Spring 2023?)
 
