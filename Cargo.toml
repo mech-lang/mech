@@ -18,7 +18,7 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = ["stdlib", "parallel"]
-stdlib = []
+stdlib = ["time"]
 parallel = ["rayon"]
 no-std = ["rlibc"]
 
@@ -31,6 +31,7 @@ lazy_static = "1.4.0"
 seahash = "4.1.0"
 indexmap = "1.9.1"
 rayon = {version = "1.5.3", optional = true}
+time = {version = "*", optional = true}
 
 [dependencies.num-traits]
 version = "0.2.15"
