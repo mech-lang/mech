@@ -198,6 +198,12 @@ async fn main() -> Result<(), MechError> {
         .value_name("WEBSOCKET")
         .help("Sets the address of maestro websocket (127.0.0.1:3236)")
         .takes_value(true))  
+      .arg(Arg::with_name("registry")
+        .help("Location of the Mech machine registry.")
+        .short("g")
+        .long("registry")
+        .value_name("REGISTRY")
+        .takes_value(true))
       .arg(Arg::with_name("mech_run_file_paths")
         .help("The files and folders to run.")
         .required(true)
@@ -334,11 +340,11 @@ async fn main() -> Result<(), MechError> {
   // RUN
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("run") {
-
     let mech_paths: Vec<String> = matches.values_of("mech_run_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let repl_flag = matches.is_present("repl_mode");    
     let debug_flag = matches.is_present("debug");    
     let timings_flag = matches.is_present("timings");    
+    let machine_registry = matches.value_of("registry").unwrap_or("https://gitlab.com/mech-lang/machines/mech/-/raw/v0.1-beta/src/registry.mec").to_string();
     let input_arguments = matches.values_of("inargs").map_or(vec![], |inargs| inargs.collect());
     let out_tables = matches.values_of("out").map_or(vec![], |out| out.collect());
     let address: String = matches.value_of("address").unwrap_or("127.0.0.1").to_string();
@@ -370,7 +376,8 @@ async fn main() -> Result<(), MechError> {
 
     println!("{}", "[Running]".bright_green());
 
-    let runner = ProgramRunner::new("Mech Run");
+    let mut runner = ProgramRunner::new("Mech Run");
+    runner.registry = machine_registry;
     let mech_client = runner.run()?;
     mech_client.send(RunLoopMessage::Code(MechCode::MiniBlocks(blocks)));
 
