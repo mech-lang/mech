@@ -99,11 +99,12 @@ pub struct Program {
   programs: usize,
   loaded_machines: HashSet<u64>,
   pub listeners: HashMap<(TableId,RegisterIndex,RegisterIndex),HashSet<u64>>,
-  pub trigger_to_listener: HashMap<(TableId,RegisterIndex,RegisterIndex),((TableId, RegisterIndex, RegisterIndex),HashSet<u64>)>
+  pub trigger_to_listener: HashMap<(TableId,RegisterIndex,RegisterIndex),((TableId, RegisterIndex, RegisterIndex),HashSet<u64>)>,
+  pub registry: String,
 }
 
 impl Program {
-  pub fn new(name:&str, capacity: usize, recursion_limit: u64, outgoing: Sender<RunLoopMessage>, incoming: Receiver<RunLoopMessage>) -> Program {
+  pub fn new(name:&str, capacity: usize, recursion_limit: u64, outgoing: Sender<RunLoopMessage>, incoming: Receiver<RunLoopMessage>, registry: String) -> Program {
     let mut mech = Core::new();
     Program { 
       name: name.to_owned(), 
@@ -123,6 +124,7 @@ impl Program {
       programs: 0,
       listeners: HashMap::new(),
       trigger_to_listener: HashMap::new(),
+      registry,
     }
   }
 
@@ -193,15 +195,17 @@ impl Program {
         Err(_) => {
           // Download machine_repository index
           match &outgoing {
-            Some(sender) => {sender.send(ClientMessage::String(format!("{} Updating machine registry.", "[Downloading]".bright_cyan())));}
+            Some(sender) => {sender.send(ClientMessage::String(format!("{} Updating machine registry from:\n{}", "[Downloading]".bright_cyan(),self.registry)));}
             None => {return Err(MechError{id: 1246, kind: MechErrorKind::None});},
           }
           // Download registry
-          let registry_url = "https://gitlab.com/mech-lang/machines/mech/-/raw/v0.1-beta/src/registry.mec";
+          let registry_url = &self.registry;
           let mut response_text = match reqwest::get(registry_url) {
             Ok(mut response) => {
               match response.text() {
-                Ok(text) => text,
+                Ok(text) => {
+                  text
+                },
                 Err(_) => {return Err(MechError{id: 1235, kind: MechErrorKind::None});},
               }
             }

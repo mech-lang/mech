@@ -121,6 +121,7 @@ impl RunLoop {
 pub struct ProgramRunner {
   pub name: String,
   pub socket: Option<Arc<UdpSocket>>,
+  pub registry: String,
   //pub persistence_channel: Option<Sender<PersisterMessage>>,
 }
 
@@ -148,6 +149,7 @@ impl ProgramRunner {
     ProgramRunner {
       name: name.to_owned(),
       socket,
+      registry: "https://gitlab.com/mech-lang/machines/mech/-/raw/v0.1-beta/src/registry.mec".to_string(),
       //program,
       // TODO Use the persistence file specified by the user
       //persistence_channel: Some(persister.get_channel()),
@@ -195,7 +197,7 @@ impl ProgramRunner {
     // Start a channel receiving thread    
     let thread = thread::Builder::new().name(name.clone()).spawn(move || {
       
-      let mut program = Program::new("new program", 100, 1000, outgoing.clone(), program_incoming);
+      let mut program = Program::new("new program", 100, 1000, outgoing.clone(), program_incoming, self.registry);
 
       let program_channel_udpsocket = program.outgoing.clone();
       let program_channel_udpsocket = program.outgoing.clone();
@@ -256,7 +258,7 @@ impl ProgramRunner {
           }
         }
         Err(err) => {
-          //println!("{:?}", err);
+          client_outgoing.send(ClientMessage::Error(err.kind.clone()));
         }
       }
 
@@ -584,7 +586,7 @@ impl ProgramRunner {
                     }
                   }
                   Err(err) => {
-                    //println!("{:?}", err);
+                    client_outgoing.send(ClientMessage::Error(err.kind.clone()));
                   }
                 }
               }
