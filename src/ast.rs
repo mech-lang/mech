@@ -391,6 +391,24 @@ impl Ast {
         }
         compiled.push(AstNode::TableDefine{children});
       },
+      ParserNode::FollowedBy{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<AstNode> = Vec::new();
+        for node in result {
+          match node {
+            AstNode::Token{..} => (),
+            AstNode::SelectData{..} => {
+              children.push(AstNode::Expression{
+                children: vec![AstNode::AnonymousTableDefine{
+                  children: vec![AstNode::TableRow{
+                    children: vec![AstNode::TableColumn{
+                      children: vec![node]}]}]}]});
+            },
+            _ => children.push(node),
+          }
+        }
+        compiled.push(AstNode::FollowedBy{children});
+      },
       ParserNode::TableSelect{children} => {
         let result = self.compile_nodes(children);
         let mut children: Vec<AstNode> = Vec::new();

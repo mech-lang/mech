@@ -1258,7 +1258,7 @@ fn flatten_operator(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Null))
 }
 
-// whenever_oeprator ::= "~" ;
+// whenever_operator ::= "~" ;
 fn whenever_operator(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = tag("~")(input)?;
   Ok((input, ParserNode::Null))
@@ -1274,6 +1274,35 @@ fn until_operator(input: ParseString) -> ParseResult<ParserNode> {
 fn wait_operator(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = tag("|~")(input)?;
   Ok((input, ParserNode::Null))
+}
+
+// followed_by_operator ::= "~>" ;
+fn followed_by_operator(input: ParseString) -> ParseResult<ParserNode> {
+  let (input, _) = tag("~>")(input)?;
+  Ok((input, ParserNode::Null))
+}
+
+// followed_by ::= table, kind_annotation?, <!stmt_operator>, space*, equal, <space+>, <expression>, space*, <followed_by_operator>, space*, <expression> ;
+fn followed_by(input: ParseString) -> ParseResult<ParserNode> {
+  let msg1 = "Expect spaces around operator";
+  let msg2 = "Expect expression";
+  let mut children = vec![];
+  let (input, table) = table(input)?;
+  children.push(table);
+  let (input, kind_id) = opt(kind_annotation)(input)?;
+  if let Some(kind_id) = kind_id { children.push(kind_id); }
+  let (input, _) = labelr!(null(is_not(stmt_operator)), skip_nil, msg1)(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, _) = equal(input)?;
+  let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
+  let (input, nexpression) = label!(expression, msg2)(input)?;
+  children.push(nexpression);
+  let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
+  let (input, _) = followed_by_operator(input)?;
+  let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
+  let (input, nexpression) = label!(expression, msg2)(input)?;
+  children.push(nexpression);
+  Ok((input, ParserNode::FollowedBy{children}))
 }
 
 // whenever_data ::= whenever_operator, <space>, <!space>, <variable_define | expression | data> ;
@@ -1309,11 +1338,11 @@ fn until_data(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Until{children: vec![watch]}))
 }
 
-// statement ::= (table_define | variable_define | split_data  | flatten_data | whenever_data | wait_data |
-// >>             until_data   | set_data        | update_data | add_row      | comment ), space*, <newline+> ;
+// statement ::= (followed_by  | table_define | variable_define | split_data  | flatten_data | whenever_data | wait_data |
+// >>             until_data   | set_data     | update_data     | add_row     | comment ), space*, <newline+> ;
 fn statement(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect newline to terminate statement";
-  let (input, statement) = alt((table_define, variable_define, split_data, flatten_data, whenever_data, wait_data, until_data, set_data, update_data, add_row, comment))(input)?;
+  let (input, statement) = alt((followed_by, table_define, variable_define, split_data, flatten_data, whenever_data, wait_data, until_data, set_data, update_data, add_row, comment))(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, _) = label!(many1(newline), msg)(input)?;
   Ok((input, ParserNode::Statement{children: vec![statement]}))
