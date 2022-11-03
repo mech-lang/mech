@@ -167,7 +167,7 @@ impl<'a> nom::InputLength for ParseString<'a> {
 }
 
 /// The part of error context that's independent to its cause location.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct ParseErrorDetail {
   message: &'static str,
   annotation_rngs: Vec<ParseStringRange>,
@@ -2006,7 +2006,15 @@ fn program(input: ParseString) -> ParseResult<ParserNode> {
 // parse_mech_fragment ::= statement ;
 fn parse_mech_fragment(input: ParseString) -> ParseResult<ParserNode> {
   let (input, statement) = statement(input)?;
-  Ok((input, ParserNode::Root { children:  vec![statement] }))
+  Ok((input, ParserNode::Root { children:  vec![
+    ParserNode::Program { children:  vec![
+      ParserNode::Body { children:  vec![
+        ParserNode::Section { children:  vec![
+          statement
+        ]} 
+      ]}
+    ]}
+  ]}))
 }
 
 // parse_mech ::= program | statement ;
@@ -2410,11 +2418,12 @@ pub fn parse_fragment(text: &str) -> Result<ParserNode, MechError> {
     let e = ParseError::new(remaining, "Inputs since here are not parsed");
     error_log.push((e.cause_range, e.error_detail));
   }
-  
+
   // Construct result
   if error_log.is_empty() {
     Ok(result_node)
   } else {
+    println!("{:?}", error_log);
     let report = error_log.into_iter().map(|e| ParserErrorContext {
       cause_rng: e.0,
       err_message: String::from(e.1.message),
