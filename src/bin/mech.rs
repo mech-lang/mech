@@ -503,14 +503,16 @@ async fn main() -> Result<(), MechError> {
     None
   };
 
-    let help_message = r#"
+  let help_message = r#"
 Available commands are: 
 
+core    - prints info about a given Mech core
+clear   - reset a given Mech core
 help    - displays this message
 quit    - quits this REPL
-core    - prints info about the current mech core
-runtime - prints info about the runtime attached to the current core
-clear   - reset the current core
+save    - save the state of a core to disk
+pause   - pause program execution
+resume  - resume program execution
 "#;
 
   let mut stdo = stdout();
@@ -644,6 +646,10 @@ clear   - reset the current core
           ReplCommand::Quit => {
             println!("Quit");
             break 'REPL;
+          },
+          ReplCommand::SaveCore(core_id) => {
+            println!("Save");
+            mech_client.send(RunLoopMessage::DumpCore(core_id));
           },
           ReplCommand::Table(id) => {
             println!("Table {:?}", id);
