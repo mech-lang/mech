@@ -22,6 +22,7 @@ pub enum ReplCommand {
   Pause,
   Resume,
   Stop,
+  Save,
   PrintCore(Option<u64>),
   Clear,
   Table(u64),
@@ -64,6 +65,11 @@ fn quit(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   Ok((input, ReplCommand::Quit))
 }
 
+fn save(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
+  let (input, _) = tag("save")(input)?;
+  Ok((input, ReplCommand::Save))
+}
+
 fn resume(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   let (input, _) = tag("resume")(input)?;
   Ok((input, ReplCommand::Resume))
@@ -81,7 +87,7 @@ fn help(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
 
 fn command(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   let (input, _) = tag(":")(input)?;
-  let (input, command) = alt((quit, help, pause, resume, core, clear))(input)?;
+  let (input, command) = alt((quit, help, pause, resume, core, clear, save))(input)?;
   Ok((input, command))
 }
 
