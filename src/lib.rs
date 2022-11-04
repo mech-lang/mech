@@ -76,6 +76,7 @@ pub enum RunLoopMessage {
   String((String, Option<u32>)),
   Exit(i32),
   PrintCore(Option<u64>),
+  DumpCore(u64),
   PrintTable(u64),
   PrintRuntime,
   Listening((u64,(TableId,RegisterIndex,RegisterIndex))),
