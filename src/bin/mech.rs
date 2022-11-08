@@ -651,10 +651,6 @@ resume  - resume program execution
             println!("Save");
             mech_client.send(RunLoopMessage::DumpCore(core_id));
           },
-          ReplCommand::Table(id) => {
-            println!("Table {:?}", id);
-            //mech_client.send(RunLoopMessage::Table(id));
-          },
           ReplCommand::Clear => {
             println!("Clear");
             mech_client.send(RunLoopMessage::Clear);
