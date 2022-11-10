@@ -34,5 +34,13 @@
                 "path": "./syntaxes/mech.tmLanguage.json"
             }
         ]
+    },
+    "dependencies": {
+        "vscode-languageclient": "^7.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "^18.11.9",
+        "@types/vscode": "^1.63.0",
+        "@vscode/test-electron": "^2.1.2"
     }
 }
