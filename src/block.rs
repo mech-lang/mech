@@ -106,6 +106,7 @@ pub enum BlockState {
 #[derive(Clone)]
 pub struct Block {
   pub id: BlockId,
+  pub ast: nodes::AstNode,
   pub state: BlockState,
   pub tables: Database,
   pub plan: Plan,
@@ -129,6 +130,7 @@ impl Block {
   pub fn new() -> Block {
     Block {
       id: 0,
+      ast: nodes::AstNode::Null,
       state: BlockState::New,
       tables: Database::new(),
       plan: Plan::new(),
@@ -942,6 +944,9 @@ impl fmt::Debug for Block {
     block_drawing.add_title("🧊","BLOCK");
     block_drawing.add_line(format!("id: {}", humanize(&self.id)));
     block_drawing.add_line(format!("state: {:?}", &self.state));
+    block_drawing.add_title("🌳","Ast");
+    block_drawing.add_line(format!("{:?}", &self.ast));
+
     block_drawing.add_title("⚙️",&format!("triggers ({})",self.triggers.len()));
     if self.triggers.len() > 0 {
       for (table,row,col) in &self.triggers {

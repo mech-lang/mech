@@ -1,6 +1,6 @@
 use crate::*;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum AstNode {
   Root                    { children: Vec<AstNode> },
   Fragment                { children: Vec<AstNode> },
