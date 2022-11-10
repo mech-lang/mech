@@ -22,6 +22,7 @@ pub enum ReplCommand {
   Pause,
   Resume,
   Stop,
+  SaveCore(u64),
   PrintCore(Option<u64>),
   Clear,
   Table(u64),
@@ -59,6 +60,17 @@ fn core(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   Ok((input, ReplCommand::PrintCore(core_id)))
 }
 
+fn save(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
+  let (input, _) = tag("save")(input)?;
+  let (input, _) = space0(input)?;
+  let (input, core_id) = opt(digit1)(input)?;
+  let core_id = match core_id {
+    Some(core_id) => core_id.parse::<u64>().unwrap(),
+    None => 0,
+  };
+  Ok((input, ReplCommand::SaveCore(core_id)))
+}
+
 fn quit(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   let (input, _) = alt((tag("quit"),tag("exit")))(input)?;
   Ok((input, ReplCommand::Quit))
@@ -81,7 +93,7 @@ fn help(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
 
 fn command(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   let (input, _) = tag(":")(input)?;
-  let (input, command) = alt((quit, help, pause, resume, core, clear))(input)?;
+  let (input, command) = alt((quit, help, pause, resume, core, clear, save))(input)?;
   Ok((input, command))
 }
 
