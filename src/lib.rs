@@ -92,6 +92,7 @@ pub enum RunLoopMessage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MiniBlock {
   pub id: u64,
+  pub ast: nodes::AstNode,
   pub transformations: Vec<Transformation>,
   pub strings: Vec<(u64, String)>,
   pub number_literals: Vec<(u64, NumberLiteral)>,
@@ -101,6 +102,7 @@ impl MiniBlock {
   pub fn new() -> MiniBlock { 
     MiniBlock {
       id: 0,
+      ast: nodes::AstNode::Null,
       transformations: Vec::with_capacity(1),
       strings: Vec::with_capacity(1),
       number_literals: Vec::with_capacity(1),
@@ -112,6 +114,7 @@ impl MiniBlock {
     for tfms in &miniblock.transformations {
       block.add_tfm(tfms.clone());
     }
+    block.ast = miniblock.ast.clone();
     block
   }
 }
