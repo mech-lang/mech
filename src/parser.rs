@@ -2293,6 +2293,21 @@ pub fn print_err_report(text: &str, report: &ParserErrorReport) {
   println!("{}", msg);
 }
 
+/// Temporary (hopefully) function for langserver.
+pub fn get_err_locations(
+  text: &str, report: &ParserErrorReport
+) -> Vec<((usize, usize), (usize, usize))> {
+  let tf = TextFormatter::new(text);
+  let mut result = vec![];
+  for err in report {
+    result.push((
+      tf.get_location_by_index(err.cause_rng.0),
+      tf.get_location_by_index(err.cause_rng.1 - 1),
+    ));
+  }
+  result
+}
+
 // ## Parser interfaces
 
 fn get_graphemes(text: &str) -> Vec<&str> {
