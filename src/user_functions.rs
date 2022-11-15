@@ -1,5 +1,8 @@
 use crate::*;
 
+#[cfg(feature = "stdlib")]
+use crate::function::table::*;
+
 use hashbrown::{HashSet, HashMap};
 
 // # User-defined Mech Functions
