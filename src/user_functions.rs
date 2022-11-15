@@ -1,5 +1,4 @@
 use crate::*;
-use crate::function::table::*;
 
 use hashbrown::{HashSet, HashMap};
 
