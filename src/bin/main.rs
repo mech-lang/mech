@@ -3,7 +3,6 @@ use mech_syntax::ast::Ast;
 use mech_syntax::compiler::Compiler;
 use mech_core::*;
 
-use std::cell::RefCell;
 use std::rc::Rc;
 
 use std::fs;
