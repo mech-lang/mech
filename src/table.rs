@@ -673,11 +673,11 @@ macro_rules! collect_columns {
   )
 }
 
-type TableIx = usize;
-type Alias = u64;
+pub type TableIx = usize;
+pub type Alias = u64;
 
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct AliasMap {
   capacity: usize,
   ix_to_alias: Vec<Alias>,  
