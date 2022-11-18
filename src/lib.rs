@@ -11,9 +11,11 @@ extern crate core as rust_core;
 
 use rust_core::fmt;
 use std::sync::Arc;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 use mech_core::*;
 use crossbeam_channel::Sender;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 // ## Client Message
 
@@ -87,6 +89,48 @@ pub enum RunLoopMessage {
   Blocks(Vec<MiniBlock>),
   RemoteCoreConnect(MechSocket),
   RemoteCoreDisconnect(u64),
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MiniTable {
+  pub id: u64,     
+  pub dynamic: bool,                      
+  pub rows: usize,                       
+  pub cols: usize,                       
+  pub col_kinds: Vec<ValueKind>,                 
+  pub col_map: (u64,Vec<Alias>,Vec<(Alias,TableIx)>),  
+  pub row_map: (u64,Vec<Alias>,Vec<(Alias,TableIx)>),
+  pub data: Vec<Vec<Value>>,
+  pub dictionary: Vec<(u64,String)>,
+}
+
+fn minify_table(table: &Table) -> MiniTable {
+
+  MiniTable {
+    id: table.id,
+    dynamic: table.dynamic,
+    rows: table.rows,
+    cols: table.cols,
+    col_kinds: table.col_kinds.clone(),
+  }
+
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MiniCore {
+  //pub sections: Vec<HashMap<BlockId,Rc<RefCell<Block>>>>,
+  pub blocks: Vec<MiniBlock>,
+  //unsatisfied_blocks: HashMap<BlockId,Rc<RefCell<Block>>>,
+  database: Vec<MiniTable>,
+  //pub functions: Rc<RefCell<Functions>>,
+  //pub user_functions: Rc<RefCell<HashMap<u64,UserFunction>>>,
+  //pub required_functions: HashSet<u64>,
+  //pub errors: HashMap<MechErrorKind,Vec<Rc<RefCell<Block>>>>,
+  //pub input: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
+  //pub output: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
+  //pub defined_tables: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
+  //pub schedule: Schedule,
+  //pub dictionary: StringDictionary,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
