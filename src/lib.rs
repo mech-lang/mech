@@ -98,10 +98,10 @@ pub struct MiniTable {
   pub rows: usize,                       
   pub cols: usize,                       
   pub col_kinds: Vec<ValueKind>,                 
-  pub col_map: (u64,Vec<Alias>,Vec<(Alias,TableIx)>),  
-  pub row_map: (u64,Vec<Alias>,Vec<(Alias,TableIx)>),
-  pub data: Vec<Vec<Value>>,
-  pub dictionary: Vec<(u64,String)>,
+  //pub col_map: (u64,Vec<Alias>,Vec<(Alias,TableIx)>),  
+  //pub row_map: (u64,Vec<Alias>,Vec<(Alias,TableIx)>),
+  //pub data: Vec<Vec<Value>>,
+  //pub dictionary: Vec<(u64,String)>,
 }
 
 fn minify_table(table: &Table) -> MiniTable {
