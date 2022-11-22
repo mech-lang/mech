@@ -4,37 +4,37 @@ use std::sync::Mutex;
 
 use tower_lsp::jsonrpc;
 use tower_lsp::lsp_types::*;
-use tower_lsp::{Client, LanguageServer, LspService, Server};
-use tokio::net::TcpListener;
+use tower_lsp::{Client, LanguageServer};
 
-use mech_syntax::parser;
-use mech_syntax::ast::Ast;
 use mech_core::*;
 use mech_core::nodes::*;
+
+use crate::parser;
+use crate::ast::Ast;
 
 ///
 /// TODO
 ///
 /// Current:
 ///
-/// Hover
+/// Hover  -- ok
 /// Goto definition
-///
-///
-/// Running value
-/// Debuger
 ///
 /// Run mech instance
 ///
 ///
-///   1. Integrate langserver into `mech` executable
-///   2. Let parser track location information
-///   3. (Include location information in parser nodes)?
+///   1. Integrate langserver into `mech` executable -- ok
+///   2. Let parser track location information -- wait
+///   3. (Include location information in parser nodes)? -- wait
 ///
 ///
 /// Long run:
 ///   1. Implement syntax highlighting with lsp
 ///   2. Use delta to improve server's performance
+/// 
+/// Long term goals:
+///   Running value
+///   Debuger
 ///
 
 fn collect_global_table_symbols(ast_node: &AstNode, set: &mut HashSet<String>) {
@@ -66,11 +66,6 @@ fn collect_global_table_symbols(ast_node: &AstNode, set: &mut HashSet<String>) {
   }
 }
 
-struct MechLangBackend {
-  client: Client,
-  shared_state: Mutex<RefCell<SharedState>>,
-}
-
 struct SharedState {
   global_table_symbols: Vec<String>,
 }
@@ -82,8 +77,13 @@ impl SharedState {
   }
 }
 
-impl MechLangBackend {
-  fn new(client: Client) -> Self {
+pub struct Backend {
+  client: Client,
+  shared_state: Mutex<RefCell<SharedState>>,
+}
+
+impl Backend {
+  pub fn new(client: Client) -> Self {
     Self {
       client,
       shared_state: Mutex::new(RefCell::new(SharedState {
@@ -94,7 +94,7 @@ impl MechLangBackend {
 }
 
 #[tower_lsp::async_trait]
-impl LanguageServer for MechLangBackend {
+impl LanguageServer for Backend {
   async fn initialize(&self, _: InitializeParams) -> jsonrpc::Result<InitializeResult> {
     println!("[INITIALIZE]");
     Ok(InitializeResult {
@@ -198,24 +198,4 @@ impl LanguageServer for MechLangBackend {
       range: None
     }))
   }
-}
-
-#[tokio::main]
-async fn main() -> std::io::Result<()> {
-  let listener = TcpListener::bind("127.0.0.1:4041").await?;
-
-  loop {
-    println!("Waiting for client...");
-    match listener.accept().await {
-      Ok((conn_sk, client_addr)) => {
-        println!("Incomming client: {:?}", client_addr);
-        let (service, client_sk) = LspService::new(|client| MechLangBackend::new(client));
-        let (conn_sk_in, conn_sk_out) = conn_sk.into_split();
-        Server::new(conn_sk_in, conn_sk_out, client_sk).serve(service).await;
-      },
-      Err(e) => println!("couldn't get client: {:?}", e),
-    }
-  }
-
-  Ok(())
 }
