@@ -54,11 +54,18 @@ fn collect_global_table_symbols(ast_node: &AstNode, set: &mut HashSet<String>) {
     AstNode::Root{children} |
     AstNode::Block{children} |
     AstNode::Statement{children} |
-    AstNode::Fragment{children} => {
+    AstNode::Fragment{children} | 
+    AstNode::Transformation{children}=> {
       for node in children {
         collect_global_table_symbols(node, set);
       }
     },
+    AstNode::Program{title, children} |
+    AstNode::Section{title, children} => {
+      for node in children {
+        collect_global_table_symbols(node, set);
+      }
+    }
     _ => (),
   }
 }
@@ -134,7 +141,7 @@ impl LanguageServer for MechLangBackend {
         println!("{:?}", err_locs);
         for (i, err) in report.iter().enumerate() {
           let range = Range {
-            start: Position {
+            start: Position client_addr{
               line: ((err_locs[i].0).0 - 1) as u32,
               character: ((err_locs[i].0).1 - 1) as u32,
             },
