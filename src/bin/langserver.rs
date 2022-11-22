@@ -42,7 +42,7 @@ fn collect_global_table_symbols(ast_node: &AstNode, set: &mut HashSet<String>) {
     AstNode::TableDefine{children} => {
       for node in children {
         match node {
-          AstNode::Table{name, id} => {
+          AstNode::Table{name, id: _} => {
             let table_name = name.into_iter().collect();
             set.insert(table_name);
             break;
@@ -55,17 +55,13 @@ fn collect_global_table_symbols(ast_node: &AstNode, set: &mut HashSet<String>) {
     AstNode::Block{children} |
     AstNode::Statement{children} |
     AstNode::Fragment{children} | 
-    AstNode::Transformation{children}=> {
+    AstNode::Program{title: _, children} |
+    AstNode::Section{title: _, children} |
+    AstNode::Transformation{children} => {
       for node in children {
         collect_global_table_symbols(node, set);
       }
     },
-    AstNode::Program{title, children} |
-    AstNode::Section{title, children} => {
-      for node in children {
-        collect_global_table_symbols(node, set);
-      }
-    }
     _ => (),
   }
 }
@@ -141,7 +137,7 @@ impl LanguageServer for MechLangBackend {
         println!("{:?}", err_locs);
         for (i, err) in report.iter().enumerate() {
           let range = Range {
-            start: Position client_addr{
+            start: Position {
               line: ((err_locs[i].0).0 - 1) as u32,
               character: ((err_locs[i].0).1 - 1) as u32,
             },
