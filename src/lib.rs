@@ -98,39 +98,81 @@ pub struct MiniTable {
   pub rows: usize,                       
   pub cols: usize,                       
   pub col_kinds: Vec<ValueKind>,                 
-  //pub col_map: (u64,Vec<Alias>,Vec<(Alias,TableIx)>),  
-  //pub row_map: (u64,Vec<Alias>,Vec<(Alias,TableIx)>),
-  //pub data: Vec<Vec<Value>>,
-  //pub dictionary: Vec<(u64,String)>,
+  pub col_map: (u64,Vec<Alias>,Vec<(Alias,TableIx)>),  
+  pub row_map: (u64,Vec<Alias>,Vec<(Alias,TableIx)>),
+  pub data: Vec<Vec<Value>>,
+  pub dictionary: Vec<(u64,String)>,
 }
 
-fn minify_table(table: &Table) -> MiniTable {
+impl MiniTable {
 
-  MiniTable {
-    id: table.id,
-    dynamic: table.dynamic,
-    rows: table.rows,
-    cols: table.cols,
-    col_kinds: table.col_kinds.clone(),
+  fn minify_table(table: &Table) -> MiniTable {
+    MiniTable {
+      id: table.id,
+      dynamic: table.dynamic,
+      rows: table.rows,
+      cols: table.cols,
+      col_kinds: table.col_kinds.clone(),
+      col_map: (0,vec![],vec![]),
+      row_map: (0,vec![],vec![]),
+      data: vec![],
+      dictionary: vec![],
+    }
   }
 
+  fn maximize_table(minitable: &MiniTable) -> Table {
+    Table {
+      id: minitable.id,
+      dynamic: minitable.dynamic,
+      rows: minitable.rows,
+      cols: minitable.cols,                     
+      col_kinds: Vec::with_capacity(minitable.cols),
+      col_map: AliasMap::new(minitable.cols),
+      row_map: AliasMap::new(minitable.rows),
+      data: Vec::with_capacity(minitable.cols),
+      dictionary: Rc::new(RefCell::new(HashMap::new())),
+    }
+  }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MiniCore {
   //pub sections: Vec<HashMap<BlockId,Rc<RefCell<Block>>>>,
   pub blocks: Vec<MiniBlock>,
-  //unsatisfied_blocks: HashMap<BlockId,Rc<RefCell<Block>>>,
-  database: Vec<MiniTable>,
+  pub unsatisfied_blocks: Vec<(BlockId,BlockId)>,
+  pub database: Vec<MiniTable>,
   //pub functions: Rc<RefCell<Functions>>,
   //pub user_functions: Rc<RefCell<HashMap<u64,UserFunction>>>,
-  //pub required_functions: HashSet<u64>,
-  //pub errors: HashMap<MechErrorKind,Vec<Rc<RefCell<Block>>>>,
-  //pub input: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
-  //pub output: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
-  //pub defined_tables: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
+  pub required_functions: Vec<u64>,
+  pub errors: Vec<(MechErrorKind,Vec<BlockId>)>,
+  pub input: Vec<(TableId,RegisterIndex,RegisterIndex)>,
+  pub output: Vec<(TableId,RegisterIndex,RegisterIndex)>,
+  pub defined_tables: Vec<(TableId,RegisterIndex,RegisterIndex)>,
   //pub schedule: Schedule,
-  //pub dictionary: StringDictionary,
+  pub dictionary: Vec<(u64,String)>,
+}
+
+impl MiniCore {
+
+  fn minify_core(core: &Core) -> MiniCore {
+    MiniCore {
+      blocks: vec![],
+      unsatisfied_blocks: vec![],
+      database: vec![],
+      required_functions: vec![],
+      errors: vec![],
+      input: vec![],
+      output: vec![],
+      defined_tables: vec![],
+      dictionary: vec![],
+    }
+  }
+
+  fn maximize_core(minicore: &MiniCore) -> Core {
+    let mut core = Core::new();
+    let blocks: Vec<Block> = minicore.blocks.iter().map(|b| MiniBlock::maximize_block(b)).collect();
+    core
+  }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
