@@ -128,6 +128,7 @@ impl Compiler {
             for tfm in tfms {
               block.add_tfm(tfm);
             }
+            block.ast = node.clone();
             elements.push(SectionElement::Block(block));
           }
           AstNode::UserFunction{children} => {
