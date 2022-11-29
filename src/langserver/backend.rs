@@ -44,7 +44,7 @@ fn collect_global_table_symbols(ast_node: &AstNode, set: &mut HashSet<String>) {
     AstNode::TableDefine{children} => {
       for node in children {
         match node {
-          AstNode::Table{name, id: _} => {
+          AstNode::Table{name, id: _, ..} => {
             let table_name = name.into_iter().collect();
             set.insert(table_name);
             break;
@@ -57,8 +57,8 @@ fn collect_global_table_symbols(ast_node: &AstNode, set: &mut HashSet<String>) {
     AstNode::Block{children} |
     AstNode::Statement{children} |
     AstNode::Fragment{children} | 
-    AstNode::Program{title: _, children} |
-    AstNode::Section{title: _, children} |
+    AstNode::Program{children, ..} |
+    AstNode::Section{children, ..} |
     AstNode::Transformation{children} => {
       for node in children {
         collect_global_table_symbols(node, set);

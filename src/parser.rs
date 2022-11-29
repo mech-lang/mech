@@ -36,6 +36,31 @@ use colored::*;
 
 // ## Parser utilities
 
+fn grapheme_is_newline(grapheme: &str) -> bool {
+  for ch in grapheme.chars() {
+    if ch == '\n' {
+      return true;
+    }
+  }
+  false
+}
+
+fn grapheme_width(grapheme: &str) -> u32 {
+  let mut width = 0;
+  for ch in grapheme.chars() {
+    if ch.is_ascii() {
+      if !ch.is_ascii_control() || ch == '\t' {
+        width += 1;
+      }  // else width += 0
+    } else if ch.is_alphanumeric() {  // TODO: unicode width?
+      width += 1;
+    } else {
+      return 1;
+    }
+  }
+  width
+}
+
 /// Range to a substring from ParseString, [a, b).
 type ParseStringRange = (usize, usize);
 
@@ -50,6 +75,8 @@ struct ParseString<'a> {
   graphemes: &'a Vec<&'a str>,
   error_log: Vec<(ParseStringRange, ParseErrorDetail)>,
   cursor: usize,
+  curr_row: u32,
+  curr_col: u32,
 }
 
 impl<'a> ParseString<'a> {
@@ -59,22 +86,29 @@ impl<'a> ParseString<'a> {
       graphemes,
       error_log: vec![],
       cursor: 0,
+      curr_row: 0,
+      curr_col: 0,
     }
   }
 
   /// Peek at current location and try to match a tag
-  fn match_tag(&self, tag: &str) -> (bool, usize) {
+  fn match_tag(&self, tag: &str) -> (bool, usize, u32) {
     let gs = tag.graphemes(true).collect::<Vec<&str>>();
     let gs_len = gs.len();
+    let mut lines = 0;
     if self.len() < gs_len {
-      return (false, 0);
+      return (false, 0, 0);
     }
     for i in 0..gs_len {
-      if self.graphemes[self.cursor + i] != gs[i] {
-        return (false, 0);
+      let ch = self.graphemes[self.cursor + i];
+      if ch != gs[i] {
+        return (false, 0, 0);
+      }
+      if grapheme_is_newline(ch) {
+        lines += 1;
       }
     }
-    (true, gs_len)
+    (true, gs_len, lines)
   }
 
   /// Mutate self by consuming one grapheme
@@ -84,14 +118,25 @@ impl<'a> ParseString<'a> {
     }
     let g = self.graphemes[self.cursor];
     self.cursor += 1;
+    self.curr_col += 1;
+    if grapheme_is_newline(g) {
+      self.curr_row += 1;
+      self.curr_col = 0;
+    }
     Some(g.to_string())
   }
 
   /// If current location matches the tag, consume the matched string.
   fn consume_tag(&mut self, tag: &str) -> Option<String> {
-    let (matched, gs_len) = self.match_tag(tag);
+    let (matched, gs_len, lines) = self.match_tag(tag);
     if matched {
       self.cursor += gs_len;
+      if lines == 0 {
+        self.curr_col += gs_len as u32;
+      } else {
+        self.curr_col = 0;
+        self.curr_row += lines;
+      }
       Some(tag.to_string())
     } else {
       None
@@ -107,6 +152,7 @@ impl<'a> ParseString<'a> {
     if let Some(c) = g.chars().next() {
       if !c.is_ascii() && !c.is_alphabetic() {
         self.cursor += 1;
+        self.curr_col += 1;
         return Some(g.to_string());
       }
     }
@@ -122,6 +168,7 @@ impl<'a> ParseString<'a> {
     if let Some(c) = g.chars().next() {
       if c.is_alphabetic() {
         self.cursor += 1;
+        self.curr_col += 1;
         return Some(g.to_string());
       }
     }
@@ -137,10 +184,19 @@ impl<'a> ParseString<'a> {
     if let Some(c) = g.chars().next() {
       if c.is_numeric() {
         self.cursor += 1;
+        self.curr_col += 1;
         return Some(g.to_string());
       }
     }
     None
+  }
+
+  /// Get location of the cursor
+  fn loc(&self) -> SourceLocation {
+    SourceLocation {
+      row: self.curr_row,
+      col: self.curr_col,
+    }
   }
 
   /// Get remaining (unparsed) length
@@ -470,8 +526,11 @@ fn any(mut input: ParseString) -> ParseResult<String> {
 macro_rules! leaf {
   ($name:ident, $byte:expr, $token:expr) => (
     fn $name(input: ParseString) -> ParseResult<ParserNode> {
+      let start = input.loc();
       let (input, _) = tag($byte)(input)?;
-      Ok((input, ParserNode::Token{token: $token, chars: $byte.chars().collect::<Vec<char>>()}))
+      let end = input.loc();
+      let src_range = SourceRange { start, end };
+      Ok((input, ParserNode::Token{token: $token, chars: $byte.chars().collect::<Vec<char>>(), src_range}))
     }
   )
 }
@@ -512,17 +571,31 @@ leaf!{new_line_char, "\n", Token::Newline}
 leaf!{carriage_return, "\r", Token::CarriageReturn}
 
 // emoji ::= emoji_grapheme+ ;
-fn emoji(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, matching) = many1(emoji_grapheme)(input)?;
-  let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: Token::Emoji, chars: b.chars().collect::<Vec<char>>()}).collect();
-  Ok((input, ParserNode::Emoji{children: chars}))
+fn emoji<'a>(input: ParseString<'a>) -> ParseResult<ParserNode> {
+  let emoji_token = |input: ParseString<'a>| {
+    let start = input.loc();
+    let (input, g) = emoji_grapheme(input)?;
+    let end = input.loc();
+    let src_range = SourceRange { start, end };
+    Ok((input, ParserNode::Token{token: Token::Emoji, chars: g.chars().collect::<Vec<char>>(), src_range}))
+  };
+  let (input, tokens) = many1(emoji_token)(input)?;
+  // let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: Token::Emoji, chars: b.chars().collect::<Vec<char>>()}).collect();
+  Ok((input, ParserNode::Emoji{children: tokens}))
 }
 
 // word ::= alpha+ ;
-fn word(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, matching) = many1(alpha)(input)?;
-  let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: Token::Alpha, chars: b.chars().collect::<Vec<char>>()}).collect();
-  Ok((input, ParserNode::Word{children: chars}))
+fn word<'a>(input: ParseString<'a>) -> ParseResult<ParserNode> {
+  let alpha_token = |input: ParseString<'a>| {
+    let start = input.loc();
+    let (input, g) = alpha(input)?;
+    let end = input.loc();
+    let src_range = SourceRange { start, end };
+    Ok((input, ParserNode::Token{token: Token::Alpha, chars: g.chars().collect::<Vec<char>>(), src_range}))
+  };
+  let (input, tokens) = many1(alpha_token)(input)?;
+  // let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: Token::Alpha, chars: b.chars().collect::<Vec<char>>()}).collect();
+  Ok((input, ParserNode::Word{children: tokens}))
 }
 
 // digit1 ::= digit+ ;
@@ -557,10 +630,17 @@ fn oct_digit(input: ParseString) -> ParseResult<String> {
 }
 
 // number ::= digit1 ;
-fn number(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, matching) = digit1(input)?;
-  let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: Token::Digit, chars: b.chars().collect::<Vec<char>>()}).collect();
-  Ok((input, ParserNode::Number{children: chars}))
+fn number<'a>(input: ParseString<'a>) -> ParseResult<ParserNode> {
+  let digit_token = |input: ParseString<'a>| {
+    let start = input.loc();
+    let (input, g) = digit(input)?;
+    let end = input.loc();
+    let src_range = SourceRange { start, end };
+    Ok((input, ParserNode::Token{token: Token::Digit, chars: g.chars().collect::<Vec<char>>(), src_range}))
+  };
+  let (input, tokens) = many1(digit_token)(input)?;
+  // let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: Token::Digit, chars: b.chars().collect::<Vec<char>>()}).collect();
+  Ok((input, ParserNode::Number{children: tokens}))
 }
 
 // punctuation ::= period | exclamation | question | comma | colon | semicolon | dash | apostrophe | left_parenthesis | right_parenthesis | left_angle | right_angle | left_brace | right_brace | left_bracket | right_bracket ;
@@ -708,6 +788,7 @@ fn number_literal(input: ParseString) -> ParseResult<ParserNode> {
 
 // float_literal ::= "."?, digit1, "."?, digit0 ;
 fn float_literal(input: ParseString) -> ParseResult<ParserNode> {
+  let start = input.loc();
   let (input, p1) = opt(tag("."))(input)?;
   let (input, p2) = digit1(input)?;
   let (input, p3) = opt(tag("."))(input)?;
@@ -723,39 +804,53 @@ fn float_literal(input: ParseString) -> ParseResult<ParserNode> {
   }
   let mut digits = p4.iter().flat_map(|c| c.chars()).collect::<Vec<char>>();
   whole.append(&mut digits);
-  Ok((input, ParserNode::FloatLiteral{chars: whole}))
+  let end = input.loc();
+  let src_range = SourceRange { start, end };
+  Ok((input, ParserNode::FloatLiteral{chars: whole, src_range}))
 }
 
 // decimal_literal ::= "0d", <digit1> ;
 fn decimal_literal(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect decimal digits after \"0d\"";
+  let start = input.loc();
   let (input, _) = tag("0d")(input)?;
   let (input, chars) = label!(digit1, msg)(input)?;
-  Ok((input, ParserNode::DecimalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
+  let end = input.loc();
+  let src_range = SourceRange { start, end };
+  Ok((input, ParserNode::DecimalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect(), src_range}))
 }
 
 // hexadecimal_literal ::= "0x", <hex_digit+> ;
 fn hexadecimal_literal(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect hexadecimal digits after \"0x\"";
+  let start = input.loc();
   let (input, _) = tag("0x")(input)?;
   let (input, chars) = label!(many1(hex_digit), msg)(input)?;
-  Ok((input, ParserNode::HexadecimalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
+  let end = input.loc();
+  let src_range = SourceRange { start, end };
+  Ok((input, ParserNode::HexadecimalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect(), src_range}))
 }
 
 // octal_literal ::= "0o", <oct_digit+> ;
 fn octal_literal(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect octal digits after \"0o\"";
+  let start = input.loc();
   let (input, _) = tag("0o")(input)?;
   let (input, chars) = label!(many1(oct_digit), msg)(input)?;
-  Ok((input, ParserNode::OctalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
+  let end = input.loc();
+  let src_range = SourceRange { start, end };
+  Ok((input, ParserNode::OctalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect(), src_range}))
 }
 
 // binary_literal ::= "0b", <bin_digit+> ;
 fn binary_literal(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect binary digits after \"0b\"";
+  let start = input.loc();
   let (input, _) = tag("0b")(input)?;
   let (input, chars) = label!(many1(bin_digit), msg)(input)?;
-  Ok((input, ParserNode::BinaryLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
+  let end = input.loc();
+  let src_range = SourceRange { start, end };
+  Ok((input, ParserNode::BinaryLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect(), src_range}))
 }
 
 // value ::= empty | boolean_literal | number_literal | string ;
@@ -2082,9 +2177,9 @@ impl<'a> TextFormatter<'a> {
           width += 1;
         }  // else width += 0
       } else if ch.is_alphanumeric() {  // TODO: unicode width?
-        width += 2;
+        width += 1;
       } else {
-        return 2;
+        return 1;
       }
     }
     width
