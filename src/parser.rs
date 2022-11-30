@@ -40,6 +40,9 @@ use colored::*;
 mod graphemes {
   use unicode_segmentation::UnicodeSegmentation;
 
+  /// Obtain unicode grapheme groups from input source, then make sure
+  /// it ends with newline.  Many functions in the parser assume input
+  /// ends with newline.
   pub fn init_source(text: &str) -> Vec<&str> {
     let mut graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
     if let Some(g) = graphemes.last() {
@@ -101,10 +104,10 @@ struct ParseString<'a> {
   graphemes: &'a Vec<&'a str>,
   /// Error report, a list of (error_location, error_context)
   error_log: Vec<(SourceRange, ParseErrorDetail)>,
-  /// Progress/location information
+  /// Point at the next grapheme to consume
   cursor: usize,
-  curr_row: usize,  // 1-indexed
-  curr_col: usize,  // 1-indexed
+  /// Location of the grapheme pointed by cursor
+  location: SourceLocation,
 }
 
 impl<'a> ParseString<'a> {
@@ -114,8 +117,7 @@ impl<'a> ParseString<'a> {
       graphemes,
       error_log: vec![],
       cursor: 0,
-      curr_row: 1,
-      curr_col: 1,
+      location: SourceLocation { row: 1, col: 1 },
     }
   }
 
@@ -130,25 +132,27 @@ impl<'a> ParseString<'a> {
     }
 
     // Try to match the tag
-    let mut tmp_row = self.curr_row;
-    let mut tmp_col = self.curr_col;
+    let mut tmp_location = self.location;
     for i in 0..gs_len {
-      let g = self.graphemes[self.cursor + i];
+      let c = self.cursor + i;
+      let g = self.graphemes[c];
       if g != gs[i] {
         return None;
       }
+
       if graphemes::is_newline(g) {
-        tmp_row += 1;
-        tmp_col = 1;
+        if !self.is_last_grapheme(c) {
+          tmp_location.row += 1;
+          tmp_location.col = 1;
+        }
       } else {
-        tmp_col += graphemes::width(g);
+        tmp_location.col += graphemes::width(g);
       }
     }
 
     // Tag matched, commit change
     self.cursor += gs_len;
-    self.curr_row = tmp_row;
-    self.curr_col = tmp_col;
+    self.location = tmp_location;
     Some(tag.to_string())
   }
 
@@ -159,12 +163,14 @@ impl<'a> ParseString<'a> {
     }
     let g = self.graphemes[self.cursor];
     if graphemes::is_newline(g) {
-      self.curr_row += 1;
-      self.curr_col = 1;
+      if !self.is_last_grapheme(self.cursor) {
+        self.location.row += 1;
+        self.location.col = 1;
+      }
     } else {
-      self.cursor += 1;
-      self.curr_col += graphemes::width(g);
+      self.location.col += graphemes::width(g);
     }
+    self.cursor += 1;
     Some(g.to_string())
   }
 
@@ -177,7 +183,7 @@ impl<'a> ParseString<'a> {
     let g = self.graphemes[self.cursor];
     if graphemes::is_emoji(g) {
       self.cursor += 1;
-      self.curr_col += graphemes::width(g);
+      self.location.col += graphemes::width(g);
       Some(g.to_string())
     } else {
       None
@@ -192,7 +198,7 @@ impl<'a> ParseString<'a> {
     let g = self.graphemes[self.cursor];
     if graphemes::is_alpha(g) {
       self.cursor += 1;
-      self.curr_col += graphemes::width(g);
+      self.location.col += graphemes::width(g);
       Some(g.to_string())
     } else {
       None
@@ -207,7 +213,7 @@ impl<'a> ParseString<'a> {
     let g = self.graphemes[self.cursor];
     if graphemes::is_numeric(g) {
       self.cursor += 1;
-      self.curr_col += graphemes::width(g);
+      self.location.col += graphemes::width(g);
       Some(g.to_string())
     } else {
       None
@@ -216,18 +222,12 @@ impl<'a> ParseString<'a> {
 
   /// Get cursor's location in source code
   fn loc(&self) -> SourceLocation {
-    SourceLocation {
-      row: self.curr_row,
-      col: self.curr_col,
-    }
+    self.location
   }
 
-  /// Get (cursor + 1)'s location in source code
-  fn next_loc(&self) -> SourceLocation {
-    SourceLocation {
-      row: self.curr_row,
-      col: self.curr_col + 1,
-    }
+  /// Test whether the grapheme pointed by cursor is the last grapheme
+  fn is_last_grapheme(&self, c: usize) -> bool {
+    (self.graphemes.len() - 1 - c) == 0
   }
 
   /// Get remaining (unparsed) length
@@ -262,9 +262,24 @@ struct ParseErrorDetail {
 
 /// The error type for the nom parser, which handles full error context
 /// (location + detail) and ownership of the input ParseString.
+///
+/// Eventually error context will be logged and ownership will be moved out.
 struct ParseError<'a> {
+  /// Cause range is defined as [start, end), where `start` points at the first
+  /// character that's catched by a label, and `end` points at the next 
+  /// character of the character that didn't match.
+  ///
+  /// Example:
+  ///   index:  1234567
+  ///   input:  abcdefg
+  ///   error:   ~~~^
+  ///   range:   |   |
+  ///           [2,  5)
+  ///
   cause_range: SourceRange,
+  /// Hold ownership to the input ParseString
   remaining_input: ParseString<'a>,
+  /// Detailed information about this error
   error_detail: ParseErrorDetail,
 }
 
@@ -273,8 +288,11 @@ impl<'a> ParseError<'a> {
   /// and empty annotations.  Ownership of the input is also passed into this
   /// error object.
   fn new(input: ParseString<'a>, msg: &'static str) -> Self {
+    let start = input.loc();
+    let mut end = start;
+    end.col += 1;
     ParseError {
-      cause_range: SourceRange { start: input.loc(), end: input.next_loc() },
+      cause_range: SourceRange { start, end },
       remaining_input: input,
       error_detail: ParseErrorDetail {
         message: msg,
@@ -618,10 +636,7 @@ fn emoji<'a>(input: ParseString<'a>) -> ParseResult<ParserNode> {
 // word ::= alpha+ ;
 fn word<'a>(input: ParseString<'a>) -> ParseResult<ParserNode> {
   let alpha_token = |input: ParseString<'a>| {
-    let start = input.loc();
-    let (input, g) = alpha(input)?;
-    let end = input.loc();
-    let src_range = SourceRange { start, end };
+    let (input, (g, src_range)) = range(alpha)(input)?;
     Ok((input, ParserNode::Token{token: Token::Alpha, chars: g.chars().collect::<Vec<char>>(), src_range}))
   };
   let (input, tokens) = many1(alpha_token)(input)?;
@@ -663,10 +678,7 @@ fn oct_digit(input: ParseString) -> ParseResult<String> {
 // number ::= digit1 ;
 fn number<'a>(input: ParseString<'a>) -> ParseResult<ParserNode> {
   let digit_token = |input: ParseString<'a>| {
-    let start = input.loc();
-    let (input, g) = digit(input)?;
-    let end = input.loc();
-    let src_range = SourceRange { start, end };
+    let (input, (g, src_range)) = range(digit)(input)?;
     Ok((input, ParserNode::Token{token: Token::Digit, chars: g.chars().collect::<Vec<char>>(), src_range}))
   };
   let (input, tokens) = many1(digit_token)(input)?;
@@ -2278,8 +2290,8 @@ impl<'a> TextFormatter<'a> {
     // the annotations on each line
     // <linenum, Vec<(start_col, rng_len, is_major, is_cause)>>
     let mut range_table: HashMap<usize, Vec<(usize, usize, bool, bool)>> = HashMap::new();
-    for line in &lines_to_print {
-      range_table.insert(*line, vec![]);
+    for linenum in &lines_to_print {
+      range_table.insert(*linenum, vec![]);
     }
     let n = annotation_rngs.len() - 1;  // if i == n, it's the last rng, i.e. the cause rng
     for (i, rng) in annotation_rngs.iter().enumerate() {
@@ -2549,9 +2561,9 @@ mod tests {
   }
 
 /////////////////////////////////////////////////////////////////////////////////
-test_parser!(err_empty_1, "", (2, 1));
-test_parser!(err_empty_2, "\n", (2, 1));
-test_parser!(err_empty_3, "\n\n  \n\n\n", (6, 1));
+test_parser!(err_empty_1, "", (1, 1));
+test_parser!(err_empty_2, "\n", (1, 1));
+test_parser!(err_empty_3, "\n\n  \n\n\n", (5, 1));
 test_parser!(ok_simple_text, "Paragraph text", );
 test_parser!(err_illegal_text, r#"Paragraph (#) text"#, (1, 13));
 
@@ -2803,7 +2815,7 @@ block
 
 Title2
 ===========
-"#, (10, 1));
+"#, (9, 12));
 test_parser!(err_section_recovery_too_many_titles_2, r#"
 Title
 ===========

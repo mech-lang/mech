@@ -1,11 +1,2 @@
 block
-  #PI = 3.14
-  x = math/sin(value: #PI)
-  y = (1 + 2) * 3
-
-block
-  #z = 7
-
-
-
-
+ x
