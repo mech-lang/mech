@@ -5,6 +5,7 @@
 // ## Prelude
 
 use crate::*;
+use crate::nodes::SourceRange;
 
 type Rows = usize;
 type Cols = usize;
@@ -19,9 +20,9 @@ pub type ParserErrorReport = Vec<ParserErrorContext>;
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ParserErrorContext {
-  pub cause_rng: (usize, usize),  // ParseStringRange
+  pub cause_rng: SourceRange,
   pub err_message: String,
-  pub annotation_rngs: Vec<(usize, usize)>,  // Vec<ParseStringRange>
+  pub annotation_rngs: Vec<SourceRange>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]

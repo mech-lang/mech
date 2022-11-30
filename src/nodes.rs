@@ -4,8 +4,8 @@ use std::cmp::Ordering;
 
 #[derive(Clone, Copy, Ord, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SourceLocation {
-  pub row: u32,
-  pub col: u32,
+  pub row: usize,
+  pub col: usize,
 }
 
 impl PartialOrd for SourceLocation {
@@ -34,6 +34,9 @@ pub struct SourceRange {
   pub end:   SourceLocation,
 }
 
+/// Coordinates in SourceRange are 1-indexed, i.e. they directly translate
+/// human's view to line and column numbers.  Having value 0 means the 
+/// range is not initialized.
 impl Default for SourceRange {
   fn default() -> Self {
     SourceRange {
