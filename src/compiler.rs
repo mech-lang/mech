@@ -29,13 +29,13 @@ fn get_sections(nodes: &Vec<AstNode>) -> Vec<Vec<AstNode>> {
       AstNode::Section{children,..} => {
         for child in children {
           match child {
-            AstNode::Block{children} => {
+            AstNode::Block{children, ..} => {
               blocks.push(child.clone());
             }
             AstNode::UserFunction{children} => {
               blocks.push(child.clone());
             }
-            AstNode::Statement{children} => {
+            AstNode::Statement{children, ..} => {
               statements.append(&mut children.clone());
             }
             _ => (),
@@ -54,7 +54,7 @@ fn get_sections(nodes: &Vec<AstNode>) -> Vec<Vec<AstNode>> {
     }
   }
   if statements.len() > 0 {
-    sections.push(vec![AstNode::Block{children: statements}]);
+    sections.push(vec![AstNode::Block{children: statements, src_range: SourceRange::default()}]);
   }
   sections
 }
@@ -82,7 +82,7 @@ fn get_blocks(nodes: &Vec<AstNode>) -> Vec<AstNode> {
     }
   }
   if statements.len() > 0 {
-    blocks.push(AstNode::Block{children: statements});
+    blocks.push(AstNode::Block{children: statements, src_range: SourceRange::default()});
   }
   blocks
 }
@@ -1173,9 +1173,9 @@ impl Compiler {
       AstNode::Section{children, ..} |
       AstNode::Attribute{children} |
       AstNode::Transformation{children} |
-      AstNode::Statement{children} |
+      AstNode::Statement{children, ..} |
       AstNode::Fragment{children} |
-      AstNode::Block{children} |
+      AstNode::Block{children, ..} |
       AstNode::MathExpression{children} |
       AstNode::Expression{children} |
       AstNode::TableRow{children} |

@@ -1468,10 +1468,10 @@ fn until_data(input: ParseString) -> ParseResult<ParserNode> {
 // >>             until_data   | set_data     | update_data     | add_row     | comment ), space*, <newline+> ;
 fn statement(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect newline to terminate statement";
-  let (input, statement) = alt((followed_by, table_define, variable_define, split_data, flatten_data, whenever_data, wait_data, until_data, set_data, update_data, add_row, comment))(input)?;
+  let (input, (statement, src_range)) = range(alt((followed_by, table_define, variable_define, split_data, flatten_data, whenever_data, wait_data, until_data, set_data, update_data, add_row, comment)))(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, _) = label!(many1(newline), msg)(input)?;
-  Ok((input, ParserNode::Statement{children: vec![statement]}))
+  Ok((input, ParserNode::Statement{children: vec![statement], src_range}))
 }
 
 // #### Expressions
@@ -1902,9 +1902,9 @@ fn indented_tfm(input: ParseString) -> ParseResult<ParserNode> {
 
 // block ::= indented_tfm+, whitespace* ;
 fn block(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, transformations) = many1(indented_tfm)(input)?;
+  let (input, (transformations, src_range)) = range(many1(indented_tfm))(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  Ok((input, ParserNode::Block { children: transformations }))
+  Ok((input, ParserNode::Block { children: transformations, src_range }))
 }
 
 // ### Markdown

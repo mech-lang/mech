@@ -54,8 +54,8 @@ fn collect_global_table_symbols(ast_node: &AstNode, set: &mut HashSet<String>) {
       }
     },
     AstNode::Root{children} |
-    AstNode::Block{children} |
-    AstNode::Statement{children} |
+    AstNode::Block{children, ..} |
+    AstNode::Statement{children, ..} |
     AstNode::Fragment{children} | 
     AstNode::Program{children, ..} |
     AstNode::Section{children, ..} |

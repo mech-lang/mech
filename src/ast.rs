@@ -86,7 +86,7 @@ impl Ast {
         }
         compiled.push(AstNode::Section{title: title.clone(), children: children.clone()});
       },
-      ParserNode::Block{children} => compiled.push(AstNode::Block{children: self.compile_nodes(children)}),
+      ParserNode::Block{children, src_range} => compiled.push(AstNode::Block{children: self.compile_nodes(children), src_range: *src_range}),
       ParserNode::Data{children} => {
         let result = self.compile_nodes(children);
         let mut reversed = result.clone();
@@ -140,7 +140,7 @@ impl Ast {
           }
         }
       },
-      ParserNode::Statement{children} => compiled.push(AstNode::Statement{children: self.compile_nodes(children)}),
+      ParserNode::Statement{children, src_range} => compiled.push(AstNode::Statement{children: self.compile_nodes(children), src_range: *src_range}),
       ParserNode::Expression{children} => {
         let result = self.compile_nodes(children);
         for node in result {
