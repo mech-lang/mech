@@ -1,4 +1,0 @@
-block
-  #xyz = 7
-  PI = 3.14
-  y = math/sin(value: 2 * PI)

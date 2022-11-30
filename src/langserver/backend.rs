@@ -148,17 +148,15 @@ impl LanguageServer for Backend {
         parser::print_err_report(source_code_ref, &report);
         println!("--------------------------------------------------------------");
         let mut diags = vec![];
-        let err_locs = parser::get_err_locations(source_code_ref, &report);
-        println!("{:?}", err_locs);
-        for (i, err) in report.iter().enumerate() {
+        for err in report {
           let range = Range {
             start: Position {
-              line: ((err_locs[i].0).0 - 1) as u32,
-              character: ((err_locs[i].0).1 - 1) as u32,
+              line: (err.cause_rng.start.row - 1) as u32,
+              character: (err.cause_rng.start.col - 1) as u32,
             },
             end: Position {
-              line: ((err_locs[i].1).0 - 1) as u32,
-              character: ((err_locs[i].1).1 - 1) as u32,
+              line: (err.cause_rng.end.row - 1) as u32,
+              character: (err.cause_rng.end.col - 1) as u32,
             },
           };
           diags.push(Diagnostic {

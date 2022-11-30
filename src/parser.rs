@@ -8,7 +8,7 @@
 ///   5. Primitive parsers
 ///   6. Parsers
 ///   7. Reporting errors
-///   8. Parser interfaces
+///   8. Public interface
 ///   9. Unit tests
 
 // ## Prelude
@@ -29,40 +29,65 @@ use nom::{
   Err,
 };
 
-use std::cmp::Ordering;
 use std::collections::HashMap;
-use unicode_segmentation::UnicodeSegmentation;
 use colored::*;
 
 // ## Parser utilities
 
-fn grapheme_is_newline(grapheme: &str) -> bool {
-  for ch in grapheme.chars() {
-    if ch == '\n' {
-      return true;
-    }
-  }
-  false
-}
+/// Unicode grapheme group utilities.
+/// Current implementation does not guarantee correct behavior for
+/// all possible unicode characters.
+mod graphemes {
+  use unicode_segmentation::UnicodeSegmentation;
 
-fn grapheme_width(grapheme: &str) -> u32 {
-  let mut width = 0;
-  for ch in grapheme.chars() {
-    if ch.is_ascii() {
-      if !ch.is_ascii_control() || ch == '\t' {
-        width += 1;
-      }  // else width += 0
-    } else if ch.is_alphanumeric() {  // TODO: unicode width?
-      width += 1;
+  pub fn init_source(text: &str) -> Vec<&str> {
+    let mut graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
+    if let Some(g) = graphemes.last() {
+      if !is_newline(g) {
+        graphemes.push("\n");
+      }
     } else {
-      return 1;
+      graphemes.push("\n");
+    }
+    graphemes
+  }
+
+  pub fn init_tag(tag: &str) -> Vec<&str> {
+    UnicodeSegmentation::graphemes(tag, true).collect::<Vec<&str>>()
+  }
+
+  pub fn is_newline(grapheme: &str) -> bool {
+    match grapheme {
+      "\r" | "\n" | "\r\n" => true,
+      _ => false,
     }
   }
-  width
-}
 
-/// Range to a substring from ParseString, [a, b).
-type ParseStringRange = (usize, usize);
+  pub fn is_numeric(grapheme: &str) -> bool {
+    grapheme.chars().next().unwrap().is_numeric()
+  }
+
+  pub fn is_alpha(grapheme: &str) -> bool {
+    grapheme.chars().next().unwrap().is_alphabetic()
+  }
+
+  pub fn is_emoji(grapheme: &str) -> bool {
+    let ch = grapheme.chars().next().unwrap();
+    !(ch.is_alphanumeric() || ch.is_ascii())
+  }
+
+  pub fn width(grapheme: &str) -> usize {
+    // TODO: uniode width?
+    let ch = grapheme.chars().next().unwrap();
+    if ch == '\t' {
+      1
+    } else if ch.is_control() {
+      0
+    } else {
+      1
+    }
+  }
+}
 
 /// Just alias
 type ParseResult<'a, O> = IResult<ParseString<'a>, O, ParseError<'a>>;
@@ -72,11 +97,14 @@ type ParseResult<'a, O> = IResult<ParseString<'a>, O, ParseError<'a>>;
 /// can be cloned at much lower cost.
 #[derive(Clone)]
 struct ParseString<'a> {
+  /// Source code
   graphemes: &'a Vec<&'a str>,
-  error_log: Vec<(ParseStringRange, ParseErrorDetail)>,
+  /// Error report, a list of (error_location, error_context)
+  error_log: Vec<(SourceRange, ParseErrorDetail)>,
+  /// Progress/location information
   cursor: usize,
-  curr_row: u32,
-  curr_col: u32,
+  curr_row: usize,  // 1-indexed
+  curr_col: usize,  // 1-indexed
 }
 
 impl<'a> ParseString<'a> {
@@ -86,29 +114,42 @@ impl<'a> ParseString<'a> {
       graphemes,
       error_log: vec![],
       cursor: 0,
-      curr_row: 0,
-      curr_col: 0,
+      curr_row: 1,
+      curr_col: 1,
     }
   }
 
-  /// Peek at current location and try to match a tag
-  fn match_tag(&self, tag: &str) -> (bool, usize, u32) {
-    let gs = tag.graphemes(true).collect::<Vec<&str>>();
+  /// If current location matches the tag, consume the matched string.
+  fn consume_tag(&mut self, tag: &str) -> Option<String> {
+    let gs = graphemes::init_tag(tag); 
     let gs_len = gs.len();
-    let mut lines = 0;
+
+    // Must have enough remaining characters
     if self.len() < gs_len {
-      return (false, 0, 0);
+      return None;
     }
+
+    // Try to match the tag
+    let mut tmp_row = self.curr_row;
+    let mut tmp_col = self.curr_col;
     for i in 0..gs_len {
-      let ch = self.graphemes[self.cursor + i];
-      if ch != gs[i] {
-        return (false, 0, 0);
+      let g = self.graphemes[self.cursor + i];
+      if g != gs[i] {
+        return None;
       }
-      if grapheme_is_newline(ch) {
-        lines += 1;
+      if graphemes::is_newline(g) {
+        tmp_row += 1;
+        tmp_col = 1;
+      } else {
+        tmp_col += graphemes::width(g);
       }
     }
-    (true, gs_len, lines)
+
+    // Tag matched, commit change
+    self.cursor += gs_len;
+    self.curr_row = tmp_row;
+    self.curr_col = tmp_col;
+    Some(tag.to_string())
   }
 
   /// Mutate self by consuming one grapheme
@@ -117,31 +158,16 @@ impl<'a> ParseString<'a> {
       return None;
     }
     let g = self.graphemes[self.cursor];
-    self.cursor += 1;
-    self.curr_col += 1;
-    if grapheme_is_newline(g) {
+    if graphemes::is_newline(g) {
       self.curr_row += 1;
-      self.curr_col = 0;
+      self.curr_col = 1;
+    } else {
+      self.cursor += 1;
+      self.curr_col += graphemes::width(g);
     }
     Some(g.to_string())
   }
 
-  /// If current location matches the tag, consume the matched string.
-  fn consume_tag(&mut self, tag: &str) -> Option<String> {
-    let (matched, gs_len, lines) = self.match_tag(tag);
-    if matched {
-      self.cursor += gs_len;
-      if lines == 0 {
-        self.curr_col += gs_len as u32;
-      } else {
-        self.curr_col = 0;
-        self.curr_row += lines;
-      }
-      Some(tag.to_string())
-    } else {
-      None
-    }
-  }
 
   /// If current location matches any emoji, consume the matched string.
   fn consume_emoji(&mut self) -> Option<String> {
@@ -149,14 +175,13 @@ impl<'a> ParseString<'a> {
       return None;
     }
     let g = self.graphemes[self.cursor];
-    if let Some(c) = g.chars().next() {
-      if !c.is_ascii() && !c.is_alphabetic() {
-        self.cursor += 1;
-        self.curr_col += 1;
-        return Some(g.to_string());
-      }
+    if graphemes::is_emoji(g) {
+      self.cursor += 1;
+      self.curr_col += graphemes::width(g);
+      Some(g.to_string())
+    } else {
+      None
     }
-    None
   }
 
   /// If current location matches any alpha char, consume the matched string.
@@ -165,14 +190,13 @@ impl<'a> ParseString<'a> {
       return None;
     }
     let g = self.graphemes[self.cursor];
-    if let Some(c) = g.chars().next() {
-      if c.is_alphabetic() {
-        self.cursor += 1;
-        self.curr_col += 1;
-        return Some(g.to_string());
-      }
+    if graphemes::is_alpha(g) {
+      self.cursor += 1;
+      self.curr_col += graphemes::width(g);
+      Some(g.to_string())
+    } else {
+      None
     }
-    None
   }
 
   /// If current location matches any digit, consume the matched string.
@@ -181,21 +205,28 @@ impl<'a> ParseString<'a> {
       return None;
     }
     let g = self.graphemes[self.cursor];
-    if let Some(c) = g.chars().next() {
-      if c.is_numeric() {
-        self.cursor += 1;
-        self.curr_col += 1;
-        return Some(g.to_string());
-      }
+    if graphemes::is_numeric(g) {
+      self.cursor += 1;
+      self.curr_col += graphemes::width(g);
+      Some(g.to_string())
+    } else {
+      None
     }
-    None
   }
 
-  /// Get location of the cursor
+  /// Get cursor's location in source code
   fn loc(&self) -> SourceLocation {
     SourceLocation {
       row: self.curr_row,
       col: self.curr_col,
+    }
+  }
+
+  /// Get (cursor + 1)'s location in source code
+  fn next_loc(&self) -> SourceLocation {
+    SourceLocation {
+      row: self.curr_row,
+      col: self.curr_col + 1,
     }
   }
 
@@ -226,13 +257,13 @@ impl<'a> nom::InputLength for ParseString<'a> {
 #[derive(Clone, Debug)]
 struct ParseErrorDetail {
   message: &'static str,
-  annotation_rngs: Vec<ParseStringRange>,
+  annotation_rngs: Vec<SourceRange>,
 }
 
 /// The error type for the nom parser, which handles full error context
 /// (location + detail) and ownership of the input ParseString.
 struct ParseError<'a> {
-  cause_range: ParseStringRange,
+  cause_range: SourceRange,
   remaining_input: ParseString<'a>,
   error_detail: ParseErrorDetail,
 }
@@ -243,7 +274,7 @@ impl<'a> ParseError<'a> {
   /// error object.
   fn new(input: ParseString<'a>, msg: &'static str) -> Self {
     ParseError {
-      cause_range: (input.cursor, input.cursor + 1),
+      cause_range: SourceRange { start: input.loc(), end: input.next_loc() },
       remaining_input: input,
       error_detail: ParseErrorDetail {
         message: msg,
@@ -260,13 +291,13 @@ impl<'a> ParseError<'a> {
 
 /// Required by nom
 impl<'a> nom::error::ParseError<ParseString<'a>> for ParseError<'a> {
-  /// Not used
+  /// Not used, unless we have logical error
   fn from_error_kind(input: ParseString<'a>,
                      _kind: nom::error::ErrorKind) -> Self {
     ParseError::new(input, "Unexpected error")
   }
 
-  /// Not used
+  /// Probably not used
   fn append(_input: ParseString<'a>,
             _kind: nom::error::ErrorKind,
             other: Self) -> Self {
@@ -275,9 +306,9 @@ impl<'a> nom::error::ParseError<ParseString<'a>> for ParseError<'a> {
 
   /// Barely used, but we do want to keep the error with larger depth.
   fn or(self, other: Self) -> Self {
-    let (self_index, _) = self.cause_range;
-    let (other_index, _) = other.cause_range;
-    if self_index > other_index {
+    let self_start = self.cause_range.start;
+    let other_start = other.cause_range.start;
+    if self_start > other_start {
       self
     } else {
       other
@@ -305,15 +336,15 @@ where
 /// For parser p, run p and also output the range that p has matched
 /// upon success.
 fn range<'a, F, O>(mut parser: F) ->
-  impl FnMut(ParseString<'a>) -> ParseResult<(O, ParseStringRange)>
+  impl FnMut(ParseString<'a>) -> ParseResult<(O, SourceRange)>
 where
   F: FnMut(ParseString<'a>) -> ParseResult<O>
 {
   move |input: ParseString| {
-    let a = input.cursor;
+    let start = input.loc();
     match parser(input) {
       Ok((remaining, o)) => {
-        let rng = (a, remaining.cursor);
+        let rng = SourceRange { start, end: remaining.loc(), };
         Ok((remaining, (o, rng)))
       },
       Err(e) => Err(e),
@@ -360,10 +391,10 @@ where
   F: FnMut(ParseString<'a>) -> ParseResult<O>
 {
   move |mut input: ParseString| {
-    let index_before_parser = input.cursor;
+    let start = input.loc();
     match parser(input) {
       Err(Err::Error(mut e)) => {
-        e.cause_range = (index_before_parser, e.cause_range.1);
+        e.cause_range = SourceRange { start, end: e.cause_range.end };
         e.error_detail = error_detail.clone();
         Err(Err::Failure(e))
       }
@@ -385,10 +416,10 @@ where
   F: FnMut(ParseString<'a>) -> ParseResult<O>
 {
   move |mut input: ParseString| {
-    let index_before_parsing = input.cursor;
+    let start = input.loc();
     match parser(input) {
       Err(Err::Error(mut e)) => {
-        e.cause_range = (index_before_parsing, e.cause_range.1);
+        e.cause_range = SourceRange { start, end: e.cause_range.end };
         e.error_detail = error_detail.clone();
         e.log();
         recovery_fn(e.remaining_input)
@@ -1492,7 +1523,7 @@ fn user_function(input: ParseString) -> ParseResult<ParserNode> {
   let msg7 = "Expect right parenthesis ')'";
   let msg8 = "Expect newline after user function header";
   let msg9 = "Expect indented transformations for function body";
-  let a = input.cursor;
+  let start = input.loc();
   let (input, (_, r1)) = range(left_bracket)(input)?;
   let (input, mut output_args) = many0(function_output)(input)?;
   let (input, _) = label!(right_bracket, msg1, r1)(input)?;
@@ -1504,8 +1535,8 @@ fn user_function(input: ParseString) -> ParseResult<ParserNode> {
   let (input, mut input_args) = many0(function_input)(input)?;
   let (input, _) = label!(right_parenthesis, msg7, r2)(input)?;
   let (input, _) = label!(newline, msg8)(input)?;
-  let b = input.cursor;
-  let (input, function_body) = label!(function_body, msg9, (a, b))(input)?;
+  let end = input.loc();
+  let (input, function_body) = label!(function_body, msg9, SourceRange {start, end})(input)?;
   Ok((input, ParserNode::UserFunction { children: vec![ParserNode::FunctionArgs{children: output_args}, function_name, ParserNode::FunctionArgs{children: input_args}, function_body] }))
 }
 
@@ -2130,10 +2161,10 @@ struct TextFormatter<'a> {
 
 impl<'a> TextFormatter<'a> {
   fn new(text: &'a str) -> Self {
-    let graphemes = get_graphemes(text);
+    let graphemes = graphemes::init_source(text);
     let mut line_beginnings = vec![0];
     for i in 0..graphemes.len() {
-      if Self::grapheme_is_newline(graphemes[i]) {
+      if graphemes::is_newline(graphemes[i]) {
         line_beginnings.push(i + 1);
       }
     }
@@ -2147,16 +2178,6 @@ impl<'a> TextFormatter<'a> {
 
   // Index interpreter
 
-  fn index_is_at_line(&self, index: usize, linenum: usize) -> bool {
-    let line_index = linenum - 1;
-    let line_rng = self.get_line_range(linenum).unwrap();
-    if line_rng.1 == self.end_index {  // linenum is the last line
-      index >= line_rng.0
-    } else {
-      index >= line_rng.0 && index < line_rng.1
-    }
-  }
-
   fn get_line_range(&self, linenum: usize) -> Option<(usize, usize)> {
     let line_index = linenum - 1;
     if line_index >= self.line_beginnings.len() {
@@ -2169,7 +2190,10 @@ impl<'a> TextFormatter<'a> {
   }
 
   fn get_text_by_linenum(&self, linenum: usize) -> String {
-    let (start, end) = self.get_line_range(linenum).unwrap();
+    let (start, end) = match self.get_line_range(linenum) {
+      Some(v) => v,
+      None => return "\n".to_string(),
+    };
     let mut s = self.graphemes[start..end].iter().map(|s| *s).collect::<String>();
     if !s.ends_with("\n") {
       s.push('\n');
@@ -2178,60 +2202,18 @@ impl<'a> TextFormatter<'a> {
   }
 
   fn get_textlen_by_linenum(&self, linenum: usize) -> usize {
-    let (start, end) = self.get_line_range(linenum).unwrap();
+    let (start, end) = match self.get_line_range(linenum) {
+      Some(v) => v,
+      None => return 1,
+    };
     let mut len = 0;
     for i in start..end {
-      len += Self::grapheme_width(self.graphemes[i]);
+      len += graphemes::width(self.graphemes[i]);
     }
     len + 1
   }
 
-  fn get_location_by_index(&self, index: usize) -> (usize, usize) {
-    let a = self.line_beginnings.binary_search_by(
-      |n| if n <= &index { Ordering::Equal } else { Ordering::Greater }).unwrap();
-    let mut i = 1;
-    while !self.index_is_at_line(index, a + i) {
-      i += 1;
-    }
-    let row = a + i;
-    let row_beginning = self.line_beginnings[row - 1];
-    let mut col = 1;
-    for j in row_beginning..index {
-      col += Self::grapheme_width(self.graphemes[j]);
-    }
-    (row, col)
-  }
-
-  fn get_location_by_cause_range(&self, rng: ParseStringRange) -> (usize, usize) {
-    self.get_location_by_index(rng.1 - 1)
-  }
-
-  fn grapheme_width(grapheme: &str) -> usize {
-    let mut width = 0;
-    for ch in grapheme.chars() {
-      if ch.is_ascii() {
-        if !ch.is_ascii_control() || ch == '\t' {
-          width += 1;
-        }  // else width += 0
-      } else if ch.is_alphanumeric() {  // TODO: unicode width?
-        width += 1;
-      } else {
-        return 1;
-      }
-    }
-    width
-  }
-
-  fn grapheme_is_newline(grapheme: &str) -> bool {
-    for ch in grapheme.chars() {
-      if ch == '\n' {
-        return true;
-      }
-    }
-    false
-  }
-
-  // Formatted string printer
+  // FormattedString printer
 
   fn heading_color(s: &str) -> String {
     s.truecolor(246, 192, 78).bold().to_string()
@@ -2269,7 +2251,8 @@ impl<'a> TextFormatter<'a> {
   }
 
   fn err_location(&self, ctx: &ParserErrorContext) -> String {
-    let (row, col) = self.get_location_by_cause_range(ctx.cause_rng);
+    let err_end = ctx.cause_rng.end;
+    let (row, col) = (err_end.row, err_end.col - 1);
     let s = format!("@location:{}:{}\n", row, col);
     Self::location_color(&s)
   }
@@ -2280,11 +2263,11 @@ impl<'a> TextFormatter<'a> {
     let mut annotation_rngs = ctx.annotation_rngs.clone();
     annotation_rngs.push(ctx.cause_rng);
 
-    // the lines to print
+    // the lines to print (1-indexed)
     let mut lines_to_print: Vec<usize> = vec![];
-    for (a, b) in &annotation_rngs {
-      let (r1, _) = self.get_location_by_index(*a);
-      let (r2, _) = self.get_location_by_index(b - 1);
+    for rng in &annotation_rngs {
+      let r1 = rng.start.row;
+      let r2 = rng.end.row;
       for i in r1..=r2 {
         lines_to_print.push(i);
       }
@@ -2299,9 +2282,9 @@ impl<'a> TextFormatter<'a> {
       range_table.insert(*line, vec![]);
     }
     let n = annotation_rngs.len() - 1;  // if i == n, it's the last rng, i.e. the cause rng
-    for (i, (a, b)) in annotation_rngs.iter().enumerate() {
-      let (r1, c1) = self.get_location_by_index(*a);
-      let (r2, c2) = self.get_location_by_index(b - 1);
+    for (i, rng) in annotation_rngs.iter().enumerate() {
+      let (r1, c1) = (rng.start.row, rng.start.col);
+      let (r2, c2) = (rng.end.row, rng.end.col - 1);
       if r1 == r2 {  // the entire range is on one line
         range_table.get_mut(&r1).unwrap().push((c1, c2 - c1 + 1, true, i == n));
       } else {  // the range spans over multiple lines
@@ -2383,7 +2366,7 @@ impl<'a> TextFormatter<'a> {
     }
 
     // print error message
-    let (_cause_row, cause_col) = self.get_location_by_index(ctx.cause_rng.1 - 1);
+    let cause_col = ctx.cause_rng.end.col - 1;
     result.push_str(indentation);
     for _ in 0..row_str_len { result.push(' '); }
     result.push_str(vert_split2);
@@ -2419,45 +2402,18 @@ impl<'a> TextFormatter<'a> {
   }
 }
 
+// ## Public interface
+
 /// Print formatted error message.
 pub fn print_err_report(text: &str, report: &ParserErrorReport) {
   let msg = TextFormatter::new(text).format_error(report);
   println!("{}", msg);
 }
 
-/// Temporary (hopefully) function for langserver.
-pub fn get_err_locations(
-  text: &str, report: &ParserErrorReport
-) -> Vec<((usize, usize), (usize, usize))> {
-  let tf = TextFormatter::new(text);
-  let mut result = vec![];
-  for err in report {
-    result.push((
-      tf.get_location_by_index(err.cause_rng.0),
-      tf.get_location_by_index(err.cause_rng.1 - 1),
-    ));
-  }
-  result
-}
-
-// ## Parser interfaces
-
-fn get_graphemes(text: &str) -> Vec<&str> {
-  let mut graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
-  if let Some(g) = graphemes.last() {
-    if !TextFormatter::grapheme_is_newline(g) {
-      graphemes.push("\n");
-    }
-  } else {
-    graphemes.push("\n");
-  }
-  graphemes
-}
-
 pub fn parse(text: &str) -> Result<ParserNode, MechError> {
-  let graphemes = get_graphemes(text);
+  let graphemes = graphemes::init_source(text);
   let mut result_node = ParserNode::Error;
-  let mut error_log: Vec<(ParseStringRange, ParseErrorDetail)> = vec![];
+  let mut error_log: Vec<(SourceRange, ParseErrorDetail)> = vec![];
   let remaining: ParseString;
 
   // Do parse
@@ -2499,9 +2455,9 @@ pub fn parse(text: &str) -> Result<ParserNode, MechError> {
 }
 
 pub fn parse_fragment(text: &str) -> Result<ParserNode, MechError> {
-  let graphemes = get_graphemes(text);
+  let graphemes = graphemes::init_source(text);
   let mut result_node = ParserNode::Error;
-  let mut error_log: Vec<(ParseStringRange, ParseErrorDetail)> = vec![];
+  let mut error_log: Vec<(SourceRange, ParseErrorDetail)> = vec![];
   let remaining: ParseString;
 
   // Do parse
@@ -2576,16 +2532,16 @@ mod tests {
         };
     
         // Parser error should match with expected
-        let tf = parser::TextFormatter::new(text);
         assert_eq!(error_report.len(), err_locations_exp.len());
         for i in 0..error_report.len() {
           let rng = error_report[i].cause_rng;
-          let reported_location = tf.get_location_by_cause_range(rng);
+          let reported_location = (rng.end.row, rng.end.col - 1);
           let expected_location = err_locations_exp[i];
           assert_eq!(reported_location, expected_location);
         }
 
         // Formatting function doesn't crash
+        let tf = parser::TextFormatter::new(text);
         let msg = tf.format_error(&error_report);
         assert_ne!(msg.len(), 0);
       }
@@ -2593,9 +2549,9 @@ mod tests {
   }
 
 /////////////////////////////////////////////////////////////////////////////////
-test_parser!(err_empty_1, "", (1, 1));
-test_parser!(err_empty_2, "\n", (1, 1));
-test_parser!(err_empty_3, "\n\n  \n\n\n", (5, 1));
+test_parser!(err_empty_1, "", (2, 1));
+test_parser!(err_empty_2, "\n", (2, 1));
+test_parser!(err_empty_3, "\n\n  \n\n\n", (6, 1));
 test_parser!(ok_simple_text, "Paragraph text", );
 test_parser!(err_illegal_text, r#"Paragraph (#) text"#, (1, 13));
 
@@ -2847,7 +2803,7 @@ block
 
 Title2
 ===========
-"#, (9, 12));
+"#, (10, 1));
 test_parser!(err_section_recovery_too_many_titles_2, r#"
 Title
 ===========
