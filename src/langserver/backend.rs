@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::cell::RefCell;
 use std::sync::Mutex;
 use std::sync::Arc;
 
@@ -90,17 +89,17 @@ impl SharedState {
 
 pub struct Backend {
   client: Client,
-  shared_state: Mutex<RefCell<SharedState>>,
+  shared_state: Mutex<SharedState>,
 }
 
 impl Backend {
   pub fn new(client: Client) -> Self {
     Self {
       client,
-      shared_state: Mutex::new(RefCell::new(SharedState {
+      shared_state: Mutex::new(SharedState {
         global_table_symbols: vec![],
         mech_core: Core::new(),
-      })),
+      }),
     }
   }
 }
@@ -137,10 +136,10 @@ impl LanguageServer for Backend {
         let mut set = HashSet::new();
         collect_global_table_symbols(&ast.syntax_tree, &mut set);
         let mut symbols: Vec<String> = set.into_iter().collect();
-        self.shared_state.lock().unwrap().borrow_mut().set_global_table_symbols(&mut symbols);
+        self.shared_state.lock().unwrap().set_global_table_symbols(&mut symbols);
         let mut compiler = Compiler::new();
         let sections = compiler.compile_sections(&vec![ast.syntax_tree]).unwrap();
-        self.shared_state.lock().unwrap().borrow_mut().set_core_sections(sections);
+        self.shared_state.lock().unwrap().set_core_sections(sections);
       },
       Err(err) => if let MechErrorKind::ParserError(node, report) = err.kind {
         println!("source code err!");
@@ -193,7 +192,7 @@ impl LanguageServer for Backend {
   async fn completion(&self, _: CompletionParams) -> jsonrpc::Result<Option<CompletionResponse>> {
     println!("[COMPLETION]");
     let mut items = vec![];
-    let symbols = self.shared_state.lock().unwrap().borrow().global_table_symbols.clone();
+    let symbols = self.shared_state.lock().unwrap().global_table_symbols.clone();
     for symbol in symbols {
       items.push(
         CompletionItem::new_simple(symbol, "Global table".to_string()),
@@ -204,46 +203,6 @@ impl LanguageServer for Backend {
 
   async fn hover(&self, params: HoverParams) -> jsonrpc::Result<Option<Hover>> {
     println!("[HOVER]");
-    // read file
-    let path = params.text_document_position_params.text_document.uri.path();
-    let source: String = std::fs::read_to_string(path).unwrap();
-    let position = params.text_document_position_params.position;
-    let (mut row, mut col, mut index) = (0, 0, 0);
-    for ch in source.chars() {
-      if row == position.line && col == position.character {
-          break;
-      }
-      if ch == '\n' {
-        row += 1;
-        col = 0;
-      } else {
-        col += 1;
-      }
-      index += 1;
-    }
-    println!("{}, {}, {}", row, col, index);
-    let (mut start, mut end) = (0, source.len());
-    for i in (0..=index).rev() {
-      let c = source.chars().nth(i).unwrap();
-      print!("?? {}", c);
-      if !c.is_alphanumeric() || c == ' ' || c == '\n'  {
-        println!(" accept");
-        start = i;
-        break;
-      }
-      println!(" cont");
-    }
-    for i in index..source.len() {
-      let c = source.chars().nth(i).unwrap();
-      println!("!! {}", c);
-      if !c.is_alphanumeric() || c == ' ' || c == '\n'  {
-        println!(" accept");
-        end = i;
-        break;
-      }
-      println!(" cont");
-    }
-    println!("{}", source[start..end].to_owned());
     Ok(Some(Hover {
       contents: HoverContents::Scalar(
         MarkedString::String("You're hovering!".to_string())
