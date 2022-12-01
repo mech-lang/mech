@@ -7,11 +7,135 @@
 		},
 		{
 			"name": "markup.heading",
-			"match": "^#.+"
+			"match": ".+(\n=+)"
 		},
 		{
 			"name": "markup.heading",
-			"match": "^\\-"
+			"match": ".+(\n-+)"
+		},
+		{
+			"name": "markup.inserted",
+			"match": "//.+"
+		},
+		{
+			"name": "string.regexp",
+			"match": "~"
+		},
+		{
+			"name": "variable.function",
+			"match": "\\|([A-Z]|[a-z]|/|-| |[0-9])+\\||([A-Z]|[a-z]|/|-|[0-9])+: "
+		},
+		{
+			"name": "variable.function",
+			"match": "\\S+(?=\\[)"
+		},
+		{"name": "constant.regexp",
+		 "match": "\\[|\\]|{|}"
+		},
+		{
+			"name": "string.quoted.double.mech",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.mech",
+					"match": "\\\\."
+				},
+				{
+					"name": "keyword.control.mech",
+					"begin": "{{",
+					"end": "}}",
+					"patterns": [
+						{
+							"name": "constant.numeric.integer",
+							"match": "[^}]*"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "constant.language",
+			"match": "true|false|none"
+		},
+		{
+			"name": "variable.function",
+			"match": "< |> |-> |-< "
+		},
+		{
+			"name": "meta.block",
+			"begin": "<",
+			"end": ">",
+			"beginCaptures": {
+				"0": { "name": "keyword.control.mech" }
+			  },
+			  "endCaptures": {
+				"0": { "name": "keyword.control.mech" }
+			  },
+			"patterns": [
+				{
+					"name": "constant.numeric",
+					"match": "[0-9a-z/^]+"
+				}
+			]
+		},
+
+		{
+			"name" : "constant.regexp", 
+			"match": "#"
+		},
+
+		{
+			"name": "constant.numeric.integer",
+			"match": "0x[A-Z0-9]+"
+		},
+		{
+			"name": "meta.block",
+			"begin": "[a-z]+ ",
+			"end": "[A-Za-z]| |\\.",
+			"patterns": [
+				{
+					"name": "", 
+					"match": "[0-9]+" 
+				}
+			]
+		},
+		{
+			"name" : "constant.numeric.integer", 
+			"match": "[0-9]+"
+		},
+		{
+			"name": "meta.block",
+			"begin": "[a-z]+\\.",
+			"end": "\n| |{",
+			"patterns": [
+				{
+					"name": "entity.name.tag.css", 
+					"match": "[A-Za-z][0-9]*" 
+				}
+			]
+		},
+		{
+			"name" : "constant.numeric.integer", 
+			"match": "([0-9]+(\\.)[0-9]+)"
+		},
+		{
+			"name" : "", 
+			"match": "[a-z]+[0-9-]"
+		},
+		{
+			"name": "meta.block",
+			"begin": "( |\n)[a-z]+\/",
+			"end": "\\(",
+			"beginCaptures": {
+				"0": { "name": "constant.language" }
+			  },
+			"patterns": [
+				{
+					"name": "constant.language", 
+					"match": "[a-z]+" 
+				}
+			]
 		}
 	],
 	"repository": {
@@ -25,16 +149,12 @@
 					"match": "//.+"
 				},
 				{
-					"name": "constant.regexp",
-					"match": "#"
-				},
-				{
 					"name": "string.regexp",
 					"match": "~"
 				},
 				{
-					"name": "entity.name.tag.css",
-					"match": "\\|([A-Z]|[a-z]|/|-| )+\\||([A-Z]|[a-z]|/|-)+: "
+					"name": "variable.function",
+					"match": "\\|([A-Z]|[a-z]|/|-| |[0-9])+\\||([A-Z]|[a-z]|/|-|[0-9])+: "
 				},
 				{
 					"name": "variable.function",
@@ -66,16 +186,88 @@
 					]
 				},
 				{
-					"name": "constant.numeric.integer",
-					"match": "\\b0x([0-9]+)\\b"
-				},
-				{
-					"name": "constant.numeric.integer",
-					"match": "\\b([0-9]+)\\b"
-				},				{
 					"name": "constant.language",
 					"match": "true|false|none"
+				},
+				{
+					"name": "variable.function",
+					"match": "< |> |-> |-< "
+				},
+				{
+					"name": "meta.block",
+					"begin": "<",
+					"end": ">",
+					"beginCaptures": {
+						"0": { "name": "keyword.control.mech" }
+					  },
+					  "endCaptures": {
+						"0": { "name": "keyword.control.mech" }
+					  },
+					"patterns": [
+						{
+							"name": "constant.numeric",
+							"match": "((u|i)(8|16|32|64|128))|(f)(32|64|128)|bool|string"
+						}
+					]
+				},
+
+				{
+					"name" : "constant.regexp", 
+					"match": "#"
+				},
+				
+
+
+				{
+					"name": "constant.numeric.integer",
+					"match": "(0x[A-Z0-9]+)"
+				},
+				{
+					"name" : "constant.numeric.integer", 
+					"match": "([0-9]+)"
+				},
+
+
+				{
+					"name": "meta.block",
+					"begin": "[a-z]+\\.",
+					"end": "\n| |{",
+					"patterns": [
+						{
+							"name": "entity.name.tag.css", 
+							"match": "[A-Za-z][0-9]*" 
+						}
+					]
+				},
+				{
+					"name" : "constant.numeric.integer", 
+					"match": "([0-9]+(\\.)[0-9]+)"
+				},
+				{
+					"name" : "", 
+					"match": "[a-z]+[0-9-]"
+				},
+				{
+					"name": "meta.block",
+					"begin": "( |\n)[a-z]+\/",
+					"end": "\\(",
+					"beginCaptures": {
+						"0": { "name": "constant.language" }
+					  },
+					"patterns": [
+						{
+							"name": "constant.language", 
+							"match": "[a-z]+" 
+						}
+					]
 				}
+
+
+				
+				
+
+			
+				
 			]
 		}
 	},
