@@ -1,7 +1,7 @@
 import * as path from 'path';
 import { workspace, ExtensionContext } from 'vscode';
 import * as net from 'net';
-
+import * as child_process from 'child_process';
 import {
 	LanguageClient,
 	LanguageClientOptions,
@@ -15,27 +15,32 @@ let client: LanguageClient;
 export function activate(context: ExtensionContext) {
 	// The server is implemented in node
 	const serverModule = context.asAbsolutePath(
-		path.join('server', 'out', 'server.js')
+		path.join('langserver')
 	);
 	// The debug options for the server
 	// --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
-	const debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
-
-	// If the extension is launched in debug mode then the debug server options are used
-	// Otherwise the run options are used
-	// const serverOptions: ServerOptions = {
-	// 	run: { module: serverModule, transport: TransportKind.ipc },
-	// 	debug: {
-	// 		module: serverModule,
-	// 		transport: TransportKind.ipc,
-	// 		options: debugOptions
-	// 	}
-	// };
-
-	const connection = (function() {
-		return net.createConnection(4041, "localhost");
-	})();
-
+	const args = ['-p', '4041'];
+	child_process.execFile(serverModule, args)
+	const connection = new net.Socket();
+	let retryCount = 0;
+	function onError(err: { message: string | string[]; }) {
+		if(err.message.indexOf('ECONNREFUSED') > -1 && retryCount <5) {
+			retryCount += 1;
+			console.log("Attempting to reconnect shortly")
+			setTimeout(()=>{
+				connection.connect(4041, "localhost");
+				connection.on('error', onError);
+				connection.on("close", onClose);
+			},1000)
+		}
+	}
+	function onClose() {
+		console.log("Removng all listeners")
+		connection.removeAllListeners("error")
+	}
+	connection.connect(4041, "localhost");
+	connection.on('error', onError);
+	connection.on("close", onClose);
 	const serverOptions: ServerOptions = () => Promise.resolve<StreamInfo>({
 		reader: connection,
 		writer: connection,
