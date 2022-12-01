@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::sync::Mutex;
 use std::sync::Arc;
+use std::rc::Rc;
 
 use tower_lsp::jsonrpc;
 use tower_lsp::lsp_types::*;
@@ -25,8 +26,8 @@ use crate::compiler::Compiler;
 ///
 ///
 ///   1. Integrate langserver into `mech` executable -- ok
-///   2. Let parser track location information -- wait
-///   3. (Include location information in parser nodes)? -- wait
+///   2. Let parser track location information -- ok
+///   3. (Include location information in parser nodes)? -- ok
 ///
 ///
 /// Long run:
@@ -37,6 +38,54 @@ use crate::compiler::Compiler;
 ///   Running value
 ///   Debuger
 ///
+
+fn location_in_range(loc: SourceLocation, rng: SourceRange) -> bool {
+  loc >= rng.start && loc < rng.end
+}
+
+fn identifier_at_location(ast_node: &AstNode, loc: SourceLocation) -> Option<String> {
+  match ast_node {
+    AstNode::Root{children} |
+    AstNode::Program{children, ..} |
+    AstNode::Transformation{children} |
+    AstNode::VariableDefine{children} |
+    AstNode::Expression{children} |
+    AstNode::MathExpression{children} |
+    AstNode::AnonymousTableDefine{children} |
+    AstNode::TableDefine{children} |
+    AstNode::TableRow{children} |
+    AstNode::TableColumn{children} |
+    AstNode::Function{children, ..} |
+    AstNode::Section{children, ..} => {
+      for node in children {
+        if let Some(name) = identifier_at_location(node, loc) {
+          return Some(name);
+        }
+      }
+      return None;
+    },
+    AstNode::Statement{children, src_range} |
+    AstNode::Block{children, src_range} => {
+      if location_in_range(loc, *src_range) {
+        for node in children {
+          if let Some(name) = identifier_at_location(node, loc) {
+            return Some(name);
+          }
+        }
+      }
+      return None;
+    },
+    AstNode::Table{name, src_range, ..} |
+    AstNode::SelectData{name, src_range, ..} |
+    AstNode::Identifier{name, src_range, ..} => {
+      if location_in_range(loc, *src_range) {
+        return Some(name.iter().collect::<String>())
+      }
+      return None;
+    },
+    _ => return None,
+  }
+}
 
 fn collect_global_table_symbols(ast_node: &AstNode, set: &mut HashSet<String>) {
   match ast_node {
@@ -73,18 +122,7 @@ unsafe impl Sync for SharedState {}
 struct SharedState {
   global_table_symbols: Vec<String>,
   mech_core: Core,
-}
-
-impl SharedState {
-  fn set_global_table_symbols(&mut self, symbols: &mut Vec<String>) {
-    self.global_table_symbols.clear();
-    self.global_table_symbols.append(symbols);
-  }
-
-  fn set_core_sections(&mut self, sections: Vec<Vec<SectionElement>>) {
-    self.mech_core = Core::new();
-    self.mech_core.load_sections(sections);
-  }
+  mech_ast: Ast,
 }
 
 pub struct Backend {
@@ -99,8 +137,16 @@ impl Backend {
       shared_state: Mutex::new(SharedState {
         global_table_symbols: vec![],
         mech_core: Core::new(),
+        mech_ast: Ast::new(),
       }),
     }
+  }
+
+  fn with_shared_state<F>(&self, f: F)
+  where
+    F: FnOnce(&mut SharedState)
+  {
+    f(&mut self.shared_state.lock().unwrap())
   }
 }
 
@@ -121,7 +167,7 @@ impl LanguageServer for Backend {
 
   async fn did_change(&self, params: DidChangeTextDocumentParams) {
     let uri = params.text_document.uri;
-    println!("[DID_CHANGE] {}", uri.path());
+    println!("[DID_CHANGE] @ {}", uri.path());
     let source_code_ref: &String = if params.content_changes.len() != 0 {
       &params.content_changes[0].text
     } else {
@@ -136,10 +182,18 @@ impl LanguageServer for Backend {
         let mut set = HashSet::new();
         collect_global_table_symbols(&ast.syntax_tree, &mut set);
         let mut symbols: Vec<String> = set.into_iter().collect();
-        self.shared_state.lock().unwrap().set_global_table_symbols(&mut symbols);
         let mut compiler = Compiler::new();
-        let sections = compiler.compile_sections(&vec![ast.syntax_tree]).unwrap();
-        self.shared_state.lock().unwrap().set_core_sections(sections);
+        let sections = compiler.compile_sections(&vec![ast.syntax_tree.clone()]).unwrap();
+        self.with_shared_state(move |shared_state| {
+          // refresh table symbols
+          shared_state.global_table_symbols.clear();
+          shared_state.global_table_symbols.append(&mut symbols);
+          // refresh core
+          shared_state.mech_core = Core::new();
+          shared_state.mech_core.load_sections(sections);
+          // refresh ast
+          shared_state.mech_ast = ast;
+        });
       },
       Err(err) => if let MechErrorKind::ParserError(node, report) = err.kind {
         println!("source code err!");
@@ -203,11 +257,34 @@ impl LanguageServer for Backend {
 
   async fn hover(&self, params: HoverParams) -> jsonrpc::Result<Option<Hover>> {
     println!("[HOVER]");
-    Ok(Some(Hover {
-      contents: HoverContents::Scalar(
-        MarkedString::String("You're hovering!".to_string())
-      ),
-      range: None
-    }))
+    let req_pos = params.text_document_position_params.position;
+    let req_loc = SourceLocation {
+      row: req_pos.line as usize + 1,
+      col: req_pos.character as usize + 1,
+    };
+
+    let mut response = None;
+
+    self.with_shared_state(|shared_state| {
+      let name = match identifier_at_location(&shared_state.mech_ast.syntax_tree, req_loc) {
+        Some(identifier) => identifier,
+        None => return,
+      };
+      match shared_state.mech_core.get_table(&name) {
+        Ok(table) => {
+          let mut printer = BoxPrinter::new();
+          printer.add_table(&table.borrow());
+          response = Some(Hover {
+            contents: HoverContents::Scalar(
+              MarkedString::String(format!("```text{}```", printer.print()))
+            ),
+            range: None,
+          })
+        },
+        Err(_) => return,
+      };
+    });
+
+    Ok(response)
   }
 }
