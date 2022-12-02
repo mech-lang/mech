@@ -2264,6 +2264,7 @@ impl<'a> TextFormatter<'a> {
 
   fn err_location(&self, ctx: &ParserErrorContext) -> String {
     let err_end = ctx.cause_rng.end;
+    // error range will not ends at first column, so `minus 1` here is safe
     let (row, col) = (err_end.row, err_end.col - 1);
     let s = format!("@location:{}:{}\n", row, col);
     Self::location_color(&s)
@@ -2279,7 +2280,12 @@ impl<'a> TextFormatter<'a> {
     let mut lines_to_print: Vec<usize> = vec![];
     for rng in &annotation_rngs {
       let r1 = rng.start.row;
-      let r2 = rng.end.row;
+      // if range ends at first column, it doesn't reach that row
+      let r2 = if rng.end.col == 1 {
+        usize::max(rng.start.row, rng.end.row - 1)
+      } else {
+        rng.end.row
+      };
       for i in r1..=r2 {
         lines_to_print.push(i);
       }
@@ -2295,16 +2301,21 @@ impl<'a> TextFormatter<'a> {
     }
     let n = annotation_rngs.len() - 1;  // if i == n, it's the last rng, i.e. the cause rng
     for (i, rng) in annotation_rngs.iter().enumerate() {
+      // c2 might be 0
       let (r1, c1) = (rng.start.row, rng.start.col);
       let (r2, c2) = (rng.end.row, rng.end.col - 1);
       if r1 == r2 {  // the entire range is on one line
-        range_table.get_mut(&r1).unwrap().push((c1, c2 - c1 + 1, true, i == n));
+        if c2 >= c1 {  // and the range has non-zero length
+          range_table.get_mut(&r1).unwrap().push((c1, c2 - c1 + 1, true, i == n));
+        }
       } else {  // the range spans over multiple lines
         range_table.get_mut(&r1).unwrap().push((c1, usize::MAX, i != n, i == n));
         for r in r1+1..r2 {
           range_table.get_mut(&r).unwrap().push((1, usize::MAX, false, i == n));
         }
-        range_table.get_mut(&r2).unwrap().push((1, c2, i == n, i == n));
+        if c2 != 0 {  // only add the last line if it has non-zero length
+          range_table.get_mut(&r2).unwrap().push((1, c2, i == n, i == n));
+        }
       }
     }
 
@@ -2377,7 +2388,8 @@ impl<'a> TextFormatter<'a> {
       result.push('\n');
     }
 
-    // print error message
+    // print error message;
+    // error range never ends at first column, so it's safe to `minus 1` here
     let cause_col = ctx.cause_rng.end.col - 1;
     result.push_str(indentation);
     for _ in 0..row_str_len { result.push(' '); }
@@ -2547,6 +2559,7 @@ mod tests {
         assert_eq!(error_report.len(), err_locations_exp.len());
         for i in 0..error_report.len() {
           let rng = error_report[i].cause_rng;
+          // error range never ends at first column, so it's safe to `minus 1` here
           let reported_location = (rng.end.row, rng.end.col - 1);
           let expected_location = err_locations_exp[i];
           assert_eq!(reported_location, expected_location);

@@ -1,5 +1,0 @@
-block
-  a = 5
-  b = 7
-  #x = a + b
-  z = #x
