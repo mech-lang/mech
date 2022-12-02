@@ -218,8 +218,7 @@ Keyboard events
     let mut len = 0;
     let mut sections = vec![];
     for section in miniblocks {
-      let mut blocks: Vec<Block> = Vec::new();
-      let blocks = section.iter().map(|b| MiniBlock::maximize_block(&b)).collect::<Vec<Block>>();
+      let blocks = section.iter().map(|b| SectionElement::Block(MiniBlock::maximize_block(&b))).collect::<Vec<SectionElement>>();
       len += blocks.len();
       sections.push(blocks);
     }
