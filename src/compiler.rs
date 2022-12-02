@@ -29,13 +29,13 @@ fn get_sections(nodes: &Vec<AstNode>) -> Vec<Vec<AstNode>> {
       AstNode::Section{children,..} => {
         for child in children {
           match child {
-            AstNode::Block{children} => {
+            AstNode::Block{children, ..} => {
               blocks.push(child.clone());
             }
             AstNode::UserFunction{children} => {
               blocks.push(child.clone());
             }
-            AstNode::Statement{children} => {
+            AstNode::Statement{children, ..} => {
               statements.append(&mut children.clone());
             }
             _ => (),
@@ -54,7 +54,7 @@ fn get_sections(nodes: &Vec<AstNode>) -> Vec<Vec<AstNode>> {
     }
   }
   if statements.len() > 0 {
-    sections.push(vec![AstNode::Block{children: statements}]);
+    sections.push(vec![AstNode::Block{children: statements, src_range: SourceRange::default()}]);
   }
   sections
 }
@@ -69,7 +69,7 @@ fn get_blocks(nodes: &Vec<AstNode>) -> Vec<AstNode> {
         // Do something with the block state string.
         // ```mech: disabled
         match &children[0] {
-          AstNode::String{text} => {
+          AstNode::String{text, ..} => {
             let block_state = text.iter().collect::<String>();
             if block_state != "disabled".to_string() {
               blocks.append(&mut get_blocks(children));
@@ -82,7 +82,7 @@ fn get_blocks(nodes: &Vec<AstNode>) -> Vec<AstNode> {
     }
   }
   if statements.len() > 0 {
-    blocks.push(AstNode::Block{children: statements});
+    blocks.push(AstNode::Block{children: statements, src_range: SourceRange::default()});
   }
   blocks
 }
@@ -200,7 +200,7 @@ impl Compiler {
   pub fn compile_node(&mut self, node: &AstNode) -> Result<Vec<Transformation>,MechError> {
     let mut tfms = vec![];
     match node {
-      AstNode::Identifier{name, id} => {
+      AstNode::Identifier{name, id, ..} => {
         tfms.push(Transformation::Identifier{name: name.to_vec(), id: *id});
       },
       AstNode::Empty => {
@@ -218,12 +218,12 @@ impl Compiler {
         tfms.push(Transformation::NewTable{table_id: table_id.clone(), rows: 1, columns: 1 });
         tfms.push(Transformation::Constant{table_id: table_id, value: Value::Bool(false)});
       },
-      AstNode::String{text} => {
+      AstNode::String{text, ..} => {
         let table_id = TableId::Local(hash_str(&format!("string: {:?}", text)));
         tfms.push(Transformation::NewTable{table_id: table_id.clone(), rows: 1, columns: 1 });
         tfms.push(Transformation::Constant{table_id: table_id, value: Value::String(MechString::from_chars(text))});
       },
-      AstNode::NumberLiteral{kind, bytes} => {
+      AstNode::NumberLiteral{kind, bytes, ..} => {
         let string = bytes.iter().cloned().collect::<String>();
         let bytes = if *kind == *cU8 { string.parse::<u8>().unwrap().to_be_bytes().to_vec() }
           else if *kind == *cU16 { string.parse::<u16>().unwrap().to_be_bytes().to_vec() }
@@ -245,7 +245,7 @@ impl Compiler {
         tfms.push(Transformation::NewTable{table_id: table_id, rows: 1, columns: 1 });
         tfms.push(Transformation::NumberLiteral{kind: *kind, bytes: bytes.to_vec()});
       },
-      AstNode::Table{name, id} => {
+      AstNode::Table{name, id, ..} => {
         tfms.push(Transformation::NewTable{table_id: TableId::Global(*id), rows: 1, columns: 1});
         tfms.push(Transformation::Identifier{name: name.clone(), id: *id});
       }
@@ -298,7 +298,7 @@ impl Compiler {
       }
       // dest :+= src
       // dest{ix} :+= src
-      AstNode::UpdateData{name, children} => {
+      AstNode::UpdateData{name, children, ..} => {
         let mut src = self.compile_node(&children[1])?;
         let mut dest = self.compile_node(&children[0])?.clone();
 
@@ -521,7 +521,7 @@ impl Compiler {
         };
         println!("{:?}", tfms);
       }
-      AstNode::Function{name, children} => {
+      AstNode::Function{name, children, ..} => {
         let mut args: Vec<Argument>  = vec![];
         let mut arg_tfms = vec![];
         let mut identifiers = vec![];
@@ -706,7 +706,7 @@ impl Compiler {
           }
         }        
       }
-      AstNode::Token{token, chars} => {
+      AstNode::Token{token, chars, ..} => {
         tfms.push(Transformation::Identifier{name: chars.to_vec(), id: hash_chars(chars)});
       }
       AstNode::AnonymousTableDefine{children} => {
@@ -999,7 +999,7 @@ impl Compiler {
           out: (TableId::Local(id),TableIndex::All,TableIndex::All),
         });
       }
-      AstNode::SelectData{name, id, children} => {
+      AstNode::SelectData{name, id, children, ..} => {
         let mut indices = vec![];
         let mut all_indices = vec![];
         let mut local_tfms = vec![];
@@ -1013,7 +1013,7 @@ impl Compiler {
               let mut aliases = vec![];
               for child in children {
                 match child {
-                  AstNode::Identifier{name,id} => {
+                  AstNode::Identifier{name,id,..} => {
                     aliases.push(*id);
                   }
                   _ => (),
@@ -1028,7 +1028,7 @@ impl Compiler {
                   AstNode::Null => {
                     indices.push(TableIndex::All);
                   }
-                  AstNode::Identifier{name, id} => {
+                  AstNode::Identifier{name, id, ..} => {
                     indices.push(TableIndex::Alias(*id));
                   }
                   AstNode::SubscriptIndex{children} => {
@@ -1045,7 +1045,7 @@ impl Compiler {
                             indices.push(TableIndex::IxTable(TableId::Local(id)));
                           }
                         }
-                        AstNode::SelectData{name, id, children} => {
+                        AstNode::SelectData{name, id, children, ..} => {
                           if indices.len() == 2 && indices[0] == TableIndex::All {
                             indices[0] = TableIndex::IxTable(*id);
                           } else {
@@ -1100,7 +1100,7 @@ impl Compiler {
                       indices.push(TableIndex::IxTable(TableId::Local(id)));
                     }
                   }
-                  AstNode::SelectData{name, id, children} => {
+                  AstNode::SelectData{name, id, children, ..} => {
                     if indices.len() == 2 && indices[0] == TableIndex::All {
                       indices[0] = TableIndex::IxTable(*id);
                     } else {
@@ -1173,9 +1173,9 @@ impl Compiler {
       AstNode::Section{children, ..} |
       AstNode::Attribute{children} |
       AstNode::Transformation{children} |
-      AstNode::Statement{children} |
+      AstNode::Statement{children, ..} |
       AstNode::Fragment{children} |
-      AstNode::Block{children} |
+      AstNode::Block{children, ..} |
       AstNode::MathExpression{children} |
       AstNode::Expression{children} |
       AstNode::TableRow{children} |

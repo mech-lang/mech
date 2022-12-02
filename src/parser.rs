@@ -8,7 +8,7 @@
 ///   5. Primitive parsers
 ///   6. Parsers
 ///   7. Reporting errors
-///   8. Parser interfaces
+///   8. Public interface
 ///   9. Unit tests
 
 // ## Prelude
@@ -29,15 +29,68 @@ use nom::{
   Err,
 };
 
-use std::cmp::Ordering;
 use std::collections::HashMap;
-use unicode_segmentation::UnicodeSegmentation;
 use colored::*;
 
 // ## Parser utilities
 
-/// Range to a substring from ParseString, [a, b).
-type ParseStringRange = (usize, usize);
+/// Unicode grapheme group utilities.
+/// Current implementation does not guarantee correct behavior for
+/// all possible unicode characters.
+mod graphemes {
+  use unicode_segmentation::UnicodeSegmentation;
+
+  /// Obtain unicode grapheme groups from input source, then make sure
+  /// it ends with newline.  Many functions in the parser assume input
+  /// ends with newline.
+  pub fn init_source(text: &str) -> Vec<&str> {
+    let mut graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
+    if let Some(g) = graphemes.last() {
+      if !is_newline(g) {
+        graphemes.push("\n");
+      }
+    } else {
+      graphemes.push("\n");
+    }
+    graphemes
+  }
+
+  pub fn init_tag(tag: &str) -> Vec<&str> {
+    UnicodeSegmentation::graphemes(tag, true).collect::<Vec<&str>>()
+  }
+
+  pub fn is_newline(grapheme: &str) -> bool {
+    match grapheme {
+      "\r" | "\n" | "\r\n" => true,
+      _ => false,
+    }
+  }
+
+  pub fn is_numeric(grapheme: &str) -> bool {
+    grapheme.chars().next().unwrap().is_numeric()
+  }
+
+  pub fn is_alpha(grapheme: &str) -> bool {
+    grapheme.chars().next().unwrap().is_alphabetic()
+  }
+
+  pub fn is_emoji(grapheme: &str) -> bool {
+    let ch = grapheme.chars().next().unwrap();
+    !(ch.is_alphanumeric() || ch.is_ascii())
+  }
+
+  pub fn width(grapheme: &str) -> usize {
+    // TODO: uniode width?
+    let ch = grapheme.chars().next().unwrap();
+    if ch == '\t' {
+      1
+    } else if ch.is_control() {
+      0
+    } else {
+      1
+    }
+  }
+}
 
 /// Just alias
 type ParseResult<'a, O> = IResult<ParseString<'a>, O, ParseError<'a>>;
@@ -47,9 +100,14 @@ type ParseResult<'a, O> = IResult<ParseString<'a>, O, ParseError<'a>>;
 /// can be cloned at much lower cost.
 #[derive(Clone)]
 struct ParseString<'a> {
+  /// Source code
   graphemes: &'a Vec<&'a str>,
-  error_log: Vec<(ParseStringRange, ParseErrorDetail)>,
+  /// Error report, a list of (error_location, error_context)
+  error_log: Vec<(SourceRange, ParseErrorDetail)>,
+  /// Point at the next grapheme to consume
   cursor: usize,
+  /// Location of the grapheme pointed by cursor
+  location: SourceLocation,
 }
 
 impl<'a> ParseString<'a> {
@@ -59,22 +117,43 @@ impl<'a> ParseString<'a> {
       graphemes,
       error_log: vec![],
       cursor: 0,
+      location: SourceLocation { row: 1, col: 1 },
     }
   }
 
-  /// Peek at current location and try to match a tag
-  fn match_tag(&self, tag: &str) -> (bool, usize) {
-    let gs = tag.graphemes(true).collect::<Vec<&str>>();
+  /// If current location matches the tag, consume the matched string.
+  fn consume_tag(&mut self, tag: &str) -> Option<String> {
+    let gs = graphemes::init_tag(tag); 
     let gs_len = gs.len();
+
+    // Must have enough remaining characters
     if self.len() < gs_len {
-      return (false, 0);
+      return None;
     }
+
+    // Try to match the tag
+    let mut tmp_location = self.location;
     for i in 0..gs_len {
-      if self.graphemes[self.cursor + i] != gs[i] {
-        return (false, 0);
+      let c = self.cursor + i;
+      let g = self.graphemes[c];
+      if g != gs[i] {
+        return None;
+      }
+
+      if graphemes::is_newline(g) {
+        if !self.is_last_grapheme(c) {
+          tmp_location.row += 1;
+          tmp_location.col = 1;
+        }
+      } else {
+        tmp_location.col += graphemes::width(g);
       }
     }
-    (true, gs_len)
+
+    // Tag matched, commit change
+    self.cursor += gs_len;
+    self.location = tmp_location;
+    Some(tag.to_string())
   }
 
   /// Mutate self by consuming one grapheme
@@ -83,20 +162,18 @@ impl<'a> ParseString<'a> {
       return None;
     }
     let g = self.graphemes[self.cursor];
+    if graphemes::is_newline(g) {
+      if !self.is_last_grapheme(self.cursor) {
+        self.location.row += 1;
+        self.location.col = 1;
+      }
+    } else {
+      self.location.col += graphemes::width(g);
+    }
     self.cursor += 1;
     Some(g.to_string())
   }
 
-  /// If current location matches the tag, consume the matched string.
-  fn consume_tag(&mut self, tag: &str) -> Option<String> {
-    let (matched, gs_len) = self.match_tag(tag);
-    if matched {
-      self.cursor += gs_len;
-      Some(tag.to_string())
-    } else {
-      None
-    }
-  }
 
   /// If current location matches any emoji, consume the matched string.
   fn consume_emoji(&mut self) -> Option<String> {
@@ -104,13 +181,13 @@ impl<'a> ParseString<'a> {
       return None;
     }
     let g = self.graphemes[self.cursor];
-    if let Some(c) = g.chars().next() {
-      if !c.is_ascii() && !c.is_alphabetic() {
-        self.cursor += 1;
-        return Some(g.to_string());
-      }
+    if graphemes::is_emoji(g) {
+      self.cursor += 1;
+      self.location.col += graphemes::width(g);
+      Some(g.to_string())
+    } else {
+      None
     }
-    None
   }
 
   /// If current location matches any alpha char, consume the matched string.
@@ -119,13 +196,13 @@ impl<'a> ParseString<'a> {
       return None;
     }
     let g = self.graphemes[self.cursor];
-    if let Some(c) = g.chars().next() {
-      if c.is_alphabetic() {
-        self.cursor += 1;
-        return Some(g.to_string());
-      }
+    if graphemes::is_alpha(g) {
+      self.cursor += 1;
+      self.location.col += graphemes::width(g);
+      Some(g.to_string())
+    } else {
+      None
     }
-    None
   }
 
   /// If current location matches any digit, consume the matched string.
@@ -134,13 +211,23 @@ impl<'a> ParseString<'a> {
       return None;
     }
     let g = self.graphemes[self.cursor];
-    if let Some(c) = g.chars().next() {
-      if c.is_numeric() {
-        self.cursor += 1;
-        return Some(g.to_string());
-      }
+    if graphemes::is_numeric(g) {
+      self.cursor += 1;
+      self.location.col += graphemes::width(g);
+      Some(g.to_string())
+    } else {
+      None
     }
-    None
+  }
+
+  /// Get cursor's location in source code
+  fn loc(&self) -> SourceLocation {
+    self.location
+  }
+
+  /// Test whether the grapheme pointed by cursor is the last grapheme
+  fn is_last_grapheme(&self, c: usize) -> bool {
+    (self.graphemes.len() - 1 - c) == 0
   }
 
   /// Get remaining (unparsed) length
@@ -170,14 +257,29 @@ impl<'a> nom::InputLength for ParseString<'a> {
 #[derive(Clone, Debug)]
 struct ParseErrorDetail {
   message: &'static str,
-  annotation_rngs: Vec<ParseStringRange>,
+  annotation_rngs: Vec<SourceRange>,
 }
 
 /// The error type for the nom parser, which handles full error context
 /// (location + detail) and ownership of the input ParseString.
+///
+/// Eventually error context will be logged and ownership will be moved out.
 struct ParseError<'a> {
-  cause_range: ParseStringRange,
+  /// Cause range is defined as [start, end), where `start` points at the first
+  /// character that's catched by a label, and `end` points at the next 
+  /// character of the character that didn't match.
+  ///
+  /// Example:
+  ///   index:  1234567
+  ///   input:  abcdefg
+  ///   error:   ~~~^
+  ///   range:   |   |
+  ///           [2,  5)
+  ///
+  cause_range: SourceRange,
+  /// Hold ownership to the input ParseString
   remaining_input: ParseString<'a>,
+  /// Detailed information about this error
   error_detail: ParseErrorDetail,
 }
 
@@ -186,8 +288,11 @@ impl<'a> ParseError<'a> {
   /// and empty annotations.  Ownership of the input is also passed into this
   /// error object.
   fn new(input: ParseString<'a>, msg: &'static str) -> Self {
+    let start = input.loc();
+    let mut end = start;
+    end.col += 1;
     ParseError {
-      cause_range: (input.cursor, input.cursor + 1),
+      cause_range: SourceRange { start, end },
       remaining_input: input,
       error_detail: ParseErrorDetail {
         message: msg,
@@ -204,13 +309,13 @@ impl<'a> ParseError<'a> {
 
 /// Required by nom
 impl<'a> nom::error::ParseError<ParseString<'a>> for ParseError<'a> {
-  /// Not used
+  /// Not used, unless we have logical error
   fn from_error_kind(input: ParseString<'a>,
                      _kind: nom::error::ErrorKind) -> Self {
     ParseError::new(input, "Unexpected error")
   }
 
-  /// Not used
+  /// Probably not used
   fn append(_input: ParseString<'a>,
             _kind: nom::error::ErrorKind,
             other: Self) -> Self {
@@ -219,9 +324,9 @@ impl<'a> nom::error::ParseError<ParseString<'a>> for ParseError<'a> {
 
   /// Barely used, but we do want to keep the error with larger depth.
   fn or(self, other: Self) -> Self {
-    let (self_index, _) = self.cause_range;
-    let (other_index, _) = other.cause_range;
-    if self_index > other_index {
+    let self_start = self.cause_range.start;
+    let other_start = other.cause_range.start;
+    if self_start > other_start {
       self
     } else {
       other
@@ -249,15 +354,15 @@ where
 /// For parser p, run p and also output the range that p has matched
 /// upon success.
 fn range<'a, F, O>(mut parser: F) ->
-  impl FnMut(ParseString<'a>) -> ParseResult<(O, ParseStringRange)>
+  impl FnMut(ParseString<'a>) -> ParseResult<(O, SourceRange)>
 where
   F: FnMut(ParseString<'a>) -> ParseResult<O>
 {
   move |input: ParseString| {
-    let a = input.cursor;
+    let start = input.loc();
     match parser(input) {
       Ok((remaining, o)) => {
-        let rng = (a, remaining.cursor);
+        let rng = SourceRange { start, end: remaining.loc(), };
         Ok((remaining, (o, rng)))
       },
       Err(e) => Err(e),
@@ -304,10 +409,10 @@ where
   F: FnMut(ParseString<'a>) -> ParseResult<O>
 {
   move |mut input: ParseString| {
-    let index_before_parser = input.cursor;
+    let start = input.loc();
     match parser(input) {
       Err(Err::Error(mut e)) => {
-        e.cause_range = (index_before_parser, e.cause_range.1);
+        e.cause_range = SourceRange { start, end: e.cause_range.end };
         e.error_detail = error_detail.clone();
         Err(Err::Failure(e))
       }
@@ -329,10 +434,10 @@ where
   F: FnMut(ParseString<'a>) -> ParseResult<O>
 {
   move |mut input: ParseString| {
-    let index_before_parsing = input.cursor;
+    let start = input.loc();
     match parser(input) {
       Err(Err::Error(mut e)) => {
-        e.cause_range = (index_before_parsing, e.cause_range.1);
+        e.cause_range = SourceRange { start, end: e.cause_range.end };
         e.error_detail = error_detail.clone();
         e.log();
         recovery_fn(e.remaining_input)
@@ -470,8 +575,11 @@ fn any(mut input: ParseString) -> ParseResult<String> {
 macro_rules! leaf {
   ($name:ident, $byte:expr, $token:expr) => (
     fn $name(input: ParseString) -> ParseResult<ParserNode> {
+      let start = input.loc();
       let (input, _) = tag($byte)(input)?;
-      Ok((input, ParserNode::Token{token: $token, chars: $byte.chars().collect::<Vec<char>>()}))
+      let end = input.loc();
+      let src_range = SourceRange { start, end };
+      Ok((input, ParserNode::Token{token: $token, chars: $byte.chars().collect::<Vec<char>>(), src_range}))
     }
   )
 }
@@ -512,17 +620,28 @@ leaf!{new_line_char, "\n", Token::Newline}
 leaf!{carriage_return, "\r", Token::CarriageReturn}
 
 // emoji ::= emoji_grapheme+ ;
-fn emoji(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, matching) = many1(emoji_grapheme)(input)?;
-  let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: Token::Emoji, chars: b.chars().collect::<Vec<char>>()}).collect();
-  Ok((input, ParserNode::Emoji{children: chars}))
+fn emoji<'a>(input: ParseString<'a>) -> ParseResult<ParserNode> {
+  let emoji_token = |input: ParseString<'a>| {
+    let start = input.loc();
+    let (input, g) = emoji_grapheme(input)?;
+    let end = input.loc();
+    let src_range = SourceRange { start, end };
+    Ok((input, ParserNode::Token{token: Token::Emoji, chars: g.chars().collect::<Vec<char>>(), src_range}))
+  };
+  let (input, tokens) = many1(emoji_token)(input)?;
+  // let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: Token::Emoji, chars: b.chars().collect::<Vec<char>>()}).collect();
+  Ok((input, ParserNode::Emoji{children: tokens}))
 }
 
 // word ::= alpha+ ;
-fn word(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, matching) = many1(alpha)(input)?;
-  let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: Token::Alpha, chars: b.chars().collect::<Vec<char>>()}).collect();
-  Ok((input, ParserNode::Word{children: chars}))
+fn word<'a>(input: ParseString<'a>) -> ParseResult<ParserNode> {
+  let alpha_token = |input: ParseString<'a>| {
+    let (input, (g, src_range)) = range(alpha)(input)?;
+    Ok((input, ParserNode::Token{token: Token::Alpha, chars: g.chars().collect::<Vec<char>>(), src_range}))
+  };
+  let (input, tokens) = many1(alpha_token)(input)?;
+  // let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: Token::Alpha, chars: b.chars().collect::<Vec<char>>()}).collect();
+  Ok((input, ParserNode::Word{children: tokens}))
 }
 
 // digit1 ::= digit+ ;
@@ -557,10 +676,14 @@ fn oct_digit(input: ParseString) -> ParseResult<String> {
 }
 
 // number ::= digit1 ;
-fn number(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, matching) = digit1(input)?;
-  let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: Token::Digit, chars: b.chars().collect::<Vec<char>>()}).collect();
-  Ok((input, ParserNode::Number{children: chars}))
+fn number<'a>(input: ParseString<'a>) -> ParseResult<ParserNode> {
+  let digit_token = |input: ParseString<'a>| {
+    let (input, (g, src_range)) = range(digit)(input)?;
+    Ok((input, ParserNode::Token{token: Token::Digit, chars: g.chars().collect::<Vec<char>>(), src_range}))
+  };
+  let (input, tokens) = many1(digit_token)(input)?;
+  // let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: Token::Digit, chars: b.chars().collect::<Vec<char>>()}).collect();
+  Ok((input, ParserNode::Number{children: tokens}))
 }
 
 // punctuation ::= period | exclamation | question | comma | colon | semicolon | dash | apostrophe | left_parenthesis | right_parenthesis | left_angle | right_angle | left_brace | right_brace | left_bracket | right_bracket ;
@@ -708,6 +831,7 @@ fn number_literal(input: ParseString) -> ParseResult<ParserNode> {
 
 // float_literal ::= "."?, digit1, "."?, digit0 ;
 fn float_literal(input: ParseString) -> ParseResult<ParserNode> {
+  let start = input.loc();
   let (input, p1) = opt(tag("."))(input)?;
   let (input, p2) = digit1(input)?;
   let (input, p3) = opt(tag("."))(input)?;
@@ -723,39 +847,53 @@ fn float_literal(input: ParseString) -> ParseResult<ParserNode> {
   }
   let mut digits = p4.iter().flat_map(|c| c.chars()).collect::<Vec<char>>();
   whole.append(&mut digits);
-  Ok((input, ParserNode::FloatLiteral{chars: whole}))
+  let end = input.loc();
+  let src_range = SourceRange { start, end };
+  Ok((input, ParserNode::FloatLiteral{chars: whole, src_range}))
 }
 
 // decimal_literal ::= "0d", <digit1> ;
 fn decimal_literal(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect decimal digits after \"0d\"";
+  let start = input.loc();
   let (input, _) = tag("0d")(input)?;
   let (input, chars) = label!(digit1, msg)(input)?;
-  Ok((input, ParserNode::DecimalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
+  let end = input.loc();
+  let src_range = SourceRange { start, end };
+  Ok((input, ParserNode::DecimalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect(), src_range}))
 }
 
 // hexadecimal_literal ::= "0x", <hex_digit+> ;
 fn hexadecimal_literal(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect hexadecimal digits after \"0x\"";
+  let start = input.loc();
   let (input, _) = tag("0x")(input)?;
   let (input, chars) = label!(many1(hex_digit), msg)(input)?;
-  Ok((input, ParserNode::HexadecimalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
+  let end = input.loc();
+  let src_range = SourceRange { start, end };
+  Ok((input, ParserNode::HexadecimalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect(), src_range}))
 }
 
 // octal_literal ::= "0o", <oct_digit+> ;
 fn octal_literal(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect octal digits after \"0o\"";
+  let start = input.loc();
   let (input, _) = tag("0o")(input)?;
   let (input, chars) = label!(many1(oct_digit), msg)(input)?;
-  Ok((input, ParserNode::OctalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
+  let end = input.loc();
+  let src_range = SourceRange { start, end };
+  Ok((input, ParserNode::OctalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect(), src_range}))
 }
 
 // binary_literal ::= "0b", <bin_digit+> ;
 fn binary_literal(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect binary digits after \"0b\"";
+  let start = input.loc();
   let (input, _) = tag("0b")(input)?;
   let (input, chars) = label!(many1(bin_digit), msg)(input)?;
-  Ok((input, ParserNode::BinaryLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect()}))
+  let end = input.loc();
+  let src_range = SourceRange { start, end };
+  Ok((input, ParserNode::BinaryLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect(), src_range}))
 }
 
 // value ::= empty | boolean_literal | number_literal | string ;
@@ -1342,10 +1480,10 @@ fn until_data(input: ParseString) -> ParseResult<ParserNode> {
 // >>             until_data   | set_data     | update_data     | add_row     | comment ), space*, <newline+> ;
 fn statement(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect newline to terminate statement";
-  let (input, statement) = alt((followed_by, table_define, variable_define, split_data, flatten_data, whenever_data, wait_data, until_data, set_data, update_data, add_row, comment))(input)?;
+  let (input, (statement, src_range)) = range(alt((followed_by, table_define, variable_define, split_data, flatten_data, whenever_data, wait_data, until_data, set_data, update_data, add_row, comment)))(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, _) = label!(many1(newline), msg)(input)?;
-  Ok((input, ParserNode::Statement{children: vec![statement]}))
+  Ok((input, ParserNode::Statement{children: vec![statement], src_range}))
 }
 
 // #### Expressions
@@ -1397,7 +1535,7 @@ fn user_function(input: ParseString) -> ParseResult<ParserNode> {
   let msg7 = "Expect right parenthesis ')'";
   let msg8 = "Expect newline after user function header";
   let msg9 = "Expect indented transformations for function body";
-  let a = input.cursor;
+  let start = input.loc();
   let (input, (_, r1)) = range(left_bracket)(input)?;
   let (input, mut output_args) = many0(function_output)(input)?;
   let (input, _) = label!(right_bracket, msg1, r1)(input)?;
@@ -1409,8 +1547,8 @@ fn user_function(input: ParseString) -> ParseResult<ParserNode> {
   let (input, mut input_args) = many0(function_input)(input)?;
   let (input, _) = label!(right_parenthesis, msg7, r2)(input)?;
   let (input, _) = label!(newline, msg8)(input)?;
-  let b = input.cursor;
-  let (input, function_body) = label!(function_body, msg9, (a, b))(input)?;
+  let end = input.loc();
+  let (input, function_body) = label!(function_body, msg9, SourceRange {start, end})(input)?;
   Ok((input, ParserNode::UserFunction { children: vec![ParserNode::FunctionArgs{children: output_args}, function_name, ParserNode::FunctionArgs{children: input_args}, function_body] }))
 }
 
@@ -1776,9 +1914,9 @@ fn indented_tfm(input: ParseString) -> ParseResult<ParserNode> {
 
 // block ::= indented_tfm+, whitespace* ;
 fn block(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, transformations) = many1(indented_tfm)(input)?;
+  let (input, (transformations, src_range)) = range(many1(indented_tfm))(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  Ok((input, ParserNode::Block { children: transformations }))
+  Ok((input, ParserNode::Block { children: transformations, src_range }))
 }
 
 // ### Markdown
@@ -2035,10 +2173,10 @@ struct TextFormatter<'a> {
 
 impl<'a> TextFormatter<'a> {
   fn new(text: &'a str) -> Self {
-    let graphemes = get_graphemes(text);
+    let graphemes = graphemes::init_source(text);
     let mut line_beginnings = vec![0];
     for i in 0..graphemes.len() {
-      if Self::grapheme_is_newline(graphemes[i]) {
+      if graphemes::is_newline(graphemes[i]) {
         line_beginnings.push(i + 1);
       }
     }
@@ -2052,16 +2190,6 @@ impl<'a> TextFormatter<'a> {
 
   // Index interpreter
 
-  fn index_is_at_line(&self, index: usize, linenum: usize) -> bool {
-    let line_index = linenum - 1;
-    let line_rng = self.get_line_range(linenum).unwrap();
-    if line_rng.1 == self.end_index {  // linenum is the last line
-      index >= line_rng.0
-    } else {
-      index >= line_rng.0 && index < line_rng.1
-    }
-  }
-
   fn get_line_range(&self, linenum: usize) -> Option<(usize, usize)> {
     let line_index = linenum - 1;
     if line_index >= self.line_beginnings.len() {
@@ -2074,7 +2202,10 @@ impl<'a> TextFormatter<'a> {
   }
 
   fn get_text_by_linenum(&self, linenum: usize) -> String {
-    let (start, end) = self.get_line_range(linenum).unwrap();
+    let (start, end) = match self.get_line_range(linenum) {
+      Some(v) => v,
+      None => return "\n".to_string(),
+    };
     let mut s = self.graphemes[start..end].iter().map(|s| *s).collect::<String>();
     if !s.ends_with("\n") {
       s.push('\n');
@@ -2083,60 +2214,18 @@ impl<'a> TextFormatter<'a> {
   }
 
   fn get_textlen_by_linenum(&self, linenum: usize) -> usize {
-    let (start, end) = self.get_line_range(linenum).unwrap();
+    let (start, end) = match self.get_line_range(linenum) {
+      Some(v) => v,
+      None => return 1,
+    };
     let mut len = 0;
     for i in start..end {
-      len += Self::grapheme_width(self.graphemes[i]);
+      len += graphemes::width(self.graphemes[i]);
     }
     len + 1
   }
 
-  fn get_location_by_index(&self, index: usize) -> (usize, usize) {
-    let a = self.line_beginnings.binary_search_by(
-      |n| if n <= &index { Ordering::Equal } else { Ordering::Greater }).unwrap();
-    let mut i = 1;
-    while !self.index_is_at_line(index, a + i) {
-      i += 1;
-    }
-    let row = a + i;
-    let row_beginning = self.line_beginnings[row - 1];
-    let mut col = 1;
-    for j in row_beginning..index {
-      col += Self::grapheme_width(self.graphemes[j]);
-    }
-    (row, col)
-  }
-
-  fn get_location_by_cause_range(&self, rng: ParseStringRange) -> (usize, usize) {
-    self.get_location_by_index(rng.1 - 1)
-  }
-
-  fn grapheme_width(grapheme: &str) -> usize {
-    let mut width = 0;
-    for ch in grapheme.chars() {
-      if ch.is_ascii() {
-        if !ch.is_ascii_control() || ch == '\t' {
-          width += 1;
-        }  // else width += 0
-      } else if ch.is_alphanumeric() {  // TODO: unicode width?
-        width += 2;
-      } else {
-        return 2;
-      }
-    }
-    width
-  }
-
-  fn grapheme_is_newline(grapheme: &str) -> bool {
-    for ch in grapheme.chars() {
-      if ch == '\n' {
-        return true;
-      }
-    }
-    false
-  }
-
-  // Formatted string printer
+  // FormattedString printer
 
   fn heading_color(s: &str) -> String {
     s.truecolor(246, 192, 78).bold().to_string()
@@ -2174,7 +2263,9 @@ impl<'a> TextFormatter<'a> {
   }
 
   fn err_location(&self, ctx: &ParserErrorContext) -> String {
-    let (row, col) = self.get_location_by_cause_range(ctx.cause_rng);
+    let err_end = ctx.cause_rng.end;
+    // error range will not ends at first column, so `minus 1` here is safe
+    let (row, col) = (err_end.row, err_end.col - 1);
     let s = format!("@location:{}:{}\n", row, col);
     Self::location_color(&s)
   }
@@ -2185,11 +2276,16 @@ impl<'a> TextFormatter<'a> {
     let mut annotation_rngs = ctx.annotation_rngs.clone();
     annotation_rngs.push(ctx.cause_rng);
 
-    // the lines to print
+    // the lines to print (1-indexed)
     let mut lines_to_print: Vec<usize> = vec![];
-    for (a, b) in &annotation_rngs {
-      let (r1, _) = self.get_location_by_index(*a);
-      let (r2, _) = self.get_location_by_index(b - 1);
+    for rng in &annotation_rngs {
+      let r1 = rng.start.row;
+      // if range ends at first column, it doesn't reach that row
+      let r2 = if rng.end.col == 1 {
+        usize::max(rng.start.row, rng.end.row - 1)
+      } else {
+        rng.end.row
+      };
       for i in r1..=r2 {
         lines_to_print.push(i);
       }
@@ -2200,21 +2296,26 @@ impl<'a> TextFormatter<'a> {
     // the annotations on each line
     // <linenum, Vec<(start_col, rng_len, is_major, is_cause)>>
     let mut range_table: HashMap<usize, Vec<(usize, usize, bool, bool)>> = HashMap::new();
-    for line in &lines_to_print {
-      range_table.insert(*line, vec![]);
+    for linenum in &lines_to_print {
+      range_table.insert(*linenum, vec![]);
     }
     let n = annotation_rngs.len() - 1;  // if i == n, it's the last rng, i.e. the cause rng
-    for (i, (a, b)) in annotation_rngs.iter().enumerate() {
-      let (r1, c1) = self.get_location_by_index(*a);
-      let (r2, c2) = self.get_location_by_index(b - 1);
+    for (i, rng) in annotation_rngs.iter().enumerate() {
+      // c2 might be 0
+      let (r1, c1) = (rng.start.row, rng.start.col);
+      let (r2, c2) = (rng.end.row, rng.end.col - 1);
       if r1 == r2 {  // the entire range is on one line
-        range_table.get_mut(&r1).unwrap().push((c1, c2 - c1 + 1, true, i == n));
+        if c2 >= c1 {  // and the range has non-zero length
+          range_table.get_mut(&r1).unwrap().push((c1, c2 - c1 + 1, true, i == n));
+        }
       } else {  // the range spans over multiple lines
         range_table.get_mut(&r1).unwrap().push((c1, usize::MAX, i != n, i == n));
         for r in r1+1..r2 {
           range_table.get_mut(&r).unwrap().push((1, usize::MAX, false, i == n));
         }
-        range_table.get_mut(&r2).unwrap().push((1, c2, i == n, i == n));
+        if c2 != 0 {  // only add the last line if it has non-zero length
+          range_table.get_mut(&r2).unwrap().push((1, c2, i == n, i == n));
+        }
       }
     }
 
@@ -2287,8 +2388,9 @@ impl<'a> TextFormatter<'a> {
       result.push('\n');
     }
 
-    // print error message
-    let (_cause_row, cause_col) = self.get_location_by_index(ctx.cause_rng.1 - 1);
+    // print error message;
+    // error range never ends at first column, so it's safe to `minus 1` here
+    let cause_col = ctx.cause_rng.end.col - 1;
     result.push_str(indentation);
     for _ in 0..row_str_len { result.push(' '); }
     result.push_str(vert_split2);
@@ -2324,30 +2426,18 @@ impl<'a> TextFormatter<'a> {
   }
 }
 
+// ## Public interface
+
 /// Print formatted error message.
 pub fn print_err_report(text: &str, report: &ParserErrorReport) {
   let msg = TextFormatter::new(text).format_error(report);
   println!("{}", msg);
 }
 
-// ## Parser interfaces
-
-fn get_graphemes(text: &str) -> Vec<&str> {
-  let mut graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
-  if let Some(g) = graphemes.last() {
-    if !TextFormatter::grapheme_is_newline(g) {
-      graphemes.push("\n");
-    }
-  } else {
-    graphemes.push("\n");
-  }
-  graphemes
-}
-
 pub fn parse(text: &str) -> Result<ParserNode, MechError> {
-  let graphemes = get_graphemes(text);
+  let graphemes = graphemes::init_source(text);
   let mut result_node = ParserNode::Error;
-  let mut error_log: Vec<(ParseStringRange, ParseErrorDetail)> = vec![];
+  let mut error_log: Vec<(SourceRange, ParseErrorDetail)> = vec![];
   let remaining: ParseString;
 
   // Do parse
@@ -2389,9 +2479,9 @@ pub fn parse(text: &str) -> Result<ParserNode, MechError> {
 }
 
 pub fn parse_fragment(text: &str) -> Result<ParserNode, MechError> {
-  let graphemes = get_graphemes(text);
+  let graphemes = graphemes::init_source(text);
   let mut result_node = ParserNode::Error;
-  let mut error_log: Vec<(ParseStringRange, ParseErrorDetail)> = vec![];
+  let mut error_log: Vec<(SourceRange, ParseErrorDetail)> = vec![];
   let remaining: ParseString;
 
   // Do parse
@@ -2466,16 +2556,17 @@ mod tests {
         };
     
         // Parser error should match with expected
-        let tf = parser::TextFormatter::new(text);
         assert_eq!(error_report.len(), err_locations_exp.len());
         for i in 0..error_report.len() {
           let rng = error_report[i].cause_rng;
-          let reported_location = tf.get_location_by_cause_range(rng);
+          // error range never ends at first column, so it's safe to `minus 1` here
+          let reported_location = (rng.end.row, rng.end.col - 1);
           let expected_location = err_locations_exp[i];
           assert_eq!(reported_location, expected_location);
         }
 
         // Formatting function doesn't crash
+        let tf = parser::TextFormatter::new(text);
         let msg = tf.format_error(&error_report);
         assert_ne!(msg.len(), 0);
       }
