@@ -19,5 +19,6 @@ extern crate lazy_static;
 pub mod parser;
 pub mod ast;
 pub mod compiler;
+#[cfg(feature="lang-server")]
 pub mod langserver;
 //pub mod formatter;
