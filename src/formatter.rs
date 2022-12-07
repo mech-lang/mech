@@ -1,6 +1,5 @@
 use mech_core::TableId;
-use mech_core::QuantityMath;
-use super::compiler::Node;
+use mech_core::nodes::AstNode;
 use hashbrown::hash_map::{HashMap};
 
 // # Formatter
@@ -32,38 +31,31 @@ impl Formatter {
     }
   }
 
-  pub fn format(&mut self, block_ast: &Node, html: bool) -> String {
+  pub fn format(&mut self, block_ast: &AstNode, html: bool) -> String {
     self.html = html;
     let code = self.write_node(block_ast);
     code
   }
 
-  pub fn write_node(&mut self, node: &Node) -> String {
+  pub fn write_node(&mut self, node: &AstNode) -> String {
     let mut code = String::new();
     let mut node_type = "";
     match node {
-      Node::Quantity{value, unit} => {
-        node_type = "constant";
-        let unit_label = match unit {
-          Some(unit_label) => unit_label,
-          None => "",
-        };
-        code = format!("{}{}", value.format(), unit_label);
-      },
-      Node::Empty => {
+      AstNode::Empty => {
         node_type = "empty";
         code = "_".to_string();
       },
-      Node::True => {
+      AstNode::True => {
         node_type = "true";
         code = "true".to_string();
       },
-      Node::False => {
+      AstNode::False => {
         node_type = "false";
         code = "false".to_string();
       },
-      Node::Function{name, children} => {
-        match name.as_ref() {
+      AstNode::Function{name, children,..} => {
+        match name.iter().cloned().collect::<String>().as_ref()
+        {
           "table/range" => {
             let lhs = self.write_node(&children[0]);
             let rhs = self.write_node(&children[1]);
@@ -149,25 +141,25 @@ impl Formatter {
               }
             }
             code = if self.html {
-              format!("<span class=\"highlight-function-name\">{}</span>({})", name, code)
+              format!("<span class=\"highlight-function-name\">{:?}</span>({})",name.iter().cloned().collect::<String>(), code)
             } else {
-              format!("{}({})", name, code)
+              format!("{:?}({})", name.iter().cloned().collect::<String>(), code)
             }
           }
         }
       },
-      Node::Table{name, id: _} => {
-        code = name.clone();
+      AstNode::Table{name, id: _,..} => {
+        code = name.iter().cloned().collect::<String>();
         if self.html {
           code = format!("<span class=\"highlight-bracket\">#</span><span class=\"highlight-global-variable\">{}</span>", code)
         } else {
           code = format!("#{}", code)
         }
       },
-      Node::Identifier{name, id: _} => {
-        code = name.clone();
+      AstNode::Identifier{name, id: _,..} => {
+        code = name.iter().cloned().collect::<String>();
       },
-      Node::TableDefine{children} => {
+      AstNode::TableDefine{children} => {
         let lhs = self.write_node(&children[0]);
         self.indent = if self.html {
           lhs.len() + 3 - 37 - 47
@@ -182,12 +174,12 @@ impl Formatter {
         };
         code = format!("{} = {}", lhs, rhs)
       },
-      Node::SetData{children} => {
+      AstNode::SetData{children} => {
         let lhs = self.write_node(&children[0]);
         let rhs = self.write_node(&children[1]);
         code = format!("{} := {}", lhs, rhs);
       },
-      Node::SplitData{children} => {
+      AstNode::SplitData{children} => {
         let lhs = self.write_node(&children[0]);
         self.indent = if self.html {
           lhs.len() + 4
@@ -202,12 +194,12 @@ impl Formatter {
         };
         code = format!("{} >- {}", lhs, rhs);
       },
-      Node::AddRow{children} => {
+      AstNode::AddRow{children} => {
         let lhs = self.write_node(&children[0]);
         let rhs = self.write_node(&children[1]);
         code = format!("{} += {}", lhs, rhs);
       },
-      Node::VariableDefine{children} => {
+      AstNode::VariableDefine{children} => {
         let lhs = self.write_node(&children[0]);
         self.indent = if self.html {
           lhs.len() + 4
@@ -222,11 +214,11 @@ impl Formatter {
         };
         code = format!("{} = {}", lhs, rhs);
       },
-      Node::String{text} => {
+      AstNode::String{text,..} => {
         node_type = "string";
-        code = format!("\"{}\"", text);
+        code = format!("\"{:?}\"", text);
       },
-      Node::SelectData{name, id, children} => {
+      AstNode::SelectData{name, id, children,..} => {
         for child in children {
           let written_child = self.write_node(child);
           code = format!("{}{}",code, written_child);
@@ -234,22 +226,22 @@ impl Formatter {
         let formatted_name = match id {
           TableId::Local(..) => {
             if self.html {
-              format!("<span class=\"highlight-local-variable\">{}</span>", name)
+              format!("<span class=\"highlight-local-variable\">{:?}</span>", name)
             } else {
-              format!("{}", name)
+              format!("{:?}", name)
             }
           },
           TableId::Global(..) => {
             if self.html {
-              format!("<span class=\"highlight-bracket\">#</span><span class=\"highlight-global-variable\">{}</span>", name)
+              format!("<span class=\"highlight-bracket\">#</span><span class=\"highlight-global-variable\">{:?}</span>", name)
             } else {
-              format!("#{}", name)
+              format!("#{:?}", name)
             }
           },
         };
         code = format!("{}{}",formatted_name, code);
       }
-      Node::SubscriptIndex{children} => {
+      AstNode::SubscriptIndex{children} => {
         for (ix, child) in children.iter().enumerate() {
           let written_child = self.write_node(child);
           if ix == children.len() - 1 {
@@ -268,7 +260,7 @@ impl Formatter {
           code = format!("{{{}}}", code);
         }
       }
-      Node::DotIndex{children} => {
+      AstNode::DotIndex{children} => {
         let mut reversed = children.clone();
         reversed.reverse();
         for child in reversed {
@@ -277,7 +269,7 @@ impl Formatter {
         }
         code = format!(".{}", code);
       }
-      Node::AnonymousTableDefine{children} => {
+      AstNode::AnonymousTableDefine{children} => {
         let nested = self.nested;
         let rows = self.rows;
         let cols = self.cols;
@@ -305,11 +297,11 @@ impl Formatter {
         self.rows = rows;
         self.cols = cols;
       }
-      Node::SelectAll => {
+      AstNode::SelectAll => {
         node_type = "function";
         code = ":".to_string();
       }
-      Node::InlineTable{children} => {
+      AstNode::InlineTable{children} => {
         let nested = self.nested;
         self.nested = true;
         for (ix, child) in children.iter().enumerate() {
@@ -331,7 +323,7 @@ impl Formatter {
           code = format!("[{}]", code);
         };
       }
-      Node::Binding{children} => {
+      AstNode::Binding{children} => {
         let lhs = self.write_node(&children[0]);
         let rhs = self.write_node(&children[1]);
         if self.html {
@@ -340,7 +332,7 @@ impl Formatter {
           code = format!("{}: {}", lhs, rhs);
         };
       }
-      Node::Whenever{children} => {
+      AstNode::Whenever{children} => {
         let table = self.write_node(&children[0]);
         if self.html {
           code = format!("<span class=\"highlight-watch\">~</span> {}", table);
@@ -348,7 +340,7 @@ impl Formatter {
           code = format!("~ {}", table);
         };
       }
-      Node::Wait{children} => {
+      AstNode::Wait{children} => {
         let table = self.write_node(&children[0]);
         if self.html {
           code = format!("<span class=\"highlight-watch\">|~</span> {}", table);
@@ -356,7 +348,7 @@ impl Formatter {
           code = format!("|~ {}", table);
         };
       }
-      Node::Until{children} => {
+      AstNode::Until{children} => {
         let table = self.write_node(&children[0]);
         if self.html {
           code = format!("<span class=\"highlight-watch\">~|</span> {}", table);
@@ -364,7 +356,7 @@ impl Formatter {
           code = format!("~| {}", table);
         };
       }
-      Node::TableHeader{children} => {
+      AstNode::TableHeader{children} => {
         self.rows += 1;
         node_type = "parameter";
         for child in children {
@@ -373,7 +365,7 @@ impl Formatter {
         }
         code = format!("|{}|",code);
       }
-      Node::TableRow{children} => {
+      AstNode::TableRow{children} => {
         self.rows += 1;
         self.cols = 0;
         for (ix, child) in children.iter().enumerate() {
@@ -391,22 +383,22 @@ impl Formatter {
         };
         code = format!("{}{}", indent, code)
       }
-      Node::TableColumn{children} => {
+      AstNode::TableColumn{children,..} => {
         self.cols += 1;
         for child in children {
           code = self.write_node(child);
         }
       }
-      Node::Attribute{children} |
-      Node::MathExpression{children} |
-      Node::Expression{children} |
-      Node::Statement{children} |
-      Node::Transformation{children, ..} => {
+      AstNode::Attribute{children,..} |
+      AstNode::MathExpression{children,..} |
+      AstNode::Expression{children,..} |
+      AstNode::Statement{children,..} |
+      AstNode::Transformation{children, ..} => {
         for child in children {
           code = self.write_node(child);
         }
       },
-      Node::Block{children, ..} => {
+      AstNode::Block{children, ..} => {
         for child in children {
           let constraint = self.write_node(child);
           code = format!("{}{}\n", code, constraint);
