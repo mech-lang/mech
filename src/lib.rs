@@ -277,6 +277,7 @@ pub fn minify_blocks(sections: &Vec<Vec<SectionElement>>) -> Vec<Vec<MiniBlock>>
             miniblock.errors.push(error.clone());
           }*/
           miniblock.id = block.id;
+          miniblock.ast = block.ast.clone();
           miniblocks.push(miniblock);
         }
         _ => (),

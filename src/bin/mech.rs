@@ -138,6 +138,14 @@ async fn main() -> Result<(), MechError> {
         .multiple(true)))
     .subcommand(SubCommand::with_name("clean")
       .about("Remove the machines folder"))
+    .subcommand(SubCommand::with_name("langserver")
+      .about("Run a local mech language server")
+      .arg(Arg::with_name("port")
+        .short("p")
+        .long("port")
+        .value_name("PORT")
+        .help("Sets the port for the server (default: 4041)")
+        .takes_value(true)))
     .subcommand(SubCommand::with_name("run")
       .about("Run a target folder or *.mec file")
       .arg(Arg::with_name("repl_mode")
@@ -495,10 +503,26 @@ async fn main() -> Result<(), MechError> {
     println!("{} Wrote {}", "[Finished]".bright_green(), output_name);
     std::process::exit(0);
     None
+  // ------------------------------------------------
+  //  Clean
+  // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("clean") {
     std::fs::remove_dir_all("machines");
     std::process::exit(0);
     None
+  // ------------------------------------------------
+  //  Run language server
+  // ------------------------------------------------
+  } else if let Some(matches) = matches.subcommand_matches("langserver") {
+    let address = "localhost".to_owned();
+    let port = matches.value_of("port").unwrap_or("4041").to_string();
+    println!("{} Starting language server at {}:{}", "[INFO]".bright_cyan(), address, port);
+    mech_syntax::langserver::run_langserver(&address, &port).await?;
+    std::process::exit(0);
+    None
+  // ------------------------------------------------
+  //  Not matched
+  // ------------------------------------------------
   } else {
     None
   };

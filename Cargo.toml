@@ -18,7 +18,7 @@ maintenance = { status = "actively-developed" }
 
 [dependencies]
 mech-core = {path = "src/core"}
-mech-syntax = {path = "src/syntax"}
+mech-syntax = {path = "src/syntax", features = ["lang-server"]}
 mech-program = {path = "src/program"}
 mech-utilities = {path = "src/utilities"}
 
