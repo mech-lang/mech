@@ -1248,22 +1248,32 @@ fn formatted_table_define(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = table_line(input)?;
   let (input, name) = table_name(input)?;
   let (input, _) = table_line(input)?;
-  let (input, table_header) = opt(formatted_table_columns)(input)?;
-  let (input, _) = opt(table_line)(input)?;
+  let (input, table) = alt((table_with_column, table_no_column))(input)?;
+  let mut children = vec![];
+  children.push(name); 
+  children.push(table);
+  Ok((input, ParserNode::TableDefine{children}))
+}
+fn table_with_column(input: ParseString) -> ParseResult<ParserNode> {
+  let (input, table_header) = formatted_table_columns(input)?;
+  let (input, _) = table_line(input)?;
   let (input, _) = table_kinds(input)?;
   let (input, _) = table_line(input)?;
   let (input, items) = table_items(input)?;
   let (input, _) = table_line(input)?;
-  let mut children = vec![];
-  children.push(name); 
   let mut table = vec![];
-  match table_header {
-    Some(table_header) => table.push(table_header),
-    _ => (),
-  };
+  table.push(table_header);
   table.push(items);
-  children.push(ParserNode::AnonymousTable { children: table });
-  Ok((input, ParserNode::TableDefine{children}))
+  Ok((input,ParserNode::AnonymousTable { children: table }))
+}
+fn table_no_column(input: ParseString) -> ParseResult<ParserNode> {
+  let (input, _) = table_kinds(input)?;
+  let (input, _) = table_line(input)?;
+  let (input, items) = table_items(input)?;
+  let (input, _) = table_line(input)?;
+  let mut table = vec![];
+  table.push(items);
+  Ok((input,ParserNode::AnonymousTable { children: table }))
 }
 // parser for any line in the output table
 fn table_line(input: ParseString) -> ParseResult<ParserNode> {
