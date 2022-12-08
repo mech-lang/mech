@@ -1361,8 +1361,11 @@ fn variable_define(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::VariableDefine{children: vec![variable, expression]}))
 }
 
-// table_define ::= table, kind_annotation?, <!stmt_operator>, space*, equal, <space+>, <expression> ;
 fn table_define(input: ParseString) -> ParseResult<ParserNode> {
+  alt((raw_table_define, formatted_table_define))(input)
+}
+
+fn raw_table_define(input: ParseString) -> ParseResult<ParserNode> {
   let msg1 = "Expect spaces around operator";
   let msg2 = "Expect expression";
   let mut children = vec![];
@@ -1378,11 +1381,99 @@ fn table_define(input: ParseString) -> ParseResult<ParserNode> {
   children.push(expression);
   Ok((input, ParserNode::TableDefine{children}))
 }
-
-// fn table_select(input: ParseString) -> ParseResult<ParserNode> {
-//   let (input, expression) = expression(input)?;
-//   Ok((input, ParserNode::TableSelect{children: vec![expression]}))
-// }
+// parser for table in output format
+fn formatted_table_define(input: ParseString) -> ParseResult<ParserNode> {
+  let (input, _) = table_line(input)?;
+  let (input, name) = table_name(input)?;
+  let (input, _) = table_line(input)?;
+  let (input, table) = alt((table_with_column, table_no_column))(input)?;
+  let mut children = vec![];
+  children.push(name); 
+  children.push(table);
+  Ok((input, ParserNode::TableDefine{children}))
+}
+fn table_with_column(input: ParseString) -> ParseResult<ParserNode> {
+  let (input, table_header) = formatted_table_columns(input)?;
+  let (input, _) = table_line(input)?;
+  let (input, _) = table_kinds(input)?;
+  let (input, _) = table_line(input)?;
+  let (input, mut items) = many1(table_items)(input)?;
+  let (input, _) = table_line(input)?;
+  let mut table = vec![];
+  table.push(table_header);
+  table.append(&mut items);
+  Ok((input,ParserNode::AnonymousTable { children: table }))
+}
+fn table_no_column(input: ParseString) -> ParseResult<ParserNode> {
+  let (input, _) = table_kinds(input)?;
+  let (input, _) = table_line(input)?;
+  let (input, mut items) = many1(table_items)(input)?;
+  let (input, _) = table_line(input)?;
+  let mut table = vec![];
+  table.append(&mut items);
+  Ok((input,ParserNode::AnonymousTable { children: table }))
+}
+// parser for any line in the output table
+fn table_line(input: ParseString) -> ParseResult<ParserNode> {
+  let(input, _) = alt((tag("╭"), tag("├"), tag("╰")))(input)?;
+  let(input, _) = many1(alt((tag("┼"),tag("─"),tag("┬"),tag("┴"))))(input)?;
+  let(input, _) = alt((tag("╮"), tag("┤"), tag("╯")))(input)?;
+  let(input, _) = newline(input)?;
+  Ok((input, ParserNode::Null))
+}
+fn formatted_table_columns(input: ParseString) -> ParseResult<ParserNode> {
+  let(input, _) = tag("│")(input)?;
+  let (input, attr) = many1(formatted_table_column)(input)?;
+  let(input, _) = newline(input)?;
+  Ok((input, ParserNode::TableHeader { children: attr }))
+}
+fn formatted_table_column(input: ParseString) -> ParseResult<ParserNode> {
+  let (input, _) = many0(space)(input)?;
+  let (input, item) = identifier(input)?;
+  let (input, _) = many1(space)(input)?;
+  let (input, _) = tag("│")(input)?;
+  Ok((input, ParserNode::Attribute { children: vec![item] }))
+}
+// parser for the second line of the output table, generate the 
+// var name if there is one.
+fn table_name(input: ParseString) -> ParseResult<ParserNode> {
+  let(input, _) = tag("│")(input)?;
+  let(input, table_name) = table(input)?;
+  let(input, s) = many0(alt((space, left_parenthesis, right_parenthesis, word, number)))(input)?;
+  let(input, _) = tag("│")(input)?;
+  let(input, _) = newline(input)?;
+  Ok((input,table_name))
+}
+fn table_kinds(input: ParseString) -> ParseResult<ParserNode> {
+  let(input, _) = tag("│")(input)?;
+  let (input, _) = many1(table_kind)(input)?;
+  let(input, _) = newline(input)?;
+  Ok((input, ParserNode::Null))
+}
+fn table_kind(input: ParseString) -> ParseResult<ParserNode> {
+  let (input, _) = many0(space)(input)?;
+  let (input, kind_id) = identifier(input)?;
+  let (input, _) = many1(space)(input)?;
+  let (input, _) = tag("│")(input)?;
+  Ok((input, ParserNode::KindAnnotation { children: (vec![kind_id]) }))
+}
+fn table_items(input: ParseString) -> ParseResult<ParserNode> {
+  let(input, _) = tag("│")(input)?;
+  let (input, mut table_items) = many1(table_item)(input)?;
+  let(input, _) = newline(input)?;
+  Ok((input, ParserNode::TableRow{children:table_items}))
+}
+fn table_item(input: ParseString) -> ParseResult<ParserNode> {
+  let (input, _) = many0(space)(input)?;
+  let (input, item) = expression(input)?;
+  let (input, _) = many1(space)(input)?;
+  let (input, _) = tag("│")(input)?;
+  Ok((input, ParserNode::Column { children: vec![item] }))
+}
+fn table_select(input: ParseString) -> ParseResult<ParserNode> {
+  let (input, expression) = expression(input)?;
+  Ok((input, ParserNode::TableSelect{children: vec![expression]}))
+}
 
 // split_operator ::= ">-" ;
 fn split_operator(input: ParseString) -> ParseResult<ParserNode> {
