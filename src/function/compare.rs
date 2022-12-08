@@ -528,6 +528,44 @@ macro_rules! compare_compiler {
               x => {return Err(MechError{id: 7104, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }
+          (TableShape::Matrix(lhs_rows,lhs_cols), TableShape::Matrix(rhs_rows,rhs_cols)) => {
+            if lhs_rows != rhs_rows {
+              return Err(MechError{id: 7103, kind: MechErrorKind::DimensionMismatch(vec![(*lhs_rows,0),(*rhs_rows,0)])});
+            }
+            if lhs_cols != rhs_cols {
+              return Err(MechError{id: 7103, kind: MechErrorKind::DimensionMismatch(vec![(*lhs_rows,0),(*rhs_rows,0)])});
+            }
+            let mut lhs_arg_cols = block.get_whole_table_arg_cols(&arguments[0])?;
+            let mut rhs_arg_cols = block.get_whole_table_arg_cols(&arguments[1])?;
+            let (out_table_id,_,_) = out;
+            let out_table = block.get_table(out_table_id)?;
+            {
+              let mut out_table_brrw = out_table.borrow_mut();
+              out_table_brrw.resize(*lhs_rows,*lhs_cols);
+              out_table_brrw.set_kind(ValueKind::Bool);
+            }
+            
+            for col in 0..*lhs_cols {
+              let mut out_table_brrw = out_table.borrow_mut();
+              let out_column = out_table_brrw.get_column_unchecked(col);
+              match (&lhs_arg_cols[col], &rhs_arg_cols[col], &out_column) {
+                ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::U16(lhs),_), (_,Column::U16(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::U32(lhs),_), (_,Column::U32(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::U64(lhs),_), (_,Column::U64(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::U128(lhs),_), (_,Column::U128(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::I8(lhs),_), (_,Column::I8(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::I16(lhs),_), (_,Column::I16(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::I32(lhs),_), (_,Column::I32(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::I64(lhs),_), (_,Column::I64(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::I128(lhs),_), (_,Column::I128(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::F64(lhs),_), (_,Column::F64(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                x => {return Err(MechError{id: 7104, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+              }
+
+            }
+          }
           (TableShape::Dynamic(lhs_rows,1),TableShape::Dynamic(rhs_rows,1)) => {
             if lhs_rows != rhs_rows {
               return Err(MechError{id: 7111, kind: MechErrorKind::DimensionMismatch(vec![(*lhs_rows,0),(*rhs_rows,0)])});
@@ -701,6 +739,44 @@ macro_rules! compare_eq_compiler {
               ((_,Column::Bool(lhs),_), (_,Column::Bool(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
               ((_,Column::String(lhs),_), (_,Column::String(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
               x => {return Err(MechError{id: 7110, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+            }
+          }
+          (TableShape::Matrix(lhs_rows,lhs_cols), TableShape::Matrix(rhs_rows,rhs_cols)) => {
+            if lhs_rows != rhs_rows {
+              return Err(MechError{id: 7103, kind: MechErrorKind::DimensionMismatch(vec![(*lhs_rows,0),(*rhs_rows,0)])});
+            }
+            if lhs_cols != rhs_cols {
+              return Err(MechError{id: 7103, kind: MechErrorKind::DimensionMismatch(vec![(*lhs_rows,0),(*rhs_rows,0)])});
+            }
+            let mut lhs_arg_cols = block.get_whole_table_arg_cols(&arguments[0])?;
+            let mut rhs_arg_cols = block.get_whole_table_arg_cols(&arguments[1])?;
+            let (out_table_id,_,_) = out;
+            let out_table = block.get_table(out_table_id)?;
+            {
+              let mut out_table_brrw = out_table.borrow_mut();
+              out_table_brrw.resize(*lhs_rows,*lhs_cols);
+              out_table_brrw.set_kind(ValueKind::Bool);
+            }
+            
+            for col in 0..*lhs_cols {
+              let mut out_table_brrw = out_table.borrow_mut();
+              let out_column = out_table_brrw.get_column_unchecked(col);
+              match (&lhs_arg_cols[col], &rhs_arg_cols[col], &out_column) {
+                ((_,Column::U8(lhs),_), (_,Column::U8(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::U16(lhs),_), (_,Column::U16(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::U32(lhs),_), (_,Column::U32(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::U64(lhs),_), (_,Column::U64(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::U128(lhs),_), (_,Column::U128(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::I8(lhs),_), (_,Column::I8(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::I16(lhs),_), (_,Column::I16(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::I32(lhs),_), (_,Column::I32(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::I64(lhs),_), (_,Column::I64(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::I128(lhs),_), (_,Column::I128(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::F32(lhs),_), (_,Column::F32(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                ((_,Column::F64(lhs),_), (_,Column::F64(rhs),_), Column::Bool(out)) => {block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone()})}
+                x => {return Err(MechError{id: 7104, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+              }
+
             }
           }
           (TableShape::Dynamic(lhs_rows,1),TableShape::Dynamic(rhs_rows,1)) => {
