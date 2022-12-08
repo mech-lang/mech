@@ -1397,20 +1397,20 @@ fn table_with_column(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = table_line(input)?;
   let (input, _) = table_kinds(input)?;
   let (input, _) = table_line(input)?;
-  let (input, items) = table_items(input)?;
+  let (input, mut items) = many1(table_items)(input)?;
   let (input, _) = table_line(input)?;
   let mut table = vec![];
   table.push(table_header);
-  table.push(items);
+  table.append(&mut items);
   Ok((input,ParserNode::AnonymousTable { children: table }))
 }
 fn table_no_column(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = table_kinds(input)?;
   let (input, _) = table_line(input)?;
-  let (input, items) = table_items(input)?;
+  let (input, mut items) = many1(table_items)(input)?;
   let (input, _) = table_line(input)?;
   let mut table = vec![];
-  table.push(items);
+  table.append(&mut items);
   Ok((input,ParserNode::AnonymousTable { children: table }))
 }
 // parser for any line in the output table
