@@ -195,7 +195,7 @@ impl LanguageServer for Backend {
           shared_state.mech_ast = ast;
         });
       },
-      Err(err) => if let MechErrorKind::ParserError(node, report) = err.kind {
+      Err(err) => if let MechErrorKind::ParserError(node, report, msg) = err.kind {
         println!("source code err!");
         println!("--------------------------------------------------------------");
         parser::print_err_report(source_code_ref, &report);

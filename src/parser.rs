@@ -2560,12 +2560,13 @@ pub fn parse(text: &str) -> Result<ParserNode, MechError> {
   if error_log.is_empty() {
     Ok(result_node)
   } else {
-    let report = error_log.into_iter().map(|e| ParserErrorContext {
+    let report: ParserErrorReport = error_log.into_iter().map(|e| ParserErrorContext {
       cause_rng: e.0,
       err_message: String::from(e.1.message),
       annotation_rngs: e.1.annotation_rngs,
     }).collect();
-    Err(MechError{id: 3202, kind: MechErrorKind::ParserError(result_node, report)})
+    let msg = TextFormatter::new(text).format_error(&report);
+    Err(MechError{id: 3202, kind: MechErrorKind::ParserError(result_node, report, msg)})
   }
 }
 
@@ -2610,7 +2611,8 @@ pub fn parse_fragment(text: &str) -> Result<ParserNode, MechError> {
       err_message: String::from(e.1.message),
       annotation_rngs: e.1.annotation_rngs,
     }).collect();
-    Err(MechError{id: 3202, kind: MechErrorKind::ParserError(result_node, report)})
+    let msg = TextFormatter::new(text).format_error(&report);
+    Err(MechError{id: 3202, kind: MechErrorKind::ParserError(result_node, report, msg)})
   }
 }
 
