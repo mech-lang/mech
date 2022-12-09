@@ -31,8 +31,14 @@ impl Formatter {
     }
   }
 
-  pub fn format(&mut self, block_ast: &AstNode, html: bool) -> String {
-    self.html = html;
+  pub fn format(&mut self, block_ast: &AstNode) -> String {
+    self.html = false;
+    let code = self.write_node(block_ast);
+    code
+  }
+
+  pub fn format_html(&mut self, block_ast: &AstNode) -> String {
+    self.html = true;
     let code = self.write_node(block_ast);
     code
   }
