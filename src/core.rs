@@ -430,6 +430,8 @@ impl Core {
           self.input = self.input.union(&mut block_brrw.input).cloned().collect();
           self.output = self.output.union(&mut block_brrw.output).cloned().collect();        
           let (mech_error,_) = block_brrw.unsatisfied_transformation.as_ref().unwrap();
+          let blocks_with_errors = self.full_errors.entry(mech_error.clone()).or_insert(Vec::new());
+          blocks_with_errors.push(block_ref_c.clone());
           let blocks_with_errors = self.errors.entry(mech_error.kind.clone()).or_insert(Vec::new());
           blocks_with_errors.push(block_ref_c.clone());
           self.unsatisfied_blocks.insert(0,block_ref_c.clone());
