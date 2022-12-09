@@ -285,7 +285,7 @@ async fn main() -> Result<(), MechError> {
     let blocks = match compile_code(code) {
       Ok(blocks) => blocks,
       Err(mech_error) => {
-        println!("{}",format_errors(&vec![mech_error.kind]));
+        println!("{}",format_errors(&vec![mech_error]));
         std::process::exit(1);
       }
     };
@@ -363,7 +363,7 @@ async fn main() -> Result<(), MechError> {
     let mut code: Vec<MechCode> = match read_mech_files(&mech_paths) {
       Ok(code) => code,
       Err(mech_error) => {
-        println!("{}",format_errors(&vec![mech_error.kind]));
+        println!("{}",format_errors(&vec![mech_error]));
         std::process::exit(1);
       }
     };
@@ -377,7 +377,7 @@ async fn main() -> Result<(), MechError> {
     let blocks = match compile_code(code) {
       Ok(blocks) => blocks,
       Err(mech_error) => {
-        println!("{}",format_errors(&vec![mech_error.kind]));
+        println!("{}",format_errors(&vec![mech_error]));
         std::process::exit(1);
       }
     };
@@ -480,7 +480,7 @@ async fn main() -> Result<(), MechError> {
     let mut code: Vec<MechCode> = match read_mech_files(&mech_paths) {
       Ok(code) => code,
       Err(mech_error) => {
-        println!("{}",format_errors(&vec![mech_error.kind]));
+        println!("{}",format_errors(&vec![mech_error]));
         std::process::exit(1);
       }
     };
