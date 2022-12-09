@@ -26,6 +26,7 @@ extern crate time;
 extern crate mech_core;
 use mech_core::*;
 extern crate mech_syntax;
+use mech_syntax::formatter::Formatter;
 extern crate mech_utilities;
 extern crate colored;
 extern crate websocket;
@@ -51,7 +52,7 @@ pub use self::program::{Program};
 pub use self::runloop::{ProgramRunner, RunLoop, ClientMessage};
 pub use self::persister::{Persister};
 
-pub fn format_errors(errors: &Vec<MechErrorKind>) -> String {
+pub fn format_errors(errors: &Vec<MechError>) -> String {
   let mut formatted_errors = "".to_string();
   let plural = if errors.len() == 1 {
     ""
@@ -61,11 +62,17 @@ pub fn format_errors(errors: &Vec<MechErrorKind>) -> String {
   let error_notice = format!("🐛 Found {} Error{}:\n", &errors.len(), plural);
   formatted_errors = format!("{}\n{}\n\n", formatted_errors, error_notice);
   for error in errors {
-    formatted_errors = format!("{}{} {} {} {}\n\n", formatted_errors, "---".truecolor(246,192,78), "Block".truecolor(246,192,78), "BLOCKNAME", "--------------------------------------------".truecolor(246,192,78));
-    formatted_errors = format!("{}\n{:?}\n", formatted_errors, error);
-    formatted_errors = format!("{}\n", formatted_errors);
-    formatted_errors = format!("{}\n{}",formatted_errors, "----------------------------------------------------------------\n\n".truecolor(246,192,78));
+    match &error.kind {
+      MechErrorKind::ParserError(ast,report,msg) => {
+        formatted_errors = format!("{}{}", formatted_errors, msg);
+      }
+      _ => {
+        formatted_errors = format!("{}{} {} {} {}\n\n", formatted_errors, "---".truecolor(246,192,78), "Block".truecolor(246,192,78), "BLOCKNAME", "--------------------------------------------".truecolor(246,192,78));
+        formatted_errors = format!("{}\n{:?}\n", formatted_errors, error);
+      }
+    }
   }
+  formatted_errors = format!("{}\n{}",formatted_errors, "----------------------------------------------------------------\n\n".truecolor(246,192,78));
   formatted_errors
 }
 

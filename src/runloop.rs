@@ -63,7 +63,7 @@ pub enum ClientMessage {
   Value(Value),
   Transaction(Transaction),
   String(String),
-  Error(MechErrorKind),
+  Error(MechError),
   Timing(f64),
   //Block(Block),
   StepDone,
@@ -258,7 +258,7 @@ impl ProgramRunner {
           }
         }
         Err(err) => {
-          client_outgoing.send(ClientMessage::Error(err.kind.clone()));
+          client_outgoing.send(ClientMessage::Error(err.clone()));
         }
       }
 
@@ -556,8 +556,8 @@ impl ProgramRunner {
                 let mut compiler = Compiler::new(); 
                 match compiler.compile_str(&code) {
                   Ok(sections) => sections,
-                  Err(MechError{id,kind}) => {
-                    client_outgoing.send(ClientMessage::Error(kind));
+                  Err(err) => {
+                    client_outgoing.send(ClientMessage::Error(err));
                     client_outgoing.send(ClientMessage::StepDone);
                     continue 'runloop;
                   }
@@ -586,7 +586,7 @@ impl ProgramRunner {
                     }
                   }
                   Err(err) => {
-                    client_outgoing.send(ClientMessage::Error(err.kind.clone()));
+                    client_outgoing.send(ClientMessage::Error(err.clone()));
                   }
                 }
               }
@@ -621,7 +621,7 @@ impl ProgramRunner {
             }
 
             // React to errors
-            for (error,_) in program.mech.errors.iter() {
+            for (error,_) in program.mech.full_errors.iter() {
               client_outgoing.send(ClientMessage::Error(error.clone()));
             }
             client_outgoing.send(ClientMessage::StepDone);
@@ -674,10 +674,10 @@ impl ProgramRunner {
               Ok(table) => {
                 match table.borrow().get(&row,&column) {
                   Ok(v) => ClientMessage::Value(v.clone()),
-                  Err(error) => ClientMessage::Error(error.kind.clone()),
+                  Err(error) => ClientMessage::Error(error.clone()),
                 }
               }
-              Err(error) => ClientMessage::Error(error.kind.clone()),
+              Err(error) => ClientMessage::Error(error.clone()),
             };
             client_outgoing.send(msg);
           },
