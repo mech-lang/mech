@@ -35,7 +35,7 @@ pub enum MechErrorKind {
   //ColumnKindMismatch(Vec<ValueKind>),              // Excepted kind versus given kind
   //SubscriptOutOfBounds(((Rows,Cols),(Rows,Cols))), // (target) vs (actual) index
   LinearSubscriptOutOfBounds((Rows,Rows)),           // (target) vs (actual) index
-  //DuplicateAlias(u64),                             // Alias ID
+  DuplicateAlias(u64),                               // Alias ID
   //DomainMismatch(u64, u64),                        // domain IDs (target vs actual)
   MissingFunction(u64),                              // ID of missing function
   //TransformationPending(Transformation),           // Block is unsatisfied so the transformation is not added
@@ -53,3 +53,14 @@ pub enum MechErrorKind {
   ParserError(nodes::ParserNode, ParserErrorReport, String),
   None,
 }
+
+/*
+impl fmt::Debug for MechErrorKind {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      _ => write!(f,"No Format")?;
+    }
+    Ok(())
+  }
+}*/

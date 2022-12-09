@@ -69,7 +69,7 @@ impl Database {
 
   pub fn insert_alias(&mut self, alias: u64, table_id: TableId) -> Result<TableId,MechError> {
     match self.table_alias_to_id.try_insert(alias, table_id) {
-      Err(x) => {return Err(MechError{id: 1725, kind: MechErrorKind::None});},
+      Err(x) => {return Err(MechError{id: 1725, kind: MechErrorKind::DuplicateAlias(*table_id.unwrap())});},
       Ok(x) => Ok(*x), 
     }
   }
