@@ -307,6 +307,9 @@ async fn main() -> Result<(), MechError> {
 
     'receive_loop: loop {
       match thread_receiver.recv() {
+        (Ok(ClientMessage::Ready)) => {
+          println!("{} Ready", formatted_name);
+        },
         (Ok(ClientMessage::String(message))) => {
           println!("{} {}", formatted_name, message);
         },
@@ -338,7 +341,7 @@ async fn main() -> Result<(), MechError> {
           std::process::exit(1);
         }
         q => {
-          println!("*else: {:?}", q);
+          //println!("*else: {:?}", q);
         },
       };
       io::stdout().flush().unwrap();
@@ -419,6 +422,9 @@ async fn main() -> Result<(), MechError> {
     // Get all responses from the thread
     'run_receive_loop: loop {
       match thread_receiver.recv() {
+        (Ok(ClientMessage::Ready)) => {
+          println!("{} {}", formatted_name, "[Ready]".truecolor(0, 187, 204));
+        },
         (Ok(ClientMessage::Timing(freqeuncy))) => {
           if timings_flag {
             println!("{} Txn took: {:.2?}Hz", formatted_name, freqeuncy);
@@ -466,7 +472,7 @@ async fn main() -> Result<(), MechError> {
           std::process::exit(1);
         }
         q => {
-          println!("else: {:?}", q);
+          //println!("else: {:?}", q);
         },
       };
       io::stdout().flush().unwrap();
