@@ -233,6 +233,7 @@ impl ProgramRunner {
                       println!("Got a pong from: {:?}", src);
                     }
                     Ok(SocketMessage::Transaction(txn)) => {
+                      program_channel_udpsocket.send(RunLoopMessage::String((format!("Received Txn: {:?}", txn),None)));
                       program_channel_udpsocket.send(RunLoopMessage::Transaction(txn));
                     }
                     Ok(x) => println!("Unhandled Message {:?}", x),
