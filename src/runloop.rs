@@ -706,7 +706,7 @@ impl ProgramRunner {
           (Err(_), _) => {
             break 'runloop
           },
-          x => println!("qq{:?}", x),
+          x => println!("{:?}", x),
         }
         client_outgoing.send(ClientMessage::Done);
       }
