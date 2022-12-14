@@ -391,10 +391,11 @@ impl ProgramRunner {
           },
           (Ok(RunLoopMessage::Listening((core_id, register))), _) => {
             let (table_id,row,col) = &register;
+            let name = program.mech.get_name(*table_id.unwrap()).unwrap();
             match program.mech.output.contains(&register.clone()) {
               // We produce a table for which they're listening
               true => {
-                client_outgoing.send(ClientMessage::String(format!("Sending {:?} to {}", table_id, humanize(&core_id))));
+                client_outgoing.send(ClientMessage::String(format!("Sending #{} to {}", name, humanize(&core_id))));
                 // Mark down that this register has a listener for future updates
                 let mut listeners = program.listeners.entry(register.clone()).or_insert(HashSet::new()); 
                 listeners.insert(core_id);
