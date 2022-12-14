@@ -158,6 +158,13 @@ impl Core {
     }
   }
 
+  pub fn get_name(&self, name_id: u64) -> Option<String> {
+    match self.dictionary.borrow().get(&name_id) {
+      Some(mech_string) => Some(mech_string.to_string()),
+      None => None,
+    }
+  }
+
   pub fn load_function(&mut self, name: &str, mut fxn: Box<dyn MechFunctionCompiler>) -> Result<(),MechError> {
     let mut functions_brrw = self.functions.borrow_mut();
     functions_brrw.insert(hash_str(name),fxn);
