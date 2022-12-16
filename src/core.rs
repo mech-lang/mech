@@ -530,6 +530,7 @@ impl Core {
 impl fmt::Debug for Core {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    let dictionary = self.dictionary.clone();
     let mut box_drawing = BoxPrinter::new();
     box_drawing.add_title("🤖","CORE");
     if self.errors.len() > 0 {
@@ -552,9 +553,21 @@ impl fmt::Debug for Core {
     }
     box_drawing.add_title("💻","functions");
     box_drawing.add_line("Compiled Functions".to_string());
-    box_drawing.add_line(format!("{:#?}", &self.functions.borrow().functions.iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
+    box_drawing.add_line(format!("{:#?}", &self.functions.borrow().functions.iter().map(|(k,v)|
+    {
+      match dictionary.borrow().get(&k) {
+        Some(x) => x.to_string(),
+        None => humanize(&k),
+      }
+    }).collect::<Vec<String>>()));
     box_drawing.add_line("User Functions".to_string());
-    box_drawing.add_line(format!("{:#?}", &self.user_functions.borrow().iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
+    box_drawing.add_line(format!("{:#?}", &self.user_functions.borrow().iter().map(|(k,v)|
+    {
+      match dictionary.borrow().get(&k) {
+        Some(x) => x.to_string(),
+        None => humanize(&k),
+      }
+    }).collect::<Vec<String>>()));
     box_drawing.add_title("🗓️","schedule");
     box_drawing.add_line(format!("{:#?}", &self.schedule));
     box_drawing.add_title("💾","database");
