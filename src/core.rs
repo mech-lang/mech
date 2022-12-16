@@ -87,20 +87,21 @@ impl Core {
     // -----------------
     // Standard Machines
     // -----------------
-
+    let dictionary = Rc::new(RefCell::new(HashMap::new()));
     #[cfg(feature = "stdlib")]
     {
+      let mut dict = dictionary.borrow_mut();
       // Math
-      functions.insert(*MATH_ADD, Box::new(MathAdd{}));
-      functions.insert(*MATH_SUBTRACT, Box::new(MathSub{}));
-      functions.insert(*MATH_MULTIPLY, Box::new(MathMul{}));
-      functions.insert(*MATH_DIVIDE, Box::new(MathDiv{}));
-      functions.insert(*MATH_EXPONENT, Box::new(MathExp{}));
-      functions.insert(*MATH_NEGATE, Box::new(MathNegate{}));
-      functions.insert(*MATH_ADD__UPDATE, Box::new(MathAddUpdate{}));
-      functions.insert(*MATH_SUBTRACT__UPDATE, Box::new(MathSubtractUpdate{}));  
-      functions.insert(*MATH_MULTIPLY__UPDATE, Box::new(MathMultiplyUpdate{}));
-      functions.insert(*MATH_DIVIDE__UPDATE, Box::new(MathDivideUpdate{}));
+      functions.insert(*MATH_ADD, Box::new(MathAdd{})); dict.insert(*MATH_ADD,MechString::from_str("math/add"));
+      functions.insert(*MATH_SUBTRACT, Box::new(MathSub{})); dict.insert(*MATH_SUBTRACT,MechString::from_str("math/subtract"));
+      functions.insert(*MATH_MULTIPLY, Box::new(MathMul{})); dict.insert(*MATH_MULTIPLY,MechString::from_str("math/multiply"));
+      functions.insert(*MATH_DIVIDE, Box::new(MathDiv{})); dict.insert(*MATH_DIVIDE,MechString::from_str("math/divide"));
+      functions.insert(*MATH_EXPONENT, Box::new(MathExp{})); dict.insert(*MATH_EXPONENT,MechString::from_str("math/exp"));
+      functions.insert(*MATH_NEGATE, Box::new(MathNegate{})); dict.insert(*MATH_NEGATE,MechString::from_str("math/negate"));
+      functions.insert(*MATH_ADD__UPDATE, Box::new(MathAddUpdate{})); dict.insert(*MATH_ADD__UPDATE,MechString::from_str("math/add-update"));
+      functions.insert(*MATH_SUBTRACT__UPDATE, Box::new(MathSubtractUpdate{})); dict.insert(*MATH_SUBTRACT__UPDATE,MechString::from_str("math/subtract-update"));  
+      functions.insert(*MATH_MULTIPLY__UPDATE, Box::new(MathMultiplyUpdate{})); dict.insert(*MATH_MULTIPLY__UPDATE,MechString::from_str("math/multiply-update"));
+      functions.insert(*MATH_DIVIDE__UPDATE, Box::new(MathDivideUpdate{})); dict.insert(*MATH_DIVIDE__UPDATE,MechString::from_str("math/divide-update"));
 
       // Matrix
       functions.insert(*MATRIX_MULTIPLY, Box::new(MatrixMul{}));
@@ -154,7 +155,7 @@ impl Core {
       input: HashSet::new(),
       output: HashSet::new(),
       defined_tables: HashSet::new(),
-      dictionary: Rc::new(RefCell::new(HashMap::new())),
+      dictionary: dictionary,
     }
   }
 
