@@ -187,7 +187,7 @@ impl Table {
         match self.col_map.get_index(&alias) {
           Ok(ix) => Ok(self.data[ix as usize].clone()),
           Err(x) => {
-            Err(MechError{id: 7002, kind: MechErrorKind::GenericError(format!("{:?}", x))})
+            Err(x)
           },
         }
       }
