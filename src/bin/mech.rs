@@ -548,6 +548,21 @@ resume  - resume program execution
   let mut stdo = stdout();
   stdo.execute(terminal::Clear(terminal::ClearType::All));
   stdo.execute(cursor::MoveTo(0,0));
+  /*
+  magenta     truecolor(136,17,119)
+  red         truecolor(170,51,85)
+  pink        truecolor(204,102,102)
+  orange      truecolor(238,153,68)
+  yellow      truecolor(238,221,0)
+  light green truecolor(153,221,85)
+  dark green  truecolor(68,221,136)
+  cyan        truecolor(34,204,187)
+  light blue  truecolor(0,187,204)
+  dark blue   truecolor(0,153,204)
+  indigo      truecolor(51,102,187)
+  violet      truecolor(102,51,153)
+  */
+
   stdo.execute(Print(text_logo));
   stdo.execute(cursor::MoveToNextLine(1));
   
