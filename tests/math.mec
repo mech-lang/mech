@@ -191,7 +191,7 @@ Test column math with i128
   #test += ["Add Column:Column u128" 21<i128>  sum-result
             "Mul Column:Column u128" 32<i128>  mul-result
             "Sub Column:Column u128" 9<i128>  sub-result
-            "Div Column:Column u128" 8<i128>  div-result]
+            "Div Column:Column i128" 8<i128>  div-result]
 
 Test column math with f32
   x = [1<f32>; 2<f32>; 3<f32>]
@@ -200,10 +200,10 @@ Test column math with f32
   mul-result = stats/sum(column: x * y)
   sub-result = stats/sum(column: y - x)
   div-result = stats/sum(column: y / x)
-  #test += ["Add Column:Column u128" 21<f32>  sum-result
-            "Mul Column:Column u128" 32<f32>  mul-result
-            "Sub Column:Column u128" 9<f32>  sub-result
-            "Div Column:Column u128" 8<f32>  div-result]
+  #test += ["Add Column:Column f32" 21<f32>  sum-result
+            "Mul Column:Column f32" 32<f32>  mul-result
+            "Sub Column:Column f32" 9<f32>  sub-result
+            "Div Column:Column f32" 8.5<f32>  div-result]
 
 Test column math with f64
   x = [1<f64>; 2<f64>; 3<f64>]
@@ -212,10 +212,10 @@ Test column math with f64
   mul-result = stats/sum(column: x * y)
   sub-result = stats/sum(column: y - x)
   div-result = stats/sum(column: y / x)
-  #test += ["Add Column:Column u128" 21<f64>  sum-result
-            "Mul Column:Column u128" 32<f64>  mul-result
-            "Sub Column:Column u128" 9<f64>  sub-result
-            "Div Column:Column u128" 8<f64>  div-result]
+  #test += ["Add Column:Column f64" 21<f64>  sum-result
+            "Mul Column:Column f64" 32<f64>  mul-result
+            "Sub Column:Column f64" 9<f64>  sub-result
+            "Div Column:Column f64" 8.5<f64>  div-result]
 
 Scalar : Row
 ----------------
