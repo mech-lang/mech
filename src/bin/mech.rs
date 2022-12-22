@@ -47,6 +47,7 @@ extern crate websocket;
 use websocket::sync::Server;
 use websocket::OwnedMessage;
 use std::sync::Arc;
+use warp::http::header::{HeaderMap, HeaderValue};
 
 #[macro_use]
 extern crate serde_derive;
@@ -242,13 +243,41 @@ async fn main() -> Result<(), MechError> {
     let mech_paths: Vec<String> = matches.values_of("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let persistence_path = matches.value_of("persistence").unwrap_or("");
 
+
+    let mech_html = include_str!("../../wasm-notebook/index.html");
+    let mech_wasm = include_bytes!("../../wasm-notebook/pkg/mech_notebook_bg.wasm");
+    let mech_notebook = include_str!("../../wasm-notebook/pkg/mech_notebook.js");
+    
+    let mut headers = HeaderMap::new();
+    headers.insert("content-type", HeaderValue::from_static("text/html"));
     let index = warp::get()
                 .and(warp::path::end())
-                .and(warp::fs::dir("./wasm-notebook/"));
+                .map(move || {
+                  println!("Sending index");
+                  mech_html
+                })
+                .with(warp::reply::with::headers(headers));
 
-    let pkg = warp::path("pkg")
-              .and(warp::fs::dir("./wasm-notebook/pkg"));
+    let mut headers = HeaderMap::new();
+    headers.insert("accept-ranges", HeaderValue::from_static("bytes"));
+    headers.insert("content-type", HeaderValue::from_static("application/javascript"));
+    let nb = warp::path!("pkg" / "mech_notebook.js")
+              .map(move || {
+                println!("Sending js");
+                mech_notebook
+              })
+              .with(warp::reply::with::headers(headers));
 
+    let mut headers = HeaderMap::new();
+    headers.insert("accept-ranges", HeaderValue::from_static("bytes"));
+    headers.insert("content-type", HeaderValue::from_static("application/wasm"));
+    let pkg = warp::path!("pkg" / "mech_notebook_bg.wasm")
+              .map(move || {
+                println!("Sending wasm");
+                mech_wasm.to_vec()
+              })
+              .with(warp::reply::with::headers(headers));
+    
     let blocks = warp::path("blocks")
                 .and(warp::addr::remote())
                 .map(move |addr: Option<SocketAddr>| {
@@ -261,7 +290,7 @@ async fn main() -> Result<(), MechError> {
                   encode(compressed_miniblocks)
                 });
 
-    let routes = index.or(pkg).or(blocks);
+    let routes = index.or(pkg).or(nb).or(blocks);
 
     println!("{} Awaiting connection at {}", "[Mech Server]".bright_cyan(), full_address);
     let socket_address: SocketAddr = full_address.parse().unwrap();
@@ -695,6 +724,10 @@ resume  - resume program execution
           ReplCommand::SaveCore(core_id) => {
             println!("Save");
             mech_client.send(RunLoopMessage::DumpCore(core_id));
+          },
+          ReplCommand::Code(code) => {
+            println!("Code");
+            mech_client.send(RunLoopMessage::Code(code));
           },
           ReplCommand::Clear => {
             println!("Clear");
