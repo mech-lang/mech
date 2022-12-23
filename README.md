@@ -47,11 +47,12 @@ cargo install mech
 
 ### From Source
 
-You will need to install [Rust](https://www.rust-lang.org/learn/get-started) (Mech only works on the "Nightly" release channel) before building Mech. When those are installed, follow these instructions:
+You will need to install [Rust](https://www.rust-lang.org/learn/get-started) on a recent nightly release, and [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/). When those are installed, follow these instructions:
 
 ```bash
 git clone https://gitlab.com/mech-lang/mech -b v0.1-beta --recurse-submodules
 cd mech
+wasm-pack build wasm-notebook --target web
 cargo build --bin mech --release
 ```
 
