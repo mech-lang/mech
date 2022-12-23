@@ -243,7 +243,6 @@ async fn main() -> Result<(), MechError> {
     let mech_paths: Vec<String> = matches.values_of("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let persistence_path = matches.value_of("persistence").unwrap_or("");
 
-
     let mech_html = include_str!("../../wasm-notebook/index.html");
     let mech_wasm = include_bytes!("../../wasm-notebook/pkg/mech_notebook_bg.wasm");
     let mech_notebook = include_str!("../../wasm-notebook/pkg/mech_notebook.js");
@@ -568,10 +567,11 @@ Available commands are:
 core    - prints info about a given Mech core
 clear   - reset a given Mech core
 help    - displays this message
-quit    - quits this REPL
-save    - save the state of a core to disk
+load    - load a file
 pause   - pause program execution
+quit    - quits this REPL
 resume  - resume program execution
+save    - save the state of a core to disk
 "#;
 
   let mut stdo = stdout();
@@ -708,11 +708,11 @@ resume  - resume program execution
     let parse = if input.trim() == "" {
       continue 'REPL;
     } else {
-      parse_repl_command(input.trim())
+      parse(input.trim())
     };
     
     match parse {
-      Ok((_, command)) => {
+      Ok(command) => {
         match command {
           ReplCommand::Help => {
             println!("{}",help_message);

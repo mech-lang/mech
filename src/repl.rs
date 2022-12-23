@@ -1,5 +1,8 @@
 use mech_syntax::*;
+use mech_syntax::parser::*;
 use mech_utilities::*;
+use mech_core::*;
+use mech_core::nodes::*;
 use crate::minify_blocks;
 
 #[macro_use]
@@ -32,7 +35,7 @@ pub enum ReplCommand {
   Error,
 }
 
-fn mech_code(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
+/*fn mech_code(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   // Try parsing mech code fragment
   let mut compiler = compiler::Compiler::new();
   match compiler.compile_fragment(input) {
@@ -86,6 +89,13 @@ fn pause(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   Ok((input, ReplCommand::Pause))
 }
 
+fn load(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
+  let (input, _) = tag("load")(input)?;
+  let (input, _) = space1(input)?;
+  let (input, id) = syntax::parser::text(input).unwrap();
+  Ok((input, ReplCommand::Code(MechCode::String("".to_string()))))
+}
+
 fn help(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   let (input, _) = tag("help")(input)?;
   Ok((input, ReplCommand::Help))
@@ -95,9 +105,33 @@ fn command(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
   let (input, _) = tag(":")(input)?;
   let (input, command) = alt((quit, help, pause, resume, core, clear, save))(input)?;
   Ok((input, command))
+}*/
+
+pub fn help(input: ParseString) -> ParseResult<ReplCommand> {
+  let (input,_) = syntax::parser::tag("help")(input)?;
+  Ok((input,ReplCommand::Help))
 }
 
-pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand, VerboseError<&str>> {
-  let (input, command) = alt((command, mech_code))(input)?;
+pub fn parse_repl_command(input: ParseString) -> ParseResult<ReplCommand> {
+  let (input,command) = help(input)?;
   Ok((input, command))
+}
+
+pub fn parse(text: &str) -> Result<ReplCommand, MechError> {
+  let graphemes = graphemes::init_source(text);
+  let mut result_node = ParserNode::Error;
+  let mut error_log: Vec<(SourceRange, ParseErrorDetail)> = vec![];
+  let remaining: ParseString;
+
+  match parse_repl_command(ParseString::new(&graphemes)) {
+    Ok(_) => {
+
+    }
+    Err(_)=> {
+
+    }
+  }
+
+
+  Ok(ReplCommand::Empty)
 }
