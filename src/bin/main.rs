@@ -24,7 +24,7 @@ fn main() -> Result<(),MechError> {
           // println!("{:#?}", core.blocks);
           // println!("{:?}", core);
         },
-        Err(err) => if let MechErrorKind::ParserError(node, report) = err.kind {
+        Err(err) => if let MechErrorKind::ParserError(node, report, _) = err.kind {
           println!("----- TREE -----");
           println!("{:?}", node);
           println!("----- MESSAGE -----");

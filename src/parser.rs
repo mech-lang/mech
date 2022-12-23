@@ -2643,7 +2643,7 @@ mod tests {
         // Parsing should fail
         let error_report = match(parse_result) {
           Err(e) => match e.kind {
-            MechErrorKind::ParserError(_, report) => report,
+            MechErrorKind::ParserError(_, report, _) => report,
             _ => panic!("Expect mech error kind: ParserError"),
           }
           _ => panic!("Expect parser error"),
