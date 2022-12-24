@@ -536,14 +536,24 @@ impl fmt::Debug for Core {
     box_drawing.add_title("🤖","CORE");
     if self.errors.len() > 0 {
       box_drawing.add_title("🐛","errors");
-      box_drawing.add_line(format!("{:#?}", &self.errors));
+      for (error,blocks) in self.errors.iter() {
+        box_drawing.add_line(format!("  - {:?}", error));
+      }
     }
     box_drawing.add_title("📭","input");
     for (table,row,col) in &self.input {
+      let table = match dictionary.borrow().get(&table.unwrap()) {
+        Some(x) => x.to_string(),
+        None => format!("{:?}", table),
+      };
       box_drawing.add_line(format!("  - ({:?}, {:?}, {:?})", table,row,col));
     }
     box_drawing.add_title("📬","output");
     for (table,row,col) in &self.output {
+      let table = match dictionary.borrow().get(&table.unwrap()) {
+        Some(x) => x.to_string(),
+        None => format!("{:?}", table),
+      };
       box_drawing.add_line(format!("  - ({:?}, {:?}, {:?})", table,row,col));
     }
     box_drawing.add_title("🧊","blocks");
