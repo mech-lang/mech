@@ -76,7 +76,7 @@ pub fn format_errors(errors: &Vec<MechError>) -> String {
   formatted_errors
 }
 
-pub fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &str, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<Library,Box<dyn std::error::Error>> {
+pub fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &str, outgoing: Option<crossbeam_channel::Sender<ClientMessage>>) -> Result<Library,MechError> {
   create_dir("machines");
 
   let machine_file_path = format!("machines/{}",machine_name);
@@ -127,6 +127,8 @@ pub fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &st
   }
   let machine_file_path = format!("machines/{}",machine_name);
   let message = format!("Can't load library {:?}", machine_file_path);
-  let machine = unsafe{Library::new(machine_file_path).expect(&message)};
-  Ok(machine)
+  match unsafe{Library::new(machine_file_path)} {
+    Ok(machine) => Ok(machine),
+    Err(err) => Err(MechError{id: 1273, kind: MechErrorKind::GenericError(format!("{:?}",message))}),
+  }
 }

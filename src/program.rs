@@ -88,7 +88,7 @@ pub struct Program {
   pub cores: HashMap<u64,Core>,
   pub remote_cores: HashMap<u64,MechSocket>,
   pub input_map: HashMap<(TableId,RegisterIndex,RegisterIndex),HashSet<u64>>,
-  pub libraries: HashMap<String, Library>,
+  pub libraries: HashMap<String, Option<Library>>,
   pub machines: HashMap<u64, Box<dyn Machine>>,
   pub mech_functions: HashMap<u64, Box<dyn MechFunctionCompiler>>,
   pub machine_repository: HashMap<String, (String, String)>,  // (name, (version, url))
@@ -282,24 +282,29 @@ impl Program {
                     None => (),
                   }
                   let message = format!("Can't load library {:?}", machine_name);
-                  unsafe{Library::new(format!("machines/{}",machine_name)).expect(&message)}
+                  unsafe{Some(Library::new(format!("machines/{}",machine_name)).expect(&message))}
                 }
-                _ => download_machine(&machine_name, m, path, ver, outgoing.clone()).unwrap()
+                _ => Some(download_machine(&machine_name, m, path, ver, outgoing.clone()).unwrap())
               }
             });
             // Replace slashes with underscores and then add a null terminator
             let mut s = format!("{}\0", fun_name.replace("-","__").replace("/","_"));
             let error_msg = format!("Symbol {} not found",s);
             let mut registrar = MechFunctions::new();
-            unsafe{
-              match library.get::<*mut MechFunctionDeclaration>(s.as_bytes()) {
-                Ok(good) => {
-                  let declaration = good.read();
-                  (declaration.register)(&mut registrar);
+            unsafe {
+              match library {
+                Some(lib) => {
+                  match lib.get::<*mut MechFunctionDeclaration>(s.as_bytes()) {
+                    Ok(good) => {
+                      let declaration = good.read();
+                      (declaration.register)(&mut registrar);
+                    }
+                    Err(_) => {
+                      println!("Couldn't find the specified machine: {}", fun_name);
+                    }
+                  }
                 }
-                Err(_) => {
-                  println!("Couldn't find the specified machine: {}", fun_name);
-                }
+                None => (),
               }
             }     
             self.mech.functions.borrow_mut().extend(registrar.mech_functions);
@@ -350,9 +355,14 @@ impl Program {
                       None => (),
                     }
                     let message = format!("Can't load library {:?}", machine_name);
-                    unsafe{Library::new(format!("machines/{}",machine_name)).expect(&message)}
+                    unsafe{Some(Library::new(format!("machines/{}",machine_name)).expect(&message))}
                   }
-                  _ => download_machine(&machine_name, m[0], path, ver, outgoing.clone()).unwrap()
+                  _ => {
+                    match download_machine(&machine_name, m[0], path, ver, outgoing.clone()) {
+                      Ok(library) => Some(library),
+                      Err(err) => None,
+                    }
+                  }
                 }
               });          
               // Replace slashes with underscores and then add a null terminator
@@ -360,15 +370,20 @@ impl Program {
               let error_msg = format!("Symbol {} not found",s);
               let mut registrar = Machines::new();
               unsafe{
-                match library.get::<*mut MachineDeclaration>(s.as_bytes()) {
-                  Ok(good) => {
-                    let declaration = good.read();
-                    let init_code = (declaration.register)(&mut registrar, self.outgoing.clone());
-                    machine_init_code.push(init_code);
+                match library {
+                  Some(lib) => {
+                    match lib.get::<*mut MachineDeclaration>(s.as_bytes()) {
+                      Ok(good) => {
+                        let declaration = good.read();
+                        let init_code = (declaration.register)(&mut registrar, self.outgoing.clone());
+                        machine_init_code.push(init_code);
+                      }
+                      Err(_) => {
+                        println!("Couldn't find the specified machine: {}", needed_table_name);
+                      }
+                    }                  
                   }
-                  Err(_) => {
-                    println!("Couldn't find the specified machine: {}", needed_table_name);
-                  }
+                  None => (),
                 }
               }        
               self.machines.extend(registrar.machines);
