@@ -163,7 +163,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
           Some("blx") => {
             match File::open(name) {
               Ok(file) => {
-                println!("{} {}", "[Loading]".bright_green(), name);
+                println!("{} {}", "[Loading]".truecolor(153,221,85), name);
                 let mut reader = BufReader::new(file);
                 match bincode::deserialize_from(&mut reader) {
                   Ok(miniblocks) => {code.push(MechCode::MiniBlocks(miniblocks));},
@@ -180,7 +180,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
           Some("mec") => {
             match File::open(name) {
               Ok(mut file) => {
-                println!("{} {}", "[Loading]".bright_green(), name);
+                println!("{} {}", "[Loading]".truecolor(153,221,85), name);
                 let mut buffer = String::new();
                 file.read_to_string(&mut buffer);
                 code.push(MechCode::String(buffer));
@@ -202,7 +202,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
     let path = Path::new(path_str);
     // Compile a .mec file on the web
     if path.to_str().unwrap().starts_with("https") {
-      println!("{} {}", "[Downloading]".bright_green(), path.display());
+      println!("{} {}", "[Downloading]".truecolor(153,221,85), path.display());
       match reqwest::blocking::get(path.to_str().unwrap()) {
         Ok(response) => {
           match response.text() {
@@ -235,7 +235,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
 }
 
 pub fn compile_code(code: Vec<MechCode>) -> Result<Vec<Vec<MiniBlock>>,MechError> {
-  print!("{}", "[Compiling] ".bright_green());
+  print!("{}", "[Compiling] ".truecolor(153,221,85));
   stdout().flush();
   let mut miniblocks = vec![];
   for c in code {
