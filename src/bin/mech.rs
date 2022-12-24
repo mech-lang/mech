@@ -365,7 +365,7 @@ async fn main() -> Result<(), MechError> {
           println!("An Error Has Occurred: {:?}", err);
         }
         (Err(x)) => {
-          println!("{} {}", "[Error]".bright_red(), x);
+          println!("{} {}", "[Error]".truecolor(170,51,85), x);
           std::process::exit(1);
         }
         q => {
@@ -495,7 +495,7 @@ async fn main() -> Result<(), MechError> {
           //std::process::exit(0);
         },
         (Err(x)) => {
-          println!("{} {}", "[Error]".bright_red(), x);
+          println!("{} {}", "[Error]".truecolor(170,51,85), x);
           io::stdout().flush().unwrap();
           std::process::exit(1);
         }
@@ -530,7 +530,7 @@ async fn main() -> Result<(), MechError> {
     
     let result = bincode::serialize(&programs).unwrap();
     if let Err(e) = writer.write_all(&result) {
-      panic!("{} Failed to write core! {:?}", "[Error]".bright_red(), e);
+      panic!("{} Failed to write core! {:?}", "[Error]".truecolor(170,51,85), e);
     }
     writer.flush().unwrap();
 
@@ -683,7 +683,7 @@ save    - save the state of a core to disk as a .blx file.
           // Do nothing
         },
         (Err(x)) => {
-          println!("{} {}", "[Error]".bright_red(), x);
+          println!("{} {}", "[Error]".truecolor(170,51,85), x);
           break 'repl_receive_loop;
         }
         q => {
