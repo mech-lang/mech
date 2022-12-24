@@ -42,6 +42,7 @@ pub enum MechErrorKind {
   //IncorrectFunctionArgumentType,
   ZeroIndex,                                         // Zero cannot ever be used as an index.
   BlockDisabled,
+  IoError,
   GenericError(String),
   FileNotFound(String),
   Unhandled,
@@ -52,6 +53,12 @@ pub enum MechErrorKind {
   TooManyInputArguments(usize,usize),                // (given,expected)
   ParserError(nodes::ParserNode, ParserErrorReport, String),
   None,
+}
+
+impl From<std::io::Error> for MechError {
+  fn from(n: std::io::Error) -> MechError {
+    MechError{id: 74892, kind: MechErrorKind::IoError}
+  } 
 }
 
 /*
