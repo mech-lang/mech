@@ -280,7 +280,7 @@ async fn main() -> Result<(), MechError> {
     let blocks = warp::path("blocks")
                 .and(warp::addr::remote())
                 .map(move |addr: Option<SocketAddr>| {
-                  println!("{} Connection from {}", "[Mech Server]".bright_cyan(), addr.unwrap());
+                  println!("{} Connection from {}", "[Mech Server]".truecolor(34,204,187), addr.unwrap());
                   let code = read_mech_files(&mech_paths).unwrap();
                   // TODO Handle error situations
                   let miniblocks = compile_code(code).unwrap();
@@ -291,11 +291,11 @@ async fn main() -> Result<(), MechError> {
 
     let routes = index.or(pkg).or(nb).or(blocks);
 
-    println!("{} Awaiting connection at {}", "[Mech Server]".bright_cyan(), full_address);
+    println!("{} Awaiting connection at {}", "[Mech Server]".truecolor(34,204,187), full_address);
     let socket_address: SocketAddr = full_address.parse().unwrap();
     warp::serve(routes).run(socket_address).await;
 
-    println!("{} Closing server.", "[Mech Server]".bright_cyan());
+    println!("{} Closing server.", "[Mech Server]".truecolor(34,204,187));
     std::process::exit(0);
 
     None
@@ -304,7 +304,7 @@ async fn main() -> Result<(), MechError> {
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("test") {
     
-    println!("{}", "[Testing]".bright_green());
+    println!("{}", "[Testing]".truecolor(153,221,85));
     let mut mech_paths: Vec<String> = matches.values_of("mech_test_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let mut passed_all_tests = true;
     mech_paths.push("https://gitlab.com/mech-lang/machines/mech/-/raw/v0.1-beta/src/test.mec".to_string());
@@ -318,7 +318,7 @@ async fn main() -> Result<(), MechError> {
       }
     };
 
-    println!("{}", "[Running]".bright_green());
+    println!("{}", "[Running]".truecolor(153,221,85));
     let runner = ProgramRunner::new("Mech Test");
     let mech_client = runner.run()?;
     mech_client.send(RunLoopMessage::Code(MechCode::MiniBlocks(blocks)));
@@ -327,7 +327,7 @@ async fn main() -> Result<(), MechError> {
     let mut tests_passed = 0;
     let mut tests_failed = 0;
     
-    let formatted_name = format!("\n[{}]", mech_client.name).bright_cyan();
+    let formatted_name = format!("\n[{}]", mech_client.name).truecolor(34,204,187);
     let thread_receiver = mech_client.incoming.clone();
 
     let mut to_exit = false;
@@ -413,14 +413,14 @@ async fn main() -> Result<(), MechError> {
       }
     };
 
-    println!("{}", "[Running]".bright_green());
+    println!("{}", "[Running]".truecolor(153,221,85));
 
-    let mut runner = ProgramRunner::new("Mech Run");
+    let mut runner = ProgramRunner::new("Run");
     runner.registry = machine_registry;
     let mech_client = runner.run()?;
     mech_client.send(RunLoopMessage::Code(MechCode::MiniBlocks(blocks)));
 
-    let formatted_name = format!("[{}]", mech_client.name).bright_cyan().to_string();
+    let formatted_name = format!("[{}]", mech_client.name).truecolor(34,204,187).to_string();
     let mech_client_name = mech_client.name.clone();
     let mech_client_channel = mech_client.outgoing.clone();   
 
@@ -451,7 +451,7 @@ async fn main() -> Result<(), MechError> {
     'run_receive_loop: loop {
       match thread_receiver.recv() {
         (Ok(ClientMessage::Ready)) => {
-          println!("{} {}", formatted_name, "[Ready]".truecolor(0, 187, 204));
+          println!("{} {}", formatted_name, "[Ready]".truecolor(153,221,85));
         },
         (Ok(ClientMessage::Timing(freqeuncy))) => {
           if timings_flag {
@@ -534,7 +534,7 @@ async fn main() -> Result<(), MechError> {
     }
     writer.flush().unwrap();
 
-    println!("{} Wrote {}", "[Finished]".bright_green(), output_name);
+    println!("{} Wrote {}", "[Finished]".truecolor(153,221,85), output_name);
     std::process::exit(0);
     None
   // ------------------------------------------------
@@ -550,7 +550,7 @@ async fn main() -> Result<(), MechError> {
   } else if let Some(matches) = matches.subcommand_matches("langserver") {
     let address = "localhost".to_owned();
     let port = matches.value_of("port").unwrap_or("4041").to_string();
-    println!("{} Starting language server at {}:{}", "[INFO]".bright_cyan(), address, port);
+    println!("{} Starting language server at {}:{}", "[INFO]".truecolor(34,204,187), address, port);
     mech_syntax::langserver::run_langserver(&address, &port).await?;
     std::process::exit(0);
     None
@@ -564,14 +564,15 @@ async fn main() -> Result<(), MechError> {
   let help_message = r#"
 Available commands are: 
 
-core    - prints info about a given Mech core
-clear   - reset a given Mech core
+clear   - reset the current context
+core    - switch REPL context to a given core
+debug   - print debug info about the current core
 help    - displays this message
-load    - load a file
-pause   - pause program execution
+info    - print diagnostic info about the REPL environment
+load    - load a .mec or .blx file (or mech project folder)
+new     - start a new core, switch context to that core
 quit    - quits this REPL
-resume  - resume program execution
-save    - save the state of a core to disk
+save    - save the state of a core to disk as a .blx file.
 "#;
 
   let mut stdo = stdout();
@@ -608,7 +609,7 @@ save    - save the state of a core to disk
   let mech_client = match mech_client {
     Some(mech_client) => mech_client,
     None => {
-      let runner = ProgramRunner::new("Mech REPL");
+      let runner = ProgramRunner::new("REPL");
       runner.run()?
     }
   };
@@ -616,7 +617,7 @@ save    - save the state of a core to disk
   let mut skip_receive = false;
 
   //ClientHandler::new("Mech REPL", None, None, None, cores);
-  let formatted_name = format!("\n[{}]", mech_client.name).bright_cyan();
+  let formatted_name = format!("\n[{}]", mech_client.name).truecolor(34,204,187);
   let thread_receiver = mech_client.incoming.clone();
 
   // Break out receiver into its own thread
@@ -678,7 +679,7 @@ save    - save the state of a core to disk
           println!("{} Transaction: {:?}", formatted_name, txn);
         },
         (Ok(ClientMessage::Done)) => {
-          print!("{}", ">: ".truecolor(246,192,78));
+          //print!("{}", ">: ".truecolor(246,192,78));
           // Do nothing
         },
         (Err(x)) => {
@@ -696,8 +697,9 @@ save    - save the state of a core to disk
   'REPL: loop {
     
     io::stdout().flush().unwrap();
-    // Print a prompt
-    //print!("{}", ">: ".truecolor(246,192,78));
+    // Print a prompt 
+    // 4, 8, 15, 16, 23, 42
+    print!("{}", ">: ".truecolor(246,192,78));
     io::stdout().flush().unwrap();
     let mut input = String::new();
 
@@ -718,24 +720,37 @@ save    - save the state of a core to disk
             println!("{}",help_message);
           },
           ReplCommand::Quit => {
-            println!("Quit");
+            println!("{} Bye!", "[REPL]".truecolor(34,204,187));
             break 'REPL;
           },
-          ReplCommand::SaveCore(core_id) => {
+          ReplCommand::Save => {
             println!("Save");
-            mech_client.send(RunLoopMessage::DumpCore(core_id));
+            //mech_client.send(RunLoopMessage::DumpCore(core_id));
           },
           ReplCommand::Code(code) => {
-            println!("Code");
-            mech_client.send(RunLoopMessage::Code(code));
+            for c in code {
+              mech_client.send(RunLoopMessage::Code(c));
+            }
           },
           ReplCommand::Clear => {
             println!("Clear");
             mech_client.send(RunLoopMessage::Clear);
           },
-          ReplCommand::PrintCore(core_id) => {
-            println!("PrintCore {:?}", core_id);
-            mech_client.send(RunLoopMessage::PrintCore(core_id));
+          ReplCommand::Core(core_id) => {
+            println!("Core {:?}", core_id);
+            //mech_client.send(RunLoopMessage::PrintCore(core_id));
+          },
+          ReplCommand::Stop => {
+            println!("Stop");
+          },          
+          ReplCommand::Table(table_id) => {
+            println!("Table");
+          },
+          ReplCommand::Info => {
+            println!("Info");
+          },
+          ReplCommand::Debug => {
+            println!("Debug");
           },
           ReplCommand::Pause => {
             println!("Pause");
@@ -751,20 +766,10 @@ save    - save the state of a core to disk
           ReplCommand::Error => {
             println!("Unknown command. Enter :help to see available commands.");
           },
-          ReplCommand::Code(code) => {
-            //println!("Code {:?}", code);
-            mech_client.send(RunLoopMessage::Code(code));
-          },
-          _ => {
-            println!("something else: {}", help_message);
-          }
         }
       },
-      _ => {
-        
-      }, 
+      _ => (), 
     }
-   
   }
 
   Ok(())
