@@ -496,7 +496,7 @@ pub fn tag(tag: &'static str) -> impl Fn(ParseString) -> ParseResult<String> {
 
 // ## Recovery functions
 
-fn skip_till_eol(input: ParseString) -> ParseResult<ParserNode> {
+pub fn skip_till_eol(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = many0(tuple((
     is_not(newline),
     any,
@@ -522,16 +522,16 @@ fn skip_till_section_element(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Error))
 }
 
-fn skip_spaces(input: ParseString) -> ParseResult<()> {
+pub fn skip_spaces(input: ParseString) -> ParseResult<()> {
   let (input, _) = many0(space)(input)?;
   Ok((input, ()))
 }
 
-fn skip_nil(input: ParseString) -> ParseResult<ParserNode> {
+pub fn skip_nil(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Error))
 }
 
-fn skip_empty_mech_directive(input: ParseString) -> ParseResult<String> {
+pub fn skip_empty_mech_directive(input: ParseString) -> ParseResult<String> {
   Ok((input, String::from("mech:")))
 }
 
