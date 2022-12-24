@@ -182,7 +182,7 @@ impl Program {
         Ok(mut file) => {
           // Loading machine_repository index
           match &outgoing {
-            Some(sender) => {sender.send(ClientMessage::String(format!("{} Machine registry.", "[Loading]".truecolor(34,204,187))));}
+            Some(sender) => {sender.send(ClientMessage::String(format!("{} Machine registry.", "[Loading]".truecolor(153,221,85))));}
             None => {return Err(MechError{id: 1244, kind: MechErrorKind::None});},
           }
           let mut contents = String::new();
@@ -195,7 +195,7 @@ impl Program {
         Err(_) => {
           // Download machine_repository index
           match &outgoing {
-            Some(sender) => {sender.send(ClientMessage::String(format!("{} Updating machine registry from:\n{}", "[Downloading]".truecolor(34,204,187),self.registry)));}
+            Some(sender) => {sender.send(ClientMessage::String(format!("{} Updating machine registry from:\n{}", "[Downloading]".truecolor(153,221,85),self.registry)));}
             None => {return Err(MechError{id: 1246, kind: MechErrorKind::None});},
           }
           // Download registry
@@ -278,7 +278,7 @@ impl Program {
               match File::open(format!("machines/{}",machine_name)) {
                 Ok(_) => {
                   match &outgoing {
-                    Some(sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Loading]".truecolor(34,204,187), m, ver)));}
+                    Some(sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Loading]".truecolor(153,221,85), m, ver)));}
                     None => (),
                   }
                   let message = format!("Can't load library {:?}", machine_name);
@@ -351,7 +351,7 @@ impl Program {
                 match File::open(format!("machines/{}",machine_name)) {
                   Ok(_) => {
                     match &outgoing {
-                      Some(sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Loading]".truecolor(34,204,187), m[0], ver)));}
+                      Some(sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Loading]".truecolor(153,221,85), m[0], ver)));}
                       None => (),
                     }
                     let message = format!("Can't load library {:?}", machine_name);

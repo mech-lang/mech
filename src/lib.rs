@@ -85,7 +85,7 @@ pub fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &st
     // Download from the web
     if path.to_str().unwrap().starts_with("https") {
       match outgoing {
-        Some(ref sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Downloading]".truecolor(34,204,187), name, ver)));}
+        Some(ref sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Downloading]".truecolor(153,221,85), name, ver)));}
         None => (),
       }
       let machine_url = format!("{}/{}", path_str, machine_name);
@@ -115,7 +115,7 @@ pub fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &st
     // Load from a local directory
     } else {
       match outgoing {
-        Some(sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Loading]".truecolor(34,204,187), name, ver)));}
+        Some(sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Loading]".truecolor(153,221,85), name, ver)));}
         None => (),
       }
       let machine_path = format!("{}{}", path_str, machine_name);
