@@ -113,6 +113,13 @@ impl Compiler {
     compiler.compile_sections(&vec![ast.syntax_tree.clone()])
   }
 
+  pub fn compile_fragment_from_parse_tree(&mut self, parse_tree: ParserNode) -> Result<Vec<Vec<SectionElement>>,MechError> {
+    let mut ast = Ast::new();
+    ast.build_syntax_tree(&parse_tree);
+    let mut compiler = Compiler::new();
+    compiler.compile_sections(&vec![ast.syntax_tree.clone()])
+  }
+
   pub fn compile_sections(&mut self, nodes: &Vec<AstNode>) -> Result<Vec<Vec<SectionElement>>,MechError> {
     let mut sections: Vec<Vec<SectionElement>> = Vec::new();
     for section in get_sections(nodes) {
@@ -1190,5 +1197,15 @@ impl Compiler {
       x => println!("Unhandled AstNode in Compiler {:?}", x),
     }
     Ok(tfms)
+  }
+}
+
+pub fn compile_text(node: &ParserNode) -> Result<String,MechError> {
+  let mut ast = Ast::new();
+  match &ast.build_syntax_tree(node)[0] {
+    AstNode::String{text,..} => {
+      Ok(MechString::from_chars(text).to_string())
+    }
+    x => Err(MechError{id: 7392, kind: MechErrorKind::GenericError(format!("Unhandled Node: {:?}", x))})
   }
 }
