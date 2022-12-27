@@ -2414,7 +2414,7 @@ impl<'a> TextFormatter<'a> {
     // other data for printing
     let dots = "...";
     let indentation = " ";
-    let vert_split1 = " |";
+    let vert_split1 = " │";
     let vert_split2 = "  ";
     let arrow = "^";
     let tilde = "~";
