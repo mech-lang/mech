@@ -24,7 +24,7 @@ web = ["websocket"]
 mech-core = {git = "https://gitlab.com/mech-lang/core", branch = "v0.1-beta", default-features = false}
 
 serde = {version = "1.0.133", default-features = false, features = ["alloc"] }
-serde_derive = "1.0.144"
+serde_derive = "1.0.152"
 hashbrown = "0.12.3"
 crossbeam-channel = "0.5.6"
 
