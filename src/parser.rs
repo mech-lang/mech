@@ -2324,11 +2324,11 @@ impl<'a> TextFormatter<'a> {
   }
 
   fn location_color(s: &str) -> String {
-    s.blue().bold().to_string()
+    s.truecolor(0,187,204).bold().to_string()
   }
 
   fn linenum_color(s: &str) -> String {
-    s.blue().bold().to_string()
+    s.truecolor(0,187,204).bold().to_string()
   }
 
   fn text_color(s: &str) -> String {
@@ -2336,11 +2336,11 @@ impl<'a> TextFormatter<'a> {
   }
 
   fn annotation_color(s: &str) -> String {
-    s.bright_purple().bold().to_string()
+    s.truecolor(102,51,153).bold().to_string()
   }
 
   fn error_color(s: &str) -> String {
-    s.red().bold().to_string()
+    s.truecolor(170,51,85).bold().to_string()
   }
 
   fn ending_color(s: &str) -> String {
