@@ -24,8 +24,8 @@ no-std = ["rlibc"]
 
 [dependencies]
 hashbrown = "0.12.3"
-serde = {version = "1.0.144", default-features = false, features = ["alloc"] }
-serde_derive = "1.0.144"
+serde = {version = "1.0.152", default-features = false, features = ["alloc"] }
+serde_derive = "1.0.152"
 rlibc = { version = "=1.0", optional = true }
 lazy_static = "1.4.0"
 seahash = "4.1.0"
