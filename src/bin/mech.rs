@@ -287,7 +287,7 @@ async fn main() -> Result<(), MechError> {
                   let serialized_miniblocks = bincode::serialize(&miniblocks).unwrap();
                   let compressed_miniblocks = compress_to_vec(&serialized_miniblocks,6);
                   encode(compressed_miniblocks)
-                });
+                });          
 
     let routes = index.or(pkg).or(nb).or(blocks);
 
@@ -518,24 +518,33 @@ async fn main() -> Result<(), MechError> {
         std::process::exit(1);
       }
     };
-    let programs = compile_code(code);
 
-    let output_name = match matches.value_of("output_name") {
-      Some(name) => format!("{}.blx",name),
-      None => "output.blx".to_string(),
-    };
-
-    let file = OpenOptions::new().write(true).create(true).open(&output_name).unwrap();
-    let mut writer = BufWriter::new(file);
+    match compile_code(code) {
+      Ok(sections) => {
+        let output_name = match matches.value_of("output_name") {
+          Some(name) => format!("{}.blx",name),
+          None => "output.blx".to_string(),
+        };
     
-    let result = bincode::serialize(&programs).unwrap();
-    if let Err(e) = writer.write_all(&result) {
-      panic!("{} Failed to write core! {:?}", "[Error]".truecolor(170,51,85), e);
+        let file = OpenOptions::new().write(true).create(true).open(&output_name).unwrap();
+        let mut writer = BufWriter::new(file);
+      
+        let result = bincode::serialize(&sections).unwrap();
+    
+        if let Err(e) = writer.write_all(&result) {
+          panic!("{} Failed to write core(s)! {:?}", "[Error]".truecolor(170,51,85), e);
+          std::process::exit(1);
+        }
+        writer.flush().unwrap();
+    
+        println!("{} Wrote {}", "[Finished]".truecolor(153,221,85), output_name);
+        std::process::exit(0);
+      }
+      Err(mech_error) => {
+        println!("{}",format_errors(&vec![mech_error]));
+        std::process::exit(1);
+      }
     }
-    writer.flush().unwrap();
-
-    println!("{} Wrote {}", "[Finished]".truecolor(153,221,85), output_name);
-    std::process::exit(0);
     None
   // ------------------------------------------------
   //  Clean
@@ -572,7 +581,7 @@ info    - print diagnostic info about the REPL environment
 load    - load a .mec or .blx file (or mech project folder)
 new     - start a new core, switch context to that core
 quit    - quits this REPL
-save    - save the state of a core to disk as a .blx file.
+save    - save the state of a core to disk as a .blx file
 "#;
 
   let mut stdo = stdout();
