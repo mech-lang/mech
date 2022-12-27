@@ -168,12 +168,12 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
                 match bincode::deserialize_from(&mut reader) {
                   Ok(miniblocks) => {code.push(MechCode::MiniBlocks(miniblocks));},
                   Err(err) => {
-                    return Err(MechError{id: 1237, kind: MechErrorKind::None});
+                    return Err(MechError{id: 1247, kind: MechErrorKind::GenericError(format!("{:?}", err))});
                   },
                 }
               }
               Err(err) => {
-                return Err(MechError{id: 1238, kind: MechErrorKind::None});
+                return Err(MechError{id: 1248, kind: MechErrorKind::None});
               },
             };
           }
@@ -186,14 +186,14 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
                 code.push(MechCode::String(buffer));
               }
               Err(err) => {
-                return Err(MechError{id: 1239, kind: MechErrorKind::None});
+                return Err(MechError{id: 1249, kind: MechErrorKind::None});
               },
             };
           }
           _ => (), // Do nothing if the extension is not recognized
         }
       },
-      _ => {return Err(MechError{id: 1240, kind: MechErrorKind::None});},
+      _ => {return Err(MechError{id: 1250, kind: MechErrorKind::None});},
     }
     Ok(code)
   };
