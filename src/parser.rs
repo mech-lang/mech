@@ -237,12 +237,13 @@ impl<'a> ParseString<'a> {
 
   /// For debug purpose
   fn output(&self) {
-    println!("-----------------{}", self.len());
+              
+    println!("───────────────────{}", self.len());
     for i in self.cursor..self.graphemes.len() {
       print!("{}", self.graphemes[i]);
     }
     println!();
-    println!("-----------------");
+    println!("───────────────────");
   }
 }
 
@@ -2349,7 +2350,7 @@ impl<'a> TextFormatter<'a> {
 
   fn err_heading(index: usize) -> String {
     let n = index + 1;
-    let d = "---------------------";
+    let d = "────────────────────────";
     let s = format!("{} syntax error #{} {}\n", d, n, d);
     Self::heading_color(&s)
   }
