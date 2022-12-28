@@ -635,7 +635,8 @@ impl ProgramRunner {
           (Ok(RunLoopMessage::PrintCore(core_id)), _) => {
             match core_id {
               None => client_outgoing.send(ClientMessage::String(format!("There are {:?} cores running.", program.cores.len() + 1))),
-              Some(0) => client_outgoing.send(ClientMessage::String(format!("{:?}", program.mech))),
+              Some(0) => client_outgoing.send(ClientMessage::String("Core indices start a 1.".to_string())),
+              Some(1) => client_outgoing.send(ClientMessage::String(format!("{:?}", program.mech))),
               Some(core_id) => client_outgoing.send(ClientMessage::String(format!("{:?}", program.cores.get(&core_id)))),
             };
           },
