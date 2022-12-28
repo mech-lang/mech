@@ -756,6 +756,7 @@ save    - save the state of a core to disk as a .blx file
           },
           ReplCommand::Info => {
             println!("Info");
+            mech_client.send(RunLoopMessage::PrintInfo);
           },
           ReplCommand::Debug => {
             mech_client.send(RunLoopMessage::PrintCore(Some(0)));
