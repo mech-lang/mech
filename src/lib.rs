@@ -80,6 +80,7 @@ pub enum RunLoopMessage {
   PrintCore(Option<u64>),
   DumpCore(u64),
   PrintTable(u64),
+  PrintInfo,
   PrintRuntime,
   Listening((u64,(TableId,RegisterIndex,RegisterIndex))),
   GetTable(u64),
