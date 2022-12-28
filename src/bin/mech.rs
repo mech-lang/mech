@@ -626,36 +626,36 @@ save    - save the state of a core to disk as a .blx file
   let mut skip_receive = false;
 
   //ClientHandler::new("Mech REPL", None, None, None, cores);
-  let formatted_name = format!("\n[{}]", mech_client.name).truecolor(34,204,187);
+  let formatted_name1 = format!("\n[{}]", mech_client.name).truecolor(34,204,187);
+  let formatted_name2 = formatted_name1.clone();
   let thread_receiver = mech_client.incoming.clone();
 
   // Break out receiver into its own thread
   let thread = thread::Builder::new().name("Mech Receiving Thread".to_string()).spawn(move || {
     let mut q = 0;
-
     // Get all responses from the thread
     'repl_receive_loop: loop {
       match thread_receiver.recv() {
         (Ok(ClientMessage::Pause)) => {
-          println!("{} Paused", formatted_name);
+          println!("{} Paused", formatted_name1);
         },
         (Ok(ClientMessage::Resume)) => {
-          println!("{} Resumed", formatted_name);
+          println!("{} Resumed", formatted_name1);
         },
         (Ok(ClientMessage::Clear)) => {
-          println!("{} Cleared", formatted_name);
+          println!("{} Cleared", formatted_name1);
         },
         (Ok(ClientMessage::NewBlocks(count))) => {
           println!("Compiled {} blocks.", count);
         },
         (Ok(ClientMessage::String(message))) => {
-          println!("{} {}", formatted_name, message);
+          println!("{} {}", formatted_name1, message);
           print!("{}", ">: ".truecolor(246,192,78));
         },
         /*(Ok(ClientMessage::Table(table))) => {
           match table {
             Some(table) => {
-              println!("{} ", formatted_name);
+              println!("{} ", formatted_name1);
 
               fn print_table(x: u16, y: u16, table: Table) {
                 let mut stdout = stdout();
@@ -681,11 +681,11 @@ save    - save the state of a core to disk as a .blx file
 
               print!("{}", ">: ".truecolor(246,192,78));
             }
-            None => println!("{} Table not found", formatted_name),
+            None => println!("{} Table not found", formatted_name1),
           }
         },*/
         (Ok(ClientMessage::Transaction(txn))) => {
-          println!("{} Transaction: {:?}", formatted_name, txn);
+          println!("{} Transaction: {:?}", formatted_name1, txn);
         },
         (Ok(ClientMessage::Done)) => {
           //print!("{}", ">: ".truecolor(246,192,78));
@@ -703,8 +703,10 @@ save    - save the state of a core to disk as a .blx file
     }
   });
 
+  let mut current_core: u64 = 1;
+
   'REPL: loop {
-    
+
     io::stdout().flush().unwrap();
     // Print a prompt 
     // 4, 8, 15, 16, 23, 42
@@ -729,7 +731,7 @@ save    - save the state of a core to disk as a .blx file
             println!("{}",help_message);
           },
           ReplCommand::Quit => {
-            println!("{} Bye!", "[REPL]".truecolor(34,204,187));
+            println!("{} Bye!", formatted_name2);
             break 'REPL;
           },
           ReplCommand::Save => {
@@ -746,7 +748,8 @@ save    - save the state of a core to disk as a .blx file
             mech_client.send(RunLoopMessage::Clear);
           },
           ReplCommand::Core(core_id) => {
-            println!("Core {:?}", core_id);
+            println!("{} Switched to Core {}", formatted_name2, core_id);
+            current_core = core_id;
           },
           ReplCommand::Stop => {
             println!("Stop");
@@ -755,11 +758,10 @@ save    - save the state of a core to disk as a .blx file
             println!("Table");
           },
           ReplCommand::Info => {
-            println!("Info");
             mech_client.send(RunLoopMessage::PrintInfo);
           },
           ReplCommand::Debug => {
-            mech_client.send(RunLoopMessage::PrintCore(Some(0)));
+            mech_client.send(RunLoopMessage::PrintCore(Some(current_core)));
           },
           ReplCommand::Pause => {
             println!("Pause");
