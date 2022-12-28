@@ -39,10 +39,14 @@ pub enum ReplCommand {
 fn core(input: ParseString) -> ParseResult<ReplCommand> {
   let (input, _) = tag("core")(input)?;
   let (input, _) = syntax::parser::skip_spaces(input)?;
-  let (input, text) = syntax::parser::text(input).unwrap();
-  let core_id = syntax::compiler::compile_text(&text).unwrap();
-  match core_id.parse::<u64>() {
-    Ok(core_id) =>  Ok((input, ReplCommand::Core(core_id))), 
+  let (input, text) = syntax::parser::text(input)?;
+  match syntax::compiler::compile_text(&text) {
+    Ok(core_id) => {
+      match core_id.parse::<u64>() {
+        Ok(core_id) =>  Ok((input, ReplCommand::Core(core_id))), 
+        Err(err) => Ok((input, ReplCommand::Error)),
+      }
+    }
     Err(err) => Ok((input, ReplCommand::Error)),
   }
 }
@@ -117,7 +121,7 @@ pub fn resume(input: ParseString) -> ParseResult<ReplCommand> {
 
 fn command(input: ParseString) -> ParseResult<ReplCommand> {
   let (input, _) = tag(":")(input)?;
-  let (input, command) = alt((help,quit,clear,load,save,debug,info))(input)?;
+  let (input, command) = alt((help,quit,clear,load,save,debug,info,core))(input)?;
   Ok((input, command))
 }
 
