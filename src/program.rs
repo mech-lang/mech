@@ -32,6 +32,7 @@ use libloading::Library;
 use std::io::copy;
 use std::io;
 use std::net::{SocketAddr, UdpSocket};
+use std::fmt;
 
 use time;
 
@@ -457,4 +458,19 @@ impl Program {
     self.mech.clear();
   }*/
 
+}
+
+impl fmt::Debug for Program {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    let mut box_drawing = BoxPrinter::new();
+    box_drawing.add_title("🤖","Program");
+    box_drawing.add_title("  ","cores");
+    box_drawing.add_line(format!("  1. (b {:?}, t {:?})", self.mech.blocks.len() + 1 , self.mech.database.borrow().tables.len() + 1));
+    for (ix, core) in self.cores.iter() {
+      box_drawing.add_line(format!("  {:?}. (b {:?}, t {:?})", ix + 2, core.blocks.len() + 1 , core.database.borrow().tables.len() + 1));
+    }
+    write!(f,"{:?}",box_drawing)?;
+    Ok(())
+  }
 }

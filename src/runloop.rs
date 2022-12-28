@@ -639,9 +639,8 @@ impl ProgramRunner {
               Some(core_id) => client_outgoing.send(ClientMessage::String(format!("{:?}", program.cores.get(&core_id)))),
             };
           },
-          (Ok(RunLoopMessage::PrintDebug), _) => {
-            client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech.blocks)));
-            client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech)));
+          (Ok(RunLoopMessage::PrintInfo), _) => {
+            client_outgoing.send(ClientMessage::String(format!("{:?}", program)));
           },
           (Ok(RunLoopMessage::PrintTable(table_id)), _) => {
             let result = match program.mech.get_table_by_id(table_id) {
@@ -649,10 +648,6 @@ impl ProgramRunner {
               Err(x) => format!("{:?}", x),
             };
             client_outgoing.send(ClientMessage::String(result));
-          },
-          (Ok(RunLoopMessage::PrintRuntime), _) => {
-            //println!("{:?}", program.mech.runtime);
-            //client_outgoing.send(ClientMessage::String(format!("{:?}",program.mech.runtime)));
           },
           (Ok(RunLoopMessage::Blocks(miniblocks)), _) => {
             /*let mut blocks: Vec<Block> = Vec::new();
