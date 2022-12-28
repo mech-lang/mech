@@ -67,12 +67,12 @@ pub fn format_errors(errors: &Vec<MechError>) -> String {
         formatted_errors = format!("{}{}", formatted_errors, msg);
       }
       _ => {
-        formatted_errors = format!("{}{} {} {} {}\n\n", formatted_errors, "---".truecolor(246,192,78), "Block".truecolor(246,192,78), "BLOCKNAME", "--------------------------------------------".truecolor(246,192,78));
+        formatted_errors = format!("{}{}\n\n", formatted_errors, "───────────────────────────────────────────────────────────────────".truecolor(246,192,78));
         formatted_errors = format!("{}\n{:?}\n", formatted_errors, error);
       }
     }
   }
-  formatted_errors = format!("{}\n{}",formatted_errors, "----------------------------------------------------------------\n\n".truecolor(246,192,78));
+  formatted_errors = format!("{}\n{}",formatted_errors, "───────────────────────────────────────────────────────────────────\n\n".truecolor(246,192,78));
   formatted_errors
 }
 
