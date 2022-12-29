@@ -318,7 +318,7 @@ async fn main() -> Result<(), MechError> {
     println!("{}", "[Running]".truecolor(153,221,85));
     let runner = ProgramRunner::new("Mech Test");
     let mech_client = runner.run()?;
-    mech_client.send(RunLoopMessage::Code(MechCode::MiniBlocks(blocks)));
+    mech_client.send(RunLoopMessage::Code((1,MechCode::MiniBlocks(blocks))));
 
     let mut tests_count = 0;
     let mut tests_passed = 0;
@@ -415,7 +415,7 @@ async fn main() -> Result<(), MechError> {
     let mut runner = ProgramRunner::new("Run");
     runner.registry = machine_registry;
     let mech_client = runner.run()?;
-    mech_client.send(RunLoopMessage::Code(MechCode::MiniBlocks(blocks)));
+    mech_client.send(RunLoopMessage::Code((1,MechCode::MiniBlocks(blocks))));
 
     let formatted_name = format!("[{}]", mech_client.name).truecolor(34,204,187).to_string();
     let mech_client_name = mech_client.name.clone();
@@ -737,12 +737,15 @@ save    - save the state of a core to disk as a .blx file
           },
           ReplCommand::Code(code) => {
             for c in code {
-              mech_client.send(RunLoopMessage::Code(c));
+              mech_client.send(RunLoopMessage::Code((current_core,c)));
             }
           },
           ReplCommand::Clear => {
             println!("Clear");
             mech_client.send(RunLoopMessage::Clear);
+          },
+          ReplCommand::NewCore => {
+            mech_client.send(RunLoopMessage::NewCore);
           },
           ReplCommand::Core(core_id) => {
             println!("{} Switched to Core {}", formatted_name2, core_id);

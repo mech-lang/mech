@@ -29,6 +29,7 @@ pub enum ReplCommand {
   Debug,
   Clear,
   Info,
+  NewCore,
   Core(u64),
   Table(u64),
   Code(Vec<MechCode>),
@@ -94,6 +95,11 @@ pub fn save(input: ParseString) -> ParseResult<ReplCommand> {
   Ok((input,ReplCommand::Save))
 }
 
+pub fn new(input: ParseString) -> ParseResult<ReplCommand> {
+  let (input,_) = tag("new")(input)?;
+  Ok((input,ReplCommand::NewCore))
+}
+
 pub fn info(input: ParseString) -> ParseResult<ReplCommand> {
   let (input,_) = tag("info")(input)?;
   Ok((input,ReplCommand::Info))
@@ -121,7 +127,7 @@ pub fn resume(input: ParseString) -> ParseResult<ReplCommand> {
 
 fn command(input: ParseString) -> ParseResult<ReplCommand> {
   let (input, _) = tag(":")(input)?;
-  let (input, command) = alt((help,quit,clear,load,save,debug,info,core))(input)?;
+  let (input, command) = alt((help,quit,clear,load,save,debug,info,core,new))(input)?;
   Ok((input, command))
 }
 
