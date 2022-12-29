@@ -27,7 +27,7 @@ use std::fs::{OpenOptions, File, canonicalize, create_dir};
 use std::path::{Path, PathBuf};
 use std::io;
 use std::io::prelude::*;
-use std::time::{Duration, SystemTime};
+use std::time::{Duration, Instant, SystemTime};
 use std::thread::{self, JoinHandle};
 use std::sync::Mutex;
 use websocket::sync::Server;
@@ -237,22 +237,28 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
 pub fn compile_code(code: Vec<MechCode>) -> Result<Vec<Vec<MiniBlock>>,MechError> {
   print!("{}", "[Compiling] ".truecolor(153,221,85));
   stdout().flush();
-  let mut miniblocks = vec![];
+  let mut sections = vec![];
+  let now = Instant::now();
   for c in code {
     match c {
       MechCode::String(c) => {
         let mut compiler = Compiler::new();
-        let sections = compiler.compile_str(&c)?;
-        let mut mb = minify_blocks(&sections);
-        miniblocks.append(&mut mb);
+        let compiled = compiler.compile_str(&c)?;
+        let mut mb = minify_blocks(&compiled);
+        sections.append(&mut mb);
       },
       MechCode::MiniBlocks(mut mb) => {
-        miniblocks.append(&mut mb);
+        sections.append(&mut mb);
       },
     }
   }
-  println!("Compiled {} blocks.", miniblocks.len());
-  Ok(miniblocks)
+  let elapsed_time = now.elapsed();
+  let mut blocks_total = 0;
+  for s in &sections {
+    blocks_total += s.len();
+  }
+  println!("Compiled {} blocks in {}ms.", blocks_total, elapsed_time.as_micros() as f64 / 1000.0);
+  Ok(sections)
 }
 
 pub fn minify_blocks(sections: &Vec<Vec<SectionElement>>) -> Vec<Vec<MiniBlock>> {

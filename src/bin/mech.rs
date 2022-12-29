@@ -252,7 +252,6 @@ async fn main() -> Result<(), MechError> {
     let index = warp::get()
                 .and(warp::path::end())
                 .map(move || {
-                  println!("Sending index");
                   mech_html
                 })
                 .with(warp::reply::with::headers(headers));
@@ -262,7 +261,6 @@ async fn main() -> Result<(), MechError> {
     headers.insert("content-type", HeaderValue::from_static("application/javascript"));
     let nb = warp::path!("pkg" / "mech_notebook.js")
               .map(move || {
-                println!("Sending js");
                 mech_notebook
               })
               .with(warp::reply::with::headers(headers));
@@ -272,7 +270,6 @@ async fn main() -> Result<(), MechError> {
     headers.insert("content-type", HeaderValue::from_static("application/wasm"));
     let pkg = warp::path!("pkg" / "mech_notebook_bg.wasm")
               .map(move || {
-                println!("Sending wasm");
                 mech_wasm.to_vec()
               })
               .with(warp::reply::with::headers(headers));
