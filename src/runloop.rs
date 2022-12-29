@@ -550,8 +550,14 @@ impl ProgramRunner {
           } 
           (Ok(RunLoopMessage::Exit(exit_code)), _) => {
             client_outgoing.send(ClientMessage::Exit(exit_code));
-          } 
-          (Ok(RunLoopMessage::Code(code)), _) => {
+          }
+          (Ok(RunLoopMessage::NewCore), _) => {
+            let new_core = Core::new();
+            let new_core_ix = program.cores.len() as u64 + 2;
+            program.cores.insert(new_core_ix, new_core);
+            client_outgoing.send(ClientMessage::Done);
+          }
+          (Ok(RunLoopMessage::Code((core_ix,code))), _) => {
             // Load the program
             let sections: Vec<Vec<SectionElement>> = match code {
               MechCode::String(code) => {
@@ -575,56 +581,77 @@ impl ProgramRunner {
               }
             };
 
-            let result = program.mech.load_sections(sections);
+            {
 
-            for (new_block_ids,_,new_block_errors) in result {
-              if new_block_errors.len() > 0 {
-                match program.download_dependencies(Some(client_outgoing.clone())) {
-                  Ok(resolved_errors) => {
-                    let (_,_,nbo) = program.mech.resolve_errors(&resolved_errors);
-                    program.mech.schedule_blocks();
-                    for output in nbo {
-                      program.mech.step(&output);
+              let result = {
+                let mut core: &mut Core = match core_ix {
+                  1 => &mut program.mech,
+                  _ => program.cores.get_mut(&core_ix).unwrap(),
+                };
+                core.load_sections(sections)
+              };
+
+              for (new_block_ids,_,new_block_errors) in result {
+                if new_block_errors.len() > 0 {
+                  match program.download_dependencies(Some(client_outgoing.clone())) {
+                    Ok(resolved_errors) => {
+                      let mut core: &mut Core = match core_ix {
+                        1 => &mut program.mech,
+                        _ => program.cores.get_mut(&core_ix).unwrap(),
+                      };
+                      let (_,_,nbo) = core.resolve_errors(&resolved_errors);
+                      core.schedule_blocks();
+                      for output in nbo {
+                        core.step(&output);
+                      }
+                    }
+                    Err(err) => {
+                      client_outgoing.send(ClientMessage::Error(err.clone()));
                     }
                   }
-                  Err(err) => {
-                    client_outgoing.send(ClientMessage::Error(err.clone()));
+                }
+
+                if let Some(last_block_id) = new_block_ids.last() {
+                  let mut core: &mut Core = match core_ix {
+                    1 => &mut program.mech,
+                    _ => program.cores.get_mut(&core_ix).unwrap(),
+                  };
+                  let block = core.blocks.get(last_block_id).unwrap().borrow();
+                  let out_id = match block.transformations.last() {
+                    Some(Transformation::Function{name,arguments,out}) => {
+                      let (out_id,_,_) = out;
+                      *out_id
+                    } 
+                    Some(Transformation::TableDefine{table_id,indices,out}) => {
+                      *out
+                    } 
+                    Some(Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col}) => {
+                      *dest_id
+                    } 
+                    Some(Transformation::TableAlias{table_id, alias}) => {
+                      *table_id
+                    } 
+                    Some(Transformation::Whenever{table_id, ..}) => {
+                      *table_id
+                    } 
+                    _ => {
+                      TableId::Local(0)
+                    }
+                  };
+                  if let Ok(out_table) = block.get_table(&out_id) {
+                    client_outgoing.send(ClientMessage::String(format!("{:?}", out_table.borrow())));
                   }
                 }
               }
 
-              if let Some(last_block_id) = new_block_ids.last() {
-                let block = program.mech.blocks.get(last_block_id).unwrap().borrow();
-                let out_id = match block.transformations.last() {
-                  Some(Transformation::Function{name,arguments,out}) => {
-                    let (out_id,_,_) = out;
-                    *out_id
-                  } 
-                  Some(Transformation::TableDefine{table_id,indices,out}) => {
-                    *out
-                  } 
-                  Some(Transformation::Set{src_id, src_row, src_col, dest_id, dest_row, dest_col}) => {
-                    *dest_id
-                  } 
-                  Some(Transformation::TableAlias{table_id, alias}) => {
-                    *table_id
-                  } 
-                  Some(Transformation::Whenever{table_id, ..}) => {
-                    *table_id
-                  } 
-                  _ => {
-                    TableId::Local(0)
-                  }
-                };
-                if let Ok(out_table) = block.get_table(&out_id) {
-                  client_outgoing.send(ClientMessage::String(format!("{:?}", out_table.borrow())));
-                }
+              // React to errors
+              let mut core: &mut Core = match core_ix {
+                1 => &mut program.mech,
+                _ => program.cores.get_mut(&core_ix).unwrap(),
+              };
+              for (error,_) in core.full_errors.iter() {
+                client_outgoing.send(ClientMessage::Error(error.clone()));
               }
-            }
-
-            // React to errors
-            for (error,_) in program.mech.full_errors.iter() {
-              client_outgoing.send(ClientMessage::Error(error.clone()));
             }
             client_outgoing.send(ClientMessage::StepDone);
           }
