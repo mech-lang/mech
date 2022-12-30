@@ -56,7 +56,7 @@ pub enum ClientMessage {
   Stop,
   Pause,
   Resume,
-  Clear,
+  Reset,
   Exit(i32),
   Time(usize),
   NewBlocks(usize),
@@ -655,9 +655,13 @@ impl ProgramRunner {
             }
             client_outgoing.send(ClientMessage::StepDone);
           }
-          (Ok(RunLoopMessage::Clear), _) => {
-            /*program.clear();
-            client_outgoing.send(ClientMessage::Clear);*/
+          (Ok(RunLoopMessage::Reset(core_ix)), _) => {
+            let new_core = Core::new();
+            match core_ix {
+              1 => {program.mech = new_core;}
+              _ => {program.cores.insert(core_ix,new_core);},
+            };
+            client_outgoing.send(ClientMessage::Reset);
           },
           (Ok(RunLoopMessage::PrintCore(core_id)), _) => {
             match core_id {
