@@ -64,7 +64,7 @@ impl fmt::Debug for Functions {
 pub struct Core {
   pub sections: Vec<HashMap<BlockId,BlockRef>>,
   pub blocks: HashMap<BlockId,BlockRef>,
-  unsatisfied_blocks: HashMap<BlockId,BlockRef>,
+  pub unsatisfied_blocks: HashMap<BlockId,BlockRef>,
   pub database: Rc<RefCell<Database>>,
   pub functions: Rc<RefCell<Functions>>,
   pub user_functions: Rc<RefCell<HashMap<u64,UserFunction>>>,
