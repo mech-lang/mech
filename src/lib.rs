@@ -143,7 +143,7 @@ impl MiniTable {
 pub struct MiniCore {
   //pub sections: Vec<HashMap<BlockId,Rc<RefCell<Block>>>>,
   pub blocks: Vec<MiniBlock>,
-  pub unsatisfied_blocks: Vec<(BlockId,BlockId)>,
+  pub unsatisfied_blocks: Vec<MiniBlock>,
   pub database: Vec<MiniTable>,
   //pub functions: Rc<RefCell<Functions>>,
   //pub user_functions: Rc<RefCell<HashMap<u64,UserFunction>>>,
@@ -159,16 +159,27 @@ pub struct MiniCore {
 impl MiniCore {
 
   fn minify_core(core: &Core) -> MiniCore {
+
+    let blocks: Vec<MiniBlock> = core.blocks.iter().map(|(block_id,block_ref)| MiniBlock::minify_block(&block_ref.borrow()) ).collect::<Vec<MiniBlock>>();
+    let unsatisfied_blocks: Vec<MiniBlock> = core.unsatisfied_blocks.iter().map(|(block_id,block_ref)| MiniBlock::minify_block(&block_ref.borrow()) ).collect::<Vec<MiniBlock>>();
+    let database: Vec<MiniTable> = core.database.borrow().tables.iter().map(|(table_id,table)| MiniTable::minify_table(&table.borrow())).collect::<Vec<MiniTable>>();
+    let required_functions: Vec<u64> = core.required_functions.iter().map(|fxn_id| *fxn_id).collect::<Vec<u64>>();
+    let errors: Vec<(MechErrorKind,Vec<BlockId>)> = core.errors.iter().map(|(kind,blocks)| (kind.clone(),blocks.iter().map(|b| b.borrow().id ).collect::<Vec<BlockId>>()) ).collect::<Vec<(MechErrorKind,Vec<BlockId>)>>();
+    let input: Vec<(TableId,RegisterIndex,RegisterIndex)> = core.input.iter().map(|register| *register).collect::<Vec<(TableId,RegisterIndex,RegisterIndex)>>();
+    let output: Vec<(TableId,RegisterIndex,RegisterIndex)> = core.output.iter().map(|register| *register).collect::<Vec<(TableId,RegisterIndex,RegisterIndex)>>();
+    let defined_tables: Vec<(TableId,RegisterIndex,RegisterIndex)> = core.defined_tables.iter().map(|register| *register).collect::<Vec<(TableId,RegisterIndex,RegisterIndex)>>();
+    let dictionary: Vec<(u64,String)> = core.dictionary.borrow().iter().map(|(k,s)| (*k,s.to_string())).collect::<Vec<(u64,String)>>();
+
     MiniCore {
-      blocks: vec![],
-      unsatisfied_blocks: vec![],
-      database: vec![],
-      required_functions: vec![],
-      errors: vec![],
-      input: vec![],
-      output: vec![],
-      defined_tables: vec![],
-      dictionary: vec![],
+      blocks,
+      unsatisfied_blocks,
+      database,
+      required_functions,
+      errors,
+      input,
+      output,
+      defined_tables,
+      dictionary,
     }
   }
 
@@ -197,6 +208,25 @@ impl MiniBlock {
       strings: Vec::with_capacity(1),
       number_literals: Vec::with_capacity(1),
     }
+  }
+
+  pub fn minify_block(block: &Block) -> MiniBlock {
+    let mut miniblock = MiniBlock::new();
+    miniblock.transformations = block.transformations.clone();
+    match &block.unsatisfied_transformation {
+      Some((_,tfm)) => miniblock.transformations.push(tfm.clone()),
+      _ => (),
+    }
+    miniblock.transformations.append(&mut block.pending_transformations.clone());
+    /*for (k,v) in block.store.number_literals.iter() {
+      miniblock.number_literals.push((k.clone(), v.clone()));
+    }
+    for error in &block.errors {
+      miniblock.errors.push(error.clone());
+    }*/
+    miniblock.id = block.id;
+    miniblock.ast = block.ast.clone();
+    miniblock
   }
 
   pub fn maximize_block(miniblock: &MiniBlock) -> Block {
