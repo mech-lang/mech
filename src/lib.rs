@@ -269,21 +269,7 @@ pub fn minify_blocks(sections: &Vec<Vec<SectionElement>>) -> Vec<Vec<MiniBlock>>
 
       match element {
         SectionElement::Block(block) => {
-          let mut miniblock = MiniBlock::new();
-          miniblock.transformations = block.transformations.clone();
-          match &block.unsatisfied_transformation {
-            Some((_,tfm)) => miniblock.transformations.push(tfm.clone()),
-            _ => (),
-          }
-          miniblock.transformations.append(&mut block.pending_transformations.clone());
-          /*for (k,v) in block.store.number_literals.iter() {
-            miniblock.number_literals.push((k.clone(), v.clone()));
-          }
-          for error in &block.errors {
-            miniblock.errors.push(error.clone());
-          }*/
-          miniblock.id = block.id;
-          miniblock.ast = block.ast.clone();
+          let miniblock = MiniBlock::minify_block(&block);
           miniblocks.push(miniblock);
         }
         _ => (),

@@ -731,8 +731,8 @@ save    - save the state of a core to disk as a .blx file"#;
             break 'REPL;
           },
           ReplCommand::Save => {
-            println!("Save");
-            //mech_client.send(RunLoopMessage::DumpCore(core_id));
+            println!("{} Saving Core {}", formatted_name2, current_core);
+            mech_client.send(RunLoopMessage::DumpCore(current_core));
           },
           ReplCommand::Code(code) => {
             for c in code {
