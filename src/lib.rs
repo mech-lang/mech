@@ -60,6 +60,8 @@ impl fmt::Debug for MechSocket {
   }
 }
 
+type CoreIndex = u64;
+
 #[cfg(not(target_arch = "wasm32"))]
 #[cfg(feature = "web")]
 #[repr(C)]
@@ -72,13 +74,13 @@ pub enum RunLoopMessage {
   StepForward,
   Pause,
   Resume,
-  Clear,
+  Reset(CoreIndex),
   PrintDebug,
   //Table(Table),
   String((String, Option<u32>)),
   Exit(i32),
-  PrintCore(Option<u64>),
-  DumpCore(u64),
+  PrintCore(Option<CoreIndex>),
+  DumpCore(CoreIndex),
   NewCore,
   PrintTable(u64),
   PrintInfo,
@@ -87,10 +89,10 @@ pub enum RunLoopMessage {
   GetTable(u64),
   GetValue((u64,TableIndex,TableIndex)),
   Transaction(Transaction),
-  Code((u64,MechCode)),
+  Code((CoreIndex,MechCode)),
   Blocks(Vec<MiniBlock>),
   RemoteCoreConnect(MechSocket),
-  RemoteCoreDisconnect(u64),
+  RemoteCoreDisconnect(CoreIndex),
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
