@@ -27,7 +27,7 @@ pub enum ReplCommand {
   Stop,
   Save,
   Debug,
-  Clear,
+  Reset,
   Info,
   NewCore,
   Core(u64),
@@ -85,9 +85,9 @@ pub fn quit(input: ParseString) -> ParseResult<ReplCommand> {
   Ok((input,ReplCommand::Quit))
 }
 
-pub fn clear(input: ParseString) -> ParseResult<ReplCommand> {
-  let (input,_) = tag("clear")(input)?;
-  Ok((input,ReplCommand::Clear))
+pub fn reset(input: ParseString) -> ParseResult<ReplCommand> {
+  let (input,_) = tag("reset")(input)?;
+  Ok((input,ReplCommand::Reset))
 }
 
 pub fn save(input: ParseString) -> ParseResult<ReplCommand> {
@@ -127,7 +127,7 @@ pub fn resume(input: ParseString) -> ParseResult<ReplCommand> {
 
 fn command(input: ParseString) -> ParseResult<ReplCommand> {
   let (input, _) = tag(":")(input)?;
-  let (input, command) = alt((help,quit,clear,load,save,debug,info,core,new))(input)?;
+  let (input, command) = alt((help,quit,reset,load,save,debug,info,core,new))(input)?;
   Ok((input, command))
 }
 

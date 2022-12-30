@@ -570,16 +570,15 @@ async fn main() -> Result<(), MechError> {
   let help_message = r#"
 Available commands are: 
 
-clear   - reset the current context
-core    - switch REPL context to a given core
-debug   - print debug info about the current core
+core    - switch active context to a provided core
+debug   - print debug info about the active context
 help    - displays this message
 info    - print diagnostic info about the REPL environment
 load    - load a .mec or .blx file (or mech project folder)
-new     - start a new core, switch context to that core
+new     - start a new core, switch active context to that core
 quit    - quits this REPL
-save    - save the state of a core to disk as a .blx file
-"#;
+reset   - reset the actibe context
+save    - save the state of a core to disk as a .blx file"#;
 
   let mut stdo = stdout();
   stdo.execute(terminal::Clear(terminal::ClearType::All));
@@ -639,8 +638,8 @@ save    - save the state of a core to disk as a .blx file
         (Ok(ClientMessage::Resume)) => {
           println!("{} Resumed", formatted_name1);
         },
-        (Ok(ClientMessage::Clear)) => {
-          println!("{} Cleared", formatted_name1);
+        (Ok(ClientMessage::Reset)) => {
+          //println!("{} Reset", formatted_name1);
         },
         (Ok(ClientMessage::NewBlocks(count))) => {
           println!("Compiled {} blocks.", count);
@@ -740,9 +739,8 @@ save    - save the state of a core to disk as a .blx file
               mech_client.send(RunLoopMessage::Code((current_core,c)));
             }
           },
-          ReplCommand::Clear => {
-            println!("Clear");
-            mech_client.send(RunLoopMessage::Clear);
+          ReplCommand::Reset => {
+            mech_client.send(RunLoopMessage::Reset(current_core));
           },
           ReplCommand::NewCore => {
             mech_client.send(RunLoopMessage::NewCore);
@@ -758,6 +756,7 @@ save    - save the state of a core to disk as a .blx file
             println!("Table");
           },
           ReplCommand::Info => {
+            println!("{} Active context: Core {}", formatted_name2, current_core);
             mech_client.send(RunLoopMessage::PrintInfo);
           },
           ReplCommand::Debug => {
