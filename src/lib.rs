@@ -158,7 +158,7 @@ pub struct MiniCore {
 
 impl MiniCore {
 
-  fn minify_core(core: &Core) -> MiniCore {
+  pub fn minify_core(core: &Core) -> MiniCore {
 
     let blocks: Vec<MiniBlock> = core.blocks.iter().map(|(block_id,block_ref)| MiniBlock::minify_block(&block_ref.borrow()) ).collect::<Vec<MiniBlock>>();
     let unsatisfied_blocks: Vec<MiniBlock> = core.unsatisfied_blocks.iter().map(|(block_id,block_ref)| MiniBlock::minify_block(&block_ref.borrow()) ).collect::<Vec<MiniBlock>>();
@@ -183,9 +183,10 @@ impl MiniCore {
     }
   }
 
-  fn maximize_core(minicore: &MiniCore) -> Core {
+  pub fn maximize_core(minicore: &MiniCore) -> Core {
     let mut core = Core::new();
     let blocks: Vec<Block> = minicore.blocks.iter().map(|b| MiniBlock::maximize_block(b)).collect();
+    core.load_blocks(&blocks);
     core
   }
 }
