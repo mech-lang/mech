@@ -679,9 +679,9 @@ pub type Alias = u64;
 
 #[derive(Debug, Clone)]
 pub struct AliasMap {
-  capacity: usize,
-  ix_to_alias: Vec<Alias>,  
-  alias_to_ix: IndexMap<Alias,TableIx>,
+  pub capacity: usize,
+  pub ix_to_alias: Vec<Alias>,  
+  pub alias_to_ix: IndexMap<Alias,TableIx>,
 }
 
 impl AliasMap {
