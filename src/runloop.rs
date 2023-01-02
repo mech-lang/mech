@@ -23,6 +23,9 @@ use std::time::Instant;
 use std::sync::Mutex;
 
 extern crate miniz_oxide;
+extern crate bincode;
+use std::io::{Write, BufReader, BufWriter, stdout};
+use std::fs::{OpenOptions, File, canonicalize, create_dir};
 
 use miniz_oxide::inflate::decompress_to_vec;
 use miniz_oxide::deflate::compress_to_vec;
@@ -551,6 +554,41 @@ impl ProgramRunner {
           (Ok(RunLoopMessage::Exit(exit_code)), _) => {
             client_outgoing.send(ClientMessage::Exit(exit_code));
           }
+          (Ok(RunLoopMessage::DumpCore(core_ix)), _) => {
+            let result = match core_ix {
+              0 => {
+                let core = &program.mech;
+                let mut minicores = vec![];
+                for (_,core) in &program.cores {
+                  let minicore = MiniCore::minify_core(&core);
+                  minicores.push(minicore);
+                }
+                bincode::serialize(&minicores).unwrap()
+              }
+              1 => {
+                let core = &program.mech;
+                let minicore = MiniCore::minify_core(&core);
+                let minicores = MechCode::MiniCores(vec![minicore]);
+                bincode::serialize(&minicores).unwrap()
+              }
+              _ => {
+                let core = program.cores.get_mut(&core_ix).unwrap();
+                let minicore = MiniCore::minify_core(&core);
+                let minicores = MechCode::MiniCores(vec![minicore]);
+                bincode::serialize(&minicores).unwrap()
+              }
+            };
+            let output_name = format!("core-{}.blx",core_ix);
+            let file = OpenOptions::new().write(true).create(true).open(&output_name).unwrap();
+            let mut writer = BufWriter::new(file);
+            if let Err(e) = writer.write_all(&result) {
+              panic!("{} Failed to write core(s)! {:?}", "[Error]".truecolor(170,51,85), e);
+              std::process::exit(1);
+            }
+            writer.flush().unwrap();
+            client_outgoing.send(ClientMessage::String(format!("Wrote {:?}", output_name)));
+            client_outgoing.send(ClientMessage::Done);
+          }
           (Ok(RunLoopMessage::NewCore), _) => {
             let new_core = Core::new();
             let new_core_ix = program.cores.len() as u64 + 2;
@@ -560,6 +598,14 @@ impl ProgramRunner {
           (Ok(RunLoopMessage::Code((core_ix,code))), _) => {
             // Load the program
             let sections: Vec<Vec<SectionElement>> = match code {
+              MechCode::MiniCores(cores) => {
+                for mc in cores {
+                  let core = MiniCore::maximize_core(&mc); 
+                  let ix = program.cores.len() + 2;
+                  program.cores.insert(ix as u64,core);
+                }
+                continue 'runloop;
+              }
               MechCode::String(code) => {
                 let mut compiler = Compiler::new(); 
                 match compiler.compile_str(&code) {
@@ -665,11 +711,15 @@ impl ProgramRunner {
           },
           (Ok(RunLoopMessage::PrintCore(core_id)), _) => {
             match core_id {
-              None => client_outgoing.send(ClientMessage::String(format!("There are {:?} cores running.", program.cores.len() + 1))),
-              Some(0) => client_outgoing.send(ClientMessage::String("Core indices start a 1.".to_string())),
-              Some(1) => client_outgoing.send(ClientMessage::String(format!("{:?}", program.mech))),
-              Some(core_id) => client_outgoing.send(ClientMessage::String(format!("{:?}", program.cores.get(&core_id)))),
-            };
+              None => {client_outgoing.send(ClientMessage::String(format!("There are {:?} cores running.", program.cores.len() + 1)));}
+              Some(0) => {client_outgoing.send(ClientMessage::String("Core indices start a 1.".to_string()));}
+              Some(1) => {client_outgoing.send(ClientMessage::String(format!("{:?}", program.mech)));}
+              Some(core_id) => {
+                if core_id < program.cores.len() as u64 + 1 {
+                  client_outgoing.send(ClientMessage::String(format!("{:?}", program.cores.get(&core_id).unwrap())));
+                }
+              }
+            }
           },
           (Ok(RunLoopMessage::PrintInfo), _) => {
             client_outgoing.send(ClientMessage::String(format!("{:?}", program)));
@@ -733,7 +783,7 @@ impl ProgramRunner {
           (Err(_), _) => {
             break 'runloop
           },
-          x => println!("{:?}", x),
+          x => println!("qq {:?}", x),
         }
         client_outgoing.send(ClientMessage::Done);
       }

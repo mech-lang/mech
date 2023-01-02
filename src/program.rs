@@ -137,7 +137,7 @@ impl Program {
         let table_ref_brrw = table_ref.borrow();
         machine.on_change(&table_ref_brrw);
       },
-        _ => (), // Warn user that the machine is not loaded? Or is it okay to just try?
+      _ => (), // Warn user that the machine is not loaded? Or is it okay to just try?
     }
     Ok(())
   }
