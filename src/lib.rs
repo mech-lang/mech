@@ -165,8 +165,9 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
               Ok(file) => {
                 println!("{} {}", "[Loading]".truecolor(153,221,85), name);
                 let mut reader = BufReader::new(file);
-                match bincode::deserialize_from(&mut reader) {
-                  Ok(miniblocks) => {code.push(MechCode::MiniBlocks(miniblocks));},
+                let mech_code: Result<MechCode, bincode::Error> = bincode::deserialize_from(&mut reader);
+                match mech_code {
+                  Ok(c) => {code.push(c);},
                   Err(err) => {
                     return Err(MechError{id: 1247, kind: MechErrorKind::GenericError(format!("{:?}", err))});
                   },
@@ -241,6 +242,9 @@ pub fn compile_code(code: Vec<MechCode>) -> Result<Vec<Vec<MiniBlock>>,MechError
   let now = Instant::now();
   for c in code {
     match c {
+      MechCode::MiniCores(cores) => {
+        todo!()
+      }
       MechCode::String(c) => {
         let mut compiler = Compiler::new();
         let compiled = compiler.compile_str(&c)?;
