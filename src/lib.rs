@@ -259,6 +259,7 @@ impl MiniBlock {
 pub enum MechCode {
   String(String),
   MiniBlocks(Vec<Vec<MiniBlock>>),
+  MiniCores(Vec<MiniCore>),
 }
 
 #[cfg(not(target_arch = "wasm32"))]
