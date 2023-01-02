@@ -102,8 +102,8 @@ pub struct MiniTable {
   pub rows: usize,                       
   pub cols: usize,                       
   pub col_kinds: Vec<ValueKind>,                 
-  pub col_map: (u64,Vec<Alias>,Vec<(Alias,TableIx)>),  
-  pub row_map: (u64,Vec<Alias>,Vec<(Alias,TableIx)>),
+  pub col_map: (usize,Vec<Alias>,Vec<(Alias,TableIx)>),  
+  pub row_map: (usize,Vec<Alias>,Vec<(Alias,TableIx)>),
   pub data: Vec<Vec<Value>>,
   pub dictionary: Vec<(u64,String)>,
 }
@@ -111,31 +111,44 @@ pub struct MiniTable {
 impl MiniTable {
 
   fn minify_table(table: &Table) -> MiniTable {
+    let mut data = vec![];
+    for i in 1..=table.cols {
+      let mut col = vec![];
+      for j in 1..=table.rows {
+        let value = table.get_by_index(TableIndex::Index(j),TableIndex::Index(i)).unwrap();
+        col.push(value);
+      } 
+      data.push(col);
+    }
+    let dictionary = table.dictionary.borrow().iter().map(|(k,v)| (*k,v.to_string())).collect::<Vec<(u64,String)>>();
     MiniTable {
       id: table.id,
       dynamic: table.dynamic,
       rows: table.rows,
       cols: table.cols,
       col_kinds: table.col_kinds.clone(),
-      col_map: (0,vec![],vec![]),
-      row_map: (0,vec![],vec![]),
-      data: vec![],
-      dictionary: vec![],
+      col_map: (table.col_map.capacity,table.col_map.ix_to_alias.clone(),table.col_map.alias_to_ix.iter().map(|(k,v)| (*k,*v)).collect::<Vec<(Alias,TableIx)>>()),
+      row_map: (table.row_map.capacity,table.row_map.ix_to_alias.clone(),table.row_map.alias_to_ix.iter().map(|(k,v)| (*k,*v)).collect::<Vec<(Alias,TableIx)>>()),
+      data,
+      dictionary,
     }
   }
 
-  fn maximize_table(minitable: &MiniTable) -> Table {
-    Table {
-      id: minitable.id,
-      dynamic: minitable.dynamic,
-      rows: minitable.rows,
-      cols: minitable.cols,                     
-      col_kinds: Vec::with_capacity(minitable.cols),
-      col_map: AliasMap::new(minitable.cols),
-      row_map: AliasMap::new(minitable.rows),
-      data: Vec::with_capacity(minitable.cols),
-      dictionary: Rc::new(RefCell::new(HashMap::new())),
+  fn maximize_table(mt: &MiniTable) -> Table {
+    let mut table = Table::new(mt.id,mt.rows,mt.cols);
+    for (ix,kind) in mt.col_kinds.iter().enumerate() {
+      table.set_col_kind(ix,kind.clone());
     }
+    for i in 0..mt.cols {
+      for j in 0..mt.rows {
+        table.set_raw(j,i,mt.data[i][j].clone());
+      }
+    }
+    let (_,_,ixes) = &mt.col_map;
+    for (alias,ix) in ixes {
+      table.set_col_alias(*ix,*alias);
+    } 
+    table
   }
 }
 
@@ -187,6 +200,8 @@ impl MiniCore {
     let mut core = Core::new();
     let blocks: Vec<Block> = minicore.blocks.iter().map(|b| MiniBlock::maximize_block(b)).collect();
     core.load_blocks(&blocks);
+    let tables: Vec<Table> = minicore.database.iter().map(|t| MiniTable::maximize_table(t)).collect();
+    core.overwrite_tables(&tables);
     core
   }
 }
