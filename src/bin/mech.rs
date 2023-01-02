@@ -773,8 +773,8 @@ save    - save the state of a core to disk as a .blx file"#;
           ReplCommand::Empty => {
             println!("Empty");
           },
-          ReplCommand::Error => {
-            println!("Unknown command. Enter :help to see available commands.");
+          ReplCommand::Error(err) => {
+            println!("{:?}", err);
           },
         }
       },

@@ -34,7 +34,7 @@ pub enum ReplCommand {
   Table(u64),
   Code(Vec<MechCode>),
   Empty,
-  Error,
+  Error(String),
 }
 
 fn core(input: ParseString) -> ParseResult<ReplCommand> {
@@ -45,10 +45,10 @@ fn core(input: ParseString) -> ParseResult<ReplCommand> {
     Ok(core_id) => {
       match core_id.parse::<u64>() {
         Ok(core_id) =>  Ok((input, ReplCommand::Core(core_id))), 
-        Err(err) => Ok((input, ReplCommand::Error)),
+        Err(err) => Ok((input, ReplCommand::Error("".to_string()))),
       }
     }
-    Err(err) => Ok((input, ReplCommand::Error)),
+    Err(err) => Ok((input, ReplCommand::Error(format!("{:?}",err)))),
   }
 }
 
@@ -61,7 +61,7 @@ fn mech_code(input: ParseString) -> ParseResult<ReplCommand> {
       let mut mb = minify_blocks(&blocks);
       Ok((input, ReplCommand::Code(vec![MechCode::MiniBlocks(mb)])))
     },
-    Err(_) => Ok((input, ReplCommand::Error)),
+    Err(err) => Ok((input, ReplCommand::Error(format!("{:?}",err)))),
   }
 }
 
@@ -75,7 +75,7 @@ fn load(input: ParseString) -> ParseResult<ReplCommand> {
       Ok((input, ReplCommand::Code(code)))
     }
     Err(err) => {
-      Ok((input, ReplCommand::Error))
+      Ok((input, ReplCommand::Error("".to_string())))
     }
   }
 }
@@ -144,7 +144,7 @@ pub fn parse(text: &str) -> Result<ReplCommand, MechError> {
 
   match parse_repl_command(ParseString::new(&graphemes)) {
     Ok((input,command)) => Ok(command),
-    Err(_)=> Ok(ReplCommand::Error),
+    Err(_)=> Ok(ReplCommand::Error("".to_string())),
   }
 
 }
