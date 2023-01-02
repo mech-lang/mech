@@ -278,6 +278,14 @@ impl Core {
     self.database.borrow_mut().insert_table(table)
   }
 
+  pub fn overwrite_tables(&mut self, tables: &Vec<Table>) -> Result<(),MechError> {
+    let mut database_brrw = self.database.borrow_mut();
+    for table in tables {
+      let table2 = database_brrw.get_table_by_id(&table.id).unwrap();
+    }
+    Ok(())
+  }
+
   pub fn get_table(&self, table_name: &str) -> Result<Rc<RefCell<Table>>,MechError> {
     match self.database.borrow().get_table(table_name) {
       Some(table) => Ok(table.clone()),

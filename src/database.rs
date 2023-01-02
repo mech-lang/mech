@@ -81,6 +81,13 @@ impl Database {
     }
   }
 
+  pub fn overwrite_table(&mut self, table: Table) -> Result<Rc<RefCell<Table>>,MechError> {
+    match self.tables.insert(table.id, Rc::new(RefCell::new(table))) {
+      Some(x) => Ok(x.clone()),
+      None => {return Err(MechError{id: 1726, kind: MechErrorKind::None});},
+    }
+  }
+
   pub fn insert_table_ref(&mut self, table: TableRef) -> Result<Rc<RefCell<Table>>,MechError> {
     let table_id = {
       let table_brrw = table.borrow();
