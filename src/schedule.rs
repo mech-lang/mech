@@ -105,7 +105,7 @@ impl Schedule {
         Ok(())
       }
       None => {
-        Err(MechError{id: 5368, kind: MechErrorKind::GenericError(format!("No schedule assocaited with {:?}", register))})
+        Err(MechError{msg: "".to_string(), id: 5368, kind: MechErrorKind::GenericError(format!("No schedule assocaited with {:?}", register))})
       }
     }
   }

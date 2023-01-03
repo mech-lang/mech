@@ -14,6 +14,7 @@ type Cols = usize;
 pub struct MechError {
   pub id: u64,
   pub kind: MechErrorKind,
+  pub msg: String,
 }
 
 pub type ParserErrorReport = Vec<ParserErrorContext>;
@@ -57,7 +58,7 @@ pub enum MechErrorKind {
 
 impl From<std::io::Error> for MechError {
   fn from(n: std::io::Error) -> MechError {
-    MechError{id: 74892, kind: MechErrorKind::IoError}
+    MechError{msg: "".to_string(), id: 74892, kind: MechErrorKind::IoError}
   } 
 }
 

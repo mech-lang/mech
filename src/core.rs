@@ -191,11 +191,11 @@ impl Core {
                     // TODO This is inserting a {:,:} register instead of the one passed in, and that needs to be fixed.
                     changed_registers.insert((TableId::Global(*table_id),RegisterIndex::All,RegisterIndex::All));
                   },
-                  Err(x) => { return Err(MechError{id: 1000, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+                  Err(x) => { return Err(MechError{msg: "".to_string(), id: 1000, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
                 }
               }
             }
-            None => {return Err(MechError{id: 1001, kind: MechErrorKind::MissingTable(TableId::Global(*table_id))});},
+            None => {return Err(MechError{msg: "".to_string(), id: 1001, kind: MechErrorKind::MissingTable(TableId::Global(*table_id))});},
           }
         }
         Change::NewTable{table_id, rows, columns} => {
@@ -212,7 +212,7 @@ impl Core {
               }    
               table_brrw.set_col_alias(*column_ix,*column_alias);     
             }
-            x => {return Err(MechError{id: 1002, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+            x => {return Err(MechError{msg: "".to_string(), id: 1002, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
           }
         }
         Change::ColumnKind{table_id, column_ix, column_kind} => {
@@ -225,7 +225,7 @@ impl Core {
               }    
               table_brrw.set_col_kind(*column_ix,column_kind.clone());     
             }
-            x => {return Err(MechError{id: 1003, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+            x => {return Err(MechError{msg: "".to_string(), id: 1003, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
           }
         }
       }
@@ -289,14 +289,14 @@ impl Core {
   pub fn get_table(&self, table_name: &str) -> Result<Rc<RefCell<Table>>,MechError> {
     match self.database.borrow().get_table(table_name) {
       Some(table) => Ok(table.clone()),
-      None => {return Err(MechError{id: 1004, kind: MechErrorKind::MissingTable(TableId::Global(hash_str(table_name)))});},
+      None => {return Err(MechError{msg: "".to_string(), id: 1004, kind: MechErrorKind::MissingTable(TableId::Global(hash_str(table_name)))});},
     }
   }
 
   pub fn get_table_by_id(&self, table_id: u64) -> Result<Rc<RefCell<Table>>,MechError> {
     match self.database.borrow().get_table_by_id(&table_id) {
       Some(table) => Ok(table.clone()),
-      None => {return Err(MechError{id: 1005, kind: MechErrorKind::MissingTable(TableId::Global(table_id))});},
+      None => {return Err(MechError{msg: "".to_string(), id: 1005, kind: MechErrorKind::MissingTable(TableId::Global(table_id))});},
     }
   }
 
@@ -451,7 +451,7 @@ impl Core {
           let blocks_with_errors = self.errors.entry(mech_error.kind.clone()).or_insert(Vec::new());
           blocks_with_errors.push(block_ref_c.clone());
           self.unsatisfied_blocks.insert(0,block_ref_c.clone());
-          let error = MechError{id: 1006, kind: MechErrorKind::GenericError(format!("{:?}", x))};
+          let error = MechError{msg: "".to_string(), id: 1006, kind: MechErrorKind::GenericError(format!("{:?}", x))};
           new_block_errors.push(error);
         },
       };
@@ -523,7 +523,7 @@ impl Core {
         let output = block_ref.borrow().output.clone();
         Ok(output)
       }
-      None => Err(MechError{id: 1008, kind: MechErrorKind::MissingBlock(block_id)}),
+      None => Err(MechError{msg: "".to_string(), id: 1008, kind: MechErrorKind::MissingBlock(block_id)}),
     }
   }
 

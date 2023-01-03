@@ -109,7 +109,7 @@ impl MechFunctionCompiler for SetAll {
     if arg_name == *COLUMN {
       match (arg_column,out_col) {
         (Column::Bool(col),Column::Bool(out)) => block.plan.push(SetAllCol{col: col.clone(), out: out.clone()}),
-        x => {return Err(MechError{id: 4687, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+        x => {return Err(MechError{msg: "".to_string(), id: 4687, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
       }
     } else if arg_name == *ROW {
       let (_,arg_table_id,_) = &arguments[0];
@@ -120,7 +120,7 @@ impl MechFunctionCompiler for SetAll {
       };
       match (arg_kind,out_col) {
         (ValueKind::Bool,Column::Bool(out)) => block.plan.push(SetAllRow{arg: arg_table.clone(), out: out.clone()}),
-        x => {return Err(MechError{id: 4688, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+        x => {return Err(MechError{msg: "".to_string(), id: 4688, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
       }
     } else if arg_name == *TABLE {
       let (_,arg_table_id,_) = &arguments[0];
@@ -131,10 +131,10 @@ impl MechFunctionCompiler for SetAll {
       };
       match (arg_kind,out_col) {
         (ValueKind::Bool,Column::Bool(out)) => block.plan.push(SetAllTable{arg: arg_table.clone(), out: out.clone()}),
-        x => {return Err(MechError{id: 4689, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+        x => {return Err(MechError{msg: "".to_string(), id: 4689, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
       }
     } else {
-      return Err(MechError{id: 4690, kind: MechErrorKind::GenericError(format!("{:?}", arg_name))});
+      return Err(MechError{msg: "".to_string(), id: 4690, kind: MechErrorKind::GenericError(format!("{:?}", arg_name))});
     } 
     Ok(())
   }
@@ -153,10 +153,10 @@ impl MechFunctionCompiler for SetAny {
     if arg_name == *COLUMN {
       match (arg_column,out_col) {
         (Column::Bool(col),Column::Bool(out)) => block.plan.push(SetAnyCol{col: col.clone(), out: out.clone()}),
-        x => {return Err(MechError{id: 4691, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+        x => {return Err(MechError{msg: "".to_string(), id: 4691, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
       }
     } else {
-      return Err(MechError{id: 4692, kind: MechErrorKind::GenericError(format!("{:?}", arg_name))});
+      return Err(MechError{msg: "".to_string(), id: 4692, kind: MechErrorKind::GenericError(format!("{:?}", arg_name))});
     } 
     Ok(())
   }
@@ -218,15 +218,15 @@ impl MechFunctionCompiler for SetCartesian {
         let out_left_col = out_brrw.get_column_unchecked(0);
         match (lhs_arg_column,out_left_col) {
           (Column::F32(col),Column::F32(out)) => block.plan.push(SetCartLeftV{col: (col.clone(), *rows_right), out: out.clone()}),
-          x => {return Err(MechError{id: 4693, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+          x => {return Err(MechError{msg: "".to_string(), id: 4693, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
         let out_right_col = out_brrw.get_column_unchecked(1);
         match (rhs_arg_column,out_right_col) {
           (Column::F32(col),Column::F32(out)) => block.plan.push(SetCartRightV{col: col.clone(), out: out.clone()}),
-          x => {return Err(MechError{id: 4694, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+          x => {return Err(MechError{msg: "".to_string(), id: 4694, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
       }
-      x => {return Err(MechError{id: 4695, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+      x => {return Err(MechError{msg: "".to_string(), id: 4695, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
     }
     Ok(())
   }
