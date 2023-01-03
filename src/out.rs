@@ -47,7 +47,7 @@ impl Machine for Out {
         (Value::Bool(truth),_) => {
           println!("{:?}", truth);
         }
-        x => {return Err(MechError{id: 8395, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
+        x => {return Err(MechError{msg: "".to_string(), id: 8395, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
       }
     }
     //table.clear();
