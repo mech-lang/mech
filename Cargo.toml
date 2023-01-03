@@ -23,15 +23,15 @@ parallel = ["rayon"]
 no-std = ["rlibc"]
 
 [dependencies]
-hashbrown = "0.12.3"
+hashbrown = "0.13.1"
 serde = {version = "1.0.152", default-features = false, features = ["alloc"] }
 serde_derive = "1.0.152"
 rlibc = { version = "=1.0", optional = true }
 lazy_static = "1.4.0"
 seahash = "4.1.0"
-indexmap = "1.9.1"
-rayon = {version = "1.5.3", optional = true}
-time = {version = "0.2.25", optional = true}
+indexmap = "1.9.2"
+rayon = {version = "1.6.1", optional = true}
+time = {version = "0.3.17", optional = true}
 
 [dependencies.num-traits]
 version = "0.2.15"

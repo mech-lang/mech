@@ -494,7 +494,7 @@ impl Core {
               let mut new_block_pending_ids = vec![];
               for id in &new_block_ids {
                 let mut output = {
-                  let block_ref = self.blocks.get(&id).unwrap();
+                  let block_ref = self.blocks.get(id).unwrap();
                   let block_ref_brrw = block_ref.borrow();
                   block_ref_brrw.output.clone()
                 };
@@ -550,7 +550,7 @@ impl fmt::Debug for Core {
     }
     box_drawing.add_title("📭","input");
     for (table,row,col) in &self.input {
-      let table = match dictionary.borrow().get(&table.unwrap()) {
+      let table = match dictionary.borrow().get(table.unwrap()) {
         Some(x) => x.to_string(),
         None => format!("{:?}", table),
       };
@@ -558,7 +558,7 @@ impl fmt::Debug for Core {
     }
     box_drawing.add_title("📬","output");
     for (table,row,col) in &self.output {
-      let table = match dictionary.borrow().get(&table.unwrap()) {
+      let table = match dictionary.borrow().get(table.unwrap()) {
         Some(x) => x.to_string(),
         None => format!("{:?}", table),
       };
@@ -574,7 +574,7 @@ impl fmt::Debug for Core {
     box_drawing.add_line("Compiled Functions".to_string());
     box_drawing.add_line(format!("{:#?}", &self.functions.borrow().functions.iter().map(|(k,v)|
     {
-      match dictionary.borrow().get(&k) {
+      match dictionary.borrow().get(k) {
         Some(x) => x.to_string(),
         None => humanize(&k),
       }
@@ -582,7 +582,7 @@ impl fmt::Debug for Core {
     box_drawing.add_line("User Functions".to_string());
     box_drawing.add_line(format!("{:#?}", &self.user_functions.borrow().iter().map(|(k,v)|
     {
-      match dictionary.borrow().get(&k) {
+      match dictionary.borrow().get(k) {
         Some(x) => x.to_string(),
         None => humanize(&k),
       }

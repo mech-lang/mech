@@ -112,7 +112,7 @@ impl Database {
   pub fn get_table_by_id(&self, table_id: &u64) -> Option<&Rc<RefCell<Table>>> {
     match self.tables.get(table_id) {
       None => {
-        match self.table_alias_to_id.get(&table_id) {
+        match self.table_alias_to_id.get(table_id) {
           None => None,
           Some(table_id) => {
             self.tables.get(table_id.unwrap())
