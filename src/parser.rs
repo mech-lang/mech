@@ -101,13 +101,13 @@ pub type ParseResult<'a, O> = IResult<ParseString<'a>, O, ParseError<'a>>;
 #[derive(Clone, Debug)]
 pub struct ParseString<'a> {
   /// Source code
-  graphemes: &'a Vec<&'a str>,
+  pub graphemes: &'a Vec<&'a str>,
   /// Error report, a list of (error_location, error_context)
-  error_log: Vec<(SourceRange, ParseErrorDetail)>,
+  pub error_log: Vec<(SourceRange, ParseErrorDetail)>,
   /// Point at the next grapheme to consume
-  cursor: usize,
+  pub cursor: usize,
   /// Location of the grapheme pointed by cursor
-  location: SourceLocation,
+  pub location: SourceLocation,
 }
 
 impl<'a> ParseString<'a> {
@@ -257,8 +257,8 @@ impl<'a> nom::InputLength for ParseString<'a> {
 /// The part of error context that's independent to its cause location.
 #[derive(Clone, Debug)]
 pub struct ParseErrorDetail {
-  message: &'static str,
-  annotation_rngs: Vec<SourceRange>,
+  pub message: &'static str,
+  pub annotation_rngs: Vec<SourceRange>,
 }
 
 /// The error type for the nom parser, which handles full error context
@@ -278,18 +278,18 @@ pub struct ParseError<'a> {
   ///   range:   |   |
   ///           [2,  5)
   ///
-  cause_range: SourceRange,
+  pub cause_range: SourceRange,
   /// Hold ownership to the input ParseString
-  remaining_input: ParseString<'a>,
+  pub remaining_input: ParseString<'a>,
   /// Detailed information about this error
-  error_detail: ParseErrorDetail,
+  pub error_detail: ParseErrorDetail,
 }
 
 impl<'a> ParseError<'a> {
   /// Create a new error at current location of the input, with given message
   /// and empty annotations.  Ownership of the input is also passed into this
   /// error object.
-  fn new(input: ParseString<'a>, msg: &'static str) -> Self {
+  pub fn new(input: ParseString<'a>, msg: &'static str) -> Self {
     let start = input.loc();
     let mut end = start;
     end.col += 1;
@@ -2258,14 +2258,14 @@ pub fn parse_mech(input: ParseString) -> ParseResult<ParserNode> {
 
 /// This struct is responsible for analysing text, interpreting indices
 /// and ranges, and producing formatted messages.
-struct TextFormatter<'a> {
+pub struct TextFormatter<'a> {
   graphemes: Vec<&'a str>,
   line_beginnings: Vec<usize>,
   end_index: usize,
 }
 
 impl<'a> TextFormatter<'a> {
-  fn new(text: &'a str) -> Self {
+  pub fn new(text: &'a str) -> Self {
     let graphemes = graphemes::init_source(text);
     let mut line_beginnings = vec![0];
     for i in 0..graphemes.len() {
@@ -2500,7 +2500,7 @@ impl<'a> TextFormatter<'a> {
   }
 
   /// Get formatted error message.
-  fn format_error(&self, errors: &ParserErrorReport) -> String {
+  pub fn format_error(&self, errors: &ParserErrorReport) -> String {
     let n = usize::min(errors.len(), 10);
     let mut result = String::new();
     result.push('\n');
