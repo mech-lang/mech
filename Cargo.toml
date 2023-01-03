@@ -1,8 +1,8 @@
 [package]
 name = "mech"
-version = "0.0.5"
+version = "0.1.0"
 authors = ["Corey Montella <corey@mech-lang.org>"]
-description = "Main crate for the Mech programming language. Provides a REPL and hosted editor."
+description = "Toolchain for the Mech programming language."
 documentation = "http://docs.mech-lang.org"
 homepage = "https://mech-lang.org"
 repository = "https://github.com/mech-lang/mech"
@@ -55,7 +55,7 @@ winres = "0.1.12"
 
 [package.metadata.winres]
 OriginalFilename = "MECH.EXE"
-LegalCopyright = "Copyright © 2022"
+LegalCopyright = "Copyright © 2023"
 
 [patch.'https://gitlab.com/mech-lang/core']
 mech-core = { path = 'src/core' }
