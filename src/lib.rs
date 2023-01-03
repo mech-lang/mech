@@ -62,12 +62,13 @@ pub fn format_errors(errors: &Vec<MechError>) -> String {
   let error_notice = format!("🐛 Found {} Error{}:\n", &errors.len(), plural);
   formatted_errors = format!("{}\n{}\n\n", formatted_errors, error_notice);
   for error in errors {
+    formatted_errors = format!("{}{}\n\n", formatted_errors, "───────────────────────────────────────────────────────────────────".truecolor(246,192,78));
     match &error.kind {
-      MechErrorKind::ParserError(ast,report,msg) => {
-        formatted_errors = format!("{}{}", formatted_errors, msg);
+      MechErrorKind::ParserError(ast,report,msg) => { formatted_errors = format!("{}{}", formatted_errors, msg);}
+      MechErrorKind::MissingTable(table_id) => {
+        formatted_errors = format!("{} Missing table: {}\n", formatted_errors, error.msg);
       }
       _ => {
-        formatted_errors = format!("{}{}\n\n", formatted_errors, "───────────────────────────────────────────────────────────────────".truecolor(246,192,78));
         formatted_errors = format!("{}\n{:?}\n", formatted_errors, error);
       }
     }
@@ -129,6 +130,6 @@ pub fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &st
   let message = format!("Can't load library {:?}", machine_file_path);
   match unsafe{Library::new(machine_file_path)} {
     Ok(machine) => Ok(machine),
-    Err(err) => Err(MechError{id: 1273, kind: MechErrorKind::GenericError(format!("{:?}",message))}),
+    Err(err) => Err(MechError{msg: "".to_string(), id: 1273, kind: MechErrorKind::GenericError(format!("{:?}",message))}),
   }
 }

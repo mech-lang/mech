@@ -185,11 +185,11 @@ impl Program {
           // Loading machine_repository index
           match &outgoing {
             Some(sender) => {sender.send(ClientMessage::String(format!("{} Machine registry.", "[Loading]".truecolor(153,221,85))));}
-            None => {return Err(MechError{id: 1244, kind: MechErrorKind::None});},
+            None => {return Err(MechError{msg: "".to_string(), id: 1244, kind: MechErrorKind::None});},
           }
           let mut contents = String::new();
           match file.read_to_string(&mut contents) {
-            Err(_) => {return Err(MechError{id: 1445, kind: MechErrorKind::None});},
+            Err(_) => {return Err(MechError{msg: "".to_string(), id: 1445, kind: MechErrorKind::None});},
             _ => (),
           }
           contents
@@ -198,7 +198,7 @@ impl Program {
           // Download machine_repository index
           match &outgoing {
             Some(sender) => {sender.send(ClientMessage::String(format!("{} Updating machine registry from:\n{}", "[Downloading]".truecolor(153,221,85),self.registry)));}
-            None => {return Err(MechError{id: 1246, kind: MechErrorKind::None});},
+            None => {return Err(MechError{msg: "".to_string(), id: 1246, kind: MechErrorKind::None});},
           }
           // Download registry
           let registry_url = &self.registry;
@@ -208,19 +208,19 @@ impl Program {
                 Ok(text) => {
                   text
                 },
-                Err(_) => {return Err(MechError{id: 1235, kind: MechErrorKind::None});},
+                Err(_) => {return Err(MechError{msg: "".to_string(), id: 1235, kind: MechErrorKind::None});},
               }
             }
-            Err(_) => {return Err(MechError{id: 1236, kind: MechErrorKind::None});},
+            Err(_) => {return Err(MechError{msg: "".to_string(), id: 1236, kind: MechErrorKind::None});},
           };
           // Save registry
           let mut dest = match File::create("machines/registry.mec") {
             Ok(dest) => dest,
-            Err(_) => {return Err(MechError{id: 1237, kind: MechErrorKind::None});},
+            Err(_) => {return Err(MechError{msg: "".to_string(), id: 1237, kind: MechErrorKind::None});},
           };
           match dest.write_all(response_text.as_bytes()) {
             Ok(dest) => dest,
-            Err(_) => {return Err(MechError{id: 1238, kind: MechErrorKind::None});},            
+            Err(_) => {return Err(MechError{msg: "".to_string(), id: 1238, kind: MechErrorKind::None});},            
           }
           response_text
         }

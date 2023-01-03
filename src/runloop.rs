@@ -359,8 +359,8 @@ impl ProgramRunner {
                             }
                           }
                         }
-                        Err(MechError{id,kind}) => {
-                          //client_outgoing.send(ClientMessage::Error(kind.clone()));
+                        Err(err) => {
+                          client_outgoing.send(ClientMessage::Error(err));
                         }
                       }
                     }
@@ -383,8 +383,8 @@ impl ProgramRunner {
                   }
                 }
               }
-              Err(MechError{id,kind}) => {
-                //client_outgoing.send(ClientMessage::Error(kind.clone()));
+              Err(err) => {
+                client_outgoing.send(ClientMessage::Error(err));
               }
             };
             let elapsed_time = now.elapsed();
