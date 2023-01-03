@@ -2568,7 +2568,7 @@ pub fn parse(text: &str) -> Result<ParserNode, MechError> {
       annotation_rngs: e.1.annotation_rngs,
     }).collect();
     let msg = TextFormatter::new(text).format_error(&report);
-    Err(MechError{id: 3202, kind: MechErrorKind::ParserError(result_node, report, msg)})
+    Err(MechError{msg: "".to_string(), id: 3202, kind: MechErrorKind::ParserError(result_node, report, msg)})
   }
 }
 
@@ -2614,7 +2614,7 @@ pub fn parse_fragment(text: &str) -> Result<ParserNode, MechError> {
       annotation_rngs: e.1.annotation_rngs,
     }).collect();
     let msg = TextFormatter::new(text).format_error(&report);
-    Err(MechError{id: 3202, kind: MechErrorKind::ParserError(result_node, report, msg)})
+    Err(MechError{msg: "".to_string(), id: 3202, kind: MechErrorKind::ParserError(result_node, report, msg)})
   }
 }
 

@@ -13,10 +13,7 @@ pub async fn run_langserver(addr: &str, port: &str) -> Result<(), MechError> {
   // bind to address and port
   let listener = match TcpListener::bind(&addr_port).await {
     Ok(listener) => listener,
-    Err(_) => return Err(MechError {
-      id: 9999,
-      kind: MechErrorKind::GenericError(format!("Unable to bind to {}", addr_port)),
-    }),
+    Err(_) => return Err(MechError{msg: "".to_string(), id: 8923, kind: MechErrorKind::GenericError(format!("Unable to bind to {}", addr_port)),}),
   };
 
   // accept one client, then quit
@@ -27,9 +24,6 @@ pub async fn run_langserver(addr: &str, port: &str) -> Result<(), MechError> {
       Server::new(conn_sk_in, conn_sk_out, client_sk).serve(service).await;
       Ok(())
     },
-    Err(e) => Err(MechError {
-      id: 9999,
-      kind: MechErrorKind::GenericError(format!("Unable to get client: {}", e)),
-    }),
+    Err(e) => Err(MechError{msg: "".to_string(), id: 8924, kind: MechErrorKind::GenericError(format!("Unable to get client: {}", e))}),
   }
 }

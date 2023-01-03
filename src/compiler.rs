@@ -191,7 +191,7 @@ impl Compiler {
     if sections.len() > 0 {
       Ok(sections)
     } else {
-      Err(MechError{id: 3749, kind: MechErrorKind::None})
+      Err(MechError{msg: "".to_string(), id: 3749, kind: MechErrorKind::None})
     }
   }
 
@@ -1206,6 +1206,6 @@ pub fn compile_text(node: &ParserNode) -> Result<String,MechError> {
     AstNode::String{text,..} => {
       Ok(MechString::from_chars(text).to_string())
     }
-    x => Err(MechError{id: 7392, kind: MechErrorKind::GenericError(format!("Unhandled Node: {:?}", x))})
+    x => Err(MechError{msg: "".to_string(), id: 7392, kind: MechErrorKind::GenericError(format!("Unhandled Node: {:?}", x))})
   }
 }
