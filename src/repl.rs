@@ -12,9 +12,9 @@ use nom::{
   branch::alt,
   sequence::tuple,
   combinator::opt,
-  error::{context, convert_error, ErrorKind, ParseError, VerboseError},
   multi::{many1, many0},
   character::complete::{alphanumeric1, alpha1, digit1, space0, space1},
+  Err,
 };
 
 
@@ -54,14 +54,18 @@ fn core(input: ParseString) -> ParseResult<ReplCommand> {
 
 fn mech_code(input: ParseString) -> ParseResult<ReplCommand> {
   // Try parsing mech code fragment
-  let (input,parse_tree) = syntax::parser::parse_mech_fragment(input)?;
-  let mut compiler = compiler::Compiler::new();
-  match compiler.compile_fragment_from_parse_tree(parse_tree) {
-    Ok(blocks) => {
-      let mut mb = minify_blocks(&blocks);
-      Ok((input, ReplCommand::Code(vec![MechCode::MiniBlocks(mb)])))
-    },
-    Err(err) => Ok((input, ReplCommand::Error(format!("{:?}",err)))),
+  match syntax::parser::parse_mech_fragment(input) {
+    Ok((input, parse_tree)) => {
+      let mut compiler = compiler::Compiler::new();
+      match compiler.compile_fragment_from_parse_tree(parse_tree) {
+        Ok(blocks) => {
+          let mut mb = minify_blocks(&blocks);
+          Ok((input, ReplCommand::Code(vec![MechCode::MiniBlocks(mb)])))
+        },
+        Err(err) => Ok((input, ReplCommand::Error(format!("{:?}",err)))),
+      }
+    }
+    Err(err) => Err(err),
   }
 }
 
@@ -143,8 +147,23 @@ pub fn parse(text: &str) -> Result<ReplCommand, MechError> {
   let remaining: ParseString;
 
   match parse_repl_command(ParseString::new(&graphemes)) {
-    Ok((input,command)) => Ok(command),
-    Err(_)=> Ok(ReplCommand::Error("".to_string())),
+    Ok((input,command)) => {
+      return Ok(command);
+    }
+    Err(err) => match err {
+      Err::Error(mut e) | Err::Failure(mut e) => {
+        error_log.append(&mut e.remaining_input.error_log);
+        error_log.push((e.cause_range, e.error_detail));
+        remaining = e.remaining_input;
+        let report: ParserErrorReport = error_log.into_iter().map(|e| ParserErrorContext {
+          cause_rng: e.0,
+          err_message: String::from(e.1.message),
+          annotation_rngs: e.1.annotation_rngs,
+        }).collect();
+        let msg = TextFormatter::new(text).format_error(&report);
+        Err(MechError{id: 3392, kind: MechErrorKind::ParserError(result_node, report, msg)})
+      },
+      Err::Incomplete(_) => panic!("nom::Err::Incomplete is not supported!"),
+    },
   }
-
 }

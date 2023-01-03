@@ -778,7 +778,9 @@ save    - save the state of a core to disk as a .blx file"#;
           },
         }
       },
-      _ => (), 
+      Err(err) => {
+        println!("{}",format_errors(&vec![err]));
+      }, 
     }
   }
 
