@@ -15,6 +15,7 @@ use std::sync::Arc;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
+use std::time::{Instant};
 
 use mech_core::*;
 use mech_syntax::compiler::Compiler;
@@ -334,7 +335,7 @@ impl Program {
     let mut machine_init_code = vec![];
     for needed_table_id in needed_tables.iter() {
       let dictionary = self.mech.dictionary.borrow();
-      let needed_table_name = dictionary.get(&needed_table_id.unwrap()).unwrap().to_string();
+      let needed_table_name = dictionary.get(needed_table_id.unwrap()).unwrap().to_string();
       let m: Vec<_> = needed_table_name.split('/').collect();
       let needed_machine_id = hash_str(&m[0]);
       match self.loaded_machines.contains(&needed_machine_id) {

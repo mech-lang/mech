@@ -280,7 +280,7 @@ impl ProgramRunner {
         match (program.incoming.recv(), paused) {
           (Ok(RunLoopMessage::Transaction(txn)), false) => {
             // Process the transaction and calculate how long it took. 
-            let start_ns = time::precise_time_ns();
+            let now = Instant::now();
             match program.mech.process_transaction(&txn) {
               Ok((new_block_ids,changed_registers)) => {
                 for trigger_register in &changed_registers {                  
@@ -310,7 +310,7 @@ impl ProgramRunner {
                         Some(output) => {
                           // Is any of this being listened for?
                           for (register,remote_cores) in &program.listeners {
-                            if output.contains(&register) {
+                            if output.contains(register) {
                               o.insert((register.clone(),remote_cores.clone()));
                               break;
                             }
@@ -329,7 +329,7 @@ impl ProgramRunner {
                           let compressed_message = compress_to_vec(&message,6);
                           // Send the transaction to the remote core
                           for remote_core_id in listeners {
-                            match (&self.socket,program.remote_cores.get_mut(&remote_core_id)) {
+                            match (&self.socket,program.remote_cores.get_mut(remote_core_id)) {
                               (Some(ref socket),Some(MechSocket::UdpSocket(remote_core_address))) => {
                                 let len = socket.send_to(&compressed_message, remote_core_address.clone()).unwrap();
                               }
@@ -338,7 +338,7 @@ impl ProgramRunner {
                                   Ok(()) => (),
                                   Err(x) => {
                                     client_outgoing.send(ClientMessage::String(format!("Remote core disconnected: {}", humanize(&remote_core_id))));
-                                    program.remote_cores.remove(&remote_core_id);
+                                    program.remote_cores.remove(remote_core_id);
                                     for (core_id, core_address) in &program.remote_cores {
                                       match core_address {
                                         MechSocket::UdpSocket(core_address) => {
@@ -371,7 +371,7 @@ impl ProgramRunner {
                         Some(output) => {
                           // Is any of this being listened for?
                           for (register,remote_cores) in &program.listeners {
-                            if output.contains(&register) {
+                            if output.contains(register) {
                               v.insert((register.clone(),remote_cores.clone()));
                               break;
                             }
@@ -387,9 +387,9 @@ impl ProgramRunner {
                 //client_outgoing.send(ClientMessage::Error(kind.clone()));
               }
             };
-            let end_ns = time::precise_time_ns();
-            let time = (end_ns - start_ns) as f64;
-            client_outgoing.send(ClientMessage::Timing(1.0 / (time / 1_000_000_000.0)));
+            let elapsed_time = now.elapsed();
+            let cycle_duration = elapsed_time.as_nanos() as f64;
+            client_outgoing.send(ClientMessage::Timing(1.0 / (cycle_duration / 1_000_000_000.0)));
             client_outgoing.send(ClientMessage::StepDone);
           },
           (Ok(RunLoopMessage::Listening((core_id, register))), _) => {
