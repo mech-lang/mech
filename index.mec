@@ -26,7 +26,7 @@ Provides standard mathematical functions.
 
 #math/machine = [
   name: "math" 
-  version: "v0.0.1"
-  authors: "Corey Montella" 
+  version: "v0.1.0"
+  authors: ["Corey Montella", "Haocheng Gao"] 
   machine-url: "https://gitlab.com/mech-lang/machines/math"
   license: "Apache-2.0"]

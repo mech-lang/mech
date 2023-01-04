@@ -1,10 +1,10 @@
 [package]
 name = "mech-math"
-version = "0.0.5"
+version = "0.1.0"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Math library for the Mech language"
 documentation = "http://docs.mech-lang.org"
-homepage = "http://mech-lang.org"
+homepage = "https://mech-lang.org"
 repository = "https://github.com/mech-machines/math"
 keywords = ["mech", "language", "programming"]
 license = "Apache-2.0"
@@ -19,8 +19,8 @@ maintenance = { status = "actively-developed" }
 crate-type = ["dylib", "rlib"]
 
 [dependencies]
-mech-core = {git = "https://gitlab.com/mech-lang/core", branch = "v0.1-beta", default-features = false}
-mech-utilities = {git = "https://gitlab.com/mech-lang/utilities", branch = "v0.1-beta", default-features = false}
+mech-core = {version = "0.1", default-features = false}
+mech-utilities = {version = "0.1", default-features = false}
 
-libm = "0.2.5"
+libm = "0.2.6"
 lazy_static = "1.4.0"
