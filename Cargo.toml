@@ -19,8 +19,8 @@ maintenance = { status = "actively-developed" }
 crate-type = ["dylib", "rlib"]
 
 [dependencies]
-mech-core = {git = "https://gitlab.com/mech-lang/core", branch = "v0.1-beta", default-features = false}
-mech-utilities = {git = "https://gitlab.com/mech-lang/utilities", branch = "v0.1-beta", default-features = false}
+mech-core = {version = "0.1", default-features = false}
+mech-utilities = {version = "0.1", default-features = false}
 
-libm = "0.2.5"
+libm = "0.2.6"
 lazy_static = "1.4.0"
