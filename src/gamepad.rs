@@ -5,8 +5,6 @@ use mech_utilities::*;
 use std::thread::{self};
 use crossbeam_channel::Sender;
 use std::collections::HashMap;
-use std::io;
-use std::io::prelude::*;
 use gilrs::{Gilrs, Button, Event};
 use gilrs::ev::{EventType, Axis};
 

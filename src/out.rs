@@ -1,11 +1,7 @@
 extern crate crossbeam_channel;
 use mech_core::*;
 use mech_utilities::*;
-use std::thread::{self};
 use crossbeam_channel::Sender;
-use std::collections::HashMap;
-use std::io;
-use std::io::prelude::*;
 
 lazy_static! {
   static ref IO_OUT: u64 = hash_str("io/out");
@@ -47,7 +43,7 @@ impl Machine for Out {
         (Value::Bool(truth),_) => {
           println!("{:?}", truth);
         }
-        x => {return Err(MechError{id: 8395, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
+        x => {return Err(MechError{msg: "".to_string(), id: 8395, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
       }
     }
     //table.clear();
