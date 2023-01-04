@@ -8,7 +8,7 @@ You can try Mech online at [https://mech-lang.org/try](https://mech-lang.org/try
 
 Usage and installation instructions can be found in the [documentation](https://mech-lang.org/#/docs/index.mec) or the [main Mech repository](https://github.com/mech-lang/mech).
 
-Be sure to follow on our [blog](https://mech-lang.org/blog/)([RSS](https://mech-lang.org/feed.xml))!
+Be sure to follow our [blog](https://mech-lang.org/blog/)([RSS](https://mech-lang.org/feed.xml))!
 
 # Syntax
 
