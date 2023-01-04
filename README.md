@@ -8,7 +8,7 @@ You can try Mech online at [https://mech-lang.org/try](https://mech-lang.org/try
 
 Usage and installation instructions can be found in the [documentation](https://mech-lang.org/#/docs/index.mec) or the [main Mech repository](https://github.com/mech-lang/mech).
 
-Be sure to follow on our [blog](https://mech-lang.org/blog/)([RSS](https://mech-lang.org/feed.xml))!
+Be sure to follow our [blog](https://mech-lang.org/blog/)([RSS](https://mech-lang.org/feed.xml))!
 
 # Core
 
@@ -24,7 +24,7 @@ The language runtime. It's a small dataflow engine that accepts transactions of 
 - **function** - defines the standard library for Mech, including basic indexing, mathematical, comparison, and logic functions.
 - **error** - defines an `MechError`, which holds the information necessary to track and render error messages.
 
-##  Project Status
+## Project Status
 
 Mech is currently in the **beta** stage of development. This means that the language is at a suitable stage for a wider audience. While most language feature implementations are started, none are finished, and some new features may, while others could be removed. Backwards and forwards compatibility of Mech programs is not guaranteed at this time. 
 
