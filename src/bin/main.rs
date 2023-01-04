@@ -3,7 +3,6 @@ use mech_syntax::ast::Ast;
 use mech_syntax::compiler::Compiler;
 use mech_core::*;
 
-use std::cell::RefCell;
 use std::rc::Rc;
 
 use std::fs;
@@ -12,17 +11,20 @@ fn main() -> Result<(),MechError> {
     let s = fs::read_to_string("test.mec").unwrap();
     match parser::parse(&s) {
         Ok(tree) => { 
+          println!("----------- SYNTAX TREE ---------");
           println!("{:#?}", tree);
           let mut ast = Ast::new();
           ast.build_syntax_tree(&tree);
+          println!("----------- AST ---------");
+          println!("{:#?}", ast.syntax_tree);
           let mut compiler = Compiler::new();
           let sections = compiler.compile_sections(&vec![ast.syntax_tree.clone()]).unwrap();
-          let mut core = Core::new();
-          core.load_sections(sections);
-          println!("{:#?}", core.blocks);
-          println!("{:?}", core);
+          // let mut core = Core::new();
+          // core.load_sections(sections);
+          // println!("{:#?}", core.blocks);
+          // println!("{:?}", core);
         },
-        Err(err) => if let MechErrorKind::ParserError(node, report) = err.kind {
+        Err(err) => if let MechErrorKind::ParserError(node, report, _) = err.kind {
           println!("----- TREE -----");
           println!("{:?}", node);
           println!("----- MESSAGE -----");

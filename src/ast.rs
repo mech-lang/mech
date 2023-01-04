@@ -19,10 +19,8 @@ lazy_static! {
 }
 
 pub struct Ast {
-  current_char: usize,
-  current_line: usize,
-  current_col: usize,
   depth: usize,
+  last_src_range: SourceRange,
   pub syntax_tree: AstNode,
 }
 
@@ -30,18 +28,23 @@ impl Ast {
 
   pub fn new() -> Ast {
     Ast {
-      current_char: 0,
-      current_line: 0,
-      current_col: 0,
       depth: 0,
       syntax_tree: AstNode::Null,
+      last_src_range: SourceRange::default(),
     }
   }
 
   pub fn compile_nodes(&mut self, nodes: &Vec<ParserNode>) -> Vec<AstNode> {
     let mut compiled = Vec::new();
-    for node in nodes {
+    let mut iter = nodes.iter();
+    if let Some(node) = iter.nth(0) {
       compiled.append(&mut self.build_syntax_tree(node));
+      let r1 = self.last_src_range;
+      for node in iter {
+        compiled.append(&mut self.build_syntax_tree(node));
+      }
+      let r2 = self.last_src_range;
+      self.last_src_range = merge_src_range(r1, r2);
     }
     compiled
   }
@@ -58,7 +61,7 @@ impl Ast {
         let mut title = None;
         for node in result {
           match node {
-            AstNode::Title{text} => title = Some(text),
+            AstNode::Title{text, ..} => title = Some(text),
             _ => children.push(node),
           }
         }
@@ -71,7 +74,7 @@ impl Ast {
         let mut title = None;
         for node in result {
           match node {
-            AstNode::Title{text} => {
+            AstNode::Title{text, ..} => {
               if !children.is_empty() {
                 compiled.push(AstNode::Section{title: title.clone(), children: children.clone()});
                 children.clear();
@@ -83,7 +86,7 @@ impl Ast {
         }
         compiled.push(AstNode::Section{title: title.clone(), children: children.clone()});
       },
-      ParserNode::Block{children} => compiled.push(AstNode::Block{children: self.compile_nodes(children)}),
+      ParserNode::Block{children, src_range} => compiled.push(AstNode::Block{children: self.compile_nodes(children), src_range: *src_range}),
       ParserNode::Data{children} => {
         let result = self.compile_nodes(children);
         let mut reversed = result.clone();
@@ -94,19 +97,19 @@ impl Ast {
 
         for node in reversed {
           match node {
-            AstNode::Table{name, id} => {
+            AstNode::Table{name, id, src_range} => {
               if select_data_children.is_empty() {
                 select_data_children = vec![AstNode::Null; 1];
               }
               select_data_children.reverse();
-              compiled.push(AstNode::SelectData{name, id: TableId::Global(id), children: select_data_children.clone()});
+              compiled.push(AstNode::SelectData{name, id: TableId::Global(id), children: select_data_children.clone(), src_range});
             },
-            AstNode::Identifier{name, id} => {
+            AstNode::Identifier{name, id, src_range} => {
               if select_data_children.is_empty() {
                 select_data_children = vec![AstNode::Null; 1];
               }
               select_data_children.reverse();
-              let select = AstNode::SelectData{name, id: TableId::Local(id), children: select_data_children.clone()};
+              let select = AstNode::SelectData{name, id: TableId::Local(id), children: select_data_children.clone(), src_range};
               if transpose {
                 compiled.push(AstNode::TransposeSelect{children: vec![select]});
               } else {
@@ -137,7 +140,7 @@ impl Ast {
           }
         }
       },
-      ParserNode::Statement{children} => compiled.push(AstNode::Statement{children: self.compile_nodes(children)}),
+      ParserNode::Statement{children, src_range} => compiled.push(AstNode::Statement{children: self.compile_nodes(children), src_range: *src_range}),
       ParserNode::Expression{children} => {
         let result = self.compile_nodes(children);
         for node in result {
@@ -190,7 +193,7 @@ impl Ast {
           AstNode::ExponentUpdate => "math/exponent-update".chars().collect(),
           _ => Vec::new(),
         };
-        compiled.push(AstNode::UpdateData{name, children: vec![src.clone(), dest.clone()]});
+        compiled.push(AstNode::UpdateData{name, children: vec![src.clone(), dest.clone()], src_range: SourceRange::default()});
       },
       ParserNode::SplitData{children} => {
         let result = self.compile_nodes(children);
@@ -347,11 +350,11 @@ impl Ast {
       ParserNode::Infix{children} => {
         let result = self.compile_nodes(children);
         let operator = &result[0];
-        let name: Vec<char> = match operator {
-          AstNode::Token{token, chars} => chars.to_vec(),
-          _ => Vec::new(),
+        let (name, range): (Vec<char>, SourceRange) = match operator {
+          AstNode::Token{token, chars, src_range} => (chars.to_vec(), *src_range),
+          _ => (Vec::new(), SourceRange::default()),
         };
-        compiled.push(AstNode::Function{name, children: vec![]});
+        compiled.push(AstNode::Function{name, children: vec![], src_range: range});
       },
       ParserNode::VariableDefine{children} => {
         let result = self.compile_nodes(children);
@@ -390,6 +393,24 @@ impl Ast {
           }
         }
         compiled.push(AstNode::TableDefine{children});
+      },
+      ParserNode::FollowedBy{children} => {
+        let result = self.compile_nodes(children);
+        let mut children: Vec<AstNode> = Vec::new();
+        for node in result {
+          match node {
+            AstNode::Token{..} => (),
+            AstNode::SelectData{..} => {
+              children.push(AstNode::Expression{
+                children: vec![AstNode::AnonymousTableDefine{
+                  children: vec![AstNode::TableRow{
+                    children: vec![AstNode::TableColumn{
+                      children: vec![node]}]}]}]});
+            },
+            _ => children.push(node),
+          }
+        }
+        compiled.push(AstNode::FollowedBy{children});
       },
       ParserNode::TableSelect{children} => {
         let result = self.compile_nodes(children);
@@ -445,8 +466,8 @@ impl Ast {
       ParserNode::Table{children} => {
         let result = self.compile_nodes(children);
         match &result[0] {
-          AstNode::Identifier{name, id} => {
-            compiled.push(AstNode::Table{name: name.to_vec(), id: *id});
+          AstNode::Identifier{name, id, src_range} => {
+            compiled.push(AstNode::Table{name: name.to_vec(), id: *id, src_range: *src_range});
           },
           _ => (),
         };
@@ -458,11 +479,11 @@ impl Ast {
         let result = self.compile_nodes(children);
         for node in result {
           match node {
-            AstNode::Token{token, mut chars} => word.append(&mut chars),
+            AstNode::Token{token, mut chars, ..} => word.append(&mut chars),
             _ => (),
           }
         }
-        compiled.push(AstNode::String{text: word});
+        compiled.push(AstNode::String{text: word, src_range: self.last_src_range});
       },
       // String-like nodes
       ParserNode::ParagraphText{children} => {
@@ -470,12 +491,12 @@ impl Ast {
         let mut paragraph = Vec::new();
         for ref mut node in &mut result {
           match node {
-            AstNode::String{ref mut text} => paragraph.append(text),
+            AstNode::String{ref mut text, ..} => paragraph.append(text),
             _ => (),
           };
         }
 
-        let node = AstNode::ParagraphText{text: paragraph};
+        let node = AstNode::ParagraphText{text: paragraph, src_range: self.last_src_range};
         compiled.push(node);
       },
       ParserNode::InlineCode{children} => compiled.push(AstNode::InlineCode{children: self.compile_nodes(children)}),
@@ -489,7 +510,7 @@ impl Ast {
       ParserNode::Title{children} => {
         let result = self.compile_nodes(children);
         let node = match &result[0] {
-          AstNode::String{text} => AstNode::Title{text: text.clone()},
+          AstNode::String{text, src_range} => AstNode::Title{text: text.clone(), src_range: *src_range},
           _ => AstNode::Null,
         };
         compiled.push(node);
@@ -497,7 +518,7 @@ impl Ast {
       ParserNode::Subtitle{children} => {
         let result = self.compile_nodes(children);
         let node = match &result[0] {
-          AstNode::String{text} => AstNode::Title{text: text.clone()},
+          AstNode::String{text, src_range} => AstNode::Title{text: text.clone(), src_range: *src_range},
           _ => AstNode::Null,
         };
         compiled.push(node);
@@ -505,7 +526,7 @@ impl Ast {
       ParserNode::SectionTitle{children} => {
         let result = self.compile_nodes(children);
         let node = match &result[0] {
-          AstNode::String{text} => AstNode::SectionTitle{text: text.clone()},
+          AstNode::String{text, src_range} => AstNode::SectionTitle{text: text.clone(), src_range: *src_range},
           _ => AstNode::Null,
         };
         compiled.push(node);
@@ -516,27 +537,27 @@ impl Ast {
         let mut text_node = Vec::new();
         for node in result {
           match node {
-            AstNode::String{mut text} => {
+            AstNode::String{mut text, ..} => {
               text_node.append(&mut text)
             },
-            AstNode::Token{token, mut chars} => {
+            AstNode::Token{token, mut chars, ..} => {
               text_node.append(&mut chars)
             },
             _ => (),
           }
         }
-        compiled.push(AstNode::String{text: text_node});
+        compiled.push(AstNode::String{text: text_node, src_range: self.last_src_range});
       },
       ParserNode::Word{children} => {
         let mut word = Vec::new();
         let result = self.compile_nodes(children);
         for node in result {
           match node {
-            AstNode::Token{token, mut chars} => word.append(&mut chars),
+            AstNode::Token{token, mut chars, ..} => word.append(&mut chars),
             _ => (),
           }
         }
-        compiled.push(AstNode::String{text: word});
+        compiled.push(AstNode::String{text: word, src_range: self.last_src_range});
       },
       ParserNode::TableIdentifier{children} |
       ParserNode::Identifier{children} => {
@@ -544,14 +565,14 @@ impl Ast {
         let result = self.compile_nodes(children);
         for node in result {
           match node {
-            AstNode::Token{token, mut chars} => word.append(&mut chars),
-            AstNode::String{mut text} =>  word.append(&mut text),
+            AstNode::Token{token, mut chars, ..} => word.append(&mut chars),
+            AstNode::String{mut text, ..} =>  word.append(&mut text),
             //AstNode::Quantity{value, unit} => word.push_str(&format!("{}", value.to_f32())),
             _ => compiled.push(node),
           }
         }
         let id = hash_chars(&word);
-        compiled.push(AstNode::Identifier{name: word, id});
+        compiled.push(AstNode::Identifier{name: word, id, src_range: self.last_src_range});
       },
       // Math
       ParserNode::L0{children} |
@@ -567,13 +588,13 @@ impl Ast {
           match last {
             AstNode::Null => last = node,
             _ => {
-              let (name, mut children) = match node {
-                AstNode::Function{name, children} => (name.clone(), children.clone()),
-                _ => (Vec::new(), vec![]),
+              let (name, mut children, src_range) = match node {
+                AstNode::Function{name, children, src_range} => (name.clone(), children.clone(), src_range),
+                _ => (Vec::new(), vec![], SourceRange::default()),
               };
               children.push(last);
               children.reverse();
-              last = AstNode::Function{name, children};
+              last = AstNode::Function{name, children, src_range};
             },
           };
         }
@@ -605,18 +626,18 @@ impl Ast {
           AstNode::And => "logic/and".chars().collect(),
           AstNode::Or => "logic/or".chars().collect(),
           AstNode::Xor => "logic/xor".chars().collect(),
-          AstNode::Token{token, chars} => chars.to_vec(),
+          AstNode::Token{token, chars, ..} => chars.to_vec(),
           _ => Vec::new(),
         };
-        compiled.push(AstNode::Function{name, children: vec![input.clone()]});
+        compiled.push(AstNode::Function{name, children: vec![input.clone()], src_range: SourceRange::default()});
       },
       ParserNode::Not{children} => {
         let result = self.compile_nodes(children);
-        compiled.push(AstNode::Function{name: "logic/not".chars().collect(), children: result});
+        compiled.push(AstNode::Function{name: "logic/not".chars().collect(), children: result, src_range: SourceRange::default()});
       },
       ParserNode::Negation{children} => {
         let result = self.compile_nodes(children);
-        compiled.push(AstNode::Function{name: "math/negate".chars().collect(), children: result});
+        compiled.push(AstNode::Function{name: "math/negate".chars().collect(), children: result, src_range: SourceRange::default()});
       },
       ParserNode::UserFunction{children} => {
         let result = self.compile_nodes(children);
@@ -642,14 +663,18 @@ impl Ast {
         let result = self.compile_nodes(children);
         let mut children: Vec<AstNode> = Vec::new();
         let mut function_name = Vec::new();
+        let mut range = SourceRange::default();
         for node in result {
           match node {
             AstNode::Token{..} => (),
-            AstNode::Identifier{name, id} => function_name = name,
+            AstNode::Identifier{name, id, src_range} => {
+              function_name = name;
+              range = src_range;
+            },
             _ => children.push(node),
           }
         }
-        compiled.push(AstNode::Function{name: function_name, children: children.clone()});
+        compiled.push(AstNode::Function{name: function_name, children: children.clone(), src_range: range});
       },
       /*ParserNode::Negation{children} => {
         let result = self.compile_nodes(children);
@@ -668,7 +693,7 @@ impl Ast {
         let string = if result.len() > 0 {
           result[0].clone()
         } else {
-          AstNode::String{text: Vec::new()}
+          AstNode::String{text: Vec::new(), src_range: SourceRange::default()}
         };
         compiled.push(string);
       },
@@ -677,9 +702,9 @@ impl Ast {
         // There's a type annotation
         if result.len() > 1 {
           match (&result[0], &result[1]) {
-            (AstNode::NumberLiteral{kind,bytes}, AstNode::KindAnnotation{children}) => {
-              if let AstNode::Identifier{name, id} = &children[0] {
-                result[0] = AstNode::NumberLiteral{kind: *id, bytes: bytes.clone()};
+            (AstNode::NumberLiteral{kind,bytes,src_range}, AstNode::KindAnnotation{children}) => {
+              if let AstNode::Identifier{name, id, ..} = &children[0] {
+                result[0] = AstNode::NumberLiteral{kind: *id, bytes: bytes.clone(), src_range: *src_range};
               }
             }
             _ => (),
@@ -704,13 +729,14 @@ impl Ast {
         let result = self.compile_nodes(children);
         compiled.push(AstNode::KindAnnotation{children: result});
       },
-      ParserNode::FloatLiteral{chars} => {
+      ParserNode::FloatLiteral{chars, src_range} => {
         /*let string = chars.iter().cloned().collect::<String>();
         let float = string.parse::<f32>().unwrap();
         let bytes = float.to_be_bytes();*/
-        compiled.push(AstNode::NumberLiteral{kind: hash_str("f32-literal"), bytes: chars.to_vec()});
+        self.last_src_range = *src_range;
+        compiled.push(AstNode::NumberLiteral{kind: hash_str("f32-literal"), bytes: chars.to_vec(), src_range: *src_range});
       }
-      ParserNode::DecimalLiteral{chars} => {
+      ParserNode::DecimalLiteral{chars, src_range} => {
         /*let mut dec_bytes = chars.iter().map(|c| c.to_digit(10).unwrap() as u8).collect::<Vec<u8>>();
         let mut dec_number: u128 = 0;
         dec_bytes.reverse();
@@ -724,19 +750,23 @@ impl Ast {
         while bytes.len() > 1 && bytes[0] == 0 {
           bytes.remove(0);
         }*/
-        compiled.push(AstNode::NumberLiteral{kind: *DEC, bytes: chars.to_vec()});
+        self.last_src_range = *src_range;
+        compiled.push(AstNode::NumberLiteral{kind: *DEC, bytes: chars.to_vec(), src_range: *src_range});
       },
-      ParserNode::BinaryLiteral{chars} => {
+      ParserNode::BinaryLiteral{chars, src_range} => {
         //let bin_bytes = chars.iter().map(|c| c.to_digit(2).unwrap() as u8).collect::<Vec<u8>>();
-        compiled.push(AstNode::NumberLiteral{kind: *BIN, bytes: chars.to_vec()});
+        self.last_src_range = *src_range;
+        compiled.push(AstNode::NumberLiteral{kind: *BIN, bytes: chars.to_vec(), src_range: *src_range});
       }
-      ParserNode::OctalLiteral{chars} => {
+      ParserNode::OctalLiteral{chars, src_range} => {
         //let oct_bytes = chars.iter().map(|c| c.to_digit(8).unwrap() as u8).collect::<Vec<u8>>();
-        compiled.push(AstNode::NumberLiteral{kind: *OCT, bytes: chars.to_vec()});
+        self.last_src_range = *src_range;
+        compiled.push(AstNode::NumberLiteral{kind: *OCT, bytes: chars.to_vec(), src_range: *src_range});
       },
-      ParserNode::HexadecimalLiteral{chars} => {
+      ParserNode::HexadecimalLiteral{chars, src_range} => {
         //let hex_bytes = chars.iter().map(|c| c.to_digit(16).unwrap() as u8).collect::<Vec<u8>>();
-        compiled.push(AstNode::NumberLiteral{kind: *HEX, bytes: chars.to_vec()});
+        self.last_src_range = *src_range;
+        compiled.push(AstNode::NumberLiteral{kind: *HEX, bytes: chars.to_vec(), src_range: *src_range});
       },
       ParserNode::True => compiled.push(AstNode::True),
       ParserNode::False => compiled.push(AstNode::False),
@@ -812,20 +842,9 @@ impl Ast {
       ParserNode::IdentifierCharacter{children} => {
         compiled.append(&mut self.compile_nodes(children));
       },
-      ParserNode::Token{token, chars} => {
-        match token {
-          Token::Newline => {
-            self.current_line += 1;
-            self.current_col = 1;
-            self.current_char += 1;
-          },
-          Token::EndOfStream => (),
-          _ => {
-            self.current_char += 1;
-            self.current_col += 1;
-          }
-        }
-        compiled.push(AstNode::Token{token: *token, chars: chars.to_vec()});
+      ParserNode::Token{token, chars, src_range} => {
+        self.last_src_range = *src_range;
+        compiled.push(AstNode::Token{token: *token, chars: chars.to_vec(), src_range: *src_range});
       },
       ParserNode::Null => (),
       _ => println!("Unhandled Parser AstNode in AST Compiler: {:?}", node),

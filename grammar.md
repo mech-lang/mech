@@ -234,3 +234,13 @@ program ::= whitespace?, title?, <body>, whitespace?, space* ;
 parse_mech_fragment ::= statement ;
 parse_mech ::= program | statement ;
 ```
+## Table
+```ebnf
+table_title = "│#", identifier, ["+"], space, "(", number, space, "x", space, number, ")", {space}, "│", newline;
+table_type = "U8"|"U16"|"U32"|"U64"|"U128"|"I8"|"I16"|"I32"|"I64"|"I128"|"F32"|"F64"|"Bool"|"String";
+<!-- table_topline = "╭",{"-"}, "╮",newline; -->
+table_line = "╭" | "├" | "╰",{"-",["┼" | "┬" | "┴"],"-"},"╮" | "┤" | "╯",newline;
+<!-- table_botline = "╰",{"-",["┴"],"-"}, "╯",newline; -->
+table_label = "│" , [{identifier, {space}, "│"}], newline
+table = table_line, table_title, table_line, [table_label],table_line, ["│", {table_type, {space}, "│"}, newline], {"│", {expressions, {space}, "│"}, newline},table_line;
+```

@@ -1,35 +1,35 @@
 <p align="center">
-  <img width="500px" src="http://mech-lang.org/img/logo.png">
+  <img width="400px" src="https://mech-lang.org/img/logo.png">
 </p>
 
-Mech is a language for developing **data-driven**, **reactive** systems like animations, games, and robots. It makes **composing**, **transforming**, and **distributing** data easy, allowing you to focus on the essential complexity of your project.
+Mech is a language for developing **data-driven**, **reactive** systems like robots, games, and animations. It makes **composing**, **transforming**, and **distributing** data easy, allowing you to focus on the essential complexity of your project. 
 
-You can try Mech online at [try.mech-lang.org](http://try.mech-lang.org).
+You can try Mech online at [https://mech-lang.org/try](https://mech-lang.org/try).
 
-Usage and installation instructions can be found in the [documentation](http://mech-lang.org/page/learn/) or the [main Mech repository](https://github.com/mech-lang/mech).
+Usage and installation instructions can be found in the [documentation](https://mech-lang.org/#/docs/index.mec) or the [main Mech repository](https://github.com/mech-lang/mech).
 
-Read about progress on our [blog](http://mech-lang.org/blog/), and follow us on Twitter [@MechLang](https://twitter.com/MechLang).
+Be sure to follow on our [blog](https://mech-lang.org/blog/)([RSS](https://mech-lang.org/feed.xml))!
 
-# Mech Syntax
+# Syntax
 
-A toolchain for compiling textual syntax into Mech blocks.
+A toolchain for compiling textual Mech source code.
 
 ## Contents
 
-- **lexer** - defines a `Token`, which represents a character class.
-- **parser** - converts text into a parse tree, with tokens as leaves.
-- **compiler** - converts a parse tree to a syntax tree. Also handles converting a syntax tree to block constraints.
-- **formatter** - converts a parse tree into formatted text.
+- **parser** - converts text into a parse tree.
+- **ast** - converts parse tree into abstract syntax tree.
+- **compiler** - converts abstract syntax tree into blocks.
+- **formatter** - converts a parse tree into text.
 
-This branch also contains various editor modes that enable syntax highlighting in popular IDEs. Modes are available for:
+This branch also contains various editor modes that implement the language server protocol. Modes are available for:
 
-- VS Code
+- [VS Code](https://marketplace.visualstudio.com/items?itemName=Mech.Mech)
+- EMACS (Coming soon...)
+- VIM (Coming soon...)
 
-## Project Status
+##  Project Status
 
-Mech is currently in the **alpha** stage of development. This means that while some features work and are tested, programs are still likely to crash and produce incorrect results. We've implemented some language features, but many are not yet implemented.
-
-Feel free to use the language for your own satisfaction, but please don't use it for anything important.
+Mech is currently in the **beta** stage of development. This means that the language is at a suitable stage for a wider audience. While most language feature implementations are started, none are finished, and some new features may, while others could be removed. Backwards and forwards compatibility of Mech programs is not guaranteed at this time. 
 
 ## License
 
