@@ -359,7 +359,7 @@ async fn main() -> Result<(), MechError> {
           //std::process::exit(0);
         },
         Ok(ClientMessage::Error(err)) => {
-          println!("An Error Has Occurred: {:?}", err);
+          println!("{} {} An Error Has Occurred: {:?}", formatted_name, "[Error]".truecolor(170,51,85), err);
         }
         (Err(x)) => {
           println!("{} {}", "[Error]".truecolor(170,51,85), x);
