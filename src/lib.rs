@@ -38,10 +38,11 @@ use mech_syntax::compiler::{Compiler};
 use mech_core::*;
 use mech_utilities::{SocketMessage, MiniBlock};
 use mech_math::{
-  math_sin, 
-  //math_cos, 
-  //math_floor,
-  //math_round,
+  sin::*, 
+  cos::*, 
+  tan::*, 
+  atan::*,
+  atan2::*, 
 };
 use mech_html::*;
 use mech_html::{
@@ -87,66 +88,13 @@ impl WasmCore {
   
   pub fn new(capacity: usize, recursion_limit: u64) -> WasmCore {
     let mut mech = mech_core::Core::new();
-    /*
-    mech.load_standard_library();
-    mech.runtime.load_library_function("math/sin",Some(math_sin));
 
-    mech.insert_string("time/timer");
-    mech.insert_string("period");
-    mech.insert_string("ticks");
-    mech.insert_string("html/event/click");
-    mech.insert_string("html/event/pointer-move");
-    mech.insert_string("html/event/pointer-down");
-    mech.insert_string("html/event/pointer-up");
-    mech.insert_string("html/event/key-down");
-    mech.insert_string("html/event/key-up");
-    mech.insert_string("x");
-    mech.insert_string("y");
-    mech.insert_string("target");
-    mech.insert_string("event-id");
-    mech.insert_string("html/location");
-    mech.insert_string("hash");
-    mech.insert_string("host");
-    mech.insert_string("host-name");
-    mech.insert_string("href");
-    mech.insert_string("origin");
-    mech.insert_string("path");
-    mech.insert_string("port");
-    mech.insert_string("protocol");
-    mech.insert_string("search");
+    mech.load_function("math/sin",Box::new(MathSin{}));
+    mech.load_function("math/cos",Box::new(MathCos{}));
+    mech.load_function("math/tan",Box::new(MathTan{}));
+    mech.load_function("math/atan",Box::new(MathAtan{}));
+    mech.load_function("math/atan2",Box::new(MathAtan2{}));
 
-    let new_table = |table_id: u64, rows: usize, a: Vec<u64>, | {
-      let mut changes = Vec::new();
-      changes.push(Change::NewTable{
-        table_id: table_id, 
-        rows: rows,
-        columns: a.len(),
-      });
-      for (ix, alias) in a.iter().enumerate() {
-        changes.push(Change::SetColumnAlias{
-          table_id: table_id,
-          column_ix: (ix + 1) as usize,
-          column_alias: *alias
-        });
-      }
-      changes
-    };
-
-  
-
-
-    let mut changes = vec![];
-    changes.append(&mut new_table(*TIME_TIMER, 0, vec![*PERIOD, *TICKS]));
-    changes.append(&mut new_table(*HTML_EVENT_POINTER__MOVE, 1, vec![*X, *Y, *TARGET, *EVENT__ID]));
-    changes.append(&mut new_table(*HTML_EVENT_POINTER__DOWN, 1, vec![*X, *Y, *TARGET, *EVENT__ID]));
-    changes.append(&mut new_table(*HTML_EVENT_POINTER__UP, 1, vec![*X, *Y, *TARGET, *EVENT__ID]));
-    changes.append(&mut new_table(*HTML_EVENT_KEY__DOWN, 1, vec![*KEY, *EVENT__ID]));
-    changes.append(&mut new_table(*HTML_EVENT_KEY__UP, 1, vec![*KEY, *EVENT__ID]));
-    changes.append(&mut new_table(*HTML_LOCATION, 1, vec![*HASH, *HOST, *HOST__NAME, *HREF, *ORIGIN, *PATH__NAME, *PORT, *PROTOCOL, *SEARCH]));
-
-    let txn = Transaction{changes};
-    mech.process_transaction(&txn);
-*/
     let html_code = r#"
 HTML
 =====
@@ -166,8 +114,8 @@ Keyboard events
   #html/event/key-down = [|key<string> event-id<u64>| "" 0]"#;
 
     let mut compiler = Compiler::new();
-    let blocks = compiler.compile_str(&html_code).unwrap();
-    mech.load_blocks(blocks);
+    let sections = compiler.compile_str(&html_code).unwrap();
+    mech.load_sections(sections);
 
     WasmCore {
       core: mech,
@@ -257,20 +205,24 @@ Keyboard events
   pub fn load_compressed_blocks(&mut self, encoded_miniblocks: String) {
     let compressed_miniblocks = decode(encoded_miniblocks).unwrap();
     let serialized_miniblocks = decompress_to_vec(compressed_miniblocks.as_slice()).expect("Failed to decompress!");
-    self.load_blocks(serialized_miniblocks);
+    self.load_sections(serialized_miniblocks);
   }
 
-  pub fn load_blocks(&mut self, serialized_miniblocks: Vec<u8>) -> Result<(),JsValue> {
-    let miniblocks: Vec<MiniBlock> = match bincode::deserialize(&serialized_miniblocks) {
+  pub fn load_sections(&mut self, serialized_miniblocks: Vec<u8>) -> Result<(),JsValue> {
+    let miniblocks: Vec<Vec<MiniBlock>> = match bincode::deserialize(&serialized_miniblocks) {
       Ok(miniblocks) => miniblocks,
       Err(x) => {
         return Err(JsValue::from_str("5239"));
       }
     };
-    let mut blocks: Vec<Block> = Vec::new();
-    let blocks = miniblocks.iter().map(|b| MiniBlock::maximize_block(&b)).collect::<Vec<Block>>();
-    let len = blocks.len();
-    self.core.load_blocks(blocks);
+    let mut len = 0;
+    let mut sections = vec![];
+    for section in miniblocks {
+      let blocks = section.iter().map(|b| SectionElement::Block(MiniBlock::maximize_block(&b))).collect::<Vec<SectionElement>>();
+      len += blocks.len();
+      sections.push(blocks);
+    }
+    self.core.load_sections(sections);
     self.core.schedule_blocks();
     self.add_timers();
     self.add_apps();
@@ -526,17 +478,14 @@ Keyboard events
   }
 
   pub fn draw_canvases(&mut self) -> Result<(), JsValue> {
-    for canvas_id in &self.canvases {
-      match self.document.get_element_by_id(&format!("{}",canvas_id)) {
-        Some(canvas) => {
-          let canvas: web_sys::HtmlCanvasElement = canvas
-            .dyn_into::<web_sys::HtmlCanvasElement>()
-            .map_err(|_| ())
-            .unwrap();
-          draw_canvas(&canvas,&self.core);
-        }
-        _ => (),
-      }
+    let canvases = self.document.get_elements_by_tag_name("canvas");
+    for i in 0..canvases.length() {
+      let canvas = canvases.get_with_index(i).unwrap();
+      let canvas: web_sys::HtmlCanvasElement = canvas
+                    .dyn_into::<web_sys::HtmlCanvasElement>()
+                    .map_err(|_| ())
+                    .unwrap();
+      draw_canvas(&canvas,&self.core);
     }
     Ok(())
   }
