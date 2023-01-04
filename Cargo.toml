@@ -70,3 +70,5 @@ features = [
   'console',
   'XmlHttpRequest',
 ]
+
+[workspace]
