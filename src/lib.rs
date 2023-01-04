@@ -1,13 +1,12 @@
+#![allow(warnings)]
 extern crate mech_core;
-#[macro_use]
 extern crate mech_utilities;
+#[cfg(target_os = "windows")]
 extern crate gilrs;
 extern crate crossbeam_channel;
 #[macro_use]
 extern crate lazy_static;
-//use mech_core::{Interner, Transaction};
-//use mech_core::Value;
 
 pub mod out;
-pub mod serial;
+#[cfg(target_os = "windows")]
 pub mod gamepad;
