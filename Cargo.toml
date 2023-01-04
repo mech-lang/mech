@@ -20,11 +20,11 @@ maintenance = { status = "actively-developed" }
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-mech-core = {git = "https://gitlab.com/mech-lang/core", branch = "v0.1-beta"}
-mech-syntax = {git = "https://gitlab.com/mech-lang/syntax", branch = "v0.1-beta"}
-mech-utilities = {git = "https://gitlab.com/mech-lang/utilities", branch = "v0.1-beta"}
-mech-math = {git = "https://gitlab.com/mech-lang/machines/math", branch = "v0.1-beta"}
-mech-html = {git = "https://gitlab.com/mech-lang/machines/html", branch = "v0.1-beta"}
+mech-core = "0.1"
+mech-syntax = "0.1"
+mech-utilities = "0.1"
+mech-math = "0.1"
+mech-html = "0.1"
 hashbrown = "0.13.1"
 wasm-bindgen = "0.2.83"
 bincode = "1.3.3"
