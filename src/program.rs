@@ -15,6 +15,7 @@ use std::sync::Arc;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
+use std::time::{Instant};
 
 use mech_core::*;
 use mech_syntax::compiler::Compiler;
@@ -32,6 +33,7 @@ use libloading::Library;
 use std::io::copy;
 use std::io;
 use std::net::{SocketAddr, UdpSocket};
+use std::fmt;
 
 use time;
 
@@ -87,8 +89,8 @@ pub struct Program {
   pub mech: Core,
   pub cores: HashMap<u64,Core>,
   pub remote_cores: HashMap<u64,MechSocket>,
-  pub input_map: HashMap<(TableId,TableIndex,TableIndex),HashSet<u64>>,
-  pub libraries: HashMap<String, Library>,
+  pub input_map: HashMap<(TableId,RegisterIndex,RegisterIndex),HashSet<u64>>,
+  pub libraries: HashMap<String, Option<Library>>,
   pub machines: HashMap<u64, Box<dyn Machine>>,
   pub mech_functions: HashMap<u64, Box<dyn MechFunctionCompiler>>,
   pub machine_repository: HashMap<String, (String, String)>,  // (name, (version, url))
@@ -98,12 +100,13 @@ pub struct Program {
   pub errors: HashSet<MechErrorKind>,
   programs: usize,
   loaded_machines: HashSet<u64>,
-  pub listeners: HashMap<(TableId,TableIndex,TableIndex),HashSet<u64>>,
-  pub trigger_to_listener: HashMap<(TableId,TableIndex,TableIndex),((TableId, TableIndex, TableIndex),HashSet<u64>)>
+  pub listeners: HashMap<(TableId,RegisterIndex,RegisterIndex),HashSet<u64>>,
+  pub trigger_to_listener: HashMap<(TableId,RegisterIndex,RegisterIndex),((TableId, RegisterIndex, RegisterIndex),HashSet<u64>)>,
+  pub registry: String,
 }
 
 impl Program {
-  pub fn new(name:&str, capacity: usize, recursion_limit: u64, outgoing: Sender<RunLoopMessage>, incoming: Receiver<RunLoopMessage>) -> Program {
+  pub fn new(name:&str, capacity: usize, recursion_limit: u64, outgoing: Sender<RunLoopMessage>, incoming: Receiver<RunLoopMessage>, registry: String) -> Program {
     let mut mech = Core::new();
     Program { 
       name: name.to_owned(), 
@@ -123,10 +126,11 @@ impl Program {
       programs: 0,
       listeners: HashMap::new(),
       trigger_to_listener: HashMap::new(),
+      registry,
     }
   }
 
-  pub fn trigger_machine(&mut self, register: &(TableId,TableIndex,TableIndex)) -> Result<(),MechError> {
+  pub fn trigger_machine(&mut self, register: &(TableId,RegisterIndex,RegisterIndex)) -> Result<(),MechError> {
     let (table_id,_,_) = register;
     match self.machines.get_mut(table_id.unwrap()) {
       Some(mut machine) => {
@@ -134,22 +138,22 @@ impl Program {
         let table_ref_brrw = table_ref.borrow();
         machine.on_change(&table_ref_brrw);
       },
-        _ => (), // Warn user that the machine is not loaded? Or is it okay to just try?
+      _ => (), // Warn user that the machine is not loaded? Or is it okay to just try?
     }
     Ok(())
   }
 
-  pub fn compile_program(&mut self, input: String) -> Result<Vec<BlockId>,MechError> {
+  pub fn compile_program(&mut self, input: String) -> Result<Vec<((Vec<BlockId>,Vec<u64>,Vec<MechError>))>,MechError> {
     let mut compiler = Compiler::new();
-    let blocks = compiler.compile_str(&input.clone())?;
-    let (new_block_ids,block_errors) = self.mech.load_blocks(blocks);
+    let sections = compiler.compile_str(&input.clone())?;
+    let result = self.mech.load_sections(sections);
 
     //self.errors.append(&mut self.mech.runtime.errors.clone());
     /*let mech_code = *MECH_CODE;
     self.programs += 1;
     let txn = vec![Change::Set((mech_code, vec![(TableIndex::Index(self.programs),TableIndex::Index(1),Value::from_str(&input.clone()))]))];
     self.outgoing.send(RunLoopMessage::Transaction(txn));*/
-    Ok(new_block_ids)    
+    Ok(result)    
   }
 
   pub fn compile_fragment(&mut self, input: String) {
@@ -180,12 +184,12 @@ impl Program {
         Ok(mut file) => {
           // Loading machine_repository index
           match &outgoing {
-            Some(sender) => {sender.send(ClientMessage::String(format!("{} Machine registry.", "[Loading]".bright_cyan())));}
-            None => {return Err(MechError{id: 1244, kind: MechErrorKind::None});},
+            Some(sender) => {sender.send(ClientMessage::String(format!("{} Machine registry.", "[Loading]".truecolor(153,221,85))));}
+            None => {return Err(MechError{msg: "".to_string(), id: 1244, kind: MechErrorKind::None});},
           }
           let mut contents = String::new();
           match file.read_to_string(&mut contents) {
-            Err(_) => {return Err(MechError{id: 1445, kind: MechErrorKind::None});},
+            Err(_) => {return Err(MechError{msg: "".to_string(), id: 1445, kind: MechErrorKind::None});},
             _ => (),
           }
           contents
@@ -193,28 +197,30 @@ impl Program {
         Err(_) => {
           // Download machine_repository index
           match &outgoing {
-            Some(sender) => {sender.send(ClientMessage::String(format!("{} Updating machine registry.", "[Downloading]".bright_cyan())));}
-            None => {return Err(MechError{id: 1246, kind: MechErrorKind::None});},
+            Some(sender) => {sender.send(ClientMessage::String(format!("{} Updating machine registry from:\n{}", "[Downloading]".truecolor(153,221,85),self.registry)));}
+            None => {return Err(MechError{msg: "".to_string(), id: 1246, kind: MechErrorKind::None});},
           }
           // Download registry
-          let registry_url = "https://gitlab.com/mech-lang/machines/mech/-/raw/main/src/registry.mec";
+          let registry_url = &self.registry;
           let mut response_text = match reqwest::get(registry_url) {
             Ok(mut response) => {
               match response.text() {
-                Ok(text) => text,
-                Err(_) => {return Err(MechError{id: 1235, kind: MechErrorKind::None});},
+                Ok(text) => {
+                  text
+                },
+                Err(_) => {return Err(MechError{msg: "".to_string(), id: 1235, kind: MechErrorKind::None});},
               }
             }
-            Err(_) => {return Err(MechError{id: 1236, kind: MechErrorKind::None});},
+            Err(_) => {return Err(MechError{msg: "".to_string(), id: 1236, kind: MechErrorKind::None});},
           };
           // Save registry
           let mut dest = match File::create("machines/registry.mec") {
             Ok(dest) => dest,
-            Err(_) => {return Err(MechError{id: 1237, kind: MechErrorKind::None});},
+            Err(_) => {return Err(MechError{msg: "".to_string(), id: 1237, kind: MechErrorKind::None});},
           };
           match dest.write_all(response_text.as_bytes()) {
             Ok(dest) => dest,
-            Err(_) => {return Err(MechError{id: 1238, kind: MechErrorKind::None});},            
+            Err(_) => {return Err(MechError{msg: "".to_string(), id: 1238, kind: MechErrorKind::None});},            
           }
           response_text
         }
@@ -222,18 +228,18 @@ impl Program {
       
       // Compile machine registry
       let mut registry_compiler = Compiler::new();
-      let blocks = registry_compiler.compile_str(&registry_file)?;
+      let sections = registry_compiler.compile_str(&registry_file)?;
       let mut registry_core = Core::new();
-      registry_core.load_blocks(blocks);
+      registry_core.load_sections(sections);
 
       // Convert the machine listing into a hash map
       let registry_table = registry_core.get_table("mech/registry")?;
       let registry_table_brrw = registry_table.borrow();
       for row in 0..registry_table_brrw.rows {
         let row_index = TableIndex::Index(row+1);
-        let name = registry_table_brrw.get_by_index(row_index, TableIndex::Alias(*NAME))?.as_string().unwrap().to_string();
-        let version = registry_table_brrw.get_by_index(row_index, TableIndex::Alias(*VERSION))?.as_string().unwrap().to_string();
-        let url = registry_table_brrw.get_by_index(row_index, TableIndex::Alias(*URL))?.as_string().unwrap().to_string();
+        let name = registry_table_brrw.get_by_index(row_index.clone(), TableIndex::Alias(*NAME))?.as_string().unwrap().to_string();
+        let version = registry_table_brrw.get_by_index(row_index.clone(), TableIndex::Alias(*VERSION))?.as_string().unwrap().to_string();
+        let url = registry_table_brrw.get_by_index(row_index.clone(), TableIndex::Alias(*URL))?.as_string().unwrap().to_string();
         self.machine_repository.insert(name, (version, url));
       }
     }
@@ -274,28 +280,33 @@ impl Program {
               match File::open(format!("machines/{}",machine_name)) {
                 Ok(_) => {
                   match &outgoing {
-                    Some(sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Loading]".bright_cyan(), m, ver)));}
+                    Some(sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Loading]".truecolor(153,221,85), m, ver)));}
                     None => (),
                   }
                   let message = format!("Can't load library {:?}", machine_name);
-                  unsafe{Library::new(format!("machines/{}",machine_name)).expect(&message)}
+                  unsafe{Some(Library::new(format!("machines/{}",machine_name)).expect(&message))}
                 }
-                _ => download_machine(&machine_name, m, path, ver, outgoing.clone()).unwrap()
+                _ => Some(download_machine(&machine_name, m, path, ver, outgoing.clone()).unwrap())
               }
             });
             // Replace slashes with underscores and then add a null terminator
             let mut s = format!("{}\0", fun_name.replace("-","__").replace("/","_"));
             let error_msg = format!("Symbol {} not found",s);
             let mut registrar = MechFunctions::new();
-            unsafe{
-              match library.get::<*mut MechFunctionDeclaration>(s.as_bytes()) {
-                Ok(good) => {
-                  let declaration = good.read();
-                  (declaration.register)(&mut registrar);
+            unsafe {
+              match library {
+                Some(lib) => {
+                  match lib.get::<*mut MechFunctionDeclaration>(s.as_bytes()) {
+                    Ok(good) => {
+                      let declaration = good.read();
+                      (declaration.register)(&mut registrar);
+                    }
+                    Err(_) => {
+                      println!("Couldn't find the specified machine: {}", fun_name);
+                    }
+                  }
                 }
-                Err(_) => {
-                  println!("Couldn't find the specified machine: {}", fun_name);
-                }
+                None => (),
               }
             }     
             self.mech.functions.borrow_mut().extend(registrar.mech_functions);
@@ -324,7 +335,7 @@ impl Program {
     let mut machine_init_code = vec![];
     for needed_table_id in needed_tables.iter() {
       let dictionary = self.mech.dictionary.borrow();
-      let needed_table_name = dictionary.get(&needed_table_id.unwrap()).unwrap().to_string();
+      let needed_table_name = dictionary.get(needed_table_id.unwrap()).unwrap().to_string();
       let m: Vec<_> = needed_table_name.split('/').collect();
       let needed_machine_id = hash_str(&m[0]);
       match self.loaded_machines.contains(&needed_machine_id) {
@@ -342,13 +353,18 @@ impl Program {
                 match File::open(format!("machines/{}",machine_name)) {
                   Ok(_) => {
                     match &outgoing {
-                      Some(sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Loading]".bright_cyan(), m[0], ver)));}
+                      Some(sender) => {sender.send(ClientMessage::String(format!("{} {} v{}", "[Loading]".truecolor(153,221,85), m[0], ver)));}
                       None => (),
                     }
                     let message = format!("Can't load library {:?}", machine_name);
-                    unsafe{Library::new(format!("machines/{}",machine_name)).expect(&message)}
+                    unsafe{Some(Library::new(format!("machines/{}",machine_name)).expect(&message))}
                   }
-                  _ => download_machine(&machine_name, m[0], path, ver, outgoing.clone()).unwrap()
+                  _ => {
+                    match download_machine(&machine_name, m[0], path, ver, outgoing.clone()) {
+                      Ok(library) => Some(library),
+                      Err(err) => None,
+                    }
+                  }
                 }
               });          
               // Replace slashes with underscores and then add a null terminator
@@ -356,15 +372,20 @@ impl Program {
               let error_msg = format!("Symbol {} not found",s);
               let mut registrar = Machines::new();
               unsafe{
-                match library.get::<*mut MachineDeclaration>(s.as_bytes()) {
-                  Ok(good) => {
-                    let declaration = good.read();
-                    let init_code = (declaration.register)(&mut registrar, self.outgoing.clone());
-                    machine_init_code.push(init_code);
+                match library {
+                  Some(lib) => {
+                    match lib.get::<*mut MachineDeclaration>(s.as_bytes()) {
+                      Ok(good) => {
+                        let declaration = good.read();
+                        let init_code = (declaration.register)(&mut registrar, self.outgoing.clone());
+                        machine_init_code.push(init_code);
+                      }
+                      Err(_) => {
+                        println!("Couldn't find the specified machine: {}", needed_table_name);
+                      }
+                    }                  
                   }
-                  Err(_) => {
-                    println!("Couldn't find the specified machine: {}", needed_table_name);
-                  }
+                  None => (),
                 }
               }        
               self.machines.extend(registrar.machines);
@@ -377,13 +398,20 @@ impl Program {
     }
 
     // Load init code and trigger machines
+    let mut already_triggered = HashSet::new();
     for mic in &machine_init_code {
-      let new_block_ids = self.compile_program(mic.to_string())?;
+      let result = self.compile_program(mic.to_string())?;
       self.mech.schedule_blocks();
-      for block_id in new_block_ids {
-        let output = self.mech.get_output_by_block_id(block_id)?;
-        for register in output.iter() {
-          self.trigger_machine(register);
+      for (new_block_ids,_,block_error) in result {
+        for block_id in new_block_ids {
+          let block = self.mech.blocks.get(&block_id);
+          let output = self.mech.get_output_by_block_id(block_id)?;
+          for register in output.iter() {
+            if !already_triggered.contains(register) {
+              self.trigger_machine(register);
+            }
+            already_triggered.insert(register.clone());
+          }
         }
       }
     }
@@ -431,4 +459,19 @@ impl Program {
     self.mech.clear();
   }*/
 
+}
+
+impl fmt::Debug for Program {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    let mut box_drawing = BoxPrinter::new();
+    box_drawing.add_title("🤖","Program");
+    box_drawing.add_title("  ","cores");
+    box_drawing.add_line(format!("  1. (b {:?}, t {:?})", self.mech.blocks.len() , self.mech.database.borrow().tables.len()));
+    for (ix, core) in self.cores.iter() {
+      box_drawing.add_line(format!("  {:?}. (b {:?}, t {:?})", ix, core.blocks.len() , core.database.borrow().tables.len() ));
+    }
+    write!(f,"{:?}",box_drawing)?;
+    Ok(())
+  }
 }
