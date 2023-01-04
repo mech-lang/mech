@@ -1,11 +1,7 @@
 extern crate crossbeam_channel;
 use mech_core::*;
 use mech_utilities::*;
-use std::thread::{self};
 use crossbeam_channel::Sender;
-use std::collections::HashMap;
-use std::io;
-use std::io::prelude::*;
 
 lazy_static! {
   static ref IO_OUT: u64 = hash_str("io/out");
