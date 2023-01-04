@@ -64,12 +64,13 @@ impl fmt::Debug for Functions {
 pub struct Core {
   pub sections: Vec<HashMap<BlockId,BlockRef>>,
   pub blocks: HashMap<BlockId,BlockRef>,
-  unsatisfied_blocks: HashMap<BlockId,BlockRef>,
-  database: Rc<RefCell<Database>>,
+  pub unsatisfied_blocks: HashMap<BlockId,BlockRef>,
+  pub database: Rc<RefCell<Database>>,
   pub functions: Rc<RefCell<Functions>>,
   pub user_functions: Rc<RefCell<HashMap<u64,UserFunction>>>,
   pub required_functions: HashSet<u64>,
   pub errors: HashMap<MechErrorKind,Vec<BlockRef>>,
+  pub full_errors: HashMap<MechError,Vec<BlockRef>>,
   pub input: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
   pub output: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
   pub defined_tables: HashSet<(TableId,RegisterIndex,RegisterIndex)>,
@@ -86,20 +87,21 @@ impl Core {
     // -----------------
     // Standard Machines
     // -----------------
-
+    let dictionary = Rc::new(RefCell::new(HashMap::new()));
     #[cfg(feature = "stdlib")]
     {
+      let mut dict = dictionary.borrow_mut();
       // Math
-      functions.insert(*MATH_ADD, Box::new(MathAdd{}));
-      functions.insert(*MATH_SUBTRACT, Box::new(MathSub{}));
-      functions.insert(*MATH_MULTIPLY, Box::new(MathMul{}));
-      functions.insert(*MATH_DIVIDE, Box::new(MathDiv{}));
-      functions.insert(*MATH_EXPONENT, Box::new(MathExp{}));
-      functions.insert(*MATH_NEGATE, Box::new(MathNegate{}));
-      functions.insert(*MATH_ADD__UPDATE, Box::new(MathAddUpdate{}));
-      functions.insert(*MATH_SUBTRACT__UPDATE, Box::new(MathSubtractUpdate{}));  
-      functions.insert(*MATH_MULTIPLY__UPDATE, Box::new(MathMultiplyUpdate{}));
-      functions.insert(*MATH_DIVIDE__UPDATE, Box::new(MathDivideUpdate{}));
+      functions.insert(*MATH_ADD, Box::new(MathAdd{})); dict.insert(*MATH_ADD,MechString::from_str("math/add"));
+      functions.insert(*MATH_SUBTRACT, Box::new(MathSub{})); dict.insert(*MATH_SUBTRACT,MechString::from_str("math/subtract"));
+      functions.insert(*MATH_MULTIPLY, Box::new(MathMul{})); dict.insert(*MATH_MULTIPLY,MechString::from_str("math/multiply"));
+      functions.insert(*MATH_DIVIDE, Box::new(MathDiv{})); dict.insert(*MATH_DIVIDE,MechString::from_str("math/divide"));
+      functions.insert(*MATH_EXPONENT, Box::new(MathExp{})); dict.insert(*MATH_EXPONENT,MechString::from_str("math/exp"));
+      functions.insert(*MATH_NEGATE, Box::new(MathNegate{})); dict.insert(*MATH_NEGATE,MechString::from_str("math/negate"));
+      functions.insert(*MATH_ADD__UPDATE, Box::new(MathAddUpdate{})); dict.insert(*MATH_ADD__UPDATE,MechString::from_str("math/add-update"));
+      functions.insert(*MATH_SUBTRACT__UPDATE, Box::new(MathSubtractUpdate{})); dict.insert(*MATH_SUBTRACT__UPDATE,MechString::from_str("math/subtract-update"));  
+      functions.insert(*MATH_MULTIPLY__UPDATE, Box::new(MathMultiplyUpdate{})); dict.insert(*MATH_MULTIPLY__UPDATE,MechString::from_str("math/multiply-update"));
+      functions.insert(*MATH_DIVIDE__UPDATE, Box::new(MathDivideUpdate{})); dict.insert(*MATH_DIVIDE__UPDATE,MechString::from_str("math/divide-update"));
 
       // Matrix
       functions.insert(*MATRIX_MULTIPLY, Box::new(MatrixMul{}));
@@ -148,11 +150,19 @@ impl Core {
       user_functions: Rc::new(RefCell::new(HashMap::new())),
       required_functions: HashSet::new(),
       errors: HashMap::new(),
+      full_errors: HashMap::new(),
       schedule: Schedule::new(),
       input: HashSet::new(),
       output: HashSet::new(),
       defined_tables: HashSet::new(),
-      dictionary: Rc::new(RefCell::new(HashMap::new())),
+      dictionary: dictionary,
+    }
+  }
+
+  pub fn get_name(&self, name_id: u64) -> Option<String> {
+    match self.dictionary.borrow().get(&name_id) {
+      Some(mech_string) => Some(mech_string.to_string()),
+      None => None,
     }
   }
 
@@ -181,11 +191,11 @@ impl Core {
                     // TODO This is inserting a {:,:} register instead of the one passed in, and that needs to be fixed.
                     changed_registers.insert((TableId::Global(*table_id),RegisterIndex::All,RegisterIndex::All));
                   },
-                  Err(x) => { return Err(MechError{id: 1000, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+                  Err(x) => { return Err(MechError{msg: "".to_string(), id: 1000, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
                 }
               }
             }
-            None => {return Err(MechError{id: 1001, kind: MechErrorKind::MissingTable(TableId::Global(*table_id))});},
+            None => {return Err(MechError{msg: "".to_string(), id: 1001, kind: MechErrorKind::MissingTable(TableId::Global(*table_id))});},
           }
         }
         Change::NewTable{table_id, rows, columns} => {
@@ -202,7 +212,7 @@ impl Core {
               }    
               table_brrw.set_col_alias(*column_ix,*column_alias);     
             }
-            x => {return Err(MechError{id: 1002, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+            x => {return Err(MechError{msg: "".to_string(), id: 1002, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
           }
         }
         Change::ColumnKind{table_id, column_ix, column_kind} => {
@@ -215,7 +225,7 @@ impl Core {
               }    
               table_brrw.set_col_kind(*column_ix,column_kind.clone());     
             }
-            x => {return Err(MechError{id: 1003, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+            x => {return Err(MechError{msg: "".to_string(), id: 1003, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
           }
         }
       }
@@ -268,17 +278,25 @@ impl Core {
     self.database.borrow_mut().insert_table(table)
   }
 
+  pub fn overwrite_tables(&mut self, tables: &Vec<Table>) -> Result<(),MechError> {
+    let mut database_brrw = self.database.borrow_mut();
+    for table in tables {
+      let table2 = database_brrw.get_table_by_id(&table.id).unwrap();
+    }
+    Ok(())
+  }
+
   pub fn get_table(&self, table_name: &str) -> Result<Rc<RefCell<Table>>,MechError> {
     match self.database.borrow().get_table(table_name) {
       Some(table) => Ok(table.clone()),
-      None => {return Err(MechError{id: 1004, kind: MechErrorKind::MissingTable(TableId::Global(hash_str(table_name)))});},
+      None => {return Err(MechError{msg: "".to_string(), id: 1004, kind: MechErrorKind::MissingTable(TableId::Global(hash_str(table_name)))});},
     }
   }
 
   pub fn get_table_by_id(&self, table_id: u64) -> Result<Rc<RefCell<Table>>,MechError> {
     match self.database.borrow().get_table_by_id(&table_id) {
       Some(table) => Ok(table.clone()),
-      None => {return Err(MechError{id: 1005, kind: MechErrorKind::MissingTable(TableId::Global(table_id))});},
+      None => {return Err(MechError{msg: "".to_string(), id: 1005, kind: MechErrorKind::MissingTable(TableId::Global(table_id))});},
     }
   }
 
@@ -428,10 +446,12 @@ impl Core {
           self.input = self.input.union(&mut block_brrw.input).cloned().collect();
           self.output = self.output.union(&mut block_brrw.output).cloned().collect();        
           let (mech_error,_) = block_brrw.unsatisfied_transformation.as_ref().unwrap();
+          let blocks_with_errors = self.full_errors.entry(mech_error.clone()).or_insert(Vec::new());
+          blocks_with_errors.push(block_ref_c.clone());
           let blocks_with_errors = self.errors.entry(mech_error.kind.clone()).or_insert(Vec::new());
           blocks_with_errors.push(block_ref_c.clone());
           self.unsatisfied_blocks.insert(0,block_ref_c.clone());
-          let error = MechError{id: 1006, kind: MechErrorKind::GenericError(format!("{:?}", x))};
+          let error = MechError{msg: "".to_string(), id: 1006, kind: MechErrorKind::GenericError(format!("{:?}", x))};
           new_block_errors.push(error);
         },
       };
@@ -474,7 +494,7 @@ impl Core {
               let mut new_block_pending_ids = vec![];
               for id in &new_block_ids {
                 let mut output = {
-                  let block_ref = self.blocks.get(&id).unwrap();
+                  let block_ref = self.blocks.get(id).unwrap();
                   let block_ref_brrw = block_ref.borrow();
                   block_ref_brrw.output.clone()
                 };
@@ -503,7 +523,7 @@ impl Core {
         let output = block_ref.borrow().output.clone();
         Ok(output)
       }
-      None => Err(MechError{id: 1008, kind: MechErrorKind::MissingBlock(block_id)}),
+      None => Err(MechError{msg: "".to_string(), id: 1008, kind: MechErrorKind::MissingBlock(block_id)}),
     }
   }
 
@@ -519,18 +539,29 @@ impl Core {
 impl fmt::Debug for Core {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    let dictionary = self.dictionary.clone();
     let mut box_drawing = BoxPrinter::new();
     box_drawing.add_title("🤖","CORE");
     if self.errors.len() > 0 {
       box_drawing.add_title("🐛","errors");
-      box_drawing.add_line(format!("{:#?}", &self.errors));
+      for (error,blocks) in self.errors.iter() {
+        box_drawing.add_line(format!("  - {:?}", error));
+      }
     }
     box_drawing.add_title("📭","input");
     for (table,row,col) in &self.input {
+      let table = match dictionary.borrow().get(table.unwrap()) {
+        Some(x) => x.to_string(),
+        None => format!("{:?}", table),
+      };
       box_drawing.add_line(format!("  - ({:?}, {:?}, {:?})", table,row,col));
     }
     box_drawing.add_title("📬","output");
     for (table,row,col) in &self.output {
+      let table = match dictionary.borrow().get(table.unwrap()) {
+        Some(x) => x.to_string(),
+        None => format!("{:?}", table),
+      };
       box_drawing.add_line(format!("  - ({:?}, {:?}, {:?})", table,row,col));
     }
     box_drawing.add_title("🧊","blocks");
@@ -541,9 +572,21 @@ impl fmt::Debug for Core {
     }
     box_drawing.add_title("💻","functions");
     box_drawing.add_line("Compiled Functions".to_string());
-    box_drawing.add_line(format!("{:#?}", &self.functions.borrow().functions.iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
+    box_drawing.add_line(format!("{:#?}", &self.functions.borrow().functions.iter().map(|(k,v)|
+    {
+      match dictionary.borrow().get(k) {
+        Some(x) => x.to_string(),
+        None => humanize(&k),
+      }
+    }).collect::<Vec<String>>()));
     box_drawing.add_line("User Functions".to_string());
-    box_drawing.add_line(format!("{:#?}", &self.user_functions.borrow().iter().map(|(k,v)|humanize(&k)).collect::<Vec<String>>()));
+    box_drawing.add_line(format!("{:#?}", &self.user_functions.borrow().iter().map(|(k,v)|
+    {
+      match dictionary.borrow().get(k) {
+        Some(x) => x.to_string(),
+        None => humanize(&k),
+      }
+    }).collect::<Vec<String>>()));
     box_drawing.add_title("🗓️","schedule");
     box_drawing.add_line(format!("{:#?}", &self.schedule));
     box_drawing.add_title("💾","database");

@@ -122,6 +122,12 @@ impl MechString {
     }
   }
 
+  pub fn from_str(string: &str) -> MechString {
+    MechString {
+      chars: string.chars().collect::<Vec<char>>()
+    }
+  }
+
   pub fn from_chars(chars: &Vec<char>) -> MechString {
     MechString {
       chars: chars.clone(),

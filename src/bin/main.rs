@@ -20,6 +20,7 @@ use std::fmt;
 use std::ptr;
 use std::rc::Rc;
 use hashbrown::{HashMap, HashSet};
+use std::time::{Instant};
 
 use std::collections::VecDeque;
 use mech_core::*;
@@ -28,11 +29,12 @@ use mech_core::function::table;
 use std::fmt::*;
 use num_traits::*;
 use std::ops::*;
+extern crate time;
 
 fn main() -> std::result::Result<(),MechError> {
  
   //let now = Instant::now();
-  let n = 1e6 as usize;
+  let n = 1e7 as usize;
 
   let sizes: Vec<usize> = vec![1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7].iter().map(|x| *x as usize).collect();
 
@@ -235,14 +237,14 @@ fn main() -> std::result::Result<(),MechError> {
   let gravity: f32 = 1.0;
 
   //println!("{:?}", core);
-  /*
+  
   let mut total_time = VecDeque::new();  
   for i in 0..50000 {
     let txn = vec![Change::Set((hash_str("time/timer"), 
-      vec![(RegisterIndex::Index(1), RegisterIndex::Index(2), Value::f32(i as f32))]))];
+      vec![(TableIndex::Index(1), TableIndex::Index(2), Value::f32(i as f32))]))];
     
-    let start_ns = time::precise_time_ns();
-    for i in 0..n {
+    let now = Instant::now();
+    /*for i in 0..n {
       x[i] = x[i] + vx[i];
       y[i] = y[i] + vy[i];
       vy[i] = vy[i] + gravity;
@@ -262,20 +264,20 @@ fn main() -> std::result::Result<(),MechError> {
         y[i] = 500.0;
         vy[i] = vy[i] * -0.8;
       }
-    }
-    //core.process_transaction(&txn)?;
-    let end_ns = time::precise_time_ns();
-
-    let cycle_duration = (end_ns - start_ns) as f32;
+    }*/
+    core.process_transaction(&txn)?;
+    let elapsed_time = now.elapsed();
+    
+    let cycle_duration = elapsed_time.as_nanos() as f64;
     total_time.push_back(cycle_duration);
     if total_time.len() > 1000 {
       total_time.pop_front();
     }
-    let average_time: f32 = total_time.iter().sum::<f32>() / total_time.len() as f32; 
+    let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
     //println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
     println!("{:e} - {:0.2?}Hz", n, 1.0 / (cycle_duration / 1_000_000_000.0));
   }
-  */
+  
   //let average_time: f32 = total_time.iter().sum::<f32>() / total_time.len() as f32; 
   //println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
  // let time = (end_ns0 - start_ns0) as f32;

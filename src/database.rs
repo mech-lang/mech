@@ -54,14 +54,14 @@ impl Database {
     for (id,other_table) in other_tables.drain() {
       match self.tables.try_insert(id, other_table.clone()) {
         Ok(_) => (),
-        Err(x) => {return Err(MechError{id: 1723, kind: MechErrorKind::None});},
+        Err(x) => {return Err(MechError{msg: "".to_string(), id: 1723, kind: MechErrorKind::None});},
       }
     }
     let mut other_table_aliases = other.table_alias_to_id.clone();
     for (id,other_table) in other_table_aliases.drain() {
       match self.table_alias_to_id.try_insert(id, other_table.clone()) {
         Ok(_) => (),
-        Err(x) => {return Err(MechError{id: 1724, kind: MechErrorKind::None});},
+        Err(x) => {return Err(MechError{msg: "".to_string(), id: 1724, kind: MechErrorKind::None});},
       }
     }
     Ok(())
@@ -69,7 +69,7 @@ impl Database {
 
   pub fn insert_alias(&mut self, alias: u64, table_id: TableId) -> Result<TableId,MechError> {
     match self.table_alias_to_id.try_insert(alias, table_id) {
-      Err(x) => {return Err(MechError{id: 1725, kind: MechErrorKind::None});},
+      Err(x) => {return Err(MechError{msg: "".to_string(), id: 1725, kind: MechErrorKind::DuplicateAlias(*table_id.unwrap())});},
       Ok(x) => Ok(*x), 
     }
   }
@@ -77,7 +77,14 @@ impl Database {
   pub fn insert_table(&mut self, table: Table) -> Result<Rc<RefCell<Table>>,MechError> {
     match self.tables.try_insert(table.id, Rc::new(RefCell::new(table))) {
       Ok(x) => Ok(x.clone()),
-      Err(x) => {return Err(MechError{id: 1726, kind: MechErrorKind::None});},
+      Err(x) => {return Err(MechError{msg: "".to_string(), id: 1726, kind: MechErrorKind::None});},
+    }
+  }
+
+  pub fn overwrite_table(&mut self, table: Table) -> Result<Rc<RefCell<Table>>,MechError> {
+    match self.tables.insert(table.id, Rc::new(RefCell::new(table))) {
+      Some(x) => Ok(x.clone()),
+      None => {return Err(MechError{msg: "".to_string(), id: 1726, kind: MechErrorKind::None});},
     }
   }
 
@@ -88,7 +95,7 @@ impl Database {
     };
     match self.tables.try_insert(table_id, table) {
       Ok(x) => Ok(x.clone()),
-      Err(x) => {return Err(MechError{id: 1726, kind: MechErrorKind::None});},
+      Err(x) => {return Err(MechError{msg: "".to_string(), id: 1726, kind: MechErrorKind::None});},
     }
   }
 
@@ -105,7 +112,7 @@ impl Database {
   pub fn get_table_by_id(&self, table_id: &u64) -> Option<&Rc<RefCell<Table>>> {
     match self.tables.get(table_id) {
       None => {
-        match self.table_alias_to_id.get(&table_id) {
+        match self.table_alias_to_id.get(table_id) {
           None => None,
           Some(table_id) => {
             self.tables.get(table_id.unwrap())
