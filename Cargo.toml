@@ -1,10 +1,10 @@
 [package]
 name = "mech-utilities"
-version = "0.0.5"
+version = "0.1.0"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Shared components and utilities for Mech"
 documentation = "http://docs.mech-lang.org"
-homepage = "http://mech-lang.org"
+homepage = "https://mech-lang.org"
 repository = "https://github.com/mech-lang/utilities"
 keywords = ["mech"]
 categories = ["science::robotics", "science"]
@@ -23,9 +23,9 @@ web = ["websocket"]
 [dependencies]
 mech-core = {git = "https://gitlab.com/mech-lang/core", branch = "v0.1-beta", default-features = false}
 
-serde = {version = "1.0.133", default-features = false, features = ["alloc"] }
-serde_derive = "1.0.144"
-hashbrown = "0.12.3"
+serde = {version = "1.0.152", default-features = false, features = ["alloc"] }
+serde_derive = "1.0.152"
+hashbrown = "0.13.1"
 crossbeam-channel = "0.5.6"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
