@@ -47,9 +47,6 @@ members = [
   "wasm-notebook",
 ]
 
-[profile.release]
-debug = true
-
 [build-dependencies]
 winres = "0.1.12"
 
