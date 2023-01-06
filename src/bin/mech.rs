@@ -477,7 +477,7 @@ async fn main() -> Result<(), MechError> {
         }
         Ok(ClientMessage::StepDone) => {
           if debug_flag{
-            mech_client.send(RunLoopMessage::PrintDebug);
+            mech_client.send(RunLoopMessage::PrintCore(Some(1)));
           }
           if out_tables.len() > 0 {
             for table_name in &out_tables {
