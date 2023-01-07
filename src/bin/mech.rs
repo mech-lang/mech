@@ -30,6 +30,9 @@ use colored::*;
 
 extern crate mech;
 use mech::*;
+use mech_syntax::ast::Ast;
+use mech_syntax::formatter::Formatter;
+use mech_syntax::parser;
 
 use std::thread::{self, JoinHandle};
 
@@ -139,6 +142,26 @@ async fn main() -> Result<(), MechError> {
         .multiple(true)))
     .subcommand(SubCommand::with_name("clean")
       .about("Remove the machines folder"))
+    .subcommand(SubCommand::with_name("format")
+      .about("Formats Mech source code according to a prescribed style.")
+      .arg(Arg::with_name("output_name")
+        .help("Output file name or directory")
+        .short("o")
+        .long("output")
+        .value_name("OUTPUTNAME")
+        .required(false)
+        .takes_value(true))
+      .arg(Arg::with_name("mech_format_file_paths")
+        .help("The files and folders to format.")
+        .required(true)
+        .multiple(true))
+      .arg(Arg::with_name("html")
+        .short("h")
+        .long("html")
+        .value_name("Debug")
+        .help("Format with HTML.")
+        .required(false)
+        .takes_value(false)))
     .subcommand(SubCommand::with_name("langserver")
       .about("Run a local mech language server")
       .arg(Arg::with_name("port")
@@ -543,6 +566,49 @@ async fn main() -> Result<(), MechError> {
       }
     }
     None
+  // ---------------------------------------------------
+  // FORMAT standardize formatting of mech source files
+  // ---------------------------------------------------
+  } else if let Some(matches) = matches.subcommand_matches("format") {
+    let html = matches.is_present("html");    
+    let mech_paths: Vec<String> = matches.values_of("mech_format_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+    let mut code: Vec<MechCode> = match read_mech_files(&mech_paths) {
+      Ok(code) => code,
+      Err(mech_error) => {
+        println!("{}",format_errors(&vec![mech_error]));
+        std::process::exit(1);
+      }
+    };
+
+    let mut source_trees = vec![];
+
+    for c in code {
+      match c {
+        MechCode::String(source) => {
+          let parse_tree = parser::parse(&source)?;
+          let mut ast = Ast::new();
+          ast.build_syntax_tree(&parse_tree);
+          source_trees.push(ast.syntax_tree.clone());
+        }
+        _ => (), 
+      }
+    }
+
+    let formatted_source = source_trees.iter().map(|t| {
+      let mut f = Formatter::new();
+      if html {
+        f.format_html(&t)
+      } else {
+        f.format(&t)
+      }
+    }).collect::<Vec<String>>();
+  
+    for f in formatted_source {
+      println!("{}", f);
+    }
+    std::process::exit(0);
+
+    None    
   // ------------------------------------------------
   //  Clean
   // ------------------------------------------------
