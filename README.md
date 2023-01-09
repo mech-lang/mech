@@ -1,14 +1,14 @@
 <p align="center">
-  <img width="500px" src="http://mech-lang.org/img/logo.png">
+  <img width="500px" src="https://mech-lang.org/img/logo.png">
 </p>
 
 Mech is a language for developing **data-driven**, **reactive** systems like animations, games, and robots. It makes **composing**, **transforming**, and **distributing** data easy, allowing you to focus on the essential complexity of your project.
 
 You can try Mech online at [try.mech-lang.org](http://try.mech-lang.org).
 
-Usage and installation instructions can be found in the [documentation](http://mech-lang.org/page/learn/) or the [main Mech repository](https://github.com/mech-lang/mech).
+Usage and installation instructions can be found in the [documentation](https://mech-lang.org/page/learn/) or the [main Mech repository](https://github.com/mech-lang/mech).
 
-Read about progress on our [blog](http://mech-lang.org/blog/), and follow us on Twitter [@MechLang](https://twitter.com/MechLang).
+Read about progress on our [blog](https://mech-lang.org/blog/), and follow us on Twitter [@MechLang](https://twitter.com/MechLang).
 
 
 ## Welcome
@@ -47,11 +47,12 @@ cargo install mech
 
 ### From Source
 
-You will need to install [Rust](https://www.rust-lang.org/learn/get-started) (Mech only works on the "Nightly" release channel) before building Mech. When those are installed, follow these instructions:
+You will need to install [Rust](https://www.rust-lang.org/learn/get-started) on a recent nightly release, and [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/). When those are installed, follow these instructions:
 
 ```bash
 git clone https://gitlab.com/mech-lang/mech -b v0.1-beta --recurse-submodules
 cd mech
+wasm-pack build wasm-notebook --target web
 cargo build --bin mech --release
 ```
 

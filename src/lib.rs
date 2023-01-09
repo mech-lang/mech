@@ -27,7 +27,7 @@ use std::fs::{OpenOptions, File, canonicalize, create_dir};
 use std::path::{Path, PathBuf};
 use std::io;
 use std::io::prelude::*;
-use std::time::{Duration, SystemTime};
+use std::time::{Duration, Instant, SystemTime};
 use std::thread::{self, JoinHandle};
 use std::sync::Mutex;
 use websocket::sync::Server;
@@ -163,37 +163,38 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
           Some("blx") => {
             match File::open(name) {
               Ok(file) => {
-                println!("{} {}", "[Loading]".bright_green(), name);
+                println!("{} {}", "[Loading]".truecolor(153,221,85), name);
                 let mut reader = BufReader::new(file);
-                match bincode::deserialize_from(&mut reader) {
-                  Ok(miniblocks) => {code.push(MechCode::MiniBlocks(miniblocks));},
+                let mech_code: Result<MechCode, bincode::Error> = bincode::deserialize_from(&mut reader);
+                match mech_code {
+                  Ok(c) => {code.push(c);},
                   Err(err) => {
-                    return Err(MechError{id: 1237, kind: MechErrorKind::None});
+                    return Err(MechError{msg: "".to_string(), id: 1247, kind: MechErrorKind::GenericError(format!("{:?}", err))});
                   },
                 }
               }
               Err(err) => {
-                return Err(MechError{id: 1238, kind: MechErrorKind::None});
+                return Err(MechError{msg: "".to_string(), id: 1248, kind: MechErrorKind::None});
               },
             };
           }
           Some("mec") => {
             match File::open(name) {
               Ok(mut file) => {
-                println!("{} {}", "[Loading]".bright_green(), name);
+                println!("{} {}", "[Loading]".truecolor(153,221,85), name);
                 let mut buffer = String::new();
                 file.read_to_string(&mut buffer);
                 code.push(MechCode::String(buffer));
               }
               Err(err) => {
-                return Err(MechError{id: 1239, kind: MechErrorKind::None});
+                return Err(MechError{msg: "".to_string(), id: 1249, kind: MechErrorKind::None});
               },
             };
           }
           _ => (), // Do nothing if the extension is not recognized
         }
       },
-      _ => {return Err(MechError{id: 1240, kind: MechErrorKind::None});},
+      _ => {return Err(MechError{msg: "".to_string(), id: 1250, kind: MechErrorKind::None});},
     }
     Ok(code)
   };
@@ -202,15 +203,15 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
     let path = Path::new(path_str);
     // Compile a .mec file on the web
     if path.to_str().unwrap().starts_with("https") {
-      println!("{} {}", "[Downloading]".bright_green(), path.display());
+      println!("{} {}", "[Downloading]".truecolor(153,221,85), path.display());
       match reqwest::blocking::get(path.to_str().unwrap()) {
         Ok(response) => {
           match response.text() {
             Ok(text) => code.push(MechCode::String(text)),
-            _ => {return Err(MechError{id: 1241, kind: MechErrorKind::None});},
+            _ => {return Err(MechError{msg: "".to_string(), id: 1241, kind: MechErrorKind::None});},
           }
         }
-        _ => {return Err(MechError{id: 1242, kind: MechErrorKind::None});},
+        _ => {return Err(MechError{msg: "".to_string(), id: 1242, kind: MechErrorKind::None});},
       }
     } else {
       // Compile a directory of mech files
@@ -227,7 +228,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
         let mut new_code = read_file_to_code(&path)?;
         code.append(&mut new_code);
       } else {
-        return Err(MechError{id: 1243, kind: MechErrorKind::FileNotFound(path.to_str().unwrap().to_string())});
+        return Err(MechError{msg: "".to_string(), id: 1243, kind: MechErrorKind::FileNotFound(path.to_str().unwrap().to_string())});
       }
     };
   }
@@ -235,24 +236,33 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
 }
 
 pub fn compile_code(code: Vec<MechCode>) -> Result<Vec<Vec<MiniBlock>>,MechError> {
-  print!("{}", "[Compiling] ".bright_green());
+  print!("{}", "[Compiling] ".truecolor(153,221,85));
   stdout().flush();
-  let mut miniblocks = vec![];
+  let mut sections = vec![];
+  let now = Instant::now();
   for c in code {
     match c {
+      MechCode::MiniCores(cores) => {
+        todo!()
+      }
       MechCode::String(c) => {
         let mut compiler = Compiler::new();
-        let sections = compiler.compile_str(&c)?;
-        let mut mb = minify_blocks(&sections);
-        miniblocks.append(&mut mb);
+        let compiled = compiler.compile_str(&c)?;
+        let mut mb = minify_blocks(&compiled);
+        sections.append(&mut mb);
       },
       MechCode::MiniBlocks(mut mb) => {
-        miniblocks.append(&mut mb);
+        sections.append(&mut mb);
       },
     }
   }
-  println!("Compiled {} blocks.", miniblocks.len());
-  Ok(miniblocks)
+  let elapsed_time = now.elapsed();
+  let mut blocks_total = 0;
+  for s in &sections {
+    blocks_total += s.len();
+  }
+  println!("Compiled {} blocks in {}ms.", blocks_total, elapsed_time.as_micros() as f64 / 1000.0);
+  Ok(sections)
 }
 
 pub fn minify_blocks(sections: &Vec<Vec<SectionElement>>) -> Vec<Vec<MiniBlock>> {
@@ -263,20 +273,7 @@ pub fn minify_blocks(sections: &Vec<Vec<SectionElement>>) -> Vec<Vec<MiniBlock>>
 
       match element {
         SectionElement::Block(block) => {
-          let mut miniblock = MiniBlock::new();
-          miniblock.transformations = block.transformations.clone();
-          match &block.unsatisfied_transformation {
-            Some((_,tfm)) => miniblock.transformations.push(tfm.clone()),
-            _ => (),
-          }
-          miniblock.transformations.append(&mut block.pending_transformations.clone());
-          /*for (k,v) in block.store.number_literals.iter() {
-            miniblock.number_literals.push((k.clone(), v.clone()));
-          }
-          for error in &block.errors {
-            miniblock.errors.push(error.clone());
-          }*/
-          miniblock.id = block.id;
+          let miniblock = MiniBlock::minify_block(&block);
           miniblocks.push(miniblock);
         }
         _ => (),

@@ -1,16 +1,16 @@
 [package]
-name = "mech-notebook"
-version = "0.0.4"
+name = "mech-wasm-notebook"
+version = "0.1.0"
 authors = ["Corey Montella <corey@mech-lang.org>"]
-description = "A notebook for writing mech applications"
+description = "A notebook writing Mech in the browser"
 documentation = "http://docs.mech-lang.org"
-homepage = "http://mech-lang.org"
+homepage = "https://mech-lang.org"
 repository = "https://github.com/mech-lang/mech"
 keywords = ["mech", "language", "programming", "dataflow", "runtime"]
 categories = ["science::robotics", "science", "game-engines", "web-programming"]
 license = "Apache-2.0"
 readme = "README.md"
-edition = "2018"
+edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -18,4 +18,4 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 mech-wasm = {git = "https://gitlab.com/mech-lang/wasm", branch = "v0.1-beta"}
 
-wasm-bindgen = "0.2.74"
+wasm-bindgen = "0.2.83"

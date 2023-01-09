@@ -19,9 +19,9 @@ fn main() {
     mech_client.send(RunLoopMessage::Code(MechCode::MiniBlocks(mech::minify_blocks(&blocks))));
   }*/
 
-  let mech_code = include_str!("");
+  let mech_code = include_str!("../../project/main.mec");
   let blocks = compiler.compile_str(&mech_code).unwrap();
-  mech_client.send(RunLoopMessage::Code(MechCode::MiniBlocks(mech::minify_blocks(&blocks))));
+  mech_client.send(RunLoopMessage::Code((1,MechCode::MiniBlocks(mech::minify_blocks(&blocks)))));
 
   let thread_receiver = mech_client.incoming.clone();
   // Some state variables to control receive loop
