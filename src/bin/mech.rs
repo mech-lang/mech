@@ -267,8 +267,8 @@ async fn main() -> Result<(), MechError> {
     let persistence_path = matches.value_of("persistence").unwrap_or("");
 
     let mech_html = include_str!("../../wasm-notebook/index.html");
-    let mech_wasm = include_bytes!("../../wasm-notebook/pkg/mech_notebook_bg.wasm");
-    let mech_notebook = include_str!("../../wasm-notebook/pkg/mech_notebook.js");
+    let mech_wasm = include_bytes!("../../wasm-notebook/pkg/mech_wasm_notebook_bg.wasm");
+    let mech_notebook = include_str!("../../wasm-notebook/pkg/mech_wasm_notebook.js");
     
     let mut headers = HeaderMap::new();
     headers.insert("content-type", HeaderValue::from_static("text/html"));
