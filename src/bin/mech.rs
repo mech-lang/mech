@@ -169,7 +169,12 @@ async fn main() -> Result<(), MechError> {
         .long("port")
         .value_name("PORT")
         .help("Sets the port for the server (default: 4041)")
-        .takes_value(true)))
+        .takes_value(true))
+      .arg(Arg::with_name("stdio")
+        .long("stdio")
+        .value_name("STDIO")
+        .help("Start the server in stdio way")
+        .takes_value(false)))
     .subcommand(SubCommand::with_name("run")
       .about("Run a target folder or *.mec file")
       .arg(Arg::with_name("repl_mode")
@@ -620,10 +625,15 @@ async fn main() -> Result<(), MechError> {
   //  Run language server
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("langserver") {
+    let stdio_flag = matches.is_present("stdio");
     let address = "localhost".to_owned();
     let port = matches.value_of("port").unwrap_or("4041").to_string();
-    println!("{} Starting language server at {}:{}", "[INFO]".truecolor(34,204,187), address, port);
-    mech_syntax::langserver::run_langserver(&address, &port).await?;
+    if stdio_flag {
+      mech_syntax::langserver::run_io_langserver().await?;
+    } else {    
+      println!("{} Starting language server at {}:{}", "[INFO]".truecolor(34,204,187), address, port);
+      mech_syntax::langserver::run_tcp_langserver(&address, &port).await?;
+    }
     std::process::exit(0);
     None
   // ------------------------------------------------
