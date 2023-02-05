@@ -629,7 +629,7 @@ async fn main() -> Result<(), MechError> {
     let address = "localhost".to_owned();
     let port = matches.value_of("port").unwrap_or("4041").to_string();
     if stdio_flag {
-      mech_syntax::langserver::run_io_langserver().await?;
+      mech_syntax::langserver::run_stdio_langserver().await?;
     } else {    
       println!("{} Starting language server at {}:{}", "[INFO]".truecolor(34,204,187), address, port);
       mech_syntax::langserver::run_tcp_langserver(&address, &port).await?;
