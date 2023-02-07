@@ -164,17 +164,31 @@ async fn main() -> Result<(), MechError> {
         .takes_value(false)))
     .subcommand(SubCommand::with_name("langserver")
       .about("Run a local mech language server")
-      .arg(Arg::with_name("port")
-        .short("p")
-        .long("port")
-        .value_name("PORT")
-        .help("Sets the port for the server (default: 4041)")
-        .takes_value(true))
       .arg(Arg::with_name("stdio")
+        .conflicts_with("socket")
+        .short("o")
         .long("stdio")
-        .value_name("STDIO")
-        .help("Start the server in stdio way")
-        .takes_value(false)))
+        .help("Use stdio for server communciation. This is the default option")
+        .takes_value(false))
+      .arg(Arg::with_name("socket")
+        .conflicts_with("stdio")
+        .short("p")
+        .long("socket")
+        .value_name("PORT")
+        .help("Use tcp socket at PORT for server communication")
+        .takes_value(true)
+        .validator(|s| match s.parse::<u16>() {
+          Ok(_) => Ok(()),
+          Err(_) => Err("Invalid port number".to_owned()),
+        }))
+      .arg(Arg::with_name("log")
+        .required(false)
+        .short("l")
+        .long("log")
+        .value_name("LEVEL")
+        .help("Specify log level (default: debug)")
+        .possible_values(&["off", "error", "warn", "info", "debug", "trace"])
+        .takes_value(true)))
     .subcommand(SubCommand::with_name("run")
       .about("Run a target folder or *.mec file")
       .arg(Arg::with_name("repl_mode")
@@ -625,14 +639,16 @@ async fn main() -> Result<(), MechError> {
   //  Run language server
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("langserver") {
-    let stdio_flag = matches.is_present("stdio");
-    let address = "localhost".to_owned();
-    let port = matches.value_of("port").unwrap_or("4041").to_string();
-    if stdio_flag {
-      mech_syntax::langserver::run_stdio_langserver().await?;
-    } else {    
-      println!("{} Starting language server at {}:{}", "[INFO]".truecolor(34,204,187), address, port);
-      mech_syntax::langserver::run_tcp_langserver(&address, &port).await?;
+    let log_lvl = matches.value_of("log").unwrap_or("");
+    match matches.value_of("socket") {
+      Some(port) => {
+        let address = "localhost";
+        println!("{} Starting language server at {}:{}", "[INFO]".truecolor(34,204,187), address, port);
+        mech_syntax::langserver::run_tcp_langserver(address, port, log_lvl).await?;
+      },
+      _ => {  // stdio
+        mech_syntax::langserver::run_stdio_langserver(log_lvl).await?;
+      },
     }
     std::process::exit(0);
     None
