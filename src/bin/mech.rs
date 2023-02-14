@@ -282,7 +282,7 @@ async fn main() -> Result<(), MechError> {
     let mut headers = HeaderMap::new();
     headers.insert("accept-ranges", HeaderValue::from_static("bytes"));
     headers.insert("content-type", HeaderValue::from_static("application/javascript"));
-    let nb = warp::path!("pkg" / "mech_wasm_notebook.js")
+    let nb = warp::path!("pkg" / "mech_notebook.js")
               .map(move || {
                 mech_notebook
               })
