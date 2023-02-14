@@ -301,7 +301,7 @@ async fn main() -> Result<(), MechError> {
     let mut headers = HeaderMap::new();
     headers.insert("accept-ranges", HeaderValue::from_static("bytes"));
     headers.insert("content-type", HeaderValue::from_static("application/javascript"));
-    let nb = warp::path!("pkg" / "mech_notebook.js")
+    let nb = warp::path!("pkg" / "mech_wasm_notebook.js")
               .map(move || {
                 mech_notebook
               })
@@ -310,7 +310,7 @@ async fn main() -> Result<(), MechError> {
     let mut headers = HeaderMap::new();
     headers.insert("accept-ranges", HeaderValue::from_static("bytes"));
     headers.insert("content-type", HeaderValue::from_static("application/wasm"));
-    let pkg = warp::path!("pkg" / "mech_notebook_bg.wasm")
+    let pkg = warp::path!("pkg" / "mech_wasm_notebook_bg.wasm")
               .map(move || {
                 mech_wasm.to_vec()
               })
