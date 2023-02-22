@@ -158,7 +158,7 @@ async fn main() -> Result<(), MechError> {
       .arg(Arg::with_name("html")
         .short("h")
         .long("html")
-        .value_name("Debug")
+        .value_name("HTML")
         .help("Format with HTML.")
         .required(false)
         .takes_value(false)))
@@ -604,7 +604,13 @@ async fn main() -> Result<(), MechError> {
     }).collect::<Vec<String>>();
   
     for f in formatted_source {
-      println!("{}", f);
+      if html {
+        let mut file = File::create("index.html")?;
+        file.write_all(f.as_bytes())?;
+      } else {
+        let mut file = File::create("index.mec")?;
+        file.write_all(f.as_bytes())?;
+      }
     }
     std::process::exit(0);
 
