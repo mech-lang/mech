@@ -411,7 +411,7 @@ async fn main() -> Result<(), MechError> {
     let maestro_address: String = matches.value_of("maestro").unwrap_or("127.0.0.1:3235").to_string();
     let websocket_address: String = matches.value_of("websocket").unwrap_or("127.0.0.1:3236").to_string();
 
-    let mut code: Vec<MechCode> = match read_mech_files(&mech_paths) {
+    let mut code = match read_mech_files(&mech_paths) {
       Ok(code) => code,
       Err(mech_error) => {
         println!("{}",format_errors(&vec![mech_error]));
@@ -531,7 +531,7 @@ async fn main() -> Result<(), MechError> {
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("build") {
     let mech_paths: Vec<String> = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    let mut code: Vec<MechCode> = match read_mech_files(&mech_paths) {
+    let mut code = match read_mech_files(&mech_paths) {
       Ok(code) => code,
       Err(mech_error) => {
         println!("{}",format_errors(&vec![mech_error]));
@@ -572,7 +572,7 @@ async fn main() -> Result<(), MechError> {
   } else if let Some(matches) = matches.subcommand_matches("format") {
     let html = matches.is_present("html");    
     let mech_paths: Vec<String> = matches.values_of("mech_format_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    let mut code: Vec<MechCode> = match read_mech_files(&mech_paths) {
+    let mut code = match read_mech_files(&mech_paths) {
       Ok(code) => code,
       Err(mech_error) => {
         println!("{}",format_errors(&vec![mech_error]));
@@ -582,7 +582,7 @@ async fn main() -> Result<(), MechError> {
 
     let mut source_trees = vec![];
 
-    for c in code {
+    for (_,c) in code {
       match c {
         MechCode::String(source) => {
           let parse_tree = parser::parse(&source)?;
@@ -603,17 +603,26 @@ async fn main() -> Result<(), MechError> {
       }
     }).collect::<Vec<String>>();
   
-    for f in formatted_source {
+    if formatted_source.len() == 1 {
       if html {
         let mut file = File::create("index.html")?;
-        file.write_all(f.as_bytes())?;
+        file.write_all(formatted_source[0].as_bytes())?;
       } else {
         let mut file = File::create("index.mec")?;
-        file.write_all(f.as_bytes())?;
+        file.write_all(formatted_source[0].as_bytes())?;
+      }
+      std::process::exit(0);
+    } else {
+      for f in formatted_source {
+        if html {
+          let mut file = File::create("index.html")?;
+          file.write_all(f.as_bytes())?;
+        } else {
+          let mut file = File::create("index.mec")?;
+          file.write_all(f.as_bytes())?;
+        }
       }
     }
-    std::process::exit(0);
-
     None    
   // ------------------------------------------------
   //  Clean

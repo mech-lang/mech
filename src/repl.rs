@@ -76,6 +76,7 @@ fn load(input: ParseString) -> ParseResult<ReplCommand> {
   let string = syntax::compiler::compile_text(&text).unwrap();
   match read_mech_files(&vec![string.clone()]) {
     Ok(code) => {
+      let code = code.iter().map(|(_,c)| c).cloned().collect::<Vec<MechCode>>();
       Ok((input, ReplCommand::Code(code)))
     }
     Err(err) => {
