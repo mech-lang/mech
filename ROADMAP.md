@@ -7,42 +7,49 @@ Implementation: started 2018
 
 ### Stage 2 - Beta v0.1.0 - ?
 
-Target release date: Fall 2022
+Released: December 2022
 
 ### Stage 3 - Stable v1.0.0
 
 Target release date: ???
 
-## Version 0.2.0 (Spring 2023?)
+## Version 0.3.0 (Maybe Fall 2024?)
 
 - [ ] GPGPU Runtime
 - [ ] Automatic Differentiation
 - [ ] Capability system
+
+## Version 0.2.0 (Fall 2023)
+
+- [ ] Distributed Runtime Improvements
 - [ ] Persistence
 - [ ] Time travel debugging
+- [ ] More complete examples
+
 - Machines
     - [ ] JSON
     - [ ] Sockets
     - [ ] Serial
     - [ ] Bluetooth
+    - [ ] Audio
+    - [ ] Maps
+    - [ ] ChatGPT?
 
-## Version 0.1.0 (Fall 2022)
+## Version 0.1.1 (Summer 2023)
 
-- [x] User defined functions
-- [x] Errors
-- [x] Distribution
-- [x] Paralell operators
-- [x] Async blocks
-- [x] Units
-- [x] Type checking
-- [x] Multiple dispatch
-- [x] JIT Block Compiler
-- [x] Native executables
-- [x] REPL
-- Machines
-    - [x] Matrix
-    - [x] GUI
+- Language Server
+  - [ ] Syntax Highlighter
+  - [ ] Autocomplete
+  - [ ] Goto Definition
+  - [ ] Goto Docs
+  - [ ] Hover inspector
+  - [ ] Workspace support
+  - [ ] Database expolorer
 - Editor
+    - [ ] Compile programs
+    - [ ] Start and stop cores
+    - [ ] Save and load programs
+    - [ ] Workspace explorer
     - [ ] Database Explorer
     - [ ] API endpoint server
 - Docs
@@ -58,6 +65,25 @@ Target release date: ???
     - [ ] Homepage
     - [ ] Blog
     - [ ] Try
+- Machines
+    - [x] Fleshed out gui
+
+## Version 0.1.0 (December 2022)
+
+- [x] User defined functions
+- [x] Errors
+- [x] Distribution
+- [x] Paralell operators
+- [x] Async blocks
+- [x] Units
+- [x] Type checking
+- [x] Multiple dispatch
+- [x] JIT Block Compiler
+- [x] Native executables
+- [x] REPL
+- Machines
+    - [x] Matrix
+    - [x] GUI
 
 ## Version 0.0.6 Alpha (unreleased)
 
