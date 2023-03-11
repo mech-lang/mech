@@ -9,4 +9,4 @@ test:cargo:
   - cargo build --bin mech --release
   - ./target/release/mech test tests
   - cd src/syntax
-  - cargo test
+  - cargo test --release
