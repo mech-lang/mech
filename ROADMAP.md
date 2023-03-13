@@ -67,6 +67,7 @@ Target release date: ???
     - [ ] Try
 - Machines
     - [x] Fleshed out gui
+    - [ ] Plot
 
 ## Version 0.1.0 (December 2022)
 
