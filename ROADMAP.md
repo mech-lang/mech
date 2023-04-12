@@ -38,19 +38,19 @@ Target release date: ???
 ## Version 0.1.1 (Summer 2023)
 
 - Language Server
-  - [ ] Syntax Highlighter
-  - [ ] Autocomplete
-  - [ ] Goto Definition
-  - [ ] Goto Docs
-  - [ ] Hover inspector
-  - [ ] Workspace support
+  - [x] Syntax Highlighter
+  - [x] Autocomplete
+  - [x] Goto Definition
+  - [x] Goto Docs
+  - [x] Hover inspector
+  - [x] Workspace support
   - [ ] Database expolorer
 - Editor
-    - [ ] Compile programs
+    - [x] Compile programs
     - [ ] Start and stop cores
     - [ ] Save and load programs
     - [ ] Workspace explorer
-    - [ ] Database Explorer
+    - [x] Database Explorer
     - [ ] API endpoint server
 - Docs
     - Mech platform references
