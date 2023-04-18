@@ -603,22 +603,27 @@ async fn main() -> Result<(), MechError> {
       }
     }).collect::<Vec<String>>();
   
+    let output_name = match (matches.value_of("output_name"),html) {
+      (Some(name),true) => format!("{}.html",name),
+      (Some(name),false) => format!("{}.mec",name),
+      (None, true) => "output.html".to_string(),
+      (None, false) => "output.mec".to_string(),
+    };
+
+    let mut file = File::create(output_name)?;
+
     if formatted_source.len() == 1 {
       if html {
-        let mut file = File::create("index.html")?;
         file.write_all(formatted_source[0].as_bytes())?;
       } else {
-        let mut file = File::create("index.mec")?;
         file.write_all(formatted_source[0].as_bytes())?;
       }
       std::process::exit(0);
     } else {
       for f in formatted_source {
         if html {
-          let mut file = File::create("index.html")?;
           file.write_all(f.as_bytes())?;
         } else {
-          let mut file = File::create("index.mec")?;
           file.write_all(f.as_bytes())?;
         }
       }
