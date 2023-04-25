@@ -11,9 +11,12 @@ lazy_static! {
 
 export_machine!(io_out, io_out_reg);
 
-extern "C" fn io_out_reg(registrar: &mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>) -> String {
+extern "C" fn io_out_reg(registrar: &mut dyn MachineRegistrar, outgoing: Sender<RunLoopMessage>, capability_token: &CapabilityToken) -> Result<String,MechError> {
   registrar.register_machine(Box::new(Out{outgoing}));
-  "#io/out = [|text<string> color<u32>|]".to_string()
+  match capability_token.verify_capability(&Capability::StdOut) {
+    Ok(()) => Ok("#io/out = [|text<string> color<u32>|]".to_string()),
+    Err(x) => Err(x),
+  }
 }
 
 #[derive(Debug)]
