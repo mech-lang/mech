@@ -38,7 +38,8 @@ use std::thread::{self, JoinHandle};
 
 
 extern crate reqwest;
-use std::collections::HashMap;
+extern crate hashbrown;
+use hashbrown::{HashMap, HashSet};
 
 extern crate bincode;
 use std::io::{Write, BufReader, BufWriter, stdout};
@@ -172,6 +173,12 @@ async fn main() -> Result<(), MechError> {
         .takes_value(true)))
     .subcommand(SubCommand::with_name("run")
       .about("Run a target folder or *.mec file")
+      .arg(Arg::with_name("secure")
+        .short("s")
+        .long("secure")
+        .value_name("Secure")
+        .help("Secures the runtime environment by limiting capabilities.")
+        .takes_value(false))
       .arg(Arg::with_name("repl_mode")
         .short("r")
         .long("repl")
@@ -338,8 +345,14 @@ async fn main() -> Result<(), MechError> {
       }
     };
 
+
+    // The tester can write its output to std out and also connect to a core network and download dependencies, but otherwise it's locked down.
+    let mut tester_caps = HashSet::new();
+    tester_caps.insert(Capability::StdOut);
+    tester_caps.insert(Capability::DownloadDependencies);
+
     println!("{}", "[Running]".truecolor(153,221,85));
-    let runner = ProgramRunner::new("Mech Test");
+    let runner = ProgramRunner::new("Mech Test",tester_caps);
     let mech_client = runner.run()?;
     mech_client.send(RunLoopMessage::Code((1,MechCode::MiniBlocks(blocks))));
 
@@ -402,6 +415,7 @@ async fn main() -> Result<(), MechError> {
     let mech_paths: Vec<String> = matches.values_of("mech_run_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let repl_flag = matches.is_present("repl_mode");    
     let debug_flag = matches.is_present("debug");    
+    let secure_flag = matches.is_present("secure");    
     let timings_flag = matches.is_present("timings");    
     let machine_registry = matches.value_of("registry").unwrap_or("https://gitlab.com/mech-lang/machines/mech/-/raw/v0.1-beta/src/registry.mec").to_string();
     let input_arguments = matches.values_of("inargs").map_or(vec![], |inargs| inargs.collect());
@@ -435,7 +449,23 @@ async fn main() -> Result<(), MechError> {
 
     println!("{}", "[Running]".truecolor(153,221,85));
 
-    let mut runner = ProgramRunner::new("Run");
+    // Run capabilities are very permissive by default, but can be secured when the secure flag is passed.
+    let mut run_caps = HashSet::new();
+    if !secure_flag {
+      run_caps.insert(Capability::StdIn);
+      run_caps.insert(Capability::StdOut);
+      run_caps.insert(Capability::StdErr);
+      run_caps.insert(Capability::InputArguments);
+      run_caps.insert(Capability::FileSystemRead);
+      run_caps.insert(Capability::FileSystemWrite);
+      run_caps.insert(Capability::NetworkRead);
+      run_caps.insert(Capability::NetworkWrite);
+      run_caps.insert(Capability::CoreNetworkRead);
+      run_caps.insert(Capability::CoreNetworkWrite);
+      run_caps.insert(Capability::DownloadDependencies);
+    }
+
+    let mut runner = ProgramRunner::new("Run", run_caps);
     runner.registry = machine_registry;
     let mech_client = runner.run()?;
     mech_client.send(RunLoopMessage::Code((1,MechCode::MiniBlocks(blocks))));
@@ -700,7 +730,21 @@ save    - save the state of a core to disk as a .blx file"#;
   let mech_client = match mech_client {
     Some(mech_client) => mech_client,
     None => {
-      let runner = ProgramRunner::new("REPL");
+
+      // Run capabilities are very permissive by default
+      let mut repl_caps = HashSet::new();
+      repl_caps.insert(Capability::StdIn);
+      repl_caps.insert(Capability::StdOut);
+      repl_caps.insert(Capability::StdErr);
+      repl_caps.insert(Capability::FileSystemRead);
+      repl_caps.insert(Capability::FileSystemWrite);
+      repl_caps.insert(Capability::NetworkRead);
+      repl_caps.insert(Capability::NetworkWrite);
+      repl_caps.insert(Capability::CoreNetworkRead);
+      repl_caps.insert(Capability::CoreNetworkWrite);
+      repl_caps.insert(Capability::DownloadDependencies);
+
+      let runner = ProgramRunner::new("REPL", repl_caps);
       runner.run()?
     }
   };
