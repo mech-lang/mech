@@ -1,15 +1,29 @@
 //const SOURCE_FILES: &[(&str, &[u8])] = &include!(concat!(env!("OUT_DIR"), "/mech_app_files.rs"));
 
 extern crate mech;
+extern crate hashbrown;
 use mech::core::Core;
 use mech::syntax::compiler::Compiler;
 use mech::*;
+use hashbrown::HashSet;
 
 fn main() {
 
   let mut compiler = Compiler::new();
 
-  let runner = ProgramRunner::new("Mech Run");
+  let mut caps = HashSet::new();
+  caps.insert(Capability::StdIn);
+  caps.insert(Capability::StdOut);
+  caps.insert(Capability::StdErr);
+  caps.insert(Capability::FileSystemRead);
+  caps.insert(Capability::FileSystemWrite);
+  caps.insert(Capability::NetworkRead);
+  caps.insert(Capability::NetworkWrite);
+  caps.insert(Capability::CoreNetworkRead);
+  caps.insert(Capability::CoreNetworkWrite);
+  caps.insert(Capability::DownloadDependencies);
+
+  let runner = ProgramRunner::new("Mech Executable", caps);
   let mech_client = runner.run().unwrap();
 
   /*for (name, data) in SOURCE_FILES {
