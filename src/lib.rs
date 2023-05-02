@@ -44,12 +44,12 @@ lazy_static! {
 //extern crate nom;
 
 
-pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechError> {
+pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<(String,MechCode)>, MechError> {
 
-  let mut code: Vec<MechCode> = Vec::new();
+  let mut code: Vec<(String,MechCode)> = Vec::new();
 
-  let read_file_to_code = |path: &Path| -> Result<Vec<MechCode>, MechError> {
-    let mut code: Vec<MechCode> = Vec::new();
+  let read_file_to_code = |path: &Path| -> Result<Vec<(String,MechCode)>, MechError> {
+    let mut code: Vec<(String,MechCode)> = Vec::new();
     match (path.to_str(), path.extension())  {
       (Some(name), Some(extension)) => {
         match extension.to_str() {
@@ -60,7 +60,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
                 let mut reader = BufReader::new(file);
                 let mech_code: Result<MechCode, bincode::Error> = bincode::deserialize_from(&mut reader);
                 match mech_code {
-                  Ok(c) => {code.push(c);},
+                  Ok(c) => {code.push((name.to_string(),c));},
                   Err(err) => {
                     return Err(MechError{msg: "".to_string(), id: 1247, kind: MechErrorKind::GenericError(format!("{:?}", err))});
                   },
@@ -77,7 +77,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
                 println!("{} {}", "[Loading]".truecolor(153,221,85), name);
                 let mut buffer = String::new();
                 file.read_to_string(&mut buffer);
-                code.push(MechCode::String(buffer));
+                code.push((name.to_string(),MechCode::String(buffer)));
               }
               Err(err) => {
                 return Err(MechError{msg: "".to_string(), id: 1249, kind: MechErrorKind::None});
@@ -100,7 +100,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
       match reqwest::blocking::get(path.to_str().unwrap()) {
         Ok(response) => {
           match response.text() {
-            Ok(text) => code.push(MechCode::String(text)),
+            Ok(text) => code.push((path.to_str().unwrap().to_owned(),MechCode::String(text))),
             _ => {return Err(MechError{msg: "".to_string(), id: 1241, kind: MechErrorKind::None});},
           }
         }
@@ -128,12 +128,12 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
   Ok(code)
 }
 
-pub fn compile_code(code: Vec<MechCode>) -> Result<Vec<Vec<MiniBlock>>,MechError> {
+pub fn compile_code(code: Vec<(String,MechCode)>) -> Result<Vec<Vec<MiniBlock>>,MechError> {
   print!("{}", "[Compiling] ".truecolor(153,221,85));
   stdout().flush();
   let mut sections = vec![];
   let now = Instant::now();
-  for c in code {
+  for (_,c) in code {
     match c {
       MechCode::MiniCores(cores) => {
         todo!()
