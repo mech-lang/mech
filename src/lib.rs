@@ -87,7 +87,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<(String,MechCode)
           _ => (), // Do nothing if the extension is not recognized
         }
       },
-      _ => {return Err(MechError{msg: "".to_string(), id: 1250, kind: MechErrorKind::None});},
+      err => {return Err(MechError{msg: "".to_string(), id: 1250, kind: MechErrorKind::GenericError(format!("{:?}", err))});},
     }
     Ok(code)
   };

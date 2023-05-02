@@ -25,6 +25,7 @@ mech-utilities = {path = "src/utilities", version = '0.1' }
 clap = "2.34.0"
 colored = "2.0.0"
 nom = "7.1.1"
+hashbrown = "0.13.1"
 reqwest = {version = "0.11.11", features = ["blocking"]}
 bincode = "1.3.3"
 serde = "1.0.152"

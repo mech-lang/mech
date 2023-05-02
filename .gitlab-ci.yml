@@ -8,3 +8,5 @@ test:cargo:
   - wasm-pack build wasm-notebook --target web
   - cargo build --bin mech --release
   - ./target/release/mech test tests
+  - cd src/syntax
+  - cargo test --release
