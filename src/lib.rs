@@ -71,7 +71,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<(String,MechCode)
               },
             };
           }
-          Some("mec") => {
+          Some("mec") | Some("🤖") => {
             match File::open(name) {
               Ok(mut file) => {
                 println!("{} {}", "[Loading]".truecolor(153,221,85), name);
