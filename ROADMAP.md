@@ -19,8 +19,26 @@ Target release date: ???
 
 ## Version 0.2.0 (Fall 2023)
 
+(Some of this will likely move to v0.3.0, it's a lot to do in one summer)
+
 - [ ] Monorepo
-- [ ] Tensor refactor
+- [ ] Types
+  - [ ] Tuples
+  - [ ] Type definitions
+  - [ ] Specifying converstions
+  - [ ] Typeclasses
+  - [ ] Unit conversion
+  - [ ] Specifying units
+  - [ ] Dec64
+  - [ ] Currency
+  - [ ] Scientific notation
+  - [ ] Dimensional analysis
+- [ ] Table redo
+  - [ ] Simplify indexing
+  - [ ] Support efficient tensors
+  - [ ] Autograd syntax
+  - [ ] History syntax
+  - [ ] HashTable/HashSet support
 - [ ] Database redo
   - [ ] ACID
   - [ ] Persistence
@@ -43,17 +61,14 @@ Target release date: ???
   - [ ] Explicit importing
   - [ ] Remapping
   - [ ] Specifying versions
-- [ ] Tuples
-- [ ] Type definitions
-- [ ] Capabilities syntax
-- [ ] Autograd syntax
 - Editor
-  - [x] Compile programs
   - [ ] Start and stop cores
   - [ ] Save and load programs
   - [ ] Workspace explorer
-  - [x] Database explorer
   - [ ] API endpoint server
+  - [ ] Syntax highlighting
+  - [ ] Embed programs
+  - [ ] Display errors
 - Machines
   - [ ] json
   - [ ] sockets
@@ -76,9 +91,9 @@ Target release date: ???
 ## Version 0.1.1 (Spring 2023)
 
 - Core
-  - [ ] GPGPU Runtime
   - [x] Automatic differentiation
   - [x] Capability system
+  - [x] New parser
 - Language Server
   - [x] Syntax Highlighter
   - [x] Autocomplete
@@ -92,12 +107,13 @@ Target release date: ???
   - [x] Database Explorer
 - Docs
   - Mech platform references
-    - [x] Syntax
+    - [x] User Guide
     - [x] Ecosystem
     - [x] Architecture
 - Machines
   - [x] More gui
   - [x] ai
+  - [ ] gpu
 
 ## Version 0.1.0 (December 2022)
 
