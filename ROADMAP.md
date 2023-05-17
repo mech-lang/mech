@@ -13,30 +13,65 @@ Released: December 2022
 
 Target release date: ???
 
-## Version 0.3.0 (Maybe Fall 2024?)
+## Version 0.3.0 (???)
 
-- [ ] GPGPU Runtime
-- [ ] Automatic Differentiation
-- [ ] Capability system
+- ...
 
 ## Version 0.2.0 (Fall 2023)
 
-- [ ] Distributed Runtime Improvements
-- [ ] Persistence
-- [ ] Time travel debugging
-- [ ] More complete examples
-
+- [ ] Monorepo
+- [ ] Tensor refactor
+- [ ] Database redo
+  - [ ] ACID
+  - [ ] Persistence
+  - [ ] Time travel debugging
+  - [ ] Capabilities
+- [ ] Distributed runtime redo
+  - [ ] Core syntax
+  - [ ] CAP
+  - [ ] QOS
+  - [ ] Inbox
+  - [ ] Capabilities
+- [ ] State machines
+  - [ ] Atomic datatypes
+  - [ ] Delays
+  - [ ] Pattern Matching
+- [ ] Tuples
+- [ ] Type definitions
+- [ ] Capabilities syntax
+- [ ] Autograd syntax
+- Editor
+  - [x] Compile programs
+  - [ ] Start and stop cores
+  - [ ] Save and load programs
+  - [ ] Workspace explorer
+  - [x] Database explorer
+  - [ ] API endpoint server
 - Machines
-    - [ ] JSON
-    - [ ] Sockets
-    - [ ] Serial
-    - [ ] Bluetooth
-    - [ ] Audio
-    - [ ] Maps
-    - [ ] ChatGPT?
+  - [ ] json
+  - [ ] sockets
+  - [ ] serial
+  - [ ] bluetooth
+  - [ ] audio
+  - [ ] maps
+  - [ ] plot
+- Docs
+  - User Guides
+    - [ ] Tutorials
+    - [ ] How-Tos
+    - [ ] Mech for X
+- Website
+  - [ ] Homepage
+  - [ ] Blog
+  - [ ] Docs
+  - [ ] Try
 
-## Version 0.1.1 (Summer 2023)
+## Version 0.1.1 (Spring 2023)
 
+- Core
+  - [ ] GPGPU Runtime
+  - [x] Automatic differentiation
+  - [x] Capability system
 - Language Server
   - [x] Syntax Highlighter
   - [x] Autocomplete
@@ -44,30 +79,18 @@ Target release date: ???
   - [x] Goto Docs
   - [x] Hover inspector
   - [x] Workspace support
-  - [ ] Database expolorer
+  - [x] Database watcher
 - Editor
-    - [x] Compile programs
-    - [ ] Start and stop cores
-    - [ ] Save and load programs
-    - [ ] Workspace explorer
-    - [x] Database Explorer
-    - [ ] API endpoint server
+  - [x] Compile programs
+  - [x] Database Explorer
 - Docs
-    - Mech platform references
-        - [ ] Syntax
-        - [ ] Ecosystem
-        - [ ] Architecture
-    - User Guides
-        - [ ] Tutorials
-        - [ ] How-Tos
-        - [ ] Mech for X 
-- Website
-    - [ ] Homepage
-    - [ ] Blog
-    - [ ] Try
+  - Mech platform references
+    - [x] Syntax
+    - [x] Ecosystem
+    - [x] Architecture
 - Machines
-    - [x] Fleshed out gui
-    - [ ] Plot
+  - [x] More gui
+  - [x] ai
 
 ## Version 0.1.0 (December 2022)
 
@@ -83,29 +106,29 @@ Target release date: ???
 - [x] Native executables
 - [x] REPL
 - Machines
-    - [x] Matrix
-    - [x] GUI
+  - [x] Matrix
+  - [x] GUI
 
 ## Version 0.0.6 Alpha (unreleased)
 
 - [x] Testing
 - Machines 
-    - HTML
-        - [x] Mouse
-        - [x] Keyboard
-        - [x] Canvas Drawing
-    - [x] File I/O
-    - [x] Standard Streams
-    - [x] Strings
-    - [x] Number Literals
-    - [x] HTTP
-    - [x] Math
-    - [x] Stats
-    - [x] Random
-    - [x] Time
-    - [x] Set
-    - System
-        - [x] Input Arguments
-        - [x] Exit
-    - [x] Mech Compiler
-    - [x] Table
+  - HTML
+    - [x] Mouse
+    - [x] Keyboard
+    - [x] Canvas Drawing
+  - [x] File I/O
+  - [x] Standard Streams
+  - [x] Strings
+  - [x] Number Literals
+  - [x] HTTP
+  - [x] Math
+  - [x] Stats
+  - [x] Random
+  - [x] Time
+  - [x] Set
+  - System
+    - [x] Input Arguments
+    - [x] Exit
+  - [x] Mech Compiler
+  - [x] Table
