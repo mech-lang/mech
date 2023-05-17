@@ -36,6 +36,13 @@ Target release date: ???
   - [ ] Atomic datatypes
   - [ ] Delays
   - [ ] Pattern Matching
+- [ ] Machines revamp
+  - [ ] Packaging
+  - [ ] Reuse
+  - [ ] Composition
+  - [ ] Explicit importing
+  - [ ] Remapping
+  - [ ] Specifying versions
 - [ ] Tuples
 - [ ] Type definitions
 - [ ] Capabilities syntax
