@@ -4,7 +4,7 @@ variables:
 test:cargo:
   script:
   - rustup show
-  - rustup default nightly-2022-08-25
+  - rustup default nightly-2023-05-19
   - wasm-pack build wasm-notebook --target web
   - cargo build --bin mech --release
   - ./target/release/mech test tests
