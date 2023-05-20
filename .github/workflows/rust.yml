@@ -19,7 +19,7 @@ jobs:
       with:
         submodules: recursive
     - name: Setup
-      run: rustup default nightly-2022-08-25
+      run: rustup default nightly-2023-05-19
     - name: Build
       run: cargo build --bin mech --release
     - name: Run tests
