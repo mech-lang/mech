@@ -46,7 +46,6 @@ base64 = "0.13.0"
 
 members = [
   "wasm-notebook",
-  "src/syntax/editor-modes/vscode"
 ]
 
 [build-dependencies]
