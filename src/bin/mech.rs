@@ -165,11 +165,30 @@ async fn main() -> Result<(), MechError> {
         .takes_value(false)))
     .subcommand(SubCommand::with_name("langserver")
       .about("Run a local mech language server")
-      .arg(Arg::with_name("port")
+      .arg(Arg::with_name("stdio")
+        .conflicts_with("socket")
+        .short("o")
+        .long("stdio")
+        .help("Use stdio for server communciation. This is the default option")
+        .takes_value(false))
+      .arg(Arg::with_name("socket")
+        .conflicts_with("stdio")
         .short("p")
-        .long("port")
+        .long("socket")
         .value_name("PORT")
-        .help("Sets the port for the server (default: 4041)")
+        .help("Use tcp socket at PORT for server communication")
+        .takes_value(true)
+        .validator(|s| match s.parse::<u16>() {
+          Ok(_) => Ok(()),
+          Err(_) => Err("Invalid port number".to_owned()),
+        }))
+      .arg(Arg::with_name("log")
+        .required(false)
+        .short("l")
+        .long("log")
+        .value_name("LEVEL")
+        .help("Specify log level (default: debug)")
+        .possible_values(&["off", "error", "warn", "info", "debug", "trace"])
         .takes_value(true)))
     .subcommand(SubCommand::with_name("run")
       .about("Run a target folder or *.mec file")
@@ -289,7 +308,7 @@ async fn main() -> Result<(), MechError> {
     let mut headers = HeaderMap::new();
     headers.insert("accept-ranges", HeaderValue::from_static("bytes"));
     headers.insert("content-type", HeaderValue::from_static("application/javascript"));
-    let nb = warp::path!("pkg" / "mech_notebook.js")
+    let nb = warp::path!("pkg" / "mech_wasm_notebook.js")
               .map(move || {
                 mech_notebook
               })
@@ -670,10 +689,17 @@ async fn main() -> Result<(), MechError> {
   //  Run language server
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("langserver") {
-    let address = "localhost".to_owned();
-    let port = matches.value_of("port").unwrap_or("4041").to_string();
-    println!("{} Starting language server at {}:{}", "[INFO]".truecolor(34,204,187), address, port);
-    mech_syntax::langserver::run_langserver(&address, &port).await?;
+    let log_lvl = matches.value_of("log").unwrap_or("");
+    match matches.value_of("socket") {
+      Some(port) => {
+        let address = "localhost";
+        println!("{} Starting language server at {}:{}", "[INFO]".truecolor(34,204,187), address, port);
+        mech_syntax::langserver::run_tcp_langserver(address, port, log_lvl).await?;
+      },
+      _ => {  // stdio
+        mech_syntax::langserver::run_stdio_langserver(log_lvl).await?;
+      },
+    }
     std::process::exit(0);
     None
   // ------------------------------------------------
