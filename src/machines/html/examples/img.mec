@@ -1,0 +1,8 @@
+Img Example
+  #html/app = [
+    root: "mech-root" 
+    contains: [
+      kind: "img" 
+      src: "https://mech-lang.org/img/logo.png" 
+    ]
+  ]
