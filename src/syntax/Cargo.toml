@@ -22,7 +22,7 @@ no-std = ["mech-core/no-std", "rlibc"]
 lang-server = ["tower-lsp", "tokio"]
 
 [dependencies]
-mech-core = {git = "https://gitlab.com/mech-lang/core", branch = "v0.1-beta"}
+mech-core = {path = "../core"}
 
 hashbrown = "0.13.1"
 lazy_static = "1.4.0"
