@@ -23,8 +23,8 @@ crate-type = ["cdylib", "rlib"]
 mech-core = {path = "../core"}
 mech-syntax = {path = "../syntax"}
 mech-utilities = {path = "../utilities"}
-mech-math = {path = "../../machines/math"}
-mech-html = {path = "../../html"}
+mech-math = {git = "https://gitlab.com/mech-lang/machines/math", branch = "v0.1-beta"}
+mech-html = {git = "https://gitlab.com/mech-lang/machines/html", branch = "v0.1-beta"}
 
 hashbrown = "0.13.1"
 wasm-bindgen = "0.2.83"
