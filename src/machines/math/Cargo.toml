@@ -19,8 +19,8 @@ maintenance = { status = "actively-developed" }
 crate-type = ["dylib", "rlib"]
 
 [dependencies]
-mech-core = {path = "../core", default-features = false}
-mech-utilities = {path = "../utilities", default-features = false}
+mech-core = {path = "../../core", default-features = false}
+mech-utilities = {path = "../../utilities", default-features = false}
 
 libm = "0.2.6"
 lazy_static = "1.4.0"
