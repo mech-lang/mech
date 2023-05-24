@@ -4,11 +4,8 @@ This code defines a scheduling system for blocks in the Mech programming languag
 
 */
 
-
 use hashbrown::{HashMap, HashSet};
-use crate::core::BlockRef;
 use crate::*;
-
 
 /*
 The Schedule struct is used to manage the scheduling of Blocks in Mech. It contains several maps that relate registers (i.e. specific cells in a Table) to their corresponding Blocks. The Schedule struct also has methods for adding Blocks to the schedule, scheduling those Blocks, and running the scheduled Blocks. The Schedule struct manages the flow of data between Blocks and ensures that Blocks are only executed when their input data is available. Finally, the Schedule struct contains a BlockGraph struct, which is used to represent the graph of Blocks and their dependencies.

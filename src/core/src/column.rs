@@ -17,8 +17,6 @@ use std::fmt::*;
 use num_traits::identities::Zero;
 use std::ops::*;
 
-pub type TableRef = Rc<RefCell<Table>>;
-
 #[derive(Clone, Debug)]
 pub enum Column {
   f32(ColumnV<f32>),

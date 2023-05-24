@@ -106,8 +106,6 @@ The Table struct in Mech represents a data table. A vector of ValueKind to ident
 The StringDictionary is used to store strings used in the table to reduce memory usage. This struct is essential in the representation and manipulation of tables in Mech.
 */
 
-pub type StringDictionary = Rc<RefCell<HashMap<u64,MechString>>>;
-
 pub struct Table {
   pub id: u64,     
   pub dynamic: bool,                      
@@ -697,9 +695,6 @@ macro_rules! collect_columns {
     }
   )
 }
-
-pub type TableIx = usize;
-pub type Alias = u64;
 
 
 #[derive(Debug, Clone)]

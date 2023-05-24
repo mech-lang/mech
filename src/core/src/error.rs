@@ -17,8 +17,6 @@ pub struct MechError {
   pub msg: String,
 }
 
-pub type ParserErrorReport = Vec<ParserErrorContext>;
-
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ParserErrorContext {
   pub cause_rng: SourceRange,

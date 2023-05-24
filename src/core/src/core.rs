@@ -19,8 +19,6 @@ use rand::rngs::OsRng;
 use rand::RngCore;
 use ed25519_dalek::PublicKey;
 
-pub type BlockRef = Rc<RefCell<Block>>;
-
 /*
 The Functions struct serves as a container for managing custom functions implemented as MechFunctionCompiler 
 objects. Stored in a HashMap, these custom functions can be accessed, inserted, and extended during the execution 

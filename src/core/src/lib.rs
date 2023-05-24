@@ -39,6 +39,7 @@ mod schedule;
 pub mod nodes;
 #[cfg(feature = "stdlib")]
 mod capabilities;
+mod types;
 
 pub use self::core::Core;
 pub use self::table::*;
@@ -54,42 +55,12 @@ pub use self::schedule::*;
 pub use self::user_functions::*;
 #[cfg(feature = "stdlib")]
 pub use self::capabilities::*;
-
-
-pub type BlockId = u64;
-pub type ArgumentName = u64;
-pub type Argument = (ArgumentName, TableId, Vec<(TableIndex, TableIndex)>);
-pub type Out = (TableId, TableIndex, TableIndex);
-
-
-pub type Arg<T> = ColumnV<T>;
-pub type ArgTable = Rc<RefCell<Table>>;
-pub type OutTable = Rc<RefCell<Table>>;
-
-pub trait MechNumArithmetic<T>: Add<Output = T> + 
-                                Sub<Output = T> + 
-                                Div<Output = T> + 
-                                Mul<Output = T> + 
-                                Pow<T, Output = T> + 
-                                AddAssign +
-                                SubAssign +
-                                MulAssign +
-                                DivAssign +
-                                Sized {}
+pub use self::types::*;
 
 #[derive(Debug, Clone)]
 pub enum SectionElement {
   Block(Block),
   UserFunction(UserFunction),
-}
-
-pub trait MechFunctionCompiler {
-  fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &Out) -> std::result::Result<(),MechError>;
-}
-
-pub trait MechFunction {
-  fn solve(&self);
-  fn to_string(&self) -> String;
 }
 
 pub fn resize_one(block: &mut Block, out: &Out) -> std::result::Result<(),MechError> {

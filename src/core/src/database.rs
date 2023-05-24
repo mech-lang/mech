@@ -26,9 +26,6 @@ impl fmt::Debug for Change {
   }
 }
 
-pub type Transaction = Vec<Change>;
-pub type Register = (TableId,RegisterIndex,RegisterIndex);
-
 #[derive(Clone)]
 pub struct Database {
   pub transaction_queue: Vec<Vec<Change>>,
