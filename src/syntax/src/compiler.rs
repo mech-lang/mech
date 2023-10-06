@@ -569,7 +569,7 @@ impl Compiler {
             },
             _ => (),
           }
-          let mut string_identifiers = result.drain_filter(|x| if let Transformation::Identifier{..} = x {true} else {false}).collect::<Vec<Transformation>>();
+          let mut string_identifiers = result.extract_if(|x| if let Transformation::Identifier{..} = x {true} else {false}).collect::<Vec<Transformation>>();
           identifiers.append(&mut string_identifiers);
           arg_tfms.append(&mut result);
         }

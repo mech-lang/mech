@@ -2,7 +2,7 @@
 #![feature(concat_idents)]
 #![allow(warnings)]
 #![feature(iter_intersperse)]
-#![feature(drain_filter)]
+#![feature(extract_if)]
 
 extern crate core as rust_core;
 extern crate hashbrown;

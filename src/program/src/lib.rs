@@ -5,7 +5,7 @@
 // ## Prelude
 #![feature(extern_prelude)]
 #![feature(get_mut_unchecked)]
-#![feature(hash_drain_filter)]
+#![feature(hash_extract_if)]
 
 
 extern crate core;
@@ -90,7 +90,7 @@ pub fn start_maestro(mech_socket_address: String, formatted_address: String, mae
               let now = SystemTime::now();
               let mut core_map = CORE_MAP.lock().unwrap();
               // If a core hasn't been heard from since 1 second ago, disconnect it.
-              for (_, (remote_core_address, _)) in core_map.drain_filter(|_k,(_, last_seen)| now.duration_since(*last_seen).unwrap().as_secs_f32() > 1.0) {
+              for (_, (remote_core_address, _)) in core_map.extract_if(|_k,(_, last_seen)| now.duration_since(*last_seen).unwrap().as_secs_f32() > 1.0) {
                 mech_client_channel_heartbeat.send(RunLoopMessage::RemoteCoreDisconnect(hash_str(&remote_core_address.to_string())));
               }
             }

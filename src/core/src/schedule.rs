@@ -46,7 +46,7 @@ impl Schedule {
     if  self.unscheduled_blocks.len() == 0 {
       return Ok(())
     }
-    let ready_blocks: Vec<BlockRef> = self.unscheduled_blocks.drain_filter(|b| b.borrow().state == BlockState::Ready).collect();
+    let ready_blocks: Vec<BlockRef> = self.unscheduled_blocks.extract_if(|b| b.borrow().state == BlockState::Ready).collect();
 
     for block_ref in &ready_blocks {
       let mut graph = BlockGraph::new(block_ref.clone());
