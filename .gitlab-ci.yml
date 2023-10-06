@@ -4,3 +4,4 @@ test:cargo:
   - rustup default nightly-2023-08-25
   - wasm-pack build wasm-notebook --target web
   - cargo build --bin mech --release
+  - cargo test --package mech-syntax --release
