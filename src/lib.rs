@@ -1,5 +1,4 @@
 #![allow(warnings)]
-#![feature(hash_drain_filter)]
 // # Mech
 
 // ## Prelude

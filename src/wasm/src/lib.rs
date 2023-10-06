@@ -1,6 +1,5 @@
 #![recursion_limit="256"]
 #![feature(alloc)]
-#![feature(drain_filter)]
 #![feature(get_mut_unchecked)]
 #![allow(warnings)]
 extern crate wasm_bindgen;
