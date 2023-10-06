@@ -817,25 +817,6 @@ pub fn whitespace(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Null))
 }
 
-// pub fn floating_point(input: ParseString) -> ParseResult<ParserNode> {
-//   let (input,_) = period(input)?;
-//   let (input, chars) = digit1(input)?;
-//   Ok((input, ParserNode::Null))
-// }
-
-// pub fn quantity(input: ParseString) -> IResult<ParseString, ParserNode> {
-//   let (input, number) = number(input)?;
-//   let (input, float) = opt(floating_point)(input)?;
-//   let (input, unit) = identifier(input)?;
-//   let mut quantity = vec![number];
-//   match float {
-//     Some(fp) => quantity.push(fp),
-//     _ => (),
-//   };
-//   quantity.push(unit);
-//   Ok((input, ParserNode::Quantity{children: quantity}))
-// }
-
 // number_literal ::= (hexadecimal_literal | octal_literal | binary_literal | decimal_literal | float_literal), kind_annotation? ;
 pub fn number_literal(input: ParseString) -> ParseResult<ParserNode> {
   let (input, number_variant) = alt((hexadecimal_literal, octal_literal, binary_literal, decimal_literal, float_literal))(input)?;
