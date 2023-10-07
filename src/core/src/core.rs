@@ -16,6 +16,7 @@ use hashbrown::{HashMap, HashSet};
 use std::rc::Rc;
 use std::cell::RefCell;
 use rand::rngs::OsRng;
+use getrandom::getrandom;
 use rand::RngCore;
 use ed25519_dalek::PublicKey;
 
@@ -71,7 +72,7 @@ program, making it useful for large and complex programs.
 
 pub struct Core {
   pub id: u64,
-  pub public_key: PublicKey,
+  pub public_key: Option<PublicKey>,
   pub sections: Vec<HashMap<BlockId,BlockRef>>,
   pub blocks: HashMap<BlockId,BlockRef>,
   pub unsatisfied_blocks: HashMap<BlockId,BlockRef>,
@@ -152,21 +153,29 @@ impl Core {
       functions.insert(*SET_CARTESIAN, Box::new(SetCartesian{}));
     }
 
-    let mut key = [0u8; 16];
-    OsRng.fill_bytes(&mut key);
-    let core_id = OsRng.next_u64();
-    let name = format!("core-{:?}",core_id);
-    let mut default_caps = HashSet::new();
-    default_caps.insert(Capability::CoreDatabaseRead);
-    default_caps.insert(Capability::CoreDatabaseWrite);
+    let mut core_id = 0;
+    let mut public_key = None;
+    let mut capabilities = vec![];
 
-    let mut core_cap_token = CapabilityToken::new(name,default_caps,core_id,None);
-    let keypair = generate_keypair();
-    core_cap_token.sign(&keypair);
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+      let mut key = [0u8; 8];
+      OsRng.fill_bytes(&mut key);
+      core_id = OsRng.next_u64();
+      let name = format!("core-{:?}",core_id);
+      let mut default_caps = HashSet::new();
+      default_caps.insert(Capability::CoreDatabaseRead);
+      default_caps.insert(Capability::CoreDatabaseWrite);
+      let mut core_cap_token = CapabilityToken::new(name,default_caps,core_id,None);
+      let keypair = generate_keypair();
+      core_cap_token.sign(&keypair);
+      public_key = Some(keypair.public);   
+      capabilities.push(core_cap_token); 
+    }
 
     Core {
       id: core_id,
-      public_key: keypair.public,
+      public_key,
       sections: Vec::new(),
       blocks: HashMap::new(),
       unsatisfied_blocks: HashMap::new(),
@@ -181,7 +190,7 @@ impl Core {
       output: HashSet::new(),
       defined_tables: HashSet::new(),
       dictionary: dictionary,
-      capabilities: vec![core_cap_token],
+      capabilities,
     }
   }
 

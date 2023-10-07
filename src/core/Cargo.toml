@@ -18,7 +18,7 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = ["stdlib", "parallel"]
-stdlib = ["time", "rand", "ed25519-dalek"]
+stdlib = ["time", "rand", "rand_core", "ed25519-dalek", "getrandom"]
 parallel = ["rayon"]
 no-std = ["rlibc"]
 
@@ -33,7 +33,9 @@ indexmap = "1.9.2"
 rayon = {version = "1.6.1", optional = true}
 time = {version = "0.3.17", optional = true}
 ed25519-dalek = {version = "1.0.1", optional = true}
+getrandom = { version = "0.2.9", features = ["js"], optional = true}
 rand = {version = "0.7", optional = true}
+rand_core = {version = "0.5", optional = true}
 
 [dependencies.num-traits]
 version = "0.2.15"
