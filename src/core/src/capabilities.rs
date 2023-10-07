@@ -12,6 +12,15 @@ use crate::hash_str;
 use hashbrown::HashSet;
 use crate::*;
 
+#[cfg(feature = "wasm")]
+use web_sys;
+#[cfg(feature = "wasm")]
+use wasm_bindgen::prelude::*;
+#[cfg(feature = "wasm")]
+use wasm_bindgen::JsValue;
+#[cfg(feature = "wasm")]
+use web_sys::{Crypto, Window,console};
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum Capability {
   PinCPUCore(u64) ,                // Pin Mech program to a particular CPU core
@@ -137,15 +146,69 @@ impl fmt::Debug for CapabilityToken {
 }
 
 // Generate a new id for creating unique owner ids
+#[cfg(not(feature = "wasm"))]
 pub fn generate_uuid() -> u64 {
-  let mut key = [0u8; 16];
-  OsRng.fill_bytes(&mut key);
   OsRng.next_u64()
 }
 
+#[cfg(feature = "wasm")]
+pub fn generate_uuid() -> u64 {
+  let mut rng = WebCryptoRng{};
+  rng.next_u64()
+}
 
 // Generate a new keypair for signing and verifying tokens
+#[cfg(not(feature = "wasm"))]
 pub fn generate_keypair() -> Keypair {
   let mut csprng = OsRng{};
   Keypair::generate(&mut csprng)
+}
+
+#[cfg(feature = "wasm")]
+pub fn generate_keypair() -> Keypair {
+  let window = web_sys::window();
+  let mut csprng = WebCryptoRng{};
+  Keypair::generate(&mut csprng)
+}
+
+// This is to handle RNG on wasm
+
+#[cfg(feature = "wasm")]
+pub fn pubkey_from_bytes(pubkey: Vec<u8>) -> Vec<u8> {
+  PublicKey::from_bytes(pubkey.as_slice()).unwrap().as_bytes().to_vec()
+}
+
+#[cfg(feature = "wasm")]
+struct WebCryptoRng{}
+
+#[cfg(feature = "wasm")]
+impl rand_core::CryptoRng for WebCryptoRng{}
+
+#[cfg(feature = "wasm")]
+impl rand_core::RngCore for WebCryptoRng {
+
+  fn next_u32(&mut self) -> u32{
+    let mut buf:[u8;4] = [0u8;4];
+    self.fill_bytes(&mut buf);
+    u32::from_le_bytes(buf)
+  }
+
+  fn next_u64(&mut self) -> u64{
+    let mut buf:[u8;8] = [0u8;8];
+    self.fill_bytes(&mut buf);
+    u64::from_le_bytes(buf)
+  }
+
+  fn fill_bytes(&mut self, dest: &mut [u8]){
+    let window = web_sys::window().unwrap();
+    let crypto = window.crypto().unwrap();
+    crypto.get_random_values_with_u8_array(dest);
+  }
+
+  fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error>{
+    let window = web_sys::window().unwrap();
+    let crypto = window.crypto().unwrap();
+    crypto.get_random_values_with_u8_array(dest).unwrap();
+    Ok(())
+  }
 }

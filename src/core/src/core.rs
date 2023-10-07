@@ -15,10 +15,24 @@ use crate::capabilities::*;
 use hashbrown::{HashMap, HashSet};
 use std::rc::Rc;
 use std::cell::RefCell;
+
+#[cfg(feature = "crypto")]
 use rand::rngs::OsRng;
+#[cfg(feature = "crypto")]
 use getrandom::getrandom;
+#[cfg(feature = "crypto")]
 use rand::RngCore;
-use ed25519_dalek::PublicKey;
+#[cfg(feature = "crypto")]
+use ed25519_dalek::{self, Keypair, PublicKey, SecretKey, Signature, Signer, Verifier};
+#[cfg(feature = "crypto")]
+use rand::Error;
+#[cfg(feature = "wasm")]
+use wasm_bindgen::prelude::*;
+#[cfg(feature = "wasm")]
+use wasm_bindgen::JsValue;
+#[cfg(feature = "wasm")]
+use web_sys::{Crypto, Window,console};
+
 
 /*
 The Functions struct serves as a container for managing custom functions implemented as MechFunctionCompiler 
@@ -72,7 +86,7 @@ program, making it useful for large and complex programs.
 
 pub struct Core {
   pub id: u64,
-  pub public_key: Option<PublicKey>,
+  pub public_key: PublicKey,
   pub sections: Vec<HashMap<BlockId,BlockRef>>,
   pub blocks: HashMap<BlockId,BlockRef>,
   pub unsatisfied_blocks: HashMap<BlockId,BlockRef>,
@@ -153,26 +167,16 @@ impl Core {
       functions.insert(*SET_CARTESIAN, Box::new(SetCartesian{}));
     }
 
-    let mut core_id = 0;
-    let mut public_key = None;
-    let mut capabilities = vec![];
-
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-      let mut key = [0u8; 8];
-      OsRng.fill_bytes(&mut key);
-      core_id = OsRng.next_u64();
-      let name = format!("core-{:?}",core_id);
-      let mut default_caps = HashSet::new();
-      default_caps.insert(Capability::CoreDatabaseRead);
-      default_caps.insert(Capability::CoreDatabaseWrite);
-      let mut core_cap_token = CapabilityToken::new(name,default_caps,core_id,None);
-      let keypair = generate_keypair();
-      core_cap_token.sign(&keypair);
-      public_key = Some(keypair.public);   
-      capabilities.push(core_cap_token); 
-    }
-
+    let core_id = generate_uuid();
+    let name = format!("core-{:?}",core_id);
+    let mut default_caps = HashSet::new();
+    default_caps.insert(Capability::CoreDatabaseRead);
+    default_caps.insert(Capability::CoreDatabaseWrite);
+    let mut core_cap_token = CapabilityToken::new(name,default_caps,core_id,None);
+    let keypair = generate_keypair();
+    core_cap_token.sign(&keypair);
+    let public_key = keypair.public;   
+    
     Core {
       id: core_id,
       public_key,
@@ -190,7 +194,7 @@ impl Core {
       output: HashSet::new(),
       defined_tables: HashSet::new(),
       dictionary: dictionary,
-      capabilities,
+      capabilities: vec![core_cap_token],
     }
   }
 

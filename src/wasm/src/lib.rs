@@ -87,6 +87,7 @@ impl WasmCore {
   
   pub fn new(capacity: usize, recursion_limit: u64) -> WasmCore {
     let mut mech = mech_core::Core::new();
+    log!("{:?}", mech.id);
 
     mech.load_function("math/sin",Box::new(MathSin{}));
     mech.load_function("math/cos",Box::new(MathCos{}));

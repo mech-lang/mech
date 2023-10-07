@@ -20,7 +20,7 @@ maintenance = { status = "actively-developed" }
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-mech-core = {path = "../core"}
+mech-core = {path = "../core", features = ["wasm"]}
 mech-syntax = {path = "../syntax"}
 mech-utilities = {path = "../utilities"}
 mech-math = {path = "../machines/math"}
@@ -33,11 +33,6 @@ js-sys = "0.3.60"
 lazy_static = "1.4.0"
 miniz_oxide = "0.6.2"
 base64 = "0.20.0"
-
-ed25519-dalek = {version = "1.0.1"}
-getrandom = { version = "0.2.9", features = ["js"]}
-rand = {version = "0.7"}
-rand_core = {version = "0.5"}
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.33"
