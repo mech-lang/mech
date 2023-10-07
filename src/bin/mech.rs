@@ -106,7 +106,7 @@ async fn main() -> Result<(), MechError> {
 
   #[cfg(windows)]
   control::set_virtual_terminal(true).unwrap();
-  let version = "0.1.0";
+  let version = "0.2.0";
   let matches = App::new("Mech")
     .version(version)
     .author("Corey Montella corey@mech-lang.org")
