@@ -1,0 +1,27 @@
+[package]
+name = "mech-http"
+version = "0.0.1"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "HTTP library for the Mech language"
+documentation = "http://docs.mech-lang.org"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-machines/http"
+keywords = ["mech", "language", "programming"]
+license = "Apache-2.0"
+readme = "README.md"
+edition = "2021"
+
+[badges]
+gitlab = { repository = "mech-lang/machines/http", branch = "main" }
+maintenance = { status = "actively-developed" }
+
+[lib]
+crate-type = ["dylib", "rlib"]
+
+[dependencies]
+mech-core = {path = "../../core", default-features = false}
+mech-utilities = {path = "../../utilities", default-features = false}
+
+crossbeam-channel = "0.5.6"
+lazy_static = "1.4.0"
+reqwest = { version = "0.11", features = ["blocking"] }

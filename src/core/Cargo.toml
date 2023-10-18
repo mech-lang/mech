@@ -1,0 +1,59 @@
+[package]
+name = "mech-core"
+version = "0.1.0"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "The Mech language runtime. It's a small dataflow engine that accepts transactions of changes, and applies them to a compute network."
+documentation = "http://docs.mech-lang.org"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-lang/core"
+keywords = ["mech", "language", "programming", "dataflow", "runtime"]
+categories = ["no-std", "science::robotics", "science", "game-engines", "database-implementations"]
+license = "Apache-2.0"
+readme = "README.md"
+edition = "2021"
+
+[badges]
+gitlab = { repository = "mech-lang/core", branch = "main" }
+maintenance = { status = "actively-developed" }
+
+[features]
+default = ["stdlib", "parallel"]
+stdlib = ["time", "crypto"]
+parallel = ["rayon"]
+no-std = ["rlibc"]
+crypto = ["rand", "rand_core", "ed25519-dalek", "getrandom",]
+wasm = ["crypto", "web-sys", "wasm-bindgen"]
+
+[dependencies]
+hashbrown = "0.13.1"
+serde = {version = "1.0.152", default-features = false, features = ["alloc"] }
+serde_derive = "1.0.152"
+rlibc = { version = "=1.0", optional = true }
+lazy_static = "1.4.0"
+seahash = "4.1.0"
+indexmap = "1.9.2"
+rayon = {version = "1.6.1", optional = true}
+time = {version = "0.3.17", optional = true}
+ed25519-dalek = {version = "1.0.1", optional = true}
+getrandom = { version = "0.2.9", features = ["js"], optional = true}
+rand = {version = "0.7", optional = true}
+rand_core = {version = "0.5", optional = true}
+wasm-bindgen = {version = "0.2.82", optional = true}
+
+[dependencies.web-sys]
+version = "0.3.61"
+features = [
+  'Document',
+  'Element',
+  'HtmlElement',
+  'Node',
+  'Window',
+  'Crypto',
+  'console'
+]
+optional = true
+
+[dependencies.num-traits]
+version = "0.2.15"
+default-features = false
+features = ["libm"]

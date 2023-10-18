@@ -1,4 +1,4 @@
-#![feature(hash_drain_filter)]
+#![feature(hash_extract_if)]
 #![allow(warnings)]
 // # Mech
 
@@ -38,7 +38,8 @@ use std::thread::{self, JoinHandle};
 
 
 extern crate reqwest;
-use std::collections::HashMap;
+extern crate hashbrown;
+use hashbrown::{HashMap, HashSet};
 
 extern crate bincode;
 use std::io::{Write, BufReader, BufWriter, stdout};
@@ -105,7 +106,7 @@ async fn main() -> Result<(), MechError> {
 
   #[cfg(windows)]
   control::set_virtual_terminal(true).unwrap();
-  let version = "0.1.0";
+  let version = "0.2.0";
   let matches = App::new("Mech")
     .version(version)
     .author("Corey Montella corey@mech-lang.org")
@@ -158,7 +159,7 @@ async fn main() -> Result<(), MechError> {
       .arg(Arg::with_name("html")
         .short("h")
         .long("html")
-        .value_name("Debug")
+        .value_name("HTML")
         .help("Format with HTML.")
         .required(false)
         .takes_value(false)))
@@ -172,6 +173,12 @@ async fn main() -> Result<(), MechError> {
         .takes_value(true)))
     .subcommand(SubCommand::with_name("run")
       .about("Run a target folder or *.mec file")
+      .arg(Arg::with_name("secure")
+        .short("s")
+        .long("secure")
+        .value_name("Secure")
+        .help("Secures the runtime environment by limiting capabilities.")
+        .takes_value(false))
       .arg(Arg::with_name("repl_mode")
         .short("r")
         .long("repl")
@@ -291,7 +298,7 @@ async fn main() -> Result<(), MechError> {
     let mut headers = HeaderMap::new();
     headers.insert("accept-ranges", HeaderValue::from_static("bytes"));
     headers.insert("content-type", HeaderValue::from_static("application/wasm"));
-    let pkg = warp::path!("pkg" / "mech_notebook_bg.wasm")
+    let pkg = warp::path!("pkg" / "mech_wasm_notebook_bg.wasm")
               .map(move || {
                 mech_wasm.to_vec()
               })
@@ -338,8 +345,14 @@ async fn main() -> Result<(), MechError> {
       }
     };
 
+
+    // The tester can write its output to std out and also connect to a core network and download dependencies, but otherwise it's locked down.
+    let mut tester_caps = HashSet::new();
+    tester_caps.insert(Capability::StdOut);
+    tester_caps.insert(Capability::DownloadDependencies);
+
     println!("{}", "[Running]".truecolor(153,221,85));
-    let runner = ProgramRunner::new("Mech Test");
+    let runner = ProgramRunner::new("Mech Test",tester_caps);
     let mech_client = runner.run()?;
     mech_client.send(RunLoopMessage::Code((1,MechCode::MiniBlocks(blocks))));
 
@@ -402,6 +415,7 @@ async fn main() -> Result<(), MechError> {
     let mech_paths: Vec<String> = matches.values_of("mech_run_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let repl_flag = matches.is_present("repl_mode");    
     let debug_flag = matches.is_present("debug");    
+    let secure_flag = matches.is_present("secure");    
     let timings_flag = matches.is_present("timings");    
     let machine_registry = matches.value_of("registry").unwrap_or("https://gitlab.com/mech-lang/machines/mech/-/raw/v0.1-beta/src/registry.mec").to_string();
     let input_arguments = matches.values_of("inargs").map_or(vec![], |inargs| inargs.collect());
@@ -411,7 +425,7 @@ async fn main() -> Result<(), MechError> {
     let maestro_address: String = matches.value_of("maestro").unwrap_or("127.0.0.1:3235").to_string();
     let websocket_address: String = matches.value_of("websocket").unwrap_or("127.0.0.1:3236").to_string();
 
-    let mut code: Vec<MechCode> = match read_mech_files(&mech_paths) {
+    let mut code = match read_mech_files(&mech_paths) {
       Ok(code) => code,
       Err(mech_error) => {
         println!("{}",format_errors(&vec![mech_error]));
@@ -435,7 +449,23 @@ async fn main() -> Result<(), MechError> {
 
     println!("{}", "[Running]".truecolor(153,221,85));
 
-    let mut runner = ProgramRunner::new("Run");
+    // Run capabilities are very permissive by default, but can be secured when the secure flag is passed.
+    let mut run_caps = HashSet::new();
+    if !secure_flag {
+      run_caps.insert(Capability::StdIn);
+      run_caps.insert(Capability::StdOut);
+      run_caps.insert(Capability::StdErr);
+      run_caps.insert(Capability::InputArguments);
+      run_caps.insert(Capability::FileSystemRead);
+      run_caps.insert(Capability::FileSystemWrite);
+      run_caps.insert(Capability::NetworkRead);
+      run_caps.insert(Capability::NetworkWrite);
+      run_caps.insert(Capability::CoreNetworkRead);
+      run_caps.insert(Capability::CoreNetworkWrite);
+      run_caps.insert(Capability::DownloadDependencies);
+    }
+
+    let mut runner = ProgramRunner::new("Run", run_caps);
     runner.registry = machine_registry;
     let mech_client = runner.run()?;
     mech_client.send(RunLoopMessage::Code((1,MechCode::MiniBlocks(blocks))));
@@ -531,7 +561,7 @@ async fn main() -> Result<(), MechError> {
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("build") {
     let mech_paths: Vec<String> = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    let mut code: Vec<MechCode> = match read_mech_files(&mech_paths) {
+    let mut code = match read_mech_files(&mech_paths) {
       Ok(code) => code,
       Err(mech_error) => {
         println!("{}",format_errors(&vec![mech_error]));
@@ -572,7 +602,7 @@ async fn main() -> Result<(), MechError> {
   } else if let Some(matches) = matches.subcommand_matches("format") {
     let html = matches.is_present("html");    
     let mech_paths: Vec<String> = matches.values_of("mech_format_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    let mut code: Vec<MechCode> = match read_mech_files(&mech_paths) {
+    let mut code = match read_mech_files(&mech_paths) {
       Ok(code) => code,
       Err(mech_error) => {
         println!("{}",format_errors(&vec![mech_error]));
@@ -582,7 +612,7 @@ async fn main() -> Result<(), MechError> {
 
     let mut source_trees = vec![];
 
-    for c in code {
+    for (_,c) in code {
       match c {
         MechCode::String(source) => {
           let parse_tree = parser::parse(&source)?;
@@ -603,11 +633,31 @@ async fn main() -> Result<(), MechError> {
       }
     }).collect::<Vec<String>>();
   
-    for f in formatted_source {
-      println!("{}", f);
-    }
-    std::process::exit(0);
+    let output_name = match (matches.value_of("output_name"),html) {
+      (Some(name),true) => format!("{}.html",name),
+      (Some(name),false) => format!("{}.mec",name),
+      (None, true) => "output.html".to_string(),
+      (None, false) => "output.mec".to_string(),
+    };
 
+    let mut file = File::create(output_name)?;
+
+    if formatted_source.len() == 1 {
+      if html {
+        file.write_all(formatted_source[0].as_bytes())?;
+      } else {
+        file.write_all(formatted_source[0].as_bytes())?;
+      }
+      std::process::exit(0);
+    } else {
+      for f in formatted_source {
+        if html {
+          file.write_all(f.as_bytes())?;
+        } else {
+          file.write_all(f.as_bytes())?;
+        }
+      }
+    }
     None    
   // ------------------------------------------------
   //  Clean
@@ -680,7 +730,21 @@ save    - save the state of a core to disk as a .blx file"#;
   let mech_client = match mech_client {
     Some(mech_client) => mech_client,
     None => {
-      let runner = ProgramRunner::new("REPL");
+
+      // Run capabilities are very permissive by default
+      let mut repl_caps = HashSet::new();
+      repl_caps.insert(Capability::StdIn);
+      repl_caps.insert(Capability::StdOut);
+      repl_caps.insert(Capability::StdErr);
+      repl_caps.insert(Capability::FileSystemRead);
+      repl_caps.insert(Capability::FileSystemWrite);
+      repl_caps.insert(Capability::NetworkRead);
+      repl_caps.insert(Capability::NetworkWrite);
+      repl_caps.insert(Capability::CoreNetworkRead);
+      repl_caps.insert(Capability::CoreNetworkWrite);
+      repl_caps.insert(Capability::DownloadDependencies);
+
+      let runner = ProgramRunner::new("REPL", repl_caps);
       runner.run()?
     }
   };

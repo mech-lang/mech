@@ -1,6 +1,6 @@
 [package]
 name = "mech"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Toolchain for the Mech programming language."
 documentation = "http://docs.mech-lang.org"
@@ -17,14 +17,15 @@ gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = {path = "src/core", version = '0.1' }
-mech-syntax = {path = "src/syntax", features = ["lang-server"], version = '0.1' }
-mech-program = {path = "src/program", version = '0.1' }
-mech-utilities = {path = "src/utilities", version = '0.1' }
+mech-core = {path = "src/core" }
+mech-syntax = {path = "src/syntax", features = ["lang-server"]}
+mech-program = {path = "src/program"}
+mech-utilities = {path = "src/utilities"}
 
 clap = "2.34.0"
 colored = "2.0.0"
 nom = "7.1.1"
+hashbrown = "0.13.1"
 reqwest = {version = "0.11.11", features = ["blocking"]}
 bincode = "1.3.3"
 serde = "1.0.152"
@@ -44,7 +45,12 @@ base64 = "0.13.0"
 [workspace]
 
 members = [
-  "wasm-notebook",
+  "src/core",
+  "src/syntax",
+  "src/program",
+  "src/utilities",
+  "src/wasm",
+  "wasm-notebook"
 ]
 
 [build-dependencies]

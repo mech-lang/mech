@@ -1,0 +1,79 @@
+html
+=====
+
+1. Description
+---------------
+
+React to HTML events, render HTML elements, draw shapes on HTML Canvas
+
+2. Provided Tables
+-------------------
+
+A. App
+
+All HTML elements should be nested in the `#html/app` table. The root column is the ID of the HTML element to which the rendered HTML elements should be attached. The HTML elements themselves should be added to the contains column.
+
+- `#html/app[|root contains|]`
+
+B. HTML Elements
+
+Every HTML element has the following three columns.
+
+- `[|type parameters contains|]`
+
+- type - a required column that specifieds the type of the element as a String.
+- parameters - an optional column depening on the type. Allows for the configuration of certain elements.
+- contains - an optional column that allows for the nesting of elements.
+
+The available elements and parameters are:
+
+- "div" - `[]`
+- "a" - `[|href|]`
+- "img" - `[|src|]`
+- "button" - `[]`
+- "slider" - `[|min max value|]`
+- "canvas" - `[|height width|]`
+
+C. Canvas
+
+The available elements and parameters are:
+
+- "circle" - `[|center-x center-y radius|]`
+- "rectangle" - `[|x y height width|]`
+- "path" - `[|start-point contains|]`
+- "line" - `[|x y|]`
+- "quadratic" - `[|control-point end-point|]`
+- "image" - `[|x y source|]`
+
+All elements have the following optional columns:
+
+`[|fill stroke line-width transform|]`
+
+- fill - a 3 byte hexadecimal Number Literal representing a color
+- stroke - a 3 byte hexadecimal Number Literal representing a color
+- line-width - a quantity in pixels specying the width of the stroke or line
+
+D. Events
+
+- `#html/event/pointer-move[|x y target event-id|]`
+- `#html/event/pointer-down[|x y target event-id|]`
+- `#html/event/pointer-click[|x y target event-id|]`
+- `#html/event/pointer-keydown[|key event-id|]`
+- `#html/event/pointer-keyup[|key event-id|]`
+
+E. Location
+
+- `#html/location[|hash host host-name href origin path-name port protocol search|]`
+
+3. Examples
+------------
+
+4. Info
+--------
+
+#html/machine = [
+  name: "html" 
+  version: "v0.2"
+  authors: "Corey Montella" 
+  url: "https://gitlab.com/mech-lang/machines/html"
+  license: "Apache-2.0"]

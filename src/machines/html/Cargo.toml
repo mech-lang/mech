@@ -1,0 +1,71 @@
+[package]
+name = "mech-html"
+version = "0.1.0"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "HTML library for the Mech language"
+documentation = "http://docs.mech-lang.org"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-machines/html"
+keywords = ["mech", "language", "programming"]
+license = "Apache-2.0"
+readme = "README.md"
+edition = "2021"
+
+[badges]
+gitlab = { repository = "mech-lang/machines/html", branch = "main" }
+maintenance = { status = "actively-developed" }
+
+[lib]
+crate-type = ["dylib", "rlib"]
+
+[dependencies]
+mech-core = {path = "../../core", default-features = false}
+mech-utilities = {path = "../../utilities", default-features = false}
+
+crossbeam-channel = "0.5.6"
+lazy_static = "1.4.0"
+
+hashbrown = "0.13.1"
+wasm-bindgen = "0.2.83"
+bincode = "1.3.3"
+js-sys = "0.3.60"
+miniz_oxide = "0.6.2"
+base64 = "0.20.0"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.33"
+
+[dependencies.web-sys]
+version = "0.3.60"
+features = [
+  'Document',
+  'Element',
+  'HtmlElement',
+  'HtmlDivElement',
+  'HtmlImageElement',
+  'HtmlCanvasElement',
+  'HtmlInputElement',
+  'InputEvent',
+  'MouseEvent',
+  'KeyboardEvent',
+  'TouchEvent',
+  'Event',
+  'EventTarget',
+  'CanvasRenderingContext2d',
+  'Node',
+  'Window',
+  'Selection',
+  'Range',
+  'HtmlCollection',
+  'WebSocket',
+  'MessageEvent',
+  'BinaryType',
+  'Blob',
+  'ErrorEvent',
+  'ProgressEvent',
+  'HashChangeEvent',
+  'FileReader',
+  'Location',
+  'console',
+  'XmlHttpRequest',
+]

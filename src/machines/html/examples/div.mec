@@ -1,0 +1,8 @@
+Div text example
+  #html/app = [
+    root: "mech-root" 
+    contains: [
+      kind: "div" 
+      contains: "Hello World!"
+    ]
+  ]

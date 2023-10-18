@@ -1,5 +1,4 @@
 #![allow(warnings)]
-#![feature(hash_drain_filter)]
 // # Mech
 
 // ## Prelude
@@ -43,120 +42,13 @@ lazy_static! {
 
 //extern crate nom;
 
-pub fn start_maestro(mech_socket_address: String, formatted_address: String, maestro_address: String, websocket_address: String, mech_client_channel: Sender<RunLoopMessage>) -> Result<JoinHandle<()>,MechError> {
 
-  mech_client_channel.send(RunLoopMessage::String((format!("Core socket started at: {}", mech_socket_address.clone()),None)));
+pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<(String,MechCode)>, MechError> {
 
-  let mech_client_channel_ws = mech_client_channel.clone();
-  let mech_client_channel_heartbeat = mech_client_channel.clone();
+  let mut code: Vec<(String,MechCode)> = Vec::new();
 
-  let core_thread = thread::Builder::new().name("Core socket".to_string()).spawn(move || {
-    // A socket bound to 3235 is the maestro. It will be the one other cores search for
-    'socket_loop: loop {
-      match UdpSocket::bind(maestro_address.clone()) {
-        // The maestro core
-        Ok(socket) => {
-          mech_client_channel.send(RunLoopMessage::String((format!("{} Socket started at: {}", "[Maestro]".truecolor(246,192,78), maestro_address),None)));
-          let mut buf = [0; 16_383];
-          // Heartbeat thread periodically checks to see how long it's been since we've last heard from each remote core
-          thread::Builder::new().name("Heartbeat".to_string()).spawn(move || {
-            loop {
-              thread::sleep(Duration::from_millis(500));
-              let now = SystemTime::now();
-              let mut core_map = CORE_MAP.lock().unwrap();
-              // If a core hasn't been heard from since 1 second ago, disconnect it.
-              for (_, (remote_core_address, _)) in core_map.drain_filter(|_k,(_, last_seen)| now.duration_since(*last_seen).unwrap().as_secs_f32() > 1.0) {
-                mech_client_channel_heartbeat.send(RunLoopMessage::RemoteCoreDisconnect(hash_str(&remote_core_address.to_string())));
-              }
-            }
-          });
-          // TCP socket thread for websocket connections
-          thread::Builder::new().name("TCP Socket".to_string()).spawn(move || {
-            let server = Server::bind(websocket_address.clone()).unwrap();
-            mech_client_channel_ws.send(RunLoopMessage::String((format!("{} Websocket server started at: {}","[Maestro]".truecolor(246,192,78), &websocket_address),None)));
-            for request in server.filter_map(Result::ok) {
-              let mut ws_stream = request.accept().unwrap();
-              let address = ws_stream.peer_addr().unwrap();
-              mech_client_channel_ws.send(RunLoopMessage::RemoteCoreConnect(MechSocket::WebSocket(ws_stream)));
-            }
-          });
-
-          // Loop to receive UDP messages from remote cores
-          loop {
-            let (amt, src) = socket.recv_from(&mut buf).unwrap();
-            let now = SystemTime::now();
-            let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&buf);
-            match message {
-              // If a remote core connects, send a connection message back to it
-              Ok(SocketMessage::RemoteCoreConnect(remote_core_address)) => {
-                CORE_MAP.lock().unwrap().insert(src,(remote_core_address.clone(), SystemTime::now()));
-                mech_client_channel.send(RunLoopMessage::RemoteCoreConnect(MechSocket::UdpSocket(remote_core_address)));
-                let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(mech_socket_address.clone())).unwrap();
-                let len = socket.send_to(&message, src.clone()).unwrap();
-              },
-              Ok(SocketMessage::Ping) => {
-                let mut core_map = CORE_MAP.lock().unwrap();
-                match core_map.get_mut(&src) {
-                  Some((_, last_seen)) => {
-                    *last_seen = now;
-                  } 
-                  None => (),
-                }
-                let message = bincode::serialize(&SocketMessage::Pong).unwrap();
-                let len = socket.send_to(&message, src).unwrap();
-              },
-              _ => (),
-            }
-          }
-        }
-        // Maestro port is already bound, start a remote core
-        Err(_) => {
-          let socket = UdpSocket::bind(formatted_address.clone()).unwrap();
-          let message = bincode::serialize(&SocketMessage::RemoteCoreConnect(mech_socket_address.clone().to_string())).unwrap();
-          // Send a remote core message to the maestro
-          let len = socket.send_to(&message, maestro_address.clone()).unwrap();
-          let mut buf = [0; 16_383];
-          loop {
-            let message = bincode::serialize(&SocketMessage::Ping).unwrap();
-            let len = socket.send_to(&message, maestro_address.clone()).unwrap();
-            match socket.recv_from(&mut buf) {
-              Ok((amt, src)) => {
-                let now = SystemTime::now();
-                if src.to_string() == maestro_address {
-                  let message: Result<SocketMessage, bincode::Error> = bincode::deserialize(&buf);
-                  match message {
-                    Ok(SocketMessage::Pong) => {
-                      thread::sleep(Duration::from_millis(500));
-                      // Maestro is still alive
-                    },
-                    Ok(SocketMessage::RemoteCoreConnect(remote_core_address)) => {
-                      CORE_MAP.lock().unwrap().insert(src,(remote_core_address.clone(), SystemTime::now()));
-                      mech_client_channel.send(RunLoopMessage::RemoteCoreConnect(MechSocket::UdpSocket(remote_core_address)));
-                    }
-                    _ => (),
-                  }
-                }
-              } 
-              Err(_) => {
-                mech_client_channel_ws.send(RunLoopMessage::String(("Maestro has died.".to_string(),None)));
-                continue 'socket_loop;
-              }
-            }
-          }
-        }
-      }
-    }
-  }).unwrap();
-  Ok(core_thread)
-}
-
-
-pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechError> {
-
-  let mut code: Vec<MechCode> = Vec::new();
-
-  let read_file_to_code = |path: &Path| -> Result<Vec<MechCode>, MechError> {
-    let mut code: Vec<MechCode> = Vec::new();
+  let read_file_to_code = |path: &Path| -> Result<Vec<(String,MechCode)>, MechError> {
+    let mut code: Vec<(String,MechCode)> = Vec::new();
     match (path.to_str(), path.extension())  {
       (Some(name), Some(extension)) => {
         match extension.to_str() {
@@ -167,7 +59,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
                 let mut reader = BufReader::new(file);
                 let mech_code: Result<MechCode, bincode::Error> = bincode::deserialize_from(&mut reader);
                 match mech_code {
-                  Ok(c) => {code.push(c);},
+                  Ok(c) => {code.push((name.to_string(),c));},
                   Err(err) => {
                     return Err(MechError{msg: "".to_string(), id: 1247, kind: MechErrorKind::GenericError(format!("{:?}", err))});
                   },
@@ -178,13 +70,13 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
               },
             };
           }
-          Some("mec") => {
+          Some("mec") | Some("🤖") => {
             match File::open(name) {
               Ok(mut file) => {
                 println!("{} {}", "[Loading]".truecolor(153,221,85), name);
                 let mut buffer = String::new();
                 file.read_to_string(&mut buffer);
-                code.push(MechCode::String(buffer));
+                code.push((name.to_string(),MechCode::String(buffer)));
               }
               Err(err) => {
                 return Err(MechError{msg: "".to_string(), id: 1249, kind: MechErrorKind::None});
@@ -194,7 +86,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
           _ => (), // Do nothing if the extension is not recognized
         }
       },
-      _ => {return Err(MechError{msg: "".to_string(), id: 1250, kind: MechErrorKind::None});},
+      err => {return Err(MechError{msg: "".to_string(), id: 1250, kind: MechErrorKind::GenericError(format!("{:?}", err))});},
     }
     Ok(code)
   };
@@ -207,7 +99,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
       match reqwest::blocking::get(path.to_str().unwrap()) {
         Ok(response) => {
           match response.text() {
-            Ok(text) => code.push(MechCode::String(text)),
+            Ok(text) => code.push((path.to_str().unwrap().to_owned(),MechCode::String(text))),
             _ => {return Err(MechError{msg: "".to_string(), id: 1241, kind: MechErrorKind::None});},
           }
         }
@@ -235,12 +127,12 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<MechCode>, MechEr
   Ok(code)
 }
 
-pub fn compile_code(code: Vec<MechCode>) -> Result<Vec<Vec<MiniBlock>>,MechError> {
+pub fn compile_code(code: Vec<(String,MechCode)>) -> Result<Vec<Vec<MiniBlock>>,MechError> {
   print!("{}", "[Compiling] ".truecolor(153,221,85));
   stdout().flush();
   let mut sections = vec![];
   let now = Instant::now();
-  for c in code {
+  for (_,c) in code {
     match c {
       MechCode::MiniCores(cores) => {
         todo!()

@@ -1,0 +1,156 @@
+Canvas Shapes
+==============
+
+1. Basic shapes
+----------------
+
+Define the shapes
+  #circle = [
+    shape: "circle" 
+    parameters: [
+      center-x: 250.0   
+      center-y: 250.0   
+      radius: 35.0      
+      fill: 0xFF0000    
+      line-width: 5.0
+    ]
+  ]
+  #ellipse = [
+    shape: "ellipse" 
+    parameters: [
+      center-x: 250.0   
+      center-y: 250.0   
+      major-axis: 30.0
+      minor-axis: 50.0
+      radius: 35.0      
+      fill: 0xFF0000    
+      line-width: 5.0
+    ]
+  ]
+  #arc = [
+    shape: "arc" 
+    parameters: [
+      center-x: 250.0   
+      center-y: 250.0   
+      starting-angle: 30.0
+      ending-angle: 250.0
+      radius: 35.0      
+      fill: 0xFF0000    
+      line-width: 5.0
+    ]
+  ]
+  #rectangle = [
+    shape: "rectangle" 
+    parameters: [
+      x: 250.0   
+      y: 250.0   
+      width: 200.0
+      height: 150.0
+      fill: 0xFF0000    
+      line-width: 5.0
+    ]
+  ]
+  #text = [
+    shape: "text" 
+    parameters: [
+      x: 150.0   
+      y: 250.0   
+      text: "Hello World!"
+      fill: 0xFF0000    
+      font: [size: 50.0 face: "Arial"]
+    ]
+  ]
+  #image = [
+    shape: "image" 
+    parameters: [
+      x: 200.0
+      y: 100.0
+      source: "https://mech-lang.org/img/logo.png"
+      scale: [x: 0.10 y: 0.10]
+      rotate: 15
+    ]
+  ]
+
+2. Path Elements
+-----------------
+
+Line
+  x = 250.0
+  y = 250.0
+  path = [100.0 100.0
+          20.0 20.0]
+  shapes = [|shape   parameters|
+            "line"  [|x y| path]]
+  #line = [
+    shape: "path" 
+    parameters: [
+      start-point: [x: 0.0 y: 0.0] 
+      contains: [|shape parameters| shapes] 
+      stroke: 0xFF0000 
+      line-width: 3.0
+      translate: [x: x y: y]
+      rotate: 0.0
+    ]
+  ]
+
+Quadratic
+  control-point = [x: 20.0 y: 100.0]
+  end-point = [x: 200.0 y:  20.0]                    
+  shapes = [|shape      parameters|
+            "quadratic" [|control-point end-point| [|x y| control-point] [|x y| end-point]]]
+  #quadratic = [
+    shape: "path" 
+    parameters: [
+      start-point: [x: 0.0 y: 0.0] 
+      contains: [|shape parameters| shapes] 
+      stroke: 0xFF0000 
+      line-width: 3.0
+      translate: [x: x y: y]
+      rotate: 0.0
+    ]
+  ]
+
+Bezier
+  control-points = [|x y| 20.0 100.0; 200.0 100.0]
+  shapes = [|shape    parameters|
+             "bezier" [|control-points end-point| [|x y| control-points] [|x y| end-point]]]
+  #bezier = [
+    shape: "path" 
+    parameters: [
+      start-point: [x: 0.0 y: 0.0] 
+      contains: [|shape parameters| shapes] 
+      stroke: 0xFF0000 
+      line-width: 3.0
+      translate: [x: x y: y]
+      rotate: 0.0
+    ]
+  ]
+
+Arc
+  shapes = [|shape   parameters|
+             "arc"   [center-x: 0.0 center-y: 0.0 starting-angle: 30.0 ending-angle: -30.0 radius: 35.0]
+             "line"  [x: 0.0 y: 0.0]]
+  #arc = [
+    shape: "path" 
+    parameters: [
+      start-point: [x: 0.0 y: 0.0] 
+      contains: [|shape parameters| shapes] 
+      stroke: 0x000000 
+      fill: 0xFFFF00
+      line-width: 3
+      translate: [x: x y: y]
+      rotate: 0.0
+    ]
+  ]
+
+Draw a shape to the canvas
+  shape = #circle
+  canvas = [
+    kind: "canvas" 
+    contains: [|shape parameters| shape] 
+    parameters: [width: 500.0 height: 500.0]
+  ]
+  #html/app = [
+    root: "mech-root" 
+    contains: [|kind contains parameters| canvas]
+  ]

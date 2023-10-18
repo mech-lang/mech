@@ -1,0 +1,22 @@
+http
+=====
+
+1. Description
+---------------
+
+Send and receive HTTP messages.
+
+2. Provided Tables
+-------------------
+
+- `#http/request[|uri<string> header<string> response<string>|]`
+
+3. Info
+--------
+
+#http/machine = [
+  name: "http" 
+  version: "v0.0.1"
+  authors: "Corey Montella" 
+  url: "https://gitlab.com/mech-lang/machines/http"
+  license: "Apache-2.0"]

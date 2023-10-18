@@ -1,0 +1,26 @@
+[package]
+name = "mech-math"
+version = "0.1.0"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "Math library for the Mech language"
+documentation = "http://docs.mech-lang.org"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-machines/math"
+keywords = ["mech", "language", "programming"]
+license = "Apache-2.0"
+readme = "README.md"
+edition = "2021"
+
+[badges]
+gitlab = { repository = "mech-lang/machines/math", branch = "main" }
+maintenance = { status = "actively-developed" }
+
+[lib]
+crate-type = ["dylib", "rlib"]
+
+[dependencies]
+mech-core = {path = "../../core", default-features = false}
+mech-utilities = {path = "../../utilities", default-features = false}
+
+libm = "0.2.6"
+lazy_static = "1.4.0"
