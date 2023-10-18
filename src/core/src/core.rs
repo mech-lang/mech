@@ -460,7 +460,7 @@ impl Core {
         },
       };
     }
-    self.unsatisfied_blocks.drain_filter(|k,v| { 
+    self.unsatisfied_blocks.extract_if(|k,v| { 
       let state = {
         match v.try_borrow() {
           Ok(brrw) => brrw.state.clone(),
@@ -484,7 +484,7 @@ impl Core {
             let (mut nbids,mut nberrs, mut nboutput) = self.load_block(ublock);
             {
               new_block_ids.append(&mut nbids);
-              self.unsatisfied_blocks = self.unsatisfied_blocks.drain_filter(|k,v| {
+              self.unsatisfied_blocks = self.unsatisfied_blocks.extract_if  (|k,v| {
                 let state = {
                   match v.try_borrow() {
                     Ok(brrw) => brrw.state.clone(),
