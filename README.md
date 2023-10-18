@@ -11,15 +11,6 @@ Usage and installation instructions can be found in the [documentation](https://
 Read about progress on our [blog](https://mech-lang.org/blog/), and follow us on Twitter [@MechLang](https://twitter.com/MechLang).
 
 
-## Welcome
-
-This repository serves as a table of contents for the constellation of tools and utilities that comprise the Mech programming language:
-
-1. [Core](https://gitlab.com/mech-lang/core) - The language runtime. It's a small dataflow engine that accepts transactions of changes, and applies them to a compute network.  
-2. [Syntax](https://gitlab.com/mech-lang/syntax) - A compiler for a textual Mech syntax.
-3. [Program](https://gitlab.com/mech-lang/program) - Coordinates distributed Mech cores as a coherent program.
-
-
 ## Documentation
 
 Documentation is hosted online at [mech-lang.org](http://docs.mech-lang.org), and is open sourced on [GitHub](http://github.com/mech-lang/docs).
@@ -33,9 +24,7 @@ Documentation is hosted online at [mech-lang.org](http://docs.mech-lang.org), an
   - How-Tos
   - Mech for X  
 
-
 ## Installation
-
 
 ### From Binary
 
@@ -50,16 +39,10 @@ cargo install mech
 You will need to install [Rust](https://www.rust-lang.org/learn/get-started) on a recent nightly release, and [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/). When those are installed, follow these instructions:
 
 ```bash
-git clone https://gitlab.com/mech-lang/mech -b v0.1-beta --recurse-submodules
+git clone https://gitlab.com/mech-lang/mech -b v0.2-beta
 cd mech
 wasm-pack build wasm-notebook --target web
 cargo build --bin mech --release
-```
-
-To update submodules:
-
-```bash
-git submodule update --force --recursive --init --remote
 ```
 
 ## Project Roadmap
