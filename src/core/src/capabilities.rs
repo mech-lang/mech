@@ -174,11 +174,6 @@ pub fn generate_keypair() -> SigningKey  {
 // This is to handle RNG on wasm
 
 #[cfg(feature = "wasm")]
-pub fn pubkey_from_bytes(pubkey: Vec<u8>) -> Vec<u8> {
-  PublicKey::from_bytes(pubkey.as_slice()).unwrap().as_bytes().to_vec()
-}
-
-#[cfg(feature = "wasm")]
 struct WebCryptoRng{}
 
 #[cfg(feature = "wasm")]
