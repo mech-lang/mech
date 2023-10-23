@@ -1,6 +1,6 @@
 [package]
 name = "mech-core"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "The Mech language runtime. It's a small dataflow engine that accepts transactions of changes, and applies them to a compute network."
 documentation = "http://docs.mech-lang.org"
@@ -34,10 +34,10 @@ seahash = "4.1.0"
 indexmap = "2.0.2"
 rayon = {version = "1.8.0", optional = true}
 time = {version = "0.3.30", optional = true}
-ed25519-dalek = {version = "1.0.1", optional = true}
+ed25519-dalek = {version = "2.0.0", optional = true, default-features = false, features = ["rand_core"]}
 getrandom = { version = "0.2.10", features = ["js"], optional = true}
-rand = {version = "0.7", optional = true}
-rand_core = {version = "0.5", optional = true}
+rand = {version = "0.8.5", optional = true}
+rand_core = {version = "0.6.4", optional = true}
 wasm-bindgen = {version = "0.2.87", optional = true}
 
 [dependencies.web-sys]

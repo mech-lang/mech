@@ -5,7 +5,7 @@
 Defines a capability-based permission system for Mech, featuring an enum Capability representing different system permissions, and a struct CapabilityToken storing capability tokens with their associated permissions. The CapabilityToken methods allow creating, signing, verifying, and revoking tokens. Additionally, the generate_keypair function generates cryptographic keypairs for signing and verifying tokens, ensuring secure access management for the file system.
 */
 
-use ed25519_dalek::{Verifier, Signer, Keypair, PublicKey, Signature};
+use ed25519_dalek::{Verifier, Signer, SigningKey, Signature, VerifyingKey};
 use rand::rngs::OsRng;
 use rand::RngCore;
 use crate::hash_str;
@@ -57,7 +57,7 @@ pub struct CapabilityToken {
   capabilities: HashSet<Capability>,
   owner: u64,
   expires: Option<u64>,
-  signature: Option<(Signature,PublicKey)>, // WARNING: Including the public key with the signature makes it vulnerable to MITM attacks. Use secure channels where security is necessary.
+  signature: Option<(Signature,VerifyingKey)>, // WARNING: Including the public key with the signature makes it vulnerable to MITM attacks. Use secure channels where security is necessary.
 }
 
 impl CapabilityToken {
@@ -81,14 +81,14 @@ impl CapabilityToken {
   }
 
   // Sign the token using a provided keypair
-  pub fn sign(&mut self, keypair: &Keypair) -> Result<(),MechError> {
+  pub fn sign(&mut self, signing_key: &SigningKey ) -> Result<(),MechError> {
     match self.signature {
       Some(s) => { Err(MechError{msg: "".to_string(), id: 3295, kind: MechErrorKind::GenericError(format!("Capability already signed"))})},
       None => {
         let data_str = format!("{:?}{:?}{:?}", &self.name, &self.owner, &self.capabilities);
         let data_bytes = data_str.as_bytes();        
-        let signature = keypair.sign(&data_bytes);
-        self.signature = Some((signature,keypair.public));
+        let signature = signing_key.sign(&data_bytes);
+        self.signature = Some((signature,signing_key.verifying_key()));
         Ok(())
       }
     }
@@ -159,16 +159,16 @@ pub fn generate_uuid() -> u64 {
 
 // Generate a new keypair for signing and verifying tokens
 #[cfg(not(feature = "wasm"))]
-pub fn generate_keypair() -> Keypair {
+pub fn generate_keypair() -> SigningKey  {
   let mut csprng = OsRng{};
-  Keypair::generate(&mut csprng)
+  SigningKey::generate(&mut csprng)
 }
 
 #[cfg(feature = "wasm")]
-pub fn generate_keypair() -> Keypair {
+pub fn generate_keypair() -> SigningKey  {
   let window = web_sys::window();
   let mut csprng = WebCryptoRng{};
-  Keypair::generate(&mut csprng)
+  SigningKey::generate(&mut csprng)
 }
 
 // This is to handle RNG on wasm

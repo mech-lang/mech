@@ -23,7 +23,7 @@ use getrandom::getrandom;
 #[cfg(feature = "crypto")]
 use rand::RngCore;
 #[cfg(feature = "crypto")]
-use ed25519_dalek::{self, Keypair, PublicKey, SecretKey, Signature, Signer, Verifier};
+use ed25519_dalek::{self, SecretKey, SigningKey, Signature, Signer, Verifier, VerifyingKey};
 #[cfg(feature = "crypto")]
 use rand::Error;
 #[cfg(feature = "wasm")]
@@ -86,7 +86,7 @@ program, making it useful for large and complex programs.
 
 pub struct Core {
   pub id: u64,
-  pub public_key: PublicKey,
+  pub verifying_key: VerifyingKey ,
   pub sections: Vec<HashMap<BlockId,BlockRef>>,
   pub blocks: HashMap<BlockId,BlockRef>,
   pub unsatisfied_blocks: HashMap<BlockId,BlockRef>,
@@ -175,11 +175,11 @@ impl Core {
     let mut core_cap_token = CapabilityToken::new(name,default_caps,core_id,None);
     let keypair = generate_keypair();
     core_cap_token.sign(&keypair);
-    let public_key = keypair.public;   
+    let verifying_key = keypair.verifying_key();   
     
     Core {
       id: core_id,
-      public_key,
+      verifying_key,
       sections: Vec::new(),
       blocks: HashMap::new(),
       unsatisfied_blocks: HashMap::new(),
