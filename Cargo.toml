@@ -61,23 +61,23 @@ OriginalFilename = "MECH.EXE"
 LegalCopyright = "Copyright © 2023"
 
 [patch.crates-io]
-mech-core = { path = 'src/core', version = '0.1' }
-mech-syntax = { path = 'src/syntax', version = '0.1' }
-mech-program = { path = 'src/program', version = '0.1' }
-mech-utilities = { path = 'src/utilities', version = '0.1' }
-mech-wasm = { path = 'src/wasm', version = '0.1' }
+mech-core = { path = 'src/core', version = '0.2' }
+mech-syntax = { path = 'src/syntax', version = '0.2' }
+mech-program = { path = 'src/program', version = '0.2' }
+mech-utilities = { path = 'src/utilities', version = '0.2' }
+mech-wasm = { path = 'src/wasm', version = '0.2' }
 
 [patch.'https://gitlab.com/mech-lang/core']
-mech-core = { path = 'src/core', version = '0.1' }
+mech-core = { path = 'src/core', version = '0.2' }
 
 [patch.'https://gitlab.com/mech-lang/syntax']
-mech-syntax = { path = 'src/syntax', version = '0.1' }
+mech-syntax = { path = 'src/syntax', version = '0.2' }
 
 [patch.'https://gitlab.com/mech-lang/program']
-mech-program = { path = 'src/program', version = '0.1' }
+mech-program = { path = 'src/program', version = '0.2' }
 
 [patch.'https://gitlab.com/mech-lang/utilities']
-mech-utilities = { path = 'src/utilities', version = '0.1' }
+mech-utilities = { path = 'src/utilities', version = '0.2' }
 
 [patch.'https://gitlab.com/mech-lang/wasm']
-mech-wasm = { path = 'src/wasm', version = '0.1' }
+mech-wasm = { path = 'src/wasm', version = '0.2' }
