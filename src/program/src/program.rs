@@ -71,11 +71,11 @@ pub struct Program {
 }
 
 impl Program {
-  pub fn new(name:&str, capacity: usize, recursion_limit: u64, outgoing: Sender<RunLoopMessage>, incoming: Receiver<RunLoopMessage>, registry: String, default_caps: HashSet<Capability>) -> Program {
+  pub fn new(name:&str, capacity: usize, recursion_limit: u64, outgoing: Sender<RunLoopMessage>, incoming: Receiver<RunLoopMessage>, registry: String, default_caps: Option<HashSet<Capability>>) -> Program {
 
     let program_id = generate_uuid();
 
-    let mut capability_token = CapabilityToken::new(name.into(),default_caps,program_id,None);
+    let mut capability_token = CapabilityToken::new(name.into(),default_caps.unwrap(),program_id,None);
     let keypair = generate_keypair();
     capability_token.sign(&keypair);
 
