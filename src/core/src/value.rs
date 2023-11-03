@@ -39,6 +39,7 @@ pub enum Value {
   Angle(F32),
   String(MechString),
   Reference(TableId),
+  Enum(Enum),
   Empty,
 }
 
@@ -88,6 +89,7 @@ impl Value {
       Value::Bool(_) => ValueKind::Bool,
       Value::Reference(_) => ValueKind::Reference,
       Value::String(_) => ValueKind::String,
+      Value::Enum(Enum{id,..}) => ValueKind::Enum(*id),
       Value::Empty => ValueKind::Empty,
     }
   }
@@ -117,9 +119,8 @@ impl fmt::Debug for Value {
       Value::F64(v) => write!(f,"{:?}",v)?, 
       Value::Bool(v) => write!(f,"{}",v)?,
       Value::Reference(v) => write!(f,"{:?}",v)?, 
-      Value::String(v) => {
-        write!(f,"\"{}\"",v.to_string())?
-      }, 
+      Value::String(v) => write!(f,"\"{}\"",v.to_string())?,
+      Value::Enum(v) => write!(f,"{:?}",v)?, 
       Value::Empty => write!(f,"_")?,
     }
     Ok(())
@@ -151,6 +152,7 @@ pub enum ValueKind {
   String,
   Reference,
   NumberLiteral,
+  Enum(u64),
   Any,
   Compound(Vec<ValueKind>), // Note: Not sure of the implications here, doing this to return a ValueKind for a table.
   Empty
