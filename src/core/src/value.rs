@@ -89,7 +89,7 @@ impl Value {
       Value::Bool(_) => ValueKind::Bool,
       Value::Reference(_) => ValueKind::Reference,
       Value::String(_) => ValueKind::String,
-      Value::Enum(Enum{id,..}) => ValueKind::Enum(*id),
+      Value::Enum(Enum{kind,variant}) => ValueKind::Enum((*kind,*variant)),
       Value::Empty => ValueKind::Empty,
     }
   }
@@ -152,7 +152,7 @@ pub enum ValueKind {
   String,
   Reference,
   NumberLiteral,
-  Enum(u64),
+  Enum((u64,u64)),
   Any,
   Compound(Vec<ValueKind>), // Note: Not sure of the implications here, doing this to return a ValueKind for a table.
   Empty
