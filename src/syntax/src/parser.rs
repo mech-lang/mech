@@ -623,8 +623,8 @@ leaf!{right_parenthesis, ")", Token::RightParenthesis}
 leaf!{left_brace, "{", Token::LeftBrace}
 leaf!{right_brace, "}", Token::RightBrace}
 leaf!{equal, "=", Token::Equal}
-leaf!{left_angle, "<", Token::LessThan}
-leaf!{right_angle, ">", Token::GreaterThan}
+leaf!{left_angle, "<", Token::LeftAngle}
+leaf!{right_angle, ">", Token::RightAngle}
 leaf!{exclamation, "!", Token::Exclamation}
 leaf!{question, "?", Token::Question}
 leaf!{plus, "+", Token::Plus}
@@ -915,6 +915,21 @@ pub fn empty(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Empty))
 }
 
+// #### Enums
+
+// enum_define ::= "<", identifier, ">", space*, "=", space*, enum_list;
+pub fn enum_define(input: ParseString) -> ParseResult<ParserNode> {
+  let msg2 = "Expect expression";
+  let (input, _) = left_angle(input)?;
+  let (input, variable) = identifier(input)?;
+  let (input, _) = right_angle(input)?;
+  let (input, _) = many1(space)(input)?;
+  let (input, _) = equal(input)?;
+  let (input, _) = many1(space)(input)?;
+  let (input, expression) = label!(expression, msg2)(input)?;
+  Ok((input, ParserNode::EnumDefine{children: vec![variable]}))
+}
+
 // ### Blocks
 
 // #### Data
@@ -1184,23 +1199,6 @@ pub fn empty_table(input: ParseString) -> ParseResult<ParserNode> {
   };
   Ok((input, ParserNode::EmptyTable{children: table}))
 }
-
-// pub fn anonymous_matrix(input: ParseString) -> ParseResult<ParserNode> {
-//   let (input, _) = left_angle(input)?;
-//   let (input, _) = many0(alt((space, newline, tab)))(input)?;
-//   let (input, _) = many0(space)(input)?;
-//   let (input, table_header) = opt(table_header)(input)?;
-//   let (input, mut table_rows) = many0(table_row)(input)?;
-//   let (input, _) = many0(alt((space, newline, tab)))(input)?;
-//   let (input, _) = right_angle(input)?;
-//   let mut table = vec![];
-//   match table_header {
-//     Some(table_header) => table.push(table_header),
-//     _ => (),
-//   };
-//   table.append(&mut table_rows);
-//   Ok((input, ParserNode::AnonymousMatrix{children: table}))
-// }
 
 // inline_table ::= left_bracket, binding, <binding_strict*>, <right_bracket> ;
 pub fn inline_table(input: ParseString) -> ParseResult<ParserNode> {
