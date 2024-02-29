@@ -18,7 +18,7 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = ["stdlib", "parallel"]
-stdlib = ["time", "crypto"]
+stdlib = ["time"]
 parallel = ["rayon"]
 no-std = ["rlibc"]
 crypto = ["rand", "rand_core", "ed25519-dalek", "getrandom",]
