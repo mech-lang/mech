@@ -37,7 +37,7 @@ seahash = "4.1.0"
 crossterm = "0.27.0"
 lazy_static = "1.4.0"
 tui = { version = "0.19.0", default-features = false, features = ['crossterm'] }
-tokio = {version = "1.33.0", features = ["full"]}
+tokio = {version = "1.36.0", features = ["full"]}
 warp = "0.3.6"
 websocket = "0.26.5"
 miniz_oxide = "0.7.1"
