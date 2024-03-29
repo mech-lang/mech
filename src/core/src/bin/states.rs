@@ -9,17 +9,17 @@ use hashbrown::HashMap;
 fn main() {
     let mut machine: StateMachine = StateMachine::new();
     let mut transitions = machine.transitions_mut();
-    transitions.insert((State::Closed, Input::Unsuccessful),(State::Open,Some(Output::SetTimer)));
-    transitions.insert((State::Open, Input::TimerTriggered),(State::HalfOpen,None));
-    transitions.insert((State::HalfOpen, Input::Successful),(State::Closed,None));
-    transitions.insert((State::HalfOpen, Input::Unsuccessful),(State::Open,Some(Output::SetTimer)));
+    transitions.insert((State::Closed, Input::Unsuccessful),(State::Open,Output::SetTimer));
+    transitions.insert((State::Open, Input::TimerTriggered),(State::HalfOpen,Output::None));
+    transitions.insert((State::HalfOpen, Input::Successful),(State::Closed,Output::None));
+    transitions.insert((State::HalfOpen, Input::Unsuccessful),(State::Open,Output::SetTimer));
 
     // Unsuccessful request
     let machine = Arc::new(Mutex::new(machine));
     {
         let mut lock = machine.lock().unwrap();
         let res = lock.consume(Input::Unsuccessful).unwrap();
-        assert_eq!(res, Some(Output::SetTimer));
+        assert_eq!(res, Output::SetTimer);
         assert_eq!(lock.state(), &State::Open);
     }
 
@@ -29,7 +29,7 @@ fn main() {
         std::thread::sleep(Duration::new(5, 0));
         let mut lock = machine_wait.lock().unwrap();
         let res = lock.consume(Input::TimerTriggered).unwrap();
-        assert_eq!(res, None);
+        assert_eq!(res, Output::None);
         assert_eq!(lock.state(), &State::HalfOpen);
     });
 
@@ -48,7 +48,7 @@ fn main() {
     {
         let mut lock = machine.lock().unwrap();
         let res = lock.consume(Input::Successful).unwrap();
-        assert_eq!(res, None);
+        assert_eq!(res, Output::None);
         assert_eq!(lock.state(), &State::Closed);
     }
     println!("Success!");

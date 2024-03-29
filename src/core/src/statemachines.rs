@@ -26,11 +26,12 @@ pub enum TransitionError {
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Output {
   SetTimer,
+  None,
 }
 
 pub struct StateMachine {
   state: State,
-  transitions: HashMap<(State,Input),(State, Option<Output>)>
+  transitions: HashMap<(State,Input),(State,Output)>
 }
 
 impl StateMachine {
@@ -46,7 +47,7 @@ impl StateMachine {
     }
   }
 
-  pub fn consume(&mut self, input: Input) -> Result<Option<Output>, TransitionError> {
+  pub fn consume(&mut self, input: Input) -> Result<Output, TransitionError> {
     match self.transitions.get(&(self.state,input)) {
       Some((state,output)) => {
         self.state = *state;
@@ -62,11 +63,11 @@ impl StateMachine {
     &self.state
   }
 
-  pub fn transitions(&self) -> &HashMap<(State,Input),(State, Option<Output>)> {
+  pub fn transitions(&self) -> &HashMap<(State,Input),(State,Output)> {
     &self.transitions
   }
 
-  pub fn transitions_mut(&mut self) -> &mut HashMap<(State,Input),(State, Option<Output>)> {
+  pub fn transitions_mut(&mut self) -> &mut HashMap<(State,Input),(State,Output)> {
     &mut self.transitions
   }
 
