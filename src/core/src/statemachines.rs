@@ -4,85 +4,76 @@ use core::fmt;
 use std::error::Error;
 use hashbrown::HashMap;
 
-pub trait StateMachineImpl {
-  type Input;
-  type State;
-  type Output;
-  #[allow(clippy::declare_interior_mutable_const)]
-  const INITIAL_STATE: Self::State;
-  fn transition(state: &Self::State, input: &Self::Input, transitions: &HashMap<(Self::State,Self::Input),(Self::State,Option<Self::Output>)>) -> Option<(Self::State,Option<Self::Output>)>;
+#[derive(Debug,Copy,Clone,PartialEq,Eq,Hash)]
+ pub enum Input {
+    Successful,
+    Unsuccessful,
+    TimerTriggered,
 }
 
-pub struct StateMachine<T: StateMachineImpl> {
-  state: T::State,
-  transitions: HashMap<(T::State,T::Input),(T::State, Option<T::Output>)>
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum State {
+    Closed,
+    Open,
+    HalfOpen,
 }
 
-#[derive(Debug, Clone)]
-pub struct TransitionImpossibleError;
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum TransitionError {
+  Impossible,
+}
 
-impl<T> StateMachine<T>
-where
-  T: StateMachineImpl,
-{
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum Output {
+  SetTimer,
+}
+
+pub struct StateMachine {
+  state: State,
+  transitions: HashMap<(State,Input),(State, Option<Output>)>
+}
+
+impl StateMachine {
+
   pub fn new() -> Self {
-    Self::from_state(T::INITIAL_STATE)
+    StateMachine::from_state(State::Closed)
   }
 
-  pub fn from_state(state: T::State) -> Self {
+  pub fn from_state(state: State) -> Self {
     Self { 
       state, 
       transitions: HashMap::new() 
     }
   }
 
-  pub fn consume(
-    &mut self,
-    input: &T::Input,
-  ) -> Result<Option<T::Output>, TransitionImpossibleError> {
-    if let Some((state,output)) = T::transition(&self.state, input, &self.transitions) {
-      self.state = state;
-      Ok(output)
-    } else {
-      Err(TransitionImpossibleError)
+  pub fn consume(&mut self, input: Input) -> Result<Option<Output>, TransitionError> {
+    match self.transitions.get(&(self.state,input)) {
+      Some((state,output)) => {
+        self.state = *state;
+        Ok(*output)
+      }
+      None => {
+        Err(TransitionError::Impossible)
+      }
     }
   }
 
-  pub fn state(&self) -> &T::State {
+  pub fn state(&self) -> &State {
     &self.state
   }
 
-  pub fn transitions(&self) -> &HashMap<(T::State,T::Input),(T::State, Option<T::Output>)> {
+  pub fn transitions(&self) -> &HashMap<(State,Input),(State, Option<Output>)> {
     &self.transitions
   }
 
-  pub fn transitions_mut(&mut self) -> &mut HashMap<(T::State,T::Input),(T::State, Option<T::Output>)> {
+  pub fn transitions_mut(&mut self) -> &mut HashMap<(State,Input),(State, Option<Output>)> {
     &mut self.transitions
   }
 
 }
 
-impl<T> Default for StateMachine<T>
-where
-  T: StateMachineImpl,
-{
+impl Default for StateMachine {
   fn default() -> Self {
     Self::new()
-  }
-}
-
-impl fmt::Display for TransitionImpossibleError {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(
-      f,
-      "cannot perform a state transition from the current state with the provided input"
-    )
-  }
-}
-
-#[cfg(feature = "std")]
-impl Error for TransitionImpossibleError {
-  fn source(&self) -> Option<&(dyn Error + 'static)> {
-    None
   }
 }
