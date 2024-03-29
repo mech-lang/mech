@@ -41,7 +41,7 @@ pub mod nodes;
 #[cfg(feature = "stdlib")]
 mod capabilities;
 mod types;
-mod statemachines;
+pub mod statemachines;
 mod enums;
 
 pub use self::core::Core;
@@ -60,6 +60,7 @@ pub use self::user_functions::*;
 pub use self::capabilities::*;
 pub use self::types::*;
 pub use self::enums::*;
+pub use self::statemachines::*;
 
 #[derive(Debug, Clone)]
 pub enum SectionElement {
