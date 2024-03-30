@@ -2,18 +2,47 @@
 /// capabilities of this library.
 /// https://martinfowler.com/bliki/CircuitBreaker.html
 use mech_core::statemachines::*;
+use mech_core::*;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use hashbrown::HashMap;
 
 fn main() {
-    let mut machine: StateMachine = StateMachine::new();
-    let mut transitions = machine.transitions_mut();
-    transitions.insert((State::Closed, Input::Unsuccessful),(State::Open,Output::SetTimer));
-    transitions.insert((State::Open, Input::TimerTriggered),(State::HalfOpen,Output::None));
-    transitions.insert((State::HalfOpen, Input::Successful),(State::Closed,Output::None));
-    transitions.insert((State::HalfOpen, Input::Unsuccessful),(State::Open,Output::SetTimer));
 
+    let code = r#"
+    traffic_light := { <1s>=>🟢=><6s>=>🟡=<10s>=>🔴=<10s>=>🟢}"#;
+
+
+
+
+    let gn_id = hash_str("🟢");
+    let yw_id = hash_str("🟡");
+    let rd_id = hash_str("🔴");
+
+    let gn_state = State::Id(gn_id);
+    let yw_state = State::Id(yw_id);
+    let rd_state = State::Id(rd_id);
+
+    let mut machine: StateMachine = StateMachine::from_state(gn_state);
+    machine.add_transition((gn_state, Event::TimerExpired),(yw_state,Output::SetTimer(6)));
+    machine.add_transition((yw_state, Event::TimerExpired),(rd_state,Output::SetTimer(10)));
+    machine.add_transition((rd_state, Event::TimerExpired),(gn_state,Output::SetTimer(10)));
+    println!("{:#?}", machine);
+
+    
+    let mut event_queue: Vec<Event> = vec![];
+
+    loop {
+
+
+
+
+    }
+
+
+
+
+/*
     // Unsuccessful request
     let machine = Arc::new(Mutex::new(machine));
     {
@@ -23,6 +52,8 @@ fn main() {
         assert_eq!(lock.state(), &State::Open);
     }
 
+
+    
     // Set up a timer
     let machine_wait = machine.clone();
     std::thread::spawn(move || {
@@ -50,6 +81,6 @@ fn main() {
         let res = lock.consume(Input::Successful).unwrap();
         assert_eq!(res, Output::None);
         assert_eq!(lock.state(), &State::Closed);
-    }
+    }*/
     println!("Success!");
 }

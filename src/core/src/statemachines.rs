@@ -3,19 +3,24 @@
 use core::fmt;
 use std::error::Error;
 use hashbrown::HashMap;
+use crate::database::*;
 
 #[derive(Debug,Copy,Clone,PartialEq,Eq,Hash)]
- pub enum Input {
-    Successful,
-    Unsuccessful,
-    TimerTriggered,
+ pub enum Event {
+    OnCreate,
+    OnDestroy,
+    Success,
+    Fail,
+    TimerExpired,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum State {
     Closed,
-    Open,
     HalfOpen,
+    Open,
+    Id(u64),
+    None,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -25,13 +30,15 @@ pub enum TransitionError {
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Output {
-  SetTimer,
+  SetTimer(usize),
   None,
 }
 
+#[derive(Debug, Clone)]
 pub struct StateMachine {
   state: State,
-  transitions: HashMap<(State,Input),(State,Output)>
+  tables: Database,
+  transitions: HashMap<(State,Event),(State,Output)>
 }
 
 impl StateMachine {
@@ -42,13 +49,14 @@ impl StateMachine {
 
   pub fn from_state(state: State) -> Self {
     Self { 
-      state, 
+      state,
+      tables: Database::new(),
       transitions: HashMap::new() 
     }
   }
 
-  pub fn consume(&mut self, input: Input) -> Result<Output, TransitionError> {
-    match self.transitions.get(&(self.state,input)) {
+  pub fn consume(&mut self, event: Event) -> Result<Output, TransitionError> {
+    match self.transitions.get(&(self.state,event)) {
       Some((state,output)) => {
         self.state = *state;
         Ok(*output)
@@ -63,11 +71,15 @@ impl StateMachine {
     &self.state
   }
 
-  pub fn transitions(&self) -> &HashMap<(State,Input),(State,Output)> {
+  pub fn add_transition(&mut self, input: (State,Event), output: (State,Output)) -> Option<(State,Output)> {
+    self.transitions.insert(input,output)
+  }
+
+  pub fn transitions(&self) -> &HashMap<(State,Event),(State,Output)> {
     &self.transitions
   }
 
-  pub fn transitions_mut(&mut self) -> &mut HashMap<(State,Input),(State,Output)> {
+  pub fn transitions_mut(&mut self) -> &mut HashMap<(State,Event),(State,Output)> {
     &mut self.transitions
   }
 
