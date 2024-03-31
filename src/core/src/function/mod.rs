@@ -1,8 +1,12 @@
-pub mod compare;
-pub mod math_update;
-pub mod math;
-pub mod stats;
 pub mod table;
-pub mod set;
-pub mod logic;
 pub mod matrix;
+pub mod logic;
+pub mod compare;
+pub mod math;
+
+#[cfg(feature = "stdlib")]
+pub mod math_update;
+#[cfg(feature = "stdlib")]
+pub mod stats;
+#[cfg(feature = "stdlib")]
+pub mod set;

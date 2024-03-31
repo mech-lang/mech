@@ -16,15 +16,10 @@ use hashbrown::{HashMap, HashSet};
 use std::rc::Rc;
 use std::cell::RefCell;
 
-#[cfg(feature = "crypto")]
 use rand::rngs::OsRng;
-#[cfg(feature = "crypto")]
 use getrandom::getrandom;
-#[cfg(feature = "crypto")]
 use rand::RngCore;
-#[cfg(feature = "crypto")]
 use ed25519_dalek::{self, SecretKey, SigningKey, Signature, Signer, Verifier, VerifyingKey};
-#[cfg(feature = "crypto")]
 use rand::Error;
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;

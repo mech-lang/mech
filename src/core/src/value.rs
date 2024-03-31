@@ -11,7 +11,6 @@ Implementation for the Value data type in Mech, The Value type contains various 
 #[cfg(feature = "no-std")] use alloc::string::String;
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 use crate::*;
-use std::fmt;
 use std::mem::transmute;
 use std::convert::TryInto;
 

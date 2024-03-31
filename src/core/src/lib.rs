@@ -4,6 +4,8 @@
 #![feature(iter_intersperse)]
 #![feature(extract_if)]
 
+#[cfg(feature = "no-std")]
+extern crate alloc;
 extern crate core as rust_core;
 extern crate hashbrown;
 #[macro_use]
@@ -32,13 +34,11 @@ mod table;
 mod transformation;
 mod database;
 mod user_functions;
-#[cfg(feature = "stdlib")]
 pub mod function;
 mod block;
 mod core;
 mod schedule;
 pub mod nodes;
-#[cfg(feature = "stdlib")]
 mod capabilities;
 mod types;
 pub mod statemachines;
@@ -56,7 +56,6 @@ pub use self::function::*;
 pub use self::block::*;
 pub use self::schedule::*;
 pub use self::user_functions::*;
-#[cfg(feature = "stdlib")]
 pub use self::capabilities::*;
 pub use self::types::*;
 pub use self::enums::*;
