@@ -7,7 +7,47 @@ use std::time::Duration;
 use hashbrown::HashMap;
 use std::collections::VecDeque;
 
+extern crate nalgebra as na;
+use na::{Vector3, Rotation3, Matrix2x3, Matrix6, Matrix2};
+
+struct Block {
+
+}
+
+
+#[derive(Debug)]
+enum Table {
+  Vector3(Vector3<Value>),
+  Matrix2x3(Matrix2x3<Value>),
+}
+
+impl Table {
+  fn new(rows: usize, cols: usize) -> Option<Table> {
+    match (rows, cols) {
+      (1,3) => Some(Table::Vector3(Vector3::from_element(Value::Empty))),
+      (2,3) => Some(Table::Matrix2x3(Matrix2x3::from_element(Value::Empty))),
+      _ => None,
+    }
+  } 
+}
+
 fn main() {
+  let mut one = Matrix6::from_element(1);
+  let two = Matrix6::from_element(0);
+
+  let now = Instant::now();
+  let mut result;
+  let n = 1e8;
+  for _ in 0..n as usize {
+    result = one * two;
+    one = result;
+  }
+  let elapsed_time = now.elapsed();
+  println!("{:?}", elapsed_time.as_nanos() as f64 / n as f64);
+  println!("{:?}", one);
+
+  let vec = Table::new(1,3);
+  println!("{:?}", vec);
 
   let code = r#"
   traffic_light(x) := { <1s>=>🟢=[6s]=>🟡=[10s]=>🔴=[10s]=>🟢 }
@@ -26,7 +66,7 @@ fn main() {
   machine.add_transition((gn_state, Event::TimerExpired),(yw_state,Output::SetTimer(6)));
   machine.add_transition((yw_state, Event::TimerExpired),(rd_state,Output::SetTimer(10)));
   machine.add_transition((rd_state, Event::TimerExpired),(gn_state,Output::SetTimer(10)));
-  println!("{:#?}", machine);
+  //println!("{:#?}", machine);
 
   
   let mut event_queue: Vec<Event> = vec![
@@ -35,6 +75,7 @@ fn main() {
 
   let mut total_time = VecDeque::new();  
   loop {
+    break;
     match event_queue.pop() {
       Some(event) => {
         let now = Instant::now();
@@ -74,7 +115,7 @@ fn main() {
     }
   }
 
-    println!("{:#?}", machine);
+  //println!("{:#?}", machine);
 /*
     // Unsuccessful request
     let machine = Arc::new(Mutex::new(machine));

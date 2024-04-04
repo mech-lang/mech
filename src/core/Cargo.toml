@@ -39,6 +39,7 @@ rand = {version = "0.8.5"}
 tinyrand = "0.5.0"
 rand_core = {version = "0.6.4"}
 wasm-bindgen = {version = "0.2.87", optional = true}
+nalgebra = "0.32.5"
 
 [dependencies.web-sys]
 version = "0.3.64"
