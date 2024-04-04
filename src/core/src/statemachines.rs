@@ -1,5 +1,6 @@
 // Adapted from rust-fsm (MIT License https://github.com/eugene-babichenko/rust-fsm/commit/1a7d22b7d139bf810938366cf895b6cffe057436)
 
+use crate::Value;
 use core::fmt;
 use std::error::Error;
 use hashbrown::HashMap;
@@ -28,8 +29,9 @@ pub enum TransitionError {
   Impossible,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Output {
+  Value(Value),
   SetTimer(usize),
   None,
 }
@@ -59,7 +61,7 @@ impl StateMachine {
     match self.transitions.get(&(self.state,event)) {
       Some((state,output)) => {
         self.state = *state;
-        Ok(*output)
+        Ok(output.clone())
       }
       None => {
         Err(TransitionError::Impossible)
