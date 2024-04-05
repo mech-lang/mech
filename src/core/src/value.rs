@@ -58,6 +58,10 @@ impl Value {
     }
   }
 
+  pub fn from_u64(number: u64) -> Value {
+    Value::U64(U64::new(number))
+  }
+
   pub fn from_string(string: &String) -> Value {
     Value::String(MechString::from_string(string.clone()))
   }
@@ -92,7 +96,6 @@ impl Value {
       Value::Empty => ValueKind::Empty,
     }
   }
-  
 }
 
 impl fmt::Debug for Value {

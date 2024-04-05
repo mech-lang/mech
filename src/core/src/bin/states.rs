@@ -6,48 +6,94 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use hashbrown::HashMap;
 use std::collections::VecDeque;
+use core::ops::Mul;
+use core::fmt::*;
+use num_traits::identities::*;
+use num_traits::Zero;
+use std::ops::*;
 
 extern crate nalgebra as na;
 use na::{Vector3, Rotation3, Matrix2x3, Matrix6, Matrix2};
 
-struct Block {
-
+#[derive(Debug, Clone)]
+enum Table<T>
+where T: Zero + One + Clone + PartialEq + Debug + AddAssign + MulAssign + 'static {
+  Vector3(Vector3<T>),
+  Matrix2x3(Matrix2x3<T>),
+  Matrix6(Matrix6<T>),
 }
 
+impl<T> Table<T>
+where T: Zero + One + Clone + PartialEq + Debug + AddAssign + MulAssign + 'static {
 
-#[derive(Debug)]
-enum Table {
-  Vector3(Vector3<Value>),
-  Matrix2x3(Matrix2x3<Value>),
-}
-
-impl Table {
-  fn new(rows: usize, cols: usize) -> Option<Table> {
+  fn new(rows: usize, cols: usize, default: T) -> Table<T> {
     match (rows, cols) {
-      (1,3) => Some(Table::Vector3(Vector3::from_element(Value::Empty))),
-      (2,3) => Some(Table::Matrix2x3(Matrix2x3::from_element(Value::Empty))),
-      _ => None,
+      (1,3) => Table::Vector3(Vector3::from_element(default)),
+      (2,3) => Table::Matrix2x3(Matrix2x3::from_element(default)),
+      (6,6) => Table::Matrix6(Matrix6::from_element(default)),
+      _ => Table::Vector3(Vector3::from_element(default)),
     }
-  } 
+  }
+
+  fn size(&self) -> (usize,usize) {
+    match self {
+      Table::Vector3(_) => (1,3),
+      Table::Matrix2x3(_) => (2,3),
+      Table::Matrix6(_) => (6,6),
+    }
+  }
+
+  fn mat_mul(&self, rhs: &Self) -> std::result::Result<Self,MechError> {
+    match (self,rhs) {
+      (Table::Matrix6(mat_l),Table::Matrix6(mat_r)) => {
+        let result = mat_l * mat_r;
+        Ok(Table::Matrix6(result))
+      }
+      _ => Err(MechError {
+        id: 1234,
+        kind: MechErrorKind::None,
+        msg: String::from(""),
+      }),
+    }
+  }
+
+  fn add(&self, rhs: &Self) -> std::result::Result<Self,MechError> {
+    match (self,rhs) {
+      (Table::Matrix6(mat_l),Table::Matrix6(mat_r)) => {
+        let result = mat_l + mat_r;
+        Ok(Table::Matrix6(result))
+      }
+      _ => Err(MechError {
+        id: 1234,
+        kind: MechErrorKind::None,
+        msg: String::from(""),
+      }),
+    }
+  }
+
 }
 
 fn main() {
-  let mut one = Matrix6::from_element(1);
-  let two = Matrix6::from_element(0);
+  
+  let mut x = Table::new(6,6,1 as u8);
+  let y = Table::new(6,6,0 as u8);
+
 
   let now = Instant::now();
-  let mut result;
-  let n = 1e8;
+  let n = 1e5;
   for _ in 0..n as usize {
-    result = one * two;
-    one = result;
+    let result = match &x.mat_mul(&y) {
+      Ok(result) => result.clone(),
+      _ => panic!("Oh No!"),
+    };
+    x = result;
   }
   let elapsed_time = now.elapsed();
   println!("{:?}", elapsed_time.as_nanos() as f64 / n as f64);
-  println!("{:?}", one);
-
-  let vec = Table::new(1,3);
-  println!("{:?}", vec);
+  //println!("{:?}", one);
+  
+  /*
+  //println!("{:?}", vec);
 
   let code = r#"
   traffic_light(x) := { <1s>=>🟢=[6s]=>🟡=[10s]=>🔴=[10s]=>🟢 }
@@ -114,7 +160,7 @@ fn main() {
       }
     }
   }
-
+*/
   //println!("{:#?}", machine);
 /*
     // Unsuccessful request
