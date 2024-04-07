@@ -254,6 +254,15 @@ impl<T: Clone + Debug> ColumnV<T> {
   
 }
 
+impl<T: Clone + Debug> IntoIterator for ColumnV<T> {
+  type Item = T;
+  type IntoIter = std::vec::IntoIter<Self::Item>;
+
+  fn into_iter(self) -> Self::IntoIter {
+    <Vec<T> as Clone>::clone(&self.borrow()).into_iter() 
+  }
+}
+
 impl<T: Debug> fmt::Debug for ColumnV<T> {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

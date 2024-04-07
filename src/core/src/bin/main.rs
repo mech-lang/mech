@@ -25,6 +25,7 @@ use std::time::{Instant};
 use std::collections::VecDeque;
 use mech_core::*;
 use mech_core::function::table;
+use nalgebra::DMatrix;
 
 use std::fmt::*;
 use num_traits::*;
@@ -153,6 +154,48 @@ fn main() -> std::result::Result<(),MechError> {
   let mut ix_or = Column::Bool(ColumnV::new((vec![false; n])));
   let mut vx2 = Column::f32(ColumnV::new((vec![0.0; n])));
 
+  let h = 20;
+  let mut qq = Table::new(hash_str("foo"),h,h);
+  qq.set_kind(ValueKind::F32);
+  for i in 0..h {
+    for j in 0..h {
+      qq.set_raw(i,j,Value::F32(F32::new(i as f32)));
+    }
+  }
+
+  let mut rr = Table::new(hash_str("foo2"),h,h);
+  rr.set_kind(ValueKind::F32);
+  for i in 0..h {
+    for j in 0..h {
+      rr.set_raw(i,j,Value::F32(F32::new(i as f32)));
+    }
+  }
+
+  let mut out = Table::new(hash_str("foo3"),h,h);
+  out.set_kind(ValueKind::F32);
+  for i in 0..h {
+    for j in 0..h {
+      out.set_raw(i,j,Value::F32(F32::new(i as f32)));
+    }
+  }
+
+  let gen_dmatrix = |table: &Table| -> Rc<RefCell<DMatrix<f32>>> {
+    let foo = table.collect_columns_f32();
+    let naltable = foo.iter().cloned().flatten().map(|x| x.unwrap());
+    let mat = DMatrix::from_iterator(table.rows,table.cols,naltable);
+    Rc::new(RefCell::new(mat))
+  };
+
+  let qqdm = gen_dmatrix(&qq);
+  let rrdm = gen_dmatrix(&rr);
+  let outdm = gen_dmatrix(&out);
+  out.nalgebra = Some(outdm.clone());
+
+
+  let lhs = { qq.collect_columns_f32() };
+  let rhs = { rr.collect_columns_f32() };
+  let out_cols = out.collect_columns_f32();
+
   // Update the block positions on each tick of the timer  
   let mut block1 = Block::new();
   block1.add_tfm(Transformation::NewTable{table_id: TableId::Local(hash_str("block1")), rows: 1, columns: 1});
@@ -163,14 +206,15 @@ fn main() -> std::result::Result<(),MechError> {
   match (&x,&vx,&y,&vy,&g) {
     (Column::f32(x),Column::f32(vx),Column::f32(y),Column::f32(vy),Column::f32(g)) => {
       // #ball.x := #ball.x + #ball.vx
-      block1.plan.push(math::ParAddVVIP{out: x.clone(), arg: vx.clone()});
+      //block1.plan.push(math::AddVVIP{out: x.clone(), arg: vx.clone()});
       // #ball.y := #ball.y + #ball.vy    
-      block1.plan.push(math::ParAddVVIP{out: y.clone(), arg: vy.clone()});
+      //block1.plan.push(math::AddVVIP{out: y.clone(), arg: vy.clone()});
       // #ball.vy := #ball.vy + #gravity
-      block1.plan.push(math::ParAddVSIP{out: vy.clone(), arg: g.clone()});
+      //block1.plan.push(math::AddVSIP{out: vy.clone(), arg: g.clone()});
     }
     _ => (),
   }
+  block1.plan.push(matrix::MatrixMulMM{a: qqdm.clone(), b: rrdm.clone(), c: outdm.clone(),lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
 
   // Keep the balls within the boundary height
   let mut block2 = Block::new();
@@ -181,15 +225,15 @@ fn main() -> std::result::Result<(),MechError> {
   match (&y,&iy,&iyy,&iy_or,&c1,&vy2,&vy,&c500,&c0) {
     (Column::f32(y),Column::Bool(iy),Column::Bool(iyy),Column::Bool(iy_or),Column::f32(c1),Column::f32(vy2),Column::f32(vy),Column::f32(m500),Column::f32(m0)) => {
       // iy = #ball.y > #boundary.height
-      block2.plan.push(compare::ParGreaterVS{lhs: (y.clone(),0,y.len()-1), rhs: (m500.clone(),0,0), out: iy.clone()});
+      block2.plan.push(compare::GreaterVS{lhs: (y.clone(),0,y.len()-1), rhs: (m500.clone(),0,0), out: iy.clone()});
       // iyy = #ball.y < 0
-      block2.plan.push(compare::ParLessVS{lhs: (y.clone(),0,y.len()-1), rhs: (m0.clone(),0,0), out: iyy.clone()});
+      block2.plan.push(compare::LessVS{lhs: (y.clone(),0,y.len()-1), rhs: (m0.clone(),0,0), out: iyy.clone()});
       // #ball.y{iy} := #boundary.height
-      block2.plan.push(table::ParSetVSB{arg: m500.clone(), ix: 0, out:  y.clone(), oix: iy.clone()});
+      block2.plan.push(table::SetVSB{arg: m500.clone(), ix: 0, out:  y.clone(), oix: iy.clone()});
       // #ball.vy{iy | iyy} := #ball.vy * -80%
-      block2.plan.push(logic::ParOrVV{lhs: iy.clone(), rhs: iyy.clone(), out: iy_or.clone()});
-      block2.plan.push(math::ParMulVS{lhs: vy.clone(), rhs: c1.clone(), out: vy2.clone()});
-      block2.plan.push(table::ParSetVVB{arg: vy2.clone(), out: vy.clone(), oix: iy_or.clone()});
+      block2.plan.push(logic::OrVV{lhs: iy.clone(), rhs: iyy.clone(), out: iy_or.clone()});
+      block2.plan.push(math::MulVS{lhs: vy.clone(), rhs: c1.clone(), out: vy2.clone()});
+      block2.plan.push(table::SetVVB{arg: vy2.clone(), out: vy.clone(), oix: iy_or.clone()});
     }
     _ => (),
   }
@@ -203,15 +247,15 @@ fn main() -> std::result::Result<(),MechError> {
   match (&x,&ix,&ixx,&ix_or,&vx,&c1,&vx2,&c500,&c0) {
     (Column::f32(x),Column::Bool(ix),Column::Bool(ixx),Column::Bool(ix_or),Column::f32(vx),Column::f32(c1),Column::f32(vx2),Column::f32(m500),Column::f32(m0)) => {
       // ix = #ball.x > #boundary.width
-      block3.plan.push(compare::ParGreaterVS{lhs: (x.clone(),0,x.len()-1), rhs: (m500.clone(),0,0), out: ix.clone()});
+      block3.plan.push(compare::GreaterVS{lhs: (x.clone(),0,x.len()-1), rhs: (m500.clone(),0,0), out: ix.clone()});
       // ixx = #ball.x < 0
-      block3.plan.push(compare::ParLessVS{lhs: (x.clone(),0,x.len()-1), rhs: (m0.clone(),0,0), out: ixx.clone()});
+      block3.plan.push(compare::LessVS{lhs: (x.clone(),0,x.len()-1), rhs: (m0.clone(),0,0), out: ixx.clone()});
       // #ball.x{ix} := #boundary.width
-      block3.plan.push(table::ParSetVSB{arg: m500.clone(), ix: 0, out: x.clone(), oix: ix.clone()});
+      block3.plan.push(table::SetVSB{arg: m500.clone(), ix: 0, out: x.clone(), oix: ix.clone()});
       // #ball.vx{ix | ixx} := #ball.vx * -80%
-      block3.plan.push(logic::ParOrVV{lhs: ix.clone(), rhs: ixx.clone(), out: ix_or.clone()});
-      block3.plan.push(math::ParMulVS{lhs: vx.clone(), rhs: c1.clone(), out: vx2.clone()});
-      block3.plan.push(table::ParSetVVB{arg: vx2.clone(), out: vx.clone(), oix: ix_or.clone()});
+      block3.plan.push(logic::OrVV{lhs: ix.clone(), rhs: ixx.clone(), out: ix_or.clone()});
+      block3.plan.push(math::MulVS{lhs: vx.clone(), rhs: c1.clone(), out: vx2.clone()});
+      block3.plan.push(table::SetVVB{arg: vx2.clone(), out: vx.clone(), oix: ix_or.clone()});
     }
     _ => (),
   }
@@ -222,11 +266,11 @@ fn main() -> std::result::Result<(),MechError> {
 
   //println!("{:?}", block2);
   let block2_ref = Rc::new(RefCell::new(block2));
-  core.load_block(block2_ref.clone());
+  //core.load_block(block2_ref.clone());
 
   //println!("{:?}", block3);
   let block3_ref = Rc::new(RefCell::new(block3));
-  core.load_block(block3_ref.clone());
+  //core.load_block(block3_ref.clone());
 
   core.schedule_blocks();
 
@@ -239,7 +283,7 @@ fn main() -> std::result::Result<(),MechError> {
   //println!("{:?}", core);
   
   let mut total_time = VecDeque::new();  
-  for i in 0..50000 {
+  for i in 0..10000 {
     let txn = vec![Change::Set((hash_str("time/timer"), 
       vec![(TableIndex::Index(1), TableIndex::Index(2), Value::f32(i as f32))]))];
     
@@ -270,12 +314,12 @@ fn main() -> std::result::Result<(),MechError> {
     
     let cycle_duration = elapsed_time.as_nanos() as f64;
     total_time.push_back(cycle_duration);
-    if total_time.len() > 1000 {
+    if total_time.len() > 100 {
       total_time.pop_front();
     }
     let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
-    //println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
-    println!("{:e} - {:0.2?}Hz", n, 1.0 / (cycle_duration / 1_000_000_000.0));
+    println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
+    //println!("{:0.2?}", 1.0 / (cycle_duration / 1_000_000_000.0));
   }
   
   //let average_time: f32 = total_time.iter().sum::<f32>() / total_time.len() as f32; 

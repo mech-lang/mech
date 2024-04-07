@@ -20,6 +20,7 @@ extern crate getrandom;
 extern crate lazy_static;
 extern crate seahash;
 extern crate indexmap;
+extern crate nalgebra;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
