@@ -692,3 +692,89 @@ pub enum Token {
   EndOfStream,
   Emoji,
 }
+
+
+struct Program {
+  title: Title,
+  body: Vec<Body>,
+}
+
+struct Title {
+  text: String,
+}
+
+struct Body {
+  section: Vec<Section>,
+}
+
+struct Section {
+  elements: Vec<SectionElement>,
+}
+
+enum SectionElement {
+  Statement(Statement),
+  Paragraph(String)
+}
+
+enum Statement {
+  TableDefine(TableDefine),
+  VariableDefine(VariableDefine)
+}
+
+struct TableDefine {
+  name: Identifier,
+  table: Table,
+}
+
+enum Table {
+  Empty,
+  Inline,
+  Anonymous,
+}
+
+struct VariableDefine {
+  name: Identifier,
+  expression: Expression,
+}
+
+struct Identifier {
+  text: String,
+}
+
+enum Expression {
+  EmptyTable,
+  InlineTable(InlineTable),
+  Formula,
+  String,
+  AnonymousTable,
+}
+
+struct InlineTable {
+  binding: Vec<Binding>,
+}
+
+struct Binding {
+  name: Identifier,
+  kind: Option<KindAnnotation>,
+  value: Expression,
+}
+
+struct KindAnnotation {
+  name: Identifier,
+}
+
+enum Literal {
+  Empty,
+  Boolean(bool),
+  Number(NumberLiteral),
+  String(String),
+}
+
+enum NumberLiteral {
+  Float,
+  Decimal,
+  Hexadecimal,
+  Octal,
+  Binary,
+  Scientific
+}
