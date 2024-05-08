@@ -44,7 +44,6 @@ carriage-newline := "\r\n" ;
 newline := new-line-char | carriage-newline ;
 whitespace := space | newline | tab ;
 
-
 b) Comments
 
 comment-sigil := "--" | "//";
@@ -64,7 +63,6 @@ false-symbol := "✗" ;
 english-true-literal := "true" ;
 english-false-literal := "false" ;
 
-
 b) Numbers
 
 number-literal := (hexadecimal-literal | octal-literal | binary-literal | decimal-literal | float-literal), kind-annotation? ;
@@ -75,15 +73,13 @@ octal-literal := "0o", <oct-digit+> ;
 binary-literal := "0b", <bin-digit+> ;
 scientific-literal := float-literal, "e", "-"?, float-literal ;
 
-
 c) Strings
 
 string-literal := quote, (!quote, <text>)*, quote ;
 
-
 d) Values
 
-value := empty | boolean-literal | number-literal | string-literal ;
+literal := empty | boolean-literal | number-literal | string-literal ;
 empty := underscore+ ;
 
 
@@ -92,7 +88,7 @@ empty := underscore+ ;
 
 a) Define
 
-table := <identifier> ;
+table := inline-table | anonmous-table | empty-table ;
 
 binding := whitespace*, identifier, kind-annotation?, <!(space+, colon)>, colon, whitespace+,
             <empty | expression | identifier | value>, <!!right-bracket | (whitespace*, comma, <whitespace+>) | whitespace+> ;
@@ -108,7 +104,6 @@ empty-table := left-bracket, (space | newline | tab)*, table-header?, (space | n
 inline-table := left-bracket, binding, <binding-strict*>, <right-bracket> ;
 kind-annotation := left-angle, <(identifier | underscore), (",", (identifier | underscore))*>, <right-angle> ;
 
-
 b) Output
 
 table-title := "│", identifier, ["+"], space, "(", number, space, "x", space, number, ")", {space}, "│", newline;
@@ -118,7 +113,6 @@ table-line := "╭" | "├" | "╰",{"-",["┼" | "┬" | "┴"],"-"},"╮" | "�
 table-botline := "╰", {"-",["┴"],"-"}, "╯", newline;
 table-label := "│" , [{identifier, {space}, "│"}], newline
 table-output := table-line, table-title, table-line, [table-label],table-line, ["│", {table-type, {space}, "│"}, newline], {"│", {expressions, {space}, "│"}, newline},table-line;
-
 
 c) Indexing
 
@@ -131,7 +125,7 @@ single-subscript-index := left-brace, <subscript>, <right-brace> ;
 dot-index := period, <identifier>, single-subscript-index? ;
 swizzle := period, identifier, comma, !space, <identifier, (",", identifier)*> ;
 reshape-column := left-brace, colon, right-brace ;
-data := (table | identifier), index*, transpose? ;
+data := identifier, index*, transpose? ;
 
 
 3. Statements
@@ -174,7 +168,6 @@ matrix-multiply := "**" ;
 transpose := "'" ;
 range     := ":" ;
 
-
 b) Filter operators
 
 not-equal := "!=" | "¬=" | "≠" ;
@@ -184,7 +177,6 @@ less-than := "<" ;
 greater-than-equal := ">=" | "≥" ;
 less-than-equal := "<=" | "≤" ;
 filter-operator := not-equal | equal-to | greater-than-equal | greater-than | less-than-equal | less-than ;
-
 
 c) Logic operators
 
@@ -207,7 +199,7 @@ proper-superset := "⊋" ;
 element-of := "∈" ;
 not-element-of := "∉" ;
 
-e) formulas
+e) Formulas
 
 parenthetical-expression := left-parenthesis, <l0>, <right-parenthesis> ;
 negation := dash, !(dash | space), <data | value> ;
@@ -243,6 +235,7 @@ if-expressoin := "if", expression, if-body, "else", else-body ;
 if-body :=
 else-body := 
 
+
 5. Functions
 --------------
 
@@ -262,6 +255,7 @@ transformation := statement;
 empty-line := space*, newline ;
 indented-tfm := !empty-line, space, <space>, <!space>, <transformation> ;
 block := indented-tfm+, whitespace* ;
+
 
 7. State machines
 -------------------
@@ -305,7 +299,6 @@ unordered-list := list-item+, newline?, whitespace* ;
 list-item := dash, <space+>, <paragraph>, newline* ;
 formatted-text := (!grave, !eof, <paragraph-rest | carriage-return | new-line-char>)* ;
 code-block := grave, <grave>, <grave>, <newline>, formatted-text, <grave{3}, newline, whitespace*> ;
-
 
 b) Mech Extensions
 
