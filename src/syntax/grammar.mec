@@ -1,0 +1,323 @@
+Mech Grammar
+==============
+
+(Revised 5/7/2024)
+
+╭--------┬-----------------------------------------------------╮
+| Symbol |   Semantics                                         |
+|--------|-----------------------------------------------------|
+|  "abc" | input matches string literal "abc" (terminal)       |
+|  p*    | input matches `p` for 0 or more times (repetition)  |
+|  p+    | input mathces `p` for 1 or more times (repetition)  |
+|  p?    | input mathces `p` for 0 or 1 time (optional)        |
+| p1, p2 | input matches `p1` followed by `p2` (sequence)      |
+| p1 | p2| input matches `p1` or `p2` (ordered choice)         |
+|  !!p   | input matches `p`; never consume input (peek)       |
+|  !p    | input doesn't match `p`; never consume input (peek) |
+| (...)  | common grouping                                     |
+| <...>  | labeled grouping                                    |
+╰--------┴-----------------------------------------------------╯
+
+1. The Basics
+---------------
+
+alpha = "a".."z" | "A".."Z";
+digt = "0".."9";
+emoji := emoji-grapheme+ ;
+word := alpha+ ;
+digit1 := digit+ ;
+digit0 := digit* ;
+bin-digit := "0" | "1" ;
+hex-digit := digit | "a" .. "f" | "A" .. "F" ;
+oct-digit := "0" .. "7" ;
+number := digit1 ;
+identifier := (word | emoji), (word | number | dash | slash | star | emoji)* ;
+
+punctuation := period | exclamation | question | comma | colon | semicolon | dash | apostrophe | left-parenthesis | right-parenthesis | left-angle | right-angle | left-brace | right-brace | left-bracket | right-bracket ;
+symbol := ampersand | bar | dollar | at | slash | backslash | hashtag | equal | tilde | plus | asterisk | asterisk | caret | underscore ;
+paragraph-symbol := ampersand | at | slash | backslash | asterisk | caret | underscore ;
+text := (word | space | number | punctuation | symbol | emoji)+ ;
+paragraph-rest := (word | space | number | punctuation | paragraph-symbol | quote | emoij)+ ;
+paragraph-starter := (word | number | quote | left-angle | right-angle | left-bracket | right-bracket | period | exclamation | question | comma | colon | semicolon | left-parenthesis | right-parenthesis | emoji)+ ;
+
+carriage-newline := "\r\n" ;
+newline := new-line-char | carriage-newline ;
+whitespace := space | newline | tab ;
+
+
+b) Comments
+
+comment-sigil := "--" | "//";
+comment := (space | tab)*, comment-sigil, <text>, <!!newline> ;
+
+
+2. Literals
+-------------
+
+a) Boolean
+
+boolean-literal := true-literal | false-literal ;
+true-literal := english-true-literal | true-symbol ;
+false-literal := english-false-literal | false-symbol ;
+true-symbol := "✓" ;
+false-symbol := "✗" ;
+english-true-literal := "true" ;
+english-false-literal := "false" ;
+
+
+b) Numbers
+
+number-literal := (hexadecimal-literal | octal-literal | binary-literal | decimal-literal | float-literal), kind-annotation? ;
+float-literal := "."?, digit1, "."?, digit0 ;
+decimal-literal := "0d", <digit1> ;
+hexadecimal-literal := "0x", <hex-digit+> ;
+octal-literal := "0o", <oct-digit+> ;
+binary-literal := "0b", <bin-digit+> ;
+scientific-literal := float-literal, "e", "-"?, float-literal ;
+
+
+c) Strings
+
+string-literal := quote, (!quote, <text>)*, quote ;
+
+
+d) Values
+
+value := empty | boolean-literal | number-literal | string-literal ;
+empty := underscore+ ;
+
+
+3. Tables
+-----------
+
+a) Define
+
+table := <identifier> ;
+
+binding := whitespace*, identifier, kind-annotation?, <!(space+, colon)>, colon, whitespace+,
+            <empty | expression | identifier | value>, <!!right-bracket | (whitespace*, comma, <whitespace+>) | whitespace+> ;
+binding-strict := whitespace*, identifier, kind-annotation?, <!(space+, colon)>, colon, <whitespace+>,
+                   <empty | expression | identifier | value>, <!!right-bracket | (whitespace*, comma, <whitespace+>) | whitespace+> ;
+table-column := (space | tab)*, (expression | value | data), comma?, (space | tab)* ;
+table-row := (space | tab)*, table-column+, semicolon?, newline? ;
+attribute := identifier, kind-annotation?, space*, comma?, space* ;
+table-header := bar, <attribute+>, <bar>, space*, newline? ;
+anonymous-table := left-bracket, (space | newline | tab)*, table-header?,
+                    ((comment, newline) | table-row)*, (space | newline | tab)*, <right-bracket> ;
+empty-table := left-bracket, (space | newline | tab)*, table-header?, (space | newline | tab)*, right-bracket ;
+inline-table := left-bracket, binding, <binding-strict*>, <right-bracket> ;
+kind-annotation := left-angle, <(identifier | underscore), (",", (identifier | underscore))*>, <right-angle> ;
+
+
+b) Output
+
+table-title := "│", identifier, ["+"], space, "(", number, space, "x", space, number, ")", {space}, "│", newline;
+table-type := "U8"|"U16"|"U32"|"U64"|"U128"|"I8"|"I16"|"I32"|"I64"|"I128"|"F32"|"F64"|"Bool"|"String";
+table-topline := "╭",{"-"}, "╮", newline ;
+table-line := "╭" | "├" | "╰",{"-",["┼" | "┬" | "┴"],"-"},"╮" | "┤" | "╯", newline;
+table-botline := "╰", {"-",["┴"],"-"}, "╯", newline;
+table-label := "│" , [{identifier, {space}, "│"}], newline
+table-output := table-line, table-title, table-line, [table-label],table-line, ["│", {table-type, {space}, "│"}, newline], {"│", {expressions, {space}, "│"}, newline},table-line;
+
+
+c) Indexing
+
+index := swizzle | dot-index | reshape-column | subscript-index ;
+
+select-all := colon ;
+subscript := (select-all | expression | tilde), space*, comma?, space* ;
+subscript-index := left-brace, <subscript+>, <right-brace> ;
+single-subscript-index := left-brace, <subscript>, <right-brace> ;
+dot-index := period, <identifier>, single-subscript-index? ;
+swizzle := period, identifier, comma, !space, <identifier, (",", identifier)*> ;
+reshape-column := left-brace, colon, right-brace ;
+data := (table | identifier), index*, transpose? ;
+
+
+3. Statements
+---------------
+
+statement := (table-define | variable-define | split-data | flatten-data | set-data | add-row ), space*, <newline+> ;
+
+a) Operators
+
+split-operator := ">-" ;
+flatten-operator := "-<" ;
+add-row-operator := "+=" ;
+set-operator := ":=" ;
+define-operator := "=";
+stmt-operator := split-operator | flatten-operator | set-operator | update-operator | add-row-operator | define-operator ;
+
+b) Statements
+
+table-define := table, kind-annotation?, <!stmt-operator>, space*, equal, <space+>, <expression> ;
+variable-define := identifier, <!stmt-operator>, space*, equal, <space+>, <expression> ;
+split-data := (identifier | table), <!stmt-operator>, space*, split-operator, <space+>, <expression> ;
+flatten-data := identifier, <!stmt-operator>, space*, flatten-operator, <space+>, <expression> ;
+set-data := data, <!stmt-operator>, space*, set-operator, <space+>, <expression> ;
+add-row := table, <!stmt-operator>, space*, add-row-operator, <space+>, <expression | inline-table | anonymous-table> ;
+
+
+4. Expressions
+----------------
+
+expression := (empty-table | inline-table | formula | string | anonymous-table), transpose? ;
+
+a) Math operators
+
+add := "+" ;
+subtract := "-" ;
+multiply := "*" ;
+divide := "/" ;
+exponent := "^" ;
+matrix-multiply := "**" ;
+transpose := "'" ;
+range     := ":" ;
+
+
+b) Filter operators
+
+not-equal := "!=" | "¬=" | "≠" ;
+equal-to := "==" ;
+greater-than := ">" ;
+less-than := "<" ;
+greater-than-equal := ">=" | "≥" ;
+less-than-equal := "<=" | "≤" ;
+filter-operator := not-equal | equal-to | greater-than-equal | greater-than | less-than-equal | less-than ;
+
+
+c) Logic operators
+
+or := "|" ;
+and := "&" ;
+not := "!" | "¬" ;
+xor := "xor" | "⊕" | "⊻" ;
+logic-operator = and | or | xor;
+
+d) Set Operators
+
+union := "∪" ;
+intersection := "∩" ;
+difference := "∖" ;
+complement := "∁" | "'" ;
+subset := "⊆" ;
+superset := "⊇" ;
+proper-subset := "⊊" ;
+proper-superset := "⊋" ;
+element-of := "∈" ;
+not-element-of := "∉" ;
+
+e) formulas
+
+parenthetical-expression := left-parenthesis, <l0>, <right-parenthesis> ;
+negation := dash, !(dash | space), <data | value> ;
+l0 := l1, l0-infix* ;
+l0-infix := <!(space+, colon)>, range, <!space>, <l1> ;
+
+l1 := l2, l1-infix* ;
+l1-op := add | subtract ;
+l1-infix := <!l1-op>, space*, !negation, !comment-sigil, l1-op, <space+>, <l2> ;
+
+l2 := l3, l2-infix* ;
+l2-op := matrix-multiply | multiply | divide ;
+l2-infix := <!l2-op>, space*, l2-op, <space+>, <l3> ;
+
+l3 := l4, l3-infix* ;
+l3-op := exponent ;
+l3-infix := <!l3-op>, space*, l3-op, <space+>, <l4> ;
+
+l4 := l5, l4-infix* ;
+l4-op :=  logic-operator ;
+l4-infix := <!l4-op>, space*, l4-op, <space+>, <l5> ;
+
+l5 := l6, l5-infix* ;
+l5-op := filter-operator ;
+l5-infix := <!l5-op>, space*, l5-op, <space+>, <l6> ;
+
+l6 := empty-table | string | anonymous-table | fxn-call | value | not | data | negation | parenthetical-expression ;
+formula := l0 ;
+
+f) if expressions
+
+if-expressoin := "if", expression, if-body, "else", else-body ;
+if-body :=
+else-body := 
+
+5. Functions
+--------------
+
+fxn-call := identifier, left-parenthesis, <fxn-binding+>, <right-parenthesis> ;
+fxn-define := left-bracket, fxn-output*, <right-bracket>, <space+>, <equal>, <space+>, <identifier>,
+                  <left-parenthesis>, <fxn-input*>, <right-parenthesis>, <newline>, <fxn-body> ;
+fxn-output := identifier, <kind-annotation>, space*, comma?, space* ;
+fxn-input := identifier, <kind-annotation>, space*, comma?, space* ;
+fxn-body := indented-tfm+, whitespace* ;
+fxn-binding := identifier, <colon>, <space+>, <expression | identifier | value>, space*, comma?, space* ;
+
+
+6. Blocks
+-----------
+
+transformation := statement;
+empty-line := space*, newline ;
+indented-tfm := !empty-line, space, <space>, <!space>, <transformation> ;
+block := indented-tfm+, whitespace* ;
+
+7. State machines
+-------------------
+
+a) Operators
+
+pipe-operator := "=>" ;
+fsm-output-operator := "->" ;
+fsm-sigil := "#" ;
+next := pipe-operator | fsm-output-operator ;
+
+b) Specification
+
+fsm-specification := fsm-sigil, identifier, left-paren, kind-annotation*, right-paren, (fsm-output-operator, kind-annotation)?, ":=", (state-definition)*, "." ;
+state-definition := "|", identifier, (left-paren, kind-annotation, (",", kind-annotation)*, right-paren)? ;
+
+c) Implementation
+
+fsm-specification := fsm-sigil, identifier, left-paren, right-paren, pipe-operator, pattern, state-arm+ ;
+state-arm := pattern, (next, pattern | fsm-block)+;
+fsm-block := left-brace, statement+, right-brace;
+pattern := identifier, (left-paren, pattern-el, right-paren)? ;
+pattern-el := value | array-pattern | filter
+filter := filter-operator, value ;
+array-pattern := left-backet, (identifier | filter, ("," | space)+)* , right-bracket;
+
+
+8. Mechdown
+-------------
+
+a) Markdown
+
+ul-title := space*, text, space*, newline, equal+, space*, newline* ;
+title := ul-title ;
+ul-subtitle := space*, text, space*, newline, dash+, space*, newline* ;
+subtitle := ul-subtitle ;
+inline-code := grave, text, grave, space* ;
+paragraph-text := paragraph-starter, paragraph-rest? ;
+paragraph := (inline-code | paragraph-text)+, whitespace*, newline* ;
+unordered-list := list-item+, newline?, whitespace* ;
+list-item := dash, <space+>, <paragraph>, newline* ;
+formatted-text := (!grave, !eof, <paragraph-rest | carriage-return | new-line-char>)* ;
+code-block := grave, <grave>, <grave>, <newline>, formatted-text, <grave{3}, newline, whitespace*> ;
+
+
+b) Mech Extensions
+
+mech-code-block := grave{3}, !!"mec", <"mech:">, text?, <newline>, <block>, <grave{3}, newline>, whitespace* ;
+
+
+9. Program Specification
+--------------------------
+
+section-element := fxn-define | block | mech-code-block | code-block | statement | subtitle | paragraph | unordered-list;
+section := (!eof, <section-element>, whitespace?)+ ;
+body := whitespace*, section+ ;
+program := whitespace?, title?, <body>, whitespace?, space* ;
+parse-mech-fragment := statement ;
+parse-mech := program | statement ;
