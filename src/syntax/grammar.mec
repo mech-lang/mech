@@ -4,22 +4,23 @@ Mech Grammar
 (Revised 5/7/2024)
 
 ╭--------┬-----------------------------------------------------╮
-| Symbol |   Semantics                                         |
-|--------|-----------------------------------------------------|
-|  "abc" | input matches string literal "abc" (terminal)       |
-|  p*    | input matches `p` for 0 or more times (repetition)  |
-|  p+    | input mathces `p` for 1 or more times (repetition)  |
-|  p?    | input mathces `p` for 0 or 1 time (optional)        |
-| p1, p2 | input matches `p1` followed by `p2` (sequence)      |
-| p1 | p2| input matches `p1` or `p2` (ordered choice)         |
-|  !!p   | input matches `p`; never consume input (peek)       |
-|  !p    | input doesn't match `p`; never consume input (peek) |
-| (...)  | common grouping                                     |
-| <...>  | labeled grouping                                    |
+│ Symbol │   Semantics                                         │
+├--------┼-----------------------------------------------------┤
+│  "abc" │ input matches string literal "abc" (terminal)       │
+│  p*    │ input matches `p` for 0 or more times (repetition)  │
+│  p+    │ input mathces `p` for 1 or more times (repetition)  │
+│  p?    │ input mathces `p` for 0 or 1 time (optional)        │
+│ p1, p2 │ input matches `p1` followed by `p2` (sequence)      │
+│ p1 | p2│ input matches `p1` or `p2` (ordered choice)         │
+│  !!p   │ input matches `p`; never consume input (peek)       │
+│  !p    │ input doesn't match `p`; never consume input (peek) │
+│ (...)  │ common grouping                                     │
+│ <...>  │ labeled grouping                                    │
 ╰--------┴-----------------------------------------------------╯
 
+
 1. The Basics
----------------
+----------------------------------------------------------------------------
 
 alpha = "a".."z" | "A".."Z";
 digt = "0".."9";
@@ -51,7 +52,7 @@ comment := (space | tab)*, comment-sigil, <text>, <!!newline> ;
 
 
 2. Literals
--------------
+----------------------------------------------------------------------------
 
 a) Boolean
 
@@ -84,22 +85,19 @@ empty := underscore+ ;
 
 
 3. Tables
------------
+----------------------------------------------------------------------------
 
 a) Define
 
 table := inline-table | anonmous-table | empty-table ;
 
-binding := whitespace*, identifier, kind-annotation?, <!(space+, colon)>, colon, whitespace+,
-            <empty | expression | identifier | value>, <!!right-bracket | (whitespace*, comma, <whitespace+>) | whitespace+> ;
-binding-strict := whitespace*, identifier, kind-annotation?, <!(space+, colon)>, colon, <whitespace+>,
-                   <empty | expression | identifier | value>, <!!right-bracket | (whitespace*, comma, <whitespace+>) | whitespace+> ;
+binding := whitespace*, identifier, kind-annotation?, <!(space+, colon)>, colon, whitespace+, <empty | expression | identifier | value>, <!!right-bracket | (whitespace*, comma, <whitespace+>) | whitespace+> ;
+binding-strict := whitespace*, identifier, kind-annotation?, <!(space+, colon)>, colon, <whitespace+>, <empty | expression | identifier | value>, <!!right-bracket | (whitespace*, comma, <whitespace+>) | whitespace+> ;
 table-column := (space | tab)*, (expression | value | data), comma?, (space | tab)* ;
 table-row := (space | tab)*, table-column+, semicolon?, newline? ;
 attribute := identifier, kind-annotation?, space*, comma?, space* ;
 table-header := bar, <attribute+>, <bar>, space*, newline? ;
-anonymous-table := left-bracket, (space | newline | tab)*, table-header?,
-                    ((comment, newline) | table-row)*, (space | newline | tab)*, <right-bracket> ;
+anonymous-table := left-bracket, (space | newline | tab)*, table-header?, ((comment, newline) | table-row)*, (space | newline | tab)*, <right-bracket> ;
 empty-table := left-bracket, (space | newline | tab)*, table-header?, (space | newline | tab)*, right-bracket ;
 inline-table := left-bracket, binding, <binding-strict*>, <right-bracket> ;
 kind-annotation := left-angle, <(identifier | underscore), (",", (identifier | underscore))*>, <right-angle> ;
@@ -129,7 +127,7 @@ data := identifier, index*, transpose? ;
 
 
 3. Statements
----------------
+----------------------------------------------------------------------------
 
 statement := (table-define | variable-define | split-data | flatten-data | set-data | add-row ), space*, <newline+> ;
 
@@ -149,15 +147,16 @@ variable-define := identifier, <!stmt-operator>, space*, equal, <space+>, <expre
 split-data := (identifier | table), <!stmt-operator>, space*, split-operator, <space+>, <expression> ;
 flatten-data := identifier, <!stmt-operator>, space*, flatten-operator, <space+>, <expression> ;
 set-data := data, <!stmt-operator>, space*, set-operator, <space+>, <expression> ;
+type-define := left-angle, identifier, right-angle, define-operator, identifier, (left-bracket, dimension, right-bracket)? ;
 add-row := table, <!stmt-operator>, space*, add-row-operator, <space+>, <expression | inline-table | anonymous-table> ;
 
 
 4. Expressions
-----------------
+----------------------------------------------------------------------------
 
 expression := (empty-table | inline-table | formula | string | anonymous-table), transpose? ;
 
-a) Math operators
+a) Math Operators
 
 add := "+" ;
 subtract := "-" ;
@@ -168,7 +167,7 @@ matrix-multiply := "**" ;
 transpose := "'" ;
 range     := ":" ;
 
-b) Filter operators
+b) Filter Operators
 
 not-equal := "!=" | "¬=" | "≠" ;
 equal-to := "==" ;
@@ -178,7 +177,7 @@ greater-than-equal := ">=" | "≥" ;
 less-than-equal := "<=" | "≤" ;
 filter-operator := not-equal | equal-to | greater-than-equal | greater-than | less-than-equal | less-than ;
 
-c) Logic operators
+c) Logic Operators
 
 or := "|" ;
 and := "&" ;
@@ -229,19 +228,18 @@ l5-infix := <!l5-op>, space*, l5-op, <space+>, <l6> ;
 l6 := empty-table | string | anonymous-table | fxn-call | value | not | data | negation | parenthetical-expression ;
 formula := l0 ;
 
-f) if expressions
+f) If Expressions
 
-if-expressoin := "if", expression, if-body, "else", else-body ;
-if-body :=
-else-body := 
+if-sigil := "if" | "├" | "│" | "else" | "└" ;
+if-expression := (if-sigil, if-condition, if-clause)+ ;
+if-condition := underscore | formula | pattern ;
 
 
 5. Functions
---------------
+----------------------------------------------------------------------------
 
 fxn-call := identifier, left-parenthesis, <fxn-binding+>, <right-parenthesis> ;
-fxn-define := left-bracket, fxn-output*, <right-bracket>, <space+>, <equal>, <space+>, <identifier>,
-                  <left-parenthesis>, <fxn-input*>, <right-parenthesis>, <newline>, <fxn-body> ;
+fxn-define := left-bracket, fxn-output*, <right-bracket>, <space+>, <equal>, <space+>, <identifier>, <left-parenthesis>, <fxn-input*>, <right-parenthesis>, <newline>, <fxn-body> ;
 fxn-output := identifier, <kind-annotation>, space*, comma?, space* ;
 fxn-input := identifier, <kind-annotation>, space*, comma?, space* ;
 fxn-body := indented-tfm+, whitespace* ;
@@ -249,16 +247,15 @@ fxn-binding := identifier, <colon>, <space+>, <expression | identifier | value>,
 
 
 6. Blocks
------------
+----------------------------------------------------------------------------
 
-transformation := statement;
 empty-line := space*, newline ;
-indented-tfm := !empty-line, space, <space>, <!space>, <transformation> ;
+indented-tfm := !empty-line, space, <space>, <!space>, <statement> ;
 block := indented-tfm+, whitespace* ;
 
 
-7. State machines
--------------------
+7. State Machines
+----------------------------------------------------------------------------
 
 a) Operators
 
@@ -280,11 +277,11 @@ fsm-block := left-brace, statement+, right-brace;
 pattern := identifier, (left-paren, pattern-el, right-paren)? ;
 pattern-el := value | array-pattern | filter
 filter := filter-operator, value ;
-array-pattern := left-backet, (identifier | filter, ("," | space)+)* , right-bracket;
+array-pattern := left-backet, (identifier | filter, ("," | space)+)* , right-bracket ;
 
 
 8. Mechdown
--------------
+----------------------------------------------------------------------------
 
 a) Markdown
 
@@ -306,7 +303,7 @@ mech-code-block := grave{3}, !!"mec", <"mech:">, text?, <newline>, <block>, <gra
 
 
 9. Program Specification
---------------------------
+----------------------------------------------------------------------------
 
 section-element := fxn-define | block | mech-code-block | code-block | statement | subtitle | paragraph | unordered-list;
 section := (!eof, <section-element>, whitespace?)+ ;
