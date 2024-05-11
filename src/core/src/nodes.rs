@@ -712,13 +712,48 @@ struct Section {
 }
 
 enum SectionElement {
+  Subtitle,
+  Paragraph(String),
+  MechCode,
+  CodeBlock,
+  UnorderedList,
+  OrderedList,
+  BlockQuote,
+  ThematicBreak,
+}
+
+enum Subtitle {
+  Subtitle1,
+  Subtitle2,
+  Subtitle3,
+  Subtitle4,
+  Subtitle5,
+}
+
+enum MechCode {
   Statement(Statement),
-  Paragraph(String)
+  FunctionDefine,
+  FiniteStateMachine,
+}
+
+struct FsmSpecification {
+  name: Identifier,
+  input: Vec<KindAnnotation>,
+  output: KindAnnotation,
+  states: StateDefinition,
+}
+
+struct StateDefinition {
+  name: Identifier,
+
 }
 
 enum Statement {
   TableDefine(TableDefine),
-  VariableDefine(VariableDefine)
+  VariableDefine(VariableDefine),
+  SplitTable,
+  FlattenTable,
+  SetData,
 }
 
 struct TableDefine {
