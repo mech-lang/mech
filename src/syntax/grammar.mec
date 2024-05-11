@@ -129,7 +129,7 @@ data := identifier, index*, transpose? ;
 3. Statements
 ----------------------------------------------------------------------------
 
-statement := (table-define | variable-define | split-data | flatten-data | set-data | add-row ), space*, <newline+> ;
+statement := (table-define | variable-define | split-table | flatten-table | set-data ), space*, <newline+> ;
 
 a) Operators
 
@@ -144,8 +144,8 @@ b) Statements
 
 table-define := table, kind-annotation?, <!stmt-operator>, space*, equal, <space+>, <expression> ;
 variable-define := identifier, <!stmt-operator>, space*, equal, <space+>, <expression> ;
-split-data := (identifier | table), <!stmt-operator>, space*, split-operator, <space+>, <expression> ;
-flatten-data := identifier, <!stmt-operator>, space*, flatten-operator, <space+>, <expression> ;
+split-table := (identifier | table), <!stmt-operator>, space*, split-operator, <space+>, <expression> ;
+flatten-table := identifier, <!stmt-operator>, space*, flatten-operator, <space+>, <expression> ;
 set-data := data, <!stmt-operator>, space*, set-operator, <space+>, <expression> ;
 type-define := left-angle, identifier, right-angle, define-operator, identifier, (left-bracket, dimension, right-bracket)? ;
 add-row := table, <!stmt-operator>, space*, add-row-operator, <space+>, <expression | inline-table | anonymous-table> ;
@@ -257,6 +257,8 @@ block := indented-tfm+, whitespace* ;
 7. State Machines
 ----------------------------------------------------------------------------
 
+fsm := fsm-specification | fsm-definition ;
+
 a) Operators
 
 pipe-operator := "=>" ;
@@ -271,7 +273,7 @@ state-definition := "|", identifier, (left-paren, kind-annotation, (",", kind-an
 
 c) Implementation
 
-fsm-specification := fsm-sigil, identifier, left-paren, right-paren, pipe-operator, pattern, state-arm+ ;
+fsm-definition := fsm-sigil, identifier, left-paren, right-paren, pipe-operator, pattern, state-arm+ ;
 state-arm := pattern, (next, pattern | fsm-block)+;
 fsm-block := left-brace, statement+, right-brace;
 pattern := identifier, (left-paren, pattern-el, right-paren)? ;
@@ -282,6 +284,11 @@ array-pattern := left-backet, (identifier | filter, ("," | space)+)* , right-bra
 
 8. Mechdown
 ----------------------------------------------------------------------------
+
+code-span := "`" ;
+emphasis := "*" ;
+strong-emphasis := "**" ;
+block-quote-start := ">";
 
 a) Markdown
 
@@ -296,10 +303,14 @@ unordered-list := list-item+, newline?, whitespace* ;
 list-item := dash, <space+>, <paragraph>, newline* ;
 formatted-text := (!grave, !eof, <paragraph-rest | carriage-return | new-line-char>)* ;
 code-block := grave, <grave>, <grave>, <newline>, formatted-text, <grave{3}, newline, whitespace*> ;
+ordered-list :=
+block-quote :=
+thematic-break := "--", "-"* ;
 
 b) Mech Extensions
 
-mech-code-block := grave{3}, !!"mec", <"mech:">, text?, <newline>, <block>, <grave{3}, newline>, whitespace* ;
+mech-code := statement | block | fxn-define | fsm ;
+mech-code-block := grave{3}, !!"mec", <"mech:">, text?, <newline>, <mech-code>, <grave{3}, newline>, whitespace* ;
 
 
 9. Program Specification
