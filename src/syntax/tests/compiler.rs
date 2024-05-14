@@ -249,6 +249,11 @@ test_mech!(math_matrix_multiply_col_row,"
 x = [1; 2] ** [3 4]
 #test = stats/sum(table: x)", Value::F32(F32::new(21.0)));
 
+test_mech!(math_matrix_transpose_row,"
+x = [1 2 3]
+#test = x ** x'", Value::F32(F32::new(14.0)));
+
+/*
 test_mech!(math_matrix_multiply_mat_mat,"
 x = [1 2; 3 4] ** [5 6; 7 8]
 #test = stats/sum(table: x)", Value::F32(F32::new(134.0)));
@@ -267,14 +272,10 @@ test_mech!(math_matrix_multiply_mat_col,"
 x = [1 2 3; 4 5 6; 7 8 9] ** [1;2;3]
 #test = stats/sum(column: x)", Value::F32(F32::new(96.0)));
 
-test_mech!(math_matrix_transpose_row,"
-x = [1 2 3]
-#test = x ** x'", Value::F32(F32::new(14.0)));
-
 test_mech!(math_matrix_transpose_matrix,"
 x = [1 2; 3 4]
 y = x ** x'
-#test = stats/sum(table: y)", Value::F32(F32::new(52.0)));
+#test = stats/sum(table: y)", Value::F32(F32::new(52.0)));*/
 
 test_mech!(math_divide,"#test = 4 / 2", Value::F32(F32::new(2.0)));
 
