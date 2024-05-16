@@ -745,6 +745,7 @@ pub enum Subtitle {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum MechCode {
+  Expression(Expression),
   Statement(Statement),
   FunctionDefine,
   FiniteStateMachine,
@@ -838,16 +839,17 @@ pub struct KindAnnotation {
 pub enum Literal {
   Empty,
   Boolean(bool),
-  Number(NumberLiteral),
+  Number(Number),
   String(String),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum NumberLiteral {
-  Float,
-  Decimal,
-  Hexadecimal,
-  Octal,
-  Binary,
-  Scientific
+pub enum Number {
+  Integer(Vec<Token>),
+  Float(Vec<Token>),
+  Decimal(Vec<Token>),
+  Hexadecimal(Vec<Token>),
+  Octal(Vec<Token>),
+  Binary(Vec<Token>),
+  Scientific(Vec<Token>)
 }

@@ -601,12 +601,12 @@ pub fn any(mut input: ParseString) -> ParseResult<String> {
 
 macro_rules! leaf {
   ($name:ident, $byte:expr, $token:expr) => (
-    fn $name(input: ParseString) -> ParseResult<ParserNode> {
+    fn $name(input: ParseString) -> ParseResult<Token> {
       let start = input.loc();
       let (input, _) = tag($byte)(input)?;
       let end = input.loc();
       let src_range = SourceRange { start, end };
-      Ok((input, ParserNode::Token{token: $token, chars: $byte.chars().collect::<Vec<char>>(), src_range}))
+      Ok((input, Token{kind: $token, chars: $byte.chars().collect::<Vec<char>>(), src_range}))
     }
   )
 }
@@ -644,7 +644,7 @@ leaf!{bar, "|", TokenKind::Bar}
 leaf!{quote, "\"", TokenKind::Quote}
 leaf!{ampersand, "&", TokenKind::Ampersand}
 leaf!{semicolon, ";", TokenKind::Semicolon}
-leaf!{new_line_char, "\n", TokenKind::Newline}
+leaf!{new_line, "\n", TokenKind::Newline}
 leaf!{carriage_return, "\r", TokenKind::CarriageReturn}
 
 // emoji ::= emoji_grapheme+ ;
@@ -705,32 +705,31 @@ pub fn oct_digit(input: ParseString) -> ParseResult<String> {
 }
 
 // number ::= digit1 ;
-pub fn number<'a>(input: ParseString<'a>) -> ParseResult<ParserNode> {
+pub fn integer<'a>(input: ParseString<'a>) -> ParseResult<Number> {
   let digit_token = |input: ParseString<'a>| {
     let (input, (g, src_range)) = range(digit)(input)?;
-    Ok((input, ParserNode::Token{token: TokenKind::Digit, chars: g.chars().collect::<Vec<char>>(), src_range}))
+    Ok((input, Token{kind: TokenKind::Digit, chars: g.chars().collect::<Vec<char>>(), src_range}))
   };
   let (input, tokens) = many1(digit_token)(input)?;
-  // let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: TokenKind::Digit, chars: b.chars().collect::<Vec<char>>()}).collect();
-  Ok((input, ParserNode::Number{children: tokens}))
+  Ok((input, Number::Integer(tokens)))
 }
 
 // punctuation ::= period | exclamation | question | comma | colon | semicolon | dash | apostrophe | left_parenthesis | right_parenthesis | left_angle | right_angle | left_brace | right_brace | left_bracket | right_bracket ;
 pub fn punctuation(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, punctuation) = alt((period, exclamation, question, comma, colon, semicolon, dash, apostrophe, left_parenthesis, right_parenthesis, left_angle, right_angle, left_brace, right_brace, left_bracket, right_bracket))(input)?;
-  Ok((input, ParserNode::Punctuation{children: vec![punctuation]}))
+  //let (input, punctuation) = alt((period, exclamation, question, comma, colon, semicolon, dash, apostrophe, left_parenthesis, right_parenthesis, left_angle, right_angle, left_brace, right_brace, left_bracket, right_bracket))(input)?;
+  Ok((input, ParserNode::Error))
 }
 
 // symbol ::= ampersand | bar | at | slash | backslash | hashtag | equal | tilde | plus | asterisk | asterisk | caret | underscore ;
 pub fn symbol(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, symbol) = alt((ampersand, bar, at, slash, backslash, hashtag, equal, tilde, plus, asterisk, caret, underscore))(input)?;
-  Ok((input, ParserNode::Symbol{children: vec![symbol]}))
+  //let (input, symbol) = alt((ampersand, bar, at, slash, backslash, hashtag, equal, tilde, plus, asterisk, caret, underscore))(input)?;
+  Ok((input, ParserNode::Error))
 }
 
 // paragraph_symbol ::= ampersand | at | slash | backslash | asterisk | caret | hashtag | underscore ;
 pub fn paragraph_symbol(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, symbol) = alt((ampersand, at, slash, backslash, asterisk, caret, hashtag, underscore, equal, tilde, plus, percent))(input)?;
-  Ok((input, ParserNode::Symbol{children: vec![symbol]}))
+  //let (input, symbol) = alt((ampersand, at, slash, backslash, asterisk, caret, hashtag, underscore, equal, tilde, plus, percent))(input)?;
+  Ok((input, ParserNode::Error))
 }
 
 // text ::= (word | space | number | punctuation | symbol | emoji)+ ;
@@ -809,27 +808,29 @@ pub fn carriage_newline(input: ParseString) -> ParseResult<ParserNode> {
 
 // newline ::= new_line_char | carriage_newline ;
 pub fn newline(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = alt((new_line_char, carriage_newline))(input)?;
+  //let (input, _) = alt((new_line_char, carriage_newline))(input)?;
   Ok((input, ParserNode::Null))
 }
 
 // whitespace ::= space*, newline+ ;
-pub fn whitespace(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = many0(space)(input)?;
-  let (input, _) = many1(newline)(input)?;
-  Ok((input, ParserNode::Null))
+pub fn whitespace(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many1(alt((space,new_line,carriage_return)))(input)?;
+  Ok((input, ()))
 }
 
 // number_literal ::= (hexadecimal_literal | octal_literal | binary_literal | decimal_literal | float_literal), kind_annotation? ;
-pub fn number_literal(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, number_variant) = alt((hexadecimal_literal, octal_literal, binary_literal, decimal_literal, float_literal))(input)?;
+pub fn number(input: ParseString) -> ParseResult<Number> {
+  let (input, result) = integer(input)?;
+  /*
+    let (input, number_variant) = alt((hexadecimal_literal, octal_literal, binary_literal, decimal_literal, float_literal))(input)?;
   let (input, kind_id) = opt(kind_annotation)(input)?;
   let mut children = vec![number_variant];
   match kind_id {
     Some(kind_id) => children.push(kind_id),
     _ => (),
   }
-  Ok((input, ParserNode::NumberLiteral{children}))
+  */
+  Ok((input, result))
 }
 
 // pub fn rational_number(input: ParseString) -> IResult<ParseString, ParserNode> {
@@ -904,12 +905,6 @@ pub fn binary_literal(input: ParseString) -> ParseResult<ParserNode> {
   let end = input.loc();
   let src_range = SourceRange { start, end };
   Ok((input, ParserNode::BinaryLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect(), src_range}))
-}
-
-// value ::= empty | boolean_literal | number_literal | string ;
-pub fn value(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, value) = alt((empty, boolean_literal, number_literal, string))(input)?;
-  Ok((input, ParserNode::Value{children: vec![value]}))
 }
 
 // empty ::= underscore+ ;
@@ -1163,7 +1158,7 @@ pub fn table_header(input: ParseString) -> ParseResult<ParserNode> {
 // anonymous_table ::= left_bracket, (space | newline | tab)*, table_header?,
 // >>                  ((comment, newline) | table_row)*, (space | newline | tab)*, <right_bracket> ;
 pub fn anonymous_table(input: ParseString) -> ParseResult<ParserNode> {
-  let msg = "Expect right bracket ']' to finish the table";
+  /*let msg = "Expect right bracket ']' to finish the table";
   let (input, (_, r)) = range(left_bracket)(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (mut input, table_header) = opt(table_header)(input)?;
@@ -1184,13 +1179,13 @@ pub fn anonymous_table(input: ParseString) -> ParseResult<ParserNode> {
     Some(table_header) => table.push(table_header),
     _ => (),
   };
-  table.append(&mut table_rows);
-  Ok((input, ParserNode::AnonymousTable{children: table}))
+  table.append(&mut table_rows);*/
+  Ok((input, ParserNode::Error))
 }
 
 // empty_table ::= left_bracket, (space | newline | tab)*, table_header?, (space | newline | tab)*, right_bracket ;
 pub fn empty_table(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = left_bracket(input)?;
+  /*let (input, _) = left_bracket(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
   let (input, table_header) = opt(table_header)(input)?;
   let (input, _) = many0(alt((space, newline, tab)))(input)?;
@@ -1199,8 +1194,8 @@ pub fn empty_table(input: ParseString) -> ParseResult<ParserNode> {
   match table_header {
     Some(table_header) => table.push(table_header),
     _ => (),
-  };
-  Ok((input, ParserNode::EmptyTable{children: table}))
+  };*/
+  Ok((input, ParserNode::Error))
 }
 
 // inline_table ::= left_bracket, binding, <binding_strict*>, <right_bracket> ;
@@ -1219,7 +1214,7 @@ pub fn inline_table(input: ParseString) -> ParseResult<ParserNode> {
 
 // stmt_operator ::= split_operator | flatten_operator | set_operator | update_operator | add_row_operator | equal ;
 pub fn stmt_operator(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = alt((split_operator, flatten_operator, set_operator, update_operator, add_row_operator, equal, async_assign_operator))(input)?;
+  //let (input, _) = alt((split_operator, flatten_operator, set_operator, update_operator, add_row_operator, equal, async_assign_operator))(input)?;
   Ok((input, ParserNode::Null))
 }
 
@@ -1569,7 +1564,7 @@ pub fn negation(input: ParseString) -> ParseResult<ParserNode> {
   let msg = "Expect a value to immediately follow the negation sign";
   let (input, (_, r)) = range(dash)(input)?;
   let (input, _) = is_not(alt((dash, space)))(input)?;  // so it's not comment sigil
-  let (input, negated) = label!(alt((data, value)), msg, r)(input)?;
+  let (input, negated) = label!(data, msg, r)(input)?;
   Ok((input, ParserNode::Negation { children: vec![negated] }))
 }
 
@@ -1635,9 +1630,9 @@ pub fn function_input(input: ParseString) -> ParseResult<ParserNode> {
 
 // function_body ::= indented_tfm+, whitespace* ;
 pub fn function_body(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, transformations) = many1(indented_tfm)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
-  Ok((input, ParserNode::FunctionBody { children: transformations }))
+  //let (input, transformations) = many1(indented_tfm)(input)?;
+  //let (input, _) = many0(whitespace)(input)?;
+  Ok((input, ParserNode::Error))
 }
 
 // matrix_multiply ::= "**" ;
@@ -1836,7 +1831,7 @@ pub fn l5_infix(input: ParseString) -> ParseResult<ParserNode> {
 
 // l6 ::= empty_table | string | anonymous_table | function | value | not | data | negation | parenthetical_expression ;
 pub fn l6(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, l6) = alt((empty_table, string, anonymous_table, function, value, not, data, negation, parenthetical_expression))(input)?;
+  let (input, l6) = alt((empty_table, string, anonymous_table, function, not, data, negation, parenthetical_expression))(input)?;
   Ok((input, ParserNode::L6 { children: vec![l6] }))
 }
 
@@ -1936,16 +1931,21 @@ pub fn transpose(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Transpose))
 }
 
+pub fn literal(input: ParseString) -> ParseResult<Literal> {
+  let (input, result) = number(input)?;
+  Ok((input, Literal::Number(result)))
+}
+
 // expression ::= (empty_table | inline_table | math_expression | string | anonymous_table), transpose? ;
 pub fn expression(input: ParseString) -> ParseResult<Expression> {
-  /*let (input, expression) = alt((inline_table, math_expression, string, empty_table, anonymous_table))(input)?;
-  let (input, transpose) = opt(transpose)(input)?;
+  let (input, expression) = literal(input)?;
+  /*let (input, transpose) = opt(transpose)(input)?;
   let mut children = vec![expression];
   match transpose {
     Some(transpose) => children.push(transpose),
     _ => (),
   }*/
-  Ok((input, Expression::EmptyTable))
+  Ok((input, Expression::Literal(expression)))
 }
 
 // #### Block basics
@@ -1963,7 +1963,7 @@ pub fn empty_line(input: ParseString) -> ParseResult<ParserNode> {
 }
 
 // indented_tfm ::= !empty_line, space, <space>, <!space>, <transformation> ;
-pub fn indented_tfm(input: ParseString) -> ParseResult<ParserNode> {
+/*pub fn indented_tfm(input: ParseString) -> ParseResult<ParserNode> {
   let msg1 = "Indentation has to be exactly 2 spaces";
   let msg2 = "Expect transformation";
   let (input, _) = tuple((
@@ -1973,13 +1973,13 @@ pub fn indented_tfm(input: ParseString) -> ParseResult<ParserNode> {
     labelr!(is_not(space), skip_spaces, msg1),
   ))(input)?;
   label!(transformation, msg2)(input)
-}
+}*/
 
 // block ::= indented_tfm+, whitespace* ;
 pub fn block(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, (transformations, src_range)) = range(many1(indented_tfm))(input)?;
-  let (input, _) = many0(whitespace)(input)?;
-  Ok((input, ParserNode::Block { children: transformations, src_range }))
+  //let (input, (transformations, src_range)) = range(many1(indented_tfm))(input)?;
+  //let (input, _) = many0(whitespace)(input)?;
+  Ok((input, ParserNode::Error))
 }
 
 // ### Markdown
@@ -2021,13 +2021,13 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<ParserNode> {
 pub fn number_subtitle(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = many0(space)(input)?;
   let (input, _) = left_parenthesis(input)?;
-  let (input, _) = number(input)?;
+  let (input, _) = integer(input)?;
   let (input, _) = right_parenthesis(input)?;
   let (input, _) = many1(space)(input)?;
   let (input, title) = text(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, _) = many0(newline)(input)?;
-  Ok((input, ParserNode::Subtitle {level: 2, children: vec![title] }))
+  Ok((input, ParserNode::Error))
 }
 
 // alpha_subtitle ::= space*, alpha, right_parenthesis, space+, text, space*, newline* ;
@@ -2159,8 +2159,8 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
 }*/
 
 pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
-  let (input, mech_code) = statement(input)?;
-  Ok((input, MechCode::Statement(mech_code)))
+  let (input, mech_code) = expression(input)?;
+  Ok((input, MechCode::Expression(mech_code)))
 }
 
 // ### Start here
@@ -2256,7 +2256,7 @@ pub fn section3(input: ParseString) -> ParseResult<ParserNode> {
 pub fn body(input: ParseString) -> ParseResult<Body> {
   let (input, _) = many0(whitespace)(input)?;
   let (input, sections) = many1(section)(input)?;
-  let output = Body{sections: vec![]};
+  let output = Body{sections};
   Ok((input, output))
 }
 
@@ -2273,7 +2273,6 @@ pub fn program(input: ParseString) -> ParseResult<Program> {
   //let (input, body) = labelr!(body, skip_nil, msg)(input)?;
   let (input, body) = body(input)?;
   let (input, _) = opt(whitespace)(input)?;
-  let (input, _) = many0(space)(input)?;
   
   let output = Program{title: None, body: vec![body]};
 
@@ -2467,7 +2466,7 @@ impl<'a> TextFormatter<'a> {
         for r in r1+1..r2 {
           range_table.get_mut(&r).unwrap().push((1, usize::MAX, false, i == n));
         }
-        if c2 != 0 {  // only add the last line if it has non-zero length
+        if c2 != 0 {  // only add the last line if it hfnas non-zero length
           range_table.get_mut(&r2).unwrap().push((1, c2, i == n, i == n));
         }
       }
@@ -2618,7 +2617,7 @@ pub fn parse(text: &str) -> Result<Program, MechError> {
     let e = ParseError::new(remaining, "Inputs since here are not parsed");
     error_log.push((e.cause_range, e.error_detail));
   }
-  
+
   // Construct result
   if error_log.is_empty() {
     Ok(result_node.unwrap())
@@ -2633,7 +2632,7 @@ pub fn parse(text: &str) -> Result<Program, MechError> {
   }
 }
 
-pub fn parse_fragment(text: &str) -> Result<ParserNode, MechError> {
+/*pub fn parse_fragment(text: &str) -> Result<ParserNode, MechError> {
   let graphemes = graphemes::init_source(text);
   let mut result_node = ParserNode::Error;
   let mut error_log: Vec<(SourceRange, ParseErrorDetail)> = vec![];
@@ -2677,4 +2676,4 @@ pub fn parse_fragment(text: &str) -> Result<ParserNode, MechError> {
     let msg = TextFormatter::new(text).format_error(&report);
     Err(MechError{msg: "".to_string(), id: 3202, kind: MechErrorKind::ParserError(result_node, report, msg)})
   }
-}
+}*/
