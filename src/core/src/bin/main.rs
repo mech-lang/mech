@@ -154,7 +154,7 @@ fn main() -> std::result::Result<(),MechError> {
   let mut ix_or = Column::Bool(ColumnV::new((vec![false; n])));
   let mut vx2 = Column::f32(ColumnV::new((vec![0.0; n])));
 
-  let h = 20;
+  let h = 200;
   let mut qq = Table::new(hash_str("foo"),h,h);
   qq.set_kind(ValueKind::F32);
   for i in 0..h {
@@ -214,7 +214,7 @@ fn main() -> std::result::Result<(),MechError> {
     }
     _ => (),
   }
-  block1.plan.push(matrix::MatrixMulMM{a: qqdm.clone(), b: rrdm.clone(), c: outdm.clone(),lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
+  
 
   // Keep the balls within the boundary height
   let mut block2 = Block::new();
@@ -283,11 +283,15 @@ fn main() -> std::result::Result<(),MechError> {
   //println!("{:?}", core);
   
   let mut total_time = VecDeque::new();  
-  for i in 0..10000 {
+  let mut max = 0.0;
+  let mut min = 1e20;
+  let tfm = matrix::MatrixMulMM{a: qqdm.clone(), b: rrdm.clone(), c: outdm.clone(),lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()};
+  for i in 0..100000 {
     let txn = vec![Change::Set((hash_str("time/timer"), 
       vec![(TableIndex::Index(1), TableIndex::Index(2), Value::f32(i as f32))]))];
     
     let now = Instant::now();
+    tfm.solve();
     /*for i in 0..n {
       x[i] = x[i] + vx[i];
       y[i] = y[i] + vy[i];
@@ -309,18 +313,25 @@ fn main() -> std::result::Result<(),MechError> {
         vy[i] = vy[i] * -0.8;
       }
     }*/
-    core.process_transaction(&txn)?;
+    //core.process_transaction(&txn)?;
     let elapsed_time = now.elapsed();
     
     let cycle_duration = elapsed_time.as_nanos() as f64;
+    if cycle_duration > max {
+      max = cycle_duration;
+    }
+    if cycle_duration < min {
+      min = cycle_duration;
+    }
     total_time.push_back(cycle_duration);
-    if total_time.len() > 100 {
+    if total_time.len() > 1000 {
       total_time.pop_front();
     }
     let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
     println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
     //println!("{:0.2?}", 1.0 / (cycle_duration / 1_000_000_000.0));
   }
+  println!("Max: {:?} Min: {:?}", 1.0 / (max / 1_000_000_000.0), 1.0 / (min / 1_000_000_000.0));
   
   //let average_time: f32 = total_time.iter().sum::<f32>() / total_time.len() as f32; 
   //println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));

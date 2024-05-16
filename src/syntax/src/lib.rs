@@ -17,6 +17,7 @@ extern crate nom_unicode;
 extern crate lazy_static;
 
 pub mod parser;
+pub mod parser2;
 pub mod ast;
 pub mod compiler;
 #[cfg(feature="lang-server")]

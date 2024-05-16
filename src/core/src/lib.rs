@@ -29,7 +29,7 @@ use std::ops::*;
 
 
 mod column;
-mod value;
+pub mod value;
 mod error;
 mod table;
 mod transformation;

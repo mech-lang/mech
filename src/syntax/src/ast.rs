@@ -452,7 +452,7 @@ impl Ast {
           match node {
             AstNode::Token{token, ..} => {
               match token {
-                Token::Tilde => {
+                TokenKind::Tilde => {
                   children.push(AstNode::WheneverIndex{children: vec![AstNode::Null]});
                 }
                 _ => (),
@@ -836,7 +836,7 @@ impl Ast {
       },
       ParserNode::Token{token, chars, src_range} => {
         self.last_src_range = *src_range;
-        compiled.push(AstNode::Token{token: *token, chars: chars.to_vec(), src_range: *src_range});
+        compiled.push(AstNode::Token{token: token.clone(), chars: chars.to_vec(), src_range: *src_range});
       },
       ParserNode::Null => (),
       _ => println!("Unhandled Parser AstNode in AST Compiler: {:?}", node),

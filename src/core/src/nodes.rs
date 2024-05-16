@@ -105,7 +105,7 @@ pub enum AstNode {
   AddRow                  { children: Vec<AstNode> },
   Transformation          { children: Vec<AstNode> },
   Quantity                { children: Vec<AstNode> },
-  Token                   { token: Token, chars: Vec<char>, src_range: SourceRange },
+  Token                   { token: TokenKind, chars: Vec<char>, src_range: SourceRange },
   Add,
   Subtract,
   Multiply,
@@ -326,7 +326,7 @@ pub enum ParserNode {
   AddRow                  { children: Vec<ParserNode> },
   Transformation          { children: Vec<ParserNode> },
   Quantity                { children: Vec<ParserNode> },
-  Token                   { token: Token, chars: Vec<char>, src_range: SourceRange },
+  Token                   { token: TokenKind, chars: Vec<char>, src_range: SourceRange },
   Add,
   Subtract,
   Multiply,
@@ -651,7 +651,7 @@ fn spacer(width: usize, f: &mut fmt::Formatter) {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum Token {
+pub enum TokenKind {
   Alpha,
   Digit,
   HashTag,
@@ -693,28 +693,40 @@ pub enum Token {
   Emoji,
 }
 
-
-struct Program {
-  title: Title,
-  body: Vec<Body>,
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Token { 
+  pub kind: TokenKind, 
+  pub chars: Vec<char>, 
+  pub src_range: SourceRange 
 }
 
-struct Title {
-  text: String,
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Program {
+  pub title: Option<Title>,
+  pub body: Vec<Body>,
 }
 
-struct Body {
-  section: Vec<Section>,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Title {
+  pub text: String,
 }
 
-struct Section {
-  elements: Vec<SectionElement>,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Body {
+  pub sections: Vec<Section>,
 }
 
-enum SectionElement {
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Section {
+  pub elements: Vec<SectionElement>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum SectionElement {
   Subtitle,
   Paragraph(String),
-  MechCode,
+  MechCode(MechCode),
   CodeBlock,
   UnorderedList,
   OrderedList,
@@ -722,7 +734,8 @@ enum SectionElement {
   ThematicBreak,
 }
 
-enum Subtitle {
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Subtitle {
   Subtitle1,
   Subtitle2,
   Subtitle3,
@@ -730,25 +743,29 @@ enum Subtitle {
   Subtitle5,
 }
 
-enum MechCode {
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum MechCode {
   Statement(Statement),
   FunctionDefine,
   FiniteStateMachine,
 }
 
-struct FsmSpecification {
-  name: Identifier,
-  input: Vec<KindAnnotation>,
-  output: KindAnnotation,
-  states: StateDefinition,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FsmSpecification {
+  pub name: Identifier,
+  pub input: Vec<KindAnnotation>,
+  pub output: KindAnnotation,
+  pub states: StateDefinition,
 }
 
-struct StateDefinition {
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct StateDefinition {
   name: Identifier,
 
 }
 
-enum Statement {
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Statement {
   TableDefine(TableDefine),
   VariableDefine(VariableDefine),
   SplitTable,
@@ -756,56 +773,77 @@ enum Statement {
   SetData,
 }
 
-struct TableDefine {
-  name: Identifier,
-  table: Table,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TableDefine {
+  pub name: Identifier,
+  pub table: Table,
 }
 
-enum Table {
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Table {
   Empty,
   Inline,
   Anonymous,
 }
 
-struct VariableDefine {
-  name: Identifier,
-  expression: Expression,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct VariableDefine {
+  pub name: Identifier,
+  pub expression: Expression,
 }
 
-struct Identifier {
-  text: String,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Identifier {
+  pub text: Vec<Word>,
 }
 
-enum Expression {
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Emoji {
+  pub tokens: Vec<Token>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Word {
+  pub tokens: Vec<Token>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Expression {
   EmptyTable,
   InlineTable(InlineTable),
   Formula,
   String,
   AnonymousTable,
+  Literal(Literal)
 }
 
-struct InlineTable {
-  binding: Vec<Binding>,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct InlineTable {
+  pub binding: Vec<Binding>,
 }
 
-struct Binding {
-  name: Identifier,
-  kind: Option<KindAnnotation>,
-  value: Expression,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Binding {
+  pub name: Identifier,
+  pub kind: Option<KindAnnotation>,
+  pub value: Expression,
 }
 
-struct KindAnnotation {
-  name: Identifier,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct KindAnnotation {
+  pub name: Identifier,
 }
 
-enum Literal {
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Literal {
   Empty,
   Boolean(bool),
   Number(NumberLiteral),
   String(String),
 }
 
-enum NumberLiteral {
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum NumberLiteral {
   Float,
   Decimal,
   Hexadecimal,

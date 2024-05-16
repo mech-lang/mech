@@ -137,7 +137,7 @@ fn main() {
   let b = Table::new(6,6,0 as u8);
 
   let n1 = 1e7 as usize;
-  let q = 20;
+  let q = 200;
   let mut xm = DMatrix::from_element(q, q, 1 as f32);
   let mut vm = DMatrix::from_element(q, q, 2 as f32);
   let mut outm = DMatrix::from_element(q, q, 1 as f32);
@@ -157,7 +157,9 @@ fn main() {
   let n = 1e0 as usize;
   let mut total_time = VecDeque::new();  
   //loop {
-  for _ in 0..10000 {
+  let mut max = 0.0;
+  let mut min = 0.0;
+  for _ in 0..100000 {
     let now = Instant::now();
     vm.mul_to(&xm,&mut outm);
     //  x.add_mut(&vx);
@@ -169,12 +171,20 @@ fn main() {
 
     let cycle_duration = elapsed_time.as_nanos() as f64;
     total_time.push_back(cycle_duration);
-    if total_time.len() > 100 {
+    if total_time.len() > 10000 {
       total_time.pop_front();
+    }
+    if cycle_duration > max {
+      max = cycle_duration;
+    }
+    if cycle_duration < min || min == 0.0 {
+      min = cycle_duration;
     }
     let average_time: f64 = total_time.iter().sum::<f64>() / total_time.len() as f64; 
     println!("{:e} - {:0.2?}Hz", n, 1.0 / (average_time / 1_000_000_000.0));
   }
+  println!("Max: {:?} Min: {:?}", 1.0 / (max / 1_000_000_000.0), 1.0 / (min / 1_000_000_000.0));
+
 
 
   
@@ -197,7 +207,7 @@ fn main() {
   //println!("{:?}", vec);
 
   let code = r#"
-  traffic_light(x) := { <1s>=>🟢=[6s]=>🟡=[10s]=>🔴=[10s]=>🟢 }
+  traffic_light(x,t) := { <1s>=>🟢=[6s]=>🟡=[10s]=>🔴=[10s]=>🟢 }
 
   t1 = traffic_light"#;
 

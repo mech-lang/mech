@@ -2,6 +2,7 @@ use mech_syntax::parser;
 use mech_syntax::ast::Ast;
 use mech_syntax::compiler::Compiler;
 use mech_core::*;
+use mech_syntax::parser2;
 
 use std::rc::Rc;
 
@@ -9,12 +10,12 @@ use std::fs;
 fn main() -> Result<(),MechError> {
     // ----------------------------------------------------------------
     let s = fs::read_to_string("test.mec").unwrap();
-    match parser::parse(&s) {
+    match parser2::parse(&s) {
         Ok(tree) => { 
           println!("----------- SYNTAX TREE ---------");
           println!("{:#?}", tree);
           let mut ast = Ast::new();
-          ast.build_syntax_tree(&tree);
+          /*ast.build_syntax_tree(&tree);
           println!("----------- AST ---------");
           println!("{:#?}", ast.syntax_tree);
           let mut compiler = Compiler::new(); 
@@ -26,16 +27,19 @@ fn main() -> Result<(),MechError> {
           ];
           core.process_transaction(&changes)?;
           println!("{:#?}", core.blocks);
-          println!("{:?}", core);
+          println!("{:?}", core);*/ 
         },
-        Err(err) => if let MechErrorKind::ParserError(node, report, _) = err.kind {
-          println!("----- TREE -----");
-          println!("{:?}", node);
-          println!("----- MESSAGE -----");
-          parser::print_err_report(&s, &report);
-        } else {
-          panic!("Unexpected error type");
-        },
+        Err(err) => {
+          println!("{:?}", err);          
+          if let MechErrorKind::ParserError(node, report, _) = err.kind {
+            println!("----- TREE -----");
+            println!("{:?}", node);
+            println!("----- MESSAGE -----");
+            parser::print_err_report(&s, &report);
+          } else {
+            panic!("Unexpected error type");
+          };
+        }
     }
     return Ok(());
     // ----------------------------------------------------------------
