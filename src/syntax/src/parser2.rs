@@ -640,6 +640,8 @@ leaf!{semicolon, ";", TokenKind::Semicolon}
 leaf!{new_line, "\n", TokenKind::Newline}
 leaf!{carriage_return, "\r", TokenKind::CarriageReturn}
 leaf!{carriage_return_new_line, "\r\n", TokenKind::CarriageReturn}
+leaf!{bool_true, "true", TokenKind::True}
+leaf!{bool_false, "false", TokenKind::False}
 
 // emoji ::= emoji_grapheme+ ;
 fn emoji(input: ParseString) -> ParseResult<Token> {
@@ -667,34 +669,9 @@ pub fn digit0(input: ParseString) -> ParseResult<Vec<String>> {
   Ok(result)
 }
 
-// bin_digit ::= "0" | "1" ;
-pub fn bin_digit(input: ParseString) -> ParseResult<String> {
-  let result = alt((tag("1"),tag("0")))(input)?;
-  Ok(result)
-}
-
-// hex_digit ::= digit | "a" | "b" | "c" | "d" | "e" | "f" | "A" | "B" | "C" | "D" | "E" | "F" ;
-pub fn hex_digit(input: ParseString) -> ParseResult<String> {
-  let result = alt((digit, tag("a"), tag("b"), tag("c"), tag("d"), tag("e"), tag("f"), 
-                           tag("A"), tag("B"), tag("C"), tag("D"), tag("E"), tag("F")))(input)?;
-  Ok(result)
-}
-
-// oct_digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" ;
-pub fn oct_digit(input: ParseString) -> ParseResult<String> {
-  let result = alt((tag("0"),tag("1"),tag("2"),tag("3"),tag("4"),tag("5"),tag("6"),tag("7")))(input)?;
-  Ok(result)
-}
-
 fn digit_token(input: ParseString) -> ParseResult<Token> {
   let (input, (g, src_range)) = range(digit)(input)?;
   Ok((input, Token{kind: TokenKind::Digit, chars: g.chars().collect::<Vec<char>>(), src_range}))
-}
-
-// integer ::= digit1 ;
-pub fn integer(input: ParseString) -> ParseResult<Number> {
-  let (input, tokens) = many1(digit_token)(input)?;
-  Ok((input, Number::Integer(tokens)))
 }
 
 // grouping_symbol := left_parenthesis | right_parenthesis | left_angle | right_angle | left_brace | right_brace | left_bracket | right_bracket
@@ -709,7 +686,7 @@ pub fn punctuation(input: ParseString) -> ParseResult<Token> {
   Ok((input, punctuation))
 }
 
-// escaped_char ::= "\" ,  quote | backslash;
+// escaped_char ::= "\" ,  symbol | punctuation ;
 pub fn escaped_char(input: ParseString) -> ParseResult<Token> {
   let (input, _) = backslash(input)?;
   let (input, symbol) = alt((symbol, punctuation))(input)?;
@@ -814,93 +791,107 @@ pub fn whitespace(input: ParseString) -> ParseResult<Token> {
   Ok((input, space))
 }
 
-// number_literal ::= (hexadecimal_literal | octal_literal | binary_literal | decimal_literal | float_literal), kind_annotation? ;
+// number-literal := (integer | hexadecimal | octal | binary | decimal | float | rational | scientific) ;
 pub fn number(input: ParseString) -> ParseResult<Number> {
-  let (input, result) = integer(input)?;
-  /*
-    let (input, number_variant) = alt((hexadecimal_literal, octal_literal, binary_literal, decimal_literal, float_literal))(input)?;
-  let (input, kind_id) = opt(kind_annotation)(input)?;
-  let mut children = vec![number_variant];
-  match kind_id {
-    Some(kind_id) => children.push(kind_id),
-    _ => (),
-  }
-  */
+  let (input, result) = alt((hexadecimal_literal, decimal_literal, octal_literal, binary_literal, scientific_literal, rational_literal, float_literal, integer_literal))(input)?;
   Ok((input, result))
 }
 
-// pub fn rational_number(input: ParseString) -> IResult<ParseString, ParserNode> {
-//   let (input, numerator) = alt((quantity, number_literal))(input)?;
-//   let (input, _) = tag("/")(input)?;
-//   let (input, denominator) = alt((quantity, number_literal))(input)?;
-//   Ok((input, ParserNode::Null))
-// }
+pub fn rational_literal(input: ParseString) -> ParseResult<Number> {
+  let (input, Number::Integer(numerator)) = integer_literal(input)? else { unreachable!() };
+  let (input, _) = slash(input)?;
+  let (input, Number::Integer(denominator)) = integer_literal(input)? else { unreachable!() };
+  Ok((input, Number::Rational((numerator,denominator))))
+}
+
+pub fn scientific_literal(input: ParseString) -> ParseResult<Number> {
+  let (input, base) = match float_literal(input.clone()) {
+    Ok((input, Number::Float(base))) => {
+      (input, base)
+    }
+    _ => match integer_literal(input.clone()) {
+      Ok((input, Number::Integer(base))) => {
+        (input, (base, vec![]))
+      }
+      Err(err) => {return Err(err);}
+      _ => unreachable!(),
+    }
+  };
+  let (input, _) = alt((tag("e"), tag("E")))(input)?;
+  let (input, exponent) = match float_literal(input.clone()) {
+    Ok((input, Number::Float(base))) => {
+      (input, base)
+    }
+    _ => match integer_literal(input.clone()) {
+      Ok((input, Number::Integer(base))) => {
+        (input, (base, vec![]))
+      }
+      Err(err) => {return Err(err);}
+      _ => unreachable!(),
+    }
+  };
+  Ok((input, Number::Scientific((base,exponent))))
+}
+
+fn float_decimal_start(input: ParseString) -> ParseResult<Number> {
+  let (input, _) = period(input)?;
+  let (input, part) = many1(digit_token)(input)?;
+  Ok((input, Number::Float((vec![],part))))
+}
+
+fn float_full(input: ParseString) -> ParseResult<Number> {
+  let (input, whole) = many1(digit_token)(input)?;
+  let (input, _) = period(input)?;
+  let (input, part) = many1(digit_token)(input)?;
+  Ok((input, Number::Float((whole,part))))
+}
 
 // float_literal ::= "."?, digit1, "."?, digit0 ;
-pub fn float_literal(input: ParseString) -> ParseResult<ParserNode> {
-  let start = input.loc();
-  let (input, p1) = opt(tag("."))(input)?;
-  let (input, p2) = digit1(input)?;
-  let (input, p3) = opt(tag("."))(input)?;
-  let (input, p4) = digit0(input)?;
-  let mut whole: Vec<char> = vec![];
-  if let Some(_) = p1 {
-    whole.push('.');
-  }
-  let mut digits = p2.iter().flat_map(|c| c.chars()).collect::<Vec<char>>();
-  whole.append(&mut digits);
-  if let Some(_) = p3 {
-    whole.push('.');
-  }
-  let mut digits = p4.iter().flat_map(|c| c.chars()).collect::<Vec<char>>();
-  whole.append(&mut digits);
-  let end = input.loc();
-  let src_range = SourceRange { start, end };
-  Ok((input, ParserNode::FloatLiteral{chars: whole, src_range}))
+pub fn float_literal(input: ParseString) -> ParseResult<Number> {
+  let (input, result) = alt((float_decimal_start,float_full))(input)?;
+  Ok((input, result))
+}
+
+// integer ::= digit1 ;
+pub fn integer_literal(input: ParseString) -> ParseResult<Number> {
+  let (input, tokens) = many1(digit_token)(input)?;
+  Ok((input, Number::Integer(tokens)))
 }
 
 // decimal_literal ::= "0d", <digit1> ;
-pub fn decimal_literal(input: ParseString) -> ParseResult<ParserNode> {
+pub fn decimal_literal(input: ParseString) -> ParseResult<Number> {
   let msg = "Expect decimal digits after \"0d\"";
-  let start = input.loc();
-  let (input, _) = tag("0d")(input)?;
-  let (input, chars) = label!(digit1, msg)(input)?;
-  let end = input.loc();
-  let src_range = SourceRange { start, end };
-  Ok((input, ParserNode::DecimalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect(), src_range}))
+  let input = tag("0d")(input);
+  let (input, _) = input?;
+  let (input, result) = label!(many1(digit_token), msg)(input)?;
+  Ok((input, Number::Decimal(result)))
 }
 
 // hexadecimal_literal ::= "0x", <hex_digit+> ;
-pub fn hexadecimal_literal(input: ParseString) -> ParseResult<ParserNode> {
+pub fn hexadecimal_literal(input: ParseString) -> ParseResult<Number> {
   let msg = "Expect hexadecimal digits after \"0x\"";
-  let start = input.loc();
-  let (input, _) = tag("0x")(input)?;
-  let (input, chars) = label!(many1(hex_digit), msg)(input)?;
-  let end = input.loc();
-  let src_range = SourceRange { start, end };
-  Ok((input, ParserNode::HexadecimalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect(), src_range}))
+  let input = tag("0x")(input);
+  let (input, _) = input?;
+  let (input, result) = label!(many1(alt((digit_token,alpha_token))), msg)(input)?;
+  Ok((input, Number::Hexadecimal(result)))
 }
 
 // octal_literal ::= "0o", <oct_digit+> ;
-pub fn octal_literal(input: ParseString) -> ParseResult<ParserNode> {
+pub fn octal_literal(input: ParseString) -> ParseResult<Number> {
   let msg = "Expect octal digits after \"0o\"";
-  let start = input.loc();
-  let (input, _) = tag("0o")(input)?;
-  let (input, chars) = label!(many1(oct_digit), msg)(input)?;
-  let end = input.loc();
-  let src_range = SourceRange { start, end };
-  Ok((input, ParserNode::OctalLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect(), src_range}))
+  let input = tag("0o")(input);
+  let (input, _) = input?;
+  let (input, result) = label!(many1(digit_token), msg)(input)?;
+  Ok((input, Number::Octal(result)))
 }
 
 // binary_literal ::= "0b", <bin_digit+> ;
-pub fn binary_literal(input: ParseString) -> ParseResult<ParserNode> {
+pub fn binary_literal(input: ParseString) -> ParseResult<Number> {
   let msg = "Expect binary digits after \"0b\"";
-  let start = input.loc();
-  let (input, _) = tag("0b")(input)?;
-  let (input, chars) = label!(many1(bin_digit), msg)(input)?;
-  let end = input.loc();
-  let src_range = SourceRange { start, end };
-  Ok((input, ParserNode::BinaryLiteral{chars: chars.iter().flat_map(|c| c.chars()).collect(), src_range}))
+  let input = tag("0b")(input);
+  let (input, _) = input?;
+  let (input, result) = label!(many1(digit_token), msg)(input)?;
+  Ok((input, Number::Binary(result)))
 }
 
 // empty ::= underscore+ ;
@@ -2023,7 +2014,7 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<ParserNode> {
 pub fn number_subtitle(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = many0(space)(input)?;
   let (input, _) = left_parenthesis(input)?;
-  let (input, _) = integer(input)?;
+  let (input, _) = integer_literal(input)?;
   let (input, _) = right_parenthesis(input)?;
   let (input, _) = many1(space)(input)?;
   let (input, title) = text(input)?;

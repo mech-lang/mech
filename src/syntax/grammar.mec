@@ -34,12 +34,14 @@ oct-digit := "0" .. "7" ;
 number := digit1 ;
 identifier := (word | emoji), (word | number | dash | slash | star | emoji)* ;
 
-punctuation := period | exclamation | question | comma | colon | semicolon | dash | apostrophe | left-parenthesis | right-parenthesis | left-angle | right-angle | left-brace | right-brace | left-bracket | right-bracket ;
+punctuation := period | exclamation | question | comma | colon | semicolon | quote | apostrophe ;
 symbol := ampersand | bar | dollar | at | slash | backslash | hashtag | equal | tilde | plus | asterisk | asterisk | caret | underscore ;
+grouping-sumbol := left-parenthesis | right-parenthesis | left-angle | right-angle | left-brace | right-brace | left-bracket | right-bracket ;
 paragraph-symbol := ampersand | at | slash | backslash | asterisk | caret | underscore ;
-text := (word | space | number | punctuation | symbol | emoji)+ ;
-paragraph-rest := (word | space | number | punctuation | paragraph-symbol | quote | emoij)+ ;
-paragraph-starter := (word | number | quote | left-angle | right-angle | left-bracket | right-bracket | period | exclamation | question | comma | colon | semicolon | left-parenthesis | right-parenthesis | emoji)+ ;
+escaped-char := backslash,  symbol | punctuation ;
+text := (alpha | digit | whitespace | espaced-char | punctuation | symbol | grouping-sumbol | emoji) ;
+paragraph-rest := (alpha | whitespace | digit | punctuation | paragraph-symbol | quote | emoij) ;
+paragraph-starter := (alpha | digit | grouping-symbol | period | exclamation | question | comma | colon | semicolon | emoji) ;
 
 carriage-newline := "\r\n" ;
 newline := new-line-char | carriage-newline ;
@@ -66,13 +68,15 @@ english-false-literal := "false" ;
 
 b) Numbers
 
-number-literal := (hexadecimal-literal | octal-literal | binary-literal | decimal-literal | float-literal), kind-annotation? ;
-float-literal := "."?, digit1, "."?, digit0 ;
-decimal-literal := "0d", <digit1> ;
+number-literal := (integer-literal | hexadecimal-literal | octal-literal | binary-literal | decimal-literal | float-literal | rational-literal | scientific-literal) ;
+integer-literal := digit+;
+float-literal := "."?, digit+, "."?, digit* ;
+decimal-literal := "0d", <digit+> ;
 hexadecimal-literal := "0x", <hex-digit+> ;
 octal-literal := "0o", <oct-digit+> ;
 binary-literal := "0b", <bin-digit+> ;
 scientific-literal := float-literal, "e", "-"?, float-literal ;
+rational-literal := integer-literal, slash, integer-literal ;
 
 c) Strings
 

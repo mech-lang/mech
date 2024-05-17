@@ -692,6 +692,8 @@ pub enum TokenKind {
   Tab,
   Emoji,
   Text,
+  True,
+  False,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -838,7 +840,7 @@ pub struct KindAnnotation {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Literal {
   Empty,
-  Boolean(bool),
+  Boolean(Token),
   Number(Number),
   String(MechString),
 }
@@ -857,13 +859,21 @@ pub struct MechString {
   pub text: Vec<Token>,
 }
 
+type Numerator = Vec<Token>;
+type Denominator = Vec<Token>;
+type Whole = Vec<Token>;
+type Part = Vec<Token>;
+type Base = (Whole, Part);
+type Exponent = (Whole, Part);
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Number {
   Integer(Vec<Token>),
-  Float(Vec<Token>),
+  Float((Whole,Part)),
   Decimal(Vec<Token>),
   Hexadecimal(Vec<Token>),
   Octal(Vec<Token>),
   Binary(Vec<Token>),
-  Scientific(Vec<Token>)
+  Scientific((Base,Exponent)),
+  Rational((Numerator,Denominator))
 }
