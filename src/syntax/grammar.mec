@@ -93,17 +93,17 @@ empty := underscore+ ;
 
 a) Define
 
-table := inline-table | anonmous-table | empty-table ;
+table := record | anonmous-table | empty-table ;
 
 binding := whitespace*, identifier, kind-annotation?, <!(space+, colon)>, colon, whitespace+, <empty | expression | identifier | value>, <!!right-bracket | (whitespace*, comma, <whitespace+>) | whitespace+> ;
-binding-strict := whitespace*, identifier, kind-annotation?, <!(space+, colon)>, colon, <whitespace+>, <empty | expression | identifier | value>, <!!right-bracket | (whitespace*, comma, <whitespace+>) | whitespace+> ;
+binding-strict := whitespace*, identifier, kind-annotation?, <!(space+, colon)>, colon, <whitespace+>, expression, <!!right-bracket | (whitespace*, comma, <whitespace+>) | whitespace+> ;
 table-column := (space | tab)*, (expression | value | data), comma?, (space | tab)* ;
 table-row := (space | tab)*, table-column+, semicolon?, newline? ;
 attribute := identifier, kind-annotation?, space*, comma?, space* ;
 table-header := bar, <attribute+>, <bar>, space*, newline? ;
 anonymous-table := left-bracket, (space | newline | tab)*, table-header?, ((comment, newline) | table-row)*, (space | newline | tab)*, <right-bracket> ;
 empty-table := left-bracket, (space | newline | tab)*, table-header?, (space | newline | tab)*, right-bracket ;
-inline-table := left-bracket, binding, <binding-strict*>, <right-bracket> ;
+record := left-bracket, binding, <binding-strict*>, <right-bracket> ;
 kind-annotation := left-angle, <(identifier | underscore), (",", (identifier | underscore))*>, <right-angle> ;
 
 b) Output
@@ -152,13 +152,13 @@ split-table := (identifier | table), <!stmt-operator>, space*, split-operator, <
 flatten-table := identifier, <!stmt-operator>, space*, flatten-operator, <space+>, <expression> ;
 set-data := data, <!stmt-operator>, space*, set-operator, <space+>, <expression> ;
 type-define := left-angle, identifier, right-angle, define-operator, identifier, (left-bracket, dimension, right-bracket)? ;
-add-row := table, <!stmt-operator>, space*, add-row-operator, <space+>, <expression | inline-table | anonymous-table> ;
+add-row := table, <!stmt-operator>, space*, add-row-operator, <space+>, <expression | record | anonymous-table> ;
 
 
 4. Expressions
 ----------------------------------------------------------------------------
 
-expression := (empty-table | inline-table | formula | string | anonymous-table), transpose? ;
+expression := (table | formula | literal), transpose? ;
 
 a) Math Operators
 

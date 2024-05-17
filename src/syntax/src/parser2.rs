@@ -983,13 +983,13 @@ pub fn data(input: ParseString) -> ParseResult<ParserNode> {
 }
 
 // kind_annotation ::= left_angle, <(identifier | underscore), (",", (identifier | underscore))*>, <right_angle> ;
-pub fn kind_annotation(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg2 = "Expects at least one unit in kind annotation";
+pub fn kind_annotation(input: ParseString) -> ParseResult<KindAnnotation> {
+  let msg2 = "Expects at least one unit in kind annotation";
   let msg3 = "Expects right angle";
   let (input, (_, r)) = range(left_angle)(input)?;
-  let (input, kind_id) = label!(separated_list1(tag(","), alt((identifier, underscore))), msg2)(input)?;
-  let (input, _) = label!(right_angle, msg3, r)(input)?;*/
-  Ok((input, ParserNode::Error))
+  let (input, name) = identifier(input)?;
+  let (input, _) = label!(right_angle, msg3, r)(input)?;
+  Ok((input, KindAnnotation{name}))
 }
 
 // #### Tables
@@ -1000,7 +1000,10 @@ pub fn table(input: ParseString) -> ParseResult<Table> {
     Ok((input, table)) => (input, Table::Empty),
     _ => match anonymous_table(input.clone()) {
       Ok((input, table)) => (input, Table::Anonymous(table)),
-      Err(err) => {return Err(err);},
+      _ => match record(input.clone()) {
+        Ok((input, table)) => (input, Table::Record(table)),
+        Err(err) => {return Err(err);}
+      }
     }
   };
   Ok((input, table))
@@ -1009,65 +1012,22 @@ pub fn table(input: ParseString) -> ParseResult<Table> {
 // binding ::= s*, identifier, kind_annotation?, <!(space+, colon)>, colon, s+,
 // >>          <empty | expression | identifier | value>, <!!right_bracket | (s*, comma, <s+>) | s+> ;
 // >> where s ::= space | new_line | tab ;
-pub fn binding(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg1 = "Unexpected space before colon ':'";
+pub fn binding(input: ParseString) -> ParseResult<Binding> {
+  let msg1 = "Unexpected space before colon ':'";
   let msg2 = "Expects a value";
   let msg3 = "Expects whitespace or comma followed by whitespace";
   let msg4 = "Expects whitespace";
-  let mut children = vec![];
-  let (input, _) = many0(alt((space, new_line, tab)))(input)?;
-  let (input, binding_id) = identifier(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  let (input, name) = identifier(input)?;
   let (input, kind) = opt(kind_annotation)(input)?;
   let (input, _) = label!(is_not(tuple((many1(space), colon))), msg1)(input)?;
   let (input, _) = colon(input)?;
-  let (input, _) = many1(alt((space, new_line, tab)))(input)?;
-  let (input, bound) = label!(alt((empty, expression, identifier, value)), msg2)(input)?;
-  let (input, _) = label!(alt((
-    is(right_bracket),
-    null(tuple((
-      many0(alt((space, new_line, tab))),
-      comma,
-      label!(many1(alt((space, new_line, tab))), msg4),
-    ))),
-    null(many1(alt((space, new_line, tab)))),
-  )), msg3)(input)?;
-  children.push(binding_id);
-  children.push(bound);
-  if let Some(kind) = kind { children.push(kind); }*/
-  Ok((input, ParserNode::Error))
-}
-
-// binding_strict ::= s*, identifier, kind_annotation?, <!(space+, colon)>, colon, <s+>,
-// >>                 <empty | expression | identifier | value>, <!!right_bracket | (s*, comma, <s+>) | s+> ;
-// >> where s ::= space | new_line | tab ;
-pub fn binding_strict(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg1 = "Unexpected space before colon ':' for binding";
-  let msg2 = "Expects space after ':' for binding";
-  let msg3 = "Expects a value";
-  let msg4 = "Expects whitespace or comma followed by whitespace";
-  let msg5 = "Expects whitespace";
-  let mut children = vec![];
-  let (input, _) = many0(alt((space, new_line, tab)))(input)?;
-  let (input, binding_id) = identifier(input)?;
-  let (input, _) = label!(is_not(tuple((many1(space), colon))), msg1)(input)?;
-  let (input, kind) = opt(kind_annotation)(input)?;
-  let (input, _) = label!(is_not(tuple((many1(space), colon))), msg1)(input)?;
-  let (input, _) = colon(input)?;
-  let (input, _) = label!(many1(alt((space, new_line, tab))), msg2)(input)?;
-  let (input, bound) = label!(alt((empty, expression, identifier, value)), msg3)(input)?;
-  let (input, _) = label!(alt((
-    is(right_bracket),
-    null(tuple((
-      many0(alt((space, new_line, tab))),
-      comma,
-      label!(many1(alt((space, new_line, tab))), msg5),
-    ))),
-    null(many1(alt((space, new_line, tab)))),
-  )), msg4)(input)?;
-  children.push(binding_id);
-  children.push(bound);
-  if let Some(kind) = kind { children.push(kind); }*/
-  Ok((input, ParserNode::Error))
+  let (input, _) = many1(whitespace)(input)?;
+  let (input, value) = label!(expression, msg2)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = opt(comma)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  Ok((input, Binding{name, kind, value}))
 }
 
 // function_binding ::= identifier, <colon>, <space+>, <expression | identifier | value>, space*, comma?, space* ;
@@ -1148,16 +1108,13 @@ pub fn empty_table(input: ParseString) -> ParseResult<Table> {
   Ok((input, Table::Empty))
 }
 
-// inline_table ::= left_bracket, binding, <binding_strict*>, <right_bracket> ;
-pub fn inline_table(input: ParseString) -> ParseResult<ParserNode> {
+// record ::= left_bracket, binding, <binding_strict*>, <right_bracket> ;
+pub fn record(input: ParseString) -> ParseResult<Record> {
   let msg = "Expects right bracket ']' to terminate inline table";
   let (input, (_, r)) = range(left_bracket)(input)?;
-  let (input, first_binding) = binding(input)?;
-  let (input, mut other_bindings) = many0(binding_strict)(input)?;
+  let (input, bindings) = many1(binding)(input)?;
   let (input, _) = label!(right_bracket, msg, r)(input)?;
-  let mut bindings = vec![first_binding];
-  bindings.append(&mut other_bindings);
-  Ok((input, ParserNode::InlineTable{children: bindings}))
+  Ok((input, Record{bindings}))
 }
 
 // #### Statements

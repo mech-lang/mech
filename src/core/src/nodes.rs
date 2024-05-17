@@ -783,9 +783,14 @@ pub struct TableDefine {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Record {
+  pub bindings: Vec<Binding>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Table {
   Empty,
-  Record,
+  Record(Record),
   Matrix,
   Anonymous(AnonymousTable),
 }
