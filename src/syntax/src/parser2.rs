@@ -874,9 +874,9 @@ pub fn binary_literal(input: ParseString) -> ParseResult<Number> {
 }
 
 // empty ::= underscore+ ;
-pub fn empty(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = many1(underscore)(input)?;
-  Ok((input, ParserNode::Empty))
+pub fn empty(input: ParseString) -> ParseResult<Token> {
+  let (input, (g, src_range)) = range(many1(tag("_")))(input)?;
+  Ok((input, Token{kind: TokenKind::Empty, chars: g.join("").chars().collect(), src_range}))
 }
 
 // #### Enums
@@ -1900,11 +1900,14 @@ pub fn transpose(input: ParseString) -> ParseResult<ParserNode> {
 pub fn literal(input: ParseString) -> ParseResult<Literal> {
   let (input, result) = match number(input.clone()) {
     Ok((input, number)) => (input, Literal::Number(number)),
-    Err(_) => match string(input.clone()) {
+    _ => match string(input.clone()) {
       Ok((input, string)) => (input, Literal::String(string)),
-      Err(_) => match boolean(input.clone()) {
+      _ => match boolean(input.clone()) {
         Ok((input, boolean)) => (input, Literal::Boolean(boolean)),
-        Err(err) => {return Err(err);}
+        _ => match empty(input.clone()) {
+          Ok((input, empty)) => (input, Literal::Empty(empty)), 
+          Err(err) => {return Err(err);}
+        }
       }
     }
   };

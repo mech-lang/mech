@@ -694,6 +694,7 @@ pub enum TokenKind {
   Text,
   True,
   False,
+  Empty
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -839,7 +840,7 @@ pub struct KindAnnotation {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Literal {
-  Empty,
+  Empty(Token),
   Boolean(Token),
   Number(Number),
   String(MechString),
