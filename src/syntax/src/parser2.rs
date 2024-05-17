@@ -1859,13 +1859,25 @@ pub fn literal(input: ParseString) -> ParseResult<Literal> {
   Ok((input, result))
 }
 
+fn formula(input: ParseString) -> ParseResult<Formula> {
+  let (input, lhs) = literal(input)?;
+  let (input, _) = many1(whitespace)(input)?;
+  let (input, operator) = plus(input)?;
+  let (input, _) = many1(whitespace)(input)?;
+  let (input, rhs) = literal(input)?;
+  Ok((input, Formula{lhs, operator, rhs}))
+}
+
 // expression ::= (empty_table | inline_table | math_expression | string | anonymous_table), transpose? ;
 pub fn expression(input: ParseString) -> ParseResult<Expression> {
-  let (input, expression) = match table(input.clone()) {
-    Ok((input, table)) => (input, Expression::Table(table)),
-    _ => match literal(input.clone()) {
-      Ok((input, literal)) => (input, Expression::Literal(literal)),
-      Err(err) => {return Err(err);}
+  let (input, expression) = match formula(input.clone()) {
+    Ok((input, formula)) => (input, Expression::Formula(formula)),
+    _ => match table(input.clone()) {
+      Ok((input, table)) => (input, Expression::Table(table)),
+      _ => match literal(input.clone()) {
+        Ok((input, literal)) => (input, Expression::Literal(literal)),
+        Err(err) => {return Err(err);}
+      }
     }
   };
   /*let (input, transpose) = opt(transpose)(input)?;

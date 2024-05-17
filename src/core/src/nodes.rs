@@ -833,9 +833,16 @@ pub struct Word {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Expression {
-  Formula,
+  Formula(Formula),
   Table(Table),
   Literal(Literal)
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Formula {
+  pub lhs: Literal,
+  pub operator: Token,
+  pub rhs: Literal,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
