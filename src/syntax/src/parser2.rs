@@ -1968,7 +1968,7 @@ pub fn alpha_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = left_parenthesis(input)?;
   let (input, _) = alpha(input)?;
   let (input, _) = right_parenthesis(input)?;
-  let (input, _) = many1(alt((space,tab)))(input)?;
+  let (input, _) = many0(alt((space,tab)))(input)?;
   let (input, text) = many1(text)(input)?;
   let (input, _) = many0(alt((space,tab)))(input)?;
   let (input, _) = many0(whitespace)(input)?;
@@ -2120,6 +2120,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
       }
     }
   };
+  let (input, _) = many0(whitespace)(input)?;
   Ok((input, section_element))
 }
 
@@ -2141,14 +2142,12 @@ pub fn body(input: ParseString) -> ParseResult<Body> {
 // program ::= whitespace?, title?, <body>, whitespace?, space* ;
 pub fn program(input: ParseString) -> ParseResult<Program> {
   let msg = "Expects program body";
-  let (input, _) = opt(whitespace)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
   let (input, title) = opt(title)(input)?;
   //let (input, body) = labelr!(body, skip_nil, msg)(input)?;
   let (input, body) = body(input)?;
-  let (input, _) = opt(whitespace)(input)?;
-  
+  let (input, _) = many0(whitespace)(input)?;
   let output = Program{title, body};
-
   Ok((input, output))
 }
 
