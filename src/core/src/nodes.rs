@@ -733,6 +733,7 @@ pub struct Section {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum SectionElement {
+  Comment(Comment),
   Paragraph(Paragraph),
   MechCode(MechCode),
   CodeBlock,
@@ -911,4 +912,9 @@ pub enum Number {
   Binary(Vec<Token>),
   Scientific((Base,Exponent)),
   Rational((Numerator,Denominator))
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Comment {
+  pub text: Vec<Token>
 }

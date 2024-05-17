@@ -1,4 +1,5 @@
-// # Parser
+// Parser
+// ========
 
 /// Sections:
 ///   1. Prelude
@@ -10,7 +11,8 @@
 ///   7. Reporting errors
 ///   8. Public interface
 
-// ## Prelude
+// 1. Prelude
+// ------------
 
 use mech_core::{MechError, MechErrorKind, ParserErrorContext, ParserErrorReport};
 use mech_core::nodes::*;
@@ -32,7 +34,8 @@ use nom::{
 use std::collections::HashMap;
 use colored::*;
 
-// ## Parser utilities
+// 2. Parser utilities
+// ---------------------
 
 /// Unicode grapheme group utilities.
 /// Current implementation does not guarantee correct behavior for
@@ -330,7 +333,8 @@ impl<'a> nom::error::ParseError<ParseString<'a>> for ParseError<'a> {
   }
 }
 
-// ## Parser combinators
+// 3. Parser combinators
+// -----------------------
 
 /// Convert output of any parser into ParserNode::Null.
 /// Useful for working with `alt` combinator and error recovery functions.
@@ -489,7 +493,8 @@ pub fn tag(tag: &'static str) -> impl Fn(ParseString) -> ParseResult<String> {
   }
 }
 
-// ## Recovery functions
+// 4. Recovery functions
+// -----------------------
 
 pub fn skip_till_eol(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = many0(tuple((
@@ -555,7 +560,8 @@ pub fn skip_empty_mech_directive(input: ParseString) -> ParseResult<String> {
   Ok((input, String::from("mech:")))
 }
 
-// ## Primitive parsers
+// 5. Primitive parsers
+// -----------------------
 
 pub fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_emoji() {
@@ -589,9 +595,10 @@ pub fn any(mut input: ParseString) -> ParseResult<String> {
   }
 }
 
-// ## Parsers
+// 6. Parsers
+// -----------------------
 
-// ### The basics
+// (a) The basics
 
 macro_rules! leaf {
   ($name:ident, $byte:expr, $token:expr) => (
@@ -1126,14 +1133,12 @@ pub fn comment_sigil(input: ParseString) -> ParseResult<ParserNode> {
 }
 
 // comment ::= (space | tab)*, comment_sigil, <text>, <!!new_line> ;
-pub fn comment(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg1 = "Expects comment text";
+pub fn comment(input: ParseString) -> ParseResult<Comment> {
   let msg2 = "Character not allowed in comment text";
   let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, _) = comment_sigil(input)?;
-  let (input, comment) = labelr!(text, skip_nil, msg1)(input)?;
-  let (input, _) = labelr!(is(new_line), skip_till_eol, msg2)(input)?;*/
-  Ok((input, ParserNode::Error))
+  let (input, text) = many1(text)(input)?;
+  Ok((input, Comment{text}))
 }
 
 // add_row_operator ::= "+=" ;
@@ -2108,14 +2113,17 @@ pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
 
 // section_element ::= user_function | block | mech_code_block | code_block | statement | paragraph | unordered_list;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
-  let (input, section_element) = match mech_code(input.clone()) {
-    Ok((input, m)) => (input, SectionElement::MechCode(m)),
-    _ => match paragraph(input.clone()) {
-      Ok((input, p)) => (input, SectionElement::Paragraph(p)),
-      _ => match code_block(input) {
-        Ok((input, m)) => (input,SectionElement::CodeBlock),
-        Err(err) => {
-          return Err(err);
+  let (input, section_element) = match comment(input.clone()) {
+    Ok((input, comment)) => (input, SectionElement::Comment(comment)),
+    _ => match mech_code(input.clone()) {
+      Ok((input, m)) => (input, SectionElement::MechCode(m)),
+      _ => match paragraph(input.clone()) {
+        Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+        _ => match code_block(input) {
+          Ok((input, m)) => (input,SectionElement::CodeBlock),
+          Err(err) => {
+            return Err(err);
+          }
         }
       }
     }
@@ -2171,7 +2179,8 @@ pub fn parse_mech(input: ParseString) -> ParseResult<Program> {
   Ok((input, mech))
 }
 
-// ## Reporting errors
+// 7. Reporting errors
+// -----------------------
 
 /// This struct is responsible for analysing text, interpreting indices
 /// and ranges, and producing formatted messages.
@@ -2436,7 +2445,8 @@ impl<'a> TextFormatter<'a> {
   }
 }
 
-// ## Public interface
+// 8. Public interface
+// ---------------------
 
 /// Print formatted error message.
 pub fn print_err_report(text: &str, report: &ParserErrorReport) {
@@ -2487,49 +2497,3 @@ pub fn parse(text: &str) -> Result<Program, MechError> {
     Err(MechError{msg: "".to_string(), id: 3202, kind: MechErrorKind::ParserError(ParserNode::Error, report, msg)})
   }
 }
-
-/*pub fn parse_fragment(text: &str) -> Result<ParserNode, MechError> {
-  let graphemes = graphemes::init_source(text);
-  let mut result_node = ParserNode::Error;
-  let mut error_log: Vec<(SourceRange, ParseErrorDetail)> = vec![];
-  let remaining: ParseString;
-
-  // Do parse
-  match parse_mech_fragment(ParseString::new(&graphemes)) {
-    // Got a parse tree, however there may be errors
-    Ok((mut remaining_input, parse_tree)) => {
-      error_log.append(&mut remaining_input.error_log);
-      result_node = parse_tree;
-      remaining = remaining_input;
-    },
-    // Parsing failed and could not be recovered. No parse tree was created in this case
-    Err(err) => match err {
-      Err::Error(mut e) | Err::Failure(mut e) => {
-        error_log.append(&mut e.remaining_input.error_log);
-        error_log.push((e.cause_range, e.error_detail));
-        remaining = e.remaining_input;
-      },
-      Err::Incomplete(_) => panic!("nom::Err::Incomplete is not supported!"),
-    },
-  }
-  
-  // Check if all inputs were parsed
-  if remaining.len() != 0 {
-    let e = ParseError::new(remaining, "Inputs since here are not parsed");
-    error_log.push((e.cause_range, e.error_detail));
-  }
-
-  // Construct result
-  if error_log.is_empty() {
-    Ok(result_node)
-  } else {
-    println!("{:?}", error_log);
-    let report = error_log.into_iter().map(|e| ParserErrorContext {
-      cause_rng: e.0,
-      err_message: String::from(e.1.message),
-      annotation_rngs: e.1.annotation_rngs,
-    }).collect();
-    let msg = TextFormatter::new(text).format_error(&report);
-    Err(MechError{msg: "".to_string(), id: 3202, kind: MechErrorKind::ParserError(result_node, report, msg)})
-  }
-}*/
