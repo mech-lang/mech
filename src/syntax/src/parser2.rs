@@ -640,8 +640,11 @@ leaf!{semicolon, ";", TokenKind::Semicolon}
 leaf!{new_line, "\n", TokenKind::Newline}
 leaf!{carriage_return, "\r", TokenKind::CarriageReturn}
 leaf!{carriage_return_new_line, "\r\n", TokenKind::CarriageReturn}
-leaf!{bool_true, "true", TokenKind::True}
-leaf!{bool_false, "false", TokenKind::False}
+leaf!{english_true_literal, "true", TokenKind::True}
+leaf!{english_false_literal, "false", TokenKind::False}
+leaf!{check_mark, "✓", TokenKind::True}
+leaf!{cross, "✗", TokenKind::False}
+
 
 // emoji ::= emoji_grapheme+ ;
 fn emoji(input: ParseString) -> ParseResult<Token> {
@@ -732,45 +735,21 @@ pub fn identifier(input: ParseString) -> ParseResult<Identifier> {
 }
 
 // boolean_literal ::= true_literal | false_literal ;
-pub fn boolean_literal(input: ParseString) -> ParseResult<ParserNode> {
+pub fn boolean(input: ParseString) -> ParseResult<Token> {
   let (input, boolean) = alt((true_literal, false_literal))(input)?;
-  Ok((input, ParserNode::BooleanLiteral{children: vec![boolean]}))
+  Ok((input, boolean))
 }
 
-// true_literal ::= english_true_literal | true_symbol ;
-pub fn true_literal(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = alt((english_true_literal, true_symbol))(input)?;
-  Ok((input, ParserNode::True))
+// true_literal ::= english_true_literal | check_mark ;
+pub fn true_literal(input: ParseString) -> ParseResult<Token> {
+  let (input, token) = alt((english_true_literal, check_mark))(input)?;
+  Ok((input, token))
 }
 
-// false_literal ::= english_false_literal | false_symbol ;
-pub fn false_literal(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = alt((english_false_literal, false_symbol))(input)?;
-  Ok((input, ParserNode::False))
-}
-
-// true_symbol ::= "✓" ;
-pub fn true_symbol(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = tag("✓")(input)?;
-  Ok((input, ParserNode::False))
-}
-
-// false_symbol ::= "✗" ;
-pub fn false_symbol(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = tag("✗")(input)?;
-  Ok((input, ParserNode::False))
-}
-
-// english_true_literal ::= "true" ;
-pub fn english_true_literal(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = tag("true")(input)?;
-  Ok((input, ParserNode::True))
-}
-
-// english_false_literal ::= "false" ;
-pub fn english_false_literal(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = tag("false")(input)?;
-  Ok((input, ParserNode::False))
+// false_literal ::= english_false_literal | cross ;
+pub fn false_literal(input: ParseString) -> ParseResult<Token> {
+  let (input, token) = alt((english_false_literal, cross))(input)?;
+  Ok((input, token))
 }
 
 // carriage_newline ::= "\r\n" ;
@@ -1882,9 +1861,9 @@ pub fn and(input: ParseString) -> ParseResult<ParserNode> {
 
 // not ::= "!" | "¬" ;
 pub fn not(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = alt((tag("!"), tag("¬")))(input)?;
-  let (input, negated) = alt((data, true_literal, false_literal))(input)?;
-  Ok((input, ParserNode::Not { children: vec![negated] }))
+  //let (input, _) = alt((tag("!"), tag("¬")))(input)?;
+  //let (input, negated) = alt((data, true_literal, false_literal))(input)?;
+  Ok((input, ParserNode::Error))
 }
 
 // xor ::= "xor" | "⊕" | "⊻" ;
@@ -1920,10 +1899,13 @@ pub fn transpose(input: ParseString) -> ParseResult<ParserNode> {
 
 pub fn literal(input: ParseString) -> ParseResult<Literal> {
   let (input, result) = match number(input.clone()) {
-    Ok((input, result)) => (input, Literal::Number(result)),
+    Ok((input, number)) => (input, Literal::Number(number)),
     Err(_) => match string(input.clone()) {
-      Ok((input, result)) => (input, Literal::String(result)),
-      Err(err) => {return Err(err);}
+      Ok((input, string)) => (input, Literal::String(string)),
+      Err(_) => match boolean(input.clone()) {
+        Ok((input, boolean)) => (input, Literal::Boolean(boolean)),
+        Err(err) => {return Err(err);}
+      }
     }
   };
   Ok((input, result))
