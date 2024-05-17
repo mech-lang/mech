@@ -711,7 +711,7 @@ pub fn paragraph_symbol(input: ParseString) -> ParseResult<Token> {
 
 // text ::= (alpha | digit_token | space | punctuation | grouping_symbol | symbol | emoji | escaped_char)+ ;
 pub fn text(input: ParseString) -> ParseResult<Token> {
-  let (input, text) = alt((alpha_token, digit_token, whitespace, escaped_char, punctuation, grouping_symbol, symbol, emoji))(input)?;
+  let (input, text) = alt((alpha_token, digit_token, space, tab, escaped_char, punctuation, grouping_symbol, symbol, emoji))(input)?;
   Ok((input, text))
 }
 
@@ -1926,21 +1926,16 @@ pub fn block(input: ParseString) -> ParseResult<ParserNode> {
 // ### Markdown
 
 // ul_title ::= space*, text, space*, new_line, equal+, space*, new_line* ;
-pub fn ul_title(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = many0(space)(input)?;
-  let (input, text) = text(input)?;
-  let (input, _) = many0(space)(input)?;
+pub fn title(input: ParseString) -> ParseResult<Title> {
+  //let (input, _) = many0(space)(input)?;
+  let (input, text) = many1(text)(input)?;
   let (input, _) = new_line(input)?;
   let (input, _) = many1(equal)(input)?;
-  let (input, _) = many0(space)(input)?;
-  let (input, _) = many0(new_line)(input)?;
-  Ok((input,  ParserNode::Error))
-}
-
-// title ::= ul_title ;
-pub fn title(input: ParseString) -> ParseResult<ParserNode> {
-  let (input,title) = ul_title(input)?;
-  Ok((input, title))
+  let (input, _) = many0(alt((space,tab)))(input)?;
+  let (input, _) = new_line(input)?;
+  let (input, _) = many0(alt((space,tab)))(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  Ok((input,  Title{text}))
 }
 
 // ul_subtitle ::= space*, text, space*, new_line, dash+, space*, new_line* ;
@@ -2129,7 +2124,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
 pub fn section(input: ParseString) -> ParseResult<Section> {
   let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
   let (input, title) = opt(ul_subtitle)(input)?;
-  let (input, elements) = many1(section_element)(input)?;
+  let (input, elements) = many0(section_element)(input)?;
   Ok((input, Section{elements}))
 }
 
@@ -2143,18 +2138,13 @@ pub fn body(input: ParseString) -> ParseResult<Body> {
 // program ::= whitespace?, title?, <body>, whitespace?, space* ;
 pub fn program(input: ParseString) -> ParseResult<Program> {
   let msg = "Expects program body";
-  let mut program = vec![];
   let (input, _) = opt(whitespace)(input)?;
   let (input, title) = opt(title)(input)?;
-  match title {
-    Some(title) => program.push(title),
-    None => (),
-  };
   //let (input, body) = labelr!(body, skip_nil, msg)(input)?;
   let (input, body) = body(input)?;
   let (input, _) = opt(whitespace)(input)?;
   
-  let output = Program{title: None, body: vec![body]};
+  let output = Program{title, body};
 
   Ok((input, output))
 }

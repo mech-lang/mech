@@ -707,12 +707,12 @@ pub struct Token {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Program {
   pub title: Option<Title>,
-  pub body: Vec<Body>,
+  pub body: Body,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Title {
-  pub text: String,
+  pub text: Vec<Token>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
