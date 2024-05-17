@@ -2002,14 +2002,18 @@ pub fn paragraph_text(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input,  ParserNode::Error))
 }
 
+pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, elements) = match many1(text)(input) {
+    Ok((input, text)) => (input, ParagraphElement::Text(text)), 
+    Err(err) => {return Err(err);},
+  };
+  Ok((input, elements))
+}
+
 // paragraph ::= (inline_code | paragraph_text)+, whitespace*, new_line* ;
-pub fn paragraph(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, paragraph_elements) = many1(
-    alt((inline_code, paragraph_text))
-  )(input)?;
-  let (input, _) = many0(whitespace)(input)?;
-  let (input, _) = many0(new_line)(input)?;
-  Ok((input,  ParserNode::Error))
+pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
+  let (input, elements) = many1(paragraph_element)(input)?;
+  Ok((input, Paragraph{elements}))
 }
 
 // unordered_list ::= list_item+, new_line?, whitespace* ;
@@ -2106,10 +2110,13 @@ pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match mech_code(input.clone()) {
     Ok((input, m)) => (input, SectionElement::MechCode(m)),
-    _ => match code_block(input) {
-      Ok((input, m)) => (input,SectionElement::CodeBlock),
-      Err(err) => {
-        return Err(err);
+    _ => match paragraph(input.clone()) {
+      Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+      _ => match code_block(input) {
+        Ok((input, m)) => (input,SectionElement::CodeBlock),
+        Err(err) => {
+          return Err(err);
+        }
       }
     }
   };

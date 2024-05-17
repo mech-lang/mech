@@ -733,7 +733,7 @@ pub struct Section {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum SectionElement {
-  Paragraph(String),
+  Paragraph(Paragraph),
   MechCode(MechCode),
   CodeBlock,
   UnorderedList,
@@ -769,8 +769,7 @@ pub struct FsmSpecification {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct StateDefinition {
-  name: Identifier,
-
+  pub name: Identifier,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -878,6 +877,21 @@ pub enum Literal {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MechString {
   pub text: Vec<Token>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum ParagraphElement {
+  Text(Vec<Token>),
+  Bold(Vec<Token>),
+  Italic(Vec<Token>),
+  Underline(Vec<Token>),
+  Strike(Vec<Token>),
+  InlineCode
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Paragraph {
+  pub elements: Vec<ParagraphElement>,
 }
 
 type Numerator = Vec<Token>;
