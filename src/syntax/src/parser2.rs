@@ -1925,9 +1925,8 @@ pub fn block(input: ParseString) -> ParseResult<ParserNode> {
 
 // ### Markdown
 
-// ul_title ::= space*, text, space*, new_line, equal+, space*, new_line* ;
+// title ::= text+, new_line, equal+, (space|tab)*, whitespace* ;
 pub fn title(input: ParseString) -> ParseResult<Title> {
-  //let (input, _) = many0(space)(input)?;
   let (input, text) = many1(text)(input)?;
   let (input, _) = new_line(input)?;
   let (input, _) = many1(equal)(input)?;
@@ -1938,50 +1937,47 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
   Ok((input,  Title{text}))
 }
 
-// ul_subtitle ::= space*, text, space*, new_line, dash+, space*, new_line* ;
-pub fn ul_subtitle(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = many0(space)(input)?;
-  let (input, text) = text(input)?;
-  let (input, _) = many0(space)(input)?;
+// subtitle ::= text+, new_line, dash+, (space|tab)*, whitespace* ;
+pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
+  let (input, text) = many1(text)(input)?;
   let (input, _) = new_line(input)?;
-  let (input, _) = dash(input)?;
-  let (input, _) = dash(input)?;
-  let (input, _) = dash(input)?;
   let (input, _) = many1(dash)(input)?;
-  let (input, _) = many0(space)(input)?;
-  let (input, _) = many0(new_line)(input)?;
-  Ok((input,  ParserNode::Error))
+  let (input, _) = many0(alt((space,tab)))(input)?;
+  let (input, _) = new_line(input)?;
+  let (input, _) = many0(alt((space,tab)))(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  Ok((input,  Subtitle{text}))
 }
 
 // number_subtitle ::= space*, number, period, space+, text, space*, new_line* ;
-pub fn number_subtitle(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = many0(space)(input)?;
+pub fn number_subtitle(input: ParseString) -> ParseResult<Subtitle> {
+  let (input, _) = many0(alt((space,tab)))(input)?;
   let (input, _) = left_parenthesis(input)?;
   let (input, _) = integer_literal(input)?;
   let (input, _) = right_parenthesis(input)?;
-  let (input, _) = many1(space)(input)?;
-  let (input, title) = text(input)?;
-  let (input, _) = many0(space)(input)?;
-  let (input, _) = many0(new_line)(input)?;
-  Ok((input, ParserNode::Error))
+  let (input, _) = many1(alt((space,tab)))(input)?;
+  let (input, text) = many1(text)(input)?;
+  let (input, _) = many0(alt((space,tab)))(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  Ok((input, Subtitle{text}))
 }
 
 // alpha_subtitle ::= space*, alpha, right_parenthesis, space+, text, space*, new_line* ;
-pub fn alpha_subtitle(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = many0(space)(input)?;
+pub fn alpha_subtitle(input: ParseString) -> ParseResult<Subtitle> {
+  let (input, _) = many0(alt((space,tab)))(input)?;
   let (input, _) = left_parenthesis(input)?;
   let (input, _) = alpha(input)?;
   let (input, _) = right_parenthesis(input)?;
-  let (input, _) = many1(space)(input)?;
-  let (input, title) = text(input)?;
-  let (input, _) = many0(space)(input)?;
-  let (input, _) = many0(new_line)(input)?;
-  Ok((input,  ParserNode::Error))
+  let (input, _) = many1(alt((space,tab)))(input)?;
+  let (input, text) = many1(text)(input)?;
+  let (input, _) = many0(alt((space,tab)))(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  Ok((input,  Subtitle{text}))
 }
 
 // subtitle ::= ul_subtitle | number_subtitle | alpha_subtitle;
-pub fn subtitle(input: ParseString) -> ParseResult<ParserNode> {
-  let (input,title) = alt((ul_subtitle,alpha_subtitle,number_subtitle))(input)?;
+pub fn subtitle(input: ParseString) -> ParseResult<Subtitle> {
+  let (input, title) = alt((ul_subtitle,alpha_subtitle,number_subtitle))(input)?;
   Ok((input, title))
 }
 
@@ -2123,9 +2119,9 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
 // section ::= (!eof, <section_element>, whitespace?)+ ;
 pub fn section(input: ParseString) -> ParseResult<Section> {
   let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
-  let (input, title) = opt(ul_subtitle)(input)?;
+  let (input, subtitle) = opt(subtitle)(input)?;
   let (input, elements) = many0(section_element)(input)?;
-  Ok((input, Section{elements}))
+  Ok((input, Section{subtitle, elements}))
 }
 
 // body ::= whitespace*, section+ ;

@@ -721,13 +721,18 @@ pub struct Body {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Subtitle {
+  pub text: Vec<Token>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Section {
+  pub subtitle: Option<Subtitle>,
   pub elements: Vec<SectionElement>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum SectionElement {
-  Subtitle,
   Paragraph(String),
   MechCode(MechCode),
   CodeBlock,
@@ -737,14 +742,14 @@ pub enum SectionElement {
   ThematicBreak,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+/*#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Subtitle {
   Subtitle1,
   Subtitle2,
   Subtitle3,
   Subtitle4,
   Subtitle5,
-}
+}*/
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum MechCode {
