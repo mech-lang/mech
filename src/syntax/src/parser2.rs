@@ -14,7 +14,7 @@
 
 use mech_core::{MechError, MechErrorKind, ParserErrorContext, ParserErrorReport};
 use mech_core::nodes::*;
-use mech_core::nodes::SectionElement;
+use mech_core::nodes::{SectionElement, MechString};
 
 #[cfg(not(feature = "no-std"))] use core::fmt;
 #[cfg(feature = "no-std")] use alloc::fmt;
@@ -45,13 +45,6 @@ pub mod graphemes {
   /// ends with newline.
   pub fn init_source(text: &str) -> Vec<&str> {
     let mut graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
-    if let Some(g) = graphemes.last() {
-      if !is_newline(g) {
-        graphemes.push("\n");
-      }
-    } else {
-      graphemes.push("\n");
-    }
     graphemes
   }
 
@@ -646,31 +639,20 @@ leaf!{ampersand, "&", TokenKind::Ampersand}
 leaf!{semicolon, ";", TokenKind::Semicolon}
 leaf!{new_line, "\n", TokenKind::Newline}
 leaf!{carriage_return, "\r", TokenKind::CarriageReturn}
+leaf!{carriage_return_new_line, "\r\n", TokenKind::CarriageReturn}
 
 // emoji ::= emoji_grapheme+ ;
-fn emoji<'a>(input: ParseString<'a>) -> ParseResult<Emoji> {
-  
-  let emoji_token = |input: ParseString<'a>| {
-    let start = input.loc();
-    let (input, g) = emoji_grapheme(input)?;
-    let end = input.loc();
-    let src_range = SourceRange { start, end };
-    Ok((input, Token{kind: TokenKind::Emoji, chars: g.chars().collect::<Vec<char>>(), src_range}))
-  };
-
-  let (input, tokens) = many1(emoji_token)(input)?;
-  Ok((input, Emoji{tokens}))
+fn emoji(input: ParseString) -> ParseResult<Token> {
+  let start = input.loc();
+  let (input, g) = emoji_grapheme(input)?;
+  let end = input.loc();
+  let src_range = SourceRange { start, end };
+  Ok((input, Token{kind: TokenKind::Emoji, chars: g.chars().collect::<Vec<char>>(), src_range}))
 }
 
-// word ::= alpha+ ;
-pub fn word<'a>(input: ParseString<'a>) -> ParseResult<Word> {
-  let alpha_token = |input: ParseString<'a>| {
-    let (input, (g, src_range)) = range(alpha)(input)?;
-    Ok((input, Token{kind: TokenKind::Alpha, chars: g.chars().collect::<Vec<char>>(), src_range}))
-  };
-  let (input, tokens) = many1(alpha_token)(input)?;
-  // let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: TokenKind::Alpha, chars: b.chars().collect::<Vec<char>>()}).collect();
-  Ok((input, Word{tokens}))
+fn alpha_token(input: ParseString) -> ParseResult<Token> {
+  let (input, (g, src_range)) = range(alpha)(input)?;
+  Ok((input, Token{kind: TokenKind::Alpha, chars: g.chars().collect::<Vec<char>>(), src_range}))
 }
 
 // digit1 ::= digit+ ;
@@ -704,38 +686,52 @@ pub fn oct_digit(input: ParseString) -> ParseResult<String> {
   Ok(result)
 }
 
-// number ::= digit1 ;
-pub fn integer<'a>(input: ParseString<'a>) -> ParseResult<Number> {
-  let digit_token = |input: ParseString<'a>| {
-    let (input, (g, src_range)) = range(digit)(input)?;
-    Ok((input, Token{kind: TokenKind::Digit, chars: g.chars().collect::<Vec<char>>(), src_range}))
-  };
+fn digit_token(input: ParseString) -> ParseResult<Token> {
+  let (input, (g, src_range)) = range(digit)(input)?;
+  Ok((input, Token{kind: TokenKind::Digit, chars: g.chars().collect::<Vec<char>>(), src_range}))
+}
+
+// integer ::= digit1 ;
+pub fn integer(input: ParseString) -> ParseResult<Number> {
   let (input, tokens) = many1(digit_token)(input)?;
   Ok((input, Number::Integer(tokens)))
 }
 
-// punctuation ::= period | exclamation | question | comma | colon | semicolon | dash | apostrophe | left_parenthesis | right_parenthesis | left_angle | right_angle | left_brace | right_brace | left_bracket | right_bracket ;
-pub fn punctuation(input: ParseString) -> ParseResult<ParserNode> {
-  //let (input, punctuation) = alt((period, exclamation, question, comma, colon, semicolon, dash, apostrophe, left_parenthesis, right_parenthesis, left_angle, right_angle, left_brace, right_brace, left_bracket, right_bracket))(input)?;
-  Ok((input, ParserNode::Error))
+// grouping_symbol := left_parenthesis | right_parenthesis | left_angle | right_angle | left_brace | right_brace | left_bracket | right_bracket
+pub fn grouping_symbol(input: ParseString) -> ParseResult<Token> {
+  let (input, grouping) = alt((left_parenthesis, right_parenthesis, left_angle, right_angle, left_brace, right_brace, left_bracket, right_bracket))(input)?;
+  Ok((input, grouping))
 }
 
-// symbol ::= ampersand | bar | at | slash | backslash | hashtag | equal | tilde | plus | asterisk | asterisk | caret | underscore ;
-pub fn symbol(input: ParseString) -> ParseResult<ParserNode> {
-  //let (input, symbol) = alt((ampersand, bar, at, slash, backslash, hashtag, equal, tilde, plus, asterisk, caret, underscore))(input)?;
-  Ok((input, ParserNode::Error))
+// punctuation ::= period | exclamation | question | comma | colon | semicolon | dash | apostrophe ;
+pub fn punctuation(input: ParseString) -> ParseResult<Token> {
+  let (input, punctuation) = alt((period, exclamation, question, comma, colon, semicolon, quote, apostrophe))(input)?;
+  Ok((input, punctuation))
+}
+
+// escaped_char ::= "\" ,  quote | backslash;
+pub fn escaped_char(input: ParseString) -> ParseResult<Token> {
+  let (input, _) = backslash(input)?;
+  let (input, symbol) = alt((symbol, punctuation))(input)?;
+  Ok((input, symbol))
+}
+
+// symbol ::= ampersand | bar | at | slash | hashtag | equal | tilde | plus | asterisk | asterisk | caret | underscore ;
+pub fn symbol(input: ParseString) -> ParseResult<Token> {
+  let (input, symbol) = alt((ampersand, bar, at, slash, hashtag, equal, backslash, tilde, plus, dash, asterisk, caret, underscore))(input)?;
+  Ok((input, symbol))
 }
 
 // paragraph_symbol ::= ampersand | at | slash | backslash | asterisk | caret | hashtag | underscore ;
-pub fn paragraph_symbol(input: ParseString) -> ParseResult<ParserNode> {
-  //let (input, symbol) = alt((ampersand, at, slash, backslash, asterisk, caret, hashtag, underscore, equal, tilde, plus, percent))(input)?;
-  Ok((input, ParserNode::Error))
+pub fn paragraph_symbol(input: ParseString) -> ParseResult<Token> {
+  let (input, symbol) = alt((ampersand, at, slash, backslash, asterisk, caret, hashtag, underscore, equal, tilde, plus, percent))(input)?;
+  Ok((input, symbol))
 }
 
-// text ::= (word | space | number | punctuation | symbol | emoji)+ ;
-pub fn text(input: ParseString) -> ParseResult<ParserNode> {
-  //let (input, word) = many1(alt((word, space, number, punctuation, symbol, emoji)))(input)?;
-  Ok((input, ParserNode::Error))
+// text ::= (alpha | digit_token | space | punctuation | grouping_symbol | symbol | emoji | escaped_char)+ ;
+pub fn text(input: ParseString) -> ParseResult<Token> {
+  let (input, text) = alt((alpha_token, digit_token, whitespace, escaped_char, punctuation, grouping_symbol, symbol, emoji))(input)?;
+  Ok((input, text))
 }
 
 // paragraph_rest ::= (word | space | number | punctuation | paragraph_symbol | quote | emoij)+ ;
@@ -752,10 +748,10 @@ pub fn paragraph_starter(input: ParseString) -> ParseResult<ParserNode> {
 
 // identifier ::= (word | emoji), (word | number | dash | slash | emoji)* ;
 pub fn identifier(input: ParseString) -> ParseResult<Identifier> {
-  //let (input, (word, mut rest)) = tuple((alt((word,emoji)), many0(alt((word, number, dash, slash, emoji)))))(input)?;
-  //let mut id = vec![word];
-  //id.append(&mut rest);
-  Ok((input, Identifier{text: vec![]}))
+  let (input, (first, mut rest)) = tuple((alt((alpha_token,emoji)), many0(alt((alpha_token, digit_token, dash, slash, emoji)))))(input)?;
+  let mut tokens = vec![first];
+  tokens.append(&mut rest);
+  Ok((input, Identifier{tokens}))
 }
 
 // boolean_literal ::= true_literal | false_literal ;
@@ -812,10 +808,10 @@ pub fn newline(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Null))
 }
 
-// whitespace ::= space*, newline+ ;
-pub fn whitespace(input: ParseString) -> ParseResult<()> {
-  let (input, _) = many1(alt((space,new_line,carriage_return)))(input)?;
-  Ok((input, ()))
+// whitespace ::= space | newline | carriage_return | tabe ;
+pub fn whitespace(input: ParseString) -> ParseResult<Token> {
+  let (input, space) = alt((space,new_line,carriage_return,carriage_return_new_line,tab))(input)?;
+  Ok((input, space))
 }
 
 // number_literal ::= (hexadecimal_literal | octal_literal | binary_literal | decimal_literal | float_literal), kind_annotation? ;
@@ -1226,13 +1222,13 @@ pub fn comment_sigil(input: ParseString) -> ParseResult<ParserNode> {
 
 // comment ::= (space | tab)*, comment_sigil, <text>, <!!newline> ;
 pub fn comment(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect comment text";
+  /*let msg1 = "Expect comment text";
   let msg2 = "Character not allowed in comment text";
   let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, _) = comment_sigil(input)?;
   let (input, comment) = labelr!(text, skip_nil, msg1)(input)?;
-  let (input, _) = labelr!(is(newline), skip_till_eol, msg2)(input)?;
-  Ok((input, ParserNode::Comment{children: vec![comment]}))
+  let (input, _) = labelr!(is(newline), skip_till_eol, msg2)(input)?;*/
+  Ok((input, ParserNode::Error))
 }
 
 // add_row_operator ::= "+=" ;
@@ -1831,7 +1827,7 @@ pub fn l5_infix(input: ParseString) -> ParseResult<ParserNode> {
 
 // l6 ::= empty_table | string | anonymous_table | function | value | not | data | negation | parenthetical_expression ;
 pub fn l6(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, l6) = alt((empty_table, string, anonymous_table, function, not, data, negation, parenthetical_expression))(input)?;
+  let (input, l6) = alt((empty_table, anonymous_table, function, not, data, negation, parenthetical_expression))(input)?;
   Ok((input, ParserNode::L6 { children: vec![l6] }))
 }
 
@@ -1916,13 +1912,13 @@ pub fn xor(input: ParseString) -> ParseResult<ParserNode> {
 // }
 
 // string ::= quote, (!quote, <text>)*, quote ;
-pub fn string(input: ParseString) -> ParseResult<ParserNode> {
+pub fn string(input: ParseString) -> ParseResult<MechString> {
   let msg = "Character not allowed in string";
   let (input, _) = quote(input)?;
   let (input, matched) = many0(tuple((is_not(quote), label!(text, msg))))(input)?;
   let (input, _) = quote(input)?;
   let (_, text): ((), Vec<_>) = matched.into_iter().unzip();
-  Ok((input, ParserNode::String { children: text }))
+  Ok((input, MechString { text }))
 }
 
 // transpose ::= "'" ;
@@ -1932,8 +1928,14 @@ pub fn transpose(input: ParseString) -> ParseResult<ParserNode> {
 }
 
 pub fn literal(input: ParseString) -> ParseResult<Literal> {
-  let (input, result) = number(input)?;
-  Ok((input, Literal::Number(result)))
+  let (input, result) = match number(input.clone()) {
+    Ok((input, result)) => (input, Literal::Number(result)),
+    Err(_) => match string(input.clone()) {
+      Ok((input, result)) => (input, Literal::String(result)),
+      Err(err) => {return Err(err);}
+    }
+  };
+  Ok((input, result))
 }
 
 // expression ::= (empty_table | inline_table | math_expression | string | anonymous_table), transpose? ;
@@ -1993,7 +1995,7 @@ pub fn ul_title(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = many1(equal)(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, _) = many0(newline)(input)?;
-  Ok((input, ParserNode::Title { children: vec![text] }))
+  Ok((input,  ParserNode::Error))
 }
 
 // title ::= ul_title ;
@@ -2014,7 +2016,7 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = many1(dash)(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, _) = many0(newline)(input)?;
-  Ok((input, ParserNode::Subtitle { level: 1, children: vec![text] }))
+  Ok((input,  ParserNode::Error))
 }
 
 // number_subtitle ::= space*, number, period, space+, text, space*, newline* ;
@@ -2040,7 +2042,7 @@ pub fn alpha_subtitle(input: ParseString) -> ParseResult<ParserNode> {
   let (input, title) = text(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, _) = many0(newline)(input)?;
-  Ok((input, ParserNode::Subtitle  { level: 3, children: vec![title] }))
+  Ok((input,  ParserNode::Error))
 }
 
 // subtitle ::= ul_subtitle | number_subtitle | alpha_subtitle;
@@ -2055,7 +2057,7 @@ pub fn inline_code(input: ParseString) -> ParseResult<ParserNode> {
   let (input, text) = text(input)?;
   let (input, _) = grave(input)?;
   let (input, _) = many0(space)(input)?;
-  Ok((input, ParserNode::InlineCode { children: vec![text] }))
+  Ok((input,  ParserNode::Error))
 }
 
 // paragraph_text ::= paragraph_starter, paragraph_rest? ;
@@ -2067,7 +2069,7 @@ pub fn paragraph_text(input: ParseString) -> ParseResult<ParserNode> {
     Some(text) => paragraph.push(text),
     _ => (),
   };
-  Ok((input, ParserNode::ParagraphText { children: paragraph }))
+  Ok((input,  ParserNode::Error))
 }
 
 // paragraph ::= (inline_code | paragraph_text)+, whitespace*, newline* ;
@@ -2077,7 +2079,7 @@ pub fn paragraph(input: ParseString) -> ParseResult<ParserNode> {
   )(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let (input, _) = many0(newline)(input)?;
-  Ok((input, ParserNode::Paragraph { children: paragraph_elements }))
+  Ok((input,  ParserNode::Error))
 }
 
 // unordered_list ::= list_item+, newline?, whitespace* ;
@@ -2085,7 +2087,7 @@ pub fn unordered_list(input: ParseString) -> ParseResult<ParserNode> {
   let (input, list_items) = many1(list_item)(input)?;
   let (input, _) = opt(newline)(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  Ok((input, ParserNode::UnorderedList { children: list_items }))
+  Ok((input,  ParserNode::Error))
 }
 
 // list_item ::= dash, <space+>, <paragraph>, newline* ;
@@ -2096,7 +2098,7 @@ pub fn list_item(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
   let (input, list_item) = label!(paragraph, msg2)(input)?;
   let (input, _) = many0(newline)(input)?;
-  Ok((input, ParserNode::ListItem { children: vec![list_item] }))
+  Ok((input,  ParserNode::Error))
 }
 
 // formatted_text ::= (!grave, !eof, <paragraph_rest | carriage_return | new_line_char>)* ;
@@ -2107,7 +2109,7 @@ pub fn formatted_text(input: ParseString) -> ParseResult<ParserNode> {
     label!(alt((paragraph_rest, newline)), msg)
   )))(input)?;
   let (_, formatted): (((), ()), Vec<_>) = result.into_iter().unzip();
-  Ok((input, ParserNode::FormattedText { children: formatted }))
+  Ok((input,  ParserNode::Error))
 }
 
 // code_block ::= grave, <grave>, <grave>, <newline>, formatted_text, <grave{3}, newline, whitespace*> ;

@@ -14,11 +14,11 @@ fn main() -> Result<(),MechError> {
         Ok(tree) => { 
           println!("----------- SYNTAX TREE ---------");
           println!("{:#?}", tree);
-          let mut ast = Ast::new();
-          /*ast.build_syntax_tree(&tree);
-          println!("----------- AST ---------");
-          println!("{:#?}", ast.syntax_tree);
-          let mut compiler = Compiler::new(); 
+          //let mut ast = Ast::new();
+          //ast.build_syntax_tree(&tree);
+          //println!("----------- AST ---------");
+          //println!("{:#?}", ast.syntax_tree);
+          /*let mut compiler = Compiler::new(); 
           let sections = compiler.compile_sections(&vec![ast.syntax_tree.clone()]).unwrap();
            let mut core = Core::new();
           core.load_sections(sections); //
@@ -38,7 +38,7 @@ fn main() -> Result<(),MechError> {
             parser::print_err_report(&s, &report);
           } else {
             panic!("Unexpected error type");
-          };
+          }
         }
     }
     return Ok(());

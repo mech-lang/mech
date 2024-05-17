@@ -688,9 +688,10 @@ pub enum TokenKind {
   Percent,
   Newline,
   CarriageReturn,
+  CarriageReturnNewLine,
   Tab,
-  EndOfStream,
   Emoji,
+  Text,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -699,7 +700,6 @@ pub struct Token {
   pub chars: Vec<char>, 
   pub src_range: SourceRange 
 }
-
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Program {
@@ -795,7 +795,7 @@ pub struct VariableDefine {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Identifier {
-  pub text: Vec<Word>,
+  pub tokens: Vec<Token>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -840,7 +840,21 @@ pub enum Literal {
   Empty,
   Boolean(bool),
   Number(Number),
-  String(String),
+  String(MechString),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Text {
+  Alpha(Token),
+  Symbol(Token),
+  Whitespace(Token),
+  Digit(Token),
+  Punctuation(Token),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct MechString {
+  pub text: Vec<Token>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

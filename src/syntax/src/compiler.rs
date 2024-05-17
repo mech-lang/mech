@@ -5,7 +5,7 @@
 use mech_core::*;
 use mech_core::SectionElement;
 use mech_core::value;
-use mech_core::nodes::*;
+use mech_core::nodes::{AstNode, ParserNode, SourceRange};
 use mech_core::function::table::*;
 use mech_core::function::matrix::*;
 
