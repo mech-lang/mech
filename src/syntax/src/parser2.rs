@@ -45,6 +45,7 @@ pub mod graphemes {
   /// ends with new_line.
   pub fn init_source(text: &str) -> Vec<&str> {
     let mut graphemes = UnicodeSegmentation::graphemes(text, true).collect::<Vec<&str>>();
+    graphemes.push("\n");
     graphemes
   }
 
@@ -833,7 +834,7 @@ pub fn integer_literal(input: ParseString) -> ParseResult<Number> {
 
 // decimal_literal ::= "0d", <digit1> ;
 pub fn decimal_literal(input: ParseString) -> ParseResult<Number> {
-  let msg = "Expect decimal digits after \"0d\"";
+  let msg = "Expects decimal digits after \"0d\"";
   let input = tag("0d")(input);
   let (input, _) = input?;
   let (input, result) = label!(many1(digit_token), msg)(input)?;
@@ -842,7 +843,7 @@ pub fn decimal_literal(input: ParseString) -> ParseResult<Number> {
 
 // hexadecimal_literal ::= "0x", <hex_digit+> ;
 pub fn hexadecimal_literal(input: ParseString) -> ParseResult<Number> {
-  let msg = "Expect hexadecimal digits after \"0x\"";
+  let msg = "Expects hexadecimal digits after \"0x\"";
   let input = tag("0x")(input);
   let (input, _) = input?;
   let (input, result) = label!(many1(alt((digit_token,alpha_token))), msg)(input)?;
@@ -851,7 +852,7 @@ pub fn hexadecimal_literal(input: ParseString) -> ParseResult<Number> {
 
 // octal_literal ::= "0o", <oct_digit+> ;
 pub fn octal_literal(input: ParseString) -> ParseResult<Number> {
-  let msg = "Expect octal digits after \"0o\"";
+  let msg = "Expects octal digits after \"0o\"";
   let input = tag("0o")(input);
   let (input, _) = input?;
   let (input, result) = label!(many1(digit_token), msg)(input)?;
@@ -860,7 +861,7 @@ pub fn octal_literal(input: ParseString) -> ParseResult<Number> {
 
 // binary_literal ::= "0b", <bin_digit+> ;
 pub fn binary_literal(input: ParseString) -> ParseResult<Number> {
-  let msg = "Expect binary digits after \"0b\"";
+  let msg = "Expects binary digits after \"0b\"";
   let input = tag("0b")(input);
   let (input, _) = input?;
   let (input, result) = label!(many1(digit_token), msg)(input)?;
@@ -877,7 +878,7 @@ pub fn empty(input: ParseString) -> ParseResult<Token> {
 
 // enum_define ::= "<", identifier, ">", space*, "=", space*, enum_list;
 pub fn enum_define(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg2 = "Expect expression";
+  /*let msg2 = "Expects expression";
   let (input, _) = left_angle(input)?;
   let (input, variable) = identifier(input)?;
   let (input, _) = right_angle(input)?;
@@ -907,8 +908,8 @@ pub fn subscript(input: ParseString) -> ParseResult<ParserNode> {
 
 // subscript_index ::= left_brace, <subscript+>, <right_brace> ;
 pub fn subscript_index(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect subscript";
-  let msg2 = "Expect right brace '}'";
+  let msg1 = "Expects subscript";
+  let msg2 = "Expects right brace '}'";
   let (input, (_, r)) = range(left_brace)(input)?;
   let (input, subscripts) = label!(many1(subscript), msg1)(input)?;
   let (input, _) = label!(right_brace, msg2, r)(input)?;
@@ -917,8 +918,8 @@ pub fn subscript_index(input: ParseString) -> ParseResult<ParserNode> {
 
 // single_subscript_index ::= left_brace, <subscript>, <right_brace> ;
 pub fn single_subscript_index(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect subscript";
-  let msg2 = "Expect right brace '}'";
+  let msg1 = "Expects subscript";
+  let msg2 = "Expects right brace '}'";
   let (input, _) = left_brace(input)?;
   let (input, subscript) = label!(subscript, msg1)(input)?;
   let (input, _) = label!(right_brace, msg2)(input)?;
@@ -927,7 +928,7 @@ pub fn single_subscript_index(input: ParseString) -> ParseResult<ParserNode> {
 
 // dot_index ::= period, <identifier>, single_subscript_index? ;
 pub fn dot_index(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg = "Expect identifier";
+  /*let msg = "Expects identifier";
   let (input, _) = period(input)?;
   let (input, identifier) = label!(identifier, msg)(input)?;
   let (input, subscript) = opt(single_subscript_index)(input)?;
@@ -940,7 +941,7 @@ pub fn dot_index(input: ParseString) -> ParseResult<ParserNode> {
 
 // swizzle ::= period, identifier, comma, !space, <identifier, (",", identifier)*> ;
 pub fn swizzle(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg = "Expect identifier for swizzling";
+  /*let msg = "Expects identifier for swizzling";
   let (input, _) = period(input)?;
   let (input, first) = identifier(input)?;
   let (input, _) = comma(input)?;
@@ -983,8 +984,8 @@ pub fn data(input: ParseString) -> ParseResult<ParserNode> {
 
 // kind_annotation ::= left_angle, <(identifier | underscore), (",", (identifier | underscore))*>, <right_angle> ;
 pub fn kind_annotation(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg2 = "Expect at least one unit in kind annotation";
-  let msg3 = "Expect right angle";
+  /*let msg2 = "Expects at least one unit in kind annotation";
+  let msg3 = "Expects right angle";
   let (input, (_, r)) = range(left_angle)(input)?;
   let (input, kind_id) = label!(separated_list1(tag(","), alt((identifier, underscore))), msg2)(input)?;
   let (input, _) = label!(right_angle, msg3, r)(input)?;*/
@@ -1010,9 +1011,9 @@ pub fn table(input: ParseString) -> ParseResult<Table> {
 // >> where s ::= space | new_line | tab ;
 pub fn binding(input: ParseString) -> ParseResult<ParserNode> {
   /*let msg1 = "Unexpected space before colon ':'";
-  let msg2 = "Expect a value";
-  let msg3 = "Expect whitespace or comma followed by whitespace";
-  let msg4 = "Expect whitespace";
+  let msg2 = "Expects a value";
+  let msg3 = "Expects whitespace or comma followed by whitespace";
+  let msg4 = "Expects whitespace";
   let mut children = vec![];
   let (input, _) = many0(alt((space, new_line, tab)))(input)?;
   let (input, binding_id) = identifier(input)?;
@@ -1041,10 +1042,10 @@ pub fn binding(input: ParseString) -> ParseResult<ParserNode> {
 // >> where s ::= space | new_line | tab ;
 pub fn binding_strict(input: ParseString) -> ParseResult<ParserNode> {
   /*let msg1 = "Unexpected space before colon ':' for binding";
-  let msg2 = "Expect space after ':' for binding";
-  let msg3 = "Expect a value";
-  let msg4 = "Expect whitespace or comma followed by whitespace";
-  let msg5 = "Expect whitespace";
+  let msg2 = "Expects space after ':' for binding";
+  let msg3 = "Expects a value";
+  let msg4 = "Expects whitespace or comma followed by whitespace";
+  let msg5 = "Expects whitespace";
   let mut children = vec![];
   let (input, _) = many0(alt((space, new_line, tab)))(input)?;
   let (input, binding_id) = identifier(input)?;
@@ -1071,9 +1072,9 @@ pub fn binding_strict(input: ParseString) -> ParseResult<ParserNode> {
 
 // function_binding ::= identifier, <colon>, <space+>, <expression | identifier | value>, space*, comma?, space* ;
 pub fn function_binding(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg1 = "Expect colon ':' for function binding";
-  let msg2 = "Expect space after colon for function binding";
-  let msg3 = "Expect expression, identifier, or value to bind";
+  /*let msg1 = "Expects colon ':' for function binding";
+  let msg2 = "Expects space after colon for function binding";
+  let msg3 = "Expects expression, identifier, or value to bind";
   let (input, (binding_id, r)) = range(identifier)(input)?;
   let (input, _) = label!(colon, msg1)(input)?;
   let (input, _) = label!(many1(space), msg2)(input)?;
@@ -1111,8 +1112,8 @@ pub fn attribute(input: ParseString) -> ParseResult<ParserNode> {
 
 // table_header ::= bar, <attribute+>, <bar>, space*, new_line? ;
 pub fn table_header(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect at least one attribute for table header";
-  let msg2 = "Expect vertical bar to terminate table header";
+  let msg1 = "Expects at least one attribute for table header";
+  let msg2 = "Expects vertical bar to terminate table header";
   let (input, (_, r)) = range(bar)(input)?;
   let (input, attributes) = label!(many1(attribute), msg1)(input)?;
   let (input, _) = tuple((label!(bar, msg2, r), many0(space), opt(new_line)))(input)?;
@@ -1122,7 +1123,7 @@ pub fn table_header(input: ParseString) -> ParseResult<ParserNode> {
 // anonymous_table ::= left_bracket, (space | new_line | tab)*, table_header?,
 // >>                  ((comment, new_line) | table_row)*, (space | new_line | tab)*, <right_bracket> ;
 pub fn anonymous_table(input: ParseString) -> ParseResult<AnonymousTable> {
-  let msg = "Expect right bracket ']' to finish the table";
+  let msg = "Expects right bracket ']' to finish the table";
   let (input, (_, r)) = range(left_bracket)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let (input, rows) = many0(table_row)(input)?;
@@ -1149,7 +1150,7 @@ pub fn empty_table(input: ParseString) -> ParseResult<Table> {
 
 // inline_table ::= left_bracket, binding, <binding_strict*>, <right_bracket> ;
 pub fn inline_table(input: ParseString) -> ParseResult<ParserNode> {
-  let msg = "Expect right bracket ']' to terminate inline table";
+  let msg = "Expects right bracket ']' to terminate inline table";
   let (input, (_, r)) = range(left_bracket)(input)?;
   let (input, first_binding) = binding(input)?;
   let (input, mut other_bindings) = many0(binding_strict)(input)?;
@@ -1161,12 +1162,6 @@ pub fn inline_table(input: ParseString) -> ParseResult<ParserNode> {
 
 // #### Statements
 
-// stmt_operator ::= split_operator | flatten_operator | set_operator | update_operator | add_row_operator | equal ;
-pub fn stmt_operator(input: ParseString) -> ParseResult<ParserNode> {
-  //let (input, _) = alt((split_operator, flatten_operator, set_operator, update_operator, add_row_operator, equal, async_assign_operator))(input)?;
-  Ok((input, ParserNode::Null))
-}
-
 // comment_sigil ::= "--" ;
 pub fn comment_sigil(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = tag("--")(input)?;
@@ -1175,7 +1170,7 @@ pub fn comment_sigil(input: ParseString) -> ParseResult<ParserNode> {
 
 // comment ::= (space | tab)*, comment_sigil, <text>, <!!new_line> ;
 pub fn comment(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg1 = "Expect comment text";
+  /*let msg1 = "Expects comment text";
   let msg2 = "Character not allowed in comment text";
   let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, _) = comment_sigil(input)?;
@@ -1198,8 +1193,8 @@ pub fn async_assign_operator(input: ParseString) -> ParseResult<ParserNode> {
 
 // add_row ::= table, <!stmt_operator>, space*, add_row_operator, <space+>, <expression | inline_table | anonymous_table> ;
 pub fn add_row(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg1 = "Expect spaces around operator";
-  let msg2 = "Expect expression, inline table, or anonymous table";
+  /*let msg1 = "Expects spaces around operator";
+  let msg2 = "Expects expression, inline table, or anonymous table";
   let (input, table_id) = table(input)?;
   let (input, _) = labelr!(null(is_not(stmt_operator)), skip_nil, msg1)(input)?;
   let (input, _) = many0(space)(input)?;
@@ -1234,7 +1229,7 @@ pub fn divide_update_operator(input: ParseString) -> ParseResult<ParserNode> {
 }
 
 // pub fn update_exponent_operator(input: ParseString) -> ParseResult<ParserNode> {
-//   let (input, _) = tag(":^=")(input)?;
+//   let (input, _) = tag(":Expects=")(input)?;
 //   Ok((input, ParserNode::ExponentUpdate))
 // }
 
@@ -1250,8 +1245,8 @@ pub fn update_operator(input: ParseString) -> ParseResult<ParserNode> {
 
 // update_data ::= data, <!stmt_operator>, space*, update_operator, <space+>, <expression> ;
 pub fn update_data(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg1 = "Expect spaces around operator";
-  let msg2 = "Expect expression";
+  /*let msg1 = "Expects spaces around operator";
+  let msg2 = "Expects expression";
   let (input, table) = data(input)?;
   let (input, _) = labelr!(null(is_not(stmt_operator)), skip_nil, msg1)(input)?;
   let (input, _) = many0(space)(input)?;
@@ -1263,8 +1258,8 @@ pub fn update_data(input: ParseString) -> ParseResult<ParserNode> {
 
 // async_assign ::= (identifier | table), <!stmt_operator>, space*, async_assign_operator, <space+>, <expression> ;
 pub fn async_assign(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg1 = "Expect spaces around operator";
-  let msg2 = "Expect expression";
+  /*let msg1 = "Expects spaces around operator";
+  let msg2 = "Expects expression";
   let (input, table) = alt((identifier, table))(input)?;
   let (input, _) = labelr!(null(is_not(stmt_operator)), skip_nil, msg1)(input)?;
   let (input, _) = many0(space)(input)?;
@@ -1275,15 +1270,22 @@ pub fn async_assign(input: ParseString) -> ParseResult<ParserNode> {
 }
 
 // set_operator ::= ":=" ;
-pub fn set_operator(input: ParseString) -> ParseResult<ParserNode> {
+pub fn set_operator(input: ParseString) -> ParseResult<()> {
   let (input, _) = tag(":=")(input)?;
-  Ok((input, ParserNode::Null))
+  Ok((input, ()))
 }
+
+// define_operator ::= "=" ;
+pub fn define_operator(input: ParseString) -> ParseResult<()> {
+  let (input, _) = tag("=")(input)?;
+  Ok((input, ()))
+}
+
 
 // set_data ::= data, <!stmt_operator>, space*, set_operator, <space+>, <expression> ;
 pub fn set_data(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg1 = "Expect spaces around operator";
-  let msg2 = "Expect expression";
+  /*let msg1 = "Expects spaces around operator";
+  let msg2 = "Expects expression";
   let (input, table) = data(input)?;
   let (input, _) = labelr!(null(is_not(stmt_operator)), skip_nil, msg1)(input)?;
   let (input, _) = many0(space)(input)?;
@@ -1295,8 +1297,8 @@ pub fn set_data(input: ParseString) -> ParseResult<ParserNode> {
 
 // split_data ::= (identifier | table), <!stmt_operator>, space*, split_operator, <space+>, <expression> ;
 pub fn split_data(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg1 = "Expect spaces around operator";
-  let msg2 = "Expect expression";
+  /*let msg1 = "Expects spaces around operator";
+  let msg2 = "Expects expression";
   let (input, table) = alt((identifier, table))(input)?;
   let (input, _) = labelr!(null(is_not(stmt_operator)), skip_nil, msg1)(input)?;
   let (input, _) = many0(space)(input)?;
@@ -1308,8 +1310,8 @@ pub fn split_data(input: ParseString) -> ParseResult<ParserNode> {
 
 // flatten_data ::= identifier, <!stmt_operator>, space*, flatten_operator, <space+>, <expression> ;
 pub fn flatten_data(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg1 = "Expect spaces around operator";
-  let msg2 = "Expect expression";
+  /*let msg1 = "Expects spaces around operator";
+  let msg2 = "Expects expression";
   let (input, table) = identifier(input)?;
   let (input, _) = labelr!(null(is_not(stmt_operator)), skip_nil, msg1)(input)?;
   let (input, _) = many0(space)(input)?;
@@ -1320,16 +1322,16 @@ pub fn flatten_data(input: ParseString) -> ParseResult<ParserNode> {
 }
 
 // variable_define ::= identifier, <!stmt_operator>, space*, equal, <space+>, <expression> ;
-pub fn variable_define(input: ParseString) -> ParseResult<Statement> {
-  let msg1 = "Expect spaces around operator";
-  let msg2 = "Expect expression";
+pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
+  let msg1 = "Expects spaces around operator";
+  let msg2 = "Expects expression";
   let (input, name) = identifier(input)?;
-  let (input, _) = labelr!(null(is_not(stmt_operator)), skip_nil, msg1)(input)?;
+  let (input, _) = labelr!(null(is_not(define_operator)), skip_nil, msg1)(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, _) = equal(input)?;
   let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
   let (input, expression) = label!(expression, msg2)(input)?;
-  Ok((input, Statement::VariableDefine(VariableDefine{name,expression})))
+  Ok((input, VariableDefine{name,expression}))
 }
 
 pub fn table_define(input: ParseString) -> ParseResult<ParserNode> {
@@ -1337,8 +1339,8 @@ pub fn table_define(input: ParseString) -> ParseResult<ParserNode> {
 }
 
 pub fn raw_table_define(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg1 = "Expect spaces around operator";
-  let msg2 = "Expect expression";
+  /*let msg1 = "Expects spaces around operator";
+  let msg2 = "Expects expression";
   let mut children = vec![];
   let (input, table) = table(input)?;
   children.push(table);
@@ -1485,11 +1487,14 @@ pub fn followed_by_operator(input: ParseString) -> ParseResult<ParserNode> {
 // statement ::= (followed_by  | async_assign  | table_define | variable_define | split_data  | flatten_data | whenever_data | wait_data |
 // >>             until_data   | set_data     | update_data     | add_row     | comment ), space*, <new_line+> ;
 pub fn statement(input: ParseString) -> ParseResult<Statement> {
-  let msg = "Expect new_line to terminate statement";
+  let msg = "Expects new_line or semicolon to terminate statement";
   //let (input, (statement, src_range)) = range(alt((followed_by, async_assign, table_define, variable_define, split_data, flatten_data, whenever_data, wait_data, until_data, set_data, update_data, add_row, comment)))(input)?;
-  let (input, (statement, src_range)) = range(variable_define)(input)?;
+  let (input, statement) = match variable_define(input) {
+    Ok((input, var_def)) => (input, Statement::VariableDefine(var_def)),
+    Err(err) => {return Err(err);} 
+  };
   let (input, _) = many0(space)(input)?;
-  let (input, _) = label!(many1(new_line), msg)(input)?;
+  let (input, _) = label!(many1(alt((whitespace,semicolon))), msg)(input)?;
   Ok((input, statement))
 }
 
@@ -1499,8 +1504,8 @@ pub fn statement(input: ParseString) -> ParseResult<Statement> {
 
 // parenthetical_expression ::= left_parenthesis, <l0>, <right_parenthesis> ;
 pub fn parenthetical_expression(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect expression";
-  let msg2 = "Expect right parenthesis ')'";
+  let msg1 = "Expects expression";
+  let msg2 = "Expects right parenthesis ')'";
   let (input, (_, r)) = range(left_parenthesis)(input)?;
   let (input, l0) = label!(l0, msg1)(input)?;
   let (input, _) = label!(right_parenthesis, msg2, r)(input)?;
@@ -1510,7 +1515,7 @@ pub fn parenthetical_expression(input: ParseString) -> ParseResult<ParserNode> {
 // TODO: This won't parse -(5 - 3)
 // negation ::= dash, !(dash | space), <data | value> ;
 pub fn negation(input: ParseString) -> ParseResult<ParserNode> {
-  let msg = "Expect a value to immediately follow the negation sign";
+  let msg = "Expects a value to immediately follow the negation sign";
   let (input, (_, r)) = range(dash)(input)?;
   let (input, _) = is_not(alt((dash, space)))(input)?;  // so it's not comment sigil
   let (input, negated) = label!(data, msg, r)(input)?;
@@ -1519,8 +1524,8 @@ pub fn negation(input: ParseString) -> ParseResult<ParserNode> {
 
 // function ::= identifier, left_parenthesis, <function_binding+>, <right_parenthesis> ;
 pub fn function(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg1 = "Expect function binding";
-  let msg2 = "Expect right parenthesis ')'";
+  /*let msg1 = "Expects function binding";
+  let msg2 = "Expects right parenthesis ')'";
   let (input, identifier) = identifier(input)?;
   let (input, (_, r)) = range(left_parenthesis)(input)?;
   let (input, mut bindings) = label!(many1(function_binding), msg1)(input)?;
@@ -1533,15 +1538,15 @@ pub fn function(input: ParseString) -> ParseResult<ParserNode> {
 // user_function ::= left_bracket, function_output*, <right_bracket>, <space+>, <equal>, <space+>, <identifier>,
 // >>                <left_parenthesis>, <function_input*>, <right_parenthesis>, <new_line>, <function_body> ;
 pub fn user_function(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect right bracket for user function definition";
-  let msg2 = "Expect space after output declaration";
-  let msg3 = "Expect equal sign '='";
-  let msg4 = "Expect space after equal sign";
-  let msg5 = "Expect identifier for function name";
-  let msg6 = "Expect left parenthesis '('";
-  let msg7 = "Expect right parenthesis ')'";
-  let msg8 = "Expect new_line after user function header";
-  let msg9 = "Expect indented transformations for function body";
+  let msg1 = "Expects right bracket for user function definition";
+  let msg2 = "Expects space after output declaration";
+  let msg3 = "Expects equal sign '='";
+  let msg4 = "Expects space after equal sign";
+  let msg5 = "Expects identifier for function name";
+  let msg6 = "Expects left parenthesis '('";
+  let msg7 = "Expects right parenthesis ')'";
+  let msg8 = "Expects new_line after user function header";
+  let msg9 = "Expects indented transformations for function body";
   let start = input.loc();
   let (input, (_, r1)) = range(left_bracket)(input)?;
   let (input, mut output_args) = many0(function_output)(input)?;
@@ -1561,7 +1566,7 @@ pub fn user_function(input: ParseString) -> ParseResult<ParserNode> {
 
 // function_output ::= identifier, <kind_annotation>, space*, comma?, space* ;
 pub fn function_output(input: ParseString) -> ParseResult<ParserNode> {
-  let msg = "Expect kind annotation";
+  let msg = "Expects kind annotation";
   let (input, arg_id) = identifier(input)?;
   let (input, kind) = label!(kind_annotation, msg)(input)?;
   let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
@@ -1570,7 +1575,7 @@ pub fn function_output(input: ParseString) -> ParseResult<ParserNode> {
 
 // function_input ::= identifier, <kind_annotation>, space*, comma?, space* ;
 pub fn function_input(input: ParseString) -> ParseResult<ParserNode> {
-  let msg = "Expect kind annotation";
+  let msg = "Expects kind annotation";
   let (input, arg_id) = identifier(input)?;
   let (input, kind) = label!(kind_annotation, msg)(input)?;
   let (input, _) = tuple((many0(space), opt(comma), many0(space)))(input)?;
@@ -1614,7 +1619,7 @@ pub fn divide(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Divide))
 }
 
-// exponent ::= "^" ;
+// exponent ::= "Expects" ;
 pub fn exponent(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = tag("^")(input)?;
   Ok((input, ParserNode::Exponent))
@@ -1638,7 +1643,7 @@ pub fn l0(input: ParseString) -> ParseResult<ParserNode> {
 // l0_infix ::= <!(space+, colon)>, range_op, <!space>, <l1> ;
 pub fn l0_infix(input: ParseString) -> ParseResult<ParserNode> {
   let msg1 = "Unexpected space around range operator";
-  let msg2 = "Expect expression after range operator";
+  let msg2 = "Expects expression after range operator";
   let (input, _) = labelr!(is_not(tuple((many1(space), colon))), skip_spaces, msg1)(input)?;
   let (input, (op, r)) = range(range_op)(input)?;
   let (input, _) = labelr!(is_not(space), skip_spaces, msg1)(input)?;
@@ -1662,8 +1667,8 @@ pub fn l1_op(input: ParseString) -> ParseResult<ParserNode> {
 
 // l1_infix ::= <!l1_op>, space*, !negation, !comment_sigil, l1_op, <space+>, <l2> ;
 pub fn l1_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect spaces around opeartor";
-  let msg2 = "Expect expression after operator";
+  let msg1 = "Expects spaces around opeartor";
+  let msg2 = "Expects expression after operator";
   let (input, _) = labelr!(null(is_not(l1_op)), skip_nil, msg1)(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, _) = is_not(negation)(input)?;
@@ -1690,8 +1695,8 @@ pub fn l2_op(input: ParseString) -> ParseResult<ParserNode> {
 
 // l2_infix ::= <!l2_op>, space*, l2_op, <space+>, <l3> ;
 pub fn l2_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect spaces around opeartor";
-  let msg2 = "Expect expression after operator";
+  let msg1 = "Expects spaces around opeartor";
+  let msg2 = "Expects expression after operator";
   let (input, _) = labelr!(null(is_not(l2_op)), skip_nil, msg1)(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, op) = l2_op(input)?;
@@ -1716,8 +1721,8 @@ pub fn l3_op(input: ParseString) -> ParseResult<ParserNode> {
 
 // l3_infix ::= <!l3_op>, space*, l3_op, <space+>, <l4> ;
 pub fn l3_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect spaces around opeartor";
-  let msg2 = "Expect expression after operator";
+  let msg1 = "Expects spaces around opeartor";
+  let msg2 = "Expects expression after operator";
   let (input, _) = labelr!(null(is_not(l3_op)), skip_nil, msg1)(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, op) = l3_op(input)?;
@@ -1742,8 +1747,8 @@ pub fn l4_op(input: ParseString) -> ParseResult<ParserNode> {
 
 // l4_infix ::= <!l4_op>, space*, l4_op, <space+>, <l5> ;
 pub fn l4_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect spaces around opeartor";
-  let msg2 = "Expect expression after operator";
+  let msg1 = "Expects spaces around opeartor";
+  let msg2 = "Expects expression after operator";
   let (input, _) = labelr!(null(is_not(l4_op)), skip_nil, msg1)(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, op) = l4_op(input)?;
@@ -1768,8 +1773,8 @@ pub fn l5_op(input: ParseString) -> ParseResult<ParserNode> {
 
 // l5_infix ::= <!l5_op>, space*, l5_op, <space+>, <l6> ;
 pub fn l5_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expect spaces around opeartor";
-  let msg2 = "Expect expression after operator";
+  let msg1 = "Expects spaces around opeartor";
+  let msg2 = "Expects expression after operator";
   let (input, _) = labelr!(null(is_not(l5_op)), skip_nil, msg1)(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, op) = l5_op(input)?;
@@ -1932,7 +1937,7 @@ pub fn empty_line(input: ParseString) -> ParseResult<ParserNode> {
 // indented_tfm ::= !empty_line, space, <space>, <!space>, <transformation> ;
 /*pub fn indented_tfm(input: ParseString) -> ParseResult<ParserNode> {
   let msg1 = "Indentation has to be exactly 2 spaces";
-  let msg2 = "Expect transformation";
+  let msg2 = "Expects transformation";
   let (input, _) = tuple((
     is_not(empty_line),
     space,
@@ -2057,8 +2062,8 @@ pub fn unordered_list(input: ParseString) -> ParseResult<ParserNode> {
 
 // list_item ::= dash, <space+>, <paragraph>, new_line* ;
 pub fn list_item(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg1 = "Expect space after dash";
-  let msg2 = "Expect paragraph as list item";
+  /*let msg1 = "Expects space after dash";
+  let msg2 = "Expects paragraph as list item";
   let (input, _) = dash(input)?;
   let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
   let (input, list_item) = label!(paragraph, msg2)(input)?;
@@ -2079,9 +2084,9 @@ pub fn formatted_text(input: ParseString) -> ParseResult<ParserNode> {
 
 // code_block ::= grave, <grave>, <grave>, <new_line>, formatted_text, <grave{3}, new_line, whitespace*> ;
 pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
-  let msg1 = "Expect 3 graves to start a code block";
-  let msg2 = "Expect new_line";
-  let msg3 = "Expect 3 graves followed by new_line to terminate a code block";
+  let msg1 = "Expects 3 graves to start a code block";
+  let msg2 = "Expects new_line";
+  let msg3 = "Expects 3 graves followed by new_line to terminate a code block";
   let (input, (_, r)) = range(tuple((
     grave,
     label!(grave, msg1),
@@ -2104,10 +2109,10 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
 
 // mech_code_block ::= grave{3}, !!"mec", <"mech:">, text?, <new_line>, <block>, <grave{3}, new_line>, whitespace* ;
 /*pub fn mech_code_block(input: ParseString) -> ParseResult<SectionElement> {
-  let msg1 = "Expect new_line";
-  let msg2 = "Expect mech code block";
-  let msg3 = "Expect the \"mech:\" tag";
-  let msg4 = "Expect 3 graves followed by new_line to terminate the mech code block";
+  let msg1 = "Expects new_line";
+  let msg2 = "Expects mech code block";
+  let msg3 = "Expects the \"mech:\" tag";
+  let msg4 = "Expects 3 graves followed by new_line to terminate the mech code block";
   let (input, (_, r)) = range(tuple((grave, grave, grave)))(input)?;
   let (input, _) = tuple((is(tag("mec")), labelr!(tag("mech:"), skip_empty_mech_directive, msg3)))(input)?;
   let (input, directive) = opt(text)(input)?;
@@ -2125,8 +2130,14 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
 }*/
 
 pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
-  let (input, mech_code) = expression(input)?;
-  Ok((input, MechCode::Expression(mech_code)))
+  let (input, mech_code) = match statement(input.clone()) {
+    Ok((input, stmt)) => ((input, MechCode::Statement(stmt))),
+    _ => match expression(input.clone()) {
+      Ok((input, expr)) => ((input, MechCode::Expression(expr))),
+      Err(err) => {return Err(err);}
+    }
+  };
+  Ok((input, mech_code))
 }
 
 // ### Start here
@@ -2147,7 +2158,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
 
 // section ::= (!eof, <section_element>, whitespace?)+ ;
 pub fn section(input: ParseString) -> ParseResult<Section> {
-  let msg = "Expect user function, block, mech code block, code block, statement, paragraph, or unordered list";
+  let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
   let (input, title) = opt(ul_subtitle)(input)?;
   let (input, elements) = many1(section_element)(input)?;
   Ok((input, Section{elements}))
@@ -2162,7 +2173,7 @@ pub fn body(input: ParseString) -> ParseResult<Body> {
 
 // program ::= whitespace?, title?, <body>, whitespace?, space* ;
 pub fn program(input: ParseString) -> ParseResult<Program> {
-  let msg = "Expect program body";
+  let msg = "Expects program body";
   let mut program = vec![];
   let (input, _) = opt(whitespace)(input)?;
   let (input, title) = opt(title)(input)?;
@@ -2190,21 +2201,6 @@ pub fn program(input: ParseString) -> ParseResult<Program> {
 //   let (input, _) = many0(whitespace)(input)?;
 //   Ok((input, ParserNode::Block { children:  transformations }))
 // }
-
-// parse_mech_fragment ::= statement ;
-pub fn parse_mech_fragment(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, statement) = statement(input)?;
-  /*Ok((input, ParserNode::Root { children:  vec![
-    ParserNode::Program { children:  vec![
-      ParserNode::Body { children:  vec![
-        ParserNode::Section { title: None, children:  vec![
-          statement
-        ]} 
-      ]}
-    ]}
-  ]}))*/
-  Ok((input, ParserNode::Error))
-}
 
 // parse_mech ::= program | statement ;
 pub fn parse_mech(input: ParseString) -> ParseResult<Program> {
@@ -2503,7 +2499,6 @@ pub fn parse(text: &str) -> Result<Program, MechError> {
     // Parsing failed and could not be recovered. No parse tree was created in this case
     Err(err) => match err {
       Err::Error(mut e) | Err::Failure(mut e) => {
-        println!("!@@@#@#@#{:?}", e);
         error_log.append(&mut e.remaining_input.error_log);
         error_log.push((e.cause_range, e.error_detail));
         e.remaining_input
@@ -2511,9 +2506,6 @@ pub fn parse(text: &str) -> Result<Program, MechError> {
       Err::Incomplete(_) => panic!("nom::Err::Incomplete is not supported!"),
     },
   };
-
-  println!("REMAINING {:?}", remaining);
-  println!("RESULT NODE {:?}", result_node);
 
   // Check if all inputs were parsed
   if remaining.len() != 0 {

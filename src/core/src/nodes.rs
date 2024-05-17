@@ -770,7 +770,6 @@ pub struct StateDefinition {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Statement {
-  TableDefine(TableDefine),
   VariableDefine(VariableDefine),
   SplitTable,
   FlattenTable,
@@ -857,15 +856,6 @@ pub enum Literal {
   Boolean(Token),
   Number(Number),
   String(MechString),
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum Text {
-  Alpha(Token),
-  Symbol(Token),
-  Whitespace(Token),
-  Digit(Token),
-  Punctuation(Token),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
