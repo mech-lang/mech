@@ -710,28 +710,10 @@ pub fn symbol(input: ParseString) -> ParseResult<Token> {
   Ok((input, symbol))
 }
 
-// paragraph_symbol ::= ampersand | at | slash | backslash | asterisk | caret | hashtag | underscore ;
-pub fn paragraph_symbol(input: ParseString) -> ParseResult<Token> {
-  let (input, symbol) = alt((ampersand, at, slash, backslash, asterisk, caret, hashtag, underscore, equal, tilde, plus, percent))(input)?;
-  Ok((input, symbol))
-}
-
 // text ::= (alpha | digit_token | space | punctuation | grouping_symbol | symbol | emoji | escaped_char)+ ;
 pub fn text(input: ParseString) -> ParseResult<Token> {
   let (input, text) = alt((alpha_token, digit_token, space, tab, escaped_char, punctuation, grouping_symbol, symbol, emoji))(input)?;
   Ok((input, text))
-}
-
-// paragraph_rest ::= (word | space | number | punctuation | paragraph_symbol | quote | emoij)+ ;
-pub fn paragraph_rest(input: ParseString) -> ParseResult<ParserNode> {
-  //let (input, word) = many1(alt((word, space, number, punctuation, paragraph_symbol, quote, emoji)))(input)?;
-  Ok((input, ParserNode::Error))
-}
-
-// paragraph_starter ::= (word | number | quote | left_angle | right_angle | left_bracket | right_bracket | period | exclamation | question | comma | colon | semicolon | left_parenthesis | right_parenthesis | emoji)+ ;
-pub fn paragraph_starter(input: ParseString) -> ParseResult<ParserNode> {
-  //let (input, word) = many1(alt((word, number, quote, left_angle, right_angle, left_bracket, right_bracket, period, exclamation, question, comma, colon, semicolon, right_parenthesis, emoji)))(input)?;
-  Ok((input, ParserNode::Error))
 }
 
 // identifier ::= (word | emoji), (word | number | dash | slash | emoji)* ;
@@ -1928,7 +1910,7 @@ pub fn block(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Error))
 }
 
-// ### Markdown
+// ### Mechdown
 
 // title ::= text+, new_line, equal+, (space|tab)*, whitespace* ;
 pub fn title(input: ParseString) -> ParseResult<Title> {
@@ -2007,6 +1989,24 @@ pub fn paragraph_text(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input,  ParserNode::Error))
 }
 
+// paragraph_symbol ::= ampersand | at | slash | backslash | asterisk | caret | hashtag | underscore ;
+pub fn paragraph_symbol(input: ParseString) -> ParseResult<Token> {
+  let (input, symbol) = alt((ampersand, at, slash, backslash, asterisk, caret, hashtag, underscore, equal, tilde, plus, percent))(input)?;
+  Ok((input, symbol))
+}
+
+// paragraph_rest ::= (word | space | number | punctuation | paragraph_symbol | quote | emoij)+ ;
+pub fn paragraph_rest(input: ParseString) -> ParseResult<ParserNode> {
+  //let (input, word) = many1(alt((word, space, number, punctuation, paragraph_symbol, quote, emoji)))(input)?;
+  Ok((input, ParserNode::Error))
+}
+
+// paragraph_starter ::= (word | number | quote | left_angle | right_angle | left_bracket | right_bracket | period | exclamation | question | comma | colon | semicolon | left_parenthesis | right_parenthesis | emoji)+ ;
+pub fn paragraph_starter(input: ParseString) -> ParseResult<ParserNode> {
+  //let (input, word) = many1(alt((word, number, quote, left_angle, right_angle, left_bracket, right_bracket, period, exclamation, question, comma, colon, semicolon, right_parenthesis, emoji)))(input)?;
+  Ok((input, ParserNode::Error))
+}
+
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, elements) = match many1(text)(input) {
     Ok((input, text)) => (input, ParagraphElement::Text(text)), 
@@ -2022,22 +2022,21 @@ pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
 }
 
 // unordered_list ::= list_item+, new_line?, whitespace* ;
-pub fn unordered_list(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, list_items) = many1(list_item)(input)?;
-  let (input, _) = opt(new_line)(input)?;
+pub fn unordered_list(input: ParseString) -> ParseResult<UnorderedList> {
+  let (input, items) = many1(list_item)(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  Ok((input,  ParserNode::Error))
+  Ok((input,  UnorderedList{items}))
 }
 
 // list_item ::= dash, <space+>, <paragraph>, new_line* ;
-pub fn list_item(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg1 = "Expects space after dash";
+pub fn list_item(input: ParseString) -> ParseResult<Paragraph> {
+  let msg1 = "Expects space after dash";
   let msg2 = "Expects paragraph as list item";
   let (input, _) = dash(input)?;
   let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
   let (input, list_item) = label!(paragraph, msg2)(input)?;
-  let (input, _) = many0(new_line)(input)?;*/
-  Ok((input,  ParserNode::Error))
+  let (input, _) = many0(new_line)(input)?;
+  Ok((input,  list_item))
 }
 
 // formatted_text ::= (!grave, !eof, <paragraph_rest | carriage_return | new_line_char>)* ;
@@ -2067,7 +2066,6 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
   Ok((input, SectionElement::CodeBlock))
 }
 
-// ### Mechdown
 
 // pub fn inline_mech_code(input: ParseString) -> ParseResult<ParserNode> {
 //   let (input, _) = tuple((left_bracket,left_bracket))(input)?;
@@ -2115,14 +2113,17 @@ pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match comment(input.clone()) {
     Ok((input, comment)) => (input, SectionElement::Comment(comment)),
-    _ => match mech_code(input.clone()) {
-      Ok((input, m)) => (input, SectionElement::MechCode(m)),
-      _ => match paragraph(input.clone()) {
-        Ok((input, p)) => (input, SectionElement::Paragraph(p)),
-        _ => match code_block(input) {
-          Ok((input, m)) => (input,SectionElement::CodeBlock),
-          Err(err) => {
-            return Err(err);
+    _ => match unordered_list(input.clone()) {
+      Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
+      _ => match mech_code(input.clone()) {
+        Ok((input, m)) => (input, SectionElement::MechCode(m)),
+        _ => match paragraph(input.clone()) {
+          Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+          _ => match code_block(input) {
+            Ok((input, m)) => (input,SectionElement::CodeBlock),
+            Err(err) => {
+              return Err(err);
+            }
           }
         }
       }

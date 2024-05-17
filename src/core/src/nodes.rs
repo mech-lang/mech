@@ -737,20 +737,18 @@ pub enum SectionElement {
   Paragraph(Paragraph),
   MechCode(MechCode),
   CodeBlock,
-  UnorderedList,
+  UnorderedList(UnorderedList),
   OrderedList,
   BlockQuote,
   ThematicBreak,
 }
 
-/*#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum Subtitle {
-  Subtitle1,
-  Subtitle2,
-  Subtitle3,
-  Subtitle4,
-  Subtitle5,
-}*/
+pub type ListItem = Paragraph;
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct UnorderedList {
+  pub items: Vec<ListItem>,
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum MechCode {
