@@ -786,8 +786,24 @@ pub struct TableDefine {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Table {
   Empty,
-  Inline,
-  Anonymous,
+  Record,
+  Matrix,
+  Anonymous(AnonymousTable),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AnonymousTable {
+  pub rows: Vec<TableRow>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TableColumn {
+  pub element: Expression,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TableRow {
+  pub columns: Vec<TableColumn>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -813,11 +829,8 @@ pub struct Word {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Expression {
-  EmptyTable,
-  InlineTable(InlineTable),
   Formula,
-  String,
-  AnonymousTable,
+  Table(Table),
   Literal(Literal)
 }
 
