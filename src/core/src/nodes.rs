@@ -733,6 +733,7 @@ pub struct Section {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum SectionElement {
+  Section(Box<Section>),
   Comment(Comment),
   Paragraph(Paragraph),
   MechCode(MechCode),
@@ -880,6 +881,7 @@ pub struct MechString {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ParagraphElement {
+  Start(Token),
   Text(Vec<Token>),
   Bold(Vec<Token>),
   Italic(Vec<Token>),

@@ -1926,6 +1926,9 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
 
 // subtitle ::= text+, new_line, dash+, (space|tab)*, whitespace* ;
 pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
+  let (input, _) = many1(digit_token)(input)?;
+  let (input, _) = period(input)?;
+  let (input, _) = many0(space)(input)?;
   let (input, text) = many1(text)(input)?;
   let (input, _) = new_line(input)?;
   let (input, _) = many1(dash)(input)?;
@@ -1962,30 +1965,12 @@ pub fn alpha_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   Ok((input,  Subtitle{text}))
 }
 
-// subtitle ::= ul_subtitle | number_subtitle | alpha_subtitle;
-pub fn subtitle(input: ParseString) -> ParseResult<Subtitle> {
-  let (input, title) = alt((ul_subtitle,alpha_subtitle,number_subtitle))(input)?;
-  Ok((input, title))
-}
-
 // inline_code ::= grave, text, grave, space* ;
 pub fn inline_code(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = grave(input)?;
   let (input, text) = text(input)?;
   let (input, _) = grave(input)?;
   let (input, _) = many0(space)(input)?;
-  Ok((input,  ParserNode::Error))
-}
-
-// paragraph_text ::= paragraph_starter, paragraph_rest? ;
-pub fn paragraph_text(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, word) = paragraph_starter(input)?;
-  let (input, text) = opt(paragraph_rest)(input)?;
-  let mut paragraph = vec![word];
-  match text {
-    Some(text) => paragraph.push(text),
-    _ => (),
-  };
   Ok((input,  ParserNode::Error))
 }
 
@@ -2002,9 +1987,9 @@ pub fn paragraph_rest(input: ParseString) -> ParseResult<ParserNode> {
 }
 
 // paragraph_starter ::= (word | number | quote | left_angle | right_angle | left_bracket | right_bracket | period | exclamation | question | comma | colon | semicolon | left_parenthesis | right_parenthesis | emoji)+ ;
-pub fn paragraph_starter(input: ParseString) -> ParseResult<ParserNode> {
-  //let (input, word) = many1(alt((word, number, quote, left_angle, right_angle, left_bracket, right_bracket, period, exclamation, question, comma, colon, semicolon, right_parenthesis, emoji)))(input)?;
-  Ok((input, ParserNode::Error))
+pub fn paragraph_starter(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, text) = alt((alpha_token, quote, left_angle, right_angle, left_bracket, right_bracket, period, exclamation, question, comma, colon, semicolon, right_parenthesis, emoji))(input)?;
+  Ok((input, ParagraphElement::Start(text)))
 }
 
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
@@ -2017,7 +2002,10 @@ pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
 
 // paragraph ::= (inline_code | paragraph_text)+, whitespace*, new_line* ;
 pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
-  let (input, elements) = many1(paragraph_element)(input)?;
+  let (input, first) = paragraph_starter(input)?;
+  let (input, mut rest) = many0(paragraph_element)(input)?;
+  let mut elements = vec![first];
+  elements.append(&mut rest);
   Ok((input, Paragraph{elements}))
 }
 
@@ -2104,6 +2092,7 @@ pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
       Err(err) => {return Err(err);}
     }
   };
+  let (input, _) = alt((new_line, semicolon))(input)?;
   Ok((input, mech_code))
 }
 
@@ -2119,11 +2108,34 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
         Ok((input, m)) => (input, SectionElement::MechCode(m)),
         _ => match paragraph(input.clone()) {
           Ok((input, p)) => (input, SectionElement::Paragraph(p)),
-          _ => match code_block(input) {
+          _ => match code_block(input.clone()) {
             Ok((input, m)) => (input,SectionElement::CodeBlock),
-            Err(err) => {
-              return Err(err);
+            _ => match sub_section(input) {
+              Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
+              Err(err) => { return Err(err); }
             }
+          }
+        }
+      }
+    }
+  };
+  let (input, _) = many0(whitespace)(input)?;
+  Ok((input, section_element))
+}
+
+// section_element ::= user_function | block | mech_code_block | code_block | statement | paragraph | unordered_list;
+pub fn sub_section_element(input: ParseString) -> ParseResult<SectionElement> {
+  let (input, section_element) = match comment(input.clone()) {
+    Ok((input, comment)) => (input, SectionElement::Comment(comment)),
+    _ => match unordered_list(input.clone()) {
+      Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
+      _ => match mech_code(input.clone()) {
+        Ok((input, m)) => (input, SectionElement::MechCode(m)),
+        _ => match paragraph(input.clone()) {
+          Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+          _ => match code_block(input.clone()) {
+            Ok((input, m)) => (input,SectionElement::CodeBlock),
+            Err(err) => { return Err(err); }
           }
         }
       }
@@ -2136,16 +2148,26 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
 // section ::= (!eof, <section_element>, whitespace?)+ ;
 pub fn section(input: ParseString) -> ParseResult<Section> {
   let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
-  let (input, subtitle) = opt(subtitle)(input)?;
-  let (input, elements) = many0(section_element)(input)?;
+  let (input, subtitle) = opt(ul_subtitle)(input)?;
+  let (input, elements) = many1(section_element)(input)?;
   Ok((input, Section{subtitle, elements}))
 }
+
+// section ::= (!eof, <section_element>, whitespace?)+ ;
+pub fn sub_section(input: ParseString) -> ParseResult<Section> {
+  let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
+  let (input, subtitle) = alpha_subtitle(input)?;
+  let (input, elements) = many0(sub_section_element)(input)?;
+  Ok((input, Section{subtitle: Some(subtitle), elements}))
+}
+
 
 // body ::= whitespace*, section+ ;
 pub fn body(input: ParseString) -> ParseResult<Body> {
   let (input, _) = many0(whitespace)(input)?;
-  let (input, sections) = section(input)?;
-  Ok((input, Body{sections: vec![sections]}))
+  let (input, sections) = many1(section)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  Ok((input, Body{sections}))
 }
 
 // program ::= whitespace?, title?, <body>, whitespace?, space* ;
@@ -2156,8 +2178,7 @@ pub fn program(input: ParseString) -> ParseResult<Program> {
   //let (input, body) = labelr!(body, skip_nil, msg)(input)?;
   let (input, body) = body(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  let output = Program{title, body};
-  Ok((input, output))
+  Ok((input, Program{title, body}))
 }
 
 // pub fn raw_transformation(input: ParseString) -> ParseResult<ParserNode> {
