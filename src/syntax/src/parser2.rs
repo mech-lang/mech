@@ -2116,7 +2116,7 @@ pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
       Err(err) => {return Err(err);}
     }
   };
-  let (input, _) = alt((new_line, semicolon))(input)?;
+  let (input, _) = opt(alt((new_line, semicolon)))(input)?;
   Ok((input, mech_code))
 }
 
