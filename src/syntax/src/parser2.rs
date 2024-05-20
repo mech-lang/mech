@@ -27,7 +27,7 @@ use nom::{
   branch::alt,
   sequence::tuple,
   combinator::{opt, eof},
-  multi::{many1, many_till, many0, separated_list1},
+  multi::{many1, many_till, many0, separated_list1,separated_list0},
   Err,
 };
 
@@ -721,7 +721,9 @@ pub fn identifier(input: ParseString) -> ParseResult<Identifier> {
   let (input, (first, mut rest)) = tuple((alt((alpha_token,emoji)), many0(alt((alpha_token, digit_token, dash, slash, emoji)))))(input)?;
   let mut tokens = vec![first];
   tokens.append(&mut rest);
-  Ok((input, Identifier{tokens}))
+  let mut merged = merge_tokens(&mut tokens).unwrap();
+  merged.kind = TokenKind::Identifier; 
+  Ok((input, Identifier{name: merged}))
 }
 
 // boolean_literal ::= true_literal | false_literal ;
@@ -1115,6 +1117,70 @@ pub fn record(input: ParseString) -> ParseResult<Record> {
   let (input, _) = label!(right_bracket, msg, r)(input)?;
   Ok((input, Record{bindings}))
 }
+
+// #### State Machines
+
+/*
+#bubble-sort() -> arr :=
+    │ Start(arr,ix)
+    │ Comparion(arr,ix) 
+    │ Check(arr,ix)
+    └ Done(arr).
+    */
+
+pub fn fsm_define_operator(input: ParseString) -> ParseResult<()> {
+  let (input, _) = tag(":=")(input)?;
+  Ok((input, ()))
+}
+
+pub fn fsm_output_operator(input: ParseString) -> ParseResult<()> {
+  let (input, _) = tag("->")(input)?;
+  Ok((input, ()))
+}
+
+pub fn fsm_definition_separator(input: ParseString) -> ParseResult<()> {
+  let (input, _) = alt((tag("|"),tag("│"),tag("├"),tag("└")))(input)?;
+  Ok((input, ()))
+}
+
+pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
+  let ((input, _)) = hashtag(input)?;
+  let ((input, name)) = identifier(input)?;
+  let ((input, _)) = left_parenthesis(input)?;
+  let ((input, input_vars)) = separated_list0(tag(","), identifier)(input)?;
+  let ((input, _)) = right_parenthesis(input)?;
+  let ((input, _)) = many1(space)(input)?;
+  let ((input, _)) = fsm_output_operator(input)?;
+  let ((input, _)) = many1(space)(input)?;
+  let ((input, output)) = identifier(input)?;
+  let ((input, _)) = many1(space)(input)?;
+  let ((input, _)) = fsm_define_operator(input)?;
+  let ((input, _)) = many1(whitespace)(input)?;
+  let ((input, states)) = many1(fsm_state_definition)(input)?;
+  let ((input, _)) = period(input)?;
+  let ((input, _)) = many1(whitespace)(input)?;
+  Ok((input, FsmSpecification{name,input: input_vars,output,states}))
+}
+
+pub fn fsm_state_definition(input: ParseString) -> ParseResult<StateDefinition> {
+  let ((input, _)) = fsm_definition_separator(input)?;
+  let ((input, _)) = many1(whitespace)(input)?;
+  let ((input, name)) = identifier(input)?;
+  let ((input, vars)) = opt(fsm_state_definition_variables)(input)?;
+  let ((input, _)) = many0(whitespace)(input)?;
+  Ok((input, StateDefinition{name,state_variables: vars}))
+}
+
+pub fn fsm_state_definition_variables(input: ParseString) -> ParseResult<Vec<Identifier>> {
+  let ((input, _)) = left_parenthesis(input)?;
+  let ((input, names)) = separated_list1(tag(","), identifier)(input)?;
+  let ((input, _)) = right_parenthesis(input)?;
+  Ok((input, names))
+
+}
+
+
+
 
 // #### Statements
 
@@ -2109,11 +2175,14 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
 }*/
 
 pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
-  let (input, mech_code) = match statement(input.clone()) {
-    Ok((input, stmt)) => ((input, MechCode::Statement(stmt))),
-    _ => match expression(input.clone()) {
-      Ok((input, expr)) => ((input, MechCode::Expression(expr))),
-      Err(err) => {return Err(err);}
+  let (input, mech_code) = match fsm_specification(input.clone()) {
+    Ok((input, fsm_spec)) => ((input, MechCode::FsmSpecification(fsm_spec))),
+    _ => match statement(input.clone()) {
+      Ok((input, stmt)) => ((input, MechCode::Statement(stmt))),
+      _ => match expression(input.clone()) {
+        Ok((input, expr)) => ((input, MechCode::Expression(expr))),
+        Err(err) => {return Err(err);}
+      }
     }
   };
   let (input, _) = opt(alt((new_line, semicolon)))(input)?;

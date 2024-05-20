@@ -697,6 +697,7 @@ pub enum TokenKind {
   Number,
   String,
   Title,
+  Identifier,
   Empty
 }
 
@@ -793,20 +794,22 @@ pub enum MechCode {
   Expression(Expression),
   Statement(Statement),
   FunctionDefine,
+  FsmSpecification(FsmSpecification),
   FiniteStateMachine,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FsmSpecification {
   pub name: Identifier,
-  pub input: Vec<KindAnnotation>,
-  pub output: KindAnnotation,
-  pub states: StateDefinition,
+  pub input: Vec<Identifier>,
+  pub output: Identifier,
+  pub states: Vec<StateDefinition>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct StateDefinition {
   pub name: Identifier,
+  pub state_variables: Option<Vec<Identifier>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -859,7 +862,7 @@ pub struct VariableDefine {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Identifier {
-  pub tokens: Vec<Token>,
+  pub name: Token,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
