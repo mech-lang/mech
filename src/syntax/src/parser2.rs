@@ -800,18 +800,19 @@ fn float_decimal_start(input: ParseString) -> ParseResult<Number> {
   let (input, _) = period(input)?;
   let (input, part) = many1(digit_token)(input)?;
   let mut tokens2 = part.clone();
-  let merged = flatten_tokens(&mut tokens2).unwrap();
+  let mut merged = merge_tokens(&mut tokens2).unwrap();
+  merged.kind = TokenKind::Number;
   Ok((input, Number::Float((Token::default(),merged))))
 }
 
 fn float_full(input: ParseString) -> ParseResult<Number> {
-  let (input, whole) = many1(digit_token)(input)?;
+  let (input, mut whole) = many1(digit_token)(input)?;
   let (input, _) = period(input)?;
-  let (input, part) = many1(digit_token)(input)?;
-  let mut tokens2 = whole.clone();
-  let whole = flatten_tokens(&mut tokens2).unwrap();
-  let mut tokens2 = part.clone();
-  let part = flatten_tokens(&mut tokens2).unwrap();
+  let (input, mut part) = many1(digit_token)(input)?;
+  let mut whole = merge_tokens(&mut whole).unwrap();
+  let mut part = merge_tokens(&mut part).unwrap();
+  whole.kind = TokenKind::Number;
+  part.kind = TokenKind::Number;
   Ok((input, Number::Float((whole,part))))
 }
 
@@ -825,7 +826,8 @@ pub fn float_literal(input: ParseString) -> ParseResult<Number> {
 pub fn integer_literal(input: ParseString) -> ParseResult<Number> {
   let (input, tokens) = many1(digit_token)(input)?;
   let mut tokens2 = tokens.clone();
-  let merged = flatten_tokens(&mut tokens2).unwrap();
+  let mut merged = merge_tokens(&mut tokens2).unwrap();
+  merged.kind = TokenKind::Number; 
   Ok((input, Number::Integer(merged)))
 }
 
@@ -1827,8 +1829,10 @@ pub fn string(input: ParseString) -> ParseResult<MechString> {
   let (input, _) = quote(input)?;
   let (input, matched) = many0(tuple((is_not(quote), label!(text, msg))))(input)?;
   let (input, _) = quote(input)?;
-  let (_, text): ((), Vec<_>) = matched.into_iter().unzip();
-  Ok((input, MechString { text }))
+  let (_, mut text): ((), Vec<_>) = matched.into_iter().unzip();
+  let mut merged = merge_tokens(&mut text).unwrap();
+  merged.kind = TokenKind::String;
+  Ok((input, MechString { text: merged }))
 }
 
 // transpose ::= "'" ;
@@ -1922,14 +1926,16 @@ pub fn block(input: ParseString) -> ParseResult<ParserNode> {
 
 // title ::= text+, new_line, equal+, (space|tab)*, whitespace* ;
 pub fn title(input: ParseString) -> ParseResult<Title> {
-  let (input, text) = many1(text)(input)?;
+  let (input, mut text) = many1(text)(input)?;
   let (input, _) = new_line(input)?;
   let (input, _) = many1(equal)(input)?;
   let (input, _) = many0(alt((space,tab)))(input)?;
   let (input, _) = new_line(input)?;
   let (input, _) = many0(alt((space,tab)))(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  Ok((input,  Title{text}))
+  let mut title = merge_tokens(&mut text).unwrap();
+  title.kind = TokenKind::Title;
+  Ok((input, Title{text: title}))
 }
 
 // subtitle ::= text+, new_line, dash+, (space|tab)*, whitespace* ;
@@ -1937,14 +1943,16 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = many1(digit_token)(input)?;
   let (input, _) = period(input)?;
   let (input, _) = many0(space)(input)?;
-  let (input, text) = many1(text)(input)?;
+  let (input, mut text) = many1(text)(input)?;
   let (input, _) = new_line(input)?;
   let (input, _) = many1(dash)(input)?;
   let (input, _) = many0(alt((space,tab)))(input)?;
   let (input, _) = new_line(input)?;
   let (input, _) = many0(alt((space,tab)))(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  Ok((input,  Subtitle{text}))
+  let mut title = merge_tokens(&mut text).unwrap();
+  title.kind = TokenKind::Title;
+  Ok((input, Subtitle{text: title}))
 }
 
 // number_subtitle ::= space*, number, period, space+, text, space*, new_line* ;
@@ -1954,10 +1962,12 @@ pub fn number_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = integer_literal(input)?;
   let (input, _) = right_parenthesis(input)?;
   let (input, _) = many1(alt((space,tab)))(input)?;
-  let (input, text) = many1(text)(input)?;
+  let (input, mut text) = many1(text)(input)?;
   let (input, _) = many0(alt((space,tab)))(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  Ok((input, Subtitle{text}))
+  let mut title = merge_tokens(&mut text).unwrap();
+  title.kind = TokenKind::Title;
+  Ok((input, Subtitle{text: title}))
 }
 
 // alpha_subtitle ::= space*, alpha, right_parenthesis, space+, text, space*, new_line* ;
@@ -1967,10 +1977,12 @@ pub fn alpha_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = alpha(input)?;
   let (input, _) = right_parenthesis(input)?;
   let (input, _) = many0(alt((space,tab)))(input)?;
-  let (input, text) = many1(text)(input)?;
+  let (input, mut text) = many1(text)(input)?;
   let (input, _) = many0(alt((space,tab)))(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  Ok((input,  Subtitle{text}))
+  let mut title = merge_tokens(&mut text).unwrap();
+  title.kind = TokenKind::Title;
+  Ok((input, Subtitle{text: title}))
 }
 
 // inline_code ::= grave, text, grave, space* ;
@@ -1979,7 +1991,7 @@ pub fn inline_code(input: ParseString) -> ParseResult<ParserNode> {
   let (input, text) = text(input)?;
   let (input, _) = grave(input)?;
   let (input, _) = many0(space)(input)?;
-  Ok((input,  ParserNode::Error))
+  Ok((input, ParserNode::Error))
 }
 
 // paragraph_symbol ::= ampersand | at | slash | backslash | asterisk | caret | hashtag | underscore ;
@@ -2002,7 +2014,11 @@ pub fn paragraph_starter(input: ParseString) -> ParseResult<ParagraphElement> {
 
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, elements) = match many1(text)(input) {
-    Ok((input, text)) => (input, ParagraphElement::Text(text)), 
+    Ok((input, mut text)) => {
+      let mut text = merge_tokens(&mut text).unwrap();
+      text.kind = TokenKind::Text;
+      (input, ParagraphElement::Text(text))
+    }, 
     Err(err) => {return Err(err);},
   };
   Ok((input, elements))

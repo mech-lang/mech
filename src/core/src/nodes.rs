@@ -694,6 +694,9 @@ pub enum TokenKind {
   Text,
   True,
   False,
+  Number,
+  String,
+  Title,
   Empty
 }
 
@@ -722,7 +725,7 @@ impl Default for Token {
   }
 }
 
-pub fn flatten_tokens(tokens: &mut Vec<Token>) -> Option<Token> {
+pub fn merge_tokens(tokens: &mut Vec<Token>) -> Option<Token> {
   if tokens.len() == 0 {
     None
   } else if tokens.len() == 1 {
@@ -746,7 +749,7 @@ pub struct Program {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Title {
-  pub text: Vec<Token>,
+  pub text: Token,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -756,7 +759,7 @@ pub struct Body {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Subtitle {
-  pub text: Vec<Token>,
+  pub text: Token,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -910,13 +913,13 @@ pub enum Literal {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MechString {
-  pub text: Vec<Token>,
+  pub text: Token,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ParagraphElement {
   Start(Token),
-  Text(Vec<Token>),
+  Text(Token),
   Bold(Vec<Token>),
   Italic(Vec<Token>),
   Underline(Vec<Token>),
