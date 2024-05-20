@@ -774,7 +774,7 @@ pub fn scientific_literal(input: ParseString) -> ParseResult<Number> {
     }
     _ => match integer_literal(input.clone()) {
       Ok((input, Number::Integer(base))) => {
-        (input, (base, vec![]))
+        (input, (base, Token::default()))
       }
       Err(err) => {return Err(err);}
       _ => unreachable!(),
@@ -782,12 +782,12 @@ pub fn scientific_literal(input: ParseString) -> ParseResult<Number> {
   };
   let (input, _) = alt((tag("e"), tag("E")))(input)?;
   let (input, exponent) = match float_literal(input.clone()) {
-    Ok((input, Number::Float(base))) => {
-      (input, base)
+    Ok((input, Number::Float(exponent))) => {
+      (input, exponent)
     }
     _ => match integer_literal(input.clone()) {
-      Ok((input, Number::Integer(base))) => {
-        (input, (base, vec![]))
+      Ok((input, Number::Integer(exponent))) => {
+        (input, (exponent, Token::default()))
       }
       Err(err) => {return Err(err);}
       _ => unreachable!(),
@@ -799,13 +799,19 @@ pub fn scientific_literal(input: ParseString) -> ParseResult<Number> {
 fn float_decimal_start(input: ParseString) -> ParseResult<Number> {
   let (input, _) = period(input)?;
   let (input, part) = many1(digit_token)(input)?;
-  Ok((input, Number::Float((vec![],part))))
+  let mut tokens2 = part.clone();
+  let merged = flatten_tokens(&mut tokens2).unwrap();
+  Ok((input, Number::Float((Token::default(),merged))))
 }
 
 fn float_full(input: ParseString) -> ParseResult<Number> {
   let (input, whole) = many1(digit_token)(input)?;
   let (input, _) = period(input)?;
   let (input, part) = many1(digit_token)(input)?;
+  let mut tokens2 = whole.clone();
+  let whole = flatten_tokens(&mut tokens2).unwrap();
+  let mut tokens2 = part.clone();
+  let part = flatten_tokens(&mut tokens2).unwrap();
   Ok((input, Number::Float((whole,part))))
 }
 
@@ -818,7 +824,9 @@ pub fn float_literal(input: ParseString) -> ParseResult<Number> {
 // integer ::= digit1 ;
 pub fn integer_literal(input: ParseString) -> ParseResult<Number> {
   let (input, tokens) = many1(digit_token)(input)?;
-  Ok((input, Number::Integer(tokens)))
+  let mut tokens2 = tokens.clone();
+  let merged = flatten_tokens(&mut tokens2).unwrap();
+  Ok((input, Number::Integer(merged)))
 }
 
 // decimal_literal ::= "0d", <digit1> ;

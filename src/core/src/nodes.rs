@@ -697,11 +697,45 @@ pub enum TokenKind {
   Empty
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Token { 
   pub kind: TokenKind, 
   pub chars: Vec<char>, 
   pub src_range: SourceRange 
+}
+
+impl fmt::Debug for Token {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{:?}:{:?}:{:?}", self.kind, String::from_iter(self.chars.iter().cloned()), self.src_range);
+    Ok(())
+  }
+}
+
+impl Default for Token {
+  fn default() -> Self {
+    Token{
+      kind: TokenKind::Empty,
+      chars: vec![],
+      src_range: SourceRange::default(),
+    }
+  }
+}
+
+pub fn flatten_tokens(tokens: &mut Vec<Token>) -> Option<Token> {
+  if tokens.len() == 0 {
+    None
+  } else if tokens.len() == 1 {
+    Some(tokens[0].clone())
+  } else {
+    let first = tokens[0].src_range.clone();
+    let kind = tokens[0].kind.clone();
+    let last = tokens.last().unwrap().src_range.clone();
+    let src_range = merge_src_range(first, last);
+    let chars: Vec<char> = tokens.iter_mut().fold(vec![],|mut m, ref mut t| {m.append(&mut t.chars.clone()); m});
+    let merged_token = Token{kind, chars, src_range};
+    Some(merged_token)
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -895,16 +929,16 @@ pub struct Paragraph {
   pub elements: Vec<ParagraphElement>,
 }
 
-type Numerator = Vec<Token>;
-type Denominator = Vec<Token>;
-type Whole = Vec<Token>;
-type Part = Vec<Token>;
+type Numerator = Token;
+type Denominator = Token;
+type Whole = Token;
+type Part = Token;
 type Base = (Whole, Part);
 type Exponent = (Whole, Part);
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Number {
-  Integer(Vec<Token>),
+  Integer(Token),
   Float((Whole,Part)),
   Decimal(Vec<Token>),
   Hexadecimal(Vec<Token>),
