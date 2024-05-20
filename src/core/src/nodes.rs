@@ -795,8 +795,43 @@ pub enum MechCode {
   Statement(Statement),
   FunctionDefine,
   FsmSpecification(FsmSpecification),
-  FiniteStateMachine,
+  FsmImplementation(FsmImplementation),
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FsmImplementation {
+  pub name: Identifier,
+  pub input: Vec<Identifier>,
+  pub start: Pattern,
+  pub transitions: Vec<StateTransition>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct StateTransition {
+  pub start: Pattern, 
+  pub next: Pattern
+}
+
+pub struct TransitionBody {
+  code: Vec<MechCode>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Pattern {
+  Identifier(Identifier),
+  Literal(Literal),
+  Table(Table),
+  TupleStruct(TupleStruct),
+  Tuple(Vec<Pattern>)
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TupleStruct {
+  pub name: Identifier,
+  pub patterns: Vec<Pattern>,
+}
+
+pub type Tuple = Vec<Pattern>;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FsmSpecification {

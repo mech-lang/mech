@@ -746,7 +746,7 @@ pub fn false_literal(input: ParseString) -> ParseResult<Token> {
 
 // new_line ::= new_line_char | carriage_new_line ;
 pub fn new_line(input: ParseString) -> ParseResult<Token> {
-  let (input, result) = alt((new_line_char, carriage_return, carriage_return_new_line))(input)?;
+  let (input, result) = alt((carriage_return_new_line,new_line_char,carriage_return, ))(input)?;
   Ok((input, result))
 }
 
@@ -754,6 +754,11 @@ pub fn new_line(input: ParseString) -> ParseResult<Token> {
 pub fn whitespace(input: ParseString) -> ParseResult<Token> {
   let (input, space) = alt((space,tab,new_line))(input)?;
   Ok((input, space))
+}
+
+pub fn list_separator(input: ParseString) -> ParseResult<()> {
+  let (input,_) = tuple((many0(whitespace),tag(","),many0(whitespace)))(input)?;
+  Ok((input, ()))
 }
 
 // number-literal := (integer | hexadecimal | octal | binary | decimal | float | rational | scientific) ;
@@ -1121,11 +1126,22 @@ pub fn record(input: ParseString) -> ParseResult<Record> {
 // #### State Machines
 
 /*
-#bubble-sort() -> arr :=
-    │ Start(arr,ix)
-    │ Comparion(arr,ix) 
-    │ Check(arr,ix)
-    └ Done(arr).
+#bubble-sort(arr) => Start(arr,0)
+    -- Begin the sorting process by comparing elements in the input array and keeping track of the number of swapsmade so far.
+    Start(arr, swaps) => Comparison(arr, swaps)
+    -- If the input array is empty, move on to the next step (checking if the sort is done).
+    Comparison([], swaps) => Check(arr, swaps)
+    -- Compare adjacent elements in the array and decide what to do based on the result.
+    Comparison([a, b, tail], swaps) =>
+        │ a > b => Comparison([b, a, tail], swaps + 1)
+        └ _ => Comparison(tail, swaps)
+    
+    -- If no swaps were made during the sorting process, the array is sorted, so signal that the sort is done.
+    Check(arr, 0) => Done(arr)
+    -- If swaps were made, the array is not yet sorted, so start the comparison process again from the beginning.
+    Check(arr, swaps) => Compari(arr,0)
+    -- The final step: return the sorted array.
+    Done(arr) -> arr.
     */
 
 pub fn fsm_define_operator(input: ParseString) -> ParseResult<()> {
@@ -1138,16 +1154,51 @@ pub fn fsm_output_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
+pub fn fsm_transition_operator(input: ParseString) -> ParseResult<()> {
+  let (input, _) = tag("=>")(input)?;
+  Ok((input, ()))
+}
+
 pub fn fsm_definition_separator(input: ParseString) -> ParseResult<()> {
   let (input, _) = alt((tag("|"),tag("│"),tag("├"),tag("└")))(input)?;
   Ok((input, ()))
+}
+
+pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> {
+  let ((input, _)) = hashtag(input)?;
+  let ((input, name)) = identifier(input)?;
+  let ((input, _)) = left_parenthesis(input)?;
+  let ((input, input_vars)) = separated_list0(list_separator, identifier)(input)?;
+  let ((input, _)) = right_parenthesis(input)?;
+  let ((input, _)) = many1(space)(input)?;
+  let ((input, _)) = fsm_transition_operator(input)?;
+  let ((input, _)) = many1(space)(input)?;
+  let ((input, start)) = fsm_pattern(input)?;
+  let ((input, _)) = many1(whitespace)(input)?;
+  let ((input, transitions)) = many0(fsm_state_transition)(input)?;
+  let ((input, _)) = period(input)?;
+  //let ((input, _)) = many1(whitespace)(input)?;
+
+  //let ((input, _)) = many1(whitespace)(input)?;
+  //let ((input, transitions)) = fsm_state_transition(input)?;
+  Ok((input, FsmImplementation{name,input: input_vars,start,transitions}))
+}
+
+pub fn fsm_state_transition(input: ParseString) -> ParseResult<StateTransition> {
+  let ((input, start)) = fsm_pattern(input)?;
+  let ((input, _)) = many1(space)(input)?;
+  let ((input, _)) = alt((fsm_transition_operator,fsm_output_operator))(input)?;
+  let ((input, _)) = many1(space)(input)?;
+  let ((input, next)) = fsm_pattern(input)?;
+  let ((input, _)) = many0(whitespace)(input)?;
+  Ok((input, StateTransition{start, next}))
 }
 
 pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
   let ((input, _)) = hashtag(input)?;
   let ((input, name)) = identifier(input)?;
   let ((input, _)) = left_parenthesis(input)?;
-  let ((input, input_vars)) = separated_list0(tag(","), identifier)(input)?;
+  let ((input, input_vars)) = separated_list0(list_separator, identifier)(input)?;
   let ((input, _)) = right_parenthesis(input)?;
   let ((input, _)) = many1(space)(input)?;
   let ((input, _)) = fsm_output_operator(input)?;
@@ -1162,6 +1213,31 @@ pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
   Ok((input, FsmSpecification{name,input: input_vars,output,states}))
 }
 
+pub fn fsm_pattern(input: ParseString) -> ParseResult<Pattern> {
+  let ((input, ptrn)) = match tuple_struct(input.clone()) {
+    Ok((input, tpl)) => ((input, Pattern::TupleStruct(tpl))),
+    _ => match identifier(input.clone()) {
+      Ok((input, id)) => ((input, Pattern::Identifier(id))),
+      _ => match literal(input.clone()) {
+        Ok((input, ltrl)) => ((input, Pattern::Literal(ltrl))),
+        _ => match table(input.clone()) {
+          Ok((input, tbl)) => ((input, Pattern::Table(tbl))),
+          Err(err) => {return Err(err)},
+        },
+      },
+    },
+  };
+  Ok((input, ptrn))
+}
+
+pub fn tuple_struct(input: ParseString) -> ParseResult<TupleStruct> {
+  let (input, id) = identifier(input)?;
+  let ((input, _)) = left_parenthesis(input)?;
+  let ((input, patterns)) = separated_list1(list_separator, fsm_pattern)(input)?;
+  let ((input, _)) = right_parenthesis(input)?;
+  Ok((input, TupleStruct{name: id, patterns}))
+}
+
 pub fn fsm_state_definition(input: ParseString) -> ParseResult<StateDefinition> {
   let ((input, _)) = fsm_definition_separator(input)?;
   let ((input, _)) = many1(whitespace)(input)?;
@@ -1173,14 +1249,10 @@ pub fn fsm_state_definition(input: ParseString) -> ParseResult<StateDefinition> 
 
 pub fn fsm_state_definition_variables(input: ParseString) -> ParseResult<Vec<Identifier>> {
   let ((input, _)) = left_parenthesis(input)?;
-  let ((input, names)) = separated_list1(tag(","), identifier)(input)?;
+  let ((input, names)) = separated_list1(list_separator, identifier)(input)?;
   let ((input, _)) = right_parenthesis(input)?;
   Ok((input, names))
-
 }
-
-
-
 
 // #### Statements
 
@@ -2177,11 +2249,14 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
 pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
   let (input, mech_code) = match fsm_specification(input.clone()) {
     Ok((input, fsm_spec)) => ((input, MechCode::FsmSpecification(fsm_spec))),
-    _ => match statement(input.clone()) {
-      Ok((input, stmt)) => ((input, MechCode::Statement(stmt))),
-      _ => match expression(input.clone()) {
-        Ok((input, expr)) => ((input, MechCode::Expression(expr))),
-        Err(err) => {return Err(err);}
+    _ => match fsm_implementation(input.clone()) {
+      Ok((input, fsm_impl)) => ((input, MechCode::FsmImplementation(fsm_impl))),
+      _ => match statement(input.clone()) {
+        Ok((input, stmt)) => ((input, MechCode::Statement(stmt))),
+        _ => match expression(input.clone()) {
+          Ok((input, expr)) => ((input, MechCode::Expression(expr))),
+          Err(err) => {return Err(err);}
+        }
       }
     }
   };
