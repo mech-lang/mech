@@ -1125,42 +1125,30 @@ pub fn record(input: ParseString) -> ParseResult<Record> {
 
 // #### State Machines
 
-/*
-#bubble-sort(arr) => Start(arr,0)
-    -- Begin the sorting process by comparing elements in the input array and keeping track of the number of swapsmade so far.
-    Start(arr, swaps) => Comparison(arr, swaps)
-    -- If the input array is empty, move on to the next step (checking if the sort is done).
-    Comparison([], swaps) => Check(arr, swaps)
-    -- Compare adjacent elements in the array and decide what to do based on the result.
-    Comparison([a, b, tail], swaps) =>
-        │ a > b => Comparison([b, a, tail], swaps + 1)
-        └ _ => Comparison(tail, swaps)
-    
-    -- If no swaps were made during the sorting process, the array is sorted, so signal that the sort is done.
-    Check(arr, 0) => Done(arr)
-    -- If swaps were made, the array is not yet sorted, so start the comparison process again from the beginning.
-    Check(arr, swaps) => Compari(arr,0)
-    -- The final step: return the sorted array.
-    Done(arr) -> arr.
-    */
-
 pub fn fsm_define_operator(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = tag(":=")(input)?;
   Ok((input, ()))
 }
 
 pub fn fsm_output_operator(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = tag("->")(input)?;
+  let (input, _) = many1(whitespace)(input)?;
   Ok((input, ()))
 }
 
 pub fn fsm_transition_operator(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = tag("=>")(input)?;
+  let (input, _) = many1(whitespace)(input)?;
   Ok((input, ()))
 }
 
-pub fn fsm_definition_separator(input: ParseString) -> ParseResult<()> {
+pub fn fsm_guard_operator(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = alt((tag("|"),tag("│"),tag("├"),tag("└")))(input)?;
+  let (input, _) = many1(whitespace)(input)?;
   Ok((input, ()))
 }
 
@@ -1170,28 +1158,38 @@ pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> 
   let ((input, _)) = left_parenthesis(input)?;
   let ((input, input_vars)) = separated_list0(list_separator, identifier)(input)?;
   let ((input, _)) = right_parenthesis(input)?;
-  let ((input, _)) = many1(space)(input)?;
   let ((input, _)) = fsm_transition_operator(input)?;
-  let ((input, _)) = many1(space)(input)?;
   let ((input, start)) = fsm_pattern(input)?;
-  let ((input, _)) = many1(whitespace)(input)?;
-  let ((input, transitions)) = many0(fsm_state_transition)(input)?;
+  let ((input, _)) = many0(whitespace)(input)?;
+  let ((input, arms)) = many0(fsm_arm)(input)?;
   let ((input, _)) = period(input)?;
-  //let ((input, _)) = many1(whitespace)(input)?;
-
-  //let ((input, _)) = many1(whitespace)(input)?;
-  //let ((input, transitions)) = fsm_state_transition(input)?;
-  Ok((input, FsmImplementation{name,input: input_vars,start,transitions}))
+  Ok((input, FsmImplementation{name,input: input_vars,start,arms}))
 }
 
-pub fn fsm_state_transition(input: ParseString) -> ParseResult<StateTransition> {
+pub fn fsm_arm(input: ParseString) -> ParseResult<FsmArm> {
+  let ((input, _)) = many0(comment)(input)?;
   let ((input, start)) = fsm_pattern(input)?;
-  let ((input, _)) = many1(space)(input)?;
-  let ((input, _)) = alt((fsm_transition_operator,fsm_output_operator))(input)?;
-  let ((input, _)) = many1(space)(input)?;
-  let ((input, next)) = fsm_pattern(input)?;
+  let ((input, trns)) = many1(alt((fsm_guard,fsm_state_transition,fsm_output)))(input)?;
   let ((input, _)) = many0(whitespace)(input)?;
-  Ok((input, StateTransition{start, next}))
+  Ok((input, FsmArm{start, transitions: trns}))
+}
+
+pub fn fsm_guard(input: ParseString) -> ParseResult<Transition> {
+  let (input, _) = alt((fsm_transition_operator,fsm_guard_operator))(input)?;
+  let (input, expr) = expression(input)?;
+  Ok((input, Transition::Guard(expr)))
+}
+
+pub fn fsm_state_transition(input: ParseString) -> ParseResult<Transition> {
+  let (input, _) = fsm_transition_operator(input)?;
+  let ((input, ptrn)) = fsm_pattern(input)?;
+  Ok((input, Transition::Next(ptrn)))
+}
+
+pub fn fsm_output(input: ParseString) -> ParseResult<Transition> {
+  let (input, _) = fsm_output_operator(input)?;
+  let ((input, ptrn)) = fsm_pattern(input)?;
+  Ok((input, Transition::Output(ptrn)))
 }
 
 pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
@@ -1200,16 +1198,11 @@ pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
   let ((input, _)) = left_parenthesis(input)?;
   let ((input, input_vars)) = separated_list0(list_separator, identifier)(input)?;
   let ((input, _)) = right_parenthesis(input)?;
-  let ((input, _)) = many1(space)(input)?;
   let ((input, _)) = fsm_output_operator(input)?;
-  let ((input, _)) = many1(space)(input)?;
   let ((input, output)) = identifier(input)?;
-  let ((input, _)) = many1(space)(input)?;
   let ((input, _)) = fsm_define_operator(input)?;
-  let ((input, _)) = many1(whitespace)(input)?;
   let ((input, states)) = many1(fsm_state_definition)(input)?;
   let ((input, _)) = period(input)?;
-  let ((input, _)) = many1(whitespace)(input)?;
   Ok((input, FsmSpecification{name,input: input_vars,output,states}))
 }
 
@@ -1239,11 +1232,9 @@ pub fn tuple_struct(input: ParseString) -> ParseResult<TupleStruct> {
 }
 
 pub fn fsm_state_definition(input: ParseString) -> ParseResult<StateDefinition> {
-  let ((input, _)) = fsm_definition_separator(input)?;
-  let ((input, _)) = many1(whitespace)(input)?;
+  let ((input, _)) = fsm_guard_operator(input)?;
   let ((input, name)) = identifier(input)?;
   let ((input, vars)) = opt(fsm_state_definition_variables)(input)?;
-  let ((input, _)) = many0(whitespace)(input)?;
   Ok((input, StateDefinition{name,state_variables: vars}))
 }
 
@@ -1265,9 +1256,10 @@ pub fn comment_sigil(input: ParseString) -> ParseResult<ParserNode> {
 // comment ::= (space | tab)*, comment_sigil, <text>, <!!new_line> ;
 pub fn comment(input: ParseString) -> ParseResult<Comment> {
   let msg2 = "Character not allowed in comment text";
-  let (input, _) = many0(alt((space, tab)))(input)?;
+  let (input, _) = many0(whitespace)(input)?;
   let (input, _) = comment_sigil(input)?;
   let (input, text) = many1(text)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
   Ok((input, Comment{text}))
 }
 

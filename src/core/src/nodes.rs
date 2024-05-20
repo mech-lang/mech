@@ -803,17 +803,21 @@ pub struct FsmImplementation {
   pub name: Identifier,
   pub input: Vec<Identifier>,
   pub start: Pattern,
-  pub transitions: Vec<StateTransition>,
+  pub arms: Vec<FsmArm>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct StateTransition {
+pub struct FsmArm {
   pub start: Pattern, 
-  pub next: Pattern
+  pub transitions: Vec<Transition>
 }
 
-pub struct TransitionBody {
-  code: Vec<MechCode>,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Transition {
+  Next(Pattern),
+  Output(Pattern),
+  Guard(Expression),
+  TransitionBlock(Vec<MechCode>),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
