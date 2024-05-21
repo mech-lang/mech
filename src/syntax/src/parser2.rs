@@ -1578,7 +1578,6 @@ pub fn statement(input: ParseString) -> ParseResult<Statement> {
     Err(err) => {return Err(err);} 
   };
   let (input, _) = many0(space)(input)?;
-  let (input, _) = label!(many1(alt((whitespace,semicolon))), msg)(input)?;
   Ok((input, statement))
 }
 
@@ -2252,7 +2251,7 @@ pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
       }
     }
   };
-  let (input, _) = opt(alt((new_line, semicolon)))(input)?;
+  let (input, _) = alt((new_line, semicolon))(input)?;
   Ok((input, mech_code))
 }
 
