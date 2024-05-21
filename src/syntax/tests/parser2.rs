@@ -89,11 +89,11 @@ test_parser!(parse_mechdown_unordered_list, r#"- one
 
 test_parser!(parse_fsm_implementation,
 r#"#bubble-sort(arr) => Start(arr)
-    Start(arr, swaps) => Comparison(arr, swaps)
-    Comparison([], swaps) => Check(arr, swaps)
-    Comparison([a, b, tail], swaps)
-        │ 1 + 2 => Comparison([b, a, tail], swaps)
-        └ _ => Comparison(tail, swaps)
-    Check(arr, 0) => Done(arr)
-    Check(arr, swaps) => Comparison(arr,0)
-    Done(arr) -> arr."#,52299410904147598);
+  Start(arr, swaps) => Comparison(arr, swaps)
+  Comparison([], swaps) => Check(arr, swaps)
+  Comparison([a, b, tail], swaps)
+      │ 1 + 2 => Comparison([b, a, tail], swaps)
+      └ * => Comparison(tail, swaps)
+  Check(arr, 0) => Done(arr)
+  Check(arr, swaps) => Comparison(arr,0)
+  Done(arr) -> arr."#,53105519860488637);

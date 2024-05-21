@@ -816,12 +816,19 @@ pub struct FsmArm {
 pub enum Transition {
   Next(Pattern),
   Output(Pattern),
-  Guard(Expression),
+  Guard(Guard),
   TransitionBlock(Vec<MechCode>),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Guard {
+  Wildcard,
+  Expression(Expression),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Pattern {
+  Wildcard,
   Identifier(Identifier),
   Literal(Literal),
   Table(Table),

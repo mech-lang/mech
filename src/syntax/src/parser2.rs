@@ -1196,8 +1196,19 @@ pub fn fsm_arm(input: ParseString) -> ParseResult<FsmArm> {
 
 pub fn fsm_guard(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = alt((fsm_transition_operator,fsm_guard_operator))(input)?;
-  let (input, expr) = expression(input)?;
+  let (input, expr) = match wildcard(input.clone()) {
+    Ok((input, _)) => (input, Guard::Wildcard),
+    _ => match expression(input.clone()) {
+      Ok((input, expr)) => (input, Guard::Expression(expr)),
+      Err(err) => {return Err(err);}
+    }
+  };
   Ok((input, Transition::Guard(expr)))
+}
+
+pub fn wildcard(input: ParseString) -> ParseResult<Pattern> {
+  let ((input, _)) = asterisk(input)?;
+  Ok((input, Pattern::Wildcard))
 }
 
 pub fn fsm_state_transition(input: ParseString) -> ParseResult<Transition> {
@@ -1229,15 +1240,18 @@ pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
 pub fn fsm_pattern(input: ParseString) -> ParseResult<Pattern> {
   let ((input, ptrn)) = match tuple_struct(input.clone()) {
     Ok((input, tpl)) => ((input, Pattern::TupleStruct(tpl))),
-    _ => match identifier(input.clone()) {
-      Ok((input, id)) => ((input, Pattern::Identifier(id))),
-      _ => match literal(input.clone()) {
-        Ok((input, ltrl)) => ((input, Pattern::Literal(ltrl))),
-        _ => match table(input.clone()) {
-          Ok((input, tbl)) => ((input, Pattern::Table(tbl))),
-          Err(err) => {return Err(err)},
+    _ => match wildcard(input.clone()) {
+      Ok((input, _)) => ((input, Pattern::Wildcard)),
+      _ => match identifier(input.clone()) {
+        Ok((input, id)) => ((input, Pattern::Identifier(id))),
+        _ => match literal(input.clone()) {
+          Ok((input, ltrl)) => ((input, Pattern::Literal(ltrl))),
+          _ => match table(input.clone()) {
+            Ok((input, tbl)) => ((input, Pattern::Table(tbl))),
+            Err(err) => {return Err(err)},
+          },
         },
-      },
+      }
     },
   };
   Ok((input, ptrn))
