@@ -1871,10 +1871,10 @@ pub fn l6(input: ParseString) -> ParseResult<L6> {
     Ok((input, tbl)) => ((input, L6::Table(tbl))),
     _ => match literal(input.clone()) {
       Ok((input, ltrl)) => ((input, L6::Literal(ltrl))),
-      _ => match identifier(input.clone()) {
-        Ok((input, data)) => ((input, L6::Data(data))),
-        _ => match slice(input.clone()) {
-          Ok((input, slice)) => ((input, L6::Slice(slice))),
+      _ => match slice(input.clone()) {
+        Ok((input, data)) => ((input, L6::Slice(data))),
+        _ => match identifier(input.clone()) {
+          Ok((input, slice)) => ((input, L6::Data(slice))),
           Err(err) => {return Err(err);}
         }
       }

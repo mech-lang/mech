@@ -58,6 +58,11 @@ test_parser!(parse_table_vector_vars, "[a,b,c]", 52341332786722480);
 test_parser!(parse_table_column_vector, "[1; 2; 3]", 55330048942590530);
 test_parser!(parse_table_2x2, "[1 2; 3 4]", 27276319635453143);
 
+test_parser!(parse_formula, "1 + 2 * 3", 19760249313792066);
+test_parser!(parse_formula_vars, "a + b * c", 30557081270868565);
+test_parser!(parse_formula_slices, "a[1] + b[2] * c", 30557081270868565);
+test_parser!(parse_formula_, "a[1] + b[2] * c", 30557081270868565);
+
 test_parser!(parse_record, "[a: 1, b: 2, c: 3]", 13220390494180657);
 test_parser!(parse_record_column, r#"[a: 1
  b: 2
@@ -96,4 +101,4 @@ r#"#bubble-sort(arr) => Start(arr)
       └ * => Comparison([tail], swaps)
   Check(arr, 0) => Done(arr)
   Check(arr, swaps) => Comparison(arr,0)
-  Done(arr) -> arr."#,27986308623551423);
+  Done(arr) -> arr."#, 27986308623551423);
