@@ -920,7 +920,8 @@ pub enum Expression {
   Slice((Identifier,Vec<Expression>)),
   Formula(Formula),
   Table(Table),
-  Literal(Literal)
+  Literal(Literal),
+  Transpose(Box<Expression>)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

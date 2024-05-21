@@ -2040,13 +2040,12 @@ pub fn expression(input: ParseString) -> ParseResult<Expression> {
       }
     }
   };
-  /*let (input, transpose) = opt(transpose)(input)?;
-  let mut children = vec![expression];
-  match transpose {
-    Some(transpose) => children.push(transpose),
-    _ => (),
-  }*/
-  Ok((input, expression))
+  let (input, transpose) = opt(transpose)(input)?;
+  let expr = match transpose {
+    Some(_) => Expression::Transpose(Box::new(expression)),
+    None => expression,
+  };
+  Ok((input, expr))
 }
 
 // #### Block basics
