@@ -1820,7 +1820,6 @@ pub fn l2(input: ParseString) -> ParseResult<(L2,bool)> {
   let (input, (lhs,s)) = l3(input)?;
   let (input, rhs) = many0(tuple((l2_op,l3)))(input)?;
   let s = if s {s} else if rhs.is_empty() {false} else {true};
-
   Ok((input, (L2 { lhs, rhs },s)))
 }
 
@@ -1834,7 +1833,6 @@ pub fn l3(input: ParseString) -> ParseResult<(L3,bool)> {
   let (input, (lhs,s)) = l4(input)?;
   let (input, rhs) = many0(tuple((l3_op,l4)))(input)?;
   let s = if s {s} else if rhs.is_empty() {false} else {true};
-
   Ok((input, (L3 { lhs, rhs },s)))
 }
 
@@ -1848,7 +1846,6 @@ pub fn l4(input: ParseString) -> ParseResult<(L4,bool)> {
   let (input, (lhs,s)) = l5(input)?;
   let (input, rhs) = many0(tuple((l4_op,l5)))(input)?;
   let s = if s {s} else if rhs.is_empty() {false} else {true};
-
   Ok((input, (L4 { lhs, rhs },s)))
 }
 
@@ -1989,9 +1986,9 @@ pub fn string(input: ParseString) -> ParseResult<MechString> {
 }
 
 // transpose ::= "'" ;
-pub fn transpose(input: ParseString) -> ParseResult<ParserNode> {
+pub fn transpose(input: ParseString) -> ParseResult<()> {
   let (input, _) = tag("'")(input)?;
-  Ok((input, ParserNode::Transpose))
+  Ok((input, ()))
 }
 
 pub fn literal(input: ParseString) -> ParseResult<Literal> {
