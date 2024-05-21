@@ -985,10 +985,10 @@ type Exponent = (Whole, Part);
 pub enum Number {
   Integer(Token),
   Float((Whole,Part)),
-  Decimal(Vec<Token>),
-  Hexadecimal(Vec<Token>),
-  Octal(Vec<Token>),
-  Binary(Vec<Token>),
+  Decimal(Token),
+  Hexadecimal(Token),
+  Octal(Token),
+  Binary(Token),
   Scientific((Base,Exponent)),
   Rational((Numerator,Denominator))
 }

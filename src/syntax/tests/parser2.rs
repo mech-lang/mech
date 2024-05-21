@@ -8,7 +8,7 @@ use std::rc::Rc;
 use mech_core::*;
 use mech_syntax::parser2;
 
-  /// Compare error locations (the reported row and col numbers).
+  /// Compare hashed parse tree traces
   macro_rules! test_parser {
     ($func:ident, $input:tt, $expected:expr) => (
       #[test]
@@ -30,6 +30,12 @@ use mech_syntax::parser2;
 test_parser!(parse_literal_number_integer, "123", 62568158498624598);
 test_parser!(parse_literal_number_float, "123.456", 49724774253782161);
 test_parser!(parse_literal_number_rational, "123/456", 38518217377960831);
+test_parser!(parse_literal_number_hex, "0x1234567890ABCDEF", 10208025603092252);
+test_parser!(parse_literal_number_dec, "0d1234567890", 57432846543525412);
+test_parser!(parse_literal_number_oct, "0o12345670", 36107841685676795);
+test_parser!(parse_literal_number_bin, "0b1010101", 51428896740892327);
+test_parser!(parse_literal_number_sci, "123.456E789", 17117460775968053);
+
 
 test_parser!(parse_literal_string, r#""Hello World""#, 64968622345197628);
 test_parser!(parse_literal_string_escaped_quote, r#""Hello \" World""#, 9347612743027557);

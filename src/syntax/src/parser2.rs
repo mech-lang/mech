@@ -831,9 +831,8 @@ pub fn float_literal(input: ParseString) -> ParseResult<Number> {
 
 // integer ::= digit1 ;
 pub fn integer_literal(input: ParseString) -> ParseResult<Number> {
-  let (input, tokens) = many1(digit_token)(input)?;
-  let mut tokens2 = tokens.clone();
-  let mut merged = merge_tokens(&mut tokens2).unwrap();
+  let (input, mut tokens) = many1(digit_token)(input)?;
+  let mut merged = merge_tokens(&mut tokens).unwrap();
   merged.kind = TokenKind::Number; 
   Ok((input, Number::Integer(merged)))
 }
@@ -843,8 +842,10 @@ pub fn decimal_literal(input: ParseString) -> ParseResult<Number> {
   let msg = "Expects decimal digits after \"0d\"";
   let input = tag("0d")(input);
   let (input, _) = input?;
-  let (input, result) = label!(many1(digit_token), msg)(input)?;
-  Ok((input, Number::Decimal(result)))
+  let (input, mut tokens) = label!(many1(digit_token), msg)(input)?;
+  let mut merged = merge_tokens(&mut tokens).unwrap();
+  merged.kind = TokenKind::Number; 
+  Ok((input, Number::Decimal(merged)))
 }
 
 // hexadecimal_literal ::= "0x", <hex_digit+> ;
@@ -852,8 +853,10 @@ pub fn hexadecimal_literal(input: ParseString) -> ParseResult<Number> {
   let msg = "Expects hexadecimal digits after \"0x\"";
   let input = tag("0x")(input);
   let (input, _) = input?;
-  let (input, result) = label!(many1(alt((digit_token,alpha_token))), msg)(input)?;
-  Ok((input, Number::Hexadecimal(result)))
+  let (input, mut tokens) = label!(many1(alt((digit_token,alpha_token))), msg)(input)?;
+  let mut merged = merge_tokens(&mut tokens).unwrap();
+  merged.kind = TokenKind::Number; 
+  Ok((input, Number::Hexadecimal(merged)))
 }
 
 // octal_literal ::= "0o", <oct_digit+> ;
@@ -861,8 +864,10 @@ pub fn octal_literal(input: ParseString) -> ParseResult<Number> {
   let msg = "Expects octal digits after \"0o\"";
   let input = tag("0o")(input);
   let (input, _) = input?;
-  let (input, result) = label!(many1(digit_token), msg)(input)?;
-  Ok((input, Number::Octal(result)))
+  let (input, mut tokens) = label!(many1(alt((digit_token,alpha_token))), msg)(input)?;
+  let mut merged = merge_tokens(&mut tokens).unwrap();
+  merged.kind = TokenKind::Number; 
+  Ok((input, Number::Octal(merged)))
 }
 
 // binary_literal ::= "0b", <bin_digit+> ;
@@ -870,8 +875,10 @@ pub fn binary_literal(input: ParseString) -> ParseResult<Number> {
   let msg = "Expects binary digits after \"0b\"";
   let input = tag("0b")(input);
   let (input, _) = input?;
-  let (input, result) = label!(many1(digit_token), msg)(input)?;
-  Ok((input, Number::Binary(result)))
+  let (input, mut tokens) = label!(many1(alt((digit_token,alpha_token))), msg)(input)?;
+  let mut merged = merge_tokens(&mut tokens).unwrap();
+  merged.kind = TokenKind::Number; 
+  Ok((input, Number::Binary(merged)))
 }
 
 // empty ::= underscore+ ;
