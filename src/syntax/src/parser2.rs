@@ -1396,8 +1396,14 @@ pub fn set_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// define_operator ::= "=" ;
+// define_operator ::= ":=" ;
 pub fn define_operator(input: ParseString) -> ParseResult<()> {
+  let (input, _) = tag(":=")(input)?;
+  Ok((input, ()))
+}
+
+// assign_operator ::= "=" ;
+pub fn assign_operator(input: ParseString) -> ParseResult<()> {
   let (input, _) = tag("=")(input)?;
   Ok((input, ()))
 }
