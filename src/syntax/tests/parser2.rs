@@ -49,6 +49,7 @@ test_parser!(parse_record, "[a: 1, b: 2, c: 3]", 13220390494180657);
 test_parser!(parse_record_column, r#"[a: 1
  b: 2
  c: 3]"#, 35126957775100680);
+test_parser!(parse_record_nested, r#"[a: [a: 1 b: 2 c: 3] b: 2 c: 3]"#, 67293969229524370);
 
 test_parser!(parse_statement_variable_define, "x = 123", 1173180602711415);
 
@@ -59,9 +60,6 @@ test_parser!(parse_mechdown_heading, r#"Hello World
 
 This is a program."#, 33399644466523221);
 
-
 test_parser!(parse_mechdown_unordered_list, r#"- one
 - two
 - three"#, 32571997588793248);
-
-
