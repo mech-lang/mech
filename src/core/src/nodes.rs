@@ -862,6 +862,7 @@ pub struct StateDefinition {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Statement {
   VariableDefine(VariableDefine),
+  VariableAssign(VariableAssign),
   SplitTable,
   FlattenTable,
   SetData,
@@ -908,6 +909,12 @@ pub struct VariableDefine {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct VariableAssign {
+  pub target: Expression,
+  pub expression: Expression,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Identifier {
   pub name: Token,
 }
@@ -925,6 +932,12 @@ pub struct Word {
 pub type Slice = (Identifier,Vec<Expression>);
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Index {
+  SelectAll,
+  Expression(Expression),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Expression {
   Data(Identifier),
   Slice(Slice),
@@ -936,7 +949,7 @@ pub enum Expression {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Formula {
-  pub formula: L1,
+  pub formula: L0,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1052,6 +1065,12 @@ pub enum LogicOp {
   Or,
   Not,
   Xor,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct L0 {
+  pub lhs: L1,
+  pub rhs: Vec<(RangeOp,(L1,bool))>
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -1794,26 +1794,20 @@ pub fn range_op(input: ParseString) -> ParseResult<RangeOp> {
   Ok((input, RangeOp::Inclusive))
 }
 
-/*// l0 ::= l1, l0_infix* ;
-pub fn l0(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, l1) = l1(input)?;
-  let (input, mut infix) = many0(l0_infix)(input)?;
-  let mut math = vec![l1];
-  math.append(&mut infix);
-  Ok((input, ParserNode::L0 { children: math }))
-}*/
+// l0_op ::= range_op ;
+pub fn l0_op(input: ParseString) -> ParseResult<RangeOp> {
+  range_op(input)
+}
 
-/*// l0_infix ::= <!(space+, colon)>, range_op, <!space>, <l1> ;
-pub fn l0_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Unexpected space around range operator";
-  let msg2 = "Expects expression after range operator";
-  let (input, _) = labelr!(is_not(tuple((many1(space), colon))), skip_spaces, msg1)(input)?;
-  let (input, (op, r)) = range(range_op)(input)?;
-  let (input, _) = labelr!(is_not(space), skip_spaces, msg1)(input)?;
-  let (input, l1) = label!(l1, msg2, r)(input)?;
-  Ok((input, ParserNode::L0Infix { children: vec![op, l1] }))
-}*/
-
+// l0 ::= l1, l0_infix* ;
+pub fn l0(input: ParseString) -> ParseResult<L0> {
+  let (input, (lhs,s)) = l1(input)?;
+  let (input, rhs) = many0(tuple((l0_op,l1)))(input)?;
+  if s == false && rhs.is_empty() {
+    return Err(nom::Err::Error(ParseError::new(input,"No Formula Parsed")));
+  }
+  Ok((input, L0 { lhs, rhs }))
+}
 
 // l1_op ::= add | subtract ;
 pub fn l1_op(input: ParseString) -> ParseResult<AddSubOp> {
@@ -1823,13 +1817,11 @@ pub fn l1_op(input: ParseString) -> ParseResult<AddSubOp> {
 // We return a tuple with a bool so we can track whither anything at all has been matched
 
 // l1 ::= l2, l1_infix* ;
-pub fn l1(input: ParseString) -> ParseResult<L1> {
+pub fn l1(input: ParseString) -> ParseResult<(L1,bool)> {
   let (input, (lhs,s)) = l2(input)?;
   let (input, rhs) = many0(tuple((l1_op,l2)))(input)?;
-  if s == false && rhs.is_empty() {
-    return Err(nom::Err::Error(ParseError::new(input,"No Formula Parsed")));
-  }
-  Ok((input, L1 { lhs, rhs }))
+  let s = if s {s} else if rhs.is_empty() {false} else {true};
+  Ok((input, (L1 { lhs, rhs },s)))
 }
 
 // l2_op ::= matrix_multiply | multiply | divide | matrix_solve ;
@@ -2031,7 +2023,7 @@ pub fn literal(input: ParseString) -> ParseResult<Literal> {
 }
 
 fn formula(input: ParseString) -> ParseResult<Formula> {
-  let (input, frmla) = l1(input)?;
+  let (input, frmla) = l0(input)?;
   Ok((input, Formula{formula: frmla}))
 }
 

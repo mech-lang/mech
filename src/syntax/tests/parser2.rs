@@ -46,9 +46,13 @@ test_parser!(parse_literal_false, "false", 18374905389476967);
 
 test_parser!(parse_literal_empty, "_", 42646767556506866);
 
+test_parser!(parse_range, "1:10", 2668291670556464);
+test_parser!(parse_range_increment, "1:2:10", 49290182314426234);
+
 test_parser!(parse_slice, "a[1]", 16516262270243137);
 test_parser!(parse_slice_nested, "a[a[1]]", 13793932459857128);
 test_parser!(parse_slice_3d, "a[1,2,3]", 66069081409915865);
+test_parser!(parse_slice_range, "a[1:3]", 41984673176314825);
 
 test_parser!(parse_table_empty, "[]", 59794664552129197);
 test_parser!(parse_table_scalar_integer, "[123]", 66082959252429624);
@@ -58,9 +62,9 @@ test_parser!(parse_table_vector_vars, "[a,b,c]", 52341332786722480);
 test_parser!(parse_table_column_vector, "[1; 2; 3]", 55330048942590530);
 test_parser!(parse_table_2x2, "[1 2; 3 4]", 27276319635453143);
 
-test_parser!(parse_formula, "1 + 2 * 3", 19760249313792066);
-test_parser!(parse_formula_vars, "a + b * c", 30557081270868565);
-test_parser!(parse_formula_slices, "a[1] + b[2] * c", 3570206442938115);
+test_parser!(parse_formula, "1 + 2 * 3", 16381879269635102);
+test_parser!(parse_formula_vars, "a + b * c", 9193573890764142);
+test_parser!(parse_formula_slices, "a[1] + b[2] * c", 35600191299091402);
 
 test_parser!(parse_record, "[a: 1, b: 2, c: 3]", 13220390494180657);
 test_parser!(parse_record_column, r#"[a: 1
@@ -70,7 +74,7 @@ test_parser!(parse_record_nested, r#"[a: [a: 1 b: 2 c: 3] b: 2 c: 3]"#, 67293969
 
 test_parser!(parse_statement_variable_define, "x := 123", 7822511285475418);
 test_parser!(parse_statement_variable_assign, "a = 2", 60543418849393382);
-test_parser!(parse_statement_variable_assign_slice, "a[1] = 2", 60543418849393382);
+test_parser!(parse_statement_variable_assign_slice, "a[1] = 2", 23943233967889861);
 
 
 test_parser!(parse_mechdown_paragraph, "Hello World", 44055055244553644);
@@ -103,4 +107,4 @@ r#"#bubble-sort(arr) => Start(arr)
       └ * => Comparison([tail], swaps)
   Check(arr, 0) => Done(arr)
   Check(arr, swaps) => Comparison(arr,0)
-  Done(arr) -> arr."#, 27986308623551423);
+  Done(arr) -> arr."#, 48484990788839695);
