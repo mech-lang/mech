@@ -1238,20 +1238,23 @@ pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
 }
 
 pub fn fsm_pattern(input: ParseString) -> ParseResult<Pattern> {
-  let ((input, ptrn)) = match tuple_struct(input.clone()) {
-    Ok((input, tpl)) => ((input, Pattern::TupleStruct(tpl))),
-    _ => match wildcard(input.clone()) {
-      Ok((input, _)) => ((input, Pattern::Wildcard)),
-      _ => match identifier(input.clone()) {
-        Ok((input, id)) => ((input, Pattern::Identifier(id))),
-        _ => match literal(input.clone()) {
-          Ok((input, ltrl)) => ((input, Pattern::Literal(ltrl))),
-          _ => match table(input.clone()) {
-            Ok((input, tbl)) => ((input, Pattern::Table(tbl))),
-            Err(err) => {return Err(err)},
+  let ((input, ptrn)) = match formula(input.clone()) {
+    Ok((input, frmla)) => ((input, Pattern::Formula(frmla))),
+    _ => match tuple_struct(input.clone()) {
+      Ok((input, tpl)) => ((input, Pattern::TupleStruct(tpl))),
+      _ => match wildcard(input.clone()) {
+        Ok((input, _)) => ((input, Pattern::Wildcard)),
+        _ => match identifier(input.clone()) {
+          Ok((input, id)) => ((input, Pattern::Identifier(id))),
+          _ => match literal(input.clone()) {
+            Ok((input, ltrl)) => ((input, Pattern::Literal(ltrl))),
+            _ => match table(input.clone()) {
+              Ok((input, tbl)) => ((input, Pattern::Table(tbl))),
+              Err(err) => {return Err(err)},
+            },
           },
         },
-      }
+      },
     },
   };
   Ok((input, ptrn))
@@ -1620,14 +1623,14 @@ pub fn statement(input: ParseString) -> ParseResult<Statement> {
 // ##### Math expressions
 
 // parenthetical_expression ::= left_parenthesis, <l0>, <right_parenthesis> ;
-pub fn parenthetical_expression(input: ParseString) -> ParseResult<ParserNode> {
+/*pub fn parenthetical_expression(input: ParseString) -> ParseResult<ParserNode> {
   let msg1 = "Expects expression";
   let msg2 = "Expects right parenthesis ')'";
   let (input, (_, r)) = range(left_parenthesis)(input)?;
   let (input, l0) = label!(l0, msg1)(input)?;
   let (input, _) = label!(right_parenthesis, msg2, r)(input)?;
   Ok((input, l0))
-}
+}*/
 
 // TODO: This won't parse -(5 - 3)
 // negation ::= dash, !(dash | space), <data | value> ;
@@ -1706,58 +1709,79 @@ pub fn function_body(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Error))
 }
 
-// matrix_multiply ::= "**" ;
-pub fn matrix_multiply(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = tag("**")(input)?;
-  Ok((input, ParserNode::MatrixMultiply))
-}
-
 // add ::= "+" ;
-pub fn add(input: ParseString) -> ParseResult<ParserNode> {
+pub fn add(input: ParseString) -> ParseResult<AddSubOp> {
+  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = tag("+")(input)?;
-  Ok((input, ParserNode::Add))
+  let (input, _) = many1(whitespace)(input)?;
+  Ok((input, AddSubOp::Add))
 }
 
 // subtract ::= "-" ;
-pub fn subtract(input: ParseString) -> ParseResult<ParserNode> {
+pub fn subtract(input: ParseString) -> ParseResult<AddSubOp> {
+  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = tag("-")(input)?;
-  Ok((input, ParserNode::Subtract))
+  let (input, _) = many1(whitespace)(input)?;
+  Ok((input, AddSubOp::Sub))
 }
 
 // multiply ::= "*" ;
-pub fn multiply(input: ParseString) -> ParseResult<ParserNode> {
+pub fn multiply(input: ParseString) -> ParseResult<MulDivOp> {
+  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = tag("*")(input)?;
-  Ok((input, ParserNode::Multiply))
+  let (input, _) = many1(whitespace)(input)?;
+  Ok((input, MulDivOp::Mul))
 }
 
 // divide ::= "/" ;
-pub fn divide(input: ParseString) -> ParseResult<ParserNode> {
+pub fn divide(input: ParseString) -> ParseResult<MulDivOp> {
+  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = tag("/")(input)?;
-  Ok((input, ParserNode::Divide))
+  let (input, _) = many1(whitespace)(input)?;
+  Ok((input, MulDivOp::Div))
 }
 
-// exponent ::= "Expects" ;
-pub fn exponent(input: ParseString) -> ParseResult<ParserNode> {
+
+// matrix_multiply ::= "**" ;
+pub fn matrix_multiply(input: ParseString) -> ParseResult<MulDivOp> {
+  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = tag("**")(input)?;
+  let (input, _) = many1(whitespace)(input)?;
+  Ok((input, MulDivOp::MatMul))
+}
+
+// matrix_solve ::= "\" ;
+pub fn matrix_solve(input: ParseString) -> ParseResult<MulDivOp> {
+  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = tag("\\")(input)?;
+  let (input, _) = many1(whitespace)(input)?;
+  Ok((input, MulDivOp::Solve))
+}
+
+// exponent ::= "^" ;
+pub fn exponent(input: ParseString) -> ParseResult<ExponentOp> {
+  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = tag("^")(input)?;
-  Ok((input, ParserNode::Exponent))
+  let (input, _) = many1(whitespace)(input)?;
+  Ok((input, ExponentOp::Exp))
 }
 
 // range_op ::= colon ;
-pub fn range_op(input: ParseString) -> ParseResult<ParserNode> {
+pub fn range_op(input: ParseString) -> ParseResult<RangeOp> {
   let (input, _) = colon(input)?;
-  Ok((input, ParserNode::Range))
+  Ok((input, RangeOp::Inclusive))
 }
 
-// l0 ::= l1, l0_infix* ;
+/*// l0 ::= l1, l0_infix* ;
 pub fn l0(input: ParseString) -> ParseResult<ParserNode> {
   let (input, l1) = l1(input)?;
   let (input, mut infix) = many0(l0_infix)(input)?;
   let mut math = vec![l1];
   math.append(&mut infix);
   Ok((input, ParserNode::L0 { children: math }))
-}
+}*/
 
-// l0_infix ::= <!(space+, colon)>, range_op, <!space>, <l1> ;
+/*// l0_infix ::= <!(space+, colon)>, range_op, <!space>, <l1> ;
 pub fn l0_infix(input: ParseString) -> ParseResult<ParserNode> {
   let msg1 = "Unexpected space around range operator";
   let msg2 = "Expects expression after range operator";
@@ -1766,215 +1790,181 @@ pub fn l0_infix(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = labelr!(is_not(space), skip_spaces, msg1)(input)?;
   let (input, l1) = label!(l1, msg2, r)(input)?;
   Ok((input, ParserNode::L0Infix { children: vec![op, l1] }))
-}
+}*/
 
-// l1 ::= l2, l1_infix* ;
-pub fn l1(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, l2) = l2(input)?;
-  let (input, mut infix) = many0(l1_infix)(input)?;
-  let mut math = vec![l2];
-  math.append(&mut infix);
-  Ok((input, ParserNode::L1 { children: math }))
-}
 
 // l1_op ::= add | subtract ;
-pub fn l1_op(input: ParseString) -> ParseResult<ParserNode> {
+pub fn l1_op(input: ParseString) -> ParseResult<AddSubOp> {
   alt((add, subtract))(input)
 }
 
-// l1_infix ::= <!l1_op>, space*, !negation, !comment_sigil, l1_op, <space+>, <l2> ;
-pub fn l1_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expects spaces around opeartor";
-  let msg2 = "Expects expression after operator";
-  let (input, _) = labelr!(null(is_not(l1_op)), skip_nil, msg1)(input)?;
-  let (input, _) = many0(space)(input)?;
-  let (input, _) = is_not(negation)(input)?;
-  let (input, _) = is_not(comment_sigil)(input)?;
-  let (input, op) = l1_op(input)?;
-  let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
-  let (input, l2) = label!(l2, msg2)(input)?;
-  Ok((input, ParserNode::L1Infix { children: vec![op, l2] }))
+// We return a tuple with a bool so we can track whither anything at all has been matched
+
+// l1 ::= l2, l1_infix* ;
+pub fn l1(input: ParseString) -> ParseResult<L1> {
+  let (input, (lhs,s)) = l2(input)?;
+  let (input, rhs) = many0(tuple((l1_op,l2)))(input)?;
+  if s == false && rhs.is_empty() {
+    return Err(nom::Err::Error(ParseError::new(input,"No Formula Parsed")));
+  }
+  Ok((input, L1 { lhs, rhs }))
+}
+
+// l2_op ::= matrix_multiply | multiply | divide | matrix_solve ;
+pub fn l2_op(input: ParseString) -> ParseResult<MulDivOp> {
+  alt((matrix_multiply, multiply, divide, matrix_solve))(input)
 }
 
 // l2 ::= l3, l2_infix* ;
-pub fn l2(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, l3) = l3(input)?;
-  let (input, mut infix) = many0(l2_infix)(input)?;
-  let mut math = vec![l3];
-  math.append(&mut infix);
-  Ok((input, ParserNode::L2 { children: math }))
-}
+pub fn l2(input: ParseString) -> ParseResult<(L2,bool)> {
+  let (input, (lhs,s)) = l3(input)?;
+  let (input, rhs) = many0(tuple((l2_op,l3)))(input)?;
+  let s = if s {s} else if rhs.is_empty() {false} else {true};
 
-// l2_op ::= matrix_multiply | multiply | divide ;
-pub fn l2_op(input: ParseString) -> ParseResult<ParserNode> {
-  alt((matrix_multiply, multiply, divide))(input)
-}
-
-// l2_infix ::= <!l2_op>, space*, l2_op, <space+>, <l3> ;
-pub fn l2_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expects spaces around opeartor";
-  let msg2 = "Expects expression after operator";
-  let (input, _) = labelr!(null(is_not(l2_op)), skip_nil, msg1)(input)?;
-  let (input, _) = many0(space)(input)?;
-  let (input, op) = l2_op(input)?;
-  let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
-  let (input, l3) = label!(l3, msg2)(input)?;
-  Ok((input, ParserNode::L2Infix { children: vec![op, l3] }))
-}
-
-// l3 ::= l4, l3_infix* ;
-pub fn l3(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, l4) = l4(input)?;
-  let (input, mut infix) = many0(l3_infix)(input)?;
-  let mut math = vec![l4];
-  math.append(&mut infix);
-  Ok((input, ParserNode::L3 { children: math }))
+  Ok((input, (L2 { lhs, rhs },s)))
 }
 
 // l3_op ::= exponent ;
-pub fn l3_op(input: ParseString) -> ParseResult<ParserNode> {
+pub fn l3_op(input: ParseString) -> ParseResult<ExponentOp> {
   exponent(input)
 }
 
-// l3_infix ::= <!l3_op>, space*, l3_op, <space+>, <l4> ;
-pub fn l3_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expects spaces around opeartor";
-  let msg2 = "Expects expression after operator";
-  let (input, _) = labelr!(null(is_not(l3_op)), skip_nil, msg1)(input)?;
-  let (input, _) = many0(space)(input)?;
-  let (input, op) = l3_op(input)?;
-  let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
-  let (input, l4) = label!(l4, msg2)(input)?;
-  Ok((input, ParserNode::L3Infix { children: vec![op, l4] }))
-}
+// l3 ::= l4, l3_infix* ;
+pub fn l3(input: ParseString) -> ParseResult<(L3,bool)> {
+  let (input, (lhs,s)) = l4(input)?;
+  let (input, rhs) = many0(tuple((l3_op,l4)))(input)?;
+  let s = if s {s} else if rhs.is_empty() {false} else {true};
 
-// l4 ::= l5, l4_infix* ;
-pub fn l4(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, l5) = l5(input)?;
-  let (input, mut infix) = many0(l4_infix)(input)?;
-  let mut math = vec![l5];
-  math.append(&mut infix);
-  Ok((input, ParserNode::L4 { children: math }))
+  Ok((input, (L3 { lhs, rhs },s)))
 }
 
 // l4_op ::= and | or | xor ;
-pub fn l4_op(input: ParseString) -> ParseResult<ParserNode> {
+pub fn l4_op(input: ParseString) -> ParseResult<LogicOp> {
   alt((and, or, xor))(input)
 }
 
-// l4_infix ::= <!l4_op>, space*, l4_op, <space+>, <l5> ;
-pub fn l4_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expects spaces around opeartor";
-  let msg2 = "Expects expression after operator";
-  let (input, _) = labelr!(null(is_not(l4_op)), skip_nil, msg1)(input)?;
-  let (input, _) = many0(space)(input)?;
-  let (input, op) = l4_op(input)?;
-  let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
-  let (input, l5) = label!(l5, msg2)(input)?;
-  Ok((input, ParserNode::L4Infix { children: vec![op, l5] }))
+// l4 ::= l5, l4_infix* ;
+pub fn l4(input: ParseString) -> ParseResult<(L4,bool)> {
+  let (input, (lhs,s)) = l5(input)?;
+  let (input, rhs) = many0(tuple((l4_op,l5)))(input)?;
+  let s = if s {s} else if rhs.is_empty() {false} else {true};
+
+  Ok((input, (L4 { lhs, rhs },s)))
 }
 
 // l5 ::= l6, l5_infix* ;
-pub fn l5(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, l6) = l6(input)?;
-  let (input, mut infix) = many0(l5_infix)(input)?;
-  let mut math = vec![l6];
-  math.append(&mut infix);
-  Ok((input, ParserNode::L5 { children: math }))
+pub fn l5(input: ParseString) -> ParseResult<(L5,bool)> {
+  let (input, lhs) = l6(input)?;
+  let (input, rhs) = many0(tuple((l5_op,l6)))(input)?;
+  let s = if rhs.is_empty() {false} else {true};
+  Ok((input, (L5 { lhs, rhs },s)))
 }
 
 // l5_op ::= not_equal | equal_to | greater_than_equal | greater_than | less_than_equal | less_than ;
-pub fn l5_op(input: ParseString) -> ParseResult<ParserNode> {
+pub fn l5_op(input: ParseString) -> ParseResult<ComparisonOp> {
   alt((not_equal, equal_to, greater_than_equal, greater_than, less_than_equal, less_than))(input)
 }
 
-// l5_infix ::= <!l5_op>, space*, l5_op, <space+>, <l6> ;
-pub fn l5_infix(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expects spaces around opeartor";
-  let msg2 = "Expects expression after operator";
-  let (input, _) = labelr!(null(is_not(l5_op)), skip_nil, msg1)(input)?;
-  let (input, _) = many0(space)(input)?;
-  let (input, op) = l5_op(input)?;
-  let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
-  let (input, l6) = label!(l6, msg2)(input)?;
-  Ok((input, ParserNode::L5Infix { children: vec![op, l6] }))
-}
-
-// l6 ::= empty_table | string | anonymous_table | function | value | not | data | negation | parenthetical_expression ;
-pub fn l6(input: ParseString) -> ParseResult<ParserNode> {
-  //let (input, l6) = alt((empty_table, anonymous_table, function, not, data, negation, parenthetical_expression))(input)?;
-  Ok((input, ParserNode::L6 { children: vec![] }))
-}
-
-// math_expression ::= l0 ;
-pub fn math_expression(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, l0) = l0(input)?;
-  Ok((input, ParserNode::MathExpression { children: vec![l0] }))
+// l6 ::= literal | data | slice | table | parenthetical_expression ;
+pub fn l6(input: ParseString) -> ParseResult<L6> {
+  let (input, l6) = match table(input.clone()) {
+    Ok((input, tbl)) => ((input, L6::Table(tbl))),
+    _ => match literal(input.clone()) {
+      Ok((input, ltrl)) => ((input, L6::Literal(ltrl))),
+      _ => match identifier(input.clone()) {
+        Ok((input, data)) => ((input, L6::Data(data))),
+        _ => match slice(input.clone()) {
+          Ok((input, slice)) => ((input, L6::Slice(slice))),
+          Err(err) => {return Err(err);}
+        }
+      }
+    }
+  };
+  Ok((input, l6))
 }
 
 // ##### Filter expressions
 
 // not_equal ::= "!=" | "¬=" | "≠" ;
-pub fn not_equal(input: ParseString) -> ParseResult<ParserNode> {
+pub fn not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
+  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = alt((tag("!="),tag("¬="),tag("≠")))(input)?;
-  Ok((input, ParserNode::NotEqual))
+  let (input, _) = many1(whitespace)(input)?;
+  Ok((input, ComparisonOp::NotEqual))
 }
 
 // equal_to ::= "==" ;
-pub fn equal_to(input: ParseString) -> ParseResult<ParserNode> {
+pub fn equal_to(input: ParseString) -> ParseResult<ComparisonOp> {
+  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = tag("==")(input)?;
-  Ok((input, ParserNode::Equal))
+  let (input, _) = many1(whitespace)(input)?;
+  Ok((input, ComparisonOp::Equal))
 }
 
 // greater_than ::= ">" ;
-pub fn greater_than(input: ParseString) -> ParseResult<ParserNode> {
+pub fn greater_than(input: ParseString) -> ParseResult<ComparisonOp> {
+  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = tag(">")(input)?;
-  Ok((input, ParserNode::GreaterThan))
+  let (input, _) = many1(whitespace)(input)?;
+  Ok((input, ComparisonOp::GreaterThan))
 }
 
 // less_than ::= "<" ;
-pub fn less_than(input: ParseString) -> ParseResult<ParserNode> {
+pub fn less_than(input: ParseString) -> ParseResult<ComparisonOp> {
+  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = tag("<")(input)?;
-  Ok((input, ParserNode::LessThan))
+  let (input, _) = many1(whitespace)(input)?;
+  Ok((input, ComparisonOp::LessThan))
 }
 
 // greater_than_equal ::= ">=" | "≥" ;
-pub fn greater_than_equal(input: ParseString) -> ParseResult<ParserNode> {
+pub fn greater_than_equal(input: ParseString) -> ParseResult<ComparisonOp> {
+  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = alt((tag(">="),tag("≥")))(input)?;
-  Ok((input, ParserNode::GreaterThanEqual))
+  let (input, _) = many1(whitespace)(input)?;
+  Ok((input, ComparisonOp::GreaterThanEqual))
 }
 
 // less_than_equal ::= "<=" | "≤" ;
-pub fn less_than_equal(input: ParseString) -> ParseResult<ParserNode> {
+pub fn less_than_equal(input: ParseString) -> ParseResult<ComparisonOp> {
+  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = alt((tag("<="),tag("≤")))(input)?;
-  Ok((input, ParserNode::LessThanEqual))
+  let (input, _) = many1(whitespace)(input)?;
+  Ok((input, ComparisonOp::LessThanEqual))
 }
 
 // ##### Logic expressions
 
 // or ::= "|" ;
-pub fn or(input: ParseString) -> ParseResult<ParserNode> {
+pub fn or(input: ParseString) -> ParseResult<LogicOp> {
+  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = tag("|")(input)?;
-  Ok((input, ParserNode::Or))
+  let (input, _) = many1(whitespace)(input)?;
+  Ok((input, LogicOp::Or))
 }
 
 // and ::= "&" ;
-pub fn and(input: ParseString) -> ParseResult<ParserNode> {
+pub fn and(input: ParseString) -> ParseResult<LogicOp> {
+  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = tag("&")(input)?;
-  Ok((input, ParserNode::And))
+  let (input, _) = many1(whitespace)(input)?;
+  Ok((input, LogicOp::And))
 }
 
 // not ::= "!" | "¬" ;
-pub fn not(input: ParseString) -> ParseResult<ParserNode> {
-  //let (input, _) = alt((tag("!"), tag("¬")))(input)?;
-  //let (input, negated) = alt((data, true_literal, false_literal))(input)?;
-  Ok((input, ParserNode::Error))
+pub fn not(input: ParseString) -> ParseResult<LogicOp> {
+  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = alt((tag("!"), tag("¬")))(input)?;
+  let (input, _) = many1(whitespace)(input)?;
+  Ok((input, LogicOp::Not))
 }
 
 // xor ::= "xor" | "⊕" | "⊻" ;
-pub fn xor(input: ParseString) -> ParseResult<ParserNode> {
+pub fn xor(input: ParseString) -> ParseResult<LogicOp> {
+  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = alt((tag("xor"), tag("⊕"), tag("⊻")))(input)?;
-  Ok((input, ParserNode::Xor))
+  let (input, _) = many1(whitespace)(input)?;
+  Ok((input, LogicOp::Xor))
 }
 
 // ##### Other expressions
@@ -2022,12 +2012,8 @@ pub fn literal(input: ParseString) -> ParseResult<Literal> {
 }
 
 fn formula(input: ParseString) -> ParseResult<Formula> {
-  let (input, lhs) = literal(input)?;
-  let (input, _) = many1(whitespace)(input)?;
-  let (input, operator) = plus(input)?;
-  let (input, _) = many1(whitespace)(input)?;
-  let (input, rhs) = literal(input)?;
-  Ok((input, Formula{lhs, operator, rhs}))
+  let (input, frmla) = l1(input)?;
+  Ok((input, Formula{formula: frmla}))
 }
 
 fn slice(input: ParseString) -> ParseResult<(Identifier,Vec<Expression>)> {

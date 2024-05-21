@@ -92,8 +92,8 @@ r#"#bubble-sort(arr) => Start(arr)
   Start(arr, swaps) => Comparison(arr, swaps)
   Comparison([], swaps) => Check(arr, swaps)
   Comparison([a, b, tail], swaps)
-      │ 1 + 2 => Comparison([b, a, tail], swaps)
-      └ * => Comparison(tail, swaps)
+      │ a > b => Comparison([b, a, tail], swaps + 1)
+      └ * => Comparison([tail], swaps)
   Check(arr, 0) => Done(arr)
   Check(arr, swaps) => Comparison(arr,0)
-  Done(arr) -> arr."#,53105519860488637);
+  Done(arr) -> arr."#,27986308623551423);

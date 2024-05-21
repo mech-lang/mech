@@ -829,6 +829,7 @@ pub enum Guard {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Pattern {
   Wildcard,
+  Formula(Formula),
   Identifier(Identifier),
   Literal(Literal),
   Table(Table),
@@ -921,10 +922,12 @@ pub struct Word {
   pub tokens: Vec<Token>,
 }
 
+pub type Slice = (Identifier,Vec<Expression>);
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Expression {
   Data(Identifier),
-  Slice((Identifier,Vec<Expression>)),
+  Slice(Slice),
   Formula(Formula),
   Table(Table),
   Literal(Literal),
@@ -933,9 +936,7 @@ pub enum Expression {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Formula {
-  pub lhs: Literal,
-  pub operator: Token,
-  pub rhs: Literal,
+  pub formula: L1,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1008,4 +1009,86 @@ pub enum Number {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Comment {
   pub text: Vec<Token>
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum RangeOp {
+  Inclusive,
+  Exclusive,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum AddSubOp {
+  Add,
+  Sub
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum MulDivOp {
+  MatMul,
+  Solve,
+  Mul,
+  Div
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum ExponentOp {
+  Exp
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum ComparisonOp {
+  LessThan,
+  GreaterThan,
+  LessThanEqual,
+  GreaterThanEqual,
+  Equal,
+  NotEqual,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum LogicOp {
+  And,
+  Or,
+  Not,
+  Xor,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct L1 {
+  pub lhs: L2,
+  pub rhs: Vec<(AddSubOp,(L2,bool))>
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct L2 {
+  pub lhs: L3,
+  pub rhs: Vec<(MulDivOp,(L3,bool))>
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct L3 {
+  pub lhs: L4,
+  pub rhs: Vec<(ExponentOp,(L4,bool))>
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct L4 {
+  pub lhs: L5,
+  pub rhs: Vec<(LogicOp,(L5,bool))>
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct L5 {
+  pub lhs: L6,
+  pub rhs: Vec<(ComparisonOp,L6)>
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum L6 {
+  ParentheticalExpression(Box<Expression>),
+  Literal(Literal),
+  Slice(Slice),
+  Data(Identifier),
+  Table(Table),
 }
