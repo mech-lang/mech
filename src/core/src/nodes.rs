@@ -976,15 +976,17 @@ pub struct Paragraph {
   pub elements: Vec<ParagraphElement>,
 }
 
+type Sign = bool;
 type Numerator = Token;
 type Denominator = Token;
 type Whole = Token;
 type Part = Token;
 type Base = (Whole, Part);
-type Exponent = (Whole, Part);
+type Exponent = (Sign, Whole, Part);
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Number {
+  Negated(Box<Number>),
   Integer(Token),
   Float((Whole,Part)),
   Decimal(Token),

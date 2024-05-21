@@ -763,7 +763,12 @@ pub fn list_separator(input: ParseString) -> ParseResult<()> {
 
 // number-literal := (integer | hexadecimal | octal | binary | decimal | float | rational | scientific) ;
 pub fn number(input: ParseString) -> ParseResult<Number> {
+  let (input, neg) = opt(dash)(input)?;
   let (input, result) = alt((hexadecimal_literal, decimal_literal, octal_literal, binary_literal, scientific_literal, rational_literal, float_literal, integer_literal))(input)?;
+  let result = match neg {
+    Some(_) => Number::Negated(Box::new(result)),
+    None => result,
+  };
   Ok((input, result))
 }
 
@@ -788,7 +793,9 @@ pub fn scientific_literal(input: ParseString) -> ParseResult<Number> {
     }
   };
   let (input, _) = alt((tag("e"), tag("E")))(input)?;
-  let (input, exponent) = match float_literal(input.clone()) {
+  let (input, _) = opt(plus)(input)?;
+  let (input, neg) = opt(dash)(input)?;
+  let (input, (ex_whole,ex_part)) = match float_literal(input.clone()) {
     Ok((input, Number::Float(exponent))) => {
       (input, exponent)
     }
@@ -800,7 +807,11 @@ pub fn scientific_literal(input: ParseString) -> ParseResult<Number> {
       _ => unreachable!(),
     }
   };
-  Ok((input, Number::Scientific((base,exponent))))
+  let ex_sign = match neg {
+    Some(_) => true,
+    None => false,
+  };
+  Ok((input, Number::Scientific((base,(ex_sign,ex_whole,ex_part)))))
 }
 
 fn float_decimal_start(input: ParseString) -> ParseResult<Number> {
