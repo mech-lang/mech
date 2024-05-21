@@ -14,6 +14,8 @@ fn main() -> Result<(),MechError> {
         Ok(tree) => { 
           println!("----------- SYNTAX TREE ---------");
           println!("{:#?}", tree);
+          let tree_string = hash_str(&format!("{:#?}", tree));
+          println!("{:?}", tree_string);
           //let mut ast = Ast::new();
           //ast.build_syntax_tree(&tree);
           //println!("----------- AST ---------");
