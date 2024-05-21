@@ -668,21 +668,23 @@ fn alpha_token(input: ParseString) -> ParseResult<Token> {
   Ok((input, Token{kind: TokenKind::Alpha, chars: g.chars().collect::<Vec<char>>(), src_range}))
 }
 
-// digit1 ::= digit+ ;
-pub fn digit1(input: ParseString) -> ParseResult<Vec<String>> {
-  let result = many1(digit)(input)?;
-  Ok(result)
-}
-
-// digit0 ::= digit* ;
-pub fn digit0(input: ParseString) -> ParseResult<Vec<String>> {
-  let result = many0(digit)(input)?;
-  Ok(result)
-}
-
 fn digit_token(input: ParseString) -> ParseResult<Token> {
   let (input, (g, src_range)) = range(digit)(input)?;
   Ok((input, Token{kind: TokenKind::Digit, chars: g.chars().collect::<Vec<char>>(), src_range}))
+}
+
+fn underscore_digit(input: ParseString) -> ParseResult<Token> {
+  let (input, _) = underscore(input)?;
+  let (input, digit) = digit_token(input)?;
+  Ok((input,digit))
+}
+
+fn digit_sequence(input: ParseString) -> ParseResult<Vec<Token>> {
+  let (input, mut start) = digit_token(input)?;
+  let (input, mut tokens) = many0(alt((underscore_digit,digit_token)))(input)?;
+  let mut all = vec![start];
+  all.append(&mut tokens);
+  Ok((input,all))
 }
 
 // grouping_symbol := left_parenthesis | right_parenthesis | left_angle | right_angle | left_brace | right_brace | left_bracket | right_bracket
@@ -842,8 +844,8 @@ pub fn float_literal(input: ParseString) -> ParseResult<Number> {
 
 // integer ::= digit1 ;
 pub fn integer_literal(input: ParseString) -> ParseResult<Number> {
-  let (input, mut tokens) = many1(digit_token)(input)?;
-  let mut merged = merge_tokens(&mut tokens).unwrap();
+  let (input, mut digits) = digit_sequence(input)?;
+  let mut merged = merge_tokens(&mut digits).unwrap();
   merged.kind = TokenKind::Number; 
   Ok((input, Number::Integer(merged)))
 }

@@ -36,6 +36,7 @@ test_parser!(parse_literal_number_dec, "0d1234567890", 57432846543525412);
 test_parser!(parse_literal_number_oct, "0o12345670", 36107841685676795);
 test_parser!(parse_literal_number_bin, "0b1010101", 51428896740892327);
 test_parser!(parse_literal_number_sci, "123.456E789", 16735846146196743);
+test_parser!(parse_literal_number_underscores, "1_000_000", 17117948062822050);
 
 test_parser!(parse_literal_string, r#""Hello World""#, 64968622345197628);
 test_parser!(parse_literal_string_escaped_quote, r#""Hello \" World""#, 9347612743027557);
