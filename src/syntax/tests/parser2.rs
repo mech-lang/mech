@@ -69,6 +69,9 @@ test_parser!(parse_record_column, r#"[a: 1
 test_parser!(parse_record_nested, r#"[a: [a: 1 b: 2 c: 3] b: 2 c: 3]"#, 67293969229524370);
 
 test_parser!(parse_statement_variable_define, "x := 123", 7822511285475418);
+test_parser!(parse_statement_variable_assign, "a = 2", 60543418849393382);
+test_parser!(parse_statement_variable_assign_slice, "a[1] = 2", 60543418849393382);
+
 
 test_parser!(parse_mechdown_paragraph, "Hello World", 44055055244553644);
 

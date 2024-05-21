@@ -1461,6 +1461,19 @@ pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   Ok((input, VariableDefine{name,expression}))
 }
 
+// variable_define ::= identifier, <!stmt_operator>, space*, equal, <space+>, <expression> ;
+pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
+  let msg1 = "Expects spaces around operator";
+  let msg2 = "Expects expression";
+  let (input, target) = expression(input)?;
+  let (input, _) = labelr!(null(is_not(assign_operator)), skip_nil, msg1)(input)?;
+  let (input, _) = many0(space)(input)?;
+  let (input, _) = equal(input)?;
+  let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
+  let (input, expression) = label!(expression, msg2)(input)?;
+  Ok((input, VariableAssign{target,expression}))
+}
+
 pub fn table_define(input: ParseString) -> ParseResult<ParserNode> {
   alt((raw_table_define, formatted_table_define))(input)
 }
@@ -1616,9 +1629,12 @@ pub fn followed_by_operator(input: ParseString) -> ParseResult<ParserNode> {
 pub fn statement(input: ParseString) -> ParseResult<Statement> {
   let msg = "Expects new_line or semicolon to terminate statement";
   //let (input, (statement, src_range)) = range(alt((followed_by, async_assign, table_define, variable_define, split_data, flatten_data, whenever_data, wait_data, until_data, set_data, update_data, add_row, comment)))(input)?;
-  let (input, statement) = match variable_define(input) {
+  let (input, statement) = match variable_define(input.clone()) {
     Ok((input, var_def)) => (input, Statement::VariableDefine(var_def)),
-    Err(err) => {return Err(err);} 
+    _ => match variable_assign(input.clone()) {
+      Ok((input, var_asgn)) => (input, Statement::VariableAssign(var_asgn)),
+      Err(err) => {return Err(err);}   
+    },
   };
   let (input, _) = many0(space)(input)?;
   Ok((input, statement))
