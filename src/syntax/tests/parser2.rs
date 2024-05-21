@@ -36,7 +36,6 @@ test_parser!(parse_literal_number_oct, "0o12345670", 36107841685676795);
 test_parser!(parse_literal_number_bin, "0b1010101", 51428896740892327);
 test_parser!(parse_literal_number_sci, "123.456E789", 17117460775968053);
 
-
 test_parser!(parse_literal_string, r#""Hello World""#, 64968622345197628);
 test_parser!(parse_literal_string_escaped_quote, r#""Hello \" World""#, 9347612743027557);
 
@@ -48,6 +47,7 @@ test_parser!(parse_literal_empty, "_", 42646767556506866);
 test_parser!(parse_table_empty, "[]", 59794664552129197);
 test_parser!(parse_table_scalar_integer, "[123]", 66082959252429624);
 test_parser!(parse_table_vector, "[1 2 3]", 26494628560603194);
+test_parser!(parse_table_vector_vars, "[a,b,c]", 52341332786722480);
 test_parser!(parse_table_column_vector, "[1; 2; 3]", 55330048942590530);
 test_parser!(parse_table_2x2, "[1 2; 3 4]", 27276319635453143);
 
@@ -65,6 +65,16 @@ test_parser!(parse_mechdown_heading, r#"Hello World
 =============
 
 This is a program."#, 33399644466523221);
+
+test_parser!(parse_mechdown_subheadings, r#"A
+====
+
+1. B
+----
+
+(a) C
+
+A thing"#, 31292392503547082);
 
 test_parser!(parse_mechdown_unordered_list, r#"- one
 - two

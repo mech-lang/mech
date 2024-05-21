@@ -2011,7 +2011,10 @@ pub fn expression(input: ParseString) -> ParseResult<Expression> {
       Ok((input, table)) => (input, Expression::Table(table)),
       _ => match literal(input.clone()) {
         Ok((input, literal)) => (input, Expression::Literal(literal)),
-        Err(err) => {return Err(err);}
+        _ => match identifier(input.clone()) {
+          Ok((input, id)) => (input, Expression::Data(id)),
+          Err(err) => {return Err(err);}
+        }
       }
     }
   };
