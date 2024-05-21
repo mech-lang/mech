@@ -917,7 +917,7 @@ pub struct Word {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Expression {
   Data(Identifier),
-  Slice((Identifier,Identifier)),
+  Slice((Identifier,Vec<Expression>)),
   Formula(Formula),
   Table(Table),
   Literal(Literal)

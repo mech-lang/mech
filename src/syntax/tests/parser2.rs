@@ -44,6 +44,10 @@ test_parser!(parse_literal_false, "false", 18374905389476967);
 
 test_parser!(parse_literal_empty, "_", 42646767556506866);
 
+test_parser!(parse_slice, "a[1]", 16516262270243137);
+test_parser!(parse_slice_nested, "a[a[1]]", 13793932459857128);
+test_parser!(parse_slice_3d, "a[1,2,3]", 66069081409915865);
+
 test_parser!(parse_table_empty, "[]", 59794664552129197);
 test_parser!(parse_table_scalar_integer, "[123]", 66082959252429624);
 test_parser!(parse_table_vector, "[1 2 3]", 26494628560603194);
@@ -79,3 +83,14 @@ A thing"#, 31292392503547082);
 test_parser!(parse_mechdown_unordered_list, r#"- one
 - two
 - three"#, 32571997588793248);
+
+test_parser!(parse_fsm_implementation,
+r#"#bubble-sort(arr) => Start(arr)
+    Start(arr, swaps) => Comparison(arr, swaps)
+    Comparison([], swaps) => Check(arr, swaps)
+    Comparison([a, b, tail], swaps)
+        │ 1 + 2 => Comparison([b, a, tail], swaps)
+        └ _ => Comparison(tail, swaps)
+    Check(arr, 0) => Done(arr)
+    Check(arr, swaps) => Comparison(arr,0)
+    Done(arr) -> arr."#,52299410904147598);

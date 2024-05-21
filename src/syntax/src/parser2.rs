@@ -1176,7 +1176,7 @@ pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> 
 pub fn fsm_arm(input: ParseString) -> ParseResult<FsmArm> {
   let ((input, _)) = many0(comment)(input)?;
   let ((input, start)) = fsm_pattern(input)?;
-  let ((input, trns)) = many1(alt((fsm_guard,fsm_state_transition,fsm_output)))(input)?;
+  let ((input, trns)) = many1(alt((fsm_state_transition,fsm_output,fsm_guard)))(input)?;
   let ((input, _)) = many0(whitespace)(input)?;
   Ok((input, FsmArm{start, transitions: trns}))
 }
@@ -2003,17 +2003,28 @@ fn formula(input: ParseString) -> ParseResult<Formula> {
   Ok((input, Formula{lhs, operator, rhs}))
 }
 
+fn slice(input: ParseString) -> ParseResult<(Identifier,Vec<Expression>)> {
+  let (input, name) = identifier(input)?;
+  let (input, _) = left_bracket(input)?;
+  let (input, ixes) = separated_list1(list_separator,expression)(input)?;
+  let (input, _) = right_bracket(input)?;
+  Ok((input, (name, ixes)))
+}
+
 // expression ::= (empty_table | inline_table | math_expression | string | anonymous_table), transpose? ;
 pub fn expression(input: ParseString) -> ParseResult<Expression> {
   let (input, expression) = match formula(input.clone()) {
-    Ok((input, formula)) => (input, Expression::Formula(formula)),
+    Ok((input, frmla)) => (input, Expression::Formula(frmla)),
     _ => match table(input.clone()) {
-      Ok((input, table)) => (input, Expression::Table(table)),
+      Ok((input, tbl)) => (input, Expression::Table(tbl)),
       _ => match literal(input.clone()) {
-        Ok((input, literal)) => (input, Expression::Literal(literal)),
-        _ => match identifier(input.clone()) {
-          Ok((input, id)) => (input, Expression::Data(id)),
-          Err(err) => {return Err(err);}
+        Ok((input, ltrl)) => (input, Expression::Literal(ltrl)),
+        _ => match slice(input.clone()) {
+          Ok((input, slc)) => (input, Expression::Slice(slc)),
+          _ => match identifier(input.clone()) {
+            Ok((input, id)) => (input, Expression::Data(id)),
+            Err(err) => {return Err(err);}
+          }
         }
       }
     }
