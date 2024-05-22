@@ -1105,7 +1105,7 @@ pub struct L5 {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum L6 {
-  ParentheticalExpression(Box<Expression>),
+  ParentheticalExpression(Box<L0>),
   Literal(Literal),
   Slice(Slice),
   Data(Identifier),

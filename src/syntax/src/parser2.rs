@@ -1645,14 +1645,14 @@ pub fn statement(input: ParseString) -> ParseResult<Statement> {
 // ##### Math expressions
 
 // parenthetical_expression ::= left_parenthesis, <l0>, <right_parenthesis> ;
-/*pub fn parenthetical_expression(input: ParseString) -> ParseResult<ParserNode> {
+pub fn parenthetical_expression(input: ParseString) -> ParseResult<Box<L0>> {
   let msg1 = "Expects expression";
   let msg2 = "Expects right parenthesis ')'";
   let (input, (_, r)) = range(left_parenthesis)(input)?;
   let (input, l0) = label!(l0, msg1)(input)?;
   let (input, _) = label!(right_parenthesis, msg2, r)(input)?;
-  Ok((input, l0))
-}*/
+  Ok((input, Box::new(l0)))
+}
 
 // TODO: This won't parse -(5 - 3)
 // negation ::= dash, !(dash | space), <data | value> ;
@@ -1878,18 +1878,21 @@ pub fn l5_op(input: ParseString) -> ParseResult<ComparisonOp> {
 
 // l6 ::= literal | data | slice | table | parenthetical_expression ;
 pub fn l6(input: ParseString) -> ParseResult<L6> {
-  let (input, l6) = match table(input.clone()) {
-    Ok((input, tbl)) => ((input, L6::Table(tbl))),
-    _ => match literal(input.clone()) {
-      Ok((input, ltrl)) => ((input, L6::Literal(ltrl))),
-      _ => match slice(input.clone()) {
-        Ok((input, data)) => ((input, L6::Slice(data))),
-        _ => match identifier(input.clone()) {
-          Ok((input, slice)) => ((input, L6::Data(slice))),
-          Err(err) => {return Err(err);}
-        }
-      }
-    }
+  let (input, l6) = match parenthetical_expression(input.clone()) {
+    Ok((input, paren_expr)) => ((input, L6::ParentheticalExpression(paren_expr))),
+    _ => match table(input.clone()) {
+      Ok((input, tbl)) => ((input, L6::Table(tbl))),
+      _ => match literal(input.clone()) {
+        Ok((input, ltrl)) => ((input, L6::Literal(ltrl))),
+        _ => match slice(input.clone()) {
+          Ok((input, data)) => ((input, L6::Slice(data))),
+          _ => match identifier(input.clone()) {
+            Ok((input, slice)) => ((input, L6::Data(slice))),
+            Err(err) => {return Err(err);}
+          },
+        },
+      },
+    },
   };
   Ok((input, l6))
 }

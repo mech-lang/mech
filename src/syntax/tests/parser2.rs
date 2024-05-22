@@ -65,6 +65,7 @@ test_parser!(parse_table_2x2, "[1 2; 3 4]", 27276319635453143);
 test_parser!(parse_formula, "1 + 2 * 3", 16381879269635102);
 test_parser!(parse_formula_vars, "a + b * c", 9193573890764142);
 test_parser!(parse_formula_slices, "a[1] + b[2] * c", 35600191299091402);
+test_parser!(parse_formula_paren_expr, "(1 + 2) * 3", 29006423147868544);
 
 test_parser!(parse_record, "[a: 1, b: 2, c: 3]", 13220390494180657);
 test_parser!(parse_record_column, r#"[a: 1
