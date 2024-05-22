@@ -904,8 +904,14 @@ pub struct TableRow {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct VariableDefine {
-  pub name: Identifier,
+  pub var: Var,
   pub expression: Expression,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Var {
+  pub name: Identifier,
+  pub kind: Option<KindAnnotation>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -939,7 +945,7 @@ pub enum Index {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Expression {
-  Data(Identifier),
+  Var(Var),
   Slice(Slice),
   Formula(Formula),
   Table(Table),
@@ -966,7 +972,19 @@ pub struct Binding {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct KindAnnotation {
+  pub kinds: Vec<Kind>
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Kind {
+  Tuple(Vec<Kind>),
+  Scalar(KindLabel)
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct KindLabel {
   pub name: Identifier,
+  pub size: Vec<Number>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1108,6 +1126,6 @@ pub enum L6 {
   ParentheticalExpression(Box<L0>),
   Literal(Literal),
   Slice(Slice),
-  Data(Identifier),
+  Var(Var),
   Table(Table),
 }

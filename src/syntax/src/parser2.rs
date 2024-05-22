@@ -1008,14 +1008,41 @@ pub fn data(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Error))
 }
 
+
+// #### Kind Annotations
+
 // kind_annotation ::= left_angle, <(identifier | underscore), (",", (identifier | underscore))*>, <right_angle> ;
 pub fn kind_annotation(input: ParseString) -> ParseResult<KindAnnotation> {
   let msg2 = "Expects at least one unit in kind annotation";
   let msg3 = "Expects right angle";
   let (input, (_, r)) = range(left_angle)(input)?;
-  let (input, name) = identifier(input)?;
+  let (input, kinds) = separated_list1(list_separator, kind)(input)?;
   let (input, _) = label!(right_angle, msg3, r)(input)?;
-  Ok((input, KindAnnotation{name}))
+  Ok((input, KindAnnotation{ kinds }))
+}
+
+pub fn kind(input: ParseString) -> ParseResult<Kind> {
+  let (input, kind) = alt((kind_tuple, kind_scalar))(input)?;
+  Ok((input, kind))
+}
+
+pub fn kind_tuple(input: ParseString) -> ParseResult<Kind> {
+  let (input, _) = left_parenthesis(input)?;
+  let (input, kinds) = separated_list1(list_separator, kind)(input)?;
+  let (input, _) = right_parenthesis(input)?;
+  Ok((input, Kind::Tuple(kinds)))
+}
+
+pub fn kind_scalar(input: ParseString) -> ParseResult<Kind> {
+  let (input, kind) = kind_label(input)?;
+  Ok((input, Kind::Scalar(kind)))
+}
+
+pub fn kind_label(input: ParseString) -> ParseResult<KindLabel> {
+  let (input, name) = identifier(input)?;
+  let (input, _) = opt(colon)(input)?;
+  let (input, size) = separated_list0(list_separator,number)(input)?;
+  Ok((input, KindLabel{ name, size }))
 }
 
 // #### Tables
@@ -1452,13 +1479,13 @@ pub fn flatten_data(input: ParseString) -> ParseResult<ParserNode> {
 pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
-  let (input, name) = identifier(input)?;
+  let (input, var) = var(input)?;
   let (input, _) = labelr!(null(is_not(define_operator)), skip_nil, msg1)(input)?;
   let (input, _) = many0(space)(input)?;
   let (input, _) = equal(input)?;
   let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
   let (input, expression) = label!(expression, msg2)(input)?;
-  Ok((input, VariableDefine{name,expression}))
+  Ok((input, VariableDefine{var,expression}))
 }
 
 // variable_define ::= identifier, <!stmt_operator>, space*, equal, <space+>, <expression> ;
@@ -1885,9 +1912,9 @@ pub fn l6(input: ParseString) -> ParseResult<L6> {
       _ => match literal(input.clone()) {
         Ok((input, ltrl)) => ((input, L6::Literal(ltrl))),
         _ => match slice(input.clone()) {
-          Ok((input, data)) => ((input, L6::Slice(data))),
-          _ => match identifier(input.clone()) {
-            Ok((input, slice)) => ((input, L6::Data(slice))),
+          Ok((input, slc)) => ((input, L6::Slice(slc))),
+          _ => match var(input.clone()) {
+            Ok((input, var)) => ((input, L6::Var(var))),
             Err(err) => {return Err(err);}
           },
         },
@@ -1895,6 +1922,12 @@ pub fn l6(input: ParseString) -> ParseResult<L6> {
     },
   };
   Ok((input, l6))
+}
+
+fn var(input: ParseString) -> ParseResult<Var> {
+  let ((input, name)) = identifier(input)?;
+  let ((input, kind)) = opt(kind_annotation)(input)?;
+  Ok((input, Var{ name, kind }))
 }
 
 // ##### Filter expressions
@@ -2048,8 +2081,8 @@ pub fn expression(input: ParseString) -> ParseResult<Expression> {
         Ok((input, ltrl)) => (input, Expression::Literal(ltrl)),
         _ => match slice(input.clone()) {
           Ok((input, slc)) => (input, Expression::Slice(slc)),
-          _ => match identifier(input.clone()) {
-            Ok((input, id)) => (input, Expression::Data(id)),
+          _ => match var(input.clone()) {
+            Ok((input, var)) => (input, Expression::Var(var)),
             Err(err) => {return Err(err);}
           }
         }
