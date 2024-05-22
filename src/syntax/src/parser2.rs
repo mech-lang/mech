@@ -1660,11 +1660,25 @@ pub fn statement(input: ParseString) -> ParseResult<Statement> {
     Ok((input, var_def)) => (input, Statement::VariableDefine(var_def)),
     _ => match variable_assign(input.clone()) {
       Ok((input, var_asgn)) => (input, Statement::VariableAssign(var_asgn)),
-      Err(err) => {return Err(err);}   
+      _ => match kind_define(input.clone()) {
+        Ok((input, knd_def)) => ((input, Statement::KindDefine(knd_def))),
+        Err(err) => {return Err(err);}   
+      },
     },
   };
   let (input, _) = many0(space)(input)?;
   Ok((input, statement))
+}
+
+pub fn kind_define(input: ParseString) -> ParseResult<KindDefine> {
+  let (input, _) = left_angle(input)?;
+  let (input, name) = identifier(input)?;
+  let (input, _) = right_angle(input)?;
+  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = define_operator(input)?;
+  let (input, _) = many1(whitespace)(input)?;
+  let (input, knd) = kind_annotation(input)?;
+  Ok((input, KindDefine{name,definition: knd}))
 }
 
 // #### Expressions

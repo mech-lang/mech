@@ -863,9 +863,16 @@ pub struct StateDefinition {
 pub enum Statement {
   VariableDefine(VariableDefine),
   VariableAssign(VariableAssign),
+  KindDefine(KindDefine),
   SplitTable,
   FlattenTable,
   SetData,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct KindDefine {
+  pub name: Identifier,
+  pub definition: KindAnnotation,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

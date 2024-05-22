@@ -50,6 +50,8 @@ test_parser!(parse_kind_annotation, "10<m/s^2>", 23566671171775747);
 test_parser!(parse_kind_annotation_size, "foo<u8:3,4>", 23754552381603812);
 test_parser!(parse_kind_annotation_lhs, "z<u8> := 10", 1328561829991962);
 test_parser!(parse_kind_annotation_both, "z<u8> := 10<u8>", 48854411622876658);
+test_parser!(parse_kind_annotation_tuple, "z<(u8,u8)>", 65064718600897177);
+test_parser!(parse_kind_annotation_tuple_nested, "z<((u8,u8),u8)>", 23648802851573596);
 
 test_parser!(parse_range, "1:10", 2668291670556464);
 test_parser!(parse_range_increment, "1:2:10", 49290182314426234);
@@ -81,6 +83,9 @@ test_parser!(parse_record_nested, r#"[a: [a: 1 b: 2 c: 3] b: 2 c: 3]"#, 67293969
 test_parser!(parse_statement_variable_define, "x := 123", 61318328524297221);
 test_parser!(parse_statement_variable_assign, "a = 2", 61938044825647035);
 test_parser!(parse_statement_variable_assign_slice, "a[1] = 2", 23943233967889861);
+test_parser!(parse_statement_kind_define, "<pos> := <(u8,u8,u8)>", 62624658898678961);
+test_parser!(parse_statement_kind_define_size, "<foo> := <(u8:1,2, u8:3,3)>", 37979414279321074);
+test_parser!(parse_statement_kind_define_size_hex, "<bar> := <foo:0x01, 0xFF>", 62296951259330595);
 
 
 test_parser!(parse_mechdown_paragraph, "Hello World", 44055055244553644);
