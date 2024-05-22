@@ -833,17 +833,17 @@ pub enum Pattern {
   Identifier(Identifier),
   Literal(Literal),
   Table(Table),
-  TupleStruct(TupleStruct),
-  Tuple(Vec<Pattern>)
+  TupleStruct(PatternTupleStruct),
+  Tuple(PatternTuple)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct TupleStruct {
+pub struct PatternTupleStruct {
   pub name: Identifier,
   pub patterns: Vec<Pattern>,
 }
 
-pub type Tuple = Vec<Pattern>;
+pub type PatternTuple = Vec<Pattern>;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FsmSpecification {
@@ -946,11 +946,17 @@ pub enum Index {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Expression {
   Var(Var),
+  Tuple(Tuple),
   Slice(Slice),
   Formula(Formula),
   Table(Table),
   Literal(Literal),
   Transpose(Box<Expression>)
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Tuple {
+  pub elements: Vec<Expression>
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -993,6 +999,7 @@ pub enum Literal {
   Boolean(Token),
   Number(Number),
   String(MechString),
+  TypedLiteral((Box<Literal>,KindAnnotation))
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

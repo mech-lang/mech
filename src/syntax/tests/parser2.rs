@@ -46,6 +46,11 @@ test_parser!(parse_literal_false, "false", 18374905389476967);
 
 test_parser!(parse_literal_empty, "_", 42646767556506866);
 
+test_parser!(parse_kind_annotation, "10<m/s^2>", 23566671171775747);
+test_parser!(parse_kind_annotation_size, "foo<u8:3,4>", 23754552381603812);
+test_parser!(parse_kind_annotation_lhs, "z<u8> := 10", 1328561829991962);
+test_parser!(parse_kind_annotation_both, "z<u8> := 10<u8>", 48854411622876658);
+
 test_parser!(parse_range, "1:10", 2668291670556464);
 test_parser!(parse_range_increment, "1:2:10", 49290182314426234);
 
@@ -58,13 +63,13 @@ test_parser!(parse_table_empty, "[]", 59794664552129197);
 test_parser!(parse_table_scalar_integer, "[123]", 66082959252429624);
 test_parser!(parse_table_vector, "[1 2 3]", 26494628560603194);
 test_parser!(parse_table_vector_transpose, "[1 2 3]'", 13707685070224489);
-test_parser!(parse_table_vector_vars, "[a,b,c]", 52341332786722480);
+test_parser!(parse_table_vector_vars, "[a,b,c]", 70295520128197781);
 test_parser!(parse_table_column_vector, "[1; 2; 3]", 55330048942590530);
 test_parser!(parse_table_2x2, "[1 2; 3 4]", 27276319635453143);
 
 test_parser!(parse_formula, "1 + 2 * 3", 16381879269635102);
-test_parser!(parse_formula_vars, "a + b * c", 9193573890764142);
-test_parser!(parse_formula_slices, "a[1] + b[2] * c", 35600191299091402);
+test_parser!(parse_formula_vars, "a + b * c", 57105902454770510);
+test_parser!(parse_formula_slices, "a[1] + b[2] * c", 20245506777075164);
 test_parser!(parse_formula_paren_expr, "(1 + 2) * 3", 29006423147868544);
 
 test_parser!(parse_record, "[a: 1, b: 2, c: 3]", 13220390494180657);
@@ -73,8 +78,8 @@ test_parser!(parse_record_column, r#"[a: 1
  c: 3]"#, 35126957775100680);
 test_parser!(parse_record_nested, r#"[a: [a: 1 b: 2 c: 3] b: 2 c: 3]"#, 67293969229524370);
 
-test_parser!(parse_statement_variable_define, "x := 123", 7822511285475418);
-test_parser!(parse_statement_variable_assign, "a = 2", 60543418849393382);
+test_parser!(parse_statement_variable_define, "x := 123", 61318328524297221);
+test_parser!(parse_statement_variable_assign, "a = 2", 61938044825647035);
 test_parser!(parse_statement_variable_assign_slice, "a[1] = 2", 23943233967889861);
 
 
@@ -108,4 +113,4 @@ r#"#bubble-sort(arr) => Start(arr)
       └ * => Comparison([tail], swaps)
   Check(arr, 0) => Done(arr)
   Check(arr, swaps) => Comparison(arr,0)
-  Done(arr) -> arr."#, 48484990788839695);
+  Done(arr) -> arr."#, 67774157737283226);

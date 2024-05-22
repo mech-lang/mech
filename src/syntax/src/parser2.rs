@@ -718,9 +718,9 @@ pub fn text(input: ParseString) -> ParseResult<Token> {
   Ok((input, text))
 }
 
-// identifier ::= (word | emoji), (word | number | dash | slash | emoji)* ;
+// identifier ::= (word | emoji), (word | number | symbol | emoji)* ;
 pub fn identifier(input: ParseString) -> ParseResult<Identifier> {
-  let (input, (first, mut rest)) = tuple((alt((alpha_token,emoji)), many0(alt((alpha_token, digit_token, dash, slash, emoji)))))(input)?;
+  let (input, (first, mut rest)) = tuple((alt((alpha_token,emoji)), many0(alt((alpha_token, digit_token, symbol, emoji)))))(input)?;
   let mut tokens = vec![first];
   tokens.append(&mut rest);
   let mut merged = merge_tokens(&mut tokens).unwrap();
@@ -1287,12 +1287,12 @@ pub fn fsm_pattern(input: ParseString) -> ParseResult<Pattern> {
   Ok((input, ptrn))
 }
 
-pub fn tuple_struct(input: ParseString) -> ParseResult<TupleStruct> {
+pub fn tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
   let (input, id) = identifier(input)?;
   let ((input, _)) = left_parenthesis(input)?;
   let ((input, patterns)) = separated_list1(list_separator, fsm_pattern)(input)?;
   let ((input, _)) = right_parenthesis(input)?;
-  Ok((input, TupleStruct{name: id, patterns}))
+  Ok((input, PatternTupleStruct{name: id, patterns}))
 }
 
 pub fn fsm_state_definition(input: ParseString) -> ParseResult<StateDefinition> {
@@ -1480,9 +1480,9 @@ pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
   let (input, var) = var(input)?;
-  let (input, _) = labelr!(null(is_not(define_operator)), skip_nil, msg1)(input)?;
+  let (input, _) = labelr!(null(is_not(assign_operator)), skip_nil, msg1)(input)?;
   let (input, _) = many0(space)(input)?;
-  let (input, _) = equal(input)?;
+  let (input, _) = define_operator(input)?;
   let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
   let (input, expression) = label!(expression, msg2)(input)?;
   Ok((input, VariableDefine{var,expression}))
@@ -1493,9 +1493,9 @@ pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
   let (input, target) = expression(input)?;
-  let (input, _) = labelr!(null(is_not(assign_operator)), skip_nil, msg1)(input)?;
+  let (input, _) = labelr!(null(is_not(define_operator)), skip_nil, msg1)(input)?;
   let (input, _) = many0(space)(input)?;
-  let (input, _) = equal(input)?;
+  let (input, _) = assign_operator(input)?;
   let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
   let (input, expression) = label!(expression, msg2)(input)?;
   Ok((input, VariableAssign{target,expression}))
@@ -2054,6 +2054,11 @@ pub fn literal(input: ParseString) -> ParseResult<Literal> {
         }
       }
     }
+  };
+  let (input, result) = match opt(kind_annotation)(input.clone()) {
+    Ok((input, Some(knd))) => ((input, Literal::TypedLiteral((Box::new(result),knd)))),
+    Ok((input, None)) => (input,result),
+    Err(err) => {return Err(err);}
   };
   Ok((input, result))
 }
