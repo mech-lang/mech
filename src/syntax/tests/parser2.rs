@@ -55,46 +55,46 @@ test_parser!(parse_kind_annotation_both, "z<u8> := 10<u8>", 48854411622876658);
 test_parser!(parse_kind_annotation_tuple, "z<(u8,u8)>", 65064718600897177);
 test_parser!(parse_kind_annotation_tuple_nested, "z<((u8,u8),u8)>", 23648802851573596);
 
-test_parser!(parse_range, "1:10", 2668291670556464);
-test_parser!(parse_range_increment, "1:2:10", 49290182314426234);
+test_parser!(parse_range, "1:10", 66930478939264165);
+test_parser!(parse_range_increment, "1:2:10", 18888666111954368);
 
 test_parser!(parse_slice, "a[1]", 16516262270243137);
 test_parser!(parse_slice_nested, "a[a[1]]", 13793932459857128);
 test_parser!(parse_slice_3d, "a[1,2,3]", 66069081409915865);
-test_parser!(parse_slice_range, "a[1:3]", 41984673176314825);
+test_parser!(parse_slice_range, "a[1:3]", 42134448022382694);
 
-test_parser!(parse_table_empty, "[]", 59794664552129197);
-test_parser!(parse_table_scalar_integer, "[123]", 66082959252429624);
-test_parser!(parse_table_vector, "[1 2 3]", 26494628560603194);
-test_parser!(parse_table_vector_transpose, "[1 2 3]'", 13707685070224489);
-test_parser!(parse_table_vector_vars, "[a,b,c]", 70295520128197781);
-test_parser!(parse_table_column_vector, "[1; 2; 3]", 55330048942590530);
-test_parser!(parse_table_2x2, "[1 2; 3 4]", 27276319635453143);
-test_parser!(parse_table_tuples, "[(1,2), (3,4)]", 20769020289401805);
+test_parser!(parse_table_empty, "[]", 46610421933005859);
+test_parser!(parse_table_scalar_integer, "[123]", 67339409240896555);
+test_parser!(parse_table_vector, "[1 2 3]", 23528642570375971);
+test_parser!(parse_table_vector_transpose, "[1 2 3]'", 13459023447197651);
+test_parser!(parse_table_vector_vars, "[a,b,c]", 5222512025448397);
+test_parser!(parse_table_column_vector, "[1; 2; 3]", 46881973018548258);
+test_parser!(parse_table_2x2, "[1 2; 3 4]", 42328110307600702);
+test_parser!(parse_table_tuples, "[(1,2), (3,4)]", 4304724103076973);
 
-test_parser!(parse_tuple_empty, "()", 29008066626008126);
-test_parser!(parse_tuple_scalar, "(1)", 60611199377964235);
-test_parser!(parse_tuple_three, "(1,2,3)", 30725408229715107);
-test_parser!(parse_tuple_nested, "(1,(2,3))", 52960167516616216);
-test_parser!(parse_tuple_hetero, r#"(1, true, "Hello")"#, 60218094033807294);
-test_parser!(parse_tuple_hetero_nested, r#"(1, (true, "Hello"))"#, 70579066168824339);
-test_parser!(parse_tuple_expressions, r#"(1 + 2, x > y, true | false)"#, 26730556360720153);
+test_parser!(parse_tuple_empty, "()", 46625237035827900);
+test_parser!(parse_tuple_scalar, "(1)", 41050214404370146);
+test_parser!(parse_tuple_three, "(1,2,3)", 34973964530646587);
+test_parser!(parse_tuple_nested, "(1,(2,3))", 1496208466301128);
+test_parser!(parse_tuple_hetero, r#"(1, true, "Hello")"#, 1090619636774422);
+test_parser!(parse_tuple_hetero_nested, r#"(1, (true, "Hello"))"#, 52985721568108321);
+test_parser!(parse_tuple_expressions, r#"(1 + 2, x > y, true | false)"#, 27548167311049490);
 
-test_parser!(parse_formula, "1 + 2 * 3", 16381879269635102);
-test_parser!(parse_formula_vars, "a + b * c", 57105902454770510);
-test_parser!(parse_formula_slices, "a[1] + b[2] * c", 20245506777075164);
-test_parser!(parse_formula_paren_expr, "(1 + 2) * 3", 29006423147868544);
+test_parser!(parse_formula, "1 + 2 * 3", 53314686960653757);
+test_parser!(parse_formula_vars, "a + b * c", 26596788877301348);
+test_parser!(parse_formula_slices, "a[1] + b[2] * c", 14997858166465448);
+test_parser!(parse_formula_paren_expr, "(1 + 2) * 3", 22002356562256589);
 
-test_parser!(parse_record, "[a: 1, b: 2, c: 3]", 13220390494180657);
+test_parser!(parse_record, "[a: 1, b: 2, c: 3]", 23513968729906793);
 test_parser!(parse_record_column, r#"[a: 1
  b: 2
- c: 3]"#, 35126957775100680);
-test_parser!(parse_record_nested, r#"[a: [a: 1 b: 2 c: 3] b: 2 c: 3]"#, 67293969229524370);
+ c: 3]"#, 41121906894714823);
+test_parser!(parse_record_nested, r#"[a: [a: 1 b: 2 c: 3] b: 2 c: 3]"#, 34734170064490835);
 
 test_parser!(parse_statement_variable_define, "x := 123", 61318328524297221);
-test_parser!(parse_statement_variable_define_annotated_tuple, "z<(u8, u8)> := (10,11)", 8219147218683252);
-test_parser!(parse_statement_variable_define_annotated_tuple_both, "z<(u8, u16)> := (10<u8>,11<u16>)", 30767030235972710);
-test_parser!(parse_statement_variable_define_annotated_tuple_rhs, "z := (10<u8>,11<u16>)", 2918093392977802);
+test_parser!(parse_statement_variable_define_annotated_tuple, "z<(u8, u8)> := (10,11)", 5743532714881875);
+test_parser!(parse_statement_variable_define_annotated_tuple_both, "z<(u8, u16)> := (10<u8>,11<u16>)", 58071829579428918);
+test_parser!(parse_statement_variable_define_annotated_tuple_rhs, "z := (10<u8>,11<u16>)", 64984498152023673);
 
 test_parser!(parse_statement_variable_assign, "a = 2", 61938044825647035);
 test_parser!(parse_statement_variable_assign_slice, "a[1] = 2", 23943233967889861);
@@ -133,4 +133,4 @@ r#"#bubble-sort(arr) => Start(arr)
       └ * => Comparison([tail], swaps)
   Check(arr, 0) => Done(arr)
   Check(arr, swaps) => Comparison(arr,0)
-  Done(arr) -> arr."#, 67774157737283226);
+  Done(arr) -> arr."#, 43316847444076976);

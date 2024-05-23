@@ -1045,18 +1045,25 @@ pub fn kind_label(input: ParseString) -> ParseResult<KindLabel> {
   Ok((input, KindLabel{ name, size }))
 }
 
-// #### Tables
+// #### Structures
 
-// table ::= hashtag, <identifier> ;
-pub fn table(input: ParseString) -> ParseResult<Table> {
+// structure ::= hashtag, <identifier> ;
+pub fn structure(input: ParseString) -> ParseResult<Structure> {
   let (input, table) = match empty_table(input.clone()) {
-    Ok((input, table)) => (input, Table::Empty),
-    _ => match anonymous_table(input.clone()) {
-      Ok((input, table)) => (input, Table::Anonymous(table)),
-      _ => match record(input.clone()) {
-        Ok((input, table)) => (input, Table::Record(table)),
-        Err(err) => {return Err(err);}
-      }
+    Ok((input, table)) => (input, Structure::Empty),
+    Err(err) => match table(input.clone()) {
+      Ok((input, tbl)) => (input, Structure::Table(tbl)),
+      Err(err) => {
+        match tuple(input.clone()) {
+          Ok((input, tpl)) => (input, Structure::Tuple(tpl)),
+          _ => match record(input.clone()) {
+            Ok((input, table)) => (input, Structure::Record(table)),
+            Err(e3) => {
+              return Err(err);
+            }
+          }
+        }
+      },
     }
   };
   Ok((input, table))
@@ -1135,30 +1142,32 @@ pub fn table_header(input: ParseString) -> ParseResult<ParserNode> {
 
 // anonymous_table ::= left_bracket, (space | new_line | tab)*, table_header?,
 // >>                  ((comment, new_line) | table_row)*, (space | new_line | tab)*, <right_bracket> ;
-pub fn anonymous_table(input: ParseString) -> ParseResult<AnonymousTable> {
+pub fn table(input: ParseString) -> ParseResult<Table> {
   let msg = "Expects right bracket ']' to finish the table";
   let (input, (_, r)) = range(left_bracket)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let (input, rows) = many0(table_row)(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  let (input, _) = label!(right_bracket, msg, r)(input)?;
-  Ok((input, AnonymousTable{rows}))
+  let (input, _) = match label!(right_bracket, msg, r)(input) {
+    Ok((input, matches)) => {
+      (input, matches)
+    }
+    Err(err) => {
+      println!("!!!!!!!!!!!!!!{:?}", err);
+      return Err(err);
+    }
+  };
+  Ok((input, Table{rows}))
 }
 
 // empty_table ::= left_bracket, (space | new_line | tab)*, table_header?, (space | new_line | tab)*, right_bracket ;
-pub fn empty_table(input: ParseString) -> ParseResult<Table> {
+pub fn empty_table(input: ParseString) -> ParseResult<Structure> {
   let (input, _) = left_bracket(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let (input, _) = opt(empty)(input)?;
-  //let (input, table_header) = opt(table_header)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let (input, _) = right_bracket(input)?;
-  /*let mut table = vec![];
-  match table_header {
-    Some(table_header) => table.push(table_header),
-    _ => (),
-  };*/
-  Ok((input, Table::Empty))
+  Ok((input, Structure::Empty))
 }
 
 // record ::= left_bracket, binding, <binding_strict*>, <right_bracket> ;
@@ -1265,22 +1274,14 @@ pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
 }
 
 pub fn fsm_pattern(input: ParseString) -> ParseResult<Pattern> {
-  let ((input, ptrn)) = match formula(input.clone()) {
-    Ok((input, frmla)) => ((input, Pattern::Formula(frmla))),
-    _ => match tuple_struct(input.clone()) {
-      Ok((input, tpl)) => ((input, Pattern::TupleStruct(tpl))),
-      _ => match wildcard(input.clone()) {
-        Ok((input, _)) => ((input, Pattern::Wildcard)),
-        _ => match identifier(input.clone()) {
-          Ok((input, id)) => ((input, Pattern::Identifier(id))),
-          _ => match literal(input.clone()) {
-            Ok((input, ltrl)) => ((input, Pattern::Literal(ltrl))),
-            _ => match table(input.clone()) {
-              Ok((input, tbl)) => ((input, Pattern::Table(tbl))),
-              Err(err) => {return Err(err)},
-            },
-          },
-        },
+  let ((input, ptrn)) = match tuple_struct(input.clone()) {
+    Ok((input, tpl)) => (input, Pattern::TupleStruct(tpl)),
+    _ => match wildcard(input.clone()) {
+      Ok((input, _)) => (input, Pattern::Wildcard),
+      _ => match formula(input.clone()) {
+        Ok((input, Factor::Expression(expr))) => (input, Pattern::Expression(*expr)),
+        Ok((input, frmla)) => (input, Pattern::Formula(frmla)),
+        Err(err) => {return Err(err)},
       },
     },
   };
@@ -1686,13 +1687,13 @@ pub fn kind_define(input: ParseString) -> ParseResult<KindDefine> {
 // ##### Math expressions
 
 // parenthetical_expression ::= left_parenthesis, <l0>, <right_parenthesis> ;
-pub fn parenthetical_expression(input: ParseString) -> ParseResult<Box<L0>> {
+pub fn parenthetical_term(input: ParseString) -> ParseResult<Factor> {
   let msg1 = "Expects expression";
   let msg2 = "Expects right parenthesis ')'";
   let (input, (_, r)) = range(left_parenthesis)(input)?;
-  let (input, l0) = label!(l0, msg1)(input)?;
+  let (input, frmla) = label!(formula, msg1)(input)?;
   let (input, _) = label!(right_parenthesis, msg2, r)(input)?;
-  Ok((input, Box::new(l0)))
+  Ok((input, frmla))
 }
 
 // TODO: This won't parse -(5 - 3)
@@ -1836,106 +1837,113 @@ pub fn range_op(input: ParseString) -> ParseResult<RangeOp> {
 }
 
 // l0_op ::= range_op ;
-pub fn l0_op(input: ParseString) -> ParseResult<RangeOp> {
-  range_op(input)
+pub fn range_operator(input: ParseString) -> ParseResult<FormulaOperator> {
+  let (input, op) = range_op(input)?;
+  Ok((input, FormulaOperator::Range(op)))
 }
 
 // l0 ::= l1, l0_infix* ;
-pub fn l0(input: ParseString) -> ParseResult<L0> {
-  let (input, (lhs,s)) = l1(input)?;
-  let (input, rhs) = many0(nom_tuple((l0_op,l1)))(input)?;
-  if s == false && rhs.is_empty() {
-    return Err(nom::Err::Error(ParseError::new(input,"No Formula Parsed")));
-  }
-  Ok((input, L0 { lhs, rhs }))
+pub fn formula(input: ParseString) -> ParseResult<Factor> {
+  let (input, lhs) = l1(input)?;
+  let (input, rhs) = many0(nom_tuple((range_operator,l1)))(input)?;
+  let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
+  Ok((input, factor))
 }
 
 // l1_op ::= add | subtract ;
-pub fn l1_op(input: ParseString) -> ParseResult<AddSubOp> {
-  alt((add, subtract))(input)
+pub fn add_sub_operator(input: ParseString) -> ParseResult<FormulaOperator> {
+  let (input, op) = alt((add, subtract))(input)?;
+  Ok((input, FormulaOperator::AddSub(op)))
 }
 
-// We return a tuple with a bool so we can track whither anything at all has been matched
-
 // l1 ::= l2, l1_infix* ;
-pub fn l1(input: ParseString) -> ParseResult<(L1,bool)> {
-  let (input, (lhs,s)) = l2(input)?;
-  let (input, rhs) = many0(nom_tuple((l1_op,l2)))(input)?;
-  let s = if s {s} else if rhs.is_empty() {false} else {true};
-  Ok((input, (L1 { lhs, rhs },s)))
+pub fn l1(input: ParseString) -> ParseResult<Factor> {
+  let (input, lhs) = l2(input)?;
+  let (input, rhs) = many0(nom_tuple((add_sub_operator,l2)))(input)?;
+  let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
+  Ok((input, factor))
 }
 
 // l2_op ::= matrix_multiply | multiply | divide | matrix_solve ;
-pub fn l2_op(input: ParseString) -> ParseResult<MulDivOp> {
-  alt((matrix_multiply, multiply, divide, matrix_solve))(input)
+pub fn mul_div_operator(input: ParseString) -> ParseResult<FormulaOperator> {
+  let (input, op) = alt((matrix_multiply, multiply, divide, matrix_solve))(input)?;
+  Ok((input, FormulaOperator::MulDiv(op)))
 }
 
 // l2 ::= l3, l2_infix* ;
-pub fn l2(input: ParseString) -> ParseResult<(L2,bool)> {
-  let (input, (lhs,s)) = l3(input)?;
-  let (input, rhs) = many0(nom_tuple((l2_op,l3)))(input)?;
-  let s = if s {s} else if rhs.is_empty() {false} else {true};
-  Ok((input, (L2 { lhs, rhs },s)))
+pub fn l2(input: ParseString) -> ParseResult<Factor> {
+  let (input, lhs) = l3(input)?;
+  let (input, rhs) = many0(nom_tuple((mul_div_operator,l3)))(input)?;
+  let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
+  Ok((input, factor))
 }
 
 // l3_op ::= exponent ;
-pub fn l3_op(input: ParseString) -> ParseResult<ExponentOp> {
-  exponent(input)
+pub fn exponent_operator(input: ParseString) -> ParseResult<FormulaOperator> {
+  let (input, op) = exponent(input)?;
+  Ok((input, FormulaOperator::Exponent(op)))
 }
 
 // l3 ::= l4, l3_infix* ;
-pub fn l3(input: ParseString) -> ParseResult<(L3,bool)> {
-  let (input, (lhs,s)) = l4(input)?;
-  let (input, rhs) = many0(nom_tuple((l3_op,l4)))(input)?;
-  let s = if s {s} else if rhs.is_empty() {false} else {true};
-  Ok((input, (L3 { lhs, rhs },s)))
+pub fn l3(input: ParseString) -> ParseResult<Factor> {
+  let (input, lhs) = l4(input)?;
+  let (input, rhs) = many0(nom_tuple((exponent_operator,l4)))(input)?;
+  let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
+  Ok((input, factor))
 }
 
 // l4_op ::= and | or | xor ;
-pub fn l4_op(input: ParseString) -> ParseResult<LogicOp> {
-  alt((and, or, xor))(input)
+pub fn logic_operator(input: ParseString) -> ParseResult<FormulaOperator> {
+  let (input, op) = alt((and, or, xor))(input)?;
+  Ok((input, FormulaOperator::Logic(op)))
 }
 
 // l4 ::= l5, l4_infix* ;
-pub fn l4(input: ParseString) -> ParseResult<(L4,bool)> {
-  let (input, (lhs,s)) = l5(input)?;
-  let (input, rhs) = many0(nom_tuple((l4_op,l5)))(input)?;
-  let s = if s {s} else if rhs.is_empty() {false} else {true};
-  Ok((input, (L4 { lhs, rhs },s)))
+pub fn l4(input: ParseString) -> ParseResult<Factor> {
+  let (input, lhs) = l5(input)?;
+  let (input, rhs) = many0(nom_tuple((logic_operator,l5)))(input)?;
+  let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
+  Ok((input, factor))
 }
 
 // l5 ::= l6, l5_infix* ;
-pub fn l5(input: ParseString) -> ParseResult<(L5,bool)> {
-  let (input, lhs) = l6(input)?;
-  let (input, rhs) = many0(nom_tuple((l5_op,l6)))(input)?;
-  let s = if rhs.is_empty() {false} else {true};
-  Ok((input, (L5 { lhs, rhs },s)))
+pub fn l5(input: ParseString) -> ParseResult<Factor> {
+  let (input, lhs) = factor(input)?;
+  let (input, rhs) = many0(nom_tuple((comparison_operator,factor)))(input)?;
+  let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
+  Ok((input, factor))
 }
 
 // l5_op ::= not_equal | equal_to | greater_than_equal | greater_than | less_than_equal | less_than ;
-pub fn l5_op(input: ParseString) -> ParseResult<ComparisonOp> {
-  alt((not_equal, equal_to, greater_than_equal, greater_than, less_than_equal, less_than))(input)
+pub fn comparison_operator(input: ParseString) -> ParseResult<FormulaOperator> {
+  let (input, op) = alt((not_equal, equal_to, greater_than_equal, greater_than, less_than_equal, less_than))(input)?;
+  Ok((input, FormulaOperator::Comparison(op)))
 }
 
 // l6 ::= literal | data | slice | table | parenthetical_expression ;
-pub fn l6(input: ParseString) -> ParseResult<L6> {
-  let (input, l6) = match parenthetical_expression(input.clone()) {
-    Ok((input, paren_expr)) => ((input, L6::ParentheticalExpression(paren_expr))),
-    _ => match table(input.clone()) {
-      Ok((input, tbl)) => ((input, L6::Table(tbl))),
+pub fn factor(input: ParseString) -> ParseResult<Factor> {
+  let (input, fctr) = match parenthetical_term(input.clone()) {
+    Ok((input, term)) => (input, term),
+    _ => match structure(input.clone()) {
+      Ok((input, strct)) => (input, Factor::Expression(Box::new(Expression::Structure(strct)))),
       _ => match literal(input.clone()) {
-        Ok((input, ltrl)) => ((input, L6::Literal(ltrl))),
+        Ok((input, ltrl)) => (input, Factor::Expression(Box::new(Expression::Literal(ltrl)))),
         _ => match slice(input.clone()) {
-          Ok((input, slc)) => ((input, L6::Slice(slc))),
+          Ok((input, slc)) => (input, Factor::Expression(Box::new(Expression::Slice(slc)))),
           _ => match var(input.clone()) {
-            Ok((input, var)) => ((input, L6::Var(var))),
+            Ok((input, var)) => (input, Factor::Expression(Box::new(Expression::Var(var)))),
             Err(err) => {return Err(err);}
           },
         },
       },
     },
   };
-  Ok((input, l6))
+  /*let (input, transpose) = opt(transpose)(input)?;
+  let fctr = match transpose {
+    Some(_) => Factor::Transpose(Box::new(fctr)),
+    None => fctr,
+  };*/
+  Ok((input, fctr))
 }
 
 fn var(input: ParseString) -> ParseResult<Var> {
@@ -2077,11 +2085,6 @@ pub fn literal(input: ParseString) -> ParseResult<Literal> {
   Ok((input, result))
 }
 
-fn formula(input: ParseString) -> ParseResult<Formula> {
-  let (input, frmla) = l0(input)?;
-  Ok((input, Formula{formula: frmla}))
-}
-
 fn slice(input: ParseString) -> ParseResult<(Identifier,Vec<Expression>)> {
   let (input, name) = identifier(input)?;
   let (input, _) = left_bracket(input)?;
@@ -2102,23 +2105,9 @@ pub fn tuple(input: ParseString) -> ParseResult<Tuple> {
 // expression ::= (empty_table | inline_table | math_expression | string | anonymous_table), transpose? ;
 pub fn expression(input: ParseString) -> ParseResult<Expression> {
   let (input, expression) = match formula(input.clone()) {
-    Ok((input, frmla)) => (input, Expression::Formula(frmla)),
-    _ => match table(input.clone()) {
-      Ok((input, tbl)) => (input, Expression::Table(tbl)),
-      _ => match tuple(input.clone()) {
-        Ok((input, tpl)) => (input, Expression::Tuple(tpl)),
-        _ => match literal(input.clone()) {
-          Ok((input, ltrl)) => (input, Expression::Literal(ltrl)),
-          _ => match slice(input.clone()) {
-            Ok((input, slc)) => (input, Expression::Slice(slc)),
-            _ => match var(input.clone()) {
-              Ok((input, var)) => (input, Expression::Var(var)),
-              Err(err) => {return Err(err);}
-            }
-          }
-        }
-      }
-    }
+    Ok((input, Factor::Expression(expr))) => (input, *expr),
+    Ok((input, fctr)) => (input, Expression::Formula(fctr)),
+    Err(err) => {return Err(err);}
   };
   let (input, transpose) = opt(transpose)(input)?;
   let expr = match transpose {
@@ -2248,7 +2237,7 @@ pub fn paragraph_rest(input: ParseString) -> ParseResult<ParserNode> {
 
 // paragraph_starter ::= (word | number | quote | left_angle | right_angle | left_bracket | right_bracket | period | exclamation | question | comma | colon | semicolon | left_parenthesis | right_parenthesis | emoji)+ ;
 pub fn paragraph_starter(input: ParseString) -> ParseResult<ParagraphElement> {
-  let (input, text) = alt((alpha_token, quote, left_angle, right_angle, left_bracket, right_bracket, period, exclamation, question, comma, colon, semicolon, right_parenthesis, emoji))(input)?;
+  let (input, text) = alt((alpha_token, quote, emoji))(input)?;
   Ok((input, ParagraphElement::Start(text)))
 }
 
@@ -2370,12 +2359,12 @@ pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
 
 // section_element ::= user_function | block | mech_code_block | code_block | statement | paragraph | unordered_list;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
-  let (input, section_element) = match comment(input.clone()) {
-    Ok((input, comment)) => (input, SectionElement::Comment(comment)),
+  let (input, section_element) = match mech_code(input.clone()) {
+    Ok((input, code)) => (input, SectionElement::MechCode(code)),
     _ => match unordered_list(input.clone()) {
       Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
-      _ => match mech_code(input.clone()) {
-        Ok((input, m)) => (input, SectionElement::MechCode(m)),
+      _ => match comment(input.clone()) {
+        Ok((input, comment)) => (input, SectionElement::Comment(comment)),
         _ => match paragraph(input.clone()) {
           Ok((input, p)) => (input, SectionElement::Paragraph(p)),
           _ => match code_block(input.clone()) {
@@ -2760,13 +2749,15 @@ pub fn parse(text: &str) -> Result<Program, MechError> {
       remaining_input
     },
     // Parsing failed and could not be recovered. No parse tree was created in this case
-    Err(err) => match err {
-      Err::Error(mut e) | Err::Failure(mut e) => {
-        error_log.append(&mut e.remaining_input.error_log);
-        error_log.push((e.cause_range, e.error_detail));
-        e.remaining_input
-      },
-      Err::Incomplete(_) => panic!("nom::Err::Incomplete is not supported!"),
+    Err(err) => {
+      match err {
+        Err::Error(mut e) | Err::Failure(mut e) => {
+          error_log.append(&mut e.remaining_input.error_log);
+          error_log.push((e.cause_range, e.error_detail));
+          e.remaining_input
+        },
+        Err::Incomplete(_) => panic!("nom::Err::Incomplete is not supported!"),
+      }
     },
   };
 

@@ -775,11 +775,12 @@ pub enum SectionElement {
   Comment(Comment),
   Paragraph(Paragraph),
   MechCode(MechCode),
-  CodeBlock,
   UnorderedList(UnorderedList),
-  OrderedList,
-  BlockQuote,
-  ThematicBreak,
+  CodeBlock,       // todo
+  OrderedList,     // todo
+  BlockQuote,      // todo
+  ThematicBreak,   // todo
+  Image,           // todo
 }
 
 pub type ListItem = Paragraph;
@@ -793,9 +794,10 @@ pub struct UnorderedList {
 pub enum MechCode {
   Expression(Expression),
   Statement(Statement),
-  FunctionDefine,
   FsmSpecification(FsmSpecification),
   FsmImplementation(FsmImplementation),
+  FunctionDefine,  // todo
+  EnumDefine,      // todo
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -829,10 +831,8 @@ pub enum Guard {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Pattern {
   Wildcard,
-  Formula(Formula),
-  Identifier(Identifier),
-  Literal(Literal),
-  Table(Table),
+  Formula(Factor),
+  Expression(Expression),
   TupleStruct(PatternTupleStruct),
   Tuple(PatternTuple)
 }
@@ -864,9 +864,11 @@ pub enum Statement {
   VariableDefine(VariableDefine),
   VariableAssign(VariableAssign),
   KindDefine(KindDefine),
-  SplitTable,
-  FlattenTable,
-  SetData,
+  FsmDeclare,      // todo
+  FsmExec,         // todo
+  SplitTable,      // todo
+  FlattenTable,    // todo
+  SetData,         // todo
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -876,26 +878,26 @@ pub struct KindDefine {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct TableDefine {
-  pub name: Identifier,
-  pub table: Table,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Record {
   pub bindings: Vec<Binding>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum Table {
+pub enum Structure {
   Empty,
   Record(Record),
-  Matrix,
-  Anonymous(AnonymousTable),
+  Matrix(Matrix),
+  Table(Table),
+  Tuple(Tuple),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct AnonymousTable {
+pub struct Matrix {
+  pub rows: Vec<TableRow>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Table {
   pub rows: Vec<TableRow>,
 }
 
@@ -953,27 +955,17 @@ pub enum Index {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Expression {
   Var(Var),
-  Tuple(Tuple),
   Slice(Slice),
-  Formula(Formula),
-  Table(Table),
+  Formula(Factor),
+  Structure(Structure),
   Literal(Literal),
-  Transpose(Box<Expression>)
+  Transpose(Box<Expression>),
+  FunctionCall     // todo
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Tuple {
   pub elements: Vec<Expression>
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Formula {
-  pub formula: L0,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct InlineTable {
-  pub binding: Vec<Binding>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1018,11 +1010,12 @@ pub struct MechString {
 pub enum ParagraphElement {
   Start(Token),
   Text(Token),
-  Bold(Vec<Token>),
-  Italic(Vec<Token>),
-  Underline(Vec<Token>),
-  Strike(Vec<Token>),
-  InlineCode
+  Bold,            // todo
+  Italic,          // todo
+  Underline,       // todo
+  Strike,          // todo
+  InlineCode,      // todo           
+  Link,            // todo
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1059,7 +1052,7 @@ pub struct Comment {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum RangeOp {
   Inclusive,
-  Exclusive,
+  Exclusive,       // todo
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1100,46 +1093,23 @@ pub enum LogicOp {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct L0 {
-  pub lhs: L1,
-  pub rhs: Vec<(RangeOp,(L1,bool))>
+pub enum FormulaOperator {
+  Logic(LogicOp),
+  Comparison(ComparisonOp),
+  AddSub(AddSubOp),
+  MulDiv(MulDivOp),
+  Exponent(ExponentOp),
+  Range(RangeOp),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct L1 {
-  pub lhs: L2,
-  pub rhs: Vec<(AddSubOp,(L2,bool))>
+pub struct Term {
+  pub lhs: Factor,
+  pub rhs: Vec<(FormulaOperator,Factor)>
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct L2 {
-  pub lhs: L3,
-  pub rhs: Vec<(MulDivOp,(L3,bool))>
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct L3 {
-  pub lhs: L4,
-  pub rhs: Vec<(ExponentOp,(L4,bool))>
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct L4 {
-  pub lhs: L5,
-  pub rhs: Vec<(LogicOp,(L5,bool))>
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct L5 {
-  pub lhs: L6,
-  pub rhs: Vec<(ComparisonOp,L6)>
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum L6 {
-  ParentheticalExpression(Box<L0>),
-  Literal(Literal),
-  Slice(Slice),
-  Var(Var),
-  Table(Table),
+pub enum Factor {
+  Term(Box<Term>),
+  Expression(Box<Expression>),
 }
