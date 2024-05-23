@@ -732,25 +732,25 @@ pub fn paragraph_symbol(input: ParseString) -> ParseResult<ParserNode> {
 
 // text ::= (word | space | number | punctuation | symbol | emoji)+ ;
 pub fn text(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, word) = many1(alt((word, space, number, punctuation, symbol, emoji)))(input)?;
+  let (input, word) = many1(alt((word, space, number, punctuation, symbol)))(input)?;
   Ok((input, ParserNode::Text{children: word}))
 }
 
 // paragraph_rest ::= (word | space | number | punctuation | paragraph_symbol | quote | emoij)+ ;
 pub fn paragraph_rest(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, word) = many1(alt((word, space, number, punctuation, paragraph_symbol, quote, emoji)))(input)?;
+  let (input, word) = many1(alt((word, space, number, punctuation, paragraph_symbol, quote)))(input)?;
   Ok((input, ParserNode::Text{children: word}))
 }
 
 // paragraph_starter ::= (word | number | quote | left_angle | right_angle | left_bracket | right_bracket | period | exclamation | question | comma | colon | semicolon | left_parenthesis | right_parenthesis | emoji)+ ;
 pub fn paragraph_starter(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, word) = many1(alt((word, number, quote, left_angle, right_angle, left_bracket, right_bracket, period, exclamation, question, comma, colon, semicolon, right_parenthesis, emoji)))(input)?;
+  let (input, word) = many1(alt((word, number, quote, left_angle, right_angle, left_bracket, right_bracket, period, exclamation, question, comma, colon, semicolon, right_parenthesis)))(input)?;
   Ok((input, ParserNode::Text{children: word}))
 }
 
 // identifier ::= (word | emoji), (word | number | dash | slash | emoji)* ;
 pub fn identifier(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, (word, mut rest)) = tuple((alt((word,emoji)), many0(alt((word, number, dash, slash, emoji)))))(input)?;
+  let (input, (word, mut rest)) = tuple((word, many0(alt((word, number, dash, slash)))))(input)?;
   let mut id = vec![word];
   id.append(&mut rest);
   Ok((input, ParserNode::Identifier{children: id}))

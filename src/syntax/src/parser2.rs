@@ -120,6 +120,11 @@ impl<'a> ParseString<'a> {
 
   /// If current location matches the tag, consume the matched string.
   fn consume_tag(&mut self, tag: &str) -> Option<String> {
+    if self.is_empty() {
+      return None;
+    }
+    let current = self.graphemes[self.cursor];
+
     let gs = graphemes::init_tag(tag); 
     let gs_len = gs.len();
 
@@ -136,7 +141,6 @@ impl<'a> ParseString<'a> {
       if g != gs[i] {
         return None;
       }
-
       if graphemes::is_new_line(g) {
         if !self.is_last_grapheme(c) {
           tmp_location.row += 1;
@@ -146,7 +150,6 @@ impl<'a> ParseString<'a> {
         tmp_location.col += graphemes::width(g);
       }
     }
-
     // Tag matched, commit change
     self.cursor += gs_len;
     self.location = tmp_location;
@@ -155,7 +158,7 @@ impl<'a> ParseString<'a> {
 
   /// Mutate self by consuming one grapheme
   fn consume_one(&mut self) -> Option<String> {
-    if self.len() == 0 {
+    if self.is_empty() {
       return None;
     }
     let g = self.graphemes[self.cursor];
@@ -174,10 +177,11 @@ impl<'a> ParseString<'a> {
 
   /// If current location matches any emoji, consume the matched string.
   fn consume_emoji(&mut self) -> Option<String> {
-    if self.len() == 0 {
+    if self.is_empty() {
       return None;
     }
     let g = self.graphemes[self.cursor];
+    
     if graphemes::is_emoji(g) {
       self.cursor += 1;
       self.location.col += graphemes::width(g);
@@ -189,7 +193,7 @@ impl<'a> ParseString<'a> {
 
   /// If current location matches any alpha char, consume the matched string.
   fn consume_alpha(&mut self) -> Option<String> {
-    if self.len() == 0 {
+    if self.is_empty() {
       return None;
     }
     let g = self.graphemes[self.cursor];
@@ -204,7 +208,7 @@ impl<'a> ParseString<'a> {
 
   /// If current location matches any digit, consume the matched string.
   fn consume_digit(&mut self) -> Option<String> {
-    if self.len() == 0 {
+    if self.is_empty() {
       return None;
     }
     let g = self.graphemes[self.cursor];
@@ -230,6 +234,10 @@ impl<'a> ParseString<'a> {
   /// Get remaining (unparsed) length
   pub fn len(&self) -> usize {
     self.graphemes.len() - self.cursor
+  }
+  
+  pub fn is_empty(&self) -> bool {
+    self.len() == 0
   }
 
   /// For debug purpose
@@ -485,10 +493,13 @@ where
 /// Return a terminal parsing expression that consumes `tag` from input.
 pub fn tag(tag: &'static str) -> impl Fn(ParseString) -> ParseResult<String> {
   move |mut input: ParseString| {
+    if input.is_empty() {
+      return Err(nom::Err::Error(ParseError::new(input, "Unexpected eof")));
+    }
     if let Some(matched) = input.consume_tag(tag) {
       Ok((input, matched))
     } else {
-      Err(nom::Err::Error(ParseError::new(input, "Unexpected character")))
+      Err(nom::Err::Error(ParseError::new(input, "Unexpected char")))
     }
   }
 }
@@ -511,7 +522,7 @@ fn skip_pass_eol(input: ParseString) -> ParseResult<ParserNode> {
 }
 
 fn skip_till_section_element(input: ParseString) -> ParseResult<ParserNode> {
-  if input.len() == 0 {
+  if input.is_empty() {
     return Ok((input, ParserNode::Error));
   }
   let (input, _) = skip_pass_eol(input)?;
@@ -603,7 +614,11 @@ pub fn any(mut input: ParseString) -> ParseResult<String> {
 macro_rules! leaf {
   ($name:ident, $byte:expr, $token:expr) => (
     fn $name(input: ParseString) -> ParseResult<Token> {
+      if input.is_empty() {
+        return Err(nom::Err::Error(ParseError::new(input, "Unexpected eof")))
+      }
       let start = input.loc();
+      let byte = input.graphemes[input.cursor];
       let (input, _) = tag($byte)(input)?;
       let end = input.loc();
       let src_range = SourceRange { start, end };
@@ -625,6 +640,7 @@ leaf!{left_parenthesis, "(", TokenKind::LeftParenthesis}
 leaf!{right_parenthesis, ")", TokenKind::RightParenthesis}
 leaf!{left_brace, "{", TokenKind::LeftBrace}
 leaf!{right_brace, "}", TokenKind::RightBrace}
+leaf!{dollar, "$", TokenKind::Dollar}
 leaf!{equal, "=", TokenKind::Equal}
 leaf!{left_angle, "<", TokenKind::LeftAngle}
 leaf!{right_angle, ">", TokenKind::RightAngle}
@@ -652,7 +668,17 @@ leaf!{english_true_literal, "true", TokenKind::True}
 leaf!{english_false_literal, "false", TokenKind::False}
 leaf!{check_mark, "✓", TokenKind::True}
 leaf!{cross, "✗", TokenKind::False}
-
+leaf!{box_tl_round, "╭", TokenKind::BoxDrawing}
+leaf!{box_tr_round, "╮", TokenKind::BoxDrawing}
+leaf!{box_bl_round, "╰", TokenKind::BoxDrawing}
+leaf!{box_br_round, "╯", TokenKind::BoxDrawing}
+leaf!{box_vert, "│", TokenKind::BoxDrawing}
+leaf!{box_cross, "┼", TokenKind::BoxDrawing}
+leaf!{box_horz, "─", TokenKind::BoxDrawing}
+leaf!{box_t_left, "├", TokenKind::BoxDrawing}
+leaf!{box_t_right, "┤", TokenKind::BoxDrawing}
+leaf!{box_t_top, "T", TokenKind::BoxDrawing}
+leaf!{box_t_bottom, "┴", TokenKind::BoxDrawing}
 
 // emoji ::= emoji_grapheme+ ;
 fn emoji(input: ParseString) -> ParseResult<Token> {
@@ -714,13 +740,13 @@ pub fn symbol(input: ParseString) -> ParseResult<Token> {
 
 // text ::= (alpha | digit_token | space | punctuation | grouping_symbol | symbol | emoji | escaped_char)+ ;
 pub fn text(input: ParseString) -> ParseResult<Token> {
-  let (input, text) = alt((alpha_token, digit_token, space, tab, escaped_char, punctuation, grouping_symbol, symbol, emoji))(input)?;
+  let (input, text) = alt((alpha_token, digit_token, space, tab, escaped_char, punctuation, grouping_symbol, symbol))(input)?;
   Ok((input, text))
 }
 
 // identifier ::= (word | emoji), (word | number | symbol | emoji)* ;
 pub fn identifier(input: ParseString) -> ParseResult<Identifier> {
-  let (input, (first, mut rest)) = nom_tuple((alt((alpha_token,emoji)), many0(alt((alpha_token, digit_token, symbol, emoji)))))(input)?;
+  let (input, (first, mut rest)) = nom_tuple((alpha_token, many0(alt((alpha_token, digit_token, symbol)))))(input)?;
   let mut tokens = vec![first];
   tokens.append(&mut rest);
   let mut merged = merge_tokens(&mut tokens).unwrap();
@@ -1113,47 +1139,55 @@ pub fn table_column(input: ParseString) -> ParseResult<TableColumn> {
 
 // table_row ::= (space | tab)*, table_column+, semicolon?, new_line? ;
 pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
+  //let (input, _) = opt(table_separator)(input)?;
   let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, columns) = many1(table_column)(input)?;
   let (input, _) = nom_tuple((opt(semicolon), opt(new_line)))(input)?;
   Ok((input, TableRow{columns}))
 }
 
-// attribute ::= identifier, kind_annotation?, space*, comma?, space* ;
-pub fn attribute(input: ParseString) -> ParseResult<ParserNode> {
-  /*let mut children = vec![];
-  let (input, identifier) = identifier(input)?;
-  children.push(identifier);
-  let (input, kind) = opt(kind_annotation)(input)?;
-  let (input, _) = nom_tuple((many0(space), opt(comma), many0(space)))(input)?;
-  if let Some(kind) = kind { children.push(kind); }*/
-  Ok((input, ParserNode::Error))
-}
-
 // table_header ::= bar, <attribute+>, <bar>, space*, new_line? ;
-pub fn table_header(input: ParseString) -> ParseResult<ParserNode> {
+/*pub fn table_header(input: ParseString) -> ParseResult<ParserNode> {
   let msg1 = "Expects at least one attribute for table header";
   let msg2 = "Expects vertical bar to terminate table header";
   let (input, (_, r)) = range(bar)(input)?;
   let (input, attributes) = label!(many1(attribute), msg1)(input)?;
   let (input, _) = nom_tuple((label!(bar, msg2, r), many0(space), opt(new_line)))(input)?;
   Ok((input, ParserNode::TableHeader{children: attributes}))
+}*/
+
+
+pub fn box_drawing_char(input: ParseString) -> ParseResult<Token> {
+  alt((box_tl_round, box_tr_round, box_bl_round, box_br_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
+}
+
+pub fn table_start(input: ParseString) -> ParseResult<Token> {
+  alt((box_tl_round, box_vert, bar, left_bracket))(input)
+}
+
+pub fn table_end(input: ParseString) -> ParseResult<Token> {
+  let result = alt((box_br_round, bar, right_bracket))(input);
+  result
+}
+
+pub fn table_separator(input: ParseString) -> ParseResult<Token> {
+  alt((box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom, bar))(input)
 }
 
 // anonymous_table ::= left_bracket, (space | new_line | tab)*, table_header?,
 // >>                  ((comment, new_line) | table_row)*, (space | new_line | tab)*, <right_bracket> ;
 pub fn table(input: ParseString) -> ParseResult<Table> {
   let msg = "Expects right bracket ']' to finish the table";
-  let (input, (_, r)) = range(left_bracket)(input)?;
+  let (input, (_, r)) = range(table_start)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let (input, rows) = many0(table_row)(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  let (input, _) = match label!(right_bracket, msg, r)(input) {
+  let (input, _) = match label!(table_end, msg, r)(input) {
     Ok((input, matches)) => {
       (input, matches)
     }
     Err(err) => {
-      println!("!!!!!!!!!!!!!!{:?}", err);
+      //println!("!!!!!!!!!!!!!!{:?}", err);
       return Err(err);
     }
   };
@@ -1502,37 +1536,6 @@ pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
   Ok((input, VariableAssign{target,expression}))
 }
 
-pub fn table_define(input: ParseString) -> ParseResult<ParserNode> {
-  alt((raw_table_define, formatted_table_define))(input)
-}
-
-pub fn raw_table_define(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg1 = "Expects spaces around operator";
-  let msg2 = "Expects expression";
-  let mut children = vec![];
-  let (input, table) = table(input)?;
-  children.push(table);
-  let (input, kind_id) = opt(kind_annotation)(input)?;
-  if let Some(kind_id) = kind_id { children.push(kind_id); }
-  let (input, _) = labelr!(null(is_not(stmt_operator)), skip_nil, msg1)(input)?;
-  let (input, _) = many0(space)(input)?;
-  let (input, _) = equal(input)?;
-  let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
-  let (input, expression) = label!(expression, msg2)(input)?;
-  children.push(expression);*/
-  Ok((input, ParserNode::Error))
-}
-// parser for table in output format
-pub fn formatted_table_define(input: ParseString) -> ParseResult<ParserNode> {
-  let (input, _) = table_line(input)?;
-  let (input, name) = table_name(input)?;
-  let (input, _) = table_line(input)?;
-  let (input, table) = alt((table_with_column, table_no_column))(input)?;
-  let mut children = vec![];
-  children.push(name); 
-  children.push(table);
-  Ok((input, ParserNode::TableDefine{children}))
-}
 pub fn table_with_column(input: ParseString) -> ParseResult<ParserNode> {
   let (input, table_header) = formatted_table_columns(input)?;
   let (input, _) = table_line(input)?;
@@ -2237,7 +2240,7 @@ pub fn paragraph_rest(input: ParseString) -> ParseResult<ParserNode> {
 
 // paragraph_starter ::= (word | number | quote | left_angle | right_angle | left_bracket | right_bracket | period | exclamation | question | comma | colon | semicolon | left_parenthesis | right_parenthesis | emoji)+ ;
 pub fn paragraph_starter(input: ParseString) -> ParseResult<ParagraphElement> {
-  let (input, text) = alt((alpha_token, quote, emoji))(input)?;
+  let (input, text) = alt((alpha_token, quote))(input)?;
   Ok((input, ParagraphElement::Start(text)))
 }
 

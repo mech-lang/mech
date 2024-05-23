@@ -698,6 +698,8 @@ pub enum TokenKind {
   String,
   Title,
   Identifier,
+  BoxDrawing,
+  Dollar,
   Empty
 }
 
