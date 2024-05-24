@@ -898,9 +898,18 @@ pub struct Matrix {
   pub rows: Vec<TableRow>,
 }
 
+pub type TableHeader = Vec<Field>;
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Table {
+  pub header: TableHeader,
   pub rows: Vec<TableRow>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Field {
+  pub name: Identifier,
+  pub kind: KindAnnotation,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

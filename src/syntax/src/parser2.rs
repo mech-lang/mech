@@ -788,6 +788,11 @@ pub fn whitespace(input: ParseString) -> ParseResult<Token> {
   Ok((input, space))
 }
 
+pub fn space_tab(input: ParseString) -> ParseResult<Token> {
+  let (input, space) = alt((space,tab))(input)?;
+  Ok((input, space))
+}
+
 pub fn list_separator(input: ParseString) -> ParseResult<()> {
   let (input,_) = nom_tuple((many0(whitespace),tag(","),many0(whitespace)))(input)?;
   Ok((input, ()))
@@ -1082,7 +1087,7 @@ pub fn structure(input: ParseString) -> ParseResult<Structure> {
   let (input, table) = match empty_table(input.clone()) {
     Ok((input, table)) => (input, Structure::Empty),
     Err(err) => match table(input.clone()) {
-      Ok((input, tbl)) => (input, Structure::Table(tbl)),
+      Ok((input, tbl)) => (input, tbl),
       Err(err) => {
         match tuple(input.clone()) {
           Ok((input, tpl)) => (input, Structure::Tuple(tpl)),
@@ -1135,16 +1140,16 @@ pub fn function_binding(input: ParseString) -> ParseResult<ParserNode> {
 
 // table_column ::= (space | tab)*, (expression | value | data), comma?, (space | tab)* ;
 pub fn table_column(input: ParseString) -> ParseResult<TableColumn> {
-  let (input, _) = many0(alt((space, tab)))(input)?;
+  let (input, _) = many0(space_tab)(input)?;
   let (input, element) = expression(input)?;
-  let (input, _) = nom_tuple((many0(alt((space, tab))),opt(alt((comma,table_separator))), many0(alt((space, tab)))))(input)?;
+  let (input, _) = nom_tuple((many0(space_tab),opt(alt((comma,table_separator))), many0(space_tab)))(input)?;
   Ok((input, TableColumn{element}))
 }
 
 // table_row ::= (space | tab)*, table_column+, semicolon?, new_line? ;
 pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
   let (input, _) = opt(table_separator)(input)?;
-  let (input, _) = many0(alt((space, tab)))(input)?;
+  let (input, _) = many0(space_tab)(input)?;
   let (input, columns) = many1(table_column)(input)?;
   let (input, _) = nom_tuple((opt(semicolon), opt(new_line)))(input)?;
   let (input, _) = opt(nom_tuple((many1(box_drawing_char),new_line)))(input)?;
@@ -1152,15 +1157,19 @@ pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
 }
 
 // table_header ::= bar, <attribute+>, <bar>, space*, new_line? ;
-/*pub fn table_header(input: ParseString) -> ParseResult<ParserNode> {
-  let msg1 = "Expects at least one attribute for table header";
-  let msg2 = "Expects vertical bar to terminate table header";
-  let (input, (_, r)) = range(bar)(input)?;
-  let (input, attributes) = label!(many1(attribute), msg1)(input)?;
-  let (input, _) = nom_tuple((label!(bar, msg2, r), many0(space), opt(new_line)))(input)?;
-  Ok((input, ParserNode::TableHeader{children: attributes}))
-}*/
+pub fn table_header(input: ParseString) -> ParseResult<Vec<Field>> {
+  let (input, fields) = separated_list1(many1(space_tab),field)(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, _) = alt((bar,box_vert))(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  Ok((input, fields))
+}
 
+pub fn field(input: ParseString) -> ParseResult<Field> {
+  let (input, name) = identifier(input)?;
+  let (input, kind) = kind_annotation(input)?;
+  Ok((input, Field{name, kind}))
+}
 
 pub fn box_drawing_char(input: ParseString) -> ParseResult<Token> {
   alt((box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
@@ -1182,23 +1191,21 @@ pub fn table_separator(input: ParseString) -> ParseResult<Token> {
 
 // anonymous_table ::= left_bracket, (space | new_line | tab)*, table_header?,
 // >>                  ((comment, new_line) | table_row)*, (space | new_line | tab)*, <right_bracket> ;
-pub fn table(input: ParseString) -> ParseResult<Table> {
+pub fn table(input: ParseString) -> ParseResult<Structure> {
   let msg = "Expects right bracket ']' to finish the table";
   let (input, (_, r)) = range(table_start)(input)?;
+  let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
+  let (input, header) = opt(table_header)(input)?;
   let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
   let (input, rows) = many1(table_row)(input)?;
   let (input, _) = many0(box_drawing_char)(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  let (input, _) = match label!(table_end, msg, r)(input) {
-    Ok((input, matches)) => {
-      (input, matches)
-    }
-    Err(err) => {
-      //println!("!!!!!!!!!!!!!!{:?}", err);
-      return Err(err);
-    }
+  let (input, _) = label!(table_end, msg, r)(input)?;
+  let out = match header {
+    Some(header) => Structure::Table(Table{header,rows}),
+    None => Structure::Matrix(Matrix{rows}),
   };
-  Ok((input, Table{rows}))
+  Ok((input, out))
 }
 
 // empty_table ::= left_bracket, (space | new_line | tab)*, table_header?, (space | new_line | tab)*, right_bracket ;
@@ -2168,9 +2175,9 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
   let (input, mut text) = many1(text)(input)?;
   let (input, _) = new_line(input)?;
   let (input, _) = many1(equal)(input)?;
-  let (input, _) = many0(alt((space,tab)))(input)?;
+  let (input, _) = many0(space_tab)(input)?;
   let (input, _) = new_line(input)?;
-  let (input, _) = many0(alt((space,tab)))(input)?;
+  let (input, _) = many0(space_tab)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let mut title = merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
@@ -2185,9 +2192,9 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, mut text) = many1(text)(input)?;
   let (input, _) = new_line(input)?;
   let (input, _) = many1(dash)(input)?;
-  let (input, _) = many0(alt((space,tab)))(input)?;
+  let (input, _) = many0(space_tab)(input)?;
   let (input, _) = new_line(input)?;
-  let (input, _) = many0(alt((space,tab)))(input)?;
+  let (input, _) = many0(space_tab)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let mut title = merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
@@ -2196,13 +2203,13 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
 
 // number_subtitle ::= space*, number, period, space+, text, space*, new_line* ;
 pub fn number_subtitle(input: ParseString) -> ParseResult<Subtitle> {
-  let (input, _) = many0(alt((space,tab)))(input)?;
+  let (input, _) = many0(space_tab)(input)?;
   let (input, _) = left_parenthesis(input)?;
   let (input, _) = integer_literal(input)?;
   let (input, _) = right_parenthesis(input)?;
-  let (input, _) = many1(alt((space,tab)))(input)?;
+  let (input, _) = many1(space_tab)(input)?;
   let (input, mut text) = many1(text)(input)?;
-  let (input, _) = many0(alt((space,tab)))(input)?;
+  let (input, _) = many0(space_tab)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let mut title = merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
@@ -2211,13 +2218,13 @@ pub fn number_subtitle(input: ParseString) -> ParseResult<Subtitle> {
 
 // alpha_subtitle ::= space*, alpha, right_parenthesis, space+, text, space*, new_line* ;
 pub fn alpha_subtitle(input: ParseString) -> ParseResult<Subtitle> {
-  let (input, _) = many0(alt((space,tab)))(input)?;
+  let (input, _) = many0(space_tab)(input)?;
   let (input, _) = left_parenthesis(input)?;
   let (input, _) = alpha(input)?;
   let (input, _) = right_parenthesis(input)?;
-  let (input, _) = many0(alt((space,tab)))(input)?;
+  let (input, _) = many0(space_tab)(input)?;
   let (input, mut text) = many1(text)(input)?;
-  let (input, _) = many0(alt((space,tab)))(input)?;
+  let (input, _) = many0(space_tab)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let mut title = merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;

@@ -64,42 +64,60 @@ test_parser!(parse_slice_3d, "a[1,2,3]", 66069081409915865);
 test_parser!(parse_slice_range, "a[1:3]", 42134448022382694);
 
 test_parser!(parse_table_empty, "[]", 46610421933005859);
-test_parser!(parse_table_scalar_integer, "[123]", 67339409240896555);
-test_parser!(parse_table_vector, "[1 2 3]", 23528642570375971);
-test_parser!(parse_table_vector_transpose, "[1 2 3]'", 13459023447197651);
-test_parser!(parse_table_vector_vars, "[a,b,c]", 5222512025448397);
-test_parser!(parse_table_column_vector, "[1; 2; 3]", 46881973018548258);
-test_parser!(parse_table_2x2, "[1 2; 3 4]", 42328110307600702);
-test_parser!(parse_table_tuples, "[(1,2), (3,4)]", 4304724103076973);
+test_parser!(parse_matrix_scalar_integer, "[123]", 13075771302721700);
+test_parser!(parse_matrix_vector, "[1 2 3]", 58888609671561603);
+test_parser!(parse_matrix_vector_transpose, "[1 2 3]'", 51008949150648919);
+test_parser!(parse_matrix_vector_vars, "[a,b,c]", 49551394880404050);
+test_parser!(parse_matrix_column_vector, "[1; 2; 3]", 24137050493281632);
+test_parser!(parse_matrix_2x2, "[1 2; 3 4]", 12435940958099457);
+test_parser!(parse_matrix_tuples, "[(1,2), (3,4)]", 65497773797987574);
 
-test_parser!(parse_table_fancy1,
+test_parser!(parse_matrix_fancy1,
 r#"╭───┬───┬───╮
 │ 1 │ 2 │ 3 │
 ├───┼───┼───┤
 │ 4 │ 5 │ 6 │
 ├───┼───┼───┤
 │ 7 │ 8 │ 9 │
-╰───┴───┴───╯"#,18418993306066300);
-test_parser!(parse_table_fancy2,
+╰───┴───┴───╯"#,44412314364066378);
+test_parser!(parse_matrix_fancy2,
 r#"╭───┬───┬───╮
 │ 1 │ 2 │ 3 │
 │ 4 │ 5 │ 6 │
 │ 7 │ 8 │ 9 │
-╰───┴───┴───╯"#,48890214043734371);
-test_parser!(parse_table_fancy3,
+╰───┴───┴───╯"#,64979024920836908);
+test_parser!(parse_matrix_fancy3,
 r#"╭───────────╮
 │ 1   2   3 │
 ├───────────┤
 │ 4   5   6 │
 ├───────────┤
 │ 7   8   9 │
-╰───────────╯"#,18418993306066300);
-test_parser!(parse_table_fancy4,
+╰───────────╯"#,44412314364066378);
+test_parser!(parse_matrix_fancy4,
 r#"╭───────────╮
 │ 1   2   3 │
 │ 4   5   6 │
 │ 7   8   9 │
-╰───────────╯"#,48890214043734371);
+╰───────────╯"#,64979024920836908);
+
+test_parser!(parse_table_inline,r#"[x<f32> y<u8> | 1.2 9 ; 1.3 8 ]"#,65004581493517295);
+test_parser!(parse_table_empty, "[ x<f32> y<u8> | _ ]", 49124109782989357);
+test_parser!(parse_table,
+r#"[x<f32> y<u8> 
+1.2    9 
+1.3    8   ]"#,414818813821773);
+test_parser!(parse_table_header_facy,
+r#"╭───────────────────────────╮
+│ x<u8>   y<string>  z<f32> │
+├───────┬──────────┬────────┤
+│   1   │  "a"     │ 3.14   │
+├───────┼──────────┼────────┤
+│   4   │  "b"     │ 6.15   │
+├───────┼──────────┼────────┤
+│   7   │  "c"     │ 9.19   │
+╰───────┴──────────┴────────╯"#,20506962846954977);
+
 
 test_parser!(parse_tuple_empty, "()", 46625237035827900);
 test_parser!(parse_tuple_scalar, "(1)", 41050214404370146);
@@ -162,4 +180,4 @@ r#"#bubble-sort(arr) => Start(arr)
       └ * => Comparison([tail], swaps)
   Check(arr, 0) => Done(arr)
   Check(arr, swaps) => Comparison(arr,0)
-  Done(arr) -> arr."#, 43316847444076976);
+  Done(arr) -> arr."#, 57218274469469508);
