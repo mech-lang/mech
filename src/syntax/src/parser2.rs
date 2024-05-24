@@ -798,6 +798,11 @@ pub fn list_separator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
+pub fn enum_separator(input: ParseString) -> ParseResult<()> {
+  let (input,_) = nom_tuple((many0(whitespace),tag("|"),many0(whitespace)))(input)?;
+  Ok((input, ()))
+}
+
 // number-literal := (integer | hexadecimal | octal | binary | decimal | float | rational | scientific) ;
 pub fn number(input: ParseString) -> ParseResult<Number> {
   let (input, neg) = opt(dash)(input)?;
@@ -933,21 +938,6 @@ pub fn binary_literal(input: ParseString) -> ParseResult<Number> {
 pub fn empty(input: ParseString) -> ParseResult<Token> {
   let (input, (g, src_range)) = range(many1(tag("_")))(input)?;
   Ok((input, Token{kind: TokenKind::Empty, chars: g.join("").chars().collect(), src_range}))
-}
-
-// #### Enums
-
-// enum_define ::= "<", identifier, ">", space*, "=", space*, enum_list;
-pub fn enum_define(input: ParseString) -> ParseResult<ParserNode> {
-  /*let msg2 = "Expects expression";
-  let (input, _) = left_angle(input)?;
-  let (input, variable) = identifier(input)?;
-  let (input, _) = right_angle(input)?;
-  let (input, _) = many1(space)(input)?;
-  let (input, _) = equal(input)?;
-  let (input, _) = many1(space)(input)?;
-  let (input, expression) = label!(expression, msg2)(input)?;*/
-  Ok((input,ParserNode::Error))
 }
 
 // ### Blocks
@@ -1678,14 +1668,42 @@ pub fn statement(input: ParseString) -> ParseResult<Statement> {
     Ok((input, var_def)) => (input, Statement::VariableDefine(var_def)),
     _ => match variable_assign(input.clone()) {
       Ok((input, var_asgn)) => (input, Statement::VariableAssign(var_asgn)),
-      _ => match kind_define(input.clone()) {
-        Ok((input, knd_def)) => ((input, Statement::KindDefine(knd_def))),
-        Err(err) => {return Err(err);}   
+      _ => match enum_define(input.clone()) {
+        Ok((input, enm_def)) => (input, Statement::EnumDefine(enm_def)),
+        _ => match kind_define(input.clone()) {
+          Ok((input, knd_def)) => (input, Statement::KindDefine(knd_def)),
+          Err(err) => {return Err(err);}   
+        },
       },
     },
   };
   let (input, _) = many0(space)(input)?;
   Ok((input, statement))
+}
+
+pub fn enum_define(input: ParseString) -> ParseResult<EnumDefine> {
+  let (input, _) = left_angle(input)?;
+  let (input, name) = identifier(input)?;
+  let (input, _) = right_angle(input)?;
+  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = define_operator(input)?;
+  let (input, _) = many1(whitespace)(input)?;
+  let (input, variants) = separated_list1(enum_separator, enum_variant)(input)?;
+  Ok((input, EnumDefine{name, variants}))
+}
+
+pub fn enum_variant(input: ParseString) -> ParseResult<EnumVariant> {
+  let (input, _) = opt(grave)(input)?;
+  let (input, name) = identifier(input)?;
+  let (input, value) = opt(enum_variant_kind)(input)?;
+  Ok((input, EnumVariant{name, value}))
+}
+
+pub fn enum_variant_kind(input: ParseString) -> ParseResult<KindAnnotation> {
+  let (input, _) = left_parenthesis(input)?;
+  let (input, annotation) = kind_annotation(input)?;
+  let (input, _) = right_parenthesis(input)?;
+  Ok((input, annotation))
 }
 
 pub fn kind_define(input: ParseString) -> ParseResult<KindDefine> {

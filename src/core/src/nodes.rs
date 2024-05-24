@@ -799,7 +799,6 @@ pub enum MechCode {
   FsmSpecification(FsmSpecification),
   FsmImplementation(FsmImplementation),
   FunctionDefine,  // todo
-  EnumDefine,      // todo
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -866,11 +865,24 @@ pub enum Statement {
   VariableDefine(VariableDefine),
   VariableAssign(VariableAssign),
   KindDefine(KindDefine),
+  EnumDefine(EnumDefine),
   FsmDeclare,      // todo
   FsmExec,         // todo
   SplitTable,      // todo
   FlattenTable,    // todo
   SetData,         // todo
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct EnumDefine {
+  pub name: Identifier,
+  pub variants: Vec<EnumVariant>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct EnumVariant {
+  pub name: Identifier,
+  pub value: Option<KindAnnotation>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
