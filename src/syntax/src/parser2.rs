@@ -1078,20 +1078,36 @@ pub fn structure(input: ParseString) -> ParseResult<Structure> {
     Ok((input, table)) => (input, Structure::Empty),
     Err(err) => match table(input.clone()) {
       Ok((input, tbl)) => (input, tbl),
-      Err(err) => {
-        match tuple(input.clone()) {
-          Ok((input, tpl)) => (input, Structure::Tuple(tpl)),
-          _ => match record(input.clone()) {
+      Err(err) => match tuple(input.clone()) {
+        Ok((input, tpl)) => (input, Structure::Tuple(tpl)),
+        Err(err) => match tuple_struct(input.clone()) {
+        Ok((input, tpl)) => (input, Structure::TupleStruct(tpl)),
+          Err(err) => match record(input.clone()) {
             Ok((input, table)) => (input, Structure::Record(table)),
-            Err(e3) => {
-              return Err(err);
-            }
+            Err(err) => {return Err(err);}
           }
         }
-      },
+      }
     }
   };
   Ok((input, table))
+}
+
+pub fn atom(input: ParseString) -> ParseResult<Atom> {
+  let (input, _) = grave(input)?;
+  let (input, name) = identifier(input)?;
+  Ok((input, Atom{name}))
+}
+
+pub fn tuple_struct(input: ParseString) -> ParseResult<TupleStruct> {
+  let (input, _) = grave(input)?;
+  let (input, name) = identifier(input)?;
+  let (input, _) = left_parenthesis(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  let (input, value) = expression(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = right_parenthesis(input)?;
+  Ok((input, TupleStruct{name, value: Box::new(value)}))
 }
 
 // binding ::= s*, identifier, kind_annotation?, <!(space+, colon)>, colon, s+,
@@ -1312,7 +1328,7 @@ pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
 }
 
 pub fn fsm_pattern(input: ParseString) -> ParseResult<Pattern> {
-  let ((input, ptrn)) = match tuple_struct(input.clone()) {
+  let ((input, ptrn)) = match fsm_tuple_struct(input.clone()) {
     Ok((input, tpl)) => (input, Pattern::TupleStruct(tpl)),
     _ => match wildcard(input.clone()) {
       Ok((input, _)) => (input, Pattern::Wildcard),
@@ -1326,7 +1342,7 @@ pub fn fsm_pattern(input: ParseString) -> ParseResult<Pattern> {
   Ok((input, ptrn))
 }
 
-pub fn tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
+pub fn fsm_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
   let (input, id) = identifier(input)?;
   let ((input, _)) = left_parenthesis(input)?;
   let ((input, patterns)) = separated_list1(list_separator, fsm_pattern)(input)?;
@@ -2128,11 +2144,14 @@ pub fn literal(input: ParseString) -> ParseResult<Literal> {
     Ok((input, number)) => (input, Literal::Number(number)),
     _ => match string(input.clone()) {
       Ok((input, string)) => (input, Literal::String(string)),
-      _ => match boolean(input.clone()) {
-        Ok((input, boolean)) => (input, Literal::Boolean(boolean)),
-        _ => match empty(input.clone()) {
-          Ok((input, empty)) => (input, Literal::Empty(empty)), 
-          Err(err) => {return Err(err);}
+      _ => match atom(input.clone()) {
+        Ok((input, atm)) => (input, Literal::Atom(atm)),
+        _ => match boolean(input.clone()) {
+          Ok((input, boolean)) => (input, Literal::Boolean(boolean)),
+          _ => match empty(input.clone()) {
+            Ok((input, empty)) => (input, Literal::Empty(empty)), 
+            Err(err) => {return Err(err);}
+          }
         }
       }
     }

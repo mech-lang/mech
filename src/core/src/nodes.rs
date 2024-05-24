@@ -903,7 +903,18 @@ pub enum Structure {
   Matrix(Matrix),
   Table(Table),
   Tuple(Tuple),
-  TupleStruct, // todo
+  TupleStruct(TupleStruct),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Atom {
+  pub name: Identifier,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TupleStruct {
+  pub name: Identifier,
+  pub value: Box<Expression>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1028,6 +1039,7 @@ pub enum Literal {
   Boolean(Token),
   Number(Number),
   String(MechString),
+  Atom(Atom),
   TypedLiteral((Box<Literal>,KindAnnotation))
 }
 

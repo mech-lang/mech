@@ -38,6 +38,7 @@ test_parser!(parse_literal_number_bin, "0b1010101", 51428896740892327);
 test_parser!(parse_literal_number_sci, "123.456E789", 16735846146196743);
 test_parser!(parse_literal_number_underscores, "1_000_000", 17117948062822050);
 test_parser!(parse_literal_number_bin_leading_zeros, "0b00010101", 31115173340120627);
+test_parser!(parse_literal_atom, "`A", 29631792893088166);
 
 test_parser!(parse_literal_string, r#""Hello World""#, 64968622345197628);
 test_parser!(parse_literal_string_escaped_quote, r#""Hello \" World""#, 9347612743027557);
@@ -145,6 +146,9 @@ test_parser!(parse_tuple_nested, "(1,(2,3))", 1496208466301128);
 test_parser!(parse_tuple_hetero, r#"(1, true, "Hello")"#, 1090619636774422);
 test_parser!(parse_tuple_hetero_nested, r#"(1, (true, "Hello"))"#, 52985721568108321);
 test_parser!(parse_tuple_expressions, r#"(1 + 2, x > y, true | false)"#, 27548167311049490);
+
+test_parser!(parse_tuple_struct, "`A(1)", 66955281358379713);
+test_parser!(parse_tuple_struct_tuple, "`A((1,2,3))", 52529776185352049);
 
 test_parser!(parse_formula, "1 + 2 * 3", 53314686960653757);
 test_parser!(parse_formula_vars, "a + b * c", 26596788877301348);
