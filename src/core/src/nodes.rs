@@ -891,6 +891,7 @@ pub enum Structure {
   Matrix(Matrix),
   Table(Table),
   Tuple(Tuple),
+  TupleStruct, // todo
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -971,7 +972,7 @@ pub enum Expression {
   Structure(Structure),
   Literal(Literal),
   Transpose(Box<Expression>),
-  FunctionCall(FunctionCall)
+  FunctionCall(FunctionCall),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -190,6 +190,13 @@ test_parser!(parse_mechdown_unordered_list, r#"- one
 - two
 - three"#, 32571997588793248);
 
+test_parser!(parse_fsm_specification,
+r#"#bubble-sort(arr) -> arr := 
+    │ Start(arr,ix)
+    │ Comparison(arr,ix) 
+    │ Check(arr,ix)
+    └ Done(arr)."#, 36857026007363078);
+
 test_parser!(parse_fsm_implementation,
 r#"#bubble-sort(arr) => Start(arr)
   Start(arr, swaps) => Comparison(arr, swaps)
