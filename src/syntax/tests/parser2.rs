@@ -84,6 +84,12 @@ test_parser!(parse_map_multiple_elements, r#"{"a":10, "b":20, "c": 30}"#, 628684
 test_parser!(parse_map_vert, r#"{"a":10 
 "b":20
 "c": 30}"#, 62212514262033319);
+test_parser!(parse_map_nested, r#"{"a":{"a":10}}"#, 21702877120906108);
+test_parser!(parse_map_nested_multiline, r#"{"a":
+    {
+        "a":10
+    }
+}"#, 3640489195602648);
 
 test_parser!(parse_function_call, "a(b)", 11123136008908087);
 test_parser!(parse_function_call_nested, "a(a(a(a(a(a(a(a(a))))))))", 37209815955448119);
