@@ -63,7 +63,7 @@ test_parser!(parse_slice_nested, "a[a[1]]", 13793932459857128);
 test_parser!(parse_slice_3d, "a[1,2,3]", 66069081409915865);
 test_parser!(parse_slice_range, "a[1:3]", 42134448022382694);
 
-test_parser!(parse_table_empty, "[]", 46610421933005859);
+test_parser!(parse_empty_table, "[]", 46610421933005859);
 test_parser!(parse_matrix_scalar_integer, "[123]", 13075771302721700);
 test_parser!(parse_matrix_vector, "[1 2 3]", 58888609671561603);
 test_parser!(parse_matrix_vector_transpose, "[1 2 3]'", 51008949150648919);

@@ -2367,7 +2367,8 @@ pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
         }
       }
     }
-  };
+  };  
+  let (input, _) = many0(space_tab)(input)?;
   let (input, _) = alt((new_line, semicolon))(input)?;
   Ok((input, mech_code))
 }
