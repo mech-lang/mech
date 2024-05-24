@@ -118,6 +118,10 @@ impl<'a> ParseString<'a> {
     }
   }
 
+  pub fn current(&self) -> Option<&str> {
+    self.graphemes.get(self.cursor).copied()
+  }
+
   /// If current location matches the tag, consume the matched string.
   fn consume_tag(&mut self, tag: &str) -> Option<String> {
     if self.is_empty() {
@@ -574,13 +578,13 @@ pub fn skip_empty_mech_directive(input: ParseString) -> ParseResult<String> {
 // 5. Primitive parsers
 // -----------------------
 
-pub fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {
+/*pub fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_emoji() {
     Ok((input, matched))
   } else {
     Err(nom::Err::Error(ParseError::new(input, "Unexpected character")))
   }
-}
+}*/
 
 pub fn alpha(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_alpha() {
@@ -672,22 +676,21 @@ leaf!{box_tl_round, "╭", TokenKind::BoxDrawing}
 leaf!{box_tr_round, "╮", TokenKind::BoxDrawing}
 leaf!{box_bl_round, "╰", TokenKind::BoxDrawing}
 leaf!{box_br_round, "╯", TokenKind::BoxDrawing}
-leaf!{box_vert, "│", TokenKind::BoxDrawing}
 leaf!{box_cross, "┼", TokenKind::BoxDrawing}
 leaf!{box_horz, "─", TokenKind::BoxDrawing}
 leaf!{box_t_left, "├", TokenKind::BoxDrawing}
 leaf!{box_t_right, "┤", TokenKind::BoxDrawing}
-leaf!{box_t_top, "T", TokenKind::BoxDrawing}
+leaf!{box_t_top, "┬", TokenKind::BoxDrawing}
 leaf!{box_t_bottom, "┴", TokenKind::BoxDrawing}
 
 // emoji ::= emoji_grapheme+ ;
-fn emoji(input: ParseString) -> ParseResult<Token> {
+/*fn emoji(input: ParseString) -> ParseResult<Token> {
   let start = input.loc();
   let (input, g) = emoji_grapheme(input)?;
   let end = input.loc();
   let src_range = SourceRange { start, end };
   Ok((input, Token{kind: TokenKind::Emoji, chars: g.chars().collect::<Vec<char>>(), src_range}))
-}
+}*/
 
 fn alpha_token(input: ParseString) -> ParseResult<Token> {
   let (input, (g, src_range)) = range(alpha)(input)?;
@@ -1133,16 +1136,18 @@ pub fn function_binding(input: ParseString) -> ParseResult<ParserNode> {
 pub fn table_column(input: ParseString) -> ParseResult<TableColumn> {
   let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, element) = expression(input)?;
-  let (input, _) = nom_tuple((opt(comma), many0(alt((space, tab)))))(input)?;
+  let (input, _) = nom_tuple((many0(alt((space, tab))),opt(alt((comma,table_separator))), many0(alt((space, tab)))))(input)?;
   Ok((input, TableColumn{element}))
 }
 
 // table_row ::= (space | tab)*, table_column+, semicolon?, new_line? ;
 pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
-  //let (input, _) = opt(table_separator)(input)?;
+  println!("TABLE ROW: {:?}", input.current());
+  let (input, _) = opt(table_separator)(input)?;
   let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, columns) = many1(table_column)(input)?;
   let (input, _) = nom_tuple((opt(semicolon), opt(new_line)))(input)?;
+  let (input, _) = opt(nom_tuple((many1(box_drawing_char),new_line)))(input)?;
   Ok((input, TableRow{columns}))
 }
 
@@ -1158,20 +1163,39 @@ pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
 
 
 pub fn box_drawing_char(input: ParseString) -> ParseResult<Token> {
-  alt((box_tl_round, box_tr_round, box_bl_round, box_br_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
+  alt((box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
 pub fn table_start(input: ParseString) -> ParseResult<Token> {
-  alt((box_tl_round, box_vert, bar, left_bracket))(input)
+  alt((box_tl_round, left_bracket))(input)
 }
 
 pub fn table_end(input: ParseString) -> ParseResult<Token> {
-  let result = alt((box_br_round, bar, right_bracket))(input);
+  let result = alt((box_br_round, right_bracket))(input);
   result
 }
 
+fn box_vert(input: ParseString) -> ParseResult<Token> {
+  if input.is_empty() {
+    return Err(nom::Err::Error(ParseError::new(input, "Unexpected eof")))
+  }
+  let byte = "│";
+  let start = input.loc();
+  println!("BOX VERT");
+  let (input, _) = tag(byte)(input)?;
+  let end = input.loc();
+  let src_range = SourceRange { start, end };
+  let token = Token{kind: TokenKind::BoxDrawing, chars: byte.chars().collect::<Vec<char>>(), src_range};
+  println!("WE DID IT!!! {:?}", token);
+
+  Ok((input, Token{kind: TokenKind::BoxDrawing, chars: byte.chars().collect::<Vec<char>>(), src_range}))
+}
+
 pub fn table_separator(input: ParseString) -> ParseResult<Token> {
-  alt((box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom, bar))(input)
+  println!("Doing a table separator");
+  let (input, token) = alt((dollar, at, box_vert))(input)?;
+  println!("TABLE SEPARATOR {:?}", token);
+  Ok((input, token))
 }
 
 // anonymous_table ::= left_bracket, (space | new_line | tab)*, table_header?,
@@ -1179,8 +1203,10 @@ pub fn table_separator(input: ParseString) -> ParseResult<Token> {
 pub fn table(input: ParseString) -> ParseResult<Table> {
   let msg = "Expects right bracket ']' to finish the table";
   let (input, (_, r)) = range(table_start)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
-  let (input, rows) = many0(table_row)(input)?;
+  let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
+  let (input, rows) = many1(table_row)(input)?;
+  let (input, _) = many0(box_drawing_char)(input)?;
+  //let (input, _) = box_drawing_char(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let (input, _) = match label!(table_end, msg, r)(input) {
     Ok((input, matches)) => {
@@ -1196,11 +1222,11 @@ pub fn table(input: ParseString) -> ParseResult<Table> {
 
 // empty_table ::= left_bracket, (space | new_line | tab)*, table_header?, (space | new_line | tab)*, right_bracket ;
 pub fn empty_table(input: ParseString) -> ParseResult<Structure> {
-  let (input, _) = left_bracket(input)?;
+  let (input, _) = table_start(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let (input, _) = opt(empty)(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  let (input, _) = right_bracket(input)?;
+  let (input, _) = table_end(input)?;
   Ok((input, Structure::Empty))
 }
 
