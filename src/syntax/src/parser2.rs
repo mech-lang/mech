@@ -682,6 +682,7 @@ leaf!{box_t_left, "├", TokenKind::BoxDrawing}
 leaf!{box_t_right, "┤", TokenKind::BoxDrawing}
 leaf!{box_t_top, "┬", TokenKind::BoxDrawing}
 leaf!{box_t_bottom, "┴", TokenKind::BoxDrawing}
+leaf!{box_vert, "│", TokenKind::BoxDrawing}
 
 // emoji ::= emoji_grapheme+ ;
 /*fn emoji(input: ParseString) -> ParseResult<Token> {
@@ -1142,7 +1143,6 @@ pub fn table_column(input: ParseString) -> ParseResult<TableColumn> {
 
 // table_row ::= (space | tab)*, table_column+, semicolon?, new_line? ;
 pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
-  println!("TABLE ROW: {:?}", input.current());
   let (input, _) = opt(table_separator)(input)?;
   let (input, _) = many0(alt((space, tab)))(input)?;
   let (input, columns) = many1(table_column)(input)?;
@@ -1175,26 +1175,8 @@ pub fn table_end(input: ParseString) -> ParseResult<Token> {
   result
 }
 
-fn box_vert(input: ParseString) -> ParseResult<Token> {
-  if input.is_empty() {
-    return Err(nom::Err::Error(ParseError::new(input, "Unexpected eof")))
-  }
-  let byte = "│";
-  let start = input.loc();
-  println!("BOX VERT");
-  let (input, _) = tag(byte)(input)?;
-  let end = input.loc();
-  let src_range = SourceRange { start, end };
-  let token = Token{kind: TokenKind::BoxDrawing, chars: byte.chars().collect::<Vec<char>>(), src_range};
-  println!("WE DID IT!!! {:?}", token);
-
-  Ok((input, Token{kind: TokenKind::BoxDrawing, chars: byte.chars().collect::<Vec<char>>(), src_range}))
-}
-
 pub fn table_separator(input: ParseString) -> ParseResult<Token> {
-  println!("Doing a table separator");
   let (input, token) = alt((dollar, at, box_vert))(input)?;
-  println!("TABLE SEPARATOR {:?}", token);
   Ok((input, token))
 }
 
@@ -1206,7 +1188,6 @@ pub fn table(input: ParseString) -> ParseResult<Table> {
   let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
   let (input, rows) = many1(table_row)(input)?;
   let (input, _) = many0(box_drawing_char)(input)?;
-  //let (input, _) = box_drawing_char(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let (input, _) = match label!(table_end, msg, r)(input) {
     Ok((input, matches)) => {
