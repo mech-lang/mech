@@ -72,6 +72,13 @@ test_parser!(parse_matrix_column_vector, "[1; 2; 3]", 24137050493281632);
 test_parser!(parse_matrix_2x2, "[1 2; 3 4]", 12435940958099457);
 test_parser!(parse_matrix_tuples, "[(1,2), (3,4)]", 65497773797987574);
 
+test_parser!(parse_function_call, "a(b)", 11123136008908087);
+test_parser!(parse_function_call_nested, "a(a(a(a(a(a(a(a(a))))))))", 37209815955448119);
+test_parser!(parse_function_call_multi_args, "a(b,c,d)", 63772171465944686);
+test_parser!(parse_function_call_named_args, "a(b: 1, c: 2 ,d: 3)", 51521379098738857);
+
+test_parser!(parse_mega_formula, "((2 + 3 * sin(3.14)) > (10 - 3 + cos(2 * 3.14))) & (4 < 5 | (2 ^ 3 + 10 / 2) == 5) & (tan(45) < 1 | log(10, 2) + 3 > 5) & (sqrt(16) - 2 == 2 | 3 * 2 - 5 + 1 != 2 + 1)", 49936918439020726);
+
 test_parser!(parse_matrix_fancy1,
 r#"╭───┬───┬───╮
 │ 1 │ 2 │ 3 │

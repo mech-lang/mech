@@ -971,7 +971,13 @@ pub enum Expression {
   Structure(Structure),
   Literal(Literal),
   Transpose(Box<Expression>),
-  FunctionCall     // todo
+  FunctionCall(FunctionCall)
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FunctionCall {
+  pub name: Identifier,
+  pub args: Vec<(Option<Identifier>,Expression)>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

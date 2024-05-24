@@ -1943,13 +1943,16 @@ pub fn factor(input: ParseString) -> ParseResult<Factor> {
     Ok((input, term)) => (input, term),
     _ => match structure(input.clone()) {
       Ok((input, strct)) => (input, Factor::Expression(Box::new(Expression::Structure(strct)))),
-      _ => match literal(input.clone()) {
-        Ok((input, ltrl)) => (input, Factor::Expression(Box::new(Expression::Literal(ltrl)))),
-        _ => match slice(input.clone()) {
-          Ok((input, slc)) => (input, Factor::Expression(Box::new(Expression::Slice(slc)))),
-          _ => match var(input.clone()) {
-            Ok((input, var)) => (input, Factor::Expression(Box::new(Expression::Var(var)))),
-            Err(err) => {return Err(err);}
+      _ => match function_call(input.clone()) {
+        Ok((input, fxn)) => (input, Factor::Expression(Box::new(Expression::FunctionCall(fxn)))),
+        _ => match literal(input.clone()) {
+          Ok((input, ltrl)) => (input, Factor::Expression(Box::new(Expression::Literal(ltrl)))),
+          _ => match slice(input.clone()) {
+            Ok((input, slc)) => (input, Factor::Expression(Box::new(Expression::Slice(slc)))),
+            _ => match var(input.clone()) {
+              Ok((input, var)) => (input, Factor::Expression(Box::new(Expression::Var(var)))),
+              Err(err) => {return Err(err);}
+            },
           },
         },
       },
@@ -1961,6 +1964,28 @@ pub fn factor(input: ParseString) -> ParseResult<Factor> {
     None => fctr,
   };*/
   Ok((input, fctr))
+}
+
+fn function_call(input: ParseString) -> ParseResult<FunctionCall> {
+  let (input, name) = identifier(input)?;
+  let (input, _) = left_parenthesis(input)?;
+  let (input, args) = separated_list0(list_separator, alt((function_arg_with_binding,function_arg)))(input)?;
+  let (input, _) = right_parenthesis(input)?;
+  Ok((input, FunctionCall{name,args} ))
+}
+
+fn function_arg_with_binding(input: ParseString) -> ParseResult<(Option<Identifier>,Expression)> {
+  let (input, arg_name) = identifier(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = colon(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  let (input, expr) = expression(input)?;
+  Ok((input, (Some(arg_name), expr)))
+}
+
+fn function_arg(input: ParseString) -> ParseResult<(Option<Identifier>,Expression)> {
+  let (input, expr) = expression(input)?;
+  Ok((input, (None, expr)))
 }
 
 fn var(input: ParseString) -> ParseResult<Var> {
