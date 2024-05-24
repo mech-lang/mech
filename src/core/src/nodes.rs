@@ -904,6 +904,24 @@ pub enum Structure {
   Table(Table),
   Tuple(Tuple),
   TupleStruct(TupleStruct),
+  Set(Set),
+  Map(Map),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Map {
+  pub elements: Vec<Mapping>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Mapping {
+  pub key: Expression,
+  pub value: Expression,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Set {
+  pub elements: Vec<Expression>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

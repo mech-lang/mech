@@ -1084,7 +1084,13 @@ pub fn structure(input: ParseString) -> ParseResult<Structure> {
         Ok((input, tpl)) => (input, Structure::TupleStruct(tpl)),
           Err(err) => match record(input.clone()) {
             Ok((input, table)) => (input, Structure::Record(table)),
-            Err(err) => {return Err(err);}
+            Err(err) => match map(input.clone()) {
+              Ok((input, map)) => (input, Structure::Map(map)),
+              Err(err) => match set(input.clone()) {
+                Ok((input, set)) => (input, Structure::Set(set)),
+                Err(err) => {return Err(err);}
+              }
+            }
           }
         }
       }
@@ -1228,9 +1234,49 @@ pub fn empty_table(input: ParseString) -> ParseResult<Structure> {
 pub fn record(input: ParseString) -> ParseResult<Record> {
   let msg = "Expects right bracket ']' to terminate inline table";
   let (input, (_, r)) = range(left_bracket)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
   let (input, bindings) = many1(binding)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
   let (input, _) = label!(right_bracket, msg, r)(input)?;
   Ok((input, Record{bindings}))
+}
+
+// record ::= left_bracket, binding, <binding_strict*>, <right_bracket> ;
+pub fn map(input: ParseString) -> ParseResult<Map> {
+  let msg = "Expects right bracket '}' to terminate inline table";
+  let (input, (_, r)) = range(left_brace)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  let (input, elements) = many0(mapping)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = label!(right_brace, msg, r)(input)?;
+  Ok((input, Map{elements}))
+}
+
+pub fn mapping(input: ParseString) -> ParseResult<Mapping> {
+  let msg1 = "Unexpected space before colon ':'";
+  let msg2 = "Expects a value";
+  let msg3 = "Expects whitespace or comma followed by whitespace";
+  let msg4 = "Expects whitespace";
+  let (input, _) = many0(whitespace)(input)?;
+  let (input, key) = expression(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = colon(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  let (input, value) = label!(expression, msg2)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = opt(comma)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  Ok((input, Mapping{key, value}))
+}
+
+pub fn set(input: ParseString) -> ParseResult<Set> {
+  let msg = "Expects right bracket '}' to terminate inline table";
+  let (input, (_, r)) = range(left_brace)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  let (input, elements) = separated_list0(list_separator, expression)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = label!(right_brace, msg, r)(input)?;
+  Ok((input, Set{elements}))
 }
 
 // #### State Machines
@@ -1882,14 +1928,19 @@ pub fn exponent(input: ParseString) -> ParseResult<ExponentOp> {
 }
 
 // range_op ::= colon ;
-pub fn range_op(input: ParseString) -> ParseResult<RangeOp> {
-  let (input, _) = colon(input)?;
+pub fn range_inclusive(input: ParseString) -> ParseResult<RangeOp> {
+  let (input, _) = tag("..=")(input)?;
   Ok((input, RangeOp::Inclusive))
+}
+
+pub fn range_exclusive(input: ParseString) -> ParseResult<RangeOp> {
+  let (input, _) = tag("..")(input)?;
+  Ok((input, RangeOp::Exclusive))
 }
 
 // l0_op ::= range_op ;
 pub fn range_operator(input: ParseString) -> ParseResult<FormulaOperator> {
-  let (input, op) = range_op(input)?;
+  let (input, op) = alt((range_inclusive,range_exclusive))(input)?;
   Ok((input, FormulaOperator::Range(op)))
 }
 

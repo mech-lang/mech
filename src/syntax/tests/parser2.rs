@@ -56,13 +56,13 @@ test_parser!(parse_kind_annotation_both, "z<u8> := 10<u8>", 48854411622876658);
 test_parser!(parse_kind_annotation_tuple, "z<(u8,u8)>", 65064718600897177);
 test_parser!(parse_kind_annotation_tuple_nested, "z<((u8,u8),u8)>", 23648802851573596);
 
-test_parser!(parse_range, "1:10", 66930478939264165);
-test_parser!(parse_range_increment, "1:2:10", 18888666111954368);
+test_parser!(parse_range, "1..10", 39641622172510161);
+test_parser!(parse_range_increment, "1..2..10", 13574609388661220);
 
 test_parser!(parse_slice, "a[1]", 16516262270243137);
 test_parser!(parse_slice_nested, "a[a[1]]", 13793932459857128);
 test_parser!(parse_slice_3d, "a[1,2,3]", 66069081409915865);
-test_parser!(parse_slice_range, "a[1:3]", 42134448022382694);
+test_parser!(parse_slice_range, "a[1..3]", 48079164967586292);
 
 test_parser!(parse_empty_table, "[]", 46610421933005859);
 test_parser!(parse_matrix_scalar_integer, "[123]", 13075771302721700);
@@ -72,6 +72,18 @@ test_parser!(parse_matrix_vector_vars, "[a,b,c]", 49551394880404050);
 test_parser!(parse_matrix_column_vector, "[1; 2; 3]", 24137050493281632);
 test_parser!(parse_matrix_2x2, "[1 2; 3 4]", 12435940958099457);
 test_parser!(parse_matrix_tuples, "[(1,2), (3,4)]", 65497773797987574);
+
+
+test_parser!(parse_set, "{1}", 69974777805729230);
+test_parser!(parse_set_empty, "{_}", 10776303557909121);
+test_parser!(parse_set_multiple_elements, "{1,2,3}", 71261022303757095);
+
+test_parser!(parse_map, r#"{"a":10}"#, 21922069278691558);
+test_parser!(parse_map_empty, "{}", 55962694842201166);
+test_parser!(parse_map_multiple_elements, r#"{"a":10, "b":20, "c": 30}"#, 62868431196002057);
+test_parser!(parse_map_vert, r#"{"a":10 
+"b":20
+"c": 30}"#, 62212514262033319);
 
 test_parser!(parse_function_call, "a(b)", 11123136008908087);
 test_parser!(parse_function_call_nested, "a(a(a(a(a(a(a(a(a))))))))", 37209815955448119);
