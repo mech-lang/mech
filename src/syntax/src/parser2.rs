@@ -1076,19 +1076,22 @@ pub fn kind_label(input: ParseString) -> ParseResult<KindLabel> {
 pub fn structure(input: ParseString) -> ParseResult<Structure> {
   let (input, table) = match empty_table(input.clone()) {
     Ok((input, table)) => (input, Structure::Empty),
-    Err(err) => match table(input.clone()) {
-      Ok((input, tbl)) => (input, tbl),
-      Err(err) => match tuple(input.clone()) {
-        Ok((input, tpl)) => (input, Structure::Tuple(tpl)),
-        Err(err) => match tuple_struct(input.clone()) {
-        Ok((input, tpl)) => (input, Structure::TupleStruct(tpl)),
-          Err(err) => match record(input.clone()) {
-            Ok((input, table)) => (input, Structure::Record(table)),
-            Err(err) => match map(input.clone()) {
-              Ok((input, map)) => (input, Structure::Map(map)),
-              Err(err) => match set(input.clone()) {
-                Ok((input, set)) => (input, Structure::Set(set)),
-                Err(err) => {return Err(err);}
+    Err(err) => match matrix(input.clone()) {
+      Ok((input, mtrx)) => (input, Structure::Matrix(mtrx)),
+      Err(err) => match table(input.clone()) {
+        Ok((input, tbl)) => (input, Structure::Table(tbl)),
+        Err(err) => match tuple(input.clone()) {
+          Ok((input, tpl)) => (input, Structure::Tuple(tpl)),
+          Err(err) => match tuple_struct(input.clone()) {
+          Ok((input, tpl)) => (input, Structure::TupleStruct(tpl)),
+            Err(err) => match record(input.clone()) {
+              Ok((input, table)) => (input, Structure::Record(table)),
+              Err(err) => match map(input.clone()) {
+                Ok((input, map)) => (input, Structure::Map(map)),
+                Err(err) => match set(input.clone()) {
+                  Ok((input, set)) => (input, Structure::Set(set)),
+                  Err(err) => {return Err(err);}
+                }
               }
             }
           }
@@ -1187,12 +1190,21 @@ pub fn box_drawing_char(input: ParseString) -> ParseResult<Token> {
   alt((box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
-pub fn table_start(input: ParseString) -> ParseResult<Token> {
+pub fn matrix_start(input: ParseString) -> ParseResult<Token> {
   alt((box_tl_round, left_bracket))(input)
 }
 
-pub fn table_end(input: ParseString) -> ParseResult<Token> {
+pub fn matrix_end(input: ParseString) -> ParseResult<Token> {
   let result = alt((box_br_round, right_bracket))(input);
+  result
+}
+
+pub fn table_start(input: ParseString) -> ParseResult<Token> {
+  alt((box_tl_round, left_brace))(input)
+}
+
+pub fn table_end(input: ParseString) -> ParseResult<Token> {
+  let result = alt((box_br_round, right_brace))(input);
   result
 }
 
@@ -1203,21 +1215,30 @@ pub fn table_separator(input: ParseString) -> ParseResult<Token> {
 
 // anonymous_table ::= left_bracket, (space | new_line | tab)*, table_header?,
 // >>                  ((comment, new_line) | table_row)*, (space | new_line | tab)*, <right_bracket> ;
-pub fn table(input: ParseString) -> ParseResult<Structure> {
+pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
+  let msg = "Expects right bracket ']' to finish the table";
+  let (input, (_, r)) = range(matrix_start)(input)?;
+  let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
+  let (input, rows) = many0(table_row)(input)?;
+  let (input, _) = many0(box_drawing_char)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = label!(matrix_end, msg, r)(input)?;
+  Ok((input, Matrix{rows}))
+}
+
+// anonymous_table ::= left_bracket, (space | new_line | tab)*, table_header?,
+// >>                  ((comment, new_line) | table_row)*, (space | new_line | tab)*, <right_bracket> ;
+pub fn table(input: ParseString) -> ParseResult<Table> {
   let msg = "Expects right bracket ']' to finish the table";
   let (input, (_, r)) = range(table_start)(input)?;
   let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
-  let (input, header) = opt(table_header)(input)?;
+  let (input, header) = table_header(input)?;
   let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
   let (input, rows) = many1(table_row)(input)?;
   let (input, _) = many0(box_drawing_char)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let (input, _) = label!(table_end, msg, r)(input)?;
-  let out = match header {
-    Some(header) => Structure::Table(Table{header,rows}),
-    None => Structure::Matrix(Matrix{rows}),
-  };
-  Ok((input, out))
+  Ok((input, Table{header,rows}))
 }
 
 // empty_table ::= left_bracket, (space | new_line | tab)*, table_header?, (space | new_line | tab)*, right_bracket ;
@@ -1233,11 +1254,11 @@ pub fn empty_table(input: ParseString) -> ParseResult<Structure> {
 // record ::= left_bracket, binding, <binding_strict*>, <right_bracket> ;
 pub fn record(input: ParseString) -> ParseResult<Record> {
   let msg = "Expects right bracket ']' to terminate inline table";
-  let (input, (_, r)) = range(left_bracket)(input)?;
+  let (input, (_, r)) = range(left_brace)(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let (input, bindings) = many1(binding)(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  let (input, _) = label!(right_bracket, msg, r)(input)?;
+  let (input, _) = label!(right_brace, msg, r)(input)?;
   Ok((input, Record{bindings}))
 }
 

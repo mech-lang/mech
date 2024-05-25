@@ -19,7 +19,7 @@ use mech_syntax::parser2;
               let hashed_parse = hash_str(&format!("{:#?}", tree));
               assert_eq!(hashed_parse, $expected);
             },
-            Err(err) => {panic!("Should have worked");}
+            Err(err) => {panic!("{:?}", err);}
         }   
       }
     )
@@ -64,7 +64,7 @@ test_parser!(parse_slice_nested, "a[a[1]]", 13793932459857128);
 test_parser!(parse_slice_3d, "a[1,2,3]", 66069081409915865);
 test_parser!(parse_slice_range, "a[1..3]", 48079164967586292);
 
-test_parser!(parse_empty_table, "[]", 46610421933005859);
+test_parser!(parse_empty_table, "[]", 20166184779250868);
 test_parser!(parse_matrix_scalar_integer, "[123]", 13075771302721700);
 test_parser!(parse_matrix_vector, "[1 2 3]", 58888609671561603);
 test_parser!(parse_matrix_vector_transpose, "[1 2 3]'", 51008949150648919);
@@ -75,11 +75,11 @@ test_parser!(parse_matrix_tuples, "[(1,2), (3,4)]", 65497773797987574);
 
 
 test_parser!(parse_set, "{1}", 69974777805729230);
-test_parser!(parse_set_empty, "{_}", 10776303557909121);
+test_parser!(parse_set_empty, "{_}", 46610421933005859);
 test_parser!(parse_set_multiple_elements, "{1,2,3}", 71261022303757095);
 
 test_parser!(parse_map, r#"{"a":10}"#, 21922069278691558);
-test_parser!(parse_map_empty, "{}", 55962694842201166);
+test_parser!(parse_map_empty, "{}", 46610421933005859);
 test_parser!(parse_map_multiple_elements, r#"{"a":10, "b":20, "c": 30}"#, 62868431196002057);
 test_parser!(parse_map_vert, r#"{"a":10 
 "b":20
@@ -127,13 +127,13 @@ r#"╭───────────╮
 │ 7   8   9 │
 ╰───────────╯"#,64979024920836908);
 
-test_parser!(parse_table_inline,r#"[x<f32> y<u8> | 1.2 9 ; 1.3 8 ]"#,65004581493517295);
-test_parser!(parse_table_empty, "[ x<f32> y<u8> | _ ]", 49124109782989357);
+test_parser!(parse_table_inline,r#"{x<f32> y<u8> | 1.2 9 ; 1.3 8 }"#,65004581493517295);
+test_parser!(parse_table_empty, "{ x<f32> y<u8> | _ }", 49124109782989357);
 test_parser!(parse_table,
-r#"[x<f32> y<u8> 
+r#"{x<f32> y<u8> |
 1.2    9 
-1.3    8   ]"#,414818813821773);
-test_parser!(parse_table_header_facy,
+1.3    8   }"#,20283572108419840);
+test_parser!(parse_table_header_fancy,
 r#"╭───────────────────────────╮
 │ x<u8>   y<string>  z<f32> │
 ├───────┬──────────┬────────┤
@@ -142,9 +142,9 @@ r#"╭────────────────────────�
 │   4   │  "b"     │ 6.15   │
 ├───────┼──────────┼────────┤
 │   7   │  "c"     │ 9.19   │
-╰───────┴──────────┴────────╯"#,20506962846954977);
+╰───────┴──────────┴────────╯"#,3450605516861874);
 
-test_parser!(parse_table_header_facy_variable,
+test_parser!(parse_table_header_fancy_variable,
 r#"x := 
 ╭─────────────────────────────╮
 │ x<u8>   y<string>  z<u8:3>  │
@@ -154,7 +154,7 @@ r#"x :=
 │   4   │  "b"     │ [4 5 6]  │
 ├───────┼──────────┼──────────┤
 │   7   │  "c"     │ [7 8 9]  │
-╰───────┴──────────┴──────────╯"#,17948577493400579);
+╰───────┴──────────┴──────────╯"#,36455411168101343);
 
 
 test_parser!(parse_tuple_empty, "()", 46625237035827900);
@@ -173,11 +173,11 @@ test_parser!(parse_formula_vars, "a + b * c", 26596788877301348);
 test_parser!(parse_formula_slices, "a[1] + b[2] * c", 14997858166465448);
 test_parser!(parse_formula_paren_expr, "(1 + 2) * 3", 22002356562256589);
 
-test_parser!(parse_record, "[a: 1, b: 2, c: 3]", 23513968729906793);
-test_parser!(parse_record_column, r#"[a: 1
+test_parser!(parse_record, "{a: 1, b: 2, c: 3}", 23513968729906793);
+test_parser!(parse_record_column, r#"{a: 1
  b: 2
- c: 3]"#, 41121906894714823);
-test_parser!(parse_record_nested, r#"[a: [a: 1 b: 2 c: 3] b: 2 c: 3]"#, 34734170064490835);
+ c: 3}"#, 41121906894714823);
+test_parser!(parse_record_nested, r#"{a: {a: 1 b: 2 c: 3} b: 2 c: 3}"#, 34734170064490835);
 
 test_parser!(parse_statement_variable_define, "x := 123", 61318328524297221);
 test_parser!(parse_statement_variable_define_annotated_tuple, "z<(u8, u8)> := (10,11)", 5743532714881875);
@@ -231,7 +231,7 @@ r#"#bubble-sort(arr) => Start(arr)
       └ * => Comparison([tail], swaps)
   Check(arr, 0) => Done(arr)
   Check(arr, swaps) => Comparison(arr,0)
-  Done(arr) -> arr."#, 57218274469469508);
+  Done(arr) -> arr."#, 7716607608104350);
 
 test_parser!(parse_function_define,r#"foo(x<u8>, y<u8>) -> z<u8> :=
     x2 := x + 1
