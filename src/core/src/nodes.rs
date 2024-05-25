@@ -798,7 +798,21 @@ pub enum MechCode {
   Statement(Statement),
   FsmSpecification(FsmSpecification),
   FsmImplementation(FsmImplementation),
-  FunctionDefine,  // todo
+  FunctionDefine(FunctionDefine),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FunctionDefine {
+  pub name: Identifier,
+  pub input: Vec<FunctionArgument>,
+  pub output: FunctionArgument,
+  pub statements: Vec<Statement>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FunctionArgument {
+  pub name: Identifier,
+  pub kind: KindAnnotation,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

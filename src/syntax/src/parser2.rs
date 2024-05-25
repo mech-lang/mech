@@ -1281,30 +1281,31 @@ pub fn set(input: ParseString) -> ParseResult<Set> {
 
 // #### State Machines
 
-pub fn fsm_define_operator(input: ParseString) -> ParseResult<()> {
-  let (input, _) = many1(whitespace)(input)?;
+pub fn define_operator(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many0(whitespace)(input)?;
   let (input, _) = tag(":=")(input)?;
+  let (input, _) = many0(whitespace)(input)?;
   Ok((input, ()))
 }
 
-pub fn fsm_output_operator(input: ParseString) -> ParseResult<()> {
-  let (input, _) = many1(whitespace)(input)?;
+pub fn output_operator(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many0(whitespace)(input)?;
   let (input, _) = tag("->")(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
   Ok((input, ()))
 }
 
-pub fn fsm_transition_operator(input: ParseString) -> ParseResult<()> {
-  let (input, _) = many1(whitespace)(input)?;
+pub fn transition_operator(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many0(whitespace)(input)?;
   let (input, _) = tag("=>")(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
   Ok((input, ()))
 }
 
-pub fn fsm_guard_operator(input: ParseString) -> ParseResult<()> {
-  let (input, _) = many1(whitespace)(input)?;
+pub fn guard_operator(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many0(whitespace)(input)?;
   let (input, _) = alt((tag("|"),tag("│"),tag("├"),tag("└")))(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = many0(whitespace)(input)?;
   Ok((input, ()))
 }
 
@@ -1314,7 +1315,7 @@ pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> 
   let ((input, _)) = left_parenthesis(input)?;
   let ((input, input_vars)) = separated_list0(list_separator, identifier)(input)?;
   let ((input, _)) = right_parenthesis(input)?;
-  let ((input, _)) = fsm_transition_operator(input)?;
+  let ((input, _)) = transition_operator(input)?;
   let ((input, start)) = fsm_pattern(input)?;
   let ((input, _)) = many0(whitespace)(input)?;
   let ((input, arms)) = many0(fsm_arm)(input)?;
@@ -1331,7 +1332,7 @@ pub fn fsm_arm(input: ParseString) -> ParseResult<FsmArm> {
 }
 
 pub fn fsm_guard(input: ParseString) -> ParseResult<Transition> {
-  let (input, _) = alt((fsm_transition_operator,fsm_guard_operator))(input)?;
+  let (input, _) = alt((transition_operator,guard_operator))(input)?;
   let (input, expr) = match wildcard(input.clone()) {
     Ok((input, _)) => (input, Guard::Wildcard),
     _ => match expression(input.clone()) {
@@ -1348,13 +1349,13 @@ pub fn wildcard(input: ParseString) -> ParseResult<Pattern> {
 }
 
 pub fn fsm_state_transition(input: ParseString) -> ParseResult<Transition> {
-  let (input, _) = fsm_transition_operator(input)?;
+  let (input, _) = transition_operator(input)?;
   let ((input, ptrn)) = fsm_pattern(input)?;
   Ok((input, Transition::Next(ptrn)))
 }
 
 pub fn fsm_output(input: ParseString) -> ParseResult<Transition> {
-  let (input, _) = fsm_output_operator(input)?;
+  let (input, _) = output_operator(input)?;
   let ((input, ptrn)) = fsm_pattern(input)?;
   Ok((input, Transition::Output(ptrn)))
 }
@@ -1365,9 +1366,9 @@ pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
   let ((input, _)) = left_parenthesis(input)?;
   let ((input, input_vars)) = separated_list0(list_separator, identifier)(input)?;
   let ((input, _)) = right_parenthesis(input)?;
-  let ((input, _)) = fsm_output_operator(input)?;
+  let ((input, _)) = output_operator(input)?;
   let ((input, output)) = identifier(input)?;
-  let ((input, _)) = fsm_define_operator(input)?;
+  let ((input, _)) = define_operator(input)?;
   let ((input, states)) = many1(fsm_state_definition)(input)?;
   let ((input, _)) = period(input)?;
   Ok((input, FsmSpecification{name,input: input_vars,output,states}))
@@ -1397,7 +1398,7 @@ pub fn fsm_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
 }
 
 pub fn fsm_state_definition(input: ParseString) -> ParseResult<StateDefinition> {
-  let ((input, _)) = fsm_guard_operator(input)?;
+  let ((input, _)) = guard_operator(input)?;
   let ((input, name)) = identifier(input)?;
   let ((input, vars)) = opt(fsm_state_definition_variables)(input)?;
   Ok((input, StateDefinition{name,state_variables: vars}))
@@ -1518,21 +1519,12 @@ pub fn async_assign(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::AsyncAssign{children: vec![]}))
 }
 
-// set_operator ::= ":=" ;
-pub fn set_operator(input: ParseString) -> ParseResult<()> {
-  let (input, _) = tag(":=")(input)?;
-  Ok((input, ()))
-}
-
-// define_operator ::= ":=" ;
-pub fn define_operator(input: ParseString) -> ParseResult<()> {
-  let (input, _) = tag(":=")(input)?;
-  Ok((input, ()))
-}
 
 // assign_operator ::= "=" ;
 pub fn assign_operator(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many0(whitespace)(input)?;
   let (input, _) = tag("=")(input)?;
+  let (input, _) = many0(whitespace)(input)?;
   Ok((input, ()))
 }
 
@@ -1582,9 +1574,7 @@ pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   let msg2 = "Expects expression";
   let (input, var) = var(input)?;
   let (input, _) = labelr!(null(is_not(assign_operator)), skip_nil, msg1)(input)?;
-  let (input, _) = many0(space)(input)?;
   let (input, _) = define_operator(input)?;
-  let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
   let (input, expression) = label!(expression, msg2)(input)?;
   Ok((input, VariableDefine{var,expression}))
 }
@@ -1595,9 +1585,7 @@ pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
   let msg2 = "Expects expression";
   let (input, target) = expression(input)?;
   let (input, _) = labelr!(null(is_not(define_operator)), skip_nil, msg1)(input)?;
-  let (input, _) = many0(space)(input)?;
   let (input, _) = assign_operator(input)?;
-  let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
   let (input, expression) = label!(expression, msg2)(input)?;
   Ok((input, VariableAssign{target,expression}))
 }
@@ -1726,6 +1714,7 @@ pub fn followed_by_operator(input: ParseString) -> ParseResult<ParserNode> {
 pub fn statement(input: ParseString) -> ParseResult<Statement> {
   let msg = "Expects new_line or semicolon to terminate statement";
   //let (input, (statement, src_range)) = range(alt((followed_by, async_assign, table_define, variable_define, split_data, flatten_data, whenever_data, wait_data, until_data, set_data, update_data, add_row, comment)))(input)?;
+  //let (input, _) = many0(whitespace)(input.clone())?;
   let (input, statement) = match variable_define(input.clone()) {
     Ok((input, var_def)) => (input, Statement::VariableDefine(var_def)),
     _ => match variable_assign(input.clone()) {
@@ -1747,9 +1736,7 @@ pub fn enum_define(input: ParseString) -> ParseResult<EnumDefine> {
   let (input, _) = left_angle(input)?;
   let (input, name) = identifier(input)?;
   let (input, _) = right_angle(input)?;
-  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = define_operator(input)?;
-  let (input, _) = many1(whitespace)(input)?;
   let (input, variants) = separated_list1(enum_separator, enum_variant)(input)?;
   Ok((input, EnumDefine{name, variants}))
 }
@@ -1772,9 +1759,7 @@ pub fn kind_define(input: ParseString) -> ParseResult<KindDefine> {
   let (input, _) = left_angle(input)?;
   let (input, name) = identifier(input)?;
   let (input, _) = right_angle(input)?;
-  let (input, _) = many1(whitespace)(input)?;
   let (input, _) = define_operator(input)?;
-  let (input, _) = many1(whitespace)(input)?;
   let (input, knd) = kind_annotation(input)?;
   Ok((input, KindDefine{name,definition: knd}))
 }
@@ -2051,15 +2036,34 @@ pub fn factor(input: ParseString) -> ParseResult<Factor> {
   Ok((input, fctr))
 }
 
+pub fn function_define(input: ParseString) -> ParseResult<FunctionDefine> {
+  let ((input, name)) = identifier(input)?;
+  let ((input, _)) = left_parenthesis(input)?;
+  let ((input, input_args)) = separated_list0(list_separator, function_arg)(input)?;
+  let ((input, _)) = right_parenthesis(input)?;
+  let ((input, _)) = output_operator(input)?;
+  let ((input, output)) = function_arg(input)?;
+  let ((input, _)) = define_operator(input)?;
+  let ((input, statements)) = many1(statement)(input)?;
+  let ((input, _)) = period(input)?;
+  Ok((input,FunctionDefine{name,input: input_args,output,statements}))
+}
+
+fn function_arg(input: ParseString) -> ParseResult<FunctionArgument> {
+  let ((input, name)) = identifier(input)?;
+  let ((input, kind)) = kind_annotation(input)?;
+  Ok((input, FunctionArgument{ name, kind }))
+}
+
 fn function_call(input: ParseString) -> ParseResult<FunctionCall> {
   let (input, name) = identifier(input)?;
   let (input, _) = left_parenthesis(input)?;
-  let (input, args) = separated_list0(list_separator, alt((function_arg_with_binding,function_arg)))(input)?;
+  let (input, args) = separated_list0(list_separator, alt((function_call_arg_with_binding,function_call_arg)))(input)?;
   let (input, _) = right_parenthesis(input)?;
   Ok((input, FunctionCall{name,args} ))
 }
 
-fn function_arg_with_binding(input: ParseString) -> ParseResult<(Option<Identifier>,Expression)> {
+fn function_call_arg_with_binding(input: ParseString) -> ParseResult<(Option<Identifier>,Expression)> {
   let (input, arg_name) = identifier(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let (input, _) = colon(input)?;
@@ -2068,7 +2072,7 @@ fn function_arg_with_binding(input: ParseString) -> ParseResult<(Option<Identifi
   Ok((input, (Some(arg_name), expr)))
 }
 
-fn function_arg(input: ParseString) -> ParseResult<(Option<Identifier>,Expression)> {
+fn function_call_arg(input: ParseString) -> ParseResult<(Option<Identifier>,Expression)> {
   let (input, expr) = expression(input)?;
   Ok((input, (None, expr)))
 }
