@@ -23,10 +23,10 @@ web = ["websocket"]
 [dependencies]
 mech-core = {path = "../core"}
 
-serde = {version = "1.0.189", default-features = false, features = ["alloc"] }
-serde_derive = "1.0.189"
-hashbrown = "0.14.1"
-crossbeam-channel = "0.5.8"
+serde = {version = "1.0.203", default-features = false, features = ["alloc"] }
+serde_derive = "1.0.203"
+hashbrown = "0.14.5"
+crossbeam-channel = "0.5.13"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 websocket = {version = "0.26.5", optional = true, default-features = false, features = ["sync"]}
