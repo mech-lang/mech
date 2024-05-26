@@ -2,6 +2,7 @@ use mech_syntax::*;
 use mech_syntax::parser::*;
 use syntax::parser::tag;
 use mech_utilities::*;
+use mech_utilities::MechCode;
 use mech_core::*;
 use mech_core::nodes::*;
 use crate::{minify_blocks, read_mech_files};

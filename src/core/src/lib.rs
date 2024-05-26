@@ -4,6 +4,8 @@
 #![feature(iter_intersperse)]
 #![feature(extract_if)]
 
+#[cfg(feature = "no-std")]
+extern crate alloc;
 extern crate core as rust_core;
 extern crate hashbrown;
 #[macro_use]
@@ -18,6 +20,7 @@ extern crate getrandom;
 extern crate lazy_static;
 extern crate seahash;
 extern crate indexmap;
+extern crate nalgebra;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
@@ -26,21 +29,21 @@ use std::ops::*;
 
 
 mod column;
-mod value;
+pub mod value;
 mod error;
 mod table;
 mod transformation;
 mod database;
 mod user_functions;
-#[cfg(feature = "stdlib")]
 pub mod function;
 mod block;
 mod core;
 mod schedule;
 pub mod nodes;
-#[cfg(feature = "stdlib")]
 mod capabilities;
 mod types;
+pub mod statemachines;
+mod enums;
 
 pub use self::core::Core;
 pub use self::table::*;
@@ -54,9 +57,10 @@ pub use self::function::*;
 pub use self::block::*;
 pub use self::schedule::*;
 pub use self::user_functions::*;
-#[cfg(feature = "stdlib")]
 pub use self::capabilities::*;
 pub use self::types::*;
+pub use self::enums::*;
+pub use self::statemachines::*;
 
 #[derive(Debug, Clone)]
 pub enum SectionElement {

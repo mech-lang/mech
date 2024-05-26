@@ -1,6 +1,6 @@
 [package]
 name = "mech-utilities"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Shared components and utilities for Mech"
 documentation = "http://docs.mech-lang.org"
@@ -23,10 +23,10 @@ web = ["websocket"]
 [dependencies]
 mech-core = {path = "../core"}
 
-serde = {version = "1.0.152", default-features = false, features = ["alloc"] }
-serde_derive = "1.0.152"
-hashbrown = "0.13.1"
-crossbeam-channel = "0.5.6"
+serde = {version = "1.0.203", default-features = false, features = ["alloc"] }
+serde_derive = "1.0.203"
+hashbrown = "0.14.5"
+crossbeam-channel = "0.5.13"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 websocket = {version = "0.26.5", optional = true, default-features = false, features = ["sync"]}

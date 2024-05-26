@@ -125,13 +125,13 @@ pub struct ProgramRunner {
   pub name: String,
   pub socket: Option<Arc<UdpSocket>>,
   pub registry: String,
-  pub capabilities: HashSet<Capability>,
+  pub capabilities: Option<HashSet<Capability>>,
   //pub persistence_channel: Option<Sender<PersisterMessage>>,
 }
 
 impl ProgramRunner {
 
-  pub fn new(name:&str, capabilities: HashSet<Capability>) -> ProgramRunner {
+  pub fn new(name:&str, capabilities: Option<HashSet<Capability>>) -> ProgramRunner {
     // Start a persister
     /*
     let persist_name = format!("{}.mdb", name);

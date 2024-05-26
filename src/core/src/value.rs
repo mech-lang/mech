@@ -11,7 +11,6 @@ Implementation for the Value data type in Mech, The Value type contains various 
 #[cfg(feature = "no-std")] use alloc::string::String;
 #[cfg(feature = "no-std")] use alloc::vec::Vec;
 use crate::*;
-use std::fmt;
 use std::mem::transmute;
 use std::convert::TryInto;
 
@@ -39,6 +38,7 @@ pub enum Value {
   Angle(F32),
   String(MechString),
   Reference(TableId),
+  Enum(Enum),
   Empty,
 }
 
@@ -56,6 +56,10 @@ impl Value {
       Value::String(string) => Ok(string.clone()),
       _ => Err(MechError{msg: "".to_string(), id: 4021, kind: MechErrorKind::None}),
     }
+  }
+
+  pub fn from_u64(number: u64) -> Value {
+    Value::U64(U64::new(number))
   }
 
   pub fn from_string(string: &String) -> Value {
@@ -88,10 +92,10 @@ impl Value {
       Value::Bool(_) => ValueKind::Bool,
       Value::Reference(_) => ValueKind::Reference,
       Value::String(_) => ValueKind::String,
+      Value::Enum(Enum{kind,variant}) => ValueKind::Enum((*kind,*variant)),
       Value::Empty => ValueKind::Empty,
     }
   }
-  
 }
 
 impl fmt::Debug for Value {
@@ -117,9 +121,8 @@ impl fmt::Debug for Value {
       Value::F64(v) => write!(f,"{:?}",v)?, 
       Value::Bool(v) => write!(f,"{}",v)?,
       Value::Reference(v) => write!(f,"{:?}",v)?, 
-      Value::String(v) => {
-        write!(f,"\"{}\"",v.to_string())?
-      }, 
+      Value::String(v) => write!(f,"\"{}\"",v.to_string())?,
+      Value::Enum(v) => write!(f,"{:?}",v)?, 
       Value::Empty => write!(f,"_")?,
     }
     Ok(())
@@ -151,6 +154,7 @@ pub enum ValueKind {
   String,
   Reference,
   NumberLiteral,
+  Enum((u64,u64)),
   Any,
   Compound(Vec<ValueKind>), // Note: Not sure of the implications here, doing this to return a ValueKind for a table.
   Empty

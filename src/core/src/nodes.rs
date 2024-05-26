@@ -105,7 +105,7 @@ pub enum AstNode {
   AddRow                  { children: Vec<AstNode> },
   Transformation          { children: Vec<AstNode> },
   Quantity                { children: Vec<AstNode> },
-  Token                   { token: Token, chars: Vec<char>, src_range: SourceRange },
+  Token                   { token: TokenKind, chars: Vec<char>, src_range: SourceRange },
   Add,
   Subtract,
   Multiply,
@@ -311,6 +311,7 @@ pub enum ParserNode {
   SubscriptIndex          { children: Vec<ParserNode> },
   Range,
   VariableDefine          { children: Vec<ParserNode> },
+  EnumDefine              { children: Vec<ParserNode> },
   TableDefine             { children: Vec<ParserNode> },
   FollowedBy              { children: Vec<ParserNode> },
   AsyncAssign             { children: Vec<ParserNode> },
@@ -325,7 +326,7 @@ pub enum ParserNode {
   AddRow                  { children: Vec<ParserNode> },
   Transformation          { children: Vec<ParserNode> },
   Quantity                { children: Vec<ParserNode> },
-  Token                   { token: Token, chars: Vec<char>, src_range: SourceRange },
+  Token                   { token: TokenKind, chars: Vec<char>, src_range: SourceRange },
   Add,
   Subtract,
   Multiply,
@@ -496,6 +497,7 @@ fn print_parser_node(node: &ParserNode, level: usize, f: &mut fmt::Formatter) {
     ParserNode::String{children}                     => { write!(f, "String\n"); Some(children) },
     ParserNode::StringInterpolation{children}        => { write!(f, "StringInterpolation\n"); Some(children) },
     ParserNode::VariableDefine{children}             => { write!(f, "VariableDefine\n"); Some(children) },
+    ParserNode::EnumDefine{children}                 => { write!(f, "EnumDefine\n"); Some(children) },
     ParserNode::TableDefine{children}                => { write!(f, "TableDefine\n"); Some(children) },
     ParserNode::FollowedBy{children}                 => { write!(f, "FollowedBy\n"); Some(children) },
     ParserNode::AsyncAssign{children}                => { write!(f, "AsyncAssign\n"); Some(children) },
@@ -649,7 +651,7 @@ fn spacer(width: usize, f: &mut fmt::Formatter) {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum Token {
+pub enum TokenKind {
   Alpha,
   Digit,
   HashTag,
@@ -670,8 +672,8 @@ pub enum Token {
   Slash,
   Apostrophe,
   Equal,
-  LessThan,
-  GreaterThan,
+  LeftAngle,
+  RightAngle,
   Exclamation,
   Question,
   Period,
@@ -686,7 +688,521 @@ pub enum Token {
   Percent,
   Newline,
   CarriageReturn,
+  CarriageReturnNewLine,
   Tab,
-  EndOfStream,
   Emoji,
+  Text,
+  True,
+  False,
+  Number,
+  String,
+  Title,
+  Identifier,
+  BoxDrawing,
+  Dollar,
+  Empty
+}
+
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Token { 
+  pub kind: TokenKind, 
+  pub chars: Vec<char>, 
+  pub src_range: SourceRange 
+}
+
+impl fmt::Debug for Token {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{:?}:{:?}:{:?}", self.kind, String::from_iter(self.chars.iter().cloned()), self.src_range);
+    Ok(())
+  }
+}
+
+impl Default for Token {
+  fn default() -> Self {
+    Token{
+      kind: TokenKind::Empty,
+      chars: vec![],
+      src_range: SourceRange::default(),
+    }
+  }
+}
+
+pub fn merge_tokens(tokens: &mut Vec<Token>) -> Option<Token> {
+  if tokens.len() == 0 {
+    None
+  } else if tokens.len() == 1 {
+    Some(tokens[0].clone())
+  } else {
+    let first = tokens[0].src_range.clone();
+    let kind = tokens[0].kind.clone();
+    let last = tokens.last().unwrap().src_range.clone();
+    let src_range = merge_src_range(first, last);
+    let chars: Vec<char> = tokens.iter_mut().fold(vec![],|mut m, ref mut t| {m.append(&mut t.chars.clone()); m});
+    let merged_token = Token{kind, chars, src_range};
+    Some(merged_token)
+  }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Program {
+  pub title: Option<Title>,
+  pub body: Body,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Title {
+  pub text: Token,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Body {
+  pub sections: Vec<Section>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Subtitle {
+  pub text: Token,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Section {
+  pub subtitle: Option<Subtitle>,
+  pub elements: Vec<SectionElement>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum SectionElement {
+  Section(Box<Section>),
+  Comment(Comment),
+  Paragraph(Paragraph),
+  MechCode(MechCode),
+  UnorderedList(UnorderedList),
+  CodeBlock,       // todo
+  OrderedList,     // todo
+  BlockQuote,      // todo
+  ThematicBreak,   // todo
+  Image,           // todo
+}
+
+pub type ListItem = Paragraph;
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct UnorderedList {
+  pub items: Vec<ListItem>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum MechCode {
+  Expression(Expression),
+  Statement(Statement),
+  FsmSpecification(FsmSpecification),
+  FsmImplementation(FsmImplementation),
+  FunctionDefine(FunctionDefine),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FunctionDefine {
+  pub name: Identifier,
+  pub input: Vec<FunctionArgument>,
+  pub output: FunctionArgument,
+  pub statements: Vec<Statement>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FunctionArgument {
+  pub name: Identifier,
+  pub kind: KindAnnotation,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FsmImplementation {
+  pub name: Identifier,
+  pub input: Vec<Identifier>,
+  pub start: Pattern,
+  pub arms: Vec<FsmArm>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FsmArm {
+  pub start: Pattern, 
+  pub transitions: Vec<Transition>
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Transition {
+  Next(Pattern),
+  Output(Pattern),
+  Guard(Guard),
+  TransitionBlock(Vec<MechCode>),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Guard {
+  Wildcard,
+  Expression(Expression),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Pattern {
+  Wildcard,
+  Formula(Factor),
+  Expression(Expression),
+  TupleStruct(PatternTupleStruct),
+  Tuple(PatternTuple)
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PatternTupleStruct {
+  pub name: Identifier,
+  pub patterns: Vec<Pattern>,
+}
+
+pub type PatternTuple = Vec<Pattern>;
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FsmSpecification {
+  pub name: Identifier,
+  pub input: Vec<Identifier>,
+  pub output: Identifier,
+  pub states: Vec<StateDefinition>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct StateDefinition {
+  pub name: Identifier,
+  pub state_variables: Option<Vec<Identifier>>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Statement {
+  VariableDefine(VariableDefine),
+  VariableAssign(VariableAssign),
+  KindDefine(KindDefine),
+  EnumDefine(EnumDefine),
+  FsmDeclare(FsmDeclare),     
+  FsmEval,        // todo
+  SplitTable,     // todo
+  FlattenTable,   // todo
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FsmDeclare {
+  pub fsm: Fsm,
+  pub instance: FsmInstance,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Fsm {
+  pub name: Identifier,
+  pub kind: Option<KindAnnotation>,
+}
+
+pub type FsmArgs = Vec<(Option<Identifier>,Expression)>;
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FsmInstance {
+  pub name: Identifier,
+  pub args: Option<FsmArgs>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct EnumDefine {
+  pub name: Identifier,
+  pub variants: Vec<EnumVariant>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct EnumVariant {
+  pub name: Identifier,
+  pub value: Option<KindAnnotation>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct KindDefine {
+  pub name: Identifier,
+  pub definition: KindAnnotation,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Record {
+  pub bindings: Vec<Binding>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Structure {
+  Empty,
+  Record(Record),
+  Matrix(Matrix),
+  Table(Table),
+  Tuple(Tuple),
+  TupleStruct(TupleStruct),
+  Set(Set),
+  Map(Map),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Map {
+  pub elements: Vec<Mapping>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Mapping {
+  pub key: Expression,
+  pub value: Expression,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Set {
+  pub elements: Vec<Expression>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Atom {
+  pub name: Identifier,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TupleStruct {
+  pub name: Identifier,
+  pub value: Box<Expression>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Matrix {
+  pub rows: Vec<TableRow>,
+}
+
+pub type TableHeader = Vec<Field>;
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Table {
+  pub header: TableHeader,
+  pub rows: Vec<TableRow>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Field {
+  pub name: Identifier,
+  pub kind: KindAnnotation,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TableColumn {
+  pub element: Expression,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TableRow {
+  pub columns: Vec<TableColumn>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct VariableDefine {
+  pub var: Var,
+  pub expression: Expression,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Var {
+  pub name: Identifier,
+  pub kind: Option<KindAnnotation>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct VariableAssign {
+  pub target: Expression,
+  pub expression: Expression,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Identifier {
+  pub name: Token,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Emoji {
+  pub tokens: Vec<Token>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Word {
+  pub tokens: Vec<Token>,
+}
+
+pub type Slice = (Identifier,Vec<Expression>);
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Index {
+  SelectAll,
+  Expression(Expression),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Expression {
+  Var(Var),
+  Slice(Slice),
+  Formula(Factor),
+  Structure(Structure),
+  Literal(Literal),
+  Transpose(Box<Expression>),
+  FunctionCall(FunctionCall),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FunctionCall {
+  pub name: Identifier,
+  pub args: Vec<(Option<Identifier>,Expression)>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Tuple {
+  pub elements: Vec<Expression>
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Binding {
+  pub name: Identifier,
+  pub kind: Option<KindAnnotation>,
+  pub value: Expression,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct KindAnnotation {
+  pub kinds: Vec<Kind>
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Kind {
+  Tuple(Vec<Kind>),
+  Scalar(KindLabel)
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct KindLabel {
+  pub name: Identifier,
+  pub size: Vec<Number>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Literal {
+  Empty(Token),
+  Boolean(Token),
+  Number(Number),
+  String(MechString),
+  Atom(Atom),
+  TypedLiteral((Box<Literal>,KindAnnotation))
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct MechString {
+  pub text: Token,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum ParagraphElement {
+  Start(Token),
+  Text(Token),
+  Bold,            // todo
+  Italic,          // todo
+  Underline,       // todo
+  Strike,          // todo
+  InlineCode,      // todo           
+  Link,            // todo
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Paragraph {
+  pub elements: Vec<ParagraphElement>,
+}
+
+type Sign = bool;
+type Numerator = Token;
+type Denominator = Token;
+type Whole = Token;
+type Part = Token;
+type Base = (Whole, Part);
+type Exponent = (Sign, Whole, Part);
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Number {
+  Negated(Box<Number>),
+  Integer(Token),
+  Float((Whole,Part)),
+  Decimal(Token),
+  Hexadecimal(Token),
+  Octal(Token),
+  Binary(Token),
+  Scientific((Base,Exponent)),
+  Rational((Numerator,Denominator))
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Comment {
+  pub text: Vec<Token>
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum RangeOp {
+  Inclusive,
+  Exclusive,       // todo
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum AddSubOp {
+  Add,
+  Sub
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum MulDivOp {
+  MatMul,
+  Solve,
+  Mul,
+  Div
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum ExponentOp {
+  Exp
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum ComparisonOp {
+  LessThan,
+  GreaterThan,
+  LessThanEqual,
+  GreaterThanEqual,
+  Equal,
+  NotEqual,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum LogicOp {
+  And,
+  Or,
+  Not,
+  Xor,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum FormulaOperator {
+  Logic(LogicOp),
+  Comparison(ComparisonOp),
+  AddSub(AddSubOp),
+  MulDiv(MulDivOp),
+  Exponent(ExponentOp),
+  Range(RangeOp),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Term {
+  pub lhs: Factor,
+  pub rhs: Vec<(FormulaOperator,Factor)>
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Factor {
+  Term(Box<Term>),
+  Expression(Box<Expression>),
 }

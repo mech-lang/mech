@@ -11,6 +11,7 @@ use std::fmt;
 use crate::*;
 use hashbrown::HashMap;
 use indexmap::IndexMap;
+use nalgebra::DMatrix;
 
 // ### Table Id
 
@@ -115,6 +116,7 @@ pub struct Table {
   pub col_map: AliasMap,  
   pub row_map: AliasMap,
   pub data: Vec<Column>,
+  pub nalgebra: Option<Rc<RefCell<DMatrix<f32>>>>,
   pub dictionary: StringDictionary,
 }
 
@@ -129,6 +131,7 @@ impl Table {
       col_map: AliasMap::new(cols),
       row_map: AliasMap::new(rows),
       data: Vec::with_capacity(cols),
+      nalgebra: None,
       dictionary: Rc::new(RefCell::new(HashMap::new())),
     };
     for col in 0..cols {
@@ -533,6 +536,12 @@ impl Table {
   }
 
   pub fn get_raw(&self, row: usize, col: usize) -> Result<Value,MechError> {
+    if let Some(table) = &self.nalgebra {
+      let ix = self.subscript_to_index(row,col).unwrap();
+      let table_value: f32 = table.borrow()[ix];
+      return Ok(Value::F32(F32::new(table_value)));
+    }
+
     if col < self.cols && row < self.rows {
       match &self.data[col] {
         Column::Time(c) => Ok(Value::Time(c.borrow()[row])),
@@ -589,6 +598,10 @@ impl Table {
 
   pub fn has_col_aliases(&self) -> bool {
     self.col_map.alias_to_ix.len() > 0
+  }
+
+  pub fn subscript_to_index(&self, row: usize, col: usize) -> Result<usize,MechError> {
+    Ok((col * self.cols) + row)
   }
 
   pub fn index_to_subscript(&self, ix: usize) -> Result<(usize, usize),MechError> {

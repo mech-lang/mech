@@ -41,6 +41,7 @@ pub enum Column {
   Length(ColumnV<F32>),
   Angle(ColumnV<F32>),
   Speed(ColumnV<F32>),
+  Enum(ColumnV<Enum>),
   Any(ColumnV<Value>),
   Empty,
 }
@@ -85,6 +86,7 @@ impl Column {
         let t = table.borrow();
         t.rows * t.cols
       },
+      Column::Enum(col) => col.len(),
       Column::Empty => 0,
     }
   }
@@ -118,6 +120,7 @@ impl Column {
       Column::Any(col) => col.borrow_mut().resize(rows,Value::Empty),
       Column::Bool(col) => col.borrow_mut().resize(rows,false),
       Column::String(col) => col.borrow_mut().resize(rows,MechString::new()),
+      Column::Enum(col) => col.borrow_mut().resize(rows,Enum{kind:0, variant:0}),
       Column::Reference(_) |
       Column::Empty => {return Err(MechError{msg: "".to_string(), id: 9430, kind: MechErrorKind::None});}
     }
@@ -189,6 +192,7 @@ impl Column {
       Column::Length(_) => ValueKind::Length,
       Column::Angle(_) => ValueKind::Angle,
       Column::Any(_) => ValueKind::Any,
+      Column::Enum(_) => ValueKind::Enum((0,0)),
       Column::Empty => ValueKind::Empty,
     }
   }
@@ -248,6 +252,15 @@ impl<T: Clone + Debug> ColumnV<T> {
     col.borrow_mut()
   }
   
+}
+
+impl<T: Clone + Debug> IntoIterator for ColumnV<T> {
+  type Item = T;
+  type IntoIter = std::vec::IntoIter<Self::Item>;
+
+  fn into_iter(self) -> Self::IntoIter {
+    <Vec<T> as Clone>::clone(&self.borrow()).into_iter() 
+  }
 }
 
 impl<T: Debug> fmt::Debug for ColumnV<T> {

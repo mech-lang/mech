@@ -609,41 +609,41 @@ macro_rules! leaf {
   )
 }
 
-leaf!{at, "@", Token::At}
-leaf!{hashtag, "#", Token::HashTag}
-leaf!{period, ".", Token::Period}
-leaf!{colon, ":", Token::Colon}
-leaf!{comma, ",", Token::Comma}
-leaf!{percent, "%", Token::Percent}
-leaf!{apostrophe, "'", Token::Apostrophe}
-leaf!{left_bracket, "[", Token::LeftBracket}
-leaf!{right_bracket, "]", Token::RightBracket}
-leaf!{left_parenthesis, "(", Token::LeftParenthesis}
-leaf!{right_parenthesis, ")", Token::RightParenthesis}
-leaf!{left_brace, "{", Token::LeftBrace}
-leaf!{right_brace, "}", Token::RightBrace}
-leaf!{equal, "=", Token::Equal}
-leaf!{left_angle, "<", Token::LessThan}
-leaf!{right_angle, ">", Token::GreaterThan}
-leaf!{exclamation, "!", Token::Exclamation}
-leaf!{question, "?", Token::Question}
-leaf!{plus, "+", Token::Plus}
-leaf!{dash, "-", Token::Dash}
-leaf!{underscore, "_", Token::Underscore}
-leaf!{asterisk, "*", Token::Asterisk}
-leaf!{slash, "/", Token::Slash}
-leaf!{backslash, "\\", Token::Backslash}
-leaf!{caret, "^", Token::Caret}
-leaf!{space, " ", Token::Space}
-leaf!{tab, "\t", Token::Tab}
-leaf!{tilde, "~", Token::Tilde}
-leaf!{grave, "`", Token::Grave}
-leaf!{bar, "|", Token::Bar}
-leaf!{quote, "\"", Token::Quote}
-leaf!{ampersand, "&", Token::Ampersand}
-leaf!{semicolon, ";", Token::Semicolon}
-leaf!{new_line_char, "\n", Token::Newline}
-leaf!{carriage_return, "\r", Token::CarriageReturn}
+leaf!{at, "@", TokenKind::At}
+leaf!{hashtag, "#", TokenKind::HashTag}
+leaf!{period, ".", TokenKind::Period}
+leaf!{colon, ":", TokenKind::Colon}
+leaf!{comma, ",", TokenKind::Comma}
+leaf!{percent, "%", TokenKind::Percent}
+leaf!{apostrophe, "'", TokenKind::Apostrophe}
+leaf!{left_bracket, "[", TokenKind::LeftBracket}
+leaf!{right_bracket, "]", TokenKind::RightBracket}
+leaf!{left_parenthesis, "(", TokenKind::LeftParenthesis}
+leaf!{right_parenthesis, ")", TokenKind::RightParenthesis}
+leaf!{left_brace, "{", TokenKind::LeftBrace}
+leaf!{right_brace, "}", TokenKind::RightBrace}
+leaf!{equal, "=", TokenKind::Equal}
+leaf!{left_angle, "<", TokenKind::LeftAngle}
+leaf!{right_angle, ">", TokenKind::RightAngle}
+leaf!{exclamation, "!", TokenKind::Exclamation}
+leaf!{question, "?", TokenKind::Question}
+leaf!{plus, "+", TokenKind::Plus}
+leaf!{dash, "-", TokenKind::Dash}
+leaf!{underscore, "_", TokenKind::Underscore}
+leaf!{asterisk, "*", TokenKind::Asterisk}
+leaf!{slash, "/", TokenKind::Slash}
+leaf!{backslash, "\\", TokenKind::Backslash}
+leaf!{caret, "^", TokenKind::Caret}
+leaf!{space, " ", TokenKind::Space}
+leaf!{tab, "\t", TokenKind::Tab}
+leaf!{tilde, "~", TokenKind::Tilde}
+leaf!{grave, "`", TokenKind::Grave}
+leaf!{bar, "|", TokenKind::Bar}
+leaf!{quote, "\"", TokenKind::Quote}
+leaf!{ampersand, "&", TokenKind::Ampersand}
+leaf!{semicolon, ";", TokenKind::Semicolon}
+leaf!{new_line_char, "\n", TokenKind::Newline}
+leaf!{carriage_return, "\r", TokenKind::CarriageReturn}
 
 // emoji ::= emoji_grapheme+ ;
 fn emoji<'a>(input: ParseString<'a>) -> ParseResult<ParserNode> {
@@ -652,10 +652,10 @@ fn emoji<'a>(input: ParseString<'a>) -> ParseResult<ParserNode> {
     let (input, g) = emoji_grapheme(input)?;
     let end = input.loc();
     let src_range = SourceRange { start, end };
-    Ok((input, ParserNode::Token{token: Token::Emoji, chars: g.chars().collect::<Vec<char>>(), src_range}))
+    Ok((input, ParserNode::Token{token: TokenKind::Emoji, chars: g.chars().collect::<Vec<char>>(), src_range}))
   };
   let (input, tokens) = many1(emoji_token)(input)?;
-  // let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: Token::Emoji, chars: b.chars().collect::<Vec<char>>()}).collect();
+  // let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: TokenKind::Emoji, chars: b.chars().collect::<Vec<char>>()}).collect();
   Ok((input, ParserNode::Emoji{children: tokens}))
 }
 
@@ -663,10 +663,10 @@ fn emoji<'a>(input: ParseString<'a>) -> ParseResult<ParserNode> {
 pub fn word<'a>(input: ParseString<'a>) -> ParseResult<ParserNode> {
   let alpha_token = |input: ParseString<'a>| {
     let (input, (g, src_range)) = range(alpha)(input)?;
-    Ok((input, ParserNode::Token{token: Token::Alpha, chars: g.chars().collect::<Vec<char>>(), src_range}))
+    Ok((input, ParserNode::Token{token: TokenKind::Alpha, chars: g.chars().collect::<Vec<char>>(), src_range}))
   };
   let (input, tokens) = many1(alpha_token)(input)?;
-  // let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: Token::Alpha, chars: b.chars().collect::<Vec<char>>()}).collect();
+  // let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: TokenKind::Alpha, chars: b.chars().collect::<Vec<char>>()}).collect();
   Ok((input, ParserNode::Word{children: tokens}))
 }
 
@@ -705,10 +705,10 @@ pub fn oct_digit(input: ParseString) -> ParseResult<String> {
 pub fn number<'a>(input: ParseString<'a>) -> ParseResult<ParserNode> {
   let digit_token = |input: ParseString<'a>| {
     let (input, (g, src_range)) = range(digit)(input)?;
-    Ok((input, ParserNode::Token{token: Token::Digit, chars: g.chars().collect::<Vec<char>>(), src_range}))
+    Ok((input, ParserNode::Token{token: TokenKind::Digit, chars: g.chars().collect::<Vec<char>>(), src_range}))
   };
   let (input, tokens) = many1(digit_token)(input)?;
-  // let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: Token::Digit, chars: b.chars().collect::<Vec<char>>()}).collect();
+  // let chars: Vec<ParserNode> = matching.iter().map(|b| ParserNode::Token{token: TokenKind::Digit, chars: b.chars().collect::<Vec<char>>()}).collect();
   Ok((input, ParserNode::Number{children: tokens}))
 }
 
@@ -913,6 +913,21 @@ pub fn value(input: ParseString) -> ParseResult<ParserNode> {
 pub fn empty(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = many1(underscore)(input)?;
   Ok((input, ParserNode::Empty))
+}
+
+// #### Enums
+
+// enum_define ::= "<", identifier, ">", space*, "=", space*, enum_list;
+pub fn enum_define(input: ParseString) -> ParseResult<ParserNode> {
+  let msg2 = "Expect expression";
+  let (input, _) = left_angle(input)?;
+  let (input, variable) = identifier(input)?;
+  let (input, _) = right_angle(input)?;
+  let (input, _) = many1(space)(input)?;
+  let (input, _) = equal(input)?;
+  let (input, _) = many1(space)(input)?;
+  let (input, expression) = label!(expression, msg2)(input)?;
+  Ok((input, ParserNode::EnumDefine{children: vec![variable]}))
 }
 
 // ### Blocks
@@ -1184,23 +1199,6 @@ pub fn empty_table(input: ParseString) -> ParseResult<ParserNode> {
   };
   Ok((input, ParserNode::EmptyTable{children: table}))
 }
-
-// pub fn anonymous_matrix(input: ParseString) -> ParseResult<ParserNode> {
-//   let (input, _) = left_angle(input)?;
-//   let (input, _) = many0(alt((space, newline, tab)))(input)?;
-//   let (input, _) = many0(space)(input)?;
-//   let (input, table_header) = opt(table_header)(input)?;
-//   let (input, mut table_rows) = many0(table_row)(input)?;
-//   let (input, _) = many0(alt((space, newline, tab)))(input)?;
-//   let (input, _) = right_angle(input)?;
-//   let mut table = vec![];
-//   match table_header {
-//     Some(table_header) => table.push(table_header),
-//     _ => (),
-//   };
-//   table.append(&mut table_rows);
-//   Ok((input, ParserNode::AnonymousMatrix{children: table}))
-// }
 
 // inline_table ::= left_bracket, binding, <binding_strict*>, <right_bracket> ;
 pub fn inline_table(input: ParseString) -> ParseResult<ParserNode> {

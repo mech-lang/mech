@@ -3,7 +3,9 @@
 // ## Preamble
 
 use mech_core::*;
-use mech_core::nodes::*;
+use mech_core::SectionElement;
+use mech_core::value;
+use mech_core::nodes::{AstNode, ParserNode, SourceRange};
 use mech_core::function::table::*;
 use mech_core::function::matrix::*;
 
@@ -1075,7 +1077,7 @@ impl Compiler {
                               indices.push(TableIndex::IxTable(*table_id));
                             }
                             Transformation::NumberLiteral{kind, bytes} => {
-                              let mut value = NumberLiteral::new(*kind, bytes.clone());
+                              let mut value = value::NumberLiteral::new(*kind, bytes.clone());
                               if indices.len() == 2 && indices[0] == TableIndex::All {
                                 indices[0] = TableIndex::Index(value.as_usize());
                               } else {
@@ -1130,7 +1132,7 @@ impl Compiler {
                         indices.push(TableIndex::IxTable(*table_id));
                       }
                       Transformation::NumberLiteral{kind, bytes} => {
-                        let mut value = NumberLiteral::new(*kind, bytes.clone());
+                        let mut value = value::NumberLiteral::new(*kind, bytes.clone());
                         if indices.len() == 2 && indices[0] == TableIndex::All {
                           indices[0] = TableIndex::Index(value.as_usize());
                         } else {

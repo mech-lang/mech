@@ -352,7 +352,7 @@ async fn main() -> Result<(), MechError> {
     tester_caps.insert(Capability::DownloadDependencies);
 
     println!("{}", "[Running]".truecolor(153,221,85));
-    let runner = ProgramRunner::new("Mech Test",tester_caps);
+    let runner = ProgramRunner::new("Mech Test",Some(tester_caps));
     let mech_client = runner.run()?;
     mech_client.send(RunLoopMessage::Code((1,MechCode::MiniBlocks(blocks))));
 
@@ -465,7 +465,7 @@ async fn main() -> Result<(), MechError> {
       run_caps.insert(Capability::DownloadDependencies);
     }
 
-    let mut runner = ProgramRunner::new("Run", run_caps);
+    let mut runner = ProgramRunner::new("Run", Some(run_caps));
     runner.registry = machine_registry;
     let mech_client = runner.run()?;
     mech_client.send(RunLoopMessage::Code((1,MechCode::MiniBlocks(blocks))));
@@ -744,7 +744,7 @@ save    - save the state of a core to disk as a .blx file"#;
       repl_caps.insert(Capability::CoreNetworkWrite);
       repl_caps.insert(Capability::DownloadDependencies);
 
-      let runner = ProgramRunner::new("REPL", repl_caps);
+      let runner = ProgramRunner::new("REPL", Some(repl_caps));
       runner.run()?
     }
   };
