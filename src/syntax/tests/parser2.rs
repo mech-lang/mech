@@ -190,9 +190,14 @@ test_parser!(parse_statement_kind_define, "<pos> := <(u8,u8,u8)>", 6262465889867
 test_parser!(parse_statement_kind_define_size, "<foo> := <(u8:1,2, u8:3,3)>", 37979414279321074);
 test_parser!(parse_statement_kind_define_size_hex, "<bar> := <foo:0x01, 0xFF>", 62296951259330595);
 
-test_parser!(parse_enum_define, "<my-type> := A | B", 64572902068503820);
-test_parser!(parse_enum_define_typed, "<my-type> := A(<u8>) | B", 41352039959953377);
-test_parser!(parse_enum_define_grave, "<my-type> := `A | `B", 24306883787841449);
+test_parser!(parse_statement_enum_define, "<my-type> := A | B", 64572902068503820);
+test_parser!(parse_statement_enum_define_typed, "<my-type> := A(<u8>) | B", 41352039959953377);
+test_parser!(parse_statement_enum_define_grave, "<my-type> := `A | `B", 24306883787841449);
+
+test_parser!(parse_statement_fsm_declare, "#a := #b", 39943460307682106);
+test_parser!(parse_statement_fsm_declare_args, "#a := #b(a,b,c)", 167113185653114);
+test_parser!(parse_statement_fsm_declare_args_named, "#a := #b(foo: 1, bar: 2)", 64211208682710695);
+test_parser!(parse_statement_fsm_declare_args_kind, "#a<foo> := #b", 7877799523673869);
 
 test_parser!(parse_mechdown_paragraph, "Hello World", 44055055244553644);
 

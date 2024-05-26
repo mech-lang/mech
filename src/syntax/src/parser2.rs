@@ -520,7 +520,7 @@ pub fn skip_till_eol(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Null))
 }
 
-fn skip_pass_eol(input: ParseString) -> ParseResult<ParserNode> {
+fn skip_past_eol(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = skip_till_eol(input)?;
   let (input, _) = new_line(input)?;
   Ok((input, ParserNode::Null))
@@ -530,10 +530,10 @@ fn skip_till_section_element(input: ParseString) -> ParseResult<ParserNode> {
   if input.is_empty() {
     return Ok((input, ParserNode::Error));
   }
-  let (input, _) = skip_pass_eol(input)?;
+  let (input, _) = skip_past_eol(input)?;
   let (input, _) = many0(nom_tuple((
     is_not(section_element),
-    skip_pass_eol,
+    skip_past_eol,
   )))(input)?;
   Ok((input, ParserNode::Error))
 }
@@ -543,10 +543,10 @@ fn skip_till_section_element2(input: ParseString) -> ParseResult<ParserNode> {
   if input.len() == 0 {
     return Ok((input, ParserNode::Error));
   }
-  let (input, _) = skip_pass_eol(input)?;
+  let (input, _) = skip_past_eol(input)?;
   let (input, _) = many0(nom_tuple((
     is_not(section_element2),
-    skip_pass_eol,
+    skip_past_eol,
   )))(input)?;
   Ok((input, ParserNode::Error))
 }
@@ -555,10 +555,10 @@ fn skip_till_section_element3(input: ParseString) -> ParseResult<ParserNode> {
   if input.len() == 0 {
     return Ok((input, ParserNode::Error));
   }
-  let (input, _) = skip_pass_eol(input)?;
+  let (input, _) = skip_past_eol(input)?;
   let (input, _) = many0(nom_tuple((
     is_not(section_element3),
-    skip_pass_eol,
+    skip_past_eol,
   )))(input)?;
   Ok((input, ParserNode::Error))
 }*/
@@ -1477,10 +1477,42 @@ pub fn statement(input: ParseString) -> ParseResult<Statement> {
       Ok((input, enm_def)) => { return Ok((input, Statement::EnumDefine(enm_def))); },
       Err(_) => (),
   }
+  match fsm_declare(input.clone()) {
+    Ok((input, var_def)) => { return Ok((input, Statement::FsmDeclare(var_def))); },
+    Err(_) => (),
+  }
   match kind_define(input.clone()) {
       Ok((input, knd_def)) => { return Ok((input, Statement::KindDefine(knd_def))); },
       Err(err) => { return Err(err); },
   }
+}
+
+fn fsm_declare(input: ParseString) -> ParseResult<FsmDeclare> {
+  let (input, fsm) = fsm(input)?;
+  let (input, _) = define_operator(input)?;
+  let (input, instance) = fsm_instance(input)?;
+  Ok((input, FsmDeclare{fsm,instance}))
+}
+  
+fn fsm(input: ParseString) -> ParseResult<Fsm> {
+  let ((input, _)) = hashtag(input)?;
+  let ((input, name)) = identifier(input)?;
+  let ((input, kind)) = opt(kind_annotation)(input)?;
+  Ok((input, Fsm{ name, kind }))
+}
+
+fn fsm_instance(input: ParseString) -> ParseResult<FsmInstance> {
+  let ((input, _)) = hashtag(input)?;
+  let (input, name) = identifier(input)?;
+  let (input, args) = opt(fsm_args)(input)?;
+  Ok((input, FsmInstance{name,args} ))
+}
+
+fn fsm_args(input: ParseString) -> ParseResult<Vec<(Option<Identifier>,Expression)>> {
+  let (input, _) = left_parenthesis(input)?;
+  let (input, args) = separated_list0(list_separator, alt((call_arg_with_binding,call_arg)))(input)?;
+  let (input, _) = right_parenthesis(input)?;
+  Ok((input, args))
 }
 
 pub fn enum_define(input: ParseString) -> ParseResult<EnumDefine> {
@@ -1737,12 +1769,12 @@ fn function_arg(input: ParseString) -> ParseResult<FunctionArgument> {
 fn function_call(input: ParseString) -> ParseResult<FunctionCall> {
   let (input, name) = identifier(input)?;
   let (input, _) = left_parenthesis(input)?;
-  let (input, args) = separated_list0(list_separator, alt((function_call_arg_with_binding,function_call_arg)))(input)?;
+  let (input, args) = separated_list0(list_separator, alt((call_arg_with_binding,call_arg)))(input)?;
   let (input, _) = right_parenthesis(input)?;
   Ok((input, FunctionCall{name,args} ))
 }
 
-fn function_call_arg_with_binding(input: ParseString) -> ParseResult<(Option<Identifier>,Expression)> {
+fn call_arg_with_binding(input: ParseString) -> ParseResult<(Option<Identifier>,Expression)> {
   let (input, arg_name) = identifier(input)?;
   let (input, _) = many0(whitespace)(input)?;
   let (input, _) = colon(input)?;
@@ -1751,7 +1783,7 @@ fn function_call_arg_with_binding(input: ParseString) -> ParseResult<(Option<Ide
   Ok((input, (Some(arg_name), expr)))
 }
 
-fn function_call_arg(input: ParseString) -> ParseResult<(Option<Identifier>,Expression)> {
+fn call_arg(input: ParseString) -> ParseResult<(Option<Identifier>,Expression)> {
   let (input, expr) = expression(input)?;
   Ok((input, (None, expr)))
 }

@@ -880,11 +880,30 @@ pub enum Statement {
   VariableAssign(VariableAssign),
   KindDefine(KindDefine),
   EnumDefine(EnumDefine),
-  FsmDeclare,      // todo
-  FsmExec,         // todo
-  SplitTable,      // todo
-  FlattenTable,    // todo
-  SetData,         // todo
+  FsmDeclare(FsmDeclare),     
+  FsmEval,        // todo
+  SplitTable,     // todo
+  FlattenTable,   // todo
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FsmDeclare {
+  pub fsm: Fsm,
+  pub instance: FsmInstance,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Fsm {
+  pub name: Identifier,
+  pub kind: Option<KindAnnotation>,
+}
+
+pub type FsmArgs = Vec<(Option<Identifier>,Expression)>;
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FsmInstance {
+  pub name: Identifier,
+  pub args: Option<FsmArgs>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
