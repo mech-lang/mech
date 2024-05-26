@@ -29,6 +29,7 @@ use nom::{
   combinator::{opt, eof},
   multi::{many1, many_till, many0, separated_list1,separated_list0},
   Err,
+  Err::Failure
 };
 
 use std::collections::HashMap;
@@ -1072,34 +1073,70 @@ pub fn kind_label(input: ParseString) -> ParseResult<KindLabel> {
 
 // #### Structures
 
+
+fn max_err<'a>(x: Option<ParseError<'a>>, y: ParseError<'a>) -> ParseError<'a> {
+  match (x,&y) {
+    (None, y) => y.clone(),
+    _ => y.clone(),
+  }
+}
+
 // structure ::= hashtag, <identifier> ;
 pub fn structure(input: ParseString) -> ParseResult<Structure> {
-  let (input, table) = match empty_table(input.clone()) {
-    Ok((input, table)) => (input, Structure::Empty),
-    Err(err) => match matrix(input.clone()) {
-      Ok((input, mtrx)) => (input, Structure::Matrix(mtrx)),
-      Err(err) => match table(input.clone()) {
-        Ok((input, tbl)) => (input, Structure::Table(tbl)),
-        Err(err) => match tuple(input.clone()) {
-          Ok((input, tpl)) => (input, Structure::Tuple(tpl)),
-          Err(err) => match tuple_struct(input.clone()) {
-          Ok((input, tpl)) => (input, Structure::TupleStruct(tpl)),
-            Err(err) => match record(input.clone()) {
-              Ok((input, table)) => (input, Structure::Record(table)),
-              Err(err) => match map(input.clone()) {
-                Ok((input, map)) => (input, Structure::Map(map)),
-                Err(err) => match set(input.clone()) {
-                  Ok((input, set)) => (input, Structure::Set(set)),
-                  Err(err) => {return Err(err);}
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  };
-  Ok((input, table))
+  let mut max: Option<ParseError> = None;
+  match empty_table(input.clone()) {
+    Ok((input, _)) => {return Ok((input, Structure::Empty));},
+    Err(Failure(err)) => {
+      println!("!!{:?} {:?}", max, max_err(None,err));
+    }, 
+    _ => (),
+  }
+  match matrix(input.clone()) {
+    Ok((input, mtrx)) => {return Ok((input, Structure::Matrix(mtrx)));},
+    Err(Failure(err)) => { return Err(Failure(err)); }, 
+    _ => (),
+  }
+  match table(input.clone()) {
+    Ok((input, tbl)) => {return Ok((input, Structure::Table(tbl)));},
+    Err(Failure(err)) => { return Err(Failure(err)); }, 
+    _ => (),
+  }
+  match tuple(input.clone()) {
+    Ok((input, tpl)) => {return Ok((input, Structure::Tuple(tpl)));},
+    Err(nom::Err::Failure(err)) => {
+      println!("$${:?} {:?}", max, max_err(None,err));
+    }, 
+    _ => (),
+  }
+  match tuple_struct(input.clone()) {
+    Ok((input, tpl)) => {return Ok((input, Structure::TupleStruct(tpl)));},
+    Err(nom::Err::Failure(err)) => {
+      println!("%%{:?} {:?}", max, max_err(None,err));
+    }, 
+    _ => (),
+  }
+  match record(input.clone()) {
+    Ok((input, table)) => {return Ok((input, Structure::Record(table)));},
+    Err(nom::Err::Failure(err)) => {
+      println!("^^{:?} {:?}", max, max_err(None,err));
+    }, 
+    _ => (),
+  }
+  match map(input.clone()) {
+    Ok((input, map)) => {return Ok((input, Structure::Map(map)));},
+    Err(nom::Err::Failure(err)) => {
+      println!("&&{:?} {:?}", max, max_err(None,err));
+    }, 
+    _ => (),
+  }
+  match set(input.clone()) {
+    Ok((input, set)) => {return Ok((input, Structure::Set(set)));},
+    Err(nom::Err::Failure(ref err)) => {
+      //println!("**{:?} {:?}", max, max_err(None,err));
+      return Err(nom::Err::Failure(err.clone()));
+    }, 
+    Err(err) => {return Err(err);}
+  }
 }
 
 pub fn atom(input: ParseString) -> ParseResult<Atom> {
@@ -1216,20 +1253,25 @@ pub fn table_separator(input: ParseString) -> ParseResult<Token> {
 // anonymous_table ::= left_bracket, (space | new_line | tab)*, table_header?,
 // >>                  ((comment, new_line) | table_row)*, (space | new_line | tab)*, <right_bracket> ;
 pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
-  let msg = "Expects right bracket ']' to finish the table";
+  let msg = "Expects right bracket ']' to finish the matrix";
   let (input, (_, r)) = range(matrix_start)(input)?;
   let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
   let (input, rows) = many0(table_row)(input)?;
   let (input, _) = many0(box_drawing_char)(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  let (input, _) = label!(matrix_end, msg, r)(input)?;
+  let (input, _) = match label!(matrix_end, msg, r)(input) {
+    Ok(k) => k,
+    Err(err) => {
+      return Err(err);
+    }
+  };
   Ok((input, Matrix{rows}))
 }
 
 // anonymous_table ::= left_bracket, (space | new_line | tab)*, table_header?,
 // >>                  ((comment, new_line) | table_row)*, (space | new_line | tab)*, <right_bracket> ;
 pub fn table(input: ParseString) -> ParseResult<Table> {
-  let msg = "Expects right bracket ']' to finish the table";
+  let msg = "Expects right bracket '}' to finish the table";
   let (input, (_, r)) = range(table_start)(input)?;
   let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
   let (input, header) = table_header(input)?;
@@ -1237,7 +1279,13 @@ pub fn table(input: ParseString) -> ParseResult<Table> {
   let (input, rows) = many1(table_row)(input)?;
   let (input, _) = many0(box_drawing_char)(input)?;
   let (input, _) = many0(whitespace)(input)?;
-  let (input, _) = label!(table_end, msg, r)(input)?;
+  let (input, _) = match label!(table_end, msg, r)(input) {
+    Ok(k) => k,
+    Err(err) => {
+      println!("!!!! {:?}", err);
+      return Err(err);
+    }
+  };
   Ok((input, Table{header,rows}))
 }
 
@@ -1730,27 +1778,26 @@ pub fn followed_by_operator(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Null))
 }
 
+
 // statement ::= (followed_by  | async_assign  | table_define | variable_define | split_data  | flatten_data | whenever_data | wait_data |
 // >>             until_data   | set_data     | update_data     | add_row     | comment ), space*, <new_line+> ;
 pub fn statement(input: ParseString) -> ParseResult<Statement> {
-  let msg = "Expects new_line or semicolon to terminate statement";
-  //let (input, (statement, src_range)) = range(alt((followed_by, async_assign, table_define, variable_define, split_data, flatten_data, whenever_data, wait_data, until_data, set_data, update_data, add_row, comment)))(input)?;
-  //let (input, _) = many0(whitespace)(input.clone())?;
-  let (input, statement) = match variable_define(input.clone()) {
-    Ok((input, var_def)) => (input, Statement::VariableDefine(var_def)),
-    _ => match variable_assign(input.clone()) {
-      Ok((input, var_asgn)) => (input, Statement::VariableAssign(var_asgn)),
-      _ => match enum_define(input.clone()) {
-        Ok((input, enm_def)) => (input, Statement::EnumDefine(enm_def)),
-        _ => match kind_define(input.clone()) {
-          Ok((input, knd_def)) => (input, Statement::KindDefine(knd_def)),
-          Err(err) => {return Err(err);}   
-        },
-      },
-    },
-  };
-  let (input, _) = many0(space)(input)?;
-  Ok((input, statement))
+  match variable_define(input.clone()) {
+    Ok((input, var_def)) => { return Ok((input, Statement::VariableDefine(var_def))); },
+    Err(_) => (),
+  }
+  match variable_assign(input.clone()) {
+      Ok((input, var_asgn)) => { return Ok((input, Statement::VariableAssign(var_asgn))); },
+      Err(_) => (),
+  }
+  match enum_define(input.clone()) {
+      Ok((input, enm_def)) => { return Ok((input, Statement::EnumDefine(enm_def))); },
+      Err(_) => (),
+  }
+  match kind_define(input.clone()) {
+      Ok((input, knd_def)) => { return Ok((input, Statement::KindDefine(knd_def))); },
+      Err(err) => { return Err(err); },
+  }
 }
 
 pub fn enum_define(input: ParseString) -> ParseResult<EnumDefine> {
@@ -2030,31 +2077,36 @@ pub fn comparison_operator(input: ParseString) -> ParseResult<FormulaOperator> {
 
 // l6 ::= literal | data | slice | table | parenthetical_expression ;
 pub fn factor(input: ParseString) -> ParseResult<Factor> {
-  let (input, fctr) = match parenthetical_term(input.clone()) {
-    Ok((input, term)) => (input, term),
-    _ => match structure(input.clone()) {
-      Ok((input, strct)) => (input, Factor::Expression(Box::new(Expression::Structure(strct)))),
-      _ => match function_call(input.clone()) {
-        Ok((input, fxn)) => (input, Factor::Expression(Box::new(Expression::FunctionCall(fxn)))),
-        _ => match literal(input.clone()) {
-          Ok((input, ltrl)) => (input, Factor::Expression(Box::new(Expression::Literal(ltrl)))),
-          _ => match slice(input.clone()) {
-            Ok((input, slc)) => (input, Factor::Expression(Box::new(Expression::Slice(slc)))),
-            _ => match var(input.clone()) {
-              Ok((input, var)) => (input, Factor::Expression(Box::new(Expression::Var(var)))),
-              Err(err) => {return Err(err);}
-            },
-          },
-        },
-      },
-    },
-  };
+  match parenthetical_term(input.clone()) {
+    Ok((input, term)) => { return Ok((input, term)); },
+    Err(_) => (),
+  }
+  match structure(input.clone()) {
+      Ok((input, strct)) => { return Ok((input, Factor::Expression(Box::new(Expression::Structure(strct))))); },
+      Err(Failure(err)) => {return Err(Failure(err))},
+      _ => (),
+  }
+  match function_call(input.clone()) {
+      Ok((input, fxn)) => { return Ok((input, Factor::Expression(Box::new(Expression::FunctionCall(fxn))))); },
+      Err(_) => (),
+  }
+  match literal(input.clone()) {
+      Ok((input, ltrl)) => { return Ok((input, Factor::Expression(Box::new(Expression::Literal(ltrl))))); },
+      Err(_) => (),
+  }
+  match slice(input.clone()) {
+      Ok((input, slc)) => { return Ok((input, Factor::Expression(Box::new(Expression::Slice(slc))))); },
+      Err(_) => (),
+  }
+  match var(input.clone()) {
+      Ok((input, var)) => { return Ok((input, Factor::Expression(Box::new(Expression::Var(var))))); },
+      Err(err) => { return Err(err); },
+  }
   /*let (input, transpose) = opt(transpose)(input)?;
   let fctr = match transpose {
     Some(_) => Factor::Transpose(Box::new(fctr)),
     None => fctr,
   };*/
-  Ok((input, fctr))
 }
 
 pub fn function_define(input: ParseString) -> ParseResult<FunctionDefine> {
@@ -2262,7 +2314,10 @@ pub fn expression(input: ParseString) -> ParseResult<Expression> {
   let (input, expression) = match formula(input.clone()) {
     Ok((input, Factor::Expression(expr))) => (input, *expr),
     Ok((input, fctr)) => (input, Expression::Formula(fctr)),
-    Err(err) => {return Err(err);}
+    Err(Failure(err)) => {
+      return Err(Failure(err));
+    }
+    Err(err) => {return Err(err);},
   };
   let (input, transpose) = opt(transpose)(input)?;
   let expr = match transpose {
@@ -2501,6 +2556,9 @@ pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
         Ok((input, stmt)) => ((input, MechCode::Statement(stmt))),
         _ => match expression(input.clone()) {
           Ok((input, expr)) => ((input, MechCode::Expression(expr))),
+          Err(Failure(err)) => {
+            println!("%%%%%%%%%%%{:?}", err);
+            return Err(Failure(err));}
           Err(err) => {return Err(err);}
         }
       }
@@ -2517,14 +2575,19 @@ pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match mech_code(input.clone()) {
     Ok((input, code)) => (input, SectionElement::MechCode(code)),
+    Err(Failure(err)) => {return Err(Failure(err));}
     _ => match unordered_list(input.clone()) {
       Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
+      Err(Failure(err)) => {return Err(Failure(err));}
       _ => match comment(input.clone()) {
         Ok((input, comment)) => (input, SectionElement::Comment(comment)),
+        Err(Failure(err)) => {return Err(Failure(err));}
         _ => match paragraph(input.clone()) {
           Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+          Err(Failure(err)) => {return Err(Failure(err));}
           _ => match code_block(input.clone()) {
             Ok((input, m)) => (input,SectionElement::CodeBlock),
+            Err(Failure(err)) => {return Err(Failure(err));}
             _ => match sub_section(input) {
               Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
               Err(err) => { return Err(err); }
