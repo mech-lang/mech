@@ -814,31 +814,57 @@ pub fn enum_separator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
+
 // number-literal := (integer | hexadecimal | octal | binary | decimal | float | rational | scientific) ;
+
 pub fn number(input: ParseString) -> ParseResult<Number> {
+  let (input, real_num) = real_number(input)?;
+  match tag("i")(input.clone()) {
+    Ok((input,_)) => {
+      return Ok((input, Number::Imaginary(
+        ComplexNumber{
+          real: None, 
+          imaginary: ImaginaryNumber{number: real_num}
+        })));
+      }
+    _ => match nom_tuple((plus,real_number,tag("i")))(input.clone()) {
+      Ok((input, (_,imaginary_num,_))) => {
+        return Ok((input, Number::Imaginary(
+          ComplexNumber{
+            real: Some(real_num), 
+            imaginary: ImaginaryNumber{number: imaginary_num},
+          })));
+        }
+      _ => ()
+    }
+  }
+  Ok((input, Number::Real(real_num)))
+}
+
+pub fn real_number(input: ParseString) -> ParseResult<RealNumber> {
   let (input, neg) = opt(dash)(input)?;
   let (input, result) = alt((hexadecimal_literal, decimal_literal, octal_literal, binary_literal, scientific_literal, rational_literal, float_literal, integer_literal))(input)?;
   let result = match neg {
-    Some(_) => Number::Negated(Box::new(result)),
+    Some(_) => RealNumber::Negated(Box::new(result)),
     None => result,
   };
   Ok((input, result))
 }
 
-pub fn rational_literal(input: ParseString) -> ParseResult<Number> {
-  let (input, Number::Integer(numerator)) = integer_literal(input)? else { unreachable!() };
+pub fn rational_literal(input: ParseString) -> ParseResult<RealNumber> {
+  let (input, RealNumber::Integer(numerator)) = integer_literal(input)? else { unreachable!() };
   let (input, _) = slash(input)?;
-  let (input, Number::Integer(denominator)) = integer_literal(input)? else { unreachable!() };
-  Ok((input, Number::Rational((numerator,denominator))))
+  let (input, RealNumber::Integer(denominator)) = integer_literal(input)? else { unreachable!() };
+  Ok((input, RealNumber::Rational((numerator,denominator))))
 }
 
-pub fn scientific_literal(input: ParseString) -> ParseResult<Number> {
+pub fn scientific_literal(input: ParseString) -> ParseResult<RealNumber> {
   let (input, base) = match float_literal(input.clone()) {
-    Ok((input, Number::Float(base))) => {
+    Ok((input, RealNumber::Float(base))) => {
       (input, base)
     }
     _ => match integer_literal(input.clone()) {
-      Ok((input, Number::Integer(base))) => {
+      Ok((input, RealNumber::Integer(base))) => {
         (input, (base, Token::default()))
       }
       Err(err) => {return Err(err);}
@@ -849,11 +875,11 @@ pub fn scientific_literal(input: ParseString) -> ParseResult<Number> {
   let (input, _) = opt(plus)(input)?;
   let (input, neg) = opt(dash)(input)?;
   let (input, (ex_whole,ex_part)) = match float_literal(input.clone()) {
-    Ok((input, Number::Float(exponent))) => {
+    Ok((input, RealNumber::Float(exponent))) => {
       (input, exponent)
     }
     _ => match integer_literal(input.clone()) {
-      Ok((input, Number::Integer(exponent))) => {
+      Ok((input, RealNumber::Integer(exponent))) => {
         (input, (exponent, Token::default()))
       }
       Err(err) => {return Err(err);}
@@ -864,85 +890,85 @@ pub fn scientific_literal(input: ParseString) -> ParseResult<Number> {
     Some(_) => true,
     None => false,
   };
-  Ok((input, Number::Scientific((base,(ex_sign,ex_whole,ex_part)))))
+  Ok((input, RealNumber::Scientific((base,(ex_sign,ex_whole,ex_part)))))
 }
 
-fn float_decimal_start(input: ParseString) -> ParseResult<Number> {
+fn float_decimal_start(input: ParseString) -> ParseResult<RealNumber> {
   let (input, _) = period(input)?;
-  let (input, part) = many1(digit_token)(input)?;
+  let (input, part) = digit_sequence(input)?;
   let mut tokens2 = part.clone();
   let mut merged = merge_tokens(&mut tokens2).unwrap();
   merged.kind = TokenKind::Number;
-  Ok((input, Number::Float((Token::default(),merged))))
+  Ok((input, RealNumber::Float((Token::default(),merged))))
 }
 
-fn float_full(input: ParseString) -> ParseResult<Number> {
-  let (input, mut whole) = many1(digit_token)(input)?;
+fn float_full(input: ParseString) -> ParseResult<RealNumber> {
+  let (input, mut whole) = digit_sequence(input)?;
   let (input, _) = period(input)?;
-  let (input, mut part) = many1(digit_token)(input)?;
+  let (input, mut part) = digit_sequence(input)?;
   let mut whole = merge_tokens(&mut whole).unwrap();
   let mut part = merge_tokens(&mut part).unwrap();
   whole.kind = TokenKind::Number;
   part.kind = TokenKind::Number;
-  Ok((input, Number::Float((whole,part))))
+  Ok((input, RealNumber::Float((whole,part))))
 }
 
 // float_literal ::= "."?, digit1, "."?, digit0 ;
-pub fn float_literal(input: ParseString) -> ParseResult<Number> {
+pub fn float_literal(input: ParseString) -> ParseResult<RealNumber> {
   let (input, result) = alt((float_decimal_start,float_full))(input)?;
   Ok((input, result))
 }
 
 // integer ::= digit1 ;
-pub fn integer_literal(input: ParseString) -> ParseResult<Number> {
+pub fn integer_literal(input: ParseString) -> ParseResult<RealNumber> {
   let (input, mut digits) = digit_sequence(input)?;
   let mut merged = merge_tokens(&mut digits).unwrap();
   merged.kind = TokenKind::Number; 
-  Ok((input, Number::Integer(merged)))
+  Ok((input, RealNumber::Integer(merged)))
 }
 
 // decimal_literal ::= "0d", <digit1> ;
-pub fn decimal_literal(input: ParseString) -> ParseResult<Number> {
+pub fn decimal_literal(input: ParseString) -> ParseResult<RealNumber> {
   let msg = "Expects decimal digits after \"0d\"";
   let input = tag("0d")(input);
   let (input, _) = input?;
-  let (input, mut tokens) = label!(many1(digit_token), msg)(input)?;
+  let (input, mut tokens) = label!(digit_sequence, msg)(input)?;
   let mut merged = merge_tokens(&mut tokens).unwrap();
   merged.kind = TokenKind::Number; 
-  Ok((input, Number::Decimal(merged)))
+  Ok((input, RealNumber::Decimal(merged)))
 }
 
 // hexadecimal_literal ::= "0x", <hex_digit+> ;
-pub fn hexadecimal_literal(input: ParseString) -> ParseResult<Number> {
+pub fn hexadecimal_literal(input: ParseString) -> ParseResult<RealNumber> {
   let msg = "Expects hexadecimal digits after \"0x\"";
   let input = tag("0x")(input);
   let (input, _) = input?;
-  let (input, mut tokens) = label!(many1(alt((digit_token,alpha_token))), msg)(input)?;
+  let (input, mut tokens) = label!(many1(alt((digit_token,underscore,alpha_token))), msg)(input)?;
   let mut merged = merge_tokens(&mut tokens).unwrap();
   merged.kind = TokenKind::Number; 
-  Ok((input, Number::Hexadecimal(merged)))
+  Ok((input, RealNumber::Hexadecimal(merged)))
 }
 
 // octal_literal ::= "0o", <oct_digit+> ;
-pub fn octal_literal(input: ParseString) -> ParseResult<Number> {
+pub fn octal_literal(input: ParseString) -> ParseResult<RealNumber> {
   let msg = "Expects octal digits after \"0o\"";
   let input = tag("0o")(input);
   let (input, _) = input?;
-  let (input, mut tokens) = label!(many1(alt((digit_token,alpha_token))), msg)(input)?;
+  let (input, mut tokens) = label!(many1(alt((digit_token,underscore,alpha_token))), msg)(input)?;
   let mut merged = merge_tokens(&mut tokens).unwrap();
   merged.kind = TokenKind::Number; 
-  Ok((input, Number::Octal(merged)))
+  Ok((input, RealNumber::Octal(merged)))
 }
 
 // binary_literal ::= "0b", <bin_digit+> ;
-pub fn binary_literal(input: ParseString) -> ParseResult<Number> {
+pub fn binary_literal(input: ParseString) -> ParseResult<RealNumber> {
   let msg = "Expects binary digits after \"0b\"";
   let input = tag("0b")(input);
   let (input, _) = input?;
-  let (input, mut tokens) = label!(many1(alt((digit_token,alpha_token))), msg)(input)?;
+  let (input, mut tokens) = label!(many1(alt((digit_token,underscore,alpha_token))), msg)(input)?;
   let mut merged = merge_tokens(&mut tokens).unwrap();
   merged.kind = TokenKind::Number; 
-  Ok((input, Number::Binary(merged)))
+  Ok((input, RealNumber::Binary(merged)))
 }
 
 // empty ::= underscore+ ;
@@ -1947,9 +1973,9 @@ pub fn transpose(input: ParseString) -> ParseResult<()> {
 
 pub fn literal(input: ParseString) -> ParseResult<Literal> {
   let (input, result) = match number(input.clone()) {
-    Ok((input, number)) => (input, Literal::Number(number)),
+    Ok((input, num)) => (input, Literal::Number(num)),
     _ => match string(input.clone()) {
-      Ok((input, string)) => (input, Literal::String(string)),
+      Ok((input, s)) => (input, Literal::String(s)),
       _ => match atom(input.clone()) {
         Ok((input, atm)) => (input, Literal::Atom(atm)),
         _ => match boolean(input.clone()) {

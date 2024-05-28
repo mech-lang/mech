@@ -1137,14 +1137,20 @@ type Numerator = Token;
 type Denominator = Token;
 type Whole = Token;
 type Part = Token;
-type Real = Token;
-type Imaginary = Token;
+type Real = Box<Number>;
+type Imaginary = Box<Number>;
 type Base = (Whole, Part);
 type Exponent = (Sign, Whole, Part);
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Number {
-  Negated(Box<Number>),
+  Real(RealNumber),
+  Imaginary(ComplexNumber),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum RealNumber {
+  Negated(Box<RealNumber>),
   Integer(Token),
   Float((Whole,Part)),
   Decimal(Token),
@@ -1153,8 +1159,17 @@ pub enum Number {
   Binary(Token),
   Scientific((Base,Exponent)),
   Rational((Numerator,Denominator)),
-  Imaginary(Imaginary),       // todo
-  Complex((Real,Imaginary)),  // todo
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ImaginaryNumber {
+  pub number: RealNumber,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ComplexNumber {
+  pub real: Option<RealNumber>,
+  pub imaginary: ImaginaryNumber
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
