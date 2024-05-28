@@ -789,18 +789,28 @@ pub fn whitespace(input: ParseString) -> ParseResult<Token> {
   Ok((input, space))
 }
 
+pub fn whitespace0(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many0(whitespace)(input)?;
+  Ok((input, ()))
+}
+
+pub fn whitespace1(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many1(whitespace)(input)?;
+  Ok((input, ()))
+}
+
 pub fn space_tab(input: ParseString) -> ParseResult<Token> {
   let (input, space) = alt((space,tab))(input)?;
   Ok((input, space))
 }
 
 pub fn list_separator(input: ParseString) -> ParseResult<()> {
-  let (input,_) = nom_tuple((many0(whitespace),tag(","),many0(whitespace)))(input)?;
+  let (input,_) = nom_tuple((whitespace0,tag(","),whitespace0))(input)?;
   Ok((input, ()))
 }
 
 pub fn enum_separator(input: ParseString) -> ParseResult<()> {
-  let (input,_) = nom_tuple((many0(whitespace),tag("|"),many0(whitespace)))(input)?;
+  let (input,_) = nom_tuple((whitespace0,tag("|"),whitespace0))(input)?;
   Ok((input, ()))
 }
 
@@ -1055,9 +1065,9 @@ pub fn tuple_struct(input: ParseString) -> ParseResult<TupleStruct> {
   let (input, _) = grave(input)?;
   let (input, name) = identifier(input)?;
   let (input, _) = left_parenthesis(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, value) = expression(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = right_parenthesis(input)?;
   Ok((input, TupleStruct{name, value: Box::new(value)}))
 }
@@ -1070,16 +1080,16 @@ pub fn binding(input: ParseString) -> ParseResult<Binding> {
   let msg2 = "Expects a value";
   let msg3 = "Expects whitespace or comma followed by whitespace";
   let msg4 = "Expects whitespace";
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, name) = identifier(input)?;
   let (input, kind) = opt(kind_annotation)(input)?;
   let (input, _) = label!(is_not(nom_tuple((many1(space), colon))), msg1)(input)?;
   let (input, _) = colon(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   let (input, value) = label!(expression, msg2)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = opt(comma)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   Ok((input, Binding{name, kind, value}))
 }
 
@@ -1106,7 +1116,7 @@ pub fn table_header(input: ParseString) -> ParseResult<Vec<Field>> {
   let (input, fields) = separated_list1(many1(space_tab),field)(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = alt((bar,box_vert))(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   Ok((input, fields))
 }
 
@@ -1151,7 +1161,7 @@ pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
   let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
   let (input, rows) = many0(table_row)(input)?;
   let (input, _) = many0(box_drawing_char)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = match label!(matrix_end, msg, r)(input) {
     Ok(k) => k,
     Err(err) => {
@@ -1171,7 +1181,7 @@ pub fn table(input: ParseString) -> ParseResult<Table> {
   let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
   let (input, rows) = many1(table_row)(input)?;
   let (input, _) = many0(box_drawing_char)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = match label!(table_end, msg, r)(input) {
     Ok(k) => k,
     Err(err) => {
@@ -1185,9 +1195,9 @@ pub fn table(input: ParseString) -> ParseResult<Table> {
 // empty_table ::= left_bracket, (space | new_line | tab)*, table_header?, (space | new_line | tab)*, right_bracket ;
 pub fn empty_table(input: ParseString) -> ParseResult<Structure> {
   let (input, _) = table_start(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = opt(empty)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = table_end(input)?;
   Ok((input, Structure::Empty))
 }
@@ -1196,9 +1206,9 @@ pub fn empty_table(input: ParseString) -> ParseResult<Structure> {
 pub fn record(input: ParseString) -> ParseResult<Record> {
   let msg = "Expects right bracket ']' to terminate inline table";
   let (input, (_, r)) = range(left_brace)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, bindings) = many1(binding)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = label!(right_brace, msg, r)(input)?;
   Ok((input, Record{bindings}))
 }
@@ -1207,9 +1217,9 @@ pub fn record(input: ParseString) -> ParseResult<Record> {
 pub fn map(input: ParseString) -> ParseResult<Map> {
   let msg = "Expects right bracket '}' to terminate inline table";
   let (input, (_, r)) = range(left_brace)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, elements) = many0(mapping)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = label!(right_brace, msg, r)(input)?;
   Ok((input, Map{elements}))
 }
@@ -1219,24 +1229,24 @@ pub fn mapping(input: ParseString) -> ParseResult<Mapping> {
   let msg2 = "Expects a value";
   let msg3 = "Expects whitespace or comma followed by whitespace";
   let msg4 = "Expects whitespace";
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, key) = expression(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = colon(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, value) = label!(expression, msg2)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = opt(comma)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   Ok((input, Mapping{key, value}))
 }
 
 pub fn set(input: ParseString) -> ParseResult<Set> {
   let msg = "Expects right bracket '}' to terminate inline table";
   let (input, (_, r)) = range(left_brace)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, elements) = separated_list0(list_separator, expression)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = label!(right_brace, msg, r)(input)?;
   Ok((input, Set{elements}))
 }
@@ -1244,30 +1254,30 @@ pub fn set(input: ParseString) -> ParseResult<Set> {
 // #### State Machines
 
 pub fn define_operator(input: ParseString) -> ParseResult<()> {
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = tag(":=")(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   Ok((input, ()))
 }
 
 pub fn output_operator(input: ParseString) -> ParseResult<()> {
-  let (input, _) = many0(whitespace)(input)?;
-  let (input, _) = tag("->")(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = tag("=>")(input)?;
+  let (input, _) = whitespace0(input)?;
   Ok((input, ()))
 }
 
 pub fn transition_operator(input: ParseString) -> ParseResult<()> {
-  let (input, _) = many0(whitespace)(input)?;
-  let (input, _) = tag("=>")(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = tag("->")(input)?;
+  let (input, _) = whitespace0(input)?;
   Ok((input, ()))
 }
 
 pub fn guard_operator(input: ParseString) -> ParseResult<()> {
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = alt((tag("|"),tag("│"),tag("├"),tag("└")))(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   Ok((input, ()))
 }
 
@@ -1279,7 +1289,7 @@ pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> 
   let ((input, _)) = right_parenthesis(input)?;
   let ((input, _)) = transition_operator(input)?;
   let ((input, start)) = fsm_pattern(input)?;
-  let ((input, _)) = many0(whitespace)(input)?;
+  let ((input, _)) = whitespace0(input)?;
   let ((input, arms)) = many0(fsm_arm)(input)?;
   let ((input, _)) = period(input)?;
   Ok((input, FsmImplementation{name,input: input_vars,start,arms}))
@@ -1289,7 +1299,7 @@ pub fn fsm_arm(input: ParseString) -> ParseResult<FsmArm> {
   let ((input, _)) = many0(comment)(input)?;
   let ((input, start)) = fsm_pattern(input)?;
   let ((input, trns)) = many1(alt((fsm_state_transition,fsm_output,fsm_guard)))(input)?;
-  let ((input, _)) = many0(whitespace)(input)?;
+  let ((input, _)) = whitespace0(input)?;
   Ok((input, FsmArm{start, transitions: trns}))
 }
 
@@ -1337,18 +1347,23 @@ pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
 }
 
 pub fn fsm_pattern(input: ParseString) -> ParseResult<Pattern> {
-  let ((input, ptrn)) = match fsm_tuple_struct(input.clone()) {
-    Ok((input, tpl)) => (input, Pattern::TupleStruct(tpl)),
-    _ => match wildcard(input.clone()) {
-      Ok((input, _)) => (input, Pattern::Wildcard),
-      _ => match formula(input.clone()) {
-        Ok((input, Factor::Expression(expr))) => (input, Pattern::Expression(*expr)),
-        Ok((input, frmla)) => (input, Pattern::Formula(frmla)),
-        Err(err) => {return Err(err)},
-      },
-    },
-  };
-  Ok((input, ptrn))
+  match fsm_tuple_struct(input.clone()) {
+    Ok((input, tpl)) => {return Ok((input, Pattern::TupleStruct(tpl)))},
+    _ => ()
+  }
+  match wildcard(input.clone()) {
+    Ok((input, _)) => {return Ok((input, Pattern::Wildcard))},
+    _ => ()
+  }
+  match fsm(input.clone()) {
+    Ok((input, f)) => {return Ok((input, Pattern::Fsm(f)))},
+    _ => (),
+  }
+  match formula(input.clone()) {
+    Ok((input, Factor::Expression(expr))) => {return Ok((input, Pattern::Expression(*expr)))},
+    Ok((input, frmla)) => {return Ok((input, Pattern::Formula(frmla)))},
+    Err(err) => {return Err(err)},
+  }
 }
 
 pub fn fsm_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
@@ -1373,6 +1388,42 @@ pub fn fsm_state_definition_variables(input: ParseString) -> ParseResult<Vec<Ide
   Ok((input, names))
 }
 
+pub fn fsm_pipe(input: ParseString) -> ParseResult<FsmPipe> {
+  let ((input, start)) = fsm_pattern(input)?;
+  let ((input, trns)) = many1(alt((fsm_state_transition,fsm_output,fsm_guard)))(input)?;
+  let ((input, _)) = whitespace0(input)?;
+  Ok((input, FsmPipe{start, transitions: trns}))
+}
+
+fn fsm_declare(input: ParseString) -> ParseResult<FsmDeclare> {
+  let (input, fsm) = fsm(input)?;
+  let (input, _) = define_operator(input)?;
+  let (input, instance) = fsm_instance(input)?;
+  Ok((input, FsmDeclare{fsm,instance}))
+}
+  
+fn fsm(input: ParseString) -> ParseResult<Fsm> {
+  let ((input, _)) = hashtag(input)?;
+  let ((input, name)) = identifier(input)?;
+  let ((input, args)) = opt(argument_list)(input)?;
+  let ((input, kind)) = opt(kind_annotation)(input)?;
+  Ok((input, Fsm{ name, args, kind }))
+}
+
+fn fsm_instance(input: ParseString) -> ParseResult<FsmInstance> {
+  let ((input, _)) = hashtag(input)?;
+  let (input, name) = identifier(input)?;
+  let (input, args) = opt(fsm_args)(input)?;
+  Ok((input, FsmInstance{name,args} ))
+}
+
+fn fsm_args(input: ParseString) -> ParseResult<Vec<(Option<Identifier>,Expression)>> {
+  let (input, _) = left_parenthesis(input)?;
+  let (input, args) = separated_list0(list_separator, alt((call_arg_with_binding,call_arg)))(input)?;
+  let (input, _) = right_parenthesis(input)?;
+  Ok((input, args))
+}
+
 // #### Statements
 
 // comment_sigil ::= "--" ;
@@ -1384,18 +1435,18 @@ pub fn comment_sigil(input: ParseString) -> ParseResult<()> {
 // comment ::= (space | tab)*, comment_sigil, <text>, <!!new_line> ;
 pub fn comment(input: ParseString) -> ParseResult<Comment> {
   let msg2 = "Character not allowed in comment text";
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = comment_sigil(input)?;
   let (input, text) = many1(text)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   Ok((input, Comment{text}))
 }
 
 // assign_operator ::= "=" ;
 pub fn assign_operator(input: ParseString) -> ParseResult<()> {
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = tag("=")(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   Ok((input, ()))
 }
 
@@ -1467,52 +1518,33 @@ pub fn flatten_operator(input: ParseString) -> ParseResult<ParserNode> {
 pub fn statement(input: ParseString) -> ParseResult<Statement> {
   match variable_define(input.clone()) {
     Ok((input, var_def)) => { return Ok((input, Statement::VariableDefine(var_def))); },
-    Err(_) => (),
+    Err(Failure(err)) => {return Err(Failure(err))},
+    _ => (),
   }
   match variable_assign(input.clone()) {
-      Ok((input, var_asgn)) => { return Ok((input, Statement::VariableAssign(var_asgn))); },
-      Err(_) => (),
+    Ok((input, var_asgn)) => { return Ok((input, Statement::VariableAssign(var_asgn))); },
+    Err(Failure(err)) => {return Err(Failure(err))},
+    _ => (),
+  }
+  match fsm_pipe(input.clone()) {
+    Ok((input, pipe)) => { return Ok((input, Statement::FsmPipe(pipe))); },
+    Err(Failure(err)) => {return Err(Failure(err))},
+    _ => (),
   }
   match enum_define(input.clone()) {
-      Ok((input, enm_def)) => { return Ok((input, Statement::EnumDefine(enm_def))); },
-      Err(_) => (),
+    Ok((input, enm_def)) => { return Ok((input, Statement::EnumDefine(enm_def))); },
+    Err(Failure(err)) => {return Err(Failure(err))},
+    _ => (),
   }
   match fsm_declare(input.clone()) {
     Ok((input, var_def)) => { return Ok((input, Statement::FsmDeclare(var_def))); },
-    Err(_) => (),
+    Err(Failure(err)) => {return Err(Failure(err))},
+    _ => (),
   }
   match kind_define(input.clone()) {
-      Ok((input, knd_def)) => { return Ok((input, Statement::KindDefine(knd_def))); },
-      Err(err) => { return Err(err); },
+    Ok((input, knd_def)) => { return Ok((input, Statement::KindDefine(knd_def))); },
+    Err(err) => { return Err(err); },
   }
-}
-
-fn fsm_declare(input: ParseString) -> ParseResult<FsmDeclare> {
-  let (input, fsm) = fsm(input)?;
-  let (input, _) = define_operator(input)?;
-  let (input, instance) = fsm_instance(input)?;
-  Ok((input, FsmDeclare{fsm,instance}))
-}
-  
-fn fsm(input: ParseString) -> ParseResult<Fsm> {
-  let ((input, _)) = hashtag(input)?;
-  let ((input, name)) = identifier(input)?;
-  let ((input, kind)) = opt(kind_annotation)(input)?;
-  Ok((input, Fsm{ name, kind }))
-}
-
-fn fsm_instance(input: ParseString) -> ParseResult<FsmInstance> {
-  let ((input, _)) = hashtag(input)?;
-  let (input, name) = identifier(input)?;
-  let (input, args) = opt(fsm_args)(input)?;
-  Ok((input, FsmInstance{name,args} ))
-}
-
-fn fsm_args(input: ParseString) -> ParseResult<Vec<(Option<Identifier>,Expression)>> {
-  let (input, _) = left_parenthesis(input)?;
-  let (input, args) = separated_list0(list_separator, alt((call_arg_with_binding,call_arg)))(input)?;
-  let (input, _) = right_parenthesis(input)?;
-  Ok((input, args))
 }
 
 pub fn enum_define(input: ParseString) -> ParseResult<EnumDefine> {
@@ -1563,58 +1595,58 @@ pub fn parenthetical_term(input: ParseString) -> ParseResult<Factor> {
 
 // add ::= "+" ;
 pub fn add(input: ParseString) -> ParseResult<AddSubOp> {
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   let (input, _) = tag("+")(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   Ok((input, AddSubOp::Add))
 }
 
 // subtract ::= "-" ;
 pub fn subtract(input: ParseString) -> ParseResult<AddSubOp> {
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   let (input, _) = tag("-")(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   Ok((input, AddSubOp::Sub))
 }
 
 // multiply ::= "*" ;
 pub fn multiply(input: ParseString) -> ParseResult<MulDivOp> {
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   let (input, _) = tag("*")(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   Ok((input, MulDivOp::Mul))
 }
 
 // divide ::= "/" ;
 pub fn divide(input: ParseString) -> ParseResult<MulDivOp> {
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   let (input, _) = tag("/")(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   Ok((input, MulDivOp::Div))
 }
 
 
 // matrix_multiply ::= "**" ;
 pub fn matrix_multiply(input: ParseString) -> ParseResult<MulDivOp> {
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   let (input, _) = tag("**")(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   Ok((input, MulDivOp::MatMul))
 }
 
 // matrix_solve ::= "\" ;
 pub fn matrix_solve(input: ParseString) -> ParseResult<MulDivOp> {
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   let (input, _) = tag("\\")(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   Ok((input, MulDivOp::Solve))
 }
 
 // exponent ::= "^" ;
 pub fn exponent(input: ParseString) -> ParseResult<ExponentOp> {
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   let (input, _) = tag("^")(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   Ok((input, ExponentOp::Exp))
 }
 
@@ -1747,15 +1779,22 @@ pub fn factor(input: ParseString) -> ParseResult<Factor> {
   };*/
 }
 
+pub fn statement_separator(input: ParseString) -> ParseResult<()> {
+  let (input,_) = nom_tuple((whitespace0,semicolon,whitespace0))(input)?;
+  Ok((input, ()))
+}
+
 pub fn function_define(input: ParseString) -> ParseResult<FunctionDefine> {
   let ((input, name)) = identifier(input)?;
   let ((input, _)) = left_parenthesis(input)?;
   let ((input, input_args)) = separated_list0(list_separator, function_arg)(input)?;
   let ((input, _)) = right_parenthesis(input)?;
-  let ((input, _)) = output_operator(input)?;
+  let ((input, _)) = whitespace0(input)?;
+  let ((input, _)) = equal(input)?;
+  let ((input, _)) = whitespace0(input)?;
   let ((input, output)) = function_arg(input)?;
   let ((input, _)) = define_operator(input)?;
-  let ((input, statements)) = many1(statement)(input)?;
+  let ((input, statements)) = separated_list1(alt((whitespace1,statement_separator)), statement)(input)?;
   let ((input, _)) = period(input)?;
   Ok((input,FunctionDefine{name,input: input_args,output,statements}))
 }
@@ -1766,19 +1805,24 @@ fn function_arg(input: ParseString) -> ParseResult<FunctionArgument> {
   Ok((input, FunctionArgument{ name, kind }))
 }
 
-fn function_call(input: ParseString) -> ParseResult<FunctionCall> {
-  let (input, name) = identifier(input)?;
+fn argument_list(input: ParseString) -> ParseResult<ArgumentList> {
   let (input, _) = left_parenthesis(input)?;
   let (input, args) = separated_list0(list_separator, alt((call_arg_with_binding,call_arg)))(input)?;
   let (input, _) = right_parenthesis(input)?;
+  Ok((input, args))
+}
+
+fn function_call(input: ParseString) -> ParseResult<FunctionCall> {
+  let (input, name) = identifier(input)?;
+  let (input, args) = argument_list(input)?;
   Ok((input, FunctionCall{name,args} ))
 }
 
 fn call_arg_with_binding(input: ParseString) -> ParseResult<(Option<Identifier>,Expression)> {
   let (input, arg_name) = identifier(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = colon(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, expr) = expression(input)?;
   Ok((input, (Some(arg_name), expr)))
 }
@@ -1798,49 +1842,49 @@ fn var(input: ParseString) -> ParseResult<Var> {
 
 // not_equal ::= "!=" | "¬=" | "≠" ;
 pub fn not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   let (input, _) = alt((tag("!="),tag("¬="),tag("≠")))(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   Ok((input, ComparisonOp::NotEqual))
 }
 
 // equal_to ::= "==" ;
 pub fn equal_to(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   let (input, _) = tag("==")(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   Ok((input, ComparisonOp::Equal))
 }
 
 // greater_than ::= ">" ;
 pub fn greater_than(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   let (input, _) = tag(">")(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   Ok((input, ComparisonOp::GreaterThan))
 }
 
 // less_than ::= "<" ;
 pub fn less_than(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   let (input, _) = tag("<")(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   Ok((input, ComparisonOp::LessThan))
 }
 
 // greater_than_equal ::= ">=" | "≥" ;
 pub fn greater_than_equal(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   let (input, _) = alt((tag(">="),tag("≥")))(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   Ok((input, ComparisonOp::GreaterThanEqual))
 }
 
 // less_than_equal ::= "<=" | "≤" ;
 pub fn less_than_equal(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   let (input, _) = alt((tag("<="),tag("≤")))(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   Ok((input, ComparisonOp::LessThanEqual))
 }
 
@@ -1848,33 +1892,33 @@ pub fn less_than_equal(input: ParseString) -> ParseResult<ComparisonOp> {
 
 // or ::= "|" ;
 pub fn or(input: ParseString) -> ParseResult<LogicOp> {
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   let (input, _) = tag("|")(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   Ok((input, LogicOp::Or))
 }
 
 // and ::= "&" ;
 pub fn and(input: ParseString) -> ParseResult<LogicOp> {
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   let (input, _) = tag("&")(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   Ok((input, LogicOp::And))
 }
 
 // not ::= "!" | "¬" ;
 pub fn not(input: ParseString) -> ParseResult<LogicOp> {
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   let (input, _) = alt((tag("!"), tag("¬")))(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   Ok((input, LogicOp::Not))
 }
 
 // xor ::= "xor" | "⊕" | "⊻" ;
 pub fn xor(input: ParseString) -> ParseResult<LogicOp> {
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   let (input, _) = alt((tag("xor"), tag("⊕"), tag("⊻")))(input)?;
-  let (input, _) = many1(whitespace)(input)?;
+  let (input, _) = whitespace1(input)?;
   Ok((input, LogicOp::Xor))
 }
 
@@ -1933,9 +1977,9 @@ fn slice(input: ParseString) -> ParseResult<(Identifier,Vec<Expression>)> {
 
 pub fn tuple(input: ParseString) -> ParseResult<Tuple> {
   let (input, _) = left_parenthesis(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, exprs) = separated_list0(list_separator, expression)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = right_parenthesis(input)?;
   Ok((input, Tuple{elements: exprs}))
 }
@@ -1968,7 +2012,7 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = new_line(input)?;
   let (input, _) = many0(space_tab)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let mut title = merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
   Ok((input, Title{text: title}))
@@ -1985,7 +2029,7 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = new_line(input)?;
   let (input, _) = many0(space_tab)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let mut title = merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
   Ok((input, Subtitle{text: title}))
@@ -2000,7 +2044,7 @@ pub fn number_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = many1(space_tab)(input)?;
   let (input, mut text) = many1(text)(input)?;
   let (input, _) = many0(space_tab)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let mut title = merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
   Ok((input, Subtitle{text: title}))
@@ -2015,7 +2059,7 @@ pub fn alpha_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, mut text) = many1(text)(input)?;
   let (input, _) = many0(space_tab)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let mut title = merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
   Ok((input, Subtitle{text: title}))
@@ -2057,7 +2101,7 @@ pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
 // unordered_list ::= list_item+, new_line?, whitespace* ;
 pub fn unordered_list(input: ParseString) -> ParseResult<UnorderedList> {
   let (input, items) = many1(list_item)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   Ok((input,  UnorderedList{items}))
 }
 
@@ -2085,30 +2129,42 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
   )))(input)?;
   let (input, _) = label!(new_line, msg2)(input)?;
   //let (input, text) = formatted_text(input)?;
-  let (input, _) = label!(nom_tuple((grave, grave, grave, new_line, many0(whitespace))), msg3, r)(input)?;
+  let (input, _) = label!(nom_tuple((grave, grave, grave, new_line, whitespace0)), msg3, r)(input)?;
   Ok((input, SectionElement::CodeBlock))
 }
 
+pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
+  match fsm_specification(input.clone()) {
+    Ok((input, fsm_spec)) => {return Ok((input, MechCode::FsmSpecification(fsm_spec)));},
+    Err(Failure(err)) => { return Err(Failure(err)); }
+    _ => () 
+  }
+  match fsm_implementation(input.clone()) {
+    Ok((input, fsm_impl)) => {return Ok((input, MechCode::FsmImplementation(fsm_impl)));},
+    Err(Failure(err)) => { return Err(Failure(err)); }
+    _ => ()
+  }
+  match function_define(input.clone()) {
+    Ok((input, fxn_def)) => {return Ok((input, MechCode::FunctionDefine(fxn_def)));},
+    Err(Failure(err)) => { return Err(Failure(err)); }
+    _ => () 
+  }
+  match statement(input.clone()) {
+    Ok((input, stmt)) => { return Ok((input, MechCode::Statement(stmt)));},
+    Err(Failure(err)) => { return Err(Failure(err)); }
+    _ => ()
+  }
+  match expression(input.clone()) {
+    Ok((input, expr)) => {return Ok((input, MechCode::Expression(expr)));},
+    Err(err) => {return Err(err);}
+  }
+}
+  
 pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
-  let (input, mech_code) = match fsm_specification(input.clone()) {
-    Ok((input, fsm_spec)) => ((input, MechCode::FsmSpecification(fsm_spec))),
-    _ => match fsm_implementation(input.clone()) {
-      Ok((input, fsm_impl)) => ((input, MechCode::FsmImplementation(fsm_impl))),
-      _ => match statement(input.clone()) {
-        Ok((input, stmt)) => ((input, MechCode::Statement(stmt))),
-        _ => match expression(input.clone()) {
-          Ok((input, expr)) => ((input, MechCode::Expression(expr))),
-          Err(Failure(err)) => {
-            println!("%%%%%%%%%%%{:?}", err);
-            return Err(Failure(err));}
-          Err(err) => {return Err(err);}
-        }
-      }
-    }
-  };  
+  let (input, code) = mech_code_alt(input.clone())?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = alt((new_line, semicolon))(input)?;
-  Ok((input, mech_code))
+  Ok((input, code))
 }
 
 // ### Start here
@@ -2139,7 +2195,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
       }
     }
   };
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   Ok((input, section_element))
 }
 
@@ -2161,7 +2217,7 @@ pub fn sub_section_element(input: ParseString) -> ParseResult<SectionElement> {
       }
     }
   };
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   Ok((input, section_element))
 }
 
@@ -2184,20 +2240,20 @@ pub fn sub_section(input: ParseString) -> ParseResult<Section> {
 
 // body ::= whitespace*, section+ ;
 pub fn body(input: ParseString) -> ParseResult<Body> {
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, sections) = many1(section)(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   Ok((input, Body{sections}))
 }
 
 // program ::= whitespace?, title?, <body>, whitespace?, space* ;
 pub fn program(input: ParseString) -> ParseResult<Program> {
   let msg = "Expects program body";
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, title) = opt(title)(input)?;
   //let (input, body) = labelr!(body, skip_nil, msg)(input)?;
   let (input, body) = body(input)?;
-  let (input, _) = many0(whitespace)(input)?;
+  let (input, _) = whitespace0(input)?;
   Ok((input, Program{title, body}))
 }
 

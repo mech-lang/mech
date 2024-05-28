@@ -194,10 +194,10 @@ test_parser!(parse_statement_enum_define, "<my-type> := A | B", 6457290206850382
 test_parser!(parse_statement_enum_define_typed, "<my-type> := A(<u8>) | B", 41352039959953377);
 test_parser!(parse_statement_enum_define_grave, "<my-type> := `A | `B", 24306883787841449);
 
-test_parser!(parse_statement_fsm_declare, "#a := #b", 39943460307682106);
-test_parser!(parse_statement_fsm_declare_args, "#a := #b(a,b,c)", 167113185653114);
-test_parser!(parse_statement_fsm_declare_args_named, "#a := #b(foo: 1, bar: 2)", 64211208682710695);
-test_parser!(parse_statement_fsm_declare_args_kind, "#a<foo> := #b", 7877799523673869);
+test_parser!(parse_statement_fsm_declare, "#a := #b", 4380795891459111);
+test_parser!(parse_statement_fsm_declare_args, "#a := #b(a,b,c)", 56046594109432523);
+test_parser!(parse_statement_fsm_declare_args_named, "#a := #b(foo: 1, bar: 2)", 66501534532915001);
+test_parser!(parse_statement_fsm_declare_args_kind, "#a<foo> := #b", 49557624327305078);
 
 test_parser!(parse_mechdown_paragraph, "Hello World", 44055055244553644);
 
@@ -221,24 +221,32 @@ test_parser!(parse_mechdown_unordered_list, r#"- one
 - three"#, 32571997588793248);
 
 test_parser!(parse_fsm_specification,
-r#"#bubble-sort(arr) -> arr := 
+r#"#bubble-sort(arr) => arr := 
     │ Start(arr,ix)
     │ Comparison(arr,ix) 
     │ Check(arr,ix)
     └ Done(arr)."#, 36857026007363078);
 
 test_parser!(parse_fsm_implementation,
-r#"#bubble-sort(arr) => Start(arr)
-  Start(arr, swaps) => Comparison(arr, swaps)
-  Comparison([], swaps) => Check(arr, swaps)
+r#"#bubble-sort(arr) -> Start(arr)
+  Start(arr, swaps) -> Comparison(arr, swaps)
+  Comparison([], swaps) -> Check(arr, swaps)
   Comparison([a, b, tail], swaps)
-      │ a > b => Comparison([b, a, tail], swaps + 1)
-      └ * => Comparison([tail], swaps)
-  Check(arr, 0) => Done(arr)
-  Check(arr, swaps) => Comparison(arr,0)
-  Done(arr) -> arr."#, 7716607608104350);
+      │ a > b -> Comparison([b, a, tail], swaps + 1)
+      └ * -> Comparison([tail], swaps)
+  Check(arr, 0) -> Done(arr)
+  Check(arr, swaps) -> Comparison(arr,0)
+  Done(arr) => arr."#, 7716607608104350);
 
-test_parser!(parse_function_define,r#"foo(x<u8>, y<u8>) -> z<u8> :=
+test_parser!(parse_function_define,r#"a() = b<c> := 
+    a := 1;
+    b := 2;
+    c := 3."#,44088885252566638);
+
+test_parser!(parse_function_define_args,r#"foo(x<u8>, y<u8>) = z<u8> :=
     x2 := x + 1
     y2 := y + 2
-    z := x2 + y2."#,12807075299820411);
+    z := x2 + y2."#,34269112102387147);
+
+    test_parser!(parse_function_define_inline,r#"a() = b<c> := a := 1;b := 2;c := 3."#,13544347646831071);
+    

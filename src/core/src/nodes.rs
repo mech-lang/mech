@@ -849,7 +849,8 @@ pub enum Pattern {
   Formula(Factor),
   Expression(Expression),
   TupleStruct(PatternTupleStruct),
-  Tuple(PatternTuple)
+  Tuple(PatternTuple),
+  Fsm(Fsm),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -881,9 +882,22 @@ pub enum Statement {
   KindDefine(KindDefine),
   EnumDefine(EnumDefine),
   FsmDeclare(FsmDeclare),     
-  FsmEval,        // todo
+  FsmPipe(FsmPipe), 
   SplitTable,     // todo
   FlattenTable,   // todo
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FsmPipe {
+  pub start: Pattern,
+  pub transitions: Vec<Transition>
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum PipeElement {
+  Expression(Expression),
+  FsmInstance(FsmInstance),
+  Timer // todo
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -895,7 +909,8 @@ pub struct FsmDeclare {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Fsm {
   pub name: Identifier,
-  pub kind: Option<KindAnnotation>,
+  pub args: Option<ArgumentList>,
+  pub kind: Option<KindAnnotation>
 }
 
 pub type FsmArgs = Vec<(Option<Identifier>,Expression)>;
@@ -1049,10 +1064,12 @@ pub enum Expression {
   FunctionCall(FunctionCall),
 }
 
+pub type ArgumentList = Vec<(Option<Identifier>,Expression)>;
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FunctionCall {
   pub name: Identifier,
-  pub args: Vec<(Option<Identifier>,Expression)>,
+  pub args: ArgumentList,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1121,6 +1138,8 @@ type Numerator = Token;
 type Denominator = Token;
 type Whole = Token;
 type Part = Token;
+type Real = Token;
+type Imaginary = Token;
 type Base = (Whole, Part);
 type Exponent = (Sign, Whole, Part);
 
@@ -1134,7 +1153,9 @@ pub enum Number {
   Octal(Token),
   Binary(Token),
   Scientific((Base,Exponent)),
-  Rational((Numerator,Denominator))
+  Rational((Numerator,Denominator)),
+  Imaginary(Imaginary),       // todo
+  Complex((Real,Imaginary)),  // todo
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1145,7 +1166,7 @@ pub struct Comment {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum RangeOp {
   Inclusive,
-  Exclusive,       // todo
+  Exclusive,      
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
