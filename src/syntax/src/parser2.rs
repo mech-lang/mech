@@ -579,13 +579,13 @@ pub fn skip_empty_mech_directive(input: ParseString) -> ParseResult<String> {
 // 5. Primitive parsers
 // -----------------------
 
-/*pub fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {
+pub fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_emoji() {
     Ok((input, matched))
   } else {
     Err(nom::Err::Error(ParseError::new(input, "Unexpected character")))
   }
-}*/
+}
 
 pub fn alpha(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_alpha() {
@@ -685,14 +685,20 @@ leaf!{box_t_top, "┬", TokenKind::BoxDrawing}
 leaf!{box_t_bottom, "┴", TokenKind::BoxDrawing}
 leaf!{box_vert, "│", TokenKind::BoxDrawing}
 
+fn forbidden_emoji(input: ParseString) -> ParseResult<Token> {
+  alt((box_t_left,box_tl_round,box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_right, box_t_top, box_t_bottom))(input)
+}
+
 // emoji ::= emoji_grapheme+ ;
-/*fn emoji(input: ParseString) -> ParseResult<Token> {
+fn emoji(input: ParseString) -> ParseResult<Token> {
+  let msg1 = "Cannot be a box-drawing emoji";
   let start = input.loc();
+  let (input, _) = is_not(forbidden_emoji)(input)?;
   let (input, g) = emoji_grapheme(input)?;
   let end = input.loc();
   let src_range = SourceRange { start, end };
   Ok((input, Token{kind: TokenKind::Emoji, chars: g.chars().collect::<Vec<char>>(), src_range}))
-}*/
+}
 
 fn alpha_token(input: ParseString) -> ParseResult<Token> {
   let (input, (g, src_range)) = range(alpha)(input)?;
@@ -751,7 +757,7 @@ pub fn text(input: ParseString) -> ParseResult<Token> {
 
 // identifier ::= (word | emoji), (word | number | symbol | emoji)* ;
 pub fn identifier(input: ParseString) -> ParseResult<Identifier> {
-  let (input, (first, mut rest)) = nom_tuple((alpha_token, many0(alt((alpha_token, digit_token, symbol)))))(input)?;
+  let (input, (first, mut rest)) = nom_tuple((alt((alpha_token, emoji)), many0(alt((alpha_token, digit_token, symbol)))))(input)?;
   let mut tokens = vec![first];
   tokens.append(&mut rest);
   let mut merged = merge_tokens(&mut tokens).unwrap();
@@ -1025,58 +1031,38 @@ fn max_err<'a>(x: Option<ParseError<'a>>, y: ParseError<'a>) -> ParseError<'a> {
 
 // structure ::= hashtag, <identifier> ;
 pub fn structure(input: ParseString) -> ParseResult<Structure> {
-  let mut max: Option<ParseError> = None;
   match empty_table(input.clone()) {
     Ok((input, _)) => {return Ok((input, Structure::Empty));},
-    Err(Failure(err)) => {
-      println!("!!{:?} {:?}", max, max_err(None,err));
-    }, 
     _ => (),
   }
   match matrix(input.clone()) {
     Ok((input, mtrx)) => {return Ok((input, Structure::Matrix(mtrx)));},
-    Err(Failure(err)) => { return Err(Failure(err)); }, 
+    //Err(Failure(err)) => { return Err(Failure(err)); }, 
     _ => (),
   }
   match table(input.clone()) {
     Ok((input, tbl)) => {return Ok((input, Structure::Table(tbl)));},
-    Err(Failure(err)) => { return Err(Failure(err)); }, 
+    //Err(Failure(err)) => { return Err(Failure(err)); }, 
     _ => (),
   }
   match tuple(input.clone()) {
     Ok((input, tpl)) => {return Ok((input, Structure::Tuple(tpl)));},
-    Err(nom::Err::Failure(err)) => {
-      println!("$${:?} {:?}", max, max_err(None,err));
-    }, 
     _ => (),
   }
   match tuple_struct(input.clone()) {
     Ok((input, tpl)) => {return Ok((input, Structure::TupleStruct(tpl)));},
-    Err(nom::Err::Failure(err)) => {
-      println!("%%{:?} {:?}", max, max_err(None,err));
-    }, 
     _ => (),
   }
   match record(input.clone()) {
     Ok((input, table)) => {return Ok((input, Structure::Record(table)));},
-    Err(nom::Err::Failure(err)) => {
-      println!("^^{:?} {:?}", max, max_err(None,err));
-    }, 
     _ => (),
   }
   match map(input.clone()) {
     Ok((input, map)) => {return Ok((input, Structure::Map(map)));},
-    Err(nom::Err::Failure(err)) => {
-      println!("&&{:?} {:?}", max, max_err(None,err));
-    }, 
     _ => (),
   }
   match set(input.clone()) {
     Ok((input, set)) => {return Ok((input, Structure::Set(set)));},
-    Err(nom::Err::Failure(ref err)) => {
-      //println!("**{:?} {:?}", max, max_err(None,err));
-      return Err(nom::Err::Failure(err.clone()));
-    }, 
     Err(err) => {return Err(err);}
   }
 }
@@ -1122,7 +1108,12 @@ pub fn binding(input: ParseString) -> ParseResult<Binding> {
 // table_column ::= (space | tab)*, (expression | value | data), comma?, (space | tab)* ;
 pub fn table_column(input: ParseString) -> ParseResult<TableColumn> {
   let (input, _) = many0(space_tab)(input)?;
-  let (input, element) = expression(input)?;
+  let (input, element) = match expression(input) {
+    Ok(result) => result,
+    Err(err) => {
+      return Err(err);
+    }
+  };
   let (input, _) = nom_tuple((many0(space_tab),opt(alt((comma,table_separator))), many0(space_tab)))(input)?;
   Ok((input, TableColumn{element}))
 }
@@ -1131,7 +1122,12 @@ pub fn table_column(input: ParseString) -> ParseResult<TableColumn> {
 pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
   let (input, _) = opt(table_separator)(input)?;
   let (input, _) = many0(space_tab)(input)?;
-  let (input, columns) = many1(table_column)(input)?;
+  let (input, columns) = match many1(table_column)(input) {
+    Ok(result) => result,
+    Err(error) => {
+      return Err(error);
+    }
+  };
   let (input, _) = nom_tuple((opt(semicolon), opt(new_line)))(input)?;
   let (input, _) = opt(nom_tuple((many1(box_drawing_char),new_line)))(input)?;
   Ok((input, TableRow{columns}))
@@ -1156,6 +1152,10 @@ pub fn box_drawing_char(input: ParseString) -> ParseResult<Token> {
   alt((box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
+pub fn box_drawing_emoji(input: ParseString) -> ParseResult<Token> {
+  alt((box_tl_round, box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
+}
+
 pub fn matrix_start(input: ParseString) -> ParseResult<Token> {
   alt((box_tl_round, left_bracket))(input)
 }
@@ -1175,7 +1175,7 @@ pub fn table_end(input: ParseString) -> ParseResult<Token> {
 }
 
 pub fn table_separator(input: ParseString) -> ParseResult<Token> {
-  let (input, token) = alt((dollar, at, box_vert))(input)?;
+  let (input, token) = box_vert(input)?;
   Ok((input, token))
 }
 
@@ -1211,7 +1211,6 @@ pub fn table(input: ParseString) -> ParseResult<Table> {
   let (input, _) = match label!(table_end, msg, r)(input) {
     Ok(k) => k,
     Err(err) => {
-      println!("!!!! {:?}", err);
       return Err(err);
     }
   };
@@ -1553,22 +1552,22 @@ pub fn flatten_operator(input: ParseString) -> ParseResult<ParserNode> {
 pub fn statement(input: ParseString) -> ParseResult<Statement> {
   match variable_define(input.clone()) {
     Ok((input, var_def)) => { return Ok((input, Statement::VariableDefine(var_def))); },
-    Err(Failure(err)) => {return Err(Failure(err))},
+    //Err(Failure(err)) => {return Err(Failure(err))},
     _ => (),
   }
   match variable_assign(input.clone()) {
     Ok((input, var_asgn)) => { return Ok((input, Statement::VariableAssign(var_asgn))); },
-    Err(Failure(err)) => {return Err(Failure(err))},
+    //Err(Failure(err)) => {return Err(Failure(err))},
     _ => (),
   }
   match enum_define(input.clone()) {
     Ok((input, enm_def)) => { return Ok((input, Statement::EnumDefine(enm_def))); },
-    Err(Failure(err)) => {return Err(Failure(err))},
+    //Err(Failure(err)) => {return Err(Failure(err))},
     _ => (),
   }
   match fsm_declare(input.clone()) {
     Ok((input, var_def)) => { return Ok((input, Statement::FsmDeclare(var_def))); },
-    Err(Failure(err)) => {return Err(Failure(err))},
+    //Err(Failure(err)) => {return Err(Failure(err))},
     _ => (),
   }
   match kind_define(input.clone()) {
@@ -1782,9 +1781,9 @@ pub fn factor(input: ParseString) -> ParseResult<Factor> {
     Err(_) => (),
   }
   match structure(input.clone()) {
-      Ok((input, strct)) => { return Ok((input, Factor::Expression(Box::new(Expression::Structure(strct))))); },
-      Err(Failure(err)) => {return Err(Failure(err))},
-      _ => (),
+    Ok((input, strct)) => { return Ok((input, Factor::Expression(Box::new(Expression::Structure(strct))))); },
+    //Err(Failure(err)) => {return Err(Failure(err))},
+    _ => (),
   }
   match fsm_pipe(input.clone()) {
     Ok((input, pipe)) => { return Ok((input, Factor::Expression(Box::new(Expression::FsmPipe(pipe))))); },
@@ -2018,9 +2017,9 @@ pub fn expression(input: ParseString) -> ParseResult<Expression> {
   let (input, expression) = match formula(input.clone()) {
     Ok((input, Factor::Expression(expr))) => (input, *expr),
     Ok((input, fctr)) => (input, Expression::Formula(fctr)),
-    Err(Failure(err)) => {
-      return Err(Failure(err));
-    }
+    //Err(Failure(err)) => {
+    //  return Err(Failure(err));
+    //}
     Err(err) => {return Err(err);},
   };
   let (input, transpose) = opt(transpose)(input)?;
@@ -2165,22 +2164,22 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
 pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
   match fsm_specification(input.clone()) {
     Ok((input, fsm_spec)) => {return Ok((input, MechCode::FsmSpecification(fsm_spec)));},
-    Err(Failure(err)) => { return Err(Failure(err)); }
+    //Err(Failure(err)) => { return Err(Failure(err)); }
     _ => () 
   }
   match fsm_implementation(input.clone()) {
     Ok((input, fsm_impl)) => {return Ok((input, MechCode::FsmImplementation(fsm_impl)));},
-    Err(Failure(err)) => { return Err(Failure(err)); }
+    //Err(Failure(err)) => { return Err(Failure(err)); }
     _ => ()
   }
   match function_define(input.clone()) {
     Ok((input, fxn_def)) => {return Ok((input, MechCode::FunctionDefine(fxn_def)));},
-    Err(Failure(err)) => { return Err(Failure(err)); }
+    //Err(Failure(err)) => { return Err(Failure(err)); }
     _ => () 
   }
   match statement(input.clone()) {
     Ok((input, stmt)) => { return Ok((input, MechCode::Statement(stmt)));},
-    Err(Failure(err)) => { return Err(Failure(err)); }
+    //Err(Failure(err)) => { return Err(Failure(err)); }
     _ => ()
   }
   match expression(input.clone()) {
@@ -2202,19 +2201,19 @@ pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match mech_code(input.clone()) {
     Ok((input, code)) => (input, SectionElement::MechCode(code)),
-    Err(Failure(err)) => {return Err(Failure(err));}
+    //Err(Failure(err)) => {return Err(Failure(err));}
     _ => match unordered_list(input.clone()) {
       Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
-      Err(Failure(err)) => {return Err(Failure(err));}
+      //Err(Failure(err)) => {return Err(Failure(err));}
       _ => match comment(input.clone()) {
         Ok((input, comment)) => (input, SectionElement::Comment(comment)),
-        Err(Failure(err)) => {return Err(Failure(err));}
+        //Err(Failure(err)) => {return Err(Failure(err));}
         _ => match paragraph(input.clone()) {
           Ok((input, p)) => (input, SectionElement::Paragraph(p)),
-          Err(Failure(err)) => {return Err(Failure(err));}
+          //Err(Failure(err)) => {return Err(Failure(err));}
           _ => match code_block(input.clone()) {
             Ok((input, m)) => (input,SectionElement::CodeBlock),
-            Err(Failure(err)) => {return Err(Failure(err));}
+            //Err(Failure(err)) => {return Err(Failure(err));}
             _ => match sub_section(input) {
               Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
               Err(err) => { return Err(err); }

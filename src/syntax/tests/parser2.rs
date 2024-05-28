@@ -27,6 +27,15 @@ use mech_syntax::parser2;
 
 /////////////////////////////////////////////////////////////////////////////////
 
+test_parser!(parse_identifier, "abc", 48171905589132044);
+test_parser!(parse_identifier_number, "abc123", 32986501350920458);
+test_parser!(parse_identifier_dash, "dash-delinates-words", 19078698641356489);
+test_parser!(parse_identifier_slash, "slash/delinates/scope", 71507821257673205);
+test_parser!(parse_identifier_qualified, "io/print", 72034991961564183);
+test_parser!(parse_identifier_emoji, "🤖", 12564702933130716);
+test_parser!(parse_identifier_star, "A*", 47514170547507386);
+test_parser!(parse_identifier_greek, "Δx^2", 34800204971269505);
+
 test_parser!(parse_literal_number_integer, "123", 47158019211217915);
 test_parser!(parse_literal_number_integer_neg, "-123", 35870853261236691);
 test_parser!(parse_literal_number_float, "123.456", 35039068852936934);
@@ -76,7 +85,6 @@ test_parser!(parse_matrix_vector_vars, "[a,b,c]", 49551394880404050);
 test_parser!(parse_matrix_column_vector, "[1; 2; 3]", 71460606371207459);
 test_parser!(parse_matrix_2x2, "[1 2; 3 4]", 55450029560457659);
 test_parser!(parse_matrix_tuples, "[(1,2), (3,4)]", 54992719886778865);
-
 
 test_parser!(parse_set, "{1}", 35956285171394015);
 test_parser!(parse_set_empty, "{_}", 46610421933005859);
@@ -184,6 +192,7 @@ test_parser!(parse_record_column, r#"{a: 1
 test_parser!(parse_record_nested, r#"{a: {a: 1 b: 2 c: 3} b: 2 c: 3}"#, 42954662984815976);
 
 test_parser!(parse_statement_variable_define, "x := 123", 62190040362503998);
+test_parser!(parse_statement_variable_define_emoji, "Δx^2 := 123", 42324157149985255);
 test_parser!(parse_statement_variable_define_annotated_tuple, "z<(u8, u8)> := (10,11)", 70189018235132426);
 test_parser!(parse_statement_variable_define_annotated_tuple_both, "z<(u8, u16)> := (10<u8>,11<u16>)", 6440057661285952);
 test_parser!(parse_statement_variable_define_annotated_tuple_rhs, "z := (10<u8>,11<u16>)", 68216837866507296);
