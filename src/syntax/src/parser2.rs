@@ -1267,6 +1267,13 @@ pub fn output_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
+pub fn async_transition_operator(input: ParseString) -> ParseResult<()> {
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = tag("~>")(input)?;
+  let (input, _) = whitespace0(input)?;
+  Ok((input, ()))
+}
+
 pub fn transition_operator(input: ParseString) -> ParseResult<()> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("->")(input)?;
@@ -1325,6 +1332,13 @@ pub fn fsm_state_transition(input: ParseString) -> ParseResult<Transition> {
   let ((input, ptrn)) = fsm_pattern(input)?;
   Ok((input, Transition::Next(ptrn)))
 }
+
+pub fn fsm_async_transition(input: ParseString) -> ParseResult<Transition> {
+  let (input, _) = async_transition_operator(input)?;
+  let ((input, ptrn)) = fsm_pattern(input)?;
+  Ok((input, Transition::Async(ptrn)))
+}
+
 
 pub fn fsm_output(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = output_operator(input)?;
@@ -1386,7 +1400,7 @@ pub fn fsm_state_definition_variables(input: ParseString) -> ParseResult<Vec<Ide
 
 pub fn fsm_pipe(input: ParseString) -> ParseResult<FsmPipe> {
   let ((input, start)) = fsm_instance(input)?;
-  let ((input, trns)) = many0(alt((fsm_state_transition,fsm_output,fsm_guard)))(input)?;
+  let ((input, trns)) = many0(alt((fsm_state_transition,fsm_async_transition,fsm_output,fsm_guard)))(input)?;
   Ok((input, FsmPipe{start, transitions: trns}))
 }
 

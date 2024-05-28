@@ -197,6 +197,10 @@ test_parser!(parse_statement_enum_define_grave, "<my-type> := `A | `B", 24306883
 test_parser!(parse_fsm_instance, "#a", 25265165668657972);
 test_parser!(parse_fsm_instance_args, "#a(a,b,c)", 3224655551426456);
 test_parser!(parse_fsm_instance_args_named, "#a(foo: 1, bar: 2)", 68753991422526257);
+test_parser!(parse_fsm_pipe_transition, "#a -> #b", 428983498488167);
+test_parser!(parse_fsm_pipe_async, "#a ~> #b", 49667412332171174);
+test_parser!(parse_fsm_pipe_out, "#a => #b", 52005814634192125);
+test_parser!(parse_fsm_pipe_all, "#a -> #b ~> #c => #d", 27532108367535129);
 
 test_parser!(parse_statement_fsm_declare, "#a := #b", 52031770603132409);
 test_parser!(parse_statement_fsm_declare_args, "#a := #b(a,b,c)", 57320567753593041);

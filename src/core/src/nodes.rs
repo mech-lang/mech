@@ -833,6 +833,7 @@ pub struct FsmArm {
 pub enum Transition {
   Next(Pattern),
   Output(Pattern),
+  Async(Pattern),
   Guard(Guard),
   TransitionBlock(Vec<MechCode>),
 }
