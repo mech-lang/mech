@@ -849,8 +849,6 @@ pub enum Pattern {
   Formula(Factor),
   Expression(Expression),
   TupleStruct(PatternTupleStruct),
-  Tuple(PatternTuple),
-  Fsm(Fsm),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -882,14 +880,13 @@ pub enum Statement {
   KindDefine(KindDefine),
   EnumDefine(EnumDefine),
   FsmDeclare(FsmDeclare),     
-  FsmPipe(FsmPipe), 
   SplitTable,     // todo
   FlattenTable,   // todo
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FsmPipe {
-  pub start: Pattern,
+  pub start: FsmInstance,
   pub transitions: Vec<Transition>
 }
 
@@ -903,7 +900,7 @@ pub enum PipeElement {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FsmDeclare {
   pub fsm: Fsm,
-  pub instance: FsmInstance,
+  pub pipe: FsmPipe,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1062,6 +1059,7 @@ pub enum Expression {
   Literal(Literal),
   Transpose(Box<Expression>),
   FunctionCall(FunctionCall),
+  FsmPipe(FsmPipe),
 }
 
 pub type ArgumentList = Vec<(Option<Identifier>,Expression)>;

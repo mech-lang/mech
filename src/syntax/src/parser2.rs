@@ -1290,7 +1290,7 @@ pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> 
   let ((input, _)) = transition_operator(input)?;
   let ((input, start)) = fsm_pattern(input)?;
   let ((input, _)) = whitespace0(input)?;
-  let ((input, arms)) = many0(fsm_arm)(input)?;
+  let ((input, arms)) = many1(fsm_arm)(input)?;
   let ((input, _)) = period(input)?;
   Ok((input, FsmImplementation{name,input: input_vars,start,arms}))
 }
@@ -1355,10 +1355,6 @@ pub fn fsm_pattern(input: ParseString) -> ParseResult<Pattern> {
     Ok((input, _)) => {return Ok((input, Pattern::Wildcard))},
     _ => ()
   }
-  match fsm(input.clone()) {
-    Ok((input, f)) => {return Ok((input, Pattern::Fsm(f)))},
-    _ => (),
-  }
   match formula(input.clone()) {
     Ok((input, Factor::Expression(expr))) => {return Ok((input, Pattern::Expression(*expr)))},
     Ok((input, frmla)) => {return Ok((input, Pattern::Formula(frmla)))},
@@ -1389,17 +1385,16 @@ pub fn fsm_state_definition_variables(input: ParseString) -> ParseResult<Vec<Ide
 }
 
 pub fn fsm_pipe(input: ParseString) -> ParseResult<FsmPipe> {
-  let ((input, start)) = fsm_pattern(input)?;
-  let ((input, trns)) = many1(alt((fsm_state_transition,fsm_output,fsm_guard)))(input)?;
-  let ((input, _)) = whitespace0(input)?;
+  let ((input, start)) = fsm_instance(input)?;
+  let ((input, trns)) = many0(alt((fsm_state_transition,fsm_output,fsm_guard)))(input)?;
   Ok((input, FsmPipe{start, transitions: trns}))
 }
 
 fn fsm_declare(input: ParseString) -> ParseResult<FsmDeclare> {
   let (input, fsm) = fsm(input)?;
   let (input, _) = define_operator(input)?;
-  let (input, instance) = fsm_instance(input)?;
-  Ok((input, FsmDeclare{fsm,instance}))
+  let (input, pipe) = fsm_pipe(input)?;
+  Ok((input, FsmDeclare{fsm,pipe}))
 }
   
 fn fsm(input: ParseString) -> ParseResult<Fsm> {
@@ -1523,11 +1518,6 @@ pub fn statement(input: ParseString) -> ParseResult<Statement> {
   }
   match variable_assign(input.clone()) {
     Ok((input, var_asgn)) => { return Ok((input, Statement::VariableAssign(var_asgn))); },
-    Err(Failure(err)) => {return Err(Failure(err))},
-    _ => (),
-  }
-  match fsm_pipe(input.clone()) {
-    Ok((input, pipe)) => { return Ok((input, Statement::FsmPipe(pipe))); },
     Err(Failure(err)) => {return Err(Failure(err))},
     _ => (),
   }
@@ -1756,6 +1746,10 @@ pub fn factor(input: ParseString) -> ParseResult<Factor> {
       Err(Failure(err)) => {return Err(Failure(err))},
       _ => (),
   }
+  match fsm_pipe(input.clone()) {
+    Ok((input, pipe)) => { return Ok((input, Factor::Expression(Box::new(Expression::FsmPipe(pipe))))); },
+    Err(_) => (),
+  }
   match function_call(input.clone()) {
       Ok((input, fxn)) => { return Ok((input, Factor::Expression(Box::new(Expression::FunctionCall(fxn))))); },
       Err(_) => (),
@@ -1772,11 +1766,6 @@ pub fn factor(input: ParseString) -> ParseResult<Factor> {
       Ok((input, var)) => { return Ok((input, Factor::Expression(Box::new(Expression::Var(var))))); },
       Err(err) => { return Err(err); },
   }
-  /*let (input, transpose) = opt(transpose)(input)?;
-  let fctr = match transpose {
-    Some(_) => Factor::Transpose(Box::new(fctr)),
-    None => fctr,
-  };*/
 }
 
 pub fn statement_separator(input: ParseString) -> ParseResult<()> {

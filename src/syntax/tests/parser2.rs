@@ -64,7 +64,7 @@ test_parser!(parse_slice_nested, "a[a[1]]", 13793932459857128);
 test_parser!(parse_slice_3d, "a[1,2,3]", 66069081409915865);
 test_parser!(parse_slice_range, "a[1..3]", 48079164967586292);
 
-test_parser!(parse_empty_table, "[]", 20166184779250868);
+test_parser!(parse_matrix_empty, "[]", 20166184779250868);
 test_parser!(parse_matrix_scalar_integer, "[123]", 13075771302721700);
 test_parser!(parse_matrix_vector, "[1 2 3]", 58888609671561603);
 test_parser!(parse_matrix_vector_transpose, "[1 2 3]'", 51008949150648919);
@@ -194,10 +194,16 @@ test_parser!(parse_statement_enum_define, "<my-type> := A | B", 6457290206850382
 test_parser!(parse_statement_enum_define_typed, "<my-type> := A(<u8>) | B", 41352039959953377);
 test_parser!(parse_statement_enum_define_grave, "<my-type> := `A | `B", 24306883787841449);
 
-test_parser!(parse_statement_fsm_declare, "#a := #b", 4380795891459111);
-test_parser!(parse_statement_fsm_declare_args, "#a := #b(a,b,c)", 56046594109432523);
-test_parser!(parse_statement_fsm_declare_args_named, "#a := #b(foo: 1, bar: 2)", 66501534532915001);
-test_parser!(parse_statement_fsm_declare_args_kind, "#a<foo> := #b", 49557624327305078);
+test_parser!(parse_fsm_instance, "#a", 25265165668657972);
+test_parser!(parse_fsm_instance_args, "#a(a,b,c)", 3224655551426456);
+test_parser!(parse_fsm_instance_args_named, "#a(foo: 1, bar: 2)", 68753991422526257);
+
+test_parser!(parse_statement_fsm_declare, "#a := #b", 52031770603132409);
+test_parser!(parse_statement_fsm_declare_args, "#a := #b(a,b,c)", 57320567753593041);
+test_parser!(parse_statement_fsm_declare_args_named, "#a := #b(foo: 1, bar: 2)", 49779412525306762);
+test_parser!(parse_statement_fsm_declare_args_kind, "#a<foo> := #b", 3182624260594038);
+test_parser!(parse_statement_fsm_declare_pipe, "#a := #b -> #c", 4372245302078996);
+test_parser!(parse_statement_fsm_declare_pipe_output, "#a := #b -> #c -> #d => out", 28918541910487698);
 
 test_parser!(parse_mechdown_paragraph, "Hello World", 44055055244553644);
 
@@ -241,12 +247,12 @@ r#"#bubble-sort(arr) -> Start(arr)
 test_parser!(parse_function_define,r#"a() = b<c> := 
     a := 1;
     b := 2;
-    c := 3."#,44088885252566638);
+    c := 3."#, 44088885252566638);
 
 test_parser!(parse_function_define_args,r#"foo(x<u8>, y<u8>) = z<u8> :=
     x2 := x + 1
     y2 := y + 2
-    z := x2 + y2."#,34269112102387147);
+    z := x2 + y2."#, 34269112102387147);
 
-    test_parser!(parse_function_define_inline,r#"a() = b<c> := a := 1;b := 2;c := 3."#,13544347646831071);
+test_parser!(parse_function_define_inline,r#"a() = b<c> := a := 1;b := 2;c := 3."#, 13544347646831071);
     
