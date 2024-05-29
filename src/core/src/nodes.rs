@@ -1054,16 +1054,9 @@ pub enum Subscript {
   Dot(Identifier),          // a.b
   Swizzle(Vec<Identifier>), // a.b,c
   Formula(Factor),          // a[1 + 1]
-  Filter,                   // a[>1]
   All,                      // a[:]
-  Bracket(Vec<Subscript>), // a[1,2,3]
+  Bracket(Vec<Subscript>),  // a[1,2,3]
   Brace(Vec<Subscript>)     // a{"foo"}
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum Index {
-  SelectAll,
-  Expression(Expression),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
