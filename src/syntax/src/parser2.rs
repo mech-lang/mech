@@ -1995,13 +1995,59 @@ pub fn literal(input: ParseString) -> ParseResult<Literal> {
   Ok((input, result))
 }
 
-fn slice(input: ParseString) -> ParseResult<(Identifier,Vec<Expression>)> {
+fn slice(input: ParseString) -> ParseResult<Slice> {
   let (input, name) = identifier(input)?;
-  let (input, _) = left_bracket(input)?;
-  let (input, ixes) = separated_list1(list_separator,expression)(input)?;
-  let (input, _) = right_bracket(input)?;
-  Ok((input, (name, ixes)))
+  let (input, ixes) = subscript(input)?;
+  Ok((input, Slice{name, subscript: ixes}))
 }
+
+fn subscript(input: ParseString) -> ParseResult<Vec<Subscript>> {
+  let (input, subscripts) = many1(alt((swizzle_subscript,dot_subscript,bracket_subscript,brace_subscript)))(input)?;
+  Ok((input, subscripts))
+}
+
+fn swizzle_subscript(input: ParseString) -> ParseResult<Subscript> {
+  let (input, _) = period(input)?;
+  let (input, first) = identifier(input)?;
+  let (input, _) = comma(input)?;
+  let (input, mut name) = separated_list1(tag(","),identifier)(input)?;
+  let mut subscripts = vec![first];
+  subscripts.append(&mut name);
+  Ok((input, Subscript::Swizzle(subscripts)))
+}
+
+fn dot_subscript(input: ParseString) -> ParseResult<Subscript> {
+  let (input, _) = period(input)?;
+  let (input, name) = identifier(input)?;
+  Ok((input, Subscript::Dot(name)))
+}
+
+fn bracket_subscript(input: ParseString) -> ParseResult<Subscript> {
+  let (input, _) = left_bracket(input)?;
+  let (input, subscripts) = separated_list1(list_separator,alt((select_all,formula_subscript)))(input)?;
+  let (input, _) = right_bracket(input)?;
+  Ok((input, Subscript::Bracket(subscripts)))
+}
+
+fn brace_subscript(input: ParseString) -> ParseResult<Subscript> {
+  let (input, _) = left_brace(input)?;
+  let (input, subscripts) = separated_list1(list_separator,alt((select_all,formula_subscript)))(input)?;
+  let (input, _) = right_brace(input)?;
+  Ok((input, Subscript::Brace(subscripts)))
+}
+
+pub fn select_all(input: ParseString) -> ParseResult<Subscript> {
+  let (input, lhs) = colon(input)?;
+  Ok((input, Subscript::All))
+}
+
+pub fn formula_subscript(input: ParseString) -> ParseResult<Subscript> {
+  let (input, lhs) = l1(input)?;
+  let (input, rhs) = many0(nom_tuple((range_operator,l1)))(input)?;
+  let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
+  Ok((input, Subscript::Formula(factor)))
+}
+
 
 pub fn tuple(input: ParseString) -> ParseResult<Tuple> {
   let (input, _) = left_parenthesis(input)?;
