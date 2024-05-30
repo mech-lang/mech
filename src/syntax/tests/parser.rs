@@ -3,7 +3,8 @@ extern crate mech_syntax;
 extern crate mech_core;
 #[macro_use]
 extern crate lazy_static;
-use mech_syntax::parser::{TextFormatter, parse};
+use mech_syntax::parser::{parse};
+use mech_syntax::TextFormatter;
 use std::cell::RefCell;
 use std::rc::Rc;
 use mech_core::*;
@@ -52,8 +53,8 @@ use mech_core::*;
 
 /////////////////////////////////////////////////////////////////////////////////
 test_parser!(err_empty_1, "", (1, 1));
-test_parser!(err_empty_2, "\n", (1, 1));
-test_parser!(err_empty_3, "\n\n  \n\n\n", (5, 1));
+test_parser!(err_empty_2, "\n", (2, 1));
+test_parser!(err_empty_3, "\n\n  \n\n\n", (6, 1));
 test_parser!(ok_simple_text, "Paragraph text", );
 
 /////// LITERALS ///////
