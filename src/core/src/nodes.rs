@@ -1093,19 +1093,18 @@ pub struct Binding {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct KindAnnotation {
-  pub kinds: Vec<Kind>
+  pub kind: Kind
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Kind {
   Tuple(Vec<Kind>),
-  Scalar(KindLabel)
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct KindLabel {
-  pub name: Identifier,
-  pub size: Vec<Number>,
+  Bracket((Vec<Kind>,Vec<Literal>)),
+  Brace((Vec<Kind>,Vec<Literal>)),
+  Map(Box<Kind>,Box<Kind>),
+  Scalar(Identifier),
+  Atom(Identifier),
+  Empty,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

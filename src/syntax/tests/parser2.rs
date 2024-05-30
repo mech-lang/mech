@@ -62,12 +62,21 @@ test_parser!(parse_literal_false, "false", 18374905389476967);
 
 test_parser!(parse_literal_empty, "_", 42646767556506866);
 
-test_parser!(parse_kind_annotation, "10<m/s^2>", 71616930996186052);
-test_parser!(parse_kind_annotation_size, "foo<u8:3,4>", 47950682744332223);
-test_parser!(parse_kind_annotation_lhs, "z<u8> := 10", 23247483275563923);
-test_parser!(parse_kind_annotation_both, "z<u8> := 10<u8>", 1385214578996481);
-test_parser!(parse_kind_annotation_tuple, "z<(u8,u8)>", 65064718600897177);
-test_parser!(parse_kind_annotation_tuple_nested, "z<((u8,u8),u8)>", 23648802851573596);
+test_parser!(parse_kind_annotation, "10<m/s^2>", 41451390958973903);
+test_parser!(parse_kind_annotation_size, "foo<u8:3,4>", 8411444293349319);
+test_parser!(parse_kind_annotation_lhs, "z<u8> := 10", 71403132938397338);
+test_parser!(parse_kind_annotation_both, "z<u8> := 10<u8>", 35142481711361869);
+test_parser!(parse_kind_annotation_tuple, "z<(u8,u8)>", 57987489394315533);
+test_parser!(parse_kind_annotation_tuple_nested, "z<((u8,u8),u8)>", 64061479951167009);
+test_parser!(parse_kind_annotation_tuple_empty, "z<_>", 15408982683395009);
+test_parser!(parse_kind_annotation_tuple_atom, "z<`A>", 4301426029334554);
+test_parser!(parse_kind_annotation_tuple_vector_dynamic, "z<[u8]:1,_>", 63916155854859674);
+test_parser!(parse_kind_annotation_tuple_vector_3d, "z<[u8]:2,3,4>", 54073698199977163);
+test_parser!(parse_kind_annotation_tuple_record, "z<{u8,string}:1,2>", 63423700931504609);
+test_parser!(parse_kind_annotation_tuple_table, "z<{u8,string,[u8]:3}:3,3>", 65499865810553426);
+test_parser!(parse_kind_annotation_tuple_set, "z<{u8}>", 16458084577498196);
+test_parser!(parse_kind_annotation_tuple_map, "z<{string:u8}>", 24709209651786249);
+test_parser!(parse_kind_annotation_tuple_map_nested, "z<{string:{string:u8}}>", 12787900685791211);
 
 test_parser!(parse_range, "1..10", 5844225421276229);
 test_parser!(parse_range_increment, "1..2..10", 47858485653184183);
@@ -150,12 +159,12 @@ r#"╭───────────╮
 │ 7   8   9 │
 ╰───────────╯"#,16339589348817943);
 
-test_parser!(parse_table_inline,r#"{x<f32> y<u8> | 1.2 9 ; 1.3 8 }"#,12469378324178801);
-test_parser!(parse_table_empty, "{ x<f32> y<u8> | _ }", 49124109782989357);
+test_parser!(parse_table_inline,r#"{x<f32> y<u8> | 1.2 9 ; 1.3 8 }"#,18779183519589985);
+test_parser!(parse_table_empty, "{ x<f32> y<u8> | _ }", 15413160474115045);
 test_parser!(parse_table,
 r#"{x<f32> y<u8> |
 1.2    9 
-1.3    8   }"#,60702597920596872);
+1.3    8   }"#,47449831800460666);
 test_parser!(parse_table_header_fancy,
 r#"╭───────────────────────────╮
 │ x<u8>   y<string>  z<f32> │
@@ -165,19 +174,19 @@ r#"╭────────────────────────�
 │   4   │  "b"     │ 6.15   │
 ├───────┼──────────┼────────┤
 │   7   │  "c"     │ 9.19   │
-╰───────┴──────────┴────────╯"#,64660003063383141);
+╰───────┴──────────┴────────╯"#,16194689768577729);
 
 test_parser!(parse_table_header_fancy_variable,
 r#"x := 
-╭─────────────────────────────╮
-│ x<u8>   y<string>  z<u8:3>  │
-├───────┬──────────┬──────────┤
-│   1   │  "a"     │ [1 2 3]  │
-├───────┼──────────┼──────────┤
-│   4   │  "b"     │ [4 5 6]  │
-├───────┼──────────┼──────────┤
-│   7   │  "c"     │ [7 8 9]  │
-╰───────┴──────────┴──────────╯"#,60046088409113153);
+╭─────────────────────────────────╮
+│ x<u8>   y<string>  z<[u8]:1,3>  │
+├───────┬──────────┬──────────────┤
+│   1   │   "a"    │   [1 2 3]    │
+├───────┼──────────┼──────────────┤
+│   4   │   "b"    │   [4 5 6]    │
+├───────┼──────────┼──────────────┤
+│   7   │   "c"    │   [7 8 9]    │
+╰───────┴──────────┴──────────────╯"#,43076861283025690);
 
 
 test_parser!(parse_tuple_empty, "()", 46625237035827900);
@@ -204,18 +213,18 @@ test_parser!(parse_record_nested, r#"{a: {a: 1 b: 2 c: 3} b: 2 c: 3}"#, 42954662
 
 test_parser!(parse_statement_variable_define, "x := 123", 62190040362503998);
 test_parser!(parse_statement_variable_define_emoji, "Δx^2 := 123", 42324157149985255);
-test_parser!(parse_statement_variable_define_annotated_tuple, "z<(u8, u8)> := (10,11)", 70189018235132426);
-test_parser!(parse_statement_variable_define_annotated_tuple_both, "z<(u8, u16)> := (10<u8>,11<u16>)", 6440057661285952);
-test_parser!(parse_statement_variable_define_annotated_tuple_rhs, "z := (10<u8>,11<u16>)", 68216837866507296);
+test_parser!(parse_statement_variable_define_annotated_tuple, "z<(u8, u8)> := (10,11)", 7667347478522863);
+test_parser!(parse_statement_variable_define_annotated_tuple_both, "z<(u8, u16)> := (10<u8>,11<u16>)", 10505668968110378);
+test_parser!(parse_statement_variable_define_annotated_tuple_rhs, "z := (10<u8>,11<u16>)", 30360312150734751);
 
 test_parser!(parse_statement_variable_assign, "a = 2", 5448552719387223);
 test_parser!(parse_statement_variable_assign_slice, "a[1] = 2", 20762289900010478);
-test_parser!(parse_statement_kind_define, "<pos> := <(u8,u8,u8)>", 62624658898678961);
-test_parser!(parse_statement_kind_define_size, "<foo> := <(u8:1,2, u8:3,3)>", 59365484348435996);
-test_parser!(parse_statement_kind_define_size_hex, "<bar> := <foo:0x01, 0xFF>", 42590915248956376);
+test_parser!(parse_statement_kind_define, "<pos> := <(u8,u8,u8)>", 23009507256904188);
+test_parser!(parse_statement_kind_define_size, "<foo> := <([u8]:1,2, [u8]:3,3)>", 7698832452691191);
+test_parser!(parse_statement_kind_define_size_hex, "<bar> := <[foo]:0x01, 0xFF>", 6442842300718590);
 
 test_parser!(parse_statement_enum_define, "<my-type> := A | B", 64572902068503820);
-test_parser!(parse_statement_enum_define_typed, "<my-type> := A(<u8>) | B", 41352039959953377);
+test_parser!(parse_statement_enum_define_typed, "<my-type> := A(<u8>) | B", 62980205579073513);
 test_parser!(parse_statement_enum_define_grave, "<my-type> := `A | `B", 24306883787841449);
 
 test_parser!(parse_fsm_instance, "#a", 25265165668657972);
@@ -229,7 +238,7 @@ test_parser!(parse_fsm_pipe_all, "#a -> #b ~> #c => #d", 27532108367535129);
 test_parser!(parse_statement_fsm_declare, "#a := #b", 52031770603132409);
 test_parser!(parse_statement_fsm_declare_args, "#a := #b(a,b,c)", 57320567753593041);
 test_parser!(parse_statement_fsm_declare_args_named, "#a := #b(foo: 1, bar: 2)", 20318356213698921);
-test_parser!(parse_statement_fsm_declare_args_kind, "#a<foo> := #b", 3182624260594038);
+test_parser!(parse_statement_fsm_declare_args_kind, "#a<foo> := #b", 22678544250457847);
 test_parser!(parse_statement_fsm_declare_pipe, "#a := #b -> #c", 4372245302078996);
 test_parser!(parse_statement_fsm_declare_pipe_output, "#a := #b -> #c -> #d => out", 28918541910487698);
 
@@ -275,12 +284,12 @@ r#"#bubble-sort(arr) -> Start(arr)
 test_parser!(parse_function_define,r#"a() = b<c> := 
     a := 1;
     b := 2;
-    c := 3."#, 63243368957527106);
+    c := 3."#, 66257525442314554);
 
 test_parser!(parse_function_define_args,r#"foo(x<u8>, y<u8>) = z<u8> :=
     x2 := x + 1
     y2 := y + 2
-    z := x2 + y2."#, 7012778753667092);
+    z := x2 + y2."#, 6010352619935357);
 
-test_parser!(parse_function_define_inline,r#"a() = b<c> := a := 1;b := 2;c := 3."#, 50534530857365659);
+test_parser!(parse_function_define_inline,r#"a() = b<c> := a := 1;b := 2;c := 3."#, 27112950721321045);
     

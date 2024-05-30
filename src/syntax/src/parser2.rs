@@ -990,14 +990,53 @@ pub fn kind_annotation(input: ParseString) -> ParseResult<KindAnnotation> {
   let msg2 = "Expects at least one unit in kind annotation";
   let msg3 = "Expects right angle";
   let (input, (_, r)) = range(left_angle)(input)?;
-  let (input, kinds) = separated_list1(list_separator, kind)(input)?;
+  let (input, kind) = kind(input)?;
   let (input, _) = label!(right_angle, msg3, r)(input)?;
-  Ok((input, KindAnnotation{ kinds }))
+  Ok((input, KindAnnotation{ kind }))
 }
 
 pub fn kind(input: ParseString) -> ParseResult<Kind> {
-  let (input, kind) = alt((kind_tuple, kind_scalar))(input)?;
+  let (input, kind) = alt((kind_empty,kind_atom,kind_tuple, kind_scalar, kind_bracket, kind_map, kind_brace))(input)?;
   Ok((input, kind))
+}
+
+
+pub fn kind_empty(input: ParseString) -> ParseResult<Kind> {
+  let (input, _) = many1(underscore)(input)?;
+  Ok((input, Kind::Empty))
+}
+
+pub fn kind_atom(input: ParseString) -> ParseResult<Kind> {
+  let (input, _) = grave(input)?;
+  let (input, atm) = identifier(input)?;
+  Ok((input, Kind::Atom(atm)))
+}
+
+pub fn kind_map(input: ParseString) -> ParseResult<Kind> {
+  let (input, _) = left_brace(input)?;
+  let (input, key_kind) = kind(input)?;
+  let (input, _) = colon(input)?;
+  let (input, value_kind) = kind(input)?;
+  let (input, _) = right_brace(input)?;
+  Ok((input, Kind::Map(Box::new(key_kind),Box::new(value_kind))))
+}
+
+pub fn kind_brace(input: ParseString) -> ParseResult<Kind> {
+  let (input, _) = left_brace(input)?;
+  let (input, kinds) = separated_list1(list_separator,kind)(input)?;
+  let (input, _) = right_brace(input)?;
+  let (input, _) = opt(colon)(input)?;
+  let (input, size) = separated_list0(list_separator,literal)(input)?;
+  Ok((input, Kind::Brace((kinds,size))))
+}
+
+pub fn kind_bracket(input: ParseString) -> ParseResult<Kind> {
+  let (input, _) = left_bracket(input)?;
+  let (input, kinds) = separated_list1(list_separator,kind)(input)?;
+  let (input, _) = right_bracket(input)?;
+  let (input, _) = opt(colon)(input)?;
+  let (input, size) = separated_list0(list_separator,literal)(input)?;
+  Ok((input, Kind::Bracket((kinds,size))))
 }
 
 pub fn kind_tuple(input: ParseString) -> ParseResult<Kind> {
@@ -1008,15 +1047,8 @@ pub fn kind_tuple(input: ParseString) -> ParseResult<Kind> {
 }
 
 pub fn kind_scalar(input: ParseString) -> ParseResult<Kind> {
-  let (input, kind) = kind_label(input)?;
+  let (input, kind) = identifier(input)?;
   Ok((input, Kind::Scalar(kind)))
-}
-
-pub fn kind_label(input: ParseString) -> ParseResult<KindLabel> {
-  let (input, name) = identifier(input)?;
-  let (input, _) = opt(colon)(input)?;
-  let (input, size) = separated_list0(list_separator,number)(input)?;
-  Ok((input, KindLabel{ name, size }))
 }
 
 // #### Structures
