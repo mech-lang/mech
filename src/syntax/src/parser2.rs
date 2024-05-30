@@ -689,7 +689,7 @@ fn forbidden_emoji(input: ParseString) -> ParseResult<Token> {
   alt((box_t_left,box_tl_round,box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
-// emoji ::= emoji_grapheme+ ;
+// emoji := emoji_grapheme+ ;
 fn emoji(input: ParseString) -> ParseResult<Token> {
   let msg1 = "Cannot be a box-drawing emoji";
   let start = input.loc();
@@ -710,12 +710,14 @@ fn digit_token(input: ParseString) -> ParseResult<Token> {
   Ok((input, Token{kind: TokenKind::Digit, chars: g.chars().collect::<Vec<char>>(), src_range}))
 }
 
+// underscore_digit := underscore, digit ;
 fn underscore_digit(input: ParseString) -> ParseResult<Token> {
   let (input, _) = underscore(input)?;
   let (input, digit) = digit_token(input)?;
   Ok((input,digit))
 }
 
+// digit_sequence := digit, (underscore_digit | digit)*
 fn digit_sequence(input: ParseString) -> ParseResult<Vec<Token>> {
   let (input, mut start) = digit_token(input)?;
   let (input, mut tokens) = many0(alt((underscore_digit,digit_token)))(input)?;
@@ -730,34 +732,34 @@ pub fn grouping_symbol(input: ParseString) -> ParseResult<Token> {
   Ok((input, grouping))
 }
 
-// punctuation ::= period | exclamation | question | comma | colon | semicolon | dash | apostrophe ;
+// punctuation := period | exclamation | question | comma | colon | semicolon | quote | apostrophe ;
 pub fn punctuation(input: ParseString) -> ParseResult<Token> {
   let (input, punctuation) = alt((period, exclamation, question, comma, colon, semicolon, quote, apostrophe))(input)?;
   Ok((input, punctuation))
 }
 
-// escaped_char ::= "\" ,  symbol | punctuation ;
+// escaped_char := "\" ,  symbol | punctuation ;
 pub fn escaped_char(input: ParseString) -> ParseResult<Token> {
   let (input, _) = backslash(input)?;
   let (input, symbol) = alt((symbol, punctuation))(input)?;
   Ok((input, symbol))
 }
 
-// symbol ::= ampersand | bar | at | slash | hashtag | equal | tilde | plus | asterisk | asterisk | caret | underscore ;
+// symbol := ampersand | bar | at | slash | hashtag | equal | backslash | tilde | plus | dash | asterisk | caret | underscore ;
 pub fn symbol(input: ParseString) -> ParseResult<Token> {
   let (input, symbol) = alt((ampersand, bar, at, slash, hashtag, equal, backslash, tilde, plus, dash, asterisk, caret, underscore))(input)?;
   Ok((input, symbol))
 }
 
-// text ::= (alpha | digit_token | space | punctuation | grouping_symbol | symbol | emoji | escaped_char)+ ;
+// text := (alpha | digit | space | tabe | escaped_char | punctuation | grouping_symbol | symbol)+ ;
 pub fn text(input: ParseString) -> ParseResult<Token> {
   let (input, text) = alt((alpha_token, digit_token, space, tab, escaped_char, punctuation, grouping_symbol, symbol))(input)?;
   Ok((input, text))
 }
 
-// identifier ::= (word | emoji), (word | number | symbol | emoji)* ;
+// identifier := (alpha | emoji), (alpha | digit | symbol | emoji)* ;
 pub fn identifier(input: ParseString) -> ParseResult<Identifier> {
-  let (input, (first, mut rest)) = nom_tuple((alt((alpha_token, emoji)), many0(alt((alpha_token, digit_token, symbol)))))(input)?;
+  let (input, (first, mut rest)) = nom_tuple((alt((alpha_token, emoji)), many0(alt((alpha_token, digit_token, symbol, emoji)))))(input)?;
   let mut tokens = vec![first];
   tokens.append(&mut rest);
   let mut merged = merge_tokens(&mut tokens).unwrap();
@@ -765,36 +767,37 @@ pub fn identifier(input: ParseString) -> ParseResult<Identifier> {
   Ok((input, Identifier{name: merged}))
 }
 
-// boolean_literal ::= true_literal | false_literal ;
+// boolean_literal := true_literal | false_literal ;
 pub fn boolean(input: ParseString) -> ParseResult<Token> {
   let (input, boolean) = alt((true_literal, false_literal))(input)?;
   Ok((input, boolean))
 }
 
-// true_literal ::= english_true_literal | check_mark ;
+// true_literal := english_true_literal | check_mark ;
 pub fn true_literal(input: ParseString) -> ParseResult<Token> {
   let (input, token) = alt((english_true_literal, check_mark))(input)?;
   Ok((input, token))
 }
 
-// false_literal ::= english_false_literal | cross ;
+// false_literal := english_false_literal | cross ;
 pub fn false_literal(input: ParseString) -> ParseResult<Token> {
   let (input, token) = alt((english_false_literal, cross))(input)?;
   Ok((input, token))
 }
 
-// new_line ::= new_line_char | carriage_new_line ;
+// new_line := new_line_char | carriage_new_line ;
 pub fn new_line(input: ParseString) -> ParseResult<Token> {
   let (input, result) = alt((carriage_return_new_line,new_line_char,carriage_return, ))(input)?;
   Ok((input, result))
 }
 
-// whitespace ::= space | new_line | carriage_return | tabe ;
+// whitespace := space | new_line | carriage_return | tabe ;
 pub fn whitespace(input: ParseString) -> ParseResult<Token> {
   let (input, space) = alt((space,tab,new_line))(input)?;
   Ok((input, space))
 }
 
+// whitespace0 := 
 pub fn whitespace0(input: ParseString) -> ParseResult<()> {
   let (input, _) = many0(whitespace)(input)?;
   Ok((input, ()))
@@ -899,6 +902,7 @@ pub fn scientific_literal(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Scientific((base,(ex_sign,ex_whole,ex_part)))))
 }
 
+// float_decimal_start := ".", digit_sequence ;
 fn float_decimal_start(input: ParseString) -> ParseResult<RealNumber> {
   let (input, _) = period(input)?;
   let (input, part) = digit_sequence(input)?;
@@ -908,6 +912,7 @@ fn float_decimal_start(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Float((Token::default(),merged))))
 }
 
+// float_full := digit_sequence, ".", digit_sequnce ;
 fn float_full(input: ParseString) -> ParseResult<RealNumber> {
   let (input, mut whole) = digit_sequence(input)?;
   let (input, _) = period(input)?;
@@ -919,13 +924,13 @@ fn float_full(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Float((whole,part))))
 }
 
-// float_literal ::= "."?, digit1, "."?, digit0 ;
+// float_literal := "."?, digit1, "."?, digit0 ;
 pub fn float_literal(input: ParseString) -> ParseResult<RealNumber> {
   let (input, result) = alt((float_decimal_start,float_full))(input)?;
   Ok((input, result))
 }
 
-// integer ::= digit1 ;
+// integer := digit1 ;
 pub fn integer_literal(input: ParseString) -> ParseResult<RealNumber> {
   let (input, mut digits) = digit_sequence(input)?;
   let mut merged = merge_tokens(&mut digits).unwrap();
@@ -933,7 +938,7 @@ pub fn integer_literal(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Integer(merged)))
 }
 
-// decimal_literal ::= "0d", <digit1> ;
+// decimal_literal := "0d", <digit1> ;
 pub fn decimal_literal(input: ParseString) -> ParseResult<RealNumber> {
   let msg = "Expects decimal digits after \"0d\"";
   let input = tag("0d")(input);
@@ -944,7 +949,7 @@ pub fn decimal_literal(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Decimal(merged)))
 }
 
-// hexadecimal_literal ::= "0x", <hex_digit+> ;
+// hexadecimal_literal := "0x", <hex_digit+> ;
 pub fn hexadecimal_literal(input: ParseString) -> ParseResult<RealNumber> {
   let msg = "Expects hexadecimal digits after \"0x\"";
   let input = tag("0x")(input);
@@ -955,7 +960,7 @@ pub fn hexadecimal_literal(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Hexadecimal(merged)))
 }
 
-// octal_literal ::= "0o", <oct_digit+> ;
+// octal_literal := "0o", <oct_digit+> ;
 pub fn octal_literal(input: ParseString) -> ParseResult<RealNumber> {
   let msg = "Expects octal digits after \"0o\"";
   let input = tag("0o")(input);
@@ -966,7 +971,7 @@ pub fn octal_literal(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Octal(merged)))
 }
 
-// binary_literal ::= "0b", <bin_digit+> ;
+// binary_literal := "0b", <bin_digit+> ;
 pub fn binary_literal(input: ParseString) -> ParseResult<RealNumber> {
   let msg = "Expects binary digits after \"0b\"";
   let input = tag("0b")(input);
@@ -977,7 +982,7 @@ pub fn binary_literal(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Binary(merged)))
 }
 
-// empty ::= underscore+ ;
+// empty := underscore+ ;
 pub fn empty(input: ParseString) -> ParseResult<Token> {
   let (input, (g, src_range)) = range(many1(tag("_")))(input)?;
   Ok((input, Token{kind: TokenKind::Empty, chars: g.join("").chars().collect(), src_range}))
@@ -985,7 +990,7 @@ pub fn empty(input: ParseString) -> ParseResult<Token> {
 
 // #### Kind Annotations
 
-// kind_annotation ::= left_angle, <(identifier | underscore), (",", (identifier | underscore))*>, <right_angle> ;
+// kind_annotation := left_angle, kind, right_angle ;
 pub fn kind_annotation(input: ParseString) -> ParseResult<KindAnnotation> {
   let msg2 = "Expects at least one unit in kind annotation";
   let msg3 = "Expects right angle";
@@ -995,23 +1000,26 @@ pub fn kind_annotation(input: ParseString) -> ParseResult<KindAnnotation> {
   Ok((input, KindAnnotation{ kind }))
 }
 
+// kind := empty | atom | tuple | scalar | bracket | map | brace
 pub fn kind(input: ParseString) -> ParseResult<Kind> {
   let (input, kind) = alt((kind_empty,kind_atom,kind_tuple, kind_scalar, kind_bracket, kind_map, kind_brace))(input)?;
   Ok((input, kind))
 }
 
-
+// kind_empty := underscore* ;
 pub fn kind_empty(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = many1(underscore)(input)?;
   Ok((input, Kind::Empty))
 }
 
+// kind_atom := "`", identifier ;
 pub fn kind_atom(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = grave(input)?;
   let (input, atm) = identifier(input)?;
   Ok((input, Kind::Atom(atm)))
 }
 
+// kind_map = "{", kind, ":", kind, "}" ;
 pub fn kind_map(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_brace(input)?;
   let (input, key_kind) = kind(input)?;
@@ -1021,6 +1029,7 @@ pub fn kind_map(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Map(Box::new(key_kind),Box::new(value_kind))))
 }
 
+// kind_brace = "{", list1(",",kind) "}", [":"], list0(",",literal) ;
 pub fn kind_brace(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_brace(input)?;
   let (input, kinds) = separated_list1(list_separator,kind)(input)?;
@@ -1030,6 +1039,7 @@ pub fn kind_brace(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Brace((kinds,size))))
 }
 
+// kind_bracket = "[", list1(",",kind) "]", [":"], list0(",",literal) ;
 pub fn kind_bracket(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_bracket(input)?;
   let (input, kinds) = separated_list1(list_separator,kind)(input)?;
@@ -1039,6 +1049,7 @@ pub fn kind_bracket(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Bracket((kinds,size))))
 }
 
+// kind_bracket = "(", list1(",",kind) ")" ;
 pub fn kind_tuple(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_parenthesis(input)?;
   let (input, kinds) = separated_list1(list_separator, kind)(input)?;
@@ -1046,6 +1057,7 @@ pub fn kind_tuple(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Tuple(kinds)))
 }
 
+// kind_scalar := identifier ;
 pub fn kind_scalar(input: ParseString) -> ParseResult<Kind> {
   let (input, kind) = identifier(input)?;
   Ok((input, Kind::Scalar(kind)))
@@ -1061,7 +1073,7 @@ fn max_err<'a>(x: Option<ParseError<'a>>, y: ParseError<'a>) -> ParseError<'a> {
   }
 }
 
-// structure ::= hashtag, <identifier> ;
+// structure := empty_table | matrix | table | tuple | tuple_struct | record | map | set ;
 pub fn structure(input: ParseString) -> ParseResult<Structure> {
   match empty_table(input.clone()) {
     Ok((input, _)) => {return Ok((input, Structure::Empty));},
@@ -1099,12 +1111,14 @@ pub fn structure(input: ParseString) -> ParseResult<Structure> {
   }
 }
 
+// atom := "`", identifier ;
 pub fn atom(input: ParseString) -> ParseResult<Atom> {
   let (input, _) = grave(input)?;
   let (input, name) = identifier(input)?;
   Ok((input, Atom{name}))
 }
 
+// tuple_struct = atom, "(", expression, ")" ;
 pub fn tuple_struct(input: ParseString) -> ParseResult<TupleStruct> {
   let (input, _) = grave(input)?;
   let (input, name) = identifier(input)?;
@@ -1116,9 +1130,9 @@ pub fn tuple_struct(input: ParseString) -> ParseResult<TupleStruct> {
   Ok((input, TupleStruct{name, value: Box::new(value)}))
 }
 
-// binding ::= s*, identifier, kind_annotation?, <!(space+, colon)>, colon, s+,
+// binding := identifier, kind_annotation?, <!(space+, colon)>, colon, s+,
 // >>          <empty | expression | identifier | value>, <!!right_bracket | (s*, comma, <s+>) | s+> ;
-// >> where s ::= space | new_line | tab ;
+// >> where s := space | new_line | tab ;
 pub fn binding(input: ParseString) -> ParseResult<Binding> {
   let msg1 = "Unexpected space before colon ':'";
   let msg2 = "Expects a value";
@@ -1137,7 +1151,7 @@ pub fn binding(input: ParseString) -> ParseResult<Binding> {
   Ok((input, Binding{name, kind, value}))
 }
 
-// table_column ::= (space | tab)*, (expression | value | data), comma?, (space | tab)* ;
+// table_column := (space | tab)*, (expression | value | data), comma?, (space | tab)* ;
 pub fn table_column(input: ParseString) -> ParseResult<TableColumn> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, element) = match expression(input) {
@@ -1150,7 +1164,7 @@ pub fn table_column(input: ParseString) -> ParseResult<TableColumn> {
   Ok((input, TableColumn{element}))
 }
 
-// table_row ::= (space | tab)*, table_column+, semicolon?, new_line? ;
+// table_row := (space | tab)*, table_column+, semicolon?, new_line? ;
 pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
   let (input, _) = opt(table_separator)(input)?;
   let (input, _) = many0(space_tab)(input)?;
@@ -1165,7 +1179,7 @@ pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
   Ok((input, TableRow{columns}))
 }
 
-// table_header ::= bar, <attribute+>, <bar>, space*, new_line? ;
+// table_header := bar, <attribute+>, <bar>, space*, new_line? ;
 pub fn table_header(input: ParseString) -> ParseResult<Vec<Field>> {
   let (input, fields) = separated_list1(many1(space_tab),field)(input)?;
   let (input, _) = many0(space_tab)(input)?;
@@ -1211,7 +1225,7 @@ pub fn table_separator(input: ParseString) -> ParseResult<Token> {
   Ok((input, token))
 }
 
-// anonymous_table ::= left_bracket, (space | new_line | tab)*, table_header?,
+// anonymous_table := left_bracket, (space | new_line | tab)*, table_header?,
 // >>                  ((comment, new_line) | table_row)*, (space | new_line | tab)*, <right_bracket> ;
 pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
   let msg = "Expects right bracket ']' to finish the matrix";
@@ -1229,7 +1243,7 @@ pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
   Ok((input, Matrix{rows}))
 }
 
-// anonymous_table ::= left_bracket, (space | new_line | tab)*, table_header?,
+// anonymous_table := left_bracket, (space | new_line | tab)*, table_header?,
 // >>                  ((comment, new_line) | table_row)*, (space | new_line | tab)*, <right_bracket> ;
 pub fn table(input: ParseString) -> ParseResult<Table> {
   let msg = "Expects right bracket '}' to finish the table";
@@ -1249,7 +1263,7 @@ pub fn table(input: ParseString) -> ParseResult<Table> {
   Ok((input, Table{header,rows}))
 }
 
-// empty_table ::= left_bracket, (space | new_line | tab)*, table_header?, (space | new_line | tab)*, right_bracket ;
+// empty_table := left_bracket, (space | new_line | tab)*, table_header?, (space | new_line | tab)*, right_bracket ;
 pub fn empty_table(input: ParseString) -> ParseResult<Structure> {
   let (input, _) = table_start(input)?;
   let (input, _) = whitespace0(input)?;
@@ -1259,7 +1273,7 @@ pub fn empty_table(input: ParseString) -> ParseResult<Structure> {
   Ok((input, Structure::Empty))
 }
 
-// record ::= left_bracket, binding, <binding_strict*>, <right_bracket> ;
+// record := left_bracket, binding, <binding_strict*>, <right_bracket> ;
 pub fn record(input: ParseString) -> ParseResult<Record> {
   let msg = "Expects right bracket ']' to terminate inline table";
   let (input, (_, r)) = range(left_brace)(input)?;
@@ -1270,7 +1284,7 @@ pub fn record(input: ParseString) -> ParseResult<Record> {
   Ok((input, Record{bindings}))
 }
 
-// record ::= left_bracket, binding, <binding_strict*>, <right_bracket> ;
+// record := left_bracket, binding, <binding_strict*>, <right_bracket> ;
 pub fn map(input: ParseString) -> ParseResult<Map> {
   let msg = "Expects right bracket '}' to terminate inline table";
   let (input, (_, r)) = range(left_brace)(input)?;
@@ -1492,13 +1506,13 @@ fn fsm_args(input: ParseString) -> ParseResult<Vec<(Option<Identifier>,Expressio
 
 // #### Statements
 
-// comment_sigil ::= "--" ;
+// comment_sigil := "--" | "//" | "/*" ;
 pub fn comment_sigil(input: ParseString) -> ParseResult<()> {
   let (input, _) = alt((tag("--"),tag("//"),tag("/*")))(input)?;
   Ok((input, ()))
 }
 
-// comment ::= (space | tab)*, comment_sigil, <text>, <!!new_line> ;
+// comment := ws0, comment_sigil, text+ ;
 pub fn comment(input: ParseString) -> ParseResult<Comment> {
   let msg2 = "Character not allowed in comment text";
   let (input, _) = whitespace0(input)?;
@@ -1508,7 +1522,7 @@ pub fn comment(input: ParseString) -> ParseResult<Comment> {
   Ok((input, Comment{text}))
 }
 
-// assign_operator ::= "=" ;
+// assign_operator := "=" ;
 pub fn assign_operator(input: ParseString) -> ParseResult<()> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("=")(input)?;
@@ -1516,7 +1530,7 @@ pub fn assign_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// split_data ::= (identifier | table), <!stmt_operator>, space*, split_operator, <space+>, <expression> ;
+// split_data := (identifier | table), <!stmt_operator>, space*, split_operator, <space+>, <expression> ;
 pub fn split_data(input: ParseString) -> ParseResult<ParserNode> {
   /*let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
@@ -1529,7 +1543,7 @@ pub fn split_data(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::SplitData{children: vec![]}))
 }
 
-// flatten_data ::= identifier, <!stmt_operator>, space*, flatten_operator, <space+>, <expression> ;
+// flatten_data := identifier, <!stmt_operator>, space*, flatten_operator, <space+>, <expression> ;
 pub fn flatten_data(input: ParseString) -> ParseResult<ParserNode> {
   /*let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
@@ -1542,7 +1556,7 @@ pub fn flatten_data(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::FlattenData{children: vec![]}))
 }
 
-// variable_define ::= identifier, <!stmt_operator>, space*, equal, <space+>, <expression> ;
+// variable_define := identifier, define_operator, expression ;
 pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
@@ -1553,7 +1567,7 @@ pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   Ok((input, VariableDefine{var,expression}))
 }
 
-// variable_define ::= identifier, <!stmt_operator>, space*, equal, <space+>, <expression> ;
+// variable_define := identifier, assign_operator, expression ;
 pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
@@ -1567,20 +1581,19 @@ pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
 // parser for the second line of the output table, generate the 
 // var name if there is one.
 
-// split_operator ::= ">-" ;
+// split_operator := ">-" ;
 pub fn split_operator(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = tag(">-")(input)?;
   Ok((input, ParserNode::Null))
 }
 
-// flatten_operator ::= "-<" ;
+// flatten_operator := "-<" ;
 pub fn flatten_operator(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = tag("-<")(input)?;
   Ok((input, ParserNode::Null))
 }
 
-// statement ::= (followed_by  | async_assign  | table_define | variable_define | split_data  | flatten_data | whenever_data | wait_data |
-// >>             until_data   | set_data     | update_data     | add_row     | comment ), space*, <new_line+> ;
+// statement := variable_define | variable_assign | enum_define | fm_declare | kind_define ;
 pub fn statement(input: ParseString) -> ParseResult<Statement> {
   match variable_define(input.clone()) {
     Ok((input, var_def)) => { return Ok((input, Statement::VariableDefine(var_def))); },
@@ -1608,6 +1621,7 @@ pub fn statement(input: ParseString) -> ParseResult<Statement> {
   }
 }
 
+// enum_define := "<", identifier, ">", define_operator, list1(enum_separator, enum_variant);
 pub fn enum_define(input: ParseString) -> ParseResult<EnumDefine> {
   let (input, _) = left_angle(input)?;
   let (input, name) = identifier(input)?;
@@ -1617,6 +1631,7 @@ pub fn enum_define(input: ParseString) -> ParseResult<EnumDefine> {
   Ok((input, EnumDefine{name, variants}))
 }
 
+// enum_variant := atom | identifier, enum_variant_kind? ;
 pub fn enum_variant(input: ParseString) -> ParseResult<EnumVariant> {
   let (input, _) = opt(grave)(input)?;
   let (input, name) = identifier(input)?;
@@ -1624,6 +1639,7 @@ pub fn enum_variant(input: ParseString) -> ParseResult<EnumVariant> {
   Ok((input, EnumVariant{name, value}))
 }
 
+// enum_variant_kind := "(", kind_annotation, ")" ;
 pub fn enum_variant_kind(input: ParseString) -> ParseResult<KindAnnotation> {
   let (input, _) = left_parenthesis(input)?;
   let (input, annotation) = kind_annotation(input)?;
@@ -1631,6 +1647,7 @@ pub fn enum_variant_kind(input: ParseString) -> ParseResult<KindAnnotation> {
   Ok((input, annotation))
 }
 
+// kind_define := "<", identifier, ">", define_operator, kind_annotation ;
 pub fn kind_define(input: ParseString) -> ParseResult<KindDefine> {
   let (input, _) = left_angle(input)?;
   let (input, name) = identifier(input)?;
@@ -1644,7 +1661,7 @@ pub fn kind_define(input: ParseString) -> ParseResult<KindDefine> {
 
 // ##### Math expressions
 
-// parenthetical_expression ::= left_parenthesis, <l0>, <right_parenthesis> ;
+// parenthetical_expression := left_parenthesis, formula, right_parenthesis ;
 pub fn parenthetical_term(input: ParseString) -> ParseResult<Factor> {
   let msg1 = "Expects expression";
   let msg2 = "Expects right parenthesis ')'";
@@ -1654,7 +1671,7 @@ pub fn parenthetical_term(input: ParseString) -> ParseResult<Factor> {
   Ok((input, frmla))
 }
 
-// add ::= "+" ;
+// add := "+" ;
 pub fn add(input: ParseString) -> ParseResult<AddSubOp> {
   let (input, _) = whitespace1(input)?;
   let (input, _) = tag("+")(input)?;
@@ -1662,7 +1679,7 @@ pub fn add(input: ParseString) -> ParseResult<AddSubOp> {
   Ok((input, AddSubOp::Add))
 }
 
-// subtract ::= "-" ;
+// subtract := "-" ;
 pub fn subtract(input: ParseString) -> ParseResult<AddSubOp> {
   let (input, _) = whitespace1(input)?;
   let (input, _) = tag("-")(input)?;
@@ -1670,7 +1687,7 @@ pub fn subtract(input: ParseString) -> ParseResult<AddSubOp> {
   Ok((input, AddSubOp::Sub))
 }
 
-// multiply ::= "*" ;
+// multiply := "*" ;
 pub fn multiply(input: ParseString) -> ParseResult<MulDivOp> {
   let (input, _) = whitespace1(input)?;
   let (input, _) = tag("*")(input)?;
@@ -1678,7 +1695,7 @@ pub fn multiply(input: ParseString) -> ParseResult<MulDivOp> {
   Ok((input, MulDivOp::Mul))
 }
 
-// divide ::= "/" ;
+// divide := "/" ;
 pub fn divide(input: ParseString) -> ParseResult<MulDivOp> {
   let (input, _) = whitespace1(input)?;
   let (input, _) = tag("/")(input)?;
@@ -1686,8 +1703,7 @@ pub fn divide(input: ParseString) -> ParseResult<MulDivOp> {
   Ok((input, MulDivOp::Div))
 }
 
-
-// matrix_multiply ::= "**" ;
+// matrix_multiply := "**" ;
 pub fn matrix_multiply(input: ParseString) -> ParseResult<MulDivOp> {
   let (input, _) = whitespace1(input)?;
   let (input, _) = tag("**")(input)?;
@@ -1695,7 +1711,7 @@ pub fn matrix_multiply(input: ParseString) -> ParseResult<MulDivOp> {
   Ok((input, MulDivOp::MatMul))
 }
 
-// matrix_solve ::= "\" ;
+// matrix_solve := "\" ;
 pub fn matrix_solve(input: ParseString) -> ParseResult<MulDivOp> {
   let (input, _) = whitespace1(input)?;
   let (input, _) = tag("\\")(input)?;
@@ -1703,7 +1719,7 @@ pub fn matrix_solve(input: ParseString) -> ParseResult<MulDivOp> {
   Ok((input, MulDivOp::Solve))
 }
 
-// exponent ::= "^" ;
+// exponent := "^" ;
 pub fn exponent(input: ParseString) -> ParseResult<ExponentOp> {
   let (input, _) = whitespace1(input)?;
   let (input, _) = tag("^")(input)?;
@@ -1711,24 +1727,25 @@ pub fn exponent(input: ParseString) -> ParseResult<ExponentOp> {
   Ok((input, ExponentOp::Exp))
 }
 
-// range_op ::= colon ;
+// range_inclusive := "..=" ;
 pub fn range_inclusive(input: ParseString) -> ParseResult<RangeOp> {
   let (input, _) = tag("..=")(input)?;
   Ok((input, RangeOp::Inclusive))
 }
 
+// range_exclusive := ".." ;
 pub fn range_exclusive(input: ParseString) -> ParseResult<RangeOp> {
   let (input, _) = tag("..")(input)?;
   Ok((input, RangeOp::Exclusive))
 }
 
-// l0_op ::= range_op ;
+// range_operator := range_inclusive | range_exclusive ;
 pub fn range_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   let (input, op) = alt((range_inclusive,range_exclusive))(input)?;
   Ok((input, FormulaOperator::Range(op)))
 }
 
-// l0 ::= l1, l0_infix* ;
+// formula := l1, (range_operator, l1)* ;
 pub fn formula(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l1(input)?;
   let (input, rhs) = many0(nom_tuple((range_operator,l1)))(input)?;
@@ -1736,13 +1753,13 @@ pub fn formula(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// l1_op ::= add | subtract ;
+// add_sub_operator := add | subtract ;
 pub fn add_sub_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   let (input, op) = alt((add, subtract))(input)?;
   Ok((input, FormulaOperator::AddSub(op)))
 }
 
-// l1 ::= l2, l1_infix* ;
+// l1 := l2, (add_sub_operator, l2)* ;
 pub fn l1(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l2(input)?;
   let (input, rhs) = many0(nom_tuple((add_sub_operator,l2)))(input)?;
@@ -1750,13 +1767,13 @@ pub fn l1(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// l2_op ::= matrix_multiply | multiply | divide | matrix_solve ;
+// mul_div_operator := matrix_multiply | multiply | divide | matrix_solve ;
 pub fn mul_div_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   let (input, op) = alt((matrix_multiply, multiply, divide, matrix_solve))(input)?;
   Ok((input, FormulaOperator::MulDiv(op)))
 }
 
-// l2 ::= l3, l2_infix* ;
+// l2 := l3, (mul_div_operator, l3)* ;
 pub fn l2(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l3(input)?;
   let (input, rhs) = many0(nom_tuple((mul_div_operator,l3)))(input)?;
@@ -1764,13 +1781,13 @@ pub fn l2(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// l3_op ::= exponent ;
+// exponent_operator := exponent ;
 pub fn exponent_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   let (input, op) = exponent(input)?;
   Ok((input, FormulaOperator::Exponent(op)))
 }
 
-// l3 ::= l4, l3_infix* ;
+// l3 := l4, (exponent_operator, l4)* ;
 pub fn l3(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l4(input)?;
   let (input, rhs) = many0(nom_tuple((exponent_operator,l4)))(input)?;
@@ -1778,13 +1795,13 @@ pub fn l3(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// l4_op ::= and | or | xor ;
+// logic_operator := and | or | xor ;
 pub fn logic_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   let (input, op) = alt((and, or, xor))(input)?;
   Ok((input, FormulaOperator::Logic(op)))
 }
 
-// l4 ::= l5, l4_infix* ;
+// l4 := l5, (logic_operator, l5)* ;
 pub fn l4(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l5(input)?;
   let (input, rhs) = many0(nom_tuple((logic_operator,l5)))(input)?;
@@ -1792,7 +1809,7 @@ pub fn l4(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// l5 ::= l6, l5_infix* ;
+// l5 := factor, (comparison_operator, factor)* ;
 pub fn l5(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = factor(input)?;
   let (input, rhs) = many0(nom_tuple((comparison_operator,factor)))(input)?;
@@ -1800,13 +1817,13 @@ pub fn l5(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// l5_op ::= not_equal | equal_to | greater_than_equal | greater_than | less_than_equal | less_than ;
+// comparison_operator := not_equal | equal_to | greater_than_equal | greater_than | less_than_equal | less_than ;
 pub fn comparison_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   let (input, op) = alt((not_equal, equal_to, greater_than_equal, greater_than, less_than_equal, less_than))(input)?;
   Ok((input, FormulaOperator::Comparison(op)))
 }
 
-// l6 ::= literal | data | slice | table | parenthetical_expression ;
+// factor := parenthetical_term | structure | fsm_pipe | function_call | literal | slice | var ;
 pub fn factor(input: ParseString) -> ParseResult<Factor> {
   match parenthetical_term(input.clone()) {
     Ok((input, term)) => { return Ok((input, term)); },
@@ -1839,6 +1856,7 @@ pub fn factor(input: ParseString) -> ParseResult<Factor> {
   }
 }
 
+// statement_separator := ";" ;
 pub fn statement_separator(input: ParseString) -> ParseResult<()> {
   let (input,_) = nom_tuple((whitespace0,semicolon,whitespace0))(input)?;
   Ok((input, ()))
@@ -1865,6 +1883,7 @@ fn function_arg(input: ParseString) -> ParseResult<FunctionArgument> {
   Ok((input, FunctionArgument{ name, kind }))
 }
 
+// argument_list := "(", list0(",", call_arg_with_biding | call_arg)
 fn argument_list(input: ParseString) -> ParseResult<ArgumentList> {
   let (input, _) = left_parenthesis(input)?;
   let (input, args) = separated_list0(list_separator, alt((call_arg_with_binding,call_arg)))(input)?;
@@ -1872,6 +1891,7 @@ fn argument_list(input: ParseString) -> ParseResult<ArgumentList> {
   Ok((input, args))
 }
 
+// function_call := identifier, argument_list
 fn function_call(input: ParseString) -> ParseResult<FunctionCall> {
   let (input, name) = identifier(input)?;
   let (input, args) = argument_list(input)?;
@@ -1900,7 +1920,7 @@ fn var(input: ParseString) -> ParseResult<Var> {
 
 // ##### Filter expressions
 
-// not_equal ::= "!=" | "¬=" | "≠" ;
+// not_equal := "!=" | "¬=" | "≠" ;
 pub fn not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = whitespace1(input)?;
   let (input, _) = alt((tag("!="),tag("¬="),tag("≠")))(input)?;
@@ -1908,7 +1928,7 @@ pub fn not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   Ok((input, ComparisonOp::NotEqual))
 }
 
-// equal_to ::= "==" ;
+// equal_to := "==" ;
 pub fn equal_to(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = whitespace1(input)?;
   let (input, _) = tag("==")(input)?;
@@ -1916,7 +1936,7 @@ pub fn equal_to(input: ParseString) -> ParseResult<ComparisonOp> {
   Ok((input, ComparisonOp::Equal))
 }
 
-// greater_than ::= ">" ;
+// greater_than := ">" ;
 pub fn greater_than(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = whitespace1(input)?;
   let (input, _) = tag(">")(input)?;
@@ -1924,7 +1944,7 @@ pub fn greater_than(input: ParseString) -> ParseResult<ComparisonOp> {
   Ok((input, ComparisonOp::GreaterThan))
 }
 
-// less_than ::= "<" ;
+// less_than := "<" ;
 pub fn less_than(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = whitespace1(input)?;
   let (input, _) = tag("<")(input)?;
@@ -1932,7 +1952,7 @@ pub fn less_than(input: ParseString) -> ParseResult<ComparisonOp> {
   Ok((input, ComparisonOp::LessThan))
 }
 
-// greater_than_equal ::= ">=" | "≥" ;
+// greater_than_equal := ">=" | "≥" ;
 pub fn greater_than_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = whitespace1(input)?;
   let (input, _) = alt((tag(">="),tag("≥")))(input)?;
@@ -1940,7 +1960,7 @@ pub fn greater_than_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   Ok((input, ComparisonOp::GreaterThanEqual))
 }
 
-// less_than_equal ::= "<=" | "≤" ;
+// less_than_equal := "<=" | "≤" ;
 pub fn less_than_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = whitespace1(input)?;
   let (input, _) = alt((tag("<="),tag("≤")))(input)?;
@@ -1950,7 +1970,7 @@ pub fn less_than_equal(input: ParseString) -> ParseResult<ComparisonOp> {
 
 // ##### Logic expressions
 
-// or ::= "|" ;
+// or := "|" ;
 pub fn or(input: ParseString) -> ParseResult<LogicOp> {
   let (input, _) = whitespace1(input)?;
   let (input, _) = tag("|")(input)?;
@@ -1958,7 +1978,7 @@ pub fn or(input: ParseString) -> ParseResult<LogicOp> {
   Ok((input, LogicOp::Or))
 }
 
-// and ::= "&" ;
+// and := "&" ;
 pub fn and(input: ParseString) -> ParseResult<LogicOp> {
   let (input, _) = whitespace1(input)?;
   let (input, _) = tag("&")(input)?;
@@ -1966,7 +1986,7 @@ pub fn and(input: ParseString) -> ParseResult<LogicOp> {
   Ok((input, LogicOp::And))
 }
 
-// not ::= "!" | "¬" ;
+// not := "!" | "¬" ;
 pub fn not(input: ParseString) -> ParseResult<LogicOp> {
   let (input, _) = whitespace1(input)?;
   let (input, _) = alt((tag("!"), tag("¬")))(input)?;
@@ -1974,7 +1994,7 @@ pub fn not(input: ParseString) -> ParseResult<LogicOp> {
   Ok((input, LogicOp::Not))
 }
 
-// xor ::= "xor" | "⊕" | "⊻" ;
+// xor := "xor" | "⊕" | "⊻" ;
 pub fn xor(input: ParseString) -> ParseResult<LogicOp> {
   let (input, _) = whitespace1(input)?;
   let (input, _) = alt((tag("xor"), tag("⊕"), tag("⊻")))(input)?;
@@ -1984,7 +2004,7 @@ pub fn xor(input: ParseString) -> ParseResult<LogicOp> {
 
 // ##### Other expressions
 
-// string ::= quote, (!quote, <text>)*, quote ;
+// string := quote, (!quote, <text>)*, quote ;
 pub fn string(input: ParseString) -> ParseResult<MechString> {
   let msg = "Character not allowed in string";
   let (input, _) = quote(input)?;
@@ -1996,7 +2016,7 @@ pub fn string(input: ParseString) -> ParseResult<MechString> {
   Ok((input, MechString { text: merged }))
 }
 
-// transpose ::= "'" ;
+// transpose := "'" ;
 pub fn transpose(input: ParseString) -> ParseResult<()> {
   let (input, _) = tag("'")(input)?;
   Ok((input, ()))
@@ -2090,7 +2110,7 @@ pub fn tuple(input: ParseString) -> ParseResult<Tuple> {
   Ok((input, Tuple{elements: exprs}))
 }
 
-// expression ::= (empty_table | inline_table | math_expression | string | anonymous_table), transpose? ;
+// expression := (empty_table | inline_table | math_expression | string | anonymous_table), transpose? ;
 pub fn expression(input: ParseString) -> ParseResult<Expression> {
   let (input, expression) = match formula(input.clone()) {
     Ok((input, Factor::Expression(expr))) => (input, *expr),
@@ -2110,7 +2130,7 @@ pub fn expression(input: ParseString) -> ParseResult<Expression> {
 
 // ### Mechdown
 
-// title ::= text+, new_line, equal+, (space|tab)*, whitespace* ;
+// title := text+, new_line, equal+, (space|tab)*, whitespace* ;
 pub fn title(input: ParseString) -> ParseResult<Title> {
   let (input, mut text) = many1(text)(input)?;
   let (input, _) = new_line(input)?;
@@ -2124,7 +2144,7 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
   Ok((input, Title{text: title}))
 }
 
-// subtitle ::= text+, new_line, dash+, (space|tab)*, whitespace* ;
+// subtitle := text+, new_line, dash+, (space|tab)*, whitespace* ;
 pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = many1(digit_token)(input)?;
   let (input, _) = period(input)?;
@@ -2141,7 +2161,7 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   Ok((input, Subtitle{text: title}))
 }
 
-// number_subtitle ::= space*, number, period, space+, text, space*, new_line* ;
+// number_subtitle := space*, number, period, space+, text, space*, new_line* ;
 pub fn number_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = left_parenthesis(input)?;
@@ -2156,7 +2176,7 @@ pub fn number_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   Ok((input, Subtitle{text: title}))
 }
 
-// alpha_subtitle ::= space*, alpha, right_parenthesis, space+, text, space*, new_line* ;
+// alpha_subtitle := space*, alpha, right_parenthesis, space+, text, space*, new_line* ;
 pub fn alpha_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = left_parenthesis(input)?;
@@ -2171,13 +2191,13 @@ pub fn alpha_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   Ok((input, Subtitle{text: title}))
 }
 
-// paragraph_symbol ::= ampersand | at | slash | backslash | asterisk | caret | hashtag | underscore ;
+// paragraph_symbol := ampersand | at | slash | backslash | asterisk | caret | hashtag | underscore ;
 pub fn paragraph_symbol(input: ParseString) -> ParseResult<Token> {
   let (input, symbol) = alt((ampersand, at, slash, backslash, asterisk, caret, hashtag, underscore, equal, tilde, plus, percent))(input)?;
   Ok((input, symbol))
 }
 
-// paragraph_starter ::= (word | number | quote | left_angle | right_angle | left_bracket | right_bracket | period | exclamation | question | comma | colon | semicolon | left_parenthesis | right_parenthesis | emoji)+ ;
+// paragraph_starter := (word | number | quote | left_angle | right_angle | left_bracket | right_bracket | period | exclamation | question | comma | colon | semicolon | left_parenthesis | right_parenthesis | emoji)+ ;
 pub fn paragraph_starter(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, text) = alt((alpha_token, quote))(input)?;
   Ok((input, ParagraphElement::Start(text)))
@@ -2195,7 +2215,7 @@ pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, elements))
 }
 
-// paragraph ::= (inline_code | paragraph_text)+, whitespace*, new_line* ;
+// paragraph := (inline_code | paragraph_text)+, whitespace*, new_line* ;
 pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
   let (input, first) = paragraph_starter(input)?;
   let (input, mut rest) = many0(paragraph_element)(input)?;
@@ -2204,14 +2224,14 @@ pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
   Ok((input, Paragraph{elements}))
 }
 
-// unordered_list ::= list_item+, new_line?, whitespace* ;
+// unordered_list := list_item+, new_line?, whitespace* ;
 pub fn unordered_list(input: ParseString) -> ParseResult<UnorderedList> {
   let (input, items) = many1(list_item)(input)?;
   let (input, _) = whitespace0(input)?;
   Ok((input,  UnorderedList{items}))
 }
 
-// list_item ::= dash, <space+>, <paragraph>, new_line* ;
+// list_item := dash, <space+>, <paragraph>, new_line* ;
 pub fn list_item(input: ParseString) -> ParseResult<Paragraph> {
   let msg1 = "Expects space after dash";
   let msg2 = "Expects paragraph as list item";
@@ -2223,7 +2243,7 @@ pub fn list_item(input: ParseString) -> ParseResult<Paragraph> {
 }
 
 
-// code_block ::= grave, <grave>, <grave>, <new_line>, formatted_text, <grave{3}, new_line, whitespace*> ;
+// code_block := grave, <grave>, <grave>, <new_line>, formatted_text, <grave{3}, new_line, whitespace*> ;
 pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
   let msg1 = "Expects 3 graves to start a code block";
   let msg2 = "Expects new_line";
@@ -2275,7 +2295,7 @@ pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
 
 // ### Start here
 
-// section_element ::= user_function | block | mech_code_block | code_block | statement | paragraph | unordered_list;
+// section_element := user_function | block | mech_code_block | code_block | statement | paragraph | unordered_list;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match mech_code(input.clone()) {
     Ok((input, code)) => (input, SectionElement::MechCode(code)),
@@ -2305,7 +2325,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   Ok((input, section_element))
 }
 
-// section_element ::= user_function | block | mech_code_block | code_block | statement | paragraph | unordered_list;
+// section_element := user_function | block | mech_code_block | code_block | statement | paragraph | unordered_list;
 pub fn sub_section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match comment(input.clone()) {
     Ok((input, comment)) => (input, SectionElement::Comment(comment)),
@@ -2327,7 +2347,7 @@ pub fn sub_section_element(input: ParseString) -> ParseResult<SectionElement> {
   Ok((input, section_element))
 }
 
-// section ::= (!eof, <section_element>, whitespace?)+ ;
+// section := (!eof, <section_element>, whitespace?)+ ;
 pub fn section(input: ParseString) -> ParseResult<Section> {
   let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
   let (input, subtitle) = opt(ul_subtitle)(input)?;
@@ -2335,7 +2355,7 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
   Ok((input, Section{subtitle, elements}))
 }
 
-// section ::= (!eof, <section_element>, whitespace?)+ ;
+// section := (!eof, <section_element>, whitespace?)+ ;
 pub fn sub_section(input: ParseString) -> ParseResult<Section> {
   let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
   let (input, subtitle) = alpha_subtitle(input)?;
@@ -2344,7 +2364,7 @@ pub fn sub_section(input: ParseString) -> ParseResult<Section> {
 }
 
 
-// body ::= whitespace*, section+ ;
+// body := whitespace*, section+ ;
 pub fn body(input: ParseString) -> ParseResult<Body> {
   let (input, _) = whitespace0(input)?;
   let (input, sections) = many1(section)(input)?;
@@ -2352,7 +2372,7 @@ pub fn body(input: ParseString) -> ParseResult<Body> {
   Ok((input, Body{sections}))
 }
 
-// program ::= whitespace?, title?, <body>, whitespace?, space* ;
+// program := whitespace?, title?, <body>, whitespace?, space* ;
 pub fn program(input: ParseString) -> ParseResult<Program> {
   let msg = "Expects program body";
   let (input, _) = whitespace0(input)?;
@@ -2363,7 +2383,7 @@ pub fn program(input: ParseString) -> ParseResult<Program> {
   Ok((input, Program{title, body}))
 }
 
-// parse_mech ::= program | statement ;
+// parse_mech := program | statement ;
 pub fn parse_mech(input: ParseString) -> ParseResult<Program> {
   //let (input, mech) = alt((program, statement))(input)?;
   //Ok((input, ParserNode::Root { children: vec![mech] }))
