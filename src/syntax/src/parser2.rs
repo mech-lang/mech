@@ -1188,6 +1188,7 @@ pub fn table_header(input: ParseString) -> ParseResult<Vec<Field>> {
   Ok((input, fields))
 }
 
+// field := identifier, kind_annotation ;
 pub fn field(input: ParseString) -> ParseResult<Field> {
   let (input, name) = identifier(input)?;
   let (input, kind) = kind_annotation(input)?;
@@ -1225,8 +1226,7 @@ pub fn table_separator(input: ParseString) -> ParseResult<Token> {
   Ok((input, token))
 }
 
-// anonymous_table := left_bracket, (space | new_line | tab)*, table_header?,
-// >>                  ((comment, new_line) | table_row)*, (space | new_line | tab)*, <right_bracket> ;
+// matrix := matrix_start, box_drawing_char*, table_row, box_drawing_char*, matrix_end ;
 pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
   let msg = "Expects right bracket ']' to finish the matrix";
   let (input, (_, r)) = range(matrix_start)(input)?;
@@ -1243,8 +1243,7 @@ pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
   Ok((input, Matrix{rows}))
 }
 
-// anonymous_table := left_bracket, (space | new_line | tab)*, table_header?,
-// >>                  ((comment, new_line) | table_row)*, (space | new_line | tab)*, <right_bracket> ;
+// table := table_start, box_drawing_char*, table_header, box_drawing_char*, table_row, box_drawing_char*, table_end ;
 pub fn table(input: ParseString) -> ParseResult<Table> {
   let msg = "Expects right bracket '}' to finish the table";
   let (input, (_, r)) = range(table_start)(input)?;
@@ -1263,7 +1262,7 @@ pub fn table(input: ParseString) -> ParseResult<Table> {
   Ok((input, Table{header,rows}))
 }
 
-// empty_table := left_bracket, (space | new_line | tab)*, table_header?, (space | new_line | tab)*, right_bracket ;
+// empty_table := table_start, empty?, table_end ;
 pub fn empty_table(input: ParseString) -> ParseResult<Structure> {
   let (input, _) = table_start(input)?;
   let (input, _) = whitespace0(input)?;
@@ -1273,18 +1272,18 @@ pub fn empty_table(input: ParseString) -> ParseResult<Structure> {
   Ok((input, Structure::Empty))
 }
 
-// record := left_bracket, binding, <binding_strict*>, <right_bracket> ;
+// record := table_start, binding+, table_end ;
 pub fn record(input: ParseString) -> ParseResult<Record> {
   let msg = "Expects right bracket ']' to terminate inline table";
-  let (input, (_, r)) = range(left_brace)(input)?;
+  let (input, (_, r)) = range(table_start)(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, bindings) = many1(binding)(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, _) = label!(right_brace, msg, r)(input)?;
+  let (input, _) = label!(table_end, msg, r)(input)?;
   Ok((input, Record{bindings}))
 }
 
-// record := left_bracket, binding, <binding_strict*>, <right_bracket> ;
+// record := "{", mapping*, "}" ;
 pub fn map(input: ParseString) -> ParseResult<Map> {
   let msg = "Expects right bracket '}' to terminate inline table";
   let (input, (_, r)) = range(left_brace)(input)?;
@@ -1295,6 +1294,7 @@ pub fn map(input: ParseString) -> ParseResult<Map> {
   Ok((input, Map{elements}))
 }
 
+// mapping := expression, ":", expression
 pub fn mapping(input: ParseString) -> ParseResult<Mapping> {
   let msg1 = "Unexpected space before colon ':'";
   let msg2 = "Expects a value";
@@ -1312,6 +1312,7 @@ pub fn mapping(input: ParseString) -> ParseResult<Mapping> {
   Ok((input, Mapping{key, value}))
 }
 
+// set := "{", list0(",",expression), "}" ;
 pub fn set(input: ParseString) -> ParseResult<Set> {
   let msg = "Expects right bracket '}' to terminate inline table";
   let (input, (_, r)) = range(left_brace)(input)?;
@@ -1877,6 +1878,7 @@ pub fn function_define(input: ParseString) -> ParseResult<FunctionDefine> {
   Ok((input,FunctionDefine{name,input: input_args,output,statements}))
 }
 
+// function_arg := identifier, kind_annotation ;
 fn function_arg(input: ParseString) -> ParseResult<FunctionArgument> {
   let ((input, name)) = identifier(input)?;
   let ((input, kind)) = kind_annotation(input)?;
@@ -1898,6 +1900,7 @@ fn function_call(input: ParseString) -> ParseResult<FunctionCall> {
   Ok((input, FunctionCall{name,args} ))
 }
 
+// call_arg_with_binding := identifier, colon, expression ;
 fn call_arg_with_binding(input: ParseString) -> ParseResult<(Option<Identifier>,Expression)> {
   let (input, arg_name) = identifier(input)?;
   let (input, _) = whitespace0(input)?;
@@ -1907,11 +1910,13 @@ fn call_arg_with_binding(input: ParseString) -> ParseResult<(Option<Identifier>,
   Ok((input, (Some(arg_name), expr)))
 }
 
+// call_arg := expression ;
 fn call_arg(input: ParseString) -> ParseResult<(Option<Identifier>,Expression)> {
   let (input, expr) = expression(input)?;
   Ok((input, (None, expr)))
 }
 
+// var := identifier, kind_annotation? ;
 fn var(input: ParseString) -> ParseResult<Var> {
   let ((input, name)) = identifier(input)?;
   let ((input, kind)) = opt(kind_annotation)(input)?;
@@ -2022,6 +2027,8 @@ pub fn transpose(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
+
+// literal := number | string | atom | boolean | empty, kind_annotation? ;
 pub fn literal(input: ParseString) -> ParseResult<Literal> {
   let (input, result) = match number(input.clone()) {
     Ok((input, num)) => (input, Literal::Number(num)),
@@ -2047,17 +2054,20 @@ pub fn literal(input: ParseString) -> ParseResult<Literal> {
   Ok((input, result))
 }
 
+// slice := identifier, subscript ;
 fn slice(input: ParseString) -> ParseResult<Slice> {
   let (input, name) = identifier(input)?;
   let (input, ixes) = subscript(input)?;
   Ok((input, Slice{name, subscript: ixes}))
 }
 
+// subscript := (swizzle_subscript | dot_subscript | bracket_subscript | brace_subscript)+ ; 
 fn subscript(input: ParseString) -> ParseResult<Vec<Subscript>> {
   let (input, subscripts) = many1(alt((swizzle_subscript,dot_subscript,bracket_subscript,brace_subscript)))(input)?;
   Ok((input, subscripts))
 }
 
+// swizzle_subscript := ".", identifier, "," , list1(",", identifier) ;
 fn swizzle_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, _) = period(input)?;
   let (input, first) = identifier(input)?;
@@ -2068,12 +2078,14 @@ fn swizzle_subscript(input: ParseString) -> ParseResult<Subscript> {
   Ok((input, Subscript::Swizzle(subscripts)))
 }
 
+// dot_subscript := ".", identifier
 fn dot_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, _) = period(input)?;
   let (input, name) = identifier(input)?;
   Ok((input, Subscript::Dot(name)))
 }
 
+// bracket_subscript := "[", list1(",", select_all | formula_subscript) "]" ;
 fn bracket_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, _) = left_bracket(input)?;
   let (input, subscripts) = separated_list1(list_separator,alt((select_all,formula_subscript)))(input)?;
@@ -2081,6 +2093,7 @@ fn bracket_subscript(input: ParseString) -> ParseResult<Subscript> {
   Ok((input, Subscript::Bracket(subscripts)))
 }
 
+// brace_subscript := "{", list1(",", select_all | formula_subscript) "}" ;
 fn brace_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, _) = left_brace(input)?;
   let (input, subscripts) = separated_list1(list_separator,alt((select_all,formula_subscript)))(input)?;
@@ -2088,11 +2101,13 @@ fn brace_subscript(input: ParseString) -> ParseResult<Subscript> {
   Ok((input, Subscript::Brace(subscripts)))
 }
 
+// select_all := ":" ;
 pub fn select_all(input: ParseString) -> ParseResult<Subscript> {
   let (input, lhs) = colon(input)?;
   Ok((input, Subscript::All))
 }
 
+// formula_subscript := formula ;
 pub fn formula_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, lhs) = l1(input)?;
   let (input, rhs) = many0(nom_tuple((range_operator,l1)))(input)?;
@@ -2100,7 +2115,7 @@ pub fn formula_subscript(input: ParseString) -> ParseResult<Subscript> {
   Ok((input, Subscript::Formula(factor)))
 }
 
-
+// tuple := "(", list0(",", expression), ")" ;
 pub fn tuple(input: ParseString) -> ParseResult<Tuple> {
   let (input, _) = left_parenthesis(input)?;
   let (input, _) = whitespace0(input)?;
@@ -2110,7 +2125,7 @@ pub fn tuple(input: ParseString) -> ParseResult<Tuple> {
   Ok((input, Tuple{elements: exprs}))
 }
 
-// expression := (empty_table | inline_table | math_expression | string | anonymous_table), transpose? ;
+// expression := formula, transpose? ;
 pub fn expression(input: ParseString) -> ParseResult<Expression> {
   let (input, expression) = match formula(input.clone()) {
     Ok((input, Factor::Expression(expr))) => (input, *expr),
@@ -2203,6 +2218,7 @@ pub fn paragraph_starter(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Start(text)))
 }
 
+// paragraph_element := text+ ;
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, elements) = match many1(text)(input) {
     Ok((input, mut text)) => {
@@ -2259,6 +2275,7 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
   Ok((input, SectionElement::CodeBlock))
 }
 
+// mech_code_alt := fsm_specification | fsm_implementation | function_define | statement | expression ;
 pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
   match fsm_specification(input.clone()) {
     Ok((input, fsm_spec)) => {return Ok((input, MechCode::FsmSpecification(fsm_spec)));},
@@ -2285,7 +2302,8 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
     Err(err) => {return Err(err);}
   }
 }
-  
+
+// mech_code := mech_code_alt, "\n" | ";" ;
 pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
   let (input, code) = mech_code_alt(input.clone())?;
   let (input, _) = many0(space_tab)(input)?;
@@ -2295,7 +2313,7 @@ pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
 
 // ### Start here
 
-// section_element := user_function | block | mech_code_block | code_block | statement | paragraph | unordered_list;
+// section_element := mech_code | unordered_list | comment | paragraph | code_block | sub_section;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match mech_code(input.clone()) {
     Ok((input, code)) => (input, SectionElement::MechCode(code)),
@@ -2325,7 +2343,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   Ok((input, section_element))
 }
 
-// section_element := user_function | block | mech_code_block | code_block | statement | paragraph | unordered_list;
+// section_element := comment | unordered_list | mech_code | paragraph | code_block;
 pub fn sub_section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match comment(input.clone()) {
     Ok((input, comment)) => (input, SectionElement::Comment(comment)),
@@ -2347,7 +2365,7 @@ pub fn sub_section_element(input: ParseString) -> ParseResult<SectionElement> {
   Ok((input, section_element))
 }
 
-// section := (!eof, <section_element>, whitespace?)+ ;
+// section := ul_subtitle?, section_element+ ;
 pub fn section(input: ParseString) -> ParseResult<Section> {
   let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
   let (input, subtitle) = opt(ul_subtitle)(input)?;
@@ -2355,7 +2373,7 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
   Ok((input, Section{subtitle, elements}))
 }
 
-// section := (!eof, <section_element>, whitespace?)+ ;
+// sub_section := alpha_subtitle, sub_section_element* ;
 pub fn sub_section(input: ParseString) -> ParseResult<Section> {
   let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
   let (input, subtitle) = alpha_subtitle(input)?;
@@ -2364,7 +2382,7 @@ pub fn sub_section(input: ParseString) -> ParseResult<Section> {
 }
 
 
-// body := whitespace*, section+ ;
+// body := section+ ;
 pub fn body(input: ParseString) -> ParseResult<Body> {
   let (input, _) = whitespace0(input)?;
   let (input, sections) = many1(section)(input)?;
@@ -2372,7 +2390,7 @@ pub fn body(input: ParseString) -> ParseResult<Body> {
   Ok((input, Body{sections}))
 }
 
-// program := whitespace?, title?, <body>, whitespace?, space* ;
+// program := title?, body ;
 pub fn program(input: ParseString) -> ParseResult<Program> {
   let msg = "Expects program body";
   let (input, _) = whitespace0(input)?;
