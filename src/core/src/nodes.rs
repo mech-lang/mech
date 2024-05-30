@@ -1066,7 +1066,6 @@ pub enum Expression {
   Formula(Factor),
   Structure(Structure),
   Literal(Literal),
-  Transpose(Box<Expression>),
   FunctionCall(FunctionCall),
   FsmPipe(FsmPipe),
 }
@@ -1247,4 +1246,6 @@ pub struct Term {
 pub enum Factor {
   Term(Box<Term>),
   Expression(Box<Expression>),
+  Negated(Box<Factor>),
+  Transpose(Box<Factor>),
 }

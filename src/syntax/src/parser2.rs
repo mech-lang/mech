@@ -1363,6 +1363,12 @@ pub fn parenthetical_term(input: ParseString) -> ParseResult<Factor> {
   Ok((input, frmla))
 }
 
+pub fn negated_factor(input: ParseString) -> ParseResult<Factor> {
+  let (input, _) = dash(input)?;
+  let (input, expr) = factor(input)?;
+  Ok((input, Factor::Negated(Box::new(expr))))
+}
+
 // add := "+" ;
 pub fn add(input: ParseString) -> ParseResult<AddSubOp> {
   let (input, _) = whitespace1(input)?;
@@ -1517,37 +1523,38 @@ pub fn comparison_operator(input: ParseString) -> ParseResult<FormulaOperator> {
 
 // factor := parenthetical_term | structure | fsm_pipe | function_call | literal | slice | var ;
 pub fn factor(input: ParseString) -> ParseResult<Factor> {
-  match parenthetical_term(input.clone()) {
-    Ok((input, term)) => { return Ok((input, term)); },
-    Err(_) => (),
-  }
-  match structure(input.clone()) {
-    Ok((input, strct)) => { return Ok((input, Factor::Expression(Box::new(Expression::Structure(strct))))); },
-    //Err(Failure(err)) => {return Err(Failure(err))},
-    _ => (),
-  }
-  match fsm_pipe(input.clone()) {
-    Ok((input, pipe)) => { return Ok((input, Factor::Expression(Box::new(Expression::FsmPipe(pipe))))); },
-    Err(_) => (),
-  }
-  match function_call(input.clone()) {
-      Ok((input, fxn)) => { return Ok((input, Factor::Expression(Box::new(Expression::FunctionCall(fxn))))); },
-      Err(_) => (),
-  }
-  match literal(input.clone()) {
-      Ok((input, ltrl)) => { return Ok((input, Factor::Expression(Box::new(Expression::Literal(ltrl))))); },
-      Err(_) => (),
-  }
-  match slice(input.clone()) {
-      Ok((input, slc)) => { return Ok((input, Factor::Expression(Box::new(Expression::Slice(slc))))); },
-      Err(_) => (),
-  }
-  match var(input.clone()) {
-      Ok((input, var)) => { return Ok((input, Factor::Expression(Box::new(Expression::Var(var))))); },
-      Err(err) => { return Err(err); },
-  }
+  let (input, fctr) = match parenthetical_term(input.clone()) {
+    Ok((input, term)) => (input, term),
+    Err(_) => match negated_factor(input.clone()) {
+      Ok((input, neg)) => (input, neg),
+      Err(_) => match structure(input.clone()) {
+        Ok((input, strct)) => (input, Factor::Expression(Box::new(Expression::Structure(strct)))),
+        _ => match fsm_pipe(input.clone()) {
+          Ok((input, pipe)) => (input, Factor::Expression(Box::new(Expression::FsmPipe(pipe)))),
+          Err(_) => match function_call(input.clone()) {
+            Ok((input, fxn)) => (input, Factor::Expression(Box::new(Expression::FunctionCall(fxn)))),
+            Err(_) => match literal(input.clone()) {
+              Ok((input, ltrl)) => (input, Factor::Expression(Box::new(Expression::Literal(ltrl)))),
+              Err(_) => match slice(input.clone()) {
+                Ok((input, slc)) => (input, Factor::Expression(Box::new(Expression::Slice(slc)))),
+                Err(_) => match var(input.clone()) {
+                  Ok((input, var)) => (input, Factor::Expression(Box::new(Expression::Var(var)))),
+                  Err(err) => { return Err(err); },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+  let (input, transpose) = opt(transpose)(input)?;
+  let fctr = match transpose {
+    Some(_) => Factor::Transpose(Box::new(fctr)),
+    None => fctr,
+  };
+  Ok((input, fctr))
 }
-
 // statement_separator := ";" ;
 pub fn statement_separator(input: ParseString) -> ParseResult<()> {
   let (input,_) = nom_tuple((whitespace0,semicolon,whitespace0))(input)?;
@@ -1818,18 +1825,13 @@ pub fn tuple(input: ParseString) -> ParseResult<Tuple> {
 
 // expression := formula, transpose? ;
 pub fn expression(input: ParseString) -> ParseResult<Expression> {
-  let (input, expression) = match formula(input.clone()) {
+  let (input, expr) = match formula(input.clone()) {
     Ok((input, Factor::Expression(expr))) => (input, *expr),
     Ok((input, fctr)) => (input, Expression::Formula(fctr)),
     //Err(Failure(err)) => {
     //  return Err(Failure(err));
     //}
     Err(err) => {return Err(err);},
-  };
-  let (input, transpose) = opt(transpose)(input)?;
-  let expr = match transpose {
-    Some(_) => Expression::Transpose(Box::new(expression)),
-    None => expression,
   };
   Ok((input, expr))
 }

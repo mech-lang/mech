@@ -8,8 +8,9 @@ use serde_derive::*;
 use std::any::Any;
 
 #[derive(Clone, Debug)]
-pub struct Annotation {
-  pub kind: u64,
+pub struct NodeAnnotation {
+  pub kind_id: u64,
+  pub kind_annotation: Option<KindAnnotation>,
   pub size: Size,
 }
 
@@ -39,60 +40,70 @@ fn body(body: &Body) -> Result<(),MechError> {
 fn section(section: &Section) -> Result<(),MechError> {
   for el in &section.elements {
     let result = section_element(&el)?;
+    println!("Section Result: {:?}", result);
   }
   Ok(())
 }
 
-fn section_element(element: &SectionElement) -> Result<(),MechError> {
+fn section_element(element: &SectionElement) -> Result<NodeAnnotation,MechError> {
   match element {
-    SectionElement::MechCode(code) => {mech_code(&code);},
-    _ => unimplemented!(),
+    SectionElement::MechCode(code) => {mech_code(&code)},
+    _ => todo!(),
   }
-  Ok(())
 }
 
-fn mech_code(code: &MechCode) -> Result<(),MechError> {
+fn mech_code(code: &MechCode) -> Result<NodeAnnotation,MechError> {
   match &code {
-    MechCode::Expression(expr) => {expression(&expr)?;},
-    MechCode::Statement(_) => (),
-    MechCode::FsmSpecification(_) => (),
-    MechCode::FsmImplementation(_) => (),
-    MechCode::FunctionDefine(_) => (),
+    MechCode::Expression(expr) => {expression(&expr)},
+    MechCode::Statement(_) => todo!(),
+    MechCode::FsmSpecification(_) => todo!(),
+    MechCode::FsmImplementation(_) => todo!(),
+    MechCode::FunctionDefine(_) => todo!(),
   }
-  Ok(())
 }
 
-fn expression(expr: &Expression) -> Result<(),MechError> {
+fn expression(expr: &Expression) -> Result<NodeAnnotation,MechError> {
   match &expr {
-    Expression::Var(_) => (),
-    Expression::Slice(_) => (),
-    Expression::Formula(_) => (),
-    Expression::Structure(_) => (),
-    Expression::Literal(ltrl) => {literal(&ltrl)?;},
-    Expression::Transpose(_) => (),
-    Expression::FunctionCall(_) => (),
-    Expression::FsmPipe(_) => (),
+    Expression::Var(_) => todo!(),
+    Expression::Slice(_) => todo!(),
+    Expression::Formula(_) => todo!(),
+    Expression::Structure(_) => todo!(),
+    Expression::Literal(ltrl) => Ok(literal(&ltrl)),
+    Expression::FunctionCall(_) => todo!(),
+    Expression::FsmPipe(_) => todo!(),
   }
-  Ok(())
 }
 
-fn literal(ltrl: &Literal) -> Result<(),MechError> {
-  /*match &ltrl {
-    Literal::Empty(_) => (),
-    Literal::Boolean(bln) => boolean(&bln),
-    Literal::Number(num) => number(&num),
-    Literal::String(strng) => string(&num),
-    Literal::Atom(_) => (),
-    Literal::TypedLiteral(_) => {
-
+fn literal(ltrl: &Literal) -> NodeAnnotation {
+  match &ltrl {
+    Literal::Empty(_) => todo!(),
+    Literal::Boolean(bln) => boolean(bln),
+    Literal::Number(num) => number(num),
+    Literal::String(strng) => todo!(),
+    Literal::Atom(_) => todo!(),
+    Literal::TypedLiteral((ltrl,kind)) => {
+      let kind_id = hash_str(&format!("{:?}",kind));
+      NodeAnnotation {
+        kind_id,
+        kind_annotation: Some(kind.clone()),
+        size: Size{dimensions: 1, sizes: vec![1]},
+      }
     },
-  }*/
-  Ok(())
+  }
 }
 
-fn boolean(tkn: Token) -> Annotation {
-  Annotation {
-      kind: hash_str("boolean"),
+fn boolean(tkn: &Token) -> NodeAnnotation {
+  NodeAnnotation {
+      kind_id: hash_str("boolean"),
+      kind_annotation: None,
+      size: Size{dimensions: 1, sizes: vec![1]},
+  }
+}
+
+fn number(tkn: &Number) -> NodeAnnotation {
+  NodeAnnotation {
+      kind_id: hash_str("number"),
+      kind_annotation: None,
       size: Size{dimensions: 1, sizes: vec![1]},
   }
 }

@@ -37,7 +37,7 @@ test_parser!(parse_identifier_star, "A*", 47514170547507386);
 test_parser!(parse_identifier_greek, "Δx^2", 34800204971269505);
 
 test_parser!(parse_literal_number_integer, "123", 47158019211217915);
-test_parser!(parse_literal_number_integer_neg, "-123", 35870853261236691);
+test_parser!(parse_literal_number_integer_neg, "-123", 40753438147517837);
 test_parser!(parse_literal_number_float, "123.456", 35039068852936934);
 test_parser!(parse_literal_number_rational, "123/456", 51796036056154014);
 test_parser!(parse_literal_number_hex, "0x1234567890ABCDEF", 43012669827828490);
@@ -50,6 +50,10 @@ test_parser!(parse_literal_number_imaginary, "1234i", 56634961804533704);
 test_parser!(parse_literal_number_complex, "1234+567i", 52164299928210322);
 test_parser!(parse_literal_number_complex_fractions, "12.34+5.67i", 49522358830348899);
 test_parser!(parse_literal_number_hex_underscores, "0xAB_CD_EF_GH", 11525069796638697);
+
+test_parser!(parse_literal_negated, "-a", 56350807559492456);
+test_parser!(parse_literal_negated_transpose, "-[a, b, c]'", 54897448919946207);
+test_parser!(parse_literal_negated_multi, "-a + -b * -(-c - -b)", 58911143883839038);
 
 test_parser!(parse_literal_atom, "`A", 29631792893088166);
 
@@ -100,7 +104,8 @@ test_parser!(parse_slice_mega, r#"a.x.y[1,1 + 1,[1 2 3],1..3,1..=3].a,b,b,c{"foo
 test_parser!(parse_matrix_empty, "[]", 20166184779250868);
 test_parser!(parse_matrix_scalar_integer, "[123]", 54310964423322192);
 test_parser!(parse_matrix_vector, "[1 2 3]", 13246292939325121);
-test_parser!(parse_matrix_vector_transpose, "[1 2 3]'", 35774200196470992);
+test_parser!(parse_matrix_vector_transpose, "[1 2 3]'", 48164647757607072);
+test_parser!(parse_matrix_vector_transposes, "[A' + B' C']'", 26766651170564067);
 test_parser!(parse_matrix_vector_vars, "[a,b,c]", 49551394880404050);
 test_parser!(parse_matrix_column_vector, "[1; 2; 3]", 71460606371207459);
 test_parser!(parse_matrix_2x2, "[1 2; 3 4]", 55450029560457659);
