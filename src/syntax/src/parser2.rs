@@ -693,7 +693,7 @@ pub fn kind_annotation(input: ParseString) -> ParseResult<KindAnnotation> {
 
 // kind := empty | atom | tuple | scalar | bracket | map | brace
 pub fn kind(input: ParseString) -> ParseResult<Kind> {
-  let (input, kind) = alt((kind_empty,kind_atom,kind_tuple, kind_scalar, kind_bracket, kind_map, kind_brace))(input)?;
+  let (input, kind) = alt((kind_fxn,kind_empty,kind_atom,kind_tuple, kind_scalar, kind_bracket, kind_map, kind_brace))(input)?;
   Ok((input, kind))
 }
 
@@ -718,6 +718,17 @@ pub fn kind_map(input: ParseString) -> ParseResult<Kind> {
   let (input, value_kind) = kind(input)?;
   let (input, _) = right_brace(input)?;
   Ok((input, Kind::Map(Box::new(key_kind),Box::new(value_kind))))
+}
+
+pub fn kind_fxn(input: ParseString) -> ParseResult<Kind> {
+  let (input, _) = left_parenthesis(input)?;
+  let (input, input_kinds) = separated_list0(list_separator,kind)(input)?;
+  let (input, _) = right_parenthesis(input)?;
+  let (input, _) = equal(input)?;
+  let (input, _) = left_parenthesis(input)?;
+  let (input, output_kinds) = separated_list0(list_separator,kind)(input)?;
+  let (input, _) = right_parenthesis(input)?;
+  Ok((input, Kind::Function(input_kinds,output_kinds)))
 }
 
 // kind_brace = "{", list1(",",kind) "}", [":"], list0(",",literal) ;

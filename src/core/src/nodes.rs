@@ -1103,6 +1103,8 @@ pub enum Kind {
   Map(Box<Kind>,Box<Kind>),
   Scalar(Identifier),
   Atom(Identifier),
+  Function(Vec<Kind>,Vec<Kind>),
+  Fsm(Vec<Kind>,Vec<Kind>),
   Empty,
 }
 
