@@ -805,7 +805,7 @@ pub enum MechCode {
 pub struct FunctionDefine {
   pub name: Identifier,
   pub input: Vec<FunctionArgument>,
-  pub output: FunctionArgument,
+  pub output: Vec<FunctionArgument>,
   pub statements: Vec<Statement>,
 }
 

@@ -1569,11 +1569,23 @@ pub fn function_define(input: ParseString) -> ParseResult<FunctionDefine> {
   let ((input, _)) = whitespace0(input)?;
   let ((input, _)) = equal(input)?;
   let ((input, _)) = whitespace0(input)?;
-  let ((input, output)) = function_arg(input)?;
+  let ((input, output)) = alt((function_out_args,function_out_arg))(input)?;
   let ((input, _)) = define_operator(input)?;
   let ((input, statements)) = separated_list1(alt((whitespace1,statement_separator)), statement)(input)?;
   let ((input, _)) = period(input)?;
   Ok((input,FunctionDefine{name,input: input_args,output,statements}))
+}
+
+fn function_out_args(input: ParseString) -> ParseResult<Vec<FunctionArgument>> {
+  let ((input, _)) = left_parenthesis(input)?;
+  let ((input, args)) = separated_list1(list_separator,function_arg)(input)?;
+  let ((input, _)) = right_parenthesis(input)?;
+  Ok((input, args))
+}
+
+fn function_out_arg(input: ParseString) -> ParseResult<Vec<FunctionArgument>> {
+  let ((input, arg)) = function_arg(input)?;
+  Ok((input, vec![arg]))
 }
 
 // function_arg := identifier, kind_annotation ;

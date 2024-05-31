@@ -289,12 +289,33 @@ r#"#bubble-sort(arr) -> Start(arr)
 test_parser!(parse_function_define,r#"a() = b<c> := 
     a := 1;
     b := 2;
-    c := 3."#, 66257525442314554);
+    c := 3."#, 62997233809516734);
 
 test_parser!(parse_function_define_args,r#"foo(x<u8>, y<u8>) = z<u8> :=
     x2 := x + 1
     y2 := y + 2
-    z := x2 + y2."#, 6010352619935357);
+    z := x2 + y2."#, 26397243087465788);
 
-test_parser!(parse_function_define_inline,r#"a() = b<c> := a := 1;b := 2;c := 3."#, 27112950721321045);
+test_parser!(parse_function_define_inline,r#"a() = b<c> := a := 1;b := 2;c := 3."#, 36259460740270037);
     
+test_parser!(parse_function_define_real,r#"time-update(μ<pose>, Σ<cov>) = (μ<pose>, Σ<cov>) :=
+  θ :=  μ.θ
+  Gt := [1  0 -u.v * math/sin(θ) * Δt
+         0  1  u.v * math/cos(θ) * Δt
+         0  0  1]
+  Vt := [math/cos(θ) * Δt  0
+         math/sin(θ) * Δt  0
+         0                 Δt]
+  μ := μ + u.v,v,ω * [math/cos(θ), math/sin(θ), 1] * Δt
+  Σ := Gt ** Σ ** Gt' + Vt ** Q ** Vt'.
+
+measurement-update(μ<[f32]:3>, Σ<[f32]:3,3>) = (μ<[f32]:3>, Σ<[f32]:3,3>) :=
+  Δy := camera.y - μ.y
+  Δx := camera.x - μ.x
+  q := Δx ^ 2 + Δy ^ 2
+  Ẑ := math/atan2(y: Δy, x: Δx) - μ.θ
+  H := [Δy / q, -Δx / q, -1]
+  S := H ** Σ ** H' + Q
+  K := Σ ** H' / S
+  μ := (μ + K * (z -  Ẑ))
+  Σ := ([1 0 0; 0 1 0; 0 0 1] - K ** H) ** Σ."#,9205364509048892);
