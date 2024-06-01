@@ -76,11 +76,11 @@ fn expression(expr: &Expression) -> Result<NodeAnnotation,MechError> {
 
 fn literal(ltrl: &Literal) -> NodeAnnotation {
   match &ltrl {
-    Literal::Empty(_) => todo!(),
+    Literal::Empty(_) => empty(),
     Literal::Boolean(bln) => boolean(bln),
     Literal::Number(num) => number(num),
-    Literal::String(strng) => todo!(),
-    Literal::Atom(_) => todo!(),
+    Literal::String(strng) => string(strng),
+    Literal::Atom(atm) => atom(atm),
     Literal::TypedLiteral((ltrl,kind)) => {
       let kind_id = hash_str(&format!("{:?}",kind));
       NodeAnnotation {
@@ -108,24 +108,27 @@ fn number(tkn: &Number) -> NodeAnnotation {
   }
 }
 
-/*fn empty(ltrl: &Empty) -> Annotation {
-  Annotation {
-    kind: hash_str("_"),
-    size: Size{dimensions: 1, sizes: vec![1]},
+fn empty() -> NodeAnnotation {
+  NodeAnnotation {
+      kind_id: hash_str("empty"),
+      kind_annotation: None,
+      size: Size{dimensions: 1, sizes: vec![1]},
   }
 }
 
-fn string(ltrl: &MechString) -> Annotation {
-  Annotation {
-    kind: hash_str("string"),
-    size: Size{dimensions: 1, sizes: vec![1]},
+fn string(tkn: &MechString) -> NodeAnnotation {
+  NodeAnnotation {
+      kind_id: hash_str("string"),
+      kind_annotation: None,
+      size: Size{dimensions: 1, sizes: vec![1]},
   }
-}*/
+}
 
-/*fn number(ltrl: &Number) -> Annotation {
-  Annotation {
-    kind: hash_str("number"),
-    size: Size{dimensions: 1, sizes: vec![1]},
-    token: 
+fn atom(tkn: &Atom) -> NodeAnnotation {
+  NodeAnnotation {
+      kind_id: hash_str("atom"),
+      kind_annotation: None,
+      size: Size{dimensions: 1, sizes: vec![1]},
   }
-}*/
+}
+
