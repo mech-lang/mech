@@ -82,7 +82,7 @@ fn literal(ltrl: &Literal) -> NodeAnnotation {
     Literal::String(strng) => string(strng),
     Literal::Atom(atm) => atom(atm),
     Literal::TypedLiteral((ltrl,kind)) => {
-      let kind_id = hash_str(&format!("{:?}",kind));
+      let kind_id = kind.hash();
       NodeAnnotation {
         kind_id,
         kind_annotation: Some(kind.clone()),

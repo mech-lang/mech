@@ -1033,6 +1033,12 @@ pub struct Identifier {
   pub name: Token,
 }
 
+impl Identifier {
+  pub fn hash(&self) -> u64 {
+    hash_chars(&self.name.chars)
+  }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Emoji {
   pub tokens: Vec<Token>,
@@ -1093,6 +1099,15 @@ pub struct Binding {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct KindAnnotation {
   pub kind: Kind
+}
+
+impl KindAnnotation {
+  pub fn hash(&self) -> u64 {
+    match &self.kind {
+      Kind::Scalar(id) => id.hash(),
+      _ => 0,
+    }
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

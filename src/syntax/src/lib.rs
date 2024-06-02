@@ -24,6 +24,7 @@ pub mod analyzer;
 #[cfg(feature="lang-server")]
 pub mod langserver;
 pub mod formatter;
+pub mod interpreter;
 
 use mech_core::*;
 use mech_core::nodes::*;
