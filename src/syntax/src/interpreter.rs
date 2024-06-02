@@ -1,4 +1,4 @@
-use mech_core::{MechError, hash_str, nodes::*};
+use mech_core::{MechError, MechErrorKind, hash_str, nodes::*};
 use crate::parser2::*;
 use serde_derive::*;
 use std::any::Any;
@@ -57,7 +57,7 @@ fn expression(expr: &Expression) -> Result<Value,MechError> {
   match &expr {
     Expression::Var(_) => todo!(),
     Expression::Slice(_) => todo!(),
-    Expression::Formula(_) => todo!(),
+    Expression::Formula(fctr) => factor(fctr),
     Expression::Structure(_) => todo!(),
     Expression::Literal(ltrl) => Ok(literal(&ltrl)),
     Expression::FunctionCall(_) => todo!(),
@@ -65,10 +65,37 @@ fn expression(expr: &Expression) -> Result<Value,MechError> {
   }
 }
 
+fn factor(fctr: &Factor) -> Result<Value,MechError> {
+  match fctr {
+    Factor::Term(trm) => term(trm),
+    Factor::Expression(expr) => expression(expr),
+    Factor::Negated(_) => todo!(),
+    Factor::Transpose(_) => todo!(),
+  }
+}
+
+fn term(trm: &Term) -> Result<Value,MechError> {
+  let mut lhs_result = factor(&trm.lhs)?;
+  for (op,rhs) in &trm.rhs {
+    let rhs_result = factor(&rhs)?;
+    lhs_result = match (lhs_result, rhs_result, op) {
+      (Value::Number(lhs_val), Value::Number(rhs_val), FormulaOperator::AddSub(AddSubOp::Add)) 
+        => Value::Number(lhs_val + rhs_val),
+      (Value::Number(lhs_val), Value::Number(rhs_val), FormulaOperator::AddSub(AddSubOp::Sub)) 
+        => Value::Number(lhs_val - rhs_val),
+      x => {
+        println!("{:?}", trm);
+        return Err(MechError{msg: "interpreter.rs".to_string(), id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});
+      }
+    }
+  }
+  Ok(lhs_result)
+}
+
 fn literal(ltrl: &Literal) -> Value {
   match &ltrl {
     Literal::Empty(_) => empty(),
-    Literal::Boolean(bln) => todo!(),
+    Literal::Boolean(bln) => boolean(bln),
     Literal::Number(num) => number(num),
     Literal::String(strng) => string(strng),
     Literal::Atom(atm) => todo!(),
@@ -113,27 +140,17 @@ fn empty() -> Value {
   Value::Empty
 }
 
-/*fn boolean(tkn: &Token) -> NodeAnnotation {
-  NodeAnnotation {
-      kind_id: hash_str("boolean"),
-      kind_annotation: None,
-      size: Size{dimensions: 1, sizes: vec![1]},
-  }
+fn boolean(tkn: &Token) -> Value {
+  let strng: String = tkn.chars.iter().collect::<String>();
+  let val = match strng.as_str() {
+    "true" => true,
+    "false" => false,
+    _ => unreachable!(),
+  };
+  Value::Bool(val)
 }
 
-fn empty() -> NodeAnnotation {
-  NodeAnnotation {
-      kind_id: hash_str("empty"),
-      kind_annotation: None,
-      size: Size{dimensions: 1, sizes: vec![1]},
-  }
-}
+/*fn atom(tkn: &Atom) -> Value {
 
-fn atom(tkn: &Atom) -> NodeAnnotation {
-  NodeAnnotation {
-      kind_id: hash_str("atom"),
-      kind_annotation: None,
-      size: Size{dimensions: 1, sizes: vec![1]},
-  }
 }*/
 
