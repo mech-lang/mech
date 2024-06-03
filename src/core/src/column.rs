@@ -122,7 +122,7 @@ impl Column {
       Column::String(col) => col.borrow_mut().resize(rows,MechString::new()),
       Column::Enum(col) => col.borrow_mut().resize(rows,Enum{kind:0, variant:0}),
       Column::Reference(_) |
-      Column::Empty => {return Err(MechError{msg: "".to_string(), id: 9430, kind: MechErrorKind::None});}
+      Column::Empty => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 9430, kind: MechErrorKind::None});}
     }
     Ok(())
   }
@@ -149,7 +149,7 @@ impl Column {
       (Column::Index(col),Column::Index(other)) => col.extend(other),
       (Column::Bool(col),Column::Bool(other)) => col.extend(other),
       (Column::String(col),Column::String(other)) => col.extend(other),
-      _ => {return Err(MechError{msg: "".to_string(), id: 9431, kind: MechErrorKind::None});}
+      _ => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 9431, kind: MechErrorKind::None});}
     }
     Ok(())
   }

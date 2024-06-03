@@ -99,18 +99,18 @@ impl MechFunctionCompiler for MatrixMul {
     match (&lhs_kind, &rhs_kind) {
       (_,ValueKind::Compound(_)) |
       (ValueKind::Compound(_),_) => {
-        return Err(MechError{msg: "".to_string(), id: 9049, kind: MechErrorKind::GenericError("matrix/multiply doesn't support compound table kinds.".to_string())});
+        return Err(MechError{tokens: vec![], msg: "".to_string(), id: 9049, kind: MechErrorKind::GenericError("matrix/multiply doesn't support compound table kinds.".to_string())});
       }
       (k,j) => {
         if (*k != *j) {
-          return Err(MechError{msg: "".to_string(), id: 9050, kind: MechErrorKind::GenericError("matrix/multiply doesn't support disparate table kinds.".to_string())});
+          return Err(MechError{tokens: vec![], msg: "".to_string(), id: 9050, kind: MechErrorKind::GenericError("matrix/multiply doesn't support disparate table kinds.".to_string())});
         }
       }
     }
     match (&arg_shapes[0],&arg_shapes[1]) {
       (TableShape::Row(columns), TableShape::Column(rows)) => {
         if columns != rows {
-          return Err(MechError{msg: "".to_string(), id: 9403, kind: MechErrorKind::GenericError("Dimension mismatch".to_string())});
+          return Err(MechError{tokens: vec![], msg: "".to_string(), id: 9403, kind: MechErrorKind::GenericError("Dimension mismatch".to_string())});
         }
         out_brrw.resize(1,1);    
         out_brrw.set_kind(rhs_kind);
@@ -126,12 +126,12 @@ impl MechFunctionCompiler for MatrixMul {
             let lhs = { block.get_table(&arg_table_id)?.borrow().collect_columns_f64() };
             block.plan.push(MatrixMulRV{lhs: lhs.clone(), rhs: rhs.clone(), out: out_col.clone()});
           }
-          x => {return Err(MechError{msg: "".to_string(), id: 9044, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
+          x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 9044, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }
       }
       (TableShape::Matrix(lhs_rows,lhs_columns), TableShape::Column(rows)) => {
         if lhs_columns != rows {
-          return Err(MechError{msg: "".to_string(), id: 9403, kind: MechErrorKind::GenericError("Dimension mismatch".to_string())});
+          return Err(MechError{tokens: vec![], msg: "".to_string(), id: 9403, kind: MechErrorKind::GenericError("Dimension mismatch".to_string())});
         }
         out_brrw.resize(*rows,1);    
         out_brrw.set_kind(rhs_kind);
@@ -148,7 +148,7 @@ impl MechFunctionCompiler for MatrixMul {
             let out_cols = out_brrw.collect_columns_f64();
             block.plan.push(MatrixMulMM{a: foo.clone(), b: foo.clone(), c: foo.clone(),lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
           }
-          x => {return Err(MechError{msg: "".to_string(), id: 9044, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
+          x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 9044, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }
       }
       (TableShape::Column(rows),TableShape::Row(columns)) => {
@@ -168,12 +168,12 @@ impl MechFunctionCompiler for MatrixMul {
             let out_cols = out_brrw.collect_columns_f64();
             block.plan.push(MatrixMulVR{lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
           }
-          x => {return Err(MechError{msg: "".to_string(), id: 9047, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
+          x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 9047, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }
       }
       (TableShape::Row(lhs_columns),TableShape::Matrix(rhs_rows,rhs_columns)) => {
         if lhs_columns != rhs_rows {
-          return Err(MechError{msg: "".to_string(), id: 9048, kind: MechErrorKind::GenericError("Dimension mismatch".to_string())});
+          return Err(MechError{tokens: vec![], msg: "".to_string(), id: 9048, kind: MechErrorKind::GenericError("Dimension mismatch".to_string())});
         }        
         out_brrw.resize(1,*rhs_columns);
         out_brrw.set_kind(rhs_kind);
@@ -190,12 +190,12 @@ impl MechFunctionCompiler for MatrixMul {
             let out_cols = out_brrw.collect_columns_f64();
             block.plan.push(MatrixMulMM{a: foo.clone(), b: foo.clone(), c: foo.clone(),lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
           }
-          x => {return Err(MechError{msg: "".to_string(), id: 9048, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
+          x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 9048, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         } 
       }
       (TableShape::Matrix(lhs_rows,lhs_columns),TableShape::Matrix(rhs_rows,rhs_columns)) => {
         if lhs_columns != rhs_rows {
-          return Err(MechError{msg: "".to_string(), id: 9048, kind: MechErrorKind::GenericError("Dimension mismatch".to_string())});
+          return Err(MechError{tokens: vec![], msg: "".to_string(), id: 9048, kind: MechErrorKind::GenericError("Dimension mismatch".to_string())});
         }        
         out_brrw.resize(*lhs_rows,*rhs_columns);
         out_brrw.set_kind(rhs_kind);
@@ -215,10 +215,10 @@ impl MechFunctionCompiler for MatrixMul {
             let out_cols = out_brrw.collect_columns_f64();
             block.plan.push(MatrixMulMM{a: foo.clone(), b: foo.clone(), c: foo.clone(),lhs: lhs.clone(), rhs: rhs.clone(), out: out_cols.clone()});
           }
-          x => {return Err(MechError{msg: "".to_string(), id: 9049, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
+          x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 9049, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }        
       }
-      x => {return Err(MechError{msg: "".to_string(), id: 9051, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+      x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 9051, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
     }
     Ok(())
   }
@@ -282,7 +282,7 @@ impl MechFunctionCompiler for MatrixTranspose {
         let arg_kind = { arg_table.borrow().kind() };
         match arg_kind {
           ValueKind::Compound(_) => {
-            return Err(MechError{msg: "".to_string(), id: 9152, kind: MechErrorKind::GenericError("matrix/transpose doesn't support compound table kinds.".to_string())});
+            return Err(MechError{tokens: vec![], msg: "".to_string(), id: 9152, kind: MechErrorKind::GenericError("matrix/transpose doesn't support compound table kinds.".to_string())});
           }
           _ => (),
         }
@@ -297,14 +297,14 @@ impl MechFunctionCompiler for MatrixTranspose {
             let arg = { block.get_table(&arg_table_id)?.borrow().collect_columns_f64() };
             block.plan.push(MatrixTransposeR{arg: arg.clone(), out: out_col.clone()});
           }
-          x => {return Err(MechError{msg: "".to_string(), id: 9153, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+          x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 9153, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
       }
       TableShape::Matrix(rows,columns) => {
         let arg_kind = { block.get_table(&arg_table_id)?.borrow().kind() };
         match arg_kind {
           ValueKind::Compound(_) => {
-            return Err(MechError{msg: "".to_string(), id: 9154, kind: MechErrorKind::GenericError("matrix/transpose doesn't support compound table kinds.".to_string())});
+            return Err(MechError{tokens: vec![], msg: "".to_string(), id: 9154, kind: MechErrorKind::GenericError("matrix/transpose doesn't support compound table kinds.".to_string())});
           }
           _ => (),
         }
@@ -321,10 +321,10 @@ impl MechFunctionCompiler for MatrixTranspose {
             let out_cols = { out_brrw.collect_columns_f64() };
             block.plan.push(MatrixTransposeM{arg: arg.clone(), out: out_cols.clone()});
           }
-          x => {return Err(MechError{msg: "".to_string(), id: 9047, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
+          x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 9047, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }
       }
-      x => {return Err(MechError{msg: "".to_string(), id: 9156, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+      x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 9156, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
     }
     Ok(())
   }

@@ -1,4 +1,4 @@
-use mech_core::{MechError, MechErrorKind, hash_str, nodes::*};
+use mech_core::{MechError, MechErrorKind, hash_str, ValueKind, nodes::*};
 use crate::parser2::*;
 use serde_derive::*;
 use std::any::Any;
@@ -10,6 +10,7 @@ pub enum Value {
   String(String),
   Bool(bool),
   Atom(u64),
+  Table(Vec<Value>),
   Empty
 }
 
@@ -107,7 +108,7 @@ impl Interpreter {
         return Ok(value.clone())         
       }
       None => {
-        return Err(MechError{msg: "interpreter.rs".to_string(), id: 110, kind: MechErrorKind::None});
+        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 110, kind: MechErrorKind::None});
       }
     }
   }
@@ -128,10 +129,13 @@ impl Interpreter {
       lhs_result = match (lhs_result, rhs_result, op) {
         (Value::Number(lhs_val), Value::Number(rhs_val), FormulaOperator::AddSub(AddSubOp::Add)) 
           => Value::Number(lhs_val + rhs_val),
-        (Value::Number(lhs_val), Value::Number(rhs_val), FormulaOperator::AddSub(AddSubOp::Sub)) 
+        (Value::Number(lhs_val), Value::Number(rhs_val), FormulaOperator::AddSub(AddSubOp::Sub))
           => Value::Number(lhs_val - rhs_val),
+        (Value::String(lhs_val), Value::Number(rhs_val), FormulaOperator::AddSub(AddSubOp::Sub)) => {
+          return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 135, kind: MechErrorKind::UnhandledFunctionArgumentKind(ValueKind::String,ValueKind::NumberLiteral)});
+        }
         x => {
-          return Err(MechError{msg: "interpreter.rs".to_string(), id: 135, kind: MechErrorKind::GenericError(format!("{:?}", x))});
+          return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 135, kind: MechErrorKind::UnhandledFunctionArgumentKind(ValueKind::NumberLiteral,ValueKind::NumberLiteral)});
         }
       }
     }

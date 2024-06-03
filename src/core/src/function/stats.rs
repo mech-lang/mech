@@ -136,7 +136,7 @@ pub struct StatsSum{}
 impl MechFunctionCompiler for StatsSum {
   fn compile(&self, block: &mut Block, arguments: &Vec<Argument>, out: &(TableId, TableIndex, TableIndex)) -> std::result::Result<(),MechError> {
     if arguments.len() > 1 {
-      return Err(MechError{msg: "".to_string(), id: 3040, kind: MechErrorKind::GenericError("Too many function arguments".to_string())});
+      return Err(MechError{tokens: vec![], msg: "".to_string(), id: 3040, kind: MechErrorKind::GenericError("Too many function arguments".to_string())});
     }
     let (out_table_id, _, _) = out;
     let arg_col = block.get_arg_column(&arguments[0])?;
@@ -196,7 +196,7 @@ impl MechFunctionCompiler for StatsSum {
             }
           }
           (Column::Reference((ref table, (ColumnIndex::Bool(ix_col), ColumnIndex::None))),_,Column::F32(out)) => block.plan.push(StatsSumTB{col: table.clone(), ix: ix_col.clone(), out: out.clone()}),
-          x => {return Err(MechError{msg: "".to_string(), id: 3041, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
+          x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 3041, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }
       }
       else if *arg_name == *ROW {
@@ -208,7 +208,7 @@ impl MechFunctionCompiler for StatsSum {
         };
         match kind {
           ValueKind::Compound(_) => {
-            return Err(MechError{msg: "".to_string(), id: 3042, kind: MechErrorKind::GenericError("stat/sum(row) doesn't support compound table kinds.".to_string())});
+            return Err(MechError{tokens: vec![], msg: "".to_string(), id: 3042, kind: MechErrorKind::GenericError("stat/sum(row) doesn't support compound table kinds.".to_string())});
           }
           k => {
             out_brrw.resize(arg_table.borrow().rows,1);
@@ -372,7 +372,7 @@ impl MechFunctionCompiler for StatsSum {
             };
             block.plan.push(StatsSumRow{cols: cols.clone(), rows: rows, out: out_col.clone()});
           }         
-          x => {return Err(MechError{msg: "".to_string(), id: 3043, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
+          x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 3043, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }
       } 
       else if *arg_name == *TABLE {
@@ -384,7 +384,7 @@ impl MechFunctionCompiler for StatsSum {
         };
         match kind {
           ValueKind::Compound(_) => {
-            return Err(MechError{msg: "".to_string(), id: 3044, kind: MechErrorKind::GenericError("stat/sum(row) doesn't support compound table kinds.".to_string())});
+            return Err(MechError{tokens: vec![], msg: "".to_string(), id: 3044, kind: MechErrorKind::GenericError("stat/sum(row) doesn't support compound table kinds.".to_string())});
           }
           k => {
             out_brrw.resize(1,1);
@@ -548,11 +548,11 @@ impl MechFunctionCompiler for StatsSum {
             };
             block.plan.push(StatsSumTable{cols: cols.clone(), rows: rows, out: out_col.clone()});
           }        
-          x => {return Err(MechError{msg: "".to_string(), id: 3045, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
+          x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 3045, kind: MechErrorKind::GenericError(format!("{:?}",x))})},
         }
       }
       else {  
-        return Err(MechError{msg: "".to_string(), id: 3046, kind: MechErrorKind::UnknownFunctionArgument(*arg_name)});
+        return Err(MechError{tokens: vec![], msg: "".to_string(), id: 3046, kind: MechErrorKind::UnknownFunctionArgument(*arg_name)});
       }
     } 
     Ok(())

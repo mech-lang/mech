@@ -750,6 +750,17 @@ pub struct Program {
   pub body: Body,
 }
 
+impl Program {
+  pub fn tokens(&self) -> Vec<Token> {
+    /*let mut title_tokens = match self.title.tokens() {
+      Some(tkns) => tkns,
+      None => vec![],
+    };*/
+    let body_tokens = self.body.tokens();
+    body_tokens
+  }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Title {
   pub text: Token,
@@ -758,6 +769,17 @@ pub struct Title {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Body {
   pub sections: Vec<Section>,
+}
+
+impl Body {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut out = vec![];
+    for s in &self.sections {
+      let mut tkns = s.tokens();
+      out.append(&mut tkns);
+    }
+    out
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -769,6 +791,17 @@ pub struct Subtitle {
 pub struct Section {
   pub subtitle: Option<Subtitle>,
   pub elements: Vec<SectionElement>,
+}
+
+impl Section {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut out = vec![];
+    for s in &self.elements {
+      let mut tkns = s.tokens();
+      out.append(&mut tkns);
+    }
+    out
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -785,6 +818,15 @@ pub enum SectionElement {
   Image,           // todo
 }
 
+impl SectionElement {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      SectionElement::MechCode(code) => code.tokens(),
+      _ => todo!(),
+    }
+  }
+}
+
 pub type ListItem = Paragraph;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -799,6 +841,19 @@ pub enum MechCode {
   FsmSpecification(FsmSpecification),
   FsmImplementation(FsmImplementation),
   FunctionDefine(FunctionDefine),
+}
+
+impl MechCode {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      MechCode::Expression(x) => x.tokens(),
+      _ => todo!(),
+      //Statement(x) => x.tokens(),
+      //FsmSpecification(x) => x.tokens(),
+      //FsmImplementation(x) => x.tokens(),
+      //FunctionDefine(x) => x.tokens(),
+    }
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1076,6 +1131,15 @@ pub enum Expression {
   FsmPipe(FsmPipe),
 }
 
+impl Expression {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      Expression::Literal(ltrl) => ltrl.tokens(),
+      _ => todo!(),
+    }
+  }
+}
+
 pub type ArgumentList = Vec<(Option<Identifier>,Expression)>;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1105,7 +1169,7 @@ impl KindAnnotation {
   pub fn hash(&self) -> u64 {
     match &self.kind {
       Kind::Scalar(id) => id.hash(),
-      _ => 0,
+      _ => todo!(),
     }
   }
 }
@@ -1131,6 +1195,17 @@ pub enum Literal {
   String(MechString),
   Atom(Atom),
   TypedLiteral((Box<Literal>,KindAnnotation))
+}
+
+impl Literal {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      Literal::Number(x) => x.tokens(),
+      Literal::Boolean(tkn) => vec![tkn.clone()],
+      Literal::String(strng) => vec![strng.text.clone()],
+      _ => todo!(),
+    }
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1171,6 +1246,15 @@ pub enum Number {
   Imaginary(ComplexNumber),
 }
 
+impl Number {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      Number::Real(x) => x.tokens(),
+      _ => todo!(),
+    }
+  }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum RealNumber {
   Negated(Box<RealNumber>),
@@ -1182,6 +1266,15 @@ pub enum RealNumber {
   Binary(Token),
   Scientific((Base,Exponent)),
   Rational((Numerator,Denominator)),
+}
+
+impl RealNumber {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      RealNumber::Integer(tkn) => vec![tkn.clone()],
+      _ => todo!(),
+    }
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1259,10 +1352,34 @@ pub struct Term {
   pub rhs: Vec<(FormulaOperator,Factor)>
 }
 
+impl Term {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut lhs_tkns = self.lhs.tokens();
+    let mut rhs_tkns = vec![];
+    for (op, r) in &self.rhs {
+      let mut tkns = r.tokens();
+      rhs_tkns.append(&mut tkns);
+    }
+    lhs_tkns.append(&mut rhs_tkns);
+    lhs_tkns
+  }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Factor {
   Term(Box<Term>),
   Expression(Box<Expression>),
   Negated(Box<Factor>),
   Transpose(Box<Factor>),
+}
+
+impl Factor {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      Factor::Term(x) => x.tokens(),
+      Factor::Expression(x) => x.tokens(),
+      Factor::Negated(x) => x.tokens(),
+      Factor::Transpose(x) => x.tokens(),
+    }
+  }
 }

@@ -83,7 +83,7 @@ impl CapabilityToken {
   // Sign the token using a provided keypair
   pub fn sign(&mut self, signing_key: &SigningKey ) -> Result<(),MechError> {
     match self.signature {
-      Some(s) => { Err(MechError{msg: "".to_string(), id: 3295, kind: MechErrorKind::GenericError(format!("Capability already signed"))})},
+      Some(s) => { Err(MechError{tokens: vec![], msg: "".to_string(), id: 3295, kind: MechErrorKind::GenericError(format!("Capability already signed"))})},
       None => {
         let data_str = format!("{:?}{:?}{:?}", &self.name, &self.owner, &self.capabilities);
         let data_bytes = data_str.as_bytes();        
@@ -103,10 +103,10 @@ impl CapabilityToken {
         if public_key.verify(&data_bytes, &s).is_ok() {
           Ok(())
         } else {
-          Err(MechError{id: 83820, msg: "".to_string(), kind: MechErrorKind::InvalidCapabilityToken})
+          Err(MechError{tokens: vec![], id: 83820, msg: "".to_string(), kind: MechErrorKind::InvalidCapabilityToken})
         }
       },
-      None => Err(MechError{id: 83821, msg: "".to_string(), kind: MechErrorKind::InvalidCapabilityToken})
+      None => Err(MechError{tokens: vec![], id: 83821, msg: "".to_string(), kind: MechErrorKind::InvalidCapabilityToken})
     }
   }
 
@@ -115,7 +115,7 @@ impl CapabilityToken {
     if self.capabilities.contains(capability) {
       Ok(())
     } else {
-      Err(MechError{id: 83822, msg: "".to_string(), kind: MechErrorKind::MissingCapability(capability.clone())})
+      Err(MechError{tokens: vec![], id: 83822, msg: "".to_string(), kind: MechErrorKind::MissingCapability(capability.clone())})
     }
   }
 

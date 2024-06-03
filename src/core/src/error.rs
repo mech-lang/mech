@@ -5,7 +5,7 @@
 // ## Prelude
 
 use crate::*;
-use crate::nodes::SourceRange;
+use crate::nodes::{SourceRange, Token};
 
 type Rows = usize;
 type Cols = usize;
@@ -13,6 +13,7 @@ type Cols = usize;
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct MechError {
   pub id: u64,
+  pub tokens: Vec<Token>,
   pub kind: MechErrorKind,
   pub msg: String,
 }
@@ -47,7 +48,7 @@ pub enum MechErrorKind {
   Unhandled,
   UnknownFunctionArgument(u64),
   UnknownColumnKind(u64),
-  UnhandledFunctionArgumentKind(ValueKind),
+  UnhandledFunctionArgumentKind(ValueKind,ValueKind),
   UnhandledTableShape(TableShape),
   TooManyInputArguments(usize,usize),                // (given,expected)
   ParserError(nodes::ParserNode, ParserErrorReport, String),
@@ -58,7 +59,7 @@ pub enum MechErrorKind {
 
 impl From<std::io::Error> for MechError {
   fn from(n: std::io::Error) -> MechError {
-    MechError{msg: "".to_string(), id: 74892, kind: MechErrorKind::IoError}
+    MechError{tokens: vec![], msg: "".to_string(), id: 74892, kind: MechErrorKind::IoError}
   } 
 }
 

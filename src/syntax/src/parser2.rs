@@ -2177,6 +2177,6 @@ pub fn parse(text: &str) -> Result<Program, MechError> {
       annotation_rngs: e.1.annotation_rngs,
     }).collect();
     let msg = TextFormatter::new(text).format_error(&report);
-    Err(MechError{msg: "".to_string(), id: 3202, kind: MechErrorKind::ParserError(ParserNode::Error, report, msg)})
+    Err(MechError{tokens: vec![], msg: "".to_string(), id: 3202, kind: MechErrorKind::ParserError(ParserNode::Error, report, msg)})
   }
 }

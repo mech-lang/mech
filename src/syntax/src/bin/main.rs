@@ -20,7 +20,7 @@ fn main() -> Result<(),MechError> {
           //let result = analyze(&tree);
           //println!("A: {:#?}", result);
           let mut intrp = Interpreter::new();
-          let result = intrp.interpret(&tree).unwrap();
+          let result = intrp.interpret(&tree);
           println!("{:?}", intrp);
           println!("R: {:#?}", result);
 

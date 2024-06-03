@@ -93,7 +93,7 @@ macro_rules! math_update_compiler {
               ((_,Column::Bool(arg),ColumnIndex::Index(ix)),(_,Column::Bool(out),ColumnIndex::Bool(oix))) => block.plan.push(SetSIxVB{arg: arg.clone(), ix: *ix, out: out.clone(), oix: oix.clone()}),
               ((_,Column::Ref(src),ColumnIndex::Index(in_ix)),(_,Column::Ref(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}
               ((_,Column::String(src),ColumnIndex::Index(in_ix)),(_,Column::String(out),ColumnIndex::Index(out_ix))) => {block.plan.push(SetSIxSIx{arg: src.clone(), ix: *in_ix, out: out.clone(), oix: *out_ix});}*/
-              x => {return Err(MechError{msg: "".to_string(), id: 6115, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+              x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 6115, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }
           /*
@@ -114,7 +114,7 @@ macro_rules! math_update_compiler {
               ((_,Column::I64(lhs),_), (_,Column::I64(rhs),_), Column::I64(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
               ((_,Column::I128(lhs),_), (_,Column::I128(rhs),_), Column::I128(out)) => { block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) }
               */
-              x => {return Err(MechError{msg: "".to_string(), id: 6005, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+              x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 6005, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }   
           (TableShape::Column(rows), TableShape::Scalar) => {
@@ -157,12 +157,12 @@ macro_rules! math_update_compiler {
                   block.plan.push($op3{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
                 }
               }
-              x => {return Err(MechError{msg: "".to_string(), id: 6006, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+              x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 6006, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }                   
           (TableShape::Column(lhs_rows), TableShape::Column(rhs_rows)) => {
             if lhs_rows != rhs_rows {
-              return Err(MechError{msg: "".to_string(), id: 6007, kind: MechErrorKind::DimensionMismatch(((*lhs_rows,0),(*rhs_rows,0)))});
+              return Err(MechError{tokens: vec![], msg: "".to_string(), id: 6007, kind: MechErrorKind::DimensionMismatch(((*lhs_rows,0),(*rhs_rows,0)))});
             }
             let mut argument_columns = block.get_arg_columns(arguments)?;
             let (_,col,_) = &argument_columns[0];
@@ -178,7 +178,7 @@ macro_rules! math_update_compiler {
               ((_,Column::Length(lhs),_),(_,Column::Length(rhs),_),Column::Length(out)) => { block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() }) },
               ((_,Column::Speed(lhs),_),(_,Column::Speed(rhs),_),Column::Speed(out)) => { block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() }) },
               ((_,Column::Time(lhs),_),(_,Column::Time(rhs),_),Column::Time(out)) => { block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() }) },
-              x => {return Err(MechError{msg: "".to_string(), id: 6008, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+              x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 6008, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
             }
           }
           (TableShape::Row(cols), TableShape::Scalar) => {
@@ -206,7 +206,7 @@ macro_rules! math_update_compiler {
                     block.plan.push($op3::<F32>{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
                   }
                 }
-                x => {return Err(MechError{msg: "".to_string(), id: 6009, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+                x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 6009, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
               }
             }
           }
@@ -235,7 +235,7 @@ macro_rules! math_update_compiler {
                     block.plan.push($op2{lhs: lhs.clone(), rhs: rhs.clone(), out: out.clone() }) 
                   }
                 }
-                x => {return Err(MechError{msg: "".to_string(), id: 6010, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+                x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 6010, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
               }
             }
           }            
@@ -244,7 +244,7 @@ macro_rules! math_update_compiler {
             let rhs_rows = 1;
 
             if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
-              return Err(MechError{msg: "".to_string(), id: 6011, kind: MechErrorKind::DimensionMismatch(((lhs_rows,*lhs_cols),(rhs_rows,*rhs_cols)))});
+              return Err(MechError{tokens: vec![], msg: "".to_string(), id: 6011, kind: MechErrorKind::DimensionMismatch(((lhs_rows,*lhs_cols),(rhs_rows,*rhs_cols)))});
             }
 
             let lhs_columns = block.get_whole_table_arg_cols(&arguments[0])?;
@@ -278,14 +278,14 @@ macro_rules! math_update_compiler {
                     block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() })
                   }
                 }
-                x => {return Err(MechError{msg: "".to_string(), id: 6012, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+                x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 6012, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
               }
             }
           }
           (TableShape::Matrix(lhs_rows,lhs_cols), TableShape::Matrix(rhs_rows,rhs_cols)) => {
            
             if lhs_rows != rhs_rows || lhs_cols != rhs_cols {
-              return Err(MechError{msg: "".to_string(), id: 6011, kind: MechErrorKind::DimensionMismatch(((*lhs_rows,*lhs_cols),(*rhs_rows,*rhs_cols)))});
+              return Err(MechError{tokens: vec![], msg: "".to_string(), id: 6011, kind: MechErrorKind::DimensionMismatch(((*lhs_rows,*lhs_cols),(*rhs_rows,*rhs_cols)))});
             }
 
             let lhs_columns = block.get_whole_table_arg_cols(&arguments[0])?;
@@ -312,14 +312,14 @@ macro_rules! math_update_compiler {
                     block.plan.push($op4{lhs: (lhs.clone(),0,lhs.len()-1), rhs: (rhs.clone(),0,rhs.len()-1), out: out.clone() })
                   }
                 }
-                x => {return Err(MechError{msg: "".to_string(), id: 6012, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+                x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 6012, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
               }
             }
           }
-          (TableShape::Pending(table_id),_) => { return Err(MechError{msg: "".to_string(), id: 6013, kind: MechErrorKind::PendingTable(*table_id)}); }
-          (_,TableShape::Pending(table_id)) => {return Err(MechError{msg: "".to_string(), id: 6014, kind: MechErrorKind::PendingTable(*table_id)}); },
+          (TableShape::Pending(table_id),_) => { return Err(MechError{tokens: vec![], msg: "".to_string(), id: 6013, kind: MechErrorKind::PendingTable(*table_id)}); }
+          (_,TableShape::Pending(table_id)) => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 6014, kind: MechErrorKind::PendingTable(*table_id)}); },
           */
-          x => {return Err(MechError{msg: "".to_string(), id: 6115, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+          x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 6115, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
         }
         Ok(())
       }

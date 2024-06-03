@@ -49,7 +49,7 @@ macro_rules! trigonometry_rad_vv {
       ) -> std::result::Result<(),MechError>
       {
         if arguments.len() > 1 {
-          return Err(MechError{msg: "".to_string(), id: 1347, kind: MechErrorKind::TooManyInputArguments(arguments.len(),1)});
+          return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1347, kind: MechErrorKind::TooManyInputArguments(arguments.len(),1)});
         }
         let arg_dims = block.get_arg_dims(&arguments)?;
         let (arg_name,arg_table_id,_) = arguments[0];
@@ -67,7 +67,7 @@ macro_rules! trigonometry_rad_vv {
                   (_,Column::F32(col),ColumnIndex::Index(_)) |
                   (_,Column::F32(col),ColumnIndex::All) => block.plan.push($function_type{col: (col.clone(),0,0), out: out_col.clone()}),
                   (_,Column::Angle(col),ColumnIndex::All) => block.plan.push($function_type{col: (col.clone(),0,0), out: out_col.clone()}),
-                  (_,col,_) => { return Err(MechError{msg: "".to_string(), id: 1348, kind: MechErrorKind::UnhandledFunctionArgumentKind(col.kind())}); }
+                  (_,col,_) => { return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1348, kind: MechErrorKind::UnhandledFunctionArgumentKind(col.kind())}); }
                 }
               }
             }
@@ -79,7 +79,7 @@ macro_rules! trigonometry_rad_vv {
                 match arg {
                   (_,Column::F32(col),ColumnIndex::All) => block.plan.push($function_type{col: (col.clone(),0,col.len()-1), out: out_col.clone()}),
                   (_,Column::Angle(col),ColumnIndex::All) => block.plan.push($function_type{col: (col.clone(),0,col.len()-1), out: out_col.clone()}),
-                  (_,col,_) => { return Err(MechError{msg: "".to_string(), id: 1349, kind: MechErrorKind::UnhandledFunctionArgumentKind(col.kind())}); }
+                  (_,col,_) => { return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1349, kind: MechErrorKind::UnhandledFunctionArgumentKind(col.kind())}); }
                 }
               }
             }
@@ -92,7 +92,7 @@ macro_rules! trigonometry_rad_vv {
                   match &arg_cols[col_ix] {
                     (_,Column::F32(col),ColumnIndex::All) => block.plan.push($function_type{col: (col.clone(),0,col.len()-1), out: out_col.clone()}),
                     (_,Column::Angle(col),ColumnIndex::All) => block.plan.push($function_type{col: (col.clone(),0,col.len()-1), out: out_col.clone()}),
-                    (_,col,_) => { return Err(MechError{msg: "".to_string(), id: 1349, kind: MechErrorKind::UnhandledFunctionArgumentKind(col.kind())}); }
+                    (_,col,_) => { return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1349, kind: MechErrorKind::UnhandledFunctionArgumentKind(col.kind())}); }
                   }
                 }
               }
@@ -106,15 +106,15 @@ macro_rules! trigonometry_rad_vv {
                   match &arg_cols[col_ix] {
                     (_,Column::F32(col),ColumnIndex::All) => block.plan.push($function_type{col: (col.clone(),0,col.len()-1), out: out_col.clone()}),
                     (_,Column::Angle(col),ColumnIndex::All) => block.plan.push($function_type{col: (col.clone(),0,col.len()-1), out: out_col.clone()}),
-                    (_,col,_) => { return Err(MechError{msg: "".to_string(), id: 1349, kind: MechErrorKind::UnhandledFunctionArgumentKind(col.kind())}); }
+                    (_,col,_) => { return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1349, kind: MechErrorKind::UnhandledFunctionArgumentKind(col.kind())}); }
                   }
                 }
               }
             }
-            x => {return Err(MechError{msg: "".to_string(), id: 1350, kind: MechErrorKind::UnhandledTableShape(arg_dims[0])});},
+            x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1350, kind: MechErrorKind::UnhandledTableShape(arg_dims[0])});},
           }
         } else {
-          return Err(MechError{msg: "".to_string(), id: 1351, kind: MechErrorKind::UnknownFunctionArgument(arg_name)});
+          return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1351, kind: MechErrorKind::UnknownFunctionArgument(arg_name)});
         }
         Ok(())
       }

@@ -113,7 +113,7 @@ impl Schedule {
         Ok(())
       }
       None => {
-        Err(MechError{msg: "".to_string(), id: 5368, kind: MechErrorKind::GenericError(format!("No schedule assocaited with {:?}", register))})
+        Err(MechError{tokens: vec![], msg: "".to_string(), id: 5368, kind: MechErrorKind::GenericError(format!("No schedule assocaited with {:?}", register))})
       }
     }
   }

@@ -47,14 +47,14 @@ impl Value {
   pub fn as_table_reference(&self) -> Result<TableId,MechError> {
     match self {
       Value::Reference(table_id) => Ok(*table_id),
-      _ => Err(MechError{msg: "".to_string(), id: 4020, kind: MechErrorKind::None}),
+      _ => Err(MechError{tokens: vec![], msg: "".to_string(), id: 4020, kind: MechErrorKind::None}),
     }
   }
 
   pub fn as_string(&self) -> Result<MechString,MechError> {
     match self {
       Value::String(string) => Ok(string.clone()),
-      _ => Err(MechError{msg: "".to_string(), id: 4021, kind: MechErrorKind::None}),
+      _ => Err(MechError{tokens: vec![], msg: "".to_string(), id: 4021, kind: MechErrorKind::None}),
     }
   }
 
