@@ -67,7 +67,7 @@ macro_rules! trigonometry_rad_vv {
                   (_,Column::F32(col),ColumnIndex::Index(_)) |
                   (_,Column::F32(col),ColumnIndex::All) => block.plan.push($function_type{col: (col.clone(),0,0), out: out_col.clone()}),
                   (_,Column::Angle(col),ColumnIndex::All) => block.plan.push($function_type{col: (col.clone(),0,0), out: out_col.clone()}),
-                  (_,col,_) => { return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1348, kind: MechErrorKind::UnhandledFunctionArgumentKind(col.kind())}); }
+                  (_,col,_) => { return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1348, kind: MechErrorKind::UnhandledFunctionArgumentKind}); }
                 }
               }
             }
@@ -79,7 +79,7 @@ macro_rules! trigonometry_rad_vv {
                 match arg {
                   (_,Column::F32(col),ColumnIndex::All) => block.plan.push($function_type{col: (col.clone(),0,col.len()-1), out: out_col.clone()}),
                   (_,Column::Angle(col),ColumnIndex::All) => block.plan.push($function_type{col: (col.clone(),0,col.len()-1), out: out_col.clone()}),
-                  (_,col,_) => { return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1349, kind: MechErrorKind::UnhandledFunctionArgumentKind(col.kind())}); }
+                  (_,col,_) => { return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1349, kind: MechErrorKind::UnhandledFunctionArgumentKind}); }
                 }
               }
             }
@@ -92,7 +92,7 @@ macro_rules! trigonometry_rad_vv {
                   match &arg_cols[col_ix] {
                     (_,Column::F32(col),ColumnIndex::All) => block.plan.push($function_type{col: (col.clone(),0,col.len()-1), out: out_col.clone()}),
                     (_,Column::Angle(col),ColumnIndex::All) => block.plan.push($function_type{col: (col.clone(),0,col.len()-1), out: out_col.clone()}),
-                    (_,col,_) => { return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1349, kind: MechErrorKind::UnhandledFunctionArgumentKind(col.kind())}); }
+                    (_,col,_) => { return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1349, kind: MechErrorKind::UnhandledFunctionArgumentKind}); }
                   }
                 }
               }
@@ -106,7 +106,7 @@ macro_rules! trigonometry_rad_vv {
                   match &arg_cols[col_ix] {
                     (_,Column::F32(col),ColumnIndex::All) => block.plan.push($function_type{col: (col.clone(),0,col.len()-1), out: out_col.clone()}),
                     (_,Column::Angle(col),ColumnIndex::All) => block.plan.push($function_type{col: (col.clone(),0,col.len()-1), out: out_col.clone()}),
-                    (_,col,_) => { return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1349, kind: MechErrorKind::UnhandledFunctionArgumentKind(col.kind())}); }
+                    (_,col,_) => { return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1349, kind: MechErrorKind::UnhandledFunctionArgumentKind}); }
                   }
                 }
               }
