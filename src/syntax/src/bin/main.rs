@@ -3,19 +3,32 @@ use mech_syntax::ast::Ast;
 use mech_syntax::compiler::Compiler;
 use mech_core::*;
 use mech_syntax::parser2;
+use mech_syntax::analyzer::*;
+use mech_syntax::interpreter::*;
+
 
 use std::rc::Rc;
 
 use std::fs;
 fn main() -> Result<(),MechError> {
     // ----------------------------------------------------------------
-    let s = fs::read_to_string("test.mec").unwrap();
+    let s = fs::read_to_string("../../../test.mec").unwrap();
     match parser2::parse(&s) {
         Ok(tree) => { 
           println!("----------- SYNTAX TREE ---------");
           println!("{:#?}", tree);
+          //let result = analyze(&tree);
+          //println!("A: {:#?}", result);
+          let mut intrp = Interpreter::new();
+          let result = intrp.interpret(&tree).unwrap();
+          println!("{:?}", intrp);
+          println!("R: {:#?}", result);
+
           let tree_string = hash_str(&format!("{:#?}", tree));
           println!("{:?}", tree_string);
+
+
+
           //let mut ast = Ast::new();
           //ast.build_syntax_tree(&tree);
           //println!("----------- AST ---------");

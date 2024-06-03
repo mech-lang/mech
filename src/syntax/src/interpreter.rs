@@ -2,8 +2,9 @@ use mech_core::{MechError, MechErrorKind, hash_str, nodes::*};
 use crate::parser2::*;
 use serde_derive::*;
 use std::any::Any;
+use hashbrown::HashMap;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Value {
   Number(i64),
   String(String),
@@ -11,146 +12,188 @@ pub enum Value {
   Atom(u64),
   Empty
 }
-pub fn interpret(tree: &Program) -> Result<Value,MechError> {
-  program(tree)
+
+#[derive(Clone, Debug)]
+pub struct Interpreter {
+  pub symbols: HashMap<u64, Value>,
 }
 
-fn program(program: &Program) -> Result<Value,MechError> {
-  body(&program.body)
-}
 
-fn body(body: &Body) -> Result<Value,MechError> {
-  let mut result = None;
-  for sec in &body.sections {
-    result = Some(section(&sec)?);
+impl Interpreter {
+
+  pub fn new() -> Interpreter {
+    Interpreter {
+      symbols: HashMap::new(),
+    }
   }
-  Ok(result.unwrap())
-}
 
-fn section(section: &Section) -> Result<Value,MechError> {
-  let mut result = None;
-  for el in &section.elements {
-    result = Some(section_element(&el)?);
-    println!("Interpreter Result: {:?}", result);
+  pub fn interpret(&mut self, tree: &Program) -> Result<Value,MechError> {
+    self.program(tree)
   }
-  Ok(result.unwrap())
-}
 
-fn section_element(element: &SectionElement) -> Result<Value,MechError> {
-  match element {
-    SectionElement::MechCode(code) => {mech_code(&code)},
-    _ => todo!(),
+  fn program(&mut self, program: &Program) -> Result<Value,MechError> {
+    self.body(&program.body)
   }
-}
 
-fn mech_code(code: &MechCode) -> Result<Value,MechError> {
-  match &code {
-    MechCode::Expression(expr) => {expression(&expr)},
-    MechCode::Statement(_) => todo!(),
-    MechCode::FsmSpecification(_) => todo!(),
-    MechCode::FsmImplementation(_) => todo!(),
-    MechCode::FunctionDefine(_) => todo!(),
+  fn body(&mut self, body: &Body) -> Result<Value,MechError> {
+    let mut result = None;
+    for sec in &body.sections {
+      result = Some(self.section(&sec)?);
+    }
+    Ok(result.unwrap())
   }
-}
 
-fn expression(expr: &Expression) -> Result<Value,MechError> {
-  match &expr {
-    Expression::Var(_) => todo!(),
-    Expression::Slice(_) => todo!(),
-    Expression::Formula(fctr) => factor(fctr),
-    Expression::Structure(_) => todo!(),
-    Expression::Literal(ltrl) => Ok(literal(&ltrl)),
-    Expression::FunctionCall(_) => todo!(),
-    Expression::FsmPipe(_) => todo!(),
+  fn section(&mut self, section: &Section) -> Result<Value,MechError> {
+    let mut result = None;
+    for el in &section.elements {
+      result = Some(self.section_element(&el)?);
+      println!("Interpreter Result: {:?}", result);
+    }
+    Ok(result.unwrap())
   }
-}
 
-fn factor(fctr: &Factor) -> Result<Value,MechError> {
-  match fctr {
-    Factor::Term(trm) => term(trm),
-    Factor::Expression(expr) => expression(expr),
-    Factor::Negated(_) => todo!(),
-    Factor::Transpose(_) => todo!(),
+  fn section_element(&mut self, element: &SectionElement) -> Result<Value,MechError> {
+    match element {
+      SectionElement::MechCode(code) => {self.mech_code(&code)},
+      _ => todo!(),
+    }
   }
-}
 
-fn term(trm: &Term) -> Result<Value,MechError> {
-  let mut lhs_result = factor(&trm.lhs)?;
-  for (op,rhs) in &trm.rhs {
-    let rhs_result = factor(&rhs)?;
-    lhs_result = match (lhs_result, rhs_result, op) {
-      (Value::Number(lhs_val), Value::Number(rhs_val), FormulaOperator::AddSub(AddSubOp::Add)) 
-        => Value::Number(lhs_val + rhs_val),
-      (Value::Number(lhs_val), Value::Number(rhs_val), FormulaOperator::AddSub(AddSubOp::Sub)) 
-        => Value::Number(lhs_val - rhs_val),
-      x => {
-        println!("{:?}", trm);
-        return Err(MechError{msg: "interpreter.rs".to_string(), id: 6496, kind: MechErrorKind::GenericError(format!("{:?}", x))});
+  fn mech_code(&mut self, code: &MechCode) -> Result<Value,MechError> {
+    match &code {
+      MechCode::Expression(expr) => self.expression(&expr),
+      MechCode::Statement(stmt) => self.statement(&stmt),
+      MechCode::FsmSpecification(_) => todo!(),
+      MechCode::FsmImplementation(_) => todo!(),
+      MechCode::FunctionDefine(_) => todo!(),
+    }
+  }
+
+  fn statement(&mut self, stmt: &Statement) -> Result<Value,MechError> {
+    match stmt {
+      Statement::VariableDefine(var_def) => self.variable_define(&var_def),
+      Statement::VariableAssign(_) => todo!(),
+      Statement::KindDefine(_) => todo!(),
+      Statement::EnumDefine(_) => todo!(),
+      Statement::FsmDeclare(_) => todo!(),
+      Statement::SplitTable => todo!(),
+      Statement::FlattenTable => todo!(),
+    }
+  }
+
+  fn variable_define(&mut self, var_def: &VariableDefine) -> Result<Value,MechError> {
+    let id = var_def.var.name.hash();
+    let result = self.expression(&var_def.expression)?;
+    self.symbols.insert(id,result.clone());
+    Ok(result)
+  }
+
+  fn expression(&mut self, expr: &Expression) -> Result<Value,MechError> {
+    match &expr {
+      Expression::Var(v) => self.var(&v),
+      Expression::Slice(_) => todo!(),
+      Expression::Formula(fctr) => self.factor(fctr),
+      Expression::Structure(_) => todo!(),
+      Expression::Literal(ltrl) => Ok(self.literal(&ltrl)),
+      Expression::FunctionCall(_) => todo!(),
+      Expression::FsmPipe(_) => todo!(),
+    }
+  }
+
+  fn var(&mut self, v: &Var) -> Result<Value,MechError> {
+    let id = v.name.hash();
+    match self.symbols.get(&id) {
+      Some(value) => {
+        return Ok(value.clone())         
+      }
+      None => {
+        return Err(MechError{msg: "interpreter.rs".to_string(), id: 110, kind: MechErrorKind::None});
       }
     }
   }
-  Ok(lhs_result)
-}
 
-fn literal(ltrl: &Literal) -> Value {
-  match &ltrl {
-    Literal::Empty(_) => empty(),
-    Literal::Boolean(bln) => boolean(bln),
-    Literal::Number(num) => number(num),
-    Literal::String(strng) => string(strng),
-    Literal::Atom(atm) => todo!(),
-    Literal::TypedLiteral((ltrl,kind)) => {
-      todo!();
-    },
+  fn factor(&mut self, fctr: &Factor) -> Result<Value,MechError> {
+    match fctr {
+      Factor::Term(trm) => self.term(trm),
+      Factor::Expression(expr) => self.expression(expr),
+      Factor::Negated(_) => todo!(),
+      Factor::Transpose(_) => todo!(),
+    }
   }
-}
 
-fn number(num: &Number) -> Value {
-  match num {
-    Number::Real(num) => real(num),
-    Number::Imaginary(num) => todo!(),
+  fn term(&mut self, trm: &Term) -> Result<Value,MechError> {
+    let mut lhs_result = self.factor(&trm.lhs)?;
+    for (op,rhs) in &trm.rhs {
+      let rhs_result = self.factor(&rhs)?;
+      lhs_result = match (lhs_result, rhs_result, op) {
+        (Value::Number(lhs_val), Value::Number(rhs_val), FormulaOperator::AddSub(AddSubOp::Add)) 
+          => Value::Number(lhs_val + rhs_val),
+        (Value::Number(lhs_val), Value::Number(rhs_val), FormulaOperator::AddSub(AddSubOp::Sub)) 
+          => Value::Number(lhs_val - rhs_val),
+        x => {
+          return Err(MechError{msg: "interpreter.rs".to_string(), id: 135, kind: MechErrorKind::GenericError(format!("{:?}", x))});
+        }
+      }
+    }
+    Ok(lhs_result)
   }
-}
 
-fn real(rl: &RealNumber) -> Value {
-  match rl {
-    RealNumber::Negated(num) => todo!(),
-    RealNumber::Integer(num) => integer(num),
-    RealNumber::Float(num) => todo!(),
-    RealNumber::Decimal(num) => todo!(),
-    RealNumber::Hexadecimal(num) => todo!(),
-    RealNumber::Octal(num) => todo!(),
-    RealNumber::Binary(num) => todo!(),
-    RealNumber::Scientific(num) => todo!(),
-    RealNumber::Rational(num) => todo!(),
+  fn literal(&mut self, ltrl: &Literal) -> Value {
+    match &ltrl {
+      Literal::Empty(_) => self.empty(),
+      Literal::Boolean(bln) => self.boolean(bln),
+      Literal::Number(num) => self.number(num),
+      Literal::String(strng) => self.string(strng),
+      Literal::Atom(atm) => todo!(),
+      Literal::TypedLiteral((ltrl,kind)) => {
+        todo!();
+      },
+    }
   }
+
+  fn number(&mut self, num: &Number) -> Value {
+    match num {
+      Number::Real(num) => self.real(num),
+      Number::Imaginary(num) => todo!(),
+    }
+  }
+
+  fn real(&mut self, rl: &RealNumber) -> Value {
+    match rl {
+      RealNumber::Negated(num) => todo!(),
+      RealNumber::Integer(num) => self.integer(num),
+      RealNumber::Float(num) => todo!(),
+      RealNumber::Decimal(num) => todo!(),
+      RealNumber::Hexadecimal(num) => todo!(),
+      RealNumber::Octal(num) => todo!(),
+      RealNumber::Binary(num) => todo!(),
+      RealNumber::Scientific(num) => todo!(),
+      RealNumber::Rational(num) => todo!(),
+    }
+  }
+
+  fn integer(&mut self, int: &Token) -> Value {
+    let num: i64 = int.chars.iter().collect::<String>().parse::<i64>().unwrap();
+    Value::Number(num)
+  }
+
+  fn string(&mut self, tkn: &MechString) -> Value {
+    let strng: String = tkn.text.chars.iter().collect::<String>();
+    Value::String(strng)
+  }
+
+  fn empty(&mut self, ) -> Value {
+    Value::Empty
+  }
+
+  fn boolean(&mut self, tkn: &Token) -> Value {
+    let strng: String = tkn.chars.iter().collect::<String>();
+    let val = match strng.as_str() {
+      "true" => true,
+      "false" => false,
+      _ => unreachable!(),
+    };
+    Value::Bool(val)
+  }
+
 }
-
-fn integer(int: &Token) -> Value {
-  let num: i64 = int.chars.iter().collect::<String>().parse::<i64>().unwrap();
-  Value::Number(num)
-}
-
-fn string(tkn: &MechString) -> Value {
-  let strng: String = tkn.text.chars.iter().collect::<String>();
-  Value::String(strng)
-}
-
-fn empty() -> Value {
-  Value::Empty
-}
-
-fn boolean(tkn: &Token) -> Value {
-  let strng: String = tkn.chars.iter().collect::<String>();
-  let val = match strng.as_str() {
-    "true" => true,
-    "false" => false,
-    _ => unreachable!(),
-  };
-  Value::Bool(val)
-}
-
-/*fn atom(tkn: &Atom) -> Value {
-
-}*/
-
