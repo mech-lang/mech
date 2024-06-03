@@ -94,11 +94,43 @@ impl Interpreter {
       Expression::Var(v) => self.var(&v),
       Expression::Slice(_) => todo!(),
       Expression::Formula(fctr) => self.factor(fctr),
-      Expression::Structure(_) => todo!(),
+      Expression::Structure(strct) => self.structure(strct),
       Expression::Literal(ltrl) => Ok(self.literal(&ltrl)),
       Expression::FunctionCall(_) => todo!(),
       Expression::FsmPipe(_) => todo!(),
     }
+  }
+
+  fn structure(&mut self, strct: &Structure) -> Result<Value,MechError> {
+    match strct {
+      Structure::Empty => todo!(),
+      Structure::Record(x) => todo!(),
+      Structure::Matrix(mat) => self.matrix(&mat),
+      Structure::Table(x) => todo!(),
+      Structure::Tuple(x) => todo!(),
+      Structure::TupleStruct(x) => todo!(),
+      Structure::Set(x) => todo!(),
+      Structure::Map(x) => todo!(),
+    }
+  }
+
+  fn matrix(&mut self, m: &Matrix) -> Result<Value,MechError> { 
+    for row in &m.rows {
+      let result = self.matrix_row(row)?;
+    }
+    todo!();
+  }
+
+  fn matrix_row(&mut self, r: &MatrixRow) -> Result<Value,MechError> {
+    for col in &r.columns {
+      let result = self.matrix_column(col)?;
+    }
+    todo!();
+  }
+
+  fn matrix_column(&mut self, r: &MatrixColumn) -> Result<Value,MechError> { 
+    let result = self.expression(&r.element)?;
+    todo!();
   }
 
   fn var(&mut self, v: &Var) -> Result<Value,MechError> {
@@ -131,11 +163,8 @@ impl Interpreter {
           => Value::Number(lhs_val + rhs_val),
         (Value::Number(lhs_val), Value::Number(rhs_val), FormulaOperator::AddSub(AddSubOp::Sub))
           => Value::Number(lhs_val - rhs_val),
-        (Value::String(lhs_val), Value::Number(rhs_val), FormulaOperator::AddSub(AddSubOp::Sub)) => {
-          return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 135, kind: MechErrorKind::UnhandledFunctionArgumentKind(ValueKind::String,ValueKind::NumberLiteral)});
-        }
         x => {
-          return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 135, kind: MechErrorKind::UnhandledFunctionArgumentKind(ValueKind::NumberLiteral,ValueKind::NumberLiteral)});
+          return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 135, kind: MechErrorKind::UnhandledFunctionArgumentKind});
         }
       }
     }
@@ -186,7 +215,7 @@ impl Interpreter {
     Value::String(strng)
   }
 
-  fn empty(&mut self, ) -> Value {
+  fn empty(&mut self) -> Value {
     Value::Empty
   }
 

@@ -52,7 +52,7 @@ test_parser!(parse_literal_number_complex_fractions, "12.34+5.67i", 495223588303
 test_parser!(parse_literal_number_hex_underscores, "0xAB_CD_EF_GH", 11525069796638697);
 
 test_parser!(parse_literal_negated, "-a", 56350807559492456);
-test_parser!(parse_literal_negated_transpose, "-[a, b, c]'", 54897448919946207);
+test_parser!(parse_literal_negated_transpose, "-[a, b, c]'", 28260948291495770);
 test_parser!(parse_literal_negated_multi, "-a + -b * -(-c - -b)", 58911143883839038);
 
 test_parser!(parse_literal_atom, "`A", 29631792893088166);
@@ -96,21 +96,21 @@ test_parser!(parse_slice_dot_chain, "a.b.c", 41359157262287512);
 test_parser!(parse_slice_formula, "a[1 + 1]", 31476935489771180);
 test_parser!(parse_slice_all, "a[:]", 59486585015065589);
 test_parser!(parse_slice_multi, "a[:,1,1 + 1]", 32148654415944679);
-test_parser!(parse_slice_logical, "a[[true false true]]", 32880137013888501);
+test_parser!(parse_slice_logical, "a[[true false true]]", 22988697843305658);
 test_parser!(parse_slice_swizzle, "a.x,x,y", 45252841116611977);
 test_parser!(parse_slice_key, r#"a{"foo"}"#, 56850274883809298);
-test_parser!(parse_slice_mega, r#"a.x.y[1,1 + 1,[1 2 3],1..3,1..=3].a,b,b,c{"foo"}"#, 48610320734809417);
+test_parser!(parse_slice_mega, r#"a.x.y[1,1 + 1,[1 2 3],1..3,1..=3].a,b,b,c{"foo"}"#, 6897376440205456);
 
 
 test_parser!(parse_matrix_empty, "[]", 20166184779250868);
-test_parser!(parse_matrix_scalar_integer, "[123]", 54310964423322192);
-test_parser!(parse_matrix_vector, "[1 2 3]", 13246292939325121);
-test_parser!(parse_matrix_vector_transpose, "[1 2 3]'", 48164647757607072);
-test_parser!(parse_matrix_vector_transposes, "[A' + B' C']'", 26766651170564067);
-test_parser!(parse_matrix_vector_vars, "[a,b,c]", 49551394880404050);
-test_parser!(parse_matrix_column_vector, "[1; 2; 3]", 71460606371207459);
-test_parser!(parse_matrix_2x2, "[1 2; 3 4]", 55450029560457659);
-test_parser!(parse_matrix_tuples, "[(1,2), (3,4)]", 54992719886778865);
+test_parser!(parse_matrix_scalar_integer, "[123]", 21675146718618610);
+test_parser!(parse_matrix_vector, "[1 2 3]", 30693086370542127);
+test_parser!(parse_matrix_vector_transpose, "[1 2 3]'", 35071653597190083);
+test_parser!(parse_matrix_vector_transposes, "[A' + B' C']'", 39809887119621634);
+test_parser!(parse_matrix_vector_vars, "[a,b,c]", 60770341462741177);
+test_parser!(parse_matrix_column_vector, "[1; 2; 3]", 38030129547778653);
+test_parser!(parse_matrix_2x2, "[1 2; 3 4]", 33529581225564663);
+test_parser!(parse_matrix_tuples, "[(1,2), (3,4)]", 16921021255927653);
 
 test_parser!(parse_set, "{1}", 35956285171394015);
 test_parser!(parse_set_empty, "{_}", 46610421933005859);
@@ -143,13 +143,13 @@ r#"╭───┬───┬───╮
 │ 4 │ 5 │ 6 │
 ├───┼───┼───┤
 │ 7 │ 8 │ 9 │
-╰───┴───┴───╯"#,6793140575280764);
+╰───┴───┴───╯"#,29958166929332346);
 test_parser!(parse_matrix_fancy2,
 r#"╭───┬───┬───╮
 │ 1 │ 2 │ 3 │
 │ 4 │ 5 │ 6 │
 │ 7 │ 8 │ 9 │
-╰───┴───┴───╯"#,16339589348817943);
+╰───┴───┴───╯"#,60073775801197611);
 test_parser!(parse_matrix_fancy3,
 r#"╭───────────╮
 │ 1   2   3 │
@@ -157,13 +157,13 @@ r#"╭───────────╮
 │ 4   5   6 │
 ├───────────┤
 │ 7   8   9 │
-╰───────────╯"#,6793140575280764);
+╰───────────╯"#,29958166929332346);
 test_parser!(parse_matrix_fancy4,
 r#"╭───────────╮
 │ 1   2   3 │
 │ 4   5   6 │
 │ 7   8   9 │
-╰───────────╯"#,16339589348817943);
+╰───────────╯"#,60073775801197611);
 
 test_parser!(parse_table_inline,r#"{x<f32> y<u8> | 1.2 9 ; 1.3 8 }"#,18779183519589985);
 test_parser!(parse_table_empty, "{ x<f32> y<u8> | _ }", 15413160474115045);
@@ -180,7 +180,7 @@ r#"╭────────────────────────�
 │   4   │  "b"     │ 6.15   │
 ├───────┼──────────┼────────┤
 │   7   │  "c"     │ 9.19   │
-╰───────┴──────────┴────────╯"#,16194689768577729);
+╰───────┴──────────┴────────╯"#,40931531245879404);
 
 test_parser!(parse_table_header_fancy_variable,
 r#"x := 
@@ -192,7 +192,7 @@ r#"x :=
 │   4   │   "b"    │   [4 5 6]    │
 ├───────┼──────────┼──────────────┤
 │   7   │   "c"    │   [7 8 9]    │
-╰───────┴──────────┴──────────────╯"#,43076861283025690);
+╰───────┴──────────┴──────────────╯"#,37234775238921438);
 
 
 test_parser!(parse_tuple_empty, "()", 46625237035827900);
@@ -285,7 +285,7 @@ r#"#bubble-sort(arr) -> Start(arr)
       └ * -> Comparison([tail], swaps)
   Check(arr, 0) -> Done(arr)
   Check(arr, swaps) -> Comparison(arr,0)
-  Done(arr) => arr."#, 44068451390416423);
+  Done(arr) => arr."#, 12713972902824909);
 
 test_parser!(parse_function_define,r#"a() = b<c> := 
     a := 1;
@@ -319,4 +319,4 @@ measurement-update(μ<[f32]:3>, Σ<[f32]:3,3>) = (μ<[f32]:3>, Σ<[f32]:3,3>) :=
   S := H ** Σ ** H' + Q
   K := Σ ** H' / S
   μ := (μ + K * (z -  Ẑ))
-  Σ := ([1 0 0; 0 1 0; 0 0 1] - K ** H) ** Σ."#,9205364509048892);
+  Σ := ([1 0 0; 0 1 0; 0 0 1] - K ** H) ** Σ."#,17022348164623115);

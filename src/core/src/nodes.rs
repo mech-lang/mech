@@ -1038,7 +1038,7 @@ pub struct TupleStruct {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Matrix {
-  pub rows: Vec<TableRow>,
+  pub rows: Vec<MatrixRow>,
 }
 
 pub type TableHeader = Vec<Field>;
@@ -1061,8 +1061,18 @@ pub struct TableColumn {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct MatrixColumn {
+  pub element: Expression,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TableRow {
   pub columns: Vec<TableColumn>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct MatrixRow {
+  pub columns: Vec<MatrixColumn>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

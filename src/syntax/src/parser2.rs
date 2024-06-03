@@ -781,13 +781,13 @@ pub fn structure(input: ParseString) -> ParseResult<Structure> {
     Ok((input, _)) => {return Ok((input, Structure::Empty));},
     _ => (),
   }
-  match matrix(input.clone()) {
-    Ok((input, mtrx)) => {return Ok((input, Structure::Matrix(mtrx)));},
+  match table(input.clone()) {
+    Ok((input, tbl)) => {return Ok((input, Structure::Table(tbl)));},
     //Err(Failure(err)) => { return Err(Failure(err)); }, 
     _ => (),
   }
-  match table(input.clone()) {
-    Ok((input, tbl)) => {return Ok((input, Structure::Table(tbl)));},
+  match matrix(input.clone()) {
+    Ok((input, mtrx)) => {return Ok((input, Structure::Matrix(mtrx)));},
     //Err(Failure(err)) => { return Err(Failure(err)); }, 
     _ => (),
   }
@@ -866,6 +866,20 @@ pub fn table_column(input: ParseString) -> ParseResult<TableColumn> {
   Ok((input, TableColumn{element}))
 }
 
+// matrix_column := (space | tab)*, (expression | value | data), comma?, (space | tab)* ;
+pub fn matrix_column(input: ParseString) -> ParseResult<MatrixColumn> {
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, element) = match expression(input) {
+    Ok(result) => result,
+    Err(err) => {
+      return Err(err);
+    }
+  };
+  let (input, _) = nom_tuple((many0(space_tab),opt(alt((comma,table_separator))), many0(space_tab)))(input)?;
+  Ok((input, MatrixColumn{element}))
+}
+
+
 // table_row := (space | tab)*, table_column+, semicolon?, new_line? ;
 pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
   let (input, _) = opt(table_separator)(input)?;
@@ -879,6 +893,21 @@ pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
   let (input, _) = nom_tuple((opt(semicolon), opt(new_line)))(input)?;
   let (input, _) = opt(nom_tuple((many1(box_drawing_char),new_line)))(input)?;
   Ok((input, TableRow{columns}))
+}
+
+// matrix_row := (space | tab)*, table_column+, semicolon?, new_line? ;
+pub fn matrix_row(input: ParseString) -> ParseResult<MatrixRow> {
+  let (input, _) = opt(table_separator)(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, columns) = match many1(matrix_column)(input) {
+    Ok(result) => result,
+    Err(error) => {
+      return Err(error);
+    }
+  };
+  let (input, _) = nom_tuple((opt(semicolon), opt(new_line)))(input)?;
+  let (input, _) = opt(nom_tuple((many1(box_drawing_char),new_line)))(input)?;
+  Ok((input, MatrixRow{columns}))
 }
 
 // table_header := bar, <attribute+>, <bar>, space*, new_line? ;
@@ -933,7 +962,7 @@ pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
   let msg = "Expects right bracket ']' to finish the matrix";
   let (input, (_, r)) = range(matrix_start)(input)?;
   let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
-  let (input, rows) = many0(table_row)(input)?;
+  let (input, rows) = many0(matrix_row)(input)?;
   let (input, _) = many0(box_drawing_char)(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, _) = match label!(matrix_end, msg, r)(input) {

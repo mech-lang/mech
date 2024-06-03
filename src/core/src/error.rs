@@ -48,7 +48,7 @@ pub enum MechErrorKind {
   Unhandled,
   UnknownFunctionArgument(u64),
   UnknownColumnKind(u64),
-  UnhandledFunctionArgumentKind(ValueKind,ValueKind),
+  UnhandledFunctionArgumentKind,
   UnhandledTableShape(TableShape),
   TooManyInputArguments(usize,usize),                // (given,expected)
   ParserError(nodes::ParserNode, ParserErrorReport, String),
