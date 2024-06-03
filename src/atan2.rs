@@ -60,7 +60,7 @@ impl MechFunctionCompiler for MathAtan2 {
             match (arg1,arg2) {
               ((_,Column::F32(y_col),ColumnIndex::Index(_)),(_,Column::F32(x_col),ColumnIndex::Index(_))) |
               ((_,Column::F32(y_col),ColumnIndex::All),(_,Column::F32(x_col),ColumnIndex::All)) => block.plan.push(MathAtan2VV{y_col: (y_col.clone(),0,0), x_col: (x_col.clone(),0,0), out: out_col.clone()}),
-              ((_,col,_),_) => { return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1348, kind: MechErrorKind::UnhandledFunctionArgumentKind(col.kind())}); }
+              ((_,col,_),_) => { return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1348, kind: MechErrorKind::UnhandledFunctionArgumentKind}); }
             }
           }
         }
