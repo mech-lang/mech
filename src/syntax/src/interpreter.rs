@@ -9,6 +9,8 @@ use std::ops::AddAssign;
 use std::ops::Add;
 use std::rc::Rc;
 
+//-----------------------------------------------------------------------------
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
   Number(i64),
@@ -87,11 +89,6 @@ pub trait MechFunction {
   fn solve(&self) -> Value;
 }
 
-pub struct Interpreter {
-  pub symbols: HashMap<u64, Value>,
-  pub functions: Vec<Rc<dyn MechFunction>>,
-}
-
 struct AddRv3Rv3 {
   lhs: RowVector3<i64>,
   rhs: RowVector3<i64>,
@@ -102,6 +99,13 @@ impl MechFunction for AddRv3Rv3 {
     let result = &self.lhs + &self.rhs;
     Value::Matrix(Matrix::RowVector3(result))
   }
+}
+
+//-----------------------------------------------------------------------------
+
+pub struct Interpreter {
+  pub symbols: HashMap<u64, Value>,
+  pub functions: Vec<Rc<dyn MechFunction>>,
 }
 
 impl Interpreter {
@@ -116,6 +120,8 @@ impl Interpreter {
   pub fn interpret(&mut self, tree: &Program) -> Result<Value,MechError> {
     self.program(tree)
   }
+  
+//-----------------------------------------------------------------------------
 
   fn program(&mut self, program: &Program) -> Result<Value,MechError> {
     self.body(&program.body)
