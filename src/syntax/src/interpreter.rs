@@ -3,6 +3,7 @@ use crate::parser2::*;
 use serde_derive::*;
 use std::any::Any;
 use hashbrown::HashMap;
+use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix6, Matrix2};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
@@ -11,7 +12,42 @@ pub enum Value {
   Bool(bool),
   Atom(u64),
   Table(Vec<Value>),
+  RowDVector(RowDVector<Value>),
+  RowVector2(Box<RowVector2<Value>>),
+  RowVector3(Box<RowVector3<Value>>),
+  RowVector4(Box<RowVector4<Value>>),
+  Matrix1(Box<Matrix1<Value>>),
+  Matrix2(Box<Matrix2<Value>>),
+  Matrix3(Box<Matrix3<Value>>),
+  Matrix4(Box<Matrix4<Value>>),
+  Matrix2x3(Box<Matrix2x3<Value>>),
+  DMatrix(DMatrix<Value>),
   Empty
+}
+
+impl Value {
+
+  pub fn shape(&self) -> (usize,usize) {
+    match self {
+      Value::Number(x) => (1,1),
+      Value::String(x) => (1,1),
+      Value::Bool(x) => (1,1),
+      Value::Atom(x) => (1,1),
+      Value::Table(x) => (1,1),
+      Value::RowDVector(x) => x.shape(),
+      Value::RowVector2(x) => x.shape(),
+      Value::RowVector3(x) => x.shape(),
+      Value::RowVector4(x) => x.shape(),
+      Value::Matrix1(x) => x.shape(),
+      Value::Matrix2(x) => x.shape(),
+      Value::Matrix3(x) => x.shape(),
+      Value::Matrix4(x) => x.shape(),
+      Value::Matrix2x3(x) => x.shape(),
+      Value::DMatrix(x) => x.shape(),
+      Value::Empty => (0,0),
+    }
+  }
+
 }
 
 #[derive(Clone, Debug)]
@@ -114,23 +150,59 @@ impl Interpreter {
     }
   }
 
+
   fn matrix(&mut self, m: &Matrix) -> Result<Value,MechError> { 
+    let mut out = vec![];
     for row in &m.rows {
       let result = self.matrix_row(row)?;
+      out.push(result);
     }
-    todo!();
+    let (_,col_n) = out[0].shape();
+    let out_vec = match (out.len(),col_n) {
+      (1,_) => out[0].clone(),
+      (2,2) => {
+        let mut rows = vec![];
+        for o in &out {if let Value::RowVector2(v) = &o {rows.push(v.clone());}}
+        Value::Matrix2(Box::new(Matrix2::from_rows(&[*rows[0].clone(), *rows[1].clone()])))
+      }
+      (2,3) => {
+        let mut rows = vec![];
+        for o in &out {if let Value::RowVector3(v) = &o {rows.push(v.clone());}}
+        Value::Matrix2x3(Box::new(Matrix2x3::from_rows(&[*rows[0].clone(), *rows[1].clone()])))
+      }
+      (3,3) => {
+        let mut rows = vec![];
+        for o in &out {if let Value::RowVector3(v) = &o {rows.push(v.clone());}}
+        Value::Matrix3(Box::new(Matrix3::from_rows(&[*rows[0].clone(), *rows[1].clone(), *rows[2].clone()])))
+      }
+      (4,4) => {
+        let mut rows = vec![];
+        for o in &out {if let Value::RowVector4(v) = &o {rows.push(v.clone());}}
+        Value::Matrix4(Box::new(Matrix4::from_rows(&[*rows[0].clone(), *rows[1].clone(), *rows[2].clone(), *rows[3].clone()])))
+      }
+      _ => todo!(),
+    };
+    Ok(out_vec)
   }
 
   fn matrix_row(&mut self, r: &MatrixRow) -> Result<Value,MechError> {
+    let mut row = Vec::new();
     for col in &r.columns {
       let result = self.matrix_column(col)?;
+      row.push(result);
     }
-    todo!();
+    let out_vec = match row.len() {
+      1 => Value::Matrix1(Box::new(Matrix1::from_element(row[0].clone()))),
+      2 => Value::RowVector2(Box::new(RowVector2::from_vec(row.clone()))),
+      3 => Value::RowVector3(Box::new(RowVector3::from_vec(row.clone()))),
+      4 => Value::RowVector4(Box::new(RowVector4::from_vec(row.clone()))),
+      n => Value::RowDVector(RowDVector::from_vec(row)),
+    };
+    Ok(out_vec)
   }
 
   fn matrix_column(&mut self, r: &MatrixColumn) -> Result<Value,MechError> { 
-    let result = self.expression(&r.element)?;
-    todo!();
+    self.expression(&r.element)
   }
 
   fn var(&mut self, v: &Var) -> Result<Value,MechError> {

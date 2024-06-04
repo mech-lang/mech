@@ -1009,6 +1009,15 @@ pub enum Structure {
   Map(Map),
 }
 
+impl Structure {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      Structure::Matrix(mat) => mat.tokens(),
+      _ => todo!(),
+    }
+  }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Map {
   pub elements: Vec<Mapping>,
@@ -1041,6 +1050,17 @@ pub struct Matrix {
   pub rows: Vec<MatrixRow>,
 }
 
+impl Matrix {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    for r in &self.rows {
+      let mut t = r.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
+}
+
 pub type TableHeader = Vec<Field>;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1065,6 +1085,12 @@ pub struct MatrixColumn {
   pub element: Expression,
 }
 
+impl MatrixColumn {
+  pub fn tokens(&self) -> Vec<Token> {
+    self.element.tokens()
+  }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TableRow {
   pub columns: Vec<TableColumn>,
@@ -1073,6 +1099,17 @@ pub struct TableRow {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MatrixRow {
   pub columns: Vec<MatrixColumn>,
+}
+
+impl MatrixRow {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    for r in &self.columns {
+      let mut t = r.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1087,6 +1124,18 @@ pub struct Var {
   pub kind: Option<KindAnnotation>,
 }
 
+impl Var {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.name.tokens();
+    if let Some(knd) = &self.kind {
+      let mut t = knd.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
+}
+
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct VariableAssign {
   pub target: Expression,
@@ -1097,6 +1146,13 @@ pub struct VariableAssign {
 pub struct Identifier {
   pub name: Token,
 }
+
+impl Identifier {
+  pub fn tokens(&self) -> Vec<Token> {
+    vec![self.name.clone()]
+  }
+}
+
 
 impl Identifier {
   pub fn hash(&self) -> u64 {
@@ -1144,7 +1200,10 @@ pub enum Expression {
 impl Expression {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
+      Expression::Var(v) => v.tokens(),
       Expression::Literal(ltrl) => ltrl.tokens(),
+      Expression::Structure(strct) => strct.tokens(),
+      Expression::Formula(fctr) => fctr.tokens(),
       _ => todo!(),
     }
   }
@@ -1176,11 +1235,16 @@ pub struct KindAnnotation {
 }
 
 impl KindAnnotation {
+
   pub fn hash(&self) -> u64 {
     match &self.kind {
       Kind::Scalar(id) => id.hash(),
       _ => todo!(),
     }
+  }
+
+  pub fn tokens(&self) -> Vec<Token> {
+    self.kind.tokens()
   }
 }
 
@@ -1195,6 +1259,22 @@ pub enum Kind {
   Function(Vec<Kind>,Vec<Kind>),
   Fsm(Vec<Kind>,Vec<Kind>),
   Empty,
+}
+
+impl Kind {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      Kind::Tuple(x) => todo!(),
+      Kind::Bracket(x) => todo!(),
+      Kind::Brace(x) => todo!(),
+      Kind::Map(x,y) => todo!(),
+      Kind::Scalar(x) => x.tokens(),
+      Kind::Atom(x) => x.tokens(),
+      Kind::Function(x,y) => todo!(),
+      Kind::Fsm(x,y) => todo!(),
+      Kind::Empty => vec![],
+    }
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
