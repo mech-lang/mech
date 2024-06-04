@@ -44,8 +44,9 @@ c := a + b"#;
     Ok(tree) => { 
       let mut intrp = Interpreter::new();
       let result = intrp.interpret(&tree);
+      let fxn = &intrp.functions[0];
       b.iter(|| {
-        let result = intrp.functions[0].solve();
+        let result = fxn.solve();
       });
     }
     _ => (),
