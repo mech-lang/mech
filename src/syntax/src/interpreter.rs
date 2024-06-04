@@ -7,6 +7,7 @@ use hashbrown::HashMap;
 use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix6, Matrix2};
 use std::ops::AddAssign;
 use std::ops::Add;
+use std::rc::Rc;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
@@ -18,9 +19,7 @@ pub enum Value {
   Empty
 }
 
-
 impl Value {
-
   pub fn shape(&self) -> (usize,usize) {
     match self {
       Value::Number(x) => (1,1),
@@ -31,7 +30,6 @@ impl Value {
       Value::Empty => (0,0),
     }
   }
-
 }
 
 impl Add for Value {
@@ -69,7 +67,6 @@ pub enum Matrix {
 }
 
 impl Matrix {
-
   pub fn shape(&self) -> (usize,usize) {
     match self {
       Matrix::RowDVector(x) => x.shape(),
@@ -84,7 +81,6 @@ impl Matrix {
       Matrix::DMatrix(x) => x.shape(),
     }
   }
-
 }
 
 pub trait MechFunction {
@@ -93,22 +89,19 @@ pub trait MechFunction {
 
 pub struct Interpreter {
   pub symbols: HashMap<u64, Value>,
-  pub functions: Vec<Box<dyn MechFunction>>,
+  pub functions: Vec<Rc<dyn MechFunction>>,
 }
 
-struct VecAdd {
+struct AddRv3Rv3 {
   lhs: RowVector3<i64>,
   rhs: RowVector3<i64>,
 }
 
-impl MechFunction for VecAdd {
-
+impl MechFunction for AddRv3Rv3 {
   fn solve(&self) -> Value {
-    self.lhs + self.rhs;
-    Value::Empty
+    let result = &self.lhs + &self.rhs;
+    Value::Matrix(Matrix::RowVector3(result))
   }
-
-
 }
 
 impl Interpreter {
@@ -294,10 +287,11 @@ impl Interpreter {
           => Value::Number(lhs_val + rhs_val),
         (Value::Number(lhs_val), Value::Number(rhs_val), FormulaOperator::AddSub(AddSubOp::Sub))
           => Value::Number(lhs_val - rhs_val),
-        (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Add))
-          => {
-            self.functions.push(Box::new(VecAdd{lhs,rhs}));
-            Value::Empty
+        (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) => {
+          let fxn = AddRv3Rv3{lhs,rhs}; 
+          let out = fxn.solve();
+          self.functions.push(Rc::new(fxn));
+          return Ok(out);
         }
         x => {
           return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 239, kind: MechErrorKind::UnhandledFunctionArgumentKind});
