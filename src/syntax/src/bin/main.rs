@@ -21,7 +21,6 @@ fn main() -> Result<(),MechError> {
           //println!("A: {:#?}", result);
           let mut intrp = Interpreter::new();
           let result = intrp.interpret(&tree);
-          println!("{:?}", intrp);
           println!("R: {:#?}", result);
 
           let tree_string = hash_str(&format!("{:#?}", tree));

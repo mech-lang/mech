@@ -1,9 +1,12 @@
 use mech_core::{MechError, MechErrorKind, hash_str, ValueKind, nodes::*};
 use crate::parser2::*;
+use mech_core::nodes::Matrix as Mat;
 use serde_derive::*;
 use std::any::Any;
 use hashbrown::HashMap;
 use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix6, Matrix2};
+use std::ops::AddAssign;
+use std::ops::Add;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
@@ -11,19 +14,10 @@ pub enum Value {
   String(String),
   Bool(bool),
   Atom(u64),
-  Table(Vec<Value>),
-  RowDVector(RowDVector<Value>),
-  RowVector2(Box<RowVector2<Value>>),
-  RowVector3(Box<RowVector3<Value>>),
-  RowVector4(Box<RowVector4<Value>>),
-  Matrix1(Box<Matrix1<Value>>),
-  Matrix2(Box<Matrix2<Value>>),
-  Matrix3(Box<Matrix3<Value>>),
-  Matrix4(Box<Matrix4<Value>>),
-  Matrix2x3(Box<Matrix2x3<Value>>),
-  DMatrix(DMatrix<Value>),
+  Matrix(Matrix),
   Empty
 }
+
 
 impl Value {
 
@@ -33,34 +27,96 @@ impl Value {
       Value::String(x) => (1,1),
       Value::Bool(x) => (1,1),
       Value::Atom(x) => (1,1),
-      Value::Table(x) => (1,1),
-      Value::RowDVector(x) => x.shape(),
-      Value::RowVector2(x) => x.shape(),
-      Value::RowVector3(x) => x.shape(),
-      Value::RowVector4(x) => x.shape(),
-      Value::Matrix1(x) => x.shape(),
-      Value::Matrix2(x) => x.shape(),
-      Value::Matrix3(x) => x.shape(),
-      Value::Matrix4(x) => x.shape(),
-      Value::Matrix2x3(x) => x.shape(),
-      Value::DMatrix(x) => x.shape(),
+      Value::Matrix(x) => x.shape(),
       Value::Empty => (0,0),
     }
   }
 
 }
 
-#[derive(Clone, Debug)]
-pub struct Interpreter {
-  pub symbols: HashMap<u64, Value>,
+impl Add for Value {
+  type Output = Value;
+
+  fn add(self, rhs: Value) -> Self::Output {
+    match (self,rhs) {
+      (Value::Number(lhs), Value::Number(rhs)) => Value::Number(lhs + rhs),
+      _ => Value::Empty,
+    }
+  }
 }
 
+impl AddAssign for Value {
+  fn add_assign(&mut self, rhs: Value) {
+    match (self.clone(),rhs) {
+      (Value::Number(mut lhs),Value::Number(rhs)) => *self = Value::Number(lhs + rhs),
+      _ => *self = Value::Empty,
+    }
+  }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Matrix {
+  RowDVector(RowDVector<i64>),
+  RowVector2(RowVector2<i64>),
+  RowVector3(RowVector3<i64>),
+  RowVector4(RowVector4<i64>),
+  Matrix1(Matrix1<i64>),
+  Matrix2(Matrix2<i64>),
+  Matrix3(Matrix3<i64>),
+  Matrix4(Matrix4<i64>),
+  Matrix2x3(Matrix2x3<i64>),
+  DMatrix(DMatrix<i64>),
+}
+
+impl Matrix {
+
+  pub fn shape(&self) -> (usize,usize) {
+    match self {
+      Matrix::RowDVector(x) => x.shape(),
+      Matrix::RowVector2(x) => x.shape(),
+      Matrix::RowVector3(x) => x.shape(),
+      Matrix::RowVector4(x) => x.shape(),
+      Matrix::Matrix1(x) => x.shape(),
+      Matrix::Matrix2(x) => x.shape(),
+      Matrix::Matrix3(x) => x.shape(),
+      Matrix::Matrix4(x) => x.shape(),
+      Matrix::Matrix2x3(x) => x.shape(),
+      Matrix::DMatrix(x) => x.shape(),
+    }
+  }
+
+}
+
+pub trait MechFunction {
+  fn solve(&self) -> Value;
+}
+
+pub struct Interpreter {
+  pub symbols: HashMap<u64, Value>,
+  pub functions: Vec<Box<dyn MechFunction>>,
+}
+
+struct VecAdd {
+  lhs: RowVector3<i64>,
+  rhs: RowVector3<i64>,
+}
+
+impl MechFunction for VecAdd {
+
+  fn solve(&self) -> Value {
+    self.lhs + self.rhs;
+    Value::Empty
+  }
+
+
+}
 
 impl Interpreter {
 
   pub fn new() -> Interpreter {
     Interpreter {
       symbols: HashMap::new(),
+      functions: Vec::new(),
     }
   }
 
@@ -151,7 +207,7 @@ impl Interpreter {
   }
 
 
-  fn matrix(&mut self, m: &Matrix) -> Result<Value,MechError> { 
+  fn matrix(&mut self, m: &Mat) -> Result<Value,MechError> { 
     let mut out = vec![];
     for row in &m.rows {
       let result = self.matrix_row(row)?;
@@ -160,7 +216,7 @@ impl Interpreter {
     let (_,col_n) = out[0].shape();
     let out_vec = match (out.len(),col_n) {
       (1,_) => out[0].clone(),
-      (2,2) => {
+      /*(2,2) => {
         let mut rows = vec![];
         for o in &out {if let Value::RowVector2(v) = &o {rows.push(v.clone());}}
         Value::Matrix2(Box::new(Matrix2::from_rows(&[*rows[0].clone(), *rows[1].clone()])))
@@ -179,26 +235,29 @@ impl Interpreter {
         let mut rows = vec![];
         for o in &out {if let Value::RowVector4(v) = &o {rows.push(v.clone());}}
         Value::Matrix4(Box::new(Matrix4::from_rows(&[*rows[0].clone(), *rows[1].clone(), *rows[2].clone(), *rows[3].clone()])))
-      }
+      }*/
       _ => todo!(),
     };
     Ok(out_vec)
   }
 
   fn matrix_row(&mut self, r: &MatrixRow) -> Result<Value,MechError> {
-    let mut row = Vec::new();
+    let mut row: Vec<i64> = Vec::new();
     for col in &r.columns {
       let result = self.matrix_column(col)?;
-      row.push(result);
+      match result {
+        Value::Number(n) => row.push(n),
+        _ => todo!(),
+      }
     }
     let out_vec = match row.len() {
-      1 => Value::Matrix1(Box::new(Matrix1::from_element(row[0].clone()))),
-      2 => Value::RowVector2(Box::new(RowVector2::from_vec(row.clone()))),
-      3 => Value::RowVector3(Box::new(RowVector3::from_vec(row.clone()))),
-      4 => Value::RowVector4(Box::new(RowVector4::from_vec(row.clone()))),
-      n => Value::RowDVector(RowDVector::from_vec(row)),
+      1 => Matrix::Matrix1(Matrix1::from_element(row[0].clone())),
+      2 => Matrix::RowVector2(RowVector2::from_vec(row.clone())),
+      3 => Matrix::RowVector3(RowVector3::from_vec(row.clone())),
+      4 => Matrix::RowVector4(RowVector4::from_vec(row.clone())),
+      n => Matrix::RowDVector(RowDVector::from_vec(row.clone())),
     };
-    Ok(out_vec)
+    Ok(Value::Matrix(out_vec))
   }
 
   fn matrix_column(&mut self, r: &MatrixColumn) -> Result<Value,MechError> { 
@@ -235,8 +294,13 @@ impl Interpreter {
           => Value::Number(lhs_val + rhs_val),
         (Value::Number(lhs_val), Value::Number(rhs_val), FormulaOperator::AddSub(AddSubOp::Sub))
           => Value::Number(lhs_val - rhs_val),
+        (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Add))
+          => {
+            self.functions.push(Box::new(VecAdd{lhs,rhs}));
+            Value::Empty
+        }
         x => {
-          return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 135, kind: MechErrorKind::UnhandledFunctionArgumentKind});
+          return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 239, kind: MechErrorKind::UnhandledFunctionArgumentKind});
         }
       }
     }
