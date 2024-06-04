@@ -215,26 +215,26 @@ impl Interpreter {
     let (_,col_n) = out[0].shape();
     let out_vec = match (out.len(),col_n) {
       (1,_) => out[0].clone(),
-      /*(2,2) => {
-        let mut rows = vec![];
-        for o in &out {if let Value::RowVector2(v) = &o {rows.push(v.clone());}}
-        Value::Matrix2(Box::new(Matrix2::from_rows(&[*rows[0].clone(), *rows[1].clone()])))
+      (2,2) => {
+        let mut rows: Vec<RowVector2<i64>> = vec![];
+        for o in &out {if let Value::Matrix(Matrix::RowVector2(v)) = &o {rows.push(v.clone());}}
+        Value::Matrix(Matrix::Matrix2(Matrix2::from_rows(&[rows[0].clone(), rows[1].clone()])))
       }
       (2,3) => {
-        let mut rows = vec![];
-        for o in &out {if let Value::RowVector3(v) = &o {rows.push(v.clone());}}
-        Value::Matrix2x3(Box::new(Matrix2x3::from_rows(&[*rows[0].clone(), *rows[1].clone()])))
+        let mut rows: Vec<RowVector3<i64>> = vec![];
+        for o in &out {if let Value::Matrix(Matrix::RowVector3(v)) = &o {rows.push(v.clone());}}
+        Value::Matrix(Matrix::Matrix2x3(Matrix2x3::from_rows(&[rows[0].clone(), rows[1].clone()])))
       }
       (3,3) => {
-        let mut rows = vec![];
-        for o in &out {if let Value::RowVector3(v) = &o {rows.push(v.clone());}}
-        Value::Matrix3(Box::new(Matrix3::from_rows(&[*rows[0].clone(), *rows[1].clone(), *rows[2].clone()])))
+        let mut rows: Vec<RowVector3<i64>> = vec![];
+        for o in &out {if let Value::Matrix(Matrix::RowVector3(v)) = &o {rows.push(v.clone());}}
+        Value::Matrix(Matrix::Matrix3(Matrix3::from_rows(&[rows[0].clone(), rows[1].clone(), rows[2].clone()])))
       }
       (4,4) => {
-        let mut rows = vec![];
-        for o in &out {if let Value::RowVector4(v) = &o {rows.push(v.clone());}}
-        Value::Matrix4(Box::new(Matrix4::from_rows(&[*rows[0].clone(), *rows[1].clone(), *rows[2].clone(), *rows[3].clone()])))
-      }*/
+        let mut rows: Vec<RowVector4<i64>> = vec![];
+        for o in &out {if let Value::Matrix(Matrix::RowVector4(v)) = &o {rows.push(v.clone());}}
+        Value::Matrix(Matrix::Matrix4(Matrix4::from_rows(&[rows[0].clone(), rows[1].clone(), rows[2].clone(), rows[3].clone()])))
+      }
       _ => todo!(),
     };
     Ok(out_vec)
