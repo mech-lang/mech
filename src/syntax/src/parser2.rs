@@ -1450,11 +1450,11 @@ pub fn matrix_multiply(input: ParseString) -> ParseResult<MulDivOp> {
 }
 
 // matrix_solve := "\" ;
-pub fn matrix_solve(input: ParseString) -> ParseResult<MulDivOp> {
+pub fn matrix_solve(input: ParseString) -> ParseResult<VecOp> {
   let (input, _) = whitespace1(input)?;
   let (input, _) = tag("\\")(input)?;
   let (input, _) = whitespace1(input)?;
-  Ok((input, MulDivOp::Solve))
+  Ok((input, VecOp::Solve))
 }
 
 // exponent := "^" ;
@@ -1507,7 +1507,7 @@ pub fn l1(input: ParseString) -> ParseResult<Factor> {
 
 // mul_div_operator := matrix_multiply | multiply | divide | matrix_solve ;
 pub fn mul_div_operator(input: ParseString) -> ParseResult<FormulaOperator> {
-  let (input, op) = alt((matrix_multiply, multiply, divide, matrix_solve))(input)?;
+  let (input, op) = alt((matrix_multiply, multiply, divide))(input)?;
   Ok((input, FormulaOperator::MulDiv(op)))
 }
 

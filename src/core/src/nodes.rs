@@ -1403,7 +1403,7 @@ pub enum MulDivOp {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum VecOps {
+pub enum VecOp {
   Solve,
   Dot,
   Cross,
