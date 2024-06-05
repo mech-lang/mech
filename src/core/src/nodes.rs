@@ -1397,13 +1397,13 @@ pub enum AddSubOp {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum MulDivOp {
-  MatMul,
   Mul,
   Div
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum VecOp {
+  MatMul,
   Solve,
   Dot,
   Cross,
@@ -1440,6 +1440,7 @@ pub enum FormulaOperator {
   MulDiv(MulDivOp),
   Exponent(ExponentOp),
   Range(RangeOp),
+  Vec(VecOp),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
