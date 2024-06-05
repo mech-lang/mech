@@ -13,7 +13,7 @@ use std::rc::Rc;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
-  Number(i64),
+  Number(f64),
   String(String),
   Bool(bool),
   Atom(u64),
@@ -56,16 +56,16 @@ impl AddAssign for Value {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Matrix {
-  RowDVector(RowDVector<i64>),
-  RowVector2(RowVector2<i64>),
-  RowVector3(RowVector3<i64>),
-  RowVector4(RowVector4<i64>),
-  Matrix1(Matrix1<i64>),
-  Matrix2(Matrix2<i64>),
-  Matrix3(Matrix3<i64>),
-  Matrix4(Matrix4<i64>),
-  Matrix2x3(Matrix2x3<i64>),
-  DMatrix(DMatrix<i64>),
+  RowDVector(RowDVector<f64>),
+  RowVector2(RowVector2<f64>),
+  RowVector3(RowVector3<f64>),
+  RowVector4(RowVector4<f64>),
+  Matrix1(Matrix1<f64>),
+  Matrix2(Matrix2<f64>),
+  Matrix3(Matrix3<f64>),
+  Matrix4(Matrix4<f64>),
+  Matrix2x3(Matrix2x3<f64>),
+  DMatrix(DMatrix<f64>),
 }
 
 impl Matrix {
@@ -89,15 +89,56 @@ pub trait MechFunction {
   fn solve(&self) -> Value;
 }
 
+// The naming scheme will be OP LHS RHS
+// The abbreviations are:
+// Rv - row vector
+// Cv - col vector
+// MXY  - Matrix size X Y, or just X if it's square
+
 struct AddRv3Rv3 {
-  lhs: RowVector3<i64>,
-  rhs: RowVector3<i64>,
+  lhs: RowVector3<f64>,
+  rhs: RowVector3<f64>,
 }
 
 impl MechFunction for AddRv3Rv3 {
   fn solve(&self) -> Value {
     let result = &self.lhs + &self.rhs;
     Value::Matrix(Matrix::RowVector3(result))
+  }
+}
+
+struct AddM3M3 {
+  lhs: Matrix3<f64>,
+  rhs: Matrix3<f64>,
+}
+
+impl MechFunction for AddM3M3 {
+  fn solve(&self) -> Value {
+    let result = &self.lhs + &self.rhs;
+    Value::Matrix(Matrix::Matrix3(result))
+  }
+}
+
+struct MatMulM2M2 {
+  lhs: Matrix2<f64>,
+  rhs: Matrix2<f64>,
+}
+
+impl MechFunction for MatMulM2M2 {
+  fn solve(&self) -> Value {
+    let result = &self.lhs * &self.rhs;
+    Value::Matrix(Matrix::Matrix2(result))
+  }
+}
+
+struct TransposeM2 {
+  mat: Matrix2<f64>,
+}
+
+impl MechFunction for TransposeM2 {
+  fn solve(&self) -> Value {
+    let result = self.mat.transpose();
+    Value::Matrix(Matrix::Matrix2(result))
   }
 }
 
@@ -216,22 +257,22 @@ impl Interpreter {
     let out_vec = match (out.len(),col_n) {
       (1,_) => out[0].clone(),
       (2,2) => {
-        let mut rows: Vec<RowVector2<i64>> = vec![];
+        let mut rows: Vec<RowVector2<f64>> = vec![];
         for o in &out {if let Value::Matrix(Matrix::RowVector2(v)) = &o {rows.push(v.clone());}}
         Value::Matrix(Matrix::Matrix2(Matrix2::from_rows(&[rows[0].clone(), rows[1].clone()])))
       }
       (2,3) => {
-        let mut rows: Vec<RowVector3<i64>> = vec![];
+        let mut rows: Vec<RowVector3<f64>> = vec![];
         for o in &out {if let Value::Matrix(Matrix::RowVector3(v)) = &o {rows.push(v.clone());}}
         Value::Matrix(Matrix::Matrix2x3(Matrix2x3::from_rows(&[rows[0].clone(), rows[1].clone()])))
       }
       (3,3) => {
-        let mut rows: Vec<RowVector3<i64>> = vec![];
+        let mut rows: Vec<RowVector3<f64>> = vec![];
         for o in &out {if let Value::Matrix(Matrix::RowVector3(v)) = &o {rows.push(v.clone());}}
         Value::Matrix(Matrix::Matrix3(Matrix3::from_rows(&[rows[0].clone(), rows[1].clone(), rows[2].clone()])))
       }
       (4,4) => {
-        let mut rows: Vec<RowVector4<i64>> = vec![];
+        let mut rows: Vec<RowVector4<f64>> = vec![];
         for o in &out {if let Value::Matrix(Matrix::RowVector4(v)) = &o {rows.push(v.clone());}}
         Value::Matrix(Matrix::Matrix4(Matrix4::from_rows(&[rows[0].clone(), rows[1].clone(), rows[2].clone(), rows[3].clone()])))
       }
@@ -241,7 +282,7 @@ impl Interpreter {
   }
 
   fn matrix_row(&mut self, r: &MatrixRow) -> Result<Value,MechError> {
-    let mut row: Vec<i64> = Vec::new();
+    let mut row: Vec<f64> = Vec::new();
     for col in &r.columns {
       let result = self.matrix_column(col)?;
       match result {
@@ -280,7 +321,15 @@ impl Interpreter {
       Factor::Term(trm) => self.term(trm),
       Factor::Expression(expr) => self.expression(expr),
       Factor::Negated(_) => todo!(),
-      Factor::Transpose(_) => todo!(),
+      Factor::Transpose(fctr) => {
+        if let Value::Matrix(Matrix::Matrix2(mat)) = self.factor(fctr)? {
+          let fxn = TransposeM2{mat}; 
+          let out: Value = fxn.solve();
+          self.functions.push(Rc::new(fxn));
+          return Ok(out);
+        }
+        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 333, kind: MechErrorKind::None});
+      },
     }
   }
 
@@ -295,6 +344,18 @@ impl Interpreter {
           => Value::Number(lhs_val - rhs_val),
         (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) => {
           let fxn = AddRv3Rv3{lhs,rhs}; 
+          let out = fxn.solve();
+          self.functions.push(Rc::new(fxn));
+          return Ok(out);
+        }
+        (Value::Matrix(Matrix::Matrix3(lhs)), Value::Matrix(Matrix::Matrix3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) => {
+          let fxn = AddM3M3{lhs,rhs}; 
+          let out = fxn.solve();
+          self.functions.push(Rc::new(fxn));
+          return Ok(out);
+        }
+        (Value::Matrix(Matrix::Matrix2(lhs)), Value::Matrix(Matrix::Matrix2(rhs)), FormulaOperator::MulDiv(MulDivOp::MatMul)) => {
+          let fxn = MatMulM2M2{lhs,rhs}; 
           let out = fxn.solve();
           self.functions.push(Rc::new(fxn));
           return Ok(out);
@@ -342,7 +403,7 @@ impl Interpreter {
   }
 
   fn integer(&mut self, int: &Token) -> Value {
-    let num: i64 = int.chars.iter().collect::<String>().parse::<i64>().unwrap();
+    let num: f64 = int.chars.iter().collect::<String>().parse::<f64>().unwrap();
     Value::Number(num)
   }
 

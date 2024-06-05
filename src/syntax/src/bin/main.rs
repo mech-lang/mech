@@ -5,6 +5,7 @@ use mech_core::*;
 use mech_syntax::parser2;
 use mech_syntax::analyzer::*;
 use mech_syntax::interpreter::*;
+use std::time::Instant;
 
 
 use std::rc::Rc;
@@ -22,6 +23,14 @@ fn main() -> Result<(),MechError> {
           let mut intrp = Interpreter::new();
           let result = intrp.interpret(&tree);
           println!("R: {:#?}", result);
+          println!("{:#?}", intrp.symbols); 
+
+          //let now = Instant::now();
+          //println!("!!!! {:?}", intrp.functions[0].solve());
+          //let elapsed_time = now.elapsed();
+          //let cycle_duration = elapsed_time.as_nanos() as f64;
+          //println!("{:0.2?}Hz", 1.0 / (cycle_duration / 1_000_000_000.0));
+
 
           let tree_string = hash_str(&format!("{:#?}", tree));
           println!("{:?}", tree_string);
