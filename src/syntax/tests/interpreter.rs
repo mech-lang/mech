@@ -31,19 +31,19 @@ use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, Ro
 
 /////////////////////////////////////////////////////////////////////////////////
 
-test_interpreter!(interpret_literal_integer, "123", Value::Number(123.0));
+test_interpreter!(interpret_literal_integer, "123", Value::Number(123));
 //test_interpreter!(interpret_literal_string, "Hello", Value::String("Hello".to_string()));
 test_interpreter!(interpret_literal_true, "true", Value::Bool(true));
 
-test_interpreter!(interpret_formula_add, "1 + 1", Value::Number(2.0));
-test_interpreter!(interpret_formula_sub, "1 - 1", Value::Number(0.0));
-test_interpreter!(interpret_formula_neg, "-1", Value::Number(-1.0));
-test_interpreter!(interpret_formula_multiple_terms, "1 + 2 + 3", Value::Number(6.0));
+test_interpreter!(interpret_formula_add, "1 + 1", Value::Number(2));
+test_interpreter!(interpret_formula_sub, "1 - 1", Value::Number(0));
+test_interpreter!(interpret_formula_neg, "-1", Value::Number(-1));
+test_interpreter!(interpret_formula_multiple_terms, "1 + 2 + 3", Value::Number(6));
 
-test_interpreter!(interpret_statement_variable_define, "x := 123", Value::Number(123.0));
+test_interpreter!(interpret_statement_variable_define, "x := 123", Value::Number(123));
 
-test_interpreter!(interpret_variable_recall, "a := 1; b := 2; a", Value::Number(1.0));
+test_interpreter!(interpret_variable_recall, "a := 1; b := 2; a", Value::Number(1));
 
-test_interpreter!(interpret_matrix2, "[1 2; 3 4]", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![1.0,3.0,2.0,4.0]))));
-test_interpreter!(interpret_matrix2_transpose, "[1 2; 3 4]'", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![1.0,2.0,3.0,4.0]))));
-test_interpreter!(interpret_matrix2_negate, "-[1 2; 3 4]", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![-1.0,-3.0,-2.0,-4.0]))));
+test_interpreter!(interpret_matrix2, "[1 2; 3 4]", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![1,3,2,4]))));
+test_interpreter!(interpret_matrix2_transpose, "[1 2; 3 4]'", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![1,2,3,4]))));
+test_interpreter!(interpret_matrix2_negate, "-[1 2; 3 4]", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![-1,-3,-2,-4]))));

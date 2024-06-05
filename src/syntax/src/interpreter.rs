@@ -3,22 +3,39 @@ use crate::parser2::*;
 use mech_core::nodes::Matrix as Mat;
 use serde_derive::*;
 use std::any::Any;
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix6, Matrix2};
 use std::ops::AddAssign;
 use std::ops::Add;
 use std::rc::Rc;
+use std::hash::{Hash, Hasher};
+use indexmap::set::IndexSet;
 
 //-----------------------------------------------------------------------------
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Value {
-  Number(f64),
+  Number(i64),
   String(String),
   Bool(bool),
   Atom(u64),
   Matrix(Matrix),
+  Set(MechSet),
   Empty
+}
+
+impl Hash for Value {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    match self {
+      Value::Number(x) => (*x as i64).hash(state),
+      Value::String(x) => x.hash(state),
+      Value::Bool(x) => x.hash(state),
+      Value::Atom(x) => x.hash(state),
+      Value::Matrix(x) => x.hash(state),
+      Value::Set(x) => x.hash(state),
+      Value::Empty => Value::Empty.hash(state),
+    }
+  }
 }
 
 impl Value {
@@ -29,6 +46,7 @@ impl Value {
       Value::Bool(x) => (1,1),
       Value::Atom(x) => (1,1),
       Value::Matrix(x) => x.shape(),
+      Value::Set(x) => (1,x.set.len()),
       Value::Empty => (0,0),
     }
   }
@@ -54,18 +72,50 @@ impl AddAssign for Value {
   }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MechSet {
+  set: IndexSet<Value>,
+}
+
+impl Hash for MechSet {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    for x in self.set.iter() {
+        x.hash(state)
+    }
+  }
+}
+
+
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Matrix {
-  RowDVector(RowDVector<f64>),
-  RowVector2(RowVector2<f64>),
-  RowVector3(RowVector3<f64>),
-  RowVector4(RowVector4<f64>),
-  Matrix1(Matrix1<f64>),
-  Matrix2(Matrix2<f64>),
-  Matrix3(Matrix3<f64>),
-  Matrix4(Matrix4<f64>),
-  Matrix2x3(Matrix2x3<f64>),
-  DMatrix(DMatrix<f64>),
+  RowDVector(RowDVector<i64>),
+  RowVector2(RowVector2<i64>),
+  RowVector3(RowVector3<i64>),
+  RowVector4(RowVector4<i64>),
+  Matrix1(Matrix1<i64>),
+  Matrix2(Matrix2<i64>),
+  Matrix3(Matrix3<i64>),
+  Matrix4(Matrix4<i64>),
+  Matrix2x3(Matrix2x3<i64>),
+  DMatrix(DMatrix<i64>),
+}
+
+impl Hash for Matrix {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    match self {
+      Matrix::RowDVector(x) => x.hash(state),
+      Matrix::RowVector2(x) => x.hash(state),
+      Matrix::RowVector3(x) => x.hash(state),
+      Matrix::RowVector4(x) => x.hash(state),
+      Matrix::Matrix1(x) => x.hash(state),
+      Matrix::Matrix2(x) => x.hash(state),
+      Matrix::Matrix3(x) => x.hash(state),
+      Matrix::Matrix4(x) => x.hash(state),
+      Matrix::Matrix2x3(x) => x.hash(state),
+      Matrix::DMatrix(x) => x.hash(state),
+    }
+  }
 }
 
 impl Matrix {
@@ -96,8 +146,8 @@ pub trait MechFunction {
 // MXY  - Matrix size X Y, or just X if it's square
 
 struct AddRv3Rv3 {
-  lhs: RowVector3<f64>,
-  rhs: RowVector3<f64>,
+  lhs: RowVector3<i64>,
+  rhs: RowVector3<i64>,
 }
 
 impl MechFunction for AddRv3Rv3 {
@@ -108,8 +158,8 @@ impl MechFunction for AddRv3Rv3 {
 }
 
 struct AddM3M3 {
-  lhs: Matrix3<f64>,
-  rhs: Matrix3<f64>,
+  lhs: Matrix3<i64>,
+  rhs: Matrix3<i64>,
 }
 
 impl MechFunction for AddM3M3 {
@@ -120,8 +170,8 @@ impl MechFunction for AddM3M3 {
 }
 
 struct MatMulM2M2 {
-  lhs: Matrix2<f64>,
-  rhs: Matrix2<f64>,
+  lhs: Matrix2<i64>,
+  rhs: Matrix2<i64>,
 }
 
 impl MechFunction for MatMulM2M2 {
@@ -132,7 +182,7 @@ impl MechFunction for MatMulM2M2 {
 }
 
 struct TransposeM2 {
-  mat: Matrix2<f64>,
+  mat: Matrix2<i64>,
 }
 
 impl MechFunction for TransposeM2 {
@@ -143,7 +193,7 @@ impl MechFunction for TransposeM2 {
 }
 
 struct NegateF64 {
-  n: f64,
+  n: i64,
 }
 
 impl MechFunction for NegateF64 {
@@ -153,7 +203,7 @@ impl MechFunction for NegateF64 {
 }
 
 struct NegateM2 {
-  mat: Matrix2<f64>,
+  mat: Matrix2<i64>,
 }
 
 impl MechFunction for NegateM2 {
@@ -277,22 +327,22 @@ impl Interpreter {
     let out_vec = match (out.len(),col_n) {
       (1,_) => out[0].clone(),
       (2,2) => {
-        let mut rows: Vec<RowVector2<f64>> = vec![];
+        let mut rows: Vec<RowVector2<i64>> = vec![];
         for o in &out {if let Value::Matrix(Matrix::RowVector2(v)) = &o {rows.push(v.clone());}}
         Value::Matrix(Matrix::Matrix2(Matrix2::from_rows(&[rows[0].clone(), rows[1].clone()])))
       }
       (2,3) => {
-        let mut rows: Vec<RowVector3<f64>> = vec![];
+        let mut rows: Vec<RowVector3<i64>> = vec![];
         for o in &out {if let Value::Matrix(Matrix::RowVector3(v)) = &o {rows.push(v.clone());}}
         Value::Matrix(Matrix::Matrix2x3(Matrix2x3::from_rows(&[rows[0].clone(), rows[1].clone()])))
       }
       (3,3) => {
-        let mut rows: Vec<RowVector3<f64>> = vec![];
+        let mut rows: Vec<RowVector3<i64>> = vec![];
         for o in &out {if let Value::Matrix(Matrix::RowVector3(v)) = &o {rows.push(v.clone());}}
         Value::Matrix(Matrix::Matrix3(Matrix3::from_rows(&[rows[0].clone(), rows[1].clone(), rows[2].clone()])))
       }
       (4,4) => {
-        let mut rows: Vec<RowVector4<f64>> = vec![];
+        let mut rows: Vec<RowVector4<i64>> = vec![];
         for o in &out {if let Value::Matrix(Matrix::RowVector4(v)) = &o {rows.push(v.clone());}}
         Value::Matrix(Matrix::Matrix4(Matrix4::from_rows(&[rows[0].clone(), rows[1].clone(), rows[2].clone(), rows[3].clone()])))
       }
@@ -302,7 +352,7 @@ impl Interpreter {
   }
 
   fn matrix_row(&mut self, r: &MatrixRow) -> Result<Value,MechError> {
-    let mut row: Vec<f64> = Vec::new();
+    let mut row: Vec<i64> = Vec::new();
     for col in &r.columns {
       let result = self.matrix_column(col)?;
       match result {
@@ -440,7 +490,7 @@ impl Interpreter {
   }
 
   fn integer(&mut self, int: &Token) -> Value {
-    let num: f64 = int.chars.iter().collect::<String>().parse::<f64>().unwrap();
+    let num: i64 = int.chars.iter().collect::<String>().parse::<i64>().unwrap();
     Value::Number(num)
   }
 
