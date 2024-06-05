@@ -57,7 +57,7 @@ c := a + b"#;
 fn matrix_add_baseline_nalgebra(b:&mut Bencher){
   b.iter(|| {
     let a: RowVector3<i64> = RowVector3::from_vec(vec![1,2,3]);
-    let b = RowVector3::from_vec(vec![4,5,6]);
+    let b: RowVector3<i64> = RowVector3::from_vec(vec![4,5,6]);
     let c = a + b;
   });
 }

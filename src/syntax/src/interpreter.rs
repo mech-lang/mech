@@ -142,6 +142,26 @@ impl MechFunction for TransposeM2 {
   }
 }
 
+struct NegateF64 {
+  n: f64,
+}
+
+impl MechFunction for NegateF64 {
+  fn solve(&self) -> Value {
+    Value::Number(-self.n)
+  }
+}
+
+struct NegateM2 {
+  mat: Matrix2<f64>,
+}
+
+impl MechFunction for NegateM2 {
+  fn solve(&self) -> Value {
+    Value::Matrix(Matrix::Matrix2(-self.mat))
+  }
+}
+
 //-----------------------------------------------------------------------------
 
 pub struct Interpreter {
@@ -311,7 +331,7 @@ impl Interpreter {
         return Ok(value.clone())         
       }
       None => {
-        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 110, kind: MechErrorKind::None});
+        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 314, kind: MechErrorKind::None});
       }
     }
   }
@@ -320,7 +340,24 @@ impl Interpreter {
     match fctr {
       Factor::Term(trm) => self.term(trm),
       Factor::Expression(expr) => self.expression(expr),
-      Factor::Negated(_) => todo!(),
+      Factor::Negated(neg) => {
+        match self.factor(neg)? {
+          Value::Matrix(Matrix::Matrix2(mat)) => {
+            let fxn = NegateM2{mat}; 
+            let out: Value = fxn.solve();
+            self.functions.push(Rc::new(fxn));
+            return Ok(out);
+          }
+          Value::Number(n) => {
+            let fxn = NegateF64{n}; 
+            let out: Value = fxn.solve();
+            self.functions.push(Rc::new(fxn));
+            return Ok(out);
+          }
+          _ => todo!(),
+        }  
+        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 331, kind: MechErrorKind::None});
+      },
       Factor::Transpose(fctr) => {
         if let Value::Matrix(Matrix::Matrix2(mat)) = self.factor(fctr)? {
           let fxn = TransposeM2{mat}; 
@@ -328,7 +365,7 @@ impl Interpreter {
           self.functions.push(Rc::new(fxn));
           return Ok(out);
         }
-        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 333, kind: MechErrorKind::None});
+        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 331, kind: MechErrorKind::None});
       },
     }
   }
