@@ -1442,11 +1442,11 @@ pub fn divide(input: ParseString) -> ParseResult<MulDivOp> {
 }
 
 // matrix_multiply := "**" ;
-pub fn matrix_multiply(input: ParseString) -> ParseResult<MulDivOp> {
+pub fn matrix_multiply(input: ParseString) -> ParseResult<VecOp> {
   let (input, _) = whitespace1(input)?;
   let (input, _) = tag("**")(input)?;
   let (input, _) = whitespace1(input)?;
-  Ok((input, MulDivOp::MatMul))
+  Ok((input, VecOp::MatMul))
 }
 
 // matrix_solve := "\" ;
@@ -1455,6 +1455,22 @@ pub fn matrix_solve(input: ParseString) -> ParseResult<VecOp> {
   let (input, _) = tag("\\")(input)?;
   let (input, _) = whitespace1(input)?;
   Ok((input, VecOp::Solve))
+}
+
+// dot_product := "·" ;
+pub fn dot_product(input: ParseString) -> ParseResult<VecOp> {
+  let (input, _) = whitespace1(input)?;
+  let (input, _) = tag("·")(input)?;
+  let (input, _) = whitespace1(input)?;
+  Ok((input, VecOp::Dot))
+}
+
+// cross_product := "⨯" ;
+pub fn cross_product(input: ParseString) -> ParseResult<VecOp> {
+  let (input, _) = whitespace1(input)?;
+  let (input, _) = tag("⨯")(input)?;
+  let (input, _) = whitespace1(input)?;
+  Ok((input, VecOp::Cross))
 }
 
 // exponent := "^" ;
@@ -1507,14 +1523,20 @@ pub fn l1(input: ParseString) -> ParseResult<Factor> {
 
 // mul_div_operator := matrix_multiply | multiply | divide | matrix_solve ;
 pub fn mul_div_operator(input: ParseString) -> ParseResult<FormulaOperator> {
-  let (input, op) = alt((matrix_multiply, multiply, divide))(input)?;
+  let (input, op) = alt((multiply, divide))(input)?;
   Ok((input, FormulaOperator::MulDiv(op)))
+}
+
+// mul_div_operator := matrix_multiply | multiply | divide | matrix_solve ;
+pub fn vec_operator(input: ParseString) -> ParseResult<FormulaOperator> {
+  let (input, op) = alt((matrix_multiply, matrix_solve, dot_product, cross_product))(input)?;
+  Ok((input, FormulaOperator::Vec(op)))
 }
 
 // l2 := l3, (mul_div_operator, l3)* ;
 pub fn l2(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l3(input)?;
-  let (input, rhs) = many0(nom_tuple((mul_div_operator,l3)))(input)?;
+  let (input, rhs) = many0(nom_tuple((alt((mul_div_operator, vec_operator)),l3)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
@@ -1569,7 +1591,7 @@ pub fn factor(input: ParseString) -> ParseResult<Factor> {
       Ok((input, neg)) => (input, neg),
       Err(_) => match structure(input.clone()) {
         Ok((input, strct)) => (input, Factor::Expression(Box::new(Expression::Structure(strct)))),
-        _ => match fsm_pipe(input.clone()) {
+        Err(_) => match fsm_pipe(input.clone()) {
           Ok((input, pipe)) => (input, Factor::Expression(Box::new(Expression::FsmPipe(pipe)))),
           Err(_) => match function_call(input.clone()) {
             Ok((input, fxn)) => (input, Factor::Expression(Box::new(Expression::FunctionCall(fxn)))),

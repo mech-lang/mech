@@ -210,6 +210,8 @@ test_parser!(parse_formula, "1 + 2 * 3", 35118734439232812);
 test_parser!(parse_formula_vars, "a + b * c", 26596788877301348);
 test_parser!(parse_formula_slices, "a[1] + b[2] * c", 8392692448570008);
 test_parser!(parse_formula_paren_expr, "(1 + 2) * 3", 37070150120883219);
+test_parser!(parse_formula_cross, "a ⨯ b", 35316863412583795);
+test_parser!(parse_formula_dot, "a · b", 32414125599205190);
 
 test_parser!(parse_record, "{a: 1, b: 2, c: 3}", 26546496782427794);
 test_parser!(parse_record_column, r#"{a: 1
@@ -319,4 +321,4 @@ measurement-update(μ<[f32]:3>, Σ<[f32]:3,3>) = (μ<[f32]:3>, Σ<[f32]:3,3>) :=
   S := H ** Σ ** H' + Q
   K := Σ ** H' / S
   μ := (μ + K * (z -  Ẑ))
-  Σ := ([1 0 0; 0 1 0; 0 0 1] - K ** H) ** Σ."#,17022348164623115);
+  Σ := ([1 0 0; 0 1 0; 0 0 1] - K ** H) ** Σ."#,64799053611110444);

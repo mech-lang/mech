@@ -354,7 +354,7 @@ impl Interpreter {
           self.functions.push(Rc::new(fxn));
           return Ok(out);
         }
-        (Value::Matrix(Matrix::Matrix2(lhs)), Value::Matrix(Matrix::Matrix2(rhs)), FormulaOperator::MulDiv(MulDivOp::MatMul)) => {
+        (Value::Matrix(Matrix::Matrix2(lhs)), Value::Matrix(Matrix::Matrix2(rhs)), FormulaOperator::Vec(VecOp::MatMul)) => {
           let fxn = MatMulM2M2{lhs,rhs}; 
           let out = fxn.solve();
           self.functions.push(Rc::new(fxn));
