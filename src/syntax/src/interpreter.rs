@@ -11,7 +11,7 @@ use std::rc::Rc;
 use std::hash::{Hash, Hasher};
 use indexmap::set::IndexSet;
 
-//-----------------------------------------------------------------------------
+// Value-----------------------------------------------------------------------
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Value {
@@ -72,6 +72,8 @@ impl AddAssign for Value {
   }
 }
 
+//-----------------------------------------------------------------------------
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MechSet {
   set: IndexSet<Value>,
@@ -85,7 +87,7 @@ impl Hash for MechSet {
   }
 }
 
-
+//-----------------------------------------------------------------------------
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Matrix {
@@ -135,15 +137,17 @@ impl Matrix {
   }
 }
 
-pub trait MechFunction {
-  fn solve(&self) -> Value;
-}
-
 // The naming scheme will be OP LHS RHS
 // The abbreviations are:
 // Rv - row vector
 // Cv - col vector
 // MXY  - Matrix size X Y, or just X if it's square
+
+pub trait MechFunction {
+  fn solve(&self) -> Value;
+}
+
+// Add ------------------------------------------------------------------------
 
 struct AddRv3Rv3 {
   lhs: RowVector3<i64>,
@@ -169,6 +173,8 @@ impl MechFunction for AddM3M3 {
   }
 }
 
+// MatMul ---------------------------------------------------------------------
+
 struct MatMulM2M2 {
   lhs: Matrix2<i64>,
   rhs: Matrix2<i64>,
@@ -181,6 +187,8 @@ impl MechFunction for MatMulM2M2 {
   }
 }
 
+// Transpose ------------------------------------------------------------------
+
 struct TransposeM2 {
   mat: Matrix2<i64>,
 }
@@ -191,6 +199,8 @@ impl MechFunction for TransposeM2 {
     Value::Matrix(Matrix::Matrix2(result))
   }
 }
+
+// Negate ---------------------------------------------------------------------
 
 struct NegateF64 {
   n: i64,
@@ -212,7 +222,7 @@ impl MechFunction for NegateM2 {
   }
 }
 
-//-----------------------------------------------------------------------------
+// Interpreter ----------------------------------------------------------------
 
 pub struct Interpreter {
   pub symbols: HashMap<u64, Value>,
@@ -311,11 +321,19 @@ impl Interpreter {
       Structure::Table(x) => todo!(),
       Structure::Tuple(x) => todo!(),
       Structure::TupleStruct(x) => todo!(),
-      Structure::Set(x) => todo!(),
+      Structure::Set(x) => self.set(&x),
       Structure::Map(x) => todo!(),
     }
   }
 
+  fn set(&mut self, m: &Set) -> Result<Value,MechError> { 
+    let mut out = IndexSet::new();
+    for el in &m.elements {
+      let result = self.expression(el)?;
+      out.insert(result);
+    }
+    Ok(Value::Set(MechSet{set: out}))
+  }
 
   fn matrix(&mut self, m: &Mat) -> Result<Value,MechError> { 
     let mut out = vec![];
