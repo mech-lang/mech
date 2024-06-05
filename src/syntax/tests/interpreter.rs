@@ -47,3 +47,7 @@ test_interpreter!(interpret_variable_recall, "a := 1; b := 2; a", Value::Number(
 test_interpreter!(interpret_matrix2, "[1 2; 3 4]", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![1,3,2,4]))));
 test_interpreter!(interpret_matrix2_transpose, "[1 2; 3 4]'", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![1,2,3,4]))));
 test_interpreter!(interpret_matrix2_negate, "-[1 2; 3 4]", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![-1,-3,-2,-4]))));
+
+
+test_interpreter!(interpret_slice, "a := [1,2,3]; a[2]", Value::Number(2));
+test_interpreter!(interpret_slice_2d, "a := [1,2,3]; a[1,2]", Value::Number(2));

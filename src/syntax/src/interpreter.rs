@@ -135,6 +135,36 @@ impl Matrix {
       Matrix::DMatrix(x) => x.shape(),
     }
   }
+
+  pub fn index1d(&self, ix: usize) -> i64 {
+    match self {
+      Matrix::RowDVector(x) => *x.index(ix-1),
+      Matrix::RowVector2(x) => todo!(),
+      Matrix::RowVector3(x) => *x.index(ix-1),
+      Matrix::RowVector4(x) => todo!(),
+      Matrix::Matrix1(x) => todo!(),
+      Matrix::Matrix2(x) => todo!(),
+      Matrix::Matrix3(x) => todo!(),
+      Matrix::Matrix4(x) => todo!(),
+      Matrix::Matrix2x3(x) => todo!(),
+      Matrix::DMatrix(x) => todo!(),
+    }
+  }
+
+  pub fn index2d(&self, row: usize, col: usize) -> i64 {
+    match self {
+      Matrix::RowDVector(x) => *x.index((row-1,col-1)),
+      Matrix::RowVector2(x) => todo!(),
+      Matrix::RowVector3(x) => *x.index((row-1,col-1)),
+      Matrix::RowVector4(x) => todo!(),
+      Matrix::Matrix1(x) => todo!(),
+      Matrix::Matrix2(x) => todo!(),
+      Matrix::Matrix3(x) => todo!(),
+      Matrix::Matrix4(x) => todo!(),
+      Matrix::Matrix2x3(x) => todo!(),
+      Matrix::DMatrix(x) => todo!(),
+    }
+  }
 }
 
 // The naming scheme will be OP LHS RHS
@@ -304,13 +334,56 @@ impl Interpreter {
   fn expression(&mut self, expr: &Expression) -> Result<Value,MechError> {
     match &expr {
       Expression::Var(v) => self.var(&v),
-      Expression::Slice(_) => todo!(),
+      Expression::Slice(slc) => self.slice(&slc),
       Expression::Formula(fctr) => self.factor(fctr),
       Expression::Structure(strct) => self.structure(strct),
       Expression::Literal(ltrl) => Ok(self.literal(&ltrl)),
       Expression::FunctionCall(_) => todo!(),
       Expression::FsmPipe(_) => todo!(),
     }
+  }
+
+  fn slice(&mut self, slc: &Slice) -> Result<Value,MechError> {
+    let name = &slc.name.hash();
+    for s in &slc.subscript {
+      let s_result = self.subscript(&s,name)?;
+      return Ok(s_result);
+    }
+    return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 337, kind: MechErrorKind::None});
+  }
+
+  fn subscript(&mut self, sbscrpt: &Subscript, name: &u64) -> Result<Value,MechError> {
+    match sbscrpt {
+      Subscript::Dot(x) => todo!(),
+      Subscript::Swizzle(x) => todo!(),
+      Subscript::Formula(fctr) => {return self.factor(fctr);},
+      Subscript::Bracket(subs) => {
+        let mut resolved_subs = vec![];
+        for s in subs {
+          let result = self.subscript(&s,name)?;
+          resolved_subs.push(result);
+        }
+        match self.symbols.get(name) {
+          Some(val) => {
+            match val {
+              Value::Matrix(mat) => {
+                let result = match resolved_subs[..] {
+                  [Value::Number(ix)] => mat.index1d(ix as usize),
+                  [Value::Number(row_ix),Value::Number(col_ix)] => mat.index2d(row_ix as usize,col_ix as usize),
+                  _ => todo!(),
+                };
+                return Ok(Value::Number(result));
+              }
+              _ => todo!(),
+            }
+          }
+          None => { return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 335, kind: MechErrorKind::None});}
+        }
+      },
+      Subscript::Brace(x) => todo!(),
+      Subscript::All => todo!(),
+    }
+    return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 373, kind: MechErrorKind::None});
   }
 
   fn structure(&mut self, strct: &Structure) -> Result<Value,MechError> {
@@ -399,7 +472,7 @@ impl Interpreter {
         return Ok(value.clone())         
       }
       None => {
-        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 314, kind: MechErrorKind::None});
+        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 462, kind: MechErrorKind::None});
       }
     }
   }
@@ -424,7 +497,7 @@ impl Interpreter {
           }
           _ => todo!(),
         }  
-        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 331, kind: MechErrorKind::None});
+        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 487, kind: MechErrorKind::None});
       },
       Factor::Transpose(fctr) => {
         if let Value::Matrix(Matrix::Matrix2(mat)) = self.factor(fctr)? {
@@ -433,7 +506,7 @@ impl Interpreter {
           self.functions.push(Rc::new(fxn));
           return Ok(out);
         }
-        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 331, kind: MechErrorKind::None});
+        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 496, kind: MechErrorKind::None});
       },
     }
   }
@@ -466,7 +539,7 @@ impl Interpreter {
           return Ok(out);
         }
         x => {
-          return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 239, kind: MechErrorKind::UnhandledFunctionArgumentKind});
+          return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 529, kind: MechErrorKind::UnhandledFunctionArgumentKind});
         }
       }
     }
