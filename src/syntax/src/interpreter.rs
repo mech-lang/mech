@@ -155,6 +155,28 @@ impl Hash for MechTable {
   }
 }
 
+pub struct FunctionDefinition {
+  pub id: u64,
+  pub input: HashMap<u64, KindAnnotation>,
+  pub output: HashMap<u64, KindAnnotation>,
+  pub stack: HashMap<Value,Value>,
+  pub statements: Vec<Rc<dyn MechFunction>>,
+}
+
+impl FunctionDefinition {
+
+  pub fn new(id: u64) -> Self {
+    Self {
+      id,
+      input: HashMap::new(),
+      output: HashMap::new(),
+      stack: HashMap::new(),
+      statements: Vec::new(),
+    }
+  }
+
+}
+
 
 //-----------------------------------------------------------------------------
 
@@ -236,6 +258,9 @@ impl Matrix {
   }
 }
 
+// Functions
+// ------------------------------------------------------------------------
+
 // The naming scheme will be OP LHS RHS
 // The abbreviations are:
 // Rv - row vector
@@ -247,6 +272,17 @@ pub trait MechFunction {
 }
 
 // Add ------------------------------------------------------------------------
+
+struct AddScalar {
+  lhs: i64,
+  rhs: i64,
+}
+
+impl MechFunction for AddScalar {
+  fn solve(&self) -> Value {
+    Value::Number(self.lhs + self.rhs)
+  }
+}
 
 struct AddRv3Rv3 {
   lhs: RowVector3<i64>,
@@ -269,6 +305,19 @@ impl MechFunction for AddM3M3 {
   fn solve(&self) -> Value {
     let result = &self.lhs + &self.rhs;
     Value::Matrix(Matrix::Matrix3(result))
+  }
+}
+
+// Sub ------------------------------------------------------------------------
+
+struct SubScalar {
+  lhs: i64,
+  rhs: i64,
+}
+
+impl MechFunction for SubScalar {
+  fn solve(&self) -> Value {
+    Value::Number(self.lhs - self.rhs)
   }
 }
 
@@ -321,11 +370,13 @@ impl MechFunction for NegateM2 {
   }
 }
 
-// Interpreter ----------------------------------------------------------------
+// Interpreter 
+// ----------------------------------------------------------------------------
 
 pub struct Interpreter {
   pub symbols: HashMap<u64, Value>,
   pub functions: Vec<Rc<dyn MechFunction>>,
+  pub user_functions: HashMap<u64,FunctionDefinition>
 }
 
 impl Interpreter {
@@ -334,6 +385,7 @@ impl Interpreter {
     Interpreter {
       symbols: HashMap::new(),
       functions: Vec::new(),
+      user_functions: HashMap::new(),
     }
   }
 
@@ -377,8 +429,26 @@ impl Interpreter {
       MechCode::Statement(stmt) => self.statement(&stmt),
       MechCode::FsmSpecification(_) => todo!(),
       MechCode::FsmImplementation(_) => todo!(),
-      MechCode::FunctionDefine(_) => todo!(),
+      MechCode::FunctionDefine(fxn_def) => self.function_define(&fxn_def),
     }
+  }
+
+  fn function_define(&mut self, fxn_def: &FunctionDefine) -> Result<Value,MechError> {
+    let name_id = fxn_def.name.hash();
+    let mut new_fxn = FunctionDefinition::new(name_id);
+    for input_arg in &fxn_def.input {
+      let arg_id = input_arg.name.hash();
+      new_fxn.input.insert(arg_id,input_arg.kind.clone());
+    }
+    for output_arg in &fxn_def.output {
+      let arg_id = output_arg.name.hash();
+      new_fxn.output.insert(arg_id,output_arg.kind.clone());
+    }
+    for statement in &fxn_def.statements {
+      
+    }
+    self.user_functions.insert(name_id,new_fxn);
+    Ok(Value::Empty)
   }
 
   fn statement(&mut self, stmt: &Statement) -> Result<Value,MechError> {
@@ -632,7 +702,7 @@ impl Interpreter {
 
   fn factor(&mut self, fctr: &Factor) -> Result<Value,MechError> {
     match fctr {
-      Factor::Term(trm) => self.term(trm),
+      Factor::Term(trm) => {let (o,f) = self.term(trm)?; Ok(o)},
       Factor::Expression(expr) => self.expression(expr),
       Factor::Negated(neg) => {
         match self.factor(neg)? {
@@ -664,39 +734,30 @@ impl Interpreter {
     }
   }
 
-  fn term(&mut self, trm: &Term) -> Result<Value,MechError> {
+  fn term(&mut self, trm: &Term) -> Result<(Value,Vec<Rc<dyn MechFunction>>),MechError> {
+    let mut fxns: Vec<Rc<dyn MechFunction>> = vec![];
     let mut lhs_result = self.factor(&trm.lhs)?;
     for (op,rhs) in &trm.rhs {
       let rhs_result = self.factor(&rhs)?;
-      lhs_result = match (lhs_result, rhs_result, op) {
-        (Value::Number(lhs_val), Value::Number(rhs_val), FormulaOperator::AddSub(AddSubOp::Add)) 
-          => Value::Number(lhs_val + rhs_val),
-        (Value::Number(lhs_val), Value::Number(rhs_val), FormulaOperator::AddSub(AddSubOp::Sub))
-          => Value::Number(lhs_val - rhs_val),
-        (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) => {
-          let fxn = AddRv3Rv3{lhs,rhs}; 
-          let out = fxn.solve();
-          self.functions.push(Rc::new(fxn));
-          return Ok(out);
-        }
-        (Value::Matrix(Matrix::Matrix3(lhs)), Value::Matrix(Matrix::Matrix3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) => {
-          let fxn = AddM3M3{lhs,rhs}; 
-          let out = fxn.solve();
-          self.functions.push(Rc::new(fxn));
-          return Ok(out);
-        }
-        (Value::Matrix(Matrix::Matrix2(lhs)), Value::Matrix(Matrix::Matrix2(rhs)), FormulaOperator::Vec(VecOp::MatMul)) => {
-          let fxn = MatMulM2M2{lhs,rhs}; 
-          let out = fxn.solve();
-          self.functions.push(Rc::new(fxn));
-          return Ok(out);
-        }
+      match (lhs_result, rhs_result, op) {
+        (Value::Number(lhs), Value::Number(rhs), FormulaOperator::AddSub(AddSubOp::Add)) =>
+          fxns.push(Rc::new(AddScalar{lhs,rhs})),
+        (Value::Number(lhs), Value::Number(rhs), FormulaOperator::AddSub(AddSubOp::Sub)) =>
+          fxns.push(Rc::new(SubScalar{lhs,rhs})),
+        (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) =>
+          fxns.push(Rc::new(AddRv3Rv3{lhs,rhs})),
+        (Value::Matrix(Matrix::Matrix3(lhs)), Value::Matrix(Matrix::Matrix3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) =>
+          fxns.push(Rc::new(AddM3M3{lhs,rhs})),
+        (Value::Matrix(Matrix::Matrix2(lhs)), Value::Matrix(Matrix::Matrix2(rhs)), FormulaOperator::Vec(VecOp::MatMul)) => 
+          fxns.push(Rc::new(MatMulM2M2{lhs,rhs})),
         x => {
           return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 685, kind: MechErrorKind::UnhandledFunctionArgumentKind});
         }
-      }
+      };
+      let res = fxns.last().unwrap().solve();
+      lhs_result = res;
     }
-    Ok(lhs_result)
+    return Ok((lhs_result,fxns));
   }
 
   fn literal(&mut self, ltrl: &Literal) -> Value {
