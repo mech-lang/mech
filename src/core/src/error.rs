@@ -27,6 +27,8 @@ pub struct ParserErrorContext {
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum MechErrorKind {
+  UndefinedField(u64),                                 // Accessed a field of a record that's not defined
+  UndefinedVariable(u64),                              // Accessed a variable that's not defined
   MissingTable(TableId),                             // TableId of missing table
   MissingBlock(BlockId),                             // BlockId of missing block
   PendingTable(TableId),                             // TableId of pending table                          

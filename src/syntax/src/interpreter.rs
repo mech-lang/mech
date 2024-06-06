@@ -24,6 +24,7 @@ pub enum Value {
   Set(MechSet),
   Map(MechMap),
   Record(MechMap),
+  Table(MechTable),
   Id(u64),
   Empty
 }
@@ -39,6 +40,7 @@ impl Hash for Value {
       Value::Set(x) => x.hash(state),
       Value::Map(x) => x.hash(state),
       Value::Record(x) => x.hash(state),
+      Value::Table(x) => x.hash(state),
       Value::Id(x) => x.hash(state),
       Value::Empty => Value::Empty.hash(state),
     }
@@ -53,6 +55,7 @@ impl Value {
       Value::Bool(x) => (1,1),
       Value::Atom(x) => (1,1),
       Value::Matrix(x) => x.shape(),
+      Value::Table(x) => x.shape(),
       Value::Set(x) => (1,x.set.len()),
       Value::Map(x) => (1,x.map.len()),
       Value::Record(x) => (1,x.map.len()),
@@ -129,6 +132,29 @@ impl Hash for MechMap {
     }
   }
 }
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MechTable {
+  rows: usize,
+  cols: usize,
+  data: IndexMap<Value,Vec<Value>>,
+}
+
+impl MechTable {
+  pub fn shape(&self) -> (usize,usize) {
+    (self.rows,self.cols)
+  }
+}
+
+impl Hash for MechTable {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    for (k,v) in self.data.iter() {
+        k.hash(state);
+        v.hash(state);
+    }
+  }
+}
+
 
 //-----------------------------------------------------------------------------
 
@@ -388,39 +414,49 @@ impl Interpreter {
 
   fn slice(&mut self, slc: &Slice) -> Result<Value,MechError> {
     let name = &slc.name.hash();
+    let val: Value = match self.symbols.get(name) {
+      Some(val) => val.clone(),
+      None => {return Err(MechError{tokens: slc.name.tokens(), msg: "interpreter.rs".to_string(), id: 440, kind: MechErrorKind::UndefinedVariable(*name)});}
+    };
     for s in &slc.subscript {
-      let s_result = self.subscript(&s,name)?;
+      let s_result = self.subscript(&s,&val)?;
       return Ok(s_result);
     }
-    return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 337, kind: MechErrorKind::None});
+    unreachable!() // subscript should have through an error if we can't access an element
   }
 
-  fn subscript(&mut self, sbscrpt: &Subscript, name: &u64) -> Result<Value,MechError> {
+  fn subscript(&mut self, sbscrpt: &Subscript, val: &Value) -> Result<Value,MechError> {
     match sbscrpt {
-      Subscript::Dot(x) => todo!(),
+      Subscript::Dot(x) => {
+        let key = x.hash();
+        match val {
+          Value::Record(rcrd) => {
+            match rcrd.map.get(&Value::Id(key)) {
+              Some(value) => return Ok(value.clone()),
+              None => { return Err(MechError{tokens: x.tokens(), msg: "interpreter.rs".to_string(), id: 434, kind: MechErrorKind::UndefinedField(key)});}
+            }
+          }
+          _ => todo!(),
+        }
+      },
       Subscript::Swizzle(x) => todo!(),
       Subscript::Formula(fctr) => {return self.factor(fctr);},
       Subscript::Bracket(subs) => {
         let mut resolved_subs = vec![];
         for s in subs {
-          let result = self.subscript(&s,name)?;
+          let result = self.subscript(&s,val)?;
           resolved_subs.push(result);
         }
-        match self.symbols.get(name) {
-          Some(val) => {
-            match val {
-              Value::Matrix(mat) => {
-                let result = match resolved_subs[..] {
-                  [Value::Number(ix)] => mat.index1d(ix as usize),
-                  [Value::Number(row_ix),Value::Number(col_ix)] => mat.index2d(row_ix as usize,col_ix as usize),
-                  _ => todo!(),
-                };
-                return Ok(Value::Number(result));
-              }
+        match val {
+          Value::Matrix(mat) => {
+            let result = match resolved_subs[..] {
+              [Value::Number(ix)] => mat.index1d(ix as usize),
+              [Value::Number(row_ix),Value::Number(col_ix)] => mat.index2d(row_ix as usize,col_ix as usize),
               _ => todo!(),
-            }
+            };
+            return Ok(Value::Number(result));
           }
-          None => { return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 335, kind: MechErrorKind::None});}
+          _ => todo!(),
         }
       },
       Subscript::Brace(x) => todo!(),
@@ -434,7 +470,7 @@ impl Interpreter {
       Structure::Empty => Ok(Value::Empty),
       Structure::Record(x) => self.record(&x),
       Structure::Matrix(x) => self.matrix(&x),
-      Structure::Table(x) => todo!(),
+      Structure::Table(x) => self.table(&x),
       Structure::Tuple(x) => todo!(),
       Structure::TupleStruct(x) => todo!(),
       Structure::Set(x) => self.set(&x),
@@ -470,6 +506,59 @@ impl Interpreter {
       out.insert(result);
     }
     Ok(Value::Set(MechSet{set: out}))
+  }
+
+  fn table(&mut self, t: &Table) -> Result<Value,MechError> { 
+    let mut rows = vec![];
+    let header = self.table_header(&t.header)?;
+    let mut cols = 0;
+    // Interpret the rows
+    for row in &t.rows {
+      let result = self.table_row(row)?;
+      cols = result.len();
+      rows.push(result);
+    }
+    // Provision columns
+    let mut data = Vec::new();
+    for i in 0..cols {
+      data.push(vec![])
+    }
+    // Populate columns with data from rows
+    for row in rows {
+      for (ix,el) in row.iter().enumerate() {
+        data[ix].push(el.clone());
+      }
+    }
+    // Build the table
+    let mut data_map = IndexMap::new();
+    for (field_label,column) in header.iter().zip(data.iter()) {
+      data_map.insert(field_label.clone(),column.clone());
+    }
+    let tbl = MechTable{rows: t.rows.len(), cols, data: data_map.clone()  };
+    Ok(Value::Table(tbl))
+  }
+
+  fn table_header(&mut self, fields: &Vec<Field>) -> Result<Vec<Value>,MechError> {
+    let mut row: Vec<Value> = Vec::new();
+    for f in fields {
+      let id = f.name.hash();
+      let kind = &f.kind;
+      row.push(Value::Id(id));
+    }
+    Ok(row)
+  }
+
+  fn table_row(&mut self, r: &TableRow) -> Result<Vec<Value>,MechError> {
+    let mut row: Vec<Value> = Vec::new();
+    for col in &r.columns {
+      let result = self.table_column(col)?;
+      row.push(result);
+   }
+    Ok(row)
+  }
+
+  fn table_column(&mut self, r: &TableColumn) -> Result<Value,MechError> { 
+    self.expression(&r.element)
   }
 
   fn matrix(&mut self, m: &Mat) -> Result<Value,MechError> { 
@@ -536,7 +625,7 @@ impl Interpreter {
         return Ok(value.clone())         
       }
       None => {
-        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 462, kind: MechErrorKind::None});
+        return Err(MechError{tokens: v.tokens(), msg: "interpreter.rs".to_string(), id: 618, kind: MechErrorKind::UndefinedVariable(id)});
       }
     }
   }
@@ -561,7 +650,7 @@ impl Interpreter {
           }
           _ => todo!(),
         }  
-        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 487, kind: MechErrorKind::None});
+        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 643, kind: MechErrorKind::None});
       },
       Factor::Transpose(fctr) => {
         if let Value::Matrix(Matrix::Matrix2(mat)) = self.factor(fctr)? {
@@ -570,7 +659,7 @@ impl Interpreter {
           self.functions.push(Rc::new(fxn));
           return Ok(out);
         }
-        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 496, kind: MechErrorKind::None});
+        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 652, kind: MechErrorKind::None});
       },
     }
   }
@@ -603,7 +692,7 @@ impl Interpreter {
           return Ok(out);
         }
         x => {
-          return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 529, kind: MechErrorKind::UnhandledFunctionArgumentKind});
+          return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 685, kind: MechErrorKind::UnhandledFunctionArgumentKind});
         }
       }
     }
