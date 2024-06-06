@@ -8,6 +8,7 @@ use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, Ro
 use std::ops::AddAssign;
 use std::ops::Add;
 use std::rc::Rc;
+use std::cell::RefCell;
 use std::hash::{Hash, Hasher};
 use indexmap::set::IndexSet;
 use indexmap::map::IndexMap;
@@ -155,11 +156,13 @@ impl Hash for MechTable {
   }
 }
 
+type SymbolTable = Rc<RefCell<HashMap<u64,Value>>>;
+
 pub struct FunctionDefinition {
   pub id: u64,
   pub input: HashMap<u64, KindAnnotation>,
   pub output: HashMap<u64, KindAnnotation>,
-  pub stack: HashMap<Value,Value>,
+  pub stack: SymbolTable,
   pub statements: Vec<Rc<dyn MechFunction>>,
 }
 
@@ -170,7 +173,7 @@ impl FunctionDefinition {
       id,
       input: HashMap::new(),
       output: HashMap::new(),
-      stack: HashMap::new(),
+      stack: Rc::new(RefCell::new(HashMap::new())),
       statements: Vec::new(),
     }
   }
@@ -374,7 +377,7 @@ impl MechFunction for NegateM2 {
 // ----------------------------------------------------------------------------
 
 pub struct Interpreter {
-  pub symbols: HashMap<u64, Value>,
+  pub symbols: SymbolTable,
   pub functions: Vec<Rc<dyn MechFunction>>,
   pub user_functions: HashMap<u64,FunctionDefinition>
 }
@@ -383,7 +386,7 @@ impl Interpreter {
 
   pub fn new() -> Interpreter {
     Interpreter {
-      symbols: HashMap::new(),
+      symbols: Rc::new(RefCell::new(HashMap::new())),
       functions: Vec::new(),
       user_functions: HashMap::new(),
     }
@@ -453,7 +456,7 @@ impl Interpreter {
 
   fn statement(&mut self, stmt: &Statement) -> Result<Value,MechError> {
     match stmt {
-      Statement::VariableDefine(var_def) => self.variable_define(&var_def),
+      Statement::VariableDefine(var_def) => self.variable_define(&var_def, self.symbols.clone()),
       Statement::VariableAssign(_) => todo!(),
       Statement::KindDefine(_) => todo!(),
       Statement::EnumDefine(_) => todo!(),
@@ -463,17 +466,18 @@ impl Interpreter {
     }
   }
 
-  fn variable_define(&mut self, var_def: &VariableDefine) -> Result<Value,MechError> {
+  fn variable_define(&mut self, var_def: &VariableDefine, symbols: Rc<RefCell<HashMap<u64,Value>>>) -> Result<Value,MechError> {
     let id = var_def.var.name.hash();
     let result = self.expression(&var_def.expression)?;
-    self.symbols.insert(id,result.clone());
+    let mut symbols_brrw = symbols.borrow_mut();
+    symbols_brrw.insert(id,result.clone());
     Ok(result)
   }
 
   fn expression(&mut self, expr: &Expression) -> Result<Value,MechError> {
     match &expr {
-      Expression::Var(v) => self.var(&v),
-      Expression::Slice(slc) => self.slice(&slc),
+      Expression::Var(v) => self.var(&v, self.symbols.clone()),
+      Expression::Slice(slc) => self.slice(&slc, self.symbols.clone()),
       Expression::Formula(fctr) => self.factor(fctr),
       Expression::Structure(strct) => self.structure(strct),
       Expression::Literal(ltrl) => Ok(self.literal(&ltrl)),
@@ -482,9 +486,10 @@ impl Interpreter {
     }
   }
 
-  fn slice(&mut self, slc: &Slice) -> Result<Value,MechError> {
+  fn slice(&mut self, slc: &Slice, symbols: SymbolTable) -> Result<Value,MechError> {
     let name = &slc.name.hash();
-    let val: Value = match self.symbols.get(name) {
+    let symbols_brrw = symbols.borrow();
+    let val: Value = match symbols_brrw.get(name) {
       Some(val) => val.clone(),
       None => {return Err(MechError{tokens: slc.name.tokens(), msg: "interpreter.rs".to_string(), id: 440, kind: MechErrorKind::UndefinedVariable(*name)});}
     };
@@ -688,9 +693,10 @@ impl Interpreter {
     self.expression(&r.element)
   }
 
-  fn var(&mut self, v: &Var) -> Result<Value,MechError> {
+  fn var(&mut self, v: &Var, symbols: SymbolTable) -> Result<Value,MechError> {
     let id = v.name.hash();
-    match self.symbols.get(&id) {
+    let symbols_brrw = symbols.borrow();
+    match symbols_brrw.get(&id) {
       Some(value) => {
         return Ok(value.clone())         
       }
@@ -702,7 +708,11 @@ impl Interpreter {
 
   fn factor(&mut self, fctr: &Factor) -> Result<Value,MechError> {
     match fctr {
-      Factor::Term(trm) => {let (o,f) = self.term(trm)?; Ok(o)},
+      Factor::Term(trm) => {
+        let (o,mut f) = self.term(trm)?;
+        self.functions.append(&mut f);
+        Ok(o)
+      },
       Factor::Expression(expr) => self.expression(expr),
       Factor::Negated(neg) => {
         match self.factor(neg)? {
