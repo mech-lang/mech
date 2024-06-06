@@ -55,3 +55,4 @@ test_interpreter!(interpret_slice_2d, "a := [1,2,3]; a[1,2]", Value::Number(2));
 
 test_interpreter!(interpret_set,"{1,2,3}", Value::Set(MechSet::from_vec(vec![Value::Number(1),Value::Number(2),Value::Number(3)])));
 test_interpreter!(interpret_record,r#"{a: 1, b: "Hello"}"#, Value::Record(MechMap::from_vec(vec![(Value::Id(55170961230981453),Value::Number(1)),(Value::Id(44311847522083591),Value::String("Hello".to_string()))])));
+test_interpreter!(interpret_map,r#"{"a": 1, "b": 2}"#, Value::Map(MechMap::from_vec(vec![(Value::String("a".to_string()),Value::Number(1)),(Value::String("b".to_string()),Value::Number(2))])));

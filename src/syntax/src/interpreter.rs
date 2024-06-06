@@ -432,14 +432,24 @@ impl Interpreter {
   fn structure(&mut self, strct: &Structure) -> Result<Value,MechError> {
     match strct {
       Structure::Empty => Ok(Value::Empty),
-      Structure::Record(rcrd) => self.record(&rcrd),
-      Structure::Matrix(mat) => self.matrix(&mat),
+      Structure::Record(x) => self.record(&x),
+      Structure::Matrix(x) => self.matrix(&x),
       Structure::Table(x) => todo!(),
       Structure::Tuple(x) => todo!(),
       Structure::TupleStruct(x) => todo!(),
       Structure::Set(x) => self.set(&x),
-      Structure::Map(x) => todo!(),
+      Structure::Map(x) => self.map(&x),
     }
+  }
+
+  fn map(&mut self, mp: &Map) -> Result<Value,MechError> {
+    let mut m = IndexMap::new();
+    for b in &mp.elements {
+      let key = self.expression(&b.key)?;
+      let val = self.expression(&b.value)?;
+      m.insert(key,val);
+    }
+    Ok(Value::Map(MechMap{map: m}))
   }
 
   fn record(&mut self, rcrd: &Record) -> Result<Value,MechError> {
