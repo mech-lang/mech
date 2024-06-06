@@ -36,6 +36,24 @@ use nalgebra::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVecto
 
 
 #[bench]
+fn matrix_multiply(b:&mut Bencher){
+  let s = r#"a := [1 2; 3 4]
+b := [4 5; 6 7]
+c := a ** b"#;
+  match parser2::parse(&s) {
+    Ok(tree) => { 
+      let mut intrp = Interpreter::new();
+      let result = intrp.interpret(&tree);
+      let fxn = &intrp.functions[0];
+      b.iter(|| {
+        let result = fxn.solve();
+      });
+    }
+    _ => (),
+  }
+}
+
+#[bench]
 fn matrix_add(b:&mut Bencher){
   let s = r#"a := [1 2 3]
 b := [4 5 6]
