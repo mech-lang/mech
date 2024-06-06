@@ -10,6 +10,7 @@ use std::ops::Add;
 use std::rc::Rc;
 use std::hash::{Hash, Hasher};
 use indexmap::set::IndexSet;
+use indexmap::map::IndexMap;
 
 // Value-----------------------------------------------------------------------
 
@@ -21,6 +22,9 @@ pub enum Value {
   Atom(u64),
   Matrix(Matrix),
   Set(MechSet),
+  Map(MechMap),
+  Record(MechMap),
+  Id(u64),
   Empty
 }
 
@@ -33,6 +37,9 @@ impl Hash for Value {
       Value::Atom(x) => x.hash(state),
       Value::Matrix(x) => x.hash(state),
       Value::Set(x) => x.hash(state),
+      Value::Map(x) => x.hash(state),
+      Value::Record(x) => x.hash(state),
+      Value::Id(x) => x.hash(state),
       Value::Empty => Value::Empty.hash(state),
     }
   }
@@ -47,7 +54,10 @@ impl Value {
       Value::Atom(x) => (1,1),
       Value::Matrix(x) => x.shape(),
       Value::Set(x) => (1,x.set.len()),
+      Value::Map(x) => (1,x.map.len()),
+      Value::Record(x) => (1,x.map.len()),
       Value::Empty => (0,0),
+      Value::Id(x) => (0,0),
     }
   }
 }
@@ -79,9 +89,42 @@ pub struct MechSet {
   set: IndexSet<Value>,
 }
 
+impl MechSet {
+  pub fn from_vec(vec: Vec<Value>) -> MechSet {
+    let mut set = IndexSet::new();
+    for v in vec {
+      set.insert(v);
+    }
+    MechSet{set}
+  }
+}
+
 impl Hash for MechSet {
   fn hash<H: Hasher>(&self, state: &mut H) {
     for x in self.set.iter() {
+        x.hash(state)
+    }
+  }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MechMap {
+  map: IndexMap<Value,Value>,
+}
+
+impl MechMap {
+  pub fn from_vec(vec: Vec<(Value,Value)>) -> MechMap {
+    let mut map = IndexMap::new();
+    for (k,v) in vec {
+      map.insert(k,v);
+    }
+    MechMap{map}
+  }
+}
+
+impl Hash for MechMap {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    for x in self.map.iter() {
         x.hash(state)
     }
   }
@@ -388,8 +431,8 @@ impl Interpreter {
 
   fn structure(&mut self, strct: &Structure) -> Result<Value,MechError> {
     match strct {
-      Structure::Empty => todo!(),
-      Structure::Record(x) => todo!(),
+      Structure::Empty => Ok(Value::Empty),
+      Structure::Record(rcrd) => self.record(&rcrd),
       Structure::Matrix(mat) => self.matrix(&mat),
       Structure::Table(x) => todo!(),
       Structure::Tuple(x) => todo!(),
@@ -397,6 +440,17 @@ impl Interpreter {
       Structure::Set(x) => self.set(&x),
       Structure::Map(x) => todo!(),
     }
+  }
+
+  fn record(&mut self, rcrd: &Record) -> Result<Value,MechError> {
+    let mut m = IndexMap::new();
+    for b in &rcrd.bindings {
+      let name = b.name.hash();
+      let kind = &b.kind;
+      let val = self.expression(&b.value)?;
+      m.insert(Value::Id(name),val);
+    }
+    Ok(Value::Record(MechMap{map: m}))
   }
 
   fn set(&mut self, m: &Set) -> Result<Value,MechError> { 

@@ -8,6 +8,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use mech_syntax::parser2;
 use mech_syntax::interpreter::*;
+use indexmap::set::IndexSet;
 use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix6, Matrix2};
 
   /// Compare interpreter output to expected value
@@ -32,7 +33,7 @@ use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, Ro
 /////////////////////////////////////////////////////////////////////////////////
 
 test_interpreter!(interpret_literal_integer, "123", Value::Number(123));
-//test_interpreter!(interpret_literal_string, "Hello", Value::String("Hello".to_string()));
+test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String("Hello".to_string()));
 test_interpreter!(interpret_literal_true, "true", Value::Bool(true));
 
 test_interpreter!(interpret_formula_add, "1 + 1", Value::Number(2));
@@ -51,3 +52,6 @@ test_interpreter!(interpret_matrix2_negate, "-[1 2; 3 4]", Value::Matrix(Matrix:
 
 test_interpreter!(interpret_slice, "a := [1,2,3]; a[2]", Value::Number(2));
 test_interpreter!(interpret_slice_2d, "a := [1,2,3]; a[1,2]", Value::Number(2));
+
+test_interpreter!(interpret_set,"{1,2,3}", Value::Set(MechSet::from_vec(vec![Value::Number(1),Value::Number(2),Value::Number(3)])));
+test_interpreter!(interpret_record,r#"{a: 1, b: "Hello"}"#, Value::Record(MechMap::from_vec(vec![(Value::Id(55170961230981453),Value::Number(1)),(Value::Id(44311847522083591),Value::String("Hello".to_string()))])));
