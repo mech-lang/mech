@@ -44,7 +44,7 @@ c := a ** b"#;
     Ok(tree) => { 
       let mut intrp = Interpreter::new();
       let result = intrp.interpret(&tree);
-      let fxn = &intrp.functions[0];
+      let fxn = &intrp.plan.borrow()[0];
       b.iter(|| {
         let result = fxn.solve();
       });
@@ -62,7 +62,7 @@ c := a + b"#;
     Ok(tree) => { 
       let mut intrp = Interpreter::new();
       let result = intrp.interpret(&tree);
-      let fxn = &intrp.functions[0];
+      let fxn = &intrp.plan.borrow()[0];
       b.iter(|| {
         let result = fxn.solve();
       });

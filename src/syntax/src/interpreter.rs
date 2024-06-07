@@ -156,6 +156,7 @@ impl Hash for MechTable {
   }
 }
 
+type Plan = Rc<RefCell<Vec<Rc<dyn MechFunction>>>>;
 type SymbolTable = Rc<RefCell<HashMap<u64,Value>>>;
 
 pub struct FunctionDefinition {
@@ -163,7 +164,7 @@ pub struct FunctionDefinition {
   pub input: HashMap<u64, KindAnnotation>,
   pub output: HashMap<u64, KindAnnotation>,
   pub stack: SymbolTable,
-  pub statements: Vec<Rc<dyn MechFunction>>,
+  pub statements: Plan,
 }
 
 impl FunctionDefinition {
@@ -174,7 +175,7 @@ impl FunctionDefinition {
       input: HashMap::new(),
       output: HashMap::new(),
       stack: Rc::new(RefCell::new(HashMap::new())),
-      statements: Vec::new(),
+      statements: Rc::new(RefCell::new(Vec::new())),
     }
   }
 
@@ -378,8 +379,8 @@ impl MechFunction for NegateM2 {
 
 pub struct Interpreter {
   pub symbols: SymbolTable,
-  pub functions: Vec<Rc<dyn MechFunction>>,
-  pub user_functions: HashMap<u64,FunctionDefinition>
+  pub plan: Plan,
+  pub functions: HashMap<u64,FunctionDefinition>
 }
 
 impl Interpreter {
@@ -387,56 +388,56 @@ impl Interpreter {
   pub fn new() -> Interpreter {
     Interpreter {
       symbols: Rc::new(RefCell::new(HashMap::new())),
-      functions: Vec::new(),
-      user_functions: HashMap::new(),
+      plan: Rc::new(RefCell::new(Vec::new())),
+      functions: HashMap::new(),
     }
   }
 
-  pub fn interpret(&mut self, tree: &Program) -> Result<Value,MechError> {
-    self.program(tree)
+  pub fn interpret(&self, tree: &Program) -> Result<Value,MechError> {
+    self.program(tree, self.plan.clone(), self.symbols.clone())
   }
   
 //-----------------------------------------------------------------------------
 
-  fn program(&mut self, program: &Program) -> Result<Value,MechError> {
-    self.body(&program.body)
+  fn program(&self, program: &Program, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
+    self.body(&program.body, plan.clone(), symbols.clone())
   }
 
-  fn body(&mut self, body: &Body) -> Result<Value,MechError> {
+  fn body(&self, body: &Body, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
     let mut result = None;
     for sec in &body.sections {
-      result = Some(self.section(&sec)?);
+      result = Some(self.section(&sec, plan.clone(), symbols.clone())?);
     }
     Ok(result.unwrap())
   }
 
-  fn section(&mut self, section: &Section) -> Result<Value,MechError> {
+  fn section(&self, section: &Section, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
     let mut result = None;
     for el in &section.elements {
-      result = Some(self.section_element(&el)?);
+      result = Some(self.section_element(&el, plan.clone(), symbols.clone())?);
       println!("Interpreter Result: {:?}", result);
     }
     Ok(result.unwrap())
   }
 
-  fn section_element(&mut self, element: &SectionElement) -> Result<Value,MechError> {
+  fn section_element(&self, element: &SectionElement, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
     match element {
-      SectionElement::MechCode(code) => {self.mech_code(&code)},
+      SectionElement::MechCode(code) => {self.mech_code(&code, plan.clone(), symbols.clone())},
       _ => todo!(),
     }
   }
 
-  fn mech_code(&mut self, code: &MechCode) -> Result<Value,MechError> {
+  fn mech_code(&self, code: &MechCode, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
     match &code {
-      MechCode::Expression(expr) => self.expression(&expr),
-      MechCode::Statement(stmt) => self.statement(&stmt),
+      MechCode::Expression(expr) => self.expression(&expr, plan.clone(), symbols.clone()),
+      MechCode::Statement(stmt) => self.statement(&stmt, plan.clone(), symbols.clone()),
       MechCode::FsmSpecification(_) => todo!(),
       MechCode::FsmImplementation(_) => todo!(),
-      MechCode::FunctionDefine(fxn_def) => self.function_define(&fxn_def),
+      MechCode::FunctionDefine(fxn_def) => self.function_define(&fxn_def, plan.clone(), symbols.clone()),
     }
   }
 
-  fn function_define(&mut self, fxn_def: &FunctionDefine) -> Result<Value,MechError> {
+  fn function_define(&self, fxn_def: &FunctionDefine, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
     let name_id = fxn_def.name.hash();
     let mut new_fxn = FunctionDefinition::new(name_id);
     for input_arg in &fxn_def.input {
@@ -450,13 +451,13 @@ impl Interpreter {
     for statement in &fxn_def.statements {
       
     }
-    self.user_functions.insert(name_id,new_fxn);
+    //self.functions.insert(name_id,new_fxn);
     Ok(Value::Empty)
   }
 
-  fn statement(&mut self, stmt: &Statement) -> Result<Value,MechError> {
+  fn statement(&self, stmt: &Statement, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
     match stmt {
-      Statement::VariableDefine(var_def) => self.variable_define(&var_def, self.symbols.clone()),
+      Statement::VariableDefine(var_def) => self.variable_define(&var_def, plan.clone(), symbols.clone()),
       Statement::VariableAssign(_) => todo!(),
       Statement::KindDefine(_) => todo!(),
       Statement::EnumDefine(_) => todo!(),
@@ -466,27 +467,27 @@ impl Interpreter {
     }
   }
 
-  fn variable_define(&mut self, var_def: &VariableDefine, symbols: Rc<RefCell<HashMap<u64,Value>>>) -> Result<Value,MechError> {
+  fn variable_define(&self, var_def: &VariableDefine, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
     let id = var_def.var.name.hash();
-    let result = self.expression(&var_def.expression)?;
+    let result = self.expression(&var_def.expression, plan.clone(), symbols.clone())?;
     let mut symbols_brrw = symbols.borrow_mut();
     symbols_brrw.insert(id,result.clone());
     Ok(result)
   }
 
-  fn expression(&mut self, expr: &Expression) -> Result<Value,MechError> {
+  fn expression(&self, expr: &Expression, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
     match &expr {
-      Expression::Var(v) => self.var(&v, self.symbols.clone()),
-      Expression::Slice(slc) => self.slice(&slc, self.symbols.clone()),
-      Expression::Formula(fctr) => self.factor(fctr),
-      Expression::Structure(strct) => self.structure(strct),
+      Expression::Var(v) => self.var(&v, symbols.clone()),
+      Expression::Slice(slc) => self.slice(&slc, plan.clone(), symbols.clone()),
+      Expression::Formula(fctr) => self.factor(fctr, plan.clone(), symbols.clone()),
+      Expression::Structure(strct) => self.structure(strct, plan.clone(), symbols.clone()),
       Expression::Literal(ltrl) => Ok(self.literal(&ltrl)),
       Expression::FunctionCall(_) => todo!(),
       Expression::FsmPipe(_) => todo!(),
     }
   }
 
-  fn slice(&mut self, slc: &Slice, symbols: SymbolTable) -> Result<Value,MechError> {
+  fn slice(&self, slc: &Slice, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
     let name = &slc.name.hash();
     let symbols_brrw = symbols.borrow();
     let val: Value = match symbols_brrw.get(name) {
@@ -494,13 +495,13 @@ impl Interpreter {
       None => {return Err(MechError{tokens: slc.name.tokens(), msg: "interpreter.rs".to_string(), id: 440, kind: MechErrorKind::UndefinedVariable(*name)});}
     };
     for s in &slc.subscript {
-      let s_result = self.subscript(&s,&val)?;
+      let s_result = self.subscript(&s, &val, plan.clone(), symbols.clone())?;
       return Ok(s_result);
     }
     unreachable!() // subscript should have through an error if we can't access an element
   }
 
-  fn subscript(&mut self, sbscrpt: &Subscript, val: &Value) -> Result<Value,MechError> {
+  fn subscript(&self, sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
     match sbscrpt {
       Subscript::Dot(x) => {
         let key = x.hash();
@@ -515,11 +516,11 @@ impl Interpreter {
         }
       },
       Subscript::Swizzle(x) => todo!(),
-      Subscript::Formula(fctr) => {return self.factor(fctr);},
+      Subscript::Formula(fctr) => {return self.factor(fctr,plan.clone(), symbols.clone());},
       Subscript::Bracket(subs) => {
         let mut resolved_subs = vec![];
         for s in subs {
-          let result = self.subscript(&s,val)?;
+          let result = self.subscript(&s, val, plan.clone(), symbols.clone())?;
           resolved_subs.push(result);
         }
         match val {
@@ -540,56 +541,56 @@ impl Interpreter {
     return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 373, kind: MechErrorKind::None});
   }
 
-  fn structure(&mut self, strct: &Structure) -> Result<Value,MechError> {
+  fn structure(&self, strct: &Structure, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
     match strct {
       Structure::Empty => Ok(Value::Empty),
-      Structure::Record(x) => self.record(&x),
-      Structure::Matrix(x) => self.matrix(&x),
-      Structure::Table(x) => self.table(&x),
+      Structure::Record(x) => self.record(&x, plan.clone(), symbols.clone()),
+      Structure::Matrix(x) => self.matrix(&x, plan.clone(), symbols.clone()),
+      Structure::Table(x) => self.table(&x, plan.clone(), symbols.clone()),
       Structure::Tuple(x) => todo!(),
       Structure::TupleStruct(x) => todo!(),
-      Structure::Set(x) => self.set(&x),
-      Structure::Map(x) => self.map(&x),
+      Structure::Set(x) => self.set(&x, plan.clone(), symbols.clone()),
+      Structure::Map(x) => self.map(&x, plan.clone(), symbols.clone()),
     }
   }
 
-  fn map(&mut self, mp: &Map) -> Result<Value,MechError> {
+  fn map(&self, mp: &Map, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
     let mut m = IndexMap::new();
     for b in &mp.elements {
-      let key = self.expression(&b.key)?;
-      let val = self.expression(&b.value)?;
+      let key = self.expression(&b.key, plan.clone(), symbols.clone())?;
+      let val = self.expression(&b.value, plan.clone(), symbols.clone())?;
       m.insert(key,val);
     }
     Ok(Value::Map(MechMap{map: m}))
   }
 
-  fn record(&mut self, rcrd: &Record) -> Result<Value,MechError> {
+  fn record(&self, rcrd: &Record, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
     let mut m = IndexMap::new();
     for b in &rcrd.bindings {
       let name = b.name.hash();
       let kind = &b.kind;
-      let val = self.expression(&b.value)?;
+      let val = self.expression(&b.value, plan.clone(), symbols.clone())?;
       m.insert(Value::Id(name),val);
     }
     Ok(Value::Record(MechMap{map: m}))
   }
 
-  fn set(&mut self, m: &Set) -> Result<Value,MechError> { 
+  fn set(&self, m: &Set, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> { 
     let mut out = IndexSet::new();
     for el in &m.elements {
-      let result = self.expression(el)?;
+      let result = self.expression(el, plan.clone(), symbols.clone())?;
       out.insert(result);
     }
     Ok(Value::Set(MechSet{set: out}))
   }
 
-  fn table(&mut self, t: &Table) -> Result<Value,MechError> { 
+  fn table(&self, t: &Table, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> { 
     let mut rows = vec![];
     let header = self.table_header(&t.header)?;
     let mut cols = 0;
     // Interpret the rows
     for row in &t.rows {
-      let result = self.table_row(row)?;
+      let result = self.table_row(row, plan.clone(), symbols.clone())?;
       cols = result.len();
       rows.push(result);
     }
@@ -613,7 +614,7 @@ impl Interpreter {
     Ok(Value::Table(tbl))
   }
 
-  fn table_header(&mut self, fields: &Vec<Field>) -> Result<Vec<Value>,MechError> {
+  fn table_header(&self, fields: &Vec<Field>) -> Result<Vec<Value>,MechError> {
     let mut row: Vec<Value> = Vec::new();
     for f in fields {
       let id = f.name.hash();
@@ -623,23 +624,23 @@ impl Interpreter {
     Ok(row)
   }
 
-  fn table_row(&mut self, r: &TableRow) -> Result<Vec<Value>,MechError> {
+  fn table_row(&self, r: &TableRow, plan: Plan, symbols: SymbolTable) -> Result<Vec<Value>,MechError> {
     let mut row: Vec<Value> = Vec::new();
     for col in &r.columns {
-      let result = self.table_column(col)?;
+      let result = self.table_column(col, plan.clone(), symbols.clone())?;
       row.push(result);
    }
     Ok(row)
   }
 
-  fn table_column(&mut self, r: &TableColumn) -> Result<Value,MechError> { 
-    self.expression(&r.element)
+  fn table_column(&self, r: &TableColumn, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> { 
+    self.expression(&r.element, plan.clone(), symbols.clone())
   }
 
-  fn matrix(&mut self, m: &Mat) -> Result<Value,MechError> { 
+  fn matrix(&self, m: &Mat, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> { 
     let mut out = vec![];
     for row in &m.rows {
-      let result = self.matrix_row(row)?;
+      let result = self.matrix_row(row, plan.clone(), symbols.clone())?;
       out.push(result);
     }
     let (_,col_n) = out[0].shape();
@@ -670,10 +671,10 @@ impl Interpreter {
     Ok(out_vec)
   }
 
-  fn matrix_row(&mut self, r: &MatrixRow) -> Result<Value,MechError> {
+  fn matrix_row(&self, r: &MatrixRow, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
     let mut row: Vec<i64> = Vec::new();
     for col in &r.columns {
-      let result = self.matrix_column(col)?;
+      let result = self.matrix_column(col, plan.clone(), symbols.clone())?;
       match result {
         Value::Number(n) => row.push(n),
         _ => todo!(),
@@ -689,11 +690,11 @@ impl Interpreter {
     Ok(Value::Matrix(out_vec))
   }
 
-  fn matrix_column(&mut self, r: &MatrixColumn) -> Result<Value,MechError> { 
-    self.expression(&r.element)
+  fn matrix_column(&self, r: &MatrixColumn, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> { 
+    self.expression(&r.element, plan.clone(), symbols.clone())
   }
 
-  fn var(&mut self, v: &Var, symbols: SymbolTable) -> Result<Value,MechError> {
+  fn var(&self, v: &Var, symbols: SymbolTable) -> Result<Value,MechError> {
     let id = v.name.hash();
     let symbols_brrw = symbols.borrow();
     match symbols_brrw.get(&id) {
@@ -706,26 +707,27 @@ impl Interpreter {
     }
   }
 
-  fn factor(&mut self, fctr: &Factor) -> Result<Value,MechError> {
+  fn factor(&self, fctr: &Factor, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
     match fctr {
       Factor::Term(trm) => {
-        let (o,mut f) = self.term(trm)?;
-        self.functions.append(&mut f);
-        Ok(o)
+        let result = self.term(trm, plan.clone(), symbols.clone())?;
+        Ok(result)
       },
-      Factor::Expression(expr) => self.expression(expr),
+      Factor::Expression(expr) => self.expression(expr, plan.clone(), symbols.clone()),
       Factor::Negated(neg) => {
-        match self.factor(neg)? {
+        match self.factor(neg, plan.clone(), symbols.clone())? {
           Value::Matrix(Matrix::Matrix2(mat)) => {
             let fxn = NegateM2{mat}; 
             let out: Value = fxn.solve();
-            self.functions.push(Rc::new(fxn));
+            let mut plan_brrw = plan.borrow_mut();
+            plan_brrw.push(Rc::new(fxn));
             return Ok(out);
           }
           Value::Number(n) => {
             let fxn = NegateF64{n}; 
             let out: Value = fxn.solve();
-            self.functions.push(Rc::new(fxn));
+            let mut plan_brrw = plan.borrow_mut();
+            plan_brrw.push(Rc::new(fxn));
             return Ok(out);
           }
           _ => todo!(),
@@ -733,10 +735,11 @@ impl Interpreter {
         return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 643, kind: MechErrorKind::None});
       },
       Factor::Transpose(fctr) => {
-        if let Value::Matrix(Matrix::Matrix2(mat)) = self.factor(fctr)? {
+        if let Value::Matrix(Matrix::Matrix2(mat)) = self.factor(fctr, plan.clone(), symbols.clone())? {
           let fxn = TransposeM2{mat}; 
           let out: Value = fxn.solve();
-          self.functions.push(Rc::new(fxn));
+          let mut plan_brrw = plan.borrow_mut();
+          plan_brrw.push(Rc::new(fxn));
           return Ok(out);
         }
         return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 652, kind: MechErrorKind::None});
@@ -744,33 +747,35 @@ impl Interpreter {
     }
   }
 
-  fn term(&mut self, trm: &Term) -> Result<(Value,Vec<Rc<dyn MechFunction>>),MechError> {
-    let mut fxns: Vec<Rc<dyn MechFunction>> = vec![];
-    let mut lhs_result = self.factor(&trm.lhs)?;
+  fn term(&self, trm: &Term, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
+    let mut lhs_result = self.factor(&trm.lhs, plan.clone(), symbols.clone())?;
+    let mut term_plan: Vec<Rc<dyn MechFunction>> = vec![];
     for (op,rhs) in &trm.rhs {
-      let rhs_result = self.factor(&rhs)?;
+      let rhs_result = self.factor(&rhs, plan.clone(), symbols.clone())?;
       match (lhs_result, rhs_result, op) {
         (Value::Number(lhs), Value::Number(rhs), FormulaOperator::AddSub(AddSubOp::Add)) =>
-          fxns.push(Rc::new(AddScalar{lhs,rhs})),
+          term_plan.push(Rc::new(AddScalar{lhs,rhs})),
         (Value::Number(lhs), Value::Number(rhs), FormulaOperator::AddSub(AddSubOp::Sub)) =>
-          fxns.push(Rc::new(SubScalar{lhs,rhs})),
+          term_plan.push(Rc::new(SubScalar{lhs,rhs})),
         (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) =>
-          fxns.push(Rc::new(AddRv3Rv3{lhs,rhs})),
+          term_plan.push(Rc::new(AddRv3Rv3{lhs,rhs})),
         (Value::Matrix(Matrix::Matrix3(lhs)), Value::Matrix(Matrix::Matrix3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) =>
-          fxns.push(Rc::new(AddM3M3{lhs,rhs})),
+          term_plan.push(Rc::new(AddM3M3{lhs,rhs})),
         (Value::Matrix(Matrix::Matrix2(lhs)), Value::Matrix(Matrix::Matrix2(rhs)), FormulaOperator::Vec(VecOp::MatMul)) => 
-          fxns.push(Rc::new(MatMulM2M2{lhs,rhs})),
+          term_plan.push(Rc::new(MatMulM2M2{lhs,rhs})),
         x => {
           return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 685, kind: MechErrorKind::UnhandledFunctionArgumentKind});
         }
       };
-      let res = fxns.last().unwrap().solve();
+      let res = term_plan.last().unwrap().solve();
       lhs_result = res;
     }
-    return Ok((lhs_result,fxns));
+    let mut plan_brrw = plan.borrow_mut();
+    plan_brrw.append(&mut term_plan);
+    return Ok(lhs_result);
   }
 
-  fn literal(&mut self, ltrl: &Literal) -> Value {
+  fn literal(&self, ltrl: &Literal) -> Value {
     match &ltrl {
       Literal::Empty(_) => self.empty(),
       Literal::Boolean(bln) => self.boolean(bln),
@@ -783,14 +788,14 @@ impl Interpreter {
     }
   }
 
-  fn number(&mut self, num: &Number) -> Value {
+  fn number(&self, num: &Number) -> Value {
     match num {
       Number::Real(num) => self.real(num),
       Number::Imaginary(num) => todo!(),
     }
   }
 
-  fn real(&mut self, rl: &RealNumber) -> Value {
+  fn real(&self, rl: &RealNumber) -> Value {
     match rl {
       RealNumber::Negated(num) => todo!(),
       RealNumber::Integer(num) => self.integer(num),
@@ -804,21 +809,21 @@ impl Interpreter {
     }
   }
 
-  fn integer(&mut self, int: &Token) -> Value {
+  fn integer(&self, int: &Token) -> Value {
     let num: i64 = int.chars.iter().collect::<String>().parse::<i64>().unwrap();
     Value::Number(num)
   }
 
-  fn string(&mut self, tkn: &MechString) -> Value {
+  fn string(&self, tkn: &MechString) -> Value {
     let strng: String = tkn.text.chars.iter().collect::<String>();
     Value::String(strng)
   }
 
-  fn empty(&mut self) -> Value {
+  fn empty(&self) -> Value {
     Value::Empty
   }
 
-  fn boolean(&mut self, tkn: &Token) -> Value {
+  fn boolean(&self, tkn: &Token) -> Value {
     let strng: String = tkn.chars.iter().collect::<String>();
     let val = match strng.as_str() {
       "true" => true,
