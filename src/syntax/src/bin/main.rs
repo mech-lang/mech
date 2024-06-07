@@ -28,7 +28,7 @@ fn main() -> Result<(),MechError> {
 
           let now = Instant::now();
           for _ in 0..1e6 as usize {
-            for fxn in &intrp.functions {
+            for fxn in intrp.plan.borrow().iter() {
               fxn.solve();
             }
           }
