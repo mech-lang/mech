@@ -163,8 +163,8 @@ pub struct FunctionDefinition {
   pub id: u64,
   pub input: HashMap<u64, KindAnnotation>,
   pub output: HashMap<u64, KindAnnotation>,
-  pub stack: SymbolTable,
-  pub statements: Plan,
+  pub symbols: SymbolTable,
+  pub plan: Plan,
 }
 
 impl FunctionDefinition {
@@ -174,8 +174,8 @@ impl FunctionDefinition {
       id,
       input: HashMap::new(),
       output: HashMap::new(),
-      stack: Rc::new(RefCell::new(HashMap::new())),
-      statements: Rc::new(RefCell::new(Vec::new())),
+      symbols: Rc::new(RefCell::new(HashMap::new())),
+      plan: Rc::new(RefCell::new(Vec::new())),
     }
   }
 
@@ -443,14 +443,17 @@ impl Interpreter {
     for input_arg in &fxn_def.input {
       let arg_id = input_arg.name.hash();
       new_fxn.input.insert(arg_id,input_arg.kind.clone());
+      new_fxn.symbols.borrow_mut().insert(arg_id,Value::Empty);
     }
     for output_arg in &fxn_def.output {
       let arg_id = output_arg.name.hash();
       new_fxn.output.insert(arg_id,output_arg.kind.clone());
     }
-    for statement in &fxn_def.statements {
-      
+    for stmnt in &fxn_def.statements {
+      self.statement(stmnt, new_fxn.plan.clone(), new_fxn.symbols.clone());
     }
+    println!("!!!{:?}", new_fxn.symbols);
+    println!("!!!{:?}", new_fxn.symbols);
     //self.functions.insert(name_id,new_fxn);
     Ok(Value::Empty)
   }
