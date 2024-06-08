@@ -25,6 +25,9 @@ fn main() -> Result<(),MechError> {
           let result = intrp.interpret(&tree);
           println!("R: {:#?}", result);
           println!("{:#?}", intrp.symbols); 
+          for fxn in intrp.plan.borrow().iter() {
+            println!("{:?}", fxn.to_string());
+          }
 
           let now = Instant::now();
           for _ in 0..1e6 as usize {

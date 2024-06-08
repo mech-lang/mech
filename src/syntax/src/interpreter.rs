@@ -273,10 +273,24 @@ impl Matrix {
 
 pub trait MechFunction {
   fn solve(&self) -> Value;
+  fn to_string(&self) -> String;
 }
 
 // Add ------------------------------------------------------------------------
 
+#[derive(Debug)]
+struct AddEmpty {
+  term: Term
+}
+
+impl MechFunction for AddEmpty {
+  fn solve(&self) -> Value {
+    Value::Empty
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+#[derive(Debug)]
 struct AddScalar {
   lhs: i64,
   rhs: i64,
@@ -286,8 +300,10 @@ impl MechFunction for AddScalar {
   fn solve(&self) -> Value {
     Value::Number(self.lhs + self.rhs)
   }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+#[derive(Debug)]
 struct AddRv3Rv3 {
   lhs: RowVector3<i64>,
   rhs: RowVector3<i64>,
@@ -298,8 +314,10 @@ impl MechFunction for AddRv3Rv3 {
     let result = &self.lhs + &self.rhs;
     Value::Matrix(Matrix::RowVector3(result))
   }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+#[derive(Debug)]
 struct AddM3M3 {
   lhs: Matrix3<i64>,
   rhs: Matrix3<i64>,
@@ -310,10 +328,12 @@ impl MechFunction for AddM3M3 {
     let result = &self.lhs + &self.rhs;
     Value::Matrix(Matrix::Matrix3(result))
   }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
 // Sub ------------------------------------------------------------------------
 
+#[derive(Debug)]
 struct SubScalar {
   lhs: i64,
   rhs: i64,
@@ -323,10 +343,12 @@ impl MechFunction for SubScalar {
   fn solve(&self) -> Value {
     Value::Number(self.lhs - self.rhs)
   }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
 // MatMul ---------------------------------------------------------------------
 
+#[derive(Debug)]
 struct MatMulM2M2 {
   lhs: Matrix2<i64>,
   rhs: Matrix2<i64>,
@@ -337,10 +359,12 @@ impl MechFunction for MatMulM2M2 {
     let result = &self.lhs * &self.rhs;
     Value::Matrix(Matrix::Matrix2(result))
   }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
 // Transpose ------------------------------------------------------------------
 
+#[derive(Debug)]
 struct TransposeM2 {
   mat: Matrix2<i64>,
 }
@@ -350,10 +374,12 @@ impl MechFunction for TransposeM2 {
     let result = self.mat.transpose();
     Value::Matrix(Matrix::Matrix2(result))
   }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
 // Negate ---------------------------------------------------------------------
 
+#[derive(Debug)]
 struct NegateF64 {
   n: i64,
 }
@@ -362,8 +388,10 @@ impl MechFunction for NegateF64 {
   fn solve(&self) -> Value {
     Value::Number(-self.n)
   }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+#[derive(Debug)]
 struct NegateM2 {
   mat: Matrix2<i64>,
 }
@@ -372,6 +400,7 @@ impl MechFunction for NegateM2 {
   fn solve(&self) -> Value {
     Value::Matrix(Matrix::Matrix2(-self.mat))
   }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
 // Interpreter 
@@ -452,8 +481,13 @@ impl Interpreter {
     for stmnt in &fxn_def.statements {
       self.statement(stmnt, new_fxn.plan.clone(), new_fxn.symbols.clone());
     }
+    
     println!("!!!{:?}", new_fxn.symbols);
-    println!("!!!{:?}", new_fxn.symbols);
+    let plan = new_fxn.plan.borrow();
+    for fxn in plan.iter() {
+      println!("!!!{:?}", fxn.to_string());
+    }
+    
     //self.functions.insert(name_id,new_fxn);
     Ok(Value::Empty)
   }
@@ -756,6 +790,8 @@ impl Interpreter {
     for (op,rhs) in &trm.rhs {
       let rhs_result = self.factor(&rhs, plan.clone(), symbols.clone())?;
       match (lhs_result, rhs_result, op) {
+        (Value::Empty, Value::Empty, FormulaOperator::AddSub(AddSubOp::Add)) =>
+          term_plan.push(Rc::new(AddEmpty{term: trm.clone()})),
         (Value::Number(lhs), Value::Number(rhs), FormulaOperator::AddSub(AddSubOp::Add)) =>
           term_plan.push(Rc::new(AddScalar{lhs,rhs})),
         (Value::Number(lhs), Value::Number(rhs), FormulaOperator::AddSub(AddSubOp::Sub)) =>
