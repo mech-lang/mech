@@ -6,10 +6,7 @@ use mech_syntax::parser2;
 use mech_syntax::analyzer::*;
 use mech_syntax::interpreter::*;
 use std::time::Instant;
-use hashbrown::HashMap;
-use std::cell::RefCell;
 
-use std::rc::Rc;
 
 use std::fs;
 fn main() -> Result<(),MechError> {
