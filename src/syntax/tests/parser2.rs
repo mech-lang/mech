@@ -72,7 +72,7 @@ test_parser!(parse_kind_annotation_size, "foo<u8:3,4>", 8411444293349319);
 test_parser!(parse_kind_annotation_lhs, "z<u8> := 10", 71403132938397338);
 test_parser!(parse_kind_annotation_both, "z<u8> := 10<u8>", 35142481711361869);
 test_parser!(parse_kind_annotation_tuple, "z<(u8,u8)>", 57987489394315533);
-test_parser!(parse_kind_annotation_sted, "z<((u8,u8),u8)>", 64061479951167009);
+test_parser!(parse_kind_annotation_tuple_nested, "z<((u8,u8),u8)>", 64061479951167009);
 test_parser!(parse_kind_annotation_empty, "z<_>", 15408982683395009);
 test_parser!(parse_kind_annotation_atom, "z<`A>", 4301426029334554);
 test_parser!(parse_kind_annotation_vector_dynamic, "z<[u8]:1,_>", 63916155854859674);
