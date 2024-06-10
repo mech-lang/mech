@@ -65,6 +65,7 @@ test_parser!(parse_literal_true, "true", 1252109378846295);
 test_parser!(parse_literal_false, "false", 18374905389476967);
 
 test_parser!(parse_literal_empty, "_", 42646767556506866);
+test_parser!(parse_literal_empty_multi, "_____", 16517769417968924);
 
 test_parser!(parse_kind_annotation, "10<m/s^2>", 41451390958973903);
 test_parser!(parse_kind_annotation_size, "foo<u8:3,4>", 8411444293349319);
