@@ -159,7 +159,7 @@ impl Hash for MechTable {
   }
 }
 
-type Plan = Rc<RefCell<Vec<Rc<dyn MechFunction>>>>;
+type Plan = Rc<RefCell<Vec<Box<dyn MechFunction>>>>;
 type SymbolTable = Rc<RefCell<HashMap<u64,Value>>>;
 
 pub struct FunctionDefinition {
@@ -307,6 +307,21 @@ pub trait MechFunction {
   fn to_string(&self) -> String;
 }
 
+// Define ---------------------------------------------------------------------
+
+#[derive(Debug)]
+struct VarDef {
+  name: u64,
+  source: u64,
+}
+
+impl MechFunction for VarDef {
+  fn solve(&self) -> Value {
+    Value::Empty
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 // Add ------------------------------------------------------------------------
 
 #[derive(Debug)]
@@ -318,7 +333,7 @@ impl MechFunction for AddEmpty {
   fn solve(&self) -> Value {
     Value::Empty
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("AddEmpty")}
 }
 
 #[derive(Debug)]
@@ -542,6 +557,9 @@ impl Interpreter {
     let result = self.expression(&var_def.expression, plan.clone(), symbols.clone())?;
     let mut symbols_brrw = symbols.borrow_mut();
     symbols_brrw.insert(id,result.clone());
+    let var_def = VarDef{name: id, source: 0};
+    let mut plan_brrw = plan.borrow_mut();
+    plan_brrw.push(Box::new(var_def));
     Ok(result)
   }
 
@@ -800,14 +818,14 @@ impl Interpreter {
             let fxn = NegateM2{mat}; 
             let out: Value = fxn.solve();
             let mut plan_brrw = plan.borrow_mut();
-            plan_brrw.push(Rc::new(fxn));
+            plan_brrw.push(Box::new(fxn));
             return Ok(out);
           }
           Value::Number(n) => {
             let fxn = NegateF64{n}; 
             let out: Value = fxn.solve();
             let mut plan_brrw = plan.borrow_mut();
-            plan_brrw.push(Rc::new(fxn));
+            plan_brrw.push(Box::new(fxn));
             return Ok(out);
           }
           _ => todo!(),
@@ -819,7 +837,7 @@ impl Interpreter {
           let fxn = TransposeM2{mat}; 
           let out: Value = fxn.solve();
           let mut plan_brrw = plan.borrow_mut();
-          plan_brrw.push(Rc::new(fxn));
+          plan_brrw.push(Box::new(fxn));
           return Ok(out);
         }
         return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 652, kind: MechErrorKind::None});
@@ -829,22 +847,22 @@ impl Interpreter {
 
   fn term(&mut self, trm: &Term, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
     let mut lhs_result = self.factor(&trm.lhs, plan.clone(), symbols.clone())?;
-    let mut term_plan: Vec<Rc<dyn MechFunction>> = vec![];
+    let mut term_plan: Vec<Box<dyn MechFunction>> = vec![];
     for (op,rhs) in &trm.rhs {
       let rhs_result = self.factor(&rhs, plan.clone(), symbols.clone())?;
       match (lhs_result, rhs_result, op) {
         (Value::Empty, Value::Empty, FormulaOperator::AddSub(AddSubOp::Add)) =>
-          term_plan.push(Rc::new(AddEmpty{term: trm.clone()})),
+          term_plan.push(Box::new(AddEmpty{term: trm.clone()})),
         (Value::Number(lhs), Value::Number(rhs), FormulaOperator::AddSub(AddSubOp::Add)) =>
-          term_plan.push(Rc::new(AddScalar{lhs,rhs})),
+          term_plan.push(Box::new(AddScalar{lhs,rhs})),
         (Value::Number(lhs), Value::Number(rhs), FormulaOperator::AddSub(AddSubOp::Sub)) =>
-          term_plan.push(Rc::new(SubScalar{lhs,rhs})),
+          term_plan.push(Box::new(SubScalar{lhs,rhs})),
         (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) =>
-          term_plan.push(Rc::new(AddRv3Rv3{lhs,rhs})),
+          term_plan.push(Box::new(AddRv3Rv3{lhs,rhs})),
         (Value::Matrix(Matrix::Matrix3(lhs)), Value::Matrix(Matrix::Matrix3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) =>
-          term_plan.push(Rc::new(AddM3M3{lhs,rhs})),
+          term_plan.push(Box::new(AddM3M3{lhs,rhs})),
         (Value::Matrix(Matrix::Matrix2(lhs)), Value::Matrix(Matrix::Matrix2(rhs)), FormulaOperator::Vec(VecOp::MatMul)) => 
-          term_plan.push(Rc::new(MatMulM2M2{lhs,rhs})),
+          term_plan.push(Box::new(MatMulM2M2{lhs,rhs})),
         x => {
           return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 685, kind: MechErrorKind::UnhandledFunctionArgumentKind});
         }
