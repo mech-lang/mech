@@ -26,6 +26,7 @@ pub enum Value {
   Map(MechMap),
   Record(MechMap),
   Table(MechTable),
+  Tuple(MechTuple),
   Id(u64),
   Empty
 }
@@ -42,6 +43,7 @@ impl Hash for Value {
       Value::Map(x) => x.hash(state),
       Value::Record(x) => x.hash(state),
       Value::Table(x) => x.hash(state),
+      Value::Tuple(x) => x.hash(state),
       Value::Id(x) => x.hash(state),
       Value::Empty => Value::Empty.hash(state),
     }
@@ -60,6 +62,7 @@ impl Value {
       Value::Set(x) => (1,x.set.len()),
       Value::Map(x) => (1,x.map.len()),
       Value::Record(x) => (1,x.map.len()),
+      Value::Tuple(x) => (1,x.size()),
       Value::Empty => (0,0),
       Value::Id(x) => (0,0),
     }
@@ -261,6 +264,34 @@ impl Matrix {
     }
   }
 }
+
+// ------------------------------------------------------------------------
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MechTuple {
+  elements: Vec<Box<Value>>
+}
+
+impl MechTuple {
+
+  pub fn from_vec(elements: Vec<Value>) -> Self {
+    MechTuple{elements: elements.iter().map(|m| Box::new(m.clone())).collect::<Vec<Box<Value>>>()}
+  }
+
+  pub fn size(&self) -> usize {
+    self.elements.len()
+  }
+
+}
+
+impl Hash for MechTuple {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    for x in self.elements.iter() {
+        x.hash(state)
+    }
+  }
+}
+
 
 // Functions
 // ------------------------------------------------------------------------
@@ -577,7 +608,7 @@ impl Interpreter {
       Subscript::Brace(x) => todo!(),
       Subscript::All => todo!(),
     }
-    return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 373, kind: MechErrorKind::None});
+    return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 580, kind: MechErrorKind::None});
   }
 
   fn structure(&mut self, strct: &Structure, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
@@ -586,11 +617,21 @@ impl Interpreter {
       Structure::Record(x) => self.record(&x, plan.clone(), symbols.clone()),
       Structure::Matrix(x) => self.matrix(&x, plan.clone(), symbols.clone()),
       Structure::Table(x) => self.table(&x, plan.clone(), symbols.clone()),
-      Structure::Tuple(x) => todo!(),
+      Structure::Tuple(x) => self.tuple(&x, plan.clone(), symbols.clone()),
       Structure::TupleStruct(x) => todo!(),
       Structure::Set(x) => self.set(&x, plan.clone(), symbols.clone()),
       Structure::Map(x) => self.map(&x, plan.clone(), symbols.clone()),
     }
+  }
+
+  fn tuple(&mut self, tpl: &Tuple, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
+    let mut elements = vec![];
+    for el in &tpl.elements {
+      let result = self.expression(el,plan.clone(),symbols.clone())?;
+      elements.push(Box::new(result));
+    }
+    let mech_tuple = MechTuple{elements};
+    Ok(Value::Tuple(mech_tuple))
   }
 
   fn map(&mut self, mp: &Map, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
