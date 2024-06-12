@@ -51,6 +51,7 @@ test_interpreter!(interpret_matrix2_transpose, "[1 2; 3 4]'", Value::Matrix(Matr
 test_interpreter!(interpret_matrix2_negate, "-[1 2; 3 4]", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![-1,-3,-2,-4]))));
 
 test_interpreter!(interpret_tuple, "(1,true)", Value::Tuple(MechTuple::from_vec(vec![Value::Number(1), Value::Bool(true)])));
+test_interpreter!(interpret_tuple_nested, r#"(1,("Hello",false))"#, Value::Tuple(MechTuple::from_vec(vec![Value::Number(1), Value::Tuple(MechTuple::from_vec(vec![Value::String("Hello".to_string()), Value::Bool(false)]))])));
 
 test_interpreter!(interpret_slice, "a := [1,2,3]; a[2]", Value::Number(2));
 test_interpreter!(interpret_slice_2d, "a := [1,2,3]; a[1,2]", Value::Number(2));
