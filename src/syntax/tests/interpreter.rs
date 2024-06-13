@@ -42,6 +42,7 @@ test_interpreter!(interpret_formula_sub, "1 - 1", Value::Number(0));
 test_interpreter!(interpret_formula_neg, "-1", Value::Number(-1));
 test_interpreter!(interpret_formula_multiple_terms, "1 + 2 + 3", Value::Number(6));
 test_interpreter!(interpret_formula_unicode, "😃:=1;🤦🏼‍♂️:=2;y̆és:=🤦🏼‍♂️ + 😃", Value::Number(3));
+test_interpreter!(interpret_formula_gt, "10 > 11", Value::Bool(false));
 
 test_interpreter!(interpret_statement_variable_define, "x := 123", Value::Number(123));
 

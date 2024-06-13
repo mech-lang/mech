@@ -322,6 +322,21 @@ impl MechFunction for VarDef {
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+// Greater Than ---------------------------------------------------------------
+
+#[derive(Debug)]
+struct GTScalar {
+  lhs: i64,
+  rhs: i64,
+}
+
+impl MechFunction for GTScalar {
+  fn solve(&self) -> Value {
+    Value::Bool(self.lhs > self.rhs)
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 // Add ------------------------------------------------------------------------
 
 #[derive(Debug)]
@@ -853,6 +868,8 @@ impl Interpreter {
       match (lhs_result, rhs_result, op) {
         (Value::Empty, Value::Empty, FormulaOperator::AddSub(AddSubOp::Add)) =>
           term_plan.push(Box::new(AddEmpty{term: trm.clone()})),
+        (Value::Number(lhs), Value::Number(rhs), FormulaOperator::Comparison(ComparisonOp::GreaterThan)) =>
+          term_plan.push(Box::new(GTScalar{lhs,rhs})),
         (Value::Number(lhs), Value::Number(rhs), FormulaOperator::AddSub(AddSubOp::Add)) =>
           term_plan.push(Box::new(AddScalar{lhs,rhs})),
         (Value::Number(lhs), Value::Number(rhs), FormulaOperator::AddSub(AddSubOp::Sub)) =>
