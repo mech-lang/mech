@@ -35,6 +35,7 @@ use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, Ro
 test_interpreter!(interpret_literal_integer, "123", Value::Number(123));
 test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String("Hello".to_string()));
 test_interpreter!(interpret_literal_true, "true", Value::Bool(true));
+test_interpreter!(interpret_literal_atom, "`A", Value::Atom(55450514845822917));
 
 test_interpreter!(interpret_formula_add, "1 + 1", Value::Number(2));
 test_interpreter!(interpret_formula_sub, "1 - 1", Value::Number(0));

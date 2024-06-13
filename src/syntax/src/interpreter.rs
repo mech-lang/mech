@@ -881,11 +881,16 @@ impl Interpreter {
       Literal::Boolean(bln) => self.boolean(bln),
       Literal::Number(num) => self.number(num),
       Literal::String(strng) => self.string(strng),
-      Literal::Atom(atm) => todo!(),
+      Literal::Atom(atm) => self.atom(atm),
       Literal::TypedLiteral((ltrl,kind)) => {
         todo!();
       },
     }
+  }
+
+  fn atom(&mut self, atm: &Atom) -> Value {
+    let id = atm.name.hash();
+    Value::Atom(id)
   }
 
   fn number(&mut self, num: &Number) -> Value {
