@@ -48,9 +48,10 @@ test_interpreter!(interpret_statement_variable_define, "x := 123", Value::Number
 
 test_interpreter!(interpret_variable_recall, "a := 1; b := 2; a", Value::Number(1));
 
-test_interpreter!(interpret_matrix2, "[1 2; 3 4]", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![1,3,2,4]))));
-test_interpreter!(interpret_matrix2_transpose, "[1 2; 3 4]'", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![1,2,3,4]))));
-test_interpreter!(interpret_matrix2_negate, "-[1 2; 3 4]", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![-1,-3,-2,-4]))));
+test_interpreter!(interpret_matrix_mat2, "[1 2; 3 4]", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![1,3,2,4]))));
+test_interpreter!(interpret_matrix_transpose, "[1 2; 3 4]'", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![1,2,3,4]))));
+test_interpreter!(interpret_matrix_negate, "-[1 2; 3 4]", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![-1,-3,-2,-4]))));
+test_interpreter!(interpret_matrix_row3_add, "[1 2 3] + [4 5 6]", Value::Matrix(Matrix::RowVector3(RowVector3::from_vec(vec![5,7,9]))));
 
 test_interpreter!(interpret_tuple, "(1,true)", Value::Tuple(MechTuple::from_vec(vec![Value::Number(1), Value::Bool(true)])));
 test_interpreter!(interpret_tuple_nested, r#"(1,("Hello",false))"#, Value::Tuple(MechTuple::from_vec(vec![Value::Number(1), Value::Tuple(MechTuple::from_vec(vec![Value::String("Hello".to_string()), Value::Bool(false)]))])));
