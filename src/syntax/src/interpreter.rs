@@ -466,6 +466,36 @@ impl MechFunction for SubRv3Rv3 {
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+// Mul ------------------------------------------------------------------------
+
+#[derive(Debug)]
+struct MulScalar {
+  lhs: i64,
+  rhs: i64,
+}
+
+impl MechFunction for MulScalar {
+  fn solve(&self) -> Value {
+    Value::Number(self.lhs * self.rhs)
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// Div ------------------------------------------------------------------------
+
+#[derive(Debug)]
+struct DivScalar {
+  lhs: i64,
+  rhs: i64,
+}
+
+impl MechFunction for DivScalar {
+  fn solve(&self) -> Value {
+    Value::Number(self.lhs / self.rhs)
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 // MatMul ---------------------------------------------------------------------
 
 #[derive(Debug)]
@@ -950,6 +980,12 @@ impl Interpreter {
           term_plan.push(Box::new(SubScalar{lhs,rhs})),
         (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Sub)) =>
           term_plan.push(Box::new(SubRv3Rv3{lhs,rhs})),
+        // Mul
+        (Value::Number(lhs), Value::Number(rhs), FormulaOperator::MulDiv(MulDivOp::Mul)) =>
+          term_plan.push(Box::new(MulScalar{lhs,rhs})),
+        // Div
+        (Value::Number(lhs), Value::Number(rhs), FormulaOperator::MulDiv(MulDivOp::Div)) =>
+          term_plan.push(Box::new(DivScalar{lhs,rhs})),
         // Mat Mul
         (Value::Matrix(Matrix::Matrix2(lhs)), Value::Matrix(Matrix::Matrix2(rhs)), FormulaOperator::Vec(VecOp::MatMul)) => 
           term_plan.push(Box::new(MatMulM2M2{lhs,rhs})),

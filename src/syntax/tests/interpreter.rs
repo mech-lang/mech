@@ -39,6 +39,9 @@ test_interpreter!(interpret_literal_atom, "`A", Value::Atom(55450514845822917));
 
 test_interpreter!(interpret_formula_math_add, "1 + 1", Value::Number(2));
 test_interpreter!(interpret_formula_math_sub, "1 - 1", Value::Number(0));
+test_interpreter!(interpret_formula_math_mul, "2 * 2", Value::Number(4));
+test_interpreter!(interpret_formula_math_div, "2 / 2", Value::Number(1));
+
 test_interpreter!(interpret_formula_math_neg, "-1", Value::Number(-1));
 test_interpreter!(interpret_formula_math_multiple_terms, "1 + 2 + 3", Value::Number(6));
 test_interpreter!(interpret_formula_comparison_gt, "10 > 11", Value::Bool(false));
