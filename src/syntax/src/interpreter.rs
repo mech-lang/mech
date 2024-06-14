@@ -337,6 +337,21 @@ impl MechFunction for GTScalar {
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+// Less Than ---------------------------------------------------------------
+
+#[derive(Debug)]
+struct LTScalar {
+  lhs: i64,
+  rhs: i64,
+}
+
+impl MechFunction for LTScalar {
+  fn solve(&self) -> Value {
+    Value::Bool(self.lhs < self.rhs)
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 // Add ------------------------------------------------------------------------
 
 #[derive(Debug)]
@@ -403,6 +418,20 @@ struct SubScalar {
 impl MechFunction for SubScalar {
   fn solve(&self) -> Value {
     Value::Number(self.lhs - self.rhs)
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+#[derive(Debug)]
+struct SubRv3Rv3 {
+  lhs: RowVector3<i64>,
+  rhs: RowVector3<i64>,
+}
+
+impl MechFunction for SubRv3Rv3 {
+  fn solve(&self) -> Value {
+    let result = &self.lhs - &self.rhs;
+    Value::Matrix(Matrix::RowVector3(result))
   }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
@@ -866,18 +895,26 @@ impl Interpreter {
     for (op,rhs) in &trm.rhs {
       let rhs_result = self.factor(&rhs, plan.clone(), symbols.clone())?;
       match (lhs_result, rhs_result, op) {
-        (Value::Empty, Value::Empty, FormulaOperator::AddSub(AddSubOp::Add)) =>
-          term_plan.push(Box::new(AddEmpty{term: trm.clone()})),
+        // Compare
+        (Value::Number(lhs), Value::Number(rhs), FormulaOperator::Comparison(ComparisonOp::LessThan)) =>
+          term_plan.push(Box::new(LTScalar{lhs,rhs})),          
         (Value::Number(lhs), Value::Number(rhs), FormulaOperator::Comparison(ComparisonOp::GreaterThan)) =>
           term_plan.push(Box::new(GTScalar{lhs,rhs})),
+        // Add
+        (Value::Empty, Value::Empty, FormulaOperator::AddSub(AddSubOp::Add)) =>
+          term_plan.push(Box::new(AddEmpty{term: trm.clone()})),
         (Value::Number(lhs), Value::Number(rhs), FormulaOperator::AddSub(AddSubOp::Add)) =>
           term_plan.push(Box::new(AddScalar{lhs,rhs})),
-        (Value::Number(lhs), Value::Number(rhs), FormulaOperator::AddSub(AddSubOp::Sub)) =>
-          term_plan.push(Box::new(SubScalar{lhs,rhs})),
         (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) =>
           term_plan.push(Box::new(AddRv3Rv3{lhs,rhs})),
         (Value::Matrix(Matrix::Matrix3(lhs)), Value::Matrix(Matrix::Matrix3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) =>
           term_plan.push(Box::new(AddM3M3{lhs,rhs})),
+        // Sub
+        (Value::Number(lhs), Value::Number(rhs), FormulaOperator::AddSub(AddSubOp::Sub)) =>
+          term_plan.push(Box::new(SubScalar{lhs,rhs})),
+        (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Sub)) =>
+          term_plan.push(Box::new(SubRv3Rv3{lhs,rhs})),
+        // Mat Mul
         (Value::Matrix(Matrix::Matrix2(lhs)), Value::Matrix(Matrix::Matrix2(rhs)), FormulaOperator::Vec(VecOp::MatMul)) => 
           term_plan.push(Box::new(MatMulM2M2{lhs,rhs})),
         x => {
