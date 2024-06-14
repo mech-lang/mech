@@ -352,6 +352,36 @@ impl MechFunction for LTScalar {
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+// And ------------------------------------------------------------------------
+
+#[derive(Debug)]
+struct AndScalar {
+  lhs: bool,
+  rhs: bool,
+}
+
+impl MechFunction for AndScalar {
+  fn solve(&self) -> Value {
+    Value::Bool(self.lhs && self.rhs)
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+// Or ------------------------------------------------------------------------
+
+#[derive(Debug)]
+struct OrScalar {
+  lhs: bool,
+  rhs: bool,
+}
+
+impl MechFunction for OrScalar {
+  fn solve(&self) -> Value {
+    Value::Bool(self.lhs || self.rhs)
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 // Add ------------------------------------------------------------------------
 
 #[derive(Debug)]
@@ -900,6 +930,12 @@ impl Interpreter {
           term_plan.push(Box::new(LTScalar{lhs,rhs})),          
         (Value::Number(lhs), Value::Number(rhs), FormulaOperator::Comparison(ComparisonOp::GreaterThan)) =>
           term_plan.push(Box::new(GTScalar{lhs,rhs})),
+        // And
+        (Value::Bool(lhs), Value::Bool(rhs), FormulaOperator::Logic(LogicOp::And)) =>
+          term_plan.push(Box::new(AndScalar{lhs,rhs})),
+        // Or
+        (Value::Bool(lhs), Value::Bool(rhs), FormulaOperator::Logic(LogicOp::Or)) =>
+          term_plan.push(Box::new(OrScalar{lhs,rhs})),
         // Add
         (Value::Empty, Value::Empty, FormulaOperator::AddSub(AddSubOp::Add)) =>
           term_plan.push(Box::new(AddEmpty{term: trm.clone()})),

@@ -44,6 +44,10 @@ test_interpreter!(interpret_formula_math_multiple_terms, "1 + 2 + 3", Value::Num
 test_interpreter!(interpret_formula_comparison_gt, "10 > 11", Value::Bool(false));
 test_interpreter!(interpret_formula_comparison_lt, "10 < 11", Value::Bool(true));
 test_interpreter!(interpret_formula_unicode, "😃:=1;🤦🏼‍♂️:=2;y̆és:=🤦🏼‍♂️ + 😃", Value::Number(3));
+test_interpreter!(interpret_formula_logic_and, "true & true", Value::Bool(true));
+test_interpreter!(interpret_formula_logic_and2, "true & false", Value::Bool(false));
+test_interpreter!(interpret_formula_logic_or, "true | false", Value::Bool(true));
+test_interpreter!(interpret_formula_logic_or2, "false | false", Value::Bool(false));
 
 test_interpreter!(interpret_statement_variable_define, "x := 123", Value::Number(123));
 
