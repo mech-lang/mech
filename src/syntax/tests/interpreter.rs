@@ -35,7 +35,9 @@ use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, Ro
 test_interpreter!(interpret_literal_integer, "123", Value::Number(123));
 test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String("Hello".to_string()));
 test_interpreter!(interpret_literal_true, "true", Value::Bool(true));
+test_interpreter!(interpret_literal_false, "false", Value::Bool(false));
 test_interpreter!(interpret_literal_atom, "`A", Value::Atom(55450514845822917));
+test_interpreter!(interpret_literal_empty, "_", Value::Empty);
 
 test_interpreter!(interpret_formula_math_add, "2 + 2", Value::Number(4));
 test_interpreter!(interpret_formula_math_sub, "2 - 2", Value::Number(0));
@@ -56,6 +58,9 @@ test_interpreter!(interpret_formula_logic_or2, "false | false", Value::Bool(fals
 test_interpreter!(interpret_statement_variable_define, "x := 123", Value::Number(123));
 
 test_interpreter!(interpret_variable_recall, "a := 1; b := 2; a", Value::Number(1));
+
+test_interpreter!(interpret_matrix_range_exclusive, "1..4", Value::Matrix(Matrix::RowDVector(RowDVector::from_vec(vec![1,2,3]))));
+test_interpreter!(interpret_matrix_range_inclusive, "1..=4", Value::Matrix(Matrix::RowDVector(RowDVector::from_vec(vec![1,2,3,4]))));
 
 test_interpreter!(interpret_matrix_mat2, "[1 2; 3 4]", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![1,3,2,4]))));
 test_interpreter!(interpret_matrix_transpose, "[1 2; 3 4]'", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![1,2,3,4]))));

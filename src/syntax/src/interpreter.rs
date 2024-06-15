@@ -511,6 +511,35 @@ impl MechFunction for ExpScalar {
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+// Range ------------------------------------------------------------------------
+
+#[derive(Debug)]
+struct RangeExclusive {
+  max: i64,
+  min: i64,
+}
+
+impl MechFunction for RangeExclusive {
+  fn solve(&self) -> Value {
+    Value::Matrix(Matrix::RowDVector(RowDVector::from_vec((self.min..self.max).collect::<Vec<i64>>())))
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+#[derive(Debug)]
+struct RangeInclusive {
+  max: i64,
+  min: i64,
+}
+
+impl MechFunction for RangeInclusive {
+  fn solve(&self) -> Value {
+    Value::Matrix(Matrix::RowDVector(RowDVector::from_vec((self.min..=self.max).collect::<Vec<i64>>())))
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+
 // MatMul ---------------------------------------------------------------------
 
 #[derive(Debug)]
@@ -1007,6 +1036,11 @@ impl Interpreter {
         // Or
         (Value::Bool(lhs), Value::Bool(rhs), FormulaOperator::Logic(LogicOp::Or)) =>
           term_plan.push(Box::new(OrScalar{lhs,rhs})),        
+        // Range
+        (Value::Number(min), Value::Number(max), FormulaOperator::Range(RangeOp::Exclusive)) =>
+          term_plan.push(Box::new(RangeExclusive{max,min})),       
+        (Value::Number(min), Value::Number(max), FormulaOperator::Range(RangeOp::Inclusive)) =>
+          term_plan.push(Box::new(RangeInclusive{max,min})), 
         x => {
           return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 685, kind: MechErrorKind::UnhandledFunctionArgumentKind});
         }
