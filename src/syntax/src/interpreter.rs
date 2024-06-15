@@ -714,6 +714,7 @@ impl Interpreter {
   fn expression(&mut self, expr: &Expression, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
     match &expr {
       Expression::Var(v) => self.var(&v, symbols.clone()),
+      Expression::Range(rng) => self.range(&rng, plan.clone(), symbols.clone()),
       Expression::Slice(slc) => self.slice(&slc, plan.clone(), symbols.clone()),
       Expression::Formula(fctr) => self.factor(fctr, plan.clone(), symbols.clone()),
       Expression::Structure(strct) => self.structure(strct, plan.clone(), symbols.clone()),
@@ -721,6 +722,24 @@ impl Interpreter {
       Expression::FunctionCall(_) => todo!(),
       Expression::FsmPipe(_) => todo!(),
     }
+  }
+
+  fn range(&mut self, rng: &RangeExpression, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
+    let start = self.factor(&rng.start, plan.clone(),symbols.clone())?;
+    let terminal = self.factor(&rng.terminal, plan.clone(),symbols.clone())?;
+    let mut plan_brrw = plan.borrow_mut();
+    match (start,terminal,&rng.operator) {
+      (Value::Number(min), Value::Number(max), RangeOp::Exclusive) =>
+        plan_brrw.push(Box::new(RangeExclusive{max,min})),       
+      (Value::Number(min), Value::Number(max), RangeOp::Inclusive) =>
+        plan_brrw.push(Box::new(RangeInclusive{max,min})), 
+      x => {
+        println!("{:?}", x);
+        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 740, kind: MechErrorKind::UnhandledFunctionArgumentKind});
+      }
+    }
+    let res = plan_brrw.last().unwrap().solve();
+    Ok(res)
   }
 
   fn slice(&mut self, slc: &Slice, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
@@ -751,6 +770,7 @@ impl Interpreter {
           _ => todo!(),
         }
       },
+      Subscript::Range(x) => todo!(),
       Subscript::Swizzle(x) => todo!(),
       Subscript::Formula(fctr) => {return self.factor(fctr,plan.clone(), symbols.clone());},
       Subscript::Bracket(subs) => {
@@ -1036,12 +1056,8 @@ impl Interpreter {
         // Or
         (Value::Bool(lhs), Value::Bool(rhs), FormulaOperator::Logic(LogicOp::Or)) =>
           term_plan.push(Box::new(OrScalar{lhs,rhs})),        
-        // Range
-        (Value::Number(min), Value::Number(max), FormulaOperator::Range(RangeOp::Exclusive)) =>
-          term_plan.push(Box::new(RangeExclusive{max,min})),       
-        (Value::Number(min), Value::Number(max), FormulaOperator::Range(RangeOp::Inclusive)) =>
-          term_plan.push(Box::new(RangeInclusive{max,min})), 
         x => {
+          println!("{:?}", x);
           return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 685, kind: MechErrorKind::UnhandledFunctionArgumentKind});
         }
       };

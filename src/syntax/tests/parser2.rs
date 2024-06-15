@@ -84,14 +84,14 @@ test_parser!(parse_kind_annotation_map, "z<{string:u8}>", 24709209651786249);
 test_parser!(parse_kind_annotation_map_nested, "z<{string:{string:u8}}>", 12787900685791211);
 test_parser!(parse_kind_annotation_function, "z<(u8,u8)=(u8)>", 7505600452235802);
 
-test_parser!(parse_range, "1..10", 5844225421276229);
-test_parser!(parse_range_increment, "1..2..10", 47858485653184183);
+test_parser!(parse_range, "1..10", 12982910244952926);
+test_parser!(parse_range_increment, "1..2..10", 55953760740329370);
 
 test_parser!(parse_slice, "a[1]", 44592826654700758);
 test_parser!(parse_slice_nested, "a[a[1]]", 68026688928900201);
 test_parser!(parse_slice_3d, "a[1,2,3]", 22383159065466977);
-test_parser!(parse_slice_range, "a[1..3]", 7469514989823385);
-test_parser!(parse_slice_range_inclusive, "a[1..=3]", 35541432081278011);
+test_parser!(parse_slice_range, "a[1..3]", 1587219038137663);
+test_parser!(parse_slice_range_inclusive, "a[1..=3]", 53965541241723299);
 test_parser!(parse_slice_dot, "a.b", 45658871590006420);
 test_parser!(parse_slice_dot_chain, "a.b.c", 41359157262287512);
 test_parser!(parse_slice_formula, "a[1 + 1]", 31476935489771180);
@@ -100,7 +100,7 @@ test_parser!(parse_slice_multi, "a[:,1,1 + 1]", 32148654415944679);
 test_parser!(parse_slice_logical, "a[[true false true]]", 22988697843305658);
 test_parser!(parse_slice_swizzle, "a.x,x,y", 45252841116611977);
 test_parser!(parse_slice_key, r#"a{"foo"}"#, 56850274883809298);
-test_parser!(parse_slice_mega, r#"a.x.y[1,1 + 1,[1 2 3],1..3,1..=3].a,b,b,c{"foo"}"#, 6897376440205456);
+test_parser!(parse_slice_mega, r#"a.x.y[1,1 + 1,[1 2 3],1..3,1..=3].a,b,b,c{"foo"}"#, 68153246169941525);
 
 
 test_parser!(parse_matrix_empty, "[]", 20166184779250868);

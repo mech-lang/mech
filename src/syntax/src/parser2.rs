@@ -1494,16 +1494,14 @@ pub fn range_exclusive(input: ParseString) -> ParseResult<RangeOp> {
 }
 
 // range_operator := range_inclusive | range_exclusive ;
-pub fn range_operator(input: ParseString) -> ParseResult<FormulaOperator> {
+pub fn range_operator(input: ParseString) -> ParseResult<RangeOp> {
   let (input, op) = alt((range_inclusive,range_exclusive))(input)?;
-  Ok((input, FormulaOperator::Range(op)))
+  Ok((input, op))
 }
 
 // formula := l1, (range_operator, l1)* ;
 pub fn formula(input: ParseString) -> ParseResult<Factor> {
-  let (input, lhs) = l1(input)?;
-  let (input, rhs) = many0(nom_tuple((range_operator,l1)))(input)?;
-  let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
+  let (input, factor) = l1(input)?;
   Ok((input, factor))
 }
 
@@ -1860,7 +1858,7 @@ fn dot_subscript(input: ParseString) -> ParseResult<Subscript> {
 // bracket_subscript := "[", list1(",", select_all | formula_subscript) "]" ;
 fn bracket_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, _) = left_bracket(input)?;
-  let (input, subscripts) = separated_list1(list_separator,alt((select_all,formula_subscript)))(input)?;
+  let (input, subscripts) = separated_list1(list_separator,alt((select_all,range_subscript,formula_subscript)))(input)?;
   let (input, _) = right_bracket(input)?;
   Ok((input, Subscript::Bracket(subscripts)))
 }
@@ -1881,10 +1879,27 @@ pub fn select_all(input: ParseString) -> ParseResult<Subscript> {
 
 // formula_subscript := formula ;
 pub fn formula_subscript(input: ParseString) -> ParseResult<Subscript> {
-  let (input, lhs) = l1(input)?;
-  let (input, rhs) = many0(nom_tuple((range_operator,l1)))(input)?;
-  let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
+  let (input, factor) = l1(input)?;
   Ok((input, Subscript::Formula(factor)))
+}
+
+// formula_subscript := formula ;
+pub fn range_subscript(input: ParseString) -> ParseResult<Subscript> {
+  let (input, rng) = range_expression(input)?;
+  Ok((input, Subscript::Range(rng)))
+}
+
+// range
+pub fn range_expression(input: ParseString) -> ParseResult<RangeExpression> {
+  let (input, start) = formula(input)?;
+  let (input, op) = range_operator(input)?;
+  let (input, x) = formula(input)?;
+  let (input, y) = opt(nom_tuple((range_operator,formula)))(input)?;
+  let range = match y {
+    Some((op2,terminal)) => RangeExpression{start, increment: Some((op,x)), operator: op2, terminal},
+    None => RangeExpression{start, increment: None, operator: op, terminal: x},
+  };
+  Ok((input, range))
 }
 
 // tuple := "(", list0(",", expression), ")" ;
@@ -1899,13 +1914,13 @@ pub fn tuple(input: ParseString) -> ParseResult<Tuple> {
 
 // expression := formula, transpose? ;
 pub fn expression(input: ParseString) -> ParseResult<Expression> {
-  let (input, expr) = match formula(input.clone()) {
-    Ok((input, Factor::Expression(expr))) => (input, *expr),
-    Ok((input, fctr)) => (input, Expression::Formula(fctr)),
-    //Err(Failure(err)) => {
-    //  return Err(Failure(err));
-    //}
-    Err(err) => {return Err(err);},
+  let (input, expr) = match range_expression(input.clone()) {
+    Ok((input, rng)) => (input, Expression::Range(Box::new(rng))),
+    Err(_) => match formula(input.clone()) {
+      Ok((input, Factor::Expression(expr))) => (input, *expr),
+      Ok((input, fctr)) => (input, Expression::Formula(fctr)),
+      Err(err) => {return Err(err);},
+    } 
   };
   Ok((input, expr))
 }

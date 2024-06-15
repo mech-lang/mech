@@ -21,7 +21,7 @@ pub mod parser;
 pub mod parser2;
 pub mod ast;
 pub mod compiler;
-pub mod analyzer;
+//pub mod analyzer;
 #[cfg(feature="lang-server")]
 pub mod langserver;
 pub mod formatter;

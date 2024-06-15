@@ -1180,6 +1180,7 @@ pub struct Slice {
 pub enum Subscript {
   Dot(Identifier),          // a.b
   Swizzle(Vec<Identifier>), // a.b,c
+  Range(RangeExpression),   // a[1 + 1]
   Formula(Factor),          // a[1 + 1]
   All,                      // a[:]
   Bracket(Vec<Subscript>),  // a[1,2,3]
@@ -1189,6 +1190,7 @@ pub enum Subscript {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Expression {
   Var(Var),
+  Range(Box<RangeExpression>),
   Slice(Slice),
   Formula(Factor),
   Structure(Structure),
@@ -1439,8 +1441,15 @@ pub enum FormulaOperator {
   AddSub(AddSubOp),
   MulDiv(MulDivOp),
   Exponent(ExponentOp),
-  Range(RangeOp),
   Vec(VecOp),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RangeExpression {
+  pub start: Factor,
+  pub increment: Option<(RangeOp,Factor)>,
+  pub operator: RangeOp,
+  pub terminal: Factor,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
