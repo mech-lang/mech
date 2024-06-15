@@ -496,6 +496,21 @@ impl MechFunction for DivScalar {
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
+// Exp ------------------------------------------------------------------------
+
+#[derive(Debug)]
+struct ExpScalar {
+  lhs: i64,
+  rhs: i64,
+}
+
+impl MechFunction for ExpScalar {
+  fn solve(&self) -> Value {
+    Value::Number(self.lhs.pow(self.rhs as u32))
+  }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
 // MatMul ---------------------------------------------------------------------
 
 #[derive(Debug)]
@@ -955,17 +970,6 @@ impl Interpreter {
     for (op,rhs) in &trm.rhs {
       let rhs_result = self.factor(&rhs, plan.clone(), symbols.clone())?;
       match (lhs_result, rhs_result, op) {
-        // Compare
-        (Value::Number(lhs), Value::Number(rhs), FormulaOperator::Comparison(ComparisonOp::LessThan)) =>
-          term_plan.push(Box::new(LTScalar{lhs,rhs})),          
-        (Value::Number(lhs), Value::Number(rhs), FormulaOperator::Comparison(ComparisonOp::GreaterThan)) =>
-          term_plan.push(Box::new(GTScalar{lhs,rhs})),
-        // And
-        (Value::Bool(lhs), Value::Bool(rhs), FormulaOperator::Logic(LogicOp::And)) =>
-          term_plan.push(Box::new(AndScalar{lhs,rhs})),
-        // Or
-        (Value::Bool(lhs), Value::Bool(rhs), FormulaOperator::Logic(LogicOp::Or)) =>
-          term_plan.push(Box::new(OrScalar{lhs,rhs})),
         // Add
         (Value::Empty, Value::Empty, FormulaOperator::AddSub(AddSubOp::Add)) =>
           term_plan.push(Box::new(AddEmpty{term: trm.clone()})),
@@ -986,9 +990,23 @@ impl Interpreter {
         // Div
         (Value::Number(lhs), Value::Number(rhs), FormulaOperator::MulDiv(MulDivOp::Div)) =>
           term_plan.push(Box::new(DivScalar{lhs,rhs})),
+        // Exp
+        (Value::Number(lhs), Value::Number(rhs), FormulaOperator::Exponent(ExponentOp::Exp)) =>
+          term_plan.push(Box::new(ExpScalar{lhs,rhs})),          
         // Mat Mul
         (Value::Matrix(Matrix::Matrix2(lhs)), Value::Matrix(Matrix::Matrix2(rhs)), FormulaOperator::Vec(VecOp::MatMul)) => 
           term_plan.push(Box::new(MatMulM2M2{lhs,rhs})),
+        // Compare
+        (Value::Number(lhs), Value::Number(rhs), FormulaOperator::Comparison(ComparisonOp::LessThan)) =>
+          term_plan.push(Box::new(LTScalar{lhs,rhs})),          
+        (Value::Number(lhs), Value::Number(rhs), FormulaOperator::Comparison(ComparisonOp::GreaterThan)) =>
+          term_plan.push(Box::new(GTScalar{lhs,rhs})),
+        // And
+        (Value::Bool(lhs), Value::Bool(rhs), FormulaOperator::Logic(LogicOp::And)) =>
+          term_plan.push(Box::new(AndScalar{lhs,rhs})),
+        // Or
+        (Value::Bool(lhs), Value::Bool(rhs), FormulaOperator::Logic(LogicOp::Or)) =>
+          term_plan.push(Box::new(OrScalar{lhs,rhs})),        
         x => {
           return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 685, kind: MechErrorKind::UnhandledFunctionArgumentKind});
         }
