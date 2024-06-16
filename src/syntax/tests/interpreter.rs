@@ -62,6 +62,8 @@ test_interpreter!(interpret_variable_recall, "a := 1; b := 2; a", Value::Number(
 test_interpreter!(interpret_matrix_range_exclusive, "1..4", Value::Matrix(Matrix::RowDVector(RowDVector::from_vec(vec![1,2,3]))));
 test_interpreter!(interpret_matrix_range_inclusive, "1..=4", Value::Matrix(Matrix::RowDVector(RowDVector::from_vec(vec![1,2,3,4]))));
 
+test_interpreter!(interpret_matrix_empty, "[]", Value::Matrix(Matrix::DMatrix(DMatrix::from_vec(0,0,vec![]))));
+test_interpreter!(interpret_matrix_mat1, "[123]", Value::Matrix(Matrix::Matrix1(Matrix1::from_vec(vec![123]))));
 test_interpreter!(interpret_matrix_mat2, "[1 2; 3 4]", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![1,3,2,4]))));
 test_interpreter!(interpret_matrix_transpose, "[1 2; 3 4]'", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![1,2,3,4]))));
 test_interpreter!(interpret_matrix_negate, "-[1 2; 3 4]", Value::Matrix(Matrix::Matrix2(Matrix2::from_vec(vec![-1,-3,-2,-4]))));
@@ -74,6 +76,7 @@ test_interpreter!(interpret_tuple_nested, r#"(1,("Hello",false))"#, Value::Tuple
 test_interpreter!(interpret_slice, "a := [1,2,3]; a[2]", Value::Number(2));
 test_interpreter!(interpret_slice_2d, "a := [1,2,3]; a[1,2]", Value::Number(2));
 
+test_interpreter!(interpret_set_empty,"{_}", Value::Set(MechSet::from_vec(vec![])));
 test_interpreter!(interpret_set,"{1,2,3}", Value::Set(MechSet::from_vec(vec![Value::Number(1),Value::Number(2),Value::Number(3)])));
 test_interpreter!(interpret_record,r#"{a: 1, b: "Hello"}"#, Value::Record(MechMap::from_vec(vec![(Value::Id(55170961230981453),Value::Number(1)),(Value::Id(44311847522083591),Value::String("Hello".to_string()))])));
 test_interpreter!(interpret_record_field_access,r#"a := {x: 1,  y: 2}; a.y"#, Value::Number(2));

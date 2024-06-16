@@ -909,6 +909,9 @@ impl Interpreter {
       let result = self.matrix_row(row, plan.clone(), symbols.clone())?;
       out.push(result);
     }
+    if out.is_empty() {
+      return Ok(Value::Matrix(Matrix::DMatrix(DMatrix::from_vec(0,0,vec![]))));
+    }
     let (_,col_n) = out[0].shape();
     let out_vec = match (out.len(),col_n) {
       (1,_) => out[0].clone(),

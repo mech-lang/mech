@@ -777,6 +777,10 @@ fn max_err<'a>(x: Option<ParseError<'a>>, y: ParseError<'a>) -> ParseError<'a> {
 
 // structure := empty_table | matrix | table | tuple | tuple_struct | record | map | set ;
 pub fn structure(input: ParseString) -> ParseResult<Structure> {
+  match empty_set(input.clone()) {
+    Ok((input, set)) => {return Ok((input, Structure::Set(set)));},
+    _ => (),
+  }
   match empty_table(input.clone()) {
     Ok((input, _)) => {return Ok((input, Structure::Empty));},
     _ => (),
@@ -997,10 +1001,17 @@ pub fn table(input: ParseString) -> ParseResult<Table> {
 pub fn empty_table(input: ParseString) -> ParseResult<Structure> {
   let (input, _) = table_start(input)?;
   let (input, _) = whitespace0(input)?;
+  let (input, _) = table_end(input)?;
+  Ok((input, Structure::Empty))
+}
+
+pub fn empty_set(input: ParseString) -> ParseResult<Set> {
+  let (input, _) = table_start(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = opt(empty)(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, _) = table_end(input)?;
-  Ok((input, Structure::Empty))
+  Ok((input,  Set{elements: vec![]}))
 }
 
 // record := table_start, binding+, table_end ;
