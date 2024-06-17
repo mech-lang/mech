@@ -7,6 +7,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use mech_core::*;
 use mech_syntax::parser2;
+use std::env;
 
   /// Compare hashed parse tree traces
   macro_rules! test_parser {
