@@ -319,7 +319,7 @@ impl MechFunction for VarDef {
   fn solve(&self) -> Value {
     Value::Empty
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 // Greater Than ---------------------------------------------------------------
@@ -334,7 +334,7 @@ impl MechFunction for GTScalar {
   fn solve(&self) -> Value {
     Value::Bool(self.lhs > self.rhs)
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 // Less Than ---------------------------------------------------------------
@@ -349,7 +349,7 @@ impl MechFunction for LTScalar {
   fn solve(&self) -> Value {
     Value::Bool(self.lhs < self.rhs)
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 // And ------------------------------------------------------------------------
@@ -364,7 +364,7 @@ impl MechFunction for AndScalar {
   fn solve(&self) -> Value {
     Value::Bool(self.lhs && self.rhs)
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 // Or ------------------------------------------------------------------------
@@ -379,7 +379,7 @@ impl MechFunction for OrScalar {
   fn solve(&self) -> Value {
     Value::Bool(self.lhs || self.rhs)
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 // Add ------------------------------------------------------------------------
@@ -406,7 +406,7 @@ impl MechFunction for AddScalar {
   fn solve(&self) -> Value {
     Value::Number(self.lhs + self.rhs)
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 #[derive(Debug)]
@@ -420,7 +420,7 @@ impl MechFunction for AddRv3Rv3 {
     let result = &self.lhs + &self.rhs;
     Value::Matrix(Matrix::RowVector3(result))
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 #[derive(Debug)]
@@ -434,7 +434,7 @@ impl MechFunction for AddM3M3 {
     let result = &self.lhs + &self.rhs;
     Value::Matrix(Matrix::Matrix3(result))
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 // Sub ------------------------------------------------------------------------
@@ -449,7 +449,7 @@ impl MechFunction for SubScalar {
   fn solve(&self) -> Value {
     Value::Number(self.lhs - self.rhs)
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 #[derive(Debug)]
@@ -463,7 +463,7 @@ impl MechFunction for SubRv3Rv3 {
     let result = &self.lhs - &self.rhs;
     Value::Matrix(Matrix::RowVector3(result))
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 // Mul ------------------------------------------------------------------------
@@ -478,7 +478,7 @@ impl MechFunction for MulScalar {
   fn solve(&self) -> Value {
     Value::Number(self.lhs * self.rhs)
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 // Div ------------------------------------------------------------------------
@@ -493,7 +493,7 @@ impl MechFunction for DivScalar {
   fn solve(&self) -> Value {
     Value::Number(self.lhs / self.rhs)
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 // Exp ------------------------------------------------------------------------
@@ -508,7 +508,7 @@ impl MechFunction for ExpScalar {
   fn solve(&self) -> Value {
     Value::Number(self.lhs.pow(self.rhs as u32))
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 // Range ------------------------------------------------------------------------
@@ -523,7 +523,7 @@ impl MechFunction for RangeExclusive {
   fn solve(&self) -> Value {
     Value::Matrix(Matrix::RowDVector(RowDVector::from_vec((self.min..self.max).collect::<Vec<i64>>())))
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 #[derive(Debug)]
@@ -536,7 +536,7 @@ impl MechFunction for RangeInclusive {
   fn solve(&self) -> Value {
     Value::Matrix(Matrix::RowDVector(RowDVector::from_vec((self.min..=self.max).collect::<Vec<i64>>())))
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 
@@ -553,7 +553,7 @@ impl MechFunction for MatMulM2M2 {
     let result = &self.lhs * &self.rhs;
     Value::Matrix(Matrix::Matrix2(result))
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 // Transpose ------------------------------------------------------------------
@@ -568,7 +568,7 @@ impl MechFunction for TransposeM2 {
     let result = self.mat.transpose();
     Value::Matrix(Matrix::Matrix2(result))
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 // Negate ---------------------------------------------------------------------
@@ -582,7 +582,7 @@ impl MechFunction for NegateF64 {
   fn solve(&self) -> Value {
     Value::Number(-self.n)
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 #[derive(Debug)]
@@ -594,7 +594,7 @@ impl MechFunction for NegateM2 {
   fn solve(&self) -> Value {
     Value::Matrix(Matrix::Matrix2(-self.mat))
   }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 // Interpreter 
@@ -640,7 +640,6 @@ impl Interpreter {
     let mut result = None;
     for el in &section.elements {
       result = Some(self.section_element(&el, plan.clone(), symbols.clone())?);
-      println!("Interpreter Result: {:?}", result);
     }
     Ok(result.unwrap())
   }
