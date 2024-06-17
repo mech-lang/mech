@@ -15,36 +15,39 @@ use std::env;
 async fn main() -> Result<(), MechError> {
   
     let args: Vec<_> = env::args().collect();
-    let s = fs::read_to_string(&args[1]).unwrap();
-    match parser2::parse(&s) {
-        Ok(tree) => { 
-          println!("----------- SYNTAX TREE ---------");
-          println!("{:#?}", tree);
-          let mut intrp = Interpreter::new();
-          let result = intrp.interpret(&tree);
-          println!("R: {:#?}", result);
-          println!("{:#?}", intrp.symbols); 
-          for fxn in intrp.plan.borrow().iter() {
-            println!("{:?}", fxn.to_string());
-          }
-          for fxn in intrp.plan.borrow().iter() {
-            fxn.solve();
-          }
-          let tree_string = hash_str(&format!("{:#?}", tree));
-          println!("{:?}", tree_string);
-        },
-        Err(err) => {
-          println!("{:?}", err);          
-          if let MechErrorKind::ParserError(node, report, _) = err.kind {
-            println!("----- TREE -----");
-            println!("{:?}", node);
-            println!("----- MESSAGE -----");
-            parser::print_err_report(&s, &report);
-          } else {
-            panic!("Unexpected error type");
+    match args.get(1) {
+      Some(filename) => {
+        let s = fs::read_to_string(&filename).unwrap();
+        match parser2::parse(&s) {
+          Ok(tree) => { 
+            println!("\n-------------------------------- 🌳 Syntax Tree --------------------------------\n");
+            let tree_hash = hash_str(&format!("{:#?}", tree));
+            println!("Tree Hash: {:?}", tree_hash);
+            println!("{:#?}", tree);
+            let mut intrp = Interpreter::new();
+            let result = intrp.interpret(&tree);
+            println!("\n-------------------------------- 💻 Interpreter --------------------------------\n");
+            println!("Symbols: {:#?}", intrp.symbols); 
+            println!("Plan:"); 
+            for (ix,fxn) in intrp.plan.borrow().iter().enumerate() {
+              println!("  {}. {}", ix + 1, fxn.to_string());
+            }
+            for fxn in intrp.plan.borrow().iter() {
+              fxn.solve();
+            }
+            println!("\n---------------------------------- 🌟 Result ----------------------------------\n");
+            println!("Result:  {:#?}", result);
+          },
+          Err(err) => {
+            if let MechErrorKind::ParserError(tree, report, _) = err.kind {
+              parser::print_err_report(&s, &report);
+            } else {
+              panic!("Unexpected error type");
+            }
           }
         }
+      }
+      None => println!("Missing path to .mec file."),
     }
-
   Ok(())
 }
