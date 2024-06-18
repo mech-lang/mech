@@ -2013,8 +2013,9 @@ pub fn paragraph_starter(input: ParseString) -> ParseResult<ParagraphElement> {
 
 // paragraph_element := text+ ;
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
-  let (input, elements) = match many1(text)(input) {
+  let (input, elements) = match many1(nom_tuple((is_not(define_operator),text)))(input) {
     Ok((input, mut text)) => {
+      let mut text = text.into_iter().map(|(_,tkn)| tkn).collect();
       let mut text = merge_tokens(&mut text).unwrap();
       text.kind = TokenKind::Text;
       (input, ParagraphElement::Text(text))
