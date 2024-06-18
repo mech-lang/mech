@@ -781,8 +781,8 @@ pub fn structure(input: ParseString) -> ParseResult<Structure> {
     Ok((input, set)) => {return Ok((input, Structure::Set(set)));},
     _ => (),
   }
-  match empty_table(input.clone()) {
-    Ok((input, _)) => {return Ok((input, Structure::Empty));},
+  match empty_map(input.clone()) {
+    Ok((input, map)) => {return Ok((input, Structure::Map(map)));},
     _ => (),
   }
   match table(input.clone()) {
@@ -998,17 +998,17 @@ pub fn table(input: ParseString) -> ParseResult<Table> {
 }
 
 // empty_table := table_start, empty?, table_end ;
-pub fn empty_table(input: ParseString) -> ParseResult<Structure> {
+pub fn empty_map(input: ParseString) -> ParseResult<Map> {
   let (input, _) = table_start(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, _) = table_end(input)?;
-  Ok((input, Structure::Empty))
+  Ok((input, Map{elements: vec![]}))
 }
 
 pub fn empty_set(input: ParseString) -> ParseResult<Set> {
   let (input, _) = table_start(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, _) = opt(empty)(input)?;
+  let (input, _) = empty(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, _) = table_end(input)?;
   Ok((input,  Set{elements: vec![]}))

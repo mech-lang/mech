@@ -115,11 +115,11 @@ test_parser!(parse_matrix_2x2, "[1 2; 3 4]", 33529581225564663);
 test_parser!(parse_matrix_tuples, "[(1,2), (3,4)]", 16921021255927653);
 
 test_parser!(parse_set, "{1}", 35956285171394015);
-test_parser!(parse_set_empty, "{_}", 46610421933005859);
+test_parser!(parse_set_empty, "{_}", 46862853373603272);
 test_parser!(parse_set_multiple_elements, "{1,2,3}", 27836895338180221);
 
 test_parser!(parse_map, r#"{"a":10}"#, 40163603282332712);
-test_parser!(parse_map_empty, "{}", 46610421933005859);
+test_parser!(parse_map_empty, "{}", 55962694842201166);
 test_parser!(parse_map_multiple_elements, r#"{"a":10, "b":20, "c": 30}"#, 14390678166496455);
 test_parser!(parse_map_vert, r#"{"a":10 
 "b":20
