@@ -49,6 +49,7 @@ pub enum MechErrorKind {
   GenericError(String),
   FileNotFound(String),
   Unhandled,
+  OutputUndefinedInFunctionBody(u64),
   UnknownFunctionArgument(u64),
   UnknownColumnKind(u64),
   UnhandledFunctionArgumentKind,
