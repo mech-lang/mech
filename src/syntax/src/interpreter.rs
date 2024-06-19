@@ -12,6 +12,7 @@ use std::cell::RefCell;
 use std::hash::{Hash, Hasher};
 use indexmap::set::IndexSet;
 use indexmap::map::IndexMap;
+use std::fmt;
 
 // Value-----------------------------------------------------------------------
 
@@ -28,6 +29,7 @@ pub enum Value {
   Table(MechTable),
   Tuple(MechTuple),
   Id(u64),
+  MutableReference(MutableReferece),
   Empty
 }
 
@@ -45,6 +47,7 @@ impl Hash for Value {
       Value::Table(x) => x.hash(state),
       Value::Tuple(x) => x.hash(state),
       Value::Id(x) => x.hash(state),
+      Value::MutableReference(x) => x.borrow().hash(state),
       Value::Empty => Value::Empty.hash(state),
     }
   }
@@ -63,6 +66,7 @@ impl Value {
       Value::Map(x) => (1,x.map.len()),
       Value::Record(x) => (1,x.map.len()),
       Value::Tuple(x) => (1,x.size()),
+      Value::MutableReference(x) => (1,1),
       Value::Empty => (0,0),
       Value::Id(x) => (0,0),
     }
@@ -161,13 +165,24 @@ impl Hash for MechTable {
 
 type Plan = Rc<RefCell<Vec<Box<dyn MechFunction>>>>;
 type SymbolTable = Rc<RefCell<HashMap<u64,Value>>>;
+type MutableReferece = Rc<RefCell<i64>>;
 
+
+#[derive(Clone)]
 pub struct FunctionDefinition {
   pub id: u64,
   pub input: HashMap<u64, KindAnnotation>,
   pub output: HashMap<u64, KindAnnotation>,
   pub symbols: SymbolTable,
   pub plan: Plan,
+}
+
+impl fmt::Debug for FunctionDefinition {
+  #[inline]
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f,"UsrFxn::{:?}()", self.id)?;
+    Ok(())
+  }
 }
 
 impl FunctionDefinition {
@@ -181,6 +196,15 @@ impl FunctionDefinition {
       plan: Rc::new(RefCell::new(Vec::new())),
     }
   }
+
+  pub fn solve(&self) -> Value {
+    let plan_brrw = self.plan.borrow();
+    for step in plan_brrw.iter() {
+      let result = step.solve();
+    }
+    Value::Empty
+  } 
+
 
 }
 
@@ -307,6 +331,20 @@ pub trait MechFunction {
   fn to_string(&self) -> String;
 }
 
+// User Function --------------------------------------------------------------
+
+#[derive(Debug)]
+struct UserFunction {
+  fxn: FunctionDefinition,
+}
+
+impl MechFunction for UserFunction {
+  fn solve(&self) -> Value {
+    self.fxn.solve()
+  }
+  fn to_string(&self) -> String { format!("{:?}", self)}
+}
+
 // Define ---------------------------------------------------------------------
 
 #[derive(Debug)]
@@ -395,6 +433,20 @@ impl MechFunction for AddEmpty {
   }
   fn to_string(&self) -> String { format!("AddEmpty")}
 }
+
+#[derive(Debug)]
+struct AddScalarRef {
+  lhs: Rc<RefCell<i64>>,
+  rhs: Rc<RefCell<i64>>,
+}
+
+impl MechFunction for AddScalarRef {
+  fn solve(&self) -> Value {
+    Value::Number(*self.lhs.borrow() + *self.rhs.borrow())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self)}
+}
+
 
 #[derive(Debug)]
 struct AddScalar {
@@ -604,7 +656,7 @@ pub struct Interpreter {
   pub symbols: SymbolTable,
   pub plan: Plan,
   pub functions: HashMap<u64,FunctionDefinition>,
-  pub storage: HashMap<u64,Rc<RefCell<Matrix>>>,
+  pub storage: HashMap<u64,Rc<RefCell<Value>>>,
 }
 
 impl Interpreter {
@@ -662,28 +714,33 @@ impl Interpreter {
   }
 
   fn function_define(&mut self, fxn_def: &FunctionDefine, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
-    let name_id = fxn_def.name.hash();
-    let mut new_fxn = FunctionDefinition::new(name_id);
+    let fxn_name_id = fxn_def.name.hash();
+    let mut new_fxn = FunctionDefinition::new(fxn_name_id);
     for input_arg in &fxn_def.input {
       let arg_id = input_arg.name.hash();
       new_fxn.input.insert(arg_id,input_arg.kind.clone());
-      new_fxn.symbols.borrow_mut().insert(arg_id,Value::Empty);
+      let placeholder_value = Value::MutableReference(Rc::new(RefCell::new(0)));
+      new_fxn.symbols.borrow_mut().insert(arg_id, placeholder_value);
     }
     for output_arg in &fxn_def.output {
       let arg_id = output_arg.name.hash();
       new_fxn.output.insert(arg_id,output_arg.kind.clone());
     }
     for stmnt in &fxn_def.statements {
-      self.statement(stmnt, new_fxn.plan.clone(), new_fxn.symbols.clone());
+      let result = self.statement(stmnt, new_fxn.plan.clone(), new_fxn.symbols.clone());
+      println!("{:?}", result);
     }
     
-    println!("!!!{:?}", new_fxn.symbols);
-    let plan = new_fxn.plan.borrow();
-    for fxn in plan.iter() {
-      println!("!!!{:?}", fxn.to_string());
+    {
+      println!("Symbols {:#?}", new_fxn.symbols);
+      let plan = new_fxn.plan.borrow();
+      println!("Plan");
+      for fxn in plan.iter() {
+        println!("   - {}", fxn.to_string());
+      }
     }
     
-    //self.functions.insert(name_id,new_fxn);
+    self.functions.insert(new_fxn.id, new_fxn);
     Ok(Value::Empty)
   }
 
@@ -718,9 +775,27 @@ impl Interpreter {
       Expression::Formula(fctr) => self.factor(fctr, plan.clone(), symbols.clone()),
       Expression::Structure(strct) => self.structure(strct, plan.clone(), symbols.clone()),
       Expression::Literal(ltrl) => Ok(self.literal(&ltrl)),
-      Expression::FunctionCall(_) => todo!(),
+      Expression::FunctionCall(fxn_call) => self.function_call(fxn_call, plan.clone(), symbols.clone()),
       Expression::FsmPipe(_) => todo!(),
     }
+  }
+
+  fn function_call(&mut self, fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
+    let fxn_name_id = fxn_call.name.hash();
+    match self.functions.get(&fxn_name_id) {
+      Some(fxn) => {
+        let mut new_fxn = fxn.clone();
+        for (arg_name, arg_expr) in &fxn_call.args {
+          let result = self.expression(&arg_expr, plan.clone(), symbols.clone())?;
+          // load arguments into function
+        }
+        // schedule function
+        let mut plan_brrw = plan.borrow_mut();
+        plan_brrw.push(Box::new(UserFunction{fxn: new_fxn.clone()}));      
+      }
+      None => { return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 756, kind: MechErrorKind::MissingFunction(fxn_name_id)});}
+    }   
+    Ok(Value::Empty)
   }
 
   fn range(&mut self, rng: &RangeExpression, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
@@ -734,7 +809,7 @@ impl Interpreter {
         plan_brrw.push(Box::new(RangeInclusive{max,min})), 
       x => {
         println!("{:?}", x);
-        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 740, kind: MechErrorKind::UnhandledFunctionArgumentKind});
+        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 776, kind: MechErrorKind::UnhandledFunctionArgumentKind});
       }
     }
     let res = plan_brrw.last().unwrap().solve();
@@ -746,7 +821,7 @@ impl Interpreter {
     let symbols_brrw = symbols.borrow();
     let val: Value = match symbols_brrw.get(name) {
       Some(val) => val.clone(),
-      None => {return Err(MechError{tokens: slc.name.tokens(), msg: "interpreter.rs".to_string(), id: 440, kind: MechErrorKind::UndefinedVariable(*name)});}
+      None => {return Err(MechError{tokens: slc.name.tokens(), msg: "interpreter.rs".to_string(), id: 788, kind: MechErrorKind::UndefinedVariable(*name)});}
     };
     for s in &slc.subscript {
       let s_result = self.subscript(&s, &val, plan.clone(), symbols.clone())?;
@@ -763,7 +838,7 @@ impl Interpreter {
           Value::Record(rcrd) => {
             match rcrd.map.get(&Value::Id(key)) {
               Some(value) => return Ok(value.clone()),
-              None => { return Err(MechError{tokens: x.tokens(), msg: "interpreter.rs".to_string(), id: 434, kind: MechErrorKind::UndefinedField(key)});}
+              None => { return Err(MechError{tokens: x.tokens(), msg: "interpreter.rs".to_string(), id: 805, kind: MechErrorKind::UndefinedField(key)});}
             }
           }
           _ => todo!(),
@@ -793,7 +868,7 @@ impl Interpreter {
       Subscript::Brace(x) => todo!(),
       Subscript::All => todo!(),
     }
-    return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 580, kind: MechErrorKind::None});
+    return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 835, kind: MechErrorKind::None});
   }
 
   fn structure(&mut self, strct: &Structure, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
@@ -970,7 +1045,7 @@ impl Interpreter {
         return Ok(value.clone())         
       }
       None => {
-        return Err(MechError{tokens: v.tokens(), msg: "interpreter.rs".to_string(), id: 618, kind: MechErrorKind::UndefinedVariable(id)});
+        return Err(MechError{tokens: v.tokens(), msg: "interpreter.rs".to_string(), id: 1012, kind: MechErrorKind::UndefinedVariable(id)});
       }
     }
   }
@@ -1000,7 +1075,7 @@ impl Interpreter {
           }
           _ => todo!(),
         }  
-        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 643, kind: MechErrorKind::None});
+        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 1042, kind: MechErrorKind::None});
       },
       Factor::Transpose(fctr) => {
         if let Value::Matrix(Matrix::Matrix2(mat)) = self.factor(fctr, plan.clone(), symbols.clone())? {
@@ -1010,7 +1085,7 @@ impl Interpreter {
           plan_brrw.push(Box::new(fxn));
           return Ok(out);
         }
-        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 652, kind: MechErrorKind::None});
+        return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 1052, kind: MechErrorKind::None});
       },
     }
   }
@@ -1024,6 +1099,8 @@ impl Interpreter {
         // Add
         (Value::Empty, Value::Empty, FormulaOperator::AddSub(AddSubOp::Add)) =>
           term_plan.push(Box::new(AddEmpty{term: trm.clone()})),
+        (Value::MutableReference(lhs), Value::Number(rhs), FormulaOperator::AddSub(AddSubOp::Add)) =>
+          term_plan.push(Box::new(AddScalarRef{lhs, rhs: Rc::new(RefCell::new(rhs))})),
         (Value::Number(lhs), Value::Number(rhs), FormulaOperator::AddSub(AddSubOp::Add)) =>
           term_plan.push(Box::new(AddScalar{lhs,rhs})),
         (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) =>
@@ -1060,7 +1137,7 @@ impl Interpreter {
           term_plan.push(Box::new(OrScalar{lhs,rhs})),        
         x => {
           println!("{:?}", x);
-          return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 685, kind: MechErrorKind::UnhandledFunctionArgumentKind});
+          return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 1104, kind: MechErrorKind::UnhandledFunctionArgumentKind});
         }
       };
       let res = term_plan.last().unwrap().solve();

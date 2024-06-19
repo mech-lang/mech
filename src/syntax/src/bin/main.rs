@@ -11,7 +11,7 @@ use std::fs;
 
 fn main() -> Result<(),MechError> {
     // ----------------------------------------------------------------
-    let s = fs::read_to_string("../../../test.mec").unwrap();
+    let s = fs::read_to_string("../../test.mec").unwrap();
     match parser2::parse(&s) {
         Ok(tree) => { 
           println!("----------- SYNTAX TREE ---------");
