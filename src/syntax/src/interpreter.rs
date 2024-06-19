@@ -1,4 +1,4 @@
-use mech_core::{MechError, MechErrorKind, hash_str, ValueKind, nodes::*};
+use mech_core::{MechError, MechErrorKind, hash_str, ValueKind, nodes::*, humanize};
 use crate::parser2::*;
 use mech_core::nodes::Matrix as Mat;
 use serde_derive::*;
@@ -13,6 +13,11 @@ use std::hash::{Hash, Hasher};
 use indexmap::set::IndexSet;
 use indexmap::map::IndexMap;
 use std::fmt;
+use tabled::{
+  settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
+  Tabled,
+};
+use tabled::{settings::style::LineText};
 
 // Value-----------------------------------------------------------------------
 
@@ -171,8 +176,9 @@ type MutableReferece = Rc<RefCell<i64>>;
 #[derive(Clone)]
 pub struct FunctionDefinition {
   pub id: u64,
-  pub input: HashMap<u64, KindAnnotation>,
-  pub output: HashMap<u64, KindAnnotation>,
+  pub name: String,
+  pub input: IndexMap<u64, KindAnnotation>,
+  pub output: IndexMap<u64, KindAnnotation>,
   pub symbols: SymbolTable,
   pub plan: Plan,
 }
@@ -180,18 +186,35 @@ pub struct FunctionDefinition {
 impl fmt::Debug for FunctionDefinition {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f,"UsrFxn::{:?}()", self.id)?;
+    let input_str = format!("{:#?}", self.input);
+    let output_str = format!("{:#?}", self.output);
+    let symbols_str = format!("{:#?}", self.symbols);
+    let mut plan_str = "".to_string();
+    for step in self.plan.borrow().iter() {
+      plan_str = format!("{}  - {}\n",plan_str,step.to_string());
+    }
+    let data = vec!["📥 Input", &input_str, 
+                    "📤 Output", &output_str, 
+                    "🔣 Symbols",   &symbols_str,
+                    "📋 Plan", &plan_str];
+    let mut table = tabled::Table::new(data);
+    table
+        .with(Style::modern())
+        .with(Panel::header(format!("📈 UserFxn::{}\n({})", self.name, humanize(&self.id))))
+        .with(Alignment::left());
+    println!("{table}");
     Ok(())
   }
 }
 
 impl FunctionDefinition {
 
-  pub fn new(id: u64) -> Self {
+  pub fn new(id: u64, name: String) -> Self {
     Self {
       id,
-      input: HashMap::new(),
-      output: HashMap::new(),
+      name,
+      input: IndexMap::new(),
+      output: IndexMap::new(),
       symbols: Rc::new(RefCell::new(HashMap::new())),
       plan: Rc::new(RefCell::new(Vec::new())),
     }
@@ -438,11 +461,13 @@ impl MechFunction for AddEmpty {
 struct AddScalarRef {
   lhs: Rc<RefCell<i64>>,
   rhs: Rc<RefCell<i64>>,
+  out: Rc<RefCell<i64>>,
 }
 
 impl MechFunction for AddScalarRef {
   fn solve(&self) -> Value {
-    Value::Number(*self.lhs.borrow() + *self.rhs.borrow())
+    *self.out.borrow_mut() = *self.lhs.borrow() + *self.rhs.borrow();
+    Value::Empty
   }
   fn to_string(&self) -> String { format!("{:?}", self)}
 }
@@ -715,7 +740,7 @@ impl Interpreter {
 
   fn function_define(&mut self, fxn_def: &FunctionDefine, plan: Plan, symbols: SymbolTable) -> Result<Value,MechError> {
     let fxn_name_id = fxn_def.name.hash();
-    let mut new_fxn = FunctionDefinition::new(fxn_name_id);
+    let mut new_fxn = FunctionDefinition::new(fxn_name_id,fxn_def.name.to_string());
     for input_arg in &fxn_def.input {
       let arg_id = input_arg.name.hash();
       new_fxn.input.insert(arg_id,input_arg.kind.clone());
@@ -728,18 +753,7 @@ impl Interpreter {
     }
     for stmnt in &fxn_def.statements {
       let result = self.statement(stmnt, new_fxn.plan.clone(), new_fxn.symbols.clone());
-      println!("{:?}", result);
-    }
-    
-    {
-      println!("Symbols {:#?}", new_fxn.symbols);
-      let plan = new_fxn.plan.borrow();
-      println!("Plan");
-      for fxn in plan.iter() {
-        println!("   - {}", fxn.to_string());
-      }
-    }
-    
+    }    
     self.functions.insert(new_fxn.id, new_fxn);
     Ok(Value::Empty)
   }
@@ -785,9 +799,42 @@ impl Interpreter {
     match self.functions.get(&fxn_name_id) {
       Some(fxn) => {
         let mut new_fxn = fxn.clone();
-        for (arg_name, arg_expr) in &fxn_call.args {
-          let result = self.expression(&arg_expr, plan.clone(), symbols.clone())?;
-          // load arguments into function
+        for (ix,(arg_name, arg_expr)) in fxn_call.args.iter().enumerate() {
+          // Get the value
+          let value_ref = match arg_name {
+            // Arg is called with a name
+            Some(arg_id) => {
+              match new_fxn.input.get(&arg_id.hash()) {
+                // Arg name matches expected name
+                Some(kind) => {
+                  let symbols_brrw = new_fxn.symbols.borrow();
+                  symbols_brrw.get(&arg_id.hash()).unwrap().clone()
+                }
+                // The argument name doesn't match
+                None => { return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 756, kind: MechErrorKind::UnknownFunctionArgument(arg_id.hash())});}
+              }
+            }
+            // Arg is called positionally (no arg name supplied)
+            None => {
+              match &new_fxn.input.iter().nth(ix) {
+                Some((arg_id,kind)) => {
+                  let symbols_brrw = new_fxn.symbols.borrow();
+                  symbols_brrw.get(*arg_id).unwrap().clone()
+                }
+                None => { return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 807, kind: MechErrorKind::TooManyInputArguments(ix+1,new_fxn.input.len())});} 
+              }
+            }
+          };
+          if let Value::MutableReference(ref mutable_ref) = value_ref {
+            let result = self.expression(&arg_expr, plan.clone(), symbols.clone())?;
+            let mut ref_brrw = mutable_ref.borrow_mut();
+            match result {
+              Value::Number(num) => *ref_brrw = num,
+              _ => todo!(),
+            }
+          } else {
+            unreachable!();
+          }
         }
         // schedule function
         let mut plan_brrw = plan.borrow_mut();
@@ -1100,7 +1147,7 @@ impl Interpreter {
         (Value::Empty, Value::Empty, FormulaOperator::AddSub(AddSubOp::Add)) =>
           term_plan.push(Box::new(AddEmpty{term: trm.clone()})),
         (Value::MutableReference(lhs), Value::Number(rhs), FormulaOperator::AddSub(AddSubOp::Add)) =>
-          term_plan.push(Box::new(AddScalarRef{lhs, rhs: Rc::new(RefCell::new(rhs))})),
+          term_plan.push(Box::new(AddScalarRef{lhs, rhs: Rc::new(RefCell::new(rhs)), out: Rc::new(RefCell::new(0))})),
         (Value::Number(lhs), Value::Number(rhs), FormulaOperator::AddSub(AddSubOp::Add)) =>
           term_plan.push(Box::new(AddScalar{lhs,rhs})),
         (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) =>

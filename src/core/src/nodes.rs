@@ -1151,6 +1151,11 @@ impl Identifier {
   pub fn tokens(&self) -> Vec<Token> {
     vec![self.name.clone()]
   }
+
+  pub fn to_string(&self) -> String {
+    self.name.chars.iter().collect()
+  }
+
 }
 
 
