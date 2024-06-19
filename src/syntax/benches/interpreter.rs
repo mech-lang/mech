@@ -28,7 +28,7 @@ use mech_syntax::ast::Ast;
 use mech_syntax::compiler::Compiler;
 use mech_core::*;
 use mech_syntax::parser2;
-use mech_syntax::analyzer::*;
+//use mech_syntax::analyzer::*;
 use mech_syntax::interpreter::*;
 use mech_syntax::parser::{parse};
 use nalgebra::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix6, Matrix2};
@@ -40,6 +40,24 @@ fn matrix_multiply(b:&mut Bencher){
   let s = r#"a := [1 2; 3 4]
 b := [4 5; 6 7]
 c := a ** b"#;
+  match parser2::parse(&s) {
+    Ok(tree) => { 
+      let mut intrp = Interpreter::new();
+      let result = intrp.interpret(&tree);
+      let fxn = &intrp.plan.borrow()[0];
+      b.iter(|| {
+        let result = fxn.solve();
+      });
+    }
+    _ => (),
+  }
+}
+
+#[bench]
+fn matrix_add_scalar(b:&mut Bencher){
+  let s = r#"a := 1
+b := 2
+c := a + b"#;
   match parser2::parse(&s) {
     Ok(tree) => { 
       let mut intrp = Interpreter::new();
