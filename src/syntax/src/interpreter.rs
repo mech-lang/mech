@@ -172,7 +172,7 @@ impl Hash for MechTable {
 }
 
 type Functions = Rc<RefCell<HashMap<u64,FunctionDefinition>>>;
-type Plan = Rc<RefCell<Vec<Box<dyn MechFunction2>>>>;
+type Plan = Rc<RefCell<Vec<Box<dyn MechFunction>>>>;
 type MutableReference = Rc<RefCell<Value>>;
 type SymbolTableRef= Rc<RefCell<SymbolTable>>;
 type ValRef = Rc<RefCell<Value>>;
@@ -396,11 +396,6 @@ impl Hash for MechTuple {
 // MXY  - Matrix size X Y, or just X if it's square
 
 pub trait MechFunction {
-  fn solve(&self) -> Value;
-  fn to_string(&self) -> String;
-}
-
-pub trait MechFunction2 {
   fn solve(&self);
   fn out(&self) -> Value;
   fn to_string(&self) -> String;
@@ -414,7 +409,7 @@ struct UserFunction {
   fxn: FunctionDefinition,
 }
 
-impl MechFunction2 for UserFunction {
+impl MechFunction for UserFunction {
   fn solve(&self){
     self.fxn.solve();
   }
@@ -425,7 +420,7 @@ impl MechFunction2 for UserFunction {
 }
 
 // Greater Than ---------------------------------------------------------------
-
+/*
 #[derive(Debug)]
 struct GTScalar {
   lhs: i64,
@@ -482,21 +477,9 @@ impl MechFunction for OrScalar {
     Value::Bool(self.lhs || self.rhs)
   }
   fn to_string(&self) -> String { format!("{:?}", self)}
-}
+}*/
 
 // Add ------------------------------------------------------------------------
-
-#[derive(Debug)]
-struct AddEmpty {
-  term: Term
-}
-
-impl MechFunction for AddEmpty {
-  fn solve(&self) -> Value {
-    Value::Empty
-  }
-  fn to_string(&self) -> String { format!("AddEmpty")}
-}
 
 #[derive(Debug)] 
 struct AddScalar {
@@ -505,7 +488,7 @@ struct AddScalar {
   out: Rc<RefCell<i64>>,
 }
 
-impl MechFunction2 for AddScalar {
+impl MechFunction for AddScalar {
   fn solve(&self) {
     *self.out.borrow_mut() = *self.lhs.borrow() + *self.rhs.borrow();
   }
@@ -514,7 +497,7 @@ impl MechFunction2 for AddScalar {
   }
   fn to_string(&self) -> String { format!("{:?}", self) }
 }
-
+/*
 #[derive(Debug)]
 struct AddRv3Rv3 {
   lhs: RowVector3<i64>,
@@ -701,7 +684,7 @@ impl MechFunction for NegateM2 {
     Value::Matrix(Matrix::Matrix2(-self.mat))
   }
   fn to_string(&self) -> String { format!("{:?}", self)}
-}
+}*/
 
 // Interpreter 
 // ----------------------------------------------------------------------------
@@ -1153,18 +1136,20 @@ fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: Functio
     Factor::Negated(neg) => {
       match factor(neg, plan.clone(), symbols.clone(), functions.clone())? {
         Value::Matrix(Matrix::Matrix2(mat)) => {
-          let fxn = NegateM2{mat}; 
-          let out: Value = fxn.solve();
-          let mut plan_brrw = plan.borrow_mut();
+          //let fxn = NegateM2{mat}; 
+          //let out: Value = fxn.solve();
+          //let mut plan_brrw = plan.borrow_mut();
           //plan_brrw.push(Box::new(fxn));
-          return Ok(out);
+          //return Ok(out);
+          todo!()
         }
         Value::Number(n) => {
-          let fxn = NegateF64{n}; 
-          let out: Value = fxn.solve();
-          let mut plan_brrw = plan.borrow_mut();
+          //let fxn = NegateF64{n}; 
+          //let out: Value = fxn.solve();
+          //let mut plan_brrw = plan.borrow_mut();
           //plan_brrw.push(Box::new(fxn));
-          return Ok(out);
+          //return Ok(out);
+          todo!()
         }
         _ => todo!(),
       }  
@@ -1172,11 +1157,12 @@ fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: Functio
     },
     Factor::Transpose(fctr) => {
       if let Value::Matrix(Matrix::Matrix2(mat)) = factor(fctr, plan.clone(), symbols.clone(), functions.clone())? {
-        let fxn = TransposeM2{mat}; 
-        let out: Value = fxn.solve();
-        let mut plan_brrw = plan.borrow_mut();
+        //let fxn = TransposeM2{mat}; 
+        //let out: Value = fxn.solve();
+        //let mut plan_brrw = plan.borrow_mut();
         //plan_brrw.push(Box::new(fxn));
-        return Ok(out);
+        //return Ok(out);
+        todo!()
       }
       return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 1052, kind: MechErrorKind::None});
     },
@@ -1185,7 +1171,7 @@ fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: Functio
 
 fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
   let mut lhs_result = factor(&trm.lhs, plan.clone(), symbols.clone(), functions.clone())?;
-  let mut term_plan: Vec<Box<dyn MechFunction2>> = vec![];
+  let mut term_plan: Vec<Box<dyn MechFunction>> = vec![];
   for (op,rhs) in &trm.rhs {
     let rhs_result = factor(&rhs, plan.clone(), symbols.clone(), functions.clone())?;
     match (lhs_result, rhs_result, op) {
