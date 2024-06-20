@@ -258,6 +258,10 @@ impl FunctionDefinition {
     }
   }
 
+  pub fn recompile(&self, functions: Functions) -> Result<FunctionDefinition,MechError> {
+    function_define(&self.code, functions.clone())
+  }
+
   pub fn solve(&self) -> ValRef {
     let plan_brrw = self.plan.borrow();
     for step in plan_brrw.iter() {
@@ -410,27 +414,14 @@ struct UserFunction {
   fxn: FunctionDefinition,
 }
 
-impl MechFunction for UserFunction {
-  fn solve(&self) -> Value {
+impl MechFunction2 for UserFunction {
+  fn solve(&self){
     self.fxn.solve();
-    Value::Empty
   }
-  fn to_string(&self) -> String { format!("{:?}", self)}
-}
-
-// Define ---------------------------------------------------------------------
-
-#[derive(Debug)]
-struct VarDef {
-  name: u64,
-  source: u64,
-}
-
-impl MechFunction for VarDef {
-  fn solve(&self) -> Value {
-    Value::Empty
+  fn out(&self) -> Value {
+    Value::MutableReference(self.fxn.out.clone())
   }
-  fn to_string(&self) -> String { format!("{:?}", self)}
+  fn to_string(&self) -> String { format!("UserFxn::{:?}", self.fxn.name)}
 }
 
 // Greater Than ---------------------------------------------------------------
@@ -448,7 +439,7 @@ impl MechFunction for GTScalar {
   fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
-// Less Than ---------------------------------------------------------------
+// Less Than ------------------------------------------------------------------
 
 #[derive(Debug)]
 struct LTScalar {
@@ -507,7 +498,7 @@ impl MechFunction for AddEmpty {
   fn to_string(&self) -> String { format!("AddEmpty")}
 }
 
-#[derive(Debug)]
+#[derive(Debug)] 
 struct AddScalar {
   lhs: Rc<RefCell<i64>>,
   rhs: Rc<RefCell<i64>>,
@@ -787,9 +778,8 @@ fn function_define(fxn_def: &FunctionDefine, functions: Functions) -> Result<Fun
   for input_arg in &fxn_def.input {
     let arg_id = input_arg.name.hash();
     new_fxn.input.insert(arg_id,input_arg.kind.clone());
-    let in_arg = Rc::new(RefCell::new(0));
-    //let placeholder_value = Value::MutableReference(Value::Number(in_arg.clone()));
-    //new_fxn.symbols.borrow_mut().insert(arg_id, placeholder_value);
+    let in_arg = Value::I64(Rc::new(RefCell::new(0)));
+    new_fxn.symbols.borrow_mut().insert(arg_id, in_arg);
   }
   let output_arg_ids = fxn_def.output.iter().map(|output_arg| {
     let arg_id = output_arg.name.hash();
@@ -830,8 +820,6 @@ fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTableRef
   let result = expression(&var_def.expression, plan.clone(), symbols.clone(), functions.clone())?;
   let mut symbols_brrw = symbols.borrow_mut();
   symbols_brrw.insert(id,result.clone());
-  let var_def = VarDef{name: id, source: 0};
-  let mut plan_brrw = plan.borrow_mut();
   Ok(result)
 }
 
@@ -853,10 +841,10 @@ fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, f
   let fxns_brrw = functions.borrow();
   match fxns_brrw.get(&fxn_name_id) {
     Some(fxn) => {
-      let mut new_fxn = fxn.clone();
+      let mut new_fxn = fxn.recompile(functions.clone())?; // This just calles function_define again, it should be smarter.
       for (ix,(arg_name, arg_expr)) in fxn_call.args.iter().enumerate() {
         // Get the value
-        let value_ref = match arg_name {
+        let value_ref: ValRef = match arg_name {
           // Arg is called with a name
           Some(arg_id) => {
             match new_fxn.input.get(&arg_id.hash()) {
@@ -880,26 +868,26 @@ fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, f
             }
           }
         };
-        /*if let Value::MutableReference(ref mutable_ref) = value_ref {
-          let result = self.expression(&arg_expr, plan.clone(), symbols.clone())?;
-          let mut ref_brrw = mutable_ref.borrow_mut();
-          match result {
-            Value::Number(num) => *ref_brrw = num,
-            _ => todo!(),
+        let result = expression(&arg_expr, plan.clone(), symbols.clone(), functions.clone())?;
+        let mut ref_brrw = value_ref.borrow_mut();
+        // TODO check types
+        match (&mut *ref_brrw, &result) {
+          (Value::I64(arg_ref), Value::I64(i64_ref)) => {
+            *arg_ref.borrow_mut() = i64_ref.borrow().clone();
           }
-        } else {
-          unreachable!();
-        }*/
+          _ => todo!(),
+        }
       }
       // schedule function
       let mut plan_brrw = plan.borrow_mut();
       let result = new_fxn.solve();
-      //plan_brrw.push(Box::new(UserFunction{fxn: new_fxn.clone()}));      
-      return Ok(Value::Empty)
+      let result_brrw = result.borrow();
+      plan_brrw.push(Box::new(UserFunction{fxn: new_fxn.clone()}));
+      return Ok(result_brrw.clone())
     }
     None => { return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 756, kind: MechErrorKind::MissingFunction(fxn_name_id)});}
   }   
-  Ok(Value::Empty)
+  unreachable!()
 }
 
 fn range(rng: &RangeExpression, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
@@ -1200,10 +1188,15 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: Functions) -
   let mut term_plan: Vec<Box<dyn MechFunction2>> = vec![];
   for (op,rhs) in &trm.rhs {
     let rhs_result = factor(&rhs, plan.clone(), symbols.clone(), functions.clone())?;
-    match (lhs_result.clone(), rhs_result, op) {
+    match (lhs_result, rhs_result, op) {
       // Add
       (Value::I64(lhs), Value::I64(rhs), FormulaOperator::AddSub(AddSubOp::Add)) =>
         term_plan.push(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
+      (Value::MutableReference(lhs), Value::I64(rhs), FormulaOperator::AddSub(AddSubOp::Add)) => match *lhs.borrow() {
+        Value::I64(ref lhs) =>
+          term_plan.push(Box::new(AddScalar{lhs: lhs.clone(), rhs, out: Rc::new(RefCell::new(0))})),
+        _ => todo!(),
+      }
       /*
       (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) =>
         term_plan.push(Box::new(AddRv3Rv3{lhs,rhs})),
