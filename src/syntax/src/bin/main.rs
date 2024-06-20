@@ -3,6 +3,10 @@ use mech_syntax::ast::Ast;
 use mech_syntax::compiler::Compiler;
 use mech_core::*;
 use mech_syntax::parser2;
+use mech_syntax::interpreter::Value;
+use std::cell::RefCell;
+use std::rc::Rc;
+
 //use mech_syntax::analyzer::*;
 use mech_syntax::interpreter::*;
 use std::time::Instant;
@@ -10,6 +14,7 @@ use std::fs;
 
 
 fn main() -> Result<(),MechError> {
+
     // ----------------------------------------------------------------
     let s = fs::read_to_string("../../test.mec").unwrap();
     match parser2::parse(&s) {
