@@ -27,8 +27,9 @@ fn main() -> Result<(),MechError> {
           let result = intrp.interpret(&tree);
           println!("R: {:#?}", result);
           println!("{:#?}", intrp.symbols); 
+          println!("Plan: ");
           for fxn in intrp.plan.borrow().iter() {
-            println!("{:?}", fxn.to_string());
+            println!("  - {}", fxn.to_string());
           }
 
           let now = Instant::now();
