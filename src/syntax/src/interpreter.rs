@@ -490,7 +490,10 @@ struct AddScalar {
 
 impl MechFunction for AddScalar {
   fn solve(&self) {
-    *self.out.borrow_mut() = *self.lhs.borrow() + *self.rhs.borrow();
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr + *rhs_ptr;}
   }
   fn out(&self) -> Value {
     Value::I64(self.out.clone())
