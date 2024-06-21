@@ -81,3 +81,7 @@ test_interpreter!(interpret_set,"{1,2,3}", Value::Set(MechSet::from_vec(vec![Val
 test_interpreter!(interpret_record,r#"{a: 1, b: "Hello"}"#, Value::Record(MechMap::from_vec(vec![(Value::Id(55170961230981453),Value::I64(Rc::new(RefCell::new(1)))),(Value::Id(44311847522083591),Value::String("Hello".to_string()))])));
 test_interpreter!(interpret_record_field_access,r#"a := {x: 1,  y: 2}; a.y"#, Value::I64(Rc::new(RefCell::new(2))));
 test_interpreter!(interpret_map,r#"{"a": 1, "b": 2}"#, Value::Map(MechMap::from_vec(vec![(Value::String("a".to_string()),Value::I64(Rc::new(RefCell::new(1)))),(Value::String("b".to_string()),Value::I64(Rc::new(RefCell::new(2))))])));
+
+test_interpreter!(interpret_function_define_call,r#"foo(x<i64>) = z<i64> :=
+z := x + 10.
+foo(10)"#, Value::I64(Rc::new(RefCell::new(20))));
