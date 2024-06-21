@@ -1309,8 +1309,11 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: Functions) -
           term_plan.push(Box::new(AddScalar{lhs: lhs.clone(), rhs, out: Rc::new(RefCell::new(0))})),
         _ => todo!(),
       }
-      (Value::MutableReference(lhs), Value::MutableReference(rhs), FormulaOperator::AddSub(AddSubOp::Add)) => match (&*lhs.borrow(),&*rhs.borrow()) { (Value::I64(ref lhs),Value::I64(ref rhs)) =>
+      (Value::MutableReference(lhs), Value::MutableReference(rhs), FormulaOperator::AddSub(AddSubOp::Add)) => match (&*lhs.borrow(),&*rhs.borrow()) { 
+        (Value::I64(ref lhs),Value::I64(ref rhs)) =>
           term_plan.push(Box::new(AddScalar{lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(0))})),
+        (Value::Matrix(Matrix::RowVector3(lhs)),Value::Matrix(Matrix::RowVector3(rhs))) =>
+          term_plan.push(Box::new(AddRv3Rv3{lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector3::from_element(0)))})),
         _ => todo!(),
       }
       (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) =>
@@ -1334,6 +1337,11 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: Functions) -
       // Mat Mul
       (Value::Matrix(Matrix::Matrix2(lhs)), Value::Matrix(Matrix::Matrix2(rhs)), FormulaOperator::Vec(VecOp::MatMul)) => 
         term_plan.push(Box::new(MatMulM2M2{lhs,rhs,out: Rc::new(RefCell::new(Matrix2::from_element(0)))})),
+      (Value::MutableReference(lhs), Value::MutableReference(rhs), FormulaOperator::Vec(VecOp::MatMul)) => match (&*lhs.borrow(),&*rhs.borrow()) {
+        (Value::Matrix(Matrix::Matrix2(lhs)), Value::Matrix(Matrix::Matrix2(rhs))) =>
+          term_plan.push(Box::new(MatMulM2M2{lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(Matrix2::from_element(0)))})),
+        _ => todo!(),
+      } 
       // Compare
       (Value::I64(lhs), Value::I64(rhs), FormulaOperator::Comparison(ComparisonOp::LessThan)) =>
         term_plan.push(Box::new(LTScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),

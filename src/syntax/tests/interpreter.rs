@@ -69,6 +69,8 @@ test_interpreter!(interpret_matrix_transpose, "[1 2; 3 4]'", Value::Matrix(Matri
 test_interpreter!(interpret_matrix_negate, "-[1 2; 3 4]", Value::Matrix(Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_vec(vec![-1,-3,-2,-4]))))));
 test_interpreter!(interpret_matrix_row3_add, "[1 2 3] + [4 5 6]", Value::Matrix(Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(vec![5,7,9]))))));
 test_interpreter!(interpret_matrix_row3_sub, "[1 2 3] - [4 5 6]", Value::Matrix(Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(vec![-3,-3,-3]))))));
+test_interpreter!(interpret_matrix_mat2_matmul_ref, "a := [1 2; 3 4]; b := [4 5; 6 7]; c := a ** b", Value::Matrix(Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_vec(vec![16,36,19,43]))))));
+test_interpreter!(interpret_matrix_row3_add_ref, "a := [1 2 3]; b := [4 5 6]; c := a + b", Value::Matrix(Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(vec![5,7,9]))))));
 
 test_interpreter!(interpret_tuple, "(1,true)", Value::Tuple(MechTuple::from_vec(vec![Value::I64(Rc::new(RefCell::new(1))), Value::Bool(Rc::new(RefCell::new(true)))])));
 test_interpreter!(interpret_tuple_nested, r#"(1,("Hello",false))"#, Value::Tuple(MechTuple::from_vec(vec![Value::I64(Rc::new(RefCell::new(1))), Value::Tuple(MechTuple::from_vec(vec![Value::String("Hello".to_string()), Value::Bool(Rc::new(RefCell::new(false)))]))])));
@@ -85,3 +87,7 @@ test_interpreter!(interpret_map,r#"{"a": 1, "b": 2}"#, Value::Map(MechMap::from_
 test_interpreter!(interpret_function_define_call,r#"foo(x<i64>) = z<i64> :=
 z := x + 10.
 foo(10)"#, Value::I64(Rc::new(RefCell::new(20))));
+
+test_interpreter!(interpret_function_define_call_2_args,r#"foo(x<i64>, y<i64>) = z<i64> :=
+z := x + y.
+foo(10,20)"#, Value::I64(Rc::new(RefCell::new(30))));
