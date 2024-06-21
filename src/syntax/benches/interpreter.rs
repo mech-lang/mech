@@ -54,17 +54,15 @@ c := a ** b"#;
 }
 
 #[bench]
-fn matrix_add_scalar(b:&mut Bencher){
-  let s = r#"a := 1
-b := 2
-c := a + b"#;
+fn add_scalar(b:&mut Bencher){
+  let s = r#"1 + 1"#;
   match parser2::parse(&s) {
     Ok(tree) => { 
       let mut intrp = Interpreter::new();
       let result = intrp.interpret(&tree);
       let fxn = &intrp.plan.borrow()[0];
       b.iter(|| {
-        let result = fxn.solve();
+        fxn.solve();
       });
     }
     _ => (),
@@ -72,7 +70,7 @@ c := a + b"#;
 }
 
 #[bench]
-fn matrix_add(b:&mut Bencher){
+fn matrix_add_row(b:&mut Bencher){
   let s = r#"a := [1 2 3]
 b := [4 5 6]
 c := a + b"#;
@@ -82,7 +80,7 @@ c := a + b"#;
       let result = intrp.interpret(&tree);
       let fxn = &intrp.plan.borrow()[0];
       b.iter(|| {
-        let result = fxn.solve();
+        fxn.solve();
       });
     }
     _ => (),
@@ -111,7 +109,14 @@ fn matrix_add_baseline_rust(b:&mut Bencher){
 }
 
 #[bench]
-fn matrix_add_baseline_heap(b:&mut Bencher){
+fn add_baseline_rust(b:&mut Bencher){
+  b.iter(|| {
+    1 + 1
+  });
+}
+
+#[bench]
+fn matrix_row_add_baseline_heap(b:&mut Bencher){
   b.iter(|| {
     let a: Vec<i64> = vec![1, 2, 3];
     let b: Vec<i64> = vec![4, 5, 6];
