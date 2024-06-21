@@ -23,7 +23,6 @@ use tabled::{settings::style::LineText};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Value {
-  Number(i64),
   I64(Rc<RefCell<i64>>),
   String(String),
   Bool(bool),
@@ -42,7 +41,6 @@ pub enum Value {
 impl Hash for Value {
   fn hash<H: Hasher>(&self, state: &mut H) {
     match self {
-      Value::Number(x) => (*x as i64).hash(state),
       Value::I64(x) => x.borrow().hash(state),
       Value::String(x) => x.hash(state),
       Value::Bool(x) => x.hash(state),
@@ -63,7 +61,6 @@ impl Hash for Value {
 impl Value {
   pub fn shape(&self) -> (usize,usize) {
     match self {
-      Value::Number(x) => (1,1),
       Value::I64(x) => (1,1),
       Value::String(x) => (1,1),
       Value::Bool(x) => (1,1),
@@ -77,26 +74,6 @@ impl Value {
       Value::MutableReference(x) => (1,1),
       Value::Empty => (0,0),
       Value::Id(x) => (0,0),
-    }
-  }
-}
-
-impl Add for Value {
-  type Output = Value;
-
-  fn add(self, rhs: Value) -> Self::Output {
-    match (self,rhs) {
-      (Value::Number(lhs), Value::Number(rhs)) => Value::Number(lhs + rhs),
-      _ => Value::Empty,
-    }
-  }
-}
-
-impl AddAssign for Value {
-  fn add_assign(&mut self, rhs: Value) {
-    match (self.clone(),rhs) {
-      (Value::Number(mut lhs),Value::Number(rhs)) => *self = Value::Number(lhs + rhs),
-      _ => *self = Value::Empty,
     }
   }
 }
@@ -282,13 +259,13 @@ impl FunctionDefinition {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Matrix {
-  RowDVector(RowDVector<i64>),
+  RowDVector(Rc<RefCell<RowDVector<i64>>>),
   RowVector2(RowVector2<i64>),
-  RowVector3(RowVector3<i64>),
+  RowVector3(Rc<RefCell<RowVector3<i64>>>),
   RowVector4(RowVector4<i64>),
   Matrix1(Matrix1<i64>),
   Matrix2(Matrix2<i64>),
-  Matrix3(Matrix3<i64>),
+  Matrix3(Rc<RefCell<Matrix3<i64>>>),
   Matrix4(Matrix4<i64>),
   Matrix2x3(Matrix2x3<i64>),
   DMatrix(DMatrix<i64>),
@@ -297,13 +274,13 @@ pub enum Matrix {
 impl Hash for Matrix {
   fn hash<H: Hasher>(&self, state: &mut H) {
     match self {
-      Matrix::RowDVector(x) => x.hash(state),
+      Matrix::RowDVector(x) => x.borrow().hash(state),
       Matrix::RowVector2(x) => x.hash(state),
-      Matrix::RowVector3(x) => x.hash(state),
+      Matrix::RowVector3(x) => x.borrow().hash(state),
       Matrix::RowVector4(x) => x.hash(state),
       Matrix::Matrix1(x) => x.hash(state),
       Matrix::Matrix2(x) => x.hash(state),
-      Matrix::Matrix3(x) => x.hash(state),
+      Matrix::Matrix3(x) => x.borrow().hash(state),
       Matrix::Matrix4(x) => x.hash(state),
       Matrix::Matrix2x3(x) => x.hash(state),
       Matrix::DMatrix(x) => x.hash(state),
@@ -314,13 +291,13 @@ impl Hash for Matrix {
 impl Matrix {
   pub fn shape(&self) -> (usize,usize) {
     match self {
-      Matrix::RowDVector(x) => x.shape(),
+      Matrix::RowDVector(x) => x.borrow().shape(),
       Matrix::RowVector2(x) => x.shape(),
-      Matrix::RowVector3(x) => x.shape(),
+      Matrix::RowVector3(x) => x.borrow().shape(),
       Matrix::RowVector4(x) => x.shape(),
       Matrix::Matrix1(x) => x.shape(),
       Matrix::Matrix2(x) => x.shape(),
-      Matrix::Matrix3(x) => x.shape(),
+      Matrix::Matrix3(x) => x.borrow().shape(),
       Matrix::Matrix4(x) => x.shape(),
       Matrix::Matrix2x3(x) => x.shape(),
       Matrix::DMatrix(x) => x.shape(),
@@ -329,9 +306,9 @@ impl Matrix {
 
   pub fn index1d(&self, ix: usize) -> i64 {
     match self {
-      Matrix::RowDVector(x) => *x.index(ix-1),
+      Matrix::RowDVector(x) => *x.borrow().index(ix-1),
       Matrix::RowVector2(x) => todo!(),
-      Matrix::RowVector3(x) => *x.index(ix-1),
+      Matrix::RowVector3(x) => *x.borrow().index(ix-1),
       Matrix::RowVector4(x) => todo!(),
       Matrix::Matrix1(x) => todo!(),
       Matrix::Matrix2(x) => todo!(),
@@ -344,9 +321,9 @@ impl Matrix {
 
   pub fn index2d(&self, row: usize, col: usize) -> i64 {
     match self {
-      Matrix::RowDVector(x) => *x.index((row-1,col-1)),
+      Matrix::RowDVector(x) => *x.borrow().index((row-1,col-1)),
       Matrix::RowVector2(x) => todo!(),
-      Matrix::RowVector3(x) => *x.index((row-1,col-1)),
+      Matrix::RowVector3(x) => *x.borrow().index((row-1,col-1)),
       Matrix::RowVector4(x) => todo!(),
       Matrix::Matrix1(x) => todo!(),
       Matrix::Matrix2(x) => todo!(),
@@ -500,66 +477,91 @@ impl MechFunction for AddScalar {
   }
   fn to_string(&self) -> String { format!("{:?}", self) }
 }
-/*
+
 #[derive(Debug)]
 struct AddRv3Rv3 {
-  lhs: RowVector3<i64>,
-  rhs: RowVector3<i64>,
+  lhs: Rc<RefCell<RowVector3<i64>>>,
+  rhs: Rc<RefCell<RowVector3<i64>>>,
+  out: Rc<RefCell<RowVector3<i64>>>,
 }
 
 impl MechFunction for AddRv3Rv3 {
-  fn solve(&self) -> Value {
-    let result = &self.lhs + &self.rhs;
-    Value::Matrix(Matrix::RowVector3(result))
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr + *rhs_ptr;}
+  }
+  fn out(&self) -> Value {
+    Value::Matrix(Matrix::RowVector3(self.out.clone()))
   }
   fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 #[derive(Debug)]
 struct AddM3M3 {
-  lhs: Matrix3<i64>,
-  rhs: Matrix3<i64>,
+  lhs: Rc<RefCell<Matrix3<i64>>>,
+  rhs: Rc<RefCell<Matrix3<i64>>>,
+  out: Rc<RefCell<Matrix3<i64>>>,
 }
 
 impl MechFunction for AddM3M3 {
-  fn solve(&self) -> Value {
-    let result = &self.lhs + &self.rhs;
-    Value::Matrix(Matrix::Matrix3(result))
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr + *rhs_ptr;}
+  }
+  fn out(&self) -> Value {
+    Value::Matrix(Matrix::Matrix3(self.out.clone()))
   }
   fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 // Sub ------------------------------------------------------------------------
 
-#[derive(Debug)]
+#[derive(Debug)] 
 struct SubScalar {
-  lhs: i64,
-  rhs: i64,
+  lhs: Rc<RefCell<i64>>,
+  rhs: Rc<RefCell<i64>>,
+  out: Rc<RefCell<i64>>,
 }
 
 impl MechFunction for SubScalar {
-  fn solve(&self) -> Value {
-    Value::Number(self.lhs - self.rhs)
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr - *rhs_ptr;}
   }
-  fn to_string(&self) -> String { format!("{:?}", self)}
+  fn out(&self) -> Value {
+    Value::I64(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
 #[derive(Debug)]
 struct SubRv3Rv3 {
-  lhs: RowVector3<i64>,
-  rhs: RowVector3<i64>,
+  lhs: Rc<RefCell<RowVector3<i64>>>,
+  rhs: Rc<RefCell<RowVector3<i64>>>,
+  out: Rc<RefCell<RowVector3<i64>>>,
 }
 
 impl MechFunction for SubRv3Rv3 {
-  fn solve(&self) -> Value {
-    let result = &self.lhs - &self.rhs;
-    Value::Matrix(Matrix::RowVector3(result))
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr - *rhs_ptr;}
+  }
+  fn out(&self) -> Value {
+    Value::Matrix(Matrix::RowVector3(self.out.clone()))
   }
   fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 // Mul ------------------------------------------------------------------------
-
+/*
 #[derive(Debug)]
 struct MulScalar {
   lhs: i64,
@@ -601,37 +603,59 @@ impl MechFunction for ExpScalar {
     Value::Number(self.lhs.pow(self.rhs as u32))
   }
   fn to_string(&self) -> String { format!("{:?}", self)}
-}
+}*/
 
 // Range ------------------------------------------------------------------------
 
 #[derive(Debug)]
 struct RangeExclusive {
-  max: i64,
-  min: i64,
+  max: Rc<RefCell<i64>>,
+  min: Rc<RefCell<i64>>,
+  out: Rc<RefCell<RowDVector<i64>>>,
 }
 
 impl MechFunction for RangeExclusive {
-  fn solve(&self) -> Value {
-    Value::Matrix(Matrix::RowDVector(RowDVector::from_vec((self.min..self.max).collect::<Vec<i64>>())))
+  fn solve(&self) {
+    let max_ptr = self.max.as_ptr();
+    let min_ptr = self.min.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    
+    unsafe {
+        let rng = (*min_ptr..*max_ptr).collect::<Vec<i64>>();
+        *out_ptr = RowDVector::from_vec(rng);
+    }
+  }
+  fn out(&self) -> Value {
+    Value::Matrix(Matrix::RowDVector(self.out.clone()))
   }
   fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 #[derive(Debug)]
 struct RangeInclusive {
-  max: i64,
-  min: i64,
+  max: Rc<RefCell<i64>>,
+  min: Rc<RefCell<i64>>,
+  out: Rc<RefCell<RowDVector<i64>>>,
 }
 
 impl MechFunction for RangeInclusive {
-  fn solve(&self) -> Value {
-    Value::Matrix(Matrix::RowDVector(RowDVector::from_vec((self.min..=self.max).collect::<Vec<i64>>())))
+  fn solve(&self) {
+    let max_ptr = self.max.as_ptr();
+    let min_ptr = self.min.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    
+    unsafe {
+        let rng = (*min_ptr..=*max_ptr).collect::<Vec<i64>>();
+        *out_ptr = RowDVector::from_vec(rng);
+    }
+  }
+  fn out(&self) -> Value {
+    Value::Matrix(Matrix::RowDVector(self.out.clone()))
   }
   fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
-
+/*
 // MatMul ---------------------------------------------------------------------
 
 #[derive(Debug)]
@@ -880,19 +904,20 @@ fn range(rng: &RangeExpression, plan: Plan, symbols: SymbolTableRef, functions: 
   let start = factor(&rng.start, plan.clone(),symbols.clone(), functions.clone())?;
   let terminal = factor(&rng.terminal, plan.clone(),symbols.clone(), functions.clone())?;
   let mut plan_brrw = plan.borrow_mut();
-  /*match (start,terminal,&rng.operator) {
-    (Value::Number(min), Value::Number(max), RangeOp::Exclusive) =>
-      plan_brrw.push(Box::new(RangeExclusive{max,min})),       
-    (Value::Number(min), Value::Number(max), RangeOp::Inclusive) =>
-      plan_brrw.push(Box::new(RangeInclusive{max,min})), 
+  match (start,terminal,&rng.operator) {
+    (Value::I64(min), Value::I64(max), RangeOp::Exclusive) =>
+      plan_brrw.push(Box::new(RangeExclusive{max,min, out: Rc::new(RefCell::new(RowDVector::from_element(1,0)))})),       
+    (Value::I64(min), Value::I64(max), RangeOp::Inclusive) =>
+      plan_brrw.push(Box::new(RangeInclusive{max,min, out: Rc::new(RefCell::new(RowDVector::from_element(1,0)))})),       
     x => {
       println!("{:?}", x);
       return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 776, kind: MechErrorKind::UnhandledFunctionArgumentKind});
     }
   }
-  let res = plan_brrw.last().unwrap().solve();*/
-
-  Ok(Value::Empty)
+  let step = plan_brrw.last().unwrap();
+  step.solve();
+  let res = step.out();
+  Ok(res)
 }
 
 fn slice(slc: &Slice, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
@@ -920,6 +945,15 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
             None => { return Err(MechError{tokens: x.tokens(), msg: "interpreter.rs".to_string(), id: 805, kind: MechErrorKind::UndefinedField(key)});}
           }
         }
+        Value::MutableReference(r) => match &*r.borrow() {
+          Value::Record(rcrd) => {
+            match rcrd.map.get(&Value::Id(key)) {
+              Some(value) => return Ok(value.clone()),
+              None => { return Err(MechError{tokens: x.tokens(), msg: "interpreter.rs".to_string(), id: 805, kind: MechErrorKind::UndefinedField(key)});}
+            }
+          }
+          _ => todo!(),
+        }
         _ => todo!(),
       }
     },
@@ -934,14 +968,28 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
       }
       match val {
         Value::Matrix(mat) => {
-          let result = match resolved_subs[..] {
-            [Value::Number(ix)] => mat.index1d(ix as usize),
-            [Value::Number(row_ix),Value::Number(col_ix)] => mat.index2d(row_ix as usize,col_ix as usize),
+          let result = match &resolved_subs[..] {
+            [Value::I64(ix)] => mat.index1d(*ix.borrow() as usize),
+            [Value::I64(row_ix),Value::I64(col_ix)] => mat.index2d(*row_ix.borrow() as usize,*col_ix.borrow() as usize),
             _ => todo!(),
           };
-          return Ok(Value::Number(result));
+          return Ok(Value::I64(Rc::new(RefCell::new(result))));
         }
-        _ => todo!(),
+        Value::MutableReference(x) => match &*x.borrow() {
+          Value::Matrix(mat) => {
+            let result = match &resolved_subs[..] {
+              [Value::I64(ix)] => mat.index1d(*ix.borrow() as usize),
+              [Value::I64(row_ix),Value::I64(col_ix)] => mat.index2d(*row_ix.borrow() as usize,*col_ix.borrow() as usize),
+              _ => todo!(),
+            };
+            return Ok(Value::I64(Rc::new(RefCell::new(result))));
+          }
+          _ => todo!(),
+        }
+        x => {
+          println!("{:?}",x);
+          todo!()
+        },
       }
     },
     Subscript::Brace(x) => todo!(),
@@ -1075,13 +1123,13 @@ fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: Functions) ->
     }
     (2,3) => {
       let mut rows: Vec<RowVector3<i64>> = vec![];
-      for o in &out {if let Value::Matrix(Matrix::RowVector3(v)) = &o {rows.push(v.clone());}}
+      for o in &out {if let Value::Matrix(Matrix::RowVector3(v)) = &o {rows.push(v.borrow().clone());}}
       Value::Matrix(Matrix::Matrix2x3(Matrix2x3::from_rows(&[rows[0].clone(), rows[1].clone()])))
     }
     (3,3) => {
       let mut rows: Vec<RowVector3<i64>> = vec![];
-      for o in &out {if let Value::Matrix(Matrix::RowVector3(v)) = &o {rows.push(v.clone());}}
-      Value::Matrix(Matrix::Matrix3(Matrix3::from_rows(&[rows[0].clone(), rows[1].clone(), rows[2].clone()])))
+      for o in &out {if let Value::Matrix(Matrix::RowVector3(v)) = &o {rows.push(v.borrow().clone());}}
+      Value::Matrix(Matrix::Matrix3(Rc::new(RefCell::new(Matrix3::from_rows(&[rows[0].clone(), rows[1].clone(), rows[2].clone()])))))
     }
     (4,4) => {
       let mut rows: Vec<RowVector4<i64>> = vec![];
@@ -1098,16 +1146,16 @@ fn matrix_row(r: &MatrixRow, plan: Plan, symbols: SymbolTableRef, functions: Fun
   for col in &r.columns {
     let result = matrix_column(col, plan.clone(), symbols.clone(), functions.clone())?;
     match result {
-      Value::Number(n) => row.push(n),
+      Value::I64(n) => row.push(n.borrow().clone()),
       _ => todo!(),
     }
   }
   let out_vec = match row.len() {
     1 => Matrix::Matrix1(Matrix1::from_element(row[0].clone())),
     2 => Matrix::RowVector2(RowVector2::from_vec(row.clone())),
-    3 => Matrix::RowVector3(RowVector3::from_vec(row.clone())),
+    3 => Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(row.clone())))),
     4 => Matrix::RowVector4(RowVector4::from_vec(row.clone())),
-    n => Matrix::RowDVector(RowDVector::from_vec(row.clone())),
+    n => Matrix::RowDVector(Rc::new(RefCell::new(RowDVector::from_vec(row.clone())))),
   };
   Ok(Value::Matrix(out_vec))
 }
@@ -1146,14 +1194,14 @@ fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: Functio
           //return Ok(out);
           todo!()
         }
-        Value::Number(n) => {
+        //Value::Number(n) => {
           //let fxn = NegateF64{n}; 
           //let out: Value = fxn.solve();
           //let mut plan_brrw = plan.borrow_mut();
           //plan_brrw.push(Box::new(fxn));
           //return Ok(out);
-          todo!()
-        }
+        //  todo!()
+        //}
         _ => todo!(),
       }  
       return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 1042, kind: MechErrorKind::None});
@@ -1190,18 +1238,17 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: Functions) -
           term_plan.push(Box::new(AddScalar{lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(0))})),
         _ => todo!(),
       }
-      /*
       (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) =>
-        term_plan.push(Box::new(AddRv3Rv3{lhs,rhs})),
+        term_plan.push(Box::new(AddRv3Rv3{lhs,rhs,out: Rc::new(RefCell::new(RowVector3::from_element(0)))})),
       (Value::Matrix(Matrix::Matrix3(lhs)), Value::Matrix(Matrix::Matrix3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) =>
-        term_plan.push(Box::new(AddM3M3{lhs,rhs})),
+        term_plan.push(Box::new(AddM3M3{lhs,rhs,out: Rc::new(RefCell::new(Matrix3::from_element(0)))})),
       // Sub
-      (Value::Number(lhs), Value::Number(rhs), FormulaOperator::AddSub(AddSubOp::Sub)) =>
-        term_plan.push(Box::new(SubScalar{lhs,rhs})),
+      (Value::I64(lhs), Value::I64(rhs), FormulaOperator::AddSub(AddSubOp::Sub)) =>
+        term_plan.push(Box::new(SubScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
       (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Sub)) =>
-        term_plan.push(Box::new(SubRv3Rv3{lhs,rhs})),
+        term_plan.push(Box::new(SubRv3Rv3{lhs,rhs,out: Rc::new(RefCell::new(RowVector3::from_element(0)))})),
       // Mul
-      (Value::Number(lhs), Value::Number(rhs), FormulaOperator::MulDiv(MulDivOp::Mul)) =>
+      /*(Value::Number(lhs), Value::Number(rhs), FormulaOperator::MulDiv(MulDivOp::Mul)) =>
         term_plan.push(Box::new(MulScalar{lhs,rhs})),
       // Div
       (Value::Number(lhs), Value::Number(rhs), FormulaOperator::MulDiv(MulDivOp::Div)) =>

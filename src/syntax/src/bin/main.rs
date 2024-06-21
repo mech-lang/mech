@@ -11,11 +11,14 @@ use std::rc::Rc;
 use mech_syntax::interpreter::*;
 use std::time::Instant;
 use std::fs;
+extern crate nalgebra as na;
+use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix6, Matrix2};
 
 
 fn main() -> Result<(),MechError> {
 
     // ----------------------------------------------------------------
+
     let s = fs::read_to_string("../../test.mec").unwrap();
     match parser2::parse(&s) {
         Ok(tree) => { 
@@ -24,7 +27,7 @@ fn main() -> Result<(),MechError> {
           //let result = analyze(&tree);
           //println!("A: {:#?}", result);
           let mut intrp = Interpreter::new();
-          let result = intrp.interpret(&tree);
+          let result = intrp.interpret(&tree)?;
           println!("R: {:#?}", result);
           println!("{:#?}", intrp.symbols); 
           println!("Plan: ");
