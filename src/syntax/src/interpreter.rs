@@ -25,7 +25,7 @@ use tabled::{settings::style::LineText};
 pub enum Value {
   I64(Rc<RefCell<i64>>),
   String(String),
-  Bool(bool),
+  Bool(Rc<RefCell<bool>>),
   Atom(u64),
   Matrix(Matrix),
   Set(MechSet),
@@ -43,7 +43,7 @@ impl Hash for Value {
     match self {
       Value::I64(x) => x.borrow().hash(state),
       Value::String(x) => x.hash(state),
-      Value::Bool(x) => x.hash(state),
+      Value::Bool(x) => x.borrow().hash(state),
       Value::Atom(x) => x.hash(state),
       Value::Matrix(x) => x.hash(state),
       Value::Set(x) => x.hash(state),
@@ -264,7 +264,7 @@ pub enum Matrix {
   RowVector3(Rc<RefCell<RowVector3<i64>>>),
   RowVector4(RowVector4<i64>),
   Matrix1(Matrix1<i64>),
-  Matrix2(Matrix2<i64>),
+  Matrix2(Rc<RefCell<Matrix2<i64>>>),
   Matrix3(Rc<RefCell<Matrix3<i64>>>),
   Matrix4(Matrix4<i64>),
   Matrix2x3(Matrix2x3<i64>),
@@ -279,7 +279,7 @@ impl Hash for Matrix {
       Matrix::RowVector3(x) => x.borrow().hash(state),
       Matrix::RowVector4(x) => x.hash(state),
       Matrix::Matrix1(x) => x.hash(state),
-      Matrix::Matrix2(x) => x.hash(state),
+      Matrix::Matrix2(x) => x.borrow().hash(state),
       Matrix::Matrix3(x) => x.borrow().hash(state),
       Matrix::Matrix4(x) => x.hash(state),
       Matrix::Matrix2x3(x) => x.hash(state),
@@ -296,7 +296,7 @@ impl Matrix {
       Matrix::RowVector3(x) => x.borrow().shape(),
       Matrix::RowVector4(x) => x.shape(),
       Matrix::Matrix1(x) => x.shape(),
-      Matrix::Matrix2(x) => x.shape(),
+      Matrix::Matrix2(x) => x.borrow().shape(),
       Matrix::Matrix3(x) => x.borrow().shape(),
       Matrix::Matrix4(x) => x.shape(),
       Matrix::Matrix2x3(x) => x.shape(),
@@ -397,64 +397,92 @@ impl MechFunction for UserFunction {
 }
 
 // Greater Than ---------------------------------------------------------------
-/*
+
 #[derive(Debug)]
 struct GTScalar {
-  lhs: i64,
-  rhs: i64,
+  lhs: Rc<RefCell<i64>>,
+  rhs: Rc<RefCell<i64>>,
+  out: Rc<RefCell<bool>>,
 }
 
 impl MechFunction for GTScalar {
-  fn solve(&self) -> Value {
-    Value::Bool(self.lhs > self.rhs)
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr > *rhs_ptr;}
   }
-  fn to_string(&self) -> String { format!("{:?}", self)}
+  fn out(&self) -> Value {
+    Value::Bool(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
 // Less Than ------------------------------------------------------------------
 
 #[derive(Debug)]
 struct LTScalar {
-  lhs: i64,
-  rhs: i64,
+  lhs: Rc<RefCell<i64>>,
+  rhs: Rc<RefCell<i64>>,
+  out: Rc<RefCell<bool>>,
 }
 
 impl MechFunction for LTScalar {
-  fn solve(&self) -> Value {
-    Value::Bool(self.lhs < self.rhs)
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr < *rhs_ptr;}
   }
-  fn to_string(&self) -> String { format!("{:?}", self)}
+  fn out(&self) -> Value {
+    Value::Bool(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
 // And ------------------------------------------------------------------------
 
 #[derive(Debug)]
 struct AndScalar {
-  lhs: bool,
-  rhs: bool,
+  lhs: Rc<RefCell<bool>>,
+  rhs: Rc<RefCell<bool>>,
+  out: Rc<RefCell<bool>>,
 }
 
 impl MechFunction for AndScalar {
-  fn solve(&self) -> Value {
-    Value::Bool(self.lhs && self.rhs)
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr && *rhs_ptr;}
   }
-  fn to_string(&self) -> String { format!("{:?}", self)}
+  fn out(&self) -> Value {
+    Value::Bool(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
 // Or ------------------------------------------------------------------------
 
 #[derive(Debug)]
 struct OrScalar {
-  lhs: bool,
-  rhs: bool,
+  lhs: Rc<RefCell<bool>>,
+  rhs: Rc<RefCell<bool>>,
+  out: Rc<RefCell<bool>>,
 }
 
 impl MechFunction for OrScalar {
-  fn solve(&self) -> Value {
-    Value::Bool(self.lhs || self.rhs)
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr || *rhs_ptr;}
   }
-  fn to_string(&self) -> String { format!("{:?}", self)}
-}*/
+  fn out(&self) -> Value {
+    Value::Bool(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self) }
+}
 
 // Add ------------------------------------------------------------------------
 
@@ -561,49 +589,71 @@ impl MechFunction for SubRv3Rv3 {
 }
 
 // Mul ------------------------------------------------------------------------
-/*
-#[derive(Debug)]
+
+#[derive(Debug)] 
 struct MulScalar {
-  lhs: i64,
-  rhs: i64,
+  lhs: Rc<RefCell<i64>>,
+  rhs: Rc<RefCell<i64>>,
+  out: Rc<RefCell<i64>>,
 }
 
 impl MechFunction for MulScalar {
-  fn solve(&self) -> Value {
-    Value::Number(self.lhs * self.rhs)
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr * *rhs_ptr;}
   }
-  fn to_string(&self) -> String { format!("{:?}", self)}
+  fn out(&self) -> Value {
+    Value::I64(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self) }
 }
+
 
 // Div ------------------------------------------------------------------------
 
-#[derive(Debug)]
+#[derive(Debug)] 
 struct DivScalar {
-  lhs: i64,
-  rhs: i64,
+  lhs: Rc<RefCell<i64>>,
+  rhs: Rc<RefCell<i64>>,
+  out: Rc<RefCell<i64>>,
 }
 
 impl MechFunction for DivScalar {
-  fn solve(&self) -> Value {
-    Value::Number(self.lhs / self.rhs)
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr / *rhs_ptr;}
   }
-  fn to_string(&self) -> String { format!("{:?}", self)}
+  fn out(&self) -> Value {
+    Value::I64(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
 // Exp ------------------------------------------------------------------------
 
-#[derive(Debug)]
+#[derive(Debug)] 
 struct ExpScalar {
-  lhs: i64,
-  rhs: i64,
+  lhs: Rc<RefCell<i64>>,
+  rhs: Rc<RefCell<i64>>,
+  out: Rc<RefCell<i64>>,
 }
 
 impl MechFunction for ExpScalar {
-  fn solve(&self) -> Value {
-    Value::Number(self.lhs.pow(self.rhs as u32))
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = (*lhs_ptr).pow(*rhs_ptr as u32);}
   }
-  fn to_string(&self) -> String { format!("{:?}", self)}
-}*/
+  fn out(&self) -> Value {
+    Value::I64(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self) }
+}
 
 // Range ------------------------------------------------------------------------
 
@@ -643,10 +693,9 @@ impl MechFunction for RangeInclusive {
     let max_ptr = self.max.as_ptr();
     let min_ptr = self.min.as_ptr();
     let out_ptr = self.out.as_ptr();
-    
     unsafe {
-        let rng = (*min_ptr..=*max_ptr).collect::<Vec<i64>>();
-        *out_ptr = RowDVector::from_vec(rng);
+      let rng = (*min_ptr..=*max_ptr).collect::<Vec<i64>>();
+      *out_ptr = RowDVector::from_vec(rng);
     }
   }
   fn out(&self) -> Value {
@@ -655,34 +704,44 @@ impl MechFunction for RangeInclusive {
   fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
-/*
+
 // MatMul ---------------------------------------------------------------------
 
 #[derive(Debug)]
 struct MatMulM2M2 {
-  lhs: Matrix2<i64>,
-  rhs: Matrix2<i64>,
+  lhs: Rc<RefCell<Matrix2<i64>>>,
+  rhs: Rc<RefCell<Matrix2<i64>>>,
+  out: Rc<RefCell<Matrix2<i64>>>,
 }
 
 impl MechFunction for MatMulM2M2 {
-  fn solve(&self) -> Value {
-    let result = &self.lhs * &self.rhs;
-    Value::Matrix(Matrix::Matrix2(result))
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe{ *out_ptr = *lhs_ptr * *rhs_ptr;}
+  }
+  fn out(&self) -> Value {
+    Value::Matrix(Matrix::Matrix2(self.out.clone()))
   }
   fn to_string(&self) -> String { format!("{:?}", self)}
 }
-
 // Transpose ------------------------------------------------------------------
 
 #[derive(Debug)]
 struct TransposeM2 {
-  mat: Matrix2<i64>,
+  mat: Rc<RefCell<Matrix2<i64>>>,
+  out: Rc<RefCell<Matrix2<i64>>>,
 }
 
 impl MechFunction for TransposeM2 {
-  fn solve(&self) -> Value {
-    let result = self.mat.transpose();
-    Value::Matrix(Matrix::Matrix2(result))
+  fn solve(&self) {
+    let input_ptr = self.mat.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe{*out_ptr = (*input_ptr).transpose();}
+  }
+  fn out(&self) -> Value {
+    Value::Matrix(Matrix::Matrix2(self.out.clone()))
   }
   fn to_string(&self) -> String { format!("{:?}", self)}
 }
@@ -690,28 +749,44 @@ impl MechFunction for TransposeM2 {
 // Negate ---------------------------------------------------------------------
 
 #[derive(Debug)]
-struct NegateF64 {
-  n: i64,
+struct NegateScalar {
+  input: Rc<RefCell<i64>>,
+  output: Rc<RefCell<i64>>,
 }
 
-impl MechFunction for NegateF64 {
-  fn solve(&self) -> Value {
-    Value::Number(-self.n)
+impl MechFunction for NegateScalar {
+  fn solve(&self) {
+    let input_ptr = self.input.as_ptr();
+    let output_ptr = self.output.as_ptr();
+
+    unsafe {
+      *output_ptr = -*input_ptr;
+    }
+  }
+  fn out(&self) -> Value {
+    Value::I64(self.output.clone())
   }
   fn to_string(&self) -> String { format!("{:?}", self)}
 }
+
 
 #[derive(Debug)]
 struct NegateM2 {
-  mat: Matrix2<i64>,
+  mat: Rc<RefCell<Matrix2<i64>>>,
+  out: Rc<RefCell<Matrix2<i64>>>,
 }
 
 impl MechFunction for NegateM2 {
-  fn solve(&self) -> Value {
-    Value::Matrix(Matrix::Matrix2(-self.mat))
+  fn solve(&self) {
+    let mat_ptr = self.mat.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = -*mat_ptr;}
+  }
+  fn out(&self) -> Value {
+    Value::Matrix(Matrix::Matrix2(self.out.clone()))
   }
   fn to_string(&self) -> String { format!("{:?}", self)}
-}*/
+}
 
 // Interpreter 
 // ----------------------------------------------------------------------------
@@ -1119,7 +1194,7 @@ fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: Functions) ->
     (2,2) => {
       let mut rows: Vec<RowVector2<i64>> = vec![];
       for o in &out {if let Value::Matrix(Matrix::RowVector2(v)) = &o {rows.push(v.clone());}}
-      Value::Matrix(Matrix::Matrix2(Matrix2::from_rows(&[rows[0].clone(), rows[1].clone()])))
+      Value::Matrix(Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_rows(&[rows[0].clone(), rows[1].clone()])))))
     }
     (2,3) => {
       let mut rows: Vec<RowVector3<i64>> = vec![];
@@ -1187,33 +1262,33 @@ fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: Functio
     Factor::Negated(neg) => {
       match factor(neg, plan.clone(), symbols.clone(), functions.clone())? {
         Value::Matrix(Matrix::Matrix2(mat)) => {
-          //let fxn = NegateM2{mat}; 
-          //let out: Value = fxn.solve();
-          //let mut plan_brrw = plan.borrow_mut();
-          //plan_brrw.push(Box::new(fxn));
-          //return Ok(out);
-          todo!()
+          let fxn = NegateM2{mat, out: Rc::new(RefCell::new(Matrix2::from_element(0)))};
+          fxn.solve();
+          let out = fxn.out();
+          let mut plan_brrw = plan.borrow_mut();
+          plan_brrw.push(Box::new(fxn));
+          return Ok(out);
         }
-        //Value::Number(n) => {
-          //let fxn = NegateF64{n}; 
-          //let out: Value = fxn.solve();
-          //let mut plan_brrw = plan.borrow_mut();
-          //plan_brrw.push(Box::new(fxn));
-          //return Ok(out);
-        //  todo!()
-        //}
+        Value::I64(n) => {
+          let fxn = NegateScalar{input: n, output: Rc::new(RefCell::new(0))}; 
+          fxn.solve();
+          let out: Value = fxn.out();
+          let mut plan_brrw = plan.borrow_mut();
+          plan_brrw.push(Box::new(fxn));
+          return Ok(out);
+        }
         _ => todo!(),
       }  
       return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 1042, kind: MechErrorKind::None});
     },
     Factor::Transpose(fctr) => {
       if let Value::Matrix(Matrix::Matrix2(mat)) = factor(fctr, plan.clone(), symbols.clone(), functions.clone())? {
-        //let fxn = TransposeM2{mat}; 
-        //let out: Value = fxn.solve();
-        //let mut plan_brrw = plan.borrow_mut();
-        //plan_brrw.push(Box::new(fxn));
-        //return Ok(out);
-        todo!()
+        let fxn = TransposeM2{mat, out: Rc::new(RefCell::new(Matrix2::from_element(0)))};
+        fxn.solve();
+        let out_val = fxn.out();
+        let mut plan_brrw = plan.borrow_mut();
+        plan_brrw.push(Box::new(fxn));
+        return Ok(out_val);
       }
       return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 1052, kind: MechErrorKind::None});
     },
@@ -1239,37 +1314,37 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: Functions) -
         _ => todo!(),
       }
       (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) =>
-        term_plan.push(Box::new(AddRv3Rv3{lhs,rhs,out: Rc::new(RefCell::new(RowVector3::from_element(0)))})),
+        term_plan.push(Box::new(AddRv3Rv3{lhs, rhs, out: Rc::new(RefCell::new(RowVector3::from_element(0)))})),
       (Value::Matrix(Matrix::Matrix3(lhs)), Value::Matrix(Matrix::Matrix3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) =>
-        term_plan.push(Box::new(AddM3M3{lhs,rhs,out: Rc::new(RefCell::new(Matrix3::from_element(0)))})),
+        term_plan.push(Box::new(AddM3M3{lhs, rhs, out: Rc::new(RefCell::new(Matrix3::from_element(0)))})),
       // Sub
       (Value::I64(lhs), Value::I64(rhs), FormulaOperator::AddSub(AddSubOp::Sub)) =>
         term_plan.push(Box::new(SubScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
       (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Sub)) =>
         term_plan.push(Box::new(SubRv3Rv3{lhs,rhs,out: Rc::new(RefCell::new(RowVector3::from_element(0)))})),
       // Mul
-      /*(Value::Number(lhs), Value::Number(rhs), FormulaOperator::MulDiv(MulDivOp::Mul)) =>
-        term_plan.push(Box::new(MulScalar{lhs,rhs})),
+      (Value::I64(lhs), Value::I64(rhs), FormulaOperator::MulDiv(MulDivOp::Mul)) =>
+        term_plan.push(Box::new(MulScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
       // Div
-      (Value::Number(lhs), Value::Number(rhs), FormulaOperator::MulDiv(MulDivOp::Div)) =>
-        term_plan.push(Box::new(DivScalar{lhs,rhs})),
+      (Value::I64(lhs), Value::I64(rhs), FormulaOperator::MulDiv(MulDivOp::Div)) =>
+        term_plan.push(Box::new(DivScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
       // Exp
-      (Value::Number(lhs), Value::Number(rhs), FormulaOperator::Exponent(ExponentOp::Exp)) =>
-        term_plan.push(Box::new(ExpScalar{lhs,rhs})),          
+      (Value::I64(lhs), Value::I64(rhs), FormulaOperator::Exponent(ExponentOp::Exp)) =>
+        term_plan.push(Box::new(ExpScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),         
       // Mat Mul
       (Value::Matrix(Matrix::Matrix2(lhs)), Value::Matrix(Matrix::Matrix2(rhs)), FormulaOperator::Vec(VecOp::MatMul)) => 
-        term_plan.push(Box::new(MatMulM2M2{lhs,rhs})),
+        term_plan.push(Box::new(MatMulM2M2{lhs,rhs,out: Rc::new(RefCell::new(Matrix2::from_element(0)))})),
       // Compare
-      (Value::Number(lhs), Value::Number(rhs), FormulaOperator::Comparison(ComparisonOp::LessThan)) =>
-        term_plan.push(Box::new(LTScalar{lhs,rhs})),          
-      (Value::Number(lhs), Value::Number(rhs), FormulaOperator::Comparison(ComparisonOp::GreaterThan)) =>
-        term_plan.push(Box::new(GTScalar{lhs,rhs})),
+      (Value::I64(lhs), Value::I64(rhs), FormulaOperator::Comparison(ComparisonOp::LessThan)) =>
+        term_plan.push(Box::new(LTScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),
+      (Value::I64(lhs), Value::I64(rhs), FormulaOperator::Comparison(ComparisonOp::GreaterThan)) =>
+        term_plan.push(Box::new(GTScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),
       // And
       (Value::Bool(lhs), Value::Bool(rhs), FormulaOperator::Logic(LogicOp::And)) =>
-        term_plan.push(Box::new(AndScalar{lhs,rhs})),
+        term_plan.push(Box::new(AndScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),        
       // Or
       (Value::Bool(lhs), Value::Bool(rhs), FormulaOperator::Logic(LogicOp::Or)) =>
-        term_plan.push(Box::new(OrScalar{lhs,rhs})),*/        
+        term_plan.push(Box::new(OrScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),        
       x => {
         println!("{:?}", x);
         return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 1104, kind: MechErrorKind::UnhandledFunctionArgumentKind});
@@ -1345,5 +1420,5 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: Functions) -
       "false" => false,
       _ => unreachable!(),
     };
-    Value::Bool(val)
+    Value::Bool(Rc::new(RefCell::new(val)))
   }
