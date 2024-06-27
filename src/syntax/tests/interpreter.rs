@@ -84,10 +84,14 @@ test_interpreter!(interpret_record,r#"{a: 1, b: "Hello"}"#, Value::Record(MechMa
 test_interpreter!(interpret_record_field_access,r#"a := {x: 1,  y: 2}; a.y"#, Value::I64(Rc::new(RefCell::new(2))));
 test_interpreter!(interpret_map,r#"{"a": 1, "b": 2}"#, Value::Map(MechMap::from_vec(vec![(Value::String("a".to_string()),Value::I64(Rc::new(RefCell::new(1)))),(Value::String("b".to_string()),Value::I64(Rc::new(RefCell::new(2))))])));
 
-test_interpreter!(interpret_function_define_call,r#"foo(x<i64>) = z<i64> :=
+test_interpreter!(interpret_function_define,r#"foo(x<i64>) = z<i64> :=
 z := x + 10.
 foo(10)"#, Value::I64(Rc::new(RefCell::new(20))));
-
-test_interpreter!(interpret_function_define_call_2_args,r#"foo(x<i64>, y<i64>) = z<i64> :=
+test_interpreter!(interpret_function_define_2_args,r#"foo(x<i64>, y<i64>) = z<i64> :=
 z := x + y.
 foo(10,20)"#, Value::I64(Rc::new(RefCell::new(30))));
+test_interpreter!(interpret_function_define_statments,r#"foo(x<i64>, y<i64>) = z<i64> :=
+    a := x + 1
+    b := y + 1
+    z := a + b.
+foo(10,20)"#, Value::I64(Rc::new(RefCell::new(32))));
