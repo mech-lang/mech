@@ -1309,6 +1309,11 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: Functions) -
           term_plan.push(Box::new(AddScalar{lhs: lhs.clone(), rhs, out: Rc::new(RefCell::new(0))})),
         _ => todo!(),
       }
+      (Value::I64(lhs), Value::MutableReference(rhs), FormulaOperator::AddSub(AddSubOp::Add)) => match *rhs.borrow() {
+        Value::I64(ref rhs) =>
+          term_plan.push(Box::new(AddScalar{lhs, rhs: rhs.clone(), out: Rc::new(RefCell::new(0))})),
+        _ => todo!(),
+      }
       (Value::MutableReference(lhs), Value::MutableReference(rhs), FormulaOperator::AddSub(AddSubOp::Add)) => match (&*lhs.borrow(),&*rhs.borrow()) { 
         (Value::I64(ref lhs),Value::I64(ref rhs)) =>
           term_plan.push(Box::new(AddScalar{lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(0))})),

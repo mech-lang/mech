@@ -91,7 +91,7 @@ test_interpreter!(interpret_function_define_2_args,r#"foo(x<i64>, y<i64>) = z<i6
 z := x + y.
 foo(10,20)"#, Value::I64(Rc::new(RefCell::new(30))));
 test_interpreter!(interpret_function_define_statments,r#"foo(x<i64>, y<i64>) = z<i64> :=
-    a := x + 1
+    a := 1 + x
     b := y + 1
     z := a + b.
 foo(10,20)"#, Value::I64(Rc::new(RefCell::new(32))));
