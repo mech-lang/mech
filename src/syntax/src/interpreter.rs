@@ -513,115 +513,6 @@ impl MechFunction for OrScalar {
   fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
-// Sub ------------------------------------------------------------------------
-
-#[derive(Debug)] 
-struct SubScalar {
-  lhs: Rc<RefCell<i64>>,
-  rhs: Rc<RefCell<i64>>,
-  out: Rc<RefCell<i64>>,
-}
-
-impl MechFunction for SubScalar {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr - *rhs_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::I64(self.out.clone())
-  }
-  fn to_string(&self) -> String { format!("{:?}", self) }
-}
-
-#[derive(Debug)]
-struct SubRv3Rv3 {
-  lhs: Rc<RefCell<RowVector3<i64>>>,
-  rhs: Rc<RefCell<RowVector3<i64>>>,
-  out: Rc<RefCell<RowVector3<i64>>>,
-}
-
-impl MechFunction for SubRv3Rv3 {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr - *rhs_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::Matrix(Matrix::RowVector3(self.out.clone()))
-  }
-  fn to_string(&self) -> String { format!("{:?}", self)}
-}
-
-// Mul ------------------------------------------------------------------------
-
-#[derive(Debug)] 
-struct MulScalar {
-  lhs: Rc<RefCell<i64>>,
-  rhs: Rc<RefCell<i64>>,
-  out: Rc<RefCell<i64>>,
-}
-
-impl MechFunction for MulScalar {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr * *rhs_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::I64(self.out.clone())
-  }
-  fn to_string(&self) -> String { format!("{:?}", self) }
-}
-
-
-// Div ------------------------------------------------------------------------
-
-#[derive(Debug)] 
-struct DivScalar {
-  lhs: Rc<RefCell<i64>>,
-  rhs: Rc<RefCell<i64>>,
-  out: Rc<RefCell<i64>>,
-}
-
-impl MechFunction for DivScalar {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr / *rhs_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::I64(self.out.clone())
-  }
-  fn to_string(&self) -> String { format!("{:?}", self) }
-}
-
-// Exp ------------------------------------------------------------------------
-
-#[derive(Debug)] 
-struct ExpScalar {
-  lhs: Rc<RefCell<i64>>,
-  rhs: Rc<RefCell<i64>>,
-  out: Rc<RefCell<i64>>,
-}
-
-impl MechFunction for ExpScalar {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = (*lhs_ptr).pow(*rhs_ptr as u32);}
-  }
-  fn out(&self) -> Value {
-    Value::I64(self.out.clone())
-  }
-  fn to_string(&self) -> String { format!("{:?}", self) }
-}
-
 // Range ------------------------------------------------------------------------
 
 #[derive(Debug)]
@@ -1566,4 +1457,113 @@ impl NativeFunctionCompiler for MathAdd {
         Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
     }
   }
+}
+
+// Sub ------------------------------------------------------------------------
+
+#[derive(Debug)] 
+struct SubScalar {
+  lhs: Rc<RefCell<i64>>,
+  rhs: Rc<RefCell<i64>>,
+  out: Rc<RefCell<i64>>,
+}
+
+impl MechFunction for SubScalar {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr - *rhs_ptr;}
+  }
+  fn out(&self) -> Value {
+    Value::I64(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
+#[derive(Debug)]
+struct SubRv3Rv3 {
+  lhs: Rc<RefCell<RowVector3<i64>>>,
+  rhs: Rc<RefCell<RowVector3<i64>>>,
+  out: Rc<RefCell<RowVector3<i64>>>,
+}
+
+impl MechFunction for SubRv3Rv3 {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr - *rhs_ptr;}
+  }
+  fn out(&self) -> Value {
+    Value::Matrix(Matrix::RowVector3(self.out.clone()))
+  }
+  fn to_string(&self) -> String { format!("{:?}", self)}
+}
+
+// Mul ------------------------------------------------------------------------
+
+#[derive(Debug)] 
+struct MulScalar {
+  lhs: Rc<RefCell<i64>>,
+  rhs: Rc<RefCell<i64>>,
+  out: Rc<RefCell<i64>>,
+}
+
+impl MechFunction for MulScalar {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr * *rhs_ptr;}
+  }
+  fn out(&self) -> Value {
+    Value::I64(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
+
+// Div ------------------------------------------------------------------------
+
+#[derive(Debug)] 
+struct DivScalar {
+  lhs: Rc<RefCell<i64>>,
+  rhs: Rc<RefCell<i64>>,
+  out: Rc<RefCell<i64>>,
+}
+
+impl MechFunction for DivScalar {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr / *rhs_ptr;}
+  }
+  fn out(&self) -> Value {
+    Value::I64(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
+// Exp ------------------------------------------------------------------------
+
+#[derive(Debug)] 
+struct ExpScalar {
+  lhs: Rc<RefCell<i64>>,
+  rhs: Rc<RefCell<i64>>,
+  out: Rc<RefCell<i64>>,
+}
+
+impl MechFunction for ExpScalar {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = (*lhs_ptr).pow(*rhs_ptr as u32);}
+  }
+  fn out(&self) -> Value {
+    Value::I64(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self) }
 }
