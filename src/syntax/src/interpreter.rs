@@ -21,9 +21,24 @@ use tabled::{settings::style::LineText};
 
 // Value-----------------------------------------------------------------------
 
+#[derive(PartialEq, Debug)]
+pub struct F64(f64);
+impl F64 {
+  pub fn new(val: f64) -> F64 {
+    F64(val)
+  }
+}
+impl Eq for F64 {}
+impl Hash for F64 {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    self.0.to_bits().hash(state);
+  }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Value {
   I64(Rc<RefCell<i64>>),
+  F64(Rc<RefCell<F64>>),
   String(String),
   Bool(Rc<RefCell<bool>>),
   Atom(u64),
@@ -42,6 +57,7 @@ impl Hash for Value {
   fn hash<H: Hasher>(&self, state: &mut H) {
     match self {
       Value::I64(x) => x.borrow().hash(state),
+      Value::F64(x) => x.borrow().hash(state),
       Value::String(x) => x.hash(state),
       Value::Bool(x) => x.borrow().hash(state),
       Value::Atom(x) => x.hash(state),
@@ -62,6 +78,7 @@ impl Value {
   pub fn shape(&self) -> (usize,usize) {
     match self {
       Value::I64(x) => (1,1),
+      Value::F64(x) => (1,1),
       Value::String(x) => (1,1),
       Value::Bool(x) => (1,1),
       Value::Atom(x) => (1,1),
@@ -1451,7 +1468,7 @@ fn real(rl: &RealNumber) -> Value {
   match rl {
     RealNumber::Negated(num) => todo!(),
     RealNumber::Integer(num) => integer(num),
-    RealNumber::Float(num) => todo!(),
+    RealNumber::Float(num) => float(num),
     RealNumber::Decimal(num) => todo!(),
     RealNumber::Hexadecimal(num) => todo!(),
     RealNumber::Octal(num) => todo!(),
@@ -1459,6 +1476,13 @@ fn real(rl: &RealNumber) -> Value {
     RealNumber::Scientific(num) => todo!(),
     RealNumber::Rational(num) => todo!(),
   }
+}
+
+fn float(flt: &(Token,Token)) -> Value {
+  let a = flt.0.chars.iter().collect::<String>();
+  let b = flt.1.chars.iter().collect::<String>();
+  let num: f64 = format!("{}.{}",a,b).parse::<f64>().unwrap();
+  Value::F64(Rc::new(RefCell::new(F64(num))))
 }
 
 fn integer(int: &Token) -> Value {
@@ -1485,20 +1509,21 @@ fn boolean(tkn: &Token) -> Value {
   Value::Bool(Rc::new(RefCell::new(val)))
 }
 
+use libm::sin;
+
 #[derive(Debug)]
 pub struct MathSinScalar {
-  val: Rc<RefCell<i64>>,
-  out: Rc<RefCell<i64>>,
+  val: Rc<RefCell<F64>>,
+  out: Rc<RefCell<F64>>,
 }
 
 impl MechFunction for MathSinScalar {
   fn solve(&self) {
     let val_ptr = self.val.as_ptr();
     let out_ptr = self.out.as_ptr();
-    use libm::sin;
-    unsafe{*out_ptr = sin((*val_ptr) as f64) as i64;}
+    unsafe{(*out_ptr).0 = sin((*val_ptr).0);}
   }
-  fn out(&self) -> Value { Value::I64(self.out.clone()) }
+  fn out(&self) -> Value { Value::F64(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 
@@ -1510,8 +1535,8 @@ impl NativeFunctionCompiler for MathSin {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     match &arguments[0] {
-      Value::I64(val) =>
-        Ok(Box::new(MathSinScalar{val: val.clone(), out: Rc::new(RefCell::new(0))})),
+      Value::F64(val) =>
+        Ok(Box::new(MathSinScalar{val: val.clone(), out: Rc::new(RefCell::new(F64(0.0)))})),
       x => 
         Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
     }
