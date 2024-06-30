@@ -881,7 +881,7 @@ fn function_define(fxn_def: &FunctionDefine, functions: Functions) -> Result<Fun
     for arg_id in output_arg_ids {
       match symbol_brrw.get(arg_id) {
         Some(cell) => new_fxn.out = cell.clone(),
-        None => { return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 783, kind: MechErrorKind::OutputUndefinedInFunctionBody(arg_id)});} 
+        None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::OutputUndefinedInFunctionBody(arg_id)});} 
       }
     }
   }
@@ -939,7 +939,7 @@ fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, f
                 symbols_brrw.get(arg_id.hash()).unwrap().clone()
               }
               // The argument name doesn't match
-              None => { return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 756, kind: MechErrorKind::UnknownFunctionArgument(arg_id.hash())});}
+              None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnknownFunctionArgument(arg_id.hash())});}
             }
           }
           // Arg is called positionally (no arg name supplied)
@@ -949,7 +949,7 @@ fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, f
                 let symbols_brrw = new_fxn.symbols.borrow();
                 symbols_brrw.get(**arg_id).unwrap().clone()
               }
-              None => { return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 807, kind: MechErrorKind::TooManyInputArguments(ix+1,new_fxn.input.len())});} 
+              None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::TooManyInputArguments(ix+1,new_fxn.input.len())});} 
             }
           }
         };
@@ -970,7 +970,7 @@ fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, f
       plan_brrw.push(Box::new(UserFunction{fxn: new_fxn.clone()}));
       return Ok(result_brrw.clone())
     }
-    None => { return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 756, kind: MechErrorKind::MissingFunction(fxn_name_id)});}
+    None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::MissingFunction(fxn_name_id)});}
   }   
   unreachable!()
 }
@@ -986,7 +986,7 @@ fn range(rng: &RangeExpression, plan: Plan, symbols: SymbolTableRef, functions: 
       plan_brrw.push(Box::new(RangeInclusive{max,min, out: Rc::new(RefCell::new(RowDVector::from_element(1,0)))})),       
     x => {
       println!("{:?}", x);
-      return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 776, kind: MechErrorKind::UnhandledFunctionArgumentKind});
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});
     }
   }
   let step = plan_brrw.last().unwrap();
@@ -1000,7 +1000,7 @@ fn slice(slc: &Slice, plan: Plan, symbols: SymbolTableRef, functions: Functions)
   let symbols_brrw = symbols.borrow();
   let val: Value = match symbols_brrw.get(name) {
     Some(val) => Value::MutableReference(val.clone()),
-    None => {return Err(MechError{tokens: slc.name.tokens(), msg: "interpreter.rs".to_string(), id: 788, kind: MechErrorKind::UndefinedVariable(name)});}
+    None => {return Err(MechError{tokens: slc.name.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
   };
   for s in &slc.subscript {
     let s_result = subscript(&s, &val, plan.clone(), symbols.clone(), functions.clone())?;
@@ -1017,14 +1017,14 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
         Value::Record(rcrd) => {
           match rcrd.map.get(&Value::Id(key)) {
             Some(value) => return Ok(value.clone()),
-            None => { return Err(MechError{tokens: x.tokens(), msg: "interpreter.rs".to_string(), id: 805, kind: MechErrorKind::UndefinedField(key)});}
+            None => { return Err(MechError{tokens: x.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(key)});}
           }
         }
         Value::MutableReference(r) => match &*r.borrow() {
           Value::Record(rcrd) => {
             match rcrd.map.get(&Value::Id(key)) {
               Some(value) => return Ok(value.clone()),
-              None => { return Err(MechError{tokens: x.tokens(), msg: "interpreter.rs".to_string(), id: 805, kind: MechErrorKind::UndefinedField(key)});}
+              None => { return Err(MechError{tokens: x.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(key)});}
             }
           }
           _ => todo!(),
@@ -1070,7 +1070,7 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
     Subscript::Brace(x) => todo!(),
     Subscript::All => todo!(),
   }
-  return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 835, kind: MechErrorKind::None});
+  return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::None});
 }
 
 fn structure(strct: &Structure, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
@@ -1247,7 +1247,7 @@ fn var(v: &Var, symbols: SymbolTableRef) -> Result<Value,MechError> {
       return Ok(Value::MutableReference(value.clone()))
     }
     None => {
-      return Err(MechError{tokens: v.tokens(), msg: "interpreter.rs".to_string(), id: 1012, kind: MechErrorKind::UndefinedVariable(id)});
+      return Err(MechError{tokens: v.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(id)});
     }
   }
 }
@@ -1279,7 +1279,7 @@ fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: Functio
         }
         _ => todo!(),
       }  
-      return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 1042, kind: MechErrorKind::None});
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::None});
     },
     Factor::Transpose(fctr) => {
       if let Value::Matrix(Matrix::Matrix2(mat)) = factor(fctr, plan.clone(), symbols.clone(), functions.clone())? {
@@ -1290,7 +1290,7 @@ fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: Functio
         plan_brrw.push(Box::new(fxn));
         return Ok(out_val);
       }
-      return Err(MechError{tokens: vec![], msg: "interpreter.rs".to_string(), id: 1052, kind: MechErrorKind::None});
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::None});
     },
   }
 }
@@ -1301,7 +1301,7 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: Functions) -
   for (op,rhs) in &trm.rhs {
     let rhs_result = factor(&rhs, plan.clone(), symbols.clone(), functions.clone())?;
     match (lhs_result, rhs_result, op) {
-      // Add
+      // Add ------------------------------------------------------------------
       (Value::I64(lhs), Value::I64(rhs), FormulaOperator::AddSub(AddSubOp::Add)) =>
         term_plan.push(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
       (Value::MutableReference(lhs), Value::I64(rhs), FormulaOperator::AddSub(AddSubOp::Add)) => match *lhs.borrow() {
@@ -1325,21 +1325,21 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: Functions) -
         term_plan.push(Box::new(AddRv3Rv3{lhs, rhs, out: Rc::new(RefCell::new(RowVector3::from_element(0)))})),
       (Value::Matrix(Matrix::Matrix3(lhs)), Value::Matrix(Matrix::Matrix3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) =>
         term_plan.push(Box::new(AddM3M3{lhs, rhs, out: Rc::new(RefCell::new(Matrix3::from_element(0)))})),
-      // Sub
+      // Sub ------------------------------------------------------------------
       (Value::I64(lhs), Value::I64(rhs), FormulaOperator::AddSub(AddSubOp::Sub)) =>
         term_plan.push(Box::new(SubScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
       (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Sub)) =>
         term_plan.push(Box::new(SubRv3Rv3{lhs,rhs,out: Rc::new(RefCell::new(RowVector3::from_element(0)))})),
-      // Mul
+      // Mul ------------------------------------------------------------------
       (Value::I64(lhs), Value::I64(rhs), FormulaOperator::MulDiv(MulDivOp::Mul)) =>
         term_plan.push(Box::new(MulScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
-      // Div
+      // Div ------------------------------------------------------------------
       (Value::I64(lhs), Value::I64(rhs), FormulaOperator::MulDiv(MulDivOp::Div)) =>
         term_plan.push(Box::new(DivScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
-      // Exp
+      // Exp ------------------------------------------------------------------
       (Value::I64(lhs), Value::I64(rhs), FormulaOperator::Exponent(ExponentOp::Exp)) =>
         term_plan.push(Box::new(ExpScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),         
-      // Mat Mul
+      // Mat Mul --------------------------------------------------------------
       (Value::Matrix(Matrix::Matrix2(lhs)), Value::Matrix(Matrix::Matrix2(rhs)), FormulaOperator::Vec(VecOp::MatMul)) => 
         term_plan.push(Box::new(MatMulM2M2{lhs,rhs,out: Rc::new(RefCell::new(Matrix2::from_element(0)))})),
       (Value::MutableReference(lhs), Value::MutableReference(rhs), FormulaOperator::Vec(VecOp::MatMul)) => match (&*lhs.borrow(),&*rhs.borrow()) {
@@ -1347,20 +1347,21 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: Functions) -
           term_plan.push(Box::new(MatMulM2M2{lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(Matrix2::from_element(0)))})),
         _ => todo!(),
       } 
-      // Compare
+      // Less Than ------------------------------------------------------------
       (Value::I64(lhs), Value::I64(rhs), FormulaOperator::Comparison(ComparisonOp::LessThan)) =>
         term_plan.push(Box::new(LTScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),
+      // Greater Than ---------------------------------------------------------
       (Value::I64(lhs), Value::I64(rhs), FormulaOperator::Comparison(ComparisonOp::GreaterThan)) =>
         term_plan.push(Box::new(GTScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),
-      // And
+      // And ------------------------------------------------------------------
       (Value::Bool(lhs), Value::Bool(rhs), FormulaOperator::Logic(LogicOp::And)) =>
         term_plan.push(Box::new(AndScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),        
-      // Or
+      // Or -------------------------------------------------------------------
       (Value::Bool(lhs), Value::Bool(rhs), FormulaOperator::Logic(LogicOp::Or)) =>
         term_plan.push(Box::new(OrScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),        
       x => {
         println!("{:?}", x);
-        return Err(MechError{tokens: trm.tokens(), msg: "interpreter.rs".to_string(), id: 1104, kind: MechErrorKind::UnhandledFunctionArgumentKind});
+        return Err(MechError{tokens: trm.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});
       }
     };
       let mut last_step = term_plan.last().unwrap();

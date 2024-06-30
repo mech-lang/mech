@@ -12,7 +12,7 @@ type Cols = usize;
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct MechError {
-  pub id: u64,
+  pub id: u32,
   pub tokens: Vec<Token>,
   pub kind: MechErrorKind,
   pub msg: String,
