@@ -148,7 +148,19 @@ impl Hash for MechTable {
   }
 }
 
-type Functions = Rc<RefCell<HashMap<u64,FunctionDefinition>>>;
+pub struct Functions {
+  pub functions: HashMap<u64,FunctionDefinition>,
+  pub function_compilers: HashMap<u64, Box<dyn NativeFunctionCompiler>>
+}
+
+impl Functions {
+  pub fn new() -> Self {
+    Self {functions: HashMap::new(), function_compilers: HashMap::new()}
+  }
+}
+
+
+type FunctionsRef = Rc<RefCell<Functions>>;
 type Plan = Rc<RefCell<Vec<Box<dyn MechFunction>>>>;
 type MutableReference = Rc<RefCell<Value>>;
 type SymbolTableRef= Rc<RefCell<SymbolTable>>;
@@ -235,7 +247,7 @@ impl FunctionDefinition {
     }
   }
 
-  pub fn recompile(&self, functions: Functions) -> Result<FunctionDefinition,MechError> {
+  pub fn recompile(&self, functions: FunctionsRef) -> Result<FunctionDefinition,MechError> {
     function_define(&self.code, functions.clone())
   }
 
@@ -387,7 +399,7 @@ struct UserFunction {
 }
 
 impl MechFunction for UserFunction {
-  fn solve(&self){
+  fn solve(&self) {
     self.fxn.solve();
   }
   fn out(&self) -> Value {
@@ -794,16 +806,17 @@ impl MechFunction for NegateM2 {
 pub struct Interpreter {
   pub symbols: SymbolTableRef,
   pub plan: Plan,
-  pub functions: Functions,
+  pub functions: FunctionsRef,
 }
 
 impl Interpreter {
-
   pub fn new() -> Interpreter {
+    let mut fxns = Functions::new();
+    fxns.function_compilers.insert(hash_str("math/sin"),Box::new(MathSin{}));
     Interpreter {
       symbols: Rc::new(RefCell::new(SymbolTable::new())),
       plan: Rc::new(RefCell::new(Vec::new())),
-      functions: Rc::new(RefCell::new(HashMap::new())),
+      functions: Rc::new(RefCell::new(fxns)),
     }
   }
 
@@ -812,13 +825,17 @@ impl Interpreter {
   }
 }
 
+pub trait NativeFunctionCompiler {
+  fn compile(&self, arguments: &Vec<Value>, out: &Value) -> std::result::Result<Box<dyn MechFunction>,MechError>;
+}
+
 //-----------------------------------------------------------------------------
 
-fn program(program: &Program, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
+fn program(program: &Program, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   body(&program.body, plan.clone(), symbols.clone(), functions.clone())
 }
 
-fn body(body: &Body, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
+fn body(body: &Body, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   let mut result = None;
   for sec in &body.sections {
     result = Some(section(&sec, plan.clone(), symbols.clone(), functions.clone())?);
@@ -826,7 +843,7 @@ fn body(body: &Body, plan: Plan, symbols: SymbolTableRef, functions: Functions) 
   Ok(result.unwrap())
 }
 
-fn section(section: &Section, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
+fn section(section: &Section, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   let mut result = None;
   for el in &section.elements {
     result = Some(section_element(&el, plan.clone(), symbols.clone(), functions.clone())?);
@@ -834,7 +851,7 @@ fn section(section: &Section, plan: Plan, symbols: SymbolTableRef, functions: Fu
   Ok(result.unwrap())
 }
 
-fn section_element(element: &SectionElement, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
+fn section_element(element: &SectionElement, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   let out = match element {
     SectionElement::MechCode(code) => {mech_code(&code, plan.clone(), symbols.clone(), functions.clone())?},
     SectionElement::Section(sctn) => todo!(),
@@ -851,7 +868,7 @@ fn section_element(element: &SectionElement, plan: Plan, symbols: SymbolTableRef
   Ok(out)
 }
 
-fn mech_code(code: &MechCode, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
+fn mech_code(code: &MechCode, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   match &code {
     MechCode::Expression(expr) => expression(&expr, plan.clone(), symbols.clone(), functions.clone()),
     MechCode::Statement(stmt) => statement(&stmt, plan.clone(), symbols.clone(), functions.clone()),
@@ -860,14 +877,14 @@ fn mech_code(code: &MechCode, plan: Plan, symbols: SymbolTableRef, functions: Fu
     MechCode::FunctionDefine(fxn_def) => {
       let usr_fxn = function_define(&fxn_def, functions.clone())?;
       let mut fxns_brrw = functions.borrow_mut();
-      fxns_brrw.insert(usr_fxn.id, usr_fxn);
+      fxns_brrw.functions.insert(usr_fxn.id, usr_fxn);
       Ok(Value::Empty)
     },
   }
 }
 
 
-fn function_define(fxn_def: &FunctionDefine, functions: Functions) -> Result<FunctionDefinition,MechError> {
+fn function_define(fxn_def: &FunctionDefine, functions: FunctionsRef) -> Result<FunctionDefinition,MechError> {
   let fxn_name_id = fxn_def.name.hash();
   let mut new_fxn = FunctionDefinition::new(fxn_name_id,fxn_def.name.to_string(), fxn_def.clone());
   for input_arg in &fxn_def.input {
@@ -898,7 +915,7 @@ fn function_define(fxn_def: &FunctionDefine, functions: Functions) -> Result<Fun
   Ok(new_fxn)
 }
 
-fn statement(stmt: &Statement, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
+fn statement(stmt: &Statement, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   match stmt {
     Statement::VariableDefine(var_def) => variable_define(&var_def, plan.clone(), symbols.clone(), functions.clone()),
     Statement::VariableAssign(_) => todo!(),
@@ -910,7 +927,7 @@ fn statement(stmt: &Statement, plan: Plan, symbols: SymbolTableRef, functions: F
   }
 }
 
-fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
+fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   let id = var_def.var.name.hash();
   let result = expression(&var_def.expression, plan.clone(), symbols.clone(), functions.clone())?;
   let mut symbols_brrw = symbols.borrow_mut();
@@ -918,7 +935,7 @@ fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTableRef
   Ok(result)
 }
 
-fn expression(expr: &Expression, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
+fn expression(expr: &Expression, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   match &expr {
     Expression::Var(v) => var(&v, symbols.clone()),
     Expression::Range(rng) => range(&rng, plan.clone(), symbols.clone(), functions.clone()),
@@ -931,10 +948,10 @@ fn expression(expr: &Expression, plan: Plan, symbols: SymbolTableRef, functions:
   }
 }
 
-fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
+fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   let fxn_name_id = fxn_call.name.hash();
   let fxns_brrw = functions.borrow();
-  match fxns_brrw.get(&fxn_name_id) {
+  match fxns_brrw.functions.get(&fxn_name_id) {
     Some(fxn) => {
       let mut new_fxn = fxn.recompile(functions.clone())?; // This just calles function_define again, it should be smarter.
       for (ix,(arg_name, arg_expr)) in fxn_call.args.iter().enumerate() {
@@ -985,7 +1002,7 @@ fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, f
   unreachable!()
 }
 
-fn range(rng: &RangeExpression, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
+fn range(rng: &RangeExpression, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   let start = factor(&rng.start, plan.clone(),symbols.clone(), functions.clone())?;
   let terminal = factor(&rng.terminal, plan.clone(),symbols.clone(), functions.clone())?;
   let mut plan_brrw = plan.borrow_mut();
@@ -1005,7 +1022,7 @@ fn range(rng: &RangeExpression, plan: Plan, symbols: SymbolTableRef, functions: 
   Ok(res)
 }
 
-fn slice(slc: &Slice, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
+fn slice(slc: &Slice, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   let name = slc.name.hash();
   let symbols_brrw = symbols.borrow();
   let val: Value = match symbols_brrw.get(name) {
@@ -1019,7 +1036,7 @@ fn slice(slc: &Slice, plan: Plan, symbols: SymbolTableRef, functions: Functions)
   unreachable!() // subscript should have through an error if we can't access an element
 }
 
-fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
+fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   match sbscrpt {
     Subscript::Dot(x) => {
       let key = x.hash();
@@ -1083,7 +1100,7 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
   return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::None});
 }
 
-fn structure(strct: &Structure, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
+fn structure(strct: &Structure, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   match strct {
     Structure::Empty => Ok(Value::Empty),
     Structure::Record(x) => record(&x, plan.clone(), symbols.clone(), functions.clone()),
@@ -1096,7 +1113,7 @@ fn structure(strct: &Structure, plan: Plan, symbols: SymbolTableRef, functions: 
   }
 }
 
-fn tuple(tpl: &Tuple, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
+fn tuple(tpl: &Tuple, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   let mut elements = vec![];
   for el in &tpl.elements {
     let result = expression(el,plan.clone(),symbols.clone(), functions.clone())?;
@@ -1106,7 +1123,7 @@ fn tuple(tpl: &Tuple, plan: Plan, symbols: SymbolTableRef, functions: Functions)
   Ok(Value::Tuple(mech_tuple))
 }
 
-fn map(mp: &Map, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
+fn map(mp: &Map, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   let mut m = IndexMap::new();
   for b in &mp.elements {
     let key = expression(&b.key, plan.clone(), symbols.clone(), functions.clone())?;
@@ -1116,7 +1133,7 @@ fn map(mp: &Map, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> R
   Ok(Value::Map(MechMap{map: m}))
 }
 
-fn record(rcrd: &Record, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
+fn record(rcrd: &Record, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   let mut m = IndexMap::new();
   for b in &rcrd.bindings {
     let name = b.name.hash();
@@ -1127,7 +1144,7 @@ fn record(rcrd: &Record, plan: Plan, symbols: SymbolTableRef, functions: Functio
   Ok(Value::Record(MechMap{map: m}))
 }
 
-fn set(m: &Set, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> { 
+fn set(m: &Set, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> { 
   let mut out = IndexSet::new();
   for el in &m.elements {
     let result = expression(el, plan.clone(), symbols.clone(), functions.clone())?;
@@ -1136,7 +1153,7 @@ fn set(m: &Set, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Re
   Ok(Value::Set(MechSet{set: out}))
 }
 
-fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> { 
+fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> { 
   let mut rows = vec![];
   let header = table_header(&t.header)?;
   let mut cols = 0;
@@ -1176,7 +1193,7 @@ fn table_header(fields: &Vec<Field>) -> Result<Vec<Value>,MechError> {
   Ok(row)
 }
 
-fn table_row(r: &TableRow, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Vec<Value>,MechError> {
+fn table_row(r: &TableRow, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Vec<Value>,MechError> {
   let mut row: Vec<Value> = Vec::new();
   for col in &r.columns {
     let result = table_column(col, plan.clone(), symbols.clone(), functions.clone())?;
@@ -1185,11 +1202,11 @@ fn table_row(r: &TableRow, plan: Plan, symbols: SymbolTableRef, functions: Funct
   Ok(row)
 }
 
-fn table_column(r: &TableColumn, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> { 
+fn table_column(r: &TableColumn, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> { 
   expression(&r.element, plan.clone(), symbols.clone(), functions.clone())
 }
 
-fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> { 
+fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> { 
   let mut out = vec![];
   for row in &m.rows {
     let result = matrix_row(row, plan.clone(), symbols.clone(), functions.clone())?;
@@ -1226,7 +1243,7 @@ fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: Functions) ->
   Ok(out_vec)
 }
 
-fn matrix_row(r: &MatrixRow, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
+fn matrix_row(r: &MatrixRow, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   let mut row: Vec<i64> = Vec::new();
   for col in &r.columns {
     let result = matrix_column(col, plan.clone(), symbols.clone(), functions.clone())?;
@@ -1245,7 +1262,7 @@ fn matrix_row(r: &MatrixRow, plan: Plan, symbols: SymbolTableRef, functions: Fun
   Ok(Value::Matrix(out_vec))
 }
 
-fn matrix_column(r: &MatrixColumn, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> { 
+fn matrix_column(r: &MatrixColumn, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> { 
   expression(&r.element, plan.clone(), symbols.clone(), functions.clone())
 }
 
@@ -1262,7 +1279,7 @@ fn var(v: &Var, symbols: SymbolTableRef) -> Result<Value,MechError> {
   }
 }
 
-fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
+fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   match fctr {
     Factor::Term(trm) => {
       let result = term(trm, plan.clone(), symbols.clone(), functions.clone())?;
@@ -1305,7 +1322,7 @@ fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: Functio
   }
 }
 
-fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
+fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   let mut lhs_result = factor(&trm.lhs, plan.clone(), symbols.clone(), functions.clone())?;
   let mut term_plan: Vec<Box<dyn MechFunction>> = vec![];
   for (op,rhs) in &trm.rhs {
@@ -1374,75 +1391,110 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: Functions) -
         return Err(MechError{tokens: trm.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});
       }
     };
-      let mut last_step = term_plan.last().unwrap();
-      last_step.solve();
-      let res = last_step.out();
-      lhs_result = res;
+    let mut last_step = term_plan.last().unwrap();
+    last_step.solve();
+    let res = last_step.out();
+    lhs_result = res;
+  }
+  let mut plan_brrw = plan.borrow_mut();
+  plan_brrw.append(&mut term_plan);
+  return Ok(lhs_result);
+}
+
+fn literal(ltrl: &Literal) -> Value {
+  match &ltrl {
+    Literal::Empty(_) => empty(),
+    Literal::Boolean(bln) => boolean(bln),
+    Literal::Number(num) => number(num),
+    Literal::String(strng) => string(strng),
+    Literal::Atom(atm) => atom(atm),
+    Literal::TypedLiteral((ltrl,kind)) => {
+      todo!();
+    },
+  }
+}
+
+fn atom(atm: &Atom) -> Value {
+  let id = atm.name.hash();
+  Value::Atom(id)
+}
+
+fn number(num: &Number) -> Value {
+  match num {
+    Number::Real(num) => real(num),
+    Number::Imaginary(num) => todo!(),
+  }
+}
+
+fn real(rl: &RealNumber) -> Value {
+  match rl {
+    RealNumber::Negated(num) => todo!(),
+    RealNumber::Integer(num) => integer(num),
+    RealNumber::Float(num) => todo!(),
+    RealNumber::Decimal(num) => todo!(),
+    RealNumber::Hexadecimal(num) => todo!(),
+    RealNumber::Octal(num) => todo!(),
+    RealNumber::Binary(num) => todo!(),
+    RealNumber::Scientific(num) => todo!(),
+    RealNumber::Rational(num) => todo!(),
+  }
+}
+
+fn integer(int: &Token) -> Value {
+  let num: i64 = int.chars.iter().collect::<String>().parse::<i64>().unwrap();
+  Value::I64(Rc::new(RefCell::new(num)))
+}
+
+fn string(tkn: &MechString) -> Value {
+  let strng: String = tkn.text.chars.iter().collect::<String>();
+  Value::String(strng)
+}
+
+fn empty() -> Value {
+  Value::Empty
+}
+
+fn boolean(tkn: &Token) -> Value {
+  let strng: String = tkn.chars.iter().collect::<String>();
+  let val = match strng.as_str() {
+    "true" => true,
+    "false" => false,
+    _ => unreachable!(),
+  };
+  Value::Bool(Rc::new(RefCell::new(val)))
+}
+
+#[derive(Debug)]
+pub struct MathSinScalar {
+  val: Rc<RefCell<i64>>,
+  out: Rc<RefCell<i64>>,
+}
+
+impl MechFunction for MathSinScalar {
+  fn solve(&self) {
+    let val_ptr = self.val.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    use libm::sin;
+    unsafe{*out_ptr = sin((*val_ptr) as f64) as i64;}
+  }
+  fn out(&self) -> Value { Value::I64(self.out.clone()) }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+pub struct MathSin {}
+
+impl NativeFunctionCompiler for MathSin {
+  fn compile(&self, arguments: &Vec<Value>, out: &Value) -> Result<Box<dyn MechFunction>,MechError> {
+    if arguments.len() > 1 {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
-    let mut plan_brrw = plan.borrow_mut();
-    plan_brrw.append(&mut term_plan);
-    return Ok(lhs_result);
-  }
-
-  fn literal(ltrl: &Literal) -> Value {
-    match &ltrl {
-      Literal::Empty(_) => empty(),
-      Literal::Boolean(bln) => boolean(bln),
-      Literal::Number(num) => number(num),
-      Literal::String(strng) => string(strng),
-      Literal::Atom(atm) => atom(atm),
-      Literal::TypedLiteral((ltrl,kind)) => {
-        todo!();
-      },
+    match &arguments[0] {
+      Value::I64(val) =>
+        Ok(Box::new(MathSinScalar{val: val.clone(), out: Rc::new(RefCell::new(0))})),
+      x => {
+        println!("{:?}", x);
+        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+      }
     }
   }
-
-  fn atom(atm: &Atom) -> Value {
-    let id = atm.name.hash();
-    Value::Atom(id)
-  }
-
-  fn number(num: &Number) -> Value {
-    match num {
-      Number::Real(num) => real(num),
-      Number::Imaginary(num) => todo!(),
-    }
-  }
-
-  fn real(rl: &RealNumber) -> Value {
-    match rl {
-      RealNumber::Negated(num) => todo!(),
-      RealNumber::Integer(num) => integer(num),
-      RealNumber::Float(num) => todo!(),
-      RealNumber::Decimal(num) => todo!(),
-      RealNumber::Hexadecimal(num) => todo!(),
-      RealNumber::Octal(num) => todo!(),
-      RealNumber::Binary(num) => todo!(),
-      RealNumber::Scientific(num) => todo!(),
-      RealNumber::Rational(num) => todo!(),
-    }
-  }
-
-  fn integer(int: &Token) -> Value {
-    let num: i64 = int.chars.iter().collect::<String>().parse::<i64>().unwrap();
-    Value::I64(Rc::new(RefCell::new(num)))
-  }
-
-  fn string(tkn: &MechString) -> Value {
-    let strng: String = tkn.text.chars.iter().collect::<String>();
-    Value::String(strng)
-  }
-
-  fn empty() -> Value {
-    Value::Empty
-  }
-
-  fn boolean(tkn: &Token) -> Value {
-    let strng: String = tkn.chars.iter().collect::<String>();
-    let val = match strng.as_str() {
-      "true" => true,
-      "false" => false,
-      _ => unreachable!(),
-    };
-    Value::Bool(Rc::new(RefCell::new(val)))
-  }
+}

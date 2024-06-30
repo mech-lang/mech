@@ -17,6 +17,7 @@ extern crate nom_unicode;
 extern crate lazy_static;
 extern crate nalgebra as na;
 extern crate tabled;
+extern crate libm;
 
 pub mod parser;
 pub mod parser2;

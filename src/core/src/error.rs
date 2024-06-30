@@ -53,6 +53,7 @@ pub enum MechErrorKind {
   UnknownFunctionArgument(u64),
   UnknownColumnKind(u64),
   UnhandledFunctionArgumentKind,
+  IncorrectNumberOfArguments,
   UnhandledTableShape(TableShape),
   TooManyInputArguments(usize,usize),                // (given,expected)
   ParserError(nodes::ParserNode, ParserErrorReport, String),
