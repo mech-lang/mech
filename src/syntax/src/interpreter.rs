@@ -835,10 +835,20 @@ fn section(section: &Section, plan: Plan, symbols: SymbolTableRef, functions: Fu
 }
 
 fn section_element(element: &SectionElement, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
-  match element {
-    SectionElement::MechCode(code) => {mech_code(&code, plan.clone(), symbols.clone(), functions.clone())},
-    _ => todo!(),
-  }
+  let out = match element {
+    SectionElement::MechCode(code) => {mech_code(&code, plan.clone(), symbols.clone(), functions.clone())?},
+    SectionElement::Section(sctn) => todo!(),
+    SectionElement::Comment(cmmnt) => todo!(),
+    SectionElement::Paragraph(p) => Value::Empty,
+    SectionElement::MechCode(code) => todo!(),
+    SectionElement::UnorderedList(ul) => todo!(),
+    SectionElement::CodeBlock => todo!(),
+    SectionElement::OrderedList => todo!(),
+    SectionElement::BlockQuote => todo!(),
+    SectionElement::ThematicBreak => todo!(),
+    SectionElement::Image => todo!(),
+  };
+  Ok(out)
 }
 
 fn mech_code(code: &MechCode, plan: Plan, symbols: SymbolTableRef, functions: Functions) -> Result<Value,MechError> {
