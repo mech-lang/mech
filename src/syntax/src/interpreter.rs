@@ -973,52 +973,42 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
   for (op,rhs) in &trm.rhs {
     let rhs_result = factor(&rhs, plan.clone(), symbols.clone(), functions.clone())?;
     match (lhs_result, rhs_result, op) {
-      // Add ------------------------------------------------------------------
       (lhs, rhs, FormulaOperator::AddSub(AddSubOp::Add)) => {
         let new_fxn = MathAdd{}.compile(&vec![lhs,rhs])?;
         term_plan.push(new_fxn);
       }
-      // Sub ------------------------------------------------------------------
       (lhs, rhs, FormulaOperator::AddSub(AddSubOp::Sub)) => {
         let new_fxn = MathSub{}.compile(&vec![lhs,rhs])?;
         term_plan.push(new_fxn);
       }
-      // Mul ------------------------------------------------------------------
       (lhs, rhs, FormulaOperator::MulDiv(MulDivOp::Mul)) => {
         let new_fxn = MathMul{}.compile(&vec![lhs,rhs])?;
         term_plan.push(new_fxn);
       }
-      // Div ------------------------------------------------------------------
       (lhs, rhs, FormulaOperator::MulDiv(MulDivOp::Div)) => {
         let new_fxn = MathDiv{}.compile(&vec![lhs,rhs])?;
         term_plan.push(new_fxn);
       }
-      // Exp ------------------------------------------------------------------
       (lhs, rhs, FormulaOperator::Exponent(ExponentOp::Exp)) => {
         let new_fxn = MathExp{}.compile(&vec![lhs,rhs])?;
         term_plan.push(new_fxn);
       } 
-      // Mat Mul --------------------------------------------------------------
       (lhs, rhs, FormulaOperator::Vec(VecOp::MatMul)) => {
         let new_fxn = MatrixMul{}.compile(&vec![lhs,rhs])?;
         term_plan.push(new_fxn);
       }
-      // Less Than ------------------------------------------------------------
       (lhs, rhs, FormulaOperator::Comparison(ComparisonOp::LessThan)) => {
         let new_fxn = CompareLessThan{}.compile(&vec![lhs,rhs])?;
         term_plan.push(new_fxn);
       }
-      // Greater Than ---------------------------------------------------------
       (lhs, rhs, FormulaOperator::Comparison(ComparisonOp::GreaterThan)) => {
         let new_fxn = CompareGreaterThan{}.compile(&vec![lhs,rhs])?;
         term_plan.push(new_fxn);
       }
-      // And ------------------------------------------------------------------
       (lhs, rhs, FormulaOperator::Logic(LogicOp::And)) => {
         let new_fxn = LogicAnd{}.compile(&vec![lhs,rhs])?;
         term_plan.push(new_fxn);
       }
-      // Or -------------------------------------------------------------------
       (lhs, rhs, FormulaOperator::Logic(LogicOp::Or)) => {
         let new_fxn = LogicOr{}.compile(&vec![lhs,rhs])?;
         term_plan.push(new_fxn);
