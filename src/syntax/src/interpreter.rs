@@ -19,7 +19,7 @@ use tabled::{
 };
 use tabled::{settings::style::LineText};
 
-// Value-----------------------------------------------------------------------
+// Value ----------------------------------------------------------------------
 
 #[derive(PartialEq, Debug)]
 pub struct F64(f64);
@@ -407,7 +407,6 @@ pub trait MechFunction {
   fn to_string(&self) -> String;
 }
 
-
 // User Function --------------------------------------------------------------
 
 #[derive(Debug)]
@@ -423,227 +422,6 @@ impl MechFunction for UserFunction {
     Value::MutableReference(self.fxn.out.clone())
   }
   fn to_string(&self) -> String { format!("UserFxn::{:?}", self.fxn.name)}
-}
-
-// Greater Than ---------------------------------------------------------------
-
-#[derive(Debug)]
-struct GTScalar {
-  lhs: Rc<RefCell<i64>>,
-  rhs: Rc<RefCell<i64>>,
-  out: Rc<RefCell<bool>>,
-}
-
-impl MechFunction for GTScalar {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr > *rhs_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::Bool(self.out.clone())
-  }
-  fn to_string(&self) -> String { format!("{:?}", self) }
-}
-
-// Less Than ------------------------------------------------------------------
-
-#[derive(Debug)]
-struct LTScalar {
-  lhs: Rc<RefCell<i64>>,
-  rhs: Rc<RefCell<i64>>,
-  out: Rc<RefCell<bool>>,
-}
-
-impl MechFunction for LTScalar {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr < *rhs_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::Bool(self.out.clone())
-  }
-  fn to_string(&self) -> String { format!("{:?}", self) }
-}
-
-// And ------------------------------------------------------------------------
-
-#[derive(Debug)]
-struct AndScalar {
-  lhs: Rc<RefCell<bool>>,
-  rhs: Rc<RefCell<bool>>,
-  out: Rc<RefCell<bool>>,
-}
-
-impl MechFunction for AndScalar {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr && *rhs_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::Bool(self.out.clone())
-  }
-  fn to_string(&self) -> String { format!("{:?}", self) }
-}
-
-// Or ------------------------------------------------------------------------
-
-#[derive(Debug)]
-struct OrScalar {
-  lhs: Rc<RefCell<bool>>,
-  rhs: Rc<RefCell<bool>>,
-  out: Rc<RefCell<bool>>,
-}
-
-impl MechFunction for OrScalar {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr || *rhs_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::Bool(self.out.clone())
-  }
-  fn to_string(&self) -> String { format!("{:?}", self) }
-}
-
-// Range ------------------------------------------------------------------------
-
-#[derive(Debug)]
-struct RangeExclusive {
-  max: Rc<RefCell<i64>>,
-  min: Rc<RefCell<i64>>,
-  out: Rc<RefCell<RowDVector<i64>>>,
-}
-
-impl MechFunction for RangeExclusive {
-  fn solve(&self) {
-    let max_ptr = self.max.as_ptr();
-    let min_ptr = self.min.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    
-    unsafe {
-        let rng = (*min_ptr..*max_ptr).collect::<Vec<i64>>();
-        *out_ptr = RowDVector::from_vec(rng);
-    }
-  }
-  fn out(&self) -> Value {
-    Value::Matrix(Matrix::RowDVector(self.out.clone()))
-  }
-  fn to_string(&self) -> String { format!("{:?}", self)}
-}
-
-#[derive(Debug)]
-struct RangeInclusive {
-  max: Rc<RefCell<i64>>,
-  min: Rc<RefCell<i64>>,
-  out: Rc<RefCell<RowDVector<i64>>>,
-}
-
-impl MechFunction for RangeInclusive {
-  fn solve(&self) {
-    let max_ptr = self.max.as_ptr();
-    let min_ptr = self.min.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {
-      let rng = (*min_ptr..=*max_ptr).collect::<Vec<i64>>();
-      *out_ptr = RowDVector::from_vec(rng);
-    }
-  }
-  fn out(&self) -> Value {
-    Value::Matrix(Matrix::RowDVector(self.out.clone()))
-  }
-  fn to_string(&self) -> String { format!("{:?}", self)}
-}
-
-
-// MatMul ---------------------------------------------------------------------
-
-#[derive(Debug)]
-struct MatMulM2M2 {
-  lhs: Rc<RefCell<Matrix2<i64>>>,
-  rhs: Rc<RefCell<Matrix2<i64>>>,
-  out: Rc<RefCell<Matrix2<i64>>>,
-}
-
-impl MechFunction for MatMulM2M2 {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe{ *out_ptr = *lhs_ptr * *rhs_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::Matrix(Matrix::Matrix2(self.out.clone()))
-  }
-  fn to_string(&self) -> String { format!("{:?}", self)}
-}
-// Transpose ------------------------------------------------------------------
-
-#[derive(Debug)]
-struct TransposeM2 {
-  mat: Rc<RefCell<Matrix2<i64>>>,
-  out: Rc<RefCell<Matrix2<i64>>>,
-}
-
-impl MechFunction for TransposeM2 {
-  fn solve(&self) {
-    let input_ptr = self.mat.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe{*out_ptr = (*input_ptr).transpose();}
-  }
-  fn out(&self) -> Value {
-    Value::Matrix(Matrix::Matrix2(self.out.clone()))
-  }
-  fn to_string(&self) -> String { format!("{:?}", self)}
-}
-
-// Negate ---------------------------------------------------------------------
-
-#[derive(Debug)]
-struct NegateScalar {
-  input: Rc<RefCell<i64>>,
-  output: Rc<RefCell<i64>>,
-}
-
-impl MechFunction for NegateScalar {
-  fn solve(&self) {
-    let input_ptr = self.input.as_ptr();
-    let output_ptr = self.output.as_ptr();
-
-    unsafe {
-      *output_ptr = -*input_ptr;
-    }
-  }
-  fn out(&self) -> Value {
-    Value::I64(self.output.clone())
-  }
-  fn to_string(&self) -> String { format!("{:?}", self)}
-}
-
-
-#[derive(Debug)]
-struct NegateM2 {
-  mat: Rc<RefCell<Matrix2<i64>>>,
-  out: Rc<RefCell<Matrix2<i64>>>,
-}
-
-impl MechFunction for NegateM2 {
-  fn solve(&self) {
-    let mat_ptr = self.mat.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = -*mat_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::Matrix(Matrix::Matrix2(self.out.clone()))
-  }
-  fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 // Interpreter 
@@ -1566,4 +1344,242 @@ impl MechFunction for ExpScalar {
     Value::I64(self.out.clone())
   }
   fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
+// Negate ---------------------------------------------------------------------
+
+#[derive(Debug)]
+struct NegateScalar {
+  input: Rc<RefCell<i64>>,
+  output: Rc<RefCell<i64>>,
+}
+
+impl MechFunction for NegateScalar {
+  fn solve(&self) {
+    let input_ptr = self.input.as_ptr();
+    let output_ptr = self.output.as_ptr();
+
+    unsafe {
+      *output_ptr = -*input_ptr;
+    }
+  }
+  fn out(&self) -> Value {
+    Value::I64(self.output.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self)}
+}
+
+
+#[derive(Debug)]
+struct NegateM2 {
+  mat: Rc<RefCell<Matrix2<i64>>>,
+  out: Rc<RefCell<Matrix2<i64>>>,
+}
+
+impl MechFunction for NegateM2 {
+  fn solve(&self) {
+    let mat_ptr = self.mat.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = -*mat_ptr;}
+  }
+  fn out(&self) -> Value {
+    Value::Matrix(Matrix::Matrix2(self.out.clone()))
+  }
+  fn to_string(&self) -> String { format!("{:?}", self)}
+}
+
+// ----------------------------------------------------------------------------
+// Logic Library
+// ----------------------------------------------------------------------------
+
+// And ------------------------------------------------------------------------
+
+#[derive(Debug)]
+struct AndScalar {
+  lhs: Rc<RefCell<bool>>,
+  rhs: Rc<RefCell<bool>>,
+  out: Rc<RefCell<bool>>,
+}
+
+impl MechFunction for AndScalar {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr && *rhs_ptr;}
+  }
+  fn out(&self) -> Value {
+    Value::Bool(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
+// Or ------------------------------------------------------------------------
+
+#[derive(Debug)]
+struct OrScalar {
+  lhs: Rc<RefCell<bool>>,
+  rhs: Rc<RefCell<bool>>,
+  out: Rc<RefCell<bool>>,
+}
+
+impl MechFunction for OrScalar {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr || *rhs_ptr;}
+  }
+  fn out(&self) -> Value {
+    Value::Bool(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
+// ----------------------------------------------------------------------------
+// Compare Library
+// ----------------------------------------------------------------------------
+
+// Greater Than ---------------------------------------------------------------
+
+#[derive(Debug)]
+struct GTScalar {
+  lhs: Rc<RefCell<i64>>,
+  rhs: Rc<RefCell<i64>>,
+  out: Rc<RefCell<bool>>,
+}
+
+impl MechFunction for GTScalar {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr > *rhs_ptr;}
+  }
+  fn out(&self) -> Value {
+    Value::Bool(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
+// Less Than ------------------------------------------------------------------
+
+#[derive(Debug)]
+struct LTScalar {
+  lhs: Rc<RefCell<i64>>,
+  rhs: Rc<RefCell<i64>>,
+  out: Rc<RefCell<bool>>,
+}
+
+impl MechFunction for LTScalar {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr < *rhs_ptr;}
+  }
+  fn out(&self) -> Value {
+    Value::Bool(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
+// ----------------------------------------------------------------------------
+// Matrix Library
+// ----------------------------------------------------------------------------
+
+// MatMul ---------------------------------------------------------------------
+
+#[derive(Debug)]
+struct MatMulM2M2 {
+  lhs: Rc<RefCell<Matrix2<i64>>>,
+  rhs: Rc<RefCell<Matrix2<i64>>>,
+  out: Rc<RefCell<Matrix2<i64>>>,
+}
+
+impl MechFunction for MatMulM2M2 {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe{ *out_ptr = *lhs_ptr * *rhs_ptr;}
+  }
+  fn out(&self) -> Value {
+    Value::Matrix(Matrix::Matrix2(self.out.clone()))
+  }
+  fn to_string(&self) -> String { format!("{:?}", self)}
+}
+// Transpose ------------------------------------------------------------------
+
+#[derive(Debug)]
+struct TransposeM2 {
+  mat: Rc<RefCell<Matrix2<i64>>>,
+  out: Rc<RefCell<Matrix2<i64>>>,
+}
+
+impl MechFunction for TransposeM2 {
+  fn solve(&self) {
+    let input_ptr = self.mat.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe{*out_ptr = (*input_ptr).transpose();}
+  }
+  fn out(&self) -> Value {
+    Value::Matrix(Matrix::Matrix2(self.out.clone()))
+  }
+  fn to_string(&self) -> String { format!("{:?}", self)}
+}
+
+// ----------------------------------------------------------------------------
+// Range Library
+// ----------------------------------------------------------------------------
+
+// Exclusive ------------------------------------------------------------------
+
+#[derive(Debug)]
+struct RangeExclusive {
+  max: Rc<RefCell<i64>>,
+  min: Rc<RefCell<i64>>,
+  out: Rc<RefCell<RowDVector<i64>>>,
+}
+
+impl MechFunction for RangeExclusive {
+  fn solve(&self) {
+    let max_ptr = self.max.as_ptr();
+    let min_ptr = self.min.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    
+    unsafe {
+        let rng = (*min_ptr..*max_ptr).collect::<Vec<i64>>();
+        *out_ptr = RowDVector::from_vec(rng);
+    }
+  }
+  fn out(&self) -> Value {
+    Value::Matrix(Matrix::RowDVector(self.out.clone()))
+  }
+  fn to_string(&self) -> String { format!("{:?}", self)}
+}
+
+// Inclusive ------------------------------------------------------------------
+
+#[derive(Debug)]
+struct RangeInclusive {
+  max: Rc<RefCell<i64>>,
+  min: Rc<RefCell<i64>>,
+  out: Rc<RefCell<RowDVector<i64>>>,
+}
+
+impl MechFunction for RangeInclusive {
+  fn solve(&self) {
+    let max_ptr = self.max.as_ptr();
+    let min_ptr = self.min.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {
+      let rng = (*min_ptr..=*max_ptr).collect::<Vec<i64>>();
+      *out_ptr = RowDVector::from_vec(rng);
+    }
+  }
+  fn out(&self) -> Value {
+    Value::Matrix(Matrix::RowDVector(self.out.clone()))
+  }
+  fn to_string(&self) -> String { format!("{:?}", self)}
 }
