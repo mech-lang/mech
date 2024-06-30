@@ -826,7 +826,7 @@ impl Interpreter {
 }
 
 pub trait NativeFunctionCompiler {
-  fn compile(&self, arguments: &Vec<Value>, out: &Value) -> std::result::Result<Box<dyn MechFunction>,MechError>;
+  fn compile(&self, arguments: &Vec<Value>) -> std::result::Result<Box<dyn MechFunction>,MechError>;
 }
 
 //-----------------------------------------------------------------------------
@@ -997,7 +997,28 @@ fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, f
       plan_brrw.push(Box::new(UserFunction{fxn: new_fxn.clone()}));
       return Ok(result_brrw.clone())
     }
-    None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::MissingFunction(fxn_name_id)});}
+    None => { 
+      match fxns_brrw.function_compilers.get(&fxn_name_id) {
+        Some(fxn_compiler) => {
+          let mut input_arg_values = vec![];
+          for (arg_name, arg_expr) in fxn_call.args.iter() {
+            let result = expression(&arg_expr, plan.clone(), symbols.clone(), functions.clone())?;
+            input_arg_values.push(result);
+          }
+          match fxn_compiler.compile(&input_arg_values) {
+            Ok(new_fxn) => {
+              let mut plan_brrw = plan.borrow_mut();
+              new_fxn.solve();
+              let result = new_fxn.out();
+              plan_brrw.push(new_fxn);
+              return Ok(result)
+            }
+            Err(x) => {return Err(x);}
+          }
+        }
+        None => {return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::MissingFunction(fxn_name_id)});}
+      }
+    }
   }   
   unreachable!()
 }
@@ -1484,17 +1505,15 @@ impl MechFunction for MathSinScalar {
 pub struct MathSin {}
 
 impl NativeFunctionCompiler for MathSin {
-  fn compile(&self, arguments: &Vec<Value>, out: &Value) -> Result<Box<dyn MechFunction>,MechError> {
-    if arguments.len() > 1 {
+  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+    if arguments.len() != 1 {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     match &arguments[0] {
       Value::I64(val) =>
         Ok(Box::new(MathSinScalar{val: val.clone(), out: Rc::new(RefCell::new(0))})),
-      x => {
-        println!("{:?}", x);
+      x => 
         Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
-      }
     }
   }
 }
