@@ -975,44 +975,54 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
     match (lhs_result, rhs_result, op) {
       // Add ------------------------------------------------------------------
       (lhs, rhs, FormulaOperator::AddSub(AddSubOp::Add)) => {
-        let math_add = MathAdd{};
-        let new_fxn = math_add.compile(&vec![lhs,rhs])?;
+        let new_fxn = MathAdd{}.compile(&vec![lhs,rhs])?;
         term_plan.push(new_fxn);
       }
       // Sub ------------------------------------------------------------------
-      (Value::I64(lhs), Value::I64(rhs), FormulaOperator::AddSub(AddSubOp::Sub)) =>
-        term_plan.push(Box::new(SubScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
-      (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Sub)) =>
-        term_plan.push(Box::new(SubRv3Rv3{lhs,rhs,out: Rc::new(RefCell::new(RowVector3::from_element(0)))})),
+      (lhs, rhs, FormulaOperator::AddSub(AddSubOp::Sub)) => {
+        let new_fxn = MathSub{}.compile(&vec![lhs,rhs])?;
+        term_plan.push(new_fxn);
+      }
       // Mul ------------------------------------------------------------------
-      (Value::I64(lhs), Value::I64(rhs), FormulaOperator::MulDiv(MulDivOp::Mul)) =>
-        term_plan.push(Box::new(MulScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
+      (lhs, rhs, FormulaOperator::MulDiv(MulDivOp::Mul)) => {
+        let new_fxn = MathMul{}.compile(&vec![lhs,rhs])?;
+        term_plan.push(new_fxn);
+      }
       // Div ------------------------------------------------------------------
-      (Value::I64(lhs), Value::I64(rhs), FormulaOperator::MulDiv(MulDivOp::Div)) =>
-        term_plan.push(Box::new(DivScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
+      (lhs, rhs, FormulaOperator::MulDiv(MulDivOp::Div)) => {
+        let new_fxn = MathDiv{}.compile(&vec![lhs,rhs])?;
+        term_plan.push(new_fxn);
+      }
       // Exp ------------------------------------------------------------------
-      (Value::I64(lhs), Value::I64(rhs), FormulaOperator::Exponent(ExponentOp::Exp)) =>
-        term_plan.push(Box::new(ExpScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),         
-      // Mat Mul --------------------------------------------------------------
-      (Value::Matrix(Matrix::Matrix2(lhs)), Value::Matrix(Matrix::Matrix2(rhs)), FormulaOperator::Vec(VecOp::MatMul)) => 
-        term_plan.push(Box::new(MatMulM2M2{lhs,rhs,out: Rc::new(RefCell::new(Matrix2::from_element(0)))})),
-      (Value::MutableReference(lhs), Value::MutableReference(rhs), FormulaOperator::Vec(VecOp::MatMul)) => match (&*lhs.borrow(),&*rhs.borrow()) {
-        (Value::Matrix(Matrix::Matrix2(lhs)), Value::Matrix(Matrix::Matrix2(rhs))) =>
-          term_plan.push(Box::new(MatMulM2M2{lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(Matrix2::from_element(0)))})),
-        _ => todo!(),
+      (lhs, rhs, FormulaOperator::Exponent(ExponentOp::Exp)) => {
+        let new_fxn = MathExp{}.compile(&vec![lhs,rhs])?;
+        term_plan.push(new_fxn);
       } 
+      // Mat Mul --------------------------------------------------------------
+      (lhs, rhs, FormulaOperator::Vec(VecOp::MatMul)) => {
+        let new_fxn = MatrixMul{}.compile(&vec![lhs,rhs])?;
+        term_plan.push(new_fxn);
+      }
       // Less Than ------------------------------------------------------------
-      (Value::I64(lhs), Value::I64(rhs), FormulaOperator::Comparison(ComparisonOp::LessThan)) =>
-        term_plan.push(Box::new(LTScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),
+      (lhs, rhs, FormulaOperator::Comparison(ComparisonOp::LessThan)) => {
+        let new_fxn = CompareLessThan{}.compile(&vec![lhs,rhs])?;
+        term_plan.push(new_fxn);
+      }
       // Greater Than ---------------------------------------------------------
-      (Value::I64(lhs), Value::I64(rhs), FormulaOperator::Comparison(ComparisonOp::GreaterThan)) =>
-        term_plan.push(Box::new(GTScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),
+      (lhs, rhs, FormulaOperator::Comparison(ComparisonOp::GreaterThan)) => {
+        let new_fxn = CompareGreaterThan{}.compile(&vec![lhs,rhs])?;
+        term_plan.push(new_fxn);
+      }
       // And ------------------------------------------------------------------
-      (Value::Bool(lhs), Value::Bool(rhs), FormulaOperator::Logic(LogicOp::And)) =>
-        term_plan.push(Box::new(AndScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),        
+      (lhs, rhs, FormulaOperator::Logic(LogicOp::And)) => {
+        let new_fxn = LogicAnd{}.compile(&vec![lhs,rhs])?;
+        term_plan.push(new_fxn);
+      }
       // Or -------------------------------------------------------------------
-      (Value::Bool(lhs), Value::Bool(rhs), FormulaOperator::Logic(LogicOp::Or)) =>
-        term_plan.push(Box::new(OrScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),        
+      (lhs, rhs, FormulaOperator::Logic(LogicOp::Or)) => {
+        let new_fxn = LogicOr{}.compile(&vec![lhs,rhs])?;
+        term_plan.push(new_fxn);
+      }        
       x => {
         println!("{:?}", x);
         return Err(MechError{tokens: trm.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});
@@ -1279,6 +1289,25 @@ impl MechFunction for SubRv3Rv3 {
   fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
+pub struct MathSub {}
+
+impl NativeFunctionCompiler for MathSub {
+  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+    if arguments.len() != 2 {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    match (arguments[0].clone(), arguments[1].clone()) {
+      (Value::I64(lhs), Value::I64(rhs)) =>
+        Ok(Box::new(SubScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
+      (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs))) =>
+        Ok(Box::new(SubRv3Rv3{lhs,rhs,out: Rc::new(RefCell::new(RowVector3::from_element(0)))})),
+      x => 
+        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    }
+  }
+}
+
+
 // Mul ------------------------------------------------------------------------
 
 #[derive(Debug)] 
@@ -1301,6 +1330,21 @@ impl MechFunction for MulScalar {
   fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
+pub struct MathMul {}
+
+impl NativeFunctionCompiler for MathMul {
+  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+    if arguments.len() != 2 {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    match (arguments[0].clone(), arguments[1].clone()) {
+      (Value::I64(lhs), Value::I64(rhs)) =>
+        Ok(Box::new(MulScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
+      x => 
+        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    }
+  }
+}
 
 // Div ------------------------------------------------------------------------
 
@@ -1324,6 +1368,22 @@ impl MechFunction for DivScalar {
   fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
+pub struct MathDiv {}
+
+impl NativeFunctionCompiler for MathDiv {
+  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+    if arguments.len() != 2 {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    match (arguments[0].clone(), arguments[1].clone()) {
+      (Value::I64(lhs), Value::I64(rhs)) =>
+        Ok(Box::new(DivScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
+      x => 
+        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    }
+  }
+}
+
 // Exp ------------------------------------------------------------------------
 
 #[derive(Debug)] 
@@ -1344,6 +1404,22 @@ impl MechFunction for ExpScalar {
     Value::I64(self.out.clone())
   }
   fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
+pub struct MathExp {}
+
+impl NativeFunctionCompiler for MathExp {
+  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+    if arguments.len() != 2 {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    match (arguments[0].clone(), arguments[1].clone()) {
+      (Value::I64(lhs), Value::I64(rhs)) =>
+        Ok(Box::new(ExpScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
+      x => 
+        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    }
+  }
 }
 
 // Negate ---------------------------------------------------------------------
@@ -1414,6 +1490,22 @@ impl MechFunction for AndScalar {
   fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
+pub struct LogicAnd {}
+
+impl NativeFunctionCompiler for LogicAnd {
+  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+    if arguments.len() != 2 {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    match (arguments[0].clone(), arguments[1].clone()) {
+      (Value::Bool(lhs), Value::Bool(rhs)) =>
+        Ok(Box::new(AndScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),
+      x => 
+        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    }
+  }
+}
+
 // Or ------------------------------------------------------------------------
 
 #[derive(Debug)]
@@ -1434,6 +1526,22 @@ impl MechFunction for OrScalar {
     Value::Bool(self.out.clone())
   }
   fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
+pub struct LogicOr {}
+
+impl NativeFunctionCompiler for LogicOr {
+  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+    if arguments.len() != 2 {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    match (arguments[0].clone(), arguments[1].clone()) {
+      (Value::Bool(lhs), Value::Bool(rhs)) =>
+        Ok(Box::new(OrScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),
+      x => 
+        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    }
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -1462,6 +1570,22 @@ impl MechFunction for GTScalar {
   fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
+pub struct CompareGreaterThan {}
+
+impl NativeFunctionCompiler for CompareGreaterThan {
+  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+    if arguments.len() != 2 {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    match (arguments[0].clone(), arguments[1].clone()) {
+      (Value::I64(lhs), Value::I64(rhs)) =>
+        Ok(Box::new(GTScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),
+      x => 
+        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    }
+  }
+}
+
 // Less Than ------------------------------------------------------------------
 
 #[derive(Debug)]
@@ -1482,6 +1606,22 @@ impl MechFunction for LTScalar {
     Value::Bool(self.out.clone())
   }
   fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
+pub struct CompareLessThan {}
+
+impl NativeFunctionCompiler for CompareLessThan {
+  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+    if arguments.len() != 2 {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    match (arguments[0].clone(), arguments[1].clone()) {
+      (Value::I64(lhs), Value::I64(rhs)) =>
+        Ok(Box::new(LTScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),
+      x => 
+        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    }
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -1509,6 +1649,28 @@ impl MechFunction for MatMulM2M2 {
   }
   fn to_string(&self) -> String { format!("{:?}", self)}
 }
+
+pub struct MatrixMul {}
+
+impl NativeFunctionCompiler for MatrixMul {
+  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+    if arguments.len() != 2 {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    match (arguments[0].clone(), arguments[1].clone()) {
+      (Value::Matrix(Matrix::Matrix2(lhs)), Value::Matrix(Matrix::Matrix2(rhs))) => 
+        Ok(Box::new(MatMulM2M2{lhs,rhs,out: Rc::new(RefCell::new(Matrix2::from_element(0)))})),
+      (Value::MutableReference(lhs), Value::MutableReference(rhs)) => match (&*lhs.borrow(),&*rhs.borrow()) {
+        (Value::Matrix(Matrix::Matrix2(lhs)), Value::Matrix(Matrix::Matrix2(rhs))) =>
+          Ok(Box::new(MatMulM2M2{lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(Matrix2::from_element(0)))})),
+        _ => todo!(),
+      } 
+      x => 
+        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    }
+  }
+}
+
 // Transpose ------------------------------------------------------------------
 
 #[derive(Debug)]
