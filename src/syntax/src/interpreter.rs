@@ -513,68 +513,6 @@ impl MechFunction for OrScalar {
   fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
-// Add ------------------------------------------------------------------------
-
-#[derive(Debug)] 
-struct AddScalar {
-  lhs: Rc<RefCell<i64>>,
-  rhs: Rc<RefCell<i64>>,
-  out: Rc<RefCell<i64>>,
-}
-
-impl MechFunction for AddScalar {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr + *rhs_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::I64(self.out.clone())
-  }
-  fn to_string(&self) -> String { format!("{:?}", self) }
-}
-
-#[derive(Debug)]
-struct AddRv3Rv3 {
-  lhs: Rc<RefCell<RowVector3<i64>>>,
-  rhs: Rc<RefCell<RowVector3<i64>>>,
-  out: Rc<RefCell<RowVector3<i64>>>,
-}
-
-impl MechFunction for AddRv3Rv3 {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr + *rhs_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::Matrix(Matrix::RowVector3(self.out.clone()))
-  }
-  fn to_string(&self) -> String { format!("{:?}", self)}
-}
-
-#[derive(Debug)]
-struct AddM3M3 {
-  lhs: Rc<RefCell<Matrix3<i64>>>,
-  rhs: Rc<RefCell<Matrix3<i64>>>,
-  out: Rc<RefCell<Matrix3<i64>>>,
-}
-
-impl MechFunction for AddM3M3 {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr + *rhs_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::Matrix(Matrix::Matrix3(self.out.clone()))
-  }
-  fn to_string(&self) -> String { format!("{:?}", self)}
-}
-
 // Sub ------------------------------------------------------------------------
 
 #[derive(Debug)] 
@@ -1367,29 +1305,11 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
     let rhs_result = factor(&rhs, plan.clone(), symbols.clone(), functions.clone())?;
     match (lhs_result, rhs_result, op) {
       // Add ------------------------------------------------------------------
-      (Value::I64(lhs), Value::I64(rhs), FormulaOperator::AddSub(AddSubOp::Add)) =>
-        term_plan.push(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
-      (Value::MutableReference(lhs), Value::I64(rhs), FormulaOperator::AddSub(AddSubOp::Add)) => match *lhs.borrow() {
-        Value::I64(ref lhs) =>
-          term_plan.push(Box::new(AddScalar{lhs: lhs.clone(), rhs, out: Rc::new(RefCell::new(0))})),
-        _ => todo!(),
+      (lhs, rhs, FormulaOperator::AddSub(AddSubOp::Add)) => {
+        let math_add = MathAdd{};
+        let new_fxn = math_add.compile(&vec![lhs,rhs])?;
+        term_plan.push(new_fxn);
       }
-      (Value::I64(lhs), Value::MutableReference(rhs), FormulaOperator::AddSub(AddSubOp::Add)) => match *rhs.borrow() {
-        Value::I64(ref rhs) =>
-          term_plan.push(Box::new(AddScalar{lhs, rhs: rhs.clone(), out: Rc::new(RefCell::new(0))})),
-        _ => todo!(),
-      }
-      (Value::MutableReference(lhs), Value::MutableReference(rhs), FormulaOperator::AddSub(AddSubOp::Add)) => match (&*lhs.borrow(),&*rhs.borrow()) { 
-        (Value::I64(ref lhs),Value::I64(ref rhs)) =>
-          term_plan.push(Box::new(AddScalar{lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(0))})),
-        (Value::Matrix(Matrix::RowVector3(lhs)),Value::Matrix(Matrix::RowVector3(rhs))) =>
-          term_plan.push(Box::new(AddRv3Rv3{lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector3::from_element(0)))})),
-        _ => todo!(),
-      }
-      (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) =>
-        term_plan.push(Box::new(AddRv3Rv3{lhs, rhs, out: Rc::new(RefCell::new(RowVector3::from_element(0)))})),
-      (Value::Matrix(Matrix::Matrix3(lhs)), Value::Matrix(Matrix::Matrix3(rhs)), FormulaOperator::AddSub(AddSubOp::Add)) =>
-        term_plan.push(Box::new(AddM3M3{lhs, rhs, out: Rc::new(RefCell::new(Matrix3::from_element(0)))})),
       // Sub ------------------------------------------------------------------
       (Value::I64(lhs), Value::I64(rhs), FormulaOperator::AddSub(AddSubOp::Sub)) =>
         term_plan.push(Box::new(SubScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
@@ -1509,6 +1429,12 @@ fn boolean(tkn: &Token) -> Value {
   Value::Bool(Rc::new(RefCell::new(val)))
 }
 
+// ----------------------------------------------------------------------------
+// Math Library
+// ----------------------------------------------------------------------------
+
+// Sin ------------------------------------------------------------------------
+
 use libm::sin;
 
 #[derive(Debug)]
@@ -1537,6 +1463,105 @@ impl NativeFunctionCompiler for MathSin {
     match &arguments[0] {
       Value::F64(val) =>
         Ok(Box::new(MathSinScalar{val: val.clone(), out: Rc::new(RefCell::new(F64(0.0)))})),
+      x => 
+        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    }
+  }
+}
+
+// Add ------------------------------------------------------------------------
+
+#[derive(Debug)] 
+struct AddScalar {
+  lhs: Rc<RefCell<i64>>,
+  rhs: Rc<RefCell<i64>>,
+  out: Rc<RefCell<i64>>,
+}
+
+impl MechFunction for AddScalar {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr + *rhs_ptr;}
+  }
+  fn out(&self) -> Value {
+    Value::I64(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
+#[derive(Debug)]
+struct AddRv3Rv3 {
+  lhs: Rc<RefCell<RowVector3<i64>>>,
+  rhs: Rc<RefCell<RowVector3<i64>>>,
+  out: Rc<RefCell<RowVector3<i64>>>,
+}
+
+impl MechFunction for AddRv3Rv3 {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr + *rhs_ptr;}
+  }
+  fn out(&self) -> Value {
+    Value::Matrix(Matrix::RowVector3(self.out.clone()))
+  }
+  fn to_string(&self) -> String { format!("{:?}", self)}
+}
+
+#[derive(Debug)]
+struct AddM3M3 {
+  lhs: Rc<RefCell<Matrix3<i64>>>,
+  rhs: Rc<RefCell<Matrix3<i64>>>,
+  out: Rc<RefCell<Matrix3<i64>>>,
+}
+
+impl MechFunction for AddM3M3 {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = *lhs_ptr + *rhs_ptr;}
+  }
+  fn out(&self) -> Value {
+    Value::Matrix(Matrix::Matrix3(self.out.clone()))
+  }
+  fn to_string(&self) -> String { format!("{:?}", self)}
+}
+
+pub struct MathAdd {}
+
+impl NativeFunctionCompiler for MathAdd {
+  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+    if arguments.len() != 2 {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    match (arguments[0].clone(), arguments[1].clone()) {
+      (Value::I64(lhs), Value::I64(rhs)) =>
+          Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
+      (Value::MutableReference(lhs), Value::I64(rhs)) => match *lhs.borrow() {
+        Value::I64(ref lhs) =>
+          Ok(Box::new(AddScalar{lhs: lhs.clone(), rhs, out: Rc::new(RefCell::new(0))})),
+        _ => todo!(),
+      }
+      (Value::I64(lhs), Value::MutableReference(rhs)) => match *rhs.borrow() {
+        Value::I64(ref rhs) =>
+          Ok(Box::new(AddScalar{lhs, rhs: rhs.clone(), out: Rc::new(RefCell::new(0))})),
+        _ => todo!(),
+      }
+      (Value::MutableReference(lhs), Value::MutableReference(rhs)) => match (&*lhs.borrow(),&*rhs.borrow()) { 
+        (Value::I64(ref lhs),Value::I64(ref rhs)) =>
+          Ok(Box::new(AddScalar{lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(0))})),
+        (Value::Matrix(Matrix::RowVector3(lhs)),Value::Matrix(Matrix::RowVector3(rhs))) =>
+          Ok(Box::new(AddRv3Rv3{lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector3::from_element(0)))})),
+        _ => todo!(),
+      }
+      (Value::Matrix(Matrix::RowVector3(lhs)), Value::Matrix(Matrix::RowVector3(rhs))) =>
+        Ok(Box::new(AddRv3Rv3{lhs, rhs, out: Rc::new(RefCell::new(RowVector3::from_element(0)))})),
+      (Value::Matrix(Matrix::Matrix3(lhs)), Value::Matrix(Matrix::Matrix3(rhs))) =>
+        Ok(Box::new(AddM3M3{lhs, rhs, out: Rc::new(RefCell::new(Matrix3::from_element(0)))})),
       x => 
         Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
     }
