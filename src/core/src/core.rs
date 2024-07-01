@@ -288,14 +288,14 @@ impl Core {
   pub fn get_table(&self, table_name: &str) -> Result<TableRef,MechError> {
     match self.database.borrow().get_table(table_name) {
       Some(table) => Ok(table.clone()),
-      None => {return Err(MechError{msg: "".to_string(), id: 1004, kind: MechErrorKind::MissingTable(TableId::Global(hash_str(table_name)))});},
+      None => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1004, kind: MechErrorKind::MissingTable(TableId::Global(hash_str(table_name)))});},
     }
   }
 
   pub fn get_table_by_id(&self, table_id: u64) -> Result<TableRef,MechError> {
     match self.database.borrow().get_table_by_id(&table_id) {
       Some(table) => Ok(table.clone()),
-      None => {return Err(MechError{msg: "".to_string(), id: 1005, kind: MechErrorKind::MissingTable(TableId::Global(table_id))});},
+      None => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1005, kind: MechErrorKind::MissingTable(TableId::Global(table_id))});},
     }
   }
 
@@ -450,7 +450,7 @@ impl Core {
           let blocks_with_errors = self.errors.entry(mech_error.kind.clone()).or_insert(Vec::new());
           blocks_with_errors.push(block_ref_c.clone());
           self.unsatisfied_blocks.insert(0,block_ref_c.clone());
-          let error = MechError{msg: "".to_string(), id: 1006, kind: MechErrorKind::GenericError(format!("{:?}", x))};
+          let error = MechError{tokens: vec![], msg: "".to_string(), id: 1006, kind: MechErrorKind::GenericError(format!("{:?}", x))};
           new_block_errors.push(error);
         },
       };
@@ -522,7 +522,7 @@ impl Core {
         let output = block_ref.borrow().output.clone();
         Ok(output)
       }
-      None => Err(MechError{msg: "".to_string(), id: 1008, kind: MechErrorKind::MissingBlock(block_id)}),
+      None => Err(MechError{tokens: vec![], msg: "".to_string(), id: 1008, kind: MechErrorKind::MissingBlock(block_id)}),
     }
   }
 

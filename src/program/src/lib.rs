@@ -253,6 +253,6 @@ pub fn download_machine(machine_name: &str, name: &str, path_str: &str, ver: &st
   let message = format!("Can't load library {:?}", machine_file_path);
   match unsafe{Library::new(machine_file_path)} {
     Ok(machine) => Ok(machine),
-    Err(err) => Err(MechError{msg: "".to_string(), id: 1273, kind: MechErrorKind::GenericError(format!("{:?}",message))}),
+    Err(err) => Err(MechError{tokens: vec![], msg: "".to_string(), id: 1273, kind: MechErrorKind::GenericError(format!("{:?}",message))}),
   }
 }

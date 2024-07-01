@@ -5,14 +5,15 @@
 // ## Prelude
 
 use crate::*;
-use crate::nodes::SourceRange;
+use crate::nodes::{SourceRange, Token};
 
 type Rows = usize;
 type Cols = usize;
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct MechError {
-  pub id: u64,
+  pub id: u32,
+  pub tokens: Vec<Token>,
   pub kind: MechErrorKind,
   pub msg: String,
 }
@@ -26,10 +27,13 @@ pub struct ParserErrorContext {
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum MechErrorKind {
+  UndefinedField(u64),                               // Accessed a field of a record that's not defined
+  UndefinedVariable(u64),                            // Accessed a variable that's not defined
   MissingTable(TableId),                             // TableId of missing table
   MissingBlock(BlockId),                             // BlockId of missing block
+  PendingExpression,                              // id of pending variable
   PendingTable(TableId),                             // TableId of pending table                          
-  DimensionMismatch(Vec<(Rows,Cols)>),      // Argument dimensions are mismatched ((row,col),(row,col))
+  DimensionMismatch(Vec<(Rows,Cols)>),               // Argument dimensions are mismatched ((row,col),(row,col))
   //MissingColumn((TableId,TableIndex)),             // The identified table is missing a needed column
   //ColumnKindMismatch(Vec<ValueKind>),              // Excepted kind versus given kind
   //SubscriptOutOfBounds(((Rows,Cols),(Rows,Cols))), // (target) vs (actual) index
@@ -45,9 +49,11 @@ pub enum MechErrorKind {
   GenericError(String),
   FileNotFound(String),
   Unhandled,
+  OutputUndefinedInFunctionBody(u64),
   UnknownFunctionArgument(u64),
   UnknownColumnKind(u64),
-  UnhandledFunctionArgumentKind(ValueKind),
+  UnhandledFunctionArgumentKind,
+  IncorrectNumberOfArguments,
   UnhandledTableShape(TableShape),
   TooManyInputArguments(usize,usize),                // (given,expected)
   ParserError(nodes::ParserNode, ParserErrorReport, String),
@@ -58,7 +64,7 @@ pub enum MechErrorKind {
 
 impl From<std::io::Error> for MechError {
   fn from(n: std::io::Error) -> MechError {
-    MechError{msg: "".to_string(), id: 74892, kind: MechErrorKind::IoError}
+    MechError{tokens: vec![], msg: "".to_string(), id: 74892, kind: MechErrorKind::IoError}
   } 
 }
 

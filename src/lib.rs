@@ -61,12 +61,12 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<(String,MechCode)
                 match mech_code {
                   Ok(c) => {code.push((name.to_string(),c));},
                   Err(err) => {
-                    return Err(MechError{msg: "".to_string(), id: 1247, kind: MechErrorKind::GenericError(format!("{:?}", err))});
+                    return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1247, kind: MechErrorKind::GenericError(format!("{:?}", err))});
                   },
                 }
               }
               Err(err) => {
-                return Err(MechError{msg: "".to_string(), id: 1248, kind: MechErrorKind::None});
+                return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1248, kind: MechErrorKind::None});
               },
             };
           }
@@ -79,14 +79,14 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<(String,MechCode)
                 code.push((name.to_string(),MechCode::String(buffer)));
               }
               Err(err) => {
-                return Err(MechError{msg: "".to_string(), id: 1249, kind: MechErrorKind::None});
+                return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1249, kind: MechErrorKind::None});
               },
             };
           }
           _ => (), // Do nothing if the extension is not recognized
         }
       },
-      err => {return Err(MechError{msg: "".to_string(), id: 1250, kind: MechErrorKind::GenericError(format!("{:?}", err))});},
+      err => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1250, kind: MechErrorKind::GenericError(format!("{:?}", err))});},
     }
     Ok(code)
   };
@@ -100,10 +100,10 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<(String,MechCode)
         Ok(response) => {
           match response.text() {
             Ok(text) => code.push((path.to_str().unwrap().to_owned(),MechCode::String(text))),
-            _ => {return Err(MechError{msg: "".to_string(), id: 1241, kind: MechErrorKind::None});},
+            _ => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1241, kind: MechErrorKind::None});},
           }
         }
-        _ => {return Err(MechError{msg: "".to_string(), id: 1242, kind: MechErrorKind::None});},
+        _ => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1242, kind: MechErrorKind::None});},
       }
     } else {
       // Compile a directory of mech files
@@ -120,7 +120,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<(String,MechCode)
         let mut new_code = read_file_to_code(&path)?;
         code.append(&mut new_code);
       } else {
-        return Err(MechError{msg: "".to_string(), id: 1243, kind: MechErrorKind::FileNotFound(path.to_str().unwrap().to_string())});
+        return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1243, kind: MechErrorKind::FileNotFound(path.to_str().unwrap().to_string())});
       }
     };
   }

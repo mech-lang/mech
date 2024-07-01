@@ -1,44 +1,41 @@
-# Mech Project Roadmap
+Mech Project Roadmap
+===============================================================================
 
-### Stage 1 - Alpha v0.0.1 - v0.0.6
+(a) Stage 1 - Alpha v0.0.1 - v0.0.6
 
 Conception: started 2014
 Implementation: started 2018
 
-### Stage 2 - Beta v0.1.0 - ?
+(b) Stage 2 - Beta v0.1.0 - ?
 
 Released: December 2022
 
-### Stage 3 - Stable v1.0.0
+(c) Stage 3 - Stable v1.0.0
 
 Target release date: ???
 
-## Version 0.3.0 (???)
+Version 0.2.0 (Fall 2024)
+-------------------------------------------------------------------------------
 
-- ...
-
-## Version 0.2.0 (Fall 2023)
+Current work is focused on reimplementing the core of the Mech language to 
+reorient programs around the state machines.
 
 (Some of this will likely move to v0.3.0, it's a lot to do in one summer)
 
-- [ ] Monorepo
+- [x] Monorepo
 - [ ] Types
-  - [ ] Tuples
-  - [ ] Type definitions
-  - [ ] Specifying converstions
-  - [ ] Typeclasses
-  - [ ] Unit conversion
-  - [ ] Specifying units
+  - [x] Tuples
+  - [x] Type definitions
+  - [x] Specifying units
   - [ ] Dec64
   - [ ] Currency
-  - [ ] Scientific notation
-  - [ ] Dimensional analysis
+  - [x] Scientific notation
 - [ ] Table redo
-  - [ ] Simplify indexing
-  - [ ] Support efficient tensors
+  - [x] Simplify indexing
+  - [x] Support efficient tensors
   - [ ] Autograd syntax
   - [ ] History syntax
-  - [ ] HashTable/HashSet support
+  - [x] HashTable/HashSet support
 - [ ] Database redo
   - [ ] ACID
   - [ ] Persistence
@@ -50,10 +47,10 @@ Target release date: ???
   - [ ] QOS
   - [ ] Inbox
   - [ ] Capabilities
-- [ ] State machines
-  - [ ] Atomic datatypes
+- [x] State machines
+  - [x] Atomic datatypes
   - [ ] Delays
-  - [ ] Pattern Matching
+  - [x] Pattern Matching
 - [ ] Machines revamp
   - [ ] Packaging
   - [ ] Reuse
@@ -77,8 +74,10 @@ Target release date: ???
   - [ ] audio
   - [ ] maps
   - [ ] plot
+  - [ ] gpgpu
 - Docs
   - User Guides
+    - [ ] Learn Mech in 15 Minutes
     - [ ] Tutorials
     - [ ] How-Tos
     - [ ] Mech for X
@@ -88,7 +87,8 @@ Target release date: ???
   - [ ] Docs
   - [ ] Try
 
-## Version 0.1.1 (Spring 2023)
+Version 0.1.1 (Spring 2023)
+-------------------------------------------------------------------------------
 
 - Core
   - [x] Automatic differentiation
@@ -113,9 +113,9 @@ Target release date: ???
 - Machines
   - [x] More gui
   - [x] ai
-  - [ ] gpu
 
-## Version 0.1.0 (December 2022)
+Version 0.1.0 (December 2022)
+-------------------------------------------------------------------------------
 
 - [x] User defined functions
 - [x] Errors
@@ -132,7 +132,8 @@ Target release date: ???
   - [x] Matrix
   - [x] GUI
 
-## Version 0.0.6 Alpha (unreleased)
+Version 0.0.6 Alpha (unreleased)
+-------------------------------------------------------------------------------
 
 - [x] Testing
 - Machines 

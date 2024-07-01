@@ -750,6 +750,17 @@ pub struct Program {
   pub body: Body,
 }
 
+impl Program {
+  pub fn tokens(&self) -> Vec<Token> {
+    /*let mut title_tokens = match self.title.tokens() {
+      Some(tkns) => tkns,
+      None => vec![],
+    };*/
+    let body_tokens = self.body.tokens();
+    body_tokens
+  }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Title {
   pub text: Token,
@@ -758,6 +769,17 @@ pub struct Title {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Body {
   pub sections: Vec<Section>,
+}
+
+impl Body {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut out = vec![];
+    for s in &self.sections {
+      let mut tkns = s.tokens();
+      out.append(&mut tkns);
+    }
+    out
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -769,6 +791,17 @@ pub struct Subtitle {
 pub struct Section {
   pub subtitle: Option<Subtitle>,
   pub elements: Vec<SectionElement>,
+}
+
+impl Section {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut out = vec![];
+    for s in &self.elements {
+      let mut tkns = s.tokens();
+      out.append(&mut tkns);
+    }
+    out
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -783,6 +816,15 @@ pub enum SectionElement {
   BlockQuote,      // todo
   ThematicBreak,   // todo
   Image,           // todo
+}
+
+impl SectionElement {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      SectionElement::MechCode(code) => code.tokens(),
+      _ => todo!(),
+    }
+  }
 }
 
 pub type ListItem = Paragraph;
@@ -801,11 +843,24 @@ pub enum MechCode {
   FunctionDefine(FunctionDefine),
 }
 
+impl MechCode {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      MechCode::Expression(x) => x.tokens(),
+      _ => todo!(),
+      //Statement(x) => x.tokens(),
+      //FsmSpecification(x) => x.tokens(),
+      //FsmImplementation(x) => x.tokens(),
+      //FunctionDefine(x) => x.tokens(),
+    }
+  }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FunctionDefine {
   pub name: Identifier,
   pub input: Vec<FunctionArgument>,
-  pub output: FunctionArgument,
+  pub output: Vec<FunctionArgument>,
   pub statements: Vec<Statement>,
 }
 
@@ -833,6 +888,7 @@ pub struct FsmArm {
 pub enum Transition {
   Next(Pattern),
   Output(Pattern),
+  Async(Pattern),
   Guard(Guard),
   TransitionBlock(Vec<MechCode>),
 }
@@ -849,7 +905,6 @@ pub enum Pattern {
   Formula(Factor),
   Expression(Expression),
   TupleStruct(PatternTupleStruct),
-  Tuple(PatternTuple)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -881,21 +936,34 @@ pub enum Statement {
   KindDefine(KindDefine),
   EnumDefine(EnumDefine),
   FsmDeclare(FsmDeclare),     
-  FsmEval,        // todo
   SplitTable,     // todo
   FlattenTable,   // todo
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FsmPipe {
+  pub start: FsmInstance,
+  pub transitions: Vec<Transition>
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum PipeElement {
+  Expression(Expression),
+  FsmInstance(FsmInstance),
+  Timer // todo
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FsmDeclare {
   pub fsm: Fsm,
-  pub instance: FsmInstance,
+  pub pipe: FsmPipe,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Fsm {
   pub name: Identifier,
-  pub kind: Option<KindAnnotation>,
+  pub args: Option<ArgumentList>,
+  pub kind: Option<KindAnnotation>
 }
 
 pub type FsmArgs = Vec<(Option<Identifier>,Expression)>;
@@ -941,6 +1009,15 @@ pub enum Structure {
   Map(Map),
 }
 
+impl Structure {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      Structure::Matrix(mat) => mat.tokens(),
+      _ => todo!(),
+    }
+  }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Map {
   pub elements: Vec<Mapping>,
@@ -970,7 +1047,18 @@ pub struct TupleStruct {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Matrix {
-  pub rows: Vec<TableRow>,
+  pub rows: Vec<MatrixRow>,
+}
+
+impl Matrix {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    for r in &self.rows {
+      let mut t = r.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
 }
 
 pub type TableHeader = Vec<Field>;
@@ -993,8 +1081,35 @@ pub struct TableColumn {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct MatrixColumn {
+  pub element: Expression,
+}
+
+impl MatrixColumn {
+  pub fn tokens(&self) -> Vec<Token> {
+    self.element.tokens()
+  }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TableRow {
   pub columns: Vec<TableColumn>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct MatrixRow {
+  pub columns: Vec<MatrixColumn>,
+}
+
+impl MatrixRow {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    for r in &self.columns {
+      let mut t = r.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1009,6 +1124,18 @@ pub struct Var {
   pub kind: Option<KindAnnotation>,
 }
 
+impl Var {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.name.tokens();
+    if let Some(knd) = &self.kind {
+      let mut t = knd.tokens();
+      tkns.append(&mut t);
+    }
+    tkns
+  }
+}
+
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct VariableAssign {
   pub target: Expression,
@@ -1018,6 +1145,24 @@ pub struct VariableAssign {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Identifier {
   pub name: Token,
+}
+
+impl Identifier {
+  pub fn tokens(&self) -> Vec<Token> {
+    vec![self.name.clone()]
+  }
+
+  pub fn to_string(&self) -> String {
+    self.name.chars.iter().collect()
+  }
+
+}
+
+
+impl Identifier {
+  pub fn hash(&self) -> u64 {
+    hash_chars(&self.name.chars)
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1030,29 +1175,53 @@ pub struct Word {
   pub tokens: Vec<Token>,
 }
 
-pub type Slice = (Identifier,Vec<Expression>);
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Slice {
+  pub name: Identifier,
+  pub subscript: Vec<Subscript>
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum Index {
-  SelectAll,
-  Expression(Expression),
+pub enum Subscript {
+  Dot(Identifier),          // a.b
+  Swizzle(Vec<Identifier>), // a.b,c
+  Range(RangeExpression),   // a[1 + 1]
+  Formula(Factor),          // a[1 + 1]
+  All,                      // a[:]
+  Bracket(Vec<Subscript>),  // a[1,2,3]
+  Brace(Vec<Subscript>)     // a{"foo"}
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Expression {
   Var(Var),
+  Range(Box<RangeExpression>),
   Slice(Slice),
   Formula(Factor),
   Structure(Structure),
   Literal(Literal),
-  Transpose(Box<Expression>),
   FunctionCall(FunctionCall),
+  FsmPipe(FsmPipe),
 }
+
+impl Expression {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      Expression::Var(v) => v.tokens(),
+      Expression::Literal(ltrl) => ltrl.tokens(),
+      Expression::Structure(strct) => strct.tokens(),
+      Expression::Formula(fctr) => fctr.tokens(),
+      _ => todo!(),
+    }
+  }
+}
+
+pub type ArgumentList = Vec<(Option<Identifier>,Expression)>;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FunctionCall {
   pub name: Identifier,
-  pub args: Vec<(Option<Identifier>,Expression)>,
+  pub args: ArgumentList,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1069,19 +1238,50 @@ pub struct Binding {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct KindAnnotation {
-  pub kinds: Vec<Kind>
+  pub kind: Kind
+}
+
+impl KindAnnotation {
+
+  pub fn hash(&self) -> u64 {
+    match &self.kind {
+      Kind::Scalar(id) => id.hash(),
+      _ => todo!(),
+    }
+  }
+
+  pub fn tokens(&self) -> Vec<Token> {
+    self.kind.tokens()
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Kind {
   Tuple(Vec<Kind>),
-  Scalar(KindLabel)
+  Bracket((Vec<Kind>,Vec<Literal>)),
+  Brace((Vec<Kind>,Vec<Literal>)),
+  Map(Box<Kind>,Box<Kind>),
+  Scalar(Identifier),
+  Atom(Identifier),
+  Function(Vec<Kind>,Vec<Kind>),
+  Fsm(Vec<Kind>,Vec<Kind>),
+  Empty,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct KindLabel {
-  pub name: Identifier,
-  pub size: Vec<Number>,
+impl Kind {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      Kind::Tuple(x) => todo!(),
+      Kind::Bracket(x) => todo!(),
+      Kind::Brace(x) => todo!(),
+      Kind::Map(x,y) => todo!(),
+      Kind::Scalar(x) => x.tokens(),
+      Kind::Atom(x) => x.tokens(),
+      Kind::Function(x,y) => todo!(),
+      Kind::Fsm(x,y) => todo!(),
+      Kind::Empty => vec![],
+    }
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1092,6 +1292,17 @@ pub enum Literal {
   String(MechString),
   Atom(Atom),
   TypedLiteral((Box<Literal>,KindAnnotation))
+}
+
+impl Literal {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      Literal::Number(x) => x.tokens(),
+      Literal::Boolean(tkn) => vec![tkn.clone()],
+      Literal::String(strng) => vec![strng.text.clone()],
+      _ => todo!(),
+    }
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1121,12 +1332,29 @@ type Numerator = Token;
 type Denominator = Token;
 type Whole = Token;
 type Part = Token;
+type Real = Box<Number>;
+type Imaginary = Box<Number>;
 type Base = (Whole, Part);
 type Exponent = (Sign, Whole, Part);
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Number {
-  Negated(Box<Number>),
+  Real(RealNumber),
+  Imaginary(ComplexNumber),
+}
+
+impl Number {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      Number::Real(x) => x.tokens(),
+      _ => todo!(),
+    }
+  }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum RealNumber {
+  Negated(Box<RealNumber>),
   Integer(Token),
   Float((Whole,Part)),
   Decimal(Token),
@@ -1134,18 +1362,38 @@ pub enum Number {
   Octal(Token),
   Binary(Token),
   Scientific((Base,Exponent)),
-  Rational((Numerator,Denominator))
+  Rational((Numerator,Denominator)),
+}
+
+impl RealNumber {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      RealNumber::Integer(tkn) => vec![tkn.clone()],
+      _ => todo!(),
+    }
+  }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ImaginaryNumber {
+  pub number: RealNumber,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ComplexNumber {
+  pub real: Option<RealNumber>,
+  pub imaginary: ImaginaryNumber
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Comment {
-  pub text: Vec<Token>
+  pub text: Token,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum RangeOp {
   Inclusive,
-  Exclusive,       // todo
+  Exclusive,      
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1156,10 +1404,16 @@ pub enum AddSubOp {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum MulDivOp {
-  MatMul,
-  Solve,
   Mul,
   Div
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum VecOp {
+  MatMul,
+  Solve,
+  Dot,
+  Cross,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1192,7 +1446,15 @@ pub enum FormulaOperator {
   AddSub(AddSubOp),
   MulDiv(MulDivOp),
   Exponent(ExponentOp),
-  Range(RangeOp),
+  Vec(VecOp),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RangeExpression {
+  pub start: Factor,
+  pub increment: Option<(RangeOp,Factor)>,
+  pub operator: RangeOp,
+  pub terminal: Factor,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -1201,8 +1463,34 @@ pub struct Term {
   pub rhs: Vec<(FormulaOperator,Factor)>
 }
 
+impl Term {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut lhs_tkns = self.lhs.tokens();
+    let mut rhs_tkns = vec![];
+    for (op, r) in &self.rhs {
+      let mut tkns = r.tokens();
+      rhs_tkns.append(&mut tkns);
+    }
+    lhs_tkns.append(&mut rhs_tkns);
+    lhs_tkns
+  }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Factor {
   Term(Box<Term>),
   Expression(Box<Expression>),
+  Negated(Box<Factor>),
+  Transpose(Box<Factor>),
+}
+
+impl Factor {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      Factor::Term(x) => x.tokens(),
+      Factor::Expression(x) => x.tokens(),
+      Factor::Negated(x) => x.tokens(),
+      Factor::Transpose(x) => x.tokens(),
+    }
+  }
 }

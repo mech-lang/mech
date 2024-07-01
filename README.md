@@ -15,31 +15,19 @@ Read about progress on our [blog](https://mech-lang.org/blog/), and follow us on
 
 Documentation is hosted online at [mech-lang.org](http://docs.mech-lang.org), and is open sourced on [GitHub](http://github.com/mech-lang/docs).
 
-- Mech platform references
-  - Syntax
-  - Ecosystem
-  - Architecture
-- User guides
-  - Tutorials
-  - How-Tos
-  - Mech for X  
 
 ## Installation
 
 ### From Binary
 
-You can download the latest release for your platform [here](https://github.com/mech-lang/mech/releases). Or, if you have Rust's Cargo tool installed you can use the following command:
-
-```bash
-cargo install mech
-```
+You can download the latest release for your platform [here](https://github.com/mech-lang/mech/releases).
 
 ### From Source
 
 You will need to install [Rust](https://www.rust-lang.org/learn/get-started) on a recent nightly release, and [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/). When those are installed, follow these instructions:
 
 ```bash
-git clone https://gitlab.com/mech-lang/mech -b v0.2-beta
+git clone https://gitlab.com/mech-lang/mech
 cd mech
 wasm-pack build wasm-notebook --target web
 cargo build --bin mech --release
@@ -47,9 +35,11 @@ cargo build --bin mech --release
 
 ## Project Roadmap
 
-Mech is currently in the **alpha** stage of development. This means that while some features work and are tested, programs are still likely to crash and produce incorrect results. There is a "happy path" that works well, but it's quite narrow. We've implemented many language features, but most are incomplete and some are not yet implemented at all. 
+Mech is undergoing a redesign to incorporate state machines into the language.
 
-The project will hit the **beta** stage of development when all currently planned features have been implemented at least as a prototype. The current target for this milestone is October 2022.
+This work is happening in the v0.2-beta branch of the repository.
+
+The current target for the release of v0.2 is October 2024.
 
 See [ROADMAP.md](ROADMAP.md) for more.
 

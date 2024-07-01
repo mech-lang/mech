@@ -75,11 +75,11 @@ impl Database {
                     // TODO This is inserting a {:,:} register instead of the one passed in, and that needs to be fixed.
                     changed_registers.insert((TableId::Global(*table_id),RegisterIndex::All,RegisterIndex::All));
                   },
-                  Err(x) => { return Err(MechError{msg: "".to_string(), id: 1719, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+                  Err(x) => { return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1719, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
                 }
               }
             }
-            None => {return Err(MechError{msg: "".to_string(), id: 1720, kind: MechErrorKind::MissingTable(TableId::Global(*table_id))});},
+            None => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1720, kind: MechErrorKind::MissingTable(TableId::Global(*table_id))});},
           }
         }
         Change::NewTable{table_id, rows, columns} => {
@@ -96,7 +96,7 @@ impl Database {
               }    
               table_brrw.set_col_alias(*column_ix,*column_alias);     
             }
-            x => {return Err(MechError{msg: "".to_string(), id: 1721, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+            x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1721, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
           }
         }
         Change::ColumnKind{table_id, column_ix, column_kind} => {
@@ -109,7 +109,7 @@ impl Database {
               }    
               table_brrw.set_col_kind(*column_ix,column_kind.clone());     
             }
-            x => {return Err(MechError{msg: "".to_string(), id: 1722, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
+            x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1722, kind: MechErrorKind::GenericError(format!("{:?}", x))});},
           }
         }
       }
@@ -123,14 +123,14 @@ impl Database {
     for (id,other_table) in other_tables.drain() {
       match self.tables.try_insert(id, other_table.clone()) {
         Ok(_) => (),
-        Err(x) => {return Err(MechError{msg: "".to_string(), id: 1723, kind: MechErrorKind::None});},
+        Err(x) => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1723, kind: MechErrorKind::None});},
       }
     }
     let mut other_table_aliases = other.table_alias_to_id.clone();
     for (id,other_table) in other_table_aliases.drain() {
       match self.table_alias_to_id.try_insert(id, other_table.clone()) {
         Ok(_) => (),
-        Err(x) => {return Err(MechError{msg: "".to_string(), id: 1724, kind: MechErrorKind::None});},
+        Err(x) => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1724, kind: MechErrorKind::None});},
       }
     }
     Ok(())
@@ -138,7 +138,7 @@ impl Database {
 
   pub fn insert_alias(&mut self, alias: u64, table_id: TableId) -> Result<TableId,MechError> {
     match self.table_alias_to_id.try_insert(alias, table_id) {
-      Err(x) => {return Err(MechError{msg: "".to_string(), id: 1725, kind: MechErrorKind::DuplicateAlias(*table_id.unwrap())});},
+      Err(x) => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1725, kind: MechErrorKind::DuplicateAlias(*table_id.unwrap())});},
       Ok(x) => Ok(*x), 
     }
   }
@@ -146,14 +146,14 @@ impl Database {
   pub fn insert_table(&mut self, table: Table) -> Result<TableRef,MechError> {
     match self.tables.try_insert(table.id, Rc::new(RefCell::new(table))) {
       Ok(x) => Ok(x.clone()),
-      Err(x) => {return Err(MechError{msg: "".to_string(), id: 1726, kind: MechErrorKind::None});},
+      Err(x) => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1726, kind: MechErrorKind::None});},
     }
   }
 
   pub fn overwrite_table(&mut self, table: Table) -> Result<TableRef,MechError> {
     match self.tables.insert(table.id, Rc::new(RefCell::new(table))) {
       Some(x) => Ok(x.clone()),
-      None => {return Err(MechError{msg: "".to_string(), id: 1726, kind: MechErrorKind::None});},
+      None => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1726, kind: MechErrorKind::None});},
     }
   }
 
@@ -164,7 +164,7 @@ impl Database {
     };
     match self.tables.try_insert(table_id, table) {
       Ok(x) => Ok(x.clone()),
-      Err(x) => {return Err(MechError{msg: "".to_string(), id: 1726, kind: MechErrorKind::None});},
+      Err(x) => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1726, kind: MechErrorKind::None});},
     }
   }
 

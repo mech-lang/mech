@@ -41,7 +41,7 @@ impl MechFunctionCompiler for MathAtan2 {
   ) -> std::result::Result<(),MechError>
   {
     if arguments.len() > 2 {
-      return Err(MechError{msg: "".to_string(), id: 1347, kind: MechErrorKind::TooManyInputArguments(arguments.len(),1)});
+      return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1347, kind: MechErrorKind::TooManyInputArguments(arguments.len(),1)});
     }
     let arg_dims = block.get_arg_dims(&arguments)?;
     let (arg_name1,arg_table_id1,_) = arguments[0];
@@ -60,14 +60,14 @@ impl MechFunctionCompiler for MathAtan2 {
             match (arg1,arg2) {
               ((_,Column::F32(y_col),ColumnIndex::Index(_)),(_,Column::F32(x_col),ColumnIndex::Index(_))) |
               ((_,Column::F32(y_col),ColumnIndex::All),(_,Column::F32(x_col),ColumnIndex::All)) => block.plan.push(MathAtan2VV{y_col: (y_col.clone(),0,0), x_col: (x_col.clone(),0,0), out: out_col.clone()}),
-              ((_,col,_),_) => { return Err(MechError{msg: "".to_string(), id: 1348, kind: MechErrorKind::UnhandledFunctionArgumentKind(col.kind())}); }
+              ((_,col,_),_) => { return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1348, kind: MechErrorKind::UnhandledFunctionArgumentKind}); }
             }
           }
         }
-        x => {return Err(MechError{msg: "".to_string(), id: 1350, kind: MechErrorKind::UnhandledTableShape(arg_dims[0])});},
+        x => {return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1350, kind: MechErrorKind::UnhandledTableShape(arg_dims[0])});},
       }
     } else {
-      return Err(MechError{msg: "".to_string(), id: 1351, kind: MechErrorKind::UnknownFunctionArgument(arg_name1)});
+      return Err(MechError{tokens: vec![], msg: "".to_string(), id: 1351, kind: MechErrorKind::UnknownFunctionArgument(arg_name1)});
     }
     Ok(())
   }

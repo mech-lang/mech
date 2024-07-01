@@ -3,19 +3,54 @@ use mech_syntax::ast::Ast;
 use mech_syntax::compiler::Compiler;
 use mech_core::*;
 use mech_syntax::parser2;
-
+use mech_syntax::interpreter::Value;
+use std::cell::RefCell;
 use std::rc::Rc;
 
+//use mech_syntax::analyzer::*;
+use mech_syntax::interpreter::*;
+use std::time::Instant;
 use std::fs;
+extern crate nalgebra as na;
+use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix6, Matrix2};
+
+
 fn main() -> Result<(),MechError> {
+
     // ----------------------------------------------------------------
-    let s = fs::read_to_string("test.mec").unwrap();
+
+    let s = fs::read_to_string("../../test.mec").unwrap();
     match parser2::parse(&s) {
         Ok(tree) => { 
           println!("----------- SYNTAX TREE ---------");
           println!("{:#?}", tree);
+          //let result = analyze(&tree);
+          //println!("A: {:#?}", result);
+          let mut intrp = Interpreter::new();
+          let result = intrp.interpret(&tree)?;
+          println!("R: {:#?}", result);
+          println!("{:#?}", intrp.symbols); 
+          println!("Plan: ");
+          for fxn in intrp.plan.borrow().iter() {
+            println!("  - {}", fxn.to_string());
+          }
+
+          let now = Instant::now();
+          for _ in 0..1e6 as usize {
+            for fxn in intrp.plan.borrow().iter() {
+              fxn.solve();
+            }
+          }
+          let elapsed_time = now.elapsed();
+          let cycle_duration = elapsed_time.as_nanos() as f64;
+          println!("{:0.2?} ns", cycle_duration / 1000000.0);
+
+
           let tree_string = hash_str(&format!("{:#?}", tree));
           println!("{:?}", tree_string);
+
+
+
           //let mut ast = Ast::new();
           //ast.build_syntax_tree(&tree);
           //println!("----------- AST ---------");
