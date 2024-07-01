@@ -5,7 +5,7 @@ authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Organizes Mech cores into a coordinated program."
 documentation = "http://docs.mech-lang.org"
 homepage = "https://mech-lang.org"
-repository = "https://github.com/mech-lang/program"
+repository = "https://github.com/mech-lang"
 keywords = ["mech", "language", "programming", "dataflow", "runtime"]
 categories = ["science::robotics", "science", "game-engines", "web-programming"]
 license = "Apache-2.0"
@@ -13,13 +13,13 @@ readme = "README.md"
 edition = "2021"
 
 [badges]
-gitlab = { repository = "mech-lang/program", branch = "main" }
+gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = {path = "../core"}
-mech-syntax = {path = "../syntax"}
-mech-utilities = {path = "../utilities"}
+mech-core = "0.2"
+mech-syntax = "0.2"
+mech-utilities = "0.2"
 
 time = "0.3.30"
 serde = "1.0.189"
@@ -36,3 +36,8 @@ hashbrown = "0.14.1"
 websocket = "0.26.5"
 miniz_oxide = "0.7.1"
 indexmap = "2.0.2"
+
+[patch.crates-io]
+mech-core = {path = "../core"}
+mech-syntax = {path = "../syntax"}
+mech-utilities = {path = "../utilities"}

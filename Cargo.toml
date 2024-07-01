@@ -3,7 +3,7 @@ name = "mech"
 version = "0.2.0"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Toolchain for the Mech programming language."
-documentation = "http://docs.mech-lang.org"
+documentation = "https://mech-lang.org/docs"
 homepage = "https://mech-lang.org"
 repository = "https://github.com/mech-lang/mech"
 keywords = ["mech", "language", "programming", "dataflow", "runtime"]
@@ -11,17 +11,17 @@ categories = ["science::robotics", "science", "game-engines", "web-programming"]
 license = "Apache-2.0"
 readme = "README.md"
 edition = "2021"
-rust-version = "1.74"
+rust-version = "1.80"
 
 [badges]
 gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = {path = "src/core" }
-mech-syntax = {path = "src/syntax", features = ["lang-server"]}
-mech-program = {path = "src/program"}
-mech-utilities = {path = "src/utilities"}
+mech-core = "0.2"
+mech-syntax = {version = "0.2", features = ["lang-server"]}
+mech-program = "0.2"
+mech-utilities = "0.2"
 
 clap = {version = "4.5.8", features = ["cargo"]}
 colored = "2.1.0"
@@ -63,11 +63,11 @@ OriginalFilename = "MECH.EXE"
 LegalCopyright = "Copyright © 2023"
 
 [patch.crates-io]
-mech-core = { path = 'src/core', version = '0.2' }
-mech-syntax = { path = 'src/syntax', version = '0.2' }
-mech-program = { path = 'src/program', version = '0.2' }
-mech-utilities = { path = 'src/utilities', version = '0.2' }
-mech-wasm = { path = 'src/wasm', version = '0.2' }
+mech-core = { path = 'src/core' }
+mech-syntax = { path = 'src/syntax'}
+mech-program = { path = 'src/program'}
+mech-utilities = { path = 'src/utilities'}
+mech-wasm = { path = 'src/wasm'}
 
 [patch.'https://gitlab.com/mech-lang/core']
 mech-core = { path = 'src/core', version = '0.2' }

@@ -5,7 +5,7 @@ authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Shared components and utilities for Mech"
 documentation = "http://docs.mech-lang.org"
 homepage = "https://mech-lang.org"
-repository = "https://github.com/mech-lang/utilities"
+repository = "https://github.com/mech-lang"
 keywords = ["mech"]
 categories = ["science::robotics", "science"]
 license = "Apache-2.0"
@@ -13,7 +13,7 @@ readme = "README.md"
 edition = "2021"
 
 [badges]
-gitlab = { repository = "mech-lang/utilities", branch = "main" }
+gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [features]
@@ -21,12 +21,15 @@ default = ["web"]
 web = ["websocket"]
 
 [dependencies]
-mech-core = {path = "../core"}
+mech-core = "0.2"
 
 serde = {version = "1.0.203", default-features = false, features = ["alloc"] }
 serde_derive = "1.0.203"
 hashbrown = "0.14.5"
 crossbeam-channel = "0.5.13"
+
+[patch.crates-io]
+mech-core = {path = "../core"}
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 websocket = {version = "0.26.5", optional = true, default-features = false, features = ["sync"]}
