@@ -15,13 +15,11 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: recursive
     - name: Setup
-      run: rustup default nightly-2023-05-19
+      run: rustup default nightly-2024-05-26
     - name: Build
+      run: wasm-pack --version
+      run: wasm-pack build wasm-notebook --target web
       run: cargo build --bin mech --release
     - name: Run tests
-      run: |
-        ./target/release/mech test tests
+      run: cargo test --package mech-syntax --release
