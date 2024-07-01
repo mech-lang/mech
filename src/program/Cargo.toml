@@ -17,9 +17,9 @@ gitlab = { repository = "mech-lang/program", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = {path = "../core"}
-mech-syntax = {path = "../syntax"}
-mech-utilities = {path = "../utilities"}
+mech-core = "0.2"
+mech-syntax = "0.2"
+mech-utilities = "0.2"
 
 time = "0.3.30"
 serde = "1.0.189"
@@ -36,3 +36,8 @@ hashbrown = "0.14.1"
 websocket = "0.26.5"
 miniz_oxide = "0.7.1"
 indexmap = "2.0.2"
+
+[patch.crates-io]
+mech-core = {path = "../core"}
+mech-syntax = {path = "../syntax"}
+mech-utilities = {path = "../utilities"}
