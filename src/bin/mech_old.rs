@@ -23,7 +23,7 @@ extern crate base64;
 use base64::{encode, decode};
 
 extern crate clap;
-use clap::{Arg, App, ArgMatches, SubCommand};
+use clap::{Arg, ArgMatches, ArgAction, Command};
 
 extern crate colored;
 use colored::*;
@@ -104,162 +104,146 @@ async fn main() -> Result<(), MechError> {
   │ │ └─┘ │ │ │ └────┐ │ └──┘ │ │ │   │ │
   └─┘     └─┘ └──────┘ └──────┘ └─┘   └─┘"#.truecolor(246,192,78);
 
+  let about = format!("{}", text_logo);
+
   #[cfg(windows)]
   control::set_virtual_terminal(true).unwrap();
   let version = "0.2.0";
-  let matches = App::new("Mech")
+  let matches = Command::new("Mech")
     .version(version)
     .author("Corey Montella corey@mech-lang.org")
-    .about(&*format!("{}", text_logo))
-    .subcommand(SubCommand::with_name("serve")
+    .about(about)
+    .subcommand(Command::new("serve")
       .about("Starts a Mech HTTP and websocket server")
-      .arg(Arg::with_name("mech_serve_file_paths")
+      .arg(Arg::new("mech_serve_file_paths")
         .help("Source .mec and .blx files")
         .required(false)
-        .multiple(true))
-      .arg(Arg::with_name("port")
-        .short("p")
+        .action(ArgAction::Append))
+      .arg(Arg::new("port")
+        .short('p')
         .long("port")
         .value_name("PORT")
-        .help("Sets the port for the server (8081)")
-        .takes_value(true))
-      .arg(Arg::with_name("address")
-        .short("a")
+        .help("Sets the port for the server (8081)"))
+      .arg(Arg::new("address")
+        .short('a')
         .long("address")
         .value_name("ADDRESS")
-        .help("Sets the address of the server (127.0.0.1)")
-        .takes_value(true))  
-      .arg(Arg::with_name("persist")
-        .short("r")
+        .help("Sets the address of the server (127.0.0.1)"))  
+      .arg(Arg::new("persist")
+        .short('r')
         .long("persist")
         .value_name("PERSIST")
-        .help("The path for the file to load from and persist changes (current working directory)")
-        .takes_value(true)))
-    .subcommand(SubCommand::with_name("test")
+        .help("The path for the file to load from and persist changes (current working directory)")))
+    .subcommand(Command::new("test")
       .about("Run tests in a target folder or *.mec file.")
-      .arg(Arg::with_name("mech_test_file_paths")
+      .arg(Arg::new("mech_test_file_paths")
         .help("The files and folders to test.")
         .required(true)
-        .multiple(true)))
-    .subcommand(SubCommand::with_name("clean")
+        .action(ArgAction::Append)))
+    .subcommand(Command::new("clean")
       .about("Remove the machines folder"))
-    .subcommand(SubCommand::with_name("format")
+    .subcommand(Command::new("format")
       .about("Formats Mech source code according to a prescribed style.")
-      .arg(Arg::with_name("output_name")
+      .arg(Arg::new("output_name")
         .help("Output file name or directory")
-        .short("o")
+        .short('o')
         .long("output")
         .value_name("OUTPUTNAME")
-        .required(false)
-        .takes_value(true))
-      .arg(Arg::with_name("mech_format_file_paths")
+        .required(false))
+      .arg(Arg::new("mech_format_file_paths")
         .help("The files and folders to format.")
         .required(true)
-        .multiple(true))
-      .arg(Arg::with_name("html")
-        .short("h")
+        .action(ArgAction::Append))
+      .arg(Arg::new("html")
+        .short('h')
         .long("html")
         .value_name("HTML")
         .help("Format with HTML.")
-        .required(false)
-        .takes_value(false)))
-    .subcommand(SubCommand::with_name("langserver")
+        .required(false)))
+    .subcommand(Command::new("langserver")
       .about("Run a local mech language server")
-      .arg(Arg::with_name("port")
-        .short("p")
+      .arg(Arg::new("port")
+        .short('p')
         .long("port")
         .value_name("PORT")
-        .help("Sets the port for the server (default: 4041)")
-        .takes_value(true)))
-    .subcommand(SubCommand::with_name("run")
+        .help("Sets the port for the server (default: 4041)")))
+    .subcommand(Command::new("run")
       .about("Run a target folder or *.mec file")
-      .arg(Arg::with_name("secure")
-        .short("s")
+      .arg(Arg::new("secure")
+        .short('s')
         .long("secure")
         .value_name("Secure")
-        .help("Secures the runtime environment by limiting capabilities.")
-        .takes_value(false))
-      .arg(Arg::with_name("repl_mode")
-        .short("r")
+        .help("Secures the runtime environment by limiting capabilities."))
+      .arg(Arg::new("repl_mode")
+        .short('r')
         .long("repl")
         .value_name("REPL")
-        .help("Start a REPL")
-        .takes_value(false))
-      .arg(Arg::with_name("timings")
-        .short("t")
+        .help("Start a REPL"))
+      .arg(Arg::new("timings")
+        .short('t')
         .long("timings")
         .value_name("TIMINGS")
-        .help("Displays transaction frequency in Hz.")
-        .takes_value(false))
-      .arg(Arg::with_name("debug")
-        .short("d")
+        .help("Displays transaction frequency in Hz."))
+      .arg(Arg::new("debug")
+        .short('d')
         .long("debug")
         .value_name("Debug")
         .help("Print debug info")
-        .multiple(true)
-        .required(false)
-        .takes_value(false))
-      .arg(Arg::with_name("out")
-        .short("o")
+        .action(ArgAction::Append)
+        .required(false))
+      .arg(Arg::new("out")
+        .short('o')
         .long("out")
         .value_name("Out")
-        .help("Specify output table(s)")
-        .takes_value(true))
-      .arg(Arg::with_name("inargs")
-        .short("i")
+        .help("Specify output table(s)"))
+      .arg(Arg::new("inargs")
+        .short('i')
         .long("inargs")
         .value_name("inargs")
         .help("Input arguments")
         .required(false)
-        .multiple(true)
-        .takes_value(true))   
-      .arg(Arg::with_name("address")
-        .short("a")
+        .action(ArgAction::Append))   
+      .arg(Arg::new("address")
+        .short('a')
         .long("address")
         .value_name("ADDRESS")
-        .help("Sets address of core socket (127.0.0.1)")
-        .takes_value(true)) 
-      .arg(Arg::with_name("port")
-        .short("p")
+        .help("Sets address of core socket (127.0.0.1)")) 
+      .arg(Arg::new("port")
+        .short('p')
         .long("port")
         .value_name("PORT")
-        .help("Sets port of core socket (defaults to OS assigned port)")
-        .takes_value(true)) 
-      .arg(Arg::with_name("maestro")
-        .short("m")
+        .help("Sets port of core socket (defaults to OS assigned port)")) 
+      .arg(Arg::new("maestro")
+        .short('m')
         .long("maestro")
         .value_name("MAESTRO")
-        .help("Sets address of the maestro core (127.0.0.1:3235)")
-        .takes_value(true))  
-      .arg(Arg::with_name("websocket")
-        .short("w")
+        .help("Sets address of the maestro core (127.0.0.1:3235)"))  
+      .arg(Arg::new("websocket")
+        .short('w')
         .long("websocket")
         .value_name("WEBSOCKET")
-        .help("Sets the address of maestro websocket (127.0.0.1:3236)")
-        .takes_value(true))  
-      .arg(Arg::with_name("registry")
+        .help("Sets the address of maestro websocket (127.0.0.1:3236)"))  
+      .arg(Arg::new("registry")
         .help("Location of the Mech machine registry.")
-        .short("g")
+        .short('g')
         .long("registry")
-        .value_name("REGISTRY")
-        .takes_value(true))
-      .arg(Arg::with_name("mech_run_file_paths")
+        .value_name("REGISTRY"))
+      .arg(Arg::new("mech_run_file_paths")
         .help("The files and folders to run.")
         .required(true)
-        .multiple(true)))
-    .subcommand(SubCommand::with_name("build")
+        .action(ArgAction::Append)))
+    .subcommand(Command::new("build")
       .about("Build a target folder or *.mec file into a .blx file that can be loaded into a Mech runtime or compiled into an executable.")    
-      .arg(Arg::with_name("output_name")
+      .arg(Arg::new("output_name")
         .help("Output file name")
-        .short("o")
+        .short('o')
         .long("output")
         .value_name("OUTPUTNAME")
-        .required(false)
-        .takes_value(true))
-      .arg(Arg::with_name("mech_build_file_paths")
+        .required(false))
+      .arg(Arg::new("mech_build_file_paths")
         .help("The files and folders to build.")
         .required(true)
-        .multiple(true)))
+        .action(ArgAction::Append)))
     .get_matches();
 
   // ------------------------------------------------
@@ -267,11 +251,11 @@ async fn main() -> Result<(), MechError> {
   // ------------------------------------------------
   let mech_client: Option<RunLoop> = if let Some(matches) = matches.subcommand_matches("serve") {
 
-    let port = matches.value_of("port").unwrap_or("8081");
-    let address = matches.value_of("address").unwrap_or("127.0.0.1");
+    let port: String = matches.get_one::<String>("port").cloned().unwrap_or("8081".to_string());
+    let address = matches.get_one::<String>("address").cloned().unwrap_or("127.0.0.1".to_string());
     let full_address: String = format!("{}:{}",address,port);
-    let mech_paths: Vec<String> = matches.values_of("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    let persistence_path = matches.value_of("persistence").unwrap_or("");
+    let mech_paths: Vec<String> = matches.get_many::<String>("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+    let persistence_path = matches.get_one::<String>("persistence").unwrap_or(&"".to_string());
 
     let mech_html = include_str!("../../wasm-notebook/index.html");
     let mech_wasm = include_bytes!("../../wasm-notebook/pkg/mech_wasm_notebook_bg.wasm");
@@ -332,7 +316,7 @@ async fn main() -> Result<(), MechError> {
   } else if let Some(matches) = matches.subcommand_matches("test") {
     
     println!("{}", "[Testing]".truecolor(153,221,85));
-    let mut mech_paths: Vec<String> = matches.values_of("mech_test_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+    let mut mech_paths: Vec<String> = matches.get_many::<String>("mech_test_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let mut passed_all_tests = true;
     mech_paths.push("https://gitlab.com/mech-lang/machines/mech/-/raw/v0.1-beta/src/test.mec".to_string());
     let code = read_mech_files(&mech_paths)?;
@@ -412,18 +396,18 @@ async fn main() -> Result<(), MechError> {
   // RUN
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("run") {
-    let mech_paths: Vec<String> = matches.values_of("mech_run_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    let repl_flag = matches.is_present("repl_mode");    
-    let debug_flag = matches.is_present("debug");    
-    let secure_flag = matches.is_present("secure");    
-    let timings_flag = matches.is_present("timings");    
-    let machine_registry = matches.value_of("registry").unwrap_or("https://gitlab.com/mech-lang/machines/mech/-/raw/v0.1-beta/src/registry.mec").to_string();
-    let input_arguments = matches.values_of("inargs").map_or(vec![], |inargs| inargs.collect());
-    let out_tables = matches.values_of("out").map_or(vec![], |out| out.collect());
-    let address: String = matches.value_of("address").unwrap_or("127.0.0.1").to_string();
-    let port: String = matches.value_of("port").unwrap_or("0").to_string();
-    let maestro_address: String = matches.value_of("maestro").unwrap_or("127.0.0.1:3235").to_string();
-    let websocket_address: String = matches.value_of("websocket").unwrap_or("127.0.0.1:3236").to_string();
+    let mech_paths: Vec<String> = matches.get_many::<String>("mech_run_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+    let repl_flag = matches.contains_id("repl_mode");    
+    let debug_flag = matches.contains_id("debug");    
+    let secure_flag = matches.contains_id("secure");    
+    let timings_flag = matches.contains_id("timings");    
+    let machine_registry = matches.get_one::<String>("registry").unwrap_or(&"https://gitlab.com/mech-lang/machines/mech/-/raw/v0.1-beta/src/registry.mec".to_string()).to_string();
+    let input_arguments = matches.get_many::<String>("inargs").map_or(vec![], |inargs| inargs.collect());
+    let out_tables = matches.get_many::<String>("out").map_or(vec![], |out| out.collect());
+    let address: String = matches.get_one::<String>("address").unwrap_or(&"127.0.0.1".to_string()).to_string();
+    let port: String = matches.get_one::<String>("port").unwrap_or(&"0".to_string()).to_string();
+    let maestro_address: String = matches.get_one::<String>("maestro").unwrap_or(&"127.0.0.1:3235".to_string()).to_string();
+    let websocket_address: String = matches.get_one::<String>("websocket").unwrap_or(&"127.0.0.1:3236".to_string()).to_string();
 
     let mut code = match read_mech_files(&mech_paths) {
       Ok(code) => code,
@@ -560,7 +544,7 @@ async fn main() -> Result<(), MechError> {
   // BUILD a .blx file from .mec and other .blx files
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("build") {
-    let mech_paths: Vec<String> = matches.values_of("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+    let mech_paths: Vec<String> = matches.get_many::<String>("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let mut code = match read_mech_files(&mech_paths) {
       Ok(code) => code,
       Err(mech_error) => {
@@ -571,7 +555,7 @@ async fn main() -> Result<(), MechError> {
 
     match compile_code(code) {
       Ok(sections) => {
-        let output_name = match matches.value_of("output_name") {
+        let output_name = match matches.get_one::<String>("output_name") {
           Some(name) => format!("{}.blx",name),
           None => "output.blx".to_string(),
         };
@@ -600,8 +584,8 @@ async fn main() -> Result<(), MechError> {
   // FORMAT standardize formatting of mech source files
   // ---------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("format") {
-    let html = matches.is_present("html");    
-    let mech_paths: Vec<String> = matches.values_of("mech_format_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+    let html = matches.contains_id("html");    
+    let mech_paths: Vec<String> = matches.get_many::<String>("mech_format_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let mut code = match read_mech_files(&mech_paths) {
       Ok(code) => code,
       Err(mech_error) => {
@@ -633,7 +617,7 @@ async fn main() -> Result<(), MechError> {
       }
     }).collect::<Vec<String>>();
   
-    let output_name = match (matches.value_of("output_name"),html) {
+    let output_name = match (matches.get_one::<String>("output_name"),html) {
       (Some(name),true) => format!("{}.html",name),
       (Some(name),false) => format!("{}.mec",name),
       (None, true) => "output.html".to_string(),
@@ -671,7 +655,7 @@ async fn main() -> Result<(), MechError> {
   // ------------------------------------------------
   } else if let Some(matches) = matches.subcommand_matches("langserver") {
     let address = "localhost".to_owned();
-    let port = matches.value_of("port").unwrap_or("4041").to_string();
+    let port = matches.get_one::<String>("port").unwrap_or(&"4041".to_string()).to_string();
     println!("{} Starting language server at {}:{}", "[INFO]".truecolor(34,204,187), address, port);
     mech_syntax::langserver::run_langserver(&address, &port).await?;
     std::process::exit(0);
