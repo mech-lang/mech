@@ -10,7 +10,7 @@ Read about our current progress on our [blog](https://mech-lang.org/blog/).
 
 ## Documentation
 
-If this is your first time with Mech, read [Learn Mech in Fifteen Minutes](https://gitlab.com/mech-lang/docs/-/raw/v0.2-beta/II.guides/MechFifteen.mec?ref_type=heads).
+If this is your first time with Mech, read [Learn Mech in Fifteen Minutes](https://gitlab.com/mech-lang/docs/-/raw/v0.2-beta/III.guides/MechFifteen.mec).
 
 Documentation is hosted online at [mech-lang.org](https://mech-lang.org/docs), and is open sourced on [GitHub](http://github.com/mech-lang/docs).
 
