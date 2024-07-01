@@ -68,6 +68,7 @@ where T: Zero + One + Clone + PartialEq + Debug + AddAssign + MulAssign + 'stati
         Ok(Table::DMatrix(result))
       }
       _ => Err(MechError {
+        tokens: vec![],
         id: 1234,
         kind: MechErrorKind::None,
         msg: String::from(""),
@@ -86,6 +87,7 @@ where T: Zero + One + Clone + PartialEq + Debug + AddAssign + MulAssign + 'stati
         Ok(Table::DVector(result))
       }
       _ => Err(MechError {
+        tokens: vec![],
         id: 1234,
         kind: MechErrorKind::None,
         msg: String::from(""),
@@ -104,6 +106,7 @@ where T: Zero + One + Clone + PartialEq + Debug + AddAssign + MulAssign + 'stati
         Ok(())
       }
       _ => Err(MechError {
+        tokens: vec![],
         id: 1234,
         kind: MechErrorKind::None,
         msg: String::from(""),
@@ -122,6 +125,7 @@ where T: Zero + One + Clone + PartialEq + Debug + AddAssign + MulAssign + 'stati
         Ok(())
       }
       _ => Err(MechError {
+        tokens: vec![],
         id: 1234,
         kind: MechErrorKind::None,
         msg: String::from(""),
