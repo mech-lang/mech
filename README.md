@@ -16,11 +16,11 @@ Documentation is hosted online at [mech-lang.org](https://mech-lang.org/docs), a
 
 ## Installation
 
-### From Binary
+### Binary
 
 You can download the latest release for your platform [here](https://github.com/mech-lang/mech/releases).
 
-### From Source
+### Source
 
 You will need to install [Rust](https://www.rust-lang.org/learn/get-started) on a recent nightly release, and [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/). When those are installed, follow these instructions:
 
@@ -29,14 +29,6 @@ git clone https://gitlab.com/mech-lang/mech
 cd mech
 wasm-pack build wasm-notebook --target web
 cargo build --bin mech --release
-```
-
-### Via Cargo
-
-If you have Rust's Cargo package manager installed, you can install Mech directly from [crates.io](https://crates.io/crates/mech):
-
-```bash
-cargo install mech
 ```
 
 ## Project Roadmap
