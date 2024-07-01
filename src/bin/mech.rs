@@ -17,7 +17,7 @@ use crossterm::{
   ExecutableCommand, QueueableCommand,
   terminal, cursor, style::Print,
 };
-use clap::{arg, command, value_parser, ArgAction, Command};
+use clap::{arg, command, value_parser, Arg, ArgAction, Command};
 use std::path::PathBuf;
 use tabled::{
   settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
@@ -34,57 +34,61 @@ fn main() -> Result<(), MechError> {
   │ │ └─┘ │ │ │ └────┐ │ └──┘ │ │ │   │ │
   └─┘     └─┘ └──────┘ └──────┘ └─┘   └─┘"#.truecolor(246,192,78);
 
+  let about = format!("{}", text_logo);
 
+  let matches = Command::new("Mech")
+    .version(version)
+    .author("Corey Montella corey@mech-lang.org")
+    .about(about)
+    .arg(Arg::new("mech_paths")
+        .help("Source .mec and .blx files")
+        .required(false)
+        .action(ArgAction::Append))
+    .arg(Arg::new("debug")
+        .short('d')
+        .long("debug")
+        .help("Print debug info")
+        .action(ArgAction::SetTrue))
+    .get_matches();
 
-  let matches = command!() // requires `cargo` feature
-                .arg(arg!([mech_paths] "Optional Mech source target")
-                  .required(false)
-                  .value_parser(value_parser!(PathBuf)))
-                .arg(
-                    arg!(
-                        -c --config <FILE> "Sets a custom config file"
-                    )
-                    .required(false)
-                    .value_parser(value_parser!(PathBuf)),
-                )
-                .arg(arg!(
-                    -d --debug ... "Turn debugging information on"
-                ))
-                .get_matches();
-
-  if let Some(mech_paths) = matches.get_one::<PathBuf>("mech_paths") {
+  if let Some(mech_paths) = matches.get_one::<String>("mech_paths") {
     let s = fs::read_to_string(&mech_paths).unwrap();
     match parser2::parse(&s) {
       Ok(tree) => { 
         let mut intrp = Interpreter::new();
         let result = intrp.interpret(&tree);
-        
-        let tree_hash = hash_str(&format!("{:#?}", tree));
-        let syntax_tree_str = format!("Tree Hash: {:?}\n{:#?}", tree_hash, tree);
+        let debug_flag = matches.get_flag("debug");
+        if debug_flag {
+          let tree_hash = hash_str(&format!("{:#?}", tree));
+          let syntax_tree_str = format!("Tree Hash: {:?}\n{:#?}", tree_hash, tree);
 
-        let mut interpreter_str = format!("Symbols: {:#?}\n", intrp.symbols); 
-        interpreter_str = format!("{}Plan:\n", interpreter_str); 
-        for (ix,fxn) in intrp.plan.borrow().iter().enumerate() {
-          interpreter_str = format!("{}  {}. {}\n", interpreter_str, ix + 1, fxn.to_string());
-        }
-        interpreter_str = format!("{}Fxns:\n", interpreter_str); 
-        for (id,fxn) in intrp.functions.borrow().functions.iter() {
-          println!("{:?}", fxn);
-        }
-        for fxn in intrp.plan.borrow().iter() {
-          fxn.solve();
-        }
-        let result_str = format!("{:#?}", result);
+          let mut interpreter_str = format!("Symbols: {:#?}\n", intrp.symbols); 
+          interpreter_str = format!("{}Plan:\n", interpreter_str); 
+          for (ix,fxn) in intrp.plan.borrow().iter().enumerate() {
+            interpreter_str = format!("{}  {}. {}\n", interpreter_str, ix + 1, fxn.to_string());
+          }
+          interpreter_str = format!("{}Fxns:\n", interpreter_str); 
+          for (id,fxn) in intrp.functions.borrow().functions.iter() {
+            println!("{:?}", fxn);
+          }
+          for fxn in intrp.plan.borrow().iter() {
+            fxn.solve();
+          }
+          let result_str = format!("{:#?}", result);
 
-        let data = vec!["🌳 Syntax Tree", &syntax_tree_str, 
-                        "💻 Interpreter", &interpreter_str, 
-                        "🌟 Result",      &result_str];
-        let mut table = tabled::Table::new(data);
-        table
-            .with(Style::modern())
-            .with(Panel::header(format!("Runtime Debug Info")))
-            .with(Alignment::left());
-        println!("{table}");
+          let data = vec!["🌳 Syntax Tree", &syntax_tree_str, 
+                          "💻 Interpreter", &interpreter_str, 
+                          "🌟 Result",      &result_str];
+          let mut table = tabled::Table::new(data);
+          table
+              .with(Style::modern())
+              .with(Panel::header(format!("Runtime Debug Info")))
+              .with(Alignment::left());
+    
+          println!("{table}");
+        } else {
+          println!("{:#?}", result);
+        }
       },
       Err(err) => {
         if let MechErrorKind::ParserError(tree, report, _) = err.kind {
