@@ -1387,7 +1387,7 @@ pub struct ComplexNumber {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Comment {
-  pub text: Vec<Token>
+  pub text: Token,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

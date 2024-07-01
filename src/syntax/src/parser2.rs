@@ -1251,18 +1251,34 @@ fn fsm_args(input: ParseString) -> ParseResult<Vec<(Option<Identifier>,Expressio
 
 // comment_sigil := "--" | "//" | "/*" ;
 pub fn comment_sigil(input: ParseString) -> ParseResult<()> {
-  let (input, _) = alt((tag("--"),tag("//"),tag("/*")))(input)?;
+  let (input, _) = alt((tag("--"),tag("//")))(input)?;
   Ok((input, ()))
 }
 
 // comment := ws0, comment_sigil, text+ ;
 pub fn comment(input: ParseString) -> ParseResult<Comment> {
-  let msg2 = "Character not allowed in comment text";
+  let (input, cmmnt) = alt((comment_singleline, comment_multiline))(input)?;
+  Ok((input, cmmnt))
+}
+
+// comment := ws0, comment_sigil, text+ ;
+pub fn comment_singleline(input: ParseString) -> ParseResult<Comment> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = comment_sigil(input)?;
-  let (input, text) = many1(text)(input)?;
+  let (input, mut text) = many1(text)(input)?;
   let (input, _) = whitespace0(input)?;
-  Ok((input, Comment{text}))
+  Ok((input, Comment{text: merge_tokens(&mut text).unwrap()}))
+}
+
+// comment := ws0, "/*", text+, "*/" ;
+pub fn comment_multiline(input: ParseString) -> ParseResult<Comment> {
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = tag("/*")(input)?;
+  let (input, text) = many1(nom_tuple((is_not(tag("*/")),alt((text,whitespace)))))(input)?;
+  let mut text = text.iter().map(|(_,a)| a).cloned().collect::<Vec<Token>>();
+  let (input, _) = tag("*/")(input)?;
+  let (input, _) = whitespace0(input)?;
+  Ok((input, Comment{text: merge_tokens(&mut text).unwrap()}))
 }
 
 // assign_operator := "=" ;

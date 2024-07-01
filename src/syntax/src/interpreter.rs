@@ -477,7 +477,7 @@ fn section_element(element: &SectionElement, plan: Plan, symbols: SymbolTableRef
   let out = match element {
     SectionElement::MechCode(code) => {mech_code(&code, plan.clone(), symbols.clone(), functions.clone())?},
     SectionElement::Section(sctn) => todo!(),
-    SectionElement::Comment(cmmnt) => todo!(),
+    SectionElement::Comment(cmmnt) => Value::Empty,
     SectionElement::Paragraph(p) => Value::Empty,
     SectionElement::MechCode(code) => todo!(),
     SectionElement::UnorderedList(ul) => todo!(),
