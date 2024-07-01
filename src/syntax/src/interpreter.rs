@@ -648,17 +648,13 @@ fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, f
 fn range(rng: &RangeExpression, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
   let start = factor(&rng.start, plan.clone(),symbols.clone(), functions.clone())?;
   let terminal = factor(&rng.terminal, plan.clone(),symbols.clone(), functions.clone())?;
+  let new_fxn = match &rng.operator {
+    RangeOp::Exclusive => RangeExclusive{}.compile(&vec![start,terminal])?,
+    RangeOp::Inclusive => RangeInclusive{}.compile(&vec![start,terminal])?,
+    x => unreachable!(),
+  };
   let mut plan_brrw = plan.borrow_mut();
-  match (start,terminal,&rng.operator) {
-    (Value::I64(min), Value::I64(max), RangeOp::Exclusive) =>
-      plan_brrw.push(Box::new(RangeExclusive{max,min, out: Rc::new(RefCell::new(RowDVector::from_element(1,0)))})),       
-    (Value::I64(min), Value::I64(max), RangeOp::Inclusive) =>
-      plan_brrw.push(Box::new(RangeInclusive{max,min, out: Rc::new(RefCell::new(RowDVector::from_element(1,0)))})),       
-    x => {
-      println!("{:?}", x);
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});
-    }
-  }
+  plan_brrw.push(new_fxn);
   let step = plan_brrw.last().unwrap();
   step.solve();
   let res = step.out();
@@ -951,64 +947,31 @@ fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: Functio
 }
 
 fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
-  let mut lhs_result = factor(&trm.lhs, plan.clone(), symbols.clone(), functions.clone())?;
+  let mut lhs = factor(&trm.lhs, plan.clone(), symbols.clone(), functions.clone())?;
   let mut term_plan: Vec<Box<dyn MechFunction>> = vec![];
   for (op,rhs) in &trm.rhs {
-    let rhs_result = factor(&rhs, plan.clone(), symbols.clone(), functions.clone())?;
-    match (lhs_result, rhs_result, op) {
-      (lhs, rhs, FormulaOperator::AddSub(AddSubOp::Add)) => {
-        let new_fxn = MathAdd{}.compile(&vec![lhs,rhs])?;
-        term_plan.push(new_fxn);
-      }
-      (lhs, rhs, FormulaOperator::AddSub(AddSubOp::Sub)) => {
-        let new_fxn = MathSub{}.compile(&vec![lhs,rhs])?;
-        term_plan.push(new_fxn);
-      }
-      (lhs, rhs, FormulaOperator::MulDiv(MulDivOp::Mul)) => {
-        let new_fxn = MathMul{}.compile(&vec![lhs,rhs])?;
-        term_plan.push(new_fxn);
-      }
-      (lhs, rhs, FormulaOperator::MulDiv(MulDivOp::Div)) => {
-        let new_fxn = MathDiv{}.compile(&vec![lhs,rhs])?;
-        term_plan.push(new_fxn);
-      }
-      (lhs, rhs, FormulaOperator::Exponent(ExponentOp::Exp)) => {
-        let new_fxn = MathExp{}.compile(&vec![lhs,rhs])?;
-        term_plan.push(new_fxn);
-      } 
-      (lhs, rhs, FormulaOperator::Vec(VecOp::MatMul)) => {
-        let new_fxn = MatrixMul{}.compile(&vec![lhs,rhs])?;
-        term_plan.push(new_fxn);
-      }
-      (lhs, rhs, FormulaOperator::Comparison(ComparisonOp::LessThan)) => {
-        let new_fxn = CompareLessThan{}.compile(&vec![lhs,rhs])?;
-        term_plan.push(new_fxn);
-      }
-      (lhs, rhs, FormulaOperator::Comparison(ComparisonOp::GreaterThan)) => {
-        let new_fxn = CompareGreaterThan{}.compile(&vec![lhs,rhs])?;
-        term_plan.push(new_fxn);
-      }
-      (lhs, rhs, FormulaOperator::Logic(LogicOp::And)) => {
-        let new_fxn = LogicAnd{}.compile(&vec![lhs,rhs])?;
-        term_plan.push(new_fxn);
-      }
-      (lhs, rhs, FormulaOperator::Logic(LogicOp::Or)) => {
-        let new_fxn = LogicOr{}.compile(&vec![lhs,rhs])?;
-        term_plan.push(new_fxn);
-      }        
-      x => {
-        println!("{:?}", x);
-        return Err(MechError{tokens: trm.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});
-      }
+    let rhs = factor(&rhs, plan.clone(), symbols.clone(), functions.clone())?;
+    let new_fxn = match op {
+      FormulaOperator::AddSub(AddSubOp::Add) => MathAdd{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::AddSub(AddSubOp::Sub) => MathSub{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::MulDiv(MulDivOp::Mul) => MathMul{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::MulDiv(MulDivOp::Div) => MathDiv{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::Exponent(ExponentOp::Exp) => MathExp{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::Vec(VecOp::MatMul) => MatrixMul{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::Comparison(ComparisonOp::LessThan) => CompareLessThan{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::Comparison(ComparisonOp::GreaterThan) => CompareGreaterThan{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::Logic(LogicOp::And) => LogicAnd{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::Logic(LogicOp::Or) => LogicOr{}.compile(&vec![lhs,rhs])?,
+      x => todo!(),
     };
-    let mut last_step = term_plan.last().unwrap();
-    last_step.solve();
-    let res = last_step.out();
-    lhs_result = res;
+    new_fxn.solve();
+    let res = new_fxn.out();
+    term_plan.push(new_fxn);
+    lhs = res;
   }
   let mut plan_brrw = plan.borrow_mut();
   plan_brrw.append(&mut term_plan);
-  return Ok(lhs_result);
+  return Ok(lhs);
 }
 
 fn literal(ltrl: &Literal) -> Value {
@@ -1705,13 +1668,13 @@ impl NativeFunctionCompiler for MatrixTranspose {
 // Exclusive ------------------------------------------------------------------
 
 #[derive(Debug)]
-struct RangeExclusive {
+struct RangeExclusiveScalar {
   max: Rc<RefCell<i64>>,
   min: Rc<RefCell<i64>>,
   out: Rc<RefCell<RowDVector<i64>>>,
 }
 
-impl MechFunction for RangeExclusive {
+impl MechFunction for RangeExclusiveScalar {
   fn solve(&self) {
     let max_ptr = self.max.as_ptr();
     let min_ptr = self.min.as_ptr();
@@ -1728,16 +1691,33 @@ impl MechFunction for RangeExclusive {
   fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
+pub struct RangeExclusive {}
+
+impl NativeFunctionCompiler for RangeExclusive {
+  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+    if arguments.len() != 2 {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    match (arguments[0].clone(), arguments[1].clone()) {
+      (Value::I64(min), Value::I64(max)) =>
+        Ok(Box::new(RangeExclusiveScalar{max,min, out: Rc::new(RefCell::new(RowDVector::from_element(1,0)))})),
+      x => 
+        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    }
+  }
+}
+
+
 // Inclusive ------------------------------------------------------------------
 
 #[derive(Debug)]
-struct RangeInclusive {
+struct RangeInclusiveScalar {
   max: Rc<RefCell<i64>>,
   min: Rc<RefCell<i64>>,
   out: Rc<RefCell<RowDVector<i64>>>,
 }
 
-impl MechFunction for RangeInclusive {
+impl MechFunction for RangeInclusiveScalar {
   fn solve(&self) {
     let max_ptr = self.max.as_ptr();
     let min_ptr = self.min.as_ptr();
@@ -1751,4 +1731,20 @@ impl MechFunction for RangeInclusive {
     Value::Matrix(Matrix::RowDVector(self.out.clone()))
   }
   fn to_string(&self) -> String { format!("{:?}", self)}
+}
+
+pub struct RangeInclusive {}
+
+impl NativeFunctionCompiler for RangeInclusive {
+  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+    if arguments.len() != 2 {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    match (arguments[0].clone(), arguments[1].clone()) {
+      (Value::I64(min), Value::I64(max)) =>
+        Ok(Box::new(RangeInclusiveScalar{max,min, out: Rc::new(RefCell::new(RowDVector::from_element(1,0)))})),
+      x => 
+        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    }
+  }
 }
