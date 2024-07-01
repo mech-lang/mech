@@ -115,7 +115,7 @@ impl MechSet {
 impl Hash for MechSet {
   fn hash<H: Hasher>(&self, state: &mut H) {
     for x in self.set.iter() {
-        x.hash(state)
+      x.hash(state)
     }
   }
 }
@@ -138,7 +138,7 @@ impl MechMap {
 impl Hash for MechMap {
   fn hash<H: Hasher>(&self, state: &mut H) {
     for x in self.map.iter() {
-        x.hash(state)
+      x.hash(state)
     }
   }
 }
@@ -159,8 +159,8 @@ impl MechTable {
 impl Hash for MechTable {
   fn hash<H: Hasher>(&self, state: &mut H) {
     for (k,v) in self.data.iter() {
-        k.hash(state);
-        v.hash(state);
+      k.hash(state);
+      v.hash(state);
     }
   }
 }
@@ -208,8 +208,6 @@ impl SymbolTable {
     self.symbols.insert(key,cell.clone());
     cell.clone()
   }
-
-
 }
 
 
@@ -932,37 +930,22 @@ fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: Functio
     },
     Factor::Expression(expr) => expression(expr, plan.clone(), symbols.clone(), functions.clone()),
     Factor::Negated(neg) => {
-      match factor(neg, plan.clone(), symbols.clone(), functions.clone())? {
-        Value::Matrix(Matrix::Matrix2(mat)) => {
-          let fxn = NegateM2{mat, out: Rc::new(RefCell::new(Matrix2::from_element(0)))};
-          fxn.solve();
-          let out = fxn.out();
-          let mut plan_brrw = plan.borrow_mut();
-          plan_brrw.push(Box::new(fxn));
-          return Ok(out);
-        }
-        Value::I64(n) => {
-          let fxn = NegateScalar{input: n, output: Rc::new(RefCell::new(0))}; 
-          fxn.solve();
-          let out: Value = fxn.out();
-          let mut plan_brrw = plan.borrow_mut();
-          plan_brrw.push(Box::new(fxn));
-          return Ok(out);
-        }
-        _ => todo!(),
-      }  
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::None});
+      let value = factor(neg, plan.clone(), symbols.clone(), functions.clone())?;
+      let new_fxn = MathNegate{}.compile(&vec![value])?;
+      new_fxn.solve();
+      let out = new_fxn.out();
+      let mut plan_brrw = plan.borrow_mut();
+      plan_brrw.push(new_fxn);
+      Ok(out)
     },
     Factor::Transpose(fctr) => {
-      if let Value::Matrix(Matrix::Matrix2(mat)) = factor(fctr, plan.clone(), symbols.clone(), functions.clone())? {
-        let fxn = TransposeM2{mat, out: Rc::new(RefCell::new(Matrix2::from_element(0)))};
-        fxn.solve();
-        let out_val = fxn.out();
-        let mut plan_brrw = plan.borrow_mut();
-        plan_brrw.push(Box::new(fxn));
-        return Ok(out_val);
-      }
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::None});
+      let value = factor(fctr, plan.clone(), symbols.clone(), functions.clone())?;
+      let new_fxn = MatrixTranspose{}.compile(&vec![value])?;
+      new_fxn.solve();
+      let out = new_fxn.out();
+      let mut plan_brrw = plan.borrow_mut();
+      plan_brrw.push(new_fxn);
+      Ok(out)
     },
   }
 }
@@ -1454,6 +1437,24 @@ impl MechFunction for NegateM2 {
   fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
+pub struct MathNegate {}
+
+impl NativeFunctionCompiler for MathNegate {
+  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+    if arguments.len() != 1 {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    match (arguments[0].clone()) {
+      Value::Matrix(Matrix::Matrix2(mat)) =>
+        Ok(Box::new(NegateM2{mat, out: Rc::new(RefCell::new(Matrix2::from_element(0)))})),
+      Value::I64(n) =>
+        Ok(Box::new(NegateScalar{input: n, output: Rc::new(RefCell::new(0))})),
+      x => 
+        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    }
+  }
+}
+
 // ----------------------------------------------------------------------------
 // Logic Library
 // ----------------------------------------------------------------------------
@@ -1679,6 +1680,22 @@ impl MechFunction for TransposeM2 {
     Value::Matrix(Matrix::Matrix2(self.out.clone()))
   }
   fn to_string(&self) -> String { format!("{:?}", self)}
+}
+
+pub struct MatrixTranspose {}
+
+impl NativeFunctionCompiler for MatrixTranspose {
+  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+    if arguments.len() != 1 {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    match (arguments[0].clone()) {
+      Value::Matrix(Matrix::Matrix2(mat)) =>
+        Ok(Box::new(TransposeM2{mat, out: Rc::new(RefCell::new(Matrix2::from_element(0)))})),
+      x => 
+        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    }
+  }
 }
 
 // ----------------------------------------------------------------------------
