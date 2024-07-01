@@ -257,9 +257,9 @@ async fn main() -> Result<(), MechError> {
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let persistence_path = matches.get_one::<String>("persistence").unwrap_or(&"".to_string());
 
-    let mech_html = include_str!("../../wasm-notebook/index.html");
-    let mech_wasm = include_bytes!("../../wasm-notebook/pkg/mech_wasm_notebook_bg.wasm");
-    let mech_notebook = include_str!("../../wasm-notebook/pkg/mech_wasm_notebook.js");
+    let mech_html = include_str!("../../../../../wasm-notebook/index.html");
+    let mech_wasm = include_bytes!("../../../../../wasm-notebook/pkg/mech_wasm_notebook_bg.wasm");
+    let mech_notebook = include_str!("../../../../../wasm-notebook/pkg/mech_wasm_notebook.js");
     
     let mut headers = HeaderMap::new();
     headers.insert("content-type", HeaderValue::from_static("text/html"));
