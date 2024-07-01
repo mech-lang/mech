@@ -6,15 +6,13 @@ Mech is a language for developing **data-driven**, **reactive** systems like ani
 
 You can try Mech online at [try.mech-lang.org](http://try.mech-lang.org).
 
-Usage and installation instructions can be found in the [documentation](https://mech-lang.org/page/learn/) or the [main Mech repository](https://github.com/mech-lang/mech).
-
-Read about progress on our [blog](https://mech-lang.org/blog/), and follow us on Twitter [@MechLang](https://twitter.com/MechLang).
-
+Read about our current progress on our [blog](https://mech-lang.org/blog/).
 
 ## Documentation
 
-Documentation is hosted online at [mech-lang.org](http://docs.mech-lang.org), and is open sourced on [GitHub](http://github.com/mech-lang/docs).
+If this is your first time with Mech, read [Learn Mech in Fifteen Minutes](https://gitlab.com/mech-lang/docs/-/raw/v0.2-beta/II.guides/MechFifteen.mec?ref_type=heads).
 
+Documentation is hosted online at [mech-lang.org](http://docs.mech-lang.org), and is open sourced on [GitHub](http://github.com/mech-lang/docs).
 
 ## Installation
 
@@ -31,6 +29,14 @@ git clone https://gitlab.com/mech-lang/mech
 cd mech
 wasm-pack build wasm-notebook --target web
 cargo build --bin mech --release
+```
+
+### Via Cargo
+
+If you have Rust's Cargo package manager installed, you can install Mech directly from [crates.io](https://crates.io/crates/mech):
+
+```bash
+cargo install mech
 ```
 
 ## Project Roadmap
