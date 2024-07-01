@@ -1,5 +1,5 @@
 Mech Project Roadmap
-======================
+===============================================================================
 
 (a) Stage 1 - Alpha v0.0.1 - v0.0.6
 
@@ -14,13 +14,11 @@ Released: December 2022
 
 Target release date: ???
 
-Version 0.3.0 (???)
-------------------------
-
-- ...
-
 Version 0.2.0 (Fall 2024)
----------------------------
+-------------------------------------------------------------------------------
+
+Current work is focused on reimplementing the core of the Mech language to 
+reorient programs around the state machines.
 
 (Some of this will likely move to v0.3.0, it's a lot to do in one summer)
 
@@ -90,7 +88,7 @@ Version 0.2.0 (Fall 2024)
   - [ ] Try
 
 Version 0.1.1 (Spring 2023)
------------------------------
+-------------------------------------------------------------------------------
 
 - Core
   - [x] Automatic differentiation
@@ -117,7 +115,7 @@ Version 0.1.1 (Spring 2023)
   - [x] ai
 
 Version 0.1.0 (December 2022)
-----------------------------------
+-------------------------------------------------------------------------------
 
 - [x] User defined functions
 - [x] Errors
@@ -135,7 +133,7 @@ Version 0.1.0 (December 2022)
   - [x] GUI
 
 Version 0.0.6 Alpha (unreleased)
-----------------------------------
+-------------------------------------------------------------------------------
 
 - [x] Testing
 - Machines 
