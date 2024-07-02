@@ -47,6 +47,7 @@ test_interpreter!(interpret_formula_math_exp, "2 ^ 2", Value::I64(Rc::new(RefCel
 
 test_interpreter!(interpret_kind_annotation, "1<u64>", Value::U64(Rc::new(RefCell::new(1))));
 test_interpreter!(interpret_kind_annotation_math, "1<u64> + 1<u64>", Value::U64(Rc::new(RefCell::new(2))));
+test_interpreter!(interpret_kind_u8_overflow, "256<u8>", Value::U8(Rc::new(RefCell::new(0))));
 
 test_interpreter!(interpret_formula_math_neg, "-1", Value::I64(Rc::new(RefCell::new(-1))));
 test_interpreter!(interpret_formula_math_multiple_terms, "1 + 2 + 3", Value::I64(Rc::new(RefCell::new(6))));

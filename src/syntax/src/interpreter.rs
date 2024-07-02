@@ -1,4 +1,4 @@
-use mech_core::{MechError, MechErrorKind, hash_str, ValueKind, nodes::Kind as NodeKind, nodes::*, humanize};
+use mech_core::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*, humanize};
 use crate::parser2::*;
 use mech_core::nodes::Matrix as Mat;
 use serde_derive::*;
@@ -20,10 +20,6 @@ use tabled::{
 use tabled::{settings::style::LineText};
 use std::fmt::Debug;
 
-lazy_static! {
-  pub static ref U64: u64 = hash_str("u64");
-}
-
 // Value ----------------------------------------------------------------------
 
 #[derive(PartialEq, Debug)]
@@ -40,10 +36,38 @@ impl Hash for F64 {
   }
 }
 
+#[derive(PartialEq, Debug)]
+pub struct F32(f32);
+impl F32 {
+  pub fn new(val: f32) -> F32 {
+    F32(val)
+  }
+}
+impl Eq for F32 {}
+impl Hash for F32 {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    self.0.to_bits().hash(state);
+  }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum ValueKind {
+  U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, Str, Bool
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Value {
+  U8(Rc<RefCell<u8>>),
+  U16(Rc<RefCell<u16>>),
+  U32(Rc<RefCell<u32>>),
   U64(Rc<RefCell<u64>>),
+  U128(Rc<RefCell<u128>>),
+  I8(Rc<RefCell<i8>>),
+  I16(Rc<RefCell<i16>>),
+  I32(Rc<RefCell<i32>>),
   I64(Rc<RefCell<i64>>),
+  I128(Rc<RefCell<i128>>),
+  F32(Rc<RefCell<F32>>),
   F64(Rc<RefCell<F64>>),
   String(String),
   Bool(Rc<RefCell<bool>>),
@@ -62,8 +86,17 @@ pub enum Value {
 impl Hash for Value {
   fn hash<H: Hasher>(&self, state: &mut H) {
     match self {
+      Value::U8(x) => x.borrow().hash(state),
+      Value::U16(x) => x.borrow().hash(state),
+      Value::U32(x) => x.borrow().hash(state),
       Value::U64(x) => x.borrow().hash(state),
+      Value::U128(x) => x.borrow().hash(state),
+      Value::I8(x) => x.borrow().hash(state),
+      Value::I16(x) => x.borrow().hash(state),
+      Value::I32(x) => x.borrow().hash(state),
       Value::I64(x) => x.borrow().hash(state),
+      Value::I128(x) => x.borrow().hash(state),
+      Value::F32(x) => x.borrow().hash(state),
       Value::F64(x) => x.borrow().hash(state),
       Value::String(x) => x.hash(state),
       Value::Bool(x) => x.borrow().hash(state),
@@ -84,8 +117,17 @@ impl Hash for Value {
 impl Value {
   pub fn shape(&self) -> (usize,usize) {
     match self {
+      Value::U8(x) => (1,1),
+      Value::U16(x) => (1,1),
+      Value::U32(x) => (1,1),
       Value::U64(x) => (1,1),
+      Value::U128(x) => (1,1),
+      Value::I8(x) => (1,1),
+      Value::I16(x) => (1,1),
+      Value::I32(x) => (1,1),
       Value::I64(x) => (1,1),
+      Value::I128(x) => (1,1),
+      Value::F32(x) => (1,1),
       Value::F64(x) => (1,1),
       Value::String(x) => (1,1),
       Value::Bool(x) => (1,1),
@@ -107,18 +149,78 @@ trait ToValue {
   fn to_value(&self) -> Value;
 }
 
-impl ToValue for Rc<RefCell<i64>> {
+impl ToValue for Rc<RefCell<u8>> {
   fn to_value(&self) -> Value {
-      Value::I64(self.clone())
+    Value::U8(self.clone())
+  }
+}
+
+impl ToValue for Rc<RefCell<u16>> {
+  fn to_value(&self) -> Value {
+    Value::U16(self.clone())
+  }
+}
+
+impl ToValue for Rc<RefCell<u32>> {
+  fn to_value(&self) -> Value {
+    Value::U32(self.clone())
   }
 }
 
 impl ToValue for Rc<RefCell<u64>> {
   fn to_value(&self) -> Value {
-      Value::U64(self.clone())
+    Value::U64(self.clone())
   }
 }
 
+impl ToValue for Rc<RefCell<u128>> {
+  fn to_value(&self) -> Value {
+    Value::U128(self.clone())
+  }
+}
+
+impl ToValue for Rc<RefCell<i8>> {
+  fn to_value(&self) -> Value {
+    Value::I8(self.clone())
+  }
+}
+
+impl ToValue for Rc<RefCell<i16>> {
+  fn to_value(&self) -> Value {
+    Value::I16(self.clone())
+  }
+}
+
+impl ToValue for Rc<RefCell<i32>> {
+  fn to_value(&self) -> Value {
+    Value::I32(self.clone())
+  }
+}
+
+impl ToValue for Rc<RefCell<i64>> {
+  fn to_value(&self) -> Value {
+    Value::I64(self.clone())
+  }
+}
+
+impl ToValue for Rc<RefCell<i128>> {
+  fn to_value(&self) -> Value {
+    Value::I128(self.clone())
+  }
+}
+
+/*
+impl ToValue for Rc<RefCell<f32>> {
+  fn to_value(&self) -> Value {
+    Value::F32(F32::new(self.clone()))
+  }
+}
+
+impl ToValue for Rc<RefCell<f64>> {
+  fn to_value(&self) -> Value {
+    Value::F64(F64::new(self.clone()))
+  }
+}*/
 
 // Kind -----------------------------------------------------------------------
 
@@ -207,12 +309,13 @@ impl Hash for MechTable {
 
 pub struct Functions {
   pub functions: HashMap<u64,FunctionDefinition>,
-  pub function_compilers: HashMap<u64, Box<dyn NativeFunctionCompiler>>
+  pub function_compilers: HashMap<u64, Box<dyn NativeFunctionCompiler>>,
+  pub kinds: HashMap<u64,ValueKind>,
 }
 
 impl Functions {
   pub fn new() -> Self {
-    Self {functions: HashMap::new(), function_compilers: HashMap::new()}
+    Self {functions: HashMap::new(), function_compilers: HashMap::new(), kinds: HashMap::new()}
   }
 }
 
@@ -473,8 +576,25 @@ pub struct Interpreter {
 
 impl Interpreter {
   pub fn new() -> Interpreter {
+    
+    // Preload functions
     let mut fxns = Functions::new();
     fxns.function_compilers.insert(hash_str("math/sin"),Box::new(MathSin{}));
+    
+    // Preload kinds
+    fxns.kinds.insert(hash_str("u8"),ValueKind::U8);
+    fxns.kinds.insert(hash_str("u16"),ValueKind::U16);
+    fxns.kinds.insert(hash_str("u32"),ValueKind::U32);
+    fxns.kinds.insert(hash_str("u64"),ValueKind::U64);
+    fxns.kinds.insert(hash_str("u128"),ValueKind::U128);
+    fxns.kinds.insert(hash_str("i8"),ValueKind::I8);
+    fxns.kinds.insert(hash_str("i16"),ValueKind::I16);
+    fxns.kinds.insert(hash_str("i32"),ValueKind::I32);
+    fxns.kinds.insert(hash_str("i64"),ValueKind::I64);
+    fxns.kinds.insert(hash_str("i128"),ValueKind::I128);
+    fxns.kinds.insert(hash_str("f32"),ValueKind::F32);
+    fxns.kinds.insert(hash_str("f64"),ValueKind::F64);
+
     Interpreter {
       symbols: Rc::new(RefCell::new(SymbolTable::new())),
       plan: Rc::new(RefCell::new(Vec::new())),
@@ -604,7 +724,7 @@ fn expression(expr: &Expression, plan: Plan, symbols: SymbolTableRef, functions:
     Expression::Slice(slc) => slice(&slc, plan.clone(), symbols.clone(), functions.clone()),
     Expression::Formula(fctr) => factor(fctr, plan.clone(), symbols.clone(), functions.clone()),
     Expression::Structure(strct) => structure(strct, plan.clone(), symbols.clone(), functions.clone()),
-    Expression::Literal(ltrl) => literal(&ltrl),
+    Expression::Literal(ltrl) => literal(&ltrl, functions.clone()),
     Expression::FunctionCall(fxn_call) => function_call(fxn_call, plan.clone(), symbols.clone(), functions.clone()),
     Expression::FsmPipe(_) => todo!(),
   }
@@ -1014,26 +1134,35 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
   return Ok(lhs);
 }
 
-fn literal(ltrl: &Literal) -> Result<Value,MechError> {
+fn literal(ltrl: &Literal, functions: FunctionsRef) -> Result<Value,MechError> {
   match &ltrl {
     Literal::Empty(_) => Ok(empty()),
     Literal::Boolean(bln) => Ok(boolean(bln)),
     Literal::Number(num) => Ok(number(num)),
     Literal::String(strng) => Ok(string(strng)),
     Literal::Atom(atm) => Ok(atom(atm)),
-    Literal::TypedLiteral((ltrl,kind)) => typed_literal(ltrl,kind),
+    Literal::TypedLiteral((ltrl,kind)) => typed_literal(ltrl,kind,functions),
   }
 }
 
-fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation) -> Result<Value,MechError> {
-  let value = literal(ltrl)?;
+fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, functions: FunctionsRef) -> Result<Value,MechError> {
+  let value = literal(ltrl,functions.clone())?;
   let kind = kind_annotation(knd_attn);
   match (&value,kind) {
-    (Value::I64(num), Kind::Scalar(x)) => {
-      if x == *U64 {
-        Ok(Value::U64(Rc::new(RefCell::new(*num.borrow() as u64))))
-      } else {
-        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::CouldNotAssignKindToValue})
+    (Value::I64(num), Kind::Scalar(to_kind_id)) => {
+      match functions.borrow().kinds.get(&to_kind_id) {
+        Some(ValueKind::I8) => Ok(Value::I8(Rc::new(RefCell::new(*num.borrow() as i8)))),
+        Some(ValueKind::I16) => Ok(Value::I16(Rc::new(RefCell::new(*num.borrow() as i16)))),
+        Some(ValueKind::I32) => Ok(Value::I32(Rc::new(RefCell::new(*num.borrow() as i32)))),
+        Some(ValueKind::I64) => Ok(value),
+        Some(ValueKind::I128) => Ok(Value::I128(Rc::new(RefCell::new(*num.borrow() as i128)))),
+        Some(ValueKind::U8) => Ok(Value::U8(Rc::new(RefCell::new(*num.borrow() as u8)))),
+        Some(ValueKind::U16) => Ok(Value::U16(Rc::new(RefCell::new(*num.borrow() as u16)))),
+        Some(ValueKind::U32) => Ok(Value::U32(Rc::new(RefCell::new(*num.borrow() as u32)))),
+        Some(ValueKind::U64) => Ok(Value::U64(Rc::new(RefCell::new(*num.borrow() as u64)))),
+        Some(ValueKind::U128) => Ok(Value::U128(Rc::new(RefCell::new(*num.borrow() as u128)))),
+        None => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(to_kind_id)}),
+        _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::CouldNotAssignKindToValue}),
       }
     }
     _ => todo!(),

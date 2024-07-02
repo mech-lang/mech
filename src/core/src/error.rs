@@ -54,6 +54,7 @@ pub enum MechErrorKind {
   UnknownColumnKind(u64),
   UnhandledFunctionArgumentKind,
   CouldNotAssignKindToValue,
+  UndefinedKind(u64),
   IncorrectNumberOfArguments,
   UnhandledTableShape(TableShape),
   TooManyInputArguments(usize,usize),                // (given,expected)
