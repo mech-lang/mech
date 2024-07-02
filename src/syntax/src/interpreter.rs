@@ -1,4 +1,4 @@
-use mech_core::{MechError, MechErrorKind, hash_str, ValueKind, nodes::*, humanize};
+use mech_core::{MechError, MechErrorKind, hash_str, ValueKind, nodes::Kind as NodeKind, nodes::*, humanize};
 use crate::parser2::*;
 use mech_core::nodes::Matrix as Mat;
 use serde_derive::*;
@@ -18,6 +18,11 @@ use tabled::{
   Tabled,
 };
 use tabled::{settings::style::LineText};
+use std::fmt::Debug;
+
+lazy_static! {
+  pub static ref U64: u64 = hash_str("u64");
+}
 
 // Value ----------------------------------------------------------------------
 
@@ -37,6 +42,7 @@ impl Hash for F64 {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Value {
+  U64(Rc<RefCell<u64>>),
   I64(Rc<RefCell<i64>>),
   F64(Rc<RefCell<F64>>),
   String(String),
@@ -56,6 +62,7 @@ pub enum Value {
 impl Hash for Value {
   fn hash<H: Hasher>(&self, state: &mut H) {
     match self {
+      Value::U64(x) => x.borrow().hash(state),
       Value::I64(x) => x.borrow().hash(state),
       Value::F64(x) => x.borrow().hash(state),
       Value::String(x) => x.hash(state),
@@ -77,6 +84,7 @@ impl Hash for Value {
 impl Value {
   pub fn shape(&self) -> (usize,usize) {
     match self {
+      Value::U64(x) => (1,1),
       Value::I64(x) => (1,1),
       Value::F64(x) => (1,1),
       Value::String(x) => (1,1),
@@ -93,6 +101,38 @@ impl Value {
       Value::Id(x) => (0,0),
     }
   }
+}
+
+trait ToValue {
+  fn to_value(&self) -> Value;
+}
+
+impl ToValue for Rc<RefCell<i64>> {
+  fn to_value(&self) -> Value {
+      Value::I64(self.clone())
+  }
+}
+
+impl ToValue for Rc<RefCell<u64>> {
+  fn to_value(&self) -> Value {
+      Value::U64(self.clone())
+  }
+}
+
+
+// Kind -----------------------------------------------------------------------
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum Kind {
+  Scalar(u64),
+  Tuple,
+  Bracket,
+  Brace,
+  Map,
+  Atom,
+  Function,
+  Fsm,
+  Empty,
 }
 
 //-----------------------------------------------------------------------------
@@ -564,7 +604,7 @@ fn expression(expr: &Expression, plan: Plan, symbols: SymbolTableRef, functions:
     Expression::Slice(slc) => slice(&slc, plan.clone(), symbols.clone(), functions.clone()),
     Expression::Formula(fctr) => factor(fctr, plan.clone(), symbols.clone(), functions.clone()),
     Expression::Structure(strct) => structure(strct, plan.clone(), symbols.clone(), functions.clone()),
-    Expression::Literal(ltrl) => Ok(literal(&ltrl)),
+    Expression::Literal(ltrl) => literal(&ltrl),
     Expression::FunctionCall(fxn_call) => function_call(fxn_call, plan.clone(), symbols.clone(), functions.clone()),
     Expression::FsmPipe(_) => todo!(),
   }
@@ -974,16 +1014,39 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
   return Ok(lhs);
 }
 
-fn literal(ltrl: &Literal) -> Value {
+fn literal(ltrl: &Literal) -> Result<Value,MechError> {
   match &ltrl {
-    Literal::Empty(_) => empty(),
-    Literal::Boolean(bln) => boolean(bln),
-    Literal::Number(num) => number(num),
-    Literal::String(strng) => string(strng),
-    Literal::Atom(atm) => atom(atm),
-    Literal::TypedLiteral((ltrl,kind)) => {
-      todo!();
-    },
+    Literal::Empty(_) => Ok(empty()),
+    Literal::Boolean(bln) => Ok(boolean(bln)),
+    Literal::Number(num) => Ok(number(num)),
+    Literal::String(strng) => Ok(string(strng)),
+    Literal::Atom(atm) => Ok(atom(atm)),
+    Literal::TypedLiteral((ltrl,kind)) => typed_literal(ltrl,kind),
+  }
+}
+
+fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation) -> Result<Value,MechError> {
+  let value = literal(ltrl)?;
+  let kind = kind_annotation(knd_attn);
+  match (&value,kind) {
+    (Value::I64(num), Kind::Scalar(x)) => {
+      if x == *U64 {
+        Ok(Value::U64(Rc::new(RefCell::new(*num.borrow() as u64))))
+      } else {
+        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::CouldNotAssignKindToValue})
+      }
+    }
+    _ => todo!(),
+  }
+}
+
+fn kind_annotation(knd_attn: &KindAnnotation) -> Kind {
+  match &knd_attn.kind {
+    NodeKind::Scalar(id) => {
+      let kind_id = id.hash();
+      Kind::Scalar(kind_id)
+    }
+    _ => todo!(),
   }
 }
 
@@ -1087,13 +1150,16 @@ impl NativeFunctionCompiler for MathSin {
 // Add ------------------------------------------------------------------------
 
 #[derive(Debug)] 
-struct AddScalar {
-  lhs: Rc<RefCell<i64>>,
-  rhs: Rc<RefCell<i64>>,
-  out: Rc<RefCell<i64>>,
+struct AddScalar<T> {
+  lhs: Rc<RefCell<T>>,
+  rhs: Rc<RefCell<T>>,
+  out: Rc<RefCell<T>>,
 }
 
-impl MechFunction for AddScalar {
+impl<T> MechFunction for AddScalar<T>
+where T: Copy + Debug + Clone + Sync + Send + Add<Output = T>,
+      Rc<RefCell<T>>: ToValue
+{
   fn solve(&self) {
     let lhs_ptr = self.lhs.as_ptr();
     let rhs_ptr = self.rhs.as_ptr();
@@ -1101,7 +1167,7 @@ impl MechFunction for AddScalar {
     unsafe {*out_ptr = *lhs_ptr + *rhs_ptr;}
   }
   fn out(&self) -> Value {
-    Value::I64(self.out.clone())
+    self.out.to_value()
   }
   fn to_string(&self) -> String { format!("{:?}", self) }
 }
@@ -1155,6 +1221,8 @@ impl NativeFunctionCompiler for MathAdd {
     }
     match (arguments[0].clone(), arguments[1].clone()) {
       (Value::I64(lhs), Value::I64(rhs)) =>
+          Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
+      (Value::U64(lhs), Value::U64(rhs)) =>
           Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
       (Value::MutableReference(lhs), Value::I64(rhs)) => match *lhs.borrow() {
         Value::I64(ref lhs) =>
@@ -1543,13 +1611,15 @@ impl NativeFunctionCompiler for CompareGreaterThan {
 // Less Than ------------------------------------------------------------------
 
 #[derive(Debug)]
-struct LTScalar {
-  lhs: Rc<RefCell<i64>>,
-  rhs: Rc<RefCell<i64>>,
+struct LTScalar<T> {
+  lhs: Rc<RefCell<T>>,
+  rhs: Rc<RefCell<T>>,
   out: Rc<RefCell<bool>>,
 }
 
-impl MechFunction for LTScalar {
+impl<T> MechFunction for LTScalar<T> 
+where T: Copy + Debug + Clone + Sync + Send + PartialOrd
+{
   fn solve(&self) {
     let lhs_ptr = self.lhs.as_ptr();
     let rhs_ptr = self.rhs.as_ptr();
@@ -1572,6 +1642,8 @@ impl NativeFunctionCompiler for CompareLessThan {
     match (arguments[0].clone(), arguments[1].clone()) {
       (Value::I64(lhs), Value::I64(rhs)) =>
         Ok(Box::new(LTScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),
+      (Value::U64(lhs), Value::U64(rhs)) =>
+        Ok(Box::new(LTScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),        
       x => 
         Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
     }

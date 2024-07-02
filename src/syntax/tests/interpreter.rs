@@ -45,6 +45,9 @@ test_interpreter!(interpret_formula_math_mul, "2 * 2", Value::I64(Rc::new(RefCel
 test_interpreter!(interpret_formula_math_div, "2 / 2", Value::I64(Rc::new(RefCell::new(1))));
 test_interpreter!(interpret_formula_math_exp, "2 ^ 2", Value::I64(Rc::new(RefCell::new(4))));
 
+test_interpreter!(interpret_kind_annotation, "1<u64>", Value::U64(Rc::new(RefCell::new(1))));
+test_interpreter!(interpret_kind_annotation_math, "1<u64> + 1<u64>", Value::U64(Rc::new(RefCell::new(2))));
+
 test_interpreter!(interpret_formula_math_neg, "-1", Value::I64(Rc::new(RefCell::new(-1))));
 test_interpreter!(interpret_formula_math_multiple_terms, "1 + 2 + 3", Value::I64(Rc::new(RefCell::new(6))));
 test_interpreter!(interpret_formula_comparison_gt, "10 > 11", Value::Bool(Rc::new(RefCell::new(false))));
