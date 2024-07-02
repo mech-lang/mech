@@ -1349,12 +1349,18 @@ impl NativeFunctionCompiler for MathAdd {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     match (arguments[0].clone(), arguments[1].clone()) {
-      (Value::I64(lhs), Value::I64(rhs)) =>
-          Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
-      (Value::U64(lhs), Value::U64(rhs)) =>
-          Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
+      (Value::I8(lhs), Value::I8(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
+      (Value::I16(lhs), Value::I16(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
+      (Value::I32(lhs), Value::I32(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
+      (Value::I64(lhs), Value::I64(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
+      (Value::I128(lhs), Value::I128(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
+      (Value::U8(lhs), Value::U8(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
+      (Value::U16(lhs), Value::U16(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
+      (Value::U32(lhs), Value::U32(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
+      (Value::U64(lhs), Value::U64(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
+      (Value::U128(lhs), Value::U128(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
       (Value::MutableReference(lhs), Value::I64(rhs)) => match *lhs.borrow() {
-        Value::I64(ref lhs) =>
+        Value::I64(ref lhs) => 
           Ok(Box::new(AddScalar{lhs: lhs.clone(), rhs, out: Rc::new(RefCell::new(0))})),
         _ => todo!(),
       }
