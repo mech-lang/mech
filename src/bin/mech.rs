@@ -49,13 +49,18 @@ fn main() -> Result<(), MechError> {
         .long("debug")
         .help("Print debug info")
         .action(ArgAction::SetTrue))
+    .arg(Arg::new("repl")
+        .short('r')
+        .long("repl")
+        .help("Start REPL")
+        .action(ArgAction::SetTrue))
     .get_matches();
 
+  let mut intrp = Interpreter::new();
   if let Some(mech_paths) = matches.get_one::<String>("mech_paths") {
     let s = fs::read_to_string(&mech_paths).unwrap();
     match parser2::parse(&s) {
       Ok(tree) => { 
-        let mut intrp = Interpreter::new();
         let result = intrp.interpret(&tree);
         let debug_flag = matches.get_flag("debug");
         if debug_flag {
@@ -80,10 +85,9 @@ fn main() -> Result<(), MechError> {
                           "💻 Interpreter", &interpreter_str, 
                           "🌟 Result",      &result_str];
           let mut table = tabled::Table::new(data);
-          table
-              .with(Style::modern())
-              .with(Panel::header(format!("Runtime Debug Info")))
-              .with(Alignment::left());
+          table.with(Style::modern())
+               .with(Panel::header(format!("Runtime Debug Info")))
+               .with(Alignment::left());
     
           println!("{table}");
         } else {
@@ -98,44 +102,46 @@ fn main() -> Result<(), MechError> {
         }
       }
     }
-  } else {
-    #[cfg(windows)]
-    control::set_virtual_terminal(true).unwrap();
-    let mut stdo = stdout();
-    stdo.execute(terminal::Clear(terminal::ClearType::All));
-    stdo.execute(cursor::MoveTo(0,0));
-    stdo.execute(Print(text_logo));
-    stdo.execute(cursor::MoveToNextLine(1));
-    println!(" {}",  "╔═══════════════════════════════════════╗".bright_black());
-    println!(" {}                 {}                {}", "║".bright_black(), format!("v{}",version).truecolor(246,192,78), "║".bright_black());
-    println!(" {}           {}           {}", "║".bright_black(), "www.mech-lang.org", "║".bright_black());
-    println!(" {}\n",  "╚═══════════════════════════════════════╝".bright_black());
+    let repl_flag = matches.get_flag("repl");
+    if !repl_flag {
+      return Ok(());
+    }
+  } 
+  
+  #[cfg(windows)]
+  control::set_virtual_terminal(true).unwrap();
+  let mut stdo = stdout();
+  stdo.execute(terminal::Clear(terminal::ClearType::All));
+  stdo.execute(cursor::MoveTo(0,0));
+  stdo.execute(Print(text_logo));
+  stdo.execute(cursor::MoveToNextLine(1));
+  println!(" {}",  "╔═══════════════════════════════════════╗".bright_black());
+  println!(" {}                 {}                {}", "║".bright_black(), format!("v{}",version).truecolor(246,192,78), "║".bright_black());
+  println!(" {}           {}           {}", "║".bright_black(), "www.mech-lang.org", "║".bright_black());
+  println!(" {}\n",  "╚═══════════════════════════════════════╝".bright_black());
 
-
-    let mut intrp = Interpreter::new();
-    'REPL: loop {
-      io::stdout().flush().unwrap();
-      // Print a prompt 
-      // 4, 8, 15, 16, 23, 42
-      print!("{}", ">: ".truecolor(246,192,78));
-      io::stdout().flush().unwrap();
-      let mut input = String::new();
-      io::stdin().read_line(&mut input).unwrap();
-      match parser2::parse(&input) {
-        Ok(tree) => { 
-          let result = intrp.interpret(&tree);
-          println!("{:?}", result);
-        }
-        Err(err) => {
-          if let MechErrorKind::ParserError(tree, report, _) = err.kind {
-            parser::print_err_report(&input, &report);
-          } else {
-            panic!("Unexpected error type");
-          }
+  'REPL: loop {
+    io::stdout().flush().unwrap();
+    // Print a prompt 
+    // 4, 8, 15, 16, 23, 42
+    print!("{}", ">: ".truecolor(246,192,78));
+    io::stdout().flush().unwrap();
+    let mut input = String::new();
+    io::stdin().read_line(&mut input).unwrap();
+    match parser2::parse(&input) {
+      Ok(tree) => { 
+        let result = intrp.interpret(&tree);
+        println!("{:?}", result);
+      }
+      Err(err) => {
+        if let MechErrorKind::ParserError(tree, report, _) = err.kind {
+          parser::print_err_report(&input, &report);
+        } else {
+          panic!("Unexpected error type");
         }
       }
-
     }
   }
+  
   Ok(())
 }
