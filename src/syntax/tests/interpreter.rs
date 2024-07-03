@@ -50,6 +50,7 @@ test_interpreter!(interpret_kind_annotation_math, "1<u64> + 1<u64>", Value::U64(
 test_interpreter!(interpret_kind_overflow, "256<u8>", Value::U8(Rc::new(RefCell::new(0))));
 test_interpreter!(interpret_kind_math_overflow, "255<u8> + 1<u8>", Value::U8(Rc::new(RefCell::new(0))));
 test_interpreter!(interpret_kind_math_no_overflow, "255<u16> + 1<u16>", Value::U16(Rc::new(RefCell::new(256))));
+test_interpreter!(interpret_kind_matrix_row3, "[1<u8> 2<u8> 3<u8>]", Value::MatrixU8(Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(vec![1,2,3]))))));
 
 test_interpreter!(interpret_formula_math_neg, "-1", Value::I64(Rc::new(RefCell::new(-1))));
 test_interpreter!(interpret_formula_math_multiple_terms, "1 + 2 + 3", Value::I64(Rc::new(RefCell::new(6))));
@@ -65,18 +66,19 @@ test_interpreter!(interpret_statement_variable_define, "x := 123", Value::I64(Rc
 
 test_interpreter!(interpret_variable_recall, "a := 1; b := 2; a", Value::MutableReference(Rc::new(RefCell::new(Value::I64(Rc::new(RefCell::new(1)))))));
 
-test_interpreter!(interpret_matrix_range_exclusive, "1..4", Value::Matrix(Matrix::RowDVector(Rc::new(RefCell::new(RowDVector::from_vec(vec![1,2,3]))))));
-test_interpreter!(interpret_matrix_range_inclusive, "1..=4", Value::Matrix(Matrix::RowDVector(Rc::new(RefCell::new(RowDVector::from_vec(vec![1,2,3,4]))))));
+test_interpreter!(interpret_matrix_range_exclusive, "1..4", Value::MatrixI64(Matrix::RowDVector(Rc::new(RefCell::new(RowDVector::from_vec(vec![1,2,3]))))));
+test_interpreter!(interpret_matrix_range_inclusive, "1..=4", Value::MatrixI64(Matrix::RowDVector(Rc::new(RefCell::new(RowDVector::from_vec(vec![1,2,3,4]))))));
 
-test_interpreter!(interpret_matrix_empty, "[]", Value::Matrix(Matrix::DMatrix(DMatrix::from_vec(0,0,vec![]))));
-test_interpreter!(interpret_matrix_mat1, "[123]", Value::Matrix(Matrix::Matrix1(Matrix1::from_vec(vec![123]))));
-test_interpreter!(interpret_matrix_mat2, "[1 2; 3 4]", Value::Matrix(Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_vec(vec![1,3,2,4]))))));
-test_interpreter!(interpret_matrix_transpose, "[1 2; 3 4]'", Value::Matrix(Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_vec(vec![1,2,3,4]))))));
-test_interpreter!(interpret_matrix_negate, "-[1 2; 3 4]", Value::Matrix(Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_vec(vec![-1,-3,-2,-4]))))));
-test_interpreter!(interpret_matrix_row3_add, "[1 2 3] + [4 5 6]", Value::Matrix(Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(vec![5,7,9]))))));
-test_interpreter!(interpret_matrix_row3_sub, "[1 2 3] - [4 5 6]", Value::Matrix(Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(vec![-3,-3,-3]))))));
-test_interpreter!(interpret_matrix_mat2_matmul_ref, "a := [1 2; 3 4]; b := [4 5; 6 7]; c := a ** b", Value::Matrix(Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_vec(vec![16,36,19,43]))))));
-test_interpreter!(interpret_matrix_row3_add_ref, "a := [1 2 3]; b := [4 5 6]; c := a + b", Value::Matrix(Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(vec![5,7,9]))))));
+test_interpreter!(interpret_matrix_empty, "[]", Value::MatrixI64(Matrix::DMatrix(DMatrix::from_vec(0,0,vec![]))));
+test_interpreter!(interpret_matrix_row3, "[1 2 3]", Value::MatrixI64(Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(vec![1,2,3]))))));
+test_interpreter!(interpret_matrix_mat1, "[123]", Value::MatrixI64(Matrix::Matrix1(Matrix1::from_vec(vec![123]))));
+test_interpreter!(interpret_matrix_mat2, "[1 2; 3 4]", Value::MatrixI64(Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_vec(vec![1,3,2,4]))))));
+test_interpreter!(interpret_matrix_transpose, "[1 2; 3 4]'", Value::MatrixI64(Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_vec(vec![1,2,3,4]))))));
+test_interpreter!(interpret_matrix_negate, "-[1 2; 3 4]", Value::MatrixI64(Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_vec(vec![-1,-3,-2,-4]))))));
+test_interpreter!(interpret_matrix_row3_add, "[1 2 3] + [4 5 6]", Value::MatrixI64(Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(vec![5,7,9]))))));
+test_interpreter!(interpret_matrix_row3_sub, "[1 2 3] - [4 5 6]", Value::MatrixI64(Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(vec![-3,-3,-3]))))));
+test_interpreter!(interpret_matrix_mat2_matmul_ref, "a := [1 2; 3 4]; b := [4 5; 6 7]; c := a ** b", Value::MatrixI64(Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_vec(vec![16,36,19,43]))))));
+test_interpreter!(interpret_matrix_row3_add_ref, "a := [1 2 3]; b := [4 5 6]; c := a + b", Value::MatrixI64(Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(vec![5,7,9]))))));
 
 test_interpreter!(interpret_tuple, "(1,true)", Value::Tuple(MechTuple::from_vec(vec![Value::I64(Rc::new(RefCell::new(1))), Value::Bool(Rc::new(RefCell::new(true)))])));
 test_interpreter!(interpret_tuple_nested, r#"(1,("Hello",false))"#, Value::Tuple(MechTuple::from_vec(vec![Value::I64(Rc::new(RefCell::new(1))), Value::Tuple(MechTuple::from_vec(vec![Value::String("Hello".to_string()), Value::Bool(Rc::new(RefCell::new(false)))]))])));
