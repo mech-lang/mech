@@ -33,6 +33,7 @@ use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, Ro
 /////////////////////////////////////////////////////////////////////////////////
 
 test_interpreter!(interpret_literal_integer, "123", Value::I64(Rc::new(RefCell::new(123))));
+test_interpreter!(interpret_literal_float, "1.23", Value::F64(Rc::new(RefCell::new(F64::new(1.23)))));
 test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String("Hello".to_string()));
 test_interpreter!(interpret_literal_true, "true", Value::Bool(Rc::new(RefCell::new(true))));
 test_interpreter!(interpret_literal_false, "false", Value::Bool(Rc::new(RefCell::new(false))));
@@ -72,6 +73,7 @@ test_interpreter!(interpret_matrix_range_inclusive, "1..=4", Value::MatrixI64(Ma
 test_interpreter!(interpret_matrix_empty, "[]", Value::MatrixI64(Matrix::DMatrix(DMatrix::from_vec(0,0,vec![]))));
 test_interpreter!(interpret_matrix_row3, "[1 2 3]", Value::MatrixI64(Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(vec![1,2,3]))))));
 test_interpreter!(interpret_matrix_mat1, "[123]", Value::MatrixI64(Matrix::Matrix1(Matrix1::from_vec(vec![123]))));
+test_interpreter!(interpret_matrix_row3_float, "[1.2 2.3 3.4]", Value::MatrixF64(Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(vec![F64::new(1.2),F64::new(2.3),F64::new(3.4)]))))));
 test_interpreter!(interpret_matrix_mat2, "[1 2; 3 4]", Value::MatrixI64(Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_vec(vec![1,3,2,4]))))));
 test_interpreter!(interpret_matrix_transpose, "[1 2; 3 4]'", Value::MatrixI64(Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_vec(vec![1,2,3,4]))))));
 test_interpreter!(interpret_matrix_negate, "-[1 2; 3 4]", Value::MatrixI64(Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_vec(vec![-1,-3,-2,-4]))))));

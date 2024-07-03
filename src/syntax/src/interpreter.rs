@@ -22,7 +22,7 @@ use std::fmt::Debug;
 
 // Value ----------------------------------------------------------------------
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub struct F64(f64);
 impl F64 {
   pub fn new(val: f64) -> F64 {
@@ -36,7 +36,7 @@ impl Hash for F64 {
   }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub struct F32(f32);
 impl F32 {
   pub fn new(val: f32) -> F32 {
@@ -82,8 +82,8 @@ pub enum Value {
   MatrixI32(Matrix<i32>),
   MatrixI64(Matrix<i64>),
   MatrixI128(Matrix<i128>),
-  //MatrixF32(Matrix<F32>),
-  //MatrixF64(Matrix<F64>),
+  MatrixF32(Matrix<F32>),
+  MatrixF64(Matrix<F64>),
   Set(MechSet),
   Map(MechMap),
   Record(MechMap),
@@ -122,8 +122,8 @@ impl Hash for Value {
       Value::MatrixI32(x) => x.hash(state),
       Value::MatrixI64(x) => x.hash(state),
       Value::MatrixI128(x) => x.hash(state),
-      //Value::MatrixF32(x) => x.hash(state),
-      //Value::MatrixF64(x) => x.hash(state),
+      Value::MatrixF32(x) => x.hash(state),
+      Value::MatrixF64(x) => x.hash(state),
       Value::Set(x) => x.hash(state),
       Value::Map(x) => x.hash(state),
       Value::Record(x) => x.hash(state),
@@ -164,8 +164,8 @@ impl Value {
       Value::MatrixI32(x) => x.shape(),
       Value::MatrixI64(x) => x.shape(),
       Value::MatrixI128(x) => x.shape(),
-      //Value::MatrixF32(x) => x.shape(),
-      //Value::MatrixF64(x) => x.shape(),
+      Value::MatrixF32(x) => x.shape(),
+      Value::MatrixF64(x) => x.shape(),
       Value::Table(x) => x.shape(),
       Value::Set(x) => (1,x.set.len()),
       Value::Map(x) => (1,x.map.len()),
@@ -204,8 +204,8 @@ impl Value {
       Value::MatrixI32(x) => ValueKind::Matrix,
       Value::MatrixI64(x) => ValueKind::Matrix,
       Value::MatrixI128(x) => ValueKind::Matrix,
-      //Value::MatrixF32(x) => ValueKind::Matrix,
-      //Value::MatrixF64(x) => ValueKind::Matrix,
+      Value::MatrixF32(x) => ValueKind::Matrix,
+      Value::MatrixF64(x) => ValueKind::Matrix,
       Value::Table(x) => ValueKind::Table,
       Value::Set(x) => ValueKind::Set,
       Value::Map(x) => ValueKind::Map,
@@ -228,8 +228,8 @@ impl Value {
   fn as_i32(&self) -> Option<&Rc<RefCell<i32>>> {if let Value::I32(v) = self { Some(v) } else { None }}
   fn as_i64(&self) -> Option<&Rc<RefCell<i64>>> {if let Value::I64(v) = self { Some(v) } else { None }}
   fn as_i128(&self) -> Option<&Rc<RefCell<i128>>> {if let Value::I128(v) = self { Some(v) } else { None }}
-  //fn as_f32(&self) -> Option<&Rc<RefCell<f32>>> {if let Value::F32(v) = self { Some(v) } else { None }}
-  //fn as_f64(&self) -> Option<&Rc<RefCell<f64>>> {if let Value::F64(v) = self { Some(v) } else { None }}
+  fn as_f32(&self) -> Option<Rc<RefCell<f32>>> {if let Value::F32(v) = self { Some(Rc::new(RefCell::new(v.borrow().0))) } else { None }}
+  fn as_f64(&self) -> Option<Rc<RefCell<f64>>> {if let Value::F64(v) = self { Some(Rc::new(RefCell::new(v.borrow().0))) } else { None }}
 
 }
 
@@ -544,8 +544,8 @@ impl_to_matrix!(i16);
 impl_to_matrix!(i32);
 impl_to_matrix!(i64);
 impl_to_matrix!(i128);
-impl_to_matrix!(f32);
-impl_to_matrix!(f64);
+impl_to_matrix!(F32);
+impl_to_matrix!(F64);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Matrix<T> {
@@ -1184,9 +1184,9 @@ fn matrix_row(r: &MatrixRow, plan: Plan, symbols: SymbolTableRef, functions: Fun
     Value::I16(_) => {Value::MatrixI16(i16::to_matrix(row.iter().map(|v| v.as_i16().unwrap().borrow().clone()).collect()))},
     Value::I32(_) => {Value::MatrixI32(i32::to_matrix(row.iter().map(|v| v.as_i32().unwrap().borrow().clone()).collect()))},
     Value::I64(_) => {Value::MatrixI64(i64::to_matrix(row.iter().map(|v| v.as_i64().unwrap().borrow().clone()).collect()))},
-    Value::I128(_) => {Value::MatrixI128(i128::to_matrix(row.iter().map(|v| v.as_i128().unwrap().borrow().clone()).collect()))},    
-    //Value::F32(_) => {Ok(Value::MatrixF32(f32::to_matrix(row.iter().map(|v| v.as_f32().unwrap().borrow().clone()).collect())))},
-    //Value::F64(_) => {Ok(Value::MatrixF64(f64::to_matrix(row.iter().map(|v| v.as_f64().unwrap().borrow().clone()).collect())))},
+    Value::I128(_) => {Value::MatrixI128(i128::to_matrix(row.iter().map(|v| v.as_i128().unwrap().borrow().clone()).collect()))},
+    Value::F32(_) => {Value::MatrixF32(F32::to_matrix(row.iter().map(|v| F32::new(v.as_f32().unwrap().borrow().clone())).collect()))},
+    Value::F64(_) => {Value::MatrixF64(F64::to_matrix(row.iter().map(|v| F64::new(v.as_f64().unwrap().borrow().clone())).collect()))},
     _ => todo!(),
   };
   Ok(mat)
