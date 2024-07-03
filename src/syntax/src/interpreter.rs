@@ -20,6 +20,9 @@ use tabled::{
 use tabled::{settings::style::LineText};
 use std::fmt::Debug;
 
+type Ref<T> = Rc<RefCell<T>>;
+type MResult<T> = Result<T,MechError>;
+
 // Value ----------------------------------------------------------------------
 
 #[derive(PartialEq, Debug, Clone, Copy)]
@@ -52,25 +55,26 @@ impl Hash for F32 {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum ValueKind {
-  U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, Str, Bool, Empty, Matrix, Set, Map, Record, Table, Tuple, Id, Reference, String, Atom
+  U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, 
+  String, Bool, Matrix, Set, Map, Record, Table, Tuple, Id, Reference, Atom(u64), Empty
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Value {
-  U8(Rc<RefCell<u8>>),
-  U16(Rc<RefCell<u16>>),
-  U32(Rc<RefCell<u32>>),
-  U64(Rc<RefCell<u64>>),
-  U128(Rc<RefCell<u128>>),
-  I8(Rc<RefCell<i8>>),
-  I16(Rc<RefCell<i16>>),
-  I32(Rc<RefCell<i32>>),
-  I64(Rc<RefCell<i64>>),
-  I128(Rc<RefCell<i128>>),
-  F32(Rc<RefCell<F32>>),
-  F64(Rc<RefCell<F64>>),
+  U8(Ref<u8>),
+  U16(Ref<u16>),
+  U32(Ref<u32>),
+  U64(Ref<u64>),
+  U128(Ref<u128>),
+  I8(Ref<i8>),
+  I16(Ref<i16>),
+  I32(Ref<i32>),
+  I64(Ref<i64>),
+  I128(Ref<i128>),
+  F32(Ref<F32>),
+  F64(Ref<F64>),
   String(String),
-  Bool(Rc<RefCell<bool>>),
+  Bool(Ref<bool>),
   Atom(u64),
   MatrixU8(Matrix<u8>),
   MatrixU16(Matrix<u16>),
@@ -193,7 +197,7 @@ impl Value {
       Value::F64(x) => ValueKind::F64,
       Value::String(x) => ValueKind::String,
       Value::Bool(x) => ValueKind::Bool,
-      Value::Atom(x) => ValueKind::Atom,
+      Value::Atom(x) => ValueKind::Atom(*x),
       Value::MatrixU8(x) => ValueKind::Matrix,
       Value::MatrixU16(x) => ValueKind::Matrix,
       Value::MatrixU32(x) => ValueKind::Matrix,
@@ -217,19 +221,18 @@ impl Value {
     }
   }
 
-
-  fn as_u8(&self) -> Option<&Rc<RefCell<u8>>> {if let Value::U8(v) = self { Some(v) } else { None }}
-  fn as_u16(&self) -> Option<&Rc<RefCell<u16>>> {if let Value::U16(v) = self { Some(v) } else { None }}
-  fn as_u32(&self) -> Option<&Rc<RefCell<u32>>> {if let Value::U32(v) = self { Some(v) } else { None }}
-  fn as_u64(&self) -> Option<&Rc<RefCell<u64>>> {if let Value::U64(v) = self { Some(v) } else { None }}
-  fn as_u128(&self) -> Option<&Rc<RefCell<u128>>> {if let Value::U128(v) = self { Some(v) } else { None }}
-  fn as_i8(&self) -> Option<&Rc<RefCell<i8>>> {if let Value::I8(v) = self { Some(v) } else { None }}
-  fn as_i16(&self) -> Option<&Rc<RefCell<i16>>> {if let Value::I16(v) = self { Some(v) } else { None }}
-  fn as_i32(&self) -> Option<&Rc<RefCell<i32>>> {if let Value::I32(v) = self { Some(v) } else { None }}
-  fn as_i64(&self) -> Option<&Rc<RefCell<i64>>> {if let Value::I64(v) = self { Some(v) } else { None }}
-  fn as_i128(&self) -> Option<&Rc<RefCell<i128>>> {if let Value::I128(v) = self { Some(v) } else { None }}
-  fn as_f32(&self) -> Option<Rc<RefCell<f32>>> {if let Value::F32(v) = self { Some(Rc::new(RefCell::new(v.borrow().0))) } else { None }}
-  fn as_f64(&self) -> Option<Rc<RefCell<f64>>> {if let Value::F64(v) = self { Some(Rc::new(RefCell::new(v.borrow().0))) } else { None }}
+  fn as_u8(&self) -> Option<Ref<u8>> {if let Value::U8(v) = self { Some(v.clone()) } else { None }}
+  fn as_u16(&self) -> Option<Ref<u16>> {if let Value::U16(v) = self { Some(v.clone()) } else { None }}
+  fn as_u32(&self) -> Option<Ref<u32>> {if let Value::U32(v) = self { Some(v.clone()) } else { None }}
+  fn as_u64(&self) -> Option<Ref<u64>> {if let Value::U64(v) = self { Some(v.clone()) } else { None }}
+  fn as_u128(&self) -> Option<Ref<u128>> {if let Value::U128(v) = self { Some(v.clone()) } else { None }}
+  fn as_i8(&self) -> Option<Ref<i8>> {if let Value::I8(v) = self { Some(v.clone()) } else { None }}
+  fn as_i16(&self) -> Option<Ref<i16>> {if let Value::I16(v) = self { Some(v.clone()) } else { None }}
+  fn as_i32(&self) -> Option<Ref<i32>> {if let Value::I32(v) = self { Some(v.clone()) } else { None }}
+  fn as_i64(&self) -> Option<Ref<i64>> {if let Value::I64(v) = self { Some(v.clone()) } else { None }}
+  fn as_i128(&self) -> Option<Ref<i128>> {if let Value::I128(v) = self { Some(v.clone()) } else { None }}
+  fn as_f32(&self) -> Option<Ref<f32>> {if let Value::F32(v) = self { Some(Rc::new(RefCell::new(v.borrow().0))) } else { None }}
+  fn as_f64(&self) -> Option<Ref<f64>> {if let Value::F64(v) = self { Some(Rc::new(RefCell::new(v.borrow().0))) } else { None }}
 
 }
 
@@ -237,77 +240,30 @@ trait ToValue {
   fn to_value(&self) -> Value;
 }
 
-impl ToValue for Rc<RefCell<u8>> {
-  fn to_value(&self) -> Value {
-    Value::U8(self.clone())
-  }
-}
-
-impl ToValue for Rc<RefCell<u16>> {
-  fn to_value(&self) -> Value {
-    Value::U16(self.clone())
-  }
-}
-
-impl ToValue for Rc<RefCell<u32>> {
-  fn to_value(&self) -> Value {
-    Value::U32(self.clone())
-  }
-}
-
-impl ToValue for Rc<RefCell<u64>> {
-  fn to_value(&self) -> Value {
-    Value::U64(self.clone())
-  }
-}
-
-impl ToValue for Rc<RefCell<u128>> {
-  fn to_value(&self) -> Value {
-    Value::U128(self.clone())
-  }
-}
-
-impl ToValue for Rc<RefCell<i8>> {
-  fn to_value(&self) -> Value {
-    Value::I8(self.clone())
-  }
-}
-
-impl ToValue for Rc<RefCell<i16>> {
-  fn to_value(&self) -> Value {
-    Value::I16(self.clone())
-  }
-}
-
-impl ToValue for Rc<RefCell<i32>> {
-  fn to_value(&self) -> Value {
-    Value::I32(self.clone())
-  }
-}
-
-impl ToValue for Rc<RefCell<i64>> {
-  fn to_value(&self) -> Value {
-    Value::I64(self.clone())
-  }
-}
-
-impl ToValue for Rc<RefCell<i128>> {
-  fn to_value(&self) -> Value {
-    Value::I128(self.clone())
-  }
-}
-
-impl ToValue for Rc<RefCell<RowVector3<i64>>> {
-  fn to_value(&self) -> Value {
-    Value::MatrixI64(Matrix::<i64>::RowVector3(self.clone()))
-  }
-}
-
-impl ToValue for Rc<RefCell<RowVector3<u8>>> {
-  fn to_value(&self) -> Value {
-    Value::MatrixU8(Matrix::<u8>::RowVector3(self.clone()))
-  }
-}
+impl ToValue for Ref<u8> { fn to_value(&self) -> Value { Value::U8(self.clone()) } }
+impl ToValue for Ref<u16> { fn to_value(&self) -> Value { Value::U16(self.clone()) } }
+impl ToValue for Ref<u32> { fn to_value(&self) -> Value { Value::U32(self.clone()) } }
+impl ToValue for Ref<u64> { fn to_value(&self) -> Value { Value::U64(self.clone()) } }
+impl ToValue for Ref<u128> { fn to_value(&self) -> Value { Value::U128(self.clone()) } }
+impl ToValue for Ref<i8> { fn to_value(&self) -> Value { Value::I8(self.clone()) } }
+impl ToValue for Ref<i16> { fn to_value(&self) -> Value { Value::I16(self.clone()) } }
+impl ToValue for Ref<i32> { fn to_value(&self) -> Value { Value::I32(self.clone()) } }
+impl ToValue for Ref<i64> { fn to_value(&self) -> Value { Value::I64(self.clone()) } }
+impl ToValue for Ref<i128> { fn to_value(&self) -> Value { Value::I128(self.clone()) } }
+//impl ToValue for Ref<F32> { fn to_value(&self) -> Value { Value::F32(self.clone()) } }
+//impl ToValue for Ref<F64> { fn to_value(&self) -> Value { Value::F64(self.clone()) } }
+impl ToValue for Ref<RowVector3<u8>> { fn to_value(&self) -> Value { Value::MatrixU8(Matrix::<u8>::RowVector3(self.clone())) }}
+impl ToValue for Ref<RowVector3<u16>> { fn to_value(&self) -> Value { Value::MatrixU16(Matrix::<u16>::RowVector3(self.clone())) }}
+impl ToValue for Ref<RowVector3<u32>> { fn to_value(&self) -> Value { Value::MatrixU32(Matrix::<u32>::RowVector3(self.clone())) }}
+impl ToValue for Ref<RowVector3<u64>> { fn to_value(&self) -> Value { Value::MatrixU64(Matrix::<u64>::RowVector3(self.clone())) }}
+impl ToValue for Ref<RowVector3<u128>> { fn to_value(&self) -> Value { Value::MatrixU128(Matrix::<u128>::RowVector3(self.clone())) }}
+impl ToValue for Ref<RowVector3<i8>> { fn to_value(&self) -> Value { Value::MatrixI8(Matrix::<i8>::RowVector3(self.clone())) }}
+impl ToValue for Ref<RowVector3<i16>> { fn to_value(&self) -> Value { Value::MatrixI16(Matrix::<i16>::RowVector3(self.clone())) }}
+impl ToValue for Ref<RowVector3<i32>> { fn to_value(&self) -> Value { Value::MatrixI32(Matrix::<i32>::RowVector3(self.clone())) }}
+impl ToValue for Ref<RowVector3<i64>> { fn to_value(&self) -> Value { Value::MatrixI64(Matrix::<i64>::RowVector3(self.clone())) }}
+impl ToValue for Ref<RowVector3<i128>> { fn to_value(&self) -> Value { Value::MatrixI128(Matrix::<i128>::RowVector3(self.clone())) }}
+//impl ToValue for Ref<RowVector3<f32>> { fn to_value(&self) -> Value { Value::MatrixF32(Matrix::<F32>::RowVector3(self.clone())) }}
+//impl ToValue for Ref<RowVector3<f64>> { fn to_value(&self) -> Value { Value::MatrixF64(Matrix::<F64>::RowVector3(self.clone())) }}
 
 // Kind -----------------------------------------------------------------------
 
@@ -407,11 +363,11 @@ impl Functions {
 }
 
 
-type FunctionsRef = Rc<RefCell<Functions>>;
-type Plan = Rc<RefCell<Vec<Box<dyn MechFunction>>>>;
-type MutableReference = Rc<RefCell<Value>>;
-type SymbolTableRef= Rc<RefCell<SymbolTable>>;
-type ValRef = Rc<RefCell<Value>>;
+type FunctionsRef = Ref<Functions>;
+type Plan = Ref<Vec<Box<dyn MechFunction>>>;
+type MutableReference = Ref<Value>;
+type SymbolTableRef= Ref<SymbolTable>;
+type ValRef = Ref<Value>;
 
 #[derive(Clone, Debug)]
 pub struct SymbolTable {
@@ -449,7 +405,7 @@ pub struct FunctionDefinition {
   pub input: IndexMap<u64, KindAnnotation>,
   pub output: IndexMap<u64, KindAnnotation>,
   pub symbols: SymbolTableRef,
-  pub out: Rc<RefCell<Value>>,
+  pub out: Ref<Value>,
   pub plan: Plan,
 }
 
@@ -492,7 +448,7 @@ impl FunctionDefinition {
     }
   }
 
-  pub fn recompile(&self, functions: FunctionsRef) -> Result<FunctionDefinition,MechError> {
+  pub fn recompile(&self, functions: FunctionsRef) -> MResult<FunctionDefinition> {
     function_define(&self.code, functions.clone())
   }
 
@@ -549,13 +505,13 @@ impl_to_matrix!(F64);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Matrix<T> {
-  RowDVector(Rc<RefCell<RowDVector<T>>>),
+  RowDVector(Ref<RowDVector<T>>),
   RowVector2(RowVector2<T>),
-  RowVector3(Rc<RefCell<RowVector3<T>>>),
+  RowVector3(Ref<RowVector3<T>>),
   RowVector4(RowVector4<T>),
   Matrix1(Matrix1<T>),
-  Matrix2(Rc<RefCell<Matrix2<T>>>),
-  Matrix3(Rc<RefCell<Matrix3<T>>>),
+  Matrix2(Ref<Matrix2<T>>),
+  Matrix3(Ref<Matrix3<T>>),
   Matrix4(Matrix4<T>),
   Matrix2x3(Matrix2x3<T>),
   DMatrix(DMatrix<T>),
@@ -728,22 +684,22 @@ impl Interpreter {
     }
   }
 
-  pub fn interpret(&mut self, tree: &Program) -> Result<Value,MechError> {
+  pub fn interpret(&mut self, tree: &Program) -> MResult<Value> {
     program(tree, self.plan.clone(), self.symbols.clone(), self.functions.clone())
   }
 }
 
 pub trait NativeFunctionCompiler {
-  fn compile(&self, arguments: &Vec<Value>) -> std::result::Result<Box<dyn MechFunction>,MechError>;
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>>;
 }
 
 //-----------------------------------------------------------------------------
 
-fn program(program: &Program, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
+fn program(program: &Program, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   body(&program.body, plan.clone(), symbols.clone(), functions.clone())
 }
 
-fn body(body: &Body, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
+fn body(body: &Body, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let mut result = None;
   for sec in &body.sections {
     result = Some(section(&sec, plan.clone(), symbols.clone(), functions.clone())?);
@@ -751,7 +707,7 @@ fn body(body: &Body, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRe
   Ok(result.unwrap())
 }
 
-fn section(section: &Section, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
+fn section(section: &Section, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let mut result = None;
   for el in &section.elements {
     result = Some(section_element(&el, plan.clone(), symbols.clone(), functions.clone())?);
@@ -759,7 +715,7 @@ fn section(section: &Section, plan: Plan, symbols: SymbolTableRef, functions: Fu
   Ok(result.unwrap())
 }
 
-fn section_element(element: &SectionElement, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
+fn section_element(element: &SectionElement, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let out = match element {
     SectionElement::MechCode(code) => {mech_code(&code, plan.clone(), symbols.clone(), functions.clone())?},
     SectionElement::Section(sctn) => todo!(),
@@ -776,7 +732,7 @@ fn section_element(element: &SectionElement, plan: Plan, symbols: SymbolTableRef
   Ok(out)
 }
 
-fn mech_code(code: &MechCode, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
+fn mech_code(code: &MechCode, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   match &code {
     MechCode::Expression(expr) => expression(&expr, plan.clone(), symbols.clone(), functions.clone()),
     MechCode::Statement(stmt) => statement(&stmt, plan.clone(), symbols.clone(), functions.clone()),
@@ -792,7 +748,7 @@ fn mech_code(code: &MechCode, plan: Plan, symbols: SymbolTableRef, functions: Fu
 }
 
 
-fn function_define(fxn_def: &FunctionDefine, functions: FunctionsRef) -> Result<FunctionDefinition,MechError> {
+fn function_define(fxn_def: &FunctionDefine, functions: FunctionsRef) -> MResult<FunctionDefinition> {
   let fxn_name_id = fxn_def.name.hash();
   let mut new_fxn = FunctionDefinition::new(fxn_name_id,fxn_def.name.to_string(), fxn_def.clone());
   for input_arg in &fxn_def.input {
@@ -823,7 +779,7 @@ fn function_define(fxn_def: &FunctionDefine, functions: FunctionsRef) -> Result<
   Ok(new_fxn)
 }
 
-fn statement(stmt: &Statement, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
+fn statement(stmt: &Statement, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   match stmt {
     Statement::VariableDefine(var_def) => variable_define(&var_def, plan.clone(), symbols.clone(), functions.clone()),
     Statement::VariableAssign(_) => todo!(),
@@ -835,7 +791,7 @@ fn statement(stmt: &Statement, plan: Plan, symbols: SymbolTableRef, functions: F
   }
 }
 
-fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
+fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let id = var_def.var.name.hash();
   let result = expression(&var_def.expression, plan.clone(), symbols.clone(), functions.clone())?;
   let mut symbols_brrw = symbols.borrow_mut();
@@ -843,7 +799,7 @@ fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTableRef
   Ok(result)
 }
 
-fn expression(expr: &Expression, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
+fn expression(expr: &Expression, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   match &expr {
     Expression::Var(v) => var(&v, symbols.clone()),
     Expression::Range(rng) => range(&rng, plan.clone(), symbols.clone(), functions.clone()),
@@ -856,7 +812,7 @@ fn expression(expr: &Expression, plan: Plan, symbols: SymbolTableRef, functions:
   }
 }
 
-fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
+fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let fxn_name_id = fxn_call.name.hash();
   let fxns_brrw = functions.borrow();
   match fxns_brrw.functions.get(&fxn_name_id) {
@@ -931,7 +887,7 @@ fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, f
   unreachable!()
 }
 
-fn range(rng: &RangeExpression, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
+fn range(rng: &RangeExpression, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let start = factor(&rng.start, plan.clone(),symbols.clone(), functions.clone())?;
   let terminal = factor(&rng.terminal, plan.clone(),symbols.clone(), functions.clone())?;
   let new_fxn = match &rng.operator {
@@ -947,7 +903,7 @@ fn range(rng: &RangeExpression, plan: Plan, symbols: SymbolTableRef, functions: 
   Ok(res)
 }
 
-fn slice(slc: &Slice, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
+fn slice(slc: &Slice, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let name = slc.name.hash();
   let symbols_brrw = symbols.borrow();
   let val: Value = match symbols_brrw.get(name) {
@@ -961,7 +917,7 @@ fn slice(slc: &Slice, plan: Plan, symbols: SymbolTableRef, functions: FunctionsR
   unreachable!() // subscript should have through an error if we can't access an element
 }
 
-fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
+fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   match sbscrpt {
     Subscript::Dot(x) => {
       let key = x.hash();
@@ -1025,7 +981,7 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
   return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::None});
 }
 
-fn structure(strct: &Structure, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
+fn structure(strct: &Structure, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   match strct {
     Structure::Empty => Ok(Value::Empty),
     Structure::Record(x) => record(&x, plan.clone(), symbols.clone(), functions.clone()),
@@ -1038,7 +994,7 @@ fn structure(strct: &Structure, plan: Plan, symbols: SymbolTableRef, functions: 
   }
 }
 
-fn tuple(tpl: &Tuple, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
+fn tuple(tpl: &Tuple, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let mut elements = vec![];
   for el in &tpl.elements {
     let result = expression(el,plan.clone(),symbols.clone(), functions.clone())?;
@@ -1048,7 +1004,7 @@ fn tuple(tpl: &Tuple, plan: Plan, symbols: SymbolTableRef, functions: FunctionsR
   Ok(Value::Tuple(mech_tuple))
 }
 
-fn map(mp: &Map, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
+fn map(mp: &Map, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let mut m = IndexMap::new();
   for b in &mp.elements {
     let key = expression(&b.key, plan.clone(), symbols.clone(), functions.clone())?;
@@ -1058,7 +1014,7 @@ fn map(mp: &Map, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -
   Ok(Value::Map(MechMap{map: m}))
 }
 
-fn record(rcrd: &Record, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
+fn record(rcrd: &Record, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let mut m = IndexMap::new();
   for b in &rcrd.bindings {
     let name = b.name.hash();
@@ -1069,7 +1025,7 @@ fn record(rcrd: &Record, plan: Plan, symbols: SymbolTableRef, functions: Functio
   Ok(Value::Record(MechMap{map: m}))
 }
 
-fn set(m: &Set, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> { 
+fn set(m: &Set, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> { 
   let mut out = IndexSet::new();
   for el in &m.elements {
     let result = expression(el, plan.clone(), symbols.clone(), functions.clone())?;
@@ -1078,7 +1034,7 @@ fn set(m: &Set, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) ->
   Ok(Value::Set(MechSet{set: out}))
 }
 
-fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> { 
+fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> { 
   let mut rows = vec![];
   let header = table_header(&t.header)?;
   let mut cols = 0;
@@ -1108,7 +1064,7 @@ fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
   Ok(Value::Table(tbl))
 }
 
-fn table_header(fields: &Vec<Field>) -> Result<Vec<Value>,MechError> {
+fn table_header(fields: &Vec<Field>) -> MResult<Vec<Value>> {
   let mut row: Vec<Value> = Vec::new();
   for f in fields {
     let id = f.name.hash();
@@ -1118,7 +1074,7 @@ fn table_header(fields: &Vec<Field>) -> Result<Vec<Value>,MechError> {
   Ok(row)
 }
 
-fn table_row(r: &TableRow, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Vec<Value>,MechError> {
+fn table_row(r: &TableRow, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Vec<Value>> {
   let mut row: Vec<Value> = Vec::new();
   for col in &r.columns {
     let result = table_column(col, plan.clone(), symbols.clone(), functions.clone())?;
@@ -1127,11 +1083,11 @@ fn table_row(r: &TableRow, plan: Plan, symbols: SymbolTableRef, functions: Funct
   Ok(row)
 }
 
-fn table_column(r: &TableColumn, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> { 
+fn table_column(r: &TableColumn, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> { 
   expression(&r.element, plan.clone(), symbols.clone(), functions.clone())
 }
 
-fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> { 
+fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> { 
   let mut out = vec![];
   for row in &m.rows {
     let result = matrix_row(row, plan.clone(), symbols.clone(), functions.clone())?;
@@ -1168,7 +1124,7 @@ fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef)
   Ok(out_vec)
 }
 
-fn matrix_row(r: &MatrixRow, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
+fn matrix_row(r: &MatrixRow, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let mut row: Vec<Value> = Vec::new();
   for col in &r.columns {
     let result = matrix_column(col, plan.clone(), symbols.clone(), functions.clone())?;
@@ -1192,11 +1148,11 @@ fn matrix_row(r: &MatrixRow, plan: Plan, symbols: SymbolTableRef, functions: Fun
   Ok(mat)
 }
 
-fn matrix_column(r: &MatrixColumn, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> { 
+fn matrix_column(r: &MatrixColumn, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> { 
   expression(&r.element, plan.clone(), symbols.clone(), functions.clone())
 }
 
-fn var(v: &Var, symbols: SymbolTableRef) -> Result<Value,MechError> {
+fn var(v: &Var, symbols: SymbolTableRef) -> MResult<Value> {
   let id = v.name.hash();
   let symbols_brrw = symbols.borrow();
   match symbols_brrw.get(id) {
@@ -1209,7 +1165,7 @@ fn var(v: &Var, symbols: SymbolTableRef) -> Result<Value,MechError> {
   }
 }
 
-fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
+fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   match fctr {
     Factor::Term(trm) => {
       let result = term(trm, plan.clone(), symbols.clone(), functions.clone())?;
@@ -1237,7 +1193,7 @@ fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: Functio
   }
 }
 
-fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> Result<Value,MechError> {
+fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let mut lhs = factor(&trm.lhs, plan.clone(), symbols.clone(), functions.clone())?;
   let mut term_plan: Vec<Box<dyn MechFunction>> = vec![];
   for (op,rhs) in &trm.rhs {
@@ -1265,7 +1221,7 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
   return Ok(lhs);
 }
 
-fn literal(ltrl: &Literal, functions: FunctionsRef) -> Result<Value,MechError> {
+fn literal(ltrl: &Literal, functions: FunctionsRef) -> MResult<Value> {
   match &ltrl {
     Literal::Empty(_) => Ok(empty()),
     Literal::Boolean(bln) => Ok(boolean(bln)),
@@ -1276,7 +1232,7 @@ fn literal(ltrl: &Literal, functions: FunctionsRef) -> Result<Value,MechError> {
   }
 }
 
-fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, functions: FunctionsRef) -> Result<Value,MechError> {
+fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, functions: FunctionsRef) -> MResult<Value> {
   let value = literal(ltrl,functions.clone())?;
   let kind = kind_annotation(knd_attn);
   match (&value,kind) {
@@ -1377,8 +1333,8 @@ use libm::sin;
 
 #[derive(Debug)]
 pub struct MathSinScalar {
-  val: Rc<RefCell<F64>>,
-  out: Rc<RefCell<F64>>,
+  val: Ref<F64>,
+  out: Ref<F64>,
 }
 
 impl MechFunction for MathSinScalar {
@@ -1394,7 +1350,7 @@ impl MechFunction for MathSinScalar {
 pub struct MathSin {}
 
 impl NativeFunctionCompiler for MathSin {
-  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
@@ -1411,14 +1367,14 @@ impl NativeFunctionCompiler for MathSin {
 
 #[derive(Debug)] 
 struct AddScalar<T> {
-  lhs: Rc<RefCell<T>>,
-  rhs: Rc<RefCell<T>>,
-  out: Rc<RefCell<T>>,
+  lhs: Ref<T>,
+  rhs: Ref<T>,
+  out: Ref<T>,
 }
 
 impl<T> MechFunction for AddScalar<T>
 where T: Copy + Debug + Clone + Sync + Send + Add<Output = T>,
-      Rc<RefCell<T>>: ToValue
+      Ref<T>: ToValue
 {
   fn solve(&self) {
     let lhs_ptr = self.lhs.as_ptr();
@@ -1426,22 +1382,20 @@ where T: Copy + Debug + Clone + Sync + Send + Add<Output = T>,
     let out_ptr = self.out.as_ptr();
     unsafe {*out_ptr = *lhs_ptr + *rhs_ptr;}
   }
-  fn out(&self) -> Value {
-    self.out.to_value()
-  }
+  fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
 #[derive(Debug)]
 struct AddRv3Rv3<T> {
-  lhs: Rc<RefCell<RowVector3<T>>>,
-  rhs: Rc<RefCell<RowVector3<T>>>,
-  out: Rc<RefCell<RowVector3<T>>>,
+  lhs: Ref<RowVector3<T>>,
+  rhs: Ref<RowVector3<T>>,
+  out: Ref<RowVector3<T>>,
 }
 
 impl<T> MechFunction for AddRv3Rv3<T> 
 where T: Copy + Debug + Clone + Sync + Send + Add<Output = T> + PartialEq + AddAssign + 'static,
-      Rc<RefCell<RowVector3<T>>>: ToValue
+      Ref<RowVector3<T>>: ToValue
 {
   fn solve(&self) {
     let lhs_ptr = self.lhs.as_ptr();
@@ -1449,17 +1403,15 @@ where T: Copy + Debug + Clone + Sync + Send + Add<Output = T> + PartialEq + AddA
     let out_ptr = self.out.as_ptr();
     unsafe {*out_ptr = *lhs_ptr + *rhs_ptr;}
   }
-  fn out(&self) -> Value {
-    self.out.to_value()
-  }
+  fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
 #[derive(Debug)]
 struct AddM3M3 {
-  lhs: Rc<RefCell<Matrix3<i64>>>,
-  rhs: Rc<RefCell<Matrix3<i64>>>,
-  out: Rc<RefCell<Matrix3<i64>>>,
+  lhs: Ref<Matrix3<i64>>,
+  rhs: Ref<Matrix3<i64>>,
+  out: Ref<Matrix3<i64>>,
 }
 
 impl MechFunction for AddM3M3 {
@@ -1478,7 +1430,7 @@ impl MechFunction for AddM3M3 {
 pub struct MathAdd {}
 
 impl NativeFunctionCompiler for MathAdd {
-  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
@@ -1524,9 +1476,9 @@ impl NativeFunctionCompiler for MathAdd {
 
 #[derive(Debug)] 
 struct SubScalar {
-  lhs: Rc<RefCell<i64>>,
-  rhs: Rc<RefCell<i64>>,
-  out: Rc<RefCell<i64>>,
+  lhs: Ref<i64>,
+  rhs: Ref<i64>,
+  out: Ref<i64>,
 }
 
 impl MechFunction for SubScalar {
@@ -1544,9 +1496,9 @@ impl MechFunction for SubScalar {
 
 #[derive(Debug)]
 struct SubRv3Rv3 {
-  lhs: Rc<RefCell<RowVector3<i64>>>,
-  rhs: Rc<RefCell<RowVector3<i64>>>,
-  out: Rc<RefCell<RowVector3<i64>>>,
+  lhs: Ref<RowVector3<i64>>,
+  rhs: Ref<RowVector3<i64>>,
+  out: Ref<RowVector3<i64>>,
 }
 
 impl MechFunction for SubRv3Rv3 {
@@ -1565,7 +1517,7 @@ impl MechFunction for SubRv3Rv3 {
 pub struct MathSub {}
 
 impl NativeFunctionCompiler for MathSub {
-  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
@@ -1585,9 +1537,9 @@ impl NativeFunctionCompiler for MathSub {
 
 #[derive(Debug)] 
 struct MulScalar {
-  lhs: Rc<RefCell<i64>>,
-  rhs: Rc<RefCell<i64>>,
-  out: Rc<RefCell<i64>>,
+  lhs: Ref<i64>,
+  rhs: Ref<i64>,
+  out: Ref<i64>,
 }
 
 impl MechFunction for MulScalar {
@@ -1606,7 +1558,7 @@ impl MechFunction for MulScalar {
 pub struct MathMul {}
 
 impl NativeFunctionCompiler for MathMul {
-  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
@@ -1623,9 +1575,9 @@ impl NativeFunctionCompiler for MathMul {
 
 #[derive(Debug)] 
 struct DivScalar {
-  lhs: Rc<RefCell<i64>>,
-  rhs: Rc<RefCell<i64>>,
-  out: Rc<RefCell<i64>>,
+  lhs: Ref<i64>,
+  rhs: Ref<i64>,
+  out: Ref<i64>,
 }
 
 impl MechFunction for DivScalar {
@@ -1644,7 +1596,7 @@ impl MechFunction for DivScalar {
 pub struct MathDiv {}
 
 impl NativeFunctionCompiler for MathDiv {
-  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
@@ -1661,9 +1613,9 @@ impl NativeFunctionCompiler for MathDiv {
 
 #[derive(Debug)] 
 struct ExpScalar {
-  lhs: Rc<RefCell<i64>>,
-  rhs: Rc<RefCell<i64>>,
-  out: Rc<RefCell<i64>>,
+  lhs: Ref<i64>,
+  rhs: Ref<i64>,
+  out: Ref<i64>,
 }
 
 impl MechFunction for ExpScalar {
@@ -1682,7 +1634,7 @@ impl MechFunction for ExpScalar {
 pub struct MathExp {}
 
 impl NativeFunctionCompiler for MathExp {
-  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
@@ -1699,8 +1651,8 @@ impl NativeFunctionCompiler for MathExp {
 
 #[derive(Debug)]
 struct NegateScalar {
-  input: Rc<RefCell<i64>>,
-  output: Rc<RefCell<i64>>,
+  input: Ref<i64>,
+  output: Ref<i64>,
 }
 
 impl MechFunction for NegateScalar {
@@ -1721,8 +1673,8 @@ impl MechFunction for NegateScalar {
 
 #[derive(Debug)]
 struct NegateM2 {
-  mat: Rc<RefCell<Matrix2<i64>>>,
-  out: Rc<RefCell<Matrix2<i64>>>,
+  mat: Ref<Matrix2<i64>>,
+  out: Ref<Matrix2<i64>>,
 }
 
 impl MechFunction for NegateM2 {
@@ -1740,7 +1692,7 @@ impl MechFunction for NegateM2 {
 pub struct MathNegate {}
 
 impl NativeFunctionCompiler for MathNegate {
-  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
@@ -1763,9 +1715,9 @@ impl NativeFunctionCompiler for MathNegate {
 
 #[derive(Debug)]
 struct AndScalar {
-  lhs: Rc<RefCell<bool>>,
-  rhs: Rc<RefCell<bool>>,
-  out: Rc<RefCell<bool>>,
+  lhs: Ref<bool>,
+  rhs: Ref<bool>,
+  out: Ref<bool>,
 }
 
 impl MechFunction for AndScalar {
@@ -1784,7 +1736,7 @@ impl MechFunction for AndScalar {
 pub struct LogicAnd {}
 
 impl NativeFunctionCompiler for LogicAnd {
-  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
@@ -1801,9 +1753,9 @@ impl NativeFunctionCompiler for LogicAnd {
 
 #[derive(Debug)]
 struct OrScalar {
-  lhs: Rc<RefCell<bool>>,
-  rhs: Rc<RefCell<bool>>,
-  out: Rc<RefCell<bool>>,
+  lhs: Ref<bool>,
+  rhs: Ref<bool>,
+  out: Ref<bool>,
 }
 
 impl MechFunction for OrScalar {
@@ -1822,7 +1774,7 @@ impl MechFunction for OrScalar {
 pub struct LogicOr {}
 
 impl NativeFunctionCompiler for LogicOr {
-  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
@@ -1843,9 +1795,9 @@ impl NativeFunctionCompiler for LogicOr {
 
 #[derive(Debug)]
 struct GTScalar {
-  lhs: Rc<RefCell<i64>>,
-  rhs: Rc<RefCell<i64>>,
-  out: Rc<RefCell<bool>>,
+  lhs: Ref<i64>,
+  rhs: Ref<i64>,
+  out: Ref<bool>,
 }
 
 impl MechFunction for GTScalar {
@@ -1864,7 +1816,7 @@ impl MechFunction for GTScalar {
 pub struct CompareGreaterThan {}
 
 impl NativeFunctionCompiler for CompareGreaterThan {
-  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
@@ -1881,9 +1833,9 @@ impl NativeFunctionCompiler for CompareGreaterThan {
 
 #[derive(Debug)]
 struct LTScalar<T> {
-  lhs: Rc<RefCell<T>>,
-  rhs: Rc<RefCell<T>>,
-  out: Rc<RefCell<bool>>,
+  lhs: Ref<T>,
+  rhs: Ref<T>,
+  out: Ref<bool>,
 }
 
 impl<T> MechFunction for LTScalar<T> 
@@ -1904,7 +1856,7 @@ where T: Copy + Debug + Clone + Sync + Send + PartialOrd
 pub struct CompareLessThan {}
 
 impl NativeFunctionCompiler for CompareLessThan {
-  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
@@ -1927,9 +1879,9 @@ impl NativeFunctionCompiler for CompareLessThan {
 
 #[derive(Debug)]
 struct MatMulM2M2 {
-  lhs: Rc<RefCell<Matrix2<i64>>>,
-  rhs: Rc<RefCell<Matrix2<i64>>>,
-  out: Rc<RefCell<Matrix2<i64>>>,
+  lhs: Ref<Matrix2<i64>>,
+  rhs: Ref<Matrix2<i64>>,
+  out: Ref<Matrix2<i64>>,
 }
 
 impl MechFunction for MatMulM2M2 {
@@ -1948,7 +1900,7 @@ impl MechFunction for MatMulM2M2 {
 pub struct MatrixMul {}
 
 impl NativeFunctionCompiler for MatrixMul {
-  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
@@ -1970,8 +1922,8 @@ impl NativeFunctionCompiler for MatrixMul {
 
 #[derive(Debug)]
 struct TransposeM2 {
-  mat: Rc<RefCell<Matrix2<i64>>>,
-  out: Rc<RefCell<Matrix2<i64>>>,
+  mat: Ref<Matrix2<i64>>,
+  out: Ref<Matrix2<i64>>,
 }
 
 impl MechFunction for TransposeM2 {
@@ -1989,7 +1941,7 @@ impl MechFunction for TransposeM2 {
 pub struct Matrixranspose {}
 
 impl NativeFunctionCompiler for Matrixranspose {
-  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
@@ -2010,9 +1962,9 @@ impl NativeFunctionCompiler for Matrixranspose {
 
 #[derive(Debug)]
 struct RangeExclusiveScalar {
-  max: Rc<RefCell<i64>>,
-  min: Rc<RefCell<i64>>,
-  out: Rc<RefCell<RowDVector<i64>>>,
+  max: Ref<i64>,
+  min: Ref<i64>,
+  out: Ref<RowDVector<i64>>,
 }
 
 impl MechFunction for RangeExclusiveScalar {
@@ -2035,7 +1987,7 @@ impl MechFunction for RangeExclusiveScalar {
 pub struct RangeExclusive {}
 
 impl NativeFunctionCompiler for RangeExclusive {
-  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
@@ -2053,9 +2005,9 @@ impl NativeFunctionCompiler for RangeExclusive {
 
 #[derive(Debug)]
 struct RangeInclusiveScalar {
-  max: Rc<RefCell<i64>>,
-  min: Rc<RefCell<i64>>,
-  out: Rc<RefCell<RowDVector<i64>>>,
+  max: Ref<i64>,
+  min: Ref<i64>,
+  out: Ref<RowDVector<i64>>,
 }
 
 impl MechFunction for RangeInclusiveScalar {
@@ -2077,7 +2029,7 @@ impl MechFunction for RangeInclusiveScalar {
 pub struct RangeInclusive {}
 
 impl NativeFunctionCompiler for RangeInclusive {
-  fn compile(&self, arguments: &Vec<Value>) -> Result<Box<dyn MechFunction>,MechError> {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
