@@ -303,18 +303,17 @@ pub enum Kind {
 
 impl Kind {
 
-  fn to_value_kind(&self, functions: FunctionsRef) -> Option<ValueKind> {
+  fn to_value_kind(&self, functions: FunctionsRef) -> MResult<ValueKind> {
     match self {
       Kind::Scalar(id) => {
-        functions.borrow().kinds.get(id).cloned()
+        match functions.borrow().kinds.get(id).cloned() {
+          Some(val_knd) => Ok(val_knd),
+          None => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(*id)}),
+        }
       },
       Kind::Matrix(knd,size) => {
-        match knd.to_value_kind(functions.clone()) {
-          Some(knd) => {
-            Some(ValueKind::Matrix(Box::new(knd),size.clone()))
-          }
-          None => None,
-        }
+        let val_knd = knd.to_value_kind(functions.clone())?;
+        Ok(ValueKind::Matrix(Box::new(val_knd),size.clone()))
       },
       Kind::Tuple => todo!(),
       Kind::Brace => todo!(),
@@ -869,13 +868,9 @@ fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTableRef
   let result = expression(&var_def.expression, plan.clone(), symbols.clone(), functions.clone())?;
   if let Some(knd_atn) =  &var_def.var.kind {
     let knd = kind_annotation(&knd_atn.kind,functions.clone())?;
-    match knd.to_value_kind(functions.clone()) {
-      Some(knd) => {
-        println!("{:?}", result.kind());
-        println!("{:?}", knd);                
-      }
-      None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(0)});} 
-    }
+    let val_knd = knd.to_value_kind(functions.clone())?;
+    println!("{:?}", result.kind());
+    println!("{:?}", val_knd);                
   };
   let mut symbols_brrw = symbols.borrow_mut();
   symbols_brrw.insert(id,result.clone());
