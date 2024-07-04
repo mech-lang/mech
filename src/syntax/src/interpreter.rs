@@ -56,7 +56,7 @@ impl Hash for F32 {
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, 
-  String, Bool, Matrix, Set, Map, Record, Table, Tuple, Id, Reference, Atom(u64), Empty
+  String, Bool, Matrix(Box<ValueKind>,Vec<usize>), Set, Map, Record, Table, Tuple, Id, Reference, Atom(u64), Empty
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -141,23 +141,23 @@ impl Hash for Value {
 }
 
 impl Value {
-  pub fn shape(&self) -> (usize,usize) {
+  pub fn shape(&self) -> Vec<usize> {
     match self {
-      Value::U8(x) => (1,1),
-      Value::U16(x) => (1,1),
-      Value::U32(x) => (1,1),
-      Value::U64(x) => (1,1),
-      Value::U128(x) => (1,1),
-      Value::I8(x) => (1,1),
-      Value::I16(x) => (1,1),
-      Value::I32(x) => (1,1),
-      Value::I64(x) => (1,1),
-      Value::I128(x) => (1,1),
-      Value::F32(x) => (1,1),
-      Value::F64(x) => (1,1),
-      Value::String(x) => (1,1),
-      Value::Bool(x) => (1,1),
-      Value::Atom(x) => (1,1),
+      Value::U8(x) => vec![1,1],
+      Value::U16(x) => vec![1,1],
+      Value::U32(x) => vec![1,1],
+      Value::U64(x) => vec![1,1],
+      Value::U128(x) => vec![1,1],
+      Value::I8(x) => vec![1,1],
+      Value::I16(x) => vec![1,1],
+      Value::I32(x) => vec![1,1],
+      Value::I64(x) => vec![1,1],
+      Value::I128(x) => vec![1,1],
+      Value::F32(x) => vec![1,1],
+      Value::F64(x) => vec![1,1],
+      Value::String(x) => vec![1,1],
+      Value::Bool(x) => vec![1,1],
+      Value::Atom(x) => vec![1,1],
       Value::MatrixU8(x) => x.shape(),
       Value::MatrixU16(x) => x.shape(),
       Value::MatrixU32(x) => x.shape(),
@@ -171,13 +171,13 @@ impl Value {
       Value::MatrixF32(x) => x.shape(),
       Value::MatrixF64(x) => x.shape(),
       Value::Table(x) => x.shape(),
-      Value::Set(x) => (1,x.set.len()),
-      Value::Map(x) => (1,x.map.len()),
-      Value::Record(x) => (1,x.map.len()),
-      Value::Tuple(x) => (1,x.size()),
-      Value::MutableReference(x) => (1,1),
-      Value::Empty => (0,0),
-      Value::Id(x) => (0,0),
+      Value::Set(x) => vec![1,x.set.len()],
+      Value::Map(x) => vec![1,x.map.len()],
+      Value::Record(x) => vec![1,x.map.len()],
+      Value::Tuple(x) => vec![1,x.size()],
+      Value::MutableReference(x) => vec![1,1],
+      Value::Empty => vec![0,0],
+      Value::Id(x) => vec![0,0],
     }
   }
 
@@ -198,18 +198,18 @@ impl Value {
       Value::String(x) => ValueKind::String,
       Value::Bool(x) => ValueKind::Bool,
       Value::Atom(x) => ValueKind::Atom(*x),
-      Value::MatrixU8(x) => ValueKind::Matrix,
-      Value::MatrixU16(x) => ValueKind::Matrix,
-      Value::MatrixU32(x) => ValueKind::Matrix,
-      Value::MatrixU64(x) => ValueKind::Matrix,
-      Value::MatrixU128(x) => ValueKind::Matrix,
-      Value::MatrixI8(x) => ValueKind::Matrix,
-      Value::MatrixI16(x) => ValueKind::Matrix,
-      Value::MatrixI32(x) => ValueKind::Matrix,
-      Value::MatrixI64(x) => ValueKind::Matrix,
-      Value::MatrixI128(x) => ValueKind::Matrix,
-      Value::MatrixF32(x) => ValueKind::Matrix,
-      Value::MatrixF64(x) => ValueKind::Matrix,
+      Value::MatrixU8(x) => ValueKind::Matrix(Box::new(ValueKind::U8),x.shape()),
+      Value::MatrixU16(x) => ValueKind::Matrix(Box::new(ValueKind::U16),x.shape()),
+      Value::MatrixU32(x) => ValueKind::Matrix(Box::new(ValueKind::U32),x.shape()),
+      Value::MatrixU64(x) => ValueKind::Matrix(Box::new(ValueKind::U64),x.shape()),
+      Value::MatrixU128(x) => ValueKind::Matrix(Box::new(ValueKind::U128),x.shape()),
+      Value::MatrixI8(x) => ValueKind::Matrix(Box::new(ValueKind::I8),x.shape()),
+      Value::MatrixI16(x) => ValueKind::Matrix(Box::new(ValueKind::I16),x.shape()),
+      Value::MatrixI32(x) => ValueKind::Matrix(Box::new(ValueKind::I32),x.shape()),
+      Value::MatrixI64(x) => ValueKind::Matrix(Box::new(ValueKind::I64),x.shape()),
+      Value::MatrixI128(x) => ValueKind::Matrix(Box::new(ValueKind::U128,),x.shape()),
+      Value::MatrixF32(x) => ValueKind::Matrix(Box::new(ValueKind::F32),x.shape()),
+      Value::MatrixF64(x) => ValueKind::Matrix(Box::new(ValueKind::F64),x.shape()),
       Value::Table(x) => ValueKind::Table,
       Value::Set(x) => ValueKind::Set,
       Value::Map(x) => ValueKind::Map,
@@ -236,6 +236,24 @@ impl Value {
   fn as_vecf64(&self) -> Option<Vec<F64>> {if let Value::MatrixF64(v) = self { Some(v.as_vec()) } else { None }}
   fn as_vecu8(&self) -> Option<Vec<u8>> {if let Value::MatrixU8(v) = self { Some(v.as_vec()) } else { None }}
   fn as_veci64(&self) -> Option<Vec<i64>> {if let Value::MatrixI64(v) = self { Some(v.as_vec()) } else { None }}
+  
+  fn as_usize(&self) -> Option<usize> {
+    match self {
+      Value::U8(v) => Some(*v.borrow() as usize),
+      Value::U16(v) => Some(*v.borrow() as usize),
+      Value::U32(v) => Some(*v.borrow() as usize),
+      Value::U64(v) => Some(*v.borrow() as usize),
+      Value::U128(v) => Some(*v.borrow() as usize),
+      Value::I8(v) => Some(*v.borrow() as usize),
+      Value::I16(v) => Some(*v.borrow() as usize),
+      Value::I32(v) => Some(*v.borrow() as usize),
+      Value::I64(v) => Some(*v.borrow() as usize),
+      Value::I128(v) => Some(*v.borrow() as usize),
+      Value::F32(v) => Some((*v.borrow()).0 as usize),
+      Value::F64(v) => Some((*v.borrow()).0 as usize),
+      _ => None,
+    }
+  }
 
 }
 
@@ -273,14 +291,43 @@ impl ToValue for Ref<RowVector3<i128>> { fn to_value(&self) -> Value { Value::Ma
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Kind {
   Scalar(u64),
+  Matrix(Box<Kind>,Vec<usize>),
   Tuple,
-  Bracket,
   Brace,
   Map,
   Atom,
   Function,
   Fsm,
   Empty,
+}
+
+impl Kind {
+
+  fn to_value_kind(&self, functions: FunctionsRef) -> Option<ValueKind> {
+    match self {
+      Kind::Scalar(id) => {
+        functions.borrow().kinds.get(id).cloned()
+      },
+      Kind::Matrix(knd,size) => {
+        match knd.to_value_kind(functions.clone()) {
+          Some(knd) => {
+            Some(ValueKind::Matrix(Box::new(knd),size.clone()))
+          }
+          None => None,
+        }
+      },
+      Kind::Tuple => todo!(),
+      Kind::Brace => todo!(),
+      Kind::Map => todo!(),
+      Kind::Atom => todo!(),
+      Kind::Function => todo!(),
+      Kind::Fsm => todo!(),
+      Kind::Empty => todo!(),
+    }
+    
+  }
+
+
 }
 
 //-----------------------------------------------------------------------------
@@ -339,8 +386,8 @@ pub struct MechTable {
 }
 
 impl MechTable {
-  pub fn shape(&self) -> (usize,usize) {
-    (self.rows,self.cols)
+  pub fn shape(&self) -> Vec<usize> {
+    vec![self.rows,self.cols]
   }
 }
 
@@ -549,8 +596,8 @@ impl<T> Matrix<T>
 where T: Debug + Clone + Copy + PartialEq + 'static
 {
 
-  pub fn shape(&self) -> (usize,usize) {
-    match self {
+  pub fn shape(&self) -> Vec<usize> {
+    let shape = match self {
       Matrix::RowDVector(x) => x.borrow().shape(),
       Matrix::RowVector2(x) => x.borrow().shape(),
       Matrix::RowVector3(x) => x.borrow().shape(),
@@ -561,7 +608,8 @@ where T: Debug + Clone + Copy + PartialEq + 'static
       Matrix::Matrix4(x) => x.borrow().shape(),
       Matrix::Matrix2x3(x) => x.borrow().shape(),
       Matrix::DMatrix(x) => x.borrow().shape(),
-    }
+    };
+    vec![shape.0, shape.1]
   }
 
   pub fn index1d(&self, ix: usize) -> T {
@@ -819,9 +867,48 @@ fn statement(stmt: &Statement, plan: Plan, symbols: SymbolTableRef, functions: F
 fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let id = var_def.var.name.hash();
   let result = expression(&var_def.expression, plan.clone(), symbols.clone(), functions.clone())?;
+  if let Some(knd_atn) =  &var_def.var.kind {
+    let knd = kind_annotation(&knd_atn.kind,functions.clone())?;
+    match knd.to_value_kind(functions.clone()) {
+      Some(knd) => {
+        println!("{:?}", result.kind());
+        println!("{:?}", knd);                
+      }
+      None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(0)});} 
+    }
+  };
   let mut symbols_brrw = symbols.borrow_mut();
   symbols_brrw.insert(id,result.clone());
   Ok(result)
+}
+
+fn kind_annotation(knd: &NodeKind, functions: FunctionsRef) -> MResult<Kind> {
+  match knd {
+    NodeKind::Scalar(id) => {
+      let kind_id = id.hash();
+      Ok(Kind::Scalar(kind_id))
+    }
+    NodeKind::Bracket((el_knds, size)) => {
+      let mut knds = vec![];
+      for knd in el_knds {
+        let knd = kind_annotation(knd, functions.clone())?;
+        knds.push(knd);
+      }
+      let mut dims = vec![];
+      for dim in size {
+        let dim_val = literal(dim, functions.clone())?;
+        match dim_val.as_usize() {
+          Some(size_val) => dims.push(size_val.clone()),
+          None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
+        }
+      }
+      if knds.len() != 1 {
+        return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::MatrixMustHaveHomogenousKind});
+      }
+      Ok(Kind::Matrix(Box::new(knds[0].clone()),dims))
+    }
+    _ => todo!(),
+  }
 }
 
 fn expression(expr: &Expression, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
@@ -1121,7 +1208,8 @@ fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef)
   if out.is_empty() {
     return Ok(Value::MatrixF64(Matrix::<F64>::DMatrix(Rc::new(RefCell::new(DMatrix::from_vec(0,0,vec![]))))));
   }
-  let (_,col_n) = out[0].shape();
+  let shape = out[0].shape();
+  let col_n = shape[1];
   let row_n = out.len();
   let mat = match &out[0] {
     Value::MatrixI64(_) => Value::MatrixI64(i64::to_matrix(out.iter().flat_map(|r| r.as_veci64().unwrap()).collect(),row_n,col_n)),
@@ -1129,27 +1217,6 @@ fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef)
     Value::MatrixU8(_) => Value::MatrixU8(u8::to_matrix(out.iter().flat_map(|r| r.as_vecu8().unwrap()).collect(),row_n,col_n)),
     _ => todo!(),
   };
-    /*(2,2) => {
-      let mut rows: Vec<RowVector2<i64>> = vec![];
-      for o in &out {if let Value::MatrixI64(Matrix::<i64>::RowVector2(v)) = &o {rows.push(v.clone());}}
-      Value::MatrixI64(Matrix::<i64>::Matrix2(Rc::new(RefCell::new(Matrix2::from_rows(&[rows[0].clone(), rows[1].clone()])))))
-    }
-    (2,3) => {
-      let mut rows: Vec<RowVector3<i64>> = vec![];
-      for o in &out {if let Value::MatrixI64(Matrix::<i64>::RowVector3(v)) = &o {rows.push(v.borrow().clone());}}
-      Value::MatrixI64(Matrix::<i64>::Matrix2x3(Matrix2x3::from_rows(&[rows[0].clone(), rows[1].clone()])))
-    }
-    (3,3) => {
-      let mut rows: Vec<RowVector3<i64>> = vec![];
-      for o in &out {if let Value::MatrixI64(Matrix::<i64>::RowVector3(v)) = &o {rows.push(v.borrow().clone());}}
-      Value::MatrixI64(Matrix::<i64>::Matrix3(Rc::new(RefCell::new(Matrix3::from_rows(&[rows[0].clone(), rows[1].clone(), rows[2].clone()])))))
-    }
-    (4,4) => {
-      let mut rows: Vec<RowVector4<i64>> = vec![];
-      for o in &out {if let Value::MatrixI64(Matrix::<i64>::RowVector4(v)) = &o {rows.push(v.clone());}}
-      Value::MatrixI64(Matrix::<i64>::Matrix4(Matrix4::from_rows(&[rows[0].clone(), rows[1].clone(), rows[2].clone(), rows[3].clone()])))
-    }*/
-
   Ok(mat)
 }
 
@@ -1263,7 +1330,7 @@ fn literal(ltrl: &Literal, functions: FunctionsRef) -> MResult<Value> {
 
 fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, functions: FunctionsRef) -> MResult<Value> {
   let value = literal(ltrl,functions.clone())?;
-  let kind = kind_annotation(knd_attn);
+  let kind = kind_annotation(&knd_attn.kind, functions.clone())?;
   match (&value,kind) {
     (Value::I64(num), Kind::Scalar(to_kind_id)) => {
       match functions.borrow().kinds.get(&to_kind_id) {
@@ -1280,16 +1347,6 @@ fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, functions: Functions
         None => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(to_kind_id)}),
         _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::CouldNotAssignKindToValue}),
       }
-    }
-    _ => todo!(),
-  }
-}
-
-fn kind_annotation(knd_attn: &KindAnnotation) -> Kind {
-  match &knd_attn.kind {
-    NodeKind::Scalar(id) => {
-      let kind_id = id.hash();
-      Kind::Scalar(kind_id)
     }
     _ => todo!(),
   }
