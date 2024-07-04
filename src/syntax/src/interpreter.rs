@@ -233,6 +233,9 @@ impl Value {
   fn as_i128(&self) -> Option<Ref<i128>> {if let Value::I128(v) = self { Some(v.clone()) } else { None }}
   fn as_f32(&self) -> Option<Ref<f32>> {if let Value::F32(v) = self { Some(Rc::new(RefCell::new(v.borrow().0))) } else { None }}
   fn as_f64(&self) -> Option<Ref<f64>> {if let Value::F64(v) = self { Some(Rc::new(RefCell::new(v.borrow().0))) } else { None }}
+  fn as_vecf64(&self) -> Option<Vec<F64>> {if let Value::MatrixF64(v) = self { Some(v.as_vec()) } else { None }}
+  fn as_vecu8(&self) -> Option<Vec<u8>> {if let Value::MatrixU8(v) = self { Some(v.as_vec()) } else { None }}
+  fn as_veci64(&self) -> Option<Vec<i64>> {if let Value::MatrixI64(v) = self { Some(v.as_vec()) } else { None }}
 
 }
 
@@ -471,19 +474,25 @@ impl FunctionDefinition {
 // Matrix ---------------------------------------------------------------------
 
 trait ToMatrix: Clone {
-  fn to_matrix(elements: Vec<Self>) -> Matrix<Self>;
+  fn to_matrix(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self>;
 }
 
 macro_rules! impl_to_matrix {
   ($t:ty) => {
     impl ToMatrix for $t {
-      fn to_matrix(elements: Vec<Self>) -> Matrix<Self> {
-        match elements.len() {
-          1 => Matrix::Matrix1(Matrix1::from_element(elements[0].clone())),
-          2 => Matrix::RowVector2(RowVector2::from_vec(elements.clone())),
-          3 => Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(elements.clone())))),
-          4 => Matrix::RowVector4(RowVector4::from_vec(elements.clone())),
-          n => Matrix::RowDVector(Rc::new(RefCell::new(RowDVector::from_vec(elements.clone())))),
+      fn to_matrix(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
+        match (rows,cols) {
+          (1,1) => Matrix::Matrix1(Rc::new(RefCell::new(Matrix1::from_element(elements[0].clone())))),
+          (2,2) => Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_vec(elements).transpose()))),
+          (3,4) => Matrix::Matrix3(Rc::new(RefCell::new(Matrix3::from_vec(elements)))),
+          (4,2) => Matrix::Matrix4(Rc::new(RefCell::new(Matrix4::from_vec(elements)))),
+          (2,3) => Matrix::Matrix2x3(Rc::new(RefCell::new(Matrix2x3::from_vec(elements)))),
+          (1,2) => Matrix::RowVector2(Rc::new(RefCell::new(RowVector2::from_vec(elements.clone())))),
+          (1,3) => Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(elements.clone())))),
+          (1,4) => Matrix::RowVector4(Rc::new(RefCell::new(RowVector4::from_vec(elements.clone())))),
+          (1,n) => Matrix::RowDVector(Rc::new(RefCell::new(RowDVector::from_vec(elements.clone())))),
+          (m,n) => Matrix::DMatrix(Rc::new(RefCell::new(DMatrix::from_vec(rows,cols,elements)))),
+          _ => todo!(),
         }
       }
     }
@@ -506,15 +515,15 @@ impl_to_matrix!(F64);
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Matrix<T> {
   RowDVector(Ref<RowDVector<T>>),
-  RowVector2(RowVector2<T>),
+  RowVector2(Ref<RowVector2<T>>),
   RowVector3(Ref<RowVector3<T>>),
-  RowVector4(RowVector4<T>),
-  Matrix1(Matrix1<T>),
+  RowVector4(Ref<RowVector4<T>>),
+  Matrix1(Ref<Matrix1<T>>),
   Matrix2(Ref<Matrix2<T>>),
   Matrix3(Ref<Matrix3<T>>),
-  Matrix4(Matrix4<T>),
-  Matrix2x3(Matrix2x3<T>),
-  DMatrix(DMatrix<T>),
+  Matrix4(Ref<Matrix4<T>>),
+  Matrix2x3(Ref<Matrix2x3<T>>),
+  DMatrix(Ref<DMatrix<T>>),
 }
 
 impl<T> Hash for Matrix<T> 
@@ -523,15 +532,15 @@ where T: Hash + na::Scalar
   fn hash<H: Hasher>(&self, state: &mut H) {
     match self {
       Matrix::RowDVector(x) => x.borrow().hash(state),
-      Matrix::RowVector2(x) => x.hash(state),
+      Matrix::RowVector2(x) => x.borrow().hash(state),
       Matrix::RowVector3(x) => x.borrow().hash(state),
-      Matrix::RowVector4(x) => x.hash(state),
-      Matrix::Matrix1(x) => x.hash(state),
+      Matrix::RowVector4(x) => x.borrow().hash(state),
+      Matrix::Matrix1(x) => x.borrow().hash(state),
       Matrix::Matrix2(x) => x.borrow().hash(state),
       Matrix::Matrix3(x) => x.borrow().hash(state),
-      Matrix::Matrix4(x) => x.hash(state),
-      Matrix::Matrix2x3(x) => x.hash(state),
-      Matrix::DMatrix(x) => x.hash(state),
+      Matrix::Matrix4(x) => x.borrow().hash(state),
+      Matrix::Matrix2x3(x) => x.borrow().hash(state),
+      Matrix::DMatrix(x) => x.borrow().hash(state),
     }
   }
 }
@@ -543,15 +552,15 @@ where T: Debug + Clone + Copy + PartialEq + 'static
   pub fn shape(&self) -> (usize,usize) {
     match self {
       Matrix::RowDVector(x) => x.borrow().shape(),
-      Matrix::RowVector2(x) => x.shape(),
+      Matrix::RowVector2(x) => x.borrow().shape(),
       Matrix::RowVector3(x) => x.borrow().shape(),
-      Matrix::RowVector4(x) => x.shape(),
-      Matrix::Matrix1(x) => x.shape(),
+      Matrix::RowVector4(x) => x.borrow().shape(),
+      Matrix::Matrix1(x) => x.borrow().shape(),
       Matrix::Matrix2(x) => x.borrow().shape(),
       Matrix::Matrix3(x) => x.borrow().shape(),
-      Matrix::Matrix4(x) => x.shape(),
-      Matrix::Matrix2x3(x) => x.shape(),
-      Matrix::DMatrix(x) => x.shape(),
+      Matrix::Matrix4(x) => x.borrow().shape(),
+      Matrix::Matrix2x3(x) => x.borrow().shape(),
+      Matrix::DMatrix(x) => x.borrow().shape(),
     }
   }
 
@@ -582,6 +591,22 @@ where T: Debug + Clone + Copy + PartialEq + 'static
       Matrix::Matrix4(x) => todo!(),
       Matrix::Matrix2x3(x) => todo!(),
       Matrix::DMatrix(x) => todo!(),
+    }
+  }
+
+  pub fn as_vec(&self) -> Vec<T> {
+    match self {
+      Matrix::RowDVector(x) => x.borrow().as_slice().to_vec(),
+      Matrix::RowVector2(x) => x.borrow().as_slice().to_vec(),
+      Matrix::RowVector3(x) => x.borrow().as_slice().to_vec(),
+      Matrix::RowVector4(x) => x.borrow().as_slice().to_vec(),
+      Matrix::Matrix1(x) => x.borrow().as_slice().to_vec(),
+      Matrix::Matrix2(x) => x.borrow().as_slice().to_vec(),
+      Matrix::Matrix3(x) => x.borrow().as_slice().to_vec(),
+      Matrix::Matrix4(x) => x.borrow().as_slice().to_vec(),
+      Matrix::Matrix2x3(x) => x.borrow().as_slice().to_vec(),
+      Matrix::DMatrix(x) => x.borrow().as_slice().to_vec(),
+      _ => todo!(),
     }
   }
 
@@ -1094,12 +1119,17 @@ fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef)
     out.push(result);
   }
   if out.is_empty() {
-    return Ok(Value::MatrixI64(Matrix::<i64>::DMatrix(DMatrix::from_vec(0,0,vec![]))));
+    return Ok(Value::MatrixF64(Matrix::<F64>::DMatrix(Rc::new(RefCell::new(DMatrix::from_vec(0,0,vec![]))))));
   }
   let (_,col_n) = out[0].shape();
-  let out_vec = match (out.len(),col_n) {
-    (1,_) => out[0].clone(),
-    (2,2) => {
+  let row_n = out.len();
+  let mat = match &out[0] {
+    Value::MatrixI64(_) => Value::MatrixI64(i64::to_matrix(out.iter().flat_map(|r| r.as_veci64().unwrap()).collect(),row_n,col_n)),
+    Value::MatrixF64(_) => Value::MatrixF64(F64::to_matrix(out.iter().flat_map(|r| r.as_vecf64().unwrap()).collect(),row_n,col_n)),
+    Value::MatrixU8(_) => Value::MatrixU8(u8::to_matrix(out.iter().flat_map(|r| r.as_vecu8().unwrap()).collect(),row_n,col_n)),
+    _ => todo!(),
+  };
+    /*(2,2) => {
       let mut rows: Vec<RowVector2<i64>> = vec![];
       for o in &out {if let Value::MatrixI64(Matrix::<i64>::RowVector2(v)) = &o {rows.push(v.clone());}}
       Value::MatrixI64(Matrix::<i64>::Matrix2(Rc::new(RefCell::new(Matrix2::from_rows(&[rows[0].clone(), rows[1].clone()])))))
@@ -1118,10 +1148,9 @@ fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef)
       let mut rows: Vec<RowVector4<i64>> = vec![];
       for o in &out {if let Value::MatrixI64(Matrix::<i64>::RowVector4(v)) = &o {rows.push(v.clone());}}
       Value::MatrixI64(Matrix::<i64>::Matrix4(Matrix4::from_rows(&[rows[0].clone(), rows[1].clone(), rows[2].clone(), rows[3].clone()])))
-    }
-    _ => todo!(),
-  };
-  Ok(out_vec)
+    }*/
+
+  Ok(mat)
 }
 
 fn matrix_row(r: &MatrixRow, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
@@ -1131,18 +1160,18 @@ fn matrix_row(r: &MatrixRow, plan: Plan, symbols: SymbolTableRef, functions: Fun
     row.push(result);
   }
   let mat = match &row[0] {
-    Value::U8(_) => {Value::MatrixU8(u8::to_matrix(row.iter().map(|v| v.as_u8().unwrap().borrow().clone()).collect()))},
-    Value::U16(_) => {Value::MatrixU16(u16::to_matrix(row.iter().map(|v| v.as_u16().unwrap().borrow().clone()).collect()))},
-    Value::U32(_) => {Value::MatrixU32(u32::to_matrix(row.iter().map(|v| v.as_u32().unwrap().borrow().clone()).collect()))},
-    Value::U64(_) => {Value::MatrixU64(u64::to_matrix(row.iter().map(|v| v.as_u64().unwrap().borrow().clone()).collect()))},
-    Value::U128(_) => {Value::MatrixU128(u128::to_matrix(row.iter().map(|v| v.as_u128().unwrap().borrow().clone()).collect()))},
-    Value::I8(_) => {Value::MatrixI8(i8::to_matrix(row.iter().map(|v| v.as_i8().unwrap().borrow().clone()).collect()))},
-    Value::I16(_) => {Value::MatrixI16(i16::to_matrix(row.iter().map(|v| v.as_i16().unwrap().borrow().clone()).collect()))},
-    Value::I32(_) => {Value::MatrixI32(i32::to_matrix(row.iter().map(|v| v.as_i32().unwrap().borrow().clone()).collect()))},
-    Value::I64(_) => {Value::MatrixI64(i64::to_matrix(row.iter().map(|v| v.as_i64().unwrap().borrow().clone()).collect()))},
-    Value::I128(_) => {Value::MatrixI128(i128::to_matrix(row.iter().map(|v| v.as_i128().unwrap().borrow().clone()).collect()))},
-    Value::F32(_) => {Value::MatrixF32(F32::to_matrix(row.iter().map(|v| F32::new(v.as_f32().unwrap().borrow().clone())).collect()))},
-    Value::F64(_) => {Value::MatrixF64(F64::to_matrix(row.iter().map(|v| F64::new(v.as_f64().unwrap().borrow().clone())).collect()))},
+    Value::U8(_) => {Value::MatrixU8(u8::to_matrix(row.iter().map(|v| v.as_u8().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::U16(_) => {Value::MatrixU16(u16::to_matrix(row.iter().map(|v| v.as_u16().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::U32(_) => {Value::MatrixU32(u32::to_matrix(row.iter().map(|v| v.as_u32().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::U64(_) => {Value::MatrixU64(u64::to_matrix(row.iter().map(|v| v.as_u64().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::U128(_) => {Value::MatrixU128(u128::to_matrix(row.iter().map(|v| v.as_u128().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::I8(_) => {Value::MatrixI8(i8::to_matrix(row.iter().map(|v| v.as_i8().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::I16(_) => {Value::MatrixI16(i16::to_matrix(row.iter().map(|v| v.as_i16().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::I32(_) => {Value::MatrixI32(i32::to_matrix(row.iter().map(|v| v.as_i32().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::I64(_) => {Value::MatrixI64(i64::to_matrix(row.iter().map(|v| v.as_i64().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::I128(_) => {Value::MatrixI128(i128::to_matrix(row.iter().map(|v| v.as_i128().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::F32(_) => {Value::MatrixF32(F32::to_matrix(row.iter().map(|v| F32::new(v.as_f32().unwrap().borrow().clone())).collect(),1,row.len()))},
+    Value::F64(_) => {Value::MatrixF64(F64::to_matrix(row.iter().map(|v| F64::new(v.as_f64().unwrap().borrow().clone())).collect(),1,row.len()))},
     _ => todo!(),
   };
   Ok(mat)

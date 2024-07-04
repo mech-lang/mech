@@ -70,12 +70,13 @@ test_interpreter!(interpret_variable_recall, "a := 1; b := 2; a", Value::Mutable
 test_interpreter!(interpret_matrix_range_exclusive, "1..4", Value::MatrixI64(Matrix::RowDVector(Rc::new(RefCell::new(RowDVector::from_vec(vec![1,2,3]))))));
 test_interpreter!(interpret_matrix_range_inclusive, "1..=4", Value::MatrixI64(Matrix::RowDVector(Rc::new(RefCell::new(RowDVector::from_vec(vec![1,2,3,4]))))));
 
-test_interpreter!(interpret_matrix_empty, "[]", Value::MatrixI64(Matrix::DMatrix(DMatrix::from_vec(0,0,vec![]))));
+test_interpreter!(interpret_matrix_empty, "[]", Value::MatrixF64(Matrix::DMatrix(Rc::new(RefCell::new(DMatrix::from_vec(0,0,vec![]))))));
 test_interpreter!(interpret_matrix_row3, "[1 2 3]", Value::MatrixI64(Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(vec![1,2,3]))))));
-test_interpreter!(interpret_matrix_mat1, "[123]", Value::MatrixI64(Matrix::Matrix1(Matrix1::from_vec(vec![123]))));
+test_interpreter!(interpret_matrix_mat1, "[123]", Value::MatrixI64(Matrix::Matrix1(Rc::new(RefCell::new(Matrix1::from_vec(vec![123]))))));
 test_interpreter!(interpret_matrix_row3_float, "[1.2 2.3 3.4]", Value::MatrixF64(Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(vec![F64::new(1.2),F64::new(2.3),F64::new(3.4)]))))));
 test_interpreter!(interpret_matrix_mat2, "[1 2; 3 4]", Value::MatrixI64(Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_vec(vec![1,3,2,4]))))));
 test_interpreter!(interpret_matrix_transpose, "[1 2; 3 4]'", Value::MatrixI64(Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_vec(vec![1,2,3,4]))))));
+test_interpreter!(interpret_matrix_mat2_f64, "[1.1 2.2; 3.3 4.4]", Value::MatrixF64(Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_vec(vec![F64::new(1.1),F64::new(3.3),F64::new(2.2),F64::new(4.4)]))))));
 test_interpreter!(interpret_matrix_negate, "-[1 2; 3 4]", Value::MatrixI64(Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_vec(vec![-1,-3,-2,-4]))))));
 test_interpreter!(interpret_matrix_row3_add, "[1 2 3] + [4 5 6]", Value::MatrixI64(Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(vec![5,7,9]))))));
 test_interpreter!(interpret_matrix_row3_sub, "[1 2 3] - [4 5 6]", Value::MatrixI64(Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(vec![-3,-3,-3]))))));
