@@ -53,7 +53,7 @@ impl Hash for F32 {
   }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, 
   String, Bool, Matrix(Box<ValueKind>,Vec<usize>), Set, Map, Record, Table, Tuple, Id, Reference, Atom(u64), Empty
@@ -95,6 +95,7 @@ pub enum Value {
   Tuple(MechTuple),
   Id(u64),
   MutableReference(MutableReference),
+  Kind(ValueKind),
   Empty
 }
 
@@ -135,6 +136,7 @@ impl Hash for Value {
       Value::Tuple(x) => x.hash(state),
       Value::Id(x) => x.hash(state),
       Value::MutableReference(x) => x.borrow().hash(state),
+      Value::Kind(x) => x.hash(state),
       Value::Empty => Value::Empty.hash(state),
     }
   }
@@ -177,6 +179,7 @@ impl Value {
       Value::Tuple(x) => vec![1,x.size()],
       Value::MutableReference(x) => vec![1,1],
       Value::Empty => vec![0,0],
+      Value::Kind(_) => vec![0,0],
       Value::Id(x) => vec![0,0],
     }
   }
@@ -218,6 +221,7 @@ impl Value {
       Value::MutableReference(x) => ValueKind::Reference,
       Value::Empty => ValueKind::Empty,
       Value::Id(x) => ValueKind::Id,
+      Value::Kind(x) => x.clone(),
     }
   }
 
@@ -865,12 +869,20 @@ fn statement(stmt: &Statement, plan: Plan, symbols: SymbolTableRef, functions: F
 
 fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let id = var_def.var.name.hash();
-  let result = expression(&var_def.expression, plan.clone(), symbols.clone(), functions.clone())?;
+  let mut result = expression(&var_def.expression, plan.clone(), symbols.clone(), functions.clone())?;
   if let Some(knd_atn) =  &var_def.var.kind {
     let knd = kind_annotation(&knd_atn.kind,functions.clone())?;
-    let val_knd = knd.to_value_kind(functions.clone())?;
-    println!("{:?}", result.kind());
-    println!("{:?}", val_knd);                
+    let target_knd = knd.to_value_kind(functions.clone())?;
+    let convert_fxn = match (result.kind(), target_knd) {
+      (ValueKind::I64,ValueKind::U8) => ConvertKind{}.compile(&vec![result.clone(), Value::Kind(ValueKind::U8)])?,
+      (ValueKind::I64,ValueKind::U64) => ConvertKind{}.compile(&vec![result.clone(), Value::Kind(ValueKind::U64)])?,
+      _ => todo!(),
+    };
+    convert_fxn.solve();
+    let converted_result = convert_fxn.out();
+    let mut plan_brrw = plan.borrow_mut();
+    plan_brrw.push(convert_fxn);
+    result = converted_result;
   };
   let mut symbols_brrw = symbols.borrow_mut();
   symbols_brrw.insert(id,result.clone());
@@ -2117,6 +2129,66 @@ impl NativeFunctionCompiler for RangeInclusive {
     match (arguments[0].clone(), arguments[1].clone()) {
       (Value::I64(min), Value::I64(max)) =>
         Ok(Box::new(RangeInclusiveScalar{max,min, out: Rc::new(RefCell::new(RowDVector::from_element(1,0)))})),
+      x => 
+        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    }
+  }
+}
+
+// Convert ------------------------------------------------------------------
+
+#[derive(Debug)]
+struct ConvertScalarU64 {
+  input: Ref<i64>,
+  out: Ref<u64>,
+}
+
+impl MechFunction for ConvertScalarU64 {
+  fn solve(&self) {
+    let in_ptr = self.input.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {
+      *out_ptr = *in_ptr as u64;
+    }
+  }
+  fn out(&self) -> Value {
+    Value::U64(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self)}
+}
+
+#[derive(Debug)]
+struct ConvertScalarU8 {
+  input: Ref<i64>,
+  out: Ref<u8>,
+}
+
+impl MechFunction for ConvertScalarU8 {
+  fn solve(&self) {
+    let in_ptr = self.input.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {
+      *out_ptr = *in_ptr as u8;
+    }
+  }
+  fn out(&self) -> Value {
+    Value::U8(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self)}
+}
+
+pub struct ConvertKind {}
+
+impl NativeFunctionCompiler for ConvertKind {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() != 2 {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    match (arguments[0].clone(),arguments[1].kind()) {
+      (Value::I64(arg), ValueKind::U64) =>
+        Ok(Box::new(ConvertScalarU64{input: arg.clone(), out: Rc::new(RefCell::new(0))})),
+      (Value::I64(arg), ValueKind::U8) =>
+        Ok(Box::new(ConvertScalarU8{input: arg.clone(), out: Rc::new(RefCell::new(0))})),        
       x => 
         Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
     }
