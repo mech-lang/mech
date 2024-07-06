@@ -54,6 +54,7 @@ test_interpreter!(interpret_kind_math_no_overflow, "255<u16> + 1<u16>", Value::U
 test_interpreter!(interpret_kind_matrix_row3, "[1<u8> 2<u8> 3<u8>]", Value::MatrixU8(Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(vec![1,2,3]))))));
 test_interpreter!(interpret_kind_lhs_define, "x<u64> := 1", Value::U64(Rc::new(RefCell::new(1))));
 test_interpreter!(interpret_kind_lhs_define_overflow, "x<u8> := 256", Value::U8(Rc::new(RefCell::new(0))));
+test_interpreter!(interpret_kind_convert_twice, "x<u64> := 1; y<i8> := x", Value::I8(Rc::new(RefCell::new(1))));
 
 test_interpreter!(interpret_formula_math_neg, "-1", Value::I64(Rc::new(RefCell::new(-1))));
 test_interpreter!(interpret_formula_math_multiple_terms, "1 + 2 + 3", Value::I64(Rc::new(RefCell::new(6))));

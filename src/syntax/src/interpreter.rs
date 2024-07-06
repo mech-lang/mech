@@ -873,11 +873,7 @@ fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTableRef
   if let Some(knd_atn) =  &var_def.var.kind {
     let knd = kind_annotation(&knd_atn.kind,functions.clone())?;
     let target_knd = knd.to_value_kind(functions.clone())?;
-    let convert_fxn = match (result.kind(), target_knd) {
-      (ValueKind::I64,ValueKind::U8) => ConvertKind{}.compile(&vec![result.clone(), Value::Kind(ValueKind::U8)])?,
-      (ValueKind::I64,ValueKind::U64) => ConvertKind{}.compile(&vec![result.clone(), Value::Kind(ValueKind::U64)])?,
-      _ => todo!(),
-    };
+    let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_knd)])?;
     convert_fxn.solve();
     let converted_result = convert_fxn.out();
     let mut plan_brrw = plan.borrow_mut();
@@ -2137,44 +2133,28 @@ impl NativeFunctionCompiler for RangeInclusive {
 
 // Convert ------------------------------------------------------------------
 
-#[derive(Debug)]
-struct ConvertScalarU64 {
-  input: Ref<i64>,
-  out: Ref<u64>,
-}
-
-impl MechFunction for ConvertScalarU64 {
-  fn solve(&self) {
-    let in_ptr = self.input.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {
-      *out_ptr = *in_ptr as u64;
-    }
-  }
-  fn out(&self) -> Value {
-    Value::U64(self.out.clone())
-  }
-  fn to_string(&self) -> String { format!("{:?}", self)}
-}
 
 #[derive(Debug)]
-struct ConvertScalarU8 {
-  input: Ref<i64>,
-  out: Ref<u8>,
+struct ConvertScalar<T, U> {
+    input: Ref<T>,
+    out: Ref<U>,
 }
 
-impl MechFunction for ConvertScalarU8 {
+impl<T, U> MechFunction for ConvertScalar<T, U>
+where
+    T: Copy + std::fmt::Debug,
+    U: Copy + std::fmt::Debug,
+    Ref<U>: ToValue
+{
   fn solve(&self) {
-    let in_ptr = self.input.as_ptr();
-    let out_ptr = self.out.as_ptr();
+    let in_value = self.input.borrow();
+    let mut out_value = self.out.borrow_mut();
     unsafe {
-      *out_ptr = *in_ptr as u8;
+      *out_value = *(&*in_value as *const T as *const U);
     }
   }
-  fn out(&self) -> Value {
-    Value::U8(self.out.clone())
-  }
-  fn to_string(&self) -> String { format!("{:?}", self)}
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
 pub struct ConvertKind {}
@@ -2185,10 +2165,20 @@ impl NativeFunctionCompiler for ConvertKind {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     match (arguments[0].clone(),arguments[1].kind()) {
-      (Value::I64(arg), ValueKind::U64) =>
-        Ok(Box::new(ConvertScalarU64{input: arg.clone(), out: Rc::new(RefCell::new(0))})),
+      (Value::I64(arg), ValueKind::I8) =>
+        Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i8))})),
       (Value::I64(arg), ValueKind::U8) =>
-        Ok(Box::new(ConvertScalarU8{input: arg.clone(), out: Rc::new(RefCell::new(0))})),        
+        Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u8))})),
+      (Value::I64(arg), ValueKind::U64) =>
+        Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u64))})),
+      (Value::U8(arg), ValueKind::U64) =>
+        Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u64))})),
+      (Value::MutableReference(lhs), ValueKind::I8) => match &*lhs.borrow() {
+        Value::U64(arg) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i8))})),               
+        _ => todo!(),
+      } 
+      (Value::U64(arg), ValueKind::I8) =>
+        Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i8))})),               
       x => 
         Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
     }
