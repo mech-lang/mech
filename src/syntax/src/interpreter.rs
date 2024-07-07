@@ -2168,6 +2168,8 @@ impl NativeFunctionCompiler for ConvertKind {
       (Value::I64(arg), ValueKind::I8) =>
         Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i8))})),
       (Value::I64(arg), ValueKind::U8) =>
+        Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u8))})),        
+      (Value::I64(arg), ValueKind::U8) =>
         Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u8))})),
       (Value::I64(arg), ValueKind::U64) =>
         Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u64))})),
