@@ -2136,15 +2136,15 @@ impl NativeFunctionCompiler for RangeInclusive {
 
 #[derive(Debug)]
 struct ConvertScalar<T, U> {
-    input: Ref<T>,
-    out: Ref<U>,
+  input: Ref<T>,
+  out: Ref<U>,
 }
 
 impl<T, U> MechFunction for ConvertScalar<T, U>
 where
-    T: Copy + std::fmt::Debug,
-    U: Copy + std::fmt::Debug,
-    Ref<U>: ToValue
+  T: Copy + std::fmt::Debug,
+  U: Copy + std::fmt::Debug,
+  Ref<U>: ToValue
 {
   fn solve(&self) {
     let in_value = self.input.borrow();
@@ -2159,121 +2159,52 @@ where
 
 pub struct ConvertKind {}
 
+macro_rules! generate_conversion_match_arms {
+  ($arg:expr, $($input_type:ident => $($value_kind:ident, $target_type:ident),+);+ $(;)?) => {
+    match $arg {
+      $(
+        $(
+          (Value::$input_type(arg), ValueKind::$value_kind) => {Ok(Box::new(ConvertScalar {input: arg.clone(),out: Rc::new(RefCell::new(0 as $target_type))}))},
+        )+
+      )+
+      x => Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+    }
+  }
+}
+
+fn generate_conversion_fxn(source_value: Value, target_kind: ValueKind) -> MResult<Box<dyn MechFunction>>  {
+  generate_conversion_match_arms!(
+    (source_value, target_kind),
+    I8 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
+    I16 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
+    I32 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
+    I64 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
+    I128 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
+    U8 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
+    U16 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
+    U32 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
+    U64 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
+    U128 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
+  )
+}
+
 impl NativeFunctionCompiler for ConvertKind {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
-    match (arguments[0].clone(),arguments[1].kind()) {
-      (Value::I8(arg), ValueKind::I8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i8))})),
-      (Value::I8(arg), ValueKind::I16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i16))})),
-      (Value::I8(arg), ValueKind::I32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i32))})),
-      (Value::I8(arg), ValueKind::I64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i64))})),
-      (Value::I8(arg), ValueKind::I128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i128))})),
-      (Value::I8(arg), ValueKind::U8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u8))})),        
-      (Value::I8(arg), ValueKind::U16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u16))})),
-      (Value::I8(arg), ValueKind::U32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u32))})),
-      (Value::I8(arg), ValueKind::U64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u64))})),
-      (Value::I8(arg), ValueKind::U128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u128))})),
-      (Value::I16(arg), ValueKind::I8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i8))})),
-      (Value::I16(arg), ValueKind::I16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i16))})),
-      (Value::I16(arg), ValueKind::I32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i32))})),
-      (Value::I16(arg), ValueKind::I64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i64))})),
-      (Value::I16(arg), ValueKind::I128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i128))})),
-      (Value::I16(arg), ValueKind::U8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u8))})),        
-      (Value::I16(arg), ValueKind::U16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u16))})),
-      (Value::I16(arg), ValueKind::U32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u32))})),
-      (Value::I16(arg), ValueKind::U64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u64))})),
-      (Value::I16(arg), ValueKind::U128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u128))})),
-      (Value::I32(arg), ValueKind::I8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i8))})),
-      (Value::I32(arg), ValueKind::I16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i16))})),
-      (Value::I32(arg), ValueKind::I32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i32))})),
-      (Value::I32(arg), ValueKind::I64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i64))})),
-      (Value::I32(arg), ValueKind::I128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i128))})),
-      (Value::I32(arg), ValueKind::U8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u8))})),        
-      (Value::I32(arg), ValueKind::U16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u16))})),
-      (Value::I32(arg), ValueKind::U32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u32))})),
-      (Value::I32(arg), ValueKind::U64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u64))})),
-      (Value::I32(arg), ValueKind::U128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u128))})),
-      (Value::I64(arg), ValueKind::I8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i8))})),
-      (Value::I64(arg), ValueKind::I16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i16))})),
-      (Value::I64(arg), ValueKind::I32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i32))})),
-      (Value::I64(arg), ValueKind::I64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i64))})),
-      (Value::I64(arg), ValueKind::I128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i128))})),
-      (Value::I64(arg), ValueKind::U8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u8))})),        
-      (Value::I64(arg), ValueKind::U16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u16))})),
-      (Value::I64(arg), ValueKind::U32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u32))})),
-      (Value::I64(arg), ValueKind::U64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u64))})),
-      (Value::I64(arg), ValueKind::U128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u128))})),
-      (Value::I128(arg), ValueKind::I8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i8))})),
-      (Value::I128(arg), ValueKind::I16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i16))})),
-      (Value::I128(arg), ValueKind::I32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i32))})),
-      (Value::I128(arg), ValueKind::I64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i64))})),
-      (Value::I128(arg), ValueKind::I128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i128))})),
-      (Value::I128(arg), ValueKind::U8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u8))})),        
-      (Value::I128(arg), ValueKind::U16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u16))})),
-      (Value::I128(arg), ValueKind::U32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u32))})),
-      (Value::I128(arg), ValueKind::U64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u64))})),
-      (Value::I128(arg), ValueKind::U128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u128))})),
-      (Value::U8(arg), ValueKind::I8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i8))})),
-      (Value::U8(arg), ValueKind::I16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i16))})),
-      (Value::U8(arg), ValueKind::I32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i32))})),
-      (Value::U8(arg), ValueKind::I64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i64))})),
-      (Value::U8(arg), ValueKind::I128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i128))})),
-      (Value::U8(arg), ValueKind::U8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u8))})),        
-      (Value::U8(arg), ValueKind::U16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u16))})),
-      (Value::U8(arg), ValueKind::U32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u32))})),
-      (Value::U8(arg), ValueKind::U64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u64))})),
-      (Value::U8(arg), ValueKind::U128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u128))})),
-      (Value::U16(arg), ValueKind::I8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i8))})),
-      (Value::U16(arg), ValueKind::I16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i16))})),
-      (Value::U16(arg), ValueKind::I32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i32))})),
-      (Value::U16(arg), ValueKind::I64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i64))})),
-      (Value::U16(arg), ValueKind::I128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i128))})),
-      (Value::U16(arg), ValueKind::U8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u8))})),        
-      (Value::U16(arg), ValueKind::U16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u16))})),
-      (Value::U16(arg), ValueKind::U32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u32))})),
-      (Value::U16(arg), ValueKind::U64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u64))})),
-      (Value::U16(arg), ValueKind::U128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u128))})),
-      (Value::U32(arg), ValueKind::I8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i8))})),
-      (Value::U32(arg), ValueKind::I16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i16))})),
-      (Value::U32(arg), ValueKind::I32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i32))})),
-      (Value::U32(arg), ValueKind::I64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i64))})),
-      (Value::U32(arg), ValueKind::I128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i128))})),
-      (Value::U32(arg), ValueKind::U8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u8))})),        
-      (Value::U32(arg), ValueKind::U16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u16))})),
-      (Value::U32(arg), ValueKind::U32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u32))})),
-      (Value::U32(arg), ValueKind::U64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u64))})),
-      (Value::U32(arg), ValueKind::U128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u128))})),
-      (Value::U64(arg), ValueKind::I8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i8))})),
-      (Value::U64(arg), ValueKind::I16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i16))})),
-      (Value::U64(arg), ValueKind::I32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i32))})),
-      (Value::U64(arg), ValueKind::I64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i64))})),
-      (Value::U64(arg), ValueKind::I128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i128))})),
-      (Value::U64(arg), ValueKind::U8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u8))})),        
-      (Value::U64(arg), ValueKind::U16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u16))})),
-      (Value::U64(arg), ValueKind::U32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u32))})),
-      (Value::U64(arg), ValueKind::U64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u64))})),
-      (Value::U64(arg), ValueKind::U128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u128))})),
-      (Value::U128(arg), ValueKind::I8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i8))})),
-      (Value::U128(arg), ValueKind::I16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i16))})),
-      (Value::U128(arg), ValueKind::I32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i32))})),
-      (Value::U128(arg), ValueKind::I64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i64))})),
-      (Value::U128(arg), ValueKind::I128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i128))})),
-      (Value::U128(arg), ValueKind::U8) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u8))})),        
-      (Value::U128(arg), ValueKind::U16) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u16))})),
-      (Value::U128(arg), ValueKind::U32) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u32))})),
-      (Value::U128(arg), ValueKind::U64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u64))})),               
-      (Value::U128(arg), ValueKind::U128) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u128))})),               
-      (Value::U8(arg), ValueKind::U64) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0u64))})),
-      (Value::MutableReference(lhs), ValueKind::I8) => match &*lhs.borrow() {
-        Value::U64(arg) => Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i8))})),               
-        _ => todo!(),
-      } 
-      (Value::U64(arg), ValueKind::I8) =>
-        Ok(Box::new(ConvertScalar{input: arg.clone(), out: Rc::new(RefCell::new(0i8))})),               
-      x => 
-        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    let source_value = arguments[0].clone();
+    let target_kind = arguments[1].kind();
+    match generate_conversion_fxn(source_value.clone(), target_kind.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match source_value {
+          Value::MutableReference(lhs) => {
+            generate_conversion_fxn(lhs.borrow().clone(), target_kind.clone())
+          }
+          _ => unreachable!(),
+        }
+      }
     }
   }
 }
