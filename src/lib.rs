@@ -5,16 +5,16 @@
 
 pub extern crate mech_core as core;
 pub extern crate mech_syntax as syntax;
-pub extern crate mech_program as program;
+//pub extern crate mech_program as program;
 pub extern crate mech_utilities as utilities;
 
-mod repl;
+//mod repl;
 
 pub use mech_core::*;
 pub use mech_syntax::compiler::*;
-pub use mech_program::*;
+//pub use mech_program::*;
 pub use mech_utilities::*;
-pub use self::repl::*;
+//pub use self::repl::*;
 
 extern crate colored;
 use colored::*;
@@ -29,7 +29,7 @@ use std::io::prelude::*;
 use std::time::{Duration, Instant, SystemTime};
 use std::thread::{self, JoinHandle};
 use std::sync::Mutex;
-use websocket::sync::Server;
+//use websocket::sync::Server;
 use std::net::{SocketAddr, UdpSocket, TcpListener, TcpStream};
 use std::collections::HashMap;
 use crossbeam_channel::Sender;
@@ -42,7 +42,7 @@ lazy_static! {
 
 //extern crate nom;
 
-
+/*
 pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<(String,MechCode)>, MechError> {
 
   let mut code: Vec<(String,MechCode)> = Vec::new();
@@ -125,7 +125,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<(String,MechCode)
     };
   }
   Ok(code)
-}
+}*/
 
 pub fn compile_code(code: Vec<(String,MechCode)>) -> Result<Vec<Vec<MiniBlock>>,MechError> {
   print!("{}", "[Compiling] ".truecolor(153,221,85));
