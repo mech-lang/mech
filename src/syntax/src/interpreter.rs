@@ -277,16 +277,68 @@ impl ToValue for Ref<i64> { fn to_value(&self) -> Value { Value::I64(self.clone(
 impl ToValue for Ref<i128> { fn to_value(&self) -> Value { Value::I128(self.clone()) } }
 //impl ToValue for Ref<F32> { fn to_value(&self) -> Value { Value::F32(self.clone()) } }
 //impl ToValue for Ref<F64> { fn to_value(&self) -> Value { Value::F64(self.clone()) } }
-impl ToValue for Ref<RowVector3<u8>> { fn to_value(&self) -> Value { Value::MatrixU8(Matrix::<u8>::RowVector3(self.clone())) }}
-impl ToValue for Ref<RowVector3<u16>> { fn to_value(&self) -> Value { Value::MatrixU16(Matrix::<u16>::RowVector3(self.clone())) }}
-impl ToValue for Ref<RowVector3<u32>> { fn to_value(&self) -> Value { Value::MatrixU32(Matrix::<u32>::RowVector3(self.clone())) }}
-impl ToValue for Ref<RowVector3<u64>> { fn to_value(&self) -> Value { Value::MatrixU64(Matrix::<u64>::RowVector3(self.clone())) }}
-impl ToValue for Ref<RowVector3<u128>> { fn to_value(&self) -> Value { Value::MatrixU128(Matrix::<u128>::RowVector3(self.clone())) }}
-impl ToValue for Ref<RowVector3<i8>> { fn to_value(&self) -> Value { Value::MatrixI8(Matrix::<i8>::RowVector3(self.clone())) }}
-impl ToValue for Ref<RowVector3<i16>> { fn to_value(&self) -> Value { Value::MatrixI16(Matrix::<i16>::RowVector3(self.clone())) }}
-impl ToValue for Ref<RowVector3<i32>> { fn to_value(&self) -> Value { Value::MatrixI32(Matrix::<i32>::RowVector3(self.clone())) }}
-impl ToValue for Ref<RowVector3<i64>> { fn to_value(&self) -> Value { Value::MatrixI64(Matrix::<i64>::RowVector3(self.clone())) }}
-impl ToValue for Ref<RowVector3<i128>> { fn to_value(&self) -> Value { Value::MatrixI128(Matrix::<i128>::RowVector3(self.clone())) }}
+
+
+// Use the macro to generate the implementations
+
+macro_rules! impl_to_value_matrix3 {
+  ($($nd_matrix_kind:ident, $matrix_kind:ident, $base_type:ty),+ $(,)?) => {
+    $(
+      impl ToValue for Ref<$nd_matrix_kind<$base_type>> {
+        fn to_value(&self) -> Value {
+          Value::$matrix_kind(Matrix::<$base_type>::$nd_matrix_kind(self.clone()))
+        }
+      }
+    )+
+  };
+}
+
+impl_to_value_matrix3!(
+  Matrix2, MatrixI8, i8,
+  Matrix2, MatrixI16, i16,
+  Matrix2, MatrixI32, i32,
+  Matrix2, MatrixI64, i64,
+  Matrix2, MatrixI128, i128,
+  Matrix2, MatrixU8, u8,
+  Matrix2, MatrixU16, u16,
+  Matrix2, MatrixU32, u32,
+  Matrix2, MatrixU64, u64,
+  Matrix2, MatrixU128, u128,
+
+  Matrix3, MatrixI8, i8,
+  Matrix3, MatrixI16, i16,
+  Matrix3, MatrixI32, i32,
+  Matrix3, MatrixI64, i64,
+  Matrix3, MatrixI128, i128,
+  Matrix3, MatrixU8, u8,
+  Matrix3, MatrixU16, u16,
+  Matrix3, MatrixU32, u32,
+  Matrix3, MatrixU64, u64,
+  Matrix3, MatrixU128, u128,
+
+  RowVector2, MatrixI8, i8,
+  RowVector2, MatrixI16, i16,
+  RowVector2, MatrixI32, i32,
+  RowVector2, MatrixI64, i64,
+  RowVector2, MatrixI128, i128,
+  RowVector2, MatrixU8, u8,
+  RowVector2, MatrixU16, u16,
+  RowVector2, MatrixU32, u32,
+  RowVector2, MatrixU64, u64,
+  RowVector2, MatrixU128, u128,
+
+  RowVector3, MatrixI8, i8,
+  RowVector3, MatrixI16, i16,
+  RowVector3, MatrixI32, i32,
+  RowVector3, MatrixI64, i64,
+  RowVector3, MatrixI128, i128,
+  RowVector3, MatrixU8, u8,
+  RowVector3, MatrixU16, u16,
+  RowVector3, MatrixU32, u32,
+  RowVector3, MatrixU64, u64,
+  RowVector3, MatrixU128, u128,
+);
+
 //impl ToValue for Ref<RowVector3<f32>> { fn to_value(&self) -> Value { Value::MatrixF32(Matrix::<F32>::RowVector3(self.clone())) }}
 //impl ToValue for Ref<RowVector3<f64>> { fn to_value(&self) -> Value { Value::MatrixF64(Matrix::<F64>::RowVector3(self.clone())) }}
 
@@ -1454,109 +1506,96 @@ impl NativeFunctionCompiler for MathSin {
 
 // Add ------------------------------------------------------------------------
 
-#[derive(Debug)] 
-struct AddScalar<T> {
-  lhs: Ref<T>,
-  rhs: Ref<T>,
-  out: Ref<T>,
+macro_rules! impl_mech_fxn {
+  ($struct_name:ident, $arg_type:ty) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      lhs: Ref<$arg_type>,
+      rhs: Ref<$arg_type>,
+      out: Ref<$arg_type>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + Add<Output = T> + PartialEq + AddAssign + 'static,
+      Ref<$arg_type>: ToValue
+    {
+      fn solve(&self) {
+        let lhs_ptr = self.lhs.as_ptr();
+        let rhs_ptr = self.rhs.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        unsafe { *out_ptr = *lhs_ptr + *rhs_ptr; }
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }
+  };
 }
 
-impl<T> MechFunction for AddScalar<T>
-where T: Copy + Debug + Clone + Sync + Send + Add<Output = T>,
-      Ref<T>: ToValue
-{
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr + *rhs_ptr;}
-  }
-  fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
-}
-
-#[derive(Debug)]
-struct AddRv3Rv3<T> {
-  lhs: Ref<RowVector3<T>>,
-  rhs: Ref<RowVector3<T>>,
-  out: Ref<RowVector3<T>>,
-}
-
-impl<T> MechFunction for AddRv3Rv3<T> 
-where T: Copy + Debug + Clone + Sync + Send + Add<Output = T> + PartialEq + AddAssign + 'static,
-      Ref<RowVector3<T>>: ToValue
-{
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr + *rhs_ptr;}
-  }
-  fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self)}
-}
-
-#[derive(Debug)]
-struct AddM3M3 {
-  lhs: Ref<Matrix3<i64>>,
-  rhs: Ref<Matrix3<i64>>,
-  out: Ref<Matrix3<i64>>,
-}
-
-impl MechFunction for AddM3M3 {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr + *rhs_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::MatrixI64(Matrix::<i64>::Matrix3(self.out.clone()))
-  }
-  fn to_string(&self) -> String { format!("{:?}", self)}
-}
+impl_mech_fxn!(AddScalar, T);
+impl_mech_fxn!(AddM2M2, Matrix2<T>);
+impl_mech_fxn!(AddM3M3, Matrix3<T>);
+impl_mech_fxn!(AddRv2Rv2, RowVector2<T>);
+impl_mech_fxn!(AddRv3Rv3, RowVector3<T>);
 
 pub struct MathAdd {}
+
+macro_rules! generate_add_match_arms {
+  ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
+    match $arg {
+      $(
+        (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
+          Ok(Box::new(AddScalar { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(0)) }))
+        },
+        $(
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
+            Ok(Box::new(AddRv3Rv3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector3::from_element(0 as $target_type))) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
+            Ok(Box::new(AddRv2Rv2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector2::from_element(0 as $target_type))) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
+            Ok(Box::new(AddM3M3{lhs, rhs, out: Rc::new(RefCell::new(Matrix3::from_element(0)))}))
+          },
+        )+
+      )+
+      x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+    }
+  }
+}
+
+fn generate_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  generate_add_match_arms!(
+    (lhs_value, rhs_value),
+    I8, I8 => MatrixI8, i8;
+    I16, I16 => MatrixI16, i16;
+    I32, I32 => MatrixI32, i32;
+    I64, I64 => MatrixI64, i64;
+    I128, I128 => MatrixI128, i128;
+    U8, U8 => MatrixU8, u8;
+    U16, U16 => MatrixU16, u16;
+    U32, U32 => MatrixU32, u32;
+    U64, U64 => MatrixU64, u64;
+    U128, U128 => MatrixU128, u128;
+  )
+}
 
 impl NativeFunctionCompiler for MathAdd {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
-    match (arguments[0].clone(), arguments[1].clone()) {
-      (Value::I8(lhs), Value::I8(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
-      (Value::I16(lhs), Value::I16(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
-      (Value::I32(lhs), Value::I32(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
-      (Value::I64(lhs), Value::I64(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
-      (Value::I128(lhs), Value::I128(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
-      (Value::U8(lhs), Value::U8(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
-      (Value::U16(lhs), Value::U16(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
-      (Value::U32(lhs), Value::U32(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
-      (Value::U64(lhs), Value::U64(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
-      (Value::U128(lhs), Value::U128(rhs)) => Ok(Box::new(AddScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
-      (Value::MutableReference(lhs), Value::I64(rhs)) => match *lhs.borrow() {
-        Value::I64(ref lhs) => 
-          Ok(Box::new(AddScalar{lhs: lhs.clone(), rhs, out: Rc::new(RefCell::new(0))})),
-        _ => todo!(),
+    let lhs_value = arguments[0].clone();
+    let rhs_value = arguments[1].clone();
+    match generate_add_fxn(lhs_value.clone(), rhs_value.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match (lhs_value,rhs_value) {
+          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {generate_add_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
+          (lhs_value,Value::MutableReference(rhs)) => { generate_add_fxn(lhs_value.clone(), rhs.borrow().clone())}
+          (Value::MutableReference(lhs),rhs_value) => { generate_add_fxn(lhs.borrow().clone(), rhs_value.clone()) }
+          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
       }
-      (Value::I64(lhs), Value::MutableReference(rhs)) => match *rhs.borrow() {
-        Value::I64(ref rhs) =>
-          Ok(Box::new(AddScalar{lhs, rhs: rhs.clone(), out: Rc::new(RefCell::new(0))})),
-        _ => todo!(),
-      }
-      (Value::MutableReference(lhs), Value::MutableReference(rhs)) => match (&*lhs.borrow(),&*rhs.borrow()) { 
-        (Value::I64(ref lhs),Value::I64(ref rhs)) =>
-          Ok(Box::new(AddScalar{lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(0))})),
-        (Value::MatrixI64(Matrix::<i64>::RowVector3(lhs)),Value::MatrixI64(Matrix::<i64>::RowVector3(rhs))) =>
-          Ok(Box::new(AddRv3Rv3{lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector3::from_element(0)))})),
-        _ => todo!(),
-      }
-      (Value::MatrixI64(Matrix::<i64>::RowVector3(lhs)), Value::MatrixI64(Matrix::<i64>::RowVector3(rhs))) =>
-        Ok(Box::new(AddRv3Rv3{lhs, rhs, out: Rc::new(RefCell::new(RowVector3::from_element(0)))})),
-      (Value::MatrixI64(Matrix::<i64>::Matrix3(lhs)), Value::MatrixI64(Matrix::<i64>::Matrix3(rhs))) =>
-        Ok(Box::new(AddM3M3{lhs, rhs, out: Rc::new(RefCell::new(Matrix3::from_element(0)))})),
-      x => 
-        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
     }
   }
 }
