@@ -5,8 +5,8 @@ use serde_derive::*;
 use std::any::Any;
 use hashbrown::{HashMap, HashSet};
 use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix6, Matrix2};
-use std::ops::AddAssign;
-use std::ops::Add;
+use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign};
+use num_traits::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::hash::{Hash, Hasher};
@@ -21,6 +21,10 @@ use tabled::{settings::style::LineText};
 use std::fmt::Debug;
 
 type Ref<T> = Rc<RefCell<T>>;
+pub fn new_ref<T>(item: T) -> Rc<RefCell<T>> {
+  Rc::new(RefCell::new(item))
+}
+
 type MResult<T> = Result<T,MechError>;
 
 // Value ----------------------------------------------------------------------
@@ -261,7 +265,7 @@ impl Value {
 
 }
 
-trait ToValue {
+pub trait ToValue {
   fn to_value(&self) -> Value;
 }
 
@@ -281,7 +285,7 @@ impl ToValue for Ref<i128> { fn to_value(&self) -> Value { Value::I128(self.clon
 
 // Use the macro to generate the implementations
 
-macro_rules! impl_to_value_matrix3 {
+macro_rules! impl_to_value_matrix {
   ($($nd_matrix_kind:ident, $matrix_kind:ident, $base_type:ty),+ $(,)?) => {
     $(
       impl ToValue for Ref<$nd_matrix_kind<$base_type>> {
@@ -293,7 +297,19 @@ macro_rules! impl_to_value_matrix3 {
   };
 }
 
-impl_to_value_matrix3!(
+impl_to_value_matrix!(
+
+  Matrix2x3, MatrixI8, i8,
+  Matrix2x3, MatrixI16, i16,
+  Matrix2x3, MatrixI32, i32,
+  Matrix2x3, MatrixI64, i64,
+  Matrix2x3, MatrixI128, i128,
+  Matrix2x3, MatrixU8, u8,
+  Matrix2x3, MatrixU16, u16,
+  Matrix2x3, MatrixU32, u32,
+  Matrix2x3, MatrixU64, u64,
+  Matrix2x3, MatrixU128, u128,
+
   Matrix2, MatrixI8, i8,
   Matrix2, MatrixI16, i16,
   Matrix2, MatrixI32, i32,
@@ -337,6 +353,17 @@ impl_to_value_matrix3!(
   RowVector3, MatrixU32, u32,
   RowVector3, MatrixU64, u64,
   RowVector3, MatrixU128, u128,
+
+  RowVector4, MatrixI8, i8,
+  RowVector4, MatrixI16, i16,
+  RowVector4, MatrixI32, i32,
+  RowVector4, MatrixI64, i64,
+  RowVector4, MatrixI128, i128,
+  RowVector4, MatrixU8, u8,
+  RowVector4, MatrixU16, u16,
+  RowVector4, MatrixU32, u32,
+  RowVector4, MatrixU64, u64,
+  RowVector4, MatrixU128, u128,
 
   RowDVector, MatrixI8, i8,
   RowDVector, MatrixI16, i16,
@@ -1574,8 +1601,10 @@ macro_rules! impl_add_fxn {
 impl_add_fxn!(AddScalar, T);
 impl_add_fxn!(AddM2M2, Matrix2<T>);
 impl_add_fxn!(AddM3M3, Matrix3<T>);
+impl_add_fxn!(AddM2x3M2x3, Matrix2x3<T>);
 impl_add_fxn!(AddRv2Rv2, RowVector2<T>);
 impl_add_fxn!(AddRv3Rv3, RowVector3<T>);
+impl_add_fxn!(AddRv4Rv4, RowVector4<T>);
 
 macro_rules! impl_add_fxn_dynamic {
   ($struct_name:ident, $arg_type:ty) => {
@@ -1616,6 +1645,9 @@ macro_rules! generate_add_match_arms {
           Ok(Box::new(AddScalar { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(0)) }))
         },
         $(
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
+            Ok(Box::new(AddRv4Rv4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector4::from_element(0 as $target_type))) }))
+          },
           (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
             Ok(Box::new(AddRv3Rv3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector3::from_element(0 as $target_type))) }))
           },
@@ -1628,6 +1660,9 @@ macro_rules! generate_add_match_arms {
           (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
             Ok(Box::new(AddM3M3{lhs, rhs, out: Rc::new(RefCell::new(Matrix3::from_element(0)))}))
           },
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
+            Ok(Box::new(AddM2x3M2x3{lhs, rhs, out: Rc::new(RefCell::new(Matrix2x3::from_element(0)))}))
+          },          
           (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
             let length = {lhs.borrow().len()};
             Ok(Box::new(AddRvDRvD{lhs, rhs, out: Rc::new(RefCell::new(RowDVector::from_element(length,0)))}))
@@ -1686,137 +1721,432 @@ impl NativeFunctionCompiler for MathAdd {
 
 // Sub ------------------------------------------------------------------------
 
-#[derive(Debug)] 
-struct SubScalar {
-  lhs: Ref<i64>,
-  rhs: Ref<i64>,
-  out: Ref<i64>,
+macro_rules! impl_sub_fxn {
+  ($struct_name:ident, $arg_type:ty) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      lhs: Ref<$arg_type>,
+      rhs: Ref<$arg_type>,
+      out: Ref<$arg_type>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + Sub<Output = T> + PartialEq + SubAssign + 'static,
+      Ref<$arg_type>: ToValue
+    {
+      fn solve(&self) {
+        let lhs_ptr = self.lhs.as_ptr();
+        let rhs_ptr = self.rhs.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        unsafe { *out_ptr = *lhs_ptr - *rhs_ptr; }
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }
+  };
 }
 
-impl MechFunction for SubScalar {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr - *rhs_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::I64(self.out.clone())
-  }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+impl_sub_fxn!(SubScalar, T);
+impl_sub_fxn!(SubM2M2, Matrix2<T>);
+impl_sub_fxn!(SubM3M3, Matrix3<T>);
+impl_sub_fxn!(SubM2x3M2x3, Matrix2x3<T>);
+impl_sub_fxn!(SubRv2Rv2, RowVector2<T>);
+impl_sub_fxn!(SubRv3Rv3, RowVector3<T>);
+impl_sub_fxn!(SubRv4Rv4, RowVector4<T>);
+
+macro_rules! impl_sub_fxn_dynamic {
+  ($struct_name:ident, $arg_type:ty) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      lhs: Ref<$arg_type>,
+      rhs: Ref<$arg_type>,
+      out: Ref<$arg_type>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + Sub<Output = T> + PartialEq + SubAssign + 'static,
+      Ref<$arg_type>: ToValue
+    {
+      fn solve(&self) {
+        let lhs_ptr = self.lhs.as_ptr();
+        let rhs_ptr = self.rhs.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        unsafe { (*lhs_ptr).sub_to(&*rhs_ptr,&mut *out_ptr) }
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }
+  };
 }
 
-#[derive(Debug)]
-struct SubRv3Rv3 {
-  lhs: Ref<RowVector3<i64>>,
-  rhs: Ref<RowVector3<i64>>,
-  out: Ref<RowVector3<i64>>,
-}
-
-impl MechFunction for SubRv3Rv3 {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr - *rhs_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::MatrixI64(Matrix::<i64>::RowVector3(self.out.clone()))
-  }
-  fn to_string(&self) -> String { format!("{:?}", self)}
-}
+impl_sub_fxn_dynamic!(SubRvDRvD, RowDVector<T>);
+impl_sub_fxn_dynamic!(SubVDVD, DVector<T>);
+impl_sub_fxn_dynamic!(SubMDMD, DMatrix<T>);
 
 pub struct MathSub {}
+
+macro_rules! generate_sub_match_arms {
+  ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
+    match $arg {
+      $(
+        (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
+          Ok(Box::new(SubScalar { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(0)) }))
+        },
+        $(
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
+            Ok(Box::new(SubRv4Rv4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector4::from_element(0 as $target_type))) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
+            Ok(Box::new(SubRv3Rv3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector3::from_element(0 as $target_type))) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
+            Ok(Box::new(SubRv2Rv2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector2::from_element(0 as $target_type))) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
+            Ok(Box::new(SubM2M2{lhs, rhs, out: Rc::new(RefCell::new(Matrix2::from_element(0)))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
+            Ok(Box::new(SubM3M3{lhs, rhs, out: Rc::new(RefCell::new(Matrix3::from_element(0)))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
+            Ok(Box::new(SubM2x3M2x3{lhs, rhs, out: Rc::new(RefCell::new(Matrix2x3::from_element(0)))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
+            let length = {lhs.borrow().len()};
+            Ok(Box::new(SubRvDRvD{lhs, rhs, out: Rc::new(RefCell::new(RowDVector::from_element(length,0)))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => {
+            let length = {lhs.borrow().len()};
+            Ok(Box::new(SubVDVD{lhs, rhs, out: Rc::new(RefCell::new(DVector::from_element(length,0)))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DMatrix(rhs))) => {
+            let (rows,cols) = {lhs.borrow().shape()};
+            Ok(Box::new(SubMDMD{lhs, rhs, out: Rc::new(RefCell::new(DMatrix::from_element(rows,cols,0)))}))
+          },
+        )+
+      )+
+      x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+    }
+  }
+}
+
+fn generate_sub_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  generate_sub_match_arms!(
+    (lhs_value, rhs_value),
+    I8, I8 => MatrixI8, i8;
+    I16, I16 => MatrixI16, i16;
+    I32, I32 => MatrixI32, i32;
+    I64, I64 => MatrixI64, i64;
+    I128, I128 => MatrixI128, i128;
+    U8, U8 => MatrixU8, u8;
+    U16, U16 => MatrixU16, u16;
+    U32, U32 => MatrixU32, u32;
+    U64, U64 => MatrixU64, u64;
+    U128, U128 => MatrixU128, u128;
+  )
+}
 
 impl NativeFunctionCompiler for MathSub {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
-    match (arguments[0].clone(), arguments[1].clone()) {
-      (Value::I64(lhs), Value::I64(rhs)) =>
-        Ok(Box::new(SubScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
-      (Value::MatrixI64(Matrix::<i64>::RowVector3(lhs)), Value::MatrixI64(Matrix::<i64>::RowVector3(rhs))) =>
-        Ok(Box::new(SubRv3Rv3{lhs,rhs,out: Rc::new(RefCell::new(RowVector3::from_element(0)))})),
-      x => 
-        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    let lhs_value = arguments[0].clone();
+    let rhs_value = arguments[1].clone();
+    match generate_sub_fxn(lhs_value.clone(), rhs_value.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match (lhs_value,rhs_value) {
+          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {generate_sub_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
+          (lhs_value,Value::MutableReference(rhs)) => { generate_sub_fxn(lhs_value.clone(), rhs.borrow().clone())}
+          (Value::MutableReference(lhs),rhs_value) => { generate_sub_fxn(lhs.borrow().clone(), rhs_value.clone()) }
+          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
     }
   }
 }
 
-
 // Mul ------------------------------------------------------------------------
 
-#[derive(Debug)] 
-struct MulScalar {
-  lhs: Ref<i64>,
-  rhs: Ref<i64>,
-  out: Ref<i64>,
+#[derive(Debug)]
+struct MulScalar<T> {
+  lhs: Ref<T>,
+  rhs: Ref<T>,
+  out: Ref<T>,
 }
-
-impl MechFunction for MulScalar {
+impl<T> MechFunction for MulScalar<T>
+where
+  T: Copy + Debug + Clone + Sync + Send + Mul<Output = T> + PartialEq + MulAssign + Zero + One + 'static,
+  Ref<T>: ToValue
+{
   fn solve(&self) {
     let lhs_ptr = self.lhs.as_ptr();
     let rhs_ptr = self.rhs.as_ptr();
     let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr * *rhs_ptr;}
+    unsafe { *out_ptr = *lhs_ptr * *rhs_ptr; }
   }
-  fn out(&self) -> Value {
-    Value::I64(self.out.clone())
-  }
+  fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
+macro_rules! impl_mul_fxn_dynamic {
+  ($struct_name:ident, $arg_type:ty) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      lhs: Ref<$arg_type>,
+      rhs: Ref<$arg_type>,
+      out: Ref<$arg_type>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + Mul<Output = T> + PartialEq + MulAssign + 'static,
+      Ref<$arg_type>: ToValue
+    {
+      fn solve(&self) {
+        let lhs_ptr = self.lhs.as_ptr();
+        let rhs_ptr = self.rhs.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        unsafe { *out_ptr = (*lhs_ptr).component_mul(&*rhs_ptr); }
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }
+  };
+}
+
+impl_mul_fxn_dynamic!(MulM2x3M2x3, Matrix2x3<T>);
+impl_mul_fxn_dynamic!(MulM2M2, Matrix2<T>);
+impl_mul_fxn_dynamic!(MulM3M3, Matrix3<T>);
+impl_mul_fxn_dynamic!(MulRv2Rv2, RowVector2<T>);
+impl_mul_fxn_dynamic!(MulRv3Rv3, RowVector3<T>);
+impl_mul_fxn_dynamic!(MulRv4Rv4, RowVector4<T>);
+impl_mul_fxn_dynamic!(MulRvDRvD, RowDVector<T>);
+impl_mul_fxn_dynamic!(MulVDVD, DVector<T>);
+impl_mul_fxn_dynamic!(MulMDMD, DMatrix<T>);
+
 pub struct MathMul {}
+
+macro_rules! generate_mul_match_arms {
+  ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
+    match $arg {
+      $(
+        (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
+          Ok(Box::new(MulScalar { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(0)) }))
+        },
+        $(
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
+            Ok(Box::new(MulRv4Rv4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector4::from_element(0 as $target_type))) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
+            Ok(Box::new(MulRv3Rv3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector3::from_element(0 as $target_type))) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
+            Ok(Box::new(MulRv2Rv2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector2::from_element(0 as $target_type))) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
+            Ok(Box::new(MulM2M2{lhs, rhs, out: Rc::new(RefCell::new(Matrix2::from_element(0)))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
+            Ok(Box::new(MulM2x3M2x3{lhs, rhs, out: Rc::new(RefCell::new(Matrix2x3::from_element(0)))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
+            Ok(Box::new(MulM3M3{lhs, rhs, out: Rc::new(RefCell::new(Matrix3::from_element(0)))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
+            let length = {lhs.borrow().len()};
+            Ok(Box::new(MulRvDRvD{lhs, rhs, out: Rc::new(RefCell::new(RowDVector::from_element(length,0)))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => {
+            let length = {lhs.borrow().len()};
+            Ok(Box::new(MulVDVD{lhs, rhs, out: Rc::new(RefCell::new(DVector::from_element(length,0)))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DMatrix(rhs))) => {
+            let (rows,cols) = {lhs.borrow().shape()};
+            Ok(Box::new(MulMDMD{lhs, rhs, out: Rc::new(RefCell::new(DMatrix::from_element(rows,cols,0)))}))
+          },
+        )+
+      )+
+      x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+    }
+  }
+}
+
+fn generate_mul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  generate_mul_match_arms!(
+    (lhs_value, rhs_value),
+    I8, I8 => MatrixI8, i8;
+    I16, I16 => MatrixI16, i16;
+    I32, I32 => MatrixI32, i32;
+    I64, I64 => MatrixI64, i64;
+    I128, I128 => MatrixI128, i128;
+    U8, U8 => MatrixU8, u8;
+    U16, U16 => MatrixU16, u16;
+    U32, U32 => MatrixU32, u32;
+    U64, U64 => MatrixU64, u64;
+    U128, U128 => MatrixU128, u128;
+  )
+}
 
 impl NativeFunctionCompiler for MathMul {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
-    match (arguments[0].clone(), arguments[1].clone()) {
-      (Value::I64(lhs), Value::I64(rhs)) =>
-        Ok(Box::new(MulScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
-      x => 
-        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    let lhs_value = arguments[0].clone();
+    let rhs_value = arguments[1].clone();
+    match generate_mul_fxn(lhs_value.clone(), rhs_value.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match (lhs_value,rhs_value) {
+          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {generate_mul_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
+          (lhs_value,Value::MutableReference(rhs)) => { generate_mul_fxn(lhs_value.clone(), rhs.borrow().clone())}
+          (Value::MutableReference(lhs),rhs_value) => { generate_mul_fxn(lhs.borrow().clone(), rhs_value.clone()) }
+          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
     }
   }
 }
 
 // Div ------------------------------------------------------------------------
 
-#[derive(Debug)] 
-struct DivScalar {
-  lhs: Ref<i64>,
-  rhs: Ref<i64>,
-  out: Ref<i64>,
+#[derive(Debug)]
+struct DivScalar<T> {
+  lhs: Ref<T>,
+  rhs: Ref<T>,
+  out: Ref<T>,
 }
-
-impl MechFunction for DivScalar {
+impl<T> MechFunction for DivScalar<T>
+where
+  T: Copy + Debug + Clone + Sync + Send + Div<Output = T> + PartialEq + DivAssign + Zero + One + 'static,
+  Ref<T>: ToValue
+{
   fn solve(&self) {
     let lhs_ptr = self.lhs.as_ptr();
     let rhs_ptr = self.rhs.as_ptr();
     let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr / *rhs_ptr;}
+    unsafe { *out_ptr = *lhs_ptr / *rhs_ptr; }
   }
-  fn out(&self) -> Value {
-    Value::I64(self.out.clone())
-  }
+  fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
+macro_rules! impl_div_fxn_dynamic {
+  ($struct_name:ident, $arg_type:ty) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      lhs: Ref<$arg_type>,
+      rhs: Ref<$arg_type>,
+      out: Ref<$arg_type>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + Div<Output = T> + PartialEq + DivAssign + 'static,
+      Ref<$arg_type>: ToValue
+    {
+      fn solve(&self) {
+        let lhs_ptr = self.lhs.as_ptr();
+        let rhs_ptr = self.rhs.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        unsafe { *out_ptr = (*lhs_ptr).component_div(&*rhs_ptr); }
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }
+  };
+}
+
+impl_div_fxn_dynamic!(DivM2x3M2x3, Matrix2x3<T>);
+impl_div_fxn_dynamic!(DivM2M2, Matrix2<T>);
+impl_div_fxn_dynamic!(DivM3M3, Matrix3<T>);
+impl_div_fxn_dynamic!(DivRv2Rv2, RowVector2<T>);
+impl_div_fxn_dynamic!(DivRv3Rv3, RowVector3<T>);
+impl_div_fxn_dynamic!(DivRv4Rv4, RowVector4<T>);
+impl_div_fxn_dynamic!(DivRvDRvD, RowDVector<T>);
+impl_div_fxn_dynamic!(DivVDVD, DVector<T>);
+impl_div_fxn_dynamic!(DivMDMD, DMatrix<T>);
+
 pub struct MathDiv {}
+
+macro_rules! generate_div_match_arms {
+  ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
+    match $arg {
+      $(
+        (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
+          Ok(Box::new(DivScalar { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(0)) }))
+        },
+        $(
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
+            Ok(Box::new(DivRv4Rv4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector4::from_element(0 as $target_type))) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
+            Ok(Box::new(DivRv3Rv3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector3::from_element(0 as $target_type))) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
+            Ok(Box::new(DivRv2Rv2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector2::from_element(0 as $target_type))) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
+            Ok(Box::new(DivM2M2{lhs, rhs, out: Rc::new(RefCell::new(Matrix2::from_element(0)))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
+            Ok(Box::new(DivM2x3M2x3{lhs, rhs, out: Rc::new(RefCell::new(Matrix2x3::from_element(0)))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
+            Ok(Box::new(DivM3M3{lhs, rhs, out: Rc::new(RefCell::new(Matrix3::from_element(0)))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
+            let length = {lhs.borrow().len()};
+            Ok(Box::new(DivRvDRvD{lhs, rhs, out: Rc::new(RefCell::new(RowDVector::from_element(length,0)))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => {
+            let length = {lhs.borrow().len()};
+            Ok(Box::new(DivVDVD{lhs, rhs, out: Rc::new(RefCell::new(DVector::from_element(length,0)))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DMatrix(rhs))) => {
+            let (rows,cols) = {lhs.borrow().shape()};
+            Ok(Box::new(DivMDMD{lhs, rhs, out: Rc::new(RefCell::new(DMatrix::from_element(rows,cols,0)))}))
+          },
+        )+
+      )+
+      x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+    }
+  }
+}
+
+fn generate_div_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  generate_div_match_arms!(
+    (lhs_value, rhs_value),
+    I8, I8 => MatrixI8, i8;
+    I16, I16 => MatrixI16, i16;
+    I32, I32 => MatrixI32, i32;
+    I64, I64 => MatrixI64, i64;
+    I128, I128 => MatrixI128, i128;
+    U8, U8 => MatrixU8, u8;
+    U16, U16 => MatrixU16, u16;
+    U32, U32 => MatrixU32, u32;
+    U64, U64 => MatrixU64, u64;
+    U128, U128 => MatrixU128, u128;
+  )
+}
 
 impl NativeFunctionCompiler for MathDiv {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
-    match (arguments[0].clone(), arguments[1].clone()) {
-      (Value::I64(lhs), Value::I64(rhs)) =>
-        Ok(Box::new(DivScalar{lhs, rhs, out: Rc::new(RefCell::new(0))})),
-      x => 
-        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    let lhs_value = arguments[0].clone();
+    let rhs_value = arguments[1].clone();
+    match generate_div_fxn(lhs_value.clone(), rhs_value.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match (lhs_value,rhs_value) {
+          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {generate_div_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
+          (lhs_value,Value::MutableReference(rhs)) => { generate_div_fxn(lhs_value.clone(), rhs.borrow().clone())}
+          (Value::MutableReference(lhs),rhs_value) => { generate_div_fxn(lhs.borrow().clone(), rhs_value.clone()) }
+          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
     }
   }
 }

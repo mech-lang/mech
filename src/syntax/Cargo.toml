@@ -41,6 +41,11 @@ libm = "0.2.8"
 tower-lsp = {version = "0.20.0", optional = true}
 tokio = { version = "1.37.0", features = ["full"], optional = true }
 
+[dependencies.num-traits]
+version = "0.2.19"
+default-features = false
+features = ["libm"]
+
 [patch.crates-io]
 mech-core = {path = "../core"}
 
