@@ -42,7 +42,25 @@ impl Hash for F64 {
     self.0.to_bits().hash(state);
   }
 }
-
+impl Add for F64 {
+  type Output = F64;
+  fn add(self, other: F64) -> F64 {
+    F64(self.0 + other.0)
+  }
+}
+impl AddAssign for F64 {
+  fn add_assign(&mut self, other: F64) {
+    self.0 += other.0;
+  }
+}
+impl Zero for F64 {
+  fn zero() -> Self {
+    F64::new(0.0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0.0
+  }
+}
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub struct F32(f32);
 impl F32 {
@@ -56,6 +74,26 @@ impl Hash for F32 {
     self.0.to_bits().hash(state);
   }
 }
+impl Add for F32 {
+  type Output = F32;
+  fn add(self, other: F32) -> F32 {
+    F32(self.0 + other.0)
+  }
+}
+impl AddAssign for F32 {
+  fn add_assign(&mut self, other: F32) {
+    self.0 += other.0;
+  }
+}
+impl Zero for F32 {
+  fn zero() -> Self {
+    F32::new(0.0)
+  }
+  fn is_zero(&self) -> bool {
+    self.0 == 0.0
+  }
+}
+
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 enum ValueKind {
@@ -242,8 +280,17 @@ impl Value {
   fn as_f32(&self) -> Option<Ref<f32>> {if let Value::F32(v) = self { Some(Rc::new(RefCell::new(v.borrow().0))) } else { None }}
   fn as_f64(&self) -> Option<Ref<f64>> {if let Value::F64(v) = self { Some(Rc::new(RefCell::new(v.borrow().0))) } else { None }}
   fn as_vecf64(&self) -> Option<Vec<F64>> {if let Value::MatrixF64(v) = self { Some(v.as_vec()) } else { None }}
+  fn as_vecf32(&self) -> Option<Vec<F32>> {if let Value::MatrixF32(v) = self { Some(v.as_vec()) } else { None }}
   fn as_vecu8(&self) -> Option<Vec<u8>> {if let Value::MatrixU8(v) = self { Some(v.as_vec()) } else { None }}
+  fn as_vecu16(&self) -> Option<Vec<u16>> {if let Value::MatrixU16(v) = self { Some(v.as_vec()) } else { None }}
+  fn as_vecu32(&self) -> Option<Vec<u32>> {if let Value::MatrixU32(v) = self { Some(v.as_vec()) } else { None }}
+  fn as_vecu64(&self) -> Option<Vec<u64>> {if let Value::MatrixU64(v) = self { Some(v.as_vec()) } else { None }}
+  fn as_vecu128(&self) -> Option<Vec<u128>> {if let Value::MatrixU128(v) = self { Some(v.as_vec()) } else { None }}
+  fn as_veci8(&self) -> Option<Vec<i8>> {if let Value::MatrixI8(v) = self { Some(v.as_vec()) } else { None }}
+  fn as_veci16(&self) -> Option<Vec<i16>> {if let Value::MatrixI16(v) = self { Some(v.as_vec()) } else { None }}
+  fn as_veci32(&self) -> Option<Vec<i32>> {if let Value::MatrixI32(v) = self { Some(v.as_vec()) } else { None }}
   fn as_veci64(&self) -> Option<Vec<i64>> {if let Value::MatrixI64(v) = self { Some(v.as_vec()) } else { None }}
+  fn as_veci128(&self) -> Option<Vec<i128>> {if let Value::MatrixI128(v) = self { Some(v.as_vec()) } else { None }}
   
   fn as_usize(&self) -> Option<usize> {
     match self {
@@ -279,9 +326,8 @@ impl ToValue for Ref<i16> { fn to_value(&self) -> Value { Value::I16(self.clone(
 impl ToValue for Ref<i32> { fn to_value(&self) -> Value { Value::I32(self.clone()) } }
 impl ToValue for Ref<i64> { fn to_value(&self) -> Value { Value::I64(self.clone()) } }
 impl ToValue for Ref<i128> { fn to_value(&self) -> Value { Value::I128(self.clone()) } }
-//impl ToValue for Ref<F32> { fn to_value(&self) -> Value { Value::F32(self.clone()) } }
-//impl ToValue for Ref<F64> { fn to_value(&self) -> Value { Value::F64(self.clone()) } }
-
+impl ToValue for Ref<F32> { fn to_value(&self) -> Value { Value::F32(self.clone()) } }
+impl ToValue for Ref<F64> { fn to_value(&self) -> Value { Value::F64(self.clone()) } }
 
 // Use the macro to generate the implementations
 
@@ -309,6 +355,8 @@ impl_to_value_matrix!(
   Matrix2x3, MatrixU32, u32,
   Matrix2x3, MatrixU64, u64,
   Matrix2x3, MatrixU128, u128,
+  Matrix2x3, MatrixF32, F32,
+  Matrix2x3, MatrixF64, F64,
 
   Matrix2, MatrixI8, i8,
   Matrix2, MatrixI16, i16,
@@ -320,6 +368,8 @@ impl_to_value_matrix!(
   Matrix2, MatrixU32, u32,
   Matrix2, MatrixU64, u64,
   Matrix2, MatrixU128, u128,
+  Matrix2, MatrixF32, F32,
+  Matrix2, MatrixF64, F64,
 
   Matrix3, MatrixI8, i8,
   Matrix3, MatrixI16, i16,
@@ -331,6 +381,8 @@ impl_to_value_matrix!(
   Matrix3, MatrixU32, u32,
   Matrix3, MatrixU64, u64,
   Matrix3, MatrixU128, u128,
+  Matrix3, MatrixF32, F32,
+  Matrix3, MatrixF64, F64,
 
   RowVector2, MatrixI8, i8,
   RowVector2, MatrixI16, i16,
@@ -342,7 +394,9 @@ impl_to_value_matrix!(
   RowVector2, MatrixU32, u32,
   RowVector2, MatrixU64, u64,
   RowVector2, MatrixU128, u128,
-
+  RowVector2, MatrixF32, F32,
+  RowVector2, MatrixF64, F64,
+  
   RowVector3, MatrixI8, i8,
   RowVector3, MatrixI16, i16,
   RowVector3, MatrixI32, i32,
@@ -353,6 +407,8 @@ impl_to_value_matrix!(
   RowVector3, MatrixU32, u32,
   RowVector3, MatrixU64, u64,
   RowVector3, MatrixU128, u128,
+  RowVector3, MatrixF32, F32,
+  RowVector3, MatrixF64, F64,
 
   RowVector4, MatrixI8, i8,
   RowVector4, MatrixI16, i16,
@@ -364,6 +420,8 @@ impl_to_value_matrix!(
   RowVector4, MatrixU32, u32,
   RowVector4, MatrixU64, u64,
   RowVector4, MatrixU128, u128,
+  RowVector4, MatrixF32, F32,
+  RowVector4, MatrixF64, F64,
 
   RowDVector, MatrixI8, i8,
   RowDVector, MatrixI16, i16,
@@ -375,6 +433,8 @@ impl_to_value_matrix!(
   RowDVector, MatrixU32, u32,
   RowDVector, MatrixU64, u64,
   RowDVector, MatrixU128, u128,
+  RowDVector, MatrixF32, F32,
+  RowDVector, MatrixF64, F64,
 
   DVector, MatrixI8, i8,
   DVector, MatrixI16, i16,
@@ -386,6 +446,8 @@ impl_to_value_matrix!(
   DVector, MatrixU32, u32,
   DVector, MatrixU64, u64,
   DVector, MatrixU128, u128,
+  DVector, MatrixF32, F32,
+  DVector, MatrixF64, F64,
 
   DMatrix, MatrixI8, i8,
   DMatrix, MatrixI16, i16,
@@ -397,10 +459,9 @@ impl_to_value_matrix!(
   DMatrix, MatrixU32, u32,
   DMatrix, MatrixU64, u64,
   DMatrix, MatrixU128, u128,
+  DMatrix, MatrixF32, F32,
+  DMatrix, MatrixF64, F64,
 );
-
-//impl ToValue for Ref<RowVector3<f32>> { fn to_value(&self) -> Value { Value::MatrixF32(Matrix::<F32>::RowVector3(self.clone())) }}
-//impl ToValue for Ref<RowVector3<f64>> { fn to_value(&self) -> Value { Value::MatrixF64(Matrix::<F64>::RowVector3(self.clone())) }}
 
 // Kind -----------------------------------------------------------------------
 
@@ -439,10 +500,7 @@ impl Kind {
       Kind::Fsm => todo!(),
       Kind::Empty => todo!(),
     }
-    
   }
-
-
 }
 
 //-----------------------------------------------------------------------------
@@ -871,6 +929,8 @@ impl Interpreter {
     fxns.kinds.insert(hash_str("i128"),ValueKind::I128);
     fxns.kinds.insert(hash_str("f32"),ValueKind::F32);
     fxns.kinds.insert(hash_str("f64"),ValueKind::F64);
+    fxns.kinds.insert(hash_str("string"),ValueKind::String);
+    fxns.kinds.insert(hash_str("bool"),ValueKind::Bool);
 
     Interpreter {
       symbols: Rc::new(RefCell::new(SymbolTable::new())),
@@ -1334,9 +1394,18 @@ fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef)
   let col_n = shape[1];
   let row_n = out.len();
   let mat = match &out[0] {
-    Value::MatrixI64(_) => Value::MatrixI64(i64::to_matrix(out.iter().flat_map(|r| r.as_veci64().unwrap()).collect(),row_n,col_n)),
-    Value::MatrixF64(_) => Value::MatrixF64(F64::to_matrix(out.iter().flat_map(|r| r.as_vecf64().unwrap()).collect(),row_n,col_n)),
     Value::MatrixU8(_) => Value::MatrixU8(u8::to_matrix(out.iter().flat_map(|r| r.as_vecu8().unwrap()).collect(),row_n,col_n)),
+    Value::MatrixU16(_) => Value::MatrixU16(u16::to_matrix(out.iter().flat_map(|r| r.as_vecu16().unwrap()).collect(),row_n,col_n)),
+    Value::MatrixU32(_) => Value::MatrixU32(u32::to_matrix(out.iter().flat_map(|r| r.as_vecu32().unwrap()).collect(),row_n,col_n)),
+    Value::MatrixU64(_) => Value::MatrixU64(u64::to_matrix(out.iter().flat_map(|r| r.as_vecu64().unwrap()).collect(),row_n,col_n)),
+    Value::MatrixU128(_) => Value::MatrixU128(u128::to_matrix(out.iter().flat_map(|r| r.as_vecu128().unwrap()).collect(),row_n,col_n)),
+    Value::MatrixI8(_) => Value::MatrixI8(i8::to_matrix(out.iter().flat_map(|r| r.as_veci8().unwrap()).collect(),row_n,col_n)),
+    Value::MatrixI16(_) => Value::MatrixI16(i16::to_matrix(out.iter().flat_map(|r| r.as_veci16().unwrap()).collect(),row_n,col_n)),
+    Value::MatrixI32(_) => Value::MatrixI32(i32::to_matrix(out.iter().flat_map(|r| r.as_veci32().unwrap()).collect(),row_n,col_n)),
+    Value::MatrixI64(_) => Value::MatrixI64(i64::to_matrix(out.iter().flat_map(|r| r.as_veci64().unwrap()).collect(),row_n,col_n)),
+    Value::MatrixI128(_) => Value::MatrixI128(i128::to_matrix(out.iter().flat_map(|r| r.as_veci128().unwrap()).collect(),row_n,col_n)),    
+    Value::MatrixF32(_) => Value::MatrixF32(F32::to_matrix(out.iter().flat_map(|r| r.as_vecf32().unwrap()).collect(),row_n,col_n)),
+    Value::MatrixF64(_) => Value::MatrixF64(F64::to_matrix(out.iter().flat_map(|r| r.as_vecf64().unwrap()).collect(),row_n,col_n)),
     _ => todo!(),
   };
   Ok(mat)
@@ -1456,16 +1525,18 @@ fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, functions: Functions
   match (&value,kind) {
     (Value::I64(num), Kind::Scalar(to_kind_id)) => {
       match functions.borrow().kinds.get(&to_kind_id) {
-        Some(ValueKind::I8) => Ok(Value::I8(Rc::new(RefCell::new(*num.borrow() as i8)))),
-        Some(ValueKind::I16) => Ok(Value::I16(Rc::new(RefCell::new(*num.borrow() as i16)))),
-        Some(ValueKind::I32) => Ok(Value::I32(Rc::new(RefCell::new(*num.borrow() as i32)))),
+        Some(ValueKind::I8) => Ok(Value::I8(new_ref(*num.borrow() as i8))),
+        Some(ValueKind::I16) => Ok(Value::I16(new_ref(*num.borrow() as i16))),
+        Some(ValueKind::I32) => Ok(Value::I32(new_ref(*num.borrow() as i32))),
         Some(ValueKind::I64) => Ok(value),
-        Some(ValueKind::I128) => Ok(Value::I128(Rc::new(RefCell::new(*num.borrow() as i128)))),
-        Some(ValueKind::U8) => Ok(Value::U8(Rc::new(RefCell::new(*num.borrow() as u8)))),
-        Some(ValueKind::U16) => Ok(Value::U16(Rc::new(RefCell::new(*num.borrow() as u16)))),
-        Some(ValueKind::U32) => Ok(Value::U32(Rc::new(RefCell::new(*num.borrow() as u32)))),
-        Some(ValueKind::U64) => Ok(Value::U64(Rc::new(RefCell::new(*num.borrow() as u64)))),
-        Some(ValueKind::U128) => Ok(Value::U128(Rc::new(RefCell::new(*num.borrow() as u128)))),
+        Some(ValueKind::I128) => Ok(Value::I128(new_ref(*num.borrow() as i128))),
+        Some(ValueKind::U8) => Ok(Value::U8(new_ref(*num.borrow() as u8))),
+        Some(ValueKind::U16) => Ok(Value::U16(new_ref(*num.borrow() as u16))),
+        Some(ValueKind::U32) => Ok(Value::U32(new_ref(*num.borrow() as u32))),
+        Some(ValueKind::U64) => Ok(Value::U64(new_ref(*num.borrow() as u64))),
+        Some(ValueKind::U128) => Ok(Value::U128(new_ref(*num.borrow() as u128))),
+        Some(ValueKind::F32) => Ok(Value::F32(new_ref(F32::new(*num.borrow() as f32)))),
+        Some(ValueKind::F64) => Ok(Value::F64(new_ref(F64::new(*num.borrow() as f64)))),
         None => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(to_kind_id)}),
         _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::CouldNotAssignKindToValue}),
       }
@@ -1641,39 +1712,39 @@ macro_rules! generate_add_match_arms {
   ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
     match $arg {
       $(
-        (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
-          Ok(Box::new(AddScalar { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(0)) }))
-        },
         $(
+          (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
+            Ok(Box::new(AddScalar { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new($target_type::zero())) }))
+          },
           (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
-            Ok(Box::new(AddRv4Rv4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector4::from_element(0 as $target_type))) }))
+            Ok(Box::new(AddRv4Rv4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector4::from_element($target_type::zero()))) }))
           },
           (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
-            Ok(Box::new(AddRv3Rv3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector3::from_element(0 as $target_type))) }))
+            Ok(Box::new(AddRv3Rv3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector3::from_element($target_type::zero()))) }))
           },
           (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
-            Ok(Box::new(AddRv2Rv2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector2::from_element(0 as $target_type))) }))
+            Ok(Box::new(AddRv2Rv2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector2::from_element($target_type::zero()))) }))
           },
           (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
-            Ok(Box::new(AddM2M2{lhs, rhs, out: Rc::new(RefCell::new(Matrix2::from_element(0)))}))
+            Ok(Box::new(AddM2M2{lhs, rhs, out: Rc::new(RefCell::new(Matrix2::from_element($target_type::zero())))}))
           },
           (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
-            Ok(Box::new(AddM3M3{lhs, rhs, out: Rc::new(RefCell::new(Matrix3::from_element(0)))}))
+            Ok(Box::new(AddM3M3{lhs, rhs, out: Rc::new(RefCell::new(Matrix3::from_element($target_type::zero())))}))
           },
           (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
-            Ok(Box::new(AddM2x3M2x3{lhs, rhs, out: Rc::new(RefCell::new(Matrix2x3::from_element(0)))}))
+            Ok(Box::new(AddM2x3M2x3{lhs, rhs, out: Rc::new(RefCell::new(Matrix2x3::from_element($target_type::zero())))}))
           },          
           (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
             let length = {lhs.borrow().len()};
-            Ok(Box::new(AddRvDRvD{lhs, rhs, out: Rc::new(RefCell::new(RowDVector::from_element(length,0)))}))
+            Ok(Box::new(AddRvDRvD{lhs, rhs, out: Rc::new(RefCell::new(RowDVector::from_element(length,$target_type::zero())))}))
           },
           (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => {
             let length = {lhs.borrow().len()};
-            Ok(Box::new(AddVDVD{lhs, rhs, out: Rc::new(RefCell::new(DVector::from_element(length,0)))}))
+            Ok(Box::new(AddVDVD{lhs, rhs, out: Rc::new(RefCell::new(DVector::from_element(length,$target_type::zero())))}))
           },
           (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DMatrix(rhs))) => {
             let (rows,cols) = {lhs.borrow().shape()};
-            Ok(Box::new(AddMDMD{lhs, rhs, out: Rc::new(RefCell::new(DMatrix::from_element(rows,cols,0)))}))
+            Ok(Box::new(AddMDMD{lhs, rhs, out: Rc::new(RefCell::new(DMatrix::from_element(rows,cols,$target_type::zero())))}))
           },
         )+
       )+
@@ -1695,6 +1766,8 @@ fn generate_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
     U32, U32 => MatrixU32, u32;
     U64, U64 => MatrixU64, u64;
     U128, U128 => MatrixU128, u128;
+    F32, F32 => MatrixF32, F32;
+    F64, F64 => MatrixF64, F64;
   )
 }
 
