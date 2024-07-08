@@ -5,7 +5,7 @@ use serde_derive::*;
 use std::any::Any;
 use hashbrown::{HashMap, HashSet};
 use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix6, Matrix2};
-use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign};
+use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign, Neg};
 use num_traits::*;
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -13,6 +13,7 @@ use std::hash::{Hash, Hasher};
 use indexmap::set::IndexSet;
 use indexmap::map::IndexMap;
 use std::fmt;
+use simba::scalar::ClosedNeg;
 use tabled::{
   settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
   Tabled,
@@ -88,7 +89,7 @@ impl DivAssign for F64 {
 }
 impl Zero for F64 {
   fn zero() -> Self {
-    F64::new(0.0)
+    F64(0.0)
   }
   fn is_zero(&self) -> bool {
     self.0 == 0.0
@@ -96,12 +97,19 @@ impl Zero for F64 {
 }
 impl One for F64 {
   fn one() -> Self {
-    F64::new(1.0)
+    F64(1.0)
   }
   fn is_one(&self) -> bool {
     self.0 == 1.0
   }
 }
+impl Neg for F64 {
+  type Output = Self;
+  fn neg(self) -> Self::Output {
+    F64(-self.0)
+  }
+}
+
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub struct F32(f32);
 impl F32 {
@@ -128,7 +136,7 @@ impl AddAssign for F32 {
 }
 impl Zero for F32 {
   fn zero() -> Self {
-    F32::new(0.0)
+    F32(0.0)
   }
   fn is_zero(&self) -> bool {
     self.0 == 0.0
@@ -136,7 +144,7 @@ impl Zero for F32 {
 }
 impl One for F32 {
   fn one() -> Self {
-    F32::new(1.0)
+    F32(1.0)
   }
   fn is_one(&self) -> bool {
     self.0 == 1.0
@@ -173,6 +181,12 @@ impl Div for F32 {
 impl DivAssign for F32 {
   fn div_assign(&mut self, other: F32) {
     self.0 /= other.0;
+  }
+}
+impl Neg for F32 {
+  type Output = Self;
+  fn neg(self) -> Self::Output {
+    F32(-self.0)
   }
 }
 
@@ -2351,60 +2365,138 @@ impl NativeFunctionCompiler for MathExp {
 
 // Negate ---------------------------------------------------------------------
 
-#[derive(Debug)]
-struct NegateScalar {
-  input: Ref<i64>,
-  output: Ref<i64>,
-}
-
-impl MechFunction for NegateScalar {
-  fn solve(&self) {
-    let input_ptr = self.input.as_ptr();
-    let output_ptr = self.output.as_ptr();
-
-    unsafe {
-      *output_ptr = -*input_ptr;
+macro_rules! impl_neg_fxn {
+  ($struct_name:ident, $arg_type:ty) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      input: Ref<$arg_type>,
+      out: Ref<$arg_type>,
     }
-  }
-  fn out(&self) -> Value {
-    Value::I64(self.output.clone())
-  }
-  fn to_string(&self) -> String { format!("{:?}", self)}
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + Neg<Output = T> + PartialEq + 'static,
+      Ref<$arg_type>: ToValue
+    {
+      fn solve(&self) {
+        let input_ptr = self.input.as_ptr();
+        let output_ptr = self.out.as_ptr();
+        unsafe { *output_ptr = -*input_ptr; }
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }
+  };
 }
 
+impl_neg_fxn!(NegateScalar, T);
+impl_neg_fxn!(NegateM2, Matrix2<T>);
+impl_neg_fxn!(NegateM3, Matrix3<T>);
+impl_neg_fxn!(NegateM2x3, Matrix2x3<T>);
+impl_neg_fxn!(NegateRv2, RowVector2<T>);
+impl_neg_fxn!(NegateRv3, RowVector3<T>);
+impl_neg_fxn!(NegateRv4, RowVector4<T>);
 
-#[derive(Debug)]
-struct NegateM2 {
-  mat: Ref<Matrix2<i64>>,
-  out: Ref<Matrix2<i64>>,
+macro_rules! impl_neg_fxn_dynamic {
+  ($struct_name:ident, $arg_type:ty) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      input: Ref<$arg_type>,
+      out: Ref<$arg_type>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + Neg + ClosedNeg + PartialEq + 'static,
+      Ref<$arg_type>: ToValue
+    {
+      fn solve(&self) {
+        let input_ptr = self.input.borrow();
+        let output_ptr = self.out.as_ptr();
+        unsafe { *output_ptr = input_ptr.clone().neg(); }
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }
+  };
 }
 
-impl MechFunction for NegateM2 {
-  fn solve(&self) {
-    let mat_ptr = self.mat.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = -*mat_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::MatrixI64(Matrix::<i64>::Matrix2(self.out.clone()))
-  }
-  fn to_string(&self) -> String { format!("{:?}", self)}
-}
+impl_neg_fxn_dynamic!(NegateRvD, RowDVector<T>);
+impl_neg_fxn_dynamic!(NegateVD, DVector<T>);
+impl_neg_fxn_dynamic!(NegateMD, DMatrix<T>);
 
 pub struct MathNegate {}
+
+macro_rules! generate_neg_match_arms {
+  ($arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
+    match $arg {
+      $(
+        $(
+          Value::$input_type(input) => {
+            Ok(Box::new(NegateScalar{ input: input.clone(), out: Rc::new(RefCell::new($target_type::zero())) }))
+          },
+          Value::$matrix_kind(Matrix::<$target_type>::RowVector4(input)) => {
+            Ok(Box::new(NegateRv4{ input: input.clone(), out: Rc::new(RefCell::new(RowVector4::from_element($target_type::zero()))) }))
+          },
+          Value::$matrix_kind(Matrix::<$target_type>::RowVector3(input)) => {
+            Ok(Box::new(NegateRv3{ input: input.clone(), out: Rc::new(RefCell::new(RowVector3::from_element($target_type::zero()))) }))
+          },
+          Value::$matrix_kind(Matrix::<$target_type>::RowVector2(input)) => {
+            Ok(Box::new(NegateRv2{ input: input.clone(), out: Rc::new(RefCell::new(RowVector2::from_element($target_type::zero()))) }))
+          },
+          Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)) => {
+            Ok(Box::new(NegateM2{input, out: Rc::new(RefCell::new(Matrix2::from_element($target_type::zero())))}))
+          },
+          Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)) => {
+            Ok(Box::new(NegateM3{input, out: Rc::new(RefCell::new(Matrix3::from_element($target_type::zero())))}))
+          },
+          Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)) => {
+            Ok(Box::new(NegateM2x3{input, out: Rc::new(RefCell::new(Matrix2x3::from_element($target_type::zero())))}))
+          },          
+          Value::$matrix_kind(Matrix::<$target_type>::RowDVector(input)) => {
+            let length = {input.borrow().len()};
+            Ok(Box::new(NegateRvD{input, out: Rc::new(RefCell::new(RowDVector::from_element(length,$target_type::zero())))}))
+          },
+          Value::$matrix_kind(Matrix::<$target_type>::DVector(input)) => {
+            let length = {input.borrow().len()};
+            Ok(Box::new(NegateVD{input, out: Rc::new(RefCell::new(DVector::from_element(length,$target_type::zero())))}))
+          },
+          Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)) => {
+            let (rows,cols) = {input.borrow().shape()};
+            Ok(Box::new(NegateMD{input, out: Rc::new(RefCell::new(DMatrix::from_element(rows,cols,$target_type::zero())))}))
+          },
+        )+
+      )+
+      x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+    }
+  }
+}
+
+fn generate_neg_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  generate_neg_match_arms!(
+    (lhs_value),
+    I8 => MatrixI8, i8;
+    I16 => MatrixI16, i16;
+    I32 => MatrixI32, i32;
+    I64 => MatrixI64, i64;
+    I128 => MatrixI128, i128;
+    F32 => MatrixF32, F32;
+    F64 => MatrixF64, F64;
+  )
+}
 
 impl NativeFunctionCompiler for MathNegate {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
-    match (arguments[0].clone()) {
-      Value::MatrixI64(Matrix::<i64>::Matrix2(mat)) =>
-        Ok(Box::new(NegateM2{mat, out: Rc::new(RefCell::new(Matrix2::from_element(0)))})),
-      Value::I64(n) =>
-        Ok(Box::new(NegateScalar{input: n, output: Rc::new(RefCell::new(0))})),
-      x => 
-        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    let input = arguments[0].clone();
+    match generate_neg_fxn(input.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match (input) {
+          (Value::MutableReference(input)) => {generate_neg_fxn(input.borrow().clone())}
+          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
     }
   }
 }
