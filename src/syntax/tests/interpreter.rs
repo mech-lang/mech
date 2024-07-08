@@ -68,6 +68,9 @@ test_interpreter!(interpret_formula_logic_or2, "false | false", Value::Bool(new_
 
 test_interpreter!(interpret_statement_variable_define, "x := 123", Value::I64(new_ref(123)));
 
+test_interpreter!(interpret_reference_bool, "x := false; y := true; x & y", Value::Bool(new_ref(false)));
+test_interpreter!(interpret_reference_bool2, "x := false; x & true", Value::Bool(new_ref(false)));
+
 test_interpreter!(interpret_variable_recall, "a := 1; b := 2; a", Value::MutableReference(new_ref(Value::I64(new_ref(1)))));
 
 test_interpreter!(interpret_matrix_range_exclusive, "1..4", Value::MatrixI64(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![1,2,3])))));

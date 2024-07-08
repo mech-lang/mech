@@ -213,6 +213,7 @@ pub enum Value {
   String(String),
   Bool(Ref<bool>),
   Atom(u64),
+  MatrixBool(Matrix<bool>),
   MatrixU8(Matrix<u8>),
   MatrixU16(Matrix<u16>),
   MatrixU32(Matrix<u32>),
@@ -254,6 +255,7 @@ impl Hash for Value {
       Value::String(x) => x.hash(state),
       Value::Bool(x) => x.borrow().hash(state),
       Value::Atom(x) => x.hash(state),
+      Value::MatrixBool(x) => x.hash(state),
       Value::MatrixU8(x) => x.hash(state),
       Value::MatrixU16(x) => x.hash(state),
       Value::MatrixU32(x) => x.hash(state),
@@ -297,6 +299,7 @@ impl Value {
       Value::String(x) => vec![1,1],
       Value::Bool(x) => vec![1,1],
       Value::Atom(x) => vec![1,1],
+      Value::MatrixBool(x) => x.shape(),
       Value::MatrixU8(x) => x.shape(),
       Value::MatrixU16(x) => x.shape(),
       Value::MatrixU32(x) => x.shape(),
@@ -338,6 +341,7 @@ impl Value {
       Value::String(x) => ValueKind::String,
       Value::Bool(x) => ValueKind::Bool,
       Value::Atom(x) => ValueKind::Atom(*x),
+      Value::MatrixBool(x) => ValueKind::Matrix(Box::new(ValueKind::Bool),x.shape()),
       Value::MatrixU8(x) => ValueKind::Matrix(Box::new(ValueKind::U8),x.shape()),
       Value::MatrixU16(x) => ValueKind::Matrix(Box::new(ValueKind::U16),x.shape()),
       Value::MatrixU32(x) => ValueKind::Matrix(Box::new(ValueKind::U32),x.shape()),
@@ -376,6 +380,7 @@ impl Value {
   fn as_f64(&self) -> Option<Ref<f64>> {if let Value::F64(v) = self { Some(Rc::new(RefCell::new(v.borrow().0))) } else { None }}
   fn as_vecf64(&self) -> Option<Vec<F64>> {if let Value::MatrixF64(v) = self { Some(v.as_vec()) } else { None }}
   fn as_vecf32(&self) -> Option<Vec<F32>> {if let Value::MatrixF32(v) = self { Some(v.as_vec()) } else { None }}
+  fn as_vecbool(&self) -> Option<Vec<bool>> {if let Value::MatrixBool(v) = self { Some(v.as_vec()) } else { None }}
   fn as_vecu8(&self) -> Option<Vec<u8>> {if let Value::MatrixU8(v) = self { Some(v.as_vec()) } else { None }}
   fn as_vecu16(&self) -> Option<Vec<u16>> {if let Value::MatrixU16(v) = self { Some(v.as_vec()) } else { None }}
   fn as_vecu32(&self) -> Option<Vec<u32>> {if let Value::MatrixU32(v) = self { Some(v.as_vec()) } else { None }}
@@ -423,6 +428,7 @@ impl ToValue for Ref<i64> { fn to_value(&self) -> Value { Value::I64(self.clone(
 impl ToValue for Ref<i128> { fn to_value(&self) -> Value { Value::I128(self.clone()) } }
 impl ToValue for Ref<F32> { fn to_value(&self) -> Value { Value::F32(self.clone()) } }
 impl ToValue for Ref<F64> { fn to_value(&self) -> Value { Value::F64(self.clone()) } }
+impl ToValue for Ref<bool> { fn to_value(&self) -> Value { Value::Bool(self.clone()) } }
 
 // Use the macro to generate the implementations
 
@@ -440,6 +446,7 @@ macro_rules! impl_to_value_matrix {
 
 impl_to_value_matrix!(
 
+  Matrix2x3, MatrixBool, bool,
   Matrix2x3, MatrixI8, i8,
   Matrix2x3, MatrixI16, i16,
   Matrix2x3, MatrixI32, i32,
@@ -453,6 +460,7 @@ impl_to_value_matrix!(
   Matrix2x3, MatrixF32, F32,
   Matrix2x3, MatrixF64, F64,
 
+  Matrix2, MatrixBool, bool,
   Matrix2, MatrixI8, i8,
   Matrix2, MatrixI16, i16,
   Matrix2, MatrixI32, i32,
@@ -466,6 +474,7 @@ impl_to_value_matrix!(
   Matrix2, MatrixF32, F32,
   Matrix2, MatrixF64, F64,
 
+  Matrix3, MatrixBool, bool,
   Matrix3, MatrixI8, i8,
   Matrix3, MatrixI16, i16,
   Matrix3, MatrixI32, i32,
@@ -479,6 +488,7 @@ impl_to_value_matrix!(
   Matrix3, MatrixF32, F32,
   Matrix3, MatrixF64, F64,
 
+  RowVector2, MatrixBool, bool,
   RowVector2, MatrixI8, i8,
   RowVector2, MatrixI16, i16,
   RowVector2, MatrixI32, i32,
@@ -492,6 +502,7 @@ impl_to_value_matrix!(
   RowVector2, MatrixF32, F32,
   RowVector2, MatrixF64, F64,
   
+  RowVector3, MatrixBool, bool,
   RowVector3, MatrixI8, i8,
   RowVector3, MatrixI16, i16,
   RowVector3, MatrixI32, i32,
@@ -505,6 +516,7 @@ impl_to_value_matrix!(
   RowVector3, MatrixF32, F32,
   RowVector3, MatrixF64, F64,
 
+  RowVector4, MatrixBool, bool,
   RowVector4, MatrixI8, i8,
   RowVector4, MatrixI16, i16,
   RowVector4, MatrixI32, i32,
@@ -518,6 +530,7 @@ impl_to_value_matrix!(
   RowVector4, MatrixF32, F32,
   RowVector4, MatrixF64, F64,
 
+  RowDVector, MatrixBool, bool,
   RowDVector, MatrixI8, i8,
   RowDVector, MatrixI16, i16,
   RowDVector, MatrixI32, i32,
@@ -531,6 +544,7 @@ impl_to_value_matrix!(
   RowDVector, MatrixF32, F32,
   RowDVector, MatrixF64, F64,
 
+  DVector, MatrixBool, bool,
   DVector, MatrixI8, i8,
   DVector, MatrixI16, i16,
   DVector, MatrixI32, i32,
@@ -544,6 +558,7 @@ impl_to_value_matrix!(
   DVector, MatrixF32, F32,
   DVector, MatrixF64, F64,
 
+  DMatrix, MatrixBool, bool,
   DMatrix, MatrixI8, i8,
   DMatrix, MatrixI16, i16,
   DMatrix, MatrixI32, i32,
@@ -1587,10 +1602,16 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
       FormulaOperator::MulDiv(MulDivOp::Div) => MathDiv{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Exponent(ExponentOp::Exp) => MathExp{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Vec(VecOp::MatMul) => MatrixMul{}.compile(&vec![lhs,rhs])?,
+      //FormulaOperator::Comparison(ComparisonOp::Equal) => CompareEqual{}.compile(&vec![lhs,rhs])?,
+      //FormulaOperator::Comparison(ComparisonOp::NotEqual) => CompareNotEqual{}.compile(&vec![lhs,rhs])?,
+      //FormulaOperator::Comparison(ComparisonOp::LessThanEqual) => CompareLessThanEqual{}.compile(&vec![lhs,rhs])?,
+      //FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual) => CompareGreaterThanEqual{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Comparison(ComparisonOp::LessThan) => CompareLessThan{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Comparison(ComparisonOp::GreaterThan) => CompareGreaterThan{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Logic(LogicOp::And) => LogicAnd{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Logic(LogicOp::Or) => LogicOr{}.compile(&vec![lhs,rhs])?,
+      //FormulaOperator::Logic(LogicOp::Not) => LogicNot{}.compile(&vec![lhs,rhs])?,
+      //FormulaOperator::Logic(LogicOp::Xor) => LogicXor{}.compile(&vec![lhs,rhs])?,
       x => todo!(),
     };
     new_fxn.solve();
@@ -2537,8 +2558,25 @@ impl NativeFunctionCompiler for LogicAnd {
     match (arguments[0].clone(), arguments[1].clone()) {
       (Value::Bool(lhs), Value::Bool(rhs)) =>
         Ok(Box::new(AndScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),
-      x => 
-        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+      (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {
+        match (&*lhs.borrow(), &*rhs.borrow()) {
+          (Value::Bool(lhs), Value::Bool(rhs)) => Ok(Box::new(AndScalar{lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(false))})),
+          _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+        }
+      }
+      (Value::Bool(lhs),Value::MutableReference(rhs)) => {
+        match (&*rhs.borrow()) {
+          (Value::Bool(rhs)) => Ok(Box::new(AndScalar{lhs, rhs: rhs.clone(), out: Rc::new(RefCell::new(false))})),
+          _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+        }
+      }
+      (Value::MutableReference(lhs),Value::Bool(rhs)) => {
+        match (&*lhs.borrow()) {
+          (Value::Bool(lhs)) => Ok(Box::new(AndScalar{lhs: lhs.clone(), rhs, out: Rc::new(RefCell::new(false))})),
+          _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+        }
+      }
+      x => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
     }
   }
 }
@@ -2575,8 +2613,25 @@ impl NativeFunctionCompiler for LogicOr {
     match (arguments[0].clone(), arguments[1].clone()) {
       (Value::Bool(lhs), Value::Bool(rhs)) =>
         Ok(Box::new(OrScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),
-      x => 
-        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+      (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {
+        match (&*lhs.borrow(), &*rhs.borrow()) {
+          (Value::Bool(lhs), Value::Bool(rhs)) => Ok(Box::new(OrScalar{lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(false))})),
+          _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+        }
+      }
+      (Value::Bool(lhs),Value::MutableReference(rhs)) => {
+        match (&*rhs.borrow()) {
+          (Value::Bool(rhs)) => Ok(Box::new(OrScalar{lhs, rhs: rhs.clone(), out: Rc::new(RefCell::new(false))})),
+          _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+        }
+      }
+      (Value::MutableReference(lhs),Value::Bool(rhs)) => {
+        match (&*lhs.borrow()) {
+          (Value::Bool(lhs)) => Ok(Box::new(OrScalar{lhs: lhs.clone(), rhs, out: Rc::new(RefCell::new(false))})),
+          _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+        }
+      }
+      x => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
     }
   }
 }
@@ -2768,8 +2823,8 @@ impl MechFunction for RangeExclusiveScalar {
     let out_ptr = self.out.as_ptr();
     
     unsafe {
-        let rng = (*min_ptr..*max_ptr).collect::<Vec<i64>>();
-        *out_ptr = RowDVector::from_vec(rng);
+      let rng = (*min_ptr..*max_ptr).collect::<Vec<i64>>();
+      *out_ptr = RowDVector::from_vec(rng);
     }
   }
   fn out(&self) -> Value {
