@@ -20,7 +20,7 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 mech-core = "0.2.1"
 mech-syntax = {version = "0.2.1", features = ["lang-server"]}
-#mech-program = "0.2"
+#mech-program = "0.2.1"
 mech-utilities = "0.2.1"
 
 clap = {version = "4.5.8", features = ["cargo"]}

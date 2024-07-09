@@ -17,9 +17,9 @@ gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = "0.2"
-mech-syntax = "0.2"
-mech-utilities = "0.2"
+mech-core = "0.2.1"
+mech-syntax = "0.2.1"
+mech-utilities = "0.2.1"
 
 time = "0.3.30"
 serde = "1.0.189"

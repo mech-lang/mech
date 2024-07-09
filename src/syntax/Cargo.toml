@@ -22,7 +22,7 @@ no-std = ["mech-core/no-std", "rlibc"]
 lang-server = ["tower-lsp", "tokio"]
 
 [dependencies]
-mech-core = "0.2"
+mech-core = "0.2.1"
 
 hashbrown = "0.14.5"
 lazy_static = "1.4.0"
