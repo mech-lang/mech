@@ -4,7 +4,7 @@ use mech_core::nodes::Matrix as Mat;
 use serde_derive::*;
 use std::any::Any;
 use hashbrown::{HashMap, HashSet};
-use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix6, Matrix2};
+use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix3x2, Matrix6, Matrix2};
 use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign, Neg};
 use num_traits::*;
 use std::rc::Rc;
@@ -459,6 +459,20 @@ impl_to_value_matrix!(
   Matrix2x3, MatrixF32, F32,
   Matrix2x3, MatrixF64, F64,
 
+  Matrix3x2, MatrixBool, bool,
+  Matrix3x2, MatrixI8, i8,
+  Matrix3x2, MatrixI16, i16,
+  Matrix3x2, MatrixI32, i32,
+  Matrix3x2, MatrixI64, i64,
+  Matrix3x2, MatrixI128, i128,
+  Matrix3x2, MatrixU8, u8,
+  Matrix3x2, MatrixU16, u16,
+  Matrix3x2, MatrixU32, u32,
+  Matrix3x2, MatrixU64, u64,
+  Matrix3x2, MatrixU128, u128,
+  Matrix3x2, MatrixF32, F32,
+  Matrix3x2, MatrixF64, F64,
+
   Matrix2, MatrixBool, bool,
   Matrix2, MatrixI8, i8,
   Matrix2, MatrixI16, i16,
@@ -486,6 +500,48 @@ impl_to_value_matrix!(
   Matrix3, MatrixU128, u128,
   Matrix3, MatrixF32, F32,
   Matrix3, MatrixF64, F64,
+
+  Vector2, MatrixBool, bool,
+  Vector2, MatrixI8, i8,
+  Vector2, MatrixI16, i16,
+  Vector2, MatrixI32, i32,
+  Vector2, MatrixI64, i64,
+  Vector2, MatrixI128, i128,
+  Vector2, MatrixU8, u8,
+  Vector2, MatrixU16, u16,
+  Vector2, MatrixU32, u32,
+  Vector2, MatrixU64, u64,
+  Vector2, MatrixU128, u128,
+  Vector2, MatrixF32, F32,
+  Vector2, MatrixF64, F64,
+
+  Vector3, MatrixBool, bool,
+  Vector3, MatrixI8, i8,
+  Vector3, MatrixI16, i16,
+  Vector3, MatrixI32, i32,
+  Vector3, MatrixI64, i64,
+  Vector3, MatrixI128, i128,
+  Vector3, MatrixU8, u8,
+  Vector3, MatrixU16, u16,
+  Vector3, MatrixU32, u32,
+  Vector3, MatrixU64, u64,
+  Vector3, MatrixU128, u128,
+  Vector3, MatrixF32, F32,
+  Vector3, MatrixF64, F64,
+
+  Vector4, MatrixBool, bool,
+  Vector4, MatrixI8, i8,
+  Vector4, MatrixI16, i16,
+  Vector4, MatrixI32, i32,
+  Vector4, MatrixI64, i64,
+  Vector4, MatrixI128, i128,
+  Vector4, MatrixU8, u8,
+  Vector4, MatrixU16, u16,
+  Vector4, MatrixU32, u32,
+  Vector4, MatrixU64, u64,
+  Vector4, MatrixU128, u128,
+  Vector4, MatrixF32, F32,
+  Vector4, MatrixF64, F64,
 
   RowVector2, MatrixBool, bool,
   RowVector2, MatrixI8, i8,
@@ -816,9 +872,13 @@ macro_rules! impl_to_matrix {
           (3,4) => Matrix::Matrix3(new_ref(Matrix3::from_vec(elements))),
           (4,2) => Matrix::Matrix4(new_ref(Matrix4::from_vec(elements))),
           (2,3) => Matrix::Matrix2x3(new_ref(Matrix2x3::from_vec(elements))),
+          (3,2) => Matrix::Matrix3x2(new_ref(Matrix3x2::from_vec(elements))),
           (1,2) => Matrix::RowVector2(new_ref(RowVector2::from_vec(elements))),
           (1,3) => Matrix::RowVector3(new_ref(RowVector3::from_vec(elements))),
           (1,4) => Matrix::RowVector4(new_ref(RowVector4::from_vec(elements))),
+          (2,1) => Matrix::Vector2(new_ref(Vector2::from_vec(elements))),
+          (3,1) => Matrix::Vector3(new_ref(Vector3::from_vec(elements))),
+          (4,1) => Matrix::Vector4(new_ref(Vector4::from_vec(elements))),
           (1,n) => Matrix::RowDVector(new_ref(RowDVector::from_vec(elements))),
           (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
           (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
@@ -846,11 +906,15 @@ pub enum Matrix<T> {
   RowVector2(Ref<RowVector2<T>>),
   RowVector3(Ref<RowVector3<T>>),
   RowVector4(Ref<RowVector4<T>>),
+  Vector2(Ref<Vector2<T>>),
+  Vector3(Ref<Vector3<T>>),
+  Vector4(Ref<Vector4<T>>),  
   Matrix1(Ref<Matrix1<T>>),
   Matrix2(Ref<Matrix2<T>>),
   Matrix3(Ref<Matrix3<T>>),
   Matrix4(Ref<Matrix4<T>>),
   Matrix2x3(Ref<Matrix2x3<T>>),
+  Matrix3x2(Ref<Matrix3x2<T>>),
   DMatrix(Ref<DMatrix<T>>),
   DVector(Ref<DVector<T>>),
   RowDVector(Ref<RowDVector<T>>),
@@ -864,11 +928,15 @@ where T: Hash + na::Scalar
       Matrix::RowVector2(x) => x.borrow().hash(state),
       Matrix::RowVector3(x) => x.borrow().hash(state),
       Matrix::RowVector4(x) => x.borrow().hash(state),
+      Matrix::Vector2(x) => x.borrow().hash(state),
+      Matrix::Vector3(x) => x.borrow().hash(state),
+      Matrix::Vector4(x) => x.borrow().hash(state),
       Matrix::Matrix1(x) => x.borrow().hash(state),
       Matrix::Matrix2(x) => x.borrow().hash(state),
       Matrix::Matrix3(x) => x.borrow().hash(state),
       Matrix::Matrix4(x) => x.borrow().hash(state),
       Matrix::Matrix2x3(x) => x.borrow().hash(state),
+      Matrix::Matrix3x2(x) => x.borrow().hash(state),
       Matrix::DMatrix(x) => x.borrow().hash(state),
       Matrix::RowDVector(x) => x.borrow().hash(state),
       Matrix::DVector(x) => x.borrow().hash(state),
@@ -885,11 +953,15 @@ where T: Debug + Clone + Copy + PartialEq + 'static
       Matrix::RowVector2(x) => x.borrow().shape(),
       Matrix::RowVector3(x) => x.borrow().shape(),
       Matrix::RowVector4(x) => x.borrow().shape(),
+      Matrix::Vector2(x) => x.borrow().shape(),
+      Matrix::Vector3(x) => x.borrow().shape(),
+      Matrix::Vector4(x) => x.borrow().shape(),
       Matrix::Matrix1(x) => x.borrow().shape(),
       Matrix::Matrix2(x) => x.borrow().shape(),
       Matrix::Matrix3(x) => x.borrow().shape(),
       Matrix::Matrix4(x) => x.borrow().shape(),
       Matrix::Matrix2x3(x) => x.borrow().shape(),
+      Matrix::Matrix3x2(x) => x.borrow().shape(),
       Matrix::DMatrix(x) => x.borrow().shape(),
       Matrix::RowDVector(x) => x.borrow().shape(),
       Matrix::DVector(x) => x.borrow().shape(),
@@ -902,11 +974,15 @@ where T: Debug + Clone + Copy + PartialEq + 'static
       Matrix::RowVector2(x) => todo!(),
       Matrix::RowVector3(x) => *x.borrow().index(ix-1),
       Matrix::RowVector4(x) => todo!(),
+      Matrix::Vector2(x) => todo!(),
+      Matrix::Vector3(x) => *x.borrow().index(ix-1),
+      Matrix::Vector4(x) => todo!(),
       Matrix::Matrix1(x) => todo!(),
       Matrix::Matrix2(x) => todo!(),
       Matrix::Matrix3(x) => todo!(),
       Matrix::Matrix4(x) => todo!(),
       Matrix::Matrix2x3(x) => todo!(),
+      Matrix::Matrix3x2(x) => todo!(),
       Matrix::DMatrix(x) => todo!(),
       Matrix::RowDVector(x) => *x.borrow().index(ix-1),
       Matrix::DVector(x) => *x.borrow().index(ix-1),
@@ -918,11 +994,15 @@ where T: Debug + Clone + Copy + PartialEq + 'static
       Matrix::RowVector2(x) => todo!(),
       Matrix::RowVector3(x) => *x.borrow().index((row-1,col-1)),
       Matrix::RowVector4(x) => todo!(),
+      Matrix::Vector2(x) => todo!(),
+      Matrix::Vector3(x) => *x.borrow().index((row-1,col-1)),
+      Matrix::Vector4(x) => todo!(),
       Matrix::Matrix1(x) => todo!(),
       Matrix::Matrix2(x) => todo!(),
       Matrix::Matrix3(x) => todo!(),
       Matrix::Matrix4(x) => todo!(),
       Matrix::Matrix2x3(x) => todo!(),
+      Matrix::Matrix3x2(x) => todo!(),
       Matrix::DMatrix(x) => todo!(),
       Matrix::RowDVector(x) => *x.borrow().index((row-1,col-1)),
       Matrix::DVector(x) => *x.borrow().index((row-1,col-1)),
@@ -934,11 +1014,15 @@ where T: Debug + Clone + Copy + PartialEq + 'static
       Matrix::RowVector2(x) => x.borrow().as_slice().to_vec(),
       Matrix::RowVector3(x) => x.borrow().as_slice().to_vec(),
       Matrix::RowVector4(x) => x.borrow().as_slice().to_vec(),
+      Matrix::Vector2(x) => x.borrow().as_slice().to_vec(),
+      Matrix::Vector3(x) => x.borrow().as_slice().to_vec(),
+      Matrix::Vector4(x) => x.borrow().as_slice().to_vec(),
       Matrix::Matrix1(x) => x.borrow().as_slice().to_vec(),
       Matrix::Matrix2(x) => x.borrow().as_slice().to_vec(),
       Matrix::Matrix3(x) => x.borrow().as_slice().to_vec(),
       Matrix::Matrix4(x) => x.borrow().as_slice().to_vec(),
       Matrix::Matrix2x3(x) => x.borrow().as_slice().to_vec(),
+      Matrix::Matrix3x2(x) => x.borrow().as_slice().to_vec(),
       Matrix::DMatrix(x) => x.borrow().as_slice().to_vec(),
       Matrix::RowDVector(x) => x.borrow().as_slice().to_vec(),
       Matrix::DVector(x) => x.borrow().as_slice().to_vec(),
@@ -3001,22 +3085,120 @@ impl NativeFunctionCompiler for MatrixMul {
 
 // Transpose ------------------------------------------------------------------
 
-#[derive(Debug)]
-struct TransposeM2 {
-  mat: Ref<Matrix2<i64>>,
-  out: Ref<Matrix2<i64>>,
+macro_rules! impl_transpose_fxn {
+  ($struct_name:ident, $arg_type:ty, $out_type:ty) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      input: Ref<$arg_type>,
+      out: Ref<$out_type>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + Neg<Output = T> + PartialEq + 'static,
+      Ref<$out_type>: ToValue
+    {
+      fn solve(&self) {
+        let input_ptr = self.input.as_ptr();
+        let output_ptr = self.out.as_ptr();
+        unsafe { *output_ptr = (*input_ptr).transpose(); }
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }
+  };
 }
 
-impl MechFunction for TransposeM2 {
-  fn solve(&self) {
-    let input_ptr = self.mat.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe{*out_ptr = (*input_ptr).transpose();}
+impl_transpose_fxn!(TransposeM2, Matrix2<T>, Matrix2<T>);
+impl_transpose_fxn!(TransposeM3, Matrix3<T>, Matrix3<T>);
+impl_transpose_fxn!(TransposeM2x3, Matrix2x3<T>, Matrix3x2<T>);
+impl_transpose_fxn!(TransposeM3x2, Matrix3x2<T>, Matrix2x3<T>);
+impl_transpose_fxn!(TransposeRv2, RowVector2<T>, Vector2<T>);
+impl_transpose_fxn!(TransposeRv3, RowVector3<T>, Vector3<T>);
+impl_transpose_fxn!(TransposeRv4, RowVector4<T>, Vector4<T>);
+
+macro_rules! impl_transpose_fxn_dynamic {
+  ($struct_name:ident, $arg_type:ty, $out_type:ty) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      input: Ref<$arg_type>,
+      out: Ref<$out_type>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + ClosedNeg + PartialEq + 'static,
+      Ref<$out_type>: ToValue
+    {
+      fn solve(&self) {
+        let input_ptr = self.input.borrow();
+        let output_ptr = self.out.as_ptr();
+        unsafe { *output_ptr = input_ptr.clone().transpose(); }
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }
+  };
+}
+
+impl_transpose_fxn_dynamic!(TransposeRvD, RowDVector<T>, DVector<T>);
+impl_transpose_fxn_dynamic!(TransposeVD, DVector<T>, RowDVector<T>);
+impl_transpose_fxn_dynamic!(TransposeMD, DMatrix<T>, DMatrix<T>);
+
+macro_rules! generate_transpose_match_arms {
+  ($arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
+    match $arg {
+      $(
+        $(
+          Value::$matrix_kind(Matrix::<$target_type>::RowVector4(input)) => {
+            Ok(Box::new(TransposeRv4{ input: input.clone(), out: new_ref(Vector4::from_element($target_type::zero())) }))
+          },
+          Value::$matrix_kind(Matrix::<$target_type>::RowVector3(input)) => {
+            Ok(Box::new(TransposeRv3{ input: input.clone(), out: new_ref(Vector3::from_element($target_type::zero())) }))
+          },
+          Value::$matrix_kind(Matrix::<$target_type>::RowVector2(input)) => {
+            Ok(Box::new(TransposeRv2{ input: input.clone(), out: new_ref(Vector2::from_element($target_type::zero())) }))
+          },
+          Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)) => {
+            Ok(Box::new(TransposeM2{input, out: new_ref(Matrix2::from_element($target_type::zero()))}))
+          },
+          Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)) => {
+            Ok(Box::new(TransposeM3{input, out: new_ref(Matrix3::from_element($target_type::zero()))}))
+          },
+          Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)) => {
+            Ok(Box::new(TransposeM2x3{input, out: new_ref(Matrix3x2::from_element($target_type::zero()))}))
+          },          
+          Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)) => {
+            Ok(Box::new(TransposeM3x2{input, out: new_ref(Matrix2x3::from_element($target_type::zero()))}))
+          },          
+          Value::$matrix_kind(Matrix::<$target_type>::RowDVector(input)) => {
+            let length = {input.borrow().len()};
+            Ok(Box::new(TransposeRvD{input, out: new_ref(DVector::from_element(length,$target_type::zero()))}))
+          },
+          Value::$matrix_kind(Matrix::<$target_type>::DVector(input)) => {
+            let length = {input.borrow().len()};
+            Ok(Box::new(TransposeVD{input, out: new_ref(RowDVector::from_element(length,$target_type::zero()))}))
+          },
+          Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)) => {
+            let (rows,cols) = {input.borrow().shape()};
+            Ok(Box::new(TransposeMD{input, out: new_ref(DMatrix::from_element(rows,cols,$target_type::zero()))}))
+          },
+        )+
+      )+
+      x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+    }
   }
-  fn out(&self) -> Value {
-    Value::MatrixI64(Matrix::<i64>::Matrix2(self.out.clone()))
-  }
-  fn to_string(&self) -> String { format!("{:?}", self)}
+}
+
+fn generate_transpose_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  generate_transpose_match_arms!(
+    (lhs_value),
+    I8 => MatrixI8, i8;
+    I16 => MatrixI16, i16;
+    I32 => MatrixI32, i32;
+    I64 => MatrixI64, i64;
+    I128 => MatrixI128, i128;
+    F32 => MatrixF32, F32;
+    F64 => MatrixF64, F64;
+  )
 }
 
 pub struct MatrixTranspose {}
@@ -3024,13 +3206,17 @@ pub struct MatrixTranspose {}
 impl NativeFunctionCompiler for MatrixTranspose {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
-    match (arguments[0].clone()) {
-      Value::MatrixI64(Matrix::<i64>::Matrix2(mat)) =>
-        Ok(Box::new(TransposeM2{mat, out: new_ref(Matrix2::from_element(0))})),
-      x => 
-        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    let input = arguments[0].clone();
+    match generate_transpose_fxn(input.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match (input) {
+          (Value::MutableReference(input)) => {generate_transpose_fxn(input.borrow().clone())}
+          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
     }
   }
 }
