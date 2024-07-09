@@ -1586,7 +1586,7 @@ fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: Functio
     },
     Factor::Transpose(fctr) => {
       let value = factor(fctr, plan.clone(), symbols.clone(), functions.clone())?;
-      let new_fxn = Matrixranspose{}.compile(&vec![value])?;
+      let new_fxn = MatrixTranspose{}.compile(&vec![value])?;
       new_fxn.solve();
       let out = new_fxn.out();
       let mut plan_brrw = plan.borrow_mut();
@@ -3019,9 +3019,9 @@ impl MechFunction for TransposeM2 {
   fn to_string(&self) -> String { format!("{:?}", self)}
 }
 
-pub struct Matrixranspose {}
+pub struct MatrixTranspose {}
 
-impl NativeFunctionCompiler for Matrixranspose {
+impl NativeFunctionCompiler for MatrixTranspose {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
       return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
