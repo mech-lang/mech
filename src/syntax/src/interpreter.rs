@@ -13,6 +13,7 @@ use std::hash::{Hash, Hasher};
 use indexmap::set::IndexSet;
 use indexmap::map::IndexMap;
 use std::fmt;
+use std::cmp::PartialOrd;
 use simba::scalar::ClosedNeg;
 use tabled::{
   settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
@@ -30,7 +31,7 @@ type MResult<T> = Result<T,MechError>;
 
 // Value ----------------------------------------------------------------------
 
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(PartialEq, Debug, Clone, Copy, PartialOrd)]
 pub struct F64(f64);
 impl F64 {
   pub fn new(val: f64) -> F64 {
@@ -110,7 +111,7 @@ impl Neg for F64 {
   }
 }
 
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(PartialEq, Debug, Clone, Copy, PartialOrd)]
 pub struct F32(f32);
 impl F32 {
   pub fn new(val: f32) -> F32 {
@@ -812,18 +813,17 @@ macro_rules! impl_to_matrix {
     impl ToMatrix for $t {
       fn to_matrix(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
         match (rows,cols) {
-          (1,1) => Matrix::Matrix1(Rc::new(RefCell::new(Matrix1::from_element(elements[0].clone())))),
-          (2,2) => Matrix::Matrix2(Rc::new(RefCell::new(Matrix2::from_vec(elements).transpose()))),
-          (3,4) => Matrix::Matrix3(Rc::new(RefCell::new(Matrix3::from_vec(elements)))),
-          (4,2) => Matrix::Matrix4(Rc::new(RefCell::new(Matrix4::from_vec(elements)))),
-          (2,3) => Matrix::Matrix2x3(Rc::new(RefCell::new(Matrix2x3::from_vec(elements)))),
-          (1,2) => Matrix::RowVector2(Rc::new(RefCell::new(RowVector2::from_vec(elements.clone())))),
-          (1,3) => Matrix::RowVector3(Rc::new(RefCell::new(RowVector3::from_vec(elements.clone())))),
-          (1,4) => Matrix::RowVector4(Rc::new(RefCell::new(RowVector4::from_vec(elements.clone())))),
-          (1,n) => Matrix::RowDVector(Rc::new(RefCell::new(RowDVector::from_vec(elements.clone())))),
-          (m,1) => Matrix::DVector(Rc::new(RefCell::new(DVector::from_vec(elements.clone())))),
-          (m,n) => Matrix::DMatrix(Rc::new(RefCell::new(DMatrix::from_vec(rows,cols,elements)))),
-          _ => todo!(),
+          (1,1) => Matrix::Matrix1(new_ref(Matrix1::from_element(elements[0].clone()))),
+          (2,2) => Matrix::Matrix2(new_ref(Matrix2::from_vec(elements))),
+          (3,4) => Matrix::Matrix3(new_ref(Matrix3::from_vec(elements))),
+          (4,2) => Matrix::Matrix4(new_ref(Matrix4::from_vec(elements))),
+          (2,3) => Matrix::Matrix2x3(new_ref(Matrix2x3::from_vec(elements))),
+          (1,2) => Matrix::RowVector2(new_ref(RowVector2::from_vec(elements))),
+          (1,3) => Matrix::RowVector3(new_ref(RowVector3::from_vec(elements))),
+          (1,4) => Matrix::RowVector4(new_ref(RowVector4::from_vec(elements))),
+          (1,n) => Matrix::RowDVector(new_ref(RowDVector::from_vec(elements))),
+          (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
+          (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
         }
       }
     }
@@ -1043,9 +1043,9 @@ impl Interpreter {
     fxns.kinds.insert(hash_str("bool"),ValueKind::Bool);
 
     Interpreter {
-      symbols: Rc::new(RefCell::new(SymbolTable::new())),
-      plan: Rc::new(RefCell::new(Vec::new())),
-      functions: Rc::new(RefCell::new(fxns)),
+      symbols: new_ref(SymbolTable::new()),
+      plan: new_ref(Vec::new()),
+      functions: new_ref(fxns),
     }
   }
 
@@ -1491,33 +1491,42 @@ fn table_column(r: &TableColumn, plan: Plan, symbols: SymbolTableRef, functions:
   expression(&r.element, plan.clone(), symbols.clone(), functions.clone())
 }
 
-fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> { 
+fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let mut out = vec![];
   for row in &m.rows {
     let result = matrix_row(row, plan.clone(), symbols.clone(), functions.clone())?;
     out.push(result);
   }
+
   if out.is_empty() {
-    return Ok(Value::MatrixF64(Matrix::<F64>::DMatrix(Rc::new(RefCell::new(DMatrix::from_vec(0,0,vec![]))))));
+    return Ok(Value::MatrixF64(Matrix::<F64>::DMatrix(Rc::new(RefCell::new(DMatrix::from_vec(0, 0, vec![]))))));
   }
+
   let shape = out[0].shape();
   let col_n = shape[1];
   let row_n = out.len();
+
+  // Function to put element vector into column-major ordering so it can be reconstituted into a matrix
+  fn to_column_major<T: Clone>(out: &[Value], row_n: usize, col_n: usize, extract_fn: impl Fn(&Value) -> Option<Vec<T>> + Clone) -> Vec<T> {
+    (0..col_n).flat_map(|col| out.iter().map({let value = extract_fn.clone();move |row| value(row).unwrap()[col].clone()})).collect()
+  }
+
   let mat = match &out[0] {
-    Value::MatrixU8(_) => Value::MatrixU8(u8::to_matrix(out.iter().flat_map(|r| r.as_vecu8().unwrap()).collect(),row_n,col_n)),
-    Value::MatrixU16(_) => Value::MatrixU16(u16::to_matrix(out.iter().flat_map(|r| r.as_vecu16().unwrap()).collect(),row_n,col_n)),
-    Value::MatrixU32(_) => Value::MatrixU32(u32::to_matrix(out.iter().flat_map(|r| r.as_vecu32().unwrap()).collect(),row_n,col_n)),
-    Value::MatrixU64(_) => Value::MatrixU64(u64::to_matrix(out.iter().flat_map(|r| r.as_vecu64().unwrap()).collect(),row_n,col_n)),
-    Value::MatrixU128(_) => Value::MatrixU128(u128::to_matrix(out.iter().flat_map(|r| r.as_vecu128().unwrap()).collect(),row_n,col_n)),
-    Value::MatrixI8(_) => Value::MatrixI8(i8::to_matrix(out.iter().flat_map(|r| r.as_veci8().unwrap()).collect(),row_n,col_n)),
-    Value::MatrixI16(_) => Value::MatrixI16(i16::to_matrix(out.iter().flat_map(|r| r.as_veci16().unwrap()).collect(),row_n,col_n)),
-    Value::MatrixI32(_) => Value::MatrixI32(i32::to_matrix(out.iter().flat_map(|r| r.as_veci32().unwrap()).collect(),row_n,col_n)),
-    Value::MatrixI64(_) => Value::MatrixI64(i64::to_matrix(out.iter().flat_map(|r| r.as_veci64().unwrap()).collect(),row_n,col_n)),
-    Value::MatrixI128(_) => Value::MatrixI128(i128::to_matrix(out.iter().flat_map(|r| r.as_veci128().unwrap()).collect(),row_n,col_n)),    
-    Value::MatrixF32(_) => Value::MatrixF32(F32::to_matrix(out.iter().flat_map(|r| r.as_vecf32().unwrap()).collect(),row_n,col_n)),
-    Value::MatrixF64(_) => Value::MatrixF64(F64::to_matrix(out.iter().flat_map(|r| r.as_vecf64().unwrap()).collect(),row_n,col_n)),
+    Value::MatrixU8(_) => Value::MatrixU8(u8::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu8()), row_n, col_n)),
+    Value::MatrixU16(_) => Value::MatrixU16(u16::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu16()), row_n, col_n)),
+    Value::MatrixU32(_) => Value::MatrixU32(u32::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu32()), row_n, col_n)),
+    Value::MatrixU64(_) => Value::MatrixU64(u64::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu64()), row_n, col_n)),
+    Value::MatrixU128(_) => Value::MatrixU128(u128::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu128()), row_n, col_n)),
+    Value::MatrixI8(_) => Value::MatrixI8(i8::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci8()), row_n, col_n)),
+    Value::MatrixI16(_) => Value::MatrixI16(i16::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci16()), row_n, col_n)),
+    Value::MatrixI32(_) => Value::MatrixI32(i32::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci32()), row_n, col_n)),
+    Value::MatrixI64(_) => Value::MatrixI64(i64::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci64()), row_n, col_n)),
+    Value::MatrixI128(_) => Value::MatrixI128(i128::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci128()), row_n, col_n)),
+    Value::MatrixF32(_) => Value::MatrixF32(F32::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecf32()), row_n, col_n)),
+    Value::MatrixF64(_) => Value::MatrixF64(F64::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecf64()), row_n, col_n)),
     _ => todo!(),
   };
+
   Ok(mat)
 }
 
@@ -2643,37 +2652,150 @@ impl NativeFunctionCompiler for LogicOr {
 // Greater Than ---------------------------------------------------------------
 
 #[derive(Debug)]
-struct GTScalar {
-  lhs: Ref<i64>,
-  rhs: Ref<i64>,
+struct GTScalar<T> {
+  lhs: Ref<T>,
+  rhs: Ref<T>,
   out: Ref<bool>,
 }
-
-impl MechFunction for GTScalar {
+impl<T> MechFunction for GTScalar<T>
+where
+  T: Copy + Debug + Clone + Sync + Send + PartialEq + PartialOrd + 'static,
+  Ref<T>: ToValue
+{
   fn solve(&self) {
     let lhs_ptr = self.lhs.as_ptr();
     let rhs_ptr = self.rhs.as_ptr();
     let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr > *rhs_ptr;}
+    unsafe { *out_ptr = *lhs_ptr > *rhs_ptr; }
   }
-  fn out(&self) -> Value {
-    Value::Bool(self.out.clone())
-  }
+  fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
+macro_rules! impl_gt_fxn {
+  ($struct_name:ident, $arg_type:ty, $out_type:ty) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      lhs: Ref<$arg_type>,
+      rhs: Ref<$arg_type>,
+      out: Ref<$out_type>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + PartialEq + PartialOrd + 'static,
+      Ref<$arg_type>: ToValue
+    {
+      fn solve(&self) {
+        let lhs_ptr = self.lhs.as_ptr();
+        let rhs_ptr = self.rhs.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        unsafe {
+          for i in 0..(*lhs_ptr).len() {
+            (*out_ptr)[i] = (*lhs_ptr)[i] > (*rhs_ptr)[i];
+          }
+        }
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }
+  };
+}
+
+impl_gt_fxn!(GTM2x3M2x3, Matrix2x3<T>, Matrix2x3<bool>);
+impl_gt_fxn!(GTM2M2, Matrix2<T>, Matrix2<bool>);
+impl_gt_fxn!(GTM3M3, Matrix3<T>, Matrix3<bool>);
+impl_gt_fxn!(GTRv2Rv2, RowVector2<T>, RowVector2<bool>);
+impl_gt_fxn!(GTRv3Rv3, RowVector3<T>, RowVector3<bool>);
+impl_gt_fxn!(GTRv4Rv4, RowVector4<T>, RowVector4<bool>);
+impl_gt_fxn!(GTRvDRvD, RowDVector<T>, RowDVector<bool>);
+impl_gt_fxn!(GTVDVD, DVector<T>, DVector<bool>);
+impl_gt_fxn!(GTMDMD, DMatrix<T>, DMatrix<bool>);
+
 pub struct CompareGreaterThan {}
+
+macro_rules! generate_gt_match_arms {
+  ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
+    match $arg {
+      $(
+        $(
+          (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
+            Ok(Box::new(GTScalar{ lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(false) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
+            Ok(Box::new(GTM2x3M2x3{lhs, rhs, out: Rc::new(RefCell::new(Matrix2x3::from_element(false)))}))
+          },   
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
+            Ok(Box::new(GTRv4Rv4{ lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector4::from_element(false))) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
+            Ok(Box::new(GTRv3Rv3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector3::from_element(false))) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
+            Ok(Box::new(GTRv2Rv2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Rc::new(RefCell::new(RowVector2::from_element(false))) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
+            Ok(Box::new(GTM2M2{lhs, rhs, out: Rc::new(RefCell::new(Matrix2::from_element(false)))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
+            Ok(Box::new(GTM3M3{lhs, rhs, out: Rc::new(RefCell::new(Matrix3::from_element(false)))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
+            Ok(Box::new(GTM2x3M2x3{lhs, rhs, out: Rc::new(RefCell::new(Matrix2x3::from_element(false)))}))
+          },          
+          (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
+            let length = {lhs.borrow().len()};
+            Ok(Box::new(GTRvDRvD{lhs, rhs, out: Rc::new(RefCell::new(RowDVector::from_element(length,false)))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => {
+            let length = {lhs.borrow().len()};
+            Ok(Box::new(GTVDVD{lhs, rhs, out: Rc::new(RefCell::new(DVector::from_element(length,false)))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DMatrix(rhs))) => {
+            let (rows,cols) = {lhs.borrow().shape()};
+            Ok(Box::new(GTMDMD{lhs, rhs, out: Rc::new(RefCell::new(DMatrix::from_element(rows,cols,false)))}))
+          },
+        )+
+      )+
+      x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+    }
+  }
+}
+
+fn generate_gt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  generate_gt_match_arms!(
+    (lhs_value, rhs_value),
+    I8, I8 => MatrixI8, i8;
+    I16, I16 => MatrixI16, i16;
+    I32, I32 => MatrixI32, i32;
+    I64, I64 => MatrixI64, i64;
+    I128, I128 => MatrixI128, i128;
+    U8, U8 => MatrixU8, u8;
+    U16, U16 => MatrixU16, u16;
+    U32, U32 => MatrixU32, u32;
+    U64, U64 => MatrixU64, u64;
+    U128, U128 => MatrixU128, u128;
+    F32, F32 => MatrixF32, F32;
+    F64, F64 => MatrixF64, F64;
+  )
+}
 
 impl NativeFunctionCompiler for CompareGreaterThan {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
-    match (arguments[0].clone(), arguments[1].clone()) {
-      (Value::I64(lhs), Value::I64(rhs)) =>
-        Ok(Box::new(GTScalar{lhs, rhs, out: Rc::new(RefCell::new(false))})),
-      x => 
-        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    let lhs_value = arguments[0].clone();
+    let rhs_value = arguments[1].clone();
+    match generate_gt_fxn(lhs_value.clone(), rhs_value.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match (lhs_value,rhs_value) {
+          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {generate_gt_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
+          (lhs_value,Value::MutableReference(rhs)) => { generate_gt_fxn(lhs_value.clone(), rhs.borrow().clone())}
+          (Value::MutableReference(lhs),rhs_value) => { generate_gt_fxn(lhs.borrow().clone(), rhs_value.clone()) }
+          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
     }
   }
 }
