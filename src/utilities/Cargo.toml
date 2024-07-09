@@ -1,6 +1,6 @@
 [package]
 name = "mech-utilities"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Shared components and utilities for Mech"
 documentation = "http://docs.mech-lang.org"
