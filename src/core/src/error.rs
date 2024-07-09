@@ -29,6 +29,7 @@ pub struct ParserErrorContext {
 pub enum MechErrorKind {
   UndefinedField(u64),                               // Accessed a field of a record that's not defined
   UndefinedVariable(u64),                            // Accessed a variable that's not defined
+  UndefinedKind(u64),                                // Used a kind that's not defined
   MissingTable(TableId),                             // TableId of missing table
   MissingBlock(BlockId),                             // BlockId of missing block
   PendingExpression,                              // id of pending variable
@@ -53,6 +54,9 @@ pub enum MechErrorKind {
   UnknownFunctionArgument(u64),
   UnknownColumnKind(u64),
   UnhandledFunctionArgumentKind,
+  CouldNotAssignKindToValue,
+  ExpectedNumericForSize,                            // When something non-numeric is passed as a size
+  MatrixMustHaveHomogenousKind,                      // When multiple element kinds are specified for a matrix
   IncorrectNumberOfArguments,
   UnhandledTableShape(TableShape),
   TooManyInputArguments(usize,usize),                // (given,expected)
