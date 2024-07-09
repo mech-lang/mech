@@ -1916,8 +1916,6 @@ impl_add_fxn_dynamic!(AddRvDRvD, RowDVector<T>);
 impl_add_fxn_dynamic!(AddVDVD, DVector<T>);
 impl_add_fxn_dynamic!(AddMDMD, DMatrix<T>);
 
-pub struct MathAdd {}
-
 macro_rules! generate_add_match_arms {
   ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
     match $arg {
@@ -1980,6 +1978,8 @@ fn generate_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
     F64, F64 => MatrixF64, F64;
   )
 }
+
+pub struct MathAdd {}
 
 impl NativeFunctionCompiler for MathAdd {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
@@ -2066,8 +2066,6 @@ impl_sub_fxn_dynamic!(SubRvDRvD, RowDVector<T>);
 impl_sub_fxn_dynamic!(SubVDVD, DVector<T>);
 impl_sub_fxn_dynamic!(SubMDMD, DMatrix<T>);
 
-pub struct MathSub {}
-
 macro_rules! generate_sub_match_arms {
   ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
     match $arg {
@@ -2130,6 +2128,8 @@ fn generate_sub_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
     F64, F64 => MatrixF64, F64;
   )
 }
+
+pub struct MathSub {}
 
 impl NativeFunctionCompiler for MathSub {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
@@ -2210,8 +2210,6 @@ impl_mul_fxn_dynamic!(MulRvDRvD, RowDVector<T>);
 impl_mul_fxn_dynamic!(MulVDVD, DVector<T>);
 impl_mul_fxn_dynamic!(MulMDMD, DMatrix<T>);
 
-pub struct MathMul {}
-
 macro_rules! generate_mul_match_arms {
   ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
     match $arg {
@@ -2274,6 +2272,8 @@ fn generate_mul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
     F64, F64 => MatrixF64, F64;
   )
 }
+
+pub struct MathMul {}
 
 impl NativeFunctionCompiler for MathMul {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
@@ -2354,8 +2354,6 @@ impl_div_fxn_dynamic!(DivRvDRvD, RowDVector<T>);
 impl_div_fxn_dynamic!(DivVDVD, DVector<T>);
 impl_div_fxn_dynamic!(DivMDMD, DMatrix<T>);
 
-pub struct MathDiv {}
-
 macro_rules! generate_div_match_arms {
   ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
     match $arg {
@@ -2418,6 +2416,8 @@ fn generate_div_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
     F64, F64 => MatrixF64, F64;
   )
 }
+
+pub struct MathDiv {}
 
 impl NativeFunctionCompiler for MathDiv {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
@@ -2538,8 +2538,6 @@ impl_neg_fxn_dynamic!(NegateRvD, RowDVector<T>);
 impl_neg_fxn_dynamic!(NegateVD, DVector<T>);
 impl_neg_fxn_dynamic!(NegateMD, DMatrix<T>);
 
-pub struct MathNegate {}
-
 macro_rules! generate_neg_match_arms {
   ($arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
     match $arg {
@@ -2597,6 +2595,8 @@ fn generate_neg_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError
     F64 => MatrixF64, F64;
   )
 }
+
+pub struct MathNegate {}
 
 impl NativeFunctionCompiler for MathNegate {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
@@ -2796,27 +2796,25 @@ impl_gt_fxn!(GTRvDRvD, RowDVector<T>, RowDVector<bool>);
 impl_gt_fxn!(GTVDVD, DVector<T>, DVector<bool>);
 impl_gt_fxn!(GTMDMD, DMatrix<T>, DMatrix<bool>);
 
-pub struct CompareGreaterThan {}
-
 macro_rules! generate_gt_match_arms {
   ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
     match $arg {
       $(
         $(
           (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
-            Ok(Box::new(GTScalar{ lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(false) }))
+            Ok(Box::new(GTScalar{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(false) }))
           },
           (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
             Ok(Box::new(GTM2x3M2x3{lhs, rhs, out: new_ref(Matrix2x3::from_element(false))}))
           },   
           (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
-            Ok(Box::new(GTRv4Rv4{ lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element(false)) }))
+            Ok(Box::new(GTRv4Rv4{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element(false)) }))
           },
           (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
-            Ok(Box::new(GTRv3Rv3 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element(false)) }))
+            Ok(Box::new(GTRv3Rv3{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element(false)) }))
           },
           (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
-            Ok(Box::new(GTRv2Rv2 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element(false)) }))
+            Ok(Box::new(GTRv2Rv2{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element(false)) }))
           },
           (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
             Ok(Box::new(GTM2M2{lhs, rhs, out: new_ref(Matrix2::from_element(false))}))
@@ -2863,6 +2861,8 @@ fn generate_gt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFun
     F64, F64 => MatrixF64, F64;
   )
 }
+
+pub struct CompareGreaterThan {}
 
 impl NativeFunctionCompiler for CompareGreaterThan {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
@@ -2955,19 +2955,19 @@ macro_rules! generate_lt_match_arms {
       $(
         $(
           (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
-            Ok(Box::new(LTScalar{ lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(false) }))
+            Ok(Box::new(LTScalar{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(false) }))
           },
           (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
             Ok(Box::new(LTM2x3M2x3{lhs, rhs, out: new_ref(Matrix2x3::from_element(false))}))
           },   
           (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
-            Ok(Box::new(LTRv4Rv4{ lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element(false)) }))
+            Ok(Box::new(LTRv4Rv4{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element(false)) }))
           },
           (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
-            Ok(Box::new(LTRv3Rv3 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element(false)) }))
+            Ok(Box::new(LTRv3Rv3{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element(false)) }))
           },
           (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
-            Ok(Box::new(LTRv2Rv2 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element(false)) }))
+            Ok(Box::new(LTRv2Rv2{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element(false)) }))
           },
           (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
             Ok(Box::new(LTM2M2{lhs, rhs, out: new_ref(Matrix2::from_element(false))}))
@@ -3149,13 +3149,13 @@ macro_rules! generate_transpose_match_arms {
       $(
         $(
           Value::$matrix_kind(Matrix::<$target_type>::RowVector4(input)) => {
-            Ok(Box::new(TransposeRv4{ input: input.clone(), out: new_ref(Vector4::from_element($target_type::zero())) }))
+            Ok(Box::new(TransposeRv4{input: input.clone(), out: new_ref(Vector4::from_element($target_type::zero())) }))
           },
           Value::$matrix_kind(Matrix::<$target_type>::RowVector3(input)) => {
-            Ok(Box::new(TransposeRv3{ input: input.clone(), out: new_ref(Vector3::from_element($target_type::zero())) }))
+            Ok(Box::new(TransposeRv3{input: input.clone(), out: new_ref(Vector3::from_element($target_type::zero())) }))
           },
           Value::$matrix_kind(Matrix::<$target_type>::RowVector2(input)) => {
-            Ok(Box::new(TransposeRv2{ input: input.clone(), out: new_ref(Vector2::from_element($target_type::zero())) }))
+            Ok(Box::new(TransposeRv2{input: input.clone(), out: new_ref(Vector2::from_element($target_type::zero())) }))
           },
           Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)) => {
             Ok(Box::new(TransposeM2{input, out: new_ref(Matrix2::from_element($target_type::zero()))}))
@@ -3335,8 +3335,6 @@ where
   fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
-pub struct ConvertKind {}
-
 macro_rules! generate_conversion_match_arms {
   ($arg:expr, $($input_type:ident => $($value_kind:ident, $target_type:ident),+);+ $(;)?) => {
     match $arg {
@@ -3365,6 +3363,8 @@ fn generate_conversion_fxn(source_value: Value, target_kind: ValueKind) -> MResu
     U128 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
   )
 }
+
+pub struct ConvertKind {}
 
 impl NativeFunctionCompiler for ConvertKind {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
