@@ -21,6 +21,7 @@ use tabled::{
 };
 use tabled::{settings::style::LineText};
 use std::fmt::Debug;
+use paste::paste;
 
 type Ref<T> = Rc<RefCell<T>>;
 pub fn new_ref<T>(item: T) -> Rc<RefCell<T>> {
@@ -1841,6 +1842,60 @@ fn boolean(tkn: &Token) -> Value {
 // The Standard Library!
 // ============================================================================
 
+
+macro_rules! generate_binop_match_arms {
+  ($lib:ident, $arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
+    paste!{
+      match $arg {
+        $(
+          $(
+            (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
+              Ok(Box::new([<$lib Scalar>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($target_type::zero()) }))
+            },
+            //(Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$lhs_type(rhs)) => {
+            //  Ok(Box::new([<$lib Rv3S>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($target_type::zero())) }))
+            //},
+            //(Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
+            //  Ok(Box::new([<$lib SRv3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($target_type::zero())) }))
+            //},
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
+              Ok(Box::new([<$lib Rv4Rv4>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element($target_type::zero())) }))
+            },
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
+              Ok(Box::new([<$lib Rv3Rv3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($target_type::zero())) }))
+            },
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
+              Ok(Box::new([<$lib Rv2Rv2>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element($target_type::zero())) }))
+            },
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
+              Ok(Box::new([<$lib M2M2>]{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::zero()))}))
+            },
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
+              Ok(Box::new([<$lib M3M3>]{lhs, rhs, out: new_ref(Matrix3::from_element($target_type::zero()))}))
+            },
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
+              Ok(Box::new([<$lib M2x3M2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($target_type::zero()))}))
+            },          
+            (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
+              let length = {lhs.borrow().len()};
+              Ok(Box::new([<$lib RvDRvD>]{lhs, rhs, out: new_ref(RowDVector::from_element(length,$target_type::zero()))}))
+            },
+            (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => {
+              let length = {lhs.borrow().len()};
+              Ok(Box::new([<$lib VDVD>]{lhs, rhs, out: new_ref(DVector::from_element(length,$target_type::zero()))}))
+            },
+            (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DMatrix(rhs))) => {
+              let (rows,cols) = {lhs.borrow().shape()};
+              Ok(Box::new([<$lib MDMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::zero()))}))
+            },
+          )+
+        )+
+        x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+      }
+    }
+  }
+}
+
 // ----------------------------------------------------------------------------
 // Math Library
 // ----------------------------------------------------------------------------
@@ -1987,53 +2042,9 @@ impl_add_fxn_dynamic!(AddRvDRvD, RowDVector<T>);
 impl_add_fxn_dynamic!(AddVDVD, DVector<T>);
 impl_add_fxn_dynamic!(AddMDMD, DMatrix<T>);
 
-macro_rules! generate_add_match_arms {
-  ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
-    match $arg {
-      $(
-        $(
-          (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
-            Ok(Box::new(AddScalar { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($target_type::zero()) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
-            Ok(Box::new(AddRv4Rv4 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element($target_type::zero())) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
-            Ok(Box::new(AddRv3Rv3 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($target_type::zero())) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
-            Ok(Box::new(AddRv2Rv2 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element($target_type::zero())) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
-            Ok(Box::new(AddM2M2{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::zero()))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
-            Ok(Box::new(AddM3M3{lhs, rhs, out: new_ref(Matrix3::from_element($target_type::zero()))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
-            Ok(Box::new(AddM2x3M2x3{lhs, rhs, out: new_ref(Matrix2x3::from_element($target_type::zero()))}))
-          },          
-          (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
-            let length = {lhs.borrow().len()};
-            Ok(Box::new(AddRvDRvD{lhs, rhs, out: new_ref(RowDVector::from_element(length,$target_type::zero()))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => {
-            let length = {lhs.borrow().len()};
-            Ok(Box::new(AddVDVD{lhs, rhs, out: new_ref(DVector::from_element(length,$target_type::zero()))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DMatrix(rhs))) => {
-            let (rows,cols) = {lhs.borrow().shape()};
-            Ok(Box::new(AddMDMD{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::zero()))}))
-          },
-        )+
-      )+
-      x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-    }
-  }
-}
-
 fn generate_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_add_match_arms!(
+  generate_binop_match_arms!(
+    Add,
     (lhs_value, rhs_value),
     I8, I8 => MatrixI8, i8;
     I16, I16 => MatrixI16, i16;
@@ -2137,53 +2148,9 @@ impl_sub_fxn_dynamic!(SubRvDRvD, RowDVector<T>);
 impl_sub_fxn_dynamic!(SubVDVD, DVector<T>);
 impl_sub_fxn_dynamic!(SubMDMD, DMatrix<T>);
 
-macro_rules! generate_sub_match_arms {
-  ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
-    match $arg {
-      $(
-        $(
-          (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
-            Ok(Box::new(SubScalar { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($target_type::zero()) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
-            Ok(Box::new(SubRv4Rv4 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element($target_type::zero())) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
-            Ok(Box::new(SubRv3Rv3 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($target_type::zero())) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
-            Ok(Box::new(SubRv2Rv2 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element($target_type::zero())) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
-            Ok(Box::new(SubM2M2{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::zero()))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
-            Ok(Box::new(SubM3M3{lhs, rhs, out: new_ref(Matrix3::from_element($target_type::zero()))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
-            Ok(Box::new(SubM2x3M2x3{lhs, rhs, out: new_ref(Matrix2x3::from_element($target_type::zero()))}))
-          },          
-          (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
-            let length = {lhs.borrow().len()};
-            Ok(Box::new(SubRvDRvD{lhs, rhs, out: new_ref(RowDVector::from_element(length,$target_type::zero()))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => {
-            let length = {lhs.borrow().len()};
-            Ok(Box::new(SubVDVD{lhs, rhs, out: new_ref(DVector::from_element(length,$target_type::zero()))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DMatrix(rhs))) => {
-            let (rows,cols) = {lhs.borrow().shape()};
-            Ok(Box::new(SubMDMD{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::zero()))}))
-          },
-        )+
-      )+
-      x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-    }
-  }
-}
-
 fn generate_sub_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_sub_match_arms!(
+  generate_binop_match_arms!(
+    Sub,
     (lhs_value, rhs_value),
     I8, I8 => MatrixI8, i8;
     I16, I16 => MatrixI16, i16;
@@ -2224,6 +2191,34 @@ impl NativeFunctionCompiler for MathSub {
 }
 
 // Mul ------------------------------------------------------------------------
+
+macro_rules! impl_mul_fxn {
+  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      lhs: Ref<$arg1_type>,
+      rhs: Ref<$arg2_type>,
+      out: Ref<$out_type>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + Mul<Output = T> + PartialEq + MulAssign + 'static,
+      Ref<$out_type>: ToValue
+    {
+      fn solve(&self) {
+        let lhs_ptr = self.lhs.as_ptr();
+        let rhs_ptr = self.rhs.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        unsafe { *out_ptr = *lhs_ptr * *rhs_ptr; }
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }
+  };
+}
+
+impl_mul_fxn!(MulScalar, T, T, T);
+
 macro_rules! impl_mul_fxn_scalar_rhs {
   ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty) => {
     #[derive(Debug)]
@@ -2250,6 +2245,7 @@ macro_rules! impl_mul_fxn_scalar_rhs {
     }
   };
 }
+
 macro_rules! impl_mul_fxn_scalar_lhs {
   ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty) => {
     #[derive(Debug)]
@@ -2297,33 +2293,6 @@ impl_mul_fxn_scalar_lhs!(MulRvDS, RowDVector<T>, T, RowDVector<T>);
 impl_mul_fxn_scalar_lhs!(MulVDS, DVector<T>, T, DVector<T>);
 impl_mul_fxn_scalar_lhs!(MulMDS, DMatrix<T>, T, DMatrix<T>);
 
-macro_rules! impl_mul_fxn {
-  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty) => {
-    #[derive(Debug)]
-    struct $struct_name<T> {
-      lhs: Ref<$arg1_type>,
-      rhs: Ref<$arg2_type>,
-      out: Ref<$out_type>,
-    }
-    impl<T> MechFunction for $struct_name<T>
-    where
-      T: Copy + Debug + Clone + Sync + Send + Mul<Output = T> + PartialEq + MulAssign + 'static,
-      Ref<$out_type>: ToValue
-    {
-      fn solve(&self) {
-        let lhs_ptr = self.lhs.as_ptr();
-        let rhs_ptr = self.rhs.as_ptr();
-        let out_ptr = self.out.as_ptr();
-        unsafe { *out_ptr = *lhs_ptr * *rhs_ptr; }
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
-    }
-  };
-}
-
-impl_mul_fxn!(MulScalar, T, T, T);
-
 macro_rules! impl_mul_fxn_dynamic {
   ($struct_name:ident, $arg_type:ty) => {
     #[derive(Debug)]
@@ -2359,59 +2328,9 @@ impl_mul_fxn_dynamic!(MulRvDRvD, RowDVector<T>);
 impl_mul_fxn_dynamic!(MulVDVD, DVector<T>);
 impl_mul_fxn_dynamic!(MulMDMD, DMatrix<T>);
 
-macro_rules! generate_mul_match_arms {
-  ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
-    match $arg {
-      $(
-        $(
-          (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
-            Ok(Box::new(MulScalar{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($target_type::zero()) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$lhs_type(rhs)) => {
-            Ok(Box::new(MulRv3S{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($target_type::zero())) }))
-          },
-          (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
-            Ok(Box::new(MulSRv3{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($target_type::zero())) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
-            Ok(Box::new(MulRv4Rv4{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element($target_type::zero())) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
-            Ok(Box::new(MulRv3Rv3{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($target_type::zero())) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
-            Ok(Box::new(MulRv2Rv2{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element($target_type::zero())) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
-            Ok(Box::new(MulM2M2{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::zero()))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
-            Ok(Box::new(MulM3M3{lhs, rhs, out: new_ref(Matrix3::from_element($target_type::zero()))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
-            Ok(Box::new(MulM2x3M2x3{lhs, rhs, out: new_ref(Matrix2x3::from_element($target_type::zero()))}))
-          },          
-          (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
-            let length = {lhs.borrow().len()};
-            Ok(Box::new(MulRvDRvD{lhs, rhs, out: new_ref(RowDVector::from_element(length,$target_type::zero()))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => {
-            let length = {lhs.borrow().len()};
-            Ok(Box::new(MulVDVD{lhs, rhs, out: new_ref(DVector::from_element(length,$target_type::zero()))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DMatrix(rhs))) => {
-            let (rows,cols) = {lhs.borrow().shape()};
-            Ok(Box::new(MulMDMD{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::zero()))}))
-          },
-        )+
-      )+
-      x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-    }
-  }
-}
-
 fn generate_mul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_mul_match_arms!(
+  generate_binop_match_arms!(
+    Mul,
     (lhs_value, rhs_value),
     I8, I8 => MatrixI8, i8;
     I16, I16 => MatrixI16, i16;
@@ -2509,53 +2428,9 @@ impl_div_fxn_dynamic!(DivRvDRvD, RowDVector<T>);
 impl_div_fxn_dynamic!(DivVDVD, DVector<T>);
 impl_div_fxn_dynamic!(DivMDMD, DMatrix<T>);
 
-macro_rules! generate_div_match_arms {
-  ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
-    match $arg {
-      $(
-        $(
-          (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
-            Ok(Box::new(DivScalar { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($target_type::zero()) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
-            Ok(Box::new(DivRv4Rv4 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element($target_type::zero())) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
-            Ok(Box::new(DivRv3Rv3 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($target_type::zero())) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
-            Ok(Box::new(DivRv2Rv2 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element($target_type::zero())) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
-            Ok(Box::new(DivM2M2{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::zero()))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
-            Ok(Box::new(DivM3M3{lhs, rhs, out: new_ref(Matrix3::from_element($target_type::zero()))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
-            Ok(Box::new(DivM2x3M2x3{lhs, rhs, out: new_ref(Matrix2x3::from_element($target_type::zero()))}))
-          },          
-          (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
-            let length = {lhs.borrow().len()};
-            Ok(Box::new(DivRvDRvD{lhs, rhs, out: new_ref(RowDVector::from_element(length,$target_type::zero()))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => {
-            let length = {lhs.borrow().len()};
-            Ok(Box::new(DivVDVD{lhs, rhs, out: new_ref(DVector::from_element(length,$target_type::zero()))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DMatrix(rhs))) => {
-            let (rows,cols) = {lhs.borrow().shape()};
-            Ok(Box::new(DivMDMD{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::zero()))}))
-          },
-        )+
-      )+
-      x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-    }
-  }
-}
-
 fn generate_div_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_div_match_arms!(
+  generate_binop_match_arms!(
+    Div,
     (lhs_value, rhs_value),
     I8, I8 => MatrixI8, i8;
     I16, I16 => MatrixI16, i16;
@@ -2889,6 +2764,57 @@ impl NativeFunctionCompiler for LogicOr {
 // Compare Library
 // ----------------------------------------------------------------------------
 
+
+macro_rules! generate_compare_match_arms {
+  ($lib: ident, $arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
+    paste!{
+      match $arg {
+        $(
+          $(
+            (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
+              Ok(Box::new([<$lib Scalar>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(false) }))
+            },
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
+              Ok(Box::new([<$lib M2x3M2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element(false))}))
+            },   
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
+              Ok(Box::new([<$lib Rv4Rv4>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element(false)) }))
+            },
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
+              Ok(Box::new([<$lib Rv3Rv3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element(false)) }))
+            },
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
+              Ok(Box::new([<$lib Rv2Rv2>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element(false)) }))
+            },
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
+              Ok(Box::new([<$lib M2M2>]{lhs, rhs, out: new_ref(Matrix2::from_element(false))}))
+            },
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
+              Ok(Box::new([<$lib M3M3>]{lhs, rhs, out: new_ref(Matrix3::from_element(false))}))
+            },
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
+              Ok(Box::new([<$lib M2x3M2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element(false))}))
+            },          
+            (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
+              let length = {lhs.borrow().len()};
+              Ok(Box::new([<$lib RvDRvD>]{lhs, rhs, out: new_ref(RowDVector::from_element(length,false))}))
+            },
+            (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => {
+              let length = {lhs.borrow().len()};
+              Ok(Box::new([<$lib VDVD>]{lhs, rhs, out: new_ref(DVector::from_element(length,false))}))
+            },
+            (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DMatrix(rhs))) => {
+              let (rows,cols) = {lhs.borrow().shape()};
+              Ok(Box::new([<$lib MDMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,false))}))
+            },
+          )+
+        )+
+        x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+      }
+    }
+  }
+}
+
 // Greater Than ---------------------------------------------------------------
 
 #[derive(Debug)]
@@ -2951,56 +2877,9 @@ impl_gt_fxn!(GTRvDRvD, RowDVector<T>, RowDVector<bool>);
 impl_gt_fxn!(GTVDVD, DVector<T>, DVector<bool>);
 impl_gt_fxn!(GTMDMD, DMatrix<T>, DMatrix<bool>);
 
-macro_rules! generate_gt_match_arms {
-  ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
-    match $arg {
-      $(
-        $(
-          (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
-            Ok(Box::new(GTScalar{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(false) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
-            Ok(Box::new(GTM2x3M2x3{lhs, rhs, out: new_ref(Matrix2x3::from_element(false))}))
-          },   
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
-            Ok(Box::new(GTRv4Rv4{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element(false)) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
-            Ok(Box::new(GTRv3Rv3{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element(false)) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
-            Ok(Box::new(GTRv2Rv2{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element(false)) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
-            Ok(Box::new(GTM2M2{lhs, rhs, out: new_ref(Matrix2::from_element(false))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
-            Ok(Box::new(GTM3M3{lhs, rhs, out: new_ref(Matrix3::from_element(false))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
-            Ok(Box::new(GTM2x3M2x3{lhs, rhs, out: new_ref(Matrix2x3::from_element(false))}))
-          },          
-          (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
-            let length = {lhs.borrow().len()};
-            Ok(Box::new(GTRvDRvD{lhs, rhs, out: new_ref(RowDVector::from_element(length,false))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => {
-            let length = {lhs.borrow().len()};
-            Ok(Box::new(GTVDVD{lhs, rhs, out: new_ref(DVector::from_element(length,false))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DMatrix(rhs))) => {
-            let (rows,cols) = {lhs.borrow().shape()};
-            Ok(Box::new(GTMDMD{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,false))}))
-          },
-        )+
-      )+
-      x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-    }
-  }
-}
-
 fn generate_gt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_gt_match_arms!(
+  generate_compare_match_arms!(
+    GT,
     (lhs_value, rhs_value),
     I8, I8 => MatrixI8, i8;
     I16, I16 => MatrixI16, i16;
@@ -3102,58 +2981,9 @@ impl_lt_fxn!(LTRvDRvD, RowDVector<T>, RowDVector<bool>);
 impl_lt_fxn!(LTVDVD, DVector<T>, DVector<bool>);
 impl_lt_fxn!(LTMDMD, DMatrix<T>, DMatrix<bool>);
 
-pub struct CompareLessThan {}
-
-macro_rules! generate_lt_match_arms {
-  ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
-    match $arg {
-      $(
-        $(
-          (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
-            Ok(Box::new(LTScalar{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(false) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
-            Ok(Box::new(LTM2x3M2x3{lhs, rhs, out: new_ref(Matrix2x3::from_element(false))}))
-          },   
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
-            Ok(Box::new(LTRv4Rv4{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element(false)) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
-            Ok(Box::new(LTRv3Rv3{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element(false)) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
-            Ok(Box::new(LTRv2Rv2{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element(false)) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
-            Ok(Box::new(LTM2M2{lhs, rhs, out: new_ref(Matrix2::from_element(false))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
-            Ok(Box::new(LTM3M3{lhs, rhs, out: new_ref(Matrix3::from_element(false))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
-            Ok(Box::new(LTM2x3M2x3{lhs, rhs, out: new_ref(Matrix2x3::from_element(false))}))
-          },          
-          (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
-            let length = {lhs.borrow().len()};
-            Ok(Box::new(LTRvDRvD{lhs, rhs, out: new_ref(RowDVector::from_element(length,false))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => {
-            let length = {lhs.borrow().len()};
-            Ok(Box::new(LTVDVD{lhs, rhs, out: new_ref(DVector::from_element(length,false))}))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DMatrix(rhs))) => {
-            let (rows,cols) = {lhs.borrow().shape()};
-            Ok(Box::new(LTMDMD{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,false))}))
-          },
-        )+
-      )+
-      x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-    }
-  }
-}
-
 fn generate_lt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_lt_match_arms!(
+  generate_compare_match_arms!(
+    LT,
     (lhs_value, rhs_value),
     I8, I8 => MatrixI8, i8;
     I16, I16 => MatrixI16, i16;
@@ -3169,6 +2999,8 @@ fn generate_lt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFun
     F64, F64 => MatrixF64, F64;
   )
 }
+
+pub struct CompareLessThan {}
 
 impl NativeFunctionCompiler for CompareLessThan {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
