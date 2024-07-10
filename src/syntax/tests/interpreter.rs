@@ -125,3 +125,4 @@ test_interpreter!(interpret_function_define_statements,r#"foo(x<i64>, y<i64>) = 
 foo(10,20)"#, Value::I64(new_ref(32)));
 
 test_interpreter!(interpret_function_call_native,r#"math/sin(1.5707963267948966)"#, Value::F64(new_ref(F64::new(1.0))));
+test_interpreter!(interpret_function_call_native_cos,r#"math/cos(0.0)"#, Value::F64(new_ref(F64::new(1.0))));

@@ -1134,7 +1134,8 @@ impl Interpreter {
     // Preload functions
     let mut fxns = Functions::new();
     fxns.function_compilers.insert(hash_str("math/sin"),Box::new(MathSin{}));
-    
+    fxns.function_compilers.insert(hash_str("math/cos"),Box::new(MathCos{}));
+
     // Preload kinds
     fxns.kinds.insert(hash_str("u8"),ValueKind::U8);
     fxns.kinds.insert(hash_str("u16"),ValueKind::U16);
@@ -1843,6 +1844,42 @@ fn boolean(tkn: &Token) -> Value {
 // ----------------------------------------------------------------------------
 // Math Library
 // ----------------------------------------------------------------------------
+
+// Cos ------------------------------------------------------------------------
+
+use libm::cos;
+
+#[derive(Debug)]
+pub struct MathCosScalar {
+  val: Ref<F64>,
+  out: Ref<F64>,
+}
+
+impl MechFunction for MathCosScalar {
+  fn solve(&self) {
+    let val_ptr = self.val.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe{(*out_ptr).0 = cos((*val_ptr).0);}
+  }
+  fn out(&self) -> Value { Value::F64(self.out.clone()) }
+  fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+
+pub struct MathCos {}
+
+impl NativeFunctionCompiler for MathCos {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() != 1 {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    match &arguments[0] {
+      Value::F64(val) =>
+        Ok(Box::new(MathCosScalar{val: val.clone(), out: new_ref(F64(0.0))})),
+      x => 
+        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    }
+  }
+}
 
 // Sin ------------------------------------------------------------------------
 
