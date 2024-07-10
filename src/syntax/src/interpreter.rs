@@ -367,31 +367,31 @@ impl Value {
     }
   }
 
-  fn as_u8(&self) -> Option<Ref<u8>> {if let Value::U8(v) = self { Some(v.clone()) } else { None }}
-  fn as_u16(&self) -> Option<Ref<u16>> {if let Value::U16(v) = self { Some(v.clone()) } else { None }}
-  fn as_u32(&self) -> Option<Ref<u32>> {if let Value::U32(v) = self { Some(v.clone()) } else { None }}
-  fn as_u64(&self) -> Option<Ref<u64>> {if let Value::U64(v) = self { Some(v.clone()) } else { None }}
-  fn as_u128(&self) -> Option<Ref<u128>> {if let Value::U128(v) = self { Some(v.clone()) } else { None }}
-  fn as_i8(&self) -> Option<Ref<i8>> {if let Value::I8(v) = self { Some(v.clone()) } else { None }}
-  fn as_i16(&self) -> Option<Ref<i16>> {if let Value::I16(v) = self { Some(v.clone()) } else { None }}
-  fn as_i32(&self) -> Option<Ref<i32>> {if let Value::I32(v) = self { Some(v.clone()) } else { None }}
-  fn as_i64(&self) -> Option<Ref<i64>> {if let Value::I64(v) = self { Some(v.clone()) } else { None }}
-  fn as_i128(&self) -> Option<Ref<i128>> {if let Value::I128(v) = self { Some(v.clone()) } else { None }}
-  fn as_f32(&self) -> Option<Ref<f32>> {if let Value::F32(v) = self { Some(new_ref(v.borrow().0)) } else { None }}
-  fn as_f64(&self) -> Option<Ref<f64>> {if let Value::F64(v) = self { Some(new_ref(v.borrow().0)) } else { None }}
-  fn as_vecf64(&self) -> Option<Vec<F64>> {if let Value::MatrixF64(v) = self { Some(v.as_vec()) } else { None }}
-  fn as_vecf32(&self) -> Option<Vec<F32>> {if let Value::MatrixF32(v) = self { Some(v.as_vec()) } else { None }}
-  fn as_vecbool(&self) -> Option<Vec<bool>> {if let Value::MatrixBool(v) = self { Some(v.as_vec()) } else { None }}
-  fn as_vecu8(&self) -> Option<Vec<u8>> {if let Value::MatrixU8(v) = self { Some(v.as_vec()) } else { None }}
-  fn as_vecu16(&self) -> Option<Vec<u16>> {if let Value::MatrixU16(v) = self { Some(v.as_vec()) } else { None }}
-  fn as_vecu32(&self) -> Option<Vec<u32>> {if let Value::MatrixU32(v) = self { Some(v.as_vec()) } else { None }}
-  fn as_vecu64(&self) -> Option<Vec<u64>> {if let Value::MatrixU64(v) = self { Some(v.as_vec()) } else { None }}
-  fn as_vecu128(&self) -> Option<Vec<u128>> {if let Value::MatrixU128(v) = self { Some(v.as_vec()) } else { None }}
-  fn as_veci8(&self) -> Option<Vec<i8>> {if let Value::MatrixI8(v) = self { Some(v.as_vec()) } else { None }}
-  fn as_veci16(&self) -> Option<Vec<i16>> {if let Value::MatrixI16(v) = self { Some(v.as_vec()) } else { None }}
-  fn as_veci32(&self) -> Option<Vec<i32>> {if let Value::MatrixI32(v) = self { Some(v.as_vec()) } else { None }}
-  fn as_veci64(&self) -> Option<Vec<i64>> {if let Value::MatrixI64(v) = self { Some(v.as_vec()) } else { None }}
-  fn as_veci128(&self) -> Option<Vec<i128>> {if let Value::MatrixI128(v) = self { Some(v.as_vec()) } else { None }}
+  fn as_u8(&self) -> Option<Ref<u8>> {if let Value::U8(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_u8() } else { None }}
+  fn as_u16(&self) -> Option<Ref<u16>> {if let Value::U16(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_u16() } else { None }}
+  fn as_u32(&self) -> Option<Ref<u32>> {if let Value::U32(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_u32() } else { None }}
+  fn as_u64(&self) -> Option<Ref<u64>> {if let Value::U64(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_u64() } else { None }}
+  fn as_u128(&self) -> Option<Ref<u128>> {if let Value::U128(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_u128() } else { None }}
+  fn as_i8(&self) -> Option<Ref<i8>> {if let Value::I8(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_i8() } else { None }}
+  fn as_i16(&self) -> Option<Ref<i16>> {if let Value::I16(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_i16() } else { None }}
+  fn as_i32(&self) -> Option<Ref<i32>> {if let Value::I32(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_i32() } else { None }}
+  fn as_i64(&self) -> Option<Ref<i64>> {if let Value::I64(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_i64() } else { None }}
+  fn as_i128(&self) -> Option<Ref<i128>> {if let Value::I128(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_i128() } else { None }}
+  fn as_f32(&self) -> Option<Ref<f32>> {if let Value::F32(v) = self { Some(new_ref(v.borrow().0)) } else if let Value::MutableReference(val) = self { val.borrow().as_f32() } else { None }}
+  fn as_f64(&self) -> Option<Ref<f64>> {if let Value::F64(v) = self { Some(new_ref(v.borrow().0)) } else if let Value::MutableReference(val) = self { val.borrow().as_f64() } else { None }}
+  fn as_vecf64(&self) -> Option<Vec<F64>> {if let Value::MatrixF64(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf64() } else { None }}
+  fn as_vecf32(&self) -> Option<Vec<F32>> {if let Value::MatrixF32(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf32() } else { None }}
+  fn as_vecbool(&self) -> Option<Vec<bool>> {if let Value::MatrixBool(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecbool() } else { None }}
+  fn as_vecu8(&self) -> Option<Vec<u8>> {if let Value::MatrixU8(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu8() } else { None }}
+  fn as_vecu16(&self) -> Option<Vec<u16>> {if let Value::MatrixU16(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu16() } else { None }}
+  fn as_vecu32(&self) -> Option<Vec<u32>> {if let Value::MatrixU32(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu32() } else { None }}
+  fn as_vecu64(&self) -> Option<Vec<u64>> {if let Value::MatrixU64(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu64() } else { None }}
+  fn as_vecu128(&self) -> Option<Vec<u128>> {if let Value::MatrixU128(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu128() } else { None }}
+  fn as_veci8(&self) -> Option<Vec<i8>> {if let Value::MatrixI8(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_veci8() } else { None }}
+  fn as_veci16(&self) -> Option<Vec<i16>> {if let Value::MatrixI16(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_veci16() } else { None }}
+  fn as_veci32(&self) -> Option<Vec<i32>> {if let Value::MatrixI32(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_veci32() } else { None }}
+  fn as_veci64(&self) -> Option<Vec<i64>> {if let Value::MatrixI64(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_veci64() } else { None }}
+  fn as_veci128(&self) -> Option<Vec<i128>> {if let Value::MatrixI128(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_veci128() } else { None }}
   
   fn as_usize(&self) -> Option<usize> {
     match self {
@@ -1875,8 +1875,11 @@ impl NativeFunctionCompiler for MathCos {
     match &arguments[0] {
       Value::F64(val) =>
         Ok(Box::new(MathCosScalar{val: val.clone(), out: new_ref(F64(0.0))})),
-      x => 
-        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+      Value::MutableReference(val) => match &*val.borrow() {
+        Value::F64(val) => Ok(Box::new(MathCosScalar{val: val.clone(), out: new_ref(F64(0.0))})),
+        x => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})  
+      }
+      x =>Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
     }
   }
 }
@@ -1911,8 +1914,11 @@ impl NativeFunctionCompiler for MathSin {
     match &arguments[0] {
       Value::F64(val) =>
         Ok(Box::new(MathSinScalar{val: val.clone(), out: new_ref(F64(0.0))})),
-      x => 
-        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+      Value::MutableReference(val) => match &*val.borrow() {
+        Value::F64(val) => Ok(Box::new(MathSinScalar{val: val.clone(), out: new_ref(F64(0.0))})),
+        x => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})  
+      }
+      x =>Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
     }
   }
 }
@@ -2218,27 +2224,105 @@ impl NativeFunctionCompiler for MathSub {
 }
 
 // Mul ------------------------------------------------------------------------
+macro_rules! impl_mul_fxn_scalar_rhs {
+  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      lhs: Ref<$arg1_type>,
+      rhs: Ref<$arg2_type>,
+      out: Ref<$out_type>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + Mul<Output = T> + PartialEq + MulAssign + Zero + One + 'static,
+      Ref<$out_type>: ToValue
+    {
+      fn solve(&self) {
+        let lhs_ptr = self.lhs.as_ptr();
+        let rhs_ptr = self.rhs.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        unsafe { 
+          *out_ptr = (*rhs_ptr).clone() * *lhs_ptr;
+        }
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }
+  };
+}
+macro_rules! impl_mul_fxn_scalar_lhs {
+  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      lhs: Ref<$arg1_type>,
+      rhs: Ref<$arg2_type>,
+      out: Ref<$out_type>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + Mul<Output = T> + PartialEq + MulAssign + Zero + One + 'static,
+      Ref<$out_type>: ToValue
+    {
+      fn solve(&self) {
+        let lhs_ptr = self.lhs.as_ptr();
+        let rhs_ptr = self.rhs.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        unsafe { 
+          *out_ptr = (*lhs_ptr).clone() * *rhs_ptr; 
+        }
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }
+  };
+}
 
-#[derive(Debug)]
-struct MulScalar<T> {
-  lhs: Ref<T>,
-  rhs: Ref<T>,
-  out: Ref<T>,
+impl_mul_fxn_scalar_rhs!(MulSM2x3, T, Matrix2x3<T>, Matrix2x3<T>);
+impl_mul_fxn_scalar_rhs!(MulSM2, T, Matrix2<T>, Matrix2<T>);
+impl_mul_fxn_scalar_rhs!(MulSM3, T, Matrix3<T>, Matrix3<T>);
+impl_mul_fxn_scalar_rhs!(MulSRv2, T, RowVector2<T>, RowVector2<T>);
+impl_mul_fxn_scalar_rhs!(MulSRv3, T, RowVector3<T>, RowVector3<T>);
+impl_mul_fxn_scalar_rhs!(MulSRv4, T, RowVector4<T>, RowVector4<T>);
+impl_mul_fxn_scalar_rhs!(MulSRvD, T, RowDVector<T>, RowDVector<T>);
+impl_mul_fxn_scalar_rhs!(MulSVD, T, DVector<T>, DVector<T>);
+impl_mul_fxn_scalar_rhs!(MulSMD, T, DMatrix<T>, DMatrix<T>);
+
+impl_mul_fxn_scalar_lhs!(MulM2x3S, Matrix2x3<T>, T, Matrix2x3<T>);
+impl_mul_fxn_scalar_lhs!(MulM2S, Matrix2<T>, T, Matrix2<T>);
+impl_mul_fxn_scalar_lhs!(MulM3S, Matrix3<T>, T, Matrix3<T>);
+impl_mul_fxn_scalar_lhs!(MulRv2S, RowVector2<T>, T, RowVector2<T>);
+impl_mul_fxn_scalar_lhs!(MulRv3S, RowVector3<T>, T, RowVector3<T>);
+impl_mul_fxn_scalar_lhs!(MulRv4S, RowVector4<T>, T, RowVector4<T>);
+impl_mul_fxn_scalar_lhs!(MulRvDS, RowDVector<T>, T, RowDVector<T>);
+impl_mul_fxn_scalar_lhs!(MulVDS, DVector<T>, T, DVector<T>);
+impl_mul_fxn_scalar_lhs!(MulMDS, DMatrix<T>, T, DMatrix<T>);
+
+macro_rules! impl_mul_fxn {
+  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      lhs: Ref<$arg1_type>,
+      rhs: Ref<$arg2_type>,
+      out: Ref<$out_type>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + Mul<Output = T> + PartialEq + MulAssign + 'static,
+      Ref<$out_type>: ToValue
+    {
+      fn solve(&self) {
+        let lhs_ptr = self.lhs.as_ptr();
+        let rhs_ptr = self.rhs.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        unsafe { *out_ptr = *lhs_ptr * *rhs_ptr; }
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }
+  };
 }
-impl<T> MechFunction for MulScalar<T>
-where
-  T: Copy + Debug + Clone + Sync + Send + Mul<Output = T> + PartialEq + MulAssign + Zero + One + 'static,
-  Ref<T>: ToValue
-{
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe { *out_ptr = *lhs_ptr * *rhs_ptr; }
-  }
-  fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
-}
+
+impl_mul_fxn!(MulScalar, T, T, T);
 
 macro_rules! impl_mul_fxn_dynamic {
   ($struct_name:ident, $arg_type:ty) => {
@@ -2281,16 +2365,22 @@ macro_rules! generate_mul_match_arms {
       $(
         $(
           (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
-            Ok(Box::new(MulScalar { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($target_type::zero()) }))
+            Ok(Box::new(MulScalar{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($target_type::zero()) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$lhs_type(rhs)) => {
+            Ok(Box::new(MulRv3S{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($target_type::zero())) }))
+          },
+          (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
+            Ok(Box::new(MulSRv3{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($target_type::zero())) }))
           },
           (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
-            Ok(Box::new(MulRv4Rv4 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element($target_type::zero())) }))
+            Ok(Box::new(MulRv4Rv4{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element($target_type::zero())) }))
           },
           (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
-            Ok(Box::new(MulRv3Rv3 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($target_type::zero())) }))
+            Ok(Box::new(MulRv3Rv3{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($target_type::zero())) }))
           },
           (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
-            Ok(Box::new(MulRv2Rv2 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element($target_type::zero())) }))
+            Ok(Box::new(MulRv2Rv2{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element($target_type::zero())) }))
           },
           (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
             Ok(Box::new(MulM2M2{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::zero()))}))
