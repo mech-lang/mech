@@ -473,6 +473,20 @@ impl_to_value_matrix!(
   Matrix3x2, MatrixF32, F32,
   Matrix3x2, MatrixF64, F64,
 
+  Matrix1, MatrixBool, bool,
+  Matrix1, MatrixI8, i8,
+  Matrix1, MatrixI16, i16,
+  Matrix1, MatrixI32, i32,
+  Matrix1, MatrixI64, i64,
+  Matrix1, MatrixI128, i128,
+  Matrix1, MatrixU8, u8,
+  Matrix1, MatrixU16, u16,
+  Matrix1, MatrixU32, u32,
+  Matrix1, MatrixU64, u64,
+  Matrix1, MatrixU128, u128,
+  Matrix1, MatrixF32, F32,
+  Matrix1, MatrixF64, F64,
+
   Matrix2, MatrixBool, bool,
   Matrix2, MatrixI8, i8,
   Matrix2, MatrixI16, i16,
@@ -500,6 +514,20 @@ impl_to_value_matrix!(
   Matrix3, MatrixU128, u128,
   Matrix3, MatrixF32, F32,
   Matrix3, MatrixF64, F64,
+
+  Matrix4, MatrixBool, bool,
+  Matrix4, MatrixI8, i8,
+  Matrix4, MatrixI16, i16,
+  Matrix4, MatrixI32, i32,
+  Matrix4, MatrixI64, i64,
+  Matrix4, MatrixI128, i128,
+  Matrix4, MatrixU8, u8,
+  Matrix4, MatrixU16, u16,
+  Matrix4, MatrixU32, u32,
+  Matrix4, MatrixU64, u64,
+  Matrix4, MatrixU128, u128,
+  Matrix4, MatrixF32, F32,
+  Matrix4, MatrixF64, F64,
 
   Vector2, MatrixBool, bool,
   Vector2, MatrixI8, i8,
@@ -1691,7 +1719,7 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
       FormulaOperator::MulDiv(MulDivOp::Mul) => MathMul{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::MulDiv(MulDivOp::Div) => MathDiv{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Exponent(ExponentOp::Exp) => MathExp{}.compile(&vec![lhs,rhs])?,
-      FormulaOperator::Vec(VecOp::MatMul) => MatrixMul{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::Vec(VecOp::MatMul) => MatrixMatMul{}.compile(&vec![lhs,rhs])?,
       //FormulaOperator::Comparison(ComparisonOp::Equal) => CompareEqual{}.compile(&vec![lhs,rhs])?,
       //FormulaOperator::Comparison(ComparisonOp::NotEqual) => CompareNotEqual{}.compile(&vec![lhs,rhs])?,
       //FormulaOperator::Comparison(ComparisonOp::LessThanEqual) => CompareLessThanEqual{}.compile(&vec![lhs,rhs])?,
@@ -3043,42 +3071,148 @@ impl NativeFunctionCompiler for CompareLessThan {
 // MatMul ---------------------------------------------------------------------
 
 #[derive(Debug)]
-struct MatMulM2M2 {
-  lhs: Ref<Matrix2<i64>>,
-  rhs: Ref<Matrix2<i64>>,
-  out: Ref<Matrix2<i64>>,
+struct MatMulScalar<T> {
+  lhs: Ref<T>,
+  rhs: Ref<T>,
+  out: Ref<T>,
 }
-
-impl MechFunction for MatMulM2M2 {
+impl<T> MechFunction for MatMulScalar<T>
+where
+  T: Copy + Debug + Clone + Sync + Send + Mul<Output = T> + PartialEq + MulAssign + Zero + One + 'static,
+  Ref<T>: ToValue
+{
   fn solve(&self) {
     let lhs_ptr = self.lhs.as_ptr();
     let rhs_ptr = self.rhs.as_ptr();
     let out_ptr = self.out.as_ptr();
-    unsafe{ *out_ptr = *lhs_ptr * *rhs_ptr;}
+    unsafe { *out_ptr = *lhs_ptr * *rhs_ptr; }
   }
-  fn out(&self) -> Value {
-    Value::MatrixI64(Matrix::<i64>::Matrix2(self.out.clone()))
-  }
-  fn to_string(&self) -> String { format!("{:?}", self)}
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
-pub struct MatrixMul {}
+macro_rules! impl_matmul_fxn_dynamic {
+  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      lhs: Ref<$arg1_type>,
+      rhs: Ref<$arg2_type>,
+      out: Ref<$out_type>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + Zero + One + Mul<Output = T> + Add<Output = T> + MulAssign + AddAssign + PartialEq  + 'static,
+      Ref<$out_type>: ToValue
+    {
+      fn solve(&self) {
+        let lhs_ptr = self.lhs.as_ptr();
+        let rhs_ptr = self.rhs.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        unsafe { (*lhs_ptr).mul_to(&*rhs_ptr,&mut *out_ptr); }
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }
+  };
+}
 
-impl NativeFunctionCompiler for MatrixMul {
+impl_matmul_fxn_dynamic!(MatMulM2x3M3x2, Matrix2x3<T>, Matrix3x2<T>, Matrix2<T>);
+impl_matmul_fxn_dynamic!(MatMulM2M2, Matrix2<T>, Matrix2<T>, Matrix2<T>);
+impl_matmul_fxn_dynamic!(MatMulM3M3, Matrix3<T>, Matrix3<T>, Matrix3<T>);
+impl_matmul_fxn_dynamic!(MatMulRv2V2, RowVector2<T>,Vector2<T>,Matrix1<T>);
+impl_matmul_fxn_dynamic!(MatMulRv3V3, RowVector3<T>,Vector3<T>,Matrix1<T>);
+impl_matmul_fxn_dynamic!(MatMulRv4V4, RowVector4<T>,Vector4<T>,Matrix1<T>);
+impl_matmul_fxn_dynamic!(MatMulV2Rv2, Vector2<T>, RowVector2<T>, Matrix2<T>);
+impl_matmul_fxn_dynamic!(MatMulV3Rv3, Vector3<T>, RowVector3<T>, Matrix3<T>);
+impl_matmul_fxn_dynamic!(MatMulV4Rv4, Vector4<T>, RowVector4<T>, Matrix4<T>);
+impl_matmul_fxn_dynamic!(MatMulRvDVD, RowDVector<T>, DVector<T>, Matrix1<T>);
+impl_matmul_fxn_dynamic!(MatMulVDRvD, DVector<T>,RowDVector<T>,DMatrix<T>);
+impl_matmul_fxn_dynamic!(MatMulMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>);
+
+macro_rules! generate_matmul_match_arms {
+  ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
+    match $arg {
+      $(
+        $(
+          (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
+            Ok(Box::new(MatMulScalar { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($target_type::zero()) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Vector4(rhs))) => {
+            Ok(Box::new(MatMulRv4V4 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Matrix1::from_element($target_type::zero())) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Vector3(rhs))) => {
+            Ok(Box::new(MatMulRv3V3 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Matrix1::from_element($target_type::zero())) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Vector2(rhs))) => {
+            Ok(Box::new(MatMulRv2V2 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Matrix1::from_element($target_type::zero())) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
+            Ok(Box::new(MatMulM2M2{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::zero()))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
+            Ok(Box::new(MatMulM3M3{lhs, rhs, out: new_ref(Matrix3::from_element($target_type::zero()))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(rhs))) => {
+            Ok(Box::new(MatMulM2x3M3x2{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::zero()))}))
+          },          
+          (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => {
+            let length = {lhs.borrow().len()};
+            Ok(Box::new(MatMulRvDVD{lhs, rhs, out: new_ref(Matrix1::from_element($target_type::zero()))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
+            let rows = {lhs.borrow().len()};
+            let cols = {rhs.borrow().len()};
+            Ok(Box::new(MatMulVDRvD{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::zero()))}))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DMatrix(rhs))) => {
+            let (rows,_) = {lhs.borrow().shape()};
+            let (_,cols) = {rhs.borrow().shape()};
+            Ok(Box::new(MatMulMDMD{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::zero()))}))
+          },
+        )+
+      )+
+      x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+    }
+  }
+}
+
+fn generate_matmul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  generate_matmul_match_arms!(
+    (lhs_value, rhs_value),
+    I8, I8 => MatrixI8, i8;
+    I16, I16 => MatrixI16, i16;
+    I32, I32 => MatrixI32, i32;
+    I64, I64 => MatrixI64, i64;
+    I128, I128 => MatrixI128, i128;
+    U8, U8 => MatrixU8, u8;
+    U16, U16 => MatrixU16, u16;
+    U32, U32 => MatrixU32, u32;
+    U64, U64 => MatrixU64, u64;
+    U128, U128 => MatrixU128, u128;
+    F32, F32 => MatrixF32, F32;
+    F64, F64 => MatrixF64, F64;
+  )
+}
+
+pub struct MatrixMatMul {}
+
+impl NativeFunctionCompiler for MatrixMatMul {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
-    match (arguments[0].clone(), arguments[1].clone()) {
-      (Value::MatrixI64(Matrix::<i64>::Matrix2(lhs)), Value::MatrixI64(Matrix::<i64>::Matrix2(rhs))) => 
-        Ok(Box::new(MatMulM2M2{lhs,rhs,out: new_ref(Matrix2::from_element(0))})),
-      (Value::MutableReference(lhs), Value::MutableReference(rhs)) => match (&*lhs.borrow(),&*rhs.borrow()) {
-        (Value::MatrixI64(Matrix::<i64>::Matrix2(lhs)), Value::MatrixI64(Matrix::<i64>::Matrix2(rhs))) =>
-          Ok(Box::new(MatMulM2M2{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Matrix2::from_element(0))})),
-        _ => todo!(),
-      } 
-      x => 
-        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    let lhs_value = arguments[0].clone();
+    let rhs_value = arguments[1].clone();
+    match generate_matmul_fxn(lhs_value.clone(), rhs_value.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match (lhs_value,rhs_value) {
+          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {generate_matmul_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
+          (lhs_value,Value::MutableReference(rhs)) => { generate_matmul_fxn(lhs_value.clone(), rhs.borrow().clone())}
+          (Value::MutableReference(lhs),rhs_value) => { generate_matmul_fxn(lhs.borrow().clone(), rhs_value.clone()) }
+          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
     }
   }
 }
@@ -3309,8 +3443,11 @@ impl NativeFunctionCompiler for RangeInclusive {
   }
 }
 
-// Convert ------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// Type Conversion Library
+// ----------------------------------------------------------------------------
 
+// Convert --------------------------------------------------------------------
 
 #[derive(Debug)]
 struct ConvertScalar<T, U> {
