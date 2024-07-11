@@ -1905,7 +1905,7 @@ macro_rules! mul_scalar_rhs_op {
   };
 }
 
-macro_rules! impl_scalar_binop {
+macro_rules! impl_binop {
   ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
     #[derive(Debug)]
     struct $struct_name<T> {
@@ -1936,43 +1936,43 @@ macro_rules! impl_scalar_binop {
 }
 
 macro_rules! generate_binop_match_arms {
-  ($lib:ident, $arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
+  ($lib:ident, $arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr),+);+ $(;)?) => {
     paste!{
       match $arg {
         $(
           $(
             (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
-              Ok(Box::new([<$lib Scalar>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($target_type::zero()) }))
+              Ok(Box::new([<$lib Scalar>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($default) }))
             },
             (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
-              Ok(Box::new([<$lib M2M2>]{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::zero()))}))
+              Ok(Box::new([<$lib M2M2>]{lhs, rhs, out: new_ref(Matrix2::from_element($default))}))
             },
             (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
-              Ok(Box::new([<$lib M3M3>]{lhs, rhs, out: new_ref(Matrix3::from_element($target_type::zero()))}))
+              Ok(Box::new([<$lib M3M3>]{lhs, rhs, out: new_ref(Matrix3::from_element($default))}))
             },
             (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
-              Ok(Box::new([<$lib R2R2>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element($target_type::zero())) }))
+              Ok(Box::new([<$lib R2R2>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element($default)) }))
             },
             (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
-              Ok(Box::new([<$lib R3R3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($target_type::zero())) }))
+              Ok(Box::new([<$lib R3R3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($default)) }))
             },
             (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
-              Ok(Box::new([<$lib R4R4>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element($target_type::zero())) }))
+              Ok(Box::new([<$lib R4R4>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element($default)) }))
             },
             (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
-              Ok(Box::new([<$lib M2x3M2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($target_type::zero()))}))
+              Ok(Box::new([<$lib M2x3M2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($default))}))
             },          
             (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
               let length = {lhs.borrow().len()};
-              Ok(Box::new([<$lib RDRD>]{lhs, rhs, out: new_ref(RowDVector::from_element(length,$target_type::zero()))}))
+              Ok(Box::new([<$lib RDRD>]{lhs, rhs, out: new_ref(RowDVector::from_element(length,$default))}))
             },
             (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => {
               let length = {lhs.borrow().len()};
-              Ok(Box::new([<$lib VDVD>]{lhs, rhs, out: new_ref(DVector::from_element(length,$target_type::zero()))}))
+              Ok(Box::new([<$lib VDVD>]{lhs, rhs, out: new_ref(DVector::from_element(length,$default))}))
             },
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DMatrix(rhs))) => {
               let (rows,cols) = {lhs.borrow().shape()};
-              Ok(Box::new([<$lib MDMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::zero()))}))
+              Ok(Box::new([<$lib MDMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))}))
             },
           )+
         )+
@@ -2062,33 +2062,33 @@ impl NativeFunctionCompiler for MathSin {
 
 // Add ------------------------------------------------------------------------
 
-impl_scalar_binop!(AddScalar, T,T,T, add_op);
-impl_scalar_binop!(AddM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>, add_op);
-impl_scalar_binop!(AddM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>, add_op);
-impl_scalar_binop!(AddM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>, add_op);
-impl_scalar_binop!(AddR2R2, RowVector2<T>, RowVector2<T>, RowVector2<T>, add_op);
-impl_scalar_binop!(AddR3R3, RowVector3<T>, RowVector3<T>, RowVector3<T>, add_op);
-impl_scalar_binop!(AddR4R4, RowVector4<T>, RowVector4<T>, RowVector4<T>, add_op);
-impl_scalar_binop!(AddRDRD, RowDVector<T>, RowDVector<T>, RowDVector<T>, addto_op);
-impl_scalar_binop!(AddVDVD, DVector<T>,DVector<T>,DVector<T>, addto_op);
-impl_scalar_binop!(AddMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>, addto_op);
+impl_binop!(AddScalar, T,T,T, add_op);
+impl_binop!(AddM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>, add_op);
+impl_binop!(AddM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>, add_op);
+impl_binop!(AddM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>, add_op);
+impl_binop!(AddR2R2, RowVector2<T>, RowVector2<T>, RowVector2<T>, add_op);
+impl_binop!(AddR3R3, RowVector3<T>, RowVector3<T>, RowVector3<T>, add_op);
+impl_binop!(AddR4R4, RowVector4<T>, RowVector4<T>, RowVector4<T>, add_op);
+impl_binop!(AddRDRD, RowDVector<T>, RowDVector<T>, RowDVector<T>, addto_op);
+impl_binop!(AddVDVD, DVector<T>,DVector<T>,DVector<T>, addto_op);
+impl_binop!(AddMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>, addto_op);
 
 fn generate_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   generate_binop_match_arms!(
     Add,
     (lhs_value, rhs_value),
-    I8, I8 => MatrixI8, i8;
-    I16, I16 => MatrixI16, i16;
-    I32, I32 => MatrixI32, i32;
-    I64, I64 => MatrixI64, i64;
-    I128, I128 => MatrixI128, i128;
-    U8, U8 => MatrixU8, u8;
-    U16, U16 => MatrixU16, u16;
-    U32, U32 => MatrixU32, u32;
-    U64, U64 => MatrixU64, u64;
-    U128, U128 => MatrixU128, u128;
-    F32, F32 => MatrixF32, F32;
-    F64, F64 => MatrixF64, F64;
+    I8,   I8   => MatrixI8,   i8,   i8::zero();
+    I16,  I16  => MatrixI16,  i16,  i16::zero();
+    I32,  I32  => MatrixI32,  i32,  i32::zero();
+    I64,  I64  => MatrixI64,  i64,  i64::zero();
+    I128, I128 => MatrixI128, i128, i128::zero();
+    U8,   U8   => MatrixU8,   u8,   u8::zero();
+    U16,  U16  => MatrixU16,  u16,  u16::zero();
+    U32,  U32  => MatrixU32,  u32,  u32::zero();
+    U64,  U64  => MatrixU64,  u64,  u64::zero();
+    U128, U128 => MatrixU128, u128, u128::zero();
+    F32,  F32  => MatrixF32,  F32,  F32::zero();
+    F64,  F64  => MatrixF64,  F64,  F64::zero();
   )
 }
 
@@ -2117,33 +2117,33 @@ impl NativeFunctionCompiler for MathAdd {
 
 // Sub ------------------------------------------------------------------------
 
-impl_scalar_binop!(SubScalar, T,T,T, sub_op);
-impl_scalar_binop!(SubM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>, sub_op);
-impl_scalar_binop!(SubM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>, sub_op);
-impl_scalar_binop!(SubM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>, sub_op);
-impl_scalar_binop!(SubR2R2, RowVector2<T>,RowVector2<T>,RowVector2<T>, sub_op);
-impl_scalar_binop!(SubR3R3, RowVector3<T>,RowVector3<T>,RowVector3<T>, sub_op);
-impl_scalar_binop!(SubR4R4, RowVector4<T>,RowVector4<T>,RowVector4<T>, sub_op);
-impl_scalar_binop!(SubRDRD, RowDVector<T>,RowDVector<T>,RowDVector<T>, subto_op);
-impl_scalar_binop!(SubVDVD, DVector<T>,DVector<T>,DVector<T>, subto_op);
-impl_scalar_binop!(SubMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>, subto_op);
+impl_binop!(SubScalar, T,T,T, sub_op);
+impl_binop!(SubM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>, sub_op);
+impl_binop!(SubM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>, sub_op);
+impl_binop!(SubM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>, sub_op);
+impl_binop!(SubR2R2, RowVector2<T>,RowVector2<T>,RowVector2<T>, sub_op);
+impl_binop!(SubR3R3, RowVector3<T>,RowVector3<T>,RowVector3<T>, sub_op);
+impl_binop!(SubR4R4, RowVector4<T>,RowVector4<T>,RowVector4<T>, sub_op);
+impl_binop!(SubRDRD, RowDVector<T>,RowDVector<T>,RowDVector<T>, subto_op);
+impl_binop!(SubVDVD, DVector<T>,DVector<T>,DVector<T>, subto_op);
+impl_binop!(SubMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>, subto_op);
 
 fn generate_sub_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   generate_binop_match_arms!(
     Sub,
     (lhs_value, rhs_value),
-    I8, I8 => MatrixI8, i8;
-    I16, I16 => MatrixI16, i16;
-    I32, I32 => MatrixI32, i32;
-    I64, I64 => MatrixI64, i64;
-    I128, I128 => MatrixI128, i128;
-    U8, U8 => MatrixU8, u8;
-    U16, U16 => MatrixU16, u16;
-    U32, U32 => MatrixU32, u32;
-    U64, U64 => MatrixU64, u64;
-    U128, U128 => MatrixU128, u128;
-    F32, F32 => MatrixF32, F32;
-    F64, F64 => MatrixF64, F64;
+    I8,   I8   => MatrixI8,   i8,   i8::zero();
+    I16,  I16  => MatrixI16,  i16,  i16::zero();
+    I32,  I32  => MatrixI32,  i32,  i32::zero();
+    I64,  I64  => MatrixI64,  i64,  i64::zero();
+    I128, I128 => MatrixI128, i128, i128::zero();
+    U8,   U8   => MatrixU8,   u8,   u8::zero();
+    U16,  U16  => MatrixU16,  u16,  u16::zero();
+    U32,  U32  => MatrixU32,  u32,  u32::zero();
+    U64,  U64  => MatrixU64,  u64,  u64::zero();
+    U128, U128 => MatrixU128, u128, u128::zero();
+    F32,  F32  => MatrixF32,  F32,  F32::zero();
+    F64,  F64  => MatrixF64,  F64,  F64::zero();
   )
 }
 
@@ -2172,51 +2172,51 @@ impl NativeFunctionCompiler for MathSub {
 
 // add ------------------------------------------------------------------------
 
-impl_scalar_binop!(MulScalar, T,T,T, mul_op);
-impl_scalar_binop!(MulSM2x3, T, Matrix2x3<T>, Matrix2x3<T>,mul_scalar_rhs_op);
-impl_scalar_binop!(MulSM2, T, Matrix2<T>, Matrix2<T>,mul_scalar_rhs_op);
-impl_scalar_binop!(MulSM3, T, Matrix3<T>, Matrix3<T>,mul_scalar_rhs_op);
-impl_scalar_binop!(MulSRv2, T, RowVector2<T>, RowVector2<T>,mul_scalar_rhs_op);
-impl_scalar_binop!(MulSRv3, T, RowVector3<T>, RowVector3<T>,mul_scalar_rhs_op);
-impl_scalar_binop!(MulSRv4, T, RowVector4<T>, RowVector4<T>,mul_scalar_rhs_op);
-impl_scalar_binop!(MulSRvD, T, RowDVector<T>, RowDVector<T>,mul_scalar_rhs_op);
-impl_scalar_binop!(MulSVD, T, DVector<T>, DVector<T>,mul_scalar_rhs_op);
-impl_scalar_binop!(MulSMD, T, DMatrix<T>, DMatrix<T>,mul_scalar_rhs_op);
-impl_scalar_binop!(MulM2x3S, Matrix2x3<T>, T, Matrix2x3<T>,mul_scalar_lhs_op);
-impl_scalar_binop!(MulM2S, Matrix2<T>, T, Matrix2<T>,mul_scalar_lhs_op);
-impl_scalar_binop!(MulM3S, Matrix3<T>, T, Matrix3<T>,mul_scalar_lhs_op);
-impl_scalar_binop!(MulRv2S, RowVector2<T>, T, RowVector2<T>,mul_scalar_lhs_op);
-impl_scalar_binop!(MulRv3S, RowVector3<T>, T, RowVector3<T>,mul_scalar_lhs_op);
-impl_scalar_binop!(MulRv4S, RowVector4<T>, T, RowVector4<T>,mul_scalar_lhs_op);
-impl_scalar_binop!(MulRvDS, RowDVector<T>, T, RowDVector<T>,mul_scalar_lhs_op);
-impl_scalar_binop!(MulVDS, DVector<T>, T, DVector<T>,mul_scalar_lhs_op);
-impl_scalar_binop!(MulMDS, DMatrix<T>, T, DMatrix<T>,mul_scalar_lhs_op);
-impl_scalar_binop!(MulM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>, component_mul_op);
-impl_scalar_binop!(MulM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>, component_mul_op);
-impl_scalar_binop!(MulM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>, component_mul_op);
-impl_scalar_binop!(MulR2R2, RowVector2<T>,RowVector2<T>,RowVector2<T>, component_mul_op);
-impl_scalar_binop!(MulR3R3, RowVector3<T>,RowVector3<T>,RowVector3<T>, component_mul_op);
-impl_scalar_binop!(MulR4R4, RowVector4<T>,RowVector4<T>,RowVector4<T>, component_mul_op);
-impl_scalar_binop!(MulRDRD, RowDVector<T>,RowDVector<T>,RowDVector<T>, component_mul_op);
-impl_scalar_binop!(MulVDVD, DVector<T>,DVector<T>,DVector<T>, component_mul_op);
-impl_scalar_binop!(MulMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>, component_mul_op);
+impl_binop!(MulScalar, T,T,T, mul_op);
+impl_binop!(MulSM2x3, T, Matrix2x3<T>, Matrix2x3<T>,mul_scalar_rhs_op);
+impl_binop!(MulSM2, T, Matrix2<T>, Matrix2<T>,mul_scalar_rhs_op);
+impl_binop!(MulSM3, T, Matrix3<T>, Matrix3<T>,mul_scalar_rhs_op);
+impl_binop!(MulSRv2, T, RowVector2<T>, RowVector2<T>,mul_scalar_rhs_op);
+impl_binop!(MulSRv3, T, RowVector3<T>, RowVector3<T>,mul_scalar_rhs_op);
+impl_binop!(MulSRv4, T, RowVector4<T>, RowVector4<T>,mul_scalar_rhs_op);
+impl_binop!(MulSRvD, T, RowDVector<T>, RowDVector<T>,mul_scalar_rhs_op);
+impl_binop!(MulSVD, T, DVector<T>, DVector<T>,mul_scalar_rhs_op);
+impl_binop!(MulSMD, T, DMatrix<T>, DMatrix<T>,mul_scalar_rhs_op);
+impl_binop!(MulM2x3S, Matrix2x3<T>, T, Matrix2x3<T>,mul_scalar_lhs_op);
+impl_binop!(MulM2S, Matrix2<T>, T, Matrix2<T>,mul_scalar_lhs_op);
+impl_binop!(MulM3S, Matrix3<T>, T, Matrix3<T>,mul_scalar_lhs_op);
+impl_binop!(MulRv2S, RowVector2<T>, T, RowVector2<T>,mul_scalar_lhs_op);
+impl_binop!(MulRv3S, RowVector3<T>, T, RowVector3<T>,mul_scalar_lhs_op);
+impl_binop!(MulRv4S, RowVector4<T>, T, RowVector4<T>,mul_scalar_lhs_op);
+impl_binop!(MulRvDS, RowDVector<T>, T, RowDVector<T>,mul_scalar_lhs_op);
+impl_binop!(MulVDS, DVector<T>, T, DVector<T>,mul_scalar_lhs_op);
+impl_binop!(MulMDS, DMatrix<T>, T, DMatrix<T>,mul_scalar_lhs_op);
+impl_binop!(MulM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>, component_mul_op);
+impl_binop!(MulM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>, component_mul_op);
+impl_binop!(MulM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>, component_mul_op);
+impl_binop!(MulR2R2, RowVector2<T>,RowVector2<T>,RowVector2<T>, component_mul_op);
+impl_binop!(MulR3R3, RowVector3<T>,RowVector3<T>,RowVector3<T>, component_mul_op);
+impl_binop!(MulR4R4, RowVector4<T>,RowVector4<T>,RowVector4<T>, component_mul_op);
+impl_binop!(MulRDRD, RowDVector<T>,RowDVector<T>,RowDVector<T>, component_mul_op);
+impl_binop!(MulVDVD, DVector<T>,DVector<T>,DVector<T>, component_mul_op);
+impl_binop!(MulMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>, component_mul_op);
 
 fn generate_mul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   generate_binop_match_arms!(
     Mul,
     (lhs_value, rhs_value),
-    I8, I8 => MatrixI8, i8;
-    I16, I16 => MatrixI16, i16;
-    I32, I32 => MatrixI32, i32;
-    I64, I64 => MatrixI64, i64;
-    I128, I128 => MatrixI128, i128;
-    U8, U8 => MatrixU8, u8;
-    U16, U16 => MatrixU16, u16;
-    U32, U32 => MatrixU32, u32;
-    U64, U64 => MatrixU64, u64;
-    U128, U128 => MatrixU128, u128;
-    F32, F32 => MatrixF32, F32;
-    F64, F64 => MatrixF64, F64;
+    I8,   I8   => MatrixI8,   i8,   i8::zero();
+    I16,  I16  => MatrixI16,  i16,  i16::zero();
+    I32,  I32  => MatrixI32,  i32,  i32::zero();
+    I64,  I64  => MatrixI64,  i64,  i64::zero();
+    I128, I128 => MatrixI128, i128, i128::zero();
+    U8,   U8   => MatrixU8,   u8,   u8::zero();
+    U16,  U16  => MatrixU16,  u16,  u16::zero();
+    U32,  U32  => MatrixU32,  u32,  u32::zero();
+    U64,  U64  => MatrixU64,  u64,  u64::zero();
+    U128, U128 => MatrixU128, u128, u128::zero();
+    F32,  F32  => MatrixF32,  F32,  F32::zero();
+    F64,  F64  => MatrixF64,  F64,  F64::zero();
   )
 }
 
@@ -2245,33 +2245,33 @@ impl NativeFunctionCompiler for MathMul {
 
 // Div ------------------------------------------------------------------------
 
-impl_scalar_binop!(DivScalar, T, T, T, div_op);
-impl_scalar_binop!(DivM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>,component_div_op);
-impl_scalar_binop!(DivM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>,component_div_op);
-impl_scalar_binop!(DivM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>,component_div_op);
-impl_scalar_binop!(DivR2R2, RowVector2<T>,RowVector2<T>,RowVector2<T>,component_div_op);
-impl_scalar_binop!(DivR3R3, RowVector3<T>,RowVector3<T>,RowVector3<T>,component_div_op);
-impl_scalar_binop!(DivR4R4, RowVector4<T>,RowVector4<T>,RowVector4<T>,component_div_op);
-impl_scalar_binop!(DivRDRD, RowDVector<T>,RowDVector<T>,RowDVector<T>,component_div_op);
-impl_scalar_binop!(DivVDVD, DVector<T>,DVector<T>,DVector<T>,component_div_op);
-impl_scalar_binop!(DivMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>,component_div_op);
+impl_binop!(DivScalar, T, T, T, div_op);
+impl_binop!(DivM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>,component_div_op);
+impl_binop!(DivM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>,component_div_op);
+impl_binop!(DivM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>,component_div_op);
+impl_binop!(DivR2R2, RowVector2<T>,RowVector2<T>,RowVector2<T>,component_div_op);
+impl_binop!(DivR3R3, RowVector3<T>,RowVector3<T>,RowVector3<T>,component_div_op);
+impl_binop!(DivR4R4, RowVector4<T>,RowVector4<T>,RowVector4<T>,component_div_op);
+impl_binop!(DivRDRD, RowDVector<T>,RowDVector<T>,RowDVector<T>,component_div_op);
+impl_binop!(DivVDVD, DVector<T>,DVector<T>,DVector<T>,component_div_op);
+impl_binop!(DivMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>,component_div_op);
 
 fn generate_div_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   generate_binop_match_arms!(
     Div,
     (lhs_value, rhs_value),
-    I8, I8 => MatrixI8, i8;
-    I16, I16 => MatrixI16, i16;
-    I32, I32 => MatrixI32, i32;
-    I64, I64 => MatrixI64, i64;
-    I128, I128 => MatrixI128, i128;
-    U8, U8 => MatrixU8, u8;
-    U16, U16 => MatrixU16, u16;
-    U32, U32 => MatrixU32, u32;
-    U64, U64 => MatrixU64, u64;
-    U128, U128 => MatrixU128, u128;
-    F32, F32 => MatrixF32, F32;
-    F64, F64 => MatrixF64, F64;
+    I8,   I8   => MatrixI8,   i8,   i8::zero();
+    I16,  I16  => MatrixI16,  i16,  i16::zero();
+    I32,  I32  => MatrixI32,  i32,  i32::zero();
+    I64,  I64  => MatrixI64,  i64,  i64::zero();
+    I128, I128 => MatrixI128, i128, i128::zero();
+    U8,   U8   => MatrixU8,   u8,   u8::zero();
+    U16,  U16  => MatrixU16,  u16,  u16::zero();
+    U32,  U32  => MatrixU32,  u32,  u32::zero();
+    U64,  U64  => MatrixU64,  u64,  u64::zero();
+    U128, U128 => MatrixU128, u128, u128::zero();
+    F32,  F32  => MatrixF32,  F32,  F32::zero();
+    F64,  F64  => MatrixF64,  F64,  F64::zero();
   )
 }
 
