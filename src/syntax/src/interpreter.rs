@@ -1852,33 +1852,27 @@ macro_rules! generate_binop_match_arms {
             (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
               Ok(Box::new([<$lib Scalar>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($target_type::zero()) }))
             },
-            //(Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$lhs_type(rhs)) => {
-            //  Ok(Box::new([<$lib Rv3S>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($target_type::zero())) }))
-            //},
-            //(Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
-            //  Ok(Box::new([<$lib SRv3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($target_type::zero())) }))
-            //},
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
-              Ok(Box::new([<$lib Rv4Rv4>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element($target_type::zero())) }))
-            },
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
-              Ok(Box::new([<$lib Rv3Rv3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($target_type::zero())) }))
-            },
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
-              Ok(Box::new([<$lib Rv2Rv2>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element($target_type::zero())) }))
-            },
             (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
               Ok(Box::new([<$lib M2M2>]{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::zero()))}))
             },
             (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
               Ok(Box::new([<$lib M3M3>]{lhs, rhs, out: new_ref(Matrix3::from_element($target_type::zero()))}))
             },
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
+              Ok(Box::new([<$lib R2R2>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element($target_type::zero())) }))
+            },
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
+              Ok(Box::new([<$lib R3R3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($target_type::zero())) }))
+            },
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
+              Ok(Box::new([<$lib R4R4>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element($target_type::zero())) }))
+            },
             (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
               Ok(Box::new([<$lib M2x3M2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($target_type::zero()))}))
             },          
             (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
               let length = {lhs.borrow().len()};
-              Ok(Box::new([<$lib RvDRvD>]{lhs, rhs, out: new_ref(RowDVector::from_element(length,$target_type::zero()))}))
+              Ok(Box::new([<$lib RDRD>]{lhs, rhs, out: new_ref(RowDVector::from_element(length,$target_type::zero()))}))
             },
             (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => {
               let length = {lhs.borrow().len()};
@@ -2009,9 +2003,9 @@ impl_add_fxn!(AddScalar, T);
 impl_add_fxn!(AddM2M2, Matrix2<T>);
 impl_add_fxn!(AddM3M3, Matrix3<T>);
 impl_add_fxn!(AddM2x3M2x3, Matrix2x3<T>);
-impl_add_fxn!(AddRv2Rv2, RowVector2<T>);
-impl_add_fxn!(AddRv3Rv3, RowVector3<T>);
-impl_add_fxn!(AddRv4Rv4, RowVector4<T>);
+impl_add_fxn!(AddR2R2, RowVector2<T>);
+impl_add_fxn!(AddR3R3, RowVector3<T>);
+impl_add_fxn!(AddR4R4, RowVector4<T>);
 
 macro_rules! impl_add_fxn_dynamic {
   ($struct_name:ident, $arg_type:ty) => {
@@ -2038,7 +2032,7 @@ macro_rules! impl_add_fxn_dynamic {
   };
 }
 
-impl_add_fxn_dynamic!(AddRvDRvD, RowDVector<T>);
+impl_add_fxn_dynamic!(AddRDRD, RowDVector<T>);
 impl_add_fxn_dynamic!(AddVDVD, DVector<T>);
 impl_add_fxn_dynamic!(AddMDMD, DMatrix<T>);
 
@@ -2115,9 +2109,9 @@ impl_sub_fxn!(SubScalar, T);
 impl_sub_fxn!(SubM2M2, Matrix2<T>);
 impl_sub_fxn!(SubM3M3, Matrix3<T>);
 impl_sub_fxn!(SubM2x3M2x3, Matrix2x3<T>);
-impl_sub_fxn!(SubRv2Rv2, RowVector2<T>);
-impl_sub_fxn!(SubRv3Rv3, RowVector3<T>);
-impl_sub_fxn!(SubRv4Rv4, RowVector4<T>);
+impl_sub_fxn!(SubR2R2, RowVector2<T>);
+impl_sub_fxn!(SubR3R3, RowVector3<T>);
+impl_sub_fxn!(SubR4R4, RowVector4<T>);
 
 macro_rules! impl_sub_fxn_dynamic {
   ($struct_name:ident, $arg_type:ty) => {
@@ -2144,7 +2138,7 @@ macro_rules! impl_sub_fxn_dynamic {
   };
 }
 
-impl_sub_fxn_dynamic!(SubRvDRvD, RowDVector<T>);
+impl_sub_fxn_dynamic!(SubRDRD, RowDVector<T>);
 impl_sub_fxn_dynamic!(SubVDVD, DVector<T>);
 impl_sub_fxn_dynamic!(SubMDMD, DMatrix<T>);
 
@@ -2321,10 +2315,10 @@ macro_rules! impl_mul_fxn_dynamic {
 impl_mul_fxn_dynamic!(MulM2x3M2x3, Matrix2x3<T>);
 impl_mul_fxn_dynamic!(MulM2M2, Matrix2<T>);
 impl_mul_fxn_dynamic!(MulM3M3, Matrix3<T>);
-impl_mul_fxn_dynamic!(MulRv2Rv2, RowVector2<T>);
-impl_mul_fxn_dynamic!(MulRv3Rv3, RowVector3<T>);
-impl_mul_fxn_dynamic!(MulRv4Rv4, RowVector4<T>);
-impl_mul_fxn_dynamic!(MulRvDRvD, RowDVector<T>);
+impl_mul_fxn_dynamic!(MulR2R2, RowVector2<T>);
+impl_mul_fxn_dynamic!(MulR3R3, RowVector3<T>);
+impl_mul_fxn_dynamic!(MulR4R4, RowVector4<T>);
+impl_mul_fxn_dynamic!(MulRDRD, RowDVector<T>);
 impl_mul_fxn_dynamic!(MulVDVD, DVector<T>);
 impl_mul_fxn_dynamic!(MulMDMD, DMatrix<T>);
 
@@ -2421,10 +2415,10 @@ macro_rules! impl_div_fxn_dynamic {
 impl_div_fxn_dynamic!(DivM2x3M2x3, Matrix2x3<T>);
 impl_div_fxn_dynamic!(DivM2M2, Matrix2<T>);
 impl_div_fxn_dynamic!(DivM3M3, Matrix3<T>);
-impl_div_fxn_dynamic!(DivRv2Rv2, RowVector2<T>);
-impl_div_fxn_dynamic!(DivRv3Rv3, RowVector3<T>);
-impl_div_fxn_dynamic!(DivRv4Rv4, RowVector4<T>);
-impl_div_fxn_dynamic!(DivRvDRvD, RowDVector<T>);
+impl_div_fxn_dynamic!(DivR2R2, RowVector2<T>);
+impl_div_fxn_dynamic!(DivR3R3, RowVector3<T>);
+impl_div_fxn_dynamic!(DivR4R4, RowVector4<T>);
+impl_div_fxn_dynamic!(DivRDRD, RowDVector<T>);
 impl_div_fxn_dynamic!(DivVDVD, DVector<T>);
 impl_div_fxn_dynamic!(DivMDMD, DMatrix<T>);
 
@@ -2778,13 +2772,13 @@ macro_rules! generate_compare_match_arms {
               Ok(Box::new([<$lib M2x3M2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element(false))}))
             },   
             (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
-              Ok(Box::new([<$lib Rv4Rv4>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element(false)) }))
+              Ok(Box::new([<$lib R4R4>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element(false)) }))
             },
             (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
-              Ok(Box::new([<$lib Rv3Rv3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element(false)) }))
+              Ok(Box::new([<$lib R3R3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element(false)) }))
             },
             (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
-              Ok(Box::new([<$lib Rv2Rv2>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element(false)) }))
+              Ok(Box::new([<$lib R2R2>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element(false)) }))
             },
             (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
               Ok(Box::new([<$lib M2M2>]{lhs, rhs, out: new_ref(Matrix2::from_element(false))}))
@@ -2797,7 +2791,7 @@ macro_rules! generate_compare_match_arms {
             },          
             (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
               let length = {lhs.borrow().len()};
-              Ok(Box::new([<$lib RvDRvD>]{lhs, rhs, out: new_ref(RowDVector::from_element(length,false))}))
+              Ok(Box::new([<$lib RDRD>]{lhs, rhs, out: new_ref(RowDVector::from_element(length,false))}))
             },
             (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => {
               let length = {lhs.borrow().len()};
@@ -2870,10 +2864,10 @@ macro_rules! impl_gt_fxn {
 impl_gt_fxn!(GTM2x3M2x3, Matrix2x3<T>, Matrix2x3<bool>);
 impl_gt_fxn!(GTM2M2, Matrix2<T>, Matrix2<bool>);
 impl_gt_fxn!(GTM3M3, Matrix3<T>, Matrix3<bool>);
-impl_gt_fxn!(GTRv2Rv2, RowVector2<T>, RowVector2<bool>);
-impl_gt_fxn!(GTRv3Rv3, RowVector3<T>, RowVector3<bool>);
-impl_gt_fxn!(GTRv4Rv4, RowVector4<T>, RowVector4<bool>);
-impl_gt_fxn!(GTRvDRvD, RowDVector<T>, RowDVector<bool>);
+impl_gt_fxn!(GTR2R2, RowVector2<T>, RowVector2<bool>);
+impl_gt_fxn!(GTR3R3, RowVector3<T>, RowVector3<bool>);
+impl_gt_fxn!(GTR4R4, RowVector4<T>, RowVector4<bool>);
+impl_gt_fxn!(GTRDRD, RowDVector<T>, RowDVector<bool>);
 impl_gt_fxn!(GTVDVD, DVector<T>, DVector<bool>);
 impl_gt_fxn!(GTMDMD, DMatrix<T>, DMatrix<bool>);
 
@@ -2974,10 +2968,10 @@ macro_rules! impl_lt_fxn {
 impl_lt_fxn!(LTM2x3M2x3, Matrix2x3<T>, Matrix2x3<bool>);
 impl_lt_fxn!(LTM2M2, Matrix2<T>, Matrix2<bool>);
 impl_lt_fxn!(LTM3M3, Matrix3<T>, Matrix3<bool>);
-impl_lt_fxn!(LTRv2Rv2, RowVector2<T>, RowVector2<bool>);
-impl_lt_fxn!(LTRv3Rv3, RowVector3<T>, RowVector3<bool>);
-impl_lt_fxn!(LTRv4Rv4, RowVector4<T>, RowVector4<bool>);
-impl_lt_fxn!(LTRvDRvD, RowDVector<T>, RowDVector<bool>);
+impl_lt_fxn!(LTR2R2, RowVector2<T>, RowVector2<bool>);
+impl_lt_fxn!(LTR3R3, RowVector3<T>, RowVector3<bool>);
+impl_lt_fxn!(LTR4R4, RowVector4<T>, RowVector4<bool>);
+impl_lt_fxn!(LTRDRD, RowDVector<T>, RowDVector<bool>);
 impl_lt_fxn!(LTVDVD, DVector<T>, DVector<bool>);
 impl_lt_fxn!(LTMDMD, DMatrix<T>, DMatrix<bool>);
 
