@@ -1842,6 +1842,98 @@ fn boolean(tkn: &Token) -> Value {
 // The Standard Library!
 // ============================================================================
 
+// ----------------------------------------------------------------------------
+// Math Library
+// ----------------------------------------------------------------------------
+
+macro_rules! addto_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { (*$lhs).add_to(&*$rhs,&mut *$out) }
+  };
+}
+
+macro_rules! subto_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { (*$lhs).sub_to(&*$rhs,&mut *$out) }
+  };
+}
+
+macro_rules! component_mul_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = (*$lhs).component_mul(&*$rhs); }
+  };
+}
+
+macro_rules! component_div_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = (*$lhs).component_div(&*$rhs); }
+  };
+}
+
+macro_rules! add_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = *$lhs + *$rhs; }
+  };
+}
+
+macro_rules! sub_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = *$lhs - *$rhs; }
+  };
+}
+
+macro_rules! mul_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = *$lhs * *$rhs; }
+  };
+}
+
+macro_rules! div_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = *$lhs / *$rhs; }
+  };
+}
+
+macro_rules! mul_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = (*$lhs).clone() * *$rhs; }
+  };
+}
+macro_rules! mul_scalar_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = (*$rhs).clone() * *$lhs;}
+  };
+}
+
+macro_rules! impl_scalar_binop {
+  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      lhs: Ref<$arg1_type>,
+      rhs: Ref<$arg2_type>,
+      out: Ref<$out_type>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + 'static + PartialEq +
+      Add<Output = T> + AddAssign +
+      Sub<Output = T> + SubAssign +
+      Mul<Output = T> + MulAssign +
+      Div<Output = T> + DivAssign +
+      Zero + One,
+      Ref<$out_type>: ToValue
+    {
+      fn solve(&self) {
+        let lhs_ptr = self.lhs.as_ptr();
+        let rhs_ptr = self.rhs.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        $op!(lhs_ptr,rhs_ptr,out_ptr);
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }
+  };
+}
 
 macro_rules! generate_binop_match_arms {
   ($lib:ident, $arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
@@ -1889,10 +1981,6 @@ macro_rules! generate_binop_match_arms {
     }
   }
 }
-
-// ----------------------------------------------------------------------------
-// Math Library
-// ----------------------------------------------------------------------------
 
 // Cos ------------------------------------------------------------------------
 
@@ -1974,67 +2062,16 @@ impl NativeFunctionCompiler for MathSin {
 
 // Add ------------------------------------------------------------------------
 
-macro_rules! impl_add_fxn {
-  ($struct_name:ident, $arg_type:ty) => {
-    #[derive(Debug)]
-    struct $struct_name<T> {
-      lhs: Ref<$arg_type>,
-      rhs: Ref<$arg_type>,
-      out: Ref<$arg_type>,
-    }
-    impl<T> MechFunction for $struct_name<T>
-    where
-      T: Copy + Debug + Clone + Sync + Send + Add<Output = T> + PartialEq + AddAssign + 'static,
-      Ref<$arg_type>: ToValue
-    {
-      fn solve(&self) {
-        let lhs_ptr = self.lhs.as_ptr();
-        let rhs_ptr = self.rhs.as_ptr();
-        let out_ptr = self.out.as_ptr();
-        unsafe { *out_ptr = *lhs_ptr + *rhs_ptr; }
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
-    }
-  };
-}
-
-impl_add_fxn!(AddScalar, T);
-impl_add_fxn!(AddM2M2, Matrix2<T>);
-impl_add_fxn!(AddM3M3, Matrix3<T>);
-impl_add_fxn!(AddM2x3M2x3, Matrix2x3<T>);
-impl_add_fxn!(AddR2R2, RowVector2<T>);
-impl_add_fxn!(AddR3R3, RowVector3<T>);
-impl_add_fxn!(AddR4R4, RowVector4<T>);
-
-macro_rules! impl_add_fxn_dynamic {
-  ($struct_name:ident, $arg_type:ty) => {
-    #[derive(Debug)]
-    struct $struct_name<T> {
-      lhs: Ref<$arg_type>,
-      rhs: Ref<$arg_type>,
-      out: Ref<$arg_type>,
-    }
-    impl<T> MechFunction for $struct_name<T>
-    where
-      T: Copy + Debug + Clone + Sync + Send + Add<Output = T> + PartialEq + AddAssign + 'static,
-      Ref<$arg_type>: ToValue
-    {
-      fn solve(&self) {
-        let lhs_ptr = self.lhs.as_ptr();
-        let rhs_ptr = self.rhs.as_ptr();
-        let out_ptr = self.out.as_ptr();
-        unsafe { (*lhs_ptr).add_to(&*rhs_ptr,&mut *out_ptr) }
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
-    }
-  };
-}
-
-impl_add_fxn_dynamic!(AddRDRD, RowDVector<T>);
-impl_add_fxn_dynamic!(AddVDVD, DVector<T>);
-impl_add_fxn_dynamic!(AddMDMD, DMatrix<T>);
+impl_scalar_binop!(AddScalar, T,T,T, add_op);
+impl_scalar_binop!(AddM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>, add_op);
+impl_scalar_binop!(AddM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>, add_op);
+impl_scalar_binop!(AddM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>, add_op);
+impl_scalar_binop!(AddR2R2, RowVector2<T>, RowVector2<T>, RowVector2<T>, add_op);
+impl_scalar_binop!(AddR3R3, RowVector3<T>, RowVector3<T>, RowVector3<T>, add_op);
+impl_scalar_binop!(AddR4R4, RowVector4<T>, RowVector4<T>, RowVector4<T>, add_op);
+impl_scalar_binop!(AddRDRD, RowDVector<T>, RowDVector<T>, RowDVector<T>, addto_op);
+impl_scalar_binop!(AddVDVD, DVector<T>,DVector<T>,DVector<T>, addto_op);
+impl_scalar_binop!(AddMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>, addto_op);
 
 fn generate_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   generate_binop_match_arms!(
@@ -2080,67 +2117,16 @@ impl NativeFunctionCompiler for MathAdd {
 
 // Sub ------------------------------------------------------------------------
 
-macro_rules! impl_sub_fxn {
-  ($struct_name:ident, $arg_type:ty) => {
-    #[derive(Debug)]
-    struct $struct_name<T> {
-      lhs: Ref<$arg_type>,
-      rhs: Ref<$arg_type>,
-      out: Ref<$arg_type>,
-    }
-    impl<T> MechFunction for $struct_name<T>
-    where
-      T: Copy + Debug + Clone + Sync + Send + Sub<Output = T> + PartialEq + SubAssign + 'static,
-      Ref<$arg_type>: ToValue
-    {
-      fn solve(&self) {
-        let lhs_ptr = self.lhs.as_ptr();
-        let rhs_ptr = self.rhs.as_ptr();
-        let out_ptr = self.out.as_ptr();
-        unsafe { *out_ptr = *lhs_ptr - *rhs_ptr; }
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
-    }
-  };
-}
-
-impl_sub_fxn!(SubScalar, T);
-impl_sub_fxn!(SubM2M2, Matrix2<T>);
-impl_sub_fxn!(SubM3M3, Matrix3<T>);
-impl_sub_fxn!(SubM2x3M2x3, Matrix2x3<T>);
-impl_sub_fxn!(SubR2R2, RowVector2<T>);
-impl_sub_fxn!(SubR3R3, RowVector3<T>);
-impl_sub_fxn!(SubR4R4, RowVector4<T>);
-
-macro_rules! impl_sub_fxn_dynamic {
-  ($struct_name:ident, $arg_type:ty) => {
-    #[derive(Debug)]
-    struct $struct_name<T> {
-      lhs: Ref<$arg_type>,
-      rhs: Ref<$arg_type>,
-      out: Ref<$arg_type>,
-    }
-    impl<T> MechFunction for $struct_name<T>
-    where
-      T: Copy + Debug + Clone + Sync + Send + Sub<Output = T> + PartialEq + SubAssign + 'static,
-      Ref<$arg_type>: ToValue
-    {
-      fn solve(&self) {
-        let lhs_ptr = self.lhs.as_ptr();
-        let rhs_ptr = self.rhs.as_ptr();
-        let out_ptr = self.out.as_ptr();
-        unsafe { (*lhs_ptr).sub_to(&*rhs_ptr,&mut *out_ptr) }
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
-    }
-  };
-}
-
-impl_sub_fxn_dynamic!(SubRDRD, RowDVector<T>);
-impl_sub_fxn_dynamic!(SubVDVD, DVector<T>);
-impl_sub_fxn_dynamic!(SubMDMD, DMatrix<T>);
+impl_scalar_binop!(SubScalar, T,T,T, sub_op);
+impl_scalar_binop!(SubM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>, sub_op);
+impl_scalar_binop!(SubM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>, sub_op);
+impl_scalar_binop!(SubM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>, sub_op);
+impl_scalar_binop!(SubR2R2, RowVector2<T>,RowVector2<T>,RowVector2<T>, sub_op);
+impl_scalar_binop!(SubR3R3, RowVector3<T>,RowVector3<T>,RowVector3<T>, sub_op);
+impl_scalar_binop!(SubR4R4, RowVector4<T>,RowVector4<T>,RowVector4<T>, sub_op);
+impl_scalar_binop!(SubRDRD, RowDVector<T>,RowDVector<T>,RowDVector<T>, subto_op);
+impl_scalar_binop!(SubVDVD, DVector<T>,DVector<T>,DVector<T>, subto_op);
+impl_scalar_binop!(SubMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>, subto_op);
 
 fn generate_sub_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   generate_binop_match_arms!(
@@ -2184,143 +2170,36 @@ impl NativeFunctionCompiler for MathSub {
   }
 }
 
-// Mul ------------------------------------------------------------------------
+// add ------------------------------------------------------------------------
 
-macro_rules! impl_mul_fxn {
-  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty) => {
-    #[derive(Debug)]
-    struct $struct_name<T> {
-      lhs: Ref<$arg1_type>,
-      rhs: Ref<$arg2_type>,
-      out: Ref<$out_type>,
-    }
-    impl<T> MechFunction for $struct_name<T>
-    where
-      T: Copy + Debug + Clone + Sync + Send + Mul<Output = T> + PartialEq + MulAssign + 'static,
-      Ref<$out_type>: ToValue
-    {
-      fn solve(&self) {
-        let lhs_ptr = self.lhs.as_ptr();
-        let rhs_ptr = self.rhs.as_ptr();
-        let out_ptr = self.out.as_ptr();
-        unsafe { *out_ptr = *lhs_ptr * *rhs_ptr; }
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
-    }
-  };
-}
-
-impl_mul_fxn!(MulScalar, T, T, T);
-
-macro_rules! impl_mul_fxn_scalar_rhs {
-  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty) => {
-    #[derive(Debug)]
-    struct $struct_name<T> {
-      lhs: Ref<$arg1_type>,
-      rhs: Ref<$arg2_type>,
-      out: Ref<$out_type>,
-    }
-    impl<T> MechFunction for $struct_name<T>
-    where
-      T: Copy + Debug + Clone + Sync + Send + Mul<Output = T> + PartialEq + MulAssign + Zero + One + 'static,
-      Ref<$out_type>: ToValue
-    {
-      fn solve(&self) {
-        let lhs_ptr = self.lhs.as_ptr();
-        let rhs_ptr = self.rhs.as_ptr();
-        let out_ptr = self.out.as_ptr();
-        unsafe { 
-          *out_ptr = (*rhs_ptr).clone() * *lhs_ptr;
-        }
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
-    }
-  };
-}
-
-macro_rules! impl_mul_fxn_scalar_lhs {
-  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty) => {
-    #[derive(Debug)]
-    struct $struct_name<T> {
-      lhs: Ref<$arg1_type>,
-      rhs: Ref<$arg2_type>,
-      out: Ref<$out_type>,
-    }
-    impl<T> MechFunction for $struct_name<T>
-    where
-      T: Copy + Debug + Clone + Sync + Send + Mul<Output = T> + PartialEq + MulAssign + Zero + One + 'static,
-      Ref<$out_type>: ToValue
-    {
-      fn solve(&self) {
-        let lhs_ptr = self.lhs.as_ptr();
-        let rhs_ptr = self.rhs.as_ptr();
-        let out_ptr = self.out.as_ptr();
-        unsafe { 
-          *out_ptr = (*lhs_ptr).clone() * *rhs_ptr; 
-        }
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
-    }
-  };
-}
-
-impl_mul_fxn_scalar_rhs!(MulSM2x3, T, Matrix2x3<T>, Matrix2x3<T>);
-impl_mul_fxn_scalar_rhs!(MulSM2, T, Matrix2<T>, Matrix2<T>);
-impl_mul_fxn_scalar_rhs!(MulSM3, T, Matrix3<T>, Matrix3<T>);
-impl_mul_fxn_scalar_rhs!(MulSRv2, T, RowVector2<T>, RowVector2<T>);
-impl_mul_fxn_scalar_rhs!(MulSRv3, T, RowVector3<T>, RowVector3<T>);
-impl_mul_fxn_scalar_rhs!(MulSRv4, T, RowVector4<T>, RowVector4<T>);
-impl_mul_fxn_scalar_rhs!(MulSRvD, T, RowDVector<T>, RowDVector<T>);
-impl_mul_fxn_scalar_rhs!(MulSVD, T, DVector<T>, DVector<T>);
-impl_mul_fxn_scalar_rhs!(MulSMD, T, DMatrix<T>, DMatrix<T>);
-
-impl_mul_fxn_scalar_lhs!(MulM2x3S, Matrix2x3<T>, T, Matrix2x3<T>);
-impl_mul_fxn_scalar_lhs!(MulM2S, Matrix2<T>, T, Matrix2<T>);
-impl_mul_fxn_scalar_lhs!(MulM3S, Matrix3<T>, T, Matrix3<T>);
-impl_mul_fxn_scalar_lhs!(MulRv2S, RowVector2<T>, T, RowVector2<T>);
-impl_mul_fxn_scalar_lhs!(MulRv3S, RowVector3<T>, T, RowVector3<T>);
-impl_mul_fxn_scalar_lhs!(MulRv4S, RowVector4<T>, T, RowVector4<T>);
-impl_mul_fxn_scalar_lhs!(MulRvDS, RowDVector<T>, T, RowDVector<T>);
-impl_mul_fxn_scalar_lhs!(MulVDS, DVector<T>, T, DVector<T>);
-impl_mul_fxn_scalar_lhs!(MulMDS, DMatrix<T>, T, DMatrix<T>);
-
-macro_rules! impl_mul_fxn_dynamic {
-  ($struct_name:ident, $arg_type:ty) => {
-    #[derive(Debug)]
-    struct $struct_name<T> {
-      lhs: Ref<$arg_type>,
-      rhs: Ref<$arg_type>,
-      out: Ref<$arg_type>,
-    }
-    impl<T> MechFunction for $struct_name<T>
-    where
-      T: Copy + Debug + Clone + Sync + Send + Mul<Output = T> + PartialEq + MulAssign + 'static,
-      Ref<$arg_type>: ToValue
-    {
-      fn solve(&self) {
-        let lhs_ptr = self.lhs.as_ptr();
-        let rhs_ptr = self.rhs.as_ptr();
-        let out_ptr = self.out.as_ptr();
-        unsafe { *out_ptr = (*lhs_ptr).component_mul(&*rhs_ptr); }
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
-    }
-  };
-}
-
-impl_mul_fxn_dynamic!(MulM2x3M2x3, Matrix2x3<T>);
-impl_mul_fxn_dynamic!(MulM2M2, Matrix2<T>);
-impl_mul_fxn_dynamic!(MulM3M3, Matrix3<T>);
-impl_mul_fxn_dynamic!(MulR2R2, RowVector2<T>);
-impl_mul_fxn_dynamic!(MulR3R3, RowVector3<T>);
-impl_mul_fxn_dynamic!(MulR4R4, RowVector4<T>);
-impl_mul_fxn_dynamic!(MulRDRD, RowDVector<T>);
-impl_mul_fxn_dynamic!(MulVDVD, DVector<T>);
-impl_mul_fxn_dynamic!(MulMDMD, DMatrix<T>);
+impl_scalar_binop!(MulScalar, T,T,T, mul_op);
+impl_scalar_binop!(MulSM2x3, T, Matrix2x3<T>, Matrix2x3<T>,mul_scalar_rhs_op);
+impl_scalar_binop!(MulSM2, T, Matrix2<T>, Matrix2<T>,mul_scalar_rhs_op);
+impl_scalar_binop!(MulSM3, T, Matrix3<T>, Matrix3<T>,mul_scalar_rhs_op);
+impl_scalar_binop!(MulSRv2, T, RowVector2<T>, RowVector2<T>,mul_scalar_rhs_op);
+impl_scalar_binop!(MulSRv3, T, RowVector3<T>, RowVector3<T>,mul_scalar_rhs_op);
+impl_scalar_binop!(MulSRv4, T, RowVector4<T>, RowVector4<T>,mul_scalar_rhs_op);
+impl_scalar_binop!(MulSRvD, T, RowDVector<T>, RowDVector<T>,mul_scalar_rhs_op);
+impl_scalar_binop!(MulSVD, T, DVector<T>, DVector<T>,mul_scalar_rhs_op);
+impl_scalar_binop!(MulSMD, T, DMatrix<T>, DMatrix<T>,mul_scalar_rhs_op);
+impl_scalar_binop!(MulM2x3S, Matrix2x3<T>, T, Matrix2x3<T>,mul_scalar_lhs_op);
+impl_scalar_binop!(MulM2S, Matrix2<T>, T, Matrix2<T>,mul_scalar_lhs_op);
+impl_scalar_binop!(MulM3S, Matrix3<T>, T, Matrix3<T>,mul_scalar_lhs_op);
+impl_scalar_binop!(MulRv2S, RowVector2<T>, T, RowVector2<T>,mul_scalar_lhs_op);
+impl_scalar_binop!(MulRv3S, RowVector3<T>, T, RowVector3<T>,mul_scalar_lhs_op);
+impl_scalar_binop!(MulRv4S, RowVector4<T>, T, RowVector4<T>,mul_scalar_lhs_op);
+impl_scalar_binop!(MulRvDS, RowDVector<T>, T, RowDVector<T>,mul_scalar_lhs_op);
+impl_scalar_binop!(MulVDS, DVector<T>, T, DVector<T>,mul_scalar_lhs_op);
+impl_scalar_binop!(MulMDS, DMatrix<T>, T, DMatrix<T>,mul_scalar_lhs_op);
+impl_scalar_binop!(MulM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>, component_mul_op);
+impl_scalar_binop!(MulM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>, component_mul_op);
+impl_scalar_binop!(MulM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>, component_mul_op);
+impl_scalar_binop!(MulR2R2, RowVector2<T>,RowVector2<T>,RowVector2<T>, component_mul_op);
+impl_scalar_binop!(MulR3R3, RowVector3<T>,RowVector3<T>,RowVector3<T>, component_mul_op);
+impl_scalar_binop!(MulR4R4, RowVector4<T>,RowVector4<T>,RowVector4<T>, component_mul_op);
+impl_scalar_binop!(MulRDRD, RowDVector<T>,RowDVector<T>,RowDVector<T>, component_mul_op);
+impl_scalar_binop!(MulVDVD, DVector<T>,DVector<T>,DVector<T>, component_mul_op);
+impl_scalar_binop!(MulMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>, component_mul_op);
 
 fn generate_mul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   generate_binop_match_arms!(
@@ -2366,61 +2245,16 @@ impl NativeFunctionCompiler for MathMul {
 
 // Div ------------------------------------------------------------------------
 
-#[derive(Debug)]
-struct DivScalar<T> {
-  lhs: Ref<T>,
-  rhs: Ref<T>,
-  out: Ref<T>,
-}
-impl<T> MechFunction for DivScalar<T>
-where
-  T: Copy + Debug + Clone + Sync + Send + Div<Output = T> + PartialEq + DivAssign + Zero + One + 'static,
-  Ref<T>: ToValue
-{
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe { *out_ptr = *lhs_ptr / *rhs_ptr; }
-  }
-  fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
-}
-
-macro_rules! impl_div_fxn_dynamic {
-  ($struct_name:ident, $arg_type:ty) => {
-    #[derive(Debug)]
-    struct $struct_name<T> {
-      lhs: Ref<$arg_type>,
-      rhs: Ref<$arg_type>,
-      out: Ref<$arg_type>,
-    }
-    impl<T> MechFunction for $struct_name<T>
-    where
-      T: Copy + Debug + Clone + Sync + Send + Div<Output = T> + PartialEq + DivAssign + 'static,
-      Ref<$arg_type>: ToValue
-    {
-      fn solve(&self) {
-        let lhs_ptr = self.lhs.as_ptr();
-        let rhs_ptr = self.rhs.as_ptr();
-        let out_ptr = self.out.as_ptr();
-        unsafe { *out_ptr = (*lhs_ptr).component_div(&*rhs_ptr); }
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
-    }
-  };
-}
-
-impl_div_fxn_dynamic!(DivM2x3M2x3, Matrix2x3<T>);
-impl_div_fxn_dynamic!(DivM2M2, Matrix2<T>);
-impl_div_fxn_dynamic!(DivM3M3, Matrix3<T>);
-impl_div_fxn_dynamic!(DivR2R2, RowVector2<T>);
-impl_div_fxn_dynamic!(DivR3R3, RowVector3<T>);
-impl_div_fxn_dynamic!(DivR4R4, RowVector4<T>);
-impl_div_fxn_dynamic!(DivRDRD, RowDVector<T>);
-impl_div_fxn_dynamic!(DivVDVD, DVector<T>);
-impl_div_fxn_dynamic!(DivMDMD, DMatrix<T>);
+impl_scalar_binop!(DivScalar, T, T, T, div_op);
+impl_scalar_binop!(DivM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>,component_div_op);
+impl_scalar_binop!(DivM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>,component_div_op);
+impl_scalar_binop!(DivM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>,component_div_op);
+impl_scalar_binop!(DivR2R2, RowVector2<T>,RowVector2<T>,RowVector2<T>,component_div_op);
+impl_scalar_binop!(DivR3R3, RowVector3<T>,RowVector3<T>,RowVector3<T>,component_div_op);
+impl_scalar_binop!(DivR4R4, RowVector4<T>,RowVector4<T>,RowVector4<T>,component_div_op);
+impl_scalar_binop!(DivRDRD, RowDVector<T>,RowDVector<T>,RowDVector<T>,component_div_op);
+impl_scalar_binop!(DivVDVD, DVector<T>,DVector<T>,DVector<T>,component_div_op);
+impl_scalar_binop!(DivMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>,component_div_op);
 
 fn generate_div_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   generate_binop_match_arms!(
