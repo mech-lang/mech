@@ -1894,11 +1894,24 @@ macro_rules! div_op {
   };
 }
 
+macro_rules! add_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = (*$lhs).add_scalar(*$rhs); }
+  };
+}
+
+macro_rules! add_scalar_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = (*$rhs).add_scalar(*$lhs); }
+  };
+}
+
 macro_rules! mul_scalar_lhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { *$out = (*$lhs).clone() * *$rhs; }
   };
 }
+
 macro_rules! mul_scalar_rhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { *$out = (*$rhs).clone() * *$lhs;}
@@ -2106,6 +2119,24 @@ impl NativeFunctionCompiler for MathSin {
 // Add ------------------------------------------------------------------------
 
 impl_binop!(AddScalar, T,T,T, add_op);
+impl_binop!(AddSM2x3, T, Matrix2x3<T>, Matrix2x3<T>,add_scalar_rhs_op);
+impl_binop!(AddSM2, T, Matrix2<T>, Matrix2<T>,add_scalar_rhs_op);
+impl_binop!(AddSM3, T, Matrix3<T>, Matrix3<T>,add_scalar_rhs_op);
+impl_binop!(AddSRv2, T, RowVector2<T>, RowVector2<T>,add_scalar_rhs_op);
+impl_binop!(AddSRv3, T, RowVector3<T>, RowVector3<T>,add_scalar_rhs_op);
+impl_binop!(AddSRv4, T, RowVector4<T>, RowVector4<T>,add_scalar_rhs_op);
+impl_binop!(AddSRvD, T, RowDVector<T>, RowDVector<T>,add_scalar_rhs_op);
+impl_binop!(AddSVD, T, DVector<T>, DVector<T>,add_scalar_rhs_op);
+impl_binop!(AddSMD, T, DMatrix<T>, DMatrix<T>,add_scalar_rhs_op);
+impl_binop!(AddM2x3S, Matrix2x3<T>, T, Matrix2x3<T>,add_scalar_lhs_op);
+impl_binop!(AddM2S, Matrix2<T>, T, Matrix2<T>,add_scalar_lhs_op);
+impl_binop!(AddM3S, Matrix3<T>, T, Matrix3<T>,add_scalar_lhs_op);
+impl_binop!(AddRv2S, RowVector2<T>, T, RowVector2<T>,add_scalar_lhs_op);
+impl_binop!(AddRv3S, RowVector3<T>, T, RowVector3<T>,add_scalar_lhs_op);
+impl_binop!(AddRv4S, RowVector4<T>, T, RowVector4<T>,add_scalar_lhs_op);
+impl_binop!(AddRvDS, RowDVector<T>, T, RowDVector<T>,add_scalar_lhs_op);
+impl_binop!(AddVDS, DVector<T>, T, DVector<T>,add_scalar_lhs_op);
+impl_binop!(AddMDS, DMatrix<T>, T, DMatrix<T>,add_scalar_lhs_op);
 impl_binop!(AddM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>, add_op);
 impl_binop!(AddM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>, add_op);
 impl_binop!(AddM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>, add_op);
