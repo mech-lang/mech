@@ -1905,6 +1905,42 @@ macro_rules! mul_scalar_rhs_op {
   };
 }
 
+macro_rules! gt_vec_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] > (*$rhs)[i];
+      }
+    }
+  };
+}
+
+macro_rules! gt_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      (*$out) = (*$lhs) > (*$rhs);
+    }
+  };
+}
+
+macro_rules! lt_vec_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] < (*$rhs)[i];
+      }
+    }
+  };
+}
+
+macro_rules! lt_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      (*$out) = (*$lhs) < (*$rhs);
+    }
+  };
+}
+
 macro_rules! impl_binop {
   ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
     #[derive(Debug)]
@@ -1915,7 +1951,8 @@ macro_rules! impl_binop {
     }
     impl<T> MechFunction for $struct_name<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + 'static + PartialEq +
+      T: Copy + Debug + Clone + Sync + Send + 'static + 
+      PartialEq + PartialOrd +
       Add<Output = T> + AddAssign +
       Sub<Output = T> + SubAssign +
       Mul<Output = T> + MulAssign +
@@ -2645,82 +2682,33 @@ macro_rules! generate_compare_match_arms {
 
 // Greater Than ---------------------------------------------------------------
 
-#[derive(Debug)]
-struct GTScalar<T> {
-  lhs: Ref<T>,
-  rhs: Ref<T>,
-  out: Ref<bool>,
-}
-impl<T> MechFunction for GTScalar<T>
-where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + PartialOrd + 'static,
-  Ref<T>: ToValue
-{
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe { *out_ptr = *lhs_ptr > *rhs_ptr; }
-  }
-  fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
-}
-
-macro_rules! impl_gt_fxn {
-  ($struct_name:ident, $arg_type:ty, $out_type:ty) => {
-    #[derive(Debug)]
-    struct $struct_name<T> {
-      lhs: Ref<$arg_type>,
-      rhs: Ref<$arg_type>,
-      out: Ref<$out_type>,
-    }
-    impl<T> MechFunction for $struct_name<T>
-    where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + PartialOrd + 'static,
-      Ref<$arg_type>: ToValue
-    {
-      fn solve(&self) {
-        let lhs_ptr = self.lhs.as_ptr();
-        let rhs_ptr = self.rhs.as_ptr();
-        let out_ptr = self.out.as_ptr();
-        unsafe {
-          for i in 0..(*lhs_ptr).len() {
-            (*out_ptr)[i] = (*lhs_ptr)[i] > (*rhs_ptr)[i];
-          }
-        }
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
-    }
-  };
-}
-
-impl_gt_fxn!(GTM2x3M2x3, Matrix2x3<T>, Matrix2x3<bool>);
-impl_gt_fxn!(GTM2M2, Matrix2<T>, Matrix2<bool>);
-impl_gt_fxn!(GTM3M3, Matrix3<T>, Matrix3<bool>);
-impl_gt_fxn!(GTR2R2, RowVector2<T>, RowVector2<bool>);
-impl_gt_fxn!(GTR3R3, RowVector3<T>, RowVector3<bool>);
-impl_gt_fxn!(GTR4R4, RowVector4<T>, RowVector4<bool>);
-impl_gt_fxn!(GTRDRD, RowDVector<T>, RowDVector<bool>);
-impl_gt_fxn!(GTVDVD, DVector<T>, DVector<bool>);
-impl_gt_fxn!(GTMDMD, DMatrix<T>, DMatrix<bool>);
+impl_binop!(GTScalar, T, T, bool, gt_op);
+impl_binop!(GTM2x3M2x3, Matrix2x3<T>, Matrix2x3<T>, Matrix2x3<bool>, gt_vec_op);
+impl_binop!(GTM2M2, Matrix2<T>, Matrix2<T>, Matrix2<bool>, gt_vec_op);
+impl_binop!(GTM3M3, Matrix3<T>,Matrix3<T>, Matrix3<bool>, gt_vec_op);
+impl_binop!(GTR2R2, RowVector2<T>, RowVector2<T>, RowVector2<bool>, gt_vec_op);
+impl_binop!(GTR3R3, RowVector3<T>, RowVector3<T>, RowVector3<bool>, gt_vec_op);
+impl_binop!(GTR4R4, RowVector4<T>, RowVector4<T>, RowVector4<bool>, gt_vec_op);
+impl_binop!(GTRDRD, RowDVector<T>, RowDVector<T>, RowDVector<bool>, gt_vec_op);
+impl_binop!(GTVDVD, DVector<T>, DVector<T>, DVector<bool>, gt_vec_op);
+impl_binop!(GTMDMD, DMatrix<T>, DMatrix<T>, DMatrix<bool>, gt_vec_op);
 
 fn generate_gt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_compare_match_arms!(
+  generate_binop_match_arms!(
     GT,
     (lhs_value, rhs_value),
-    I8, I8 => MatrixI8, i8;
-    I16, I16 => MatrixI16, i16;
-    I32, I32 => MatrixI32, i32;
-    I64, I64 => MatrixI64, i64;
-    I128, I128 => MatrixI128, i128;
-    U8, U8 => MatrixU8, u8;
-    U16, U16 => MatrixU16, u16;
-    U32, U32 => MatrixU32, u32;
-    U64, U64 => MatrixU64, u64;
-    U128, U128 => MatrixU128, u128;
-    F32, F32 => MatrixF32, F32;
-    F64, F64 => MatrixF64, F64;
+    I8,   I8   => MatrixI8,   i8,   false;
+    I16,  I16  => MatrixI16,  i16,  false;
+    I32,  I32  => MatrixI32,  i32,  false;
+    I64,  I64  => MatrixI64,  i64,  false;
+    I128, I128 => MatrixI128, i128, false;
+    U8,   U8   => MatrixU8,   u8,   false;
+    U16,  U16  => MatrixU16,  u16,  false;
+    U32,  U32  => MatrixU32,  u32,  false;
+    U64,  U64  => MatrixU64,  u64,  false;
+    U128, U128 => MatrixU128, u128, false;
+    F32,  F32  => MatrixF32,  F32,  false;
+    F64,  F64  => MatrixF64,  F64,  false;
   )
 }
 
@@ -2749,82 +2737,33 @@ impl NativeFunctionCompiler for CompareGreaterThan {
 
 // Less Than ------------------------------------------------------------------
 
-#[derive(Debug)]
-struct LTScalar<T> {
-  lhs: Ref<T>,
-  rhs: Ref<T>,
-  out: Ref<bool>,
-}
-impl<T> MechFunction for LTScalar<T>
-where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + PartialOrd + 'static,
-  Ref<T>: ToValue
-{
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe { *out_ptr = *lhs_ptr < *rhs_ptr; }
-  }
-  fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
-}
-
-macro_rules! impl_lt_fxn {
-  ($struct_name:ident, $arg_type:ty, $out_type:ty) => {
-    #[derive(Debug)]
-    struct $struct_name<T> {
-      lhs: Ref<$arg_type>,
-      rhs: Ref<$arg_type>,
-      out: Ref<$out_type>,
-    }
-    impl<T> MechFunction for $struct_name<T>
-    where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + PartialOrd + 'static,
-      Ref<$arg_type>: ToValue
-    {
-      fn solve(&self) {
-        let lhs_ptr = self.lhs.as_ptr();
-        let rhs_ptr = self.rhs.as_ptr();
-        let out_ptr = self.out.as_ptr();
-        unsafe {
-          for i in 0..(*lhs_ptr).len() {
-            (*out_ptr)[i] = (*lhs_ptr)[i] < (*rhs_ptr)[i];
-          }
-        }
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
-    }
-  };
-}
-
-impl_lt_fxn!(LTM2x3M2x3, Matrix2x3<T>, Matrix2x3<bool>);
-impl_lt_fxn!(LTM2M2, Matrix2<T>, Matrix2<bool>);
-impl_lt_fxn!(LTM3M3, Matrix3<T>, Matrix3<bool>);
-impl_lt_fxn!(LTR2R2, RowVector2<T>, RowVector2<bool>);
-impl_lt_fxn!(LTR3R3, RowVector3<T>, RowVector3<bool>);
-impl_lt_fxn!(LTR4R4, RowVector4<T>, RowVector4<bool>);
-impl_lt_fxn!(LTRDRD, RowDVector<T>, RowDVector<bool>);
-impl_lt_fxn!(LTVDVD, DVector<T>, DVector<bool>);
-impl_lt_fxn!(LTMDMD, DMatrix<T>, DMatrix<bool>);
+impl_binop!(LTScalar, T, T, bool, lt_op);
+impl_binop!(LTM2x3M2x3, Matrix2x3<T>, Matrix2x3<T>, Matrix2x3<bool>, lt_vec_op);
+impl_binop!(LTM2M2, Matrix2<T>, Matrix2<T>, Matrix2<bool>, lt_vec_op);
+impl_binop!(LTM3M3, Matrix3<T>,Matrix3<T>, Matrix3<bool>, lt_vec_op);
+impl_binop!(LTR2R2, RowVector2<T>, RowVector2<T>, RowVector2<bool>, lt_vec_op);
+impl_binop!(LTR3R3, RowVector3<T>, RowVector3<T>, RowVector3<bool>, lt_vec_op);
+impl_binop!(LTR4R4, RowVector4<T>, RowVector4<T>, RowVector4<bool>, lt_vec_op);
+impl_binop!(LTRDRD, RowDVector<T>, RowDVector<T>, RowDVector<bool>, lt_vec_op);
+impl_binop!(LTVDVD, DVector<T>, DVector<T>, DVector<bool>, lt_vec_op);
+impl_binop!(LTMDMD, DMatrix<T>, DMatrix<T>, DMatrix<bool>, lt_vec_op);
 
 fn generate_lt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_compare_match_arms!(
+  generate_binop_match_arms!(
     LT,
     (lhs_value, rhs_value),
-    I8, I8 => MatrixI8, i8;
-    I16, I16 => MatrixI16, i16;
-    I32, I32 => MatrixI32, i32;
-    I64, I64 => MatrixI64, i64;
-    I128, I128 => MatrixI128, i128;
-    U8, U8 => MatrixU8, u8;
-    U16, U16 => MatrixU16, u16;
-    U32, U32 => MatrixU32, u32;
-    U64, U64 => MatrixU64, u64;
-    U128, U128 => MatrixU128, u128;
-    F32, F32 => MatrixF32, F32;
-    F64, F64 => MatrixF64, F64;
+    I8,   I8   => MatrixI8,   i8,   false;
+    I16,  I16  => MatrixI16,  i16,  false;
+    I32,  I32  => MatrixI32,  i32,  false;
+    I64,  I64  => MatrixI64,  i64,  false;
+    I128, I128 => MatrixI128, i128, false;
+    U8,   U8   => MatrixU8,   u8,   false;
+    U16,  U16  => MatrixU16,  u16,  false;
+    U32,  U32  => MatrixU32,  u32,  false;
+    U64,  U64  => MatrixU64,  u64,  false;
+    U128, U128 => MatrixU128, u128, false;
+    F32,  F32  => MatrixF32,  F32,  false;
+    F64,  F64  => MatrixF64,  F64,  false;
   )
 }
 
