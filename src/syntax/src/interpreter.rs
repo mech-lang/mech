@@ -1941,6 +1941,12 @@ macro_rules! lt_op {
   };
 }
 
+macro_rules! matmul_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { (*$lhs).mul_to(&*$rhs,&mut *$out); }
+  };
+}
+
 macro_rules! impl_binop {
   ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
     #[derive(Debug)]
@@ -2796,64 +2802,19 @@ impl NativeFunctionCompiler for CompareLessThan {
 
 // MatMul ---------------------------------------------------------------------
 
-#[derive(Debug)]
-struct MatMulScalar<T> {
-  lhs: Ref<T>,
-  rhs: Ref<T>,
-  out: Ref<T>,
-}
-impl<T> MechFunction for MatMulScalar<T>
-where
-  T: Copy + Debug + Clone + Sync + Send + Mul<Output = T> + PartialEq + MulAssign + Zero + One + 'static,
-  Ref<T>: ToValue
-{
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe { *out_ptr = *lhs_ptr * *rhs_ptr; }
-  }
-  fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
-}
-
-macro_rules! impl_matmul_fxn_dynamic {
-  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty) => {
-    #[derive(Debug)]
-    struct $struct_name<T> {
-      lhs: Ref<$arg1_type>,
-      rhs: Ref<$arg2_type>,
-      out: Ref<$out_type>,
-    }
-    impl<T> MechFunction for $struct_name<T>
-    where
-      T: Copy + Debug + Clone + Sync + Send + Zero + One + Mul<Output = T> + Add<Output = T> + MulAssign + AddAssign + PartialEq  + 'static,
-      Ref<$out_type>: ToValue
-    {
-      fn solve(&self) {
-        let lhs_ptr = self.lhs.as_ptr();
-        let rhs_ptr = self.rhs.as_ptr();
-        let out_ptr = self.out.as_ptr();
-        unsafe { (*lhs_ptr).mul_to(&*rhs_ptr,&mut *out_ptr); }
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
-    }
-  };
-}
-
-impl_matmul_fxn_dynamic!(MatMulM2x3M3x2, Matrix2x3<T>, Matrix3x2<T>, Matrix2<T>);
-impl_matmul_fxn_dynamic!(MatMulM2M2, Matrix2<T>, Matrix2<T>, Matrix2<T>);
-impl_matmul_fxn_dynamic!(MatMulM3M3, Matrix3<T>, Matrix3<T>, Matrix3<T>);
-impl_matmul_fxn_dynamic!(MatMulRv2V2, RowVector2<T>,Vector2<T>,Matrix1<T>);
-impl_matmul_fxn_dynamic!(MatMulRv3V3, RowVector3<T>,Vector3<T>,Matrix1<T>);
-impl_matmul_fxn_dynamic!(MatMulRv4V4, RowVector4<T>,Vector4<T>,Matrix1<T>);
-impl_matmul_fxn_dynamic!(MatMulV2Rv2, Vector2<T>, RowVector2<T>, Matrix2<T>);
-impl_matmul_fxn_dynamic!(MatMulV3Rv3, Vector3<T>, RowVector3<T>, Matrix3<T>);
-impl_matmul_fxn_dynamic!(MatMulV4Rv4, Vector4<T>, RowVector4<T>, Matrix4<T>);
-impl_matmul_fxn_dynamic!(MatMulRvDVD, RowDVector<T>, DVector<T>, Matrix1<T>);
-impl_matmul_fxn_dynamic!(MatMulVDRvD, DVector<T>,RowDVector<T>,DMatrix<T>);
-impl_matmul_fxn_dynamic!(MatMulMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>);
+impl_binop!(MatMulScalar, T,T,T,mul_op);
+impl_binop!(MatMulM2x3M3x2, Matrix2x3<T>, Matrix3x2<T>, Matrix2<T>,matmul_op);
+impl_binop!(MatMulM2M2, Matrix2<T>, Matrix2<T>, Matrix2<T>,matmul_op);
+impl_binop!(MatMulM3M3, Matrix3<T>, Matrix3<T>, Matrix3<T>,matmul_op);
+impl_binop!(MatMulRv2V2, RowVector2<T>,Vector2<T>,Matrix1<T>,matmul_op);
+impl_binop!(MatMulRv3V3, RowVector3<T>,Vector3<T>,Matrix1<T>,matmul_op);
+impl_binop!(MatMulRv4V4, RowVector4<T>,Vector4<T>,Matrix1<T>,matmul_op);
+impl_binop!(MatMulV2Rv2, Vector2<T>, RowVector2<T>, Matrix2<T>,matmul_op);
+impl_binop!(MatMulV3Rv3, Vector3<T>, RowVector3<T>, Matrix3<T>,matmul_op);
+impl_binop!(MatMulV4Rv4, Vector4<T>, RowVector4<T>, Matrix4<T>,matmul_op);
+impl_binop!(MatMulRvDVD, RowDVector<T>, DVector<T>, Matrix1<T>,matmul_op);
+impl_binop!(MatMulVDRvD, DVector<T>,RowDVector<T>,DMatrix<T>,matmul_op);
+impl_binop!(MatMulMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>,matmul_op);
 
 macro_rules! generate_matmul_match_arms {
   ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
@@ -2905,18 +2866,18 @@ macro_rules! generate_matmul_match_arms {
 fn generate_matmul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   generate_matmul_match_arms!(
     (lhs_value, rhs_value),
-    I8, I8 => MatrixI8, i8;
-    I16, I16 => MatrixI16, i16;
-    I32, I32 => MatrixI32, i32;
-    I64, I64 => MatrixI64, i64;
+    I8,   I8   => MatrixI8,   i8;
+    I16,  I16  => MatrixI16,  i16;
+    I32,  I32  => MatrixI32,  i32;
+    I64,  I64  => MatrixI64,  i64;
     I128, I128 => MatrixI128, i128;
-    U8, U8 => MatrixU8, u8;
-    U16, U16 => MatrixU16, u16;
-    U32, U32 => MatrixU32, u32;
-    U64, U64 => MatrixU64, u64;
+    U8,   U8   => MatrixU8,   u8;
+    U16,  U16  => MatrixU16,  u16;
+    U32,  U32  => MatrixU32,  u32;
+    U64,  U64  => MatrixU64,  u64;
     U128, U128 => MatrixU128, u128;
-    F32, F32 => MatrixF32, F32;
-    F64, F64 => MatrixF64, F64;
+    F32,  F32  => MatrixF32,  F32;
+    F64,  F64  => MatrixF64,  F64;
   )
 }
 
