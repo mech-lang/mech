@@ -1906,6 +1906,56 @@ macro_rules! add_scalar_rhs_op {
   };
 }
 
+macro_rules! sub_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] - (*$rhs);
+      }
+    }
+  };
+}
+
+macro_rules! sub_scalar_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$rhs).len() {
+        (*$out)[i] = (*$lhs) - (*$rhs)[i];
+      }
+    }
+  };
+}
+
+macro_rules! sub_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] - (*$rhs);
+      }
+    }
+  };
+}
+
+macro_rules! sub_scalar_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$rhs).len() {
+        (*$out)[i] = (*$lhs) - (*$rhs)[i];
+      }
+    }
+  };
+}
+
+macro_rules! sub_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] - (*$rhs);
+      }
+    }
+  };
+}
+
 macro_rules! mul_scalar_lhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { *$out = (*$lhs).clone() * *$rhs; }
@@ -1915,6 +1965,46 @@ macro_rules! mul_scalar_lhs_op {
 macro_rules! mul_scalar_rhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { *$out = (*$rhs).clone() * *$lhs;}
+  };
+}
+
+macro_rules! div_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] / (*$rhs);
+      }
+    }
+  };
+}
+
+macro_rules! div_scalar_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$rhs).len() {
+        (*$out)[i] = (*$lhs) / (*$rhs)[i];
+      }
+    }
+  };
+}
+
+macro_rules! lt_vec_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*lhs).len() {
+        (*$out)[i] = (*$lhs)[i] < (*$rhs);
+      }
+    }
+  };
+}
+
+macro_rules! lt_vec_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$rhs).len() {
+        (*$out)[i] = (*$lhs) < (*$rhs)[i];
+      }
+    }
   };
 }
 
@@ -2192,6 +2282,22 @@ impl NativeFunctionCompiler for MathAdd {
 // Sub ------------------------------------------------------------------------
 
 impl_binop!(SubScalar, T,T,T, sub_op);
+impl_binop!(SubSM2x3, T, Matrix2x3<T>, Matrix2x3<T>,sub_scalar_rhs_op);
+impl_binop!(SubSM2, T, Matrix2<T>, Matrix2<T>,sub_scalar_rhs_op);
+impl_binop!(SubSM3, T, Matrix3<T>, Matrix3<T>,sub_scalar_rhs_op);
+impl_binop!(SubSRv2, T, RowVector2<T>, RowVector2<T>,sub_scalar_rhs_op);
+impl_binop!(SubSRv3, T, RowVector3<T>, RowVector3<T>,sub_scalar_rhs_op);
+impl_binop!(SubSRv4, T, RowVector4<T>, RowVector4<T>,sub_scalar_rhs_op);
+impl_binop!(SubSRvD, T, RowDVector<T>, RowDVector<T>,sub_scalar_rhs_op);
+impl_binop!(SubSVD, T, DVector<T>, DVector<T>,sub_scalar_rhs_op);
+impl_binop!(SubSMD, T, DMatrix<T>, DMatrix<T>,sub_scalar_rhs_op);
+impl_binop!(SubM2x3S, Matrix2x3<T>, T, Matrix2x3<T>,sub_scalar_lhs_op);
+impl_binop!(SubM2S, Matrix2<T>, T, Matrix2<T>,sub_scalar_lhs_op);
+impl_binop!(SubM3S, Matrix3<T>, T, Matrix3<T>,sub_scalar_lhs_op);
+impl_binop!(SubRv2S, RowVector2<T>, T, RowVector2<T>,sub_scalar_lhs_op);
+impl_binop!(SubRv3S, RowVector3<T>, T, RowVector3<T>,sub_scalar_lhs_op);
+impl_binop!(SubRv4S, RowVector4<T>, T, RowVector4<T>,sub_scalar_lhs_op);
+impl_binop!(SubRvDS, RowDVector<T>, T, RowDVector<T>,sub_scalar_lhs_op);
 impl_binop!(SubM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>, sub_op);
 impl_binop!(SubM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>, sub_op);
 impl_binop!(SubM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>, sub_op);
@@ -2244,7 +2350,7 @@ impl NativeFunctionCompiler for MathSub {
   }
 }
 
-// add ------------------------------------------------------------------------
+// Mul ------------------------------------------------------------------------
 
 impl_binop!(MulScalar, T,T,T, mul_op);
 impl_binop!(MulSM2x3, T, Matrix2x3<T>, Matrix2x3<T>,mul_scalar_rhs_op);
@@ -2320,6 +2426,22 @@ impl NativeFunctionCompiler for MathMul {
 // Div ------------------------------------------------------------------------
 
 impl_binop!(DivScalar, T, T, T, div_op);
+impl_binop!(DivSM2x3, T, Matrix2x3<T>, Matrix2x3<T>,div_scalar_rhs_op);
+impl_binop!(DivSM2, T, Matrix2<T>, Matrix2<T>,div_scalar_rhs_op);
+impl_binop!(DivSM3, T, Matrix3<T>, Matrix3<T>,div_scalar_rhs_op);
+impl_binop!(DivSRv2, T, RowVector2<T>, RowVector2<T>,div_scalar_rhs_op);
+impl_binop!(DivSRv3, T, RowVector3<T>, RowVector3<T>,div_scalar_rhs_op);
+impl_binop!(DivSRv4, T, RowVector4<T>, RowVector4<T>,div_scalar_rhs_op);
+impl_binop!(DivSRvD, T, RowDVector<T>, RowDVector<T>,div_scalar_rhs_op);
+impl_binop!(DivSVD, T, DVector<T>, DVector<T>,div_scalar_rhs_op);
+impl_binop!(DivSMD, T, DMatrix<T>, DMatrix<T>,div_scalar_rhs_op);
+impl_binop!(DivM2x3S, Matrix2x3<T>, T, Matrix2x3<T>,div_scalar_lhs_op);
+impl_binop!(DivM2S, Matrix2<T>, T, Matrix2<T>,div_scalar_lhs_op);
+impl_binop!(DivM3S, Matrix3<T>, T, Matrix3<T>,div_scalar_lhs_op);
+impl_binop!(DivRv2S, RowVector2<T>, T, RowVector2<T>,div_scalar_lhs_op);
+impl_binop!(DivRv3S, RowVector3<T>, T, RowVector3<T>,div_scalar_lhs_op);
+impl_binop!(DivRv4S, RowVector4<T>, T, RowVector4<T>,div_scalar_lhs_op);
+impl_binop!(DivRvDS, RowDVector<T>, T, RowDVector<T>,div_scalar_lhs_op);
 impl_binop!(DivM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>,component_div_op);
 impl_binop!(DivM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>,component_div_op);
 impl_binop!(DivM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>,component_div_op);
@@ -2776,6 +2898,22 @@ impl NativeFunctionCompiler for CompareGreaterThan {
 
 impl_binop!(LTScalar, T, T, bool, lt_op);
 impl_binop!(LTM2x3M2x3, Matrix2x3<T>, Matrix2x3<T>, Matrix2x3<bool>, lt_vec_op);
+//impl_binop!(LTSM2x3, T, Matrix2x3<T>, Matrix2x3<bool>,lt_vec_rhs_op);
+//impl_binop!(LTSM2, T, Matrix2<T>, Matrix2<bool>,lt_vec_rhs_op);
+//impl_binop!(LTSM3, T, Matrix3<T>, Matrix3<bool>,lt_vec_rhs_op);
+//impl_binop!(LTSRv2, T, RowVector2<T>, RowVector2<bool>,lt_vec_rhs_op);
+//impl_binop!(LTSRv3, T, RowVector3<T>, RowVector3<bool>,lt_vec_rhs_op);
+//impl_binop!(LTSRv4, T, RowVector4<T>, RowVector4<bool>,lt_vec_rhs_op);
+//impl_binop!(LTSRvD, T, RowDVector<T>, RowDVector<bool>,lt_vec_rhs_op);
+//impl_binop!(LTSVD, T, DVector<T>, DVector<bool>,lt_vec_rhs_op);
+//impl_binop!(LTSMD, T, DMatrix<T>, DMatrix<bool>,lt_vec_rhs_op);
+//impl_binop!(LTM2x3S, Matrix2x3<T>, T, Matrix2x3<bool>,lt_vec_rhs_op);
+//impl_binop!(LTM2S, Matrix2<T>, T, Matrix2<bool>,lt_vec_lhs_op);
+//impl_binop!(LTM3S, Matrix3<T>, T, Matrix3<bool>,lt_vec_lhs_op);
+//impl_binop!(LTRv2S, RowVector2<T>, T, RowVector2<bool>,lt_vec_lhs_op);
+//impl_binop!(LTRv3S, RowVector3<T>, T, RowVector3<bool>,lt_vec_lhs_op);
+//impl_binop!(LTRv4S, RowVector4<T>, T, RowVector4<bool>,lt_vec_lhs_op);
+//impl_binop!(LTRvDS, RowDVector<T>, T, RowDVector<bool>,lt_vec_lhs_op);
 impl_binop!(LTM2M2, Matrix2<T>, Matrix2<T>, Matrix2<bool>, lt_vec_op);
 impl_binop!(LTM3M3, Matrix3<T>,Matrix3<T>, Matrix3<bool>, lt_vec_op);
 impl_binop!(LTR2R2, RowVector2<T>, RowVector2<T>, RowVector2<bool>, lt_vec_op);
