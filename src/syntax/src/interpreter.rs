@@ -2271,12 +2271,7 @@ macro_rules! impl_bool_binop {
     impl<T> MechFunction for $struct_name<T>
     where
       T: Copy + Debug + Clone + Sync + Send + 'static + 
-      PartialEq + PartialOrd +
-      Add<Output = T> + AddAssign +
-      Sub<Output = T> + SubAssign +
-      Mul<Output = T> + MulAssign +
-      Div<Output = T> + DivAssign +
-      Zero + One,
+      PartialEq + PartialOrd,
       Ref<$out_type>: ToValue
     {
       fn solve(&self) {
@@ -3255,39 +3250,40 @@ impl NativeFunctionCompiler for CompareGreaterThanEqual {
 
 // Less Than Equal ---------------------------------------------------------------
 
-impl_binop!(LTEScalar, T, T, bool, lte_op);
-impl_binop!(LTESM2x3, T, Matrix2x3<T>, Matrix2x3<bool>,lte_scalar_rhs_op);
-impl_binop!(LTESM2, T, Matrix2<T>, Matrix2<bool>,lte_scalar_rhs_op);
-impl_binop!(LTESM3, T, Matrix3<T>, Matrix3<bool>,lte_scalar_rhs_op);
-impl_binop!(LTESR2, T, RowVector2<T>, RowVector2<bool>,lte_scalar_rhs_op);
-impl_binop!(LTESR3, T, RowVector3<T>, RowVector3<bool>,lte_scalar_rhs_op);
-impl_binop!(LTESR4, T, RowVector4<T>, RowVector4<bool>,lte_scalar_rhs_op);
-impl_binop!(LTESRD, T, RowDVector<T>, RowDVector<bool>,lte_scalar_rhs_op);
-impl_binop!(LTESVD, T, DVector<T>, DVector<bool>,lte_scalar_rhs_op);
-impl_binop!(LTESMD, T, DMatrix<T>, DMatrix<bool>,lte_scalar_rhs_op);
-impl_binop!(LTEM2x3S, Matrix2x3<T>, T, Matrix2x3<bool>,lte_scalar_lhs_op);
-impl_binop!(LTEM2S, Matrix2<T>, T, Matrix2<bool>,lte_scalar_lhs_op);
-impl_binop!(LTEM3S, Matrix3<T>, T, Matrix3<bool>,lte_scalar_lhs_op);
-impl_binop!(LTER2S, RowVector2<T>, T, RowVector2<bool>,lte_scalar_lhs_op);
-impl_binop!(LTER3S, RowVector3<T>, T, RowVector3<bool>,lte_scalar_lhs_op);
-impl_binop!(LTER4S, RowVector4<T>, T, RowVector4<bool>,lte_scalar_lhs_op);
-impl_binop!(LTERDS, RowDVector<T>, T, RowDVector<bool>,lte_scalar_lhs_op);
-impl_binop!(LTEVDS, DVector<T>, T, DVector<bool>,lte_scalar_lhs_op);
-impl_binop!(LTEMDS, DMatrix<T>, T, DMatrix<bool>,lte_scalar_lhs_op);
-impl_binop!(LTEM2x3M2x3, Matrix2x3<T>, Matrix2x3<T>, Matrix2x3<bool>, lte_vec_op);
-impl_binop!(LTEM2M2, Matrix2<T>, Matrix2<T>, Matrix2<bool>, lte_vec_op);
-impl_binop!(LTEM3M3, Matrix3<T>,Matrix3<T>, Matrix3<bool>, lte_vec_op);
-impl_binop!(LTER2R2, RowVector2<T>, RowVector2<T>, RowVector2<bool>, lte_vec_op);
-impl_binop!(LTER3R3, RowVector3<T>, RowVector3<T>, RowVector3<bool>, lte_vec_op);
-impl_binop!(LTER4R4, RowVector4<T>, RowVector4<T>, RowVector4<bool>, lte_vec_op);
-impl_binop!(LTERDRD, RowDVector<T>, RowDVector<T>, RowDVector<bool>, lte_vec_op);
-impl_binop!(LTEVDVD, DVector<T>, DVector<T>, DVector<bool>, lte_vec_op);
-impl_binop!(LTEMDMD, DMatrix<T>, DMatrix<T>, DMatrix<bool>, lte_vec_op);
+impl_bool_binop!(LTEScalar, T, T, bool, lte_op);
+impl_bool_binop!(LTESM2x3, T, Matrix2x3<T>, Matrix2x3<bool>,lte_scalar_rhs_op);
+impl_bool_binop!(LTESM2, T, Matrix2<T>, Matrix2<bool>,lte_scalar_rhs_op);
+impl_bool_binop!(LTESM3, T, Matrix3<T>, Matrix3<bool>,lte_scalar_rhs_op);
+impl_bool_binop!(LTESR2, T, RowVector2<T>, RowVector2<bool>,lte_scalar_rhs_op);
+impl_bool_binop!(LTESR3, T, RowVector3<T>, RowVector3<bool>,lte_scalar_rhs_op);
+impl_bool_binop!(LTESR4, T, RowVector4<T>, RowVector4<bool>,lte_scalar_rhs_op);
+impl_bool_binop!(LTESRD, T, RowDVector<T>, RowDVector<bool>,lte_scalar_rhs_op);
+impl_bool_binop!(LTESVD, T, DVector<T>, DVector<bool>,lte_scalar_rhs_op);
+impl_bool_binop!(LTESMD, T, DMatrix<T>, DMatrix<bool>,lte_scalar_rhs_op);
+impl_bool_binop!(LTEM2x3S, Matrix2x3<T>, T, Matrix2x3<bool>,lte_scalar_lhs_op);
+impl_bool_binop!(LTEM2S, Matrix2<T>, T, Matrix2<bool>,lte_scalar_lhs_op);
+impl_bool_binop!(LTEM3S, Matrix3<T>, T, Matrix3<bool>,lte_scalar_lhs_op);
+impl_bool_binop!(LTER2S, RowVector2<T>, T, RowVector2<bool>,lte_scalar_lhs_op);
+impl_bool_binop!(LTER3S, RowVector3<T>, T, RowVector3<bool>,lte_scalar_lhs_op);
+impl_bool_binop!(LTER4S, RowVector4<T>, T, RowVector4<bool>,lte_scalar_lhs_op);
+impl_bool_binop!(LTERDS, RowDVector<T>, T, RowDVector<bool>,lte_scalar_lhs_op);
+impl_bool_binop!(LTEVDS, DVector<T>, T, DVector<bool>,lte_scalar_lhs_op);
+impl_bool_binop!(LTEMDS, DMatrix<T>, T, DMatrix<bool>,lte_scalar_lhs_op);
+impl_bool_binop!(LTEM2x3M2x3, Matrix2x3<T>, Matrix2x3<T>, Matrix2x3<bool>, lte_vec_op);
+impl_bool_binop!(LTEM2M2, Matrix2<T>, Matrix2<T>, Matrix2<bool>, lte_vec_op);
+impl_bool_binop!(LTEM3M3, Matrix3<T>,Matrix3<T>, Matrix3<bool>, lte_vec_op);
+impl_bool_binop!(LTER2R2, RowVector2<T>, RowVector2<T>, RowVector2<bool>, lte_vec_op);
+impl_bool_binop!(LTER3R3, RowVector3<T>, RowVector3<T>, RowVector3<bool>, lte_vec_op);
+impl_bool_binop!(LTER4R4, RowVector4<T>, RowVector4<T>, RowVector4<bool>, lte_vec_op);
+impl_bool_binop!(LTERDRD, RowDVector<T>, RowDVector<T>, RowDVector<bool>, lte_vec_op);
+impl_bool_binop!(LTEVDVD, DVector<T>, DVector<T>, DVector<bool>, lte_vec_op);
+impl_bool_binop!(LTEMDMD, DMatrix<T>, DMatrix<T>, DMatrix<bool>, lte_vec_op);
 
 fn generate_lte_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   generate_binop_match_arms!(
     LTE,
     (lhs_value, rhs_value),
+    Bool, Bool => MatrixBool, bool, false;
     I8,   I8   => MatrixI8,   i8,   false;
     I16,  I16  => MatrixI16,  i16,  false;
     I32,  I32  => MatrixI32,  i32,  false;
@@ -3361,6 +3357,7 @@ fn generate_eq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFun
   generate_binop_match_arms!(
     EQ,
     (lhs_value, rhs_value),
+    Bool, Bool => MatrixBool, bool, false;
     I8,   I8   => MatrixI8,   i8,   false;
     I16,  I16  => MatrixI16,  i16,  false;
     I32,  I32  => MatrixI32,  i32,  false;
