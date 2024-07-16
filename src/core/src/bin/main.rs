@@ -24,7 +24,7 @@ use std::time::{Instant};
 
 use std::collections::VecDeque;
 use mech_core::*;
-use mech_core::function::table;
+//use mech_core::function::table;
 use nalgebra::DMatrix;
 
 use std::fmt::*;
@@ -33,7 +33,7 @@ use std::ops::*;
 extern crate time;
 
 fn main() -> std::result::Result<(),MechError> {
- 
+  /*
   //let now = Instant::now();
   let n = 1e7 as usize;
 
@@ -339,5 +339,7 @@ fn main() -> std::result::Result<(),MechError> {
   //println!("{:0.4?} s", time / 1e9);
   //println!("{:?}", core);
 
+  Ok(())
+}*/
   Ok(())
 }

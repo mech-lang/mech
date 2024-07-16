@@ -1,8 +1,5 @@
 #![feature(hash_extract_if)]
 #![allow(warnings)]
-use mech_syntax::parser;
-use mech_syntax::ast::Ast;
-use mech_syntax::compiler::Compiler;
 use mech_core::*;
 use mech_syntax::parser2;
 //use mech_syntax::analyzer::*;
@@ -25,7 +22,7 @@ use tabled::{
 };
 
 fn main() -> Result<(), MechError> {
-  let version = "0.2.1";
+  let version = "0.2.2";
   let text_logo = r#"
   ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐   ┌─┐
   └───┐ ┌───┘ └──────┘ │ │ └┐ │ │ │   │ │
@@ -95,8 +92,8 @@ fn main() -> Result<(), MechError> {
         }
       },
       Err(err) => {
-        if let MechErrorKind::ParserError(tree, report, _) = err.kind {
-          parser::print_err_report(&s, &report);
+        if let MechErrorKind::ParserError(report, _) = err.kind {
+          parser2::print_err_report(&s, &report);
         } else {
           panic!("Unexpected error type");
         }
@@ -131,11 +128,14 @@ fn main() -> Result<(), MechError> {
     match parser2::parse(&input) {
       Ok(tree) => { 
         let result = intrp.interpret(&tree);
-        println!("{:?}", result);
+        match result {
+          Ok(r) => println!("{}", r.pretty_print()),
+          Err(err) => println!("{:?}", err),
+        }
       }
       Err(err) => {
-        if let MechErrorKind::ParserError(tree, report, _) = err.kind {
-          parser::print_err_report(&input, &report);
+        if let MechErrorKind::ParserError(report, _) = err.kind {
+          parser2::print_err_report(&input, &report);
         } else {
           panic!("Unexpected error type");
         }

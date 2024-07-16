@@ -11,7 +11,7 @@ pub extern crate mech_utilities as utilities;
 //mod repl;
 
 pub use mech_core::*;
-pub use mech_syntax::compiler::*;
+//pub use mech_syntax::compiler::*;
 //pub use mech_program::*;
 pub use mech_utilities::*;
 //pub use self::repl::*;
@@ -127,6 +127,7 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<(String,MechCode)
   Ok(code)
 }*/
 
+/*
 pub fn compile_code(code: Vec<(String,MechCode)>) -> Result<Vec<Vec<MiniBlock>>,MechError> {
   print!("{}", "[Compiling] ".truecolor(153,221,85));
   stdout().flush();
@@ -174,4 +175,4 @@ pub fn minify_blocks(sections: &Vec<Vec<SectionElement>>) -> Vec<Vec<MiniBlock>>
     mb_sections.push(miniblocks);
   }
   mb_sections
-}
+}*/
