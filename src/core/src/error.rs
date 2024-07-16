@@ -61,7 +61,7 @@ pub enum MechErrorKind {
   IncorrectNumberOfArguments,
   //UnhandledTableShape(TableShape),
   TooManyInputArguments(usize,usize),                // (given,expected)
-  ParserError(nodes::ParserNode, ParserErrorReport, String),
+  ParserError(ParserErrorReport, String),
   //MissingCapability(Capability),
   InvalidCapabilityToken,
   None,
