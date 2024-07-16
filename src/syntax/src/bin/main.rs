@@ -66,7 +66,7 @@ fn main() -> Result<(),MechError> {
         },
         Err(err) => {
           println!("{:?}", err);          
-          if let MechErrorKind::ParserError(node, report, _) = err.kind {
+          if let MechErrorKind::ParserError(report, _) = err.kind {
             println!("----- TREE -----");
             println!("{:?}", node);
             println!("----- MESSAGE -----");
