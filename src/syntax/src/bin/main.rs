@@ -29,7 +29,7 @@ fn main() -> Result<(),MechError> {
           //println!("A: {:#?}", result);
           let mut intrp = Interpreter::new();
           let result = intrp.interpret(&tree)?;
-          println!("R: {:#?}", result);
+          println!("{}", result.pretty_print());
           println!("{:#?}", intrp.symbols); 
           println!("Plan: ");
           for fxn in intrp.plan.borrow().iter() {

@@ -16,6 +16,7 @@ use std::fmt;
 use std::cmp::PartialOrd;
 use simba::scalar::ClosedNeg;
 use tabled::{
+  builder::Builder,
   settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
   Tabled,
 };
@@ -242,48 +243,94 @@ pub enum Value {
 impl Hash for Value {
   fn hash<H: Hasher>(&self, state: &mut H) {
     match self {
-      Value::U8(x) => x.borrow().hash(state),
-      Value::U16(x) => x.borrow().hash(state),
-      Value::U32(x) => x.borrow().hash(state),
-      Value::U64(x) => x.borrow().hash(state),
+      Value::Id(x)   => x.hash(state),
+      Value::Kind(x) => x.hash(state),
+      Value::U8(x)   => x.borrow().hash(state),
+      Value::U16(x)  => x.borrow().hash(state),
+      Value::U32(x)  => x.borrow().hash(state),
+      Value::U64(x)  => x.borrow().hash(state),
       Value::U128(x) => x.borrow().hash(state),
-      Value::I8(x) => x.borrow().hash(state),
-      Value::I16(x) => x.borrow().hash(state),
-      Value::I32(x) => x.borrow().hash(state),
-      Value::I64(x) => x.borrow().hash(state),
+      Value::I8(x)   => x.borrow().hash(state),
+      Value::I16(x)  => x.borrow().hash(state),
+      Value::I32(x)  => x.borrow().hash(state),
+      Value::I64(x)  => x.borrow().hash(state),
       Value::I128(x) => x.borrow().hash(state),
-      Value::F32(x) => x.borrow().hash(state),
-      Value::F64(x) => x.borrow().hash(state),
-      Value::String(x) => x.hash(state),
+      Value::F32(x)  => x.borrow().hash(state),
+      Value::F64(x)  => x.borrow().hash(state),
       Value::Bool(x) => x.borrow().hash(state),
       Value::Atom(x) => x.hash(state),
-      Value::MatrixBool(x) => x.hash(state),
-      Value::MatrixU8(x) => x.hash(state),
-      Value::MatrixU16(x) => x.hash(state),
-      Value::MatrixU32(x) => x.hash(state),
-      Value::MatrixU64(x) => x.hash(state),
-      Value::MatrixU128(x) => x.hash(state),
-      Value::MatrixI8(x) => x.hash(state),
-      Value::MatrixI16(x) => x.hash(state),
-      Value::MatrixI32(x) => x.hash(state),
-      Value::MatrixI64(x) => x.hash(state),
-      Value::MatrixI128(x) => x.hash(state),
-      Value::MatrixF32(x) => x.hash(state),
-      Value::MatrixF64(x) => x.hash(state),
-      Value::Set(x) => x.hash(state),
-      Value::Map(x) => x.hash(state),
-      Value::Record(x) => x.hash(state),
+      Value::Set(x)  => x.hash(state),
+      Value::Map(x)  => x.hash(state),
       Value::Table(x) => x.hash(state),
       Value::Tuple(x) => x.hash(state),
-      Value::Id(x) => x.hash(state),
+      Value::Record(x) => x.hash(state),
+      Value::String(x) => x.hash(state),
+      Value::MatrixBool(x) => x.hash(state),
+      Value::MatrixU8(x)   => x.hash(state),
+      Value::MatrixU16(x)  => x.hash(state),
+      Value::MatrixU32(x)  => x.hash(state),
+      Value::MatrixU64(x)  => x.hash(state),
+      Value::MatrixU128(x) => x.hash(state),
+      Value::MatrixI8(x)   => x.hash(state),
+      Value::MatrixI16(x)  => x.hash(state),
+      Value::MatrixI32(x)  => x.hash(state),
+      Value::MatrixI64(x)  => x.hash(state),
+      Value::MatrixI128(x) => x.hash(state),
+      Value::MatrixF32(x)  => x.hash(state),
+      Value::MatrixF64(x)  => x.hash(state),
       Value::MutableReference(x) => x.borrow().hash(state),
-      Value::Kind(x) => x.hash(state),
       Value::Empty => Value::Empty.hash(state),
     }
   }
 }
 
 impl Value {
+
+  pub fn pretty_print(&self) -> String {
+    let mut builder = Builder::default();
+    match self {
+      Value::U8(x)   => {builder.push_record(vec!["u8"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::U16(x)  => {builder.push_record(vec!["u16"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::U32(x)  => {builder.push_record(vec!["u32"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::U64(x)  => {builder.push_record(vec!["u64"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::U128(x) => {builder.push_record(vec!["u128"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::I8(x)   => {builder.push_record(vec!["i8"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::I16(x)  => {builder.push_record(vec!["i16"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::I32(x)  => {builder.push_record(vec!["i32"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::I64(x)  => {builder.push_record(vec!["i64"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::I128(x) => {builder.push_record(vec!["i128"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::F32(x)  => {builder.push_record(vec!["f32"]); builder.push_record(vec![format!("{:?}",x.borrow().0)]);},
+      Value::F64(x)  => {builder.push_record(vec!["f64"]); builder.push_record(vec![format!("{:?}",x.borrow().0)]);},
+      Value::Bool(x) => {builder.push_record(vec!["bool"]); builder.push_record(vec![format!("{:?}",x)]);},
+      Value::Atom(x) => {builder.push_record(vec!["atom"]); builder.push_record(vec![format!("{:?}",x)]);},
+      Value::Set(x)  => builder.push_record(vec![format!("{:?}",x)]),
+      Value::Map(x)  => builder.push_record(vec![format!("{:?}",x)]),
+      Value::String(x) => builder.push_record(vec![x]),
+      Value::Table(x)  => builder.push_record(vec![format!("{:?}",x)]),
+      Value::Tuple(x)  => builder.push_record(vec![format!("{:?}",x)]),
+      Value::Record(x) => builder.push_record(vec![format!("{:?}",x)]),
+      Value::MatrixBool(x) => {return x.pretty_print();}
+      Value::MatrixU8(x)   => {return x.pretty_print();},
+      Value::MatrixU16(x)  => {return x.pretty_print();},
+      Value::MatrixU32(x)  => {return x.pretty_print();},
+      Value::MatrixU64(x)  => {return x.pretty_print();},
+      Value::MatrixU128(x) => {return x.pretty_print();},
+      Value::MatrixI8(x)   => {return x.pretty_print();},
+      Value::MatrixI16(x)  => {return x.pretty_print();},
+      Value::MatrixI32(x)  => {return x.pretty_print();},
+      Value::MatrixI64(x)  => {return x.pretty_print();},
+      Value::MatrixI128(x) => {return x.pretty_print();},
+      Value::MatrixF32(x)  => {return x.pretty_print();},
+      Value::MatrixF64(x)  => {return x.pretty_print();},
+      Value::MutableReference(x) => {return x.borrow().pretty_print();},
+      Value::Empty => builder.push_record(vec!["_"]),
+      _ => unreachable!(),
+    };
+    let mut table = builder.build();
+    table.with(Style::modern());
+    format!("{table}")
+  }
+
   pub fn shape(&self) -> Vec<usize> {
     match self {
       Value::U8(x) => vec![1,1],
@@ -441,8 +488,7 @@ macro_rules! impl_to_value_matrix {
         }
       }
     )+
-  };
-}
+  };}
 
 impl_to_value_matrix!(
 
@@ -912,10 +958,7 @@ macro_rules! impl_to_matrix {
           (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
           (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
         }
-      }
-    }
-  };
-}
+      }}};}
 
 impl_to_matrix!(u8);
 impl_to_matrix!(u16);
@@ -976,6 +1019,32 @@ where T: Hash + na::Scalar
 impl<T> Matrix<T> 
 where T: Debug + Clone + Copy + PartialEq + 'static
 {
+
+  pub fn pretty_print(&self) -> String {
+    let mut builder = Builder::default();
+    match self {
+      Matrix::RowVector2(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
+      Matrix::RowVector3(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
+      Matrix::RowVector4(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
+      Matrix::Vector2(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
+      Matrix::Vector3(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
+      Matrix::Vector4(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
+      Matrix::Matrix1(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
+      Matrix::Matrix2(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
+      Matrix::Matrix3(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
+      Matrix::Matrix4(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
+      Matrix::Matrix2x3(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
+      Matrix::Matrix3x2(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
+      Matrix::DMatrix(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
+      Matrix::RowDVector(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
+      Matrix::DVector(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
+      _ => todo!(),
+    };
+    let mut table = builder.build();
+    table.with(Style::modern());
+    format!("{table}")
+  }
+
 
   pub fn shape(&self) -> Vec<usize> {
     let shape = match self {
@@ -1849,385 +1918,110 @@ fn boolean(tkn: &Token) -> Value {
 macro_rules! addto_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { (*$lhs).add_to(&*$rhs,&mut *$out) }
-  };
-}
+  };}
 
 macro_rules! subto_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { (*$lhs).sub_to(&*$rhs,&mut *$out) }
-  };
-}
+  };}
 
 macro_rules! component_mul_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { *$out = (*$lhs).component_mul(&*$rhs); }
-  };
-}
+  };}
 
 macro_rules! component_div_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { *$out = (*$lhs).component_div(&*$rhs); }
-  };
-}
+  };}
 
 macro_rules! add_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { *$out = *$lhs + *$rhs; }
-  };
-}
+  };}
 
 macro_rules! sub_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { *$out = *$lhs - *$rhs; }
-  };
-}
+  };}
 
 macro_rules! mul_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { *$out = *$lhs * *$rhs; }
-  };
-}
+  };}
 
 macro_rules! div_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { *$out = *$lhs / *$rhs; }
-  };
-}
+  };}
 
 macro_rules! add_scalar_lhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { *$out = (*$lhs).add_scalar(*$rhs); }
-  };
-}
+  };}
 
 macro_rules! add_scalar_rhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { *$out = (*$rhs).add_scalar(*$lhs); }
-  };
-}
+  };}
 
 macro_rules! sub_scalar_lhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$lhs).len() {
         (*$out)[i] = (*$lhs)[i] - (*$rhs);
-      }
-    }
-  };
-}
+      }}};}
 
 macro_rules! sub_scalar_rhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$rhs).len() {
         (*$out)[i] = (*$lhs) - (*$rhs)[i];
-      }
-    }
-  };
-}
+      }}};}
 
 macro_rules! sub_scalar_lhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$lhs).len() {
         (*$out)[i] = (*$lhs)[i] - (*$rhs);
-      }
-    }
-  };
-}
+      }}};}
 
 macro_rules! sub_scalar_rhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$rhs).len() {
         (*$out)[i] = (*$lhs) - (*$rhs)[i];
-      }
-    }
-  };
-}
+      }}};}
 
 macro_rules! sub_scalar_lhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$lhs).len() {
         (*$out)[i] = (*$lhs)[i] - (*$rhs);
-      }
-    }
-  };
-}
+      }}};}
 
 macro_rules! mul_scalar_lhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { *$out = (*$lhs).clone() * *$rhs; }
-  };
-}
+  };}
 
 macro_rules! mul_scalar_rhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = (*$rhs).clone() * *$lhs;}
-  };
-}
+    unsafe { *$out = (*$rhs).clone() * *$lhs;}};}
 
 macro_rules! div_scalar_lhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$lhs).len() {
         (*$out)[i] = (*$lhs)[i] / (*$rhs);
-      }
-    }
-  };
-}
+      }}};}
 
 macro_rules! div_scalar_rhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$rhs).len() {
         (*$out)[i] = (*$lhs) / (*$rhs)[i];
-      }
-    }
-  };
-}
-
-macro_rules! lt_scalar_lhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] < (*$rhs);
-      }
-    }
-  };
-}
-
-macro_rules! lt_scalar_rhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$rhs).len() {
-        (*$out)[i] = (*$lhs) < (*$rhs)[i];
-      }
-    }
-  };
-}
-
-
-macro_rules! lt_vec_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] < (*$rhs)[i];
-      }
-    }
-  };
-}
-
-macro_rules! lt_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      (*$out) = (*$lhs) < (*$rhs);
-    }
-  };
-}
-
-macro_rules! gt_scalar_lhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] > (*$rhs);
-      }
-    }
-  };
-}
-
-macro_rules! gt_scalar_rhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$rhs).len() {
-        (*$out)[i] = (*$lhs) > (*$rhs)[i];
-      }
-    }
-  };
-}
-
-macro_rules! gt_vec_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] > (*$rhs)[i];
-      }
-    }
-  };
-}
-
-macro_rules! gt_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      (*$out) = (*$lhs) > (*$rhs);
-    }
-  };
-}
-
-macro_rules! neq_scalar_lhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] != (*$rhs);
-      }
-    }
-  };
-}
-
-macro_rules! neq_scalar_rhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$rhs).len() {
-        (*$out)[i] = (*$lhs) != (*$rhs)[i];
-      }
-    }
-  };
-}
-
-
-macro_rules! neq_vec_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] != (*$rhs)[i];
-      }
-    }
-  };
-}
-
-macro_rules! neq_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      (*$out) = (*$lhs) != (*$rhs);
-    }
-  };
-}
-
-macro_rules! eq_scalar_lhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] == (*$rhs);
-      }
-    }
-  };
-}
-
-macro_rules! eq_scalar_rhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$rhs).len() {
-        (*$out)[i] = (*$lhs) == (*$rhs)[i];
-      }
-    }
-  };
-}
-
-
-macro_rules! eq_vec_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] == (*$rhs)[i];
-      }
-    }
-  };
-}
-
-macro_rules! eq_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      (*$out) = (*$lhs) == (*$rhs);
-    }
-  };
-}
-
-
-macro_rules! lte_scalar_lhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] <= (*$rhs);
-      }
-    }
-  };
-}
-
-macro_rules! lte_scalar_rhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$rhs).len() {
-        (*$out)[i] = (*$lhs) <= (*$rhs)[i];
-      }
-    }
-  };
-}
-
-
-macro_rules! lte_vec_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] <= (*$rhs)[i];
-      }
-    }
-  };
-}
-
-macro_rules! lte_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      (*$out) = (*$lhs) <= (*$rhs);
-    }
-  };
-}
-
-macro_rules! gte_scalar_lhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] >= (*$rhs);
-      }
-    }
-  };
-}
-
-macro_rules! gte_scalar_rhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$rhs).len() {
-        (*$out)[i] = (*$lhs) >= (*$rhs)[i];
-      }
-    }
-  };
-}
-
-
-macro_rules! gte_vec_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] >= (*$rhs)[i];
-      }
-    }
-  };
-}
-
-macro_rules! gte_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      (*$out) = (*$lhs) >= (*$rhs);
-    }
-  };
-}
-
-
-macro_rules! matmul_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { (*$lhs).mul_to(&*$rhs,&mut *$out); }
-  };
-}
+      }}};}
 
 macro_rules! impl_binop {
   ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
@@ -2256,9 +2050,7 @@ macro_rules! impl_binop {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:?}", self) }
-    }
-  };
-}
+    }};}
 
 macro_rules! impl_bool_binop {
   ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
@@ -2282,9 +2074,7 @@ macro_rules! impl_bool_binop {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:?}", self) }
-    }
-  };
-}
+    }};}
 
 macro_rules! generate_binop_match_arms {
   ($lib:ident, $arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr),+);+ $(;)?) => {
@@ -2293,92 +2083,66 @@ macro_rules! generate_binop_match_arms {
         $(
           $(
             (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => {
-              Ok(Box::new([<$lib Scalar>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($default) }))
-            },
+              Ok(Box::new([<$lib Scalar>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($default) }))},
             (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
-              Ok(Box::new([<$lib M2M2>]{lhs, rhs, out: new_ref(Matrix2::from_element($default))}))
-            },
+              Ok(Box::new([<$lib M2M2>]{lhs, rhs, out: new_ref(Matrix2::from_element($default))}))},
             (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
-              Ok(Box::new([<$lib SM2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($default))}))
-            },
+              Ok(Box::new([<$lib SM2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($default))}))},
             (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
-              Ok(Box::new([<$lib SM2>]{lhs, rhs, out: new_ref(Matrix2::from_element($default))}))
-            },
+              Ok(Box::new([<$lib SM2>]{lhs, rhs, out: new_ref(Matrix2::from_element($default))}))},
             (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
-              Ok(Box::new([<$lib SR2>]{lhs, rhs, out: new_ref(RowVector2::from_element($default))}))
-            },
+              Ok(Box::new([<$lib SR2>]{lhs, rhs, out: new_ref(RowVector2::from_element($default))}))},
             (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
-              Ok(Box::new([<$lib SR3>]{lhs, rhs, out: new_ref(RowVector3::from_element($default))}))
-            },
+              Ok(Box::new([<$lib SR3>]{lhs, rhs, out: new_ref(RowVector3::from_element($default))}))},
             (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
-              Ok(Box::new([<$lib SR4>]{lhs, rhs, out: new_ref(RowVector4::from_element($default))}))
-            },
+              Ok(Box::new([<$lib SR4>]{lhs, rhs, out: new_ref(RowVector4::from_element($default))}))},
             (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
               let length = {rhs.borrow().len()};
-              Ok(Box::new([<$lib SRD>]{lhs, rhs, out: new_ref(RowDVector::from_element(length,$default))}))
-            },
+              Ok(Box::new([<$lib SRD>]{lhs, rhs, out: new_ref(RowDVector::from_element(length,$default))}))},
             (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => {
               let length = {rhs.borrow().len()};
-              Ok(Box::new([<$lib SVD>]{lhs, rhs, out: new_ref(DVector::from_element(length,$default))}))
-            },
+              Ok(Box::new([<$lib SVD>]{lhs, rhs, out: new_ref(DVector::from_element(length,$default))}))},
             (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::DMatrix(rhs))) => {
               let (rows,cols) = {rhs.borrow().shape()};
-              Ok(Box::new([<$lib SMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))}))
-            },
+              Ok(Box::new([<$lib SMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))}))},
             (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)),Value::$lhs_type(rhs)) => {
-              Ok(Box::new([<$lib M2x3S>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($default))}))
-            },
+              Ok(Box::new([<$lib M2x3S>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($default))}))},
             (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)),Value::$lhs_type(rhs)) => {
-              Ok(Box::new([<$lib M2S>]{lhs, rhs, out: new_ref(Matrix2::from_element($default))}))
-            },
+              Ok(Box::new([<$lib M2S>]{lhs, rhs, out: new_ref(Matrix2::from_element($default))}))},
             (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)),Value::$lhs_type(rhs)) => {
-              Ok(Box::new([<$lib R2S>]{lhs, rhs, out: new_ref(RowVector2::from_element($default))}))
-            },
+              Ok(Box::new([<$lib R2S>]{lhs, rhs, out: new_ref(RowVector2::from_element($default))}))},
             (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)),Value::$lhs_type(rhs)) => {
-              Ok(Box::new([<$lib R3S>]{lhs, rhs, out: new_ref(RowVector3::from_element($default))}))
-            },
+              Ok(Box::new([<$lib R3S>]{lhs, rhs, out: new_ref(RowVector3::from_element($default))}))},
             (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)),Value::$lhs_type(rhs)) => {
-              Ok(Box::new([<$lib R4S>]{lhs, rhs, out: new_ref(RowVector4::from_element($default))}))
-            },
+              Ok(Box::new([<$lib R4S>]{lhs, rhs, out: new_ref(RowVector4::from_element($default))}))},
             (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)),Value::$lhs_type(rhs)) => {
               let length = {lhs.borrow().len()};
-              Ok(Box::new([<$lib RDS>]{lhs, rhs, out: new_ref(RowDVector::from_element(length,$default))}))
-            },
+              Ok(Box::new([<$lib RDS>]{lhs, rhs, out: new_ref(RowDVector::from_element(length,$default))}))},
             (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)),Value::$lhs_type(rhs)) => {
               let length = {lhs.borrow().len()};
-              Ok(Box::new([<$lib VDS>]{lhs, rhs, out: new_ref(DVector::from_element(length,$default))}))
-            },
+              Ok(Box::new([<$lib VDS>]{lhs, rhs, out: new_ref(DVector::from_element(length,$default))}))},
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(lhs)),Value::$lhs_type(rhs)) => {
               let (rows,cols) = {lhs.borrow().shape()};
-              Ok(Box::new([<$lib MDS>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))}))
-            },
+              Ok(Box::new([<$lib MDS>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))}))},
             (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
-              Ok(Box::new([<$lib M3M3>]{lhs, rhs, out: new_ref(Matrix3::from_element($default))}))
-            },
+              Ok(Box::new([<$lib M3M3>]{lhs, rhs, out: new_ref(Matrix3::from_element($default))}))},
             (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => {
-              Ok(Box::new([<$lib R2R2>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element($default)) }))
-            },
+              Ok(Box::new([<$lib R2R2>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element($default)) }))},
             (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => {
-              Ok(Box::new([<$lib R3R3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($default)) }))
-            },
+              Ok(Box::new([<$lib R3R3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($default)) }))},
             (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => {
-              Ok(Box::new([<$lib R4R4>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element($default)) }))
-            },
+              Ok(Box::new([<$lib R4R4>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element($default)) }))},
             (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
-              Ok(Box::new([<$lib M2x3M2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($default))}))
-            },          
+              Ok(Box::new([<$lib M2x3M2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($default))}))},          
             (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
               let length = {lhs.borrow().len()};
-              Ok(Box::new([<$lib RDRD>]{lhs, rhs, out: new_ref(RowDVector::from_element(length,$default))}))
-            },
+              Ok(Box::new([<$lib RDRD>]{lhs, rhs, out: new_ref(RowDVector::from_element(length,$default))}))},
             (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => {
               let length = {lhs.borrow().len()};
-              Ok(Box::new([<$lib VDVD>]{lhs, rhs, out: new_ref(DVector::from_element(length,$default))}))
-            },
+              Ok(Box::new([<$lib VDVD>]{lhs, rhs, out: new_ref(DVector::from_element(length,$default))}))},
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DMatrix(rhs))) => {
               let (rows,cols) = {lhs.borrow().shape()};
-              Ok(Box::new([<$lib MDMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))}))
-            },
+              Ok(Box::new([<$lib MDMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))}))},
           )+
         )+
         x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
@@ -2816,9 +2580,7 @@ macro_rules! impl_neg_fxn {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:?}", self) }
-    }
-  };
-}
+    }};}
 
 impl_neg_fxn!(NegateScalar, T);
 impl_neg_fxn!(NegateM2, Matrix2<T>);
@@ -2847,9 +2609,7 @@ macro_rules! impl_neg_fxn_dynamic {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:?}", self) }
-    }
-  };
-}
+    }};}
 
 impl_neg_fxn_dynamic!(NegateRD, RowDVector<T>);
 impl_neg_fxn_dynamic!(NegateVD, DVector<T>);
@@ -3050,6 +2810,174 @@ impl NativeFunctionCompiler for LogicOr {
 // ----------------------------------------------------------------------------
 // Compare Library
 // ----------------------------------------------------------------------------
+
+macro_rules! lt_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] < (*$rhs);
+      }}};}
+
+macro_rules! lt_scalar_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$rhs).len() {
+        (*$out)[i] = (*$lhs) < (*$rhs)[i];
+      }}};}
+
+
+macro_rules! lt_vec_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] < (*$rhs)[i];
+      }}};}
+
+macro_rules! lt_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      (*$out) = (*$lhs) < (*$rhs);
+    }};}
+
+macro_rules! gt_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] > (*$rhs);
+      }}};}
+
+macro_rules! gt_scalar_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$rhs).len() {
+        (*$out)[i] = (*$lhs) > (*$rhs)[i];
+      }}};}
+
+macro_rules! gt_vec_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] > (*$rhs)[i];
+      }}};}
+
+macro_rules! gt_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      (*$out) = (*$lhs) > (*$rhs);
+    }};}
+
+macro_rules! neq_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] != (*$rhs);
+      }}};}
+
+macro_rules! neq_scalar_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$rhs).len() {
+        (*$out)[i] = (*$lhs) != (*$rhs)[i];
+      }}};}
+
+
+macro_rules! neq_vec_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] != (*$rhs)[i];
+      }}};}
+
+macro_rules! neq_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      (*$out) = (*$lhs) != (*$rhs);
+    }};}
+
+macro_rules! eq_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] == (*$rhs);
+      }}};}
+
+macro_rules! eq_scalar_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$rhs).len() {
+        (*$out)[i] = (*$lhs) == (*$rhs)[i];
+      }}};}
+
+
+macro_rules! eq_vec_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] == (*$rhs)[i];
+      }}};}
+
+macro_rules! eq_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      (*$out) = (*$lhs) == (*$rhs);
+    }};}
+
+
+macro_rules! lte_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] <= (*$rhs);
+      }}};}
+
+macro_rules! lte_scalar_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$rhs).len() {
+        (*$out)[i] = (*$lhs) <= (*$rhs)[i];
+      }}};}
+
+
+macro_rules! lte_vec_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] <= (*$rhs)[i];
+      }}};}
+
+macro_rules! lte_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      (*$out) = (*$lhs) <= (*$rhs);
+    }};}
+
+macro_rules! gte_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] >= (*$rhs);
+      }}};}
+
+macro_rules! gte_scalar_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$rhs).len() {
+        (*$out)[i] = (*$lhs) >= (*$rhs)[i];
+      }}};}
+
+
+macro_rules! gte_vec_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] >= (*$rhs)[i];
+      }}};}
+
+macro_rules! gte_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      (*$out) = (*$lhs) >= (*$rhs);
+    }};}
 
 // Greater Than ---------------------------------------------------------------
 
@@ -3495,6 +3423,12 @@ impl NativeFunctionCompiler for CompareLessThan {
 // Matrix Library
 // ----------------------------------------------------------------------------
 
+macro_rules! matmul_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { (*$lhs).mul_to(&*$rhs,&mut *$out); }
+  };}
+
+
 // MatMul ---------------------------------------------------------------------
 
 impl_binop!(MatMulScalar, T,T,T,mul_op);
@@ -3620,9 +3554,7 @@ macro_rules! impl_transpose_fxn {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:?}", self) }
-    }
-  };
-}
+    }};}
 
 impl_transpose_fxn!(TransposeM2, Matrix2<T>, Matrix2<T>);
 impl_transpose_fxn!(TransposeM3, Matrix3<T>, Matrix3<T>);
@@ -3651,9 +3583,7 @@ macro_rules! impl_transpose_fxn_dynamic {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:?}", self) }
-    }
-  };
-}
+    }};}
 
 impl_transpose_fxn_dynamic!(TransposeRD, RowDVector<T>, DVector<T>);
 impl_transpose_fxn_dynamic!(TransposeVD, DVector<T>, RowDVector<T>);

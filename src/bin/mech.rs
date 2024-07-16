@@ -131,7 +131,10 @@ fn main() -> Result<(), MechError> {
     match parser2::parse(&input) {
       Ok(tree) => { 
         let result = intrp.interpret(&tree);
-        println!("{:?}", result);
+        match result {
+          Ok(r) => println!("{}", r.pretty_print()),
+          Err(err) => println!("{:?}", err),
+        }
       }
       Err(err) => {
         if let MechErrorKind::ParserError(tree, report, _) = err.kind {
