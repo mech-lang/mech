@@ -43,12 +43,12 @@ use crate::*;
 /// Convert output of any parser into ParserNode::Null.
 /// Useful for working with `alt` combinator and error recovery functions.
 fn null<'a, F, O>(mut parser: F) ->
-  impl FnMut(ParseString<'a>) -> ParseResult<ParserNode>
+  impl FnMut(ParseString<'a>) -> ParseResult<()>
 where
   F: FnMut(ParseString<'a>) -> ParseResult<O>
 {
   move |input: ParseString| match parser(input) {
-    Ok((remaining, _)) => Ok((remaining, ParserNode::Null)),
+    Ok((remaining, _)) => Ok((remaining, ())),
     Err(Err::Error(e)) => Err(Err::Error(e)),
     Err(Err::Failure(e)) => Err(Err::Failure(e)),
     x => panic!("Err::Incomplete is not supported"),
@@ -203,30 +203,30 @@ pub fn tag(tag: &'static str) -> impl Fn(ParseString) -> ParseResult<String> {
 // 4. Recovery functions
 // -----------------------
 
-pub fn skip_till_eol(input: ParseString) -> ParseResult<ParserNode> {
+pub fn skip_till_eol(input: ParseString) -> ParseResult<()> {
   let (input, _) = many0(nom_tuple((
     is_not(new_line),
     any,
   )))(input)?;
-  Ok((input, ParserNode::Null))
+  Ok((input, ()))
 }
 
-fn skip_past_eol(input: ParseString) -> ParseResult<ParserNode> {
+fn skip_past_eol(input: ParseString) -> ParseResult<()> {
   let (input, _) = skip_till_eol(input)?;
   let (input, _) = new_line(input)?;
-  Ok((input, ParserNode::Null))
+  Ok((input, ()))
 }
 
-fn skip_till_section_element(input: ParseString) -> ParseResult<ParserNode> {
+fn skip_till_section_element(input: ParseString) -> ParseResult<()> {
   if input.is_empty() {
-    return Ok((input, ParserNode::Error));
+    return Ok((input, ()));
   }
   let (input, _) = skip_past_eol(input)?;
   let (input, _) = many0(nom_tuple((
     is_not(section_element),
     skip_past_eol,
   )))(input)?;
-  Ok((input, ParserNode::Error))
+  Ok((input, ()))
 }
 
 /*
@@ -259,8 +259,8 @@ pub fn skip_spaces(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-pub fn skip_nil(input: ParseString) -> ParseResult<ParserNode> {
-  Ok((input, ParserNode::Error))
+pub fn skip_nil(input: ParseString) -> ParseResult<()> {
+  Ok((input, ()))
 }
 
 pub fn skip_empty_mech_directive(input: ParseString) -> ParseResult<String> {
@@ -1290,7 +1290,7 @@ pub fn assign_operator(input: ParseString) -> ParseResult<()> {
 }
 
 // split_data := (identifier | table), <!stmt_operator>, space*, split_operator, <space+>, <expression> ;
-pub fn split_data(input: ParseString) -> ParseResult<ParserNode> {
+/*pub fn split_data(input: ParseString) -> ParseResult<ParserNode> {
   /*let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
   let (input, table) = alt((identifier, table))(input)?;
@@ -1300,10 +1300,10 @@ pub fn split_data(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
   let (input, expression) = label!(expression, msg2)(input)?;*/
   Ok((input, ParserNode::SplitData{children: vec![]}))
-}
+}*/
 
 // flatten_data := identifier, <!stmt_operator>, space*, flatten_operator, <space+>, <expression> ;
-pub fn flatten_data(input: ParseString) -> ParseResult<ParserNode> {
+/*pub fn flatten_data(input: ParseString) -> ParseResult<ParserNode> {
   /*let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
   let (input, table) = identifier(input)?;
@@ -1313,7 +1313,7 @@ pub fn flatten_data(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
   let (input, expression) = label!(expression, msg2)(input)?;*/
   Ok((input, ParserNode::FlattenData{children: vec![]}))
-}
+}*/
 
 // variable_define := identifier, define_operator, expression ;
 pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
@@ -1341,16 +1341,16 @@ pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
 // var name if there is one.
 
 // split_operator := ">-" ;
-pub fn split_operator(input: ParseString) -> ParseResult<ParserNode> {
+/*pub fn split_operator(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = tag(">-")(input)?;
   Ok((input, ParserNode::Null))
-}
+}*/
 
 // flatten_operator := "-<" ;
-pub fn flatten_operator(input: ParseString) -> ParseResult<ParserNode> {
+/*pub fn flatten_operator(input: ParseString) -> ParseResult<ParserNode> {
   let (input, _) = tag("-<")(input)?;
   Ok((input, ParserNode::Null))
-}
+}*/
 
 // statement := variable_define | variable_assign | enum_define | fm_declare | kind_define ;
 pub fn statement(input: ParseString) -> ParseResult<Statement> {
@@ -2271,6 +2271,6 @@ pub fn parse(text: &str) -> Result<Program, MechError> {
       annotation_rngs: e.1.annotation_rngs,
     }).collect();
     let msg = TextFormatter::new(text).format_error(&report);
-    Err(MechError{tokens: vec![], msg: "".to_string(), id: 3202, kind: MechErrorKind::ParserError(ParserNode::Error, report, msg)})
+    Err(MechError{tokens: vec![], msg: "".to_string(), id: 3202, kind: MechErrorKind::ParserError(report, msg)})
   }
 }

@@ -1,6 +1,6 @@
 [package]
 name = "mech-program"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Organizes Mech cores into a coordinated program."
 documentation = "http://docs.mech-lang.org"
@@ -17,9 +17,9 @@ gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = "0.2.1"
-mech-syntax = "0.2.1"
-mech-utilities = "0.2.1"
+mech-core = "0.2.2"
+mech-syntax = "0.2.2"
+mech-utilities = "0.2.2"
 
 time = "0.3.30"
 serde = "1.0.189"

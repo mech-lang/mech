@@ -19,14 +19,14 @@ extern crate nalgebra as na;
 extern crate tabled;
 extern crate libm;
 
-pub mod parser;
+//pub mod parser;
 pub mod parser2;
-pub mod ast;
-pub mod compiler;
+//pub mod ast;
+//pub mod compiler;
 //pub mod analyzer;
-#[cfg(feature="lang-server")]
-pub mod langserver;
-pub mod formatter;
+//#[cfg(feature="lang-server")]
+//pub mod langserver;
+//pub mod formatter;
 pub mod interpreter;
 
 use mech_core::*;

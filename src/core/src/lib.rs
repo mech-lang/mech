@@ -28,59 +28,59 @@ use num_traits::*;
 use std::ops::*;
 
 
-mod column;
-pub mod value;
+//mod column;
+//pub mod value;
 mod error;
-mod table;
-mod transformation;
-mod database;
-mod user_functions;
-pub mod function;
-mod block;
-mod core;
-mod schedule;
+//mod table;
+//mod transformation;
+//mod database;
+//mod user_functions;
+//pub mod function;
+//mod block;
+//mod core;
+//mod schedule;
 pub mod nodes;
-mod capabilities;
-mod types;
-pub mod statemachines;
-mod enums;
+//mod capabilities;
+//mod types;
+//pub mod statemachines;
+//mod enums;
 
-pub use self::core::Core;
-pub use self::table::*;
-pub use self::column::*;
-pub use self::value::*;
+//pub use self::core::Core;
+//pub use self::table::*;
+//pub use self::column::*;
+//pub use self::value::*;
 pub use self::error::*;
-pub use self::transformation::Transformation;
-pub use self::database::*;
-#[cfg(feature = "stdlib")]
-pub use self::function::*;
-pub use self::block::*;
-pub use self::schedule::*;
-pub use self::user_functions::*;
-pub use self::capabilities::*;
-pub use self::types::*;
-pub use self::enums::*;
-pub use self::statemachines::*;
+//pub use self::transformation::Transformation;
+//pub use self::database::*;
+//#[cfg(feature = "stdlib")]
+//pub use self::function::*;
+//pub use self::block::*;
+//pub use self::schedule::*;
+//pub use self::user_functions::*;
+//pub use self::capabilities::*;
+//pub use self::types::*;
+//pub use self::enums::*;
+//pub use self::statemachines::*;
 
-#[derive(Debug, Clone)]
+/*#[derive(Debug, Clone)]
 pub enum SectionElement {
   Block(Block),
   UserFunction(UserFunction),
-}
+}*/
 
-pub fn resize_one(block: &mut Block, out: &Out) -> std::result::Result<(),MechError> {
+/*pub fn resize_one(block: &mut Block, out: &Out) -> std::result::Result<(),MechError> {
   let (out_table_id,_,_) = out;
   let out_table = block.get_table(out_table_id)?;
   let mut out_brrw = out_table.borrow_mut();
   out_brrw.resize(1,1);
   Ok(())
-}
+}*/
 
-pub trait Machine {
+/*pub trait Machine {
   fn name(&self) -> String;
   fn id(&self) -> u64;
   fn on_change(&mut self, table: &Table) -> Result<(), MechError>;
-}
+}*/
 
 
 #[derive(Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
@@ -205,7 +205,7 @@ pub const WORDLIST: &[&str;256] = &[
   "ulu", "fix", "gry", "hol", "jup", "lam", "pas",
   "rom", "sne", "ten", "uta"];
 
-
+/*
 #[derive(Debug)]
 pub enum LineKind {
   Title((String,String)),
@@ -541,3 +541,4 @@ impl fmt::Debug for BoxPrinter {
     Ok(())
   }
 }
+*/

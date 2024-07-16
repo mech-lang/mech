@@ -9,6 +9,7 @@ use crate::nodes::{SourceRange, Token};
 
 type Rows = usize;
 type Cols = usize;
+pub type ParserErrorReport = Vec<ParserErrorContext>;
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct MechError {
@@ -30,10 +31,10 @@ pub enum MechErrorKind {
   UndefinedField(u64),                               // Accessed a field of a record that's not defined
   UndefinedVariable(u64),                            // Accessed a variable that's not defined
   UndefinedKind(u64),                                // Used a kind that's not defined
-  MissingTable(TableId),                             // TableId of missing table
-  MissingBlock(BlockId),                             // BlockId of missing block
+  MissingTable(u64),                               // TableId of missing table
+  MissingBlock(u64),                             // BlockId of missing block
   PendingExpression,                              // id of pending variable
-  PendingTable(TableId),                             // TableId of pending table                          
+  PendingTable(u64),                             // TableId of pending table                          
   DimensionMismatch(Vec<(Rows,Cols)>),               // Argument dimensions are mismatched ((row,col),(row,col))
   //MissingColumn((TableId,TableIndex)),             // The identified table is missing a needed column
   //ColumnKindMismatch(Vec<ValueKind>),              // Excepted kind versus given kind
@@ -58,10 +59,10 @@ pub enum MechErrorKind {
   ExpectedNumericForSize,                            // When something non-numeric is passed as a size
   MatrixMustHaveHomogenousKind,                      // When multiple element kinds are specified for a matrix
   IncorrectNumberOfArguments,
-  UnhandledTableShape(TableShape),
+  //UnhandledTableShape(TableShape),
   TooManyInputArguments(usize,usize),                // (given,expected)
-  ParserError(nodes::ParserNode, ParserErrorReport, String),
-  MissingCapability(Capability),
+  ParserError(ParserErrorReport, String),
+  //MissingCapability(Capability),
   InvalidCapabilityToken,
   None,
 }
