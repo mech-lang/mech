@@ -25,7 +25,7 @@ use tabled::{
 };
 
 fn main() -> Result<(), MechError> {
-  let version = "0.2.1";
+  let version = "0.2.2";
   let text_logo = r#"
   ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐   ┌─┐
   └───┐ ┌───┘ └──────┘ │ │ └┐ │ │ │   │ │
