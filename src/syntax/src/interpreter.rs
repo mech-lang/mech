@@ -1799,7 +1799,7 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
       FormulaOperator::Comparison(ComparisonOp::GreaterThan) => CompareGreaterThan{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Logic(LogicOp::And) => LogicAnd{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Logic(LogicOp::Or) => LogicOr{}.compile(&vec![lhs,rhs])?,
-      //FormulaOperator::Logic(LogicOp::Not) => LogicNot{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::Logic(LogicOp::Not) => LogicNot{}.compile(&vec![lhs,rhs])?,
       //FormulaOperator::Logic(LogicOp::Xor) => LogicXor{}.compile(&vec![lhs,rhs])?,
       x => todo!(),
     };
@@ -2071,6 +2071,28 @@ macro_rules! impl_bool_binop {
         let rhs_ptr = self.rhs.as_ptr();
         let out_ptr = self.out.as_ptr();
         $op!(lhs_ptr,rhs_ptr,out_ptr);
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }};}
+
+macro_rules! impl_bool_urop {
+  ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      arg: Ref<$arg_type>,
+      out: Ref<$out_type>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + 'static + 
+      PartialEq + PartialOrd,
+      Ref<$out_type>: ToValue
+    {
+      fn solve(&self) {
+        let arg_ptr = self.arg.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        $op!(arg_ptr,out_ptr);
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:?}", self) }
@@ -2799,6 +2821,47 @@ impl NativeFunctionCompiler for LogicOr {
       (Value::MutableReference(lhs),Value::Bool(rhs)) => {
         match (&*lhs.borrow()) {
           (Value::Bool(lhs)) => Ok(Box::new(OrScalar{lhs: lhs.clone(), rhs, out: new_ref(false)})),
+          _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+        }
+      }
+      x => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    }
+  }
+}
+
+// Not ------------------------------------------------------------------------
+
+#[derive(Debug)]
+struct NotScalar {
+  lhs: Ref<bool>,
+  out: Ref<bool>,
+}
+
+impl MechFunction for NotScalar {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {*out_ptr = !*lhs_ptr;}
+  }
+  fn out(&self) -> Value {
+    Value::Bool(self.out.clone())
+  }
+  fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
+pub struct LogicNot {}
+
+impl NativeFunctionCompiler for LogicNot {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() != 1 {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    match (arguments[0].clone()) {
+      (Value::Bool(lhs)) =>
+        Ok(Box::new(NotScalar{lhs, out: new_ref(false)})),
+      (Value::MutableReference(lhs)) => {
+        match (&*lhs.borrow()) {
+          (Value::Bool(lhs)) => Ok(Box::new(NotScalar{lhs: lhs.clone(), out: new_ref(false)})),
           _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
         }
       }
