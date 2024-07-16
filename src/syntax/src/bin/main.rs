@@ -1,6 +1,3 @@
-use mech_syntax::parser;
-use mech_syntax::ast::Ast;
-use mech_syntax::compiler::Compiler;
 use mech_core::*;
 use mech_syntax::parser2;
 use mech_syntax::interpreter::Value;
@@ -73,7 +70,7 @@ fn main() -> Result<(),MechError> {
             println!("----- TREE -----");
             println!("{:?}", node);
             println!("----- MESSAGE -----");
-            parser::print_err_report(&s, &report);
+            parser2::print_err_report(&s, &report);
           } else {
             panic!("Unexpected error type");
           }
@@ -81,31 +78,6 @@ fn main() -> Result<(),MechError> {
     }
     return Ok(());
     // ----------------------------------------------------------------
-
-let input = r#"
-[a<f32>] = foo(x<f32>)
-  y = 3
-  z = x * 2
-  a = z + y * 3
-y = foo(x: 10)
-#test = y"#;
-  let input = String::from(input);
-
-  let mut ast = Ast::new();
-  let mut compiler = Compiler::new();
-  let mut core = Core::new();
-  let parse_tree = parser::parse(&input)?;
-  println!("{:#?}", parse_tree);
-
-  ast.build_syntax_tree(&parse_tree);
-
-  println!("{:?}", ast.syntax_tree);
-
-  let sections = compiler.compile_sections(&vec![ast.syntax_tree.clone()]).unwrap();
-  //println!("{:?}",sections);
-  core.load_sections(sections);
-  println!("{:#?}", core.blocks);
-  println!("{:?}", core);
 
 /*
   let mut code = r#"

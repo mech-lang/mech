@@ -7,25 +7,25 @@ use std::cell::RefCell;
 // Types
 // -------
 
-pub type TableRef = Rc<RefCell<Table>>;
-pub type BlockRef = Rc<RefCell<Block>>;
+//pub type TableRef = Rc<RefCell<Table>>;
+//pub type BlockRef = Rc<RefCell<Block>>;
 
-pub type Transaction = Vec<Change>;
-pub type Register = (TableId,RegisterIndex,RegisterIndex);
+//pub type Transaction = Vec<Change>;
+//pub type Register = (TableId,RegisterIndex,RegisterIndex);
 pub type ParserErrorReport = Vec<ParserErrorContext>;
 
 
 pub type BlockId = u64;
 pub type ArgumentName = u64;
-pub type Argument = (ArgumentName, TableId, Vec<(TableIndex, TableIndex)>);
-pub type Out = (TableId, TableIndex, TableIndex);
+//pub type Argument = (ArgumentName, TableId, Vec<(TableIndex, TableIndex)>);
+//pub type Out = (TableId, TableIndex, TableIndex);
 
 
-pub type Arg<T> = ColumnV<T>;
-pub type ArgTable = Rc<RefCell<Table>>;
-pub type OutTable = Rc<RefCell<Table>>;
+//pub type Arg<T> = ColumnV<T>;
+//pub type ArgTable = Rc<RefCell<Table>>;
+//pub type OutTable = Rc<RefCell<Table>>;
 
-pub type StringDictionary = Rc<RefCell<HashMap<u64,MechString>>>;
+//pub type StringDictionary = Rc<RefCell<HashMap<u64,MechString>>>;
 
 pub type TableIx = usize;
 pub type Alias = u64;
