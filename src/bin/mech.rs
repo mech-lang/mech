@@ -92,7 +92,7 @@ fn main() -> Result<(), MechError> {
         }
       },
       Err(err) => {
-        if let MechErrorKind::ParserError(tree, report, _) = err.kind {
+        if let MechErrorKind::ParserError(report, _) = err.kind {
           parser2::print_err_report(&s, &report);
         } else {
           panic!("Unexpected error type");
@@ -134,7 +134,7 @@ fn main() -> Result<(), MechError> {
         }
       }
       Err(err) => {
-        if let MechErrorKind::ParserError(tree, report, _) = err.kind {
+        if let MechErrorKind::ParserError(report, _) = err.kind {
           parser2::print_err_report(&input, &report);
         } else {
           panic!("Unexpected error type");
