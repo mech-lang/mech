@@ -18,7 +18,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 // ## Client Message
-
+/*
 #[derive(Serialize, Deserialize, Debug)]
 pub enum SocketMessage {
   Ping,
@@ -58,10 +58,10 @@ impl fmt::Debug for MechSocket {
       &MechSocket::WebSocketSender(_) => write!(f, "MechSocket::WebSocketSender()"),
     }
   }
-}
+}*/
 
-type CoreIndex = u64;
-
+//type CoreIndex = u64;
+/*
 #[cfg(not(target_arch = "wasm32"))]
 #[cfg(feature = "web")]
 #[repr(C)]
@@ -94,8 +94,8 @@ pub enum RunLoopMessage {
   Blocks(Vec<MiniBlock>),
   RemoteCoreConnect(MechSocket),
   RemoteCoreDisconnect(CoreIndex),
-}
-
+}*/
+/*
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MiniTable {
   pub id: u64,     
@@ -151,8 +151,8 @@ impl MiniTable {
     } 
     table
   }
-}
-
+}*/
+/*
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MiniCore {
   //pub sections: Vec<HashMap<BlockId,Rc<RefCell<Block>>>>,
@@ -205,18 +205,18 @@ impl MiniCore {
     core.overwrite_tables(&tables);
     core
   }
-}
+}*/
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+/*#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MiniBlock {
   pub id: u64,
   pub ast: nodes::AstNode,
   pub transformations: Vec<Transformation>,
   pub strings: Vec<(u64, String)>,
   pub number_literals: Vec<(u64, NumberLiteral)>,
-}
+}*/
 
-impl MiniBlock {
+/*impl MiniBlock {
   pub fn new() -> MiniBlock { 
     MiniBlock {
       id: 0,
@@ -254,8 +254,8 @@ impl MiniBlock {
     block.ast = miniblock.ast.clone();
     block
   }
-}
-
+}*/
+/*
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MechCode {
   String(String),
@@ -342,3 +342,4 @@ impl MechFunctionRegistrar for MechFunctions {
     self.mech_functions.insert(function_id, mech_function_compiler);
   }
 }
+  */

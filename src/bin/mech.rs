@@ -1,8 +1,5 @@
 #![feature(hash_extract_if)]
 #![allow(warnings)]
-use mech_syntax::parser;
-use mech_syntax::ast::Ast;
-use mech_syntax::compiler::Compiler;
 use mech_core::*;
 use mech_syntax::parser2;
 //use mech_syntax::analyzer::*;
@@ -96,7 +93,7 @@ fn main() -> Result<(), MechError> {
       },
       Err(err) => {
         if let MechErrorKind::ParserError(tree, report, _) = err.kind {
-          parser::print_err_report(&s, &report);
+          parser2::print_err_report(&s, &report);
         } else {
           panic!("Unexpected error type");
         }
@@ -138,7 +135,7 @@ fn main() -> Result<(), MechError> {
       }
       Err(err) => {
         if let MechErrorKind::ParserError(tree, report, _) = err.kind {
-          parser::print_err_report(&input, &report);
+          parser2::print_err_report(&input, &report);
         } else {
           panic!("Unexpected error type");
         }
