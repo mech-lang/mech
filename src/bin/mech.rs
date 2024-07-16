@@ -1,7 +1,7 @@
 #![feature(hash_extract_if)]
 #![allow(warnings)]
 use mech_core::*;
-use mech_syntax::parser2;
+use mech_syntax::parser;
 //use mech_syntax::analyzer::*;
 use mech_syntax::interpreter::*;
 use std::time::Instant;
@@ -56,7 +56,7 @@ fn main() -> Result<(), MechError> {
   let mut intrp = Interpreter::new();
   if let Some(mech_paths) = matches.get_one::<String>("mech_paths") {
     let s = fs::read_to_string(&mech_paths).unwrap();
-    match parser2::parse(&s) {
+    match parser::parse(&s) {
       Ok(tree) => { 
         let result = intrp.interpret(&tree);
         let debug_flag = matches.get_flag("debug");
@@ -93,7 +93,7 @@ fn main() -> Result<(), MechError> {
       },
       Err(err) => {
         if let MechErrorKind::ParserError(report, _) = err.kind {
-          parser2::print_err_report(&s, &report);
+          parser::print_err_report(&s, &report);
         } else {
           panic!("Unexpected error type");
         }
@@ -125,7 +125,7 @@ fn main() -> Result<(), MechError> {
     io::stdout().flush().unwrap();
     let mut input = String::new();
     io::stdin().read_line(&mut input).unwrap();
-    match parser2::parse(&input) {
+    match parser::parse(&input) {
       Ok(tree) => { 
         let result = intrp.interpret(&tree);
         match result {
@@ -135,7 +135,7 @@ fn main() -> Result<(), MechError> {
       }
       Err(err) => {
         if let MechErrorKind::ParserError(report, _) = err.kind {
-          parser2::print_err_report(&input, &report);
+          parser::print_err_report(&input, &report);
         } else {
           panic!("Unexpected error type");
         }

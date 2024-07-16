@@ -6,9 +6,8 @@ extern crate lazy_static;
 extern crate nalgebra as na;
 use std::cell::RefCell;
 use std::rc::Rc;
-use mech_syntax::parser2;
-use mech_syntax::interpreter::ToValue;
-use mech_syntax::interpreter::*;
+use mech_syntax::matrix::Matrix;
+use mech_syntax::*;
 use indexmap::set::IndexSet;
 use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix3x2, Matrix2x3, Matrix6, Matrix2};
 
@@ -18,7 +17,7 @@ use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, Ro
       #[test]
       fn $func() {
         let s = $input;
-        match parser2::parse(&s) {
+        match parser::parse(&s) {
             Ok(tree) => { 
               let mut intrp = Interpreter::new();
               let result = intrp.interpret(&tree).unwrap();

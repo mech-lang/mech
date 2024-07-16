@@ -1,6 +1,6 @@
 use mech_core::*;
-use mech_syntax::parser2;
-use mech_syntax::interpreter::Value;
+use mech_syntax::parser;
+use mech_syntax::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -18,7 +18,7 @@ fn main() -> Result<(),MechError> {
 
     let s = fs::read_to_string("../../test.mec").unwrap();
 
-    match parser2::parse(&s) {
+    match parser::parse(&s) {
         Ok(tree) => { 
           println!("----------- SYNTAX TREE ---------");
           println!("{:#?}", tree);
@@ -68,7 +68,7 @@ fn main() -> Result<(),MechError> {
           println!("{:?}", err);          
           if let MechErrorKind::ParserError(report, _) = err.kind {
             println!("----- MESSAGE -----");
-            parser2::print_err_report(&s, &report);
+            parser::print_err_report(&s, &report);
           } else {
             panic!("Unexpected error type");
           }
