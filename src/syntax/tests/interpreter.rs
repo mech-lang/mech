@@ -74,6 +74,7 @@ test_interpreter!(interpret_formula_logic_and2, "true & false", Value::Bool(new_
 test_interpreter!(interpret_formula_logic_or_vec, "[true false true] | [false false true]", Value::MatrixBool(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![true,false,true])))));
 test_interpreter!(interpret_formula_logic_or, "true | false", Value::Bool(new_ref(true)));
 test_interpreter!(interpret_formula_logic_or2, "false | false", Value::Bool(new_ref(false)));
+test_interpreter!(interpret_formula_logic_xor_vec, "[true false false] ⊕ [true true false]", Value::MatrixBool(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![false,true,false])))));
 test_interpreter!(interpret_formula_logic_not, "!false", Value::Bool(new_ref(true)));
 test_interpreter!(interpret_formula_logic_not_vec, "![false true false]", Value::MatrixBool(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![true,false,true])))));
 

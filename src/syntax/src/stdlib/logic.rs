@@ -59,6 +59,33 @@ macro_rules! or_scalar_lhs_op {
         (*$out)[i] = (*$lhs)[i] || (*$rhs);
       }}};}
 
+macro_rules! xor_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {*$out = *$lhs ^ *$rhs;}
+    };}
+
+macro_rules! xor_vec_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] ^ (*$rhs)[i];
+      }}};}
+    
+macro_rules! xor_scalar_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$rhs).len() {
+        (*$out)[i] = (*$lhs) ^ (*$rhs)[i];
+      }}};}
+      
+
+macro_rules! xor_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] ^ (*$rhs);
+      }}};}      
+
 macro_rules! not_op {
   ($arg:expr, $out:expr) => {
     unsafe {*$out = !*$arg;}
@@ -226,6 +253,68 @@ impl NativeFunctionCompiler for LogicOr {
           (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {generate_or_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
           (lhs_value,Value::MutableReference(rhs)) => { generate_or_fxn(lhs_value.clone(), rhs.borrow().clone())}
           (Value::MutableReference(lhs),rhs_value) => { generate_or_fxn(lhs.borrow().clone(), rhs_value.clone()) }
+          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
+    }
+  }
+}
+
+// Xor ------------------------------------------------------------------------
+
+impl_logic_binop!(XorScalar, bool, bool, bool, xor_op);
+impl_logic_binop!(XorSM2x3, bool, Matrix2x3<bool>, Matrix2x3<bool>,xor_scalar_rhs_op);
+impl_logic_binop!(XorSM2, bool, Matrix2<bool>, Matrix2<bool>,xor_scalar_rhs_op);
+impl_logic_binop!(XorSM3, bool, Matrix3<bool>, Matrix3<bool>,xor_scalar_rhs_op);
+impl_logic_binop!(XorSR2, bool, RowVector2<bool>, RowVector2<bool>,xor_scalar_rhs_op);
+impl_logic_binop!(XorSR3, bool, RowVector3<bool>, RowVector3<bool>,xor_scalar_rhs_op);
+impl_logic_binop!(XorSR4, bool, RowVector4<bool>, RowVector4<bool>,xor_scalar_rhs_op);
+impl_logic_binop!(XorSRD, bool, RowDVector<bool>, RowDVector<bool>,xor_scalar_rhs_op);
+impl_logic_binop!(XorSVD, bool, DVector<bool>, DVector<bool>,xor_scalar_rhs_op);
+impl_logic_binop!(XorSMD, bool, DMatrix<bool>, DMatrix<bool>,xor_scalar_rhs_op);
+impl_logic_binop!(XorM2x3S, Matrix2x3<bool>, bool, Matrix2x3<bool>,xor_scalar_lhs_op);
+impl_logic_binop!(XorM2S, Matrix2<bool>, bool, Matrix2<bool>,xor_scalar_lhs_op);
+impl_logic_binop!(XorM3S, Matrix3<bool>, bool, Matrix3<bool>,xor_scalar_lhs_op);
+impl_logic_binop!(XorR2S, RowVector2<bool>, bool, RowVector2<bool>,xor_scalar_lhs_op);
+impl_logic_binop!(XorR3S, RowVector3<bool>, bool, RowVector3<bool>,xor_scalar_lhs_op);
+impl_logic_binop!(XorR4S, RowVector4<bool>, bool, RowVector4<bool>,xor_scalar_lhs_op);
+impl_logic_binop!(XorRDS, RowDVector<bool>, bool, RowDVector<bool>,xor_scalar_lhs_op);
+impl_logic_binop!(XorVDS, DVector<bool>, bool, DVector<bool>,xor_scalar_lhs_op);
+impl_logic_binop!(XorMDS, DMatrix<bool>, bool, DMatrix<bool>,xor_scalar_lhs_op);
+impl_logic_binop!(XorM2M2, Matrix2<bool>,Matrix2<bool>,Matrix2<bool>, xor_vec_op);
+impl_logic_binop!(XorM3M3, Matrix3<bool>,Matrix3<bool>,Matrix3<bool>, xor_vec_op);
+impl_logic_binop!(XorM2x3M2x3, Matrix2x3<bool>,Matrix2x3<bool>,Matrix2x3<bool>, xor_vec_op);
+impl_logic_binop!(XorR2R2, RowVector2<bool>, RowVector2<bool>, RowVector2<bool>, xor_vec_op);
+impl_logic_binop!(XorR3R3, RowVector3<bool>, RowVector3<bool>, RowVector3<bool>, xor_vec_op);
+impl_logic_binop!(XorR4R4, RowVector4<bool>, RowVector4<bool>, RowVector4<bool>, xor_vec_op);
+impl_logic_binop!(XorRDRD, RowDVector<bool>, RowDVector<bool>, RowDVector<bool>, xor_vec_op);
+impl_logic_binop!(XorVDVD, DVector<bool>,DVector<bool>,DVector<bool>, xor_vec_op);
+impl_logic_binop!(XorMDMD, DMatrix<bool>,DMatrix<bool>,DMatrix<bool>, xor_vec_op);
+
+fn generate_xor_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  generate_binop_match_arms!(
+    Xor,
+    (lhs_value, rhs_value),
+    Bool, Bool => MatrixBool, bool, false;
+  )
+}
+
+pub struct LogicXor {}
+
+impl NativeFunctionCompiler for LogicXor {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() != 2 {
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    let lhs_value = arguments[0].clone();
+    let rhs_value = arguments[1].clone();
+    match generate_xor_fxn(lhs_value.clone(), rhs_value.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match (lhs_value,rhs_value) {
+          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {generate_xor_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
+          (lhs_value,Value::MutableReference(rhs)) => { generate_xor_fxn(lhs_value.clone(), rhs.borrow().clone())}
+          (Value::MutableReference(lhs),rhs_value) => { generate_xor_fxn(lhs.borrow().clone(), rhs_value.clone()) }
           x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
