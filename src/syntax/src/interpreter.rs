@@ -320,7 +320,7 @@ fn slice(slc: &Slice, plan: Plan, symbols: SymbolTableRef, functions: FunctionsR
     let s_result = subscript(&s, &val, plan.clone(), symbols.clone(), functions.clone())?;
     return Ok(s_result);
   }
-  unreachable!() // subscript should have through an error if we can't access an element
+  unreachable!() // subscript should have thrown an error if we can't access an element
 }
 
 fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {

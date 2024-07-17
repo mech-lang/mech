@@ -76,7 +76,10 @@ fn main() -> Result<(), MechError> {
           for fxn in intrp.plan.borrow().iter() {
             fxn.solve();
           }
-          let result_str = format!("{:#?}", result);
+          let result_str = match result {
+            Ok(r) => format!("{}", r.pretty_print()),
+            Err(err) => format!("{:?}", err),
+          };
 
           let data = vec!["🌳 Syntax Tree", &syntax_tree_str, 
                           "💻 Interpreter", &interpreter_str, 
@@ -88,7 +91,11 @@ fn main() -> Result<(), MechError> {
     
           println!("{table}");
         } else {
-          println!("{:#?}", result);
+          let result_str = match result {
+            Ok(r) => format!("{}", r.pretty_print()),
+            Err(err) => format!("{:?}", err),
+          };
+          println!("{}", result_str);
         }
       },
       Err(err) => {
