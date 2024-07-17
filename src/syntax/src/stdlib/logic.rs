@@ -5,26 +5,117 @@ use crate::stdlib::*;
 // Logic Library
 // ----------------------------------------------------------------------------
 
+macro_rules! and_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {*$out = *$lhs && *$rhs;}
+    };}
+
+macro_rules! and_vec_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] && (*$rhs)[i];
+      }}};}
+    
+macro_rules! and_scalar_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$rhs).len() {
+        (*$out)[i] = (*$lhs) && (*$rhs)[i];
+      }}};}
+      
+
+macro_rules! and_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] && (*$rhs);
+      }}};}
+
+macro_rules! or_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {*$out = *$lhs || *$rhs;}
+    };}
+
+macro_rules! or_vec_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] || (*$rhs)[i];
+      }}};}
+    
+macro_rules! or_scalar_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$rhs).len() {
+        (*$out)[i] = (*$lhs) || (*$rhs)[i];
+      }}};}
+      
+
+macro_rules! or_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] || (*$rhs);
+      }}};}
+
+#[macro_export]
+macro_rules! impl_logic_binop {
+  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
+    #[derive(Debug)]
+    struct $struct_name {
+      lhs: Ref<$arg1_type>,
+      rhs: Ref<$arg2_type>,
+      out: Ref<$out_type>,
+    }
+    impl MechFunction for $struct_name {
+      fn solve(&self) {
+        let lhs_ptr = self.lhs.as_ptr();
+        let rhs_ptr = self.rhs.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        $op!(lhs_ptr,rhs_ptr,out_ptr);
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }};}
+
 // And ------------------------------------------------------------------------
 
-#[derive(Debug)]
-struct AndScalar {
-  lhs: Ref<bool>,
-  rhs: Ref<bool>,
-  out: Ref<bool>,
-}
+impl_logic_binop!(AndScalar, bool, bool, bool, and_op);
+impl_logic_binop!(AndSM2x3, bool, Matrix2x3<bool>, Matrix2x3<bool>,and_scalar_rhs_op);
+impl_logic_binop!(AndSM2, bool, Matrix2<bool>, Matrix2<bool>,and_scalar_rhs_op);
+impl_logic_binop!(AndSM3, bool, Matrix3<bool>, Matrix3<bool>,and_scalar_rhs_op);
+impl_logic_binop!(AndSR2, bool, RowVector2<bool>, RowVector2<bool>,and_scalar_rhs_op);
+impl_logic_binop!(AndSR3, bool, RowVector3<bool>, RowVector3<bool>,and_scalar_rhs_op);
+impl_logic_binop!(AndSR4, bool, RowVector4<bool>, RowVector4<bool>,and_scalar_rhs_op);
+impl_logic_binop!(AndSRD, bool, RowDVector<bool>, RowDVector<bool>,and_scalar_rhs_op);
+impl_logic_binop!(AndSVD, bool, DVector<bool>, DVector<bool>,and_scalar_rhs_op);
+impl_logic_binop!(AndSMD, bool, DMatrix<bool>, DMatrix<bool>,and_scalar_rhs_op);
+impl_logic_binop!(AndM2x3S, Matrix2x3<bool>, bool, Matrix2x3<bool>,and_scalar_lhs_op);
+impl_logic_binop!(AndM2S, Matrix2<bool>, bool, Matrix2<bool>,and_scalar_lhs_op);
+impl_logic_binop!(AndM3S, Matrix3<bool>, bool, Matrix3<bool>,and_scalar_lhs_op);
+impl_logic_binop!(AndR2S, RowVector2<bool>, bool, RowVector2<bool>,and_scalar_lhs_op);
+impl_logic_binop!(AndR3S, RowVector3<bool>, bool, RowVector3<bool>,and_scalar_lhs_op);
+impl_logic_binop!(AndR4S, RowVector4<bool>, bool, RowVector4<bool>,and_scalar_lhs_op);
+impl_logic_binop!(AndRDS, RowDVector<bool>, bool, RowDVector<bool>,and_scalar_lhs_op);
+impl_logic_binop!(AndVDS, DVector<bool>, bool, DVector<bool>,and_scalar_lhs_op);
+impl_logic_binop!(AndMDS, DMatrix<bool>, bool, DMatrix<bool>,and_scalar_lhs_op);
+impl_logic_binop!(AndM2M2, Matrix2<bool>,Matrix2<bool>,Matrix2<bool>, and_vec_op);
+impl_logic_binop!(AndM3M3, Matrix3<bool>,Matrix3<bool>,Matrix3<bool>, and_vec_op);
+impl_logic_binop!(AndM2x3M2x3, Matrix2x3<bool>,Matrix2x3<bool>,Matrix2x3<bool>, and_vec_op);
+impl_logic_binop!(AndR2R2, RowVector2<bool>, RowVector2<bool>, RowVector2<bool>, and_vec_op);
+impl_logic_binop!(AndR3R3, RowVector3<bool>, RowVector3<bool>, RowVector3<bool>, and_vec_op);
+impl_logic_binop!(AndR4R4, RowVector4<bool>, RowVector4<bool>, RowVector4<bool>, and_vec_op);
+impl_logic_binop!(AndRDRD, RowDVector<bool>, RowDVector<bool>, RowDVector<bool>, and_vec_op);
+impl_logic_binop!(AndVDVD, DVector<bool>,DVector<bool>,DVector<bool>, and_vec_op);
+impl_logic_binop!(AndMDMD, DMatrix<bool>,DMatrix<bool>,DMatrix<bool>, and_vec_op);
 
-impl MechFunction for AndScalar {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr && *rhs_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::Bool(self.out.clone())
-  }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+fn generate_and_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  generate_binop_match_arms!(
+    And,
+    (lhs_value, rhs_value),
+    Bool, Bool => MatrixBool, bool, false;
+  )
 }
 
 pub struct LogicAnd {}
@@ -32,54 +123,61 @@ pub struct LogicAnd {}
 impl NativeFunctionCompiler for LogicAnd {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
-    match (arguments[0].clone(), arguments[1].clone()) {
-      (Value::Bool(lhs), Value::Bool(rhs)) =>
-        Ok(Box::new(AndScalar{lhs, rhs, out: new_ref(false)})),
-      (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {
-        match (&*lhs.borrow(), &*rhs.borrow()) {
-          (Value::Bool(lhs), Value::Bool(rhs)) => Ok(Box::new(AndScalar{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(false)})),
-          _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    let lhs_value = arguments[0].clone();
+    let rhs_value = arguments[1].clone();
+    match generate_and_fxn(lhs_value.clone(), rhs_value.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match (lhs_value,rhs_value) {
+          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {generate_and_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
+          (lhs_value,Value::MutableReference(rhs)) => { generate_and_fxn(lhs_value.clone(), rhs.borrow().clone())}
+          (Value::MutableReference(lhs),rhs_value) => { generate_and_fxn(lhs.borrow().clone(), rhs_value.clone()) }
+          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
-      (Value::Bool(lhs),Value::MutableReference(rhs)) => {
-        match (&*rhs.borrow()) {
-          (Value::Bool(rhs)) => Ok(Box::new(AndScalar{lhs, rhs: rhs.clone(), out: new_ref(false)})),
-          _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
-        }
-      }
-      (Value::MutableReference(lhs),Value::Bool(rhs)) => {
-        match (&*lhs.borrow()) {
-          (Value::Bool(lhs)) => Ok(Box::new(AndScalar{lhs: lhs.clone(), rhs, out: new_ref(false)})),
-          _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
-        }
-      }
-      x => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
     }
   }
 }
 
 // Or ------------------------------------------------------------------------
 
-#[derive(Debug)]
-struct OrScalar {
-  lhs: Ref<bool>,
-  rhs: Ref<bool>,
-  out: Ref<bool>,
-}
+impl_logic_binop!(OrScalar, bool, bool, bool, or_op);
+impl_logic_binop!(OrSM2x3, bool, Matrix2x3<bool>, Matrix2x3<bool>,or_scalar_rhs_op);
+impl_logic_binop!(OrSM2, bool, Matrix2<bool>, Matrix2<bool>,or_scalar_rhs_op);
+impl_logic_binop!(OrSM3, bool, Matrix3<bool>, Matrix3<bool>,or_scalar_rhs_op);
+impl_logic_binop!(OrSR2, bool, RowVector2<bool>, RowVector2<bool>,or_scalar_rhs_op);
+impl_logic_binop!(OrSR3, bool, RowVector3<bool>, RowVector3<bool>,or_scalar_rhs_op);
+impl_logic_binop!(OrSR4, bool, RowVector4<bool>, RowVector4<bool>,or_scalar_rhs_op);
+impl_logic_binop!(OrSRD, bool, RowDVector<bool>, RowDVector<bool>,or_scalar_rhs_op);
+impl_logic_binop!(OrSVD, bool, DVector<bool>, DVector<bool>,or_scalar_rhs_op);
+impl_logic_binop!(OrSMD, bool, DMatrix<bool>, DMatrix<bool>,or_scalar_rhs_op);
+impl_logic_binop!(OrM2x3S, Matrix2x3<bool>, bool, Matrix2x3<bool>,or_scalar_lhs_op);
+impl_logic_binop!(OrM2S, Matrix2<bool>, bool, Matrix2<bool>,or_scalar_lhs_op);
+impl_logic_binop!(OrM3S, Matrix3<bool>, bool, Matrix3<bool>,or_scalar_lhs_op);
+impl_logic_binop!(OrR2S, RowVector2<bool>, bool, RowVector2<bool>,or_scalar_lhs_op);
+impl_logic_binop!(OrR3S, RowVector3<bool>, bool, RowVector3<bool>,or_scalar_lhs_op);
+impl_logic_binop!(OrR4S, RowVector4<bool>, bool, RowVector4<bool>,or_scalar_lhs_op);
+impl_logic_binop!(OrRDS, RowDVector<bool>, bool, RowDVector<bool>,or_scalar_lhs_op);
+impl_logic_binop!(OrVDS, DVector<bool>, bool, DVector<bool>,or_scalar_lhs_op);
+impl_logic_binop!(OrMDS, DMatrix<bool>, bool, DMatrix<bool>,or_scalar_lhs_op);
+impl_logic_binop!(OrM2M2, Matrix2<bool>,Matrix2<bool>,Matrix2<bool>, or_vec_op);
+impl_logic_binop!(OrM3M3, Matrix3<bool>,Matrix3<bool>,Matrix3<bool>, or_vec_op);
+impl_logic_binop!(OrM2x3M2x3, Matrix2x3<bool>,Matrix2x3<bool>,Matrix2x3<bool>, or_vec_op);
+impl_logic_binop!(OrR2R2, RowVector2<bool>, RowVector2<bool>, RowVector2<bool>, or_vec_op);
+impl_logic_binop!(OrR3R3, RowVector3<bool>, RowVector3<bool>, RowVector3<bool>, or_vec_op);
+impl_logic_binop!(OrR4R4, RowVector4<bool>, RowVector4<bool>, RowVector4<bool>, or_vec_op);
+impl_logic_binop!(OrRDRD, RowDVector<bool>, RowDVector<bool>, RowDVector<bool>, or_vec_op);
+impl_logic_binop!(OrVDVD, DVector<bool>,DVector<bool>,DVector<bool>, or_vec_op);
+impl_logic_binop!(OrMDMD, DMatrix<bool>,DMatrix<bool>,DMatrix<bool>, or_vec_op);
 
-impl MechFunction for OrScalar {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = *lhs_ptr || *rhs_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::Bool(self.out.clone())
-  }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+fn generate_or_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  generate_binop_match_arms!(
+    Or,
+    (lhs_value, rhs_value),
+    Bool, Bool => MatrixBool, bool, false;
+  )
 }
 
 pub struct LogicOr {}
@@ -87,30 +185,20 @@ pub struct LogicOr {}
 impl NativeFunctionCompiler for LogicOr {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
-    match (arguments[0].clone(), arguments[1].clone()) {
-      (Value::Bool(lhs), Value::Bool(rhs)) =>
-        Ok(Box::new(OrScalar{lhs, rhs, out: new_ref(false)})),
-      (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {
-        match (&*lhs.borrow(), &*rhs.borrow()) {
-          (Value::Bool(lhs), Value::Bool(rhs)) => Ok(Box::new(OrScalar{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(false)})),
-          _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    let lhs_value = arguments[0].clone();
+    let rhs_value = arguments[1].clone();
+    match generate_or_fxn(lhs_value.clone(), rhs_value.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match (lhs_value,rhs_value) {
+          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {generate_or_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
+          (lhs_value,Value::MutableReference(rhs)) => { generate_or_fxn(lhs_value.clone(), rhs.borrow().clone())}
+          (Value::MutableReference(lhs),rhs_value) => { generate_or_fxn(lhs.borrow().clone(), rhs_value.clone()) }
+          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
-      (Value::Bool(lhs),Value::MutableReference(rhs)) => {
-        match (&*rhs.borrow()) {
-          (Value::Bool(rhs)) => Ok(Box::new(OrScalar{lhs, rhs: rhs.clone(), out: new_ref(false)})),
-          _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
-        }
-      }
-      (Value::MutableReference(lhs),Value::Bool(rhs)) => {
-        match (&*lhs.borrow()) {
-          (Value::Bool(lhs)) => Ok(Box::new(OrScalar{lhs: lhs.clone(), rhs, out: new_ref(false)})),
-          _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
-        }
-      }
-      x => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
     }
   }
 }

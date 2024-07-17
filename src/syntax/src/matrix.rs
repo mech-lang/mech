@@ -38,6 +38,7 @@ pub trait ToMatrix: Clone {
           }
         }}};}
   
+  impl_to_matrix!(bool);
   impl_to_matrix!(u8);
   impl_to_matrix!(u16);
   impl_to_matrix!(u32);

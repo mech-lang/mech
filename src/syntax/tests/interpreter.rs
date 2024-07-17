@@ -69,7 +69,9 @@ test_interpreter!(interpret_formula_comparison_gt_vec, "[1 8; 10 5] > [7 2; 4 11
 test_interpreter!(interpret_formula_comparison_lt_vec, "[1 8 10 5] < [7 2 4 11]", Value::MatrixBool(Matrix::RowVector4(new_ref(RowVector4::from_vec(vec![true,false,false,true])))));
 test_interpreter!(interpret_formula_unicode, "😃:=1;🤦🏼‍♂️:=2;y̆és:=🤦🏼‍♂️ + 😃", Value::I64(new_ref(3)));
 test_interpreter!(interpret_formula_logic_and, "true & true", Value::Bool(new_ref(true)));
+test_interpreter!(interpret_formula_logic_and_vec, "[true false true] & [false false true]", Value::MatrixBool(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![false,false,true])))));
 test_interpreter!(interpret_formula_logic_and2, "true & false", Value::Bool(new_ref(false)));
+test_interpreter!(interpret_formula_logic_or_vec, "[true false true] | [false false true]", Value::MatrixBool(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![true,false,true])))));
 test_interpreter!(interpret_formula_logic_or, "true | false", Value::Bool(new_ref(true)));
 test_interpreter!(interpret_formula_logic_or2, "false | false", Value::Bool(new_ref(false)));
 test_interpreter!(interpret_formula_logic_not, "!false", Value::Bool(new_ref(true)));
