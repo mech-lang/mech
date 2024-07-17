@@ -339,7 +339,7 @@ fn generate_not_fxn(arg_value: Value) -> Result<Box<dyn MechFunction>, MechError
   generate_urnop_match_arms!(
     Not,
     (arg_value),
-    Bool, Bool => MatrixBool, bool, false;
+    Bool => MatrixBool, bool, false;
   )
 }
 

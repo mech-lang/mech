@@ -175,7 +175,7 @@ macro_rules! generate_binop_match_arms {
 
 #[macro_export]
 macro_rules! generate_urnop_match_arms {
-  ($lib:ident, $arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr),+);+ $(;)?) => {
+  ($lib:ident, $arg:expr, $($lhs_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr),+);+ $(;)?) => {
     paste!{
       match $arg {
         $(
