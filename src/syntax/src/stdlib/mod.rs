@@ -173,6 +173,44 @@ macro_rules! generate_binop_match_arms {
   }
 }
 
+#[macro_export]
+macro_rules! generate_urnop_match_arms {
+  ($lib:ident, $arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr),+);+ $(;)?) => {
+    paste!{
+      match $arg {
+        $(
+          $(
+            (Value::$lhs_type(arg)) => {
+              Ok(Box::new([<$lib Scalar>]{arg: arg.clone(), out: new_ref($default) }))},
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(arg))) => {
+              Ok(Box::new([<$lib M2>]{arg, out: new_ref(Matrix2::from_element($default))}))},
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(arg))) => {
+              Ok(Box::new([<$lib M3>]{arg, out: new_ref(Matrix3::from_element($default))}))},
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(arg))) => {
+              Ok(Box::new([<$lib R2>]{arg: arg.clone(), out: new_ref(RowVector2::from_element($default)) }))},
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(arg))) => {
+              Ok(Box::new([<$lib R3>]{arg: arg.clone(), out: new_ref(RowVector3::from_element($default)) }))},
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(arg))) => {
+              Ok(Box::new([<$lib R4>]{arg: arg.clone(), out: new_ref(RowVector4::from_element($default)) }))},
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(arg))) => {
+              Ok(Box::new([<$lib M2x3>]{arg, out: new_ref(Matrix2x3::from_element($default))}))},          
+            (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(arg))) => {
+              let length = {arg.borrow().len()};
+              Ok(Box::new([<$lib RD>]{arg, out: new_ref(RowDVector::from_element(length,$default))}))},
+            (Value::$matrix_kind(Matrix::<$target_type>::DVector(arg))) => {
+              let length = {arg.borrow().len()};
+              Ok(Box::new([<$lib VD>]{arg, out: new_ref(DVector::from_element(length,$default))}))},
+            (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(arg))) => {
+              let (rows,cols) = {arg.borrow().shape()};
+              Ok(Box::new([<$lib MD>]{arg, out: new_ref(DMatrix::from_element(rows,cols,$default))}))},
+          )+
+        )+
+        x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+      }
+    }
+  }
+}
+
 // ----------------------------------------------------------------------------
 // Type Conversion Library
 // ----------------------------------------------------------------------------

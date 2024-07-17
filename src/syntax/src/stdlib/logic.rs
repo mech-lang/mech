@@ -59,6 +59,18 @@ macro_rules! or_scalar_lhs_op {
         (*$out)[i] = (*$lhs)[i] || (*$rhs);
       }}};}
 
+macro_rules! not_op {
+  ($arg:expr, $out:expr) => {
+    unsafe {*$out = !*$arg;}
+    };}
+
+macro_rules! not_vec_op {
+  ($arg:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$arg).len() {
+        (*$out)[i] = !(*$arg)[i];
+      }}};}
+
 #[macro_export]
 macro_rules! impl_logic_binop {
   ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
@@ -74,6 +86,24 @@ macro_rules! impl_logic_binop {
         let rhs_ptr = self.rhs.as_ptr();
         let out_ptr = self.out.as_ptr();
         $op!(lhs_ptr,rhs_ptr,out_ptr);
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }};}
+
+#[macro_export]
+macro_rules! impl_logic_urnop {
+  ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident) => {
+    #[derive(Debug)]
+    struct $struct_name {
+      arg: Ref<$arg_type>,
+      out: Ref<$out_type>,
+    }
+    impl MechFunction for $struct_name {
+      fn solve(&self) {
+        let arg_ptr = self.arg.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        $op!(arg_ptr,out_ptr);
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:?}", self) }
@@ -205,22 +235,23 @@ impl NativeFunctionCompiler for LogicOr {
 
 // Not ------------------------------------------------------------------------
 
-#[derive(Debug)]
-struct NotScalar {
-  lhs: Ref<bool>,
-  out: Ref<bool>,
-}
+impl_logic_urnop!(NotScalar, bool, bool, not_op);
+impl_logic_urnop!(NotM2, Matrix2<bool>, Matrix2<bool>, not_vec_op);
+impl_logic_urnop!(NotM3, Matrix3<bool>, Matrix3<bool>, not_vec_op);
+impl_logic_urnop!(NotM2x3, Matrix2x3<bool>, Matrix2x3<bool>, not_vec_op);
+impl_logic_urnop!(NotR2, RowVector2<bool>, RowVector2<bool>, not_vec_op);
+impl_logic_urnop!(NotR3, RowVector3<bool>, RowVector3<bool>, not_vec_op);
+impl_logic_urnop!(NotR4, RowVector4<bool>, RowVector4<bool>, not_vec_op);
+impl_logic_urnop!(NotRD, RowDVector<bool>, RowDVector<bool>, not_vec_op);
+impl_logic_urnop!(NotVD, DVector<bool>, DVector<bool>, not_vec_op);
+impl_logic_urnop!(NotMD, DMatrix<bool>, DMatrix<bool>, not_vec_op);
 
-impl MechFunction for NotScalar {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = !*lhs_ptr;}
-  }
-  fn out(&self) -> Value {
-    Value::Bool(self.out.clone())
-  }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+fn generate_not_fxn(arg_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  generate_urnop_match_arms!(
+    Not,
+    (arg_value),
+    Bool, Bool => MatrixBool, bool, false;
+  )
 }
 
 pub struct LogicNot {}
@@ -228,18 +259,17 @@ pub struct LogicNot {}
 impl NativeFunctionCompiler for LogicNot {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
-    match (arguments[0].clone()) {
-      (Value::Bool(lhs)) =>
-        Ok(Box::new(NotScalar{lhs, out: new_ref(false)})),
-      (Value::MutableReference(lhs)) => {
-        match (&*lhs.borrow()) {
-          (Value::Bool(lhs)) => Ok(Box::new(NotScalar{lhs: lhs.clone(), out: new_ref(false)})),
-          _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    let arg_value = arguments[0].clone();
+    match generate_not_fxn(arg_value.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match arg_value {
+          (Value::MutableReference(arg)) => {generate_not_fxn(arg.borrow().clone())}
+          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
-      x => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
     }
   }
 }

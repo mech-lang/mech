@@ -75,6 +75,7 @@ test_interpreter!(interpret_formula_logic_or_vec, "[true false true] | [false fa
 test_interpreter!(interpret_formula_logic_or, "true | false", Value::Bool(new_ref(true)));
 test_interpreter!(interpret_formula_logic_or2, "false | false", Value::Bool(new_ref(false)));
 test_interpreter!(interpret_formula_logic_not, "!false", Value::Bool(new_ref(true)));
+test_interpreter!(interpret_formula_logic_not_vec, "![false true false]", Value::MatrixBool(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![true,false,true])))));
 
 test_interpreter!(interpret_statement_variable_define, "x := 123", Value::I64(new_ref(123)));
 
