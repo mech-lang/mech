@@ -6,6 +6,7 @@ use mech_core::nodes::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::ops::*;
+use std::iter::Step;
 use num_traits::*;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
@@ -102,6 +103,31 @@ impl Neg for F64 {
     F64(-self.0)
   }
 }
+impl Step for F64 {
+  fn steps_between(start: &Self, end: &Self) -> Option<usize> {
+    if start.0 < end.0 {
+      Some(((end.0 - start.0) / 1.0) as usize) 
+    } else {
+      Some(0)
+    }
+  }
+
+  fn forward_checked(start: Self, count: usize) -> Option<Self> {
+    Some(F64(start.0 + count as f64)) 
+  }
+
+  fn backward_checked(start: Self, count: usize) -> Option<Self> {
+    Some(F64(start.0 - count as f64)) 
+  }
+
+  fn forward(start: Self, count: usize) -> Self {
+    F64(start.0 + count as f64) 
+  }
+
+  fn backward(start: Self, count: usize) -> Self {
+    F64(start.0 - count as f64)
+  }
+}
 
 #[derive(PartialEq, Debug, Clone, Copy, PartialOrd)]
 pub struct F32(pub f32);
@@ -180,5 +206,30 @@ impl Neg for F32 {
   type Output = Self;
   fn neg(self) -> Self::Output {
     F32(-self.0)
+  }
+}
+impl Step for F32 {
+  fn steps_between(start: &Self, end: &Self) -> Option<usize> {
+    if start.0 < end.0 {
+      Some(((end.0 - start.0) / 1.0) as usize)
+    } else {
+      Some(0)
+    }
+  }
+
+  fn forward_checked(start: Self, count: usize) -> Option<Self> {
+    Some(F32(start.0 + count as f32)) 
+  }
+
+  fn backward_checked(start: Self, count: usize) -> Option<Self> {
+    Some(F32(start.0 - count as f32)) 
+  }
+
+  fn forward(start: Self, count: usize) -> Self {
+    F32(start.0 + count as f32) 
+  }
+
+  fn backward(start: Self, count: usize) -> Self {
+    F32(start.0 - count as f32) 
   }
 }

@@ -86,7 +86,9 @@ test_interpreter!(interpret_reference_bool2, "x := false; x & true", Value::Bool
 test_interpreter!(interpret_variable_recall, "a := 1; b := 2; a", Value::MutableReference(new_ref(Value::I64(new_ref(1)))));
 
 test_interpreter!(interpret_matrix_range_exclusive, "1..4", Value::MatrixI64(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![1,2,3])))));
+test_interpreter!(interpret_matrix_range_exclusive_u8, "1<u8>..4<u8>", Value::MatrixU8(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![1,2,3])))));
 test_interpreter!(interpret_matrix_range_inclusive, "1..=4", Value::MatrixI64(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![1,2,3,4])))));
+test_interpreter!(interpret_matrix_range_inclusive_u8, "1<u8>..=4<u8>", Value::MatrixU8(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![1,2,3,4])))));
 
 test_interpreter!(interpret_matrix_empty, "[]", Value::MatrixF64(Matrix::DMatrix(new_ref(DMatrix::from_vec(0,0,vec![])))));
 test_interpreter!(interpret_matrix_row3, "[1 2 3]", new_ref(RowVector3::from_vec(vec![1i64,2,3])).to_value());
