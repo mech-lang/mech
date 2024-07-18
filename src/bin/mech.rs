@@ -1,5 +1,6 @@
 #![feature(hash_extract_if)]
 #![allow(warnings)]
+use mech::format_parse_tree;
 use mech_core::*;
 use mech_syntax::parser;
 //use mech_syntax::analyzer::*;
@@ -20,6 +21,8 @@ use tabled::{
   settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
   Tabled,
 };
+use serde_json;
+
 
 fn main() -> Result<(), MechError> {
   let version = "0.2.2";
@@ -59,10 +62,12 @@ fn main() -> Result<(), MechError> {
     match parser::parse(&s) {
       Ok(tree) => { 
         let result = intrp.interpret(&tree);
+        let pretty_json = format_parse_tree(&tree);
+
         let debug_flag = matches.get_flag("debug");
         if debug_flag {
           let tree_hash = hash_str(&format!("{:#?}", tree));
-          let syntax_tree_str = format!("Tree Hash: {:?}\n{:#?}", tree_hash, tree);
+          let syntax_tree_str = format!("Tree Hash: {:?}\n{}", tree_hash, pretty_json);
 
           let mut interpreter_str = format!("Symbols: {:#?}\n", intrp.symbols); 
           interpreter_str = format!("{}Plan:\n", interpreter_str); 
