@@ -353,38 +353,25 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
       let mut resolved_subs = vec![];
       for s in subs {
         let result = subscript(&s, val, plan.clone(), symbols.clone(), functions.clone())?;
-        resolved_subs.push(result);
-      }
-      match val {
-        Value::MatrixI64(mat) => {
-          let result = match &resolved_subs[..] {
-            [Value::I64(ix)] => mat.index1d(*ix.borrow() as usize),
-            [Value::I64(row_ix),Value::I64(col_ix)] => mat.index2d(*row_ix.borrow() as usize,*col_ix.borrow() as usize),
-            _ => todo!(),
-          };
-          return Ok(Value::I64(new_ref(result)));
+        match result.as_index() {
+          Some(ix) => resolved_subs.push(ix),
+          None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind});}
         }
-        Value::MutableReference(x) => match &*x.borrow() {
-          Value::MatrixI64(mat) => {
-            let result = match &resolved_subs[..] {
-              [Value::I64(ix)] => mat.index1d(*ix.borrow() as usize),
-              [Value::I64(row_ix),Value::I64(col_ix)] => mat.index2d(*row_ix.borrow() as usize,*col_ix.borrow() as usize),
-              _ => todo!(),
-            };
-            return Ok(Value::I64(new_ref(result)));
-          }
-          _ => todo!(),
-        }
-        x => {
-          println!("{:?}",x);
-          todo!()
-        },
       }
+      let sub_value = match resolved_subs.len() {
+        1 => resolved_subs[0].clone(),
+        x => resolved_subs.iter().map(|s| s.as_usize().unwrap()).collect::<Vec<usize>>().to_value(),
+      };
+      let new_fxn = MatrixAccess{}.compile(&vec![val.clone(),sub_value])?;
+      new_fxn.solve();
+      let res = new_fxn.out();
+      let mut plan_brrw = plan.borrow_mut();
+      plan_brrw.push(new_fxn);
+      Ok(res)
     },
     Subscript::Brace(x) => todo!(),
     Subscript::All => todo!(),
   }
-  return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::None});
 }
 
 fn structure(strct: &Structure, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {

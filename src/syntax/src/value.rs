@@ -19,7 +19,7 @@ use tabled::{
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, 
-  String, Bool, Matrix(Box<ValueKind>,Vec<usize>), Set, Map, Record, Table, Tuple, Id, Reference, Atom(u64), Empty
+  String, Bool, Matrix(Box<ValueKind>,Vec<usize>), Set, Map, Record, Table, Tuple, Id, Index, Reference, Atom(u64), Empty
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -39,6 +39,7 @@ pub enum Value {
   String(String),
   Bool(Ref<bool>),
   Atom(u64),
+  MatrixIndex(Matrix<usize>),
   MatrixBool(Matrix<bool>),
   MatrixU8(Matrix<u8>),
   MatrixU16(Matrix<u16>),
@@ -58,6 +59,7 @@ pub enum Value {
   Table(MechTable),
   Tuple(MechTuple),
   Id(u64),
+  Index(Ref<usize>),
   MutableReference(MutableReference),
   Kind(ValueKind),
   Empty
@@ -80,6 +82,7 @@ impl Hash for Value {
       Value::I128(x) => x.borrow().hash(state),
       Value::F32(x)  => x.borrow().hash(state),
       Value::F64(x)  => x.borrow().hash(state),
+      Value::Index(x)=> x.borrow().hash(state),
       Value::Bool(x) => x.borrow().hash(state),
       Value::Atom(x) => x.hash(state),
       Value::Set(x)  => x.hash(state),
@@ -89,6 +92,7 @@ impl Hash for Value {
       Value::Record(x) => x.hash(state),
       Value::String(x) => x.hash(state),
       Value::MatrixBool(x) => x.hash(state),
+      Value::MatrixIndex(x) => x.hash(state),
       Value::MatrixU8(x)   => x.hash(state),
       Value::MatrixU16(x)  => x.hash(state),
       Value::MatrixU32(x)  => x.hash(state),
@@ -125,6 +129,7 @@ impl Value {
       Value::F32(x)  => {builder.push_record(vec!["f32"]); builder.push_record(vec![format!("{:?}",x.borrow().0)]);},
       Value::F64(x)  => {builder.push_record(vec!["f64"]); builder.push_record(vec![format!("{:?}",x.borrow().0)]);},
       Value::Bool(x) => {builder.push_record(vec!["bool"]); builder.push_record(vec![format!("{:?}",x)]);},
+      Value::Index(x)  => {builder.push_record(vec!["ix"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
       Value::Atom(x) => {builder.push_record(vec!["atom"]); builder.push_record(vec![format!("{:?}",x)]);},
       Value::Set(x)  => builder.push_record(vec![format!("{:?}",x)]),
       Value::Map(x)  => builder.push_record(vec![format!("{:?}",x)]),
@@ -132,6 +137,7 @@ impl Value {
       Value::Table(x)  => builder.push_record(vec![format!("{:?}",x)]),
       Value::Tuple(x)  => builder.push_record(vec![format!("{:?}",x)]),
       Value::Record(x) => builder.push_record(vec![format!("{:?}",x)]),
+      Value::MatrixIndex(x) => {return x.pretty_print();}
       Value::MatrixBool(x) => {return x.pretty_print();}
       Value::MatrixU8(x)   => {return x.pretty_print();},
       Value::MatrixU16(x)  => {return x.pretty_print();},
@@ -168,9 +174,11 @@ impl Value {
       Value::I128(x) => vec![1,1],
       Value::F32(x) => vec![1,1],
       Value::F64(x) => vec![1,1],
+      Value::Index(x) => vec![1,1],
       Value::String(x) => vec![1,1],
       Value::Bool(x) => vec![1,1],
       Value::Atom(x) => vec![1,1],
+      Value::MatrixIndex(x) => x.shape(),
       Value::MatrixBool(x) => x.shape(),
       Value::MatrixU8(x) => x.shape(),
       Value::MatrixU16(x) => x.shape(),
@@ -213,6 +221,7 @@ impl Value {
       Value::String(_) => ValueKind::String,
       Value::Bool(_) => ValueKind::Bool,
       Value::Atom(x) => ValueKind::Atom(*x),
+      Value::MatrixIndex(x) => ValueKind::Matrix(Box::new(ValueKind::Index),x.shape()),
       Value::MatrixBool(x) => ValueKind::Matrix(Box::new(ValueKind::Bool),x.shape()),
       Value::MatrixU8(x) => ValueKind::Matrix(Box::new(ValueKind::U8),x.shape()),
       Value::MatrixU16(x) => ValueKind::Matrix(Box::new(ValueKind::U16),x.shape()),
@@ -234,6 +243,7 @@ impl Value {
       Value::MutableReference(x) => ValueKind::Reference,
       Value::Empty => ValueKind::Empty,
       Value::Id(x) => ValueKind::Id,
+      Value::Index(x) => ValueKind::Index,
       Value::Kind(x) => x.clone(),
     }
   }
@@ -264,9 +274,18 @@ impl Value {
   pub fn as_veci32(&self) -> Option<Vec<i32>> {if let Value::MatrixI32(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_veci32() } else { None }}
   pub fn as_veci64(&self) -> Option<Vec<i64>> {if let Value::MatrixI64(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_veci64() } else { None }}
   pub fn as_veci128(&self) -> Option<Vec<i128>> {if let Value::MatrixI128(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_veci128() } else { None }}
-  
+  pub fn as_vecusize(&self) -> Option<Vec<usize>> {if let Value::MatrixIndex(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecusize() } else { None }}
+
+  pub fn as_index(&self) -> Option<Value> {
+    match self.as_usize() {      
+      Some(ix) => Some(Value::Index(new_ref(ix))),
+      None => None,
+    }
+  }
+
   pub fn as_usize(&self) -> Option<usize> {
-    match self {
+    match self {      
+      Value::Index(v) => Some(*v.borrow()),
       Value::U8(v) => Some(*v.borrow() as usize),
       Value::U16(v) => Some(*v.borrow() as usize),
       Value::U32(v) => Some(*v.borrow() as usize),
@@ -289,6 +308,19 @@ pub trait ToValue {
   fn to_value(&self) -> Value;
 }
 
+impl ToValue for Vec<usize> {
+  fn to_value(&self) -> Value {
+    match self.len() {
+      1 => Value::Index(new_ref(self[0].clone())),
+      2 => Value::MatrixIndex(Matrix::RowVector2(new_ref(RowVector2::from_vec(self.clone())))),
+      3 => Value::MatrixIndex(Matrix::RowVector3(new_ref(RowVector3::from_vec(self.clone())))),
+      4 => Value::MatrixIndex(Matrix::RowVector4(new_ref(RowVector4::from_vec(self.clone())))),
+      n => Value::MatrixIndex(Matrix::RowDVector(new_ref(RowDVector::from_vec(self.clone())))),
+    }
+  }
+}
+
+impl ToValue for Ref<usize> { fn to_value(&self) -> Value { Value::Index(self.clone()) } }
 impl ToValue for Ref<u8> { fn to_value(&self) -> Value { Value::U8(self.clone()) } }
 impl ToValue for Ref<u16> { fn to_value(&self) -> Value { Value::U16(self.clone()) } }
 impl ToValue for Ref<u32> { fn to_value(&self) -> Value { Value::U32(self.clone()) } }
@@ -316,6 +348,7 @@ macro_rules! impl_to_value_matrix {
 
 impl_to_value_matrix!(
 
+  Matrix2x3, MatrixIndex, usize,
   Matrix2x3, MatrixBool, bool,
   Matrix2x3, MatrixI8, i8,
   Matrix2x3, MatrixI16, i16,
@@ -329,7 +362,8 @@ impl_to_value_matrix!(
   Matrix2x3, MatrixU128, u128,
   Matrix2x3, MatrixF32, F32,
   Matrix2x3, MatrixF64, F64,
-
+  
+  Matrix3x2, MatrixIndex, usize,
   Matrix3x2, MatrixBool, bool,
   Matrix3x2, MatrixI8, i8,
   Matrix3x2, MatrixI16, i16,
@@ -344,6 +378,7 @@ impl_to_value_matrix!(
   Matrix3x2, MatrixF32, F32,
   Matrix3x2, MatrixF64, F64,
 
+  Matrix1, MatrixIndex, usize,
   Matrix1, MatrixBool, bool,
   Matrix1, MatrixI8, i8,
   Matrix1, MatrixI16, i16,
@@ -358,6 +393,7 @@ impl_to_value_matrix!(
   Matrix1, MatrixF32, F32,
   Matrix1, MatrixF64, F64,
 
+  Matrix2, MatrixIndex, usize,
   Matrix2, MatrixBool, bool,
   Matrix2, MatrixI8, i8,
   Matrix2, MatrixI16, i16,
@@ -372,6 +408,7 @@ impl_to_value_matrix!(
   Matrix2, MatrixF32, F32,
   Matrix2, MatrixF64, F64,
 
+  Matrix3, MatrixIndex, usize,
   Matrix3, MatrixBool, bool,
   Matrix3, MatrixI8, i8,
   Matrix3, MatrixI16, i16,
@@ -386,6 +423,7 @@ impl_to_value_matrix!(
   Matrix3, MatrixF32, F32,
   Matrix3, MatrixF64, F64,
 
+  Matrix4, MatrixIndex, usize,
   Matrix4, MatrixBool, bool,
   Matrix4, MatrixI8, i8,
   Matrix4, MatrixI16, i16,
@@ -400,6 +438,7 @@ impl_to_value_matrix!(
   Matrix4, MatrixF32, F32,
   Matrix4, MatrixF64, F64,
 
+  Vector2, MatrixIndex, usize,
   Vector2, MatrixBool, bool,
   Vector2, MatrixI8, i8,
   Vector2, MatrixI16, i16,
@@ -414,6 +453,7 @@ impl_to_value_matrix!(
   Vector2, MatrixF32, F32,
   Vector2, MatrixF64, F64,
 
+  Vector3, MatrixIndex, usize,
   Vector3, MatrixBool, bool,
   Vector3, MatrixI8, i8,
   Vector3, MatrixI16, i16,
@@ -428,6 +468,7 @@ impl_to_value_matrix!(
   Vector3, MatrixF32, F32,
   Vector3, MatrixF64, F64,
 
+  Vector4, MatrixIndex, usize,
   Vector4, MatrixBool, bool,
   Vector4, MatrixI8, i8,
   Vector4, MatrixI16, i16,
@@ -442,6 +483,7 @@ impl_to_value_matrix!(
   Vector4, MatrixF32, F32,
   Vector4, MatrixF64, F64,
 
+  RowVector2, MatrixIndex, usize,
   RowVector2, MatrixBool, bool,
   RowVector2, MatrixI8, i8,
   RowVector2, MatrixI16, i16,
@@ -456,6 +498,7 @@ impl_to_value_matrix!(
   RowVector2, MatrixF32, F32,
   RowVector2, MatrixF64, F64,
   
+  RowVector3, MatrixIndex, usize,
   RowVector3, MatrixBool, bool,
   RowVector3, MatrixI8, i8,
   RowVector3, MatrixI16, i16,
@@ -470,6 +513,7 @@ impl_to_value_matrix!(
   RowVector3, MatrixF32, F32,
   RowVector3, MatrixF64, F64,
 
+  RowVector4, MatrixIndex, usize,
   RowVector4, MatrixBool, bool,
   RowVector4, MatrixI8, i8,
   RowVector4, MatrixI16, i16,
@@ -484,6 +528,7 @@ impl_to_value_matrix!(
   RowVector4, MatrixF32, F32,
   RowVector4, MatrixF64, F64,
 
+  RowDVector, MatrixIndex, usize,
   RowDVector, MatrixBool, bool,
   RowDVector, MatrixI8, i8,
   RowDVector, MatrixI16, i16,
@@ -498,6 +543,7 @@ impl_to_value_matrix!(
   RowDVector, MatrixF32, F32,
   RowDVector, MatrixF64, F64,
 
+  DVector, MatrixIndex, usize,
   DVector, MatrixBool, bool,
   DVector, MatrixI8, i8,
   DVector, MatrixI16, i16,
@@ -512,6 +558,7 @@ impl_to_value_matrix!(
   DVector, MatrixF32, F32,
   DVector, MatrixF64, F64,
 
+  DMatrix, MatrixIndex, usize,
   DMatrix, MatrixBool, bool,
   DMatrix, MatrixI8, i8,
   DMatrix, MatrixI16, i16,
