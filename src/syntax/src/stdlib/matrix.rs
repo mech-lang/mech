@@ -5,17 +5,18 @@ use crate::stdlib::*;
 // Matrix Library
 // ----------------------------------------------------------------------------
 
-macro_rules! matmul_op {
-    ($lhs:expr, $rhs:expr, $out:expr) => {
-      unsafe { (*$lhs).mul_to(&*$rhs,&mut *$out); }
-    };}
+
+// MatMul ---------------------------------------------------------------------
 
 macro_rules! mul_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { *$out = *$lhs * *$rhs; }
   };}
 
-// MatMul ---------------------------------------------------------------------
+macro_rules! matmul_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { (*$lhs).mul_to(&*$rhs,&mut *$out); }
+  };}
 
 impl_binop!(MatMulScalar, T,T,T,mul_op);
 impl_binop!(MatMulM2x3M3x2, Matrix2x3<T>, Matrix3x2<T>, Matrix2<T>,matmul_op);
@@ -120,98 +121,60 @@ impl NativeFunctionCompiler for MatrixMatMul {
 }
 
 // Transpose ------------------------------------------------------------------
-  
-macro_rules! impl_transpose_fxn {
-  ($struct_name:ident, $arg_type:ty, $out_type:ty) => {
-    #[derive(Debug)]
-    struct $struct_name<T> {
-      input: Ref<$arg_type>,
-      out: Ref<$out_type>,
-    }
-    impl<T> MechFunction for $struct_name<T>
-    where
-      T: Copy + Debug + Clone + Sync + Send + Neg<Output = T> + PartialEq + 'static,
-      Ref<$out_type>: ToValue
-    {
-      fn solve(&self) {
-        let input_ptr = self.input.as_ptr();
-        let output_ptr = self.out.as_ptr();
-        unsafe { *output_ptr = (*input_ptr).transpose(); }
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
-    }};}
 
-impl_transpose_fxn!(TransposeM2, Matrix2<T>, Matrix2<T>);
-impl_transpose_fxn!(TransposeM3, Matrix3<T>, Matrix3<T>);
-impl_transpose_fxn!(TransposeM2x3, Matrix2x3<T>, Matrix3x2<T>);
-impl_transpose_fxn!(TransposeM3x2, Matrix3x2<T>, Matrix2x3<T>);
-impl_transpose_fxn!(TransposeR2, RowVector2<T>, Vector2<T>);
-impl_transpose_fxn!(TransposeR3, RowVector3<T>, Vector3<T>);
-impl_transpose_fxn!(TransposeR4, RowVector4<T>, Vector4<T>);
-  
-macro_rules! impl_transpose_fxn_dynamic {
-  ($struct_name:ident, $arg_type:ty, $out_type:ty) => {
-    #[derive(Debug)]
-    struct $struct_name<T> {
-      input: Ref<$arg_type>,
-      out: Ref<$out_type>,
-    }
-    impl<T> MechFunction for $struct_name<T>
-    where
-      T: Copy + Debug + Clone + Sync + Send + ClosedNeg + PartialEq + 'static,
-      Ref<$out_type>: ToValue
-    {
-      fn solve(&self) {
-        let input_ptr = self.input.borrow();
-        let output_ptr = self.out.as_ptr();
-        unsafe { *output_ptr = input_ptr.clone().transpose(); }
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
-    }};}
-  
-impl_transpose_fxn_dynamic!(TransposeRD, RowDVector<T>, DVector<T>);
-impl_transpose_fxn_dynamic!(TransposeVD, DVector<T>, RowDVector<T>);
-impl_transpose_fxn_dynamic!(TransposeMD, DMatrix<T>, DMatrix<T>);
+macro_rules! transpose_op {
+  ($arg:expr, $out:expr) => {
+    unsafe { *$out = (*$arg).transpose(); }
+  };}
+
+impl_bool_urop!(TransposeM2, Matrix2<T>, Matrix2<T>, transpose_op);
+impl_bool_urop!(TransposeM3, Matrix3<T>, Matrix3<T>, transpose_op);
+impl_bool_urop!(TransposeM2x3, Matrix2x3<T>, Matrix3x2<T>, transpose_op);
+impl_bool_urop!(TransposeM3x2, Matrix3x2<T>, Matrix2x3<T>, transpose_op);
+impl_bool_urop!(TransposeR2, RowVector2<T>, Vector2<T>, transpose_op);
+impl_bool_urop!(TransposeR3, RowVector3<T>, Vector3<T>, transpose_op);
+impl_bool_urop!(TransposeR4, RowVector4<T>, Vector4<T>, transpose_op); 
+impl_bool_urop!(TransposeRD, RowDVector<T>, DVector<T>, transpose_op);
+impl_bool_urop!(TransposeVD, DVector<T>, RowDVector<T>, transpose_op);
+impl_bool_urop!(TransposeMD, DMatrix<T>, DMatrix<T>, transpose_op);
 
 macro_rules! generate_transpose_match_arms {
-  ($arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident),+);+ $(;)?) => {
+  ($arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr),+);+ $(;)?) => {
     match $arg {
       $(
         $(
-          Value::$matrix_kind(Matrix::<$target_type>::RowVector4(input)) => {
-            Ok(Box::new(TransposeR4{input: input.clone(), out: new_ref(Vector4::from_element($target_type::zero())) }))
+          Value::$matrix_kind(Matrix::<$target_type>::RowVector4(arg)) => {
+            Ok(Box::new(TransposeR4{arg: arg.clone(), out: new_ref(Vector4::from_element($default)) }))
           },
-          Value::$matrix_kind(Matrix::<$target_type>::RowVector3(input)) => {
-            Ok(Box::new(TransposeR3{input: input.clone(), out: new_ref(Vector3::from_element($target_type::zero())) }))
+          Value::$matrix_kind(Matrix::<$target_type>::RowVector3(arg)) => {
+            Ok(Box::new(TransposeR3{arg: arg.clone(), out: new_ref(Vector3::from_element($default)) }))
           },
-          Value::$matrix_kind(Matrix::<$target_type>::RowVector2(input)) => {
-            Ok(Box::new(TransposeR2{input: input.clone(), out: new_ref(Vector2::from_element($target_type::zero())) }))
+          Value::$matrix_kind(Matrix::<$target_type>::RowVector2(arg)) => {
+            Ok(Box::new(TransposeR2{arg: arg.clone(), out: new_ref(Vector2::from_element($default)) }))
           },
-          Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)) => {
-            Ok(Box::new(TransposeM2{input, out: new_ref(Matrix2::from_element($target_type::zero()))}))
+          Value::$matrix_kind(Matrix::<$target_type>::Matrix2(arg)) => {
+            Ok(Box::new(TransposeM2{arg, out: new_ref(Matrix2::from_element($default))}))
           },
-          Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)) => {
-            Ok(Box::new(TransposeM3{input, out: new_ref(Matrix3::from_element($target_type::zero()))}))
+          Value::$matrix_kind(Matrix::<$target_type>::Matrix3(arg)) => {
+            Ok(Box::new(TransposeM3{arg, out: new_ref(Matrix3::from_element($default))}))
           },
-          Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)) => {
-            Ok(Box::new(TransposeM2x3{input, out: new_ref(Matrix3x2::from_element($target_type::zero()))}))
+          Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(arg)) => {
+            Ok(Box::new(TransposeM2x3{arg, out: new_ref(Matrix3x2::from_element($default))}))
           },          
-          Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)) => {
-            Ok(Box::new(TransposeM3x2{input, out: new_ref(Matrix2x3::from_element($target_type::zero()))}))
+          Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(arg)) => {
+            Ok(Box::new(TransposeM3x2{arg, out: new_ref(Matrix2x3::from_element($default))}))
           },          
-          Value::$matrix_kind(Matrix::<$target_type>::RowDVector(input)) => {
-            let length = {input.borrow().len()};
-            Ok(Box::new(TransposeRD{input, out: new_ref(DVector::from_element(length,$target_type::zero()))}))
+          Value::$matrix_kind(Matrix::<$target_type>::RowDVector(arg)) => {
+            let length = {arg.borrow().len()};
+            Ok(Box::new(TransposeRD{arg, out: new_ref(DVector::from_element(length,$default))}))
           },
-          Value::$matrix_kind(Matrix::<$target_type>::DVector(input)) => {
-            let length = {input.borrow().len()};
-            Ok(Box::new(TransposeVD{input, out: new_ref(RowDVector::from_element(length,$target_type::zero()))}))
+          Value::$matrix_kind(Matrix::<$target_type>::DVector(arg)) => {
+            let length = {arg.borrow().len()};
+            Ok(Box::new(TransposeVD{arg, out: new_ref(RowDVector::from_element(length,$default))}))
           },
-          Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)) => {
-            let (rows,cols) = {input.borrow().shape()};
-            Ok(Box::new(TransposeMD{input, out: new_ref(DMatrix::from_element(rows,cols,$target_type::zero()))}))
+          Value::$matrix_kind(Matrix::<$target_type>::DMatrix(arg)) => {
+            let (rows,cols) = {arg.borrow().shape()};
+            Ok(Box::new(TransposeMD{arg, out: new_ref(DMatrix::from_element(rows,cols,$default))}))
           },
         )+
       )+
@@ -223,13 +186,19 @@ macro_rules! generate_transpose_match_arms {
 fn generate_transpose_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   generate_transpose_match_arms!(
     (lhs_value),
-    I8 => MatrixI8, i8;
-    I16 => MatrixI16, i16;
-    I32 => MatrixI32, i32;
-    I64 => MatrixI64, i64;
-    I128 => MatrixI128, i128;
-    F32 => MatrixF32, F32;
-    F64 => MatrixF64, F64;
+    Bool => MatrixBool, bool, false;
+    I8   => MatrixI8,   i8,   i8::zero();
+    I16  => MatrixI16,  i16,  i16::zero();
+    I32  => MatrixI32,  i32,  i32::zero();
+    I64  => MatrixI64,  i64,  i64::zero();
+    I128 => MatrixI128, i128, i128::zero();
+    U8   => MatrixU8,   u8,   u8::zero();
+    U16  => MatrixU16,  u16,  u16::zero();
+    U32  => MatrixU32,  u32,  u32::zero();
+    U64  => MatrixU64,  u64,  u64::zero();
+    U128 => MatrixU128, u128, u128::zero();
+    F32  => MatrixF32,  F32,  F32::zero();
+    F64  => MatrixF64,  F64,  F64::zero();
   )
 }
   
