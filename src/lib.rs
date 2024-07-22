@@ -6,15 +6,14 @@
 pub extern crate mech_core as core;
 pub extern crate mech_syntax as syntax;
 //pub extern crate mech_program as program;
-//pub extern crate mech_utilities as utilities;
+pub extern crate mech_utilities as utilities;
 
 //mod repl;
 
 pub use mech_core::*;
-use mech_core::nodes::Program;
 //pub use mech_syntax::compiler::*;
 //pub use mech_program::*;
-//pub use mech_utilities::*;
+pub use mech_utilities::*;
 //pub use self::repl::*;
 
 extern crate colored;
@@ -39,164 +38,6 @@ extern crate lazy_static;
 
 lazy_static! {
   static ref CORE_MAP: Mutex<HashMap<SocketAddr, (String, SystemTime)>> = Mutex::new(HashMap::new());
-}
-
-pub fn format_parse_tree(program: &Program) -> String {
-  let json_string = serde_json::to_string_pretty(&program).unwrap();
-
-  let depth = |line: &str|->usize{line.chars().take_while(|&c| c == ' ').count()};
-  let mut result = String::new();
-  let lines: Vec<&str> = json_string.lines().collect();
-  result.push_str("Program\n");
-  for (index, line) in lines.iter().enumerate() {
-    let trm = line.trim();
-    if trm == "}" || 
-       trm == "},"|| 
-       trm == "{" || 
-       trm == "[" || 
-       trm == "],"|| 
-       trm == "]" {
-      continue;
-    }
-
-    // Count leading spaces to determine depth
-    let d = depth(line);
-    // Construct the tree-like prefix
-    let mut prefix = String::new();
-    for _ in 0..d {
-      prefix.push_str(" ");
-    }
-    if index == lines.len() {
-      prefix.push_str("└ ");
-    } else {
-      if depth(lines[index + 1]) != d {
-        prefix.push_str("└ ");
-      } else {
-        prefix.push_str("├ ");
-      }
-    }
-    let trm = line.trim();
-    let trm = trm.trim_end_matches('{')
-                  .trim_start_matches('"')
-                  .trim_end_matches(':')
-                  .trim_end_matches('"')
-                  .trim_end_matches('[');
-    prefix.push_str(trm);
-
-    // Append formatted line to result
-    result.push_str(&prefix);
-    result.push('\n');
-    result = result.replace("\":", "");
-  }
-  let mut indexed_str = IndexedString::new(&result);
-  'rows: for i in 0..indexed_str.rows {
-    let rowz = &indexed_str.index_map[i];
-    for j in 0..rowz.len() {
-      let c = match indexed_str.get(i,j) {
-        Some(c) => c,
-        None => continue,
-      };
-      if c == '└' {
-        for k in i+1..indexed_str.rows {
-          match indexed_str.get(k,j) {
-            Some(c2) => {
-              if c2 == '└' {
-                indexed_str.set(i,j,'├');
-                for l in i+1..k {
-                  match indexed_str.get(l,j) {
-                    Some(' ') => {indexed_str.set(l,j,'│');},
-                    Some('└') => {indexed_str.set(l,j,'├');},
-                    _ => (),
-                  }
-                }
-              } else if c2 == ' ' {
-                continue;
-              } else {
-                continue 'rows;
-              }
-            },
-            None => continue,
-          }
-
-        }
-      } else if c == ' ' || c == '│' {
-        continue;
-      } else {
-        continue 'rows;
-      }
-    }
-  }
-  indexed_str.to_string()
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct IndexedString {
-  pub data: Vec<char>,
-  pub index_map: Vec<Vec<usize>>,
-  pub rows: usize,
-  pub cols: usize,
-}
-
-impl IndexedString {
-  fn new(input: &str) -> Self {
-      let mut data = Vec::new();
-      let mut index_map = Vec::new();
-      let mut current_row = 0;
-      let mut current_col = 0;
-      index_map.push(Vec::new());
-      for c in input.chars() {
-        data.push(c);
-        if c == '\n' {
-          index_map.push(Vec::new());
-          current_row += 1;
-          current_col = 0;
-        } else {
-          index_map[current_row].push(data.len() - 1);
-          current_col += 1;
-        }
-      }
-      let rows = index_map.len();
-      let cols = if rows > 0 { index_map[0].len() } else { 0 };
-      IndexedString {
-          data,
-          index_map,
-          rows,
-          cols,
-      }
-  }
-  fn to_string(&self) -> String {
-    self.data.iter().collect()
-  }
-  fn get(&self, row: usize, col: usize) -> Option<char> {
-    if row < self.rows {
-      let rowz = &self.index_map[row];
-      if col < rowz.len() {
-        let index = self.index_map[row][col];
-        Some(self.data[index])
-      } else {
-        None
-      }
-    } else {
-      None
-    }
-  }
-
-  fn set(&mut self, row: usize, col: usize, new_char: char) -> Result<(), String> {
-    if row < self.rows {
-      let row_indices = &mut self.index_map[row];
-      if col < row_indices.len() {
-        let index = row_indices[col];
-        self.data[index] = new_char;
-        Ok(())
-      } else {
-        Err("Column index out of bounds".to_string())
-      }
-    } else {
-      Err("Row index out of bounds".to_string())
-    }
-  }
-
-
 }
 
 //extern crate nom;

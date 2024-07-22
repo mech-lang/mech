@@ -6,7 +6,6 @@
 #![feature(get_mut_unchecked)]
 #![allow(dead_code)]
 #![allow(warnings)]
-#![feature(step_trait)]
 
 extern crate mech_core;
 #[cfg(feature="no-std")] #[macro_use] extern crate alloc;
@@ -20,28 +19,18 @@ extern crate nalgebra as na;
 extern crate tabled;
 extern crate libm;
 
-pub mod value;
-pub mod parser;
+//pub mod parser;
+pub mod parser2;
+//pub mod ast;
+//pub mod compiler;
+//pub mod analyzer;
+//#[cfg(feature="lang-server")]
+//pub mod langserver;
+//pub mod formatter;
 pub mod interpreter;
-pub mod matrix;
-pub mod types;
-pub mod functions;
-pub mod kind;
-pub mod stdlib;
 
 use mech_core::*;
 use mech_core::nodes::*;
-use std::cell::RefCell;
-use std::rc::Rc;
-
-pub use self::stdlib::*;
-pub use self::value::*;
-pub use self::parser::*;
-pub use self::interpreter::*;
-pub use self::matrix::*;
-pub use self::types::*;
-pub use self::functions::*;
-pub use self::kind::*;
 
 #[cfg(not(feature = "no-std"))] use core::fmt;
 #[cfg(feature = "no-std")] use alloc::fmt;

@@ -891,8 +891,7 @@ impl Term {
 pub enum Factor {
   Term(Box<Term>),
   Expression(Box<Expression>),
-  Negate(Box<Factor>),
-  Not(Box<Factor>),
+  Negated(Box<Factor>),
   Transpose(Box<Factor>),
 }
 
@@ -901,8 +900,7 @@ impl Factor {
     match self {
       Factor::Term(x) => x.tokens(),
       Factor::Expression(x) => x.tokens(),
-      Factor::Negate(x) => x.tokens(),
-      Factor::Not(x) => x.tokens(),
+      Factor::Negated(x) => x.tokens(),
       Factor::Transpose(x) => x.tokens(),
     }
   }
