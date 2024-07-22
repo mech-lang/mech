@@ -25,7 +25,7 @@ use serde_json;
 
 
 fn main() -> Result<(), MechError> {
-  let version = "0.2.2";
+  let version = "0.2.3";
   let text_logo = r#"
   ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐   ┌─┐
   └───┐ ┌───┘ └──────┘ │ │ └┐ │ │ │   │ │
