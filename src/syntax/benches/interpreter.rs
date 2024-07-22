@@ -27,7 +27,7 @@ use mech_syntax::parser;
 use mech_syntax::ast::Ast;
 use mech_syntax::compiler::Compiler;
 use mech_core::*;
-use mech_syntax::parser2;
+use mech_syntax::parser;
 //use mech_syntax::analyzer::*;
 use mech_syntax::interpreter::*;
 use mech_syntax::parser::{parse};
@@ -40,7 +40,7 @@ fn matrix_multiply(b:&mut Bencher){
   let s = r#"a := [1 2; 3 4]
 b := [4 5; 6 7]
 c := a ** b"#;
-  match parser2::parse(&s) {
+  match parser::parse(&s) {
     Ok(tree) => { 
       let mut intrp = Interpreter::new();
       let result = intrp.interpret(&tree);
@@ -56,7 +56,7 @@ c := a ** b"#;
 #[bench]
 fn add_scalar(b:&mut Bencher){
   let s = r#"1 + 1"#;
-  match parser2::parse(&s) {
+  match parser::parse(&s) {
     Ok(tree) => { 
       let mut intrp = Interpreter::new();
       let result = intrp.interpret(&tree);
@@ -74,7 +74,7 @@ fn matrix_add_row(b:&mut Bencher){
   let s = r#"a := [1 2 3]
 b := [4 5 6]
 c := a + b"#;
-  match parser2::parse(&s) {
+  match parser::parse(&s) {
     Ok(tree) => { 
       let mut intrp = Interpreter::new();
       let result = intrp.interpret(&tree);
