@@ -6,7 +6,7 @@ extern crate lazy_static;
 use std::cell::RefCell;
 use std::rc::Rc;
 use mech_core::*;
-use mech_syntax::parser2;
+use mech_syntax::parser;
 use std::env;
 
   /// Compare hashed parse tree traces
@@ -15,7 +15,7 @@ use std::env;
       #[test]
       fn $func() {
         let s = $input;
-        match parser2::parse(&s) {
+        match parser::parse(&s) {
             Ok(tree) => { 
               let hashed_parse = hash_str(&format!("{:#?}", tree));
               assert_eq!(hashed_parse, $expected);
@@ -38,7 +38,7 @@ test_parser!(parse_identifier_star, "A*", 47514170547507386);
 test_parser!(parse_identifier_greek, "Δx^2", 34800204971269505);
 
 test_parser!(parse_literal_number_integer, "123", 47158019211217915);
-test_parser!(parse_literal_number_integer_neg, "-123", 40753438147517837);
+test_parser!(parse_literal_number_integer_neg, "-123", 31175819317228376);
 test_parser!(parse_literal_number_float, "123.456", 35039068852936934);
 test_parser!(parse_literal_number_rational, "123/456", 51796036056154014);
 test_parser!(parse_literal_number_hex, "0x1234567890ABCDEF", 43012669827828490);
@@ -52,9 +52,10 @@ test_parser!(parse_literal_number_complex, "1234+567i", 52164299928210322);
 test_parser!(parse_literal_number_complex_fractions, "12.34+5.67i", 49522358830348899);
 test_parser!(parse_literal_number_hex_underscores, "0xAB_CD_EF_GH", 11525069796638697);
 
-test_parser!(parse_literal_negated, "-a", 56350807559492456);
-test_parser!(parse_literal_negated_transpose, "-[a, b, c]'", 28260948291495770);
-test_parser!(parse_literal_negated_multi, "-a + -b * -(-c - -b)", 58911143883839038);
+test_parser!(parse_literal_negated, "-a", 28095792625106764);
+test_parser!(parse_literal_negated_transpose, "-[a, b, c]'", 18032051464716518);
+test_parser!(parse_literal_negated_multi, "-a + -b * -(-c - -b)", 29443585629021246);
+test_parser!(parse_literal_negated_bool, "!a", 25781072094432306);
 
 test_parser!(parse_literal_atom, "`A", 29631792893088166);
 
@@ -323,4 +324,4 @@ measurement-update(μ<[f32]:3>, Σ<[f32]:3,3>) = (μ<[f32]:3>, Σ<[f32]:3,3>) :=
   S := H ** Σ ** H' + Q
   K := Σ ** H' / S
   μ := (μ + K * (z -  Ẑ))
-  Σ := ([1 0 0; 0 1 0; 0 0 1] - K ** H) ** Σ."#,64799053611110444);
+  Σ := ([1 0 0; 0 1 0; 0 0 1] - K ** H) ** Σ."#,17138746356126439);
