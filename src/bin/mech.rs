@@ -1,8 +1,7 @@
 #![feature(hash_extract_if)]
 #![allow(warnings)]
-use mech::format_parse_tree;
 use mech_core::*;
-use mech_syntax::parser;
+use mech_syntax::parser2;
 //use mech_syntax::analyzer::*;
 use mech_syntax::interpreter::*;
 use std::time::Instant;
@@ -21,11 +20,9 @@ use tabled::{
   settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
   Tabled,
 };
-use serde_json;
-
 
 fn main() -> Result<(), MechError> {
-  let version = "0.2.3";
+  let version = "0.2.2";
   let text_logo = r#"
   ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐   ┌─┐
   └───┐ ┌───┘ └──────┘ │ │ └┐ │ │ │   │ │
@@ -59,15 +56,13 @@ fn main() -> Result<(), MechError> {
   let mut intrp = Interpreter::new();
   if let Some(mech_paths) = matches.get_one::<String>("mech_paths") {
     let s = fs::read_to_string(&mech_paths).unwrap();
-    match parser::parse(&s) {
+    match parser2::parse(&s) {
       Ok(tree) => { 
         let result = intrp.interpret(&tree);
-        let pretty_json = format_parse_tree(&tree);
-
         let debug_flag = matches.get_flag("debug");
         if debug_flag {
           let tree_hash = hash_str(&format!("{:#?}", tree));
-          let syntax_tree_str = format!("Tree Hash: {:?}\n{}", tree_hash, pretty_json);
+          let syntax_tree_str = format!("Tree Hash: {:?}\n{:#?}", tree_hash, tree);
 
           let mut interpreter_str = format!("Symbols: {:#?}\n", intrp.symbols); 
           interpreter_str = format!("{}Plan:\n", interpreter_str); 
@@ -81,10 +76,7 @@ fn main() -> Result<(), MechError> {
           for fxn in intrp.plan.borrow().iter() {
             fxn.solve();
           }
-          let result_str = match result {
-            Ok(r) => format!("{}", r.pretty_print()),
-            Err(err) => format!("{:?}", err),
-          };
+          let result_str = format!("{:#?}", result);
 
           let data = vec!["🌳 Syntax Tree", &syntax_tree_str, 
                           "💻 Interpreter", &interpreter_str, 
@@ -96,16 +88,12 @@ fn main() -> Result<(), MechError> {
     
           println!("{table}");
         } else {
-          let result_str = match result {
-            Ok(r) => format!("{}", r.pretty_print()),
-            Err(err) => format!("{:?}", err),
-          };
-          println!("{}", result_str);
+          println!("{:#?}", result);
         }
       },
       Err(err) => {
         if let MechErrorKind::ParserError(report, _) = err.kind {
-          parser::print_err_report(&s, &report);
+          parser2::print_err_report(&s, &report);
         } else {
           panic!("Unexpected error type");
         }
@@ -137,7 +125,7 @@ fn main() -> Result<(), MechError> {
     io::stdout().flush().unwrap();
     let mut input = String::new();
     io::stdin().read_line(&mut input).unwrap();
-    match parser::parse(&input) {
+    match parser2::parse(&input) {
       Ok(tree) => { 
         let result = intrp.interpret(&tree);
         match result {
@@ -147,7 +135,7 @@ fn main() -> Result<(), MechError> {
       }
       Err(err) => {
         if let MechErrorKind::ParserError(report, _) = err.kind {
-          parser::print_err_report(&input, &report);
+          parser2::print_err_report(&input, &report);
         } else {
           panic!("Unexpected error type");
         }
