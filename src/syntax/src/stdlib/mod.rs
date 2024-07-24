@@ -217,38 +217,100 @@ macro_rules! generate_urnop_match_arms {
 
 // Convert --------------------------------------------------------------------
 
-#[derive(Debug)]
-struct ConvertScalar<T, U> {
-  input: Ref<T>,
-  out: Ref<U>,
-}
-
-impl<T, U> MechFunction for ConvertScalar<T, U>
-where
-  T: Copy + std::fmt::Debug,
-  U: Copy + std::fmt::Debug,
-  Ref<U>: ToValue
-{
-  fn solve(&self) {
-    let in_value = self.input.borrow();
-    let mut out_value = self.out.borrow_mut();
-    unsafe {
-      *out_value = *(&*in_value as *const T as *const U);
+#[macro_export]  
+macro_rules! impl_convert_op {
+  ($struct_name:ident, $arg_type:ty, $out_type:ty, $out_type2:ty, $op:ident) => {
+    #[derive(Debug)]
+    
+    struct $struct_name {
+      arg: Ref<$arg_type>,
+      out: Ref<$out_type>,
+    }
+    impl MechFunction for $struct_name
+    where
+      Ref<$out_type>: ToValue
+    {
+      fn solve(&self) {
+        let arg_ptr = self.arg.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        $op!(arg_ptr,out_ptr,$out_type2)
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
     }
   }
-  fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
-macro_rules! generate_conversion_match_arms {
-  ($arg:expr, $($input_type:ident => $($value_kind:ident, $target_type:ident),+);+ $(;)?) => {
-    match $arg {
+macro_rules! convert_op1 {
+  ($arg:expr, $out:expr, $out_type:ty) => {
+    unsafe{ *$out = *$arg as $out_type }
+  };}
+
+macro_rules! convert_op2 {
+  ($arg:expr, $out:expr, $out_type:ty) => {
+    unsafe{ *$out = (*$arg).0 as $out_type }
+  };}
+
+macro_rules! convert_op3 {
+  ($arg:expr, $out:expr, $out_type:ty) => {
+    unsafe{ (*$out).0 = (*$arg) as $out_type }
+  };}
+
+macro_rules! convert_op4 {
+  ($arg:expr, $out:expr, $out_type:ty) => {
+    unsafe{ (*$out).0 = (*$arg).0 as $out_type }
+  };}
+
+macro_rules! impl_convert_op_group {
+  ($from:ty, [$($to:ty),*], $func:ident) => {
+    paste!{
       $(
+        impl_convert_op!([<ConvertScalar $from:upper $to:upper>], $from, $to, [<$to:lower>], $func);
+      )*
+    }
+  };
+}
+
+impl_convert_op_group!(i8,   [i8, i16, i32, i64, i128, u8, u16, u32, u64, u128], convert_op1);
+impl_convert_op_group!(i16,  [i8, i16, i32, i64, i128, u8, u16, u32, u64, u128], convert_op1);
+impl_convert_op_group!(i32,  [i8, i16, i32, i64, i128, u8, u16, u32, u64, u128], convert_op1);
+impl_convert_op_group!(i64,  [i8, i16, i32, i64, i128, u8, u16, u32, u64, u128], convert_op1);
+impl_convert_op_group!(i128, [i8, i16, i32, i64, i128, u8, u16, u32, u64, u128], convert_op1);
+
+impl_convert_op_group!(u8,   [i8, i16, i32, i64, i128, u8, u16, u32, u64, u128], convert_op1);
+impl_convert_op_group!(u16,  [i8, i16, i32, i64, i128, u8, u16, u32, u64, u128], convert_op1);
+impl_convert_op_group!(u32,  [i8, i16, i32, i64, i128, u8, u16, u32, u64, u128], convert_op1);
+impl_convert_op_group!(u64,  [i8, i16, i32, i64, i128, u8, u16, u32, u64, u128], convert_op1);
+impl_convert_op_group!(u128, [i8, i16, i32, i64, i128, u8, u16, u32, u64, u128], convert_op1);
+
+impl_convert_op_group!(F32,  [i8, i16, i32, i64, i128, u8, u16, u32, u64, u128], convert_op2);
+impl_convert_op_group!(F64,  [i8, i16, i32, i64, i128, u8, u16, u32, u64, u128], convert_op2);
+
+impl_convert_op_group!(i8,   [F32, F64], convert_op3);
+impl_convert_op_group!(i16,  [F32, F64], convert_op3);
+impl_convert_op_group!(i32,  [F32, F64], convert_op3);
+impl_convert_op_group!(i64,  [F32, F64], convert_op3);
+impl_convert_op_group!(i128, [F32, F64], convert_op3);
+impl_convert_op_group!(u8,   [F32, F64], convert_op3);
+impl_convert_op_group!(u16,  [F32, F64], convert_op3);
+impl_convert_op_group!(u32,  [F32, F64], convert_op3);
+impl_convert_op_group!(u64,  [F32, F64], convert_op3);
+impl_convert_op_group!(u128, [F32, F64], convert_op3);
+
+impl_convert_op_group!(F32,  [F32, F64], convert_op4);
+impl_convert_op_group!(F64,  [F32, F64], convert_op4);
+
+macro_rules! generate_conversion_match_arms {
+  ($arg:expr, $($input_type:ident => $($target_type:ident),+);+ $(;)?) => {
+    paste!{
+      match $arg {
         $(
-          (Value::$input_type(arg), ValueKind::$value_kind) => {Ok(Box::new(ConvertScalar {input: arg.clone(),out: new_ref(0 as $target_type)}))},
+          $(
+            (Value::[<$input_type:upper>](arg), ValueKind::[<$target_type:upper>]) => {Ok(Box::new([<ConvertScalar $input_type:upper $target_type:upper>]{arg: arg.clone(), out: new_ref($target_type::zero())}))},
+          )+
         )+
-      )+
-      x => Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+        x => Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+      }
     }
   }
 }
@@ -256,16 +318,18 @@ macro_rules! generate_conversion_match_arms {
 fn generate_conversion_fxn(source_value: Value, target_kind: ValueKind) -> MResult<Box<dyn MechFunction>>  {
   generate_conversion_match_arms!(
     (source_value, target_kind),
-    I8 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
-    I16 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
-    I32 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
-    I64 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
-    I128 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
-    U8 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
-    U16 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
-    U32 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
-    U64 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
-    U128 => I8, i8, I16, i16, I32, i32, I64, i64, I128, i128, U8, u8, U16, u16, U32, u32, U64, u64, U128, u128;
+    i8   => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    i16  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    i32  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    i64  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    i128 => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    u8   => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    u16  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    u32  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    u64  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    u128 => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    F32  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    F64  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
   )
 }
 
