@@ -123,25 +123,125 @@ macro_rules! neg_vec_op {
     unsafe { *$out = (*$arg).clone().neg(); }
   };}
 
+use libm::{cos,cosf};
+macro_rules! cos_op {
+  ($arg:expr, $out:expr) => {
+    unsafe{(*$out).0 = cos((*$arg).0);}
+  };}
+
+macro_rules! cos_vec_op {
+  ($arg:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$arg).len() {
+        ((*$out)[i]).0 = cos(((*$arg)[i]).0);
+      }}};}
+
+macro_rules! cosf_op {
+  ($arg:expr, $out:expr) => {
+    unsafe{(*$out).0 = cosf((*$arg).0);}
+  };}  
+
+macro_rules! cosf_vec_op {
+  ($arg:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$arg).len() {
+        ((*$out)[i]).0 = cosf(((*$arg)[i]).0);
+      }}};}
+
+use libm::{sin,sinf};
+macro_rules! sin_op {
+  ($arg:expr, $out:expr) => {
+    unsafe{(*$out).0 = sin((*$arg).0);}
+  };}
+
+macro_rules! sin_vec_op {
+  ($arg:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$arg).len() {
+        ((*$out)[i]).0 = sin(((*$arg)[i]).0);
+      }}};}
+
+macro_rules! sinf_op {
+  ($arg:expr, $out:expr) => {
+    unsafe{(*$out).0 = sinf((*$arg).0);}
+  };}  
+
+macro_rules! sinf_vec_op {
+  ($arg:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$arg).len() {
+        ((*$out)[i]).0 = sinf(((*$arg)[i]).0);
+      }}};}      
+   
+#[macro_export]
+macro_rules! generate_urnop_match_arms2 {
+  ($lib:ident, $arg:expr, $($lhs_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr),+);+ $(;)?) => {
+    paste!{
+      match $arg {
+        $(
+          $(
+            (Value::$lhs_type(arg)) => {
+              Ok(Box::new([<$lib $lhs_type Scalar>]{arg: arg.clone(), out: new_ref($default) }))},
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(arg))) => {
+              Ok(Box::new([<$lib $lhs_type M2>]{arg, out: new_ref(Matrix2::from_element($default))}))},
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(arg))) => {
+              Ok(Box::new([<$lib $lhs_type M3>]{arg, out: new_ref(Matrix3::from_element($default))}))},
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(arg))) => {
+              Ok(Box::new([<$lib $lhs_type R2>]{arg: arg.clone(), out: new_ref(RowVector2::from_element($default)) }))},
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(arg))) => {
+              Ok(Box::new([<$lib $lhs_type R3>]{arg: arg.clone(), out: new_ref(RowVector3::from_element($default)) }))},
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(arg))) => {
+              Ok(Box::new([<$lib $lhs_type R4>]{arg: arg.clone(), out: new_ref(RowVector4::from_element($default)) }))},
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(arg))) => {
+              Ok(Box::new([<$lib $lhs_type M2x3>]{arg, out: new_ref(Matrix2x3::from_element($default))}))},          
+            (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(arg))) => {
+              let length = {arg.borrow().len()};
+              Ok(Box::new([<$lib $lhs_type RD>]{arg, out: new_ref(RowDVector::from_element(length,$default))}))},
+            (Value::$matrix_kind(Matrix::<$target_type>::DVector(arg))) => {
+              let length = {arg.borrow().len()};
+              Ok(Box::new([<$lib $lhs_type VD>]{arg, out: new_ref(DVector::from_element(length,$default))}))},
+            (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(arg))) => {
+              let (rows,cols) = {arg.borrow().shape()};
+              Ok(Box::new([<$lib $lhs_type MD>]{arg, out: new_ref(DMatrix::from_element(rows,cols,$default))}))},
+          )+
+        )+
+        x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+      }
+    }
+  }
+}
 
 // Cos ------------------------------------------------------------------------
 
-use libm::cos;
+impl_urop!(MathCosF32Scalar, F32, F32, cosf_op);
+impl_urop!(MathCosF32M2, Matrix2<F32>, Matrix2<F32>, cosf_vec_op);
+impl_urop!(MathCosF32M3, Matrix3<F32>, Matrix3<F32>, cosf_vec_op);
+impl_urop!(MathCosF32R2, RowVector2<F32>, RowVector2<F32>, cosf_vec_op);
+impl_urop!(MathCosF32R3, RowVector3<F32>, RowVector3<F32>, cosf_vec_op);
+impl_urop!(MathCosF32R4, RowVector4<F32>, RowVector4<F32>, cosf_vec_op);
+impl_urop!(MathCosF32M2x3, Matrix2x3<F32>, Matrix2x3<F32>, cosf_vec_op);
+impl_urop!(MathCosF32VD, DVector<F32>, DVector<F32>, cosf_vec_op);
+impl_urop!(MathCosF32RD, RowDVector<F32>, RowDVector<F32>, cosf_vec_op);
+impl_urop!(MathCosF32MD, DMatrix<F32>, DMatrix<F32>, cosf_vec_op);
 
-#[derive(Debug)]
-pub struct MathCosScalar {
-  val: Ref<F64>,
-  out: Ref<F64>,
-}
+impl_urop!(MathCosF64Scalar, F64, F64, cos_op);
+impl_urop!(MathCosF64M2, Matrix2<F64>, Matrix2<F64>, cos_vec_op);
+impl_urop!(MathCosF64M3, Matrix3<F64>, Matrix3<F64>, cos_vec_op);
+impl_urop!(MathCosF64R2, RowVector2<F64>, RowVector2<F64>, cos_vec_op);
+impl_urop!(MathCosF64R3, RowVector3<F64>, RowVector3<F64>, cos_vec_op);
+impl_urop!(MathCosF64R4, RowVector4<F64>, RowVector4<F64>, cos_vec_op);
+impl_urop!(MathCosF64M2x3, Matrix2x3<F64>, Matrix2x3<F64>, cos_vec_op);
+impl_urop!(MathCosF64VD, DVector<F64>, DVector<F64>, cos_vec_op);
+impl_urop!(MathCosF64RD, RowDVector<F64>, RowDVector<F64>, cos_vec_op);
+impl_urop!(MathCosF64MD, DMatrix<F64>, DMatrix<F64>, cos_vec_op);
 
-impl MechFunction for MathCosScalar {
-  fn solve(&self) {
-    let val_ptr = self.val.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe{(*out_ptr).0 = cos((*val_ptr).0);}
-  }
-  fn out(&self) -> Value { Value::F64(self.out.clone()) }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+fn generate_cos_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  generate_urnop_match_arms2!(
+    MathCos,
+    (lhs_value),
+    F32 => MatrixF32, F32, F32::zero();
+    F64 => MatrixF64, F64, F64::zero();
+  )
 }
 
 pub struct MathCos {}
@@ -149,38 +249,53 @@ pub struct MathCos {}
 impl NativeFunctionCompiler for MathCos {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
-    match &arguments[0] {
-      Value::F64(val) =>
-        Ok(Box::new(MathCosScalar{val: val.clone(), out: new_ref(F64(0.0))})),
-      Value::MutableReference(val) => match &*val.borrow() {
-        Value::F64(val) => Ok(Box::new(MathCosScalar{val: val.clone(), out: new_ref(F64(0.0))})),
-        x => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})  
+    let input = arguments[0].clone();
+    match generate_cos_fxn(input.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match (input) {
+          (Value::MutableReference(input)) => {generate_cos_fxn(input.borrow().clone())}
+          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
       }
-      x =>Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
     }
   }
 }
 
 // Sin ------------------------------------------------------------------------
 
-use libm::sin;
 
-#[derive(Debug)]
-pub struct MathSinScalar {
-  val: Ref<F64>,
-  out: Ref<F64>,
-}
+impl_urop!(MathSinF32Scalar, F32, F32, sinf_op);
+impl_urop!(MathSinF32M2, Matrix2<F32>, Matrix2<F32>, sinf_vec_op);
+impl_urop!(MathSinF32M3, Matrix3<F32>, Matrix3<F32>, sinf_vec_op);
+impl_urop!(MathSinF32R2, RowVector2<F32>, RowVector2<F32>, sinf_vec_op);
+impl_urop!(MathSinF32R3, RowVector3<F32>, RowVector3<F32>, sinf_vec_op);
+impl_urop!(MathSinF32R4, RowVector4<F32>, RowVector4<F32>, sinf_vec_op);
+impl_urop!(MathSinF32M2x3, Matrix2x3<F32>, Matrix2x3<F32>, sinf_vec_op);
+impl_urop!(MathSinF32VD, DVector<F32>, DVector<F32>, sinf_vec_op);
+impl_urop!(MathSinF32RD, RowDVector<F32>, RowDVector<F32>, sinf_vec_op);
+impl_urop!(MathSinF32MD, DMatrix<F32>, DMatrix<F32>, sinf_vec_op);
 
-impl MechFunction for MathSinScalar {
-  fn solve(&self) {
-    let val_ptr = self.val.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe{(*out_ptr).0 = sin((*val_ptr).0);}
-  }
-  fn out(&self) -> Value { Value::F64(self.out.clone()) }
-  fn to_string(&self) -> String { format!("{:#?}", self)}
+impl_urop!(MathSinF64Scalar, F64, F64, sin_op);
+impl_urop!(MathSinF64M2, Matrix2<F64>, Matrix2<F64>, sin_vec_op);
+impl_urop!(MathSinF64M3, Matrix3<F64>, Matrix3<F64>, sin_vec_op);
+impl_urop!(MathSinF64R2, RowVector2<F64>, RowVector2<F64>, sin_vec_op);
+impl_urop!(MathSinF64R3, RowVector3<F64>, RowVector3<F64>, sin_vec_op);
+impl_urop!(MathSinF64R4, RowVector4<F64>, RowVector4<F64>, sin_vec_op);
+impl_urop!(MathSinF64M2x3, Matrix2x3<F64>, Matrix2x3<F64>, sin_vec_op);
+impl_urop!(MathSinF64VD, DVector<F64>, DVector<F64>, sin_vec_op);
+impl_urop!(MathSinF64RD, RowDVector<F64>, RowDVector<F64>, sin_vec_op);
+impl_urop!(MathSinF64MD, DMatrix<F64>, DMatrix<F64>, sin_vec_op);
+
+fn generate_sin_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  generate_urnop_match_arms2!(
+    MathSin,
+    (lhs_value),
+    F32 => MatrixF32, F32, F32::zero();
+    F64 => MatrixF64, F64, F64::zero();
+  )
 }
 
 pub struct MathSin {}
@@ -188,16 +303,17 @@ pub struct MathSin {}
 impl NativeFunctionCompiler for MathSin {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
-    match &arguments[0] {
-      Value::F64(val) =>
-        Ok(Box::new(MathSinScalar{val: val.clone(), out: new_ref(F64(0.0))})),
-      Value::MutableReference(val) => match &*val.borrow() {
-        Value::F64(val) => Ok(Box::new(MathSinScalar{val: val.clone(), out: new_ref(F64(0.0))})),
-        x => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})  
+    let input = arguments[0].clone();
+    match generate_sin_fxn(input.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match (input) {
+          (Value::MutableReference(input)) => {generate_sin_fxn(input.borrow().clone())}
+          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
       }
-      x =>Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
     }
   }
 }
