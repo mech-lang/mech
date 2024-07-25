@@ -612,41 +612,105 @@ impl NativeFunctionCompiler for MathDiv {
 
 // Exp ------------------------------------------------------------------------
 
-#[derive(Debug)] 
-struct ExpScalar {
-  lhs: Ref<i64>,
-  rhs: Ref<i64>,
-  out: Ref<i64>,
-}
+macro_rules! exp_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {*$out = (*$lhs).pow(*$rhs);}
+  };}
 
-impl MechFunction for ExpScalar {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {*out_ptr = (*lhs_ptr).pow(*rhs_ptr as u32);}
-  }
-  fn out(&self) -> Value {
-    Value::I64(self.out.clone())
-  }
-  fn to_string(&self) -> String { format!("{:?}", self) }
-}
+macro_rules! exp_vec_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i].pow((*$rhs)[i]);
+      }}};}
 
-pub struct MathExp {}
+macro_rules! exp_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i].pow((*$rhs));
+      }}};}
 
-impl NativeFunctionCompiler for MathExp {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 2 {
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+macro_rules! exp_scalar_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$rhs).len() {
+        (*$out)[i] = (*$lhs).pow((*$rhs)[i]);
+      }}};}
+
+#[macro_export]
+macro_rules! impl_expop {
+  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      lhs: Ref<$arg1_type>,
+      rhs: Ref<$arg2_type>,
+      out: Ref<$out_type>,
     }
-    match (arguments[0].clone(), arguments[1].clone()) {
-      (Value::I64(lhs), Value::I64(rhs)) =>
-        Ok(Box::new(ExpScalar{lhs, rhs, out: new_ref(0)})),
-      x => 
-        Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
-    }
-  }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + 'static + 
+      PartialEq + PartialOrd +
+      Add<Output = T> + AddAssign +
+      Sub<Output = T> + SubAssign +
+      Mul<Output = T> + MulAssign +
+      Div<Output = T> + DivAssign +
+      Pow<T, Output = T> +
+      Zero + One,
+      Ref<$out_type>: ToValue
+    {
+      fn solve(&self) {
+        let lhs_ptr = self.lhs.as_ptr();
+        let rhs_ptr = self.rhs.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        $op!(lhs_ptr,rhs_ptr,out_ptr);
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }};}
+
+impl_expop!(ExpScalar, T, T, T, exp_op);
+impl_expop!(ExpSM2x3, T, Matrix2x3<T>, Matrix2x3<T>,exp_scalar_rhs_op);
+impl_expop!(ExpSM2, T, Matrix2<T>, Matrix2<T>,exp_scalar_rhs_op);
+impl_expop!(ExpSM3, T, Matrix3<T>, Matrix3<T>,exp_scalar_rhs_op);
+impl_expop!(ExpSR2, T, RowVector2<T>, RowVector2<T>,exp_scalar_rhs_op);
+impl_expop!(ExpSR3, T, RowVector3<T>, RowVector3<T>,exp_scalar_rhs_op);
+impl_expop!(ExpSR4, T, RowVector4<T>, RowVector4<T>,exp_scalar_rhs_op);
+impl_expop!(ExpSRD, T, RowDVector<T>, RowDVector<T>,exp_scalar_rhs_op);
+impl_expop!(ExpSVD, T, DVector<T>, DVector<T>,exp_scalar_rhs_op);
+impl_expop!(ExpSMD, T, DMatrix<T>, DMatrix<T>,exp_scalar_rhs_op);
+impl_expop!(ExpM2x3S, Matrix2x3<T>, T, Matrix2x3<T>,exp_scalar_lhs_op);
+impl_expop!(ExpM2S, Matrix2<T>, T, Matrix2<T>,exp_scalar_lhs_op);
+impl_expop!(ExpM3S, Matrix3<T>, T, Matrix3<T>,exp_scalar_lhs_op);
+impl_expop!(ExpR2S, RowVector2<T>, T, RowVector2<T>,exp_scalar_lhs_op);
+impl_expop!(ExpR3S, RowVector3<T>, T, RowVector3<T>,exp_scalar_lhs_op);
+impl_expop!(ExpR4S, RowVector4<T>, T, RowVector4<T>,exp_scalar_lhs_op);
+impl_expop!(ExpRDS, RowDVector<T>, T, RowDVector<T>,exp_scalar_lhs_op);
+impl_expop!(ExpVDS, DVector<T>, T, DVector<T>,add_scalar_lhs_op);
+impl_expop!(ExpMDS, DMatrix<T>, T, DMatrix<T>,add_scalar_lhs_op);
+impl_expop!(ExpM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>,exp_vec_op);
+impl_expop!(ExpM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>,exp_vec_op);
+impl_expop!(ExpM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>,exp_vec_op);
+impl_expop!(ExpR2R2, RowVector2<T>,RowVector2<T>,RowVector2<T>,exp_vec_op);
+impl_expop!(ExpR3R3, RowVector3<T>,RowVector3<T>,RowVector3<T>,exp_vec_op);
+impl_expop!(ExpR4R4, RowVector4<T>,RowVector4<T>,RowVector4<T>,exp_vec_op);
+impl_expop!(ExpRDRD, RowDVector<T>,RowDVector<T>,RowDVector<T>,exp_vec_op);
+impl_expop!(ExpVDVD, DVector<T>,DVector<T>,DVector<T>,exp_vec_op);
+impl_expop!(ExpMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>,exp_vec_op);
+
+fn generate_exp_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  generate_binop_match_arms!(
+    Exp,
+    (lhs_value, rhs_value),
+    U8,   U8   => MatrixU8,  u8,  u8::zero();
+    U16,  U16  => MatrixU16, u16, u16::zero();
+    U32,  U32  => MatrixU32, u32, u32::zero();
+    F32,  F32  => MatrixF32,  F32,  F32::zero();
+    F64,  F64  => MatrixF64,  F64,  F64::zero();
+  )
 }
+
+impl_mech_binop_fxn!(MathExp,generate_exp_fxn);
 
 // Negate ---------------------------------------------------------------------
   

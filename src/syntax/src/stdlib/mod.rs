@@ -7,7 +7,7 @@ use std::ops::*;
 use num_traits::*;
 use std::fmt::Debug;
 use simba::scalar::ClosedNeg;
-
+use num_traits::Pow;
 
 pub mod math;
 pub mod logic;
@@ -128,7 +128,7 @@ macro_rules! generate_binop_match_arms {
               Ok(Box::new([<$lib M2M2>]{lhs, rhs, out: new_ref(Matrix2::from_element($default))}))},
             (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => {
               Ok(Box::new([<$lib M3M3>]{lhs, rhs, out: new_ref(Matrix3::from_element($default))}))},
-              
+
             (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => {
               Ok(Box::new([<$lib SM2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($default))}))},
             (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => {
@@ -229,6 +229,33 @@ macro_rules! generate_urnop_match_arms {
           )+
         )+
         x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+      }
+    }
+  }
+}
+
+#[macro_export]
+macro_rules! impl_mech_binop_fxn {
+  ($fxn_name:ident, $gen_fxn:ident) => {
+    pub struct $fxn_name {}
+    impl NativeFunctionCompiler for $fxn_name {
+      fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        if arguments.len() != 2 {
+          return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+        }
+        let lhs_value = arguments[0].clone();
+        let rhs_value = arguments[1].clone();
+        match $gen_fxn(lhs_value.clone(), rhs_value.clone()) {
+          Ok(fxn) => Ok(fxn),
+          Err(_) => {
+            match (lhs_value,rhs_value) {
+              (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {$gen_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
+              (lhs_value,Value::MutableReference(rhs)) => { $gen_fxn(lhs_value.clone(), rhs.borrow().clone())}
+              (Value::MutableReference(lhs),rhs_value) => { $gen_fxn(lhs.borrow().clone(), rhs_value.clone()) }
+              x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+            }
+          }
+        }
       }
     }
   }
