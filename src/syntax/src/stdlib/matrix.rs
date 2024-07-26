@@ -5,7 +5,6 @@ use crate::stdlib::*;
 // Matrix Library
 // ----------------------------------------------------------------------------
 
-
 // MatMul ---------------------------------------------------------------------
 
 macro_rules! mul_op {
@@ -97,28 +96,7 @@ fn generate_matmul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn Mec
   )
 }
 
-pub struct MatrixMatMul {}
-
-impl NativeFunctionCompiler for MatrixMatMul {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 2 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
-    }
-    let lhs_value = arguments[0].clone();
-    let rhs_value = arguments[1].clone();
-    match generate_matmul_fxn(lhs_value.clone(), rhs_value.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (lhs_value,rhs_value) {
-          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {generate_matmul_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
-          (lhs_value,Value::MutableReference(rhs)) => { generate_matmul_fxn(lhs_value.clone(), rhs.borrow().clone())}
-          (Value::MutableReference(lhs),rhs_value) => { generate_matmul_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-        }
-      }
-    }
-  }
-}
+impl_mech_binop_fxn!(MatrixMatMul,generate_matmul_fxn);
 
 // Transpose ------------------------------------------------------------------
 
@@ -202,25 +180,7 @@ fn generate_transpose_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, Mec
   )
 }
   
-pub struct MatrixTranspose {}
-
-impl NativeFunctionCompiler for MatrixTranspose {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 1 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
-    }
-    let input = arguments[0].clone();
-    match generate_transpose_fxn(input.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (input) {
-          (Value::MutableReference(input)) => {generate_transpose_fxn(input.borrow().clone())}
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-        }
-      }
-    }
-  }
-}
+impl_mech_urnop_fxn!(MatrixTranspose,generate_transpose_fxn);
 
 // Access ---------------------------------------------------------------------
 
@@ -267,7 +227,6 @@ impl_access_fxn!(Access1DM3x2, Matrix3x2<T>, usize, T, access_1d);
 impl_access_fxn!(Access1DMD, DMatrix<T>, usize, T, access_1d);
 impl_access_fxn!(Access1DRD, RowDVector<T>, usize, T, access_1d);
 impl_access_fxn!(Access1DVD, DVector<T>, usize, T, access_1d);
-
 
 impl_access_fxn!(Access2DR2, RowVector2<T>, RowVector2<usize>, T, access_2d);
 impl_access_fxn!(Access2DR3, RowVector3<T>, RowVector2<usize>, T, access_2d);
@@ -372,23 +331,4 @@ fn generate_access_fxn(lhs_value: Value, ixes: Value) -> Result<Box<dyn MechFunc
   )
 }
 
-pub struct MatrixAccess {}
-
-impl NativeFunctionCompiler for MatrixAccess {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 2 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
-    }
-    let source = arguments[0].clone();
-    let ixes = arguments[1].clone();
-    match generate_access_fxn(source.clone(), ixes.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (source) {
-          (Value::MutableReference(source)) => {generate_access_fxn(source.borrow().clone(), ixes.clone())}
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-        }
-      }
-    }
-  }
-}
+impl_mech_urnop_fxn!(MatrixAccess,generate_access_fxn);

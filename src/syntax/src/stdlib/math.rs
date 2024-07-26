@@ -280,14 +280,15 @@ fn generate_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
 impl_mech_binop_fxn!(MathAdd,generate_add_fxn);
 
 // Sub ------------------------------------------------------------------------
-macro_rules! subto_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { (*$lhs).sub_to(&*$rhs,&mut *$out) }
-  };}
 
 macro_rules! sub_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { *$out = *$lhs - *$rhs; }
+  };}
+
+macro_rules! subto_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { (*$lhs).sub_to(&*$rhs,&mut *$out) }
   };}
 
 macro_rules! sub_scalar_lhs_op {
@@ -296,7 +297,6 @@ macro_rules! sub_scalar_lhs_op {
       for i in 0..(*$lhs).len() {
         (*$out)[i] = (*$lhs)[i] - (*$rhs);
       }}};}
-
 
 macro_rules! sub_scalar_rhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
