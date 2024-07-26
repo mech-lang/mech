@@ -5,174 +5,13 @@ use crate::stdlib::*;
 // Math Library
 // ----------------------------------------------------------------------------
 
-macro_rules! addto_op {
-    ($lhs:expr, $rhs:expr, $out:expr) => {
-      unsafe { (*$lhs).add_to(&*$rhs,&mut *$out) }
-    };}
+#[macro_export]
+macro_rules! generate_math_fxns {
+  ($lib:ident) => {
+    generate_fxns!($lib,T,T,impl_binop);
+  }
+}
 
-macro_rules! subto_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { (*$lhs).sub_to(&*$rhs,&mut *$out) }
-  };}
-
-macro_rules! component_mul_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = (*$lhs).component_mul(&*$rhs); }
-  };}
-
-macro_rules! component_div_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = (*$lhs).component_div(&*$rhs); }
-  };}
-
-macro_rules! add_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = *$lhs + *$rhs; }
-  };}
-
-macro_rules! sub_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = *$lhs - *$rhs; }
-  };}
-
-macro_rules! mul_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = *$lhs * *$rhs; }
-  };}
-
-macro_rules! div_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = *$lhs / *$rhs; }
-  };}
-
-macro_rules! add_scalar_lhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = (*$lhs).add_scalar(*$rhs); }
-  };}
-
-macro_rules! add_scalar_rhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = (*$rhs).add_scalar(*$lhs); }
-  };}
-
-macro_rules! sub_scalar_lhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] - (*$rhs);
-      }}};}
-
-macro_rules! sub_scalar_rhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$rhs).len() {
-        (*$out)[i] = (*$lhs) - (*$rhs)[i];
-      }}};}
-
-macro_rules! sub_scalar_lhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] - (*$rhs);
-      }}};}
-
-macro_rules! sub_scalar_rhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$rhs).len() {
-        (*$out)[i] = (*$lhs) - (*$rhs)[i];
-      }}};}
-
-macro_rules! sub_scalar_lhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] - (*$rhs);
-      }}};}
-
-macro_rules! mul_scalar_lhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = (*$lhs).clone() * *$rhs; }
-  };}
-
-macro_rules! mul_scalar_rhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = (*$rhs).clone() * *$lhs;}};}
-
-macro_rules! div_scalar_lhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] / (*$rhs);
-      }}};}
-
-macro_rules! div_scalar_rhs_op {
-  ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$rhs).len() {
-        (*$out)[i] = (*$lhs) / (*$rhs)[i];
-      }}};}
-
-macro_rules! neg_op {
-  ($arg:expr, $out:expr) => {
-    unsafe { *$out = -*$arg; }
-  };}
-
-macro_rules! neg_vec_op {
-  ($arg:expr, $out:expr) => {
-    unsafe { *$out = (*$arg).clone().neg(); }
-  };}
-
-use libm::{cos,cosf};
-macro_rules! cos_op {
-  ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = cos((*$arg).0);}
-  };}
-
-macro_rules! cos_vec_op {
-  ($arg:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = cos(((*$arg)[i]).0);
-      }}};}
-
-macro_rules! cosf_op {
-  ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = cosf((*$arg).0);}
-  };}  
-
-macro_rules! cosf_vec_op {
-  ($arg:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = cosf(((*$arg)[i]).0);
-      }}};}
-
-use libm::{sin,sinf};
-macro_rules! sin_op {
-  ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = sin((*$arg).0);}
-  };}
-
-macro_rules! sin_vec_op {
-  ($arg:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = sin(((*$arg)[i]).0);
-      }}};}
-
-macro_rules! sinf_op {
-  ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = sinf((*$arg).0);}
-  };}  
-
-macro_rules! sinf_vec_op {
-  ($arg:expr, $out:expr) => {
-    unsafe {
-      for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = sinf(((*$arg)[i]).0);
-      }}};}      
-   
 #[macro_export]
 macro_rules! generate_urnop_match_arms2 {
   ($lib:ident, $arg:expr, $($lhs_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr),+);+ $(;)?) => {
@@ -212,6 +51,32 @@ macro_rules! generate_urnop_match_arms2 {
 }
 
 // Cos ------------------------------------------------------------------------
+
+
+use libm::{cos,cosf};
+macro_rules! cos_op {
+  ($arg:expr, $out:expr) => {
+    unsafe{(*$out).0 = cos((*$arg).0);}
+  };}
+
+macro_rules! cos_vec_op {
+  ($arg:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$arg).len() {
+        ((*$out)[i]).0 = cos(((*$arg)[i]).0);
+      }}};}
+
+macro_rules! cosf_op {
+  ($arg:expr, $out:expr) => {
+    unsafe{(*$out).0 = cosf((*$arg).0);}
+  };}  
+
+macro_rules! cosf_vec_op {
+  ($arg:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$arg).len() {
+        ((*$out)[i]).0 = cosf(((*$arg)[i]).0);
+      }}};}
 
 impl_urop!(MathCosF32Scalar, F32, F32, cosf_op);
 impl_urop!(MathCosF32M2, Matrix2<F32>, Matrix2<F32>, cosf_vec_op);
@@ -266,6 +131,30 @@ impl NativeFunctionCompiler for MathCos {
 
 // Sin ------------------------------------------------------------------------
 
+use libm::{sin,sinf};
+macro_rules! sin_op {
+  ($arg:expr, $out:expr) => {
+    unsafe{(*$out).0 = sin((*$arg).0);}
+  };}
+
+macro_rules! sin_vec_op {
+  ($arg:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$arg).len() {
+        ((*$out)[i]).0 = sin(((*$arg)[i]).0);
+      }}};}
+
+macro_rules! sinf_op {
+  ($arg:expr, $out:expr) => {
+    unsafe{(*$out).0 = sinf((*$arg).0);}
+  };}  
+
+macro_rules! sinf_vec_op {
+  ($arg:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$arg).len() {
+        ((*$out)[i]).0 = sinf(((*$arg)[i]).0);
+      }}};}
 
 impl_urop!(MathSinF32Scalar, F32, F32, sinf_op);
 impl_urop!(MathSinF32M2, Matrix2<F32>, Matrix2<F32>, sinf_vec_op);
@@ -320,6 +209,26 @@ impl NativeFunctionCompiler for MathSin {
 
 // Add ------------------------------------------------------------------------
 
+macro_rules! add_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = *$lhs + *$rhs; }
+  };}
+
+macro_rules! addto_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { (*$lhs).add_to(&*$rhs,&mut *$out) }
+  };}
+
+macro_rules! add_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = (*$lhs).add_scalar(*$rhs); }
+  };}
+
+macro_rules! add_scalar_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = (*$rhs).add_scalar(*$lhs); }
+  };}
+
 impl_binop!(AddScalar, T,T,T, add_op);
 impl_binop!(AddSM2x3, T, Matrix2x3<T>, Matrix2x3<T>,add_scalar_rhs_op);
 impl_binop!(AddSM2, T, Matrix2<T>, Matrix2<T>,add_scalar_rhs_op);
@@ -368,30 +277,33 @@ fn generate_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
   )
 }
 
-pub struct MathAdd {}
-
-impl NativeFunctionCompiler for MathAdd {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 2 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
-    }
-    let lhs_value = arguments[0].clone();
-    let rhs_value = arguments[1].clone();
-    match generate_add_fxn(lhs_value.clone(), rhs_value.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (lhs_value,rhs_value) {
-          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {generate_add_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
-          (lhs_value,Value::MutableReference(rhs)) => { generate_add_fxn(lhs_value.clone(), rhs.borrow().clone())}
-          (Value::MutableReference(lhs),rhs_value) => { generate_add_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-        }
-      }
-    }
-  }
-}
+impl_mech_binop_fxn!(MathAdd,generate_add_fxn);
 
 // Sub ------------------------------------------------------------------------
+macro_rules! subto_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { (*$lhs).sub_to(&*$rhs,&mut *$out) }
+  };}
+
+macro_rules! sub_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = *$lhs - *$rhs; }
+  };}
+
+macro_rules! sub_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] - (*$rhs);
+      }}};}
+
+
+macro_rules! sub_scalar_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$rhs).len() {
+        (*$out)[i] = (*$lhs) - (*$rhs)[i];
+      }}};}
 
 impl_binop!(SubScalar, T,T,T, sub_op);
 impl_binop!(SubSM2x3, T, Matrix2x3<T>, Matrix2x3<T>,sub_scalar_rhs_op);
@@ -441,59 +353,27 @@ fn generate_sub_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
   )
 }
 
-pub struct MathSub {}
-
-impl NativeFunctionCompiler for MathSub {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 2 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
-    }
-    let lhs_value = arguments[0].clone();
-    let rhs_value = arguments[1].clone();
-    match generate_sub_fxn(lhs_value.clone(), rhs_value.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (lhs_value,rhs_value) {
-          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {generate_sub_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
-          (lhs_value,Value::MutableReference(rhs)) => { generate_sub_fxn(lhs_value.clone(), rhs.borrow().clone())}
-          (Value::MutableReference(lhs),rhs_value) => { generate_sub_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-        }
-      }
-    }
-  }
-}
+impl_mech_binop_fxn!(MathSub,generate_sub_fxn);
 
 // Mul ------------------------------------------------------------------------
 
-impl_binop!(MulScalar, T,T,T, mul_op);
-impl_binop!(MulSM2x3, T, Matrix2x3<T>, Matrix2x3<T>,mul_scalar_rhs_op);
-impl_binop!(MulSM2, T, Matrix2<T>, Matrix2<T>,mul_scalar_rhs_op);
-impl_binop!(MulSM3, T, Matrix3<T>, Matrix3<T>,mul_scalar_rhs_op);
-impl_binop!(MulSR2, T, RowVector2<T>, RowVector2<T>,mul_scalar_rhs_op);
-impl_binop!(MulSR3, T, RowVector3<T>, RowVector3<T>,mul_scalar_rhs_op);
-impl_binop!(MulSR4, T, RowVector4<T>, RowVector4<T>,mul_scalar_rhs_op);
-impl_binop!(MulSRD, T, RowDVector<T>, RowDVector<T>,mul_scalar_rhs_op);
-impl_binop!(MulSVD, T, DVector<T>, DVector<T>,mul_scalar_rhs_op);
-impl_binop!(MulSMD, T, DMatrix<T>, DMatrix<T>,mul_scalar_rhs_op);
-impl_binop!(MulM2x3S, Matrix2x3<T>, T, Matrix2x3<T>,mul_scalar_lhs_op);
-impl_binop!(MulM2S, Matrix2<T>, T, Matrix2<T>,mul_scalar_lhs_op);
-impl_binop!(MulM3S, Matrix3<T>, T, Matrix3<T>,mul_scalar_lhs_op);
-impl_binop!(MulR2S, RowVector2<T>, T, RowVector2<T>,mul_scalar_lhs_op);
-impl_binop!(MulR3S, RowVector3<T>, T, RowVector3<T>,mul_scalar_lhs_op);
-impl_binop!(MulR4S, RowVector4<T>, T, RowVector4<T>,mul_scalar_lhs_op);
-impl_binop!(MulRDS, RowDVector<T>, T, RowDVector<T>,mul_scalar_lhs_op);
-impl_binop!(MulVDS, DVector<T>, T, DVector<T>,mul_scalar_lhs_op);
-impl_binop!(MulMDS, DMatrix<T>, T, DMatrix<T>,mul_scalar_lhs_op);
-impl_binop!(MulM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>, component_mul_op);
-impl_binop!(MulM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>, component_mul_op);
-impl_binop!(MulM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>, component_mul_op);
-impl_binop!(MulR2R2, RowVector2<T>,RowVector2<T>,RowVector2<T>, component_mul_op);
-impl_binop!(MulR3R3, RowVector3<T>,RowVector3<T>,RowVector3<T>, component_mul_op);
-impl_binop!(MulR4R4, RowVector4<T>,RowVector4<T>,RowVector4<T>, component_mul_op);
-impl_binop!(MulRDRD, RowDVector<T>,RowDVector<T>,RowDVector<T>, component_mul_op);
-impl_binop!(MulVDVD, DVector<T>,DVector<T>,DVector<T>, component_mul_op);
-impl_binop!(MulMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>, component_mul_op);
+macro_rules! mul_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = *$lhs * *$rhs; }};}
+
+macro_rules! mul_vec_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = (*$lhs).component_mul(&*$rhs); }};}
+
+macro_rules! mul_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = (*$lhs).clone() * *$rhs; }};}
+
+macro_rules! mul_scalar_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = (*$rhs).clone() * *$lhs;}};}
+
+generate_math_fxns!(Mul);
 
 fn generate_mul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   generate_binop_match_arms!(
@@ -514,59 +394,36 @@ fn generate_mul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
   )
 }
 
-pub struct MathMul {}
+impl_mech_binop_fxn!(MathMul,generate_mul_fxn);
 
-impl NativeFunctionCompiler for MathMul {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 2 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
-    }
-    let lhs_value = arguments[0].clone();
-    let rhs_value = arguments[1].clone();
-    match generate_mul_fxn(lhs_value.clone(), rhs_value.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (lhs_value,rhs_value) {
-          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {generate_mul_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
-          (lhs_value,Value::MutableReference(rhs)) => { generate_mul_fxn(lhs_value.clone(), rhs.borrow().clone())}
-          (Value::MutableReference(lhs),rhs_value) => { generate_mul_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-        }
-      }
-    }
-  }
-}
 
 // Div ------------------------------------------------------------------------
 
-impl_binop!(DivScalar, T, T, T, div_op);
-impl_binop!(DivSM2x3, T, Matrix2x3<T>, Matrix2x3<T>,div_scalar_rhs_op);
-impl_binop!(DivSM2, T, Matrix2<T>, Matrix2<T>,div_scalar_rhs_op);
-impl_binop!(DivSM3, T, Matrix3<T>, Matrix3<T>,div_scalar_rhs_op);
-impl_binop!(DivSR2, T, RowVector2<T>, RowVector2<T>,div_scalar_rhs_op);
-impl_binop!(DivSR3, T, RowVector3<T>, RowVector3<T>,div_scalar_rhs_op);
-impl_binop!(DivSR4, T, RowVector4<T>, RowVector4<T>,div_scalar_rhs_op);
-impl_binop!(DivSRD, T, RowDVector<T>, RowDVector<T>,div_scalar_rhs_op);
-impl_binop!(DivSVD, T, DVector<T>, DVector<T>,div_scalar_rhs_op);
-impl_binop!(DivSMD, T, DMatrix<T>, DMatrix<T>,div_scalar_rhs_op);
-impl_binop!(DivM2x3S, Matrix2x3<T>, T, Matrix2x3<T>,div_scalar_lhs_op);
-impl_binop!(DivM2S, Matrix2<T>, T, Matrix2<T>,div_scalar_lhs_op);
-impl_binop!(DivM3S, Matrix3<T>, T, Matrix3<T>,div_scalar_lhs_op);
-impl_binop!(DivR2S, RowVector2<T>, T, RowVector2<T>,div_scalar_lhs_op);
-impl_binop!(DivR3S, RowVector3<T>, T, RowVector3<T>,div_scalar_lhs_op);
-impl_binop!(DivR4S, RowVector4<T>, T, RowVector4<T>,div_scalar_lhs_op);
-impl_binop!(DivRDS, RowDVector<T>, T, RowDVector<T>,div_scalar_lhs_op);
-impl_binop!(DivVDS, DVector<T>, T, DVector<T>,add_scalar_lhs_op);
-impl_binop!(DivMDS, DMatrix<T>, T, DMatrix<T>,add_scalar_lhs_op);
-impl_binop!(DivM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>,component_div_op);
-impl_binop!(DivM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>,component_div_op);
-impl_binop!(DivM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>,component_div_op);
-impl_binop!(DivR2R2, RowVector2<T>,RowVector2<T>,RowVector2<T>,component_div_op);
-impl_binop!(DivR3R3, RowVector3<T>,RowVector3<T>,RowVector3<T>,component_div_op);
-impl_binop!(DivR4R4, RowVector4<T>,RowVector4<T>,RowVector4<T>,component_div_op);
-impl_binop!(DivRDRD, RowDVector<T>,RowDVector<T>,RowDVector<T>,component_div_op);
-impl_binop!(DivVDVD, DVector<T>,DVector<T>,DVector<T>,component_div_op);
-impl_binop!(DivMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>,component_div_op);
+macro_rules! div_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = *$lhs / *$rhs; }
+  };}
+
+macro_rules! div_vec_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = (*$lhs).component_div(&*$rhs); }
+  };}
+
+macro_rules! div_scalar_lhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$lhs).len() {
+        (*$out)[i] = (*$lhs)[i] / (*$rhs);
+      }}};}
+
+macro_rules! div_scalar_rhs_op {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(*$rhs).len() {
+        (*$out)[i] = (*$lhs) / (*$rhs)[i];
+      }}};}
+
+generate_math_fxns!(Div);
 
 fn generate_div_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   generate_binop_match_arms!(
@@ -587,28 +444,7 @@ fn generate_div_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
   )
 }
 
-pub struct MathDiv {}
-
-impl NativeFunctionCompiler for MathDiv {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 2 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
-    }
-    let lhs_value = arguments[0].clone();
-    let rhs_value = arguments[1].clone();
-    match generate_div_fxn(lhs_value.clone(), rhs_value.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (lhs_value,rhs_value) {
-          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {generate_div_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
-          (lhs_value,Value::MutableReference(rhs)) => { generate_div_fxn(lhs_value.clone(), rhs.borrow().clone())}
-          (Value::MutableReference(lhs),rhs_value) => { generate_div_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-        }
-      }
-    }
-  }
-}
+impl_mech_binop_fxn!(MathDiv,generate_div_fxn);
 
 // Exp ------------------------------------------------------------------------
 
@@ -669,34 +505,14 @@ macro_rules! impl_expop {
       fn to_string(&self) -> String { format!("{:?}", self) }
     }};}
 
-impl_expop!(ExpScalar, T, T, T, exp_op);
-impl_expop!(ExpSM2x3, T, Matrix2x3<T>, Matrix2x3<T>,exp_scalar_rhs_op);
-impl_expop!(ExpSM2, T, Matrix2<T>, Matrix2<T>,exp_scalar_rhs_op);
-impl_expop!(ExpSM3, T, Matrix3<T>, Matrix3<T>,exp_scalar_rhs_op);
-impl_expop!(ExpSR2, T, RowVector2<T>, RowVector2<T>,exp_scalar_rhs_op);
-impl_expop!(ExpSR3, T, RowVector3<T>, RowVector3<T>,exp_scalar_rhs_op);
-impl_expop!(ExpSR4, T, RowVector4<T>, RowVector4<T>,exp_scalar_rhs_op);
-impl_expop!(ExpSRD, T, RowDVector<T>, RowDVector<T>,exp_scalar_rhs_op);
-impl_expop!(ExpSVD, T, DVector<T>, DVector<T>,exp_scalar_rhs_op);
-impl_expop!(ExpSMD, T, DMatrix<T>, DMatrix<T>,exp_scalar_rhs_op);
-impl_expop!(ExpM2x3S, Matrix2x3<T>, T, Matrix2x3<T>,exp_scalar_lhs_op);
-impl_expop!(ExpM2S, Matrix2<T>, T, Matrix2<T>,exp_scalar_lhs_op);
-impl_expop!(ExpM3S, Matrix3<T>, T, Matrix3<T>,exp_scalar_lhs_op);
-impl_expop!(ExpR2S, RowVector2<T>, T, RowVector2<T>,exp_scalar_lhs_op);
-impl_expop!(ExpR3S, RowVector3<T>, T, RowVector3<T>,exp_scalar_lhs_op);
-impl_expop!(ExpR4S, RowVector4<T>, T, RowVector4<T>,exp_scalar_lhs_op);
-impl_expop!(ExpRDS, RowDVector<T>, T, RowDVector<T>,exp_scalar_lhs_op);
-impl_expop!(ExpVDS, DVector<T>, T, DVector<T>,add_scalar_lhs_op);
-impl_expop!(ExpMDS, DMatrix<T>, T, DMatrix<T>,add_scalar_lhs_op);
-impl_expop!(ExpM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>,exp_vec_op);
-impl_expop!(ExpM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>,exp_vec_op);
-impl_expop!(ExpM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>,exp_vec_op);
-impl_expop!(ExpR2R2, RowVector2<T>,RowVector2<T>,RowVector2<T>,exp_vec_op);
-impl_expop!(ExpR3R3, RowVector3<T>,RowVector3<T>,RowVector3<T>,exp_vec_op);
-impl_expop!(ExpR4R4, RowVector4<T>,RowVector4<T>,RowVector4<T>,exp_vec_op);
-impl_expop!(ExpRDRD, RowDVector<T>,RowDVector<T>,RowDVector<T>,exp_vec_op);
-impl_expop!(ExpVDVD, DVector<T>,DVector<T>,DVector<T>,exp_vec_op);
-impl_expop!(ExpMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>,exp_vec_op);
+#[macro_export]
+macro_rules! generate_math_fxns_exp {
+  ($lib:ident) => {
+    generate_fxns!($lib,T,T,impl_expop);
+  }
+}
+
+generate_math_fxns_exp!(Exp);
 
 fn generate_exp_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   generate_binop_match_arms!(
@@ -714,6 +530,16 @@ impl_mech_binop_fxn!(MathExp,generate_exp_fxn);
 
 // Negate ---------------------------------------------------------------------
   
+macro_rules! neg_op {
+  ($arg:expr, $out:expr) => {
+    unsafe { *$out = -*$arg; }
+  };}
+
+macro_rules! neg_vec_op {
+  ($arg:expr, $out:expr) => {
+    unsafe { *$out = (*$arg).clone().neg(); }
+  };}
+
 macro_rules! impl_neg_op {
   ($struct_name:ident, $out_type:ty, $op:ident) => {
     #[derive(Debug)]
@@ -760,22 +586,4 @@ fn generate_neg_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError
   )
 }
 
-pub struct MathNegate {}
-
-impl NativeFunctionCompiler for MathNegate {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 1 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
-    }
-    let input = arguments[0].clone();
-    match generate_neg_fxn(input.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (input) {
-          (Value::MutableReference(input)) => {generate_neg_fxn(input.borrow().clone())}
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-        }
-      }
-    }
-  }
-}
+impl_mech_urnop_fxn!(MathNegate,generate_neg_fxn);

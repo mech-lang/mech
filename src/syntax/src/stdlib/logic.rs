@@ -175,28 +175,7 @@ fn generate_and_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
   )
 }
 
-pub struct LogicAnd {}
-
-impl NativeFunctionCompiler for LogicAnd {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 2 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
-    }
-    let lhs_value = arguments[0].clone();
-    let rhs_value = arguments[1].clone();
-    match generate_and_fxn(lhs_value.clone(), rhs_value.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (lhs_value,rhs_value) {
-          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {generate_and_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
-          (lhs_value,Value::MutableReference(rhs)) => { generate_and_fxn(lhs_value.clone(), rhs.borrow().clone())}
-          (Value::MutableReference(lhs),rhs_value) => { generate_and_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-        }
-      }
-    }
-  }
-}
+impl_mech_binop_fxn!(LogicAnd,generate_and_fxn);
 
 // Or ------------------------------------------------------------------------
 
@@ -237,28 +216,7 @@ fn generate_or_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFun
   )
 }
 
-pub struct LogicOr {}
-
-impl NativeFunctionCompiler for LogicOr {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 2 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
-    }
-    let lhs_value = arguments[0].clone();
-    let rhs_value = arguments[1].clone();
-    match generate_or_fxn(lhs_value.clone(), rhs_value.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (lhs_value,rhs_value) {
-          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {generate_or_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
-          (lhs_value,Value::MutableReference(rhs)) => { generate_or_fxn(lhs_value.clone(), rhs.borrow().clone())}
-          (Value::MutableReference(lhs),rhs_value) => { generate_or_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-        }
-      }
-    }
-  }
-}
+impl_mech_binop_fxn!(LogicOr,generate_or_fxn);
 
 // Xor ------------------------------------------------------------------------
 
@@ -299,28 +257,7 @@ fn generate_xor_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
   )
 }
 
-pub struct LogicXor {}
-
-impl NativeFunctionCompiler for LogicXor {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 2 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
-    }
-    let lhs_value = arguments[0].clone();
-    let rhs_value = arguments[1].clone();
-    match generate_xor_fxn(lhs_value.clone(), rhs_value.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (lhs_value,rhs_value) {
-          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {generate_xor_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
-          (lhs_value,Value::MutableReference(rhs)) => { generate_xor_fxn(lhs_value.clone(), rhs.borrow().clone())}
-          (Value::MutableReference(lhs),rhs_value) => { generate_xor_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-        }
-      }
-    }
-  }
-}
+impl_mech_binop_fxn!(LogicXor,generate_xor_fxn);
 
 // Not ------------------------------------------------------------------------
 
@@ -343,22 +280,4 @@ fn generate_not_fxn(arg_value: Value) -> Result<Box<dyn MechFunction>, MechError
   )
 }
 
-pub struct LogicNot {}
-
-impl NativeFunctionCompiler for LogicNot {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 1 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
-    }
-    let arg_value = arguments[0].clone();
-    match generate_not_fxn(arg_value.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match arg_value {
-          (Value::MutableReference(arg)) => {generate_not_fxn(arg.borrow().clone())}
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-        }
-      }
-    }
-  }
-}
+impl_mech_urnop_fxn!(LogicNot,generate_not_fxn);
