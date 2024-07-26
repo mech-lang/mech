@@ -331,4 +331,4 @@ fn generate_access_fxn(lhs_value: Value, ixes: Value) -> Result<Box<dyn MechFunc
   )
 }
 
-impl_mech_urnop_fxn!(MatrixAccess,generate_access_fxn);
+impl_mech_binop_fxn!(MatrixAccess,generate_access_fxn);
