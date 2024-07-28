@@ -274,7 +274,13 @@ impl Value {
   pub fn as_veci32(&self) -> Option<Vec<i32>> {if let Value::MatrixI32(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_veci32() } else { None }}
   pub fn as_veci64(&self) -> Option<Vec<i64>> {if let Value::MatrixI64(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_veci64() } else { None }}
   pub fn as_veci128(&self) -> Option<Vec<i128>> {if let Value::MatrixI128(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_veci128() } else { None }}
-  pub fn as_vecusize(&self) -> Option<Vec<usize>> {if let Value::MatrixIndex(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecusize() } else { None }}
+  pub fn as_vecusize(&self) -> Option<Vec<usize>> {
+    match self {
+      Value::MatrixIndex(v) => Some(v.as_vec()),
+      Value::MatrixI64(v) => Some(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
+      _ => todo!(),
+    }
+  }
 
   pub fn as_index(&self) -> MResult<Value> {
     match self.as_usize() {      
@@ -311,7 +317,7 @@ pub trait ToIndex {
   fn to_index(&self) -> Value;
 }
 
-//impl ToIndex for Ref<i64> { fn to_index(&self) -> Value { Value::I128(self.clone()) } }
+impl ToIndex for Ref<Vec<i64>> { fn to_index(&self) -> Value { (*self.borrow()).iter().map(|x| *x as usize).collect::<Vec<usize>>().to_value() } }
 
 pub trait ToValue {
   fn to_value(&self) -> Value;
