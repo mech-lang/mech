@@ -346,17 +346,17 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
         _ => todo!(),
       }
     },
-    Subscript::Range(x) => todo!(),
+    Subscript::Range(rng) => {return range(rng,plan.clone(), symbols.clone(), functions.clone());},
     Subscript::Swizzle(x) => todo!(),
-    Subscript::Formula(fctr) => {return factor(fctr,plan.clone(), symbols.clone(), functions.clone());},
+    Subscript::Formula(fctr) => {
+      let result = factor(fctr,plan.clone(), symbols.clone(), functions.clone())?;
+      result.as_index()
+    },
     Subscript::Bracket(subs) => {
       let mut resolved_subs = vec![];
       for s in subs {
         let result = subscript(&s, val, plan.clone(), symbols.clone(), functions.clone())?;
-        match result.as_index() {
-          Some(ix) => resolved_subs.push(ix),
-          None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind});}
-        }
+        resolved_subs.push(result);
       }
       let sub_value = match resolved_subs.len() {
         1 => resolved_subs[0].clone(),

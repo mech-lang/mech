@@ -102,26 +102,6 @@ impl<T> Matrix<T>
 where T: Debug + Clone + Copy + PartialEq + 'static
 {
 
-  pub fn as_index(&self) -> MResult<Value> {
-    match self {
-      /*Matrix::RowVector2(x) => x.borrow()
-      Matrix::RowVector3(x) => x.borrow().hash(state),
-      Matrix::RowVector4(x) => x.borrow().hash(state),
-      Matrix::Vector2(x) => x.borrow().hash(state),
-      Matrix::Vector3(x) => x.borrow().hash(state),
-      Matrix::Vector4(x) => x.borrow().hash(state),
-      Matrix::Matrix1(x) => x.borrow().hash(state),
-      Matrix::Matrix2(x) => x.borrow().hash(state),
-      Matrix::Matrix3(x) => x.borrow().hash(state),
-      Matrix::Matrix4(x) => x.borrow().hash(state),
-      Matrix::Matrix2x3(x) => x.borrow().hash(state),
-      Matrix::Matrix3x2(x) => x.borrow().hash(state),
-      Matrix::DMatrix(x) => x.borrow().hash(state),*/
-      Matrix::RowDVector(x) => Ok(x.borrow().iter().map(|s| s as usize).collect::<Vec<usize>>().to_value()),
-      _ => todo!(),
-    }
-  }
-
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     match self {
