@@ -17,15 +17,10 @@ use hashbrown::{HashMap, HashSet};
 
 use std::collections::VecDeque;
 use std::thread;
-use mech_core::*;
-use mech_core::function::table;
 
 use std::fmt::*;
 use std::ops::*;
 
-use mech_syntax::parser;
-use mech_syntax::ast::Ast;
-use mech_syntax::compiler::Compiler;
 use mech_core::*;
 use mech_syntax::parser;
 //use mech_syntax::analyzer::*;

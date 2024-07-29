@@ -43,7 +43,8 @@ test_interpreter!(interpret_formula_math_add, "2 + 2", Value::I64(new_ref(4)));
 test_interpreter!(interpret_formula_math_sub, "2 - 2", Value::I64(new_ref(0)));
 test_interpreter!(interpret_formula_math_mul, "2 * 2", Value::I64(new_ref(4)));
 test_interpreter!(interpret_formula_math_div, "2 / 2", Value::I64(new_ref(1)));
-test_interpreter!(interpret_formula_math_exp, "2 ^ 2", Value::I64(new_ref(4)));
+test_interpreter!(interpret_formula_math_exp, "2<u8> ^ 2<u8>", Value::U8(new_ref(4)));
+test_interpreter!(interpret_formula_math_exp_f64, "2.0 ^ 2.0", Value::F64(new_ref(F64::new(4.0))));
 
 test_interpreter!(interpret_kind_annotation, "1<u64>", Value::U64(new_ref(1)));
 test_interpreter!(interpret_kind_annotation_math, "1<u64> + 1<u64>", Value::U64(new_ref(2)));
@@ -54,6 +55,7 @@ test_interpreter!(interpret_kind_matrix_row3, "[1<u8> 2<u8> 3<u8>]", Value::Matr
 test_interpreter!(interpret_kind_lhs_define, "x<u64> := 1", Value::U64(new_ref(1)));
 test_interpreter!(interpret_kind_lhs_define_overflow, "x<u8> := 256", Value::U8(new_ref(0)));
 test_interpreter!(interpret_kind_convert_twice, "x<u64> := 1; y<i8> := x", Value::I8(new_ref(1)));
+test_interpreter!(interpret_kind_convert_float, "x<f32> := 123;", Value::F32(new_ref(F32::new(123.0))));
 
 test_interpreter!(interpret_formula_math_neg, "-1", Value::I64(new_ref(-1)));
 test_interpreter!(interpret_formula_math_multiple_terms, "1 + 2 + 3", Value::I64(new_ref(6)));
@@ -61,6 +63,7 @@ test_interpreter!(interpret_formula_comparison_bool, "true == false", Value::Boo
 test_interpreter!(interpret_formula_comparison_bool2, "true == true", Value::Bool(new_ref(true)));
 test_interpreter!(interpret_formula_comparison_eq, "10 == 11", Value::Bool(new_ref(false)));
 test_interpreter!(interpret_formula_comparison_neq, "10 != 11", Value::Bool(new_ref(true)));
+test_interpreter!(interpret_formula_comparison_neq_bool, "false != true", Value::Bool(new_ref(true)));
 test_interpreter!(interpret_formula_comparison_gt, "10 > 11", Value::Bool(new_ref(false)));
 test_interpreter!(interpret_formula_comparison_lt, "10 < 11", Value::Bool(new_ref(true)));
 test_interpreter!(interpret_formula_comparison_gte, "10 >= 10", Value::Bool(new_ref(true)));
@@ -122,9 +125,12 @@ test_interpreter!(interpret_tuple, "(1,true)", Value::Tuple(MechTuple::from_vec(
 test_interpreter!(interpret_tuple_nested, r#"(1,("Hello",false))"#, Value::Tuple(MechTuple::from_vec(vec![Value::I64(new_ref(1)), Value::Tuple(MechTuple::from_vec(vec![Value::String("Hello".to_string()), Value::Bool(new_ref(false))]))])));
 
 test_interpreter!(interpret_slice, "a := [1,2,3]; a[2]", Value::I64(new_ref(2)));
-test_interpreter!(interpret_slice_2d, "a := [1,2,3]; a[1,2]", Value::I64(new_ref(2)));
+test_interpreter!(interpret_slice_2d, "a := [1,2;3,4]; a[1,2]", Value::I64(new_ref(2)));
 test_interpreter!(interpret_slice_f64, "a := [1.0,2.0,3.0]; a[2]", Value::F64(new_ref(F64::new(2.0))));
 test_interpreter!(interpret_slice_2d_f64, "a := [1,2;3,4]; a[2,1]", Value::I64(new_ref(3)));
+test_interpreter!(interpret_slice_range, "x := 4..10; x[1..=3]", Value::MatrixI64(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![4,5,6])))));
+test_interpreter!(interpret_slice_range_2d, "x := [1 2 3; 4 5 6; 7 8 9]; x[2..=3, 2..=3]", Value::MatrixI64(Matrix::Matrix2(new_ref(Matrix2::from_vec(vec![5,8,6,9])))));
+
 
 test_interpreter!(interpret_set_empty,"{_}", Value::Set(MechSet::from_vec(vec![])));
 test_interpreter!(interpret_set,"{1,2,3}", Value::Set(MechSet::from_vec(vec![Value::I64(new_ref(1)),Value::I64(new_ref(2)),Value::I64(new_ref(3))])));
@@ -144,5 +150,7 @@ test_interpreter!(interpret_function_define_statements,r#"foo(x<i64>, y<i64>) = 
     z := a + b.
 foo(10,20)"#, Value::I64(new_ref(32)));
 
+test_interpreter!(interpret_function_call_native_vector,"math/sin([1.570796327 1.570796327])", new_ref(RowVector2::from_vec(vec![F64::new(1.0),F64::new(1.0)])).to_value());
 test_interpreter!(interpret_function_call_native,r#"math/sin(1.5707963267948966)"#, Value::F64(new_ref(F64::new(1.0))));
 test_interpreter!(interpret_function_call_native_cos,r#"math/cos(0.0)"#, Value::F64(new_ref(F64::new(1.0))));
+test_interpreter!(interpret_function_call_native_vector2,"math/cos([0.0 0.0])", new_ref(RowVector2::from_vec(vec![F64::new(1.0),F64::new(1.0)])).to_value());
