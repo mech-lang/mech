@@ -274,12 +274,21 @@ impl Value {
   pub fn as_veci32(&self) -> Option<Vec<i32>> {if let Value::MatrixI32(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_veci32() } else { None }}
   pub fn as_veci64(&self) -> Option<Vec<i64>> {if let Value::MatrixI64(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_veci64() } else { None }}
   pub fn as_veci128(&self) -> Option<Vec<i128>> {if let Value::MatrixI128(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_veci128() } else { None }}
-  pub fn as_vecusize(&self) -> Option<Vec<usize>> {if let Value::MatrixIndex(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecusize() } else { None }}
+  pub fn as_vecusize(&self) -> Option<Vec<usize>> {
+    match self {
+      Value::MatrixIndex(v) => Some(v.as_vec()),
+      Value::MatrixI64(v) => Some(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
+      _ => todo!(),
+    }
+  }
 
-  pub fn as_index(&self) -> Option<Value> {
+  pub fn as_index(&self) -> MResult<Value> {
     match self.as_usize() {      
-      Some(ix) => Some(Value::Index(new_ref(ix))),
-      None => None,
+      Some(ix) => Ok(Value::Index(new_ref(ix))),
+      None => match self {
+        //Value::MatrixI64(x) => Ok(x.as_index()?),
+        _ => todo!(),
+      },
     }
   }
 
@@ -303,6 +312,12 @@ impl Value {
   }
 
 }
+
+pub trait ToIndex {
+  fn to_index(&self) -> Value;
+}
+
+impl ToIndex for Ref<Vec<i64>> { fn to_index(&self) -> Value { (*self.borrow()).iter().map(|x| *x as usize).collect::<Vec<usize>>().to_value() } }
 
 pub trait ToValue {
   fn to_value(&self) -> Value;
@@ -335,7 +350,7 @@ impl ToValue for Ref<F32> { fn to_value(&self) -> Value { Value::F32(self.clone(
 impl ToValue for Ref<F64> { fn to_value(&self) -> Value { Value::F64(self.clone()) } }
 impl ToValue for Ref<bool> { fn to_value(&self) -> Value { Value::Bool(self.clone()) } }
 
-macro_rules! impl_to_value_matrix {
+macro_rules! to_value_matrix {
   ($($nd_matrix_kind:ident, $matrix_kind:ident, $base_type:ty),+ $(,)?) => {
     $(
       impl ToValue for Ref<$nd_matrix_kind<$base_type>> {
@@ -346,233 +361,42 @@ macro_rules! impl_to_value_matrix {
     )+
   };}
 
-impl_to_value_matrix!(
+macro_rules! impl_to_value_matrix {
+  ($matrix_kind:ident) => {
+    to_value_matrix!(
+      $matrix_kind, MatrixIndex, usize,
+      $matrix_kind, MatrixBool,  bool,
+      $matrix_kind, MatrixI8,    i8,
+      $matrix_kind, MatrixI16,   i16,
+      $matrix_kind, MatrixI32,   i32,
+      $matrix_kind, MatrixI64,   i64,
+      $matrix_kind, MatrixI128,  i128,
+      $matrix_kind, MatrixU8,    u8,
+      $matrix_kind, MatrixU16,   u16,
+      $matrix_kind, MatrixU32,   u32,
+      $matrix_kind, MatrixU64,   u64,
+      $matrix_kind, MatrixU128,  u128,
+      $matrix_kind, MatrixF32,   F32,
+      $matrix_kind, MatrixF64,   F64,
+    );
+  }
+}
 
-  Matrix2x3, MatrixIndex, usize,
-  Matrix2x3, MatrixBool, bool,
-  Matrix2x3, MatrixI8, i8,
-  Matrix2x3, MatrixI16, i16,
-  Matrix2x3, MatrixI32, i32,
-  Matrix2x3, MatrixI64, i64,
-  Matrix2x3, MatrixI128, i128,
-  Matrix2x3, MatrixU8, u8,
-  Matrix2x3, MatrixU16, u16,
-  Matrix2x3, MatrixU32, u32,
-  Matrix2x3, MatrixU64, u64,
-  Matrix2x3, MatrixU128, u128,
-  Matrix2x3, MatrixF32, F32,
-  Matrix2x3, MatrixF64, F64,
-  
-  Matrix3x2, MatrixIndex, usize,
-  Matrix3x2, MatrixBool, bool,
-  Matrix3x2, MatrixI8, i8,
-  Matrix3x2, MatrixI16, i16,
-  Matrix3x2, MatrixI32, i32,
-  Matrix3x2, MatrixI64, i64,
-  Matrix3x2, MatrixI128, i128,
-  Matrix3x2, MatrixU8, u8,
-  Matrix3x2, MatrixU16, u16,
-  Matrix3x2, MatrixU32, u32,
-  Matrix3x2, MatrixU64, u64,
-  Matrix3x2, MatrixU128, u128,
-  Matrix3x2, MatrixF32, F32,
-  Matrix3x2, MatrixF64, F64,
-
-  Matrix1, MatrixIndex, usize,
-  Matrix1, MatrixBool, bool,
-  Matrix1, MatrixI8, i8,
-  Matrix1, MatrixI16, i16,
-  Matrix1, MatrixI32, i32,
-  Matrix1, MatrixI64, i64,
-  Matrix1, MatrixI128, i128,
-  Matrix1, MatrixU8, u8,
-  Matrix1, MatrixU16, u16,
-  Matrix1, MatrixU32, u32,
-  Matrix1, MatrixU64, u64,
-  Matrix1, MatrixU128, u128,
-  Matrix1, MatrixF32, F32,
-  Matrix1, MatrixF64, F64,
-
-  Matrix2, MatrixIndex, usize,
-  Matrix2, MatrixBool, bool,
-  Matrix2, MatrixI8, i8,
-  Matrix2, MatrixI16, i16,
-  Matrix2, MatrixI32, i32,
-  Matrix2, MatrixI64, i64,
-  Matrix2, MatrixI128, i128,
-  Matrix2, MatrixU8, u8,
-  Matrix2, MatrixU16, u16,
-  Matrix2, MatrixU32, u32,
-  Matrix2, MatrixU64, u64,
-  Matrix2, MatrixU128, u128,
-  Matrix2, MatrixF32, F32,
-  Matrix2, MatrixF64, F64,
-
-  Matrix3, MatrixIndex, usize,
-  Matrix3, MatrixBool, bool,
-  Matrix3, MatrixI8, i8,
-  Matrix3, MatrixI16, i16,
-  Matrix3, MatrixI32, i32,
-  Matrix3, MatrixI64, i64,
-  Matrix3, MatrixI128, i128,
-  Matrix3, MatrixU8, u8,
-  Matrix3, MatrixU16, u16,
-  Matrix3, MatrixU32, u32,
-  Matrix3, MatrixU64, u64,
-  Matrix3, MatrixU128, u128,
-  Matrix3, MatrixF32, F32,
-  Matrix3, MatrixF64, F64,
-
-  Matrix4, MatrixIndex, usize,
-  Matrix4, MatrixBool, bool,
-  Matrix4, MatrixI8, i8,
-  Matrix4, MatrixI16, i16,
-  Matrix4, MatrixI32, i32,
-  Matrix4, MatrixI64, i64,
-  Matrix4, MatrixI128, i128,
-  Matrix4, MatrixU8, u8,
-  Matrix4, MatrixU16, u16,
-  Matrix4, MatrixU32, u32,
-  Matrix4, MatrixU64, u64,
-  Matrix4, MatrixU128, u128,
-  Matrix4, MatrixF32, F32,
-  Matrix4, MatrixF64, F64,
-
-  Vector2, MatrixIndex, usize,
-  Vector2, MatrixBool, bool,
-  Vector2, MatrixI8, i8,
-  Vector2, MatrixI16, i16,
-  Vector2, MatrixI32, i32,
-  Vector2, MatrixI64, i64,
-  Vector2, MatrixI128, i128,
-  Vector2, MatrixU8, u8,
-  Vector2, MatrixU16, u16,
-  Vector2, MatrixU32, u32,
-  Vector2, MatrixU64, u64,
-  Vector2, MatrixU128, u128,
-  Vector2, MatrixF32, F32,
-  Vector2, MatrixF64, F64,
-
-  Vector3, MatrixIndex, usize,
-  Vector3, MatrixBool, bool,
-  Vector3, MatrixI8, i8,
-  Vector3, MatrixI16, i16,
-  Vector3, MatrixI32, i32,
-  Vector3, MatrixI64, i64,
-  Vector3, MatrixI128, i128,
-  Vector3, MatrixU8, u8,
-  Vector3, MatrixU16, u16,
-  Vector3, MatrixU32, u32,
-  Vector3, MatrixU64, u64,
-  Vector3, MatrixU128, u128,
-  Vector3, MatrixF32, F32,
-  Vector3, MatrixF64, F64,
-
-  Vector4, MatrixIndex, usize,
-  Vector4, MatrixBool, bool,
-  Vector4, MatrixI8, i8,
-  Vector4, MatrixI16, i16,
-  Vector4, MatrixI32, i32,
-  Vector4, MatrixI64, i64,
-  Vector4, MatrixI128, i128,
-  Vector4, MatrixU8, u8,
-  Vector4, MatrixU16, u16,
-  Vector4, MatrixU32, u32,
-  Vector4, MatrixU64, u64,
-  Vector4, MatrixU128, u128,
-  Vector4, MatrixF32, F32,
-  Vector4, MatrixF64, F64,
-
-  RowVector2, MatrixIndex, usize,
-  RowVector2, MatrixBool, bool,
-  RowVector2, MatrixI8, i8,
-  RowVector2, MatrixI16, i16,
-  RowVector2, MatrixI32, i32,
-  RowVector2, MatrixI64, i64,
-  RowVector2, MatrixI128, i128,
-  RowVector2, MatrixU8, u8,
-  RowVector2, MatrixU16, u16,
-  RowVector2, MatrixU32, u32,
-  RowVector2, MatrixU64, u64,
-  RowVector2, MatrixU128, u128,
-  RowVector2, MatrixF32, F32,
-  RowVector2, MatrixF64, F64,
-  
-  RowVector3, MatrixIndex, usize,
-  RowVector3, MatrixBool, bool,
-  RowVector3, MatrixI8, i8,
-  RowVector3, MatrixI16, i16,
-  RowVector3, MatrixI32, i32,
-  RowVector3, MatrixI64, i64,
-  RowVector3, MatrixI128, i128,
-  RowVector3, MatrixU8, u8,
-  RowVector3, MatrixU16, u16,
-  RowVector3, MatrixU32, u32,
-  RowVector3, MatrixU64, u64,
-  RowVector3, MatrixU128, u128,
-  RowVector3, MatrixF32, F32,
-  RowVector3, MatrixF64, F64,
-
-  RowVector4, MatrixIndex, usize,
-  RowVector4, MatrixBool, bool,
-  RowVector4, MatrixI8, i8,
-  RowVector4, MatrixI16, i16,
-  RowVector4, MatrixI32, i32,
-  RowVector4, MatrixI64, i64,
-  RowVector4, MatrixI128, i128,
-  RowVector4, MatrixU8, u8,
-  RowVector4, MatrixU16, u16,
-  RowVector4, MatrixU32, u32,
-  RowVector4, MatrixU64, u64,
-  RowVector4, MatrixU128, u128,
-  RowVector4, MatrixF32, F32,
-  RowVector4, MatrixF64, F64,
-
-  RowDVector, MatrixIndex, usize,
-  RowDVector, MatrixBool, bool,
-  RowDVector, MatrixI8, i8,
-  RowDVector, MatrixI16, i16,
-  RowDVector, MatrixI32, i32,
-  RowDVector, MatrixI64, i64,
-  RowDVector, MatrixI128, i128,
-  RowDVector, MatrixU8, u8,
-  RowDVector, MatrixU16, u16,
-  RowDVector, MatrixU32, u32,
-  RowDVector, MatrixU64, u64,
-  RowDVector, MatrixU128, u128,
-  RowDVector, MatrixF32, F32,
-  RowDVector, MatrixF64, F64,
-
-  DVector, MatrixIndex, usize,
-  DVector, MatrixBool, bool,
-  DVector, MatrixI8, i8,
-  DVector, MatrixI16, i16,
-  DVector, MatrixI32, i32,
-  DVector, MatrixI64, i64,
-  DVector, MatrixI128, i128,
-  DVector, MatrixU8, u8,
-  DVector, MatrixU16, u16,
-  DVector, MatrixU32, u32,
-  DVector, MatrixU64, u64,
-  DVector, MatrixU128, u128,
-  DVector, MatrixF32, F32,
-  DVector, MatrixF64, F64,
-
-  DMatrix, MatrixIndex, usize,
-  DMatrix, MatrixBool, bool,
-  DMatrix, MatrixI8, i8,
-  DMatrix, MatrixI16, i16,
-  DMatrix, MatrixI32, i32,
-  DMatrix, MatrixI64, i64,
-  DMatrix, MatrixI128, i128,
-  DMatrix, MatrixU8, u8,
-  DMatrix, MatrixU16, u16,
-  DMatrix, MatrixU32, u32,
-  DMatrix, MatrixU64, u64,
-  DMatrix, MatrixU128, u128,
-  DMatrix, MatrixF32, F32,
-  DMatrix, MatrixF64, F64,
-);
+impl_to_value_matrix!(Matrix2x3);
+impl_to_value_matrix!(Matrix3x2);
+impl_to_value_matrix!(Matrix1);
+impl_to_value_matrix!(Matrix2);
+impl_to_value_matrix!(Matrix3);
+impl_to_value_matrix!(Matrix4);
+impl_to_value_matrix!(Vector2);
+impl_to_value_matrix!(Vector3);
+impl_to_value_matrix!(Vector4);
+impl_to_value_matrix!(RowVector2);
+impl_to_value_matrix!(RowVector3);
+impl_to_value_matrix!(RowVector4);
+impl_to_value_matrix!(RowDVector);
+impl_to_value_matrix!(DVector);
+impl_to_value_matrix!(DMatrix);
 
 // Set --------------------------------------------------------------------------
 

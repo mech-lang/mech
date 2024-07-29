@@ -10,6 +10,7 @@ use std::iter::Step;
 use num_traits::*;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
+use libm::{pow,powf};
 
 pub type FunctionsRef = Ref<Functions>;
 pub type Plan = Ref<Vec<Box<dyn MechFunction>>>;
@@ -37,6 +38,14 @@ impl Hash for F64 {
     self.0.to_bits().hash(state);
   }
 }
+
+impl Pow<F64> for F64 {
+  type Output = F64;
+  fn pow(self, rhs: F64) -> Self::Output {
+    F64(self.0.powf(rhs.0))
+  }
+}
+
 impl Add for F64 {
   type Output = F64;
   fn add(self, other: F64) -> F64 {
@@ -136,6 +145,14 @@ impl F32 {
     F32(val)
   }
 }
+
+impl Pow<F32> for F32 {
+  type Output = F32;
+  fn pow(self, rhs: F32) -> Self::Output {
+    F32(self.0.pow(rhs.0))
+  }
+}
+
 impl Eq for F32 {}
 impl Hash for F32 {
   fn hash<H: Hasher>(&self, state: &mut H) {

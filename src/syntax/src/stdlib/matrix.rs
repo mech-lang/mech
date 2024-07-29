@@ -5,7 +5,6 @@ use crate::stdlib::*;
 // Matrix Library
 // ----------------------------------------------------------------------------
 
-
 // MatMul ---------------------------------------------------------------------
 
 macro_rules! mul_op {
@@ -97,28 +96,7 @@ fn generate_matmul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn Mec
   )
 }
 
-pub struct MatrixMatMul {}
-
-impl NativeFunctionCompiler for MatrixMatMul {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 2 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
-    }
-    let lhs_value = arguments[0].clone();
-    let rhs_value = arguments[1].clone();
-    match generate_matmul_fxn(lhs_value.clone(), rhs_value.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (lhs_value,rhs_value) {
-          (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {generate_matmul_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
-          (lhs_value,Value::MutableReference(rhs)) => { generate_matmul_fxn(lhs_value.clone(), rhs.borrow().clone())}
-          (Value::MutableReference(lhs),rhs_value) => { generate_matmul_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-        }
-      }
-    }
-  }
-}
+impl_mech_binop_fxn!(MatrixMatMul,generate_matmul_fxn);
 
 // Transpose ------------------------------------------------------------------
 
@@ -202,25 +180,7 @@ fn generate_transpose_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, Mec
   )
 }
   
-pub struct MatrixTranspose {}
-
-impl NativeFunctionCompiler for MatrixTranspose {
-  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 1 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
-    }
-    let input = arguments[0].clone();
-    match generate_transpose_fxn(input.clone()) {
-      Ok(fxn) => Ok(fxn),
-      Err(_) => {
-        match (input) {
-          (Value::MutableReference(input)) => {generate_transpose_fxn(input.borrow().clone())}
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-        }
-      }
-    }
-  }
-}
+impl_mech_urnop_fxn!(MatrixTranspose,generate_transpose_fxn);
 
 // Access ---------------------------------------------------------------------
 
@@ -231,7 +191,38 @@ macro_rules! access_1d {
 
 macro_rules! access_2d {
   ($source:expr, $ix:expr, $out:expr) => {
-    unsafe { *$out = (*$source).index(((*$ix)[0]-1,(*$ix)[1]-1)).clone() }
+    unsafe { 
+      let ix1 = (*$ix).0;
+      let ix2 = (*$ix).1;
+      *$out = (*$source).index((ix1-1,ix2-1)).clone() 
+    }
+  };}
+
+macro_rules! access_1d_slice2 {
+  ($source:expr, $ix:expr, $out:expr) => {
+    unsafe { 
+      (*$out)[0] = (*$source).index((*$ix)[0]-1).clone();
+      (*$out)[1] = (*$source).index((*$ix)[1]-1).clone();
+    }
+  };}
+
+macro_rules! access_1d_slice3 {
+  ($source:expr, $ix:expr, $out:expr) => {
+    unsafe { 
+      (*$out)[0] = (*$source).index((*$ix)[0]-1).clone();
+      (*$out)[1] = (*$source).index((*$ix)[1]-1).clone();
+      (*$out)[2] = (*$source).index((*$ix)[2]-1).clone();
+    }
+  };}
+
+macro_rules! access_2d_slice2 {
+  ($source:expr, $ix:expr, $out:expr) => {
+    unsafe { 
+      (*$out)[0] = (*$source).index(((*$ix).0[0]-1,(*$ix).1[0]-1)).clone();
+      (*$out)[1] = (*$source).index(((*$ix).0[1]-1,(*$ix).1[0]-1)).clone();
+      (*$out)[2] = (*$source).index(((*$ix).0[0]-1,(*$ix).1[1]-1)).clone();
+      (*$out)[3] = (*$source).index(((*$ix).0[1]-1,(*$ix).1[1]-1)).clone();
+    }
   };}
 
 macro_rules! impl_access_fxn {
@@ -257,135 +248,134 @@ macro_rules! impl_access_fxn {
       fn to_string(&self) -> String { format!("{:?}", self) }
     }};}
 
-impl_access_fxn!(Access1DR2, RowVector2<T>, usize, T, access_1d);
-impl_access_fxn!(Access1DR3, RowVector3<T>, usize, T, access_1d);
-impl_access_fxn!(Access1DR4, RowVector4<T>, usize, T, access_1d);
-impl_access_fxn!(Access1DM2, Matrix2<T>, usize, T, access_1d);
-impl_access_fxn!(Access1DM3, Matrix3<T>, usize, T, access_1d);
-impl_access_fxn!(Access1DM2x3, Matrix2x3<T>, usize, T, access_1d);
-impl_access_fxn!(Access1DM3x2, Matrix3x2<T>, usize, T, access_1d);
-impl_access_fxn!(Access1DMD, DMatrix<T>, usize, T, access_1d);
-impl_access_fxn!(Access1DRD, RowDVector<T>, usize, T, access_1d);
-impl_access_fxn!(Access1DVD, DVector<T>, usize, T, access_1d);
+impl_access_fxn!(Access1DSR2,   RowVector2<T>, usize, T, access_1d);
+impl_access_fxn!(Access1DSR3,   RowVector3<T>, usize, T, access_1d);
+impl_access_fxn!(Access1DSR4,   RowVector4<T>, usize, T, access_1d);
+impl_access_fxn!(Access1DSM2,   Matrix2<T>,    usize, T, access_1d);
+impl_access_fxn!(Access1DSM3,   Matrix3<T>,    usize, T, access_1d);
+impl_access_fxn!(Access1DSM2x3, Matrix2x3<T>,  usize, T, access_1d);
+impl_access_fxn!(Access1DSM3x2, Matrix3x2<T>,  usize, T, access_1d);
+impl_access_fxn!(Access1DSMD,   DMatrix<T>,    usize, T, access_1d);
+impl_access_fxn!(Access1DSRD,   RowDVector<T>, usize, T, access_1d);
+impl_access_fxn!(Access1DSVD,   DVector<T>,    usize, T, access_1d);
 
+impl_access_fxn!(Access2DSR2,   RowVector2<T>, (usize,usize), T, access_2d);
+impl_access_fxn!(Access2DSR3,   RowVector3<T>, (usize,usize), T, access_2d);
+impl_access_fxn!(Access2DSR4,   RowVector4<T>, (usize,usize), T, access_2d);
+impl_access_fxn!(Access2DSM2,   Matrix2<T>,    (usize,usize), T, access_2d);
+impl_access_fxn!(Access2DSM3,   Matrix3<T>,    (usize,usize), T, access_2d);
+impl_access_fxn!(Access2DSM2x3, Matrix2x3<T>,  (usize,usize), T, access_2d);
+impl_access_fxn!(Access2DSM3x2, Matrix3x2<T>,  (usize,usize), T, access_2d);
+impl_access_fxn!(Access2DSMD,   DMatrix<T>,    (usize,usize), T, access_2d);
+impl_access_fxn!(Access2DSRD,   RowDVector<T>, (usize,usize), T, access_2d);
+impl_access_fxn!(Access2DSVD,   DVector<T>,    (usize,usize), T, access_2d);
 
-impl_access_fxn!(Access2DR2, RowVector2<T>, RowVector2<usize>, T, access_2d);
-impl_access_fxn!(Access2DR3, RowVector3<T>, RowVector2<usize>, T, access_2d);
-impl_access_fxn!(Access2DR4, RowVector4<T>, RowVector2<usize>, T, access_2d);
-impl_access_fxn!(Access2DM2, Matrix2<T>, RowVector2<usize>, T, access_2d);
-impl_access_fxn!(Access2DM3, Matrix3<T>, RowVector2<usize>, T, access_2d);
-impl_access_fxn!(Access2DM2x3, Matrix2x3<T>, RowVector2<usize>, T, access_2d);
-impl_access_fxn!(Access2DM3x2, Matrix3x2<T>, RowVector2<usize>, T, access_2d);
-impl_access_fxn!(Access2DMD, DMatrix<T>, RowVector2<usize>, T, access_2d);
-impl_access_fxn!(Access2DRD, RowDVector<T>, RowVector2<usize>, T, access_2d);
-impl_access_fxn!(Access2DVD, DVector<T>, RowVector2<usize>, T, access_2d);
-
+impl_access_fxn!(Access1DR2RD, RowDVector<T>, RowVector2<usize>, RowVector2<T>, access_1d_slice2);
+impl_access_fxn!(Access1DR3RD, RowDVector<T>, RowVector3<usize>, RowVector3<T>, access_1d_slice3);
+impl_access_fxn!(Access2DR2M3, Matrix3<T>, (RowVector2<usize>,RowVector2<usize>), Matrix2<T>, access_2d_slice2);
+impl_access_fxn!(Access2DR2DM, DMatrix<T>, (RowVector2<usize>,RowVector2<usize>), Matrix2<T>, access_2d_slice2);
 
 macro_rules! generate_access_match_arms {
   ($arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr),+);+ $(;)?) => {
     match $arg {
       $(
         $(
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(input)), Value::Index(ix)) => {
-            Ok(Box::new(Access1DR4{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(input)), [Value::Index(ix)]) => {
+            Ok(Box::new(Access1DSR4{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
           },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(input)), Value::Index(ix)) => {
-            Ok(Box::new(Access1DR3{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(input)), [Value::Index(ix)]) => {
+            Ok(Box::new(Access1DSR3{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
           },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(input)), Value::Index(ix)) => {
-            Ok(Box::new(Access1DR2{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(input)), [Value::Index(ix)]) => {
+            Ok(Box::new(Access1DSR2{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
           },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)), Value::Index(ix)) => {
-            Ok(Box::new(Access1DM2{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)), [Value::Index(ix)]) => {
+            Ok(Box::new(Access1DSM2{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
           },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)), Value::Index(ix)) => {
-            Ok(Box::new(Access1DM3{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)), [Value::Index(ix)]) => {
+            Ok(Box::new(Access1DSM3{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
           },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)), Value::Index(ix)) => {
-            Ok(Box::new(Access1DM2x3{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)), [Value::Index(ix)]) => {
+            Ok(Box::new(Access1DSM2x3{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
           },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)), Value::Index(ix)) => {
-            Ok(Box::new(Access1DM3x2{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)), [Value::Index(ix)]) => {
+            Ok(Box::new(Access1DSM3x2{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
           },
-          (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)), Value::Index(ix)) => {
-            Ok(Box::new(Access1DMD{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)), [Value::Index(ix)]) => {
+            Ok(Box::new(Access1DSMD{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
           },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(input)), Value::Index(ix)) => {
-            Ok(Box::new(Access1DRD{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(input)), [Value::Index(ix)]) => {
+            Ok(Box::new(Access1DSRD{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
           },
-          (Value::$matrix_kind(Matrix::<$target_type>::DVector(input)), Value::Index(ix)) => {
-            Ok(Box::new(Access1DVD{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          (Value::$matrix_kind(Matrix::<$target_type>::DVector(input)), [Value::Index(ix)]) => {
+            Ok(Box::new(Access1DSVD{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
           },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(input)), Value::MatrixIndex(Matrix::<usize>::RowVector2(ix))) => {
-            Ok(Box::new(Access2DR4{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(input)), [Value::MatrixIndex(Matrix::RowVector2(ix))]) => {
+            Ok(Box::new(Access1DR2RD{source: input.clone(), ixes: ix.clone(), out: new_ref(RowVector2::from_element($default)) }))
           },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(input)), Value::MatrixIndex(Matrix::<usize>::RowVector2(ix))) => {
-            Ok(Box::new(Access2DR3{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(input)), [Value::MatrixIndex(Matrix::RowVector3(ix))]) => {
+            Ok(Box::new(Access1DR3RD{source: input.clone(), ixes: ix.clone(), out: new_ref(RowVector3::from_element($default)) }))
           },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(input)), Value::MatrixIndex(Matrix::<usize>::RowVector2(ix))) => {
-            Ok(Box::new(Access2DR2{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)), [Value::MatrixIndex(Matrix::RowVector2(ix1)), Value::MatrixIndex(Matrix::RowVector2(ix2))]) => {
+            Ok(Box::new(Access2DR2M3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(Matrix2::from_element($default)) }))
           },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)), Value::MatrixIndex(Matrix::<usize>::RowVector2(ix))) => {
-            Ok(Box::new(Access2DM2{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)), [Value::MatrixIndex(Matrix::RowVector2(ix1)), Value::MatrixIndex(Matrix::RowVector2(ix2))]) => {
+            Ok(Box::new(Access2DR2DM{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(Matrix2::from_element($default)) }))
           },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)), Value::MatrixIndex(Matrix::<usize>::RowVector2(ix))) => {
-            Ok(Box::new(Access2DM3{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)), [Value::Index(ix1),Value::Index(ix2)]) => {
+            Ok(Box::new(Access2DSM2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) }))
           },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)), Value::MatrixIndex(Matrix::<usize>::RowVector2(ix))) => {
-            Ok(Box::new(Access2DM2x3{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)), [Value::Index(ix1),Value::Index(ix2)]) => {
+            Ok(Box::new(Access2DSM3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) }))
           },
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)), Value::MatrixIndex(Matrix::<usize>::RowVector2(ix))) => {
-            Ok(Box::new(Access2DM3x2{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)), [Value::Index(ix1),Value::Index(ix2)]) => {
+            Ok(Box::new(Access2DSM2x3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) }))
           },
-          (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)), Value::MatrixIndex(Matrix::<usize>::RowVector2(ix))) => {
-            Ok(Box::new(Access2DMD{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)), [Value::Index(ix1),Value::Index(ix2)]) => {
+            Ok(Box::new(Access2DSM3x2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) }))
           },
-          (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(input)), Value::MatrixIndex(Matrix::<usize>::RowVector2(ix))) => {
-            Ok(Box::new(Access2DRD{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
-          },
-          (Value::$matrix_kind(Matrix::<$target_type>::DVector(input)), Value::MatrixIndex(Matrix::<usize>::RowVector2(ix))) => {
-            Ok(Box::new(Access2DVD{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)), [Value::Index(ix1),Value::Index(ix2)]) => {
+            Ok(Box::new(Access2DSMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) }))
           },
         )+
       )+
-      x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+      x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: 314, kind: MechErrorKind::UnhandledFunctionArgumentKind }),
     }
   }
 }
 
-fn generate_access_fxn(lhs_value: Value, ixes: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn generate_access_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
   generate_access_match_arms!(
-    (lhs_value, ixes),
+    (lhs_value, ixes.as_slice()),
     Bool => MatrixBool, bool, false;
-    I8 => MatrixI8, i8, i8::zero();
-    I16  => MatrixI16,  i16, i16::zero();
-    I32  => MatrixI32,  i32, i32::zero();
-    I64 => MatrixI64,  i64, i64::zero();
+    I8   => MatrixI8,   i8,   i8::zero();
+    I16  => MatrixI16,  i16,  i16::zero();
+    I32  => MatrixI32,  i32,  i32::zero();
+    I64  => MatrixI64,  i64,  i64::zero();
     I128 => MatrixI128, i128, i128::zero();
-    U8   => MatrixU8,   u8, u8::zero();
-    U16  => MatrixU16,  u16, u16::zero();
-    U32  => MatrixU32,  u32, u32::zero();
-    U64  => MatrixU64,  u64, u64::zero();
+    U8   => MatrixU8,   u8,   u8::zero();
+    U16  => MatrixU16,  u16,  u16::zero();
+    U32  => MatrixU32,  u32,  u32::zero();
+    U64  => MatrixU64,  u64,  u64::zero();
     U128 => MatrixU128, u128, u128::zero();
-    F32  => MatrixF32,  F32, F32::zero();
-    F64  => MatrixF64,  F64, F64::zero();
+    F32  => MatrixF32,  F32,  F32::zero();
+    F64  => MatrixF64,  F64,  F64::zero();
   )
 }
 
 pub struct MatrixAccess {}
-
 impl NativeFunctionCompiler for MatrixAccess {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 2 {
+    if arguments.len() <= 1 {
       return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
-    let source = arguments[0].clone();
-    let ixes = arguments[1].clone();
-    match generate_access_fxn(source.clone(), ixes.clone()) {
+    let ixes = arguments.clone().split_off(1);
+    let mat = arguments[0].clone();
+    match generate_access_fxn(mat.clone(), ixes.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
-        match (source) {
-          (Value::MutableReference(source)) => {generate_access_fxn(source.borrow().clone(), ixes.clone())}
+        match (mat,ixes) {
+          (Value::MutableReference(lhs),rhs_value) => { generate_access_fxn(lhs.borrow().clone(), rhs_value.clone()) }
           x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
