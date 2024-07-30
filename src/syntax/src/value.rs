@@ -62,6 +62,7 @@ pub enum Value {
   Index(Ref<usize>),
   MutableReference(MutableReference),
   Kind(ValueKind),
+  IndexAll,
   Empty
 }
 
@@ -107,6 +108,7 @@ impl Hash for Value {
       Value::MatrixF64(x)  => x.hash(state),
       Value::MutableReference(x) => x.borrow().hash(state),
       Value::Empty => Value::Empty.hash(state),
+      Value::IndexAll => Value::IndexAll.hash(state),
     }
   }
 }
@@ -153,6 +155,7 @@ impl Value {
       Value::MatrixF64(x)  => {return x.pretty_print();},
       Value::MutableReference(x) => {return x.borrow().pretty_print();},
       Value::Empty => builder.push_record(vec!["_"]),
+      Value::IndexAll => builder.push_record(vec![":"]),
       _ => unreachable!(),
     };
     let mut table = builder.build();
@@ -199,6 +202,7 @@ impl Value {
       Value::Tuple(x) => vec![1,x.size()],
       Value::MutableReference(x) => vec![1,1],
       Value::Empty => vec![0,0],
+      Value::IndexAll => vec![0,0],
       Value::Kind(_) => vec![0,0],
       Value::Id(x) => vec![0,0],
     }
@@ -242,6 +246,7 @@ impl Value {
       Value::Tuple(x) => ValueKind::Tuple,
       Value::MutableReference(x) => ValueKind::Reference,
       Value::Empty => ValueKind::Empty,
+      Value::IndexAll => ValueKind::Empty,
       Value::Id(x) => ValueKind::Id,
       Value::Index(x) => ValueKind::Index,
       Value::Kind(x) => x.clone(),

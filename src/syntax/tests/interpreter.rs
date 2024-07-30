@@ -9,7 +9,7 @@ use std::rc::Rc;
 use mech_syntax::matrix::Matrix;
 use mech_syntax::*;
 use indexmap::set::IndexSet;
-use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix3x2, Matrix2x3, Matrix6, Matrix2};
+use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, Vector4, Vector2, DMatrix, Rotation3, Matrix3x2, Matrix2x3, Matrix6, Matrix2};
 
   /// Compare interpreter output to expected value
   macro_rules! test_interpreter {
@@ -130,6 +130,9 @@ test_interpreter!(interpret_slice_f64, "a := [1.0,2.0,3.0]; a[2]", Value::F64(ne
 test_interpreter!(interpret_slice_2d_f64, "a := [1,2;3,4]; a[2,1]", Value::I64(new_ref(3)));
 test_interpreter!(interpret_slice_range, "x := 4..10; x[1..=3]", Value::MatrixI64(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![4,5,6])))));
 test_interpreter!(interpret_slice_range_2d, "x := [1 2 3; 4 5 6; 7 8 9]; x[2..=3, 2..=3]", Value::MatrixI64(Matrix::Matrix2(new_ref(Matrix2::from_vec(vec![5,8,6,9])))));
+test_interpreter!(interpret_slice_all, "x := [1 2; 4 5]; x[:]", Value::MatrixI64(Matrix::Vector4(new_ref(Vector4::from_vec(vec![1,4,2,5])))));
+test_interpreter!(interpret_slice_all_2d, "x := [1 2; 4 5]; x[:,2]", Value::MatrixI64(Matrix::Vector2(new_ref(Vector2::from_vec(vec![2,5])))));
+test_interpreter!(interpret_slice_all_2d_row, "x := [1 2; 4 5]; x[2,:]", Value::MatrixI64(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![4,5])))));
 
 
 test_interpreter!(interpret_set_empty,"{_}", Value::Set(MechSet::from_vec(vec![])));

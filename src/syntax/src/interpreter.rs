@@ -374,7 +374,7 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
       Ok(res)
     },
     Subscript::Brace(x) => todo!(),
-    Subscript::All => todo!(),
+    Subscript::All => Ok(Value::IndexAll),
   }
 }
 
