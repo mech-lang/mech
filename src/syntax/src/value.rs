@@ -290,10 +290,14 @@ impl Value {
   pub fn as_index(&self) -> MResult<Value> {
     match self.as_usize() {      
       Some(ix) => Ok(Value::Index(new_ref(ix))),
-      None => match self {
-        //Value::MatrixI64(x) => Ok(x.as_index()?),
-        _ => todo!(),
-      },
+      None => match self.as_vecusize() {
+        Some(x) => {
+          let shape = self.shape();
+          let out = Value::MatrixIndex(usize::to_matrix(x, shape[0], shape[1]));
+          Ok(out)
+        },
+        None => Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
+      }
     }
   }
 

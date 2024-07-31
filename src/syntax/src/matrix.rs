@@ -36,7 +36,8 @@ macro_rules! impl_to_matrix {
           (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
           (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
         }}}};}
-  
+
+impl_to_matrix!(usize);
 impl_to_matrix!(bool);
 impl_to_matrix!(u8);
 impl_to_matrix!(u16);
