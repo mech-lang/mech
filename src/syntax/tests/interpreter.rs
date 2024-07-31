@@ -136,6 +136,9 @@ test_interpreter!(interpret_slice_all_2d_row, "x := [1 2; 4 5]; x[2,:]", Value::
 test_interpreter!(interpret_slice_all_range, "x := [1 2 3 4; 5 6 7 8]; x[:,1..=2]", Value::MatrixI64(Matrix::DMatrix(new_ref(DMatrix::from_vec(2,2,vec![1,5,2,6])))));
 test_interpreter!(interpret_slice_range_all, "x := [1 2 3; 4 5 6; 7 8 9]; x[1..=2,:]", Value::MatrixI64(Matrix::Matrix2x3(new_ref(Matrix2x3::from_vec(vec![1,4,2,5,3,6])))));
 test_interpreter!(interpret_slice_range_dupe, "x := [1 2 3; 4 5 6; 7 8 9]; x[[1 1],:]", Value::MatrixI64(Matrix::Matrix2x3(new_ref(Matrix2x3::from_vec(vec![1,1,2,2,3,3])))));
+test_interpreter!(interpret_slice_all_reshape, "x := [1 2 3; 4 5 6; 7 8 9]; y := x[:,[1,1]]; y[:]", Value::MatrixI64(Matrix::DVector(new_ref(DVector::from_vec(vec![1,4,7,1,4,7])))));
+
+
 
 
 test_interpreter!(interpret_set_empty,"{_}", Value::Set(MechSet::from_vec(vec![])));
