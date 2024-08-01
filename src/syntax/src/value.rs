@@ -200,7 +200,7 @@ impl Value {
       Value::Map(x) => vec![1,x.map.len()],
       Value::Record(x) => vec![1,x.map.len()],
       Value::Tuple(x) => vec![1,x.size()],
-      Value::MutableReference(x) => vec![1,1],
+      Value::MutableReference(x) => x.borrow().shape(),
       Value::Empty => vec![0,0],
       Value::IndexAll => vec![0,0],
       Value::Kind(_) => vec![0,0],
@@ -283,6 +283,7 @@ impl Value {
     match self {
       Value::MatrixIndex(v) => Some(v.as_vec()),
       Value::MatrixI64(v) => Some(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
+      Value::MutableReference(x) => x.borrow().as_vecusize(),
       _ => todo!(),
     }
   }
