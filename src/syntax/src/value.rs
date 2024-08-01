@@ -317,6 +317,7 @@ impl Value {
       Value::I128(v) => Some(*v.borrow() as usize),
       Value::F32(v) => Some((*v.borrow()).0 as usize),
       Value::F64(v) => Some((*v.borrow()).0 as usize),
+      Value::MutableReference(v) => v.borrow().as_usize(),
       _ => None,
     }
   }
