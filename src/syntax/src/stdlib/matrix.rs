@@ -321,6 +321,7 @@ impl_access_fxn!(Access2DSRD,   RowDVector<T>, (usize,usize), T, access_2d);
 impl_access_fxn!(Access2DSVD,   DVector<T>,    (usize,usize), T, access_2d);
 
 // x[1..3]
+impl_access_fxn!(Access1DV2R3, RowVector3<T>, Vector2<usize>, Vector2<T>, access_1d_slice2);
 impl_access_fxn!(Access1DR2R3, RowVector3<T>, RowVector2<usize>, RowVector2<T>, access_1d_slice2);
 impl_access_fxn!(Access1DR2RD, RowDVector<T>, RowVector2<usize>, RowVector2<T>, access_1d_slice2);
 impl_access_fxn!(Access1DR3RD, RowDVector<T>, RowVector3<usize>, RowVector3<T>, access_1d_slice3);
@@ -409,6 +410,9 @@ macro_rules! generate_access_match_arms {
             Ok(Box::new(Access2DSMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) }))
           },
           // x[1..3]
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(input)), [Value::MatrixIndex(Matrix::Vector2(ix))]) => {
+            Ok(Box::new(Access1DV2R3{source: input.clone(), ixes: ix.clone(), out: new_ref(Vector2::from_element($default)) }))
+          },          
           (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(input)), [Value::MatrixIndex(Matrix::RowVector2(ix))]) => {
             Ok(Box::new(Access1DR2R3{source: input.clone(), ixes: ix.clone(), out: new_ref(RowVector2::from_element($default)) }))
           },
