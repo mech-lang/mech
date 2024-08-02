@@ -214,6 +214,28 @@ macro_rules! access_1d_slice3 {
       (*$out)[2] = (*$source).index((*$ix)[2]-1).clone();
     }};}
 
+macro_rules! access_1d_slice_bool {
+  ($source:expr, $ix:expr, $out:expr) => {
+    unsafe { 
+      let mut j = 0;
+      let out_len = (*$out).len();
+      for i in 0..(*$ix).len() {
+        if (*$ix)[i] == true {
+          j += 1;
+        }
+      }
+      if j != out_len {
+        (*$out).resize_horizontally_mut(j,(*$out)[0]);
+      }
+      j = 0;
+      for i in 0..(*$source).len() {
+        if (*$ix)[i] == true {
+          (*$out)[j] = (*$source).index(i).clone();
+          j += 1;
+        }
+      }
+    }};}
+
 macro_rules! access_2d_slice2 {
   ($source:expr, $ix:expr, $out:expr) => {
     unsafe { 
@@ -325,6 +347,7 @@ impl_access_fxn!(Access1DV2R3, RowVector3<T>, Vector2<usize>, Vector2<T>, access
 impl_access_fxn!(Access1DR2R3, RowVector3<T>, RowVector2<usize>, RowVector2<T>, access_1d_slice2);
 impl_access_fxn!(Access1DR2RD, RowDVector<T>, RowVector2<usize>, RowVector2<T>, access_1d_slice2);
 impl_access_fxn!(Access1DR3RD, RowDVector<T>, RowVector3<usize>, RowVector3<T>, access_1d_slice3);
+impl_access_fxn!(Access1DR3bR3, RowVector3<T>, RowVector3<bool>, RowDVector<T>, access_1d_slice_bool);
 
 // x[1..3,1..3]
 impl_access_fxn!(Access2DR2M3, Matrix3<T>, (RowVector2<usize>,RowVector2<usize>), Matrix2<T>, access_2d_slice2);
@@ -410,6 +433,10 @@ macro_rules! generate_access_match_arms {
             Ok(Box::new(Access2DSMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) }))
           },
           // x[1..3]
+          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(input)), [Value::MatrixBool(Matrix::RowVector3(ix))]) => {
+            let len = input.borrow().len();
+            Ok(Box::new(Access1DR3bR3{source: input.clone(), ixes: ix.clone(), out: new_ref(RowDVector::from_element(len,$default)) }))
+          },    
           (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(input)), [Value::MatrixIndex(Matrix::Vector2(ix))]) => {
             Ok(Box::new(Access1DV2R3{source: input.clone(), ixes: ix.clone(), out: new_ref(Vector2::from_element($default)) }))
           },          

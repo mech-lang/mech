@@ -284,6 +284,7 @@ impl Value {
       Value::MatrixIndex(v) => Some(v.as_vec()),
       Value::MatrixI64(v) => Some(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
       Value::MutableReference(x) => x.borrow().as_vecusize(),
+      Value::MatrixBool(v) => None,
       _ => todo!(),
     }
   }
@@ -297,7 +298,14 @@ impl Value {
           let out = Value::MatrixIndex(usize::to_matrix(x, shape[0], shape[1]));
           Ok(out)
         },
-        None => Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
+        None => match self.as_vecbool() {
+          Some(x) => {
+            let shape = self.shape();
+            let out = Value::MatrixBool(bool::to_matrix(x, shape[0], shape[1]));
+            Ok(out)
+          }
+          None => Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
+        }
       }
     }
   }
