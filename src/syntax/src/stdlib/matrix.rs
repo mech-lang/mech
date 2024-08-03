@@ -236,6 +236,28 @@ macro_rules! access_1d_slice_bool {
       }
     }};}
 
+macro_rules! access_1d_slice_bool_v {
+  ($source:expr, $ix:expr, $out:expr) => {
+    unsafe { 
+      let mut j = 0;
+      let out_len = (*$out).len();
+      for i in 0..(*$ix).len() {
+        if (*$ix)[i] == true {
+          j += 1;
+        }
+      }
+      if j != out_len {
+        (*$out).resize_vertically_mut(j,(*$out)[0]);
+      }
+      j = 0;
+      for i in 0..(*$source).len() {
+        if (*$ix)[i] == true {
+          (*$out)[j] = (*$source).index(i).clone();
+          j += 1;
+        }
+      }
+    }};}    
+
 macro_rules! access_2d_slice2 {
   ($source:expr, $ix:expr, $out:expr) => {
     unsafe { 
@@ -254,6 +276,20 @@ macro_rules! access_2d_slice2_all {
         (*$out)[out_ix] = (*$source).index(((*$ix)[0] - 1, i)).clone();
         out_ix += 1;
         (*$out)[out_ix] = (*$source).index(((*$ix)[1] - 1, i)).clone();
+        out_ix += 1;
+      }}};}
+
+macro_rules! access_2d_slice3_all {
+  ($source:expr, $ix:expr, $out:expr) => {
+    unsafe { 
+      let n_cols = (*$out).ncols();
+      let mut out_ix = 0;
+      for i in 0..n_cols {
+        (*$out)[out_ix] = (*$source).index(((*$ix)[0] - 1, i)).clone();
+        out_ix += 1;
+        (*$out)[out_ix] = (*$source).index(((*$ix)[1] - 1, i)).clone();
+        out_ix += 1;
+        (*$out)[out_ix] = (*$source).index(((*$ix)[2] - 1, i)).clone();
         out_ix += 1;
       }}};}
 
@@ -351,7 +387,12 @@ impl_access_fxn_shape!(Access1DV3, Vector3<usize>, Vector3<T>, access_1d_slice3)
 impl_access_fxn_shape!(Access1DR2, RowVector2<usize>, RowVector2<T>, access_1d_slice2);
 impl_access_fxn_shape!(Access1DR3, RowVector3<usize>, RowVector3<T>, access_1d_slice3);
 
+impl_access_fxn_shape!(Access1DR2b, RowVector2<bool>, RowDVector<T>, access_1d_slice_bool);
 impl_access_fxn_shape!(Access1DR3b, RowVector3<bool>, RowDVector<T>, access_1d_slice_bool);
+impl_access_fxn_shape!(Access1DR4b, RowVector4<bool>, RowDVector<T>, access_1d_slice_bool);
+impl_access_fxn_shape!(Access1DV2b, Vector2<bool>, DVector<T>, access_1d_slice_bool_v);
+impl_access_fxn_shape!(Access1DV3b, Vector3<bool>, DVector<T>, access_1d_slice_bool_v);
+impl_access_fxn_shape!(Access1DV4b, Vector4<bool>, DVector<T>, access_1d_slice_bool_v);
 
 // x[1..3,1..3]
 impl_access_fxn_shape!(Access2DR2, (RowVector2<usize>,RowVector2<usize>), Matrix2<T>, access_2d_slice2);
@@ -367,6 +408,7 @@ impl_access_fxn_shape!(Access2DSA, usize, RowDVector<T>, access_row);
 
 // x[1..3,:]
 impl_access_fxn_shape!(Access2DR2A, RowVector2<usize>, DMatrix<T>, access_2d_slice2_all);
+impl_access_fxn_shape!(Access2DR3A, RowVector3<usize>, DMatrix<T>, access_2d_slice3_all);
 
 // x[:,1..3]
 impl_access_fxn_shape!(Access2DAR2, RowVector2<usize>, DMatrix<T>, access_2d_all_slice2);
