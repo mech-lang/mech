@@ -430,6 +430,15 @@ macro_rules! generate_access_match_arms {
           (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(input)), [Value::Index(ix)]) => {
             Ok(Box::new(Access1DSR2{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
           },
+          (Value::$matrix_kind(Matrix::<$target_type>::Vector4(input)), [Value::Index(ix)]) => {
+            Ok(Box::new(Access1DSV4{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::Vector3(input)), [Value::Index(ix)]) => {
+            Ok(Box::new(Access1DSV3{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          },
+          (Value::$matrix_kind(Matrix::<$target_type>::Vector2(input)), [Value::Index(ix)]) => {
+            Ok(Box::new(Access1DSV2{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
+          },
           (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)), [Value::Index(ix)]) => {
             Ok(Box::new(Access1DSM2{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
           },

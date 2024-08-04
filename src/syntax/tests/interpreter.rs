@@ -125,6 +125,7 @@ test_interpreter!(interpret_tuple, "(1,true)", Value::Tuple(MechTuple::from_vec(
 test_interpreter!(interpret_tuple_nested, r#"(1,("Hello",false))"#, Value::Tuple(MechTuple::from_vec(vec![Value::I64(new_ref(1)), Value::Tuple(MechTuple::from_vec(vec![Value::String("Hello".to_string()), Value::Bool(new_ref(false))]))])));
 
 test_interpreter!(interpret_slice, "a := [1,2,3]; a[2]", Value::I64(new_ref(2)));
+test_interpreter!(interpret_slice_v, "a := [1,2,3]'; a[2]", Value::I64(new_ref(2)));
 test_interpreter!(interpret_slice_2d, "a := [1,2;3,4]; a[1,2]", Value::I64(new_ref(2)));
 test_interpreter!(interpret_slice_f64, "a := [1.0,2.0,3.0]; a[2]", Value::F64(new_ref(F64::new(2.0))));
 test_interpreter!(interpret_slice_2d_f64, "a := [1,2;3,4]; a[2,1]", Value::I64(new_ref(3)));
