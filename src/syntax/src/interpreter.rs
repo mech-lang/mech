@@ -360,25 +360,30 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
     },
     Subscript::Bracket(subs) => {
       let mut fxn_input = vec![val.clone()];
-      match &subs[..] {
+      /*match &subs[..] {
         [Subscript::Formula(ix)] => {
           let result = factor(&ix, plan.clone(), symbols.clone(), functions.clone())?;
-          fxn_input.push(result);
-          let new_fxn = MatrixAccess{}.compile(&fxn_input)?;
+          fxn_input.push(result.as_index()?);
+          let new_fxn = MatrixAccessFormula{}.compile(&fxn_input)?;
+          new_fxn.solve();
+          let res = new_fxn.out();
+          let mut plan_brrw = plan.borrow_mut();
+          plan_brrw.push(new_fxn);
+          return Ok(res);
         },
-        [Subscript::Range(ix)] => todo!(),
-        [Subscript::All] => todo!(),
-        [Subscript::All,Subscript::All] => todo!(),
-        [Subscript::Formula(ix1),Subscript::Formula(ix2)] => todo!(),
-        [Subscript::Range(ix1),Subscript::Range(ix2)] => todo!(),
-        [Subscript::All,Subscript::Formula(ix2)] => todo!(),
-        [Subscript::Formula(ix1),Subscript::All] => todo!(),
-        [Subscript::Range(ix1),Subscript::Formula(ix2)] => todo!(),
-        [Subscript::Formula(ix1),Subscript::Range(ix2)] => todo!(),
-        [Subscript::All,Subscript::Range(ix2)] => todo!(),
-        [Subscript::Range(ix1),Subscript::All] => todo!(),
+        [Subscript::Range(ix)] => (),
+        [Subscript::All] => (),
+        [Subscript::All,Subscript::All] => (),
+        [Subscript::Formula(ix1),Subscript::Formula(ix2)] => (),
+        [Subscript::Range(ix1),Subscript::Range(ix2)] => (),
+        [Subscript::All,Subscript::Formula(ix2)] => (),
+        [Subscript::Formula(ix1),Subscript::All] => (),
+        [Subscript::Range(ix1),Subscript::Formula(ix2)] => (),
+        [Subscript::Formula(ix1),Subscript::Range(ix2)] => (),
+        [Subscript::All,Subscript::Range(ix2)] => (),
+        [Subscript::Range(ix1),Subscript::All] => (),
         _ => unreachable!()
-      }
+      }*/
       let mut resolved_subs = vec![];
       for s in subs {
         let result = subscript(&s, val, plan.clone(), symbols.clone(), functions.clone())?;

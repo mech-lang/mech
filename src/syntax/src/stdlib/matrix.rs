@@ -599,3 +599,102 @@ impl NativeFunctionCompiler for MatrixAccess {
     }
   }
 }
+
+macro_rules! generate_access_formula_match_arms {
+  ($fxn_name:ident, $ix:tt, $ixes:expr, $arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr),+);+ $(;)?) => {
+    paste!{
+      match $arg {
+        $(
+          $(
+              // x[1]
+              (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(input)), $ix) => {
+                Ok(Box::new([<$fxn_name R4>]{source: input.clone(), ixes: $ixes, out: new_ref($default) }))
+              },
+              (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(input)), $ix) => {
+                Ok(Box::new([<$fxn_name R3>]{source: input.clone(), ixes: $ixes, out: new_ref($default) }))
+              },
+              (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(input)), $ix) => {
+                Ok(Box::new([<$fxn_name R2>]{source: input.clone(), ixes: $ixes, out: new_ref($default) }))
+              },
+              (Value::$matrix_kind(Matrix::<$target_type>::Vector4(input)), $ix) => {
+                Ok(Box::new([<$fxn_name V4>]{source: input.clone(), ixes: $ixes, out: new_ref($default) }))
+              },
+              (Value::$matrix_kind(Matrix::<$target_type>::Vector3(input)), $ix) => {
+                Ok(Box::new([<$fxn_name V3>]{source: input.clone(), ixes: $ixes, out: new_ref($default) }))
+              },
+              (Value::$matrix_kind(Matrix::<$target_type>::Vector2(input)), $ix) => {
+                Ok(Box::new([<$fxn_name V2>]{source: input.clone(), ixes: $ixes, out: new_ref($default) }))
+              },
+              (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)), $ix) => {
+                Ok(Box::new([<$fxn_name M2>]{source: input.clone(), ixes: $ixes, out: new_ref($default) }))
+              },
+              (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)), $ix) => {
+                Ok(Box::new([<$fxn_name M3>]{source: input.clone(), ixes: $ixes, out: new_ref($default) }))
+              },
+              (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)), $ix) => {
+                Ok(Box::new([<$fxn_name M4>]{source: input.clone(), ixes: $ixes, out: new_ref($default) }))
+              },
+              (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)), $ix) => {
+                Ok(Box::new([<$fxn_name M2x3>]{source: input.clone(), ixes: $ixes, out: new_ref($default) }))
+              },
+              (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)), $ix) => {
+                Ok(Box::new([<$fxn_name M3x2>]{source: input.clone(), ixes: $ixes, out: new_ref($default) }))
+              },
+              (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)), $ix) => {
+                Ok(Box::new([<$fxn_name MD>]{source: input.clone(), ixes: $ixes, out: new_ref($default) }))
+              },
+              (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(input)), $ix) => {
+                Ok(Box::new([<$fxn_name RD>]{source: input.clone(), ixes: $ixes, out: new_ref($default) }))
+              },
+              (Value::$matrix_kind(Matrix::<$target_type>::DVector(input)), $ix) => {
+                Ok(Box::new([<$fxn_name VD>]{source: input.clone(), ixes: $ixes, out: new_ref($default) }))
+              },
+          
+          )+
+        )+
+        x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: 314, kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+      }
+    }
+  }
+}
+
+fn generate_access_formula_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+  generate_access_formula_match_arms!(
+    Access1DS,
+    [Value::Index(ix)],ix.clone(),
+    (lhs_value, ixes.as_slice()),
+    Bool => MatrixBool, bool, false;
+    I8   => MatrixI8,   i8,   i8::zero();
+    I16  => MatrixI16,  i16,  i16::zero();
+    I32  => MatrixI32,  i32,  i32::zero();
+    I64  => MatrixI64,  i64,  i64::zero();
+    I128 => MatrixI128, i128, i128::zero();
+    U8   => MatrixU8,   u8,   u8::zero();
+    U16  => MatrixU16,  u16,  u16::zero();
+    U32  => MatrixU32,  u32,  u32::zero();
+    U64  => MatrixU64,  u64,  u64::zero();
+    U128 => MatrixU128, u128, u128::zero();
+    F32  => MatrixF32,  F32,  F32::zero();
+    F64  => MatrixF64,  F64,  F64::zero();
+  )
+}
+
+pub struct MatrixAccessFormula {}
+impl NativeFunctionCompiler for MatrixAccessFormula {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() <= 1 {
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    let ixes = arguments.clone().split_off(1);
+    let mat = arguments[0].clone();
+    match generate_access_formula_fxn(mat.clone(), ixes.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match (mat,ixes) {
+          (Value::MutableReference(lhs),rhs_value) => { generate_access_formula_fxn(lhs.borrow().clone(), rhs_value.clone()) }
+          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
+    }
+  }
+}
