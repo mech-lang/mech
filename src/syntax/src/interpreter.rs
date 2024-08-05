@@ -359,12 +359,36 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
       result.as_index()
     },
     Subscript::Bracket(subs) => {
+      let mut fxn_input = vec![val.clone()];
+      /*match &subs[..] {
+        [Subscript::Formula(ix)] => {
+          let result = factor(&ix, plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result.as_index()?);
+          let new_fxn = MatrixAccessFormula{}.compile(&fxn_input)?;
+          new_fxn.solve();
+          let res = new_fxn.out();
+          let mut plan_brrw = plan.borrow_mut();
+          plan_brrw.push(new_fxn);
+          return Ok(res);
+        },
+        [Subscript::Range(ix)] => (),
+        [Subscript::All] => (),
+        [Subscript::All,Subscript::All] => (),
+        [Subscript::Formula(ix1),Subscript::Formula(ix2)] => (),
+        [Subscript::Range(ix1),Subscript::Range(ix2)] => (),
+        [Subscript::All,Subscript::Formula(ix2)] => (),
+        [Subscript::Formula(ix1),Subscript::All] => (),
+        [Subscript::Range(ix1),Subscript::Formula(ix2)] => (),
+        [Subscript::Formula(ix1),Subscript::Range(ix2)] => (),
+        [Subscript::All,Subscript::Range(ix2)] => (),
+        [Subscript::Range(ix1),Subscript::All] => (),
+        _ => unreachable!()
+      }*/
       let mut resolved_subs = vec![];
       for s in subs {
         let result = subscript(&s, val, plan.clone(), symbols.clone(), functions.clone())?;
         resolved_subs.push(result);
       }
-      let mut fxn_input = vec![val.clone()];
       fxn_input.append(&mut resolved_subs);
       let new_fxn = MatrixAccess{}.compile(&fxn_input)?;
       new_fxn.solve();
@@ -374,7 +398,7 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
       Ok(res)
     },
     Subscript::Brace(x) => todo!(),
-    Subscript::All => todo!(),
+    Subscript::All => Ok(Value::IndexAll),
   }
 }
 

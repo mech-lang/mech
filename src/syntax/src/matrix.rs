@@ -22,7 +22,7 @@ macro_rules! impl_to_matrix {
         match (rows,cols) {
           (1,1) => Matrix::Matrix1(new_ref(Matrix1::from_element(elements[0].clone()))),
           (2,2) => Matrix::Matrix2(new_ref(Matrix2::from_vec(elements))),
-          (3,4) => Matrix::Matrix3(new_ref(Matrix3::from_vec(elements))),
+          (3,3) => Matrix::Matrix3(new_ref(Matrix3::from_vec(elements))),
           (4,2) => Matrix::Matrix4(new_ref(Matrix4::from_vec(elements))),
           (2,3) => Matrix::Matrix2x3(new_ref(Matrix2x3::from_vec(elements))),
           (3,2) => Matrix::Matrix3x2(new_ref(Matrix3x2::from_vec(elements))),
@@ -36,7 +36,8 @@ macro_rules! impl_to_matrix {
           (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
           (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
         }}}};}
-  
+
+impl_to_matrix!(usize);
 impl_to_matrix!(bool);
 impl_to_matrix!(u8);
 impl_to_matrix!(u16);

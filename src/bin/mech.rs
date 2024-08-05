@@ -25,7 +25,7 @@ use serde_json;
 
 
 fn main() -> Result<(), MechError> {
-  let version = "0.2.4";
+  let version = "0.2.5";
   let text_logo = r#"
   ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐   ┌─┐
   └───┐ ┌───┘ └──────┘ │ │ └┐ │ │ │   │ │
@@ -139,11 +139,17 @@ fn main() -> Result<(), MechError> {
     io::stdin().read_line(&mut input).unwrap();
     match parser::parse(&input) {
       Ok(tree) => { 
+        let now = Instant::now();
         let result = intrp.interpret(&tree);
+        let elapsed_time = now.elapsed();
+        let cycle_duration = elapsed_time.as_nanos() as f64;
+
         match result {
           Ok(r) => println!("{}", r.pretty_print()),
           Err(err) => println!("{:?}", err),
         }
+        println!("{:0.2?} ns", cycle_duration / 1000000.0);
+
       }
       Err(err) => {
         if let MechErrorKind::ParserError(report, _) = err.kind {
