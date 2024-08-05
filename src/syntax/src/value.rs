@@ -62,6 +62,7 @@ pub enum Value {
   Index(Ref<usize>),
   MutableReference(MutableReference),
   Kind(ValueKind),
+  IndexAll,
   Empty
 }
 
@@ -107,6 +108,7 @@ impl Hash for Value {
       Value::MatrixF64(x)  => x.hash(state),
       Value::MutableReference(x) => x.borrow().hash(state),
       Value::Empty => Value::Empty.hash(state),
+      Value::IndexAll => Value::IndexAll.hash(state),
     }
   }
 }
@@ -153,6 +155,7 @@ impl Value {
       Value::MatrixF64(x)  => {return x.pretty_print();},
       Value::MutableReference(x) => {return x.borrow().pretty_print();},
       Value::Empty => builder.push_record(vec!["_"]),
+      Value::IndexAll => builder.push_record(vec![":"]),
       _ => unreachable!(),
     };
     let mut table = builder.build();
@@ -197,8 +200,9 @@ impl Value {
       Value::Map(x) => vec![1,x.map.len()],
       Value::Record(x) => vec![1,x.map.len()],
       Value::Tuple(x) => vec![1,x.size()],
-      Value::MutableReference(x) => vec![1,1],
+      Value::MutableReference(x) => x.borrow().shape(),
       Value::Empty => vec![0,0],
+      Value::IndexAll => vec![0,0],
       Value::Kind(_) => vec![0,0],
       Value::Id(x) => vec![0,0],
     }
@@ -242,6 +246,7 @@ impl Value {
       Value::Tuple(x) => ValueKind::Tuple,
       Value::MutableReference(x) => ValueKind::Reference,
       Value::Empty => ValueKind::Empty,
+      Value::IndexAll => ValueKind::Empty,
       Value::Id(x) => ValueKind::Id,
       Value::Index(x) => ValueKind::Index,
       Value::Kind(x) => x.clone(),
@@ -278,6 +283,8 @@ impl Value {
     match self {
       Value::MatrixIndex(v) => Some(v.as_vec()),
       Value::MatrixI64(v) => Some(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
+      Value::MutableReference(x) => x.borrow().as_vecusize(),
+      Value::MatrixBool(v) => None,
       _ => todo!(),
     }
   }
@@ -285,10 +292,21 @@ impl Value {
   pub fn as_index(&self) -> MResult<Value> {
     match self.as_usize() {      
       Some(ix) => Ok(Value::Index(new_ref(ix))),
-      None => match self {
-        //Value::MatrixI64(x) => Ok(x.as_index()?),
-        _ => todo!(),
-      },
+      None => match self.as_vecusize() {
+        Some(x) => {
+          let shape = self.shape();
+          let out = Value::MatrixIndex(usize::to_matrix(x, shape[0], shape[1]));
+          Ok(out)
+        },
+        None => match self.as_vecbool() {
+          Some(x) => {
+            let shape = self.shape();
+            let out = Value::MatrixBool(bool::to_matrix(x, shape[0], shape[1]));
+            Ok(out)
+          }
+          None => Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
+        }
+      }
     }
   }
 
@@ -307,6 +325,7 @@ impl Value {
       Value::I128(v) => Some(*v.borrow() as usize),
       Value::F32(v) => Some((*v.borrow()).0 as usize),
       Value::F64(v) => Some((*v.borrow()).0 as usize),
+      Value::MutableReference(v) => v.borrow().as_usize(),
       _ => None,
     }
   }
