@@ -420,7 +420,6 @@ macro_rules! generate_access_match_arms {
     match $arg {
       $(
         $(
-          // x[1]
           (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(input)), [Value::Index(ix)]) => {
             Ok(Box::new(Access1DSR4{source: input.clone(), ixes: ix.clone(), out: new_ref($default) }))
           },
