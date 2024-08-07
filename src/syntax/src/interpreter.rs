@@ -482,7 +482,7 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
           fxn_input.push(Value::IndexAll);
           plan.borrow_mut().push(MatrixAccessRangeAll{}.compile(&fxn_input)?);
         },
-        _ => unreachable!()
+        _ => unreachable!(),
       };
       let plan_brrw = plan.borrow();
       let mut new_fxn = &plan_brrw.last().unwrap();
