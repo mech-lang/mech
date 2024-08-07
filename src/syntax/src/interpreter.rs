@@ -366,7 +366,6 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
           fxn_input.push(result.as_index()?);
           plan.borrow_mut().push(MatrixAccessScalar{}.compile(&fxn_input)?);
         },
-        
         [Subscript::Range(ix)] => {
           let result = range(ix,plan.clone(), symbols.clone(), functions.clone())?;
           let result = match result.as_vecusize() {
@@ -450,7 +449,8 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
         },
         _ => unreachable!()
       };
-      let mut new_fxn = &plan.borrow()[0];
+      let plan_brrw = plan.borrow();
+      let mut new_fxn = &plan_brrw.last().unwrap();
       new_fxn.solve();
       let res = new_fxn.out();
       return Ok(res);
