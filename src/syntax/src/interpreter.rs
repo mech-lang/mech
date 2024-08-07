@@ -323,6 +323,30 @@ fn slice(slc: &Slice, plan: Plan, symbols: SymbolTableRef, functions: FunctionsR
   unreachable!() // subscript should have thrown an error if we can't access an element
 }
 
+
+fn subscript_formula(sbscrpt: &Subscript, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+  match sbscrpt {
+    Subscript::Formula(fctr) => {
+      let result = factor(fctr,plan.clone(), symbols.clone(), functions.clone())?;
+      result.as_index()
+    }
+    _ => unreachable!()
+  }
+}
+
+fn subscript_range(sbscrpt: &Subscript, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+  match sbscrpt {
+    Subscript::Range(rng) => {
+      let result = range(rng,plan.clone(), symbols.clone(), functions.clone())?;
+      match result.as_vecusize() {
+        Some(v) => Ok(v.to_value()),
+        None => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
+      }
+    }
+    _ => unreachable!()
+  }
+}
+
 fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   match sbscrpt {
     Subscript::Dot(x) => {
@@ -346,25 +370,14 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
         _ => todo!(),
       }
     },
-    Subscript::Range(rng) => {
-      let result = range(rng,plan.clone(), symbols.clone(), functions.clone())?;
-      match result.as_vecusize() {
-        Some(v) => Ok(v.to_value()),
-        None => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
-      }
-    },
     Subscript::Swizzle(x) => todo!(),
-    Subscript::Formula(fctr) => {
-      let result = factor(fctr,plan.clone(), symbols.clone(), functions.clone())?;
-      result.as_index()
-    },
     Subscript::Bracket(subs) => {
       let mut fxn_input = vec![val.clone()];
       match &subs[..] {
         [Subscript::Formula(ix)] => {
-          let result = factor(&ix, plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
           let shape = result.shape();
-          fxn_input.push(result.as_index()?);
+          fxn_input.push(result);
           match shape[..] {
             [1,1] => plan.borrow_mut().push(MatrixAccessScalar{}.compile(&fxn_input)?),
             [1,n] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
@@ -373,12 +386,8 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
           }
         },
         [Subscript::Range(ix)] => {
-          let result = range(ix,plan.clone(), symbols.clone(), functions.clone())?;
-          let result = match result.as_vecusize() {
-            Some(v) => v.to_value(),
-            None => {return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind})},
-          };
-          fxn_input.push(result.as_index()?);
+          let result = subscript_range(&subs[0],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
           plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?);
         },
         [Subscript::All] => {
@@ -387,16 +396,16 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
         },
         [Subscript::All,Subscript::All] => todo!(),
         [Subscript::Formula(ix1),Subscript::Formula(ix2)] => {
-          let result = factor(&ix1, plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
           let shape1 = result.shape();
-          fxn_input.push(result.as_index()?);
-          let result = factor(&ix2, plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          let result = subscript_formula(&subs[1], plan.clone(), symbols.clone(), functions.clone())?;
           let shape2 = result.shape();
-          fxn_input.push(result.as_index()?);
+          fxn_input.push(result);
           match ((shape1[0],shape1[1]),(shape2[0],shape2[1])) {
             ((1,1),(1,1)) => plan.borrow_mut().push(MatrixAccessScalarScalar{}.compile(&fxn_input)?),
-            //((1,1),(1,m)) => plan.borrow_mut().push(MatrixAccessScalarRange{}.compile(&fxn_input)?),
-            //((1,n),(1,1)) => plan.borrow_mut().push(MatrixAccessRangeScalar{}.compile(&fxn_input)?),
+            ((1,1),(1,m)) => plan.borrow_mut().push(MatrixAccessScalarRange{}.compile(&fxn_input)?),
+            ((1,n),(1,1)) => plan.borrow_mut().push(MatrixAccessRangeScalar{}.compile(&fxn_input)?),
             ((n,1),(1,m)) |
             ((n,1),(m,1)) |
             ((1,n),(m,1)) |
@@ -405,25 +414,17 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
           }
         },
         [Subscript::Range(ix1),Subscript::Range(ix2)] => {
-          let result = range(ix1,plan.clone(), symbols.clone(), functions.clone())?;
-          let result = match result.as_vecusize() {
-            Some(v) => v.to_value(),
-            None => {return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind})},
-          };
-          fxn_input.push(result.as_index()?);
-          let result = range(ix2,plan.clone(), symbols.clone(), functions.clone())?;
-          let result = match result.as_vecusize() {
-            Some(v) => v.to_value(),
-            None => {return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind})},
-          };
-          fxn_input.push(result.as_index()?);
+          let result = subscript_range(&subs[0],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          let result = subscript_range(&subs[1],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
           plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?);
         },
         [Subscript::All,Subscript::Formula(ix2)] => {
           fxn_input.push(Value::IndexAll);
-          let result = factor(&ix2, plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_formula(&subs[1], plan.clone(), symbols.clone(), functions.clone())?;
           let shape = result.shape();
-          fxn_input.push(result.as_index()?);
+          fxn_input.push(result);
           match &shape[..] {
             [1,1] => plan.borrow_mut().push(MatrixAccessAllScalar{}.compile(&fxn_input)?),
             [1,n] => plan.borrow_mut().push(MatrixAccessAllRange{}.compile(&fxn_input)?),
@@ -432,9 +433,9 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
           }
         },
         [Subscript::Formula(ix1),Subscript::All] => {
-          let result = factor(&ix1, plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
           let shape = result.shape();
-          fxn_input.push(result.as_index()?);
+          fxn_input.push(result);
           fxn_input.push(Value::IndexAll);
           match &shape[..] {
             [1,1] => plan.borrow_mut().push(MatrixAccessScalarAll{}.compile(&fxn_input)?),
@@ -444,15 +445,11 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
           }
         },
         [Subscript::Range(ix1),Subscript::Formula(ix2)] => {
-          let result = range(ix1,plan.clone(), symbols.clone(), functions.clone())?;
-          let result = match result.as_vecusize() {
-            Some(v) => v.to_value(),
-            None => {return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind})},
-          };
-          fxn_input.push(result.as_index()?);
-          let result = factor(&ix2, plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_range(&subs[0],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          let result = subscript_formula(&subs[1], plan.clone(), symbols.clone(), functions.clone())?;
           let shape = result.shape();
-          fxn_input.push(result.as_index()?);
+          fxn_input.push(result);
           match &shape[..] {
             [1,1] => plan.borrow_mut().push(MatrixAccessRangeScalar{}.compile(&fxn_input)?),
             [1,n] => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
@@ -461,15 +458,11 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
           }
         },
         [Subscript::Formula(ix1),Subscript::Range(ix2)] => {
-          let result = factor(&ix1, plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
           let shape = result.shape();
-          fxn_input.push(result.as_index()?);
-          let result = range(ix2,plan.clone(), symbols.clone(), functions.clone())?;
-          let result = match result.as_vecusize() {
-            Some(v) => v.to_value(),
-            None => {return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind})},
-          };
-          fxn_input.push(result.as_index()?);
+          fxn_input.push(result);
+          let result = subscript_range(&subs[1],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
           match &shape[..] {
             [1,1] => plan.borrow_mut().push(MatrixAccessScalarRange{}.compile(&fxn_input)?),
             [1,n] => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
@@ -479,21 +472,13 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
         },
         [Subscript::All,Subscript::Range(ix2)] => {
           fxn_input.push(Value::IndexAll);
-          let result = range(ix2,plan.clone(), symbols.clone(), functions.clone())?;
-          let result = match result.as_vecusize() {
-            Some(v) => v.to_value(),
-            None => {return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind})},
-          };
-          fxn_input.push(result.as_index()?);
+          let result = subscript_range(&subs[1],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
           plan.borrow_mut().push(MatrixAccessAllRange{}.compile(&fxn_input)?);
         },
         [Subscript::Range(ix1),Subscript::All] => {
-          let result = range(ix1,plan.clone(), symbols.clone(), functions.clone())?;
-          let result = match result.as_vecusize() {
-            Some(v) => v.to_value(),
-            None => {return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind})},
-          };
-          fxn_input.push(result.as_index()?);
+          let result = subscript_range(&subs[0],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
           fxn_input.push(Value::IndexAll);
           plan.borrow_mut().push(MatrixAccessRangeAll{}.compile(&fxn_input)?);
         },
@@ -506,7 +491,7 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
       return Ok(res);
     },
     Subscript::Brace(x) => todo!(),
-    Subscript::All => Ok(Value::IndexAll),
+    _ => unreachable!(),
   }
 }
 
