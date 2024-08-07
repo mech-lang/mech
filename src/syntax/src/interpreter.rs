@@ -443,8 +443,7 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
             _ => todo!(),
           }
         },
-        [Subscript::Range(ix1),Subscript::Formula(ix2)] => todo!(),
-        /*{
+        [Subscript::Range(ix1),Subscript::Formula(ix2)] => {
           let result = range(ix1,plan.clone(), symbols.clone(), functions.clone())?;
           let result = match result.as_vecusize() {
             Some(v) => v.to_value(),
@@ -452,10 +451,32 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
           };
           fxn_input.push(result.as_index()?);
           let result = factor(&ix2, plan.clone(), symbols.clone(), functions.clone())?;
+          let shape = result.shape();
           fxn_input.push(result.as_index()?);
-          plan.borrow_mut().push(MatrixAccessRangeScalar{}.compile(&fxn_input)?);
-        },*/
-        [Subscript::Formula(ix1),Subscript::Range(ix2)] => todo!(),
+          match &shape[..] {
+            [1,1] => plan.borrow_mut().push(MatrixAccessRangeScalar{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }
+        },
+        [Subscript::Formula(ix1),Subscript::Range(ix2)] => {
+          let result = factor(&ix1, plan.clone(), symbols.clone(), functions.clone())?;
+          let shape = result.shape();
+          fxn_input.push(result.as_index()?);
+          let result = range(ix2,plan.clone(), symbols.clone(), functions.clone())?;
+          let result = match result.as_vecusize() {
+            Some(v) => v.to_value(),
+            None => {return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind})},
+          };
+          fxn_input.push(result.as_index()?);
+          match &shape[..] {
+            [1,1] => plan.borrow_mut().push(MatrixAccessScalarRange{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }
+        },
         [Subscript::All,Subscript::Range(ix2)] => {
           fxn_input.push(Value::IndexAll);
           let result = range(ix2,plan.clone(), symbols.clone(), functions.clone())?;

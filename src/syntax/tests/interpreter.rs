@@ -142,7 +142,8 @@ test_interpreter!(interpret_slice_ix_ref, "x := [94 53 13]; y := [3 3]; x[y]", V
 test_interpreter!(interpret_slice_ix_ref2, "x := [94 53 13]; y := [3; 3]; x[y]", Value::MatrixI64(Matrix::Vector2(new_ref(Vector2::from_vec(vec![13,13])))));
 test_interpreter!(interpret_slice_ix_ref3, "x := [94 53 13]; y := 3; x[y]", Value::I64(new_ref(13)));
 test_interpreter!(interpret_slice_logical_ix, "x := [94 53 13]; ix := [false true true]; x[ix]", Value::MatrixI64(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![53,13])))));
-
+test_interpreter!(interpret_slice_row, "x := [94 53 13; 4 5 6; 7 8 9]; x[2,1..3]", Value::MatrixI64(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![4,5])))));
+test_interpreter!(interpret_slice_col, "x := [94 53 13; 4 5 6; 7 8 9]; x[1..3,2]", Value::MatrixI64(Matrix::Vector2(new_ref(Vector2::from_vec(vec![53,5])))));
 
 test_interpreter!(interpret_set_empty,"{_}", Value::Set(MechSet::from_vec(vec![])));
 test_interpreter!(interpret_set,"{1,2,3}", Value::Set(MechSet::from_vec(vec![Value::I64(new_ref(1)),Value::I64(new_ref(2)),Value::I64(new_ref(3))])));
