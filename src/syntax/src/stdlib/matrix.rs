@@ -562,6 +562,7 @@ macro_rules! generate_access_range_match_arms {
             (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(input)), [Value::MatrixIndex(Matrix::RowVector2(ix))]) => Ok(Box::new(Access1DR2R3 {source: input.clone(), ixes: ix.clone(), out: new_ref(RowVector2::from_element($default)) })),
             (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(input)), [Value::MatrixIndex(Matrix::RowVector2(ix))]) => Ok(Box::new(Access1DR2RD {source: input.clone(), ixes: ix.clone(), out: new_ref(RowVector2::from_element($default)) })),
             (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(input)), [Value::MatrixIndex(Matrix::RowVector3(ix))]) => Ok(Box::new(Access1DR3RD {source: input.clone(), ixes: ix.clone(), out: new_ref(RowVector3::from_element($default)) })),
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)),    [Value::MatrixIndex(Matrix::RowVector2(ix))]) => Ok(Box::new(Access1DR2M3 {source: input.clone(), ixes: ix.clone(), out: new_ref(RowVector2::from_element($default)) })),
           )+
         )+
         x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
