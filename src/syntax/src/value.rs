@@ -346,9 +346,9 @@ impl ToValue for Vec<usize> {
   fn to_value(&self) -> Value {
     match self.len() {
       1 => Value::Index(new_ref(self[0].clone())),
-      2 => Value::MatrixIndex(Matrix::RowVector2(new_ref(RowVector2::from_vec(self.clone())))),
-      3 => Value::MatrixIndex(Matrix::RowVector3(new_ref(RowVector3::from_vec(self.clone())))),
-      4 => Value::MatrixIndex(Matrix::RowVector4(new_ref(RowVector4::from_vec(self.clone())))),
+      //2 => Value::MatrixIndex(Matrix::RowVector2(new_ref(RowVector2::from_vec(self.clone())))),
+      //3 => Value::MatrixIndex(Matrix::RowVector3(new_ref(RowVector3::from_vec(self.clone())))),
+      //4 => Value::MatrixIndex(Matrix::RowVector4(new_ref(RowVector4::from_vec(self.clone())))),
       n => Value::MatrixIndex(Matrix::RowDVector(new_ref(RowDVector::from_vec(self.clone())))),
     }
   }
