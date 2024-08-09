@@ -370,6 +370,16 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
         _ => todo!(),
       }
     },
+    Subscript::DotInt(x) => {
+      let mut fxn_input = vec![val.clone()];
+      let result = real(&x.clone());
+      fxn_input.push(result.as_index()?);
+      let new_fxn = MatrixAccessScalar{}.compile(&fxn_input)?; // This presumes the thing is a matrix...
+      new_fxn.solve();
+      let res = new_fxn.out();
+      plan.borrow_mut().push(new_fxn);
+      return Ok(res);
+    },
     Subscript::Swizzle(x) => {
       let mut values = vec![];
       for k in x {

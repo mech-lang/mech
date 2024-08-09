@@ -1865,9 +1865,9 @@ fn slice(input: ParseString) -> ParseResult<Slice> {
   Ok((input, Slice{name, subscript: ixes}))
 }
 
-// subscript := (swizzle_subscript | dot_subscript | bracket_subscript | brace_subscript)+ ; 
+// subscript := (swizzle_subscript | dot_subscript_int | dot_subscript | bracket_subscript | brace_subscript)+ ; 
 fn subscript(input: ParseString) -> ParseResult<Vec<Subscript>> {
-  let (input, subscripts) = many1(alt((swizzle_subscript,dot_subscript,bracket_subscript,brace_subscript)))(input)?;
+  let (input, subscripts) = many1(alt((swizzle_subscript,dot_subscript,dot_subscript_int,bracket_subscript,brace_subscript)))(input)?;
   Ok((input, subscripts))
 }
 
@@ -1882,11 +1882,18 @@ fn swizzle_subscript(input: ParseString) -> ParseResult<Subscript> {
   Ok((input, Subscript::Swizzle(subscripts)))
 }
 
-// dot_subscript := ".", identifier
+// dot_subscript := ".", identifier ;
 fn dot_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, _) = period(input)?;
   let (input, name) = identifier(input)?;
   Ok((input, Subscript::Dot(name)))
+}
+
+// dot_subscript_int := ".", integer_literal ;
+fn dot_subscript_int(input: ParseString) -> ParseResult<Subscript> {
+  let (input, _) = period(input)?;
+  let (input, name) = integer_literal(input)?;
+  Ok((input, Subscript::DotInt(name)))
 }
 
 // bracket_subscript := "[", list1(",", select_all | formula_subscript) "]" ;

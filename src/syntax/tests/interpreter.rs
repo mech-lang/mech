@@ -145,7 +145,13 @@ test_interpreter!(interpret_slice_logical_ix, "x := [94 53 13]; ix := [false tru
 test_interpreter!(interpret_slice_row, "x := [94 53 13; 4 5 6; 7 8 9]; x[2,1..3]", Value::MatrixI64(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![4,5])))));
 test_interpreter!(interpret_slice_col, "x := [94 53 13; 4 5 6; 7 8 9]; x[1..3,2]", Value::MatrixI64(Matrix::DVector(new_ref(DVector::from_vec(vec![53,5])))));
 test_interpreter!(interpret_slice_dynamic, "x := 1..10; y := x'; ix := 1..5; y[ix]'", Value::MatrixI64(Matrix::DVector(new_ref(DVector::from_vec(vec![1,2,3,4])))));
-test_interpreter!(interpret_slice_swizzle_record, "x := {x: 1, y: 2, z: 3}; x.y,z,z", Value::Tuple(MechTuple::from_vec(vec![Value::I64(new_ref(2)),Value::I64(new_ref(3)),Value::I64(new_ref(3))])));
+
+test_interpreter!(interpret_swizzle_record, "x := {x: 1, y: 2, z: 3}; x.y,z,z", Value::Tuple(MechTuple::from_vec(vec![Value::I64(new_ref(2)),Value::I64(new_ref(3)),Value::I64(new_ref(3))])));
+
+test_interpreter!(interpret_dot_record, "x := {x: 1, y: 2, z: 3}; x.x", Value::I64(new_ref(1)));
+
+test_interpreter!(interpret_dot_int_matrix, "x := [1,2,3]; x.1", Value::I64(new_ref(1)));
+
 
 test_interpreter!(interpret_set_empty,"{_}", Value::Set(MechSet::from_vec(vec![])));
 test_interpreter!(interpret_set,"{1,2,3}", Value::Set(MechSet::from_vec(vec![Value::I64(new_ref(1)),Value::I64(new_ref(2)),Value::I64(new_ref(3))])));
