@@ -436,8 +436,6 @@ impl_access_fxn_shape!(Access2DSVD, (usize, DVector<usize>), RowDVector<T>, acce
 impl_access_fxn_shape!(Access2DRDS, (RowDVector<usize>, usize), DVector<T>, access_2d_col_slice);
 impl_access_fxn_shape!(Access2DVDS, (DVector<usize>, usize), DVector<T>, access_2d_col_slice);
 
-// x.x,y,z
-
 macro_rules! generate_access_match_arms {
   ($fxn_name:ident,$macro_name:ident, $arg:expr) => {
     paste!{
