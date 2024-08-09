@@ -136,7 +136,7 @@ impl Value {
       Value::Set(x)  => builder.push_record(vec![format!("{:?}",x)]),
       Value::Map(x)  => {return x.pretty_print();}
       Value::String(x) => {builder.push_record(vec!["string"]); builder.push_record(vec![x])},
-      Value::Table(x)  => builder.push_record(vec![format!("{:?}",x)]),
+      Value::Table(x)  => {return x.pretty_print();},
       Value::Tuple(x)  => {return x.pretty_print();},
       Value::Record(x) => {return x.pretty_print();},
       Value::MatrixIndex(x) => {return x.pretty_print();}
@@ -492,6 +492,19 @@ pub struct MechTable {
 }
 
 impl MechTable {
+
+  pub fn pretty_print(&self) -> String {
+    let mut builder = Builder::default();
+    for (k,v) in &self.data {
+      let mut col_string = v.iter().map(|x| x.pretty_print()).collect::<Vec<String>>();
+      col_string.insert(0,k.pretty_print());
+      builder.push_column(col_string);
+    }
+    let mut table = builder.build();
+    table.with(Style::modern());
+    format!("{table}")
+  }
+
   pub fn shape(&self) -> Vec<usize> {
     vec![self.rows,self.cols]
   }
