@@ -14,6 +14,7 @@ pub mod logic;
 pub mod compare;
 pub mod matrix;
 pub mod range;
+pub mod table;
 
 // ============================================================================
 // The Standard Library!
