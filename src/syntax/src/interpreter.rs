@@ -323,6 +323,30 @@ fn slice(slc: &Slice, plan: Plan, symbols: SymbolTableRef, functions: FunctionsR
   unreachable!() // subscript should have thrown an error if we can't access an element
 }
 
+
+fn subscript_formula(sbscrpt: &Subscript, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+  match sbscrpt {
+    Subscript::Formula(fctr) => {
+      let result = factor(fctr,plan.clone(), symbols.clone(), functions.clone())?;
+      result.as_index()
+    }
+    _ => unreachable!()
+  }
+}
+
+fn subscript_range(sbscrpt: &Subscript, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+  match sbscrpt {
+    Subscript::Range(rng) => {
+      let result = range(rng,plan.clone(), symbols.clone(), functions.clone())?;
+      match result.as_vecusize() {
+        Some(v) => Ok(v.to_value()),
+        None => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
+      }
+    }
+    _ => unreachable!()
+  }
+}
+
 fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   match sbscrpt {
     Subscript::Dot(x) => {
@@ -346,59 +370,162 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
         _ => todo!(),
       }
     },
-    Subscript::Range(rng) => {
-      let result = range(rng,plan.clone(), symbols.clone(), functions.clone())?;
-      match result.as_vecusize() {
-        Some(v) => Ok(v.to_value()),
-        None => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
-      }
+    Subscript::DotInt(x) => {
+      let mut fxn_input = vec![val.clone()];
+      let result = real(&x.clone());
+      fxn_input.push(result.as_index()?);
+      let new_fxn = MatrixAccessScalar{}.compile(&fxn_input)?; // This presumes the thing is a matrix...
+      new_fxn.solve();
+      let res = new_fxn.out();
+      plan.borrow_mut().push(new_fxn);
+      return Ok(res);
     },
-    Subscript::Swizzle(x) => todo!(),
-    Subscript::Formula(fctr) => {
-      let result = factor(fctr,plan.clone(), symbols.clone(), functions.clone())?;
-      result.as_index()
+    Subscript::Swizzle(x) => {
+      let mut values = vec![];
+      for k in x {
+        let key = k.hash();
+        match val {
+          Value::Record(rcrd) => {
+            match rcrd.map.get(&Value::Id(key)) {
+              Some(value) => values.push(value.clone()),
+              None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(key)});}
+            }
+          }
+          Value::MutableReference(r) => match &*r.borrow() {
+            Value::Record(rcrd) => {
+              match rcrd.map.get(&Value::Id(key)) {
+                Some(value) => values.push(value.clone()),
+                None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(key)});}
+              }
+            }
+            _ => todo!(),
+          }
+          _ => todo!(),
+        }
+      }
+      Ok(Value::Tuple(MechTuple::from_vec(values)))
     },
     Subscript::Bracket(subs) => {
       let mut fxn_input = vec![val.clone()];
-      /*match &subs[..] {
+      match &subs[..] {
         [Subscript::Formula(ix)] => {
-          let result = factor(&ix, plan.clone(), symbols.clone(), functions.clone())?;
-          fxn_input.push(result.as_index()?);
-          let new_fxn = MatrixAccessFormula{}.compile(&fxn_input)?;
-          new_fxn.solve();
-          let res = new_fxn.out();
-          let mut plan_brrw = plan.borrow_mut();
-          plan_brrw.push(new_fxn);
-          return Ok(res);
+          let result = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+          let shape = result.shape();
+          fxn_input.push(result);
+          match shape[..] {
+            [1,1] => plan.borrow_mut().push(MatrixAccessScalar{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }
         },
-        [Subscript::Range(ix)] => (),
-        [Subscript::All] => (),
-        [Subscript::All,Subscript::All] => (),
-        [Subscript::Formula(ix1),Subscript::Formula(ix2)] => (),
-        [Subscript::Range(ix1),Subscript::Range(ix2)] => (),
-        [Subscript::All,Subscript::Formula(ix2)] => (),
-        [Subscript::Formula(ix1),Subscript::All] => (),
-        [Subscript::Range(ix1),Subscript::Formula(ix2)] => (),
-        [Subscript::Formula(ix1),Subscript::Range(ix2)] => (),
-        [Subscript::All,Subscript::Range(ix2)] => (),
-        [Subscript::Range(ix1),Subscript::All] => (),
-        _ => unreachable!()
-      }*/
-      let mut resolved_subs = vec![];
-      for s in subs {
-        let result = subscript(&s, val, plan.clone(), symbols.clone(), functions.clone())?;
-        resolved_subs.push(result);
-      }
-      fxn_input.append(&mut resolved_subs);
-      let new_fxn = MatrixAccess{}.compile(&fxn_input)?;
+        [Subscript::Range(ix)] => {
+          let result = subscript_range(&subs[0],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?);
+        },
+        [Subscript::All] => {
+          fxn_input.push(Value::IndexAll);
+          plan.borrow_mut().push(MatrixAccessAll{}.compile(&fxn_input)?);
+        },
+        [Subscript::All,Subscript::All] => todo!(),
+        [Subscript::Formula(ix1),Subscript::Formula(ix2)] => {
+          let result = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+          let shape1 = result.shape();
+          fxn_input.push(result);
+          let result = subscript_formula(&subs[1], plan.clone(), symbols.clone(), functions.clone())?;
+          let shape2 = result.shape();
+          fxn_input.push(result);
+          match ((shape1[0],shape1[1]),(shape2[0],shape2[1])) {
+            ((1,1),(1,1)) => plan.borrow_mut().push(MatrixAccessScalarScalar{}.compile(&fxn_input)?),
+            ((1,1),(1,m)) => plan.borrow_mut().push(MatrixAccessScalarRange{}.compile(&fxn_input)?),
+            ((1,n),(1,1)) => plan.borrow_mut().push(MatrixAccessRangeScalar{}.compile(&fxn_input)?),
+            ((n,1),(1,m)) |
+            ((n,1),(m,1)) |
+            ((1,n),(m,1)) |
+            ((1,n),(1,m)) => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }
+        },
+        [Subscript::Range(ix1),Subscript::Range(ix2)] => {
+          let result = subscript_range(&subs[0],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          let result = subscript_range(&subs[1],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?);
+        },
+        [Subscript::All,Subscript::Formula(ix2)] => {
+          fxn_input.push(Value::IndexAll);
+          let result = subscript_formula(&subs[1], plan.clone(), symbols.clone(), functions.clone())?;
+          let shape = result.shape();
+          fxn_input.push(result);
+          match &shape[..] {
+            [1,1] => plan.borrow_mut().push(MatrixAccessAllScalar{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixAccessAllRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixAccessAllRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }
+        },
+        [Subscript::Formula(ix1),Subscript::All] => {
+          let result = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+          let shape = result.shape();
+          fxn_input.push(result);
+          fxn_input.push(Value::IndexAll);
+          match &shape[..] {
+            [1,1] => plan.borrow_mut().push(MatrixAccessScalarAll{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixAccessRangeAll{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixAccessRangeAll{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }
+        },
+        [Subscript::Range(ix1),Subscript::Formula(ix2)] => {
+          let result = subscript_range(&subs[0],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          let result = subscript_formula(&subs[1], plan.clone(), symbols.clone(), functions.clone())?;
+          let shape = result.shape();
+          fxn_input.push(result);
+          match &shape[..] {
+            [1,1] => plan.borrow_mut().push(MatrixAccessRangeScalar{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }
+        },
+        [Subscript::Formula(ix1),Subscript::Range(ix2)] => {
+          let result = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+          let shape = result.shape();
+          fxn_input.push(result);
+          let result = subscript_range(&subs[1],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          match &shape[..] {
+            [1,1] => plan.borrow_mut().push(MatrixAccessScalarRange{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }
+        },
+        [Subscript::All,Subscript::Range(ix2)] => {
+          fxn_input.push(Value::IndexAll);
+          let result = subscript_range(&subs[1],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          plan.borrow_mut().push(MatrixAccessAllRange{}.compile(&fxn_input)?);
+        },
+        [Subscript::Range(ix1),Subscript::All] => {
+          let result = subscript_range(&subs[0],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          fxn_input.push(Value::IndexAll);
+          plan.borrow_mut().push(MatrixAccessRangeAll{}.compile(&fxn_input)?);
+        },
+        _ => unreachable!(),
+      };
+      let plan_brrw = plan.borrow();
+      let mut new_fxn = &plan_brrw.last().unwrap();
       new_fxn.solve();
       let res = new_fxn.out();
-      let mut plan_brrw = plan.borrow_mut();
-      plan_brrw.push(new_fxn);
-      Ok(res)
+      return Ok(res);
     },
     Subscript::Brace(x) => todo!(),
-    Subscript::All => Ok(Value::IndexAll),
+    _ => unreachable!(),
   }
 }
 
@@ -530,18 +657,18 @@ fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef)
 
   let mat = match &out[0] {
     Value::MatrixBool(_) => Value::MatrixBool(bool::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecbool()), row_n, col_n)),
-    Value::MatrixU8(_) => Value::MatrixU8(u8::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu8()), row_n, col_n)),
-    Value::MatrixU16(_) => Value::MatrixU16(u16::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu16()), row_n, col_n)),
-    Value::MatrixU32(_) => Value::MatrixU32(u32::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu32()), row_n, col_n)),
-    Value::MatrixU64(_) => Value::MatrixU64(u64::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu64()), row_n, col_n)),
+    Value::MatrixU8(_)   => Value::MatrixU8(u8::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu8()), row_n, col_n)),
+    Value::MatrixU16(_)  => Value::MatrixU16(u16::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu16()), row_n, col_n)),
+    Value::MatrixU32(_)  => Value::MatrixU32(u32::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu32()), row_n, col_n)),
+    Value::MatrixU64(_)  => Value::MatrixU64(u64::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu64()), row_n, col_n)),
     Value::MatrixU128(_) => Value::MatrixU128(u128::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu128()), row_n, col_n)),
-    Value::MatrixI8(_) => Value::MatrixI8(i8::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci8()), row_n, col_n)),
-    Value::MatrixI16(_) => Value::MatrixI16(i16::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci16()), row_n, col_n)),
-    Value::MatrixI32(_) => Value::MatrixI32(i32::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci32()), row_n, col_n)),
-    Value::MatrixI64(_) => Value::MatrixI64(i64::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci64()), row_n, col_n)),
+    Value::MatrixI8(_)   => Value::MatrixI8(i8::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci8()), row_n, col_n)),
+    Value::MatrixI16(_)  => Value::MatrixI16(i16::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci16()), row_n, col_n)),
+    Value::MatrixI32(_)  => Value::MatrixI32(i32::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci32()), row_n, col_n)),
+    Value::MatrixI64(_)  => Value::MatrixI64(i64::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci64()), row_n, col_n)),
     Value::MatrixI128(_) => Value::MatrixI128(i128::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci128()), row_n, col_n)),
-    Value::MatrixF32(_) => Value::MatrixF32(F32::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecf32()), row_n, col_n)),
-    Value::MatrixF64(_) => Value::MatrixF64(F64::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecf64()), row_n, col_n)),
+    Value::MatrixF32(_)  => Value::MatrixF32(F32::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecf32()), row_n, col_n)),
+    Value::MatrixF64(_)  => Value::MatrixF64(F64::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecf64()), row_n, col_n)),
     _ => todo!(),
   };
 
@@ -556,18 +683,18 @@ fn matrix_row(r: &MatrixRow, plan: Plan, symbols: SymbolTableRef, functions: Fun
   }
   let mat = match &row[0] {
     Value::Bool(_) => {Value::MatrixBool(bool::to_matrix(row.iter().map(|v| v.as_bool().unwrap().borrow().clone()).collect(),1,row.len()))},
-    Value::U8(_) => {Value::MatrixU8(u8::to_matrix(row.iter().map(|v| v.as_u8().unwrap().borrow().clone()).collect(),1,row.len()))},
-    Value::U16(_) => {Value::MatrixU16(u16::to_matrix(row.iter().map(|v| v.as_u16().unwrap().borrow().clone()).collect(),1,row.len()))},
-    Value::U32(_) => {Value::MatrixU32(u32::to_matrix(row.iter().map(|v| v.as_u32().unwrap().borrow().clone()).collect(),1,row.len()))},
-    Value::U64(_) => {Value::MatrixU64(u64::to_matrix(row.iter().map(|v| v.as_u64().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::U8(_)   => {Value::MatrixU8(u8::to_matrix(row.iter().map(|v| v.as_u8().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::U16(_)  => {Value::MatrixU16(u16::to_matrix(row.iter().map(|v| v.as_u16().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::U32(_)  => {Value::MatrixU32(u32::to_matrix(row.iter().map(|v| v.as_u32().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::U64(_)  => {Value::MatrixU64(u64::to_matrix(row.iter().map(|v| v.as_u64().unwrap().borrow().clone()).collect(),1,row.len()))},
     Value::U128(_) => {Value::MatrixU128(u128::to_matrix(row.iter().map(|v| v.as_u128().unwrap().borrow().clone()).collect(),1,row.len()))},
-    Value::I8(_) => {Value::MatrixI8(i8::to_matrix(row.iter().map(|v| v.as_i8().unwrap().borrow().clone()).collect(),1,row.len()))},
-    Value::I16(_) => {Value::MatrixI16(i16::to_matrix(row.iter().map(|v| v.as_i16().unwrap().borrow().clone()).collect(),1,row.len()))},
-    Value::I32(_) => {Value::MatrixI32(i32::to_matrix(row.iter().map(|v| v.as_i32().unwrap().borrow().clone()).collect(),1,row.len()))},
-    Value::I64(_) => {Value::MatrixI64(i64::to_matrix(row.iter().map(|v| v.as_i64().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::I8(_)   => {Value::MatrixI8(i8::to_matrix(row.iter().map(|v| v.as_i8().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::I16(_)  => {Value::MatrixI16(i16::to_matrix(row.iter().map(|v| v.as_i16().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::I32(_)  => {Value::MatrixI32(i32::to_matrix(row.iter().map(|v| v.as_i32().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::I64(_)  => {Value::MatrixI64(i64::to_matrix(row.iter().map(|v| v.as_i64().unwrap().borrow().clone()).collect(),1,row.len()))},
     Value::I128(_) => {Value::MatrixI128(i128::to_matrix(row.iter().map(|v| v.as_i128().unwrap().borrow().clone()).collect(),1,row.len()))},
-    Value::F32(_) => {Value::MatrixF32(F32::to_matrix(row.iter().map(|v| F32::new(v.as_f32().unwrap().borrow().clone())).collect(),1,row.len()))},
-    Value::F64(_) => {Value::MatrixF64(F64::to_matrix(row.iter().map(|v| F64::new(v.as_f64().unwrap().borrow().clone())).collect(),1,row.len()))},
+    Value::F32(_)  => {Value::MatrixF32(F32::to_matrix(row.iter().map(|v| F32::new(v.as_f32().unwrap().borrow().clone())).collect(),1,row.len()))},
+    Value::F64(_)  => {Value::MatrixF64(F64::to_matrix(row.iter().map(|v| F64::new(v.as_f64().unwrap().borrow().clone())).collect(),1,row.len()))},
     _ => todo!(),
   };
   Ok(mat)
@@ -638,16 +765,19 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
       FormulaOperator::MulDiv(MulDivOp::Mul) => MathMul{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::MulDiv(MulDivOp::Div) => MathDiv{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Exponent(ExponentOp::Exp) => MathExp{}.compile(&vec![lhs,rhs])?,
+
       FormulaOperator::Vec(VecOp::MatMul) => MatrixMatMul{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Vec(VecOp::Solve) => todo!(),
       FormulaOperator::Vec(VecOp::Cross) => todo!(),
       FormulaOperator::Vec(VecOp::Dot) => todo!(),
+
       FormulaOperator::Comparison(ComparisonOp::Equal) => CompareEqual{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Comparison(ComparisonOp::NotEqual) => CompareNotEqual{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Comparison(ComparisonOp::LessThanEqual) => CompareLessThanEqual{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual) => CompareGreaterThanEqual{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Comparison(ComparisonOp::LessThan) => CompareLessThan{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Comparison(ComparisonOp::GreaterThan) => CompareGreaterThan{}.compile(&vec![lhs,rhs])?,
+
       FormulaOperator::Logic(LogicOp::And) => LogicAnd{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Logic(LogicOp::Or) => LogicOr{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Logic(LogicOp::Not) => LogicNot{}.compile(&vec![lhs,rhs])?,
@@ -680,18 +810,18 @@ fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, functions: Functions
   match (&value,kind) {
     (Value::I64(num), Kind::Scalar(to_kind_id)) => {
       match functions.borrow().kinds.get(&to_kind_id) {
-        Some(ValueKind::I8) => Ok(Value::I8(new_ref(*num.borrow() as i8))),
-        Some(ValueKind::I16) => Ok(Value::I16(new_ref(*num.borrow() as i16))),
-        Some(ValueKind::I32) => Ok(Value::I32(new_ref(*num.borrow() as i32))),
-        Some(ValueKind::I64) => Ok(value),
+        Some(ValueKind::I8)   => Ok(Value::I8(new_ref(*num.borrow() as i8))),
+        Some(ValueKind::I16)  => Ok(Value::I16(new_ref(*num.borrow() as i16))),
+        Some(ValueKind::I32)  => Ok(Value::I32(new_ref(*num.borrow() as i32))),
+        Some(ValueKind::I64)  => Ok(value),
         Some(ValueKind::I128) => Ok(Value::I128(new_ref(*num.borrow() as i128))),
-        Some(ValueKind::U8) => Ok(Value::U8(new_ref(*num.borrow() as u8))),
-        Some(ValueKind::U16) => Ok(Value::U16(new_ref(*num.borrow() as u16))),
-        Some(ValueKind::U32) => Ok(Value::U32(new_ref(*num.borrow() as u32))),
-        Some(ValueKind::U64) => Ok(Value::U64(new_ref(*num.borrow() as u64))),
+        Some(ValueKind::U8)   => Ok(Value::U8(new_ref(*num.borrow() as u8))),
+        Some(ValueKind::U16)  => Ok(Value::U16(new_ref(*num.borrow() as u16))),
+        Some(ValueKind::U32)  => Ok(Value::U32(new_ref(*num.borrow() as u32))),
+        Some(ValueKind::U64)  => Ok(Value::U64(new_ref(*num.borrow() as u64))),
         Some(ValueKind::U128) => Ok(Value::U128(new_ref(*num.borrow() as u128))),
-        Some(ValueKind::F32) => Ok(Value::F32(new_ref(F32::new(*num.borrow() as f32)))),
-        Some(ValueKind::F64) => Ok(Value::F64(new_ref(F64::new(*num.borrow() as f64)))),
+        Some(ValueKind::F32)  => Ok(Value::F32(new_ref(F32::new(*num.borrow() as f32)))),
+        Some(ValueKind::F64)  => Ok(Value::F64(new_ref(F64::new(*num.borrow() as f64)))),
         None => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(to_kind_id)}),
         _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::CouldNotAssignKindToValue}),
       }

@@ -37,8 +37,26 @@ macro_rules! impl_to_matrix {
           (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
         }}}};}
 
-impl_to_matrix!(usize);
-impl_to_matrix!(bool);
+impl ToMatrix for usize {
+  fn to_matrix(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
+    match (rows,cols) {
+      (1,n) => Matrix::RowDVector(new_ref(RowDVector::from_vec(elements))),
+      (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
+      (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
+    }
+  }
+}
+
+impl ToMatrix for bool {
+  fn to_matrix(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
+    match (rows,cols) {
+      (1,n) => Matrix::RowDVector(new_ref(RowDVector::from_vec(elements))),
+      (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
+      (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
+    }
+  }
+}
+
 impl_to_matrix!(u8);
 impl_to_matrix!(u16);
 impl_to_matrix!(u32);
