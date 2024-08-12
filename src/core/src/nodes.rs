@@ -600,7 +600,8 @@ pub enum Subscript {
   Formula(Factor),          // a[1 + 1]
   All,                      // a[:]
   Bracket(Vec<Subscript>),  // a[1,2,3]
-  Brace(Vec<Subscript>)     // a{"foo"}
+  Brace(Vec<Subscript>),    // a{"foo"}
+  DotInt(RealNumber)        // a.1
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

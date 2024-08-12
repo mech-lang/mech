@@ -130,15 +130,15 @@ impl Value {
       Value::I128(x) => {builder.push_record(vec!["i128"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
       Value::F32(x)  => {builder.push_record(vec!["f32"]); builder.push_record(vec![format!("{:?}",x.borrow().0)]);},
       Value::F64(x)  => {builder.push_record(vec!["f64"]); builder.push_record(vec![format!("{:?}",x.borrow().0)]);},
-      Value::Bool(x) => {builder.push_record(vec!["bool"]); builder.push_record(vec![format!("{:?}",x)]);},
+      Value::Bool(x) => {builder.push_record(vec!["bool"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
       Value::Index(x)  => {builder.push_record(vec!["ix"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
       Value::Atom(x) => {builder.push_record(vec!["atom"]); builder.push_record(vec![format!("{:?}",x)]);},
       Value::Set(x)  => builder.push_record(vec![format!("{:?}",x)]),
-      Value::Map(x)  => builder.push_record(vec![format!("{:?}",x)]),
-      Value::String(x) => builder.push_record(vec![x]),
-      Value::Table(x)  => builder.push_record(vec![format!("{:?}",x)]),
-      Value::Tuple(x)  => builder.push_record(vec![format!("{:?}",x)]),
-      Value::Record(x) => builder.push_record(vec![format!("{:?}",x)]),
+      Value::Map(x)  => {return x.pretty_print();}
+      Value::String(x) => {builder.push_record(vec!["string"]); builder.push_record(vec![x])},
+      Value::Table(x)  => {return x.pretty_print();},
+      Value::Tuple(x)  => {return x.pretty_print();},
+      Value::Record(x) => {return x.pretty_print();},
       Value::MatrixIndex(x) => {return x.pretty_print();}
       Value::MatrixBool(x) => {return x.pretty_print();}
       Value::MatrixU8(x)   => {return x.pretty_print();},
@@ -156,6 +156,7 @@ impl Value {
       Value::MutableReference(x) => {return x.borrow().pretty_print();},
       Value::Empty => builder.push_record(vec!["_"]),
       Value::IndexAll => builder.push_record(vec![":"]),
+      Value::Id(x) => builder.push_record(vec![format!("{:?}",humanize(x))]),
       _ => unreachable!(),
     };
     let mut table = builder.build();
@@ -346,9 +347,9 @@ impl ToValue for Vec<usize> {
   fn to_value(&self) -> Value {
     match self.len() {
       1 => Value::Index(new_ref(self[0].clone())),
-      2 => Value::MatrixIndex(Matrix::RowVector2(new_ref(RowVector2::from_vec(self.clone())))),
-      3 => Value::MatrixIndex(Matrix::RowVector3(new_ref(RowVector3::from_vec(self.clone())))),
-      4 => Value::MatrixIndex(Matrix::RowVector4(new_ref(RowVector4::from_vec(self.clone())))),
+      //2 => Value::MatrixIndex(Matrix::RowVector2(new_ref(RowVector2::from_vec(self.clone())))),
+      //3 => Value::MatrixIndex(Matrix::RowVector3(new_ref(RowVector3::from_vec(self.clone())))),
+      //4 => Value::MatrixIndex(Matrix::RowVector4(new_ref(RowVector4::from_vec(self.clone())))),
       n => Value::MatrixIndex(Matrix::RowDVector(new_ref(RowDVector::from_vec(self.clone())))),
     }
   }
@@ -450,6 +451,22 @@ pub struct MechMap {
 }
 
 impl MechMap {
+
+  pub fn pretty_print(&self) -> String {
+    let mut builder = Builder::default();
+    let mut element_strings = vec![];
+    let mut key_strings = vec![];
+    for (k,v) in self.map.iter() {
+      element_strings.push(v.pretty_print());
+      key_strings.push(k.pretty_print());
+    }    
+    builder.push_record(key_strings);
+    builder.push_record(element_strings);
+    let mut table = builder.build();
+    table.with(Style::modern());
+    format!("{table}")
+  }
+
   pub fn from_vec(vec: Vec<(Value,Value)>) -> MechMap {
     let mut map = IndexMap::new();
     for (k,v) in vec {
@@ -475,6 +492,19 @@ pub struct MechTable {
 }
 
 impl MechTable {
+
+  pub fn pretty_print(&self) -> String {
+    let mut builder = Builder::default();
+    for (k,v) in &self.data {
+      let mut col_string = v.iter().map(|x| x.pretty_print()).collect::<Vec<String>>();
+      col_string.insert(0,k.pretty_print());
+      builder.push_column(col_string);
+    }
+    let mut table = builder.build();
+    table.with(Style::modern());
+    format!("{table}")
+  }
+
   pub fn shape(&self) -> Vec<usize> {
     vec![self.rows,self.cols]
   }
@@ -497,6 +527,15 @@ pub struct MechTuple {
 }
 
 impl MechTuple {
+
+  pub fn pretty_print(&self) -> String {
+    let mut builder = Builder::default();
+    let string_elements: Vec<String> = self.elements.iter().map(|e| e.pretty_print()).collect::<Vec<String>>();
+    builder.push_record(string_elements);
+    let mut table = builder.build();
+    table.with(Style::modern());
+    format!("{table}")
+  }
 
   pub fn from_vec(elements: Vec<Value>) -> Self {
     MechTuple{elements: elements.iter().map(|m| Box::new(m.clone())).collect::<Vec<Box<Value>>>()}
