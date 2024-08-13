@@ -4,11 +4,11 @@ use crate::stdlib::math::*;
 use crate::stdlib::logic::*;
 use crate::stdlib::compare::*;
 use crate::stdlib::matrix::*;
-use crate::stdlib::range::*;
+use crate::stdlib::range::{RangeInclusive, RangeExclusive};
 use crate::*;
+use crate::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*};
+use crate::nodes::Matrix as Mat;
 
-use mech_core::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*};
-use mech_core::nodes::Matrix as Mat;
 use na::DMatrix;
 use indexmap::set::IndexSet;
 use indexmap::map::IndexMap;

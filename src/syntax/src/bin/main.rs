@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 //use mech_syntax::analyzer::*;
-use mech_syntax::interpreter::*;
+use mech_core::interpreter::*;
 use std::time::Instant;
 use std::fs;
 extern crate nalgebra as na;

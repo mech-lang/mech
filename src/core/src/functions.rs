@@ -1,9 +1,9 @@
 use crate::types::*;
 use crate::value::*;
 use crate::interpreter::*;
+use crate::nodes::*;
+use crate::*;
 
-use mech_core::*;
-use mech_core::nodes::*;
 use hashbrown::{HashMap, HashSet};
 use indexmap::map::IndexMap;
 use std::rc::Rc;

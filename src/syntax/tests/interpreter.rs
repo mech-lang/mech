@@ -6,8 +6,9 @@ extern crate lazy_static;
 extern crate nalgebra as na;
 use std::cell::RefCell;
 use std::rc::Rc;
-use mech_syntax::matrix::Matrix;
+use mech_core::matrix::Matrix;
 use mech_syntax::*;
+use mech_core::*;
 use indexmap::set::IndexSet;
 use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, Vector4, Vector2, DMatrix, Rotation3, Matrix3x2, Matrix2x3, Matrix6, Matrix2};
 
