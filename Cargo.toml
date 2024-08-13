@@ -73,12 +73,3 @@ mech-core = { path = 'src/core', version = '0.2.6' }
 
 [patch.'https://gitlab.com/mech-lang/syntax']
 mech-syntax = { path = 'src/syntax', version = '0.2.6' }
-
-[patch.'https://gitlab.com/mech-lang/program']
-mech-program = { path = 'src/program', version = '0.2.6' }
-
-[patch.'https://gitlab.com/mech-lang/utilities']
-mech-utilities = { path = 'src/utilities', version = '0.2.6' }
-
-[patch.'https://gitlab.com/mech-lang/wasm']
-mech-wasm = { path = 'src/wasm', version = '0.2.6' }
