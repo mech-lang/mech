@@ -88,7 +88,6 @@ fn section_element(element: &SectionElement, plan: Plan, symbols: SymbolTableRef
     SectionElement::Section(sctn) => todo!(),
     SectionElement::Comment(cmmnt) => Value::Empty,
     SectionElement::Paragraph(p) => Value::Empty,
-    SectionElement::MechCode(code) => todo!(),
     SectionElement::UnorderedList(ul) => todo!(),
     SectionElement::CodeBlock => todo!(),
     SectionElement::OrderedList => todo!(),
@@ -606,7 +605,7 @@ fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
   // Build the table
   let mut data_map = IndexMap::new();
   for (field_label,column) in header.iter().zip(data.iter()) {
-    data_map.insert(field_label.clone(),column.clone());
+    data_map.insert(field_label.clone(),new_ref(column.clone()));
   }
   let tbl = MechTable{rows: t.rows.len(), cols, data: data_map.clone()  };
   Ok(Value::Table(tbl))
