@@ -484,10 +484,13 @@ impl Hash for MechMap {
   }
 }
 
+// Table ------------------------------------------------------------------
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MechTable {
   pub rows: usize,
   pub cols: usize,
+  pub col_kinds: Vec<ValueKind>,
   pub data: IndexMap<Value,Ref<Vec<Value>>>,
 }
 
