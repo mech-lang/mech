@@ -41,8 +41,8 @@ impl MechFunction for TableAccessCol {
   fn solve(&self) {
     let out_ptr = self.out.as_ptr();
     unsafe { 
-      for i in 0..self.source.shape()[0] {
-        (*out_ptr)[i] = self.source.index1d(i).as_i64().unwrap().borrow().clone();
+      for i in 1..=self.source.shape()[0] {
+        (*out_ptr)[i-1] = self.source.index1d(i).as_i64().unwrap().borrow().clone();
       }
     }
   }

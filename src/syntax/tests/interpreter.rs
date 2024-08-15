@@ -153,6 +153,10 @@ test_interpreter!(interpret_dot_record, "x := {x: 1, y: 2, z: 3}; x.x", Value::I
 
 test_interpreter!(interpret_dot_int_matrix, "x := [1,2,3]; x.1", Value::I64(new_ref(1)));
 
+test_interpreter!(interpret_dot_index_table, "x := { x<i64> y<u8>| 1 2; 4 5}; x.x", Value::MatrixI64(Matrix::Vector2(new_ref(Vector2::from_vec(vec![1,4])))));
+
+
+
 
 test_interpreter!(interpret_set_empty,"{_}", Value::Set(MechSet::from_vec(vec![])));
 test_interpreter!(interpret_set,"{1,2,3}", Value::Set(MechSet::from_vec(vec![Value::I64(new_ref(1)),Value::I64(new_ref(2)),Value::I64(new_ref(3))])));

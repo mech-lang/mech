@@ -498,7 +498,7 @@ impl MechTable {
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     for (k,(knd,val)) in &self.data {
-      let mut col_string = vec![k.pretty_print()];//,val.pretty_print()];
+      let mut col_string = vec![k.pretty_print(), val.pretty_print()];
       builder.push_column(col_string);
     }
     let mut table = builder.build();
