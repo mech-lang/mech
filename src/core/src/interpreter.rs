@@ -4,6 +4,7 @@ use crate::stdlib::math::*;
 use crate::stdlib::logic::*;
 use crate::stdlib::compare::*;
 use crate::stdlib::matrix::*;
+use crate::stdlib::table::*;
 use crate::stdlib::range::{RangeInclusive, RangeExclusive};
 use crate::*;
 use crate::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*};
@@ -364,6 +365,19 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
               None => { return Err(MechError{tokens: x.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(key)});}
             }
           }
+          Value::Table(tbl) => {
+            match tbl.data.get(&Value::Id(key)) {
+              Some(value) => {
+                let fxn_input: Vec<Value> = vec![val.clone(), Value::Id(key)];
+                let new_fxn = AccessColumn{}.compile(&fxn_input)?;
+                new_fxn.solve();
+                let res = new_fxn.out();
+                plan.borrow_mut().push(new_fxn);
+                return Ok(res);
+              },
+              None => { return Err(MechError{tokens: x.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(key)});}
+            }
+          }
           _ => todo!(),
         }
         _ => todo!(),
@@ -604,10 +618,11 @@ fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
   }
   // Build the table
   let mut data_map = IndexMap::new();
-  for (field_label,column) in ids.iter().zip(data.iter()) {
-    data_map.insert(field_label.clone(),new_ref(column.clone()));
+  for (field_label,(column,knd)) in ids.iter().zip(data.iter().zip(col_kinds)) {
+    let val = Value::to_matrix(column.clone(),column.len(),1);
+    data_map.insert(field_label.clone(),(knd,val));
   }
-  let tbl = MechTable{rows: t.rows.len(), cols, col_kinds, data: data_map.clone()  };
+  let tbl = MechTable{rows: t.rows.len(), cols, data: data_map.clone()  };
   Ok(Value::Table(tbl))
 }
 

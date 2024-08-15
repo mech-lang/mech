@@ -1,9 +1,10 @@
 #[macro_use]
 use crate::stdlib::*;
+use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix3x2, Matrix6, Matrix2};
 
 // Access ---------------------------------------------------------------------
 
-macro_rules! impl_access_fxn {
+/*macro_rules! impl_access_fxn {
   ($struct_name:ident, $out_type:ty) => {
     #[derive(Debug)]
     struct $struct_name<T> {
@@ -19,8 +20,8 @@ macro_rules! impl_access_fxn {
         let source_ptr = self.source.as_ptr();
         let out_ptr = self.out.as_ptr();
         unsafe { 
-          for i in 0..(*source_ptr).rows {
-            (*out_ptr)[i] = (*source_ptr)[i].into();
+          for i in 0..(*source_ptr).len() {
+            (*out_ptr)[i] = 0; //(*source_ptr)[i].into();
           }
         }
       }
@@ -28,15 +29,63 @@ macro_rules! impl_access_fxn {
       fn to_string(&self) -> String { format!("{:?}", self) }
     }
   };
+}*/
+
+#[derive(Debug)]
+struct TableAccessCol {
+  source: Matrix<Value>,
+  out: Ref<Vector2<i64>>,
 }
 
-impl_access_fxn!(TableAccessCol, Vector2<T>);
+impl MechFunction for TableAccessCol {
+  fn solve(&self) {
+    let out_ptr = self.out.as_ptr();
+    unsafe { 
+      for i in 0..self.source.shape()[0] {
+        (*out_ptr)[i] = self.source.index1d(i).as_i64().unwrap().borrow().clone();
+      }
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
+//impl_access_fxn!(TableAccessCol, Vector2<usize>);
+    //($arg:expr, $($input_type:ident => $($target_type:ident, $default:expr),+);+ $(;)?) => {
+
+macro_rules! generate_access_column_match_arms {
+  ($arg:expr, $default:expr) => {
+    //paste!{
+      match $arg {
+        (Value::Table(tbl),Value::Id(k)) => {
+          let key = Value::Id(k);
+          match tbl.data.get(&key) {
+            Some((ValueKind::I64,value)) => {
+              Ok(Box::new(TableAccessCol{source: value.clone(), out: new_ref(Vector2::from_element(i64::zero())) }))
+            }
+            _ => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)});}
+          }
+        }
+        x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+      }
+    //}
+  }
+}
+
+fn generate_access_column_fxn(source: Value, key: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  generate_access_column_match_arms!(
+    
+    (source,key),
+    0
   
-macro_rules! generate_access_match_arms {
-  ($fxn_name:ident,$macro_name:ident, $arg:expr) => {
+  )
+}
+
+
+/*macro_rules! generate_access_match_arms {
+  ($macro_name:ident, $arg:expr) => {
     paste!{
       [<generate_access_ $macro_name _match_arms>]!(
-        $fxn_name,
         $arg,
         Bool => bool, false;
         I8   => i8,   i8::zero();
@@ -54,48 +103,21 @@ macro_rules! generate_access_match_arms {
       )
     }
   }
-}
-  
-macro_rules! generate_access_column_match_arms {
-  ($fxn_name:ident, $arg:expr, $($input_type:ident => $($table_kind:ident, $target_type:ident, $default:expr),+);+ $(;)?) => {
-    paste!{
-      match $arg {
-        $(
-          $(
-            (Value::Table(tbl), Value::Id(k)) => {
-              let key = Value::Id(k);
-              match (tbl.data.get(&key),tbl.kind.get(&key)) {
-                Some(value) => {
-                  Ok(Box::new(TableAccessColumn{source: input.clone(), column_ix: ix.clone(), out: new_ref(DVector::from_element(tbl.rows,$default)) })),
-                }
-                None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(key)});}
-              }
-            },
-          )+
-        )+
-        x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-      }
-    }
-  }
-}
-  
-fn generate_access_column_fxn(lhs_value: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_access_column_match_arms!(Access1DS, scalar, (lhs_value, ixes.as_slice()))
-}
+}*/
 
-pub struct TableAccessColumn {}
-impl NativeFunctionCompiler for TableAccessColumn {
+pub struct AccessColumn {}
+impl NativeFunctionCompiler for AccessColumn {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
       return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
-    let ixes = arguments.clone().split_off(1);
-    let mat = arguments[0].clone();
-    match generate_access_column_fxn(mat.clone(), ixes.clone()) {
+    let tbl = arguments[0].clone();
+    let key = arguments[1].clone();
+    match generate_access_column_fxn(tbl.clone(), key.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
-        match (mat,ixes) {
-          (Value::MutableReference(lhs),rhs_value) => { generate_access_column_fxn(lhs.borrow().clone(), rhs_value.clone()) }
+        match (tbl,&key) {
+          (Value::MutableReference(tbl),_) => { generate_access_column_fxn(tbl.borrow().clone(), key.clone()) }
           x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }

@@ -57,6 +57,7 @@ impl ToMatrix for bool {
   }
 }
 
+impl_to_matrix!(Value);
 impl_to_matrix!(u8);
 impl_to_matrix!(u16);
 impl_to_matrix!(u32);
@@ -118,7 +119,7 @@ where T: Hash + na::Scalar
 }
 
 impl<T> Matrix<T> 
-where T: Debug + Clone + Copy + PartialEq + 'static
+where T: Debug + Clone + PartialEq + 'static
 {
 
   pub fn pretty_print(&self) -> String {
@@ -169,41 +170,41 @@ where T: Debug + Clone + Copy + PartialEq + 'static
 
   pub fn index1d(&self, ix: usize) -> T {
     match self {
-      Matrix::RowVector2(x) => *x.borrow().index(ix-1),
-      Matrix::RowVector3(x) => *x.borrow().index(ix-1),
-      Matrix::RowVector4(x) => *x.borrow().index(ix-1),
-      Matrix::Vector2(x) => *x.borrow().index(ix-1),
-      Matrix::Vector3(x) => *x.borrow().index(ix-1),
-      Matrix::Vector4(x) => *x.borrow().index(ix-1),
-      Matrix::Matrix1(x) => *x.borrow().index(ix-1),
-      Matrix::Matrix2(x) => *x.borrow().index(ix-1),
-      Matrix::Matrix3(x) => *x.borrow().index(ix-1),
-      Matrix::Matrix4(x) => *x.borrow().index(ix-1),
-      Matrix::Matrix2x3(x) => *x.borrow().index(ix-1),
-      Matrix::Matrix3x2(x) => *x.borrow().index(ix-1),
-      Matrix::DMatrix(x) => *x.borrow().index(ix-1),
-      Matrix::RowDVector(x) => *x.borrow().index(ix-1),
-      Matrix::DVector(x) => *x.borrow().index(ix-1),
+      Matrix::RowVector2(x) => (*x.borrow().index(ix-1)).clone(),
+      Matrix::RowVector3(x) => (*x.borrow().index(ix-1)).clone(),
+      Matrix::RowVector4(x) => (*x.borrow().index(ix-1)).clone(),
+      Matrix::Vector2(x) => (*x.borrow().index(ix-1)).clone(),
+      Matrix::Vector3(x) => (*x.borrow().index(ix-1)).clone(),
+      Matrix::Vector4(x) => (*x.borrow().index(ix-1)).clone(),
+      Matrix::Matrix1(x) => (*x.borrow().index(ix-1)).clone(),
+      Matrix::Matrix2(x) => (*x.borrow().index(ix-1)).clone(),
+      Matrix::Matrix3(x) => (*x.borrow().index(ix-1)).clone(),
+      Matrix::Matrix4(x) => (*x.borrow().index(ix-1)).clone(),
+      Matrix::Matrix2x3(x) => (*x.borrow().index(ix-1)).clone(),
+      Matrix::Matrix3x2(x) => (*x.borrow().index(ix-1)).clone(),
+      Matrix::DMatrix(x) => (*x.borrow().index(ix-1)).clone(),
+      Matrix::RowDVector(x) => (*x.borrow().index(ix-1)).clone(),
+      Matrix::DVector(x) => (*x.borrow().index(ix-1)).clone(),
     }
   }
 
   pub fn index2d(&self, row: usize, col: usize) -> T {
     match self {
-      Matrix::RowVector2(x) => *x.borrow().index((row-1,col-1)),
-      Matrix::RowVector3(x) => *x.borrow().index((row-1,col-1)),
-      Matrix::RowVector4(x) => *x.borrow().index((row-1,col-1)),
-      Matrix::Vector2(x) => *x.borrow().index((row-1,col-1)),
-      Matrix::Vector3(x) => *x.borrow().index((row-1,col-1)),
-      Matrix::Vector4(x) => *x.borrow().index((row-1,col-1)),
-      Matrix::Matrix1(x) => *x.borrow().index((row-1,col-1)),
-      Matrix::Matrix2(x) => *x.borrow().index((row-1,col-1)),
-      Matrix::Matrix3(x) => *x.borrow().index((row-1,col-1)),
-      Matrix::Matrix4(x) => *x.borrow().index((row-1,col-1)),
-      Matrix::Matrix2x3(x) => *x.borrow().index((row-1,col-1)),
-      Matrix::Matrix3x2(x) => *x.borrow().index((row-1,col-1)),
-      Matrix::DMatrix(x) => *x.borrow().index((row-1,col-1)),
-      Matrix::RowDVector(x) => *x.borrow().index((row-1,col-1)),
-      Matrix::DVector(x) => *x.borrow().index((row-1,col-1)),
+      Matrix::RowVector2(x) => (*x.borrow().index((row-1,col-1))).clone(),
+      Matrix::RowVector3(x) => (*x.borrow().index((row-1,col-1))).clone(),
+      Matrix::RowVector4(x) => (*x.borrow().index((row-1,col-1))).clone(),
+      Matrix::Vector2(x) => (*x.borrow().index((row-1,col-1))).clone(),
+      Matrix::Vector3(x) => (*x.borrow().index((row-1,col-1))).clone(),
+      Matrix::Vector4(x) => (*x.borrow().index((row-1,col-1))).clone(),
+      Matrix::Matrix1(x) => (*x.borrow().index((row-1,col-1))).clone(),
+      Matrix::Matrix2(x) => (*x.borrow().index((row-1,col-1))).clone(),
+      Matrix::Matrix3(x) => (*x.borrow().index((row-1,col-1))).clone(),
+      Matrix::Matrix4(x) => (*x.borrow().index((row-1,col-1))).clone(),
+      Matrix::Matrix2x3(x) => (*x.borrow().index((row-1,col-1))).clone(),
+      Matrix::Matrix3x2(x) => (*x.borrow().index((row-1,col-1))).clone(),
+      Matrix::DMatrix(x) => (*x.borrow().index((row-1,col-1))).clone(),
+      Matrix::RowDVector(x) => (*x.borrow().index((row-1,col-1))).clone(),
+      Matrix::DVector(x) => (*x.borrow().index((row-1,col-1))).clone(),
     }
   }
 

@@ -490,17 +490,15 @@ impl Hash for MechMap {
 pub struct MechTable {
   pub rows: usize,
   pub cols: usize,
-  pub col_kinds: Vec<ValueKind>,
-  pub data: IndexMap<Value,Ref<Vec<Value>>>,
+  pub data: IndexMap<Value,(ValueKind,Matrix<Value>)>,
 }
 
 impl MechTable {
 
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
-    for (k,v) in &self.data {
-      let mut col_string = v.borrow().iter().map(|x| x.pretty_print()).collect::<Vec<String>>();
-      col_string.insert(0,k.pretty_print());
+    for (k,(knd,val)) in &self.data {
+      let mut col_string = vec![k.pretty_print()];//,val.pretty_print()];
       builder.push_column(col_string);
     }
     let mut table = builder.build();
@@ -515,9 +513,10 @@ impl MechTable {
 
 impl Hash for MechTable {
   fn hash<H: Hasher>(&self, state: &mut H) {
-    for (k,v) in self.data.iter() {
+    for (k,(knd,val)) in self.data.iter() {
       k.hash(state);
-      v.borrow().hash(state);
+      knd.hash(state);
+      val.hash(state);
     }
   }
 }
