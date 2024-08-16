@@ -620,7 +620,14 @@ fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
   let mut data_map = IndexMap::new();
   for (field_label,(column,knd)) in ids.iter().zip(data.iter().zip(col_kinds)) {
     let val = Value::to_matrix(column.clone(),column.len(),1);
-    data_map.insert(field_label.clone(),(knd,val));
+    match knd {
+      ValueKind::I64 => {data_map.insert(field_label.clone(),(knd,val));},
+      ValueKind::U8 => {
+        let u8_vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_u8().unwrap().to_value()).collect::<Vec<Value>>();
+        data_map.insert(field_label.clone(),(knd,Value::to_matrix(u8_vals.clone(),u8_vals.len(),1)));
+      },
+      _ => todo!(),
+    };
   }
   let tbl = MechTable{rows: t.rows.len(), cols, data: data_map.clone()  };
   Ok(Value::Table(tbl))

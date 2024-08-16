@@ -31,24 +31,35 @@ use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matri
   };
 }*/
 
-#[derive(Debug)]
-struct TableAccessCol {
-  source: Matrix<Value>,
-  out: Ref<Vector2<i64>>,
-}
 
-impl MechFunction for TableAccessCol {
-  fn solve(&self) {
-    let out_ptr = self.out.as_ptr();
-    unsafe { 
-      for i in 1..=self.source.shape()[0] {
-        (*out_ptr)[i-1] = self.source.index1d(i).as_i64().unwrap().borrow().clone();
+macro_rules! impl_col_access_fxn {
+  ($fxn_name:ident, $out_type:ty) => {
+    #[derive(Debug)]
+    struct $fxn_name {
+      source: Matrix<Value>,
+      out: Ref<Vector2<$out_type>>,
+    }
+
+    impl MechFunction for $fxn_name {
+      fn solve(&self) {
+        let out_ptr = self.out.as_ptr();
+        unsafe { 
+          for i in 1..=self.source.shape()[0] {
+            paste! {
+              (*out_ptr)[i-1] = self.source.index1d(i).[<as_ $out_type>]().unwrap().borrow().clone();
+            }
+          }
+        }
       }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
     }
   }
-  fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
 }
+
+impl_col_access_fxn!(TableAccessColI64,i64);
+impl_col_access_fxn!(TableAccessColU8,u8);
+
 
 //impl_access_fxn!(TableAccessCol, Vector2<usize>);
     //($arg:expr, $($input_type:ident => $($target_type:ident, $default:expr),+);+ $(;)?) => {
@@ -61,7 +72,10 @@ macro_rules! generate_access_column_match_arms {
           let key = Value::Id(k);
           match tbl.data.get(&key) {
             Some((ValueKind::I64,value)) => {
-              Ok(Box::new(TableAccessCol{source: value.clone(), out: new_ref(Vector2::from_element(i64::zero())) }))
+              Ok(Box::new(TableAccessColI64{source: value.clone(), out: new_ref(Vector2::from_element(i64::zero())) }))
+            }
+            Some((ValueKind::U8,value)) => {
+              Ok(Box::new(TableAccessColU8{source: value.clone(), out: new_ref(Vector2::from_element(u8::zero())) }))
             }
             _ => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)});}
           }
