@@ -623,8 +623,12 @@ fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
     match knd {
       ValueKind::I64 => {data_map.insert(field_label.clone(),(knd,val));},
       ValueKind::U8 => {
-        let u8_vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_u8().unwrap().to_value()).collect::<Vec<Value>>();
-        data_map.insert(field_label.clone(),(knd,Value::to_matrix(u8_vals.clone(),u8_vals.len(),1)));
+        let vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_u8().unwrap().to_value()).collect::<Vec<Value>>();
+        data_map.insert(field_label.clone(),(knd,Value::to_matrix(vals.clone(),vals.len(),1)));
+      },
+      ValueKind::Bool => {
+        let vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_bool().unwrap().to_value()).collect::<Vec<Value>>();
+        data_map.insert(field_label.clone(),(knd,Value::to_matrix(vals.clone(),vals.len(),1)));
       },
       _ => todo!(),
     };
