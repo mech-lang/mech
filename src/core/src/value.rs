@@ -269,8 +269,8 @@ impl Value {
   pub fn as_i32(&self) -> Option<Ref<i32>> {if let Value::I32(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_i32() } else { None }}
   pub fn as_i64(&self) -> Option<Ref<i64>> {if let Value::I64(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_i64() } else { None }}
   pub fn as_i128(&self) -> Option<Ref<i128>> {if let Value::I128(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_i128() } else { None }}
-  pub fn as_f32(&self) -> Option<Ref<f32>> {if let Value::F32(v) = self { Some(new_ref(v.borrow().0)) } else if let Value::MutableReference(val) = self { val.borrow().as_f32() } else { None }}
-  pub fn as_f64(&self) -> Option<Ref<f64>> {if let Value::F64(v) = self { Some(new_ref(v.borrow().0)) } else if let Value::MutableReference(val) = self { val.borrow().as_f64() } else { None }}
+  pub fn as_f32(&self) -> Option<Ref<F32>> {if let Value::F32(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_f32() } else { None }}
+  pub fn as_f64(&self) -> Option<Ref<F64>> {if let Value::F64(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_f64() } else { None }}
   pub fn as_vecf64(&self) -> Option<Vec<F64>> {if let Value::MatrixF64(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf64() } else { None }}
   pub fn as_vecf32(&self) -> Option<Vec<F32>> {if let Value::MatrixF32(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf32() } else { None }}
   pub fn as_vecbool(&self) -> Option<Vec<bool>> {if let Value::MatrixBool(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecbool() } else { None }}

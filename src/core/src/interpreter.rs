@@ -351,37 +351,12 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
   match sbscrpt {
     Subscript::Dot(x) => {
       let key = x.hash();
-      match val {
-        Value::Record(rcrd) => {
-          match rcrd.map.get(&Value::Id(key)) {
-            Some(value) => return Ok(value.clone()),
-            None => { return Err(MechError{tokens: x.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(key)});}
-          }
-        }
-        Value::MutableReference(r) => match &*r.borrow() {
-          Value::Record(rcrd) => {
-            match rcrd.map.get(&Value::Id(key)) {
-              Some(value) => return Ok(value.clone()),
-              None => { return Err(MechError{tokens: x.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(key)});}
-            }
-          }
-          Value::Table(tbl) => {
-            match tbl.data.get(&Value::Id(key)) {
-              Some(value) => {
-                let fxn_input: Vec<Value> = vec![val.clone(), Value::Id(key)];
-                let new_fxn = AccessColumn{}.compile(&fxn_input)?;
-                new_fxn.solve();
-                let res = new_fxn.out();
-                plan.borrow_mut().push(new_fxn);
-                return Ok(res);
-              },
-              None => { return Err(MechError{tokens: x.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(key)});}
-            }
-          }
-          _ => todo!(),
-        }
-        _ => todo!(),
-      }
+      let fxn_input: Vec<Value> = vec![val.clone(), Value::Id(key)];
+      let new_fxn = AccessColumn{}.compile(&fxn_input)?;
+      new_fxn.solve();
+      let res = new_fxn.out();
+      plan.borrow_mut().push(new_fxn);
+      return Ok(res);
     },
     Subscript::DotInt(x) => {
       let mut fxn_input = vec![val.clone()];
@@ -720,8 +695,8 @@ fn matrix_row(r: &MatrixRow, plan: Plan, symbols: SymbolTableRef, functions: Fun
     Value::I32(_)  => {Value::MatrixI32(i32::to_matrix(row.iter().map(|v| v.as_i32().unwrap().borrow().clone()).collect(),1,row.len()))},
     Value::I64(_)  => {Value::MatrixI64(i64::to_matrix(row.iter().map(|v| v.as_i64().unwrap().borrow().clone()).collect(),1,row.len()))},
     Value::I128(_) => {Value::MatrixI128(i128::to_matrix(row.iter().map(|v| v.as_i128().unwrap().borrow().clone()).collect(),1,row.len()))},
-    Value::F32(_)  => {Value::MatrixF32(F32::to_matrix(row.iter().map(|v| F32::new(v.as_f32().unwrap().borrow().clone())).collect(),1,row.len()))},
-    Value::F64(_)  => {Value::MatrixF64(F64::to_matrix(row.iter().map(|v| F64::new(v.as_f64().unwrap().borrow().clone())).collect(),1,row.len()))},
+    Value::F32(_)  => {Value::MatrixF32(F32::to_matrix(row.iter().map(|v| v.as_f32().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::F64(_)  => {Value::MatrixF64(F64::to_matrix(row.iter().map(|v| v.as_f64().unwrap().borrow().clone()).collect(),1,row.len()))},
     _ => todo!(),
   };
   Ok(mat)
