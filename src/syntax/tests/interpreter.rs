@@ -102,6 +102,9 @@ test_interpreter!(interpret_matrix_mat2, "[1 2; 3 4]", new_ref(Matrix2::from_vec
 test_interpreter!(interpret_matrix_transpose, "[1 2; 3 4]'", new_ref(Matrix2::from_vec(vec![1i64,2,3,4])).to_value());
 test_interpreter!(interpret_matrix_transpose_u8, "[1<u8> 2<u8> 3<u8>]'", new_ref(Vector3::from_vec(vec![1u8,2,3,4])).to_value());
 test_interpreter!(interpret_matrix_transpose_float, "[1.0 2.0 3.0; 4.0 5.0 6.0]'", new_ref(Matrix3x2::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0),F64::new(4.0),F64::new(5.0),F64::new(6.0),])).to_value());
+test_interpreter!(interpret_matrix_transpose_vector, "x := { x<i64> | 1; 3; 5; }; x.x'", new_ref(RowVector3::from_vec(vec![1i64,3,5])).to_value());
+
+
 test_interpreter!(interpret_matrix_mat2_f64, "[1.1 2.2; 3.3 4.4]", Value::MatrixF64(Matrix::Matrix2(new_ref(Matrix2::from_vec(vec![F64::new(1.1),F64::new(3.3),F64::new(2.2),F64::new(4.4)])))));
 test_interpreter!(interpret_matrix_negate, "-[1 2; 3 4]", new_ref(Matrix2::from_vec(vec![-1i64,-3,-2,-4])).to_value());
 test_interpreter!(interpret_matrix_negate_float, "-[1.0 2.0; 3.0 4.0]", new_ref(Matrix2::from_vec(vec![F64::new(-1.0),F64::new(-3.0),F64::new(-2.0),F64::new(-4.0)])).to_value());

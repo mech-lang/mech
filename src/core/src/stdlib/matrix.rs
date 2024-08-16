@@ -92,6 +92,9 @@ impl_bool_urop!(TransposeM2, Matrix2<T>, Matrix2<T>, transpose_op);
 impl_bool_urop!(TransposeM3, Matrix3<T>, Matrix3<T>, transpose_op);
 impl_bool_urop!(TransposeM2x3, Matrix2x3<T>, Matrix3x2<T>, transpose_op);
 impl_bool_urop!(TransposeM3x2, Matrix3x2<T>, Matrix2x3<T>, transpose_op);
+impl_bool_urop!(TransposeV2, Vector2<T>, RowVector2<T>, transpose_op);
+impl_bool_urop!(TransposeV3, Vector3<T>, RowVector3<T>, transpose_op);
+impl_bool_urop!(TransposeV4, Vector4<T>, RowVector4<T>, transpose_op); 
 impl_bool_urop!(TransposeR2, RowVector2<T>, Vector2<T>, transpose_op);
 impl_bool_urop!(TransposeR3, RowVector3<T>, Vector3<T>, transpose_op);
 impl_bool_urop!(TransposeR4, RowVector4<T>, Vector4<T>, transpose_op); 
@@ -104,35 +107,18 @@ macro_rules! generate_transpose_match_arms {
     match $arg {
       $(
         $(
-          Value::$matrix_kind(Matrix::<$target_type>::RowVector4(arg)) => {
-            Ok(Box::new(TransposeR4{arg: arg.clone(), out: new_ref(Vector4::from_element($default)) }))
-          },
-          Value::$matrix_kind(Matrix::<$target_type>::RowVector3(arg)) => {
-            Ok(Box::new(TransposeR3{arg: arg.clone(), out: new_ref(Vector3::from_element($default)) }))
-          },
-          Value::$matrix_kind(Matrix::<$target_type>::RowVector2(arg)) => {
-            Ok(Box::new(TransposeR2{arg: arg.clone(), out: new_ref(Vector2::from_element($default)) }))
-          },
-          Value::$matrix_kind(Matrix::<$target_type>::Matrix2(arg)) => {
-            Ok(Box::new(TransposeM2{arg, out: new_ref(Matrix2::from_element($default))}))
-          },
-          Value::$matrix_kind(Matrix::<$target_type>::Matrix3(arg)) => {
-            Ok(Box::new(TransposeM3{arg, out: new_ref(Matrix3::from_element($default))}))
-          },
-          Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(arg)) => {
-            Ok(Box::new(TransposeM2x3{arg, out: new_ref(Matrix3x2::from_element($default))}))
-          },          
-          Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(arg)) => {
-            Ok(Box::new(TransposeM3x2{arg, out: new_ref(Matrix2x3::from_element($default))}))
-          },          
-          Value::$matrix_kind(Matrix::<$target_type>::RowDVector(arg)) => {
-            let length = {arg.borrow().len()};
-            Ok(Box::new(TransposeRD{arg, out: new_ref(DVector::from_element(length,$default))}))
-          },
-          Value::$matrix_kind(Matrix::<$target_type>::DVector(arg)) => {
-            let length = {arg.borrow().len()};
-            Ok(Box::new(TransposeVD{arg, out: new_ref(RowDVector::from_element(length,$default))}))
-          },
+          Value::$matrix_kind(Matrix::<$target_type>::Vector4(arg))    => Ok(Box::new(TransposeV4{arg: arg.clone(), out: new_ref(RowVector4::from_element($default)) })),
+          Value::$matrix_kind(Matrix::<$target_type>::Vector3(arg))    => Ok(Box::new(TransposeV3{arg: arg.clone(), out: new_ref(RowVector3::from_element($default)) })),
+          Value::$matrix_kind(Matrix::<$target_type>::Vector2(arg))    => Ok(Box::new(TransposeV2{arg: arg.clone(), out: new_ref(RowVector2::from_element($default)) })),
+          Value::$matrix_kind(Matrix::<$target_type>::DVector(arg))    => Ok(Box::new(TransposeVD{arg: arg.clone(), out: new_ref(RowDVector::from_element(arg.borrow().len(),$default))})),
+          Value::$matrix_kind(Matrix::<$target_type>::Matrix2(arg))    => Ok(Box::new(TransposeM2{arg: arg.clone(), out: new_ref(Matrix2::from_element($default))})),
+          Value::$matrix_kind(Matrix::<$target_type>::Matrix3(arg))    => Ok(Box::new(TransposeM3{arg: arg.clone(), out: new_ref(Matrix3::from_element($default))})),
+          Value::$matrix_kind(Matrix::<$target_type>::RowVector4(arg)) => Ok(Box::new(TransposeR4{arg: arg.clone(), out: new_ref(Vector4::from_element($default)) })),
+          Value::$matrix_kind(Matrix::<$target_type>::RowVector3(arg)) => Ok(Box::new(TransposeR3{arg: arg.clone(), out: new_ref(Vector3::from_element($default)) })),
+          Value::$matrix_kind(Matrix::<$target_type>::RowVector2(arg)) => Ok(Box::new(TransposeR2{arg: arg.clone(), out: new_ref(Vector2::from_element($default)) })),
+          Value::$matrix_kind(Matrix::<$target_type>::RowDVector(arg)) => Ok(Box::new(TransposeRD{arg: arg.clone(), out: new_ref(DVector::from_element(arg.borrow().len(),$default))})),
+          Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(arg))  => Ok(Box::new(TransposeM2x3{arg: arg.clone(), out: new_ref(Matrix3x2::from_element($default))})),          
+          Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(arg))  => Ok(Box::new(TransposeM3x2{arg: arg.clone(), out: new_ref(Matrix2x3::from_element($default))})),          
           Value::$matrix_kind(Matrix::<$target_type>::DMatrix(arg)) => {
             let (rows,cols) = {arg.borrow().shape()};
             Ok(Box::new(TransposeMD{arg, out: new_ref(DMatrix::from_element(rows,cols,$default))}))
