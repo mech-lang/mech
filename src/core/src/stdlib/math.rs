@@ -19,26 +19,15 @@ macro_rules! generate_urnop_match_arms2 {
       match $arg {
         $(
           $(
-            (Value::$lhs_type(arg)) => {
-              Ok(Box::new([<$lib $lhs_type Scalar>]{arg: arg.clone(), out: new_ref($default) }))},
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(arg))) => {
-              Ok(Box::new([<$lib $lhs_type M2>]{arg, out: new_ref(Matrix2::from_element($default))}))},
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(arg))) => {
-              Ok(Box::new([<$lib $lhs_type M3>]{arg, out: new_ref(Matrix3::from_element($default))}))},
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(arg))) => {
-              Ok(Box::new([<$lib $lhs_type R2>]{arg: arg.clone(), out: new_ref(RowVector2::from_element($default)) }))},
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(arg))) => {
-              Ok(Box::new([<$lib $lhs_type R3>]{arg: arg.clone(), out: new_ref(RowVector3::from_element($default)) }))},
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(arg))) => {
-              Ok(Box::new([<$lib $lhs_type R4>]{arg: arg.clone(), out: new_ref(RowVector4::from_element($default)) }))},
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(arg))) => {
-              Ok(Box::new([<$lib $lhs_type M2x3>]{arg, out: new_ref(Matrix2x3::from_element($default))}))},          
-            (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(arg))) => {
-              let length = {arg.borrow().len()};
-              Ok(Box::new([<$lib $lhs_type RD>]{arg, out: new_ref(RowDVector::from_element(length,$default))}))},
-            (Value::$matrix_kind(Matrix::<$target_type>::DVector(arg))) => {
-              let length = {arg.borrow().len()};
-              Ok(Box::new([<$lib $lhs_type VD>]{arg, out: new_ref(DVector::from_element(length,$default))}))},
+            (Value::$lhs_type(arg)) => Ok(Box::new([<$lib $lhs_type S>]{arg: arg.clone(), out: new_ref($default) })),
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(arg))) => Ok(Box::new([<$lib $lhs_type M2>]{arg, out: new_ref(Matrix2::from_element($default))})),
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(arg))) => Ok(Box::new([<$lib $lhs_type M3>]{arg, out: new_ref(Matrix3::from_element($default))})),
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(arg))) => Ok(Box::new([<$lib $lhs_type R2>]{arg: arg.clone(), out: new_ref(RowVector2::from_element($default)) })),
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(arg))) => Ok(Box::new([<$lib $lhs_type R3>]{arg: arg.clone(), out: new_ref(RowVector3::from_element($default)) })),
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(arg))) => Ok(Box::new([<$lib $lhs_type R4>]{arg: arg.clone(), out: new_ref(RowVector4::from_element($default)) })),
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(arg))) => Ok(Box::new([<$lib $lhs_type M2x3>]{arg, out: new_ref(Matrix2x3::from_element($default))})),         
+            (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(arg))) => Ok(Box::new([<$lib $lhs_type RD>]{arg: arg.clone(), out: new_ref(RowDVector::from_element(arg.borrow().len(),$default))})),
+            (Value::$matrix_kind(Matrix::<$target_type>::DVector(arg))) => Ok(Box::new([<$lib $lhs_type VD>]{arg: arg.clone(), out: new_ref(DVector::from_element(arg.borrow().len(),$default))})),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(arg))) => {
               let (rows,cols) = {arg.borrow().shape()};
               Ok(Box::new([<$lib $lhs_type MD>]{arg, out: new_ref(DMatrix::from_element(rows,cols,$default))}))},
@@ -78,24 +67,32 @@ macro_rules! cosf_vec_op {
         ((*$out)[i]).0 = cosf(((*$arg)[i]).0);
       }}};}
 
-impl_urop!(MathCosF32Scalar, F32, F32, cosf_op);
+impl_urop!(MathCosF32S, F32, F32, cosf_op);
 impl_urop!(MathCosF32M2, Matrix2<F32>, Matrix2<F32>, cosf_vec_op);
 impl_urop!(MathCosF32M3, Matrix3<F32>, Matrix3<F32>, cosf_vec_op);
 impl_urop!(MathCosF32R2, RowVector2<F32>, RowVector2<F32>, cosf_vec_op);
 impl_urop!(MathCosF32R3, RowVector3<F32>, RowVector3<F32>, cosf_vec_op);
 impl_urop!(MathCosF32R4, RowVector4<F32>, RowVector4<F32>, cosf_vec_op);
+impl_urop!(MathCosF32V2, Vector2<F32>, Vector2<F32>, cosf_vec_op);
+impl_urop!(MathCosF32V3, Vector3<F32>, Vector3<F32>, cosf_vec_op);
+impl_urop!(MathCosF32V4, Vector4<F32>, Vector4<F32>, cosf_vec_op);
 impl_urop!(MathCosF32M2x3, Matrix2x3<F32>, Matrix2x3<F32>, cosf_vec_op);
+impl_urop!(MathCosF32M3x2, Matrix3x2<F32>, Matrix3x2<F32>, cosf_vec_op);
 impl_urop!(MathCosF32VD, DVector<F32>, DVector<F32>, cosf_vec_op);
 impl_urop!(MathCosF32RD, RowDVector<F32>, RowDVector<F32>, cosf_vec_op);
 impl_urop!(MathCosF32MD, DMatrix<F32>, DMatrix<F32>, cosf_vec_op);
 
-impl_urop!(MathCosF64Scalar, F64, F64, cos_op);
+impl_urop!(MathCosF64S, F64, F64, cos_op);
 impl_urop!(MathCosF64M2, Matrix2<F64>, Matrix2<F64>, cos_vec_op);
 impl_urop!(MathCosF64M3, Matrix3<F64>, Matrix3<F64>, cos_vec_op);
 impl_urop!(MathCosF64R2, RowVector2<F64>, RowVector2<F64>, cos_vec_op);
 impl_urop!(MathCosF64R3, RowVector3<F64>, RowVector3<F64>, cos_vec_op);
 impl_urop!(MathCosF64R4, RowVector4<F64>, RowVector4<F64>, cos_vec_op);
+impl_urop!(MathCosF64V2, Vector2<F64>, Vector2<F64>, cos_vec_op);
+impl_urop!(MathCosF64V3, Vector3<F64>, Vector3<F64>, cos_vec_op);
+impl_urop!(MathCosF64V4, Vector4<F64>, Vector4<F64>, cos_vec_op);
 impl_urop!(MathCosF64M2x3, Matrix2x3<F64>, Matrix2x3<F64>, cos_vec_op);
+impl_urop!(MathCosF64M3x2, Matrix3x2<F64>, Matrix3x2<F64>, cos_vec_op);
 impl_urop!(MathCosF64VD, DVector<F64>, DVector<F64>, cos_vec_op);
 impl_urop!(MathCosF64RD, RowDVector<F64>, RowDVector<F64>, cos_vec_op);
 impl_urop!(MathCosF64MD, DMatrix<F64>, DMatrix<F64>, cos_vec_op);
@@ -156,24 +153,32 @@ macro_rules! sinf_vec_op {
         ((*$out)[i]).0 = sinf(((*$arg)[i]).0);
       }}};}
 
-impl_urop!(MathSinF32Scalar, F32, F32, sinf_op);
+impl_urop!(MathSinF32S, F32, F32, sinf_op);
 impl_urop!(MathSinF32M2, Matrix2<F32>, Matrix2<F32>, sinf_vec_op);
 impl_urop!(MathSinF32M3, Matrix3<F32>, Matrix3<F32>, sinf_vec_op);
 impl_urop!(MathSinF32R2, RowVector2<F32>, RowVector2<F32>, sinf_vec_op);
 impl_urop!(MathSinF32R3, RowVector3<F32>, RowVector3<F32>, sinf_vec_op);
 impl_urop!(MathSinF32R4, RowVector4<F32>, RowVector4<F32>, sinf_vec_op);
+impl_urop!(MathSinF32V2, Vector2<F32>, Vector2<F32>, sinf_vec_op);
+impl_urop!(MathSinF32V3, Vector3<F32>, Vector3<F32>, sinf_vec_op);
+impl_urop!(MathSinF32V4, Vector4<F32>, Vector4<F32>, sinf_vec_op);
 impl_urop!(MathSinF32M2x3, Matrix2x3<F32>, Matrix2x3<F32>, sinf_vec_op);
+impl_urop!(MathSinF32M3x2, Matrix3x2<F32>, Matrix3x2<F32>, sinf_vec_op);
 impl_urop!(MathSinF32VD, DVector<F32>, DVector<F32>, sinf_vec_op);
 impl_urop!(MathSinF32RD, RowDVector<F32>, RowDVector<F32>, sinf_vec_op);
 impl_urop!(MathSinF32MD, DMatrix<F32>, DMatrix<F32>, sinf_vec_op);
 
-impl_urop!(MathSinF64Scalar, F64, F64, sin_op);
+impl_urop!(MathSinF64S, F64, F64, sin_op);
 impl_urop!(MathSinF64M2, Matrix2<F64>, Matrix2<F64>, sin_vec_op);
 impl_urop!(MathSinF64M3, Matrix3<F64>, Matrix3<F64>, sin_vec_op);
 impl_urop!(MathSinF64R2, RowVector2<F64>, RowVector2<F64>, sin_vec_op);
 impl_urop!(MathSinF64R3, RowVector3<F64>, RowVector3<F64>, sin_vec_op);
 impl_urop!(MathSinF64R4, RowVector4<F64>, RowVector4<F64>, sin_vec_op);
+impl_urop!(MathSinF64V2, Vector2<F64>, Vector2<F64>, sin_vec_op);
+impl_urop!(MathSinF64V3, Vector3<F64>, Vector3<F64>, sin_vec_op);
+impl_urop!(MathSinF64V4, Vector4<F64>, Vector4<F64>, sin_vec_op);
 impl_urop!(MathSinF64M2x3, Matrix2x3<F64>, Matrix2x3<F64>, sin_vec_op);
+impl_urop!(MathSinF64M3x2, Matrix3x2<F64>, Matrix3x2<F64>, sin_vec_op);
 impl_urop!(MathSinF64VD, DVector<F64>, DVector<F64>, sin_vec_op);
 impl_urop!(MathSinF64RD, RowDVector<F64>, RowDVector<F64>, sin_vec_op);
 impl_urop!(MathSinF64MD, DMatrix<F64>, DMatrix<F64>, sin_vec_op);
@@ -229,34 +234,52 @@ macro_rules! add_scalar_rhs_op {
     unsafe { *$out = (*$rhs).add_scalar(*$lhs); }
   };}
 
-impl_binop!(AddScalar, T,T,T, add_op);
+impl_binop!(AddS, T,T,T, add_op);
 impl_binop!(AddSM2x3, T, Matrix2x3<T>, Matrix2x3<T>,add_scalar_rhs_op);
+impl_binop!(AddSM3x2, T, Matrix3x2<T>, Matrix3x2<T>,add_scalar_rhs_op);
+impl_binop!(AddSM1, T, Matrix1<T>, Matrix1<T>,add_scalar_rhs_op);
 impl_binop!(AddSM2, T, Matrix2<T>, Matrix2<T>,add_scalar_rhs_op);
 impl_binop!(AddSM3, T, Matrix3<T>, Matrix3<T>,add_scalar_rhs_op);
+impl_binop!(AddSM4, T, Matrix4<T>, Matrix4<T>,add_scalar_rhs_op);
 impl_binop!(AddSR2, T, RowVector2<T>, RowVector2<T>,add_scalar_rhs_op);
 impl_binop!(AddSR3, T, RowVector3<T>, RowVector3<T>,add_scalar_rhs_op);
 impl_binop!(AddSR4, T, RowVector4<T>, RowVector4<T>,add_scalar_rhs_op);
 impl_binop!(AddSRD, T, RowDVector<T>, RowDVector<T>,add_scalar_rhs_op);
+impl_binop!(AddSV2, T, Vector2<T>, Vector2<T>,add_scalar_rhs_op);
+impl_binop!(AddSV3, T, Vector3<T>, Vector3<T>,add_scalar_rhs_op);
+impl_binop!(AddSV4, T, Vector4<T>, Vector4<T>,add_scalar_rhs_op);
 impl_binop!(AddSVD, T, DVector<T>, DVector<T>,add_scalar_rhs_op);
 impl_binop!(AddSMD, T, DMatrix<T>, DMatrix<T>,add_scalar_rhs_op);
 impl_binop!(AddM2x3S, Matrix2x3<T>, T, Matrix2x3<T>,add_scalar_lhs_op);
+impl_binop!(AddM3x2S, Matrix3x2<T>, T, Matrix3x2<T>,add_scalar_lhs_op);
+impl_binop!(AddM1S, Matrix1<T>, T, Matrix1<T>,add_scalar_lhs_op);
 impl_binop!(AddM2S, Matrix2<T>, T, Matrix2<T>,add_scalar_lhs_op);
 impl_binop!(AddM3S, Matrix3<T>, T, Matrix3<T>,add_scalar_lhs_op);
+impl_binop!(AddM4S, Matrix4<T>, T, Matrix4<T>,add_scalar_lhs_op);
+impl_binop!(AddMDS, DMatrix<T>, T, DMatrix<T>,add_scalar_lhs_op);
 impl_binop!(AddR2S, RowVector2<T>, T, RowVector2<T>,add_scalar_lhs_op);
 impl_binop!(AddR3S, RowVector3<T>, T, RowVector3<T>,add_scalar_lhs_op);
 impl_binop!(AddR4S, RowVector4<T>, T, RowVector4<T>,add_scalar_lhs_op);
 impl_binop!(AddRDS, RowDVector<T>, T, RowDVector<T>,add_scalar_lhs_op);
+impl_binop!(AddV2S, Vector2<T>, T, Vector2<T>,add_scalar_lhs_op);
+impl_binop!(AddV3S, Vector3<T>, T, Vector3<T>,add_scalar_lhs_op);
+impl_binop!(AddV4S, Vector4<T>, T, Vector4<T>,add_scalar_lhs_op);
 impl_binop!(AddVDS, DVector<T>, T, DVector<T>,add_scalar_lhs_op);
-impl_binop!(AddMDS, DMatrix<T>, T, DMatrix<T>,add_scalar_lhs_op);
+impl_binop!(AddM1M1, Matrix1<T>,Matrix1<T>,Matrix1<T>, add_op);
 impl_binop!(AddM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>, add_op);
 impl_binop!(AddM3M3, Matrix3<T>,Matrix3<T>,Matrix3<T>, add_op);
+impl_binop!(AddM4M4, Matrix4<T>,Matrix4<T>,Matrix4<T>, add_op);
+impl_binop!(AddMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>, addto_op);
 impl_binop!(AddM2x3M2x3, Matrix2x3<T>,Matrix2x3<T>,Matrix2x3<T>, add_op);
+impl_binop!(AddM3x2M3x2, Matrix3x2<T>,Matrix3x2<T>,Matrix3x2<T>, add_op);
 impl_binop!(AddR2R2, RowVector2<T>, RowVector2<T>, RowVector2<T>, add_op);
 impl_binop!(AddR3R3, RowVector3<T>, RowVector3<T>, RowVector3<T>, add_op);
 impl_binop!(AddR4R4, RowVector4<T>, RowVector4<T>, RowVector4<T>, add_op);
 impl_binop!(AddRDRD, RowDVector<T>, RowDVector<T>, RowDVector<T>, addto_op);
-impl_binop!(AddVDVD, DVector<T>,DVector<T>,DVector<T>, addto_op);
-impl_binop!(AddMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>, addto_op);
+impl_binop!(AddV2V2, Vector2<T>, Vector2<T>, Vector2<T>, add_op);
+impl_binop!(AddV3V3, Vector3<T>, Vector3<T>, Vector3<T>, add_op);
+impl_binop!(AddV4V4, Vector4<T>, Vector4<T>, Vector4<T>, add_op);
+impl_binop!(AddVDVD, DVector<T>, DVector<T>, DVector<T>, addto_op);
 
 fn generate_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   generate_binop_match_arms!(
@@ -305,7 +328,7 @@ macro_rules! sub_scalar_rhs_op {
         (*$out)[i] = (*$lhs) - (*$rhs)[i];
       }}};}
 
-impl_binop!(SubScalar, T,T,T, sub_op);
+impl_binop!(SubS, T,T,T, sub_op);
 impl_binop!(SubSM2x3, T, Matrix2x3<T>, Matrix2x3<T>,sub_scalar_rhs_op);
 impl_binop!(SubSM2, T, Matrix2<T>, Matrix2<T>,sub_scalar_rhs_op);
 impl_binop!(SubSM3, T, Matrix3<T>, Matrix3<T>,sub_scalar_rhs_op);
@@ -322,6 +345,9 @@ impl_binop!(SubR2S, RowVector2<T>, T, RowVector2<T>,sub_scalar_lhs_op);
 impl_binop!(SubR3S, RowVector3<T>, T, RowVector3<T>,sub_scalar_lhs_op);
 impl_binop!(SubR4S, RowVector4<T>, T, RowVector4<T>,sub_scalar_lhs_op);
 impl_binop!(SubRDS, RowDVector<T>, T, RowDVector<T>,sub_scalar_lhs_op);
+impl_binop!(SubV2S, Vector2<T>, T, Vector2<T>,sub_scalar_lhs_op);
+impl_binop!(SubV3S, Vector3<T>, T, Vector3<T>,sub_scalar_lhs_op);
+impl_binop!(SubV4S, Vector4<T>, T, Vector4<T>,sub_scalar_lhs_op);
 impl_binop!(SubVDS, DVector<T>, T, DVector<T>,sub_scalar_lhs_op);
 impl_binop!(SubMDS, DMatrix<T>, T, DMatrix<T>,sub_scalar_lhs_op);
 impl_binop!(SubM2M2, Matrix2<T>,Matrix2<T>,Matrix2<T>, sub_op);
@@ -561,7 +587,7 @@ macro_rules! impl_neg_op {
       fn to_string(&self) -> String { format!("{:?}", self) }
     }};}
 
-impl_neg_op!(NegateScalar, T, neg_op);
+impl_neg_op!(NegateS, T, neg_op);
 impl_neg_op!(NegateM2, Matrix2<T>,neg_op);
 impl_neg_op!(NegateM3, Matrix3<T>,neg_op);
 impl_neg_op!(NegateM2x3, Matrix2x3<T>,neg_op);

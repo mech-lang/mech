@@ -188,7 +188,7 @@ macro_rules! not_vec_op {
         (*$out)[i] = !(*$arg)[i];
       }}};}
 
-impl_logic_urnop!(NotScalar, bool, bool, not_op);
+impl_logic_urnop!(NotS, bool, bool, not_op);
 impl_logic_urnop!(NotM2, Matrix2<bool>, Matrix2<bool>, not_vec_op);
 impl_logic_urnop!(NotM3, Matrix3<bool>, Matrix3<bool>, not_vec_op);
 impl_logic_urnop!(NotM2x3, Matrix2x3<bool>, Matrix2x3<bool>, not_vec_op);
