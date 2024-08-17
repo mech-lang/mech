@@ -2,10 +2,11 @@
 use crate::stdlib::*;
 use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix3x2, Matrix6, Matrix2};
 
-// Access ---------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// Access 
+// ----------------------------------------------------------------------------
 
-
-
+// Record Access --------------------------------------------------------------
 
 #[derive(Debug)]
 struct RecordAccess {
@@ -18,6 +19,8 @@ impl MechFunction for RecordAccess {
   fn out(&self) -> Value { self.source.clone() }
   fn to_string(&self) -> String { format!("{:?}", self) }
 }
+
+// Table Access ---------------------------------------------------------------
 
 macro_rules! impl_col_access_fxn {
   ($fxn_name:ident, $vector_size:ident, $out_type:ty) => {

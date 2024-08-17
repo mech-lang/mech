@@ -81,6 +81,7 @@ test_interpreter!(interpret_formula_logic_or2, "false | false", Value::Bool(new_
 test_interpreter!(interpret_formula_logic_xor_vec, "[true false false] ⊕ [true true false]", Value::MatrixBool(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![false,true,false])))));
 test_interpreter!(interpret_formula_logic_not, "!false", Value::Bool(new_ref(true)));
 test_interpreter!(interpret_formula_logic_not_vec, "![false true false]", Value::MatrixBool(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![true,false,true])))));
+//test_interpreter!(interpret_formula_logic_not_vec1, "![false]", Value::MatrixBool(Matrix::Matrix1(new_ref(Matrix1::from_vec(vec![true])))));
 
 test_interpreter!(interpret_statement_variable_define, "x := 123", Value::I64(new_ref(123)));
 
@@ -109,6 +110,8 @@ test_interpreter!(interpret_matrix_add_v2s, "[1;2] + 3", new_ref(Vector2::from_v
 test_interpreter!(interpret_matrix_mat2_f64, "[1.1 2.2; 3.3 4.4]", Value::MatrixF64(Matrix::Matrix2(new_ref(Matrix2::from_vec(vec![F64::new(1.1),F64::new(3.3),F64::new(2.2),F64::new(4.4)])))));
 test_interpreter!(interpret_matrix_negate, "-[1 2; 3 4]", new_ref(Matrix2::from_vec(vec![-1i64,-3,-2,-4])).to_value());
 test_interpreter!(interpret_matrix_negate_float, "-[1.0 2.0; 3.0 4.0]", new_ref(Matrix2::from_vec(vec![F64::new(-1.0),F64::new(-3.0),F64::new(-2.0),F64::new(-4.0)])).to_value());
+test_interpreter!(interpret_matrix_negate_mat1, "-[1]", new_ref(Matrix1::from_vec(vec![-1i64])).to_value());
+
 test_interpreter!(interpret_matrix_row3_add, "[1 2 3] + [4 5 6]", new_ref(RowVector3::from_vec(vec![5i64,7,9])).to_value());
 test_interpreter!(interpret_matrix_row3_mul_scalar, "[1 2 3] * 3", new_ref(RowVector3::from_vec(vec![3i64,6,9])).to_value());
 test_interpreter!(interpret_matrix_row3_mul_scalar2, "3 * [1 2 3]", new_ref(RowVector3::from_vec(vec![3i64,6,9])).to_value());
@@ -122,8 +125,9 @@ test_interpreter!(interpret_matrix_gt, "x := [66.0 2.0 3.0; 66.0 5.0 66.0]; y :=
 test_interpreter!(interpret_matrix_lt, "x := [66.0 2.0 3.0; 66.0 4.0 66.0]; y := [1.0 2.0 3.0; 4.0 5.0 6.0]; x < y", new_ref(Matrix2x3::from_vec(vec![false,false,false,true,false,false])).to_value());
 test_interpreter!(interpret_matrix_lt_int, "x := [66 2 3; 66 4 66]; y := [1 2 3; 4 5 6]; x < y", new_ref(Matrix2x3::from_vec(vec![false,false,false,true,false,false])).to_value());
 
-test_interpreter!(interpret_matrix_mat2_matmul_ref, "a := [1 2; 3 4]; b := [4 5; 6 7]; c := a ** b", new_ref(Matrix2::from_vec(vec![16i64,36,19,43])).to_value());
-test_interpreter!(interpret_matrix_mat2x3_matmul_ref, "a := [1.0 2.0 3.0; 4.0 5.0 6.0]; b := [4.0 5.0; 6.0 7.0; 8.0 9.0]; c := a ** b", new_ref(Matrix2::from_vec(vec![F64::new(40.0),F64::new(94.0),F64::new(46.0),F64::new(109.0)])).to_value());
+test_interpreter!(interpret_matrix_matmul_mat1, "[2] ** [10]", new_ref(Matrix1::from_vec(vec![20i64])).to_value());
+test_interpreter!(interpret_matrix_matmul_mat2_ref, "a := [1 2; 3 4]; b := [4 5; 6 7]; c := a ** b", new_ref(Matrix2::from_vec(vec![16i64,36,19,43])).to_value());
+test_interpreter!(interpret_matrixmatmul_mat2x3_ref, "a := [1.0 2.0 3.0; 4.0 5.0 6.0]; b := [4.0 5.0; 6.0 7.0; 8.0 9.0]; c := a ** b", new_ref(Matrix2::from_vec(vec![F64::new(40.0),F64::new(94.0),F64::new(46.0),F64::new(109.0)])).to_value());
 
 
 test_interpreter!(interpret_tuple, "(1,true)", Value::Tuple(MechTuple::from_vec(vec![Value::I64(new_ref(1)), Value::Bool(new_ref(true))])));
