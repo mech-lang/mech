@@ -20,28 +20,10 @@ extern crate nalgebra as na;
 extern crate tabled;
 extern crate libm;
 
-pub mod value;
-pub mod parser;
-pub mod interpreter;
-pub mod matrix;
-pub mod types;
-pub mod functions;
-pub mod kind;
-pub mod stdlib;
-
 use mech_core::*;
 use mech_core::nodes::*;
 use std::cell::RefCell;
 use std::rc::Rc;
-
-pub use self::stdlib::*;
-pub use self::value::*;
-pub use self::parser::*;
-pub use self::interpreter::*;
-pub use self::matrix::*;
-pub use self::types::*;
-pub use self::functions::*;
-pub use self::kind::*;
 
 #[cfg(not(feature = "no-std"))] use core::fmt;
 #[cfg(feature = "no-std")] use alloc::fmt;
@@ -58,6 +40,21 @@ use nom::{
 
 use std::collections::HashMap;
 use colored::*;
+
+pub mod mechdown;
+pub mod expressions;
+pub mod statements;
+pub mod structures;
+pub mod base;
+pub mod parser;
+
+pub use crate::parser::*;
+pub use crate::mechdown::*;
+pub use crate::expressions::*;
+pub use crate::statements::*;
+pub use crate::structures::*;
+pub use crate::base::*;
+
 
 /// Unicode grapheme group utilities.
 /// Current implementation does not guarantee correct behavior for
@@ -367,8 +364,7 @@ impl<'a> nom::error::ParseError<ParseString<'a>> for ParseError<'a> {
   }
 }
 
-// 7. Reporting errors
-// -----------------------
+
 
 /// This struct is responsible for analysing text, interpreting indices
 /// and ranges, and producing formatted messages.

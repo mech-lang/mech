@@ -4,11 +4,12 @@ use crate::stdlib::math::*;
 use crate::stdlib::logic::*;
 use crate::stdlib::compare::*;
 use crate::stdlib::matrix::*;
-use crate::stdlib::range::*;
+use crate::stdlib::table::*;
+use crate::stdlib::range::{RangeInclusive, RangeExclusive};
 use crate::*;
+use crate::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*};
+use crate::nodes::Matrix as Mat;
 
-use mech_core::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*};
-use mech_core::nodes::Matrix as Mat;
 use na::DMatrix;
 use indexmap::set::IndexSet;
 use indexmap::map::IndexMap;
@@ -58,8 +59,6 @@ impl Interpreter {
   }
 }
 
-
-
 //-----------------------------------------------------------------------------
 
 fn program(program: &Program, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
@@ -88,7 +87,6 @@ fn section_element(element: &SectionElement, plan: Plan, symbols: SymbolTableRef
     SectionElement::Section(sctn) => todo!(),
     SectionElement::Comment(cmmnt) => Value::Empty,
     SectionElement::Paragraph(p) => Value::Empty,
-    SectionElement::MechCode(code) => todo!(),
     SectionElement::UnorderedList(ul) => todo!(),
     SectionElement::CodeBlock => todo!(),
     SectionElement::OrderedList => todo!(),
@@ -351,24 +349,12 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
   match sbscrpt {
     Subscript::Dot(x) => {
       let key = x.hash();
-      match val {
-        Value::Record(rcrd) => {
-          match rcrd.map.get(&Value::Id(key)) {
-            Some(value) => return Ok(value.clone()),
-            None => { return Err(MechError{tokens: x.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(key)});}
-          }
-        }
-        Value::MutableReference(r) => match &*r.borrow() {
-          Value::Record(rcrd) => {
-            match rcrd.map.get(&Value::Id(key)) {
-              Some(value) => return Ok(value.clone()),
-              None => { return Err(MechError{tokens: x.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(key)});}
-            }
-          }
-          _ => todo!(),
-        }
-        _ => todo!(),
-      }
+      let fxn_input: Vec<Value> = vec![val.clone(), Value::Id(key)];
+      let new_fxn = AccessColumn{}.compile(&fxn_input)?;
+      new_fxn.solve();
+      let res = new_fxn.out();
+      plan.borrow_mut().push(new_fxn);
+      return Ok(res);
     },
     Subscript::DotInt(x) => {
       let mut fxn_input = vec![val.clone()];
@@ -584,7 +570,7 @@ fn set(m: &Set, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) ->
 
 fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> { 
   let mut rows = vec![];
-  let header = table_header(&t.header)?;
+  let (ids,col_kinds) = table_header(&t.header, functions.clone())?;
   let mut cols = 0;
   // Interpret the rows
   for row in &t.rows {
@@ -605,21 +591,35 @@ fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
   }
   // Build the table
   let mut data_map = IndexMap::new();
-  for (field_label,column) in header.iter().zip(data.iter()) {
-    data_map.insert(field_label.clone(),column.clone());
+  for (field_label,(column,knd)) in ids.iter().zip(data.iter().zip(col_kinds)) {
+    let val = Value::to_matrix(column.clone(),column.len(),1);
+    match knd {
+      ValueKind::I64 => {data_map.insert(field_label.clone(),(knd,val));},
+      ValueKind::U8 => {
+        let vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_u8().unwrap().to_value()).collect::<Vec<Value>>();
+        data_map.insert(field_label.clone(),(knd,Value::to_matrix(vals.clone(),vals.len(),1)));
+      },
+      ValueKind::Bool => {
+        let vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_bool().unwrap().to_value()).collect::<Vec<Value>>();
+        data_map.insert(field_label.clone(),(knd,Value::to_matrix(vals.clone(),vals.len(),1)));
+      },
+      _ => todo!(),
+    };
   }
   let tbl = MechTable{rows: t.rows.len(), cols, data: data_map.clone()  };
   Ok(Value::Table(tbl))
 }
 
-fn table_header(fields: &Vec<Field>) -> MResult<Vec<Value>> {
-  let mut row: Vec<Value> = Vec::new();
+fn table_header(fields: &Vec<Field>, functions: FunctionsRef) -> MResult<(Vec<Value>,Vec<ValueKind>)> {
+  let mut ids: Vec<Value> = Vec::new();
+  let mut kinds: Vec<ValueKind> = Vec::new();
   for f in fields {
     let id = f.name.hash();
-    let kind = &f.kind;
-    row.push(Value::Id(id));
+    let kind = kind_annotation(&f.kind.kind, functions.clone())?;
+    ids.push(Value::Id(id));
+    kinds.push(kind.to_value_kind(functions.clone())?);
   }
-  Ok(row)
+  Ok((ids,kinds))
 }
 
 fn table_row(r: &TableRow, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Vec<Value>> {
@@ -693,8 +693,8 @@ fn matrix_row(r: &MatrixRow, plan: Plan, symbols: SymbolTableRef, functions: Fun
     Value::I32(_)  => {Value::MatrixI32(i32::to_matrix(row.iter().map(|v| v.as_i32().unwrap().borrow().clone()).collect(),1,row.len()))},
     Value::I64(_)  => {Value::MatrixI64(i64::to_matrix(row.iter().map(|v| v.as_i64().unwrap().borrow().clone()).collect(),1,row.len()))},
     Value::I128(_) => {Value::MatrixI128(i128::to_matrix(row.iter().map(|v| v.as_i128().unwrap().borrow().clone()).collect(),1,row.len()))},
-    Value::F32(_)  => {Value::MatrixF32(F32::to_matrix(row.iter().map(|v| F32::new(v.as_f32().unwrap().borrow().clone())).collect(),1,row.len()))},
-    Value::F64(_)  => {Value::MatrixF64(F64::to_matrix(row.iter().map(|v| F64::new(v.as_f64().unwrap().borrow().clone())).collect(),1,row.len()))},
+    Value::F32(_)  => {Value::MatrixF32(F32::to_matrix(row.iter().map(|v| v.as_f32().unwrap().borrow().clone()).collect(),1,row.len()))},
+    Value::F64(_)  => {Value::MatrixF64(F64::to_matrix(row.iter().map(|v| v.as_f64().unwrap().borrow().clone()).collect(),1,row.len()))},
     _ => todo!(),
   };
   Ok(mat)
@@ -779,7 +779,7 @@ fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
       FormulaOperator::Comparison(ComparisonOp::GreaterThan) => CompareGreaterThan{}.compile(&vec![lhs,rhs])?,
 
       FormulaOperator::Logic(LogicOp::And) => LogicAnd{}.compile(&vec![lhs,rhs])?,
-      FormulaOperator::Logic(LogicOp::Or) => LogicOr{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::Logic(LogicOp::Or)  => LogicOr{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Logic(LogicOp::Not) => LogicNot{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Logic(LogicOp::Xor) => LogicXor{}.compile(&vec![lhs,rhs])?,
     };

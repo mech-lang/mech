@@ -4,7 +4,7 @@ use mech::format_parse_tree;
 use mech_core::*;
 use mech_syntax::parser;
 //use mech_syntax::analyzer::*;
-use mech_syntax::interpreter::*;
+use mech_core::interpreter::*;
 use std::time::Instant;
 use std::fs;
 use std::env;
@@ -25,7 +25,7 @@ use serde_json;
 
 
 fn main() -> Result<(), MechError> {
-  let version = "0.2.6";
+  let version = "0.2.7";
   let text_logo = r#"
   ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐   ┌─┐
   └───┐ ┌───┘ └──────┘ │ │ └┐ │ │ │   │ │
