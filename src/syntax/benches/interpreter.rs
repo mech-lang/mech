@@ -24,7 +24,7 @@ use std::ops::*;
 use mech_core::*;
 use mech_syntax::parser;
 //use mech_syntax::analyzer::*;
-use mech_syntax::interpreter::*;
+use mech_core::interpreter::*;
 use mech_syntax::parser::{parse};
 use nalgebra::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix6, Matrix2};
 
