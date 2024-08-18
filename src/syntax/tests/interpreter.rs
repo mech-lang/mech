@@ -140,6 +140,8 @@ test_interpreter!(interpret_slice_f64, "a := [1.0,2.0,3.0]; a[2]", Value::F64(ne
 test_interpreter!(interpret_slice_2d_f64, "a := [1,2;3,4]; a[2,1]", Value::I64(new_ref(3)));
 test_interpreter!(interpret_slice_range, "x := 4..10; x[1..=3]", Value::MatrixI64(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![4,5,6])))));
 test_interpreter!(interpret_slice_range_2d, "x := [1 2 3; 4 5 6; 7 8 9]; x[2..=3, 2..=3]", Value::MatrixI64(Matrix::DMatrix(new_ref(DMatrix::from_vec(2,2,vec![5,8,6,9])))));
+test_interpreter!(interpret_slice_sclar_range, "ix := [true false true]'; x := [1 2 3; 4 5 6; 7 8 9]; x[2,ix]", Value::MatrixI64(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![4,6])))));
+test_interpreter!(interpret_slice_range_scalar, "ix := [true false true]'; x := [1 2 3; 4 5 6; 7 8 9]; x[ix,2]", Value::MatrixI64(Matrix::DVector(new_ref(DVector::from_vec(vec![2,8])))));
 test_interpreter!(interpret_slice_all, "x := [1 2; 4 5]; x[:]", Value::MatrixI64(Matrix::DVector(new_ref(DVector::from_vec(vec![1,4,2,5])))));
 test_interpreter!(interpret_slice_all_2d, "x := [1 2; 4 5]; x[:,2]", Value::MatrixI64(Matrix::DVector(new_ref(DVector::from_vec(vec![2,5])))));
 test_interpreter!(interpret_slice_all_2d_row, "x := [1 2; 4 5]; x[2,:]", Value::MatrixI64(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![4,5])))));
