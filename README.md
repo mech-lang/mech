@@ -37,7 +37,7 @@ This work is happening in the v0.2-beta branch of the repository.
 
 The current target for the release of v0.2 is October 2024.
 
-See [ROADMAP.md](ROADMAP.md) for more.
+See [ROADMAP.mec](ROADMAP.mec) for more.
 
 ## License
 
