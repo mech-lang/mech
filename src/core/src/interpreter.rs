@@ -1,10 +1,11 @@
 use crate::matrix::{Matrix, ToMatrix};
 use crate::kind::Kind;
-use crate::stdlib::math::*;
-use crate::stdlib::logic::*;
-use crate::stdlib::compare::*;
-use crate::stdlib::matrix::*;
-use crate::stdlib::table::*;
+use crate::stdlib::{math::*,
+                    logic::*,
+                    compare::*,
+                    matrix::*,
+                    table::*,
+                    convert::*};
 use crate::stdlib::range::{RangeInclusive, RangeExclusive};
 use crate::*;
 use crate::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*};
