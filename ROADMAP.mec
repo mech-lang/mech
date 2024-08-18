@@ -8,34 +8,24 @@ Implementation: started 2018
 
 (b) Stage 2 - Beta v0.1.0 - ?
 
-Released: December 2022
+Started: December 2022
+Currently: v0.2.7 (2024)
+
+- v0.2 (data specification)
+- v0.3 (program specification) 
+- v0.4 (system specification) 
 
 (c) Stage 3 - Stable v1.0.0
 
 Target release date: ???
 
-Version 0.2.0 (Fall 2024)
+Version 0.3.0 (Spring 2025)
 -------------------------------------------------------------------------------
 
-Current work is focused on reimplementing the core of the Mech language to 
-reorient programs around the state machines.
-
-(Some of this will likely move to v0.3.0, it's a lot to do in one summer)
-
-- [x] Monorepo
-- [ ] Types
-  - [x] Tuples
-  - [x] Type definitions
-  - [x] Specifying units
   - [ ] Dec64
   - [ ] Currency
-  - [x] Scientific notation
-- [ ] Table redo
-  - [x] Simplify indexing
-  - [x] Support efficient tensors
   - [ ] Autograd syntax
   - [ ] History syntax
-  - [x] HashTable/HashSet support
 - [ ] Database redo
   - [ ] ACID
   - [ ] Persistence
@@ -47,18 +37,14 @@ reorient programs around the state machines.
   - [ ] QOS
   - [ ] Inbox
   - [ ] Capabilities
-- [x] State machines
-  - [x] Atomic datatypes
-  - [ ] Delays
-  - [x] Pattern Matching
 - [ ] Machines revamp
   - [ ] Packaging
   - [ ] Reuse
   - [ ] Composition
   - [ ] Explicit importing
   - [ ] Remapping
-  - [ ] Specifying versions
-- Editor
+  - [ ] Specifying versions  
+- [ ] Editor
   - [ ] Start and stop cores
   - [ ] Save and load programs
   - [ ] Workspace explorer
@@ -66,7 +52,7 @@ reorient programs around the state machines.
   - [ ] Syntax highlighting
   - [ ] Embed programs
   - [ ] Display errors
-- Machines
+- [ ] Machines
   - [ ] json
   - [ ] sockets
   - [ ] serial
@@ -75,12 +61,84 @@ reorient programs around the state machines.
   - [ ] maps
   - [ ] plot
   - [ ] gpgpu
+- State machines
+  - [ ] Specification
+  - [ ] Definition
+
+Version 0.2.0 (Fall 2024)
+-------------------------------------------------------------------------------
+
+Current work is focused on reimplementing the core of the Mech language to 
+reorient programs around state machines. Version 0.2 will be focused on data
+specification - entering data into the system, slicing, remixing, and 
+reshaping it for use in program logic.
+
+- [x] Monorepo
+- New Literals
+  - [ ] Enums
+  - [x] Atoms
+  - [ ] Kind definitions
+  - [x] Specifying units
+  - [ ] Scientific notation
+  - [ ] Imaginary Numbers
+- Table redo
+  - [x] Different kinds: Table, Matrix, Record, Set, Tuple
+  - [x] Simplify indexing
+  - [x] HashTable/HashSet support
+- Stdlib Redo
+  - [x] Math
+  - [x] Compare
+  - [x] Logic
+  - [x] Range
+  - [x] Access
+  - [x] Convert
+- Parser Redo
+  - [x] Mechdown
+  - [x] Statements
+  - [x] Expressions
+  - [x] Structures
+  - [ ] Formatter
+- Mechdown Redo
+  - [x] Headers
+  - [x] Paragraphs
+  - [ ] Code Block
+  - [ ] Ordered List
+  - [ ] Block Quote
+  - [ ] Thematic Break
+  - [ ] Image
+  - [ ] Link
+- Function Redo
+  - [x] FXN Call
+  - [x] FXN Defintiion
+- Expression
+  - [x] Var  
+  - [x] Range
+  - [x] Slice
+  - [x] Forumula
+  - [x] Struct
+  - [x] Literal
+  - [x] Function call
+  - [ ] FSM Pipe
+- Statement
+  - [x] VarDefine
+  - [ ] VarAssign
+  - [ ] Kind Define
+  - [ ] Enum Define
+  - [ ] FSM Declaration
+  - [ ] Split 
+  - [ ] Flatten 
+- Matrix
+  - [x] Multiply
+  - [x] Transpose
+  - [ ] Solve linear system
+  - [ ] Cross
+  - [ ] Dot
 - Docs
-  - User Guides
-    - [ ] Learn Mech in 15 Minutes
-    - [ ] Tutorials
-    - [ ] How-Tos
-    - [ ] Mech for X
+  - [ ] Language Spec
+  - [x] Learn Mech in 15 Minutes
+  - [ ] Tutorials
+  - [ ] How-Tos
+  - [ ] Mech for X
 - Website
   - [ ] Homepage
   - [ ] Blog
