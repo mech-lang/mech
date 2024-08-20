@@ -168,6 +168,7 @@ test_interpreter!(interpret_dot_index_table2, "x := { x<i64> y<u8>| 1 2; 4 5}; x
 test_interpreter!(interpret_dot_index_table3, "x := { x<i64> y<bool>| 1 true; 4 false; 3 true}; x.y", Value::MatrixBool(Matrix::Vector3(new_ref(Vector3::from_vec(vec![true, false, true])))));
 test_interpreter!(interpret_dot_index_table4, "x := { x<i64> y<u8>| 1 2; 3 4; 5 6; 7 8 }; x.x", Value::MatrixI64(Matrix::Vector4(new_ref(Vector4::from_vec(vec![1,3,5,7])))));
 test_interpreter!(interpret_dot_index_table5, "x := { x<i64> y<i8>| 1 2; 3 4; 5 6; 7 8 }; x.y", Value::MatrixI8(Matrix::Vector4(new_ref(Vector4::from_vec(vec![2,4,6,8])))));
+test_interpreter!(interpret_dot_index_table6, "x := {x<u32> y<f32> z<i8>|1 2 3;4 5 6}; x.y", Value::MatrixF32(Matrix::Vector2(new_ref(Vector2::from_vec(vec![F32::new(2.0),F32::new(5.0)])))));
 
 test_interpreter!(interpret_set_empty,"{_}", Value::Set(MechSet::from_vec(vec![])));
 test_interpreter!(interpret_set,"{1,2,3}", Value::Set(MechSet::from_vec(vec![Value::I64(new_ref(1)),Value::I64(new_ref(2)),Value::I64(new_ref(3))])));

@@ -292,8 +292,44 @@ impl Value {
   impl_as_type!(u64);
   impl_as_type!(u128);
 
-  pub fn as_f32(&self)  -> Option<Ref<F32>>  {if let Value::F32(v)  = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_f32()  } else { None }}
-  pub fn as_f64(&self)  -> Option<Ref<F64>>  {if let Value::F64(v)  = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_f64()  } else { None }}
+  pub fn as_f32(&self) -> Option<Ref<F32>> {
+    match self {
+      Value::U8(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::U16(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::U32(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::U64(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::U128(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::I8(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::I16(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::I32(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::I64(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::I128(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::F32(v) => Some(new_ref(F32::new((*v.borrow()).0 as f32))),
+      Value::F64(v) => Some(new_ref(F32::new((*v.borrow()).0 as f32))),
+      Value::MutableReference(val) => val.borrow().as_f32(),
+      _ => None,
+    }
+  }
+
+  pub fn as_f64(&self) -> Option<Ref<F64>> {
+    match self {
+      Value::U8(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
+      Value::U16(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
+      Value::U32(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
+      Value::U64(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
+      Value::U128(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
+      Value::I8(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
+      Value::I16(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
+      Value::I32(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
+      Value::I64(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
+      Value::I128(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
+      Value::F64(v) => Some(new_ref(F64::new((*v.borrow()).0 as f64))),
+      Value::F64(v) => Some(new_ref(F64::new((*v.borrow()).0 as f64))),
+      Value::MutableReference(val) => val.borrow().as_f64(),
+      _ => None,
+    }
+  }
+
   pub fn as_vecf64(&self)   -> Option<Vec<F64>>  {if let Value::MatrixF64(v)  = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf64()  } else { None }}
   pub fn as_vecf32(&self)   -> Option<Vec<F32>>  {if let Value::MatrixF32(v)  = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf32()  } else { None }}
   pub fn as_vecbool(&self)  -> Option<Vec<bool>> {if let Value::MatrixBool(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecbool() } else { None }}
