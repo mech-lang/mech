@@ -12,7 +12,32 @@ use tabled::{
   settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
   Tabled,
 };
+use paste::paste;
 
+macro_rules! impl_as_type {
+  ($target_type:ty) => {
+    paste!{
+      pub fn [<as_ $target_type>](&self) -> Option<Ref<$target_type>> {
+        match self {
+          Value::U8(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::U16(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::U32(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::U64(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::U128(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::I8(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::I16(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::I32(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::I64(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::I128(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::F32(v) => Some(new_ref((*v.borrow()).0 as $target_type)),
+          Value::F64(v) => Some(new_ref((*v.borrow()).0 as $target_type)),
+          Value::MutableReference(val) => val.borrow().[<as_ $target_type>](),
+          _ => None,
+        }
+      }
+    }
+  };
+}
 
 // Value ----------------------------------------------------------------------
 
@@ -255,20 +280,18 @@ impl Value {
   }
 
   pub fn as_bool(&self) -> Option<Ref<bool>> {if let Value::Bool(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_bool() } else { None }}
-  pub fn as_u8(&self) -> Option<Ref<u8>> {
-    if let Value::U8(v) = self { Some(v.clone()) } 
-    else if let Value::I64(v) = self { Some(new_ref(v.borrow().clone() as u8)) } 
-    else if let Value::MutableReference(val) = self { val.borrow().as_u8() } 
-    else { None }}
-  pub fn as_u16(&self)  -> Option<Ref<u16>>  {if let Value::U16(v)  = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_u16()  } else { None }}
-  pub fn as_u32(&self)  -> Option<Ref<u32>>  {if let Value::U32(v)  = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_u32()  } else { None }}
-  pub fn as_u64(&self)  -> Option<Ref<u64>>  {if let Value::U64(v)  = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_u64()  } else { None }}
-  pub fn as_u128(&self) -> Option<Ref<u128>> {if let Value::U128(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_u128() } else { None }}
-  pub fn as_i8(&self)   -> Option<Ref<i8>>   {if let Value::I8(v)   = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_i8()   } else { None }}
-  pub fn as_i16(&self)  -> Option<Ref<i16>>  {if let Value::I16(v)  = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_i16()  } else { None }}
-  pub fn as_i32(&self)  -> Option<Ref<i32>>  {if let Value::I32(v)  = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_i32()  } else { None }}
-  pub fn as_i64(&self)  -> Option<Ref<i64>>  {if let Value::I64(v)  = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_i64()  } else { None }}
-  pub fn as_i128(&self) -> Option<Ref<i128>> {if let Value::I128(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_i128() } else { None }}
+  
+  impl_as_type!(i8);
+  impl_as_type!(i16);
+  impl_as_type!(i32);
+  impl_as_type!(i64);
+  impl_as_type!(i128);
+  impl_as_type!(u8);
+  impl_as_type!(u16);
+  impl_as_type!(u32);
+  impl_as_type!(u64);
+  impl_as_type!(u128);
+
   pub fn as_f32(&self)  -> Option<Ref<F32>>  {if let Value::F32(v)  = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_f32()  } else { None }}
   pub fn as_f64(&self)  -> Option<Ref<F64>>  {if let Value::F64(v)  = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_f64()  } else { None }}
   pub fn as_vecf64(&self)   -> Option<Vec<F64>>  {if let Value::MatrixF64(v)  = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf64()  } else { None }}

@@ -1,5 +1,6 @@
 use crate::matrix::{Matrix, ToMatrix};
 use crate::kind::Kind;
+
 use crate::stdlib::{math::*,
                     logic::*,
                     compare::*,
@@ -569,6 +570,19 @@ fn set(m: &Set, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) ->
   Ok(Value::Set(MechSet{set: out}))
 }
 
+macro_rules! handle_value_kind {
+  ($value_kind:ident, $val:expr, $field_label:expr, $data_map:expr, $converter:ident) => {{
+      let mut vals = Vec::new();
+      for x in $val.as_vec().iter() {
+        match x.$converter() {
+          Some(u) => vals.push(u.to_value()),
+          None => {return Err(MechError {tokens: vec![],msg: file!().to_string(),id: line!(),kind: MechErrorKind::WrongTableColumnKind,});}
+        }
+      }
+      $data_map.insert($field_label.clone(), ($value_kind, Value::to_matrix(vals.clone(), vals.len(), 1)));
+  }};
+}
+
 fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> { 
   let mut rows = vec![];
   let (ids,col_kinds) = table_header(&t.header, functions.clone())?;
@@ -595,11 +609,18 @@ fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
   for (field_label,(column,knd)) in ids.iter().zip(data.iter().zip(col_kinds)) {
     let val = Value::to_matrix(column.clone(),column.len(),1);
     match knd {
-      ValueKind::I64 => {data_map.insert(field_label.clone(),(knd,val));},
-      ValueKind::U8 => {
-        let vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_u8().unwrap().to_value()).collect::<Vec<Value>>();
-        data_map.insert(field_label.clone(),(knd,Value::to_matrix(vals.clone(),vals.len(),1)));
-      },
+      ValueKind::I8 => handle_value_kind!(knd, val, field_label, data_map, as_i8),
+      ValueKind::I16 => handle_value_kind!(knd, val, field_label, data_map, as_i16),
+      ValueKind::I32 => handle_value_kind!(knd, val, field_label, data_map, as_i32),
+      ValueKind::I64 => handle_value_kind!(knd, val, field_label, data_map, as_i64),
+      ValueKind::I128 => handle_value_kind!(knd, val, field_label, data_map, as_i128),      
+      ValueKind::U8 => handle_value_kind!(knd, val, field_label, data_map, as_u8),
+      ValueKind::U16 => handle_value_kind!(knd, val, field_label, data_map, as_u16),
+      ValueKind::U32 => handle_value_kind!(knd, val, field_label, data_map, as_u32),
+      ValueKind::U64 => handle_value_kind!(knd, val, field_label, data_map, as_u64),
+      ValueKind::U128 => handle_value_kind!(knd, val, field_label, data_map, as_u128),
+      ValueKind::F32 => handle_value_kind!(knd, val, field_label, data_map, as_f32),
+      ValueKind::F64 => handle_value_kind!(knd, val, field_label, data_map, as_f64),
       ValueKind::Bool => {
         let vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_bool().unwrap().to_value()).collect::<Vec<Value>>();
         data_map.insert(field_label.clone(),(knd,Value::to_matrix(vals.clone(),vals.len(),1)));

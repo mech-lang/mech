@@ -32,6 +32,7 @@ pub enum MechErrorKind {
   UndefinedVariable(u64),                            // Accessed a variable that's not defined
   UndefinedKind(u64),                                // Used a kind that's not defined
   MissingTable(u64),                               // TableId of missing table
+  WrongTableColumnKind,
   MissingBlock(u64),                             // BlockId of missing block
   PendingExpression,                              // id of pending variable
   PendingTable(u64),                             // TableId of pending table                          
