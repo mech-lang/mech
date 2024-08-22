@@ -46,9 +46,9 @@ macro_rules! impl_logic_urnop {
     }};}
 
 #[macro_export]
-macro_rules! generate_logic_fxns {
+macro_rules! impl_logic_fxns {
   ($lib:ident) => {
-    generate_fxns!($lib,bool,bool,impl_logic_binop);
+    impl_fxns!($lib,bool,bool,impl_logic_binop);
   }
 }
 
@@ -81,17 +81,17 @@ macro_rules! and_scalar_lhs_op {
         (*$out)[i] = (*$lhs)[i] && (*$rhs);
       }}};}
 
-generate_logic_fxns!(And);
+impl_logic_fxns!(And);
 
-fn generate_and_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_binop_match_arms!(
+fn impl_and_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_binop_match_arms!(
     And,
     (lhs_value, rhs_value),
     Bool, Bool => MatrixBool, bool, false;
   )
 }
 
-impl_mech_binop_fxn!(LogicAnd,generate_and_fxn);
+impl_mech_binop_fxn!(LogicAnd,impl_and_fxn);
 
 // Or ------------------------------------------------------------------------
 
@@ -122,17 +122,17 @@ macro_rules! or_scalar_lhs_op {
         (*$out)[i] = (*$lhs)[i] || (*$rhs);
       }}};}
 
-generate_logic_fxns!(Or);
+impl_logic_fxns!(Or);
 
-fn generate_or_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_binop_match_arms!(
+fn impl_or_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_binop_match_arms!(
     Or,
     (lhs_value, rhs_value),
     Bool, Bool => MatrixBool, bool, false;
   )
 }
 
-impl_mech_binop_fxn!(LogicOr,generate_or_fxn);
+impl_mech_binop_fxn!(LogicOr,impl_or_fxn);
 
 // Xor ------------------------------------------------------------------------
 macro_rules! xor_op {
@@ -162,17 +162,17 @@ macro_rules! xor_scalar_lhs_op {
         (*$out)[i] = (*$lhs)[i] ^ (*$rhs);
       }}};} 
 
-generate_logic_fxns!(Xor);
+impl_logic_fxns!(Xor);
 
-fn generate_xor_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_binop_match_arms!(
+fn impl_xor_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_binop_match_arms!(
     Xor,
     (lhs_value, rhs_value),
     Bool, Bool => MatrixBool, bool, false;
   )
 }
 
-impl_mech_binop_fxn!(LogicXor,generate_xor_fxn);
+impl_mech_binop_fxn!(LogicXor,impl_xor_fxn);
 
 // Not ------------------------------------------------------------------------
 
@@ -205,12 +205,12 @@ impl_logic_urnop!(NotV4, Vector4<bool>, Vector4<bool>, not_vec_op);
 impl_logic_urnop!(NotVD, DVector<bool>, DVector<bool>, not_vec_op);
 impl_logic_urnop!(NotMD, DMatrix<bool>, DMatrix<bool>, not_vec_op);
 
-fn generate_not_fxn(arg_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_urnop_match_arms!(
+fn impl_not_fxn(arg_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_urnop_match_arms!(
     Not,
     (arg_value),
     Bool => MatrixBool, bool, false;
   )
 }
 
-impl_mech_urnop_fxn!(LogicNot,generate_not_fxn);
+impl_mech_urnop_fxn!(LogicNot,impl_not_fxn);

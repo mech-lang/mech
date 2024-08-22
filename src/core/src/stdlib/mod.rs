@@ -118,7 +118,7 @@ macro_rules! impl_urop {
     }};}  
 
 #[macro_export]
-macro_rules! generate_fxns {
+macro_rules! impl_fxns {
   ($lib:ident, $in:ident, $out:ident, $op:ident) => {
     paste!{
       // Scalar
@@ -181,7 +181,7 @@ macro_rules! generate_fxns {
   }}
 
 #[macro_export]
-macro_rules! generate_binop_match_arms {
+macro_rules! impl_binop_match_arms {
   ($lib:ident, $arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr),+);+ $(;)?) => {
     paste!{
       match $arg {
@@ -258,7 +258,7 @@ macro_rules! generate_binop_match_arms {
 }
 
 #[macro_export]
-macro_rules! generate_urnop_match_arms {
+macro_rules! impl_urnop_match_arms {
   ($lib:ident, $arg:expr, $($lhs_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr),+);+ $(;)?) => {
     paste!{
       match $arg {

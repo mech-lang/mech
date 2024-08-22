@@ -6,16 +6,16 @@ use crate::stdlib::*;
 // ----------------------------------------------------------------------------
 
 #[macro_export]
-macro_rules! generate_compare_fxns {
+macro_rules! impl_compare_fxns {
   ($lib:ident) => {
-    generate_fxns!($lib,T,bool,impl_binop);
+    impl_fxns!($lib,T,bool,impl_binop);
   }
 }
 
 #[macro_export]
-macro_rules! generate_compare_fxns_bool {
+macro_rules! impl_compare_fxns_bool {
   ($lib:ident) => {
-    generate_fxns!($lib,T,bool,impl_bool_binop);
+    impl_fxns!($lib,T,bool,impl_bool_binop);
   }
 }
 
@@ -48,10 +48,10 @@ macro_rules! gt_op {
       (*$out) = (*$lhs) > (*$rhs);
     }};}
 
-generate_compare_fxns!(GT);
+impl_compare_fxns!(GT);
 
-fn generate_gt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_binop_match_arms!(
+fn impl_gt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_binop_match_arms!(
     GT,
     (lhs_value, rhs_value),
     I8,   I8   => MatrixI8,   i8,   false;
@@ -69,7 +69,7 @@ fn generate_gt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFun
   )
 }
 
-impl_mech_binop_fxn!(CompareGreaterThan,generate_gt_fxn);
+impl_mech_binop_fxn!(CompareGreaterThan,impl_gt_fxn);
 
 // Greater Than Equal ---------------------------------------------------------------
 
@@ -100,10 +100,10 @@ macro_rules! gte_op {
       (*$out) = (*$lhs) >= (*$rhs);
     }};}
 
-generate_compare_fxns!(GTE);
+impl_compare_fxns!(GTE);
 
-fn generate_gte_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_binop_match_arms!(
+fn impl_gte_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_binop_match_arms!(
     GTE,
     (lhs_value, rhs_value),
     I8,   I8   => MatrixI8,   i8,   false;
@@ -121,7 +121,7 @@ fn generate_gte_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
   )
 }
 
-impl_mech_binop_fxn!(CompareGreaterThanEqual,generate_gte_fxn);
+impl_mech_binop_fxn!(CompareGreaterThanEqual,impl_gte_fxn);
 
 // Less Than ------------------------------------------------------------------
 
@@ -152,10 +152,10 @@ macro_rules! lt_op {
       (*$out) = (*$lhs) < (*$rhs);
     }};}
 
-generate_compare_fxns!(LT);
+impl_compare_fxns!(LT);
 
-fn generate_lt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_binop_match_arms!(
+fn impl_lt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_binop_match_arms!(
     LT,
     (lhs_value, rhs_value),
     I8,   I8   => MatrixI8,   i8,   false;
@@ -173,7 +173,7 @@ fn generate_lt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFun
   )
 }
 
-impl_mech_binop_fxn!(CompareLessThan,generate_lt_fxn);
+impl_mech_binop_fxn!(CompareLessThan,impl_lt_fxn);
 
 // Less Than Equal ---------------------------------------------------------------
 
@@ -204,10 +204,10 @@ macro_rules! lte_op {
       (*$out) = (*$lhs) <= (*$rhs);
     }};}
 
-generate_compare_fxns!(LTE);
+impl_compare_fxns!(LTE);
 
-fn generate_lte_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_binop_match_arms!(
+fn impl_lte_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_binop_match_arms!(
     LTE,
     (lhs_value, rhs_value),
     I8,   I8   => MatrixI8,   i8,   false;
@@ -225,7 +225,7 @@ fn generate_lte_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
   )
 }
 
-impl_mech_binop_fxn!(CompareLessThanEqual,generate_lte_fxn);
+impl_mech_binop_fxn!(CompareLessThanEqual,impl_lte_fxn);
 
 // Equal ---------------------------------------------------------------
 
@@ -257,10 +257,10 @@ macro_rules! eq_op {
       (*$out) = (*$lhs) == (*$rhs);
     }};}
 
-generate_compare_fxns_bool!(EQ);
+impl_compare_fxns_bool!(EQ);
 
-fn generate_eq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_binop_match_arms!(
+fn impl_eq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_binop_match_arms!(
     EQ,
     (lhs_value, rhs_value),
     Bool, Bool => MatrixBool, bool, false;
@@ -279,7 +279,7 @@ fn generate_eq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFun
   )
 }
 
-impl_mech_binop_fxn!(CompareEqual,generate_eq_fxn);
+impl_mech_binop_fxn!(CompareEqual,impl_eq_fxn);
 
 // Not Equal ---------------------------------------------------------------
 
@@ -310,10 +310,10 @@ macro_rules! neq_op {
       (*$out) = (*$lhs) != (*$rhs);
     }};}
 
-generate_compare_fxns_bool!(NEQ);
+impl_compare_fxns_bool!(NEQ);
 
-fn generate_neq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_binop_match_arms!(
+fn impl_neq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_binop_match_arms!(
     NEQ,
     (lhs_value, rhs_value),
     Bool, Bool => MatrixBool, bool, false;
@@ -332,4 +332,4 @@ fn generate_neq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
   )
 }
 
-impl_mech_binop_fxn!(CompareNotEqual,generate_neq_fxn);
+impl_mech_binop_fxn!(CompareNotEqual,impl_neq_fxn);

@@ -91,7 +91,7 @@ impl_convert_op_group!(u128, [F32, F64], convert_op3);
 impl_convert_op_group!(F32,  [F32, F64], convert_op4);
 impl_convert_op_group!(F64,  [F32, F64], convert_op4);
 
-macro_rules! generate_conversion_match_arms {
+macro_rules! impl_conversion_match_arms {
   ($arg:expr, $($input_type:ident => $($target_type:ident),+);+ $(;)?) => {
     paste!{
       match $arg {
@@ -106,8 +106,8 @@ macro_rules! generate_conversion_match_arms {
   }
 }
 
-fn generate_conversion_fxn(source_value: Value, target_kind: ValueKind) -> MResult<Box<dyn MechFunction>>  {
-  generate_conversion_match_arms!(
+fn impl_conversion_fxn(source_value: Value, target_kind: ValueKind) -> MResult<Box<dyn MechFunction>>  {
+  impl_conversion_match_arms!(
     (source_value, target_kind),
     i8   => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
     i16  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
@@ -133,12 +133,12 @@ impl NativeFunctionCompiler for ConvertKind {
     }
     let source_value = arguments[0].clone();
     let target_kind = arguments[1].kind();
-    match generate_conversion_fxn(source_value.clone(), target_kind.clone()) {
+    match impl_conversion_fxn(source_value.clone(), target_kind.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
         match source_value {
           Value::MutableReference(lhs) => {
-            generate_conversion_fxn(lhs.borrow().clone(), target_kind.clone())
+            impl_conversion_fxn(lhs.borrow().clone(), target_kind.clone())
           }
           _ => unreachable!(),
         }

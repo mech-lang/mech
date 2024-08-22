@@ -72,7 +72,7 @@ impl_col_access_fxn_shapes!(u128);
 impl_col_access_fxn_shapes!(F32);
 impl_col_access_fxn_shapes!(F64);
 
-macro_rules! generate_access_column_match_arms {
+macro_rules! impl_access_column_match_arms {
   ($arg:expr, $($lhs_type:ident, $($default:expr),+);+ $(;)?) => {
     paste!{
       match $arg {
@@ -104,8 +104,8 @@ macro_rules! generate_access_column_match_arms {
   }
 }
 
-fn generate_access_column_fxn(source: Value, key: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_access_column_match_arms!(
+fn impl_access_column_fxn(source: Value, key: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_access_column_match_arms!(
     (source,key),
     Bool,false;
     I8,i8::zero();
@@ -131,11 +131,11 @@ impl NativeFunctionCompiler for AccessColumn {
     }
     let tbl = arguments[0].clone();
     let key = arguments[1].clone();
-    match generate_access_column_fxn(tbl.clone(), key.clone()) {
+    match impl_access_column_fxn(tbl.clone(), key.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
         match (tbl,&key) {
-          (Value::MutableReference(tbl),_) => { generate_access_column_fxn(tbl.borrow().clone(), key.clone()) }
+          (Value::MutableReference(tbl),_) => { impl_access_column_fxn(tbl.borrow().clone(), key.clone()) }
           x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
