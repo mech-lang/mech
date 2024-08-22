@@ -159,6 +159,7 @@ test_interpreter!(interpret_slice_dynamic, "x := 1..10; y := x'; ix := 1..5; y[i
 test_interpreter!(interpret_slice_all_bool, "ix := [false, false, true]'; x := [1 2 3; 4 5 6; 7 8 9]; x[:,ix]", Value::MatrixI64(Matrix::DMatrix(new_ref(DMatrix::from_vec(3,1,vec![3,6,9])))));
 test_interpreter!(interpret_slice_ix_bool, "ix := [false, false, true]; x := [1 2 3; 4 5 6; 7 8 9]; x[[1,2,3,3],ix]", Value::MatrixI64(Matrix::DMatrix(new_ref(DMatrix::from_vec(4,1,vec![3,6,9,9])))));
 test_interpreter!(interpret_slice_bool_bool, "ix := [true, false, true]; x := [1 2 3; 4 5 6;7 8 9]; x[ix,ix]", Value::MatrixI64(Matrix::DMatrix(new_ref(DMatrix::from_vec(2,2,vec![1,7,3,9])))));
+test_interpreter!(interpret_slice_ix_bool_v, "ix1 := [false, false, true]; ix2 := [1,2,3,3]; x := [1 2 3; 4 5 6; 7 8 9]; x[ix1',ix2']", Value::MatrixI64(Matrix::DMatrix(new_ref(DMatrix::from_vec(1,4,vec![7,8,9,9])))));
 
 
 test_interpreter!(interpret_swizzle_record, "x := {x: 1, y: 2, z: 3}; x.y,z,z", Value::Tuple(MechTuple::from_vec(vec![Value::I64(new_ref(2)),Value::I64(new_ref(3)),Value::I64(new_ref(3))])));
