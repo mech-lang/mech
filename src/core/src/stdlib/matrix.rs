@@ -341,7 +341,39 @@ macro_rules! access_2d_slice_bool2 {
           }
         }
       }
-    }};}     
+    }};}    
+
+macro_rules! access_2d_slice_bool_bool {
+  ($source:expr, $ix:expr, $out:expr) => {
+    unsafe { 
+      let ix1 = &(*$ix).0;
+      let ix2 = &(*$ix).1;
+      let mut k = 0;
+      let mut j = 0;
+      let out_len = (*$out).len();
+      for i in 0..ix1.len() {
+        if ix1[i] == true {
+          j += 1;
+        }
+      }
+      for i in 0..ix2.len() {
+        if ix2[i] == true {
+          k += 1;
+        }
+      }
+      if j != (*$out).nrows() || k != (*$out).ncols() {
+        (*$out).resize_mut(j, k, (*$out)[0]);
+      }
+      let mut out_ix = 0;
+      for k in 0..ix2.len() {
+        for j in 0..ix1.len() {
+          if ix1[j] == true && ix2[k] == true {
+            (*$out)[out_ix] = (*$source).index((j, k)).clone();
+            out_ix += 1;
+          }
+        }
+      }
+    }};} 
 
 macro_rules! access_2d_slice2_all {
   ($source:expr, $ix:expr, $out:expr) => {
@@ -562,8 +594,8 @@ impl_access_fxn_shape!(Access2DRDVD, (RowDVector<usize>,DVector<usize>),    DMat
 
 impl_access_fxn_shape!(Access2DRDbRD, (RowDVector<bool>,RowDVector<usize>), DMatrix<T>, access_2d_slice_bool);
 impl_access_fxn_shape!(Access2DRDRDb, (RowDVector<usize>,RowDVector<bool>), DMatrix<T>, access_2d_slice_bool2);
-//impl_access_fxn_shape!(Access2DRDbRDb, (RowDVector<bool>,RowDVector<bool>), DMatrix<T>, access_2d_slice_bool_bool);
-//
+impl_access_fxn_shape!(Access2DRDbRDb, (RowDVector<bool>,RowDVector<bool>), DMatrix<T>, access_2d_slice_bool_bool);
+
 //impl_access_fxn_shape!(Access2DVDbVD, (DVector<bool>,DVector<usize>), DMatrix<T>, access_2d_slice_bool);
 //impl_access_fxn_shape!(Access2DVDRVb, (DVector<usize>,DVector<bool>), DMatrix<T>, access_2d_slice_bool2);
 //impl_access_fxn_shape!(Access2DVDbVDb, (DVector<bool>,DVector<bool>), DMatrix<T>, access_2d_slice_bool_bool);
@@ -897,8 +929,13 @@ macro_rules! generate_access_range_range_match_arms {
             (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)), [Value::MatrixIndex(Matrix::RowDVector(ix1)), Value::MatrixBool(Matrix::RowDVector(ix2))]) => Ok(Box::new(Access2DRDRDbM4{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)), [Value::MatrixIndex(Matrix::RowDVector(ix1)), Value::MatrixBool(Matrix::RowDVector(ix2))]) => Ok(Box::new(Access2DRDRDbMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
 
-
-
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)), [Value::MatrixBool(Matrix::RowDVector(ix1)), Value::MatrixBool(Matrix::RowDVector(ix2))]) => Ok(Box::new(Access2DRDbRDbM3x2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)), [Value::MatrixBool(Matrix::RowDVector(ix1)), Value::MatrixBool(Matrix::RowDVector(ix2))]) => Ok(Box::new(Access2DRDbRDbM2x3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix1(input)), [Value::MatrixBool(Matrix::RowDVector(ix1)), Value::MatrixBool(Matrix::RowDVector(ix2))]) =>   Ok(Box::new(Access2DRDbRDbM1{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)), [Value::MatrixBool(Matrix::RowDVector(ix1)), Value::MatrixBool(Matrix::RowDVector(ix2))]) =>   Ok(Box::new(Access2DRDbRDbM2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)), [Value::MatrixBool(Matrix::RowDVector(ix1)), Value::MatrixBool(Matrix::RowDVector(ix2))]) =>   Ok(Box::new(Access2DRDbRDbM3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)), [Value::MatrixBool(Matrix::RowDVector(ix1)), Value::MatrixBool(Matrix::RowDVector(ix2))]) =>   Ok(Box::new(Access2DRDbRDbM4{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)), [Value::MatrixBool(Matrix::RowDVector(ix1)), Value::MatrixBool(Matrix::RowDVector(ix2))]) =>   Ok(Box::new(Access2DRDbRDbMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
 
           )+
         )+
