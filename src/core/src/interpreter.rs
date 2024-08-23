@@ -369,29 +369,14 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
       return Ok(res);
     },
     Subscript::Swizzle(x) => {
-      let mut values = vec![];
-      for k in x {
-        let key = k.hash();
-        match val {
-          Value::Record(rcrd) => {
-            match rcrd.map.get(&Value::Id(key)) {
-              Some(value) => values.push(value.clone()),
-              None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(key)});}
-            }
-          }
-          Value::MutableReference(r) => match &*r.borrow() {
-            Value::Record(rcrd) => {
-              match rcrd.map.get(&Value::Id(key)) {
-                Some(value) => values.push(value.clone()),
-                None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(key)});}
-              }
-            }
-            _ => todo!(),
-          }
-          _ => todo!(),
-        }
-      }
-      Ok(Value::Tuple(MechTuple::from_vec(values)))
+      let mut keys = x.iter().map(|x| Value::Id(x.hash())).collect::<Vec<Value>>();
+      let mut fxn_input: Vec<Value> = vec![val.clone()];
+      fxn_input.append(&mut keys);
+      let new_fxn = AccessSwizzle{}.compile(&fxn_input)?;
+      new_fxn.solve();
+      let res = new_fxn.out();
+      plan.borrow_mut().push(new_fxn);
+      return Ok(res);
     },
     Subscript::Bracket(subs) => {
       let mut fxn_input = vec![val.clone()];
