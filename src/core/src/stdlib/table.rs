@@ -158,6 +158,19 @@ impl MechFunction for RecordAccessSwizzle {
   fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
+#[derive(Debug)]
+struct TableAccessSwizzle {
+  out: Value,
+}
+
+impl MechFunction for TableAccessSwizzle {
+  fn solve(&self) {
+    ()
+  }
+  fn out(&self) -> Value { self.out.clone() }
+  fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
 pub struct AccessSwizzle {}
 impl NativeFunctionCompiler for AccessSwizzle {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
@@ -166,9 +179,9 @@ impl NativeFunctionCompiler for AccessSwizzle {
     }
     let keys = &arguments.clone().split_off(1);
     let src = &arguments[0];
-    let mut values = vec![];
     match src {
       Value::Record(rcrd) => {
+        let mut values = vec![];
         for k in keys {
           match rcrd.map.get(k) {
             Some(value) => values.push(value.clone()),
@@ -177,8 +190,22 @@ impl NativeFunctionCompiler for AccessSwizzle {
         }
         Ok(Box::new(RecordAccessSwizzle{source: Value::Tuple(MechTuple::from_vec(values))}))
       }
+      Value::Table(tbl) => {
+        let mut elements = vec![];
+        for k in keys {
+          match tbl.data.get(k) {
+            Some((kind, mat_values)) => {
+              elements.push(Box::new(mat_values.to_value()));
+            }
+            None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(*k.as_u64().unwrap().borrow())});}
+          }
+        }
+        let tuple = Value::Tuple(MechTuple{elements});
+        Ok(Box::new(TableAccessSwizzle{out: tuple}))
+      }
       Value::MutableReference(r) => match &*r.borrow() {
         Value::Record(rcrd) => {
+          let mut values = vec![];
           for k in keys {
             match rcrd.map.get(k) {
               Some(value) => values.push(value.clone()),
@@ -186,6 +213,19 @@ impl NativeFunctionCompiler for AccessSwizzle {
             }
           }
           Ok(Box::new(RecordAccessSwizzle{source: Value::Tuple(MechTuple::from_vec(values))}))
+        }
+        Value::Table(tbl) => {
+          let mut elements = vec![];
+          for k in keys {
+            match tbl.data.get(k) {
+              Some((kind, mat_values)) => {
+                elements.push(Box::new(mat_values.to_value()));
+              }
+              None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(*k.as_u64().unwrap().borrow())});}
+            }
+          }
+          let tuple = Value::Tuple(MechTuple{elements});
+          Ok(Box::new(TableAccessSwizzle{out: tuple}))
         }
         _ => todo!(),
       }

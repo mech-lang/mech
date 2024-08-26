@@ -44,7 +44,7 @@ macro_rules! impl_as_type {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, 
-  String, Bool, Matrix(Box<ValueKind>,Vec<usize>), Set, Map, Record, Table, Tuple, Id, Index, Reference, Atom(u64), Empty
+  String, Bool, Matrix(Box<ValueKind>,Vec<usize>), Set, Map, Record, Table, Tuple, Id, Index, Reference, Atom(u64), Empty, Any
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -78,6 +78,7 @@ pub enum Value {
   MatrixI128(Matrix<i128>),
   MatrixF32(Matrix<F32>),
   MatrixF64(Matrix<F64>),
+  MatrixValue(Matrix<Value>),
   Set(MechSet),
   Map(MechMap),
   Record(MechMap),
@@ -131,6 +132,7 @@ impl Hash for Value {
       Value::MatrixI128(x) => x.hash(state),
       Value::MatrixF32(x)  => x.hash(state),
       Value::MatrixF64(x)  => x.hash(state),
+      Value::MatrixValue(x)  => x.hash(state),
       Value::MutableReference(x) => x.borrow().hash(state),
       Value::Empty => Value::Empty.hash(state),
       Value::IndexAll => Value::IndexAll.hash(state),
@@ -178,6 +180,7 @@ impl Value {
       Value::MatrixI128(x) => {return x.pretty_print();},
       Value::MatrixF32(x)  => {return x.pretty_print();},
       Value::MatrixF64(x)  => {return x.pretty_print();},
+      Value::MatrixValue(x)  => {return x.pretty_print();},
       Value::MutableReference(x) => {return x.borrow().pretty_print();},
       Value::Empty => builder.push_record(vec!["_"]),
       Value::IndexAll => builder.push_record(vec![":"]),
@@ -221,6 +224,7 @@ impl Value {
       Value::MatrixI128(x) => x.shape(),
       Value::MatrixF32(x) => x.shape(),
       Value::MatrixF64(x) => x.shape(),
+      Value::MatrixValue(x) => x.shape(),
       Value::Table(x) => x.shape(),
       Value::Set(x) => vec![1,x.set.len()],
       Value::Map(x) => vec![1,x.map.len()],
@@ -265,6 +269,7 @@ impl Value {
       Value::MatrixI128(x) => ValueKind::Matrix(Box::new(ValueKind::U128,),x.shape()),
       Value::MatrixF32(x) => ValueKind::Matrix(Box::new(ValueKind::F32),x.shape()),
       Value::MatrixF64(x) => ValueKind::Matrix(Box::new(ValueKind::F64),x.shape()),
+      Value::MatrixValue(x) => ValueKind::Matrix(Box::new(ValueKind::Any),x.shape()),
       Value::Table(x) => ValueKind::Table,
       Value::Set(x) => ValueKind::Set,
       Value::Map(x) => ValueKind::Map,
