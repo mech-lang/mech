@@ -156,8 +156,14 @@ test_interpreter!(interpret_slice_logical_ix, "x := [94 53 13]; ix := [false tru
 test_interpreter!(interpret_slice_row, "x := [94 53 13; 4 5 6; 7 8 9]; x[2,1..3]", Value::MatrixI64(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![4,5])))));
 test_interpreter!(interpret_slice_col, "x := [94 53 13; 4 5 6; 7 8 9]; x[1..3,2]", Value::MatrixI64(Matrix::DVector(new_ref(DVector::from_vec(vec![53,5])))));
 test_interpreter!(interpret_slice_dynamic, "x := 1..10; y := x'; ix := 1..5; y[ix]'", Value::MatrixI64(Matrix::DVector(new_ref(DVector::from_vec(vec![1,2,3,4])))));
+test_interpreter!(interpret_slice_all_bool, "ix := [false, false, true]'; x := [1 2 3; 4 5 6; 7 8 9]; x[:,ix]", Value::MatrixI64(Matrix::DMatrix(new_ref(DMatrix::from_vec(3,1,vec![3,6,9])))));
+test_interpreter!(interpret_slice_ix_bool, "ix := [false, false, true]; x := [1 2 3; 4 5 6; 7 8 9]; x[[1,2,3,3],ix]", Value::MatrixI64(Matrix::DMatrix(new_ref(DMatrix::from_vec(4,1,vec![3,6,9,9])))));
+test_interpreter!(interpret_slice_bool_bool, "ix := [true, false, true]; x := [1 2 3; 4 5 6;7 8 9]; x[ix,ix]", Value::MatrixI64(Matrix::DMatrix(new_ref(DMatrix::from_vec(2,2,vec![1,7,3,9])))));
+test_interpreter!(interpret_slice_ix_bool_v, "ix1 := [false, false, true]; ix2 := [1,2,3,3]; x := [1 2 3; 4 5 6; 7 8 9]; x[ix1',ix2']", Value::MatrixI64(Matrix::DMatrix(new_ref(DMatrix::from_vec(1,4,vec![7,8,9,9])))));
+
 
 test_interpreter!(interpret_swizzle_record, "x := {x: 1, y: 2, z: 3}; x.y,z,z", Value::Tuple(MechTuple::from_vec(vec![Value::I64(new_ref(2)),Value::I64(new_ref(3)),Value::I64(new_ref(3))])));
+test_interpreter!(interpret_swizzle_table, "x := { x<i64> y<u8>| 1 2; 4 5}; x.x,x,y", Value::Tuple(MechTuple::from_vec(vec![Matrix::Vector2(new_ref(Vector2::from_vec(vec![Value::I64(new_ref(1)),Value::I64(new_ref(4))]))).to_value(),Matrix::Vector2(new_ref(Vector2::from_vec(vec![Value::I64(new_ref(1)),Value::I64(new_ref(4))]))).to_value(),Matrix::Vector2(new_ref(Vector2::from_vec(vec![Value::U8(new_ref(2)),Value::U8(new_ref(5))]))).to_value()])));
 
 test_interpreter!(interpret_dot_record, "x := {x: 1, y: 2, z: 3}; x.x", Value::I64(new_ref(1)));
 
@@ -167,9 +173,8 @@ test_interpreter!(interpret_dot_index_table, "x := { x<i64> y<u8>| 1 2; 4 5}; x.
 test_interpreter!(interpret_dot_index_table2, "x := { x<i64> y<u8>| 1 2; 4 5}; x.y", Value::MatrixU8(Matrix::Vector2(new_ref(Vector2::from_vec(vec![2,5])))));
 test_interpreter!(interpret_dot_index_table3, "x := { x<i64> y<bool>| 1 true; 4 false; 3 true}; x.y", Value::MatrixBool(Matrix::Vector3(new_ref(Vector3::from_vec(vec![true, false, true])))));
 test_interpreter!(interpret_dot_index_table4, "x := { x<i64> y<u8>| 1 2; 3 4; 5 6; 7 8 }; x.x", Value::MatrixI64(Matrix::Vector4(new_ref(Vector4::from_vec(vec![1,3,5,7])))));
-
-
-
+test_interpreter!(interpret_dot_index_table5, "x := { x<i64> y<i8>| 1 2; 3 4; 5 6; 7 8 }; x.y", Value::MatrixI8(Matrix::Vector4(new_ref(Vector4::from_vec(vec![2,4,6,8])))));
+test_interpreter!(interpret_dot_index_table6, "x := {x<u32> y<f32> z<i8>|1 2 3;4 5 6}; x.y", Value::MatrixF32(Matrix::Vector2(new_ref(Vector2::from_vec(vec![F32::new(2.0),F32::new(5.0)])))));
 
 test_interpreter!(interpret_set_empty,"{_}", Value::Set(MechSet::from_vec(vec![])));
 test_interpreter!(interpret_set,"{1,2,3}", Value::Set(MechSet::from_vec(vec![Value::I64(new_ref(1)),Value::I64(new_ref(2)),Value::I64(new_ref(3))])));

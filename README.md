@@ -20,12 +20,11 @@ You can download the latest release for your platform [here](https://github.com/
 
 ### Source
 
-You will need to install [Rust](https://www.rust-lang.org/learn/get-started) on a recent nightly release, and [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/). When those are installed, follow these instructions:
+You will need to install [Rust](https://www.rust-lang.org/learn/get-started) on a recent nightly release. Follow these instructions to build the Mech language toolchain, which is packaged in a single executable called "mech":
 
 ```bash
 git clone https://gitlab.com/mech-lang/mech
 cd mech
-wasm-pack build wasm-notebook --target web
 cargo build --bin mech --release
 ```
 
@@ -37,7 +36,7 @@ This work is happening in the v0.2-beta branch of the repository.
 
 The current target for the release of v0.2 is October 2024.
 
-See [ROADMAP.md](ROADMAP.md) for more.
+See [ROADMAP.mec](ROADMAP.mec) for more.
 
 ## License
 
