@@ -219,3 +219,12 @@ where T: Debug + Clone + PartialEq + 'static
     }
   }
 }
+
+
+impl ToValue for Matrix<Value> {
+
+  fn to_value(&self) -> Value {
+    Value::MatrixValue(self.clone())
+  }
+  
+}

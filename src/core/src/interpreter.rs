@@ -1,10 +1,12 @@
 use crate::matrix::{Matrix, ToMatrix};
 use crate::kind::Kind;
-use crate::stdlib::math::*;
-use crate::stdlib::logic::*;
-use crate::stdlib::compare::*;
-use crate::stdlib::matrix::*;
-use crate::stdlib::table::*;
+
+use crate::stdlib::{math::*,
+                    logic::*,
+                    compare::*,
+                    matrix::*,
+                    table::*,
+                    convert::*};
 use crate::stdlib::range::{RangeInclusive, RangeExclusive};
 use crate::*;
 use crate::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*};
@@ -367,29 +369,14 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
       return Ok(res);
     },
     Subscript::Swizzle(x) => {
-      let mut values = vec![];
-      for k in x {
-        let key = k.hash();
-        match val {
-          Value::Record(rcrd) => {
-            match rcrd.map.get(&Value::Id(key)) {
-              Some(value) => values.push(value.clone()),
-              None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(key)});}
-            }
-          }
-          Value::MutableReference(r) => match &*r.borrow() {
-            Value::Record(rcrd) => {
-              match rcrd.map.get(&Value::Id(key)) {
-                Some(value) => values.push(value.clone()),
-                None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(key)});}
-              }
-            }
-            _ => todo!(),
-          }
-          _ => todo!(),
-        }
-      }
-      Ok(Value::Tuple(MechTuple::from_vec(values)))
+      let mut keys = x.iter().map(|x| Value::Id(x.hash())).collect::<Vec<Value>>();
+      let mut fxn_input: Vec<Value> = vec![val.clone()];
+      fxn_input.append(&mut keys);
+      let new_fxn = AccessSwizzle{}.compile(&fxn_input)?;
+      new_fxn.solve();
+      let res = new_fxn.out();
+      plan.borrow_mut().push(new_fxn);
+      return Ok(res);
     },
     Subscript::Bracket(subs) => {
       let mut fxn_input = vec![val.clone()];
@@ -568,6 +555,19 @@ fn set(m: &Set, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) ->
   Ok(Value::Set(MechSet{set: out}))
 }
 
+macro_rules! handle_value_kind {
+  ($value_kind:ident, $val:expr, $field_label:expr, $data_map:expr, $converter:ident) => {{
+      let mut vals = Vec::new();
+      for x in $val.as_vec().iter() {
+        match x.$converter() {
+          Some(u) => vals.push(u.to_value()),
+          None => {return Err(MechError {tokens: vec![],msg: file!().to_string(),id: line!(),kind: MechErrorKind::WrongTableColumnKind,});}
+        }
+      }
+      $data_map.insert($field_label.clone(), ($value_kind, Value::to_matrix(vals.clone(), vals.len(), 1)));
+  }};
+}
+
 fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> { 
   let mut rows = vec![];
   let (ids,col_kinds) = table_header(&t.header, functions.clone())?;
@@ -594,11 +594,18 @@ fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
   for (field_label,(column,knd)) in ids.iter().zip(data.iter().zip(col_kinds)) {
     let val = Value::to_matrix(column.clone(),column.len(),1);
     match knd {
-      ValueKind::I64 => {data_map.insert(field_label.clone(),(knd,val));},
-      ValueKind::U8 => {
-        let vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_u8().unwrap().to_value()).collect::<Vec<Value>>();
-        data_map.insert(field_label.clone(),(knd,Value::to_matrix(vals.clone(),vals.len(),1)));
-      },
+      ValueKind::I8 => handle_value_kind!(knd, val, field_label, data_map, as_i8),
+      ValueKind::I16 => handle_value_kind!(knd, val, field_label, data_map, as_i16),
+      ValueKind::I32 => handle_value_kind!(knd, val, field_label, data_map, as_i32),
+      ValueKind::I64 => handle_value_kind!(knd, val, field_label, data_map, as_i64),
+      ValueKind::I128 => handle_value_kind!(knd, val, field_label, data_map, as_i128),      
+      ValueKind::U8 => handle_value_kind!(knd, val, field_label, data_map, as_u8),
+      ValueKind::U16 => handle_value_kind!(knd, val, field_label, data_map, as_u16),
+      ValueKind::U32 => handle_value_kind!(knd, val, field_label, data_map, as_u32),
+      ValueKind::U64 => handle_value_kind!(knd, val, field_label, data_map, as_u64),
+      ValueKind::U128 => handle_value_kind!(knd, val, field_label, data_map, as_u128),
+      ValueKind::F32 => handle_value_kind!(knd, val, field_label, data_map, as_f32),
+      ValueKind::F64 => handle_value_kind!(knd, val, field_label, data_map, as_f64),
       ValueKind::Bool => {
         let vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_bool().unwrap().to_value()).collect::<Vec<Value>>();
         data_map.insert(field_label.clone(),(knd,Value::to_matrix(vals.clone(),vals.len(),1)));

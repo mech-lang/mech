@@ -6,14 +6,14 @@ use crate::stdlib::*;
 // ----------------------------------------------------------------------------
 
 #[macro_export]
-macro_rules! generate_math_fxns {
+macro_rules! impl_math_fxns {
   ($lib:ident) => {
-    generate_fxns!($lib,T,T,impl_binop);
+    impl_fxns!($lib,T,T,impl_binop);
   }
 }
 
 #[macro_export]
-macro_rules! generate_urnop_match_arms2 {
+macro_rules! impl_urnop_match_arms2 {
   ($lib:ident, $arg:expr, $($lhs_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr),+);+ $(;)?) => {
     paste!{
       match $arg {
@@ -100,8 +100,8 @@ impl_math_urop!(MathCos, F32, cosf);
 impl_math_urop!(MathCos, F64, cos);
 
 
-fn generate_cos_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_urnop_match_arms2!(
+fn impl_cos_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_urnop_match_arms2!(
     MathCos,
     (lhs_value),
     F32 => MatrixF32, F32, F32::zero();
@@ -117,11 +117,11 @@ impl NativeFunctionCompiler for MathCos {
       return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let input = arguments[0].clone();
-    match generate_cos_fxn(input.clone()) {
+    match impl_cos_fxn(input.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
         match (input) {
-          (Value::MutableReference(input)) => {generate_cos_fxn(input.borrow().clone())}
+          (Value::MutableReference(input)) => {impl_cos_fxn(input.borrow().clone())}
           x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
@@ -159,8 +159,8 @@ macro_rules! sinf_vec_op {
 impl_math_urop!(MathSin, F32, sinf);
 impl_math_urop!(MathSin, F64, sin);
 
-fn generate_sin_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_urnop_match_arms2!(
+fn impl_sin_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_urnop_match_arms2!(
     MathSin,
     (lhs_value),
     F32 => MatrixF32, F32, F32::zero();
@@ -176,11 +176,11 @@ impl NativeFunctionCompiler for MathSin {
       return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let input = arguments[0].clone();
-    match generate_sin_fxn(input.clone()) {
+    match impl_sin_fxn(input.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
         match (input) {
-          (Value::MutableReference(input)) => {generate_sin_fxn(input.borrow().clone())}
+          (Value::MutableReference(input)) => {impl_sin_fxn(input.borrow().clone())}
           x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
@@ -210,10 +210,10 @@ macro_rules! add_scalar_rhs_op {
     unsafe { *$out = (*$rhs).add_scalar(*$lhs); }
   };}
 
-generate_math_fxns!(Add);
+impl_math_fxns!(Add);
 
-fn generate_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_binop_match_arms!(
+fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_binop_match_arms!(
     Add,
     (lhs_value, rhs_value),
     I8,   I8   => MatrixI8,   i8,   i8::zero();
@@ -231,7 +231,7 @@ fn generate_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
   )
 }
 
-impl_mech_binop_fxn!(MathAdd,generate_add_fxn);
+impl_mech_binop_fxn!(MathAdd,impl_add_fxn);
 
 // Sub ------------------------------------------------------------------------
 
@@ -259,10 +259,10 @@ macro_rules! sub_scalar_rhs_op {
         (*$out)[i] = (*$lhs) - (*$rhs)[i];
       }}};}
 
-generate_math_fxns!(Sub);
+impl_math_fxns!(Sub);
 
-fn generate_sub_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_binop_match_arms!(
+fn impl_sub_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_binop_match_arms!(
     Sub,
     (lhs_value, rhs_value),
     I8,   I8   => MatrixI8,   i8,   i8::zero();
@@ -280,7 +280,7 @@ fn generate_sub_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
   )
 }
 
-impl_mech_binop_fxn!(MathSub,generate_sub_fxn);
+impl_mech_binop_fxn!(MathSub,impl_sub_fxn);
 
 // Mul ------------------------------------------------------------------------
 
@@ -300,10 +300,10 @@ macro_rules! mul_scalar_rhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { *$out = (*$rhs).clone() * *$lhs;}};}
 
-generate_math_fxns!(Mul);
+impl_math_fxns!(Mul);
 
-fn generate_mul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_binop_match_arms!(
+fn impl_mul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_binop_match_arms!(
     Mul,
     (lhs_value, rhs_value),
     I8,   I8   => MatrixI8,   i8,   i8::zero();
@@ -321,7 +321,7 @@ fn generate_mul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
   )
 }
 
-impl_mech_binop_fxn!(MathMul,generate_mul_fxn);
+impl_mech_binop_fxn!(MathMul,impl_mul_fxn);
 
 
 // Div ------------------------------------------------------------------------
@@ -350,10 +350,10 @@ macro_rules! div_scalar_rhs_op {
         (*$out)[i] = (*$lhs) / (*$rhs)[i];
       }}};}
 
-generate_math_fxns!(Div);
+impl_math_fxns!(Div);
 
-fn generate_div_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_binop_match_arms!(
+fn impl_div_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_binop_match_arms!(
     Div,
     (lhs_value, rhs_value),
     I8,   I8   => MatrixI8,   i8,   i8::zero();
@@ -371,7 +371,7 @@ fn generate_div_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
   )
 }
 
-impl_mech_binop_fxn!(MathDiv,generate_div_fxn);
+impl_mech_binop_fxn!(MathDiv,impl_div_fxn);
 
 // Exp ------------------------------------------------------------------------
 
@@ -433,16 +433,16 @@ macro_rules! impl_expop {
     }};}
 
 #[macro_export]
-macro_rules! generate_math_fxns_exp {
+macro_rules! impl_math_fxns_exp {
   ($lib:ident) => {
-    generate_fxns!($lib,T,T,impl_expop);
+    impl_fxns!($lib,T,T,impl_expop);
   }
 }
 
-generate_math_fxns_exp!(Exp);
+impl_math_fxns_exp!(Exp);
 
-fn generate_exp_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_binop_match_arms!(
+fn impl_exp_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_binop_match_arms!(
     Exp,
     (lhs_value, rhs_value),
     U8,   U8   => MatrixU8,  u8,  u8::zero();
@@ -453,7 +453,7 @@ fn generate_exp_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFu
   )
 }
 
-impl_mech_binop_fxn!(MathExp,generate_exp_fxn);
+impl_mech_binop_fxn!(MathExp,impl_exp_fxn);
 
 // Negate ---------------------------------------------------------------------
   
@@ -505,8 +505,8 @@ impl_neg_op!(NegateV4, Vector4<T>,neg_op);
 impl_neg_op!(NegateVD, DVector<T>,neg_vec_op);
 impl_neg_op!(NegateMD, DMatrix<T>,neg_vec_op);
   
-fn generate_neg_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  generate_urnop_match_arms!(
+fn impl_neg_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_urnop_match_arms!(
     Negate,
     (lhs_value),
     I8 => MatrixI8, i8, i8::zero();
@@ -519,4 +519,4 @@ fn generate_neg_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError
   )
 }
 
-impl_mech_urnop_fxn!(MathNegate,generate_neg_fxn);
+impl_mech_urnop_fxn!(MathNegate,impl_neg_fxn);
