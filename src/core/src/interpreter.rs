@@ -594,18 +594,18 @@ fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
   for (field_label,(column,knd)) in ids.iter().zip(data.iter().zip(col_kinds)) {
     let val = Value::to_matrix(column.clone(),column.len(),1);
     match knd {
-      ValueKind::I8 => handle_value_kind!(knd, val, field_label, data_map, as_i8),
-      ValueKind::I16 => handle_value_kind!(knd, val, field_label, data_map, as_i16),
-      ValueKind::I32 => handle_value_kind!(knd, val, field_label, data_map, as_i32),
-      ValueKind::I64 => handle_value_kind!(knd, val, field_label, data_map, as_i64),
+      ValueKind::I8   => handle_value_kind!(knd, val, field_label, data_map, as_i8),
+      ValueKind::I16  => handle_value_kind!(knd, val, field_label, data_map, as_i16),
+      ValueKind::I32  => handle_value_kind!(knd, val, field_label, data_map, as_i32),
+      ValueKind::I64  => handle_value_kind!(knd, val, field_label, data_map, as_i64),
       ValueKind::I128 => handle_value_kind!(knd, val, field_label, data_map, as_i128),      
-      ValueKind::U8 => handle_value_kind!(knd, val, field_label, data_map, as_u8),
-      ValueKind::U16 => handle_value_kind!(knd, val, field_label, data_map, as_u16),
-      ValueKind::U32 => handle_value_kind!(knd, val, field_label, data_map, as_u32),
-      ValueKind::U64 => handle_value_kind!(knd, val, field_label, data_map, as_u64),
+      ValueKind::U8   => handle_value_kind!(knd, val, field_label, data_map, as_u8),
+      ValueKind::U16  => handle_value_kind!(knd, val, field_label, data_map, as_u16),
+      ValueKind::U32  => handle_value_kind!(knd, val, field_label, data_map, as_u32),
+      ValueKind::U64  => handle_value_kind!(knd, val, field_label, data_map, as_u64),
       ValueKind::U128 => handle_value_kind!(knd, val, field_label, data_map, as_u128),
-      ValueKind::F32 => handle_value_kind!(knd, val, field_label, data_map, as_f32),
-      ValueKind::F64 => handle_value_kind!(knd, val, field_label, data_map, as_f64),
+      ValueKind::F32  => handle_value_kind!(knd, val, field_label, data_map, as_f32),
+      ValueKind::F64  => handle_value_kind!(knd, val, field_label, data_map, as_f64),
       ValueKind::Bool => {
         let vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_bool().unwrap().to_value()).collect::<Vec<Value>>();
         data_map.insert(field_label.clone(),(knd,Value::to_matrix(vals.clone(),vals.len(),1)));
@@ -858,9 +858,30 @@ fn real(rl: &RealNumber) -> Value {
     RealNumber::Hexadecimal(num) => todo!(),
     RealNumber::Octal(num) => todo!(),
     RealNumber::Binary(num) => todo!(),
-    RealNumber::Scientific(num) => todo!(),
+    RealNumber::Scientific(num) => scientific(num),
     RealNumber::Rational(num) => todo!(),
   }
+}
+
+fn scientific(sci: &(Base,Exponent)) -> Value {
+  let (base,exp): &(Base,Exponent) = sci;
+  let (whole,part): &(Whole,Part) = base;
+  let (sign,exp_whole, exp_part): &(Sign, Whole, Part) = exp;
+
+  let a = whole.chars.iter().collect::<String>();
+  let b = part.chars.iter().collect::<String>();
+  let c = exp_whole.chars.iter().collect::<String>();
+  let d = exp_part.chars.iter().collect::<String>();
+  let num_f64: f64 = format!("{}.{}",a,b).parse::<f64>().unwrap();
+  let mut exp_f64: f64 = format!("{}.{}",c,d).parse::<f64>().unwrap();
+  if *sign {
+    exp_f64 = -exp_f64;
+  }
+
+  let num = num_f64 * 10f64.powf(exp_f64);
+
+
+  Value::F64(new_ref(F64(num)))
 }
 
 fn float(flt: &(Token,Token)) -> Value {

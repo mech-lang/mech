@@ -739,15 +739,15 @@ pub struct Paragraph {
   pub elements: Vec<ParagraphElement>,
 }
 
-type Sign = bool;
-type Numerator = Token;
-type Denominator = Token;
-type Whole = Token;
-type Part = Token;
-type Real = Box<Number>;
-type Imaginary = Box<Number>;
-type Base = (Whole, Part);
-type Exponent = (Sign, Whole, Part);
+pub type Sign = bool;
+pub type Numerator = Token;
+pub type Denominator = Token;
+pub type Whole = Token;
+pub type Part = Token;
+pub type Real = Box<Number>;
+pub type Imaginary = Box<Number>;
+pub type Base = (Whole, Part);
+pub type Exponent = (Sign, Whole, Part);
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Number {
