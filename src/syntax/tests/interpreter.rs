@@ -35,6 +35,7 @@ use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, Ro
 test_interpreter!(interpret_literal_integer, "123", Value::I64(new_ref(123)));
 test_interpreter!(interpret_literal_sci, "1.23e2", Value::F64(new_ref(F64::new(123.0))));
 test_interpreter!(interpret_literal_bin, "0b10101", Value::I64(new_ref(21)));
+test_interpreter!(interpret_literal_hex, "0xabc123", Value::I64(new_ref(11256099)));
 test_interpreter!(interpret_literal_float, "1.23", Value::F64(new_ref(F64::new(1.23))));
 test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String("Hello".to_string()));
 test_interpreter!(interpret_literal_true, "true", Value::Bool(new_ref(true)));
