@@ -857,10 +857,16 @@ fn real(rl: &RealNumber) -> Value {
     RealNumber::Decimal(num) => todo!(),
     RealNumber::Hexadecimal(num) => todo!(),
     RealNumber::Octal(num) => todo!(),
-    RealNumber::Binary(num) => todo!(),
+    RealNumber::Binary(num) => binary(num),
     RealNumber::Scientific(num) => scientific(num),
     RealNumber::Rational(num) => todo!(),
   }
+}
+
+fn binary(bnry: &Token) -> Value {
+  let binary_str: String = bnry.chars.iter().collect();
+  let num = i64::from_str_radix(&binary_str, 2).unwrap();
+  Value::I64(new_ref(num))
 }
 
 fn scientific(sci: &(Base,Exponent)) -> Value {
