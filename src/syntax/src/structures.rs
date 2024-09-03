@@ -92,6 +92,14 @@ pub fn tuple_struct(input: ParseString) -> ParseResult<TupleStruct> {
 // binding := identifier, kind_annotation?, <!(space+, colon)>, colon, s+,
 // >>          <empty | expression | identifier | value>, <!!right_bracket | (s*, comma, <s+>) | s+> ;
 // >> where s := space | new_line | tab ;
+
+// binding ::= identifier, kind_annotation?, whitespace?, ":", whitespace?, (expression | empty | identifier | value), whitespace?, (comma, whitespace?)?
+/* Gemini AI Explanation:
+
+Optional Whitespace: The whitespace? elements explicitly allow for optional whitespace before the kind_annotation and after the colon.
+Specific Value Non-Terminal: The value non-terminal symbol is used for the value part, which could be more specific than expression depending on the language's context.
+Direct Use of space, new_line, and tab: The s non-terminal is replaced with its definition, making the grammar more concise. */
+
 pub fn binding(input: ParseString) -> ParseResult<Binding> {
   let msg1 = "Unexpected space before colon ':'";
   let msg2 = "Expects a value";
@@ -258,6 +266,7 @@ pub fn empty_map(input: ParseString) -> ParseResult<Map> {
   Ok((input, Map{elements: vec![]}))
 }
 
+// empty_set ::= table_start, whitespace?, empty, whitespace?, table_end
 pub fn empty_set(input: ParseString) -> ParseResult<Set> {
   let (input, _) = table_start(input)?;
   let (input, _) = whitespace0(input)?;
@@ -320,6 +329,7 @@ pub fn set(input: ParseString) -> ParseResult<Set> {
 
 // #### State Machines
 
+//define_operator ::= ":" "="
 pub fn define_operator(input: ParseString) -> ParseResult<()> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag(":=")(input)?;
@@ -327,6 +337,7 @@ pub fn define_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
+// output_operator ::= "=>"
 pub fn output_operator(input: ParseString) -> ParseResult<()> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("=>")(input)?;
@@ -334,6 +345,7 @@ pub fn output_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
+// async_transition_operator ::= "~>"
 pub fn async_transition_operator(input: ParseString) -> ParseResult<()> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("~>")(input)?;
@@ -341,6 +353,7 @@ pub fn async_transition_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
+// transition_operator ::= "->"
 pub fn transition_operator(input: ParseString) -> ParseResult<()> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("->")(input)?;
@@ -348,6 +361,7 @@ pub fn transition_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
+// guard_operator ::= "|" | "│" | "├" | "└"
 pub fn guard_operator(input: ParseString) -> ParseResult<()> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = alt((tag("|"),tag("│"),tag("├"),tag("└")))(input)?;
@@ -355,6 +369,7 @@ pub fn guard_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
+// fsm_implementation ::= "#" identifier, "(", identifier*, ")", "->", fsm_pattern, whitespace?, fsm_arm+, "."
 pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> {
   let ((input, _)) = hashtag(input)?;
   let ((input, name)) = identifier(input)?;
@@ -369,6 +384,7 @@ pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> 
   Ok((input, FsmImplementation{name,input: input_vars,start,arms}))
 }
 
+// fsm_arm ::= comment*, fsm_pattern, (fsm_state_transition | fsm_output | fsm_guard)+, whitespace?
 pub fn fsm_arm(input: ParseString) -> ParseResult<FsmArm> {
   let ((input, _)) = many0(comment)(input)?;
   let ((input, start)) = fsm_pattern(input)?;
@@ -377,6 +393,7 @@ pub fn fsm_arm(input: ParseString) -> ParseResult<FsmArm> {
   Ok((input, FsmArm{start, transitions: trns}))
 }
 
+// fsm_guard ::= (transition_operator | guard_operator), (wildcard | expression)
 pub fn fsm_guard(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = alt((transition_operator,guard_operator))(input)?;
   let (input, expr) = match wildcard(input.clone()) {
@@ -389,17 +406,20 @@ pub fn fsm_guard(input: ParseString) -> ParseResult<Transition> {
   Ok((input, Transition::Guard(expr)))
 }
 
+// wildcard ::= "*"
 pub fn wildcard(input: ParseString) -> ParseResult<Pattern> {
   let ((input, _)) = asterisk(input)?;
   Ok((input, Pattern::Wildcard))
 }
 
+// fsm_state_transition ::= transition_operator, fsm_pattern
 pub fn fsm_state_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = transition_operator(input)?;
   let ((input, ptrn)) = fsm_pattern(input)?;
   Ok((input, Transition::Next(ptrn)))
 }
 
+// fsm_async_transition ::= async_transition_operator, fsm_pattern
 pub fn fsm_async_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = async_transition_operator(input)?;
   let ((input, ptrn)) = fsm_pattern(input)?;
@@ -407,12 +427,14 @@ pub fn fsm_async_transition(input: ParseString) -> ParseResult<Transition> {
 }
 
 
+// fsm_output ::= output_operator, fsm_pattern
 pub fn fsm_output(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = output_operator(input)?;
   let ((input, ptrn)) = fsm_pattern(input)?;
   Ok((input, Transition::Output(ptrn)))
 }
 
+// fsm_specification ::= "#" identifier, "(", identifier*, ")", output_operator, identifier, define_operator, fsm_state_definition+, "."
 pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
   let ((input, _)) = hashtag(input)?;
   let ((input, name)) = identifier(input)?;
@@ -427,6 +449,7 @@ pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
   Ok((input, FsmSpecification{name,input: input_vars,output,states}))
 }
 
+// fsm_pattern ::= fsm_tuple_struct | wildcard | formula
 pub fn fsm_pattern(input: ParseString) -> ParseResult<Pattern> {
   match fsm_tuple_struct(input.clone()) {
     Ok((input, tpl)) => {return Ok((input, Pattern::TupleStruct(tpl)))},
@@ -443,6 +466,7 @@ pub fn fsm_pattern(input: ParseString) -> ParseResult<Pattern> {
   }
 }
 
+// fsm_tuple_struct ::= identifier, "(", fsm_pattern+, ")"
 pub fn fsm_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
   let (input, id) = identifier(input)?;
   let ((input, _)) = left_parenthesis(input)?;
@@ -451,6 +475,7 @@ pub fn fsm_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
   Ok((input, PatternTupleStruct{name: id, patterns}))
 }
 
+// fsm_state_definition ::= guard_operator?, identifier, fsm_state_definition_variables?
 pub fn fsm_state_definition(input: ParseString) -> ParseResult<StateDefinition> {
   let ((input, _)) = guard_operator(input)?;
   let ((input, name)) = identifier(input)?;
@@ -458,6 +483,7 @@ pub fn fsm_state_definition(input: ParseString) -> ParseResult<StateDefinition> 
   Ok((input, StateDefinition{name,state_variables: vars}))
 }
 
+// fsm_state_definition_variables ::= "(", identifier+, ")"
 pub fn fsm_state_definition_variables(input: ParseString) -> ParseResult<Vec<Identifier>> {
   let ((input, _)) = left_parenthesis(input)?;
   let ((input, names)) = separated_list1(list_separator, identifier)(input)?;
@@ -465,12 +491,14 @@ pub fn fsm_state_definition_variables(input: ParseString) -> ParseResult<Vec<Ide
   Ok((input, names))
 }
 
+// fsm_pipe ::= fsm_instance, (fsm_state_transition | fsm_async_transition | fsm_output | fsm_guard)*
 pub fn fsm_pipe(input: ParseString) -> ParseResult<FsmPipe> {
   let ((input, start)) = fsm_instance(input)?;
   let ((input, trns)) = many0(alt((fsm_state_transition,fsm_async_transition,fsm_output,fsm_guard)))(input)?;
   Ok((input, FsmPipe{start, transitions: trns}))
 }
 
+// fsm_declare ::= fsm, define_operator, fsm_pipe
 pub fn fsm_declare(input: ParseString) -> ParseResult<FsmDeclare> {
   let (input, fsm) = fsm(input)?;
   let (input, _) = define_operator(input)?;
@@ -478,6 +506,7 @@ pub fn fsm_declare(input: ParseString) -> ParseResult<FsmDeclare> {
   Ok((input, FsmDeclare{fsm,pipe}))
 }
   
+// fsm ::= "#" identifier, argument_list?, kind_annotation?
 pub fn fsm(input: ParseString) -> ParseResult<Fsm> {
   let ((input, _)) = hashtag(input)?;
   let ((input, name)) = identifier(input)?;
@@ -486,6 +515,7 @@ pub fn fsm(input: ParseString) -> ParseResult<Fsm> {
   Ok((input, Fsm{ name, args, kind }))
 }
 
+// fsm_instance ::= "#" identifier, argument_list?
 pub fn fsm_instance(input: ParseString) -> ParseResult<FsmInstance> {
   let ((input, _)) = hashtag(input)?;
   let (input, name) = identifier(input)?;
@@ -493,6 +523,7 @@ pub fn fsm_instance(input: ParseString) -> ParseResult<FsmInstance> {
   Ok((input, FsmInstance{name,args} ))
 }
 
+// fsm_args ::= "(", (call_arg_with_binding | call_arg)*, ")"
 pub fn fsm_args(input: ParseString) -> ParseResult<Vec<(Option<Identifier>,Expression)>> {
   let (input, _) = left_parenthesis(input)?;
   let (input, args) = separated_list0(list_separator, alt((call_arg_with_binding,call_arg)))(input)?;
