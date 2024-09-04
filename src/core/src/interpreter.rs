@@ -854,13 +854,19 @@ fn real(rl: &RealNumber) -> Value {
     RealNumber::Negated(num) => todo!(),
     RealNumber::Integer(num) => integer(num),
     RealNumber::Float(num) => float(num),
-    RealNumber::Decimal(num) => todo!(),
+    RealNumber::Decimal(num) => dec(num),
     RealNumber::Hexadecimal(num) => hex(num),
     RealNumber::Octal(num) => oct(num),
     RealNumber::Binary(num) => binary(num),
     RealNumber::Scientific(num) => scientific(num),
     RealNumber::Rational(num) => todo!(),
   }
+}
+
+fn dec(bnry: &Token) -> Value {
+  let binary_str: String = bnry.chars.iter().collect();
+  let num = i64::from_str_radix(&binary_str, 10).unwrap();
+  Value::I64(new_ref(num))
 }
 
 fn binary(bnry: &Token) -> Value {

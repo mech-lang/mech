@@ -37,6 +37,7 @@ test_interpreter!(interpret_literal_sci, "1.23e2", Value::F64(new_ref(F64::new(1
 test_interpreter!(interpret_literal_bin, "0b10101", Value::I64(new_ref(21)));
 test_interpreter!(interpret_literal_hex, "0x123abc", Value::I64(new_ref(1194684)));
 test_interpreter!(interpret_literal_oct, "0o1234", Value::I64(new_ref(668)));
+test_interpreter!(interpret_literal_dec, "0d1234", Value::I64(new_ref(1234)));
 
 test_interpreter!(interpret_literal_float, "1.23", Value::F64(new_ref(F64::new(1.23))));
 test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String("Hello".to_string()));
