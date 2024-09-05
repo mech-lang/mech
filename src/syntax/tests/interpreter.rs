@@ -64,6 +64,9 @@ test_interpreter!(interpret_kind_lhs_define_overflow, "x<u8> := 256", Value::U8(
 test_interpreter!(interpret_kind_convert_twice, "x<u64> := 1; y<i8> := x", Value::I8(new_ref(1)));
 test_interpreter!(interpret_kind_convert_float, "x<f32> := 123;", Value::F32(new_ref(F32::new(123.0))));
 
+test_interpreter!(interpret_kind_define, "<foo> := <i64>; x<foo> := 123", Value::I64(new_ref(123)));
+
+
 test_interpreter!(interpret_formula_math_neg, "-1", Value::I64(new_ref(-1)));
 test_interpreter!(interpret_formula_math_multiple_terms, "1 + 2 + 3", Value::I64(new_ref(6)));
 test_interpreter!(interpret_formula_comparison_bool, "true == false", Value::Bool(new_ref(false)));

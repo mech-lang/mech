@@ -150,12 +150,21 @@ fn statement(stmt: &Statement, plan: Plan, symbols: SymbolTableRef, functions: F
   match stmt {
     Statement::VariableDefine(var_def) => variable_define(&var_def, plan.clone(), symbols.clone(), functions.clone()),
     Statement::VariableAssign(_) => todo!(),
-    Statement::KindDefine(_) => todo!(),
+    Statement::KindDefine(knd_def) => kind_define(&knd_def, plan.clone(), symbols.clone(), functions.clone()),
     Statement::EnumDefine(_) => todo!(),
     Statement::FsmDeclare(_) => todo!(),
     Statement::SplitTable => todo!(),
     Statement::FlattenTable => todo!(),
   }
+}
+
+fn kind_define(knd_def: &KindDefine, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+  let id = knd_def.name.hash();
+  let kind = kind_annotation(&knd_def.kind.kind, functions.clone())?;
+  let value_kind = kind.to_value_kind(functions.clone())?;
+  let mut fxns_brrw = functions.borrow_mut();
+  fxns_brrw.kinds.insert(id, value_kind.clone());
+  Ok(Value::Kind(value_kind))
 }
 
 fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
