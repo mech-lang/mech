@@ -150,12 +150,21 @@ fn statement(stmt: &Statement, plan: Plan, symbols: SymbolTableRef, functions: F
   match stmt {
     Statement::VariableDefine(var_def) => variable_define(&var_def, plan.clone(), symbols.clone(), functions.clone()),
     Statement::VariableAssign(_) => todo!(),
-    Statement::KindDefine(_) => todo!(),
+    Statement::KindDefine(knd_def) => kind_define(&knd_def, plan.clone(), symbols.clone(), functions.clone()),
     Statement::EnumDefine(_) => todo!(),
     Statement::FsmDeclare(_) => todo!(),
     Statement::SplitTable => todo!(),
     Statement::FlattenTable => todo!(),
   }
+}
+
+fn kind_define(knd_def: &KindDefine, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+  let id = knd_def.name.hash();
+  let kind = kind_annotation(&knd_def.kind.kind, functions.clone())?;
+  let value_kind = kind.to_value_kind(functions.clone())?;
+  let mut fxns_brrw = functions.borrow_mut();
+  fxns_brrw.kinds.insert(id, value_kind.clone());
+  Ok(Value::Kind(value_kind))
 }
 
 fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
@@ -854,13 +863,37 @@ fn real(rl: &RealNumber) -> Value {
     RealNumber::Negated(num) => todo!(),
     RealNumber::Integer(num) => integer(num),
     RealNumber::Float(num) => float(num),
-    RealNumber::Decimal(num) => todo!(),
-    RealNumber::Hexadecimal(num) => todo!(),
-    RealNumber::Octal(num) => todo!(),
-    RealNumber::Binary(num) => todo!(),
+    RealNumber::Decimal(num) => dec(num),
+    RealNumber::Hexadecimal(num) => hex(num),
+    RealNumber::Octal(num) => oct(num),
+    RealNumber::Binary(num) => binary(num),
     RealNumber::Scientific(num) => scientific(num),
     RealNumber::Rational(num) => todo!(),
   }
+}
+
+fn dec(bnry: &Token) -> Value {
+  let binary_str: String = bnry.chars.iter().collect();
+  let num = i64::from_str_radix(&binary_str, 10).unwrap();
+  Value::I64(new_ref(num))
+}
+
+fn binary(bnry: &Token) -> Value {
+  let binary_str: String = bnry.chars.iter().collect();
+  let num = i64::from_str_radix(&binary_str, 2).unwrap();
+  Value::I64(new_ref(num))
+}
+
+fn oct(octl: &Token) -> Value {
+  let hex_str: String = octl.chars.iter().collect();
+  let num = i64::from_str_radix(&hex_str, 8).unwrap();
+  Value::I64(new_ref(num))
+}
+
+fn hex(hxdcml: &Token) -> Value {
+  let hex_str: String = hxdcml.chars.iter().collect();
+  let num = i64::from_str_radix(&hex_str, 16).unwrap();
+  Value::I64(new_ref(num))
 }
 
 fn scientific(sci: &(Base,Exponent)) -> Value {

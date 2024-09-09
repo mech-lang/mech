@@ -185,7 +185,8 @@ impl Value {
       Value::Empty => builder.push_record(vec!["_"]),
       Value::IndexAll => builder.push_record(vec![":"]),
       Value::Id(x) => builder.push_record(vec![format!("{:?}",humanize(x))]),
-      _ => unreachable!(),
+      Value::Kind(x) => builder.push_record(vec![format!("{:?}",x)]),
+
     };
     let mut table = builder.build();
     table.with(Style::modern());
