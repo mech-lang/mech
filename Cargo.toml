@@ -1,6 +1,6 @@
 [package]
 name = "mech"
-version = "0.2.9"
+version = "0.2.10"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Mech is a reactive programming language for building robots, games, and animations."
 documentation = "https://mech-lang.org/docs"
@@ -18,8 +18,8 @@ gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = "0.2.9"
-mech-syntax = "0.2.9"
+mech-core = "0.2.10"
+mech-syntax = "0.2.10"
 #mech-program = "0.2.2"
 #mech-utilities = "0.2.2"
 
@@ -69,7 +69,7 @@ mech-utilities = { path = 'src/utilities'}
 mech-wasm = { path = 'src/wasm'}
 
 [patch.'https://gitlab.com/mech-lang/core']
-mech-core = { path = 'src/core', version = '0.2.9' }
+mech-core = { path = 'src/core', version = '0.2.10' }
 
 [patch.'https://gitlab.com/mech-lang/syntax']
-mech-syntax = { path = 'src/syntax', version = '0.2.9' }
+mech-syntax = { path = 'src/syntax', version = '0.2.10' }
