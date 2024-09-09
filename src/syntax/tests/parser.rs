@@ -230,9 +230,9 @@ test_parser!(parse_statement_variable_define_annotated_tuple_rhs, "z := (10<u8>,
 
 test_parser!(parse_statement_variable_assign, "a = 2", 5448552719387223);
 test_parser!(parse_statement_variable_assign_slice, "a[1] = 2", 20762289900010478);
-test_parser!(parse_statement_kind_define, "<pos> := <(u8,u8,u8)>", 23009507256904188);
-test_parser!(parse_statement_kind_define_size, "<foo> := <([u8]:1,2, [u8]:3,3)>", 7698832452691191);
-test_parser!(parse_statement_kind_define_size_hex, "<bar> := <[foo]:0x01, 0xFF>", 6442842300718590);
+test_parser!(parse_statement_kind_define, "<pos> := <(u8,u8,u8)>", 19272007189561377);
+test_parser!(parse_statement_kind_define_size, "<foo> := <([u8]:1,2, [u8]:3,3)>", 19568235100036623);
+test_parser!(parse_statement_kind_define_size_hex, "<bar> := <[foo]:0x01, 0xFF>", 52794480162632018);
 
 test_parser!(parse_statement_enum_define, "<my-type> := A | B", 64572902068503820);
 test_parser!(parse_statement_enum_define_typed, "<my-type> := A(<u8>) | B", 62980205579073513);
