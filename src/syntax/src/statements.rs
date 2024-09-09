@@ -168,7 +168,7 @@ pub fn kind_define(input: ParseString) -> ParseResult<KindDefine> {
   let (input, _) = right_angle(input)?;
   let (input, _) = define_operator(input)?;
   let (input, knd) = kind_annotation(input)?;
-  Ok((input, KindDefine{name,definition: knd}))
+  Ok((input, KindDefine{name,kind:knd}))
 }
 
 

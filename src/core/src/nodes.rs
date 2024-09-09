@@ -400,7 +400,7 @@ pub struct EnumVariant {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct KindDefine {
   pub name: Identifier,
-  pub definition: KindAnnotation,
+  pub kind: KindAnnotation,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

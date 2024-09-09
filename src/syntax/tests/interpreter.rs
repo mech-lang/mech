@@ -34,6 +34,11 @@ use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, Ro
 
 test_interpreter!(interpret_literal_integer, "123", Value::I64(new_ref(123)));
 test_interpreter!(interpret_literal_sci, "1.23e2", Value::F64(new_ref(F64::new(123.0))));
+test_interpreter!(interpret_literal_bin, "0b10101", Value::I64(new_ref(21)));
+test_interpreter!(interpret_literal_hex, "0x123abc", Value::I64(new_ref(1194684)));
+test_interpreter!(interpret_literal_oct, "0o1234", Value::I64(new_ref(668)));
+test_interpreter!(interpret_literal_dec, "0d1234", Value::I64(new_ref(1234)));
+
 test_interpreter!(interpret_literal_float, "1.23", Value::F64(new_ref(F64::new(1.23))));
 test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String("Hello".to_string()));
 test_interpreter!(interpret_literal_true, "true", Value::Bool(new_ref(true)));
@@ -58,6 +63,9 @@ test_interpreter!(interpret_kind_lhs_define, "x<u64> := 1", Value::U64(new_ref(1
 test_interpreter!(interpret_kind_lhs_define_overflow, "x<u8> := 256", Value::U8(new_ref(0)));
 test_interpreter!(interpret_kind_convert_twice, "x<u64> := 1; y<i8> := x", Value::I8(new_ref(1)));
 test_interpreter!(interpret_kind_convert_float, "x<f32> := 123;", Value::F32(new_ref(F32::new(123.0))));
+
+test_interpreter!(interpret_kind_define, "<foo> := <i64>; x<foo> := 123", Value::I64(new_ref(123)));
+
 
 test_interpreter!(interpret_formula_math_neg, "-1", Value::I64(new_ref(-1)));
 test_interpreter!(interpret_formula_math_multiple_terms, "1 + 2 + 3", Value::I64(new_ref(6)));
