@@ -34,12 +34,14 @@ pub fn parenthetical_term(input: ParseString) -> ParseResult<Factor> {
   Ok((input, frmla))
 }
 
+// negate_factor := "-" factor ;
 pub fn negate_factor(input: ParseString) -> ParseResult<Factor> {
   let (input, _) = dash(input)?;
   let (input, expr) = factor(input)?;
   Ok((input, Factor::Negate(Box::new(expr))))
 }
 
+// not_factor := "not" factor ;
 pub fn not_factor(input: ParseString) -> ParseResult<Factor> {
   let (input, _) = not(input)?;
   let (input, expr) = factor(input)?;
@@ -261,6 +263,7 @@ pub fn statement_separator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
+// function_define := identifier "(" (function_arg (list_separator function_arg)*)? ")" whitespace0 "=" whitespace0 (function_out_args | function_out_arg) define_operator (statement (whitespace1 | statement_separator)*) period ;
 pub fn function_define(input: ParseString) -> ParseResult<FunctionDefine> {
   let ((input, name)) = identifier(input)?;
   let ((input, _)) = left_parenthesis(input)?;
@@ -276,6 +279,7 @@ pub fn function_define(input: ParseString) -> ParseResult<FunctionDefine> {
   Ok((input,FunctionDefine{name,input: input_args,output,statements}))
 }
 
+// function_out_args := "(" function_arg (list_separator function_arg)* ")" ;
 pub fn function_out_args(input: ParseString) -> ParseResult<Vec<FunctionArgument>> {
   let ((input, _)) = left_parenthesis(input)?;
   let ((input, args)) = separated_list1(list_separator,function_arg)(input)?;
@@ -283,6 +287,7 @@ pub fn function_out_args(input: ParseString) -> ParseResult<Vec<FunctionArgument
   Ok((input, args))
 }
 
+// function_out_arg := function_arg ;
 pub fn function_out_arg(input: ParseString) -> ParseResult<Vec<FunctionArgument>> {
   let ((input, arg)) = function_arg(input)?;
   Ok((input, vec![arg]))
