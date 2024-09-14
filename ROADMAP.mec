@@ -131,7 +131,7 @@ reshaping it for use in program logic.
 - Statement
   - [x] VarDefine
   - [ ] VarAssign
-  - [ ] Kind Define
+  - [x] Kind Define
   - [ ] Enum Define
 - Matrix
   - [x] Multiply
