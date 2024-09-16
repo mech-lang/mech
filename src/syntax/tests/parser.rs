@@ -325,3 +325,13 @@ measurement-update(μ<[f32]:3>, Σ<[f32]:3,3>) = (μ<[f32]:3>, Σ<[f32]:3,3>) :=
   K := Σ ** H' / S
   μ := (μ + K * (z -  Ẑ))
   Σ := ([1 0 0; 0 1 0; 0 0 1] - K ** H) ** Σ."#,17138746356126439);
+
+test_parser!(parse_comment_inline,r#"a := 0b10101   -- bin
+b := 0x123abc  -- hex
+c := 0o1234    -- oct
+a := 0d1234    -- dec"#, 32628914429923900);
+
+test_parser!(parse_comment_block,r#"/* Hello 
+   World */
+
+a := 123"#, 18698165613865065);
