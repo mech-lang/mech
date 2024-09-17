@@ -1,14 +1,10 @@
 <p align="center">
-  <img width="400px" src="https://mech-lang.org/img/logo.png">
+  <img width="500px" src="https://mech-lang.org/img/logo.png">
 </p>
 
-Mech is a language for developing **data-driven**, **reactive** systems like robots, games, and animations. It makes **composing**, **transforming**, and **distributing** data easy, allowing you to focus on the essential complexity of your project. 
+Mech is a language for developing **data-driven**, **reactive** systems like animations, games, and robots. It makes **composing**, **transforming**, and **distributing** data easy, allowing you to focus on the essential complexity of your project.
 
-You can try Mech online at [https://mech-lang.org/try](https://mech-lang.org/try).
-
-Usage and installation instructions can be found in the [documentation](https://mech-lang.org/#/docs/index.mec) or the [main Mech repository](https://github.com/mech-lang/mech).
-
-Be sure to follow our [blog](https://mech-lang.org/blog/)([RSS](https://mech-lang.org/feed.xml))!
+[Try](https://mech-lang.org/try/) Mech online in your browser, or follow our progress on our [blog](https://mech-lang.org/blog/).
 
 # Core
 
@@ -16,13 +12,14 @@ The language runtime. It's a small dataflow engine that accepts transactions of 
 
 ## Contents
 
-- **block** - defines a `Block`, which is the ubiquitous unit of code in Mech. A block is comprised of transformations on input tables. These transformations can either modify existing tables or create new tables.
-- **table** - defines a `Table`, the core data structure of Mech. A table is a 2D array of values.
-- **column** - defines a `Column`, which is a vector of values.
-- **value** - defines a `Value`, a unified datatype for Mech. A value can be empty, a boolean, a string, a reference to another table, a number literal.
-- **database** - defines a `Database` of tables. Databases accept `Transactions`, which are sets of `Changes` to the database.
-- **function** - defines the standard library for Mech, including basic indexing, mathematical, comparison, and logic functions.
-- **error** - defines an `MechError`, which holds the information necessary to track and render error messages.
+- **interpreter** - The Mech interpreter, which executes Mech bytecode.
+- **value** - Defines `Value`, a unified datatype
+- **kind** - Defines `Kind`, which is used to annotate the kind of each varible
+- **error** - Define `MechError`, an error type that is used throughout the Mech system.
+- **functions** - User defined functions
+- **matrix** - Mech `Matrix` wraps NDArray for fast matrix computations
+- **nodes** - Defines various nodes which comprise the Mech AST.
+- **types** - Defines various types used by the Rust implementation of the Mech compiler.
 
 ## Project Status
 

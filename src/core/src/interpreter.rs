@@ -151,11 +151,18 @@ fn statement(stmt: &Statement, plan: Plan, symbols: SymbolTableRef, functions: F
     Statement::VariableDefine(var_def) => variable_define(&var_def, plan.clone(), symbols.clone(), functions.clone()),
     Statement::VariableAssign(_) => todo!(),
     Statement::KindDefine(knd_def) => kind_define(&knd_def, plan.clone(), symbols.clone(), functions.clone()),
-    Statement::EnumDefine(_) => todo!(),
+    Statement::EnumDefine(enm_def) => enum_define(&enm_def, plan.clone(), symbols.clone(), functions.clone()),
     Statement::FsmDeclare(_) => todo!(),
     Statement::SplitTable => todo!(),
     Statement::FlattenTable => todo!(),
   }
+}
+
+fn enum_define(enm_def: &EnumDefine, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+  let id = enm_def.name.hash();
+  
+  
+  Ok(Value::Empty)
 }
 
 fn kind_define(knd_def: &KindDefine, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
