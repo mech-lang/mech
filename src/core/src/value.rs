@@ -44,7 +44,7 @@ macro_rules! impl_as_type {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, 
-  String, Bool, Matrix(Box<ValueKind>,Vec<usize>), Set, Map, Record, Table, Tuple, Id, Index, Reference, Atom(u64), Empty, Any
+  String, Bool, Matrix(Box<ValueKind>,Vec<usize>), Enum(u64), Set, Map, Record, Table, Tuple, Id, Index, Reference, Atom(u64), Empty, Any
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -84,6 +84,7 @@ pub enum Value {
   Record(MechMap),
   Table(MechTable),
   Tuple(MechTuple),
+  Enum(Box<MechEnum>),
   Id(u64),
   Index(Ref<usize>),
   MutableReference(MutableReference),
@@ -117,6 +118,7 @@ impl Hash for Value {
       Value::Table(x) => x.hash(state),
       Value::Tuple(x) => x.hash(state),
       Value::Record(x) => x.hash(state),
+      Value::Enum(x) => x.hash(state),
       Value::String(x) => x.hash(state),
       Value::MatrixBool(x) => x.hash(state),
       Value::MatrixIndex(x) => x.hash(state),
@@ -166,6 +168,7 @@ impl Value {
       Value::Table(x)  => {return x.pretty_print();},
       Value::Tuple(x)  => {return x.pretty_print();},
       Value::Record(x) => {return x.pretty_print();},
+      Value::Enum(x) => {return x.pretty_print();},
       Value::MatrixIndex(x) => {return x.pretty_print();}
       Value::MatrixBool(x) => {return x.pretty_print();}
       Value::MatrixU8(x)   => {return x.pretty_print();},
@@ -186,7 +189,6 @@ impl Value {
       Value::IndexAll => builder.push_record(vec![":"]),
       Value::Id(x) => builder.push_record(vec![format!("{:?}",humanize(x))]),
       Value::Kind(x) => builder.push_record(vec![format!("{:?}",x)]),
-
     };
     let mut table = builder.build();
     table.with(Style::modern());
@@ -226,6 +228,7 @@ impl Value {
       Value::MatrixF32(x) => x.shape(),
       Value::MatrixF64(x) => x.shape(),
       Value::MatrixValue(x) => x.shape(),
+      Value::Enum(x) => vec![1,1],
       Value::Table(x) => x.shape(),
       Value::Set(x) => vec![1,x.set.len()],
       Value::Map(x) => vec![1,x.map.len()],
@@ -276,6 +279,7 @@ impl Value {
       Value::Map(x) => ValueKind::Map,
       Value::Record(x) => ValueKind::Record,
       Value::Tuple(x) => ValueKind::Tuple,
+      Value::Enum(x) => ValueKind::Enum(x.id),
       Value::MutableReference(x) => ValueKind::Reference,
       Value::Empty => ValueKind::Empty,
       Value::IndexAll => ValueKind::Empty,
@@ -627,5 +631,35 @@ impl Hash for MechTuple {
     for x in self.elements.iter() {
         x.hash(state)
     }
+  }
+}
+
+// Enum -----------------------------------------------------------------------
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MechEnum {
+  pub id: u64,
+  pub variant: u64,
+  pub value: Option<Value>,
+}
+
+impl MechEnum {
+
+  pub fn pretty_print(&self) -> String {
+    let mut builder = Builder::default();
+    let string_elements: Vec<String> = vec![format!("{}{}",self.id,self.variant)];
+    builder.push_record(string_elements);
+    let mut table = builder.build();
+    table.with(Style::modern());
+    format!("{table}")
+  }
+
+}
+
+impl Hash for MechEnum {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    self.id.hash(state);
+    self.variant.hash(state);
+    self.value.hash(state);
   }
 }
