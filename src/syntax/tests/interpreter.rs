@@ -38,7 +38,6 @@ test_interpreter!(interpret_literal_bin, "0b10101", Value::I64(new_ref(21)));
 test_interpreter!(interpret_literal_hex, "0x123abc", Value::I64(new_ref(1194684)));
 test_interpreter!(interpret_literal_oct, "0o1234", Value::I64(new_ref(668)));
 test_interpreter!(interpret_literal_dec, "0d1234", Value::I64(new_ref(1234)));
-
 test_interpreter!(interpret_literal_float, "1.23", Value::F64(new_ref(F64::new(1.23))));
 test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String("Hello".to_string()));
 test_interpreter!(interpret_literal_true, "true", Value::Bool(new_ref(true)));
@@ -48,7 +47,6 @@ test_interpreter!(interpret_literal_empty, "_", Value::Empty);
 
 test_interpreter!(interpret_comment, "123 -- comment", Value::I64(new_ref(123)));
 test_interpreter!(interpret_comment2, "123 // comment", Value::I64(new_ref(123)));
-
 
 test_interpreter!(interpret_formula_math_add, "2 + 2", Value::I64(new_ref(4)));
 test_interpreter!(interpret_formula_math_sub, "2 - 2", Value::I64(new_ref(0)));
@@ -60,7 +58,109 @@ test_interpreter!(interpret_formula_math_exp_f64, "2.0 ^ 2.0", Value::F64(new_re
 test_interpreter!(interpret_kind_annotation, "1<u64>", Value::U64(new_ref(1)));
 test_interpreter!(interpret_kind_annotation_math, "1<u64> + 1<u64>", Value::U64(new_ref(2)));
 test_interpreter!(interpret_kind_overflow, "256<u8>", Value::U8(new_ref(0)));
-test_interpreter!(interpret_kind_math_overflow, "255<u8> + 1<u8>", Value::U8(new_ref(0)));
+test_interpreter!(interpret_kind_math_overflow_u8, "255<u8> + 1<u8>", Value::U8(new_ref(0)));
+
+// New tests overflow - unsigned
+test_interpreter!(interpret_kind_math_overflow_u16, "65535<u16> + 1<u16>", Value::U16(new_ref(0)));
+test_interpreter!(interpret_kind_math_overflow_u32, "4294967295<u32> + 1<u32>", Value::U32(new_ref(0)));
+test_interpreter!(interpret_kind_math_overflow_u64, "18446744073709551615<u64> + 1<u64>", Value::U64(new_ref(0)));
+test_interpreter!(interpret_kind_math_overflow_u128, "340282366920938463463374607431768211455<u128> + 1<u128>", Value::U128(new_ref(0)));
+
+// New test overflow - signed
+test_interpreter!(interpret_kind_math_overflow_i8, "127<i8> + 1<i8>", Value::I8(new_ref(-128)));
+test_interpreter!(interpret_kind_math_overflow_i16, "32767<i16> + 1<i16>", Value::I16(new_ref(-32768)));
+test_interpreter!(interpret_kind_math_overflow_i32, "2147483647<i32> + 1<i32>", Value::I32(new_ref(-2147483648)));
+test_interpreter!(interpret_kind_math_overflow_i64, "9223372036854775807<i64> + 1<i64>", Value::I64(new_ref(-9223372036854775808)));
+test_interpreter!(interpret_kind_math_overflow_i128, "170141183460469231731687303715884105727<i128> + 1<i128>", Value::I128(new_ref(-170141183460469231731687303715884105728)));
+
+// New test overflow - float
+test_interpreter!(interpret_kind_math_overflow_f32,"1.0<f32> + 1.0<f32>",Value::F32(new_ref(mech_core::F32(3.402823e+38))));
+test_interpreter!(interpret_kind_math_overflow_f64,"1.0<f64> + 1.0<f64>",Value::F64(new_ref(mech_core::F64(1.7976931348623157e+308))));
+
+// New tests underflow - unsigned
+test_interpreter!(interpret_kind_math_underflow_u8, "0<u8> - 1<u8>", Value::U8(new_ref(255)));
+test_interpreter!(interpret_kind_math_underflow_u16, "0<u16> - 1<u16>", Value::U16(new_ref(65535)));
+test_interpreter!(interpret_kind_math_underflow_u32, "0<u32> - 1<u32>", Value::U32(new_ref(4294967295)));
+test_interpreter!(interpret_kind_math_underflow_u64, "0<u64> - 1<u64>", Value::U64(new_ref(18446744073709551615)));
+test_interpreter!(interpret_kind_math_underflow_u128, "0<u128> - 1<u128>", Value::U128(new_ref(340282366920938463463374607431768211455)));
+
+// New tests underflow - signed
+test_interpreter!(interpret_kind_math_underflow_i8, "-128<i8> - 1<i8>", Value::U8(new_ref(127)));
+test_interpreter!(interpret_kind_math_underflow_i16, "-128<i16> - 1<i16>", Value::I16(new_ref(-127)));
+test_interpreter!(interpret_kind_math_underflow_i32, "-2147483648<i32> - 1<i32>", Value::I32(new_ref(2147483647)));
+test_interpreter!(interpret_kind_math_underflow_i64, "-9223372036854775808<i64> - 1<i64>", Value::I64(new_ref(9223372036854775807)));
+test_interpreter!(interpret_kind_math_underflow_i128, "-170141183460469231731687303715884105728<i128> - 1<i128>", Value::I128(new_ref(170141183460469231731687303715884105727)));
+
+// New test underflow - floats
+test_interpreter!(interpret_kind_math_underflow_f32,"-1.0<f32> - 1.0<f32>",Value::F32(new_ref(mech_core::F32(1.175494e-38))));
+test_interpreter!(interpret_kind_math_underflow_f64,"-1.0<f64> - 1.0<f64>",Value::F64(new_ref(mech_core::F64(2.2250738585072014e-308))));
+
+// New tests nominal with type def - unsigned
+//u8
+test_interpreter!(interpret_formula_math_add_u8, "2<u8> + 2<u8>", Value::U8(new_ref(4)));
+test_interpreter!(interpret_formula_math_sub_u8, "2<u8> - 2<u8>", Value::U8(new_ref(0)));
+test_interpreter!(interpret_formula_math_div_u8, "2<u8> / 2<u8>", Value::U8(new_ref(1)));
+test_interpreter!(interpret_formula_math_mul_u8, "2<u8> * 2<u8>", Value::U8(new_ref(4)));
+// u16
+test_interpreter!(interpret_formula_math_add_u16, "2<u16> + 2<u16>", Value::U16(new_ref(4)));
+test_interpreter!(interpret_formula_math_sub_u16, "2<u16> - 2<u16>", Value::U16(new_ref(0)));
+test_interpreter!(interpret_formula_math_div_u16, "2<u16> / 2<u16>", Value::U16(new_ref(1)));
+test_interpreter!(interpret_formula_math_mul_u16, "2<u16> * 2<u16>", Value::U16(new_ref(4)));
+// u32
+test_interpreter!(interpret_formula_math_add_u32, "2<u32> + 2<u32>", Value::U32(new_ref(4)));
+test_interpreter!(interpret_formula_math_sub_u32, "2<u32> - 2<u32>", Value::U32(new_ref(0)));
+test_interpreter!(interpret_formula_math_div_u32, "2<u32> / 2<u32>", Value::U32(new_ref(1)));
+test_interpreter!(interpret_formula_math_mul_u32, "2<u32> * 2<u32>", Value::U32(new_ref(4)));
+// u64
+test_interpreter!(interpret_formula_math_add_u64, "2<u64> + 2<u64>", Value::U64(new_ref(4)));
+test_interpreter!(interpret_formula_math_sub_u64, "2<u64> - 2<u64>", Value::U64(new_ref(0)));
+test_interpreter!(interpret_formula_math_div_u64, "2<u64> / 2<u64>", Value::U64(new_ref(1)));
+test_interpreter!(interpret_formula_math_mul_u64, "2<u64> * 2<u64>", Value::U64(new_ref(4)));
+// u128
+test_interpreter!(interpret_formula_math_add_u128, "2<u128> + 2<u128>", Value::U128(new_ref(4)));
+test_interpreter!(interpret_formula_math_sub_u128, "2<u128> - 2<u128>", Value::U128(new_ref(0)));
+test_interpreter!(interpret_formula_math_div_u128, "2<u128> / 2<u128>", Value::U128(new_ref(1)));
+test_interpreter!(interpret_formula_math_mul_u128, "2<u128> * 2<u128>", Value::U128(new_ref(4)));
+
+// New tests nominal with type def - signed
+//i8
+test_interpreter!(interpret_formula_math_add_i8, "2<i8> + 2<i8>", Value::I8(new_ref(4)));
+test_interpreter!(interpret_formula_math_sub_i8, "2<i8> - 2<i8>", Value::I8(new_ref(0)));
+test_interpreter!(interpret_formula_math_div_i8, "2<i8> / 2<i8>", Value::I8(new_ref(1)));
+test_interpreter!(interpret_formula_math_mul_i8, "2<i8> * 2<i8>", Value::I8(new_ref(4)));
+// i16
+test_interpreter!(interpret_formula_math_add_i16, "2<i16> + 2<i16>", Value::I16(new_ref(4)));
+test_interpreter!(interpret_formula_math_sub_i16, "2<i16> - 2<i16>", Value::I16(new_ref(0)));
+test_interpreter!(interpret_formula_math_div_i16, "2<i16> / 2<i16>", Value::I16(new_ref(1)));
+test_interpreter!(interpret_formula_math_mul_i16, "2<i16> * 2<i16>", Value::I16(new_ref(4)));
+// i32
+test_interpreter!(interpret_formula_math_add_i32, "2<i32> + 2<i32>", Value::I32(new_ref(4)));
+test_interpreter!(interpret_formula_math_sub_i32, "2<i32> - 2<i32>", Value::I32(new_ref(0)));
+test_interpreter!(interpret_formula_math_div_i32, "2<i32> / 2<i32>", Value::I32(new_ref(1)));
+test_interpreter!(interpret_formula_math_mul_i32, "2<i32> * 2<i32>", Value::I32(new_ref(4)));
+// i64
+test_interpreter!(interpret_formula_math_add_i64, "2<i64> + 2<i64>", Value::I64(new_ref(4)));
+test_interpreter!(interpret_formula_math_sub_i64, "2<i64> - 2<i64>", Value::I64(new_ref(0)));
+test_interpreter!(interpret_formula_math_div_i64, "2<i64> / 2<i64>", Value::I64(new_ref(1)));
+test_interpreter!(interpret_formula_math_mul_i64, "2<i64> * 2<i64>", Value::I64(new_ref(4)));
+// i128
+test_interpreter!(interpret_formula_math_add_i128, "2<i128> + 2<i128>", Value::I128(new_ref(4)));
+test_interpreter!(interpret_formula_math_sub_i128, "2<i128> - 2<i128>", Value::I128(new_ref(0)));
+test_interpreter!(interpret_formula_math_div_i128, "2<i128> / 2<i128>", Value::I128(new_ref(1)));
+test_interpreter!(interpret_formula_math_mul_i128, "2<i128> * 2<i128>", Value::I128(new_ref(4)));
+
+// New tests for nominal with type def - floats
+// f32
+test_interpreter!(interpret_formula_math_add_f32, "2.0<f32> + 2.0<f32>", Value::F32(new_ref(mech_core::F32(4.0))));
+test_interpreter!(interpret_formula_math_sub_f32, "2.0<f32> - 2.0<f32>", Value::F32(new_ref(mech_core::F32(0.0))));
+test_interpreter!(interpret_formula_math_div_f32, "2.0<f32> / 2.0<f32>", Value::F32(new_ref(mech_core::F32(1.0))));
+test_interpreter!(interpret_formula_math_mul_f32, "2.0<f32> * 2.0<f32>", Value::F32(new_ref(mech_core::F32(4.0))));
+//f64
+test_interpreter!(interpret_formula_math_add_f64, "2.0<f64> + 2.0<f64>", Value::F64(new_ref(mech_core::F64(4.0))));
+test_interpreter!(interpret_formula_math_sub_f64, "2.0<f64> - 2.0<f64>", Value::F64(new_ref(mech_core::F64(0.0))));
+test_interpreter!(interpret_formula_math_div_f64, "2.0<f64> / 2.0<f64>", Value::F64(new_ref(mech_core::F64(1.0))));
+test_interpreter!(interpret_formula_math_mul_f64, "2.0<f64> * 2.0<f64>", Value::F64(new_ref(mech_core::F64(4.0))));
+
 test_interpreter!(interpret_kind_math_no_overflow, "255<u16> + 1<u16>", Value::U16(new_ref(256)));
 test_interpreter!(interpret_kind_matrix_row3, "[1<u8> 2<u8> 3<u8>]", Value::MatrixU8(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![1,2,3])))));
 test_interpreter!(interpret_kind_lhs_define, "x<u64> := 1", Value::U64(new_ref(1)));
@@ -69,7 +169,6 @@ test_interpreter!(interpret_kind_convert_twice, "x<u64> := 1; y<i8> := x", Value
 test_interpreter!(interpret_kind_convert_float, "x<f32> := 123;", Value::F32(new_ref(F32::new(123.0))));
 
 test_interpreter!(interpret_kind_define, "<foo> := <i64>; x<foo> := 123", Value::I64(new_ref(123)));
-
 
 test_interpreter!(interpret_formula_math_neg, "-1", Value::I64(new_ref(-1)));
 test_interpreter!(interpret_formula_math_multiple_terms, "1 + 2 + 3", Value::I64(new_ref(6)));
@@ -211,4 +310,3 @@ test_interpreter!(interpret_function_call_native_vector,"math/sin([1.570796327 1
 test_interpreter!(interpret_function_call_native,r#"math/sin(1.5707963267948966)"#, Value::F64(new_ref(F64::new(1.0))));
 test_interpreter!(interpret_function_call_native_cos,r#"math/cos(0.0)"#, Value::F64(new_ref(F64::new(1.0))));
 test_interpreter!(interpret_function_call_native_vector2,"math/cos([0.0 0.0])", new_ref(RowVector2::from_vec(vec![F64::new(1.0),F64::new(1.0)])).to_value());
-
