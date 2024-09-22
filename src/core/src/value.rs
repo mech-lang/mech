@@ -639,15 +639,14 @@ impl Hash for MechTuple {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MechEnum {
   pub id: u64,
-  pub variant: u64,
-  pub value: Option<Value>,
+  pub variants: Vec<(u64, Option<Value>)>,
 }
 
 impl MechEnum {
 
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
-    let string_elements: Vec<String> = vec![format!("{}{}",self.id,self.variant)];
+    let string_elements: Vec<String> = vec![format!("{}{:?}",self.id,self.variants)];
     builder.push_record(string_elements);
     let mut table = builder.build();
     table.with(Style::modern());
@@ -659,7 +658,6 @@ impl MechEnum {
 impl Hash for MechEnum {
   fn hash<H: Hasher>(&self, state: &mut H) {
     self.id.hash(state);
-    self.variant.hash(state);
-    self.value.hash(state);
+    self.variants.hash(state);
   }
 }

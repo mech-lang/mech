@@ -160,9 +160,8 @@ fn statement(stmt: &Statement, plan: Plan, symbols: SymbolTableRef, functions: F
 
 fn enum_define(enm_def: &EnumDefine, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let id = enm_def.name.hash();
-  
-  
-  Ok(Value::Empty)
+  let variants = enm_def.variants.iter().map(|v| (v.name.hash(),None)).collect::<Vec<(u64, Option<Value>)>>();
+  Ok(Value::Enum(Box::new(MechEnum{id, variants})))
 }
 
 fn kind_define(knd_def: &KindDefine, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
