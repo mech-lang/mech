@@ -16,7 +16,7 @@ Comprehensive documentation is available at [mech-lang.org](https://mech-lang.or
 
 ### 💾 From Binary
 
-Download the latest release for your platform [here](https://github.com/mech-lang/mech/releases).
+Download the latest release for your platform [here](https://github.com/mech-lang/mech/releases/latest).
 
 ### 🔨 From Source
 

@@ -445,7 +445,7 @@ pub struct Set {
   pub elements: Vec<Expression>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Atom {
   pub name: Identifier,
 }
@@ -553,7 +553,7 @@ pub struct VariableAssign {
   pub expression: Expression,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Identifier {
   pub name: Token,
 }
@@ -648,7 +648,7 @@ pub struct Binding {
   pub value: Expression,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct KindAnnotation {
   pub kind: Kind
 }
@@ -667,7 +667,7 @@ impl KindAnnotation {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize,Eq, PartialEq)]
 pub enum Kind {
   Tuple(Vec<Kind>),
   Bracket((Vec<Kind>,Vec<Literal>)),
@@ -696,7 +696,7 @@ impl Kind {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub enum Literal {
   Empty(Token),
   Boolean(Token),
@@ -717,7 +717,7 @@ impl Literal {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct MechString {
   pub text: Token,
 }
@@ -749,7 +749,7 @@ pub type Imaginary = Box<Number>;
 pub type Base = (Whole, Part);
 pub type Exponent = (Sign, Whole, Part);
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub enum Number {
   Real(RealNumber),
   Imaginary(ComplexNumber),
@@ -764,7 +764,7 @@ impl Number {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub enum RealNumber {
   Negated(Box<RealNumber>),
   Integer(Token),
@@ -786,12 +786,12 @@ impl RealNumber {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct ImaginaryNumber {
   pub number: RealNumber,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct ComplexNumber {
   pub real: Option<RealNumber>,
   pub imaginary: ImaginaryNumber
