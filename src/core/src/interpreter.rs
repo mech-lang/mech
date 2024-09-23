@@ -86,15 +86,15 @@ fn section(section: &Section, plan: Plan, symbols: SymbolTableRef, functions: Fu
 fn section_element(element: &SectionElement, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let out = match element {
     SectionElement::MechCode(code) => {mech_code(&code, plan.clone(), symbols.clone(), functions.clone())?},
-    SectionElement::Section(sctn) => todo!(),
+    SectionElement::Section(sctn) => Value::Empty,
     SectionElement::Comment(cmmnt) => Value::Empty,
     SectionElement::Paragraph(p) => Value::Empty,
-    SectionElement::UnorderedList(ul) => todo!(),
-    SectionElement::CodeBlock => todo!(),
-    SectionElement::OrderedList => todo!(),
-    SectionElement::BlockQuote => todo!(),
-    SectionElement::ThematicBreak => todo!(),
-    SectionElement::Image => todo!(),
+    SectionElement::UnorderedList(ul) => Value::Empty,
+    SectionElement::CodeBlock => Value::Empty,
+    SectionElement::OrderedList => Value::Empty,
+    SectionElement::BlockQuote => Value::Empty,
+    SectionElement::ThematicBreak => Value::Empty,
+    SectionElement::Image => Value::Empty,
   };
   Ok(out)
 }
