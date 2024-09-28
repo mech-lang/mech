@@ -91,6 +91,17 @@ impl_convert_op_group!(u128, [F32, F64], convert_op3);
 impl_convert_op_group!(F32,  [F32, F64], convert_op4);
 impl_convert_op_group!(F64,  [F32, F64], convert_op4);
 
+#[derive(Debug)]
+struct ConvertSEnum {
+  out: Value,
+}
+impl MechFunction for ConvertSEnum
+{
+  fn solve(&self) { }
+  fn out(&self) -> Value { self.out.clone() }
+  fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
 macro_rules! impl_conversion_match_arms {
   ($arg:expr, $($input_type:ident => $($target_type:ident),+);+ $(;)?) => {
     paste!{
@@ -100,6 +111,12 @@ macro_rules! impl_conversion_match_arms {
             (Value::[<$input_type:upper>](arg), ValueKind::[<$target_type:upper>]) => {Ok(Box::new([<ConvertS $input_type:upper $target_type:upper>]{arg: arg.clone(), out: new_ref($target_type::zero())}))},
           )+
         )+
+        (Value::Atom(varian_id), ValueKind::Enum(enum_id)) => {
+          let variants = vec![(varian_id,None)];
+          let enm = MechEnum{id: enum_id, variants};
+          let val = Value::Enum(Box::new(enm.clone()));
+          Ok(Box::new(ConvertSEnum{out: val}))
+        }
         x => Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
       }
     }
@@ -137,10 +154,17 @@ impl NativeFunctionCompiler for ConvertKind {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
         match source_value {
-          Value::MutableReference(lhs) => {
-            impl_conversion_fxn(lhs.borrow().clone(), target_kind.clone())
+          Value::MutableReference(rhs) => {
+            impl_conversion_fxn(rhs.borrow().clone(), target_kind.clone())
           }
-          _ => unreachable!(),
+          Value::Atom(rhs) => {
+            // todo check to see if target kind exists
+            impl_conversion_fxn(source_value, target_kind.clone())
+          }
+          x => {
+            println!("{:?}",x);
+            todo!();
+          }
         }
       }
     }
