@@ -181,9 +181,23 @@ fn kind_define(knd_def: &KindDefine, plan: Plan, symbols: SymbolTableRef, functi
 fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let id = var_def.var.name.hash();
   let mut result = expression(&var_def.expression, plan.clone(), symbols.clone(), functions.clone())?;
-  if let Some(knd_atn) =  &var_def.var.kind {
-    let knd = kind_annotation(&knd_atn.kind,functions.clone())?;
+  if let Some(knd_anntn) =  &var_def.var.kind {
+    let knd = kind_annotation(&knd_anntn.kind,functions.clone())?;
     let target_knd = knd.to_value_kind(functions.clone())?;
+    // Do type checking
+    match (&result, &target_knd) {
+      (Value::Atom(given_variant_id), ValueKind::Enum(enum_id)) => {
+        let fxns_brrw = functions.borrow();
+        let my_enum = match fxns_brrw.enums.get(enum_id) {
+          Some(my_enum) => my_enum,
+          None => todo!(),
+        };
+        if !my_enum.variants.iter().any(|(enum_variant, inner_value)| *given_variant_id == *enum_variant) {
+          return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnknownEnumVairant(*enum_id,*given_variant_id)}); 
+        }
+      }
+      _ => todo!(),
+    }
     let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_knd)])?;
     convert_fxn.solve();
     let converted_result = convert_fxn.out();

@@ -154,13 +154,8 @@ impl NativeFunctionCompiler for ConvertKind {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
         match source_value {
-          Value::MutableReference(rhs) => {
-            impl_conversion_fxn(rhs.borrow().clone(), target_kind.clone())
-          }
-          Value::Atom(rhs) => {
-            // todo check to see if target kind exists
-            impl_conversion_fxn(source_value, target_kind.clone())
-          }
+          Value::MutableReference(rhs) => impl_conversion_fxn(rhs.borrow().clone(), target_kind.clone()),
+          Value::Atom(atom_id) => impl_conversion_fxn(source_value, target_kind.clone()),
           x => {
             println!("{:?}",x);
             todo!();
