@@ -31,11 +31,17 @@ pub struct Functions {
   pub functions: HashMap<u64,FunctionDefinition>,
   pub function_compilers: HashMap<u64, Box<dyn NativeFunctionCompiler>>,
   pub kinds: HashMap<u64,ValueKind>,
+  pub enums: HashMap<u64,MechEnum>,
 }
   
 impl Functions {
   pub fn new() -> Self {
-      Self {functions: HashMap::new(), function_compilers: HashMap::new(), kinds: HashMap::new()}
+      Self {
+        functions: HashMap::new(), 
+        function_compilers: HashMap::new(), 
+        kinds: HashMap::new(),
+        enums: HashMap::new(),
+      }
   }
 }
 

@@ -170,6 +170,10 @@ test_interpreter!(interpret_kind_convert_float, "x<f32> := 123;", Value::F32(new
 
 test_interpreter!(interpret_kind_define, "<foo> := <i64>; x<foo> := 123", Value::I64(new_ref(123)));
 
+test_interpreter!(interpret_enum_define, "<foo> := `A | `B", Value::Enum(Box::new(MechEnum{id: 18069117524405134, variants: vec![(55450514845822917,None),(2300890681602401,None)]})));
+test_interpreter!(interpret_enum_define_variable, "<foo> := `A | `B; x<foo> := `A;", Value::Enum(Box::new(MechEnum{id: 18069117524405134, variants: vec![(55450514845822917,None)]})));
+
+
 test_interpreter!(interpret_formula_math_neg, "-1", Value::I64(new_ref(-1)));
 test_interpreter!(interpret_formula_math_multiple_terms, "1 + 2 + 3", Value::I64(new_ref(6)));
 test_interpreter!(interpret_formula_comparison_bool, "true == false", Value::Bool(new_ref(false)));
