@@ -1,6 +1,6 @@
 [package]
 name = "mech-syntax"
-version = "0.2.12"
+version = "0.2.13"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "A toolchain for compiling textual syntax into Mech blocks."
 documentation = "http://docs.mech-lang.org"
@@ -21,7 +21,7 @@ default = []
 no-std = ["mech-core/no-std", "rlibc"]
 
 [dependencies]
-mech-core = "0.2.12"
+mech-core = "0.2.13"
 
 hashbrown = "0.14.5"
 lazy_static = "1.5.0"
