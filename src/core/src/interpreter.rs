@@ -196,7 +196,12 @@ fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTableRef
           return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnknownEnumVairant(*enum_id,*given_variant_id)}); 
         }
       }
-      _ => todo!(),
+      (Value::Atom(given_variant_id), target_kind) => {
+        return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnableToConvertValueKind}); 
+      }
+      x => {
+        println!("{:?}",x);
+      },
     }
     let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_knd)])?;
     convert_fxn.solve();

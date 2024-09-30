@@ -57,6 +57,7 @@ pub enum MechErrorKind {
   UnknownFunctionArgument(u64),
   UnknownColumnKind(u64),
   UnknownEnumVairant(u64,u64),
+  UnableToConvertValueKind,
   UnhandledFunctionArgumentKind,
   CouldNotAssignKindToValue,
   ExpectedNumericForSize,                            // When something non-numeric is passed as a size
