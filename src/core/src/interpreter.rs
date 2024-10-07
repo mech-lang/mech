@@ -149,13 +149,36 @@ pub fn function_define(fxn_def: &FunctionDefine, functions: FunctionsRef) -> MRe
 fn statement(stmt: &Statement, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   match stmt {
     Statement::VariableDefine(var_def) => variable_define(&var_def, plan.clone(), symbols.clone(), functions.clone()),
-    Statement::VariableAssign(_) => todo!(),
+    Statement::VariableAssign(var_assgn) => variable_assign(&var_assgn, plan.clone(), symbols.clone(), functions.clone()),
     Statement::KindDefine(knd_def) => kind_define(&knd_def, plan.clone(), symbols.clone(), functions.clone()),
     Statement::EnumDefine(enm_def) => enum_define(&enm_def, plan.clone(), symbols.clone(), functions.clone()),
     Statement::FsmDeclare(_) => todo!(),
     Statement::SplitTable => todo!(),
     Statement::FlattenTable => todo!(),
   }
+}
+
+fn variable_assign(var_assgn: &VariableAssign, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+
+  let mut trgt = expression(&var_assgn.target, plan.clone(), symbols.clone(), functions.clone())?;
+  let mut expr = expression(&var_assgn.expression, plan.clone(), symbols.clone(), functions.clone())?;
+
+  // First, make sure they are compatible kinds
+  match trgt {
+    Value::MutableReference(trgt_ref) => {
+      let mut trgt_ref_brrw = trgt_ref.borrow_mut();
+      // The Kinds are the same, we can just assign
+      if trgt_ref_brrw.kind() == expr.kind() {
+        *trgt_ref_brrw = expr.clone();
+        return Ok(expr);
+      // The kinds are different, cant we convert?
+      } else {
+
+      }
+    }
+    _ => (),
+  }
+  Ok(Value::Empty)
 }
 
 fn enum_define(enm_def: &EnumDefine, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {

@@ -87,7 +87,7 @@ reshaping it for use in program logic.
 
 - [x] Monorepo
 - New Literals
-  - [ ] Enums
+  - [x] Enums
   - [x] Atoms
   - [x] Specifying units
   - [x] Scientific notation
@@ -132,7 +132,7 @@ reshaping it for use in program logic.
   - [x] VarDefine
   - [ ] VarAssign
   - [x] Kind Define
-  - [ ] Enum Define
+  - [x] Enum Define
 - Matrix
   - [x] Multiply
   - [x] Transpose
