@@ -978,7 +978,8 @@ fn float(flt: &(Token,Token)) -> Value {
 }
 
 fn integer(int: &Token) -> Value {
-  let num: i64 = int.chars.iter().collect::<String>().parse::<i64>().unwrap();
+  let num: i128 = int.chars.iter().collect::<String>().parse::<i128>().unwrap();
+  let num = num as i64;
   Value::I64(new_ref(num))
 }
 

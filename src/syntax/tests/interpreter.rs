@@ -63,7 +63,7 @@ test_interpreter!(interpret_kind_math_overflow_u8, "255<u8> + 1<u8>", Value::U8(
 // New tests overflow - unsigned
 test_interpreter!(interpret_kind_math_overflow_u16, "65535<u16> + 1<u16>", Value::U16(new_ref(0)));
 test_interpreter!(interpret_kind_math_overflow_u32, "4294967295<u32> + 1<u32>", Value::U32(new_ref(0)));
-// test_interpreter!(interpret_kind_math_overflow_u64, "18446744073709551615<u64> + 1<u64>", Value::U64(new_ref(0)));
+test_interpreter!(interpret_kind_math_overflow_u64, "18446744073709551615<u64> + 1<u64>", Value::U64(new_ref(0)));
 // test_interpreter!(interpret_kind_math_overflow_u128, "340282366920938463463374607431768211455<u128> + 1<u128>", Value::U128(new_ref(0)));
 
 // New test overflow - signed
