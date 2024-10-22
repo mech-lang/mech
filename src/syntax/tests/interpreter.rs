@@ -63,7 +63,7 @@ test_interpreter!(interpret_kind_math_overflow_u8, "255<u8> + 1<u8>", Value::U8(
 // New tests overflow - unsigned
 test_interpreter!(interpret_kind_math_overflow_u16, "65535<u16> + 1<u16>", Value::U16(new_ref(0)));
 test_interpreter!(interpret_kind_math_overflow_u32, "4294967295<u32> + 1<u32>", Value::U32(new_ref(0)));
-// test_interpreter!(interpret_kind_math_overflow_u64, "18446744073709551615<u64> + 1<u64>", Value::U64(new_ref(0)));
+test_interpreter!(interpret_kind_math_overflow_u64, "18446744073709551615<u64> + 1<u64>", Value::U64(new_ref(0)));
 // test_interpreter!(interpret_kind_math_overflow_u128, "340282366920938463463374607431768211455<u128> + 1<u128>", Value::U128(new_ref(0)));
 
 // New test overflow - signed
@@ -254,10 +254,10 @@ test_interpreter!(interpret_matrix_add_3x3, "[1 2 3; 4 5 6; 7 8 9] + [9 8 7; 6 5
 //test_interpreter!(interpret_matrix_div_3x3, "[10 20 30; 40 50 60; 70 80 90] / [2 3 4; 5 6 7; 8 9 10]", new_ref(Matrix3::from_vec(vec![1i64, 2, 3, 4, 5, 6, 7, 8, 9])).to_value());
 
 // 4x4 Nominal Operations
-//test_interpreter!(interpret_matrix_add_4x4, "[1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16] + [17 18 19 20; 21 22 23 24; 25 26 27 28; 29 30 31 32]", new_ref(Matrix4::from_vec(vec![18i64, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48])).to_value());
-//test_interpreter!(interpret_matrix_sub_4x4, "[1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16] - [17 18 19 20; 21 22 23 24; 25 26 27 28; 29 30 31 32]", new_ref(Matrix4::from_vec(vec![-16i64, -16, -16, -16, -16, -16, -16, -16, -16, -16, -16, -16, -16, -16, -16, -16])).to_value());
-//test_interpreter!(interpret_matrix_mul_4x4, "[1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16] * [17 18 19 20; 21 22 23 24; 25 26 27 28; 29 30 31 32]", new_ref(Matrix4::from_vec(vec![292i64, 304, 316, 328, 676, 704, 732, 760, 1060, 1120, 1180, 1240, 1444, 1536, 1628, 1720])).to_value());
-//test_interpreter!(interpret_matrix_div_4x4, "[1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16] / [2 3 4 5; 6 7 8 9; 10 11 12 13; 14 15 16 17]", new_ref(Matrix4::from_vec(vec![-0.25, 0.25, -0.25, 0.25, -0.25, 0.25, -0.25, 0.25, -0.25, 0.25, -0.25, 0.25, -0.25, 0.25, -0.25, 0.25])).to_value());
+test_interpreter!(interpret_matrix_add_4x4, "[1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16] + [17 18 19 20; 21 22 23 24; 25 26 27 28; 29 30 31 32]", new_ref(Matrix4::from_vec(vec![18i64, 26, 34, 42, 20, 28, 36, 44, 22, 30, 38, 46, 24, 32, 40, 48])).to_value());
+test_interpreter!(interpret_matrix_sub_4x4, "[1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16] - [17 18 19 20; 21 22 23 24; 25 26 27 28; 29 30 31 32]", new_ref(Matrix4::from_vec(vec![-16i64, -16, -16, -16, -16, -16, -16, -16, -16, -16, -16, -16, -16, -16, -16, -16])).to_value());
+test_interpreter!(interpret_matrix_mul_4x4, "[1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16] * [17 18 19 20; 21 22 23 24; 25 26 27 28; 29 30 31 32]", new_ref(Matrix4::from_vec(vec![17i64, 105, 225, 377, 36, 132, 260, 420, 57, 161, 297, 465, 80, 192, 336, 512])).to_value());
+test_interpreter!(interpret_matrix_div_4x4, "[2 3 4 5; 6 7 8 9; 10 11 12 13; 14 15 16 17] / [1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16]", new_ref(Matrix4::from_vec(vec![2i64, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])).to_value());
 
 // 2x3 Nominal Operations
 //test_interpreter!(interpret_matrix_add_2x3, "[1 2 3; 4 5 6] + [7 8 9; 10 11 12]", new_ref(Matrix2x3::from_vec(vec![8i64, 10, 12, 14, 16, 18])).to_value());
