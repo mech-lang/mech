@@ -21,7 +21,11 @@ default = []
 no-std = ["mech-core/no-std", "rlibc"]
 
 [dependencies]
+<<<<<<< HEAD
 mech-core = "0.2.16"
+=======
+mech-core = "0.2.15"
+>>>>>>> 6f5e3d0aa6ebf0ac25afb5e1704a4b776d5e89b5
 
 hashbrown = "0.15.0"
 lazy_static = "1.5.0"
