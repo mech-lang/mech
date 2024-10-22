@@ -26,7 +26,7 @@ mech-utilities = {path = "../utilities"}
 mech-math = {path = "../machines/math"}
 mech-html = {path = "../machines/html"}
 
-hashbrown = "0.14.5"
+hashbrown = "0.15.0"
 wasm-bindgen = "0.2.93"
 bincode = "1.3.3"
 js-sys = "0.3.70"

@@ -25,7 +25,7 @@ mech-core = "0.2.2"
 
 serde = {version = "1.0.203", default-features = false, features = ["alloc"] }
 serde_derive = "1.0.203"
-hashbrown = "0.14.5"
+hashbrown = "0.15.0"
 crossbeam-channel = "0.5.13"
 
 [patch.crates-io]
