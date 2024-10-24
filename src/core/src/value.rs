@@ -41,7 +41,7 @@ macro_rules! impl_as_type {
 
 // Value ----------------------------------------------------------------------
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, 
   String, Bool, Matrix(Box<ValueKind>,Vec<usize>), Enum(u64), Set, Map, Record, Table, Tuple, Id, Index, Reference, Atom(u64), Empty, Any
