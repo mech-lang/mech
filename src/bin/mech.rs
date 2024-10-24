@@ -22,10 +22,23 @@ use tabled::{
   Tabled,
 };
 use serde_json;
+use std::panic;
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() -> Result<(), MechError> {
-  let version = "0.2.16";
+  panic::set_hook(Box::new(|panic_info| {
+    if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
+      println!("Mech Language Error: {}", s);
+      // Check for underflow error message
+      if s.contains("underflow") {
+          println!("Underflow error occurred!");
+      }
+    } else {
+        println!("Mech Language Error: Unknown panic");
+    }
+  }));
+  
   let text_logo = r#"
   ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐   ┌─┐
   └───┐ ┌───┘ └──────┘ │ │ └┐ │ │ │   │ │
@@ -37,7 +50,7 @@ fn main() -> Result<(), MechError> {
   let about = format!("{}", text_logo);
 
   let matches = Command::new("Mech")
-    .version(version)
+    .version(VERSION)
     .author("Corey Montella corey@mech-lang.org")
     .about(about)
     .arg(Arg::new("mech_paths")
@@ -124,10 +137,8 @@ fn main() -> Result<(), MechError> {
   stdo.execute(cursor::MoveTo(0,0));
   stdo.execute(Print(text_logo));
   stdo.execute(cursor::MoveToNextLine(1));
-  println!(" {}",  "╔═══════════════════════════════════════╗".bright_black());
-  println!(" {}                 {}                {}", "║".bright_black(), format!("v{}",version).truecolor(246,192,78), "║".bright_black());
-  println!(" {}           {}           {}", "║".bright_black(), "www.mech-lang.org", "║".bright_black());
-  println!(" {}\n",  "╚═══════════════════════════════════════╝".bright_black());
+  println!("\n                {}                ",format!("v{}",VERSION).truecolor(246,192,78));
+  println!("           {}           \n", "www.mech-lang.org");
 
   'REPL: loop {
     io::stdout().flush().unwrap();
