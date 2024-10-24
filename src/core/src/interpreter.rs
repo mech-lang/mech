@@ -895,6 +895,24 @@ fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, functions: Functions
         _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::CouldNotAssignKindToValue}),
       }
     }
+    (Value::F64(num), Kind::Scalar(to_kind_id)) => {
+      match functions.borrow().kinds.get(&to_kind_id) {
+        Some(ValueKind::I8)   => Ok(Value::I8(new_ref((*num.borrow()).0 as i8))),
+        Some(ValueKind::I16)  => Ok(Value::I16(new_ref((*num.borrow()).0 as i16))),
+        Some(ValueKind::I32)  => Ok(Value::I32(new_ref((*num.borrow()).0 as i32))),
+        Some(ValueKind::I64)  => Ok(Value::I64(new_ref((*num.borrow()).0 as i64))),
+        Some(ValueKind::I128) => Ok(Value::I128(new_ref((*num.borrow()).0 as i128))),
+        Some(ValueKind::U8)   => Ok(Value::U8(new_ref((*num.borrow()).0 as u8))),
+        Some(ValueKind::U16)  => Ok(Value::U16(new_ref((*num.borrow()).0 as u16))),
+        Some(ValueKind::U32)  => Ok(Value::U32(new_ref((*num.borrow()).0 as u32))),
+        Some(ValueKind::U64)  => Ok(Value::U64(new_ref((*num.borrow()).0 as u64))),
+        Some(ValueKind::U128) => Ok(Value::U128(new_ref((*num.borrow()).0 as u128))),
+        Some(ValueKind::F32)  => Ok(Value::F32(new_ref(F32::new((*num.borrow()).0 as f32)))),
+        Some(ValueKind::F64)  => Ok(Value::F64(new_ref(F64::new((*num.borrow()).0 as f64)))),
+        None => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(to_kind_id)}),
+        _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::CouldNotAssignKindToValue}),
+      }
+    }
     _ => todo!(),
   }
 }
@@ -978,9 +996,8 @@ fn float(flt: &(Token,Token)) -> Value {
 }
 
 fn integer(int: &Token) -> Value {
-  let num: i128 = int.chars.iter().collect::<String>().parse::<i128>().unwrap();
-  let num = num as i64;
-  Value::I64(new_ref(num))
+  let num: f64 = int.chars.iter().collect::<String>().parse::<f64>().unwrap();
+  Value::F64(new_ref(F64::new(num)))
 }
 
 fn string(tkn: &MechString) -> Value {

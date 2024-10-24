@@ -357,6 +357,7 @@ impl Value {
     match self {
       Value::MatrixIndex(v) => Some(v.as_vec()),
       Value::MatrixI64(v) => Some(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
+      Value::MatrixF64(v) => Some(v.as_vec().iter().map(|x| (*x).0 as usize).collect::<Vec<usize>>()),
       Value::MutableReference(x) => x.borrow().as_vecusize(),
       Value::MatrixBool(v) => None,
       _ => todo!(),
