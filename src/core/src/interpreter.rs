@@ -6,7 +6,8 @@ use crate::stdlib::{math::*,
                     compare::*,
                     matrix::*,
                     table::*,
-                    convert::*};
+                    convert::*
+                  };
 use crate::stdlib::range::{RangeInclusive, RangeExclusive};
 use crate::*;
 use crate::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*};
@@ -121,7 +122,7 @@ pub fn function_define(fxn_def: &FunctionDefine, functions: FunctionsRef) -> MRe
   for input_arg in &fxn_def.input {
     let arg_id = input_arg.name.hash();
     new_fxn.input.insert(arg_id,input_arg.kind.clone());
-    let in_arg = Value::I64(new_ref(0));
+    let in_arg = Value::F64(new_ref(F64::new(0.0)));
     new_fxn.symbols.borrow_mut().insert(arg_id, in_arg);
   }
   let output_arg_ids = fxn_def.output.iter().map(|output_arg| {
@@ -319,7 +320,10 @@ fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, f
           (Value::I64(arg_ref), Value::I64(i64_ref)) => {
             *arg_ref.borrow_mut() = i64_ref.borrow().clone();
           }
-          _ => todo!(),
+          (Value::F64(arg_ref), Value::F64(f64_ref)) => {
+            *arg_ref.borrow_mut() = f64_ref.borrow().clone();
+          }
+          (x,y) => {return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::KindMismatch(x.kind(),y.kind())});}
         }
       }
       // schedule function
@@ -908,7 +912,7 @@ fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, functions: Functions
         Some(ValueKind::U64)  => Ok(Value::U64(new_ref((*num.borrow()).0 as u64))),
         Some(ValueKind::U128) => Ok(Value::U128(new_ref((*num.borrow()).0 as u128))),
         Some(ValueKind::F32)  => Ok(Value::F32(new_ref(F32::new((*num.borrow()).0 as f32)))),
-        Some(ValueKind::F64)  => Ok(Value::F64(new_ref(F64::new((*num.borrow()).0 as f64)))),
+        Some(ValueKind::F64)  => Ok(value),
         None => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(to_kind_id)}),
         _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::CouldNotAssignKindToValue}),
       }

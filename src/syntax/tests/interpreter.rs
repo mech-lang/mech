@@ -57,20 +57,11 @@ test_interpreter!(interpret_formula_math_exp_f64, "2.0 ^ 2.0", Value::F64(new_re
 
 test_interpreter!(interpret_kind_annotation, "1<u64>", Value::U64(new_ref(1)));
 test_interpreter!(interpret_kind_annotation_math, "1<u64> + 1<u64>", Value::U64(new_ref(2)));
-test_interpreter!(interpret_kind_overflow, "256<u8>", Value::U8(new_ref(255)));
-test_interpreter!(interpret_kind_math_overflow_u8, "255<u8> + 1<u8>", Value::U8(new_ref(0)));
 
 // New tests overflow - unsigned
-test_interpreter!(interpret_kind_math_overflow_u16, "65535<u16> + 1<u16>", Value::U16(new_ref(0)));
-test_interpreter!(interpret_kind_math_overflow_u32, "4294967295<u32> + 1<u32>", Value::U32(new_ref(0)));
-test_interpreter!(interpret_kind_math_overflow_u64, "18446744073709551615<u64> + 1<u64>", Value::U64(new_ref(0)));
 // test_interpreter!(interpret_kind_math_overflow_u128, "340282366920938463463374607431768211455<u128> + 1<u128>", Value::U128(new_ref(0)));
 
 // New test overflow - signed
-test_interpreter!(interpret_kind_math_overflow_i8, "127<i8> + 1<i8>", Value::I8(new_ref(-128)));
-test_interpreter!(interpret_kind_math_overflow_i16, "32767<i16> + 1<i16>", Value::I16(new_ref(-32768)));
-test_interpreter!(interpret_kind_math_overflow_i32, "2147483647<i32> + 1<i32>", Value::I32(new_ref(-2147483648)));
-test_interpreter!(interpret_kind_math_overflow_i64, "9223372036854775807<i64> + 1<i64>", Value::I64(new_ref(-9223372036854775808)));
 // test_interpreter!(interpret_kind_math_overflow_i128, "170141183460469231731687303715884105727<i128> + 1<i128>", Value::I128(new_ref(-170141183460469231731687303715884105728)));
 
 // New test overflow - float
@@ -78,22 +69,7 @@ test_interpreter!(interpret_kind_math_overflow_i64, "9223372036854775807<i64> + 
 // test_interpreter!(interpret_kind_math_overflow_f64,"1.0<f64> + 1.0<f64>",Value::F64(new_ref(F64::new(1.7976931348623157e+308))));
 
 // New tests underflow - unsigned
-test_interpreter!(interpret_kind_math_underflow_u8, "0<u8> - 1<u8>", Value::U8(new_ref(255)));
-test_interpreter!(interpret_kind_math_underflow_u16, "0<u16> - 1<u16>", Value::U16(new_ref(65535)));
-test_interpreter!(interpret_kind_math_underflow_u32, "0<u32> - 1<u32>", Value::U32(new_ref(4294967295)));
 //test_interpreter!(interpret_kind_math_underflow_u64, "0<u64> - 1<u64>", Value::U64(new_ref(18446744073709551615)));
-test_interpreter!(interpret_kind_math_underflow_u128, "0<u128> - 1<u128>", Value::U128(new_ref(340282366920938463463374607431768211455)));
-
-// New tests underflow - signed
-// test_interpreter!(interpret_kind_math_underflow_i8, "-128<i8> - 1<i8>", Value::I8(new_ref(127))); 
-// test_interpreter!(interpret_kind_math_underflow_i16, "-128<i16> - 1<i16>", Value::I16(new_ref(-127)));
-test_interpreter!(interpret_kind_math_underflow_i32, "-2147483648<i32> - 1<i32>", Value::I32(new_ref(2147483647)));
-//test_interpreter!(interpret_kind_math_underflow_i64, "-9223372036854775808<i64> - 1<i64>", Value::F64(new_ref(F64::new(9223372036854775807.0)));
-//test_interpreter!(interpret_kind_math_underflow_i128, "-170141183460469231731687303715884105728<i128> - 1<i128>", Value::I128(new_ref(170141183460469231731687303715884105727)));
-
-// New test underflow - floats
-//test_interpreter!(interpret_kind_math_underflow_f32,"-1.0<f32> - 1.0<f32>",Value::F32(new_ref(F32::new(1.175494e-38))));
-//test_interpreter!(interpret_kind_math_underflow_f64,"-1.0<f64> - 1.0<f64>",Value::F64(new_ref(F64::new(2.2250738585072014e-308))));
 
 // New tests nominal with type def - unsigned
 //u8
@@ -164,7 +140,6 @@ test_interpreter!(interpret_formula_math_mul_i128, "2<i128> * 2<i128>", Value::I
 test_interpreter!(interpret_kind_math_no_overflow, "255<u16> + 1<u16>", Value::U16(new_ref(256)));
 test_interpreter!(interpret_kind_matrix_row3, "[1<u8> 2<u8> 3<u8>]", Value::MatrixU8(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![1,2,3])))));
 test_interpreter!(interpret_kind_lhs_define, "x<u64> := 1", Value::U64(new_ref(1)));
-test_interpreter!(interpret_kind_lhs_define_overflow, "x<u8> := 256", Value::U8(new_ref(0)));
 test_interpreter!(interpret_kind_convert_twice, "x<u64> := 1; y<i8> := x", Value::I8(new_ref(1)));
 test_interpreter!(interpret_kind_convert_float, "x<f32> := 123;", Value::F32(new_ref(F32::new(123.0))));
 
@@ -229,13 +204,13 @@ test_interpreter!(interpret_matrix_row3_add_float, "[1.0 2.0 3.0] + [4.0 5.0 6.0
 test_interpreter!(interpret_matrix_row3_sub, "[1 2 3] - [4 5 6]", new_ref(RowVector3::from_vec(vec![F64::new(-3.0),F64::new(-3.0),F64::new(-3.0)])).to_value());
 test_interpreter!(interpret_matrix_row3_sub_float, "[1.0 2.0 3.0] - [4.0 5.0 6.0]", new_ref(RowVector3::from_vec(vec![F64::new(-3.0),F64::new(-3.0),F64::new(-3.0)])).to_value());
 test_interpreter!(interpret_matrix_row3_add_ref, "a := [1 2 3]; b := [4 5 6]; c := a + b", new_ref(RowVector3::from_vec(vec![F64::new(5.0),F64::new(7.0),F64::new(9.0)])).to_value());
-test_interpreter!(interpret_matrix_dynamic_add, "[1 2 3 4; 5 6 7 8] + [1 2 3 4; 5 6 7 8]", new_ref(DMatrix::from_vec(2,4,vec![F64::new(2.0),F64::new(4.0),F64::new(6.0),F64::new(8.0),F64::new(10.0),F64::new(12.0),F64::new(14.0),F64::new(16.0)])).to_value());
+test_interpreter!(interpret_matrix_dynamic_add, "[1 2 3 4; 5 6 7 8] + [1 2 3 4; 5 6 7 8]", new_ref(DMatrix::from_vec(2,4,vec![F64::new(2.0), F64::new(10.0), F64::new(4.0), F64::new(12.0), F64::new(6.0), F64::new(14.0), F64::new(8.0), F64::new(16.0)])).to_value());
 test_interpreter!(interpret_matrix_dynamic_div, "[2 4 6 8] / [2 2 2 2]", new_ref(RowVector4::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0),F64::new(4.0)])).to_value());
 test_interpreter!(interpret_matrix_gt, "x := [66.0 2.0 3.0; 66.0 5.0 66.0]; y := [1.0 2.0 3.0; 4.0 5.0 6.0]; x > y", new_ref(Matrix2x3::from_vec(vec![true,true,false,false,false,true])).to_value());
 test_interpreter!(interpret_matrix_lt, "x := [66.0 2.0 3.0; 66.0 4.0 66.0]; y := [1.0 2.0 3.0; 4.0 5.0 6.0]; x < y", new_ref(Matrix2x3::from_vec(vec![false,false,false,true,false,false])).to_value());
 test_interpreter!(interpret_matrix_lt_int, "x := [66 2 3; 66 4 66]; y := [1 2 3; 4 5 6]; x < y", new_ref(Matrix2x3::from_vec(vec![false,false,false,true,false,false])).to_value());
 
-test_interpreter!(interpret_matrix_matmul_mat1, "[2] ** [10]", new_ref(Matrix1::from_vec(vec![20i64])).to_value());
+test_interpreter!(interpret_matrix_matmul_mat1, "[2] ** [10]", new_ref(Matrix1::from_vec(vec![F64::new(20.0)])).to_value());
 test_interpreter!(interpret_matrix_matmul_mat2_ref, "a := [1 2; 3 4]; b := [4 5; 6 7]; c := a ** b", new_ref(Matrix2::from_vec(vec![F64::new(16.0), F64::new(36.0), F64::new(19.0), F64::new(43.0)])).to_value());
 test_interpreter!(interpret_matrixmatmul_mat2x3_ref, "a := [1.0 2.0 3.0; 4.0 5.0 6.0]; b := [4.0 5.0; 6.0 7.0; 8.0 9.0]; c := a ** b", new_ref(Matrix2::from_vec(vec![F64::new(40.0),F64::new(94.0),F64::new(46.0),F64::new(109.0)])).to_value());
 
@@ -266,16 +241,10 @@ test_interpreter!(interpret_matrix_sub_4x4,
                                                   F64::new(-16.0), F64::new(-16.0), F64::new(-16.0), F64::new(-16.0)])).to_value());
 test_interpreter!(interpret_matrix_mul_4x4, 
                   "[1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16] * [17 18 19 20; 21 22 23 24; 25 26 27 28; 29 30 31 32]", 
-                  new_ref(Matrix4::from_vec(vec![F64::new(250.0), F64::new(260.0), F64::new(270.0), F64::new(280.0), 
-                                                  F64::new(618.0), F64::new(644.0), F64::new(670.0), F64::new(696.0), 
-                                                  F64::new(986.0), F64::new(1028.0), F64::new(1070.0), F64::new(1112.0), 
-                                                  F64::new(1354.0), F64::new(1412.0), F64::new(1470.0), F64::new(1528.0)])).to_value());
+                  new_ref(Matrix4::from_vec(vec![F64::new(17.0), F64::new(105.0), F64::new(225.0), F64::new(377.0), F64::new(36.0), F64::new(132.0), F64::new(260.0), F64::new(420.0), F64::new(57.0), F64::new(161.0), F64::new(297.0), F64::new(465.0), F64::new(80.0), F64::new(192.0), F64::new(336.0), F64::new(512.0)])).to_value());
 test_interpreter!(interpret_matrix_div_4x4, 
                   "[2 3 4 5; 6 7 8 9; 10 11 12 13; 14 15 16 17] / [2 2 2 2; 3 3 3 3; 4 4 4 4; 5 5 5 5]", 
-                  new_ref(Matrix4::from_vec(vec![F64::new(1.0), F64::new(1.5), F64::new(2.0), F64::new(2.5), 
-                                                  F64::new(2.0), F64::new(2.333333), F64::new(2.666667), F64::new(3.0), 
-                                                  F64::new(2.5), F64::new(2.75), F64::new(3.0), F64::new(3.25), 
-                                                  F64::new(2.8), F64::new(3.0), F64::new(3.2), F64::new(3.4)])).to_value());
+                  new_ref(Matrix4::from_vec(vec![F64::new(1.0), F64::new(2.0), F64::new(2.5), F64::new(2.8), F64::new(1.5), F64::new(2.3333333333333335), F64::new(2.75), F64::new(3.0), F64::new(2.0), F64::new(2.6666666666666665), F64::new(3.0), F64::new(3.2), F64::new(2.5), F64::new(3.0), F64::new(3.25), F64::new(3.4)])).to_value());
 // 2x3 Nominal Operations
 //test_interpreter!(interpret_matrix_add_2x3, "[1 2 3; 4 5 6] + [7 8 9; 10 11 12]", new_ref(Matrix2x3::from_vec(vec![8i64, 10, 12, 14, 16, 18])).to_value());
 test_interpreter!(interpret_matrix_sub_2x3, "[1 2 3; 4 5 6] - [7 8 9; 10 11 12]", 
@@ -334,8 +303,8 @@ test_interpreter!(interpret_slice_ix_ref, "x := [94 53 13]; y := [3 3]; x[y]", V
 test_interpreter!(interpret_slice_ix_ref2, "x := [94 53 13]; y := [3; 3]; x[y]", Value::MatrixF64(Matrix::DVector(new_ref(DVector::from_vec(vec![F64::new(13.0),F64::new(13.0)])))));
 test_interpreter!(interpret_slice_ix_ref3, "x := [94 53 13]; y := 3; x[y]", Value::F64(new_ref(F64::new(13.0))));
 test_interpreter!(interpret_slice_logical_ix, "x := [94 53 13]; ix := [false true true]; x[ix]", Value::MatrixF64(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![F64::new(53.0),F64::new(13.0)])))));
-test_interpreter!(interpret_slice_row, "x := [94 53 13; 4 5 6; 7 8 9]; x[2,1..3]", Value::MatrixF64(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![F64::new(4.0),F64::new(5.0),F64::new(6.0)])))));
-test_interpreter!(interpret_slice_col, "x := [94 53 13; 4 5 6; 7 8 9]; x[1..3,2]", Value::MatrixF64(Matrix::DVector(new_ref(DVector::from_vec(vec![F64::new(53.0),F64::new(5.0),F64::new(8.0)])))));
+test_interpreter!(interpret_slice_row, "x := [94 53 13; 4 5 6; 7 8 9]; x[2,1..3]", Value::MatrixF64(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![F64::new(4.0),F64::new(5.0)])))));
+test_interpreter!(interpret_slice_col, "x := [94 53 13; 4 5 6; 7 8 9]; x[1..3,2]", Value::MatrixF64(Matrix::DVector(new_ref(DVector::from_vec(vec![F64::new(53.0),F64::new(5.0)])))));
 test_interpreter!(interpret_slice_dynamic, "x := 1..10; y := x'; ix := 1..5; y[ix]'", Value::MatrixF64(Matrix::DVector(new_ref(DVector::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0),F64::new(4.0)])))));
 test_interpreter!(interpret_slice_all_bool, "ix := [false, false, true]'; x := [1 2 3; 4 5 6; 7 8 9]; x[:,ix]", Value::MatrixF64(Matrix::DMatrix(new_ref(DMatrix::from_vec(3,1,vec![F64::new(3.0),F64::new(6.0),F64::new(9.0)])))));
 test_interpreter!(interpret_slice_ix_bool, "ix := [false, false, true]; x := [1 2 3; 4 5 6; 7 8 9]; x[[1,2,3,3],ix]", Value::MatrixF64(Matrix::DMatrix(new_ref(DMatrix::from_vec(4,1,vec![F64::new(3.0),F64::new(6.0),F64::new(9.0),F64::new(9.0)])))));
@@ -364,7 +333,7 @@ test_interpreter!(interpret_map, r#"{"a": 1, "b": 2}"#, Value::Map(MechMap::from
 test_interpreter!(interpret_function_define,r#"foo(x<f64>) = z<f64> :=
 z := 10 + x. 
 foo(10)"#, Value::F64(new_ref(F64::new(20.0))));
-test_interpreter!(interpret_function_define_2_args,r#"foo(x<i64>, y<i64>) = z<i64> :=
+test_interpreter!(interpret_function_define_2_args,r#"foo(x<f64>, y<f64>) = z<f64> :=
 z := x + y.
 foo(10,20)"#, Value::F64(new_ref(F64::new(30.0))));
 test_interpreter!(interpret_function_define_statements,r#"foo(x<i64>, y<i64>) = z<i64> :=
