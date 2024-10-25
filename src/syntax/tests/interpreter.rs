@@ -336,7 +336,7 @@ foo(10)"#, Value::F64(new_ref(F64::new(20.0))));
 test_interpreter!(interpret_function_define_2_args,r#"foo(x<f64>, y<f64>) = z<f64> :=
 z := x + y.
 foo(10,20)"#, Value::F64(new_ref(F64::new(30.0))));
-test_interpreter!(interpret_function_define_statements,r#"foo(x<i64>, y<i64>) = z<i64> :=
+test_interpreter!(interpret_function_define_statements,r#"foo(x<f64>, y<f64>) = z<f64> :=
     a := 1 + x
     b := y + 1
     z := a + b.
