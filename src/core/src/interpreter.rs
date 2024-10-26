@@ -165,8 +165,8 @@ fn variable_assign(var_assgn: &VariableAssign, plan: Plan, symbols: SymbolTableR
   let mut expr = expression(&var_assgn.expression, plan.clone(), symbols.clone(), functions.clone())?;
 
   // First, make sure they are compatible kinds
-  match trgt {
-    Value::MutableReference(trgt_ref) => {
+  match (trgt,&expr) {
+    (Value::MutableReference(trgt_ref),_) => {
       let mut trgt_ref_brrw = trgt_ref.borrow_mut();
       // The Kinds are the same, we can just assign
       if trgt_ref_brrw.kind() == expr.kind() {
@@ -174,10 +174,26 @@ fn variable_assign(var_assgn: &VariableAssign, plan: Plan, symbols: SymbolTableR
         return Ok(expr);
       // The kinds are different, cant we convert?
       } else {
-
+        unimplemented!();
       }
     }
-    _ => (),
+    (Value::F64(trgt_ref),Value::F64(expr_inner)) => {
+      let mut trgt_ref_brrw = trgt_ref.borrow_mut();
+      if expr.kind() == ValueKind::F64 {
+
+        println!("Before assignment: {:?}", (*trgt_ref_brrw).0);
+        println!("Assigned value: {:?}", expr_inner.borrow().0);
+        
+        (*trgt_ref_brrw).0 = expr_inner.borrow().0;
+        
+        println!("After assignment: {:?}", (*trgt_ref_brrw).0);
+        
+        return Ok(expr);
+      } else {
+        unimplemented!();
+      }
+    }
+    _ => unimplemented!(),
   }
   Ok(Value::Empty)
 }
