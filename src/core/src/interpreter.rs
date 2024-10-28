@@ -161,7 +161,7 @@ fn statement(stmt: &Statement, plan: Plan, symbols: SymbolTableRef, functions: F
 
 fn variable_assign(var_assgn: &VariableAssign, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
 
-  let mut trgt = expression(&var_assgn.target, plan.clone(), symbols.clone(), functions.clone())?;
+  let mut trgt = slice_ref(&var_assgn.target, plan.clone(), symbols.clone(), functions.clone())?;
   let mut expr = expression(&var_assgn.expression, plan.clone(), symbols.clone(), functions.clone())?;
 
   // First, make sure they are compatible kinds
@@ -187,7 +187,7 @@ fn variable_assign(var_assgn: &VariableAssign, plan: Plan, symbols: SymbolTableR
         (*trgt_ref_brrw).0 = expr_inner.borrow().0;
         
         println!("After assignment: {:?}", (*trgt_ref_brrw).0);
-        
+
         return Ok(expr);
       } else {
         unimplemented!();
@@ -405,6 +405,26 @@ fn slice(slc: &Slice, plan: Plan, symbols: SymbolTableRef, functions: FunctionsR
   unreachable!() // subscript should have thrown an error if we can't access an element
 }
 
+fn slice_ref(slc: &SliceRef, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+  let name = slc.name.hash();
+  let symbols_brrw = symbols.borrow();
+  let val: Value = match symbols_brrw.get(name) {
+    Some(val) => Value::MutableReference(val.clone()),
+    None => {return Err(MechError{tokens: slc.name.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
+  };
+  match &slc.subscript {
+    Some(sbscrpt) => {
+      for s in sbscrpt {
+        let s_result = subscript(&s, &val, plan.clone(), symbols.clone(), functions.clone())?;
+        return Ok(s_result);
+      }
+    }
+    None => {
+
+    }
+  }
+  unreachable!() // subscript should have thrown an error if we can't access an element
+}
 
 fn subscript_formula(sbscrpt: &Subscript, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   match sbscrpt {

@@ -228,8 +228,8 @@ test_parser!(parse_statement_variable_define_annotated_tuple, "z<(u8, u8)> := (1
 test_parser!(parse_statement_variable_define_annotated_tuple_both, "z<(u8, u16)> := (10<u8>,11<u16>)", 10505668968110378);
 test_parser!(parse_statement_variable_define_annotated_tuple_rhs, "z := (10<u8>,11<u16>)", 30360312150734751);
 
-test_parser!(parse_statement_variable_assign, "a = 2", 5448552719387223);
-test_parser!(parse_statement_variable_assign_slice, "a[1] = 2", 20762289900010478);
+test_parser!(parse_statement_variable_assign, "a = 2", 47312424597726258);
+test_parser!(parse_statement_variable_assign_slice, "a[1] = 2", 38641881983528183);
 test_parser!(parse_statement_kind_define, "<pos> := <(u8,u8,u8)>", 19272007189561377);
 test_parser!(parse_statement_kind_define_size, "<foo> := <([u8]:1,2, [u8]:3,3)>", 19568235100036623);
 test_parser!(parse_statement_kind_define_size_hex, "<bar> := <[foo]:0x01, 0xFF>", 52794480162632018);
