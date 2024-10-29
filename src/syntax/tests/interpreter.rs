@@ -59,6 +59,7 @@ test_interpreter!(interpret_kind_annotation, "1<u64>", Value::U64(new_ref(1)));
 test_interpreter!(interpret_kind_annotation_math, "1<u64> + 1<u64>", Value::U64(new_ref(2)));
 
 // New tests overflow - unsigned
+// test_interpreter!(interpret_kind_math_overflow_u64, "18446744073709551615<u64> + 1<u64>", Value::U64(new_ref(0)));
 // test_interpreter!(interpret_kind_math_overflow_u128, "340282366920938463463374607431768211455<u128> + 1<u128>", Value::U128(new_ref(0)));
 
 // New test overflow - signed
