@@ -160,42 +160,26 @@ fn statement(stmt: &Statement, plan: Plan, symbols: SymbolTableRef, functions: F
 }
 
 fn variable_assign(var_assgn: &VariableAssign, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
-
-  let mut trgt = slice_ref(&var_assgn.target, plan.clone(), symbols.clone(), functions.clone())?;
   let mut expr = expression(&var_assgn.expression, plan.clone(), symbols.clone(), functions.clone())?;
-
-  // First, make sure they are compatible kinds
-  match (trgt,&expr) {
-    (Value::MutableReference(trgt_ref),_) => {
-      let mut trgt_ref_brrw = trgt_ref.borrow_mut();
-      // The Kinds are the same, we can just assign
-      if trgt_ref_brrw.kind() == expr.kind() {
-        *trgt_ref_brrw = expr.clone();
-        return Ok(expr);
-      // The kinds are different, cant we convert?
-      } else {
-        unimplemented!();
+  let slc = &var_assgn.target;
+  let name = slc.name.hash();
+  let symbols_brrw = symbols.borrow();
+  let val: Value = match symbols_brrw.get(name) {
+    Some(val) => Value::MutableReference(val.clone()),
+    None => {return Err(MechError{tokens: slc.name.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
+  };
+  match &slc.subscript {
+    Some(sbscrpt) => {
+      for s in sbscrpt {
+        let s_result = subscript_ref(&s, &val, &expr, plan.clone(), symbols.clone(), functions.clone())?;
+        return Ok(s_result);
       }
     }
-    (Value::F64(trgt_ref),Value::F64(expr_inner)) => {
-      let mut trgt_ref_brrw = trgt_ref.borrow_mut();
-      if expr.kind() == ValueKind::F64 {
-
-        println!("Before assignment: {:?}", (*trgt_ref_brrw).0);
-        println!("Assigned value: {:?}", expr_inner.borrow().0);
-        
-        (*trgt_ref_brrw).0 = expr_inner.borrow().0;
-        
-        println!("After assignment: {:?}", (*trgt_ref_brrw).0);
-
-        return Ok(expr);
-      } else {
-        unimplemented!();
-      }
+    None => {
+      todo!()
     }
-    _ => unimplemented!(),
   }
-  Ok(Value::Empty)
+  unreachable!(); // subscript should have thrown an error if we can't access an element
 }
 
 fn enum_define(enm_def: &EnumDefine, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
@@ -405,27 +389,6 @@ fn slice(slc: &Slice, plan: Plan, symbols: SymbolTableRef, functions: FunctionsR
   unreachable!() // subscript should have thrown an error if we can't access an element
 }
 
-fn slice_ref(slc: &SliceRef, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
-  let name = slc.name.hash();
-  let symbols_brrw = symbols.borrow();
-  let val: Value = match symbols_brrw.get(name) {
-    Some(val) => Value::MutableReference(val.clone()),
-    None => {return Err(MechError{tokens: slc.name.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
-  };
-  match &slc.subscript {
-    Some(sbscrpt) => {
-      for s in sbscrpt {
-        let s_result = subscript(&s, &val, plan.clone(), symbols.clone(), functions.clone())?;
-        return Ok(s_result);
-      }
-    }
-    None => {
-
-    }
-  }
-  unreachable!() // subscript should have thrown an error if we can't access an element
-}
-
 fn subscript_formula(sbscrpt: &Subscript, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   match sbscrpt {
     Subscript::Formula(fctr) => {
@@ -446,6 +409,77 @@ fn subscript_range(sbscrpt: &Subscript, plan: Plan, symbols: SymbolTableRef, fun
       }
     }
     _ => unreachable!()
+  }
+}
+
+fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+  match sbscrpt {
+    Subscript::Dot(x) => {
+      todo!()
+    },
+    Subscript::DotInt(x) => {
+      todo!()
+    },
+    Subscript::Swizzle(x) => {
+      unreachable!()
+    },
+    Subscript::Bracket(subs) => {
+      let mut fxn_input = vec![sink.clone()];
+      match &subs[..] {
+        [Subscript::Formula(ix)] => {
+          let ixes = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+          let shape = ixes.shape();
+          fxn_input.push(source.clone());
+          fxn_input.push(ixes);
+          plan.borrow_mut().push(MatrixAccessScalarRef{}.compile(&fxn_input)?);
+          /*match shape[..] {
+            [1,1] => plan.borrow_mut().push(MatrixAccessScalar{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }*/
+        },
+        [Subscript::Range(ix)] => {
+          todo!()
+        },
+        [Subscript::All] => {
+          todo!()
+        },
+        [Subscript::All,Subscript::All] => todo!(),
+        [Subscript::Formula(ix1),Subscript::Formula(ix2)] => {
+          todo!()
+        },
+        [Subscript::Range(ix1),Subscript::Range(ix2)] => {
+          todo!()
+        },
+        [Subscript::All,Subscript::Formula(ix2)] => {
+          todo!()
+        },
+        [Subscript::Formula(ix1),Subscript::All] => {
+          todo!()
+        },
+        [Subscript::Range(ix1),Subscript::Formula(ix2)] => {
+          todo!()
+        },
+        [Subscript::Formula(ix1),Subscript::Range(ix2)] => {
+          todo!()
+        },
+        [Subscript::All,Subscript::Range(ix2)] => {
+          todo!()
+        },
+        [Subscript::Range(ix1),Subscript::All] => {
+          todo!()
+        },
+        _ => unreachable!(),
+      };
+      let plan_brrw = plan.borrow();
+      let mut new_fxn = &plan_brrw.last().unwrap();
+      new_fxn.solve();
+      let res = new_fxn.out();
+      return Ok(res);
+    },
+    Subscript::Brace(x) => todo!(),
+    _ => unreachable!(),
   }
 }
 
