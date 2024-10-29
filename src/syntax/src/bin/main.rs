@@ -21,6 +21,7 @@ fn main() -> Result<(),MechError> {
     match parser::parse(&s) {
         Ok(tree) => { 
           println!("----------- SYNTAX TREE ---------");
+          println!("{:?}",hash_str(&format!("{:#?}", tree)));
           println!("{:#?}", tree);
           //let result = analyze(&tree);
           //println!("A: {:#?}", result);

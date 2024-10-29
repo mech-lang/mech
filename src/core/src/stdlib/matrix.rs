@@ -719,6 +719,45 @@ impl NativeFunctionCompiler for MatrixAccessScalar {
   }
 }
 
+#[derive(Debug)]
+struct Set1DSR2 {
+  source: Ref<F64>,
+  ixes: Ref<usize>,
+  sink: Ref<RowVector2<F64>>,
+}
+impl MechFunction for Set1DSR2 {
+  fn solve(&self) {
+    let sink_ptr = self.sink.as_ptr();
+    let ixes_ptr = self.ixes.as_ptr();
+    let source_ptr = self.source.as_ptr();
+    unsafe {
+      (*sink_ptr)[*ixes_ptr - 1] = (*source_ptr).clone();
+    }
+  }
+  fn out(&self) -> Value { Value::MatrixF64(Matrix::RowVector2(self.sink.clone())) }
+  fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
+pub struct MatrixSetScalar {}
+impl NativeFunctionCompiler for MatrixSetScalar {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() <= 1 {
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    let sink: Value = arguments[0].clone();
+    let source: Value = arguments[1].clone();
+    let ixes = arguments.clone().split_off(2);
+    match (sink, ixes.as_slice(), source) {
+      (Value::MatrixF64(Matrix::<F64>::RowVector2(input)),
+        [Value::Index(ix)], 
+        Value::F64(source)) => {
+        Ok(Box::new(Set1DSR2{sink: input.clone(), ixes: ix.clone(), source: source.clone()}))
+      }
+      x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+    }
+  }
+}
+
 // x[1,2] ---------------------------------------------------------------------
 
 macro_rules! impl_access_scalar_scalar_match_arms {

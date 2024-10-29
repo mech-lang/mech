@@ -6,7 +6,8 @@ use crate::stdlib::{math::*,
                     compare::*,
                     matrix::*,
                     table::*,
-                    convert::*};
+                    convert::*
+                  };
 use crate::stdlib::range::{RangeInclusive, RangeExclusive};
 use crate::*;
 use crate::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*};
@@ -121,7 +122,7 @@ pub fn function_define(fxn_def: &FunctionDefine, functions: FunctionsRef) -> MRe
   for input_arg in &fxn_def.input {
     let arg_id = input_arg.name.hash();
     new_fxn.input.insert(arg_id,input_arg.kind.clone());
-    let in_arg = Value::I64(new_ref(0));
+    let in_arg = Value::F64(new_ref(F64::new(0.0)));
     new_fxn.symbols.borrow_mut().insert(arg_id, in_arg);
   }
   let output_arg_ids = fxn_def.output.iter().map(|output_arg| {
@@ -159,26 +160,32 @@ fn statement(stmt: &Statement, plan: Plan, symbols: SymbolTableRef, functions: F
 }
 
 fn variable_assign(var_assgn: &VariableAssign, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
-
-  let mut trgt = expression(&var_assgn.target, plan.clone(), symbols.clone(), functions.clone())?;
-  let mut expr = expression(&var_assgn.expression, plan.clone(), symbols.clone(), functions.clone())?;
-
-  // First, make sure they are compatible kinds
-  match trgt {
-    Value::MutableReference(trgt_ref) => {
-      let mut trgt_ref_brrw = trgt_ref.borrow_mut();
-      // The Kinds are the same, we can just assign
-      if trgt_ref_brrw.kind() == expr.kind() {
-        *trgt_ref_brrw = expr.clone();
-        return Ok(expr);
-      // The kinds are different, cant we convert?
-      } else {
-
+  let mut source = expression(&var_assgn.expression, plan.clone(), symbols.clone(), functions.clone())?;
+  let slc = &var_assgn.target;
+  let name = slc.name.hash();
+  let symbols_brrw = symbols.borrow();
+  let sink = match symbols_brrw.get(name) {
+    Some(val) => val.borrow().clone(),
+    None => {return Err(MechError{tokens: slc.name.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
+  };
+  match &slc.subscript {
+    Some(sbscrpt) => {
+      for s in sbscrpt {
+        let s_result = subscript_ref(&s, &sink, &source, plan.clone(), symbols.clone(), functions.clone())?;
+        return Ok(s_result);
       }
     }
-    _ => (),
+    None => {
+      let args = vec![sink,source];
+      let fxn = SetValue{}.compile(&args)?;
+      fxn.solve();
+      let mut plan_brrw = plan.borrow_mut();
+      let res = fxn.out();
+      plan_brrw.push(fxn);
+      return Ok(res);
+    }
   }
-  Ok(Value::Empty)
+  unreachable!(); // subscript should have thrown an error if we can't access an element
 }
 
 fn enum_define(enm_def: &EnumDefine, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
@@ -319,7 +326,10 @@ fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, f
           (Value::I64(arg_ref), Value::I64(i64_ref)) => {
             *arg_ref.borrow_mut() = i64_ref.borrow().clone();
           }
-          _ => todo!(),
+          (Value::F64(arg_ref), Value::F64(f64_ref)) => {
+            *arg_ref.borrow_mut() = f64_ref.borrow().clone();
+          }
+          (x,y) => {return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::KindMismatch(x.kind(),y.kind())});}
         }
       }
       // schedule function
@@ -385,7 +395,6 @@ fn slice(slc: &Slice, plan: Plan, symbols: SymbolTableRef, functions: FunctionsR
   unreachable!() // subscript should have thrown an error if we can't access an element
 }
 
-
 fn subscript_formula(sbscrpt: &Subscript, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   match sbscrpt {
     Subscript::Formula(fctr) => {
@@ -406,6 +415,77 @@ fn subscript_range(sbscrpt: &Subscript, plan: Plan, symbols: SymbolTableRef, fun
       }
     }
     _ => unreachable!()
+  }
+}
+
+fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+  match sbscrpt {
+    Subscript::Dot(x) => {
+      todo!()
+    },
+    Subscript::DotInt(x) => {
+      todo!()
+    },
+    Subscript::Swizzle(x) => {
+      unreachable!()
+    },
+    Subscript::Bracket(subs) => {
+      let mut fxn_input = vec![sink.clone()];
+      match &subs[..] {
+        [Subscript::Formula(ix)] => {
+          let ixes = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+          let shape = ixes.shape();
+          fxn_input.push(source.clone());
+          fxn_input.push(ixes);
+          plan.borrow_mut().push(MatrixSetScalar{}.compile(&fxn_input)?);
+          /*match shape[..] {
+            [1,1] => plan.borrow_mut().push(MatrixAccessScalar{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }*/
+        },
+        [Subscript::Range(ix)] => {
+          todo!()
+        },
+        [Subscript::All] => {
+          todo!()
+        },
+        [Subscript::All,Subscript::All] => todo!(),
+        [Subscript::Formula(ix1),Subscript::Formula(ix2)] => {
+          todo!()
+        },
+        [Subscript::Range(ix1),Subscript::Range(ix2)] => {
+          todo!()
+        },
+        [Subscript::All,Subscript::Formula(ix2)] => {
+          todo!()
+        },
+        [Subscript::Formula(ix1),Subscript::All] => {
+          todo!()
+        },
+        [Subscript::Range(ix1),Subscript::Formula(ix2)] => {
+          todo!()
+        },
+        [Subscript::Formula(ix1),Subscript::Range(ix2)] => {
+          todo!()
+        },
+        [Subscript::All,Subscript::Range(ix2)] => {
+          todo!()
+        },
+        [Subscript::Range(ix1),Subscript::All] => {
+          todo!()
+        },
+        _ => unreachable!(),
+      };
+      let plan_brrw = plan.borrow();
+      let mut new_fxn = &plan_brrw.last().unwrap();
+      new_fxn.solve();
+      let res = new_fxn.out();
+      return Ok(res);
+    },
+    Subscript::Brace(x) => todo!(),
+    _ => unreachable!(),
   }
 }
 
@@ -895,6 +975,24 @@ fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, functions: Functions
         _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::CouldNotAssignKindToValue}),
       }
     }
+    (Value::F64(num), Kind::Scalar(to_kind_id)) => {
+      match functions.borrow().kinds.get(&to_kind_id) {
+        Some(ValueKind::I8)   => Ok(Value::I8(new_ref((*num.borrow()).0 as i8))),
+        Some(ValueKind::I16)  => Ok(Value::I16(new_ref((*num.borrow()).0 as i16))),
+        Some(ValueKind::I32)  => Ok(Value::I32(new_ref((*num.borrow()).0 as i32))),
+        Some(ValueKind::I64)  => Ok(Value::I64(new_ref((*num.borrow()).0 as i64))),
+        Some(ValueKind::I128) => Ok(Value::I128(new_ref((*num.borrow()).0 as i128))),
+        Some(ValueKind::U8)   => Ok(Value::U8(new_ref((*num.borrow()).0 as u8))),
+        Some(ValueKind::U16)  => Ok(Value::U16(new_ref((*num.borrow()).0 as u16))),
+        Some(ValueKind::U32)  => Ok(Value::U32(new_ref((*num.borrow()).0 as u32))),
+        Some(ValueKind::U64)  => Ok(Value::U64(new_ref((*num.borrow()).0 as u64))),
+        Some(ValueKind::U128) => Ok(Value::U128(new_ref((*num.borrow()).0 as u128))),
+        Some(ValueKind::F32)  => Ok(Value::F32(new_ref(F32::new((*num.borrow()).0 as f32)))),
+        Some(ValueKind::F64)  => Ok(value),
+        None => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(to_kind_id)}),
+        _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::CouldNotAssignKindToValue}),
+      }
+    }
     _ => todo!(),
   }
 }
@@ -978,9 +1076,8 @@ fn float(flt: &(Token,Token)) -> Value {
 }
 
 fn integer(int: &Token) -> Value {
-  let num: i128 = int.chars.iter().collect::<String>().parse::<i128>().unwrap();
-  let num = num as i64;
-  Value::I64(new_ref(num))
+  let num: f64 = int.chars.iter().collect::<String>().parse::<f64>().unwrap();
+  Value::F64(new_ref(F64::new(num)))
 }
 
 fn string(tkn: &MechString) -> Value {

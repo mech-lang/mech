@@ -3,6 +3,46 @@ use crate::stdlib::*;
 use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix3x2, Matrix6, Matrix2};
 
 // ----------------------------------------------------------------------------
+// Set 
+// ----------------------------------------------------------------------------
+
+// Scalar Set -----------------------------------------------------------------
+
+#[derive(Debug)]
+struct SetF64{
+  sink: Ref<F64>,
+  source: Ref<F64>,
+}
+impl MechFunction for SetF64 {
+  fn solve(&self) {
+    let sink_ptr = self.sink.as_ptr();
+    let source_ptr = self.source.as_ptr();
+    unsafe {
+      *sink_ptr = (*source_ptr).clone();
+    }
+  }
+  fn out(&self) -> Value { Value::F64(self.sink.clone()) }
+  fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
+pub struct SetValue {}
+impl NativeFunctionCompiler for SetValue {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() <= 1 {
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    let sink = arguments[0].clone();
+    let source = arguments[1].clone();
+    match (sink,source) {
+      (Value::F64(sink),Value::F64(source)) => {
+        Ok(Box::new(SetF64{sink: sink.clone(), source: source.clone()}))
+      }
+      x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+    }
+  }
+}
+
+// ----------------------------------------------------------------------------
 // Access 
 // ----------------------------------------------------------------------------
 

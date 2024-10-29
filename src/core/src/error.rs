@@ -37,6 +37,7 @@ pub enum MechErrorKind {
   PendingExpression,                              // id of pending variable
   PendingTable(u64),                             // TableId of pending table                          
   DimensionMismatch(Vec<(Rows,Cols)>),               // Argument dimensions are mismatched ((row,col),(row,col))
+  KindMismatch(ValueKind,ValueKind),
   UnhandledIndexKind,
   //MissingColumn((TableId,TableIndex)),             // The identified table is missing a needed column
   //ColumnKindMismatch(Vec<ValueKind>),              // Excepted kind versus given kind

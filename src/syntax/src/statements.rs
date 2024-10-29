@@ -85,7 +85,7 @@ pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
 pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
-  let (input, target) = expression(input)?;
+  let (input, target) = slice_ref(input)?;
   let (input, _) = labelr!(null(is_not(define_operator)), skip_nil, msg1)(input)?;
   let (input, _) = assign_operator(input)?;
   let (input, expression) = label!(expression, msg2)(input)?;

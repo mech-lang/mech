@@ -474,6 +474,13 @@ pub fn slice(input: ParseString) -> ParseResult<Slice> {
   Ok((input, Slice{name, subscript: ixes}))
 }
 
+// slice_ref := identifier, subscript ;
+pub fn slice_ref(input: ParseString) -> ParseResult<SliceRef> {
+  let (input, name) = identifier(input)?;
+  let (input, ixes) = opt(subscript)(input)?;
+  Ok((input, SliceRef{name, subscript: ixes}))
+}
+
 // subscript := (swizzle_subscript | dot_subscript_int | dot_subscript | bracket_subscript | brace_subscript)+ ; 
 pub fn subscript(input: ParseString) -> ParseResult<Vec<Subscript>> {
   let (input, subscripts) = many1(alt((swizzle_subscript,dot_subscript,dot_subscript_int,bracket_subscript,brace_subscript)))(input)?;

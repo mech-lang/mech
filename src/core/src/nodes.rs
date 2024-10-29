@@ -549,7 +549,7 @@ impl Var {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct VariableAssign {
-  pub target: Expression,
+  pub target: SliceRef,
   pub expression: Expression,
 }
 
@@ -590,6 +590,12 @@ pub struct Word {
 pub struct Slice {
   pub name: Identifier,
   pub subscript: Vec<Subscript>
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SliceRef {
+  pub name: Identifier,
+  pub subscript: Option<Vec<Subscript>>
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
