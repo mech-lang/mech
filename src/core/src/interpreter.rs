@@ -160,23 +160,29 @@ fn statement(stmt: &Statement, plan: Plan, symbols: SymbolTableRef, functions: F
 }
 
 fn variable_assign(var_assgn: &VariableAssign, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
-  let mut expr = expression(&var_assgn.expression, plan.clone(), symbols.clone(), functions.clone())?;
+  let mut source = expression(&var_assgn.expression, plan.clone(), symbols.clone(), functions.clone())?;
   let slc = &var_assgn.target;
   let name = slc.name.hash();
   let symbols_brrw = symbols.borrow();
-  let val: Value = match symbols_brrw.get(name) {
-    Some(val) => Value::MutableReference(val.clone()),
+  let sink = match symbols_brrw.get(name) {
+    Some(val) => val.borrow().clone(),
     None => {return Err(MechError{tokens: slc.name.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
   };
   match &slc.subscript {
     Some(sbscrpt) => {
       for s in sbscrpt {
-        let s_result = subscript_ref(&s, &val, &expr, plan.clone(), symbols.clone(), functions.clone())?;
+        let s_result = subscript_ref(&s, &sink, &source, plan.clone(), symbols.clone(), functions.clone())?;
         return Ok(s_result);
       }
     }
     None => {
-      todo!()
+      let args = vec![sink,source];
+      let fxn = SetValue{}.compile(&args)?;
+      fxn.solve();
+      let mut plan_brrw = plan.borrow_mut();
+      let res = fxn.out();
+      plan_brrw.push(fxn);
+      return Ok(res);
     }
   }
   unreachable!(); // subscript should have thrown an error if we can't access an element
@@ -431,7 +437,7 @@ fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, 
           let shape = ixes.shape();
           fxn_input.push(source.clone());
           fxn_input.push(ixes);
-          plan.borrow_mut().push(MatrixAccessScalarRef{}.compile(&fxn_input)?);
+          plan.borrow_mut().push(MatrixSetScalar{}.compile(&fxn_input)?);
           /*match shape[..] {
             [1,1] => plan.borrow_mut().push(MatrixAccessScalar{}.compile(&fxn_input)?),
             [1,n] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),

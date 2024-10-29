@@ -738,8 +738,8 @@ impl MechFunction for Set1DSR2 {
   fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
-pub struct MatrixAccessScalarRef {}
-impl NativeFunctionCompiler for MatrixAccessScalarRef {
+pub struct MatrixSetScalar {}
+impl NativeFunctionCompiler for MatrixSetScalar {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
       return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
@@ -747,23 +747,13 @@ impl NativeFunctionCompiler for MatrixAccessScalarRef {
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
     let ixes = arguments.clone().split_off(2);
-    
-    match sink {
-      Value::MutableReference(val_ref) => {
-        let val_ref_brrw = val_ref.borrow().clone();
-        match (val_ref_brrw, ixes.as_slice(), source) {
-          /*(Value::MatrixF64(Matrix::<F64>::Matrix1(input)),[Value::Index(ix)]) => {
-            Ok(Box::new(MatrixAccessM1Ref1DS{sink: input.clone(), ixes: ix.clone(), source: source.clone() }))
-          }*/
-          (Value::MatrixF64(Matrix::<F64>::RowVector2(input)),
-            [Value::Index(ix)], 
-            Value::F64(source)) => {
-            Ok(Box::new(Set1DSR2{sink: input.clone(), ixes: ix.clone(), source: source.clone()}))
-          }
-          x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-        }
+    match (sink, ixes.as_slice(), source) {
+      (Value::MatrixF64(Matrix::<F64>::RowVector2(input)),
+        [Value::Index(ix)], 
+        Value::F64(source)) => {
+        Ok(Box::new(Set1DSR2{sink: input.clone(), ixes: ix.clone(), source: source.clone()}))
       }
-      _ => todo!(),
+      x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
     }
   }
 }
