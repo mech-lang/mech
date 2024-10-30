@@ -433,17 +433,16 @@ fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, 
       let mut fxn_input = vec![sink.clone()];
       match &subs[..] {
         [Subscript::Formula(ix)] => {
+          fxn_input.push(source.clone());
           let ixes = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
           let shape = ixes.shape();
-          fxn_input.push(source.clone());
           fxn_input.push(ixes);
-          plan.borrow_mut().push(MatrixSetScalar{}.compile(&fxn_input)?);
-          /*match shape[..] {
-            [1,1] => plan.borrow_mut().push(MatrixAccessScalar{}.compile(&fxn_input)?),
-            [1,n] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
-            [n,1] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
+          match shape[..] {
+            [1,1] => plan.borrow_mut().push(MatrixSetScalar{}.compile(&fxn_input)?),
+            //[1,n] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
+            //[n,1] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
             _ => todo!(),
-          }*/
+          }
         },
         [Subscript::Range(ix)] => {
           todo!()
@@ -453,7 +452,23 @@ fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, 
         },
         [Subscript::All,Subscript::All] => todo!(),
         [Subscript::Formula(ix1),Subscript::Formula(ix2)] => {
-          todo!()
+          fxn_input.push(source.clone());
+          let result = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+          let shape1 = result.shape();
+          fxn_input.push(result);
+          let result = subscript_formula(&subs[1], plan.clone(), symbols.clone(), functions.clone())?;
+          let shape2 = result.shape();
+          fxn_input.push(result);
+          match ((shape1[0],shape1[1]),(shape2[0],shape2[1])) {
+            ((1,1),(1,1)) => plan.borrow_mut().push(MatrixSetScalarScalar{}.compile(&fxn_input)?),
+            //((1,1),(1,m)) => plan.borrow_mut().push(MatrixAccessScalarRange{}.compile(&fxn_input)?),
+            //((1,n),(1,1)) => plan.borrow_mut().push(MatrixAccessRangeScalar{}.compile(&fxn_input)?),
+            //((n,1),(1,m)) |
+            //((n,1),(m,1)) |
+            //((1,n),(m,1)) |
+            //((1,n),(1,m)) => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }          
         },
         [Subscript::Range(ix1),Subscript::Range(ix2)] => {
           todo!()

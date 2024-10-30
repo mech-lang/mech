@@ -350,6 +350,5 @@ test_interpreter!(interpret_function_call_native_vector2,"math/cos([0.0 0.0])", 
 
 test_interpreter!(interpret_set_value,"x := 1.23; x = 4.56;", Value::F64(new_ref(F64::new(4.56))));
 test_interpreter!(interpret_set_value_row_vector,"x := [6,2]; x[1] = 4; x[1];", Value::F64(new_ref(F64::new(4.0))));
-
 test_interpreter!(interpret_set_value_col_vector,"x := [false false true true]'; x[1] = true; x[1]", Value::Bool(new_ref(true)));
-
+test_interpreter!(interpret_set_value_scalar_scalar,"x := [1 2; 3 4]; x[2,2] = 42; x[2,2];", Value::F64(new_ref(F64::new(42.0))));
