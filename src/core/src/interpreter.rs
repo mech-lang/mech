@@ -448,7 +448,9 @@ fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, 
           todo!()
         },
         [Subscript::All] => {
-          todo!()
+          fxn_input.push(source.clone());
+          fxn_input.push(Value::IndexAll);
+          plan.borrow_mut().push(MatrixSetAll{}.compile(&fxn_input)?);
         },
         [Subscript::All,Subscript::All] => todo!(),
         [Subscript::Formula(ix1),Subscript::Formula(ix2)] => {
