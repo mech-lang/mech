@@ -489,7 +489,17 @@ fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, 
           }
         }
         [Subscript::Formula(ix1),Subscript::All] => {
-          todo!()
+          fxn_input.push(source.clone());
+          let ix = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+          let shape = ix.shape();
+          fxn_input.push(ix);
+          fxn_input.push(Value::IndexAll);
+          match shape[..] {
+            [1,1] => plan.borrow_mut().push(MatrixSetScalarAll{}.compile(&fxn_input)?),
+            //[1,n] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
+            //[n,1] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }
         },
         [Subscript::Range(ix1),Subscript::Formula(ix2)] => {
           todo!()
