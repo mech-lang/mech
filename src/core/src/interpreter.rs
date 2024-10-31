@@ -466,13 +466,10 @@ fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, 
           fxn_input.push(result);
           match ((shape1[0],shape1[1]),(shape2[0],shape2[1])) {
             ((1,1),(1,1)) => plan.borrow_mut().push(MatrixSetScalarScalar{}.compile(&fxn_input)?),
-            ((1,1),(1,m)) => plan.borrow_mut().push(MatrixSetScalarRange{}.compile(&fxn_input)?),
-            ((1,n),(1,1)) => plan.borrow_mut().push(MatrixSetRangeScalar{}.compile(&fxn_input)?),
-            //((n,1),(1,m)) |
-            //((n,1),(m,1)) |
-            //((1,n),(m,1)) |
-            //((1,n),(1,m)) => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
-            _ => todo!(),
+            ((1,1),(m,1)) => plan.borrow_mut().push(MatrixSetScalarRange{}.compile(&fxn_input)?),
+            ((n,1),(1,1)) => plan.borrow_mut().push(MatrixSetRangeScalar{}.compile(&fxn_input)?),
+            ((n,1),(m,1)) => todo!(), //plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
+            _ => unreachable!(),
           }          
         },
         [Subscript::Range(ix1),Subscript::Range(ix2)] => {
@@ -615,13 +612,10 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
           fxn_input.push(result);
           match ((shape1[0],shape1[1]),(shape2[0],shape2[1])) {
             ((1,1),(1,1)) => plan.borrow_mut().push(MatrixAccessScalarScalar{}.compile(&fxn_input)?),
-            ((1,1),(1,m)) => plan.borrow_mut().push(MatrixAccessScalarRange{}.compile(&fxn_input)?),
-            ((1,n),(1,1)) => plan.borrow_mut().push(MatrixAccessRangeScalar{}.compile(&fxn_input)?),
-            ((n,1),(1,m)) |
-            ((n,1),(m,1)) |
-            ((1,n),(m,1)) |
-            ((1,n),(1,m)) => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
-            _ => todo!(),
+            ((1,1),(m,1)) => plan.borrow_mut().push(MatrixAccessScalarRange{}.compile(&fxn_input)?),
+            ((n,1),(1,1)) => plan.borrow_mut().push(MatrixAccessRangeScalar{}.compile(&fxn_input)?),
+            ((n,1),(m,1)) => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
+            _ => unreachable!(),
           }
         },
         [Subscript::Range(ix1),Subscript::Range(ix2)] => {

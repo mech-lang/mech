@@ -370,16 +370,16 @@ impl Value {
       None => match self.as_vecusize() {
         Some(x) => {
           let shape = self.shape();
-          let out = Value::MatrixIndex(usize::to_matrix(x, shape[0], shape[1]));
+          let out = Value::MatrixIndex(usize::to_matrix(x, shape[0] * shape[1],1 ));
           Ok(out)
         },
         None => match self.as_vecbool() {
           Some(x) => {
             let shape = self.shape();
             let out = match (shape[0], shape[1]) {
-              (1,n) => Matrix::RowDVector(new_ref(RowDVector::from_vec(x))),
+              (1,n) => Matrix::DVector(new_ref(DVector::from_vec(x))),
               (m,1) => Matrix::DVector(new_ref(DVector::from_vec(x))),
-              (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,x))),
+              (m,n) => Matrix::DVector(new_ref(DVector::from_vec(x))),
             };
             Ok(Value::MatrixBool(out))
           }
@@ -428,7 +428,7 @@ impl ToValue for Vec<usize> {
       //2 => Value::MatrixIndex(Matrix::RowVector2(new_ref(RowVector2::from_vec(self.clone())))),
       //3 => Value::MatrixIndex(Matrix::RowVector3(new_ref(RowVector3::from_vec(self.clone())))),
       //4 => Value::MatrixIndex(Matrix::RowVector4(new_ref(RowVector4::from_vec(self.clone())))),
-      n => Value::MatrixIndex(Matrix::RowDVector(new_ref(RowDVector::from_vec(self.clone())))),
+      n => Value::MatrixIndex(Matrix::DVector(new_ref(DVector::from_vec(self.clone())))),
     }
   }
 }
