@@ -439,13 +439,16 @@ fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, 
           fxn_input.push(ixes);
           match shape[..] {
             [1,1] => plan.borrow_mut().push(MatrixSetScalar{}.compile(&fxn_input)?),
-            //[1,n] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
-            //[n,1] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixSetRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixSetRange{}.compile(&fxn_input)?),
             _ => todo!(),
           }
         },
         [Subscript::Range(ix)] => {
-          todo!()
+          fxn_input.push(source.clone());
+          let ixes = subscript_range(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(ixes);
+          plan.borrow_mut().push(MatrixSetRange{}.compile(&fxn_input)?);
         },
         [Subscript::All] => {
           fxn_input.push(source.clone());

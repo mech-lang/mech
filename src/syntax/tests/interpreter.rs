@@ -355,3 +355,4 @@ test_interpreter!(interpret_set_value_scalar_scalar,"x := [1 2; 3 4]; x[2,2] = 4
 test_interpreter!(interpret_set_value_all,"x := [1 2; 3 4]; x[:] = 42; x[1] + x[2] + x[3] + x[4]; ", Value::F64(new_ref(F64::new(168.0))));
 test_interpreter!(interpret_set_value_all_scalar,"x := [1 2; 3 4]; x[:,1] = 42; x[1] + x[2] + x[3] + x[4]", Value::F64(new_ref(F64::new(90.0))));
 test_interpreter!(interpret_set_value_scalar_all,"x := [1 2; 3 4]; x[1,:] = 42; x[1] + x[3];", Value::F64(new_ref(F64::new(84.0))));
+test_interpreter!(interpret_set_value_slice,"x := [1 2 3 4]; x[[1 3]] = 42; x[1] + x[2] + x[3] + x[4];", Value::F64(new_ref(F64::new(90.0))));
