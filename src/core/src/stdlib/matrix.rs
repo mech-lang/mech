@@ -2067,3 +2067,200 @@ impl NativeFunctionCompiler for MatrixSetScalarAll {
     }
   }
 }
+
+// x[1..3,1] := 1 ------------------------------------------------------------------
+
+macro_rules! impl_set_range_scalar_fxn {
+  ($struct_name:ident, $matrix_shape:ident) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      source: Ref<T>,
+      ixes: (Ref<RowDVector<usize>>,Ref<usize>),
+      sink: Ref<$matrix_shape<T>>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      Ref<$matrix_shape<T>>: ToValue
+    {
+      fn solve(&self) {
+        let sink_ptr = self.sink.as_ptr();
+        let (range_ix,scalar_ix) = &self.ixes;
+        let range_ix_ptr = range_ix.as_ptr();
+        let scalar_ix_ptr = scalar_ix.as_ptr();
+        let source_ptr = self.source.as_ptr();
+        unsafe { 
+          for rix in &*range_ix_ptr {
+            (*sink_ptr).row_mut(rix - 1)[*scalar_ix_ptr - 1] = (*source_ptr).clone();
+          }
+        }
+      }
+      fn out(&self) -> Value { self.sink.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }};}
+
+impl_set_range_scalar_fxn!(Set2DRSRD,RowDVector); 
+impl_set_range_scalar_fxn!(Set2DRSVD,DVector); 
+impl_set_range_scalar_fxn!(Set2DRSMD,DMatrix); 
+impl_set_range_scalar_fxn!(Set2DRSR4,RowVector4);    
+impl_set_range_scalar_fxn!(Set2DRSR3,RowVector3);
+impl_set_range_scalar_fxn!(Set2DRSR2,RowVector2);
+impl_set_range_scalar_fxn!(Set2DRSV4,Vector4);    
+impl_set_range_scalar_fxn!(Set2DRSV3,Vector3);
+impl_set_range_scalar_fxn!(Set2DRSV2,Vector2);
+impl_set_range_scalar_fxn!(Set2DRSM4,Matrix4);    
+impl_set_range_scalar_fxn!(Set2DRSM3,Matrix3);
+impl_set_range_scalar_fxn!(Set2DRSM2,Matrix2);
+impl_set_range_scalar_fxn!(Set2DRSM1,Matrix1);
+impl_set_range_scalar_fxn!(Set2DRSM2x3,Matrix2x3);
+impl_set_range_scalar_fxn!(Set2DRSM3x2,Matrix3x2);
+
+macro_rules! impl_set_range_scalar_match_arms {
+  ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
+    paste!{
+      match $arg {
+        $(
+            (Value::[<Matrix $value_kind>](Matrix::RowVector4(input)),[Value::MatrixIndex(Matrix::RowDVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R4>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::RowVector3(input)),[Value::MatrixIndex(Matrix::RowDVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R3>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::RowVector2(input)),[Value::MatrixIndex(Matrix::RowDVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R2>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::Vector4(input)),   [Value::MatrixIndex(Matrix::RowDVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V4>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::Vector3(input)),   [Value::MatrixIndex(Matrix::RowDVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V3>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::Vector2(input)),   [Value::MatrixIndex(Matrix::RowDVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V2>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::Matrix4(input)),   [Value::MatrixIndex(Matrix::RowDVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::Matrix3(input)),   [Value::MatrixIndex(Matrix::RowDVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::Matrix2(input)),   [Value::MatrixIndex(Matrix::RowDVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::Matrix1(input)),   [Value::MatrixIndex(Matrix::RowDVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M1>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(input)), [Value::MatrixIndex(Matrix::RowDVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2x3>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(input)), [Value::MatrixIndex(Matrix::RowDVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3x2>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::DMatrix(input)),   [Value::MatrixIndex(Matrix::RowDVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MD>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::RowDVector(input)),[Value::MatrixIndex(Matrix::RowDVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name RD>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::MatrixIndex(Matrix::RowDVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VD>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+        )+
+        x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+      }
+    }
+  }
+}
+
+fn impl_set_range_scalar_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_set_match_arms!(Set2DRS, range_scalar, (sink, ixes.as_slice(), source))
+}
+
+pub struct MatrixSetRangeScalar {}
+impl NativeFunctionCompiler for MatrixSetRangeScalar {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() <= 1 {
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    let sink: Value = arguments[0].clone();
+    let source: Value = arguments[1].clone();
+    let ixes = arguments.clone().split_off(2);
+    match impl_set_range_scalar_fxn(sink.clone(),source.clone(),ixes.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match sink {
+          Value::MutableReference(sink) => { impl_set_range_scalar_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
+          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
+    }
+  }
+}
+
+// x[1,1..3] := 1 ------------------------------------------------------------------
+
+macro_rules! impl_set_scalar_range_fxn {
+  ($struct_name:ident, $matrix_shape:ident) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      source: Ref<T>,
+      ixes: (Ref<usize>,Ref<RowDVector<usize>>),
+      sink: Ref<$matrix_shape<T>>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      Ref<$matrix_shape<T>>: ToValue
+    {
+      fn solve(&self) {
+        let sink_ptr = self.sink.as_ptr();
+        let (scalar_ix,range_ix) = &self.ixes;
+        let range_ix_ptr = range_ix.as_ptr();
+        let scalar_ix_ptr = scalar_ix.as_ptr();
+        let source_ptr = self.source.as_ptr();
+        unsafe { 
+          for rix in &*range_ix_ptr {
+            (*sink_ptr).column_mut(rix - 1)[*scalar_ix_ptr - 1] = (*source_ptr).clone();
+          }
+        }
+      }
+      fn out(&self) -> Value { self.sink.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }};}
+
+impl_set_scalar_range_fxn!(Set2DSRRD,RowDVector); 
+impl_set_scalar_range_fxn!(Set2DSRVD,DVector); 
+impl_set_scalar_range_fxn!(Set2DSRMD,DMatrix); 
+impl_set_scalar_range_fxn!(Set2DSRR4,RowVector4);    
+impl_set_scalar_range_fxn!(Set2DSRR3,RowVector3);
+impl_set_scalar_range_fxn!(Set2DSRR2,RowVector2);
+impl_set_scalar_range_fxn!(Set2DSRV4,Vector4);    
+impl_set_scalar_range_fxn!(Set2DSRV3,Vector3);
+impl_set_scalar_range_fxn!(Set2DSRV2,Vector2);
+impl_set_scalar_range_fxn!(Set2DSRM4,Matrix4);    
+impl_set_scalar_range_fxn!(Set2DSRM3,Matrix3);
+impl_set_scalar_range_fxn!(Set2DSRM2,Matrix2);
+impl_set_scalar_range_fxn!(Set2DSRM1,Matrix1);
+impl_set_scalar_range_fxn!(Set2DSRM2x3,Matrix2x3);
+impl_set_scalar_range_fxn!(Set2DSRM3x2,Matrix3x2);
+
+macro_rules! impl_set_scalar_range_match_arms {
+  ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
+    paste!{
+      match $arg {
+        $(
+            (Value::[<Matrix $value_kind>](Matrix::RowVector4(input)),[Value::Index(ix1),Value::MatrixIndex(Matrix::RowDVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R4>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::RowVector3(input)),[Value::Index(ix1),Value::MatrixIndex(Matrix::RowDVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R3>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::RowVector2(input)),[Value::Index(ix1),Value::MatrixIndex(Matrix::RowDVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R2>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::Vector4(input)),   [Value::Index(ix1),Value::MatrixIndex(Matrix::RowDVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V4>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::Vector3(input)),   [Value::Index(ix1),Value::MatrixIndex(Matrix::RowDVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V3>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::Vector2(input)),   [Value::Index(ix1),Value::MatrixIndex(Matrix::RowDVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V2>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::Matrix4(input)),   [Value::Index(ix1),Value::MatrixIndex(Matrix::RowDVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::Matrix3(input)),   [Value::Index(ix1),Value::MatrixIndex(Matrix::RowDVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::Matrix2(input)),   [Value::Index(ix1),Value::MatrixIndex(Matrix::RowDVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::Matrix1(input)),   [Value::Index(ix1),Value::MatrixIndex(Matrix::RowDVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M1>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(input)), [Value::Index(ix1),Value::MatrixIndex(Matrix::RowDVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2x3>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(input)), [Value::Index(ix1),Value::MatrixIndex(Matrix::RowDVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3x2>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::DMatrix(input)),   [Value::Index(ix1),Value::MatrixIndex(Matrix::RowDVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MD>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::RowDVector(input)),[Value::Index(ix1),Value::MatrixIndex(Matrix::RowDVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name RD>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::Index(ix1),Value::MatrixIndex(Matrix::RowDVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VD>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+        )+
+        x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+      }
+    }
+  }
+}
+
+fn impl_set_scalar_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_set_match_arms!(Set2DSR, scalar_range, (sink, ixes.as_slice(), source))
+}
+pub struct MatrixSetScalarRange {}
+impl NativeFunctionCompiler for MatrixSetScalarRange {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() <= 1 {
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    let sink: Value = arguments[0].clone();
+    let source: Value = arguments[1].clone();
+    let ixes = arguments.clone().split_off(2);
+    match impl_set_scalar_range_fxn(sink.clone(),source.clone(),ixes.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match sink {
+          Value::MutableReference(sink) => { impl_set_scalar_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
+          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
+    }
+  }
+}
