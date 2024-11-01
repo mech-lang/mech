@@ -124,58 +124,22 @@ macro_rules! impl_fxns {
       // Scalar
       $op!([<$lib SS>], $in, $in, $out, [<$lib:lower _op>]);
       // Scalar Matrix
-      $op!([<$lib SM1>], $in, Matrix1<$in>, Matrix1<$out>,[<$lib:lower _scalar_rhs_op>]);
-      $op!([<$lib SM2>], $in, Matrix2<$in>, Matrix2<$out>,[<$lib:lower _scalar_rhs_op>]);
-      $op!([<$lib SM3>], $in, Matrix3<$in>, Matrix3<$out>,[<$lib:lower _scalar_rhs_op>]);
-      $op!([<$lib SM4>], $in, Matrix4<$in>, Matrix4<$out>,[<$lib:lower _scalar_rhs_op>]);
       $op!([<$lib SMD>], $in, DMatrix<$in>, DMatrix<$out>,[<$lib:lower _scalar_rhs_op>]);
-      $op!([<$lib SM2x3>], $in, Matrix2x3<$in>, Matrix2x3<$out>,[<$lib:lower _scalar_rhs_op>]);
-      $op!([<$lib SM3x2>], $in, Matrix3x2<$in>, Matrix3x2<$out>,[<$lib:lower _scalar_rhs_op>]);
       // Scalar Row
-      $op!([<$lib SR2>], $in, RowVector2<$in>, RowVector2<$out>,[<$lib:lower _scalar_rhs_op>]);
-      $op!([<$lib SR3>], $in, RowVector3<$in>, RowVector3<$out>,[<$lib:lower _scalar_rhs_op>]);
-      $op!([<$lib SR4>], $in, RowVector4<$in>, RowVector4<$out>,[<$lib:lower _scalar_rhs_op>]);
       $op!([<$lib SRD>], $in, RowDVector<$in>, RowDVector<$out>,[<$lib:lower _scalar_rhs_op>]);
       // Scalar Vector
-      $op!([<$lib SV2>], $in, Vector2<$in>, Vector2<$out>,[<$lib:lower _scalar_rhs_op>]);
-      $op!([<$lib SV3>], $in, Vector3<$in>, Vector3<$out>,[<$lib:lower _scalar_rhs_op>]);
-      $op!([<$lib SV4>], $in, Vector4<$in>, Vector4<$out>,[<$lib:lower _scalar_rhs_op>]);
       $op!([<$lib SVD>], $in, DVector<$in>, DVector<$out>,[<$lib:lower _scalar_rhs_op>]);
       // Matrix Scalar
-      $op!([<$lib M1S>], Matrix1<$in>, $in, Matrix1<$out>,[<$lib:lower _scalar_lhs_op>]);
-      $op!([<$lib M2S>], Matrix2<$in>, $in, Matrix2<$out>,[<$lib:lower _scalar_lhs_op>]);
-      $op!([<$lib M3S>], Matrix3<$in>, $in, Matrix3<$out>,[<$lib:lower _scalar_lhs_op>]);
-      $op!([<$lib M4S>], Matrix4<$in>, $in, Matrix4<$out>,[<$lib:lower _scalar_lhs_op>]);
       $op!([<$lib MDS>], DMatrix<$in>, $in, DMatrix<$out>,[<$lib:lower _scalar_lhs_op>]);
-      $op!([<$lib M2x3S>], Matrix2x3<$in>, $in, Matrix2x3<$out>,[<$lib:lower _scalar_lhs_op>]);
-      $op!([<$lib M3x2S>], Matrix3x2<$in>, $in, Matrix3x2<$out>,[<$lib:lower _scalar_lhs_op>]);
       // Row Scalar
-      $op!([<$lib R2S>], RowVector2<$in>, $in, RowVector2<$out>,[<$lib:lower _scalar_lhs_op>]);
-      $op!([<$lib R3S>], RowVector3<$in>, $in, RowVector3<$out>,[<$lib:lower _scalar_lhs_op>]);
-      $op!([<$lib R4S>], RowVector4<$in>, $in, RowVector4<$out>,[<$lib:lower _scalar_lhs_op>]);
       $op!([<$lib RDS>], RowDVector<$in>, $in, RowDVector<$out>,[<$lib:lower _scalar_lhs_op>]);
       // Vector Scalar
-      $op!([<$lib V2S>], Vector2<$in>, $in, Vector2<$out>,[<$lib:lower _scalar_lhs_op>]);
-      $op!([<$lib V3S>], Vector3<$in>, $in, Vector3<$out>,[<$lib:lower _scalar_lhs_op>]);
-      $op!([<$lib V4S>], Vector4<$in>, $in, Vector4<$out>,[<$lib:lower _scalar_lhs_op>]);
       $op!([<$lib VDS>], DVector<$in>, $in, DVector<$out>,[<$lib:lower _scalar_lhs_op>]);
       // Matrix Matrix
-      $op!([<$lib M2x3M2x3>], Matrix2x3<$in>, Matrix2x3<$in>, Matrix2x3<$out>, [<$lib:lower _vec_op>]);
-      $op!([<$lib M3x2M3x2>], Matrix3x2<$in>, Matrix3x2<$in>, Matrix3x2<$out>, [<$lib:lower _vec_op>]);
-      $op!([<$lib M1M1>], Matrix1<$in>, Matrix1<$in>, Matrix1<$out>, [<$lib:lower _vec_op>]);
-      $op!([<$lib M2M2>], Matrix2<$in>, Matrix2<$in>, Matrix2<$out>, [<$lib:lower _vec_op>]);
-      $op!([<$lib M3M3>], Matrix3<$in>, Matrix3<$in>, Matrix3<$out>, [<$lib:lower _vec_op>]);
-      $op!([<$lib M4M4>], Matrix4<$in>, Matrix4<$in>, Matrix4<$out>, [<$lib:lower _vec_op>]);
       $op!([<$lib MDMD>], DMatrix<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _vec_op>]);
       // Row Row
-      $op!([<$lib R2R2>], RowVector2<$in>, RowVector2<$in>, RowVector2<$out>, [<$lib:lower _vec_op>]);
-      $op!([<$lib R3R3>], RowVector3<$in>, RowVector3<$in>, RowVector3<$out>, [<$lib:lower _vec_op>]);
-      $op!([<$lib R4R4>], RowVector4<$in>, RowVector4<$in>, RowVector4<$out>, [<$lib:lower _vec_op>]);
       $op!([<$lib RDRD>], RowDVector<$in>, RowDVector<$in>, RowDVector<$out>, [<$lib:lower _vec_op>]);
       // Vector Vector
-      $op!([<$lib V2V2>], Vector2<$in>, Vector2<$in>, Vector2<$out>, [<$lib:lower _vec_op>]);
-      $op!([<$lib V3V3>], Vector3<$in>, Vector3<$in>, Vector3<$out>, [<$lib:lower _vec_op>]);
-      $op!([<$lib V4V4>], Vector4<$in>, Vector4<$in>, Vector4<$out>, [<$lib:lower _vec_op>]);
       $op!([<$lib VDVD>], DVector<$in>, DVector<$in>, DVector<$out>, [<$lib:lower _vec_op>]);
     }
   }}
@@ -190,64 +154,31 @@ macro_rules! impl_binop_match_arms {
             // Scalar Scalar
             (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => Ok(Box::new([<$lib SS>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($default) })),
             // Scalar Matrix
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::Matrix1(rhs))) => Ok(Box::new([<$lib SM1>]{lhs, rhs, out: new_ref(Matrix1::from_element($default))})),
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => Ok(Box::new([<$lib SM2>]{lhs, rhs, out: new_ref(Matrix2::from_element($default))})),
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => Ok(Box::new([<$lib SM3>]{lhs, rhs, out: new_ref(Matrix3::from_element($default))})),
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::Matrix4(rhs))) => Ok(Box::new([<$lib SM4>]{lhs, rhs, out: new_ref(Matrix4::from_element($default))})),
             (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::DMatrix(rhs))) => {
               let (rows,cols) = {rhs.borrow().shape()};
-              Ok(Box::new([<$lib SMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))}))},   
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(rhs))) => Ok(Box::new([<$lib SM3x2>]{lhs, rhs, out: new_ref(Matrix3x2::from_element($default))})),
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => Ok(Box::new([<$lib SM2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($default))})),
+              Ok(Box::new([<$lib SMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))}))
+            },   
             // Scalar Row
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => Ok(Box::new([<$lib SR2>]{lhs, rhs, out: new_ref(RowVector2::from_element($default))})),
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => Ok(Box::new([<$lib SR3>]{lhs, rhs, out: new_ref(RowVector3::from_element($default))})),
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => Ok(Box::new([<$lib SR4>]{lhs, rhs, out: new_ref(RowVector4::from_element($default))})),
             (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => Ok(Box::new([<$lib SRD>]{lhs, rhs: rhs.clone(), out: new_ref(RowDVector::from_element(rhs.borrow().len(),$default))})),
             // Scalar Vector
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::Vector2(rhs))) => Ok(Box::new([<$lib SV2>]{lhs, rhs, out: new_ref(Vector2::from_element($default))})),
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::Vector3(rhs))) => Ok(Box::new([<$lib SV3>]{lhs, rhs, out: new_ref(Vector3::from_element($default))})),
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::Vector4(rhs))) => Ok(Box::new([<$lib SV4>]{lhs, rhs, out: new_ref(Vector4::from_element($default))})),
             (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => Ok(Box::new([<$lib SVD>]{lhs, rhs: rhs.clone(), out: new_ref(DVector::from_element(rhs.borrow().len(),$default))})),
             // Matrix Scalar
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib M2x3S>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($default))})),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib M3x2S>]{lhs, rhs, out: new_ref(Matrix3x2::from_element($default))})),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix1(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib M1S>]{lhs, rhs, out: new_ref(Matrix1::from_element($default))})),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib M2S>]{lhs, rhs, out: new_ref(Matrix2::from_element($default))})),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib M3S>]{lhs, rhs, out: new_ref(Matrix3::from_element($default))})),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib M4S>]{lhs, rhs, out: new_ref(Matrix4::from_element($default))})),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(lhs)),Value::$lhs_type(rhs)) => {
               let (rows,cols) = {lhs.borrow().shape()};
-              Ok(Box::new([<$lib MDS>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))}))},              
+              Ok(Box::new([<$lib MDS>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))}))
+            },              
             // Row Scalar
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib R2S>]{lhs, rhs, out: new_ref(RowVector2::from_element($default))})),
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib R3S>]{lhs, rhs, out: new_ref(RowVector3::from_element($default))})),
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib R4S>]{lhs, rhs, out: new_ref(RowVector4::from_element($default))})),
             (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib RDS>]{lhs: lhs.clone(), rhs, out: new_ref(RowDVector::from_element(lhs.borrow().len(),$default))})),
             // Vector Scalar
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector2(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib V2S>]{lhs, rhs, out: new_ref(Vector2::from_element($default))})),
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector3(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib V3S>]{lhs, rhs, out: new_ref(Vector3::from_element($default))})),
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector4(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib V4S>]{lhs, rhs, out: new_ref(Vector4::from_element($default))})),
             (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib VDS>]{lhs: lhs.clone(), rhs, out: new_ref(DVector::from_element(lhs.borrow().len(),$default))})),
             // Matrix Matrix
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix1(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix1(rhs))) => Ok(Box::new([<$lib M1M1>]{lhs, rhs, out: new_ref(Matrix1::from_element($default))})),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => Ok(Box::new([<$lib M2M2>]{lhs, rhs, out: new_ref(Matrix2::from_element($default))})),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => Ok(Box::new([<$lib M3M3>]{lhs, rhs, out: new_ref(Matrix3::from_element($default))})),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix4(rhs))) => Ok(Box::new([<$lib M4M4>]{lhs, rhs, out: new_ref(Matrix4::from_element($default))})),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(rhs))) => Ok(Box::new([<$lib M2x3M2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($default))})),  
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(rhs))) => Ok(Box::new([<$lib M3x2M3x2>]{lhs, rhs, out: new_ref(Matrix3x2::from_element($default))})),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DMatrix(rhs))) => {
               let (rows,cols) = {lhs.borrow().shape()};
-              Ok(Box::new([<$lib MDMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))}))},
+              Ok(Box::new([<$lib MDMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))}))
+            },
             // Row Row
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => Ok(Box::new([<$lib R2R2>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element($default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => Ok(Box::new([<$lib R3R3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => Ok(Box::new([<$lib R4R4>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element($default)) })),
             (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => Ok(Box::new([<$lib RDRD>]{lhs: lhs.clone(), rhs, out: new_ref(RowDVector::from_element(lhs.borrow().len(),$default))})),
             // Vector Vector
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Vector2(rhs))) => Ok(Box::new([<$lib V2V2>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Vector2::from_element($default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Vector3(rhs))) => Ok(Box::new([<$lib V3V3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Vector3::from_element($default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Vector4(rhs))) => Ok(Box::new([<$lib V4V4>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Vector4::from_element($default)) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => Ok(Box::new([<$lib VDVD>]{lhs: lhs.clone(), rhs, out: new_ref(DVector::from_element(lhs.borrow().len(),$default))})),
           )+
         )+
@@ -265,23 +196,12 @@ macro_rules! impl_urnop_match_arms {
         $(
           $(
             (Value::$lhs_type(arg)) => Ok(Box::new([<$lib S>]{arg: arg.clone(), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix1(arg))) => Ok(Box::new([<$lib M1>]{arg, out: new_ref(Matrix1::from_element($default))})),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(arg))) => Ok(Box::new([<$lib M2>]{arg, out: new_ref(Matrix2::from_element($default))})),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(arg))) => Ok(Box::new([<$lib M3>]{arg, out: new_ref(Matrix3::from_element($default))})),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(arg))) => Ok(Box::new([<$lib M4>]{arg, out: new_ref(Matrix4::from_element($default))})),
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(arg))) => Ok(Box::new([<$lib R2>]{arg: arg.clone(), out: new_ref(RowVector2::from_element($default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(arg))) => Ok(Box::new([<$lib R3>]{arg: arg.clone(), out: new_ref(RowVector3::from_element($default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(arg))) => Ok(Box::new([<$lib R4>]{arg: arg.clone(), out: new_ref(RowVector4::from_element($default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector2(arg))) => Ok(Box::new([<$lib V2>]{arg: arg.clone(), out: new_ref(Vector2::from_element($default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector3(arg))) => Ok(Box::new([<$lib V3>]{arg: arg.clone(), out: new_ref(Vector3::from_element($default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector4(arg))) => Ok(Box::new([<$lib V4>]{arg: arg.clone(), out: new_ref(Vector4::from_element($default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(arg))) => Ok(Box::new([<$lib M3x2>]{arg, out: new_ref(Matrix3x2::from_element($default))})),         
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(arg))) => Ok(Box::new([<$lib M2x3>]{arg, out: new_ref(Matrix2x3::from_element($default))})),         
             (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(arg))) => Ok(Box::new([<$lib RD>]{arg: arg.clone(), out: new_ref(RowDVector::from_element(arg.borrow().len(),$default))})),
             (Value::$matrix_kind(Matrix::<$target_type>::DVector(arg))) => Ok(Box::new([<$lib VD>]{arg: arg.clone(), out: new_ref(DVector::from_element(arg.borrow().len(),$default))})),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(arg))) => {
               let (rows,cols) = {arg.borrow().shape()};
-              Ok(Box::new([<$lib MD>]{arg, out: new_ref(DMatrix::from_element(rows,cols,$default))}))},
+              Ok(Box::new([<$lib MD>]{arg, out: new_ref(DMatrix::from_element(rows,cols,$default))}))
+            },
           )+
         )+
         x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),

@@ -480,18 +480,6 @@ macro_rules! impl_to_value_matrix {
   }
 }
 
-impl_to_value_matrix!(Matrix2x3);
-impl_to_value_matrix!(Matrix3x2);
-impl_to_value_matrix!(Matrix1);
-impl_to_value_matrix!(Matrix2);
-impl_to_value_matrix!(Matrix3);
-impl_to_value_matrix!(Matrix4);
-impl_to_value_matrix!(Vector2);
-impl_to_value_matrix!(Vector3);
-impl_to_value_matrix!(Vector4);
-impl_to_value_matrix!(RowVector2);
-impl_to_value_matrix!(RowVector3);
-impl_to_value_matrix!(RowVector4);
 impl_to_value_matrix!(RowDVector);
 impl_to_value_matrix!(DVector);
 impl_to_value_matrix!(DMatrix);

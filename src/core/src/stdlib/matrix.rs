@@ -18,18 +18,7 @@ macro_rules! matmul_op {
   };}
 
 impl_binop!(MatMulScalar, T,T,T,mul_op);
-impl_binop!(MatMulM2x3M3x2, Matrix2x3<T>, Matrix3x2<T>, Matrix2<T>,matmul_op);
-impl_binop!(MatMulM1M1, Matrix1<T>, Matrix1<T>, Matrix1<T>,matmul_op);
-impl_binop!(MatMulM2M2, Matrix2<T>, Matrix2<T>, Matrix2<T>,matmul_op);
-impl_binop!(MatMulM3M3, Matrix3<T>, Matrix3<T>, Matrix3<T>,matmul_op);
-impl_binop!(MatMulM4M4, Matrix4<T>, Matrix4<T>, Matrix4<T>,matmul_op);
-impl_binop!(MatMulR2V2, RowVector2<T>,Vector2<T>,Matrix1<T>,matmul_op);
-impl_binop!(MatMulR3V3, RowVector3<T>,Vector3<T>,Matrix1<T>,matmul_op);
-impl_binop!(MatMulR4V4, RowVector4<T>,Vector4<T>,Matrix1<T>,matmul_op);
-impl_binop!(MatMulV2R2, Vector2<T>, RowVector2<T>, Matrix2<T>,matmul_op);
-impl_binop!(MatMulV3R3, Vector3<T>, RowVector3<T>, Matrix3<T>,matmul_op);
-impl_binop!(MatMulV4R4, Vector4<T>, RowVector4<T>, Matrix4<T>,matmul_op);
-impl_binop!(MatMulRDVD, RowDVector<T>, DVector<T>, Matrix1<T>,matmul_op);
+impl_binop!(MatMulRDVD, RowDVector<T>, DVector<T>, DMatrix<T>,matmul_op);
 impl_binop!(MatMulVDRD, DVector<T>,RowDVector<T>,DMatrix<T>,matmul_op);
 impl_binop!(MatMulMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>,matmul_op);
 
@@ -39,18 +28,7 @@ macro_rules! impl_matmul_match_arms {
       $(
         $(
           (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => Ok(Box::new(MatMulScalar { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($target_type::zero()) })),
-          (Value::$matrix_kind(Matrix::<$target_type>::Vector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector4(rhs))) => Ok(Box::new(MatMulV4R4 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Matrix4::from_element($target_type::zero())) })),
-          (Value::$matrix_kind(Matrix::<$target_type>::Vector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector3(rhs))) => Ok(Box::new(MatMulV3R3 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Matrix3::from_element($target_type::zero())) })),
-          (Value::$matrix_kind(Matrix::<$target_type>::Vector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowVector2(rhs))) => Ok(Box::new(MatMulV2R2 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Matrix2::from_element($target_type::zero())) })),
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Vector4(rhs))) => Ok(Box::new(MatMulR4V4 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Matrix1::from_element($target_type::zero())) })),
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Vector3(rhs))) => Ok(Box::new(MatMulR3V3 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Matrix1::from_element($target_type::zero())) })),
-          (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Vector2(rhs))) => Ok(Box::new(MatMulR2V2 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Matrix1::from_element($target_type::zero())) })),
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix1(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix1(rhs))) => Ok(Box::new(MatMulM1M1{lhs, rhs, out: new_ref(Matrix1::from_element($target_type::zero()))})),
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix2(rhs))) => Ok(Box::new(MatMulM2M2{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::zero()))})),
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3(rhs))) => Ok(Box::new(MatMulM3M3{lhs, rhs, out: new_ref(Matrix3::from_element($target_type::zero()))})),
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix4(rhs))) => Ok(Box::new(MatMulM4M4{lhs, rhs, out: new_ref(Matrix4::from_element($target_type::zero()))})),
-          (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(rhs))) => Ok(Box::new(MatMulM2x3M3x2{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::zero()))})),          
-          (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => Ok(Box::new(MatMulRDVD{lhs, rhs, out: new_ref(Matrix1::from_element($target_type::zero()))})),
+          (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::DVector(rhs))) => Ok(Box::new(MatMulRDVD{lhs, rhs, out: new_ref(DMatrix::from_element(1,1,$target_type::zero()))})),
           (Value::$matrix_kind(Matrix::<$target_type>::DVector(lhs)), Value::$matrix_kind(Matrix::<$target_type>::RowDVector(rhs))) => {
             let rows = {lhs.borrow().len()};
             let cols = {rhs.borrow().len()};
@@ -95,18 +73,6 @@ macro_rules! transpose_op {
     unsafe { *$out = (*$arg).transpose(); }
   };}
 
-impl_bool_urop!(TransposeM1, Matrix1<T>, Matrix1<T>, transpose_op);
-impl_bool_urop!(TransposeM2, Matrix2<T>, Matrix2<T>, transpose_op);
-impl_bool_urop!(TransposeM3, Matrix3<T>, Matrix3<T>, transpose_op);
-impl_bool_urop!(TransposeM4, Matrix4<T>, Matrix4<T>, transpose_op);
-impl_bool_urop!(TransposeM2x3, Matrix2x3<T>, Matrix3x2<T>, transpose_op);
-impl_bool_urop!(TransposeM3x2, Matrix3x2<T>, Matrix2x3<T>, transpose_op);
-impl_bool_urop!(TransposeV2, Vector2<T>, RowVector2<T>, transpose_op);
-impl_bool_urop!(TransposeV3, Vector3<T>, RowVector3<T>, transpose_op);
-impl_bool_urop!(TransposeV4, Vector4<T>, RowVector4<T>, transpose_op); 
-impl_bool_urop!(TransposeR2, RowVector2<T>, Vector2<T>, transpose_op);
-impl_bool_urop!(TransposeR3, RowVector3<T>, Vector3<T>, transpose_op);
-impl_bool_urop!(TransposeR4, RowVector4<T>, Vector4<T>, transpose_op); 
 impl_bool_urop!(TransposeRD, RowDVector<T>, DVector<T>, transpose_op);
 impl_bool_urop!(TransposeVD, DVector<T>, RowDVector<T>, transpose_op);
 impl_bool_urop!(TransposeMD, DMatrix<T>, DMatrix<T>, transpose_op);
@@ -116,20 +82,8 @@ macro_rules! impl_transpose_match_arms {
     match $arg {
       $(
         $(
-          Value::$matrix_kind(Matrix::<$target_type>::Vector4(arg))    => Ok(Box::new(TransposeV4{arg: arg.clone(), out: new_ref(RowVector4::from_element($default)) })),
-          Value::$matrix_kind(Matrix::<$target_type>::Vector3(arg))    => Ok(Box::new(TransposeV3{arg: arg.clone(), out: new_ref(RowVector3::from_element($default)) })),
-          Value::$matrix_kind(Matrix::<$target_type>::Vector2(arg))    => Ok(Box::new(TransposeV2{arg: arg.clone(), out: new_ref(RowVector2::from_element($default)) })),
           Value::$matrix_kind(Matrix::<$target_type>::DVector(arg))    => Ok(Box::new(TransposeVD{arg: arg.clone(), out: new_ref(RowDVector::from_element(arg.borrow().len(),$default))})),
-          Value::$matrix_kind(Matrix::<$target_type>::Matrix1(arg))    => Ok(Box::new(TransposeM1{arg: arg.clone(), out: new_ref(Matrix1::from_element($default))})),
-          Value::$matrix_kind(Matrix::<$target_type>::Matrix2(arg))    => Ok(Box::new(TransposeM2{arg: arg.clone(), out: new_ref(Matrix2::from_element($default))})),
-          Value::$matrix_kind(Matrix::<$target_type>::Matrix3(arg))    => Ok(Box::new(TransposeM3{arg: arg.clone(), out: new_ref(Matrix3::from_element($default))})),
-          Value::$matrix_kind(Matrix::<$target_type>::Matrix4(arg))    => Ok(Box::new(TransposeM4{arg: arg.clone(), out: new_ref(Matrix4::from_element($default))})),
-          Value::$matrix_kind(Matrix::<$target_type>::RowVector4(arg)) => Ok(Box::new(TransposeR4{arg: arg.clone(), out: new_ref(Vector4::from_element($default)) })),
-          Value::$matrix_kind(Matrix::<$target_type>::RowVector3(arg)) => Ok(Box::new(TransposeR3{arg: arg.clone(), out: new_ref(Vector3::from_element($default)) })),
-          Value::$matrix_kind(Matrix::<$target_type>::RowVector2(arg)) => Ok(Box::new(TransposeR2{arg: arg.clone(), out: new_ref(Vector2::from_element($default)) })),
           Value::$matrix_kind(Matrix::<$target_type>::RowDVector(arg)) => Ok(Box::new(TransposeRD{arg: arg.clone(), out: new_ref(DVector::from_element(arg.borrow().len(),$default))})),
-          Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(arg))  => Ok(Box::new(TransposeM2x3{arg: arg.clone(), out: new_ref(Matrix3x2::from_element($default))})),          
-          Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(arg))  => Ok(Box::new(TransposeM3x2{arg: arg.clone(), out: new_ref(Matrix2x3::from_element($default))})),          
           Value::$matrix_kind(Matrix::<$target_type>::DMatrix(arg)) => {
             let (rows,cols) = {arg.borrow().shape()};
             Ok(Box::new(TransposeMD{arg, out: new_ref(DMatrix::from_element(rows,cols,$default))}))
@@ -529,18 +483,6 @@ macro_rules! impl_access_fxn {
 macro_rules! impl_access_fxn_shape {
   ($name:ident, $ix_type:ty, $out_type:ty, $fxn:ident) => {
     paste!{
-      impl_access_fxn!([<$name V2>],   Vector2<T>,    $ix_type, $out_type, $fxn);
-      impl_access_fxn!([<$name V3>],   Vector3<T>,    $ix_type, $out_type, $fxn);
-      impl_access_fxn!([<$name V4>],   Vector4<T>,    $ix_type, $out_type, $fxn);
-      impl_access_fxn!([<$name R2>],   RowVector2<T>, $ix_type, $out_type, $fxn);
-      impl_access_fxn!([<$name R3>],   RowVector3<T>, $ix_type, $out_type, $fxn);
-      impl_access_fxn!([<$name R4>],   RowVector4<T>, $ix_type, $out_type, $fxn);
-      impl_access_fxn!([<$name M1>],   Matrix1<T>,    $ix_type, $out_type, $fxn);
-      impl_access_fxn!([<$name M2>],   Matrix2<T>,    $ix_type, $out_type, $fxn);
-      impl_access_fxn!([<$name M3>],   Matrix3<T>,    $ix_type, $out_type, $fxn);
-      impl_access_fxn!([<$name M4>],   Matrix4<T>,    $ix_type, $out_type, $fxn);
-      impl_access_fxn!([<$name M2x3>], Matrix2x3<T>,  $ix_type, $out_type, $fxn);
-      impl_access_fxn!([<$name M3x2>], Matrix3x2<T>,  $ix_type, $out_type, $fxn);
       impl_access_fxn!([<$name MD>],   DMatrix<T>,    $ix_type, $out_type, $fxn);
       impl_access_fxn!([<$name RD>],   RowDVector<T>, $ix_type, $out_type, $fxn);
       impl_access_fxn!([<$name VD>],   DVector<T>,    $ix_type, $out_type, $fxn);
@@ -558,7 +500,7 @@ impl_access_fxn_shape!(Access1DVD, DVector<usize>, DVector<T>, access_1d_slice);
 impl_access_fxn_shape!(Access1DVDb, DVector<bool>, DVector<T>, access_1d_slice_bool_v);
 
 // x[1..3,1..3]
-impl_access_fxn_shape!(Access2DVDVD, (DVector<usize>,DVector<usize>),       DMatrix<T>, access_2d_slice);
+impl_access_fxn_shape!(Access2DVDVD, (DVector<usize>,DVector<usize>), DMatrix<T>, access_2d_slice);
 impl_access_fxn_shape!(Access2DVDbVD, (DVector<bool>,DVector<usize>), DMatrix<T>, access_2d_slice_bool);
 impl_access_fxn_shape!(Access2DVDVDb, (DVector<usize>,DVector<bool>), DMatrix<T>, access_2d_slice_bool2);
 impl_access_fxn_shape!(Access2DVDbVDb, (DVector<bool>,DVector<bool>), DMatrix<T>, access_2d_slice_bool_bool);
@@ -620,17 +562,6 @@ macro_rules! impl_access_scalar_match_arms {
       match $arg {
         $(
           $(
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(input)), [Value::Index(ix)]) => Ok(Box::new([<$fxn_name R4>]  {source: input.clone(), ixes: ix.clone(), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(input)), [Value::Index(ix)]) => Ok(Box::new([<$fxn_name R3>]  {source: input.clone(), ixes: ix.clone(), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(input)), [Value::Index(ix)]) => Ok(Box::new([<$fxn_name R2>]  {source: input.clone(), ixes: ix.clone(), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector4(input)),    [Value::Index(ix)]) => Ok(Box::new([<$fxn_name V4>]  {source: input.clone(), ixes: ix.clone(), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector3(input)),    [Value::Index(ix)]) => Ok(Box::new([<$fxn_name V3>]  {source: input.clone(), ixes: ix.clone(), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector2(input)),    [Value::Index(ix)]) => Ok(Box::new([<$fxn_name V2>]  {source: input.clone(), ixes: ix.clone(), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)),    [Value::Index(ix)]) => Ok(Box::new([<$fxn_name M2>]  {source: input.clone(), ixes: ix.clone(), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)),    [Value::Index(ix)]) => Ok(Box::new([<$fxn_name M3>]  {source: input.clone(), ixes: ix.clone(), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)),    [Value::Index(ix)]) => Ok(Box::new([<$fxn_name M4>]  {source: input.clone(), ixes: ix.clone(), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)),  [Value::Index(ix)]) => Ok(Box::new([<$fxn_name M2x3>]{source: input.clone(), ixes: ix.clone(), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)),  [Value::Index(ix)]) => Ok(Box::new([<$fxn_name M3x2>]{source: input.clone(), ixes: ix.clone(), out: new_ref($default) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)),    [Value::Index(ix)]) => Ok(Box::new([<$fxn_name MD>]  {source: input.clone(), ixes: ix.clone(), out: new_ref($default) })),
             (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(input)), [Value::Index(ix)]) => Ok(Box::new([<$fxn_name RD>]  {source: input.clone(), ixes: ix.clone(), out: new_ref($default) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DVector(input)),    [Value::Index(ix)]) => Ok(Box::new([<$fxn_name VD>]  {source: input.clone(), ixes: ix.clone(), out: new_ref($default) })),
@@ -674,17 +605,6 @@ macro_rules! impl_access_scalar_scalar_match_arms {
       match $arg {
         $(
           $(
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(input)), [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name R4>]  {source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(input)), [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name R3>]  {source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(input)), [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name R2>]  {source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector4(input)),    [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name V4>]  {source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector3(input)),    [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name V3>]  {source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector2(input)),    [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name V2>]  {source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)),    [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name M2>]  {source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)),    [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name M3>]  {source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)),    [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name M4>]  {source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)),  [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name M2x3>]{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)),  [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name M3x2>]{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)),    [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name MD>]  {source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) })),
             (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(input)), [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name RD>]  {source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DVector(input)),    [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name VD>]  {source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref($default) })),
@@ -728,51 +648,12 @@ macro_rules! impl_access_range_match_arms {
       match $arg {
         $(
           $(
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(input)), [Value::MatrixBool(Matrix::DVector(ix))])     => Ok(Box::new(Access1DVDbR2{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(input)), [Value::MatrixBool(Matrix::DVector(ix))])     => Ok(Box::new(Access1DVDbR3{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(input)), [Value::MatrixBool(Matrix::DVector(ix))])     => Ok(Box::new(Access1DVDbR4{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(input)), [Value::MatrixBool(Matrix::DVector(ix))])     => Ok(Box::new(Access1DVDbRD{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),   
-
-            // --
-
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector2(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbV2{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector3(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbV3{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector4(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbV4{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            (Value::$matrix_kind(Matrix::<$target_type>::DVector(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbVD{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),   
-
-            // --
-
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix1(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbM1{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbM2{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbM3{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbM4{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),              
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbM3x2{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),              
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbM2x3{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),              
-            (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbMD{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),   
-
-            // --
-
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDR2{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDR3{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDR4{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),                
-            (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDRD{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),   
-
-            // --
-
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector2(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDV2{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector3(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDV3{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            (Value::$matrix_kind(Matrix::<$target_type>::Vector4(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDV4{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),                
-            (Value::$matrix_kind(Matrix::<$target_type>::DVector(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDVD{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),   
-
-            // --
-
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix1(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDM1{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDM2{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDM3{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDM4{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),                
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)), [Value::MatrixIndex(Matrix::DVector(ix))]) => Ok(Box::new(Access1DVDM3x2{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)), [Value::MatrixIndex(Matrix::DVector(ix))]) => Ok(Box::new(Access1DVDM2x3{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDMD{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),   
+            (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(input)), [Value::MatrixBool(Matrix::DVector(ix))]) => Ok(Box::new(Access1DVDbRD{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),   
+            (Value::$matrix_kind(Matrix::<$target_type>::DVector(input)),    [Value::MatrixBool(Matrix::DVector(ix))]) => Ok(Box::new(Access1DVDbVD{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),   
+            (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)),    [Value::MatrixBool(Matrix::DVector(ix))]) => Ok(Box::new(Access1DVDbMD{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),   
+            (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(input)), [Value::MatrixIndex(Matrix::DVector(ix))]) => Ok(Box::new(Access1DVDRD{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),   
+            (Value::$matrix_kind(Matrix::<$target_type>::DVector(input)),    [Value::MatrixIndex(Matrix::DVector(ix))]) => Ok(Box::new(Access1DVDVD{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),   
+            (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)),    [Value::MatrixIndex(Matrix::DVector(ix))]) => Ok(Box::new(Access1DVDMD{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),   
           )+
         )+
         x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
@@ -813,36 +694,9 @@ macro_rules! impl_access_range_range_match_arms {
       match $arg {
         $(
           $(
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDM3x2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDM2x3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix1(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDM1{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDM2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDM3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDM4{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDM3x2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDM2x3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix1(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDM1{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDM2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDM3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDM4{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbM3x2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbM2x3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix1(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbM1{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbM2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbM3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbM4{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbM3x2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbM2x3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix1(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbM1{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbM2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbM3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbM4{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
           )+
         )+
@@ -890,11 +744,6 @@ macro_rules! impl_access_all_match_arms {
       match $arg {
         $(
           $(
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)),  [Value::IndexAll]) => Ok(Box::new(Access1DAM3x2{source: input.clone(), ixes: new_ref(Value::IndexAll), out: new_ref(DVector::from_element(input.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)),  [Value::IndexAll]) => Ok(Box::new(Access1DAM2x3{source: input.clone(), ixes: new_ref(Value::IndexAll), out: new_ref(DVector::from_element(input.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)),    [Value::IndexAll]) => Ok(Box::new(Access1DAM2  {source: input.clone(), ixes: new_ref(Value::IndexAll), out: new_ref(DVector::from_element(input.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)),    [Value::IndexAll]) => Ok(Box::new(Access1DAM3  {source: input.clone(), ixes: new_ref(Value::IndexAll), out: new_ref(DVector::from_element(input.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)),    [Value::IndexAll]) => Ok(Box::new(Access1DAM4  {source: input.clone(), ixes: new_ref(Value::IndexAll), out: new_ref(DVector::from_element(input.borrow().len(),$default)) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)),    [Value::IndexAll]) => Ok(Box::new(Access1DAMD  {source: input.clone(), ixes: new_ref(Value::IndexAll), out: new_ref(DVector::from_element(input.borrow().len(),$default)) })),
           )+
         )+
@@ -936,11 +785,6 @@ macro_rules! impl_access_all_scalar_match_arms {
       match $arg {
         $(
           $(
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)),  [Value::IndexAll,Value::Index(ix)]) => Ok(Box::new(Access2DASM2x3{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(input.borrow().nrows(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)),  [Value::IndexAll,Value::Index(ix)]) => Ok(Box::new(Access2DASM3x2{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(input.borrow().nrows(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)),    [Value::IndexAll,Value::Index(ix)]) => Ok(Box::new(Access2DASM2  {source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(input.borrow().nrows(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)),    [Value::IndexAll,Value::Index(ix)]) => Ok(Box::new(Access2DASM3  {source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(input.borrow().nrows(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)),    [Value::IndexAll,Value::Index(ix)]) => Ok(Box::new(Access2DASM4  {source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(input.borrow().nrows(),$default)) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)),    [Value::IndexAll,Value::Index(ix)]) => Ok(Box::new(Access2DASMD  {source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(input.borrow().nrows(),$default)) })),
           )+
         )+
@@ -982,12 +826,6 @@ macro_rules! impl_access_scalar_all_match_arms {
       match $arg {
         $(
           $(
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM2x3{source: input.clone(), ixes: ix.clone(), out: new_ref(RowDVector::from_element(input.borrow().nrows(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM3x2{source: input.clone(), ixes: ix.clone(), out: new_ref(RowDVector::from_element(input.borrow().nrows(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix1(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM1{source: input.clone(), ixes: ix.clone(), out: new_ref(RowDVector::from_element(input.borrow().nrows(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM2{source: input.clone(), ixes: ix.clone(), out: new_ref(RowDVector::from_element(input.borrow().nrows(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM3{source: input.clone(), ixes: ix.clone(), out: new_ref(RowDVector::from_element(input.borrow().nrows(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM4{source: input.clone(), ixes: ix.clone(), out: new_ref(RowDVector::from_element(input.borrow().nrows(),$default)) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAMD{source: input.clone(), ixes: ix.clone(), out: new_ref(RowDVector::from_element(input.borrow().nrows(),$default)) })),
           )+
         )+
@@ -1030,14 +868,8 @@ macro_rules! impl_access_all_range_match_arms {
         $(
           $(
             // All Vector
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))]) => Ok(Box::new(Access2DAVDM2{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))]) => Ok(Box::new(Access2DAVDM3{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))]) => Ok(Box::new(Access2DAVDM4{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))]) => Ok(Box::new(Access2DAVDMD{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) })),
             // All Bool Vector
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => Ok(Box::new(Access2DAVDbM2{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => Ok(Box::new(Access2DAVDbM3{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => Ok(Box::new(Access2DAVDbM4{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => Ok(Box::new(Access2DAVDbMD{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) })),
           )+
         )+
@@ -1080,14 +912,8 @@ macro_rules! impl_access_range_all_match_arms {
         $(
           $(
             // Vector All
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)), [Value::MatrixIndex(Matrix::DVector(ix)), Value::IndexAll]) => Ok(Box::new(Access2DVDAM2{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)), [Value::MatrixIndex(Matrix::DVector(ix)), Value::IndexAll]) => Ok(Box::new(Access2DVDAM3{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)), [Value::MatrixIndex(Matrix::DVector(ix)), Value::IndexAll]) => Ok(Box::new(Access2DVDAM4{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)), [Value::MatrixIndex(Matrix::DVector(ix)), Value::IndexAll]) => Ok(Box::new(Access2DVDAMD{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) })),
             // Bool Vector All
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)), [Value::MatrixBool(Matrix::DVector(ix)), Value::IndexAll]) => Ok(Box::new(Access2DVDbAM2{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)), [Value::MatrixBool(Matrix::DVector(ix)), Value::IndexAll]) => Ok(Box::new(Access2DVDbAM3{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)), [Value::MatrixBool(Matrix::DVector(ix)), Value::IndexAll]) => Ok(Box::new(Access2DVDbAM4{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)), [Value::MatrixBool(Matrix::DVector(ix)), Value::IndexAll]) => Ok(Box::new(Access2DVDbAMD{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) })),
           )+
         )+
@@ -1130,18 +956,8 @@ macro_rules! impl_access_range_scalar_match_arms {
         $(
           $(
             // Vector Scalar
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::Index(ix2)]) => Ok(Box::new(Access2DVDSM2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DVector::from_element(ix1.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::Index(ix2)]) => Ok(Box::new(Access2DVDSM3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DVector::from_element(ix1.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::Index(ix2)]) => Ok(Box::new(Access2DVDSM4{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DVector::from_element(ix1.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::Index(ix2)]) => Ok(Box::new(Access2DVDSM2x3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DVector::from_element(ix1.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::Index(ix2)]) => Ok(Box::new(Access2DVDSM3x2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DVector::from_element(ix1.borrow().len(),$default)) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::Index(ix2)]) => Ok(Box::new(Access2DVDSMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DVector::from_element(ix1.borrow().len(),$default)) })),
             // Bool Vector Scalar
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)]) => Ok(Box::new(Access2DVDbSM2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DVector::from_element(ix1.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)]) => Ok(Box::new(Access2DVDbSM3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DVector::from_element(ix1.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)]) => Ok(Box::new(Access2DVDbSM4{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DVector::from_element(ix1.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)]) => Ok(Box::new(Access2DVDbSM2x3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DVector::from_element(ix1.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)]) => Ok(Box::new(Access2DVDbSM3x2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DVector::from_element(ix1.borrow().len(),$default)) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)]) => Ok(Box::new(Access2DVDbSMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DVector::from_element(ix1.borrow().len(),$default)) })),
           )+
         )+
@@ -1184,18 +1000,8 @@ macro_rules! impl_access_scalar_range_match_arms {
         $(
           $(
             // Vector Scalar
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)),   [Value::Index(ix1), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DSVDM2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(RowDVector::from_element(ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)),   [Value::Index(ix1), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DSVDM3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(RowDVector::from_element(ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)),   [Value::Index(ix1), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DSVDM4{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(RowDVector::from_element(ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)), [Value::Index(ix1), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DSVDM2x3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(RowDVector::from_element(ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)), [Value::Index(ix1), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DSVDM3x2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(RowDVector::from_element(ix2.borrow().len(),$default)) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)),   [Value::Index(ix1), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DSVDMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(RowDVector::from_element(ix2.borrow().len(),$default)) })),
             // Bool Vector Scalar
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(input)),   [Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DSVDbM2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(RowDVector::from_element(ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(input)),   [Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DSVDbM3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(RowDVector::from_element(ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(input)),   [Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DSVDbM4{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(RowDVector::from_element(ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(input)), [Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DSVDbM2x3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(RowDVector::from_element(ix2.borrow().len(),$default)) })),
-            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(input)), [Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DSVDbM3x2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(RowDVector::from_element(ix2.borrow().len(),$default)) })),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(input)),   [Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DSVDbMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(RowDVector::from_element(ix2.borrow().len(),$default)) })),
           )+
         )+
@@ -1284,36 +1090,12 @@ macro_rules! impl_set_scalar_fxn {
 impl_set_scalar_fxn!(Set1DSRD,RowDVector); 
 impl_set_scalar_fxn!(Set1DSVD,DVector); 
 impl_set_scalar_fxn!(Set1DSMD,DMatrix); 
-impl_set_scalar_fxn!(Set1DSR4,RowVector4);    
-impl_set_scalar_fxn!(Set1DSR3,RowVector3);
-impl_set_scalar_fxn!(Set1DSR2,RowVector2);
-impl_set_scalar_fxn!(Set1DSV4,Vector4);    
-impl_set_scalar_fxn!(Set1DSV3,Vector3);
-impl_set_scalar_fxn!(Set1DSV2,Vector2);
-impl_set_scalar_fxn!(Set1DSM4,Matrix4);    
-impl_set_scalar_fxn!(Set1DSM3,Matrix3);
-impl_set_scalar_fxn!(Set1DSM2,Matrix2);
-impl_set_scalar_fxn!(Set1DSM1,Matrix1);
-impl_set_scalar_fxn!(Set1DSM2x3,Matrix2x3);
-impl_set_scalar_fxn!(Set1DSM3x2,Matrix3x2);
 
 macro_rules! impl_set_scalar_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
     paste!{
       match $arg {
         $(
-            (Value::[<Matrix $value_kind>](Matrix::RowVector4(input)),[Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R4>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::RowVector3(input)),[Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R3>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::RowVector2(input)),[Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R2>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector4(input)),   [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V4>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector3(input)),   [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V3>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector2(input)),   [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V2>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix4(input)),   [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix3(input)),   [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix2(input)),   [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix1(input)),   [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M1>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(input)), [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2x3>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(input)), [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3x2>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::DMatrix(input)),   [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MD>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::RowDVector(input)),[Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name RD>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VD>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
@@ -1381,36 +1163,12 @@ macro_rules! impl_set_range_fxn {
 impl_set_range_fxn!(Set1DRRD,RowDVector); 
 impl_set_range_fxn!(Set1DRVD,DVector); 
 impl_set_range_fxn!(Set1DRMD,DMatrix); 
-impl_set_range_fxn!(Set1DRR4,RowVector4);    
-impl_set_range_fxn!(Set1DRR3,RowVector3);
-impl_set_range_fxn!(Set1DRR2,RowVector2);
-impl_set_range_fxn!(Set1DRV4,Vector4);    
-impl_set_range_fxn!(Set1DRV3,Vector3);
-impl_set_range_fxn!(Set1DRV2,Vector2);
-impl_set_range_fxn!(Set1DRM4,Matrix4);    
-impl_set_range_fxn!(Set1DRM3,Matrix3);
-impl_set_range_fxn!(Set1DRM2,Matrix2);
-impl_set_range_fxn!(Set1DRM1,Matrix1);
-impl_set_range_fxn!(Set1DRM2x3,Matrix2x3);
-impl_set_range_fxn!(Set1DRM3x2,Matrix3x2);
 
 macro_rules! impl_set_range_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
     paste!{
       match $arg {
         $(
-            (Value::[<Matrix $value_kind>](Matrix::RowVector4(input)),[Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R4>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::RowVector3(input)),[Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R3>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::RowVector2(input)),[Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R2>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector4(input)),   [Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V4>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector3(input)),   [Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V3>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector2(input)),   [Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V2>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix4(input)),   [Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix3(input)),   [Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix2(input)),   [Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix1(input)),   [Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M1>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(input)), [Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2x3>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(input)), [Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3x2>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::DMatrix(input)),   [Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MD>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::RowDVector(input)),[Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name RD>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VD>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
@@ -1476,36 +1234,12 @@ macro_rules! impl_set_all_fxn {
 impl_set_all_fxn!(Set1DARD,RowDVector); 
 impl_set_all_fxn!(Set1DAVD,DVector); 
 impl_set_all_fxn!(Set1DAMD,DMatrix); 
-impl_set_all_fxn!(Set1DAR4,RowVector4);    
-impl_set_all_fxn!(Set1DAR3,RowVector3);
-impl_set_all_fxn!(Set1DAR2,RowVector2);
-impl_set_all_fxn!(Set1DAV4,Vector4);    
-impl_set_all_fxn!(Set1DAV3,Vector3);
-impl_set_all_fxn!(Set1DAV2,Vector2);
-impl_set_all_fxn!(Set1DAM4,Matrix4);    
-impl_set_all_fxn!(Set1DAM3,Matrix3);
-impl_set_all_fxn!(Set1DAM2,Matrix2);
-impl_set_all_fxn!(Set1DAM1,Matrix1);
-impl_set_all_fxn!(Set1DAM2x3,Matrix2x3);
-impl_set_all_fxn!(Set1DAM3x2,Matrix3x2);
 
 macro_rules! impl_set_all_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
     paste!{
       match $arg {
         $(
-            (Value::[<Matrix $value_kind>](Matrix::RowVector4(input)),[Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R4>] { sink: input.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::RowVector3(input)),[Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R3>] { sink: input.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::RowVector2(input)),[Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R2>] { sink: input.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector4(input)),   [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V4>] { sink: input.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector3(input)),   [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V3>] { sink: input.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector2(input)),   [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V2>] { sink: input.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix4(input)),   [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4>] { sink: input.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix3(input)),   [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3>] { sink: input.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix2(input)),   [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2>] { sink: input.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix1(input)),   [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M1>] { sink: input.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(input)), [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2x3>] { sink: input.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(input)), [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3x2>] { sink: input.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::DMatrix(input)),   [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MD>] { sink: input.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::RowDVector(input)),[Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name RD>] { sink: input.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VD>] { sink: input.clone(), source: source.clone() })),
@@ -1573,36 +1307,12 @@ macro_rules! impl_set_scalar_scalar_fxn {
 impl_set_scalar_scalar_fxn!(Set2DSSRD,RowDVector); 
 impl_set_scalar_scalar_fxn!(Set2DSSVD,DVector); 
 impl_set_scalar_scalar_fxn!(Set2DSSMD,DMatrix); 
-impl_set_scalar_scalar_fxn!(Set2DSSR4,RowVector4);    
-impl_set_scalar_scalar_fxn!(Set2DSSR3,RowVector3);
-impl_set_scalar_scalar_fxn!(Set2DSSR2,RowVector2);
-impl_set_scalar_scalar_fxn!(Set2DSSV4,Vector4);    
-impl_set_scalar_scalar_fxn!(Set2DSSV3,Vector3);
-impl_set_scalar_scalar_fxn!(Set2DSSV2,Vector2);
-impl_set_scalar_scalar_fxn!(Set2DSSM4,Matrix4);    
-impl_set_scalar_scalar_fxn!(Set2DSSM3,Matrix3);
-impl_set_scalar_scalar_fxn!(Set2DSSM2,Matrix2);
-impl_set_scalar_scalar_fxn!(Set2DSSM1,Matrix1);
-impl_set_scalar_scalar_fxn!(Set2DSSM2x3,Matrix2x3);
-impl_set_scalar_scalar_fxn!(Set2DSSM3x2,Matrix3x2);
 
 macro_rules! impl_set_scalar_scalar_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
     paste!{
       match $arg {
         $(
-            (Value::[<Matrix $value_kind>](Matrix::RowVector4(input)),[Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R4>] { sink: input.clone(),   ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::RowVector3(input)),[Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R3>] { sink: input.clone(),   ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::RowVector2(input)),[Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R2>] { sink: input.clone(),   ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector4(input)),   [Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V4>] { sink: input.clone(),   ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector3(input)),   [Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V3>] { sink: input.clone(),   ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector2(input)),   [Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V2>] { sink: input.clone(),   ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix4(input)),   [Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4>] { sink: input.clone(),   ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix3(input)),   [Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3>] { sink: input.clone(),   ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix2(input)),   [Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2>] { sink: input.clone(),   ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix1(input)),   [Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M1>] { sink: input.clone(),   ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(input)), [Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2x3>] { sink: input.clone(), ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(input)), [Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3x2>] { sink: input.clone(), ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::DMatrix(input)),   [Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MD>] { sink: input.clone(),   ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::RowDVector(input)),[Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name RD>] { sink: input.clone(),   ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VD>] { sink: input.clone(),   ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
@@ -1670,36 +1380,12 @@ macro_rules! impl_set_all_scalar_fxn {
 impl_set_all_scalar_fxn!(Set2DASRD,RowDVector); 
 impl_set_all_scalar_fxn!(Set2DASVD,DVector); 
 impl_set_all_scalar_fxn!(Set2DASMD,DMatrix); 
-impl_set_all_scalar_fxn!(Set2DASR4,RowVector4);    
-impl_set_all_scalar_fxn!(Set2DASR3,RowVector3);
-impl_set_all_scalar_fxn!(Set2DASR2,RowVector2);
-impl_set_all_scalar_fxn!(Set2DASV4,Vector4);    
-impl_set_all_scalar_fxn!(Set2DASV3,Vector3);
-impl_set_all_scalar_fxn!(Set2DASV2,Vector2);
-impl_set_all_scalar_fxn!(Set2DASM4,Matrix4);    
-impl_set_all_scalar_fxn!(Set2DASM3,Matrix3);
-impl_set_all_scalar_fxn!(Set2DASM2,Matrix2);
-impl_set_all_scalar_fxn!(Set2DASM1,Matrix1);
-impl_set_all_scalar_fxn!(Set2DASM2x3,Matrix2x3);
-impl_set_all_scalar_fxn!(Set2DASM3x2,Matrix3x2);
 
 macro_rules! impl_set_all_scalar_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
     paste!{
       match $arg {
         $(
-            (Value::[<Matrix $value_kind>](Matrix::RowVector4(input)),[Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R4>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::RowVector3(input)),[Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R3>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::RowVector2(input)),[Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R2>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector4(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V4>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector3(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V3>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector2(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V2>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix4(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix3(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix2(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix1(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M1>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(input)), [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2x3>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(input)), [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3x2>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::DMatrix(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MD>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::RowDVector(input)),[Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name RD>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VD>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
@@ -1767,36 +1453,12 @@ macro_rules! impl_set_scalar_all_fxn {
 impl_set_scalar_all_fxn!(Set2DSARD,RowDVector); 
 impl_set_scalar_all_fxn!(Set2DSAVD,DVector); 
 impl_set_scalar_all_fxn!(Set2DSAMD,DMatrix); 
-impl_set_scalar_all_fxn!(Set2DSAR4,RowVector4);    
-impl_set_scalar_all_fxn!(Set2DSAR3,RowVector3);
-impl_set_scalar_all_fxn!(Set2DSAR2,RowVector2);
-impl_set_scalar_all_fxn!(Set2DSAV4,Vector4);    
-impl_set_scalar_all_fxn!(Set2DSAV3,Vector3);
-impl_set_scalar_all_fxn!(Set2DSAV2,Vector2);
-impl_set_scalar_all_fxn!(Set2DSAM4,Matrix4);    
-impl_set_scalar_all_fxn!(Set2DSAM3,Matrix3);
-impl_set_scalar_all_fxn!(Set2DSAM2,Matrix2);
-impl_set_scalar_all_fxn!(Set2DSAM1,Matrix1);
-impl_set_scalar_all_fxn!(Set2DSAM2x3,Matrix2x3);
-impl_set_scalar_all_fxn!(Set2DSAM3x2,Matrix3x2);
 
 macro_rules! impl_set_scalar_all_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
     paste!{
       match $arg {
         $(
-            (Value::[<Matrix $value_kind>](Matrix::RowVector4(input)),[Value::Index(ix), Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R4>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::RowVector3(input)),[Value::Index(ix), Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R3>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::RowVector2(input)),[Value::Index(ix), Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R2>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector4(input)),   [Value::Index(ix), Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V4>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector3(input)),   [Value::Index(ix), Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V3>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector2(input)),   [Value::Index(ix), Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V2>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix4(input)),   [Value::Index(ix), Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix3(input)),   [Value::Index(ix), Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix2(input)),   [Value::Index(ix), Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix1(input)),   [Value::Index(ix), Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M1>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(input)), [Value::Index(ix), Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2x3>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(input)), [Value::Index(ix), Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3x2>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::DMatrix(input)),   [Value::Index(ix), Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MD>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::RowDVector(input)),[Value::Index(ix), Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name RD>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::Index(ix), Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VD>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
@@ -1866,36 +1528,12 @@ macro_rules! impl_set_range_scalar_fxn {
 impl_set_range_scalar_fxn!(Set2DRSRD,RowDVector); 
 impl_set_range_scalar_fxn!(Set2DRSVD,DVector); 
 impl_set_range_scalar_fxn!(Set2DRSMD,DMatrix); 
-impl_set_range_scalar_fxn!(Set2DRSR4,RowVector4);    
-impl_set_range_scalar_fxn!(Set2DRSR3,RowVector3);
-impl_set_range_scalar_fxn!(Set2DRSR2,RowVector2);
-impl_set_range_scalar_fxn!(Set2DRSV4,Vector4);    
-impl_set_range_scalar_fxn!(Set2DRSV3,Vector3);
-impl_set_range_scalar_fxn!(Set2DRSV2,Vector2);
-impl_set_range_scalar_fxn!(Set2DRSM4,Matrix4);    
-impl_set_range_scalar_fxn!(Set2DRSM3,Matrix3);
-impl_set_range_scalar_fxn!(Set2DRSM2,Matrix2);
-impl_set_range_scalar_fxn!(Set2DRSM1,Matrix1);
-impl_set_range_scalar_fxn!(Set2DRSM2x3,Matrix2x3);
-impl_set_range_scalar_fxn!(Set2DRSM3x2,Matrix3x2);
 
 macro_rules! impl_set_range_scalar_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
     paste!{
       match $arg {
         $(
-            (Value::[<Matrix $value_kind>](Matrix::RowVector4(input)),[Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R4>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::RowVector3(input)),[Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R3>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::RowVector2(input)),[Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R2>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector4(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V4>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector3(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V3>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector2(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V2>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix4(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix3(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix2(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix1(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M1>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(input)), [Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2x3>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(input)), [Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3x2>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::DMatrix(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MD>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::RowDVector(input)),[Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name RD>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VD>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
@@ -1965,36 +1603,12 @@ macro_rules! impl_set_scalar_range_fxn {
 impl_set_scalar_range_fxn!(Set2DSRRD,RowDVector); 
 impl_set_scalar_range_fxn!(Set2DSRVD,DVector); 
 impl_set_scalar_range_fxn!(Set2DSRMD,DMatrix); 
-impl_set_scalar_range_fxn!(Set2DSRR4,RowVector4);    
-impl_set_scalar_range_fxn!(Set2DSRR3,RowVector3);
-impl_set_scalar_range_fxn!(Set2DSRR2,RowVector2);
-impl_set_scalar_range_fxn!(Set2DSRV4,Vector4);    
-impl_set_scalar_range_fxn!(Set2DSRV3,Vector3);
-impl_set_scalar_range_fxn!(Set2DSRV2,Vector2);
-impl_set_scalar_range_fxn!(Set2DSRM4,Matrix4);    
-impl_set_scalar_range_fxn!(Set2DSRM3,Matrix3);
-impl_set_scalar_range_fxn!(Set2DSRM2,Matrix2);
-impl_set_scalar_range_fxn!(Set2DSRM1,Matrix1);
-impl_set_scalar_range_fxn!(Set2DSRM2x3,Matrix2x3);
-impl_set_scalar_range_fxn!(Set2DSRM3x2,Matrix3x2);
 
 macro_rules! impl_set_scalar_range_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
     paste!{
       match $arg {
         $(
-            (Value::[<Matrix $value_kind>](Matrix::RowVector4(input)),[Value::Index(ix1),Value::MatrixIndex(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R4>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::RowVector3(input)),[Value::Index(ix1),Value::MatrixIndex(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R3>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::RowVector2(input)),[Value::Index(ix1),Value::MatrixIndex(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R2>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector4(input)),   [Value::Index(ix1),Value::MatrixIndex(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V4>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector3(input)),   [Value::Index(ix1),Value::MatrixIndex(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V3>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector2(input)),   [Value::Index(ix1),Value::MatrixIndex(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V2>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix4(input)),   [Value::Index(ix1),Value::MatrixIndex(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix3(input)),   [Value::Index(ix1),Value::MatrixIndex(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix2(input)),   [Value::Index(ix1),Value::MatrixIndex(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix1(input)),   [Value::Index(ix1),Value::MatrixIndex(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M1>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(input)), [Value::Index(ix1),Value::MatrixIndex(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2x3>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(input)), [Value::Index(ix1),Value::MatrixIndex(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3x2>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::DMatrix(input)),   [Value::Index(ix1),Value::MatrixIndex(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MD>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::RowDVector(input)),[Value::Index(ix1),Value::MatrixIndex(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name RD>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::Index(ix1),Value::MatrixIndex(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VD>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
