@@ -20,6 +20,18 @@ macro_rules! impl_urnop_match_arms2 {
         $(
           $(
             (Value::$lhs_type(arg)) => Ok(Box::new([<$lib $lhs_type S>]{arg: arg.clone(), out: new_ref($default) })),
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix1(arg))) => Ok(Box::new([<$lib $lhs_type M1>]{arg, out: new_ref(Matrix1::from_element($default))})),
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2(arg))) => Ok(Box::new([<$lib $lhs_type M2>]{arg, out: new_ref(Matrix2::from_element($default))})),
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3(arg))) => Ok(Box::new([<$lib $lhs_type M3>]{arg, out: new_ref(Matrix3::from_element($default))})),
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix4(arg))) => Ok(Box::new([<$lib $lhs_type M4>]{arg, out: new_ref(Matrix4::from_element($default))})),
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector2(arg))) => Ok(Box::new([<$lib $lhs_type R2>]{arg: arg.clone(), out: new_ref(RowVector2::from_element($default)) })),
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector3(arg))) => Ok(Box::new([<$lib $lhs_type R3>]{arg: arg.clone(), out: new_ref(RowVector3::from_element($default)) })),
+            (Value::$matrix_kind(Matrix::<$target_type>::RowVector4(arg))) => Ok(Box::new([<$lib $lhs_type R4>]{arg: arg.clone(), out: new_ref(RowVector4::from_element($default)) })),
+            (Value::$matrix_kind(Matrix::<$target_type>::Vector2(arg))) => Ok(Box::new([<$lib $lhs_type V2>]{arg: arg.clone(), out: new_ref(Vector2::from_element($default)) })),
+            (Value::$matrix_kind(Matrix::<$target_type>::Vector3(arg))) => Ok(Box::new([<$lib $lhs_type V3>]{arg: arg.clone(), out: new_ref(Vector3::from_element($default)) })),
+            (Value::$matrix_kind(Matrix::<$target_type>::Vector4(arg))) => Ok(Box::new([<$lib $lhs_type V4>]{arg: arg.clone(), out: new_ref(Vector4::from_element($default)) })),
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(arg))) => Ok(Box::new([<$lib $lhs_type M2x3>]{arg, out: new_ref(Matrix2x3::from_element($default))})),         
+            (Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(arg))) => Ok(Box::new([<$lib $lhs_type M3x2>]{arg, out: new_ref(Matrix3x2::from_element($default))})),         
             (Value::$matrix_kind(Matrix::<$target_type>::RowDVector(arg))) => Ok(Box::new([<$lib $lhs_type RD>]{arg: arg.clone(), out: new_ref(RowDVector::from_element(arg.borrow().len(),$default))})),
             (Value::$matrix_kind(Matrix::<$target_type>::DVector(arg))) => Ok(Box::new([<$lib $lhs_type VD>]{arg: arg.clone(), out: new_ref(DVector::from_element(arg.borrow().len(),$default))})),
             (Value::$matrix_kind(Matrix::<$target_type>::DMatrix(arg))) => {
@@ -65,6 +77,18 @@ macro_rules! impl_math_urop {
   ($fxn_name:ident, $type:ident, $op_fxn:ident) => {
     paste!{
       impl_urop!([<$fxn_name $type S>], $type, $type, [<$op_fxn _op>]);
+      impl_urop!([<$fxn_name $type M1>], Matrix1<$type>, Matrix1<$type>, [<$op_fxn _vec_op>]);
+      impl_urop!([<$fxn_name $type M2>], Matrix2<$type>, Matrix2<$type>, [<$op_fxn _vec_op>]);
+      impl_urop!([<$fxn_name $type M3>], Matrix3<$type>, Matrix3<$type>, [<$op_fxn _vec_op>]);
+      impl_urop!([<$fxn_name $type M4>], Matrix4<$type>, Matrix4<$type>, [<$op_fxn _vec_op>]);
+      impl_urop!([<$fxn_name $type R2>], RowVector2<$type>, RowVector2<$type>, [<$op_fxn _vec_op>]);
+      impl_urop!([<$fxn_name $type R3>], RowVector3<$type>, RowVector3<$type>, [<$op_fxn _vec_op>]);
+      impl_urop!([<$fxn_name $type R4>], RowVector4<$type>, RowVector4<$type>, [<$op_fxn _vec_op>]);
+      impl_urop!([<$fxn_name $type V2>], Vector2<$type>, Vector2<$type>, [<$op_fxn _vec_op>]);
+      impl_urop!([<$fxn_name $type V3>], Vector3<$type>, Vector3<$type>, [<$op_fxn _vec_op>]);
+      impl_urop!([<$fxn_name $type V4>], Vector4<$type>, Vector4<$type>, [<$op_fxn _vec_op>]);
+      impl_urop!([<$fxn_name $type M2x3>], Matrix2x3<$type>, Matrix2x3<$type>, [<$op_fxn _vec_op>]);
+      impl_urop!([<$fxn_name $type M3x2>], Matrix3x2<$type>, Matrix3x2<$type>, [<$op_fxn _vec_op>]);
       impl_urop!([<$fxn_name $type VD>], DVector<$type>, DVector<$type>, [<$op_fxn _vec_op>]);
       impl_urop!([<$fxn_name $type RD>], RowDVector<$type>, RowDVector<$type>, [<$op_fxn _vec_op>]);
       impl_urop!([<$fxn_name $type MD>], DMatrix<$type>, DMatrix<$type>, [<$op_fxn _vec_op>]);
@@ -465,7 +489,19 @@ macro_rules! impl_neg_op {
     }};}
 
 impl_neg_op!(NegateS, T, neg_op);
+impl_neg_op!(NegateM1, Matrix1<T>,neg_op);
+impl_neg_op!(NegateM2, Matrix2<T>,neg_op);
+impl_neg_op!(NegateM3, Matrix3<T>,neg_op);
+impl_neg_op!(NegateM4, Matrix4<T>,neg_op);
+impl_neg_op!(NegateM2x3, Matrix2x3<T>,neg_op);
+impl_neg_op!(NegateM3x2, Matrix3x2<T>,neg_op);
+impl_neg_op!(NegateR2, RowVector2<T>,neg_op);
+impl_neg_op!(NegateR3, RowVector3<T>,neg_op);
+impl_neg_op!(NegateR4, RowVector4<T>,neg_op);     
 impl_neg_op!(NegateRD, RowDVector<T>,neg_vec_op);
+impl_neg_op!(NegateV2, Vector2<T>,neg_op);
+impl_neg_op!(NegateV3, Vector3<T>,neg_op);
+impl_neg_op!(NegateV4, Vector4<T>,neg_op);     
 impl_neg_op!(NegateVD, DVector<T>,neg_vec_op);
 impl_neg_op!(NegateMD, DMatrix<T>,neg_vec_op);
   
@@ -473,13 +509,13 @@ fn impl_neg_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_urnop_match_arms!(
     Negate,
     (lhs_value),
-    I8 => MatrixI8,     i8,   i8::zero();
-    I16 => MatrixI16,   i16,  i16::zero();
-    I32 => MatrixI32,   i32,  i32::zero();
-    I64 => MatrixI64,   i64,  i64::zero();
+    I8 => MatrixI8, i8, i8::zero();
+    I16 => MatrixI16, i16, i16::zero();
+    I32 => MatrixI32, i32, i32::zero();
+    I64 => MatrixI64, i64, i64::zero();
     I128 => MatrixI128, i128, i128::zero();
-    F32 => MatrixF32,   F32,  F32::zero();
-    F64 => MatrixF64,   F64,  F64::zero();
+    F32 => MatrixF32, F32, F32::zero();
+    F64 => MatrixF64, F64, F64::zero();
   )
 }
 
