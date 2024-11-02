@@ -89,6 +89,10 @@ macro_rules! impl_col_access_fxn {
 macro_rules! impl_col_access_fxn_shapes {
   ($type:ident) => {
     paste!{
+      impl_col_access_fxn!([<TableAccessCol $type:camel M1>], Matrix1, [<$type>]);
+      impl_col_access_fxn!([<TableAccessCol $type:camel V2>], Vector2, [<$type>]);
+      impl_col_access_fxn!([<TableAccessCol $type:camel V3>], Vector3, [<$type>]);
+      impl_col_access_fxn!([<TableAccessCol $type:camel V4>], Vector4, [<$type>]);
       impl_col_access_fxn!([<TableAccessCol $type:camel VD>], DVector, [<$type>]);
     }
   }
@@ -124,6 +128,10 @@ macro_rules! impl_access_column_match_arms {
           match (tbl.data.get(&key),tbl.rows) {
             $(
               $(
+                (Some((ValueKind::$lhs_type,value)),1) => Ok(Box::new([<TableAccessCol $lhs_type M1>]{source: value.clone(), out: new_ref(Matrix1::from_element($default)) })),
+                (Some((ValueKind::$lhs_type,value)),2) => Ok(Box::new([<TableAccessCol $lhs_type V2>]{source: value.clone(), out: new_ref(Vector2::from_element($default)) })),
+                (Some((ValueKind::$lhs_type,value)),3) => Ok(Box::new([<TableAccessCol $lhs_type V3>]{source: value.clone(), out: new_ref(Vector3::from_element($default)) })),
+                (Some((ValueKind::$lhs_type,value)),4) => Ok(Box::new([<TableAccessCol $lhs_type V4>]{source: value.clone(), out: new_ref(Vector4::from_element($default)) })),
                 (Some((ValueKind::$lhs_type,value)),n) => Ok(Box::new([<TableAccessCol $lhs_type VD>]{source: value.clone(), out: new_ref(DVector::from_element(n,$default)) })),
               )+
             )+
