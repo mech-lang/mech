@@ -535,10 +535,18 @@ fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, 
           }
         },
         [Subscript::All,Subscript::Range(ix2)] => {
-          todo!()
+          fxn_input.push(source.clone());
+          fxn_input.push(Value::IndexAll);
+          let result = subscript_range(&subs[1],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          plan.borrow_mut().push(MatrixSetAllRange{}.compile(&fxn_input)?);
         },
         [Subscript::Range(ix1),Subscript::All] => {
-          todo!()
+          fxn_input.push(source.clone());
+          let result = subscript_range(&subs[0],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          fxn_input.push(Value::IndexAll);
+          //plan.borrow_mut().push(MatrixSetRangeAll{}.compile(&fxn_input)?);
         },
         _ => unreachable!(),
       };
