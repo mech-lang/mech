@@ -546,7 +546,7 @@ fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, 
           let result = subscript_range(&subs[0],plan.clone(), symbols.clone(), functions.clone())?;
           fxn_input.push(result);
           fxn_input.push(Value::IndexAll);
-          //plan.borrow_mut().push(MatrixSetRangeAll{}.compile(&fxn_input)?);
+          plan.borrow_mut().push(MatrixSetRangeAll{}.compile(&fxn_input)?);
         },
         _ => unreachable!(),
       };
