@@ -468,12 +468,17 @@ fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, 
             ((1,1),(1,1)) => plan.borrow_mut().push(MatrixSetScalarScalar{}.compile(&fxn_input)?),
             ((1,1),(m,1)) => plan.borrow_mut().push(MatrixSetScalarRange{}.compile(&fxn_input)?),
             ((n,1),(1,1)) => plan.borrow_mut().push(MatrixSetRangeScalar{}.compile(&fxn_input)?),
-            ((n,1),(m,1)) => todo!(), //plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
+            ((n,1),(m,1)) => plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?),
             _ => unreachable!(),
           }          
         },
         [Subscript::Range(ix1),Subscript::Range(ix2)] => {
-          todo!()
+          fxn_input.push(source.clone());
+          let result = subscript_range(&subs[0],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          let result = subscript_range(&subs[1],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?);
         },
         [Subscript::All,Subscript::Formula(ix2)] => {
           fxn_input.push(source.clone());
@@ -510,8 +515,8 @@ fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, 
           fxn_input.push(result);
           match &shape[..] {
             [1,1] => plan.borrow_mut().push(MatrixSetRangeScalar{}.compile(&fxn_input)?),
-            //[1,n] => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
-            //[n,1] => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?),
             _ => todo!(),
           }
         },
@@ -524,8 +529,8 @@ fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, 
           fxn_input.push(result);
           match &shape[..] {
             [1,1] => plan.borrow_mut().push(MatrixSetScalarRange{}.compile(&fxn_input)?),
-            //[1,n] => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
-            //[n,1] => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?),
             _ => todo!(),
           }
         },

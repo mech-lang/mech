@@ -1642,3 +1642,79 @@ impl NativeFunctionCompiler for MatrixSetScalarRange {
     }
   }
 }
+
+// x[1..3,1..3] := 1 ------------------------------------------------------------------
+
+macro_rules! impl_set_range_range_fxn {
+  ($struct_name:ident, $matrix_shape:ident) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      source: Ref<T>,
+      ixes: (Ref<DVector<usize>>,Ref<DVector<usize>>),
+      sink: Ref<$matrix_shape<T>>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      Ref<$matrix_shape<T>>: ToValue
+    {
+      fn solve(&self) {
+        let sink_ptr = self.sink.as_ptr();
+        let (range_ix1,range_ix2) = &self.ixes;
+        let range_ix1_ptr = range_ix1.as_ptr();
+        let range_ix2_ptr = range_ix2.as_ptr();
+        let source_ptr = self.source.as_ptr();
+        unsafe { 
+          for cix in &*range_ix2_ptr {
+            for rix in &*range_ix1_ptr {
+              (*sink_ptr).column_mut(cix - 1)[rix - 1] = (*source_ptr).clone();
+            }
+          }
+        }
+      }
+      fn out(&self) -> Value { self.sink.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }};}
+
+impl_set_range_range_fxn!(Set2DRRRD,RowDVector); 
+impl_set_range_range_fxn!(Set2DRRVD,DVector); 
+impl_set_range_range_fxn!(Set2DRRMD,DMatrix); 
+
+macro_rules! impl_set_range_range_match_arms {
+  ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
+    paste!{
+      match $arg {
+        $(
+            (Value::[<Matrix $value_kind>](Matrix::DMatrix(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)),Value::MatrixIndex(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MD>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::RowDVector(input)),[Value::MatrixIndex(Matrix::DVector(ix1)),Value::MatrixIndex(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name RD>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)),Value::MatrixIndex(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VD>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
+        )+
+        x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+      }
+    }
+  }
+}
+
+fn impl_set_range_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_set_match_arms!(Set2DRR, range_range, (sink, ixes.as_slice(), source))
+}
+pub struct MatrixSetRangeRange {}
+impl NativeFunctionCompiler for MatrixSetRangeRange {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() <= 1 {
+      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    let sink: Value = arguments[0].clone();
+    let source: Value = arguments[1].clone();
+    let ixes = arguments.clone().split_off(2);
+    match impl_set_range_range_fxn(sink.clone(),source.clone(),ixes.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match sink {
+          Value::MutableReference(sink) => { impl_set_range_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
+          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
+    }
+  }
+}
