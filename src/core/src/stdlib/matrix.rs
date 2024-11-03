@@ -1351,11 +1351,29 @@ impl NativeFunctionCompiler for MatrixSetScalar {
 
 // x[1..3] := 1 ------------------------------------------------------------------
 
+macro_rules! set_1d_range {
+  ($source:expr, $ix:expr, $sink:expr) => {
+    unsafe { 
+      for i in 0..(*$ix).len() {
+        (*$sink)[(*$ix)[i] - 1] = (*$source).clone();
+      }
+    }
+  };}
+
+macro_rules! set_1d_range_vec {
+  ($source:expr, $ix:expr, $sink:expr) => {
+    unsafe { 
+      for i in 0..(*$ix).len() {
+        (*$sink)[(*$ix)[i] - 1] = (*$source)[i].clone();
+      }
+    }
+  };}  
+
 macro_rules! impl_set_range_fxn {
-  ($struct_name:ident, $matrix_shape:ident) => {
+  ($struct_name:ident, $matrix_shape:ident, $source_matrix_shape:ty, $op:ident) => {
     #[derive(Debug)]
     struct $struct_name<T> {
-      source: Ref<T>,
+      source: Ref<$source_matrix_shape>,
       ixes: Ref<DVector<usize>>,
       sink: Ref<$matrix_shape<T>>,
     }
@@ -1368,31 +1386,30 @@ macro_rules! impl_set_range_fxn {
         let sink_ptr = self.sink.as_ptr();
         let ixes_ptr = self.ixes.as_ptr();
         let source_ptr = self.source.as_ptr();
-        unsafe { 
-          for i in 0..(*ixes_ptr).len() {
-            (*sink_ptr)[(*ixes_ptr)[i] - 1] = (*source_ptr).clone();
-          }
-        }
+        $op!(source_ptr,ixes_ptr,sink_ptr);
+
       }
       fn out(&self) -> Value { self.sink.to_value() }
       fn to_string(&self) -> String { format!("{:?}", self) }
     }};}
 
-impl_set_range_fxn!(Set1DRRD,RowDVector); 
-impl_set_range_fxn!(Set1DRVD,DVector); 
-impl_set_range_fxn!(Set1DRMD,DMatrix); 
-impl_set_range_fxn!(Set1DRR4,RowVector4);    
-impl_set_range_fxn!(Set1DRR3,RowVector3);
-impl_set_range_fxn!(Set1DRR2,RowVector2);
-impl_set_range_fxn!(Set1DRV4,Vector4);    
-impl_set_range_fxn!(Set1DRV3,Vector3);
-impl_set_range_fxn!(Set1DRV2,Vector2);
-impl_set_range_fxn!(Set1DRM4,Matrix4);    
-impl_set_range_fxn!(Set1DRM3,Matrix3);
-impl_set_range_fxn!(Set1DRM2,Matrix2);
-impl_set_range_fxn!(Set1DRM1,Matrix1);
-impl_set_range_fxn!(Set1DRM2x3,Matrix2x3);
-impl_set_range_fxn!(Set1DRM3x2,Matrix3x2);
+impl_set_range_fxn!(Set1DRRD,RowDVector,T,set_1d_range);
+impl_set_range_fxn!(Set1DRVD,DVector,T,set_1d_range);
+impl_set_range_fxn!(Set1DRMD,DMatrix,T,set_1d_range);
+impl_set_range_fxn!(Set1DRR4,RowVector4,T,set_1d_range);
+impl_set_range_fxn!(Set1DRR4R3,RowVector4,RowVector3<T>,set_1d_range_vec);
+
+impl_set_range_fxn!(Set1DRR3,RowVector3,T,set_1d_range);
+impl_set_range_fxn!(Set1DRR2,RowVector2,T,set_1d_range);
+impl_set_range_fxn!(Set1DRV4,Vector4,T,set_1d_range);
+impl_set_range_fxn!(Set1DRV3,Vector3,T,set_1d_range);
+impl_set_range_fxn!(Set1DRV2,Vector2,T,set_1d_range);
+impl_set_range_fxn!(Set1DRM4,Matrix4,T,set_1d_range);
+impl_set_range_fxn!(Set1DRM3,Matrix3,T,set_1d_range);
+impl_set_range_fxn!(Set1DRM2,Matrix2,T,set_1d_range);
+impl_set_range_fxn!(Set1DRM1,Matrix1,T,set_1d_range);
+impl_set_range_fxn!(Set1DRM2x3,Matrix2x3,T,set_1d_range);
+impl_set_range_fxn!(Set1DRM3x2,Matrix3x2,T,set_1d_range);
 
 macro_rules! impl_set_range_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
@@ -1400,6 +1417,7 @@ macro_rules! impl_set_range_match_arms {
       match $arg {
         $(
             (Value::[<Matrix $value_kind>](Matrix::RowVector4(input)),[Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R4>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
+            (Value::[<Matrix $value_kind>](Matrix::RowVector4(input)),[Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind>](Matrix::RowVector3(source))) => Ok(Box::new([<$fxn_name R4R3>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::RowVector3(input)),[Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R3>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::RowVector2(input)),[Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R2>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::Vector4(input)),   [Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V4>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
@@ -1436,10 +1454,11 @@ impl NativeFunctionCompiler for MatrixSetRange {
     let ixes = arguments.clone().split_off(2);
     match impl_set_range_fxn(sink.clone(),source.clone(),ixes.clone()) {
       Ok(fxn) => Ok(fxn),
-      Err(_) => {
+      Err(x) => {
+        println!("{:?}", x);
         match sink {
           Value::MutableReference(sink) => { impl_set_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }
