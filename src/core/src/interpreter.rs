@@ -421,7 +421,13 @@ fn subscript_range(sbscrpt: &Subscript, plan: Plan, symbols: SymbolTableRef, fun
 fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   match sbscrpt {
     Subscript::Dot(x) => {
-      todo!()
+      let key = x.hash();
+      let fxn_input: Vec<Value> = vec![sink.clone(), source.clone(), Value::Id(key)];
+      let new_fxn = SetColumn{}.compile(&fxn_input)?;
+      new_fxn.solve();
+      let res = new_fxn.out();
+      plan.borrow_mut().push(new_fxn);
+      return Ok(res);
     },
     Subscript::DotInt(x) => {
       todo!()
