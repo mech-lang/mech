@@ -47,11 +47,15 @@ impl NativeFunctionCompiler for SetValue {
 // Record Set -----------------------------------------------------------------
 
 #[derive(Debug)]
-struct RecordSet {
-  sink: Ref<F64>,
-  source: Ref<F64>,
+struct RecordSet<T> {
+  sink: Ref<T>,
+  source: Ref<T>,
 }
-impl MechFunction for RecordSet {
+impl<T> MechFunction for RecordSet<T> 
+  where
+  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<T>: ToValue
+{
   fn solve(&self) {
     let source_ptr = self.source.as_ptr();
     let sink_ptr = self.sink.as_ptr();
@@ -122,6 +126,18 @@ macro_rules! impl_set_column_match_arms {
         (Value::Record(rcrd),source,Value::Id(k)) => {
           let key = Value::Id(k);
           match (rcrd.map.get(&key),source) {
+            (Some(Value::Bool(sink)), Value::Bool(source)) => Ok(Box::new(RecordSet{sink: sink.clone(), source: source.clone()})),
+            (Some(Value::I8(sink)), Value::I8(source)) => Ok(Box::new(RecordSet{sink: sink.clone(), source: source.clone()})),
+            (Some(Value::I16(sink)), Value::I16(source)) => Ok(Box::new(RecordSet{sink: sink.clone(), source: source.clone()})),
+            (Some(Value::I32(sink)), Value::I32(source)) => Ok(Box::new(RecordSet{sink: sink.clone(), source: source.clone()})),
+            (Some(Value::I64(sink)), Value::I64(source)) => Ok(Box::new(RecordSet{sink: sink.clone(), source: source.clone()})),
+            (Some(Value::I128(sink)), Value::I128(source)) => Ok(Box::new(RecordSet{sink: sink.clone(), source: source.clone()})),
+            (Some(Value::U8(sink)), Value::U8(source)) => Ok(Box::new(RecordSet{sink: sink.clone(), source: source.clone()})),
+            (Some(Value::U16(sink)), Value::U16(source)) => Ok(Box::new(RecordSet{sink: sink.clone(), source: source.clone()})),
+            (Some(Value::U32(sink)), Value::U32(source)) => Ok(Box::new(RecordSet{sink: sink.clone(), source: source.clone()})),
+            (Some(Value::U64(sink)), Value::U64(source)) => Ok(Box::new(RecordSet{sink: sink.clone(), source: source.clone()})),
+            (Some(Value::U128(sink)), Value::U128(source)) => Ok(Box::new(RecordSet{sink: sink.clone(), source: source.clone()})),
+            (Some(Value::F32(sink)), Value::F32(source)) => Ok(Box::new(RecordSet{sink: sink.clone(), source: source.clone()})),
             (Some(Value::F64(sink)), Value::F64(source)) => Ok(Box::new(RecordSet{sink: sink.clone(), source: source.clone()})),
             _ => return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)}),
           }
