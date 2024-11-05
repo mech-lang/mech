@@ -421,7 +421,13 @@ fn subscript_range(sbscrpt: &Subscript, plan: Plan, symbols: SymbolTableRef, fun
 fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   match sbscrpt {
     Subscript::Dot(x) => {
-      todo!()
+      let key = x.hash();
+      let fxn_input: Vec<Value> = vec![sink.clone(), source.clone(), Value::Id(key)];
+      let new_fxn = SetColumn{}.compile(&fxn_input)?;
+      new_fxn.solve();
+      let res = new_fxn.out();
+      plan.borrow_mut().push(new_fxn);
+      return Ok(res);
     },
     Subscript::DotInt(x) => {
       todo!()
@@ -433,48 +439,120 @@ fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, 
       let mut fxn_input = vec![sink.clone()];
       match &subs[..] {
         [Subscript::Formula(ix)] => {
+          fxn_input.push(source.clone());
           let ixes = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
           let shape = ixes.shape();
-          fxn_input.push(source.clone());
           fxn_input.push(ixes);
-          plan.borrow_mut().push(MatrixSetScalar{}.compile(&fxn_input)?);
-          /*match shape[..] {
-            [1,1] => plan.borrow_mut().push(MatrixAccessScalar{}.compile(&fxn_input)?),
-            [1,n] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
-            [n,1] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
+          match shape[..] {
+            [1,1] => plan.borrow_mut().push(MatrixSetScalar{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixSetRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixSetRange{}.compile(&fxn_input)?),
             _ => todo!(),
-          }*/
+          }
         },
         [Subscript::Range(ix)] => {
-          todo!()
+          fxn_input.push(source.clone());
+          let ixes = subscript_range(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(ixes);
+          plan.borrow_mut().push(MatrixSetRange{}.compile(&fxn_input)?);
         },
         [Subscript::All] => {
-          todo!()
+          fxn_input.push(source.clone());
+          fxn_input.push(Value::IndexAll);
+          plan.borrow_mut().push(MatrixSetAll{}.compile(&fxn_input)?);
         },
         [Subscript::All,Subscript::All] => todo!(),
         [Subscript::Formula(ix1),Subscript::Formula(ix2)] => {
-          todo!()
+          fxn_input.push(source.clone());
+          let result = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+          let shape1 = result.shape();
+          fxn_input.push(result);
+          let result = subscript_formula(&subs[1], plan.clone(), symbols.clone(), functions.clone())?;
+          let shape2 = result.shape();
+          fxn_input.push(result);
+          match ((shape1[0],shape1[1]),(shape2[0],shape2[1])) {
+            ((1,1),(1,1)) => plan.borrow_mut().push(MatrixSetScalarScalar{}.compile(&fxn_input)?),
+            ((1,1),(m,1)) => plan.borrow_mut().push(MatrixSetScalarRange{}.compile(&fxn_input)?),
+            ((n,1),(1,1)) => plan.borrow_mut().push(MatrixSetRangeScalar{}.compile(&fxn_input)?),
+            ((n,1),(m,1)) => plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?),
+            _ => unreachable!(),
+          }          
         },
         [Subscript::Range(ix1),Subscript::Range(ix2)] => {
-          todo!()
+          fxn_input.push(source.clone());
+          let result = subscript_range(&subs[0],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          let result = subscript_range(&subs[1],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?);
         },
         [Subscript::All,Subscript::Formula(ix2)] => {
-          todo!()
-        },
+          fxn_input.push(source.clone());
+          fxn_input.push(Value::IndexAll);
+          let ix = subscript_formula(&subs[1], plan.clone(), symbols.clone(), functions.clone())?;
+          let shape = ix.shape();
+          fxn_input.push(ix);
+          match shape[..] {
+            [1,1] => plan.borrow_mut().push(MatrixSetAllScalar{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixSetRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixSetRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }
+        }
         [Subscript::Formula(ix1),Subscript::All] => {
-          todo!()
+          fxn_input.push(source.clone());
+          let ix = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+          let shape = ix.shape();
+          fxn_input.push(ix);
+          fxn_input.push(Value::IndexAll);
+          match shape[..] {
+            [1,1] => plan.borrow_mut().push(MatrixSetScalarAll{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixSetRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixSetRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }
         },
         [Subscript::Range(ix1),Subscript::Formula(ix2)] => {
-          todo!()
+          fxn_input.push(source.clone());
+          let result = subscript_range(&subs[0],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          let result = subscript_formula(&subs[1], plan.clone(), symbols.clone(), functions.clone())?;
+          let shape = result.shape();
+          fxn_input.push(result);
+          match &shape[..] {
+            [1,1] => plan.borrow_mut().push(MatrixSetRangeScalar{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }
         },
         [Subscript::Formula(ix1),Subscript::Range(ix2)] => {
-          todo!()
+          fxn_input.push(source.clone());
+          let result = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+          let shape = result.shape();
+          fxn_input.push(result);
+          let result = subscript_range(&subs[1],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          match &shape[..] {
+            [1,1] => plan.borrow_mut().push(MatrixSetScalarRange{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }
         },
         [Subscript::All,Subscript::Range(ix2)] => {
-          todo!()
+          fxn_input.push(source.clone());
+          fxn_input.push(Value::IndexAll);
+          let result = subscript_range(&subs[1],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          plan.borrow_mut().push(MatrixSetAllRange{}.compile(&fxn_input)?);
         },
         [Subscript::Range(ix1),Subscript::All] => {
-          todo!()
+          fxn_input.push(source.clone());
+          let result = subscript_range(&subs[0],plan.clone(), symbols.clone(), functions.clone())?;
+          fxn_input.push(result);
+          fxn_input.push(Value::IndexAll);
+          plan.borrow_mut().push(MatrixSetRangeAll{}.compile(&fxn_input)?);
         },
         _ => unreachable!(),
       };
@@ -553,13 +631,10 @@ fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableR
           fxn_input.push(result);
           match ((shape1[0],shape1[1]),(shape2[0],shape2[1])) {
             ((1,1),(1,1)) => plan.borrow_mut().push(MatrixAccessScalarScalar{}.compile(&fxn_input)?),
-            ((1,1),(1,m)) => plan.borrow_mut().push(MatrixAccessScalarRange{}.compile(&fxn_input)?),
-            ((1,n),(1,1)) => plan.borrow_mut().push(MatrixAccessRangeScalar{}.compile(&fxn_input)?),
-            ((n,1),(1,m)) |
-            ((n,1),(m,1)) |
-            ((1,n),(m,1)) |
-            ((1,n),(1,m)) => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
-            _ => todo!(),
+            ((1,1),(m,1)) => plan.borrow_mut().push(MatrixAccessScalarRange{}.compile(&fxn_input)?),
+            ((n,1),(1,1)) => plan.borrow_mut().push(MatrixAccessRangeScalar{}.compile(&fxn_input)?),
+            ((n,1),(m,1)) => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
+            _ => unreachable!(),
           }
         },
         [Subscript::Range(ix1),Subscript::Range(ix2)] => {

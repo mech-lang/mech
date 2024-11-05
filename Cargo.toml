@@ -1,6 +1,6 @@
 [package]
 name = "mech"
-version = "0.2.17"
+version = "0.2.18"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Mech is a reactive programming language for building robots, games, and animations."
 documentation = "https://mech-lang.org/docs"
@@ -18,8 +18,8 @@ gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = "0.2.17"
-mech-syntax = "0.2.17"
+mech-core = "0.2.18"
+mech-syntax = "0.2.18"
 #mech-program = "0.2.2"
 #mech-utilities = "0.2.2"
 
@@ -27,10 +27,10 @@ clap = {version = "4.5.20", features = ["cargo"]}
 colored = "2.1.0"
 #nom = "7.1.3"
 #hashbrown = "0.15.0"
-#reqwest = {version = "0.12.4", features = ["blocking"]}
+#reqwest = {version = "0.12.9", features = ["blocking"]}
 bincode = "1.3.3"
-serde = "1.0.213"
-serde_derive = "1.0.213"
+serde = "1.0.214"
+serde_derive = "1.0.214"
 serde_json = "1.0.128"
 crossbeam-channel = "0.5.13"
 #seahash = "4.1.0"
@@ -69,7 +69,7 @@ mech-utilities = { path = 'src/utilities'}
 mech-wasm = { path = 'src/wasm'}
 
 [patch.'https://gitlab.com/mech-lang/core']
-mech-core = { path = 'src/core', version = '0.2.17' }
+mech-core = { path = 'src/core', version = '0.2.18' }
 
 [patch.'https://gitlab.com/mech-lang/syntax']
-mech-syntax = { path = 'src/syntax', version = '0.2.17' }
+mech-syntax = { path = 'src/syntax', version = '0.2.18' }
