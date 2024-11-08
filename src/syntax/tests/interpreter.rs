@@ -365,3 +365,7 @@ test_interpreter!(interpret_set_record_field,"x := {a: 1, b: true}; x.a = 2; x.a
 test_interpreter!(interpret_set_record_field2,"x := {a: 1, b: true}; x.b = false; x.b;", Value::Bool(new_ref(false)));
 test_interpreter!(interpret_set_record_field3,"x := {a: 1<u64>, b: true}; x.a = 2<u64>; x.a;", Value::U64(new_ref(2)));
 
+test_interpreter!(interpret_set_table_col,"x := { x<f64> y<f64> | 1 2; 3 4 }; x.x = [42;46]; y := x.x; y[1] + y[2]", Value::F64(new_ref(F64::new(88.0))));
+
+
+
