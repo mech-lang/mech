@@ -1659,11 +1659,27 @@ impl NativeFunctionCompiler for MatrixSetScalarScalar {
 
 // x[:,1] := 1 ----------------------------------------------------------------
 
+macro_rules! set_2d_all_scalar {
+  ($sink:expr, $ix:expr, $source:expr) => {
+    unsafe {
+      for i in 0..(*$sink).nrows() {
+        (*$sink).column_mut(*$ix - 1)[i] = (*$source).clone();
+      }
+    }};}
+
+macro_rules! set_2d_all_vector {
+  ($sink:expr, $ix:expr, $source:expr) => {
+    unsafe {
+      for i in 0..(*$sink).nrows() {
+        (*$sink).column_mut(*$ix - 1)[i] = (*$source)[i].clone();
+      }
+    }};}
+    
 macro_rules! impl_set_all_scalar_fxn {
-  ($struct_name:ident, $matrix_shape:ident) => {
+  ($struct_name:ident, $matrix_shape:ident, $source_type:ty,  $op:ident) => {
     #[derive(Debug)]
     struct $struct_name<T> {
-      source: Ref<T>,
+      source: Ref<$source_type>,
       ix: Ref<usize>,
       sink: Ref<$matrix_shape<T>>,
     }
@@ -1676,52 +1692,62 @@ macro_rules! impl_set_all_scalar_fxn {
         let sink_ptr = self.sink.as_ptr();
         let ix_ptr = self.ix.as_ptr();
         let source_ptr = self.source.as_ptr();
-        unsafe {
-          for i in 0..(*sink_ptr).nrows() {
-            (*sink_ptr).column_mut(*ix_ptr - 1)[i] = (*source_ptr).clone();
-          }
-        }
+        $op!(sink_ptr,ix_ptr,source_ptr);
       }
       fn out(&self) -> Value { self.sink.to_value() }
       fn to_string(&self) -> String { format!("{:?}", self) }
     }};}
 
-impl_set_all_scalar_fxn!(Set2DASRD,RowDVector); 
-impl_set_all_scalar_fxn!(Set2DASVD,DVector); 
-impl_set_all_scalar_fxn!(Set2DASMD,DMatrix); 
-impl_set_all_scalar_fxn!(Set2DASR4,RowVector4);    
-impl_set_all_scalar_fxn!(Set2DASR3,RowVector3);
-impl_set_all_scalar_fxn!(Set2DASR2,RowVector2);
-impl_set_all_scalar_fxn!(Set2DASV4,Vector4);    
-impl_set_all_scalar_fxn!(Set2DASV3,Vector3);
-impl_set_all_scalar_fxn!(Set2DASV2,Vector2);
-impl_set_all_scalar_fxn!(Set2DASM4,Matrix4);    
-impl_set_all_scalar_fxn!(Set2DASM3,Matrix3);
-impl_set_all_scalar_fxn!(Set2DASM2,Matrix2);
-impl_set_all_scalar_fxn!(Set2DASM1,Matrix1);
-impl_set_all_scalar_fxn!(Set2DASM2x3,Matrix2x3);
-impl_set_all_scalar_fxn!(Set2DASM3x2,Matrix3x2);
+impl_set_all_scalar_fxn!(Set2DASRD,RowDVector, T, set_2d_all_scalar);
+impl_set_all_scalar_fxn!(Set2DASVD,DVector, T, set_2d_all_scalar);
+impl_set_all_scalar_fxn!(Set2DASMD,DMatrix, T, set_2d_all_scalar);
+impl_set_all_scalar_fxn!(Set2DASR4,RowVector4, T, set_2d_all_scalar);
+impl_set_all_scalar_fxn!(Set2DASR3,RowVector3, T, set_2d_all_scalar);
+impl_set_all_scalar_fxn!(Set2DASR2,RowVector2, T, set_2d_all_scalar);
+impl_set_all_scalar_fxn!(Set2DASV4,Vector4, T, set_2d_all_scalar);
+impl_set_all_scalar_fxn!(Set2DASV3,Vector3, T, set_2d_all_scalar);
+impl_set_all_scalar_fxn!(Set2DASV2,Vector2, T, set_2d_all_scalar);
+impl_set_all_scalar_fxn!(Set2DASM4,Matrix4, T, set_2d_all_scalar);
+impl_set_all_scalar_fxn!(Set2DASM3,Matrix3, T, set_2d_all_scalar);
+impl_set_all_scalar_fxn!(Set2DASM2,Matrix2, T, set_2d_all_scalar);
+impl_set_all_scalar_fxn!(Set2DASM1,Matrix1, T, set_2d_all_scalar);
+impl_set_all_scalar_fxn!(Set2DASM2x3,Matrix2x3, T, set_2d_all_scalar);
+impl_set_all_scalar_fxn!(Set2DASM3x2,Matrix3x2, T, set_2d_all_scalar);
+
+impl_set_all_scalar_fxn!(Set2DASM2x3V2,Matrix2x3, Vector2<T>, set_2d_all_vector);
+impl_set_all_scalar_fxn!(Set2DASM3x2V3,Matrix3x2, Vector3<T>, set_2d_all_vector);
+impl_set_all_scalar_fxn!(Set2DASV2V2,Vector2, Vector2<T>, set_2d_all_vector);
+impl_set_all_scalar_fxn!(Set2DASV3V3,Vector3, Vector3<T>, set_2d_all_vector);
+impl_set_all_scalar_fxn!(Set2DASV4V4,Vector4, Vector4<T>, set_2d_all_vector);
+impl_set_all_scalar_fxn!(Set2DASVDVD,DVector, DVector<T>, set_2d_all_vector);
 
 macro_rules! impl_set_all_scalar_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
     paste!{
       match $arg {
         $(
-            (Value::[<Matrix $value_kind>](Matrix::RowVector4(input)),[Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R4>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::RowVector3(input)),[Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R3>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::RowVector2(input)),[Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R2>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector4(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V4>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector3(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V3>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Vector2(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V2>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix4(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix3(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix2(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix1(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M1>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(input)), [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2x3>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(input)), [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3x2>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::DMatrix(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MD>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::RowDVector(input)),[Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name RD>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
-            (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VD>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::RowVector4(input)),[Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R4>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::RowVector3(input)),[Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R3>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::RowVector2(input)),[Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R2>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Vector4(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V4>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Vector3(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V3>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Vector2(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V2>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix4(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix3(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix2(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix1(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M1>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(input)), [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2x3>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(input)), [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3x2>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::DMatrix(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MD>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::RowDVector(input)),[Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name RD>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VD>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          
+          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(input)),   [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind>](Matrix::Vector2(source))) => Ok(Box::new([<$fxn_name M2x3V2>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(input)),   [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind>](Matrix::Vector3(source))) => Ok(Box::new([<$fxn_name M3x2V3>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Vector2(input)),   [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind>](Matrix::Vector2(source))) => Ok(Box::new([<$fxn_name V2V2>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Vector3(input)),   [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind>](Matrix::Vector3(source))) => Ok(Box::new([<$fxn_name V3V3>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Vector4(input)),   [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind>](Matrix::Vector4(source))) => Ok(Box::new([<$fxn_name V4V4>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind>](Matrix::DVector(source))) => Ok(Box::new([<$fxn_name VDVD>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
         )+
         x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
@@ -1744,7 +1770,7 @@ impl NativeFunctionCompiler for MatrixSetAllScalar {
     let ixes = arguments.clone().split_off(2);
     match impl_set_all_scalar_fxn(sink.clone(),source.clone(),ixes.clone()) {
       Ok(fxn) => Ok(fxn),
-      Err(_) => {
+      Err(x) => {
         match sink {
           Value::MutableReference(sink) => { impl_set_all_scalar_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
           x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
