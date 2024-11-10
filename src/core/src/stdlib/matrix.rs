@@ -1660,18 +1660,18 @@ impl NativeFunctionCompiler for MatrixSetScalarScalar {
 // x[:,1] := 1 ----------------------------------------------------------------
 
 macro_rules! set_2d_all_scalar {
-  ($sink:expr, $ix:expr, $source:expr) => {
+  ($sink:expr, $source:expr) => {
     unsafe {
-      for i in 0..(*$sink).nrows() {
-        (*$sink).column_mut(*$ix - 1)[i] = (*$source).clone();
+      for i in 0..$sink.nrows() {
+        ($sink)[i] = ($source).clone();
       }
     }};}
 
 macro_rules! set_2d_all_vector {
-  ($sink:expr, $ix:expr, $source:expr) => {
+  ($sink:expr, $source:expr) => {
     unsafe {
-      for i in 0..(*$sink).nrows() {
-        (*$sink).column_mut(*$ix - 1)[i] = (*$source)[i].clone();
+      for i in 0..$sink.nrows() {
+        ($sink)[i] = ($source)[i].clone();
       }
     }};}
     
@@ -1689,10 +1689,12 @@ macro_rules! impl_set_all_scalar_fxn {
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {
-        let sink_ptr = self.sink.as_ptr();
-        let ix_ptr = self.ix.as_ptr();
-        let source_ptr = self.source.as_ptr();
-        $op!(sink_ptr,ix_ptr,source_ptr);
+        unsafe {
+          let ix_ptr = *(self.ix.as_ptr());
+          let mut sink_ptr = (&mut *(self.sink.as_ptr())).column_mut(ix_ptr - 1);;
+          let source_ptr = (*(self.source.as_ptr())).clone();
+          $op!(sink_ptr,source_ptr);
+        }
       }
       fn out(&self) -> Value { self.sink.to_value() }
       fn to_string(&self) -> String { format!("{:?}", self) }
