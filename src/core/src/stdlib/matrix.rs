@@ -1254,7 +1254,7 @@ macro_rules! impl_set_match_arms {
   }
 }
 
-// x[1] := 1 ------------------------------------------------------------------
+// x[1] = 1 ------------------------------------------------------------------
 
 macro_rules! impl_set_scalar_fxn {
   ($struct_name:ident, $matrix_shape:ident) => {
@@ -1349,7 +1349,7 @@ impl NativeFunctionCompiler for MatrixSetScalar {
   }
 }
 
-// x[1..3] := 1 ------------------------------------------------------------------
+// x[1..3] = 1 ------------------------------------------------------------------
 
 macro_rules! set_1d_range {
   ($source:expr, $ix:expr, $sink:expr) => {
@@ -1465,7 +1465,7 @@ impl NativeFunctionCompiler for MatrixSetRange {
   }
 }
 
-// x[:] := 1 ------------------------------------------------------------------
+// x[:] = 1 ------------------------------------------------------------------
 
 macro_rules! impl_set_all_fxn {
   ($struct_name:ident, $matrix_shape:ident) => {
@@ -1560,7 +1560,7 @@ impl NativeFunctionCompiler for MatrixSetAll {
   }
 }
 
-// x[1,1] := 1 ----------------------------------------------------------------
+// x[1,1] = 1 ----------------------------------------------------------------
 
 macro_rules! impl_set_scalar_scalar_fxn {
   ($struct_name:ident, $matrix_shape:ident) => {
@@ -1657,7 +1657,7 @@ impl NativeFunctionCompiler for MatrixSetScalarScalar {
   }
 }
 
-// x[:,1] := 1 ----------------------------------------------------------------
+// x[:,1] = 1 -----------------------------------------------------------------
 
 macro_rules! set_2d_all_scalar {
   ($sink:expr, $source:expr) => {
@@ -1782,7 +1782,7 @@ impl NativeFunctionCompiler for MatrixSetAllScalar {
   }
 }
 
-// x[1,:] := 1 ----------------------------------------------------------------
+// x[1,:] = 1 -----------------------------------------------------------------
 
 macro_rules! impl_set_scalar_all_fxn {
   ($struct_name:ident, $matrix_shape:ident) => {
@@ -1879,7 +1879,7 @@ impl NativeFunctionCompiler for MatrixSetScalarAll {
   }
 }
 
-// x[1..3,1] := 1 ------------------------------------------------------------------
+// x[1..3,1] = 1 ------------------------------------------------------------------
 
 macro_rules! impl_set_range_scalar_fxn {
   ($struct_name:ident, $matrix_shape:ident) => {
@@ -1978,7 +1978,7 @@ impl NativeFunctionCompiler for MatrixSetRangeScalar {
   }
 }
 
-// x[1,1..3] := 1 ------------------------------------------------------------------
+// x[1,1..3] = 1 ------------------------------------------------------------------
 
 macro_rules! impl_set_scalar_range_fxn {
   ($struct_name:ident, $matrix_shape:ident) => {
@@ -2076,7 +2076,7 @@ impl NativeFunctionCompiler for MatrixSetScalarRange {
   }
 }
 
-// x[1..3,1..3] := 1 ------------------------------------------------------------------
+// x[1..3,1..3] = 1 ------------------------------------------------------------------
 
 macro_rules! impl_set_range_range_fxn {
   ($struct_name:ident, $matrix_shape:ident) => {
@@ -2176,7 +2176,7 @@ impl NativeFunctionCompiler for MatrixSetRangeRange {
   }
 }
 
-// x[:,1..3] := 1 ------------------------------------------------------------------
+// x[:,1..3] = 1 ------------------------------------------------------------------
 
 macro_rules! impl_set_all_range_fxn {
   ($struct_name:ident, $matrix_shape:ident) => {
@@ -2275,7 +2275,7 @@ impl NativeFunctionCompiler for MatrixSetAllRange {
 }
 
 
-// x[1..3,:] := 1 ------------------------------------------------------------------
+// x[1..3,:] = 1 ------------------------------------------------------------------
 
 macro_rules! impl_set_range_all_fxn {
   ($struct_name:ident, $matrix_shape:ident) => {
