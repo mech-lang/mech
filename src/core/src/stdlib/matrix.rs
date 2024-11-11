@@ -1354,27 +1354,38 @@ impl NativeFunctionCompiler for MatrixSetScalar {
 macro_rules! set_1d_range {
   ($source:expr, $ix:expr, $sink:expr) => {
     unsafe { 
-      for i in 0..(*$ix).len() {
-        (*$sink)[(*$ix)[i] - 1] = (*$source).clone();
+      for i in 0..($ix).len() {
+        ($sink)[($ix)[i] - 1] = ($source).clone();
       }
     }
   };}
 
+macro_rules! set_1d_range_b {
+  ($source:expr, $ix:expr, $sink:expr) => {
+    unsafe { 
+      for i in 0..($ix).len() {
+        if $ix[i] == true {
+          ($sink)[i] = ($source).clone();
+        }
+      }
+    }
+  };}  
+
 macro_rules! set_1d_range_vec {
   ($source:expr, $ix:expr, $sink:expr) => {
     unsafe { 
-      for i in 0..(*$ix).len() {
-        (*$sink)[(*$ix)[i] - 1] = (*$source)[i].clone();
+      for i in 0..($ix).len() {
+        ($sink)[($ix)[i] - 1] = ($source)[i].clone();
       }
     }
   };}  
 
 macro_rules! impl_set_range_fxn {
-  ($struct_name:ident, $matrix_shape:ident, $source_matrix_shape:ty, $op:ident) => {
+  ($struct_name:ident, $matrix_shape:ident, $source_matrix_shape:ty, $op:ident, $ix:ty) => {
     #[derive(Debug)]
     struct $struct_name<T> {
       source: Ref<$source_matrix_shape>,
-      ixes: Ref<DVector<usize>>,
+      ixes: Ref<DVector<$ix>>,
       sink: Ref<$matrix_shape<T>>,
     }
     impl<T> MechFunction for $struct_name<T>
@@ -1383,33 +1394,35 @@ macro_rules! impl_set_range_fxn {
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {
-        let sink_ptr = self.sink.as_ptr();
-        let ixes_ptr = self.ixes.as_ptr();
-        let source_ptr = self.source.as_ptr();
-        $op!(source_ptr,ixes_ptr,sink_ptr);
-
+        unsafe {
+          let ix_ptr = (*(self.ixes.as_ptr())).clone();
+          let mut sink_ptr = (&mut *(self.sink.as_ptr()));
+          let source_ptr = (*(self.source.as_ptr())).clone();
+          $op!(source_ptr,ix_ptr,sink_ptr);
+        }
       }
       fn out(&self) -> Value { self.sink.to_value() }
       fn to_string(&self) -> String { format!("{:?}", self) }
     }};}
 
-impl_set_range_fxn!(Set1DRRD,RowDVector,T,set_1d_range);
-impl_set_range_fxn!(Set1DRVD,DVector,T,set_1d_range);
-impl_set_range_fxn!(Set1DRMD,DMatrix,T,set_1d_range);
-impl_set_range_fxn!(Set1DRR4,RowVector4,T,set_1d_range);
-impl_set_range_fxn!(Set1DRR4R3,RowVector4,RowVector3<T>,set_1d_range_vec);
+impl_set_range_fxn!(Set1DRRD,RowDVector,T,set_1d_range,usize);
+impl_set_range_fxn!(Set1DRVD,DVector,T,set_1d_range,usize);
+impl_set_range_fxn!(Set1DRMD,DMatrix,T,set_1d_range,usize);
+impl_set_range_fxn!(Set1DRR4,RowVector4,T,set_1d_range,usize);
+impl_set_range_fxn!(Set1DRR4R3,RowVector4,RowVector3<T>,set_1d_range_vec,usize);
 
-impl_set_range_fxn!(Set1DRR3,RowVector3,T,set_1d_range);
-impl_set_range_fxn!(Set1DRR2,RowVector2,T,set_1d_range);
-impl_set_range_fxn!(Set1DRV4,Vector4,T,set_1d_range);
-impl_set_range_fxn!(Set1DRV3,Vector3,T,set_1d_range);
-impl_set_range_fxn!(Set1DRV2,Vector2,T,set_1d_range);
-impl_set_range_fxn!(Set1DRM4,Matrix4,T,set_1d_range);
-impl_set_range_fxn!(Set1DRM3,Matrix3,T,set_1d_range);
-impl_set_range_fxn!(Set1DRM2,Matrix2,T,set_1d_range);
-impl_set_range_fxn!(Set1DRM1,Matrix1,T,set_1d_range);
-impl_set_range_fxn!(Set1DRM2x3,Matrix2x3,T,set_1d_range);
-impl_set_range_fxn!(Set1DRM3x2,Matrix3x2,T,set_1d_range);
+impl_set_range_fxn!(Set1DRR3B,RowVector3,T,set_1d_range_b,bool);
+impl_set_range_fxn!(Set1DRR3,RowVector3,T,set_1d_range,usize);
+impl_set_range_fxn!(Set1DRR2,RowVector2,T,set_1d_range,usize);
+impl_set_range_fxn!(Set1DRV4,Vector4,T,set_1d_range,usize);
+impl_set_range_fxn!(Set1DRV3,Vector3,T,set_1d_range,usize);
+impl_set_range_fxn!(Set1DRV2,Vector2,T,set_1d_range,usize);
+impl_set_range_fxn!(Set1DRM4,Matrix4,T,set_1d_range,usize);
+impl_set_range_fxn!(Set1DRM3,Matrix3,T,set_1d_range,usize);
+impl_set_range_fxn!(Set1DRM2,Matrix2,T,set_1d_range,usize);
+impl_set_range_fxn!(Set1DRM1,Matrix1,T,set_1d_range,usize);
+impl_set_range_fxn!(Set1DRM2x3,Matrix2x3,T,set_1d_range,usize);
+impl_set_range_fxn!(Set1DRM3x2,Matrix3x2,T,set_1d_range,usize);
 
 macro_rules! impl_set_range_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
@@ -1432,6 +1445,9 @@ macro_rules! impl_set_range_match_arms {
             (Value::[<Matrix $value_kind>](Matrix::DMatrix(input)),   [Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MD>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::RowDVector(input)),[Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name RD>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
             (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VD>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
+        
+            (Value::[<Matrix $value_kind>](Matrix::RowVector3(input)),[Value::MatrixBool(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R3B>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
+
         )+
         x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
