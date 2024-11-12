@@ -69,25 +69,26 @@ impl<T> MechFunction for RecordSet<T>
 
 // Table Set ------------------------------------------------------------------
 
-/*macro_rules! impl_col_set_fxn {
+macro_rules! impl_col_set_fxn {
   ($fxn_name:ident, $vector_size:ident, $out_type:ty) => {
     #[derive(Debug)]
     struct $fxn_name {
-      source: Matrix<Value>,
-      out: Ref<$vector_size<$out_type>>,
+      source: Ref<$vector_size<$out_type>>,
+      sink: Ref<$vector_size<Value>>,
     }
     impl MechFunction for $fxn_name {
       fn solve(&self) {
-        let out_ptr = self.out.as_ptr();
+        let source_ptr = self.source.as_ptr();
+        let sink_ptr = self.sink.as_ptr();
         unsafe { 
-          for i in 1..=self.source.shape()[0] {
+          for i in 0..(*source_ptr).len() {
             paste! {
-              (*out_ptr)[i-1] = self.source.index1d(i).[<as_ $out_type:lower>]().unwrap().borrow().clone();
+              (*sink_ptr)[i] = Value::[<$out_type:camel>](new_ref((*source_ptr).index(i).clone()));
             }
           }
         }
       }
-      fn out(&self) -> Value { self.out.to_value() }
+      fn out(&self) -> Value { Value::MatrixValue(Matrix::$vector_size(self.sink.clone())) }
       fn to_string(&self) -> String { format!("{:?}", self) }
     }
   }
@@ -96,11 +97,11 @@ impl<T> MechFunction for RecordSet<T>
 macro_rules! impl_col_set_fxn_shapes {
   ($type:ident) => {
     paste!{
-      impl_col_set_fxn!([<TableSetCol $type:camel M1>], Matrix1, [<$type>]);
-      impl_col_set_fxn!([<TableSetCol $type:camel V2>], Vector2, [<$type>]);
-      impl_col_set_fxn!([<TableSetCol $type:camel V3>], Vector3, [<$type>]);
-      impl_col_set_fxn!([<TableSetCol $type:camel V4>], Vector4, [<$type>]);
-      impl_col_set_fxn!([<TableSetCol $type:camel VD>], DVector, [<$type>]);
+      impl_col_set_fxn!([<TableSetCol $type:camel M1>], Matrix1, $type);
+      impl_col_set_fxn!([<TableSetCol $type:camel V2>], Vector2, $type);
+      impl_col_set_fxn!([<TableSetCol $type:camel V3>], Vector3, $type);
+      impl_col_set_fxn!([<TableSetCol $type:camel V4>], Vector4, $type);
+      impl_col_set_fxn!([<TableSetCol $type:camel VD>], DVector, $type);
     }
   }
 }
@@ -117,7 +118,7 @@ impl_col_set_fxn_shapes!(u32);
 impl_col_set_fxn_shapes!(u64);
 impl_col_set_fxn_shapes!(u128);
 impl_col_set_fxn_shapes!(F32);
-impl_col_set_fxn_shapes!(F64);*/
+impl_col_set_fxn_shapes!(F64);
 
 macro_rules! impl_set_column_match_arms {
   ($arg:expr, $($lhs_type:ident, $($default:expr),+);+ $(;)?) => {
@@ -142,21 +143,19 @@ macro_rules! impl_set_column_match_arms {
             _ => return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)}),
           }
         }
-        /*(Value::Table(tbl),source,Value::Id(k)) => {
+        (Value::Table(tbl),source,Value::Id(k)) => {
           let key = Value::Id(k);
-          match (tbl.data.get(&key),tbl.rows) {
+          match (tbl.data.get(&key),tbl.rows,source) {
             $(
-              $(
-                (Some((ValueKind::$lhs_type,value)),1) => Ok(Box::new([<TableAccessCol $lhs_type M1>]{source: value.clone(), out: new_ref(Matrix1::from_element($default)) })),
-                (Some((ValueKind::$lhs_type,value)),2) => Ok(Box::new([<TableAccessCol $lhs_type V2>]{source: value.clone(), out: new_ref(Vector2::from_element($default)) })),
-                (Some((ValueKind::$lhs_type,value)),3) => Ok(Box::new([<TableAccessCol $lhs_type V3>]{source: value.clone(), out: new_ref(Vector3::from_element($default)) })),
-                (Some((ValueKind::$lhs_type,value)),4) => Ok(Box::new([<TableAccessCol $lhs_type V4>]{source: value.clone(), out: new_ref(Vector4::from_element($default)) })),
-                (Some((ValueKind::$lhs_type,value)),n) => Ok(Box::new([<TableAccessCol $lhs_type VD>]{source: value.clone(), out: new_ref(DVector::from_element(n,$default)) })),
-              )+
+                (Some((ValueKind::$lhs_type,Matrix::Matrix1(sink))),1,Value::[<Matrix $lhs_type>](Matrix::Matrix1(source))) => Ok(Box::new([<TableSetCol $lhs_type M1>]{source: source.clone(), sink: sink.clone() })),
+                (Some((ValueKind::$lhs_type,Matrix::Vector2(sink))),2,Value::[<Matrix $lhs_type>](Matrix::Vector2(source))) => Ok(Box::new([<TableSetCol $lhs_type V2>]{source: source.clone(), sink: sink.clone() })),
+                (Some((ValueKind::$lhs_type,Matrix::Vector3(sink))),3,Value::[<Matrix $lhs_type>](Matrix::Vector3(source))) => Ok(Box::new([<TableSetCol $lhs_type V3>]{source: source.clone(), sink: sink.clone() })),
+                (Some((ValueKind::$lhs_type,Matrix::Vector4(sink))),4,Value::[<Matrix $lhs_type>](Matrix::Vector4(source))) => Ok(Box::new([<TableSetCol $lhs_type V4>]{source: source.clone(), sink: sink.clone() })),
+                (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::DVector(source))) => Ok(Box::new([<TableSetCol $lhs_type VD>]{source: source.clone(), sink: sink.clone() })),
             )+
-            _ => return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)}),
+            x => return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)}),
           }
-        }*/
+        }
         x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
     }

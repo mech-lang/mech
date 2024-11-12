@@ -25,7 +25,7 @@ use std::time::{Instant};
 use std::collections::VecDeque;
 use mech_core::*;
 //use mech_core::function::table;
-use nalgebra::DMatrix;
+use nalgebra::*;
 
 use std::fmt::*;
 use num_traits::*;
@@ -33,6 +33,31 @@ use std::ops::*;
 extern crate time;
 
 fn main() -> std::result::Result<(),MechError> {
+
+  let n = 10000;
+  //let x = new_ref(Matrix6::from_element(F64::new(1.0)));
+  let x = new_ref(DMatrix::from_element(n,4,F64::new(1.0)));
+
+  let source = F64::new(5.0);
+  let source_c = source.clone();
+
+  unsafe {
+    //let sink = x.as_ptr();
+    let sink = &mut *(x.as_ptr());
+    let mut column = sink.column_mut(0);
+    let now = Instant::now();
+    for _ in 0..1e6 as usize {
+      for i in 0..n {
+        //(*sink).column_mut(0)[i] = source_c;
+        column[i] = source_c;
+      }
+    }
+    let elapsed_time = now.elapsed();
+    let cycle_duration = elapsed_time.as_nanos() as f64;
+    println!("{:0.2?} ns", cycle_duration / 1000000.0);
+
+  }
+
   /*
   //let now = Instant::now();
   let n = 1e7 as usize;

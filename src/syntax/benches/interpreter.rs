@@ -28,7 +28,22 @@ use mech_core::interpreter::*;
 use mech_syntax::parser::{parse};
 use nalgebra::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix6, Matrix2};
 
-
+#[bench]
+fn set_column(b:&mut Bencher){
+  let s = r#"a := [1 2; 3 4]
+a[:,1] = 4"#;
+  match parser::parse(&s) {
+    Ok(tree) => { 
+      let mut intrp = Interpreter::new();
+      let result = intrp.interpret(&tree);
+      let fxn = &intrp.plan.borrow()[0];
+      b.iter(|| {
+        let result = fxn.solve();
+      });
+    }
+    _ => (),
+  }
+}
 
 #[bench]
 fn matrix_multiply(b:&mut Bencher){
