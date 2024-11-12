@@ -130,7 +130,7 @@ reshaping it for use in program logic.
   - [x] Function call
 - Statement
   - [x] VarDefine
-  - [ ] VarAssign
+  - [x] VarAssign
   - [x] Kind Define
   - [x] Enum Define
 - Matrix
