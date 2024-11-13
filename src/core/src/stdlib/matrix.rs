@@ -2316,8 +2316,17 @@ impl NativeFunctionCompiler for MatrixSetAllRange {
 
 // x[1..3,:] = 1 ------------------------------------------------------------------
 
+macro_rules! set_2d_vector_all {
+  ($sink:expr, $ix:expr, $source:expr) => {
+      for cix in 0..($sink).ncols() {
+        for rix in &$ix {
+          ($sink).column_mut(cix)[rix - 1] = ($source).clone();
+        }
+      }
+    };}
+
 macro_rules! impl_set_range_all_fxn {
-  ($struct_name:ident, $matrix_shape:ident) => {
+  ($struct_name:ident, $matrix_shape:ident, $op:tt) => {
     #[derive(Debug)]
     struct $struct_name<T> {
       source: Ref<T>,
@@ -2330,36 +2339,32 @@ macro_rules! impl_set_range_all_fxn {
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {
-        let sink_ptr = self.sink.as_ptr();
-        let rix_ptr = self.ixes.as_ptr();
-        let source_ptr = self.source.as_ptr();
         unsafe { 
-          for cix in 0..(*sink_ptr).ncols() {
-            for rix in &*rix_ptr {
-              (*sink_ptr).column_mut(cix)[rix - 1] = (*source_ptr).clone();
-            }
-          }
+          let ix_ptr = (*(self.ixes.as_ptr())).clone();
+          let mut sink_ptr = (&mut *(self.sink.as_ptr()));
+          let source_ptr = (*(self.source.as_ptr())).clone();
+          $op!(sink_ptr,ix_ptr,source_ptr);
         }
       }
       fn out(&self) -> Value { self.sink.to_value() }
       fn to_string(&self) -> String { format!("{:?}", self) }
     }};}
 
-    impl_set_range_all_fxn!(Set2DRARD,RowDVector); 
-    impl_set_range_all_fxn!(Set2DRAVD,DVector); 
-    impl_set_range_all_fxn!(Set2DRAMD,DMatrix); 
-    impl_set_range_all_fxn!(Set2DRAR4,RowVector4);    
-    impl_set_range_all_fxn!(Set2DRAR3,RowVector3);
-    impl_set_range_all_fxn!(Set2DRAR2,RowVector2);
-    impl_set_range_all_fxn!(Set2DRAV4,Vector4);    
-    impl_set_range_all_fxn!(Set2DRAV3,Vector3);
-    impl_set_range_all_fxn!(Set2DRAV2,Vector2);
-    impl_set_range_all_fxn!(Set2DRAM4,Matrix4);    
-    impl_set_range_all_fxn!(Set2DRAM3,Matrix3);
-    impl_set_range_all_fxn!(Set2DRAM2,Matrix2);
-    impl_set_range_all_fxn!(Set2DRAM1,Matrix1);
-    impl_set_range_all_fxn!(Set2DRAM2x3,Matrix2x3);
-    impl_set_range_all_fxn!(Set2DRAM3x2,Matrix3x2);
+impl_set_range_all_fxn!(Set2DRARD,RowDVector,set_2d_vector_all);
+impl_set_range_all_fxn!(Set2DRAVD,DVector,set_2d_vector_all);
+impl_set_range_all_fxn!(Set2DRAMD,DMatrix,set_2d_vector_all);
+impl_set_range_all_fxn!(Set2DRAR4,RowVector4,set_2d_vector_all);
+impl_set_range_all_fxn!(Set2DRAR3,RowVector3,set_2d_vector_all);
+impl_set_range_all_fxn!(Set2DRAR2,RowVector2,set_2d_vector_all);
+impl_set_range_all_fxn!(Set2DRAV4,Vector4,set_2d_vector_all);
+impl_set_range_all_fxn!(Set2DRAV3,Vector3,set_2d_vector_all);
+impl_set_range_all_fxn!(Set2DRAV2,Vector2,set_2d_vector_all);
+impl_set_range_all_fxn!(Set2DRAM4,Matrix4,set_2d_vector_all);
+impl_set_range_all_fxn!(Set2DRAM3,Matrix3,set_2d_vector_all);
+impl_set_range_all_fxn!(Set2DRAM2,Matrix2,set_2d_vector_all);
+impl_set_range_all_fxn!(Set2DRAM1,Matrix1,set_2d_vector_all);
+impl_set_range_all_fxn!(Set2DRAM2x3,Matrix2x3,set_2d_vector_all);
+impl_set_range_all_fxn!(Set2DRAM3x2,Matrix3x2,set_2d_vector_all);
 
 macro_rules! impl_set_range_all_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
