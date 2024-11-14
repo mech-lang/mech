@@ -2117,8 +2117,17 @@ impl NativeFunctionCompiler for MatrixSetScalarRange {
 
 // x[1..3,1..3] = 1 ------------------------------------------------------------------
 
+macro_rules! set_2d_vector_vector {
+  ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+      for cix in &$ix1 {
+        for rix in &$ix2 {
+          ($sink).column_mut(cix - 1)[rix - 1] = ($source).clone();
+        }
+      }
+    };}
+
 macro_rules! impl_set_range_range_fxn {
-  ($struct_name:ident, $matrix_shape:ident) => {
+  ($struct_name:ident, $matrix_shape:ident, $op:tt) => {
     #[derive(Debug)]
     struct $struct_name<T> {
       source: Ref<T>,
@@ -2131,38 +2140,34 @@ macro_rules! impl_set_range_range_fxn {
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {
-        let sink_ptr = self.sink.as_ptr();
-        let (range_ix1,range_ix2) = &self.ixes;
-        let range_ix1_ptr = range_ix1.as_ptr();
-        let range_ix2_ptr = range_ix2.as_ptr();
-        let source_ptr = self.source.as_ptr();
         unsafe { 
-          for cix in &*range_ix2_ptr {
-            for rix in &*range_ix1_ptr {
-              (*sink_ptr).column_mut(cix - 1)[rix - 1] = (*source_ptr).clone();
-            }
-          }
+          let mut sink_ptr = (&mut *(self.sink.as_ptr()));
+          let source_ptr = (*(self.source.as_ptr())).clone();
+          let (range_ix1,range_ix2) = &self.ixes;
+          let range_ix1_ptr = (*(range_ix1.as_ptr())).clone();
+          let range_ix2_ptr = (*(range_ix2.as_ptr())).clone();
+          $op!(sink_ptr,range_ix1_ptr,range_ix2_ptr,source_ptr);
         }
       }
       fn out(&self) -> Value { self.sink.to_value() }
       fn to_string(&self) -> String { format!("{:?}", self) }
     }};}
 
-    impl_set_range_range_fxn!(Set2DRRRD,RowDVector); 
-    impl_set_range_range_fxn!(Set2DRRVD,DVector); 
-    impl_set_range_range_fxn!(Set2DRRMD,DMatrix); 
-    impl_set_range_range_fxn!(Set2DRRR4,RowVector4);    
-    impl_set_range_range_fxn!(Set2DRRR3,RowVector3);
-    impl_set_range_range_fxn!(Set2DRRR2,RowVector2);
-    impl_set_range_range_fxn!(Set2DRRV4,Vector4);    
-    impl_set_range_range_fxn!(Set2DRRV3,Vector3);
-    impl_set_range_range_fxn!(Set2DRRV2,Vector2);
-    impl_set_range_range_fxn!(Set2DRRM4,Matrix4);    
-    impl_set_range_range_fxn!(Set2DRRM3,Matrix3);
-    impl_set_range_range_fxn!(Set2DRRM2,Matrix2);
-    impl_set_range_range_fxn!(Set2DRRM1,Matrix1);
-    impl_set_range_range_fxn!(Set2DRRM2x3,Matrix2x3);
-    impl_set_range_range_fxn!(Set2DRRM3x2,Matrix3x2);
+impl_set_range_range_fxn!(Set2DRRRD,RowDVector,set_2d_vector_vector);
+impl_set_range_range_fxn!(Set2DRRVD,DVector,set_2d_vector_vector);
+impl_set_range_range_fxn!(Set2DRRMD,DMatrix,set_2d_vector_vector);
+impl_set_range_range_fxn!(Set2DRRR4,RowVector4,set_2d_vector_vector);
+impl_set_range_range_fxn!(Set2DRRR3,RowVector3,set_2d_vector_vector);
+impl_set_range_range_fxn!(Set2DRRR2,RowVector2,set_2d_vector_vector);
+impl_set_range_range_fxn!(Set2DRRV4,Vector4,set_2d_vector_vector);
+impl_set_range_range_fxn!(Set2DRRV3,Vector3,set_2d_vector_vector);
+impl_set_range_range_fxn!(Set2DRRV2,Vector2,set_2d_vector_vector);
+impl_set_range_range_fxn!(Set2DRRM4,Matrix4,set_2d_vector_vector);
+impl_set_range_range_fxn!(Set2DRRM3,Matrix3,set_2d_vector_vector);
+impl_set_range_range_fxn!(Set2DRRM2,Matrix2,set_2d_vector_vector);
+impl_set_range_range_fxn!(Set2DRRM1,Matrix1,set_2d_vector_vector);
+impl_set_range_range_fxn!(Set2DRRM2x3,Matrix2x3,set_2d_vector_vector);
+impl_set_range_range_fxn!(Set2DRRM3x2,Matrix3x2,set_2d_vector_vector);
 
 macro_rules! impl_set_range_range_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
