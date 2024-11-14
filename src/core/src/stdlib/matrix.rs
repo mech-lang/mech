@@ -2217,8 +2217,17 @@ impl NativeFunctionCompiler for MatrixSetRangeRange {
 
 // x[:,1..3] = 1 ------------------------------------------------------------------
 
-macro_rules! impl_set_all_range_fxn {
-  ($struct_name:ident, $matrix_shape:ident) => {
+macro_rules! set_2d_all_vector {
+  ($sink:expr, $ix:expr, $source:expr) => {
+      for cix in &$ix {
+        for rix in 0..($sink).nrows() {
+          ($sink).column_mut(cix - 1)[rix] = ($source).clone();
+        }
+      }
+    };}
+
+macro_rules! impl_set_all_range_fxn {  
+  ($struct_name:ident, $matrix_shape:ident, $op:tt) => {
     #[derive(Debug)]
     struct $struct_name<T> {
       source: Ref<T>,
@@ -2231,36 +2240,32 @@ macro_rules! impl_set_all_range_fxn {
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {
-        let sink_ptr = self.sink.as_ptr();
-        let cix_ptr = self.ixes.as_ptr();
-        let source_ptr = self.source.as_ptr();
         unsafe { 
-          for cix in &*cix_ptr {
-            for rix in 0..(*sink_ptr).nrows() {
-              (*sink_ptr).column_mut(cix - 1)[rix] = (*source_ptr).clone();
-            }
-          }
+          let ix_ptr = (*(self.ixes.as_ptr())).clone();
+          let mut sink_ptr = (&mut *(self.sink.as_ptr()));
+          let source_ptr = (*(self.source.as_ptr())).clone();
+          $op!(sink_ptr,ix_ptr,source_ptr);
         }
       }
       fn out(&self) -> Value { self.sink.to_value() }
       fn to_string(&self) -> String { format!("{:?}", self) }
     }};}
 
-    impl_set_all_range_fxn!(Set2DARRD,RowDVector); 
-    impl_set_all_range_fxn!(Set2DARVD,DVector); 
-    impl_set_all_range_fxn!(Set2DARMD,DMatrix); 
-    impl_set_all_range_fxn!(Set2DARR4,RowVector4);    
-    impl_set_all_range_fxn!(Set2DARR3,RowVector3);
-    impl_set_all_range_fxn!(Set2DARR2,RowVector2);
-    impl_set_all_range_fxn!(Set2DARV4,Vector4);    
-    impl_set_all_range_fxn!(Set2DARV3,Vector3);
-    impl_set_all_range_fxn!(Set2DARV2,Vector2);
-    impl_set_all_range_fxn!(Set2DARM4,Matrix4);    
-    impl_set_all_range_fxn!(Set2DARM3,Matrix3);
-    impl_set_all_range_fxn!(Set2DARM2,Matrix2);
-    impl_set_all_range_fxn!(Set2DARM1,Matrix1);
-    impl_set_all_range_fxn!(Set2DARM2x3,Matrix2x3);
-    impl_set_all_range_fxn!(Set2DARM3x2,Matrix3x2);
+impl_set_all_range_fxn!(Set2DARRD,RowDVector, set_2d_all_vector);
+impl_set_all_range_fxn!(Set2DARVD,DVector, set_2d_all_vector);
+impl_set_all_range_fxn!(Set2DARMD,DMatrix, set_2d_all_vector);
+impl_set_all_range_fxn!(Set2DARR4,RowVector4, set_2d_all_vector);
+impl_set_all_range_fxn!(Set2DARR3,RowVector3, set_2d_all_vector);
+impl_set_all_range_fxn!(Set2DARR2,RowVector2, set_2d_all_vector);
+impl_set_all_range_fxn!(Set2DARV4,Vector4, set_2d_all_vector);
+impl_set_all_range_fxn!(Set2DARV3,Vector3, set_2d_all_vector);
+impl_set_all_range_fxn!(Set2DARV2,Vector2, set_2d_all_vector);
+impl_set_all_range_fxn!(Set2DARM4,Matrix4, set_2d_all_vector);
+impl_set_all_range_fxn!(Set2DARM3,Matrix3, set_2d_all_vector);
+impl_set_all_range_fxn!(Set2DARM2,Matrix2, set_2d_all_vector);
+impl_set_all_range_fxn!(Set2DARM1,Matrix1, set_2d_all_vector);
+impl_set_all_range_fxn!(Set2DARM2x3,Matrix2x3, set_2d_all_vector);
+impl_set_all_range_fxn!(Set2DARM3x2,Matrix3x2, set_2d_all_vector);
 
 macro_rules! impl_set_all_range_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
@@ -2292,6 +2297,7 @@ macro_rules! impl_set_all_range_match_arms {
 fn impl_set_all_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
   impl_set_match_arms!(Set2DAR, all_range, (sink, ixes.as_slice(), source))
 }
+
 pub struct MatrixSetAllRange {}
 impl NativeFunctionCompiler for MatrixSetAllRange {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
@@ -2312,7 +2318,6 @@ impl NativeFunctionCompiler for MatrixSetAllRange {
     }
   }
 }
-
 
 // x[1..3,:] = 1 ------------------------------------------------------------------
 
