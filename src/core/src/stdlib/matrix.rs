@@ -1920,8 +1920,15 @@ impl NativeFunctionCompiler for MatrixSetScalarAll {
 
 // x[1..3,1] = 1 ------------------------------------------------------------------
 
+macro_rules! set_2d_vector_scalar {
+  ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+      for rix in &$ix1 {
+        ($sink).row_mut(rix - 1)[$ix2 - 1] = ($source).clone();
+      }
+    };}
+
 macro_rules! impl_set_range_scalar_fxn {
-  ($struct_name:ident, $matrix_shape:ident) => {
+  ($struct_name:ident, $matrix_shape:ident, $op:tt) => {
     #[derive(Debug)]
     struct $struct_name<T> {
       source: Ref<T>,
@@ -1934,36 +1941,34 @@ macro_rules! impl_set_range_scalar_fxn {
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {
-        let sink_ptr = self.sink.as_ptr();
-        let (range_ix,scalar_ix) = &self.ixes;
-        let range_ix_ptr = range_ix.as_ptr();
-        let scalar_ix_ptr = scalar_ix.as_ptr();
-        let source_ptr = self.source.as_ptr();
         unsafe { 
-          for rix in &*range_ix_ptr {
-            (*sink_ptr).row_mut(rix - 1)[*scalar_ix_ptr - 1] = (*source_ptr).clone();
-          }
+          let mut sink_ptr = (&mut *(self.sink.as_ptr()));
+          let source_ptr = (*(self.source.as_ptr())).clone();
+          let (ix1,ix2) = &self.ixes;
+          let ix1_ptr = (*(ix1.as_ptr())).clone();
+          let ix2_ptr = (*(ix2.as_ptr())).clone();
+          $op!(sink_ptr,ix1_ptr,ix2_ptr,source_ptr);
         }
       }
       fn out(&self) -> Value { self.sink.to_value() }
       fn to_string(&self) -> String { format!("{:?}", self) }
     }};}
 
-impl_set_range_scalar_fxn!(Set2DRSRD,RowDVector); 
-impl_set_range_scalar_fxn!(Set2DRSVD,DVector); 
-impl_set_range_scalar_fxn!(Set2DRSMD,DMatrix); 
-impl_set_range_scalar_fxn!(Set2DRSR4,RowVector4);    
-impl_set_range_scalar_fxn!(Set2DRSR3,RowVector3);
-impl_set_range_scalar_fxn!(Set2DRSR2,RowVector2);
-impl_set_range_scalar_fxn!(Set2DRSV4,Vector4);    
-impl_set_range_scalar_fxn!(Set2DRSV3,Vector3);
-impl_set_range_scalar_fxn!(Set2DRSV2,Vector2);
-impl_set_range_scalar_fxn!(Set2DRSM4,Matrix4);    
-impl_set_range_scalar_fxn!(Set2DRSM3,Matrix3);
-impl_set_range_scalar_fxn!(Set2DRSM2,Matrix2);
-impl_set_range_scalar_fxn!(Set2DRSM1,Matrix1);
-impl_set_range_scalar_fxn!(Set2DRSM2x3,Matrix2x3);
-impl_set_range_scalar_fxn!(Set2DRSM3x2,Matrix3x2);
+impl_set_range_scalar_fxn!(Set2DRSRD,RowDVector, set_2d_vector_scalar);
+impl_set_range_scalar_fxn!(Set2DRSVD,DVector, set_2d_vector_scalar);
+impl_set_range_scalar_fxn!(Set2DRSMD,DMatrix, set_2d_vector_scalar);
+impl_set_range_scalar_fxn!(Set2DRSR4,RowVector4, set_2d_vector_scalar);
+impl_set_range_scalar_fxn!(Set2DRSR3,RowVector3, set_2d_vector_scalar);
+impl_set_range_scalar_fxn!(Set2DRSR2,RowVector2, set_2d_vector_scalar);
+impl_set_range_scalar_fxn!(Set2DRSV4,Vector4, set_2d_vector_scalar);
+impl_set_range_scalar_fxn!(Set2DRSV3,Vector3, set_2d_vector_scalar);
+impl_set_range_scalar_fxn!(Set2DRSV2,Vector2, set_2d_vector_scalar);
+impl_set_range_scalar_fxn!(Set2DRSM4,Matrix4, set_2d_vector_scalar);
+impl_set_range_scalar_fxn!(Set2DRSM3,Matrix3, set_2d_vector_scalar);
+impl_set_range_scalar_fxn!(Set2DRSM2,Matrix2, set_2d_vector_scalar);
+impl_set_range_scalar_fxn!(Set2DRSM1,Matrix1, set_2d_vector_scalar);
+impl_set_range_scalar_fxn!(Set2DRSM2x3,Matrix2x3, set_2d_vector_scalar);
+impl_set_range_scalar_fxn!(Set2DRSM3x2,Matrix3x2, set_2d_vector_scalar);
 
 macro_rules! impl_set_range_scalar_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
