@@ -4,7 +4,7 @@ use crate::kind::Kind;
 use crate::stdlib::{math::*,
                     logic::*,
                     compare::*,
-                    matrix::*,
+                    matrix::{*, access::*, set::*},
                     table::*,
                     convert::*
                   };
