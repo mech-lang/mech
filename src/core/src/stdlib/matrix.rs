@@ -1256,8 +1256,13 @@ macro_rules! impl_set_match_arms {
 
 // x[1] = 1 ------------------------------------------------------------------
 
+macro_rules! set_1d_set_scalar {
+  ($sink:expr, $ix:expr, $source:expr) => {
+    ($sink)[$ix - 1] = ($source).clone();
+  };}  
+
 macro_rules! impl_set_scalar_fxn {
-  ($struct_name:ident, $matrix_shape:ident) => {
+  ($struct_name:ident, $matrix_shape:ident, $op:tt) => {
     #[derive(Debug)]
     struct $struct_name<T> {
       source: Ref<T>,
@@ -1270,32 +1275,32 @@ macro_rules! impl_set_scalar_fxn {
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {
-        let sink_ptr = self.sink.as_ptr();
-        let ixes_ptr = self.ixes.as_ptr();
-        let source_ptr = self.source.as_ptr();
         unsafe {
-          (*sink_ptr)[*ixes_ptr - 1] = (*source_ptr).clone();
+          let ix_ptr = (*(self.ixes.as_ptr())).clone();
+          let mut sink_ptr = (&mut *(self.sink.as_ptr()));
+          let source_ptr = (*(self.source.as_ptr())).clone();
+          $op!(sink_ptr,ix_ptr,source_ptr);
         }
       }
       fn out(&self) -> Value { self.sink.to_value() }
       fn to_string(&self) -> String { format!("{:?}", self) }
     }};}
 
-impl_set_scalar_fxn!(Set1DSRD,RowDVector); 
-impl_set_scalar_fxn!(Set1DSVD,DVector); 
-impl_set_scalar_fxn!(Set1DSMD,DMatrix); 
-impl_set_scalar_fxn!(Set1DSR4,RowVector4);    
-impl_set_scalar_fxn!(Set1DSR3,RowVector3);
-impl_set_scalar_fxn!(Set1DSR2,RowVector2);
-impl_set_scalar_fxn!(Set1DSV4,Vector4);    
-impl_set_scalar_fxn!(Set1DSV3,Vector3);
-impl_set_scalar_fxn!(Set1DSV2,Vector2);
-impl_set_scalar_fxn!(Set1DSM4,Matrix4);    
-impl_set_scalar_fxn!(Set1DSM3,Matrix3);
-impl_set_scalar_fxn!(Set1DSM2,Matrix2);
-impl_set_scalar_fxn!(Set1DSM1,Matrix1);
-impl_set_scalar_fxn!(Set1DSM2x3,Matrix2x3);
-impl_set_scalar_fxn!(Set1DSM3x2,Matrix3x2);
+impl_set_scalar_fxn!(Set1DSRD,RowDVector, set_1d_set_scalar);
+impl_set_scalar_fxn!(Set1DSVD,DVector, set_1d_set_scalar);
+impl_set_scalar_fxn!(Set1DSMD,DMatrix, set_1d_set_scalar);
+impl_set_scalar_fxn!(Set1DSR4,RowVector4, set_1d_set_scalar);
+impl_set_scalar_fxn!(Set1DSR3,RowVector3, set_1d_set_scalar);
+impl_set_scalar_fxn!(Set1DSR2,RowVector2, set_1d_set_scalar);
+impl_set_scalar_fxn!(Set1DSV4,Vector4, set_1d_set_scalar);
+impl_set_scalar_fxn!(Set1DSV3,Vector3, set_1d_set_scalar);
+impl_set_scalar_fxn!(Set1DSV2,Vector2, set_1d_set_scalar);
+impl_set_scalar_fxn!(Set1DSM4,Matrix4, set_1d_set_scalar);
+impl_set_scalar_fxn!(Set1DSM3,Matrix3, set_1d_set_scalar);
+impl_set_scalar_fxn!(Set1DSM2,Matrix2, set_1d_set_scalar);
+impl_set_scalar_fxn!(Set1DSM1,Matrix1, set_1d_set_scalar);
+impl_set_scalar_fxn!(Set1DSM2x3,Matrix2x3, set_1d_set_scalar);
+impl_set_scalar_fxn!(Set1DSM3x2,Matrix3x2, set_1d_set_scalar);
 
 macro_rules! impl_set_scalar_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
@@ -1519,11 +1524,11 @@ macro_rules! impl_set_all_fxn {
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {
-        let sink_ptr = self.sink.as_ptr();
-        let source_ptr = self.source.as_ptr();
         unsafe { 
-          for i in 0..(*sink_ptr).len() {
-            (*sink_ptr)[i] = (*source_ptr).clone();
+          let mut sink_ptr = (&mut *(self.sink.as_ptr()));
+          let source_ptr = (*(self.source.as_ptr())).clone();
+          for i in 0..(sink_ptr).len() {
+            (sink_ptr)[i] = (source_ptr).clone();
           }
         }
       }
@@ -1601,8 +1606,13 @@ impl NativeFunctionCompiler for MatrixSetAll {
 
 // x[1,1] = 1 ----------------------------------------------------------------
 
+macro_rules! set_2d_scalar_scalar {
+  ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+      ($sink).column_mut($ix2 - 1)[$ix1 - 1] = ($source).clone();
+    };}
+
 macro_rules! impl_set_scalar_scalar_fxn {
-  ($struct_name:ident, $matrix_shape:ident) => {
+  ($struct_name:ident, $matrix_shape:ident, $op:tt) => {
     #[derive(Debug)]
     struct $struct_name<T> {
       source: Ref<T>,
@@ -1615,34 +1625,34 @@ macro_rules! impl_set_scalar_scalar_fxn {
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {
-        let sink_ptr = self.sink.as_ptr();
-        let (ixx,ixy) = &self.ixes;
-        let ixx_ptr = ixx.as_ptr();
-        let ixy_ptr = ixy.as_ptr();
-        let source_ptr = self.source.as_ptr();
         unsafe {
-          (*sink_ptr).column_mut(*ixy_ptr - 1)[*ixx_ptr - 1] = (*source_ptr).clone();
+          let mut sink_ptr = (&mut *(self.sink.as_ptr()));
+          let source_ptr = (*(self.source.as_ptr())).clone();
+          let (ix1,ix2) = &self.ixes;
+          let ix1_ptr = (*(ix1.as_ptr())).clone();
+          let ix2_ptr = (*(ix2.as_ptr())).clone();
+          $op!(sink_ptr,ix1_ptr,ix2_ptr,source_ptr);
         }
       }
       fn out(&self) -> Value { self.sink.to_value() }
       fn to_string(&self) -> String { format!("{:?}", self) }
     }};}
 
-impl_set_scalar_scalar_fxn!(Set2DSSRD,RowDVector); 
-impl_set_scalar_scalar_fxn!(Set2DSSVD,DVector); 
-impl_set_scalar_scalar_fxn!(Set2DSSMD,DMatrix); 
-impl_set_scalar_scalar_fxn!(Set2DSSR4,RowVector4);    
-impl_set_scalar_scalar_fxn!(Set2DSSR3,RowVector3);
-impl_set_scalar_scalar_fxn!(Set2DSSR2,RowVector2);
-impl_set_scalar_scalar_fxn!(Set2DSSV4,Vector4);    
-impl_set_scalar_scalar_fxn!(Set2DSSV3,Vector3);
-impl_set_scalar_scalar_fxn!(Set2DSSV2,Vector2);
-impl_set_scalar_scalar_fxn!(Set2DSSM4,Matrix4);    
-impl_set_scalar_scalar_fxn!(Set2DSSM3,Matrix3);
-impl_set_scalar_scalar_fxn!(Set2DSSM2,Matrix2);
-impl_set_scalar_scalar_fxn!(Set2DSSM1,Matrix1);
-impl_set_scalar_scalar_fxn!(Set2DSSM2x3,Matrix2x3);
-impl_set_scalar_scalar_fxn!(Set2DSSM3x2,Matrix3x2);
+impl_set_scalar_scalar_fxn!(Set2DSSRD,RowDVector,set_2d_scalar_scalar);
+impl_set_scalar_scalar_fxn!(Set2DSSVD,DVector,set_2d_scalar_scalar);
+impl_set_scalar_scalar_fxn!(Set2DSSMD,DMatrix,set_2d_scalar_scalar);
+impl_set_scalar_scalar_fxn!(Set2DSSR4,RowVector4,set_2d_scalar_scalar);
+impl_set_scalar_scalar_fxn!(Set2DSSR3,RowVector3,set_2d_scalar_scalar);
+impl_set_scalar_scalar_fxn!(Set2DSSR2,RowVector2,set_2d_scalar_scalar);
+impl_set_scalar_scalar_fxn!(Set2DSSV4,Vector4,set_2d_scalar_scalar);
+impl_set_scalar_scalar_fxn!(Set2DSSV3,Vector3,set_2d_scalar_scalar);
+impl_set_scalar_scalar_fxn!(Set2DSSV2,Vector2,set_2d_scalar_scalar);
+impl_set_scalar_scalar_fxn!(Set2DSSM4,Matrix4,set_2d_scalar_scalar);
+impl_set_scalar_scalar_fxn!(Set2DSSM3,Matrix3,set_2d_scalar_scalar);
+impl_set_scalar_scalar_fxn!(Set2DSSM2,Matrix2,set_2d_scalar_scalar);
+impl_set_scalar_scalar_fxn!(Set2DSSM1,Matrix1,set_2d_scalar_scalar);
+impl_set_scalar_scalar_fxn!(Set2DSSM2x3,Matrix2x3,set_2d_scalar_scalar);
+impl_set_scalar_scalar_fxn!(Set2DSSM3x2,Matrix3x2,set_2d_scalar_scalar);
 
 macro_rules! impl_set_scalar_scalar_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
@@ -1700,19 +1710,17 @@ impl NativeFunctionCompiler for MatrixSetScalarScalar {
 
 macro_rules! set_2d_all_scalar {
   ($sink:expr, $source:expr) => {
-    unsafe {
       for i in 0..$sink.nrows() {
         ($sink)[i] = ($source).clone();
       }
-    }};}
+    };}
 
 macro_rules! set_2d_all_vector {
   ($sink:expr, $source:expr) => {
-    unsafe {
       for i in 0..$sink.nrows() {
         ($sink)[i] = ($source)[i].clone();
       }
-    }};}
+    };}
     
 macro_rules! impl_set_all_scalar_fxn {
   ($struct_name:ident, $matrix_shape:ident, $source_type:ty,  $op:ident) => {
@@ -1823,8 +1831,15 @@ impl NativeFunctionCompiler for MatrixSetAllScalar {
 
 // x[1,:] = 1 -----------------------------------------------------------------
 
+macro_rules! set_2d_scalar_all {
+  ($sink:expr, $ix:expr, $source:expr) => {
+      for i in 0..($sink).ncols() {
+        ($sink).row_mut($ix - 1)[i] = ($source).clone();
+      }
+    };}
+
 macro_rules! impl_set_scalar_all_fxn {
-  ($struct_name:ident, $matrix_shape:ident) => {
+  ($struct_name:ident, $matrix_shape:ident, $op:tt) => {
     #[derive(Debug)]
     struct $struct_name<T> {
       source: Ref<T>,
@@ -1837,34 +1852,32 @@ macro_rules! impl_set_scalar_all_fxn {
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {
-        let sink_ptr = self.sink.as_ptr();
-        let ix_ptr = self.ix.as_ptr();
-        let source_ptr = self.source.as_ptr();
         unsafe {
-          for i in 0..(*sink_ptr).ncols() {
-            (*sink_ptr).row_mut(*ix_ptr - 1)[i] = (*source_ptr).clone();
-          }
+          let ix_ptr = (*(self.ix.as_ptr())).clone();
+          let mut sink_ptr = (&mut *(self.sink.as_ptr()));
+          let source_ptr = (*(self.source.as_ptr())).clone();
+          $op!(sink_ptr,ix_ptr,source_ptr);
         }
       }
       fn out(&self) -> Value { self.sink.to_value() }
       fn to_string(&self) -> String { format!("{:?}", self) }
     }};}
 
-impl_set_scalar_all_fxn!(Set2DSARD,RowDVector); 
-impl_set_scalar_all_fxn!(Set2DSAVD,DVector); 
-impl_set_scalar_all_fxn!(Set2DSAMD,DMatrix); 
-impl_set_scalar_all_fxn!(Set2DSAR4,RowVector4);    
-impl_set_scalar_all_fxn!(Set2DSAR3,RowVector3);
-impl_set_scalar_all_fxn!(Set2DSAR2,RowVector2);
-impl_set_scalar_all_fxn!(Set2DSAV4,Vector4);    
-impl_set_scalar_all_fxn!(Set2DSAV3,Vector3);
-impl_set_scalar_all_fxn!(Set2DSAV2,Vector2);
-impl_set_scalar_all_fxn!(Set2DSAM4,Matrix4);    
-impl_set_scalar_all_fxn!(Set2DSAM3,Matrix3);
-impl_set_scalar_all_fxn!(Set2DSAM2,Matrix2);
-impl_set_scalar_all_fxn!(Set2DSAM1,Matrix1);
-impl_set_scalar_all_fxn!(Set2DSAM2x3,Matrix2x3);
-impl_set_scalar_all_fxn!(Set2DSAM3x2,Matrix3x2);
+impl_set_scalar_all_fxn!(Set2DSARD,RowDVector, set_2d_scalar_all);
+impl_set_scalar_all_fxn!(Set2DSAVD,DVector, set_2d_scalar_all);
+impl_set_scalar_all_fxn!(Set2DSAMD,DMatrix, set_2d_scalar_all);
+impl_set_scalar_all_fxn!(Set2DSAR4,RowVector4, set_2d_scalar_all);
+impl_set_scalar_all_fxn!(Set2DSAR3,RowVector3, set_2d_scalar_all);
+impl_set_scalar_all_fxn!(Set2DSAR2,RowVector2, set_2d_scalar_all);
+impl_set_scalar_all_fxn!(Set2DSAV4,Vector4, set_2d_scalar_all);
+impl_set_scalar_all_fxn!(Set2DSAV3,Vector3, set_2d_scalar_all);
+impl_set_scalar_all_fxn!(Set2DSAV2,Vector2, set_2d_scalar_all);
+impl_set_scalar_all_fxn!(Set2DSAM4,Matrix4, set_2d_scalar_all);
+impl_set_scalar_all_fxn!(Set2DSAM3,Matrix3, set_2d_scalar_all);
+impl_set_scalar_all_fxn!(Set2DSAM2,Matrix2, set_2d_scalar_all);
+impl_set_scalar_all_fxn!(Set2DSAM1,Matrix1, set_2d_scalar_all);
+impl_set_scalar_all_fxn!(Set2DSAM2x3,Matrix2x3, set_2d_scalar_all);
+impl_set_scalar_all_fxn!(Set2DSAM3x2,Matrix3x2, set_2d_scalar_all);
 
 macro_rules! impl_set_scalar_all_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
