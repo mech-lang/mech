@@ -3,6 +3,62 @@ use crate::stdlib::*;
 
 // Set -----------------------------------------------------------------
 
+enum Foo {
+    A,
+    B,
+    C,
+}
+
+
+
+enum Bar {
+    D,
+    E,
+    F,
+}
+/*
+macro_rules! match_tuple {
+    // Main case: match on a tuple (Foo, Bar) with feature flags
+    ($value:expr, $foo_enum:ident { $( $foo_variant:ident ),* }, $bar_enum:ident { $( $bar_variant:ident ),* }, $($feature_flag:expr),*) => {
+        match $value {
+            // Loop through Foo variants
+            $(
+                #[cfg(feature = $feature_flag)]
+                $foo_enum::$foo_variant => {
+                    // Loop through Bar variants for each Foo variant
+                    $(
+                        #[cfg(feature = concat!("match_", stringify!($foo_variant), "_", stringify!($bar_variant)))]
+                        $bar_enum::$bar_variant => {
+                            println!("Matched ({:?}, {:?})", stringify!($foo_variant), stringify!($bar_variant));
+                        }
+                    )*
+                }
+            )*
+
+            // Catch-all arm if no match arms were enabled for the tuple
+            #[cfg(not(any($(
+                feature = $feature_flag
+            ),*)))]
+            _ => {
+                println!("No match for the tuple");
+            }
+        }
+    };
+}
+
+
+
+
+
+
+
+
+fn foo() {
+    let x = (Foo::A, Bar::D);
+    match_tuple!(x, Foo { A, B, C}, Bar { D, E, F }, "match_A", "match_A_D", "match_B");
+}*/
+
+
 macro_rules! impl_set_match_arms {
     ($fxn_name:ident,$macro_name:ident, $arg:expr) => {
       paste!{
@@ -22,6 +78,30 @@ macro_rules! impl_set_match_arms {
           U128;
           F32;  
           F64; 
+        )
+      }
+    }
+  }
+
+  macro_rules! impl_set_match_arms2 {
+    ($fxn_name:ident,$macro_name:ident, $arg:expr) => {
+      paste!{
+        [<impl_set_ $macro_name _match_arms>]!(
+          $fxn_name,
+          $arg,
+          Bool, "Bool";
+          U8, "U8";
+          U16, "U16";
+          U32, "U32";
+          U64, "U64";
+          U128, "U128";
+          I8, "I8";
+          I16, "I16";
+          I32, "I32";
+          I64, "I64";
+          U128, "U128";
+          F32, "F32"; 
+          F64, "F64" ;
         )
       }
     }
@@ -76,24 +156,39 @@ macro_rules! impl_set_match_arms {
   impl_set_scalar_fxn!(Set1DSM3x2,Matrix3x2, set_1d_set_scalar);
   
   macro_rules! impl_set_scalar_match_arms {
-    ($fxn_name:ident, $arg:expr, $($value_kind:ident);+ $(;)?) => {
+    ($fxn_name:ident, $arg:expr, $($value_kind:ident,$value_string:tt);+ $(;)?) => {
       paste!{
         match $arg {
           $(
+              #[cfg(all(feature = $value_string, feature = "RowVector4"))]
               (Value::[<Matrix $value_kind>](Matrix::RowVector4(input)),[Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R4>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
+              #[cfg(all(feature = $value_string, feature = "RowVector3"))]
               (Value::[<Matrix $value_kind>](Matrix::RowVector3(input)),[Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R3>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
+              #[cfg(all(feature = $value_string, feature = "RowVector2"))]
               (Value::[<Matrix $value_kind>](Matrix::RowVector2(input)),[Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name R2>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
+              #[cfg(all(feature = $value_string, feature = "Vector4"))]
               (Value::[<Matrix $value_kind>](Matrix::Vector4(input)),   [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V4>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
+              #[cfg(all(feature = $value_string, feature = "Vector3"))]
               (Value::[<Matrix $value_kind>](Matrix::Vector3(input)),   [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V3>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
+              #[cfg(all(feature = $value_string, feature = "Vector2"))]
               (Value::[<Matrix $value_kind>](Matrix::Vector2(input)),   [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name V2>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
+              #[cfg(all(feature = $value_string, feature = "MAtrix4"))]
               (Value::[<Matrix $value_kind>](Matrix::Matrix4(input)),   [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
+              #[cfg(all(feature = $value_string, feature = "Matrix3"))]
               (Value::[<Matrix $value_kind>](Matrix::Matrix3(input)),   [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
+              #[cfg(all(feature = $value_string, feature = "Matrix2"))]
               (Value::[<Matrix $value_kind>](Matrix::Matrix2(input)),   [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
+              #[cfg(all(feature = $value_string, feature = "MAtrix1"))]
               (Value::[<Matrix $value_kind>](Matrix::Matrix1(input)),   [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M1>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
+              #[cfg(all(feature = $value_string, feature = "Matrix2x3"))]
               (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(input)), [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2x3>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
+              #[cfg(all(feature = $value_string, feature = "Matrix3x2"))]
               (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(input)), [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3x2>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
+              #[cfg(all(feature = $value_string, feature = "MatrixD"))]
               (Value::[<Matrix $value_kind>](Matrix::DMatrix(input)),   [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MD>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
+              #[cfg(all(feature = $value_string, feature = "RowVectorD"))]
               (Value::[<Matrix $value_kind>](Matrix::RowDVector(input)),[Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name RD>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
+              #[cfg(all(feature = $value_string, feature = "VectorD"))]
               (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VD>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
           )+
           x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
@@ -103,7 +198,7 @@ macro_rules! impl_set_match_arms {
   }
   
   fn impl_set_scalar_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
-    impl_set_match_arms!(Set1DS, scalar, (sink, ixes.as_slice(), source))
+    impl_set_match_arms2!(Set1DS, scalar, (sink, ixes.as_slice(), source))
   }
   
   pub struct MatrixSetScalar {}
