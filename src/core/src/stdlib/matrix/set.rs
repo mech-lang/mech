@@ -3,62 +3,6 @@ use crate::stdlib::*;
 
 // Set -----------------------------------------------------------------
 
-enum Foo {
-    A,
-    B,
-    C,
-}
-
-
-
-enum Bar {
-    D,
-    E,
-    F,
-}
-/*
-macro_rules! match_tuple {
-    // Main case: match on a tuple (Foo, Bar) with feature flags
-    ($value:expr, $foo_enum:ident { $( $foo_variant:ident ),* }, $bar_enum:ident { $( $bar_variant:ident ),* }, $($feature_flag:expr),*) => {
-        match $value {
-            // Loop through Foo variants
-            $(
-                #[cfg(feature = $feature_flag)]
-                $foo_enum::$foo_variant => {
-                    // Loop through Bar variants for each Foo variant
-                    $(
-                        #[cfg(feature = concat!("match_", stringify!($foo_variant), "_", stringify!($bar_variant)))]
-                        $bar_enum::$bar_variant => {
-                            println!("Matched ({:?}, {:?})", stringify!($foo_variant), stringify!($bar_variant));
-                        }
-                    )*
-                }
-            )*
-
-            // Catch-all arm if no match arms were enabled for the tuple
-            #[cfg(not(any($(
-                feature = $feature_flag
-            ),*)))]
-            _ => {
-                println!("No match for the tuple");
-            }
-        }
-    };
-}
-
-
-
-
-
-
-
-
-fn foo() {
-    let x = (Foo::A, Bar::D);
-    match_tuple!(x, Foo { A, B, C}, Bar { D, E, F }, "match_A", "match_A_D", "match_B");
-}*/
-
-
 macro_rules! impl_set_match_arms {
     ($fxn_name:ident,$macro_name:ident, $arg:expr) => {
       paste!{
