@@ -179,10 +179,10 @@ fn impl_transpose_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechErr
     (lhs_value),
     Bool => MatrixBool, bool, false, "Bool";
     I8   => MatrixI8,   i8,   i8::zero(), "I8";
-    I16  => MatrixI16,  i16,  i16::zero(), "I32";
-    I32  => MatrixI32,  i32,  i32::zero(), "I64";
-    I64  => MatrixI64,  i64,  i64::zero(), "I128";
-    I128 => MatrixI128, i128, i128::zero(), "I16";
+    I16  => MatrixI16,  i16,  i16::zero(), "I16";
+    I32  => MatrixI32,  i32,  i32::zero(), "I32";
+    I64  => MatrixI64,  i64,  i64::zero(), "I64";
+    I128 => MatrixI128, i128, i128::zero(), "I128";
     U8   => MatrixU8,   u8,   u8::zero(), "U8";
     U16  => MatrixU16,  u16,  u16::zero(), "U16";
     U32  => MatrixU32,  u32,  u32::zero(), "U32";
