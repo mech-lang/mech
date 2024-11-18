@@ -41,39 +41,39 @@ macro_rules! impl_matmul_match_arms {
     match $arg {
       $(
         $(
-          #[cfg(all(feature = $value_string))]
+          #[cfg(feature = $value_string)]
           (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => Ok(Box::new(MatMulScalar { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($target_type::zero()) })),
-          #[cfg(all(feature = $value_string, feature = "Vector4"))]
+          #[cfg(feature = "Vector4")]
           (Value::$matrix_kind(Matrix::Vector4(lhs)),    Value::$matrix_kind(Matrix::RowVector4(rhs))) => Ok(Box::new(MatMulV4R4 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Matrix4::from_element($target_type::zero())) })),
-          #[cfg(all(feature = $value_string, feature = "Vector3"))]
+          #[cfg(feature = "Vector3")]
           (Value::$matrix_kind(Matrix::Vector3(lhs)),    Value::$matrix_kind(Matrix::RowVector3(rhs))) => Ok(Box::new(MatMulV3R3 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Matrix3::from_element($target_type::zero())) })),
-          #[cfg(all(feature = $value_string, feature = "Vector2"))]
+          #[cfg(feature = "Vector2")]
           (Value::$matrix_kind(Matrix::Vector2(lhs)),    Value::$matrix_kind(Matrix::RowVector2(rhs))) => Ok(Box::new(MatMulV2R2 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Matrix2::from_element($target_type::zero())) })),
-          #[cfg(all(feature = $value_string, feature = "RowVector4"))]
+          #[cfg(feature = "RowVector4")]
           (Value::$matrix_kind(Matrix::RowVector4(lhs)), Value::$matrix_kind(Matrix::Vector4(rhs))) => Ok(Box::new(MatMulR4V4 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Matrix1::from_element($target_type::zero())) })),
-          #[cfg(all(feature = $value_string, feature = "RowVector3"))]
+          #[cfg(feature = "RowVector3")]
           (Value::$matrix_kind(Matrix::RowVector3(lhs)), Value::$matrix_kind(Matrix::Vector3(rhs))) => Ok(Box::new(MatMulR3V3 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Matrix1::from_element($target_type::zero())) })),
-          #[cfg(all(feature = $value_string, feature = "RowVector2"))]
+          #[cfg(feature = "RowVector2")]
           (Value::$matrix_kind(Matrix::RowVector2(lhs)), Value::$matrix_kind(Matrix::Vector2(rhs))) => Ok(Box::new(MatMulR2V2 { lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Matrix1::from_element($target_type::zero())) })),
-          #[cfg(all(feature = $value_string, feature = "Matrix4"))]
+          #[cfg(feature = "Matrix4")]
           (Value::$matrix_kind(Matrix::Matrix4(lhs)),    Value::$matrix_kind(Matrix::Matrix4(rhs))) => Ok(Box::new(MatMulM4M4{lhs, rhs, out: new_ref(Matrix4::from_element($target_type::zero()))})),
-          #[cfg(all(feature = $value_string, feature = "Matrix3"))]
+          #[cfg(feature = "Matrix3")]
           (Value::$matrix_kind(Matrix::Matrix3(lhs)),    Value::$matrix_kind(Matrix::Matrix3(rhs))) => Ok(Box::new(MatMulM3M3{lhs, rhs, out: new_ref(Matrix3::from_element($target_type::zero()))})),
-          #[cfg(all(feature = $value_string, feature = "Matrix2"))]
+          #[cfg(feature = "Matrix2")]
           (Value::$matrix_kind(Matrix::Matrix2(lhs)),    Value::$matrix_kind(Matrix::Matrix2(rhs))) => Ok(Box::new(MatMulM2M2{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::zero()))})),
-          #[cfg(all(feature = $value_string, feature = "Matrix1"))]
+          #[cfg(feature = "Matrix1")]
           (Value::$matrix_kind(Matrix::Matrix1(lhs)),    Value::$matrix_kind(Matrix::Matrix1(rhs))) => Ok(Box::new(MatMulM1M1{lhs, rhs, out: new_ref(Matrix1::from_element($target_type::zero()))})),
-          #[cfg(all(feature = $value_string, feature = "Matrix2x3"))]
+          #[cfg(feature = "Matrix2x3")]
           (Value::$matrix_kind(Matrix::Matrix2x3(lhs)),  Value::$matrix_kind(Matrix::Matrix3x2(rhs))) => Ok(Box::new(MatMulM2x3M3x2{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::zero()))})),          
-          #[cfg(all(feature = $value_string, feature = "RowVectorD"))]
+          #[cfg(feature = "RowVectorD")]
           (Value::$matrix_kind(Matrix::RowDVector(lhs)), Value::$matrix_kind(Matrix::DVector(rhs))) => Ok(Box::new(MatMulRDVD{lhs, rhs, out: new_ref(Matrix1::from_element($target_type::zero()))})),
-          #[cfg(all(feature = $value_string, feature = "VectorD"))]
+          #[cfg(feature = "VectorD")]
           (Value::$matrix_kind(Matrix::DVector(lhs)),    Value::$matrix_kind(Matrix::RowDVector(rhs))) => {
             let rows = {lhs.borrow().len()};
             let cols = {rhs.borrow().len()};
             Ok(Box::new(MatMulVDRD{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::zero()))}))
           },
-          #[cfg(all(feature = $value_string, feature = "MatrixD"))]
+          #[cfg(feature = "MatrixD")]
           (Value::$matrix_kind(Matrix::DMatrix(lhs)), Value::$matrix_kind(Matrix::DMatrix(rhs))) => {
             let (rows,_) = {lhs.borrow().shape()};
             let (_,cols) = {rhs.borrow().shape()};
@@ -134,35 +134,35 @@ macro_rules! impl_transpose_match_arms {
     match $arg {
       $(
         $(
-          #[cfg(all(feature = $value_string, feature = "RowVector4"))]
+          #[cfg(feature = "RowVector4")]
           Value::$matrix_kind(Matrix::<$target_type>::RowVector4(arg)) => Ok(Box::new(TransposeR4{arg: arg.clone(), out: new_ref(Vector4::from_element($default)) })),
-          #[cfg(all(feature = $value_string, feature = "RowVector3"))]
+          #[cfg(feature = "RowVector3")]
           Value::$matrix_kind(Matrix::<$target_type>::RowVector3(arg)) => Ok(Box::new(TransposeR3{arg: arg.clone(), out: new_ref(Vector3::from_element($default)) })),
-          #[cfg(all(feature = $value_string, feature = "RowVector2"))]
+          #[cfg(feature = "RowVector2")]
           Value::$matrix_kind(Matrix::<$target_type>::RowVector2(arg)) => Ok(Box::new(TransposeR2{arg: arg.clone(), out: new_ref(Vector2::from_element($default)) })),
-          #[cfg(all(feature = $value_string, feature = "Vector4"))]
+          #[cfg(feature = "Vector4")]
           Value::$matrix_kind(Matrix::<$target_type>::Vector4(arg))    => Ok(Box::new(TransposeV4{arg: arg.clone(), out: new_ref(RowVector4::from_element($default)) })),
-          #[cfg(all(feature = $value_string, feature = "Vector3"))]
+          #[cfg(feature = "Vector3")]
           Value::$matrix_kind(Matrix::<$target_type>::Vector3(arg))    => Ok(Box::new(TransposeV3{arg: arg.clone(), out: new_ref(RowVector3::from_element($default)) })),
-          #[cfg(all(feature = $value_string, feature = "Vector2"))]
+          #[cfg(feature = "Vector2")]
           Value::$matrix_kind(Matrix::<$target_type>::Vector2(arg))    => Ok(Box::new(TransposeV2{arg: arg.clone(), out: new_ref(RowVector2::from_element($default)) })),
-          #[cfg(all(feature = $value_string, feature = "Matrix4"))]
+          #[cfg(feature = "Matrix4")]
           Value::$matrix_kind(Matrix::<$target_type>::Matrix4(arg))    => Ok(Box::new(TransposeM4{arg: arg.clone(), out: new_ref(Matrix4::from_element($default))})),
-          #[cfg(all(feature = $value_string, feature = "Matrix3"))]
+          #[cfg(feature = "Matrix3")]
           Value::$matrix_kind(Matrix::<$target_type>::Matrix3(arg))    => Ok(Box::new(TransposeM3{arg: arg.clone(), out: new_ref(Matrix3::from_element($default))})),
-          #[cfg(all(feature = $value_string, feature = "Matrix2"))]
+          #[cfg(feature = "Matrix2")]
           Value::$matrix_kind(Matrix::<$target_type>::Matrix2(arg))    => Ok(Box::new(TransposeM2{arg: arg.clone(), out: new_ref(Matrix2::from_element($default))})),
-          #[cfg(all(feature = $value_string, feature = "Matrix1"))]
+          #[cfg(feature = "Matrix1")]
           Value::$matrix_kind(Matrix::<$target_type>::Matrix1(arg))    => Ok(Box::new(TransposeM1{arg: arg.clone(), out: new_ref(Matrix1::from_element($default))})),
-          #[cfg(all(feature = $value_string, feature = "Matrix2x3"))]
+          #[cfg(feature = "Matrix2x3")]
           Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(arg))  => Ok(Box::new(TransposeM2x3{arg: arg.clone(), out: new_ref(Matrix3x2::from_element($default))})),          
-          #[cfg(all(feature = $value_string, feature = "Matrix3x2"))]
+          #[cfg(feature = "Matrix3x2")]
           Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(arg))  => Ok(Box::new(TransposeM3x2{arg: arg.clone(), out: new_ref(Matrix2x3::from_element($default))})),          
-          #[cfg(all(feature = $value_string, feature = "VectorD"))]
+          #[cfg(feature = "VectorD")]
           Value::$matrix_kind(Matrix::<$target_type>::DVector(arg))    => Ok(Box::new(TransposeVD{arg: arg.clone(), out: new_ref(RowDVector::from_element(arg.borrow().len(),$default))})),
-          #[cfg(all(feature = $value_string, feature = "RowVectorD"))]
+          #[cfg(feature = "RowVectorD")]
           Value::$matrix_kind(Matrix::<$target_type>::RowDVector(arg)) => Ok(Box::new(TransposeRD{arg: arg.clone(), out: new_ref(DVector::from_element(arg.borrow().len(),$default))})),
-          #[cfg(all(feature = $value_string, feature = "MatrixD"))]
+          #[cfg(feature = "MatrixD")]
           Value::$matrix_kind(Matrix::<$target_type>::DMatrix(arg)) => {
             let (rows,cols) = {arg.borrow().shape()};
             Ok(Box::new(TransposeMD{arg, out: new_ref(DMatrix::from_element(rows,cols,$default))}))
