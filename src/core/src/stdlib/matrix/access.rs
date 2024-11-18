@@ -368,21 +368,36 @@ macro_rules! access_1d {
   macro_rules! impl_access_fxn_shape {
     ($name:ident, $ix_type:ty, $out_type:ty, $fxn:ident) => {
       paste!{
-        impl_access_fxn!([<$name V2>],   Vector2<T>,    $ix_type, $out_type, $fxn);
-        impl_access_fxn!([<$name V3>],   Vector3<T>,    $ix_type, $out_type, $fxn);
-        impl_access_fxn!([<$name V4>],   Vector4<T>,    $ix_type, $out_type, $fxn);
-        impl_access_fxn!([<$name R2>],   RowVector2<T>, $ix_type, $out_type, $fxn);
-        impl_access_fxn!([<$name R3>],   RowVector3<T>, $ix_type, $out_type, $fxn);
-        impl_access_fxn!([<$name R4>],   RowVector4<T>, $ix_type, $out_type, $fxn);
+        #[cfg(feature = "Matrix1")]
         impl_access_fxn!([<$name M1>],   Matrix1<T>,    $ix_type, $out_type, $fxn);
+        #[cfg(feature = "Matrix2")]
         impl_access_fxn!([<$name M2>],   Matrix2<T>,    $ix_type, $out_type, $fxn);
+        #[cfg(feature = "Matrix3")]
         impl_access_fxn!([<$name M3>],   Matrix3<T>,    $ix_type, $out_type, $fxn);
+        #[cfg(feature = "Matrix4")]
         impl_access_fxn!([<$name M4>],   Matrix4<T>,    $ix_type, $out_type, $fxn);
+        #[cfg(feature = "Matrix2x3")]
         impl_access_fxn!([<$name M2x3>], Matrix2x3<T>,  $ix_type, $out_type, $fxn);
+        #[cfg(feature = "Matrix3x2")]
         impl_access_fxn!([<$name M3x2>], Matrix3x2<T>,  $ix_type, $out_type, $fxn);
+        #[cfg(feature = "MatrixD")]
         impl_access_fxn!([<$name MD>],   DMatrix<T>,    $ix_type, $out_type, $fxn);
-        impl_access_fxn!([<$name RD>],   RowDVector<T>, $ix_type, $out_type, $fxn);
+        #[cfg(feature = "Vector2")]
+        impl_access_fxn!([<$name V2>],   Vector2<T>,    $ix_type, $out_type, $fxn);
+        #[cfg(feature = "Vector3")]
+        impl_access_fxn!([<$name V3>],   Vector3<T>,    $ix_type, $out_type, $fxn);
+        #[cfg(feature = "Vector4")]
+        impl_access_fxn!([<$name V4>],   Vector4<T>,    $ix_type, $out_type, $fxn);
+        #[cfg(feature = "VectorD")]
         impl_access_fxn!([<$name VD>],   DVector<T>,    $ix_type, $out_type, $fxn);
+        #[cfg(feature = "RowVector2")]
+        impl_access_fxn!([<$name R2>],   RowVector2<T>, $ix_type, $out_type, $fxn);
+        #[cfg(feature = "RowVector3")]
+        impl_access_fxn!([<$name R3>],   RowVector3<T>, $ix_type, $out_type, $fxn);
+        #[cfg(feature = "RowVector4")]
+        impl_access_fxn!([<$name R4>],   RowVector4<T>, $ix_type, $out_type, $fxn);
+        #[cfg(feature = "RowVectorD")]
+        impl_access_fxn!([<$name RD>],   RowDVector<T>, $ix_type, $out_type, $fxn);
       }
     };}
   

@@ -127,21 +127,36 @@ macro_rules! transpose_op {
     unsafe { *$out = (*$arg).transpose(); }
   };}
 
-impl_bool_urop!(TransposeM1, Matrix1<T>, Matrix1<T>, transpose_op);
+#[cfg(feature = "Matrix1")]
+  impl_bool_urop!(TransposeM1, Matrix1<T>, Matrix1<T>, transpose_op);
+#[cfg(feature = "Matrix2")]
 impl_bool_urop!(TransposeM2, Matrix2<T>, Matrix2<T>, transpose_op);
+#[cfg(feature = "Matrix3")]
 impl_bool_urop!(TransposeM3, Matrix3<T>, Matrix3<T>, transpose_op);
+#[cfg(feature = "Matrix4")]
 impl_bool_urop!(TransposeM4, Matrix4<T>, Matrix4<T>, transpose_op);
+#[cfg(feature = "Matrix2x3")]
 impl_bool_urop!(TransposeM2x3, Matrix2x3<T>, Matrix3x2<T>, transpose_op);
+#[cfg(feature = "Matrix3x2")]
 impl_bool_urop!(TransposeM3x2, Matrix3x2<T>, Matrix2x3<T>, transpose_op);
-impl_bool_urop!(TransposeV2, Vector2<T>, RowVector2<T>, transpose_op);
-impl_bool_urop!(TransposeV3, Vector3<T>, RowVector3<T>, transpose_op);
-impl_bool_urop!(TransposeV4, Vector4<T>, RowVector4<T>, transpose_op); 
-impl_bool_urop!(TransposeR2, RowVector2<T>, Vector2<T>, transpose_op);
-impl_bool_urop!(TransposeR3, RowVector3<T>, Vector3<T>, transpose_op);
-impl_bool_urop!(TransposeR4, RowVector4<T>, Vector4<T>, transpose_op); 
-impl_bool_urop!(TransposeRD, RowDVector<T>, DVector<T>, transpose_op);
-impl_bool_urop!(TransposeVD, DVector<T>, RowDVector<T>, transpose_op);
+#[cfg(feature = "MatrixD")]
 impl_bool_urop!(TransposeMD, DMatrix<T>, DMatrix<T>, transpose_op);
+#[cfg(feature = "Vector2")]
+impl_bool_urop!(TransposeV2, Vector2<T>, RowVector2<T>, transpose_op);
+#[cfg(feature = "Vector3")]
+impl_bool_urop!(TransposeV3, Vector3<T>, RowVector3<T>, transpose_op);
+#[cfg(feature = "Vector4")]
+impl_bool_urop!(TransposeV4, Vector4<T>, RowVector4<T>, transpose_op); 
+#[cfg(feature = "VectorD")]
+impl_bool_urop!(TransposeVD, DVector<T>, RowDVector<T>, transpose_op);
+#[cfg(feature = "RowVector2")]
+impl_bool_urop!(TransposeR2, RowVector2<T>, Vector2<T>, transpose_op);
+#[cfg(feature = "RowVector3")]
+impl_bool_urop!(TransposeR3, RowVector3<T>, Vector3<T>, transpose_op);
+#[cfg(feature = "RowVector4")]
+impl_bool_urop!(TransposeR4, RowVector4<T>, Vector4<T>, transpose_op); 
+#[cfg(feature = "RowVectorD")]
+impl_bool_urop!(TransposeRD, RowDVector<T>, DVector<T>, transpose_op);
 
 macro_rules! impl_transpose_match_arms {
   ($arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr, $value_string:tt),+);+ $(;)?) => {
