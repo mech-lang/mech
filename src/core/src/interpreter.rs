@@ -4,7 +4,7 @@ use crate::kind::Kind;
 use crate::stdlib::{math::*,
                     logic::*,
                     compare::*,
-                    matrix::*,
+                    matrix::{*, access::*, set::*},
                     table::*,
                     convert::*
                   };
@@ -880,18 +880,31 @@ fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef)
   }
 
   let mat = match &out[0] {
+    #[cfg(feature = "Bool")]
     Value::MatrixBool(_) => Value::MatrixBool(bool::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecbool()), row_n, col_n)),
+    #[cfg(feature = "U8")]
     Value::MatrixU8(_)   => Value::MatrixU8(u8::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu8()), row_n, col_n)),
+    #[cfg(feature = "U16")]
     Value::MatrixU16(_)  => Value::MatrixU16(u16::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu16()), row_n, col_n)),
+    #[cfg(feature = "U32")]
     Value::MatrixU32(_)  => Value::MatrixU32(u32::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu32()), row_n, col_n)),
+    #[cfg(feature = "U65")]
     Value::MatrixU64(_)  => Value::MatrixU64(u64::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu64()), row_n, col_n)),
+    #[cfg(feature = "U128")]
     Value::MatrixU128(_) => Value::MatrixU128(u128::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu128()), row_n, col_n)),
+    #[cfg(feature = "I8")]
     Value::MatrixI8(_)   => Value::MatrixI8(i8::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci8()), row_n, col_n)),
+    #[cfg(feature = "I16")]
     Value::MatrixI16(_)  => Value::MatrixI16(i16::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci16()), row_n, col_n)),
+    #[cfg(feature = "I32")]
     Value::MatrixI32(_)  => Value::MatrixI32(i32::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci32()), row_n, col_n)),
+    #[cfg(feature = "I64")]
     Value::MatrixI64(_)  => Value::MatrixI64(i64::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci64()), row_n, col_n)),
+    #[cfg(feature = "I128")]
     Value::MatrixI128(_) => Value::MatrixI128(i128::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci128()), row_n, col_n)),
+    #[cfg(feature = "F32")]
     Value::MatrixF32(_)  => Value::MatrixF32(F32::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecf32()), row_n, col_n)),
+    #[cfg(feature = "F64")]
     Value::MatrixF64(_)  => Value::MatrixF64(F64::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecf64()), row_n, col_n)),
     _ => todo!(),
   };
@@ -906,18 +919,31 @@ fn matrix_row(r: &MatrixRow, plan: Plan, symbols: SymbolTableRef, functions: Fun
     row.push(result);
   }
   let mat = match &row[0] {
+    #[cfg(feature = "Bool")]
     Value::Bool(_) => {Value::MatrixBool(bool::to_matrix(row.iter().map(|v| v.as_bool().unwrap().borrow().clone()).collect(),1,row.len()))},
+    #[cfg(feature = "U8")]
     Value::U8(_)   => {Value::MatrixU8(u8::to_matrix(row.iter().map(|v| v.as_u8().unwrap().borrow().clone()).collect(),1,row.len()))},
+    #[cfg(feature = "U16")]
     Value::U16(_)  => {Value::MatrixU16(u16::to_matrix(row.iter().map(|v| v.as_u16().unwrap().borrow().clone()).collect(),1,row.len()))},
+    #[cfg(feature = "U32")]
     Value::U32(_)  => {Value::MatrixU32(u32::to_matrix(row.iter().map(|v| v.as_u32().unwrap().borrow().clone()).collect(),1,row.len()))},
+    #[cfg(feature = "U65")]
     Value::U64(_)  => {Value::MatrixU64(u64::to_matrix(row.iter().map(|v| v.as_u64().unwrap().borrow().clone()).collect(),1,row.len()))},
+    #[cfg(feature = "U128")]
     Value::U128(_) => {Value::MatrixU128(u128::to_matrix(row.iter().map(|v| v.as_u128().unwrap().borrow().clone()).collect(),1,row.len()))},
+    #[cfg(feature = "I8")]
     Value::I8(_)   => {Value::MatrixI8(i8::to_matrix(row.iter().map(|v| v.as_i8().unwrap().borrow().clone()).collect(),1,row.len()))},
+    #[cfg(feature = "I16")]
     Value::I16(_)  => {Value::MatrixI16(i16::to_matrix(row.iter().map(|v| v.as_i16().unwrap().borrow().clone()).collect(),1,row.len()))},
+    #[cfg(feature = "I32")]
     Value::I32(_)  => {Value::MatrixI32(i32::to_matrix(row.iter().map(|v| v.as_i32().unwrap().borrow().clone()).collect(),1,row.len()))},
+    #[cfg(feature = "I64")]
     Value::I64(_)  => {Value::MatrixI64(i64::to_matrix(row.iter().map(|v| v.as_i64().unwrap().borrow().clone()).collect(),1,row.len()))},
+    #[cfg(feature = "I128")]
     Value::I128(_) => {Value::MatrixI128(i128::to_matrix(row.iter().map(|v| v.as_i128().unwrap().borrow().clone()).collect(),1,row.len()))},
+    #[cfg(feature = "F32")]
     Value::F32(_)  => {Value::MatrixF32(F32::to_matrix(row.iter().map(|v| v.as_f32().unwrap().borrow().clone()).collect(),1,row.len()))},
+    #[cfg(feature = "F64")]
     Value::F64(_)  => {Value::MatrixF64(F64::to_matrix(row.iter().map(|v| v.as_f64().unwrap().borrow().clone()).collect(),1,row.len()))},
     _ => todo!(),
   };

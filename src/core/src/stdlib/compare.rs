@@ -54,18 +54,18 @@ fn impl_gt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunctio
   impl_binop_match_arms!(
     GT,
     (lhs_value, rhs_value),
-    I8,   I8   => MatrixI8,   i8,   false;
-    I16,  I16  => MatrixI16,  i16,  false;
-    I32,  I32  => MatrixI32,  i32,  false;
-    I64,  I64  => MatrixI64,  i64,  false;
-    I128, I128 => MatrixI128, i128, false;
-    U8,   U8   => MatrixU8,   u8,   false;
-    U16,  U16  => MatrixU16,  u16,  false;
-    U32,  U32  => MatrixU32,  u32,  false;
-    U64,  U64  => MatrixU64,  u64,  false;
-    U128, U128 => MatrixU128, u128, false;
-    F32,  F32  => MatrixF32,  F32,  false;
-    F64,  F64  => MatrixF64,  F64,  false;
+    I8,   I8   => MatrixI8,   i8,   false, "I8";
+    I16,  I16  => MatrixI16,  i16,  false, "I16";
+    I32,  I32  => MatrixI32,  i32,  false, "I32";
+    I64,  I64  => MatrixI64,  i64,  false, "I64";
+    I128, I128 => MatrixI128, i128, false, "I128";
+    U8,   U8   => MatrixU8,   u8,   false, "U8";
+    U16,  U16  => MatrixU16,  u16,  false, "U16";
+    U32,  U32  => MatrixU32,  u32,  false, "U32";
+    U64,  U64  => MatrixU64,  u64,  false, "U64";
+    U128, U128 => MatrixU128, u128, false, "U128";
+    F32,  F32  => MatrixF32,  F32,  false, "F32";
+    F64,  F64  => MatrixF64,  F64,  false, "F64";
   )
 }
 
@@ -106,18 +106,18 @@ fn impl_gte_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
   impl_binop_match_arms!(
     GTE,
     (lhs_value, rhs_value),
-    I8,   I8   => MatrixI8,   i8,   false;
-    I16,  I16  => MatrixI16,  i16,  false;
-    I32,  I32  => MatrixI32,  i32,  false;
-    I64,  I64  => MatrixI64,  i64,  false;
-    I128, I128 => MatrixI128, i128, false;
-    U8,   U8   => MatrixU8,   u8,   false;
-    U16,  U16  => MatrixU16,  u16,  false;
-    U32,  U32  => MatrixU32,  u32,  false;
-    U64,  U64  => MatrixU64,  u64,  false;
-    U128, U128 => MatrixU128, u128, false;
-    F32,  F32  => MatrixF32,  F32,  false;
-    F64,  F64  => MatrixF64,  F64,  false;
+    I8,   I8   => MatrixI8,   i8,   false, "I8";
+    I16,  I16  => MatrixI16,  i16,  false, "I16";
+    I32,  I32  => MatrixI32,  i32,  false, "I32";
+    I64,  I64  => MatrixI64,  i64,  false, "I64";
+    I128, I128 => MatrixI128, i128, false, "I128";
+    U8,   U8   => MatrixU8,   u8,   false, "U8";
+    U16,  U16  => MatrixU16,  u16,  false, "U16";
+    U32,  U32  => MatrixU32,  u32,  false, "U32";
+    U64,  U64  => MatrixU64,  u64,  false, "U64";
+    U128, U128 => MatrixU128, u128, false, "U128";
+    F32,  F32  => MatrixF32,  F32,  false, "F32";
+    F64,  F64  => MatrixF64,  F64,  false, "F64";
   )
 }
 
@@ -158,18 +158,18 @@ fn impl_lt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunctio
   impl_binop_match_arms!(
     LT,
     (lhs_value, rhs_value),
-    I8,   I8   => MatrixI8,   i8,   false;
-    I16,  I16  => MatrixI16,  i16,  false;
-    I32,  I32  => MatrixI32,  i32,  false;
-    I64,  I64  => MatrixI64,  i64,  false;
-    I128, I128 => MatrixI128, i128, false;
-    U8,   U8   => MatrixU8,   u8,   false;
-    U16,  U16  => MatrixU16,  u16,  false;
-    U32,  U32  => MatrixU32,  u32,  false;
-    U64,  U64  => MatrixU64,  u64,  false;
-    U128, U128 => MatrixU128, u128, false;
-    F32,  F32  => MatrixF32,  F32,  false;
-    F64,  F64  => MatrixF64,  F64,  false;
+    I8,   I8   => MatrixI8,   i8,   false, "I8";
+    I16,  I16  => MatrixI16,  i16,  false, "I16";
+    I32,  I32  => MatrixI32,  i32,  false, "I32";
+    I64,  I64  => MatrixI64,  i64,  false, "I64";
+    I128, I128 => MatrixI128, i128, false, "I128";
+    U8,   U8   => MatrixU8,   u8,   false, "U8";
+    U16,  U16  => MatrixU16,  u16,  false, "U16";
+    U32,  U32  => MatrixU32,  u32,  false, "U32";
+    U64,  U64  => MatrixU64,  u64,  false, "U64";
+    U128, U128 => MatrixU128, u128, false, "U128";
+    F32,  F32  => MatrixF32,  F32,  false, "F32";
+    F64,  F64  => MatrixF64,  F64,  false, "F64";
   )
 }
 
@@ -210,18 +210,18 @@ fn impl_lte_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
   impl_binop_match_arms!(
     LTE,
     (lhs_value, rhs_value),
-    I8,   I8   => MatrixI8,   i8,   false;
-    I16,  I16  => MatrixI16,  i16,  false;
-    I32,  I32  => MatrixI32,  i32,  false;
-    I64,  I64  => MatrixI64,  i64,  false;
-    I128, I128 => MatrixI128, i128, false;
-    U8,   U8   => MatrixU8,   u8,   false;
-    U16,  U16  => MatrixU16,  u16,  false;
-    U32,  U32  => MatrixU32,  u32,  false;
-    U64,  U64  => MatrixU64,  u64,  false;
-    U128, U128 => MatrixU128, u128, false;
-    F32,  F32  => MatrixF32,  F32,  false;
-    F64,  F64  => MatrixF64,  F64,  false;
+    I8,   I8   => MatrixI8,   i8,   false, "I8";
+    I16,  I16  => MatrixI16,  i16,  false, "I16";
+    I32,  I32  => MatrixI32,  i32,  false, "I32";
+    I64,  I64  => MatrixI64,  i64,  false, "I64";
+    I128, I128 => MatrixI128, i128, false, "I128";
+    U8,   U8   => MatrixU8,   u8,   false, "U8";
+    U16,  U16  => MatrixU16,  u16,  false, "U16";
+    U32,  U32  => MatrixU32,  u32,  false, "U32";
+    U64,  U64  => MatrixU64,  u64,  false, "U64";
+    U128, U128 => MatrixU128, u128, false, "U128";
+    F32,  F32  => MatrixF32,  F32,  false, "F32";
+    F64,  F64  => MatrixF64,  F64,  false, "F64";
   )
 }
 
@@ -263,19 +263,19 @@ fn impl_eq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunctio
   impl_binop_match_arms!(
     EQ,
     (lhs_value, rhs_value),
-    Bool, Bool => MatrixBool, bool, false;
-    I8,   I8   => MatrixI8,   i8,   false;
-    I16,  I16  => MatrixI16,  i16,  false;
-    I32,  I32  => MatrixI32,  i32,  false;
-    I64,  I64  => MatrixI64,  i64,  false;
-    I128, I128 => MatrixI128, i128, false;
-    U8,   U8   => MatrixU8,   u8,   false;
-    U16,  U16  => MatrixU16,  u16,  false;
-    U32,  U32  => MatrixU32,  u32,  false;
-    U64,  U64  => MatrixU64,  u64,  false;
-    U128, U128 => MatrixU128, u128, false;
-    F32,  F32  => MatrixF32,  F32,  false;
-    F64,  F64  => MatrixF64,  F64,  false;
+    Bool, Bool => MatrixBool, bool, false, "Bool";
+    I8,   I8   => MatrixI8,   i8,   false, "I8";
+    I16,  I16  => MatrixI16,  i16,  false, "I16";
+    I32,  I32  => MatrixI32,  i32,  false, "I32";
+    I64,  I64  => MatrixI64,  i64,  false, "I64";
+    I128, I128 => MatrixI128, i128, false, "I128";
+    U8,   U8   => MatrixU8,   u8,   false, "U8";
+    U16,  U16  => MatrixU16,  u16,  false, "U16";
+    U32,  U32  => MatrixU32,  u32,  false, "U32";
+    U64,  U64  => MatrixU64,  u64,  false, "U64";
+    U128, U128 => MatrixU128, u128, false, "U128";
+    F32,  F32  => MatrixF32,  F32,  false, "F32";
+    F64,  F64  => MatrixF64,  F64,  false, "F64";
   )
 }
 
@@ -316,19 +316,19 @@ fn impl_neq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
   impl_binop_match_arms!(
     NEQ,
     (lhs_value, rhs_value),
-    Bool, Bool => MatrixBool, bool, false;
-    I8,   I8   => MatrixI8,   i8,   false;
-    I16,  I16  => MatrixI16,  i16,  false;
-    I32,  I32  => MatrixI32,  i32,  false;
-    I64,  I64  => MatrixI64,  i64,  false;
-    I128, I128 => MatrixI128, i128, false;
-    U8,   U8   => MatrixU8,   u8,   false;
-    U16,  U16  => MatrixU16,  u16,  false;
-    U32,  U32  => MatrixU32,  u32,  false;
-    U64,  U64  => MatrixU64,  u64,  false;
-    U128, U128 => MatrixU128, u128, false;
-    F32,  F32  => MatrixF32,  F32,  false;
-    F64,  F64  => MatrixF64,  F64,  false;
+    Bool, Bool => MatrixBool, bool, false, "Bool";
+    I8,   I8   => MatrixI8,   i8,   false, "I8";
+    I16,  I16  => MatrixI16,  i16,  false, "I16";
+    I32,  I32  => MatrixI32,  i32,  false, "I32";
+    I64,  I64  => MatrixI64,  i64,  false, "I64";
+    I128, I128 => MatrixI128, i128, false, "I128";
+    U8,   U8   => MatrixU8,   u8,   false, "U8";
+    U16,  U16  => MatrixU16,  u16,  false, "U16";
+    U32,  U32  => MatrixU32,  u32,  false, "U32";
+    U64,  U64  => MatrixU64,  u64,  false, "U64";
+    U128, U128 => MatrixU128, u128, false, "U128";
+    F32,  F32  => MatrixF32,  F32,  false, "F32";
+    F64,  F64  => MatrixF64,  F64,  false, "F64";
   )
 }
 
