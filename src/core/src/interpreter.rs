@@ -1,6 +1,9 @@
 use crate::matrix::{Matrix, ToMatrix};
 use crate::kind::Kind;
-
+use crate::{Value, ValueKind, ValRef, ToValue};
+use crate::{MechMap, MechFunction, MechTable, MechSet, MechTuple, MechEnum};
+use crate::{F64, F32};
+use crate::{Functions, FunctionsRef, FunctionDefinition, NativeFunctionCompiler, Plan, UserFunction, SymbolTableRef, SymbolTable};
 use crate::stdlib::{math::*,
                     logic::*,
                     compare::*,
@@ -9,9 +12,7 @@ use crate::stdlib::{math::*,
                     convert::*
                   };
 use crate::stdlib::range::{RangeInclusive, RangeExclusive};
-use crate::*;
-use crate::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*};
-use crate::nodes::Matrix as Mat;
+use crate::{MechError, MechErrorKind, hash_str, new_ref, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 
 use na::DMatrix;
 use indexmap::set::IndexSet;
