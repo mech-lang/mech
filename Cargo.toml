@@ -23,7 +23,7 @@ mech-syntax = "0.2.20"
 #mech-program = "0.2.2"
 #mech-utilities = "0.2.2"
 
-clap = {version = "4.5.20", features = ["cargo"]}
+clap = {version = "4.5.21", features = ["cargo"]}
 colored = "2.1.0"
 #nom = "7.1.3"
 #hashbrown = "0.15.1"
