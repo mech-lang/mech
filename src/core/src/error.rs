@@ -3,9 +3,9 @@
 // Defines a struct for errors and an enum which enumerates the error types
 
 // ## Prelude
-
-use crate::*;
+use crate::ValueKind;
 use crate::nodes::{SourceRange, Token};
+use std::fmt;
 
 type Rows = usize;
 type Cols = usize;

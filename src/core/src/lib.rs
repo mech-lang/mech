@@ -56,12 +56,6 @@ pub use self::kind::*;
 pub use self::error::*;
 pub use self::nodes::*;
 
-/*pub trait Machine {
-  fn name(&self) -> String;
-  fn id(&self) -> u64;
-  fn on_change(&mut self, table: &Table) -> Result<(), MechError>;
-}*/
-
 pub fn hash_chars(input: &Vec<char>) -> u64 {
   seahash::hash(input.iter().map(|s| String::from(*s)).collect::<String>().as_bytes()) & 0x00FFFFFFFFFFFFFF
 }
