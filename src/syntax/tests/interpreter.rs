@@ -372,3 +372,5 @@ test_interpreter!(interpret_set_table_col2,"x := { x<f64> y<f64> | 1 2; 3 4; 5 6
 
 test_interpreter!(interpret_set_logical,"x := [1 2 3]; ix := [true false true]; x[ix] = 4; x[1] + x[2] + x[3];", Value::F64(new_ref(F64::new(10.0))));
 test_interpreter!(interpret_set_logical2,"x := [1 2 3 4]; ix := [true false true true]; x[ix] = 5; x[1] + x[2] + x[3] + x[4];", Value::F64(new_ref(F64::new(17.0))));
+test_interpreter!(interpret_set_logical_scalar,"x := [1 2 3]; x[4 > 3] = 5; x[1] + x[2] + x[3]", Value::F64(new_ref(F64::new(15.0))));
+
