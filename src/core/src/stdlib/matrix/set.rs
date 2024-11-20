@@ -68,67 +68,67 @@ macro_rules! impl_set_scalar_fxn {
       fn to_string(&self) -> String { format!("{:?}", self) }
     }};}
 
-    #[cfg(feature = "RowVector4")]
-    impl_set_scalar_fxn!(Set1DSR4,RowVector4, set_1d_set_scalar, usize);
-    #[cfg(feature = "RowVector3")]
-    impl_set_scalar_fxn!(Set1DSR3,RowVector3, set_1d_set_scalar, usize);
-    #[cfg(feature = "RowVector2")]
-    impl_set_scalar_fxn!(Set1DSR2,RowVector2, set_1d_set_scalar, usize);
-    #[cfg(feature = "RowVectorD")]
-    impl_set_scalar_fxn!(Set1DSRD,RowDVector, set_1d_set_scalar, usize);
-    #[cfg(feature = "Vector4")]
-    impl_set_scalar_fxn!(Set1DSV4,Vector4, set_1d_set_scalar, usize);
-    #[cfg(feature = "Vector3")]
-    impl_set_scalar_fxn!(Set1DSV3,Vector3, set_1d_set_scalar, usize);
-    #[cfg(feature = "Vector2")]
-    impl_set_scalar_fxn!(Set1DSV2,Vector2, set_1d_set_scalar, usize);
-    #[cfg(feature = "VectorD")]
-    impl_set_scalar_fxn!(Set1DSVD,DVector, set_1d_set_scalar, usize);
-    #[cfg(feature = "MAtrix4")]
-    impl_set_scalar_fxn!(Set1DSM4,Matrix4, set_1d_set_scalar, usize);
-    #[cfg(feature = "Matrix3")]
-    impl_set_scalar_fxn!(Set1DSM3,Matrix3, set_1d_set_scalar, usize);
-    #[cfg(feature = "Matrix2")]
-    impl_set_scalar_fxn!(Set1DSM2,Matrix2, set_1d_set_scalar, usize);
-    #[cfg(feature = "MAtrix1")]
-    impl_set_scalar_fxn!(Set1DSM1,Matrix1, set_1d_set_scalar, usize);
-    #[cfg(feature = "Matrix2x3")]
-    impl_set_scalar_fxn!(Set1DSM2x3,Matrix2x3, set_1d_set_scalar, usize);
-    #[cfg(feature = "Matrix3x2")]
-    impl_set_scalar_fxn!(Set1DSM3x2,Matrix3x2, set_1d_set_scalar, usize);
-    #[cfg(feature = "MatrixD")]
-    impl_set_scalar_fxn!(Set1DSMD,DMatrix, set_1d_set_scalar, usize);
+#[cfg(feature = "RowVector4")]
+impl_set_scalar_fxn!(Set1DSR4,RowVector4, set_1d_set_scalar, usize);
+#[cfg(feature = "RowVector3")]
+impl_set_scalar_fxn!(Set1DSR3,RowVector3, set_1d_set_scalar, usize);
+#[cfg(feature = "RowVector2")]
+impl_set_scalar_fxn!(Set1DSR2,RowVector2, set_1d_set_scalar, usize);
+#[cfg(feature = "RowVectorD")]
+impl_set_scalar_fxn!(Set1DSRD,RowDVector, set_1d_set_scalar, usize);
+#[cfg(feature = "Vector4")]
+impl_set_scalar_fxn!(Set1DSV4,Vector4, set_1d_set_scalar, usize);
+#[cfg(feature = "Vector3")]
+impl_set_scalar_fxn!(Set1DSV3,Vector3, set_1d_set_scalar, usize);
+#[cfg(feature = "Vector2")]
+impl_set_scalar_fxn!(Set1DSV2,Vector2, set_1d_set_scalar, usize);
+#[cfg(feature = "VectorD")]
+impl_set_scalar_fxn!(Set1DSVD,DVector, set_1d_set_scalar, usize);
+#[cfg(feature = "MAtrix4")]
+impl_set_scalar_fxn!(Set1DSM4,Matrix4, set_1d_set_scalar, usize);
+#[cfg(feature = "Matrix3")]
+impl_set_scalar_fxn!(Set1DSM3,Matrix3, set_1d_set_scalar, usize);
+#[cfg(feature = "Matrix2")]
+impl_set_scalar_fxn!(Set1DSM2,Matrix2, set_1d_set_scalar, usize);
+#[cfg(feature = "MAtrix1")]
+impl_set_scalar_fxn!(Set1DSM1,Matrix1, set_1d_set_scalar, usize);
+#[cfg(feature = "Matrix2x3")]
+impl_set_scalar_fxn!(Set1DSM2x3,Matrix2x3, set_1d_set_scalar, usize);
+#[cfg(feature = "Matrix3x2")]
+impl_set_scalar_fxn!(Set1DSM3x2,Matrix3x2, set_1d_set_scalar, usize);
+#[cfg(feature = "MatrixD")]
+impl_set_scalar_fxn!(Set1DSMD,DMatrix, set_1d_set_scalar, usize);
 
-    #[cfg(feature = "RowVector4")]
-    impl_set_scalar_fxn!(Set1DSR4B,RowVector4, set_1d_set_scalar_b, bool);
-    #[cfg(feature = "RowVector3")]
-    impl_set_scalar_fxn!(Set1DSR3B,RowVector3, set_1d_set_scalar_b, bool);
-    #[cfg(feature = "RowVector2")]
-    impl_set_scalar_fxn!(Set1DSR2B,RowVector2, set_1d_set_scalar_b, bool);
-    #[cfg(feature = "RowVectorD")]
-    impl_set_scalar_fxn!(Set1DSRDB,RowDVector, set_1d_set_scalar_b, bool);
-    #[cfg(feature = "Vector4")]
-    impl_set_scalar_fxn!(Set1DSV4B,Vector4, set_1d_set_scalar_b, bool);
-    #[cfg(feature = "Vector3")]
-    impl_set_scalar_fxn!(Set1DSV3B,Vector3, set_1d_set_scalar_b, bool);
-    #[cfg(feature = "Vector2")]
-    impl_set_scalar_fxn!(Set1DSV2B,Vector2, set_1d_set_scalar_b, bool);
-    #[cfg(feature = "VectorD")]
-    impl_set_scalar_fxn!(Set1DSVDB,DVector, set_1d_set_scalar_b, bool);
-    #[cfg(feature = "MAtrix4")]
-    impl_set_scalar_fxn!(Set1DSM4B,Matrix4, set_1d_set_scalar_b, bool);
-    #[cfg(feature = "Matrix3")]
-    impl_set_scalar_fxn!(Set1DSM3B,Matrix3, set_1d_set_scalar_b, bool);
-    #[cfg(feature = "Matrix2")]
-    impl_set_scalar_fxn!(Set1DSM2B,Matrix2, set_1d_set_scalar_b, bool);
-    #[cfg(feature = "MAtrix1")]
-    impl_set_scalar_fxn!(Set1DSM1B,Matrix1, set_1d_set_scalar_b, bool);
-    #[cfg(feature = "Matrix2x3")]
-    impl_set_scalar_fxn!(Set1DSM2x3B,Matrix2x3, set_1d_set_scalar_b, bool);
-    #[cfg(feature = "Matrix3x2")]
-    impl_set_scalar_fxn!(Set1DSM3x2B,Matrix3x2, set_1d_set_scalar_b, bool);
-    #[cfg(feature = "MatrixD")]
-    impl_set_scalar_fxn!(Set1DSMDB,DMatrix, set_1d_set_scalar_b, bool);
+#[cfg(feature = "RowVector4")]
+impl_set_scalar_fxn!(Set1DSR4B,RowVector4, set_1d_set_scalar_b, bool);
+#[cfg(feature = "RowVector3")]
+impl_set_scalar_fxn!(Set1DSR3B,RowVector3, set_1d_set_scalar_b, bool);
+#[cfg(feature = "RowVector2")]
+impl_set_scalar_fxn!(Set1DSR2B,RowVector2, set_1d_set_scalar_b, bool);
+#[cfg(feature = "RowVectorD")]
+impl_set_scalar_fxn!(Set1DSRDB,RowDVector, set_1d_set_scalar_b, bool);
+#[cfg(feature = "Vector4")]
+impl_set_scalar_fxn!(Set1DSV4B,Vector4, set_1d_set_scalar_b, bool);
+#[cfg(feature = "Vector3")]
+impl_set_scalar_fxn!(Set1DSV3B,Vector3, set_1d_set_scalar_b, bool);
+#[cfg(feature = "Vector2")]
+impl_set_scalar_fxn!(Set1DSV2B,Vector2, set_1d_set_scalar_b, bool);
+#[cfg(feature = "VectorD")]
+impl_set_scalar_fxn!(Set1DSVDB,DVector, set_1d_set_scalar_b, bool);
+#[cfg(feature = "MAtrix4")]
+impl_set_scalar_fxn!(Set1DSM4B,Matrix4, set_1d_set_scalar_b, bool);
+#[cfg(feature = "Matrix3")]
+impl_set_scalar_fxn!(Set1DSM3B,Matrix3, set_1d_set_scalar_b, bool);
+#[cfg(feature = "Matrix2")]
+impl_set_scalar_fxn!(Set1DSM2B,Matrix2, set_1d_set_scalar_b, bool);
+#[cfg(feature = "MAtrix1")]
+impl_set_scalar_fxn!(Set1DSM1B,Matrix1, set_1d_set_scalar_b, bool);
+#[cfg(feature = "Matrix2x3")]
+impl_set_scalar_fxn!(Set1DSM2x3B,Matrix2x3, set_1d_set_scalar_b, bool);
+#[cfg(feature = "Matrix3x2")]
+impl_set_scalar_fxn!(Set1DSM3x2B,Matrix3x2, set_1d_set_scalar_b, bool);
+#[cfg(feature = "MatrixD")]
+impl_set_scalar_fxn!(Set1DSMDB,DMatrix, set_1d_set_scalar_b, bool);
 
 macro_rules! impl_set_scalar_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident,$value_string:tt);+ $(;)?) => {
