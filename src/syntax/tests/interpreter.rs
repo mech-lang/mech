@@ -374,5 +374,6 @@ test_interpreter!(interpret_set_logical,"x := [1 2 3]; ix := [true false true]; 
 test_interpreter!(interpret_set_logical2,"x := [1 2 3 4]; ix := [true false true true]; x[ix] = 5; x[1] + x[2] + x[3] + x[4];", Value::F64(new_ref(F64::new(17.0))));
 test_interpreter!(interpret_set_logical_scalar,"x := [1 2 3]; x[4 > 3] = 5; x[1] + x[2] + x[3]", Value::F64(new_ref(F64::new(15.0))));
 
-test_interpreter!(interpret_set_logical_vector_slice_bool,"x := [1 2; 4 5]; x[[true false], 2] = 42; x[1] + x[2] + x[3] + x[4];", Value::F64(new_ref(F64::new(52.0))));
-test_interpreter!(interpret_set_logical_slice_vector_bool,"x := [1 2; 4 5]; x[2,[false true]] = 42; x[1] + x[2] + x[3] + x[4]", Value::F64(new_ref(F64::new(49.0))));
+test_interpreter!(interpret_set_logical_vector_scalar_bool,"x := [1 2; 4 5]; x[[true false], 2] = 42; x[1] + x[2] + x[3] + x[4];", Value::F64(new_ref(F64::new(52.0))));
+test_interpreter!(interpret_set_logical_scalar_vector_bool,"x := [1 2; 4 5]; x[2,[false true]] = 42; x[1] + x[2] + x[3] + x[4]", Value::F64(new_ref(F64::new(49.0))));
+test_interpreter!(interpret_set_logical_vector_vector_bool,"x := [1 2; 4 5]; x[[true false],[false true]] = 42; x[1] + x[2] + x[3] + x[4]", Value::F64(new_ref(F64::new(50.0))));
