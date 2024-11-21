@@ -380,5 +380,8 @@ test_interpreter!(interpret_set_logical_vector_vector_bool,"x := [1 2; 4 5]; x[[
 
 test_interpreter!(interpret_set_logical_all_vector_bool,"x := [1 2; 4 5]; x[:,[1 2]] = 42; x[1] + x[2] + x[3] + x[4]", Value::F64(new_ref(F64::new(168.0))));
 
+test_interpreter!(interpret_set_logical_vector_vector_bool,"x := [1 2 ; 4 5 ; 7 8]; x[[1 3],:] = 42; x[1] + x[2] + x[3] + x[4] + x[5] + x[6]", Value::F64(new_ref(F64::new(177.0))));
+
+
 
 
