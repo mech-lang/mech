@@ -44,7 +44,7 @@ macro_rules! impl_as_type {
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, 
-  String, Bool, Matrix(Box<ValueKind>,Vec<usize>), Enum(u64), Set, Map, Record, Table, Tuple, Id, Index, Reference, Atom(u64), Empty, Any
+  String, Bool, Matrix(Box<ValueKind>,(usize,usize)), Enum(u64), Set, Map, Record, Table, Tuple, Id, Index, Reference, Atom(u64), Empty, Any
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -259,21 +259,21 @@ impl Value {
       Value::String(_) => ValueKind::String,
       Value::Bool(_) => ValueKind::Bool,
       Value::Atom(x) => ValueKind::Atom(*x),
-      Value::MatrixIndex(x) => ValueKind::Matrix(Box::new(ValueKind::Index),x.shape()),
-      Value::MatrixBool(x) => ValueKind::Matrix(Box::new(ValueKind::Bool),x.shape()),
-      Value::MatrixU8(x) => ValueKind::Matrix(Box::new(ValueKind::U8),x.shape()),
-      Value::MatrixU16(x) => ValueKind::Matrix(Box::new(ValueKind::U16),x.shape()),
-      Value::MatrixU32(x) => ValueKind::Matrix(Box::new(ValueKind::U32),x.shape()),
-      Value::MatrixU64(x) => ValueKind::Matrix(Box::new(ValueKind::U64),x.shape()),
-      Value::MatrixU128(x) => ValueKind::Matrix(Box::new(ValueKind::U128),x.shape()),
-      Value::MatrixI8(x) => ValueKind::Matrix(Box::new(ValueKind::I8),x.shape()),
-      Value::MatrixI16(x) => ValueKind::Matrix(Box::new(ValueKind::I16),x.shape()),
-      Value::MatrixI32(x) => ValueKind::Matrix(Box::new(ValueKind::I32),x.shape()),
-      Value::MatrixI64(x) => ValueKind::Matrix(Box::new(ValueKind::I64),x.shape()),
-      Value::MatrixI128(x) => ValueKind::Matrix(Box::new(ValueKind::U128,),x.shape()),
-      Value::MatrixF32(x) => ValueKind::Matrix(Box::new(ValueKind::F32),x.shape()),
-      Value::MatrixF64(x) => ValueKind::Matrix(Box::new(ValueKind::F64),x.shape()),
-      Value::MatrixValue(x) => ValueKind::Matrix(Box::new(ValueKind::Any),x.shape()),
+      Value::MatrixIndex(x) => ValueKind::Matrix(Box::new(ValueKind::Index),(x.shape()[0],x.shape()[1])),
+      Value::MatrixBool(x) => ValueKind::Matrix(Box::new(ValueKind::Bool),(x.shape()[0],x.shape()[1])),
+      Value::MatrixU8(x) => ValueKind::Matrix(Box::new(ValueKind::U8),(x.shape()[0],x.shape()[1])),
+      Value::MatrixU16(x) => ValueKind::Matrix(Box::new(ValueKind::U16),(x.shape()[0],x.shape()[1])),
+      Value::MatrixU32(x) => ValueKind::Matrix(Box::new(ValueKind::U32),(x.shape()[0],x.shape()[1])),
+      Value::MatrixU64(x) => ValueKind::Matrix(Box::new(ValueKind::U64),(x.shape()[0],x.shape()[1])),
+      Value::MatrixU128(x) => ValueKind::Matrix(Box::new(ValueKind::U128),(x.shape()[0],x.shape()[1])),
+      Value::MatrixI8(x) => ValueKind::Matrix(Box::new(ValueKind::I8),(x.shape()[0],x.shape()[1])),
+      Value::MatrixI16(x) => ValueKind::Matrix(Box::new(ValueKind::I16),(x.shape()[0],x.shape()[1])),
+      Value::MatrixI32(x) => ValueKind::Matrix(Box::new(ValueKind::I32),(x.shape()[0],x.shape()[1])),
+      Value::MatrixI64(x) => ValueKind::Matrix(Box::new(ValueKind::I64),(x.shape()[0],x.shape()[1])),
+      Value::MatrixI128(x) => ValueKind::Matrix(Box::new(ValueKind::U128,),(x.shape()[0],x.shape()[1])),
+      Value::MatrixF32(x) => ValueKind::Matrix(Box::new(ValueKind::F32),(x.shape()[0],x.shape()[1])),
+      Value::MatrixF64(x) => ValueKind::Matrix(Box::new(ValueKind::F64),(x.shape()[0],x.shape()[1])),
+      Value::MatrixValue(x) => ValueKind::Matrix(Box::new(ValueKind::Any),(x.shape()[0],x.shape()[1])),
       Value::Table(x) => ValueKind::Table,
       Value::Set(x) => ValueKind::Set,
       Value::Map(x) => ValueKind::Map,
@@ -340,7 +340,7 @@ impl Value {
     }
   }
 
-  pub fn as_vecf64(&self)   -> Option<Vec<F64>>  {if let Value::MatrixF64(v)  = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf64()  } else { None }}
+  pub fn as_vecf64(&self)   -> Option<Vec<F64>>  {if let Value::MatrixF64(v)  = self { Some(v.as_vec()) } else if let Value::F64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf64()  } else { None }}
   pub fn as_vecf32(&self)   -> Option<Vec<F32>>  {if let Value::MatrixF32(v)  = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf32()  } else { None }}
   pub fn as_vecbool(&self)  -> Option<Vec<bool>> {if let Value::MatrixBool(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecbool() } else { None }}
   pub fn as_vecu8(&self)    -> Option<Vec<u8>>   {if let Value::MatrixU8(v)   = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu8()   } else { None }}
