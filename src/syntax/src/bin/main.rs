@@ -28,7 +28,24 @@ fn main() -> Result<(),MechError> {
           let mut intrp = Interpreter::new();
           let result = intrp.interpret(&tree)?;
           println!("{}", result.pretty_print());
-          println!("{:#?}", intrp.symbols); 
+
+          /*let mat_brrw = intrp.symbols.borrow().get(29341039262997047).unwrap().borrow().clone();
+
+          match mat_brrw {
+            Value::MatrixF64(v) => {
+              let value = v.as_vec()[0];
+
+              
+            }
+            _ => todo!(),
+          }*/
+
+
+
+          println!("{:#?}", intrp.symbols);
+
+
+
           println!("Plan: ");
           for fxn in intrp.plan.borrow().iter() {
             println!("  - {}", fxn.to_string());

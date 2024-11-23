@@ -2,6 +2,21 @@ use crate::stdlib::*;
 
 // Horizontal Concatenate -----------------------------------------------------
 
+#[derive(Debug)]
+struct HorizontalConcatenateS1<T> {
+  out: Ref<Matrix1<T>>,
+}
+
+impl<T> MechFunction for HorizontalConcatenateS1<T> 
+where
+  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<Matrix1<T>>: ToValue
+{
+  fn solve(&self) {}
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
 #[macro_export]
 macro_rules! horizontal_concatenate {
   ($name:ident, $vec_size:expr) => {
@@ -128,6 +143,7 @@ macro_rules! impl_horzcat_arms {
       if no_refs {
         let mat: Vec<$kind> = arguments.iter().flat_map(|v| v.[<as_vec $kind:lower>]().unwrap()).collect::<Vec<$kind>>();
         match &mat[..] {
+          [e0]             => {return Ok(Box::new(HorizontalConcatenateS1{out:new_ref(Matrix1::from_vec(mat))}));}
           [e0, e1]         => {return Ok(Box::new(HorizontalConcatenateS2{out:new_ref(RowVector2::from_vec(mat))}));}
           [e0, e1, e2]     => {return Ok(Box::new(HorizontalConcatenateS3{out:new_ref(RowVector3::from_vec(mat))}));}
           [e0, e1, e2, e3] => {return Ok(Box::new(HorizontalConcatenateS4{out:new_ref(RowVector4::from_vec(mat))}));}
@@ -199,6 +215,8 @@ fn impl_horzcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   let target_kind = kinds[0].clone();
   if ValueKind::is_compatible(target_kind.clone(), ValueKind::F64)  {
     impl_horzcat_arms!(F64,arguments,F64::zero())
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U8)  {
+    impl_horzcat_arms!(u8,arguments,u8::zero())    
   } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::Bool)  {
     impl_horzcat_arms!(bool,arguments,false)
   } else {
@@ -209,9 +227,6 @@ fn impl_horzcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
 pub struct MaxtrixHorzCat {}
 impl NativeFunctionCompiler for MaxtrixHorzCat {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() <= 1 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
-    }
     // First, get the size of the output matrix
     // rows are consistent already so we can just get nrows from the first element
     impl_horzcat_fxn(arguments)

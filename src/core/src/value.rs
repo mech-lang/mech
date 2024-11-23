@@ -431,11 +431,12 @@ impl Value {
           Some(x) => {
             let shape = self.shape();
             let out = match (shape[0], shape[1]) {
-              (1,n) => Matrix::DVector(new_ref(DVector::from_vec(x))),
-              (m,1) => Matrix::DVector(new_ref(DVector::from_vec(x))),
-              (m,n) => Matrix::DVector(new_ref(DVector::from_vec(x))),
+              (1,1) => Value::Bool(new_ref(x[0])),
+              (1,n) => Value::MatrixBool(Matrix::DVector(new_ref(DVector::from_vec(x)))),
+              (m,1) => Value::MatrixBool(Matrix::DVector(new_ref(DVector::from_vec(x)))),
+              (m,n) => Value::MatrixBool(Matrix::DVector(new_ref(DVector::from_vec(x)))),
             };
-            Ok(Value::MatrixBool(out))
+            Ok(out)
           }
           None => match self.as_bool() {
             Some(x) => Ok(Value::Bool(x)),

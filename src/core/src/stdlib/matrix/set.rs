@@ -219,7 +219,8 @@ impl NativeFunctionCompiler for MatrixSetScalar {
     let ixes = arguments.clone().split_off(2);
     match impl_set_scalar_fxn(sink.clone(),source.clone(),ixes.clone()) {
       Ok(fxn) => Ok(fxn),
-      Err(_) => {
+      Err(x) => {
+        println!("{:?}",x);
         match sink {
           Value::MutableReference(sink) => { impl_set_scalar_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
           x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
