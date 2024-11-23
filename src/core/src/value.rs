@@ -44,7 +44,21 @@ macro_rules! impl_as_type {
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, 
-  String, Bool, Matrix(Box<ValueKind>,(usize,usize)), Enum(u64), Set, Map, Record, Table, Tuple, Id, Index, Reference, Atom(u64), Empty, Any
+  String, Bool, Matrix(Box<ValueKind>,(usize,usize)), Enum(u64), Set, Map, Record, Table, Tuple, Id, Index, Reference(Box<ValueKind>), Atom(u64), Empty, Any
+}
+
+impl ValueKind {
+  pub fn is_compatible(k1: ValueKind, k2: ValueKind) -> bool {
+    match k1 {
+      ValueKind::Reference(x) => {
+        ValueKind::is_compatible(*x,k2)
+      }
+      ValueKind::Matrix(x,_) => {
+        *x == k2
+      }
+      x => x == k2,
+    }
+  }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -280,7 +294,7 @@ impl Value {
       Value::Record(x) => ValueKind::Record,
       Value::Tuple(x) => ValueKind::Tuple,
       Value::Enum(x) => ValueKind::Enum(x.id),
-      Value::MutableReference(x) => ValueKind::Reference,
+      Value::MutableReference(x) => ValueKind::Reference(Box::new(x.borrow().kind())),
       Value::Empty => ValueKind::Empty,
       Value::IndexAll => ValueKind::Empty,
       Value::Id(x) => ValueKind::Id,
@@ -376,19 +390,22 @@ impl Value {
     }
   }
 
+  pub fn as_vecbool(&self)   -> Option<Vec<bool>>  {if let Value::MatrixBool(v)  = self { Some(v.as_vec()) } else if let Value::Bool(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecbool()  } else { None }}
   pub fn as_vecf64(&self)   -> Option<Vec<F64>>  {if let Value::MatrixF64(v)  = self { Some(v.as_vec()) } else if let Value::F64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf64()  } else { None }}
-  pub fn as_vecf32(&self)   -> Option<Vec<F32>>  {if let Value::MatrixF32(v)  = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf32()  } else { None }}
-  pub fn as_vecbool(&self)  -> Option<Vec<bool>> {if let Value::MatrixBool(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecbool() } else { None }}
-  pub fn as_vecu8(&self)    -> Option<Vec<u8>>   {if let Value::MatrixU8(v)   = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu8()   } else { None }}
-  pub fn as_vecu16(&self)   -> Option<Vec<u16>>  {if let Value::MatrixU16(v)  = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu16()  } else { None }}
-  pub fn as_vecu32(&self)   -> Option<Vec<u32>>  {if let Value::MatrixU32(v)  = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu32()  } else { None }}
-  pub fn as_vecu64(&self)   -> Option<Vec<u64>>  {if let Value::MatrixU64(v)  = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu64()  } else { None }}
-  pub fn as_vecu128(&self)  -> Option<Vec<u128>> {if let Value::MatrixU128(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu128() } else { None }}
-  pub fn as_veci8(&self)    -> Option<Vec<i8>>   {if let Value::MatrixI8(v)   = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_veci8()   } else { None }}
-  pub fn as_veci16(&self)   -> Option<Vec<i16>>  {if let Value::MatrixI16(v)  = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_veci16()  } else { None }}
-  pub fn as_veci32(&self)   -> Option<Vec<i32>>  {if let Value::MatrixI32(v)  = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_veci32()  } else { None }}
-  pub fn as_veci64(&self)   -> Option<Vec<i64>>  {if let Value::MatrixI64(v)  = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_veci64()  } else { None }}
-  pub fn as_veci128(&self)  -> Option<Vec<i128>> {if let Value::MatrixI128(v) = self { Some(v.as_vec()) } else if let Value::MutableReference(val) = self { val.borrow().as_veci128() } else { None }}
+  pub fn as_vecf32(&self)   -> Option<Vec<F32>>  {if let Value::MatrixF32(v)  = self { Some(v.as_vec()) } else if let Value::F32(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf32()  } else { None }}
+
+  pub fn as_vecu8(&self)   -> Option<Vec<u8>>  {if let Value::MatrixU8(v)  = self { Some(v.as_vec()) } else if let Value::U8(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu8()  } else { None }}
+  pub fn as_vecu16(&self)   -> Option<Vec<u16>>  {if let Value::MatrixU16(v)  = self { Some(v.as_vec()) } else if let Value::U16(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu16()  } else { None }}
+  pub fn as_vecu32(&self)   -> Option<Vec<u32>>  {if let Value::MatrixU32(v)  = self { Some(v.as_vec()) } else if let Value::U32(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu32()  } else { None }}
+  pub fn as_vecu64(&self)   -> Option<Vec<u64>>  {if let Value::MatrixU64(v)  = self { Some(v.as_vec()) } else if let Value::U64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu64()  } else { None }}
+  pub fn as_vecu128(&self)   -> Option<Vec<u128>>  {if let Value::MatrixU128(v)  = self { Some(v.as_vec()) } else if let Value::U128(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu128()  } else { None }}
+
+  pub fn as_veci8(&self)   -> Option<Vec<i8>>  {if let Value::MatrixI8(v)  = self { Some(v.as_vec()) } else if let Value::I8(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci8()  } else { None }}
+  pub fn as_veci16(&self)   -> Option<Vec<i16>>  {if let Value::MatrixI16(v)  = self { Some(v.as_vec()) } else if let Value::I16(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci16()  } else { None }}
+  pub fn as_veci32(&self)   -> Option<Vec<i32>>  {if let Value::MatrixI32(v)  = self { Some(v.as_vec()) } else if let Value::I32(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci32()  } else { None }}
+  pub fn as_veci64(&self)   -> Option<Vec<i64>>  {if let Value::MatrixI64(v)  = self { Some(v.as_vec()) } else if let Value::I64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci64()  } else { None }}
+  pub fn as_veci128(&self)   -> Option<Vec<i128>>  {if let Value::MatrixI128(v)  = self { Some(v.as_vec()) } else if let Value::I128(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci128()  } else { None }}
+
   pub fn as_vecusize(&self) -> Option<Vec<usize>> {
     match self {
       Value::MatrixIndex(v) => Some(v.as_vec()),
