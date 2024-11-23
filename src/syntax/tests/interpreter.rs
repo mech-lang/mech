@@ -381,6 +381,10 @@ test_interpreter!(interpret_set_logical_vector_vector_bool,"x := [1 2; 4 5]; x[[
 test_interpreter!(interpret_set_logical_all_vector_bool,"x := [1 2; 4 5]; x[:,[1 2]] = 42; x[1] + x[2] + x[3] + x[4]", Value::F64(new_ref(F64::new(168.0))));
 
 test_interpreter!(interpret_horzcat,"x := [1 2]; y := [x 3]; y[1] + y[2] + y[3]", Value::F64(new_ref(F64::new(6.0))));
+test_interpreter!(interpret_horzcat_r2m1,"x := [1 2]; z := [3]; y := [x z]; y[1] + y[2] + y[3]", Value::F64(new_ref(F64::new(6.0))));
+test_interpreter!(interpret_horzcat_m1r2,"x := [1 2]; z := [3]; y := [z x]; y[1] + y[2] + y[3]", Value::F64(new_ref(F64::new(6.0))));
+test_interpreter!(interpret_horzcat_sr2,"x := [1 2]; y := [3 x]; y[1] + y[2] + y[3]", Value::F64(new_ref(F64::new(6.0))));
+test_interpreter!(interpret_horzcat_r2s,"x := [1 2]; y := [x 3]; y[1] + y[2] + y[3]", Value::F64(new_ref(F64::new(6.0))));
 
 
 
