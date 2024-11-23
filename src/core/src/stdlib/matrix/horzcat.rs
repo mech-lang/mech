@@ -175,12 +175,34 @@ macro_rules! impl_horzcat_arms {
         }      
       } else {
         match (nargs,columns) {
-          //(1,1) => {}
-          //(1,2) => {}
-          //(1,3) => {}
-          //(1,4) => {}
-          //(1,n) => {}
-          //(2,2) => {}
+          (1,1) => {
+            // s1
+            // m1
+            todo!()
+          }
+          (1,2) => {
+            // r2
+            todo!()
+          }
+          (1,3) => {
+            // r3
+            todo!()
+          }
+          (1,4) => {
+            // r4
+            todo!()
+          }
+          (1,n) => {
+            // rd
+            todo!()
+          }
+          (2,2) => {
+            // s1s1
+            // s1m1
+            // m1s1
+            // m1m1
+            todo!()
+          }
           (2,3) => {
             let mut out = RowVector3::from_element($default);
             match &arguments[..] {
@@ -220,13 +242,67 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          //(2,4) => {}
-          //(2,n) => {}
-          //(3,3) => {}
-          //(3,4) => {}
-          //(3,n) => {}
-          //(4,4) => {}
-          //(4,n) => {}
+          (2,4) => {
+            // s1 r3
+            // r3 s1
+            // r2 r2
+            // m1 r3
+            // r3 m1
+            todo!()
+          } 
+          (2,n) => {
+            todo!()
+          }
+          (3,3) => {  
+            // s1 s1 s1
+            // s1 s1 m1
+            // s1 m1 s1
+            // s1 m1 m1
+            // m1 s1 s1
+            // m1 s1 m1
+            // m1 m1 s1
+            // m1 m1 m1
+            todo!()
+          }
+          (3,4) => {
+            // s1 s1 r2
+            // s1 m1 r2
+            // s1 r2 s1
+            // s1 r2 m1
+            // m1 s1 r2
+            // m1 m1 r2
+            // m1 r2 s1
+            // m1 r2 m1
+            // r2 s1 s1
+            // r2 s1 m1
+            // r2 m1 s1
+            // r2 m1 m1
+            todo!()
+          }
+          (3,n) => {
+            todo!()
+          }
+          (4,4) => {
+            // s1 s1 s1 m1
+            // s1 s1 m1 s1
+            // s1 s1 m1 m1
+            // s1 m1 s1 s1
+            // s1 m1 s1 m1
+            // s1 m1 m1 s1
+            // s1 m1 m1 m1
+            // m1 s1 s1 s1
+            // m1 s1 s1 m1
+            // m1 s1 m1 s1
+            // m1 s1 m1 m1
+            // m1 m1 s1 s1
+            // m1 m1 s1 m1
+            // m1 m1 m1 s1
+            // m1 m1 m1 m1
+            todo!()
+          }
+          (4,n) => {
+            todo!()
+          }
           //(m,n) => todo!()
           _ => {return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});}
         }
