@@ -1,8 +1,10 @@
 #[macro_use]
 use crate::stdlib::*;
+use paste;  
 
 pub mod access;
 pub mod set;
+pub mod horzcat;
 
 // ----------------------------------------------------------------------------
 // Matrix Library
@@ -128,7 +130,7 @@ macro_rules! transpose_op {
   };}
 
 #[cfg(feature = "Matrix1")]
-  impl_bool_urop!(TransposeM1, Matrix1<T>, Matrix1<T>, transpose_op);
+impl_bool_urop!(TransposeM1, Matrix1<T>, Matrix1<T>, transpose_op);
 #[cfg(feature = "Matrix2")]
 impl_bool_urop!(TransposeM2, Matrix2<T>, Matrix2<T>, transpose_op);
 #[cfg(feature = "Matrix3")]
@@ -223,3 +225,7 @@ fn impl_transpose_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechErr
 }
   
 impl_mech_urnop_fxn!(MatrixTranspose,impl_transpose_fxn);
+
+
+
+// Vertical Concatenate -------------------------------------------------------

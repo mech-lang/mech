@@ -289,6 +289,42 @@ impl Value {
     }
   }
 
+  pub fn is_scalar(&self) -> bool {
+    match self {
+      Value::U8(_)  | Value::U16(_) | Value::U32(_) | Value::U64(_) | Value::U128(_) | 
+      Value::I8(_)  | Value::I16(_) | Value::I32(_) | Value::I64(_) | Value::I128(_) | 
+      Value::F32(_) | Value::F64(_) | Value::String(_)  | Value::Bool(_) | Value::Atom(_) => true,
+      _ => todo!(), 
+      /*Value::MatrixIndex(x) => ValueKind::Matrix(Box::new(ValueKind::Index),(x.shape()[0],x.shape()[1])),
+      Value::MatrixBool(x) => ValueKind::Matrix(Box::new(ValueKind::Bool),(x.shape()[0],x.shape()[1])),
+      Value::MatrixU8(x) => ValueKind::Matrix(Box::new(ValueKind::U8),(x.shape()[0],x.shape()[1])),
+      Value::MatrixU16(x) => ValueKind::Matrix(Box::new(ValueKind::U16),(x.shape()[0],x.shape()[1])),
+      Value::MatrixU32(x) => ValueKind::Matrix(Box::new(ValueKind::U32),(x.shape()[0],x.shape()[1])),
+      Value::MatrixU64(x) => ValueKind::Matrix(Box::new(ValueKind::U64),(x.shape()[0],x.shape()[1])),
+      Value::MatrixU128(x) => ValueKind::Matrix(Box::new(ValueKind::U128),(x.shape()[0],x.shape()[1])),
+      Value::MatrixI8(x) => ValueKind::Matrix(Box::new(ValueKind::I8),(x.shape()[0],x.shape()[1])),
+      Value::MatrixI16(x) => ValueKind::Matrix(Box::new(ValueKind::I16),(x.shape()[0],x.shape()[1])),
+      Value::MatrixI32(x) => ValueKind::Matrix(Box::new(ValueKind::I32),(x.shape()[0],x.shape()[1])),
+      Value::MatrixI64(x) => ValueKind::Matrix(Box::new(ValueKind::I64),(x.shape()[0],x.shape()[1])),
+      Value::MatrixI128(x) => ValueKind::Matrix(Box::new(ValueKind::U128,),(x.shape()[0],x.shape()[1])),
+      Value::MatrixF32(x) => ValueKind::Matrix(Box::new(ValueKind::F32),(x.shape()[0],x.shape()[1])),
+      Value::MatrixF64(x) => ValueKind::Matrix(Box::new(ValueKind::F64),(x.shape()[0],x.shape()[1])),
+      Value::MatrixValue(x) => ValueKind::Matrix(Box::new(ValueKind::Any),(x.shape()[0],x.shape()[1])),
+      Value::Table(x) => ValueKind::Table,
+      Value::Set(x) => ValueKind::Set,
+      Value::Map(x) => ValueKind::Map,
+      Value::Record(x) => ValueKind::Record,
+      Value::Tuple(x) => ValueKind::Tuple,
+      Value::Enum(x) => ValueKind::Enum(x.id),
+      Value::MutableReference(x) => ValueKind::Reference,
+      Value::Empty => ValueKind::Empty,
+      Value::IndexAll => ValueKind::Empty,
+      Value::Id(x) => ValueKind::Id,
+      Value::Index(x) => ValueKind::Index,
+      Value::Kind(x) => x.clone(),*/
+    }
+  }
+
   pub fn as_bool(&self) -> Option<Ref<bool>> {if let Value::Bool(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_bool() } else { None }}
   
   impl_as_type!(i8);
