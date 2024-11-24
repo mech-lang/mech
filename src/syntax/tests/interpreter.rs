@@ -384,8 +384,7 @@ test_interpreter!(interpret_horzcat,"x := [1 2]; y := [x 3]; y[1] + y[2] + y[3]"
 test_interpreter!(interpret_horzcat_r2m1,"x := [1 2]; z := [3]; y := [x z]; y[1] + y[2] + y[3]", Value::F64(new_ref(F64::new(6.0))));
 test_interpreter!(interpret_horzcat_m1r2,"x := [1 2]; z := [3]; y := [z x]; y[1] + y[2] + y[3]", Value::F64(new_ref(F64::new(6.0))));
 test_interpreter!(interpret_horzcat_sr2,"x := [1 2]; y := [3 x]; y[1] + y[2] + y[3]", Value::F64(new_ref(F64::new(6.0))));
-test_interpreter!(interpret_horzcat_r2s,"x := [1 2]; y := [x 3]; y[1] + y[2] + y[3]", Value::F64(new_ref(F64::new(6.0))));
-
-
+test_interpreter!(interpret_horzcat_r2s,"x := [1 2]; y := [x 3];", new_ref(RowVector3::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0)])).to_value());
+test_interpreter!(interpret_horzcat_m1,"x := [1]; y := [x]", new_ref(Matrix1::from_vec(vec![F64::new(1.0)])).to_value());
 
 

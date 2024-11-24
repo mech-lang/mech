@@ -869,6 +869,8 @@ fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef)
 
   if out.is_empty() {
     return Ok(Value::MatrixF64(Matrix::<F64>::DMatrix(new_ref(DMatrix::from_vec(0, 0, vec![])))));
+  } else if out.len() == 1 {
+    return Ok(out[0].clone());
   }
 
   let shape = out[0].shape();
