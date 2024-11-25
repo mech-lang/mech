@@ -388,3 +388,6 @@ test_interpreter!(interpret_horzcat_r2s,"x := [1 2]; y := [x 3];", new_ref(RowVe
 test_interpreter!(interpret_horzcat_m1,"x := [1]; y := [x]", new_ref(Matrix1::from_vec(vec![F64::new(1.0)])).to_value());
 test_interpreter!(interpret_horzcat_r2,"x := [1 2]; y := [x]", new_ref(RowVector2::from_vec(vec![F64::new(1.0), F64::new(2.0)])).to_value());
 
+test_interpreter!(interpret_horzcat_sm1,"x := [2]; y := [1 x]", new_ref(RowVector2::from_vec(vec![F64::new(1.0), F64::new(2.0)])).to_value());
+test_interpreter!(interpret_horzcat_m1s,"x := [2]; y := [x 1]", new_ref(RowVector2::from_vec(vec![F64::new(2.0), F64::new(1.0)])).to_value());
+test_interpreter!(interpret_horzcat_m1m1,"x := [2]; y := [x x]", new_ref(RowVector2::from_vec(vec![F64::new(2.0), F64::new(2.0)])).to_value());
