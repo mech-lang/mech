@@ -27,7 +27,7 @@ impl Kind {
       },
       Kind::Matrix(knd,size) => {
         let val_knd = knd.to_value_kind(functions.clone())?;
-        Ok(ValueKind::Matrix(Box::new(val_knd),size.clone()))
+        Ok(ValueKind::Matrix(Box::new(val_knd),(size[0],size[1])))
       },
       Kind::Tuple => todo!(),
       Kind::Brace => todo!(),

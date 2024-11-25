@@ -1,4 +1,5 @@
 use mech_core::*;
+use mech_core::matrix::Matrix;
 use mech_syntax::parser;
 use mech_syntax::*;
 use std::cell::RefCell;
@@ -28,7 +29,50 @@ fn main() -> Result<(),MechError> {
           let mut intrp = Interpreter::new();
           let result = intrp.interpret(&tree)?;
           println!("{}", result.pretty_print());
-          println!("{:#?}", intrp.symbols); 
+
+
+          let x = Rc::new(RefCell::new(F64::new(123.0)));
+          let y = x.clone();
+          println!("{:?}", x);
+          println!("{:?}", y);
+          unsafe {
+            let mut x_ptr = (&mut *(x.as_ptr()));
+            (*x_ptr).0 = 456.0;
+          }
+          println!("{:?}", x);
+          println!("{:?}", y);
+
+          let xid: u64 = 863861563252387;
+          let yid: u64 = 29341039262997047;
+          //let yid = 
+
+          /*{
+            let mat_brrw = intrp.symbols.borrow().get(xid).unwrap().borrow().clone();
+
+            match mat_brrw {
+              Value::MatrixF64(Matrix::Matrix1(ref v)) => {
+                println!("!!!!!!!!!!!!! {:?}", v);
+                {
+                  unsafe {
+                    let mut sink_ptr = (&mut *(v.as_ptr()));
+                    sink_ptr[0].0 = 3.0;
+                  }
+                }
+                println!("!!!!!!!!!!!!! {:?}", v.as_ptr());
+              }
+              _ => todo!(),
+            }
+            println!("!@#!@$ {:?}", mat_brrw);
+          }*/
+        
+          println!("{:#?}", intrp.symbols);
+
+          /*{
+            let plan_brrw = intrp.plan.borrow();
+            let p1 = &plan_brrw[1];
+            println!("&&& {:?}", p1.out());
+          }*/
+
           println!("Plan: ");
           for fxn in intrp.plan.borrow().iter() {
             println!("  - {}", fxn.to_string());
@@ -43,7 +87,6 @@ fn main() -> Result<(),MechError> {
           let elapsed_time = now.elapsed();
           let cycle_duration = elapsed_time.as_nanos() as f64;
           println!("{:0.2?} ns", cycle_duration / 1000000.0);
-
 
           let tree_string = hash_str(&format!("{:#?}", tree));
           println!("{:?}", tree_string);

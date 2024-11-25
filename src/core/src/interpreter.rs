@@ -1,17 +1,18 @@
 use crate::matrix::{Matrix, ToMatrix};
 use crate::kind::Kind;
-
+use crate::{Value, ValueKind, ValRef, ToValue};
+use crate::{MechMap, MechFunction, MechTable, MechSet, MechTuple, MechEnum};
+use crate::{F64, F32};
+use crate::{Functions, FunctionsRef, FunctionDefinition, NativeFunctionCompiler, Plan, UserFunction, SymbolTableRef, SymbolTable};
 use crate::stdlib::{math::*,
                     logic::*,
                     compare::*,
-                    matrix::{*, access::*, set::*},
+                    matrix::{*, access::*, set::*, horzcat::*},
                     table::*,
                     convert::*
                   };
 use crate::stdlib::range::{RangeInclusive, RangeExclusive};
-use crate::*;
-use crate::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*};
-use crate::nodes::Matrix as Mat;
+use crate::{MechError, MechErrorKind, hash_str, new_ref, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 
 use na::DMatrix;
 use indexmap::set::IndexSet;
@@ -494,8 +495,8 @@ fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, 
           fxn_input.push(ix);
           match shape[..] {
             [1,1] => plan.borrow_mut().push(MatrixSetAllScalar{}.compile(&fxn_input)?),
-            [1,n] => plan.borrow_mut().push(MatrixSetRange{}.compile(&fxn_input)?),
-            [n,1] => plan.borrow_mut().push(MatrixSetRange{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixSetAllRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixSetAllRange{}.compile(&fxn_input)?),
             _ => todo!(),
           }
         }
@@ -507,8 +508,8 @@ fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, 
           fxn_input.push(Value::IndexAll);
           match shape[..] {
             [1,1] => plan.borrow_mut().push(MatrixSetScalarAll{}.compile(&fxn_input)?),
-            [1,n] => plan.borrow_mut().push(MatrixSetRange{}.compile(&fxn_input)?),
-            [n,1] => plan.borrow_mut().push(MatrixSetRange{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixSetRangeAll{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixSetRangeAll{}.compile(&fxn_input)?),
             _ => todo!(),
           }
         },
@@ -868,6 +869,8 @@ fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef)
 
   if out.is_empty() {
     return Ok(Value::MatrixF64(Matrix::<F64>::DMatrix(new_ref(DMatrix::from_vec(0, 0, vec![])))));
+  } else if out.len() == 1 {
+    return Ok(out[0].clone());
   }
 
   let shape = out[0].shape();
@@ -914,40 +917,26 @@ fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef)
 
 fn matrix_row(r: &MatrixRow, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let mut row: Vec<Value> = Vec::new();
+  let mut shape = vec![0, 0];
+  let mut kind = ValueKind::Empty;
   for col in &r.columns {
     let result = matrix_column(col, plan.clone(), symbols.clone(), functions.clone())?;
-    row.push(result);
+    if shape == vec![0,0] {
+      shape = result.shape();
+      kind = result.kind();
+      row.push(result);
+    } else if shape[0] == result.shape()[0] {
+      row.push(result);
+    } else {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![])});
+    }
   }
-  let mat = match &row[0] {
-    #[cfg(feature = "Bool")]
-    Value::Bool(_) => {Value::MatrixBool(bool::to_matrix(row.iter().map(|v| v.as_bool().unwrap().borrow().clone()).collect(),1,row.len()))},
-    #[cfg(feature = "U8")]
-    Value::U8(_)   => {Value::MatrixU8(u8::to_matrix(row.iter().map(|v| v.as_u8().unwrap().borrow().clone()).collect(),1,row.len()))},
-    #[cfg(feature = "U16")]
-    Value::U16(_)  => {Value::MatrixU16(u16::to_matrix(row.iter().map(|v| v.as_u16().unwrap().borrow().clone()).collect(),1,row.len()))},
-    #[cfg(feature = "U32")]
-    Value::U32(_)  => {Value::MatrixU32(u32::to_matrix(row.iter().map(|v| v.as_u32().unwrap().borrow().clone()).collect(),1,row.len()))},
-    #[cfg(feature = "U65")]
-    Value::U64(_)  => {Value::MatrixU64(u64::to_matrix(row.iter().map(|v| v.as_u64().unwrap().borrow().clone()).collect(),1,row.len()))},
-    #[cfg(feature = "U128")]
-    Value::U128(_) => {Value::MatrixU128(u128::to_matrix(row.iter().map(|v| v.as_u128().unwrap().borrow().clone()).collect(),1,row.len()))},
-    #[cfg(feature = "I8")]
-    Value::I8(_)   => {Value::MatrixI8(i8::to_matrix(row.iter().map(|v| v.as_i8().unwrap().borrow().clone()).collect(),1,row.len()))},
-    #[cfg(feature = "I16")]
-    Value::I16(_)  => {Value::MatrixI16(i16::to_matrix(row.iter().map(|v| v.as_i16().unwrap().borrow().clone()).collect(),1,row.len()))},
-    #[cfg(feature = "I32")]
-    Value::I32(_)  => {Value::MatrixI32(i32::to_matrix(row.iter().map(|v| v.as_i32().unwrap().borrow().clone()).collect(),1,row.len()))},
-    #[cfg(feature = "I64")]
-    Value::I64(_)  => {Value::MatrixI64(i64::to_matrix(row.iter().map(|v| v.as_i64().unwrap().borrow().clone()).collect(),1,row.len()))},
-    #[cfg(feature = "I128")]
-    Value::I128(_) => {Value::MatrixI128(i128::to_matrix(row.iter().map(|v| v.as_i128().unwrap().borrow().clone()).collect(),1,row.len()))},
-    #[cfg(feature = "F32")]
-    Value::F32(_)  => {Value::MatrixF32(F32::to_matrix(row.iter().map(|v| v.as_f32().unwrap().borrow().clone()).collect(),1,row.len()))},
-    #[cfg(feature = "F64")]
-    Value::F64(_)  => {Value::MatrixF64(F64::to_matrix(row.iter().map(|v| v.as_f64().unwrap().borrow().clone()).collect(),1,row.len()))},
-    _ => todo!(),
-  };
-  Ok(mat)
+  let new_fxn = MaxtrixHorzCat{}.compile(&row)?;
+  new_fxn.solve();
+  let out = new_fxn.out();
+  let mut plan_brrw = plan.borrow_mut();
+  plan_brrw.push(new_fxn);
+  Ok(out)
 }
 
 fn matrix_column(r: &MatrixColumn, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> { 

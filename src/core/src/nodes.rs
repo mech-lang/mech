@@ -1,6 +1,6 @@
-use crate::*;
-
 use std::cmp::Ordering;
+use crate::hash_chars; 
+use std::fmt;
 
 #[derive(Clone, Copy, Ord, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct SourceLocation {
