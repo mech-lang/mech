@@ -426,6 +426,7 @@ test_interpreter!(interpret_horzcat_m1sss, "x := [4]; y := [x 1 2 3];", new_ref(
 test_interpreter!(interpret_horzcat_sm1ss, "x := [4]; y := [1 x 2 3];", new_ref(RowVector4::from_vec(vec![F64::new(1.0), F64::new(4.0), F64::new(2.0), F64::new(3.0)])).to_value());
 test_interpreter!(interpret_horzcat_ssm1s, "x := [4]; y := [1 2 x 3];", new_ref(RowVector4::from_vec(vec![F64::new(1.0), F64::new(2.0), F64::new(4.0), F64::new(3.0)])).to_value());
 test_interpreter!(interpret_horzcat_sm1sm1, "x := [4]; z := [5]; y := [1 x 2 z];", new_ref(RowVector4::from_vec(vec![F64::new(1.0), F64::new(4.0), F64::new(2.0), F64::new(5.0)])).to_value());
+test_interpreter!(interpret_horzcat_m1ssm1, "x := [4]; z := [5]; y := [x 1 2 z];", new_ref(RowVector4::from_vec(vec![F64::new(4.0), F64::new(1.0), F64::new(2.0), F64::new(5.0)])).to_value());
 test_interpreter!(interpret_horzcat_m1sm1s, "x := [4]; z := [5]; y := [x 1 z 2];", new_ref(RowVector4::from_vec(vec![F64::new(4.0), F64::new(1.0), F64::new(5.0), F64::new(2.0)])).to_value());
 test_interpreter!(interpret_horzcat_m1m1sm1, "x := [4]; z := [5]; w := [6]; y := [x z 1 w];", new_ref(RowVector4::from_vec(vec![F64::new(4.0), F64::new(5.0), F64::new(1.0), F64::new(6.0)])).to_value());
 test_interpreter!(interpret_horzcat_m1m1m1s, "x := [4]; z := [5]; w := [6]; y := [x z w 1];", new_ref(RowVector4::from_vec(vec![F64::new(4.0), F64::new(5.0), F64::new(6.0), F64::new(1.0)])).to_value());
