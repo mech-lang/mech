@@ -4,7 +4,7 @@ use mech_core::{Value, ValueKind, ValRef, ToValue};
 use mech_core::{MechMap, MechFunction, MechTable, MechSet, MechTuple, MechEnum};
 use mech_core::{F64, F32};
 use mech_core::{Functions, FunctionsRef, FunctionDefinition, NativeFunctionCompiler, Plan, UserFunction, SymbolTableRef, SymbolTable};
-use crate::stdlib::{math::*,
+use crate::stdlib::{
                     logic::*,
                     compare::*,
                     matrix::{*, access::*, set::*, horzcat::*},
@@ -13,6 +13,9 @@ use crate::stdlib::{math::*,
                   };
 use crate::stdlib::range::{RangeInclusive, RangeExclusive};
 use mech_core::{MechError, MechErrorKind, hash_str, new_ref, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
+
+use mech_math::*;
+
 
 use na::DMatrix;
 use indexmap::set::IndexSet;
