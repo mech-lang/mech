@@ -1,3 +1,4 @@
+#[macro_use]
 use crate::stdlib::*;
 
 macro_rules! horzcat_one_arg {

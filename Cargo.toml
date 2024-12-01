@@ -52,7 +52,7 @@ members = [
   "src/utilities",
   "src/wasm",
   "wasm-notebook"
-]
+, "src/interpreter"]
 
 [build-dependencies]
 winres = "0.1.12"
