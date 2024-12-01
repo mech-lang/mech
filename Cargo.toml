@@ -44,7 +44,7 @@ lazy_static = "1.5.0"
 #base64 = "0.22.1"
 tabled = "0.16.0"
 nalgebra = "0.33.2"
-indexmap = "*"
+indexmap = "2.7.0"
 
 [workspace]
 
