@@ -22,5 +22,5 @@ crate-type = ["dylib", "rlib"]
 mech-core = {path = "../../core", default-features = false}
 mech-utilities = {path = "../../utilities", default-features = false}
 
-libm = "0.2.6"
+libm = "0.2.11"
 lazy_static = "1.4.0"
