@@ -180,6 +180,97 @@ macro_rules! horzcat_m1s {
 }
 horzcat_one_arg!(HorizontalConcatenateM1S, Matrix1, RowVector2, horzcat_m1s);
 
+macro_rules! horzcat_sssm1 {
+  ($out:expr, $e0:expr) => {
+    $out[3] = $e0[0].clone();
+  };
+}
+horzcat_one_arg!(HorizontalConcatenateSSSM1, Matrix1, RowVector4, horzcat_sssm1);
+
+macro_rules! horzcat_ssm1s {
+  ($out:expr, $e0:expr) => {
+    $out[2] = $e0[0].clone();
+  };
+}
+horzcat_one_arg!(HorizontalConcatenateSSM1S, Matrix1, RowVector4, horzcat_ssm1s);
+
+macro_rules! horzcat_sm1ss {
+  ($out:expr, $e0:expr) => {
+    $out[1] = $e0[0].clone();
+  };
+}
+horzcat_one_arg!(HorizontalConcatenateSM1SS, Matrix1, RowVector4, horzcat_sm1ss);
+
+macro_rules! horzcat_m1sss {
+  ($out:expr, $e0:expr) => {
+    $out[0] = $e0[0].clone();
+  };
+}
+horzcat_one_arg!(HorizontalConcatenateM1SSS, Matrix1, RowVector4, horzcat_m1sss);
+
+macro_rules! horzcat_sr3 {
+  ($out:expr, $e0:expr) => {
+    $out[1] = $e0[0].clone();
+    $out[2] = $e0[1].clone();
+    $out[3] = $e0[2].clone();
+  };
+}
+horzcat_one_arg!(HorizontalConcatenateSR3, RowVector3, RowVector4, horzcat_sr3);
+
+macro_rules! horzcat_r3s {
+  ($out:expr, $e0:expr) => {
+    $out[0] = $e0[0].clone();
+    $out[1] = $e0[1].clone();
+    $out[2] = $e0[2].clone();
+  };
+}
+horzcat_one_arg!(HorizontalConcatenateR3S, RowVector3, RowVector4, horzcat_r3s);
+
+macro_rules! horzcat_ssm1 {
+  ($out:expr, $e0:expr) => {
+    $out[2] = $e0[0].clone();
+  };
+}
+horzcat_one_arg!(HorizontalConcatenateSSM1, Matrix1, RowVector3, horzcat_ssm1);
+
+macro_rules! horzcat_sm1s {
+  ($out:expr, $e0:expr) => {
+    $out[1] = $e0[0].clone();
+  };
+}
+horzcat_one_arg!(HorizontalConcatenateSM1S, Matrix1, RowVector3, horzcat_sm1s);
+
+macro_rules! horzcat_m1ss {
+  ($out:expr, $e0:expr) => {
+    $out[0] = $e0[0].clone();
+  };
+}
+horzcat_one_arg!(HorizontalConcatenateM1SS, Matrix1, RowVector3, horzcat_m1ss);
+
+macro_rules! horzcat_ssr2 {
+  ($out:expr, $e0:expr) => {
+    $out[2] = $e0[0].clone();
+    $out[3] = $e0[1].clone();
+  };
+}
+horzcat_one_arg!(HorizontalConcatenateSSR2, RowVector2, RowVector4, horzcat_ssr2);
+
+macro_rules! horzcat_sr2s {
+  ($out:expr, $e0:expr) => {
+    $out[1] = $e0[0].clone();
+    $out[2] = $e0[1].clone();
+  };
+}
+horzcat_one_arg!(HorizontalConcatenateSR2S, RowVector2, RowVector4, horzcat_sr2s);
+
+macro_rules! horzcat_r2ss {
+  ($out:expr, $e0:expr) => {
+    $out[0] = $e0[0].clone();
+    $out[1] = $e0[1].clone();
+  };
+}
+horzcat_one_arg!(HorizontalConcatenateR2SS, RowVector2, RowVector4, horzcat_r2ss);
+
 macro_rules! horzcat_m1m1s {
   ($out:expr, $e0:expr, $e1:expr) => {
     $out[0] = $e0[0].clone();
@@ -350,68 +441,6 @@ macro_rules! horzcat_r2m1 {
 }
 horzcat_two_args!(HorizontalConcatenateR2M1, RowVector2, Matrix1, RowVector3, horzcat_r2m1);
 
-macro_rules! horzcat_sr3 {
-  ($out:expr, $e0:expr) => {
-    $out[1] = $e0[0].clone();
-    $out[2] = $e0[1].clone();
-    $out[3] = $e0[2].clone();
-  };
-}
-horzcat_one_arg!(HorizontalConcatenateSR3, RowVector3, RowVector4, horzcat_sr3);
-
-macro_rules! horzcat_r3s {
-  ($out:expr, $e0:expr) => {
-    $out[0] = $e0[0].clone();
-    $out[1] = $e0[1].clone();
-    $out[2] = $e0[2].clone();
-  };
-}
-horzcat_one_arg!(HorizontalConcatenateR3S, RowVector3, RowVector4, horzcat_r3s);
-
-macro_rules! horzcat_ssm1 {
-  ($out:expr, $e0:expr) => {
-    $out[2] = $e0[0].clone();
-  };
-}
-horzcat_one_arg!(HorizontalConcatenateSSM1, Matrix1, RowVector3, horzcat_ssm1);
-
-macro_rules! horzcat_sm1s {
-  ($out:expr, $e0:expr) => {
-    $out[1] = $e0[0].clone();
-  };
-}
-horzcat_one_arg!(HorizontalConcatenateSM1S, Matrix1, RowVector3, horzcat_sm1s);
-
-macro_rules! horzcat_m1ss {
-  ($out:expr, $e0:expr) => {
-    $out[0] = $e0[0].clone();
-  };
-}
-horzcat_one_arg!(HorizontalConcatenateM1SS, Matrix1, RowVector3, horzcat_m1ss);
-
-macro_rules! horzcat_ssr2 {
-  ($out:expr, $e0:expr) => {
-    $out[2] = $e0[0].clone();
-    $out[3] = $e0[1].clone();
-  };
-}
-horzcat_one_arg!(HorizontalConcatenateSSR2, RowVector2, RowVector4, horzcat_ssr2);
-
-macro_rules! horzcat_sr2s {
-  ($out:expr, $e0:expr) => {
-    $out[1] = $e0[0].clone();
-    $out[2] = $e0[1].clone();
-  };
-}
-horzcat_one_arg!(HorizontalConcatenateSR2S, RowVector2, RowVector4, horzcat_sr2s);
-
-macro_rules! horzcat_r2ss {
-  ($out:expr, $e0:expr) => {
-    $out[0] = $e0[0].clone();
-    $out[1] = $e0[1].clone();
-  };
-}
-horzcat_one_arg!(HorizontalConcatenateR2SS, RowVector2, RowVector4, horzcat_r2ss);
 
 macro_rules! horzcat_m1m1m1 {
   ($out:expr, $e0:expr,$e1:expr,$e2:expr) => {
@@ -452,33 +481,6 @@ macro_rules! horzcat_r2m1m1 {
 }
 horzcat_three_args!(HorizontalConcatenateR2M1M1, RowVector2, Matrix1, Matrix1, RowVector4, horzcat_r2m1m1);
 
-macro_rules! horzcat_sssm1 {
-  ($out:expr, $e0:expr) => {
-    $out[3] = $e0[0].clone();
-  };
-}
-horzcat_one_arg!(HorizontalConcatenateSSSM1, Matrix1, RowVector4, horzcat_sssm1);
-
-macro_rules! horzcat_ssm1s {
-  ($out:expr, $e0:expr) => {
-    $out[2] = $e0[0].clone();
-  };
-}
-horzcat_one_arg!(HorizontalConcatenateSSM1S, Matrix1, RowVector4, horzcat_ssm1s);
-
-macro_rules! horzcat_sm1ss {
-  ($out:expr, $e0:expr) => {
-    $out[1] = $e0[0].clone();
-  };
-}
-horzcat_one_arg!(HorizontalConcatenateSM1SS, Matrix1, RowVector4, horzcat_sm1ss);
-
-macro_rules! horzcat_m1sss {
-  ($out:expr, $e0:expr) => {
-    $out[0] = $e0[0].clone();
-  };
-}
-horzcat_one_arg!(HorizontalConcatenateM1SSS, Matrix1, RowVector4, horzcat_m1sss);
 
 macro_rules! horzcat_sm1m1m1 {
   ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
