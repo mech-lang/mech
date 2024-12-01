@@ -1,6 +1,6 @@
 [package]
 name = "mech-math"
-version = "0.2.21"
+version = "0.2.22"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Math library for the Mech language"
 documentation = "http://docs.mech-lang.org"
@@ -19,7 +19,7 @@ maintenance = { status = "actively-developed" }
 crate-type = ["dylib", "rlib"]
 
 [dependencies]
-mech-core = {path = "../../mech/src/core"}
+mech-core = "0.2.22"
 
 libm = "0.2.8"
 simba = "0.9.0"
