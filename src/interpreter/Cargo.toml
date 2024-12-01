@@ -57,6 +57,7 @@ MatrixD = []
 
 [dependencies]
 mech-core = "0.2.21"
+mech-math = "0.2.22"
 
 nalgebra = "0.33.2"
 indexmap = "2.6.0"
