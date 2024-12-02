@@ -1,0 +1,20 @@
+logic
+=====
+
+1. Description
+---------------
+
+Provides standard logic functions.
+
+2. Provided Functions
+----------------------
+
+3. Info
+--------
+
+math/machine = {
+  name: "logic" 
+  version: "v0.1.0"
+  authors: ["Corey Montella"] 
+  machine-url: "https://gitlab.com/mech-lang/machines/logic"
+  license: "Apache-2.0"}
