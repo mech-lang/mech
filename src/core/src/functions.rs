@@ -1,6 +1,5 @@
 use crate::types::*;
 use crate::value::*;
-use crate::interpreter::*;
 use crate::nodes::*;
 use crate::*;
 
@@ -94,10 +93,6 @@ impl FunctionDefinition {
       symbols: new_ref(SymbolTable::new()),
       plan: new_ref(Vec::new()),
     }
-  }
-
-  pub fn recompile(&self, functions: FunctionsRef) -> MResult<FunctionDefinition> {
-    function_define(&self.code, functions.clone())
   }
 
   pub fn solve(&self) -> ValRef {

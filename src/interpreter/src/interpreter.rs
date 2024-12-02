@@ -1,10 +1,10 @@
-use crate::matrix::{Matrix, ToMatrix};
-use crate::kind::Kind;
-use crate::{Value, ValueKind, ValRef, ToValue};
-use crate::{MechMap, MechFunction, MechTable, MechSet, MechTuple, MechEnum};
-use crate::{F64, F32};
-use crate::{Functions, FunctionsRef, FunctionDefinition, NativeFunctionCompiler, Plan, UserFunction, SymbolTableRef, SymbolTable};
-use crate::stdlib::{math::*,
+use mech_core::matrix::{Matrix, ToMatrix};
+use mech_core::kind::Kind;
+use mech_core::{Value, ValueKind, ValRef, ToValue};
+use mech_core::{MechMap, MechFunction, MechTable, MechSet, MechTuple, MechEnum};
+use mech_core::{F64, F32};
+use mech_core::{Functions, FunctionsRef, FunctionDefinition, NativeFunctionCompiler, Plan, UserFunction, SymbolTableRef, SymbolTable};
+use crate::stdlib::{
                     logic::*,
                     compare::*,
                     matrix::{*, access::*, set::*, horzcat::*},
@@ -12,7 +12,10 @@ use crate::stdlib::{math::*,
                     convert::*
                   };
 use crate::stdlib::range::{RangeInclusive, RangeExclusive};
-use crate::{MechError, MechErrorKind, hash_str, new_ref, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
+use mech_core::{MechError, MechErrorKind, hash_str, new_ref, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
+
+use mech_math::*;
+
 
 use na::DMatrix;
 use indexmap::set::IndexSet;
@@ -293,7 +296,7 @@ fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, f
   let fxns_brrw = functions.borrow();
   match fxns_brrw.functions.get(&fxn_name_id) {
     Some(fxn) => {
-      let mut new_fxn = fxn.recompile(functions.clone())?; // This just calles function_define again, it should be smarter.
+      let mut new_fxn = function_define(&fxn.code, functions.clone())?; // This just calles function_define again, it should be smarter.
       for (ix,(arg_name, arg_expr)) in fxn_call.args.iter().enumerate() {
         // Get the value
         let value_ref: ValRef = match arg_name {

@@ -5,4 +5,4 @@ test:cargo:
   #- wasm-pack --version
   #- wasm-pack build wasm-notebook --target web
   - cargo build --bin mech
-  - cargo test --package mech-syntax
+  - cargo test interpret

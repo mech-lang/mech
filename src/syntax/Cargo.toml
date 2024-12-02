@@ -32,10 +32,10 @@ rlibc = { version = "=1.0", optional = true }
 serde = "1.0.213"
 serde_derive = "1.0.213"
 colored = "2.1.0"
-nalgebra = "0.33.1"
-indexmap = "2.6.0"
+nalgebra = "0.33.2"
+indexmap = "2.7.0"
 tabled = "0.16.0"
-libm = "0.2.8"
+libm = "0.2.11"
 simba = "0.9.0"
 paste = "1.0.15"
 

@@ -20,6 +20,7 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 mech-core = "0.2.21"
 mech-syntax = "0.2.21"
+mech-interpreter = "0.2.21"
 #mech-program = "0.2.2"
 #mech-utilities = "0.2.2"
 
@@ -42,6 +43,8 @@ lazy_static = "1.5.0"
 #miniz_oxide = "0.7.3"
 #base64 = "0.22.1"
 tabled = "0.16.0"
+nalgebra = "0.33.2"
+indexmap = "2.7.0"
 
 [workspace]
 
@@ -52,7 +55,7 @@ members = [
   "src/utilities",
   "src/wasm",
   "wasm-notebook"
-]
+, "src/interpreter"]
 
 [build-dependencies]
 winres = "0.1.12"
@@ -64,12 +67,16 @@ LegalCopyright = "Copyright © 2024"
 [patch.crates-io]
 mech-core = { path = 'src/core' }
 mech-syntax = { path = 'src/syntax'}
-mech-program = { path = 'src/program'}
-mech-utilities = { path = 'src/utilities'}
-mech-wasm = { path = 'src/wasm'}
+mech-interpreter = { path = 'src/interpreter'}
+#mech-program = { path = 'src/program'}
+#mech-utilities = { path = 'src/utilities'}
+#mech-wasm = { path = 'src/wasm'}
 
 [patch.'https://gitlab.com/mech-lang/core']
 mech-core = { path = 'src/core', version = '0.2.21' }
 
 [patch.'https://gitlab.com/mech-lang/syntax']
 mech-syntax = { path = 'src/syntax', version = '0.2.21' }
+
+[patch.'https://gitlab.com/mech-lang/interpreter']
+mech-interpreter = { path = 'src/interpreter', version = '0.2.21' }

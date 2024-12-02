@@ -4,7 +4,7 @@ use mech::format_parse_tree;
 use mech_core::*;
 use mech_syntax::parser;
 //use mech_syntax::analyzer::*;
-use mech_core::interpreter::*;
+use mech_interpreter::interpreter::*;
 use std::time::Instant;
 use std::fs;
 use std::env;
