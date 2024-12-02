@@ -1153,10 +1153,7 @@ fn scientific(sci: &(Base,Exponent)) -> Value {
   if *sign {
     exp_f64 = -exp_f64;
   }
-
   let num = num_f64 * 10f64.powf(exp_f64);
-
-
   Value::F64(new_ref(F64(num)))
 }
 

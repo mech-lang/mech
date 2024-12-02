@@ -1,9 +1,0 @@
-Link Example
-  #html/app = [
-    root: "mech-root" 
-    contains: [
-      kind: "a" 
-      href: "https://mech-lang.org" 
-      contains: "Link!"
-    ]
-  ]

@@ -1,8 +1,0 @@
-Button Example
-  #html/app = [
-    root: "mech-root" 
-    contains: [
-      kind: "button" 
-      contains: "Click Me!" 
-    ]
-  ]
