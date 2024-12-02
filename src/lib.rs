@@ -14,6 +14,7 @@ use num_traits::*;
 use std::fmt::Debug;
 use simba::scalar::ClosedNeg;
 use num_traits::Pow;
+use mech_core::matrix::Matrix;
 
 //#[macro_use]
 //extern crate lazy_static;
