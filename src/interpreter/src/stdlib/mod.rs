@@ -10,7 +10,6 @@ use std::fmt::Debug;
 use simba::scalar::ClosedNeg;
 use num_traits::Pow;
 
-pub mod logic;
 pub mod compare;
 pub mod matrix;
 pub mod range;
