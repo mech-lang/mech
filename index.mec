@@ -13,7 +13,7 @@ Provides functions that produce a range of values.
 --------
 
 math/machine = {
-  name: "rage" 
+  name: "range" 
   version: "v0.2.22"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/range"
