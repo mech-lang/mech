@@ -11,6 +11,5 @@ use simba::scalar::ClosedNeg;
 use num_traits::Pow;
 
 pub mod matrix;
-pub mod range;
 pub mod table;
 pub mod convert;

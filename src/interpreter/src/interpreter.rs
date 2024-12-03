@@ -9,12 +9,15 @@ use crate::stdlib::{
                     table::*,
                     convert::*
                   };
-use crate::stdlib::range::{RangeInclusive, RangeExclusive};
 use mech_core::{MechError, MechErrorKind, hash_str, new_ref, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 
 use mech_math::*;
 use mech_logic::*;
 use mech_compare::*;
+use mech_range::{
+  inclusive::RangeInclusive,
+  exclusive::RangeExclusive,
+};
 
 use na::DMatrix;
 use indexmap::set::IndexSet;
