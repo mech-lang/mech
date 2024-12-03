@@ -25,13 +25,20 @@ pub fn new_ref<T>(item: T) -> Rc<RefCell<T>> {
 
 pub type MResult<T> = Result<T,MechError>;
 
-#[derive(PartialEq, Debug, Clone, Copy, PartialOrd, Serialize, Deserialize)]
+#[derive(PartialEq, Clone, Copy, PartialOrd, Serialize, Deserialize)]
 pub struct F64(pub f64);
 impl F64 {
   pub fn new(val: f64) -> F64 {
     F64(val)
   }
 }
+
+impl fmt::Debug for F64 {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+      write!(f, "{}", self.0)
+  }
+}
+
 impl Eq for F64 {}
 impl Hash for F64 {
   fn hash<H: Hasher>(&self, state: &mut H) {
@@ -138,11 +145,17 @@ impl Step for F64 {
   }
 }
 
-#[derive(PartialEq, Debug, Clone, Copy, PartialOrd, Serialize, Deserialize)]
+#[derive(PartialEq, Clone, Copy, PartialOrd, Serialize, Deserialize)]
 pub struct F32(pub f32);
 impl F32 {
   pub fn new(val: f32) -> F32 {
     F32(val)
+  }
+}
+
+impl fmt::Debug for F32 {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+      write!(f, "{}", self.0)
   }
 }
 

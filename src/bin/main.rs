@@ -17,7 +17,7 @@ fn main() -> Result<(),MechError> {
 
     // ----------------------------------------------------------------
 
-    let s = fs::read_to_string("../../test.mec").unwrap();
+    let s = fs::read_to_string("test.mec").unwrap();
 
     match parser::parse(&s) {
         Ok(tree) => { 
