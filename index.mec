@@ -1,0 +1,20 @@
+range
+=====
+
+1. Description
+---------------
+
+Provides functions that produce a range of values.
+
+2. Provided Functions
+----------------------
+
+3. Info
+--------
+
+math/machine = {
+  name: "rage" 
+  version: "v0.2.22"
+  authors: ["Corey Montella"] 
+  machine-url: "https://gitlab.com/mech-lang/machines/range"
+  license: "Apache-2.0"}
