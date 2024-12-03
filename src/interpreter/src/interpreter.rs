@@ -5,7 +5,6 @@ use mech_core::{MechMap, MechFunction, MechTable, MechSet, MechTuple, MechEnum};
 use mech_core::{F64, F32};
 use mech_core::{Functions, FunctionsRef, FunctionDefinition, NativeFunctionCompiler, Plan, UserFunction, SymbolTableRef, SymbolTable};
 use crate::stdlib::{
-                    compare::*,
                     matrix::{*, access::*, set::*, horzcat::*},
                     table::*,
                     convert::*
@@ -15,6 +14,7 @@ use mech_core::{MechError, MechErrorKind, hash_str, new_ref, MResult, nodes::Kin
 
 use mech_math::*;
 use mech_logic::*;
+use mech_compare::*;
 
 use na::DMatrix;
 use indexmap::set::IndexSet;
