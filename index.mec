@@ -9,24 +9,12 @@ Provides standard mathematical functions.
 2. Provided Functions
 ----------------------
 
-- math/sin(angle<f32>)
-- math/sin(angle<degrees>)
-
-- math/cos(angle<f32>)
-- math/cos(angle<degrees>)
-
-- math/tan(angle<f32>)
-- math/tan(angle<degrees>)
-
-- math/atan(angle<f32>)
-- math/atan(angle<degrees>)
-
 3. Info
 --------
 
-#math/machine = [
+math/machine = {
   name: "math" 
   version: "v0.1.0"
-  authors: ["Corey Montella", "Haocheng Gao"] 
+  authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/math"
-  license: "Apache-2.0"]
+  license: "Apache-2.0"}
