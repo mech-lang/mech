@@ -5,12 +5,15 @@ use mech_core::{MechMap, MechFunction, MechTable, MechSet, MechTuple, MechEnum};
 use mech_core::{F64, F32};
 use mech_core::{Functions, FunctionsRef, FunctionDefinition, NativeFunctionCompiler, Plan, UserFunction, SymbolTableRef, SymbolTable};
 use crate::stdlib::{
-                    matrix::{*, access::*, set::*, horzcat::*},
+                    horzcat::*,
                     table::*,
-                    convert::*
+                    convert::*,
+                    access::*,
+                    set::*,
                   };
 use mech_core::{MechError, MechErrorKind, hash_str, new_ref, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 
+use mech_matrix::*;
 use mech_math::*;
 use mech_logic::*;
 use mech_compare::*;
