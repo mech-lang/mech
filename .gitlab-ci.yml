@@ -1,0 +1,5 @@
+test:cargo:
+  script:
+  - rustup show
+  - rustup default nightly-2024-10-31
+  - cargo build
