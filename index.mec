@@ -1,0 +1,20 @@
+compare
+=======
+
+1. Description
+---------------
+
+Provides standard comparison functions.
+
+2. Provided Functions
+----------------------
+
+3. Info
+--------
+
+math/machine = {
+  name: "compare" 
+  version: "v0.2.22"
+  authors: ["Corey Montella"] 
+  machine-url: "https://gitlab.com/mech-lang/machines/compare"
+  license: "Apache-2.0"}
