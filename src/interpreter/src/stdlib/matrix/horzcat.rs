@@ -1210,8 +1210,6 @@ macro_rules! impl_horzcat_arms {
   }}}}}
 
 fn impl_horzcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-  println!("{:?}", arguments);
-
   // are they all the same?
   //let same = kinds.iter().all(|x| *x == target_kind);
   let kinds: Vec<ValueKind> = arguments.iter().map(|x| x.kind()).collect::<Vec<ValueKind>>();
