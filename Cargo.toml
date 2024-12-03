@@ -19,8 +19,8 @@ maintenance = { status = "actively-developed" }
 crate-type = ["dylib", "rlib"]
 
 [features]
-default = ["stdlib", "Bool", "unsigned-ints", "signed-ints", "floats", "matrix"]
-stdlib = []
+default = ["stdlib"]
+stdlib = ["Bool", "unsigned-ints", "signed-ints", "floats", "matrix"]
 signed-ints = ["I8", "I16", "I32", "I64"]
 unsigned-ints = ["U8", "U16", "U32", "U64"]
 floats = ["F32", "F64"]
