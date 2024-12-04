@@ -99,6 +99,21 @@ macro_rules! horizontal_concatenate {
     }
   };}  
 
+#[derive(Debug)]
+struct HorizontalConcatenateRD<T> {
+  out: Ref<RowDVector<T>>,
+}
+
+impl<T> MechFunction for HorizontalConcatenateRD<T> 
+where
+  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowDVector<T>>: ToValue
+{
+  fn solve(&self) {}
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
 // Horizontal Concatenate -----------------------------------------------------
 
 #[derive(Debug)]
@@ -680,8 +695,19 @@ macro_rules! impl_horzcat_arms {
             }
           }
           (1,n) => {
-            // rd
-            todo!()
+            let mut out = RowVector4::from_element($default);
+            match &arguments[..] {
+              // rd
+              [Value::MutableReference(e0)] => {
+                match *e0.borrow() {
+                  Value::[<Matrix $kind:camel>](Matrix::RowDVector(ref e0)) => {
+                    return Ok(Box::new(HorizontalConcatenateRD{out: e0.clone()}));
+                  }
+                  _ => todo!(),
+                }
+              }
+              _ => todo!(),
+            }
           }
           (2,2) => {
             let mut out = RowVector2::from_element($default);
