@@ -8,6 +8,8 @@ use tabled::{
   };
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
+use std::slice::Iter;
+use std::iter::Peekable;
 
 // Matrix ---------------------------------------------------------------------
 
@@ -351,6 +353,7 @@ where T: Debug + Clone + PartialEq + 'static
       Matrix::DMatrix(x) => x.borrow().as_slice().to_vec(),
     }
   }
+
 }
 
 
