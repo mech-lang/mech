@@ -707,6 +707,7 @@ where
 macro_rules! impl_horzcat_arms {
   ($kind:ident, $args:expr, $default:expr) => {
     paste!{
+    {
       let arguments = $args;   
       let rows = arguments[0].shape()[0];
       let columns:usize = arguments.iter().fold(0, |acc, x| acc + x.shape()[1]);
@@ -1357,8 +1358,7 @@ macro_rules! impl_horzcat_arms {
           }
           _ => {return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});}
         }
-    }
-  }}}
+  }}}}}
 
 fn impl_horzcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   // are they all the same?
