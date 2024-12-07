@@ -704,6 +704,36 @@ where
   fn to_string(&self) -> String { format!("{:?}", self) }
 }
 
+#[derive(Debug)]
+struct HorizontalConcatenateM2M2<T> {
+  e0: Ref<Matrix2<T>>,
+  e1: Ref<Matrix2<T>>,
+  out: Ref<DMatrix<T>>,
+}
+impl<T> MechFunction for HorizontalConcatenateM2M2<T>
+where
+  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<DMatrix<T>>: ToValue
+{
+  fn solve(&self) { 
+    unsafe {
+      let e0_ptr = (*(self.e0.as_ptr())).clone();
+      let e1_ptr = (*(self.e1.as_ptr())).clone();
+      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      out_ptr[0] = e0_ptr[0].clone();
+      out_ptr[1] = e0_ptr[1].clone();
+      out_ptr[2] = e0_ptr[2].clone();
+      out_ptr[3] = e0_ptr[3].clone();
+      out_ptr[4] = e1_ptr[0].clone();
+      out_ptr[5] = e1_ptr[1].clone();
+      out_ptr[6] = e1_ptr[2].clone();
+      out_ptr[7] = e1_ptr[3].clone();
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:?}", self) }
+}
+
 macro_rules! impl_horzcat_arms {
   ($kind:ident, $args:expr, $default:expr) => {
     paste!{
@@ -711,6 +741,7 @@ macro_rules! impl_horzcat_arms {
       let arguments = $args;   
       let rows = arguments[0].shape()[0];
       let columns:usize = arguments.iter().fold(0, |acc, x| acc + x.shape()[1]);
+      let rows:usize = arguments[0].shape()[0];
       let nargs = arguments.len();
       let kinds: Vec<ValueKind> = arguments.iter().map(|x| x.kind()).collect::<Vec<ValueKind>>();
       let no_refs = !kinds.iter().any(|x| {
@@ -728,8 +759,8 @@ macro_rules! impl_horzcat_arms {
           _ => {return Ok(Box::new(HorizontalConcatenateSD{out:new_ref(RowDVector::from_vec(mat))}));}
         }      
       } else {
-        match (nargs,columns) {
-          (1,1) => {
+        match (nargs,rows,columns) {
+          (1,1,1) => {
             let mut out = Matrix1::from_element($default);
             match &arguments[..] {
               // m1
@@ -744,7 +775,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (1,2) => {
+          (1,1,2) => {
             let mut out = RowVector2::from_element($default);
             match &arguments[..] {
               // r2
@@ -759,7 +790,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (1,3) => {
+          (1,1,3) => {
             let mut out = RowVector3::from_element($default);
             match &arguments[..] {
               // r3
@@ -774,7 +805,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (1,4) => {
+          (1,1,4) => {
             let mut out = RowVector4::from_element($default);
             match &arguments[..] {
               // r4
@@ -789,7 +820,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (1,n) => {
+          (1,1,n) => {
             let mut out = RowVector4::from_element($default);
             match &arguments[..] {
               // rd
@@ -804,7 +835,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (2,2) => {
+          (2,1,2) => {
             let mut out = RowVector2::from_element($default);
             match &arguments[..] {
               // s1m1
@@ -839,7 +870,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (2,3) => {
+          (2,1,3) => {
             let mut out = RowVector3::from_element($default);
             match &arguments[..] {
               //sr2
@@ -878,7 +909,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (2,4) => {
+          (2,1,4) => {
             let mut out = RowVector4::from_element($default);
             match &arguments[..] {
               // s r3
@@ -921,7 +952,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           } 
-          (2,n) => {
+          (2,1,n) => {
             let mut out = RowDVector::from_element(n,$default);
             match &arguments[..] {
               [Value::MutableReference(e0),Value::MutableReference(e1)] => {
@@ -935,7 +966,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (3,3) => {  
+          (3,1,3) => {  
             let mut out = RowVector3::from_element($default);
             match &arguments[..] {
               // s s m1
@@ -1013,7 +1044,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!()
             }
           }
-          (3,4) => {
+          (3,1,4) => {
             let mut out = RowVector4::from_element($default);
             match &arguments[..] {
               // s s r2
@@ -1120,7 +1151,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!()
             }
           }
-          (3,n) => {
+          (3,1,n) => {
             let mut out = RowDVector::from_element(n,$default);
             match &arguments[..] {
               [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2)] => {
@@ -1134,7 +1165,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (4,4) => {
+          (4,1,4) => {
             let mut out = RowVector4::from_element($default);
             match &arguments[..] {
              // s s s m1
@@ -1324,7 +1355,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (4,n) => {
+          (4,1,n) => {
             let mut out = RowDVector::from_element(n,$default);
             match &arguments[..] {
               [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2), Value::MutableReference(e3)] => {
@@ -1338,7 +1369,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (m,n) => {
+          (m,1,n) => {
             let mut out = RowDVector::from_element(n,$default);
             let mut matrix_args = vec![];
             for arg in arguments {
@@ -1355,6 +1386,250 @@ macro_rules! impl_horzcat_arms {
               }
             }
             return Ok(Box::new(HorizontalConcatenateRDN{e0: matrix_args, out: new_ref(out)}));
+          }
+          (2, 2, 2) => {
+            // v2v2
+            todo!();
+          }
+          (2, 3, 2) => {
+            // v3v3
+            todo!();
+          }
+          (2, 4, 2) => {
+            // v4v4
+            todo!();
+          }
+          (2, m, 2) => {
+            // vDvD
+            todo!();
+          }
+          (2, 2, 3) => {
+            // v2m2
+            // m2v2
+            todo!();
+          }
+          (2, 3, 3) => {
+            // v3m3
+            // m3v3
+            todo!();
+          }
+          (2, 4, 3) => {
+            // v4m4
+            // m4v4
+            todo!();
+          }
+          (2, m, 3) => {
+            // vDmD
+            // mDvD
+            todo!();
+          }
+          (2, 2, 4) => {
+            let mut out = DMatrix::from_element(2,4,$default);
+            match &arguments[..] {
+              [Value::MutableReference(e0), Value::MutableReference(e1)] => {
+                match (e0.borrow().clone(), e1.borrow().clone()) {
+                  // m2m2
+                  (Value::[<Matrix $kind:camel>](Matrix::Matrix2(ref e0)),Value::[<Matrix $kind:camel>](Matrix::Matrix2(ref e1))) => {
+                    return Ok(Box::new(HorizontalConcatenateM2M2{e0: e0.clone(), e1: e1.clone(), out: new_ref(out)}));
+                  }
+                  _ => todo!(),
+                }
+              }  
+              _ => todo!(),
+            }
+            // m2x3v2
+            // v2m2x3
+          }
+          (2, 3, 4) => {
+            // m3x2md
+            // mdm3x2
+            // mdmd
+            todo!();
+          }
+          (2, 4, 4) => {
+            // mdmd
+            todo!();
+          }
+          (2, m, 4) => {
+            // mdmd
+            todo!();
+          }
+          (2, 2, n) => {
+            // m2md
+            // mdm2
+            todo!();
+          }
+          (2, 3, n) => {
+            // m3md
+            // mdm3
+            todo!();
+          }
+          (2, 4, n) => {
+            // m4md
+            // mdm4
+            todo!();
+          }
+          (2, m, n) => {
+            // mdmd
+            todo!();
+          }
+          (3, 2, 3) => {
+            // v2v2v2
+            todo!();
+          }
+          (3, 3, 3) => {
+            // v3v3v3
+            todo!();
+          }
+          (3, 4, 3) => {
+            // v4v4v4
+            todo!();
+          }
+          (3, n, 3) => {
+            // vdvdvd
+            todo!();
+          }
+          (3, 2, 4) => {
+            // v2v2vd
+            // v2vdv2
+            // vdv2v2
+            todo!();
+          }
+          (3, 3, 4) => {
+            // v3v3md
+            // v3mdv3
+            // mdv3v3
+            // m3x2v3v3
+            // v3m3x2v3
+            // v3v3m3x2
+            todo!();
+          }
+          (3, 4, 4) => {
+            // v4v4md
+            // v4mdv4
+            // mdv4v4
+            todo!();
+          }
+          (3, m, 4) => {
+            // vdvdmd
+            // vdmdvd
+            // mdvdvd
+            todo!();
+          }
+          (3, 2, n) => {
+            // v2v2md
+            // v2mdv2
+            // mdv2v2
+            // mdmdv2
+            // mdv2md
+            // v2mdmd
+            todo!();
+          }
+          (3, 3, n) => {
+            // v3v3md
+            // v3mdv3
+            // mdv3v3
+            // mdmdv3
+            // mdv3md
+            // v3mdmd
+            todo!();
+          }
+          (3, 4, n) => {
+            // v4v4md
+            // v4mdv4
+            // mdv4v4
+            // mdmdv4
+            // mdv4md
+            // v4mdmd
+            todo!();
+          }
+          (3, m, n) => {
+            // vdmdmd
+            // mdvdmd
+            // mdmdvd
+            // vdvdmd
+            // vdmdvd
+            // mdvdvd
+            todo!();
+          }
+          (4, 2, 4) => {
+            // v2v2v2v2
+            todo!();
+          }
+          (4, 3, 4) => {
+            // v3v3v3v3
+            todo!();
+          }
+          (4, 4, 4) => {
+            // v4v4v4v4
+            todo!();
+          }
+          (4, m, 4) => {
+            // vdvdvdvd
+            todo!();
+          }
+          (4, 2, n) => {
+            // v2v2v2md
+            // v2v2mdv2
+            // v2mdv2v2
+            // mdv2v2v2
+            // v2v2mdmd
+            // v2mdv2md
+            // mdv2v2md
+            // mdv2mdv2
+            // mdmdv2v2
+            // v2v2mdmd
+            // v2mdmdmd
+            // mdmdmdv2
+            todo!();
+          }
+          (4, 3, n) => {
+            // v3v3v3md
+            // v3v3mdv3
+            // v3mdv3v3
+            // mdv3v3v3
+            // v3v3mdmd
+            // v3mdv3md
+            // mdv3v3md
+            // mdv3mdv3
+            // mdmdv3v3
+            // v3v3mdmd
+            // v3mdmdmd
+            // mdmdmdv3
+            todo!();
+          }
+          (4, 4, n) => {
+            // v4v4v4md
+            // v4v4mdv4
+            // v4mdv4v4
+            // mdv4v4v4
+            // v4v4mdmd
+            // v4mdv4md
+            // mdv4v4md
+            // mdv4mdv4
+            // mdmdv4v4
+            // v4v4mdmd
+            // v4mdmdmd
+            // mdmdmdv4
+            todo!();
+          }
+          (4, m, n) => {
+            // vdvdvdmd
+            // vdvdmdvd
+            // vdmdvdvd
+            // mdvdvdvd
+            // vdvdmdmd
+            // vdmdvdmd
+            // mdvdvdmd
+            // mdvdmdvd
+            // mdmdvdvd
+            // vdvdmdmd
+            // vdmdmdmd
+            // mdmdmdvd
+            todo!();
+          }
+          (l, m, n) => {
+            todo!();
           }
           _ => {return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});}
         }
