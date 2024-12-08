@@ -230,7 +230,8 @@ where
 
 #[derive(Debug)]
 struct HorizontalConcatenateRDN<T> {
-  e0: Vec<Matrix<T>>,
+  scalar: Vec<(Ref<T>,usize)>,
+  matrix: Vec<(Matrix<T>,usize)>,
   out: Ref<RowDVector<T>>,
 }
 
@@ -242,13 +243,16 @@ where
   fn solve(&self) {
     unsafe {
       let mut out_ptr = (&mut *(self.out.as_ptr()));
-      let mut i = 0;
-      for e in &self.e0 {          
+      for (e,i) in &self.matrix {
         let e0_ptr = e.as_vec();
+        let mut i = *i;
         for ix in 0..e0_ptr.len() {
           out_ptr[i] = e0_ptr[ix].clone();
           i += 1;
         }
+      }
+      for (e,i) in &self.scalar {
+        out_ptr[*i] = e.borrow().clone();
       }
     }
   }
@@ -1371,13 +1375,24 @@ macro_rules! impl_horzcat_arms {
           }
           (m,1,n) => {
             let mut out = RowDVector::from_element(n,$default);
-            let mut matrix_args = vec![];
-            for arg in arguments {
+            let mut matrix_args: Vec<(Matrix<$kind>,usize)> = vec![];
+            let mut scalar_args: Vec<(Ref<$kind>,usize)> = vec![];
+            let mut i = 0;
+            for arg in arguments.iter() {
               match &arg {
+                Value::[<$kind:camel>](e0) => {
+                  scalar_args.push((e0.clone(),i));
+                  i += 1;
+                }
                 Value::MutableReference(e0) => {
                   match e0.borrow().clone() {
                     Value::[<Matrix $kind:camel>](e0) => {
-                      matrix_args.push(e0.clone());
+                      matrix_args.push((e0.clone(),i));
+                      i += e0.shape()[0];
+                    }
+                    Value::[<$kind:camel>](e0) => {
+                      scalar_args.push((e0.clone(),i));
+                      i += 1;
                     }
                     _ => todo!(),
                   }
@@ -1385,7 +1400,7 @@ macro_rules! impl_horzcat_arms {
                 _ => todo!(),
               }
             }
-            return Ok(Box::new(HorizontalConcatenateRDN{e0: matrix_args, out: new_ref(out)}));
+            return Ok(Box::new(HorizontalConcatenateRDN{scalar: scalar_args, matrix: matrix_args, out: new_ref(out)}));
           }
           (2, 2, 2) => {
             // v2v2
@@ -1629,6 +1644,7 @@ macro_rules! impl_horzcat_arms {
             todo!();
           }
           (l, m, n) => {
+
             todo!();
           }
           _ => {return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});}
