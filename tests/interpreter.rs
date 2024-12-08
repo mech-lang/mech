@@ -444,3 +444,5 @@ test_interpreter!(interpret_horzcat_rdn, "a := [1 2 3]; z := [0 0 0 0 0 a];", ne
 
 test_interpreter!(interpret_horzcat_m2m2, "a := [1 2; 3 4]; z := [a a];", new_ref(DMatrix::from_vec(2,4,vec![F64::new(1.0),F64::new(3.0),F64::new(2.0),F64::new(4.0),F64::new(1.0),F64::new(3.0),F64::new(2.0),F64::new(4.0)])).to_value());
 
+test_interpreter!(interpret_horzcat_m2x3v2, "x := [1 2 3; 4 5 6]; z := [7 8]'; a := [x z];", new_ref(DMatrix::from_vec(2,4,vec![F64::new(1.0),F64::new(4.0),F64::new(2.0),F64::new(5.0),F64::new(3.0),F64::new(6.0),F64::new(7.0),F64::new(8.0)])).to_value());
+test_interpreter!(interpret_horzcat_v2m2x3, "x := [1 2 3; 4 5 6]; z := [7 8]'; a := [z x];", new_ref(DMatrix::from_vec(2,4,vec![F64::new(7.0),F64::new(8.0),F64::new(1.0),F64::new(4.0),F64::new(2.0),F64::new(5.0),F64::new(3.0),F64::new(6.0)])).to_value());
