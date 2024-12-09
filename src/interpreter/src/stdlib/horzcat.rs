@@ -856,43 +856,138 @@ macro_rules! horzcat_v3m3x2 {
 }
 horzcat_two_args!(HorizontalConcatenateV3M3x2, Vector3, Matrix3x2, Matrix3, horzcat_v3m3x2);
 
-
 macro_rules! horzcat_v4md {
   ($out:expr, $e0:expr, $e1:expr) => {
     $out[0] = $e0[0].clone();
     $out[1] = $e0[1].clone();
     $out[2] = $e0[2].clone();
     $out[3] = $e0[3].clone();
-    $out[4] = $e1[0].clone();
-    $out[5] = $e1[1].clone();
-    $out[6] = $e1[2].clone();
-    $out[7] = $e1[3].clone();
-    $out[8] = $e1[4].clone();
-    $out[9] = $e1[5].clone();
-    $out[10] = $e1[6].clone();
-    $out[11] = $e1[7].clone();
+    let offset = 4;
+    for i in 0..$e1.len() {
+      $out[i + offset] = $e1[i].clone();
+    }
   };
 }
 horzcat_two_args!(HorizontalConcatenateV4MD, Vector4, DMatrix, DMatrix, horzcat_v4md);
 
-
 macro_rules! horzcat_mdv4 {
+  ($out:expr, $e0:expr, $e1:expr) => {
+    let e0_len = $e0.len();
+    for i in 0..e0_len {
+      $out[i] = $e0[i].clone();
+    }
+    let offset = e0_len;
+    $out[offset] = $e1[0].clone();
+    $out[offset + 1] = $e1[1].clone();
+    $out[offset + 2] = $e1[2].clone();
+    $out[offset + 3] = $e1[3].clone();
+  };
+}
+horzcat_two_args!(HorizontalConcatenateMDV4, DMatrix, Vector4, DMatrix, horzcat_mdv4);
+
+macro_rules! horzcat_mdv2 {
+  ($out:expr, $e0:expr, $e1:expr) => {
+    let e0_len = $e0.len();
+    for i in 0..e0_len {
+      $out[i] = $e0[i].clone();
+    }
+    let offset = e0_len;
+    $out[offset] = $e1[0].clone();
+    $out[offset + 1] = $e1[1].clone();
+  };
+}
+horzcat_two_args!(HorizontalConcatenateMDV2, DMatrix, Vector2, DMatrix, horzcat_mdv2);
+
+macro_rules! horzcat_v2md {
+  ($out:expr, $e0:expr, $e1:expr) => {
+    $out[0] = $e0[0].clone();
+    $out[1] = $e0[1].clone();
+    let offset = 2;
+    for i in 0..$e1.len() {
+      $out[i + offset] = $e1[i].clone();
+    }
+  };
+}
+horzcat_two_args!(HorizontalConcatenateV2MD, Vector2, DMatrix, DMatrix, horzcat_v2md);
+
+macro_rules! horzcat_mdm2 {
+  ($out:expr, $e0:expr, $e1:expr) => {
+    let e0_len = $e0.len();
+    for i in 0..e0_len {
+      $out[i] = $e0[i].clone();
+    }
+    let offset = e0_len;
+    $out[offset] = $e1[0].clone();
+    $out[offset + 1] = $e1[1].clone();
+    $out[offset + 2] = $e1[2].clone();
+    $out[offset + 3] = $e1[3].clone();
+  };
+}
+
+horzcat_two_args!(HorizontalConcatenateMDM2, DMatrix, Matrix2, DMatrix, horzcat_mdm2);
+
+macro_rules! horzcat_m2md {
   ($out:expr, $e0:expr, $e1:expr) => {
     $out[0] = $e0[0].clone();
     $out[1] = $e0[1].clone();
     $out[2] = $e0[2].clone();
     $out[3] = $e0[3].clone();
-    $out[4] = $e0[4].clone();
-    $out[5] = $e0[5].clone();
-    $out[6] = $e0[6].clone();
-    $out[7] = $e0[7].clone();
-    $out[8] = $e1[0].clone();
-    $out[9] = $e1[1].clone();
-    $out[10] = $e1[2].clone();
-    $out[11] = $e1[3].clone();
+    let offset = 4;
+    for i in 0..$e1.len() {
+      $out[i + offset] = $e1[i].clone();
+    }
   };
 }
-horzcat_two_args!(HorizontalConcatenateMDV4, DMatrix, Vector4, DMatrix, horzcat_mdv4);
+horzcat_two_args!(HorizontalConcatenateM2MD, Matrix2, DMatrix, DMatrix, horzcat_m2md);
+
+macro_rules! horzcat_mdv3 {
+  ($out:expr, $e0:expr, $e1:expr) => {
+    let e0_len = $e0.len();
+    for i in 0..e0_len {
+      $out[i] = $e0[i].clone();
+    }
+    let offset = e0_len;
+    $out[offset] = $e1[0].clone();
+    $out[offset + 1] = $e1[1].clone();
+    $out[offset + 2] = $e1[2].clone();
+  };
+}
+
+horzcat_two_args!(HorizontalConcatenateMDV3, DMatrix, Vector3, DMatrix, horzcat_mdv3);
+
+macro_rules! horzcat_v3md {
+  ($out:expr, $e0:expr, $e1:expr) => {
+    $out[0] = $e0[0].clone();
+    $out[1] = $e0[1].clone();
+    $out[2] = $e0[2].clone();
+    let offset = 3;
+    for i in 0..$e1.len() {
+      $out[i + offset] = $e1[i].clone();
+    }
+  };
+}
+
+horzcat_two_args!(HorizontalConcatenateV3MD, Vector3, DMatrix, DMatrix, horzcat_v3md);
+
+macro_rules! horzcat_mdm3 {
+  ($out:expr, $e0:expr, $e1:expr) => {
+    let e0_len = $e0.len();
+    for i in 0..e0_len {
+      $out[i] = $e0[i].clone();
+    }
+    let offset = e0_len;
+    $out[offset] = $e1[0].clone();
+    $out[offset + 1] = $e1[1].clone();
+    $out[offset + 2] = $e1[2].clone();
+    $out[offset + 3] = $e1[3].clone();
+    $out[offset + 4] = $e1[5].clone();
+    $out[offset + 5] = $e1[6].clone();
+    $out[offset + 6] = $e1[7].clone();
+    $out[offset + 7] = $e1[8].clone();
+  };
+}
+
+horzcat_two_args!(HorizontalConcatenateMDM3, DMatrix, Matrix3, DMatrix, horzcat_mdm3);
 
 macro_rules! horzcat_mdvd {
   ($out:expr, $e0:expr, $e1:expr) => {
@@ -934,6 +1029,131 @@ macro_rules! horzcat_vdvd {
   };
 }
 horzcat_two_args!(HorizontalConcatenateVDVD, DVector, DVector, DMatrix, horzcat_vdvd);
+
+macro_rules! horzcat_m3x2md {
+  ($out:expr, $e0:expr, $e1:expr) => {
+    $out[0] = $e0[0].clone();
+    $out[1] = $e0[1].clone();
+    $out[2] = $e0[2].clone();
+    $out[3] = $e0[3].clone();
+    $out[4] = $e0[4].clone();
+    $out[5] = $e0[5].clone();
+    let offset = 6;
+    for i in 0..$e1.len() {
+      $out[i + offset] = $e1[i].clone();
+    }
+  };
+}
+horzcat_two_args!(HorizontalConcatenateM3x2MD, Matrix3x2, DMatrix, DMatrix, horzcat_m3x2md);
+
+macro_rules! horzcat_mdm3x2 {
+  ($out:expr, $e0:expr, $e1:expr) => {
+    let e0_len = $e0.len();
+    for i in 0..e0_len {
+      $out[i] = $e0[i].clone();
+    }
+    let offset = e0_len;
+    $out[offset] = $e1[0].clone();
+    $out[offset + 1] = $e1[1].clone();
+    $out[offset + 2] = $e1[2].clone();
+    $out[offset + 3] = $e1[3].clone();
+    $out[offset + 4] = $e1[4].clone();
+    $out[offset + 5] = $e1[5].clone();
+  };
+}
+horzcat_two_args!(HorizontalConcatenateMDM3x2, DMatrix, Matrix3x2, DMatrix, horzcat_mdm3x2);
+
+macro_rules! horzcat_mdmd {
+  ($out:expr, $e0:expr, $e1:expr) => {
+    let e0_len = $e0.len();
+    for i in 0..e0_len {
+      $out[i] = $e0[i].clone();
+    }
+    let offset = e0_len;
+    for i in 0..$e1.len() {
+      $out[i + offset] = $e1[i].clone();
+    }
+  };
+}
+horzcat_two_args!(HorizontalConcatenateMDMD, DMatrix, DMatrix, DMatrix, horzcat_mdmd);
+
+horzcat_two_args!(HorizontalConcatenateMDM4, DMatrix, Matrix4, DMatrix, horzcat_mdmd);
+horzcat_two_args!(HorizontalConcatenateM4MD, Matrix4, DMatrix, DMatrix, horzcat_mdmd);
+horzcat_two_args!(HorizontalConcatenateV4M4, Vector4, Matrix4, DMatrix, horzcat_mdmd);
+horzcat_two_args!(HorizontalConcatenateM4V4, Matrix4, Vector4, DMatrix, horzcat_mdmd);
+
+macro_rules! horzcat_m3md {
+  ($out:expr, $e0:expr, $e1:expr) => {
+    $out[0] = $e0[0].clone();
+    $out[1] = $e0[1].clone();
+    $out[2] = $e0[2].clone();
+    $out[3] = $e0[3].clone();
+    $out[4] = $e0[4].clone();
+    $out[5] = $e0[5].clone();
+    $out[6] = $e0[6].clone();
+    $out[7] = $e0[7].clone();
+    $out[8] = $e0[8].clone();
+    let offset = 9;
+    for i in 0..$e1.len() {
+      $out[i + offset] = $e1[i].clone();
+    }
+  };
+}
+horzcat_two_args!(HorizontalConcatenateM3MD, Matrix3, DMatrix, DMatrix, horzcat_m3md);
+
+macro_rules! horzcat_m3v3 {
+  ($out:expr, $e0:expr, $e1:expr) => {
+    $out[0] = $e0[0].clone();
+    $out[1] = $e0[1].clone();
+    $out[2] = $e0[2].clone();
+    $out[3] = $e0[3].clone();
+    $out[4] = $e0[4].clone();
+    $out[5] = $e0[5].clone();
+    $out[6] = $e0[6].clone();
+    $out[7] = $e0[7].clone();
+    $out[8] = $e0[8].clone();
+    $out[9] = $e1[0].clone();
+    $out[10] = $e1[1].clone();
+    $out[11] = $e1[2].clone();
+  };
+}
+horzcat_two_args!(HorizontalConcatenateM3V3, Matrix3, Vector3, DMatrix, horzcat_m3v3);
+
+macro_rules! horzcat_v3m3 {
+  ($out:expr, $e0:expr, $e1:expr) => {
+    $out[0] = $e0[0].clone();
+    $out[1] = $e0[1].clone();
+    $out[2] = $e0[2].clone();
+    $out[3] = $e1[0].clone();
+    $out[4] = $e1[1].clone();
+    $out[5] = $e1[2].clone();
+    $out[6] = $e1[3].clone();
+    $out[7] = $e1[4].clone();
+    $out[8] = $e1[5].clone();
+    $out[9] = $e1[6].clone();
+    $out[10] = $e1[7].clone();
+    $out[11] = $e1[8].clone();
+  };
+}
+horzcat_two_args!(HorizontalConcatenateV3M3, Vector3, Matrix3, DMatrix, horzcat_v3m3);
+
+macro_rules! horzcat_m3x2m3x2 {
+  ($out:expr, $e0:expr, $e1:expr) => {
+    $out[0] = $e0[0].clone();
+    $out[1] = $e0[1].clone();
+    $out[2] = $e0[2].clone();
+    $out[3] = $e0[3].clone();
+    $out[4] = $e0[4].clone();
+    $out[5] = $e0[5].clone();
+    $out[6] = $e1[0].clone();
+    $out[7] = $e1[1].clone();
+    $out[8] = $e1[2].clone();
+    $out[9] = $e1[3].clone();
+    $out[10] = $e1[4].clone();
+    $out[11] = $e1[5].clone();
+  };
+}
+horzcat_two_args!(HorizontalConcatenateM3x2M3x2, Matrix3x2, Matrix3x2, DMatrix, horzcat_m3x2m3x2);
 
 macro_rules! impl_horzcat_arms {
   ($kind:ident, $args:expr, $default:expr) => {
@@ -1921,37 +2141,125 @@ macro_rules! impl_horzcat_arms {
             }
           }
           (2, 3, 4) => {
-            // m3x2md
-            // mdm3x2
-            // mdmd
-            todo!();
+            let mut out = DMatrix::from_element(3, 4, $default);
+            match &arguments[..] {
+              [Value::MutableReference(e0), Value::MutableReference(e1)] => {
+                match (e0.borrow().clone(), e1.borrow().clone()) {
+                  // m3v3
+                  (Value::[<Matrix $kind:camel>](Matrix::Matrix3(ref e0)),Value::[<Matrix $kind:camel>](Matrix::Vector3(ref e1)))=>Ok(Box::new(HorizontalConcatenateM3V3{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  // v3m3
+                  (Value::[<Matrix $kind:camel>](Matrix::Vector3(ref e0)),Value::[<Matrix $kind:camel>](Matrix::Matrix3(ref e1)))=>Ok(Box::new(HorizontalConcatenateV3M3{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  // m3x2m3x2
+                  (Value::[<Matrix $kind:camel>](Matrix::Matrix3x2(ref e0)),Value::[<Matrix $kind:camel>](Matrix::Matrix3x2(ref e1)))=>Ok(Box::new(HorizontalConcatenateM3x2M3x2{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  _ => todo!(),
+                }
+              }
+              _ => todo!(),
+            }
           }
           (2, 4, 4) => {
-            // mdmd
-            todo!();
+            let mut out = DMatrix::from_element(4, 4, $default);
+            match &arguments[..] {
+              [Value::MutableReference(e0), Value::MutableReference(e1)] => {
+                match (e0.borrow().clone(), e1.borrow().clone()) {
+                  // v4md
+                  (Value::[<Matrix $kind:camel>](Matrix::Vector4(ref e0)),Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e1)))=>Ok(Box::new(HorizontalConcatenateV4MD{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  // mdv4
+                  (Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e0)),Value::[<Matrix $kind:camel>](Matrix::Vector4(ref e1)))=>Ok(Box::new(HorizontalConcatenateMDV4{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  // mdmd
+                  (Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e0)),Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e1)))=>Ok(Box::new(HorizontalConcatenateMDMD{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  _ => todo!(),
+                }
+              }
+              _ => todo!(),
+            }
           }
           (2, m, 4) => {
-            // mdmd
-            todo!();
+            let mut out = DMatrix::from_element(m, 4, $default);
+            match &arguments[..] {
+              [Value::MutableReference(e0), Value::MutableReference(e1)] => {
+                match (e0.borrow().clone(), e1.borrow().clone()) {
+                  // mdmd
+                  (Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e0)),Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e1)))=>Ok(Box::new(HorizontalConcatenateMDMD{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  _ => todo!(),
+                }
+              }
+              _ => todo!(),
+            }
           }
           (2, 2, n) => {
-            // m2md
-            // mdm2
-            todo!();
+            let mut out = DMatrix::from_element(2, n, $default);
+            match &arguments[..] {
+              [Value::MutableReference(e0), Value::MutableReference(e1)] => {
+                match (e0.borrow().clone(), e1.borrow().clone()) {
+                  // m2md
+                  (Value::[<Matrix $kind:camel>](Matrix::Matrix2(ref e0)),Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e1)))=>Ok(Box::new(HorizontalConcatenateM2MD{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  // mdm2
+                  (Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e0)),Value::[<Matrix $kind:camel>](Matrix::Matrix2(ref e1)))=>Ok(Box::new(HorizontalConcatenateMDM2{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  // v2md
+                  (Value::[<Matrix $kind:camel>](Matrix::Vector2(ref e0)),Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e1)))=>Ok(Box::new(HorizontalConcatenateV2MD{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  // mdv2
+                  (Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e0)),Value::[<Matrix $kind:camel>](Matrix::Vector2(ref e1)))=>Ok(Box::new(HorizontalConcatenateMDV2{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  _ => todo!(),
+                }
+              }
+              _ => todo!(),
+            }
           }
           (2, 3, n) => {
-            // m3md
-            // mdm3
-            todo!();
+            let mut out = DMatrix::from_element(3, n, $default);
+            match &arguments[..] {
+              [Value::MutableReference(e0), Value::MutableReference(e1)] => {
+                match (e0.borrow().clone(), e1.borrow().clone()) {
+                  // m3md
+                  (Value::[<Matrix $kind:camel>](Matrix::Matrix3(ref e0)),Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e1)))=>Ok(Box::new(HorizontalConcatenateM3MD{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  // mdm3
+                  (Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e0)),Value::[<Matrix $kind:camel>](Matrix::Matrix3(ref e1)))=>Ok(Box::new(HorizontalConcatenateMDM3{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  // v3md
+                  (Value::[<Matrix $kind:camel>](Matrix::Vector3(ref e0)),Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e1)))=>Ok(Box::new(HorizontalConcatenateV3MD{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  // mdv3
+                  (Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e0)),Value::[<Matrix $kind:camel>](Matrix::Vector3(ref e1)))=>Ok(Box::new(HorizontalConcatenateMDV3{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  _ => todo!(),
+                }
+              }
+              _ => todo!(),
+            }
           }
           (2, 4, n) => {
-            // m4md
-            // mdm4
-            todo!();
+            let mut out = DMatrix::from_element(4, n, $default);
+            match &arguments[..] {
+              [Value::MutableReference(e0), Value::MutableReference(e1)] => {
+                match (e0.borrow().clone(), e1.borrow().clone()) {
+                  // m4md
+                  (Value::[<Matrix $kind:camel>](Matrix::Matrix4(ref e0)),Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e1)))=>Ok(Box::new(HorizontalConcatenateM4MD{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  // mdm4
+                  (Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e0)),Value::[<Matrix $kind:camel>](Matrix::Matrix4(ref e1)))=>Ok(Box::new(HorizontalConcatenateMDM4{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  // v4md
+                  (Value::[<Matrix $kind:camel>](Matrix::Vector4(ref e0)),Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e1)))=>Ok(Box::new(HorizontalConcatenateV4MD{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  // mdv4
+                  (Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e0)),Value::[<Matrix $kind:camel>](Matrix::Vector4(ref e1)))=>Ok(Box::new(HorizontalConcatenateMDV4{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  // v4m4
+                  (Value::[<Matrix $kind:camel>](Matrix::Vector4(ref e0)),Value::[<Matrix $kind:camel>](Matrix::Matrix4(ref e1)))=>Ok(Box::new(HorizontalConcatenateV4M4{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  // m4v4
+                  (Value::[<Matrix $kind:camel>](Matrix::Matrix4(ref e0)),Value::[<Matrix $kind:camel>](Matrix::Vector4(ref e1)))=>Ok(Box::new(HorizontalConcatenateM4V4{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  _ => todo!(),
+                }
+              }
+              _ => todo!(),
+            }
           }
           (2, m, n) => {
-            // mdmd
-            todo!();
+            let mut out = DMatrix::from_element(m, n, $default);
+            match &arguments[..] {
+              [Value::MutableReference(e0), Value::MutableReference(e1)] => {
+                match (e0.borrow().clone(), e1.borrow().clone()) {
+                  // mdmd
+                  (Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e0)),Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e1)))=>Ok(Box::new(HorizontalConcatenateMDMD{e0:e0.clone(),e1:e1.clone(),out:new_ref(out)})),
+                  _ => todo!(),
+                }
+              }
+              _ => todo!(),
+            }
           }
           (3, 2, 3) => {
             // v2v2v2
@@ -2093,23 +2401,7 @@ macro_rules! impl_horzcat_arms {
             // mdmdmdv4
             todo!();
           }
-          (4, m, n) => {
-            // vdvdvdmd
-            // vdvdmdvd
-            // vdmdvdvd
-            // mdvdvdvd
-            // vdvdmdmd
-            // vdmdvdmd
-            // mdvdvdmd
-            // mdvdmdvd
-            // mdmdvdvd
-            // vdvdmdmd
-            // vdmdmdmd
-            // mdmdmdvd
-            todo!();
-          }
           (l, m, n) => {
-
             todo!();
           }
           _ => {return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});}

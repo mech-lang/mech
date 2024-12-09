@@ -466,3 +466,5 @@ test_interpreter!(interpret_horzcat_mdvd, "x := [1 2; 3 4; 5 6; 7 8; 9 10]; y :=
 test_interpreter!(interpret_horzcat_vdmd, "x := [1 2; 3 4; 5 6; 7 8; 9 10]; y := [1; 2; 3; 4; 5]; z := [y x]", new_ref(DMatrix::from_vec(5,3,vec![F64::new(1.0),F64::new(2.0),F64::new(3.0),F64::new(4.0),F64::new(5.0),F64::new(1.0),F64::new(3.0),F64::new(5.0),F64::new(7.0),F64::new(9.0),F64::new(2.0),F64::new(4.0),F64::new(6.0),F64::new(8.0),F64::new(10.0)])).to_value());
 
 test_interpreter!(interpret_horzcat_m2, "x := [1 2; 3 4]; z := [x]", new_ref(Matrix2::from_vec(vec![F64::new(1.0),F64::new(3.0),F64::new(2.0),F64::new(4.0)])).to_value());
+
+test_interpreter!(interpret_horzcat_m3v3, "x := [1 2 3; 4 5 6; 7 8 9]; y := [1;2;3]; z := [x y]", new_ref(DMatrix::from_vec(3,4,vec![F64::new(1.0),F64::new(4.0),F64::new(7.0),F64::new(2.0),F64::new(5.0),F64::new(8.0),F64::new(3.0),F64::new(6.0),F64::new(9.0),F64::new(1.0),F64::new(2.0),F64::new(3.0)])).to_value());
