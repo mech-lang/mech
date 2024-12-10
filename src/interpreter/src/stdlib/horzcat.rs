@@ -2479,66 +2479,27 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (4, 2, 4) => {
-            // v2v2v2v2
-            todo!();
-          }
-          (4, 3, 4) => {
-            // v3v3v3v3
-            todo!();
-          }
           (4, 4, 4) => {
             // v4v4v4v4
             todo!();
           }
-          (4, m, 4) => {
-            // vdvdvdvd
-            todo!();
-          }
-          (4, 2, n) => {
-            // v2v2v2md
-            // v2v2mdv2
-            // v2mdv2v2
-            // mdv2v2v2
-            // v2v2mdmd
-            // v2mdv2md
-            // mdv2v2md
-            // mdv2mdv2
-            // mdmdv2v2
-            // v2v2mdmd
-            // v2mdmdmd
-            // mdmdmdv2
-            todo!();
-          }
-          (4, 3, n) => {
-            // v3v3v3md
-            // v3v3mdv3
-            // v3mdv3v3
-            // mdv3v3v3
-            // v3v3mdmd
-            // v3mdv3md
-            // mdv3v3md
-            // mdv3mdv3
-            // mdmdv3v3
-            // v3v3mdmd
-            // v3mdmdmd
-            // mdmdmdv3
-            todo!();
-          }
-          (4, 4, n) => {
-            // v4v4v4md
-            // v4v4mdv4
-            // v4mdv4v4
-            // mdv4v4v4
-            // v4v4mdmd
-            // v4mdv4md
-            // mdv4v4md
-            // mdv4mdv4
-            // mdmdv4v4
-            // v4v4mdmd
-            // v4mdmdmd
-            // mdmdmdv4
-            todo!();
+          (4, m, n) => {
+            let mut out = DMatrix::from_element(m,n,$default);
+            match &arguments[..] {
+              [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2), Value::MutableReference(e3)] => {
+                match (e0.borrow().clone(), e1.borrow().clone(),e2.borrow().clone(),e3.borrow().clone()) {
+                  (Value::[<Matrix $kind:camel>](m0),Value::[<Matrix $kind:camel>](m1),Value::[<Matrix $kind:camel>](m2),Value::[<Matrix $kind:camel>](m3)) => {
+                    let e0 = m0.get_copyable_matrix();
+                    let e1 = m1.get_copyable_matrix();
+                    let e2 = m2.get_copyable_matrix();
+                    let e3 = m3.get_copyable_matrix();
+                    Ok(Box::new(HorizontalConcatenateFourArgs{e0,e1,e2,e3,out:new_ref(out)}))
+                  }   
+                  _ => todo!(),
+                }
+              }
+              _ => todo!(),
+            }
           }
           (l, m, n) => {
             todo!();
