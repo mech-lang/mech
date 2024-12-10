@@ -1,6 +1,8 @@
 #[macro_use]
 use crate::stdlib::*;
 
+// Horizontal Concatenate -----------------------------------------------------
+
 macro_rules! horzcat_one_arg {
   ($fxn:ident, $e0:ident, $out:ident, $opt:ident) => {
     #[derive(Debug)]
@@ -51,67 +53,6 @@ macro_rules! horzcat_two_args {
     }
   };}
 
-struct HorizontalConcatenateTwoArgs<T> {
-  e0: Box<dyn CopyMat<T>>,
-  e1: Box<dyn CopyMat<T>>,
-  out: Ref<DMatrix<T>>,
-}
-impl<T> MechFunction for HorizontalConcatenateTwoArgs<T>
-where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
-  Ref<DMatrix<T>>: ToValue
-{
-  fn solve(&self) {
-    let offset = self.e0.copy_into(&self.out,0);
-    self.e1.copy_into(&self.out,offset);
-  }
-  fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("HorzCat") }
-}
-    
-struct HorizontalConcatenateThreeArgs<T> {
-  e0: Box<dyn CopyMat<T>>,
-  e1: Box<dyn CopyMat<T>>,
-  e2: Box<dyn CopyMat<T>>,
-  out: Ref<DMatrix<T>>,
-}
-impl<T> MechFunction for HorizontalConcatenateThreeArgs<T>
-where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
-  Ref<DMatrix<T>>: ToValue
-{
-  fn solve(&self) {
-    let mut offset = self.e0.copy_into(&self.out,0);
-    offset += self.e1.copy_into(&self.out,offset);
-    self.e2.copy_into(&self.out,offset);
-  }
-  fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("HorzCat") }
-}
-
-struct HorizontalConcatenateFourArgs<T> {
-  e0: Box<dyn CopyMat<T>>,
-  e1: Box<dyn CopyMat<T>>,
-  e2: Box<dyn CopyMat<T>>,
-  e3: Box<dyn CopyMat<T>>,
-  out: Ref<DMatrix<T>>,
-}
-impl<T> MechFunction for HorizontalConcatenateFourArgs<T>
-where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
-  Ref<DMatrix<T>>: ToValue
-{
-  fn solve(&self) {
-    let mut offset = self.e0.copy_into(&self.out,0);
-    offset += self.e1.copy_into(&self.out,offset);
-    offset += self.e2.copy_into(&self.out,offset);
-    self.e3.copy_into(&self.out,offset);
-
-  }
-  fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("HorzCat") }
-}
-  
 macro_rules! horzcat_three_args {
   ($fxn:ident, $e0:ident, $e1:ident, $e2:ident, $out:ident, $opt:ident) => {
     #[derive(Debug)]
@@ -139,7 +80,7 @@ macro_rules! horzcat_three_args {
       fn to_string(&self) -> String { format!("{:?}", self) }
     }
   };} 
-
+  
 macro_rules! horzcat_four_args {
   ($fxn:ident, $e0:ident, $e1:ident, $e2:ident, $e3:ident, $out:ident, $opt:ident) => {
     #[derive(Debug)]
@@ -169,6 +110,86 @@ macro_rules! horzcat_four_args {
       fn to_string(&self) -> String { format!("{:?}", self) }
     }
   };}   
+
+struct HorizontalConcatenateTwoArgs<T> {
+  e0: Box<dyn CopyMat<T>>,
+  e1: Box<dyn CopyMat<T>>,
+  out: Ref<DMatrix<T>>,
+}
+impl<T> MechFunction for HorizontalConcatenateTwoArgs<T>
+where
+  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<DMatrix<T>>: ToValue
+{
+  fn solve(&self) {
+    let offset = self.e0.copy_into(&self.out,0);
+    self.e1.copy_into(&self.out,offset);
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("HorizontalConcatenateTwoArgs") }
+}
+    
+struct HorizontalConcatenateThreeArgs<T> {
+  e0: Box<dyn CopyMat<T>>,
+  e1: Box<dyn CopyMat<T>>,
+  e2: Box<dyn CopyMat<T>>,
+  out: Ref<DMatrix<T>>,
+}
+impl<T> MechFunction for HorizontalConcatenateThreeArgs<T>
+where
+  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<DMatrix<T>>: ToValue
+{
+  fn solve(&self) {
+    let mut offset = self.e0.copy_into(&self.out,0);
+    offset += self.e1.copy_into(&self.out,offset);
+    self.e2.copy_into(&self.out,offset);
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("HorizontalConcatenateThreeArgs") }
+}
+
+struct HorizontalConcatenateFourArgs<T> {
+  e0: Box<dyn CopyMat<T>>,
+  e1: Box<dyn CopyMat<T>>,
+  e2: Box<dyn CopyMat<T>>,
+  e3: Box<dyn CopyMat<T>>,
+  out: Ref<DMatrix<T>>,
+}
+impl<T> MechFunction for HorizontalConcatenateFourArgs<T>
+where
+  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<DMatrix<T>>: ToValue
+{
+  fn solve(&self) {
+    let mut offset = self.e0.copy_into(&self.out,0);
+    offset += self.e1.copy_into(&self.out,offset);
+    offset += self.e2.copy_into(&self.out,offset);
+    self.e3.copy_into(&self.out,offset);
+
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("HorizontalConcatenateFourArgs") }
+}
+
+struct HorizontalConcatenateNArgs<T> {
+  e0: Vec<Box<dyn CopyMat<T>>>,
+  out: Ref<DMatrix<T>>,
+}
+impl<T> MechFunction for HorizontalConcatenateNArgs<T>
+where
+  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<DMatrix<T>>: ToValue
+{
+  fn solve(&self) {
+    let mut offset = 0;
+    for e in &self.e0 {
+      offset += e.copy_into(&self.out,offset);
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("HorizontalConcatenateNArgs") }
+}
 
 macro_rules! horizontal_concatenate {
   ($name:ident, $vec_size:expr) => {
@@ -350,8 +371,6 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:?}", self) }
 }
-
-// Horizontal Concatenate -----------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateS1<T> {
@@ -1681,30 +1700,6 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (1,2,4) => {
-            // md
-            match &arguments[..] {
-              [Value::MutableReference(e0)] => {
-                match *e0.borrow() {
-                  Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e0)) => {return Ok(Box::new(HorizontalConcatenateMD{out: e0.clone()}));}
-                  _ => todo!(),
-                }
-              }
-              _ => todo!(),
-            }
-          }
-          (1,2,n) => {
-            // md
-            match &arguments[..] {
-              [Value::MutableReference(e0)] => {
-                match *e0.borrow() {
-                  Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e0)) => {return Ok(Box::new(HorizontalConcatenateMD{out: e0.clone()}));}
-                  _ => todo!(),
-                }
-              }
-              _ => todo!(),
-            }
-          }
           (1,3,1) => {
             // v3
             match &arguments[..] {
@@ -1741,30 +1736,6 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (1,3,4) => {
-            // md
-            match &arguments[..] {
-              [Value::MutableReference(e0)] => {
-                match *e0.borrow() {
-                  Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e0)) => {return Ok(Box::new(HorizontalConcatenateMD{out: e0.clone()}));}
-                  _ => todo!(),
-                }
-              }
-              _ => todo!(),
-            }
-          }
-          (1,3,n) => {
-            // md
-            match &arguments[..] {
-              [Value::MutableReference(e0)] => {
-                match *e0.borrow() {
-                  Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e0)) => {return Ok(Box::new(HorizontalConcatenateMD{out: e0.clone()}));}
-                  _ => todo!(),
-                }
-              }
-              _ => todo!(),
-            }
-          }
           (1,4,1) => {
             // v4
             match &arguments[..] {
@@ -1777,48 +1748,12 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (1,4,2) => {
-            // md
-            match &arguments[..] {
-              [Value::MutableReference(e0)] => {
-                match *e0.borrow() {
-                  Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e0)) => {return Ok(Box::new(HorizontalConcatenateMD{out: e0.clone()}));}
-                  _ => todo!(),
-                }
-              }
-              _ => todo!(),
-            }
-          }
-          (1,4,3) => {
-            // md 
-            match &arguments[..] {
-              [Value::MutableReference(e0)] => {
-                match *e0.borrow() {
-                  Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e0)) => {return Ok(Box::new(HorizontalConcatenateMD{out: e0.clone()}));}
-                  _ => todo!(),
-                }
-              }
-              _ => todo!(),
-            }
-          }
           (1,4,4) => {
             // m4
             match &arguments[..] {
               [Value::MutableReference(e0)] => {
                 match *e0.borrow() {
                   Value::[<Matrix $kind:camel>](Matrix::Matrix4(ref e0)) => {return Ok(Box::new(HorizontalConcatenateM4{out: e0.clone()}));}
-                  _ => todo!(),
-                }
-              }
-              _ => todo!(),
-            }
-          }
-          (1,4,n) => {
-            // md
-            match &arguments[..] {
-              [Value::MutableReference(e0)] => {
-                match *e0.borrow() {
-                  Value::[<Matrix $kind:camel>](Matrix::DMatrix(ref e0)) => {return Ok(Box::new(HorizontalConcatenateMD{out: e0.clone()}));}
                   _ => todo!(),
                 }
               }
@@ -2018,7 +1953,23 @@ macro_rules! impl_horzcat_arms {
             }
           }
           (l, m, n) => {
-            todo!();
+            let mut out = DMatrix::from_element(m,n,$default);
+            let mut args = vec![];
+            for arg in arguments {
+              match arg {
+                Value::MutableReference(e0) => {
+                  match e0.borrow().clone() {
+                    Value::[<Matrix $kind:camel>](m0) => {
+                      let e0 = m0.get_copyable_matrix();
+                      args.push(e0);
+                    }
+                    _ => todo!(),
+                  }
+                }
+                _ => todo!(),
+              }
+            }
+            Ok(Box::new(HorizontalConcatenateNArgs{e0: args, out:new_ref(out)}))
           }
           _ => {return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});}
         }
