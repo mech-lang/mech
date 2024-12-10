@@ -129,7 +129,41 @@ pub enum Matrix<T> {
   #[cfg(feature = "MatrixD")]
   DMatrix(Ref<DMatrix<T>>),
 }
-  
+
+pub trait CopyMat<T> {
+  fn copy_into(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize;
+}
+
+macro_rules! copy_mat {
+  ($matsize:ident) => {
+    impl<T> CopyMat<T> for Ref<$matsize<T>> 
+    where T: Clone 
+    {
+      fn copy_into(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize {
+        let src_ptr = unsafe { (*(self.as_ptr())).clone() };
+        let mut dst_ptr = unsafe { &mut *(dst.as_ptr()) };
+        for i in 0..src_ptr.len() {
+            dst_ptr[i + offset] = src_ptr[i].clone();
+        }
+        src_ptr.len()
+      }}};}
+      
+copy_mat!(DMatrix);
+copy_mat!(Matrix1);
+copy_mat!(Matrix2);
+copy_mat!(Matrix3);
+copy_mat!(Matrix4);
+copy_mat!(Matrix2x3);
+copy_mat!(Matrix3x2);
+copy_mat!(Vector2);
+copy_mat!(Vector3);
+copy_mat!(Vector4);
+copy_mat!(DVector);
+copy_mat!(RowVector2);
+copy_mat!(RowVector3);
+copy_mat!(RowVector4);
+copy_mat!(RowDVector);
+
 impl<T> Hash for Matrix<T> 
 where T: Hash + na::Scalar
 {
@@ -172,6 +206,42 @@ where T: Hash + na::Scalar
 impl<T> Matrix<T> 
 where T: Debug + Clone + PartialEq + 'static
 {
+
+  pub fn get_copyable_matrix(&self) -> Box<dyn CopyMat<T>> {
+    match self {
+      #[cfg(feature = "RowVector4")]
+      Matrix::RowVector4(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "RowVector3")]
+      Matrix::RowVector3(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "RowVector2")]
+      Matrix::RowVector2(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "RowVectorD")]
+      Matrix::RowDVector(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "Vector4")]
+      Matrix::Vector4(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "Vector3")]
+      Matrix::Vector3(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "Vector2")]
+      Matrix::Vector2(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "VectorD")]
+      Matrix::DVector(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "Matrix4")]
+      Matrix::Matrix4(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "Matrix3")]
+      Matrix::Matrix3(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "Matrix2")]
+      Matrix::Matrix2(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "Matrix1")]
+      Matrix::Matrix1(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "Matrix3x2")]
+      Matrix::Matrix3x2(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "Matrix2x3")]
+      Matrix::Matrix2x3(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "MatrixD")]
+      Matrix::DMatrix(ref x) => Box::new(x.clone()),
+    }
+  }
+
 
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();

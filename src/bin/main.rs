@@ -12,21 +12,6 @@ use std::fs;
 extern crate nalgebra as na;
 use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix6, Matrix2};
 
-/*struct Foo<T> {
-  e1: Ref<T>,
-}
-impl<T> Foo<T>
-where
-   T: Copy,
-{
-  fn foo(&self) {
-    unsafe {
-      let e0_ptr = (*(self.e1.as_ptr())).clone();
-    }
-  }
-}*/
-
-
 fn main() -> Result<(),MechError> {
 
     // ----------------------------------------------------------------
