@@ -961,7 +961,7 @@ macro_rules! vertcat_mdmdmd {
   };
 }
 
-vertcat_three_args!(VerticalConcatenateV2R2R2, RowVector2, RowVector2, RowVector2, Matrix2x3, vertcat_mdmdmd);
+vertcat_three_args!(VerticalConcatenateR2R2R2, RowVector2, RowVector2, RowVector2, Matrix3x2, vertcat_mdmdmd);
 vertcat_three_args!(VerticalConcatenateR3R3R3, RowVector3, RowVector3, RowVector3, Matrix3, vertcat_mdmdmd);
 vertcat_three_args!(VerticalConcatenateR4R4MD, RowVector4, RowVector4, DMatrix, Matrix4, vertcat_mdmdmd);
 vertcat_three_args!(VerticalConcatenateR4MDR4, RowVector4, DMatrix, RowVector4, Matrix4, vertcat_mdmdmd);
@@ -1752,16 +1752,11 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }            
           }
-          (3,2,3) => {
-            let mut out = Matrix2x3::from_element($default);
+          (3,3,2) => {
+            let mut out = Matrix3x2::from_element($default);
             match &arguments[..] {
-              [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2)] => {
-                match (e0.borrow().clone(), e1.borrow().clone(),e2.borrow().clone()) {
-                  // v2v2v2
-                  (Value::[<Matrix $kind:camel>](Matrix::RowVector2(ref e0)),Value::[<Matrix $kind:camel>](Matrix::RowVector2(ref e1)),Value::[<Matrix $kind:camel>](Matrix::RowVector2(ref e2)))=>Ok(Box::new(VerticalConcatenateV2R2R2{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),out:new_ref(out)})),
-                  _ => todo!(),
-                }
-              }
+              // r2r2r2
+              [Value::[<Matrix $kind:camel>](Matrix::RowVector2(ref e0)),Value::[<Matrix $kind:camel>](Matrix::RowVector2(ref e1)),Value::[<Matrix $kind:camel>](Matrix::RowVector2(ref e2))]=>Ok(Box::new(VerticalConcatenateR2R2R2{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),out:new_ref(out)})),
               _ => todo!(),
             }
           }
