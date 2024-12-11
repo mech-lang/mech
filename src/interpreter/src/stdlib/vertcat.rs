@@ -903,13 +903,25 @@ vertcat_two_args!(VerticalConcatenateMDR4, DMatrix, RowVector4, Matrix4, vertcat
 
 macro_rules! vertcat_mdmd {
   ($out:expr, $e0:expr, $e1:expr) => {
-    let e0_len = $e0.len();
-    for i in 0..e0_len {
-      $out[i] = $e0[i].clone();
+    let dest_rows = $out.nrows();
+    let mut offset = 0;
+    let mut dest_ix = 0;
+
+    let src_rows = $e0.nrows();
+    let stride = dest_rows - src_rows;
+    dest_ix = offset;
+    for ix in 0..$e0.len() {
+      $out[dest_ix] = $e0[ix].clone();
+      dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
     }
-    let offset = e0_len;
-    for i in 0..$e1.len() {
-      $out[i + offset] = $e1[i].clone();
+    offset += src_rows;
+
+    let src_rows = $e1.nrows();
+    let stride = dest_rows - src_rows;
+    dest_ix = offset;
+    for ix in 0..$e1.len() {
+      $out[dest_ix] = $e1[ix].clone();
+      dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
     }
   };
 }
@@ -917,17 +929,34 @@ vertcat_two_args!(VerticalConcatenateMDMD, DMatrix, DMatrix, Matrix4, vertcat_md
 
 macro_rules! vertcat_mdmdmd {
   ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
-    let e0_len = $e0.len();
-    for i in 0..e0_len {
-      $out[i] = $e0[i].clone();
+    let dest_rows = $out.nrows();
+    let mut offset = 0;
+    let mut dest_ix = 0;
+
+    let src_rows = $e0.nrows();
+    let stride = dest_rows - src_rows;
+    dest_ix = offset;
+    for ix in 0..$e0.len() {
+      $out[dest_ix] = $e0[ix].clone();
+      dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
     }
-    let offset = e0_len;
-    for i in 0..$e1.len() {
-      $out[i + offset] = $e1[i].clone();
+    offset += src_rows;
+
+    let src_rows = $e1.nrows();
+    let stride = dest_rows - src_rows;
+    dest_ix = offset;
+    for ix in 0..$e1.len() {
+      $out[dest_ix] = $e1[ix].clone();
+      dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
     }
-    let offset = offset + $e1.len();
-    for i in 0..$e2.len() {
-      $out[i + offset] = $e2[i].clone();
+    offset += src_rows;
+
+    let src_rows = $e2.nrows();
+    let stride = dest_rows - src_rows;
+    dest_ix = offset;
+    for ix in 0..$e2.len() {
+      $out[dest_ix] = $e2[ix].clone();
+      dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
     }
   };
 }
@@ -938,24 +967,45 @@ vertcat_three_args!(VerticalConcatenateR4R4MD, RowVector4, RowVector4, DMatrix, 
 vertcat_three_args!(VerticalConcatenateR4MDR4, RowVector4, DMatrix, RowVector4, Matrix4, vertcat_mdmdmd);
 vertcat_three_args!(VerticalConcatenateMDR4R4, DMatrix, RowVector4, RowVector4, Matrix4, vertcat_mdmdmd);
 
-
 macro_rules! vertcat_mdmdmdmd {
   ($out:expr, $e0:expr, $e1:expr, $e2:expr, $e3:expr) => {
-    let e0_len = $e0.len();
-    for i in 0..e0_len {
-      $out[i] = $e0[i].clone();
+    let dest_rows = $out.nrows();
+    let mut offset = 0;
+    let mut dest_ix = 0;
+
+    let src_rows = $e0.nrows();
+    let stride = dest_rows - src_rows;
+    dest_ix = offset;
+    for ix in 0..$e0.len() {
+      $out[dest_ix] = $e0[ix].clone();
+      dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
     }
-    let offset = e0_len;
-    for i in 0..$e1.len() {
-      $out[i + offset] = $e1[i].clone();
+    offset += src_rows;
+
+    let src_rows = $e1.nrows();
+    let stride = dest_rows - src_rows;
+    dest_ix = offset;
+    for ix in 0..$e1.len() {
+      $out[dest_ix] = $e1[ix].clone();
+      dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
     }
-    let offset = offset + $e1.len();
-    for i in 0..$e2.len() {
-      $out[i + offset] = $e2[i].clone();
+    offset += src_rows;
+
+    let src_rows = $e2.nrows();
+    let stride = dest_rows - src_rows;
+    dest_ix = offset;
+    for ix in 0..$e2.len() {
+      $out[dest_ix] = $e2[ix].clone();
+      dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
     }
-    let offset = offset + $e2.len();
-    for i in 0..$e3.len() {
-      $out[i + offset] = $e3[i].clone();
+    offset += src_rows;
+
+    let src_rows = $e3.nrows();
+    let stride = dest_rows - src_rows;
+    dest_ix = offset;
+    for ix in 0..$e3.len() {
+      $out[dest_ix] = $e3[ix].clone();
+      dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
     }
   };
 }
@@ -1127,81 +1177,46 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           }
-          (3,1,3) => {  
+          (3,3,1) => {  
             let mut out = Vector3::from_element($default);
             match &arguments[..] {
               // s s m1
-              [Value::[<$kind:camel>](e0), Value::[<$kind:camel>](e1), Value::MutableReference(e2)] => {
-                match *e2.borrow() {
-                  Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e2)) => {
-                    out[0] = e0.borrow().clone();
-                    out[1] = e1.borrow().clone();
-                    return Ok(Box::new(VerticalConcatenateSSM1{e0: e2.clone(), out: new_ref(out)}));
-                  }
-                  _ => todo!(),
-                }
+              [Value::[<$kind:camel>](e0), Value::[<$kind:camel>](e1), Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e2))] => {
+                out[0] = e0.borrow().clone();
+                out[1] = e1.borrow().clone();
+                return Ok(Box::new(VerticalConcatenateSSM1{e0: e2.clone(), out: new_ref(out)}));
               }
               // s m1 s
-              [Value::[<$kind:camel>](e0), Value::MutableReference(e1), Value::[<$kind:camel>](e2)] => {
-                match *e1.borrow() {
-                  Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e1)) => {
-                    out[0] = e0.borrow().clone();
-                    out[2] = e2.borrow().clone();
-                    return Ok(Box::new(VerticalConcatenateSM1S{e0: e1.clone(), out: new_ref(out)}));
-                  }
-                  _ => todo!(),
-                }
+              [Value::[<$kind:camel>](e0), Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e1)), Value::[<$kind:camel>](e2)] => {
+                out[0] = e0.borrow().clone();
+                out[2] = e2.borrow().clone();
+                return Ok(Box::new(VerticalConcatenateSM1S{e0: e1.clone(), out: new_ref(out)}));
               }
               // m1 s s
-              [Value::MutableReference(e0), Value::[<$kind:camel>](e1), Value::[<$kind:camel>](e2)] => {
-                match *e0.borrow() {
-                  Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e0)) => {
-                    out[1] = e1.borrow().clone();
-                    out[2] = e2.borrow().clone();
-                    return Ok(Box::new(VerticalConcatenateM1SS{e0: e0.clone(), out: new_ref(out)}));
-                  }
-                  _ => todo!(),
-                }
+              [Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e0)), Value::[<$kind:camel>](e1), Value::[<$kind:camel>](e2)] => {
+                out[1] = e1.borrow().clone();
+                out[2] = e2.borrow().clone();
+                return Ok(Box::new(VerticalConcatenateM1SS{e0: e0.clone(), out: new_ref(out)}));
               }
               // m1 m1 s
-              [Value::MutableReference(e0), Value::MutableReference(e1), Value::[<$kind:camel>](e2)] => {
-                match (e0.borrow().clone(), e1.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e0)), Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e1))) => {
-                    out[2] = e2.borrow().clone();
-                    return Ok(Box::new(VerticalConcatenateM1M1S{e0: e0.clone(), e1: e1.clone(), out: new_ref(out)}));
-                  }
-                  _ => todo!(),
-                }
+              [Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e0)), Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e1)), Value::[<$kind:camel>](e2)] => {
+                out[2] = e2.borrow().clone();
+                return Ok(Box::new(VerticalConcatenateM1M1S{e0: e0.clone(), e1: e1.clone(), out: new_ref(out)}));
               }
               // m1 s m1
-              [Value::MutableReference(e0), Value::[<$kind:camel>](e1), Value::MutableReference(e2)] => {
-                match (e0.borrow().clone(), e2.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e0)), Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e2))) => {
-                    out[1] = e1.borrow().clone();
-                    return Ok(Box::new(VerticalConcatenateM1SM1{e0: e0.clone(), e1: e2.clone(), out: new_ref(out)}));
-                  }
-                  _ => todo!(),
-                }
+              [Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e0)), Value::[<$kind:camel>](e1), Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e2))] => {
+                out[1] = e1.borrow().clone();
+                return Ok(Box::new(VerticalConcatenateM1SM1{e0: e0.clone(), e1: e2.clone(), out: new_ref(out)}));
               }
               // s m1 m1
-              [Value::[<$kind:camel>](e0), Value::MutableReference(e1), Value::MutableReference(e2)] => {
-                match (e1.borrow().clone(), e2.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e1)), Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e2))) => {
-                    out[0] = e0.borrow().clone();
-                    return Ok(Box::new(VerticalConcatenateSM1M1{e0: e1.clone(), e1: e2.clone(), out: new_ref(out)}));
-                  }
-                  _ => todo!(),
-                }
-              }    
+              [Value::[<$kind:camel>](e0), Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e1)), Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e2))] => {
+                out[0] = e0.borrow().clone();
+                return Ok(Box::new(VerticalConcatenateSM1M1{e0: e1.clone(), e1: e2.clone(), out: new_ref(out)}));
+              } 
               // m1 m1 m1
-              [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2)] => {
-                match (e0.borrow().clone(), e1.borrow().clone(), e2.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e0)), Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e1)), Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e2))) => {
-                    return Ok(Box::new(VerticalConcatenateM1M1M1{e0: e1.clone(), e1: e1.clone(), e2: e2.clone(), out: new_ref(out)}));
-                  }
-                  _ => todo!(),
-                }
-              }           
+              [Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e0)), Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e1)), Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e2))] => {
+                return Ok(Box::new(VerticalConcatenateM1M1M1{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: new_ref(out)}));
+              }    
               _ => todo!()
             }
           }
@@ -1753,13 +1768,8 @@ macro_rules! impl_vertcat_arms {
           (3,3,3) => {
             let mut out = Matrix3::from_element($default);
             match &arguments[..] {
-              [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2)] => {
-                match (e0.borrow().clone(), e1.borrow().clone(),e2.borrow().clone()) {
-                  // v3v3v3
-                  (Value::[<Matrix $kind:camel>](Matrix::RowVector3(ref e0)),Value::[<Matrix $kind:camel>](Matrix::RowVector3(ref e1)),Value::[<Matrix $kind:camel>](Matrix::RowVector3(ref e2)))=>Ok(Box::new(VerticalConcatenateR3R3R3{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),out:new_ref(out)})),
-                  _ => todo!(),
-                }
-              }
+              // v3v3v3
+              [Value::[<Matrix $kind:camel>](Matrix::RowVector3(ref e0)),Value::[<Matrix $kind:camel>](Matrix::RowVector3(ref e1)),Value::[<Matrix $kind:camel>](Matrix::RowVector3(ref e2))]=>Ok(Box::new(VerticalConcatenateR3R3R3{e0:e0.clone(),e1:e1.clone(),e2:e2.clone(),out:new_ref(out)})),
               _ => todo!(),
             }
           }
