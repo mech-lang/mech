@@ -1788,17 +1788,12 @@ macro_rules! impl_vertcat_arms {
           (3,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             match &arguments[..] {
-              [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2)] => {
-                match (e0.borrow().clone(), e1.borrow().clone(),e2.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](m0),Value::[<Matrix $kind:camel>](m1),Value::[<Matrix $kind:camel>](m2)) => {
-                    let e0 = m0.get_copyable_matrix();
-                    let e1 = m1.get_copyable_matrix();
-                    let e2 = m2.get_copyable_matrix();
-                    Ok(Box::new(VerticalConcatenateThreeArgs{e0,e1,e2,out:new_ref(out)}))
-                  }   
-                  _ => todo!(),
-                }
-              }
+              [Value::[<Matrix $kind:camel>](m0),Value::[<Matrix $kind:camel>](m1),Value::[<Matrix $kind:camel>](m2)] => {
+                let e0 = m0.get_copyable_matrix();
+                let e1 = m1.get_copyable_matrix();
+                let e2 = m2.get_copyable_matrix();
+                Ok(Box::new(VerticalConcatenateThreeArgs{e0,e1,e2,out:new_ref(out)}))
+              }   
               _ => todo!(),
             }
           }
@@ -1818,18 +1813,13 @@ macro_rules! impl_vertcat_arms {
           (4,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             match &arguments[..] {
-              [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2), Value::MutableReference(e3)] => {
-                match (e0.borrow().clone(), e1.borrow().clone(),e2.borrow().clone(),e3.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](m0),Value::[<Matrix $kind:camel>](m1),Value::[<Matrix $kind:camel>](m2),Value::[<Matrix $kind:camel>](m3)) => {
-                    let e0 = m0.get_copyable_matrix();
-                    let e1 = m1.get_copyable_matrix();
-                    let e2 = m2.get_copyable_matrix();
-                    let e3 = m3.get_copyable_matrix();
-                    Ok(Box::new(VerticalConcatenateFourArgs{e0,e1,e2,e3,out:new_ref(out)}))
-                  }   
-                  _ => todo!(),
-                }
-              }
+              [Value::[<Matrix $kind:camel>](m0),Value::[<Matrix $kind:camel>](m1),Value::[<Matrix $kind:camel>](m2),Value::[<Matrix $kind:camel>](m3)] => {
+                let e0 = m0.get_copyable_matrix();
+                let e1 = m1.get_copyable_matrix();
+                let e2 = m2.get_copyable_matrix();
+                let e3 = m3.get_copyable_matrix();
+                Ok(Box::new(VerticalConcatenateFourArgs{e0,e1,e2,e3,out:new_ref(out)}))
+              }   
               _ => todo!(),
             }
           }
