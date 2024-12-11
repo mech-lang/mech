@@ -132,6 +132,7 @@ pub enum Matrix<T> {
 
 pub trait CopyMat<T> {
   fn copy_into(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize;
+  fn copy_into_row_major(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize;
 }
 
 macro_rules! copy_mat {
@@ -146,6 +147,20 @@ macro_rules! copy_mat {
             dst_ptr[i + offset] = src_ptr[i].clone();
         }
         src_ptr.len()
+      }
+      fn copy_into_row_major(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize {
+        let src_ptr = unsafe { (*(self.as_ptr())).clone() };
+        let mut dst_ptr = unsafe { &mut *(dst.as_ptr()) };
+        let src_rows = src_ptr.nrows();
+        let dest_rows = dst_ptr.nrows();
+
+        let stride = dest_rows - src_rows;
+        let mut offset = offset;
+        for ix in 0..src_ptr.len() {
+            dst_ptr[offset] = src_ptr[ix].clone();
+            offset += ((ix + 1) % src_rows == 0) as usize * stride + 1;
+        }
+        src_rows
       }}};}
       
 copy_mat!(DMatrix);
