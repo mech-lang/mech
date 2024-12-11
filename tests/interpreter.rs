@@ -369,7 +369,7 @@ test_interpreter!(interpret_set_record_field2,"x := {a: 1, b: true}; x.b = false
 test_interpreter!(interpret_set_record_field3,"x := {a: 1<u64>, b: true}; x.a = 2<u64>; x.a;", Value::U64(new_ref(2)));
 
 test_interpreter!(interpret_set_table_col,"x := { x<f64> y<f64> | 1 2; 3 4 }; x.x = [42;46]; y := x.x; y[1] + y[2]", Value::F64(new_ref(F64::new(88.0))));
-test_interpreter!(interpret_set_table_col2,"x := { x<f64> y<f64> | 1 2; 3 4; 5 6; 7 8}; x.x = [42;46;47;48]; y := x.x; y[1] + y[2] + y[3] + y[4]; ", Value::F64(new_ref(F64::new(183.0))));
+test_interpreter!(interpret_set_table_col2,"x := { x<f64> y<f64> | 1 2; 3 4; 5 6; 7 8}; x.x = [42;46;47;48]; y := x.x; y[1] + y[2] + y[3] + y[4];", Value::F64(new_ref(F64::new(183.0))));
 
 test_interpreter!(interpret_set_logical,"x := [1 2 3]; ix := [true false true]; x[ix] = 4; x[1] + x[2] + x[3];", Value::F64(new_ref(F64::new(10.0))));
 test_interpreter!(interpret_set_logical2,"x := [1 2 3 4]; ix := [true false true true]; x[ix] = 5; x[1] + x[2] + x[3] + x[4];", Value::F64(new_ref(F64::new(17.0))));
