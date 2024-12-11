@@ -13,4 +13,5 @@ use num_traits::Pow;
 pub mod access;
 pub mod assign;
 pub mod horzcat;
+pub mod vertcat;
 pub mod convert;
