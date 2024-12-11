@@ -1772,7 +1772,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (2, 2, 2) => {
+          (2,2,2) => {
             let mut out = Matrix2::from_element($default);
             match &arguments[..] {
               [Value::MutableReference(e0), Value::MutableReference(e1)] => {
@@ -1785,7 +1785,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (2, 3, 2) => {
+          (2,3,2) => {
             let mut out = Matrix3x2::from_element($default);
             match &arguments[..] {
               [Value::MutableReference(e0), Value::MutableReference(e1)] => {
@@ -1798,7 +1798,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (2, 2, 3) => {
+          (2,2,3) => {
             let mut out = Matrix2x3::from_element($default);
             match &arguments[..] {
               [Value::MutableReference(e0), Value::MutableReference(e1)] => {
@@ -1813,7 +1813,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (2, 3, 3) => {
+          (2,3,3) => {
             let mut out = Matrix3::from_element($default);
             match &arguments[..] {
               [Value::MutableReference(e0), Value::MutableReference(e1)] => {
@@ -1828,7 +1828,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (2, 4, 4) => {
+          (2,4,4) => {
             let mut out = Matrix4::from_element($default);
             match &arguments[..] {
               [Value::MutableReference(e0), Value::MutableReference(e1)] => {
@@ -1845,7 +1845,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
-          (2, m, n) => {
+          (2,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             match &arguments[..] {
               [Value::MutableReference(e0), Value::MutableReference(e1)] => {
