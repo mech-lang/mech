@@ -471,3 +471,16 @@ test_interpreter!(interpret_horzcat_m3v3, "x := [1 2 3; 4 5 6; 7 8 9]; y := [1;2
 
 test_interpreter!(interpret_horzcat_v2v2v2v2, "x := [1; 2;]; z := [x x x x] ", new_ref(DMatrix::from_vec(2,4,vec![F64::new(1.0),F64::new(2.0),F64::new(1.0),F64::new(2.0),F64::new(1.0),F64::new(2.0),F64::new(1.0),F64::new(2.0)])).to_value());
 test_interpreter!(interpret_horzcat_v2v2v2v2v2, "x := [1; 2;]; z := [x x x x x] ", new_ref(DMatrix::from_vec(2,5,vec![F64::new(1.0),F64::new(2.0),F64::new(1.0),F64::new(2.0),F64::new(1.0),F64::new(2.0),F64::new(1.0),F64::new(2.0),F64::new(1.0),F64::new(2.0)])).to_value());
+
+
+test_interpreter!(interpret_vertcat_vd2, "x := [1;2;3;4]; z := [5]; y := [x;z]", new_ref(DVector::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0),F64::new(4.0),F64::new(5.0)])).to_value());
+test_interpreter!(interpret_vertcat_vd3, "x := [1;2;3]; z := [5]; y := [z;z;x]", new_ref(DVector::from_vec(vec![F64::new(5.0),F64::new(5.0),F64::new(1.0),F64::new(2.0),F64::new(3.0)])).to_value());
+test_interpreter!(interpret_vertcat_m1m1m1m1, "x := [5]; y := [x;x;x;x]", new_ref(Vector4::from_vec(vec![F64::new(5.0),F64::new(5.0),F64::new(5.0),F64::new(5.0)])).to_value());
+test_interpreter!(interpret_vertcat_vd4, "x := [5]; z := [1;2]; y := [x;x;x;z]", new_ref(DVector::from_vec(vec![F64::new(5.0),F64::new(5.0),F64::new(5.0),F64::new(1.0),F64::new(2.0)])).to_value());
+
+test_interpreter!(interpret_vertcat_vdn, "x := [5]; y := [x;x;x;x;x]", new_ref(DVector::from_vec(vec![F64::new(5.0),F64::new(5.0),F64::new(5.0),F64::new(5.0),F64::new(5.0)])).to_value());
+test_interpreter!(interpret_vertcat_r2m2, "x := [5 2;3 4]; y := [8 9];z := [y;x]", new_ref(Matrix3x2::from_vec(vec![F64::new(8.0),F64::new(5.0),F64::new(3.0),F64::new(9.0),F64::new(2.0),F64::new(4.0)])).to_value());
+test_interpreter!(interpret_vertcat_m2r2, "x := [5 2;3 4]; y := [8 9];z := [x;y]", new_ref(Matrix3x2::from_vec(vec![F64::new(5.0),F64::new(3.0),F64::new(8.0),F64::new(2.0),F64::new(4.0),F64::new(9.0)])).to_value());
+
+test_interpreter!(interpret_vertcat_r2m2x3, "x := [1 2 3; 4 5 6]; y := [7 8 9]; z := [y;x]", new_ref(Matrix3::from_vec(vec![F64::new(7.0),F64::new(1.0),F64::new(4.0),F64::new(8.0),F64::new(2.0),F64::new(5.0),F64::new(9.0),F64::new(3.0),F64::new(6.0)])).to_value());
+
