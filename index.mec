@@ -14,7 +14,7 @@ Provides standard comparison functions.
 
 math/machine = {
   name: "compare" 
-  version: "v0.2.22"
+  version: "v0.2.24"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/compare"
   license: "Apache-2.0"}
