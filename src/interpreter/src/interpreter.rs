@@ -5,17 +5,22 @@ use mech_core::{MechMap, MechFunction, MechTable, MechSet, MechTuple, MechEnum};
 use mech_core::{F64, F32};
 use mech_core::{Functions, FunctionsRef, FunctionDefinition, NativeFunctionCompiler, Plan, UserFunction, SymbolTableRef, SymbolTable};
 use crate::stdlib::{
-                    logic::*,
-                    compare::*,
-                    matrix::{*, access::*, set::*, horzcat::*},
-                    table::*,
-                    convert::*
+                    access::*,
+                    assign::*,
+                    convert::*,
+                    horzcat::*,
+                    vertcat::*,
                   };
-use crate::stdlib::range::{RangeInclusive, RangeExclusive};
 use mech_core::{MechError, MechErrorKind, hash_str, new_ref, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 
+use mech_matrix::*;
 use mech_math::*;
-
+use mech_logic::*;
+use mech_compare::*;
+use mech_range::{
+  inclusive::RangeInclusive,
+  exclusive::RangeExclusive,
+};
 
 use na::DMatrix;
 use indexmap::set::IndexSet;
@@ -864,58 +869,32 @@ fn table_column(r: &TableColumn, plan: Plan, symbols: SymbolTableRef, functions:
 }
 
 fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
-  let mut out = vec![];
+  let mut shape = vec![0, 0];
+  let mut col: Vec<Value> = Vec::new();
+  let mut kind = ValueKind::Empty;
   for row in &m.rows {
     let result = matrix_row(row, plan.clone(), symbols.clone(), functions.clone())?;
-    out.push(result);
+    if shape == vec![0,0] {
+      shape = result.shape();
+      kind = result.kind();
+      col.push(result);
+    } else if shape[1] == result.shape()[1] {
+      col.push(result);
+    } else {
+      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![])});
+    }
   }
-
-  if out.is_empty() {
+  if col.is_empty() {
     return Ok(Value::MatrixF64(Matrix::<F64>::DMatrix(new_ref(DMatrix::from_vec(0, 0, vec![])))));
-  } else if out.len() == 1 {
-    return Ok(out[0].clone());
+  } else if col.len() == 1 {
+    return Ok(col[0].clone());
   }
-
-  let shape = out[0].shape();
-  let col_n = shape[1];
-  let row_n = out.len();
-
-  // Function to put element vector into column-major ordering so it can be reconstituted into a matrix
-  fn to_column_major<T: Clone>(out: &[Value], row_n: usize, col_n: usize, extract_fn: impl Fn(&Value) -> Option<Vec<T>> + Clone) -> Vec<T> {
-    (0..col_n).flat_map(|col| out.iter().map({let value = extract_fn.clone();move |row| value(row).unwrap()[col].clone()})).collect()
-  }
-
-  let mat = match &out[0] {
-    #[cfg(feature = "Bool")]
-    Value::MatrixBool(_) => Value::MatrixBool(bool::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecbool()), row_n, col_n)),
-    #[cfg(feature = "U8")]
-    Value::MatrixU8(_)   => Value::MatrixU8(u8::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu8()), row_n, col_n)),
-    #[cfg(feature = "U16")]
-    Value::MatrixU16(_)  => Value::MatrixU16(u16::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu16()), row_n, col_n)),
-    #[cfg(feature = "U32")]
-    Value::MatrixU32(_)  => Value::MatrixU32(u32::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu32()), row_n, col_n)),
-    #[cfg(feature = "U65")]
-    Value::MatrixU64(_)  => Value::MatrixU64(u64::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu64()), row_n, col_n)),
-    #[cfg(feature = "U128")]
-    Value::MatrixU128(_) => Value::MatrixU128(u128::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecu128()), row_n, col_n)),
-    #[cfg(feature = "I8")]
-    Value::MatrixI8(_)   => Value::MatrixI8(i8::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci8()), row_n, col_n)),
-    #[cfg(feature = "I16")]
-    Value::MatrixI16(_)  => Value::MatrixI16(i16::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci16()), row_n, col_n)),
-    #[cfg(feature = "I32")]
-    Value::MatrixI32(_)  => Value::MatrixI32(i32::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci32()), row_n, col_n)),
-    #[cfg(feature = "I64")]
-    Value::MatrixI64(_)  => Value::MatrixI64(i64::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci64()), row_n, col_n)),
-    #[cfg(feature = "I128")]
-    Value::MatrixI128(_) => Value::MatrixI128(i128::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_veci128()), row_n, col_n)),
-    #[cfg(feature = "F32")]
-    Value::MatrixF32(_)  => Value::MatrixF32(F32::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecf32()), row_n, col_n)),
-    #[cfg(feature = "F64")]
-    Value::MatrixF64(_)  => Value::MatrixF64(F64::to_matrix(to_column_major(&out, row_n, col_n, |v| v.as_vecf64()), row_n, col_n)),
-    _ => todo!(),
-  };
-
-  Ok(mat)
+  let new_fxn = MaxtrixVertCat{}.compile(&col)?;
+  new_fxn.solve();
+  let out = new_fxn.out();
+  let mut plan_brrw = plan.borrow_mut();
+  plan_brrw.push(new_fxn);
+  Ok(out)
 }
 
 fn matrix_row(r: &MatrixRow, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
@@ -1154,10 +1133,7 @@ fn scientific(sci: &(Base,Exponent)) -> Value {
   if *sign {
     exp_f64 = -exp_f64;
   }
-
   let num = num_f64 * 10f64.powf(exp_f64);
-
-
   Value::F64(new_ref(F64(num)))
 }
 

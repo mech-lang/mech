@@ -12,12 +12,11 @@ use std::fs;
 extern crate nalgebra as na;
 use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix6, Matrix2};
 
-
 fn main() -> Result<(),MechError> {
 
     // ----------------------------------------------------------------
 
-    let s = fs::read_to_string("../../test.mec").unwrap();
+    let s = fs::read_to_string("test.mec").unwrap();
 
     match parser::parse(&s) {
         Ok(tree) => { 
