@@ -762,6 +762,7 @@ macro_rules! impl_vertcat_arms {
         }
       } else {
         match (nargs,rows,columns) {
+          #[cfg(feature = "Vector2")]
           (1,2,1) => {
             match &arguments[..] {
               // r2
@@ -771,6 +772,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Vector3")]
           (1,3,1) => {
             match &arguments[..] {
               // r3
@@ -785,6 +787,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Vector4")]
           (1,4,1) => {
             match &arguments[..] {
               // r4
@@ -794,6 +797,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "VectorD")]
           (1,m,1) => {
             match &arguments[..] {
               // rd
@@ -803,6 +807,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Vector2")]
           (2,2,1) => {
             let mut out = Vector2::from_element($default);
             match &arguments[..] {
@@ -813,6 +818,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Vector3")]
           (2,3,1) => {
             let mut out = Vector3::from_element($default);
             match &arguments[..] {
@@ -827,6 +833,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Vector4")]
           (2,4,1) => {
             let mut out = Vector4::from_element($default);
             match &arguments[..] {
@@ -845,6 +852,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           } 
+          #[cfg(feature = "VectorD")]
           (2,m,1) => {
             let mut out = DVector::from_element(m,$default);
             match &arguments[..] {
@@ -854,6 +862,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Vector3")]
           (3,3,1) => {  
             let mut out = Vector3::from_element($default);
             match &arguments[..] {
@@ -864,6 +873,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!()
             }
           }
+          #[cfg(feature = "Vector4")]
           (3,4,1) => {
             let mut out = Vector4::from_element($default);
             match &arguments[..] {
@@ -882,6 +892,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!()
             }
           }
+          #[cfg(feature = "VectorD")]
           (3,m,1) => {
             let mut out = DVector::from_element(m,$default);
             match &arguments[..] {
@@ -891,6 +902,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Vector4")]
           (4,4,1) => {
             let mut out = Vector4::from_element($default);
             match &arguments[..] {
@@ -901,6 +913,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "VectorD")]
           (4,m,1) => {
             let mut out = DVector::from_element(m,$default);
             match &arguments[..] {
@@ -910,6 +923,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "VectorD")]
           (l,m,1) => {
             let mut out = DVector::from_element(m,$default);
             let mut matrix_args: Vec<(Matrix<$kind>,usize)> = vec![];
@@ -930,6 +944,7 @@ macro_rules! impl_vertcat_arms {
             }
             return Ok(Box::new(VerticalConcatenateVDN{scalar: scalar_args, matrix: matrix_args, out: new_ref(out)}));
           }
+          #[cfg(feature = "Matrix2")]
           (2,2,2) => {
             let mut out = Matrix2::from_element($default);
             match &arguments[..] {
@@ -938,6 +953,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Matrix2x3")]
           (2,2,3) => {
             let mut out = Matrix2x3::from_element($default);
             match &arguments[..] {
@@ -946,6 +962,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Matrix3x2")]
           (2,3,2) => {
             let mut out = Matrix3x2::from_element($default);
             match &arguments[..] {
@@ -961,6 +978,7 @@ macro_rules! impl_vertcat_arms {
             }
             
           }
+          #[cfg(feature = "Matrix3")]
           (2,3,3) => {
             let mut out = Matrix3::from_element($default);
             match &arguments[..] {
@@ -976,6 +994,7 @@ macro_rules! impl_vertcat_arms {
             }
             
           }
+          #[cfg(feature = "Matrix4")]
           (2,4,4) => {
             let mut out = Matrix4::from_element($default);
             match &arguments[..] {
@@ -989,6 +1008,7 @@ macro_rules! impl_vertcat_arms {
             }
             
           }
+          #[cfg(feature = "MatrixD")]
           (2,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             match &arguments[..] {
@@ -1000,6 +1020,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }            
           }
+          #[cfg(feature = "Matrix3x2")]
           (3,3,2) => {
             let mut out = Matrix3x2::from_element($default);
             match &arguments[..] {
@@ -1008,6 +1029,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Matrix3")]
           (3,3,3) => {
             let mut out = Matrix3::from_element($default);
             match &arguments[..] {
@@ -1016,6 +1038,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Matrix4")]
           (3,4,4) => {
             let mut out = Matrix4::from_element($default);
             match &arguments[..] {
@@ -1028,6 +1051,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "MatrixD")]
           (3,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             match &arguments[..] {
@@ -1040,6 +1064,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Matrix4")]
           (4,4,4) => {
             let mut out = Matrix4::from_element($default);
             match &arguments[..] {
@@ -1048,6 +1073,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "MatrixD")]
           (4,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             match &arguments[..] {
@@ -1061,6 +1087,7 @@ macro_rules! impl_vertcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "MatrixD")]
           (l,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             let mut args = vec![];

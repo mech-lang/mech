@@ -1026,6 +1026,7 @@ macro_rules! impl_horzcat_arms {
         }      
       } else {
         match (nargs,rows,columns) {
+          #[cfg(feature = "Matrix1")]
           (1,1,1) => {
             let mut out = Matrix1::from_element($default);
             match &arguments[..] {
@@ -1041,6 +1042,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "RowVector2")]
           (1,1,2) => {
             let mut out = RowVector2::from_element($default);
             match &arguments[..] {
@@ -1056,6 +1058,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "RowVector3")]
           (1,1,3) => {
             let mut out = RowVector3::from_element($default);
             match &arguments[..] {
@@ -1071,6 +1074,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "RowVector4")]
           (1,1,4) => {
             let mut out = RowVector4::from_element($default);
             match &arguments[..] {
@@ -1086,6 +1090,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "RowVectorD")]
           (1,1,n) => {
             let mut out = RowVector4::from_element($default);
             match &arguments[..] {
@@ -1101,6 +1106,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "RowVector2")]
           (2,1,2) => {
             let mut out = RowVector2::from_element($default);
             match &arguments[..] {
@@ -1136,6 +1142,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "RowVector3")]
           (2,1,3) => {
             let mut out = RowVector3::from_element($default);
             match &arguments[..] {
@@ -1175,6 +1182,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "RowVector4")]
           (2,1,4) => {
             let mut out = RowVector4::from_element($default);
             match &arguments[..] {
@@ -1218,6 +1226,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           } 
+          #[cfg(feature = "RowVectorD")]
           (2,1,n) => {
             let mut out = RowDVector::from_element(n,$default);
             match &arguments[..] {
@@ -1232,6 +1241,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "RowVector3")]
           (3,1,3) => {  
             let mut out = RowVector3::from_element($default);
             match &arguments[..] {
@@ -1310,6 +1320,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!()
             }
           }
+          #[cfg(feature = "RowVector4")]
           (3,1,4) => {
             let mut out = RowVector4::from_element($default);
             match &arguments[..] {
@@ -1417,6 +1428,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!()
             }
           }
+          #[cfg(feature = "RowVectorD")]
           (3,1,n) => {
             let mut out = RowDVector::from_element(n,$default);
             match &arguments[..] {
@@ -1431,6 +1443,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "RowVector4")]
           (4,1,4) => {
             let mut out = RowVector4::from_element($default);
             match &arguments[..] {
@@ -1621,6 +1634,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "RowVectorD")]
           (4,1,n) => {
             let mut out = RowDVector::from_element(n,$default);
             match &arguments[..] {
@@ -1635,6 +1649,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "RowVectorD")]
           (m,1,n) => {
             let mut out = RowDVector::from_element(n,$default);
             let mut matrix_args: Vec<(Matrix<$kind>,usize)> = vec![];
@@ -1664,6 +1679,7 @@ macro_rules! impl_horzcat_arms {
             }
             return Ok(Box::new(HorizontalConcatenateRDN{scalar: scalar_args, matrix: matrix_args, out: new_ref(out)}));
           }
+          #[cfg(feature = "Vector2")]
           (1,2,1) => {
             // v2
             match &arguments[..] {
@@ -1676,6 +1692,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Matrix2")]
           (1,2,2) => {
             // m2
             match &arguments[..] {
@@ -1688,6 +1705,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Matrix2x3")]
           (1,2,3) => {
             // m2x3
             match &arguments[..] {
@@ -1700,6 +1718,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Vector3")]
           (1,3,1) => {
             // v3
             match &arguments[..] {
@@ -1712,6 +1731,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Matrix3x2")]
           (1,3,2) => {
             // m3x2
             match &arguments[..] {
@@ -1724,6 +1744,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Matrix3")]
           (1,3,3) => {
             // m3
             match &arguments[..] {
@@ -1736,6 +1757,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Vector4")]
           (1,4,1) => {
             // v4
             match &arguments[..] {
@@ -1748,6 +1770,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Matrix4")]
           (1,4,4) => {
             // m4
             match &arguments[..] {
@@ -1760,6 +1783,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "MatrixD")]
           (1,m,n) => {
             // md
             match &arguments[..] {
@@ -1772,6 +1796,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Matrix2")]
           (2,2,2) => {
             let mut out = Matrix2::from_element($default);
             match &arguments[..] {
@@ -1785,6 +1810,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Matrix3x2")]
           (2,3,2) => {
             let mut out = Matrix3x2::from_element($default);
             match &arguments[..] {
@@ -1798,6 +1824,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Matrix2x3")]
           (2,2,3) => {
             let mut out = Matrix2x3::from_element($default);
             match &arguments[..] {
@@ -1813,6 +1840,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Matrix3")]
           (2,3,3) => {
             let mut out = Matrix3::from_element($default);
             match &arguments[..] {
@@ -1828,6 +1856,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Matrix4")]
           (2,4,4) => {
             let mut out = Matrix4::from_element($default);
             match &arguments[..] {
@@ -1845,6 +1874,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "MatrixD")]
           (2,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             match &arguments[..] {
@@ -1861,6 +1891,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Matrix2x3")]
           (3, 2, 3) => {
             let mut out = Matrix2x3::from_element($default);
             match &arguments[..] {
@@ -1874,6 +1905,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Matrix3")]
           (3, 3, 3) => {
             let mut out = Matrix3::from_element($default);
             match &arguments[..] {
@@ -1887,6 +1919,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Matrix4")]
           (3, 4, 4) => {
             let mut out = Matrix4::from_element($default);
             match &arguments[..] {
@@ -1904,6 +1937,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "MatrixD")]
           (3, m, n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             match &arguments[..] {
@@ -1921,6 +1955,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "Matrix4")]
           (4, 4, 4) => {
             let mut out = Matrix4::from_element($default);
             match &arguments[..] {
@@ -1934,6 +1969,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "MatrixD")]
           (4, m, n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             match &arguments[..] {
@@ -1952,6 +1988,7 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           }
+          #[cfg(feature = "MatrixD")]
           (l, m, n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             let mut args = vec![];
