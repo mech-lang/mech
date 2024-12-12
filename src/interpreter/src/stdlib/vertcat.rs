@@ -731,8 +731,6 @@ macro_rules! impl_vertcat_arms {
     paste!{
     {
       let arguments = $args;  
-      println!("{:?}", arguments);
-
       let rows = arguments[0].shape()[0];
       let rows:usize = arguments.iter().fold(0, |acc, x| acc + x.shape()[0]);
       let columns:usize = arguments[0].shape()[1];
