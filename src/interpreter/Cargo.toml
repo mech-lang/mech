@@ -62,6 +62,7 @@ mech-logic = "0.2.24"
 mech-compare = "0.2.24"
 mech-range = "0.2.24"
 mech-matrix = "0.2.24"
+mech-stats = "0.2.24"
 
 nalgebra = "0.33.2"
 indexmap = "2.7.0"

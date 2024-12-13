@@ -14,6 +14,7 @@ use crate::stdlib::{
 use mech_core::{MechError, MechErrorKind, hash_str, new_ref, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 
 use mech_matrix::*;
+use mech_stats::*;
 use mech_math::*;
 use mech_logic::*;
 use mech_compare::*;
@@ -40,6 +41,8 @@ impl Interpreter {
     
     // Preload functions
     let mut fxns = Functions::new();
+    fxns.function_compilers.insert(hash_str("stats/sum/row"),Box::new(StatsSumRow{}));
+    fxns.function_compilers.insert(hash_str("stats/sum/column"),Box::new(StatsSumColumn{}));
     fxns.function_compilers.insert(hash_str("math/sin"),Box::new(MathSin{}));
     fxns.function_compilers.insert(hash_str("math/cos"),Box::new(MathCos{}));
 
