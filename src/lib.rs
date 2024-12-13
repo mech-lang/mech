@@ -1,66 +1,40 @@
+extern crate nalgebra as na;
 extern crate mech_core;
-extern crate mech_utilities;
-#[macro_use]
-extern crate lazy_static;
-use mech_core::{Transaction, ValueIterator, ValueMethods};
-use mech_core::{Value, Table, TableIndex};
-use mech_core::{Quantity, ToQuantity, QuantityMath, hash_string, Argument};
-use std::cell::RefCell;
-use std::rc::Rc;
 
-lazy_static! {
-  static ref ROW: u64 = hash_string("row");
-  static ref COLUMN: u64 = hash_string("column");
-  static ref TABLE: u64 = hash_string("table");
-}
+use na::*;
+use num_traits::*;
+use std::ops::*;
+use std::fmt::Debug;
+use mech_core::matrix::Matrix;
 
-#[no_mangle]
-pub extern "C" fn stats_average(arguments:  &mut Vec<Rc<RefCell<Argument>>>) {
-  // TODO test argument count is 1
-  let arg = arguments[0].borrow();
-  let in_arg_name = arg.name;
-  let vi = arg.iterator.clone();
-  let mut out = arguments.last().unwrap().borrow().iterator.clone();
+pub mod sum_column;
+pub mod sum_row;
 
-  let mut in_rows = vi.rows();
-  let mut in_columns = vi.columns();
+pub use self::sum_column::*;
+pub use self::sum_row::*;
 
-  if in_arg_name == *ROW {
-    out.resize(in_rows, 1);
-    for i in 1..=in_rows {
-      let mut sum: Value = Value::from_u32(0);
-      for j in 1..=in_columns {
-        match vi.get(&TableIndex::Index(i),&TableIndex::Index(j)) {
-          Some((value,_)) => {
-            sum = sum.add(value)
-          }
-          _ => ()
-        }
-      }
-      out.set_unchecked(i, 1, Value::from_f32(sum.as_f32().unwrap() / vi.columns() as f32));
+#[macro_export]  
+macro_rules! impl_stats_urop {
+  ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      arg: Ref<$arg_type>,
+      out: Ref<$out_type>,
     }
-  } else if in_arg_name == *COLUMN {
-    out.resize(1, in_columns);
-    for (i,m) in (1..=in_columns).zip(vi.column_iter.clone()) {
-      let mut sum: Value = Value::from_u32(0);
-      for (j,k) in (1..=in_rows).zip(vi.row_iter.clone()) {
-        match vi.get(&k,&m) {
-          Some((value,_)) => {
-            sum = sum.add(value)
-          }
-          _ => ()
-        }
+    impl<T> MechFunction for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + 'static + 
+      Add<Output = T> + AddAssign +
+      Zero + One +
+      PartialEq + PartialOrd,
+      Ref<$out_type>: ToValue
+    {
+      fn solve(&self) {
+        let arg_ptr = self.arg.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        $op!(arg_ptr,out_ptr);
       }
-      out.set_unchecked(1, i, Value::from_f32(sum.as_f32().unwrap() / vi.rows() as f32));
-    }      
-  } else if in_arg_name == *TABLE {
-    out.resize(1, 1);
-    let mut sum: Value = Value::from_u32(0);
-    for (value,_) in vi.clone() {
-      sum = sum.add(value)
-    }
-    out.set_unchecked(1, 1, Value::from_f32(sum.as_f32().unwrap() / (vi.rows() * vi.columns()) as f32));
-  } else {
-    // TODO Warn about unknown argument
-  }
-}
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:?}", self) }
+    }};}
+
