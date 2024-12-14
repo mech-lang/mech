@@ -4,33 +4,33 @@ use mech_core::*;
 // Div ------------------------------------------------------------------------
 
 macro_rules! div_op {
-    ($lhs:expr, $rhs:expr, $out:expr) => {
-      unsafe { *$out = *$lhs / *$rhs; }
-    };}
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = *$lhs / *$rhs; }
+  };}
   
 macro_rules! div_vec_op {
 ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = (*$lhs).component_div(&*$rhs); }
-    };}
+  unsafe { *$out = (*$lhs).component_div(&*$rhs); }
+  };}
 
 macro_rules! div_scalar_lhs_op {
 ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-    for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] / (*$rhs);
-    }}};}
+  unsafe {
+  for i in 0..(*$lhs).len() {
+    (*$out)[i] = (*$lhs)[i] / (*$rhs);
+  }}};}
 
 macro_rules! div_scalar_rhs_op {
 ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {
-    for i in 0..(*$rhs).len() {
-        (*$out)[i] = (*$lhs) / (*$rhs)[i];
-    }}};}
+  unsafe {
+  for i in 0..(*$rhs).len() {
+    (*$out)[i] = (*$lhs) / (*$rhs)[i];
+  }}};}
 
 impl_math_fxns!(Div);
 
 fn impl_div_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-impl_binop_match_arms!(
+  impl_binop_match_arms!(
     Div,
     (lhs_value, rhs_value),
     I8,   I8   => MatrixI8,   i8,   i8::zero(), "I8";
@@ -45,7 +45,7 @@ impl_binop_match_arms!(
     U128, U128 => MatrixU128, u128, u128::zero(), "U128";
     F32,  F32  => MatrixF32,  F32,  F32::zero(), "F32";
     F64,  F64  => MatrixF64,  F64,  F64::zero(), "F64";
-)
+  )
 }
 
 impl_mech_binop_fxn!(MathDiv,impl_div_fxn);

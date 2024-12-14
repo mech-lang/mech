@@ -19,8 +19,9 @@ use mech_core::matrix::Matrix;
 //#[macro_use]
 //extern crate lazy_static;
 
-static PI: f32 = 3.14159265358979323846264338327950288;
+static PI: f64 = 3.14159265358979323846264338327950288;
 
+pub mod atan2;
 pub mod cos;
 pub mod sin;
 pub mod add;
@@ -30,6 +31,7 @@ pub mod div;
 pub mod exp;
 pub mod negate;
 
+pub use self::atan2::*;
 pub use self::cos::*;
 pub use self::sin::*;
 pub use self::add::*;
@@ -47,8 +49,7 @@ pub use self::negate::*;
 macro_rules! impl_math_fxns {
   ($lib:ident) => {
     impl_fxns!($lib,T,T,impl_binop);
-  }
-}
+  }}
 
 #[macro_export]
 macro_rules! impl_urnop_match_arms2 {
@@ -93,10 +94,7 @@ macro_rules! impl_urnop_match_arms2 {
           )+
         )+
         x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-      }
-    }
-  }
-}
+      }}}}
 
 #[macro_export]
 macro_rules! impl_math_urop {
@@ -133,6 +131,4 @@ macro_rules! impl_math_urop {
       impl_urop!([<$fxn_name $type V4>], Vector4<$type>, Vector4<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "VectorD")]
       impl_urop!([<$fxn_name $type VD>], DVector<$type>, DVector<$type>, [<$op_fxn _vec_op>]);
-    }
-  }
-}
+    }}}
