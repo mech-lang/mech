@@ -55,6 +55,7 @@ mech-syntax = { path = 'src/syntax'}
 mech-interpreter = { path = 'src/interpreter'}
 mech-matrix = { path = '../machines/matrix' }
 mech-stats = { path = '../machines/stats' }
+mech-math = { path = '../machines/math' }
 
 [patch.'https://gitlab.com/mech-lang/core']
 mech-core = { path = 'src/core', version = '0.2.21' }
