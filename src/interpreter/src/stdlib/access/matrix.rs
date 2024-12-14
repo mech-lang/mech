@@ -492,6 +492,8 @@ macro_rules! access_1d {
               (Value::$matrix_kind(Matrix::Matrix3(input)),    [Value::Index(ix)]) => Ok(Box::new([<$fxn_name M3>]  {source: input.clone(), ixes: ix.clone(), out: new_ref($default) })),
               #[cfg(all(feature = $value_string, feature = "Matrix2"))]              
               (Value::$matrix_kind(Matrix::Matrix2(input)),    [Value::Index(ix)]) => Ok(Box::new([<$fxn_name M2>]  {source: input.clone(), ixes: ix.clone(), out: new_ref($default) })),
+              #[cfg(all(feature = $value_string, feature = "Matrix1"))]              
+              (Value::$matrix_kind(Matrix::Matrix1(input)),    [Value::Index(ix)]) => Ok(Box::new([<$fxn_name M1>]  {source: input.clone(), ixes: ix.clone(), out: new_ref($default) })),
               #[cfg(all(feature = $value_string, feature = "Matrix2x3"))]              
               (Value::$matrix_kind(Matrix::Matrix2x3(input)),  [Value::Index(ix)]) => Ok(Box::new([<$fxn_name M2x3>]{source: input.clone(), ixes: ix.clone(), out: new_ref($default) })),
               #[cfg(all(feature = $value_string, feature = "Matrix3x2"))]              

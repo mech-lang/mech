@@ -45,6 +45,7 @@ impl Interpreter {
     fxns.function_compilers.insert(hash_str("stats/sum/column"),Box::new(StatsSumColumn{}));
     fxns.function_compilers.insert(hash_str("math/sin"),Box::new(MathSin{}));
     fxns.function_compilers.insert(hash_str("math/cos"),Box::new(MathCos{}));
+    fxns.function_compilers.insert(hash_str("math/atan2"),Box::new(MathAtan2{}));
 
     // Preload kinds
     fxns.kinds.insert(hash_str("u8"),ValueKind::U8);
