@@ -296,17 +296,17 @@ macro_rules! impl_fxns {
       $op!([<$lib VDS>], DVector<$in>, $in, DVector<$out>,[<$lib:lower _scalar_lhs_op>]);
       // Matrix Matrix
       #[cfg(feature = "Matrix1")]
-      $op!([<$lib M2x3M2x3>], Matrix2x3<$in>, Matrix2x3<$in>, Matrix2x3<$out>, [<$lib:lower _vec_op>]);
-      #[cfg(feature = "Matrix2")]
-      $op!([<$lib M3x2M3x2>], Matrix3x2<$in>, Matrix3x2<$in>, Matrix3x2<$out>, [<$lib:lower _vec_op>]);
-      #[cfg(feature = "Matrix3")]
       $op!([<$lib M1M1>], Matrix1<$in>, Matrix1<$in>, Matrix1<$out>, [<$lib:lower _vec_op>]);
-      #[cfg(feature = "Matrix4")]
+      #[cfg(feature = "Matrix2")]
       $op!([<$lib M2M2>], Matrix2<$in>, Matrix2<$in>, Matrix2<$out>, [<$lib:lower _vec_op>]);
-      #[cfg(feature = "Matrix2x3")]
+      #[cfg(feature = "Matrix3")]
       $op!([<$lib M3M3>], Matrix3<$in>, Matrix3<$in>, Matrix3<$out>, [<$lib:lower _vec_op>]);
-      #[cfg(feature = "Matrix3x2")]
+      #[cfg(feature = "Matrix4")]
       $op!([<$lib M4M4>], Matrix4<$in>, Matrix4<$in>, Matrix4<$out>, [<$lib:lower _vec_op>]);
+      #[cfg(feature = "Matrix2x3")]
+      $op!([<$lib M2x3M2x3>], Matrix2x3<$in>, Matrix2x3<$in>, Matrix2x3<$out>, [<$lib:lower _vec_op>]);
+      #[cfg(feature = "Matrix3x2")]
+      $op!([<$lib M3x2M3x2>], Matrix3x2<$in>, Matrix3x2<$in>, Matrix3x2<$out>, [<$lib:lower _vec_op>]);
       #[cfg(feature = "MatrixD")]
       $op!([<$lib MDMD>], DMatrix<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _vec_op>]);
       // Row Row
