@@ -75,20 +75,17 @@ macro_rules! sum_column_op {
             #[cfg(feature = "VectorD")]
             Value::$matrix_kind(Matrix::<$target_type>::RowDVector(arg)) => Ok(Box::new(StatsSumColumnRD{arg: arg.clone(), out: new_ref(Matrix1::from_element($default))})),
             #[cfg(feature = "MatrixD")]
-            Value::$matrix_kind(Matrix::<$target_type>::DMatrix(arg)) => {
-              let (columns,cols) = {arg.borrow().shape()};
-              Ok(Box::new(StatsSumColumnMD{arg, out: new_ref(DVector::from_element(columns,$default))}))
-            },
+            Value::$matrix_kind(Matrix::<$target_type>::DMatrix(arg)) => Ok(Box::new(StatsSumColumnMD{arg: arg.clone(), out: new_ref(DVector::from_element(arg.borrow().nrows(),$default))})),
           )+
         )+
-        x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        _ => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
     }
   }
   
   fn impl_stats_sum_column_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
     impl_stats_sum_column_match_arms!(
-      (lhs_value),
+      lhs_value,
       I8   => MatrixI8,   i8,   i8::zero(), "I8";
       I16  => MatrixI16,  i16,  i16::zero(), "I16";
       I32  => MatrixI32,  i32,  i32::zero(), "I32";
