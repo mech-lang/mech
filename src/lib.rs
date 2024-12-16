@@ -93,7 +93,7 @@ macro_rules! impl_urnop_match_arms2 {
               Ok(Box::new([<$lib $lhs_type MD>]{arg, out: new_ref(DMatrix::from_element(rows,cols,$default))}))},
           )+
         )+
-        x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }}}}
 
 #[macro_export]

@@ -160,7 +160,7 @@ fn impl_atan2_fxn(arg1_value: Value, arg2_value: Value) -> Result<Box<dyn MechFu
       let cols = arg1.borrow().ncols();
       Ok(Box::new(Atan2MDF64{arg1, arg2, out: new_ref(DMatrix::from_element(rows,cols,F64::zero()))}))
     },
-    x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+    x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
   }
 }
 
@@ -169,7 +169,7 @@ pub struct MathAtan2 {}
 impl NativeFunctionCompiler for MathAtan2 {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let arg1 = arguments[0].clone();
     let arg2 = arguments[1].clone();
@@ -180,7 +180,7 @@ impl NativeFunctionCompiler for MathAtan2 {
           (Value::MutableReference(arg1),Value::MutableReference(arg2)) => {impl_atan2_fxn(arg1.borrow().clone(),arg2.borrow().clone())}
           (Value::MutableReference(arg1),arg2) => {impl_atan2_fxn(arg1.borrow().clone(),arg2.clone())}
           (arg1,Value::MutableReference(arg2)) => {impl_atan2_fxn(arg1.clone(),arg2.borrow().clone())}
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }

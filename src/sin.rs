@@ -45,7 +45,7 @@ pub struct MathSin {}
 impl NativeFunctionCompiler for MathSin {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let input = arguments[0].clone();
     match impl_sin_fxn(input.clone()) {
@@ -53,7 +53,7 @@ impl NativeFunctionCompiler for MathSin {
       Err(_) => {
         match (input) {
           (Value::MutableReference(input)) => {impl_sin_fxn(input.borrow().clone())}
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }

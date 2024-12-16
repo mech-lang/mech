@@ -22,7 +22,7 @@ macro_rules! mul_scalar_rhs_op {
 impl_math_fxns!(Mul);
 
 fn impl_mul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-impl_binop_match_arms!(
+  impl_binop_match_arms!(
     Mul,
     (lhs_value, rhs_value),
     I8,   I8   => MatrixI8,   i8,   i8::zero(), "I8";
@@ -37,7 +37,7 @@ impl_binop_match_arms!(
     U128, U128 => MatrixU128, u128, u128::zero(), "U128";
     F32,  F32  => MatrixF32,  F32,  F32::zero(), "F32";
     F64,  F64  => MatrixF64,  F64,  F64::zero(), "F64";
-)
+  )
 }
 
 impl_mech_binop_fxn!(MathMul,impl_mul_fxn);
