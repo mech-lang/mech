@@ -32,27 +32,27 @@ pub use self::neq::*;
 #[macro_export]
 macro_rules! impl_compare_binop {
   ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
-      #[derive(Debug)]
-      struct $struct_name<T> {
-      lhs: Ref<$arg1_type>,
-      rhs: Ref<$arg2_type>,
-      out: Ref<$out_type>,
-      }
-      impl<T> MechFunction for $struct_name<T>
-      where
-      T: Copy + Debug + Clone + Sync + Send + 'static + 
-      PartialEq + PartialOrd,
-      Ref<$out_type>: ToValue
-      {
-      fn solve(&self) {
-          let lhs_ptr = self.lhs.as_ptr();
-          let rhs_ptr = self.rhs.as_ptr();
-          let out_ptr = self.out.as_ptr();
-          $op!(lhs_ptr,rhs_ptr,out_ptr);
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
-      }};}
+    #[derive(Debug)]
+    struct $struct_name<T> {
+    lhs: Ref<$arg1_type>,
+    rhs: Ref<$arg2_type>,
+    out: Ref<$out_type>,
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
+    T: Copy + Debug + Clone + Sync + Send + 'static + 
+    PartialEq + PartialOrd,
+    Ref<$out_type>: ToValue
+    {
+    fn solve(&self) {
+      let lhs_ptr = self.lhs.as_ptr();
+      let rhs_ptr = self.rhs.as_ptr();
+      let out_ptr = self.out.as_ptr();
+      $op!(lhs_ptr,rhs_ptr,out_ptr);
+    }
+    fn out(&self) -> Value { self.out.to_value() }
+    fn to_string(&self) -> String { format!("{:?}", self) }
+    }};}
 
 #[macro_export]
 macro_rules! impl_compare_fxns {
