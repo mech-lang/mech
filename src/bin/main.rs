@@ -43,14 +43,15 @@ fn main() -> Result<(),MechError> {
           }
 
           let now = Instant::now();
-          for _ in 0..1e6 as usize {
+          let n = 1e3 as usize;
+          for _ in 0..n {
             for fxn in intrp.plan.borrow().iter() {
               fxn.solve();
             }
           }
           let elapsed_time = now.elapsed();
           let cycle_duration = elapsed_time.as_nanos() as f64;
-          println!("{:0.2?} ns", cycle_duration / 1_000_000.0);
+          println!("{:0.2?} ns", cycle_duration / n as f64);
 
           let tree_string = hash_str(&format!("{:#?}", tree));
           println!("{:?}", tree_string);

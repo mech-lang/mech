@@ -198,7 +198,7 @@ macro_rules! impl_set_scalar_match_arms {
             (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::Bool(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VDB>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),
         
         )+
-        x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
     }
   }
@@ -212,7 +212,7 @@ pub struct MatrixSetScalar {}
 impl NativeFunctionCompiler for MatrixSetScalar {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
@@ -222,7 +222,7 @@ impl NativeFunctionCompiler for MatrixSetScalar {
       Err(x) => {
         match sink {
           Value::MutableReference(sink) => { impl_set_scalar_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }
@@ -407,7 +407,7 @@ macro_rules! impl_set_range_match_arms {
           #[cfg(all(feature = $value_string, feature = "RowDVector"))]
           (Value::[<Matrix $value_kind>](Matrix::RowDVector(input)),[Value::MatrixBool(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name RDB>] { sink: input.clone(), ixes: ix.clone(), source: source.clone() })),                      
         )+
-        x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
     }
   }
@@ -421,7 +421,7 @@ pub struct MatrixSetRange {}
 impl NativeFunctionCompiler for MatrixSetRange {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
@@ -432,7 +432,7 @@ impl NativeFunctionCompiler for MatrixSetRange {
         println!("{:?}", x);
         match sink {
           Value::MutableReference(sink) => { impl_set_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }
@@ -518,7 +518,7 @@ macro_rules! impl_set_all_match_arms {
             #[cfg(all(feature = $value_string, feature = "VectorD"))]
             (Value::[<Matrix $value_kind>](Matrix::DVector(input)), [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VD>] { sink: input.clone(), source: source.clone() })),
           )+
-        x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
     }
   }
@@ -532,7 +532,7 @@ pub struct MatrixSetAll {}
 impl NativeFunctionCompiler for MatrixSetAll {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
@@ -542,7 +542,7 @@ impl NativeFunctionCompiler for MatrixSetAll {
       Err(_) => {
         match sink {
           Value::MutableReference(sink) => { impl_set_all_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }
@@ -635,7 +635,7 @@ macro_rules! impl_set_scalar_scalar_match_arms {
           #[cfg(all(feature = $value_string, feature = "VectorD"))]
           (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VD>] { sink: input.clone(),   ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
         )+
-        x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
     }
   }
@@ -649,7 +649,7 @@ pub struct MatrixSetScalarScalar {}
 impl NativeFunctionCompiler for MatrixSetScalarScalar {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
@@ -659,7 +659,7 @@ impl NativeFunctionCompiler for MatrixSetScalarScalar {
       Err(_) => {
         match sink {
           Value::MutableReference(sink) => { impl_set_scalar_scalar_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }
@@ -779,7 +779,7 @@ macro_rules! impl_set_all_scalar_match_arms {
           #[cfg(all(feature = $value_string, feature = "VectorD"))]
           (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind>](Matrix::DVector(source))) => Ok(Box::new([<$fxn_name VDVD>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
         )+
-        x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
     }
   }
@@ -793,7 +793,7 @@ pub struct MatrixSetAllScalar {}
 impl NativeFunctionCompiler for MatrixSetAllScalar {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
@@ -804,7 +804,7 @@ impl NativeFunctionCompiler for MatrixSetAllScalar {
         println!("{:?}", x);
         match sink {
           Value::MutableReference(sink) => { impl_set_all_scalar_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }
@@ -897,7 +897,7 @@ macro_rules! impl_set_scalar_all_match_arms {
           #[cfg(all(feature = $value_string, feature = "VectorD"))]
           (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::Index(ix), Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VD>] { sink: input.clone(), ix: ix.clone(), source: source.clone() })),
         )+
-        x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
     }
   }
@@ -911,7 +911,7 @@ pub struct MatrixSetScalarAll {}
 impl NativeFunctionCompiler for MatrixSetScalarAll {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
@@ -921,7 +921,7 @@ impl NativeFunctionCompiler for MatrixSetScalarAll {
       Err(_) => {
         match sink {
           Value::MutableReference(sink) => { impl_set_scalar_all_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }
@@ -1075,7 +1075,7 @@ macro_rules! impl_set_range_scalar_match_arms {
           (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::MatrixBool(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VDB>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),        
         
         )+
-        x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
     }
   }
@@ -1089,7 +1089,7 @@ pub struct MatrixSetRangeScalar {}
 impl NativeFunctionCompiler for MatrixSetRangeScalar {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
@@ -1099,7 +1099,7 @@ impl NativeFunctionCompiler for MatrixSetRangeScalar {
       Err(_) => {
         match sink {
           Value::MutableReference(sink) => { impl_set_range_scalar_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }
@@ -1252,7 +1252,7 @@ macro_rules! impl_set_scalar_range_match_arms {
           #[cfg(all(feature = $value_string, feature = "VectorD"))]
           (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::Index(ix1),Value::MatrixBool(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VDB>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),        
         )+
-        x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
     }
   }
@@ -1266,7 +1266,7 @@ pub struct MatrixSetScalarRange {}
 impl NativeFunctionCompiler for MatrixSetScalarRange {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
@@ -1276,7 +1276,7 @@ impl NativeFunctionCompiler for MatrixSetScalarRange {
       Err(_) => {
         match sink {
           Value::MutableReference(sink) => { impl_set_scalar_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }
@@ -1433,7 +1433,7 @@ macro_rules! impl_set_range_range_match_arms {
           #[cfg(all(feature = $value_string, feature = "VectorD"))]
           (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::MatrixBool(Matrix::DVector(ix1)),Value::MatrixBool(Matrix::DVector(ix2))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VDB>] { sink: input.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),        
         )+
-        x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
     }
   }
@@ -1446,7 +1446,7 @@ pub struct MatrixSetRangeRange {}
 impl NativeFunctionCompiler for MatrixSetRangeRange {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
@@ -1456,7 +1456,7 @@ impl NativeFunctionCompiler for MatrixSetRangeRange {
       Err(_) => {
         match sink {
           Value::MutableReference(sink) => { impl_set_range_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }
@@ -1609,7 +1609,7 @@ macro_rules! impl_set_all_range_match_arms {
           #[cfg(all(feature = $value_string, feature = "VectorD"))]
           (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::IndexAll,Value::MatrixBool(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VDB>] { sink: input.clone(), ixes:   ix.clone(), source: source.clone() })),
         )+
-        x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
     }
   }
@@ -1623,7 +1623,7 @@ pub struct MatrixSetAllRange {}
 impl NativeFunctionCompiler for MatrixSetAllRange {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
@@ -1633,7 +1633,7 @@ impl NativeFunctionCompiler for MatrixSetAllRange {
       Err(_) => {
         match sink {
           Value::MutableReference(sink) => { impl_set_all_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }
@@ -1786,7 +1786,7 @@ macro_rules! impl_set_range_all_match_arms {
           #[cfg(all(feature = $value_string, feature = "VectorD"))]
           (Value::[<Matrix $value_kind>](Matrix::DVector(input)),   [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VDB>] { sink: input.clone(), ixes:   ix.clone(), source: source.clone() })),
         )+
-        x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
     }
   }
@@ -1799,7 +1799,7 @@ pub struct MatrixSetRangeAll {}
 impl NativeFunctionCompiler for MatrixSetRangeAll {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
@@ -1809,7 +1809,7 @@ impl NativeFunctionCompiler for MatrixSetRangeAll {
       Err(_) => {
         match sink {
           Value::MutableReference(sink) => { impl_set_range_all_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          x => Err(MechError { tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }

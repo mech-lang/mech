@@ -117,7 +117,7 @@ macro_rules! impl_conversion_match_arms {
           let val = Value::Enum(Box::new(enm.clone()));
           Ok(Box::new(ConvertSEnum{out: val}))
         }
-        x => Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+        x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
       }
     }
   }
@@ -146,7 +146,7 @@ pub struct ConvertKind {}
 impl NativeFunctionCompiler for ConvertKind {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let source_value = arguments[0].clone();
     let target_kind = arguments[1].kind();

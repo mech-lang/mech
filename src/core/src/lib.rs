@@ -446,7 +446,7 @@ macro_rules! impl_binop_match_arms {
             (Value::$matrix_kind(Matrix::DVector(lhs)), Value::$matrix_kind(Matrix::DVector(rhs))) => Ok(Box::new([<$lib VDVD>]{lhs: lhs.clone(), rhs, out: new_ref(DVector::from_element(lhs.borrow().len(),$default))})),
           )+
         )+
-        x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
     }
   }
@@ -494,7 +494,7 @@ macro_rules! impl_urnop_match_arms {
               Ok(Box::new([<$lib MD>]{arg, out: new_ref(DMatrix::from_element(rows,cols,$default))}))},
           )+
         )+
-        x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
     }
   }
@@ -507,7 +507,7 @@ macro_rules! impl_mech_binop_fxn {
     impl NativeFunctionCompiler for $fxn_name {
       fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 2 {
-          return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+          return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
         }
         let lhs_value = arguments[0].clone();
         let rhs_value = arguments[1].clone();
@@ -518,7 +518,7 @@ macro_rules! impl_mech_binop_fxn {
               (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {$gen_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
               (lhs_value,Value::MutableReference(rhs)) => { $gen_fxn(lhs_value.clone(), rhs.borrow().clone())}
               (Value::MutableReference(lhs),rhs_value) => { $gen_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-              x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
         }
@@ -534,7 +534,7 @@ macro_rules! impl_mech_urnop_fxn {
     impl NativeFunctionCompiler for $fxn_name {
       fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 1 {
-          return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+          return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
         }
         let input = arguments[0].clone();
         match $gen_fxn(input.clone()) {
@@ -542,7 +542,7 @@ macro_rules! impl_mech_urnop_fxn {
           Err(_) => {
             match (input) {
               (Value::MutableReference(input)) => {$gen_fxn(input.borrow().clone())}
-              x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
         }

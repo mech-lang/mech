@@ -163,7 +163,7 @@ pub fn parse(text: &str) -> Result<ReplCommand, MechError> {
           annotation_rngs: e.1.annotation_rngs,
         }).collect();
         let msg = TextFormatter::new(text).format_error(&report);
-        Err(MechError{tokens: vec![], msg: "".to_string(), id: 3392, kind: MechErrorKind::ParserError(result_node, report, msg)})
+        Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 3392, kind: MechErrorKind::ParserError(result_node, report, msg)})
       },
       Err::Incomplete(_) => panic!("nom::Err::Incomplete is not supported!"),
     },

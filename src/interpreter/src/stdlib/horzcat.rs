@@ -2023,7 +2023,7 @@ macro_rules! impl_horzcat_arms {
             }
             Ok(Box::new(HorizontalConcatenateNArgs{e0: args, out:new_ref(out)}))
           }
-          _ => {return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});}
+          _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});}
         }
   }}}}}
 

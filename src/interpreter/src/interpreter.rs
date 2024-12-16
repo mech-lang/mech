@@ -153,7 +153,7 @@ pub fn function_define(fxn_def: &FunctionDefine, functions: FunctionsRef) -> MRe
     for arg_id in output_arg_ids {
       match symbol_brrw.get(arg_id) {
         Some(cell) => new_fxn.out = cell.clone(),
-        None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::OutputUndefinedInFunctionBody(arg_id)});} 
+        None => { return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::OutputUndefinedInFunctionBody(arg_id)});} 
       }
     }
   }
@@ -179,7 +179,7 @@ fn variable_assign(var_assgn: &VariableAssign, plan: Plan, symbols: SymbolTableR
   let symbols_brrw = symbols.borrow();
   let sink = match symbols_brrw.get(name) {
     Some(val) => val.borrow().clone(),
-    None => {return Err(MechError{tokens: slc.name.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
+    None => {return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
   };
   match &slc.subscript {
     Some(sbscrpt) => {
@@ -236,11 +236,11 @@ fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTableRef
           None => todo!(),
         };
         if !my_enum.variants.iter().any(|(enum_variant, inner_value)| *given_variant_id == *enum_variant) {
-          return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnknownEnumVairant(*enum_id,*given_variant_id)}); 
+          return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnknownEnumVairant(*enum_id,*given_variant_id)}); 
         }
       }
       (Value::Atom(given_variant_id), target_kind) => {
-        return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnableToConvertValueKind}); 
+        return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnableToConvertValueKind}); 
       }
       x => {
         println!("{:?}",x);
@@ -275,11 +275,11 @@ fn kind_annotation(knd: &NodeKind, functions: FunctionsRef) -> MResult<Kind> {
         let dim_val = literal(dim, functions.clone())?;
         match dim_val.as_usize() {
           Some(size_val) => dims.push(size_val.clone()),
-          None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
+          None => { return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
         }
       }
       if knds.len() != 1 {
-        return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::MatrixMustHaveHomogenousKind});
+        return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::MatrixMustHaveHomogenousKind});
       }
       Ok(Kind::Matrix(Box::new(knds[0].clone()),dims))
     }
@@ -318,7 +318,7 @@ fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, f
                 symbols_brrw.get(arg_id.hash()).unwrap().clone()
               }
               // The argument name doesn't match
-              None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnknownFunctionArgument(arg_id.hash())});}
+              None => { return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnknownFunctionArgument(arg_id.hash())});}
             }
           }
           // Arg is called positionally (no arg name supplied)
@@ -328,7 +328,7 @@ fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, f
                 let symbols_brrw = new_fxn.symbols.borrow();
                 symbols_brrw.get(**arg_id).unwrap().clone()
               }
-              None => { return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::TooManyInputArguments(ix+1,new_fxn.input.len())});} 
+              None => { return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::TooManyInputArguments(ix+1,new_fxn.input.len())});} 
             }
           }
         };
@@ -342,7 +342,7 @@ fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, f
           (Value::F64(arg_ref), Value::F64(f64_ref)) => {
             *arg_ref.borrow_mut() = f64_ref.borrow().clone();
           }
-          (x,y) => {return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::KindMismatch(x.kind(),y.kind())});}
+          (x,y) => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::KindMismatch(x.kind(),y.kind())});}
         }
       }
       // schedule function
@@ -371,7 +371,7 @@ fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, f
             Err(x) => {return Err(x);}
           }
         }
-        None => {return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::MissingFunction(fxn_name_id)});}
+        None => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::MissingFunction(fxn_name_id)});}
       }
     }
   }   
@@ -399,7 +399,7 @@ fn slice(slc: &Slice, plan: Plan, symbols: SymbolTableRef, functions: FunctionsR
   let symbols_brrw = symbols.borrow();
   let val: Value = match symbols_brrw.get(name) {
     Some(val) => Value::MutableReference(val.clone()),
-    None => {return Err(MechError{tokens: slc.name.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
+    None => {return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
   };
   for s in &slc.subscript {
     let s_result = subscript(&s, &val, plan.clone(), symbols.clone(), functions.clone())?;
@@ -424,7 +424,7 @@ fn subscript_range(sbscrpt: &Subscript, plan: Plan, symbols: SymbolTableRef, fun
       let result = range(rng,plan.clone(), symbols.clone(), functions.clone())?;
       match result.as_vecusize() {
         Some(v) => Ok(v.to_value()),
-        None => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
+        None => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
       }
     }
     _ => unreachable!()
@@ -791,7 +791,7 @@ macro_rules! handle_value_kind {
       for x in $val.as_vec().iter() {
         match x.$converter() {
           Some(u) => vals.push(u.to_value()),
-          None => {return Err(MechError {tokens: vec![],msg: file!().to_string(),id: line!(),kind: MechErrorKind::WrongTableColumnKind,});}
+          None => {return Err(MechError{file: file!().to_string(), tokens: vec![],msg: "".to_string(),id: line!(),kind: MechErrorKind::WrongTableColumnKind,});}
         }
       }
       $data_map.insert($field_label.clone(), ($value_kind, Value::to_matrix(vals.clone(), vals.len(), 1)));
@@ -885,7 +885,7 @@ fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef)
     } else if shape[1] == result.shape()[1] {
       col.push(result);
     } else {
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![])});
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![])});
     }
   }
   if col.is_empty() {
@@ -914,7 +914,7 @@ fn matrix_row(r: &MatrixRow, plan: Plan, symbols: SymbolTableRef, functions: Fun
     } else if shape[0] == result.shape()[0] {
       row.push(result);
     } else {
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![])});
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![])});
     }
   }
   let new_fxn = MaxtrixHorzCat{}.compile(&row)?;
@@ -937,7 +937,7 @@ fn var(v: &Var, symbols: SymbolTableRef) -> MResult<Value> {
       return Ok(Value::MutableReference(value.clone()))
     }
     None => {
-      return Err(MechError{tokens: v.tokens(), msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(id)});
+      return Err(MechError{file: file!().to_string(), tokens: v.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(id)});
     }
   }
 }
@@ -1047,8 +1047,8 @@ fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, functions: Functions
         Some(ValueKind::U128) => Ok(Value::U128(new_ref(*num.borrow() as u128))),
         Some(ValueKind::F32)  => Ok(Value::F32(new_ref(F32::new(*num.borrow() as f32)))),
         Some(ValueKind::F64)  => Ok(Value::F64(new_ref(F64::new(*num.borrow() as f64)))),
-        None => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(to_kind_id)}),
-        _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::CouldNotAssignKindToValue}),
+        None => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(to_kind_id)}),
+        _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::CouldNotAssignKindToValue}),
       }
     }
     (Value::F64(num), Kind::Scalar(to_kind_id)) => {
@@ -1065,8 +1065,8 @@ fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, functions: Functions
         Some(ValueKind::U128) => Ok(Value::U128(new_ref((*num.borrow()).0 as u128))),
         Some(ValueKind::F32)  => Ok(Value::F32(new_ref(F32::new((*num.borrow()).0 as f32)))),
         Some(ValueKind::F64)  => Ok(value),
-        None => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(to_kind_id)}),
-        _ => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::CouldNotAssignKindToValue}),
+        None => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(to_kind_id)}),
+        _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::CouldNotAssignKindToValue}),
       }
     }
     _ => todo!(),
