@@ -36,7 +36,7 @@ pub struct RangeInclusive {}
 impl NativeFunctionCompiler for RangeInclusive {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
-      return Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     match (arguments[0].clone(), arguments[1].clone()) {
       (Value::I8(min),   Value::I8(max))   => Ok(Box::new(RangeInclusiveScalar{max,min, out: new_ref(RowDVector::from_element(1,0))})),
@@ -51,7 +51,7 @@ impl NativeFunctionCompiler for RangeInclusive {
       (Value::U128(min), Value::U128(max)) => Ok(Box::new(RangeInclusiveScalar{max,min, out: new_ref(RowDVector::from_element(1,0))})),
       (Value::F32(min),  Value::F32(max))  => Ok(Box::new(RangeInclusiveScalar{max,min, out: new_ref(RowDVector::from_element(1,F32::new(0.0)))})),
       (Value::F64(min),  Value::F64(max))  => Ok(Box::new(RangeInclusiveScalar{max,min, out: new_ref(RowDVector::from_element(1,F64::new(0.0)))})),
-      x => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+      x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
     }
   }
 }
