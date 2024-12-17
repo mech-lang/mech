@@ -10,6 +10,8 @@ use crate::stdlib::{
                     convert::*,
                     horzcat::*,
                     vertcat::*,
+                    math::*,
+                    compare::*,
                   };
 use mech_core::{MechError, MechErrorKind, hash_str, new_ref, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 
@@ -17,7 +19,6 @@ use mech_matrix::*;
 use mech_stats::*;
 use mech_math::*;
 use mech_logic::*;
-use mech_compare::*;
 use mech_range::{
   inclusive::RangeInclusive,
   exclusive::RangeExclusive,
@@ -976,7 +977,7 @@ fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: Functio
       let mut plan_brrw = plan.borrow_mut();
       plan_brrw.push(new_fxn);
       Ok(out)
-    },
+    }
   }
 }
 
