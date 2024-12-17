@@ -14,7 +14,7 @@ Provides functions that produce a range of values.
 
 math/machine = {
   name: "range" 
-  version: "v0.2.24"
+  version: "v0.2.25"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/range"
   license: "Apache-2.0"}
