@@ -149,7 +149,10 @@ impl SymbolTable {
   pub fn insert(&mut self, key: u64, value: Value) -> ValRef {
     let cell = new_ref(value);
     self.reverse_lookup.insert(Rc::as_ptr(&cell), key);
-    self.symbols.insert(key,cell.clone());
+    let old = self.symbols.insert(key,cell.clone());
+    if let Some(old) = old {
+      self.reverse_lookup.remove(&Rc::as_ptr(&old));
+    }
     cell.clone()
   }
 }
