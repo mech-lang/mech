@@ -14,7 +14,7 @@ Provides standard logic functions.
 
 math/machine = {
   name: "logic" 
-  version: "v0.2.24"
+  version: "v0.2.25"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/logic"
   license: "Apache-2.0"}
