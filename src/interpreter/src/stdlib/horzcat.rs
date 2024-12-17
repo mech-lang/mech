@@ -126,7 +126,7 @@ where
     self.e1.copy_into(&self.out,offset);
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("HorizontalConcatenateTwoArgs") }
+  fn to_string(&self) -> String { format!("HorizontalConcatenateTwoArgs{:?}", self.out) }
 }
     
 struct HorizontalConcatenateThreeArgs<T> {
@@ -146,7 +146,7 @@ where
     self.e2.copy_into(&self.out,offset);
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("HorizontalConcatenateThreeArgs") }
+  fn to_string(&self) -> String { format!("HorizontalConcatenateThreeArgs{:?}", self.out) }
 }
 
 struct HorizontalConcatenateFourArgs<T> {
@@ -169,7 +169,7 @@ where
 
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("HorizontalConcatenateFourArgs") }
+  fn to_string(&self) -> String { format!("HorizontalConcatenateFourArgs{:?}", self.out) }
 }
 
 struct HorizontalConcatenateNArgs<T> {
@@ -188,7 +188,7 @@ where
     }
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("HorizontalConcatenateNArgs") }
+  fn to_string(&self) -> String { format!("HorizontalConcatenateNArgs{:?}", self.out) }
 }
 
 macro_rules! horizontal_concatenate {
@@ -1117,6 +1117,11 @@ macro_rules! impl_horzcat_arms {
                     out[0] = e0.borrow().clone();
                     return Ok(Box::new(HorizontalConcatenateSM1{e0: e1.clone(), out: new_ref(out)}));
                   }
+                  Value::[<$kind:camel>](ref e1) => {
+                    out[0] = e0.borrow().clone();
+                    out[1] = e1.borrow().clone();
+                    return Ok(Box::new(HorizontalConcatenateR2{out: new_ref(out)}));
+                  }
                   _ => todo!(),
                 }
               }
@@ -1127,6 +1132,11 @@ macro_rules! impl_horzcat_arms {
                     out[1] = e1.borrow().clone();
                     return Ok(Box::new(HorizontalConcatenateM1S{e0: e0.clone(), out: new_ref(out)}));
                   }
+                  Value::[<$kind:camel>](ref e0) => {
+                    out[0] = e0.borrow().clone();
+                    out[1] = e1.borrow().clone();
+                    return Ok(Box::new(HorizontalConcatenateR2{out: new_ref(out)}));
+                  }
                   _ => todo!(),
                 }
               }              
@@ -1135,6 +1145,11 @@ macro_rules! impl_horzcat_arms {
                 match (e0.borrow().clone(), e1.borrow().clone()) {
                   (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e0)),Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e1))) => {
                     return Ok(Box::new(HorizontalConcatenateM1M1{e0: e0.clone(), e1: e1.clone(), out: new_ref(out)}));
+                  }
+                  (Value::[<$kind:camel>](ref e0),Value::[<$kind:camel>](ref e1)) => {
+                    out[0] = e0.borrow().clone();
+                    out[1] = e1.borrow().clone();
+                    return Ok(Box::new(HorizontalConcatenateR2{out: new_ref(out)}));
                   }
                   _ => todo!(),
                 }
@@ -2008,7 +2023,7 @@ macro_rules! impl_horzcat_arms {
             }
             Ok(Box::new(HorizontalConcatenateNArgs{e0: args, out:new_ref(out)}))
           }
-          _ => {return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});}
+          _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});}
         }
   }}}}}
 

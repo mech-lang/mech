@@ -211,10 +211,16 @@ test_interpreter!(interpret_matrix_dynamic_div, "[2 4 6 8] / [2 2 2 2]", new_ref
 test_interpreter!(interpret_matrix_gt, "x := [66.0 2.0 3.0; 66.0 5.0 66.0]; y := [1.0 2.0 3.0; 4.0 5.0 6.0]; x > y", new_ref(Matrix2x3::from_vec(vec![true,true,false,false,false,true])).to_value());
 test_interpreter!(interpret_matrix_lt, "x := [66.0 2.0 3.0; 66.0 4.0 66.0]; y := [1.0 2.0 3.0; 4.0 5.0 6.0]; x < y", new_ref(Matrix2x3::from_vec(vec![false,false,false,true,false,false])).to_value());
 test_interpreter!(interpret_matrix_lt_int, "x := [66 2 3; 66 4 66]; y := [1 2 3; 4 5 6]; x < y", new_ref(Matrix2x3::from_vec(vec![false,false,false,true,false,false])).to_value());
+test_interpreter!(interpret_matrix_add_m2v2, "[1 1; 2 2] + [1;2]", new_ref(Matrix2::from_vec(vec![F64::new(2.0),F64::new(4.0),F64::new(2.0),F64::new(4.0)])).to_value());
+test_interpreter!(interpret_matrix_add_v2m2, "[1;2] + [1 1; 2 2]", new_ref(Matrix2::from_vec(vec![F64::new(2.0),F64::new(4.0),F64::new(2.0),F64::new(4.0)])).to_value());
+test_interpreter!(interpret_matrix_add_r2m2, "[1 2] + [1 1; 1 1]", new_ref(Matrix2::from_vec(vec![F64::new(2.0),F64::new(2.0),F64::new(3.0),F64::new(3.0)])).to_value());
+test_interpreter!(interpret_matrix_add_m2r2, "[1 1; 1 1] + [1 2]", new_ref(Matrix2::from_vec(vec![F64::new(2.0),F64::new(2.0),F64::new(3.0),F64::new(3.0)])).to_value());
 
 test_interpreter!(interpret_matrix_matmul_mat1, "[2] ** [10]", new_ref(Matrix1::from_vec(vec![F64::new(20.0)])).to_value());
 test_interpreter!(interpret_matrix_matmul_mat2_ref, "a := [1 2; 3 4]; b := [4 5; 6 7]; c := a ** b", new_ref(Matrix2::from_vec(vec![F64::new(16.0), F64::new(36.0), F64::new(19.0), F64::new(43.0)])).to_value());
 test_interpreter!(interpret_matrixmatmul_mat2x3_ref, "a := [1.0 2.0 3.0; 4.0 5.0 6.0]; b := [4.0 5.0; 6.0 7.0; 8.0 9.0]; c := a ** b", new_ref(Matrix2::from_vec(vec![F64::new(40.0),F64::new(94.0),F64::new(46.0),F64::new(109.0)])).to_value());
+test_interpreter!(interpret_matrixmatmul_r3m3, "a := [1.0 2.0 3.0]; b := [4.0 5.0 6.0; 7.0 8.0 9.0; 10 11 12]; c := a ** b", new_ref(RowVector3::from_vec(vec![F64::new(48.0),F64::new(54.0),F64::new(60.0)])).to_value());  
+test_interpreter!(interpret_matrixmatmul_m3v3, "b := [4.0 5.0 6.0; 7.0 8.0 9.0; 10 11 12]; a := [1.0 2.0 3.0]'; c := b ** a", new_ref(Vector3::from_vec(vec![F64::new(32.0),F64::new(50.0),F64::new(68.0)])).to_value());  
 
 // 2x2 Nominal Operations 
 //test_interpreter!(interpret_matrix_add_2x2, "[1 2; 3 4] + [5 6; 7 8]", new_ref(Matrix2::from_vec(vec![6i64, 8, 10, 12])).to_value());
@@ -484,3 +490,4 @@ test_interpreter!(interpret_vertcat_m2r2, "x := [5 2;3 4]; y := [8 9];z := [x;y]
 
 test_interpreter!(interpret_vertcat_r2m2x3, "x := [1 2 3; 4 5 6]; y := [7 8 9]; z := [y;x]", new_ref(Matrix3::from_vec(vec![F64::new(7.0),F64::new(1.0),F64::new(4.0),F64::new(8.0),F64::new(2.0),F64::new(5.0),F64::new(9.0),F64::new(3.0),F64::new(6.0)])).to_value());
 
+test_interpreter!(interpret_stats_sum_rowm2, "x := [1 2; 4 5]; y := stats/sum/row(x);", new_ref(RowVector2::from_vec(vec![F64::new(5.0),F64::new(7.0)])).to_value());

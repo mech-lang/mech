@@ -22,7 +22,7 @@ impl Kind {
       Kind::Scalar(id) => {
         match functions.borrow().kinds.get(id).cloned() {
           Some(val_knd) => Ok(val_knd),
-          None => Err(MechError{tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(*id)}),
+          None => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(*id)}),
         }
       },
       Kind::Matrix(knd,size) => {

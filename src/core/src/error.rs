@@ -12,8 +12,9 @@ type Cols = usize;
 pub type ParserErrorReport = Vec<ParserErrorContext>;
 
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
-pub struct MechError {
+pub struct MechError{ 
   pub id: u32,
+  pub file: String,
   pub tokens: Vec<Token>,
   pub kind: MechErrorKind,
   pub msg: String,
@@ -72,9 +73,9 @@ pub enum MechErrorKind {
   None,
 }
 
-impl From<std::io::Error> for MechError {
-  fn from(n: std::io::Error) -> MechError {
-    MechError{tokens: vec![], msg: "".to_string(), id: 74892, kind: MechErrorKind::IoError}
+impl From<std::io::Error> for MechError{ 
+  fn from(n: std::io::Error) -> MechError{ 
+    MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 74892, kind: MechErrorKind::IoError}
   } 
 }
 

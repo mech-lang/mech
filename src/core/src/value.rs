@@ -440,7 +440,7 @@ impl Value {
           }
           None => match self.as_bool() {
             Some(x) => Ok(Value::Bool(x)),
-            None => Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
+            None => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
           }
         }
       }

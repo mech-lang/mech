@@ -1102,7 +1102,7 @@ macro_rules! impl_vertcat_arms {
             }
             Ok(Box::new(VerticalConcatenateNArgs{e0: args, out:new_ref(out)}))
           }
-          _ => {return Err(MechError {tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});}
+          _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});}
         }
   }}}}}
 

@@ -260,9 +260,9 @@ impl MechCode {
       MechCode::Expression(x) => x.tokens(),
       _ => todo!(),
       //Statement(x) => x.tokens(),
+      //FunctionDefine(x) => x.tokens(),
       //FsmSpecification(x) => x.tokens(),
       //FsmImplementation(x) => x.tokens(),
-      //FunctionDefine(x) => x.tokens(),
     }
   }
 }
@@ -279,6 +279,14 @@ pub struct FunctionDefine {
 pub struct FunctionArgument {
   pub name: Identifier,
   pub kind: KindAnnotation,
+}
+
+impl FunctionArgument {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.name.tokens();
+    tokens.append(&mut self.kind.tokens());
+    tokens
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -642,6 +650,12 @@ pub struct FunctionCall {
   pub args: ArgumentList,
 }
 
+impl FunctionCall {
+  pub fn tokens(&self) -> Vec<Token> {
+    self.name.tokens()
+  }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Tuple {
   pub elements: Vec<Expression>
@@ -689,14 +703,30 @@ pub enum Kind {
 impl Kind {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
-      Kind::Tuple(x) => todo!(),
-      Kind::Bracket(x) => todo!(),
-      Kind::Brace(x) => todo!(),
-      Kind::Map(x,y) => todo!(),
+      Kind::Tuple(x) => x.iter().flat_map(|k| k.tokens()).collect(),
+      Kind::Bracket((kinds, literals)) => {
+        kinds.iter().flat_map(|k| k.tokens())
+            .chain(literals.iter().flat_map(|l| l.tokens()))
+            .collect()
+      },
+      Kind::Brace((kinds, literals)) => {
+        kinds.iter().flat_map(|k| k.tokens())
+            .chain(literals.iter().flat_map(|l| l.tokens()))
+            .collect()
+      }
+      Kind::Map(x, y) => x.tokens().into_iter().chain(y.tokens()).collect(),
       Kind::Scalar(x) => x.tokens(),
       Kind::Atom(x) => x.tokens(),
-      Kind::Function(x,y) => todo!(),
-      Kind::Fsm(x,y) => todo!(),
+      Kind::Function(args, rets) => {
+        args.iter().flat_map(|k| k.tokens())
+            .chain(rets.iter().flat_map(|k| k.tokens()))
+            .collect()
+      }
+      Kind::Fsm(args, rets) => {
+        args.iter().flat_map(|k| k.tokens())
+            .chain(rets.iter().flat_map(|k| k.tokens()))
+            .collect()
+      }
       Kind::Empty => vec![],
     }
   }
@@ -718,6 +748,7 @@ impl Literal {
       Literal::Number(x) => x.tokens(),
       Literal::Boolean(tkn) => vec![tkn.clone()],
       Literal::String(strng) => vec![strng.text.clone()],
+      Literal::Atom(atm) => atm.name.tokens(),
       _ => todo!(),
     }
   }
@@ -873,6 +904,14 @@ pub struct RangeExpression {
   pub increment: Option<(RangeOp,Factor)>,
   pub operator: RangeOp,
   pub terminal: Factor,
+}
+
+impl RangeExpression {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.start.tokens();
+    tokens.append(&mut self.terminal.tokens());
+    tokens
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
