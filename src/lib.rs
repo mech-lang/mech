@@ -24,22 +24,10 @@ static PI: f64 = 3.14159265358979323846264338327950288;
 pub mod atan2;
 pub mod cos;
 pub mod sin;
-pub mod add;
-pub mod sub;
-pub mod mul;
-pub mod div;
-pub mod exp;
-pub mod negate;
 
 pub use self::atan2::*;
 pub use self::cos::*;
 pub use self::sin::*;
-pub use self::add::*;
-pub use self::sub::*;
-pub use self::mul::*;
-pub use self::div::*;
-pub use self::exp::*;
-pub use self::negate::*;
 
 // ----------------------------------------------------------------------------
 // Math Library
@@ -93,7 +81,7 @@ macro_rules! impl_urnop_match_arms2 {
               Ok(Box::new([<$lib $lhs_type MD>]{arg, out: new_ref(DMatrix::from_element(rows,cols,$default))}))},
           )+
         )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}", x).to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }}}}
 
 #[macro_export]
