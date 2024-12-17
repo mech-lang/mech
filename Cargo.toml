@@ -53,6 +53,11 @@ LegalCopyright = "Copyright © 2024"
 mech-core = { path = 'src/core' }
 mech-syntax = { path = 'src/syntax'}
 mech-interpreter = { path = 'src/interpreter'}
+#mech-matrix = { path = '../machines/matrix' }
+#mech-stats = { path = '../machines/stats' }
+#mech-math = { path = '../machines/math' }
+#mech-range = { path = '../machines/range' }
+#mech-logic = { path = '../machines/logic' }
 
 [patch.'https://gitlab.com/mech-lang/core']
 mech-core = { path = 'src/core', version = '0.2.25' }

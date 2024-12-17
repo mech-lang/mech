@@ -43,9 +43,3 @@ paste = "1.0.15"
 version = "0.2.19"
 default-features = false
 features = ["libm"]
-
-[patch.crates-io]
-mech-core = {path = "../core"}
-
-[profile.release]
-debug = true
