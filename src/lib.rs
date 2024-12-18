@@ -51,11 +51,11 @@ pub fn pretty_print_tree(tree: &Program) -> String {
   let tree_hash = hash_str(&format!("{:#?}", tree));
   let formatted_tree = format_parse_tree(tree);
   let mut builder = Builder::default();
-  builder.push_record(vec!["🌳 Syntax Tree"]);
   builder.push_record(vec![format!("Hash: {}", tree_hash)]);
   builder.push_record(vec![format!("{}", formatted_tree)]);
   let mut table = builder.build();
-  table.with(Style::modern());
+  table.with(Style::modern())
+       .with(Panel::header("🌳 Syntax Tree"));
   format!("{table}")
 }
 
@@ -82,7 +82,7 @@ pub fn whos(intrp: &Interpreter) -> String {
 pub fn pretty_print_plan(intrp: &Interpreter) -> String {
   let mut plan_str = "".to_string(); 
   let mut builder = Builder::default();
-  builder.push_record(vec!["💻 Plan"]);
+
   let mut row = vec![];
   for (ix,fxn) in intrp.plan.borrow().iter().enumerate() {
     plan_str = format!("{}. {}\n", ix + 1, fxn.to_string());
@@ -93,7 +93,8 @@ pub fn pretty_print_plan(intrp: &Interpreter) -> String {
     }
   }
   let mut table = builder.build();
-  table.with(Style::modern());
+  table.with(Style::modern())
+       .with(Panel::header("📋 Plan"));
   format!("{table}")
 }
 

@@ -161,7 +161,7 @@ impl SymbolTable {
 
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
-    builder.push_record(vec!["💻 Symbols"]);
+    builder.push_record(vec!["🔣 Symbols"]);
     for (k,v) in &self.symbols {
       let name = self.dictionary.get(k).unwrap();
       let v_brrw = v.borrow();
