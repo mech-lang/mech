@@ -50,7 +50,7 @@ macro_rules! impl_two_arg_fxn {
         $op!(arg1_ptr,arg2_ptr,out_ptr);
       }
       fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}
 
 impl_two_arg_fxn!(Atan2F32, F32, F32, F32, atan2f_op);
