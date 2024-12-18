@@ -12,6 +12,7 @@ pub extern crate mech_syntax as syntax;
 
 pub use mech_core::*;
 use mech_core::nodes::Program;
+use mech_interpreter::Interpreter;
 //pub use mech_syntax::compiler::*;
 //pub use mech_program::*;
 //pub use mech_utilities::*;
@@ -24,6 +25,11 @@ extern crate bincode;
 use std::io::{Write, BufReader, BufWriter, stdout};
 use std::fs::{OpenOptions, File, canonicalize, create_dir};
 
+use tabled::{
+  builder::Builder,
+  settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
+  Tabled,
+};
 use std::path::{Path, PathBuf};
 use std::io;
 use std::io::prelude::*;
@@ -39,6 +45,56 @@ extern crate lazy_static;
 
 lazy_static! {
   static ref CORE_MAP: Mutex<HashMap<SocketAddr, (String, SystemTime)>> = Mutex::new(HashMap::new());
+}
+
+pub fn pretty_print_tree(tree: &Program) -> String {
+  let tree_hash = hash_str(&format!("{:#?}", tree));
+  let formatted_tree = format_parse_tree(tree);
+  let mut builder = Builder::default();
+  builder.push_record(vec!["🌳 Syntax Tree"]);
+  builder.push_record(vec![format!("Hash: {}", tree_hash)]);
+  builder.push_record(vec![format!("{}", formatted_tree)]);
+  let mut table = builder.build();
+  table.with(Style::modern());
+  format!("{table}")
+}
+
+pub fn whos(intrp: &Interpreter) -> String {
+  let mut builder = Builder::default();
+  builder.push_record(vec!["Name","Size","Bytes","Kind"]);
+  let symbol_table = intrp.symbols.borrow();
+  for (id,name) in &symbol_table.dictionary {
+    let value = symbol_table.get(*id).unwrap();
+    let value_brrw = value.borrow();
+    builder.push_record(vec![
+      name.clone(),
+      format!("{:?}",value_brrw.shape()),
+      format!("{:?}",value_brrw.size_of()),
+      format!("{:?}",value_brrw.kind())
+    ]);
+  }
+
+  let mut table = builder.build();
+  table.with(Style::modern());
+  format!("{table}")
+}
+
+pub fn pretty_print_plan(intrp: &Interpreter) -> String {
+  let mut plan_str = "".to_string(); 
+  let mut builder = Builder::default();
+  builder.push_record(vec!["💻 Plan"]);
+  let mut row = vec![];
+  for (ix,fxn) in intrp.plan.borrow().iter().enumerate() {
+    plan_str = format!("{}. {}\n", ix + 1, fxn.to_string());
+    row.push(plan_str.clone());
+    if row.len() == 4 {
+      builder.push_record(row.clone());
+      row.clear();
+    }
+  }
+  let mut table = builder.build();
+  table.with(Style::modern());
+  format!("{table}")
 }
 
 pub fn format_parse_tree(program: &Program) -> String {

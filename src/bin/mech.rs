@@ -1,6 +1,6 @@
 #![feature(hash_extract_if)]
 #![allow(warnings)]
-use mech::format_parse_tree;
+use mech::*;
 use mech_core::*;
 use mech_syntax::parser;
 //use mech_syntax::analyzer::*;
@@ -18,6 +18,7 @@ use crossterm::{
 use clap::{arg, command, value_parser, Arg, ArgAction, Command};
 use std::path::PathBuf;
 use tabled::{
+  builder::Builder,
   settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
   Tabled,
 };
@@ -62,6 +63,15 @@ fn main() -> Result<(), MechError> {
         .long("debug")
         .help("Print debug info")
         .action(ArgAction::SetTrue))
+    .arg(Arg::new("tree")
+        .long("tree")
+        .help("Print parse tree")
+        .action(ArgAction::SetTrue))   
+    .arg(Arg::new("time")
+        .short('t')
+        .long("time")
+        .help("Measure how long the programs takes to execute.")
+        .action(ArgAction::SetTrue))       
     .arg(Arg::new("repl")
         .short('r')
         .long("repl")
@@ -69,52 +79,45 @@ fn main() -> Result<(), MechError> {
         .action(ArgAction::SetTrue))
     .get_matches();
 
+  let debug_flag = matches.get_flag("debug");
+  let tree_flag = matches.get_flag("tree");
+  let repl_flag = matches.get_flag("repl");
+  let time_flag = matches.get_flag("time");
+
   let mut intrp = Interpreter::new();
   if let Some(mech_paths) = matches.get_one::<String>("mech_paths") {
     let s = fs::read_to_string(&mech_paths).unwrap();
-    match parser::parse(&s) {
-      Ok(tree) => { 
-        let result = intrp.interpret(&tree);
-        let pretty_json = format_parse_tree(&tree);
-
-        let debug_flag = matches.get_flag("debug");
-        if debug_flag {
-          let tree_hash = hash_str(&format!("{:#?}", tree));
-          let syntax_tree_str = format!("Tree Hash: {:?}\n{}", tree_hash, pretty_json);
-
-          let mut interpreter_str = format!("Symbols: {:#?}\n", intrp.symbols); 
-          interpreter_str = format!("{}Plan:\n", interpreter_str); 
-          for (ix,fxn) in intrp.plan.borrow().iter().enumerate() {
-            interpreter_str = format!("{}  {}. {}\n", interpreter_str, ix + 1, fxn.to_string());
-          }
-          interpreter_str = format!("{}Fxns:\n", interpreter_str); 
-          for (id,fxn) in intrp.functions.borrow().functions.iter() {
-            println!("{:?}", fxn);
-          }
-          for fxn in intrp.plan.borrow().iter() {
-            fxn.solve();
-          }
-          let result_str = match result {
-            Ok(r) => format!("{}", r.pretty_print()),
-            Err(err) => format!("{:?}", err),
-          };
-
-          let data = vec!["🌳 Syntax Tree", &syntax_tree_str, 
-                          "💻 Interpreter", &interpreter_str, 
-                          "🌟 Result",      &result_str];
-          let mut table = tabled::Table::new(data);
-          table.with(Style::modern())
-               .with(Panel::header(format!("Runtime Debug Info")))
-               .with(Alignment::left());
     
-          println!("{table}");
-        } else {
-          let result_str = match result {
-            Ok(r) => format!("{}", r.pretty_print()),
-            Err(err) => format!("{:?}", err),
-          };
-          println!("{}", result_str);
+    let now = Instant::now();
+    let parse_result = parser::parse(&s);
+    let elapsed_time = now.elapsed();
+    let parse_duration = elapsed_time.as_nanos() as f64;
+
+    match parse_result {
+      Ok(tree) => { 
+        let now = Instant::now();
+        let result = intrp.interpret(&tree);
+        let elapsed_time = now.elapsed();
+        let cycle_duration = elapsed_time.as_nanos() as f64;
+        
+        let result_str = match result {
+          Ok(r) => format!("{}", r.pretty_print()),
+          Err(err) => format!("{:?}", err),
+        };
+
+        if debug_flag {
+          println!("{}", intrp.symbols.borrow().pretty_print());
+          println!("{}", pretty_print_plan(&intrp));
+        } 
+        if tree_flag {
+          println!("{}", pretty_print_tree(&tree));
         }
+        if time_flag {
+          println!("Parse Time:   {:0.2?} ns", parse_duration);
+          println!("Compile Time: {:0.2?} ns", cycle_duration);
+        }
+
+        println!("{}", result_str);
       },
       Err(err) => {
         if let MechErrorKind::ParserError(report, _) = err.kind {
@@ -124,7 +127,6 @@ fn main() -> Result<(), MechError> {
         }
       }
     }
-    let repl_flag = matches.get_flag("repl");
     if !repl_flag {
       return Ok(());
     }
@@ -148,25 +150,48 @@ fn main() -> Result<(), MechError> {
     io::stdout().flush().unwrap();
     let mut input = String::new();
     io::stdin().read_line(&mut input).unwrap();
-    match parser::parse(&input) {
-      Ok(tree) => { 
-        let now = Instant::now();
-        let result = intrp.interpret(&tree);
-        let elapsed_time = now.elapsed();
-        let cycle_duration = elapsed_time.as_nanos() as f64;
 
-        match result {
-          Ok(r) => println!("{}", r.pretty_print()),
-          Err(err) => println!("{:?}", err),
+    
+    if input.chars().nth(0) == Some(':') {
+      // Treat as command 
+      match input.as_str().trim() {
+        ":help" => todo!(),
+        ":symbols" => println!("{}", intrp.symbols.borrow().pretty_print()),
+        ":plan" => println!("{}", pretty_print_plan(&intrp)),
+        ":whos" => println!("{}",whos(&intrp)),
+        ":step" => {
+          let now = Instant::now();
+            for fxn in intrp.plan.borrow().iter() {
+              fxn.solve();
+            }
+          let elapsed_time = now.elapsed();
+          let cycle_duration = elapsed_time.as_nanos() as f64;
+          println!("{:0.2?} ns", cycle_duration);
         }
-        println!("{:0.2?} ns", cycle_duration / 1000000.0);
-
+        x => todo!(),
       }
-      Err(err) => {
-        if let MechErrorKind::ParserError(report, _) = err.kind {
-          parser::print_err_report(&input, &report);
-        } else {
-          panic!("Unexpected error type");
+    } else {
+      // Treat as code
+      match parser::parse(&input) {
+        Ok(tree) => { 
+          let now = Instant::now();
+          let result = intrp.interpret(&tree);
+          let elapsed_time = now.elapsed();
+          let cycle_duration = elapsed_time.as_nanos() as f64;
+
+          match result {
+            Ok(r) => println!("{:?}\n{}", r.kind(), r.pretty_print()),
+            Err(err) => println!("{:?}", err),
+          }
+          println!("{:0.2?} ns", cycle_duration);
+
+        }
+        Err(err) => {
+          if let MechErrorKind::ParserError(report, _) = err.kind {
+            parser::print_err_report(&input, &report);
+          } else {
+            panic!("Unexpected error type");
+          }
         }
       }
     }

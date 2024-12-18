@@ -106,6 +106,7 @@ pub fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTabl
   };
   let mut symbols_brrw = symbols.borrow_mut();
   symbols_brrw.insert(id,result.clone());
+  symbols_brrw.dictionary.insert(id,var_def.var.name.to_string());
   Ok(result)
 }
 

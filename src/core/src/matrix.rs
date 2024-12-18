@@ -222,6 +222,11 @@ impl<T> Matrix<T>
 where T: Debug + Clone + PartialEq + 'static
 {
 
+  pub fn size_of(&self) -> usize {
+    let vec = self.as_vec();
+    vec.capacity() * size_of::<T>()
+  }
+
   pub fn get_copyable_matrix(&self) -> Box<dyn CopyMat<T>> {
     match self {
       #[cfg(feature = "RowVector4")]
@@ -268,7 +273,17 @@ where T: Debug + Clone + PartialEq + 'static
       #[cfg(feature = "RowVector2")]
       Matrix::RowVector2(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
       #[cfg(feature = "RowVectorD")]
-      Matrix::RowDVector(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
+      Matrix::RowDVector(vec) => {
+        let vec_brrw = vec.borrow();
+        let vec_str = if vec_brrw.ncols() > 20 {
+          let mut vec_str = vec_brrw.row(0).iter().take(10).chain(vec_brrw.row(0).iter().rev().take(9).rev()).map(|x| format!("{:?}", x)).collect::<Vec<_>>();
+          vec_str.insert(10,"...".to_string());
+          vec_str
+        } else {
+          vec_brrw.row(0).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()
+        };
+        builder.push_record(vec_str);
+      }
       #[cfg(feature = "Vector4")]
       Matrix::Vector4(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
       #[cfg(feature = "Vector3")]
@@ -276,7 +291,19 @@ where T: Debug + Clone + PartialEq + 'static
       #[cfg(feature = "Vector2")]
       Matrix::Vector2(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
       #[cfg(feature = "VectorD")]
-      Matrix::DVector(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
+      Matrix::DVector(vec) => {
+        let vec_brrw = vec.borrow();
+        let vec_str = if vec_brrw.nrows() > 20 {
+          let mut vec_str = vec_brrw.column(0).iter().take(10).chain(vec_brrw.column(0).iter().rev().take(9).rev()).map(|x| format!("{:?}", x)).collect::<Vec<_>>();
+          vec_str.insert(10,"...".to_string());
+          vec_str
+        } else {
+          vec_brrw.column(0).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()
+        };
+        for r in vec_str {
+          builder.push_record(vec![r]);
+        }
+      }
       #[cfg(feature = "Matrix4")]
       Matrix::Matrix4(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
       #[cfg(feature = "Matrix3")]

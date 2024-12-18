@@ -35,6 +35,7 @@ use std::cell::RefCell;
 use std::fmt;
 use num_traits::*;
 use std::ops::*;
+use std::mem;
 
 pub mod value;
 pub mod matrix;
