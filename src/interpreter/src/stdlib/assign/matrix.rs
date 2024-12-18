@@ -65,7 +65,7 @@ macro_rules! impl_set_scalar_fxn {
         }
       }
       fn out(&self) -> Value { self.sink.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}
 
 #[cfg(feature = "RowVector4")]
@@ -282,7 +282,7 @@ macro_rules! impl_set_range_fxn {
         }
       }
       fn out(&self) -> Value { self.sink.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}
 
 impl_set_range_fxn!(Set1DRRD,RowDVector,T,set_1d_range,usize);
@@ -463,7 +463,7 @@ macro_rules! impl_set_all_fxn {
         }
       }
       fn out(&self) -> Value { self.sink.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}
 
 impl_set_all_fxn!(Set1DARD,RowDVector); 
@@ -580,7 +580,7 @@ macro_rules! impl_set_scalar_scalar_fxn {
         }
       }
       fn out(&self) -> Value { self.sink.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}
 
 impl_set_scalar_scalar_fxn!(Set2DSSRD,RowDVector,set_2d_scalar_scalar);
@@ -704,7 +704,7 @@ macro_rules! impl_set_all_scalar_fxn {
         }
       }
       fn out(&self) -> Value { self.sink.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}
 
 impl_set_all_scalar_fxn!(Set2DASRD,RowDVector, T, set_2d_all_scalar);
@@ -842,7 +842,7 @@ macro_rules! impl_set_scalar_all_fxn {
         }
       }
       fn out(&self) -> Value { self.sink.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}
 
 impl_set_scalar_all_fxn!(Set2DSARD,RowDVector, set_2d_scalar_all);
@@ -972,7 +972,7 @@ macro_rules! impl_set_range_scalar_fxn {
         }
       }
       fn out(&self) -> Value { self.sink.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}
 
 impl_set_range_scalar_fxn!(Set2DRSRD,RowDVector, set_2d_vector_scalar, usize);
@@ -1150,7 +1150,7 @@ macro_rules! impl_set_scalar_range_fxn {
         }
       }
       fn out(&self) -> Value { self.sink.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}
 
 impl_set_scalar_range_fxn!(Set2DSRRD,RowDVector, set_2d_scalar_vector, usize);
@@ -1331,7 +1331,7 @@ macro_rules! impl_set_range_range_fxn {
         }
       }
       fn out(&self) -> Value { self.sink.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}
 
 impl_set_range_range_fxn!(Set2DRRRD,RowDVector,set_2d_vector_vector, usize);
@@ -1507,7 +1507,7 @@ macro_rules! impl_set_all_range_fxn {
         }
       }
       fn out(&self) -> Value { self.sink.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}
 
 impl_set_all_range_fxn!(Set2DARRD,RowDVector, set_2d_all_vector, usize);
@@ -1684,7 +1684,7 @@ macro_rules! impl_set_range_all_fxn {
         }
       }
       fn out(&self) -> Value { self.sink.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}
 
 impl_set_range_all_fxn!(Set2DRARD,RowDVector,set_2d_vector_all,usize);

@@ -23,7 +23,7 @@ macro_rules! vertcat_one_arg {
         }
       }
       fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }
   };}
 
@@ -49,7 +49,7 @@ macro_rules! vertcat_two_args {
         }
       }
       fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }
   };}
 
@@ -77,7 +77,7 @@ macro_rules! vertcat_three_args {
         }
       }
       fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }
   };} 
   
@@ -107,7 +107,7 @@ macro_rules! vertcat_four_args {
         }
       }
       fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }
   };}   
 
@@ -206,7 +206,7 @@ macro_rules! vertical_concatenate {
       {
         fn solve(&self) {}
         fn out(&self) -> Value { self.out.to_value() }
-        fn to_string(&self) -> String { format!("{:?}", self) }
+        fn to_string(&self) -> String { format!("{:#?}", self) }
       }
     }
   };}  
@@ -240,7 +240,7 @@ where
     }
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
 #[derive(Debug)]
@@ -278,7 +278,7 @@ where
     }
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
 #[derive(Debug)]
@@ -322,7 +322,7 @@ where
     }
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
 #[derive(Debug)]
@@ -354,7 +354,7 @@ where
     }
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
 #[derive(Debug)]
@@ -369,7 +369,7 @@ where
 {
   fn solve(&self) {}
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
 vertical_concatenate!(VerticalConcatenateS2,Vector2);
@@ -397,7 +397,7 @@ where
 {
   fn solve(&self) { }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
 macro_rules! vertcat_m1m1 {
@@ -518,7 +518,7 @@ where
     }
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
 macro_rules! vertcat_r2r2 {

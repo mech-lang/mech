@@ -23,5 +23,5 @@ impl<T> MechFunction for RecordSet<T>
     }
   }
   fn out(&self) -> Value { self.sink.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
 }

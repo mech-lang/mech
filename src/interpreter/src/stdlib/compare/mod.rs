@@ -41,7 +41,7 @@ macro_rules! impl_compare_binop {
       $op!(lhs_ptr,rhs_ptr,out_ptr);
     }
     fn out(&self) -> Value { self.out.to_value() }
-    fn to_string(&self) -> String { format!("{:?}", self) }
+    fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}
 
 #[macro_export]

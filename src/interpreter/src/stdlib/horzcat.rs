@@ -23,7 +23,7 @@ macro_rules! horzcat_one_arg {
         }
       }
       fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }
   };}
 
@@ -49,7 +49,7 @@ macro_rules! horzcat_two_args {
         }
       }
       fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }
   };}
 
@@ -77,7 +77,7 @@ macro_rules! horzcat_three_args {
         }
       }
       fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }
   };} 
   
@@ -107,7 +107,7 @@ macro_rules! horzcat_four_args {
         }
       }
       fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }
   };}   
 
@@ -206,7 +206,7 @@ macro_rules! horizontal_concatenate {
       {
         fn solve(&self) {}
         fn out(&self) -> Value { self.out.to_value() }
-        fn to_string(&self) -> String { format!("{:?}", self) }
+        fn to_string(&self) -> String { format!("{:#?}", self) }
       }
     }
   };}  
@@ -223,7 +223,7 @@ where
 {
   fn solve(&self) {}
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
 #[derive(Debug)]
@@ -255,7 +255,7 @@ where
     }
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
 #[derive(Debug)]
@@ -293,7 +293,7 @@ where
     }
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
 #[derive(Debug)]
@@ -337,7 +337,7 @@ where
     }
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
 #[derive(Debug)]
@@ -369,7 +369,7 @@ where
     }
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
 #[derive(Debug)]
@@ -384,7 +384,7 @@ where
 {
   fn solve(&self) {}
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
 horizontal_concatenate!(HorizontalConcatenateS2,2);
@@ -405,7 +405,7 @@ where
 {
   fn solve(&self) { }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
 macro_rules! horzcat_single {
@@ -421,7 +421,7 @@ macro_rules! horzcat_single {
     {
       fn solve(&self) { }
       fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }
   }
 }
@@ -831,7 +831,7 @@ where
     }
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
 macro_rules! horzcat_v2v2 {

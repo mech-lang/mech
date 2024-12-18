@@ -29,7 +29,7 @@ impl MechFunction for SetF64 {
     }
   }
   fn out(&self) -> Value { Value::F64(self.sink.clone()) }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
 pub struct SetValue {}
