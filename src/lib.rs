@@ -80,17 +80,24 @@ pub fn whos(intrp: &Interpreter) -> String {
 }
 
 pub fn pretty_print_plan(intrp: &Interpreter) -> String {
-  let mut plan_str = "".to_string(); 
   let mut builder = Builder::default();
 
   let mut row = vec![];
-  for (ix,fxn) in intrp.plan.borrow().iter().enumerate() {
-    plan_str = format!("{}. {}\n", ix + 1, fxn.to_string());
-    row.push(plan_str.clone());
-    if row.len() == 4 {
-      builder.push_record(row.clone());
-      row.clear();
+  let plan = intrp.plan.borrow();
+  if plan.is_empty() {
+    builder.push_record(vec!["".to_string()]);
+  } else {
+    for (ix, fxn) in plan.iter().enumerate() {
+      let plan_str = format!("{}. {}\n", ix + 1, fxn.to_string());
+      row.push(plan_str.clone());
+      if row.len() == 4 {
+        builder.push_record(row.clone());
+        row.clear();
+      }
     }
+  }
+  if row.is_empty() == false {
+    builder.push_record(row.clone());
   }
   let mut table = builder.build();
   table.with(Style::modern())

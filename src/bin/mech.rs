@@ -151,7 +151,6 @@ fn main() -> Result<(), MechError> {
     let mut input = String::new();
     io::stdin().read_line(&mut input).unwrap();
 
-    
     if input.chars().nth(0) == Some(':') {
       // Treat as command 
       match input.as_str().trim() {
@@ -159,17 +158,58 @@ fn main() -> Result<(), MechError> {
         ":symbols" => println!("{}", intrp.symbols.borrow().pretty_print()),
         ":plan" => println!("{}", pretty_print_plan(&intrp)),
         ":whos" => println!("{}",whos(&intrp)),
-        ":step" => {
+        ":clear" => intrp = Interpreter::new(),
+        ":load" => {
+          /*let s = fs::read_to_string(&mech_paths).unwrap();
           let now = Instant::now();
-            for fxn in intrp.plan.borrow().iter() {
-              fxn.solve();
+          let parse_result = parser::parse(&s);
+          let elapsed_time = now.elapsed();
+          let parse_duration = elapsed_time.as_nanos() as f64;
+          match parse_result {
+            Ok(tree) => { 
+              let now = Instant::now();
+              let result = intrp.interpret(&tree);
+              let elapsed_time = now.elapsed();
+              let cycle_duration = elapsed_time.as_nanos() as f64;
+              let result_str = match result {
+                Ok(r) => format!("{}", r.pretty_print()),
+                Err(err) => format!("{:?}", err),
+              };
+              println!("{}", result_str);
+            },
+            Err(err) => {
+              if let MechErrorKind::ParserError(report, _) = err.kind {
+                parser::print_err_report(&s, &report);
+              } else {
+                panic!("Unexpected error type");
+              }
             }
+          }*/
+        }
+        ":step" => {
+          let plan = intrp.plan.as_ptr();
+          let plan_brrw = unsafe { &*plan };
+          let now = Instant::now();
+          for fxn in plan_brrw {
+            fxn.solve();
+          }
           let elapsed_time = now.elapsed();
           let cycle_duration = elapsed_time.as_nanos() as f64;
           println!("{:0.2?} ns", cycle_duration);
         }
-        x => todo!(),
+        x => {
+          let err = MechError{
+            file: file!().to_string(),  
+            tokens: vec![], 
+            msg: "".to_string(), 
+            id: line!(), 
+            kind: MechErrorKind::UnknownCommand(x.to_string()) 
+          };
+          println!("{:?}",err);
+        }
       }
+    } else if input.trim() == "" {
+      // loop
     } else {
       // Treat as code
       match parser::parse(&input) {
