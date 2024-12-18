@@ -155,10 +155,16 @@ fn main() -> Result<(), MechError> {
       // Treat as command 
       match input.as_str().trim() {
         ":help" => todo!(),
-        ":symbols" => println!("{}", intrp.symbols.borrow().pretty_print()),
+        ":s" | ":symbols" => println!("{}", intrp.symbols.borrow().pretty_print()),
         ":plan" => println!("{}", pretty_print_plan(&intrp)),
         ":whos" => println!("{}",whos(&intrp)),
-        ":clear" => intrp = Interpreter::new(),
+        ":clear" => {
+          // Drop the old interpreter replace it with a new one
+          intrp = Interpreter::new();
+          // Clear the screen.
+          clc();
+        }
+        ":clc" => clc(),
         ":load" => {
           /*let s = fs::read_to_string(&mech_paths).unwrap();
           let now = Instant::now();

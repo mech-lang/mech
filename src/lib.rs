@@ -24,6 +24,10 @@ use colored::*;
 extern crate bincode;
 use std::io::{Write, BufReader, BufWriter, stdout};
 use std::fs::{OpenOptions, File, canonicalize, create_dir};
+use crossterm::{
+  ExecutableCommand, QueueableCommand,
+  terminal, cursor, style::Print,
+};
 
 use tabled::{
   builder::Builder,
@@ -75,8 +79,16 @@ pub fn whos(intrp: &Interpreter) -> String {
   }
 
   let mut table = builder.build();
-  table.with(Style::modern());
+  table.with(Style::modern())       
+       .with(Panel::header("🔍 Whos"));
+  ;
   format!("{table}")
+}
+
+pub fn clc() {
+  let mut stdo = stdout();
+  stdo.execute(terminal::Clear(terminal::ClearType::All));
+  stdo.execute(cursor::MoveTo(0,0));
 }
 
 pub fn pretty_print_plan(intrp: &Interpreter) -> String {
