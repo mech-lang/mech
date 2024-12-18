@@ -134,9 +134,8 @@ fn main() -> Result<(), MechError> {
   
   #[cfg(windows)]
   control::set_virtual_terminal(true).unwrap();
+  clc();
   let mut stdo = stdout();
-  stdo.execute(terminal::Clear(terminal::ClearType::All));
-  stdo.execute(cursor::MoveTo(0,0));
   stdo.execute(Print(text_logo));
   stdo.execute(cursor::MoveToNextLine(1));
   println!("\n                {}                ",format!("v{}",VERSION).truecolor(246,192,78));
@@ -154,10 +153,11 @@ fn main() -> Result<(), MechError> {
     if input.chars().nth(0) == Some(':') {
       // Treat as command 
       match input.as_str().trim() {
-        ":help" => todo!(),
+        ":h" | ":help" => todo!(),
+        ":q" | ":quit" | ":exit" => break 'REPL,
         ":s" | ":symbols" => println!("{}", intrp.symbols.borrow().pretty_print()),
-        ":plan" => println!("{}", pretty_print_plan(&intrp)),
-        ":whos" => println!("{}",whos(&intrp)),
+        ":p" | ":plan" => println!("{}", pretty_print_plan(&intrp)),
+        ":w" | ":whos" => println!("{}",whos(&intrp)),
         ":clear" => {
           // Drop the old interpreter replace it with a new one
           intrp = Interpreter::new();
