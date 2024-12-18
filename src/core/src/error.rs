@@ -44,12 +44,12 @@ pub enum MechErrorKind {
   //ColumnKindMismatch(Vec<ValueKind>),              // Excepted kind versus given kind
   //SubscriptOutOfBounds(((Rows,Cols),(Rows,Cols))), // (target) vs (actual) index
   LinearSubscriptOutOfBounds((Rows,Rows)),           // (target) vs (actual) index
-  DuplicateAlias(u64),                               // Alias ID
   //DomainMismatch(u64, u64),                        // domain IDs (target vs actual)
   MissingFunction(u64),                              // ID of missing function
   //TransformationPending(Transformation),           // Block is unsatisfied so the transformation is not added
   //IncorrectFunctionArgumentType,
   ZeroIndex,                                         // Zero cannot ever be used as an index.
+  VariableRedefined(u64),
   BlockDisabled,
   IoError,
   GenericError(String),

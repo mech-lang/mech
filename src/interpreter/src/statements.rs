@@ -66,22 +66,28 @@ pub fn kind_define(knd_def: &KindDefine, plan: Plan, symbols: SymbolTableRef, fu
 
 pub fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   let id = var_def.var.name.hash();
+  if symbols.borrow().contains(id) {
+    return Err(MechError{file: file!().to_string(), tokens: var_def.var.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::VariableRedefined(id)}); 
+  }
   let mut result = expression(&var_def.expression, plan.clone(), symbols.clone(), functions.clone())?;
   if let Some(knd_anntn) =  &var_def.var.kind {
     let knd = kind_annotation(&knd_anntn.kind,functions.clone())?;
     let target_knd = knd.to_value_kind(functions.clone())?;
     // Do kind checking
     match (&result, &target_knd) {
+      // Atom is a variant of an enum
       (Value::Atom(given_variant_id), ValueKind::Enum(enum_id)) => {
         let fxns_brrw = functions.borrow();
         let my_enum = match fxns_brrw.enums.get(enum_id) {
           Some(my_enum) => my_enum,
           None => todo!(),
         };
+        // Given atom isn't a variant of the enum
         if !my_enum.variants.iter().any(|(enum_variant, inner_value)| *given_variant_id == *enum_variant) {
           return Err(MechError{file: file!().to_string(), tokens: var_def.expression.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UnknownEnumVairant(*enum_id,*given_variant_id)}); 
         }
       }
+      // Atoms can't convert into anything else.
       (Value::Atom(given_variant_id), target_kind) => {
         return Err(MechError{file: file!().to_string(), tokens: var_def.expression.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UnableToConvertValueKind}); 
       }

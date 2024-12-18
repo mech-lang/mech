@@ -146,13 +146,14 @@ impl SymbolTable {
     self.symbols.get(&key).cloned()
   }
 
+  pub fn contains(&self, key: u64) -> bool {
+    self.symbols.contains_key(&key)
+  }
+
   pub fn insert(&mut self, key: u64, value: Value) -> ValRef {
     let cell = new_ref(value);
     self.reverse_lookup.insert(Rc::as_ptr(&cell), key);
     let old = self.symbols.insert(key,cell.clone());
-    if let Some(old) = old {
-      self.reverse_lookup.remove(&Rc::as_ptr(&old));
-    }
     cell.clone()
   }
 }
