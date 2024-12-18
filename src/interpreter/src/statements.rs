@@ -22,7 +22,7 @@ pub fn variable_assign(var_assgn: &VariableAssign, plan: Plan, symbols: SymbolTa
   let symbols_brrw = symbols.borrow();
   let sink = match symbols_brrw.get(name) {
     Some(val) => val.borrow().clone(),
-    None => {return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
+    None => {return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "Note: Variables are defined with the := operator.".to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
   };
   match &slc.subscript {
     Some(sbscrpt) => {
@@ -33,7 +33,7 @@ pub fn variable_assign(var_assgn: &VariableAssign, plan: Plan, symbols: SymbolTa
     }
     None => {
       let args = vec![sink,source];
-      let fxn = SetValue{}.compile(&args)?;
+      let fxn = AssignValue{}.compile(&args)?;
       fxn.solve();
       let mut plan_brrw = plan.borrow_mut();
       let res = fxn.out();

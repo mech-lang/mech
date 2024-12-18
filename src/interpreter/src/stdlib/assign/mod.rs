@@ -10,17 +10,21 @@ pub use self::record::*;
 pub use self::table::*;
 
 // ----------------------------------------------------------------------------
-// Set 
+// Assign 
 // ----------------------------------------------------------------------------
 
 // x = 1 ----------------------------------------------------------------------
 
 #[derive(Debug)]
-struct SetF64{
-  sink: Ref<F64>,
-  source: Ref<F64>,
+struct Assign<T> {
+  sink: Ref<T>,
+  source: Ref<T>,
 }
-impl MechFunction for SetF64 {
+impl<T> MechFunction for Assign<T> 
+where
+  T: Clone + Debug,
+  Ref<T>: ToValue
+{
   fn solve(&self) {
     let sink_ptr = self.sink.as_ptr();
     let source_ptr = self.source.as_ptr();
@@ -28,12 +32,12 @@ impl MechFunction for SetF64 {
       *sink_ptr = (*source_ptr).clone();
     }
   }
-  fn out(&self) -> Value { Value::F64(self.sink.clone()) }
+  fn out(&self) -> Value { self.sink.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
-pub struct SetValue {}
-impl NativeFunctionCompiler for SetValue {
+pub struct AssignValue {}
+impl NativeFunctionCompiler for AssignValue {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
@@ -41,9 +45,19 @@ impl NativeFunctionCompiler for SetValue {
     let sink = arguments[0].clone();
     let source = arguments[1].clone();
     match (sink,source) {
-      (Value::F64(sink),Value::F64(source)) => {
-        Ok(Box::new(SetF64{sink: sink.clone(), source: source.clone()}))
-      }
+      (Value::U8(sink),Value::U8(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+      (Value::U16(sink),Value::U16(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+      (Value::U32(sink),Value::U32(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+      (Value::U64(sink),Value::U64(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+      (Value::U128(sink),Value::U128(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+      (Value::I8(sink),Value::I8(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+      (Value::I16(sink),Value::I16(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+      (Value::I32(sink),Value::I32(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+      (Value::I64(sink),Value::I64(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+      (Value::I128(sink),Value::I128(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+      (Value::F32(sink),Value::F32(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+      (Value::F64(sink),Value::F64(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+      (Value::Bool(sink),Value::Bool(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
       x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
     }
   }

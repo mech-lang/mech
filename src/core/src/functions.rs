@@ -35,12 +35,12 @@ pub struct Functions {
   
 impl Functions {
   pub fn new() -> Self {
-      Self {
-        functions: HashMap::new(), 
-        function_compilers: HashMap::new(), 
-        kinds: HashMap::new(),
-        enums: HashMap::new(),
-      }
+    Self {
+      functions: HashMap::new(), 
+      function_compilers: HashMap::new(), 
+      kinds: HashMap::new(),
+      enums: HashMap::new(),
+    }
   }
 }
 
@@ -71,10 +71,9 @@ impl fmt::Debug for FunctionDefinition {
                     "🔣 Symbols",   &symbols_str,
                     "📋 Plan", &plan_str];
     let mut table = tabled::Table::new(data);
-    table
-        .with(Style::modern())
-        .with(Panel::header(format!("📈 UserFxn::{}\n({})", self.name, humanize(&self.id))))
-        .with(Alignment::left());
+    table.with(Style::modern())
+         .with(Panel::header(format!("📈 UserFxn::{}\n({})", self.name, humanize(&self.id))))
+         .with(Alignment::left());
     println!("{table}");
     Ok(())
   }
@@ -161,17 +160,17 @@ impl SymbolTable {
 
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
-    builder.push_record(vec!["🔣 Symbols"]);
     for (k,v) in &self.symbols {
       let name = self.dictionary.get(k).unwrap();
       let v_brrw = v.borrow();
       builder.push_record(vec![format!("{} : {:?}\n{}",name, v_brrw.kind(), v_brrw.pretty_print())])
     }
+    if self.symbols.is_empty() {
+      builder.push_record(vec!["".to_string()]);
+    }
     let mut table = builder.build();
-    table.with(Style::modern());
+    table.with(Style::modern())
+         .with(Panel::header("🔣 Symbols"));
     format!("{table}")
   }
-
-
-
 }
