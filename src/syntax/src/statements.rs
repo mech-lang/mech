@@ -44,6 +44,50 @@ pub fn assign_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
+// op_assign_operator := add_assign_operator | sub_assign_operator | mul_assign_operator | div_assign_operator | exp_assign_operator ;
+pub fn op_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
+  alt((add_assign_operator, sub_assign_operator, mul_assign_operator, div_assign_operator, exp_assign_operator))(input)
+}
+
+// add_assign_operator := "+=" ;
+pub fn add_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = tag("+=")(input)?;
+  let (input, _) = whitespace0(input)?;
+  Ok((input, OpAssignOp::AddAssign))
+}
+
+// sub_assign_operator := "-=" ;
+pub fn sub_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = tag("-=")(input)?;
+  let (input, _) = whitespace0(input)?;
+  Ok((input, OpAssignOp::SubAssign))
+}
+
+// mul_assign_operator := "*=" ;
+pub fn mul_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = tag("*=")(input)?;
+  let (input, _) = whitespace0(input)?;
+  Ok((input, OpAssignOp::MulAssign))
+}
+// div_assign_operator := "/=" ;
+pub fn div_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = tag("/=")(input)?;
+  let (input, _) = whitespace0(input)?;
+  Ok((input, OpAssignOp::DivAssign))
+}
+
+// exp_assign_operator := "^=" ;
+pub fn exp_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = tag("^=")(input)?;
+  let (input, _) = whitespace0(input)?;
+  Ok((input, OpAssignOp::ExpAssign))
+}
+
 // split_data := (identifier | table), <!stmt_operator>, space*, split_operator, <space+>, <expression> ;
 /*pub fn split_data(input: ParseString) -> ParseResult<ParserNode> {
   /*let msg1 = "Expects spaces around operator";
@@ -92,6 +136,17 @@ pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
   Ok((input, VariableAssign{target,expression}))
 }
 
+// op_assign := slice_ref, !define-opertor, op_assign_operator, expression ;
+pub fn op_assign(input: ParseString) -> ParseResult<OpAssign> {
+  let msg1 = "Expects spaces around operator";
+  let msg2 = "Expects expression";
+  let (input, target) = slice_ref(input)?;
+  let (input, _) = labelr!(null(is_not(define_operator)), skip_nil, msg1)(input)?;
+  let (input, op) = op_assign_operator(input)?;
+  let (input, expression) = label!(expression, msg2)(input)?;
+  Ok((input, OpAssign{target,op,expression}))
+}
+
 // parser for the second line of the output table, generate the 
 // var name if there is one.
 
@@ -116,6 +171,11 @@ pub fn statement(input: ParseString) -> ParseResult<Statement> {
   }
   match variable_assign(input.clone()) {
     Ok((input, var_asgn)) => { return Ok((input, Statement::VariableAssign(var_asgn))); },
+    //Err(Failure(err)) => {return Err(Failure(err))},
+    _ => (),
+  }
+  match op_assign(input.clone()) {
+    Ok((input, var_asgn)) => { return Ok((input, Statement::OpAssign(var_asgn))); },
     //Err(Failure(err)) => {return Err(Failure(err))},
     _ => (),
   }

@@ -9,6 +9,7 @@ pub fn statement(stmt: &Statement, plan: Plan, symbols: SymbolTableRef, function
     Statement::VariableAssign(var_assgn) => variable_assign(&var_assgn, plan.clone(), symbols.clone(), functions.clone()),
     Statement::KindDefine(knd_def) => kind_define(&knd_def, plan.clone(), symbols.clone(), functions.clone()),
     Statement::EnumDefine(enm_def) => enum_define(&enm_def, plan.clone(), symbols.clone(), functions.clone()),
+    Statement::OpAssign(op_assgn) => todo!(),
     Statement::FsmDeclare(_) => todo!(),
     Statement::SplitTable => todo!(),
     Statement::FlattenTable => todo!(),
