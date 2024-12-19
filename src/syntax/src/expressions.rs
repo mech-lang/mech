@@ -158,22 +158,22 @@ pub fn l1(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// mul_div_operator := matrix_multiply | multiply | divide | matrix_solve ;
+// mul_div_operator := multiply | divide ;
 pub fn mul_div_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   let (input, op) = alt((multiply, divide))(input)?;
   Ok((input, FormulaOperator::MulDiv(op)))
 }
 
-// mul_div_operator := matrix_multiply | multiply | divide | matrix_solve ;
-pub fn vec_operator(input: ParseString) -> ParseResult<FormulaOperator> {
+// matrix_operator := matrix_multiply | multiply | divide | matrix_solve ;
+pub fn matrix_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   let (input, op) = alt((matrix_multiply, matrix_solve, dot_product, cross_product))(input)?;
   Ok((input, FormulaOperator::Vec(op)))
 }
 
-// l2 := l3, (mul_div_operator, l3)* ;
+// l2 := l3, (mul_div_operator | matrix_operator, l3)* ;
 pub fn l2(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = l3(input)?;
-  let (input, rhs) = many0(nom_tuple((alt((mul_div_operator, vec_operator)),l3)))(input)?;
+  let (input, rhs) = many0(nom_tuple((alt((mul_div_operator, matrix_operator)),l3)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
@@ -220,7 +220,7 @@ pub fn comparison_operator(input: ParseString) -> ParseResult<FormulaOperator> {
   Ok((input, FormulaOperator::Comparison(op)))
 }
 
-// factor := parenthetical_term | structure | fsm_pipe | function_call | literal | slice | var ;
+// factor := (parenthetical_term | structure | fsm_pipe | function_call | literal | slice | var), transpose? ;
 pub fn factor(input: ParseString) -> ParseResult<Factor> {
   let (input, fctr) = match parenthetical_term(input.clone()) {
     Ok((input, term)) => (input, term),
@@ -263,7 +263,7 @@ pub fn statement_separator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// function_define := identifier "(" (function_arg (list_separator function_arg)*)? ")" whitespace0 "=" whitespace0 (function_out_args | function_out_arg) define_operator (statement (whitespace1 | statement_separator)*) period ;
+// function_define := identifier, "(", list0(list_separator function_arg), ")", "=", (function_out_args | function_out_arg), define_operator, list1((whitespace1 | statement_separator), statement), period ;
 pub fn function_define(input: ParseString) -> ParseResult<FunctionDefine> {
   let ((input, name)) = identifier(input)?;
   let ((input, _)) = left_parenthesis(input)?;
@@ -279,7 +279,7 @@ pub fn function_define(input: ParseString) -> ParseResult<FunctionDefine> {
   Ok((input,FunctionDefine{name,input: input_args,output,statements}))
 }
 
-// function_out_args := "(" function_arg (list_separator function_arg)* ")" ;
+// function_out_args := "(", list1(list_separator, function_arg),")" ;
 pub fn function_out_args(input: ParseString) -> ParseResult<Vec<FunctionArgument>> {
   let ((input, _)) = left_parenthesis(input)?;
   let ((input, args)) = separated_list1(list_separator,function_arg)(input)?;
@@ -338,7 +338,7 @@ pub fn var(input: ParseString) -> ParseResult<Var> {
   Ok((input, Var{ name, kind }))
 }
 
-// ##### Filter expressions
+// ##### Comparsion expressions
 
 // not_equal := "!=" | "¬=" | "≠" ;
 pub fn not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
@@ -422,7 +422,7 @@ pub fn xor(input: ParseString) -> ParseResult<LogicOp> {
 
 // ##### Other expressions
 
-// string := quote, (!quote, <text>)*, quote ;
+// string := quote, (!quote, text)*, quote ;
 pub fn string(input: ParseString) -> ParseResult<MechString> {
   let msg = "Character not allowed in string";
   let (input, _) = quote(input)?;
@@ -512,7 +512,7 @@ pub fn dot_subscript_int(input: ParseString) -> ParseResult<Subscript> {
   Ok((input, Subscript::DotInt(name)))
 }
 
-// bracket_subscript := "[", list1(",", select_all | formula_subscript) "]" ;
+// bracket_subscript := "[", list1(",", select_all | formula_subscript), "]" ;
 pub fn bracket_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, _) = left_bracket(input)?;
   let (input, subscripts) = separated_list1(list_separator,alt((select_all,range_subscript,formula_subscript)))(input)?;
@@ -520,7 +520,7 @@ pub fn bracket_subscript(input: ParseString) -> ParseResult<Subscript> {
   Ok((input, Subscript::Bracket(subscripts)))
 }
 
-// brace_subscript := "{", list1(",", select_all | formula_subscript) "}" ;
+// brace_subscript := "{", list1(",", select_all | formula_subscript), "}" ;
 pub fn brace_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, _) = left_brace(input)?;
   let (input, subscripts) = separated_list1(list_separator,alt((select_all,formula_subscript)))(input)?;
@@ -540,7 +540,7 @@ pub fn formula_subscript(input: ParseString) -> ParseResult<Subscript> {
   Ok((input, Subscript::Formula(factor)))
 }
 
-// formula_subscript := formula ;
+// range_subscript := range_expression ;
 pub fn range_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, rng) = range_expression(input)?;
   Ok((input, Subscript::Range(rng)))
@@ -559,7 +559,7 @@ pub fn range_expression(input: ParseString) -> ParseResult<RangeExpression> {
   Ok((input, range))
 }
 
-// expression := formula, transpose? ;
+// expression := range_expression | formula ;
 pub fn expression(input: ParseString) -> ParseResult<Expression> {
   let (input, expr) = match range_expression(input.clone()) {
     Ok((input, rng)) => (input, Expression::Range(Box::new(rng))),

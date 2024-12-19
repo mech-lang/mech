@@ -70,7 +70,7 @@ pub fn assign_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ParserNode::FlattenData{children: vec![]}))
 }*/
 
-// variable_define := identifier, define_operator, expression ;
+// variable_define := var, define_operator, expression ;
 pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
@@ -81,7 +81,7 @@ pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   Ok((input, VariableDefine{var,expression}))
 }
 
-// variable_define := identifier, assign_operator, expression ;
+// variable_assign := slice_ref, !define-opertor, assign_operator, expression ;
 pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
@@ -107,7 +107,7 @@ pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
   Ok((input, ParserNode::Null))
 }*/
 
-// statement := variable_define | variable_assign | enum_define | fm_declare | kind_define ;
+// statement := variable_define | variable_assign | enum_define | fsm_declare | kind_define ;
 pub fn statement(input: ParseString) -> ParseResult<Statement> {
   match variable_define(input.clone()) {
     Ok((input, var_def)) => { return Ok((input, Statement::VariableDefine(var_def))); },
