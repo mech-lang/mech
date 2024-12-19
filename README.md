@@ -22,7 +22,7 @@ Download the latest release for your platform [here](https://github.com/mech-lan
 
 To build Mech from source, you’ll first need to install [Rust](https://www.rust-lang.org/learn/get-started) (make sure to install a recent version on the nightly release channel). 
 
-Then Follow the instructions below to compile the Mech toolchain, bundled in a single executable called `mech`:
+Then follow the instructions below to compile the Mech toolchain, bundled in a single executable called `mech`:
 
 ```bash
 git clone https://gitlab.com/mech-lang/mech
