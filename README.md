@@ -32,10 +32,10 @@ cargo build --bin mech --release
 
 ### 🪐 Community
 
-- 👾 [Discord](https://discord.gg/asqP25NNTH)
-- 🐙 [Github](https://github.com/mech-lang)
-- 📺 [Youtube](https://youtube.com/@coreymontella3520?si=EUy2Mrv1aNo-4uQr)
-- 🛸 [Reddit](https://www.reddit.com/r/mechlang/)
+- 👾 [Discord](https://discord.gg/asqP25NNTH) - for live chat
+- 🐙 [GitHub](https://github.com/mech-lang) - for code and issues
+- 📺 [YouTube](https://youtube.com/@coreymontella3520?si=EUy2Mrv1aNo-4uQr) - for video tutorials
+- 🛸 [Reddit](https://www.reddit.com/r/mechlang/) - for help and discussion
 
 ## 🗺️ Project Roadmap
 
