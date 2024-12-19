@@ -5,9 +5,12 @@ pub mod matrix;
 pub mod record;
 pub mod table;
 
+pub mod add_assign;
+
 pub use self::matrix::*;
 pub use self::record::*;
 pub use self::table::*;
+pub use self::add_assign::*;
 
 // ----------------------------------------------------------------------------
 // Assign 

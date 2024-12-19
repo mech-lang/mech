@@ -9,11 +9,47 @@ pub fn statement(stmt: &Statement, plan: Plan, symbols: SymbolTableRef, function
     Statement::VariableAssign(var_assgn) => variable_assign(&var_assgn, plan.clone(), symbols.clone(), functions.clone()),
     Statement::KindDefine(knd_def) => kind_define(&knd_def, plan.clone(), symbols.clone(), functions.clone()),
     Statement::EnumDefine(enm_def) => enum_define(&enm_def, plan.clone(), symbols.clone(), functions.clone()),
-    Statement::OpAssign(op_assgn) => todo!(),
+    Statement::OpAssign(op_assgn) => op_assign(&op_assgn, plan.clone(), symbols.clone(), functions.clone()),
     Statement::FsmDeclare(_) => todo!(),
     Statement::SplitTable => todo!(),
     Statement::FlattenTable => todo!(),
   }
+}
+
+pub fn op_assign(op_assgn: &OpAssign, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+  let mut source = expression(&op_assgn.expression, plan.clone(), symbols.clone(), functions.clone())?;
+  let slc = &op_assgn.target;
+  let name = slc.name.hash();
+  let symbols_brrw = symbols.borrow();
+  let sink = match symbols_brrw.get(name) {
+    Some(val) => val.borrow().clone(),
+    None => {return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "Note: Variables are defined with the := operator.".to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
+  };
+  match &slc.subscript {
+    Some(sbscrpt) => {
+      // todo: this only works for the first subscript, it needs to work for multiple subscripts
+      for s in sbscrpt {
+        let fxn = match op_assgn.op {
+          OpAssignOp::Add => add_assign(&s, &sink, &source, plan.clone(), symbols.clone(), functions.clone())?,
+          _ => todo!(),
+        };
+        return Ok(fxn);
+      }
+    }
+    None => {
+      /*let args = vec![sink,source];
+      let fxn = match op {
+        OpAssign::Add => AddAssignValue{}.compile(&args)?,
+        _ => todo!(),
+      };
+      fxn.solve();
+      let mut plan_brrw = plan.borrow_mut();
+      let res = fxn.out();
+      plan_brrw.push(fxn);
+      return Ok(res);*/
+    }
+  }
+  unreachable!(); // subscript should have thrown an error if we can't access an element
 }
 
 pub fn variable_assign(var_assgn: &VariableAssign, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
@@ -110,6 +146,49 @@ pub fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTabl
   symbols_brrw.dictionary.insert(id,var_def.var.name.to_string());
   Ok(result)
 }
+
+pub fn add_assign(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+  match sbscrpt {
+    Subscript::Dot(x) => {
+      todo!()
+    },
+    Subscript::DotInt(x) => {
+      todo!()
+    },
+    Subscript::Swizzle(x) => {
+      unreachable!()
+    },
+    Subscript::Bracket(subs) => {
+      let mut fxn_input = vec![sink.clone()];
+      match &subs[..] {
+        [Subscript::Formula(ix)] => {
+          fxn_input.push(source.clone());
+          let ixes = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+          let shape = ixes.shape();
+          fxn_input.push(ixes);
+          match shape[..] {
+            //[1,1] => plan.borrow_mut().push(MatrixSetScalar{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(AddAssignRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(AddAssignRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }
+        },
+        _ => unreachable!(),
+      };
+      let plan_brrw = plan.borrow();
+      let mut new_fxn = &plan_brrw.last().unwrap();
+      new_fxn.solve();
+      let res = new_fxn.out();
+      return Ok(res);
+    },
+    Subscript::Brace(x) => todo!(),
+    _ => unreachable!(),
+  }
+}
+
+
+
+
 
 pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   match sbscrpt {

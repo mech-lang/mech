@@ -849,11 +849,11 @@ pub struct OpAssign {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum OpAssignOp {
-  AddAssign,
-  SubAssign,   
-  MulAssign,
-  DivAssign,
-  ExpAssign,   
+  Add,
+  Sub,   
+  Mul,
+  Div,
+  Exp,   
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

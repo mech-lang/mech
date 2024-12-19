@@ -229,7 +229,7 @@ impl NativeFunctionCompiler for MatrixSetScalar {
   }
 }
 
-// x[1..3] = 1 ------------------------------------------------------------------
+// x[1..3] = 1 ----------------------------------------------------------------
 
 macro_rules! set_1d_range {
   ($source:expr, $ix:expr, $sink:expr) => {
@@ -260,6 +260,7 @@ macro_rules! set_1d_range_vec {
     }
   };}  
 
+#[macro_export]
 macro_rules! impl_set_range_fxn {
   ($struct_name:ident, $matrix_shape:ident, $source_matrix_shape:ty, $op:ident, $ix:ty) => {
     #[derive(Debug)]
@@ -324,6 +325,7 @@ impl_set_range_fxn!(Set1DRV4V4,Vector4,Vector4<T>,set_1d_range_vec,usize);
 impl_set_range_fxn!(Set1DRV4V3,Vector4,Vector3<T>,set_1d_range_vec,usize);
 impl_set_range_fxn!(Set1DRV4V2,Vector4,Vector2<T>,set_1d_range_vec,usize);
 
+#[macro_export]
 macro_rules! impl_set_range_match_arms {
   ($fxn_name:ident, $arg:expr, $($value_kind:ident,$value_string:tt);+ $(;)?) => {
     paste!{
@@ -429,9 +431,10 @@ impl NativeFunctionCompiler for MatrixSetRange {
     match impl_set_range_fxn(sink.clone(),source.clone(),ixes.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(x) => {
-        println!("{:?}", x);
-        match sink {
-          Value::MutableReference(sink) => { impl_set_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
+        match (sink,source) {
+          (Value::MutableReference(sink),Value::MutableReference(source)) => { impl_set_range_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
+          (sink,Value::MutableReference(source)) => { impl_set_range_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
+          (Value::MutableReference(sink),source) => { impl_set_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
           x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
@@ -801,10 +804,9 @@ impl NativeFunctionCompiler for MatrixSetAllScalar {
     match impl_set_all_scalar_fxn(sink.clone(),source.clone(),ixes.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(x) => {
-        println!("{:?}", x);
         match sink {
           Value::MutableReference(sink) => { impl_set_all_scalar_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}", x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }

@@ -54,7 +54,7 @@ pub fn add_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("+=")(input)?;
   let (input, _) = whitespace0(input)?;
-  Ok((input, OpAssignOp::AddAssign))
+  Ok((input, OpAssignOp::Add))
 }
 
 // sub_assign_operator := "-=" ;
@@ -62,7 +62,7 @@ pub fn sub_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("-=")(input)?;
   let (input, _) = whitespace0(input)?;
-  Ok((input, OpAssignOp::SubAssign))
+  Ok((input, OpAssignOp::Sub))
 }
 
 // mul_assign_operator := "*=" ;
@@ -70,14 +70,14 @@ pub fn mul_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("*=")(input)?;
   let (input, _) = whitespace0(input)?;
-  Ok((input, OpAssignOp::MulAssign))
+  Ok((input, OpAssignOp::Mul))
 }
 // div_assign_operator := "/=" ;
 pub fn div_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("/=")(input)?;
   let (input, _) = whitespace0(input)?;
-  Ok((input, OpAssignOp::DivAssign))
+  Ok((input, OpAssignOp::Div))
 }
 
 // exp_assign_operator := "^=" ;
@@ -85,7 +85,7 @@ pub fn exp_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("^=")(input)?;
   let (input, _) = whitespace0(input)?;
-  Ok((input, OpAssignOp::ExpAssign))
+  Ok((input, OpAssignOp::Exp))
 }
 
 // split_data := (identifier | table), <!stmt_operator>, space*, split_operator, <space+>, <expression> ;
