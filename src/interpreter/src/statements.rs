@@ -181,8 +181,8 @@ pub fn add_assign(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan,
           fxn_input.push(Value::IndexAll);
           match shape[..] {
             //[1,1] => plan.borrow_mut().push(MatrixSetScalarAll{}.compile(&fxn_input)?),
-            //[1,n] => plan.borrow_mut().push(AddAssignRangeAll{}.compile(&fxn_input)?),
-            //[n,1] => plan.borrow_mut().push(AddAssignRangeAll{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(AddAssignRangeAll{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(AddAssignRangeAll{}.compile(&fxn_input)?),
             _ => todo!(),
           }
         },

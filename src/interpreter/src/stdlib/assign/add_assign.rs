@@ -159,7 +159,7 @@ impl NativeFunctionCompiler for AddAssignRange {
 }
 
 // x[1..3,:] += 1 ------------------------------------------------------------------
-/*
+
 macro_rules! add_assign_2d_vector_all {
   ($source:expr, $ix:expr, $sink:expr) => {
       for cix in 0..($sink).ncols() {
@@ -180,32 +180,26 @@ macro_rules! add_assign_2d_vector_all_b {
     }
   };} 
 
-macro_rules! add_assign_2d_vector_all_vec {
-  ($source:expr, $ix:expr, $sink:expr) => {
-    for cix in 0..($sink).ncols() {
-      for rix in 0..$ix.len() {
-        ($sink).column_mut(cix)[rix - 1] += ($source)[rix];
-      }
-    }
-  };}
 
 macro_rules! add_assign_2d_vector_all_mat {
   ($source:expr, $ix:expr, $sink:expr) => {
-    for rix in &$ix {
+    for (i,rix) in (&$ix).iter().enumerate() {
       let mut row = ($sink).row_mut(rix - 1);
-      row += ($source).row(rix - 1);
+      row += ($source).row(i);
     }
   };}
-      
-impl_add_assign_fxn!(AddAssign2DRARD,RowDVector,T,add_assign_2d_vector_all,usize);
-impl_add_assign_fxn!(AddAssign2DRAVD,DVector,T,add_assign_2d_vector_all,usize);
+
+macro_rules! add_assign_2d_vector_all_mat_b {
+  ($source:expr, $ix:expr, $sink:expr) => {
+    for (i,rix) in (&$ix).iter().enumerate() {
+      if *rix == true {
+        let mut row = ($sink).row_mut(i);
+        row += ($source).row(i);
+      }
+    }
+  };} 
+
 impl_add_assign_fxn!(AddAssign2DRAMD,DMatrix,T,add_assign_2d_vector_all,usize);
-impl_add_assign_fxn!(AddAssign2DRAR4,RowVector4,T,add_assign_2d_vector_all,usize);
-impl_add_assign_fxn!(AddAssign2DRAR3,RowVector3,T,add_assign_2d_vector_all,usize);
-impl_add_assign_fxn!(AddAssign2DRAR2,RowVector2,T,add_assign_2d_vector_all,usize);
-impl_add_assign_fxn!(AddAssign2DRAV4,Vector4,T,add_assign_2d_vector_all,usize);
-impl_add_assign_fxn!(AddAssign2DRAV3,Vector3,T,add_assign_2d_vector_all,usize);
-impl_add_assign_fxn!(AddAssign2DRAV2,Vector2,T,add_assign_2d_vector_all,usize);
 impl_add_assign_fxn!(AddAssign2DRAM4,Matrix4,T,add_assign_2d_vector_all,usize);
 impl_add_assign_fxn!(AddAssign2DRAM3,Matrix3,T,add_assign_2d_vector_all,usize);
 impl_add_assign_fxn!(AddAssign2DRAM2,Matrix2,T,add_assign_2d_vector_all,usize);
@@ -213,15 +207,33 @@ impl_add_assign_fxn!(AddAssign2DRAM1,Matrix1,T,add_assign_2d_vector_all,usize);
 impl_add_assign_fxn!(AddAssign2DRAM2x3,Matrix2x3,T,add_assign_2d_vector_all,usize);
 impl_add_assign_fxn!(AddAssign2DRAM3x2,Matrix3x2,T,add_assign_2d_vector_all,usize);
 
-impl_add_assign_fxn!(AddAssign2DRARDB,RowDVector,T,add_assign_2d_vector_all_b,bool);
-impl_add_assign_fxn!(AddAssign2DRAVDB,DVector,T,add_assign_2d_vector_all_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAMDMD,DMatrix,DMatrix<T>,add_assign_2d_vector_all_mat,usize);
+impl_add_assign_fxn!(AddAssign2DRAMDM2,DMatrix,Matrix2<T>,add_assign_2d_vector_all_mat,usize);
+impl_add_assign_fxn!(AddAssign2DRAMDM2x3,DMatrix,Matrix2x3<T>,add_assign_2d_vector_all_mat,usize);
+impl_add_assign_fxn!(AddAssign2DRAMDM3,DMatrix,Matrix3<T>,add_assign_2d_vector_all_mat,usize);
+impl_add_assign_fxn!(AddAssign2DRAMDM3x2,DMatrix,Matrix3x2<T>,add_assign_2d_vector_all_mat,usize);
+impl_add_assign_fxn!(AddAssign2DRAMDM4,DMatrix,Matrix4<T>,add_assign_2d_vector_all_mat,usize);
+
+impl_add_assign_fxn!(AddAssign2DRAM2M2,Matrix2,Matrix2<T>,add_assign_2d_vector_all_mat,usize);
+impl_add_assign_fxn!(AddAssign2DRAM2M3x2,Matrix2,Matrix3x2<T>,add_assign_2d_vector_all_mat,usize);
+impl_add_assign_fxn!(AddAssign2DRAM2MD,Matrix2,DMatrix<T>,add_assign_2d_vector_all_mat,usize);
+
+impl_add_assign_fxn!(AddAssign2DRAM3M3,Matrix3,Matrix3<T>,add_assign_2d_vector_all_mat,usize);
+impl_add_assign_fxn!(AddAssign2DRAM3M2x3,Matrix3,Matrix2x3<T>,add_assign_2d_vector_all_mat,usize);
+impl_add_assign_fxn!(AddAssign2DRAM3MD,Matrix3,DMatrix<T>,add_assign_2d_vector_all_mat,usize);
+
+impl_add_assign_fxn!(AddAssign2DRAM3x2M3x2,Matrix3x2,Matrix3x2<T>,add_assign_2d_vector_all_mat,usize);
+impl_add_assign_fxn!(AddAssign2DRAM3x2M2,Matrix3x2,Matrix2<T>,add_assign_2d_vector_all_mat,usize);
+impl_add_assign_fxn!(AddAssign2DRAM3x2MD,Matrix3x2,DMatrix<T>,add_assign_2d_vector_all_mat,usize);
+
+impl_add_assign_fxn!(AddAssign2DRAM2x3M2x3,Matrix2x3,Matrix2x3<T>,add_assign_2d_vector_all_mat,usize);
+impl_add_assign_fxn!(AddAssign2DRAM2x3M3,Matrix2x3,Matrix3<T>,add_assign_2d_vector_all_mat,usize);
+impl_add_assign_fxn!(AddAssign2DRAM2x3MD,Matrix2x3,DMatrix<T>,add_assign_2d_vector_all_mat,usize);
+
+impl_add_assign_fxn!(AddAssign2DRAM4M4,Matrix4,Matrix4<T>,add_assign_2d_vector_all_mat,usize);
+impl_add_assign_fxn!(AddAssign2DRAM4MD,Matrix4,DMatrix<T>,add_assign_2d_vector_all_mat,usize);
+
 impl_add_assign_fxn!(AddAssign2DRAMDB,DMatrix,T,add_assign_2d_vector_all_b,bool);
-impl_add_assign_fxn!(AddAssign2DRAR4B,RowVector4,T,add_assign_2d_vector_all_b,bool);
-impl_add_assign_fxn!(AddAssign2DRAR3B,RowVector3,T,add_assign_2d_vector_all_b,bool);
-impl_add_assign_fxn!(AddAssign2DRAR2B,RowVector2,T,add_assign_2d_vector_all_b,bool);
-impl_add_assign_fxn!(AddAssign2DRAV4B,Vector4,T,add_assign_2d_vector_all_b,bool);
-impl_add_assign_fxn!(AddAssign2DRAV3B,Vector3,T,add_assign_2d_vector_all_b,bool);
-impl_add_assign_fxn!(AddAssign2DRAV2B,Vector2,T,add_assign_2d_vector_all_b,bool);
 impl_add_assign_fxn!(AddAssign2DRAM4B,Matrix4,T,add_assign_2d_vector_all_b,bool);
 impl_add_assign_fxn!(AddAssign2DRAM3B,Matrix3,T,add_assign_2d_vector_all_b,bool);
 impl_add_assign_fxn!(AddAssign2DRAM2B,Matrix2,T,add_assign_2d_vector_all_b,bool);
@@ -229,18 +241,17 @@ impl_add_assign_fxn!(AddAssign2DRAM1B,Matrix1,T,add_assign_2d_vector_all_b,bool)
 impl_add_assign_fxn!(AddAssign2DRAM2x3B,Matrix2x3,T,add_assign_2d_vector_all_b,bool);
 impl_add_assign_fxn!(AddAssign2DRAM3x2B,Matrix3x2,T,add_assign_2d_vector_all_b,bool);
 
-impl_add_assign_fxn!(AddAssign2DRAR4R4,RowVector4,RowVector4<T>,add_assign_2d_vector_all_vec,usize);
-impl_add_assign_fxn!(AddAssign2DRAR4R3,RowVector4,RowVector3<T>,add_assign_2d_vector_all_vec,usize);
-impl_add_assign_fxn!(AddAssign2DRAR4R2,RowVector4,RowVector2<T>,add_assign_2d_vector_all_vec,usize);
-impl_add_assign_fxn!(AddAssign2DRAV4V4,Vector4,Vector4<T>,add_assign_2d_vector_all_vec,usize);
-impl_add_assign_fxn!(AddAssign2DRAV4V3,Vector4,Vector3<T>,add_assign_2d_vector_all_vec,usize);
-impl_add_assign_fxn!(AddAssign2DRAV4V2,Vector4,Vector2<T>,add_assign_2d_vector_all_vec,usize);
-
-impl_add_assign_fxn!(AddAssign2DRAMDMD,DMatrix,DMatrix<T>,add_assign_2d_vector_all_mat,usize);
+impl_add_assign_fxn!(AddAssign2DRAMDMDB,DMatrix,DMatrix<T>,add_assign_2d_vector_all_mat_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAM2M2B,Matrix2,Matrix2<T>,add_assign_2d_vector_all_mat_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAM3M3B,Matrix3,Matrix3<T>,add_assign_2d_vector_all_mat_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAM4M4B,Matrix4,Matrix4<T>,add_assign_2d_vector_all_mat_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAM3x2M3x2B,Matrix3x2,Matrix3x2<T>,add_assign_2d_vector_all_mat_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAM2x3M2x3B,Matrix2x3,Matrix2x3<T>,add_assign_2d_vector_all_mat_b,bool);
 
 fn add_assign_vec_all_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
-  impl_add_assign_match_arms!(AddAssign2DRA, range, (sink, ixes.as_slice(), source))
+  impl_add_assign_match_arms!(AddAssign2DRA, range_all, (sink, ixes.as_slice(), source))
 }
+
 pub struct AddAssignRangeAll {}
 impl NativeFunctionCompiler for AddAssignRangeAll {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
@@ -254,12 +265,12 @@ impl NativeFunctionCompiler for AddAssignRangeAll {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
         match (sink,ixes,source) {
-          (Value::MutableReference(sink),ixes,Value::MutableReference(source)) => { add_assign_range_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
-          (sink,ixes,Value::MutableReference(source)) => { add_assign_range_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
-          (Value::MutableReference(sink),ixes,source) => { add_assign_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
+          (Value::MutableReference(sink),ixes,Value::MutableReference(source)) => { add_assign_vec_all_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
+          (sink,ixes,Value::MutableReference(source)) => { add_assign_vec_all_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
+          (Value::MutableReference(sink),ixes,source) => { add_assign_vec_all_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
           x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }
   }
-}*/
+}
