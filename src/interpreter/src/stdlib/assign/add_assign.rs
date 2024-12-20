@@ -58,13 +58,13 @@ macro_rules! impl_add_assign_fxn {
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}
 
-// x[1..3] = 1 ----------------------------------------------------------------
+// x[1..3] += 1 ----------------------------------------------------------------
 
 macro_rules! add_assign_1d_range {
   ($source:expr, $ix:expr, $sink:expr) => {
     unsafe { 
       for i in 0..($ix).len() {
-        ($sink)[($ix)[i] - 1] += ($source).clone();
+        ($sink)[($ix)[i] - 1] += ($source);
       }
     }
   };}
@@ -74,7 +74,7 @@ macro_rules! add_assign_1d_range_b {
     unsafe { 
       for i in 0..($ix).len() {
         if $ix[i] == true {
-          ($sink)[i] += ($source).clone();
+          ($sink)[i] += ($source);
         }
       }
     }
@@ -84,7 +84,7 @@ macro_rules! add_assign_1d_range_vec {
   ($source:expr, $ix:expr, $sink:expr) => {
     unsafe { 
       for i in 0..($ix).len() {
-        ($sink)[($ix)[i] - 1] += ($source)[i].clone();
+        ($sink)[($ix)[i] - 1] += ($source)[i];
       }
     }
   };}
@@ -128,6 +128,9 @@ impl_add_assign_fxn!(AddAssign1DRV4V4,Vector4,Vector4<T>,add_assign_1d_range_vec
 impl_add_assign_fxn!(AddAssign1DRV4V3,Vector4,Vector3<T>,add_assign_1d_range_vec,usize);
 impl_add_assign_fxn!(AddAssign1DRV4V2,Vector4,Vector2<T>,add_assign_1d_range_vec,usize);
 
+impl_add_assign_fxn!(AddAssign1DRMDMD,DMatrix,DMatrix<T>,add_assign_1d_range_vec,usize);
+
+
 fn add_assign_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
   impl_add_assign_match_arms!(AddAssign1DR, range, (sink, ixes.as_slice(), source))
 }
@@ -144,13 +147,119 @@ impl NativeFunctionCompiler for AddAssignRange {
     match add_assign_range_fxn(sink.clone(),source.clone(),ixes.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(x) => {
-        match (sink,source) {
-          (Value::MutableReference(sink),Value::MutableReference(source)) => { add_assign_range_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
-          (sink,Value::MutableReference(source)) => { add_assign_range_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
-          (Value::MutableReference(sink),source) => { add_assign_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
+        match (sink,ixes,source) {
+          (Value::MutableReference(sink),ixes,Value::MutableReference(source)) => { add_assign_range_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
+          (sink,ixes,Value::MutableReference(source)) => { add_assign_range_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
+          (Value::MutableReference(sink),ixes,source) => { add_assign_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
           x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }
   }
 }
+
+// x[1..3,:] += 1 ------------------------------------------------------------------
+/*
+macro_rules! add_assign_2d_vector_all {
+  ($source:expr, $ix:expr, $sink:expr) => {
+      for cix in 0..($sink).ncols() {
+        for rix in &$ix {
+          ($sink).column_mut(cix)[rix - 1] += ($source);
+        }
+      }
+    };}
+
+macro_rules! add_assign_2d_vector_all_b {
+  ($source:expr, $ix:expr, $sink:expr) => {
+    for cix in 0..($sink).ncols() {
+      for rix in 0..$ix.len() {
+        if $ix[rix] == true {
+          ($sink).column_mut(cix)[rix] += ($source);
+        }
+      }
+    }
+  };} 
+
+macro_rules! add_assign_2d_vector_all_vec {
+  ($source:expr, $ix:expr, $sink:expr) => {
+    for cix in 0..($sink).ncols() {
+      for rix in 0..$ix.len() {
+        ($sink).column_mut(cix)[rix - 1] += ($source)[rix];
+      }
+    }
+  };}
+
+macro_rules! add_assign_2d_vector_all_mat {
+  ($source:expr, $ix:expr, $sink:expr) => {
+    for rix in &$ix {
+      let mut row = ($sink).row_mut(rix - 1);
+      row += ($source).row(rix - 1);
+    }
+  };}
+      
+impl_add_assign_fxn!(AddAssign2DRARD,RowDVector,T,add_assign_2d_vector_all,usize);
+impl_add_assign_fxn!(AddAssign2DRAVD,DVector,T,add_assign_2d_vector_all,usize);
+impl_add_assign_fxn!(AddAssign2DRAMD,DMatrix,T,add_assign_2d_vector_all,usize);
+impl_add_assign_fxn!(AddAssign2DRAR4,RowVector4,T,add_assign_2d_vector_all,usize);
+impl_add_assign_fxn!(AddAssign2DRAR3,RowVector3,T,add_assign_2d_vector_all,usize);
+impl_add_assign_fxn!(AddAssign2DRAR2,RowVector2,T,add_assign_2d_vector_all,usize);
+impl_add_assign_fxn!(AddAssign2DRAV4,Vector4,T,add_assign_2d_vector_all,usize);
+impl_add_assign_fxn!(AddAssign2DRAV3,Vector3,T,add_assign_2d_vector_all,usize);
+impl_add_assign_fxn!(AddAssign2DRAV2,Vector2,T,add_assign_2d_vector_all,usize);
+impl_add_assign_fxn!(AddAssign2DRAM4,Matrix4,T,add_assign_2d_vector_all,usize);
+impl_add_assign_fxn!(AddAssign2DRAM3,Matrix3,T,add_assign_2d_vector_all,usize);
+impl_add_assign_fxn!(AddAssign2DRAM2,Matrix2,T,add_assign_2d_vector_all,usize);
+impl_add_assign_fxn!(AddAssign2DRAM1,Matrix1,T,add_assign_2d_vector_all,usize);
+impl_add_assign_fxn!(AddAssign2DRAM2x3,Matrix2x3,T,add_assign_2d_vector_all,usize);
+impl_add_assign_fxn!(AddAssign2DRAM3x2,Matrix3x2,T,add_assign_2d_vector_all,usize);
+
+impl_add_assign_fxn!(AddAssign2DRARDB,RowDVector,T,add_assign_2d_vector_all_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAVDB,DVector,T,add_assign_2d_vector_all_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAMDB,DMatrix,T,add_assign_2d_vector_all_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAR4B,RowVector4,T,add_assign_2d_vector_all_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAR3B,RowVector3,T,add_assign_2d_vector_all_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAR2B,RowVector2,T,add_assign_2d_vector_all_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAV4B,Vector4,T,add_assign_2d_vector_all_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAV3B,Vector3,T,add_assign_2d_vector_all_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAV2B,Vector2,T,add_assign_2d_vector_all_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAM4B,Matrix4,T,add_assign_2d_vector_all_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAM3B,Matrix3,T,add_assign_2d_vector_all_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAM2B,Matrix2,T,add_assign_2d_vector_all_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAM1B,Matrix1,T,add_assign_2d_vector_all_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAM2x3B,Matrix2x3,T,add_assign_2d_vector_all_b,bool);
+impl_add_assign_fxn!(AddAssign2DRAM3x2B,Matrix3x2,T,add_assign_2d_vector_all_b,bool);
+
+impl_add_assign_fxn!(AddAssign2DRAR4R4,RowVector4,RowVector4<T>,add_assign_2d_vector_all_vec,usize);
+impl_add_assign_fxn!(AddAssign2DRAR4R3,RowVector4,RowVector3<T>,add_assign_2d_vector_all_vec,usize);
+impl_add_assign_fxn!(AddAssign2DRAR4R2,RowVector4,RowVector2<T>,add_assign_2d_vector_all_vec,usize);
+impl_add_assign_fxn!(AddAssign2DRAV4V4,Vector4,Vector4<T>,add_assign_2d_vector_all_vec,usize);
+impl_add_assign_fxn!(AddAssign2DRAV4V3,Vector4,Vector3<T>,add_assign_2d_vector_all_vec,usize);
+impl_add_assign_fxn!(AddAssign2DRAV4V2,Vector4,Vector2<T>,add_assign_2d_vector_all_vec,usize);
+
+impl_add_assign_fxn!(AddAssign2DRAMDMD,DMatrix,DMatrix<T>,add_assign_2d_vector_all_mat,usize);
+
+fn add_assign_vec_all_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_add_assign_match_arms!(AddAssign2DRA, range, (sink, ixes.as_slice(), source))
+}
+pub struct AddAssignRangeAll {}
+impl NativeFunctionCompiler for AddAssignRangeAll {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() <= 1 {
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    let sink: Value = arguments[0].clone();
+    let source: Value = arguments[1].clone();
+    let ixes = arguments.clone().split_off(2);
+    match add_assign_vec_all_fxn(sink.clone(),source.clone(),ixes.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match (sink,ixes,source) {
+          (Value::MutableReference(sink),ixes,Value::MutableReference(source)) => { add_assign_range_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
+          (sink,ixes,Value::MutableReference(source)) => { add_assign_range_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
+          (Value::MutableReference(sink),ixes,source) => { add_assign_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
+    }
+  }
+}*/
