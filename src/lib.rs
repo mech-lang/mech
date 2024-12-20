@@ -35,6 +35,6 @@ macro_rules! impl_stats_urop {
         $op!(arg_ptr,out_ptr);
       }
       fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}
 
