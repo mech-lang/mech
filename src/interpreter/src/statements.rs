@@ -1,4 +1,5 @@
 use crate::*;
+use paste::paste;
 
 // Statements
 // ----------------------------------------------------------------------------
@@ -31,22 +32,24 @@ pub fn op_assign(op_assgn: &OpAssign, plan: Plan, symbols: SymbolTableRef, funct
       for s in sbscrpt {
         let fxn = match op_assgn.op {
           OpAssignOp::Add => add_assign(&s, &sink, &source, plan.clone(), symbols.clone(), functions.clone())?,
+          OpAssignOp::Sub => sub_assign(&s, &sink, &source, plan.clone(), symbols.clone(), functions.clone())?,
           _ => todo!(),
         };
         return Ok(fxn);
       }
     }
     None => {
-      /*let args = vec![sink,source];
-      let fxn = match op {
-        OpAssign::Add => AddAssignValue{}.compile(&args)?,
+      let args = vec![sink,source];
+      let fxn = match op_assgn.op {
+        OpAssignOp::Add => AddAssignValue{}.compile(&args)?,
+        OpAssignOp::Sub => SubAssignValue{}.compile(&args)?,
         _ => todo!(),
       };
       fxn.solve();
       let mut plan_brrw = plan.borrow_mut();
       let res = fxn.out();
       plan_brrw.push(fxn);
-      return Ok(res);*/
+      return Ok(res);
     }
   }
   unreachable!(); // subscript should have thrown an error if we can't access an element
@@ -147,61 +150,67 @@ pub fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTabl
   Ok(result)
 }
 
-pub fn add_assign(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
-  match sbscrpt {
-    Subscript::Dot(x) => {
-      todo!()
-    },
-    Subscript::DotInt(x) => {
-      todo!()
-    },
-    Subscript::Swizzle(x) => {
-      unreachable!()
-    },
-    Subscript::Bracket(subs) => {
-      let mut fxn_input = vec![sink.clone()];
-      match &subs[..] {
-        [Subscript::Formula(ix)] => {
-          fxn_input.push(source.clone());
-          let ixes = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
-          let shape = ixes.shape();
-          fxn_input.push(ixes);
-          match shape[..] {
-            //[1,1] => plan.borrow_mut().push(MatrixSetScalar{}.compile(&fxn_input)?),
-            [1,n] => plan.borrow_mut().push(AddAssignRange{}.compile(&fxn_input)?),
-            [n,1] => plan.borrow_mut().push(AddAssignRange{}.compile(&fxn_input)?),
-            _ => todo!(),
-          }
-        },
-        [Subscript::Formula(ix1),Subscript::All] => {
-          fxn_input.push(source.clone());
-          let ix = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
-          let shape = ix.shape();
-          fxn_input.push(ix);
-          fxn_input.push(Value::IndexAll);
-          match shape[..] {
-            //[1,1] => plan.borrow_mut().push(MatrixSetScalarAll{}.compile(&fxn_input)?),
-            [1,n] => plan.borrow_mut().push(AddAssignRangeAll{}.compile(&fxn_input)?),
-            [n,1] => plan.borrow_mut().push(AddAssignRangeAll{}.compile(&fxn_input)?),
-            _ => todo!(),
-          }
-        },
-        _ => unreachable!(),
-      };
-      let plan_brrw = plan.borrow();
-      let mut new_fxn = &plan_brrw.last().unwrap();
-      new_fxn.solve();
-      let res = new_fxn.out();
-      return Ok(res);
-    },
-    Subscript::Brace(x) => todo!(),
-    _ => unreachable!(),
-  }
-}
+macro_rules! op_assign {
+  ($fxn_name:ident, $op:tt) => {
+    paste!{
+      pub fn $fxn_name(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+        match sbscrpt {
+          Subscript::Dot(x) => {
+            todo!()
+          },
+          Subscript::DotInt(x) => {
+            todo!()
+          },
+          Subscript::Swizzle(x) => {
+            unreachable!()
+          },
+          Subscript::Bracket(subs) => {
+            let mut fxn_input = vec![sink.clone()];
+            match &subs[..] {
+              [Subscript::Formula(ix)] => {
+                fxn_input.push(source.clone());
+                let ixes = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+                let shape = ixes.shape();
+                fxn_input.push(ixes);
+                match shape[..] {
+                  //[1,1] => plan.borrow_mut().push(MatrixSetScalar{}.compile(&fxn_input)?),
+                  [1,n] => plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?),
+                  [n,1] => plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?),
+                  _ => todo!(),
+                }
+              },
+              [Subscript::Formula(ix1),Subscript::All] => {
+                fxn_input.push(source.clone());
+                let ix = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+                let shape = ix.shape();
+                fxn_input.push(ix);
+                fxn_input.push(Value::IndexAll);
+                match shape[..] {
+                  //[1,1] => plan.borrow_mut().push(MatrixSetScalarAll{}.compile(&fxn_input)?),
+                  [1,n] => plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?),
+                  [n,1] => plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?),
+                  _ => todo!(),
+                }
+              },
+              _ => unreachable!(),
+            };
+            let plan_brrw = plan.borrow();
+            let mut new_fxn = &plan_brrw.last().unwrap();
+            new_fxn.solve();
+            let res = new_fxn.out();
+            return Ok(res);
+          },
+          Subscript::Brace(x) => todo!(),
+          _ => unreachable!(),
+        }
+      }
+    }}}
 
-
-
-
+op_assign!(add_assign, Add);
+op_assign!(sub_assign, Sub);
+//op_assign!(mul_assign, Mul);
+//op_assign!(div_assign, Div);
+//op_assign!(exp_assign, Exp);
 
 pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
   match sbscrpt {
