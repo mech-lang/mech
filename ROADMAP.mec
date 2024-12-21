@@ -9,20 +9,73 @@ Mech Project Roadmap
 Conception: started 2014
 Implementation: started 2018
 
-(b) Stage 2 - Beta v0.1.0 - ?
+(b) Stage 2 - Beta v0.1.0 - v0.4+ (???)
 
 Started: December 2022
-Currently: v0.2.7 (2024)
+Currently: v0.2.25 (2024)
 
-- v0.2 (data specification)
-- v0.3 (program specification) 
-- v0.4 (system specification) 
+- v0.2 (data specification)    (Wrapping Up)
+- v0.3 (program specification) (Starting in 2025)
+- v0.4 (system specification)
 
 (c) Stage 3 - Stable v1.0.0
 
 Target release date: ???
 
-2. Nearterm Goals
+2. Feature Status
+-------------------------------------------------------------------------------
+
+o - concept
+p - proof of concept implementation
+a - alpha implementation
+b - beta implementation
+c - feature complete
+
+a) Data Specification
+  - variety of numerical datatypes
+  - imaginary and scientific numbers
+  - flexible matrix type with fixed and dynamic sizes for homogeneous data
+  - typed tables for heterogeneous data
+  - sets
+  - maps
+  - enums
+  - bools
+  - strings
+  - atoms
+  - variable slicing
+  - operator broadcasting
+  - builtin linear algebra tools
+  - logical indexing
+  - matrix builder notation
+  - variable type and size checking
+  - variable type inference
+  - standard library functions
+
+b) Program Specification
+  - physical units with dimension checking
+  - state machines
+  - user functions
+  - automatic differentiation
+  - introspection
+  - tests
+  - profiler
+  - file/parameter server
+  - repl
+  - gui
+  - executables
+  - time travel debugging
+  - literate programming
+  - live coding
+  - multiple dynamic dispatch
+  - language server
+  
+c) System specification
+  - capability permissions
+  - gpgpu
+  - distributed programs
+  - concurrent programming
+
+3. Nearterm Goals
 -------------------------------------------------------------------------------
 
 Version 0.3.0 (Spring 2025) ---------------------------------------------------
