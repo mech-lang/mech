@@ -28,7 +28,7 @@ use std::panic;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() -> Result<(), MechError> {
-  panic::set_hook(Box::new(|panic_info| {
+  /*panic::set_hook(Box::new(|panic_info| {
     if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
       println!("Mech Language Error: {}", s);
       // Check for underflow error message
@@ -38,7 +38,7 @@ fn main() -> Result<(), MechError> {
     } else {
         println!("Mech Language Error: Unknown panic");
     }
-  }));
+  }));*/
   
   let text_logo = r#"
   ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐   ┌─┐
