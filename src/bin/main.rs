@@ -11,6 +11,7 @@ use std::time::Instant;
 use std::fs;
 extern crate nalgebra as na;
 use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix6, Matrix2};
+use std::thread;
 
 fn main() -> Result<(),MechError> {
 
@@ -20,43 +21,49 @@ fn main() -> Result<(),MechError> {
 
     match parser::parse(&s) {
         Ok(tree) => { 
-          println!("----------- SYNTAX TREE ---------");
-          println!("{:?}",hash_str(&format!("{:#?}", tree)));
-          println!("{:#?}", tree);
-          //let result = analyze(&tree);
-          //println!("A: {:#?}", result);
-          let mut intrp = Interpreter::new();
-          let result = intrp.interpret(&tree)?;
-          
-          println!("{:#?}", intrp.symbols);
-          println!("{}", result.pretty_print());
+          let handle = thread::spawn(move || {
+            println!("----------- SYNTAX TREE ---------");
+            println!("{:?}",hash_str(&format!("{:#?}", tree)));
+            println!("{:#?}", tree);
+            //let result = analyze(&tree);
+            //println!("A: {:#?}", result);
+            let mut intrp = Interpreter::new();
+            let result = intrp.interpret(&tree).unwrap();
+            
+            println!("{:#?}", intrp.symbols);
+            println!("{}", result.pretty_print());
 
-          /*{
-            let plan_brrw = intrp.plan.borrow();
-            let p1 = &plan_brrw[1];
-            println!("&&& {:?}", p1.out());
-          }*/
+            /*{
+              let plan_brrw = intrp.plan.borrow();
+              let p1 = &plan_brrw[1];
+              println!("&&& {:?}", p1.out());
+            }*/
 
-          println!("Plan: ");
-          for fxn in intrp.plan.borrow().iter() {
-            println!("  - {}", fxn.to_string());
-          }
-
-          let now = Instant::now();
-          let n = 1e3 as usize;
-          for _ in 0..n {
+            println!("Plan: ");
             for fxn in intrp.plan.borrow().iter() {
-              fxn.solve();
+              println!("  - {}", fxn.to_string());
             }
-          }
-          let elapsed_time = now.elapsed();
-          let cycle_duration = elapsed_time.as_nanos() as f64;
-          println!("{:0.2?} ns", cycle_duration / n as f64);
 
-          let tree_string = hash_str(&format!("{:#?}", tree));
-          println!("{:?}", tree_string);
+            let plan_brrw = intrp.plan.borrow();
+            let now = Instant::now();
+            let n = 1e6 as usize;
+            for _ in 0..n {
+              for fxn in plan_brrw.iter() {
+                fxn.solve();
+              }
+            }
+            let elapsed_time = now.elapsed();
+            let cycle_duration = elapsed_time.as_nanos() as f64;
+            println!("Total Time: {:0.2?} ns", cycle_duration as f64);
+            println!("Cycle Time: {:0.2?} ns", cycle_duration / n as f64);
 
+             
 
+            let tree_string = hash_str(&format!("{:#?}", tree));
+            println!("{:?}", tree_string);
+          });
+
+          handle.join().unwrap();
 
           //let mut ast = Ast::new();
           //ast.build_syntax_tree(&tree);
