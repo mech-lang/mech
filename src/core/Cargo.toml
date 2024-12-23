@@ -1,6 +1,6 @@
 [package]
 name = "mech-core"
-version = "0.2.25"
+version = "0.2.26"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "The Mech language runtime."
 documentation = "http://docs.mech-lang.org"
@@ -67,7 +67,7 @@ lazy_static = "1.5.0"
 seahash = "4.1.0"
 indexmap = "2.7.0"
 rayon = {version = "1.10.0", optional = true}
-time = {version = "0.3.36", optional = true}
+time = {version = "0.3.37", optional = true}
 ed25519-dalek = {version = "2.1.1", default-features = false, features = ["rand_core"]}
 getrandom = { version = "0.2.15", features = ["js"]}
 rand = {version = "0.8.5"}
@@ -77,7 +77,7 @@ wasm-bindgen = {version = "0.2.93", optional = true}
 nalgebra = "0.33.2"
 simba = "0.9.0"
 libm = "0.2.11"
-tabled = "0.16.0"
+tabled = "0.17.0"
 paste = "1.0.15"
 
 [dependencies.web-sys]
