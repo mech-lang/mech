@@ -26,7 +26,7 @@ macro_rules! impl_convert_op {
         $op!(arg_ptr,out_ptr,$out_type2)
       }
       fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }
   }
 }
@@ -99,7 +99,7 @@ impl MechFunction for ConvertSEnum
 {
   fn solve(&self) { }
   fn out(&self) -> Value { self.out.clone() }
-  fn to_string(&self) -> String { format!("{:?}", self) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
 macro_rules! impl_conversion_match_arms {

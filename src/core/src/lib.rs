@@ -35,6 +35,7 @@ use std::cell::RefCell;
 use std::fmt;
 use num_traits::*;
 use std::ops::*;
+use std::mem;
 
 pub mod value;
 pub mod matrix;
@@ -153,7 +154,7 @@ macro_rules! impl_binop {
           $op!(lhs_ptr,rhs_ptr,out_ptr);
       }
       fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
       }};}
 
 #[macro_export]
@@ -178,7 +179,7 @@ macro_rules! impl_bool_binop {
         $op!(lhs_ptr,rhs_ptr,out_ptr);
       }
       fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}
 
 #[macro_export]  
@@ -201,7 +202,7 @@ macro_rules! impl_bool_urop {
         $op!(arg_ptr,out_ptr);
       }
       fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}
 
 #[macro_export]  
@@ -219,7 +220,7 @@ macro_rules! impl_urop {
         $op!(arg_ptr,out_ptr);
       }
       fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}  
 
 #[macro_export]
@@ -271,11 +272,11 @@ macro_rules! impl_fxns {
       #[cfg(feature = "Matrix4")]
       $op!([<$lib M4S>], Matrix4<$in>, $in, Matrix4<$out>,[<$lib:lower _scalar_lhs_op>]);
       #[cfg(feature = "Matrix2x3")]
-      $op!([<$lib MDS>], DMatrix<$in>, $in, DMatrix<$out>,[<$lib:lower _scalar_lhs_op>]);
-      #[cfg(feature = "Matrix3x2")]
       $op!([<$lib M2x3S>], Matrix2x3<$in>, $in, Matrix2x3<$out>,[<$lib:lower _scalar_lhs_op>]);
-      #[cfg(feature = "MatrixD")]
+      #[cfg(feature = "Matrix3x2")]
       $op!([<$lib M3x2S>], Matrix3x2<$in>, $in, Matrix3x2<$out>,[<$lib:lower _scalar_lhs_op>]);
+      #[cfg(feature = "MatrixD")]
+      $op!([<$lib MDS>], DMatrix<$in>, $in, DMatrix<$out>,[<$lib:lower _scalar_lhs_op>]);
       // Row Scalar
       #[cfg(feature = "RowVector2")]
       $op!([<$lib R2S>], RowVector2<$in>, $in, RowVector2<$out>,[<$lib:lower _scalar_lhs_op>]);

@@ -158,6 +158,41 @@ impl Hash for Value {
 
 impl Value {
 
+  pub fn size_of(&self) -> usize {
+    match self {
+      Value::U8(x) => 1,
+      Value::U16(x) => 2,
+      Value::U32(x) => 4,
+      Value::U64(x) => 8,
+      Value::U128(x) => 16,
+      Value::I8(x) => 1,
+      Value::I16(x) => 2,
+      Value::I32(x) => 4,
+      Value::I64(x) => 8,
+      Value::I128(x) => 16,
+      Value::F32(x) => 4,
+      Value::F64(x) => 8,
+      Value::Bool(x) => 1,
+      Value::MatrixIndex(x) =>x.size_of(),
+      Value::MatrixBool(x) =>x.size_of(),
+      Value::MatrixU8(x)   => x.size_of(),
+      Value::MatrixU16(x)  => x.size_of(),
+      Value::MatrixU32(x)  => x.size_of(),
+      Value::MatrixU64(x)  => x.size_of(),
+      Value::MatrixU128(x) => x.size_of(),
+      Value::MatrixI8(x)   => x.size_of(),
+      Value::MatrixI16(x)  => x.size_of(),
+      Value::MatrixI32(x)  => x.size_of(),
+      Value::MatrixI64(x)  => x.size_of(),
+      Value::MatrixI128(x) => x.size_of(),
+      Value::MatrixF32(x)  => x.size_of(),
+      Value::MatrixF64(x)  => x.size_of(),
+      Value::MatrixValue(x)  => x.size_of(),
+      _ => 0,
+    }
+  }
+
+
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     match self {

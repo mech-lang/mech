@@ -9,15 +9,36 @@ macro_rules! mul_op {
   
 macro_rules! mul_vec_op {
 ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = (*$lhs).component_mul(&*$rhs); }};}
+  unsafe {
+    let mut out_deref = &mut (*$out);
+    let lhs_deref = &(*$lhs);
+    let rhs_deref = &(*$rhs);
+    for (o,(l,r)) in out_deref.iter_mut().zip(lhs_deref.iter().zip(rhs_deref.iter())) {
+      *o = *l * *r;
+    }
+  }};}
 
 macro_rules! mul_scalar_lhs_op {
 ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = (*$lhs).clone() * *$rhs; }};}
+    unsafe { 
+      let mut out_deref = &mut (*$out);
+      let lhs_deref = &(*$lhs);
+      let rhs_deref = (*$rhs);
+      for (o,l) in out_deref.iter_mut().zip(lhs_deref.iter()) {
+        *o = *l * rhs_deref;
+      }
+    }};}
 
 macro_rules! mul_scalar_rhs_op {
 ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = (*$rhs).clone() * *$lhs;}};}
+  unsafe {
+    let mut out_deref = &mut (*$out);
+    let lhs_deref = (*$lhs);
+    let rhs_deref = &(*$rhs);
+    for (o,r) in out_deref.iter_mut().zip(rhs_deref.iter()) {
+      *o = lhs_deref * *r;
+    }
+  }};}
 
 macro_rules! mul_mat_vec_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {

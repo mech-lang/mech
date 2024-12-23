@@ -18,7 +18,7 @@ pub fn max_err<'a>(x: Option<ParseError<'a>>, y: ParseError<'a>) -> ParseError<'
   }
 }
 
-// structure := empty_table | matrix | table | tuple | tuple_struct | record | map | set ;
+// structure := empty_set | empty_table | matrix | table | tuple | tuple_struct | record | map | set ;
 pub fn structure(input: ParseString) -> ParseResult<Structure> {
   match empty_set(input.clone()) {
     Ok((input, set)) => {return Ok((input, Structure::Set(set)));},
@@ -118,7 +118,7 @@ pub fn binding(input: ParseString) -> ParseResult<Binding> {
   Ok((input, Binding{name, kind, value}))
 }
 
-// table_column := (space | tab)*, (expression | value | data), comma?, (space | tab)* ;
+// table_column := (space | tab)*, expression ;
 pub fn table_column(input: ParseString) -> ParseResult<TableColumn> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, element) = match expression(input) {
@@ -131,7 +131,7 @@ pub fn table_column(input: ParseString) -> ParseResult<TableColumn> {
   Ok((input, TableColumn{element}))
 }
 
-// matrix_column := (space | tab)*, (expression | value | data), comma?, (space | tab)* ;
+// matrix_column := (space | tab)*, expression ;
 pub fn matrix_column(input: ParseString) -> ParseResult<MatrixColumn> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, element) = match expression(input) {
@@ -191,32 +191,39 @@ pub fn field(input: ParseString) -> ParseResult<Field> {
   Ok((input, Field{name, kind}))
 }
 
+// box_drawing_char := box_tr_round | box_bl_round | box_vert | box_cross | box_horz | box_t_left | box_t_right | box_t_top | box_t_bottom ;
 pub fn box_drawing_char(input: ParseString) -> ParseResult<Token> {
   alt((box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
+// box_drawing_emoji := box_tl_round | box_br_round | box_tr_round | box_bl_round | box_vert | box_cross | box_horz | box_t_left | box_t_right | box_t_top | box_t_bottom ;
 pub fn box_drawing_emoji(input: ParseString) -> ParseResult<Token> {
   alt((box_tl_round, box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
+// matrix_start := box_tl_round | left_bracket ;
 pub fn matrix_start(input: ParseString) -> ParseResult<Token> {
   alt((box_tl_round, left_bracket))(input)
 }
 
+// matrix_end := box_br_round | right_bracket ;
 pub fn matrix_end(input: ParseString) -> ParseResult<Token> {
   let result = alt((box_br_round, right_bracket))(input);
   result
 }
 
+// table_start := box_tl_round | left_brace ;
 pub fn table_start(input: ParseString) -> ParseResult<Token> {
   alt((box_tl_round, left_brace))(input)
 }
 
+// table_end := box_br_round | right_brace ;
 pub fn table_end(input: ParseString) -> ParseResult<Token> {
   let result = alt((box_br_round, right_brace))(input);
   result
 }
 
+// table_separator := box_vert ;
 pub fn table_separator(input: ParseString) -> ParseResult<Token> {
   let (input, token) = box_vert(input)?;
   Ok((input, token))
@@ -287,7 +294,7 @@ pub fn record(input: ParseString) -> ParseResult<Record> {
   Ok((input, Record{bindings}))
 }
 
-// record := "{", mapping*, "}" ;
+// map := "{", mapping*, "}" ;
 pub fn map(input: ParseString) -> ParseResult<Map> {
   let msg = "Expects right bracket '}' to terminate inline table";
   let (input, (_, r)) = range(left_brace)(input)?;
@@ -298,7 +305,7 @@ pub fn map(input: ParseString) -> ParseResult<Map> {
   Ok((input, Map{elements}))
 }
 
-// mapping := expression, ":", expression
+// mapping := expression, ":", expression ;
 pub fn mapping(input: ParseString) -> ParseResult<Mapping> {
   let msg1 = "Unexpected space before colon ':'";
   let msg2 = "Expects a value";

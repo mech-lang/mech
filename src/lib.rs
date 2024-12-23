@@ -12,6 +12,7 @@ pub extern crate mech_syntax as syntax;
 
 pub use mech_core::*;
 use mech_core::nodes::Program;
+use mech_interpreter::Interpreter;
 //pub use mech_syntax::compiler::*;
 //pub use mech_program::*;
 //pub use mech_utilities::*;
@@ -23,7 +24,16 @@ use colored::*;
 extern crate bincode;
 use std::io::{Write, BufReader, BufWriter, stdout};
 use std::fs::{OpenOptions, File, canonicalize, create_dir};
+use crossterm::{
+  ExecutableCommand, QueueableCommand,
+  terminal, cursor, style::Print,
+};
 
+use tabled::{
+  builder::Builder,
+  settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
+  Tabled,
+};
 use std::path::{Path, PathBuf};
 use std::io;
 use std::io::prelude::*;
@@ -39,6 +49,72 @@ extern crate lazy_static;
 
 lazy_static! {
   static ref CORE_MAP: Mutex<HashMap<SocketAddr, (String, SystemTime)>> = Mutex::new(HashMap::new());
+}
+
+pub fn pretty_print_tree(tree: &Program) -> String {
+  let tree_hash = hash_str(&format!("{:#?}", tree));
+  let formatted_tree = format_parse_tree(tree);
+  let mut builder = Builder::default();
+  builder.push_record(vec![format!("Hash: {}", tree_hash)]);
+  builder.push_record(vec![format!("{}", formatted_tree)]);
+  let mut table = builder.build();
+  table.with(Style::modern())
+       .with(Panel::header("🌳 Syntax Tree"));
+  format!("{table}")
+}
+
+pub fn whos(intrp: &Interpreter) -> String {
+  let mut builder = Builder::default();
+  builder.push_record(vec!["Name","Size","Bytes","Kind"]);
+  let symbol_table = intrp.symbols.borrow();
+  for (id,name) in &symbol_table.dictionary {
+    let value = symbol_table.get(*id).unwrap();
+    let value_brrw = value.borrow();
+    builder.push_record(vec![
+      name.clone(),
+      format!("{:?}",value_brrw.shape()),
+      format!("{:?}",value_brrw.size_of()),
+      format!("{:?}",value_brrw.kind())
+    ]);
+  }
+
+  let mut table = builder.build();
+  table.with(Style::modern())       
+       .with(Panel::header("🔍 Whos"));
+  ;
+  format!("{table}")
+}
+
+pub fn clc() {
+  let mut stdo = stdout();
+  stdo.execute(terminal::Clear(terminal::ClearType::All));
+  stdo.execute(cursor::MoveTo(0,0));
+}
+
+pub fn pretty_print_plan(intrp: &Interpreter) -> String {
+  let mut builder = Builder::default();
+
+  let mut row = vec![];
+  let plan = intrp.plan.borrow();
+  if plan.is_empty() {
+    builder.push_record(vec!["".to_string()]);
+  } else {
+    for (ix, fxn) in plan.iter().enumerate() {
+      let plan_str = format!("{}. {}\n", ix + 1, fxn.to_string());
+      row.push(plan_str.clone());
+      if row.len() == 4 {
+        builder.push_record(row.clone());
+        row.clear();
+      }
+    }
+  }
+  if row.is_empty() == false {
+    builder.push_record(row.clone());
+  }
+  let mut table = builder.build();
+  table.with(Style::modern())
+       .with(Panel::header("📋 Plan"));
+  format!("{table}")
 }
 
 pub fn format_parse_tree(program: &Program) -> String {

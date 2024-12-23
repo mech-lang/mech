@@ -23,7 +23,7 @@ macro_rules! impl_col_access_fxn {
           }
         }
         fn out(&self) -> Value { self.out.to_value() }
-        fn to_string(&self) -> String { format!("{:?}", self) }
+        fn to_string(&self) -> String { format!("{:#?}", self) }
       }
     }
   }
@@ -137,7 +137,7 @@ macro_rules! impl_col_access_fxn {
       ()
     }
     fn out(&self) -> Value { self.source.clone() }
-    fn to_string(&self) -> String { format!("{:?}", self) }
+    fn to_string(&self) -> String { format!("{:#?}", self) }
   }
   
   #[derive(Debug)]
@@ -150,7 +150,7 @@ macro_rules! impl_col_access_fxn {
       ()
     }
     fn out(&self) -> Value { self.out.clone() }
-    fn to_string(&self) -> String { format!("{:?}", self) }
+    fn to_string(&self) -> String { format!("{:#?}", self) }
   }
   
   pub struct AccessSwizzle {}

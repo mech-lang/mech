@@ -35,12 +35,12 @@ pub struct Functions {
   
 impl Functions {
   pub fn new() -> Self {
-      Self {
-        functions: HashMap::new(), 
-        function_compilers: HashMap::new(), 
-        kinds: HashMap::new(),
-        enums: HashMap::new(),
-      }
+    Self {
+      functions: HashMap::new(), 
+      function_compilers: HashMap::new(), 
+      kinds: HashMap::new(),
+      enums: HashMap::new(),
+    }
   }
 }
 
@@ -71,10 +71,9 @@ impl fmt::Debug for FunctionDefinition {
                     "🔣 Symbols",   &symbols_str,
                     "📋 Plan", &plan_str];
     let mut table = tabled::Table::new(data);
-    table
-        .with(Style::modern())
-        .with(Panel::header(format!("📈 UserFxn::{}\n({})", self.name, humanize(&self.id))))
-        .with(Alignment::left());
+    table.with(Style::modern())
+         .with(Panel::header(format!("📈 UserFxn::{}\n({})", self.name, humanize(&self.id))))
+         .with(Alignment::left());
     println!("{table}");
     Ok(())
   }
@@ -130,6 +129,7 @@ impl MechFunction for UserFunction {
 #[derive(Clone, Debug)]
 pub struct SymbolTable {
   pub symbols: HashMap<u64,ValRef>,
+  pub dictionary: IndexMap<u64,String>,
   pub reverse_lookup: HashMap<*const RefCell<Value>, u64>,
 }
 
@@ -138,6 +138,7 @@ impl SymbolTable {
   pub fn new() -> SymbolTable {
     Self {
       symbols: HashMap::new(),
+      dictionary: IndexMap::new(),
       reverse_lookup: HashMap::new(),
     }
   }
@@ -146,10 +147,30 @@ impl SymbolTable {
     self.symbols.get(&key).cloned()
   }
 
+  pub fn contains(&self, key: u64) -> bool {
+    self.symbols.contains_key(&key)
+  }
+
   pub fn insert(&mut self, key: u64, value: Value) -> ValRef {
     let cell = new_ref(value);
     self.reverse_lookup.insert(Rc::as_ptr(&cell), key);
-    self.symbols.insert(key,cell.clone());
+    let old = self.symbols.insert(key,cell.clone());
     cell.clone()
+  }
+
+  pub fn pretty_print(&self) -> String {
+    let mut builder = Builder::default();
+    for (k,v) in &self.symbols {
+      let name = self.dictionary.get(k).unwrap();
+      let v_brrw = v.borrow();
+      builder.push_record(vec![format!("{} : {:?}\n{}",name, v_brrw.kind(), v_brrw.pretty_print())])
+    }
+    if self.symbols.is_empty() {
+      builder.push_record(vec!["".to_string()]);
+    }
+    let mut table = builder.build();
+    table.with(Style::modern())
+         .with(Panel::header("🔣 Symbols"));
+    format!("{table}")
   }
 }

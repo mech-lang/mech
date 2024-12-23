@@ -44,6 +44,50 @@ pub fn assign_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
+// op_assign_operator := add_assign_operator | sub_assign_operator | mul_assign_operator | div_assign_operator | exp_assign_operator ;
+pub fn op_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
+  alt((add_assign_operator, sub_assign_operator, mul_assign_operator, div_assign_operator, exp_assign_operator))(input)
+}
+
+// add_assign_operator := "+=" ;
+pub fn add_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = tag("+=")(input)?;
+  let (input, _) = whitespace0(input)?;
+  Ok((input, OpAssignOp::Add))
+}
+
+// sub_assign_operator := "-=" ;
+pub fn sub_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = tag("-=")(input)?;
+  let (input, _) = whitespace0(input)?;
+  Ok((input, OpAssignOp::Sub))
+}
+
+// mul_assign_operator := "*=" ;
+pub fn mul_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = tag("*=")(input)?;
+  let (input, _) = whitespace0(input)?;
+  Ok((input, OpAssignOp::Mul))
+}
+// div_assign_operator := "/=" ;
+pub fn div_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = tag("/=")(input)?;
+  let (input, _) = whitespace0(input)?;
+  Ok((input, OpAssignOp::Div))
+}
+
+// exp_assign_operator := "^=" ;
+pub fn exp_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = tag("^=")(input)?;
+  let (input, _) = whitespace0(input)?;
+  Ok((input, OpAssignOp::Exp))
+}
+
 // split_data := (identifier | table), <!stmt_operator>, space*, split_operator, <space+>, <expression> ;
 /*pub fn split_data(input: ParseString) -> ParseResult<ParserNode> {
   /*let msg1 = "Expects spaces around operator";
@@ -70,7 +114,7 @@ pub fn assign_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ParserNode::FlattenData{children: vec![]}))
 }*/
 
-// variable_define := identifier, define_operator, expression ;
+// variable_define := var, define_operator, expression ;
 pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
@@ -81,7 +125,7 @@ pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   Ok((input, VariableDefine{var,expression}))
 }
 
-// variable_define := identifier, assign_operator, expression ;
+// variable_assign := slice_ref, !define-opertor, assign_operator, expression ;
 pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
@@ -90,6 +134,17 @@ pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
   let (input, _) = assign_operator(input)?;
   let (input, expression) = label!(expression, msg2)(input)?;
   Ok((input, VariableAssign{target,expression}))
+}
+
+// op_assign := slice_ref, !define-opertor, op_assign_operator, expression ;
+pub fn op_assign(input: ParseString) -> ParseResult<OpAssign> {
+  let msg1 = "Expects spaces around operator";
+  let msg2 = "Expects expression";
+  let (input, target) = slice_ref(input)?;
+  let (input, _) = labelr!(null(is_not(define_operator)), skip_nil, msg1)(input)?;
+  let (input, op) = op_assign_operator(input)?;
+  let (input, expression) = label!(expression, msg2)(input)?;
+  Ok((input, OpAssign{target,op,expression}))
 }
 
 // parser for the second line of the output table, generate the 
@@ -107,7 +162,7 @@ pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
   Ok((input, ParserNode::Null))
 }*/
 
-// statement := variable_define | variable_assign | enum_define | fm_declare | kind_define ;
+// statement := variable_define | variable_assign | enum_define | fsm_declare | kind_define ;
 pub fn statement(input: ParseString) -> ParseResult<Statement> {
   match variable_define(input.clone()) {
     Ok((input, var_def)) => { return Ok((input, Statement::VariableDefine(var_def))); },
@@ -116,6 +171,11 @@ pub fn statement(input: ParseString) -> ParseResult<Statement> {
   }
   match variable_assign(input.clone()) {
     Ok((input, var_asgn)) => { return Ok((input, Statement::VariableAssign(var_asgn))); },
+    //Err(Failure(err)) => {return Err(Failure(err))},
+    _ => (),
+  }
+  match op_assign(input.clone()) {
+    Ok((input, var_asgn)) => { return Ok((input, Statement::OpAssign(var_asgn))); },
     //Err(Failure(err)) => {return Err(Failure(err))},
     _ => (),
   }

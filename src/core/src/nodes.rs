@@ -354,7 +354,8 @@ pub enum Statement {
   VariableAssign(VariableAssign),
   KindDefine(KindDefine),
   EnumDefine(EnumDefine),
-  FsmDeclare(FsmDeclare),     
+  FsmDeclare(FsmDeclare),    
+  OpAssign(OpAssign), 
   SplitTable,     // todo
   FlattenTable,   // todo
 }
@@ -837,6 +838,22 @@ pub struct ComplexNumber {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Comment {
   pub text: Token,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct OpAssign {
+  pub target: SliceRef,
+  pub op: OpAssignOp,
+  pub expression: Expression,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum OpAssignOp {
+  Add,
+  Sub,   
+  Mul,
+  Div,
+  Exp,   
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

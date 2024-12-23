@@ -18,9 +18,11 @@ Comprehensive documentation is available at [mech-lang.org](https://mech-lang.or
 
 Download the latest release for your platform [here](https://github.com/mech-lang/mech/releases/latest).
 
-### 🔨 From Source
+### 📦 From Source
 
-To build Mech from source, you’ll need to install [Rust](https://www.rust-lang.org/learn/get-started) (nightly version). Follow the instructions below to compile the Mech toolchain, bundled in a single executable called `mech`:
+To build Mech from source, you’ll first need to install [Rust](https://www.rust-lang.org/learn/get-started) (make sure to install a recent version on the nightly release channel). 
+
+Then follow the instructions below to compile the Mech toolchain, bundled in a single executable called `mech`:
 
 ```bash
 git clone https://gitlab.com/mech-lang/mech
@@ -28,11 +30,32 @@ cd mech
 cargo build --bin mech --release
 ```
 
-## 🚧 Project Roadmap
+### 🪐 Community
 
-Mech is being redesigned to integrate state machines into the language, with development happening in the v0.2-beta branch.
+- 👾 [Discord](https://discord.gg/asqP25NNTH) - for live chat
+- 🐙 [GitHub](https://github.com/mech-lang) - for code and issues
+- 📺 [YouTube](https://youtube.com/@coreymontella3520?si=EUy2Mrv1aNo-4uQr) - for video tutorials
+- 🛸 [Reddit](https://www.reddit.com/r/mechlang/) - for help and discussion
 
-The v0.2 release is planned for October 2024. For more details, check out the [ROADMAP.mec](ROADMAP.mec).
+## 🗺️ Project Roadmap
+
+Mech v0.2 is currecntly **beta** status, meaning most intended features are implemented, but there are still rough edges and a general lack of documentation.
+
+This release focuses on specifying data and formulas.
+
+A Brief Roadmap:
+
+- 📍 v0.2 - data specification - formulas, defining and manipulating data
+- v0.3 - program specification - functions, modules, state machines
+- v0.4 - system specification - tools, distributed programs, capabilities
+
+For more details, read the [ROADMAP](ROADMAP.mec).
+
+A new version of Mech is [released every week](https://github.com/mech-lang/mech/releases).
+
+## 🐲 Notice
+
+Mech should be considered unstable and therefore unfit for use in critical systems until v1.0 is released.
 
 ## ⚖️ License
 

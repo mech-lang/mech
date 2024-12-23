@@ -31,7 +31,7 @@ macro_rules! impl_neg_op {
         $op!(arg_ptr,out_ptr);
     }
     fn out(&self) -> Value { self.out.to_value() }
-    fn to_string(&self) -> String { format!("{:?}", self) }
+    fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}
 
 impl_neg_op!(NegateS, T, neg_op);

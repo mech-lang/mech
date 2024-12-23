@@ -27,7 +27,7 @@ macro_rules! impl_col_set_fxn {
         }
       }
       fn out(&self) -> Value { Value::MatrixValue(Matrix::$vector_size(self.sink.clone())) }
-      fn to_string(&self) -> String { format!("{:?}", self) }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }
   }
 }

@@ -78,7 +78,7 @@ leaf!{box_t_top, "┬", TokenKind::BoxDrawing}
 leaf!{box_t_bottom, "┴", TokenKind::BoxDrawing}
 leaf!{box_vert, "│", TokenKind::BoxDrawing}
 
-// emoji_grapheme := emoji_grapheme_literal ;
+// emoji_grapheme := ?emoji_grapheme_literal? ;
 pub fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_emoji() {
     Ok((input, matched))
@@ -87,7 +87,7 @@ pub fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {
   }
 }
 
-// alpha := alpha_literal ;
+// alpha := ?alpha_literal? ;
 pub fn alpha(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_alpha() {
     Ok((input, matched))
@@ -96,7 +96,7 @@ pub fn alpha(mut input: ParseString) -> ParseResult<String> {
   }
 }
 
-// digit := digit_literal ;
+// digit := ?digit_literal? ;
 pub fn digit(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_digit() {
     Ok((input, matched))
@@ -105,7 +105,7 @@ pub fn digit(mut input: ParseString) -> ParseResult<String> {
   }
 }
 
-// any := any_character ;
+// any := ?any_character? ;
 pub fn any(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_one() {
     Ok((input, matched))
@@ -229,7 +229,7 @@ pub fn whitespace(input: ParseString) -> ParseResult<Token> {
   Ok((input, space))
 }
 
-// whitespace0 := 
+// whitespace0 := whitespace* ;
 pub fn whitespace0(input: ParseString) -> ParseResult<()> {
   let (input, _) = many0(whitespace)(input)?;
   Ok((input, ()))
@@ -247,13 +247,13 @@ pub fn space_tab(input: ParseString) -> ParseResult<Token> {
   Ok((input, space))
 }
 
-// list_separator := optional_whitespace "," optional_whitespace ;
+// list_separator := whitespace*, ",", whitespace* ;
 pub fn list_separator(input: ParseString) -> ParseResult<()> {
   let (input,_) = nom_tuple((whitespace0,tag(","),whitespace0))(input)?;
   Ok((input, ()))
 }
 
-// enum_separator := optional_whitespace "|" optional_whitespace ;
+// enum_separator := whitespace*, "|", whitespace* ;
 pub fn enum_separator(input: ParseString) -> ParseResult<()> {
   let (input,_) = nom_tuple((whitespace0,tag("|"),whitespace0))(input)?;
   Ok((input, ()))
@@ -439,13 +439,13 @@ pub fn kind_annotation(input: ParseString) -> ParseResult<KindAnnotation> {
   Ok((input, KindAnnotation{ kind }))
 }
 
-// kind := empty | atom | tuple | scalar | bracket | map | brace
+// kind := empty | atom | tuple | scalar | bracket | map | brace ;
 pub fn kind(input: ParseString) -> ParseResult<Kind> {
   let (input, kind) = alt((kind_fxn,kind_empty,kind_atom,kind_tuple, kind_scalar, kind_bracket, kind_map, kind_brace))(input)?;
   Ok((input, kind))
 }
 
-// kind_empty := underscore* ;
+// kind_empty := underscore+ ;
 pub fn kind_empty(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = many1(underscore)(input)?;
   Ok((input, Kind::Empty))
@@ -500,7 +500,7 @@ pub fn kind_bracket(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Bracket((kinds,size))))
 }
 
-// kind_bracket = "(", list1(",",kind) ")" ;
+// kind_tuple = "(", list1(",",kind) ")" ;
 pub fn kind_tuple(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_parenthesis(input)?;
   let (input, kinds) = separated_list1(list_separator, kind)(input)?;
