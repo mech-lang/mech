@@ -247,12 +247,39 @@ macro_rules! sub_assign_2d_vector_all_b {
   };} 
 
 
+#[derive(Debug)]
+struct SubAssign2DRAMDMD<T> {
+  source: Ref<DMatrix<T>>,
+  ixes: Ref<DVector<usize>>,
+  sink: Ref<DMatrix<T>>,
+}
+impl<T> MechFunction for SubAssign2DRAMDMD<T>
+where
+  T: Copy + Debug + Clone + Sync + Send + 'static +
+  Sub<Output = T> + SubAssign +
+  Zero + One +
+  PartialEq + PartialOrd,
+  Ref<DMatrix<T>>: ToValue
+{
+  fn solve(&self) {
+    unsafe {
+      let ix_ptr = &(*(self.ixes.as_ptr()));
+      let mut sink_ptr = (&mut *(self.sink.as_ptr()));
+      let source_ptr = &(*(self.source.as_ptr()));
+      for (i,rix) in (ix_ptr).iter().enumerate() {
+        let mut row = sink_ptr.row_mut(rix - 1);
+        row -= (source_ptr).row(i);
+      }
+    }
+  }
+  fn out(&self) -> Value { self.sink.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+
 macro_rules! sub_assign_2d_vector_all_mat {
   ($source:expr, $ix:expr, $sink:expr) => {
-    for (i,rix) in (&$ix).iter().enumerate() {
-      let mut row = ($sink).row_mut(rix - 1);
-      row -= ($source).row(i);
-    }
+
   };}
 
 macro_rules! sub_assign_2d_vector_all_mat_b {
@@ -273,7 +300,7 @@ impl_sub_assign_fxn!(SubAssign2DRAM1,Matrix1,T,sub_assign_2d_vector_all,usize);
 impl_sub_assign_fxn!(SubAssign2DRAM2x3,Matrix2x3,T,sub_assign_2d_vector_all,usize);
 impl_sub_assign_fxn!(SubAssign2DRAM3x2,Matrix3x2,T,sub_assign_2d_vector_all,usize);
 
-impl_sub_assign_fxn!(SubAssign2DRAMDMD,DMatrix,DMatrix<T>,sub_assign_2d_vector_all_mat,usize);
+//impl_sub_assign_fxn!(SubAssign2DRAMDMD,DMatrix,DMatrix<T>,sub_assign_2d_vector_all_mat,usize);
 impl_sub_assign_fxn!(SubAssign2DRAMDM2,DMatrix,Matrix2<T>,sub_assign_2d_vector_all_mat,usize);
 impl_sub_assign_fxn!(SubAssign2DRAMDM2x3,DMatrix,Matrix2x3<T>,sub_assign_2d_vector_all_mat,usize);
 impl_sub_assign_fxn!(SubAssign2DRAMDM3,DMatrix,Matrix3<T>,sub_assign_2d_vector_all_mat,usize);

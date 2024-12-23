@@ -73,14 +73,70 @@ where
   Ref<T>: ToValue
 {
   fn solve(&self) {
-    let sink_ptr = self.sink.as_ptr();
-    let source_ptr = self.source.as_ptr();
     unsafe {
-      *sink_ptr += (*source_ptr).clone();
+      let mut sink_ptr = (&mut *(self.sink.as_ptr()));
+      let source_ptr = &(*(self.source.as_ptr()));
+      *sink_ptr += source_ptr.clone();
     }
   }
   fn out(&self) -> Value { self.sink.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[derive(Debug)]
+struct AddAssignMDMD<T> {
+  sink: Ref<DMatrix<T>>,
+  source: Ref<DMatrix<T>>,
+}
+impl<T> MechFunction for AddAssignMDMD<T> 
+where
+  T: Debug + Clone + Sync + Send + 'static +
+  Add<Output = T> + AddAssign +
+  PartialEq + PartialOrd,
+  Ref<DMatrix<T>>: ToValue
+{
+  fn solve(&self) {
+    unsafe {
+      let mut sink_ptr = (&mut *(self.sink.as_ptr()));
+      let source_ptr = &(*(self.source.as_ptr()));
+      *sink_ptr += source_ptr;
+    }
+  }
+  fn out(&self) -> Value { self.sink.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+fn add_assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  match (sink,source) {
+    (Value::U8(sink),Value::U8(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::U16(sink),Value::U16(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::U32(sink),Value::U32(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::U64(sink),Value::U64(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::U128(sink),Value::U128(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::I8(sink),Value::I8(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::I16(sink),Value::I16(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::I32(sink),Value::I32(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::I64(sink),Value::I64(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::I128(sink),Value::I128(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::F32(sink),Value::F32(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::F64(sink),Value::F64(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::MatrixF64(Matrix::Matrix1(sink)),Value::MatrixF64(Matrix::Matrix1(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::MatrixF64(Matrix::Matrix2(sink)),Value::MatrixF64(Matrix::Matrix2(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::MatrixF64(Matrix::Matrix2x3(sink)),Value::MatrixF64(Matrix::Matrix2x3(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::MatrixF64(Matrix::Matrix3x2(sink)),Value::MatrixF64(Matrix::Matrix3x2(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::MatrixF64(Matrix::Matrix3(sink)),Value::MatrixF64(Matrix::Matrix3(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::MatrixF64(Matrix::Matrix4(sink)),Value::MatrixF64(Matrix::Matrix4(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::MatrixF64(Matrix::DMatrix(sink)),Value::MatrixF64(Matrix::DMatrix(source))) => Ok(Box::new(AddAssignMDMD{sink: sink.clone(), source: source.clone()})),
+    (Value::MatrixF64(Matrix::Vector2(sink)),Value::MatrixF64(Matrix::Vector2(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::MatrixF64(Matrix::Vector3(sink)),Value::MatrixF64(Matrix::Vector3(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::MatrixF64(Matrix::Vector4(sink)),Value::MatrixF64(Matrix::Vector4(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::MatrixF64(Matrix::DVector(sink)),Value::MatrixF64(Matrix::DVector(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::MatrixF64(Matrix::RowVector2(sink)),Value::MatrixF64(Matrix::RowVector2(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::MatrixF64(Matrix::RowVector3(sink)),Value::MatrixF64(Matrix::RowVector3(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::MatrixF64(Matrix::RowVector4(sink)),Value::MatrixF64(Matrix::RowVector4(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    (Value::MatrixF64(Matrix::RowDVector(sink)),Value::MatrixF64(Matrix::RowDVector(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
+    x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+  }
 }
 
 pub struct AddAssignValue {}
@@ -91,35 +147,16 @@ impl NativeFunctionCompiler for AddAssignValue {
     }
     let sink = arguments[0].clone();
     let source = arguments[1].clone();
-    match (sink,source) {
-      (Value::U8(sink),Value::U8(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::U16(sink),Value::U16(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::U32(sink),Value::U32(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::U64(sink),Value::U64(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::U128(sink),Value::U128(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::I8(sink),Value::I8(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::I16(sink),Value::I16(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::I32(sink),Value::I32(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::I64(sink),Value::I64(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::I128(sink),Value::I128(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::F32(sink),Value::F32(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::F64(sink),Value::F64(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::Matrix1(sink)),Value::MatrixF64(Matrix::Matrix1(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::Matrix2(sink)),Value::MatrixF64(Matrix::Matrix2(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::Matrix2x3(sink)),Value::MatrixF64(Matrix::Matrix2x3(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::Matrix3x2(sink)),Value::MatrixF64(Matrix::Matrix3x2(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::Matrix3(sink)),Value::MatrixF64(Matrix::Matrix3(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::Matrix4(sink)),Value::MatrixF64(Matrix::Matrix4(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::DMatrix(sink)),Value::MatrixF64(Matrix::DMatrix(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::Vector2(sink)),Value::MatrixF64(Matrix::Vector2(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::Vector3(sink)),Value::MatrixF64(Matrix::Vector3(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::Vector4(sink)),Value::MatrixF64(Matrix::Vector4(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::DVector(sink)),Value::MatrixF64(Matrix::DVector(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::RowVector2(sink)),Value::MatrixF64(Matrix::RowVector2(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::RowVector3(sink)),Value::MatrixF64(Matrix::RowVector3(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::RowVector4(sink)),Value::MatrixF64(Matrix::RowVector4(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::RowDVector(sink)),Value::MatrixF64(Matrix::RowDVector(source))) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
-      x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+    match add_assign_value_fxn(sink.clone(),source.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(x) => {
+        match (sink,source) {
+          (Value::MutableReference(sink),Value::MutableReference(source)) => { add_assign_value_fxn(sink.borrow().clone(),source.borrow().clone()) },
+          (sink,Value::MutableReference(source)) => { add_assign_value_fxn(sink.clone(),source.borrow().clone()) },
+          (Value::MutableReference(sink),source) => { add_assign_value_fxn(sink.borrow().clone(),source.clone()) },
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
     }
   }
 }
@@ -226,6 +263,35 @@ impl NativeFunctionCompiler for AddAssignRange {
 
 // x[1..3,:] += 1 ------------------------------------------------------------------
 
+#[derive(Debug)]
+struct AddAssign2DRAMDMD<T> {
+  source: Ref<DMatrix<T>>,
+  ixes: Ref<DVector<usize>>,
+  sink: Ref<DMatrix<T>>,
+}
+impl<T> MechFunction for AddAssign2DRAMDMD<T>
+where
+  T: Copy + Debug + Clone + Sync + Send + 'static +
+  Add<Output = T> + AddAssign +
+  Zero + One +
+  PartialEq + PartialOrd,
+  Ref<DMatrix<T>>: ToValue
+{
+  fn solve(&self) {
+    unsafe {
+      let ix_ptr = &(*(self.ixes.as_ptr()));
+      let mut sink_ptr = (&mut *(self.sink.as_ptr()));
+      let source_ptr = &(*(self.source.as_ptr()));
+      for (i,rix) in (ix_ptr).iter().enumerate() {
+        let mut row = sink_ptr.row_mut(rix - 1);
+        row += (source_ptr).row(i);
+      }
+    }
+  }
+  fn out(&self) -> Value { self.sink.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
 macro_rules! add_assign_2d_vector_all {
   ($source:expr, $ix:expr, $sink:expr) => {
       for cix in 0..($sink).ncols() {
@@ -273,7 +339,8 @@ impl_add_assign_fxn!(AddAssign2DRAM1,Matrix1,T,add_assign_2d_vector_all,usize);
 impl_add_assign_fxn!(AddAssign2DRAM2x3,Matrix2x3,T,add_assign_2d_vector_all,usize);
 impl_add_assign_fxn!(AddAssign2DRAM3x2,Matrix3x2,T,add_assign_2d_vector_all,usize);
 
-impl_add_assign_fxn!(AddAssign2DRAMDMD,DMatrix,DMatrix<T>,add_assign_2d_vector_all_mat,usize);
+//impl_add_assign_fxn!(AddAssign2DRAMDMD,DMatrix,DMatrix<T>,add_assign_2d_vector_all_mat,usize);
+
 impl_add_assign_fxn!(AddAssign2DRAMDM2,DMatrix,Matrix2<T>,add_assign_2d_vector_all_mat,usize);
 impl_add_assign_fxn!(AddAssign2DRAMDM2x3,DMatrix,Matrix2x3<T>,add_assign_2d_vector_all_mat,usize);
 impl_add_assign_fxn!(AddAssign2DRAMDM3,DMatrix,Matrix3<T>,add_assign_2d_vector_all_mat,usize);
