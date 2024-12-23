@@ -126,7 +126,7 @@ where
     self.e1.copy_into_row_major(&self.out,offset);
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("VerticalConcatenateTwoArgs{:?}", self.out) }
+  fn to_string(&self) -> String { format!("VerticalConcatenateTwoArgs\n{:#?}", self.out) }
 }
     
 struct VerticalConcatenateThreeArgs<T> {
@@ -146,7 +146,7 @@ where
     self.e2.copy_into_row_major(&self.out,offset);
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("VerticalConcatenateThreeArgs{:?}", self.out) }
+  fn to_string(&self) -> String { format!("VerticalConcatenateThreeArgs\n{:#?}", self.out) }
 }
 
 struct VerticalConcatenateFourArgs<T> {
@@ -169,7 +169,7 @@ where
 
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("VerticalConcatenateFourArgs{:?}", self.out) }
+  fn to_string(&self) -> String { format!("VerticalConcatenateFourArgs\n{:#?}", self.out) }
 }
 
 struct VerticalConcatenateNArgs<T> {
@@ -188,7 +188,7 @@ where
     }
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("VerticalConcatenateNArgs") }
+  fn to_string(&self) -> String { format!("VerticalConcatenateNArgs\n{:#?}", self.out) }
 }
 
 macro_rules! vertical_concatenate {
@@ -211,10 +211,9 @@ macro_rules! vertical_concatenate {
     }
   };}  
 
-#[derive(Debug)]
 struct VerticalConcatenateVD2<T> {
-  e0: Matrix<T>,
-  e1: Matrix<T>,
+  e0: Box<dyn CopyMat<T>>,
+  e1: Box<dyn CopyMat<T>>,
   out: Ref<DVector<T>>,
 }
 
@@ -223,31 +222,18 @@ where
   T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DVector<T>>: ToValue
 {
-  fn solve(&self) {          
-    unsafe {
-      let e0_ptr = self.e0.as_vec();
-      let e1_ptr = self.e1.as_vec();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
-      let mut i = 0;
-      for ix in 0..e0_ptr.len() {
-        out_ptr[i] = e0_ptr[ix].clone();
-        i += 1;
-      }
-      for ix in 0..e1_ptr.len() {
-        out_ptr[i] = e1_ptr[ix].clone();
-        i += 1;
-      }
-    }
+  fn solve(&self) {   
+    let mut offset = self.e0.copy_into_v(&self.out,0);
+    self.e1.copy_into_v(&self.out,offset);
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn to_string(&self) -> String { format!("VerticalConcatenateVD2\n{:#?}", self.out) }
 }
 
-#[derive(Debug)]
 struct VerticalConcatenateVD3<T> {
-  e0: Matrix<T>,
-  e1: Matrix<T>,
-  e2: Matrix<T>,
+  e0: Box<dyn CopyMat<T>>,
+  e1: Box<dyn CopyMat<T>>,
+  e2: Box<dyn CopyMat<T>>,
   out: Ref<DVector<T>>,
 }
 
@@ -256,37 +242,20 @@ where
   T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DVector<T>>: ToValue
 {
-  fn solve(&self) {          
-    unsafe {
-      let e0_ptr = self.e0.as_vec();
-      let e1_ptr = self.e1.as_vec();
-      let e2_ptr = self.e2.as_vec();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
-      let mut i = 0;
-      for ix in 0..e0_ptr.len() {
-        out_ptr[i] = e0_ptr[ix].clone();
-        i += 1;
-      }
-      for ix in 0..e1_ptr.len() {
-        out_ptr[i] = e1_ptr[ix].clone();
-        i += 1;
-      }
-      for ix in 0..e2_ptr.len() {
-        out_ptr[i] = e2_ptr[ix].clone();
-        i += 1;
-      }
-    }
+  fn solve(&self) {   
+    let mut offset = self.e0.copy_into_v(&self.out,0);
+    offset += self.e1.copy_into_v(&self.out,offset);
+    self.e2.copy_into_v(&self.out,offset);
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn to_string(&self) -> String { format!("VerticalConcatenateVD3\n{:#?}", self.out) }
 }
 
-#[derive(Debug)]
 struct VerticalConcatenateVD4<T> {
-  e0: Matrix<T>,
-  e1: Matrix<T>,
-  e2: Matrix<T>,
-  e3: Matrix<T>,
+  e0: Box<dyn CopyMat<T>>,
+  e1: Box<dyn CopyMat<T>>,
+  e2: Box<dyn CopyMat<T>>,
+  e3: Box<dyn CopyMat<T>>,
   out: Ref<DVector<T>>,
 }
 
@@ -295,40 +264,19 @@ where
   T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DVector<T>>: ToValue
 {
-  fn solve(&self) {          
-    unsafe {
-      let e0_ptr = self.e0.as_vec();
-      let e1_ptr = self.e1.as_vec();
-      let e2_ptr = self.e2.as_vec();
-      let e3_ptr = self.e3.as_vec();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
-      let mut i = 0;
-      for ix in 0..e0_ptr.len() {
-        out_ptr[i] = e0_ptr[ix].clone();
-        i += 1;
-      }
-      for ix in 0..e1_ptr.len() {
-        out_ptr[i] = e1_ptr[ix].clone();
-        i += 1;
-      }
-      for ix in 0..e2_ptr.len() {
-        out_ptr[i] = e2_ptr[ix].clone();
-        i += 1;
-      }
-      for ix in 0..e3_ptr.len() {
-        out_ptr[i] = e3_ptr[ix].clone();
-        i += 1;
-      }
-    }
+  fn solve(&self) {   
+    let mut offset = self.e0.copy_into_v(&self.out,0);
+    offset += self.e1.copy_into_v(&self.out,offset);
+    offset += self.e2.copy_into_v(&self.out,offset);
+    self.e3.copy_into_v(&self.out,offset);
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn to_string(&self) -> String { format!("VerticalConcatenateVD3\n{:#?}", self.out) }
 }
 
-#[derive(Debug)]
 struct VerticalConcatenateVDN<T> {
   scalar: Vec<(Ref<T>,usize)>,
-  matrix: Vec<(Matrix<T>,usize)>,
+  matrix: Vec<(Box<dyn CopyMat<T>>,usize)>,
   out: Ref<DVector<T>>,
 }
 
@@ -341,12 +289,7 @@ where
     unsafe {
       let mut out_ptr = (&mut *(self.out.as_ptr()));
       for (e,i) in &self.matrix {
-        let e0_ptr = e.as_vec();
-        let mut i = *i;
-        for ix in 0..e0_ptr.len() {
-          out_ptr[i] = e0_ptr[ix].clone();
-          i += 1;
-        }
+        e.copy_into_v(&self.out,*i);
       }
       for (e,i) in &self.scalar {
         out_ptr[*i] = e.borrow().clone();
@@ -354,7 +297,7 @@ where
     }
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn to_string(&self) -> String { format!("VerticalConcatenateVDN\n{:#?}", self.out) }
 }
 
 #[derive(Debug)]
@@ -857,7 +800,9 @@ macro_rules! impl_vertcat_arms {
             let mut out = DVector::from_element(m,$default);
             match &arguments[..] {
               [Value::[<Matrix $kind:camel>](e0),Value::[<Matrix $kind:camel>](e1)] => {
-                return Ok(Box::new(VerticalConcatenateVD2{e0: e0.clone(), e1: e1.clone(), out: new_ref(out)}));
+                let e0 = e0.get_copyable_matrix();
+                let e1 = e1.get_copyable_matrix();
+                return Ok(Box::new(VerticalConcatenateVD2{e0, e1, out: new_ref(out)}));
               }
               _ => todo!(),
             }
@@ -897,7 +842,10 @@ macro_rules! impl_vertcat_arms {
             let mut out = DVector::from_element(m,$default);
             match &arguments[..] {
               [Value::[<Matrix $kind:camel>](e0),Value::[<Matrix $kind:camel>](e1),Value::[<Matrix $kind:camel>](e2)] => {
-                return Ok(Box::new(VerticalConcatenateVD3{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: new_ref(out)}));
+                let e0 = e0.get_copyable_matrix();
+                let e1 = e1.get_copyable_matrix();
+                let e2 = e2.get_copyable_matrix();
+                return Ok(Box::new(VerticalConcatenateVD3{e0, e1, e2, out: new_ref(out)}));
               }
               _ => todo!(),
             }
@@ -918,7 +866,11 @@ macro_rules! impl_vertcat_arms {
             let mut out = DVector::from_element(m,$default);
             match &arguments[..] {
               [Value::[<Matrix $kind:camel>](e0),Value::[<Matrix $kind:camel>](e1),Value::[<Matrix $kind:camel>](e2),Value::[<Matrix $kind:camel>](e3)] => {
-                return Ok(Box::new(VerticalConcatenateVD4{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out)}));
+                let e0 = e0.get_copyable_matrix();
+                let e1 = e1.get_copyable_matrix();
+                let e2 = e2.get_copyable_matrix();
+                let e3 = e3.get_copyable_matrix();
+                return Ok(Box::new(VerticalConcatenateVD4{e0, e1, e2, e3, out: new_ref(out)}));
               }
               _ => todo!(),
             }
@@ -926,7 +878,7 @@ macro_rules! impl_vertcat_arms {
           #[cfg(feature = "VectorD")]
           (l,m,1) => {
             let mut out = DVector::from_element(m,$default);
-            let mut matrix_args: Vec<(Matrix<$kind>,usize)> = vec![];
+            let mut matrix_args: Vec<(Box<dyn CopyMat<$kind>>,usize)> = vec![];
             let mut scalar_args: Vec<(Ref<$kind>,usize)> = vec![];
             let mut i = 0;
             for arg in arguments.iter() {
@@ -936,7 +888,7 @@ macro_rules! impl_vertcat_arms {
                   i += 1;
                 }
                 Value::[<Matrix $kind:camel>](e0) => {
-                  matrix_args.push((e0.clone(),i));
+                  matrix_args.push((e0.get_copyable_matrix(),i));
                   i += e0.shape()[0];
                 }
                 _ => todo!(),

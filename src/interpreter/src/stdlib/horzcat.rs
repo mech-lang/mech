@@ -126,7 +126,7 @@ where
     self.e1.copy_into(&self.out,offset);
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("HorizontalConcatenateTwoArgs{:?}", self.out) }
+  fn to_string(&self) -> String { format!("HorizontalConcatenateTwoArgs\n{:#?}", self.out) }
 }
     
 struct HorizontalConcatenateThreeArgs<T> {
@@ -146,7 +146,7 @@ where
     self.e2.copy_into(&self.out,offset);
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("HorizontalConcatenateThreeArgs{:?}", self.out) }
+  fn to_string(&self) -> String { format!("HorizontalConcatenateThreeArgs\n{:#?}", self.out) }
 }
 
 struct HorizontalConcatenateFourArgs<T> {
@@ -169,7 +169,7 @@ where
 
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("HorizontalConcatenateFourArgs{:?}", self.out) }
+  fn to_string(&self) -> String { format!("HorizontalConcatenateFourArgs\n{:#?}", self.out) }
 }
 
 struct HorizontalConcatenateNArgs<T> {
@@ -188,7 +188,7 @@ where
     }
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("HorizontalConcatenateNArgs{:?}", self.out) }
+  fn to_string(&self) -> String { format!("HorizontalConcatenateNArgs\n{:#?}", self.out) }
 }
 
 macro_rules! horizontal_concatenate {
@@ -226,124 +226,72 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
-#[derive(Debug)]
+
 struct HorizontalConcatenateRD2<T> {
-  e0: Matrix<T>,
-  e1: Matrix<T>,
+  e0: Box<dyn CopyMat<T>>,
+  e1: Box<dyn CopyMat<T>>,
   out: Ref<RowDVector<T>>,
 }
-
-impl<T> MechFunction for HorizontalConcatenateRD2<T> 
+impl<T> MechFunction for HorizontalConcatenateRD2<T>
 where
   T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowDVector<T>>: ToValue
 {
-  fn solve(&self) {          
-    unsafe {
-      let e0_ptr = self.e0.as_vec();
-      let e1_ptr = self.e1.as_vec();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
-      let mut i = 0;
-      for ix in 0..e0_ptr.len() {
-        out_ptr[i] = e0_ptr[ix].clone();
-        i += 1;
-      }
-      for ix in 0..e1_ptr.len() {
-        out_ptr[i] = e1_ptr[ix].clone();
-        i += 1;
-      }
-    }
+  fn solve(&self) {
+    let mut offset = self.e0.copy_into_r(&self.out,0);
+    offset += self.e1.copy_into_r(&self.out,offset);
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn to_string(&self) -> String { format!("HorizontalConcatenateRD2\n{:#?}", self.out) }
 }
 
-#[derive(Debug)]
 struct HorizontalConcatenateRD3<T> {
-  e0: Matrix<T>,
-  e1: Matrix<T>,
-  e2: Matrix<T>,
+  e0: Box<dyn CopyMat<T>>,
+  e1: Box<dyn CopyMat<T>>,
+  e2: Box<dyn CopyMat<T>>,
   out: Ref<RowDVector<T>>,
 }
 
-impl<T> MechFunction for HorizontalConcatenateRD3<T> 
+impl<T> MechFunction for HorizontalConcatenateRD3<T>
 where
   T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowDVector<T>>: ToValue
 {
-  fn solve(&self) {          
-    unsafe {
-      let e0_ptr = self.e0.as_vec();
-      let e1_ptr = self.e1.as_vec();
-      let e2_ptr = self.e2.as_vec();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
-      let mut i = 0;
-      for ix in 0..e0_ptr.len() {
-        out_ptr[i] = e0_ptr[ix].clone();
-        i += 1;
-      }
-      for ix in 0..e1_ptr.len() {
-        out_ptr[i] = e1_ptr[ix].clone();
-        i += 1;
-      }
-      for ix in 0..e2_ptr.len() {
-        out_ptr[i] = e2_ptr[ix].clone();
-        i += 1;
-      }
-    }
+  fn solve(&self) {
+    let mut offset = self.e0.copy_into_r(&self.out,0);
+    offset += self.e1.copy_into_r(&self.out,offset);
+    self.e2.copy_into_r(&self.out,offset);
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn to_string(&self) -> String { format!("HorizontalConcatenateRD3\n{:#?}", self.out) }
 }
 
-#[derive(Debug)]
 struct HorizontalConcatenateRD4<T> {
-  e0: Matrix<T>,
-  e1: Matrix<T>,
-  e2: Matrix<T>,
-  e3: Matrix<T>,
+  e0: Box<dyn CopyMat<T>>,
+  e1: Box<dyn CopyMat<T>>,
+  e2: Box<dyn CopyMat<T>>,
+  e3: Box<dyn CopyMat<T>>,
   out: Ref<RowDVector<T>>,
 }
 
-impl<T> MechFunction for HorizontalConcatenateRD4<T> 
+impl <T> MechFunction for HorizontalConcatenateRD4<T>
 where
   T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowDVector<T>>: ToValue
 {
-  fn solve(&self) {          
-    unsafe {
-      let e0_ptr = self.e0.as_vec();
-      let e1_ptr = self.e1.as_vec();
-      let e2_ptr = self.e2.as_vec();
-      let e3_ptr = self.e3.as_vec();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
-      let mut i = 0;
-      for ix in 0..e0_ptr.len() {
-        out_ptr[i] = e0_ptr[ix].clone();
-        i += 1;
-      }
-      for ix in 0..e1_ptr.len() {
-        out_ptr[i] = e1_ptr[ix].clone();
-        i += 1;
-      }
-      for ix in 0..e2_ptr.len() {
-        out_ptr[i] = e2_ptr[ix].clone();
-        i += 1;
-      }
-      for ix in 0..e3_ptr.len() {
-        out_ptr[i] = e3_ptr[ix].clone();
-        i += 1;
-      }
-    }
+  fn solve(&self) {
+    let mut offset = self.e0.copy_into_r(&self.out,0);
+    offset += self.e1.copy_into_r(&self.out,offset);
+    offset += self.e2.copy_into_r(&self.out,offset);
+    self.e3.copy_into_r(&self.out,offset);
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn to_string(&self) -> String { format!("HorizontalConcatenateRD4\n{:#?}", self.out) }
 }
 
-#[derive(Debug)]
 struct HorizontalConcatenateRDN<T> {
   scalar: Vec<(Ref<T>,usize)>,
-  matrix: Vec<(Matrix<T>,usize)>,
+  matrix: Vec<(Box<dyn CopyMat<T>>,usize)>,
   out: Ref<RowDVector<T>>,
 }
 
@@ -356,12 +304,7 @@ where
     unsafe {
       let mut out_ptr = (&mut *(self.out.as_ptr()));
       for (e,i) in &self.matrix {
-        let e0_ptr = e.as_vec();
-        let mut i = *i;
-        for ix in 0..e0_ptr.len() {
-          out_ptr[i] = e0_ptr[ix].clone();
-          i += 1;
-        }
+        let e0_ptr = e.copy_into_r(&self.out,*i);
       }
       for (e,i) in &self.scalar {
         out_ptr[*i] = e.borrow().clone();
@@ -369,7 +312,7 @@ where
     }
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn to_string(&self) -> String { format!("HorizontalConcatenateRDN\n{:#?}", self.out) }
 }
 
 #[derive(Debug)]
@@ -1248,7 +1191,9 @@ macro_rules! impl_horzcat_arms {
               [Value::MutableReference(e0),Value::MutableReference(e1)] => {
                 match (&*e0.borrow(),&*e1.borrow()) {
                   (Value::[<Matrix $kind:camel>](e0),Value::[<Matrix $kind:camel>](e1)) => {
-                    return Ok(Box::new(HorizontalConcatenateRD2{e0: e0.clone(), e1: e1.clone(), out: new_ref(out)}));
+                    let e0 = e0.get_copyable_matrix();
+                    let e1 = e1.get_copyable_matrix();
+                    return Ok(Box::new(HorizontalConcatenateRD2{e0: e0, e1: e1, out: new_ref(out)}));
                   }
                   _ => todo!(),
                 }
@@ -1450,7 +1395,10 @@ macro_rules! impl_horzcat_arms {
               [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2)] => {
                 match (e0.borrow().clone(),e1.borrow().clone(),e2.borrow().clone()) {
                   (Value::[<Matrix $kind:camel>](e0),Value::[<Matrix $kind:camel>](e1),Value::[<Matrix $kind:camel>](e2)) => {
-                    return Ok(Box::new(HorizontalConcatenateRD3{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: new_ref(out)}));
+                    let e0 = e0.get_copyable_matrix();
+                    let e1 = e1.get_copyable_matrix();
+                    let e2 = e2.get_copyable_matrix();
+                    return Ok(Box::new(HorizontalConcatenateRD3{e0: e0, e1: e1, e2: e2, out: new_ref(out)}));
                   }
                   _ => todo!(),
                 }
@@ -1656,7 +1604,11 @@ macro_rules! impl_horzcat_arms {
               [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2), Value::MutableReference(e3)] => {
                 match (e0.borrow().clone(), e1.borrow().clone(), e2.borrow().clone(), e3.borrow().clone()) {
                   (Value::[<Matrix $kind:camel>](e0),Value::[<Matrix $kind:camel>](e1),Value::[<Matrix $kind:camel>](e2),Value::[<Matrix $kind:camel>](e3)) => {
-                    return Ok(Box::new(HorizontalConcatenateRD4{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out)}));
+                    let e0 = e0.get_copyable_matrix();
+                    let e1 = e1.get_copyable_matrix();
+                    let e2 = e2.get_copyable_matrix();
+                    let e3 = e3.get_copyable_matrix();
+                    return Ok(Box::new(HorizontalConcatenateRD4{e0: e0, e1: e1, e2: e2, e3: e3, out: new_ref(out)}));
                   }
                   _ => todo!(),
                 }
@@ -1667,7 +1619,7 @@ macro_rules! impl_horzcat_arms {
           #[cfg(feature = "RowVectorD")]
           (m,1,n) => {
             let mut out = RowDVector::from_element(n,$default);
-            let mut matrix_args: Vec<(Matrix<$kind>,usize)> = vec![];
+            let mut matrix_args: Vec<(Box<dyn CopyMat<$kind>>,usize)> = vec![];
             let mut scalar_args: Vec<(Ref<$kind>,usize)> = vec![];
             let mut i = 0;
             for arg in arguments.iter() {
@@ -1679,8 +1631,8 @@ macro_rules! impl_horzcat_arms {
                 Value::MutableReference(e0) => {
                   match e0.borrow().clone() {
                     Value::[<Matrix $kind:camel>](e0) => {
-                      matrix_args.push((e0.clone(),i));
-                      i += e0.shape()[0];
+                      matrix_args.push((e0.get_copyable_matrix(),i));
+                      i += e0.shape()[1];
                     }
                     Value::[<$kind:camel>](e0) => {
                       scalar_args.push((e0.clone(),i));
