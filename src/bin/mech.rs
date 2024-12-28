@@ -231,11 +231,10 @@ fn main() -> Result<(), MechError> {
             Some(n) => n,
             None => 1,
           };
-          let plan = intrp.plan.as_ptr();
-          let plan_brrw = unsafe { &*plan };
+          let plan_brrw = intrp.plan.borrow();
           let now = Instant::now();
           for i in 0..n {
-            for fxn in plan_brrw {
+            for fxn in plan_brrw.iter() {
               fxn.solve();
             }
           }
