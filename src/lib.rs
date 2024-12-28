@@ -5,18 +5,10 @@
 
 pub extern crate mech_core as core;
 pub extern crate mech_syntax as syntax;
-//pub extern crate mech_program as program;
-//pub extern crate mech_utilities as utilities;
-
-//mod repl;
 
 pub use mech_core::*;
 use mech_core::nodes::Program;
 use mech_interpreter::Interpreter;
-//pub use mech_syntax::compiler::*;
-//pub use mech_program::*;
-//pub use mech_utilities::*;
-//pub use self::repl::*;
 
 extern crate colored;
 use colored::*;
@@ -50,6 +42,10 @@ extern crate lazy_static;
 lazy_static! {
   static ref CORE_MAP: Mutex<HashMap<SocketAddr, (String, SystemTime)>> = Mutex::new(HashMap::new());
 }
+
+mod repl;
+
+pub use self::repl::*;
 
 pub fn pretty_print_tree(tree: &Program) -> String {
   let tree_hash = hash_str(&format!("{:#?}", tree));
