@@ -534,6 +534,7 @@ impl MatrixRow {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct VariableDefine {
+  pub mutable: bool,
   pub var: Var,
   pub expression: Expression,
 }

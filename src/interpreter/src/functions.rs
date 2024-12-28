@@ -10,7 +10,7 @@ pub fn function_define(fxn_def: &FunctionDefine, functions: FunctionsRef) -> MRe
     let arg_id = input_arg.name.hash();
     new_fxn.input.insert(arg_id,input_arg.kind.clone());
     let in_arg = Value::F64(new_ref(F64::new(0.0)));
-    new_fxn.symbols.borrow_mut().insert(arg_id, in_arg);
+    new_fxn.symbols.borrow_mut().insert(arg_id, in_arg, false);
   }
   let output_arg_ids = fxn_def.output.iter().map(|output_arg| {
     let arg_id = output_arg.name.hash();
