@@ -25,6 +25,7 @@ use tabled::{
 };
 use serde_json;
 use std::panic;
+use std::sync::{Arc, Mutex};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -144,7 +145,26 @@ fn main() -> Result<(), MechError> {
   println!("\n                {}                ",format!("v{}",VERSION).truecolor(246,192,78));
   println!("           {}           \n", "www.mech-lang.org");
 
+  let mut caught_inturrupts = Arc::new(Mutex::new(0));
+  let mut ci = caught_inturrupts.clone();
+  ctrlc::set_handler(move || {
+    println!("[Ctrl+C]");
+    let mut caught_inturrupts = ci.lock().unwrap();
+    *caught_inturrupts += 1;
+    if *caught_inturrupts >= 4 {
+      println!("Okay cya!");
+      std::process::exit(0);
+    }
+    println!("Type \":quit\" to terminate this REPL session.");
+    print!("{}", ">: ".truecolor(246,192,78));
+    io::stdout().flush().unwrap();
+  })
+  .expect("Error setting Ctrl-C handler");
   'REPL: loop {
+    {
+      let mut ci = caught_inturrupts.lock().unwrap();
+      *ci = 0;
+    }
     io::stdout().flush().unwrap();
     // Print a prompt 
     // 4, 8, 15, 16, 23, 42
