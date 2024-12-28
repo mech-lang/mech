@@ -70,6 +70,10 @@ leaf!{box_tl_round, "╭", TokenKind::BoxDrawing}
 leaf!{box_tr_round, "╮", TokenKind::BoxDrawing}
 leaf!{box_bl_round, "╰", TokenKind::BoxDrawing}
 leaf!{box_br_round, "╯", TokenKind::BoxDrawing}
+leaf!{box_tl, "┌", TokenKind::BoxDrawing}
+leaf!{box_tr, "┐", TokenKind::BoxDrawing}
+leaf!{box_bl, "└", TokenKind::BoxDrawing}
+leaf!{box_br, "┘", TokenKind::BoxDrawing}
 leaf!{box_cross, "┼", TokenKind::BoxDrawing}
 leaf!{box_horz, "─", TokenKind::BoxDrawing}
 leaf!{box_t_left, "├", TokenKind::BoxDrawing}
@@ -116,7 +120,7 @@ pub fn any(mut input: ParseString) -> ParseResult<String> {
 
 // forbidden_emoji := box_drawing | other_forbidden_shapes ;
 pub fn forbidden_emoji(input: ParseString) -> ParseResult<Token> {
-  alt((box_t_left,box_tl_round,box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_right, box_t_top, box_t_bottom))(input)
+  alt((box_tl, box_br, box_bl, box_tr, box_t_left,box_tl_round,box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
 // emoji := emoji_grapheme+ ;

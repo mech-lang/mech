@@ -72,7 +72,7 @@ pub fn ls() -> String {
     builder.push_record(vec![file_type.to_string(), last_write_time.format("%m/%d/%Y %I:%M %p").to_string(), length, name.to_string()]);
   }
   let mut table = builder.build();
-  table.with(Style::modern())
+  table.with(Style::modern_rounded())
        .with(Panel::header("📂 Directory Listing"));
   format!("Directory: {}\n{table}",current_dir.display())
 }
@@ -84,7 +84,7 @@ pub fn pretty_print_tree(tree: &Program) -> String {
   builder.push_record(vec![format!("Hash: {}", tree_hash)]);
   builder.push_record(vec![format!("{}", formatted_tree)]);
   let mut table = builder.build();
-  table.with(Style::modern())
+  table.with(Style::modern_rounded())
        .with(Panel::header("🌳 Syntax Tree"));
   format!("{table}")
 }
@@ -105,7 +105,7 @@ pub fn whos(intrp: &Interpreter) -> String {
   }
 
   let mut table = builder.build();
-  table.with(Style::modern())       
+  table.with(Style::modern_rounded())       
        .with(Panel::header("🔍 Whos"));
   ;
   format!("{table}")
@@ -138,7 +138,7 @@ pub fn pretty_print_plan(intrp: &Interpreter) -> String {
     builder.push_record(row.clone());
   }
   let mut table = builder.build();
-  table.with(Style::modern())
+  table.with(Style::modern_rounded())
        .with(Panel::header("📋 Plan"));
   format!("{table}")
 }

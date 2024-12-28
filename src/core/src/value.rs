@@ -240,7 +240,7 @@ impl Value {
       Value::Kind(x) => builder.push_record(vec![format!("{:?}",x)]),
     };
     let mut table = builder.build();
-    table.with(Style::modern());
+    table.with(Style::modern_rounded());
     format!("{table}")
   }
 
@@ -634,7 +634,7 @@ impl MechMap {
     builder.push_record(key_strings);
     builder.push_record(element_strings);
     let mut table = builder.build();
-    table.with(Style::modern());
+    table.with(Style::modern_rounded());
     format!("{table}")
   }
 
@@ -673,7 +673,7 @@ impl MechTable {
       builder.push_column(col_string);
     }
     let mut table = builder.build();
-    table.with(Style::modern());
+    table.with(Style::modern_rounded());
     format!("{table}")
   }
 
@@ -706,7 +706,7 @@ impl MechTuple {
     let string_elements: Vec<String> = self.elements.iter().map(|e| e.pretty_print()).collect::<Vec<String>>();
     builder.push_record(string_elements);
     let mut table = builder.build();
-    table.with(Style::modern());
+    table.with(Style::modern_rounded());
     format!("{table}")
   }
 
@@ -743,7 +743,7 @@ impl MechEnum {
     let string_elements: Vec<String> = vec![format!("{}{:?}",self.id,self.variants)];
     builder.push_record(string_elements);
     let mut table = builder.build();
-    table.with(Style::modern());
+    table.with(Style::modern_rounded());
     format!("{table}")
   }
 

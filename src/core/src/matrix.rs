@@ -339,7 +339,7 @@ where T: Debug + Clone + PartialEq + 'static
       _ => todo!(),
     };
     let mut table = builder.build();
-    table.with(Style::modern());
+    table.with(Style::modern_rounded());
     format!("{table}")
   }
 

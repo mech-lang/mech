@@ -71,7 +71,7 @@ impl fmt::Debug for FunctionDefinition {
                     "🔣 Symbols",   &symbols_str,
                     "📋 Plan", &plan_str];
     let mut table = tabled::Table::new(data);
-    table.with(Style::modern())
+    table.with(Style::modern_rounded())
          .with(Panel::header(format!("📈 UserFxn::{}\n({})", self.name, humanize(&self.id))))
          .with(Alignment::left());
     println!("{table}");
@@ -178,7 +178,7 @@ impl SymbolTable {
       builder.push_record(vec!["".to_string()]);
     }
     let mut table = builder.build();
-    table.with(Style::modern())
+    table.with(Style::modern_rounded())
          .with(Panel::header("🔣 Symbols"));
     format!("{table}")
   }
