@@ -135,7 +135,9 @@ fn main() -> Result<(), MechError> {
   
   #[cfg(windows)]
   control::set_virtual_terminal(true).unwrap();
-  clc();
+  if !repl_flag {
+    clc();
+  }
   let mut stdo = stdout();
   stdo.execute(Print(text_logo));
   stdo.execute(cursor::MoveToNextLine(1));
