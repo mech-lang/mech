@@ -3,8 +3,9 @@ use nom::{
   IResult,
   bytes::complete::tag,
   branch::alt,
-  bytes::complete::take_while,
-  combinator::opt,
+  bytes::complete::{take_while, take_until},
+  combinator::{opt, not},
+  multi::separated_list1,
   character::complete::{space0,space1,digit1},
 };
 //use crate::{minify_blocks, read_mech_files};
@@ -16,8 +17,10 @@ pub enum ReplCommand {
   Pause,
   Resume,
   Stop,
+  Ls,
+  Cd(String),
   Step(Option<usize>),
-  Load(String),
+  Load(Vec<String>),
   Save(String),
   Whos(Option<String>),
   Plan,
@@ -37,6 +40,8 @@ pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand> {
     quit_rpl,
     symbols_rpl,
     plan_rpl,
+    ls_rpl,
+    cd_rpl,
     whos_rpl,
     clear_rpl,
     clc_rpl,
@@ -53,6 +58,13 @@ fn help_rpl(input: &str) -> IResult<&str, ReplCommand> {
 fn quit_rpl(input: &str) -> IResult<&str, ReplCommand> {
   let (input, _) = alt((tag("q"), tag("quit"), tag("exit")))(input)?;
   Ok((input, ReplCommand::Quit))
+}
+
+fn cd_rpl(input: &str) -> IResult<&str, ReplCommand> {
+  let (input, _) = tag("cd")(input)?;
+  let (input, _) = space0(input)?;
+  let (input, path) = take_until("\r\n")(input)?;
+  Ok((input, ReplCommand::Cd(path.to_string())))
 }
 
 fn symbols_rpl(input: &str) -> IResult<&str, ReplCommand> {
@@ -84,10 +96,16 @@ fn clc_rpl(input: &str) -> IResult<&str, ReplCommand> {
   Ok((input, ReplCommand::Clc))
 }
 
+fn ls_rpl(input: &str) -> IResult<&str, ReplCommand> {
+  let (input, _) = tag("ls")(input)?;
+  Ok((input, ReplCommand::Ls))
+}
+
 fn load_rpl(input: &str) -> IResult<&str, ReplCommand> {
   let (input, _) = tag("load")(input)?;
   let (input, _) = space1(input)?;
-  Ok((input, ReplCommand::Load(input.to_string())))
+  let (input, path_strings) = separated_list1(space1, alt((take_until(" "),take_until("\r\n"))))(input)?;
+  Ok((input, ReplCommand::Load(path_strings.iter().map(|s| s.to_string()).collect())))
 }
 
 fn save_rpl(input: &str) -> IResult<&str, ReplCommand> {

@@ -57,7 +57,7 @@ fn main() -> Result<(), MechError> {
     .author("Corey Montella corey@mech-lang.org")
     .about(about)
     .arg(Arg::new("mech_paths")
-        .help("Source .mec and .blx files")
+        .help("Source .mec and files")
         .required(false)
         .action(ArgAction::Append))
     .arg(Arg::new("debug")
@@ -83,68 +83,65 @@ fn main() -> Result<(), MechError> {
 
   let debug_flag = matches.get_flag("debug");
   let tree_flag = matches.get_flag("tree");
-  let repl_flag = matches.get_flag("repl");
+  let mut repl_flag = matches.get_flag("repl");
   let time_flag = matches.get_flag("time");
 
   let mut intrp = Interpreter::new();
-  if let Some(mech_paths) = matches.get_one::<String>("mech_paths") {
-    let s = fs::read_to_string(&mech_paths).unwrap();
-    
-    let now = Instant::now();
-    let parse_result = parser::parse(&s);
-    let elapsed_time = now.elapsed();
-    let parse_duration = elapsed_time.as_nanos() as f64;
 
-    match parse_result {
-      Ok(tree) => { 
-        let now = Instant::now();
-        let result = intrp.interpret(&tree);
-        let elapsed_time = now.elapsed();
-        let cycle_duration = elapsed_time.as_nanos() as f64;
-        
-        let result_str = match result {
-          Ok(r) => format!("{}", r.pretty_print()),
-          Err(err) => format!("{:?}", err),
-        };
+  let mut paths = if let Some(m) = matches.get_many::<String>("mech_paths") {
+    m.map(|s| s.to_string()).collect()
+  } else { repl_flag = true; vec![] };
 
-        if debug_flag {
-          println!("{}", intrp.symbols.borrow().pretty_print());
-          println!("{}", pretty_print_plan(&intrp));
-        } 
-        if tree_flag {
-          println!("{}", pretty_print_tree(&tree));
-        }
-        if time_flag {
-          println!("Parse Time:   {:0.2?} ns", parse_duration);
-          println!("Compile Time: {:0.2?} ns", cycle_duration);
-        }
-
-        println!("{}", result_str);
-      },
-      Err(err) => {
-        if let MechErrorKind::ParserError(report, _) = err.kind {
-          parser::print_err_report(&s, &report);
-        } else {
-          panic!("Unexpected error type");
+  match read_mech_files(&paths) {
+    Ok(code) => {
+      for c in code {
+        match c {
+          (file,MechSourceCode::String(s)) => {
+            let now = Instant::now();
+            let parse_result = parser::parse(&s.trim());
+            let elapsed_time = now.elapsed();
+            let parse_duration = elapsed_time.as_nanos() as f64;
+            match parse_result {
+              Ok(tree) => { 
+                let now = Instant::now();
+                let result = intrp.interpret(&tree);
+                let elapsed_time = now.elapsed();
+                let cycle_duration = elapsed_time.as_nanos() as f64;
+                let result_str = match result {
+                  Ok(r) => format!("{}", r.pretty_print()),
+                  Err(err) => format!("{:?}", err),
+                };
+                println!("{}", result_str);
+              },
+              Err(err) => {
+                if let MechErrorKind::ParserError(report, _) = err.kind {
+                  parser::print_err_report(&s, &report);
+                } else {
+                  panic!("Unexpected error type");
+                }
+              }
+            }
+          }
+          _ => todo!(),
         }
       }
     }
-    if !repl_flag {
-      return Ok(());
-    }
-  } 
+    Err(err) => println!("{:?}", err),
+  }
+  if !repl_flag {
+    return Ok(());
+  }
   
   #[cfg(windows)]
   control::set_virtual_terminal(true).unwrap();
-  if !repl_flag {
-    clc();
-  }
+  clc();
   let mut stdo = stdout();
   stdo.execute(Print(text_logo));
   stdo.execute(cursor::MoveToNextLine(1));
   println!("\n                {}                ",format!("v{}",VERSION).truecolor(246,192,78));
   println!("           {}           \n", "www.mech-lang.org");
 
+  // Catch Ctrl-C a couple times before quitting
   let mut caught_inturrupts = Arc::new(Mutex::new(0));
   let mut ci = caught_inturrupts.clone();
   ctrlc::set_handler(move || {
@@ -156,20 +153,16 @@ fn main() -> Result<(), MechError> {
       std::process::exit(0);
     }
     println!("Type \":quit\" to terminate this REPL session.");
-    print!("{}", ">: ".truecolor(246,192,78));
-    io::stdout().flush().unwrap();
-  })
-  .expect("Error setting Ctrl-C handler");
+    print_prompt();
+  }).expect("Error setting Ctrl-C handler");
+  
+  // Start the main REPL loop
   'REPL: loop {
     {
       let mut ci = caught_inturrupts.lock().unwrap();
       *ci = 0;
     }
-    io::stdout().flush().unwrap();
-    // Print a prompt 
-    // 4, 8, 15, 16, 23, 42
-    print!("{}", ">: ".truecolor(246,192,78));
-    io::stdout().flush().unwrap();
+    print_prompt();
     let mut input = String::new();
     io::stdin().read_line(&mut input).unwrap();
 
@@ -187,39 +180,50 @@ fn main() -> Result<(), MechError> {
           // Drop the old interpreter replace it with a new one
           intrp = Interpreter::new();
         }
+        Ok((_, ReplCommand::Ls)) => {
+          println!("{}",ls());
+        }
+        Ok((_, ReplCommand::Cd(path))) => {
+          let path = PathBuf::from(path);
+          env::set_current_dir(&path).unwrap();
+        }
         Ok((_, ReplCommand::Clc)) => clc(),
-        Ok((_, ReplCommand::Load(path))) => {
-          println!("Loading: {:?}", path.trim());
-          let s = match fs::read_to_string(&path.trim()) {
-            Ok(s) => s,
-            Err(err) => {
-              println!("Error reading file: {:?} {:?}", err, path);
-              continue;
-            }
-          };
-          let now = Instant::now();
-          let parse_result = parser::parse(&s);
-          let elapsed_time = now.elapsed();
-          let parse_duration = elapsed_time.as_nanos() as f64;
-          match parse_result {
-            Ok(tree) => { 
-              let now = Instant::now();
-              let result = intrp.interpret(&tree);
-              let elapsed_time = now.elapsed();
-              let cycle_duration = elapsed_time.as_nanos() as f64;
-              let result_str = match result {
-                Ok(r) => format!("{}", r.pretty_print()),
-                Err(err) => format!("{:?}", err),
-              };
-              println!("{}", result_str);
-            },
-            Err(err) => {
-              if let MechErrorKind::ParserError(report, _) = err.kind {
-                parser::print_err_report(&s, &report);
-              } else {
-                panic!("Unexpected error type");
+        Ok((_, ReplCommand::Load(paths))) => {
+          match read_mech_files(&paths) {
+            Ok(code) => {
+              for c in code {
+                match c {
+                  (file,MechSourceCode::String(s)) => {
+                    let now = Instant::now();
+                    let parse_result = parser::parse(&s.trim());
+                    let elapsed_time = now.elapsed();
+                    let parse_duration = elapsed_time.as_nanos() as f64;
+                    match parse_result {
+                      Ok(tree) => { 
+                        let now = Instant::now();
+                        let result = intrp.interpret(&tree);
+                        let elapsed_time = now.elapsed();
+                        let cycle_duration = elapsed_time.as_nanos() as f64;
+                        let result_str = match result {
+                          Ok(r) => format!("{}", r.pretty_print()),
+                          Err(err) => format!("{:?}", err),
+                        };
+                        println!("{}", result_str);
+                      },
+                      Err(err) => {
+                        if let MechErrorKind::ParserError(report, _) = err.kind {
+                          parser::print_err_report(&s, &report);
+                        } else {
+                          panic!("Unexpected error type");
+                        }
+                      }
+                    }
+                  }
+                  _ => todo!(),
+                }
               }
             }
+            Err(err) => println!("{:?}", err),
           }
         }
         Ok((_, ReplCommand::Step(count))) => {
