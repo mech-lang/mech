@@ -18,8 +18,8 @@ gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = "0.2.26"
-mech-syntax = "0.2.26"
+mech-core = "0.2.27"
+mech-syntax = "0.2.27"
 mech-interpreter = "0.2.26"
 
 clap = {version = "4.5.21", features = ["cargo"]}
@@ -70,10 +70,10 @@ mech-wasm = { path = 'src/wasm'}
 #mech-logic = { path = '../machines/logic' }
 
 [patch.'https://gitlab.com/mech-lang/core']
-mech-core = { path = 'src/core', version = '0.2.26' }
+mech-core = { path = 'src/core', version = '0.2.27' }
 
 [patch.'https://gitlab.com/mech-lang/syntax']
-mech-syntax = { path = 'src/syntax', version = '0.2.26' }
+mech-syntax = { path = 'src/syntax', version = '0.2.27' }
 
 [patch.'https://gitlab.com/mech-lang/interpreter']
 mech-interpreter = { path = 'src/interpreter', version = '0.2.26' }
