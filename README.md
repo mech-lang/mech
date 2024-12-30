@@ -39,12 +39,11 @@ cargo build --bin mech --release
 
 ## 🗺️ Project Roadmap
 
-Mech v0.2 is currecntly **beta** status, meaning most intended features are implemented, but there are still rough edges and a general lack of documentation.
-
-This release focuses on specifying data and formulas.
+Mech v0.2 is currecntly **beta** status, meaning most intended features are implemented, but there are still rough edges and a general lack of documentation. Development is focused on testing and documentation.
 
 A Brief Roadmap:
 
+- ☑️ v0.1 - proof of concept system - minimum viable language implementation
 - 📍 v0.2 - data specification - formulas, defining and manipulating data
 - v0.3 - program specification - functions, modules, state machines
 - v0.4 - system specification - tools, distributed programs, capabilities

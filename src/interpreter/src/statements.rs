@@ -60,9 +60,15 @@ pub fn variable_assign(var_assgn: &VariableAssign, plan: Plan, symbols: SymbolTa
   let slc = &var_assgn.target;
   let name = slc.name.hash();
   let symbols_brrw = symbols.borrow();
-  let sink = match symbols_brrw.get(name) {
+  let sink = match symbols_brrw.get_mutable(name) {
     Some(val) => val.borrow().clone(),
-    None => {return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "Note: Variables are defined with the := operator.".to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
+    None => {
+      if !symbols_brrw.contains(name) {
+        return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "Note: Variables are defined with the := operator.".to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});
+      } else { 
+        return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "Note: Variables are defined with the := operator.".to_string(), id: line!(), kind: MechErrorKind::NotMutable(name)});
+      }
+    }
   };
   match &slc.subscript {
     Some(sbscrpt) => {
@@ -145,7 +151,8 @@ pub fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTabl
     result = converted_result;
   };
   let mut symbols_brrw = symbols.borrow_mut();
-  symbols_brrw.insert(id,result.clone());
+  // All variables get added to the symbol table.
+  symbols_brrw.insert(id,result.clone(),var_def.mutable);
   symbols_brrw.dictionary.insert(id,var_def.var.name.to_string());
   Ok(result)
 }

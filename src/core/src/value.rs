@@ -6,13 +6,18 @@ use crate::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::
 use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix3x2, Matrix6, Matrix2};
 use std::hash::{Hash, Hasher};
 use indexmap::set::IndexSet;
-use indexmap::map::IndexMap;
+use indexmap::map::*;
 use tabled::{
   builder::Builder,
   settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
   Tabled,
 };
 use paste::paste;
+use serde::ser::{Serialize, Serializer, SerializeStruct};
+use serde::de::{self, Deserialize, SeqAccess, Deserializer, MapAccess, Visitor};
+use std::fmt;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 macro_rules! impl_as_type {
   ($target_type:ty) => {
@@ -240,7 +245,7 @@ impl Value {
       Value::Kind(x) => builder.push_record(vec![format!("{:?}",x)]),
     };
     let mut table = builder.build();
-    table.with(Style::modern());
+    table.with(Style::modern_rounded());
     format!("{table}")
   }
 
@@ -634,7 +639,7 @@ impl MechMap {
     builder.push_record(key_strings);
     builder.push_record(element_strings);
     let mut table = builder.build();
-    table.with(Style::modern());
+    table.with(Style::modern_rounded());
     format!("{table}")
   }
 
@@ -673,7 +678,7 @@ impl MechTable {
       builder.push_column(col_string);
     }
     let mut table = builder.build();
-    table.with(Style::modern());
+    table.with(Style::modern_rounded());
     format!("{table}")
   }
 
@@ -706,7 +711,7 @@ impl MechTuple {
     let string_elements: Vec<String> = self.elements.iter().map(|e| e.pretty_print()).collect::<Vec<String>>();
     builder.push_record(string_elements);
     let mut table = builder.build();
-    table.with(Style::modern());
+    table.with(Style::modern_rounded());
     format!("{table}")
   }
 
@@ -743,7 +748,7 @@ impl MechEnum {
     let string_elements: Vec<String> = vec![format!("{}{:?}",self.id,self.variants)];
     builder.push_record(string_elements);
     let mut table = builder.build();
-    table.with(Style::modern());
+    table.with(Style::modern_rounded());
     format!("{table}")
   }
 

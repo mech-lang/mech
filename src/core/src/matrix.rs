@@ -10,6 +10,7 @@ use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 use std::slice::Iter;
 use std::iter::Peekable;
+use serde::ser::{Serialize, Serializer, SerializeStruct};
 
 // Matrix ---------------------------------------------------------------------
 
@@ -339,7 +340,7 @@ where T: Debug + Clone + PartialEq + 'static
       _ => todo!(),
     };
     let mut table = builder.build();
-    table.with(Style::modern());
+    table.with(Style::modern_rounded());
     format!("{table}")
   }
 

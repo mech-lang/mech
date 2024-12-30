@@ -5,18 +5,10 @@
 
 pub extern crate mech_core as core;
 pub extern crate mech_syntax as syntax;
-//pub extern crate mech_program as program;
-//pub extern crate mech_utilities as utilities;
-
-//mod repl;
 
 pub use mech_core::*;
 use mech_core::nodes::Program;
 use mech_interpreter::Interpreter;
-//pub use mech_syntax::compiler::*;
-//pub use mech_program::*;
-//pub use mech_utilities::*;
-//pub use self::repl::*;
 
 extern crate colored;
 use colored::*;
@@ -44,11 +36,49 @@ use std::sync::Mutex;
 use std::net::{SocketAddr, UdpSocket, TcpListener, TcpStream};
 use std::collections::HashMap;
 use crossbeam_channel::Sender;
+use std::{fs,env};
 #[macro_use]
 extern crate lazy_static;
 
 lazy_static! {
   static ref CORE_MAP: Mutex<HashMap<SocketAddr, (String, SystemTime)>> = Mutex::new(HashMap::new());
+}
+
+mod repl;
+mod serve;
+mod run;
+
+pub use self::repl::*;
+pub use self::serve::*;
+pub use self::run::*;
+
+// Print a prompt 
+// 4, 8, 15, 16, 23, 42
+pub fn print_prompt() {
+  stdout().flush();
+  print!("{}", ">: ".truecolor(246,192,78));
+  stdout().flush();
+}
+
+pub fn ls() -> String {
+  let current_dir = env::current_dir().unwrap();
+  let mut builder = Builder::default();
+  builder.push_record(vec!["Mode","Last Write Time","Length","Name"]);
+  for entry in fs::read_dir("./").unwrap() {
+    let entry = entry.unwrap();
+    let path = entry.path();
+    let metadata = fs::metadata(&path).unwrap();
+    let file_type = if metadata.is_dir() { "d----" } else { "-a---" };
+    let last_write_time = metadata.modified().unwrap();
+    let last_write_time: chrono::DateTime<chrono::Local> = last_write_time.into();
+    let length = if metadata.is_file() { metadata.len().to_string() } else { "".to_string() };
+    let name = path.file_name().unwrap().to_str().unwrap();
+    builder.push_record(vec![file_type.to_string(), last_write_time.format("%m/%d/%Y %I:%M %p").to_string(), length, name.to_string()]);
+  }
+  let mut table = builder.build();
+  table.with(Style::modern_rounded())
+       .with(Panel::header("📂 Directory Listing"));
+  format!("Directory: {}\n{table}",current_dir.display())
 }
 
 pub fn pretty_print_tree(tree: &Program) -> String {
@@ -58,7 +88,7 @@ pub fn pretty_print_tree(tree: &Program) -> String {
   builder.push_record(vec![format!("Hash: {}", tree_hash)]);
   builder.push_record(vec![format!("{}", formatted_tree)]);
   let mut table = builder.build();
-  table.with(Style::modern())
+  table.with(Style::modern_rounded())
        .with(Panel::header("🌳 Syntax Tree"));
   format!("{table}")
 }
@@ -79,7 +109,7 @@ pub fn whos(intrp: &Interpreter) -> String {
   }
 
   let mut table = builder.build();
-  table.with(Style::modern())       
+  table.with(Style::modern_rounded())       
        .with(Panel::header("🔍 Whos"));
   ;
   format!("{table}")
@@ -112,7 +142,7 @@ pub fn pretty_print_plan(intrp: &Interpreter) -> String {
     builder.push_record(row.clone());
   }
   let mut table = builder.build();
-  table.with(Style::modern())
+  table.with(Style::modern_rounded())
        .with(Panel::header("📋 Plan"));
   format!("{table}")
 }
@@ -271,28 +301,22 @@ impl IndexedString {
       Err("Row index out of bounds".to_string())
     }
   }
-
-
 }
 
-//extern crate nom;
+pub fn read_mech_files(mech_paths: &Vec<String>) -> MResult<Vec<(String,MechSourceCode)>> {
+  let mut code: Vec<(String,MechSourceCode)> = Vec::new();
 
-/*
-pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<(String,MechCode)>, MechError> {
-
-  let mut code: Vec<(String,MechCode)> = Vec::new();
-
-  let read_file_to_code = |path: &Path| -> Result<Vec<(String,MechCode)>, MechError> {
-    let mut code: Vec<(String,MechCode)> = Vec::new();
+  let read_file_to_code = |path: &Path| -> Result<Vec<(String,MechSourceCode)>, MechError> {
+    let mut code: Vec<(String,MechSourceCode)> = Vec::new();
     match (path.to_str(), path.extension())  {
       (Some(name), Some(extension)) => {
         match extension.to_str() {
-          Some("blx") => {
+          /*Some("blx") => {
             match File::open(name) {
               Ok(file) => {
                 println!("{} {}", "[Loading]".truecolor(153,221,85), name);
                 let mut reader = BufReader::new(file);
-                let mech_code: Result<MechCode, bincode::Error> = bincode::deserialize_from(&mut reader);
+                let mech_code: Result<MechSourceCode, bincode::Error> = bincode::deserialize_from(&mut reader);
                 match mech_code {
                   Ok(c) => {code.push((name.to_string(),c));},
                   Err(err) => {
@@ -304,14 +328,29 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<(String,MechCode)
                 return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1248, kind: MechErrorKind::None});
               },
             };
-          }
+          }*/
           Some("mec") | Some("🤖") => {
             match File::open(name) {
               Ok(mut file) => {
                 println!("{} {}", "[Loading]".truecolor(153,221,85), name);
                 let mut buffer = String::new();
                 file.read_to_string(&mut buffer);
-                code.push((name.to_string(),MechCode::String(buffer)));
+                code.push((name.to_string(),MechSourceCode::String(buffer)));
+              }
+              Err(err) => {
+                return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1249, kind: MechErrorKind::None});
+              },
+            };
+          }
+          Some("csv") => {
+            match File::open(name) {
+              Ok(mut file) => {
+                println!("{} {}", "[Loading]".truecolor(153,221,85), name);
+                let mut buffer = String::new();
+                let mut rdr = csv::Reader::from_reader(file);
+                for result in rdr.records() {
+                  println!("{:?}", result);
+                }
               }
               Err(err) => {
                 return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1249, kind: MechErrorKind::None});
@@ -329,12 +368,12 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<(String,MechCode)
   for path_str in mech_paths {
     let path = Path::new(path_str);
     // Compile a .mec file on the web
-    if path.to_str().unwrap().starts_with("https") {
+    if path_str.starts_with("https") || path_str.starts_with("http") {
       println!("{} {}", "[Downloading]".truecolor(153,221,85), path.display());
-      match reqwest::blocking::get(path.to_str().unwrap()) {
+      match reqwest::blocking::get(path_str) {
         Ok(response) => {
           match response.text() {
-            Ok(text) => code.push((path.to_str().unwrap().to_owned(),MechCode::String(text))),
+            Ok(text) => code.push((path_str.to_owned(),MechSourceCode::String(text))),
             _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1241, kind: MechErrorKind::None});},
           }
         }
@@ -360,26 +399,26 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> Result<Vec<(String,MechCode)
     };
   }
   Ok(code)
-}*/
+}
 
 /*
-pub fn compile_code(code: Vec<(String,MechCode)>) -> Result<Vec<Vec<MiniBlock>>,MechError> {
+pub fn compile_code(code: Vec<(String,MechSourceCode)>) -> Result<Vec<Vec<MiniBlock>>,MechError> {
   print!("{}", "[Compiling] ".truecolor(153,221,85));
   stdout().flush();
   let mut sections = vec![];
   let now = Instant::now();
   for (_,c) in code {
     match c {
-      MechCode::MiniCores(cores) => {
+      MechSourceCode::MiniCores(cores) => {
         todo!()
       }
-      MechCode::String(c) => {
+      MechSourceCode::String(c) => {
         let mut compiler = Compiler::new();
         let compiled = compiler.compile_str(&c)?;
         let mut mb = minify_blocks(&compiled);
         sections.append(&mut mb);
       },
-      MechCode::MiniBlocks(mut mb) => {
+      MechSourceCode::MiniBlocks(mut mb) => {
         sections.append(&mut mb);
       },
     }

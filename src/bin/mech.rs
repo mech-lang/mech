@@ -1,5 +1,6 @@
 #![feature(hash_extract_if)]
 #![allow(warnings)]
+extern crate tokio;
 use mech::*;
 use mech_core::*;
 use mech_syntax::parser;
@@ -9,6 +10,7 @@ use std::time::Instant;
 use std::fs;
 use std::env;
 use std::io;
+
 use colored::*;
 use std::io::{Write, BufReader, BufWriter, stdout};
 use crossterm::{
@@ -24,10 +26,13 @@ use tabled::{
 };
 use serde_json;
 use std::panic;
+use std::sync::{Arc, Mutex};
+
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-fn main() -> Result<(), MechError> {
+#[tokio::main]
+async fn main() -> Result<(), MechError> {
   /*panic::set_hook(Box::new(|panic_info| {
     if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
       println!("Mech Language Error: {}", s);
@@ -55,7 +60,7 @@ fn main() -> Result<(), MechError> {
     .author("Corey Montella corey@mech-lang.org")
     .about(about)
     .arg(Arg::new("mech_paths")
-        .help("Source .mec and .blx files")
+        .help("Source .mec and files")
         .required(false)
         .action(ArgAction::Append))
     .arg(Arg::new("debug")
@@ -63,6 +68,22 @@ fn main() -> Result<(), MechError> {
         .long("debug")
         .help("Print debug info")
         .action(ArgAction::SetTrue))
+    .subcommand(Command::new("serve")
+      .about("Serve Mech program over an HTTP server.")
+      .arg(Arg::new("mech_serve_file_paths")
+        .help("Source .mec and .blx files")
+        .required(false)
+        .action(ArgAction::Append))
+      .arg(Arg::new("port")
+        .short('p')
+        .long("port")
+        .value_name("PORT")
+        .help("Sets the port for the server (8081)"))
+      .arg(Arg::new("address")
+        .short('a')
+        .long("address")
+        .value_name("ADDRESS")
+        .help("Sets the address of the server (127.0.0.1)")))
     .arg(Arg::new("tree")
         .long("tree")
         .help("Print parse tree")
@@ -81,56 +102,36 @@ fn main() -> Result<(), MechError> {
 
   let debug_flag = matches.get_flag("debug");
   let tree_flag = matches.get_flag("tree");
-  let repl_flag = matches.get_flag("repl");
+  let mut repl_flag = matches.get_flag("repl");
   let time_flag = matches.get_flag("time");
 
   let mut intrp = Interpreter::new();
-  if let Some(mech_paths) = matches.get_one::<String>("mech_paths") {
-    let s = fs::read_to_string(&mech_paths).unwrap();
+
+  // Serve
+  // ----------------------------------------------------------------
+  if let Some(matches) = matches.subcommand_matches("serve") {
+
+    let port: String = matches.get_one::<String>("port").cloned().unwrap_or("8081".to_string());
+    let address = matches.get_one::<String>("address").cloned().unwrap_or("127.0.0.1".to_string());
+    let full_address: String = format!("{}:{}",address,port);
+    let mech_paths: Vec<String> = matches.get_many::<String>("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     
-    let now = Instant::now();
-    let parse_result = parser::parse(&s);
-    let elapsed_time = now.elapsed();
-    let parse_duration = elapsed_time.as_nanos() as f64;
+    serve_mech(&full_address, mech_paths).await;
+    
+  }
 
-    match parse_result {
-      Ok(tree) => { 
-        let now = Instant::now();
-        let result = intrp.interpret(&tree);
-        let elapsed_time = now.elapsed();
-        let cycle_duration = elapsed_time.as_nanos() as f64;
-        
-        let result_str = match result {
-          Ok(r) => format!("{}", r.pretty_print()),
-          Err(err) => format!("{:?}", err),
-        };
+  // Run
+  // ----------------------------------------------------------------
+  let mut paths = if let Some(m) = matches.get_many::<String>("mech_paths") {
+    m.map(|s| s.to_string()).collect()
+  } else { repl_flag = true; vec![] };
 
-        if debug_flag {
-          println!("{}", intrp.symbols.borrow().pretty_print());
-          println!("{}", pretty_print_plan(&intrp));
-        } 
-        if tree_flag {
-          println!("{}", pretty_print_tree(&tree));
-        }
-        if time_flag {
-          println!("Parse Time:   {:0.2?} ns", parse_duration);
-          println!("Compile Time: {:0.2?} ns", cycle_duration);
-        }
+  // Run the code
+  parse_and_run_mech_code(&paths, &mut intrp);
 
-        println!("{}", result_str);
-      },
-      Err(err) => {
-        if let MechErrorKind::ParserError(report, _) = err.kind {
-          parser::print_err_report(&s, &report);
-        } else {
-          panic!("Unexpected error type");
-        }
-      }
-    }
-    if !repl_flag {
-      return Ok(());
-    }
-  } 
+  if !repl_flag {
+    return Ok(());
+  }
   
   #[cfg(windows)]
   control::set_virtual_terminal(true).unwrap();
@@ -140,64 +141,86 @@ fn main() -> Result<(), MechError> {
   stdo.execute(cursor::MoveToNextLine(1));
   println!("\n                {}                ",format!("v{}",VERSION).truecolor(246,192,78));
   println!("           {}           \n", "www.mech-lang.org");
+  println!("Type \":help\" for a list of all commands.\n");
 
+  // Catch Ctrl-C a couple times before quitting
+  let mut caught_inturrupts = Arc::new(Mutex::new(0));
+  let mut ci = caught_inturrupts.clone();
+  ctrlc::set_handler(move || {
+    println!("[Ctrl+C]");
+    let mut caught_inturrupts = ci.lock().unwrap();
+    *caught_inturrupts += 1;
+    if *caught_inturrupts >= 3 {
+      println!("Okay cya!");
+      std::process::exit(0);
+    }
+    println!("Type \":quit\" to terminate this REPL session.");
+    print_prompt();
+  }).expect("Error setting Ctrl-C handler");
+  
+  // REPL
+  // ----------------------------------------------------------------
   'REPL: loop {
-    io::stdout().flush().unwrap();
-    // Print a prompt 
-    // 4, 8, 15, 16, 23, 42
-    print!("{}", ">: ".truecolor(246,192,78));
-    io::stdout().flush().unwrap();
+    {
+      let mut ci = caught_inturrupts.lock().unwrap();
+      *ci = 0;
+    }
+    // Prompt the user for input
+    print_prompt();
     let mut input = String::new();
     io::stdin().read_line(&mut input).unwrap();
 
+    // Parse the input
     if input.chars().nth(0) == Some(':') {
-      // Treat as command 
-      match input.as_str().trim() {
-        ":h" | ":help" => todo!(),
-        ":q" | ":quit" | ":exit" => break 'REPL,
-        ":s" | ":symbols" => println!("{}", intrp.symbols.borrow().pretty_print()),
-        ":p" | ":plan" => println!("{}", pretty_print_plan(&intrp)),
-        ":w" | ":whos" => println!("{}",whos(&intrp)),
-        ":clear" => {
+      // loop
+      let repl_command = parse_repl_command(&input.as_str());
+
+      match repl_command {
+        Ok((_, ReplCommand::Help)) => {
+          println!("\nMech REPL Commands:");
+          println!("----------------------------------------------------------");
+          println!("{:<15} {:<30}", ":help, :h", "Display this help message");
+          println!("{:<15} {:<30}", ":quit, :q", "Quit the REPL");
+          println!("{:<15} {:<30}", ":symbols, :s", "Display all symbols");
+          println!("{:<15} {:<30}", ":plan, :p", "Display the plan");
+          println!("{:<15} {:<30}", ":whos, :w", "Display all symbols");
+          println!("{:<15} {:<30}", ":clear", "Clear the interpreter state");
+          println!("{:<15} {:<30}", ":clc", "Clear the screen");
+          println!("{:<15} {:<30}", ":load", "Load a file");
+          println!("{:<15} {:<30}", ":ls", "List directory contents");
+          println!("{:<15} {:<30}", ":cd", "Change directory");
+          println!("{:<15} {:<30}", ":step", "Step through the plan\n");
+        }
+        Ok((_, ReplCommand::Quit)) => break 'REPL,
+        Ok((_, ReplCommand::Symbols(name))) => println!("{}", intrp.symbols.borrow().pretty_print()),
+        Ok((_, ReplCommand::Plan)) => println!("{}", pretty_print_plan(&intrp)),
+        Ok((_, ReplCommand::Whos(name))) => println!("{}",whos(&intrp)),
+        Ok((_, ReplCommand::Clear(name))) => {
           // Drop the old interpreter replace it with a new one
           intrp = Interpreter::new();
-          // Clear the screen.
-          clc();
         }
-        ":clc" => clc(),
-        ":load" => {
-          /*let s = fs::read_to_string(&mech_paths).unwrap();
+        Ok((_, ReplCommand::Ls)) => {
+          println!("{}",ls());
+        }
+        Ok((_, ReplCommand::Cd(path))) => {
+          let path = PathBuf::from(path);
+          env::set_current_dir(&path).unwrap();
+        }
+        Ok((_, ReplCommand::Clc)) => clc(),
+        Ok((_, ReplCommand::Load(paths))) => {
+          parse_and_run_mech_code(&paths, &mut intrp);
+        }
+        Ok((_, ReplCommand::Step(count))) => {
+          let n = match count {
+            Some(n) => n,
+            None => 1,
+          };
+          let plan_brrw = intrp.plan.borrow();
           let now = Instant::now();
-          let parse_result = parser::parse(&s);
-          let elapsed_time = now.elapsed();
-          let parse_duration = elapsed_time.as_nanos() as f64;
-          match parse_result {
-            Ok(tree) => { 
-              let now = Instant::now();
-              let result = intrp.interpret(&tree);
-              let elapsed_time = now.elapsed();
-              let cycle_duration = elapsed_time.as_nanos() as f64;
-              let result_str = match result {
-                Ok(r) => format!("{}", r.pretty_print()),
-                Err(err) => format!("{:?}", err),
-              };
-              println!("{}", result_str);
-            },
-            Err(err) => {
-              if let MechErrorKind::ParserError(report, _) = err.kind {
-                parser::print_err_report(&s, &report);
-              } else {
-                panic!("Unexpected error type");
-              }
+          for i in 0..n {
+            for fxn in plan_brrw.iter() {
+              fxn.solve();
             }
-          }*/
-        }
-        ":step" => {
-          let plan = intrp.plan.as_ptr();
-          let plan_brrw = unsafe { &*plan };
-          let now = Instant::now();
-          for fxn in plan_brrw {
-            fxn.solve();
           }
           let elapsed_time = now.elapsed();
           let cycle_duration = elapsed_time.as_nanos() as f64;
@@ -206,16 +229,16 @@ fn main() -> Result<(), MechError> {
         x => {
           let err = MechError{
             file: file!().to_string(),  
-            tokens: vec![], 
-            msg: "".to_string(), 
-            id: line!(), 
-            kind: MechErrorKind::UnknownCommand(x.to_string()) 
+            tokens: vec![],
+            msg: "".to_string(),
+            id: line!(),
+            kind: MechErrorKind::UnknownCommand(input.clone()),
           };
-          println!("{:?}",err);
+          println!("{:?}",x);
         }
       }
     } else if input.trim() == "" {
-      // loop
+      continue;
     } else {
       // Treat as code
       match parser::parse(&input) {

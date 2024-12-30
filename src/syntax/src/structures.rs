@@ -193,33 +193,33 @@ pub fn field(input: ParseString) -> ParseResult<Field> {
 
 // box_drawing_char := box_tr_round | box_bl_round | box_vert | box_cross | box_horz | box_t_left | box_t_right | box_t_top | box_t_bottom ;
 pub fn box_drawing_char(input: ParseString) -> ParseResult<Token> {
-  alt((box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
+  alt((box_tl, box_br, box_bl, box_tr, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
 // box_drawing_emoji := box_tl_round | box_br_round | box_tr_round | box_bl_round | box_vert | box_cross | box_horz | box_t_left | box_t_right | box_t_top | box_t_bottom ;
 pub fn box_drawing_emoji(input: ParseString) -> ParseResult<Token> {
-  alt((box_tl_round, box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
+  alt((box_tl, box_br, box_bl, box_tr, box_tl_round, box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
 // matrix_start := box_tl_round | left_bracket ;
 pub fn matrix_start(input: ParseString) -> ParseResult<Token> {
-  alt((box_tl_round, left_bracket))(input)
+  alt((box_tl_round, box_tl, left_bracket))(input)
 }
 
 // matrix_end := box_br_round | right_bracket ;
 pub fn matrix_end(input: ParseString) -> ParseResult<Token> {
-  let result = alt((box_br_round, right_bracket))(input);
+  let result = alt((box_br_round, box_br, right_bracket))(input);
   result
 }
 
 // table_start := box_tl_round | left_brace ;
 pub fn table_start(input: ParseString) -> ParseResult<Token> {
-  alt((box_tl_round, left_brace))(input)
+  alt((box_tl_round, box_tl, left_brace))(input)
 }
 
 // table_end := box_br_round | right_brace ;
 pub fn table_end(input: ParseString) -> ParseResult<Token> {
-  let result = alt((box_br_round, right_brace))(input);
+  let result = alt((box_br_round, box_br, right_brace))(input);
   result
 }
 

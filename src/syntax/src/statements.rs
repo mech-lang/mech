@@ -118,11 +118,16 @@ pub fn exp_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
 pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
+  let (input, mutable) = opt(tilde)(input)?; 
   let (input, var) = var(input)?;
   let (input, _) = labelr!(null(is_not(assign_operator)), skip_nil, msg1)(input)?;
   let (input, _) = define_operator(input)?;
   let (input, expression) = label!(expression, msg2)(input)?;
-  Ok((input, VariableDefine{var,expression}))
+  let mutable = match mutable {
+    Some(_) => true,
+    None => false,
+  };
+  Ok((input, VariableDefine{mutable, var, expression}))
 }
 
 // variable_assign := slice_ref, !define-opertor, assign_operator, expression ;

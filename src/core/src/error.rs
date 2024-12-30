@@ -50,6 +50,7 @@ pub enum MechErrorKind {
   //IncorrectFunctionArgumentType,
   ZeroIndex,                                         // Zero cannot ever be used as an index.
   VariableRedefined(u64),
+  NotMutable(u64), 
   BlockDisabled,
   IoError,
   GenericError(String),
@@ -71,6 +72,7 @@ pub enum MechErrorKind {
   //MissingCapability(Capability),
   InvalidCapabilityToken,
   UnknownCommand(String),
+  NoCode,
   None,
 }
 

@@ -1,11 +1,11 @@
 [package]
 name = "mech-wasm"
-version = "0.2.23"
+version = "0.2.27"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "A web assembly wrapper for Mech core and syntax. Allows Mech to be embedded in the browser."
 documentation = "http://docs.mech-lang.org"
 homepage = "https://mech-lang.org"
-repository = "https://github.com/mech-lang/wasm"
+repository = "https://github.com/mech-lang/mech"
 keywords = ["mech", "language", "programming", "wasm", "reactive"]
 categories = ["science::robotics", "science", "wasm", "web-programming"]
 license = "Apache-2.0"
@@ -13,23 +13,23 @@ readme = "README.md"
 edition = "2021"
 
 [badges]
-gitlab = { repository = "mech-lang/wasm", branch = "main" }
+gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-mech-core = "0.2.23"
-mech-syntax = "0.2.23"
-mech-interpreter = "0.2.23"
+mech-core = "0.2.27"
+mech-syntax = "0.2.27"
+mech-interpreter = "0.2.27"
 
 hashbrown = "0.15.2"
 wasm-bindgen = "0.2.99"
 bincode = "1.3.3"
 js-sys = "0.3.76"
 lazy_static = "1.5.0"
-miniz_oxide = "0.8.0"
+miniz_oxide = "0.8.2"
 base64 = "0.22.1"
 
 [dev-dependencies]

@@ -355,37 +355,37 @@ test_interpreter!(interpret_function_call_native,r#"math/sin(1.5707963267948966)
 test_interpreter!(interpret_function_call_native_cos,r#"math/cos(0.0)"#, Value::F64(new_ref(F64::new(1.0))));
 test_interpreter!(interpret_function_call_native_vector2,"math/cos([0.0 0.0])", new_ref(RowVector2::from_vec(vec![F64::new(1.0),F64::new(1.0)])).to_value());
 
-test_interpreter!(interpret_set_value,"x := 1.23; x = 4.56;", Value::F64(new_ref(F64::new(4.56))));
-test_interpreter!(interpret_set_value_row_vector,"x := [6,2]; x[1] = 4; x[1];", Value::F64(new_ref(F64::new(4.0))));
-test_interpreter!(interpret_set_value_col_vector,"x := [false false true true]'; x[1] = true; x[1]", Value::Bool(new_ref(true)));
-test_interpreter!(interpret_set_value_scalar_scalar,"x := [1 2; 3 4]; x[2,2] = 42; x[2,2];", Value::F64(new_ref(F64::new(42.0))));
-test_interpreter!(interpret_set_value_all,"x := [1 2; 3 4]; x[:] = 42; x[1] + x[2] + x[3] + x[4]; ", Value::F64(new_ref(F64::new(168.0))));
-test_interpreter!(interpret_set_value_all_scalar,"x := [1 2; 3 4]; x[:,1] = 42; x[1] + x[2] + x[3] + x[4]", Value::F64(new_ref(F64::new(90.0))));
-test_interpreter!(interpret_set_value_scalar_all,"x := [1 2; 3 4]; x[1,:] = 42; x[1] + x[3];", Value::F64(new_ref(F64::new(84.0))));
-test_interpreter!(interpret_set_value_slice,"x := [1 2 3 4]; x[[1 3]] = 42; x[1] + x[2] + x[3] + x[4];", Value::F64(new_ref(F64::new(90.0))));
-test_interpreter!(interpret_set_value_scalar_slice,"x := [1 2 3; 4 5 6; 7 8 9]; x[1,[1,3]] = 42; x[1] + x[7];", Value::F64(new_ref(F64::new(84.0))));
-test_interpreter!(interpret_set_value_slice_slice,"x := [1 2 3; 5 6 7; 9 10 11]; x[1..3,1..3] = 42; x[1] + x[2] + x[4] + x[5]", Value::F64(new_ref(F64::new(168.0))));
-test_interpreter!(interpret_set_value_all_slice,"x := [1 2 3; 5 6 7]; x[:,1..3] = 42; x[1] + x[2] + x[3] + x[4] + x[5] + x[6]", Value::F64(new_ref(F64::new(178.0))));
-test_interpreter!(interpret_set_value_all_slice_vec,"x := [1;6]; x = [4;5]; x[1] + x[2];", Value::F64(new_ref(F64::new(9.0))));
-test_interpreter!(interpret_set_value_slice_all,"x := [1 2 3; 5 6 7]'; x[1..3,:] = 42; x[1] + x[2] + x[3] + x[4] + x[5] + x[6]", Value::F64(new_ref(F64::new(178.0))));
-test_interpreter!(interpret_set_value_slice_vec,"x := [1 2 3 4]; x[1..=3] = [10 20 30]; x[1] + x[2] + x[3] + x[4]", Value::F64(new_ref(F64::new(64.0))));
+test_interpreter!(interpret_set_value,"~x := 1.23; x = 4.56;", Value::F64(new_ref(F64::new(4.56))));
+test_interpreter!(interpret_set_value_row_vector,"~x := [6,2]; x[1] = 4;", new_ref(RowVector2::from_vec(vec![F64::new(4.0),F64::new(2.0)])).to_value());
+test_interpreter!(interpret_set_value_col_vector,"~x := [false false true true]'; x[1] = true; x[1]", Value::Bool(new_ref(true)));
+test_interpreter!(interpret_set_value_scalar_scalar,"~x := [1 2; 3 4]; x[2,2] = 42; x[2,2];", Value::F64(new_ref(F64::new(42.0))));
+test_interpreter!(interpret_set_value_all,"~x := [1 2; 3 4]; x[:] = 42; x[1] + x[2] + x[3] + x[4]; ", Value::F64(new_ref(F64::new(168.0))));
+test_interpreter!(interpret_set_value_all_scalar,"~x := [1 2; 3 4]; x[:,1] = 42; x[1] + x[2] + x[3] + x[4]", Value::F64(new_ref(F64::new(90.0))));
+test_interpreter!(interpret_set_value_scalar_all,"~x := [1 2; 3 4]; x[1,:] = 42; x[1] + x[3];", Value::F64(new_ref(F64::new(84.0))));
+test_interpreter!(interpret_set_value_slice,"~x := [1 2 3 4]; x[[1 3]] = 42; x[1] + x[2] + x[3] + x[4];", Value::F64(new_ref(F64::new(90.0))));
+test_interpreter!(interpret_set_value_scalar_slice,"~x := [1 2 3; 4 5 6; 7 8 9]; x[1,[1,3]] = 42; x[1] + x[7];", Value::F64(new_ref(F64::new(84.0))));
+test_interpreter!(interpret_set_value_slice_slice,"~x := [1 2 3; 5 6 7; 9 10 11]; x[1..3,1..3] = 42; x[1] + x[2] + x[4] + x[5]", Value::F64(new_ref(F64::new(168.0))));
+test_interpreter!(interpret_set_value_all_slice,"~x := [1 2 3; 5 6 7]; x[:,1..3] = 42; x[1] + x[2] + x[3] + x[4] + x[5] + x[6]", Value::F64(new_ref(F64::new(178.0))));
+test_interpreter!(interpret_set_value_all_slice_vec,"~x := [1;6]; x = [4;5]; x[1] + x[2];", Value::F64(new_ref(F64::new(9.0))));
+test_interpreter!(interpret_set_value_slice_all,"~x := [1 2 3; 5 6 7]'; x[1..3,:] = 42; x[1] + x[2] + x[3] + x[4] + x[5] + x[6]", Value::F64(new_ref(F64::new(178.0))));
+test_interpreter!(interpret_set_value_slice_vec,"~x := [1 2 3 4]; x[1..=3] = [10 20 30]; x[1] + x[2] + x[3] + x[4]", Value::F64(new_ref(F64::new(64.0))));
 
-test_interpreter!(interpret_set_record_field,"x := {a: 1, b: true}; x.a = 2; x.a;", Value::F64(new_ref(F64::new(2.0))));
-test_interpreter!(interpret_set_record_field2,"x := {a: 1, b: true}; x.b = false; x.b;", Value::Bool(new_ref(false)));
-test_interpreter!(interpret_set_record_field3,"x := {a: 1<u64>, b: true}; x.a = 2<u64>; x.a;", Value::U64(new_ref(2)));
+test_interpreter!(interpret_set_record_field,"~x := {a: 1, b: true}; x.a = 2; x.a;", Value::F64(new_ref(F64::new(2.0))));
+test_interpreter!(interpret_set_record_field2,"~x := {a: 1, b: true}; x.b = false; x.b;", Value::Bool(new_ref(false)));
+test_interpreter!(interpret_set_record_field3,"~x := {a: 1<u64>, b: true}; x.a = 2<u64>; x.a;", Value::U64(new_ref(2)));
 
-test_interpreter!(interpret_set_table_col,"x := { x<f64> y<f64> | 1 2; 3 4 }; x.x = [42;46]; y := x.x; y[1] + y[2]", Value::F64(new_ref(F64::new(88.0))));
-test_interpreter!(interpret_set_table_col2,"x := { x<f64> y<f64> | 1 2; 3 4; 5 6; 7 8}; x.x = [42;46;47;48]; y := x.x; y[1] + y[2] + y[3] + y[4];", Value::F64(new_ref(F64::new(183.0))));
+test_interpreter!(interpret_set_table_col,"~x := { x<f64> y<f64> | 1 2; 3 4 }; x.x = [42;46]; y := x.x; y[1] + y[2]", Value::F64(new_ref(F64::new(88.0))));
+test_interpreter!(interpret_set_table_col2,"~x := { x<f64> y<f64> | 1 2; 3 4; 5 6; 7 8}; x.x = [42;46;47;48]; y := x.x; y[1] + y[2] + y[3] + y[4];", Value::F64(new_ref(F64::new(183.0))));
 
-test_interpreter!(interpret_set_logical,"x := [1 2 3]; ix := [true false true]; x[ix] = 4; x[1] + x[2] + x[3];", Value::F64(new_ref(F64::new(10.0))));
-test_interpreter!(interpret_set_logical2,"x := [1 2 3 4]; ix := [true false true true]; x[ix] = 5; x[1] + x[2] + x[3] + x[4];", Value::F64(new_ref(F64::new(17.0))));
-test_interpreter!(interpret_set_logical_scalar,"x := [1 2 3]; x[4 > 3] = 5; x[1] + x[2] + x[3]", Value::F64(new_ref(F64::new(15.0))));
+test_interpreter!(interpret_set_logical,"~x := [1 2 3]; ix := [true false true]; x[ix] = 4; x[1] + x[2] + x[3];", Value::F64(new_ref(F64::new(10.0))));
+test_interpreter!(interpret_set_logical2,"~x := [1 2 3 4]; ix := [true false true true]; x[ix] = 5; x[1] + x[2] + x[3] + x[4];", Value::F64(new_ref(F64::new(17.0))));
+test_interpreter!(interpret_set_logical_scalar,"~x := [1 2 3]; x[4 > 3] = 5; x[1] + x[2] + x[3]", Value::F64(new_ref(F64::new(15.0))));
 
-test_interpreter!(interpret_set_logical_vector_scalar_bool,"x := [1 2; 4 5]; x[[true false], 2] = 42; x[1] + x[2] + x[3] + x[4];", Value::F64(new_ref(F64::new(52.0))));
-test_interpreter!(interpret_set_logical_scalar_vector_bool,"x := [1 2; 4 5]; x[2,[false true]] = 42; x[1] + x[2] + x[3] + x[4]", Value::F64(new_ref(F64::new(49.0))));
-test_interpreter!(interpret_set_logical_vector_vector_bool,"x := [1 2; 4 5]; x[[true false],[false true]] = 42; x[1] + x[2] + x[3] + x[4]", Value::F64(new_ref(F64::new(50.0))));
+test_interpreter!(interpret_set_logical_vector_scalar_bool,"~x := [1 2; 4 5]; x[[true false], 2] = 42; x[1] + x[2] + x[3] + x[4];", Value::F64(new_ref(F64::new(52.0))));
+test_interpreter!(interpret_set_logical_scalar_vector_bool,"~x := [1 2; 4 5]; x[2,[false true]] = 42; x[1] + x[2] + x[3] + x[4]", Value::F64(new_ref(F64::new(49.0))));
+test_interpreter!(interpret_set_logical_vector_vector_bool,"~x := [1 2; 4 5]; x[[true false],[false true]] = 42; x[1] + x[2] + x[3] + x[4]", Value::F64(new_ref(F64::new(50.0))));
 
-test_interpreter!(interpret_set_logical_all_vector_bool,"x := [1 2; 4 5]; x[:,[1 2]] = 42; x[1] + x[2] + x[3] + x[4]", Value::F64(new_ref(F64::new(168.0))));
+test_interpreter!(interpret_set_logical_all_vector_bool,"~x := [1 2; 4 5]; x[:,[1 2]] = 42; x[1] + x[2] + x[3] + x[4]", Value::F64(new_ref(F64::new(168.0))));
 
 test_interpreter!(interpret_horzcat,"x := [1 2]; y := [x 3]; y[1] + y[2] + y[3]", Value::F64(new_ref(F64::new(6.0))));
 test_interpreter!(interpret_horzcat_r2m1,"x := [1 2]; z := [3]; y := [x z]; y[1] + y[2] + y[3]", Value::F64(new_ref(F64::new(6.0))));
@@ -498,9 +498,9 @@ test_interpreter!(interpret_add_assign_formula_all_m2m2,"x := [1 2; 3 4]; y := [
 test_interpreter!(interpret_sub_assign_formula, "ix := [1 1 2 3]; y := 5; x := [1 2 3 4]; x[ix] -= y;", new_ref(RowVector4::from_vec(vec![F64::new(-9.0),F64::new(-3.0),F64::new(-2.0),F64::new(4.0)])).to_value());
 
 
-test_interpreter!(interpret_set_logical_ram2m2_bool,"x := [1 2; 3 4]; y := [true false]; z := [10 20; 30 40]; x[y,:] = z;", new_ref(Matrix2::from_vec(vec![F64::new(10.0),F64::new(3.0),F64::new(20.0),F64::new(4.0)])).to_value());
-test_interpreter!(interpret_set_logical_ram3m3_bool,"x := [1 2 3; 4 5 6; 7 8 9]; y := [true false true]; z := [10 20 30; 40 50 60; 70 80 90]; x[y,:] = z;", new_ref(Matrix3::from_vec(vec![F64::new(10.0),F64::new(4.0),F64::new(70.0),F64::new(20.0),F64::new(5.0),F64::new(80.0),F64::new(30.0),F64::new(6.0),F64::new(90.0)])).to_value());
-test_interpreter!(interpret_set_logical_ram4m4_bool,"x := [1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16]; y := [true false true false]; z := [10 20 30 40; 50 60 70 80; 90 100 110 120; 130 140 150 160]; x[y,:] = z;", new_ref(Matrix4::from_vec(vec![F64::new(10.0),F64::new(5.0),F64::new(90.0),F64::new(13.0),F64::new(20.0),F64::new(6.0),F64::new(100.0),F64::new(14.0),F64::new(30.0),F64::new(7.0),F64::new(110.0),F64::new(15.0),F64::new(40.0),F64::new(8.0),F64::new(120.0),F64::new(16.0)])).to_value());
+test_interpreter!(interpret_set_logical_ram2m2_bool,"~x := [1 2; 3 4]; y := [true false]; z := [10 20; 30 40]; x[y,:] = z;", new_ref(Matrix2::from_vec(vec![F64::new(10.0),F64::new(3.0),F64::new(20.0),F64::new(4.0)])).to_value());
+test_interpreter!(interpret_set_logical_ram3m3_bool,"~x := [1 2 3; 4 5 6; 7 8 9]; y := [true false true]; z := [10 20 30; 40 50 60; 70 80 90]; x[y,:] = z;", new_ref(Matrix3::from_vec(vec![F64::new(10.0),F64::new(4.0),F64::new(70.0),F64::new(20.0),F64::new(5.0),F64::new(80.0),F64::new(30.0),F64::new(6.0),F64::new(90.0)])).to_value());
+test_interpreter!(interpret_set_logical_ram4m4_bool,"~x := [1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16]; y := [true false true false]; z := [10 20 30 40; 50 60 70 80; 90 100 110 120; 130 140 150 160]; x[y,:] = z;", new_ref(Matrix4::from_vec(vec![F64::new(10.0),F64::new(5.0),F64::new(90.0),F64::new(13.0),F64::new(20.0),F64::new(6.0),F64::new(100.0),F64::new(14.0),F64::new(30.0),F64::new(7.0),F64::new(110.0),F64::new(15.0),F64::new(40.0),F64::new(8.0),F64::new(120.0),F64::new(16.0)])).to_value());
 
-test_interpreter!(interpret_set_logical_ram2m2,"x := [1 2; 3 4]; y := [2 1]; x[y,:] = x;", new_ref(Matrix2::from_vec(vec![F64::new(3.0),F64::new(1.0),F64::new(4.0),F64::new(2.0)])).to_value());
-test_interpreter!(interpret_set_logical_ram3m3,"x := [1 2 3; 4 5 6; 7 8 9]; y := [2 1 3]; x[y,:] = x;", new_ref(Matrix3::from_vec(vec![F64::new(4.0),F64::new(1.0),F64::new(7.0),F64::new(5.0),F64::new(2.0),F64::new(8.0),F64::new(6.0),F64::new(3.0),F64::new(9.0)])).to_value());
+test_interpreter!(interpret_set_logical_ram2m2,"~x := [1 2; 3 4]; y := [2 1]; x[y,:] = x;", new_ref(Matrix2::from_vec(vec![F64::new(3.0),F64::new(1.0),F64::new(4.0),F64::new(2.0)])).to_value());
+test_interpreter!(interpret_set_logical_ram3m3,"~x := [1 2 3; 4 5 6; 7 8 9]; y := [2 1 3]; x[y,:] = x;", new_ref(Matrix3::from_vec(vec![F64::new(4.0),F64::new(1.0),F64::new(7.0),F64::new(5.0),F64::new(2.0),F64::new(8.0),F64::new(6.0),F64::new(3.0),F64::new(9.0)])).to_value());

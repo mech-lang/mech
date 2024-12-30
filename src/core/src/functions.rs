@@ -71,7 +71,7 @@ impl fmt::Debug for FunctionDefinition {
                     "🔣 Symbols",   &symbols_str,
                     "📋 Plan", &plan_str];
     let mut table = tabled::Table::new(data);
-    table.with(Style::modern())
+    table.with(Style::modern_rounded())
          .with(Panel::header(format!("📈 UserFxn::{}\n({})", self.name, humanize(&self.id))))
          .with(Alignment::left());
     println!("{table}");
@@ -129,6 +129,7 @@ impl MechFunction for UserFunction {
 #[derive(Clone, Debug)]
 pub struct SymbolTable {
   pub symbols: HashMap<u64,ValRef>,
+  pub mutable_variables: HashMap<u64,ValRef>,
   pub dictionary: IndexMap<u64,String>,
   pub reverse_lookup: HashMap<*const RefCell<Value>, u64>,
 }
@@ -138,9 +139,14 @@ impl SymbolTable {
   pub fn new() -> SymbolTable {
     Self {
       symbols: HashMap::new(),
+      mutable_variables: HashMap::new(),
       dictionary: IndexMap::new(),
       reverse_lookup: HashMap::new(),
     }
+  }
+
+  pub fn get_mutable(&self, key: u64) -> Option<ValRef> {
+    self.mutable_variables.get(&key).cloned()
   }
 
   pub fn get(&self, key: u64) -> Option<ValRef> {
@@ -151,10 +157,13 @@ impl SymbolTable {
     self.symbols.contains_key(&key)
   }
 
-  pub fn insert(&mut self, key: u64, value: Value) -> ValRef {
+  pub fn insert(&mut self, key: u64, value: Value, mutable: bool) -> ValRef {
     let cell = new_ref(value);
     self.reverse_lookup.insert(Rc::as_ptr(&cell), key);
     let old = self.symbols.insert(key,cell.clone());
+    if mutable {
+      self.mutable_variables.insert(key,cell.clone());
+    }
     cell.clone()
   }
 
@@ -169,7 +178,7 @@ impl SymbolTable {
       builder.push_record(vec!["".to_string()]);
     }
     let mut table = builder.build();
-    table.with(Style::modern())
+    table.with(Style::modern_rounded())
          .with(Panel::header("🔣 Symbols"));
     format!("{table}")
   }
