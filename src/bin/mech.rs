@@ -126,42 +126,9 @@ async fn main() -> Result<(), MechError> {
     m.map(|s| s.to_string()).collect()
   } else { repl_flag = true; vec![] };
 
-  match read_mech_files(&paths) {
-    Ok(code) => {
-      for c in code {
-        match c {
-          (file,MechSourceCode::String(s)) => {
-            let now = Instant::now();
-            let parse_result = parser::parse(&s.trim());
-            let elapsed_time = now.elapsed();
-            let parse_duration = elapsed_time.as_nanos() as f64;
-            match parse_result {
-              Ok(tree) => { 
-                let now = Instant::now();
-                let result = intrp.interpret(&tree);
-                let elapsed_time = now.elapsed();
-                let cycle_duration = elapsed_time.as_nanos() as f64;
-                let result_str = match result {
-                  Ok(r) => format!("{}", r.pretty_print()),
-                  Err(err) => format!("{:?}", err),
-                };
-                println!("{}", result_str);
-              },
-              Err(err) => {
-                if let MechErrorKind::ParserError(report, _) = err.kind {
-                  parser::print_err_report(&s, &report);
-                } else {
-                  panic!("Unexpected error type");
-                }
-              }
-            }
-          }
-          _ => todo!(),
-        }
-      }
-    }
-    Err(err) => println!("{:?}", err),
-  }
+  // Run the code
+  parse_and_run_mech_code(&paths, &mut intrp);
+
   if !repl_flag {
     return Ok(());
   }
@@ -174,6 +141,7 @@ async fn main() -> Result<(), MechError> {
   stdo.execute(cursor::MoveToNextLine(1));
   println!("\n                {}                ",format!("v{}",VERSION).truecolor(246,192,78));
   println!("           {}           \n", "www.mech-lang.org");
+  println!("Type \":help\" for a list of all commands.\n");
 
   // Catch Ctrl-C a couple times before quitting
   let mut caught_inturrupts = Arc::new(Mutex::new(0));
@@ -182,7 +150,7 @@ async fn main() -> Result<(), MechError> {
     println!("[Ctrl+C]");
     let mut caught_inturrupts = ci.lock().unwrap();
     *caught_inturrupts += 1;
-    if *caught_inturrupts >= 4 {
+    if *caught_inturrupts >= 3 {
       println!("Okay cya!");
       std::process::exit(0);
     }
@@ -208,7 +176,21 @@ async fn main() -> Result<(), MechError> {
       let repl_command = parse_repl_command(&input.as_str());
 
       match repl_command {
-        Ok((_, ReplCommand::Help)) => println!("Mech REPL Commands: \n  :help, :h - Display this help message\n  :quit, :q, :exit - Quit the REPL\n  :symbols, :s - Display all symbols\n  :plan, :p - Display the plan\n  :whos, :w - Display all symbols\n  :clear - Clear the screen\n  :clc - Clear the screen\n  :load - Load a file\n  :save - Save a file\n  :step - Step through the plan"),
+        Ok((_, ReplCommand::Help)) => {
+          println!("\nMech REPL Commands:");
+          println!("----------------------------------------------------------");
+          println!("{:<15} {:<30}", ":help, :h", "Display this help message");
+          println!("{:<15} {:<30}", ":quit, :q", "Quit the REPL");
+          println!("{:<15} {:<30}", ":symbols, :s", "Display all symbols");
+          println!("{:<15} {:<30}", ":plan, :p", "Display the plan");
+          println!("{:<15} {:<30}", ":whos, :w", "Display all symbols");
+          println!("{:<15} {:<30}", ":clear", "Clear the interpreter state");
+          println!("{:<15} {:<30}", ":clc", "Clear the screen");
+          println!("{:<15} {:<30}", ":load", "Load a file");
+          println!("{:<15} {:<30}", ":ls", "List directory contents");
+          println!("{:<15} {:<30}", ":cd", "Change directory");
+          println!("{:<15} {:<30}", ":step", "Step through the plan\n");
+        }
         Ok((_, ReplCommand::Quit)) => break 'REPL,
         Ok((_, ReplCommand::Symbols(name))) => println!("{}", intrp.symbols.borrow().pretty_print()),
         Ok((_, ReplCommand::Plan)) => println!("{}", pretty_print_plan(&intrp)),
@@ -226,42 +208,7 @@ async fn main() -> Result<(), MechError> {
         }
         Ok((_, ReplCommand::Clc)) => clc(),
         Ok((_, ReplCommand::Load(paths))) => {
-          match read_mech_files(&paths) {
-            Ok(code) => {
-              for c in code {
-                match c {
-                  (file,MechSourceCode::String(s)) => {
-                    let now = Instant::now();
-                    let parse_result = parser::parse(&s.trim());
-                    let elapsed_time = now.elapsed();
-                    let parse_duration = elapsed_time.as_nanos() as f64;
-                    match parse_result {
-                      Ok(tree) => { 
-                        let now = Instant::now();
-                        let result = intrp.interpret(&tree);
-                        let elapsed_time = now.elapsed();
-                        let cycle_duration = elapsed_time.as_nanos() as f64;
-                        let result_str = match result {
-                          Ok(r) => format!("{}", r.pretty_print()),
-                          Err(err) => format!("{:?}", err),
-                        };
-                        println!("{}", result_str);
-                      },
-                      Err(err) => {
-                        if let MechErrorKind::ParserError(report, _) = err.kind {
-                          parser::print_err_report(&s, &report);
-                        } else {
-                          panic!("Unexpected error type");
-                        }
-                      }
-                    }
-                  }
-                  _ => todo!(),
-                }
-              }
-            }
-            Err(err) => println!("{:?}", err),
-          }
+          parse_and_run_mech_code(&paths, &mut intrp);
         }
         Ok((_, ReplCommand::Step(count))) => {
           let n = match count {

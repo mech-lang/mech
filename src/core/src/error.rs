@@ -72,6 +72,7 @@ pub enum MechErrorKind {
   //MissingCapability(Capability),
   InvalidCapabilityToken,
   UnknownCommand(String),
+  NoCode,
   None,
 }
 

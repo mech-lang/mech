@@ -46,9 +46,11 @@ lazy_static! {
 
 mod repl;
 mod serve;
+mod run;
 
 pub use self::repl::*;
 pub use self::serve::*;
+pub use self::run::*;
 
 // Print a prompt 
 // 4, 8, 15, 16, 23, 42
@@ -61,7 +63,7 @@ pub fn print_prompt() {
 pub fn ls() -> String {
   let current_dir = env::current_dir().unwrap();
   let mut builder = Builder::default();
-  builder.push_record(vec!["Mode","LastWriteTime","Length","Name"]);
+  builder.push_record(vec!["Mode","Last Write Time","Length","Name"]);
   for entry in fs::read_dir("./").unwrap() {
     let entry = entry.unwrap();
     let path = entry.path();
