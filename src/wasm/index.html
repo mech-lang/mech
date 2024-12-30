@@ -1,0 +1,31 @@
+<html>
+  <head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
+  </head>
+  <body>
+    <div id = "mech-root"></div>
+    <script type="module">
+      import init, {run_program} from './pkg/mech_wasm.js';
+      async function run() {
+        await init();
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', "./code", true);
+        xhr.onload = function (e) {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              var src = xhr.responseText;
+              run_program(src);
+            } else {
+              console.error(xhr.statusText);
+            }
+          }
+        };
+        xhr.onerror = function (e) {
+          console.error(xhr.statusText);
+        };
+        xhr.send(null);        
+      }
+      run();
+    </script>
+  </body>
+</html>

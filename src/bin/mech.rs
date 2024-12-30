@@ -1,5 +1,6 @@
 #![feature(hash_extract_if)]
 #![allow(warnings)]
+extern crate tokio;
 use mech::*;
 use mech_core::*;
 use mech_syntax::parser;
@@ -26,10 +27,16 @@ use tabled::{
 use serde_json;
 use std::panic;
 use std::sync::{Arc, Mutex};
+use warp::http::header::{HeaderMap, HeaderValue};
+use warp::Filter;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use base64::{encode, decode};
+use chrono::Local;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-fn main() -> Result<(), MechError> {
+#[tokio::main]
+async fn main() -> Result<(), MechError> {
   /*panic::set_hook(Box::new(|panic_info| {
     if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
       println!("Mech Language Error: {}", s);
@@ -65,6 +72,22 @@ fn main() -> Result<(), MechError> {
         .long("debug")
         .help("Print debug info")
         .action(ArgAction::SetTrue))
+    .subcommand(Command::new("serve")
+      .about("Serve Mech program over an HTTP server.")
+      .arg(Arg::new("mech_serve_file_paths")
+        .help("Source .mec and .blx files")
+        .required(false)
+        .action(ArgAction::Append))
+      .arg(Arg::new("port")
+        .short('p')
+        .long("port")
+        .value_name("PORT")
+        .help("Sets the port for the server (8081)"))
+      .arg(Arg::new("address")
+        .short('a')
+        .long("address")
+        .value_name("ADDRESS")
+        .help("Sets the address of the server (127.0.0.1)")))
     .arg(Arg::new("tree")
         .long("tree")
         .help("Print parse tree")
@@ -88,6 +111,94 @@ fn main() -> Result<(), MechError> {
 
   let mut intrp = Interpreter::new();
 
+  // Serve
+  // ----------------------------------------------------------------
+  if let Some(matches) = matches.subcommand_matches("serve") {
+    let server_badge = || {"[Mech Server]".truecolor(34, 204, 187)};
+    ctrlc::set_handler(move || {
+      println!("{} Server received shutdown signal. Process terminating.", server_badge());
+      std::process::exit(0);
+    }).expect("Error setting Ctrl-C handler");
+
+    let port: String = matches.get_one::<String>("port").cloned().unwrap_or("8081".to_string());
+    let address = matches.get_one::<String>("address").cloned().unwrap_or("127.0.0.1".to_string());
+    let full_address: String = format!("{}:{}",address,port);
+    let mech_paths: Vec<String> = matches.get_many::<String>("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+    
+    // read index.html from disc
+    let mech_html: String = fs::read_to_string("src/wasm/index.html").unwrap();
+    let mech_wasm: Vec<u8> = fs::read("src/wasm/pkg/mech_wasm_bg.wasm").unwrap();
+    let mech_js: Vec<u8> = fs::read("src/wasm/pkg/mech_wasm.js").unwrap();
+
+    let code = match read_mech_files(&mech_paths) {
+      Ok(code) => code,
+      Err(err) => {
+        println!("{:?}", err);
+        vec![]
+      }
+    };
+
+    // Serve the HTML file which includes the JS
+    let mut headers = HeaderMap::new();
+    headers.insert("content-type", HeaderValue::from_static("text/html"));
+    let index = warp::get()
+        .and(warp::path::end())
+        .and(warp::filters::addr::remote()) // Capture remote address
+        .map(move |remote: Option<SocketAddr>| {
+            let date = Local::now();
+            if let Some(addr) = remote {
+              println!("{} {} - New connection from: {}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), addr);
+            } else {
+              println!("{} {} - New connection from unknown address", server_badge(), date.format("%Y-%m-%d %H:%M:%S"));
+            }
+            mech_html.clone()
+        })
+        .with(warp::reply::with::headers(headers));
+
+    // Serve the JS file which includes the wasm
+    let mut headers = HeaderMap::new();
+    headers.insert("accept-ranges", HeaderValue::from_static("bytes"));
+    headers.insert("content-type", HeaderValue::from_static("application/javascript"));
+    let nb = warp::path!("pkg" / "mech_wasm.js")
+              .map(move || {
+                mech_js.clone()
+              })
+              .with(warp::reply::with::headers(headers));
+
+    // Serve the wasm. This file is large so it's gzipped
+    let mut headers = HeaderMap::new();
+    headers.insert("accept-ranges", HeaderValue::from_static("bytes"));
+    headers.insert("content-type", HeaderValue::from_static("application/wasm"));
+    let pkg = warp::path!("pkg" / "mech_wasm_bg.wasm")
+              .map(move || {
+                mech_wasm.to_vec()
+              })
+              .with(warp::reply::with::headers(headers));
+    
+    let code = warp::path("code")
+                .and(warp::addr::remote())
+                .map(move |addr: Option<SocketAddr>| {
+                  let (file,source) = &code[0];
+                  let resp = if let MechSourceCode::String(s) = source {
+                    s.clone()
+                  } else {
+                    "".to_string()
+                  };
+                  resp
+                });    
+
+    let routes = index.or(pkg).or(nb).or(code);
+
+    println!("{} Awaiting connections at {}", server_badge(), full_address);
+    let socket_address: SocketAddr = full_address.parse().unwrap();
+    warp::serve(routes).run(socket_address).await;
+    
+    println!("{} Closing server.", server_badge());
+    std::process::exit(0);
+  }
+
+  // Run
+  // ----------------------------------------------------------------
   let mut paths = if let Some(m) = matches.get_many::<String>("mech_paths") {
     m.map(|s| s.to_string()).collect()
   } else { repl_flag = true; vec![] };
@@ -156,16 +267,19 @@ fn main() -> Result<(), MechError> {
     print_prompt();
   }).expect("Error setting Ctrl-C handler");
   
-  // Start the main REPL loop
+  // REPL
+  // ----------------------------------------------------------------
   'REPL: loop {
     {
       let mut ci = caught_inturrupts.lock().unwrap();
       *ci = 0;
     }
+    // Prompt the user for input
     print_prompt();
     let mut input = String::new();
     io::stdin().read_line(&mut input).unwrap();
 
+    // Parse the input
     if input.chars().nth(0) == Some(':') {
       // loop
       let repl_command = parse_repl_command(&input.as_str());
@@ -254,7 +368,7 @@ fn main() -> Result<(), MechError> {
         }
       }
     } else if input.trim() == "" {
-      // loop
+      continue;
     } else {
       // Treat as code
       match parser::parse(&input) {

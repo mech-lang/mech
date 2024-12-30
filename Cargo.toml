@@ -39,13 +39,17 @@ ctrlc = "3.4.5"
 csv = "1.3.1"
 reqwest = {version = "0.12.11", features = ["blocking"]}
 chrono = "0.4.39"
+warp = "0.3.7"
+tokio = { version = "1.42.0", features = ["full"] }
+base64 = "0.22.1"
 
 [workspace]
 
 members = [
   "src/core",
   "src/syntax",
-  "src/interpreter"]
+  "src/interpreter",
+  "src/wasm"]
 
 [build-dependencies]
 winres = "0.1.12"
@@ -58,6 +62,7 @@ LegalCopyright = "Copyright © 2024"
 mech-core = { path = 'src/core' }
 mech-syntax = { path = 'src/syntax'}
 mech-interpreter = { path = 'src/interpreter'}
+mech-wasm = { path = 'src/wasm'}
 #mech-matrix = { path = '../machines/matrix' }
 #mech-stats = { path = '../machines/stats' }
 #mech-math = { path = '../machines/math' }
@@ -72,3 +77,6 @@ mech-syntax = { path = 'src/syntax', version = '0.2.26' }
 
 [patch.'https://gitlab.com/mech-lang/interpreter']
 mech-interpreter = { path = 'src/interpreter', version = '0.2.26' }
+
+[patch.'https://gitlab.com/mech-lang/wasm']
+mech-wasm = { path = 'src/wasm', version = '0.2.26' }
