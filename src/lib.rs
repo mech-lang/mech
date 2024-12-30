@@ -45,8 +45,10 @@ lazy_static! {
 }
 
 mod repl;
+mod serve;
 
 pub use self::repl::*;
+pub use self::serve::*;
 
 // Print a prompt 
 // 4, 8, 15, 16, 23, 42

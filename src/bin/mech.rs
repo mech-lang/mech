@@ -27,11 +27,7 @@ use tabled::{
 use serde_json;
 use std::panic;
 use std::sync::{Arc, Mutex};
-use warp::http::header::{HeaderMap, HeaderValue};
-use warp::Filter;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use base64::{encode, decode};
-use chrono::Local;
+
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -114,87 +110,14 @@ async fn main() -> Result<(), MechError> {
   // Serve
   // ----------------------------------------------------------------
   if let Some(matches) = matches.subcommand_matches("serve") {
-    let server_badge = || {"[Mech Server]".truecolor(34, 204, 187)};
-    ctrlc::set_handler(move || {
-      println!("{} Server received shutdown signal. Process terminating.", server_badge());
-      std::process::exit(0);
-    }).expect("Error setting Ctrl-C handler");
 
     let port: String = matches.get_one::<String>("port").cloned().unwrap_or("8081".to_string());
     let address = matches.get_one::<String>("address").cloned().unwrap_or("127.0.0.1".to_string());
     let full_address: String = format!("{}:{}",address,port);
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     
-    // read index.html from disc
-    let mech_html: String = fs::read_to_string("src/wasm/index.html").unwrap();
-    let mech_wasm: Vec<u8> = fs::read("src/wasm/pkg/mech_wasm_bg.wasm").unwrap();
-    let mech_js: Vec<u8> = fs::read("src/wasm/pkg/mech_wasm.js").unwrap();
-
-    let code = match read_mech_files(&mech_paths) {
-      Ok(code) => code,
-      Err(err) => {
-        println!("{:?}", err);
-        vec![]
-      }
-    };
-
-    // Serve the HTML file which includes the JS
-    let mut headers = HeaderMap::new();
-    headers.insert("content-type", HeaderValue::from_static("text/html"));
-    let index = warp::get()
-        .and(warp::path::end())
-        .and(warp::filters::addr::remote()) // Capture remote address
-        .map(move |remote: Option<SocketAddr>| {
-            let date = Local::now();
-            if let Some(addr) = remote {
-              println!("{} {} - New connection from: {}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), addr);
-            } else {
-              println!("{} {} - New connection from unknown address", server_badge(), date.format("%Y-%m-%d %H:%M:%S"));
-            }
-            mech_html.clone()
-        })
-        .with(warp::reply::with::headers(headers));
-
-    // Serve the JS file which includes the wasm
-    let mut headers = HeaderMap::new();
-    headers.insert("accept-ranges", HeaderValue::from_static("bytes"));
-    headers.insert("content-type", HeaderValue::from_static("application/javascript"));
-    let nb = warp::path!("pkg" / "mech_wasm.js")
-              .map(move || {
-                mech_js.clone()
-              })
-              .with(warp::reply::with::headers(headers));
-
-    // Serve the wasm. This file is large so it's gzipped
-    let mut headers = HeaderMap::new();
-    headers.insert("accept-ranges", HeaderValue::from_static("bytes"));
-    headers.insert("content-type", HeaderValue::from_static("application/wasm"));
-    let pkg = warp::path!("pkg" / "mech_wasm_bg.wasm")
-              .map(move || {
-                mech_wasm.to_vec()
-              })
-              .with(warp::reply::with::headers(headers));
+    serve_mech(&full_address, mech_paths).await;
     
-    let code = warp::path("code")
-                .and(warp::addr::remote())
-                .map(move |addr: Option<SocketAddr>| {
-                  let (file,source) = &code[0];
-                  let resp = if let MechSourceCode::String(s) = source {
-                    s.clone()
-                  } else {
-                    "".to_string()
-                  };
-                  resp
-                });    
-
-    let routes = index.or(pkg).or(nb).or(code);
-
-    println!("{} Awaiting connections at {}", server_badge(), full_address);
-    let socket_address: SocketAddr = full_address.parse().unwrap();
-    warp::serve(routes).run(socket_address).await;
-    
-    println!("{} Closing server.", server_badge());
-    std::process::exit(0);
   }
 
   // Run
