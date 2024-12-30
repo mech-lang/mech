@@ -14,7 +14,7 @@ Statistics related functions.
 
 math/machine = {
   name: "stats" 
-  version: "v0.2.26"
+  version: "v0.2.27"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/stats"
   license: "Apache-2.0"}
