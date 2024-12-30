@@ -14,7 +14,10 @@ use tabled::{
 };
 use paste::paste;
 use serde::ser::{Serialize, Serializer, SerializeStruct};
-use serde::de::{self, Deserialize, Deserializer, MapAccess, Visitor};
+use serde::de::{self, Deserialize, SeqAccess, Deserializer, MapAccess, Visitor};
+use std::fmt;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 macro_rules! impl_as_type {
   ($target_type:ty) => {
@@ -107,187 +110,6 @@ pub enum Value {
   Kind(ValueKind),
   IndexAll,
   Empty
-}
-
-impl Serialize for Value {
-  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-  where
-      S: Serializer,
-  {
-    let mut state = serializer.serialize_struct("Value", 2)?;
-    match self {
-      Value::U8(x) => {
-          state.serialize_field("type", "U8")?;
-          state.serialize_field("value", &*x.borrow())?; // Borrow and serialize
-      }
-      Value::U16(x) => {
-          state.serialize_field("type", "U16")?;
-          state.serialize_field("value", &*x.borrow())?;
-      }
-      Value::U32(x) => {
-          state.serialize_field("type", "U32")?;
-          state.serialize_field("value", &*x.borrow())?;
-      }
-      Value::U64(x) => {
-          state.serialize_field("type", "U64")?;
-          state.serialize_field("value", &*x.borrow())?;
-      }
-      Value::U128(x) => {
-          state.serialize_field("type", "U128")?;
-          state.serialize_field("value", &*x.borrow())?;
-      }
-      Value::I8(x) => {
-          state.serialize_field("type", "I8")?;
-          state.serialize_field("value", &*x.borrow())?;
-      }
-      Value::I16(x) => {
-          state.serialize_field("type", "I16")?;
-          state.serialize_field("value", &*x.borrow())?;
-      }
-      Value::I32(x) => {
-          state.serialize_field("type", "I32")?;
-          state.serialize_field("value", &*x.borrow())?;
-      }
-      Value::I64(x) => {
-          state.serialize_field("type", "I64")?;
-          state.serialize_field("value", &*x.borrow())?;
-      }
-      Value::I128(x) => {
-          state.serialize_field("type", "I128")?;
-          state.serialize_field("value", &*x.borrow())?;
-      }
-      Value::F32(x) => {
-          state.serialize_field("type", "F32")?;
-          state.serialize_field("value", &x.borrow().0)?;
-      }
-      Value::F64(x) => {
-          state.serialize_field("type", "F64")?;
-          state.serialize_field("value", &x.borrow().0)?;
-      }
-      Value::String(x) => {
-          state.serialize_field("type", "String")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::Bool(x) => {
-          state.serialize_field("type", "Bool")?;
-          state.serialize_field("value", &*x.borrow())?;
-      }
-      Value::Atom(x) => {
-          state.serialize_field("type", "Atom")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::MatrixIndex(x) => {
-          state.serialize_field("type", "MatrixIndex")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::MatrixBool(x) => {
-          state.serialize_field("type", "MatrixBool")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::MatrixU8(x) => {
-          state.serialize_field("type", "MatrixU8")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::MatrixU16(x) => {
-          state.serialize_field("type", "MatrixU16")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::MatrixU32(x) => {
-          state.serialize_field("type", "MatrixU32")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::MatrixU64(x) => {
-          state.serialize_field("type", "MatrixU64")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::MatrixU128(x) => {
-          state.serialize_field("type", "MatrixU128")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::MatrixI8(x) => {
-          state.serialize_field("type", "MatrixI8")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::MatrixI16(x) => {
-          state.serialize_field("type", "MatrixI16")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::MatrixI32(x) => {
-          state.serialize_field("type", "MatrixI32")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::MatrixI64(x) => {
-          state.serialize_field("type", "MatrixI64")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::MatrixI128(x) => {
-          state.serialize_field("type", "MatrixI128")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::MatrixF32(x) => {
-          state.serialize_field("type", "MatrixF32")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::MatrixF64(x) => {
-          state.serialize_field("type", "MatrixF64")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::MatrixValue(x) => {
-          state.serialize_field("type", "MatrixValue")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::Set(x) => {
-          state.serialize_field("type", "Set")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::Map(x) => {
-          state.serialize_field("type", "Map")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::Record(x) => {
-          state.serialize_field("type", "Record")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::Table(x) => {
-          state.serialize_field("type", "Table")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::Tuple(x) => {
-          state.serialize_field("type", "Tuple")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::Enum(x) => {
-          state.serialize_field("type", "Enum")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::Id(x) => {
-          state.serialize_field("type", "Id")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::Index(x) => {
-          state.serialize_field("type", "Index")?;
-          state.serialize_field("value", &*x.borrow())?;
-      }
-      Value::MutableReference(x) => {
-          state.serialize_field("type", "MutableReference")?;
-          state.serialize_field("value", &*x.borrow())?;
-      }
-      Value::Kind(x) => {
-          state.serialize_field("type", "Kind")?;
-          state.serialize_field("value", x)?;
-      }
-      Value::IndexAll => {
-          state.serialize_field("type", "IndexAll")?;
-          state.serialize_field("value", &"")?;
-      }
-      Value::Empty => {
-          state.serialize_field("type", "Empty")?;
-          state.serialize_field("value", &"")?;
-      }
-      _ => todo!(),
-    }
-    state.end()
-  }
 }
 
 impl Hash for Value {
@@ -774,7 +596,7 @@ impl_to_value_matrix!(DMatrix);
 
 // Set --------------------------------------------------------------------------
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MechSet {
   pub set: IndexSet<Value>,
 }
@@ -799,7 +621,7 @@ impl Hash for MechSet {
 
 // Map ------------------------------------------------------------------
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MechMap {
   pub map: IndexMap<Value,Value>,
 }
@@ -840,7 +662,7 @@ impl Hash for MechMap {
 
 // Table ------------------------------------------------------------------
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MechTable {
   pub rows: usize,
   pub cols: usize,
@@ -877,7 +699,7 @@ impl Hash for MechTable {
 
 // Tuple ----------------------------------------------------------------------
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MechTuple {
   pub elements: Vec<Box<Value>>
 }
@@ -913,7 +735,7 @@ impl Hash for MechTuple {
 
 // Enum -----------------------------------------------------------------------
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MechEnum {
   pub id: u64,
   pub variants: Vec<(u64, Option<Value>)>,

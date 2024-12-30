@@ -131,47 +131,6 @@ pub enum Matrix<T> {
   DMatrix(Ref<DMatrix<T>>),
 }
 
-impl<T: Clone + Serialize> Serialize for Matrix<T> {
-  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-  where
-    S: Serializer,
-  {
-    match self {
-      #[cfg(feature = "RowVector4")]
-      Matrix::RowVector4(x) => x.borrow().as_slice().serialize(serializer),
-      #[cfg(feature = "RowVector3")]
-      Matrix::RowVector3(x) => x.borrow().as_slice().serialize(serializer),
-      #[cfg(feature = "RowVector2")]
-      Matrix::RowVector2(x) => x.borrow().as_slice().serialize(serializer),
-      #[cfg(feature = "RowVectorD")]
-      Matrix::RowDVector(x) => x.borrow().as_slice().serialize(serializer),
-      #[cfg(feature = "Vector4")]
-      Matrix::Vector4(x) => x.borrow().as_slice().serialize(serializer),
-      #[cfg(feature = "Vector3")]
-      Matrix::Vector3(x) => x.borrow().as_slice().serialize(serializer),
-      #[cfg(feature = "Vector2")]
-      Matrix::Vector2(x) => x.borrow().as_slice().serialize(serializer),
-      #[cfg(feature = "VectorD")]
-      Matrix::DVector(x) => x.borrow().as_slice().serialize(serializer),
-      #[cfg(feature = "Matrix4")]
-      Matrix::Matrix4(x) => x.borrow().as_slice().serialize(serializer),
-      #[cfg(feature = "Matrix3")]
-      Matrix::Matrix3(x) => x.borrow().as_slice().serialize(serializer),
-      #[cfg(feature = "Matrix2")]
-      Matrix::Matrix2(x) => x.borrow().as_slice().serialize(serializer),
-      #[cfg(feature = "Matrix1")]
-      Matrix::Matrix1(x) => x.borrow().as_slice().serialize(serializer),
-      #[cfg(feature = "Matrix3x2")]
-      Matrix::Matrix3x2(x) => x.borrow().as_slice().serialize(serializer),
-      #[cfg(feature = "Matrix2x3")]
-      Matrix::Matrix2x3(x) => x.borrow().as_slice().serialize(serializer),
-      #[cfg(feature = "MatrixD")]
-      Matrix::DMatrix(x) => x.borrow().as_slice().serialize(serializer),
-      _ => todo!(),
-    }
-  }
-} 
-
 pub trait CopyMat<T> {
   fn copy_into(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize;
   fn copy_into_v(&self, dst: &Ref<DVector<T>>, offset: usize) -> usize;
