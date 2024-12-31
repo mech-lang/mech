@@ -141,7 +141,7 @@ async fn main() -> Result<(), MechError> {
   stdo.execute(cursor::MoveToNextLine(1));
   println!("\n                {}                ",format!("v{}",VERSION).truecolor(246,192,78));
   println!("           {}           \n", "www.mech-lang.org");
-  println!("Type \":help\" for a list of all commands.\n");
+  println!("Enter \":help\" for a list of all commands.\n");
 
   // Catch Ctrl-C a couple times before quitting
   let mut caught_inturrupts = Arc::new(Mutex::new(0));
@@ -177,22 +177,10 @@ async fn main() -> Result<(), MechError> {
 
       match repl_command {
         Ok((_, ReplCommand::Help)) => {
-          println!("\nMech REPL Commands:");
-          println!("----------------------------------------------------------");
-          println!("{:<15} {:<30}", ":help, :h", "Display this help message");
-          println!("{:<15} {:<30}", ":quit, :q", "Quit the REPL");
-          println!("{:<15} {:<30}", ":symbols, :s", "Display all symbols");
-          println!("{:<15} {:<30}", ":plan, :p", "Display the plan");
-          println!("{:<15} {:<30}", ":whos, :w", "Display all symbols");
-          println!("{:<15} {:<30}", ":clear", "Clear the interpreter state");
-          println!("{:<15} {:<30}", ":clc", "Clear the screen");
-          println!("{:<15} {:<30}", ":load", "Load a file");
-          println!("{:<15} {:<30}", ":ls", "List directory contents");
-          println!("{:<15} {:<30}", ":cd", "Change directory");
-          println!("{:<15} {:<30}", ":step", "Step through the plan\n");
+          println!("{}",help());
         }
         Ok((_, ReplCommand::Quit)) => break 'REPL,
-        Ok((_, ReplCommand::Symbols(name))) => println!("{}", intrp.symbols.borrow().pretty_print()),
+        Ok((_, ReplCommand::Symbols(name))) => println!("{}", symbols(&intrp)),
         Ok((_, ReplCommand::Plan)) => println!("{}", pretty_print_plan(&intrp)),
         Ok((_, ReplCommand::Whos(name))) => println!("{}",whos(&intrp)),
         Ok((_, ReplCommand::Clear(name))) => {
@@ -249,7 +237,7 @@ async fn main() -> Result<(), MechError> {
           let cycle_duration = elapsed_time.as_nanos() as f64;
 
           match result {
-            Ok(r) => println!("{:?}\n{}", r.kind(), r.pretty_print()),
+            Ok(r) => println!("\n{:?}\n{}\n", r.kind(), r.pretty_print()),
             Err(err) => println!("{:?}", err),
           }
           println!("{:0.2?} ns", cycle_duration);

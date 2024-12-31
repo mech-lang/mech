@@ -24,7 +24,7 @@ pub fn parse_and_run_mech_code(paths: &Vec<String>, intrp: &mut Interpreter) -> 
                   Ok(ref r) => format!("{}", r.pretty_print()),
                   Err(ref err) => format!("{:?}", err),
                 };
-                println!("{}", result_str);
+                println!("\n{}\n", result_str);
                 return result;
               },
               Err(err) => return Err(err),

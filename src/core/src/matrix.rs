@@ -339,8 +339,19 @@ where T: Debug + Clone + PartialEq + 'static
       Matrix::DMatrix(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
       _ => todo!(),
     };
+    let matrix_style = Style::empty()
+    .top(' ')
+    .left('┃')
+    .right('┃')
+    .bottom(' ')
+    .vertical(' ')
+    .intersection_bottom(' ')
+    .corner_top_left('┏')
+    .corner_top_right('┓')
+    .corner_bottom_left('┗')
+    .corner_bottom_right('┛');
     let mut table = builder.build();
-    table.with(Style::modern_rounded());
+    table.with(matrix_style);
     format!("{table}")
   }
 

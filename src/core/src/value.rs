@@ -197,23 +197,22 @@ impl Value {
     }
   }
 
-
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     match self {
-      Value::U8(x)   => {builder.push_record(vec!["u8"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::U16(x)  => {builder.push_record(vec!["u16"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::U32(x)  => {builder.push_record(vec!["u32"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::U64(x)  => {builder.push_record(vec!["u64"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::U128(x) => {builder.push_record(vec!["u128"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::I8(x)   => {builder.push_record(vec!["i8"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::I16(x)  => {builder.push_record(vec!["i16"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::I32(x)  => {builder.push_record(vec!["i32"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::I64(x)  => {builder.push_record(vec!["i64"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::I128(x) => {builder.push_record(vec!["i128"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::F32(x)  => {builder.push_record(vec!["f32"]); builder.push_record(vec![format!("{:?}",x.borrow().0)]);},
-      Value::F64(x)  => {builder.push_record(vec!["f64"]); builder.push_record(vec![format!("{:?}",x.borrow().0)]);},
-      Value::Bool(x) => {builder.push_record(vec!["bool"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::U8(x)   => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::U16(x)  => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::U32(x)  => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::U64(x)  => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::U128(x) => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::I8(x)   => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::I16(x)  => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::I32(x)  => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::I64(x)  => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::I128(x) => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::F32(x)  => {builder.push_record(vec![format!("{:?}",x.borrow().0)]);},
+      Value::F64(x)  => {builder.push_record(vec![format!("{:?}",x.borrow().0)]);},
+      Value::Bool(x) => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
       Value::Index(x)  => {builder.push_record(vec!["ix"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
       Value::Atom(x) => {builder.push_record(vec!["atom"]); builder.push_record(vec![format!("{:?}",x)]);},
       Value::Set(x)  => builder.push_record(vec![format!("{:?}",x)]),
@@ -244,8 +243,19 @@ impl Value {
       Value::Id(x) => builder.push_record(vec![format!("{:?}",humanize(x))]),
       Value::Kind(x) => builder.push_record(vec![format!("{:?}",x)]),
     };
+    let value_style = Style::empty()
+      .top(' ')
+      .left(' ')
+      .right(' ')
+      .bottom(' ')
+      .vertical(' ')
+      .intersection_bottom(' ')
+      .corner_top_left(' ')
+      .corner_top_right(' ')
+      .corner_bottom_left(' ')
+      .corner_bottom_right(' ');
     let mut table = builder.build();
-    table.with(Style::modern_rounded());
+    table.with(value_style);
     format!("{table}")
   }
 

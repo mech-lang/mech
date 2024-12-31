@@ -172,14 +172,25 @@ impl SymbolTable {
     for (k,v) in &self.symbols {
       let name = self.dictionary.get(k).unwrap();
       let v_brrw = v.borrow();
-      builder.push_record(vec![format!("{} : {:?}\n{}",name, v_brrw.kind(), v_brrw.pretty_print())])
+      builder.push_record(vec![format!("\n{} : {:?}\n{}\n",name, v_brrw.kind(), v_brrw.pretty_print())])
     }
     if self.symbols.is_empty() {
       builder.push_record(vec!["".to_string()]);
     }
     let mut table = builder.build();
-    table.with(Style::modern_rounded())
-         .with(Panel::header("🔣 Symbols"));
+    let table_style = Style::empty()
+    .top(' ')
+    .left(' ')
+    .right(' ')
+    .bottom(' ')
+    .vertical(' ')
+    .horizontal('·')
+    .intersection_bottom(' ')
+    .corner_top_left(' ')
+    .corner_top_right(' ')
+    .corner_bottom_left(' ')
+    .corner_bottom_right(' ');
+    table.with(table_style);
     format!("{table}")
   }
 }
