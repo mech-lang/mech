@@ -213,11 +213,11 @@ impl Value {
       Value::F32(x)  => {builder.push_record(vec![format!("{:?}",x.borrow().0)]);},
       Value::F64(x)  => {builder.push_record(vec![format!("{:?}",x.borrow().0)]);},
       Value::Bool(x) => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::Index(x)  => {builder.push_record(vec!["ix"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::Atom(x) => {builder.push_record(vec!["atom"]); builder.push_record(vec![format!("{:?}",x)]);},
-      Value::Set(x)  => builder.push_record(vec![format!("{:?}",x)]),
+      Value::Index(x)  => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::Atom(x) => {builder.push_record(vec![format!("{:?}",x)]);},
+      Value::Set(x)  => {return x.pretty_print();}
       Value::Map(x)  => {return x.pretty_print();}
-      Value::String(x) => {builder.push_record(vec!["string"]); builder.push_record(vec![x])},
+      Value::String(x) => {builder.push_record(vec![x])},
       Value::Table(x)  => {return x.pretty_print();},
       Value::Tuple(x)  => {return x.pretty_print();},
       Value::Record(x) => {return x.pretty_print();},
@@ -619,6 +619,19 @@ impl MechSet {
     }
     MechSet{set}
   }
+
+  pub fn pretty_print(&self) -> String {
+    let mut builder = Builder::default();
+    let mut element_strings = vec![];
+    for x in self.set.iter() {
+      element_strings.push(x.pretty_print());
+    }
+    builder.push_record(element_strings);
+    let mut table = builder.build();
+    table.with(Style::modern_rounded());
+    format!("{table}")
+  }
+
 }
 
 impl Hash for MechSet {
