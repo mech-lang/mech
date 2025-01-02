@@ -43,8 +43,8 @@ Mech v0.2 is currecntly **beta** status, meaning most intended features are impl
 
 A Brief Roadmap:
 
-- ☑️ v0.1 - proof of concept system - minimum viable language implementation
-- 📍 v0.2 - data specification - formulas, defining and manipulating data
+- ☑️ [v0.1](https://github.com/mech-lang/mech/tree/v0.1-beta) - proof of concept system - minimum viable language implementation
+- 📍 [v0.2](https://github.com/mech-lang/mech/tree/v0.2-beta) - data specification - formulas, defining and manipulating data
 - v0.3 - program specification - functions, modules, state machines
 - v0.4 - system specification - tools, distributed programs, capabilities
 
