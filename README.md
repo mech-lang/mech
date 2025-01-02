@@ -6,12 +6,6 @@
 
 [Try Mech](https://mech-lang.org/try/) online in your browser or stay updated through our [blog](https://mech-lang.org/blog/).
 
-## 📚 Documentation
-
-New to Mech? Start with [Learn Mech in Fifteen Minutes](https://gitlab.com/mech-lang/docs/-/raw/v0.2-beta/III.guides/MechFifteen.mec).
-
-Comprehensive documentation is available at [mech-lang.org](https://mech-lang.org/docs) and open-sourced on [GitHub](http://github.com/mech-lang/docs).
-
 ## 📂 Download and Install
 
 ### 💾 From Binary
@@ -30,16 +24,26 @@ cd mech
 cargo build --bin mech --release
 ```
 
+## 📚 Documentation
+
+New to Mech? Start with [Learn Mech in Fifteen Minutes](https://gitlab.com/mech-lang/docs/-/raw/v0.2-beta/III.guides/MechFifteen.mec).
+
+Comprehensive documentation is available at [mech-lang.org](https://mech-lang.org/docs) and open-sourced on [GitHub](http://github.com/mech-lang/docs).
+
 ### 🪐 Community
+
+The Mech community stays active at a few places around the Internet:
 
 - 👾 [Discord](https://discord.gg/asqP25NNTH) - for live chat
 - 🐙 [GitHub](https://github.com/mech-lang) - for code and issues
 - 📺 [YouTube](https://youtube.com/@coreymontella3520?si=EUy2Mrv1aNo-4uQr) - for video tutorials
 - 🛸 [Reddit](https://www.reddit.com/r/mechlang/) - for help and discussion
 
+Feel free to stop by and introduce yourself -- we're happy to meet new users and answer questions! 
+
 ## 🗺️ Project Roadmap
 
-Mech v0.2 is currecntly **beta** status, meaning most intended features are implemented, but there are still rough edges and a general lack of documentation. Development is focused on testing and documentation.
+Mech v0.2 is currecntly **beta** status, meaning most intended features are implemented, but rough edges abound and a there is a general lack of documentation. Development is currently focused on testing and documentation.
 
 A Brief Roadmap:
 
