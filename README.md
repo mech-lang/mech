@@ -30,7 +30,7 @@ New to Mech? Start with [Learn Mech in Fifteen Minutes](https://gitlab.com/mech-
 
 Comprehensive documentation is available at [mech-lang.org](https://mech-lang.org/docs) and open-sourced on [GitHub](http://github.com/mech-lang/docs).
 
-### 🪐 Community
+## 🪐 Community
 
 The Mech community stays active at a few places around the Internet:
 
