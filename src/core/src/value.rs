@@ -70,17 +70,17 @@ impl fmt::Debug for ValueKind {
       ValueKind::F64 => write!(f, "f64"),
       ValueKind::String => write!(f, "string"),
       ValueKind::Bool => write!(f, "bool"),
-      ValueKind::Matrix(x,(r,c)) => write!(f, "matrix<{:?},{:?}>",x,(r,c)),
-      ValueKind::Enum(x) => write!(f, "enum<{:?}>",x),
-      ValueKind::Set(x,el) => write!(f, "set<{:?}:{}>", x, el),
-      ValueKind::Map(x,el) => write!(f, "map<{:?},{:?}:{}>",x.0,x.1,el),
-      ValueKind::Record(x) => write!(f, "record<{:?}>",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
-      ValueKind::Table(x,y) => write!(f, "table<{:?},{:?}>",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(","),y),
-      ValueKind::Tuple(x) => write!(f, "tuple<{:?}>",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
+      ValueKind::Matrix(x,(r,c)) => write!(f, "[{:?}]:{:?},{:?}",x,r,c),
+      ValueKind::Enum(x) => write!(f, "{:?}",x),
+      ValueKind::Set(x,el) => write!(f, "{{{:?}}}:{}", x, el),
+      ValueKind::Map(x,el) => write!(f, "{{{:?}:{:?}}}:{}",x.0,x.1,el),
+      ValueKind::Record(x) => write!(f, "{{{}}}",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
+      ValueKind::Table(x,y) => write!(f, "{{{}}}:{}",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(","),y),
+      ValueKind::Tuple(x) => write!(f, "({})",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
       ValueKind::Id => write!(f, "id"),
       ValueKind::Index => write!(f, "ix"),
-      ValueKind::Reference(x) => write!(f, "reference<{:?}>",x),
-      ValueKind::Atom(x) => write!(f, "atom<{:?}>",x),
+      ValueKind::Reference(x) => write!(f, "{:?}",x),
+      ValueKind::Atom(x) => write!(f, "`{:?}",x),
       ValueKind::Empty => write!(f, "_"),
       ValueKind::Any => write!(f, "_"),
     }
@@ -145,6 +145,12 @@ pub enum Value {
   Kind(ValueKind),
   IndexAll,
   Empty
+}
+
+impl fmt::Display for Value {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    self.pretty_print().fmt(f)
+  }
 }
 
 impl Hash for Value {

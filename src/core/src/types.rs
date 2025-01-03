@@ -39,6 +39,12 @@ impl fmt::Debug for F64 {
   }
 }
 
+impl fmt::Display for F64 {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+      write!(f, "{}", self.0)
+  }
+}
+
 impl Eq for F64 {}
 impl Hash for F64 {
   fn hash<H: Hasher>(&self, state: &mut H) {
@@ -150,6 +156,12 @@ pub struct F32(pub f32);
 impl F32 {
   pub fn new(val: f32) -> F32 {
     F32(val)
+  }
+}
+
+impl fmt::Display for F32 {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+      write!(f, "{}", self.0)
   }
 }
 

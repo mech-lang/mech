@@ -108,9 +108,9 @@ pub fn binding(input: ParseString) -> ParseResult<Binding> {
   let (input, _) = whitespace0(input)?;
   let (input, name) = identifier(input)?;
   let (input, kind) = opt(kind_annotation)(input)?;
-  let (input, _) = label!(is_not(nom_tuple((many1(space), colon))), msg1)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = colon(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, value) = label!(expression, msg2)(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, _) = opt(comma)(input)?;
