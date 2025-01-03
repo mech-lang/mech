@@ -13,6 +13,7 @@ pub enum Kind {
   Function,
   Fsm,
   Empty,
+  Any,
 }
 
 impl Kind {
@@ -36,6 +37,7 @@ impl Kind {
       Kind::Function => todo!(),
       Kind::Fsm => todo!(),
       Kind::Empty => Ok(ValueKind::Empty),
+      Kind::Any => Ok(ValueKind::Any),
     }
   }
 }

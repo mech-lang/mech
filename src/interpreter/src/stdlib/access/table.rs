@@ -59,8 +59,7 @@ macro_rules! impl_col_access_fxn {
       paste!{
         match $arg {
           (Value::Record(rcrd),Value::Id(k)) => {
-            let key = Value::Id(k);
-            match rcrd.map.get(&key) {
+            match rcrd.data.get(&k) {
               Some(value) => Ok(Box::new(RecordAccess{source: value.clone()})),
               _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)}),
             }
@@ -164,10 +163,11 @@ macro_rules! impl_col_access_fxn {
       match src {
         Value::Record(rcrd) => {
           let mut values = vec![];
-          for k in keys {
-            match rcrd.map.get(k) {
+          for key in keys {
+            let k = key.as_usize().unwrap() as u64;
+            match rcrd.data.get(&k) {
               Some(value) => values.push(value.clone()),
-              None => { return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(*k.as_u64().unwrap().borrow())});}
+              None => { return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)});}
             }
           }
           Ok(Box::new(RecordAccessSwizzle{source: Value::Tuple(MechTuple::from_vec(values))}))
@@ -188,10 +188,12 @@ macro_rules! impl_col_access_fxn {
         Value::MutableReference(r) => match &*r.borrow() {
           Value::Record(rcrd) => {
             let mut values = vec![];
-            for k in keys {
-              match rcrd.map.get(k) {
+            println!("!!!!!!!!!!!{:?}", keys);
+            for key in keys {
+              let k = key.as_usize().unwrap() as u64;
+              match rcrd.data.get(&k) {
                 Some(value) => values.push(value.clone()),
-                None => { return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(*k.as_u64().unwrap().borrow())});}
+                None => { return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)});}
               }
             }
             Ok(Box::new(RecordAccessSwizzle{source: Value::Tuple(MechTuple::from_vec(values))}))

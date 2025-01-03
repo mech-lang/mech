@@ -71,8 +71,8 @@ test_parser!(parse_literal_empty_multi, "_____", 16517769417968924);
 
 test_parser!(parse_kind_annotation, "10<m/s^2>", 41451390958973903);
 test_parser!(parse_kind_annotation_size, "foo<u8:3,4>", 8411444293349319);
-test_parser!(parse_kind_annotation_lhs, "z<u8> := 10", 71403132938397338);
-test_parser!(parse_kind_annotation_both, "z<u8> := 10<u8>", 35142481711361869);
+test_parser!(parse_kind_annotation_lhs, "z<u8> := 10", 10228568821707243);
+test_parser!(parse_kind_annotation_both, "z<u8> := 10<u8>", 42988188239311061);
 test_parser!(parse_kind_annotation_tuple, "z<(u8,u8)>", 57987489394315533);
 test_parser!(parse_kind_annotation_tuple_nested, "z<((u8,u8),u8)>", 64061479951167009);
 test_parser!(parse_kind_annotation_empty, "z<_>", 15408982683395009);
@@ -168,12 +168,12 @@ r#"╭───────────╮
 │ 7   8   9 │
 ╰───────────╯"#,60073775801197611);
 
-test_parser!(parse_table_inline,r#"{x<f32> y<u8> | 1.2 9 ; 1.3 8 }"#,18779183519589985);
-test_parser!(parse_table_empty, "{ x<f32> y<u8> | _ }", 15413160474115045);
+test_parser!(parse_table_inline,r#"{x<f32> y<u8> | 1.2 9 ; 1.3 8 }"#,26801390764359989);
+test_parser!(parse_table_empty, "{ x<f32> y<u8> | _ }", 43146343316257423);
 test_parser!(parse_table,
 r#"{x<f32> y<u8> |
 1.2    9 
-1.3    8   }"#,47449831800460666);
+1.3    8   }"#,17092549051805384);
 test_parser!(parse_table_header_fancy,
 r#"╭───────────────────────────╮
 │ x<u8>   y<string>  z<f32> │
@@ -183,7 +183,7 @@ r#"╭────────────────────────�
 │   4   │  "b"     │ 6.15   │
 ├───────┼──────────┼────────┤
 │   7   │  "c"     │ 9.19   │
-╰───────┴──────────┴────────╯"#,40931531245879404);
+╰───────┴──────────┴────────╯"#,46727561677510027);
 
 test_parser!(parse_table_header_fancy_variable,
 r#"x := 
@@ -195,7 +195,7 @@ r#"x :=
 │   4   │   "b"    │   [4 5 6]    │
 ├───────┼──────────┼──────────────┤
 │   7   │   "c"    │   [7 8 9]    │
-╰───────┴──────────┴──────────────╯"#,37234775238921438);
+╰───────┴──────────┴──────────────╯"#,42934549805578564);
 
 
 test_parser!(parse_tuple_empty, "()", 46625237035827900);
@@ -222,11 +222,11 @@ test_parser!(parse_record_column, r#"{a: 1
  c: 3}"#, 34810819596571683);
 test_parser!(parse_record_nested, r#"{a: {a: 1 b: 2 c: 3} b: 2 c: 3}"#, 42954662984815976);
 
-test_parser!(parse_statement_variable_define, "x := 123", 62190040362503998);
-test_parser!(parse_statement_variable_define_emoji, "Δx^2 := 123", 42324157149985255);
-test_parser!(parse_statement_variable_define_annotated_tuple, "z<(u8, u8)> := (10,11)", 7667347478522863);
-test_parser!(parse_statement_variable_define_annotated_tuple_both, "z<(u8, u16)> := (10<u8>,11<u16>)", 10505668968110378);
-test_parser!(parse_statement_variable_define_annotated_tuple_rhs, "z := (10<u8>,11<u16>)", 30360312150734751);
+test_parser!(parse_statement_variable_define, "x := 123", 60186188519876447);
+test_parser!(parse_statement_variable_define_emoji, "Δx^2 := 123", 46224234885253595);
+test_parser!(parse_statement_variable_define_annotated_tuple, "z<(u8, u8)> := (10,11)", 71501633830963595);
+test_parser!(parse_statement_variable_define_annotated_tuple_both, "z<(u8, u16)> := (10<u8>,11<u16>)", 30830365772247945);
+test_parser!(parse_statement_variable_define_annotated_tuple_rhs, "z := (10<u8>,11<u16>)", 9568886228407726);
 
 test_parser!(parse_statement_variable_assign, "a = 2", 47312424597726258);
 test_parser!(parse_statement_variable_assign_slice, "a[1] = 2", 38641881983528183);
@@ -295,14 +295,14 @@ r#"#bubble-sort(arr) -> Start(arr)
 test_parser!(parse_function_define,r#"a() = b<c> := 
     a := 1;
     b := 2;
-    c := 3."#, 62997233809516734);
+    c := 3."#, 65451063722580281);
 
 test_parser!(parse_function_define_args,r#"foo(x<u8>, y<u8>) = z<u8> :=
     x2 := x + 1
     y2 := y + 2
-    z := x2 + y2."#, 26397243087465788);
+    z := x2 + y2."#, 6452212384021502);
 
-test_parser!(parse_function_define_inline,r#"a() = b<c> := a := 1;b := 2;c := 3."#, 36259460740270037);
+test_parser!(parse_function_define_inline,r#"a() = b<c> := a := 1;b := 2;c := 3."#, 24850587288009396);
     
 test_parser!(parse_function_define_real,r#"time-update(μ<pose>, Σ<cov>) = (μ<pose>, Σ<cov>) :=
   θ :=  μ.θ
@@ -324,14 +324,14 @@ measurement-update(μ<[f32]:3>, Σ<[f32]:3,3>) = (μ<[f32]:3>, Σ<[f32]:3,3>) :=
   S := H ** Σ ** H' + Q
   K := Σ ** H' / S
   μ := (μ + K * (z -  Ẑ))
-  Σ := ([1 0 0; 0 1 0; 0 0 1] - K ** H) ** Σ."#,17138746356126439);
+  Σ := ([1 0 0; 0 1 0; 0 0 1] - K ** H) ** Σ."#,25543101346971270);
 
 test_parser!(parse_comment_inline,r#"a := 0b10101   -- bin
 b := 0x123abc  -- hex
 c := 0o1234    -- oct
-a := 0d1234    -- dec"#, 32628914429923900);
+a := 0d1234    -- dec"#, 47433378602271378);
 
 test_parser!(parse_comment_block,r#"/* Hello 
    World */
 
-a := 123"#, 18698165613865065);
+a := 123"#, 62099699526840977);

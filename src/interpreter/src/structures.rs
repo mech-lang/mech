@@ -33,18 +33,50 @@ pub fn map(mp: &Map, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRe
     let val = expression(&b.value, plan.clone(), symbols.clone(), functions.clone())?;
     m.insert(key,val);
   }
-  Ok(Value::Map(MechMap{map: m}))
+  
+  let key_kind = m.keys().next().unwrap().kind();
+  // verify that all the keys are the same kind:
+  for k in m.keys() {
+    if k.kind() != key_kind {
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::KindMismatch(k.kind(),key_kind)});
+    }
+  }
+  
+  let value_kind = m.values().next().unwrap().kind();
+  // verify that all the values are the same kind:
+  for v in m.values() {
+    if v.kind() != value_kind {
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::KindMismatch(v.kind(),value_kind)});
+    }
+  }
+  Ok(Value::Map(MechMap{
+    num_elements: m.len(),
+    key_kind,
+    value_kind,
+    map: m
+  }))
 }
 
 pub fn record(rcrd: &Record, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
-  let mut m = IndexMap::new();
+  let mut data: IndexMap<u64,Value> = IndexMap::new();
+  let cols: usize = rcrd.bindings.len();
+  let mut kinds: Vec<ValueKind> = Vec::new();
+
   for b in &rcrd.bindings {
     let name = b.name.hash();
-    let kind = &b.kind;
     let val = expression(&b.value, plan.clone(), symbols.clone(), functions.clone())?;
-    m.insert(Value::Id(name),val);
+    let knd: ValueKind = match &b.kind {
+      Some(k) => kind_annotation(&k.kind, functions.clone())?.to_value_kind(functions.clone())?,
+      None => val.kind(),
+    };
+    kinds.push(knd);
+    data.insert(name, val);
   }
-  Ok(Value::Record(MechMap{map: m}))
+  Ok(Value::Record(MechRecord{
+    cols,
+    kinds,
+    data,
+  }))
 }
 
 pub fn set(m: &Set, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> { 
@@ -53,7 +85,25 @@ pub fn set(m: &Set, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef
     let result = expression(el, plan.clone(), symbols.clone(), functions.clone())?;
     out.insert(result);
   }
-  Ok(Value::Set(MechSet{set: out}))
+
+  let set_kind = if out.len() > 0 {
+    out.iter().next().unwrap().kind()
+  } else {
+    ValueKind::Empty
+  };
+  
+  // Make sure all elements have the same kind
+  for el in &out {
+    if el.kind() != set_kind {
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::KindMismatch(el.kind(),set_kind)});
+    }
+  }
+
+  Ok(Value::Set(MechSet{
+    num_elements: out.len(),
+    kind: set_kind,
+    set: out, 
+  }))
 }
 
 macro_rules! handle_value_kind {
@@ -122,7 +172,10 @@ pub fn table_header(fields: &Vec<Field>, functions: FunctionsRef) -> MResult<(Ve
   let mut kinds: Vec<ValueKind> = Vec::new();
   for f in fields {
     let id = f.name.hash();
-    let kind = kind_annotation(&f.kind.kind, functions.clone())?;
+    let kind = match &f.kind {
+      Some(k) => kind_annotation(&k.kind, functions.clone())?,
+      None => Kind::Any,
+    };
     ids.push(Value::Id(id));
     kinds.push(kind.to_value_kind(functions.clone())?);
   }

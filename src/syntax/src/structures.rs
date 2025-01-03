@@ -184,10 +184,10 @@ pub fn table_header(input: ParseString) -> ParseResult<Vec<Field>> {
   Ok((input, fields))
 }
 
-// field := identifier, kind_annotation ;
+// field := identifier, [kind_annotation] ;
 pub fn field(input: ParseString) -> ParseResult<Field> {
   let (input, name) = identifier(input)?;
-  let (input, kind) = kind_annotation(input)?;
+  let (input, kind) = opt(kind_annotation)(input)?;
   Ok((input, Field{name, kind}))
 }
 

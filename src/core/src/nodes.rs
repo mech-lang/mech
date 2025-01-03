@@ -492,7 +492,7 @@ pub struct Table {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Field {
   pub name: Identifier,
-  pub kind: KindAnnotation,
+  pub kind: Option<KindAnnotation>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
