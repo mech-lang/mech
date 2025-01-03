@@ -188,7 +188,6 @@ macro_rules! impl_col_access_fxn {
         Value::MutableReference(r) => match &*r.borrow() {
           Value::Record(rcrd) => {
             let mut values = vec![];
-            println!("!!!!!!!!!!!{:?}", keys);
             for key in keys {
               let k = key.as_usize().unwrap() as u64;
               match rcrd.data.get(&k) {
