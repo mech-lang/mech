@@ -139,21 +139,31 @@ impl Default for Token {
   }
 }
 
-pub fn merge_tokens(tokens: &mut Vec<Token>) -> Option<Token> {
-  if tokens.len() == 0 {
-    None
-  } else if tokens.len() == 1 {
-    Some(tokens[0].clone())
-  } else {
-    let first = tokens[0].src_range.clone();
-    let kind = tokens[0].kind.clone();
-    let last = tokens.last().unwrap().src_range.clone();
-    let src_range = merge_src_range(first, last);
-    let chars: Vec<char> = tokens.iter_mut().fold(vec![],|mut m, ref mut t| {m.append(&mut t.chars.clone()); m});
-    let merged_token = Token{kind, chars, src_range};
-    Some(merged_token)
+impl Token {
+
+  pub fn to_string(&self) -> String {
+    self.chars.iter().collect()
+  }
+
+  pub fn merge_tokens(tokens: &mut Vec<Token>) -> Option<Token> {
+    if tokens.len() == 0 {
+      None
+    } else if tokens.len() == 1 {
+      Some(tokens[0].clone())
+    } else {
+      let first = tokens[0].src_range.clone();
+      let kind = tokens[0].kind.clone();
+      let last = tokens.last().unwrap().src_range.clone();
+      let src_range = merge_src_range(first, last);
+      let chars: Vec<char> = tokens.iter_mut().fold(vec![],|mut m, ref mut t| {m.append(&mut t.chars.clone()); m});
+      let merged_token = Token{kind, chars, src_range};
+      Some(merged_token)
+    }
   }
 }
+
+
+
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Program {
@@ -175,6 +185,14 @@ impl Program {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Title {
   pub text: Token,
+}
+
+impl Title {
+
+  pub fn to_string(&self) -> String {
+    self.text.to_string()
+  }
+
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -574,7 +592,7 @@ impl Identifier {
   }
 
   pub fn to_string(&self) -> String {
-    self.name.chars.iter().collect()
+    self.name.to_string()
   }
 
 }
