@@ -1,5 +1,5 @@
 use mech_core::*;
-use mech_core::nodes::Kind;
+use mech_core::nodes::{Kind, Matrix};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -91,7 +91,13 @@ impl Formatter {
     let element = match node {
       SectionElement::Section(n) => todo!(),
       SectionElement::Comment(n) => todo!(),
-      SectionElement::Paragraph(n) => n.to_string(),
+      SectionElement::Paragraph(n) => {
+        if self.html {
+          format!("<p class=\"mech-paragraph\">{}</p>",n.to_string())
+        } else {
+          format!("{}\n",n.to_string())
+        }
+      },
       SectionElement::MechCode(n) => self.mech_code(n),
       SectionElement::UnorderedList(n) => todo!(),
       SectionElement::CodeBlock => todo!(),
@@ -160,10 +166,10 @@ impl Formatter {
       Expression::Var(var) => self.var(var),
       Expression::Formula(factor) => self.factor(factor),
       Expression::Literal(literal) => self.literal(literal),
+      Expression::Structure(structure) => self.structure(structure),
+      Expression::Slice(slice) => self.slice(slice),
       _ => todo!(),
       /*Expression::Range(range) => self.range(range, src),
-      Expression::Slice(slice) => self.slice(slice, src),
-      Expression::Structure(structure) => self.structure(structure, src),
       Expression::FunctionCall(function_call) => self.function_call(function_call, src),
       Expression::FsmPipe(fsm_pipe) => self.fsm_pipe(fsm_pipe, src),*/
     };
@@ -173,6 +179,121 @@ impl Formatter {
       format!("{}", e)
     }
   }
+
+  pub fn slice(&mut self, node: &Slice) -> String {
+    let name = node.name.to_string();
+    let mut subscript = "".to_string();
+    for (i, sub) in node.subscript.iter().enumerate() {
+      let s = self.subscript(sub);
+      subscript = format!("{}{}", subscript, s);
+    }
+    if self.html {
+      format!("<span class=\"mech-slice\"><span class=\"mech-var-name\">{}</span><span class=\"mech-subscript\">{}</span></span>",name,subscript)
+    } else {
+      format!("{}{}", name, subscript)
+    }
+  }
+
+  pub fn subscript(&mut self, node: &Subscript) -> String {
+    match node {
+      Subscript::Bracket(subs) => self.bracket(subs),
+      Subscript::Formula(factor) => self.factor(factor),
+      Subscript::All => self.all(),
+      _ => todo!(),
+      /*Subscript::Dot(ident) => self.dot(ident),
+      Subscript::Swizzle(idents) => self.swizzle(idents),
+      Subscript::Range(range) => self.range(range),
+      Subscript::Brace(subs) => self.brace(subs),
+      Subscript::DotInt(real) => self.dot_int(real),*/
+    }
+  }
+
+  pub fn all(&mut self) -> String {
+    if self.html {
+      format!("<span class=\"mech-all\">:</span>")
+    } else {
+      ":".to_string()
+    }
+  }
+
+  pub fn bracket(&mut self, node: &Vec<Subscript>) -> String {
+    let mut src = "".to_string();
+    for (i, sub) in node.iter().enumerate() {
+      let s = self.subscript(sub);
+      if i == 0 {
+        src = format!("{}", s);
+      } else {
+        src = format!("{},{}", src, s);
+      }
+    }
+    if self.html {
+      format!("<span class=\"mech-bracket\">[{}]</span>",src)
+    } else {
+      format!("[{}]",src)
+    }
+  }
+
+  pub fn structure(&mut self, node: &Structure) -> String {
+    let s = match node {
+      Structure::Matrix(matrix) => self.matrix(matrix),
+      _ => todo!(),
+      //Structure::Empty => "".to_string(),
+      //Structure::Record(record) => self.record(record),
+      //Structure::Table(table) => self.table(table),
+      //Structure::Tuple(tuple) => self.tuple(tuple),
+      //Structure::TupleStruct(tuple_struct) => self.tuple_struct(tuple_struct),
+      //Structure::Set(set) => self.set(set),
+      //Structure::Map(map) => self.map(map),
+    };
+    if self.html {
+      format!("<span class=\"mech-structure\">{}</span>",s)
+    } else {
+      format!("{}", s)
+    }
+  }
+
+  pub fn matrix(&mut self, node: &Matrix) -> String {
+    let mut src = "".to_string();
+    for (i, row) in node.rows.iter().enumerate() {
+      let r = self.matrix_row(row);
+      if i == 0 {
+        src = format!("{}{}", src, r);
+      } else {
+        src = format!("{}; {}", src, r);
+      }
+          }
+    if self.html {
+      format!("<span class=\"mech-matrix\"><span class=\"mech-bracket\">[</span>{}<span class=\"mech-bracket\">]</span></span>",src)
+    } else {
+      format!("[{}]",src)
+    }
+  }
+
+  pub fn matrix_row(&mut self, node: &MatrixRow) -> String {
+    let mut src = "".to_string();
+    for (i, cell) in node.columns.iter().enumerate() {
+      let c = self.matrix_column(cell);
+      if i == 0 {
+        src = format!("{}", c);
+      } else { 
+        src = format!("{} {}", src, c);
+      }
+    }
+    if self.html {
+      format!("<span class=\"mech-matrix-row\">{}</span>",src)
+    } else {
+      src
+    }
+  }
+
+  pub fn matrix_column(&mut self, node: &MatrixColumn) -> String {
+    let element = self.expression(&node.element);
+    if self.html {
+      format!("<span class=\"mech-matrix-element\">{}</span>",element)
+    } else {
+      element
+    }    
+  }  
 
   pub fn var(&mut self, node: &Var) -> String {
     let annotation = if let Some(kind) = &node.kind {
@@ -390,7 +511,7 @@ impl Formatter {
                 let content = &input[i..tag_start].trim();
                 if !content.is_empty() {
                     formatted.push('\n');
-                    formatted.push_str(&"\t".repeat(indent_level));
+                    formatted.push_str(&" ".repeat(indent_level));
                     formatted.push_str(content);
                 }
 
@@ -399,17 +520,17 @@ impl Formatter {
                     // Decrease indentation for closing tags
                     indent_level = indent_level.saturating_sub(1);
                     formatted.push('\n');
-                    formatted.push_str(&"\t".repeat(indent_level));
+                    formatted.push_str(&" ".repeat(indent_level));
                     formatted.push_str(tag);
                 } else if tag.ends_with("/>") {
                     // Self-closing tag, no change in indentation
                     formatted.push('\n');
-                    formatted.push_str(&"\t".repeat(indent_level));
+                    formatted.push_str(&" ".repeat(indent_level));
                     formatted.push_str(tag);
                 } else {
                     // Opening tag
                     formatted.push('\n');
-                    formatted.push_str(&"\t".repeat(indent_level));
+                    formatted.push_str(&" ".repeat(indent_level));
                     formatted.push_str(tag);
                     indent_level += 1;
                 }
@@ -424,7 +545,7 @@ impl Formatter {
         let content = &input[i..].trim();
         if !content.is_empty() {
             formatted.push('\n');
-            formatted.push_str(&"\t".repeat(indent_level));
+            formatted.push_str(&" ".repeat(indent_level));
             formatted.push_str(content);
         }
         break;
