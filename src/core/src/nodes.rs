@@ -216,6 +216,12 @@ pub struct Subtitle {
   pub text: Token,
 }
 
+impl Subtitle {
+  pub fn to_string(&self) -> String {
+    self.text.to_string()
+  }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Section {
   pub subtitle: Option<Subtitle>,
