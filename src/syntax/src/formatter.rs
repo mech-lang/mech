@@ -46,7 +46,7 @@ impl Formatter {
   }
 
   pub fn subtitle(&mut self, node: &Subtitle) -> String {
-    format!("\n\n{}\n-------------------------------------------------------------------------------\n",node.to_string())
+    format!("{}\n-------------------------------------------------------------------------------\n",node.to_string())
   }
 
   pub fn body(&mut self, node: &Body) -> String {
@@ -54,11 +54,7 @@ impl Formatter {
     let section_count = node.sections.len();
     for (i, section) in node.sections.iter().enumerate() {
       let s = self.section(section);
-      if i == section_count - 1 {
-        src = format!("{}{}", src, s);
-      } else {
-        src = format!("{}\n{}", src, s);
-      }
+      src = format!("{}{}", src, s);
     }
     src
   }
@@ -70,11 +66,7 @@ impl Formatter {
     };
     for (i, el) in node.elements.iter().enumerate() {
       let el_str = self.section_element(el);
-      if i == 0 && src.is_empty() {
-        src = el_str;
-      } else {
-        src = format!("{}\n{}", src, el_str);
-      }
+      src = format!("{}{}", src, el_str);
     }
     src
   }
@@ -83,7 +75,7 @@ impl Formatter {
     match node {
       SectionElement::Section(n) => todo!(),
       SectionElement::Comment(n) => todo!(),
-      SectionElement::Paragraph(n) => todo!(),
+      SectionElement::Paragraph(n) => n.to_string(),
       SectionElement::MechCode(n) => self.mech_code(n),
       SectionElement::UnorderedList(n) => todo!(),
       SectionElement::CodeBlock => todo!(),
@@ -95,14 +87,15 @@ impl Formatter {
   }
 
   pub fn mech_code(&mut self, node: &MechCode) -> String {
-    match node {
+    let c = match node {
       MechCode::Expression(expr) => self.expression(expr),
       MechCode::Statement(stmt) => self.statement(stmt),
       _ => todo!(),
       //MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec, src),
       //MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl, src),
       //MechCode::FunctionDefine(func_def) => self.function_define(func_def, src),
-    }
+    };
+    format!("{}\n", c)
   }
 
   pub fn variable_define(&mut self, node: &VariableDefine) -> String {

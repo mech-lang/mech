@@ -797,9 +797,31 @@ pub enum ParagraphElement {
   Link,            // todo
 }
 
+impl ParagraphElement {
+
+  pub fn to_string(&self) -> String {
+    match self {
+      ParagraphElement::Start(t) => t.to_string(),
+      ParagraphElement::Text(t) => t.to_string(),
+      _ => "".to_string(),
+    }
+  }
+
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Paragraph {
   pub elements: Vec<ParagraphElement>,
+}
+
+impl Paragraph {
+  pub fn to_string(&self) -> String {
+    let mut out = "".to_string();
+    for e in &self.elements {
+      out.push_str(&e.to_string());
+    }
+    out
+  }
 }
 
 pub type Sign = bool;
