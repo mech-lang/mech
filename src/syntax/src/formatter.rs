@@ -29,53 +29,62 @@ impl Formatter {
 
   pub fn format(&mut self, tree: &Program) -> String {
     self.html = false;
-    self.program(tree,"".to_string())
+    self.program(tree)
   }
 
-  pub fn program(&mut self, node: &Program, src: String) -> String {
-    let src = self.title(&node.title, src);
-    self.body(&node.body, src)
+  pub fn program(&mut self, node: &Program) -> String {
+    let title = match &node.title {
+      Some(title) => self.title(&title),
+      None => "".to_string(),
+    };
+    let body = self.body(&node.body);
+    format!("{}{}",title,body)
   }
 
-  pub fn title(&mut self, node: &Option<Title>, src: String) -> String {
-    if let Some(title) = node {
-      format!("{}{}\n===============================================================================\n\n",src,title.to_string())
-    } else {
-      format!("{}",src)
-    }
+  pub fn title(&mut self, node: &Title) -> String {
+    format!("{}\n===============================================================================\n",node.to_string())
   }
 
-  pub fn subtitle(&mut self, node: &Option<Subtitle>, src: String) -> String {
-    if let Some(title) = node {
-      format!("{}{}\n-------------------------------------------------------------------------------\n\n",src,title.to_string())
-    } else {
-      format!("{}",src)
-    }
+  pub fn subtitle(&mut self, node: &Subtitle) -> String {
+    format!("\n\n{}\n-------------------------------------------------------------------------------\n",node.to_string())
   }
 
-  pub fn body(&mut self, node: &Body, src: String) -> String {
-    let mut src = src.clone();
-    for section in &node.sections {
-      src = self.section(section, src);
-    }
-    src
-  }
-
-  pub fn section(&mut self, node: &Section, src: String) -> String {
-    let mut src = self.subtitle(&node.subtitle, src);
-    for el in &node.elements {
-      src = self.section_element(el, src);
-      src = format!("{}\n",src);
+  pub fn body(&mut self, node: &Body) -> String {
+    let mut src = "".to_string();
+    let section_count = node.sections.len();
+    for (i, section) in node.sections.iter().enumerate() {
+      let s = self.section(section);
+      if i == section_count - 1 {
+        src = format!("{}{}", src, s);
+      } else {
+        src = format!("{}\n{}", src, s);
+      }
     }
     src
   }
 
-  pub fn section_element(&mut self, node: &SectionElement, src: String) -> String {
+  pub fn section(&mut self, node: &Section) -> String {
+    let mut src = match &node.subtitle {
+      Some(title) => self.subtitle(title),
+      None => "".to_string(),
+    };
+    for (i, el) in node.elements.iter().enumerate() {
+      let el_str = self.section_element(el);
+      if i == 0 && src.is_empty() {
+        src = el_str;
+      } else {
+        src = format!("{}\n{}", src, el_str);
+      }
+    }
+    src
+  }
+
+  pub fn section_element(&mut self, node: &SectionElement) -> String {
     match node {
       SectionElement::Section(n) => todo!(),
       SectionElement::Comment(n) => todo!(),
       SectionElement::Paragraph(n) => todo!(),
-      SectionElement::MechCode(n) => self.mech_code(n, src),
+      SectionElement::MechCode(n) => self.mech_code(n),
       SectionElement::UnorderedList(n) => todo!(),
       SectionElement::CodeBlock => todo!(),
       SectionElement::OrderedList => todo!(),
@@ -85,18 +94,45 @@ impl Formatter {
     }
   }
 
-  pub fn mech_code(&mut self, node: &MechCode, src: String) -> String {
+  pub fn mech_code(&mut self, node: &MechCode) -> String {
     match node {
-      MechCode::Expression(expr) => self.expression(expr,src),
+      MechCode::Expression(expr) => self.expression(expr),
+      MechCode::Statement(stmt) => self.statement(stmt),
       _ => todo!(),
+      //MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec, src),
+      //MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl, src),
+      //MechCode::FunctionDefine(func_def) => self.function_define(func_def, src),
     }
   }
 
-  pub fn expression(&mut self, node: &Expression, src: String) -> String {
+  pub fn variable_define(&mut self, node: &VariableDefine) -> String {
+    let mut var_def = if node.mutable {
+      "~".to_string()
+    } else {
+      "".to_string()
+    };
+    let var = self.var(&node.var);
+    let expression = self.expression(&node.expression);
+    format!("{}{} := {}", var_def, var, expression)
+  }
+
+  pub fn statement(&mut self, node: &Statement) -> String {
+    match node {
+      Statement::VariableDefine(var_def) => self.variable_define(var_def),
+      _ => todo!(),
+      //Statement::VariableAssign(var_asgn) => self.variable_assign(var_asgn, src),
+      //Statement::OpAssign(op_asgn) => self.op_assign(op_asgn, src),
+      //Statement::EnumDefine(enum_def) => self.enum_define(enum_def, src),
+      //Statement::FsmDeclare(fsm_decl) => self.fsm_declare(fsm_decl, src),
+      //Statement::KindDefine(kind_def) => self.kind_define(kind_def, src),
+    }
+  }
+
+  pub fn expression(&mut self, node: &Expression) -> String {
     match node {
       Expression::Var(var) => self.var(var),
-      Expression::Formula(factor) => self.factor(factor, src),
-      Expression::Literal(literal) => self.literal(literal, src),
+      Expression::Formula(factor) => self.factor(factor),
+      Expression::Literal(literal) => self.literal(literal),
       _ => todo!(),
       /*Expression::Range(range) => self.range(range, src),
       Expression::Slice(slice) => self.slice(slice, src),
@@ -142,10 +178,10 @@ pub enum Kind {
     }
   }
 
-  pub fn factor(&mut self, node: &Factor, src: String) -> String {
+  pub fn factor(&mut self, node: &Factor) -> String {
     match node {
-      Factor::Term(term) => self.term(term, src),
-      Factor::Expression(expr) => self.expression(expr, src),
+      Factor::Term(term) => self.term(term),
+      Factor::Expression(expr) => self.expression(expr),
       _ => todo!(),
       /*Factor::Negate(factor) => self.negate(factor, src),
       Factor::Not(factor) => self.not(factor, src),
@@ -153,18 +189,19 @@ pub enum Kind {
     }
   }
 
-  pub fn term(&mut self, node: &Term, src: String) -> String {
-    let mut src = self.factor(&node.lhs, src);
+  pub fn term(&mut self, node: &Term) -> String {
+    let mut src = self.factor(&node.lhs);
     for (formula_operator, rhs) in &node.rhs {
-      src = self.formula_operator(formula_operator, src);
-      src = self.factor(rhs, src);
+      let op = self.formula_operator(formula_operator);
+      let rhs = self.factor(rhs);
+      src = format!("{}{}{}", src, op, rhs);
     }
     src
   }
 
-  pub fn formula_operator(&mut self, node: &FormulaOperator, src: String) -> String {
+  pub fn formula_operator(&mut self, node: &FormulaOperator) -> String {
     match node {
-      FormulaOperator::AddSub(op) => self.add_sub_op(op, src),
+      FormulaOperator::AddSub(op) => self.add_sub_op(op),
       _ => todo!(),
       //FormulaOperator::MulDiv(op) => self.mul_div_op(op, src),
       //FormulaOperator::Exponent(op) => self.exponent_op(op, src),
@@ -174,20 +211,20 @@ pub enum Kind {
     }
   }
 
-  pub fn add_sub_op(&mut self, node: &AddSubOp, src: String) -> String {
+  pub fn add_sub_op(&mut self, node: &AddSubOp) -> String {
     let op = match node {
       AddSubOp::Add => "+".to_string(),
       AddSubOp::Sub => "-".to_string(),
     };
-    format!("{} {} ",src,op)
+    format!(" {} ", op)
   }
 
-  pub fn literal(&mut self, node: &Literal, src: String) -> String {
+  pub fn literal(&mut self, node: &Literal) -> String {
     match node {
-      Literal::Empty(token) => format!("{}_",src),
-      Literal::Boolean(token) => format!("{}{}", src, token.to_string()),
-      Literal::Number(number) => self.number(number, src),
-      Literal::String(mech_string) => self.string(mech_string, src),
+      Literal::Empty(token) => "_".to_string(),
+      Literal::Boolean(token) => token.to_string(),
+      Literal::Number(number) => self.number(number),
+      Literal::String(mech_string) => self.string(mech_string),
       _ => todo!(),
       /*
       Literal::Atom(atom) => self.atom(atom, src),
@@ -198,11 +235,11 @@ pub enum Kind {
     }
   }
 
-  pub fn string(&mut self, node: &MechString, src: String) -> String {
-    format!("{}\"{}\"", src, node.text.to_string())
+  pub fn string(&mut self, node: &MechString) -> String {
+    format!("\"{}\"", node.text.to_string())
   }
 
-  pub fn number(&mut self, node: &Number, src: String) -> String {
+  pub fn number(&mut self, node: &Number) -> String {
     match node {
       Number::Real(real) => self.real_number(real),
       Number::Imaginary(complex) => self.complex_numer(complex),
