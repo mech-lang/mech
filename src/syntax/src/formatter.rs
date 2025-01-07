@@ -1,4 +1,5 @@
 use mech_core::*;
+use mech_core::nodes::Kind;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -93,7 +94,7 @@ impl Formatter {
 
   pub fn expression(&mut self, node: &Expression, src: String) -> String {
     match node {
-      //Expression::Var(var) => self.var(var, src),
+      Expression::Var(var) => self.var(var),
       Expression::Formula(factor) => self.factor(factor, src),
       Expression::Literal(literal) => self.literal(literal, src),
       _ => todo!(),
@@ -102,6 +103,42 @@ impl Formatter {
       Expression::Structure(structure) => self.structure(structure, src),
       Expression::FunctionCall(function_call) => self.function_call(function_call, src),
       Expression::FsmPipe(fsm_pipe) => self.fsm_pipe(fsm_pipe, src),*/
+    }
+  }
+
+  pub fn var(&mut self, node: &Var) -> String {
+    let annotation = if let Some(kind) = &node.kind {
+      self.kind_annotation(kind)
+    } else {
+      "".to_string()
+    };
+    format!("{}{}", node.name.to_string(), annotation)
+  }
+
+  pub fn kind_annotation(&mut self, node: &KindAnnotation) -> String {
+    let kind = self.kind(&node.kind);
+    format!("<{}>", kind)
+  }
+
+  /*
+  #[derive(Clone, Debug, Serialize, Deserialize,Eq, PartialEq)]
+pub enum Kind {
+  Tuple(Vec<Kind>),
+  Bracket((Vec<Kind>,Vec<Literal>)),
+  Brace((Vec<Kind>,Vec<Literal>)),
+  Map(Box<Kind>,Box<Kind>),
+  Scalar(Identifier),
+  Atom(Identifier),
+  Function(Vec<Kind>,Vec<Kind>),
+  Fsm(Vec<Kind>,Vec<Kind>),
+  Empty,
+}*/
+
+  pub fn kind(&mut self, node: &Kind) -> String {
+    match node {
+      Kind::Scalar(ident) => ident.to_string(),
+      Kind::Empty => "_".to_string(),
+      _ => todo!(),
     }
   }
 
@@ -167,38 +204,39 @@ impl Formatter {
 
   pub fn number(&mut self, node: &Number, src: String) -> String {
     match node {
-      Number::Real(real) => self.real_number(real, src),
-      Number::Imaginary(complex) => self.complex_numer(complex, src),
+      Number::Real(real) => self.real_number(real),
+      Number::Imaginary(complex) => self.complex_numer(complex),
     }
   }
 
-  pub fn real_number(&mut self, node: &RealNumber, src: String) -> String {
+  pub fn real_number(&mut self, node: &RealNumber) -> String {
     match node {
-      RealNumber::Negated(real_number) => format!("-{}", self.real_number(real_number, src)),
-      RealNumber::Integer(token) => format!("{}{}", src, token.to_string()),
-      RealNumber::Float((whole, part)) => format!("{}{}.{}", src, whole.to_string(), part.to_string()),
-      RealNumber::Decimal(token) => format!("{}{}", src, token.to_string()),
-      RealNumber::Hexadecimal(token) => format!("{}0x{}", src, token.to_string()),
-      RealNumber::Octal(token) => format!("{}0o{}", src, token.to_string()),
-      RealNumber::Binary(token) => format!("{}0b{}", src, token.to_string()),
-      RealNumber::Scientific(((whole, part), (sign, ewhole, epart))) => format!("{}{}.{}e{}{}.{}", src, whole.to_string(), part.to_string(), if *sign { "-" } else { "+" }, ewhole.to_string(), epart.to_string()),
-      RealNumber::Rational((numerator, denominator)) => format!("{}{}/{}", src, numerator.to_string(), denominator.to_string()),
+      RealNumber::Negated(real_number) => format!("-{}", self.real_number(real_number)),
+      RealNumber::Integer(token) => token.to_string(),
+      RealNumber::Float((whole, part)) => format!("{}.{}", whole.to_string(), part.to_string()),
+      RealNumber::Decimal(token) => token.to_string(),
+      RealNumber::Hexadecimal(token) => format!("0x{}", token.to_string()),
+      RealNumber::Octal(token) => format!("0o{}", token.to_string()),
+      RealNumber::Binary(token) => format!("0b{}", token.to_string()),
+      RealNumber::Scientific(((whole, part), (sign, ewhole, epart))) => format!("{}.{}e{}{}.{}", whole.to_string(), part.to_string(), if *sign { "-" } else { "+" }, ewhole.to_string(), epart.to_string()),
+      RealNumber::Rational((numerator, denominator)) => format!("{}/{}", numerator.to_string(), denominator.to_string()),
     }
   }
 
-  pub fn complex_numer(&mut self, node: &ComplexNumber, src: String) -> String {
-    let src = if let Some(real) = &node.real {
-      let src = self.real_number(&real, src);
-      format!("{}i", src)
+  pub fn complex_numer(&mut self, node: &ComplexNumber) -> String {
+    let real = if let Some(real) = &node.real {
+      let num = self.real_number(&real);
+      format!("{}+", num)
     } else {
       "".to_string()
     };
-    self.imaginary_number(&node.imaginary, src)
+    let im = self.imaginary_number(&node.imaginary);
+    format!("{}{}", real, im)
   }
 
-  pub fn imaginary_number(&mut self, node: &ImaginaryNumber, src: String) -> String {
-    let formatted_real = self.real_number(&node.number, "".to_string());
-    format!("{}{}i", src, formatted_real)
+  pub fn imaginary_number(&mut self, node: &ImaginaryNumber) -> String {
+    let real = self.real_number(&node.number);
+    format!("{}i", real)
   }
   
 
