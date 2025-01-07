@@ -28,7 +28,7 @@ impl Formatter {
   }
 
   pub fn format(&mut self, tree: &Program) -> String {
-    self.html = false;
+    self.html = true;
     self.program(tree)
   }
 
@@ -42,11 +42,19 @@ impl Formatter {
   }
 
   pub fn title(&mut self, node: &Title) -> String {
-    format!("{}\n===============================================================================\n",node.to_string())
+    if self.html {
+      format!("<h1 class=\"mech-program-title\">{}</h1>",node.to_string())
+    } else {
+      format!("{}\n===============================================================================\n",node.to_string()) 
+    }
   }
 
   pub fn subtitle(&mut self, node: &Subtitle) -> String {
-    format!("{}\n-------------------------------------------------------------------------------\n",node.to_string())
+    if self.html {
+      format!("<h2 class=\"mech-program-subtitle\">{}</h2>",node.to_string())
+    } else {
+      format!("{}\n-------------------------------------------------------------------------------\n",node.to_string())
+    }
   }
 
   pub fn body(&mut self, node: &Body) -> String {
@@ -56,7 +64,11 @@ impl Formatter {
       let s = self.section(section);
       src = format!("{}{}", src, s);
     }
-    src
+    if self.html {
+      format!("<div class=\"mech-program-body\">{}</div>",src)
+    } else {
+      src
+    }
   }
 
   pub fn section(&mut self, node: &Section) -> String {
@@ -68,11 +80,15 @@ impl Formatter {
       let el_str = self.section_element(el);
       src = format!("{}{}", src, el_str);
     }
-    src
+    if self.html {
+      format!("<section class=\"mech-program-section\">{}</section>",src)
+    } else {
+      src
+    }
   }
 
   pub fn section_element(&mut self, node: &SectionElement) -> String {
-    match node {
+    let element = match node {
       SectionElement::Section(n) => todo!(),
       SectionElement::Comment(n) => todo!(),
       SectionElement::Paragraph(n) => n.to_string(),
@@ -83,6 +99,11 @@ impl Formatter {
       SectionElement::BlockQuote => todo!(),
       SectionElement::ThematicBreak => todo!(),
       SectionElement::Image => todo!(),
+    };
+    if self.html {
+      format!("<div class=\"mech-section-element\">{}</div>",element)
+    } else {
+      element
     }
   }
 
@@ -95,22 +116,30 @@ impl Formatter {
       //MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl, src),
       //MechCode::FunctionDefine(func_def) => self.function_define(func_def, src),
     };
-    format!("{}\n", c)
+    if self.html {
+      format!("<div class=\"mech-code\">{}</div>",c)
+    } else {
+      format!("{}\n", c)
+    }
   }
 
   pub fn variable_define(&mut self, node: &VariableDefine) -> String {
-    let mut var_def = if node.mutable {
+    let mut mutable = if node.mutable {
       "~".to_string()
     } else {
       "".to_string()
     };
     let var = self.var(&node.var);
     let expression = self.expression(&node.expression);
-    format!("{}{} := {}", var_def, var, expression)
+    if self.html {
+      format!("<span class=\"mech-variable-define\"><span class=\"mech-variable-mutable\">{}</span>{}<span class=\"mech-variable-assign-op\">:=</span>{}</span>",mutable, var, expression)
+    } else {
+      format!("{}{} := {}", mutable, var, expression)
+    }
   }
 
   pub fn statement(&mut self, node: &Statement) -> String {
-    match node {
+    let s = match node {
       Statement::VariableDefine(var_def) => self.variable_define(var_def),
       _ => todo!(),
       //Statement::VariableAssign(var_asgn) => self.variable_assign(var_asgn, src),
@@ -118,11 +147,16 @@ impl Formatter {
       //Statement::EnumDefine(enum_def) => self.enum_define(enum_def, src),
       //Statement::FsmDeclare(fsm_decl) => self.fsm_declare(fsm_decl, src),
       //Statement::KindDefine(kind_def) => self.kind_define(kind_def, src),
+    };
+    if self.html {
+      format!("<span class=\"mech-statement\">{}</span>",s)
+    } else {
+      format!("{}", s)
     }
   }
 
   pub fn expression(&mut self, node: &Expression) -> String {
-    match node {
+    let e = match node {
       Expression::Var(var) => self.var(var),
       Expression::Formula(factor) => self.factor(factor),
       Expression::Literal(literal) => self.literal(literal),
@@ -132,6 +166,11 @@ impl Formatter {
       Expression::Structure(structure) => self.structure(structure, src),
       Expression::FunctionCall(function_call) => self.function_call(function_call, src),
       Expression::FsmPipe(fsm_pipe) => self.fsm_pipe(fsm_pipe, src),*/
+    };
+    if self.html {
+      format!("<span class=\"mech-expression\">{}</span>",e)
+    } else {
+      format!("{}", e)
     }
   }
 
@@ -141,27 +180,17 @@ impl Formatter {
     } else {
       "".to_string()
     };
-    format!("{}{}", node.name.to_string(), annotation)
+    if self.html {
+      format!("<span class=\"mech-var-name\">{}</span><span class=\"mech-kind-annotation\">{}</span>", node.name.to_string(), annotation)
+    } else {
+      format!("{}{}", node.name.to_string(), annotation)
+    }
   }
 
   pub fn kind_annotation(&mut self, node: &KindAnnotation) -> String {
     let kind = self.kind(&node.kind);
     format!("<{}>", kind)
   }
-
-  /*
-  #[derive(Clone, Debug, Serialize, Deserialize,Eq, PartialEq)]
-pub enum Kind {
-  Tuple(Vec<Kind>),
-  Bracket((Vec<Kind>,Vec<Literal>)),
-  Brace((Vec<Kind>,Vec<Literal>)),
-  Map(Box<Kind>,Box<Kind>),
-  Scalar(Identifier),
-  Atom(Identifier),
-  Function(Vec<Kind>,Vec<Kind>),
-  Fsm(Vec<Kind>,Vec<Kind>),
-  Empty,
-}*/
 
   pub fn kind(&mut self, node: &Kind) -> String {
     match node {
@@ -172,14 +201,18 @@ pub enum Kind {
   }
 
   pub fn factor(&mut self, node: &Factor) -> String {
-    match node {
+    let f = match node {
       Factor::Term(term) => self.term(term),
       Factor::Expression(expr) => self.expression(expr),
       Factor::Parenthetical(paren) => format!("({})", self.factor(&paren)),
-      _ => todo!(),
-      /*Factor::Negate(factor) => self.negate(factor, src),
-      Factor::Not(factor) => self.not(factor, src),
-      Factor::Transpose(factor) => self.transpose(factor, src),*/
+      Factor::Negate(factor) => format!("-{}", self.factor(factor)),
+      Factor::Not(factor) => format!("¬{}", self.factor(factor)),
+      Factor::Transpose(factor) => format!("{}'", self.factor(factor)),
+    };
+    if self.html {
+      format!("<span class=\"mech-factor\">{}</span>",f)
+    } else {
+      f
     }
   }
 
@@ -190,77 +223,80 @@ pub enum Kind {
       let rhs = self.factor(rhs);
       src = format!("{}{}{}", src, op, rhs);
     }
-    src
+    if self.html {
+      format!("<span class=\"mech-term\">{}</span>",src)
+    } else {
+      src
+    }
   }
 
   pub fn formula_operator(&mut self, node: &FormulaOperator) -> String {
-    match node {
+    let f = match node {
       FormulaOperator::AddSub(op) => self.add_sub_op(op),
       FormulaOperator::MulDiv(op) => self.mul_div_op(op),
       FormulaOperator::Exponent(op) => self.exponent_op(op),
       FormulaOperator::Vec(op) => self.vec_op(op),
       FormulaOperator::Comparison(op) => self.comparison_op(op),
       FormulaOperator::Logic(op) => self.logic_op(op),
+    };
+    if self.html {
+      format!("<span class=\"mech-formula-operator\">{}</span>",f)
+    } else {
+      format!(" {} ", f)
     }
   }
 
   pub fn add_sub_op(&mut self, node: &AddSubOp) -> String {
-    let op = match node {
+    match node {
       AddSubOp::Add => "+".to_string(),
       AddSubOp::Sub => "-".to_string(),
-    };
-    format!(" {} ", op)
+    }
   }
 
   pub fn mul_div_op(&mut self, node: &MulDivOp) -> String {
-    let op = match node {
+    match node {
       MulDivOp::Mul => "*".to_string(),
       MulDivOp::Div => "/".to_string(),
-    };
-    format!(" {} ", op)
+    }
   }
 
   pub fn exponent_op(&mut self, node: &ExponentOp) -> String {
-    let op = match node {
+    match node {
       ExponentOp::Exp => "^".to_string(),
-    };
-    format!(" {} ", op)
+    }
   }
 
   pub fn vec_op(&mut self, node: &VecOp) -> String {
-    let op = match node {
+    match node {
       VecOp::MatMul => "**".to_string(),
       VecOp::Solve => "\\".to_string(),
       VecOp::Cross => "×".to_string(),
       VecOp::Dot => "·".to_string(),
-    };
-    format!(" {} ", op)
+    }
   }
 
   pub fn comparison_op(&mut self, node: &ComparisonOp) -> String {
-    let op = match node {
+    match node {
       ComparisonOp::Equal => "==".to_string(),
       ComparisonOp::NotEqual => "≠".to_string(),
       ComparisonOp::GreaterThan => ">".to_string(),
       ComparisonOp::GreaterThanEqual => "≥".to_string(),
       ComparisonOp::LessThan => "<".to_string(),
       ComparisonOp::LessThanEqual => "≤".to_string(),
-    };
-    format!(" {} ", op)
+    }
   }
 
   pub fn logic_op(&mut self, node: &LogicOp) -> String {
-    let op = match node {
+    match node {
       LogicOp::And => "&".to_string(),
       LogicOp::Or => "|".to_string(),
       LogicOp::Xor => "xor".to_string(),
       LogicOp::Not => "¬".to_string(),
-    };
-    format!(" {} ", op)
+    }
   }
 
   pub fn literal(&mut self, node: &Literal) -> String {
-    match node {
+    let l = match node {
       Literal::Empty(token) => "_".to_string(),
       Literal::Boolean(token) => token.to_string(),
       Literal::Number(number) => self.number(number),
@@ -271,21 +307,39 @@ pub enum Kind {
         let annotation = self.kind_annotation(kind_annotation);
         format!("{}{}", literal, annotation)
       }
+    };
+    if self.html {
+      format!("<span class=\"mech-literal\">{}</span>",l)
+    } else {
+      l
     }
   }
 
   pub fn atom(&mut self, node: &Atom) -> String {
-    format!("`{}", node.name.to_string())
+    if self.html {
+      format!("<span class=\"mech-atom\">{}</span>",node.name.to_string())
+    } else {
+      format!("`{}", node.name.to_string())
+    }
   }
 
   pub fn string(&mut self, node: &MechString) -> String {
-    format!("\"{}\"", node.text.to_string())
+    if self.html {
+      format!("<span class=\"mech-string\">\"{}\"</span>", node.text.to_string())
+    } else {
+      format!("\"{}\"", node.text.to_string())
+    }
   }
 
   pub fn number(&mut self, node: &Number) -> String {
-    match node {
+    let n = match node {
       Number::Real(real) => self.real_number(real),
       Number::Imaginary(complex) => self.complex_numer(complex),
+    };
+    if self.html {
+      format!("<span class=\"mech-number\">{}</span>",n)
+    } else {
+      n
     }
   }
 
@@ -317,6 +371,60 @@ pub enum Kind {
   pub fn imaginary_number(&mut self, node: &ImaginaryNumber) -> String {
     let real = self.real_number(&node.number);
     format!("{}i", real)
+  }
+
+  pub fn format_html(input: String) -> String {
+    let mut formatted = String::new();
+    let mut indent_level: usize = 0;
+
+    let mut i = 0;
+    while i < input.len() {
+        // Find the next tag
+        if let Some(start) = input[i..].find('<') {
+            let tag_start = i + start;
+            if let Some(end) = input[tag_start..].find('>') {
+                let tag_end = tag_start + end + 1;
+                let tag = &input[tag_start..tag_end];
+
+                // Check if this is a closing tag
+                if tag.starts_with("</") {
+                    // Decrease indentation for closing tags
+                    indent_level = indent_level.saturating_sub(1);
+                    formatted.push('\n');
+                    formatted.push_str(&"\t".repeat(indent_level));
+                    formatted.push_str(tag);
+                } else if tag.ends_with("/>") {
+                    // Self-closing tag, no change in indentation
+                    formatted.push('\n');
+                    formatted.push_str(&"\t".repeat(indent_level));
+                    formatted.push_str(tag);
+                } else {
+                    // Opening tag
+                    formatted.push('\n');
+                    formatted.push_str(&"\t".repeat(indent_level));
+                    formatted.push_str(tag);
+                    indent_level += 1;
+                }
+
+                // Move past the current tag
+                i = tag_end;
+                continue;
+            }
+        }
+
+        // Handle content between tags
+        let next_tag = input[i..].find('<').unwrap_or(input.len());
+        let content = &input[i..i + next_tag].trim();
+        if !content.is_empty() {
+            formatted.push('\n');
+            formatted.push_str(&"\t".repeat(indent_level));
+            formatted.push_str(content);
+        }
+
+        i += next_tag;
+    }
+
+    formatted
   }
   
 
