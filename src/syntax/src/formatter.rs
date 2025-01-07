@@ -386,6 +386,14 @@ impl Formatter {
                 let tag_end = tag_start + end + 1;
                 let tag = &input[tag_start..tag_end];
 
+                // Add any content before the tag
+                let content = &input[i..tag_start].trim();
+                if !content.is_empty() {
+                    formatted.push('\n');
+                    formatted.push_str(&"\t".repeat(indent_level));
+                    formatted.push_str(content);
+                }
+
                 // Check if this is a closing tag
                 if tag.starts_with("</") {
                     // Decrease indentation for closing tags
@@ -412,20 +420,18 @@ impl Formatter {
             }
         }
 
-        // Handle content between tags
-        let next_tag = input[i..].find('<').unwrap_or(input.len());
-        let content = &input[i..i + next_tag].trim();
+        // Handle remaining content (if no more tags)
+        let content = &input[i..].trim();
         if !content.is_empty() {
             formatted.push('\n');
             formatted.push_str(&"\t".repeat(indent_level));
             formatted.push_str(content);
         }
-
-        i += next_tag;
+        break;
     }
 
     formatted
-  }
-  
+}
+ 
 
 }
