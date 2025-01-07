@@ -31,7 +31,7 @@ pub fn parenthetical_term(input: ParseString) -> ParseResult<Factor> {
   let (input, (_, r)) = range(left_parenthesis)(input)?;
   let (input, frmla) = label!(formula, msg1)(input)?;
   let (input, _) = label!(right_parenthesis, msg2, r)(input)?;
-  Ok((input, frmla))
+  Ok((input, Factor::Parenthetical(Box::new(frmla))))
 }
 
 // negate_factor := "-" factor ;

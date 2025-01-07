@@ -182,6 +182,7 @@ pub enum Kind {
     match node {
       Factor::Term(term) => self.term(term),
       Factor::Expression(expr) => self.expression(expr),
+      Factor::Parenthetical(paren) => format!("({})", self.factor(&paren)),
       _ => todo!(),
       /*Factor::Negate(factor) => self.negate(factor, src),
       Factor::Not(factor) => self.not(factor, src),
@@ -202,12 +203,11 @@ pub enum Kind {
   pub fn formula_operator(&mut self, node: &FormulaOperator) -> String {
     match node {
       FormulaOperator::AddSub(op) => self.add_sub_op(op),
-      _ => todo!(),
-      //FormulaOperator::MulDiv(op) => self.mul_div_op(op, src),
-      //FormulaOperator::Exponent(op) => self.exponent_op(op, src),
-      //FormulaOperator::Vec(op) => self.vec_op(op, src),
-      //FormulaOperator::Comparison(op) => self.comparison_op(op, src),
-      //FormulaOperator::Logic(op) => self.logic_op(op, src),
+      FormulaOperator::MulDiv(op) => self.mul_div_op(op),
+      FormulaOperator::Exponent(op) => self.exponent_op(op),
+      FormulaOperator::Vec(op) => self.vec_op(op),
+      FormulaOperator::Comparison(op) => self.comparison_op(op),
+      FormulaOperator::Logic(op) => self.logic_op(op),
     }
   }
 
@@ -219,20 +219,70 @@ pub enum Kind {
     format!(" {} ", op)
   }
 
+  pub fn mul_div_op(&mut self, node: &MulDivOp) -> String {
+    let op = match node {
+      MulDivOp::Mul => "*".to_string(),
+      MulDivOp::Div => "/".to_string(),
+    };
+    format!(" {} ", op)
+  }
+
+  pub fn exponent_op(&mut self, node: &ExponentOp) -> String {
+    let op = match node {
+      ExponentOp::Exp => "^".to_string(),
+    };
+    format!(" {} ", op)
+  }
+
+  pub fn vec_op(&mut self, node: &VecOp) -> String {
+    let op = match node {
+      VecOp::MatMul => "**".to_string(),
+      VecOp::Solve => "\\".to_string(),
+      VecOp::Cross => "×".to_string(),
+      VecOp::Dot => "·".to_string(),
+    };
+    format!(" {} ", op)
+  }
+
+  pub fn comparison_op(&mut self, node: &ComparisonOp) -> String {
+    let op = match node {
+      ComparisonOp::Equal => "==".to_string(),
+      ComparisonOp::NotEqual => "≠".to_string(),
+      ComparisonOp::GreaterThan => ">".to_string(),
+      ComparisonOp::GreaterThanEqual => "≥".to_string(),
+      ComparisonOp::LessThan => "<".to_string(),
+      ComparisonOp::LessThanEqual => "≤".to_string(),
+    };
+    format!(" {} ", op)
+  }
+
+  pub fn logic_op(&mut self, node: &LogicOp) -> String {
+    let op = match node {
+      LogicOp::And => "&".to_string(),
+      LogicOp::Or => "|".to_string(),
+      LogicOp::Xor => "xor".to_string(),
+      LogicOp::Not => "¬".to_string(),
+    };
+    format!(" {} ", op)
+  }
+
   pub fn literal(&mut self, node: &Literal) -> String {
     match node {
       Literal::Empty(token) => "_".to_string(),
       Literal::Boolean(token) => token.to_string(),
       Literal::Number(number) => self.number(number),
       Literal::String(mech_string) => self.string(mech_string),
-      _ => todo!(),
-      /*
-      Literal::Atom(atom) => self.atom(atom, src),
+      Literal::Atom(atom) => self.atom(atom),
       Literal::TypedLiteral((boxed_literal, kind_annotation)) => {
-        let mut src = self.literal(boxed_literal, src);
-        self.kind_annotation(kind_annotation, src)
-      }*/
+        let literal = self.literal(boxed_literal);
+        let annotation = self.kind_annotation(kind_annotation);
+        format!("{}{}", literal, annotation)
+      }
     }
+  }
+
+  pub fn atom(&mut self, node: &Atom) -> String {
+    format!("`{}", node.name.to_string())
   }
 
   pub fn string(&mut self, node: &MechString) -> String {

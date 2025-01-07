@@ -240,6 +240,7 @@ pub fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: Fun
       let result = term(trm, plan.clone(), symbols.clone(), functions.clone())?;
       Ok(result)
     },
+    Factor::Parenthetical(paren) => factor(&*paren, plan.clone(), symbols.clone(), functions.clone()),
     Factor::Expression(expr) => expression(expr, plan.clone(), symbols.clone(), functions.clone()),
     Factor::Negate(neg) => {
       let value = factor(neg, plan.clone(), symbols.clone(), functions.clone())?;

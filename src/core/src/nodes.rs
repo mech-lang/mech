@@ -978,6 +978,7 @@ impl Term {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Factor {
   Term(Box<Term>),
+  Parenthetical(Box<Factor>),
   Expression(Box<Expression>),
   Negate(Box<Factor>),
   Not(Box<Factor>),
@@ -992,6 +993,7 @@ impl Factor {
       Factor::Negate(x) => x.tokens(),
       Factor::Not(x) => x.tokens(),
       Factor::Transpose(x) => x.tokens(),
+      Factor::Parenthetical(x) => x.tokens(),
     }
   }
 }
