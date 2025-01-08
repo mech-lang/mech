@@ -20,6 +20,8 @@ test*.mec
 /target/
 Cargo.lock
 
+
+
 # Build directory
 /build/
 .vscode/settings.json
@@ -27,6 +29,10 @@ Cargo.lock
 # Machines directory
 /machines/
 /notebook/machines
+
+# Website files
+/*.html
+/*.css
 
 # Mac Files
 .DS_Store

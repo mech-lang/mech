@@ -60,9 +60,10 @@ fn main() -> Result<(),MechError> {
              
             let mut formatter = Formatter::new();
             let source = formatter.format(&tree);
+            let formatted_html = Formatter::humanize_html(source);
 
             println!("----------------------------------");
-            println!("{}", source);
+            println!("{}", formatted_html);
             println!("----------------------------------");
 
             let tree_string = hash_str(&format!("{:#?}", tree));
