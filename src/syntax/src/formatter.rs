@@ -201,7 +201,7 @@ impl Formatter {
       }
     }
     if self.html {
-      format!("<span class=\"mech-function-call\"><span class=\"mech-function-name\">{}</span><span class=\"mech-argument-list\">{}</span></span>",name,args)
+      format!("<span class=\"mech-function-call\"><span class=\"mech-function-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-argument-list\">{}</span><span class=\"mech-right-paren\">)</span></span>",name,args)
     } else {
       format!("{}({})", name, args)
     }

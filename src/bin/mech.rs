@@ -79,7 +79,7 @@ async fn main() -> Result<(), MechError> {
         .long("html")
         .required(false)
         .help("Output as HTML")
-        .action(ArgAction::SetFalse)))
+        .action(ArgAction::SetTrue)))
     .subcommand(Command::new("serve")
       .about("Serve Mech program over an HTTP server.")
       .arg(Arg::new("mech_serve_file_paths")
