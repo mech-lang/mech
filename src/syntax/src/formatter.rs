@@ -28,6 +28,11 @@ impl Formatter {
   }
 
   pub fn format(&mut self, tree: &Program) -> String {
+    self.html = false;
+    self.program(tree)
+  }
+
+  pub fn format_html(&mut self, tree: &Program) -> String {
     self.html = true;
     self.program(tree)
   }
@@ -38,7 +43,11 @@ impl Formatter {
       None => "".to_string(),
     };
     let body = self.body(&node.body);
-    format!("{}{}",title,body)
+    if self.html {
+      format!("<div class=\"mech-program\">{}{}</div>",title,body)
+    } else {
+      format!("{}{}",title,body)
+    }
   }
 
   pub fn title(&mut self, node: &Title) -> String {
@@ -168,15 +177,47 @@ impl Formatter {
       Expression::Literal(literal) => self.literal(literal),
       Expression::Structure(structure) => self.structure(structure),
       Expression::Slice(slice) => self.slice(slice),
+      Expression::FunctionCall(function_call) => self.function_call(function_call),
       _ => todo!(),
       /*Expression::Range(range) => self.range(range, src),
-      Expression::FunctionCall(function_call) => self.function_call(function_call, src),
       Expression::FsmPipe(fsm_pipe) => self.fsm_pipe(fsm_pipe, src),*/
     };
     if self.html {
       format!("<span class=\"mech-expression\">{}</span>",e)
     } else {
       format!("{}", e)
+    }
+  }
+
+  pub fn function_call(&mut self, node: &FunctionCall) -> String {
+    let name = node.name.to_string();
+    let mut args = "".to_string();
+    for (i, arg) in node.args.iter().enumerate() {
+      let a = self.argument(arg);
+      if i == 0 {
+        args = format!("{}", a);
+      } else {
+        args = format!("{}, {}", args, a);
+      }
+    }
+    if self.html {
+      format!("<span class=\"mech-function-call\"><span class=\"mech-function-name\">{}</span><span class=\"mech-argument-list\">{}</span></span>",name,args)
+    } else {
+      format!("{}({})", name, args)
+    }
+  }
+
+  pub fn argument(&mut self, node: &(Option<Identifier>, Expression)) -> String {
+    let (name, expr) = node;
+    let n = match name {
+      Some(ident) => ident.to_string(),
+      None => "".to_string(),
+    };
+    let e = self.expression(expr);
+    if self.html {
+      format!("<span class=\"mech-argument\"><span class=\"mech-argument-name\">{}</span><span class=\"mech-argument-expression\">{}</span></span>",n,e)
+    } else {
+      format!("{}{}", n, e)
     }
   }
 
@@ -494,65 +535,58 @@ impl Formatter {
     format!("{}i", real)
   }
 
-  pub fn format_html(input: String) -> String {
+  pub fn humanize_html(input: String) -> String {
     let mut formatted = String::new();
     let mut indent_level: usize = 0;
-
     let mut i = 0;
     while i < input.len() {
-        // Find the next tag
-        if let Some(start) = input[i..].find('<') {
-            let tag_start = i + start;
-            if let Some(end) = input[tag_start..].find('>') {
-                let tag_end = tag_start + end + 1;
-                let tag = &input[tag_start..tag_end];
-
-                // Add any content before the tag
-                let content = &input[i..tag_start].trim();
-                if !content.is_empty() {
-                    formatted.push('\n');
-                    formatted.push_str(&" ".repeat(indent_level));
-                    formatted.push_str(content);
-                }
-
-                // Check if this is a closing tag
-                if tag.starts_with("</") {
-                    // Decrease indentation for closing tags
-                    indent_level = indent_level.saturating_sub(1);
-                    formatted.push('\n');
-                    formatted.push_str(&" ".repeat(indent_level));
-                    formatted.push_str(tag);
-                } else if tag.ends_with("/>") {
-                    // Self-closing tag, no change in indentation
-                    formatted.push('\n');
-                    formatted.push_str(&" ".repeat(indent_level));
-                    formatted.push_str(tag);
-                } else {
-                    // Opening tag
-                    formatted.push('\n');
-                    formatted.push_str(&" ".repeat(indent_level));
-                    formatted.push_str(tag);
-                    indent_level += 1;
-                }
-
-                // Move past the current tag
-                i = tag_end;
-                continue;
-            }
-        }
-
-        // Handle remaining content (if no more tags)
-        let content = &input[i..].trim();
-        if !content.is_empty() {
+      // Find the next tag
+      if let Some(start) = input[i..].find('<') {
+        let tag_start = i + start;
+        if let Some(end) = input[tag_start..].find('>') {
+          let tag_end = tag_start + end + 1;
+          let tag = &input[tag_start..tag_end];
+          // Add any content before the tag
+          let content = &input[i..tag_start].trim();
+          if !content.is_empty() {
             formatted.push('\n');
             formatted.push_str(&" ".repeat(indent_level));
             formatted.push_str(content);
+          }
+          // Check if this is a closing tag
+          if tag.starts_with("</") {
+            // Decrease indentation for closing tags
+            indent_level = indent_level.saturating_sub(1);
+            formatted.push('\n');
+            formatted.push_str(&" ".repeat(indent_level));
+            formatted.push_str(tag);
+          } else if tag.ends_with("/>") {
+            // Self-closing tag, no change in indentation
+            formatted.push('\n');
+            formatted.push_str(&" ".repeat(indent_level));
+            formatted.push_str(tag);
+          } else {
+            // Opening tag
+            formatted.push('\n');
+            formatted.push_str(&" ".repeat(indent_level));
+            formatted.push_str(tag);
+            indent_level += 1;
+          }
+          // Move past the current tag
+          i = tag_end;
+          continue;
         }
-        break;
+      }
+      // Handle remaining content (if no more tags)
+      let content = &input[i..].trim();
+      if !content.is_empty() {
+        formatted.push('\n');
+        formatted.push_str(&" ".repeat(indent_level));
+        formatted.push_str(content);
+      }
+      break;
     }
-
     formatted
-}
+  }
  
-
 }
