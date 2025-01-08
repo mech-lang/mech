@@ -88,7 +88,7 @@ fn main() {
       ArchivedValue::MatrixF32(mat) => {
         let data: Vec<f32> = mat.as_slice().iter().map(|&x| x.into()).collect();
         let m = Matrix2::from_vec(data);
-        Value::MatrixF32(Rc::new(Matrix::Matrix3(m)))
+        Value::MatrixF32(Rc::new(Matrix::Matrix2(m)))
       }
       _ => todo!(),
     };
