@@ -44,7 +44,7 @@ Feel free to stop by and introduce yourself -- we're happy to meet new users and
 
 ## 🗺️ Project Roadmap
 
-Mech v0.2 is currently **beta** status, meaning most intended features are implemented, but rough edges abound and a there is a general lack of documentation. Development is focused on testing and documentation.
+Mech v0.2 is currently **beta** status, meaning most intended features are implemented, but rough edges abound and there is a general lack of documentation. Development is focused on testing and documentation.
 
 A Brief Roadmap:
 
