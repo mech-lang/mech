@@ -4,7 +4,7 @@ extern crate tokio;
 use mech::*;
 use mech_core::*;
 use mech_syntax::parser;
-//use mech_syntax::analyzer::*;
+use mech_syntax::formatter::*;
 use mech_interpreter::interpreter::*;
 use std::time::Instant;
 use std::fs;
@@ -68,6 +68,18 @@ async fn main() -> Result<(), MechError> {
         .long("debug")
         .help("Print debug info")
         .action(ArgAction::SetTrue))
+    .subcommand(Command::new("format")
+      .about("Format Mech source code into standard format.")
+      .arg(Arg::new("mech_format_file_paths")
+        .help("Source .mec and .blx files")
+        .required(false)
+        .action(ArgAction::Append))
+      .arg(Arg::new("html")
+        .short('t')
+        .long("html")
+        .required(false)
+        .help("Output as HTML")
+        .action(ArgAction::SetTrue)))
     .subcommand(Command::new("serve")
       .about("Serve Mech program over an HTTP server.")
       .arg(Arg::new("mech_serve_file_paths")
@@ -119,6 +131,72 @@ async fn main() -> Result<(), MechError> {
     serve_mech(&full_address, mech_paths).await;
     
   }
+  // Format
+  // ----------------------------------------------------------------
+  if let Some(matches) = matches.subcommand_matches("format") {
+    let html_flag = matches.get_flag("html");
+    let mech_paths: Vec<String> = matches.get_many::<String>("mech_format_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+    match read_mech_files(&mech_paths) {
+      Ok(code) => {
+        for c in code {
+          match c {
+            (filename,MechSourceCode::String(s)) => {
+              let now = Instant::now();
+              let parse_result = parser::parse(&s.trim());
+              let elapsed_time = now.elapsed();
+              let parse_duration = elapsed_time.as_nanos() as f64;
+              match parse_result {
+                Ok(tree) => { 
+                  let mut formatter = Formatter::new();
+                  if html_flag {
+                    let formatted_mech = formatter.format_html(&tree);
+                    let formatted_mech = Formatter::humanize_html(formatted_mech);
+                    let head = r#"<html>
+    <head>
+        <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>"#;
+                    let foot = r#"</body></html>"#;
+                    let formatted_mech = format!("{}{}{}",head,formatted_mech,foot);
+                    // save to a html file with the same name as the input mec file in the same directory
+                    match fs::File::create(format!("{}.html",filename)) {
+                      Ok(mut file) => {
+                        match file.write_all(formatted_mech.as_bytes()) {
+                          Ok(_) => {
+                            println!("{} File saved as {}.html", "[Saved]".truecolor(153,221,85), filename);
+                          }
+                          Err(err) => {
+                            println!("Error writing to file: {:?}", err);
+                          }
+                        }
+                      },
+                      Err(err) => {
+                        println!("Error writing to file: {:?}", err);
+                      }
+                    }
+                  } else {
+                    let formatted_mech = formatter.format(&tree);
+                    println!("{}", formatted_mech);
+                  }
+                },
+                Err(err) => {
+                  if let MechErrorKind::ParserError(report, _) = err.kind {
+                    parser::print_err_report(&s, &report);
+                  } else {
+                    panic!("Unexpected error type");
+                  }
+                }
+              }
+            }
+            _ => todo!(),
+          }
+        }
+      }
+      Err(err) => todo!(),
+    }
+    return Ok(());
+  }
 
   // Run
   // ----------------------------------------------------------------
@@ -141,7 +219,7 @@ async fn main() -> Result<(), MechError> {
   stdo.execute(cursor::MoveToNextLine(1));
   println!("\n                {}                ",format!("v{}",VERSION).truecolor(246,192,78));
   println!("           {}           \n", "www.mech-lang.org");
-  println!("Type \":help\" for a list of all commands.\n");
+  println!("Enter \":help\" for a list of all commands.\n");
 
   // Catch Ctrl-C a couple times before quitting
   let mut caught_inturrupts = Arc::new(Mutex::new(0));
@@ -177,22 +255,10 @@ async fn main() -> Result<(), MechError> {
 
       match repl_command {
         Ok((_, ReplCommand::Help)) => {
-          println!("\nMech REPL Commands:");
-          println!("----------------------------------------------------------");
-          println!("{:<15} {:<30}", ":help, :h", "Display this help message");
-          println!("{:<15} {:<30}", ":quit, :q", "Quit the REPL");
-          println!("{:<15} {:<30}", ":symbols, :s", "Display all symbols");
-          println!("{:<15} {:<30}", ":plan, :p", "Display the plan");
-          println!("{:<15} {:<30}", ":whos, :w", "Display all symbols");
-          println!("{:<15} {:<30}", ":clear", "Clear the interpreter state");
-          println!("{:<15} {:<30}", ":clc", "Clear the screen");
-          println!("{:<15} {:<30}", ":load", "Load a file");
-          println!("{:<15} {:<30}", ":ls", "List directory contents");
-          println!("{:<15} {:<30}", ":cd", "Change directory");
-          println!("{:<15} {:<30}", ":step", "Step through the plan\n");
+          println!("{}",help());
         }
         Ok((_, ReplCommand::Quit)) => break 'REPL,
-        Ok((_, ReplCommand::Symbols(name))) => println!("{}", intrp.symbols.borrow().pretty_print()),
+        Ok((_, ReplCommand::Symbols(name))) => println!("{}", symbols(&intrp)),
         Ok((_, ReplCommand::Plan)) => println!("{}", pretty_print_plan(&intrp)),
         Ok((_, ReplCommand::Whos(name))) => println!("{}",whos(&intrp)),
         Ok((_, ReplCommand::Clear(name))) => {
@@ -249,7 +315,7 @@ async fn main() -> Result<(), MechError> {
           let cycle_duration = elapsed_time.as_nanos() as f64;
 
           match result {
-            Ok(r) => println!("{:?}\n{}", r.kind(), r.pretty_print()),
+            Ok(r) => println!("\n{:?}\n{}\n", r.kind(), r.pretty_print()),
             Err(err) => println!("{:?}", err),
           }
           println!("{:0.2?} ns", cycle_duration);

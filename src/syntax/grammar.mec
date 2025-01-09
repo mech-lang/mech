@@ -151,7 +151,7 @@ binding := identifier, kind_annotation?, colon, expression;
 table_column := (space | tab)*, expression ;
 table_row := (space | tab)*, table_column+, semicolon?, new_line? ;
 table_header := bar, <attribute+>, <bar>, space*, new_line? ;
-field := identifier, kind_annotation ;
+field := identifier, [kind_annotation] ;
 
 empty_table := table_start, empty?, table_end ;
 

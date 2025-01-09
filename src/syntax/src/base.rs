@@ -198,7 +198,7 @@ pub fn identifier(input: ParseString) -> ParseResult<Identifier> {
   let (input, (first, mut rest)) = nom_tuple((alt((alpha_token, emoji)), many0(alt((alpha_token, digit_token, symbol, emoji)))))(input)?;
   let mut tokens = vec![first];
   tokens.append(&mut rest);
-  let mut merged = merge_tokens(&mut tokens).unwrap();
+  let mut merged = Token::merge_tokens(&mut tokens).unwrap();
   merged.kind = TokenKind::Identifier; 
   Ok((input, Identifier{name: merged}))
 }
@@ -350,7 +350,7 @@ pub fn float_decimal_start(input: ParseString) -> ParseResult<RealNumber> {
   let (input, _) = period(input)?;
   let (input, part) = digit_sequence(input)?;
   let mut tokens2 = part.clone();
-  let mut merged = merge_tokens(&mut tokens2).unwrap();
+  let mut merged = Token::merge_tokens(&mut tokens2).unwrap();
   merged.kind = TokenKind::Number;
   Ok((input, RealNumber::Float((Token::default(),merged))))
 }
@@ -360,8 +360,8 @@ pub fn float_full(input: ParseString) -> ParseResult<RealNumber> {
   let (input, mut whole) = digit_sequence(input)?;
   let (input, _) = period(input)?;
   let (input, mut part) = digit_sequence(input)?;
-  let mut whole = merge_tokens(&mut whole).unwrap();
-  let mut part = merge_tokens(&mut part).unwrap();
+  let mut whole = Token::merge_tokens(&mut whole).unwrap();
+  let mut part = Token::merge_tokens(&mut part).unwrap();
   whole.kind = TokenKind::Number;
   part.kind = TokenKind::Number;
   Ok((input, RealNumber::Float((whole,part))))
@@ -376,7 +376,7 @@ pub fn float_literal(input: ParseString) -> ParseResult<RealNumber> {
 // integer := digit1 ;
 pub fn integer_literal(input: ParseString) -> ParseResult<RealNumber> {
   let (input, mut digits) = digit_sequence(input)?;
-  let mut merged = merge_tokens(&mut digits).unwrap();
+  let mut merged = Token::merge_tokens(&mut digits).unwrap();
   merged.kind = TokenKind::Number; 
   Ok((input, RealNumber::Integer(merged)))
 }
@@ -387,7 +387,7 @@ pub fn decimal_literal(input: ParseString) -> ParseResult<RealNumber> {
   let input = tag("0d")(input);
   let (input, _) = input?;
   let (input, mut tokens) = label!(digit_sequence, msg)(input)?;
-  let mut merged = merge_tokens(&mut tokens).unwrap();
+  let mut merged = Token::merge_tokens(&mut tokens).unwrap();
   merged.kind = TokenKind::Number; 
   Ok((input, RealNumber::Decimal(merged)))
 }
@@ -398,7 +398,7 @@ pub fn hexadecimal_literal(input: ParseString) -> ParseResult<RealNumber> {
   let input = tag("0x")(input);
   let (input, _) = input?;
   let (input, mut tokens) = label!(many1(alt((digit_token,underscore,alpha_token))), msg)(input)?;
-  let mut merged = merge_tokens(&mut tokens).unwrap();
+  let mut merged = Token::merge_tokens(&mut tokens).unwrap();
   merged.kind = TokenKind::Number; 
   Ok((input, RealNumber::Hexadecimal(merged)))
 }
@@ -409,7 +409,7 @@ pub fn octal_literal(input: ParseString) -> ParseResult<RealNumber> {
   let input = tag("0o")(input);
   let (input, _) = input?;
   let (input, mut tokens) = label!(many1(alt((digit_token,underscore,alpha_token))), msg)(input)?;
-  let mut merged = merge_tokens(&mut tokens).unwrap();
+  let mut merged = Token::merge_tokens(&mut tokens).unwrap();
   merged.kind = TokenKind::Number; 
   Ok((input, RealNumber::Octal(merged)))
 }
@@ -420,7 +420,7 @@ pub fn binary_literal(input: ParseString) -> ParseResult<RealNumber> {
   let input = tag("0b")(input);
   let (input, _) = input?;
   let (input, mut tokens) = label!(many1(alt((digit_token,underscore,alpha_token))), msg)(input)?;
-  let mut merged = merge_tokens(&mut tokens).unwrap();
+  let mut merged = Token::merge_tokens(&mut tokens).unwrap();
   merged.kind = TokenKind::Number; 
   Ok((input, RealNumber::Binary(merged)))
 }

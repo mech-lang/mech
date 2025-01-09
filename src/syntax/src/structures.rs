@@ -108,9 +108,9 @@ pub fn binding(input: ParseString) -> ParseResult<Binding> {
   let (input, _) = whitespace0(input)?;
   let (input, name) = identifier(input)?;
   let (input, kind) = opt(kind_annotation)(input)?;
-  let (input, _) = label!(is_not(nom_tuple((many1(space), colon))), msg1)(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, _) = colon(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = whitespace0(input)?;
   let (input, value) = label!(expression, msg2)(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, _) = opt(comma)(input)?;
@@ -184,10 +184,10 @@ pub fn table_header(input: ParseString) -> ParseResult<Vec<Field>> {
   Ok((input, fields))
 }
 
-// field := identifier, kind_annotation ;
+// field := identifier, [kind_annotation] ;
 pub fn field(input: ParseString) -> ParseResult<Field> {
   let (input, name) = identifier(input)?;
-  let (input, kind) = kind_annotation(input)?;
+  let (input, kind) = opt(kind_annotation)(input)?;
   Ok((input, Field{name, kind}))
 }
 

@@ -139,21 +139,31 @@ impl Default for Token {
   }
 }
 
-pub fn merge_tokens(tokens: &mut Vec<Token>) -> Option<Token> {
-  if tokens.len() == 0 {
-    None
-  } else if tokens.len() == 1 {
-    Some(tokens[0].clone())
-  } else {
-    let first = tokens[0].src_range.clone();
-    let kind = tokens[0].kind.clone();
-    let last = tokens.last().unwrap().src_range.clone();
-    let src_range = merge_src_range(first, last);
-    let chars: Vec<char> = tokens.iter_mut().fold(vec![],|mut m, ref mut t| {m.append(&mut t.chars.clone()); m});
-    let merged_token = Token{kind, chars, src_range};
-    Some(merged_token)
+impl Token {
+
+  pub fn to_string(&self) -> String {
+    self.chars.iter().collect()
+  }
+
+  pub fn merge_tokens(tokens: &mut Vec<Token>) -> Option<Token> {
+    if tokens.len() == 0 {
+      None
+    } else if tokens.len() == 1 {
+      Some(tokens[0].clone())
+    } else {
+      let first = tokens[0].src_range.clone();
+      let kind = tokens[0].kind.clone();
+      let last = tokens.last().unwrap().src_range.clone();
+      let src_range = merge_src_range(first, last);
+      let chars: Vec<char> = tokens.iter_mut().fold(vec![],|mut m, ref mut t| {m.append(&mut t.chars.clone()); m});
+      let merged_token = Token{kind, chars, src_range};
+      Some(merged_token)
+    }
   }
 }
+
+
+
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Program {
@@ -177,6 +187,14 @@ pub struct Title {
   pub text: Token,
 }
 
+impl Title {
+
+  pub fn to_string(&self) -> String {
+    self.text.to_string()
+  }
+
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Body {
   pub sections: Vec<Section>,
@@ -196,6 +214,12 @@ impl Body {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Subtitle {
   pub text: Token,
+}
+
+impl Subtitle {
+  pub fn to_string(&self) -> String {
+    self.text.to_string()
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -492,7 +516,7 @@ pub struct Table {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Field {
   pub name: Identifier,
-  pub kind: KindAnnotation,
+  pub kind: Option<KindAnnotation>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -574,7 +598,7 @@ impl Identifier {
   }
 
   pub fn to_string(&self) -> String {
-    self.name.chars.iter().collect()
+    self.name.to_string()
   }
 
 }
@@ -773,9 +797,31 @@ pub enum ParagraphElement {
   Link,            // todo
 }
 
+impl ParagraphElement {
+
+  pub fn to_string(&self) -> String {
+    match self {
+      ParagraphElement::Start(t) => t.to_string(),
+      ParagraphElement::Text(t) => t.to_string(),
+      _ => "".to_string(),
+    }
+  }
+
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Paragraph {
   pub elements: Vec<ParagraphElement>,
+}
+
+impl Paragraph {
+  pub fn to_string(&self) -> String {
+    let mut out = "".to_string();
+    for e in &self.elements {
+      out.push_str(&e.to_string());
+    }
+    out
+  }
 }
 
 pub type Sign = bool;
@@ -954,6 +1000,7 @@ impl Term {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Factor {
   Term(Box<Term>),
+  Parenthetical(Box<Factor>),
   Expression(Box<Expression>),
   Negate(Box<Factor>),
   Not(Box<Factor>),
@@ -968,6 +1015,7 @@ impl Factor {
       Factor::Negate(x) => x.tokens(),
       Factor::Not(x) => x.tokens(),
       Factor::Transpose(x) => x.tokens(),
+      Factor::Parenthetical(x) => x.tokens(),
     }
   }
 }

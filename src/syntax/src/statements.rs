@@ -22,7 +22,7 @@ pub fn comment_singleline(input: ParseString) -> ParseResult<Comment> {
   let (input, _) = comment_sigil(input)?;
   let (input, mut text) = many1(text)(input)?;
   let (input, _) = whitespace0(input)?;
-  Ok((input, Comment{text: merge_tokens(&mut text).unwrap()}))
+  Ok((input, Comment{text: Token::merge_tokens(&mut text).unwrap()}))
 }
 
 // comment := ws0, "/*", text+, "*/" ;
@@ -33,7 +33,7 @@ pub fn comment_multiline(input: ParseString) -> ParseResult<Comment> {
   let mut text = text.iter().map(|(_,a)| a).cloned().collect::<Vec<Token>>();
   let (input, _) = tag("*/")(input)?;
   let (input, _) = whitespace0(input)?;
-  Ok((input, Comment{text: merge_tokens(&mut text).unwrap()}))
+  Ok((input, Comment{text: Token::merge_tokens(&mut text).unwrap()}))
 }
 
 // assign_operator := "=" ;

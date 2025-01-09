@@ -63,8 +63,7 @@ macro_rules! impl_set_column_match_arms {
     paste!{
       match $arg {
         (Value::Record(rcrd),source,Value::Id(k)) => {
-          let key = Value::Id(k);
-          match (rcrd.map.get(&key),source) {
+          match (rcrd.data.get(&k),source) {
             (Some(Value::Bool(sink)), Value::Bool(source)) => Ok(Box::new(RecordSet{sink: sink.clone(), source: source.clone()})),
             (Some(Value::I8(sink)), Value::I8(source)) => Ok(Box::new(RecordSet{sink: sink.clone(), source: source.clone()})),
             (Some(Value::I16(sink)), Value::I16(source)) => Ok(Box::new(RecordSet{sink: sink.clone(), source: source.clone()})),

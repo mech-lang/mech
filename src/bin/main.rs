@@ -58,6 +58,13 @@ fn main() -> Result<(),MechError> {
             println!("Cycle Time: {:0.2?} ns", cycle_duration / n as f64);
 
              
+            let mut formatter = Formatter::new();
+            let source = formatter.format(&tree);
+            let formatted_html = Formatter::humanize_html(source);
+
+            println!("----------------------------------");
+            println!("{}", formatted_html);
+            println!("----------------------------------");
 
             let tree_string = hash_str(&format!("{:#?}", tree));
             println!("{:?}", tree_string);

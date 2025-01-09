@@ -23,6 +23,7 @@ use crossterm::{
 
 use tabled::{
   builder::Builder,
+  grid::config::HorizontalLine,
   settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
   Tabled,
 };
@@ -60,6 +61,90 @@ pub fn print_prompt() {
   stdout().flush();
 }
 
+pub fn mech_table_style() -> Style<(),(),(),(),(),(),2,0> {
+  Style::empty()
+    .horizontals([
+      (1, HorizontalLine::filled('-').into()),
+      (2, HorizontalLine::filled('-').into()),
+    ])
+}
+
+pub fn help() -> String {
+  let mut builder = Builder::default();
+  builder.push_record(vec!["Command","Short","Parameters","Description"]);
+  builder.push_record(vec![
+    ":help".to_string(),
+    ":h".to_string(),
+    "".to_string(),
+    "Display this help message".to_string()
+  ]);
+  builder.push_record(vec![
+    ":quit".to_string(),
+    ":q".to_string(),
+    "".to_string(),
+    "Quit the REPL".to_string()
+  ]);
+  builder.push_record(vec![
+    ":symbols".to_string(),
+    ":s".to_string(),
+    "[search pattern]".to_string(),
+    "Search symbols".to_string()
+  ]);
+  builder.push_record(vec![
+    ":plan".to_string(),
+    ":p".to_string(),
+    "".to_string(),
+    "Display the plan".to_string()
+  ]);
+  builder.push_record(vec![
+    ":whos".to_string(),
+    ":w".to_string(),
+    "[search pattern]".to_string(),
+    "Search symbol directory".to_string()
+  ]);
+  builder.push_record(vec![
+    ":clc".to_string(),
+    ":c".to_string(),
+    "".to_string(),
+    "Clear the screen".to_string()
+  ]);
+  builder.push_record(vec![
+    ":clear".to_string(),
+    "".to_string(),
+    "[target variable]".to_string(),
+    "Clear the interpreter state".to_string()
+  ]);
+  builder.push_record(vec![
+    ":load".to_string(),
+    "".to_string(),
+    "[file path]".to_string(),
+    "Load a file".to_string()
+  ]);
+  builder.push_record(vec![
+    ":ls".to_string(),
+    "".to_string(),
+    "[target path]".to_string(),
+    "List directory contents".to_string()
+  ]);
+  builder.push_record(vec![
+    ":cd".to_string(),
+    "".to_string(),
+    "[target path]".to_string(),
+    "Change directory".to_string()
+  ]);
+  builder.push_record(vec![
+    ":step".to_string(),
+    "".to_string(),
+    "[step count]".to_string(),
+    "Iterate plan".to_string()
+  ]);
+  let mut table = builder.build();
+  table.with(mech_table_style())
+       .with(Panel::header(format!("{}","🧭 Help".truecolor(0xdf,0xb9,0x9f))));
+  format!("\n{table}\n")
+}
+
+
 pub fn ls() -> String {
   let current_dir = env::current_dir().unwrap();
   let mut builder = Builder::default();
@@ -72,13 +157,13 @@ pub fn ls() -> String {
     let last_write_time = metadata.modified().unwrap();
     let last_write_time: chrono::DateTime<chrono::Local> = last_write_time.into();
     let length = if metadata.is_file() { metadata.len().to_string() } else { "".to_string() };
-    let name = path.file_name().unwrap().to_str().unwrap();
+    let name = format!("{}", path.file_name().unwrap().to_str().unwrap());
     builder.push_record(vec![file_type.to_string(), last_write_time.format("%m/%d/%Y %I:%M %p").to_string(), length, name.to_string()]);
   }
   let mut table = builder.build();
-  table.with(Style::modern_rounded())
-       .with(Panel::header("📂 Directory Listing"));
-  format!("Directory: {}\n{table}",current_dir.display())
+  table.with(mech_table_style())
+       .with(Panel::header(format!("{}","📂 Directory Listing".truecolor(0xdf,0xb9,0x9f))));
+  format!("\nDirectory: {}\n\n{table}\n",current_dir.display())
 }
 
 pub fn pretty_print_tree(tree: &Program) -> String {
@@ -109,10 +194,22 @@ pub fn whos(intrp: &Interpreter) -> String {
   }
 
   let mut table = builder.build();
-  table.with(Style::modern_rounded())       
-       .with(Panel::header("🔍 Whos"));
-  ;
-  format!("{table}")
+  table.with(mech_table_style())   
+        .with(Panel::header(format!("{}","🔍 Whos".truecolor(0xdf,0xb9,0x9f))));
+  format!("\n{table}\n")
+}
+
+pub fn symbols(intrp: &Interpreter) -> String {
+  let mut builder = Builder::default();
+  let symbol_table = intrp.symbols.borrow();
+  builder.push_record(vec![
+    format!("{}",symbol_table.pretty_print()),
+  ]);
+
+  let mut table = builder.build();
+  table.with(mech_table_style())   
+        .with(Panel::header(format!("{}","🔣 Symbols".truecolor(0xdf,0xb9,0x9f))));
+  format!("\n{table}\n")
 }
 
 pub fn clc() {
@@ -400,53 +497,3 @@ pub fn read_mech_files(mech_paths: &Vec<String>) -> MResult<Vec<(String,MechSour
   }
   Ok(code)
 }
-
-/*
-pub fn compile_code(code: Vec<(String,MechSourceCode)>) -> Result<Vec<Vec<MiniBlock>>,MechError> {
-  print!("{}", "[Compiling] ".truecolor(153,221,85));
-  stdout().flush();
-  let mut sections = vec![];
-  let now = Instant::now();
-  for (_,c) in code {
-    match c {
-      MechSourceCode::MiniCores(cores) => {
-        todo!()
-      }
-      MechSourceCode::String(c) => {
-        let mut compiler = Compiler::new();
-        let compiled = compiler.compile_str(&c)?;
-        let mut mb = minify_blocks(&compiled);
-        sections.append(&mut mb);
-      },
-      MechSourceCode::MiniBlocks(mut mb) => {
-        sections.append(&mut mb);
-      },
-    }
-  }
-  let elapsed_time = now.elapsed();
-  let mut blocks_total = 0;
-  for s in &sections {
-    blocks_total += s.len();
-  }
-  println!("Compiled {} blocks in {}ms.", blocks_total, elapsed_time.as_micros() as f64 / 1000.0);
-  Ok(sections)
-}
-
-pub fn minify_blocks(sections: &Vec<Vec<SectionElement>>) -> Vec<Vec<MiniBlock>> {
-  let mut mb_sections = vec![];
-  for section in sections {
-    let mut miniblocks = Vec::new();
-    for element in section {
-
-      match element {
-        SectionElement::Block(block) => {
-          let miniblock = MiniBlock::minify_block(&block);
-          miniblocks.push(miniblock);
-        }
-        _ => (),
-      }
-    }
-    mb_sections.push(miniblocks);
-  }
-  mb_sections
-}*/

@@ -1,11 +1,6 @@
 use mech_core::*;
-use mech_core::nodes::AstNode;
-use crate::compiler::Compiler;
-use hashbrown::hash_map::{HashMap};
-
-// # Formatter
-
-// Formats a block as text syntax
+use mech_core::nodes::{Kind, Matrix};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Formatter{
@@ -32,646 +27,566 @@ impl Formatter {
     }
   }
 
-  pub fn format(&mut self, block_ast: &AstNode) -> String {
+  pub fn format(&mut self, tree: &Program) -> String {
     self.html = false;
-    let code = self.write_node(block_ast);
-    code
+    self.program(tree)
   }
 
-  pub fn format_html(&mut self, block_ast: &AstNode) -> String {
+  pub fn format_html(&mut self, tree: &Program) -> String {
     self.html = true;
-    let header = r#"<style type="text/css">
-.user-function {
-  display: block;
-  background-color: #17151E;
-  color: #E3E1EA;
-  padding: 10px;
-  font-family: monospace;
-  line-height: 20px;
-  border-radius: 3px;
-}
-.block {
-  display: block;
-  background-color: #17151E;
-  color: #E3E1EA;
-  padding: 10px;
-  font-family: monospace;
-  line-height: 20px;
-  border-radius: 3px;
-}
-.code-block {
-  display: block;
-  background-color: #17151E;
-  color: #E3E1EA;
-  padding: 10px;
-  font-family: monospace;
-  line-height: 20px;
-  border-radius: 3px;
-}
-.statement {
-  display: block;
-}
-.transformation {
-  display: block;
-}
-.number-literal {
-  color: #72CAAB;
-}
-.hashtag {
-  color: #B27E9B
-}
-</style>"#;
-    let code = self.write_node(block_ast);
-    format!("{}{}",header,code)
+    self.program(tree)
   }
 
-  pub fn write_node(&mut self, node: &AstNode) -> String {
+  pub fn program(&mut self, node: &Program) -> String {
+    let title = match &node.title {
+      Some(title) => self.title(&title),
+      None => "".to_string(),
+    };
+    let body = self.body(&node.body);
     if self.html {
-      self.indent += 1;
+      format!("<div class=\"mech-program\">{}{}</div>",title,body)
+    } else {
+      format!("{}{}",title,body)
     }
-    let mut code = String::new();
-    let mut node_type = "";
+  }
+
+  pub fn title(&mut self, node: &Title) -> String {
+    if self.html {
+      format!("<h1 class=\"mech-program-title\">{}</h1>",node.to_string())
+    } else {
+      format!("{}\n===============================================================================\n",node.to_string()) 
+    }
+  }
+
+  pub fn subtitle(&mut self, node: &Subtitle) -> String {
+    if self.html {
+      format!("<h2 class=\"mech-program-subtitle\">{}</h2>",node.to_string())
+    } else {
+      format!("{}\n-------------------------------------------------------------------------------\n",node.to_string())
+    }
+  }
+
+  pub fn body(&mut self, node: &Body) -> String {
+    let mut src = "".to_string();
+    let section_count = node.sections.len();
+    for (i, section) in node.sections.iter().enumerate() {
+      let s = self.section(section);
+      src = format!("{}{}", src, s);
+    }
+    if self.html {
+      format!("<div class=\"mech-program-body\">{}</div>",src)
+    } else {
+      src
+    }
+  }
+
+  pub fn section(&mut self, node: &Section) -> String {
+    let mut src = match &node.subtitle {
+      Some(title) => self.subtitle(title),
+      None => "".to_string(),
+    };
+    for (i, el) in node.elements.iter().enumerate() {
+      let el_str = self.section_element(el);
+      src = format!("{}{}", src, el_str);
+    }
+    if self.html {
+      format!("<section class=\"mech-program-section\">{}</section>",src)
+    } else {
+      src
+    }
+  }
+
+  pub fn section_element(&mut self, node: &SectionElement) -> String {
+    let element = match node {
+      SectionElement::Section(n) => todo!(),
+      SectionElement::Comment(n) => todo!(),
+      SectionElement::Paragraph(n) => {
+        if self.html {
+          format!("<p class=\"mech-paragraph\">{}</p>",n.to_string())
+        } else {
+          format!("{}\n",n.to_string())
+        }
+      },
+      SectionElement::MechCode(n) => self.mech_code(n),
+      SectionElement::UnorderedList(n) => todo!(),
+      SectionElement::CodeBlock => todo!(),
+      SectionElement::OrderedList => todo!(),
+      SectionElement::BlockQuote => todo!(),
+      SectionElement::ThematicBreak => todo!(),
+      SectionElement::Image => todo!(),
+    };
+    if self.html {
+      format!("<div class=\"mech-section-element\">{}</div>",element)
+    } else {
+      element
+    }
+  }
+
+  pub fn mech_code(&mut self, node: &MechCode) -> String {
+    let c = match node {
+      MechCode::Expression(expr) => self.expression(expr),
+      MechCode::Statement(stmt) => self.statement(stmt),
+      _ => todo!(),
+      //MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec, src),
+      //MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl, src),
+      //MechCode::FunctionDefine(func_def) => self.function_define(func_def, src),
+    };
+    if self.html {
+      format!("<div class=\"mech-code\">{}</div>",c)
+    } else {
+      format!("{}\n", c)
+    }
+  }
+
+  pub fn variable_define(&mut self, node: &VariableDefine) -> String {
+    let mut mutable = if node.mutable {
+      "~".to_string()
+    } else {
+      "".to_string()
+    };
+    let var = self.var(&node.var);
+    let expression = self.expression(&node.expression);
+    if self.html {
+      format!("<span class=\"mech-variable-define\"><span class=\"mech-variable-mutable\">{}</span>{}<span class=\"mech-variable-assign-op\">:=</span>{}</span>",mutable, var, expression)
+    } else {
+      format!("{}{} := {}", mutable, var, expression)
+    }
+  }
+
+  pub fn statement(&mut self, node: &Statement) -> String {
+    let s = match node {
+      Statement::VariableDefine(var_def) => self.variable_define(var_def),
+      _ => todo!(),
+      //Statement::VariableAssign(var_asgn) => self.variable_assign(var_asgn, src),
+      //Statement::OpAssign(op_asgn) => self.op_assign(op_asgn, src),
+      //Statement::EnumDefine(enum_def) => self.enum_define(enum_def, src),
+      //Statement::FsmDeclare(fsm_decl) => self.fsm_declare(fsm_decl, src),
+      //Statement::KindDefine(kind_def) => self.kind_define(kind_def, src),
+    };
+    if self.html {
+      format!("<span class=\"mech-statement\">{}</span>",s)
+    } else {
+      format!("{}", s)
+    }
+  }
+
+  pub fn expression(&mut self, node: &Expression) -> String {
+    let e = match node {
+      Expression::Var(var) => self.var(var),
+      Expression::Formula(factor) => self.factor(factor),
+      Expression::Literal(literal) => self.literal(literal),
+      Expression::Structure(structure) => self.structure(structure),
+      Expression::Slice(slice) => self.slice(slice),
+      Expression::FunctionCall(function_call) => self.function_call(function_call),
+      _ => todo!(),
+      /*Expression::Range(range) => self.range(range, src),
+      Expression::FsmPipe(fsm_pipe) => self.fsm_pipe(fsm_pipe, src),*/
+    };
+    if self.html {
+      format!("<span class=\"mech-expression\">{}</span>",e)
+    } else {
+      format!("{}", e)
+    }
+  }
+
+  pub fn function_call(&mut self, node: &FunctionCall) -> String {
+    let name = node.name.to_string();
+    let mut args = "".to_string();
+    for (i, arg) in node.args.iter().enumerate() {
+      let a = self.argument(arg);
+      if i == 0 {
+        args = format!("{}", a);
+      } else {
+        args = format!("{}, {}", args, a);
+      }
+    }
+    if self.html {
+      format!("<span class=\"mech-function-call\"><span class=\"mech-function-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-argument-list\">{}</span><span class=\"mech-right-paren\">)</span></span>",name,args)
+    } else {
+      format!("{}({})", name, args)
+    }
+  }
+
+  pub fn argument(&mut self, node: &(Option<Identifier>, Expression)) -> String {
+    let (name, expr) = node;
+    let n = match name {
+      Some(ident) => ident.to_string(),
+      None => "".to_string(),
+    };
+    let e = self.expression(expr);
+    if self.html {
+      format!("<span class=\"mech-argument\"><span class=\"mech-argument-name\">{}</span><span class=\"mech-argument-expression\">{}</span></span>",n,e)
+    } else {
+      format!("{}{}", n, e)
+    }
+  }
+
+  pub fn slice(&mut self, node: &Slice) -> String {
+    let name = node.name.to_string();
+    let mut subscript = "".to_string();
+    for (i, sub) in node.subscript.iter().enumerate() {
+      let s = self.subscript(sub);
+      subscript = format!("{}{}", subscript, s);
+    }
+    if self.html {
+      format!("<span class=\"mech-slice\"><span class=\"mech-var-name\">{}</span><span class=\"mech-subscript\">{}</span></span>",name,subscript)
+    } else {
+      format!("{}{}", name, subscript)
+    }
+  }
+
+  pub fn subscript(&mut self, node: &Subscript) -> String {
     match node {
-      AstNode::Empty => {
-        node_type = "empty";
-        code = "_".to_string();
-      },
-      AstNode::True => {
-        node_type = "true";
-        code = "true".to_string();
-      },
-      AstNode::False => {
-        node_type = "false";
-        code = "false".to_string();
-      },
-      AstNode::Function{name, children,..} => {
-        match MechString::from_chars(name).to_string().as_ref()
-        {
-          "table/range" => {
-            let lhs = self.write_node(&children[0]);
-            let rhs = self.write_node(&children[1]);
-            code = format!("{} : {}", lhs, rhs);
-          },
-          "math/add" => {
-            let lhs = self.write_node(&children[0]);
-            let rhs = self.write_node(&children[1]);
-            code = format!("{} + {}", lhs, rhs);
-          },
-          "math/multiply" => {
-            let lhs = self.write_node(&children[0]);
-            let rhs = self.write_node(&children[1]);
-            code = format!("{} * {}", lhs, rhs);
-          },
-          "math/divide" => {
-            let lhs = self.write_node(&children[0]);
-            let rhs = self.write_node(&children[1]);
-            code = format!("{} / {}", lhs, rhs);
-          },
-          "math/subtract" => {
-            let lhs = self.write_node(&children[0]);
-            let rhs = self.write_node(&children[1]);
-            if lhs == "<span class=\"constant\" id=\"constant\">0</span>" || lhs == "0" {
-              code = format!("-{}", rhs);
-            } else {
-              code = format!("{} - {}", lhs, rhs);
-            }
-          }
-          "logic/and" => {
-            let lhs = self.write_node(&children[0]);
-            let rhs = self.write_node(&children[1]);
-            code = format!("{} & {}", lhs, rhs);
-          },
-          "logic/or" => {
-            let lhs = self.write_node(&children[0]);
-            let rhs = self.write_node(&children[1]);
-            code = format!("{} | {}", lhs, rhs);
-          },
-          "compare/less-than" => {
-            let lhs = self.write_node(&children[0]);
-            let rhs = self.write_node(&children[1]);
-            code = format!("{} < {}", lhs, rhs);
-          },
-          "compare/less-than-equal" => {
-            let lhs = self.write_node(&children[0]);
-            let rhs = self.write_node(&children[1]);
-            code = format!("{} <= {}", lhs, rhs);
-          },
-          "compare/greater-than" => {
-            let lhs = self.write_node(&children[0]);
-            let rhs = self.write_node(&children[1]);
-            code = format!("{} > {}", lhs, rhs);
-          },
-          "compare/greater-than-equal" => {
-            let lhs = self.write_node(&children[0]);
-            let rhs = self.write_node(&children[1]);
-            code = format!("{} >= {}", lhs, rhs);
-          },
-          "compare/equal" => {
-            let lhs = self.write_node(&children[0]);
-            let rhs = self.write_node(&children[1]);
-            code = format!("{} == {}", lhs, rhs);
-          },
-          "compare/not-equal" => {
-            let lhs = self.write_node(&children[0]);
-            let rhs = self.write_node(&children[1]);
-            code = format!("{} != {}", lhs, rhs);
-          },
-          "matrix/multiply" => {
-            let lhs = self.write_node(&children[0]);
-            let rhs = self.write_node(&children[1]);
-            code = format!("{} ** {}", lhs, rhs);
-          },
-          _ => {
-            //node_type = "function";
-            for (ix, child) in children.iter().enumerate() {
-              let binding = self.write_node(&child);
-              if ix == children.len() - 1 {
-                code = format!("{}{}",code, binding);
-              } else {
-                if self.html {
-                  code = format!("{}{}<span class=\"clear\">, </span>",code, binding);
-                } else {
-                  code = format!("{}{}, ",code, binding);
-                }
-
-              }
-            }
-            code = if self.html {
-              format!("<span class=\"function-name\">{}</span>({})",MechString::from_chars(name).to_string(), code)
-            } else {
-              format!("{}({})", MechString::from_chars(name).to_string(), code)
-            }
-          }
-        }
-      },
-      AstNode::Table{name, id: _,..} => {
-        code = MechString::from_chars(name).to_string();
-        if self.html {
-          code = format!("<span class=\"hashtag\">#</span><span class=\"global-variable\">{}</span>", code)
-        } else {
-          code = format!("#{}", code)
-        }
-      },
-      AstNode::Identifier{name, id: _,..} => {
-        code = MechString::from_chars(name).to_string();
-      },
-      AstNode::TableDefine{children} => {
-        let lhs = self.write_node(&children[0]);
-        /*self.indent = if self.html {
-          lhs.len() + 3 - 37 - 47
-        } else {
-          lhs.len() + 3
-        };*/
-        let rhs = self.write_node(&children[1]);
-        let lhs = if self.html {
-          format!("{}", lhs)
-        } else {
-          format!("{}", lhs)
-        };
-        code = if self.html {
-          format!("{}{}<span class=\"equal\"> = </span>\n{}", self.tab(), lhs, rhs)
-        } else {
-          format!("{} = {}", lhs, rhs)
-        };
-      },
-      AstNode::SetData{children} => {
-        let lhs = self.write_node(&children[0]);
-        let rhs = self.write_node(&children[1]);
-        code = format!("{} := {}", lhs, rhs);
-      },
-      AstNode::SplitData{children} => {
-        let lhs = self.write_node(&children[0]);
-        /*self.indent = if self.html {
-          lhs.len() + 4
-        } else {
-          lhs.len() + 2
-        };*/
-        let rhs = self.write_node(&children[1]);
-        let lhs = if self.html {
-          format!("<span class=\"local-variable\">{}</span>", lhs)
-        } else {
-          format!("{}", lhs)
-        };
-        code = format!("{} >- {}", lhs, rhs);
-      },
-      AstNode::AddRow{children} => {
-        let lhs = self.write_node(&children[0]);
-        let rhs = self.write_node(&children[1]);
-        code = format!("{} += {}", lhs, rhs);
-      },
-      AstNode::VariableDefine{children} => {
-        let lhs = self.write_node(&children[0]);
-        /*self.indent = if self.html {
-          lhs.len() + 4
-        } else {
-          lhs.len() + 2
-        };*/
-        let rhs = self.write_node(&children[1]);
-        let lhs = if self.html {
-          format!("<span class=\"local-variable\">{}</span>", lhs)
-        } else {
-          format!("{}", lhs)
-        };
-        code = format!("{} = {}", lhs, rhs);
-      },
-      AstNode::String{text,..} => {
-        let string = MechString::from_chars(text).to_string();
-        code = if self.html {
-          format!("{}<span class=\"string\">{}</span>\n",self.tab(),string)
-        } else {
-          format!("{}", string)
-        }
-      },
-      AstNode::SelectData{name, id, children,..} => {
-        let name = MechString::from_chars(name).to_string();
-        for child in children {
-          let written_child = self.write_node(child);
-          code = format!("{}{}",code, written_child);
-        }
-        let formatted_name = match id {
-          TableId::Local(..) => {
-            if self.html {
-              format!("<span class=\"local-variable\">{}</span>", name)
-            } else {
-              format!("{}", name)
-            }
-          },
-          TableId::Global(..) => {
-            if self.html {
-              format!("<span class=\"hashtag\">#</span><span class=\"global-variable\">{}</span>", name)
-            } else {
-              format!("#{}", name)
-            }
-          },
-        };
-        code = format!("{}{}",formatted_name, code);
-      }
-      AstNode::SubscriptIndex{children} => {
-        for (ix, child) in children.iter().enumerate() {
-          let written_child = self.write_node(child);
-          if ix == children.len() - 1 {
-            code = format!("{}{}",code, written_child);
-          } else {
-            if self.html {
-              code = format!("{}{}<span class=\"clear\">, </span>",code, written_child);
-            } else {
-              code = format!("{}{}, ",code, written_child);
-            }
-          }
-        }
-        if self.html {
-          code = format!("<span class=\"bracket\">{{</span>{}<span class=\"bracket\">}}</span>", code);
-        } else {
-          code = format!("{{{}}}", code);
-        }
-      }
-      AstNode::DotIndex{children} => {
-        let mut reversed = children.clone();
-        reversed.reverse();
-        for child in reversed {
-          let written_child = self.write_node(&child);
-          code = format!("{}{}", code, written_child);
-        }
-        code = format!(".{}", code);
-      }
-      AstNode::AnonymousTableDefine{children} => {
-        let nested = self.nested;
-        let rows = self.rows;
-        let cols = self.cols;
-        self.rows = 0;
-        self.cols = 0;
-        self.nested = true;
-        for (ix, child) in children.iter().enumerate() {
-          let mut newline = "";
-          let written_child = self.write_node(&child);
-          if ix != children.len() - 1 {
-            newline = "\n";
-          }
-          code = format!("{}{}{}", code, written_child, newline);
-        }
-        self.nested = nested;
-        if self.rows == 1 && self.cols == 1 && !self.nested {
-          code = format!("{}", code);
-        } else {
-          if self.html {
-            code = format!("<span class=\"bracket\">[</span>{}<span class=\"bracket\">]</span>", code);
-          } else {
-            code = format!("[{}]", code);
-          }
-        }
-        self.rows = rows;
-        self.cols = cols;
-      }
-      AstNode::SelectAll => {
-        node_type = "function";
-        code = ":".to_string();
-      }
-      AstNode::InlineTable{children} => {
-        let nested = self.nested;
-        self.nested = true;
-        for (ix, child) in children.iter().enumerate() {
-          let binding = self.write_node(&child);
-          if ix == children.len() - 1 {
-            code = format!("{}{}",code, binding);
-          } else {
-            if self.html {
-              code = format!("{}{}<span class=\"clear\">, </span>",code, binding);
-            } else {
-              code = format!("{}{}, ",code, binding);
-            }
-          }
-        }
-        self.nested = nested;
-        if self.html {
-          code = format!("<span class=\"bracket\">[</span>{}<span class=\"bracket\">]</span>", code);
-        } else {
-          code = format!("[{}]", code);
-        };
-      }
-      AstNode::Binding{children} => {
-        let lhs = self.write_node(&children[0]);
-        let rhs = self.write_node(&children[1]);
-        if self.html {
-          code = format!("<span class=\"parameter\">{}:</span> {}", lhs, rhs);
-        } else {
-          code = format!("{}: {}", lhs, rhs);
-        };
-      }
-      AstNode::Whenever{children} => {
-        let table = self.write_node(&children[0]);
-        if self.html {
-          code = format!("<span class=\"whenever\">~</span> {}", table);
-        } else {
-          code = format!("~ {}", table);
-        };
-      }
-      AstNode::Wait{children} => {
-        let table = self.write_node(&children[0]);
-        if self.html {
-          code = format!("<span class=\"wait\">|~</span> {}", table);
-        } else {
-          code = format!("|~ {}", table);
-        };
-      }
-      AstNode::Until{children} => {
-        let table = self.write_node(&children[0]);
-        if self.html {
-          code = format!("<span class=\"until\">~|</span> {}", table);
-        } else {
-          code = format!("~| {}", table);
-        };
-      }
-      AstNode::TableHeader{children} => {
-        self.rows += 1;
-        node_type = "parameter";
-        for child in children {
-          let written_child = self.write_node(child);
-          code = format!("{}{} ",code, written_child);
-        }
-        code = format!("|{}|",code);
-      }
-      AstNode::TableRow{children} => {
-        self.rows += 1;
-        self.cols = 0;
-        for (ix, child) in children.iter().enumerate() {
-          let mut space = "";
-          let written_child = self.write_node(child);
-          if ix != children.len() - 1 {
-            space = " ";
-          }
-          code = format!("{}{}{}", code, written_child, space)
-        }
-        let indent = if self.rows != 1 {
-          repeat_char(" ", self.indent)
-        } else {
-          "".to_string()
-        };
-        code = format!("{}{}", indent, code)
-      }
-      AstNode::TableColumn{children,..} => {
-        self.cols += 1;
-        for child in children {
-          code = self.write_node(child);
-        }
-      }
-      AstNode::ParagraphText{text, src_range} => {
-        let paragraph = MechString::from_chars(text).to_string();
-        if self.html {
-          code = format!("{}{}<span class=\"paragraph-text\">{}</span>\n",code,self.tab(),paragraph);
-        } else {
-          code = format!("{}{}\n\n",code,paragraph);
-        };
-      }
-      AstNode::NumberLiteral{kind, bytes, ..} => {
-        let mut compiler = Compiler::new();
-        let tfms = compiler.compile_node(&node).unwrap();
-        match &tfms[1] {
-          Transformation::NumberLiteral{kind,bytes} => {
-            let mut num = NumberLiteral::new(*kind, bytes.to_vec());
-            if self.html {
-              code = format!("{}<span class=\"number-literal\">{}</span>",code,num.as_f32());
-            } else {
-              code = format!("{}{}",code,num.as_f32());
-            };
-          }
-          _ => (),
-        }
-      }
-      AstNode::Program{title,children} => {
-        match title {
-          Some(title) => {
-            let title = MechString::from_chars(title).to_string();
-            if self.html {
-              code = format!("{}{}<h1 class=\"program-title\">{}</h1>\n",code,self.tab(),title);
-            } else {
-              let underline = repeat_char("=", title.len() + 2);
-              code = format!("{}{}\n{}\n\n",code,title,underline);
-            };
-          }
-          _ => (),
-        }
-        for child in children {
-          code = format!("{}{}",code,self.write_node(child));
-        }
-      }
-      AstNode::Section{title, children, level} => {
-        if self.html {
-          code = format!("{}{}<span class=\"{}\">\n",code, self.tab(), "section");
-        }
-        match title {
-          Some(title) => {
-            let title = MechString::from_chars(title).to_string();
-            if self.html {
-              let (tag,class) = match level {
-                1 => ("h2","level-1-title"),
-                2 => ("h3","level-2-title"),
-                3 => ("h4","level-3-title"),
-                _ => ("ERROR","ERROR")
-              };
-              code = format!("{}{}<{} class=\"{}\">{}</{}>\n",code,self.tab(),tag,class,title,tag);
-            } else {
-              let underline = repeat_char("-", title.len() + 2);
-              code = format!("{}{}\n{}\n\n",code,title,underline);
-            };
-          }
-          _ => (),
-        }
-        for child in children {
-          code = format!("{}{}",code,self.write_node(child));
-        }
-        if self.html {
-          code = format!("{}{}</span>\n",code,self.tab());
-        }
-      }
-      AstNode::Paragraph{children,..} => {       
-        if self.html {
-          code = format!("{}{}<p class=\"paragraph\">\n",code, self.tab());
-        }
-        for child in children {
-          code = format!("{}{}",code,self.write_node(child));
-        }
-        if self.html {
-          code = format!("{}{}</p>\n",code,self.tab());
-        }
-      },
-      AstNode::UnorderedList{children,..} => {       
-        if self.html {
-          code = format!("{}{}<ul class=\"unordrered-list\">\n",code, self.tab());
-        }
-        for child in children {
-          code = format!("{}{}",code,self.write_node(child));
-        }
-        if self.html {
-          code = format!("{}{}</ul>\n",code,self.tab());
-        }
-      },
-      AstNode::ListItem{children,..} => {       
-        if self.html {
-          code = format!("{}{}<li class=\"list-item\">\n",code, self.tab());
-        }
-        for child in children {
-          code = format!("{}{}",code,self.write_node(child));
-        }
-        if self.html {
-          code = format!("{}{}</li>\n",code,self.tab());
-        }
-      },
-      AstNode::CodeBlock{children,..} => {       
-        if self.html {
-          code = format!("{}{}<pre class=\"code-block\">\n",code, self.tab());
-        }
-        for child in children {
-          code = format!("{}{}",code,self.write_node(child));
-        }
-        if self.html {
-          code = format!("{}{}</pre>\n",code,self.tab());
-        }
-      },
-      AstNode::UserFunction{children, ..} => {code = self.write_nodes(children,code,"user-function");},
-      AstNode::FunctionArgs{children, ..} => {code = self.write_nodes(children,code,"function-args");},
-      AstNode::FunctionOutput{children, ..} => {code = self.write_nodes(children,code,"function-output");},
-      AstNode::FunctionInput{children, ..} => {code = self.write_nodes(children,code,"function-input");},
-      AstNode::FunctionBody{children, ..} => {code = self.write_nodes(children,code,"function-body");},
-      AstNode::FunctionBinding{children, ..} => {code = self.write_nodes(children,code,"function-binding");},
-
-      AstNode::KindAnnotation{children, ..} => {code = self.write_nodes(children,code,"kind-annotation");},
-      AstNode::InlineCode{children, ..} => {code = self.write_nodes(children,code,"inline-code");},
-      AstNode::Swizzle{children, ..} => {code = self.write_nodes(children,code,"inline-code");},
-      AstNode::FlattenData{children, ..} => {code = self.write_nodes(children,code,"inline-code");},
-      AstNode::Comment{children, ..} => {code = self.write_nodes(children,code,"inline-code");},
-      AstNode::UpdateData{children, ..} => {code = self.write_nodes(children,code,"inline-code");},
-
-
-      AstNode::Transformation{children, ..} => {code = self.write_nodes(children,code,"transformation");},
-      AstNode::Root{children,..} => {
-        code = self.write_style(code);
-        code = self.write_nodes(children,code,"root");
-      },
-      AstNode::Paragraph{children,..} => {code = self.write_nodes(children,code,"paragraph");},
-      AstNode::Attribute{children,..} => {code = self.write_nodes(children,code,"attribute");},
-      AstNode::MathExpression{children,..} => {code = self.write_nodes(children,code,"math-expression");},
-      AstNode::Expression{children,..} => {code = self.write_nodes(children,code,"expression");},
-      AstNode::Statement{children,..} => {code = self.write_nodes(children,code,"statement");},
-      AstNode::Block{children, ..} => {code = self.write_nodes(children,code,"block");},
-      AstNode::Null => (),
-      x => println!("Unhandled Node {:?}", x),
+      Subscript::Bracket(subs) => self.bracket(subs),
+      Subscript::Formula(factor) => self.factor(factor),
+      Subscript::All => self.all(),
+      _ => todo!(),
+      /*Subscript::Dot(ident) => self.dot(ident),
+      Subscript::Swizzle(idents) => self.swizzle(idents),
+      Subscript::Range(range) => self.range(range),
+      Subscript::Brace(subs) => self.brace(subs),
+      Subscript::DotInt(real) => self.dot_int(real),*/
     }
-    if self.html && node_type != "" {
-      code = format!("<span class=\"{}\">{}</span>", node_type, code);
+  }
+
+  pub fn all(&mut self) -> String {
+    if self.html {
+      format!("<span class=\"mech-all\">:</span>")
+    } else {
+      ":".to_string()
+    }
+  }
+
+  pub fn bracket(&mut self, node: &Vec<Subscript>) -> String {
+    let mut src = "".to_string();
+    for (i, sub) in node.iter().enumerate() {
+      let s = self.subscript(sub);
+      if i == 0 {
+        src = format!("{}", s);
+      } else {
+        src = format!("{},{}", src, s);
+      }
     }
     if self.html {
-      self.indent -= 1;
+      format!("<span class=\"mech-bracket\">[{}]</span>",src)
+    } else {
+      format!("[{}]",src)
     }
-    code
   }
 
-  fn tab(&mut self) -> String {
-    let mut result = "".to_string();
-    if self.indent > 100 {
-      self.indent = 0;
-    }
-    for _ in 0..self.indent {
-      result = format!("{}{}", result, "  ");
-    }
-    result
-  }
-
-  fn write_style(&self, code: String) -> String {
-    let mut code = code;
-    let mut style = r#"    
-<style type="text/css">
-  .user-function {
-    display: block;
-    background-color: #17151E;
-    color: #E3E1EA;
-    padding: 10px;
-    font-family: monospace;
-    line-height: 20px;
-    border-radius: 3px;
-  }
-  .block {
-    display: block;
-    background-color: #17151E;
-    color: #E3E1EA;
-    padding: 10px;
-    font-family: monospace;
-    line-height: 20px;
-    border-radius: 3px;
-  }
-  .transformation {
-    display: block;
-  }
-  .number-literal {
-    color: #72CAAB;
-  }
-  .hashtag {
-    color: #B27E9B
-  }
-</style>"#;
-    format!("{}{}\n",code, style)
-  }
-
-  fn write_nodes(&mut self, children: &Vec<AstNode>, code: String, class: &str) -> String {
-    let mut code = code;
+  pub fn structure(&mut self, node: &Structure) -> String {
+    let s = match node {
+      Structure::Matrix(matrix) => self.matrix(matrix),
+      _ => todo!(),
+      //Structure::Empty => "".to_string(),
+      //Structure::Record(record) => self.record(record),
+      //Structure::Table(table) => self.table(table),
+      //Structure::Tuple(tuple) => self.tuple(tuple),
+      //Structure::TupleStruct(tuple_struct) => self.tuple_struct(tuple_struct),
+      //Structure::Set(set) => self.set(set),
+      //Structure::Map(map) => self.map(map),
+    };
     if self.html {
-      code = format!("{}{}<span class=\"{}\">\n",code, self.tab(), class);
+      format!("<span class=\"mech-structure\">{}</span>",s)
+    } else {
+      format!("{}", s)
     }
-    for child in children {
-      code = format!("{}{}",code,self.write_node(child));
+  }
+
+  pub fn matrix(&mut self, node: &Matrix) -> String {
+    let mut src = "".to_string();
+    for (i, row) in node.rows.iter().enumerate() {
+      let r = self.matrix_row(row);
+      if i == 0 {
+        src = format!("{}{}", src, r);
+      } else {
+        src = format!("{}; {}", src, r);
+      }
+          }
+    if self.html {
+      format!("<span class=\"mech-matrix\"><span class=\"mech-bracket\">[</span>{}<span class=\"mech-bracket\">]</span></span>",src)
+    } else {
+      format!("[{}]",src)
+    }
+  }
+
+  pub fn matrix_row(&mut self, node: &MatrixRow) -> String {
+    let mut src = "".to_string();
+    for (i, cell) in node.columns.iter().enumerate() {
+      let c = self.matrix_column(cell);
+      if i == 0 {
+        src = format!("{}", c);
+      } else { 
+        src = format!("{} {}", src, c);
+      }
     }
     if self.html {
-      code = format!("{}{}</span>\n",code,self.tab());
+      format!("<span class=\"mech-matrix-row\">{}</span>",src)
+    } else {
+      src
     }
-    code
   }
-  
 
-}
+  pub fn matrix_column(&mut self, node: &MatrixColumn) -> String {
+    let element = self.expression(&node.element);
+    if self.html {
+      format!("<span class=\"mech-matrix-element\">{}</span>",element)
+    } else {
+      element
+    }    
+  }  
 
-fn repeat_char(to_print: &str, n: usize) -> String {
-  let mut result = "".to_string();
-  for _ in 0..n {
-    result = format!("{}{}", result, to_print);
+  pub fn var(&mut self, node: &Var) -> String {
+    let annotation = if let Some(kind) = &node.kind {
+      self.kind_annotation(kind)
+    } else {
+      "".to_string()
+    };
+    if self.html {
+      format!("<span class=\"mech-var-name\">{}</span><span class=\"mech-kind-annotation\">{}</span>", node.name.to_string(), annotation)
+    } else {
+      format!("{}{}", node.name.to_string(), annotation)
+    }
   }
-  result
+
+  pub fn kind_annotation(&mut self, node: &KindAnnotation) -> String {
+    let kind = self.kind(&node.kind);
+    format!("<{}>", kind)
+  }
+
+  pub fn kind(&mut self, node: &Kind) -> String {
+    match node {
+      Kind::Scalar(ident) => ident.to_string(),
+      Kind::Empty => "_".to_string(),
+      _ => todo!(),
+    }
+  }
+
+  pub fn factor(&mut self, node: &Factor) -> String {
+    let f = match node {
+      Factor::Term(term) => self.term(term),
+      Factor::Expression(expr) => self.expression(expr),
+      Factor::Parenthetical(paren) => format!("({})", self.factor(&paren)),
+      Factor::Negate(factor) => format!("-{}", self.factor(factor)),
+      Factor::Not(factor) => format!("¬{}", self.factor(factor)),
+      Factor::Transpose(factor) => format!("{}'", self.factor(factor)),
+    };
+    if self.html {
+      format!("<span class=\"mech-factor\">{}</span>",f)
+    } else {
+      f
+    }
+  }
+
+  pub fn term(&mut self, node: &Term) -> String {
+    let mut src = self.factor(&node.lhs);
+    for (formula_operator, rhs) in &node.rhs {
+      let op = self.formula_operator(formula_operator);
+      let rhs = self.factor(rhs);
+      src = format!("{}{}{}", src, op, rhs);
+    }
+    if self.html {
+      format!("<span class=\"mech-term\">{}</span>",src)
+    } else {
+      src
+    }
+  }
+
+  pub fn formula_operator(&mut self, node: &FormulaOperator) -> String {
+    let f = match node {
+      FormulaOperator::AddSub(op) => self.add_sub_op(op),
+      FormulaOperator::MulDiv(op) => self.mul_div_op(op),
+      FormulaOperator::Exponent(op) => self.exponent_op(op),
+      FormulaOperator::Vec(op) => self.vec_op(op),
+      FormulaOperator::Comparison(op) => self.comparison_op(op),
+      FormulaOperator::Logic(op) => self.logic_op(op),
+    };
+    if self.html {
+      format!("<span class=\"mech-formula-operator\">{}</span>",f)
+    } else {
+      format!(" {} ", f)
+    }
+  }
+
+  pub fn add_sub_op(&mut self, node: &AddSubOp) -> String {
+    match node {
+      AddSubOp::Add => "+".to_string(),
+      AddSubOp::Sub => "-".to_string(),
+    }
+  }
+
+  pub fn mul_div_op(&mut self, node: &MulDivOp) -> String {
+    match node {
+      MulDivOp::Mul => "*".to_string(),
+      MulDivOp::Div => "/".to_string(),
+    }
+  }
+
+  pub fn exponent_op(&mut self, node: &ExponentOp) -> String {
+    match node {
+      ExponentOp::Exp => "^".to_string(),
+    }
+  }
+
+  pub fn vec_op(&mut self, node: &VecOp) -> String {
+    match node {
+      VecOp::MatMul => "**".to_string(),
+      VecOp::Solve => "\\".to_string(),
+      VecOp::Cross => "×".to_string(),
+      VecOp::Dot => "·".to_string(),
+    }
+  }
+
+  pub fn comparison_op(&mut self, node: &ComparisonOp) -> String {
+    match node {
+      ComparisonOp::Equal => "==".to_string(),
+      ComparisonOp::NotEqual => "≠".to_string(),
+      ComparisonOp::GreaterThan => ">".to_string(),
+      ComparisonOp::GreaterThanEqual => "≥".to_string(),
+      ComparisonOp::LessThan => "<".to_string(),
+      ComparisonOp::LessThanEqual => "≤".to_string(),
+    }
+  }
+
+  pub fn logic_op(&mut self, node: &LogicOp) -> String {
+    match node {
+      LogicOp::And => "&".to_string(),
+      LogicOp::Or => "|".to_string(),
+      LogicOp::Xor => "xor".to_string(),
+      LogicOp::Not => "¬".to_string(),
+    }
+  }
+
+  pub fn literal(&mut self, node: &Literal) -> String {
+    let l = match node {
+      Literal::Empty(token) => "_".to_string(),
+      Literal::Boolean(token) => token.to_string(),
+      Literal::Number(number) => self.number(number),
+      Literal::String(mech_string) => self.string(mech_string),
+      Literal::Atom(atom) => self.atom(atom),
+      Literal::TypedLiteral((boxed_literal, kind_annotation)) => {
+        let literal = self.literal(boxed_literal);
+        let annotation = self.kind_annotation(kind_annotation);
+        format!("{}{}", literal, annotation)
+      }
+    };
+    if self.html {
+      format!("<span class=\"mech-literal\">{}</span>",l)
+    } else {
+      l
+    }
+  }
+
+  pub fn atom(&mut self, node: &Atom) -> String {
+    if self.html {
+      format!("<span class=\"mech-atom\">{}</span>",node.name.to_string())
+    } else {
+      format!("`{}", node.name.to_string())
+    }
+  }
+
+  pub fn string(&mut self, node: &MechString) -> String {
+    if self.html {
+      format!("<span class=\"mech-string\">\"{}\"</span>", node.text.to_string())
+    } else {
+      format!("\"{}\"", node.text.to_string())
+    }
+  }
+
+  pub fn number(&mut self, node: &Number) -> String {
+    let n = match node {
+      Number::Real(real) => self.real_number(real),
+      Number::Imaginary(complex) => self.complex_numer(complex),
+    };
+    if self.html {
+      format!("<span class=\"mech-number\">{}</span>",n)
+    } else {
+      n
+    }
+  }
+
+  pub fn real_number(&mut self, node: &RealNumber) -> String {
+    match node {
+      RealNumber::Negated(real_number) => format!("-{}", self.real_number(real_number)),
+      RealNumber::Integer(token) => token.to_string(),
+      RealNumber::Float((whole, part)) => format!("{}.{}", whole.to_string(), part.to_string()),
+      RealNumber::Decimal(token) => token.to_string(),
+      RealNumber::Hexadecimal(token) => format!("0x{}", token.to_string()),
+      RealNumber::Octal(token) => format!("0o{}", token.to_string()),
+      RealNumber::Binary(token) => format!("0b{}", token.to_string()),
+      RealNumber::Scientific(((whole, part), (sign, ewhole, epart))) => format!("{}.{}e{}{}.{}", whole.to_string(), part.to_string(), if *sign { "-" } else { "+" }, ewhole.to_string(), epart.to_string()),
+      RealNumber::Rational((numerator, denominator)) => format!("{}/{}", numerator.to_string(), denominator.to_string()),
+    }
+  }
+
+  pub fn complex_numer(&mut self, node: &ComplexNumber) -> String {
+    let real = if let Some(real) = &node.real {
+      let num = self.real_number(&real);
+      format!("{}+", num)
+    } else {
+      "".to_string()
+    };
+    let im = self.imaginary_number(&node.imaginary);
+    format!("{}{}", real, im)
+  }
+
+  pub fn imaginary_number(&mut self, node: &ImaginaryNumber) -> String {
+    let real = self.real_number(&node.number);
+    format!("{}i", real)
+  }
+
+  pub fn humanize_html(input: String) -> String {
+    let mut formatted = String::new();
+    let mut indent_level: usize = 0;
+    let mut i = 0;
+    while i < input.len() {
+      // Find the next tag
+      if let Some(start) = input[i..].find('<') {
+        let tag_start = i + start;
+        if let Some(end) = input[tag_start..].find('>') {
+          let tag_end = tag_start + end + 1;
+          let tag = &input[tag_start..tag_end];
+          // Add any content before the tag
+          let content = &input[i..tag_start].trim();
+          if !content.is_empty() {
+            formatted.push('\n');
+            formatted.push_str(&" ".repeat(indent_level));
+            formatted.push_str(content);
+          }
+          // Check if this is a closing tag
+          if tag.starts_with("</") {
+            // Decrease indentation for closing tags
+            indent_level = indent_level.saturating_sub(1);
+            formatted.push('\n');
+            formatted.push_str(&" ".repeat(indent_level));
+            formatted.push_str(tag);
+          } else if tag.ends_with("/>") {
+            // Self-closing tag, no change in indentation
+            formatted.push('\n');
+            formatted.push_str(&" ".repeat(indent_level));
+            formatted.push_str(tag);
+          } else {
+            // Opening tag
+            formatted.push('\n');
+            formatted.push_str(&" ".repeat(indent_level));
+            formatted.push_str(tag);
+            indent_level += 1;
+          }
+          // Move past the current tag
+          i = tag_end;
+          continue;
+        }
+      }
+      // Handle remaining content (if no more tags)
+      let content = &input[i..].trim();
+      if !content.is_empty() {
+        formatted.push('\n');
+        formatted.push_str(&" ".repeat(indent_level));
+        formatted.push_str(content);
+      }
+      break;
+    }
+    formatted
+  }
+ 
 }

@@ -15,7 +15,7 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
   let (input, _) = new_line(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = whitespace0(input)?;
-  let mut title = merge_tokens(&mut text).unwrap();
+  let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
   Ok((input, Title{text: title}))
 }
@@ -32,7 +32,7 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = new_line(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = whitespace0(input)?;
-  let mut title = merge_tokens(&mut text).unwrap();
+  let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
   Ok((input, Subtitle{text: title}))
 }
@@ -47,7 +47,7 @@ pub fn number_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, mut text) = many1(text)(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = whitespace0(input)?;
-  let mut title = merge_tokens(&mut text).unwrap();
+  let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
   Ok((input, Subtitle{text: title}))
 }
@@ -62,7 +62,7 @@ pub fn alpha_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, mut text) = many1(text)(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = whitespace0(input)?;
-  let mut title = merge_tokens(&mut text).unwrap();
+  let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
   Ok((input, Subtitle{text: title}))
 }
@@ -84,7 +84,7 @@ pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, elements) = match many1(nom_tuple((is_not(define_operator),text)))(input) {
     Ok((input, mut text)) => {
       let mut text = text.into_iter().map(|(_,tkn)| tkn).collect();
-      let mut text = merge_tokens(&mut text).unwrap();
+      let mut text = Token::merge_tokens(&mut text).unwrap();
       text.kind = TokenKind::Text;
       (input, ParagraphElement::Text(text))
     }, 

@@ -92,7 +92,7 @@ fn clear_rpl(input: &str) -> IResult<&str, ReplCommand> {
 }
 
 fn clc_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = tag("clc")(input)?;
+  let (input, _) = alt((tag("c"), tag("clc")))(input)?;
   Ok((input, ReplCommand::Clc))
 }
 

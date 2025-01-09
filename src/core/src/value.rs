@@ -46,10 +46,45 @@ macro_rules! impl_as_type {
 
 // Value ----------------------------------------------------------------------
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, 
-  String, Bool, Matrix(Box<ValueKind>,(usize,usize)), Enum(u64), Set, Map, Record, Table, Tuple, Id, Index, Reference(Box<ValueKind>), Atom(u64), Empty, Any
+  String, Bool, Matrix(Box<ValueKind>,(usize,usize)), Enum(u64), Set(Box<ValueKind>, usize), 
+  Map((Box<ValueKind>,Box<ValueKind>),usize), Record(Vec<ValueKind>), Table(Vec<ValueKind>, usize), Tuple(Vec<ValueKind>), Id, Index, Reference(Box<ValueKind>), Atom(u64), Empty, Any
+}
+
+impl fmt::Debug for ValueKind {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    match self {
+      ValueKind::U8 => write!(f, "u8"),
+      ValueKind::U16 => write!(f, "u16"),
+      ValueKind::U32 => write!(f, "u32"),
+      ValueKind::U64 => write!(f, "u64"),
+      ValueKind::U128 => write!(f, "u128"),
+      ValueKind::I8 => write!(f, "i8"),
+      ValueKind::I16 => write!(f, "i16"),
+      ValueKind::I32 => write!(f, "i32"),
+      ValueKind::I64 => write!(f, "i64"),
+      ValueKind::I128 => write!(f, "i128"),
+      ValueKind::F32 => write!(f, "f32"),
+      ValueKind::F64 => write!(f, "f64"),
+      ValueKind::String => write!(f, "string"),
+      ValueKind::Bool => write!(f, "bool"),
+      ValueKind::Matrix(x,(r,c)) => write!(f, "[{:?}]:{:?},{:?}",x,r,c),
+      ValueKind::Enum(x) => write!(f, "{:?}",x),
+      ValueKind::Set(x,el) => write!(f, "{{{:?}}}:{}", x, el),
+      ValueKind::Map(x,el) => write!(f, "{{{:?}:{:?}}}:{}",x.0,x.1,el),
+      ValueKind::Record(x) => write!(f, "{{{}}}",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
+      ValueKind::Table(x,y) => write!(f, "{{{}}}:{}",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(","),y),
+      ValueKind::Tuple(x) => write!(f, "({})",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
+      ValueKind::Id => write!(f, "id"),
+      ValueKind::Index => write!(f, "ix"),
+      ValueKind::Reference(x) => write!(f, "{:?}",x),
+      ValueKind::Atom(x) => write!(f, "`{:?}",x),
+      ValueKind::Empty => write!(f, "_"),
+      ValueKind::Any => write!(f, "_"),
+    }
+  }
 }
 
 impl ValueKind {
@@ -100,7 +135,7 @@ pub enum Value {
   MatrixValue(Matrix<Value>),
   Set(MechSet),
   Map(MechMap),
-  Record(MechMap),
+  Record(MechRecord),
   Table(MechTable),
   Tuple(MechTuple),
   Enum(Box<MechEnum>),
@@ -110,6 +145,12 @@ pub enum Value {
   Kind(ValueKind),
   IndexAll,
   Empty
+}
+
+impl fmt::Display for Value {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    self.pretty_print().fmt(f)
+  }
 }
 
 impl Hash for Value {
@@ -197,28 +238,27 @@ impl Value {
     }
   }
 
-
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     match self {
-      Value::U8(x)   => {builder.push_record(vec!["u8"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::U16(x)  => {builder.push_record(vec!["u16"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::U32(x)  => {builder.push_record(vec!["u32"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::U64(x)  => {builder.push_record(vec!["u64"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::U128(x) => {builder.push_record(vec!["u128"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::I8(x)   => {builder.push_record(vec!["i8"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::I16(x)  => {builder.push_record(vec!["i16"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::I32(x)  => {builder.push_record(vec!["i32"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::I64(x)  => {builder.push_record(vec!["i64"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::I128(x) => {builder.push_record(vec!["i128"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::F32(x)  => {builder.push_record(vec!["f32"]); builder.push_record(vec![format!("{:?}",x.borrow().0)]);},
-      Value::F64(x)  => {builder.push_record(vec!["f64"]); builder.push_record(vec![format!("{:?}",x.borrow().0)]);},
-      Value::Bool(x) => {builder.push_record(vec!["bool"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::Index(x)  => {builder.push_record(vec!["ix"]); builder.push_record(vec![format!("{:?}",x.borrow())]);},
-      Value::Atom(x) => {builder.push_record(vec!["atom"]); builder.push_record(vec![format!("{:?}",x)]);},
-      Value::Set(x)  => builder.push_record(vec![format!("{:?}",x)]),
+      Value::U8(x)   => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::U16(x)  => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::U32(x)  => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::U64(x)  => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::U128(x) => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::I8(x)   => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::I16(x)  => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::I32(x)  => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::I64(x)  => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::I128(x) => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::F32(x)  => {builder.push_record(vec![format!("{:?}",x.borrow().0)]);},
+      Value::F64(x)  => {builder.push_record(vec![format!("{:?}",x.borrow().0)]);},
+      Value::Bool(x) => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::Index(x)  => {builder.push_record(vec![format!("{:?}",x.borrow())]);},
+      Value::Atom(x) => {builder.push_record(vec![format!("{:?}",x)]);},
+      Value::Set(x)  => {return x.pretty_print();}
       Value::Map(x)  => {return x.pretty_print();}
-      Value::String(x) => {builder.push_record(vec!["string"]); builder.push_record(vec![x])},
+      Value::String(x) => {builder.push_record(vec![x])},
       Value::Table(x)  => {return x.pretty_print();},
       Value::Tuple(x)  => {return x.pretty_print();},
       Value::Record(x) => {return x.pretty_print();},
@@ -244,8 +284,19 @@ impl Value {
       Value::Id(x) => builder.push_record(vec![format!("{:?}",humanize(x))]),
       Value::Kind(x) => builder.push_record(vec![format!("{:?}",x)]),
     };
+    let value_style = Style::empty()
+      .top(' ')
+      .left(' ')
+      .right(' ')
+      .bottom(' ')
+      .vertical(' ')
+      .intersection_bottom(' ')
+      .corner_top_left(' ')
+      .corner_top_right(' ')
+      .corner_bottom_left(' ')
+      .corner_bottom_right(' ');
     let mut table = builder.build();
-    table.with(Style::modern_rounded());
+    table.with(value_style);
     format!("{table}")
   }
 
@@ -286,7 +337,7 @@ impl Value {
       Value::Table(x) => x.shape(),
       Value::Set(x) => vec![1,x.set.len()],
       Value::Map(x) => vec![1,x.map.len()],
-      Value::Record(x) => vec![1,x.map.len()],
+      Value::Record(x) => x.shape(),
       Value::Tuple(x) => vec![1,x.size()],
       Value::MutableReference(x) => x.borrow().shape(),
       Value::Empty => vec![0,0],
@@ -328,12 +379,12 @@ impl Value {
       Value::MatrixF32(x) => ValueKind::Matrix(Box::new(ValueKind::F32),(x.shape()[0],x.shape()[1])),
       Value::MatrixF64(x) => ValueKind::Matrix(Box::new(ValueKind::F64),(x.shape()[0],x.shape()[1])),
       Value::MatrixValue(x) => ValueKind::Matrix(Box::new(ValueKind::Any),(x.shape()[0],x.shape()[1])),
-      Value::Table(x) => ValueKind::Table,
-      Value::Set(x) => ValueKind::Set,
-      Value::Map(x) => ValueKind::Map,
-      Value::Record(x) => ValueKind::Record,
-      Value::Tuple(x) => ValueKind::Tuple,
-      Value::Enum(x) => ValueKind::Enum(x.id),
+      Value::Table(x) => x.kind(),
+      Value::Set(x) => x.kind(),
+      Value::Map(x) => x.kind(),
+      Value::Record(x) => x.kind(),
+      Value::Tuple(x) => x.kind(),
+      Value::Enum(x) => x.kind(),
       Value::MutableReference(x) => ValueKind::Reference(Box::new(x.borrow().kind())),
       Value::Empty => ValueKind::Empty,
       Value::IndexAll => ValueKind::Empty,
@@ -502,6 +553,7 @@ impl Value {
       Value::I128(v) => Some(*v.borrow() as usize),
       Value::F32(v) => Some((*v.borrow()).0 as usize),
       Value::F64(v) => Some((*v.borrow()).0 as usize),
+      Value::Id(v) => Some(*v as usize),
       Value::MutableReference(v) => v.borrow().as_usize(),
       _ => None,
     }
@@ -598,17 +650,41 @@ impl_to_value_matrix!(DMatrix);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MechSet {
+  pub kind: ValueKind,
+  pub num_elements: usize,
   pub set: IndexSet<Value>,
 }
 
 impl MechSet {
+
+  pub fn kind(&self) -> ValueKind {
+    ValueKind::Set(Box::new(self.kind.clone()), self.num_elements)
+  }
+
   pub fn from_vec(vec: Vec<Value>) -> MechSet {
     let mut set = IndexSet::new();
     for v in vec {
       set.insert(v);
     }
-    MechSet{set}
+    let kind = if set.len() > 0 { set.iter().next().unwrap().kind() } else { ValueKind::Empty };
+    MechSet{
+      kind,
+      num_elements: set.len(),
+      set}
   }
+
+  pub fn pretty_print(&self) -> String {
+    let mut builder = Builder::default();
+    let mut element_strings = vec![];
+    for x in self.set.iter() {
+      element_strings.push(x.pretty_print());
+    }
+    builder.push_record(element_strings);
+    let mut table = builder.build();
+    table.with(Style::modern_rounded());
+    format!("{table}")
+  }
+
 }
 
 impl Hash for MechSet {
@@ -623,10 +699,17 @@ impl Hash for MechSet {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MechMap {
+  pub key_kind: ValueKind,
+  pub value_kind: ValueKind,
+  pub num_elements: usize,
   pub map: IndexMap<Value,Value>,
 }
 
 impl MechMap {
+
+  pub fn kind(&self) -> ValueKind {
+    ValueKind::Map((Box::new(self.key_kind.clone()), Box::new(self.value_kind.clone())), self.num_elements)
+  }
 
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
@@ -648,7 +731,11 @@ impl MechMap {
     for (k,v) in vec {
       map.insert(k,v);
     }
-    MechMap{map}
+    MechMap{
+      key_kind: map.keys().next().unwrap().kind(),
+      value_kind: map.values().next().unwrap().kind(),
+      num_elements: map.len(),
+      map}
   }
 }
 
@@ -670,6 +757,12 @@ pub struct MechTable {
 }
 
 impl MechTable {
+
+  fn kind(&self) -> ValueKind {
+    ValueKind::Table(
+      self.data.iter().map(|(_,v)| v.0.clone()).collect(),
+      self.rows)
+  }
 
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
@@ -693,6 +786,65 @@ impl Hash for MechTable {
       k.hash(state);
       knd.hash(state);
       val.hash(state);
+    }
+  }
+}
+
+// Record ------------------------------------------------------------------
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MechRecord {
+  pub cols: usize,
+  pub kinds: Vec<ValueKind>,
+  pub data: IndexMap<u64,Value>,
+}
+
+impl MechRecord {
+
+  pub fn from_vec(vec: Vec<(u64,Value)>) -> MechRecord {
+    let mut data = IndexMap::new();
+    for (k,v) in vec {
+      data.insert(k,v);
+    }
+    let kinds = data.iter().map(|(_,v)| v.kind()).collect();
+    MechRecord{cols: data.len(), kinds, data}
+  }
+
+  pub fn insert_field(&mut self, key: u64, value: Value) {
+    self.cols += 1;
+    self.kinds.push(value.kind());
+    self.data.insert(key, value);
+  }
+
+  pub fn kind(&self) -> ValueKind {
+    ValueKind::Record(self.kinds.clone())
+  }
+
+  pub fn pretty_print(&self) -> String {
+    let mut builder = Builder::default();
+    let mut key_strings = vec![];
+    let mut element_strings = vec![];
+    for (k,v) in &self.data {
+      key_strings.push(format!("{:?}",humanize(k)));
+      element_strings.push(v.pretty_print());
+    }
+    builder.push_record(key_strings);
+    builder.push_record(element_strings);
+    let mut table = builder.build();
+    table.with(Style::modern_rounded());
+    format!("{table}")
+  }
+
+  pub fn shape(&self) -> Vec<usize> {
+    vec![1,self.cols]
+  }
+}
+
+impl Hash for MechRecord {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    for (k,v) in self.data.iter() {
+      k.hash(state);
+      v.hash(state);
     }
   }
 }
@@ -723,6 +875,10 @@ impl MechTuple {
     self.elements.len()
   }
 
+  pub fn kind(&self) -> ValueKind {
+    ValueKind::Tuple(self.elements.iter().map(|x| x.kind()).collect())
+  }
+
 }
 
 impl Hash for MechTuple {
@@ -742,6 +898,10 @@ pub struct MechEnum {
 }
 
 impl MechEnum {
+
+  pub fn kind(&self) -> ValueKind {
+    ValueKind::Enum(self.id)
+  }
 
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();

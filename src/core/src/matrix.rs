@@ -6,7 +6,7 @@ use tabled::{
     settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
     Tabled,
   };
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::slice::Iter;
 use std::iter::Peekable;
@@ -131,6 +131,13 @@ pub enum Matrix<T> {
   DMatrix(Ref<DMatrix<T>>),
 }
 
+impl<T> fmt::Display for Matrix<T>
+where T: Debug + Display + Clone + PartialEq + 'static {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    std::fmt::Display::fmt(&self.pretty_print(), f)
+  }
+}
+
 pub trait CopyMat<T> {
   fn copy_into(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize;
   fn copy_into_v(&self, dst: &Ref<DVector<T>>, offset: usize) -> usize;
@@ -238,7 +245,7 @@ where T: Hash + na::Scalar
 }
 
 impl<T> Matrix<T> 
-where T: Debug + Clone + PartialEq + 'static
+where T: Debug + Display + Clone + PartialEq + 'static
 {
 
   pub fn size_of(&self) -> usize {
@@ -306,7 +313,7 @@ where T: Debug + Clone + PartialEq + 'static
       #[cfg(feature = "Vector4")]
       Matrix::Vector4(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
       #[cfg(feature = "Vector3")]
-      Matrix::Vector3(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
+      Matrix::Vector3(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{}", x)).collect::<Vec<_>>()));}
       #[cfg(feature = "Vector2")]
       Matrix::Vector2(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
       #[cfg(feature = "VectorD")]
@@ -339,8 +346,19 @@ where T: Debug + Clone + PartialEq + 'static
       Matrix::DMatrix(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()));}
       _ => todo!(),
     };
+    let matrix_style = Style::empty()
+    .top(' ')
+    .left('┃')
+    .right('┃')
+    .bottom(' ')
+    .vertical(' ')
+    .intersection_bottom(' ')
+    .corner_top_left('┏')
+    .corner_top_right('┓')
+    .corner_bottom_left('┗')
+    .corner_bottom_right('┛');
     let mut table = builder.build();
-    table.with(Style::modern_rounded());
+    table.with(matrix_style);
     format!("{table}")
   }
 
