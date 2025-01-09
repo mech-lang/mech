@@ -11,6 +11,7 @@ categories = ["no-std", "science::robotics", "science", "parser-implementations"
 license = "Apache-2.0"
 readme = "README.md"
 edition = "2021"
+rust-version = "1.84"
 
 [badges]
 gitlab = { repository = "mech-lang/syntax", branch = "main" }
