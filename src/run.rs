@@ -4,7 +4,7 @@ use mech_core::*;
 use std::time::Instant;
 use crate::*;
 
-pub fn parse_and_run_mech_code(paths: &Vec<String>, intrp: &mut Interpreter) -> MResult<Value> {
+pub fn parse_and_run_mech_code(paths: &Vec<String>, intrp: &mut Interpreter, tree_flag: bool, debug_flag: bool, time_flag: bool) -> MResult<Value> {
   match read_mech_files(&paths) {
     Ok(code) => {
       for c in code {
@@ -24,6 +24,17 @@ pub fn parse_and_run_mech_code(paths: &Vec<String>, intrp: &mut Interpreter) -> 
                   Ok(ref r) => format!("{}", r.pretty_print()),
                   Err(ref err) => format!("{:?}", err),
                 };
+                if time_flag {
+                  println!("Parse Time: {} ns", parse_duration);
+                  println!("Cycle Time: {} ns", cycle_duration);
+                }
+                if tree_flag {
+                  println!("{}", format_parse_tree(&tree));
+                }
+                if debug_flag {
+                  println!("{}", pretty_print_symbols(&intrp));
+                  println!("{}", pretty_print_plan(&intrp)); 
+                }
                 println!("\n{}\n", result_str);
                 return result;
               },

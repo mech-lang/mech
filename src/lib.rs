@@ -199,7 +199,7 @@ pub fn whos(intrp: &Interpreter) -> String {
   format!("\n{table}\n")
 }
 
-pub fn symbols(intrp: &Interpreter) -> String {
+pub fn pretty_print_symbols(intrp: &Interpreter) -> String {
   let mut builder = Builder::default();
   let symbol_table = intrp.symbols.borrow();
   builder.push_record(vec![
