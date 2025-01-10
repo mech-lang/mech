@@ -156,9 +156,9 @@ impl Formatter {
   pub fn statement(&mut self, node: &Statement) -> String {
     let s = match node {
       Statement::VariableDefine(var_def) => self.variable_define(var_def),
+      Statement::OpAssign(op_asgn) => self.op_assign(op_asgn),
       _ => todo!(),
       //Statement::VariableAssign(var_asgn) => self.variable_assign(var_asgn, src),
-      //Statement::OpAssign(op_asgn) => self.op_assign(op_asgn, src),
       //Statement::EnumDefine(enum_def) => self.enum_define(enum_def, src),
       //Statement::FsmDeclare(fsm_decl) => self.fsm_declare(fsm_decl, src),
       //Statement::KindDefine(kind_def) => self.kind_define(kind_def, src),
@@ -167,6 +167,51 @@ impl Formatter {
       format!("<span class=\"mech-statement\">{}</span>",s)
     } else {
       format!("{}", s)
+    }
+  }
+
+  pub fn op_assign(&mut self, node: &OpAssign) -> String {
+    let target = self.slice_ref(&node.target);
+    let op = self.op_assign_op(&node.op);
+    let expression = self.expression(&node.expression);
+    if self.html {
+      format!("<span class=\"mech-op-assign\"><span class=\"mech-target\">{}</span><span class=\"mech-op\">{}</span><span class=\"mech-expression\">{}</span></span>",target,op,expression)
+    } else {
+      format!("{} {} {}", target, op, expression)
+    }
+  }
+
+  pub fn op_assign_op(&mut self, node: &OpAssignOp) -> String {
+    let op = match node {
+      OpAssignOp::Add => "+=".to_string(),
+      OpAssignOp::Sub => "-=".to_string(),
+      OpAssignOp::Mul => "*=".to_string(),
+      OpAssignOp::Div => "/=".to_string(),
+      OpAssignOp::Exp => "^=".to_string(),
+    };
+    if self.html {
+      format!("<span class=\"mech-op-assign-op\">{}</span>",op)
+    } else {
+      format!("{}", op)
+    }
+  }
+
+  pub fn slice_ref(&mut self, node: &SliceRef) -> String {
+    let name = node.name.to_string();
+    let mut subscript = "".to_string();
+    match &node.subscript {
+      Some(subs) => {
+        for sub in subs.iter() {
+          let s = self.subscript(sub);
+          subscript = format!("{}{}", subscript, s);
+        }
+      },
+      None => {},
+    }
+    if self.html {
+      format!("<span class=\"mech-slice-ref\"><span id=\"{}\" class=\"mech-var-name\">{}</span><span class=\"mech-subscript\">{}</span></span>",hash_str(&name),name,subscript)
+    } else {
+      format!("{}{}", name, subscript)
     }
   }
 
@@ -201,7 +246,7 @@ impl Formatter {
       }
     }
     if self.html {
-      format!("<span class=\"mech-function-call\"><span class=\"mech-function-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-argument-list\">{}</span><span class=\"mech-right-paren\">)</span></span>",name,args)
+      format!("<span class=\"mech-function-call\"><span id=\"{}\" class=\"mech-function-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-argument-list\">{}</span><span class=\"mech-right-paren\">)</span></span>",hash_str(&name),name,args)
     } else {
       format!("{}({})", name, args)
     }
@@ -229,7 +274,7 @@ impl Formatter {
       subscript = format!("{}{}", subscript, s);
     }
     if self.html {
-      format!("<span class=\"mech-slice\"><span class=\"mech-var-name\">{}</span><span class=\"mech-subscript\">{}</span></span>",name,subscript)
+      format!("<span class=\"mech-slice\"><span id=\"{}\" class=\"mech-var-name\">{}</span><span class=\"mech-subscript\">{}</span></span>",hash_str(&name),name,subscript)
     } else {
       format!("{}{}", name, subscript)
     }
@@ -240,12 +285,20 @@ impl Formatter {
       Subscript::Bracket(subs) => self.bracket(subs),
       Subscript::Formula(factor) => self.factor(factor),
       Subscript::All => self.all(),
+      Subscript::Dot(ident) => self.dot(ident),
       _ => todo!(),
-      /*Subscript::Dot(ident) => self.dot(ident),
-      Subscript::Swizzle(idents) => self.swizzle(idents),
-      Subscript::Range(range) => self.range(range),
-      Subscript::Brace(subs) => self.brace(subs),
-      Subscript::DotInt(real) => self.dot_int(real),*/
+      //Subscript::Swizzle(idents) => self.swizzle(idents),
+      //Subscript::Range(range) => self.range(range),
+      //Subscript::Brace(subs) => self.brace(subs),
+      //Subscript::DotInt(real) => self.dot_int(real),*/
+    }
+  }
+
+  pub fn dot(&mut self, node: &Identifier) -> String {
+    if self.html {
+      format!(".<span class=\"mech-dot\">{}</span>",node.to_string())
+    } else {
+      format!(".{}",node.to_string())
     }
   }
 
@@ -277,9 +330,9 @@ impl Formatter {
   pub fn structure(&mut self, node: &Structure) -> String {
     let s = match node {
       Structure::Matrix(matrix) => self.matrix(matrix),
+      Structure::Record(record) => self.record(record),
       _ => todo!(),
       //Structure::Empty => "".to_string(),
-      //Structure::Record(record) => self.record(record),
       //Structure::Table(table) => self.table(table),
       //Structure::Tuple(tuple) => self.tuple(tuple),
       //Structure::TupleStruct(tuple_struct) => self.tuple_struct(tuple_struct),
@@ -293,22 +346,75 @@ impl Formatter {
     }
   }
 
-  pub fn matrix(&mut self, node: &Matrix) -> String {
+  pub fn record(&mut self, node: &Record) -> String {
     let mut src = "".to_string();
-    for (i, row) in node.rows.iter().enumerate() {
-      let r = self.matrix_row(row);
+    for (i, binding) in node.bindings.iter().enumerate() {
+      let b = self.binding(binding);
       if i == 0 {
-        src = format!("{}{}", src, r);
+        src = format!("{}", b);
       } else {
-        src = format!("{}; {}", src, r);
+        src = format!("{}, {}", src, b);
       }
-          }
+    }
     if self.html {
-      format!("<span class=\"mech-matrix\"><span class=\"mech-bracket\">[</span>{}<span class=\"mech-bracket\">]</span></span>",src)
+      format!("<span class=\"mech-record\"><span class=\"mech-start-brace\">{{</span>{}<span class=\"mech-end-brace\">}}</span></span>",src)
     } else {
-      format!("[{}]",src)
+      format!("{{{}}}",src)
     }
   }
+
+  pub fn binding(&mut self, node: &Binding) -> String {
+    let name = node.name.to_string();
+    let value = self.expression(&node.value);
+    if self.html {
+      format!("<span class=\"mech-binding\"><span class=\"mech-binding-name\">{}</span><span class=\"mech-binding-colon-op\">:</span><span class=\"mech-binding-value\">{}</span></span>",name,value)
+    } else {
+      format!("{}: {}", name, value)
+    }
+  }
+
+  pub fn matrix(&mut self, node: &Matrix) -> String {
+    let mut src = "".to_string();
+    let column_count = node.rows[0].columns.len(); // Assume all rows have the same number of columns
+
+    for col_index in 0..column_count {
+        let mut column_elements = Vec::new();
+        for row in &node.rows {
+            column_elements.push(&row.columns[col_index]);
+        }
+        let c = self.matrix_column_elements(&column_elements);
+
+        if col_index == 0 {
+            src = format!("{}", c);
+        } else {
+            src = format!("{} {}", src, c);
+        }
+    }
+
+    if self.html {
+        format!("<span class=\"mech-matrix\"><span class=\"mech-bracket start\">[</span>{}<span class=\"mech-bracket end\">]</span></span>", src)
+    } else {
+        format!("[{}]", src)
+    }
+}
+
+pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> String {
+    let mut src = "".to_string();
+    for (i, cell) in column_elements.iter().enumerate() {
+        let c = self.matrix_column(cell);
+        if i == 0 {
+            src = format!("{}", c);
+        } else {
+            src = format!("{} {}", src, c);
+        }
+    }
+    if self.html {
+        format!("<div class=\"mech-matrix-column\">{}</div>", src)
+    } else {
+        src
+    }
+}
+
 
   pub fn matrix_row(&mut self, node: &MatrixRow) -> String {
     let mut src = "".to_string();
@@ -321,7 +427,7 @@ impl Formatter {
       }
     }
     if self.html {
-      format!("<span class=\"mech-matrix-row\">{}</span>",src)
+      format!("<div class=\"mech-matrix-row\">{}</div>",src)
     } else {
       src
     }
@@ -343,7 +449,7 @@ impl Formatter {
       "".to_string()
     };
     if self.html {
-      format!("<span class=\"mech-var-name\">{}</span><span class=\"mech-kind-annotation\">{}</span>", node.name.to_string(), annotation)
+      format!("<span class=\"mech-var-name\" id=\"{}\">{}</span><span class=\"mech-kind-annotation\">{}</span>",hash_str(&node.name.to_string()), node.name.to_string(), annotation)
     } else {
       format!("{}{}", node.name.to_string(), annotation)
     }
