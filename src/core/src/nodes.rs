@@ -361,15 +361,15 @@ pub type PatternTuple = Vec<Pattern>;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FsmSpecification {
   pub name: Identifier,
-  pub input: Vec<Identifier>,
-  pub output: Identifier,
+  pub input: Vec<Var>,
+  pub output: Option<KindAnnotation>,
   pub states: Vec<StateDefinition>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct StateDefinition {
   pub name: Identifier,
-  pub state_variables: Option<Vec<Identifier>>,
+  pub state_variables: Option<Vec<Var>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -441,19 +441,19 @@ pub fn fsm_output(input: ParseString) -> ParseResult<Transition> {
   Ok((input, Transition::Output(ptrn)))
 }
 
-// fsm_specification ::= "#" identifier, "(", identifier*, ")", output_operator, identifier, define_operator, fsm_state_definition+, "."
+// fsm_specification ::= "#" identifier, "(", var*, ")", output_operator, identifier, define_operator, fsm_state_definition+, "."
 pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
   let ((input, _)) = hashtag(input)?;
   let ((input, name)) = identifier(input)?;
   let ((input, _)) = left_parenthesis(input)?;
-  let ((input, input_vars)) = separated_list0(list_separator, identifier)(input)?;
+  let ((input, input_vars)) = separated_list0(list_separator, var)(input)?;
   let ((input, _)) = right_parenthesis(input)?;
-  let ((input, _)) = output_operator(input)?;
-  let ((input, output)) = identifier(input)?;
+  let ((input, _)) = opt(output_operator)(input)?;
+  let ((input, output)) = opt(kind_annotation)(input)?;
   let ((input, _)) = define_operator(input)?;
   let ((input, states)) = many1(fsm_state_definition)(input)?;
   let ((input, _)) = period(input)?;
-  Ok((input, FsmSpecification{name,input: input_vars,output,states}))
+  Ok((input, FsmSpecification{name,input: input_vars, output, states}))
 }
 
 // fsm_pattern ::= fsm_tuple_struct | wildcard | formula
@@ -491,9 +491,9 @@ pub fn fsm_state_definition(input: ParseString) -> ParseResult<StateDefinition> 
 }
 
 // fsm_state_definition_variables ::= "(", identifier+, ")"
-pub fn fsm_state_definition_variables(input: ParseString) -> ParseResult<Vec<Identifier>> {
+pub fn fsm_state_definition_variables(input: ParseString) -> ParseResult<Vec<Var>> {
   let ((input, _)) = left_parenthesis(input)?;
-  let ((input, names)) = separated_list1(list_separator, identifier)(input)?;
+  let ((input, names)) = separated_list1(list_separator, var)(input)?;
   let ((input, _)) = right_parenthesis(input)?;
   Ok((input, names))
 }
