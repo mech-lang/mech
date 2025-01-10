@@ -96,19 +96,21 @@ impl Formatter {
     }
   }
 
+  pub fn paragraph(&mut self, node: &Paragraph) -> String {
+    if self.html {
+      format!("<p class=\"mech-paragraph\">{}</p>",node.to_string())
+    } else {
+      format!("{}\n",node.to_string())
+    }
+  }
+
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     let element = match node {
-      SectionElement::Section(n) => todo!(),
+      SectionElement::Section(n) => self.section(n),
       SectionElement::Comment(n) => todo!(),
-      SectionElement::Paragraph(n) => {
-        if self.html {
-          format!("<p class=\"mech-paragraph\">{}</p>",n.to_string())
-        } else {
-          format!("{}\n",n.to_string())
-        }
-      },
+      SectionElement::Paragraph(n) => self.paragraph(n),
       SectionElement::MechCode(n) => self.mech_code(n),
-      SectionElement::UnorderedList(n) => todo!(),
+      SectionElement::UnorderedList(n) => self.unordered_list(n),
       SectionElement::CodeBlock => todo!(),
       SectionElement::OrderedList => todo!(),
       SectionElement::BlockQuote => todo!(),
@@ -119,6 +121,23 @@ impl Formatter {
       format!("<div class=\"mech-section-element\">{}</div>",element)
     } else {
       element
+    }
+  }
+
+  pub fn unordered_list(&mut self, node: &UnorderedList) -> String {
+    let mut lis = "".to_string();
+    for (i, item) in node.items.iter().enumerate() {
+      let it = self.paragraph(item);
+      if self.html {
+        lis = format!("{}<li class=\"mech-list-item\">{}</li>",lis,it);
+      } else {
+        lis = format!("{}- {}\n",lis,it); 
+      }
+    }
+    if self.html {
+      format!("<ul class=\"mech-unordered-list\">{}</ul>",lis)
+    } else {
+      lis
     }
   }
 
