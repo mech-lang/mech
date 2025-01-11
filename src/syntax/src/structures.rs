@@ -475,6 +475,7 @@ pub fn fsm_pattern(input: ParseString) -> ParseResult<Pattern> {
 
 // fsm_tuple_struct ::= identifier, "(", fsm_pattern+, ")"
 pub fn fsm_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
+  let (input, _) = grave(input)?;
   let (input, id) = identifier(input)?;
   let ((input, _)) = left_parenthesis(input)?;
   let ((input, patterns)) = separated_list1(list_separator, fsm_pattern)(input)?;
@@ -485,6 +486,8 @@ pub fn fsm_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
 // fsm_state_definition ::= guard_operator?, identifier, fsm_state_definition_variables?
 pub fn fsm_state_definition(input: ParseString) -> ParseResult<StateDefinition> {
   let ((input, _)) = guard_operator(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = grave(input)?;
   let ((input, name)) = identifier(input)?;
   let ((input, vars)) = opt(fsm_state_definition_variables)(input)?;
   Ok((input, StateDefinition{name,state_variables: vars}))

@@ -146,14 +146,168 @@ impl Formatter {
       MechCode::Expression(expr) => self.expression(expr),
       MechCode::Statement(stmt) => self.statement(stmt),
       MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
+      MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
       _ => todo!(),
-      //MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl, src),
       //MechCode::FunctionDefine(func_def) => self.function_define(func_def, src),
     };
     if self.html {
       format!("<div class=\"mech-code\">{}</div>",c)
     } else {
       format!("{}\n", c)
+    }
+  }
+
+  pub fn fsm_implementation(&mut self, node: &FsmImplementation) -> String {
+    let name = node.name.to_string();
+    let mut input = "".to_string();
+    for (i, ident) in node.input.iter().enumerate() {
+      let v = ident.to_string();
+      if i == 0 {
+        input = format!("{}", v);
+      } else {
+        input = format!("{}, {}", input, v);
+      }
+    }
+    let start = self.pattern(&node.start);
+    let mut arms = "".to_string();
+    for (i, arm) in node.arms.iter().enumerate() {
+      let a = self.fsm_arm(arm, i == node.arms.len() - 1);
+      if i == 0 {
+        arms = format!("{}", a);
+      } else {
+        arms = format!("{}{}", arms, a);
+      }
+    }
+    if self.html {
+      format!("<div class=\"mech-fsm-implementation\">
+        <div class=\"mech-fsm-implementation-header\">
+          <span class=\"mech-fsm-sigil\">#</span>
+          <span class=\"mech-fsm-name\">{}</span>
+          <span class=\"mech-left-paren\">(</span>
+          <span class=\"mech-fsm-input\">{}</span>
+          <span class=\"mech-right-paren\">)</span>
+          <span class=\"mech-fsm-define-op\">-></span>
+          <span class=\"mech-fsm-start\">{}</span>
+        </div>
+        <div class=\"mech-fsm-arms\">
+          {}
+        </div>
+      </div>",name,input,start,arms)
+    } else {
+      format!("#{}({}) :=\n{}\n{}", name, input, start, arms)
+    }
+  }
+
+  pub fn fsm_arm(&mut self, node: &FsmArm, last: bool) -> String {
+    let start = self.pattern(&node.start);
+    let mut transitions = "".to_string();
+    for (i, transition) in node.transitions.iter().enumerate() {
+      let t = self.transition(transition);
+      if i == 0 {
+        transitions = format!("{}", t);
+      } else {
+        transitions = format!("{}{}", transitions, t);
+      }
+    }
+    let dot = if last {
+      ".".to_string()
+    } else {
+      "".to_string()
+    };
+    if self.html {
+      format!("<span class=\"mech-fsm-arm\">
+        <span class=\"mech-fsm-arm-start\">{}</span>
+        <span class=\"mech-fsm-arm-transitions\">{}</span>
+        {}
+      </span>",start,transitions,dot)
+    } else {
+      format!("{}{}{}", start, transitions, dot)
+    }
+  }
+
+  pub fn pattern(&mut self, node: &Pattern) -> String {
+    let p = match node {
+      Pattern::Wildcard => "*".to_string(),
+      Pattern::Formula(factor) => self.factor(factor),
+      Pattern::Expression(expr) => self.expression(expr),
+      Pattern::TupleStruct(tuple_struct) => self.tuple_struct(tuple_struct),
+    };
+    if self.html {
+      format!("<span class=\"mech-pattern\">{}</span>",p)
+    } else {
+      p
+    }
+  }
+
+  pub fn tuple_struct(&mut self, node: &PatternTupleStruct) -> String {
+    let name = node.name.to_string();
+    let mut patterns = "".to_string();
+    for (i, pattern) in node.patterns.iter().enumerate() {
+      let p = self.pattern(pattern);
+      if i == 0 {
+        patterns = format!("{}", p);
+      } else {
+        patterns = format!("{}, {}", patterns, p);
+      }
+    }
+    if self.html {
+      format!("<span class=\"mech-tuple-struct\">
+        `
+        <span class=\"mech-tuple-struct-name\">{}</span>
+        <span class=\"mech-left-paren\">(</span>
+        <span class=\"mech-tuple-struct-patterns\">{}</span>
+        <span class=\"mech-right-paren\">)</span>
+      </span>",name,patterns)
+    } else {
+      format!("`{}({})", name, patterns)
+    }
+  }
+
+  pub fn transition(&mut self, node: &Transition) -> String {
+    match node {
+      Transition::Next(pattern) => {
+        if self.html {
+          format!("<span class=\"mech-transition-next\">-> {}</span>",self.pattern(pattern))
+        } else {
+          format!("-> {}", self.pattern(pattern))
+        }
+      }
+      Transition::Output(pattern) => {
+        if self.html {
+          format!("<span class=\"mech-transition-output\">=> {}</span>",self.pattern(pattern))
+        } else {
+          format!("=> {}", self.pattern(pattern))
+        }
+      }
+      Transition::Async(pattern) => {
+        if self.html {
+          format!("<span class=\"mech-transition-async\">~> {}</span>",self.pattern(pattern))
+        } else {
+          format!("~> {}", self.pattern(pattern))
+        }
+      }
+      Transition::Guard(guard) => {
+        if self.html {
+          format!("<span class=\"mech-transition-guard\">| {}</span>",self.guard(guard))
+        } else {
+          format!("| {}", self.guard(guard))
+        }
+      }
+      _ => todo!(),
+      //Transition::TransitionBlock(mech_code) => self.mech_code(mech_code),
+    }
+  }
+
+
+  pub fn guard(&mut self, node: &Guard) -> String {
+    let g = match node {
+      Guard::Wildcard => "*".to_string(),
+      Guard::Expression(expr) => self.expression(expr),
+    };
+    if self.html {
+      format!("<span class=\"mech-guard\">{}</span>",g)
+    } else {
+      g
     }
   }
 
@@ -226,7 +380,7 @@ impl Formatter {
     }
     if self.html {
       format!("<div class=\"mech-state-definition\">
-      <span class=\"mech-state-name\">{}</span>
+      <span class=\"mech-state-name\">`{}</span>
       <span class=\"mech-left-paren\">(</span>
       <span class=\"mech-state-variables\">{}</span>
       <span class=\"mech-right-paren\">)</span>
@@ -473,6 +627,13 @@ impl Formatter {
 
   pub fn matrix(&mut self, node: &Matrix) -> String {
     let mut src = "".to_string();
+    if node.rows.len() == 0 {
+      if self.html {
+        return format!("<span class=\"mech-matrix empty\"><span class=\"mech-bracket start\">[</span><span class=\"mech-bracket end\">]</span></span>");
+      } else {
+        return format!("[]");
+      }
+    }
     let column_count = node.rows[0].columns.len(); // Assume all rows have the same number of columns
 
     for col_index in 0..column_count {
