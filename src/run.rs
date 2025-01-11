@@ -16,26 +16,21 @@ pub fn parse_and_run_mech_code(paths: &Vec<String>, intrp: &mut Interpreter, tre
             let parse_duration = elapsed_time.as_nanos() as f64;
             match parse_result {
               Ok(tree) => { 
+                if tree_flag {
+                  println!("{}", format_parse_tree(&tree));
+                }
                 let now = Instant::now();
                 let result = intrp.interpret(&tree);
                 let elapsed_time = now.elapsed();
                 let cycle_duration = elapsed_time.as_nanos() as f64;
-                let result_str = match result {
-                  Ok(ref r) => format!("{}", r.pretty_print()),
-                  Err(ref err) => format!("{:?}", err),
-                };
                 if time_flag {
                   println!("Parse Time: {} ns", parse_duration);
                   println!("Cycle Time: {} ns", cycle_duration);
-                }
-                if tree_flag {
-                  println!("{}", format_parse_tree(&tree));
                 }
                 if debug_flag {
                   println!("{}", pretty_print_symbols(&intrp));
                   println!("{}", pretty_print_plan(&intrp)); 
                 }
-                println!("\n{}\n", result_str);
                 return result;
               },
               Err(err) => return Err(err),

@@ -205,10 +205,20 @@ async fn main() -> Result<(), MechError> {
   } else { repl_flag = true; vec![] };
 
   // Run the code
-  parse_and_run_mech_code(&paths, &mut intrp, tree_flag, debug_flag, time_flag);
+  let result = parse_and_run_mech_code(&paths, &mut intrp, tree_flag, debug_flag, time_flag); 
+  
+  let return_value = match &result {
+    Ok(ref r) => {
+      println!("{}", r.pretty_print());
+      Ok(())
+    }
+    Err(ref err) => {
+      Err(err.clone())
+    }
+  };
 
   if !repl_flag {
-    return Ok(());
+    return return_value;
   }
   
   #[cfg(windows)]
