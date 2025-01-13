@@ -394,29 +394,31 @@ pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> 
 // fsm_arm ::= comment*, fsm_pattern, (fsm_state_transition | fsm_output | fsm_guard)+, whitespace?
 pub fn fsm_arm(input: ParseString) -> ParseResult<FsmArm> {
   let ((input, _)) = many0(comment)(input)?;
-  let ((input, start)) = fsm_pattern(input)?;
-  let ((input, trns)) = many1(alt((fsm_state_transition,fsm_output,fsm_guard)))(input)?;
+  let ((input, arm)) = alt((fsm_guard_arm,fsm_transition))(input)?;
   let ((input, _)) = whitespace0(input)?;
-  Ok((input, FsmArm{start, transitions: trns}))
+  Ok((input, arm))
 }
 
-// fsm_guard ::= (transition_operator | guard_operator), (wildcard | expression)
-pub fn fsm_guard(input: ParseString) -> ParseResult<Transition> {
-  let (input, _) = alt((transition_operator,guard_operator))(input)?;
-  let (input, expr) = match wildcard(input.clone()) {
-    Ok((input, _)) => (input, Guard::Wildcard),
-    _ => match expression(input.clone()) {
-      Ok((input, expr)) => (input, Guard::Expression(expr)),
-      Err(err) => {return Err(err);}
-    }
-  };
-  Ok((input, Transition::Guard(expr)))
+// fsm_guard ::= guard_operator, fsm_arm
+pub fn fsm_guard_arm(input: ParseString) -> ParseResult<FsmArm> {
+  let ((input, _)) = many0(comment)(input)?;
+  let ((input, start)) = fsm_pattern(input)?;
+  let (input, grds) = many1(fsm_guard)(input)?;
+  Ok((input, FsmArm::Guard(start, grds)))
 }
 
-// wildcard ::= "*"
-pub fn wildcard(input: ParseString) -> ParseResult<Pattern> {
-  let ((input, _)) = asterisk(input)?;
-  Ok((input, Pattern::Wildcard))
+pub fn fsm_guard(input: ParseString) -> ParseResult<Guard> {
+  let (input, _) = guard_operator(input)?;
+  let (input, cnd) = fsm_pattern(input)?;
+  let (input, trns) = many1(alt((fsm_state_transition,fsm_output,fsm_async_transition)))(input)?;
+  Ok((input, Guard{condition: cnd, transitions: trns}))
+}
+
+pub fn fsm_transition(input: ParseString) -> ParseResult<FsmArm> {
+  let ((input, _)) = many0(comment)(input)?;
+  let ((input, start)) = fsm_pattern(input)?;
+  let ((input, trns)) = many1(alt((fsm_state_transition,fsm_output,fsm_async_transition)))(input)?;
+  Ok((input, FsmArm::Transition(start, trns)))
 }
 
 // fsm_state_transition ::= transition_operator, fsm_pattern
@@ -432,7 +434,6 @@ pub fn fsm_async_transition(input: ParseString) -> ParseResult<Transition> {
   let ((input, ptrn)) = fsm_pattern(input)?;
   Ok((input, Transition::Async(ptrn)))
 }
-
 
 // fsm_output ::= output_operator, fsm_pattern
 pub fn fsm_output(input: ParseString) -> ParseResult<Transition> {
@@ -473,6 +474,12 @@ pub fn fsm_pattern(input: ParseString) -> ParseResult<Pattern> {
   }
 }
 
+// wildcard ::= "*"
+pub fn wildcard(input: ParseString) -> ParseResult<Pattern> {
+  let ((input, _)) = asterisk(input)?;
+  Ok((input, Pattern::Wildcard))
+}
+
 // fsm_tuple_struct ::= identifier, "(", fsm_pattern+, ")"
 pub fn fsm_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
   let (input, _) = grave(input)?;
@@ -504,7 +511,7 @@ pub fn fsm_state_definition_variables(input: ParseString) -> ParseResult<Vec<Var
 // fsm_pipe ::= fsm_instance, (fsm_state_transition | fsm_async_transition | fsm_output | fsm_guard)*
 pub fn fsm_pipe(input: ParseString) -> ParseResult<FsmPipe> {
   let ((input, start)) = fsm_instance(input)?;
-  let ((input, trns)) = many0(alt((fsm_state_transition,fsm_async_transition,fsm_output,fsm_guard)))(input)?;
+  let ((input, trns)) = many0(alt((fsm_state_transition,fsm_async_transition,fsm_output)))(input)?;
   Ok((input, FsmPipe{start, transitions: trns}))
 }
 

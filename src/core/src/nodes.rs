@@ -322,9 +322,15 @@ pub struct FsmImplementation {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct FsmArm {
-  pub start: Pattern, 
-  pub transitions: Vec<Transition>
+pub enum FsmArm {
+  Guard(Pattern,Vec<Guard>),
+  Transition(Pattern,Vec<Transition>),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Guard { 
+  pub condition: Pattern,
+  pub transitions: Vec<Transition>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -332,14 +338,7 @@ pub enum Transition {
   Next(Pattern),
   Output(Pattern),
   Async(Pattern),
-  Guard(Guard),
   TransitionBlock(Vec<MechCode>),
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum Guard {
-  Wildcard,
-  Expression(Expression),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

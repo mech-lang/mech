@@ -194,12 +194,68 @@ impl Formatter {
         </div>
       </div>",name,input,start,arms)
     } else {
-      format!("#{}({}) :=\n{}\n{}", name, input, start, arms)
+      format!("#{}({}) -> {}\n{}.", name, input, start, arms)
     }
   }
 
   pub fn fsm_arm(&mut self, node: &FsmArm, last: bool) -> String {
-    let start = self.pattern(&node.start);
+    let arm = match node {
+      FsmArm::Guard(pattern, guards) => {
+        let p = self.pattern(pattern);
+        let mut gs = "".to_string();
+        for (i, guard) in guards.iter().enumerate() {
+          let g = self.guard(guard);
+          if i == 0 {
+            gs = format!("    ├ {}", g);
+          } else if i == guards.len() - 1 {
+            gs = format!("{}    └ {}", gs, g);
+          } else {
+            gs = format!("{}    ├ {}", gs, g);
+          }
+        }
+        if self.html {
+          format!("<div class=\"mech-fsm-arm-guard\">
+            <span class=\"mech-fsm-arm-pattern\">{}</span>
+            <span class=\"mech-fsm-arm-guards\">{}</span>
+          </div>",p,gs)
+        } else {
+          format!("  {}\n{}", p, gs)
+        }
+      },
+      FsmArm::Transition(pattern, transitions) => {
+        let p = self.pattern(pattern);
+        let mut ts = "".to_string();
+        for (i, transition) in transitions.iter().enumerate() {
+          let t = self.transition(transition);
+          if i == 0 {
+            ts = format!("{}\n", t);
+          } else {
+            ts = format!("{}{}", ts, t);
+          }
+        }
+        if self.html {
+          format!("<div class=\"mech-fsm-arm\">
+            <span class=\"mech-fsm-arm-pattern\">{}</span>
+            <span class=\"mech-fsm-arm-transitions\">{}</span>
+          </div>",p,ts)
+        } else {
+          format!("  {}{}", p, ts)
+        }
+      },
+    };
+    if self.html {
+      if last {
+        format!("<div class=\"mech-fsm-arm-last\">{}</div>",arm)
+      } else {
+        format!("<div class=\"mech-fsm-arm\">{}</div>",arm)
+      }
+    } else {
+      format!("{}", arm)
+    }
+  }
+
+  pub fn guard(&mut self, node: &Guard) -> String {
+    let condition = self.pattern(&node.condition);
     let mut transitions = "".to_string();
     for (i, transition) in node.transitions.iter().enumerate() {
       let t = self.transition(transition);
@@ -209,21 +265,16 @@ impl Formatter {
         transitions = format!("{}{}", transitions, t);
       }
     }
-    let dot = if last {
-      ".".to_string()
-    } else {
-      "".to_string()
-    };
     if self.html {
-      format!("<span class=\"mech-fsm-arm\">
-        <span class=\"mech-fsm-arm-start\">{}</span>
-        <span class=\"mech-fsm-arm-transitions\">{}</span>
-        {}
-      </span>",start,transitions,dot)
+      format!("<div class=\"mech-guard\">
+        <span class=\"mech-guard-condition\">{}</span>
+        <span class=\"mech-guard-transitions\">{}</span>
+      </div>",condition,transitions)
     } else {
-      format!("{}{}{}", start, transitions, dot)
+      format!("{}{}\n", condition, transitions)
     }
   }
+ 
 
   pub fn pattern(&mut self, node: &Pattern) -> String {
     let p = match node {
@@ -269,45 +320,25 @@ impl Formatter {
         if self.html {
           format!("<span class=\"mech-transition-next\">-> {}</span>",self.pattern(pattern))
         } else {
-          format!("-> {}", self.pattern(pattern))
+          format!(" -> {}", self.pattern(pattern))
         }
       }
       Transition::Output(pattern) => {
         if self.html {
           format!("<span class=\"mech-transition-output\">=> {}</span>",self.pattern(pattern))
         } else {
-          format!("=> {}", self.pattern(pattern))
+          format!(" => {}", self.pattern(pattern))
         }
       }
       Transition::Async(pattern) => {
         if self.html {
           format!("<span class=\"mech-transition-async\">~> {}</span>",self.pattern(pattern))
         } else {
-          format!("~> {}", self.pattern(pattern))
-        }
-      }
-      Transition::Guard(guard) => {
-        if self.html {
-          format!("<span class=\"mech-transition-guard\">| {}</span>",self.guard(guard))
-        } else {
-          format!("| {}", self.guard(guard))
+          format!(" ~> {}", self.pattern(pattern))
         }
       }
       _ => todo!(),
       //Transition::TransitionBlock(mech_code) => self.mech_code(mech_code),
-    }
-  }
-
-
-  pub fn guard(&mut self, node: &Guard) -> String {
-    let g = match node {
-      Guard::Wildcard => "*".to_string(),
-      Guard::Expression(expr) => self.expression(expr),
-    };
-    if self.html {
-      format!("<span class=\"mech-guard\">{}</span>",g)
-    } else {
-      g
     }
   }
 
