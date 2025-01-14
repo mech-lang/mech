@@ -206,17 +206,29 @@ impl Formatter {
         for (i, guard) in guards.iter().enumerate() {
           let g = self.guard(guard);
           if i == 0 {
-            gs = format!("    ├ {}", g);
+            if self.html {
+              gs = format!("<div class=\"mech-fsm-guard-arm\">├ {}</div>", g);
+            } else {
+              gs = format!("    ├ {}", g);
+            }
           } else if i == guards.len() - 1 {
-            gs = format!("{}    └ {}", gs, g);
-          } else {
-            gs = format!("{}    ├ {}", gs, g);
+            if self.html {
+              gs = format!("{}<div class=\"mech-fsm-guard-arm\">└ {}</div>", gs, g);
+            } else {
+              gs = format!("{}    └ {}", gs, g); 
+            }
+          } else {  
+            if self.html {
+              gs = format!("{}<div class=\"mech-fsm-guard-arm\">├ {}</div>", gs, g);
+            } else {
+              gs = format!("{}    ├ {}", gs, g);
+            }
           }
         }
         if self.html {
           format!("<div class=\"mech-fsm-arm-guard\">
-            <span class=\"mech-fsm-arm-pattern\">{}</span>
-            <span class=\"mech-fsm-arm-guards\">{}</span>
+            <span class=\"mech-fsm-start\">{}</span>
+            <span class=\"mech-fsm-guards\">{}</span>
           </div>",p,gs)
         } else {
           format!("  {}\n{}", p, gs)
