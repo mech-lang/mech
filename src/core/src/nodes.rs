@@ -339,7 +339,7 @@ pub enum Transition {
   Output(Pattern),
   Async(Pattern),
   CodeBlock(Vec<MechCode>),
-  TransitionBlock(Vec<MechCode>),
+  Statement(Statement),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
