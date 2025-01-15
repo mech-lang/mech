@@ -245,7 +245,7 @@ pub enum SectionElement {
   Section(Box<Section>),
   Comment(Comment),
   Paragraph(Paragraph),
-  MechCode(MechCode),
+  MechCode(Vec<MechCode>),
   UnorderedList(UnorderedList),
   CodeBlock,       // todo
   OrderedList,     // todo
@@ -257,7 +257,13 @@ pub enum SectionElement {
 impl SectionElement {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
-      SectionElement::MechCode(code) => code.tokens(),
+      SectionElement::MechCode(codes) => {
+        let mut tokens = vec![];
+        for code in codes {
+          tokens.append(&mut code.tokens());
+        }
+        tokens
+      },
       _ => todo!(),
     }
   }

@@ -20,8 +20,14 @@ pub fn section(section: &Section, plan: Plan, symbols: SymbolTableRef, functions
 }
 
 pub fn section_element(element: &SectionElement, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+  let mut out = Value::Empty; 
   let out = match element {
-    SectionElement::MechCode(code) => {mech_code(&code, plan.clone(), symbols.clone(), functions.clone())?},
+    SectionElement::MechCode(code) => {
+      for c in code {
+        out = mech_code(&c, plan.clone(), symbols.clone(), functions.clone())?;
+      }
+      out
+    },
     SectionElement::Section(sctn) => Value::Empty,
     SectionElement::Comment(cmmnt) => Value::Empty,
     SectionElement::Paragraph(p) => Value::Empty,

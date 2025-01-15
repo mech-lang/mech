@@ -308,6 +308,7 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
   }
 }
 
+// This is here to satisfy the type checker for this: alt((new_line, semicolon, comment_token))(input)?;
 pub fn comment_token(input: ParseString) -> ParseResult<Token> {
   let (input, c) = comment(input)?;
   Ok((input, c.text))
@@ -315,9 +316,10 @@ pub fn comment_token(input: ParseString) -> ParseResult<Token> {
 
 // mech_code := mech_code_alt, ("\n" | ";" | comment) ;
 pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
-  let (input, code) = mech_code_alt(input.clone())?;
+  let (input, code) = mech_code_alt(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = alt((new_line, semicolon, comment_token))(input)?;
+  let (input, _) = whitespace0(input)?;
   Ok((input, code))
 }
 

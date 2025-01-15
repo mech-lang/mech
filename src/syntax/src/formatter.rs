@@ -87,7 +87,7 @@ impl Formatter {
       Some(title) => self.subtitle(title),
       None => "".to_string(),
     };
-    for (i, el) in node.elements.iter().enumerate() {
+    for el in node.elements.iter() {
       let el_str = self.section_element(el);
       src = format!("{}{}", src, el_str);
     }
@@ -143,19 +143,27 @@ impl Formatter {
     }
   }
 
-  pub fn mech_code(&mut self, node: &MechCode) -> String {
-    let c = match node {
+  pub fn mech_code(&mut self, node: &Vec<MechCode>) -> String {
+    let mut src = String::new();
+    for code in node {
+      let c = match code {
       MechCode::Expression(expr) => self.expression(expr),
       MechCode::Statement(stmt) => self.statement(stmt),
       MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
       MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
       _ => todo!(),
       //MechCode::FunctionDefine(func_def) => self.function_define(func_def, src),
-    };
+      };
+      if self.html {
+        src.push_str(&format!("<div class=\"mech-code\">{}</div>", c));
+      } else {
+        src.push_str(&format!("{}\n", c));
+      }
+    }
     if self.html {
-      format!("<span class=\"mech-code\">{}</div>",c)
+      format!("<div class=\"mech-code-block\">{}</div>",src)
     } else {
-      format!("{}\n", c)
+      src
     }
   }
 
@@ -371,13 +379,11 @@ impl Formatter {
       }
       Transition::CodeBlock(code) => {
         let mut code_str = "".to_string();
-        for c in code {
-          let formatted = self.mech_code(c);
-          if self.html {
-            code_str.push_str(&format!("<span class=\"mech-transition-code\">→ {}</span>", formatted));
-          } else {
-            code_str.push_str(&format!(" {} {}", "->", formatted));
-          }
+        let formatted = self.mech_code(code);
+        if self.html {
+          code_str.push_str(&format!("<span class=\"mech-transition-code\">→ {}</span>", formatted));
+        } else {
+          code_str.push_str(&format!(" {} {}", "->", formatted));
         }
         code_str
       }
