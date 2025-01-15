@@ -34,7 +34,7 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = whitespace0(input)?;
   let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
-  Ok((input, Subtitle{text: title}))
+  Ok((input, Subtitle{text: title, level: 2}))
 }
 
 // number_subtitle := space*, number, period, space+, text, space*, new_line* ;
@@ -49,7 +49,7 @@ pub fn number_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = whitespace0(input)?;
   let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
-  Ok((input, Subtitle{text: title}))
+  Ok((input, Subtitle{text: title, level: 3}))
 }
 
 // alpha_subtitle := space*, alpha, right_parenthesis, space+, text, space*, new_line* ;
@@ -64,7 +64,7 @@ pub fn alpha_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = whitespace0(input)?;
   let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
-  Ok((input, Subtitle{text: title}))
+  Ok((input, Subtitle{text: title, level: 4}))
 }
 
 // paragraph_symbol := ampersand | at | slash | backslash | asterisk | caret | hashtag | underscore ;

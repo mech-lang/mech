@@ -214,6 +214,7 @@ impl Body {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Subtitle {
   pub text: Token,
+  pub level: u8,
 }
 
 impl Subtitle {

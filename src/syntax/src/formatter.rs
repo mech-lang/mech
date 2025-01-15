@@ -60,8 +60,9 @@ impl Formatter {
   }
 
   pub fn subtitle(&mut self, node: &Subtitle) -> String {
+    let level = node.level;
     if self.html {
-      format!("<h2 class=\"mech-program-subtitle\">{}</h2>",node.to_string())
+      format!("<h{} class=\"mech-program-subtitle\">{}</h{}>", level, node.to_string(), level)
     } else {
       format!("{}\n-------------------------------------------------------------------------------\n",node.to_string())
     }
