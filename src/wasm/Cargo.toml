@@ -1,6 +1,6 @@
 [package]
 name = "mech-wasm"
-version = "0.2.28"
+version = "0.2.30"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "A web assembly wrapper for Mech core and syntax. Allows Mech to be embedded in the browser."
 documentation = "http://docs.mech-lang.org"
@@ -21,9 +21,9 @@ maintenance = { status = "actively-developed" }
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-mech-core = "0.2.28"
-mech-syntax = "0.2.28"
-mech-interpreter = "0.2.28"
+mech-core = "0.2.30"
+mech-syntax = "0.2.30"
+mech-interpreter = "0.2.30"
 
 hashbrown = "0.15.2"
 wasm-bindgen = "0.2.99"
