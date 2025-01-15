@@ -338,6 +338,7 @@ pub enum Transition {
   Next(Pattern),
   Output(Pattern),
   Async(Pattern),
+  CodeBlock(Vec<MechCode>),
   TransitionBlock(Vec<MechCode>),
 }
 
