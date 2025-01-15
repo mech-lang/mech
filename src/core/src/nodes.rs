@@ -322,9 +322,15 @@ pub struct FsmImplementation {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct FsmArm {
-  pub start: Pattern, 
-  pub transitions: Vec<Transition>
+pub enum FsmArm {
+  Guard(Pattern,Vec<Guard>),
+  Transition(Pattern,Vec<Transition>),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Guard { 
+  pub condition: Pattern,
+  pub transitions: Vec<Transition>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -332,14 +338,8 @@ pub enum Transition {
   Next(Pattern),
   Output(Pattern),
   Async(Pattern),
-  Guard(Guard),
+  CodeBlock(Vec<MechCode>),
   TransitionBlock(Vec<MechCode>),
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum Guard {
-  Wildcard,
-  Expression(Expression),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -361,15 +361,15 @@ pub type PatternTuple = Vec<Pattern>;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FsmSpecification {
   pub name: Identifier,
-  pub input: Vec<Identifier>,
-  pub output: Identifier,
+  pub input: Vec<Var>,
+  pub output: Option<KindAnnotation>,
   pub states: Vec<StateDefinition>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct StateDefinition {
   pub name: Identifier,
-  pub state_variables: Option<Vec<Identifier>>,
+  pub state_variables: Option<Vec<Var>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

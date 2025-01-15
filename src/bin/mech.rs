@@ -205,10 +205,20 @@ async fn main() -> Result<(), MechError> {
   } else { repl_flag = true; vec![] };
 
   // Run the code
-  parse_and_run_mech_code(&paths, &mut intrp);
+  let result = parse_and_run_mech_code(&paths, &mut intrp, tree_flag, debug_flag, time_flag); 
+  
+  let return_value = match &result {
+    Ok(ref r) => {
+      println!("{}", r.pretty_print());
+      Ok(())
+    }
+    Err(ref err) => {
+      Err(err.clone())
+    }
+  };
 
   if !repl_flag {
-    return Ok(());
+    return return_value;
   }
   
   #[cfg(windows)]
@@ -258,7 +268,7 @@ async fn main() -> Result<(), MechError> {
           println!("{}",help());
         }
         Ok((_, ReplCommand::Quit)) => break 'REPL,
-        Ok((_, ReplCommand::Symbols(name))) => println!("{}", symbols(&intrp)),
+        Ok((_, ReplCommand::Symbols(name))) => println!("{}", pretty_print_symbols(&intrp)),
         Ok((_, ReplCommand::Plan)) => println!("{}", pretty_print_plan(&intrp)),
         Ok((_, ReplCommand::Whos(name))) => println!("{}",whos(&intrp)),
         Ok((_, ReplCommand::Clear(name))) => {
@@ -274,7 +284,7 @@ async fn main() -> Result<(), MechError> {
         }
         Ok((_, ReplCommand::Clc)) => clc(),
         Ok((_, ReplCommand::Load(paths))) => {
-          parse_and_run_mech_code(&paths, &mut intrp);
+          parse_and_run_mech_code(&paths, &mut intrp,false,false,false);
         }
         Ok((_, ReplCommand::Step(count))) => {
           let n = match count {
