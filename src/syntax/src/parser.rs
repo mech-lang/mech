@@ -304,6 +304,10 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
   }
   match expression(input.clone()) {
     Ok((input, expr)) => {return Ok((input, MechCode::Expression(expr)));},
+    _ => ()
+  }
+  match comment(input.clone()) {
+    Ok((input, cmnt)) => {return Ok((input, MechCode::Comment(cmnt)));},
     Err(err) => {return Err(err);}
   }
 }

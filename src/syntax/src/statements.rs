@@ -21,7 +21,6 @@ pub fn comment_singleline(input: ParseString) -> ParseResult<Comment> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = comment_sigil(input)?;
   let (input, mut text) = many1(text)(input)?;
-  let (input, _) = whitespace0(input)?;
   Ok((input, Comment{text: Token::merge_tokens(&mut text).unwrap()}))
 }
 

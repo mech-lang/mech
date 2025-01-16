@@ -53,6 +53,7 @@ pub fn mech_code(code: &MechCode, plan: Plan, symbols: SymbolTableRef, functions
       fxns_brrw.functions.insert(usr_fxn.id, usr_fxn);
       Ok(Value::Empty)
     },
+    MechCode::Comment(_) => Ok(Value::Empty),
   }
 }
   

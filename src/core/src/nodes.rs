@@ -283,6 +283,7 @@ pub enum MechCode {
   FsmSpecification(FsmSpecification),
   FsmImplementation(FsmImplementation),
   FunctionDefine(FunctionDefine),
+  Comment(Comment),
 }
 
 impl MechCode {

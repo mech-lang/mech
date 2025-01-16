@@ -109,7 +109,7 @@ impl Formatter {
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     let element = match node {
       SectionElement::Section(n) => self.section(n),
-      SectionElement::Comment(n) => todo!(),
+      SectionElement::Comment(n) => self.comment(n),
       SectionElement::Paragraph(n) => self.paragraph(n),
       SectionElement::MechCode(n) => self.mech_code(n),
       SectionElement::UnorderedList(n) => self.unordered_list(n),
@@ -123,6 +123,14 @@ impl Formatter {
       format!("<div class=\"mech-section-element\">{}</div>",element)
     } else {
       element
+    }
+  }
+
+  pub fn comment(&mut self, node: &Comment) -> String {
+    if self.html {
+      format!("<div class=\"mech-comment\">-- {}</div>",node.text.to_string())
+    } else {
+      format!("{}\n",node.text.to_string())
     }
   }
 
@@ -151,6 +159,7 @@ impl Formatter {
       MechCode::Statement(stmt) => self.statement(stmt),
       MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
       MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
+      MechCode::Comment(cmnt) => self.comment(cmnt),
       _ => todo!(),
       //MechCode::FunctionDefine(func_def) => self.function_define(func_def, src),
       };
@@ -196,7 +205,7 @@ impl Formatter {
           <span class=\"mech-left-paren\">(</span>
           <span class=\"mech-fsm-input\">{}</span>
           <span class=\"mech-right-paren\">)</span>
-          <span class=\"mech-fsm-define-op\">-></span>
+          <span class=\"mech-fsm-define-op\">→</span>
           <span class=\"mech-fsm-start\">{}</span>
         </div>
         <div class=\"mech-fsm-arms\">
@@ -402,7 +411,7 @@ impl Formatter {
       }
     }
     let output = match &node.output {
-      Some(kind) => format!(" {} {}", "=>", self.kind_annotation(kind)),
+      Some(kind) => format!(" {} {}", "⇒", self.kind_annotation(kind)),
       None => "".to_string(),
     };
     let mut states = "".to_string();
@@ -894,10 +903,34 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
     let f = match node {
       Factor::Term(term) => self.term(term),
       Factor::Expression(expr) => self.expression(expr),
-      Factor::Parenthetical(paren) => format!("({})", self.factor(&paren)),
-      Factor::Negate(factor) => format!("-{}", self.factor(factor)),
-      Factor::Not(factor) => format!("¬{}", self.factor(factor)),
-      Factor::Transpose(factor) => format!("{}'", self.factor(factor)),
+      Factor::Parenthetical(paren) => {
+        if self.html {
+          format!("<span class=\"mech-parenthetical\">({})</span>", self.factor(paren))
+        } else {
+          format!("({})", self.factor(&paren))
+        }
+      }
+      Factor::Negate(factor) => {
+        if self.html {
+          format!("<span class=\"mech-negate-op\">-</span><span class=\"mech-negate\">{}</span>", self.factor(factor))
+        } else {
+          format!("-{}", self.factor(factor))
+        }
+      }
+      Factor::Not(factor) => {
+        if self.html {
+          format!("<span class=\"mech-not-op\">¬</span><span class=\"mech-not\">{}</span>", self.factor(factor))
+        } else {
+          format!("¬{}", self.factor(factor))
+        }
+      }
+      Factor::Transpose(factor) => {
+        if self.html {
+          format!("<span class=\"mech-transpose\">{}</span><span class=\"mech-transpose-op\">'</span>", self.factor(factor))
+        } else {
+          format!("{}'", self.factor(factor))
+        }
+      }
     };
     if self.html {
       format!("<span class=\"mech-factor\">{}</span>",f)
