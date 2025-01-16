@@ -17,6 +17,7 @@ pub type Plan = Ref<Vec<Box<dyn MechFunction>>>;
 pub type MutableReference = Ref<Value>;
 pub type SymbolTableRef= Ref<SymbolTable>;
 pub type ValRef = Ref<Value>;
+use std::num::FpCategory;
 
 pub type Ref<T> = Rc<RefCell<T>>;
 pub fn new_ref<T>(item: T) -> Rc<RefCell<T>> {
@@ -126,11 +127,22 @@ impl Neg for F64 {
   }
 }
 impl Step for F64 {
-  fn steps_between(start: &Self, end: &Self) -> Option<usize> {
-    if start.0 < end.0 {
-      Some(((end.0 - start.0) / 1.0) as usize) 
-    } else {
-      Some(0)
+  fn steps_between(start: &Self, end: &Self) -> (usize, Option<usize>) {
+    if start.0 > end.0 {
+      return (0, None);
+    }
+    let diff = end.0 - start.0;
+    // Handle special floating-point cases
+    match diff.classify() {
+      FpCategory::Normal | FpCategory::Zero => {
+        if diff.fract() == 0.0 {
+          let steps = diff as usize;
+          (steps, Some(steps))
+        } else {
+          (usize::MAX, None)
+        }
+      }
+      _ => (usize::MAX, None),
     }
   }
 
@@ -251,14 +263,26 @@ impl Neg for F32 {
   }
 }
 impl Step for F32 {
-  fn steps_between(start: &Self, end: &Self) -> Option<usize> {
-    if start.0 < end.0 {
-      Some(((end.0 - start.0) / 1.0) as usize)
-    } else {
-      Some(0)
+
+  fn steps_between(start: &Self, end: &Self) -> (usize, Option<usize>) {
+    if start.0 > end.0 {
+      return (0, None);
+    }
+    let diff = end.0 - start.0;
+    // Handle special floating-point cases
+    match diff.classify() {
+      FpCategory::Normal | FpCategory::Zero => {
+        if diff.fract() == 0.0 {
+          let steps = diff as usize;
+          (steps, Some(steps))
+        } else {
+          (usize::MAX, None)
+        }
+      }
+      _ => (usize::MAX, None),
     }
   }
-
+  
   fn forward_checked(start: Self, count: usize) -> Option<Self> {
     Some(F32(start.0 + count as f32)) 
   }
