@@ -1,8 +1,8 @@
 test:cargo:
   script:
   - rustup show
-  - rustup default nightly-2024-10-31
-  #- wasm-pack --version
-  #- wasm-pack build wasm-notebook --target web
+  - rustup default nightly-2025-01-15
+  - wasm-pack --version
+  - wasm-pack build wasm-notebook --target web
   - cargo build --bin mech
   - cargo test interpret
