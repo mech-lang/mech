@@ -41,6 +41,11 @@ use std::{fs,env};
 #[macro_use]
 extern crate lazy_static;
 
+#[cfg(feature = "wasm")]
+use web_sys::{Crypto, Window, console};
+use rand::rngs::OsRng;
+use rand::RngCore;
+
 lazy_static! {
   static ref CORE_MAP: Mutex<HashMap<SocketAddr, (String, SystemTime)>> = Mutex::new(HashMap::new());
 }
@@ -59,6 +64,18 @@ pub fn print_prompt() {
   stdout().flush();
   print!("{}", ">: ".truecolor(246,192,78));
   stdout().flush();
+}
+
+// Generate a new id for creating unique owner ids
+#[cfg(not(feature = "wasm"))]
+pub fn generate_uuid() -> u64 {
+  OsRng.next_u64()
+}
+
+#[cfg(feature = "wasm")]
+pub fn generate_uuid() -> u64 {
+  let mut rng = WebCryptoRng{};
+  rng.next_u64()
 }
 
 pub fn mech_table_style() -> Style<(),(),(),(),(),(),2,0> {

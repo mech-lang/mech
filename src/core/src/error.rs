@@ -71,7 +71,7 @@ pub enum MechErrorKind {
   ParserError(ParserErrorReport, String),
   //MissingCapability(Capability),
   InvalidCapabilityToken,
-  UnknownCommand(String),
+  UnknownReplCommand(String),
   NoCode,
   None,
 }
