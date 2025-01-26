@@ -322,7 +322,7 @@ impl Formatter {
       },
       Pattern::Formula(factor) => self.factor(factor),
       Pattern::Expression(expr) => self.expression(expr),
-      Pattern::TupleStruct(tuple_struct) => self.tuple_struct(tuple_struct),
+      Pattern::TupleStruct(tuple_struct) => self.pattern_tuple_struct(tuple_struct),
     };
     if self.html {
       format!("<span class=\"mech-pattern\">{}</span>",p)
@@ -331,7 +331,7 @@ impl Formatter {
     }
   }
 
-  pub fn tuple_struct(&mut self, node: &PatternTupleStruct) -> String {
+  pub fn pattern_tuple_struct(&mut self, node: &PatternTupleStruct) -> String {
     let name = node.name.to_string();
     let mut patterns = "".to_string();
     for (i, pattern) in node.patterns.iter().enumerate() {
@@ -754,6 +754,12 @@ impl Formatter {
       format!("[{}]",src)
     }
   }
+  /*
+  #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TupleStruct {
+  pub name: Identifier,
+  pub value: Box<Expression>,
+}*/
 
   pub fn structure(&mut self, node: &Structure) -> String {
     let s = match node {
@@ -762,8 +768,8 @@ impl Formatter {
       Structure::Empty => "_".to_string(),
       Structure::Table(table) => self.table(table),
       Structure::Tuple(tuple) => self.tuple(tuple),
+      Structure::TupleStruct(tuple_struct) => self.tuple_struct(tuple_struct),
       _ => todo!(),
-      //Structure::TupleStruct(tuple_struct) => self.tuple_struct(tuple_struct),
       //Structure::Set(set) => self.set(set),
       //Structure::Map(map) => self.map(map),
     };
@@ -771,6 +777,16 @@ impl Formatter {
       format!("<span class=\"mech-structure\">{}</span>",s)
     } else {
       format!("{}", s)
+    }
+  }
+
+  pub fn tuple_struct(&mut self, node: &TupleStruct) -> String {
+    let name = node.name.to_string();
+    let value = self.expression(&node.value);
+    if self.html {
+      format!("<span class=\"mech-tuple-struct\"><span class=\"mech-tuple-struct-name\">{}</span><span class=\"mech-tuple-struct-value\">{}</span></span>",name,value)
+    } else {
+      format!("{}{}", name, value)
     }
   }
 
