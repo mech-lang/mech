@@ -759,9 +759,9 @@ impl Formatter {
     let s = match node {
       Structure::Matrix(matrix) => self.matrix(matrix),
       Structure::Record(record) => self.record(record),
+      Structure::Empty => "_".to_string(),
+      Structure::Table(table) => self.table(table),
       _ => todo!(),
-      //Structure::Empty => "".to_string(),
-      //Structure::Table(table) => self.table(table),
       //Structure::Tuple(tuple) => self.tuple(tuple),
       //Structure::TupleStruct(tuple_struct) => self.tuple_struct(tuple_struct),
       //Structure::Set(set) => self.set(set),
@@ -773,6 +773,116 @@ impl Formatter {
       format!("{}", s)
     }
   }
+
+  /*
+  #[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Structure {
+  Empty,
+  Record(Record),
+  Matrix(Matrix),
+  Table(Table),
+  Tuple(Tuple),
+  TupleStruct(TupleStruct),
+  Set(Set),
+  Map(Map),
+}
+  #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Table {
+  pub header: TableHeader,
+  pub rows: Vec<TableRow>,
+}
+  #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TableRow {
+  pub columns: Vec<TableColumn>,
+}
+  #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TableColumn {
+  pub element: Expression,
+}
+  pub type TableHeader = Vec<Field>;
+  #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Field {
+  pub name: Identifier,
+  pub kind: Option<KindAnnotation>,
+}
+  */
+
+  pub fn table(&mut self, node: &Table) -> String {
+    let header = self.table_header(&node.header);
+    let mut rows = "".to_string();
+    for (i, row) in node.rows.iter().enumerate() {
+      let r = self.table_row(row);
+      if i == 0 {
+        rows = format!("{}", r);
+      } else {
+        rows = format!("{}{}", rows, r);
+      }
+    }
+    if self.html {
+      format!("<div class=\"mech-table\"><div class=\"mech-table-header\">{}</div><div class=\"mech-table-rows\">{}</div></div>",header,rows)
+    } else {
+      format!("{}{}", header, rows)
+    }
+  }
+
+  pub fn table_header(&mut self, node: &TableHeader) -> String {
+    let mut src = "".to_string();
+    for (i, field) in node.iter().enumerate() {
+      let f = self.field(field);
+      if i == 0 {
+        src = format!("{}", f);
+      } else {
+        src = format!("{},{}", src, f);
+      }
+    }
+    if self.html {
+      format!("<div class=\"mech-table-header\">{}</div>",src)
+    } else {
+      src
+    }
+  }
+
+  pub fn table_row(&mut self, node: &TableRow) -> String {
+    let mut src = "".to_string();
+    for (i, column) in node.columns.iter().enumerate() {
+      let c = self.table_column(column);
+      if i == 0 {
+        src = format!("{}", c);
+      } else {
+        src = format!("{},{}", src, c);
+      }
+    }
+    if self.html {
+      format!("<div class=\"mech-table-row\">{}</div>",src)
+    } else {
+      src
+    }
+  }
+
+  pub fn table_column(&mut self, node: &TableColumn) -> String {
+    let element = self.expression(&node.element);
+    if self.html {
+      format!("<div class=\"mech-table-column\">{}</div>",element)
+    } else {
+      element
+    }
+  }
+
+  pub fn field(&mut self, node: &Field) -> String {
+    let name = node.name.to_string();
+    let kind = if let Some(kind) = &node.kind {
+      self.kind_annotation(kind)
+    } else {
+      "".to_string()
+    };
+    if self.html {
+      format!("<div class=\"mech-field\"><span class=\"mech-field-name\">{}</span><span class=\"mech-field-colon-op\">:</span><span class=\"mech-field-kind\">{}</span></div>",name,kind)
+    } else {
+      format!("{}: {}", name, kind)
+    }
+  }
+
+  
 
   pub fn record(&mut self, node: &Record) -> String {
     let mut src = "".to_string();
