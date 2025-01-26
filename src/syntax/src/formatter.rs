@@ -577,14 +577,43 @@ impl Formatter {
       Expression::Structure(structure) => self.structure(structure),
       Expression::Slice(slice) => self.slice(slice),
       Expression::FunctionCall(function_call) => self.function_call(function_call),
+      Expression::Range(range) => self.range_expression(range),
       _ => todo!(),
-      /*Expression::Range(range) => self.range(range, src),
-      Expression::FsmPipe(fsm_pipe) => self.fsm_pipe(fsm_pipe, src),*/
+      //Expression::FsmPipe(fsm_pipe) => self.fsm_pipe(fsm_pipe, src),
     };
     if self.html {
       format!("<span class=\"mech-expression\">{}</span>",e)
     } else {
       format!("{}", e)
+    }
+  }
+
+  pub fn range_expression(&mut self, node: &RangeExpression) -> String {
+    let start = self.factor(&node.start);
+    let operator = match &node.operator {
+      RangeOp::Inclusive => "..".to_string(),
+      RangeOp::Exclusive => "..".to_string(),
+    };
+    let terminal = self.factor(&node.terminal);
+    let increment = match &node.increment {
+      Some((op, factor)) => {
+        let o = match op {
+          RangeOp::Inclusive => "=..".to_string(),
+          RangeOp::Exclusive => "..".to_string(),
+        };
+        let f = self.factor(factor);
+        if self.html {
+          format!("<span class=\"mech-range-increment\">{}{}</span>",o,f)
+        } else {
+          format!("{}{}", o, f)
+        }
+      },
+      None => "".to_string(),
+    };
+    if self.html {
+      format!("<span class=\"mech-range-expression\"><span class=\"mech-range-start\">{}</span><span class=\"mech-range-operator\">{}</span><span class=\"mech-range-terminal\">{}</span>{}</span>",start,operator,terminal,increment)
+    } else {
+      format!("{}{}{}{}", start, operator, terminal, increment)
     }
   }
 
@@ -640,13 +669,71 @@ impl Formatter {
       Subscript::Formula(factor) => self.factor(factor),
       Subscript::All => self.all(),
       Subscript::Dot(ident) => self.dot(ident),
-      _ => todo!(),
-      //Subscript::Swizzle(idents) => self.swizzle(idents),
-      //Subscript::Range(range) => self.range(range),
-      //Subscript::Brace(subs) => self.brace(subs),
-      //Subscript::DotInt(real) => self.dot_int(real),*/
+      Subscript::Swizzle(idents) => self.swizzle(idents),
+      Subscript::Range(range) => self.range_expression(range),
+      Subscript::Brace(subs) => self.brace(subs),
+      Subscript::DotInt(real) => self.dot_int(real),
     }
   }
+
+  /*
+  #[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum Subscript {
+  Dot(Identifier),          // a.b
+  Swizzle(Vec<Identifier>), // a.b,c
+  Range(RangeExpression),   // a[1 + 1]
+  Formula(Factor),          // a[1 + 1]
+  All,                      // a[:]
+  Bracket(Vec<Subscript>),  // a[1,2,3]
+  Brace(Vec<Subscript>),    // a{"foo"}
+  DotInt(RealNumber)        // a.1
+}*/
+
+  pub fn brace(&mut self, node: &Vec<Subscript>) -> String {
+    let mut src = "".to_string();
+    for (i, sub) in node.iter().enumerate() {
+      let s = self.subscript(sub);
+      if i == 0 {
+        src = format!("{}", s);
+      } else {
+        src = format!("{},{}", src, s);
+      }
+    }
+    if self.html {
+      format!("<span class=\"mech-brace\">{{{}}}</span>",src)
+    } else {
+      format!("{{{}}}",src)
+    }
+  }
+
+  pub fn swizzle(&mut self, node: &Vec<Identifier>) -> String {
+    let mut src = "".to_string();
+    for (i, ident) in node.iter().enumerate() {
+      let s = self.dot(ident);
+      if i == 0 {
+        src = format!("{}", s);
+      } else {
+        src = format!("{},{}", src, s);
+      }
+    }
+    if self.html {
+      format!("<span class=\"mech-swizzle\">{}</span>",src)
+    } else {
+      format!("{}",src)
+    }
+  }
+
+  pub fn dot_int(&mut self, node: &RealNumber) -> String {
+    let node_str = match node {
+      RealNumber::Integer(tkn) => tkn.to_string(),
+      _ => "".to_string(),
+    };
+    if self.html {
+      format!(".<span class=\"mech-dot-int\">{}</span>",node_str)
+    } else {
+      format!(".{}",node_str)
+    }
+  } 
 
   pub fn dot(&mut self, node: &Identifier) -> String {
     if self.html {
