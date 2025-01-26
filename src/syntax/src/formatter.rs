@@ -765,7 +765,6 @@ impl Formatter {
       Structure::TupleStruct(tuple_struct) => self.tuple_struct(tuple_struct),
       Structure::Set(set) => self.set(set),
       Structure::Map(map) => self.map(map),
-      _ => todo!(),
     };
     if self.html {
       format!("<span class=\"mech-structure\">{}</span>",s)
