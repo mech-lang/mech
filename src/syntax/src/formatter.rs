@@ -676,19 +676,6 @@ impl Formatter {
     }
   }
 
-  /*
-  #[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum Subscript {
-  Dot(Identifier),          // a.b
-  Swizzle(Vec<Identifier>), // a.b,c
-  Range(RangeExpression),   // a[1 + 1]
-  Formula(Factor),          // a[1 + 1]
-  All,                      // a[:]
-  Bracket(Vec<Subscript>),  // a[1,2,3]
-  Brace(Vec<Subscript>),    // a{"foo"}
-  DotInt(RealNumber)        // a.1
-}*/
-
   pub fn brace(&mut self, node: &Vec<Subscript>) -> String {
     let mut src = "".to_string();
     for (i, sub) in node.iter().enumerate() {
