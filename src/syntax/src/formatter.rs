@@ -754,12 +754,6 @@ impl Formatter {
       format!("[{}]",src)
     }
   }
-  /*
-  #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct TupleStruct {
-  pub name: Identifier,
-  pub value: Box<Expression>,
-}*/
 
   pub fn structure(&mut self, node: &Structure) -> String {
     let s = match node {
