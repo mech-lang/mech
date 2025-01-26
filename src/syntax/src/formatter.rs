@@ -763,14 +763,58 @@ impl Formatter {
       Structure::Table(table) => self.table(table),
       Structure::Tuple(tuple) => self.tuple(tuple),
       Structure::TupleStruct(tuple_struct) => self.tuple_struct(tuple_struct),
+      Structure::Set(set) => self.set(set),
+      Structure::Map(map) => self.map(map),
       _ => todo!(),
-      //Structure::Set(set) => self.set(set),
-      //Structure::Map(map) => self.map(map),
     };
     if self.html {
       format!("<span class=\"mech-structure\">{}</span>",s)
     } else {
       format!("{}", s)
+    }
+  }
+
+  pub fn map(&mut self, node: &Map) -> String {
+    let mut src = "".to_string();
+    for (i, mapping) in node.elements.iter().enumerate() {
+      let m = self.mapping(mapping);
+      if i == 0 {
+        src = format!("{}", m);
+      } else {
+        src = format!("{}, {}", src, m);
+      }
+    }
+    if self.html {
+      format!("<span class=\"mech-map\"><span class=\"mech-start-brace\">{{</span>{}}}<span class=\"mech-end-brace\">}}</span></span>",src)
+    } else {
+      format!("{{{}}}", src)
+    }
+  }
+
+  pub fn mapping(&mut self, node: &Mapping) -> String {
+    let key = self.expression(&node.key);
+    let value = self.expression(&node.value);
+    if self.html {
+      format!("<span class=\"mech-mapping\"><span class=\"mech-key\">{}</span><span class=\"mech-colon-op\">:</span><span class=\"mech-value\">{}</span></span>",key,value)
+    } else {
+      format!("{}: {}", key, value)
+    }
+  }
+
+  pub fn set(&mut self, node: &Set) -> String {
+    let mut src = "".to_string();
+    for (i, element) in node.elements.iter().enumerate() {
+      let e = self.expression(element);
+      if i == 0 {
+        src = format!("{}", e);
+      } else {
+        src = format!("{}, {}", src, e);
+      }
+    }
+    if self.html {
+      format!("<span class=\"mech-set\"><span class=\"mech-start-brace\">{{</span>{}}}<span class=\"mech-end-brace\">}}</span></span>",src)
+    } else {
+      format!("{{{}}}", src)
     }
   }
 
