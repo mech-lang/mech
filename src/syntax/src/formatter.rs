@@ -761,8 +761,8 @@ impl Formatter {
       Structure::Record(record) => self.record(record),
       Structure::Empty => "_".to_string(),
       Structure::Table(table) => self.table(table),
+      Structure::Tuple(tuple) => self.tuple(tuple),
       _ => todo!(),
-      //Structure::Tuple(tuple) => self.tuple(tuple),
       //Structure::TupleStruct(tuple_struct) => self.tuple_struct(tuple_struct),
       //Structure::Set(set) => self.set(set),
       //Structure::Map(map) => self.map(map),
@@ -848,8 +848,30 @@ impl Formatter {
       format!("{}: {}", name, kind)
     }
   }
+  /*
+  #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Tuple {
+  pub elements: Vec<Expression>
+}
 
-  
+  */
+
+  pub fn tuple(&mut self, node: &Tuple) -> String {
+    let mut src = "".to_string();
+    for (i, element) in node.elements.iter().enumerate() {
+      let e = self.expression(element);
+      if i == 0 {
+        src = format!("{}", e);
+      } else {
+        src = format!("{},{}", src, e);
+      }
+    }
+    if self.html {
+      format!("<span class=\"mech-tuple\"><span class=\"mech-start-paren\">(</span>{})<span class=\"mech-end-paren\">)</span></span>",src)
+    } else {
+      format!("({})", src)
+    }
+  }
 
   pub fn record(&mut self, node: &Record) -> String {
     let mut src = "".to_string();
