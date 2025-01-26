@@ -34,7 +34,7 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = whitespace0(input)?;
   let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
-  Ok((input, Subtitle{text: title}))
+  Ok((input, Subtitle{text: title, level: 2}))
 }
 
 // number_subtitle := space*, number, period, space+, text, space*, new_line* ;
@@ -49,7 +49,7 @@ pub fn number_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = whitespace0(input)?;
   let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
-  Ok((input, Subtitle{text: title}))
+  Ok((input, Subtitle{text: title, level: 3}))
 }
 
 // alpha_subtitle := space*, alpha, right_parenthesis, space+, text, space*, new_line* ;
@@ -64,7 +64,7 @@ pub fn alpha_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = whitespace0(input)?;
   let mut title = Token::merge_tokens(&mut text).unwrap();
   title.kind = TokenKind::Title;
-  Ok((input, Subtitle{text: title}))
+  Ok((input, Subtitle{text: title, level: 4}))
 }
 
 // paragraph_symbol := ampersand | at | slash | backslash | asterisk | caret | hashtag | underscore ;
@@ -139,7 +139,7 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
 
 // section_element := mech_code | unordered_list | comment | paragraph | code_block | sub_section;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
-  let (input, section_element) = match mech_code(input.clone()) {
+  let (input, section_element) = match many1(mech_code)(input.clone()) {
     Ok((input, code)) => (input, SectionElement::MechCode(code)),
     //Err(Failure(err)) => {return Err(Failure(err));}
     _ => match unordered_list(input.clone()) {
@@ -173,7 +173,7 @@ pub fn sub_section_element(input: ParseString) -> ParseResult<SectionElement> {
     Ok((input, comment)) => (input, SectionElement::Comment(comment)),
     _ => match unordered_list(input.clone()) {
       Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
-      _ => match mech_code(input.clone()) {
+      _ => match many1(mech_code)(input.clone()) {
         Ok((input, m)) => (input, SectionElement::MechCode(m)),
         _ => match paragraph(input.clone()) {
           Ok((input, p)) => (input, SectionElement::Paragraph(p)),

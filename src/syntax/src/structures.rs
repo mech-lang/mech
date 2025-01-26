@@ -410,14 +410,24 @@ pub fn fsm_guard_arm(input: ParseString) -> ParseResult<FsmArm> {
 pub fn fsm_guard(input: ParseString) -> ParseResult<Guard> {
   let (input, _) = guard_operator(input)?;
   let (input, cnd) = fsm_pattern(input)?;
-  let (input, trns) = many1(alt((fsm_state_transition,fsm_output,fsm_async_transition)))(input)?;
+  let (input, trns) = many1(alt((
+    fsm_statement_transition,
+    fsm_state_transition,
+    fsm_output,
+    fsm_async_transition,
+    fsm_block_transition)))(input)?;
   Ok((input, Guard{condition: cnd, transitions: trns}))
 }
 
 pub fn fsm_transition(input: ParseString) -> ParseResult<FsmArm> {
   let (input, _) = many0(comment)(input)?;
   let (input, start) = fsm_pattern(input)?;
-  let (input, trns) = many1(alt((fsm_state_transition,fsm_output,fsm_async_transition)))(input)?;
+  let (input, trns) = many1(alt((
+    fsm_state_transition,
+    fsm_output,
+    fsm_async_transition,
+    fsm_statement_transition,
+    fsm_block_transition)))(input)?;
   Ok((input, FsmArm::Transition(start, trns)))
 }
 
@@ -435,22 +445,13 @@ pub fn fsm_async_transition(input: ParseString) -> ParseResult<Transition> {
   Ok((input, Transition::Async(ptrn)))
 }
 
-// fsm_async_transition ::= async_transition_operator, fsm_pattern
+pub fn fsm_statement_transition(input: ParseString) -> ParseResult<Transition> {
+  let (input, _) = transition_operator(input)?;
+  let (input, stmnt) = statement(input)?;
+  Ok((input, Transition::Statement(stmnt)))
+}
+
 pub fn fsm_block_transition(input: ParseString) -> ParseResult<Transition> {
-  let (input, _) = transition_operator(input)?;
-  let (input, ptrn) = fsm_pattern(input)?;
-  Ok((input, Transition::Async(ptrn)))
-}
-
-// fsm_async_transition ::= async_transition_operator, fsm_pattern
-pub fn fsm_transition_statement(input: ParseString) -> ParseResult<Transition> {
-  let (input, _) = transition_operator(input)?;
-  let (input, stmnt) = mech_code(input)?;
-  Ok((input, Transition::CodeBlock(vec![stmnt])))
-}
-
-// fsm_async_transition ::= async_transition_operator, fsm_pattern
-pub fn fsm_transition_block(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = transition_operator(input)?;
   let (input, _) = left_brace(input)?;
   let (input, code) = many1(mech_code)(input)?;

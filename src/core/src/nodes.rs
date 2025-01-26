@@ -214,6 +214,7 @@ impl Body {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Subtitle {
   pub text: Token,
+  pub level: u8,
 }
 
 impl Subtitle {
@@ -244,7 +245,7 @@ pub enum SectionElement {
   Section(Box<Section>),
   Comment(Comment),
   Paragraph(Paragraph),
-  MechCode(MechCode),
+  MechCode(Vec<MechCode>),
   UnorderedList(UnorderedList),
   CodeBlock,       // todo
   OrderedList,     // todo
@@ -256,7 +257,13 @@ pub enum SectionElement {
 impl SectionElement {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
-      SectionElement::MechCode(code) => code.tokens(),
+      SectionElement::MechCode(codes) => {
+        let mut tokens = vec![];
+        for code in codes {
+          tokens.append(&mut code.tokens());
+        }
+        tokens
+      },
       _ => todo!(),
     }
   }
@@ -276,6 +283,7 @@ pub enum MechCode {
   FsmSpecification(FsmSpecification),
   FsmImplementation(FsmImplementation),
   FunctionDefine(FunctionDefine),
+  Comment(Comment),
 }
 
 impl MechCode {
@@ -339,7 +347,7 @@ pub enum Transition {
   Output(Pattern),
   Async(Pattern),
   CodeBlock(Vec<MechCode>),
-  TransitionBlock(Vec<MechCode>),
+  Statement(Statement),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
