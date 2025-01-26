@@ -774,39 +774,6 @@ impl Formatter {
     }
   }
 
-  /*
-  #[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum Structure {
-  Empty,
-  Record(Record),
-  Matrix(Matrix),
-  Table(Table),
-  Tuple(Tuple),
-  TupleStruct(TupleStruct),
-  Set(Set),
-  Map(Map),
-}
-  #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Table {
-  pub header: TableHeader,
-  pub rows: Vec<TableRow>,
-}
-  #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct TableRow {
-  pub columns: Vec<TableColumn>,
-}
-  #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct TableColumn {
-  pub element: Expression,
-}
-  pub type TableHeader = Vec<Field>;
-  #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Field {
-  pub name: Identifier,
-  pub kind: Option<KindAnnotation>,
-}
-  */
-
   pub fn table(&mut self, node: &Table) -> String {
     let header = self.table_header(&node.header);
     let mut rows = "".to_string();
