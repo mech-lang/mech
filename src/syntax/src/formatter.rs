@@ -848,13 +848,6 @@ impl Formatter {
       format!("{}: {}", name, kind)
     }
   }
-  /*
-  #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Tuple {
-  pub elements: Vec<Expression>
-}
-
-  */
 
   pub fn tuple(&mut self, node: &Tuple) -> String {
     let mut src = "".to_string();
