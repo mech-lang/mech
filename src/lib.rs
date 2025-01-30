@@ -8,7 +8,7 @@ pub extern crate mech_syntax as syntax;
 
 pub use mech_core::*;
 use mech_core::nodes::Program;
-use mech_interpreter::Interpreter;
+pub use mech_interpreter::Interpreter;
 
 extern crate colored;
 use colored::*;
@@ -57,6 +57,9 @@ mod run;
 pub use self::repl::*;
 pub use self::serve::*;
 pub use self::run::*;
+
+pub use mech_core::*;
+pub use mech_syntax::*;
 
 // Print a prompt 
 // 4, 8, 15, 16, 23, 42
