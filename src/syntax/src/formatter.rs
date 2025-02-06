@@ -839,7 +839,7 @@ impl Formatter {
       }
     }
     if self.html {
-      format!("<div class=\"mech-table\">{}<div class=\"mech-table-rows\">{}</div></div>",header,rows)
+      format!("<table class=\"mech-table\">{}<tbody class=\"mech-table-body\">{}</tbody></table>",header,rows)
     } else {
       format!("{}{}", header, rows)
     }
@@ -849,14 +849,14 @@ impl Formatter {
     let mut src = "".to_string();
     for (i, field) in node.iter().enumerate() {
       let f = self.field(field);
-      if i == 0 {
-        src = format!("{}", f);
+      if self.html {
+        src = format!("{}<th class=\"mech-table-field\">{}</th>",src, f);
       } else {
-        src = format!("{},{}", src, f);
+        src = format!("{}{}",src, f);
       }
     }
     if self.html {
-      format!("<div class=\"mech-table-header\">{}</div>",src)
+      format!("<thead class=\"mech-table-header\"><tr>{}</tr></thead>",src)
     } else {
       src
     }
@@ -869,11 +869,11 @@ impl Formatter {
       if i == 0 {
         src = format!("{}", c);
       } else {
-        src = format!("{},{}", src, c);
+        src = format!("{} {}", src, c);
       }
     }
     if self.html {
-      format!("<div class=\"mech-table-row\">{}</div>",src)
+      format!("<tr class=\"mech-table-row\">{}</tr>",src)
     } else {
       src
     }
@@ -882,7 +882,7 @@ impl Formatter {
   pub fn table_column(&mut self, node: &TableColumn) -> String {
     let element = self.expression(&node.element);
     if self.html {
-      format!("<div class=\"mech-table-column\">{}</div>",element)
+      format!("<td class=\"mech-table-column\">{}</td>",element)
     } else {
       element
     }
