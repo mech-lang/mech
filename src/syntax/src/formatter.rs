@@ -839,7 +839,7 @@ impl Formatter {
       }
     }
     if self.html {
-      format!("<div class=\"mech-table\"><div class=\"mech-table-header\">{}</div><div class=\"mech-table-rows\">{}</div></div>",header,rows)
+      format!("<div class=\"mech-table\">{}<div class=\"mech-table-rows\">{}</div></div>",header,rows)
     } else {
       format!("{}{}", header, rows)
     }
