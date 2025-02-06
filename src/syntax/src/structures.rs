@@ -328,7 +328,7 @@ pub fn set(input: ParseString) -> ParseResult<Set> {
   let msg = "Expects right bracket '}' to terminate inline table";
   let (input, (_, r)) = range(left_brace)(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, elements) = separated_list0(list_separator, expression)(input)?;
+  let (input, elements) = separated_list0(alt((list_separator,whitespace1)), expression)(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, _) = label!(right_brace, msg, r)(input)?;
   Ok((input, Set{elements}))
