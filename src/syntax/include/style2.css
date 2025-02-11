@@ -1,0 +1,369 @@
+@font-face {
+    font-family: 'FiraCodeRegular';
+    src: url('fonts/FiraCode-Regular.ttf') 
+}
+@font-face {
+    font-family: 'FiraCodeLight';
+    src: url('fonts/FiraCode-Light.ttf') 
+}
+
+body {
+    background-color: #222021;
+    margin: 0;
+    padding: 0;
+}
+
+.mech-program {
+    background-color: #191a23;
+    color: #ada594;
+    width: 690px;
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 14px;
+    line-height: 17px;
+    border-radius: 0px;
+    padding: 30px;
+    margin: 20px;
+    border: solid, 1px, #F29A75; 
+}
+
+.mech-matrix {
+    display: inline-flex;
+}
+
+.mech-bracket.end {
+    align-self: flex-end;
+    margin-left: -10px;
+}
+
+.mech-slice-ref {
+    display: inline-flex;
+}
+
+.mech-matrix-column {
+    display: flex;
+    flex-direction: column;
+    padding-right: 10px;
+}
+
+.mech-variable-assign-op {
+    padding-left:  6px;
+    padding-right: 6px;
+}
+
+.mech-term {
+    display: inline-flex;
+}
+
+.mech-formula-operator {
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+.mech-program-title {
+    color: #b48881;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 16px;
+}
+.mech-program-title::after {
+    content: "=========================================================";
+    color: #b48881; 
+    font-size: 11pt; 
+    display: block;
+    text-align: left; 
+    margin-top: 5px; 
+}
+
+.mech-program-body {
+}
+
+.mech-program-section {
+}
+
+h2 {
+    color: #b48881;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+h2::after {
+    content: "-------------------------------------------------------------------------------------";
+    color: #b48881; 
+    font-size: 11pt; 
+    display: block;
+    text-align: left; 
+    margin-top: 5px; 
+}
+
+h4 {
+    color: #c6869c;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.mech-variable-mutable {
+    color: #ada594;
+}
+
+.mech-section-element {
+}
+
+.mech-fsm-specification
+
+.mech-fsm-sigil{
+    display: inline-flex;
+}
+
+.mech-code {
+}
+
+.mech-statement {
+}
+
+.mech-variable-define {
+    display: flex;
+}
+
+.mech-fsm-specification-header {
+    display: inline-flex;
+}
+
+.mech-variable-mutable {
+}
+
+.mech-var-name {
+    color: #F29A75;
+}
+
+.mech-kind-annotation {
+}
+
+.mech-variable-assign-op {
+    color: #ada594;
+}
+
+.mech-expression {
+}
+
+.mech-literal {
+}
+
+.mech-number {
+    color: #ddcba6;
+}
+
+.mech-factor {
+    display: inline-flex;
+}
+
+.mech-term {
+}
+
+.mech-formula-operator {
+    color: #ada594;
+}
+
+.mech-paragraph {
+    color: #f2ead9;
+}
+
+.mech-all {
+    color: #ada594;
+}
+
+.mech-record {
+    display: flex;
+}
+
+.mech-binding {
+    display: inline-flex;
+}
+
+.mech-function-call {
+    display: inline-flex;
+}
+
+.mech-slice {
+    display: inline-flex;
+}
+
+.mech-subscript {
+    display: inline-flex;
+}
+
+.mech-bracket {
+    display: inline-flex;
+    color: #bc8560
+}
+
+.mech-start-brace {
+    color: #bc8560
+}
+
+.mech-expression:hover {
+    background-color: #2a2b34;
+}
+
+.mech-end-brace {
+    color: #bc8560
+}
+
+.mech-dot {
+    color: #76899c;
+}
+
+.mech-binding-colon-op {
+    padding-right: 6px;
+}
+
+.mech-binding-name {
+    padding-left: 6px;
+}
+
+.mech-right-paren {
+    color: #bc8560
+}
+
+.mech-left-paren {
+    color: #bc8560
+}
+
+.mech-binding-name {
+    color: #76899c;
+}
+
+.mech-function-name {
+    color: #7693ae;
+}
+
+.mech-kind-annotation {
+    display: inline-flex;
+}
+
+.mech-kind {
+    display: inline-flex;
+}
+
+.mech-fsm-define-op {
+    padding-left: 6px;
+}
+
+.mech-fsm-output { 
+    padding-left: 6px;
+}
+
+.mech-fsm-input {
+    display: inline-flex;
+}
+
+.mech-fsm-name {
+    color: #7693ae;
+}
+
+.mech-kind-annotation {
+    color: #F06E59;
+}
+
+.mech-kind .mech-literal .mech-number {
+    color: #F06E59;
+}
+
+.mech-fsm-state {
+    display: inline-flex;
+}
+
+.mech-fsm-states {
+    display: flex;
+    flex-direction: column;
+    margin-left: 20px;
+}
+
+.mech-fsm-input {
+    color: #F29A75;
+}
+
+.mech-state-definition {
+    display: inline-flex;
+}
+
+.mech-fsm-arms {
+    margin-left: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.mech-fsm-arm {
+    display: inline-flex;
+}
+
+.mech-fsm-implementation-header {
+    display: inline-flex;
+}
+
+.mech-tuple-struct {
+    display: inline-flex;
+}
+
+.mech-tuple-struct-patterns {
+    display: inline-flex;
+}
+
+.mech-fsm-define-op {
+    padding-right: 6px;
+}
+
+.mech-matrix.empty .end  {
+    margin-left: 0px;
+}
+
+.mech-fsm-implementation {
+    margin-top: 20px;
+}
+
+.mech-fsm-guards {
+    display: flex;
+    flex-direction: column;
+    margin-left: 20px;
+}
+
+.mech-fsm-guard-arm {
+    display: inline-flex;
+}
+
+.mech-guard-condition {
+    padding-left: 6px;
+}
+
+.mech-transition-output {
+    padding-left: 0px;
+}
+
+.mech-state-variables {
+    display: inline-flex;
+}
+
+.mech-transition-next {
+    padding-left: 0px;
+}
+
+.mech-guard-condition {
+    display: inline-flex;
+    margin: 0px;
+}
+
+.mech-pattern-wildcard {
+    display: inline-flex;
+}
+
+.mech-tuple-struct {
+    margin-right: 6px;
+}
+
+.mech-state-name {
+    color: #dbaca5;
+}
+
+.mech-tuple-struct-name {
+    color: #dbaca5;
+}
