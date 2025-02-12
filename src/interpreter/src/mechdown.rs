@@ -28,7 +28,7 @@ pub fn section_element(element: &SectionElement, plan: Plan, symbols: SymbolTabl
       }
       out
     },
-    SectionElement::Section(sctn) => Value::Empty,
+    SectionElement::Section(sctn) => section(sctn, plan.clone(), symbols.clone(), functions.clone())?,
     SectionElement::Comment(cmmnt) => Value::Empty,
     SectionElement::Paragraph(p) => Value::Empty,
     SectionElement::UnorderedList(ul) => Value::Empty,

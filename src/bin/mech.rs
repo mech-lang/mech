@@ -266,7 +266,14 @@ async fn main() -> Result<(), MechError> {
     if input.chars().nth(0) == Some(':') {
       match MechRepl::parse_repl_command(&input.as_str()) {
         Ok((_, repl_command)) => {
-          repl.execute_repl_command(repl_command);
+          match repl.execute_repl_command(repl_command) {
+            Ok(output) => {
+              println!("{}", output);
+            }
+            Err(err) => {
+              println!("{:?}", err);
+            }
+          }
         }
         _ => todo!(),
       }
@@ -274,7 +281,14 @@ async fn main() -> Result<(), MechError> {
       continue;
     } else {
       let cmd = ReplCommand::Code(vec![("repl".to_string(),MechSourceCode::String(input))]);
-      repl.execute_repl_command(cmd);
+      match repl.execute_repl_command(cmd) {
+        Ok(output) => {
+          println!("{}", output);
+        }
+        Err(err) => {
+          println!("{:?}", err);
+        }
+      }
     }
   }
   

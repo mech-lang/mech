@@ -65,44 +65,49 @@ impl MechRepl {
     }
   }
 
-  pub fn execute_repl_command(&mut self, repl_cmd: ReplCommand) -> MResult<()> {
+  pub fn execute_repl_command(&mut self, repl_cmd: ReplCommand) -> MResult<String> {
 
     let mut intrp = self.interpreters.get_mut(&self.active).unwrap();
 
     match repl_cmd {
       ReplCommand::Help => {
-        println!("{}",help());
+        return Ok(help());
       }
       ReplCommand::Quit => {
         // exit from the program
         process::exit(0);
       }
-      ReplCommand::Symbols(name) => println!("{}", pretty_print_symbols(&intrp)),
-      ReplCommand::Plan => println!("{}", pretty_print_plan(&intrp)),
-      ReplCommand::Whos(name) => println!("{}",whos(&intrp)),
+      ReplCommand::Symbols(name) => {return Ok(pretty_print_symbols(&intrp));}
+      ReplCommand::Plan => {return Ok(pretty_print_plan(&intrp));}
+      ReplCommand::Whos(name) => {return Ok(whos(&intrp));}
       ReplCommand::Clear(name) => {
         // Drop the old interpreter replace it with a new one
         *intrp = Interpreter::new();
+        return Ok("".to_string());
       }
       ReplCommand::Ls => {
-        println!("{}",ls());
+        return Ok(ls());
       }
       ReplCommand::Cd(path) => {
         let path = PathBuf::from(path);
         env::set_current_dir(&path).unwrap();
+        return Ok("".to_string());
       }
-      ReplCommand::Clc => clc(),
+      ReplCommand::Clc => {
+        clc();
+        Ok("".to_string())
+      },
       ReplCommand::Load(paths) => {
         let code = read_mech_files(&paths)?;
         match run_mech_code(&mut intrp, &code, false,false,false) {
-          Ok(r) => println!("\n{:?}\n{}\n", r.kind(), r.pretty_print()),
-          Err(err) => println!("{:#?}", err),
+          Ok(r) => {return Ok(format!("\n{:?}\n{}\n", r.kind(), r.pretty_print()));},
+          Err(err) => {return Err(err);}
         }
       }
       ReplCommand::Code(code) => {
         match run_mech_code(&mut intrp, &code, false,false,false)  {
-          Ok(r) => println!("\n{:?}\n{}\n", r.kind(), r.pretty_print()),
-          Err(err) => println!("{:#?}", err),
+          Ok(r) => { return Ok(format!("\n{:?}\n{}\n", r.kind(), r.pretty_print()));},
+          Err(err) => { return Err(err); }
         }
       }
       ReplCommand::Step(count) => {
@@ -119,10 +124,9 @@ impl MechRepl {
         }
         let elapsed_time = now.elapsed();
         let cycle_duration = elapsed_time.as_nanos() as f64;
-        println!("{:0.2?} ns", cycle_duration);
+        return Ok(format!("{} cycles in {:0.2?} ns\n", n, cycle_duration));
       }
     }
-    Ok(())
   }
 
   pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand> {
