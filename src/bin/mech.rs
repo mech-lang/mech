@@ -151,15 +151,6 @@ async fn main() -> Result<(), MechError> {
                   if html_flag {
                     let formatted_mech = formatter.format_html(&tree);
                     let formatted_mech = Formatter::humanize_html(formatted_mech);
-                    let head = r#"<html>
-    <head>
-        <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
-        <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
-        <link rel="stylesheet" href="style.css">
-    </head>
-    <body>"#;
-                    let foot = r#"</body></html>"#;
-                    let formatted_mech = format!("{}{}{}",head,formatted_mech,foot);
                     // save to a html file with the same name as the input mec file in the same directory
                     match fs::File::create(format!("{}.html",filename)) {
                       Ok(mut file) => {
