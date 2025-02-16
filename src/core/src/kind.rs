@@ -34,7 +34,7 @@ impl Kind {
       },
       Kind::Matrix(knd,size) => {
         let val_knd = knd.to_value_kind(functions.clone())?;
-        Ok(ValueKind::Matrix(Box::new(val_knd),(size[0],size[1])))
+        Ok(ValueKind::Matrix(Box::new(val_knd),size.clone()))
       },
       Kind::Tuple(elements) => {
         let val_knds = elements.iter().map(|k| k.to_value_kind(functions.clone())).collect::<MResult<Vec<ValueKind>>>()?;
