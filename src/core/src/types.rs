@@ -171,6 +171,19 @@ impl F32 {
   }
 }
 
+macro_rules! impl_into {
+  ($from:ty => $($to:ty),*) => {
+    $(impl Into<$to> for $from {
+      fn into(self) -> $to {
+        self.0 as $to
+      }
+    })*
+  };
+}
+
+impl_into!(F64 => u8, u16, u32, i8, i16, i32, f64);
+impl_into!(F32 => u8, u16, u32, i8, i16, i32, f64);
+
 impl fmt::Display for F32 {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
       write!(f, "{}", self.0)
