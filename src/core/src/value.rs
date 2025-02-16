@@ -50,7 +50,7 @@ macro_rules! impl_as_type {
 pub enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, 
   String, Bool, Matrix(Box<ValueKind>,(usize,usize)), Enum(u64), Set(Box<ValueKind>, usize), 
-  Map((Box<ValueKind>,Box<ValueKind>),usize), Record(Vec<ValueKind>), Table(Vec<ValueKind>, usize), Tuple(Vec<ValueKind>), Id, Index, Reference(Box<ValueKind>), Atom(u64), Empty, Any
+  Map(Box<ValueKind>,Box<ValueKind>), Record(Vec<ValueKind>), Table(Vec<ValueKind>, usize), Tuple(Vec<ValueKind>), Id, Index, Reference(Box<ValueKind>), Atom(u64), Empty, Any
 }
 
 impl fmt::Debug for ValueKind {
@@ -73,7 +73,7 @@ impl fmt::Debug for ValueKind {
       ValueKind::Matrix(x,(r,c)) => write!(f, "[{:?}]:{:?},{:?}",x,r,c),
       ValueKind::Enum(x) => write!(f, "{:?}",x),
       ValueKind::Set(x,el) => write!(f, "{{{:?}}}:{}", x, el),
-      ValueKind::Map(x,el) => write!(f, "{{{:?}:{:?}}}:{}",x.0,x.1,el),
+      ValueKind::Map(x,y) => write!(f, "{{{:?}:{:?}}}",x,y),
       ValueKind::Record(x) => write!(f, "{{{}}}",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
       ValueKind::Table(x,y) => write!(f, "{{{}}}:{}",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(","),y),
       ValueKind::Tuple(x) => write!(f, "({})",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
@@ -708,7 +708,7 @@ pub struct MechMap {
 impl MechMap {
 
   pub fn kind(&self) -> ValueKind {
-    ValueKind::Map((Box::new(self.key_kind.clone()), Box::new(self.value_kind.clone())), self.num_elements)
+    ValueKind::Map(Box::new(self.key_kind.clone()), Box::new(self.value_kind.clone()))
   }
 
   pub fn pretty_print(&self) -> String {
