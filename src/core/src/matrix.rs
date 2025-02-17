@@ -433,6 +433,122 @@ where T: Debug + Display + Clone + PartialEq + 'static
     }
   }
 
+  pub fn set_unsafe(&self, elements: Vec<T>) {
+    match self {
+      #[cfg(feature = "RowVector4")]
+      Matrix::RowVector4(x) => {
+        let mut x = x.borrow_mut();
+        x[0] = elements[0].clone();
+        x[1] = elements[1].clone();
+        x[2] = elements[2].clone();
+        x[3] = elements[3].clone();
+      }
+      #[cfg(feature = "RowVector3")]
+      Matrix::RowVector3(x) => {
+        let mut x = x.borrow_mut();
+        x[0] = elements[0].clone();
+        x[1] = elements[1].clone();
+        x[2] = elements[2].clone();
+      }
+      #[cfg(feature = "RowVector2")]
+      Matrix::RowVector2(x) => {
+        let mut x = x.borrow_mut();
+        x[0] = elements[0].clone();
+        x[1] = elements[1].clone();
+      }
+      #[cfg(feature = "RowVectorD")]
+      Matrix::RowDVector(x) => {let mut x = x.borrow_mut();for i in 0..elements.len() {x[i] = elements[i].clone();}},
+      #[cfg(feature = "Vector4")]
+      Matrix::Vector4(x) => {
+        let mut x = x.borrow_mut();
+        x[0] = elements[0].clone();
+        x[1] = elements[1].clone();
+        x[2] = elements[2].clone();
+        x[3] = elements[3].clone();
+      }
+      #[cfg(feature = "Vector3")]
+      Matrix::Vector3(x) => {
+        let mut x = x.borrow_mut();
+        x[0] = elements[0].clone();
+        x[1] = elements[1].clone();
+        x[2] = elements[2].clone();
+      }
+      #[cfg(feature = "Vector2")]
+      Matrix::Vector2(x) => {
+        let mut x = x.borrow_mut();
+        x[0] = elements[0].clone();
+        x[1] = elements[1].clone();
+      }
+      #[cfg(feature = "VectorD")]
+      Matrix::DVector(x) => {let mut x = x.borrow_mut();for i in 0..elements.len() {x[i] = elements[i].clone();}},
+      #[cfg(feature = "Matrix4")]
+      Matrix::Matrix4(x) => {
+        let mut x = x.borrow_mut();
+        x[0] = elements[0].clone();
+        x[1] = elements[1].clone();
+        x[2] = elements[2].clone();
+        x[3] = elements[3].clone();
+        x[4] = elements[4].clone();
+        x[5] = elements[5].clone();
+        x[6] = elements[6].clone();
+        x[7] = elements[7].clone();
+        x[8] = elements[8].clone();
+        x[9] = elements[9].clone();
+        x[10] = elements[10].clone();
+        x[11] = elements[11].clone();
+        x[12] = elements[12].clone();
+        x[13] = elements[13].clone();
+        x[14] = elements[14].clone();
+        x[15] = elements[15].clone();
+      }
+      #[cfg(feature = "Matrix3")]
+      Matrix::Matrix3(x) => {
+        let mut x = x.borrow_mut();
+        x[0] = elements[0].clone();
+        x[1] = elements[1].clone();
+        x[2] = elements[2].clone();
+        x[3] = elements[3].clone();
+        x[4] = elements[4].clone();
+        x[5] = elements[5].clone();
+        x[6] = elements[6].clone();
+        x[7] = elements[7].clone();
+        x[8] = elements[8].clone();
+      }
+      #[cfg(feature = "Matrix2")]
+      Matrix::Matrix2(x) => {
+        let mut x = x.borrow_mut();
+        x[0] = elements[0].clone();
+        x[1] = elements[1].clone();
+        x[2] = elements[2].clone();
+        x[3] = elements[3].clone();
+      }
+      #[cfg(feature = "Matrix1")]
+      Matrix::Matrix1(x) => {let mut x = x.borrow_mut();x[0] = elements[0].clone();},
+      #[cfg(feature = "Matrix3x2")]
+      Matrix::Matrix3x2(x) => {
+        let mut x = x.borrow_mut();
+        x[0] = elements[0].clone();
+        x[1] = elements[1].clone();
+        x[2] = elements[2].clone();
+        x[3] = elements[3].clone();
+        x[4] = elements[4].clone();
+        x[5] = elements[5].clone();
+      }
+      #[cfg(feature = "Matrix2x3")]
+      Matrix::Matrix2x3(x) => {
+        let mut x = x.borrow_mut();
+        x[0] = elements[0].clone();
+        x[1] = elements[1].clone();
+        x[2] = elements[2].clone();
+        x[3] = elements[3].clone();
+        x[4] = elements[4].clone();
+        x[5] = elements[5].clone();
+      }
+      #[cfg(feature = "MatrixD")]
+      Matrix::DMatrix(x) => {let mut x = x.borrow_mut();for i in 0..elements.len() {x[i] = elements[i].clone();}},
+    }
+  }
+
   pub fn index2d(&self, row: usize, col: usize) -> T {
     match self {
       #[cfg(feature = "RowVector4")]
