@@ -433,7 +433,7 @@ where T: Debug + Display + Clone + PartialEq + 'static
     }
   }
 
-  pub fn set_unsafe(&self, elements: Vec<T>) {
+  pub fn set(&self, elements: Vec<T>) {
     match self {
       #[cfg(feature = "RowVector4")]
       Matrix::RowVector4(x) => {
