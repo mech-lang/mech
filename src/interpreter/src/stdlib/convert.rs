@@ -394,7 +394,7 @@ fn impl_conversion_fxn(source_value: Value, target_kind: ValueKind) -> MResult<B
     u64  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
     u128 => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
     F32  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    //F64  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    F64  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
   )
 }
 
