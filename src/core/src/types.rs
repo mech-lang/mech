@@ -11,6 +11,7 @@ use num_traits::*;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 use libm::{pow,powf};
+use paste::paste;
 
 pub type FunctionsRef = Ref<Functions>;
 pub type Plan = Ref<Vec<Box<dyn MechFunction>>>;
@@ -181,8 +182,44 @@ macro_rules! impl_into {
   };
 }
 
-impl_into!(F64 => u8, u16, u32, i8, i16, i32, f64);
-impl_into!(F32 => u8, u16, u32, i8, i16, i32, f64);
+macro_rules! impl_into_float {
+  ($from:ty => $($to:ty),*) => {
+    paste!{
+      $(impl Into<[<$to:upper>]> for $from {
+        fn into(self) -> [<$to:upper>] {
+          [<$to:upper>]::new(self as $to)
+        }
+      })*
+    }
+  };
+}
+
+impl_into_float!(u8 => f32, f64);
+impl_into_float!(u16 => f32, f64);
+impl_into_float!(u32 => f32, f64);
+impl_into_float!(u64 => f32, f64);
+impl_into_float!(u128 => f32, f64);
+
+impl_into_float!(i8 => f32, f64);
+impl_into_float!(i16 => f32, f64);
+impl_into_float!(i32 => f32, f64);
+impl_into_float!(i64 => f32, f64);
+impl_into_float!(i128 => f32, f64);
+
+impl_into!(F64 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
+impl_into!(F32 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
+
+impl Into<F32> for F64 {
+  fn into(self) -> F32 {
+    F32::new(self.0 as f32)
+  }
+}
+
+impl Into<F64> for F32 {
+  fn into(self) -> F64 {
+    F64::new(self.0 as f64)
+  }
+}
 
 impl fmt::Display for F32 {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
