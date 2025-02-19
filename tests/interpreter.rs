@@ -504,3 +504,8 @@ test_interpreter!(interpret_set_logical_ram4m4_bool,"~x := [1 2 3 4; 5 6 7 8; 9 
 
 test_interpreter!(interpret_set_logical_ram2m2,"~x := [1 2; 3 4]; y := [2 1]; x[y,:] = x;", new_ref(Matrix2::from_vec(vec![F64::new(3.0),F64::new(1.0),F64::new(4.0),F64::new(2.0)])).to_value());
 test_interpreter!(interpret_set_logical_ram3m3,"~x := [1 2 3; 4 5 6; 7 8 9]; y := [2 1 3]; x[y,:] = x;", new_ref(Matrix3::from_vec(vec![F64::new(4.0),F64::new(1.0),F64::new(7.0),F64::new(5.0),F64::new(2.0),F64::new(8.0),F64::new(6.0),F64::new(3.0),F64::new(9.0)])).to_value());
+
+
+test_interpreter!(interpret_convert_vec_u32u8,"x<[u8]> := [1<u32> 2<u32> 3<u32> 4<u32>]", new_ref(RowVector4::from_vec(vec![1u8,2u8,3u8,4u8])).to_value());
+
+
