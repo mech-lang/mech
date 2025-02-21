@@ -4,14 +4,20 @@ use crate::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Kind {
-  Scalar(u64),
+  Tuple(Vec<Kind>),
   Matrix(Box<Kind>,Vec<usize>),
-  Tuple,
-  Brace,
-  Map,
-  Atom,
-  Function,
-  Fsm,
+  Set(Box<Kind>,usize),
+  Map(Box<Kind>,Box<Kind>),
+  Table(Vec<Kind>,usize),
+  Record(Vec<Kind>),
+  Enum(u64),
+  Scalar(u64),
+  Atom(u64),
+  Function(Vec<Kind>,Vec<Kind>),
+  Reference(Box<Kind>),
+  Fsm(Vec<Kind>,Vec<Kind>),
+  Id,
+  Index,
   Empty,
   Any,
 }
@@ -28,16 +34,40 @@ impl Kind {
       },
       Kind::Matrix(knd,size) => {
         let val_knd = knd.to_value_kind(functions.clone())?;
-        Ok(ValueKind::Matrix(Box::new(val_knd),(size[0],size[1])))
+        Ok(ValueKind::Matrix(Box::new(val_knd),size.clone()))
       },
-      Kind::Tuple => todo!(),
-      Kind::Brace => todo!(),
-      Kind::Map => todo!(),
-      Kind::Atom => todo!(),
-      Kind::Function => todo!(),
-      Kind::Fsm => todo!(),
+      Kind::Tuple(elements) => {
+        let val_knds = elements.iter().map(|k| k.to_value_kind(functions.clone())).collect::<MResult<Vec<ValueKind>>>()?;
+        Ok(ValueKind::Tuple(val_knds))
+      }
+      Kind::Set(kind,size) => {
+        let val_knd = kind.to_value_kind(functions.clone())?;
+        Ok(ValueKind::Set(Box::new(val_knd),*size))
+      }
+      Kind::Map(keys,vals) => {
+        let key_knd = keys.to_value_kind(functions.clone())?;
+        let val_knd = vals.to_value_kind(functions.clone())?;
+        Ok(ValueKind::Map(Box::new(key_knd),Box::new(val_knd)))
+      },
+      Kind::Table(elements,size) => {
+        let val_knds = elements.iter().map(|k| k.to_value_kind(functions.clone())).collect::<MResult<Vec<ValueKind>>>()?;
+        Ok(ValueKind::Table(val_knds,*size))
+      },
+      Kind::Record(elements) => {
+        let val_knds = elements.iter().map(|k| k.to_value_kind(functions.clone())).collect::<MResult<Vec<ValueKind>>>()?;
+        Ok(ValueKind::Record(val_knds))
+      },
+      Kind::Enum(id) => Ok(ValueKind::Enum(*id)),
+      Kind::Atom(id) => Ok(ValueKind::Atom(*id)),
+      Kind::Reference(kind) => {
+        let val_knd = kind.to_value_kind(functions.clone())?;
+        Ok(ValueKind::Reference(Box::new(val_knd)))
+      },
+      Kind::Id => Ok(ValueKind::Id),
+      Kind::Index => Ok(ValueKind::Index),
       Kind::Empty => Ok(ValueKind::Empty),
       Kind::Any => Ok(ValueKind::Any),
+      _ => todo!(),
     }
   }
 }

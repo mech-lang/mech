@@ -49,8 +49,8 @@ macro_rules! impl_as_type {
 #[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, 
-  String, Bool, Matrix(Box<ValueKind>,(usize,usize)), Enum(u64), Set(Box<ValueKind>, usize), 
-  Map((Box<ValueKind>,Box<ValueKind>),usize), Record(Vec<ValueKind>), Table(Vec<ValueKind>, usize), Tuple(Vec<ValueKind>), Id, Index, Reference(Box<ValueKind>), Atom(u64), Empty, Any
+  String, Bool, Matrix(Box<ValueKind>,Vec<usize>), Enum(u64), Set(Box<ValueKind>, usize), 
+  Map(Box<ValueKind>,Box<ValueKind>), Record(Vec<ValueKind>), Table(Vec<ValueKind>, usize), Tuple(Vec<ValueKind>), Id, Index, Reference(Box<ValueKind>), Atom(u64), Empty, Any
 }
 
 impl fmt::Debug for ValueKind {
@@ -70,10 +70,10 @@ impl fmt::Debug for ValueKind {
       ValueKind::F64 => write!(f, "f64"),
       ValueKind::String => write!(f, "string"),
       ValueKind::Bool => write!(f, "bool"),
-      ValueKind::Matrix(x,(r,c)) => write!(f, "[{:?}]:{:?},{:?}",x,r,c),
+      ValueKind::Matrix(x,s) => write!(f, "[{:?}]:{:?},{:?}",x,s[0],s[1]),
       ValueKind::Enum(x) => write!(f, "{:?}",x),
       ValueKind::Set(x,el) => write!(f, "{{{:?}}}:{}", x, el),
-      ValueKind::Map(x,el) => write!(f, "{{{:?}:{:?}}}:{}",x.0,x.1,el),
+      ValueKind::Map(x,y) => write!(f, "{{{:?}:{:?}}}",x,y),
       ValueKind::Record(x) => write!(f, "{{{}}}",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
       ValueKind::Table(x,y) => write!(f, "{{{}}}:{}",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(","),y),
       ValueKind::Tuple(x) => write!(f, "({})",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
@@ -364,21 +364,21 @@ impl Value {
       Value::String(_) => ValueKind::String,
       Value::Bool(_) => ValueKind::Bool,
       Value::Atom(x) => ValueKind::Atom(*x),
-      Value::MatrixIndex(x) => ValueKind::Matrix(Box::new(ValueKind::Index),(x.shape()[0],x.shape()[1])),
-      Value::MatrixBool(x) => ValueKind::Matrix(Box::new(ValueKind::Bool),(x.shape()[0],x.shape()[1])),
-      Value::MatrixU8(x) => ValueKind::Matrix(Box::new(ValueKind::U8),(x.shape()[0],x.shape()[1])),
-      Value::MatrixU16(x) => ValueKind::Matrix(Box::new(ValueKind::U16),(x.shape()[0],x.shape()[1])),
-      Value::MatrixU32(x) => ValueKind::Matrix(Box::new(ValueKind::U32),(x.shape()[0],x.shape()[1])),
-      Value::MatrixU64(x) => ValueKind::Matrix(Box::new(ValueKind::U64),(x.shape()[0],x.shape()[1])),
-      Value::MatrixU128(x) => ValueKind::Matrix(Box::new(ValueKind::U128),(x.shape()[0],x.shape()[1])),
-      Value::MatrixI8(x) => ValueKind::Matrix(Box::new(ValueKind::I8),(x.shape()[0],x.shape()[1])),
-      Value::MatrixI16(x) => ValueKind::Matrix(Box::new(ValueKind::I16),(x.shape()[0],x.shape()[1])),
-      Value::MatrixI32(x) => ValueKind::Matrix(Box::new(ValueKind::I32),(x.shape()[0],x.shape()[1])),
-      Value::MatrixI64(x) => ValueKind::Matrix(Box::new(ValueKind::I64),(x.shape()[0],x.shape()[1])),
-      Value::MatrixI128(x) => ValueKind::Matrix(Box::new(ValueKind::U128,),(x.shape()[0],x.shape()[1])),
-      Value::MatrixF32(x) => ValueKind::Matrix(Box::new(ValueKind::F32),(x.shape()[0],x.shape()[1])),
-      Value::MatrixF64(x) => ValueKind::Matrix(Box::new(ValueKind::F64),(x.shape()[0],x.shape()[1])),
-      Value::MatrixValue(x) => ValueKind::Matrix(Box::new(ValueKind::Any),(x.shape()[0],x.shape()[1])),
+      Value::MatrixIndex(x) => ValueKind::Matrix(Box::new(ValueKind::Index),x.shape()),
+      Value::MatrixBool(x) => ValueKind::Matrix(Box::new(ValueKind::Bool),x.shape()),
+      Value::MatrixU8(x) => ValueKind::Matrix(Box::new(ValueKind::U8),x.shape()),
+      Value::MatrixU16(x) => ValueKind::Matrix(Box::new(ValueKind::U16),x.shape()),
+      Value::MatrixU32(x) => ValueKind::Matrix(Box::new(ValueKind::U32),x.shape()),
+      Value::MatrixU64(x) => ValueKind::Matrix(Box::new(ValueKind::U64),x.shape()),
+      Value::MatrixU128(x) => ValueKind::Matrix(Box::new(ValueKind::U128),x.shape()),
+      Value::MatrixI8(x) => ValueKind::Matrix(Box::new(ValueKind::I8),x.shape()),
+      Value::MatrixI16(x) => ValueKind::Matrix(Box::new(ValueKind::I16),x.shape()),
+      Value::MatrixI32(x) => ValueKind::Matrix(Box::new(ValueKind::I32),x.shape()),
+      Value::MatrixI64(x) => ValueKind::Matrix(Box::new(ValueKind::I64),x.shape()),
+      Value::MatrixI128(x) => ValueKind::Matrix(Box::new(ValueKind::U128,),x.shape()),
+      Value::MatrixF32(x) => ValueKind::Matrix(Box::new(ValueKind::F32),x.shape()),
+      Value::MatrixF64(x) => ValueKind::Matrix(Box::new(ValueKind::F64),x.shape()),
+      Value::MatrixValue(x) => ValueKind::Matrix(Box::new(ValueKind::Any),x.shape()),
       Value::Table(x) => x.kind(),
       Value::Set(x) => x.kind(),
       Value::Map(x) => x.kind(),
@@ -708,7 +708,7 @@ pub struct MechMap {
 impl MechMap {
 
   pub fn kind(&self) -> ValueKind {
-    ValueKind::Map((Box::new(self.key_kind.clone()), Box::new(self.value_kind.clone())), self.num_elements)
+    ValueKind::Map(Box::new(self.key_kind.clone()), Box::new(self.value_kind.clone()))
   }
 
   pub fn pretty_print(&self) -> String {

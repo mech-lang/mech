@@ -12,11 +12,16 @@ pub struct Formatter{
   indent: usize,
   html: bool,
   nested: bool,
+  styles: Vec<String>,
 }
+
 
 impl Formatter {
 
   pub fn new() -> Formatter {
+    let style_sheet = include_str!("../include/style.css");
+    let style_shee2 = include_str!("../include/style2.css");
+
     Formatter {
       code: String::new(),
       identifiers: HashMap::new(),
@@ -25,6 +30,7 @@ impl Formatter {
       indent: 0,
       html: false,
       nested: false,
+      styles: vec![style_sheet.to_string(), style_shee2.to_string()],
     }
   }
 
@@ -35,7 +41,18 @@ impl Formatter {
 
   pub fn format_html(&mut self, tree: &Program) -> String {
     self.html = true;
-    self.program(tree)
+    let formatted_src = self.program(tree);
+    let head = format!(r#"<html>
+    <head>
+        <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+        <style>
+                  {}
+        </style>
+    </head>
+    <body>"#, self.styles[1]);
+    let foot = r#"</body></html>"#;
+    format!("{}{}{}", head, formatted_src, foot)
   }
 
   pub fn program(&mut self, node: &Program) -> String {
