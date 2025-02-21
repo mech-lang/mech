@@ -79,7 +79,7 @@ wasm-bindgen = {version = "0.2.99", optional = true}
 nalgebra = "0.33.2"
 simba = "0.9.0"
 libm = "0.2.11"
-tabled = "0.17.0"
+tabled = "0.18.0"
 paste = "1.0.15"
 rkyv = "0.8.9"
 bytemuck = "1.21.0"
