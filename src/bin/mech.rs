@@ -234,10 +234,10 @@ async fn main() -> Result<(), MechError> {
     let mut caught_inturrupts = ci.lock().unwrap();
     *caught_inturrupts += 1;
     if *caught_inturrupts >= 3 {
-      println!("Okay cya!");
+      println!("Okay, cya!");
       std::process::exit(0);
     }
-    println!("Type \":quit\" to terminate this REPL session.");
+    println!("Enter \":quit\" to terminate this REPL session.");
     print_prompt();
   }).expect("Error setting Ctrl-C handler");
   
