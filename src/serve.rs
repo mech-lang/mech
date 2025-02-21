@@ -63,6 +63,7 @@ pub async fn serve_mech(full_address: &str, mech_paths: Vec<String>) {
               .map(move || {
                 mech_wasm.to_vec()
               })
+              //.with(warp::compression::gzip())
               .with(warp::reply::with::headers(headers));
     
     let code = warp::path("code")
