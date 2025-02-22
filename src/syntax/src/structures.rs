@@ -179,7 +179,7 @@ pub fn matrix_row(input: ParseString) -> ParseResult<MatrixRow> {
 pub fn table_header(input: ParseString) -> ParseResult<Vec<Field>> {
   let (input, fields) = separated_list1(many1(space_tab),field)(input)?;
   let (input, _) = many0(space_tab)(input)?;
-  let (input, _) = alt((bar,box_vert))(input)?;
+  let (input, _) = alt((bar,box_vert,box_vert_bold))(input)?;
   let (input, _) = whitespace0(input)?;
   Ok((input, fields))
 }
@@ -193,39 +193,39 @@ pub fn field(input: ParseString) -> ParseResult<Field> {
 
 // box_drawing_char := box_tr_round | box_bl_round | box_vert | box_cross | box_horz | box_t_left | box_t_right | box_t_top | box_t_bottom ;
 pub fn box_drawing_char(input: ParseString) -> ParseResult<Token> {
-  alt((box_tl, box_br, box_bl, box_tr, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
+  alt((box_tl, box_bl, box_tr, box_tl_bold, box_bl_bold, box_tr_bold, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
 // box_drawing_emoji := box_tl_round | box_br_round | box_tr_round | box_bl_round | box_vert | box_cross | box_horz | box_t_left | box_t_right | box_t_top | box_t_bottom ;
 pub fn box_drawing_emoji(input: ParseString) -> ParseResult<Token> {
-  alt((box_tl, box_br, box_bl, box_tr, box_tl_round, box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
+  alt((box_tl, box_bl, box_tr, box_tl_bold, box_bl_bold, box_tr_bold, box_tl_round, box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
 // matrix_start := box_tl_round | left_bracket ;
 pub fn matrix_start(input: ParseString) -> ParseResult<Token> {
-  alt((box_tl_round, box_tl, left_bracket))(input)
+  alt((box_tl_round, box_tl, box_tl_bold, left_bracket))(input)
 }
 
 // matrix_end := box_br_round | right_bracket ;
 pub fn matrix_end(input: ParseString) -> ParseResult<Token> {
-  let result = alt((box_br_round, box_br, right_bracket))(input);
+  let result = alt((box_br_round, box_br, box_br_bold, right_bracket))(input);
   result
 }
 
 // table_start := box_tl_round | left_brace ;
 pub fn table_start(input: ParseString) -> ParseResult<Token> {
-  alt((box_tl_round, box_tl, left_brace))(input)
+  alt((box_tl_round, box_tl, box_tl_bold, left_brace))(input)
 }
 
 // table_end := box_br_round | right_brace ;
 pub fn table_end(input: ParseString) -> ParseResult<Token> {
-  let result = alt((box_br_round, box_br, right_brace))(input);
+  let result = alt((box_br_round, box_br, box_br_bold, right_brace))(input);
   result
 }
 
 // table_separator := box_vert ;
 pub fn table_separator(input: ParseString) -> ParseResult<Token> {
-  let (input, token) = box_vert(input)?;
+  let (input, token) = alt((box_vert,box_vert_bold))(input)?;
   Ok((input, token))
 }
 
@@ -235,7 +235,7 @@ pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
   let (input, (_, r)) = range(matrix_start)(input)?;
   let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
   let (input, rows) = many0(matrix_row)(input)?;
-  let (input, _) = many0(box_drawing_char)(input)?;
+  let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, _) = match label!(matrix_end, msg, r)(input) {
     Ok(k) => k,

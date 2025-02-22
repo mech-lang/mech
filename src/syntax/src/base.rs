@@ -66,14 +66,22 @@ leaf!{english_true_literal, "true", TokenKind::True}
 leaf!{english_false_literal, "false", TokenKind::False}
 leaf!{check_mark, "✓", TokenKind::True}
 leaf!{cross, "✗", TokenKind::False}
+
 leaf!{box_tl_round, "╭", TokenKind::BoxDrawing}
 leaf!{box_tr_round, "╮", TokenKind::BoxDrawing}
 leaf!{box_bl_round, "╰", TokenKind::BoxDrawing}
 leaf!{box_br_round, "╯", TokenKind::BoxDrawing}
+
+leaf!{box_tl_bold, "┏", TokenKind::BoxDrawing}
+leaf!{box_tr_bold, "┓", TokenKind::BoxDrawing} 
+leaf!{box_bl_bold, "┗", TokenKind::BoxDrawing}
+leaf!{box_br_bold, "┛", TokenKind::BoxDrawing}
+
 leaf!{box_tl, "┌", TokenKind::BoxDrawing}
 leaf!{box_tr, "┐", TokenKind::BoxDrawing}
 leaf!{box_bl, "└", TokenKind::BoxDrawing}
 leaf!{box_br, "┘", TokenKind::BoxDrawing}
+
 leaf!{box_cross, "┼", TokenKind::BoxDrawing}
 leaf!{box_horz, "─", TokenKind::BoxDrawing}
 leaf!{box_t_left, "├", TokenKind::BoxDrawing}
@@ -81,6 +89,7 @@ leaf!{box_t_right, "┤", TokenKind::BoxDrawing}
 leaf!{box_t_top, "┬", TokenKind::BoxDrawing}
 leaf!{box_t_bottom, "┴", TokenKind::BoxDrawing}
 leaf!{box_vert, "│", TokenKind::BoxDrawing}
+leaf!{box_vert_bold, "┃", TokenKind::BoxDrawing}
 
 // emoji_grapheme := ?emoji_grapheme_literal? ;
 pub fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {
@@ -120,7 +129,7 @@ pub fn any(mut input: ParseString) -> ParseResult<String> {
 
 // forbidden_emoji := box_drawing | other_forbidden_shapes ;
 pub fn forbidden_emoji(input: ParseString) -> ParseResult<Token> {
-  alt((box_tl, box_br, box_bl, box_tr, box_t_left,box_tl_round,box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_right, box_t_top, box_t_bottom))(input)
+  alt((box_tl, box_br, box_bl, box_tr, box_tr_bold, box_tl_bold, box_br_bold, box_bl_bold, box_t_left,box_tl_round,box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
 // emoji := emoji_grapheme+ ;
