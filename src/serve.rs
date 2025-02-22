@@ -15,7 +15,6 @@ pub async fn serve_mech(full_address: &str, mech_paths: Vec<String>) {
       std::process::exit(0);
     }).expect("Error setting Ctrl-C handler");
 
-    // read index.html from disc
     let mech_html: String = fs::read_to_string("src/wasm/index.html").unwrap();
     let mech_wasm: Vec<u8> = fs::read("src/wasm/pkg/mech_wasm_bg.wasm").unwrap();
     let mech_js: Vec<u8> = fs::read("src/wasm/pkg/mech_wasm.js").unwrap();

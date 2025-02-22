@@ -197,7 +197,14 @@ async fn main() -> Result<(), MechError> {
   } else { repl_flag = true; vec![] };
 
   // Run the code
-  let code = read_mech_files(&paths)?;
+  let code = match read_mech_files(&paths) {
+    Ok(code) => code,
+    Err(err) => {
+      // treat the input args as a code instead of paths to files
+      let code = paths.join(" ");
+      vec![("shell".to_string(),MechSourceCode::String(code))]
+    }
+  };
   let result = run_mech_code(&mut intrp, &code, tree_flag, debug_flag, time_flag); 
   
   let return_value = match &result {
