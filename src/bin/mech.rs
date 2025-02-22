@@ -74,6 +74,11 @@ async fn main() -> Result<(), MechError> {
         .help("Source .mec and .blx files")
         .required(false)
         .action(ArgAction::Append))
+      .arg(Arg::new("stylesheet")
+        .short('s')
+        .long("stylesheet")
+        .value_name("STYLESHEET")
+        .help("Sets the stylesheet for the HTML output"))
       .arg(Arg::new("html")
         .short('t')
         .long("html")
@@ -135,6 +140,8 @@ async fn main() -> Result<(), MechError> {
   // ----------------------------------------------------------------
   if let Some(matches) = matches.subcommand_matches("format") {
     let html_flag = matches.get_flag("html");
+    let stylesheet_url = matches.get_one::<String>("stylesheet").cloned().unwrap_or("https://gitlab.com/mech-lang/mech/-/raw/v0.2-beta/src/syntax/include/style.css".to_string());
+
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_format_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     match read_mech_files(&mech_paths) {
       Ok(code) => {
@@ -149,7 +156,36 @@ async fn main() -> Result<(), MechError> {
                 Ok(tree) => { 
                   let mut formatter = Formatter::new();
                   if html_flag {
-                    let formatted_mech = formatter.format_html(&tree);
+                    // open file or url. If it's a local file load it from disk, if it's a url fetch it from internet
+                    let stylesheet = if stylesheet_url.starts_with("http") {
+                      match reqwest::get(&stylesheet_url).await {
+                        Ok(response) => match response.text().await {
+                          Ok(text) => text,
+                          Err(err) => {
+                            println!("Error fetching stylesheet text: {:?}", err);
+                            //return Err(MechError::new(MechErrorKind::NetworkError));
+                            todo!()
+                          }
+                        },
+                        Err(err) => {
+                          println!("Error fetching stylesheet: {:?}", err);
+                          //return Err(MechError::new(MechErrorKind::NetworkError));
+                          todo!()
+                        }
+                      }
+                    } else {
+                      match fs::read_to_string(&stylesheet_url) {
+                        Ok(content) => content,
+                        Err(err) => {
+                          println!("Error reading stylesheet file: {:?}", err);
+                          //return Err(MechError::new(MechErrorKind::FileReadError));
+                          todo!()
+                        }
+                      }
+                    };
+
+
+                    let formatted_mech = formatter.format_html(&tree,stylesheet.clone());
                     let formatted_mech = Formatter::humanize_html(formatted_mech);
                     // save to a html file with the same name as the input mec file in the same directory
                     match fs::File::create(format!("{}.html",filename)) {

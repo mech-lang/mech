@@ -17,6 +17,8 @@ body {
 
 .mech-program {
     margin: auto;
+    margin-top: 20px;
+    margin-bottom: 20px;
     width: 690px;
 }
 
@@ -74,7 +76,7 @@ body {
     margin-bottom: 16px;
 }
 .mech-program-title::after {
-    content: "=====================================================================";
+    content: "===================================================================";
     color: #F3B62D; 
     font-size: 14pt; 
     display: block;
@@ -126,7 +128,6 @@ h4 {
 }
 
 .mech-code-block {
-    width: 650px;
     background-color: #171D21;
     color: #ada594;
     font-family: 'FiraCodeLight', monospace;
