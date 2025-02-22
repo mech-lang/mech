@@ -1,11 +1,4 @@
-@font-face {
-    font-family: 'FiraCodeRegular';
-    src: url('fonts/FiraCode-Regular.ttf') 
-}
-@font-face {
-    font-family: 'FiraCodeLight';
-    src: url('fonts/FiraCode-Light.ttf') 
-}
+@import url(https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/fira_code.css);
 
 body {
     font-family: 'Roboto', sans-serif;
