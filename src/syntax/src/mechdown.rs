@@ -20,7 +20,7 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
   Ok((input, Title{text: title}))
 }
 
-// subtitle := text+, new_line, dash+, (space|tab)*, whitespace* ;
+// subtitle := digit_token+, period, space*, text+, new_line, dash+, (space|tab)*, new_line, (space|tab)*, whitespace* ;
 pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = many1(digit_token)(input)?;
   let (input, _) = period(input)?;
@@ -37,7 +37,7 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   Ok((input, Subtitle{text: title, level: 2}))
 }
 
-// number_subtitle := space*, number, period, space+, text, space*, new_line* ;
+// number_subtitle := (space|tab)*, "(", integer_literal, ")", (space|tab)+, text+, (space|tab)*, whitespace* ;
 pub fn number_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = left_parenthesis(input)?;
@@ -52,7 +52,7 @@ pub fn number_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   Ok((input, Subtitle{text: title, level: 3}))
 }
 
-// alpha_subtitle := space*, alpha, right_parenthesis, space+, text, space*, new_line* ;
+// alpha_subtitle := (space|tab)*, "(", alpha, ")", (space|tab)+, text+, (space|tab)*, whitespace* ;
 pub fn alpha_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = left_parenthesis(input)?;
@@ -67,7 +67,7 @@ pub fn alpha_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   Ok((input, Subtitle{text: title, level: 4}))
 }
 
-// paragraph_symbol := ampersand | at | slash | backslash | asterisk | caret | hashtag | underscore ;
+// paragraph_symbol := ampersand | at | slash | backslash | asterisk | caret | hashtag | underscore | equal | tilde | plus | percent ;
 pub fn paragraph_symbol(input: ParseString) -> ParseResult<Token> {
   let (input, symbol) = alt((ampersand, at, slash, backslash, asterisk, caret, hashtag, underscore, equal, tilde, plus, percent))(input)?;
   Ok((input, symbol))
@@ -79,7 +79,7 @@ pub fn paragraph_starter(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Start(text)))
 }
 
-// paragraph_element := text+ ;
+// paragraph_element := (!define_operator, text)+ ;
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, elements) = match many1(nom_tuple((is_not(define_operator),text)))(input) {
     Ok((input, mut text)) => {
@@ -93,7 +93,7 @@ pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, elements))
 }
 
-// paragraph := (inline_code | paragraph_text)+, whitespace*, new_line* ;
+// paragraph := paragraph_starter, paragraph_element* ;
 pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
   let (input, first) = paragraph_starter(input)?;
   let (input, mut rest) = many0(paragraph_element)(input)?;
@@ -105,6 +105,7 @@ pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
 // unordered_list := list_item+, new_line?, whitespace* ;
 pub fn unordered_list(input: ParseString) -> ParseResult<UnorderedList> {
   let (input, items) = many1(list_item)(input)?;
+  let (input, _) = opt(new_line)(input)?;
   let (input, _) = whitespace0(input)?;
   Ok((input,  UnorderedList{items}))
 }

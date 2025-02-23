@@ -257,13 +257,14 @@ pub fn factor(input: ParseString) -> ParseResult<Factor> {
   };
   Ok((input, fctr))
 }
+
 // statement_separator := ";" ;
 pub fn statement_separator(input: ParseString) -> ParseResult<()> {
   let (input,_) = nom_tuple((whitespace0,semicolon,whitespace0))(input)?;
   Ok((input, ()))
 }
 
-// function_define := identifier, "(", list0(list_separator function_arg), ")", "=", (function_out_args | function_out_arg), define_operator, list1((whitespace1 | statement_separator), statement), period ;
+// function_define := identifier, "(", list0(list_separator, function_arg), ")", "=", (function_out_args | function_out_arg), define_operator, list1((whitespace1 | statement_separator), statement), period ;
 pub fn function_define(input: ParseString) -> ParseResult<FunctionDefine> {
   let ((input, name)) = identifier(input)?;
   let ((input, _)) = left_parenthesis(input)?;
@@ -279,7 +280,7 @@ pub fn function_define(input: ParseString) -> ParseResult<FunctionDefine> {
   Ok((input,FunctionDefine{name,input: input_args,output,statements}))
 }
 
-// function_out_args := "(", list1(list_separator, function_arg),")" ;
+// function_out_args := "(", list1(list_separator, function_arg), ")" ;
 pub fn function_out_args(input: ParseString) -> ParseResult<Vec<FunctionArgument>> {
   let ((input, _)) = left_parenthesis(input)?;
   let ((input, args)) = separated_list1(list_separator,function_arg)(input)?;
@@ -300,7 +301,7 @@ pub fn function_arg(input: ParseString) -> ParseResult<FunctionArgument> {
   Ok((input, FunctionArgument{ name, kind }))
 }
 
-// argument_list := "(", list0(",", call_arg_with_biding | call_arg)
+// argument_list := "(", list0(",", call_arg_with_biding | call_arg), ")" ;
 pub fn argument_list(input: ParseString) -> ParseResult<ArgumentList> {
   let (input, _) = left_parenthesis(input)?;
   let (input, args) = separated_list0(list_separator, alt((call_arg_with_binding,call_arg)))(input)?;
@@ -308,7 +309,7 @@ pub fn argument_list(input: ParseString) -> ParseResult<ArgumentList> {
   Ok((input, args))
 }
 
-// function_call := identifier, argument_list
+// function_call := identifier, argument_list ;
 pub fn function_call(input: ParseString) -> ParseResult<FunctionCall> {
   let (input, name) = identifier(input)?;
   let (input, args) = argument_list(input)?;
@@ -440,7 +441,6 @@ pub fn transpose(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-
 // literal := number | string | atom | boolean | empty, kind_annotation? ;
 pub fn literal(input: ParseString) -> ParseResult<Literal> {
   let (input, result) = match number(input.clone()) {
@@ -474,7 +474,7 @@ pub fn slice(input: ParseString) -> ParseResult<Slice> {
   Ok((input, Slice{name, subscript: ixes}))
 }
 
-// slice_ref := identifier, subscript ;
+// slice_ref := identifier, subscript? ;
 pub fn slice_ref(input: ParseString) -> ParseResult<SliceRef> {
   let (input, name) = identifier(input)?;
   let (input, ixes) = opt(subscript)(input)?;
@@ -512,7 +512,7 @@ pub fn dot_subscript_int(input: ParseString) -> ParseResult<Subscript> {
   Ok((input, Subscript::DotInt(name)))
 }
 
-// bracket_subscript := "[", list1(",", select_all | formula_subscript), "]" ;
+// bracket_subscript := "[", list1(",", select_all | range_subscript | formula_subscript), "]" ;
 pub fn bracket_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, _) = left_bracket(input)?;
   let (input, subscripts) = separated_list1(list_separator,alt((select_all,range_subscript,formula_subscript)))(input)?;
@@ -536,7 +536,7 @@ pub fn select_all(input: ParseString) -> ParseResult<Subscript> {
 
 // formula_subscript := formula ;
 pub fn formula_subscript(input: ParseString) -> ParseResult<Subscript> {
-  let (input, factor) = l1(input)?;
+  let (input, factor) = formula(input)?;
   Ok((input, Subscript::Formula(factor)))
 }
 
@@ -546,7 +546,7 @@ pub fn range_subscript(input: ParseString) -> ParseResult<Subscript> {
   Ok((input, Subscript::Range(rng)))
 }
 
-// range
+// range := formula, range_operator, formula, (range_operator, formula)? ;
 pub fn range_expression(input: ParseString) -> ParseResult<RangeExpression> {
   let (input, start) = formula(input)?;
   let (input, op) = range_operator(input)?;

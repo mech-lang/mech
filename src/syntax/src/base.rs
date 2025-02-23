@@ -123,7 +123,7 @@ pub fn forbidden_emoji(input: ParseString) -> ParseResult<Token> {
   alt((box_tl, box_br, box_bl, box_tr, box_t_left,box_tl_round,box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
-// emoji := emoji_grapheme+ ;
+// emoji := (!forbidden_emoji, emoji_grapheme) ;
 pub fn emoji(input: ParseString) -> ParseResult<Token> {
   let msg1 = "Cannot be a box-drawing emoji";
   let start = input.loc();
@@ -187,7 +187,7 @@ pub fn symbol(input: ParseString) -> ParseResult<Token> {
   Ok((input, symbol))
 }
 
-// text := (alpha | digit | space | tabe | escaped_char | punctuation | grouping_symbol | symbol)+ ;
+// text := alpha | digit | space | tab | escaped_char | punctuation | grouping_symbol | symbol ;
 pub fn text(input: ParseString) -> ParseResult<Token> {
   let (input, text) = alt((alpha_token, digit_token, space, tab, escaped_char, punctuation, grouping_symbol, symbol))(input)?;
   Ok((input, text))
@@ -221,13 +221,13 @@ pub fn false_literal(input: ParseString) -> ParseResult<Token> {
   Ok((input, token))
 }
 
-// new_line := new_line_char | carriage_new_line ;
+// new_line := carriage_return_new_line | new_line_char | carriage_return ;
 pub fn new_line(input: ParseString) -> ParseResult<Token> {
-  let (input, result) = alt((carriage_return_new_line,new_line_char,carriage_return, ))(input)?;
+  let (input, result) = alt((carriage_return_new_line,new_line_char,carriage_return))(input)?;
   Ok((input, result))
 }
 
-// whitespace := space | new_line | carriage_return | tabe ;
+// whitespace := space | new_line | tab ;
 pub fn whitespace(input: ParseString) -> ParseResult<Token> {
   let (input, space) = alt((space,tab,new_line))(input)?;
   Ok((input, space))
@@ -239,7 +239,7 @@ pub fn whitespace0(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// whitespace1 := one_or_more_whitespaces ;
+// whitespace1 := whitespace+ ;
 pub fn whitespace1(input: ParseString) -> ParseResult<()> {
   let (input, _) = many1(whitespace)(input)?;
   Ok((input, ()))
@@ -264,7 +264,7 @@ pub fn enum_separator(input: ParseString) -> ParseResult<()> {
 }
 
 
-// number-literal := (integer | hexadecimal | octal | binary | decimal | float | rational | scientific) ;
+// number-literal := integer | hexadecimal | octal | binary | decimal | float | rational | scientific ;
 
 pub fn number(input: ParseString) -> ParseResult<Number> {
   let (input, real_num) = real_number(input)?;
@@ -290,7 +290,7 @@ pub fn number(input: ParseString) -> ParseResult<Number> {
   Ok((input, Number::Real(real_num)))
 }
 
-// real_number := optional_dash (hexadecimal_literal | decimal_literal | octal_literal | binary_literal | scientific_literal | rational_literal | float_literal | integer_literal) ;
+// real_number := dash?, (hexadecimal_literal | decimal_literal | octal_literal | binary_literal | scientific_literal | rational_literal | float_literal | integer_literal) ;
 pub fn real_number(input: ParseString) -> ParseResult<RealNumber> {
   let (input, neg) = opt(dash)(input)?;
   let (input, result) = alt((hexadecimal_literal, decimal_literal, octal_literal, binary_literal, scientific_literal, rational_literal, float_literal, integer_literal))(input)?;
@@ -301,7 +301,7 @@ pub fn real_number(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, result))
 }
 
-// rational_literal := integer_literal "/" integer_literal ;
+// rational_literal := integer_literal, "/", integer_literal ;
 pub fn rational_literal(input: ParseString) -> ParseResult<RealNumber> {
   let (input, RealNumber::Integer(numerator)) = integer_literal(input)? else { unreachable!() };
   let (input, _) = slash(input)?;
@@ -309,7 +309,7 @@ pub fn rational_literal(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Rational((numerator,denominator))))
 }
 
-// scientific_literal := (float_literal | integer_literal) ("e" | "E") (optional_plus | ε) (optional_dash | ε) (float_literal | integer_literal) ;
+// scientific_literal := (float_literal | integer_literal), ("e" | "E"), plus?, dash?, (float_literal | integer_literal) ;
 pub fn scientific_literal(input: ParseString) -> ParseResult<RealNumber> {
   let (input, base) = match float_literal(input.clone()) {
     Ok((input, RealNumber::Float(base))) => {
@@ -367,7 +367,7 @@ pub fn float_full(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Float((whole,part))))
 }
 
-// float_literal := "."?, digit1, "."?, digit0 ;
+// float_literal := float_decimal_start | float_full;
 pub fn float_literal(input: ParseString) -> ParseResult<RealNumber> {
   let (input, result) = alt((float_decimal_start,float_full))(input)?;
   Ok((input, result))
@@ -443,9 +443,9 @@ pub fn kind_annotation(input: ParseString) -> ParseResult<KindAnnotation> {
   Ok((input, KindAnnotation{ kind }))
 }
 
-// kind := empty | atom | tuple | scalar | bracket | map | brace ;
+// kind := kind_fxn | kind_empty | kind_atom | kind_tuple | kind_scalar | kind_bracket | kind_map | kind_brace ;
 pub fn kind(input: ParseString) -> ParseResult<Kind> {
-  let (input, kind) = alt((kind_fxn,kind_empty,kind_atom,kind_tuple, kind_scalar, kind_bracket, kind_map, kind_brace))(input)?;
+  let (input, kind) = alt((kind_fxn,kind_empty,kind_atom,kind_tuple,kind_scalar,kind_bracket,kind_map,kind_brace))(input)?;
   Ok((input, kind))
 }
 
@@ -472,7 +472,7 @@ pub fn kind_map(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Map(Box::new(key_kind),Box::new(value_kind))))
 }
 
-// kind_fxn := "(" kind (list_separator kind)* ")" "=" "(" kind (list_separator kind)* ")" ;
+// kind_fxn := "(", (list_separator | kind)*, ")", "=", "(", (list_separator | kind)*, ")" ;
 pub fn kind_fxn(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_parenthesis(input)?;
   let (input, input_kinds) = separated_list0(list_separator,kind)(input)?;
@@ -484,7 +484,7 @@ pub fn kind_fxn(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Function(input_kinds,output_kinds)))
 }
 
-// kind_brace = "{", list1(",",kind) "}", [":"], list0(",",literal) ;
+// kind_brace = "{", list1(",", kind), "}", ":"?, list0("," , literal) ;
 pub fn kind_brace(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_brace(input)?;
   let (input, kinds) = separated_list1(list_separator,kind)(input)?;
@@ -494,7 +494,7 @@ pub fn kind_brace(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Brace((kinds,size))))
 }
 
-// kind_bracket = "[", list1(",",kind) "]", [":"], list0(",",literal) ;
+// kind_bracket = "[", list1(",",kind), "]", ":"?, list0(",", literal) ;
 pub fn kind_bracket(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_bracket(input)?;
   let (input, kinds) = separated_list1(list_separator,kind)(input)?;
@@ -504,7 +504,7 @@ pub fn kind_bracket(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Bracket((kinds,size))))
 }
 
-// kind_tuple = "(", list1(",",kind) ")" ;
+// kind_tuple = "(", list1(",", kind), ")" ;
 pub fn kind_tuple(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_parenthesis(input)?;
   let (input, kinds) = separated_list1(list_separator, kind)(input)?;
