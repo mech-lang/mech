@@ -36,16 +36,12 @@ impl Formatter {
   }
 
   pub fn format_html(&mut self, tree: &Program, style: String) -> String {
-
-    let encoded = compress_and_encode(tree);
-
     self.html = true;
     let formatted_src = self.program(tree);
     let head = format!(r#"<html>
     <head>
         <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
         <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
-        
         <style>
                   {}
         </style>
@@ -55,8 +51,26 @@ impl Formatter {
     <div id = "mech-root"></div>
     <script type="module">
       import init, {{run_program}} from './pkg/mech_wasm.js';
-      var src = "1 + 1";
-      run_program(src);
+      async function run() {{
+        await init();
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', "./code", true);
+        xhr.onload = function (e) {{
+          if (xhr.readyState === 4) {{
+            if (xhr.status === 200) {{
+              var src = xhr.responseText;
+              run_program(src);
+            }} else {{
+              console.error(xhr.statusText);
+            }}
+          }}
+        }};
+        xhr.onerror = function (e) {{
+          console.error(xhr.statusText);
+        }};
+        xhr.send(null);        
+      }}
+      run();
     </script>
   </body>
 </html>"#);
