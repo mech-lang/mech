@@ -2,6 +2,7 @@ use mech_core::*;
 use mech_core::nodes::{Kind, Matrix};
 use std::collections::HashMap;
 use colored::Colorize;
+use std::io::{Read, Write, Cursor};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Formatter{
@@ -34,7 +35,10 @@ impl Formatter {
     self.program(tree)
   }
 
-  pub fn format_html(&mut self, tree: &Program,style: String) -> String {
+  pub fn format_html(&mut self, tree: &Program, style: String) -> String {
+
+    let encoded = compress_and_encode(tree);
+
     self.html = true;
     let formatted_src = self.program(tree);
     let head = format!(r#"<html>
@@ -47,7 +51,15 @@ impl Formatter {
         </style>
     </head>
     <body>"#, style);
-    let foot = r#"</body></html>"#;
+    let foot = format!(r#"
+    <div id = "mech-root"></div>
+    <script type="module">
+      import init, {{run_program}} from './pkg/mech_wasm.js';
+      var src = "1 + 1";
+      run_program(src);
+    </script>
+  </body>
+</html>"#);
     format!("{}{}{}", head, formatted_src, foot)
   }
 
