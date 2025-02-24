@@ -31,20 +31,16 @@ pub fn main() -> Result<(), JsValue> {
 }
 
 #[wasm_bindgen]
-pub fn run_program(src: &str) {
+pub fn run_program(src: &str) { 
+  // Decompress the string into a Program
+  let tree: Program = decode_and_decompress(&src);
   let mut intrp = Interpreter::new();
-  let parse_result = parser::parse(src);
-  match parse_result {
-    Ok(tree) => { 
-      let result = intrp.interpret(&tree).unwrap();
+  match intrp.interpret(&tree) {
+    Ok(result) => {
       log!("{:?}", result.pretty_print());
     },
     Err(err) => {
-      if let MechErrorKind::ParserError(report, _) = err.kind {
-        //parser::print_err_report(&s, &report);
-      } else {
-        //panic!("Unexpected error type");
-      }
+      log!("{:?}", err);
     }
   }
 }
