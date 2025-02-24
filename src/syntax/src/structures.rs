@@ -18,7 +18,7 @@ pub fn max_err<'a>(x: Option<ParseError<'a>>, y: ParseError<'a>) -> ParseError<'
   }
 }
 
-// structure := empty_set | empty_table | matrix | table | tuple | tuple_struct | record | map | set ;
+// structure := empty_set | empty_table | table | matrix | tuple | tuple_struct | record | map | set ;
 pub fn structure(input: ParseString) -> ParseResult<Structure> {
   match empty_set(input.clone()) {
     Ok((input, set)) => {return Ok((input, Structure::Set(set)));},
@@ -118,7 +118,7 @@ pub fn binding(input: ParseString) -> ParseResult<Binding> {
   Ok((input, Binding{name, kind, value}))
 }
 
-// table_column := (space | tab)*, expression ;
+// table_column := (space | tab)*, expression, ((space | tab)*, ("," | table_separator)?, (space | tab)*) ;
 pub fn table_column(input: ParseString) -> ParseResult<TableColumn> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, element) = match expression(input) {
@@ -131,7 +131,7 @@ pub fn table_column(input: ParseString) -> ParseResult<TableColumn> {
   Ok((input, TableColumn{element}))
 }
 
-// matrix_column := (space | tab)*, expression ;
+// matrix_column := (space | tab)*, expression, ((space | tab)*, ("," | table_separator)?, (space | tab)*) ;
 pub fn matrix_column(input: ParseString) -> ParseResult<MatrixColumn> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, element) = match expression(input) {
@@ -145,7 +145,7 @@ pub fn matrix_column(input: ParseString) -> ParseResult<MatrixColumn> {
 }
 
 
-// table_row := (space | tab)*, table_column+, semicolon?, new_line? ;
+// table_row := table_separator?, (space | tab)*, table_column+, semicolon?, new_line?, (box_drawing_char+, new_line)? ;
 pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
   let (input, _) = opt(table_separator)(input)?;
   let (input, _) = many0(space_tab)(input)?;
@@ -160,7 +160,7 @@ pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
   Ok((input, TableRow{columns}))
 }
 
-// matrix_row := (space | tab)*, table_column+, semicolon?, new_line? ;
+// matrix_row := table_separator?, (space | tab)*, matrix_column+, semicolon?, new_line?, (box_drawing_char+, new_line)? ;
 pub fn matrix_row(input: ParseString) -> ParseResult<MatrixRow> {
   let (input, _) = opt(table_separator)(input)?;
   let (input, _) = many0(space_tab)(input)?;
@@ -175,7 +175,7 @@ pub fn matrix_row(input: ParseString) -> ParseResult<MatrixRow> {
   Ok((input, MatrixRow{columns}))
 }
 
-// table_header := bar, <attribute+>, <bar>, space*, new_line? ;
+// table_header := list1(space_tab+, field), (space | tab)*, (bar| box_vert), whitespace* ;
 pub fn table_header(input: ParseString) -> ParseResult<Vec<Field>> {
   let (input, fields) = separated_list1(many1(space_tab),field)(input)?;
   let (input, _) = many0(space_tab)(input)?;
@@ -184,40 +184,40 @@ pub fn table_header(input: ParseString) -> ParseResult<Vec<Field>> {
   Ok((input, fields))
 }
 
-// field := identifier, [kind_annotation] ;
+// field := identifier, kind_annotation? ;
 pub fn field(input: ParseString) -> ParseResult<Field> {
   let (input, name) = identifier(input)?;
   let (input, kind) = opt(kind_annotation)(input)?;
   Ok((input, Field{name, kind}))
 }
 
-// box_drawing_char := box_tr_round | box_bl_round | box_vert | box_cross | box_horz | box_t_left | box_t_right | box_t_top | box_t_bottom ;
+// box_drawing_char := box_tl | box_br | box_bl | box_tr | box_tr_round | box_bl_round | box_vert | box_cross | box_horz | box_t_left | box_t_right | box_t_top | box_t_bottom ;
 pub fn box_drawing_char(input: ParseString) -> ParseResult<Token> {
   alt((box_tl, box_br, box_bl, box_tr, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
-// box_drawing_emoji := box_tl_round | box_br_round | box_tr_round | box_bl_round | box_vert | box_cross | box_horz | box_t_left | box_t_right | box_t_top | box_t_bottom ;
+// box_drawing_emoji := box_tl | box_br | box_bl | box_tr | box_tl_round | box_br_round | box_tr_round | box_bl_round | box_vert | box_cross | box_horz | box_t_left | box_t_right | box_t_top | box_t_bottom ;
 pub fn box_drawing_emoji(input: ParseString) -> ParseResult<Token> {
   alt((box_tl, box_br, box_bl, box_tr, box_tl_round, box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
-// matrix_start := box_tl_round | left_bracket ;
+// matrix_start := box_tl_round | box_tl | left_bracket ;
 pub fn matrix_start(input: ParseString) -> ParseResult<Token> {
   alt((box_tl_round, box_tl, left_bracket))(input)
 }
 
-// matrix_end := box_br_round | right_bracket ;
+// matrix_end := box_br_round | box_br | right_bracket ;
 pub fn matrix_end(input: ParseString) -> ParseResult<Token> {
   let result = alt((box_br_round, box_br, right_bracket))(input);
   result
 }
 
-// table_start := box_tl_round | left_brace ;
+// table_start := box_tl_round | box_tl | left_brace ;
 pub fn table_start(input: ParseString) -> ParseResult<Token> {
   alt((box_tl_round, box_tl, left_brace))(input)
 }
 
-// table_end := box_br_round | right_brace ;
+// table_end := box_br_round | box_br | right_brace ;
 pub fn table_end(input: ParseString) -> ParseResult<Token> {
   let result = alt((box_br_round, box_br, right_brace))(input);
   result
@@ -229,7 +229,7 @@ pub fn table_separator(input: ParseString) -> ParseResult<Token> {
   Ok((input, token))
 }
 
-// matrix := matrix_start, box_drawing_char*, table_row, box_drawing_char*, matrix_end ;
+// matrix := matrix_start, (box_drawing_char | whitespace)*, matrix_row*, box_drawing_char*, matrix_end ;
 pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
   let msg = "Expects right bracket ']' to finish the matrix";
   let (input, (_, r)) = range(matrix_start)(input)?;
@@ -246,7 +246,7 @@ pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
   Ok((input, Matrix{rows}))
 }
 
-// table := table_start, box_drawing_char*, table_header, box_drawing_char*, table_row, box_drawing_char*, table_end ;
+// table := table_start, (box_drawing_char | whitespace)*, table_header, (box_drawing_char | whitespace)*, table_row+, box_drawing_char*, whitespace*, table_end ;
 pub fn table(input: ParseString) -> ParseResult<Table> {
   let msg = "Expects right bracket '}' to finish the table";
   let (input, (_, r)) = range(table_start)(input)?;
@@ -265,7 +265,7 @@ pub fn table(input: ParseString) -> ParseResult<Table> {
   Ok((input, Table{header,rows}))
 }
 
-// empty_table := table_start, empty?, table_end ;
+// empty_table := table_start, table_end ;
 pub fn empty_map(input: ParseString) -> ParseResult<Map> {
   let (input, _) = table_start(input)?;
   let (input, _) = whitespace0(input)?;
@@ -273,7 +273,7 @@ pub fn empty_map(input: ParseString) -> ParseResult<Map> {
   Ok((input, Map{elements: vec![]}))
 }
 
-// empty_set ::= table_start, whitespace?, empty, whitespace?, table_end
+// empty_set ::= table_start, empty, table_end ;
 pub fn empty_set(input: ParseString) -> ParseResult<Set> {
   let (input, _) = table_start(input)?;
   let (input, _) = whitespace0(input)?;
@@ -305,7 +305,7 @@ pub fn map(input: ParseString) -> ParseResult<Map> {
   Ok((input, Map{elements}))
 }
 
-// mapping := expression, ":", expression ;
+// mapping := expression, ":", expression, comma? ;
 pub fn mapping(input: ParseString) -> ParseResult<Mapping> {
   let msg1 = "Unexpected space before colon ':'";
   let msg2 = "Expects a value";
@@ -323,7 +323,7 @@ pub fn mapping(input: ParseString) -> ParseResult<Mapping> {
   Ok((input, Mapping{key, value}))
 }
 
-// set := "{", list0(",",expression), "}" ;
+// set := "{", list0(("," | whitespace+), expression), "}" ;
 pub fn set(input: ParseString) -> ParseResult<Set> {
   let msg = "Expects right bracket '}' to terminate inline table";
   let (input, (_, r)) = range(left_brace)(input)?;
@@ -336,7 +336,7 @@ pub fn set(input: ParseString) -> ParseResult<Set> {
 
 // #### State Machines
 
-//define_operator ::= ":" "="
+//define_operator := ":=" ;
 pub fn define_operator(input: ParseString) -> ParseResult<()> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag(":=")(input)?;
@@ -344,7 +344,7 @@ pub fn define_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// output_operator ::= "=>"
+// output_operator := "=>" ;
 pub fn output_operator(input: ParseString) -> ParseResult<()> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("=>")(input)?;
@@ -352,7 +352,7 @@ pub fn output_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// async_transition_operator ::= "~>"
+// async_transition_operator := "~>" ;
 pub fn async_transition_operator(input: ParseString) -> ParseResult<()> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("~>")(input)?;
@@ -360,7 +360,7 @@ pub fn async_transition_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// transition_operator ::= "->"
+// transition_operator := "->" ;
 pub fn transition_operator(input: ParseString) -> ParseResult<()> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("->")(input)?;
@@ -368,7 +368,7 @@ pub fn transition_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// guard_operator ::= "|" | "│" | "├" | "└"
+// guard_operator := "|" | "│" | "├" | "└" ;
 pub fn guard_operator(input: ParseString) -> ParseResult<()> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = alt((tag("|"),tag("│"),tag("├"),tag("└")))(input)?;
@@ -376,7 +376,7 @@ pub fn guard_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// fsm_implementation ::= "#" identifier, "(", identifier*, ")", "->", fsm_pattern, whitespace?, fsm_arm+, "."
+// fsm_implementation := "#" identifier, "(", list0(",", identifier), ")", transition_operator, fsm_pattern, whitespace*, fsm_arm+, "." ;
 pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> {
   let (input, _) = hashtag(input)?;
   let (input, name) = identifier(input)?;
@@ -391,7 +391,7 @@ pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> 
   Ok((input, FsmImplementation{name,input: input_vars,start,arms}))
 }
 
-// fsm_arm ::= comment*, fsm_pattern, (fsm_state_transition | fsm_output | fsm_guard)+, whitespace?
+// fsm_arm := comment*, (fsm_transition | fsm_guard_arm), whitespace* ;
 pub fn fsm_arm(input: ParseString) -> ParseResult<FsmArm> {
   let (input, _) = many0(comment)(input)?;
   let (input, arm) = alt((fsm_guard_arm,fsm_transition))(input)?;
@@ -399,7 +399,7 @@ pub fn fsm_arm(input: ParseString) -> ParseResult<FsmArm> {
   Ok((input, arm))
 }
 
-// fsm_guard ::= guard_operator, fsm_arm
+// fsm_guard_arm := comment*, fsm_pattern, fsm_guard+ ;
 pub fn fsm_guard_arm(input: ParseString) -> ParseResult<FsmArm> {
   let (input, _) = many0(comment)(input)?;
   let (input, start) = fsm_pattern(input)?;
@@ -407,6 +407,7 @@ pub fn fsm_guard_arm(input: ParseString) -> ParseResult<FsmArm> {
   Ok((input, FsmArm::Guard(start, grds)))
 }
 
+// fsm_guard := guard_operator, fsm_pattern, (fsm_statement_transition | fsm_state_transition | fsm_output | fsm_async_transition | fsm_block_transition)+ ;
 pub fn fsm_guard(input: ParseString) -> ParseResult<Guard> {
   let (input, _) = guard_operator(input)?;
   let (input, cnd) = fsm_pattern(input)?;
@@ -419,6 +420,7 @@ pub fn fsm_guard(input: ParseString) -> ParseResult<Guard> {
   Ok((input, Guard{condition: cnd, transitions: trns}))
 }
 
+// fsm_guard := comment*, fsm_pattern, (fsm_statement_transition | fsm_state_transition | fsm_output | fsm_async_transition | fsm_block_transition)+ ;
 pub fn fsm_transition(input: ParseString) -> ParseResult<FsmArm> {
   let (input, _) = many0(comment)(input)?;
   let (input, start) = fsm_pattern(input)?;
@@ -431,26 +433,28 @@ pub fn fsm_transition(input: ParseString) -> ParseResult<FsmArm> {
   Ok((input, FsmArm::Transition(start, trns)))
 }
 
-// fsm_state_transition ::= transition_operator, fsm_pattern
+// fsm_state_transition := transition_operator, fsm_pattern ;
 pub fn fsm_state_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = transition_operator(input)?;
   let (input, ptrn) = fsm_pattern(input)?;
   Ok((input, Transition::Next(ptrn)))
 }
 
-// fsm_async_transition ::= async_transition_operator, fsm_pattern
+// fsm_async_transition := async_transition_operator, fsm_pattern ;
 pub fn fsm_async_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = async_transition_operator(input)?;
   let (input, ptrn) = fsm_pattern(input)?;
   Ok((input, Transition::Async(ptrn)))
 }
 
+// fsm_statement_transition := transition_operator, statement ;
 pub fn fsm_statement_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = transition_operator(input)?;
   let (input, stmnt) = statement(input)?;
   Ok((input, Transition::Statement(stmnt)))
 }
 
+// fsm_block_transition := transition_operator, left_brace, mech_code+, right_brace
 pub fn fsm_block_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = transition_operator(input)?;
   let (input, _) = left_brace(input)?;
@@ -459,14 +463,15 @@ pub fn fsm_block_transition(input: ParseString) -> ParseResult<Transition> {
   Ok((input, Transition::CodeBlock(code)))
 }
 
-// fsm_output ::= output_operator, fsm_pattern
+
+// fsm_output := output_operator, fsm_pattern
 pub fn fsm_output(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = output_operator(input)?;
   let ((input, ptrn)) = fsm_pattern(input)?;
   Ok((input, Transition::Output(ptrn)))
 }
 
-// fsm_specification ::= "#" identifier, "(", var*, ")", output_operator, identifier, define_operator, fsm_state_definition+, "."
+// fsm_specification := "#" identifier, "(", list0(",", var), ")", output_operator?, kind_annotation?, define_operator, fsm_state_definition+, "." ;
 pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
   let (input, _) = hashtag(input)?;
   let (input, name) = identifier(input)?;
@@ -481,7 +486,7 @@ pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
   Ok((input, FsmSpecification{name,input: input_vars, output, states}))
 }
 
-// fsm_pattern ::= fsm_tuple_struct | wildcard | formula
+// fsm_pattern := fsm_tuple_struct | wildcard | formula ;
 pub fn fsm_pattern(input: ParseString) -> ParseResult<Pattern> {
   match fsm_tuple_struct(input.clone()) {
     Ok((input, tpl)) => {return Ok((input, Pattern::TupleStruct(tpl)))},
@@ -498,13 +503,13 @@ pub fn fsm_pattern(input: ParseString) -> ParseResult<Pattern> {
   }
 }
 
-// wildcard ::= "*"
+// wildcard := "*" ;
 pub fn wildcard(input: ParseString) -> ParseResult<Pattern> {
   let ((input, _)) = asterisk(input)?;
   Ok((input, Pattern::Wildcard))
 }
 
-// fsm_tuple_struct ::= identifier, "(", fsm_pattern+, ")"
+// fsm_tuple_struct := grave, identifier, "(", list1(",", fsm_pattern), ")" ;
 pub fn fsm_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
   let (input, _) = grave(input)?;
   let (input, id) = identifier(input)?;
@@ -514,7 +519,7 @@ pub fn fsm_tuple_struct(input: ParseString) -> ParseResult<PatternTupleStruct> {
   Ok((input, PatternTupleStruct{name: id, patterns}))
 }
 
-// fsm_state_definition ::= guard_operator?, identifier, fsm_state_definition_variables?
+// fsm_state_definition := guard_operator, grave, identifier, fsm_state_definition_variables? ;
 pub fn fsm_state_definition(input: ParseString) -> ParseResult<StateDefinition> {
   let (input, _) = guard_operator(input)?;
   let (input, _) = whitespace0(input)?;
@@ -524,7 +529,7 @@ pub fn fsm_state_definition(input: ParseString) -> ParseResult<StateDefinition> 
   Ok((input, StateDefinition{name,state_variables: vars}))
 }
 
-// fsm_state_definition_variables ::= "(", identifier+, ")"
+// fsm_state_definition_variables := "(", list0(list_separator, var), ")" ;
 pub fn fsm_state_definition_variables(input: ParseString) -> ParseResult<Vec<Var>> {
   let (input, _) = left_parenthesis(input)?;
   let (input, names) = separated_list1(list_separator, var)(input)?;
@@ -532,14 +537,14 @@ pub fn fsm_state_definition_variables(input: ParseString) -> ParseResult<Vec<Var
   Ok((input, names))
 }
 
-// fsm_pipe ::= fsm_instance, (fsm_state_transition | fsm_async_transition | fsm_output | fsm_guard)*
+// fsm_pipe := fsm_instance, (fsm_state_transition | fsm_async_transition | fsm_output)* ;
 pub fn fsm_pipe(input: ParseString) -> ParseResult<FsmPipe> {
   let (input, start) = fsm_instance(input)?;
   let (input, trns) = many0(alt((fsm_state_transition,fsm_async_transition,fsm_output)))(input)?;
   Ok((input, FsmPipe{start, transitions: trns}))
 }
 
-// fsm_declare ::= fsm, define_operator, fsm_pipe
+// fsm_declare := fsm, define_operator, fsm_pipe ;
 pub fn fsm_declare(input: ParseString) -> ParseResult<FsmDeclare> {
   let (input, fsm) = fsm(input)?;
   let (input, _) = define_operator(input)?;
@@ -547,7 +552,7 @@ pub fn fsm_declare(input: ParseString) -> ParseResult<FsmDeclare> {
   Ok((input, FsmDeclare{fsm,pipe}))
 }
   
-// fsm ::= "#" identifier, argument_list?, kind_annotation?
+// fsm := "#", identifier, argument_list?, kind_annotation? ;
 pub fn fsm(input: ParseString) -> ParseResult<Fsm> {
   let ((input, _)) = hashtag(input)?;
   let ((input, name)) = identifier(input)?;
@@ -556,7 +561,7 @@ pub fn fsm(input: ParseString) -> ParseResult<Fsm> {
   Ok((input, Fsm{ name, args, kind }))
 }
 
-// fsm_instance ::= "#" identifier, argument_list?
+// fsm_instance := "#", identifier, fsm_args? ;
 pub fn fsm_instance(input: ParseString) -> ParseResult<FsmInstance> {
   let ((input, _)) = hashtag(input)?;
   let (input, name) = identifier(input)?;
@@ -564,7 +569,7 @@ pub fn fsm_instance(input: ParseString) -> ParseResult<FsmInstance> {
   Ok((input, FsmInstance{name,args} ))
 }
 
-// fsm_args ::= "(", (call_arg_with_binding | call_arg)*, ")"
+// fsm_args := "(", list0(list_separator, (call_arg_with_binding | call_arg)), ")" ;
 pub fn fsm_args(input: ParseString) -> ParseResult<Vec<(Option<Identifier>,Expression)>> {
   let (input, _) = left_parenthesis(input)?;
   let (input, args) = separated_list0(list_separator, alt((call_arg_with_binding,call_arg)))(input)?;
