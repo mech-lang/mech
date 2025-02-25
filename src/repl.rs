@@ -98,7 +98,8 @@ impl MechRepl {
         Ok("".to_string())
       },
       ReplCommand::Load(paths) => {
-        let code = read_mech_files(&paths)?;
+        let mut mechfs = MechFileSystem::new();
+        let code = mechfs.read_mech_files(&paths)?;
         match run_mech_code(&mut intrp, &code, false,false,false) {
           Ok(r) => {return Ok(format!("\n{:?}\n{}\n", r.kind(), r.pretty_print()));},
           Err(err) => {return Err(err);}

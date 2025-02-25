@@ -143,7 +143,8 @@ async fn main() -> Result<(), MechError> {
     let stylesheet_url = matches.get_one::<String>("stylesheet").cloned().unwrap_or("include/style.css".to_string());
 
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_format_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    match read_mech_files(&mech_paths) {
+    let mut mechfs = MechFileSystem::new();
+    match mechfs.read_mech_files(&mech_paths) {
       Ok(code) => {
         for c in code {
           match c {
@@ -233,7 +234,8 @@ async fn main() -> Result<(), MechError> {
   } else { repl_flag = true; vec![] };
 
   // Run the code
-  let code = match read_mech_files(&paths) {
+  let mut mechfs = MechFileSystem::new();
+  let code = match mechfs.read_mech_files(&paths) {
     Ok(code) => code,
     Err(err) => {
       // treat the input args as a code instead of paths to files

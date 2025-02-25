@@ -43,6 +43,7 @@ warp = {version = "0.3.7", features = ["compression"]}
 tokio = { version = "1.43.0", features = ["full"] }
 base64 = "0.22.1"
 rand = "0.8.5"
+notify = "8.0.0"
 
 [workspace]
 
