@@ -153,7 +153,7 @@ pub fn underscore_digit(input: ParseString) -> ParseResult<Token> {
   Ok((input,digit))
 }
 
-// digit_sequence := digit, (underscore_digit | digit)*
+// digit_sequence := digit, (underscore_digit | digit)* ;
 pub fn digit_sequence(input: ParseString) -> ParseResult<Vec<Token>> {
   let (input, mut start) = digit_token(input)?;
   let (input, mut tokens) = many0(alt((underscore_digit,digit_token)))(input)?;
@@ -162,7 +162,7 @@ pub fn digit_sequence(input: ParseString) -> ParseResult<Vec<Token>> {
   Ok((input,all))
 }
 
-// grouping_symbol := left_parenthesis | right_parenthesis | left_angle | right_angle | left_brace | right_brace | left_bracket | right_bracket
+// grouping_symbol := left_parenthesis | right_parenthesis | left_angle | right_angle | left_brace | right_brace | left_bracket | right_bracket ;
 pub fn grouping_symbol(input: ParseString) -> ParseResult<Token> {
   let (input, grouping) = alt((left_parenthesis, right_parenthesis, left_angle, right_angle, left_brace, right_brace, left_bracket, right_bracket))(input)?;
   Ok((input, grouping))
@@ -264,7 +264,7 @@ pub fn enum_separator(input: ParseString) -> ParseResult<()> {
 }
 
 
-// number-literal := integer | hexadecimal | octal | binary | decimal | float | rational | scientific ;
+// number := real_number, "i"? | ("+", real_number, "i")? ;
 
 pub fn number(input: ParseString) -> ParseResult<Number> {
   let (input, real_num) = real_number(input)?;
@@ -462,7 +462,7 @@ pub fn kind_atom(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Atom(atm)))
 }
 
-// kind_map = "{", kind, ":", kind, "}" ;
+// kind_map := "{", kind, ":", kind, "}" ;
 pub fn kind_map(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_brace(input)?;
   let (input, key_kind) = kind(input)?;
@@ -472,7 +472,7 @@ pub fn kind_map(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Map(Box::new(key_kind),Box::new(value_kind))))
 }
 
-// kind_fxn := "(", (list_separator | kind)*, ")", "=", "(", (list_separator | kind)*, ")" ;
+// kind_fxn := "(", list0(list_separator, kind), ")", "=", "(", list0(list_separator, kind), ")" ;
 pub fn kind_fxn(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_parenthesis(input)?;
   let (input, input_kinds) = separated_list0(list_separator,kind)(input)?;
@@ -484,7 +484,7 @@ pub fn kind_fxn(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Function(input_kinds,output_kinds)))
 }
 
-// kind_brace = "{", list1(",", kind), "}", ":"?, list0("," , literal) ;
+// kind_brace := "{", list1(",", kind), "}", ":"?, list0("," , literal) ;
 pub fn kind_brace(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_brace(input)?;
   let (input, kinds) = separated_list1(list_separator,kind)(input)?;
@@ -494,7 +494,7 @@ pub fn kind_brace(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Brace((kinds,size))))
 }
 
-// kind_bracket = "[", list1(",",kind), "]", ":"?, list0(",", literal) ;
+// kind_bracket := "[", list1(",",kind), "]", ":"?, list0(",", literal) ;
 pub fn kind_bracket(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_bracket(input)?;
   let (input, kinds) = separated_list1(list_separator,kind)(input)?;
@@ -504,7 +504,7 @@ pub fn kind_bracket(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Bracket((kinds,size))))
 }
 
-// kind_tuple = "(", list1(",", kind), ")" ;
+// kind_tuple := "(", list1(",", kind), ")" ;
 pub fn kind_tuple(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_parenthesis(input)?;
   let (input, kinds) = separated_list1(list_separator, kind)(input)?;

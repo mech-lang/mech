@@ -24,7 +24,7 @@ use crate::*;
 
 // ##### Math expressions
 
-// parenthetical_expression := left_parenthesis, formula, right_parenthesis ;
+// parenthetical_term := left_parenthesis, formula, right_parenthesis ;
 pub fn parenthetical_term(input: ParseString) -> ParseResult<Factor> {
   let msg1 = "Expects expression";
   let msg2 = "Expects right parenthesis ')'";
@@ -34,14 +34,14 @@ pub fn parenthetical_term(input: ParseString) -> ParseResult<Factor> {
   Ok((input, Factor::Parenthetical(Box::new(frmla))))
 }
 
-// negate_factor := "-" factor ;
+// negate_factor := "-", factor ;
 pub fn negate_factor(input: ParseString) -> ParseResult<Factor> {
   let (input, _) = dash(input)?;
   let (input, expr) = factor(input)?;
   Ok((input, Factor::Negate(Box::new(expr))))
 }
 
-// not_factor := "not" factor ;
+// not_factor := "not", factor ;
 pub fn not_factor(input: ParseString) -> ParseResult<Factor> {
   let (input, _) = not(input)?;
   let (input, expr) = factor(input)?;
@@ -339,7 +339,7 @@ pub fn var(input: ParseString) -> ParseResult<Var> {
   Ok((input, Var{ name, kind }))
 }
 
-// ##### Comparsion expressions
+// ##### Comparison expressions
 
 // not_equal := "!=" | "¬=" | "≠" ;
 pub fn not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
@@ -441,7 +441,7 @@ pub fn transpose(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// literal := number | string | atom | boolean | empty, kind_annotation? ;
+// literal := (number | string | atom | boolean | empty), kind_annotation? ;
 pub fn literal(input: ParseString) -> ParseResult<Literal> {
   let (input, result) = match number(input.clone()) {
     Ok((input, num)) => (input, Literal::Number(num)),
@@ -487,7 +487,7 @@ pub fn subscript(input: ParseString) -> ParseResult<Vec<Subscript>> {
   Ok((input, subscripts))
 }
 
-// swizzle_subscript := ".", identifier, "," , list1(",", identifier) ;
+// swizzle_subscript := ".", identifier, ",", list1(",", identifier) ;
 pub fn swizzle_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, _) = period(input)?;
   let (input, first) = identifier(input)?;

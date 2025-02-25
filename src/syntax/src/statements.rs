@@ -24,7 +24,7 @@ pub fn comment_singleline(input: ParseString) -> ParseResult<Comment> {
   Ok((input, Comment{text: Token::merge_tokens(&mut text).unwrap()}))
 }
 
-// comment := ws0, "/*", (!"*/", whitespace | text)+, "*/" ;
+// comment_multiline := whitespace*, "/*", (!"*/", whitespace* | text)+, "*/" ;
 pub fn comment_multiline(input: ParseString) -> ParseResult<Comment> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("/*")(input)?;

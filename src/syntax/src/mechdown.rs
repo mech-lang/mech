@@ -168,7 +168,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   Ok((input, section_element))
 }
 
-// section_element := comment | unordered_list | mech_code | paragraph | code_block;
+// sub_section_element := comment | unordered_list | mech_code | paragraph | code_block;
 pub fn sub_section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match comment(input.clone()) {
     Ok((input, comment)) => (input, SectionElement::Comment(comment)),
@@ -205,7 +205,6 @@ pub fn sub_section(input: ParseString) -> ParseResult<Section> {
   let (input, elements) = many0(sub_section_element)(input)?;
   Ok((input, Section{subtitle: Some(subtitle), elements}))
 }
-
 
 // body := section+ ;
 pub fn body(input: ParseString) -> ParseResult<Body> {

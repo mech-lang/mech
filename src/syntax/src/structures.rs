@@ -89,16 +89,7 @@ pub fn tuple_struct(input: ParseString) -> ParseResult<TupleStruct> {
   Ok((input, TupleStruct{name, value: Box::new(value)}))
 }
 
-// binding := identifier, kind_annotation?, <!(space+, colon)>, colon, s+,
-// >>          <empty | expression | identifier | value>, <!!right_bracket | (s*, comma, <s+>) | s+> ;
-// >> where s := space | new_line | tab ;
-
-// binding ::= identifier, kind_annotation?, whitespace?, ":", whitespace?, (expression | empty | identifier | value), whitespace?, (comma, whitespace?)?
-/* Gemini AI Explanation:
-
-Optional Whitespace: The whitespace? elements explicitly allow for optional whitespace before the kind_annotation and after the colon.
-Specific Value Non-Terminal: The value non-terminal symbol is used for the value part, which could be more specific than expression depending on the language's context.
-Direct Use of space, new_line, and tab: The s non-terminal is replaced with its definition, making the grammar more concise. */
+// binding := identifier, kind_annotation?, colon, expression, ","? ;
 
 pub fn binding(input: ParseString) -> ParseResult<Binding> {
   let msg1 = "Unexpected space before colon ':'";
@@ -265,7 +256,7 @@ pub fn table(input: ParseString) -> ParseResult<Table> {
   Ok((input, Table{header,rows}))
 }
 
-// empty_table := table_start, table_end ;
+// empty_table := table_start, whitespace*, table_end ;
 pub fn empty_map(input: ParseString) -> ParseResult<Map> {
   let (input, _) = table_start(input)?;
   let (input, _) = whitespace0(input)?;
@@ -273,7 +264,7 @@ pub fn empty_map(input: ParseString) -> ParseResult<Map> {
   Ok((input, Map{elements: vec![]}))
 }
 
-// empty_set ::= table_start, empty, table_end ;
+// empty_set := table_start, whitespace*, empty, whitespace*, table_end ;
 pub fn empty_set(input: ParseString) -> ParseResult<Set> {
   let (input, _) = table_start(input)?;
   let (input, _) = whitespace0(input)?;
@@ -283,7 +274,7 @@ pub fn empty_set(input: ParseString) -> ParseResult<Set> {
   Ok((input,  Set{elements: vec![]}))
 }
 
-// record := table_start, binding+, table_end ;
+// record := table_start, whitespace*, binding+, whitespace*, table_end ;
 pub fn record(input: ParseString) -> ParseResult<Record> {
   let msg = "Expects right bracket ']' to terminate inline table";
   let (input, (_, r)) = range(table_start)(input)?;
@@ -294,7 +285,7 @@ pub fn record(input: ParseString) -> ParseResult<Record> {
   Ok((input, Record{bindings}))
 }
 
-// map := "{", mapping*, "}" ;
+// map := "{", whitespace*, mapping*, whitespace*, "}" ;
 pub fn map(input: ParseString) -> ParseResult<Map> {
   let msg = "Expects right bracket '}' to terminate inline table";
   let (input, (_, r)) = range(left_brace)(input)?;
@@ -305,7 +296,7 @@ pub fn map(input: ParseString) -> ParseResult<Map> {
   Ok((input, Map{elements}))
 }
 
-// mapping := expression, ":", expression, comma? ;
+// mapping :=  whitespace*, expression, whitespace*, ":", whitespace*, expression, comma?, whitespace* ;
 pub fn mapping(input: ParseString) -> ParseResult<Mapping> {
   let msg1 = "Unexpected space before colon ':'";
   let msg2 = "Expects a value";
@@ -323,7 +314,7 @@ pub fn mapping(input: ParseString) -> ParseResult<Mapping> {
   Ok((input, Mapping{key, value}))
 }
 
-// set := "{", list0(("," | whitespace+), expression), "}" ;
+// set := "{", whitespace*, list0(("," | whitespace+), expression), whitespace*, "}" ;
 pub fn set(input: ParseString) -> ParseResult<Set> {
   let msg = "Expects right bracket '}' to terminate inline table";
   let (input, (_, r)) = range(left_brace)(input)?;
@@ -336,7 +327,7 @@ pub fn set(input: ParseString) -> ParseResult<Set> {
 
 // #### State Machines
 
-//define_operator := ":=" ;
+// define_operator := ":=" ;
 pub fn define_operator(input: ParseString) -> ParseResult<()> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag(":=")(input)?;
@@ -376,7 +367,7 @@ pub fn guard_operator(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// fsm_implementation := "#" identifier, "(", list0(",", identifier), ")", transition_operator, fsm_pattern, whitespace*, fsm_arm+, "." ;
+// fsm_implementation := "#", identifier, "(", list0(",", identifier), ")", transition_operator, fsm_pattern, whitespace*, fsm_arm+, "." ;
 pub fn fsm_implementation(input: ParseString) -> ParseResult<FsmImplementation> {
   let (input, _) = hashtag(input)?;
   let (input, name) = identifier(input)?;
@@ -420,7 +411,7 @@ pub fn fsm_guard(input: ParseString) -> ParseResult<Guard> {
   Ok((input, Guard{condition: cnd, transitions: trns}))
 }
 
-// fsm_guard := comment*, fsm_pattern, (fsm_statement_transition | fsm_state_transition | fsm_output | fsm_async_transition | fsm_block_transition)+ ;
+// fsm_transition := comment*, fsm_pattern, (fsm_statement_transition | fsm_state_transition | fsm_output | fsm_async_transition | fsm_block_transition)+ ;
 pub fn fsm_transition(input: ParseString) -> ParseResult<FsmArm> {
   let (input, _) = many0(comment)(input)?;
   let (input, start) = fsm_pattern(input)?;
@@ -454,7 +445,7 @@ pub fn fsm_statement_transition(input: ParseString) -> ParseResult<Transition> {
   Ok((input, Transition::Statement(stmnt)))
 }
 
-// fsm_block_transition := transition_operator, left_brace, mech_code+, right_brace
+// fsm_block_transition := transition_operator, left_brace, mech_code+, right_brace ;
 pub fn fsm_block_transition(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = transition_operator(input)?;
   let (input, _) = left_brace(input)?;
@@ -464,14 +455,14 @@ pub fn fsm_block_transition(input: ParseString) -> ParseResult<Transition> {
 }
 
 
-// fsm_output := output_operator, fsm_pattern
+// fsm_output := output_operator, fsm_pattern ;
 pub fn fsm_output(input: ParseString) -> ParseResult<Transition> {
   let (input, _) = output_operator(input)?;
   let ((input, ptrn)) = fsm_pattern(input)?;
   Ok((input, Transition::Output(ptrn)))
 }
 
-// fsm_specification := "#" identifier, "(", list0(",", var), ")", output_operator?, kind_annotation?, define_operator, fsm_state_definition+, "." ;
+// fsm_specification := "#", identifier, "(", list0(",", var), ")", output_operator?, kind_annotation?, define_operator, fsm_state_definition+, "." ;
 pub fn fsm_specification(input: ParseString) -> ParseResult<FsmSpecification> {
   let (input, _) = hashtag(input)?;
   let (input, name) = identifier(input)?;
