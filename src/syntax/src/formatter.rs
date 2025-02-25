@@ -602,7 +602,7 @@ impl Formatter {
       None => {},
     }
     if self.html {
-      format!("<span class=\"mech-slice-ref\"><span id=\"{}\" class=\"mech-var-name\">{}</span><span class=\"mech-subscript\">{}</span></span>",hash_str(&name),name,subscript)
+      format!("<span class=\"mech-slice-ref\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",hash_str(&name),name,subscript)
     } else {
       format!("{}{}", name, subscript)
     }
@@ -668,7 +668,7 @@ impl Formatter {
       }
     }
     if self.html {
-      format!("<span class=\"mech-function-call\"><span id=\"{}\" class=\"mech-function-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-argument-list\">{}</span><span class=\"mech-right-paren\">)</span></span>",hash_str(&name),name,args)
+      format!("<span class=\"mech-function-call\"><span id=\"{}\" class=\"mech-function-name mech-clickable\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-argument-list\">{}</span><span class=\"mech-right-paren\">)</span></span>",hash_str(&name),name,args)
     } else {
       format!("{}({})", name, args)
     }
@@ -696,7 +696,7 @@ impl Formatter {
       subscript = format!("{}{}", subscript, s);
     }
     if self.html {
-      format!("<span class=\"mech-slice\"><span id=\"{}\" class=\"mech-var-name\">{}</span><span class=\"mech-subscript\">{}</span></span>",hash_str(&name),name,subscript)
+      format!("<span class=\"mech-slice\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",hash_str(&name),name,subscript)
     } else {
       format!("{}{}", name, subscript)
     }
@@ -1068,7 +1068,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
       "".to_string()
     };
     if self.html {
-      format!("<span class=\"mech-var-name\" id=\"{}\">{}</span>{}",hash_str(&node.name.to_string()), node.name.to_string(), annotation)
+      format!("<span class=\"mech-var-name mech-clickable\" id=\"{}\">{}</span>{}",hash_str(&node.name.to_string()), node.name.to_string(), annotation)
     } else {
       format!("{}{}", node.name.to_string(), annotation)
     }

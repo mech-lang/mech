@@ -224,8 +224,9 @@ h4 {
     color: #a157b5
 }
 
-.mech-expression:hover {
+.mech-clickable:hover {
     background-color: #2a2b34;
+    cursor: pointer;
 }
 
 .mech-end-brace {
