@@ -521,8 +521,9 @@ pub fn kind_tuple(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Tuple(kinds)))
 }
 
-// kind_scalar := identifier ;
+// kind_scalar := identifier, [":", range_expression] ;
 pub fn kind_scalar(input: ParseString) -> ParseResult<Kind> {
   let (input, kind) = identifier(input)?;
+  let (input, range) = opt(tuple((colon,range_expression)))(input)?;
   Ok((input, Kind::Scalar(kind)))
 }
