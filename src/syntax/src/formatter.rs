@@ -50,16 +50,19 @@ impl Formatter {
     let foot = format!(r#"
     <div id = "mech-root"></div>
     <script type="module">
-      import init, {{run_program}} from './pkg/mech_wasm.js';
+      import init, {{WasmMech}} from './pkg/mech_wasm.js';
+      let wasm_core;
       async function run() {{
         await init();
+        wasm_core = new WasmMech();
+        wasm_core.init();
         var xhr = new XMLHttpRequest();
         xhr.open('GET', "./code", true);
         xhr.onload = function (e) {{
           if (xhr.readyState === 4) {{
             if (xhr.status === 200) {{
               var src = xhr.responseText;
-              run_program(src);
+              wasm_core.load_compressed_blocks(encoded_blocks);
             }} else {{
               console.error(xhr.statusText);
             }}
