@@ -4,9 +4,10 @@ use crate::*;
 // ----------------------------------------------------------------------------
 
 pub struct Interpreter {
-  pub symbols: SymbolTableRef,
-  pub plan: Plan,
-  pub functions: FunctionsRef,
+  symbols: SymbolTableRef,
+  plan: Plan,
+  functions: FunctionsRef,
+  out: Value,
 }
 
 impl Interpreter {
@@ -40,7 +41,39 @@ impl Interpreter {
       symbols: new_ref(SymbolTable::new()),
       plan: new_ref(Vec::new()),
       functions: new_ref(fxns),
+      out: Value::Empty,
     }
+  }
+
+  pub fn plan(&self) -> Plan {
+    self.plan.clone()
+  }
+
+  pub fn get_symbol(&self, id: u64) -> Option<Ref<Value>> {
+    let symbols_brrw = self.symbols.borrow();
+    symbols_brrw.get(id)
+  }
+
+  pub fn pretty_print_symbols(&self) -> String {
+    let symbol_table = self.symbols.borrow();
+    symbol_table.pretty_print()
+  }
+
+  pub fn dictionary(&self) -> Ref<Dictionary> {
+    let symbols_ref = self.symbols.borrow();
+    symbols_ref.dictionary.clone()
+  }
+
+  pub fn step(&mut self, steps: u64) -> &Value {
+    let plan_brrw = self.plan.borrow();
+    let mut result = Value::Empty;
+    for i in 0..steps {
+      for fxn in plan_brrw.iter() {
+        fxn.solve();
+      }
+    }
+    self.out = plan_brrw.last().unwrap().out().clone();
+    &self.out
   }
 
   pub fn interpret(&mut self, tree: &Program) -> MResult<Value> {
