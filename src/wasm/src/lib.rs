@@ -35,16 +35,15 @@ impl WasmMech {
   pub fn init(&self) {
     let window = web_sys::window().expect("global window does not exists");    
 		let document = window.document().expect("expecting a document on window");
-		let body = document.body().expect("document expect to have have a body");
   
-    let clickable_elements = self.document.get_elements_by_tag_name("clickable");
+    let clickable_elements = document.get_elements_by_tag_name("clickable");
     for i in 0..clickable_elements.length() {
-      let canvas = clickable_elements.get_with_index(i).unwrap();
-      let canvas: web_sys::HtmlCanvasElement = canvas
-                    .dyn_into::<web_sys::HtmlCanvasElement>()
+      let element = clickable_elements.get_with_index(i).unwrap();
+      let div_element: web_sys::HtmlDivElement = element
+                    .dyn_into::<web_sys::HtmlDivElement>()
                     .map_err(|_| ())
                     .unwrap();
-      draw_canvas(&canvas,&self.core);
+      log!("{:?}", div_element);
     }
   }
 

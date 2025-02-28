@@ -117,7 +117,7 @@ impl MechRepl {
           None => 1,
         };
         let now = Instant::now();
-        intrp.step(n);
+        intrp.step(n as u64);
         let elapsed_time = now.elapsed();
         let cycle_duration = elapsed_time.as_nanos() as f64;
         return Ok(format!("{} cycles in {:0.2?} ns\n", n, cycle_duration));

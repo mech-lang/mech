@@ -55,14 +55,14 @@ impl Formatter {
       async function run() {{
         await init();
         wasm_core = new WasmMech();
-        wasm_core.init();
         var xhr = new XMLHttpRequest();
         xhr.open('GET', "./code", true);
         xhr.onload = function (e) {{
           if (xhr.readyState === 4) {{
             if (xhr.status === 200) {{
               var src = xhr.responseText;
-              wasm_core.load_compressed_blocks(encoded_blocks);
+              wasm_core.run_program(src);
+              wasm_core.init();
             }} else {{
               console.error(xhr.statusText);
             }}
