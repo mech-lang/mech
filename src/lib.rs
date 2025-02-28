@@ -204,15 +204,15 @@ pub fn pretty_print_tree(tree: &Program) -> String {
 pub fn whos(intrp: &Interpreter) -> String {
   let mut builder = Builder::default();
   builder.push_record(vec!["Name","Size","Bytes","Kind"]);
-  let symbol_table = intrp.symbols.borrow();
-  for (id,name) in &symbol_table.dictionary {
-    let value = symbol_table.get(*id).unwrap();
+  let dictionary = intrp.dictionary();
+  for (id,name) in dictionary.borrow().iter() {
+    let value = intrp.get_symbol(*id).unwrap();
     let value_brrw = value.borrow();
     builder.push_record(vec![
       name.clone(),
       format!("{:?}",value_brrw.shape()),
       format!("{:?}",value_brrw.size_of()),
-      format!("{:?}",value_brrw.kind())
+      format!("{:?}",value_brrw.kind()),
     ]);
   }
 
@@ -224,9 +224,9 @@ pub fn whos(intrp: &Interpreter) -> String {
 
 pub fn pretty_print_symbols(intrp: &Interpreter) -> String {
   let mut builder = Builder::default();
-  let symbol_table = intrp.symbols.borrow();
+  let symbol_table = intrp.pretty_print_symbols();
   builder.push_record(vec![
-    format!("{}",symbol_table.pretty_print()),
+    format!("{}",symbol_table),
   ]);
 
   let mut table = builder.build();
@@ -245,11 +245,12 @@ pub fn pretty_print_plan(intrp: &Interpreter) -> String {
   let mut builder = Builder::default();
 
   let mut row = vec![];
-  let plan = intrp.plan.borrow();
-  if plan.is_empty() {
+  let plan = intrp.plan();
+  let plan_brrw = plan.borrow();
+  if plan_brrw.is_empty() {
     builder.push_record(vec!["".to_string()]);
   } else {
-    for (ix, fxn) in plan.iter().enumerate() {
+    for (ix, fxn) in plan_brrw.iter().enumerate() {
       let plan_str = format!("{}. {}\n", ix + 1, fxn.to_string());
       row.push(plan_str.clone());
       if row.len() == 4 {

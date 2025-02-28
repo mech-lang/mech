@@ -116,13 +116,8 @@ impl MechRepl {
           Some(n) => n,
           None => 1,
         };
-        let plan_brrw = intrp.plan.borrow();
         let now = Instant::now();
-        for i in 0..n {
-          for fxn in plan_brrw.iter() {
-            fxn.solve();
-          }
-        }
+        intrp.step(n);
         let elapsed_time = now.elapsed();
         let cycle_duration = elapsed_time.as_nanos() as f64;
         return Ok(format!("{} cycles in {:0.2?} ns\n", n, cycle_duration));
