@@ -12,39 +12,53 @@ macro_rules! log {
 
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
-  let mut intrp = Interpreter::new();
-  let parse_result = parser::parse("1 + 2");
-  match parse_result {
-    Ok(tree) => { 
-      let result = intrp.interpret(&tree);
-      log!("{:?}", result);
-    },
-    Err(err) => {
-      if let MechErrorKind::ParserError(report, _) = err.kind {
-        //parser::print_err_report(&s, &report);
-      } else {
-        //panic!("Unexpected error type");
-      }
-    }
-  }
+  //let mut wasm_mech = WasmMech::new();
+  //wasm_mech.init();
+  //wasm_mech.run_program("1 + 1");
   Ok(())
 }
 
 #[wasm_bindgen]
-pub fn run_program(src: &str) {
-  let mut intrp = Interpreter::new();
-  let parse_result = parser::parse(src);
-  match parse_result {
-    Ok(tree) => { 
-      let result = intrp.interpret(&tree).unwrap();
-      log!("{:?}", result.pretty_print());
-    },
-    Err(err) => {
-      if let MechErrorKind::ParserError(report, _) = err.kind {
-        //parser::print_err_report(&s, &report);
-      } else {
-        //panic!("Unexpected error type");
+pub struct WasmMech {
+  interpreter: Interpreter,
+}
+
+#[wasm_bindgen]
+impl WasmMech {
+
+  #[wasm_bindgen(constructor)]
+  pub fn new() -> Self {
+    Self { interpreter: Interpreter::new() }
+  }
+  
+  #[wasm_bindgen]
+  pub fn init(&self) {
+    let window = web_sys::window().expect("global window does not exists");    
+		let document = window.document().expect("expecting a document on window");
+  
+    let clickable_elements = document.get_elements_by_tag_name("clickable");
+    for i in 0..clickable_elements.length() {
+      let element = clickable_elements.get_with_index(i).unwrap();
+      let div_element: web_sys::HtmlDivElement = element
+                    .dyn_into::<web_sys::HtmlDivElement>()
+                    .map_err(|_| ())
+                    .unwrap();
+      log!("{:?}", div_element);
+    }
+  }
+
+  #[wasm_bindgen]
+  pub fn run_program(&mut self, src: &str) { 
+    // Decompress the string into a Program
+    let tree: Program = decode_and_decompress(&src);
+    match self.interpreter.interpret(&tree) {
+      Ok(result) => {
+        log!("{:?}", result.pretty_print());
+      },
+      Err(err) => {
+        log!("{:?}", err);
       }
     }
   }
+
 }

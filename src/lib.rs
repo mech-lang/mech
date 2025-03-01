@@ -45,6 +45,9 @@ extern crate lazy_static;
 use web_sys::{Crypto, Window, console};
 use rand::rngs::OsRng;
 use rand::RngCore;
+use notify::{recommended_watcher, Event, RecursiveMode, Result as NResult, Watcher};
+use std::sync::mpsc;
+use std::sync::Arc;
 
 lazy_static! {
   static ref CORE_MAP: Mutex<HashMap<SocketAddr, (String, SystemTime)>> = Mutex::new(HashMap::new());
@@ -201,15 +204,15 @@ pub fn pretty_print_tree(tree: &Program) -> String {
 pub fn whos(intrp: &Interpreter) -> String {
   let mut builder = Builder::default();
   builder.push_record(vec!["Name","Size","Bytes","Kind"]);
-  let symbol_table = intrp.symbols.borrow();
-  for (id,name) in &symbol_table.dictionary {
-    let value = symbol_table.get(*id).unwrap();
+  let dictionary = intrp.dictionary();
+  for (id,name) in dictionary.borrow().iter() {
+    let value = intrp.get_symbol(*id).unwrap();
     let value_brrw = value.borrow();
     builder.push_record(vec![
       name.clone(),
       format!("{:?}",value_brrw.shape()),
       format!("{:?}",value_brrw.size_of()),
-      format!("{:?}",value_brrw.kind())
+      format!("{:?}",value_brrw.kind()),
     ]);
   }
 
@@ -221,9 +224,9 @@ pub fn whos(intrp: &Interpreter) -> String {
 
 pub fn pretty_print_symbols(intrp: &Interpreter) -> String {
   let mut builder = Builder::default();
-  let symbol_table = intrp.symbols.borrow();
+  let symbol_table = intrp.pretty_print_symbols();
   builder.push_record(vec![
-    format!("{}",symbol_table.pretty_print()),
+    format!("{}",symbol_table),
   ]);
 
   let mut table = builder.build();
@@ -242,11 +245,12 @@ pub fn pretty_print_plan(intrp: &Interpreter) -> String {
   let mut builder = Builder::default();
 
   let mut row = vec![];
-  let plan = intrp.plan.borrow();
-  if plan.is_empty() {
+  let plan = intrp.plan();
+  let plan_brrw = plan.borrow();
+  if plan_brrw.is_empty() {
     builder.push_record(vec!["".to_string()]);
   } else {
-    for (ix, fxn) in plan.iter().enumerate() {
+    for (ix, fxn) in plan_brrw.iter().enumerate() {
       let plan_str = format!("{}. {}\n", ix + 1, fxn.to_string());
       row.push(plan_str.clone());
       if row.len() == 4 {
@@ -420,100 +424,206 @@ impl IndexedString {
   }
 }
 
-pub fn read_mech_files(mech_paths: &Vec<String>) -> MResult<Vec<(String,MechSourceCode)>> {
-  let mut code: Vec<(String,MechSourceCode)> = Vec::new();
+pub struct MechFileSystem {
+  sources: Arc<Mutex<HashMap<u64,MechSourceCode>>>,
+  watchers: Vec<Box<dyn Watcher>>,
+  threads: Vec<JoinHandle<()>>,
+}
 
-  let read_file_to_code = |path: &Path| -> Result<Vec<(String,MechSourceCode)>, MechError> {
-    let mut code: Vec<(String,MechSourceCode)> = Vec::new();
-    match (path.to_str(), path.extension())  {
-      (Some(name), Some(extension)) => {
-        match extension.to_str() {
-          /*Some("blx") => {
-            match File::open(name) {
-              Ok(file) => {
-                println!("{} {}", "[Loading]".truecolor(153,221,85), name);
-                let mut reader = BufReader::new(file);
-                let mech_code: Result<MechSourceCode, bincode::Error> = bincode::deserialize_from(&mut reader);
-                match mech_code {
-                  Ok(c) => {code.push((name.to_string(),c));},
-                  Err(err) => {
-                    return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1247, kind: MechErrorKind::GenericError(format!("{:?}", err))});
-                  },
+// Start by taking the paths, which are strings. The paths may be .mec or robot files, or they may be directories
+// For each directory and file, we will create a watcher. The watcher will watch for changes to the files and directories
+// When a change is detected, the file will be read and the source code will be updated in the sources hashmap
+
+impl MechFileSystem {
+
+  pub fn new() -> Self {
+    MechFileSystem {
+      sources: Arc::new(Mutex::new(HashMap::new())),
+      watchers: Vec::new(),
+      threads: Vec::new(),
+    }
+  }
+  
+  pub fn watch_source(&mut self, src: &'static str) -> MResult<()> {
+    let src_path = match Path::new(src.clone()).canonicalize() {
+      Ok(path) => path,
+      Err(e) => {
+        return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1246, kind: MechErrorKind::GenericError(format!("{:?}", e))});
+      },
+    };
+
+    let (tx, rx) = mpsc::channel::<NResult<Event>>();
+    match notify::recommended_watcher(tx) {
+      Ok(mut watcher) => {
+        match watcher.watch(&src_path, RecursiveMode::Recursive) {
+          Ok(_) => {
+            println!("{} Watching: {}", "[Watch]".truecolor(153,221,85), src_path.display());
+            let srcs = self.sources.clone();
+            let thread = thread::spawn(move || {
+              for res in rx {
+                match res {
+                  Ok(event) => {
+                    match event.kind {
+                      notify::EventKind::Modify(knd) => {
+                        for p in event.paths {
+                          match p.canonicalize() {
+                            Ok(event_path) => {
+                              match srcs.lock() {
+                                Ok(mut sources) => {
+                                  let file_id = hash_str(&event_path.display().to_string());
+                                  match sources.get_mut(&file_id) {
+                                    Some(code) => {
+                                      let new_source = read_mech_source_file(&event_path).unwrap();
+                                      *code = new_source;
+                                    }
+                                    None => (),
+                                  }
+                                },
+                                Err(e) => {
+                                  println!("watch error: {:?}", e);
+                                },
+                              }
+                            }
+                            Err(e) => println!("watch error: {:?}", e),
+                          }
+                        }
+                      }
+                      notify::EventKind::Create(_) => todo!(),
+                      notify::EventKind::Remove(_) => todo!(),
+                      _ => todo!(),
+                    }
+                  }
+                  Err(e) => println!("watch error: {:?}", e),
                 }
               }
-              Err(err) => {
-                return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1248, kind: MechErrorKind::None});
-              },
-            };
-          }*/
-          Some("mec") | Some("🤖") => {
-            match File::open(name) {
-              Ok(mut file) => {
-                println!("{} {}", "[Loading]".truecolor(153,221,85), name);
-                let mut buffer = String::new();
-                file.read_to_string(&mut buffer);
-                code.push((name.to_string(),MechSourceCode::String(buffer)));
-              }
-              Err(err) => {
-                return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1249, kind: MechErrorKind::None});
-              },
-            };
-          }
-          Some("csv") => {
-            match File::open(name) {
-              Ok(mut file) => {
-                println!("{} {}", "[Loading]".truecolor(153,221,85), name);
-                let mut buffer = String::new();
-                let mut rdr = csv::Reader::from_reader(file);
-                for result in rdr.records() {
-                  println!("{:?}", result);
-                }
-              }
-              Err(err) => {
-                return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1249, kind: MechErrorKind::None});
-              },
-            };
-          }
-          _ => (), // Do nothing if the extension is not recognized
+            });
+            self.watchers.push(Box::new(watcher));
+            self.threads.push(thread);
+          },
+          Err(err) => {
+            println!("{} Error watching: {}", "[Watch]".truecolor(153,221,85), err);
+          },
         }
       },
-      err => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1250, kind: MechErrorKind::GenericError(format!("{:?}", err))});},
+      Err(err) => {
+        println!("{} Error creating watcher: {}", "[Watch]".truecolor(153,221,85), err);
+      },
+    }
+    Ok(())
+  }
+
+  pub fn read_mech_files(&mut self, mech_paths: &Vec<String>) -> MResult<Vec<(String,MechSourceCode)>> {
+    let mut code: Vec<(String,MechSourceCode)> = Vec::new();
+  
+    for path_str in mech_paths {
+      let path = Path::new(path_str);
+      // Compile a .mec file on the web
+      if path_str.starts_with("https") || path_str.starts_with("http") {
+        println!("{} {}", "[Downloading]".truecolor(153,221,85), path.display());
+        match reqwest::blocking::get(path_str) {
+          Ok(response) => {
+            match response.text() {
+              Ok(text) => {
+                let src = MechSourceCode::String(text);
+
+                code.push((path_str.to_owned(), src));
+              },
+              _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1241, kind: MechErrorKind::None});},
+            }
+          }
+          _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1242, kind: MechErrorKind::None});},
+        }
+      } else {
+        // Compile a directory of mech files
+        if path.is_dir() {
+          for entry in path.read_dir().expect("read_dir call failed") {
+            if let Ok(entry) = entry {
+              let path = entry.path().canonicalize().unwrap();
+              let mut mech_src = read_mech_source_file(&path)?;
+              match self.sources.lock() {
+                Ok(mut sources) => {
+                  sources.insert(hash_str(&path.display().to_string()), mech_src.clone());
+                },
+                Err(err) => {
+                  return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1244, kind: MechErrorKind::GenericError(format!("{:?}", err))});
+                },
+              }
+              // path buf to string
+              code.push((path.display().to_string(),mech_src));
+            }
+          }
+        } else if path.is_file() {
+          let mut mech_src = read_mech_source_file(&path)?;
+          match self.sources.lock() {
+            Ok(mut sources) => {
+              sources.insert(hash_str(&path.canonicalize().unwrap().display().to_string()), mech_src.clone());
+            },
+            Err(err) => {
+              return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1244, kind: MechErrorKind::GenericError(format!("{:?}", err))});
+            },
+          }
+          // path buf to string
+          code.push((path.display().to_string(),mech_src));
+        } else {
+          return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1243, kind: MechErrorKind::FileNotFound(path.to_str().unwrap().to_string())});
+        }
+      };
     }
     Ok(code)
-  };
-
-  for path_str in mech_paths {
-    let path = Path::new(path_str);
-    // Compile a .mec file on the web
-    if path_str.starts_with("https") || path_str.starts_with("http") {
-      println!("{} {}", "[Downloading]".truecolor(153,221,85), path.display());
-      match reqwest::blocking::get(path_str) {
-        Ok(response) => {
-          match response.text() {
-            Ok(text) => code.push((path_str.to_owned(),MechSourceCode::String(text))),
-            _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1241, kind: MechErrorKind::None});},
-          }
-        }
-        _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1242, kind: MechErrorKind::None});},
-      }
-    } else {
-      // Compile a directory of mech files
-      if path.is_dir() {
-        for entry in path.read_dir().expect("read_dir call failed") {
-          if let Ok(entry) = entry {
-            let path = entry.path();
-            let mut new_code = read_file_to_code(&path)?;
-            code.append(&mut new_code);
-          }
-        }
-      } else if path.is_file() {
-        // Compile a single file
-        let mut new_code = read_file_to_code(&path)?;
-        code.append(&mut new_code);
-      } else {
-        return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1243, kind: MechErrorKind::FileNotFound(path.to_str().unwrap().to_string())});
-      }
-    };
   }
-  Ok(code)
+  
+}
+
+pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
+  match path.extension() {
+    Some(extension) => {
+      match extension.to_str() {
+        /*Some("blx") => {
+          match File::open(name) {
+            Ok(file) => {
+              println!("{} {}", "[Loading]".truecolor(153,221,85), name);
+              let mut reader = BufReader::new(file);
+              let mech_code: Result<MechSourceCode, bincode::Error> = bincode::deserialize_from(&mut reader);
+              match mech_code {
+                Ok(c) => {code.push((name.to_string(),c));},
+                Err(err) => {
+                  return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1247, kind: MechErrorKind::GenericError(format!("{:?}", err))});
+                },
+              }
+            }
+            Err(err) => {
+              return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1248, kind: MechErrorKind::None});
+            },
+          };
+        }*/
+        Some("mec") | Some("🤖") => {
+          match File::open(path) {
+            Ok(mut file) => {
+              println!("{} {}", "[Loading]".truecolor(153,221,85), path.display());
+              let mut buffer = String::new();
+              file.read_to_string(&mut buffer);
+              Ok(MechSourceCode::String(buffer))
+            }
+            Err(err) => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1249, kind: MechErrorKind::None}),
+          }
+        }
+        Some("csv") => {
+          match File::open(path) {
+            Ok(mut file) => {
+              println!("{} {}", "[Loading]".truecolor(153,221,85), path.display());
+              let mut buffer = String::new();
+              let mut rdr = csv::Reader::from_reader(file);
+              for result in rdr.records() {
+                println!("{:?}", result);
+              }
+              todo!();
+            }
+            Err(err) => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1249, kind: MechErrorKind::None}),
+          }
+        }
+        _ => todo!(), // Do nothing if the extension is not recognized
+      }
+    },
+    err => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1250, kind: MechErrorKind::GenericError(format!("{:?}", err))}),
+  }
 }

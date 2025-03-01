@@ -86,6 +86,7 @@ pub fn humanize(hash: &u64) -> String {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MechSourceCode {
   String(String),
+  Tree(Program),
 }
 
 pub const WORDLIST: &[&str;256] = &[

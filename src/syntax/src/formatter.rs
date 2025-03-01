@@ -2,6 +2,7 @@ use mech_core::*;
 use mech_core::nodes::{Kind, Matrix};
 use std::collections::HashMap;
 use colored::Colorize;
+use std::io::{Read, Write, Cursor};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Formatter{
@@ -11,17 +12,13 @@ pub struct Formatter{
   cols: usize,
   indent: usize,
   html: bool,
-  nested: bool,
-  styles: Vec<String>,
+  nested: bool
 }
 
 
 impl Formatter {
 
   pub fn new() -> Formatter {
-    let style_sheet = include_str!("../include/style.css");
-    let style_shee2 = include_str!("../include/style2.css");
-
     Formatter {
       code: String::new(),
       identifiers: HashMap::new(),
@@ -30,7 +27,6 @@ impl Formatter {
       indent: 0,
       html: false,
       nested: false,
-      styles: vec![style_sheet.to_string(), style_shee2.to_string()],
     }
   }
 
@@ -39,7 +35,7 @@ impl Formatter {
     self.program(tree)
   }
 
-  pub fn format_html(&mut self, tree: &Program) -> String {
+  pub fn format_html(&mut self, tree: &Program, style: String) -> String {
     self.html = true;
     let formatted_src = self.program(tree);
     let head = format!(r#"<html>
@@ -50,8 +46,37 @@ impl Formatter {
                   {}
         </style>
     </head>
-    <body>"#, self.styles[1]);
-    let foot = r#"</body></html>"#;
+    <body>"#, style);
+    let foot = format!(r#"
+    <div id = "mech-root"></div>
+    <script type="module">
+      import init, {{WasmMech}} from './pkg/mech_wasm.js';
+      let wasm_core;
+      async function run() {{
+        await init();
+        wasm_core = new WasmMech();
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', "./code", true);
+        xhr.onload = function (e) {{
+          if (xhr.readyState === 4) {{
+            if (xhr.status === 200) {{
+              var src = xhr.responseText;
+              wasm_core.run_program(src);
+              wasm_core.init();
+            }} else {{
+              console.error(xhr.statusText);
+            }}
+          }}
+        }};
+        xhr.onerror = function (e) {{
+          console.error(xhr.statusText);
+        }};
+        xhr.send(null);        
+      }}
+      run();
+    </script>
+  </body>
+</html>"#);
     format!("{}{}{}", head, formatted_src, foot)
   }
 
@@ -580,7 +605,7 @@ impl Formatter {
       None => {},
     }
     if self.html {
-      format!("<span class=\"mech-slice-ref\"><span id=\"{}\" class=\"mech-var-name\">{}</span><span class=\"mech-subscript\">{}</span></span>",hash_str(&name),name,subscript)
+      format!("<span class=\"mech-slice-ref\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",hash_str(&name),name,subscript)
     } else {
       format!("{}{}", name, subscript)
     }
@@ -646,7 +671,7 @@ impl Formatter {
       }
     }
     if self.html {
-      format!("<span class=\"mech-function-call\"><span id=\"{}\" class=\"mech-function-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-argument-list\">{}</span><span class=\"mech-right-paren\">)</span></span>",hash_str(&name),name,args)
+      format!("<span class=\"mech-function-call\"><span id=\"{}\" class=\"mech-function-name mech-clickable\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-argument-list\">{}</span><span class=\"mech-right-paren\">)</span></span>",hash_str(&name),name,args)
     } else {
       format!("{}({})", name, args)
     }
@@ -674,7 +699,7 @@ impl Formatter {
       subscript = format!("{}{}", subscript, s);
     }
     if self.html {
-      format!("<span class=\"mech-slice\"><span id=\"{}\" class=\"mech-var-name\">{}</span><span class=\"mech-subscript\">{}</span></span>",hash_str(&name),name,subscript)
+      format!("<span class=\"mech-slice\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",hash_str(&name),name,subscript)
     } else {
       format!("{}{}", name, subscript)
     }
@@ -1046,7 +1071,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
       "".to_string()
     };
     if self.html {
-      format!("<span class=\"mech-var-name\" id=\"{}\">{}</span>{}",hash_str(&node.name.to_string()), node.name.to_string(), annotation)
+      format!("<span class=\"mech-var-name mech-clickable\" id=\"{}\">{}</span>{}",hash_str(&node.name.to_string()), node.name.to_string(), annotation)
     } else {
       format!("{}{}", node.name.to_string(), annotation)
     }

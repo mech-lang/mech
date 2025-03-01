@@ -98,7 +98,8 @@ impl MechRepl {
         Ok("".to_string())
       },
       ReplCommand::Load(paths) => {
-        let code = read_mech_files(&paths)?;
+        let mut mechfs = MechFileSystem::new();
+        let code = mechfs.read_mech_files(&paths)?;
         match run_mech_code(&mut intrp, &code, false,false,false) {
           Ok(r) => {return Ok(format!("\n{:?}\n{}\n", r.kind(), r.pretty_print()));},
           Err(err) => {return Err(err);}
@@ -115,13 +116,8 @@ impl MechRepl {
           Some(n) => n,
           None => 1,
         };
-        let plan_brrw = intrp.plan.borrow();
         let now = Instant::now();
-        for i in 0..n {
-          for fxn in plan_brrw.iter() {
-            fxn.solve();
-          }
-        }
+        intrp.step(n as u64);
         let elapsed_time = now.elapsed();
         let cycle_duration = elapsed_time.as_nanos() as f64;
         return Ok(format!("{} cycles in {:0.2?} ns\n", n, cycle_duration));

@@ -1,6 +1,6 @@
 [package]
 name = "mech-core"
-version = "0.2.32"
+version = "0.2.33"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "The Mech language runtime."
 documentation = "http://docs.mech-lang.org"
@@ -79,10 +79,14 @@ wasm-bindgen = {version = "0.2.99", optional = true}
 nalgebra = "0.33.2"
 simba = "0.9.0"
 libm = "0.2.11"
-tabled = "0.17.0"
+tabled = "0.18.0"
 paste = "1.0.15"
 rkyv = "0.8.9"
 bytemuck = "1.21.0"
+
+bincode = "1.3.3"
+base64 = "0.22.1"
+brotli = "7.0.0"
 
 [dependencies.web-sys]
 version = "0.3.76"
