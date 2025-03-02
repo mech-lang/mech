@@ -35,15 +35,20 @@ impl WasmMech {
   pub fn init(&self) {
     let window = web_sys::window().expect("global window does not exists");    
 		let document = window.document().expect("expecting a document on window");
-  
-    let clickable_elements = document.get_elements_by_tag_name("clickable");
+    
+    let clickable_elements = document.get_elements_by_class_name("mech-clickable");
     for i in 0..clickable_elements.length() {
       let element = clickable_elements.get_with_index(i).unwrap();
-      let div_element: web_sys::HtmlDivElement = element
-                    .dyn_into::<web_sys::HtmlDivElement>()
-                    .map_err(|_| ())
-                    .unwrap();
-      log!("{:?}", div_element);
+      let element_id = element.id().parse::<u64>().unwrap();
+      let symbols = self.interpreter.symbols();
+
+      let closure = Closure::wrap(Box::new(move || {
+        let value = symbols.borrow().get(element_id);
+        log!("{:?}", value);
+      }) as Box<dyn Fn()>);
+  
+      element.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref());
+      closure.forget();
     }
   }
 
