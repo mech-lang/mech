@@ -54,6 +54,10 @@ impl Interpreter {
     symbols_brrw.get(id)
   }
 
+  pub fn symbols(&self) -> SymbolTableRef {
+    self.symbols.clone()
+  }
+
   pub fn pretty_print_symbols(&self) -> String {
     let symbol_table = self.symbols.borrow();
     symbol_table.pretty_print()
