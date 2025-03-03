@@ -43,8 +43,14 @@ impl WasmMech {
       let symbols = self.interpreter.symbols();
 
       let closure = Closure::wrap(Box::new(move || {
-        let value = symbols.borrow().get(element_id);
-        log!("{:?}", value);
+        match symbols.borrow().get(element_id) {
+          Some(value) => {
+            log!("{}", value.borrow().pretty_print());
+          },
+          None => {
+            log!("No value found for element id: {}", element_id);
+          }
+        }
       }) as Box<dyn Fn()>);
   
       element.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref());
