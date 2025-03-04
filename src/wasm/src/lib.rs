@@ -64,7 +64,7 @@ impl WasmMech {
     let tree: Program = decode_and_decompress(&src);
     match self.interpreter.interpret(&tree) {
       Ok(result) => {
-        log!("{:?}", result.pretty_print());
+        log!("{}", result.pretty_print());
       },
       Err(err) => {
         log!("{:?}", err);
