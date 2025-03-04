@@ -444,7 +444,7 @@ impl MechFileSystem {
     }
   }
   
-  pub fn watch_source(&mut self, src: &'static str) -> MResult<()> {
+  pub fn watch_source(&mut self, src: &str) -> MResult<()> {
     let src_path = match Path::new(src.clone()).canonicalize() {
       Ok(path) => path,
       Err(e) => {
@@ -476,7 +476,10 @@ impl MechFileSystem {
                                       let new_source = read_mech_source_file(&event_path).unwrap();
                                       *code = new_source;
                                     }
-                                    None => (),
+                                    None => {
+                                      let new_source = read_mech_source_file(&event_path).unwrap();
+                                      sources.insert(file_id, new_source);
+                                    },
                                   }
                                 },
                                 Err(e) => {
