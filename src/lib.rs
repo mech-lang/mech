@@ -48,6 +48,7 @@ use rand::RngCore;
 use notify::{recommended_watcher, Event, RecursiveMode, Result as NResult, Watcher};
 use std::sync::mpsc;
 use std::sync::Arc;
+use std::collections::HashSet;
 
 lazy_static! {
   static ref CORE_MAP: Mutex<HashMap<SocketAddr, (String, SystemTime)>> = Mutex::new(HashMap::new());
@@ -425,32 +426,99 @@ impl IndexedString {
 }
 
 pub struct MechFileSystem {
-  sources: Arc<Mutex<HashMap<u64,MechSourceCode>>>,
-  watchers: Vec<Box<dyn Watcher>>,
-  threads: Vec<JoinHandle<()>>,
+  directory: HashMap<PathBuf, PathBuf>,             // relative source -> absolute source
+  reverse_lookup: HashMap<PathBuf, PathBuf>,        // absolute source -> relative source
+  sources: Arc<Mutex<HashMap<u64,MechSourceCode>>>, // u64 is the hash of the relative source 
+  watchers: Vec<Box<dyn Watcher>>,                  // handles to the watchers
+  threads: Vec<JoinHandle<()>>,                     // handles the the watcher handling threads
 }
 
 // Start by taking the paths, which are strings. The paths may be .mec or robot files, or they may be directories
 // For each directory and file, we will create a watcher. The watcher will watch for changes to the files and directories
 // When a change is detected, the file will be read and the source code will be updated in the sources hashmap
 
+fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
+  if !path.is_dir() {
+    // If it's a file, return a vector containing just this path
+    return Ok(vec![path.to_path_buf()]);
+  }
+  
+  let mut files = Vec::new();
+  for entry in fs::read_dir(path)? {
+    let entry = entry?;
+    let path = entry.path();
+    if path.is_dir() {
+      files.extend(list_files(&path)?);
+    } else {
+      files.push(path);
+    }
+  }
+  Ok(files)
+}
+
 impl MechFileSystem {
 
   pub fn new() -> Self {
     MechFileSystem {
+      directory: HashMap::new(),
+      reverse_lookup: HashMap::new(),
       sources: Arc::new(Mutex::new(HashMap::new())),
       watchers: Vec::new(),
       threads: Vec::new(),
     }
   }
+
+  pub fn contains(&self, src: &str) -> bool {
+    let src_path = Path::new(src);
+    if self.directory.contains_key(src_path) {
+      return true;
+    } else if self.reverse_lookup.contains_key(src_path) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  pub fn get_source(&self, src: &str) -> Option<MechSourceCode> {
+    let src_path = Path::new(src);
+    let sources = self.sources.lock().unwrap();
+    let file_id = hash_str(&src_path.display().to_string());
+    match sources.get(&file_id) {
+      Some(code) => Some(code.clone()),
+      None => None,
+    }
+  }
   
   pub fn watch_source(&mut self, src: &str) -> MResult<()> {
-    let src_path = match Path::new(src.clone()).canonicalize() {
-      Ok(path) => path,
-      Err(e) => {
-        return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1246, kind: MechErrorKind::GenericError(format!("{:?}", e))});
-      },
-    };
+    let src_path = Path::new(src.clone());
+
+    // Collect all the files that are in the watched directory
+    let files = list_files(&src_path)?;
+    for f in files {
+      let canonical_path = f.canonicalize().unwrap();
+      self.directory.insert(f.clone(),canonical_path.clone());
+      self.reverse_lookup.insert(canonical_path.clone(),f.clone());
+      match self.read_mech_files(&vec![f.display().to_string()]) {
+        Ok(code) => {
+          for (path, src) in code {
+            let path = Path::new(&path);
+            let canonical_path = path.canonicalize().unwrap().display().to_string();
+            let file_id = hash_str(&canonical_path);
+            match self.sources.lock() {
+              Ok(mut sources) => {
+                sources.insert(file_id, src);
+              },
+              Err(err) => {
+                return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1244, kind: MechErrorKind::GenericError(format!("{:?}", err))});
+              },
+            }
+          }
+        },
+        Err(err) => {
+          return Err(err);
+        },
+      }
+    }
 
     let (tx, rx) = mpsc::channel::<NResult<Event>>();
     match notify::recommended_watcher(tx) {
@@ -459,35 +527,31 @@ impl MechFileSystem {
           Ok(_) => {
             println!("{} Watching: {}", "[Watch]".truecolor(153,221,85), src_path.display());
             let srcs = self.sources.clone();
+            // ----------------- Watcher Thread -----------------
             let thread = thread::spawn(move || {
               for res in rx {
                 match res {
                   Ok(event) => {
                     match event.kind {
                       notify::EventKind::Modify(knd) => {
-                        for p in event.paths {
-                          match p.canonicalize() {
-                            Ok(event_path) => {
-                              match srcs.lock() {
-                                Ok(mut sources) => {
-                                  let file_id = hash_str(&event_path.display().to_string());
-                                  match sources.get_mut(&file_id) {
-                                    Some(code) => {
-                                      let new_source = read_mech_source_file(&event_path).unwrap();
-                                      *code = new_source;
-                                    }
-                                    None => {
-                                      let new_source = read_mech_source_file(&event_path).unwrap();
-                                      sources.insert(file_id, new_source);
-                                    },
-                                  }
-                                },
-                                Err(e) => {
-                                  println!("watch error: {:?}", e);
+                        for event_path in event.paths {
+                          match srcs.lock() {
+                            Ok(mut sources) => {
+                              let canonical_path = event_path.canonicalize().unwrap();
+                              let file_id = hash_str(&canonical_path.display().to_string());
+                              match sources.get_mut(&file_id) {
+                                Some(code) => {
+                                  let new_source = read_mech_source_file(&event_path).unwrap();
+                                  *code = new_source;
+                                }
+                                None => {
+
                                 },
                               }
-                            }
-                            Err(e) => println!("watch error: {:?}", e),
+                            },
+                            Err(e) => {
+                              println!("watch error: {:?}", e);
+                            },
                           }
                         }
                       }
@@ -500,6 +564,8 @@ impl MechFileSystem {
                 }
               }
             });
+            // ----------------- End Watcher Thread -----------------
+
             self.watchers.push(Box::new(watcher));
             self.threads.push(thread);
           },
@@ -517,7 +583,6 @@ impl MechFileSystem {
 
   pub fn read_mech_files(&mut self, mech_paths: &Vec<String>) -> MResult<Vec<(String,MechSourceCode)>> {
     let mut code: Vec<(String,MechSourceCode)> = Vec::new();
-  
     for path_str in mech_paths {
       let path = Path::new(path_str);
       // Compile a .mec file on the web
@@ -537,38 +602,13 @@ impl MechFileSystem {
           _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1242, kind: MechErrorKind::None});},
         }
       } else {
-        // Compile a directory of mech files
-        if path.is_dir() {
-          for entry in path.read_dir().expect("read_dir call failed") {
-            if let Ok(entry) = entry {
-              let path = entry.path().canonicalize().unwrap();
-              let mut mech_src = read_mech_source_file(&path)?;
-              match self.sources.lock() {
-                Ok(mut sources) => {
-                  sources.insert(hash_str(&path.display().to_string()), mech_src.clone());
-                },
-                Err(err) => {
-                  return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1244, kind: MechErrorKind::GenericError(format!("{:?}", err))});
-                },
-              }
-              // path buf to string
-              code.push((path.display().to_string(),mech_src));
-            }
-          }
-        } else if path.is_file() {
-          let mut mech_src = read_mech_source_file(&path)?;
-          match self.sources.lock() {
-            Ok(mut sources) => {
-              sources.insert(hash_str(&path.canonicalize().unwrap().display().to_string()), mech_src.clone());
-            },
-            Err(err) => {
-              return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1244, kind: MechErrorKind::GenericError(format!("{:?}", err))});
-            },
-          }
-          // path buf to string
-          code.push((path.display().to_string(),mech_src));
-        } else {
-          return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1243, kind: MechErrorKind::FileNotFound(path.to_str().unwrap().to_string())});
+        match read_mech_source_file(path) {
+          Ok(src) => {
+            code.push((path_str.to_owned(), src));
+          },
+          Err(err) => {
+            return Err(err);
+          },
         }
       };
     }
