@@ -41,9 +41,9 @@ pub async fn serve_mech(full_address: &str, mech_paths: &Vec<String>) {
       let url = path.as_str().strip_prefix("/").unwrap_or("");
       
       if let Some(addr) = remote {
-        println!("{} {} -- New connection from: {} -- /{}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), addr, url);
+        println!("{} {} -- New request: {} -- /{}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), addr, url);
       } else {
-        println!("{} {} -- New connection from unknown address -- /{}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), url);
+        println!("{} {} -- New request from unknown address -- /{}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), url);
       }
       match index_source.read() {
         Ok(sources) => {
