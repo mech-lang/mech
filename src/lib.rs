@@ -465,6 +465,18 @@ impl MechFileSystem {
     }
   }
 
+  pub fn set_stylesheet(&mut self, stylesheet: &str) -> MResult<()> {
+    match self.sources.write() {
+      Ok(mut sources) => {
+        sources.set_stylesheet(stylesheet);
+        Ok(())
+      },
+      Err(e) => {
+        Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Could not set stylesheet".to_string(), id: line!(), kind: MechErrorKind::None})
+      },
+    }
+  }
+
   pub fn sources(&self) -> Arc<RwLock<MechSources>> {
     self.sources.clone()
   }
@@ -560,7 +572,11 @@ impl MechFileSystem {
 
 pub struct MechSources {
   index: u64,
-  sources: HashMap<u64,MechSourceCode>,              // u64 is the hash of the relative source 
+  stylesheet: String,
+  sources: HashMap<u64,MechSourceCode>,             // u64 is the hash of the relative source 
+  trees: HashMap<u64,MechSourceCode>,               // stores the ast for the sources
+  errors: HashMap<u64,Vec<MechError>>,              // stores the errors for the sources
+  html: HashMap<u64,String>,                        // stores the html for the sources
   directory: HashMap<PathBuf, PathBuf>,             // relative source -> absolute source
   reverse_lookup: HashMap<PathBuf, PathBuf>,        // absolute source -> relative source
 }
@@ -570,7 +586,11 @@ impl MechSources {
   pub fn new() -> Self {
     MechSources {
       index: 0,
+      stylesheet: "".to_string(),
       sources: HashMap::new(),
+      trees: HashMap::new(),
+      html: HashMap::new(),
+      errors: HashMap::new(),
       directory: HashMap::new(),
       reverse_lookup: HashMap::new(),
     }
@@ -590,6 +610,10 @@ impl MechSources {
     }
   }
 
+  pub fn set_stylesheet(&mut self, stylesheet: &str) {
+    self.stylesheet = stylesheet.to_string();
+  }
+
   pub fn add_source(&mut self, src: &str) -> MResult<MechSourceCode> {
     let src_path = Path::new(src);
     let canonical_path = src_path.canonicalize().unwrap();
@@ -598,12 +622,33 @@ impl MechSources {
     let file_id = hash_str(&canonical_path.display().to_string());
     match read_mech_source_file(src_path) {
       Ok(src) => {
+        let tree = match src {
+          MechSourceCode::String(ref source) => match parser::parse(&source) {
+            Ok(tree) => tree,
+            Err(err) => {
+              todo!("Handle parse error");
+            }
+          },
+          _ => {
+            todo!("Handle other source formats?");
+          }
+        };
+
+        let mut formatter = Formatter::new();
+        let formatted_mech = formatter.format_html(&tree,self.stylesheet.clone());
+        let mech_html = Formatter::humanize_html(formatted_mech);
+
+        // Save all this so we don't have to do it later.
         self.sources.insert(file_id, src.clone());
+        self.trees.insert(file_id, MechSourceCode::Tree(tree));
+        self.html.insert(file_id, mech_html);
+
         if self.index == 0 {
           self.index = file_id;
         } else if file_id == hash_str("index.mec") || file_id == hash_str("index.html") || file_id == hash_str("index.md") {
           self.index = file_id;
         }
+
         return Ok(src); 
       },
       Err(err) => {
@@ -649,8 +694,60 @@ impl MechSources {
       },
     }
   }
-  
-  
+
+  pub fn get_tree(&self, src: &str) -> Option<MechSourceCode> {
+    if src == "" {
+      let file_id = self.index;
+      return match self.trees.get(&file_id) {
+        Some(code) => Some(code.clone()),
+        None => None,
+      };
+    }
+    let absolute_path = self.directory.get(Path::new(src));
+    match absolute_path {
+      Some(path) => {
+        let file_id = hash_str(&path.display().to_string());
+        match self.trees.get(&file_id) {
+          Some(code) => Some(code.clone()),
+          None => None,
+        }
+      },
+      None => {
+        let file_id = hash_str(&src);
+        match self.trees.get(&file_id) {
+          Some(code) => Some(code.clone()),
+          None => None,
+        }
+      },
+    }
+  }
+
+  pub fn get_html(&self, src: &str) -> Option<String> {
+    if src == "" {
+      let file_id = self.index;
+      return match self.html.get(&file_id) {
+        Some(code) => Some(code.clone()),
+        None => None,
+      };
+    }
+    let absolute_path = self.directory.get(Path::new(src));
+    match absolute_path {
+      Some(path) => {
+        let file_id = hash_str(&path.display().to_string());
+        match self.html.get(&file_id) {
+          Some(code) => Some(code.clone()),
+          None => None,
+        }
+      },
+      None => {
+        let file_id = hash_str(&src);
+        match self.html.get(&file_id) {
+          Some(code) => Some(code.clone()),
+          None => None,
+        }
+      },
+    }
+  }
 
   pub fn read_mech_files(&mut self, mech_paths: &Vec<String>) -> MResult<Vec<(String,MechSourceCode)>> {
     let mut code: Vec<(String,MechSourceCode)> = Vec::new();

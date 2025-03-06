@@ -16,11 +16,12 @@ pub async fn serve_mech(full_address: &str, mech_paths: &Vec<String>) {
   }).expect("Error setting Ctrl-C handler");
 
   let stylesheet: String = fs::read_to_string("include/style.css").unwrap();
-  let ssclone = stylesheet.clone();
   let mech_wasm: Vec<u8> = fs::read("src/wasm/pkg/mech_wasm_bg.wasm").unwrap();
   let mech_js: Vec<u8> = fs::read("src/wasm/pkg/mech_wasm.js").unwrap();
 
   let mut mechfs = MechFileSystem::new();
+  mechfs.set_stylesheet(&stylesheet);
+
   for path in mech_paths {
     mechfs.watch_source(path);
   }
@@ -40,50 +41,21 @@ pub async fn serve_mech(full_address: &str, mech_paths: &Vec<String>) {
       let url = path.as_str().strip_prefix("/").unwrap_or("");
       
       if let Some(addr) = remote {
-        println!("{} {} -- New connection from: {} -- {}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), addr, url);
+        println!("{} {} -- New connection from: {} -- /{}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), addr, url);
       } else {
-        println!("{} {} -- New connection from unknown address -- {}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), url);
+        println!("{} {} -- New connection from unknown address -- /{}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), url);
       }
       match index_source.read() {
         Ok(sources) => {
           // search for a document named index.mec, index.html. If not found return a default page.
-          let source = match sources.get_source(url) {
+          let mech_html = match sources.get_html(url) {
             Some(source) => source,
             None => {
-              let response_html = format!(
-                "Not Found: {}", url);
-              MechSourceCode::String(response_html)
+              // return a html page nothing the page is missing
+              let mech_html = format!("<html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The requested URL {} was not found on this server.</p></body></html>", url);
+              return warp::reply::with_header(mech_html, "content-type", "text/html");
             }
           };
-            let tree = match source {
-              MechSourceCode::String(source) => match parser::parse(&source) {
-                Ok(tree) => tree,
-                Err(_) => {
-                let response_html = format!(
-                  "<html>
-                    <head><title>Parsing Error</title></head>
-                    <body>
-                      <p>Failed to parse source</p>
-                    </body>
-                  </html>");
-                return warp::reply::with_header(response_html, "content-type", "text/html");
-                }
-              },
-              _ => {
-                let response_html = format!(
-                "<html>
-                  <head><title>Unsupported Format</title></head>
-                  <body>
-                    <p>Unsupported source format</p>
-                  </body>
-                </html>");
-                return warp::reply::with_header(response_html, "content-type", "text/html");
-              }
-            };
-
-          let mut formatter = Formatter::new();
-          let formatted_mech = formatter.format_html(&tree,stylesheet.clone());
-          let mech_html = Formatter::humanize_html(formatted_mech);
           return warp::reply::with_header(mech_html, "content-type", "text/html");
         },
         Err(e) => {
