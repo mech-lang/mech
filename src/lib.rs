@@ -465,27 +465,33 @@ impl MechFileSystem {
     }
   }
 
+  pub fn sources(&self) -> Arc<RwLock<MechSources>> {
+    self.sources.clone()
+  }
+
   pub fn watch_source(&mut self, src: &str) -> MResult<()> {
     let src_path = Path::new(src.clone());
 
     // Collect all the files that are in the watched directory
     let files = list_files(&src_path)?;
-    match self.sources.write() {
-      Ok(mut sources) => {
-        for f in files {
-          match sources.add_source(&f.display().to_string()) {
-            Ok(_) => {
-              println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
-            },
-            Err(e) => {
-              return Err(e);
-            },
+    {
+      match self.sources.write() {
+        Ok(mut sources) => {
+          for f in files {
+            match sources.add_source(&f.display().to_string()) {
+              Ok(_) => {
+                println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
+              },
+              Err(e) => {
+                return Err(e);
+              },
+            }
           }
         }
+        Err(e) => {
+          return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None});
+        },
       }
-      Err(e) => {
-        return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None});
-      },
     }
 
     let (tx, rx) = mpsc::channel::<NResult<Event>>();
@@ -506,14 +512,17 @@ impl MechFileSystem {
                           match srcs.write() {
                             Ok(mut sources) => {
                               let canonical_path = event_path.canonicalize().unwrap();
-                              match srcs.write() {
+                              println!("{:?}", canonical_path);
+                              match srcs.try_write() {
                                 Ok(mut srcs) => {
+                                  println!("Reloading {:?}", canonical_path.display());
                                   srcs.reload_source(&canonical_path);
                                 },
                                 Err(e) => {
-                                  println!("watch error: {:?}", e);
+                                  println!("error: {:?}", e);
                                 },
                               }
+                              println!("FOO");
                             },
                             Err(e) => {
                               println!("watch error: {:?}", e);
@@ -608,11 +617,22 @@ impl MechSources {
   }
 
   pub fn get_source(&self, src: &str) -> Option<MechSourceCode> {
-    let src_path = Path::new(src);
-    let file_id = hash_str(&src_path.display().to_string());
-    match self.sources.get(&file_id) {
-      Some(code) => Some(code.clone()),
-      None => None,
+    let absolute_path = self.directory.get(Path::new(src));
+    match absolute_path {
+      Some(path) => {
+        let file_id = hash_str(&path.display().to_string());
+        match self.sources.get(&file_id) {
+          Some(code) => Some(code.clone()),
+          None => None,
+        }
+      },
+      None => {
+        let file_id = hash_str(&src);
+        match self.sources.get(&file_id) {
+          Some(code) => Some(code.clone()),
+          None => None,
+        }
+      },
     }
   }
   

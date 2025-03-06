@@ -24,6 +24,8 @@ pub async fn serve_mech(full_address: &str, mech_paths: &Vec<String>) {
     mechfs.watch_source(path);
   }
 
+  let sources = mechfs.sources();
+
   // Serve the HTML file which includes the JS
   let mut headers = HeaderMap::new();
   headers.insert("content-type", HeaderValue::from_static("text/html"));
@@ -37,47 +39,44 @@ pub async fn serve_mech(full_address: &str, mech_paths: &Vec<String>) {
         } else {
           println!("{} {} - New connection from unknown address", server_badge(), date.format("%Y-%m-%d %H:%M:%S"));
         }
-
-        // search for a document named index.mec, index.html. If not found return a default page.
-        /*let source = if let Some(source) = mechfs.get_source("index.mec")  { source }
-                else if let Some(source) = mechfs.get_source("index.html") { source }
-                else if let Some(source) = mechfs.get_source("index.md")   { source }
-                else {
-          let response_html = format!(
-              "<html>
-                  <head><title>Custom Response</title></head>
-                  <body>
-                      <p>You should specify a .mec file or folder containing .html, and .mec, and .md files.</p>
-                  </body>
-              </html>"
-          );
-          return warp::reply::with_header(response_html, "content-type", "text/html");
-        };*/
-
         /*
-        let tree = if let MechSourceCode::String(source) = source {
-          match parser::parse(&source) {
-            Ok(tree) => tree,
-            _ => todo!(), 
+        match sources.read() {
+          Ok(sources) => {
+            // search for a document named index.mec, index.html. If not found return a default page.
+            let source = if let Some(source) = sources.get_source("index.mec")  { source }
+                    else if let Some(source) = sources.get_source("index.html") { source }
+                    else if let Some(source) = sources.get_source("index.md")   { source }
+                    else {
+                      let response_html = format!(
+                          "<html>
+                              <head><title>Custom Response</title></head>
+                              <body>
+                                  <p>You should specify a .mec file or folder containing .html, and .mec, and .md files.</p>
+                              </body>
+                          </html>"
+                      );
+                      return warp::reply::with_header(response_html, "content-type", "text/html");
+                    };
+            let tree = if let MechSourceCode::String(source) = source {
+              match parser::parse(&source) {
+                Ok(tree) => tree,
+                _ => todo!(), 
+              }
+            } else {
+              todo!()
+            };
+
+            let mut formatter = Formatter::new();
+            let formatted_mech = formatter.format_html(&tree,stylesheet.clone());
+            let mech_html = Formatter::humanize_html(formatted_mech);
+            return warp::reply::with_header(mech_html, "content-type", "text/html");
+          },
+          Err(e) => {
+            println!("{} Error writing sources: {}", server_badge(), e);
+            todo!();
           }
-        } else {
-          todo!()
-        };*/
-
-
-        //let mut formatter = Formatter::new();
-        //let formatted_mech = formatter.format_html(&tree,stylesheet.clone());
-        //let mech_html = Formatter::humanize_html(formatted_mech);
-        //mech_html.clone()
-        let response_html = format!(
-          "<html>
-              <head><title>Custom Response</title></head>
-              <body>
-                  <p>You should specify a .mec file or folder containing .html, and .mec, and .md files.</p>
-              </body>
-          </html>"
-      );
-      return warp::reply::with_header(response_html, "content-type", "text/html");
+        }*/
+        "hello".clone()
     })
     .with(warp::reply::with::headers(headers));
 
