@@ -624,6 +624,7 @@ impl MechSources {
 
   pub fn add_source(&mut self, src: &str) -> MResult<MechSourceCode> {
     let src_path = Path::new(src);
+    let id = hash_str(&src_path.display().to_string());
     let canonical_path = src_path.canonicalize().unwrap();
     self.directory.insert(src_path.to_path_buf(),canonical_path.clone());
     self.reverse_lookup.insert(canonical_path.clone(),src_path.to_path_buf());
@@ -653,7 +654,7 @@ impl MechSources {
 
         if self.index == 0 {
           self.index = file_id;
-        } else if file_id == hash_str("index.mec") || file_id == hash_str("index.html") || file_id == hash_str("index.md") {
+        } else if id == hash_str("index.mec") || id == hash_str("index.html") || id == hash_str("index.md") {
           self.index = file_id;
         }
 
