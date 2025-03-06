@@ -50,7 +50,7 @@ impl Formatter {
     let foot = format!(r#"
     <div id = "mech-root"></div>
     <script type="module">
-      import init, {{WasmMech}} from './pkg/mech_wasm.js';
+      import init, {{WasmMech}} from '/pkg/mech_wasm.js';
       let wasm_core;
       async function run() {{
         await init();
