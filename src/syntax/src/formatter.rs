@@ -56,7 +56,7 @@ impl Formatter {
         await init();
         wasm_core = new WasmMech();
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', "./code", true);
+        xhr.open('GET', "/code", true);
         xhr.onload = function (e) {{
           if (xhr.readyState === 4) {{
             if (xhr.status === 200) {{
