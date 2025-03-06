@@ -38,6 +38,7 @@ use std::sync::RwLock;
 use std::net::{SocketAddr, UdpSocket, TcpListener, TcpStream};
 use std::collections::HashMap;
 use crossbeam_channel::Sender;
+use crossbeam_channel::{unbounded, Receiver};
 use std::{fs,env};
 #[macro_use]
 extern crate lazy_static;
@@ -450,18 +451,48 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
 
 
 pub struct MechFileSystem {
-  sources: Arc<RwLock<MechSources>>,                     
+  sources: Arc<RwLock<MechSources>>,
+  tx: Sender<Event>,                     
   watchers: Vec<Box<dyn Watcher>>,                 
-  threads: Vec<JoinHandle<()>>,                     
+  reload_thread: JoinHandle<()>,                     
 }
 
 impl MechFileSystem {
 
   pub fn new() -> Self {
+    let sources = Arc::new(RwLock::new(MechSources::new()));
+    let (tx, rx) = unbounded::<Event>();
+    let worker_sources = sources.clone();
+    let reload_thread = thread::spawn(move || {
+      for res in rx {
+        match res.kind {
+          notify::EventKind::Modify(knd) => {
+            println!("{:?}", res);
+            for event_path in res.paths {
+              println!("AAAA {:?}", event_path);
+              match worker_sources.write() {
+                Ok(mut sources) => {
+                  let canonical_path = event_path.canonicalize().unwrap();
+                  println!("RELOADING {:?}", canonical_path);
+                  sources.reload_source(&canonical_path);
+                },
+                Err(e) => {
+                  println!("watch error: {:?}", e);
+                },
+              }
+            }
+          }
+          notify::EventKind::Create(_) => todo!(),
+          notify::EventKind::Remove(_) => todo!(),
+          _ => todo!(),
+        }
+      }
+    });
     MechFileSystem {
-      sources: Arc::new(RwLock::new(MechSources::new())),
+      sources,
+      tx,
+      reload_thread,
       watchers: Vec::new(),
-      threads: Vec::new(),
     }
   }
 
@@ -506,55 +537,32 @@ impl MechFileSystem {
       }
     }
 
-    let (tx, rx) = mpsc::channel::<NResult<Event>>();
+    let tx = self.tx.clone();
+
+    match notify::recommended_watcher(move |res| {
+      if let Ok(event) = res {
+        println!("SEND");
+        tx.send(event).unwrap();
+      }
+    }) 
+    {
+      Ok(mut watcher) => {
+        println!("WATCH");
+          watcher.watch(&src_path, RecursiveMode::Recursive).unwrap();
+          self.watchers.push(Box::new(watcher));
+      }
+      Err(err) => println!("[Watch] Error creating watcher: {}", err),
+    }
+
+
+    /*
     match notify::recommended_watcher(tx) {
       Ok(mut watcher) => {
         match watcher.watch(&src_path, RecursiveMode::Recursive) {
           Ok(_) => {
             println!("{} Watching: {}", "[Watch]".truecolor(153,221,85), src_path.display());
-            let srcs = self.sources.clone();
-            // ----------------- Watcher Thread -----------------
-            let thread = thread::spawn(move || {
-              for res in rx {
-                match res {
-                  Ok(event) => {
-                    match event.kind {
-                      notify::EventKind::Modify(knd) => {
-                        for event_path in event.paths {
-                          match srcs.write() {
-                            Ok(mut sources) => {
-                              let canonical_path = event_path.canonicalize().unwrap();
-                              println!("{:?}", canonical_path);
-                              match srcs.try_write() {
-                                Ok(mut srcs) => {
-                                  println!("Reloading {:?}", canonical_path.display());
-                                  srcs.reload_source(&canonical_path);
-                                },
-                                Err(e) => {
-                                  println!("error: {:?}", e);
-                                },
-                              }
-                              println!("FOO");
-                            },
-                            Err(e) => {
-                              println!("watch error: {:?}", e);
-                            },
-                          }
-                        }
-                      }
-                      notify::EventKind::Create(_) => todo!(),
-                      notify::EventKind::Remove(_) => todo!(),
-                      _ => todo!(),
-                    }
-                  }
-                  Err(e) => println!("watch error: {:?}", e),
-                }
-              }
-            });
-            // ----------------- End Watcher Thread -----------------
-
+            tx.send(event).unwrap();
             self.watchers.push(Box::new(watcher));
-            self.threads.push(thread);
           },
           Err(err) => {
             println!("{} Error watching: {}", "[Watch]".truecolor(153,221,85), err);
@@ -564,7 +572,7 @@ impl MechFileSystem {
       Err(err) => {
         println!("{} Error creating watcher: {}", "[Watch]".truecolor(153,221,85), err);
       },
-    }
+    }*/
     Ok(())
   }
 
@@ -597,17 +605,41 @@ impl MechSources {
   }
 
   pub fn reload_source(&mut self, path: &PathBuf) -> MResult<()> {
+
+    println!(" RELOADIN!!!!!");
     let file_id = hash_str(&path.display().to_string());
-    match self.sources.get_mut(&file_id) {
-      Some(code) => {
-        let new_source = read_mech_source_file(&path)?;
-        *code = new_source;
-        return Ok(());
-      }
-      None => {
-        return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None});
+    let new_source = read_mech_source_file(&path)?;
+
+    // Get the stale sources
+    let mut source = self.sources.get_mut(&file_id).unwrap();
+    let mut tree = self.trees.get_mut(&file_id).unwrap();
+    let mut html = self.html.get_mut(&file_id).unwrap();
+
+    
+    // update the tree
+    let new_tree = match source {
+      MechSourceCode::String(ref source) => match parser::parse(&source) {
+        Ok(tree) => tree,
+        Err(err) => {
+          todo!("Handle parse error");
+        }
       },
-    }
+      _ => {
+        todo!("Handle other source formats?");
+      }
+    };
+    
+    // update the html
+    let mut formatter = Formatter::new();
+    let formatted_mech = formatter.format_html(&new_tree,self.stylesheet.clone());
+    let mech_html = Formatter::humanize_html(formatted_mech);
+    
+    // update
+    *source = new_source;
+    *html = mech_html;
+    *tree = MechSourceCode::Tree(new_tree);
+    
+    Ok(())
   }
 
   pub fn set_stylesheet(&mut self, stylesheet: &str) {
