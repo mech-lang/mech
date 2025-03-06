@@ -559,6 +559,7 @@ impl MechFileSystem {
 }
 
 pub struct MechSources {
+  index: u64,
   sources: HashMap<u64,MechSourceCode>,              // u64 is the hash of the relative source 
   directory: HashMap<PathBuf, PathBuf>,             // relative source -> absolute source
   reverse_lookup: HashMap<PathBuf, PathBuf>,        // absolute source -> relative source
@@ -568,6 +569,7 @@ impl MechSources {
 
   pub fn new() -> Self {
     MechSources {
+      index: 0,
       sources: HashMap::new(),
       directory: HashMap::new(),
       reverse_lookup: HashMap::new(),
@@ -597,6 +599,11 @@ impl MechSources {
     match read_mech_source_file(src_path) {
       Ok(src) => {
         self.sources.insert(file_id, src.clone());
+        if self.index == 0 {
+          self.index = file_id;
+        } else if file_id == hash_str("index.mec") || file_id == hash_str("index.html") || file_id == hash_str("index.md") {
+          self.index = file_id;
+        }
         return Ok(src); 
       },
       Err(err) => {
@@ -617,6 +624,13 @@ impl MechSources {
   }
 
   pub fn get_source(&self, src: &str) -> Option<MechSourceCode> {
+    if src == "" {
+      let file_id = self.index;
+      return match self.sources.get(&file_id) {
+        Some(code) => Some(code.clone()),
+        None => None,
+      };
+    }
     let absolute_path = self.directory.get(Path::new(src));
     match absolute_path {
       Some(path) => {

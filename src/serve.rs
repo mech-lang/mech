@@ -16,6 +16,7 @@ pub async fn serve_mech(full_address: &str, mech_paths: &Vec<String>) {
   }).expect("Error setting Ctrl-C handler");
 
   let stylesheet: String = fs::read_to_string("include/style.css").unwrap();
+  let ssclone = stylesheet.clone();
   let mech_wasm: Vec<u8> = fs::read("src/wasm/pkg/mech_wasm_bg.wasm").unwrap();
   let mech_js: Vec<u8> = fs::read("src/wasm/pkg/mech_wasm.js").unwrap();
 
@@ -24,59 +25,72 @@ pub async fn serve_mech(full_address: &str, mech_paths: &Vec<String>) {
     mechfs.watch_source(path);
   }
 
-  let sources = mechfs.sources();
+  let index_source = mechfs.sources();
+  let any_source = mechfs.sources();
 
   // Serve the HTML file which includes the JS
   let mut headers = HeaderMap::new();
   headers.insert("content-type", HeaderValue::from_static("text/html"));
   let index = warp::get()
-    .and(warp::path::end())
     .and(warp::filters::addr::remote()) // Capture remote address
-    .map(move |remote: Option<SocketAddr>| {
-        let date = Local::now();
-        if let Some(addr) = remote {
-          println!("{} {} - New connection from: {}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), addr);
-        } else {
-          println!("{} {} - New connection from unknown address", server_badge(), date.format("%Y-%m-%d %H:%M:%S"));
-        }
-        /*
-        match sources.read() {
-          Ok(sources) => {
-            // search for a document named index.mec, index.html. If not found return a default page.
-            let source = if let Some(source) = sources.get_source("index.mec")  { source }
-                    else if let Some(source) = sources.get_source("index.html") { source }
-                    else if let Some(source) = sources.get_source("index.md")   { source }
-                    else {
-                      let response_html = format!(
-                          "<html>
-                              <head><title>Custom Response</title></head>
-                              <body>
-                                  <p>You should specify a .mec file or folder containing .html, and .mec, and .md files.</p>
-                              </body>
-                          </html>"
-                      );
-                      return warp::reply::with_header(response_html, "content-type", "text/html");
-                    };
-            let tree = if let MechSourceCode::String(source) = source {
-              match parser::parse(&source) {
+    .and(warp::path::full())            // Capture full path
+    .map(move |remote: Option<SocketAddr>, path: warp::path::FullPath| {  
+      let date = Local::now();
+      // strip leading "/" from path
+      let url = path.as_str().strip_prefix("/").unwrap_or("");
+      
+      if let Some(addr) = remote {
+        println!("{} {} -- New connection from: {} -- {}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), addr, url);
+      } else {
+        println!("{} {} -- New connection from unknown address -- {}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), url);
+      }
+      match index_source.read() {
+        Ok(sources) => {
+          // search for a document named index.mec, index.html. If not found return a default page.
+          let source = match sources.get_source(url) {
+            Some(source) => source,
+            None => {
+              let response_html = format!(
+                "Not Found: {}", url);
+              MechSourceCode::String(response_html)
+            }
+          };
+            let tree = match source {
+              MechSourceCode::String(source) => match parser::parse(&source) {
                 Ok(tree) => tree,
-                _ => todo!(), 
+                Err(_) => {
+                let response_html = format!(
+                  "<html>
+                    <head><title>Parsing Error</title></head>
+                    <body>
+                      <p>Failed to parse source</p>
+                    </body>
+                  </html>");
+                return warp::reply::with_header(response_html, "content-type", "text/html");
+                }
+              },
+              _ => {
+                let response_html = format!(
+                "<html>
+                  <head><title>Unsupported Format</title></head>
+                  <body>
+                    <p>Unsupported source format</p>
+                  </body>
+                </html>");
+                return warp::reply::with_header(response_html, "content-type", "text/html");
               }
-            } else {
-              todo!()
             };
 
-            let mut formatter = Formatter::new();
-            let formatted_mech = formatter.format_html(&tree,stylesheet.clone());
-            let mech_html = Formatter::humanize_html(formatted_mech);
-            return warp::reply::with_header(mech_html, "content-type", "text/html");
-          },
-          Err(e) => {
-            println!("{} Error writing sources: {}", server_badge(), e);
-            todo!();
-          }
-        }*/
-        "hello".clone()
+          let mut formatter = Formatter::new();
+          let formatted_mech = formatter.format_html(&tree,stylesheet.clone());
+          let mech_html = Formatter::humanize_html(formatted_mech);
+          return warp::reply::with_header(mech_html, "content-type", "text/html");
+        },
+        Err(e) => {
+          println!("{} Error writing sources: {}", server_badge(), e);
+          todo!();
+        }
+      }
     })
     .with(warp::reply::with::headers(headers));
 
@@ -89,26 +103,6 @@ pub async fn serve_mech(full_address: &str, mech_paths: &Vec<String>) {
               mech_js.clone()
             })
             .with(warp::reply::with::headers(headers));
-
-  // Serve a .mec or .html file
-  let not_found = warp::path::full()
-    .map(|path: warp::path::FullPath| {
-        let url = path.as_str();
-        /*for x in mechfs {
-
-        }*/
-        let response_html = format!(
-            "<html>
-                <head><title>Custom Response</title></head>
-                <body>
-                    <h1>Requested URL</h1>
-                    <p>You requested: <strong>{}</strong></p>
-                </body>
-            </html>", 
-            url
-        );
-        warp::reply::with_header(response_html, "content-type", "text/html")
-    });
 
   // Serve the wasm. This file is large so it's gzipped
   let mut headers = HeaderMap::new();
@@ -131,7 +125,7 @@ pub async fn serve_mech(full_address: &str, mech_paths: &Vec<String>) {
                 "hello"
               });    
 
-  let routes = index.or(pkg).or(nb).or(code).or(not_found);
+  let routes = pkg.or(nb).or(code).or(index);
 
   println!("{} Awaiting connections at {}", server_badge(), full_address);
   let socket_address: SocketAddr = full_address.parse().unwrap();
