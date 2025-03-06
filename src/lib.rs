@@ -467,13 +467,11 @@ impl MechFileSystem {
       for res in rx {
         match res.kind {
           notify::EventKind::Modify(knd) => {
-            println!("{:?}", res);
             for event_path in res.paths {
-              println!("AAAA {:?}", event_path);
               match worker_sources.write() {
                 Ok(mut sources) => {
                   let canonical_path = event_path.canonicalize().unwrap();
-                  println!("RELOADING {:?}", canonical_path);
+                  println!("{} Loaded: {}", "[Reload]".truecolor(153,221,85), canonical_path.display());
                   sources.reload_source(&canonical_path);
                 },
                 Err(e) => {
@@ -541,38 +539,17 @@ impl MechFileSystem {
 
     match notify::recommended_watcher(move |res| {
       if let Ok(event) = res {
-        println!("SEND");
         tx.send(event).unwrap();
       }
     }) 
     {
       Ok(mut watcher) => {
-        println!("WATCH");
-          watcher.watch(&src_path, RecursiveMode::Recursive).unwrap();
-          self.watchers.push(Box::new(watcher));
+        println!("{} Watching: {}", "[Watch]".truecolor(153,221,85), src_path.display());
+        watcher.watch(&src_path, RecursiveMode::Recursive).unwrap();
+        self.watchers.push(Box::new(watcher));
       }
       Err(err) => println!("[Watch] Error creating watcher: {}", err),
     }
-
-
-    /*
-    match notify::recommended_watcher(tx) {
-      Ok(mut watcher) => {
-        match watcher.watch(&src_path, RecursiveMode::Recursive) {
-          Ok(_) => {
-            println!("{} Watching: {}", "[Watch]".truecolor(153,221,85), src_path.display());
-            tx.send(event).unwrap();
-            self.watchers.push(Box::new(watcher));
-          },
-          Err(err) => {
-            println!("{} Error watching: {}", "[Watch]".truecolor(153,221,85), err);
-          },
-        }
-      },
-      Err(err) => {
-        println!("{} Error creating watcher: {}", "[Watch]".truecolor(153,221,85), err);
-      },
-    }*/
     Ok(())
   }
 
@@ -606,7 +583,6 @@ impl MechSources {
 
   pub fn reload_source(&mut self, path: &PathBuf) -> MResult<()> {
 
-    println!(" RELOADIN!!!!!");
     let file_id = hash_str(&path.display().to_string());
     let new_source = read_mech_source_file(&path)?;
 
