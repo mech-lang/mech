@@ -33,6 +33,7 @@ use std::io::prelude::*;
 use std::time::{Duration, Instant, SystemTime};
 use std::thread::{self, JoinHandle};
 use std::sync::Mutex;
+use std::sync::RwLock;
 //use websocket::sync::Server;
 use std::net::{SocketAddr, UdpSocket, TcpListener, TcpStream};
 use std::collections::HashMap;
@@ -366,6 +367,7 @@ struct IndexedString {
 }
 
 impl IndexedString {
+  
   fn new(input: &str) -> Self {
       let mut data = Vec::new();
       let mut index_map = Vec::new();
@@ -392,9 +394,11 @@ impl IndexedString {
           cols,
       }
   }
+
   fn to_string(&self) -> String {
     self.data.iter().collect()
   }
+
   fn get(&self, row: usize, col: usize) -> Option<char> {
     if row < self.rows {
       let rowz = &self.index_map[row];
@@ -425,18 +429,6 @@ impl IndexedString {
   }
 }
 
-pub struct MechFileSystem {
-  directory: HashMap<PathBuf, PathBuf>,             // relative source -> absolute source
-  reverse_lookup: HashMap<PathBuf, PathBuf>,        // absolute source -> relative source
-  sources: Arc<Mutex<HashMap<u64,MechSourceCode>>>, // u64 is the hash of the relative source 
-  watchers: Vec<Box<dyn Watcher>>,                  // handles to the watchers
-  threads: Vec<JoinHandle<()>>,                     // handles the the watcher handling threads
-}
-
-// Start by taking the paths, which are strings. The paths may be .mec or robot files, or they may be directories
-// For each directory and file, we will create a watcher. The watcher will watch for changes to the files and directories
-// When a change is detected, the file will be read and the source code will be updated in the sources hashmap
-
 fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
   if !path.is_dir() {
     // If it's a file, return a vector containing just this path
@@ -456,68 +448,44 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
   Ok(files)
 }
 
+
+pub struct MechFileSystem {
+  sources: Arc<RwLock<MechSources>>,                     
+  watchers: Vec<Box<dyn Watcher>>,                 
+  threads: Vec<JoinHandle<()>>,                     
+}
+
 impl MechFileSystem {
 
   pub fn new() -> Self {
     MechFileSystem {
-      directory: HashMap::new(),
-      reverse_lookup: HashMap::new(),
-      sources: Arc::new(Mutex::new(HashMap::new())),
+      sources: Arc::new(RwLock::new(MechSources::new())),
       watchers: Vec::new(),
       threads: Vec::new(),
     }
   }
 
-  pub fn contains(&self, src: &str) -> bool {
-    let src_path = Path::new(src);
-    if self.directory.contains_key(src_path) {
-      return true;
-    } else if self.reverse_lookup.contains_key(src_path) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  pub fn get_source(&self, src: &str) -> Option<MechSourceCode> {
-    let src_path = Path::new(src);
-    let sources = self.sources.lock().unwrap();
-    let file_id = hash_str(&src_path.display().to_string());
-    match sources.get(&file_id) {
-      Some(code) => Some(code.clone()),
-      None => None,
-    }
-  }
-  
   pub fn watch_source(&mut self, src: &str) -> MResult<()> {
     let src_path = Path::new(src.clone());
 
     // Collect all the files that are in the watched directory
     let files = list_files(&src_path)?;
-    for f in files {
-      let canonical_path = f.canonicalize().unwrap();
-      self.directory.insert(f.clone(),canonical_path.clone());
-      self.reverse_lookup.insert(canonical_path.clone(),f.clone());
-      match self.read_mech_files(&vec![f.display().to_string()]) {
-        Ok(code) => {
-          for (path, src) in code {
-            let path = Path::new(&path);
-            let canonical_path = path.canonicalize().unwrap().display().to_string();
-            let file_id = hash_str(&canonical_path);
-            match self.sources.lock() {
-              Ok(mut sources) => {
-                sources.insert(file_id, src);
-              },
-              Err(err) => {
-                return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1244, kind: MechErrorKind::GenericError(format!("{:?}", err))});
-              },
-            }
+    match self.sources.write() {
+      Ok(mut sources) => {
+        for f in files {
+          match sources.add_source(&f.display().to_string()) {
+            Ok(_) => {
+              println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
+            },
+            Err(e) => {
+              return Err(e);
+            },
           }
-        },
-        Err(err) => {
-          return Err(err);
-        },
+        }
       }
+      Err(e) => {
+        return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None});
+      },
     }
 
     let (tx, rx) = mpsc::channel::<NResult<Event>>();
@@ -535,17 +503,15 @@ impl MechFileSystem {
                     match event.kind {
                       notify::EventKind::Modify(knd) => {
                         for event_path in event.paths {
-                          match srcs.lock() {
+                          match srcs.write() {
                             Ok(mut sources) => {
                               let canonical_path = event_path.canonicalize().unwrap();
-                              let file_id = hash_str(&canonical_path.display().to_string());
-                              match sources.get_mut(&file_id) {
-                                Some(code) => {
-                                  let new_source = read_mech_source_file(&event_path).unwrap();
-                                  *code = new_source;
-                                }
-                                None => {
-
+                              match srcs.write() {
+                                Ok(mut srcs) => {
+                                  srcs.reload_source(&canonical_path);
+                                },
+                                Err(e) => {
+                                  println!("watch error: {:?}", e);
                                 },
                               }
                             },
@@ -581,6 +547,77 @@ impl MechFileSystem {
     Ok(())
   }
 
+}
+
+pub struct MechSources {
+  sources: HashMap<u64,MechSourceCode>,              // u64 is the hash of the relative source 
+  directory: HashMap<PathBuf, PathBuf>,             // relative source -> absolute source
+  reverse_lookup: HashMap<PathBuf, PathBuf>,        // absolute source -> relative source
+}
+
+impl MechSources {
+
+  pub fn new() -> Self {
+    MechSources {
+      sources: HashMap::new(),
+      directory: HashMap::new(),
+      reverse_lookup: HashMap::new(),
+    }
+  }
+
+  pub fn reload_source(&mut self, path: &PathBuf) -> MResult<()> {
+    let file_id = hash_str(&path.display().to_string());
+    match self.sources.get_mut(&file_id) {
+      Some(code) => {
+        let new_source = read_mech_source_file(&path)?;
+        *code = new_source;
+        return Ok(());
+      }
+      None => {
+        return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None});
+      },
+    }
+  }
+
+  pub fn add_source(&mut self, src: &str) -> MResult<MechSourceCode> {
+    let src_path = Path::new(src);
+    let canonical_path = src_path.canonicalize().unwrap();
+    self.directory.insert(src_path.to_path_buf(),canonical_path.clone());
+    self.reverse_lookup.insert(canonical_path.clone(),src_path.to_path_buf());
+    let file_id = hash_str(&canonical_path.display().to_string());
+    match read_mech_source_file(src_path) {
+      Ok(src) => {
+        self.sources.insert(file_id, src.clone());
+        return Ok(src); 
+      },
+      Err(err) => {
+        return Err(err);
+      },
+    }
+  }
+
+  pub fn contains(&self, src: &str) -> bool {
+    let src_path = Path::new(src);
+    if self.directory.contains_key(src_path) {
+      return true;
+    } else if self.reverse_lookup.contains_key(src_path) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  pub fn get_source(&self, src: &str) -> Option<MechSourceCode> {
+    let src_path = Path::new(src);
+    let file_id = hash_str(&src_path.display().to_string());
+    match self.sources.get(&file_id) {
+      Some(code) => Some(code.clone()),
+      None => None,
+    }
+  }
+  
+  
+
   pub fn read_mech_files(&mut self, mech_paths: &Vec<String>) -> MResult<Vec<(String,MechSourceCode)>> {
     let mut code: Vec<(String,MechSourceCode)> = Vec::new();
     for path_str in mech_paths {
@@ -596,10 +633,10 @@ impl MechFileSystem {
 
                 code.push((path_str.to_owned(), src));
               },
-              _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1241, kind: MechErrorKind::None});},
+              _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None});},
             }
           }
-          _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1242, kind: MechErrorKind::None});},
+          _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None});},
         }
       } else {
         match read_mech_source_file(path) {
@@ -642,18 +679,18 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
         Some("mec") | Some("🤖") => {
           match File::open(path) {
             Ok(mut file) => {
-              println!("{} {}", "[Loading]".truecolor(153,221,85), path.display());
+              //println!("{} {}", "[Loading]".truecolor(153,221,85), path.display());
               let mut buffer = String::new();
               file.read_to_string(&mut buffer);
               Ok(MechSourceCode::String(buffer))
             }
-            Err(err) => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1249, kind: MechErrorKind::None}),
+            Err(err) => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
           }
         }
         Some("csv") => {
           match File::open(path) {
             Ok(mut file) => {
-              println!("{} {}", "[Loading]".truecolor(153,221,85), path.display());
+              //println!("{} {}", "[Loading]".truecolor(153,221,85), path.display());
               let mut buffer = String::new();
               let mut rdr = csv::Reader::from_reader(file);
               for result in rdr.records() {
@@ -661,12 +698,12 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
               }
               todo!();
             }
-            Err(err) => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1249, kind: MechErrorKind::None}),
+            Err(err) => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
           }
         }
         _ => todo!(), // Do nothing if the extension is not recognized
       }
     },
-    err => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1250, kind: MechErrorKind::GenericError(format!("{:?}", err))}),
+    err => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::GenericError(format!("{:?}", err))}),
   }
 }
