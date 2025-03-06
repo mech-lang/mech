@@ -24,19 +24,6 @@ pub async fn serve_mech(full_address: &str, mech_paths: &Vec<String>) {
     mechfs.watch_source(path);
   }
 
-  /*
-  let code = match mechfs.read_mech_files(&mech_paths) {
-    Ok(code) => code,
-    Err(err) => {
-      println!("{:?}", err);
-      vec![]
-    }
-  };
-
-
-
-  let tree2 = tree.clone();*/
-
   // Serve the HTML file which includes the JS
   let mut headers = HeaderMap::new();
   headers.insert("content-type", HeaderValue::from_static("text/html"));
@@ -65,8 +52,9 @@ pub async fn serve_mech(full_address: &str, mech_paths: &Vec<String>) {
               </html>"
           );
           return warp::reply::with_header(response_html, "content-type", "text/html");
-        };
+        };*/
 
+        /*
         let tree = if let MechSourceCode::String(source) = source {
           match parser::parse(&source) {
             Ok(tree) => tree,

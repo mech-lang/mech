@@ -144,6 +144,7 @@ async fn main() -> Result<(), MechError> {
 
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_format_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let mut mechfs = MechFileSystem::new();
+    /*
     match mechfs.read_mech_files(&mech_paths) {
       Ok(code) => {
         for c in code {
@@ -223,7 +224,7 @@ async fn main() -> Result<(), MechError> {
         }
       }
       Err(err) => todo!(),
-    }
+    }*/
     return Ok(());
   }
 
@@ -235,7 +236,7 @@ async fn main() -> Result<(), MechError> {
 
   // Run the code
   let mut mechfs = MechFileSystem::new();
-  let code = match mechfs.read_mech_files(&paths) {
+  /*let code = match mechfs.read_mech_files(&paths) {
     Ok(code) => code,
     Err(err) => {
       // treat the input args as a code instead of paths to files
@@ -257,7 +258,7 @@ async fn main() -> Result<(), MechError> {
 
   if !repl_flag {
     return return_value;
-  }
+  }*/
 
   let mut repl = MechRepl::from(intrp);
   
