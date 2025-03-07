@@ -53,8 +53,17 @@ pub async fn serve_mech(full_address: &str, mech_paths: &Vec<String>) {
             let url = url.strip_prefix("code/").unwrap();
             match sources.get_tree(url) {
               Some(tree) => {
-                let encoded = compress_and_encode(&tree);
-                return warp::reply::with_header(encoded, "content-type", "text/plain");
+                let tree: Program = if let MechSourceCode::Tree(tree) = tree { tree } else { 
+                  todo!("{} Error getting tree from sources", server_badge());
+                };
+                match compress_and_encode(&tree) {
+                  Ok(encoded) => {
+                    return warp::reply::with_header(encoded, "content-type", "text/plain");
+                  },
+                  Err(e) => {
+                    todo!("{} Error compressing and encoding tree: {}", server_badge(), e);
+                  }
+                }
               }
               None => {
                 let mech_html = format!("<html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The requested URL {} was not found on this server.</p></body></html>", url);
