@@ -144,6 +144,66 @@ async fn main() -> Result<(), MechError> {
 
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_format_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let mut mechfs = MechFileSystem::new();
+
+    // open file or url. If it's a local file load it from disk, if it's a url fetch it from internet
+    let stylesheet = if stylesheet_url.starts_with("http") {
+      match reqwest::get(&stylesheet_url).await {
+        Ok(response) => match response.text().await {
+          Ok(text) => text,
+          Err(err) => {
+            println!("Error fetching stylesheet text: {:?}", err);
+            //return Err(MechError::new(MechErrorKind::NetworkError));
+            todo!()
+          }
+        },
+        Err(err) => {
+          println!("Error fetching stylesheet: {:?}", err);
+          //return Err(MechError::new(MechErrorKind::NetworkError));
+          todo!()
+        }
+      }
+    } else {
+      match fs::read_to_string(&stylesheet_url) {
+        Ok(content) => content,
+        Err(err) => {
+          println!("Error reading stylesheet file: {:?}", err);
+          //return Err(MechError::new(MechErrorKind::FileReadError));
+          todo!()
+        }
+      }
+    };
+
+    mechfs.set_stylesheet(&stylesheet);
+
+    for path in mech_paths {
+      mechfs.watch_source(&path)?;
+    }
+
+    let sources = mechfs.sources();
+    let read_sources = sources.read().unwrap();
+
+
+    for (fid, mech_html) in read_sources.html_iter() {
+      // save to a html file with the same name as the input mec file in the same directory
+      let filename = read_sources.get_path_from_id(*fid).unwrap();
+      match fs::File::create(format!("{}.html",filename.display())) {
+        Ok(mut file) => {
+          match file.write_all(mech_html.as_bytes()) {
+            Ok(_) => {
+              println!("{} File saved as {}.html", "[Saved]".truecolor(153,221,85), filename.display());
+            }
+            Err(err) => {
+              println!("Error writing to file: {:?}", err);
+            }
+          }
+        },
+        Err(err) => {
+          println!("Error writing to file: {:?}", err);
+        }
+      }
+    }
+
+
     /*
     match mechfs.read_mech_files(&mech_paths) {
       Ok(code) => {
@@ -158,33 +218,7 @@ async fn main() -> Result<(), MechError> {
                 Ok(tree) => { 
                   let mut formatter = Formatter::new();
                   if html_flag {
-                    // open file or url. If it's a local file load it from disk, if it's a url fetch it from internet
-                    let stylesheet = if stylesheet_url.starts_with("http") {
-                      match reqwest::get(&stylesheet_url).await {
-                        Ok(response) => match response.text().await {
-                          Ok(text) => text,
-                          Err(err) => {
-                            println!("Error fetching stylesheet text: {:?}", err);
-                            //return Err(MechError::new(MechErrorKind::NetworkError));
-                            todo!()
-                          }
-                        },
-                        Err(err) => {
-                          println!("Error fetching stylesheet: {:?}", err);
-                          //return Err(MechError::new(MechErrorKind::NetworkError));
-                          todo!()
-                        }
-                      }
-                    } else {
-                      match fs::read_to_string(&stylesheet_url) {
-                        Ok(content) => content,
-                        Err(err) => {
-                          println!("Error reading stylesheet file: {:?}", err);
-                          //return Err(MechError::new(MechErrorKind::FileReadError));
-                          todo!()
-                        }
-                      }
-                    };
+
 
 
                     let formatted_mech = formatter.format_html(&tree,stylesheet.clone());
@@ -236,6 +270,10 @@ async fn main() -> Result<(), MechError> {
 
   // Run the code
   let mut mechfs = MechFileSystem::new();
+  for p in paths {
+    mechfs.watch_source(&p)?;
+  }
+
   /*let code = match mechfs.read_mech_files(&paths) {
     Ok(code) => code,
     Err(err) => {
@@ -243,8 +281,9 @@ async fn main() -> Result<(), MechError> {
       let code = paths.join(" ");
       vec![("shell".to_string(),MechSourceCode::String(code))]
     }
-  };
-  let result = run_mech_code(&mut intrp, &code, tree_flag, debug_flag, time_flag); 
+  };*/
+
+  let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag); 
   
   let return_value = match &result {
     Ok(ref r) => {
@@ -258,7 +297,7 @@ async fn main() -> Result<(), MechError> {
 
   if !repl_flag {
     return return_value;
-  }*/
+  }
 
   let mut repl = MechRepl::from(intrp);
   

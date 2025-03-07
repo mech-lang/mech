@@ -4,10 +4,12 @@ use mech_core::*;
 use std::time::Instant;
 use crate::*;
 
-pub fn run_mech_code(intrp: &mut Interpreter, code: &Vec<(String,MechSourceCode)>, tree_flag: bool, debug_flag: bool, time_flag: bool) -> MResult<Value> {
-  for c in code {
-    match c {
-      (file,MechSourceCode::String(s)) => {
+pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: bool, debug_flag: bool, time_flag: bool) -> MResult<Value> {
+  let sources = code.sources();
+  let sources = sources.read().unwrap();
+  for (file,source) in sources.sources.iter() {
+    match source {
+      MechSourceCode::String(s) => {
         let now = Instant::now();
         let parse_result = parser::parse(&s.trim());
         let elapsed_time = now.elapsed();

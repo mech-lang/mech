@@ -480,8 +480,8 @@ impl MechFileSystem {
               }
             }
           }
-          notify::EventKind::Create(_) => todo!(),
-          notify::EventKind::Remove(_) => todo!(),
+          notify::EventKind::Create(_) => (),
+          notify::EventKind::Remove(_) => (),
           _ => todo!(),
         }
       }
@@ -564,6 +564,7 @@ pub struct MechSources {
   html: HashMap<u64,String>,                        // stores the html for the sources
   directory: HashMap<PathBuf, PathBuf>,             // relative source -> absolute source
   reverse_lookup: HashMap<PathBuf, PathBuf>,        // absolute source -> relative source
+  id_map: HashMap<u64,PathBuf>,                     // hash -> path
 }
 
 impl MechSources {
@@ -578,9 +579,26 @@ impl MechSources {
       errors: HashMap::new(),
       directory: HashMap::new(),
       reverse_lookup: HashMap::new(),
+      id_map: HashMap::new(),
     }
   }
 
+  pub fn html_iter(&self) -> impl Iterator<Item = (&u64,&String)> {
+    self.html.iter()
+  }
+  
+  pub fn sources_iter(&self) -> impl Iterator<Item = &MechSourceCode> {
+    self.sources.values()
+  }
+
+  pub fn trees_iter(&self) -> impl Iterator<Item = &MechSourceCode> {
+    self.trees.values()
+  }
+
+  pub fn get_path_from_id(&self, id: u64) -> Option<&PathBuf> {
+    self.id_map.get(&id)
+  }
+  
   pub fn reload_source(&mut self, path: &PathBuf) -> MResult<()> {
 
     let file_id = hash_str(&path.display().to_string());
@@ -651,6 +669,8 @@ impl MechSources {
         self.sources.insert(file_id, src.clone());
         self.trees.insert(file_id, MechSourceCode::Tree(tree));
         self.html.insert(file_id, mech_html);
+        self.id_map.insert(file_id,src_path.to_path_buf());
+
 
         if self.index == 0 {
           self.index = file_id;
@@ -841,7 +861,9 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
             Err(err) => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
           }
         }
-        _ => todo!(), // Do nothing if the extension is not recognized
+        x => {
+          Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Unknown file extension: {:?}", x), id: line!(), kind: MechErrorKind::None})
+        },
       }
     },
     err => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::GenericError(format!("{:?}", err))}),
