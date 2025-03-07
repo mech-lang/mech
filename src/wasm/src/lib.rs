@@ -61,15 +61,22 @@ impl WasmMech {
   #[wasm_bindgen]
   pub fn run_program(&mut self, src: &str) { 
     // Decompress the string into a Program
-    let tree: Program = decode_and_decompress(&src);
-    match self.interpreter.interpret(&tree) {
-      Ok(result) => {
-        log!("{}", result.pretty_print());
+    match decode_and_decompress(&src) {
+      Ok(tree) => {
+        match self.interpreter.interpret(&tree) {
+          Ok(result) => {
+            log!("{}", result.pretty_print());
+          },
+          Err(err) => {
+            log!("{:?}", err);
+          }
+        }
       },
       Err(err) => {
         log!("{:?}", err);
       }
     }
+  
   }
 
 }
