@@ -58,7 +58,7 @@ VectorD = []
 MatrixD = []
 
 [dependencies]
-mech-core = "0.2.33"
+mech-core = "0.2.34"
 
 libm = "0.2.11"
 simba = "0.9.0"
