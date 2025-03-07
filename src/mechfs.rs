@@ -1,4 +1,5 @@
 use crate::*;
+use std::ffi::OsStr;
 
 fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
     if !path.is_dir() {
@@ -98,10 +99,15 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
   
       // Collect all the files that are in the watched directory
       let files = list_files(&src_path)?;
+
       {
         match self.sources.write() {
           Ok(mut sources) => {
             for f in files {
+              // if the file extension is not .mec, or .🤖, continue
+              if f.extension() != Some(OsStr::new("mec")) && f.extension() != Some(OsStr::new("🤖")) {
+                continue;
+              }
               match sources.add_source(&f.display().to_string()) {
                 Ok(_) => {
                   println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
