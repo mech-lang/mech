@@ -26,8 +26,7 @@ pub async fn serve_mech(full_address: &str, mech_paths: &Vec<String>) {
     mechfs.watch_source(path);
   }
 
-  let index_source = mechfs.sources();
-  let any_source = mechfs.sources();
+  let code_source = mechfs.sources();
 
   // Serve the HTML file which includes the JS
   let mut headers = HeaderMap::new();
@@ -45,8 +44,25 @@ pub async fn serve_mech(full_address: &str, mech_paths: &Vec<String>) {
       } else {
         println!("{} {} -- New request from unknown address -- /{}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), url);
       }
-      match index_source.read() {
+
+      match code_source.read() {
         Ok(sources) => {
+
+          // check to see if teh first thing is code i.e. code/index.mec should serve the compressed and encoded tree rather than the html
+          if url.starts_with("code/") {
+            let url = url.strip_prefix("code/").unwrap();
+            match sources.get_tree(url) {
+              Some(tree) => {
+                let encoded = compress_and_encode(&tree);
+                return warp::reply::with_header(encoded, "content-type", "text/plain");
+              }
+              None => {
+                let mech_html = format!("<html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The requested URL {} was not found on this server.</p></body></html>", url);
+                return warp::reply::with_header(mech_html, "content-type", "text/html");
+              }
+            }
+          }
+
           // search for a document named index.mec, index.html. If not found return a default page.
           let mech_html = match sources.get_html(url) {
             Some(source) => source,
@@ -85,19 +101,9 @@ pub async fn serve_mech(full_address: &str, mech_paths: &Vec<String>) {
               mech_wasm.to_vec()
             })
             //.with(warp::compression::gzip())
-            .with(warp::reply::with::headers(headers));
-  
-  // Serve the code. It's compressed and encoded to Base64.
-  // We'll decode and decompress on the other side to a source tree.
-  let code = warp::path("code")
-              .and(warp::addr::remote())
-              .map(move |addr: Option<SocketAddr>| {
-                //let encoded = compress_and_encode(&tree2);
-                //encoded
-                "hello"
-              });    
+            .with(warp::reply::with::headers(headers)); 
 
-  let routes = pkg.or(nb).or(code).or(index);
+  let routes = pkg.or(nb).or(index);
 
   println!("{} Awaiting connections at {}", server_badge(), full_address);
   let socket_address: SocketAddr = full_address.parse().unwrap();

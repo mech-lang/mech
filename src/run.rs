@@ -7,7 +7,7 @@ use crate::*;
 pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: bool, debug_flag: bool, time_flag: bool) -> MResult<Value> {
   let sources = code.sources();
   let sources = sources.read().unwrap();
-  for (file,source) in sources.sources.iter() {
+  for (file,source) in sources.sources_iter() {
     match source {
       MechSourceCode::String(s) => {
         let now = Instant::now();
