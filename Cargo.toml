@@ -1,6 +1,6 @@
 [package]
 name = "mech-logic"
-version = "0.2.33"
+version = "0.2.34"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Logic library for the Mech language"
 documentation = "http://docs.mech-lang.org"
