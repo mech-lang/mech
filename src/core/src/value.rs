@@ -2,6 +2,7 @@ use crate::matrix::Matrix;
 use crate::*;
 use crate::nodes::Matrix as Mat;
 use crate::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*, humanize};
+use std::collections::HashMap;
 
 use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix3x2, Matrix6, Matrix2};
 use std::hash::{Hash, Hasher};
@@ -52,6 +53,41 @@ pub enum ValueKind {
   String, Bool, Matrix(Box<ValueKind>,Vec<usize>), Enum(u64), Set(Box<ValueKind>, usize), 
   Map(Box<ValueKind>,Box<ValueKind>), Record(Vec<ValueKind>), Table(Vec<ValueKind>, usize), Tuple(Vec<ValueKind>), Id, Index, Reference(Box<ValueKind>), Atom(u64), Empty, Any
 }
+
+impl std::fmt::Display for ValueKind {
+  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    match self {
+      ValueKind::U8 => write!(f, "u8"),
+      ValueKind::U16 => write!(f, "u16"),
+      ValueKind::U32 => write!(f, "u32"),
+      ValueKind::U64 => write!(f, "u64"),
+      ValueKind::U128 => write!(f, "u128"),
+      ValueKind::I8 => write!(f, "i8"),
+      ValueKind::I16 => write!(f, "i16"),
+      ValueKind::I32 => write!(f, "i32"),
+      ValueKind::I64 => write!(f, "i64"),
+      ValueKind::I128 => write!(f, "i128"),
+      ValueKind::F32 => write!(f, "f32"),
+      ValueKind::F64 => write!(f, "f64"),
+      ValueKind::String => write!(f, "string"),
+      ValueKind::Bool => write!(f, "bool"),
+      ValueKind::Matrix(x,s) => write!(f, "[{:?}]:{:?},{:?}",x,s[0],s[1]),
+      ValueKind::Enum(x) => write!(f, "{:?}",x),
+      ValueKind::Set(x,el) => write!(f, "{{{:?}}}:{}", x, el),
+      ValueKind::Map(x,y) => write!(f, "{{{:?}:{:?}}}",x,y),
+      ValueKind::Record(x) => write!(f, "{{{}}}",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
+      ValueKind::Table(x,y) => write!(f, "{{{}}}:{}",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(","),y),
+      ValueKind::Tuple(x) => write!(f, "({})",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
+      ValueKind::Id => write!(f, "id"),
+      ValueKind::Index => write!(f, "ix"),
+      ValueKind::Reference(x) => write!(f, "{:?}",x),
+      ValueKind::Atom(x) => write!(f, "`{:?}",x),
+      ValueKind::Empty => write!(f, "_"),
+      ValueKind::Any => write!(f, "_"),
+    }
+  }
+}
+
 
 impl fmt::Debug for ValueKind {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -751,23 +787,41 @@ impl Hash for MechMap {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MechTable {
-  pub rows: usize,
-  pub cols: usize,
-  pub data: IndexMap<Value,(ValueKind,Matrix<Value>)>,
+  rows: usize,
+  cols: usize,
+  data: IndexMap<Value,(ValueKind,Matrix<Value>)>,
+  col_names: HashMap<Value,String>,
 }
 
 impl MechTable {
 
-  fn kind(&self) -> ValueKind {
+  pub fn new(rows: usize, cols: usize, data: IndexMap<Value,(ValueKind,Matrix<Value>)>, col_names: HashMap<Value,String>) -> MechTable {
+    MechTable{rows, cols, data, col_names}
+  }
+
+  pub fn kind(&self) -> ValueKind {
     ValueKind::Table(
       self.data.iter().map(|(_,v)| v.0.clone()).collect(),
       self.rows)
   }
 
+  pub fn rows(&self) -> usize {
+    self.rows
+  }
+
+  pub fn cols(&self) -> usize {
+    self.cols
+  }
+
+  pub fn get(&self, key: &Value) -> Option<&(ValueKind,Matrix<Value>)> {
+    self.data.get(key)
+  }
+
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     for (k,(knd,val)) in &self.data {
-      let mut col_string = vec![k.pretty_print(), val.pretty_print()];
+      let name = self.col_names.get(k).unwrap();
+      let mut col_string = vec![format!("{}<{}>", name.to_string(), knd), val.pretty_print()];
       builder.push_column(col_string);
     }
     let mut table = builder.build();
@@ -800,6 +854,10 @@ pub struct MechRecord {
 }
 
 impl MechRecord {
+
+  pub fn get(&self, key: &u64) -> Option<&Value> {
+    self.data.get(key)
+  }
 
   pub fn from_vec(vec: Vec<(u64,Value)>) -> MechRecord {
     let mut data = IndexMap::new();

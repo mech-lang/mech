@@ -33,10 +33,12 @@ use std::io::prelude::*;
 use std::time::{Duration, Instant, SystemTime};
 use std::thread::{self, JoinHandle};
 use std::sync::Mutex;
+use std::sync::RwLock;
 //use websocket::sync::Server;
 use std::net::{SocketAddr, UdpSocket, TcpListener, TcpStream};
 use std::collections::HashMap;
 use crossbeam_channel::Sender;
+use crossbeam_channel::{unbounded, Receiver};
 use std::{fs,env};
 #[macro_use]
 extern crate lazy_static;
@@ -45,6 +47,10 @@ extern crate lazy_static;
 use web_sys::{Crypto, Window, console};
 use rand::rngs::OsRng;
 use rand::RngCore;
+use notify::{recommended_watcher, Event, RecursiveMode, Result as NResult, Watcher};
+use std::sync::mpsc;
+use std::sync::Arc;
+use std::collections::HashSet;
 
 lazy_static! {
   static ref CORE_MAP: Mutex<HashMap<SocketAddr, (String, SystemTime)>> = Mutex::new(HashMap::new());
@@ -53,10 +59,12 @@ lazy_static! {
 mod repl;
 mod serve;
 mod run;
+mod mechfs;
 
 pub use self::repl::*;
 pub use self::serve::*;
 pub use self::run::*;
+pub use self::mechfs::*;
 
 pub use mech_core::*;
 pub use mech_syntax::*;
@@ -201,15 +209,15 @@ pub fn pretty_print_tree(tree: &Program) -> String {
 pub fn whos(intrp: &Interpreter) -> String {
   let mut builder = Builder::default();
   builder.push_record(vec!["Name","Size","Bytes","Kind"]);
-  let symbol_table = intrp.symbols.borrow();
-  for (id,name) in &symbol_table.dictionary {
-    let value = symbol_table.get(*id).unwrap();
+  let dictionary = intrp.dictionary();
+  for (id,name) in dictionary.borrow().iter() {
+    let value = intrp.get_symbol(*id).unwrap();
     let value_brrw = value.borrow();
     builder.push_record(vec![
       name.clone(),
       format!("{:?}",value_brrw.shape()),
       format!("{:?}",value_brrw.size_of()),
-      format!("{:?}",value_brrw.kind())
+      format!("{:?}",value_brrw.kind()),
     ]);
   }
 
@@ -221,9 +229,9 @@ pub fn whos(intrp: &Interpreter) -> String {
 
 pub fn pretty_print_symbols(intrp: &Interpreter) -> String {
   let mut builder = Builder::default();
-  let symbol_table = intrp.symbols.borrow();
+  let symbol_table = intrp.pretty_print_symbols();
   builder.push_record(vec![
-    format!("{}",symbol_table.pretty_print()),
+    format!("{}",symbol_table),
   ]);
 
   let mut table = builder.build();
@@ -242,11 +250,12 @@ pub fn pretty_print_plan(intrp: &Interpreter) -> String {
   let mut builder = Builder::default();
 
   let mut row = vec![];
-  let plan = intrp.plan.borrow();
-  if plan.is_empty() {
+  let plan = intrp.plan();
+  let plan_brrw = plan.borrow();
+  if plan_brrw.is_empty() {
     builder.push_record(vec!["".to_string()]);
   } else {
-    for (ix, fxn) in plan.iter().enumerate() {
+    for (ix, fxn) in plan_brrw.iter().enumerate() {
       let plan_str = format!("{}. {}\n", ix + 1, fxn.to_string());
       row.push(plan_str.clone());
       if row.len() == 4 {
@@ -361,6 +370,7 @@ struct IndexedString {
 }
 
 impl IndexedString {
+  
   fn new(input: &str) -> Self {
       let mut data = Vec::new();
       let mut index_map = Vec::new();
@@ -387,9 +397,11 @@ impl IndexedString {
           cols,
       }
   }
+
   fn to_string(&self) -> String {
     self.data.iter().collect()
   }
+
   fn get(&self, row: usize, col: usize) -> Option<char> {
     if row < self.rows {
       let rowz = &self.index_map[row];
@@ -418,102 +430,4 @@ impl IndexedString {
       Err("Row index out of bounds".to_string())
     }
   }
-}
-
-pub fn read_mech_files(mech_paths: &Vec<String>) -> MResult<Vec<(String,MechSourceCode)>> {
-  let mut code: Vec<(String,MechSourceCode)> = Vec::new();
-
-  let read_file_to_code = |path: &Path| -> Result<Vec<(String,MechSourceCode)>, MechError> {
-    let mut code: Vec<(String,MechSourceCode)> = Vec::new();
-    match (path.to_str(), path.extension())  {
-      (Some(name), Some(extension)) => {
-        match extension.to_str() {
-          /*Some("blx") => {
-            match File::open(name) {
-              Ok(file) => {
-                println!("{} {}", "[Loading]".truecolor(153,221,85), name);
-                let mut reader = BufReader::new(file);
-                let mech_code: Result<MechSourceCode, bincode::Error> = bincode::deserialize_from(&mut reader);
-                match mech_code {
-                  Ok(c) => {code.push((name.to_string(),c));},
-                  Err(err) => {
-                    return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1247, kind: MechErrorKind::GenericError(format!("{:?}", err))});
-                  },
-                }
-              }
-              Err(err) => {
-                return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1248, kind: MechErrorKind::None});
-              },
-            };
-          }*/
-          Some("mec") | Some("🤖") => {
-            match File::open(name) {
-              Ok(mut file) => {
-                println!("{} {}", "[Loading]".truecolor(153,221,85), name);
-                let mut buffer = String::new();
-                file.read_to_string(&mut buffer);
-                code.push((name.to_string(),MechSourceCode::String(buffer)));
-              }
-              Err(err) => {
-                return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1249, kind: MechErrorKind::None});
-              },
-            };
-          }
-          Some("csv") => {
-            match File::open(name) {
-              Ok(mut file) => {
-                println!("{} {}", "[Loading]".truecolor(153,221,85), name);
-                let mut buffer = String::new();
-                let mut rdr = csv::Reader::from_reader(file);
-                for result in rdr.records() {
-                  println!("{:?}", result);
-                }
-              }
-              Err(err) => {
-                return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1249, kind: MechErrorKind::None});
-              },
-            };
-          }
-          _ => (), // Do nothing if the extension is not recognized
-        }
-      },
-      err => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1250, kind: MechErrorKind::GenericError(format!("{:?}", err))});},
-    }
-    Ok(code)
-  };
-
-  for path_str in mech_paths {
-    let path = Path::new(path_str);
-    // Compile a .mec file on the web
-    if path_str.starts_with("https") || path_str.starts_with("http") {
-      println!("{} {}", "[Downloading]".truecolor(153,221,85), path.display());
-      match reqwest::blocking::get(path_str) {
-        Ok(response) => {
-          match response.text() {
-            Ok(text) => code.push((path_str.to_owned(),MechSourceCode::String(text))),
-            _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1241, kind: MechErrorKind::None});},
-          }
-        }
-        _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1242, kind: MechErrorKind::None});},
-      }
-    } else {
-      // Compile a directory of mech files
-      if path.is_dir() {
-        for entry in path.read_dir().expect("read_dir call failed") {
-          if let Ok(entry) = entry {
-            let path = entry.path();
-            let mut new_code = read_file_to_code(&path)?;
-            code.append(&mut new_code);
-          }
-        }
-      } else if path.is_file() {
-        // Compile a single file
-        let mut new_code = read_file_to_code(&path)?;
-        code.append(&mut new_code);
-      } else {
-        return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1243, kind: MechErrorKind::FileNotFound(path.to_str().unwrap().to_string())});
-      }
-    };
-  }
-  Ok(code)
 }

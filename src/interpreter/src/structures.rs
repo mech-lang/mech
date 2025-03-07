@@ -1,4 +1,5 @@
 use crate::*;
+use std::collections::HashMap;
 
 // Structures
 // ----------------------------------------------------------------------------
@@ -115,12 +116,12 @@ macro_rules! handle_value_kind {
         None => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::WrongTableColumnKind});}
       }
     }
-    $data_map.insert($field_label.clone(), ($value_kind, Value::to_matrix(vals.clone(), vals.len(), 1)));
+    $data_map.insert($field_label.clone(), ($value_kind.clone(), Value::to_matrix(vals.clone(), vals.len(), 1)));
   }};}
 
 pub fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> { 
   let mut rows = vec![];
-  let (ids,col_kinds) = table_header(&t.header, functions.clone())?;
+  let headings = table_header(&t.header, functions.clone())?;
   let mut cols = 0;
   // Interpret the rows
   for row in &t.rows {
@@ -141,45 +142,44 @@ pub fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: Function
   }
   // Build the table
   let mut data_map = IndexMap::new();
-  for (field_label,(column,knd)) in ids.iter().zip(data.iter().zip(col_kinds)) {
+  for ((id,knd,name),(column)) in headings.iter().zip(data.iter()) {
     let val = Value::to_matrix(column.clone(),column.len(),1);
     match knd {
-      ValueKind::I8   => handle_value_kind!(knd, val, field_label, data_map, as_i8),
-      ValueKind::I16  => handle_value_kind!(knd, val, field_label, data_map, as_i16),
-      ValueKind::I32  => handle_value_kind!(knd, val, field_label, data_map, as_i32),
-      ValueKind::I64  => handle_value_kind!(knd, val, field_label, data_map, as_i64),
-      ValueKind::I128 => handle_value_kind!(knd, val, field_label, data_map, as_i128),      
-      ValueKind::U8   => handle_value_kind!(knd, val, field_label, data_map, as_u8),
-      ValueKind::U16  => handle_value_kind!(knd, val, field_label, data_map, as_u16),
-      ValueKind::U32  => handle_value_kind!(knd, val, field_label, data_map, as_u32),
-      ValueKind::U64  => handle_value_kind!(knd, val, field_label, data_map, as_u64),
-      ValueKind::U128 => handle_value_kind!(knd, val, field_label, data_map, as_u128),
-      ValueKind::F32  => handle_value_kind!(knd, val, field_label, data_map, as_f32),
-      ValueKind::F64  => handle_value_kind!(knd, val, field_label, data_map, as_f64),
+      ValueKind::I8   => handle_value_kind!(knd, val, id, data_map, as_i8),
+      ValueKind::I16  => handle_value_kind!(knd, val, id, data_map, as_i16),
+      ValueKind::I32  => handle_value_kind!(knd, val, id, data_map, as_i32),
+      ValueKind::I64  => handle_value_kind!(knd, val, id, data_map, as_i64),
+      ValueKind::I128 => handle_value_kind!(knd, val, id, data_map, as_i128),      
+      ValueKind::U8   => handle_value_kind!(knd, val, id, data_map, as_u8),
+      ValueKind::U16  => handle_value_kind!(knd, val, id, data_map, as_u16),
+      ValueKind::U32  => handle_value_kind!(knd, val, id, data_map, as_u32),
+      ValueKind::U64  => handle_value_kind!(knd, val, id, data_map, as_u64),
+      ValueKind::U128 => handle_value_kind!(knd, val, id, data_map, as_u128),
+      ValueKind::F32  => handle_value_kind!(knd, val, id, data_map, as_f32),
+      ValueKind::F64  => handle_value_kind!(knd, val, id, data_map, as_f64),
       ValueKind::Bool => {
         let vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_bool().unwrap().to_value()).collect::<Vec<Value>>();
-        data_map.insert(field_label.clone(),(knd,Value::to_matrix(vals.clone(),vals.len(),1)));
+        data_map.insert(id.clone(),(knd.clone(),Value::to_matrix(vals.clone(),vals.len(),1)));
       },
       _ => todo!(),
     };
   }
-  let tbl = MechTable{rows: t.rows.len(), cols, data: data_map.clone()  };
+  let names: HashMap<Value,String> = headings.iter().map(|(id,_,name)| (id.clone(), name.to_string())).collect();
+  let tbl = MechTable::new(t.rows.len(), cols, data_map.clone(), names);
   Ok(Value::Table(tbl))
 }
 
-pub fn table_header(fields: &Vec<Field>, functions: FunctionsRef) -> MResult<(Vec<Value>,Vec<ValueKind>)> {
-  let mut ids: Vec<Value> = Vec::new();
-  let mut kinds: Vec<ValueKind> = Vec::new();
+pub fn table_header(fields: &Vec<Field>, functions: FunctionsRef) -> MResult<Vec<(Value,ValueKind,Identifier)>> {
+  let mut headings: Vec<(Value,ValueKind,Identifier)> = Vec::new();
   for f in fields {
     let id = f.name.hash();
     let kind = match &f.kind {
       Some(k) => kind_annotation(&k.kind, functions.clone())?,
       None => Kind::Any,
     };
-    ids.push(Value::Id(id));
-    kinds.push(kind.to_value_kind(functions.clone())?);
+    headings.push((Value::Id(id),kind.to_value_kind(functions.clone())?,f.name.clone()));
   }
-  Ok((ids,kinds))
+  Ok(headings)
 }
 
 pub fn table_row(r: &TableRow, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Vec<Value>> {

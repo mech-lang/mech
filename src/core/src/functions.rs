@@ -126,11 +126,13 @@ impl MechFunction for UserFunction {
 
 // Symbol Table ---------------------------------------------------------------
 
+pub type Dictionary = IndexMap<u64,String>;
+
 #[derive(Clone, Debug)]
 pub struct SymbolTable {
   pub symbols: HashMap<u64,ValRef>,
   pub mutable_variables: HashMap<u64,ValRef>,
-  pub dictionary: IndexMap<u64,String>,
+  pub dictionary: Ref<Dictionary>,
   pub reverse_lookup: HashMap<*const RefCell<Value>, u64>,
 }
 
@@ -140,7 +142,7 @@ impl SymbolTable {
     Self {
       symbols: HashMap::new(),
       mutable_variables: HashMap::new(),
-      dictionary: IndexMap::new(),
+      dictionary: new_ref(IndexMap::new()),
       reverse_lookup: HashMap::new(),
     }
   }
@@ -169,8 +171,9 @@ impl SymbolTable {
 
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
+    let dict_brrw = self.dictionary.borrow();
     for (k,v) in &self.symbols {
-      let name = self.dictionary.get(k).unwrap();
+      let name = dict_brrw.get(k).unwrap_or(&"??".to_string()).clone();
       let v_brrw = v.borrow();
       builder.push_record(vec![format!("\n{} : {:?}\n{}\n",name, v_brrw.kind(), v_brrw.pretty_print())])
     }

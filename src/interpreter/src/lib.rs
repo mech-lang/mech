@@ -7,7 +7,7 @@ extern crate mech_core;
 
 use mech_core::matrix::{Matrix, ToMatrix};
 use mech_core::kind::Kind;
-use mech_core::{Value, ValueKind, ValRef, ToValue};
+use mech_core::{Dictionary, Ref, Value, ValueKind, ValRef, ToValue};
 use mech_core::{MechMap, MechFunction, MechRecord, MechTable, MechSet, MechTuple, MechEnum};
 use mech_core::{F64, F32};
 use mech_core::{Functions, FunctionsRef, FunctionDefinition, NativeFunctionCompiler, Plan, UserFunction, SymbolTableRef, SymbolTable};

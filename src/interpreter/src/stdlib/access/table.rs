@@ -59,14 +59,14 @@ macro_rules! impl_col_access_fxn {
       paste!{
         match $arg {
           (Value::Record(rcrd),Value::Id(k)) => {
-            match rcrd.data.get(&k) {
+            match rcrd.get(&k) {
               Some(value) => Ok(Box::new(RecordAccess{source: value.clone()})),
               _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)}),
             }
           }
           (Value::Table(tbl),Value::Id(k)) => {
             let key = Value::Id(k);
-            match (tbl.data.get(&key),tbl.rows) {
+            match (tbl.get(&key),tbl.rows()) {
               $(
                 $(
                   (Some((ValueKind::$lhs_type,value)),1) => Ok(Box::new([<TableAccessCol $lhs_type M1>]{source: value.clone(), out: new_ref(Matrix1::from_element($default)) })),
@@ -165,7 +165,7 @@ macro_rules! impl_col_access_fxn {
           let mut values = vec![];
           for key in keys {
             let k = key.as_usize().unwrap() as u64;
-            match rcrd.data.get(&k) {
+            match rcrd.get(&k) {
               Some(value) => values.push(value.clone()),
               None => { return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)});}
             }
@@ -175,7 +175,7 @@ macro_rules! impl_col_access_fxn {
         Value::Table(tbl) => {
           let mut elements = vec![];
           for k in keys {
-            match tbl.data.get(k) {
+            match tbl.get(k) {
               Some((kind, mat_values)) => {
                 elements.push(Box::new(mat_values.to_value()));
               }
@@ -190,7 +190,7 @@ macro_rules! impl_col_access_fxn {
             let mut values = vec![];
             for key in keys {
               let k = key.as_usize().unwrap() as u64;
-              match rcrd.data.get(&k) {
+              match rcrd.get(&k) {
                 Some(value) => values.push(value.clone()),
                 None => { return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)});}
               }
@@ -200,7 +200,7 @@ macro_rules! impl_col_access_fxn {
           Value::Table(tbl) => {
             let mut elements = vec![];
             for k in keys {
-              match tbl.data.get(k) {
+              match tbl.get(k) {
                 Some((kind, mat_values)) => {
                   elements.push(Box::new(mat_values.to_value()));
                 }
