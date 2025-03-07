@@ -22,7 +22,7 @@ default = []
 no-std = ["mech-core/no-std", "rlibc"]
 
 [dependencies]
-mech-core = "0.2.33"
+mech-core = "0.2.34"
 
 hashbrown = "0.15.2"
 lazy_static = "1.5.0"
