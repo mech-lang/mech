@@ -62,7 +62,6 @@ impl Formatter {
           if (xhr.readyState === 4) {{
             if (xhr.status === 200) {{
               var src = xhr.responseText;
-              console.log(src);
               wasm_core.run_program(src);
               wasm_core.init();
             }} else {{
