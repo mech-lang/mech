@@ -56,11 +56,13 @@ impl Formatter {
         await init();
         wasm_core = new WasmMech();
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', "/code", true);
+        var codeUrl = `/code${{window.location.pathname}}`;
+        xhr.open('GET', codeUrl, true);
         xhr.onload = function (e) {{
           if (xhr.readyState === 4) {{
             if (xhr.status === 200) {{
               var src = xhr.responseText;
+              console.log(src);
               wasm_core.run_program(src);
               wasm_core.init();
             }} else {{
