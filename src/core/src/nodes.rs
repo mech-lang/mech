@@ -4,24 +4,22 @@ use std::fmt;
 use std::io::{Write, Cursor, Read};
 
 
-pub fn compress_and_encode<T: serde::Serialize>(tree: &T) -> String {
-  let serialized_code = bincode::serialize(tree).unwrap();
+pub fn compress_and_encode<T: serde::Serialize>(tree: &T) -> Result<String, Box<dyn std::error::Error>> {
+  let serialized_code = bincode::serialize(tree)?;
   let mut compressed = Vec::new();
   brotli::CompressorWriter::new(&mut compressed, 9, 4096, 22)
-      .write(&serialized_code)
-      .unwrap();
-  base64::encode(compressed)
+      .write(&serialized_code)?;
+  Ok(base64::encode(compressed))
 }
 
-pub fn decode_and_decompress<T: serde::de::DeserializeOwned>(encoded: &str) -> T {
-  let decoded = base64::decode(encoded).unwrap();
+pub fn decode_and_decompress<T: serde::de::DeserializeOwned>(encoded: &str) -> Result<T, Box<dyn std::error::Error>> {
+  let decoded = base64::decode(encoded)?;
   
   let mut decompressed = Vec::new();
   brotli::Decompressor::new(Cursor::new(decoded), 4096)
-      .read_to_end(&mut decompressed)
-      .unwrap();
+      .read_to_end(&mut decompressed)?;
   
-  bincode::deserialize(&decompressed).unwrap()
+  Ok(bincode::deserialize(&decompressed)?)
 }
 
 #[derive(Clone, Copy, Ord, PartialEq, Eq, Hash, Serialize, Deserialize)]
