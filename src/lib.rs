@@ -510,6 +510,19 @@ impl MechFileSystem {
     self.sources.clone()
   }
 
+  pub fn add_code(&mut self, code: &MechSourceCode) -> MResult<()> {
+    {
+      match self.sources.write() {
+        Ok(mut sources) => {
+          sources.add_code(&code)
+        },
+        Err(e) => {
+          Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Could not add code".to_string(), id: line!(), kind: MechErrorKind::None})
+        },
+      }
+    }
+  }
+
   pub fn watch_source(&mut self, src: &str) -> MResult<()> {
     let src_path = Path::new(src.clone());
 
@@ -638,6 +651,41 @@ impl MechSources {
 
   pub fn set_stylesheet(&mut self, stylesheet: &str) {
     self.stylesheet = stylesheet.to_string();
+  }
+
+  pub fn add_code(&mut self, code: &MechSourceCode) -> MResult<()> {
+    
+    match code {
+      MechSourceCode::String(ref source) => {
+        let tree = parser::parse(&source)?;
+        let mut formatter = Formatter::new();
+        let formatted_mech = formatter.format_html(&tree,self.stylesheet.clone());
+        let mech_html = Formatter::humanize_html(formatted_mech);
+
+        // Save all this so we don't have to do it later.
+        let file_id = hash_str(&source);
+        self.sources.insert(file_id, code.clone());
+        self.trees.insert(file_id, MechSourceCode::Tree(tree));
+        self.html.insert(file_id, mech_html);
+        self.id_map.insert(file_id,PathBuf::new());
+      },
+      MechSourceCode::Tree(ref tree) => {
+        let mut formatter = Formatter::new();
+        let formatted_mech = formatter.format_html(&tree,self.stylesheet.clone());
+        let mech_html = Formatter::humanize_html(formatted_mech);
+
+        // Save all this so we don't have to do it later.
+        let file_id = hash_str(&format!("{:?}", tree));
+        self.sources.insert(file_id, code.clone());
+        self.trees.insert(file_id, code.clone());
+        self.html.insert(file_id, mech_html);
+        self.id_map.insert(file_id,PathBuf::new());
+      },
+      _ => {
+        todo!("Handle other source formats?");
+      }
+    }
+    Ok(())
   }
 
   pub fn add_source(&mut self, src: &str) -> MResult<MechSourceCode> {
