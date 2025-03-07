@@ -82,7 +82,7 @@ macro_rules! impl_set_column_match_arms {
         }
         (Value::Table(tbl),source,Value::Id(k)) => {
           let key = Value::Id(k);
-          match (tbl.data.get(&key),tbl.rows,source) {
+          match (tbl.get(&key),tbl.rows(),source) {
             $(
                 (Some((ValueKind::$lhs_type,Matrix::Matrix1(sink))),1,Value::[<Matrix $lhs_type>](Matrix::Matrix1(source))) => Ok(Box::new([<TableSetCol $lhs_type M1>]{source: source.clone(), sink: sink.clone() })),
                 (Some((ValueKind::$lhs_type,Matrix::Vector2(sink))),2,Value::[<Matrix $lhs_type>](Matrix::Vector2(source))) => Ok(Box::new([<TableSetCol $lhs_type V2>]{source: source.clone(), sink: sink.clone() })),

@@ -68,6 +68,7 @@ impl MechRepl {
   pub fn execute_repl_command(&mut self, repl_cmd: ReplCommand) -> MResult<String> {
 
     let mut intrp = self.interpreters.get_mut(&self.active).unwrap();
+    let mut mechfs = MechFileSystem::new();
 
     match repl_cmd {
       ReplCommand::Help => {
@@ -98,14 +99,19 @@ impl MechRepl {
         Ok("".to_string())
       },
       ReplCommand::Load(paths) => {
-        let code = read_mech_files(&paths)?;
-        match run_mech_code(&mut intrp, &code, false,false,false) {
+        for source in paths {
+          mechfs.watch_source(&source)?;
+        }
+        match run_mech_code(&mut intrp, &mechfs, false,false,false) {
           Ok(r) => {return Ok(format!("\n{:?}\n{}\n", r.kind(), r.pretty_print()));},
           Err(err) => {return Err(err);}
         }
       }
       ReplCommand::Code(code) => {
-        match run_mech_code(&mut intrp, &code, false,false,false)  {
+        for (_,src) in code {
+          mechfs.add_code(&src)?;
+        }
+        match run_mech_code(&mut intrp, &mechfs, false,false,false)  {
           Ok(r) => { return Ok(format!("\n{:?}\n{}\n", r.kind(), r.pretty_print()));},
           Err(err) => { return Err(err); }
         }
@@ -115,13 +121,8 @@ impl MechRepl {
           Some(n) => n,
           None => 1,
         };
-        let plan_brrw = intrp.plan.borrow();
         let now = Instant::now();
-        for i in 0..n {
-          for fxn in plan_brrw.iter() {
-            fxn.solve();
-          }
-        }
+        intrp.step(n as u64);
         let elapsed_time = now.elapsed();
         let cycle_duration = elapsed_time.as_nanos() as f64;
         return Ok(format!("{} cycles in {:0.2?} ns\n", n, cycle_duration));

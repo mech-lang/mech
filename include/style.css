@@ -1,11 +1,4 @@
-@font-face {
-    font-family: 'FiraCodeRegular';
-    src: url('fonts/FiraCode-Regular.ttf') 
-}
-@font-face {
-    font-family: 'FiraCodeLight';
-    src: url('fonts/FiraCode-Light.ttf') 
-}
+@import url(https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/fira_code.css);
 
 body {
     font-family: 'Roboto', sans-serif;
@@ -17,6 +10,8 @@ body {
 
 .mech-program {
     margin: auto;
+    margin-top: 20px;
+    margin-bottom: 20px;
     width: 690px;
 }
 
@@ -74,7 +69,7 @@ body {
     margin-bottom: 16px;
 }
 .mech-program-title::after {
-    content: "=====================================================================";
+    content: "===================================================================";
     color: #F3B62D; 
     font-size: 14pt; 
     display: block;
@@ -126,7 +121,6 @@ h4 {
 }
 
 .mech-code-block {
-    width: 650px;
     background-color: #171D21;
     color: #ada594;
     font-family: 'FiraCodeLight', monospace;
@@ -230,8 +224,9 @@ h4 {
     color: #a157b5
 }
 
-.mech-expression:hover {
+.mech-clickable:hover {
     background-color: #2a2b34;
+    cursor: pointer;
 }
 
 .mech-end-brace {

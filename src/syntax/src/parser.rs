@@ -213,6 +213,7 @@ pub fn tag(tag: &'static str) -> impl Fn(ParseString) -> ParseResult<String> {
 // 3. Recovery functions
 // -----------------------
 
+// skip_till_eol := (!new_line, any)* ;
 pub fn skip_till_eol(input: ParseString) -> ParseResult<()> {
   let (input, _) = many0(nom_tuple((
     is_not(new_line),
@@ -221,12 +222,14 @@ pub fn skip_till_eol(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
+// skip_past_eol := skip_till_eol, new_line ;
 fn skip_past_eol(input: ParseString) -> ParseResult<()> {
   let (input, _) = skip_till_eol(input)?;
   let (input, _) = new_line(input)?;
   Ok((input, ()))
 }
 
+// skip_till_section_element := skip_past_eol, (!section_element, skip_past_eol)* ;
 fn skip_till_section_element(input: ParseString) -> ParseResult<()> {
   if input.is_empty() {
     return Ok((input, ()));
@@ -264,15 +267,18 @@ fn skip_till_section_element3(input: ParseString) -> ParseResult<ParserNode> {
   Ok((input, ParserNode::Error))
 }*/
 
+// skip_spaces := space* ;
 pub fn skip_spaces(input: ParseString) -> ParseResult<()> {
   let (input, _) = many0(space)(input)?;
   Ok((input, ()))
 }
 
+// skip_nil := ;
 pub fn skip_nil(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
+// skip_empty_mech_directive := ;
 pub fn skip_empty_mech_directive(input: ParseString) -> ParseResult<String> {
   Ok((input, String::from("mech:")))
 }
@@ -280,7 +286,7 @@ pub fn skip_empty_mech_directive(input: ParseString) -> ParseResult<String> {
 // 4. Public interface
 // ---------------------
 
-// mech_code_alt := fsm_specification | fsm_implementation | function_define | statement | expression ;
+// mech_code_alt := fsm_specification | fsm_implementation | function_define | statement | expression | comment ;
 pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
   match fsm_specification(input.clone()) {
     Ok((input, fsm_spec)) => {return Ok((input, MechCode::FsmSpecification(fsm_spec)));},

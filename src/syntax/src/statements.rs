@@ -4,19 +4,19 @@ use nom::sequence::tuple as nom_tuple;
 
 // #### Statements
 
-// comment_sigil := "--" | "//" | "/*" ;
+// comment_sigil := "--" | "//" ;
 pub fn comment_sigil(input: ParseString) -> ParseResult<()> {
   let (input, _) = alt((tag("--"),tag("//")))(input)?;
   Ok((input, ()))
 }
 
-// comment := ws0, comment_sigil, text+ ;
+// comment := comment_singleline | comment_multiline ;
 pub fn comment(input: ParseString) -> ParseResult<Comment> {
   let (input, cmmnt) = alt((comment_singleline, comment_multiline))(input)?;
   Ok((input, cmmnt))
 }
 
-// comment := ws0, comment_sigil, text+ ;
+// comment_singleline := ws0, comment_sigil, text+ ;
 pub fn comment_singleline(input: ParseString) -> ParseResult<Comment> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = comment_sigil(input)?;
@@ -24,7 +24,7 @@ pub fn comment_singleline(input: ParseString) -> ParseResult<Comment> {
   Ok((input, Comment{text: Token::merge_tokens(&mut text).unwrap()}))
 }
 
-// comment := ws0, "/*", text+, "*/" ;
+// comment_multiline := whitespace*, "/*", (!"*/", whitespace* | text)+, "*/" ;
 pub fn comment_multiline(input: ParseString) -> ParseResult<Comment> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("/*")(input)?;
@@ -113,7 +113,7 @@ pub fn exp_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   Ok((input, ParserNode::FlattenData{children: vec![]}))
 }*/
 
-// variable_define := var, define_operator, expression ;
+// variable_define := tilde?, var, !assign_operator, define_operator, expression ;
 pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
@@ -129,7 +129,7 @@ pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   Ok((input, VariableDefine{mutable, var, expression}))
 }
 
-// variable_assign := slice_ref, !define-opertor, assign_operator, expression ;
+// variable_assign := slice_ref, !define_operator, assign_operator, expression ;
 pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
@@ -140,7 +140,7 @@ pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
   Ok((input, VariableAssign{target,expression}))
 }
 
-// op_assign := slice_ref, !define-opertor, op_assign_operator, expression ;
+// op_assign := slice_ref, !define-operator, op_assign_operator, expression ;
 pub fn op_assign(input: ParseString) -> ParseResult<OpAssign> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
@@ -209,7 +209,7 @@ pub fn enum_define(input: ParseString) -> ParseResult<EnumDefine> {
   Ok((input, EnumDefine{name, variants}))
 }
 
-// enum_variant := atom | identifier, enum_variant_kind? ;
+// enum_variant := grave?, identifier, enum_variant_kind? ;
 pub fn enum_variant(input: ParseString) -> ParseResult<EnumVariant> {
   let (input, _) = opt(grave)(input)?;
   let (input, name) = identifier(input)?;

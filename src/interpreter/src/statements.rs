@@ -153,7 +153,8 @@ pub fn variable_define(var_def: &VariableDefine, plan: Plan, symbols: SymbolTabl
   let mut symbols_brrw = symbols.borrow_mut();
   // All variables get added to the symbol table.
   symbols_brrw.insert(id,result.clone(),var_def.mutable);
-  symbols_brrw.dictionary.insert(id,var_def.var.name.to_string());
+  let mut dict_brrw = symbols_brrw.dictionary.borrow_mut();
+  dict_brrw.insert(id,var_def.var.name.to_string());
   Ok(result)
 }
 
