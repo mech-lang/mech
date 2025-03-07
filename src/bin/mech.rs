@@ -174,11 +174,9 @@ async fn main() -> Result<(), MechError> {
     };
 
     mechfs.set_stylesheet(&stylesheet);
-
     for path in mech_paths {
       mechfs.watch_source(&path)?;
     }
-
     let sources = mechfs.sources();
     let read_sources = sources.read().unwrap();
 
@@ -202,63 +200,7 @@ async fn main() -> Result<(), MechError> {
         }
       }
     }
-
-
-    /*
-    match mechfs.read_mech_files(&mech_paths) {
-      Ok(code) => {
-        for c in code {
-          match c {
-            (filename,MechSourceCode::String(s)) => {
-              let now = Instant::now();
-              let parse_result = parser::parse(&s.trim());
-              let elapsed_time = now.elapsed();
-              let parse_duration = elapsed_time.as_nanos() as f64;
-              match parse_result {
-                Ok(tree) => { 
-                  let mut formatter = Formatter::new();
-                  if html_flag {
-
-
-
-                    let formatted_mech = formatter.format_html(&tree,stylesheet.clone());
-                    let formatted_mech = Formatter::humanize_html(formatted_mech);
-                    // save to a html file with the same name as the input mec file in the same directory
-                    match fs::File::create(format!("{}.html",filename)) {
-                      Ok(mut file) => {
-                        match file.write_all(formatted_mech.as_bytes()) {
-                          Ok(_) => {
-                            println!("{} File saved as {}.html", "[Saved]".truecolor(153,221,85), filename);
-                          }
-                          Err(err) => {
-                            println!("Error writing to file: {:?}", err);
-                          }
-                        }
-                      },
-                      Err(err) => {
-                        println!("Error writing to file: {:?}", err);
-                      }
-                    }
-                  } else {
-                    let formatted_mech = formatter.format(&tree);
-                    println!("{}", formatted_mech);
-                  }
-                },
-                Err(err) => {
-                  if let MechErrorKind::ParserError(report, _) = err.kind {
-                    parser::print_err_report(&s, &report);
-                  } else {
-                    panic!("Unexpected error type");
-                  }
-                }
-              }
-            }
-            _ => todo!(),
-          }
-        }
-      }
-      Err(err) => todo!(),
-    }*/
+    
     return Ok(());
   }
 
