@@ -39,12 +39,6 @@ pub async fn serve_mech(full_address: &str, mech_paths: &Vec<String>) {
       // strip leading "/" from path
       let url = path.as_str().strip_prefix("/").unwrap_or("");
       
-      if let Some(addr) = remote {
-        println!("{} {} -- New request: {} -- /{}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), addr, url);
-      } else {
-        println!("{} {} -- New request from unknown address -- /{}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), url);
-      }
-
       match code_source.read() {
         Ok(sources) => {
 
@@ -70,6 +64,12 @@ pub async fn serve_mech(full_address: &str, mech_paths: &Vec<String>) {
                 return warp::reply::with_header(mech_html, "content-type", "text/html");
               }
             }
+          }
+
+          if let Some(addr) = remote {
+            println!("{} {} -- New request: {} -- /{}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), addr, url);
+          } else {
+            println!("{} {} -- New request from unknown address -- /{}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), url);
           }
 
           // search for a document named index.mec, index.html. If not found return a default page.
