@@ -68,6 +68,7 @@ impl MechRepl {
   pub fn execute_repl_command(&mut self, repl_cmd: ReplCommand) -> MResult<String> {
 
     let mut intrp = self.interpreters.get_mut(&self.active).unwrap();
+    let mut mechfs = MechFileSystem::new();
 
     match repl_cmd {
       ReplCommand::Help => {
@@ -98,22 +99,22 @@ impl MechRepl {
         Ok("".to_string())
       },
       ReplCommand::Load(paths) => {
-        let mut mechfs = MechFileSystem::new();
         for source in paths {
           mechfs.watch_source(&source)?;
         }
-        /*match run_mech_code(&mut intrp, &code, false,false,false) {
+        match run_mech_code(&mut intrp, &mechfs, false,false,false) {
           Ok(r) => {return Ok(format!("\n{:?}\n{}\n", r.kind(), r.pretty_print()));},
           Err(err) => {return Err(err);}
-        }*/
-        todo!()
+        }
       }
       ReplCommand::Code(code) => {
-        /*match run_mech_code(&mut intrp, &code, false,false,false)  {
+        for (_,src) in code {
+          mechfs.add_code(&src)?;
+        }
+        match run_mech_code(&mut intrp, &mechfs, false,false,false)  {
           Ok(r) => { return Ok(format!("\n{:?}\n{}\n", r.kind(), r.pretty_print()));},
           Err(err) => { return Err(err); }
-        }*/
-        todo!("Code command not implemented");
+        }
       }
       ReplCommand::Step(count) => {
         let n = match count {
