@@ -5,7 +5,7 @@ use std::io::{Write, Cursor, Read};
 
 
 pub fn compress_and_encode<T: serde::Serialize>(tree: &T) -> Result<String, Box<dyn std::error::Error>> {
-  let serialized_code = bincode::serialize(tree)?;
+  let serialized_code = bincode::serde::encode_to_vec(tree,bincode::config::standard())?;
   let mut compressed = Vec::new();
   brotli::CompressorWriter::new(&mut compressed, 9, 4096, 22)
       .write(&serialized_code)?;
@@ -19,7 +19,9 @@ pub fn decode_and_decompress<T: serde::de::DeserializeOwned>(encoded: &str) -> R
   brotli::Decompressor::new(Cursor::new(decoded), 4096)
       .read_to_end(&mut decompressed)?;
   
-  Ok(bincode::deserialize(&decompressed)?)
+  let (decoded,red) = bincode::serde::decode_from_slice(&decompressed,bincode::config::standard())?;
+
+  Ok(decoded)
 }
 
 #[derive(Clone, Copy, Ord, PartialEq, Eq, Hash, Serialize, Deserialize)]
