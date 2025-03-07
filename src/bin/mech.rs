@@ -133,7 +133,11 @@ async fn main() -> Result<(), MechError> {
     let full_address: String = format!("{}:{}",address,port);
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     
-    serve_mech(&full_address, &mech_paths).await;
+
+    let mut server = MechServer::new(&full_address);
+    server.init().await?;
+    server.load_sources(&mech_paths)?;
+    server.serve().await?;
     
   }
   // Format
