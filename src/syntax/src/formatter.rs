@@ -6,7 +6,6 @@ use std::io::{Read, Write, Cursor};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Formatter{
-  code: String,
   identifiers: HashMap<u64, String>,
   rows: usize,
   cols: usize,
@@ -20,7 +19,6 @@ impl Formatter {
 
   pub fn new() -> Formatter {
     Formatter {
-      code: String::new(),
       identifiers: HashMap::new(),
       rows: 0,
       cols: 0,
@@ -47,6 +45,10 @@ impl Formatter {
         </style>
     </head>
     <body>"#, style);
+    let encoded_tree = match compress_and_encode(&tree) {
+      Ok(encoded) => encoded,
+      Err(e) => todo!(),
+    };
     let foot = format!(r#"
     <div id = "mech-root"></div>
     <script type="module">
@@ -54,6 +56,7 @@ impl Formatter {
       let wasm_core;
       async function run() {{
         await init();
+        var code = `{}`;
         wasm_core = new WasmMech();
         var xhr = new XMLHttpRequest();
         var codeUrl = `/code${{window.location.pathname}}`;
@@ -70,6 +73,7 @@ impl Formatter {
           }}
         }};
         xhr.onerror = function (e) {{
+          console.error("I've been waiting for this error. Look me up in formatter.rs");
           console.error(xhr.statusText);
         }};
         xhr.send(null);        
@@ -77,7 +81,7 @@ impl Formatter {
       run();
     </script>
   </body>
-</html>"#);
+</html>"#, encoded_tree);
     format!("{}{}{}", head, formatted_src, foot)
   }
 
