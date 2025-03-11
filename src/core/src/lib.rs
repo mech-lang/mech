@@ -87,6 +87,20 @@ pub fn humanize(hash: &u64) -> String {
 pub enum MechSourceCode {
   String(String),
   Tree(Program),
+  Html(String),
+}
+
+impl MechSourceCode {
+
+  pub fn to_string(&self) -> String {
+    match self {
+      MechSourceCode::String(s) => s.clone(),
+      MechSourceCode::Tree(p) => todo!("Print the tree!"),
+      MechSourceCode::Html(h) => h.clone(),
+    }
+  }
+
+
 }
 
 pub const WORDLIST: &[&str;256] = &[
