@@ -171,8 +171,8 @@ impl MechServer {
 
             // search for a document named index.mec, index.html. If not found return a default page.
             let mech_html = match sources.get_html(url) {
-              Some(source) => source,
-              None => {
+              Some(MechSourceCode::Html(source)) => source,
+              _ => {
                 // return a html page nothing the page is missing
                 let mech_html = format!("<html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The requested URL {} was not found on this server.</p></body></html>", url);
                 return warp::reply::with_header(mech_html, "content-type", "text/html");

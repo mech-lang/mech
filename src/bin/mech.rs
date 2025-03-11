@@ -74,6 +74,11 @@ async fn main() -> Result<(), MechError> {
         .help("Source .mec and .blx files")
         .required(false)
         .action(ArgAction::Append))
+      .arg(Arg::new("output_path")
+        .short('o')
+        .long("out")
+        .help("Destination folder.")
+        .required(false))        
       .arg(Arg::new("stylesheet")
         .short('s')
         .long("stylesheet")
@@ -145,6 +150,7 @@ async fn main() -> Result<(), MechError> {
   if let Some(matches) = matches.subcommand_matches("format") {
     let html_flag = matches.get_flag("html");
     let stylesheet_url = matches.get_one::<String>("stylesheet").cloned().unwrap_or("include/style.css".to_string());
+    let output_path = PathBuf::from(matches.get_one::<String>("output_path").cloned().unwrap_or(".".to_string()));
 
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_format_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let mut mechfs = MechFileSystem::new();
@@ -184,27 +190,57 @@ async fn main() -> Result<(), MechError> {
     let sources = mechfs.sources();
     let read_sources = sources.read().unwrap();
 
+    // Create the directory html_output_path
+    if output_path != PathBuf::from(".") {
+      match fs::create_dir_all(&output_path) {
+        Ok(_) => {
+          println!("{} Directory created: {}", "[Created]".truecolor(153,221,85), output_path.display());
+        }
+        Err(err) => {
+          println!("Error creating directory: {:?}", err);
+        }
+      }
+    }
 
-    for (fid, mech_html) in read_sources.html_iter() {
-      // save to a html file with the same name as the input mec file in the same directory
-      let filename = read_sources.get_path_from_id(*fid).unwrap();
-      match fs::File::create(format!("{}.html",filename.display())) {
+
+    // Create a function to handle file writing
+    let save_to_file = |path: PathBuf, content: &str| {
+      match fs::File::create(&path) {
         Ok(mut file) => {
-          match file.write_all(mech_html.as_bytes()) {
-            Ok(_) => {
-              println!("{} File saved as {}.html", "[Saved]".truecolor(153,221,85), filename.display());
-            }
-            Err(err) => {
-              println!("Error writing to file: {:?}", err);
-            }
+          if let Err(err) = file.write_all(content.as_bytes()) {
+            println!("Error writing to file: {:?}", err);
+            false
+          } else {
+            println!("{} File saved as {}", "[Saved]".truecolor(153,221,85), path.display());
+            true
           }
         },
         Err(err) => {
           println!("Error writing to file: {:?}", err);
+          false
         }
       }
+    };
+
+    // Process files based on the flag
+    if html_flag {
+      for (fid, mech_src) in read_sources.html_iter() {
+        if let MechSourceCode::Html(content) = mech_src {
+          let mut filename = read_sources.get_path_from_id(*fid).unwrap().clone();
+          filename = filename.with_extension("html");
+          let output_file = output_path.join(filename.file_name().unwrap());
+          save_to_file(output_file, content);
+        }
+      }
+    } else {
+      for (fid, mech_src) in read_sources.sources_iter() {
+        let content = mech_src.to_string();
+        let filename = read_sources.get_path_from_id(*fid).unwrap().clone();
+        let output_file = output_path.join(filename.file_name().unwrap());
+        save_to_file(output_file, &content);
+      }
     }
-    
+
     return Ok(());
   }
 
