@@ -185,6 +185,12 @@ impl Token {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct TableOfContents {
+    pub title: Option<Title>,
+    pub sections: Vec<Section>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Program {
   pub title: Option<Title>,
   pub body: Body,
@@ -198,6 +204,17 @@ impl Program {
     };*/
     let body_tokens = self.body.tokens();
     body_tokens
+  }
+
+  pub fn table_of_contents(&self) -> TableOfContents {
+    let mut sections = vec![];
+    for s in &self.body.sections {
+      sections.push(s.table_of_contents());
+    }
+    TableOfContents {
+      title: self.title.clone(),
+      sections,
+    }
   }
 
   pub fn pretty_print(&self) -> String {
@@ -338,6 +355,23 @@ pub struct Section {
 }
 
 impl Section {
+
+  pub fn table_of_contents(&self) -> Section {
+    let mut elements = vec![];
+    for e in &self.elements {
+      match e {
+        SectionElement::Section(s) => {
+          elements.push(SectionElement::Section(Box::new(s.table_of_contents())));
+        },
+        _ => (),
+      }
+    }
+    Section {
+      subtitle: self.subtitle.clone(),
+      elements,
+    }
+  }
+
   pub fn tokens(&self) -> Vec<Token> {
     let mut out = vec![];
     for s in &self.elements {
