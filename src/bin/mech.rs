@@ -107,6 +107,7 @@ async fn main() -> Result<(), MechError> {
         .value_name("ADDRESS")
         .help("Sets the address of the server (127.0.0.1)")))
     .arg(Arg::new("tree")
+        .short('e')
         .long("tree")
         .help("Print parse tree")
         .action(ArgAction::SetTrue))   
