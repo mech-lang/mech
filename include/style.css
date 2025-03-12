@@ -8,11 +8,70 @@ body {
     font-size: 12pt;
 }
 
+.mech-root {
+    display: flex;
+    flex-direction: row;
+}
+
+.mech-toc {
+    background-color: #171D21;
+    color: #f2ead9;
+    overflow-y: auto;
+    margin-right: 20px;
+    padding-right: 15px;
+    width: 250px;
+    padding-left: 10px;
+    position: sticky; 
+    top: 0; 
+    height: 100vh;
+}
+
+.mech-toc h1 {
+    visibility: hidden;
+    font-size: 12pt;
+}
+
+.mech-toc h2 {
+    font-size: 12pt;
+    padding-left: 15px;
+}
+
+.mech-toc h2 a {
+    color: #f2ead9;
+    text-decoration: none;
+}
+
+.mech-toc h2 a:hover {
+    color: #ffd139;
+    text-decoration: none;
+}
+
+.mech-toc h4 {
+    font-size: 12pt;
+    padding-left: 30px;
+    font-weight: normal;
+}
+
+.mech-toc h4 a {
+    color: #f2ead9;
+    text-decoration: none;
+}
+
+.mech-toc h4 a:hover {
+    color: #ffd139;
+    text-decoration: none;
+}
+
+
 .mech-program {
     margin: auto;
     margin-top: 20px;
     margin-bottom: 20px;
     width: 690px;
+}
+
+.mech-output {
+    flex-grow: 1;
 }
 
 .mech-matrix {
@@ -61,7 +120,7 @@ body {
     padding-right: 6px;
 }
 
-.mech-program-title {
+.mech-program .mech-program-title {
     font-family: 'FiraCodeRegular', monospace;
     color: #F3B62D;
     letter-spacing: 2px;
@@ -69,7 +128,7 @@ body {
     font-weight: bold;
     margin-bottom: 16px;
 }
-.mech-program-title::after {
+.mech-program .mech-program-title::after {
     letter-spacing: 0px;
     content: "==============================================================================";
     color: #F3B62D; 
@@ -79,13 +138,12 @@ body {
     margin-top: 5px; 
 }
 
-.mech-program-body {
+.mech-program h2 a {
+    color: #f2ead9;
+    text-decoration: none;
 }
 
-.mech-program-section {
-}
-
-h2 {
+.mech-program h2 {
     font-family: 'FiraCodeRegular', monospace;
     color: #f2ead9;
     font-size: 16pt;
@@ -94,7 +152,7 @@ h2 {
     margin-bottom: 10px;
     margin-top: 50px;
 }
-h2::after {
+.mech-program h2::after {
     content: "------------------------------------------------------------------------------";
     letter-spacing: 0px;
     color: #F3B62D; 
@@ -104,7 +162,12 @@ h2::after {
     margin-top: 5px; 
 }
 
-h4 {
+.mech-program h4 a {
+    color: #f2ead9;
+    text-decoration: none;
+}
+
+.mech-program h4 {
     font-family: 'FiraCodeRegular', monospace;
     color: #f2ead9;
     font-size: 14pt;
