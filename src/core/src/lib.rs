@@ -100,7 +100,77 @@ impl MechSourceCode {
     }
   }
 
+}
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IndexedString {
+  pub data: Vec<char>,
+  pub index_map: Vec<Vec<usize>>,
+  pub rows: usize,
+  pub cols: usize,
+}
+
+impl IndexedString {
+  
+  fn new(input: &str) -> Self {
+      let mut data = Vec::new();
+      let mut index_map = Vec::new();
+      let mut current_row = 0;
+      let mut current_col = 0;
+      index_map.push(Vec::new());
+      for c in input.chars() {
+        data.push(c);
+        if c == '\n' {
+          index_map.push(Vec::new());
+          current_row += 1;
+          current_col = 0;
+        } else {
+          index_map[current_row].push(data.len() - 1);
+          current_col += 1;
+        }
+      }
+      let rows = index_map.len();
+      let cols = if rows > 0 { index_map[0].len() } else { 0 };
+      IndexedString {
+          data,
+          index_map,
+          rows,
+          cols,
+      }
+  }
+
+  fn to_string(&self) -> String {
+    self.data.iter().collect()
+  }
+
+  fn get(&self, row: usize, col: usize) -> Option<char> {
+    if row < self.rows {
+      let rowz = &self.index_map[row];
+      if col < rowz.len() {
+        let index = self.index_map[row][col];
+        Some(self.data[index])
+      } else {
+        None
+      }
+    } else {
+      None
+    }
+  }
+
+  fn set(&mut self, row: usize, col: usize, new_char: char) -> Result<(), String> {
+    if row < self.rows {
+      let row_indices = &mut self.index_map[row];
+      if col < row_indices.len() {
+        let index = row_indices[col];
+        self.data[index] = new_char;
+        Ok(())
+      } else {
+        Err("Column index out of bounds".to_string())
+      }
+    } else {
+      Err("Row index out of bounds".to_string())
+    }
+  }
 }
 
 pub const WORDLIST: &[&str;256] = &[
