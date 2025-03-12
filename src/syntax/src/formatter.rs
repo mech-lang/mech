@@ -11,7 +11,8 @@ pub struct Formatter{
   cols: usize,
   indent: usize,
   html: bool,
-  nested: bool
+  nested: bool,
+  toc: bool,
 }
 
 
@@ -25,6 +26,7 @@ impl Formatter {
       indent: 0,
       html: false,
       nested: false,
+      toc: false,
     }
   }
 
@@ -36,6 +38,8 @@ impl Formatter {
   pub fn format_html(&mut self, tree: &Program, style: String) -> String {
 
     self.html = true;
+    let toc = tree.table_of_contents();
+    let formatted_toc = self.table_of_contents(&toc);
     let formatted_src = self.program(tree);
     let head = format!(r#"<html>
     <head>
@@ -45,13 +49,15 @@ impl Formatter {
                   {}
         </style>
     </head>
-    <body>"#, style);
+    <body>
+      <div class="mech-root">"#, style);
     let encoded_tree = match compress_and_encode(&tree) {
       Ok(encoded) => encoded,
       Err(e) => todo!(),
     };
     let foot = format!(r#"
-    <div id = "mech-root"></div>
+      <div id = "mech-output"></div>
+    </div>
     <script type="module">
       import init, {{WasmMech}} from '/pkg/mech_wasm.js';
       let wasm_core;
@@ -83,7 +89,28 @@ impl Formatter {
     </script>
   </body>
 </html>"#, encoded_tree);
-    format!("{}{}{}", head, formatted_src, foot)
+    format!("{}{}{}{}", head, formatted_toc, formatted_src, foot)
+  }
+
+  pub fn table_of_contents(&mut self, toc: &TableOfContents) -> String {
+    self.toc = true;
+    let title = match &toc.title {
+      Some(title) => self.title(&title),
+      None => "".to_string(),
+    };
+    let sections = self.sections(&toc.sections);
+    self.toc = false;
+    format!("<div class=\"mech-toc\">{}{}</div>",title,sections)
+  }
+
+  pub fn sections(&mut self, sections: &Vec<Section>) -> String {
+    let mut src = "".to_string();
+    let section_count = sections.len();
+    for (i, section) in sections.iter().enumerate() {
+      let s = self.section(section);
+      src = format!("{}{}", src, s);
+    }
+    format!("<div class=\"mech-toc-sections\">{}</div>",src)
   }
 
   pub fn program(&mut self, node: &Program) -> String {
@@ -109,8 +136,11 @@ impl Formatter {
 
   pub fn subtitle(&mut self, node: &Subtitle) -> String {
     let level = node.level;
+    let toc = if self.toc { "toc" } else { "" };
+    let title_id = hash_str(&format!("{}{}{}",level,node.to_string(),toc));
+    let link_id = hash_str(&format!("{}{}",level,node.to_string()));
     if self.html {
-      format!("<h{} class=\"mech-program-subtitle\">{}</h{}>", level, node.to_string(), level)
+      format!("<h{} id=\"{}\" class=\"mech-program-subtitle\"><a href=\"#{}\">{}</a></h{}>", level, title_id, link_id, node.to_string(), level)
     } else {
       format!("{}\n-------------------------------------------------------------------------------\n",node.to_string())
     }
