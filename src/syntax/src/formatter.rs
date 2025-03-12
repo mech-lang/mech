@@ -34,6 +34,7 @@ impl Formatter {
   }
 
   pub fn format_html(&mut self, tree: &Program, style: String) -> String {
+
     self.html = true;
     let formatted_src = self.program(tree);
     let head = format!(r#"<html>
