@@ -64,14 +64,16 @@ body {
 .mech-program-title {
     font-family: 'FiraCodeRegular', monospace;
     color: #F3B62D;
-    font-size: 14pt;
+    letter-spacing: 2px;
+    font-size: 20pt;
     font-weight: bold;
     margin-bottom: 16px;
 }
 .mech-program-title::after {
-    content: "===================================================================";
+    letter-spacing: 0px;
+    content: "==============================================================================";
     color: #F3B62D; 
-    font-size: 14pt; 
+    font-size: 12pt; 
     display: block;
     text-align: left; 
     margin-top: 5px; 
@@ -85,13 +87,16 @@ body {
 
 h2 {
     font-family: 'FiraCodeRegular', monospace;
-    color: #F3B62D;
-    font-size: 12pt;
+    color: #f2ead9;
+    font-size: 16pt;
     font-weight: bold;
+    letter-spacing: 2px;
     margin-bottom: 10px;
+    margin-top: 50px;
 }
 h2::after {
     content: "------------------------------------------------------------------------------";
+    letter-spacing: 0px;
     color: #F3B62D; 
     font-size: 12pt; 
     display: block;
@@ -101,10 +106,11 @@ h2::after {
 
 h4 {
     font-family: 'FiraCodeRegular', monospace;
-    color: #F3B62D;
-    font-size: 12pt;
+    color: #f2ead9;
+    font-size: 14pt;
     font-weight: bold;
     margin-bottom: 10px;
+    letter-spacing: 1px;
 }
 
 .mech-variable-mutable {
@@ -415,8 +421,21 @@ h4 {
     color: #ef5f90;
 }
 
+.mech-unordered-list {
+}
+
 .mech-list-item {
+    line-height: 0px;
     color: #ef5f90;
+    margin: 0px;
+    padding: 0px;
+}
+
+li p {
+    margin: 0px;
+    padding: 0px;
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 
 .mech-table {
