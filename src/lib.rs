@@ -21,13 +21,25 @@ use mech_core::matrix::Matrix;
 
 static PI: f64 = 3.14159265358979323846264338327950288;
 
+pub mod acos;
+pub mod acos2;
+pub mod asin;
+pub mod asin2;
+pub mod atan;
 pub mod atan2;
 pub mod cos;
 pub mod sin;
+pub mod tan;
 
+pub use self::acos::*;
+pub use self::acos2::*;
+pub use self::asin::*;
+pub use self::asin2::*;
+pub use self::atan::*;
 pub use self::atan2::*;
 pub use self::cos::*;
 pub use self::sin::*;
+pub use self::tan::*;
 
 // ----------------------------------------------------------------------------
 // Math Library
