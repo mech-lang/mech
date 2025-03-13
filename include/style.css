@@ -1,5 +1,9 @@
 @import url(https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/fira_code.css);
 
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     font-family: 'Roboto', sans-serif;
     background-color: #2F353B;
@@ -11,6 +15,16 @@ body {
 .mech-root {
     display: flex;
     flex-direction: row;
+}
+
+.mech-output {
+    background-color: #171D21;
+    color: #f2ead9;
+    padding: 20px;
+    margin: 20px;
+    border-radius: 10px;
+    flex-grow: 1;
+    overflow-y: auto;
 }
 
 .mech-toc {
@@ -122,9 +136,9 @@ body {
 
 .mech-program .mech-program-title {
     font-family: 'FiraCodeRegular', monospace;
-    color: #F3B62D;
+    color: #f2ead9;
     letter-spacing: 2px;
-    font-size: 20pt;
+    font-size: 22pt;
     font-weight: bold;
     margin-bottom: 16px;
 }
