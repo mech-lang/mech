@@ -191,7 +191,7 @@ impl Formatter {
       SectionElement::Paragraph(n) => self.paragraph(n),
       SectionElement::MechCode(n) => self.mech_code(n),
       SectionElement::UnorderedList(n) => self.unordered_list(n),
-      SectionElement::CodeBlock => todo!(),
+      SectionElement::CodeBlock(n) => self.code_block(n),
       SectionElement::OrderedList => todo!(),
       SectionElement::BlockQuote => todo!(),
       SectionElement::ThematicBreak => todo!(),
@@ -201,6 +201,15 @@ impl Formatter {
       format!("<div class=\"mech-section-element\">{}</div>",element)
     } else {
       element
+    }
+  }
+
+  pub fn code_block(&mut self, node: &Token) -> String {
+    let code = node.to_string();
+    if self.html {
+      format!("<pre class=\"mech-code-block\">{}</pre>",code)
+    } else {
+      format!("{}\n",code)
     }
   }
 
