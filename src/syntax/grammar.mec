@@ -1,7 +1,7 @@
 Mech Grammar
 ===============================================================================
 
-(Revised 12/19/2024)
+(Revised 3/13/2025)
 
 ╭────────┬─────────────────────────────────────────────────────╮
 │ Symbol │   Semantics                                         │
@@ -384,7 +384,7 @@ list_item := dash, <space+>, <paragraph>, new_line* ;
 
 b) Mech Extensions
 
-code_block := grave, <grave>, <grave>, <new_line>, formatted_text, <grave{3}, new_line, whitespace*> ;
+code_block := grave, <grave>, <grave>, <new_line>, any, <grave{3}, new_line, whitespace*> ;
 mech_code := mech_code_alt, ("\n" | ";" | comment) ;
 
 8. Program Specification
