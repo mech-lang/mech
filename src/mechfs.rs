@@ -277,6 +277,7 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
             MechSourceCode::String(ref source) => match parser::parse(&source) {
               Ok(tree) => tree,
               Err(err) => {
+                println!("{} {:?}", "[Parse Error]".truecolor(255,0,0), err);
                 todo!("Handle parse error");
               }
             },
