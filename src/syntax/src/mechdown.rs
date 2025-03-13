@@ -202,12 +202,19 @@ pub fn sub_section_element(input: ParseString) -> ParseResult<SectionElement> {
   Ok((input, section_element))
 }
 
-// section := ul_subtitle?, section_element+ ;
+// section := ul_subtitle, section_element* ;
 pub fn section(input: ParseString) -> ParseResult<Section> {
   let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
-  let (input, subtitle) = opt(ul_subtitle)(input)?;
+  let (input, subtitle) = ul_subtitle(input)?;
+  let (input, elements) = many0(section_element)(input)?;
+  Ok((input, Section{subtitle: Some(subtitle), elements}))
+}
+
+// section_elements := section_element+ ;
+pub fn section_elements(input: ParseString) -> ParseResult<Section> {
+  let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
   let (input, elements) = many1(section_element)(input)?;
-  Ok((input, Section{subtitle, elements}))
+  Ok((input, Section{subtitle: None, elements}))
 }
 
 // sub_section := alpha_subtitle, sub_section_element* ;
@@ -218,10 +225,10 @@ pub fn sub_section(input: ParseString) -> ParseResult<Section> {
   Ok((input, Section{subtitle: Some(subtitle), elements}))
 }
 
-// body := section+ ;
+// body := whitespace0, (section | section_elements)+, whitespace0 ;
 pub fn body(input: ParseString) -> ParseResult<Body> {
   let (input, _) = whitespace0(input)?;
-  let (input, sections) = many1(section)(input)?;
+  let (input, sections) = many1(alt((section,section_elements)))(input)?;
   let (input, _) = whitespace0(input)?;
   Ok((input, Body{sections}))
 }
