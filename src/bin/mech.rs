@@ -150,7 +150,7 @@ async fn main() -> Result<(), MechError> {
   // ----------------------------------------------------------------
   if let Some(matches) = matches.subcommand_matches("format") {
     let html_flag = matches.get_flag("html");
-    let stylesheet_url = matches.get_one::<String>("stylesheet").cloned().unwrap_or("include/style.css".to_string());
+    let stylesheet_url = matches.get_one::<String>("stylesheet").cloned().unwrap_or("https://gitlab.com/mech-lang/mech/-/raw/v0.2-beta/include/style.css?ref_type=heads".to_string());
     let output_path = PathBuf::from(matches.get_one::<String>("output_path").cloned().unwrap_or(".".to_string()));
 
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_format_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
