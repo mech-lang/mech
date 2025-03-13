@@ -133,6 +133,7 @@ pub enum TokenKind {
   Identifier,
   BoxDrawing,
   Dollar,
+  CodeBlock,
   Empty
 }
 
@@ -162,6 +163,10 @@ impl Default for Token {
 }
 
 impl Token {
+
+  pub fn new(kind: TokenKind, src_range: SourceRange, chars: Vec<char>) -> Token {
+    Token{kind, chars, src_range}
+  }
 
   pub fn to_string(&self) -> String {
     self.chars.iter().collect()
@@ -389,7 +394,7 @@ pub enum SectionElement {
   Paragraph(Paragraph),
   MechCode(Vec<MechCode>),
   UnorderedList(UnorderedList),
-  CodeBlock,       // todo
+  CodeBlock(Token),
   OrderedList,     // todo
   BlockQuote,      // todo
   ThematicBreak,   // todo
