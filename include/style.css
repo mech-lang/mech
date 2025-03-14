@@ -40,6 +40,29 @@ body {
     height: 100vh;
 }
 
+.mech-toc::-webkit-scrollbar {
+    width: 8px; /* Adjust width as needed */
+}
+
+.mech-toc::-webkit-scrollbar-track {
+    background: transparent; /* Makes the track invisible */
+}
+
+.mech-toc::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.7); /* Grey with some transparency */
+    border-radius: 10px; /* Rounds the scrollbar */
+}
+
+.mech-toc::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 0.9); /* Slightly darker on hover */
+}
+
+/* For Firefox */
+.mech-toc {
+    scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
+    scrollbar-width: thin;
+}
+
 .mech-toc h1 {
     visibility: hidden;
     font-size: 12pt;
@@ -212,6 +235,30 @@ body {
     border-radius: 0px;
     padding: 30px;
     border-radius: 10px;
+    overflow-x: auto;
+}
+
+.mech-code-block::-webkit-scrollbar {
+    height: 8px; /* Horizontal scrollbar height */
+}
+
+.mech-code-block::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.mech-code-block::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.7);
+    border-radius: 10px;
+}
+
+.mech-code-block::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 0.9);
+}
+
+/* Firefox */
+.mech-code-block {
+    scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
+    scrollbar-width: thin;
 }
 
 .mech-code {
