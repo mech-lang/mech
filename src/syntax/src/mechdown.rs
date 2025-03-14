@@ -138,12 +138,15 @@ pub fn code_block(input: ParseString) -> ParseResult<Token> {
     label!(grave, msg1),
     label!(grave, msg1),
   )))(input)?;
+  let (input, code_id) = opt(identifier)(input)?;
+  let (input, _) = many0(space_tab)(input)?;
   let (input, _) = label!(new_line, msg2)(input)?;
   let (input, (text,src_range)) = range(many0(nom_tuple((
     is_not(nom_tuple((grave, grave, grave))),
     any,
   ))))(input)?;
   let (input, _) = nom_tuple((grave, grave, grave))(input)?;
+  let (input, _) = many0(space_tab)(input)?;
   let (input, _) = new_line(input)?;
   let filtered_text: Vec<char> = text.into_iter().flat_map(|(_, s)| s.chars().collect::<Vec<char>>()).collect();
   let code_token = Token::new(TokenKind::CodeBlock, src_range, filtered_text);
