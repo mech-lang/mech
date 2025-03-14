@@ -4,6 +4,9 @@ html {
     scroll-behavior: smooth;
 }
 
+.mech-program{counter-reset: section}
+.mech-toc{counter-reset: section}
+
 body {
     font-family: 'Roboto', sans-serif;
     background-color: #2F353B;
@@ -95,7 +98,7 @@ body {
 }
 
 .mech-toc h4 a:hover {
-    color: #ffd139;
+    color: #ee6262;
     text-decoration: none;
 }
 
@@ -155,6 +158,20 @@ body {
 .mech-formula-operator {
     padding-left: 6px;
     padding-right: 6px;
+}
+
+h2{counter-reset: sub-section}
+
+h2:before{
+    counter-increment: section;
+    color: #F3B62D;
+    content: counter(section) " ";
+}
+
+h4:before{
+    counter-increment: sub-section;
+    color: #ee6262;
+    content: counter(section) "." counter(sub-section) " ";
 }
 
 .mech-program .mech-program-title {
@@ -533,6 +550,11 @@ body {
 
 .mech-tuple-struct-name {
     color: #dbc3a5;
+}
+
+.mech-code-block .mech-code:first-child .mech-comment {
+    margin-top: 0px;
+    padding-top: 0px;
 }
 
 .mech-comment {
