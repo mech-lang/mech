@@ -161,19 +161,15 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
     _ => match unordered_list(input.clone()) {
       Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
       //Err(Failure(err)) => {return Err(Failure(err));}
-      _ => match comment(input.clone()) {
-        Ok((input, comment)) => (input, SectionElement::Comment(comment)),
+      _ => match paragraph(input.clone()) {
+        Ok((input, p)) => (input, SectionElement::Paragraph(p)),
         //Err(Failure(err)) => {return Err(Failure(err));}
-        _ => match paragraph(input.clone()) {
-          Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+        _ => match code_block(input.clone()) {
+          Ok((input, m)) => (input,SectionElement::CodeBlock(m)),
           //Err(Failure(err)) => {return Err(Failure(err));}
-          _ => match code_block(input.clone()) {
-            Ok((input, m)) => (input,SectionElement::CodeBlock(m)),
-            //Err(Failure(err)) => {return Err(Failure(err));}
-            _ => match sub_section(input) {
-              Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
-              Err(err) => { return Err(err); }
-            }
+          _ => match sub_section(input) {
+            Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
+            Err(err) => { return Err(err); }
           }
         }
       }
@@ -185,18 +181,15 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
 
 // sub_section_element := comment | unordered_list | mech_code | paragraph | code_block;
 pub fn sub_section_element(input: ParseString) -> ParseResult<SectionElement> {
-  let (input, section_element) = match comment(input.clone()) {
-    Ok((input, comment)) => (input, SectionElement::Comment(comment)),
-    _ => match unordered_list(input.clone()) {
-      Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
-      _ => match many1(mech_code)(input.clone()) {
-        Ok((input, m)) => (input, SectionElement::MechCode(m)),
-        _ => match paragraph(input.clone()) {
-          Ok((input, p)) => (input, SectionElement::Paragraph(p)),
-          _ => match code_block(input.clone()) {
-            Ok((input, m)) => (input,SectionElement::CodeBlock(m)),
-            Err(err) => { return Err(err); }
-          }
+  let (input, section_element) = match unordered_list(input.clone()) {
+    Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
+    _ => match many1(mech_code)(input.clone()) {
+      Ok((input, m)) => (input, SectionElement::MechCode(m)),
+      _ => match paragraph(input.clone()) {
+        Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+        _ => match code_block(input.clone()) {
+          Ok((input, m)) => (input,SectionElement::CodeBlock(m)),
+          Err(err) => { return Err(err); }
         }
       }
     }
