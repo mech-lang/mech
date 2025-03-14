@@ -180,6 +180,7 @@ h4:before{
     letter-spacing: 2px;
     font-size: 22pt;
     font-weight: bold;
+    text-align: center;
     margin-bottom: 16px;
 }
 .mech-program .mech-program-title::after {
@@ -205,9 +206,10 @@ h4:before{
     letter-spacing: 2px;
     margin-bottom: 10px;
     margin-top: 50px;
+    margin-left: -50px;
 }
 .mech-program h2::after {
-    content: "------------------------------------------------------------------------------";
+    content: "------------------------------------------------------------------------------------";
     letter-spacing: 0px;
     color: #F3B62D; 
     font-size: 12pt; 
