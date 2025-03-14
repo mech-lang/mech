@@ -1,6 +1,6 @@
 use mech_core::*;
 use mech_core::nodes::{Kind, Matrix};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use colored::Colorize;
 use std::io::{Read, Write, Cursor};
 
@@ -1403,57 +1403,119 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
   }
 
   pub fn humanize_html(input: String) -> String {
-    let mut formatted = String::new();
-    let mut indent_level: usize = 0;
+    let mut result = String::new();
+    let mut indent_level = 0;
+    let mut in_pre_tag = false;
+    let chars: Vec<char> = input.chars().collect();
     let mut i = 0;
-    while i < input.len() {
-      // Find the next tag
-      if let Some(start) = input[i..].find('<') {
-        let tag_start = i + start;
-        if let Some(end) = input[tag_start..].find('>') {
-          let tag_end = tag_start + end + 1;
-          let tag = &input[tag_start..tag_end];
-          // Add any content before the tag
-          let content = &input[i..tag_start].trim();
-          if !content.is_empty() {
-            formatted.push('\n');
-            formatted.push_str(&" ".repeat(indent_level));
-            formatted.push_str(content);
-          }
-          // Check if this is a closing tag
-          if tag.starts_with("</") {
-            // Decrease indentation for closing tags
-            indent_level = indent_level.saturating_sub(1);
-            formatted.push('\n');
-            formatted.push_str(&" ".repeat(indent_level));
-            formatted.push_str(tag);
-          } else if tag.ends_with("/>") {
-            // Self-closing tag, no change in indentation
-            formatted.push('\n');
-            formatted.push_str(&" ".repeat(indent_level));
-            formatted.push_str(tag);
-          } else {
-            // Opening tag
-            formatted.push('\n');
-            formatted.push_str(&" ".repeat(indent_level));
-            formatted.push_str(tag);
-            indent_level += 1;
-          }
-          // Move past the current tag
-          i = tag_end;
-          continue;
-        }
-      }
-      // Handle remaining content (if no more tags)
-      let content = &input[i..].trim();
-      if !content.is_empty() {
-        formatted.push('\n');
-        formatted.push_str(&" ".repeat(indent_level));
-        formatted.push_str(content);
-      }
-      break;
+    
+    let self_closing_tags = HashSet::from([
+      "area", "base", "br", "col", "embed", "hr", "img", "input", 
+      "link", "meta", "param", "source", "track", "wbr"
+    ]);
+    
+    fn matches_tag(chars: &[char], pos: usize, tag: &[char]) -> bool {
+      pos + tag.len() <= chars.len() && chars[pos..pos+tag.len()] == tag[..]
     }
-    formatted
+    
+    while i < chars.len() {
+      // Handle <pre> tags
+      if !in_pre_tag && matches_tag(&chars, i, &['<', 'p', 'r', 'e']) && 
+        (i+4 >= chars.len() || chars[i+4].is_whitespace() || chars[i+4] == '>') {
+        
+        in_pre_tag = true;
+        result.push('\n');
+        result.push_str(&"  ".repeat(indent_level));
+        
+        // Add the pre tag
+        while i < chars.len() && chars[i] != '>' {
+          result.push(chars[i]);
+          i += 1;
+        }
+        result.push('>');
+        i += 1;
+        indent_level += 1;
+        
+        // Process pre content
+        let start = i;
+        while i < chars.len() && !matches_tag(&chars, i, &['<', '/', 'p', 'r', 'e', '>']) {
+          i += 1;
+        }
+        
+        // Add the pre content as is
+        chars[start..i].iter().for_each(|&c| result.push(c));
+        
+        // Add the closing pre tag
+        if i < chars.len() {
+          result.push_str("</pre>");
+          i += 6;
+          in_pre_tag = false;
+          indent_level -= 1;
+        }
+      // Open
+      } else if !in_pre_tag && i < chars.len() && chars[i] == '<' && i+1 < chars.len() && chars[i+1] != '/' {
+        let tag_start = i + 1;
+        let mut j = tag_start;
+        
+        // Get tag name
+        while j < chars.len() && chars[j].is_alphanumeric() {
+          j += 1;
+        }
+        
+        let tag_name: String = chars[tag_start..j].iter().collect();
+        let is_self_closing = self_closing_tags.contains(tag_name.as_str());
+        
+        // Add newline and indentation
+        result.push('\n');
+        result.push_str(&"  ".repeat(indent_level));
+        
+        // Add the tag
+        while i < chars.len() && chars[i] != '>' {
+          result.push(chars[i]);
+          i += 1;
+        }
+        result.push('>');
+        i += 1;
+        
+        if !is_self_closing {
+          indent_level += 1;
+        }
+      // Close
+      } else if !in_pre_tag && i < chars.len() && chars[i] == '<' && i+1 < chars.len() && chars[i+1] == '/' {
+        indent_level = indent_level.saturating_sub(1);
+        
+        result.push('\n');
+        result.push_str(&"  ".repeat(indent_level));
+        
+        while i < chars.len() && chars[i] != '>' {
+          result.push(chars[i]);
+          i += 1;
+        }
+        result.push('>');
+        i += 1;
+      // Not Pre
+      } else if !in_pre_tag {
+        let start = i;
+        while i < chars.len() && chars[i] != '<' {
+          i += 1;
+        }
+        
+        let content: String = chars[start..i].iter().collect();
+        if !content.trim().is_empty() {
+          result.push('\n');
+          result.push_str(&"  ".repeat(indent_level));
+          result.push_str(&content);
+        }
+      // In Pre
+      } else {
+        result.push(chars[i]);
+        i += 1;
+      }
+    }
+    
+    result.push('\n');
+    result
   }
+
  
 }
