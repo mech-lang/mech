@@ -198,7 +198,7 @@ pub fn symbol(input: ParseString) -> ParseResult<Token> {
 
 // text := alpha | digit | space | tab | escaped_char | punctuation | grouping_symbol | symbol ;
 pub fn text(input: ParseString) -> ParseResult<Token> {
-  let (input, text) = alt((alpha_token, digit_token, space, tab, escaped_char, punctuation, grouping_symbol, symbol))(input)?;
+  let (input, text) = alt((alpha_token, digit_token, emoji, space, tab, escaped_char, punctuation, grouping_symbol, symbol))(input)?;
   Ok((input, text))
 }
 
