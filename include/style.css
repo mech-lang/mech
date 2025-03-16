@@ -332,6 +332,15 @@ h4:before{
     line-height: 25px;
 }
 
+.mech-paragraph a {
+    color: #ee6262;
+    text-decoration: none;
+}
+
+.mech-paragraph a:hover {
+    text-decoration: underline;
+}
+
 .mech-all {
     color: #ffd139;
 }
