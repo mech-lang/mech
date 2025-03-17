@@ -74,15 +74,46 @@ pub fn paragraph_symbol(input: ParseString) -> ParseResult<Token> {
   Ok((input, symbol))
 }
 
-// paragraph_starter := (word | number | quote | left_angle | right_angle | left_bracket | right_bracket | period | exclamation | question | comma | colon | semicolon | left_parenthesis | right_parenthesis | emoji)+ ;
-pub fn paragraph_starter(input: ParseString) -> ParseResult<ParagraphElement> {
-  let (input, text) = alt((alpha_token, quote))(input)?;
-  Ok((input, ParagraphElement::Start(text)))
+pub fn strong(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, _) = tuple((asterisk,asterisk))(input)?;
+  let (input, text) = paragraph_element(input)?;
+  let (input, _) = tuple((asterisk,asterisk))(input)?;
+  Ok((input, ParagraphElement::Strong(Box::new(text))))
 }
 
-// paragraph_element := (!define_operator, text)+ ;
-pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
-  let (input, elements) = match many1(nom_tuple((is_not(define_operator),text)))(input) {
+pub fn emphasis(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, _) = asterisk(input)?;
+  let (input, text) = paragraph_element(input)?;
+  let (input, _) = asterisk(input)?;
+  Ok((input, ParagraphElement::Emphasis(Box::new(text))))
+}
+
+pub fn strikethrough(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, _) = tilde(input)?;
+  let (input, text) = paragraph_element(input)?;
+  let (input, _) = tilde(input)?;
+  Ok((input, ParagraphElement::Strikethrough(Box::new(text))))
+}
+
+pub fn underline(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, _) = underscore(input)?;
+  let (input, text) = paragraph_element(input)?;
+  let (input, _) = underscore(input)?;
+  Ok((input, ParagraphElement::Underline(Box::new(text))))
+}
+
+pub fn inline_code(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, _) = grave(input)?;
+  let (input, text) = many0(tuple((is_not(grave),text)))(input)?;
+  let (input, _) = grave(input)?;
+  let mut text = text.into_iter().map(|(_,tkn)| tkn).collect();
+  let mut text = Token::merge_tokens(&mut text).unwrap();
+  text.kind = TokenKind::Text;
+  Ok((input, ParagraphElement::InlineCode(text)))
+}
+
+pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, elements) = match many1(nom_tuple((is_not(alt((tilde,asterisk,underscore,grave,define_operator))),text)))(input) {
     Ok((input, mut text)) => {
       let mut text = text.into_iter().map(|(_,tkn)| tkn).collect();
       let mut text = Token::merge_tokens(&mut text).unwrap();
@@ -94,12 +125,13 @@ pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, elements))
 }
 
+pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
+  alt((paragraph_text, strong, emphasis, inline_code, strikethrough, underline))(input)
+}
+
 // paragraph := paragraph_starter, paragraph_element* ;
 pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
-  let (input, first) = paragraph_starter(input)?;
-  let (input, mut rest) = many0(paragraph_element)(input)?;
-  let mut elements = vec![first];
-  elements.append(&mut rest);
+  let (input, elements) = many0(alt((paragraph_text, strong, emphasis, inline_code, strikethrough, underline)))(input)?;
   Ok((input, Paragraph{elements}))
 }
 
