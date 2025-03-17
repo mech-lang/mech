@@ -25,6 +25,42 @@ macro_rules! leaf {
   )
 }
 
+macro_rules! ws0_leaf {
+  ($name:ident, $byte:expr, $token:expr) => (
+    pub fn $name(input: ParseString) -> ParseResult<Token> {
+      if input.is_empty() {
+        return Err(nom::Err::Error(ParseError::new(input, "Unexpected eof")))
+      }
+      let (input, _) = whitespace0(input)?;
+      let start = input.loc();
+      let byte = input.graphemes[input.cursor];
+      let (input, _) = tag($byte)(input)?;
+      let end = input.loc();
+      let (input, _) = whitespace0(input)?;
+      let src_range = SourceRange { start, end };
+      Ok((input, Token{kind: $token, chars: $byte.chars().collect::<Vec<char>>(), src_range}))
+    }
+  )
+}
+
+macro_rules! ws1_leaf {
+  ($name:ident, $byte:expr, $token:expr) => (
+    pub fn $name(input: ParseString) -> ParseResult<Token> {
+      if input.is_empty() {
+        return Err(nom::Err::Error(ParseError::new(input, "Unexpected eof")))
+      }
+      let (input, _) = whitespace1(input)?;
+      let start = input.loc();
+      let byte = input.graphemes[input.cursor];
+      let (input, _) = tag($byte)(input)?;
+      let end = input.loc();
+      let (input, _) = whitespace1(input)?;
+      let src_range = SourceRange { start, end };
+      Ok((input, Token{kind: $token, chars: $byte.chars().collect::<Vec<char>>(), src_range}))
+    }
+  )
+}
+
 leaf!{at, "@", TokenKind::At}
 leaf!{hashtag, "#", TokenKind::HashTag}
 leaf!{period, ".", TokenKind::Period}
@@ -90,6 +126,12 @@ leaf!{box_t_top, "┬", TokenKind::BoxDrawing}
 leaf!{box_t_bottom, "┴", TokenKind::BoxDrawing}
 leaf!{box_vert, "│", TokenKind::BoxDrawing}
 leaf!{box_vert_bold, "┃", TokenKind::BoxDrawing}
+
+ws0_leaf!(define_operator, ":=", TokenKind::DefineOperator);
+ws0_leaf!(assign_operator, "=", TokenKind::AssignOperator);
+ws0_leaf!(output_operator, "=>", TokenKind::OutputOperator);
+ws0_leaf!(async_transition_operator, "~>", TokenKind::AsyncTransitionOperator);
+ws0_leaf!(transition_operator, "->", TokenKind::TransitionOperator);
 
 // emoji_grapheme := ?emoji_grapheme_literal? ;
 pub fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {
