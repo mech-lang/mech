@@ -134,6 +134,12 @@ pub enum TokenKind {
   BoxDrawing,
   Dollar,
   CodeBlock,
+  InlineCode,
+  DefineOperator,
+  AssignOperator,
+  OutputOperator,
+  AsyncTransitionOperator,
+  TransitionOperator,
   Empty
 }
 
@@ -942,23 +948,26 @@ pub struct MechString {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ParagraphElement {
-  Start(Token),
   Text(Token),
-  Bold,            // todo
-  Italic,          // todo
-  Underline,       // todo
-  Strike,          // todo
-  InlineCode,      // todo           
-  Link,            // todo
+  Strong(Box<ParagraphElement>),            
+  Emphasis(Box<ParagraphElement>),
+  Underline(Box<ParagraphElement>),
+  Strikethrough(Box<ParagraphElement>),
+  InlineCode(Token),                 
+  Link
 }
 
 impl ParagraphElement {
 
   pub fn to_string(&self) -> String {
     match self {
-      ParagraphElement::Start(t) => t.to_string(),
       ParagraphElement::Text(t) => t.to_string(),
-      _ => "".to_string(),
+      ParagraphElement::Strong(t) => t.to_string(),
+      ParagraphElement::Emphasis(t) => t.to_string(),
+      ParagraphElement::Underline(t) => t.to_string(),
+      ParagraphElement::Strikethrough(t) => t.to_string(),
+      ParagraphElement::InlineCode(t) => t.to_string(),
+      _ => todo!(),
     }
   }
 
