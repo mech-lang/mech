@@ -30,7 +30,7 @@ wasm-bindgen = "0.2.100"
 js-sys = "0.3.77"
 lazy_static = "1.5.0"
 miniz_oxide = "0.8.5"
-bincode = "2.0.0"
+bincode = "2.0.1"
 base64 = "0.22.1"
 brotli = "7.0.0"
 
