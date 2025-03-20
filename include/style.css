@@ -319,6 +319,18 @@ h4:before{
 .mech-term {
 }
 
+.mech-inline-code {
+    background-color: #171D21;
+    color: #ada594;
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 12pt;
+    padding: 2px 2px;
+    margin: 0px;
+    margin-left: 2px;
+    margin-right: 7px;
+    border-radius: 5px;
+}
+
 .mech-formula-operator {
     color: #ffd139;
 }
