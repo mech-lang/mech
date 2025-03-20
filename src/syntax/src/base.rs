@@ -31,12 +31,12 @@ macro_rules! ws0_leaf {
       if input.is_empty() {
         return Err(nom::Err::Error(ParseError::new(input, "Unexpected eof")))
       }
-      let (input, _) = whitespace0(input)?;
       let start = input.loc();
       let byte = input.graphemes[input.cursor];
-      let (input, _) = tag($byte)(input)?;
-      let end = input.loc();
       let (input, _) = whitespace0(input)?;
+      let (input, _) = tag($byte)(input)?;
+      let (input, _) = whitespace0(input)?;
+      let end = input.loc();
       let src_range = SourceRange { start, end };
       Ok((input, Token{kind: $token, chars: $byte.chars().collect::<Vec<char>>(), src_range}))
     }

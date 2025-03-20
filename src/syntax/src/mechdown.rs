@@ -131,7 +131,7 @@ pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
 
 // paragraph := paragraph_starter, paragraph_element* ;
 pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
-  let (input, elements) = many0(alt((paragraph_text, strong, emphasis, inline_code, strikethrough, underline)))(input)?;
+  let (input, elements) = many1(alt((paragraph_text, strong, emphasis, inline_code, strikethrough, underline)))(input)?;
   Ok((input, Paragraph{elements}))
 }
 
@@ -206,6 +206,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
         }
       }
     }
+    _ => todo!(),
   };
   let (input, _) = whitespace0(input)?;
   Ok((input, section_element))
@@ -241,7 +242,8 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
 // section_elements := section_element+ ;
 pub fn section_elements(input: ParseString) -> ParseResult<Section> {
   let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
-  let (input, elements) = many1(section_element)(input)?;
+  let (input, elements) = many1(tuple((is_not(ul_subtitle),section_element)))(input)?;
+  let elements = elements.into_iter().map(|(_,e)| e).collect();
   Ok((input, Section{subtitle: None, elements}))
 }
 
