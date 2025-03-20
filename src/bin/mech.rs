@@ -334,7 +334,9 @@ async fn main() -> Result<(), MechError> {
             }
           }
         }
-        _ => todo!(),
+        Err(x) => {
+          println!("{} Unrecognized command: {}", "[Error]".truecolor(246,98,78), x);
+        }
       }
     } else if input.trim() == "" {
       continue;
