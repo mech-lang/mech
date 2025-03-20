@@ -193,14 +193,14 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
     _ => match unordered_list(input.clone()) {
       Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
       //Err(Failure(err)) => {return Err(Failure(err));}
-      _ => match paragraph(input.clone()) {
-        Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+      _ => match code_block(input.clone()) {
+        Ok((input, m)) => (input,SectionElement::CodeBlock(m)),
         //Err(Failure(err)) => {return Err(Failure(err));}
-        _ => match code_block(input.clone()) {
-          Ok((input, m)) => (input,SectionElement::CodeBlock(m)),
-          //Err(Failure(err)) => {return Err(Failure(err));}
-          _ => match sub_section(input) {
-            Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
+        _ => match sub_section(input.clone()) {
+          Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
+        //Err(Failure(err)) => {return Err(Failure(err));}
+          _ => match paragraph(input) {
+            Ok((input, p)) => (input, SectionElement::Paragraph(p)),
             Err(err) => { return Err(err); }
           }
         }
@@ -214,15 +214,18 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
 
 // sub_section_element := comment | unordered_list | mech_code | paragraph | code_block;
 pub fn sub_section_element(input: ParseString) -> ParseResult<SectionElement> {
-  let (input, section_element) = match unordered_list(input.clone()) {
-    Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
-    _ => match many1(mech_code)(input.clone()) {
-      Ok((input, m)) => (input, SectionElement::MechCode(m)),
-      _ => match paragraph(input.clone()) {
-        Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+  let (input, section_element) = match many1(mech_code)(input.clone()) {
+    Ok((input, m)) => (input, SectionElement::MechCode(m)),
+    _ => match unordered_list(input.clone()) {
+      Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
+      _ => match section(input.clone()) {
+        Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
         _ => match code_block(input.clone()) {
           Ok((input, m)) => (input,SectionElement::CodeBlock(m)),
-          Err(err) => { return Err(err); }
+          _ => match paragraph(input.clone()) {
+            Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+            Err(err) => { return Err(err); }
+          }
         }
       }
     }
@@ -235,7 +238,8 @@ pub fn sub_section_element(input: ParseString) -> ParseResult<SectionElement> {
 pub fn section(input: ParseString) -> ParseResult<Section> {
   let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
   let (input, subtitle) = ul_subtitle(input)?;
-  let (input, elements) = many0(section_element)(input)?;
+  let (input, elements) = many0(tuple((is_not(ul_subtitle),section_element)))(input)?;
+  let elements = elements.into_iter().map(|(_,e)| e).collect();
   Ok((input, Section{subtitle: Some(subtitle), elements}))
 }
 
@@ -251,7 +255,8 @@ pub fn section_elements(input: ParseString) -> ParseResult<Section> {
 pub fn sub_section(input: ParseString) -> ParseResult<Section> {
   let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
   let (input, subtitle) = alpha_subtitle(input)?;
-  let (input, elements) = many0(sub_section_element)(input)?;
+  let (input, elements) = many0(tuple((is_not(alt((ul_subtitle,alpha_subtitle))),sub_section_element)))(input)?;
+  let elements = elements.into_iter().map(|(_,e)| e).collect();
   Ok((input, Section{subtitle: Some(subtitle), elements}))
 }
 
