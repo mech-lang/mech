@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use crate::hash_chars; 
+use crate::*; 
 use std::fmt;
 use std::io::{Write, Cursor, Read};
 
@@ -133,6 +133,13 @@ pub enum TokenKind {
   Identifier,
   BoxDrawing,
   Dollar,
+  CodeBlock,
+  InlineCode,
+  DefineOperator,
+  AssignOperator,
+  OutputOperator,
+  AsyncTransitionOperator,
+  TransitionOperator,
   Empty
 }
 
@@ -163,6 +170,10 @@ impl Default for Token {
 
 impl Token {
 
+  pub fn new(kind: TokenKind, src_range: SourceRange, chars: Vec<char>) -> Token {
+    Token{kind, chars, src_range}
+  }
+
   pub fn to_string(&self) -> String {
     self.chars.iter().collect()
   }
@@ -185,6 +196,12 @@ impl Token {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct TableOfContents {
+    pub title: Option<Title>,
+    pub sections: Vec<Section>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Program {
   pub title: Option<Title>,
   pub body: Body,
@@ -199,6 +216,106 @@ impl Program {
     let body_tokens = self.body.tokens();
     body_tokens
   }
+
+  pub fn table_of_contents(&self) -> TableOfContents {
+    let mut sections = vec![];
+    for s in &self.body.sections {
+      sections.push(s.table_of_contents());
+    }
+    TableOfContents {
+      title: self.title.clone(),
+      sections,
+    }
+  }
+
+  pub fn pretty_print(&self) -> String {
+    let json_string = serde_json::to_string_pretty(self).unwrap();
+  
+    let depth = |line: &str|->usize{line.chars().take_while(|&c| c == ' ').count()};
+    let mut result = String::new();
+    let lines: Vec<&str> = json_string.lines().collect();
+    result.push_str("Program\n");
+    for (index, line) in lines.iter().enumerate() {
+      let trm = line.trim();
+      if trm == "}" || 
+         trm == "},"|| 
+         trm == "{" || 
+         trm == "[" || 
+         trm == "],"|| 
+         trm == "]" {
+        continue;
+      }
+  
+      // Count leading spaces to determine depth
+      let d = depth(line);
+      // Construct the tree-like prefix
+      let mut prefix = String::new();
+      for _ in 0..d {
+        prefix.push_str(" ");
+      }
+      if index == lines.len() {
+        prefix.push_str("└ ");
+      } else {
+        if depth(lines[index + 1]) != d {
+          prefix.push_str("└ ");
+        } else {
+          prefix.push_str("├ ");
+        }
+      }
+      let trm = line.trim();
+      let trm = trm.trim_end_matches('{')
+                    .trim_start_matches('"')
+                    .trim_end_matches(':')
+                    .trim_end_matches('"')
+                    .trim_end_matches('[');
+      prefix.push_str(trm);
+  
+      // Append formatted line to result
+      result.push_str(&prefix);
+      result.push('\n');
+      result = result.replace("\":", "");
+    }
+    let mut indexed_str = IndexedString::new(&result);
+    'rows: for i in 0..indexed_str.rows {
+      let rowz = &indexed_str.index_map[i];
+      for j in 0..rowz.len() {
+        let c = match indexed_str.get(i,j) {
+          Some(c) => c,
+          None => continue,
+        };
+        if c == '└' {
+          for k in i+1..indexed_str.rows {
+            match indexed_str.get(k,j) {
+              Some(c2) => {
+                if c2 == '└' {
+                  indexed_str.set(i,j,'├');
+                  for l in i+1..k {
+                    match indexed_str.get(l,j) {
+                      Some(' ') => {indexed_str.set(l,j,'│');},
+                      Some('└') => {indexed_str.set(l,j,'├');},
+                      _ => (),
+                    }
+                  }
+                } else if c2 == ' ' {
+                  continue;
+                } else {
+                  continue 'rows;
+                }
+              },
+              None => continue,
+            }
+  
+          }
+        } else if c == ' ' || c == '│' {
+          continue;
+        } else {
+          continue 'rows;
+        }
+      }
+    }
+    indexed_str.to_string()
+  }
+
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -249,6 +366,23 @@ pub struct Section {
 }
 
 impl Section {
+
+  pub fn table_of_contents(&self) -> Section {
+    let mut elements = vec![];
+    for e in &self.elements {
+      match e {
+        SectionElement::Section(s) => {
+          elements.push(SectionElement::Section(Box::new(s.table_of_contents())));
+        },
+        _ => (),
+      }
+    }
+    Section {
+      subtitle: self.subtitle.clone(),
+      elements,
+    }
+  }
+
   pub fn tokens(&self) -> Vec<Token> {
     let mut out = vec![];
     for s in &self.elements {
@@ -266,7 +400,7 @@ pub enum SectionElement {
   Paragraph(Paragraph),
   MechCode(Vec<MechCode>),
   UnorderedList(UnorderedList),
-  CodeBlock,       // todo
+  CodeBlock(Token),
   OrderedList,     // todo
   BlockQuote,      // todo
   ThematicBreak,   // todo
@@ -814,23 +948,26 @@ pub struct MechString {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ParagraphElement {
-  Start(Token),
   Text(Token),
-  Bold,            // todo
-  Italic,          // todo
-  Underline,       // todo
-  Strike,          // todo
-  InlineCode,      // todo           
-  Link,            // todo
+  Strong(Box<ParagraphElement>),            
+  Emphasis(Box<ParagraphElement>),
+  Underline(Box<ParagraphElement>),
+  Strikethrough(Box<ParagraphElement>),
+  InlineCode(Token),                 
+  Link
 }
 
 impl ParagraphElement {
 
   pub fn to_string(&self) -> String {
     match self {
-      ParagraphElement::Start(t) => t.to_string(),
       ParagraphElement::Text(t) => t.to_string(),
-      _ => "".to_string(),
+      ParagraphElement::Strong(t) => t.to_string(),
+      ParagraphElement::Emphasis(t) => t.to_string(),
+      ParagraphElement::Underline(t) => t.to_string(),
+      ParagraphElement::Strikethrough(t) => t.to_string(),
+      ParagraphElement::InlineCode(t) => t.to_string(),
+      _ => todo!(),
     }
   }
 

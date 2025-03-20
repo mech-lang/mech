@@ -17,7 +17,7 @@ pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: 
         match parse_result {
           Ok(tree) => { 
             if tree_flag {
-              println!("{}", format_parse_tree(&tree));
+              println!("{}", &tree.pretty_print());
             }
             let now = Instant::now();
             let result = intrp.interpret(&tree);

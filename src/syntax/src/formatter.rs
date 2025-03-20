@@ -1,18 +1,18 @@
 use mech_core::*;
 use mech_core::nodes::{Kind, Matrix};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use colored::Colorize;
 use std::io::{Read, Write, Cursor};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Formatter{
-  code: String,
   identifiers: HashMap<u64, String>,
   rows: usize,
   cols: usize,
   indent: usize,
   html: bool,
-  nested: bool
+  nested: bool,
+  toc: bool,
 }
 
 
@@ -20,13 +20,13 @@ impl Formatter {
 
   pub fn new() -> Formatter {
     Formatter {
-      code: String::new(),
       identifiers: HashMap::new(),
       rows: 0,
       cols: 0,
       indent: 0,
       html: false,
       nested: false,
+      toc: false,
     }
   }
 
@@ -36,7 +36,10 @@ impl Formatter {
   }
 
   pub fn format_html(&mut self, tree: &Program, style: String) -> String {
+
     self.html = true;
+    let toc = tree.table_of_contents();
+    let formatted_toc = self.table_of_contents(&toc);
     let formatted_src = self.program(tree);
     let head = format!(r#"<html>
     <head>
@@ -46,14 +49,21 @@ impl Formatter {
                   {}
         </style>
     </head>
-    <body>"#, style);
+    <body>
+      <div class="mech-root">"#, style);
+    let encoded_tree = match compress_and_encode(&tree) {
+      Ok(encoded) => encoded,
+      Err(e) => todo!(),
+    };
     let foot = format!(r#"
-    <div id = "mech-root"></div>
+      <div id = "mech-output"></div>
+    </div>
     <script type="module">
       import init, {{WasmMech}} from '/pkg/mech_wasm.js';
       let wasm_core;
       async function run() {{
         await init();
+        var code = `{}`;
         wasm_core = new WasmMech();
         var xhr = new XMLHttpRequest();
         var codeUrl = `/code${{window.location.pathname}}`;
@@ -70,6 +80,7 @@ impl Formatter {
           }}
         }};
         xhr.onerror = function (e) {{
+          console.error("I've been waiting for this error. Look me up in formatter.rs");
           console.error(xhr.statusText);
         }};
         xhr.send(null);        
@@ -77,8 +88,29 @@ impl Formatter {
       run();
     </script>
   </body>
-</html>"#);
-    format!("{}{}{}", head, formatted_src, foot)
+</html>"#, encoded_tree);
+    format!("{}{}{}{}", head, formatted_toc, formatted_src, foot)
+  }
+
+  pub fn table_of_contents(&mut self, toc: &TableOfContents) -> String {
+    self.toc = true;
+    let title = match &toc.title {
+      Some(title) => self.title(&title),
+      None => "".to_string(),
+    };
+    let sections = self.sections(&toc.sections);
+    self.toc = false;
+    format!("<div class=\"mech-toc\">{}{}</div>",title,sections)
+  }
+
+  pub fn sections(&mut self, sections: &Vec<Section>) -> String {
+    let mut src = "".to_string();
+    let section_count = sections.len();
+    for (i, section) in sections.iter().enumerate() {
+      let s = self.section(section);
+      src = format!("{}{}", src, s);
+    }
+    format!("<div class=\"mech-toc-sections\">{}</div>",src)
   }
 
   pub fn program(&mut self, node: &Program) -> String {
@@ -104,8 +136,11 @@ impl Formatter {
 
   pub fn subtitle(&mut self, node: &Subtitle) -> String {
     let level = node.level;
+    let toc = if self.toc { "toc" } else { "" };
+    let title_id = hash_str(&format!("{}{}{}",level,node.to_string(),toc));
+    let link_id = hash_str(&format!("{}{}",level,node.to_string()));
     if self.html {
-      format!("<h{} class=\"mech-program-subtitle\">{}</h{}>", level, node.to_string(), level)
+      format!("<h{} id=\"{}\" class=\"mech-program-subtitle\"><a href=\"#{}\">{}</a></h{}>", level, title_id, link_id, node.to_string(), level)
     } else {
       format!("{}\n-------------------------------------------------------------------------------\n",node.to_string())
     }
@@ -142,10 +177,57 @@ impl Formatter {
   }
 
   pub fn paragraph(&mut self, node: &Paragraph) -> String {
+    let mut src = "".to_string();
+    for el in node.elements.iter() {
+      let el_str = self.paragraph_element(el);
+      src = format!("{}{}", src, el_str);
+    }
     if self.html {
-      format!("<p class=\"mech-paragraph\">{}</p>",node.to_string())
+      format!("<p class=\"mech-paragraph\">{}</p>",src)
     } else {
-      format!("{}\n",node.to_string())
+      format!("{}\n",src)
+    }
+  }
+
+  pub fn paragraph_element(&mut self, node: &ParagraphElement) -> String {
+    match node {
+      ParagraphElement::Text(n) => n.to_string(),
+      ParagraphElement::Strong(n) => {
+        if self.html {
+          format!("<strong class=\"mech-strong\">{}</strong>", n.to_string())
+        } else {
+          format!("**{}**", n.to_string())
+        }
+      },
+      ParagraphElement::Emphasis(n) => {
+        if self.html {
+          format!("<em class=\"mech-em\">{}</em>", n.to_string())
+        } else {
+          format!("*{}*", n.to_string())
+        }
+      },
+      ParagraphElement::Underline(n) => {
+        if self.html {
+          format!("<u class=\"mech-u\">{}</u>", n.to_string())
+        } else {
+          format!("_{}_", n.to_string())
+        }
+      },
+      ParagraphElement::Strikethrough(n) => {
+        if self.html {
+          format!("<del class=\"mech-del\">{}</del>", n.to_string())
+        } else {
+          format!("~{}~", n.to_string())
+        }
+      },
+      ParagraphElement::InlineCode(n) => {
+        if self.html {
+          format!("<code class=\"mech-inline-code\">{}</code>", n.to_string())
+        } else {
+          format!("`{}`", n.to_string())
+        }
+      },
+      _ => todo!(),
     }
   }
 
@@ -156,7 +238,7 @@ impl Formatter {
       SectionElement::Paragraph(n) => self.paragraph(n),
       SectionElement::MechCode(n) => self.mech_code(n),
       SectionElement::UnorderedList(n) => self.unordered_list(n),
-      SectionElement::CodeBlock => todo!(),
+      SectionElement::CodeBlock(n) => self.code_block(n),
       SectionElement::OrderedList => todo!(),
       SectionElement::BlockQuote => todo!(),
       SectionElement::ThematicBreak => todo!(),
@@ -166,6 +248,15 @@ impl Formatter {
       format!("<div class=\"mech-section-element\">{}</div>",element)
     } else {
       element
+    }
+  }
+
+  pub fn code_block(&mut self, node: &Token) -> String {
+    let code = node.to_string();
+    if self.html {
+      format!("<pre class=\"mech-code-block\">{}</pre>",code)
+    } else {
+      format!("{}\n",code)
     }
   }
 
@@ -1359,57 +1450,119 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
   }
 
   pub fn humanize_html(input: String) -> String {
-    let mut formatted = String::new();
-    let mut indent_level: usize = 0;
+    let mut result = String::new();
+    let mut indent_level = 0;
+    let mut in_pre_tag = false;
+    let chars: Vec<char> = input.chars().collect();
     let mut i = 0;
-    while i < input.len() {
-      // Find the next tag
-      if let Some(start) = input[i..].find('<') {
-        let tag_start = i + start;
-        if let Some(end) = input[tag_start..].find('>') {
-          let tag_end = tag_start + end + 1;
-          let tag = &input[tag_start..tag_end];
-          // Add any content before the tag
-          let content = &input[i..tag_start].trim();
-          if !content.is_empty() {
-            formatted.push('\n');
-            formatted.push_str(&" ".repeat(indent_level));
-            formatted.push_str(content);
-          }
-          // Check if this is a closing tag
-          if tag.starts_with("</") {
-            // Decrease indentation for closing tags
-            indent_level = indent_level.saturating_sub(1);
-            formatted.push('\n');
-            formatted.push_str(&" ".repeat(indent_level));
-            formatted.push_str(tag);
-          } else if tag.ends_with("/>") {
-            // Self-closing tag, no change in indentation
-            formatted.push('\n');
-            formatted.push_str(&" ".repeat(indent_level));
-            formatted.push_str(tag);
-          } else {
-            // Opening tag
-            formatted.push('\n');
-            formatted.push_str(&" ".repeat(indent_level));
-            formatted.push_str(tag);
-            indent_level += 1;
-          }
-          // Move past the current tag
-          i = tag_end;
-          continue;
-        }
-      }
-      // Handle remaining content (if no more tags)
-      let content = &input[i..].trim();
-      if !content.is_empty() {
-        formatted.push('\n');
-        formatted.push_str(&" ".repeat(indent_level));
-        formatted.push_str(content);
-      }
-      break;
+    
+    let self_closing_tags = HashSet::from([
+      "area", "base", "br", "col", "embed", "hr", "img", "input", 
+      "link", "meta", "param", "source", "track", "wbr"
+    ]);
+    
+    fn matches_tag(chars: &[char], pos: usize, tag: &[char]) -> bool {
+      pos + tag.len() <= chars.len() && chars[pos..pos+tag.len()] == tag[..]
     }
-    formatted
+    
+    while i < chars.len() {
+      // Handle <pre> tags
+      if !in_pre_tag && matches_tag(&chars, i, &['<', 'p', 'r', 'e']) && 
+        (i+4 >= chars.len() || chars[i+4].is_whitespace() || chars[i+4] == '>') {
+        
+        in_pre_tag = true;
+        result.push('\n');
+        result.push_str(&"  ".repeat(indent_level));
+        
+        // Add the pre tag
+        while i < chars.len() && chars[i] != '>' {
+          result.push(chars[i]);
+          i += 1;
+        }
+        result.push('>');
+        i += 1;
+        indent_level += 1;
+        
+        // Process pre content
+        let start = i;
+        while i < chars.len() && !matches_tag(&chars, i, &['<', '/', 'p', 'r', 'e', '>']) {
+          i += 1;
+        }
+        
+        // Add the pre content as is
+        chars[start..i].iter().for_each(|&c| result.push(c));
+        
+        // Add the closing pre tag
+        if i < chars.len() {
+          result.push_str("</pre>");
+          i += 6;
+          in_pre_tag = false;
+          indent_level -= 1;
+        }
+      // Open
+      } else if !in_pre_tag && i < chars.len() && chars[i] == '<' && i+1 < chars.len() && chars[i+1] != '/' {
+        let tag_start = i + 1;
+        let mut j = tag_start;
+        
+        // Get tag name
+        while j < chars.len() && chars[j].is_alphanumeric() {
+          j += 1;
+        }
+        
+        let tag_name: String = chars[tag_start..j].iter().collect();
+        let is_self_closing = self_closing_tags.contains(tag_name.as_str());
+        
+        // Add newline and indentation
+        result.push('\n');
+        result.push_str(&"  ".repeat(indent_level));
+        
+        // Add the tag
+        while i < chars.len() && chars[i] != '>' {
+          result.push(chars[i]);
+          i += 1;
+        }
+        result.push('>');
+        i += 1;
+        
+        if !is_self_closing {
+          indent_level += 1;
+        }
+      // Close
+      } else if !in_pre_tag && i < chars.len() && chars[i] == '<' && i+1 < chars.len() && chars[i+1] == '/' {
+        indent_level = indent_level.saturating_sub(1);
+        
+        result.push('\n');
+        result.push_str(&"  ".repeat(indent_level));
+        
+        while i < chars.len() && chars[i] != '>' {
+          result.push(chars[i]);
+          i += 1;
+        }
+        result.push('>');
+        i += 1;
+      // Not Pre
+      } else if !in_pre_tag {
+        let start = i;
+        while i < chars.len() && chars[i] != '<' {
+          i += 1;
+        }
+        
+        let content: String = chars[start..i].iter().collect();
+        if !content.trim().is_empty() {
+          result.push('\n');
+          result.push_str(&"  ".repeat(indent_level));
+          result.push_str(&content);
+        }
+      // In Pre
+      } else {
+        result.push(chars[i]);
+        i += 1;
+      }
+    }
+    
+    result.push('\n');
+    result
   }
+
  
 }
