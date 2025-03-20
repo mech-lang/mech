@@ -35,14 +35,6 @@ pub fn comment_multiline(input: ParseString) -> ParseResult<Comment> {
   Ok((input, Comment{text: Token::merge_tokens(&mut text).unwrap()}))
 }
 
-// assign_operator := "=" ;
-pub fn assign_operator(input: ParseString) -> ParseResult<()> {
-  let (input, _) = whitespace0(input)?;
-  let (input, _) = tag("=")(input)?;
-  let (input, _) = whitespace0(input)?;
-  Ok((input, ()))
-}
-
 // op_assign_operator := add_assign_operator | sub_assign_operator | mul_assign_operator | div_assign_operator | exp_assign_operator ;
 pub fn op_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   alt((add_assign_operator, sub_assign_operator, mul_assign_operator, div_assign_operator, exp_assign_operator))(input)

@@ -327,38 +327,6 @@ pub fn set(input: ParseString) -> ParseResult<Set> {
 
 // #### State Machines
 
-// define_operator := ":=" ;
-pub fn define_operator(input: ParseString) -> ParseResult<()> {
-  let (input, _) = whitespace0(input)?;
-  let (input, _) = tag(":=")(input)?;
-  let (input, _) = whitespace0(input)?;
-  Ok((input, ()))
-}
-
-// output_operator := "=>" ;
-pub fn output_operator(input: ParseString) -> ParseResult<()> {
-  let (input, _) = whitespace0(input)?;
-  let (input, _) = tag("=>")(input)?;
-  let (input, _) = whitespace0(input)?;
-  Ok((input, ()))
-}
-
-// async_transition_operator := "~>" ;
-pub fn async_transition_operator(input: ParseString) -> ParseResult<()> {
-  let (input, _) = whitespace0(input)?;
-  let (input, _) = tag("~>")(input)?;
-  let (input, _) = whitespace0(input)?;
-  Ok((input, ()))
-}
-
-// transition_operator := "->" ;
-pub fn transition_operator(input: ParseString) -> ParseResult<()> {
-  let (input, _) = whitespace0(input)?;
-  let (input, _) = tag("->")(input)?;
-  let (input, _) = whitespace0(input)?;
-  Ok((input, ()))
-}
-
 // guard_operator := "|" | "│" | "├" | "└" ;
 pub fn guard_operator(input: ParseString) -> ParseResult<()> {
   let (input, _) = whitespace0(input)?;

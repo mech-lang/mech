@@ -150,7 +150,7 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
     sources: HashMap<u64,MechSourceCode>,             // u64 is the hash of the relative source 
     trees: HashMap<u64,MechSourceCode>,               // stores the ast for the sources
     errors: HashMap<u64,Vec<MechError>>,              // stores the errors for the sources
-    html: HashMap<u64,String>,                        // stores the html for the sources
+    html: HashMap<u64,MechSourceCode>,                // stores the html for the sources
     directory: HashMap<PathBuf, PathBuf>,             // relative source -> absolute source
     reverse_lookup: HashMap<PathBuf, PathBuf>,        // absolute source -> relative source
     id_map: HashMap<u64,PathBuf>,                     // hash -> path
@@ -172,7 +172,7 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
       }
     }
   
-    pub fn html_iter(&self) -> impl Iterator<Item = (&u64,&String)> {
+    pub fn html_iter(&self) -> impl Iterator<Item = (&u64,&MechSourceCode)> {
       self.html.iter()
     }
     
@@ -219,7 +219,7 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
       
       // update
       *source = new_source;
-      *html = mech_html;
+      *html = MechSourceCode::Html(mech_html);
       *tree = MechSourceCode::Tree(new_tree);
       
       Ok(())
@@ -242,7 +242,7 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
           let file_id = hash_str(&source);
           self.sources.insert(file_id, code.clone());
           self.trees.insert(file_id, MechSourceCode::Tree(tree));
-          self.html.insert(file_id, mech_html);
+          self.html.insert(file_id, MechSourceCode::Html(mech_html));
           self.id_map.insert(file_id,PathBuf::new());
         },
         MechSourceCode::Tree(ref tree) => {
@@ -254,7 +254,7 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
           let file_id = hash_str(&format!("{:?}", tree));
           self.sources.insert(file_id, code.clone());
           self.trees.insert(file_id, code.clone());
-          self.html.insert(file_id, mech_html);
+          self.html.insert(file_id, MechSourceCode::Html(mech_html));
           self.id_map.insert(file_id,PathBuf::new());
         },
         _ => {
@@ -277,6 +277,7 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
             MechSourceCode::String(ref source) => match parser::parse(&source) {
               Ok(tree) => tree,
               Err(err) => {
+                println!("{} {:?}", "[Parse Error]".truecolor(255,0,0), err);
                 todo!("Handle parse error");
               }
             },
@@ -292,7 +293,7 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
           // Save all this so we don't have to do it later.
           self.sources.insert(file_id, src.clone());
           self.trees.insert(file_id, MechSourceCode::Tree(tree));
-          self.html.insert(file_id, mech_html);
+          self.html.insert(file_id, MechSourceCode::Html(mech_html));
           self.id_map.insert(file_id,src_path.to_path_buf());
   
   
@@ -375,7 +376,7 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
       }
     }
   
-    pub fn get_html(&self, src: &str) -> Option<String> {
+    pub fn get_html(&self, src: &str) -> Option<MechSourceCode> {
       if src == "" {
         let file_id = self.index;
         return match self.html.get(&file_id) {

@@ -1,5 +1,12 @@
 @import url(https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/fira_code.css);
 
+html {
+    scroll-behavior: smooth;
+}
+
+.mech-program{counter-reset: section}
+.mech-toc{counter-reset: section}
+
 body {
     font-family: 'Roboto', sans-serif;
     background-color: #2F353B;
@@ -8,11 +15,103 @@ body {
     font-size: 12pt;
 }
 
+.mech-root {
+    display: flex;
+    flex-direction: row;
+}
+
+.mech-output {
+    background-color: #171D21;
+    color: #f2ead9;
+    padding: 20px;
+    margin: 20px;
+    border-radius: 10px;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.mech-toc {
+    background-color: #171D21;
+    color: #f2ead9;
+    overflow-y: auto;
+    margin-right: 20px;
+    padding-right: 15px;
+    width: 250px;
+    padding-left: 10px;
+    position: sticky; 
+    top: 0; 
+    height: 100vh;
+}
+
+.mech-toc::-webkit-scrollbar {
+    width: 8px; /* Adjust width as needed */
+}
+
+.mech-toc::-webkit-scrollbar-track {
+    background: transparent; /* Makes the track invisible */
+}
+
+.mech-toc::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.7); /* Grey with some transparency */
+    border-radius: 10px; /* Rounds the scrollbar */
+}
+
+.mech-toc::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 0.9); /* Slightly darker on hover */
+}
+
+/* For Firefox */
+.mech-toc {
+    scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
+    scrollbar-width: thin;
+}
+
+.mech-toc h1 {
+    visibility: hidden;
+    font-size: 12pt;
+}
+
+.mech-toc h2 {
+    font-size: 12pt;
+    padding-left: 15px;
+}
+
+.mech-toc h2 a {
+    color: #f2ead9;
+    text-decoration: none;
+}
+
+.mech-toc h2 a:hover {
+    color: #ffd139;
+    text-decoration: none;
+}
+
+.mech-toc h4 {
+    font-size: 12pt;
+    padding-left: 30px;
+    font-weight: normal;
+}
+
+.mech-toc h4 a {
+    color: #f2ead9;
+    text-decoration: none;
+}
+
+.mech-toc h4 a:hover {
+    color: #ee6262;
+    text-decoration: none;
+}
+
+
 .mech-program {
     margin: auto;
     margin-top: 20px;
     margin-bottom: 20px;
     width: 690px;
+}
+
+.mech-output {
+    flex-grow: 1;
 }
 
 .mech-matrix {
@@ -61,37 +160,32 @@ body {
     padding-right: 6px;
 }
 
-.mech-program-title {
-    font-family: 'FiraCodeRegular', monospace;
+h2{counter-reset: sub-section}
+
+h2:before{
+    counter-increment: section;
     color: #F3B62D;
-    font-size: 14pt;
+    content: counter(section) " ";
+}
+
+h4:before{
+    counter-increment: sub-section;
+    color: #ee6262;
+    content: counter(section) "." counter(sub-section) " ";
+}
+
+.mech-program .mech-program-title {
+    font-family: 'FiraCodeRegular', monospace;
+    color: #f2ead9;
+    letter-spacing: 2px;
+    font-size: 22pt;
     font-weight: bold;
+    text-align: center;
     margin-bottom: 16px;
 }
-.mech-program-title::after {
-    content: "===================================================================";
-    color: #F3B62D; 
-    font-size: 14pt; 
-    display: block;
-    text-align: left; 
-    margin-top: 5px; 
-}
-
-.mech-program-body {
-}
-
-.mech-program-section {
-}
-
-h2 {
-    font-family: 'FiraCodeRegular', monospace;
-    color: #F3B62D;
-    font-size: 12pt;
-    font-weight: bold;
-    margin-bottom: 10px;
-}
-h2::after {
-    content: "------------------------------------------------------------------------------";
+.mech-program .mech-program-title::after {
+    letter-spacing: 0px;
+    content: "==============================================================================";
     color: #F3B62D; 
     font-size: 12pt; 
     display: block;
@@ -99,12 +193,43 @@ h2::after {
     margin-top: 5px; 
 }
 
-h4 {
+.mech-program h2 a {
+    color: #f2ead9;
+    text-decoration: none;
+}
+
+.mech-program h2 {
     font-family: 'FiraCodeRegular', monospace;
-    color: #F3B62D;
-    font-size: 12pt;
+    color: #f2ead9;
+    font-size: 16pt;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    margin-top: 50px;
+    margin-left: -50px;
+}
+.mech-program h2::after {
+    content: "------------------------------------------------------------------------------------";
+    letter-spacing: 0px;
+    color: #F3B62D; 
+    font-size: 12pt; 
+    display: block;
+    text-align: left; 
+    margin-top: 5px; 
+}
+
+.mech-program h4 a {
+    color: #f2ead9;
+    text-decoration: none;
+}
+
+.mech-program h4 {
+    font-family: 'FiraCodeRegular', monospace;
+    color: #f2ead9;
+    font-size: 14pt;
     font-weight: bold;
     margin-bottom: 10px;
+    letter-spacing: 1px;
 }
 
 .mech-variable-mutable {
@@ -129,6 +254,30 @@ h4 {
     border-radius: 0px;
     padding: 30px;
     border-radius: 10px;
+    overflow-x: auto;
+}
+
+.mech-code-block::-webkit-scrollbar {
+    height: 8px; /* Horizontal scrollbar height */
+}
+
+.mech-code-block::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.mech-code-block::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.7);
+    border-radius: 10px;
+}
+
+.mech-code-block::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 0.9);
+}
+
+/* Firefox */
+.mech-code-block {
+    scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
+    scrollbar-width: thin;
 }
 
 .mech-code {
@@ -170,6 +319,18 @@ h4 {
 .mech-term {
 }
 
+.mech-inline-code {
+    background-color: #171D21;
+    color: #ada594;
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 12pt;
+    padding: 2px 2px;
+    margin: 0px;
+    margin-left: 2px;
+    margin-right: 7px;
+    border-radius: 5px;
+}
+
 .mech-formula-operator {
     color: #ffd139;
 }
@@ -181,6 +342,15 @@ h4 {
 .mech-paragraph {
     color: #f2ead9;
     line-height: 25px;
+}
+
+.mech-paragraph a {
+    color: #ee6262;
+    text-decoration: none;
+}
+
+.mech-paragraph a:hover {
+    text-decoration: underline;
 }
 
 .mech-all {
@@ -405,6 +575,11 @@ h4 {
     color: #dbc3a5;
 }
 
+.mech-code-block .mech-code:first-child .mech-comment {
+    margin-top: 0px;
+    padding-top: 0px;
+}
+
 .mech-comment {
     color: #ef5f90;
     font-style: italic;
@@ -415,8 +590,21 @@ h4 {
     color: #ef5f90;
 }
 
+.mech-unordered-list {
+}
+
 .mech-list-item {
+    line-height: 0px;
     color: #ef5f90;
+    margin: 0px;
+    padding: 0px;
+}
+
+li p {
+    margin: 0px;
+    padding: 0px;
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 
 .mech-table {
