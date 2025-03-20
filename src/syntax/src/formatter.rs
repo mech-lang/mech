@@ -177,10 +177,57 @@ impl Formatter {
   }
 
   pub fn paragraph(&mut self, node: &Paragraph) -> String {
+    let mut src = "".to_string();
+    for el in node.elements.iter() {
+      let el_str = self.paragraph_element(el);
+      src = format!("{}{}", src, el_str);
+    }
     if self.html {
-      format!("<p class=\"mech-paragraph\">{}</p>",node.to_string())
+      format!("<p class=\"mech-paragraph\">{}</p>",src)
     } else {
-      format!("{}\n",node.to_string())
+      format!("{}\n",src)
+    }
+  }
+
+  pub fn paragraph_element(&mut self, node: &ParagraphElement) -> String {
+    match node {
+      ParagraphElement::Text(n) => n.to_string(),
+      ParagraphElement::Strong(n) => {
+        if self.html {
+          format!("<strong class=\"mech-strong\">{}</strong>", n.to_string())
+        } else {
+          format!("**{}**", n.to_string())
+        }
+      },
+      ParagraphElement::Emphasis(n) => {
+        if self.html {
+          format!("<em class=\"mech-em\">{}</em>", n.to_string())
+        } else {
+          format!("*{}*", n.to_string())
+        }
+      },
+      ParagraphElement::Underline(n) => {
+        if self.html {
+          format!("<u class=\"mech-u\">{}</u>", n.to_string())
+        } else {
+          format!("_{}_", n.to_string())
+        }
+      },
+      ParagraphElement::Strikethrough(n) => {
+        if self.html {
+          format!("<del class=\"mech-del\">{}</del>", n.to_string())
+        } else {
+          format!("~{}~", n.to_string())
+        }
+      },
+      ParagraphElement::InlineCode(n) => {
+        if self.html {
+          format!("<code class=\"mech-inline-code\">{}</code>", n.to_string())
+        } else {
+          format!("`{}`", n.to_string())
+        }
+      },
+      _ => todo!(),
     }
   }
 
