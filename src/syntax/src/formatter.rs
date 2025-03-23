@@ -1047,7 +1047,7 @@ impl Formatter {
       }
     }
     if self.html {
-      format!("<span class=\"mech-tuple\"><span class=\"mech-start-paren\">(</span>{})<span class=\"mech-end-paren\">)</span></span>",src)
+      format!("<span class=\"mech-tuple\"><span class=\"mech-start-paren\">(</span>{}<span class=\"mech-end-paren\">)</span></span>",src)
     } else {
       format!("({})", src)
     }
