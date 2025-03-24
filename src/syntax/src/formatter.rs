@@ -295,13 +295,18 @@ impl Formatter {
       }
       GrammarExpression::Choice(choices) => {
         let mut src = "".to_string();
+        let inline = choices.len() <= 2;
         for (i, choice) in choices.iter().enumerate() {
           let choice_str = self.grammar_expression(choice);
           if i == 0 {
             src = format!("{}", choice_str);
           } else {
             if self.html {
-              src = format!("{} <span class=\"mech-grammar-choice-op\">|</span> {}", src, choice_str);
+              src = if inline {
+                format!("{} <span class=\"mech-grammar-choice-op\">|</span> {}", src, choice_str)
+              } else {
+                format!("{}<div class=\"mech-grammar-choice\"><span class=\"mech-grammar-choice-op\">|</span> {}</div>", src, choice_str)
+              };
             } else {
               src = format!("{} | {}", src, choice_str);
             }
@@ -311,16 +316,21 @@ impl Formatter {
       },
       GrammarExpression::Sequence(seq) => {
         let mut src = "".to_string();
+        let inline = seq.len() <= 2;
         for (i, factor) in seq.iter().enumerate() {
           let factor_str = self.grammar_expression(factor);
           if i == 0 {
-            src = format!("{}", factor_str);
+        src = format!("{}", factor_str);
           } else {
-            if self.html {
-              src = format!("{}, {}", src, factor_str);
-            } else {
-              src = format!("{}, {}", src, factor_str);
-            }
+        if self.html {
+          src = if inline {
+            format!("{}, {}", src, factor_str)
+          } else {
+            format!("{}<div class=\"mech-grammar-sequence\"><span class=\"mech-grammar-sequence-op\">,</span> {}</div>", src, factor_str)
+          };
+        } else {
+          src = format!("{}, {}", src, factor_str);
+        }
           }
         }
         src
@@ -383,7 +393,7 @@ impl Formatter {
       GrammarExpression::Definition(id) => {
         let name = id.name.to_string();
         if self.html {
-          format!("<span id=\"{}\" class=\"mech-grammar-definition\">{}</span>",hash_str(&name), name)
+          format!("<span class=\"mech-grammar-definition\"><a href=\"#{}\">{}</a></span>",hash_str(&name), name)
         } else {
           name
         }
