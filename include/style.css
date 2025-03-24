@@ -323,6 +323,24 @@ h4:before{
     color: #ccbbc2;
 }
 
+.mech-grammar-definition a {
+    color: #ccbbc2;
+    text-decoration: none;
+}
+
+.mech-grammar-definition a:hover {
+    color: #ccbbc2;
+    text-decoration: underline;
+}
+
+.mech-grammar-choice {
+    margin-left: 20px;
+}
+
+.mech-grammar-sequence {
+    margin-left: 20px;
+}
+
 
 .mech-grammar-terminal {
     color: #ef5f90;
