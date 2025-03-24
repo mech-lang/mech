@@ -140,6 +140,8 @@ pub enum TokenKind {
   OutputOperator,
   AsyncTransitionOperator,
   TransitionOperator,
+  Any,
+  Not,
   Empty
 }
 
@@ -394,6 +396,46 @@ impl Section {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Grammar {
+  pub rules: Vec<Rule>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GrammarIdentifier {
+  pub name: Token,
+}
+
+impl GrammarIdentifier {
+  pub fn tokens(&self) -> Vec<Token> {
+    vec![self.name.clone()]
+  }
+
+  pub fn to_string(&self) -> String {
+    self.name.to_string()
+  }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Rule {
+  pub name: GrammarIdentifier,
+  pub expr: GrammarExpression,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum GrammarExpression {
+  Choice(Vec<GrammarExpression>),
+  Sequence(Vec<GrammarExpression>),
+  Repeat0(Box<GrammarExpression>),
+  Repeat1(Box<GrammarExpression>),
+  Optional(Box<GrammarExpression>),
+  Terminal(Token),
+  Definition(GrammarIdentifier),
+  Peek(Box<GrammarExpression>),
+  Not(Box<GrammarExpression>),
+  Group(Box<GrammarExpression>),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SectionElement {
   Section(Box<Section>),
   Comment(Comment),
@@ -401,6 +443,7 @@ pub enum SectionElement {
   MechCode(Vec<MechCode>),
   UnorderedList(UnorderedList),
   CodeBlock(Token),
+  Grammar(Grammar),
   OrderedList,     // todo
   BlockQuote,      // todo
   ThematicBreak,   // todo

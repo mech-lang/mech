@@ -24,6 +24,7 @@ use crate::*;
 // grammar := +rule ;
 pub fn grammar(input: ParseString) -> ParseResult<Grammar> {
   let ((input, rules)) = many1(rule)(input)?;
+  let (input, _) = new_line(input)?;
   Ok((input, Grammar { rules }))
 }
 
@@ -136,8 +137,9 @@ fn group(input: ParseString) -> ParseResult<GrammarExpression> {
 // terminal := quote, +any_token, quote ;
 fn terminal(input: ParseString) -> ParseResult<GrammarExpression> {
   let (input, _) = quote(input)?;
-  let (input, mut t) = many0(any_token)(input)?;
+  let (input, mut t) = many0(tuple((is_not(quote),any_token)))(input)?;
   let (input, _) = quote(input)?;
+  let mut t = t.into_iter().map(|(_,b)| b).collect::<Vec<Token>>();
   let token =  Token::merge_tokens(&mut t).unwrap();
   Ok((input, GrammarExpression::Terminal(token)))
 }

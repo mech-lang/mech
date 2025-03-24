@@ -4,6 +4,7 @@ use crate::label;
 use crate::labelr;
 use nom::sequence::tuple as nom_tuple;
 use nom::bytes::complete::{tag, take_until};
+use crate::nom::error::ParseError;
 
 // ### Mechdown
 
@@ -161,7 +162,7 @@ pub fn skip_till_eol(input: ParseString) -> ParseResult<()> {
 }
 
 // code_block := grave, <grave>, <grave>, <new_line>, any, <grave{3}, new_line, whitespace*> ;
-pub fn code_block(input: ParseString) -> ParseResult<Token> {
+pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
   let msg1 = "Expects 3 graves to start a code block";
   let msg2 = "Expects new_line";
   let msg3 = "Expects 3 graves followed by new_line to terminate a code block";
@@ -181,8 +182,21 @@ pub fn code_block(input: ParseString) -> ParseResult<Token> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = new_line(input)?;
   let filtered_text: Vec<char> = text.into_iter().flat_map(|(_, s)| s.chars().collect::<Vec<char>>()).collect();
+ 
+  match code_id {
+    Some(id) => { 
+      if id.to_string() == "ebnf" {
+        let ebnf_text = filtered_text.iter().collect::<String>();
+        match parse_grammar(&ebnf_text) {
+          Ok(grammar_tree) => {return Ok((input, SectionElement::Grammar(grammar_tree)));},
+          Err(err) => todo!(),
+        }
+      }
+    },
+    None => (),
+  }
   let code_token = Token::new(TokenKind::CodeBlock, src_range, filtered_text);
-  Ok((input, code_token))
+  Ok((input, SectionElement::CodeBlock(code_token)))
 }
 
 // section_element := mech_code | unordered_list | comment | paragraph | code_block | sub_section;
@@ -194,7 +208,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
       Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
       //Err(Failure(err)) => {return Err(Failure(err));}
       _ => match code_block(input.clone()) {
-        Ok((input, m)) => (input,SectionElement::CodeBlock(m)),
+        Ok((input, m)) => (input,m),
         //Err(Failure(err)) => {return Err(Failure(err));}
         _ => match sub_section(input.clone()) {
           Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
@@ -221,7 +235,7 @@ pub fn sub_section_element(input: ParseString) -> ParseResult<SectionElement> {
       _ => match section(input.clone()) {
         Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
         _ => match code_block(input.clone()) {
-          Ok((input, m)) => (input,SectionElement::CodeBlock(m)),
+          Ok((input, m)) => (input,m),
           _ => match paragraph(input.clone()) {
             Ok((input, p)) => (input, SectionElement::Paragraph(p)),
             Err(err) => { return Err(err); }

@@ -35,6 +35,11 @@ impl Formatter {
     self.program(tree)
   }
 
+  /*pub fn format_grammar(&mut self, tree: &Gramamr) -> String {
+    self.html = false;
+    self.grammar(tree)
+  }*/
+
   pub fn format_html(&mut self, tree: &Program, style: String) -> String {
 
     self.html = true;
@@ -239,6 +244,7 @@ impl Formatter {
       SectionElement::MechCode(n) => self.mech_code(n),
       SectionElement::UnorderedList(n) => self.unordered_list(n),
       SectionElement::CodeBlock(n) => self.code_block(n),
+      SectionElement::Grammar(n) => self.grammar(n),
       SectionElement::OrderedList => todo!(),
       SectionElement::BlockQuote => todo!(),
       SectionElement::ThematicBreak => todo!(),
@@ -248,6 +254,169 @@ impl Formatter {
       format!("<div class=\"mech-section-element\">{}</div>",element)
     } else {
       element
+    }
+  }
+
+  /*
+  #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Grammar {
+  pub rules: Vec<Rule>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GrammarIdentifier {
+  pub name: Token,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Rule {
+  pub name: GrammarIdentifier,
+  pub expr: GrammarExpression,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum GrammarExpression {
+  Choice(Vec<GrammarExpression>),
+  Sequence(Vec<GrammarExpression>),
+  Repeat0(Box<GrammarExpression>),
+  Repeat1(Box<GrammarExpression>),
+  Optional(Box<GrammarExpression>),
+  Terminal(Token),
+  Definition(GrammarIdentifier),
+  Peek(Box<GrammarExpression>),
+  Not(Box<GrammarExpression>),
+  Group(Box<GrammarExpression>),
+}
+  */
+
+  pub fn grammar(&mut self, node: &Grammar) -> String {
+    let mut src = "".to_string();
+    for rule in node.rules.iter() {
+      let id = self.grammar_identifier(&rule.name);
+      let rule_str = format!("{} <span class=\"mech-grammar-define-op\">:=</span>{}", id, self.grammar_expression(&rule.expr));
+      if self.html {
+        src = format!("{}<div class=\"mech-grammar-rule\">{} ;</div>",src,rule_str);
+      } else {
+        src = format!("{}{};\n",src,rule_str); 
+      }
+    }
+    if self.html {
+      format!("<div class=\"mech-grammar\">{}</div>",src)
+    } else {
+      src
+    }
+  }
+
+  fn grammar_identifier(&mut self, node: &GrammarIdentifier) -> String {
+    if self.html {
+      format!("<span class=\"mech-grammar-identifier\">{}</span>",node.name.to_string())
+    } else {
+      node.name.to_string()
+    }
+  }
+
+  fn grammar_expression(&mut self, node: &GrammarExpression) -> String {
+    let expr = match node {
+      GrammarExpression::Choice(choices) => {
+        let mut src = "".to_string();
+        for (i, choice) in choices.iter().enumerate() {
+          let choice_str = self.grammar_expression(choice);
+          if i == 0 {
+            src = format!("{}", choice_str);
+          } else {
+            if self.html {
+              src = format!("{} <span class=\"mech-grammar-choice-op\">|</span> {}", src, choice_str);
+            } else {
+              src = format!("{} | {}", src, choice_str);
+            }
+          }
+        }
+        src
+      },
+      GrammarExpression::Sequence(seq) => {
+        let mut src = "".to_string();
+        for (i, factor) in seq.iter().enumerate() {
+          let factor_str = self.grammar_expression(factor);
+          if i == 0 {
+            src = format!("{}", factor_str);
+          } else {
+            if self.html {
+              src = format!("{}, {}", src, factor_str);
+            } else {
+              src = format!("{}, {}", src, factor_str);
+            }
+          }
+        }
+        src
+      },
+      GrammarExpression::Repeat0(expr) => {
+        let inner_expr = self.grammar_expression(expr);
+        if self.html {
+          format!("<span class=\"mech-grammar-repeat0-op\">*</span>{}", inner_expr)
+        } else {
+          format!("*{}", inner_expr)
+        }
+      },
+      GrammarExpression::Repeat1(expr) => {
+        let inner_expr = self.grammar_expression(expr);
+        if self.html {
+          format!("<span class=\"mech-grammar-repeat1-op\">+</span>{}", inner_expr)
+        } else {
+          format!("+{}", inner_expr)
+        }
+      },
+      GrammarExpression::Optional(expr) => {
+        let inner_expr = self.grammar_expression(expr);
+        if self.html {
+          format!("<span class=\"mech-grammar-optional-op\">?</span>{}", inner_expr)
+        } else {
+          format!("?{}", inner_expr)
+        }
+      },
+      GrammarExpression::Peek(expr) => {
+        let inner_expr = self.grammar_expression(expr);
+        if self.html {
+          format!("<span class=\"mech-grammar-peek-op\">&gt;</span>{}", inner_expr)
+        } else {
+          format!(">{}", inner_expr)
+        }
+      },
+      GrammarExpression::Not(expr) => {
+        let inner_expr = self.grammar_expression(expr);
+        if self.html {
+          format!("<span class=\"mech-grammar-not-op\">¬</span>{}", inner_expr)
+        } else {
+          format!("¬{}", inner_expr)
+        }
+      },
+      GrammarExpression::Terminal(token) => {
+        if self.html {
+          format!("<span class=\"mech-grammar-terminal\">\"{}\"</span>", token.to_string())
+        } else {
+          format!("\"{}\"", token.to_string())
+        }
+      },
+      GrammarExpression::Group(expr) => {
+        let inner_expr = self.grammar_expression(expr);
+        if self.html {
+          format!("<span class=\"mech-grammar-group\">(<span class=\"mech-grammar-group-content\">{}</span>)</span>", inner_expr)
+        } else {
+          format!("({})", inner_expr)
+        }
+      },
+      GrammarExpression::Definition(id) => {
+        if self.html {
+          format!("<span class=\"mech-grammar-definition\">{}</span>", id.name.to_string())
+        } else {
+          id.name.to_string()
+        }
+      },
+    };
+    
+    if self.html {
+      format!("<span class=\"mech-grammar-expression\">{}</span>", expr)
+    } else {
+      expr
     }
   }
 
