@@ -113,6 +113,14 @@ fn not(input: ParseString) -> ParseResult<GrammarExpression> {
   Ok((input, GrammarExpression::Not(Box::new(expr))))
 }
 
+// g-range := terminal, "..", terminal ;
+fn g_range(input: ParseString) -> ParseResult<GrammarExpression> {
+  let (input, start) = terminal_token(input)?;
+  let (input, _) = tuple((period,period))(input)?;
+  let (input, end) = terminal_token(input)?;
+  Ok((input, GrammarExpression::Range(start, end)))
+}
+
 // factor := repeat0 | repeat1 | optional | peek | not | group | definition | terminal ;
 fn factor(input: ParseString) -> ParseResult<GrammarExpression> {
   alt((
@@ -123,6 +131,7 @@ fn factor(input: ParseString) -> ParseResult<GrammarExpression> {
     not,
     group,
     definition,
+    g_range,
     terminal,
   ))(input)
   
@@ -136,10 +145,16 @@ fn group(input: ParseString) -> ParseResult<GrammarExpression> {
 
 // terminal := quote, +any_token, quote ;
 fn terminal(input: ParseString) -> ParseResult<GrammarExpression> {
+  let (input, trminl) = terminal_token(input)?;
+  Ok((input, GrammarExpression::Terminal(trminl)))
+}
+
+// terminal := quote, +any_token, quote ;
+fn terminal_token(input: ParseString) -> ParseResult<Token> {
   let (input, _) = quote(input)?;
   let (input, mut t) = many0(tuple((is_not(quote),any_token)))(input)?;
   let (input, _) = quote(input)?;
   let mut t = t.into_iter().map(|(_,b)| b).collect::<Vec<Token>>();
   let token =  Token::merge_tokens(&mut t).unwrap();
-  Ok((input, GrammarExpression::Terminal(token)))
+  Ok((input,token))
 }

@@ -257,38 +257,6 @@ impl Formatter {
     }
   }
 
-  /*
-  #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub struct Grammar {
-  pub rules: Vec<Rule>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub struct GrammarIdentifier {
-  pub name: Token,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub struct Rule {
-  pub name: GrammarIdentifier,
-  pub expr: GrammarExpression,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub enum GrammarExpression {
-  Choice(Vec<GrammarExpression>),
-  Sequence(Vec<GrammarExpression>),
-  Repeat0(Box<GrammarExpression>),
-  Repeat1(Box<GrammarExpression>),
-  Optional(Box<GrammarExpression>),
-  Terminal(Token),
-  Definition(GrammarIdentifier),
-  Peek(Box<GrammarExpression>),
-  Not(Box<GrammarExpression>),
-  Group(Box<GrammarExpression>),
-}
-  */
-
   pub fn grammar(&mut self, node: &Grammar) -> String {
     let mut src = "".to_string();
     for rule in node.rules.iter() {
@@ -308,15 +276,23 @@ pub enum GrammarExpression {
   }
 
   fn grammar_identifier(&mut self, node: &GrammarIdentifier) -> String {
+    let name = node.name.to_string();
     if self.html {
-      format!("<span class=\"mech-grammar-identifier\">{}</span>",node.name.to_string())
+      format!("<span id=\"{}\" class=\"mech-grammar-identifier\">{}</span>",hash_str(&name), name)
     } else {
-      node.name.to_string()
+      name
     }
   }
 
   fn grammar_expression(&mut self, node: &GrammarExpression) -> String {
     let expr = match node {
+      GrammarExpression::Range(start,end) => {
+        if self.html {
+          format!("<span class=\"mech-grammar-range\"><span class=\"mech-grammar-terminal\">\"{}\"</span><span class=\"mech-grammar-range-op\">..</span><span class=\"mech-grammar-terminal\">\"{}\"</span></span>", start.to_string(), end.to_string())
+        } else {
+          format!("{}..{}", start.to_string(), end.to_string())
+        }
+      }
       GrammarExpression::Choice(choices) => {
         let mut src = "".to_string();
         for (i, choice) in choices.iter().enumerate() {
@@ -405,10 +381,11 @@ pub enum GrammarExpression {
         }
       },
       GrammarExpression::Definition(id) => {
+        let name = id.name.to_string();
         if self.html {
-          format!("<span class=\"mech-grammar-definition\">{}</span>", id.name.to_string())
+          format!("<span id=\"{}\" class=\"mech-grammar-definition\">{}</span>",hash_str(&name), name)
         } else {
-          id.name.to_string()
+          name
         }
       },
     };

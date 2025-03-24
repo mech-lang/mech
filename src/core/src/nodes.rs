@@ -432,6 +432,7 @@ pub enum GrammarExpression {
   Definition(GrammarIdentifier),
   Peek(Box<GrammarExpression>),
   Not(Box<GrammarExpression>),
+  Range(Token,Token),
   Group(Box<GrammarExpression>),
 }
 
