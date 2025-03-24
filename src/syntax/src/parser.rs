@@ -27,7 +27,7 @@ use nom::{
   branch::alt,
   sequence::tuple as nom_tuple,
   combinator::{opt, eof},
-  multi::{many1, many_till, many0, separated_list1,separated_list0},
+  multi::{many1, many_till, many0, separated_list1, separated_list0},
   Err,
   Err::Failure
 };
@@ -362,7 +362,56 @@ pub fn print_err_report(text: &str, report: &ParserErrorReport) {
   println!("{}", msg);
 }
 
-pub fn parse(text: &str) -> Result<Program, MechError> {
+pub fn parse_grammar(text: &str) -> MResult<Grammar> {
+  // remove all whitespace from the input string
+  let text_no_Ws = &text.replace(" ", "").replace("\n", "").replace("\t", "");
+  let graphemes = graphemes::init_source(text_no_Ws);
+  let mut result_node = None;
+  let mut error_log: Vec<(SourceRange, ParseErrorDetail)> = vec![];
+
+  // Do parse
+  let remaining: ParseString = match grammar(ParseString::new(&graphemes)) {
+    // Got a parse tree, however there may be errors
+    Ok((mut remaining_input, parse_tree)) => {
+      error_log.append(&mut remaining_input.error_log);
+      result_node = Some(parse_tree);
+      remaining_input
+    },
+    // Parsing failed and could not be recovered. No parse tree was created in this case
+    Err(err) => {
+      match err {
+        Err::Error(mut e) | Err::Failure(mut e) => {
+          error_log.append(&mut e.remaining_input.error_log);
+          error_log.push((e.cause_range, e.error_detail));
+          e.remaining_input
+        },
+        Err::Incomplete(_) => panic!("nom::Err::Incomplete is not supported!"),
+      }
+    },
+  };
+
+  // Check if all inputs were parsed
+  if remaining.len() != 0 {
+    let e = ParseError::new(remaining, "Inputs since here are not parsed");
+    error_log.push((e.cause_range, e.error_detail));
+  }
+
+  // Construct result
+  if error_log.is_empty() {
+    Ok(result_node.unwrap())
+  } else {
+    let report: ParserErrorReport = error_log.into_iter().map(|e| ParserErrorContext {
+      cause_rng: e.0,
+      err_message: String::from(e.1.message),
+      annotation_rngs: e.1.annotation_rngs,
+    }).collect();
+    let msg = TextFormatter::new(text).format_error(&report);
+    Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 3202, kind: MechErrorKind::ParserError(report, msg)})
+  }
+}
+
+
+pub fn parse(text: &str) -> MResult<Program> {
   let graphemes = graphemes::init_source(text);
   let mut result_node = None;
   let mut error_log: Vec<(SourceRange, ParseErrorDetail)> = vec![];
