@@ -280,6 +280,55 @@ h4:before{
     scrollbar-width: thin;
 }
 
+.mech-grammar {
+    background-color: #171D21;
+    color: #ada594;
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 12pt;
+    line-height: 18px;
+    border-radius: 0px;
+    padding: 30px;
+    border-radius: 10px;
+    overflow-x: auto;
+}
+
+.mech-grammar::-webkit-scrollbar {
+    height: 8px; /* Horizontal scrollbar height */
+}
+
+.mech-grammar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.mech-grammar::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.7);
+    border-radius: 10px;
+}
+
+.mech-grammar::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 0.9);
+}
+
+/* Firefox */
+.mech-grammar {
+    scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
+    scrollbar-width: thin;
+}
+
+.mech-grammar-identifier {
+    color: #ccbbc2;
+}
+
+.mech-grammar-definition {
+    color: #ccbbc2;
+}
+
+
+.mech-grammar-terminal {
+    color: #ef5f90;
+}
+
+
 .mech-code {
 }
 
