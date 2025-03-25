@@ -80,7 +80,9 @@ impl Formatter {
               wasm_core.run_program(src);
               wasm_core.init();
             }} else {{
-              console.error(xhr.statusText);
+              console.error("Defaulting to included code");
+              wasm_core.run_program(code);
+              wasm_core.init();
             }}
           }}
         }};
