@@ -113,6 +113,16 @@ fn not(input: ParseString) -> ParseResult<GrammarExpression> {
   Ok((input, GrammarExpression::Not(Box::new(expr))))
 }
 
+// list := "[", factor, ",", factor, "]" ;
+fn list(input: ParseString) -> ParseResult<GrammarExpression> {
+  let (input, _) = left_bracket(input)?;
+  let (input, first) = factor(input)?;
+  let (input, _) = comma(input)?;
+  let (input, second) = factor(input)?;
+  let (input, _) = right_bracket(input)?;
+  Ok((input, GrammarExpression::List(Box::new(first), Box::new(second))))
+}
+
 // g-range := terminal, "..", terminal ;
 fn g_range(input: ParseString) -> ParseResult<GrammarExpression> {
   let (input, start) = terminal_token(input)?;
@@ -130,6 +140,7 @@ fn factor(input: ParseString) -> ParseResult<GrammarExpression> {
     peek,
     not,
     group,
+    list,
     definition,
     g_range,
     terminal,
