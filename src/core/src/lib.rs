@@ -24,9 +24,8 @@ extern crate hashbrown;
 extern crate serde_derive;
 extern crate serde;
 extern crate num_traits;
-extern crate ed25519_dalek;
-extern crate rand;
-extern crate getrandom;
+//extern crate ed25519_dalek;
+//extern crate rand;
 
 extern crate seahash;
 extern crate indexmap;
