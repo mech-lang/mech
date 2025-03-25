@@ -286,6 +286,15 @@ impl Formatter {
 
   fn grammar_expression(&mut self, node: &GrammarExpression) -> String {
     let expr = match node {
+      GrammarExpression::List(element,deliniator) => {
+        let el = self.grammar_expression(element);
+        let del = self.grammar_expression(deliniator);
+        if self.html {
+          format!("<span class=\"mech-grammar-list\">[<span class=\"mech-grammar-list-element\">{}</span>,<span class=\"mech-grammar-list-deliniator\">{}</span>]</span>",el,del)
+        } else {
+          format!("[{},{}]",el,del)
+        }
+      },
       GrammarExpression::Range(start,end) => {
         if self.html {
           format!("<span class=\"mech-grammar-range\"><span class=\"mech-grammar-terminal\">\"{}\"</span><span class=\"mech-grammar-range-op\">..</span><span class=\"mech-grammar-terminal\">\"{}\"</span></span>", start.to_string(), end.to_string())
@@ -295,7 +304,7 @@ impl Formatter {
       }
       GrammarExpression::Choice(choices) => {
         let mut src = "".to_string();
-        let inline = choices.len() <= 2;
+        let inline = choices.len() <= 3;
         for (i, choice) in choices.iter().enumerate() {
           let choice_str = self.grammar_expression(choice);
           if i == 0 {
@@ -316,7 +325,7 @@ impl Formatter {
       },
       GrammarExpression::Sequence(seq) => {
         let mut src = "".to_string();
-        let inline = seq.len() <= 2;
+        let inline = seq.len() <= 3;
         for (i, factor) in seq.iter().enumerate() {
           let factor_str = self.grammar_expression(factor);
           if i == 0 {
