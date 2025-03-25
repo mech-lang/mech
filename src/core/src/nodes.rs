@@ -429,6 +429,7 @@ pub enum GrammarExpression {
   Repeat1(Box<GrammarExpression>),
   Optional(Box<GrammarExpression>),
   Terminal(Token),
+  List(Box<GrammarExpression>, Box<GrammarExpression>),
   Definition(GrammarIdentifier),
   Peek(Box<GrammarExpression>),
   Not(Box<GrammarExpression>),
