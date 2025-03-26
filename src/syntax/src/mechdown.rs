@@ -69,12 +69,6 @@ pub fn alpha_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   Ok((input, Subtitle{text: title, level: 4}))
 }
 
-// paragraph_symbol := ampersand | at | slash | backslash | asterisk | caret | hashtag | underscore | equal | tilde | plus | percent ;
-pub fn paragraph_symbol(input: ParseString) -> ParseResult<Token> {
-  let (input, symbol) = alt((ampersand, at, slash, backslash, asterisk, caret, hashtag, underscore, equal, tilde, plus, percent))(input)?;
-  Ok((input, symbol))
-}
-
 pub fn strong(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = tuple((asterisk,asterisk))(input)?;
   let (input, text) = paragraph_element(input)?;
