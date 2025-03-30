@@ -418,6 +418,7 @@ pub enum SectionElement {
   Paragraph(Paragraph),
   MechCode(Vec<MechCode>),
   UnorderedList(UnorderedList),
+  Table(MarkdownTable),
   CodeBlock(Token),
   Grammar(Grammar),
   OrderedList,     // todo
