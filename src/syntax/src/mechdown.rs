@@ -79,9 +79,9 @@ pub fn alignment_separator(input: ParseString) -> ParseResult<ColumnAlignment> {
 }
 
 pub fn markdown_table(input: ParseString) -> ParseResult<MarkdownTable> {
-  //let (input, header) = markdown_table_header(input)?;
-  //let (input, rows) = many0(markdown_table_row)(input)?;
-  Ok((input, MarkdownTable{header: vec![], rows: vec![], alignment: vec![]}))
+  let (input, (header,alignment)) = markdown_table_header(input)?;
+  let (input, rows) = many0(markdown_table_row)(input)?;
+  Ok((input, MarkdownTable{header, rows, alignment}))
 }
 
 pub fn markdown_table_header(input: ParseString) -> ParseResult<(Vec<Paragraph>,Vec<ColumnAlignment>)> {
@@ -92,18 +92,20 @@ pub fn markdown_table_header(input: ParseString) -> ParseResult<(Vec<Paragraph>,
   let (input, _) = whitespace0(input)?;
   let (input, alignment) = many1(tuple((bar, alignment_separator)))(input)?;
   let (input, _) = bar(input)?;
+  let (input, _) = new_line(input)?;
   let column_names: Vec<Paragraph> = header.into_iter().map(|(_,tkn)| tkn).collect();
   let column_alignments = alignment.into_iter().map(|(_,tkn)| tkn).collect();
   Ok((input, (column_names,column_alignments)))
 }
 
-/*pub fn markdown_table_row(input: ParseString) -> ParseResult<MarkdownTableRow> {
-  let (input, _) = new_line(input)?;
+pub fn markdown_table_row(input: ParseString) -> ParseResult<Vec<Paragraph>> {
   let (input, _) = whitespace0(input)?;
   let (input, row) = many1(tuple((bar, paragraph)))(input)?;
   let (input, _) = bar(input)?;
-  Ok((input, MarkdownTableRow{row}))
-}*/
+  let (input, _) = whitespace0(input)?;
+  let row = row.into_iter().map(|(_,tkn)| tkn).collect();
+  Ok((input, row))
+}
 
 // subtitle := digit_token+, period, space*, text+, new_line, dash+, (space|tab)*, new_line, (space|tab)*, whitespace* ;
 pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
@@ -184,19 +186,8 @@ pub fn inline_code(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::InlineCode(text)))
 }
 
-
-/*
-
-| Syntax      | Description | Test Text     |
-| :---        |    :----:   |          ---: |
-| Header      | Title       | Here's this   |
-| Paragraph   | Text        | And more      |
-
-*/
-
-
 pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
-  let (input, elements) = match many1(nom_tuple((is_not(alt((tilde,asterisk,underscore,grave,define_operator))),text)))(input) {
+  let (input, elements) = match many1(nom_tuple((is_not(alt((tilde,asterisk,underscore,grave,define_operator,bar))),text)))(input) {
     Ok((input, mut text)) => {
       let mut text = text.into_iter().map(|(_,tkn)| tkn).collect();
       let mut text = Token::merge_tokens(&mut text).unwrap();
@@ -285,19 +276,18 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match many1(mech_code)(input.clone()) {
     Ok((input, code)) => (input, SectionElement::MechCode(code)),
-    //Err(Failure(err)) => {return Err(Failure(err));}
     _ => match unordered_list(input.clone()) {
       Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
-      //Err(Failure(err)) => {return Err(Failure(err));}
-      _ => match code_block(input.clone()) {
-        Ok((input, m)) => (input,m),
-        //Err(Failure(err)) => {return Err(Failure(err));}
-        _ => match sub_section(input.clone()) {
-          Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
-        //Err(Failure(err)) => {return Err(Failure(err));}
-          _ => match paragraph(input) {
-            Ok((input, p)) => (input, SectionElement::Paragraph(p)),
-            Err(err) => { return Err(err); }
+      _ => match markdown_table(input.clone()) {
+        Ok((input, table)) => (input, SectionElement::Table(table)),
+        _ => match code_block(input.clone()) {
+          Ok((input, m)) => (input,m),
+          _ => match sub_section(input.clone()) {
+            Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
+            _ => match paragraph(input) {
+              Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+              Err(err) => { return Err(err); }
+            }
           }
         }
       }
