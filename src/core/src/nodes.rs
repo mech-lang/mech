@@ -422,7 +422,6 @@ pub enum SectionElement {
   CodeBlock(Token),
   Grammar(Grammar),
   BlockQuote(Paragraph),
-  Hyperlink((Token, Paragraph)),
   ThematicBreak,
   OrderedList,     // todo
   Image,           // todo
@@ -974,6 +973,7 @@ pub enum ParagraphElement {
   Emphasis(Box<ParagraphElement>),
   Underline(Box<ParagraphElement>),
   Strikethrough(Box<ParagraphElement>),
+  Hyperlink((Box<Paragraph>, Token)),
   InlineCode(Token),                 
   Link
 }
@@ -988,6 +988,9 @@ impl ParagraphElement {
       ParagraphElement::Underline(t) => t.to_string(),
       ParagraphElement::Strikethrough(t) => t.to_string(),
       ParagraphElement::InlineCode(t) => t.to_string(),
+      ParagraphElement::Hyperlink((t, u)) => {
+        format!("[{}]({})", t.to_string(), u.to_string())
+      }
       _ => todo!(),
     }
   }

@@ -200,7 +200,7 @@ pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
 }
 
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
-  alt((paragraph_text, strong, emphasis, inline_code, strikethrough, underline))(input)
+  alt((hyperlink, paragraph_text, strong, emphasis, inline_code, strikethrough, underline))(input)
 }
 
 // paragraph := paragraph_starter, paragraph_element* ;
@@ -285,6 +285,19 @@ pub fn thematic_break(input: ParseString) -> ParseResult<SectionElement> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = new_line(input)?;
   Ok((input, SectionElement::ThematicBreak))
+}
+
+// hyperlink := "[", paragraph, "]", "(", +text, ")" ;
+pub fn hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, _) = left_bracket(input)?;
+  let (input, url_paragraph) = paragraph(input)?;
+  let (input, _) = right_bracket(input)?;
+  let (input, _) = left_parenthesis(input)?;
+  let (input, url) = many1(tuple((is_not(right_parenthesis),text)))(input)?;
+  let (input, _) = right_parenthesis(input)?;
+  let mut tokens = url.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>();
+  let merged = Token::merge_tokens(&mut tokens).unwrap();
+  Ok((input, ParagraphElement::Hyperlink((Box::new(url_paragraph), merged))))
 }
 
 // section_element := mech_code | unordered_list | comment | paragraph | code_block | sub_section;

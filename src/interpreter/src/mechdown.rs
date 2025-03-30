@@ -38,9 +38,8 @@ pub fn section_element(element: &SectionElement, plan: Plan, symbols: SymbolTabl
     SectionElement::Grammar(x) => x.hash(&mut hasher),
     SectionElement::Table(x) => x.hash(&mut hasher),
     SectionElement::BlockQuote(x) => x.hash(&mut hasher),
-    SectionElement::Hyperlink(x) => x.hash(&mut hasher),
+    SectionElement::ThematicBreak => {return Ok(Value::Empty);}
     SectionElement::OrderedList => todo!(),
-    SectionElement::ThematicBreak => todo!(),
     SectionElement::Image => todo!(),
   };
   let hash = hasher.finish();

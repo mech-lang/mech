@@ -206,6 +206,15 @@ impl Formatter {
           format!("**{}**", n.to_string())
         }
       },
+      ParagraphElement::Hyperlink((text, url)) => {
+        let url_str = url.to_string();
+        let text_str = self.paragraph(text);
+        if self.html {
+          format!("<a href=\"{}\" class=\"mech-hyperlink\">{}</a>",url_str,text_str)
+        } else {
+          format!("[{}]({})",text_str,url_str)
+        }
+      },
       ParagraphElement::Emphasis(n) => {
         if self.html {
           format!("<em class=\"mech-em\">{}</em>", n.to_string())
@@ -249,7 +258,6 @@ impl Formatter {
       SectionElement::Grammar(n) => self.grammar(n),
       SectionElement::Table(n) => self.markdown_table(n),
       SectionElement::BlockQuote(n) => self.block_quote(n),
-      SectionElement::Hyperlink(n) => self.hyperlink(n),
       SectionElement::ThematicBreak => self.thematic_break(),
       SectionElement::OrderedList => todo!(),
       SectionElement::Image => todo!(),
@@ -258,17 +266,6 @@ impl Formatter {
       format!("<div class=\"mech-section-element\">{}</div>",element)
     } else {
       element
-    }
-  }
-
-  pub fn hyperlink(&mut self, node: &(Token, Paragraph)) -> String {
-    let (url, text) = node;
-    let url_str = url.to_string();
-    let text_str = self.paragraph(text);
-    if self.html {
-      format!("<a href=\"{}\" class=\"mech-hyperlink\">{}</a>",url_str,text_str)
-    } else {
-      format!("[{}]({})",text_str,url_str)
     }
   }
 
