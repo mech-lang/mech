@@ -272,6 +272,21 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
   Ok((input, SectionElement::CodeBlock(code_token)))
 }
 
+pub fn block_quote(input: ParseString) -> ParseResult<Paragraph> {
+  let (input, _) = right_angle(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, text) = paragraph(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  Ok((input, text))
+}
+
+pub fn thematic_break(input: ParseString) -> ParseResult<SectionElement> {
+  let (input, _) = many1(asterisk)(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, _) = new_line(input)?;
+  Ok((input, SectionElement::ThematicBreak))
+}
+
 // section_element := mech_code | unordered_list | comment | paragraph | code_block | sub_section;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match many1(mech_code)(input.clone()) {
@@ -280,19 +295,24 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
       Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
       _ => match markdown_table(input.clone()) {
         Ok((input, table)) => (input, SectionElement::Table(table)),
-        _ => match code_block(input.clone()) {
-          Ok((input, m)) => (input,m),
-          _ => match sub_section(input.clone()) {
-            Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
-            _ => match paragraph(input) {
-              Ok((input, p)) => (input, SectionElement::Paragraph(p)),
-              Err(err) => { return Err(err); }
+        _ => match block_quote(input.clone()) {   
+          Ok((input, quote)) => (input, SectionElement::BlockQuote(quote)),
+          _ => match code_block(input.clone()) {
+            Ok((input, m)) => (input,m),
+            _ => match thematic_break(input.clone()) {
+              Ok((input, _)) => (input, SectionElement::ThematicBreak),
+              _ => match sub_section(input.clone()) {
+                Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
+                _ => match paragraph(input) {
+                  Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+                  Err(err) => { return Err(err); }
+                }
+              }
             }
           }
         }
       }
     }
-    _ => todo!(),
   };
   let (input, _) = whitespace0(input)?;
   Ok((input, section_element))
@@ -301,16 +321,22 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
 // sub_section_element := comment | unordered_list | mech_code | paragraph | code_block;
 pub fn sub_section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match many1(mech_code)(input.clone()) {
-    Ok((input, m)) => (input, SectionElement::MechCode(m)),
+    Ok((input, code)) => (input, SectionElement::MechCode(code)),
     _ => match unordered_list(input.clone()) {
       Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
-      _ => match section(input.clone()) {
-        Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
-        _ => match code_block(input.clone()) {
-          Ok((input, m)) => (input,m),
-          _ => match paragraph(input.clone()) {
-            Ok((input, p)) => (input, SectionElement::Paragraph(p)),
-            Err(err) => { return Err(err); }
+      _ => match markdown_table(input.clone()) {
+        Ok((input, table)) => (input, SectionElement::Table(table)),
+        _ => match block_quote(input.clone()) {   
+          Ok((input, quote)) => (input, SectionElement::BlockQuote(quote)),
+          _ => match code_block(input.clone()) {
+            Ok((input, m)) => (input,m),
+            _ => match thematic_break(input.clone()) {
+              Ok((input, _)) => (input, SectionElement::ThematicBreak),
+              _ => match paragraph(input) {
+                Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+                Err(err) => { return Err(err); }
+              }
+            }
           }
         }
       }

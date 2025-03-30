@@ -421,9 +421,10 @@ pub enum SectionElement {
   Table(MarkdownTable),
   CodeBlock(Token),
   Grammar(Grammar),
+  BlockQuote(Paragraph),
+  ThematicBreak,
   OrderedList,     // todo
-  BlockQuote,      // todo
-  ThematicBreak,   // todo
+  Hyperlink,       // todo
   Image,           // todo
 }
 

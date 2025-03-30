@@ -248,15 +248,33 @@ impl Formatter {
       SectionElement::CodeBlock(n) => self.code_block(n),
       SectionElement::Grammar(n) => self.grammar(n),
       SectionElement::Table(n) => self.markdown_table(n),
+      SectionElement::BlockQuote(n) => self.block_quote(n),
+      SectionElement::ThematicBreak => self.thematic_break(),
       SectionElement::OrderedList => todo!(),
-      SectionElement::BlockQuote => todo!(),
-      SectionElement::ThematicBreak => todo!(),
       SectionElement::Image => todo!(),
+      SectionElement::Hyperlink => todo!(),
     };
     if self.html {
       format!("<div class=\"mech-section-element\">{}</div>",element)
     } else {
       element
+    }
+  }
+
+  pub fn block_quote(&mut self, node: &Paragraph) -> String {
+    let quote_paragraph = self.paragraph(node);
+    if self.html {
+      format!("<blockquote class=\"mech-block-quote\">{}</blockquote>",quote_paragraph)
+    } else {
+      format!("> {}\n",quote_paragraph)
+    }
+  }
+
+  pub fn thematic_break(&mut self) -> String {
+    if self.html {
+      format!("<hr class=\"mech-thematic-break\"/>")
+    } else {
+      format!("***\n")
     }
   }
 

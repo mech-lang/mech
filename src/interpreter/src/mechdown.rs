@@ -35,10 +35,11 @@ pub fn section_element(element: &SectionElement, plan: Plan, symbols: SymbolTabl
     SectionElement::CodeBlock(_) => Value::Empty,
     SectionElement::Grammar(_) => Value::Empty,
     SectionElement::Table(_) => Value::Empty,
+    SectionElement::BlockQuote(_) => Value::Empty,
     SectionElement::OrderedList => Value::Empty,
-    SectionElement::BlockQuote => Value::Empty,
     SectionElement::ThematicBreak => Value::Empty,
     SectionElement::Image => Value::Empty,
+    SectionElement::Hyperlink => Value::Empty,
   };
   Ok(out)
 }
