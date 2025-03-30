@@ -85,64 +85,24 @@ pub fn merge_src_range(r1: SourceRange, r2: SourceRange) -> SourceRange {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TokenKind {
-  Alpha,
-  Digit,
-  HashTag,
-  LeftBracket,
-  RightBracket,
-  LeftParenthesis,
-  RightParenthesis,
-  LeftBrace,
-  RightBrace,
-  Caret,
-  Semicolon,
-  Space,
-  Plus,
-  Dash,
-  Underscore,
-  At,
-  Asterisk,
-  Slash,
-  Apostrophe,
-  Equal,
-  LeftAngle,
-  RightAngle,
-  Exclamation,
-  Question,
-  Period,
-  Colon,
-  Comma,
-  Tilde,
-  Grave,
-  Bar,
-  Backslash,
-  Quote,
-  Ampersand,
-  Percent,
-  Newline,
-  CarriageReturn,
-  CarriageReturnNewLine,
-  Tab,
-  Emoji,
-  Text,
-  True,
+  Alpha, Ampersand, Any, Apostrophe, AssignOperator, Asterisk, AsyncTransitionOperator, At,
+  Backslash, Bar, BoxDrawing,
+  Caret, CarriageReturn, CarriageReturnNewLine, Colon, CodeBlock, Comma,
+  Dash, DefineOperator, Digit, Dollar,
+  Emoji, Empty, Equal, Exclamation,
   False,
-  Number,
-  String,
-  Title,
-  Identifier,
-  BoxDrawing,
-  Dollar,
-  CodeBlock,
-  InlineCode,
-  DefineOperator,
-  AssignOperator,
+  Grave,
+  HashTag,
+  Identifier, InlineCode, 
+  LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
+  Newline, Not, Number,
   OutputOperator,
-  AsyncTransitionOperator,
-  TransitionOperator,
-  Any,
-  Not,
-  Empty
+  Percent, Period, Plus,
+  Question, Quote,
+  RightAngle, RightBrace, RightBracket, RightParenthesis,
+  Semicolon, Space, Slash, String,
+  Tab, Text, Tilde, Title, TransitionOperator, True,
+  Underscore,
 }
 
 #[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -350,8 +310,22 @@ impl Body {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum ColumnAlignment {
+  Left,
+  Center,
+  Right,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct MarkdownTable {
+  pub header: Vec<Paragraph>,
+  pub rows: Vec<Vec<Paragraph>>,
+  pub alignment: Vec<ColumnAlignment>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Subtitle {
-  pub text: Token,
+  pub text: Paragraph,
   pub level: u8,
 }
 
