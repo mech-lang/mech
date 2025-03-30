@@ -1,4 +1,5 @@
 use crate::*;
+use std::hash::{DefaultHasher, Hash, Hasher};
 
 // Statements
 // ----------------------------------------------------------------------------
@@ -20,28 +21,30 @@ pub fn section(section: &Section, plan: Plan, symbols: SymbolTableRef, functions
 }
 
 pub fn section_element(element: &SectionElement, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+  let mut hasher = DefaultHasher::new();
   let mut out = Value::Empty; 
-  let out = match element {
+  match element {
     SectionElement::MechCode(code) => {
       for c in code {
         out = mech_code(&c, plan.clone(), symbols.clone(), functions.clone())?;
       }
-      out
+      return Ok(out)
     },
-    SectionElement::Section(sctn) => section(sctn, plan.clone(), symbols.clone(), functions.clone())?,
-    SectionElement::Comment(_) => Value::Empty,
-    SectionElement::Paragraph(_) => Value::Empty,
-    SectionElement::UnorderedList(_) => Value::Empty,
-    SectionElement::CodeBlock(_) => Value::Empty,
-    SectionElement::Grammar(_) => Value::Empty,
-    SectionElement::Table(_) => Value::Empty,
-    SectionElement::BlockQuote(_) => Value::Empty,
-    SectionElement::OrderedList => Value::Empty,
-    SectionElement::ThematicBreak => Value::Empty,
-    SectionElement::Image => Value::Empty,
-    SectionElement::Hyperlink => Value::Empty,
+    SectionElement::Section(sctn) => {return section(sctn, plan.clone(), symbols.clone(), functions.clone());},
+    SectionElement::CodeBlock(x) => x.hash(&mut hasher),
+    SectionElement::Comment(x) => x.hash(&mut hasher),
+    SectionElement::Paragraph(x) => x.hash(&mut hasher),
+    SectionElement::UnorderedList(x) => x.hash(&mut hasher),
+    SectionElement::Grammar(x) => x.hash(&mut hasher),
+    SectionElement::Table(x) => x.hash(&mut hasher),
+    SectionElement::BlockQuote(x) => x.hash(&mut hasher),
+    SectionElement::Hyperlink(x) => x.hash(&mut hasher),
+    SectionElement::OrderedList => todo!(),
+    SectionElement::ThematicBreak => todo!(),
+    SectionElement::Image => todo!(),
   };
-  Ok(out)
+  let hash = hasher.finish();
+  Ok(Value::Id(hash))
 }
 
 pub fn mech_code(code: &MechCode, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
