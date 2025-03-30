@@ -34,6 +34,7 @@ pub fn section_element(element: &SectionElement, plan: Plan, symbols: SymbolTabl
     SectionElement::UnorderedList(_) => Value::Empty,
     SectionElement::CodeBlock(_) => Value::Empty,
     SectionElement::Grammar(_) => Value::Empty,
+    SectionElement::Table(_) => Value::Empty,
     SectionElement::OrderedList => Value::Empty,
     SectionElement::BlockQuote => Value::Empty,
     SectionElement::ThematicBreak => Value::Empty,

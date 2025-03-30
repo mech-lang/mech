@@ -218,6 +218,20 @@ h4:before{
     margin-top: 5px; 
 }
 
+.mech-program h3 a {
+    color: #f2ead9;
+    text-decoration: none;
+}
+
+.mech-program h3 {
+    font-family: 'FiraCodeRegular', monospace;
+    color: #f2ead9;
+    font-size: 14pt;
+    font-weight: bold;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
 .mech-program h4 a {
     color: #f2ead9;
     text-decoration: none;
@@ -685,4 +699,56 @@ li p {
 }
 
 .mech-table-row {
+}
+
+/* General Table Styles */
+.mech-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #2F353B; /* Dark background */
+    color: #f2ead9; /* Font color */
+}
+
+/* Table Header Styles */
+.mech-table thead {
+    background-color: #171D21; /* Slightly darker background for header */
+}
+
+.mech-table .mech-table-header-cell {
+    color: #f2ead9; /* Light font color for header */
+    padding: 10px;
+    text-align: left;
+    font-weight: bold;
+    border-bottom: 2px solid #333; /* Darker border for header */
+}
+
+/* Table Row Styles */
+.mech-table .mech-table-row-even {
+    background-color: #232A30; /* Darker row background for even rows */
+}
+
+.mech-table .mech-table-row-odd {
+    background-color: #171D21; /* Slightly darker background for odd rows */
+}
+
+/* Table Cell Styles */
+.mech-table .mech-table-cell {
+    padding: 10px;
+    border-bottom: 1px solid #333; /* Dark border for table cells */
+    text-align: left;
+}
+
+/* Table Hover Effects */
+.mech-table tbody tr:hover {
+    background-color: #3A4148; /* Slight highlight on hover */
+}
+
+/* Links Inside Table (if any) */
+.mech-table a {
+    color: #ee6262; /* Light red color for links */
+    text-decoration: none;
+}
+
+.mech-table a:hover {
+    color: #f2ead9; /* Change link color on hover */
 }

@@ -247,6 +247,7 @@ impl Formatter {
       SectionElement::UnorderedList(n) => self.unordered_list(n),
       SectionElement::CodeBlock(n) => self.code_block(n),
       SectionElement::Grammar(n) => self.grammar(n),
+      SectionElement::Table(n) => self.markdown_table(n),
       SectionElement::OrderedList => todo!(),
       SectionElement::BlockQuote => todo!(),
       SectionElement::ThematicBreak => todo!(),
@@ -257,6 +258,54 @@ impl Formatter {
     } else {
       element
     }
+  }
+
+  pub fn markdown_table(&mut self, node: &MarkdownTable) -> String {
+    let mut html = String::new();
+    html.push_str("<table class=\"mech-table\">");
+
+    // Render the header
+    if !node.header.is_empty() {
+      html.push_str("<thead><tr class=\"mech-table-header\">");
+      for (i, cell) in node.header.iter().enumerate() {
+        let align = match node.alignment.get(i) {
+          Some(ColumnAlignment::Left) => "left",
+          Some(ColumnAlignment::Center) => "center",
+          Some(ColumnAlignment::Right) => "right",
+          None => "left", // Default alignment
+        };
+        let cell_html = self.paragraph(cell);
+        html.push_str(&format!(
+          "<th class=\"mech-table-header-cell\" style=\"text-align:{}\">{}</th>", 
+          align, cell_html
+        ));
+      }
+      html.push_str("</tr></thead>");
+    }
+
+    // Render the rows
+    html.push_str("<tbody>");
+    for (row_index, row) in node.rows.iter().enumerate() {
+      let row_class = if row_index % 2 == 0 { "mech-table-row-even" } else { "mech-table-row-odd" };
+      html.push_str(&format!("<tr class=\"mech-table-row {}\">", row_class));
+      for (i, cell) in row.iter().enumerate() {
+        let align = match node.alignment.get(i) {
+          Some(ColumnAlignment::Left) => "left",
+          Some(ColumnAlignment::Center) => "center",
+          Some(ColumnAlignment::Right) => "right",
+          None => "left", // Default alignment
+        };
+        let cell_html = self.paragraph(cell);
+        html.push_str(&format!(
+          "<td class=\"mech-table-cell\" style=\"text-align:{}\">{}</td>", 
+          align, cell_html
+        ));
+      }
+      html.push_str("</tr>");
+    }
+    html.push_str("</tbody>");
+    html.push_str("</table>");
+    html
   }
 
   pub fn grammar(&mut self, node: &Grammar) -> String {
