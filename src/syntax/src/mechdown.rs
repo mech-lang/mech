@@ -22,21 +22,102 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
   Ok((input, Title{text: title}))
 }
 
+/*
+
+| Syntax      | Description |
+| ----------- | ----------- |
+| Header      | Title       |
+| Paragraph   | Text        |
+
+Also for alignment
+
+| Syntax      | Description | Test Text     |
+| :---        |    :----:   |          ---: |
+| Header      | Title       | Here's this   |
+| Paragraph   | Text        | And more      |
+
+*/
+
+// markdown-table := ?markdown_table_header, markdown_table_row* ;
+// markdown_table_header := +("|", paragraph), "|", new-line, +("|", whitespace0, alignment-separator, whitespace0), "|", new-line ;
+// markdown_table_row := new-line, whitespace0, +("|", paragraph), "|" ;
+
+
+pub struct MarkdownTableHeader {
+  pub header: Vec<(Token, Token)>,
+}
+
+pub fn no_alignment(input: ParseString) -> ParseResult<ColumnAlignment> {
+  let (input, _) = many1(dash)(input)?;
+  Ok((input, ColumnAlignment::Left))
+}
+
+pub fn left_alignment(input: ParseString) -> ParseResult<ColumnAlignment> {
+  let (input, _) = colon(input)?;
+  let (input, _) = many1(dash)(input)?;
+  Ok((input, ColumnAlignment::Left))
+}
+
+pub fn right_alignment(input: ParseString) -> ParseResult<ColumnAlignment> {
+  let (input, _) = many1(dash)(input)?;
+  let (input, _) = colon(input)?;
+  Ok((input, ColumnAlignment::Right))
+}
+
+pub fn center_alignment(input: ParseString) -> ParseResult<ColumnAlignment> {
+  let (input, _) = colon(input)?;
+  let (input, _) = many1(dash)(input)?;
+  let (input, _) = colon(input)?;
+  Ok((input, ColumnAlignment::Center))
+}
+
+pub fn alignment_separator(input: ParseString) -> ParseResult<ColumnAlignment> {
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, separator) = alt((center_alignment, left_alignment, right_alignment, no_alignment))(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  Ok((input, separator))
+}
+
+pub fn markdown_table(input: ParseString) -> ParseResult<MarkdownTable> {
+  //let (input, header) = markdown_table_header(input)?;
+  //let (input, rows) = many0(markdown_table_row)(input)?;
+  Ok((input, MarkdownTable{header: vec![], rows: vec![], alignment: vec![]}))
+}
+
+pub fn markdown_table_header(input: ParseString) -> ParseResult<(Vec<Paragraph>,Vec<ColumnAlignment>)> {
+  let (input, _) = whitespace0(input)?;
+  let (input, header) = many1(tuple((bar, paragraph)))(input)?;
+  let (input, _) = bar(input)?;
+  let (input, _) = new_line(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, alignment) = many1(tuple((bar, alignment_separator)))(input)?;
+  let (input, _) = bar(input)?;
+  let column_names: Vec<Paragraph> = header.into_iter().map(|(_,tkn)| tkn).collect();
+  let column_alignments = alignment.into_iter().map(|(_,tkn)| tkn).collect();
+  Ok((input, (column_names,column_alignments)))
+}
+
+/*pub fn markdown_table_row(input: ParseString) -> ParseResult<MarkdownTableRow> {
+  let (input, _) = new_line(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, row) = many1(tuple((bar, paragraph)))(input)?;
+  let (input, _) = bar(input)?;
+  Ok((input, MarkdownTableRow{row}))
+}*/
+
 // subtitle := digit_token+, period, space*, text+, new_line, dash+, (space|tab)*, new_line, (space|tab)*, whitespace* ;
 pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = many1(digit_token)(input)?;
   let (input, _) = period(input)?;
   let (input, _) = many0(space)(input)?;
-  let (input, mut text) = many1(text)(input)?;
+  let (input, text) = paragraph(input)?;
   let (input, _) = new_line(input)?;
   let (input, _) = many1(dash)(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = new_line(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = whitespace0(input)?;
-  let mut title = Token::merge_tokens(&mut text).unwrap();
-  title.kind = TokenKind::Title;
-  Ok((input, Subtitle{text: title, level: 2}))
+  Ok((input, Subtitle{text, level: 2}))
 }
 
 // number_subtitle := (space|tab)*, "(", integer_literal, ")", (space|tab)+, text+, (space|tab)*, whitespace* ;
@@ -45,13 +126,11 @@ pub fn number_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = left_parenthesis(input)?;
   let (input, _) = integer_literal(input)?;
   let (input, _) = right_parenthesis(input)?;
-  let (input, _) = many1(space_tab)(input)?;
-  let (input, mut text) = many1(text)(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, text) = paragraph(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = whitespace0(input)?;
-  let mut title = Token::merge_tokens(&mut text).unwrap();
-  title.kind = TokenKind::Title;
-  Ok((input, Subtitle{text: title, level: 3}))
+  Ok((input, Subtitle{text, level: 3}))
 }
 
 // alpha_subtitle := (space|tab)*, "(", alpha, ")", (space|tab)+, text+, (space|tab)*, whitespace* ;
@@ -61,12 +140,10 @@ pub fn alpha_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = alpha(input)?;
   let (input, _) = right_parenthesis(input)?;
   let (input, _) = many0(space_tab)(input)?;
-  let (input, mut text) = many1(text)(input)?;
+  let (input, text) = paragraph(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = whitespace0(input)?;
-  let mut title = Token::merge_tokens(&mut text).unwrap();
-  title.kind = TokenKind::Title;
-  Ok((input, Subtitle{text: title, level: 4}))
+  Ok((input, Subtitle{text, level: 4}))
 }
 
 pub fn strong(input: ParseString) -> ParseResult<ParagraphElement> {
@@ -106,6 +183,17 @@ pub fn inline_code(input: ParseString) -> ParseResult<ParagraphElement> {
   text.kind = TokenKind::Text;
   Ok((input, ParagraphElement::InlineCode(text)))
 }
+
+
+/*
+
+| Syntax      | Description | Test Text     |
+| :---        |    :----:   |          ---: |
+| Header      | Title       | Here's this   |
+| Paragraph   | Text        | And more      |
+
+*/
+
 
 pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, elements) = match many1(nom_tuple((is_not(alt((tilde,asterisk,underscore,grave,define_operator))),text)))(input) {
