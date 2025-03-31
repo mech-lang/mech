@@ -208,7 +208,7 @@ impl Formatter {
       },
       ParagraphElement::Hyperlink((text, url)) => {
         let url_str = url.to_string();
-        let text_str = self.paragraph(text);
+        let text_str = text.to_string();
         if self.html {
           format!("<a href=\"{}\" class=\"mech-hyperlink\">{}</a>",url_str,text_str)
         } else {
