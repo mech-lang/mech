@@ -102,6 +102,7 @@ leaf!{english_true_literal, "true", TokenKind::True}
 leaf!{english_false_literal, "false", TokenKind::False}
 leaf!{check_mark, "✓", TokenKind::True}
 leaf!{cross, "✗", TokenKind::False}
+leaf!{negate, "¬", TokenKind::Not}
 
 leaf!{box_tl_round, "╭", TokenKind::BoxDrawing}
 leaf!{box_tr_round, "╮", TokenKind::BoxDrawing}
@@ -127,11 +128,14 @@ leaf!{box_t_bottom, "┴", TokenKind::BoxDrawing}
 leaf!{box_vert, "│", TokenKind::BoxDrawing}
 leaf!{box_vert_bold, "┃", TokenKind::BoxDrawing}
 
+leaf!(http_prefix, "http", TokenKind::Http);
+
 ws0_leaf!(define_operator, ":=", TokenKind::DefineOperator);
 ws0_leaf!(assign_operator, "=", TokenKind::AssignOperator);
 ws0_leaf!(output_operator, "=>", TokenKind::OutputOperator);
 ws0_leaf!(async_transition_operator, "~>", TokenKind::AsyncTransitionOperator);
 ws0_leaf!(transition_operator, "->", TokenKind::TransitionOperator);
+
 
 // emoji_grapheme := ?emoji_grapheme_literal? ;
 pub fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {
@@ -164,6 +168,21 @@ pub fn digit(mut input: ParseString) -> ParseResult<String> {
 pub fn any(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_one() {
     Ok((input, matched))
+  } else {
+    Err(nom::Err::Error(ParseError::new(input, "Unexpected eof")))
+  }
+}
+
+pub fn any_token(mut input: ParseString) -> ParseResult<Token> {
+  if input.is_empty() {
+    return Err(nom::Err::Error(ParseError::new(input, "Unexpected eof")))
+  }
+  let start = input.loc();
+  let byte = input.graphemes[input.cursor];
+  if let Some(matched) = input.consume_one() {
+    let end = input.loc();
+    let src_range = SourceRange { start, end };
+    Ok((input, Token{kind: TokenKind::Any, chars: byte.chars().collect::<Vec<char>>(), src_range}))
   } else {
     Err(nom::Err::Error(ParseError::new(input, "Unexpected eof")))
   }

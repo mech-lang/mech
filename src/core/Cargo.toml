@@ -1,6 +1,6 @@
 [package]
 name = "mech-core"
-version = "0.2.35"
+version = "0.2.36"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "The Mech language runtime."
 documentation = "http://docs.mech-lang.org"
@@ -60,32 +60,31 @@ VectorD = []
 MatrixD = []
 
 [dependencies]
-hashbrown = "0.15.2"
-serde = {version = "1.0.218", default-features = false, features = ["alloc", "derive"] }
-serde_derive = "1.0.218"
-rlibc = { version = "=1.0", optional = true }
-lazy_static = "1.5.0"
-seahash = "4.1.0"
-serde_json = "1.0.140"
-indexmap = {version = "2.7.0", features = ["serde"]}
-rayon = {version = "1.10.0", optional = true}
-time = {version = "0.3.37", optional = true}
-ed25519-dalek = {version = "2.1.1", default-features = false, features = ["rand_core"]}
-getrandom = { version = "0.2.15", features = ["js"]}
-rand = "0.8.5"
-tinyrand = "0.5.0"
-rand_core = {version = "0.6.4"}
-wasm-bindgen = {version = "0.2.100", optional = true}
-nalgebra = "0.33.2"
-simba = "0.9.0"
-libm = "0.2.11"
-tabled = "0.18.0"
-paste = "1.0.15"
-rkyv = "0.8.10"
-bytemuck = "1.21.0"
-bincode = {version = "2.0.0", features = ["serde"]}
 base64 = "0.22.1"
+bincode = {version = "2.0.1", features = ["serde"]}
 brotli = "7.0.0"
+hashbrown = "0.15.2"
+indexmap = {version = "2.8.0", features = ["serde"]}
+lazy_static = "1.5.0"
+libm = "0.2.11"
+nalgebra = "0.33.2"
+paste = "1.0.15"
+rayon = {version = "1.10.0", optional = true}
+rlibc = { version = "=1.0", optional = true }
+seahash = "4.1.0"
+serde = {version = "1.0.219", default-features = false, features = ["alloc", "derive"] }
+serde_derive = "1.0.219"
+serde_json = "1.0.140"
+tabled = "0.18.0"
+wasm-bindgen = {version = "0.2.100", optional = true}
+#time = {version = "0.3.40", optional = true}
+#ed25519-dalek = {version = "2.1.1", default-features = false, features = ["rand_core"]}
+#rand = "0.9.0"
+#tinyrand = "0.5.0"
+#rand_core = {version = "0.9.3"}
+#simba = "0.9.0"
+#rkyv = "0.8.10"
+#bytemuck = "1.22.0"
 
 [dependencies.web-sys]
 version = "0.3.77"

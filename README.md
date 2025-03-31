@@ -24,6 +24,12 @@ cd mech
 cargo build --bin mech --release
 ```
 
+Alternatively, you can install Mech directly via Rust's [Cargo](https://crates.io/crates/mech) utility:
+
+```bash
+cargo install mech
+```
+
 ## 📚 Documentation
 
 New to Mech? Start with [Learn Mech in Fifteen Minutes](https://gitlab.com/mech-lang/docs/-/raw/v0.2-beta/III.guides/MechFifteen.mec).

@@ -44,20 +44,20 @@ body {
 }
 
 .mech-toc::-webkit-scrollbar {
-    width: 8px; /* Adjust width as needed */
+    width: 8px; 
 }
 
 .mech-toc::-webkit-scrollbar-track {
-    background: transparent; /* Makes the track invisible */
+    background: transparent; 
 }
 
 .mech-toc::-webkit-scrollbar-thumb {
-    background: rgba(128, 128, 128, 0.7); /* Grey with some transparency */
-    border-radius: 10px; /* Rounds the scrollbar */
+    background: rgba(128, 128, 128, 0.7); 
+    border-radius: 10px; 
 }
 
 .mech-toc::-webkit-scrollbar-thumb:hover {
-    background: rgba(128, 128, 128, 0.9); /* Slightly darker on hover */
+    background: rgba(128, 128, 128, 0.9); 
 }
 
 /* For Firefox */
@@ -218,6 +218,20 @@ h4:before{
     margin-top: 5px; 
 }
 
+.mech-program h3 a {
+    color: #f2ead9;
+    text-decoration: none;
+}
+
+.mech-program h3 {
+    font-family: 'FiraCodeRegular', monospace;
+    color: #f2ead9;
+    font-size: 14pt;
+    font-weight: bold;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
 .mech-program h4 a {
     color: #f2ead9;
     text-decoration: none;
@@ -279,6 +293,73 @@ h4:before{
     scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
     scrollbar-width: thin;
 }
+
+.mech-grammar {
+    background-color: #171D21;
+    color: #ada594;
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 12pt;
+    line-height: 18px;
+    border-radius: 0px;
+    padding: 30px;
+    border-radius: 10px;
+    overflow-x: auto;
+}
+
+.mech-grammar::-webkit-scrollbar {
+    height: 8px; /* Horizontal scrollbar height */
+}
+
+.mech-grammar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.mech-grammar::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.7);
+    border-radius: 10px;
+}
+
+.mech-grammar::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 0.9);
+}
+
+/* Firefox */
+.mech-grammar {
+    scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
+    scrollbar-width: thin;
+}
+
+.mech-grammar-identifier {
+    color: #ccbbc2;
+}
+
+.mech-grammar-definition {
+    color: #ccbbc2;
+}
+
+.mech-grammar-definition a {
+    color: #ccbbc2;
+    text-decoration: none;
+}
+
+.mech-grammar-definition a:hover {
+    color: #ccbbc2;
+    text-decoration: underline;
+}
+
+.mech-grammar-choice {
+    margin-left: 20px;
+}
+
+.mech-grammar-sequence {
+    margin-left: 20px;
+}
+
+
+.mech-grammar-terminal {
+    color: #ef5f90;
+}
+
 
 .mech-code {
 }
@@ -618,4 +699,74 @@ li p {
 }
 
 .mech-table-row {
+}
+
+.mech-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #2F353B;
+    color: #f2ead9; 
+}
+
+.mech-table thead {
+    background-color: #171D21;
+}
+
+.mech-table .mech-table-header-cell {
+    color: #f2ead9; 
+    padding: 10px;
+    text-align: left;
+    font-weight: bold;
+    border-bottom: 2px solid #333; 
+}
+
+.mech-table .mech-table-row-even {
+    background-color: #232A30; 
+}
+
+.mech-table .mech-table-row-odd {
+    background-color: #171D21; 
+}
+
+.mech-table .mech-table-cell {
+    padding: 10px;
+    border-bottom: 1px solid #333; 
+    text-align: left;
+}
+
+.mech-table tbody tr:hover {
+    background-color: #3A4148; 
+}
+
+.mech-table a {
+    color: #ee6262; 
+    text-decoration: none;
+}
+
+.mech-table a:hover {
+    color: #f2ead9;
+}
+
+.mech-block-quote {
+    background-color: #232A30; 
+    border-left: 5px solid #ee6262; 
+    padding: 15px 20px;
+    color: #f2ead9; 
+    font-style: italic; 
+    margin: 20px 0;
+    border-radius: 5px;
+}
+
+.mech-block-quote blockquote {
+    margin: 0;
+    padding: 0;
+    font-size: 1.2em;
+}
+
+.mech-thematic-break {
+    border: 0;
+    border-top: 2px solid #7e8892;
+    margin: 30px 0;
+    width: 100%;
+    opacity: 0.7;
 }

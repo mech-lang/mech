@@ -85,62 +85,24 @@ pub fn merge_src_range(r1: SourceRange, r2: SourceRange) -> SourceRange {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TokenKind {
-  Alpha,
-  Digit,
-  HashTag,
-  LeftBracket,
-  RightBracket,
-  LeftParenthesis,
-  RightParenthesis,
-  LeftBrace,
-  RightBrace,
-  Caret,
-  Semicolon,
-  Space,
-  Plus,
-  Dash,
-  Underscore,
-  At,
-  Asterisk,
-  Slash,
-  Apostrophe,
-  Equal,
-  LeftAngle,
-  RightAngle,
-  Exclamation,
-  Question,
-  Period,
-  Colon,
-  Comma,
-  Tilde,
-  Grave,
-  Bar,
-  Backslash,
-  Quote,
-  Ampersand,
-  Percent,
-  Newline,
-  CarriageReturn,
-  CarriageReturnNewLine,
-  Tab,
-  Emoji,
-  Text,
-  True,
+  Alpha, Ampersand, Any, Apostrophe, AssignOperator, Asterisk, AsyncTransitionOperator, At,
+  Backslash, Bar, BoxDrawing,
+  Caret, CarriageReturn, CarriageReturnNewLine, Colon, CodeBlock, Comma,
+  Dash, DefineOperator, Digit, Dollar,
+  Emoji, Empty, Equal, Exclamation,
   False,
-  Number,
-  String,
-  Title,
-  Identifier,
-  BoxDrawing,
-  Dollar,
-  CodeBlock,
-  InlineCode,
-  DefineOperator,
-  AssignOperator,
+  Grave,
+  HashTag, Http,
+  Identifier, InlineCode, 
+  LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
+  Newline, Not, Number,
   OutputOperator,
-  AsyncTransitionOperator,
-  TransitionOperator,
-  Empty
+  Percent, Period, Plus,
+  Question, Quote,
+  RightAngle, RightBrace, RightBracket, RightParenthesis,
+  Semicolon, Space, Slash, String,
+  Tab, Text, Tilde, Title, TransitionOperator, True,
+  Underscore,
 }
 
 #[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -195,13 +157,13 @@ impl Token {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct TableOfContents {
     pub title: Option<Title>,
     pub sections: Vec<Section>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Program {
   pub title: Option<Title>,
   pub body: Body,
@@ -318,7 +280,7 @@ impl Program {
 
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Title {
   pub text: Token,
 }
@@ -331,7 +293,7 @@ impl Title {
 
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Body {
   pub sections: Vec<Section>,
 }
@@ -347,9 +309,23 @@ impl Body {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub enum ColumnAlignment {
+  Left,
+  Center,
+  Right,
+}
+
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub struct MarkdownTable {
+  pub header: Vec<Paragraph>,
+  pub rows: Vec<Vec<Paragraph>>,
+  pub alignment: Vec<ColumnAlignment>,
+}
+
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Subtitle {
-  pub text: Token,
+  pub text: Paragraph,
   pub level: u8,
 }
 
@@ -359,7 +335,7 @@ impl Subtitle {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Section {
   pub subtitle: Option<Subtitle>,
   pub elements: Vec<SectionElement>,
@@ -393,17 +369,61 @@ impl Section {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Grammar {
+  pub rules: Vec<Rule>,
+}
+
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GrammarIdentifier {
+  pub name: Token,
+}
+
+impl GrammarIdentifier {
+  pub fn tokens(&self) -> Vec<Token> {
+    vec![self.name.clone()]
+  }
+
+  pub fn to_string(&self) -> String {
+    self.name.to_string()
+  }
+}
+
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Rule {
+  pub name: GrammarIdentifier,
+  pub expr: GrammarExpression,
+}
+
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub enum GrammarExpression {
+  Choice(Vec<GrammarExpression>),
+  Sequence(Vec<GrammarExpression>),
+  Repeat0(Box<GrammarExpression>),
+  Repeat1(Box<GrammarExpression>),
+  Optional(Box<GrammarExpression>),
+  Terminal(Token),
+  List(Box<GrammarExpression>, Box<GrammarExpression>),
+  Definition(GrammarIdentifier),
+  Peek(Box<GrammarExpression>),
+  Not(Box<GrammarExpression>),
+  Range(Token,Token),
+  Group(Box<GrammarExpression>),
+}
+
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SectionElement {
   Section(Box<Section>),
   Comment(Comment),
   Paragraph(Paragraph),
   MechCode(Vec<MechCode>),
   UnorderedList(UnorderedList),
+  Table(MarkdownTable),
   CodeBlock(Token),
+  Grammar(Grammar),
+  BlockQuote(Paragraph),
+  ThematicBreak,
   OrderedList,     // todo
-  BlockQuote,      // todo
-  ThematicBreak,   // todo
   Image,           // todo
 }
 
@@ -424,12 +444,12 @@ impl SectionElement {
 
 pub type ListItem = Paragraph;
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct UnorderedList {
   pub items: Vec<ListItem>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum MechCode {
   Expression(Expression),
   Statement(Statement),
@@ -452,7 +472,7 @@ impl MechCode {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FunctionDefine {
   pub name: Identifier,
   pub input: Vec<FunctionArgument>,
@@ -460,7 +480,7 @@ pub struct FunctionDefine {
   pub statements: Vec<Statement>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FunctionArgument {
   pub name: Identifier,
   pub kind: KindAnnotation,
@@ -474,7 +494,7 @@ impl FunctionArgument {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FsmImplementation {
   pub name: Identifier,
   pub input: Vec<Identifier>,
@@ -482,19 +502,19 @@ pub struct FsmImplementation {
   pub arms: Vec<FsmArm>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum FsmArm {
   Guard(Pattern,Vec<Guard>),
   Transition(Pattern,Vec<Transition>),
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Guard { 
   pub condition: Pattern,
   pub transitions: Vec<Transition>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Transition {
   Next(Pattern),
   Output(Pattern),
@@ -503,7 +523,7 @@ pub enum Transition {
   Statement(Statement),
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Pattern {
   Wildcard,
   Formula(Factor),
@@ -511,7 +531,7 @@ pub enum Pattern {
   TupleStruct(PatternTupleStruct),
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct PatternTupleStruct {
   pub name: Identifier,
   pub patterns: Vec<Pattern>,
@@ -519,7 +539,7 @@ pub struct PatternTupleStruct {
 
 pub type PatternTuple = Vec<Pattern>;
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FsmSpecification {
   pub name: Identifier,
   pub input: Vec<Var>,
@@ -527,13 +547,13 @@ pub struct FsmSpecification {
   pub states: Vec<StateDefinition>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct StateDefinition {
   pub name: Identifier,
   pub state_variables: Option<Vec<Var>>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Statement {
   VariableDefine(VariableDefine),
   VariableAssign(VariableAssign),
@@ -545,26 +565,26 @@ pub enum Statement {
   FlattenTable,   // todo
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FsmPipe {
   pub start: FsmInstance,
   pub transitions: Vec<Transition>
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum PipeElement {
   Expression(Expression),
   FsmInstance(FsmInstance),
   Timer // todo
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FsmDeclare {
   pub fsm: Fsm,
   pub pipe: FsmPipe,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Fsm {
   pub name: Identifier,
   pub args: Option<ArgumentList>,
@@ -573,36 +593,36 @@ pub struct Fsm {
 
 pub type FsmArgs = Vec<(Option<Identifier>,Expression)>;
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FsmInstance {
   pub name: Identifier,
   pub args: Option<FsmArgs>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct EnumDefine {
   pub name: Identifier,
   pub variants: Vec<EnumVariant>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct EnumVariant {
   pub name: Identifier,
   pub value: Option<KindAnnotation>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct KindDefine {
   pub name: Identifier,
   pub kind: KindAnnotation,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Record {
   pub bindings: Vec<Binding>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Structure {
   Empty,
   Record(Record),
@@ -623,34 +643,34 @@ impl Structure {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Map {
   pub elements: Vec<Mapping>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Mapping {
   pub key: Expression,
   pub value: Expression,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Set {
   pub elements: Vec<Expression>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Atom {
   pub name: Identifier,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct TupleStruct {
   pub name: Identifier,
   pub value: Box<Expression>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Matrix {
   pub rows: Vec<MatrixRow>,
 }
@@ -668,24 +688,24 @@ impl Matrix {
 
 pub type TableHeader = Vec<Field>;
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Table {
   pub header: TableHeader,
   pub rows: Vec<TableRow>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Field {
   pub name: Identifier,
   pub kind: Option<KindAnnotation>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct TableColumn {
   pub element: Expression,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct MatrixColumn {
   pub element: Expression,
 }
@@ -696,12 +716,12 @@ impl MatrixColumn {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct TableRow {
   pub columns: Vec<TableColumn>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct MatrixRow {
   pub columns: Vec<MatrixColumn>,
 }
@@ -717,14 +737,14 @@ impl MatrixRow {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct VariableDefine {
   pub mutable: bool,
   pub var: Var,
   pub expression: Expression,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Var {
   pub name: Identifier,
   pub kind: Option<KindAnnotation>,
@@ -742,13 +762,13 @@ impl Var {
 }
 
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct VariableAssign {
   pub target: SliceRef,
   pub expression: Expression,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Identifier {
   pub name: Token,
 }
@@ -771,29 +791,29 @@ impl Identifier {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Emoji {
   pub tokens: Vec<Token>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Word {
   pub tokens: Vec<Token>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Slice {
   pub name: Identifier,
   pub subscript: Vec<Subscript>
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SliceRef {
   pub name: Identifier,
   pub subscript: Option<Vec<Subscript>>
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Subscript {
   Dot(Identifier),          // a.b
   Swizzle(Vec<Identifier>), // a.b,c
@@ -805,7 +825,7 @@ pub enum Subscript {
   DotInt(RealNumber)        // a.1
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Expression {
   Var(Var),
   Range(Box<RangeExpression>),
@@ -831,7 +851,7 @@ impl Expression {
 
 pub type ArgumentList = Vec<(Option<Identifier>,Expression)>;
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FunctionCall {
   pub name: Identifier,
   pub args: ArgumentList,
@@ -843,19 +863,19 @@ impl FunctionCall {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Tuple {
   pub elements: Vec<Expression>
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Binding {
   pub name: Identifier,
   pub kind: Option<KindAnnotation>,
   pub value: Expression,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
 pub struct KindAnnotation {
   pub kind: Kind
 }
@@ -874,7 +894,7 @@ impl KindAnnotation {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize,Eq, PartialEq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize,Eq, PartialEq)]
 pub enum Kind {
   Tuple(Vec<Kind>),
   Bracket((Vec<Kind>,Vec<Literal>)),
@@ -919,7 +939,7 @@ impl Kind {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
 pub enum Literal {
   Empty(Token),
   Boolean(Token),
@@ -941,18 +961,19 @@ impl Literal {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct MechString {
   pub text: Token,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ParagraphElement {
   Text(Token),
   Strong(Box<ParagraphElement>),            
   Emphasis(Box<ParagraphElement>),
   Underline(Box<ParagraphElement>),
   Strikethrough(Box<ParagraphElement>),
+  Hyperlink((Token, Token)),
   InlineCode(Token),                 
   Link
 }
@@ -967,13 +988,16 @@ impl ParagraphElement {
       ParagraphElement::Underline(t) => t.to_string(),
       ParagraphElement::Strikethrough(t) => t.to_string(),
       ParagraphElement::InlineCode(t) => t.to_string(),
+      ParagraphElement::Hyperlink((t, u)) => {
+        format!("[{}]({})", t.to_string(), u.to_string())
+      }
       _ => todo!(),
     }
   }
 
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Paragraph {
   pub elements: Vec<ParagraphElement>,
 }
@@ -998,7 +1022,7 @@ pub type Imaginary = Box<Number>;
 pub type Base = (Whole, Part);
 pub type Exponent = (Sign, Whole, Part);
 
-#[derive(Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
 pub enum Number {
   Real(RealNumber),
   Imaginary(ComplexNumber),
@@ -1013,7 +1037,7 @@ impl Number {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
 pub enum RealNumber {
   Negated(Box<RealNumber>),
   Integer(Token),
@@ -1035,30 +1059,30 @@ impl RealNumber {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
 pub struct ImaginaryNumber {
   pub number: RealNumber,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
 pub struct ComplexNumber {
   pub real: Option<RealNumber>,
   pub imaginary: ImaginaryNumber
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Comment {
   pub text: Token,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct OpAssign {
   pub target: SliceRef,
   pub op: OpAssignOp,
   pub expression: Expression,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum OpAssignOp {
   Add,
   Sub,   
@@ -1067,25 +1091,25 @@ pub enum OpAssignOp {
   Exp,   
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum RangeOp {
   Inclusive,
   Exclusive,      
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum AddSubOp {
   Add,
   Sub
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum MulDivOp {
   Mul,
   Div
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum VecOp {
   MatMul,
   Solve,
@@ -1093,12 +1117,12 @@ pub enum VecOp {
   Cross,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ExponentOp {
   Exp
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ComparisonOp {
   LessThan,
   GreaterThan,
@@ -1108,7 +1132,7 @@ pub enum ComparisonOp {
   NotEqual,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum LogicOp {
   And,
   Or,
@@ -1116,7 +1140,7 @@ pub enum LogicOp {
   Xor,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum FormulaOperator {
   Logic(LogicOp),
   Comparison(ComparisonOp),
@@ -1126,7 +1150,7 @@ pub enum FormulaOperator {
   Vec(VecOp),
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RangeExpression {
   pub start: Factor,
   pub increment: Option<(RangeOp,Factor)>,
@@ -1142,7 +1166,7 @@ impl RangeExpression {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Term {
   pub lhs: Factor,
   pub rhs: Vec<(FormulaOperator,Factor)>
@@ -1161,7 +1185,7 @@ impl Term {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Factor {
   Term(Box<Term>),
   Parenthetical(Box<Factor>),

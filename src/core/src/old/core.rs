@@ -17,7 +17,6 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 use rand::rngs::OsRng;
-use getrandom::getrandom;
 use rand::RngCore;
 use ed25519_dalek::{self, SecretKey, SigningKey, Signature, Signer, Verifier, VerifyingKey};
 use rand::Error;

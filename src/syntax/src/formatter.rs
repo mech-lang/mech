@@ -35,6 +35,11 @@ impl Formatter {
     self.program(tree)
   }
 
+  /*pub fn format_grammar(&mut self, tree: &Gramamr) -> String {
+    self.html = false;
+    self.grammar(tree)
+  }*/
+
   pub fn format_html(&mut self, tree: &Program, style: String) -> String {
 
     self.html = true;
@@ -75,7 +80,9 @@ impl Formatter {
               wasm_core.run_program(src);
               wasm_core.init();
             }} else {{
-              console.error(xhr.statusText);
+              console.error("Defaulting to included code");
+              wasm_core.run_program(code);
+              wasm_core.init();
             }}
           }}
         }};
@@ -199,6 +206,15 @@ impl Formatter {
           format!("**{}**", n.to_string())
         }
       },
+      ParagraphElement::Hyperlink((text, url)) => {
+        let url_str = url.to_string();
+        let text_str = text.to_string();
+        if self.html {
+          format!("<a href=\"{}\" class=\"mech-hyperlink\">{}</a>",url_str,text_str)
+        } else {
+          format!("[{}]({})",text_str,url_str)
+        }
+      },
       ParagraphElement::Emphasis(n) => {
         if self.html {
           format!("<em class=\"mech-em\">{}</em>", n.to_string())
@@ -222,7 +238,7 @@ impl Formatter {
       },
       ParagraphElement::InlineCode(n) => {
         if self.html {
-          format!("<code class=\"mech-inline-code\">{}</code>", n.to_string())
+          format!("<code class=\"mech-inline-code\">{}</code>", n.to_string().trim())
         } else {
           format!("`{}`", n.to_string())
         }
@@ -239,15 +255,241 @@ impl Formatter {
       SectionElement::MechCode(n) => self.mech_code(n),
       SectionElement::UnorderedList(n) => self.unordered_list(n),
       SectionElement::CodeBlock(n) => self.code_block(n),
+      SectionElement::Grammar(n) => self.grammar(n),
+      SectionElement::Table(n) => self.markdown_table(n),
+      SectionElement::BlockQuote(n) => self.block_quote(n),
+      SectionElement::ThematicBreak => self.thematic_break(),
       SectionElement::OrderedList => todo!(),
-      SectionElement::BlockQuote => todo!(),
-      SectionElement::ThematicBreak => todo!(),
       SectionElement::Image => todo!(),
     };
     if self.html {
       format!("<div class=\"mech-section-element\">{}</div>",element)
     } else {
       element
+    }
+  }
+
+  pub fn block_quote(&mut self, node: &Paragraph) -> String {
+    let quote_paragraph = self.paragraph(node);
+    if self.html {
+      format!("<blockquote class=\"mech-block-quote\">{}</blockquote>",quote_paragraph)
+    } else {
+      format!("> {}\n",quote_paragraph)
+    }
+  }
+
+  pub fn thematic_break(&mut self) -> String {
+    if self.html {
+      format!("<hr class=\"mech-thematic-break\"/>")
+    } else {
+      format!("***\n")
+    }
+  }
+
+  pub fn markdown_table(&mut self, node: &MarkdownTable) -> String {
+    let mut html = String::new();
+    html.push_str("<table class=\"mech-table\">");
+
+    // Render the header
+    if !node.header.is_empty() {
+      html.push_str("<thead><tr class=\"mech-table-header\">");
+      for (i, cell) in node.header.iter().enumerate() {
+        let align = match node.alignment.get(i) {
+          Some(ColumnAlignment::Left) => "left",
+          Some(ColumnAlignment::Center) => "center",
+          Some(ColumnAlignment::Right) => "right",
+          None => "left", // Default alignment
+        };
+        let cell_html = self.paragraph(cell);
+        html.push_str(&format!(
+          "<th class=\"mech-table-header-cell\" style=\"text-align:{}\">{}</th>", 
+          align, cell_html
+        ));
+      }
+      html.push_str("</tr></thead>");
+    }
+
+    // Render the rows
+    html.push_str("<tbody>");
+    for (row_index, row) in node.rows.iter().enumerate() {
+      let row_class = if row_index % 2 == 0 { "mech-table-row-even" } else { "mech-table-row-odd" };
+      html.push_str(&format!("<tr class=\"mech-table-row {}\">", row_class));
+      for (i, cell) in row.iter().enumerate() {
+        let align = match node.alignment.get(i) {
+          Some(ColumnAlignment::Left) => "left",
+          Some(ColumnAlignment::Center) => "center",
+          Some(ColumnAlignment::Right) => "right",
+          None => "left", // Default alignment
+        };
+        let cell_html = self.paragraph(cell);
+        html.push_str(&format!(
+          "<td class=\"mech-table-cell\" style=\"text-align:{}\">{}</td>", 
+          align, cell_html
+        ));
+      }
+      html.push_str("</tr>");
+    }
+    html.push_str("</tbody>");
+    html.push_str("</table>");
+    html
+  }
+
+  pub fn grammar(&mut self, node: &Grammar) -> String {
+    let mut src = "".to_string();
+    for rule in node.rules.iter() {
+      let id = self.grammar_identifier(&rule.name);
+      let rule_str = format!("{} <span class=\"mech-grammar-define-op\">:=</span>{}", id, self.grammar_expression(&rule.expr));
+      if self.html {
+        src = format!("{}<div class=\"mech-grammar-rule\">{} ;</div>",src,rule_str);
+      } else {
+        src = format!("{}{};\n",src,rule_str); 
+      }
+    }
+    if self.html {
+      format!("<div class=\"mech-grammar\">{}</div>",src)
+    } else {
+      src
+    }
+  }
+
+  fn grammar_identifier(&mut self, node: &GrammarIdentifier) -> String {
+    let name = node.name.to_string();
+    if self.html {
+      format!("<span id=\"{}\" class=\"mech-grammar-identifier\">{}</span>",hash_str(&name), name)
+    } else {
+      name
+    }
+  }
+
+  fn grammar_expression(&mut self, node: &GrammarExpression) -> String {
+    let expr = match node {
+      GrammarExpression::List(element,deliniator) => {
+        let el = self.grammar_expression(element);
+        let del = self.grammar_expression(deliniator);
+        if self.html {
+          format!("<span class=\"mech-grammar-list\">[<span class=\"mech-grammar-list-element\">{}</span>,<span class=\"mech-grammar-list-deliniator\">{}</span>]</span>",el,del)
+        } else {
+          format!("[{},{}]",el,del)
+        }
+      },
+      GrammarExpression::Range(start,end) => {
+        if self.html {
+          format!("<span class=\"mech-grammar-range\"><span class=\"mech-grammar-terminal\">\"{}\"</span><span class=\"mech-grammar-range-op\">..</span><span class=\"mech-grammar-terminal\">\"{}\"</span></span>", start.to_string(), end.to_string())
+        } else {
+          format!("{}..{}", start.to_string(), end.to_string())
+        }
+      }
+      GrammarExpression::Choice(choices) => {
+        let mut src = "".to_string();
+        let inline = choices.len() <= 3;
+        for (i, choice) in choices.iter().enumerate() {
+          let choice_str = self.grammar_expression(choice);
+          if i == 0 {
+            src = format!("{}", choice_str);
+          } else {
+            if self.html {
+              src = if inline {
+                format!("{} <span class=\"mech-grammar-choice-op\">|</span> {}", src, choice_str)
+              } else {
+                format!("{}<div class=\"mech-grammar-choice\"><span class=\"mech-grammar-choice-op\">|</span> {}</div>", src, choice_str)
+              };
+            } else {
+              src = format!("{} | {}", src, choice_str);
+            }
+          }
+        }
+        src
+      },
+      GrammarExpression::Sequence(seq) => {
+        let mut src = "".to_string();
+        let inline = seq.len() <= 3;
+        for (i, factor) in seq.iter().enumerate() {
+          let factor_str = self.grammar_expression(factor);
+          if i == 0 {
+        src = format!("{}", factor_str);
+          } else {
+        if self.html {
+          src = if inline {
+            format!("{}, {}", src, factor_str)
+          } else {
+            format!("{}<div class=\"mech-grammar-sequence\"><span class=\"mech-grammar-sequence-op\">,</span> {}</div>", src, factor_str)
+          };
+        } else {
+          src = format!("{}, {}", src, factor_str);
+        }
+          }
+        }
+        src
+      },
+      GrammarExpression::Repeat0(expr) => {
+        let inner_expr = self.grammar_expression(expr);
+        if self.html {
+          format!("<span class=\"mech-grammar-repeat0-op\">*</span>{}", inner_expr)
+        } else {
+          format!("*{}", inner_expr)
+        }
+      },
+      GrammarExpression::Repeat1(expr) => {
+        let inner_expr = self.grammar_expression(expr);
+        if self.html {
+          format!("<span class=\"mech-grammar-repeat1-op\">+</span>{}", inner_expr)
+        } else {
+          format!("+{}", inner_expr)
+        }
+      },
+      GrammarExpression::Optional(expr) => {
+        let inner_expr = self.grammar_expression(expr);
+        if self.html {
+          format!("<span class=\"mech-grammar-optional-op\">?</span>{}", inner_expr)
+        } else {
+          format!("?{}", inner_expr)
+        }
+      },
+      GrammarExpression::Peek(expr) => {
+        let inner_expr = self.grammar_expression(expr);
+        if self.html {
+          format!("<span class=\"mech-grammar-peek-op\">&gt;</span>{}", inner_expr)
+        } else {
+          format!(">{}", inner_expr)
+        }
+      },
+      GrammarExpression::Not(expr) => {
+        let inner_expr = self.grammar_expression(expr);
+        if self.html {
+          format!("<span class=\"mech-grammar-not-op\">¬</span>{}", inner_expr)
+        } else {
+          format!("¬{}", inner_expr)
+        }
+      },
+      GrammarExpression::Terminal(token) => {
+        if self.html {
+          format!("<span class=\"mech-grammar-terminal\">\"{}\"</span>", token.to_string())
+        } else {
+          format!("\"{}\"", token.to_string())
+        }
+      },
+      GrammarExpression::Group(expr) => {
+        let inner_expr = self.grammar_expression(expr);
+        if self.html {
+          format!("<span class=\"mech-grammar-group\">(<span class=\"mech-grammar-group-content\">{}</span>)</span>", inner_expr)
+        } else {
+          format!("({})", inner_expr)
+        }
+      },
+      GrammarExpression::Definition(id) => {
+        let name = id.name.to_string();
+        if self.html {
+          format!("<span class=\"mech-grammar-definition\"><a href=\"#{}\">{}</a></span>",hash_str(&name), name)
+        } else {
+          name
+        }
+      },
+    };
+    
+    if self.html {
+      format!("<span class=\"mech-grammar-expression\">{}</span>", expr)
+    } else {
+      expr
     }
   }
 
@@ -1047,7 +1289,7 @@ impl Formatter {
       }
     }
     if self.html {
-      format!("<span class=\"mech-tuple\"><span class=\"mech-start-paren\">(</span>{})<span class=\"mech-end-paren\">)</span></span>",src)
+      format!("<span class=\"mech-tuple\"><span class=\"mech-start-paren\">(</span>{}<span class=\"mech-end-paren\">)</span></span>",src)
     } else {
       format!("({})", src)
     }
@@ -1393,7 +1635,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn atom(&mut self, node: &Atom) -> String {
     if self.html {
-      format!("<span class=\"mech-atom\">{}</span>",node.name.to_string())
+      format!("<span class=\"mech-atom\"><span class=\"mech-atom-grave\">`</span><span class=\"mech-atom-name\">{}</span></span>",node.name.to_string())
     } else {
       format!("`{}", node.name.to_string())
     }
@@ -1452,117 +1694,118 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
   pub fn humanize_html(input: String) -> String {
     let mut result = String::new();
     let mut indent_level = 0;
-    let mut in_pre_tag = false;
+    let mut in_special_tag = false;
+    let mut special_tag = "";
     let chars: Vec<char> = input.chars().collect();
     let mut i = 0;
     
     let self_closing_tags = HashSet::from([
-      "area", "base", "br", "col", "embed", "hr", "img", "input", 
-      "link", "meta", "param", "source", "track", "wbr"
+        "area", "base", "br", "col", "embed", "hr", "img", "input", 
+        "link", "meta", "param", "source", "track", "wbr"
     ]);
     
-    fn matches_tag(chars: &[char], pos: usize, tag: &[char]) -> bool {
-      pos + tag.len() <= chars.len() && chars[pos..pos+tag.len()] == tag[..]
+    fn matches_tag(chars: &[char], pos: usize, tag: &str) -> bool {
+        let tag_chars: Vec<char> = tag.chars().collect();
+        pos + tag_chars.len() <= chars.len() && chars[pos..pos+tag_chars.len()] == tag_chars[..]
     }
     
     while i < chars.len() {
-      // Handle <pre> tags
-      if !in_pre_tag && matches_tag(&chars, i, &['<', 'p', 'r', 'e']) && 
-        (i+4 >= chars.len() || chars[i+4].is_whitespace() || chars[i+4] == '>') {
-        
-        in_pre_tag = true;
-        result.push('\n');
-        result.push_str(&"  ".repeat(indent_level));
-        
-        // Add the pre tag
-        while i < chars.len() && chars[i] != '>' {
-          result.push(chars[i]);
-          i += 1;
+        // Handle <pre> and <code> tags
+        if !in_special_tag && (matches_tag(&chars, i, "<pre") || matches_tag(&chars, i, "<code")) {
+            in_special_tag = true;
+            special_tag = if matches_tag(&chars, i, "<pre") { "pre" } else { "code" };
+            
+            result.push('\n');
+            result.push_str(&"  ".repeat(indent_level));
+            
+            // Add the opening tag
+            while i < chars.len() && chars[i] != '>' {
+                result.push(chars[i]);
+                i += 1;
+            }
+            result.push('>');
+            i += 1;
+            indent_level += 1;
+            
+            // Process content
+            let start = i;
+            while i < chars.len() && !matches_tag(&chars, i, &format!("</{}>", special_tag)) {
+                i += 1;
+            }
+            
+            // Add the content as is
+            result.extend(chars[start..i].iter());
+            
+            // Add the closing tag
+            if i < chars.len() {
+                result.push_str(&format!("</{}>", special_tag));
+                i += special_tag.len() + 3;
+                in_special_tag = false;
+                indent_level -= 1;
+            }
+        // Open tag
+        } else if !in_special_tag && i < chars.len() && chars[i] == '<' && i+1 < chars.len() && chars[i+1] != '/' {
+            let tag_start = i + 1;
+            let mut j = tag_start;
+            
+            // Get tag name
+            while j < chars.len() && chars[j].is_alphanumeric() {
+                j += 1;
+            }
+            
+            let tag_name: String = chars[tag_start..j].iter().collect();
+            let is_self_closing = self_closing_tags.contains(tag_name.as_str());
+            
+            // Add newline and indentation
+            result.push('\n');
+            result.push_str(&"  ".repeat(indent_level));
+            
+            // Add the tag
+            while i < chars.len() && chars[i] != '>' {
+                result.push(chars[i]);
+                i += 1;
+            }
+            result.push('>');
+            i += 1;
+            
+            if !is_self_closing {
+                indent_level += 1;
+            }
+        // Close tag
+        } else if !in_special_tag && i < chars.len() && chars[i] == '<' && i+1 < chars.len() && chars[i+1] == '/' {
+            indent_level = indent_level.saturating_sub(1);
+            
+            result.push('\n');
+            result.push_str(&"  ".repeat(indent_level));
+            
+            while i < chars.len() && chars[i] != '>' {
+                result.push(chars[i]);
+                i += 1;
+            }
+            result.push('>');
+            i += 1;
+        // Regular text content
+        } else if !in_special_tag {
+            let start = i;
+            while i < chars.len() && chars[i] != '<' {
+                i += 1;
+            }
+            
+            let content: String = chars[start..i].iter().collect();
+            if !content.trim().is_empty() {
+                result.push('\n');
+                result.push_str(&"  ".repeat(indent_level));
+                result.push_str(&content);
+            }
+        // Inside <pre> or <code>
+        } else {
+            result.push(chars[i]);
+            i += 1;
         }
-        result.push('>');
-        i += 1;
-        indent_level += 1;
-        
-        // Process pre content
-        let start = i;
-        while i < chars.len() && !matches_tag(&chars, i, &['<', '/', 'p', 'r', 'e', '>']) {
-          i += 1;
-        }
-        
-        // Add the pre content as is
-        chars[start..i].iter().for_each(|&c| result.push(c));
-        
-        // Add the closing pre tag
-        if i < chars.len() {
-          result.push_str("</pre>");
-          i += 6;
-          in_pre_tag = false;
-          indent_level -= 1;
-        }
-      // Open
-      } else if !in_pre_tag && i < chars.len() && chars[i] == '<' && i+1 < chars.len() && chars[i+1] != '/' {
-        let tag_start = i + 1;
-        let mut j = tag_start;
-        
-        // Get tag name
-        while j < chars.len() && chars[j].is_alphanumeric() {
-          j += 1;
-        }
-        
-        let tag_name: String = chars[tag_start..j].iter().collect();
-        let is_self_closing = self_closing_tags.contains(tag_name.as_str());
-        
-        // Add newline and indentation
-        result.push('\n');
-        result.push_str(&"  ".repeat(indent_level));
-        
-        // Add the tag
-        while i < chars.len() && chars[i] != '>' {
-          result.push(chars[i]);
-          i += 1;
-        }
-        result.push('>');
-        i += 1;
-        
-        if !is_self_closing {
-          indent_level += 1;
-        }
-      // Close
-      } else if !in_pre_tag && i < chars.len() && chars[i] == '<' && i+1 < chars.len() && chars[i+1] == '/' {
-        indent_level = indent_level.saturating_sub(1);
-        
-        result.push('\n');
-        result.push_str(&"  ".repeat(indent_level));
-        
-        while i < chars.len() && chars[i] != '>' {
-          result.push(chars[i]);
-          i += 1;
-        }
-        result.push('>');
-        i += 1;
-      // Not Pre
-      } else if !in_pre_tag {
-        let start = i;
-        while i < chars.len() && chars[i] != '<' {
-          i += 1;
-        }
-        
-        let content: String = chars[start..i].iter().collect();
-        if !content.trim().is_empty() {
-          result.push('\n');
-          result.push_str(&"  ".repeat(indent_level));
-          result.push_str(&content);
-        }
-      // In Pre
-      } else {
-        result.push(chars[i]);
-        i += 1;
-      }
     }
     
     result.push('\n');
     result
-  }
-
+}
  
 }

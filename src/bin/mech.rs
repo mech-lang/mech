@@ -130,8 +130,9 @@ async fn main() -> Result<(), MechError> {
 
   let mut intrp = Interpreter::new();
 
+  // --------------------------------------------------------------------------
   // Serve
-  // ----------------------------------------------------------------
+  // --------------------------------------------------------------------------
   if let Some(matches) = matches.subcommand_matches("serve") {
 
     let port: String = matches.get_one::<String>("port").cloned().unwrap_or("8081".to_string());
@@ -146,8 +147,9 @@ async fn main() -> Result<(), MechError> {
     server.serve().await?;
     
   }
+  // --------------------------------------------------------------------------
   // Format
-  // ----------------------------------------------------------------
+  // --------------------------------------------------------------------------
   if let Some(matches) = matches.subcommand_matches("format") {
     let html_flag = matches.get_flag("html");
     let stylesheet_url = matches.get_one::<String>("stylesheet").cloned().unwrap_or("https://gitlab.com/mech-lang/mech/-/raw/v0.2-beta/include/style.css?ref_type=heads".to_string());
@@ -155,7 +157,7 @@ async fn main() -> Result<(), MechError> {
 
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_format_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let mut mechfs = MechFileSystem::new();
-
+    
     // open file or url. If it's a local file load it from disk, if it's a url fetch it from internet
     let stylesheet = if stylesheet_url.starts_with("http") {
       match reqwest::get(&stylesheet_url).await {
@@ -245,8 +247,9 @@ async fn main() -> Result<(), MechError> {
     return Ok(());
   }
 
+  // --------------------------------------------------------------------------
   // Run
-  // ----------------------------------------------------------------
+  // --------------------------------------------------------------------------
   let mut paths = if let Some(m) = matches.get_many::<String>("mech_paths") {
     m.map(|s| s.to_string()).collect()
   } else { repl_flag = true; vec![] };
@@ -309,8 +312,9 @@ async fn main() -> Result<(), MechError> {
     print_prompt();
   }).expect("Error setting Ctrl-C handler");
   
+  // --------------------------------------------------------------------------
   // REPL
-  // ----------------------------------------------------------------
+  // --------------------------------------------------------------------------
   'REPL: loop {
     {
       let mut ci = caught_inturrupts.lock().unwrap();
