@@ -92,7 +92,7 @@ pub enum TokenKind {
   Emoji, Empty, Equal, Exclamation,
   False,
   Grave,
-  HashTag,
+  HashTag, Http,
   Identifier, InlineCode, 
   LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
   Newline, Not, Number,
@@ -973,7 +973,7 @@ pub enum ParagraphElement {
   Emphasis(Box<ParagraphElement>),
   Underline(Box<ParagraphElement>),
   Strikethrough(Box<ParagraphElement>),
-  Hyperlink((Box<Paragraph>, Token)),
+  Hyperlink((Token, Token)),
   InlineCode(Token),                 
   Link
 }
