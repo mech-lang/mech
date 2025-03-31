@@ -210,7 +210,7 @@ pub fn raw_hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Hyperlink((url.clone(), url))))
 }
 
-// paragraph_text := +text, ?new_line, *whitespace ;
+// paragraph_text := ¬(http_prefix | left_bracket | tilde | asterisk | underscore | grave | define_operator | bar), +text ;
 pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, elements) = match many1(nom_tuple((is_not(alt((http_prefix,left_bracket,tilde,asterisk,underscore,grave,define_operator,bar))),text)))(input) {
     Ok((input, mut text)) => {
@@ -288,7 +288,10 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
         let ebnf_text = filtered_text.iter().collect::<String>();
         match parse_grammar(&ebnf_text) {
           Ok(grammar_tree) => {return Ok((input, SectionElement::Grammar(grammar_tree)));},
-          Err(err) => todo!(),
+          Err(err) => {
+            println!("Error parsing EBNF grammar: {:?}", err);
+            todo!();
+          }
         }
       }
     },
