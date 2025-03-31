@@ -128,11 +128,14 @@ leaf!{box_t_bottom, "┴", TokenKind::BoxDrawing}
 leaf!{box_vert, "│", TokenKind::BoxDrawing}
 leaf!{box_vert_bold, "┃", TokenKind::BoxDrawing}
 
+leaf!(http_prefix, "http", TokenKind::Http);
+
 ws0_leaf!(define_operator, ":=", TokenKind::DefineOperator);
 ws0_leaf!(assign_operator, "=", TokenKind::AssignOperator);
 ws0_leaf!(output_operator, "=>", TokenKind::OutputOperator);
 ws0_leaf!(async_transition_operator, "~>", TokenKind::AsyncTransitionOperator);
 ws0_leaf!(transition_operator, "->", TokenKind::TransitionOperator);
+
 
 // emoji_grapheme := ?emoji_grapheme_literal? ;
 pub fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {
