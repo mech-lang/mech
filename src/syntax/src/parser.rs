@@ -364,7 +364,7 @@ pub fn print_err_report(text: &str, report: &ParserErrorReport) {
 
 pub fn parse_grammar(text: &str) -> MResult<Grammar> {
   // remove all whitespace from the input string
-  let text_no_Ws = &text.replace(" ", "").replace("\n", "").replace("\t", "");
+  let text_no_Ws = &text.replace(" ", "").replace("\n", "").replace("\r","").replace("\t", "");
   let graphemes = graphemes::init_source(text_no_Ws);
   let mut result_node = None;
   let mut error_log: Vec<(SourceRange, ParseErrorDetail)> = vec![];
