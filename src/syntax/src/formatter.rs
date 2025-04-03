@@ -247,12 +247,37 @@ impl Formatter {
     }
   }
 
+  pub fn fencd_mech_code(&mut self, node: &Vec<MechCode>) -> String {
+    let mut src = "".to_string();
+    for code in node {
+      let c = match code {
+        MechCode::Expression(expr) => self.expression(expr),
+        MechCode::Statement(stmt) => self.statement(stmt),
+        MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
+        MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
+        MechCode::Comment(cmnt) => self.comment(cmnt),
+        _ => todo!(),
+      };
+      if self.html {
+        src.push_str(&format!("<div class=\"fenced-mech-code\">{}</div>", c));
+      } else {
+        src.push_str(&format!("{}\n", c));
+      }
+    }
+    if self.html {
+      format!("<div class=\"mech-fenced-mech-code\">{}</div>",src)
+    } else {
+      format!("```mech\n{}\n```", src)
+    }
+  }
+
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     let element = match node {
       SectionElement::Section(n) => self.section(n),
       SectionElement::Comment(n) => self.comment(n),
       SectionElement::Paragraph(n) => self.paragraph(n),
       SectionElement::MechCode(n) => self.mech_code(n),
+      SectionElement::FencedMechCode((n,s)) => self.fencd_mech_code(n),
       SectionElement::UnorderedList(n) => self.unordered_list(n),
       SectionElement::CodeBlock(n) => self.code_block(n),
       SectionElement::Grammar(n) => self.grammar(n),

@@ -280,24 +280,46 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
   let (input, _) = nom_tuple((grave, grave, grave))(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = new_line(input)?;
-  let filtered_text: Vec<char> = text.into_iter().flat_map(|(_, s)| s.chars().collect::<Vec<char>>()).collect();
+  let block_src: Vec<char> = text.into_iter().flat_map(|(_, s)| s.chars().collect::<Vec<char>>()).collect();
  
   match code_id {
     Some(id) => { 
-      if id.to_string() == "ebnf" {
-        let ebnf_text = filtered_text.iter().collect::<String>();
-        match parse_grammar(&ebnf_text) {
-          Ok(grammar_tree) => {return Ok((input, SectionElement::Grammar(grammar_tree)));},
-          Err(err) => {
-            println!("Error parsing EBNF grammar: {:?}", err);
-            todo!();
+      match id.to_string().as_str() {
+        "ebnf" => {
+          let ebnf_text = block_src.iter().collect::<String>();
+          match parse_grammar(&ebnf_text) {
+            Ok(grammar_tree) => {return Ok((input, SectionElement::Grammar(grammar_tree)));},
+            Err(err) => {
+              println!("Error parsing EBNF grammar: {:?}", err);
+              todo!();
+            }
           }
         }
-      }
+        "mech" | "mec" | "🤖" => {
+          let mech_src = block_src.iter().collect::<String>();
+          let graphemes = graphemes::init_source(&mech_src);
+          let parse_string = ParseString::new(&graphemes);
+
+          match many1(mech_code)(parse_string) {
+            Ok(mech_tree) => {
+              println!("Parsed Mech code: {:#?}", mech_tree);
+
+              todo!();
+            },
+            Err(err) => {
+              println!("Error parsing Mech code: {:?}", err);
+              todo!();
+            }
+          };
+        }
+        x => {
+          todo!("Code block with id: {}", x);
+        }
+      } 
     },
     None => (),
   }
-  let code_token = Token::new(TokenKind::CodeBlock, src_range, filtered_text);
+  let code_token = Token::new(TokenKind::CodeBlock, src_range, block_src);
   Ok((input, SectionElement::CodeBlock(code_token)))
 }
 

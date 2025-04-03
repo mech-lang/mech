@@ -411,12 +411,17 @@ pub enum GrammarExpression {
   Group(Box<GrammarExpression>),
 }
 
+// This is just a temporary flag to store block state, 
+// I don't know exactly what I want to put in here yet
+type BlockConfig = u64; 
+
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SectionElement {
   Section(Box<Section>),
   Comment(Comment),
   Paragraph(Paragraph),
   MechCode(Vec<MechCode>),
+  FencedMechCode((Vec<MechCode>, BlockConfig)),
   UnorderedList(UnorderedList),
   Table(MarkdownTable),
   CodeBlock(Token),
