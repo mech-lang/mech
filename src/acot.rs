@@ -3,29 +3,29 @@ use mech_core::*;
 
 // Acot ------------------------------------------------------------------------
 
-use libm::{atan, atanf, M_PI};
+use libm::{acot,acotf};
 macro_rules! acot_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = M_PI / 2.0 - atan((*$arg).0);}
+    unsafe{(*$out).0 = acot((*$arg).0);}
   };}
 
 macro_rules! acot_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = M_PI / 2.0 - atan(((*$arg)[i]).0);
+        ((*$out)[i]).0 = acot(((*$arg)[i]).0);
       }}};}
 
 macro_rules! acotf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = M_PI / 2.0 - atanf((*$arg).0);}
+    unsafe{(*$out).0 = acotf((*$arg).0);}
   };}  
 
 macro_rules! acotf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = M_PI / 2.0 - atanf(((*$arg)[i]).0);
+        ((*$out)[i]).0 = acotf(((*$arg)[i]).0);
       }}};}
 
 impl_math_urop!(MathAcot, F32, acotf);
