@@ -39,8 +39,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
         .entry(code_id)
         .or_insert(Box::new(Interpreter::new(code_id)))
         .as_mut();
-
-        for c in code {
+      for c in code {
         out = mech_code(&c, &pp)?;
       }
       return Ok(out)
