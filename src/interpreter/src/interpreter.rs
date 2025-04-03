@@ -1,4 +1,5 @@
 use crate::*;
+use std::rc::Rc;
 
 // Interpreter 
 // ----------------------------------------------------------------------------
@@ -58,6 +59,20 @@ impl Interpreter {
     self.symbols.clone()
   }
 
+  pub fn functions(&self) -> FunctionsRef {
+    self.functions.clone()
+  }
+
+  pub fn add_plan_step(&self, step: Box<dyn MechFunction>) {
+    let mut plan_brrw = self.plan.borrow_mut();
+    plan_brrw.push(step);
+  }
+
+  pub fn insert_function(&self, fxn: FunctionDefinition) {
+    let mut fxns_brrw = self.functions.borrow_mut();
+    fxns_brrw.functions.insert(fxn.id, fxn);
+  }
+
   pub fn pretty_print_symbols(&self) -> String {
     let symbol_table = self.symbols.borrow();
     symbol_table.pretty_print()
@@ -81,12 +96,12 @@ impl Interpreter {
   }
 
   pub fn interpret(&mut self, tree: &Program) -> MResult<Value> {
-    program(tree, self.plan.clone(), self.symbols.clone(), self.functions.clone())
+    program(tree, &self)
   }
 }
 
 //-----------------------------------------------------------------------------
 
-pub fn program(program: &Program, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
-  body(&program.body, plan.clone(), symbols.clone(), functions.clone())
+pub fn program(program: &Program, p: &Interpreter) -> MResult<Value> {
+  body(&program.body, p)
 }

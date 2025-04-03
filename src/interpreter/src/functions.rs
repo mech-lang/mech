@@ -3,8 +3,8 @@ use crate::*;
 // Functions
 // ----------------------------------------------------------------------------
 
-pub fn function_define(fxn_def: &FunctionDefine, functions: FunctionsRef) -> MResult<FunctionDefinition> {
-  let fxn_name_id = fxn_def.name.hash();
+pub fn function_define(fxn_def: &FunctionDefine, p: &Interpreter) -> MResult<FunctionDefinition> {
+  /*let fxn_name_id = fxn_def.name.hash();
   let mut new_fxn = FunctionDefinition::new(fxn_name_id,fxn_def.name.to_string(), fxn_def.clone());
   for input_arg in &fxn_def.input {
     let arg_id = input_arg.name.hash();
@@ -31,15 +31,18 @@ pub fn function_define(fxn_def: &FunctionDefine, functions: FunctionsRef) -> MRe
       }
     }
   }
-  Ok(new_fxn)
+  Ok(new_fxn)*/
+  todo!("Function define needs to be redone!");
 }
 
-pub fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+pub fn function_call(fxn_call: &FunctionCall, p: &Interpreter) -> MResult<Value> {
+  let plan = p.plan();
+  let functions = p.functions();
   let fxn_name_id = fxn_call.name.hash();
   let fxns_brrw = functions.borrow();
   match fxns_brrw.functions.get(&fxn_name_id) {
     Some(fxn) => {
-      let mut new_fxn = function_define(&fxn.code, functions.clone())?; // This just calles function_define again, it should be smarter.
+      let mut new_fxn = function_define(&fxn.code, p)?; // This just calles function_define again, it should be smarter.
       for (ix,(arg_name, arg_expr)) in fxn_call.args.iter().enumerate() {
         // Get the value
         let value_ref: ValRef = match arg_name {
@@ -66,7 +69,7 @@ pub fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRe
             }
           }
         };
-        let result = expression(&arg_expr, plan.clone(), symbols.clone(), functions.clone())?;
+        let result = expression(&arg_expr, p)?;
         let mut ref_brrw = value_ref.borrow_mut();
         // TODO check types
         match (&mut *ref_brrw, &result) {
@@ -91,7 +94,7 @@ pub fn function_call(fxn_call: &FunctionCall, plan: Plan, symbols: SymbolTableRe
         Some(fxn_compiler) => {
           let mut input_arg_values = vec![];
           for (arg_name, arg_expr) in fxn_call.args.iter() {
-            let result = expression(&arg_expr, plan.clone(), symbols.clone(), functions.clone())?;
+            let result = expression(&arg_expr, p)?;
             input_arg_values.push(result);
           }
           match fxn_compiler.compile(&input_arg_values) {
