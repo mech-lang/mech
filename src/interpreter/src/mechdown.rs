@@ -31,10 +31,17 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
       return Ok(out)
     },
     SectionElement::FencedMechCode((code,block_config)) => {
-      let block_interpreter = Interpreter::new();
+      let muthasher = DefaultHasher::new();
+      code.hash(&mut hasher);
+      let code_id: u64 = hasher.finish();
+      let mut sub_interpreters = p.sub_interpreters.borrow_mut();
+      let mut pp = sub_interpreters
+        .entry(code_id)
+        .or_insert(Box::new(Interpreter::new(code_id)))
+        .as_mut();
 
-      for c in code {
-        out = mech_code(&c, p)?;
+        for c in code {
+        out = mech_code(&c, &pp)?;
       }
       return Ok(out)
     },

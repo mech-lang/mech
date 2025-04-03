@@ -1,18 +1,21 @@
 use crate::*;
 use std::rc::Rc;
+use std::collections::HashMap;
 
 // Interpreter 
 // ----------------------------------------------------------------------------
 
 pub struct Interpreter {
+  pub id: u64,
   symbols: SymbolTableRef,
   plan: Plan,
   functions: FunctionsRef,
   out: Value,
+  pub sub_interpreters: Ref<HashMap<u64, Box<Interpreter>>>,
 }
 
 impl Interpreter {
-  pub fn new() -> Interpreter {
+  pub fn new(id: u64) -> Interpreter {
     
     // Preload functions
     let mut fxns = Functions::new();
@@ -39,10 +42,12 @@ impl Interpreter {
     fxns.kinds.insert(hash_str("bool"),ValueKind::Bool);
 
     Interpreter {
+      id,
       symbols: new_ref(SymbolTable::new()),
       plan: new_ref(Vec::new()),
       functions: new_ref(fxns),
       out: Value::Empty,
+      sub_interpreters: new_ref(HashMap::new()),
     }
   }
 
