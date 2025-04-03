@@ -21,7 +21,7 @@ use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, Ro
         let s = $input;
         match parser::parse(&s) {
             Ok(tree) => { 
-              let mut intrp = Interpreter::new();
+              let mut intrp = Interpreter::new(0);
               let result = intrp.interpret(&tree).unwrap();
               assert_eq!(result, $expected);
             },
