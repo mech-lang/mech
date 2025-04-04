@@ -301,7 +301,6 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
 
             // get rid of the prefix and then treat the rest of the string as an identifier
             let rest = tag.trim_start_matches("mech").trim_start_matches("mec").trim_start_matches("🤖");
-            println!("{}", rest);
             let code_id = if rest == "" { 0 } else {
               hash_str(rest)
             };
