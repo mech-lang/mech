@@ -262,14 +262,14 @@ impl Formatter {
         _ => todo!(),
       };
       if self.html {
-        src.push_str(&format!("<div class=\"mech-fenced-mech-code\">{}</div>", c));
+        src.push_str(&format!("<div class=\"mech-code\">{}</div>", c));
       } else {
         src.push_str(&format!("{}\n", c));
       }
     }
     self.interpreter_id = 0;
     if self.html {
-      format!("<pre class=\"mech-code-block\">{}</pre>",src)
+      format!("<div class=\"mech-fenced-mech-block\"><pre class=\"mech-code-block\">{}</pre><div class=\"mech-block-output\"></div></div>",src)
     } else {
       format!("```mech\n{}\n```", src)
     }

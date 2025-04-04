@@ -770,3 +770,28 @@ li p {
     width: 100%;
     opacity: 0.7;
 }
+
+/* Code Block Container */
+.mech-fenced-mech-block {
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+/* Code Block Styling */
+.mech-fenced-mech-block .mech-code-block {
+    background-color: #171D21;
+    border-radius: 10px 10px 0px 0px;  
+    border-bottom: 2px solid rgb(199, 220, 174);
+    margin-bottom: 0px;
+}
+
+/* Output Section */
+.mech-block-output {
+    background-color: #222A30; /* Slightly lighter dark to differentiate */
+    color: #f2ead9; /* Light text color */
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 12pt;
+    padding: 30px;
+    border-radius: 0px 0px 10px 10px; /* Only bottom corners rounded */
+    overflow-x: auto;
+}
