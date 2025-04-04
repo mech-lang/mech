@@ -28,7 +28,7 @@ impl WasmMech {
 
   #[wasm_bindgen(constructor)]
   pub fn new() -> Self {
-    Self { interpreter: Interpreter::new() }
+    Self { interpreter: Interpreter::new(0) }
   }
   
   #[wasm_bindgen]
@@ -39,9 +39,20 @@ impl WasmMech {
     let clickable_elements = document.get_elements_by_class_name("mech-clickable");
     for i in 0..clickable_elements.length() {
       let element = clickable_elements.get_with_index(i).unwrap();
-      let element_id = element.id().parse::<u64>().unwrap();
-      let symbols = self.interpreter.symbols();
 
+      // the element id is formed like this : let id = format!("{}:{}",hash_str(&name),self.interpreter_id);
+      // so we need to parse it to get the id and the interpreter id
+      let id = element.id();
+      let parsed_id: Vec<&str> = id.split(":").collect();
+      let element_id = parsed_id[0].parse::<u64>().unwrap();
+      let interpreter_id = parsed_id[1].parse::<u64>().unwrap();
+      let symbols = match interpreter_id {
+        // if the interpreter id is 0, we are in the main interpreter
+        0 => self.interpreter.symbols(), 
+        // if the interpreter id is not 0, we are in a sub interpreter
+        id => self.interpreter.sub_interpreters.borrow().get(&id).unwrap().symbols(),
+      };
+      
       let closure = Closure::wrap(Box::new(move || {
         match symbols.borrow().get(element_id) {
           Some(value) => {

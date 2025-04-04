@@ -24,20 +24,18 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
   let mut hasher = DefaultHasher::new();
   let mut out = Value::Empty; 
   match element {
+    SectionElement::FencedMechCode((code,0)) |
     SectionElement::MechCode(code) => {
       for c in code {
         out = mech_code(&c, p)?;
       }
       return Ok(out)
     },
-    SectionElement::FencedMechCode((code,block_config)) => {
-      let muthasher = DefaultHasher::new();
-      code.hash(&mut hasher);
-      let code_id: u64 = hasher.finish();
+    SectionElement::FencedMechCode((code,code_id)) => {
       let mut sub_interpreters = p.sub_interpreters.borrow_mut();
       let mut pp = sub_interpreters
-        .entry(code_id)
-        .or_insert(Box::new(Interpreter::new(code_id)))
+        .entry(*code_id)
+        .or_insert(Box::new(Interpreter::new(*code_id)))
         .as_mut();
       for c in code {
         out = mech_code(&c, &pp)?;

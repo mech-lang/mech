@@ -295,25 +295,34 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
             }
           }
         }
-        "mech" | "mec" | "🤖" => {
-          let mech_src = block_src.iter().collect::<String>();
-          let graphemes = graphemes::init_source(&mech_src);
-          let parse_string = ParseString::new(&graphemes);
+        tag => {
+          // if x begins with mec, mech, or 🤖
+          if tag.starts_with("mech") || tag.starts_with("mec") || tag.starts_with("🤖") {
 
-          match many1(mech_code)(parse_string) {
-            Ok(mech_tree) => {
-              println!("Parsed Mech code: {:#?}", mech_tree);
+            // get rid of the prefix and then treat the rest of the string as an identifier
+            let rest = tag.trim_start_matches("mech").trim_start_matches("mec").trim_start_matches("🤖");
+            println!("{}", rest);
+            let code_id = if rest == "" { 0 } else {
+              hash_str(rest)
+            };
 
-              todo!();
-            },
-            Err(err) => {
-              println!("Error parsing Mech code: {:?}", err);
-              todo!();
-            }
-          };
-        }
-        x => {
-          todo!("Code block with id: {}", x);
+            let mech_src = block_src.iter().collect::<String>();
+            let graphemes = graphemes::init_source(&mech_src);
+            let parse_string = ParseString::new(&graphemes);
+
+            match many1(mech_code)(parse_string) {
+              Ok((_, mech_tree)) => {
+                // TODO what if not all the input is parsed? Is that handled?
+                return Ok((input, SectionElement::FencedMechCode((mech_tree,code_id))));
+              },
+              Err(err) => {
+                println!("Error parsing Mech code: {:?}", err);
+                todo!();
+              }
+            };
+          } else {
+            todo!("Code block with id: {}", tag);
+          }
         }
       } 
     },
