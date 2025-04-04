@@ -13,6 +13,7 @@ pub struct Formatter{
   html: bool,
   nested: bool,
   toc: bool,
+  interpreter_id: u64,
 }
 
 
@@ -27,6 +28,7 @@ impl Formatter {
       html: false,
       nested: false,
       toc: false,
+      interpreter_id: 0,
     }
   }
 
@@ -247,7 +249,8 @@ impl Formatter {
     }
   }
 
-  pub fn fencd_mech_code(&mut self, node: &Vec<MechCode>) -> String {
+  pub fn fenced_mech_code(&mut self, node: &Vec<MechCode>, interpreter_id: &u64) -> String {
+    self.interpreter_id = *interpreter_id;
     let mut src = "".to_string();
     for code in node {
       let c = match code {
@@ -259,13 +262,14 @@ impl Formatter {
         _ => todo!(),
       };
       if self.html {
-        src.push_str(&format!("<div class=\"fenced-mech-code\">{}</div>", c));
+        src.push_str(&format!("<div class=\"mech-fenced-mech-code\">{}</div>", c));
       } else {
         src.push_str(&format!("{}\n", c));
       }
     }
+    self.interpreter_id = 0;
     if self.html {
-      format!("<div class=\"mech-fenced-mech-code\">{}</div>",src)
+      format!("<pre class=\"mech-code-block\">{}</pre>",src)
     } else {
       format!("```mech\n{}\n```", src)
     }
@@ -277,7 +281,7 @@ impl Formatter {
       SectionElement::Comment(n) => self.comment(n),
       SectionElement::Paragraph(n) => self.paragraph(n),
       SectionElement::MechCode(n) => self.mech_code(n),
-      SectionElement::FencedMechCode((n,s)) => self.fencd_mech_code(n),
+      SectionElement::FencedMechCode((n,s)) => self.fenced_mech_code(n,s),
       SectionElement::UnorderedList(n) => self.unordered_list(n),
       SectionElement::CodeBlock(n) => self.code_block(n),
       SectionElement::Grammar(n) => self.grammar(n),
@@ -963,8 +967,9 @@ impl Formatter {
       },
       None => {},
     }
+    let id = format!("{}:{}",hash_str(&name),self.interpreter_id);
     if self.html {
-      format!("<span class=\"mech-slice-ref\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",hash_str(&name),name,subscript)
+      format!("<span class=\"mech-slice-ref\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",id,name,subscript)
     } else {
       format!("{}{}", name, subscript)
     }
@@ -1029,8 +1034,9 @@ impl Formatter {
         args = format!("{}, {}", args, a);
       }
     }
+    let id = format!("{}:{}",hash_str(&name),self.interpreter_id);
     if self.html {
-      format!("<span class=\"mech-function-call\"><span id=\"{}\" class=\"mech-function-name mech-clickable\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-argument-list\">{}</span><span class=\"mech-right-paren\">)</span></span>",hash_str(&name),name,args)
+      format!("<span class=\"mech-function-call\"><span id=\"{}\" class=\"mech-function-name mech-clickable\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-argument-list\">{}</span><span class=\"mech-right-paren\">)</span></span>",id,name,args)
     } else {
       format!("{}({})", name, args)
     }
@@ -1057,8 +1063,9 @@ impl Formatter {
       let s = self.subscript(sub);
       subscript = format!("{}{}", subscript, s);
     }
+    let id = format!("{}:{}",hash_str(&name),self.interpreter_id);
     if self.html {
-      format!("<span class=\"mech-slice\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",hash_str(&name),name,subscript)
+      format!("<span class=\"mech-slice\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",id,name,subscript)
     } else {
       format!("{}{}", name, subscript)
     }
@@ -1429,8 +1436,10 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
     } else {
       "".to_string()
     };
+    let name = &node.name.to_string();
+    let id = format!("{}:{}",hash_str(&name),self.interpreter_id);
     if self.html {
-      format!("<span class=\"mech-var-name mech-clickable\" id=\"{}\">{}</span>{}",hash_str(&node.name.to_string()), node.name.to_string(), annotation)
+      format!("<span class=\"mech-var-name mech-clickable\" id=\"{}\">{}</span>{}", id, node.name.to_string(), annotation)
     } else {
       format!("{}{}", node.name.to_string(), annotation)
     }
