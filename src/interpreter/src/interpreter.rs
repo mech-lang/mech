@@ -11,6 +11,7 @@ pub struct Interpreter {
   plan: Plan,
   functions: FunctionsRef,
   out: Value,
+  pub out_values: Ref<HashMap<u64, Value>>,
   pub sub_interpreters: Ref<HashMap<u64, Box<Interpreter>>>,
 }
 
@@ -48,6 +49,7 @@ impl Interpreter {
       functions: new_ref(fxns),
       out: Value::Empty,
       sub_interpreters: new_ref(HashMap::new()),
+      out_values: new_ref(HashMap::new()),
     }
   }
 
