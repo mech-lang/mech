@@ -269,7 +269,12 @@ impl Formatter {
     }
     self.interpreter_id = 0;
     if self.html {
-      format!("<div class=\"mech-fenced-mech-block\"><pre class=\"mech-code-block\">{}</pre><div class=\"mech-block-output\"></div></div>",src)
+      let out_node = node.last().unwrap();
+      let output_id = hash_str(&format!("{:?}", out_node));
+      format!("<div class=\"mech-fenced-mech-block\">
+        <pre class=\"mech-code-block\">{}</pre>
+        <pre id=\"{}:{}\" class=\"mech-block-output\"></pre>
+      </div>",src, output_id, interpreter_id)
     } else {
       format!("```mech\n{}\n```", src)
     }
