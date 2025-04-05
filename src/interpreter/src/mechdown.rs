@@ -40,6 +40,13 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
       for c in code {
         out = mech_code(&c, &pp)?;
       }
+
+      // Save the output of the last code block in the parent interpreter
+      // so we can reference it later.
+      let last_code = code.last().unwrap();
+      let out_id = hash_str(&format!("{:?}", last_code));
+      pp.out_values.borrow_mut().insert(out_id, out.clone());
+      
       return Ok(out)
     },
     SectionElement::Section(sctn) => {return section(sctn, p);},
