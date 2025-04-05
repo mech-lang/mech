@@ -24,7 +24,6 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
   let mut hasher = DefaultHasher::new();
   let mut out = Value::Empty; 
   match element {
-    SectionElement::FencedMechCode((code,0)) |
     SectionElement::MechCode(code) => {
       for c in code {
         out = mech_code(&c, p)?;
@@ -32,21 +31,30 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
       return Ok(out)
     },
     SectionElement::FencedMechCode((code,code_id)) => {
-      let mut sub_interpreters = p.sub_interpreters.borrow_mut();
-      let mut pp = sub_interpreters
-        .entry(*code_id)
-        .or_insert(Box::new(Interpreter::new(*code_id)))
-        .as_mut();
-      for c in code {
-        out = mech_code(&c, &pp)?;
+      if *code_id == 0 {
+        for c in code {
+          out = mech_code(&c, &p)?;
+        }
+        // Save the output of the last code block in the parent interpreter
+        // so we can reference it later.
+        let last_code = code.last().unwrap();
+        let out_id = hash_str(&format!("{:?}", last_code));
+        p.out_values.borrow_mut().insert(out_id, out.clone());
+      } else {
+        let mut sub_interpreters = p.sub_interpreters.borrow_mut();
+        let mut pp = sub_interpreters
+          .entry(*code_id)
+          .or_insert(Box::new(Interpreter::new(*code_id)))
+          .as_mut();
+        for c in code {
+          out = mech_code(&c, &pp)?;
+        }
+        // Save the output of the last code block in the parent interpreter
+        // so we can reference it later.
+        let last_code = code.last().unwrap();
+        let out_id = hash_str(&format!("{:?}", last_code));
+        pp.out_values.borrow_mut().insert(out_id, out.clone());
       }
-
-      // Save the output of the last code block in the parent interpreter
-      // so we can reference it later.
-      let last_code = code.last().unwrap();
-      let out_id = hash_str(&format!("{:?}", last_code));
-      pp.out_values.borrow_mut().insert(out_id, out.clone());
-      
       return Ok(out)
     },
     SectionElement::Section(sctn) => {return section(sctn, p);},
