@@ -771,13 +771,11 @@ li p {
     opacity: 0.7;
 }
 
-/* Code Block Container */
 .mech-fenced-mech-block {
     border-radius: 10px;
     margin-bottom: 20px;
 }
 
-/* Code Block Styling */
 .mech-fenced-mech-block .mech-code-block {
     background-color: #171D21;
     border-radius: 10px 10px 0px 0px;  
@@ -785,13 +783,13 @@ li p {
     margin-bottom: 0px;
 }
 
-/* Output Section */
 .mech-block-output {
-    background-color: #222A30; /* Slightly lighter dark to differentiate */
-    color: #f2ead9; /* Light text color */
+    margin-top: 0px;
+    background-color: #222A30; 
+    color: #f2ead9;
     font-family: 'FiraCodeLight', monospace;
     font-size: 12pt;
-    padding: 30px;
+    padding: 20px;
     border-radius: 0px 0px 10px 10px; /* Only bottom corners rounded */
     overflow-x: auto;
 }
