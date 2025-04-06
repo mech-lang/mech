@@ -60,7 +60,20 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     SectionElement::Section(sctn) => {return section(sctn, p);},
     SectionElement::CodeBlock(x) => x.hash(&mut hasher),
     SectionElement::Comment(x) => x.hash(&mut hasher),
-    SectionElement::Paragraph(x) => x.hash(&mut hasher),
+    SectionElement::Paragraph(x) => {
+      for el in x.elements.iter() {
+        println!("el: {:?}", el);
+        match el {
+          ParagraphElement::InlineMechCode(expr) => {
+            let value = expression(&expr, p)?;
+            let code_id = hash_str(&format!("{:?}", expr));
+            println!("code_id: {:?}", code_id);
+            p.out_values.borrow_mut().insert(code_id, value.clone());
+          } 
+          _ => (),
+        }
+      }
+    },
     SectionElement::UnorderedList(x) => x.hash(&mut hasher),
     SectionElement::Grammar(x) => x.hash(&mut hasher),
     SectionElement::Table(x) => x.hash(&mut hasher),
