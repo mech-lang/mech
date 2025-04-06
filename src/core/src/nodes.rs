@@ -979,7 +979,8 @@ pub enum ParagraphElement {
   Underline(Box<ParagraphElement>),
   Strikethrough(Box<ParagraphElement>),
   Hyperlink((Token, Token)),
-  InlineCode(Token),                 
+  InlineCode(Token),
+  InlineMechCode(Expression),                 
   Link
 }
 
