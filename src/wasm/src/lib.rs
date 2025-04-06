@@ -106,6 +106,26 @@ impl WasmMech {
       block.set_inner_html(&formatted_output);
     }
 
+    let inline_elements = document.get_elements_by_class_name("mech-inline-mech-code");
+
+    let out_values_brrw = self.interpreter.out_values.borrow();
+
+    for j in 0..inline_elements.length() {
+      let inline_block = inline_elements.get_with_index(j).unwrap();
+      let inline_id = inline_block.id();
+      let inline_id: u64 = inline_id.parse().unwrap();
+      
+      let inline_output = match out_values_brrw.get(&inline_id) {
+        Some(value) => value,
+        None => {
+          log!("No value found for inline output id: {}", inline_id);
+          continue;
+        }
+      };
+      let formatted_output = format!("{}", inline_output.to_string());
+      inline_block.set_inner_html(&formatted_output.trim());
+    }
+
   }
 
   #[wasm_bindgen]
