@@ -245,6 +245,15 @@ impl Formatter {
           format!("`{}`", n.to_string())
         }
       },
+      ParagraphElement::InlineMechCode(expr) => {
+        let code_id = hash_str(&format!("{:?}", expr));
+        let result = self.expression(expr);
+        if self.html {
+          format!("<code id=\"{}\" class=\"mech-inline-mech-code\">{}</code>", code_id, result)
+        } else {
+          format!("{{{}}}", result)
+        }
+      },
       _ => todo!(),
     }
   }
