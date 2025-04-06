@@ -400,17 +400,31 @@ h4:before{
 .mech-term {
 }
 
+code {
+    margin: 0px;
+    padding: 0px;
+}
+
 .mech-inline-code {
     background-color: #171D21;
     color: #ada594;
     font-family: 'FiraCodeLight', monospace;
     font-size: 12pt;
-    padding: 2px 2px;
+    padding: 3px;
     margin: 0px;
-    margin-left: 2px;
-    margin-right: 7px;
     border-radius: 5px;
 }
+
+.mech-inline-mech-code {
+    background-color: #171D21;
+    color: #C7DCAE;
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 12pt;
+    padding: 3px;
+    margin: 0px;
+    border-radius: 5px;
+}
+
 
 .mech-formula-operator {
     color: #ffd139;
@@ -793,3 +807,4 @@ li p {
     border-radius: 0px 0px 10px 10px; /* Only bottom corners rounded */
     overflow-x: auto;
 }
+
