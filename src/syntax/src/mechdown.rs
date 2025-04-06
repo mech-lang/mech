@@ -212,7 +212,7 @@ pub fn raw_hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
 
 // paragraph_text := ¬(http_prefix | left_bracket | tilde | asterisk | underscore | grave | define_operator | bar), +text ;
 pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
-  let (input, elements) = match many1(nom_tuple((is_not(alt((http_prefix,left_bracket,tilde,asterisk,underscore,grave,define_operator,bar))),text)))(input) {
+  let (input, elements) = match many1(nom_tuple((is_not(alt((http_prefix,left_brace,left_bracket,tilde,asterisk,underscore,grave,define_operator,bar))),text)))(input) {
     Ok((input, mut text)) => {
       let mut text = text.into_iter().map(|(_,tkn)| tkn).collect();
       let mut text = Token::merge_tokens(&mut text).unwrap();
@@ -224,9 +224,17 @@ pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, elements))
 }
 
+// inline-mech-cdoe := "{", expression, "}" ;`
+pub fn inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, _) = left_brace(input)?;
+  let (input, expr) = expression(input)?;
+  let (input, _) = right_brace(input)?;
+  Ok((input, ParagraphElement::InlineMechCode(expr)))
+}
+
 // paragraph_element := hyperlink | raw_hyperlink | paragraph_text | strong | emphasis | inline_code | strikethrough | underline ;
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
-  alt((hyperlink, raw_hyperlink, paragraph_text, strong, emphasis, inline_code, strikethrough, underline))(input)
+  alt((hyperlink, raw_hyperlink, inline_mech_code, paragraph_text, strong, emphasis, inline_code, strikethrough, underline))(input)
 }
 
 // paragraph := +paragraph_element ;
