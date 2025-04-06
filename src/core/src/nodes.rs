@@ -994,6 +994,7 @@ impl ParagraphElement {
       ParagraphElement::Underline(t) => t.to_string(),
       ParagraphElement::Strikethrough(t) => t.to_string(),
       ParagraphElement::InlineCode(t) => t.to_string(),
+      ParagraphElement::InlineMechCode(t) => format!("{:?}",t),
       ParagraphElement::Hyperlink((t, u)) => {
         format!("[{}]({})", t.to_string(), u.to_string())
       }
