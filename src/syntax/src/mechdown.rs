@@ -442,7 +442,7 @@ pub fn sub_section(input: ParseString) -> ParseResult<Section> {
 // body := whitespace0, (section | section_elements)+, whitespace0 ;
 pub fn body(input: ParseString) -> ParseResult<Body> {
   let (input, _) = whitespace0(input)?;
-  let (input, sections) = many1(alt((section,section_elements)))(input)?;
+  let (input, sections) = many0(alt((section,section_elements)))(input)?;
   let (input, _) = whitespace0(input)?;
   Ok((input, Body{sections}))
 }
