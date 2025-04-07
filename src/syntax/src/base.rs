@@ -253,13 +253,13 @@ pub fn escaped_char(input: ParseString) -> ParseResult<Token> {
 
 // symbol := ampersand | bar | at | slash | hashtag | equal | backslash | tilde | plus | dash | asterisk | caret | underscore ;
 pub fn symbol(input: ParseString) -> ParseResult<Token> {
-  let (input, symbol) = alt((ampersand, bar, at, slash, hashtag, equal, backslash, tilde, plus, dash, asterisk, caret, underscore))(input)?;
+  let (input, symbol) = alt((ampersand, bar, percent, at, slash, hashtag, equal, backslash, tilde, plus, dash, asterisk, caret, underscore))(input)?;
   Ok((input, symbol))
 }
 
 // text := alpha | digit | space | tab | escaped_char | punctuation | grouping_symbol | symbol ;
 pub fn text(input: ParseString) -> ParseResult<Token> {
-  let (input, text) = alt((alpha_token, digit_token, emoji, space, tab, escaped_char, punctuation, grouping_symbol, symbol))(input)?;
+  let (input, text) = alt((alpha_token, digit_token, emoji, forbidden_emoji, space, tab, escaped_char, punctuation, grouping_symbol, symbol))(input)?;
   Ok((input, text))
 }
 
