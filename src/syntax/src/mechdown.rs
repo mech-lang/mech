@@ -328,7 +328,7 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
               }
             };
           } else {
-            todo!("Code block with id: {}", tag);
+            // Some other code block, just keep moving although we might want to do something with it later
           }
         }
       } 
