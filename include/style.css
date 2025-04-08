@@ -688,12 +688,45 @@ code {
 .mech-unordered-list {
 }
 
+.mech-list-item::before {
+    content: "•";
+    position: relative;         
+    font-size: 1.2rem;          
+    color: #ef5f90;;    
+    right: 20px;
+    top: 17px;
+    font-weight: bold;
+    font-size: 18pt;
+}
+
 .mech-list-item {
     line-height: 0px;
     color: #ef5f90;
-    margin: 0px;
-    padding: 0px;
+    padding-left: 20px;
 }
+
+.mech-list-item-emoji::before {
+    content: attr(data-bullet); 
+    position: relative;         
+    font-size: 1.2rem;          
+    color: #ef5f90;;    
+    right: 35px;
+    top: 17px;
+}
+
+.mech-list-item-emoji {
+    line-height: 0px;
+    color: #ef5f90;
+    padding-left: 30px;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;   
+}
+
+
 
 li p {
     margin: 0px;
@@ -717,7 +750,6 @@ table {
 }
 
 .mech-table {
-    width: 100%;
     border-collapse: collapse;
     background-color: #2F353B;
     color: #f2ead9; 
