@@ -555,12 +555,12 @@ impl Formatter {
 
   pub fn unordered_list(&mut self, node: &UnorderedList) -> String {
     let mut lis = "".to_string();
-    for (i, item) in node.items.iter().enumerate() {
+    for (i, (bullet, item)) in node.items.iter().enumerate() {
       let it = self.paragraph(item);
-      if self.html {
-        lis = format!("{}<li class=\"mech-list-item\">{}</li>",lis,it);
-      } else {
-        lis = format!("{}- {}\n",lis,it); 
+      match (bullet, self.html) {
+        (Some(bullet_tok),true) => lis = format!("{}<li data-bullet=\"{}\" class=\"mech-list-item-emoji\">{}</li>",lis,bullet_tok.to_string(),it),
+        (None,true) => lis = format!("{}<li class=\"mech-list-item\">{}</li>",lis,it),
+        (_,false) => lis = format!("{}* {}\n",lis,it),
       }
     }
     if self.html {
