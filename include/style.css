@@ -694,7 +694,7 @@ code {
     font-size: 1.2rem;          
     color: #ef5f90;;    
     right: 20px;
-    top: 17px;
+    top: 18px;
     font-weight: bold;
     font-size: 18pt;
 }
@@ -735,10 +735,6 @@ li p {
     margin-bottom: 5px;
 }
 
-table {
-    margin-bottom: 20px;
-}
-
 .mech-table-header {
     color: #dbc3a5;
 }
@@ -753,7 +749,8 @@ table {
     border-collapse: collapse;
     background-color: #2F353B;
     color: #f2ead9; 
-    margin-bottom: 20x;
+    margin: auto;
+    margin-bottom: 20px;
 }
 
 .mech-table thead {
@@ -796,12 +793,13 @@ table {
 }
 
 .mech-block-quote {
+    width: 80%;
     background-color: #232A30; 
     border-left: 5px solid #ee6262; 
     padding: 15px 20px;
     color: #f2ead9; 
     font-style: italic; 
-    margin: 20px 0;
+    margin: auto;
     border-radius: 5px;
 }
 
