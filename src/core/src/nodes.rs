@@ -451,7 +451,7 @@ pub type ListItem = Paragraph;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct UnorderedList {
-  pub items: Vec<ListItem>,
+  pub items: Vec<(Option<Token>,ListItem)>,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
