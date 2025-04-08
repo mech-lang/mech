@@ -252,14 +252,19 @@ pub fn unordered_list(input: ParseString) -> ParseResult<UnorderedList> {
 }
 
 // list_item := dash, <space+>, <paragraph>, new_line* ;
-pub fn list_item(input: ParseString) -> ParseResult<Paragraph> {
+pub fn list_item(input: ParseString) -> ParseResult<(Option<Token>,Paragraph)> {
   let msg1 = "Expects space after dash";
   let msg2 = "Expects paragraph as list item";
   let (input, _) = dash(input)?;
+  let (input, bullet) = opt(tuple((left_parenthesis, emoji, right_parenthesis)))(input)?;
   let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
   let (input, list_item) = label!(paragraph, msg2)(input)?;
   let (input, _) = many0(new_line)(input)?;
-  Ok((input,  list_item))
+  let bullet = match bullet {
+    Some((_,b,_)) => Some(b),
+    None => None,
+  };
+  Ok((input,  (bullet, list_item)))
 }
 
 
