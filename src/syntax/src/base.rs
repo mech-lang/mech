@@ -128,7 +128,8 @@ leaf!{box_t_bottom, "┴", TokenKind::BoxDrawing}
 leaf!{box_vert, "│", TokenKind::BoxDrawing}
 leaf!{box_vert_bold, "┃", TokenKind::BoxDrawing}
 
-leaf!(http_prefix, "http", TokenKind::Http);
+leaf!(http_prefix, "http", TokenKind::HttpPrefix);
+leaf!(img_prefix, "![", TokenKind::ImgPrefix);
 
 ws0_leaf!(define_operator, ":=", TokenKind::DefineOperator);
 ws0_leaf!(assign_operator, "=", TokenKind::AssignOperator);

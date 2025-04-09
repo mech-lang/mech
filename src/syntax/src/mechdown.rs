@@ -223,9 +223,22 @@ pub fn raw_hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Hyperlink((url.clone(), url))))
 }
 
-// paragraph_text := ¬(http_prefix | left_bracket | tilde | asterisk | underscore | grave | define_operator | bar), +text ;
+// img := "![", +text, "]", "(", +text, ")" ;
+pub fn img(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, _) = img_prefix(input)?;
+  let (input, caption_text) = many1(tuple((is_not(right_bracket),text)))(input)?;
+  let (input, _) = right_bracket(input)?;
+  let (input, _) = left_parenthesis(input)?;
+  let (input, src) = many1(tuple((is_not(right_parenthesis),text)))(input)?;
+  let (input, _) = right_parenthesis(input)?;
+  let merged_caption = Token::merge_tokens(&mut caption_text.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>()).unwrap();
+  let merged_src = Token::merge_tokens(&mut src.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>()).unwrap();
+  Ok((input, ParagraphElement::Image( Image{src: merged_src, caption: Some(merged_caption)} )))
+}
+
+// paragraph_text := ¬(img_prefix | http_prefix | left_bracket | tilde | asterisk | underscore | grave | define_operator | bar), +text ;
 pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
-  let (input, elements) = match many1(nom_tuple((is_not(alt((http_prefix,left_brace,left_bracket,tilde,asterisk,underscore,grave,define_operator,bar))),text)))(input) {
+  let (input, elements) = match many1(nom_tuple((is_not(alt((img_prefix,http_prefix,left_brace,left_bracket,tilde,asterisk,underscore,grave,define_operator,bar))),text)))(input) {
     Ok((input, mut text)) => {
       let mut text = text.into_iter().map(|(_,tkn)| tkn).collect();
       let mut text = Token::merge_tokens(&mut text).unwrap();
@@ -245,9 +258,9 @@ pub fn inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::InlineMechCode(expr)))
 }
 
-// paragraph_element := hyperlink | raw_hyperlink | paragraph_text | strong | emphasis | inline_code | strikethrough | underline ;
+// paragraph_element := hyperlink | raw_hyperlink | img | paragraph_text | strong | emphasis | inline_code | strikethrough | underline ;
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
-  alt((hyperlink, raw_hyperlink, inline_mech_code, paragraph_text, strong, emphasis, inline_code, strikethrough, underline))(input)
+  alt((hyperlink, raw_hyperlink, img, inline_mech_code, paragraph_text, strong, emphasis, inline_code, strikethrough, underline))(input)
 }
 
 // paragraph := +paragraph_element ;

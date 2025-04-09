@@ -201,6 +201,7 @@ impl Formatter {
   pub fn paragraph_element(&mut self, node: &ParagraphElement) -> String {
     match node {
       ParagraphElement::Text(n) => n.to_string(),
+      ParagraphElement::Image(n) => self.image(n),
       ParagraphElement::Strong(n) => {
         if self.html {
           format!("<strong class=\"mech-strong\">{}</strong>", n.to_string())
@@ -289,6 +290,23 @@ impl Formatter {
     }
   }
 
+  pub fn image(&mut self, node: &Image) -> String {
+    let src = node.src.to_string();
+    let caption = match &node.caption {
+      Some(caption) => caption.to_string(),
+      None => "".to_string(),
+    };
+    let id = hash_str(&src);
+    if self.html {
+      format!("<figure class=\"mech-figure\">
+        <img id=\"{}\" class=\"mech-image\" src=\"{}\" alt=\"{}\" />
+        <figcaption class=\"mech-figure-caption\">{}</figcaption>
+      </figure>", id, src, caption, caption)
+    } else {
+      format!("![{}]({})",caption, src)
+    }
+  }
+
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     let element = match node {
       SectionElement::Section(n) => self.section(n),
@@ -303,7 +321,6 @@ impl Formatter {
       SectionElement::BlockQuote(n) => self.block_quote(n),
       SectionElement::ThematicBreak => self.thematic_break(),
       SectionElement::OrderedList => todo!(),
-      SectionElement::Image => todo!(),
     };
     if self.html {
       format!("<div class=\"mech-section-element\">{}</div>",element)

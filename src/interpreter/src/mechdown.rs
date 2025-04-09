@@ -78,7 +78,6 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     SectionElement::BlockQuote(x) => x.hash(&mut hasher),
     SectionElement::ThematicBreak => {return Ok(Value::Empty);}
     SectionElement::OrderedList => todo!(),
-    SectionElement::Image => todo!(),
   };
   let hash = hasher.finish();
   Ok(Value::Id(hash))

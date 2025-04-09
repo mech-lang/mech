@@ -92,8 +92,8 @@ pub enum TokenKind {
   Emoji, Empty, Equal, Exclamation,
   False,
   Grave,
-  HashTag, Http,
-  Identifier, InlineCode, 
+  HashTag, HttpPrefix,
+  Identifier, ImgPrefix, InlineCode, 
   LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
   Newline, Not, Number,
   OutputOperator,
@@ -429,7 +429,6 @@ pub enum SectionElement {
   BlockQuote(Paragraph),
   ThematicBreak,
   OrderedList,     // todo
-  Image,           // todo
 }
 
 impl SectionElement {
@@ -445,6 +444,20 @@ impl SectionElement {
       _ => todo!(),
     }
   }
+}
+
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Image {
+  pub src: Token,
+  pub caption: Option<Token>,
+}
+
+impl Image {
+
+  pub fn to_string(&self) -> String {
+    format!("![{}]({})", self.caption.as_ref().unwrap_or(&Token::default()).to_string(), self.src.to_string())
+  }
+
 }
 
 pub type ListItem = Paragraph;
@@ -980,7 +993,8 @@ pub enum ParagraphElement {
   Strikethrough(Box<ParagraphElement>),
   Hyperlink((Token, Token)),
   InlineCode(Token),
-  InlineMechCode(Expression),                 
+  InlineMechCode(Expression),   
+  Image(Image),              
   Link
 }
 
@@ -994,6 +1008,7 @@ impl ParagraphElement {
       ParagraphElement::Underline(t) => t.to_string(),
       ParagraphElement::Strikethrough(t) => t.to_string(),
       ParagraphElement::InlineCode(t) => t.to_string(),
+      ParagraphElement::Image(t) => t.src.to_string(),
       ParagraphElement::InlineMechCode(t) => format!("{:?}",t),
       ParagraphElement::Hyperlink((t, u)) => {
         format!("[{}]({})", t.to_string(), u.to_string())

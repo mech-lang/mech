@@ -688,6 +688,31 @@ code {
 .mech-unordered-list {
 }
 
+.mech-figure {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 2em auto;
+    padding: 1em;
+    max-width: 600px;
+    border-radius: 10px;
+}
+
+.mech-image {
+    max-width: 100%;
+    height: auto;
+}
+
+.mech-figure-caption {
+    margin-top: 0.75em;
+    color: #ada594;
+    font-size: 0.95em;
+    text-align: center;
+    line-height: 1.4;
+    font-style: italic;
+    padding: 0 1em;
+}
+  
 .mech-list-item::before {
     content: "•";
     position: relative;         
