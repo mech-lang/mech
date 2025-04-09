@@ -73,8 +73,21 @@ pub fn alignment_separator(input: ParseString) -> ParseResult<ColumnAlignment> {
 }
 
 pub fn markdown_table(input: ParseString) -> ParseResult<MarkdownTable> {
+  let (input, _) = whitespace0(input)?;
+  let (input, table) = alt((markdown_table_with_header, markdown_table_no_header))(input)?;
+  Ok((input, table))
+}
+
+pub fn markdown_table_with_header(input: ParseString) -> ParseResult<MarkdownTable> {
   let (input, (header,alignment)) = markdown_table_header(input)?;
-  let (input, rows) = many0(markdown_table_row)(input)?;
+  let (input, rows) = many1(markdown_table_row)(input)?;
+  Ok((input, MarkdownTable{header, rows, alignment}))
+}
+
+pub fn markdown_table_no_header(input: ParseString) -> ParseResult<MarkdownTable> {
+  let (input, rows) = many1(markdown_table_row)(input)?;
+  let header = vec![];
+  let alignment = vec![];
   Ok((input, MarkdownTable{header, rows, alignment}))
 }
 
