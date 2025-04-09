@@ -1028,14 +1028,14 @@ impl Formatter {
   pub fn range_expression(&mut self, node: &RangeExpression) -> String {
     let start = self.factor(&node.start);
     let operator = match &node.operator {
-      RangeOp::Inclusive => "..".to_string(),
+      RangeOp::Inclusive => "..=".to_string(),
       RangeOp::Exclusive => "..".to_string(),
     };
     let terminal = self.factor(&node.terminal);
     let increment = match &node.increment {
       Some((op, factor)) => {
         let o = match op {
-          RangeOp::Inclusive => "=..".to_string(),
+          RangeOp::Inclusive => "..=".to_string(),
           RangeOp::Exclusive => "..".to_string(),
         };
         let f = self.factor(factor);
