@@ -385,25 +385,45 @@ pub fn thematic_break(input: ParseString) -> ParseResult<SectionElement> {
   Ok((input, SectionElement::ThematicBreak))
 }
 
+// footnote := "[^", +text, "]", ":", ws0, paragraph ;
+pub fn footnote(input: ParseString) -> ParseResult<Footnote> {
+  let (input, _) = footnote_prefix(input)?;
+  let (input, text) = many1(tuple((is_not(right_bracket),text)))(input)?;
+  let (input, _) = right_bracket(input)?;
+  let (input, _) = colon(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, paragraph) = paragraph(input)?;
+  let mut tokens = text.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>();
+  let footnote_text = Token::merge_tokens(&mut tokens).unwrap();
+  let footnote = (footnote_text, paragraph);
+  Ok((input, footnote))
+}
+
+
+
+
 // section_element := mech_code | unordered_list | comment | paragraph | code_block | sub_section;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match many1(mech_code)(input.clone()) {
     Ok((input, code)) => (input, SectionElement::MechCode(code)),
     _ => match unordered_list(input.clone()) {
       Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
-      _ => match markdown_table(input.clone()) {
-        Ok((input, table)) => (input, SectionElement::Table(table)),
-        _ => match block_quote(input.clone()) {   
-          Ok((input, quote)) => (input, SectionElement::BlockQuote(quote)),
-          _ => match code_block(input.clone()) {
-            Ok((input, m)) => (input,m),
-            _ => match thematic_break(input.clone()) {
-              Ok((input, _)) => (input, SectionElement::ThematicBreak),
-              _ => match sub_section(input.clone()) {
-                Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
-                _ => match paragraph(input) {
-                  Ok((input, p)) => (input, SectionElement::Paragraph(p)),
-                  Err(err) => { return Err(err); }
+      _ => match footnote(input.clone()) {
+        Ok((input, ftnote)) => (input, SectionElement::Footnote(ftnote)),
+        _ => match markdown_table(input.clone()) {
+          Ok((input, table)) => (input, SectionElement::Table(table)),
+          _ => match block_quote(input.clone()) {   
+            Ok((input, quote)) => (input, SectionElement::BlockQuote(quote)),
+            _ => match code_block(input.clone()) {
+              Ok((input, m)) => (input,m),
+              _ => match thematic_break(input.clone()) {
+                Ok((input, _)) => (input, SectionElement::ThematicBreak),
+                _ => match sub_section(input.clone()) {
+                  Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
+                  _ => match paragraph(input) {
+                    Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+                    Err(err) => { return Err(err); }
+                  }
                 }
               }
             }
