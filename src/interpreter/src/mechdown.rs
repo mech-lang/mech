@@ -5,19 +5,19 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 // ----------------------------------------------------------------------------
 
 pub fn body(body: &Body, p: &Interpreter) -> MResult<Value> {
-  let mut result = None;
+  let mut result = Ok(Value::Empty);
   for sec in &body.sections {
-    result = Some(section(&sec, p)?);
-  }
-  Ok(result.unwrap())
+    result = Ok(section(&sec, p)?);
+  } 
+  result
 }
 
 pub fn section(section: &Section, p: &Interpreter) -> MResult<Value> {
-  let mut result = None;
+  let mut result = Ok(Value::Empty);
   for el in &section.elements {
-    result = Some(section_element(&el, p)?);
+    result = Ok(section_element(&el, p)?);
   }
-  Ok(result.unwrap())
+  result
 }
 
 pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Value> {
