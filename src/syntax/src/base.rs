@@ -130,6 +130,7 @@ leaf!{box_vert_bold, "┃", TokenKind::BoxDrawing}
 
 leaf!(http_prefix, "http", TokenKind::HttpPrefix);
 leaf!(img_prefix, "![", TokenKind::ImgPrefix);
+leaf!(footnote_prefix, "[^", TokenKind::FootnotePrefix);
 
 ws0_leaf!(define_operator, ":=", TokenKind::DefineOperator);
 ws0_leaf!(assign_operator, "=", TokenKind::AssignOperator);
