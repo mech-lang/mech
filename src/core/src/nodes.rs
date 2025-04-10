@@ -90,7 +90,7 @@ pub enum TokenKind {
   Caret, CarriageReturn, CarriageReturnNewLine, Colon, CodeBlock, Comma,
   Dash, DefineOperator, Digit, Dollar,
   Emoji, Empty, Equal, Exclamation,
-  False,
+  False, FootnotePrefix,
   Grave,
   HashTag, HttpPrefix,
   Identifier, ImgPrefix, InlineCode, 
@@ -415,9 +415,12 @@ pub enum GrammarExpression {
 // I don't know exactly what I want to put in here yet
 type BlockConfig = u64; 
 
+pub type Footnote = (Token, Paragraph);
+
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SectionElement {
   Section(Box<Section>),
+  Footnote(Footnote),
   Comment(Comment),
   Paragraph(Paragraph),
   MechCode(Vec<MechCode>),
@@ -992,6 +995,7 @@ pub enum ParagraphElement {
   Underline(Box<ParagraphElement>),
   Strikethrough(Box<ParagraphElement>),
   Hyperlink((Token, Token)),
+  FootnoteReferece(Identifier),
   InlineCode(Token),
   InlineMechCode(Expression),   
   Image(Image),              
@@ -1008,6 +1012,7 @@ impl ParagraphElement {
       ParagraphElement::Underline(t) => t.to_string(),
       ParagraphElement::Strikethrough(t) => t.to_string(),
       ParagraphElement::InlineCode(t) => t.to_string(),
+      ParagraphElement::FootnoteReferece(t) => t.to_string(),
       ParagraphElement::Image(t) => t.src.to_string(),
       ParagraphElement::InlineMechCode(t) => format!("{:?}",t),
       ParagraphElement::Hyperlink((t, u)) => {
