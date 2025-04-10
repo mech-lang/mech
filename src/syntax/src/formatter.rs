@@ -317,6 +317,7 @@ impl Formatter {
       SectionElement::UnorderedList(n) => self.unordered_list(n),
       SectionElement::CodeBlock(n) => self.code_block(n),
       SectionElement::Grammar(n) => self.grammar(n),
+      SectionElement::Footnote(n) => self.footnote(n),
       SectionElement::Table(n) => self.markdown_table(n),
       SectionElement::BlockQuote(n) => self.block_quote(n),
       SectionElement::ThematicBreak => self.thematic_break(),
@@ -326,6 +327,20 @@ impl Formatter {
       format!("<div class=\"mech-section-element\">{}</div>",element)
     } else {
       element
+    }
+  }
+
+  pub fn footnote(&mut self, node: &Footnote) -> String {
+    let (id_name, p) = node;
+    let note_paragraph = self.paragraph(p);
+    let id: u64 = hash_str(&format!("footnote-{}",id_name.to_string()));
+    if self.html {
+      format!("<div class=\"mech-footnote\" id=\"{}\">
+        <div class=\"mech-footnote-id\">{}:</div>
+        {}
+      </div>",id, id_name.to_string(), note_paragraph)  
+    } else {
+      format!("[^{}]: {}\n",id_name.to_string(), note_paragraph)
     }
   }
 
