@@ -60,6 +60,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     SectionElement::Section(sctn) => {return section(sctn, p);},
     SectionElement::CodeBlock(x) => x.hash(&mut hasher),
     SectionElement::Comment(x) => x.hash(&mut hasher),
+    SectionElement::Footnote(x) => x.hash(&mut hasher),
     SectionElement::Paragraph(x) => {
       for el in x.elements.iter() {
         match el {
