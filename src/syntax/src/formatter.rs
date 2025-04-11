@@ -13,6 +13,8 @@ pub struct Formatter{
   html: bool,
   nested: bool,
   toc: bool,
+  figure_num: usize,
+  section_num: usize,
   interpreter_id: u64,
 }
 
@@ -25,6 +27,8 @@ impl Formatter {
       rows: 0,
       cols: 0,
       indent: 0,
+      section_num: 0,
+      figure_num: 0,
       html: false,
       nested: false,
       toc: false,
@@ -145,6 +149,10 @@ impl Formatter {
 
   pub fn subtitle(&mut self, node: &Subtitle) -> String {
     let level = node.level;
+    if level == 2 && !self.toc {
+      self.section_num += 1;
+      self.figure_num = 0;
+    }
     let toc = if self.toc { "toc" } else { "" };
     let title_id = hash_str(&format!("{}{}{}",level,node.to_string(),toc));
     let link_id = hash_str(&format!("{}{}",level,node.to_string()));
@@ -302,17 +310,20 @@ impl Formatter {
   }
 
   pub fn image(&mut self, node: &Image) -> String {
+    self.figure_num += 1;
     let src = node.src.to_string();
     let caption = match &node.caption {
       Some(caption) => caption.to_string(),
       None => "".to_string(),
     };
-    let id = hash_str(&src);
+    let figure_label = format!("Fig {}.{}:",self.section_num, self.figure_num);
+    let image_id = hash_str(&src);
+    let figure_id = hash_str(&figure_label);
     if self.html {
-      format!("<figure class=\"mech-figure\">
+      format!("<figure id=\"{}\" class=\"mech-figure\">
         <img id=\"{}\" class=\"mech-image\" src=\"{}\" alt=\"{}\" />
-        <figcaption class=\"mech-figure-caption\">{}</figcaption>
-      </figure>", id, src, caption, caption)
+        <figcaption class=\"mech-figure-caption\"><strong class=\"mech-figure-label\">{}</strong> {}</figcaption>
+      </figure>", figure_id, image_id, src, caption, figure_label, caption)
     } else {
       format!("![{}]({})",caption, src)
     }
