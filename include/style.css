@@ -692,25 +692,21 @@ code {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 2em auto;
-    padding: 1em;
-    max-width: 600px;
-    border-radius: 10px;
+    margin: 40px auto;
 }
 
 .mech-image {
-    max-width: 100%;
-    height: auto;
+    max-width: 120%;
 }
 
 .mech-figure-caption {
-    margin-top: 0.75em;
+    margin-top: 1em;
     color: #ada594;
-    font-size: 0.95em;
-    text-align: center;
+    font-size: 12pt;
+    text-align: left;;
     line-height: 1.4;
     font-style: italic;
-    padding: 0 1em;
+    padding: 1em;
 }
   
 .mech-list-item::before {
