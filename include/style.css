@@ -888,4 +888,41 @@ li p {
     scrollbar-width: thin;
 }
 
+.mech-footnote {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75em;
+    margin-top: 1em;
+    font-size: 0.9em;
+    color: #ada594;
+  }
+  
+  .mech-footnote-id {
+    color: #ee6262;
+    font-weight: bold;
+    min-width: 2em;
+    text-align: right;
+    font-family: monospace;
+  }
+  
+  .mech-footnote .mech-paragraph {
+    margin: 0;
+    line-height: 1.6;
+    color: #f2ead9;
+  }
 
+  .mech-footnote-reference {
+    font-size: 0.7em;
+    vertical-align: super;
+    text-decoration: none;
+    margin-left: 0.1em;
+    color: #ee6262;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  
+  .mech-footnote-reference:hover {
+    color: #f28b82;
+    text-decoration: underline;
+  }
+  

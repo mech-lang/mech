@@ -270,7 +270,7 @@ pub fn footnote_reference(input: ParseString) -> ParseResult<ParagraphElement> {
 
 // paragraph-element := hyperlink | raw-hyperlink | footnote-reference | img | paragraph-text | strong | emphasis | inline-code | strikethrough | underline ;
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
-  alt((hyperlink, raw_hyperlink, img, inline_mech_code, paragraph_text, strong, emphasis, inline_code, strikethrough, underline))(input)
+  alt((hyperlink, raw_hyperlink, footnote_reference, img, inline_mech_code, paragraph_text, strong, emphasis, inline_code, strikethrough, underline))(input)
 }
 
 // paragraph := +paragraph_element ;

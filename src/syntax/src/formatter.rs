@@ -198,9 +198,20 @@ impl Formatter {
     }
   }
 
+  fn footnote_reference(&mut self, node: &Token) -> String {
+    let id_string = node.to_string();
+    let id_hash = hash_str(&format!("footnote-{}",id_string));
+    if self.html {
+      format!("<a href=\"#{}\" class=\"mech-footnote-reference\">{}</a>",id_hash, id_string)
+    } else {
+      format!("[^{}]",id_string)
+    }
+  }
+
   pub fn paragraph_element(&mut self, node: &ParagraphElement) -> String {
     match node {
       ParagraphElement::Text(n) => n.to_string(),
+      ParagraphElement::FootnoteReference(n) => self.footnote_reference(n),
       ParagraphElement::Image(n) => self.image(n),
       ParagraphElement::Strong(n) => {
         if self.html {
