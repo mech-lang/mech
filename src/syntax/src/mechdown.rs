@@ -258,7 +258,17 @@ pub fn inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::InlineMechCode(expr)))
 }
 
-// paragraph_element := hyperlink | raw_hyperlink | img | paragraph_text | strong | emphasis | inline_code | strikethrough | underline ;
+// footnote-reference := "[^", +text, "]" ;
+pub fn footnote_reference(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, _) = footnote_prefix(input)?;
+  let (input, text) = many1(tuple((is_not(right_bracket),text)))(input)?;
+  let (input, _) = right_bracket(input)?;
+  let mut tokens = text.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>();
+  let footnote_text = Token::merge_tokens(&mut tokens).unwrap();
+  Ok((input, ParagraphElement::FootnoteReference(footnote_text)))
+}
+
+// paragraph-element := hyperlink | raw-hyperlink | footnote-reference | img | paragraph-text | strong | emphasis | inline-code | strikethrough | underline ;
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
   alt((hyperlink, raw_hyperlink, img, inline_mech_code, paragraph_text, strong, emphasis, inline_code, strikethrough, underline))(input)
 }
@@ -398,9 +408,6 @@ pub fn footnote(input: ParseString) -> ParseResult<Footnote> {
   let footnote = (footnote_text, paragraph);
   Ok((input, footnote))
 }
-
-
-
 
 // section_element := mech_code | unordered_list | comment | paragraph | code_block | sub_section;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {

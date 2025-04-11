@@ -995,7 +995,7 @@ pub enum ParagraphElement {
   Underline(Box<ParagraphElement>),
   Strikethrough(Box<ParagraphElement>),
   Hyperlink((Token, Token)),
-  FootnoteReferece(Identifier),
+  FootnoteReference(Token),
   InlineCode(Token),
   InlineMechCode(Expression),   
   Image(Image),              
@@ -1012,7 +1012,7 @@ impl ParagraphElement {
       ParagraphElement::Underline(t) => t.to_string(),
       ParagraphElement::Strikethrough(t) => t.to_string(),
       ParagraphElement::InlineCode(t) => t.to_string(),
-      ParagraphElement::FootnoteReferece(t) => t.to_string(),
+      ParagraphElement::FootnoteReference(t) => t.to_string(),
       ParagraphElement::Image(t) => t.src.to_string(),
       ParagraphElement::InlineMechCode(t) => format!("{:?}",t),
       ParagraphElement::Hyperlink((t, u)) => {
