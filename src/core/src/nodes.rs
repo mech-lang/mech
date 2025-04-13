@@ -462,7 +462,12 @@ impl Image {
 }
 
 pub type UnorderedList = Vec<((Option<Token>,Paragraph),Option<MDList>)>;
-pub type OrderedList = Vec<(Paragraph,Option<MDList>)>;
+
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub struct OrderedList {
+  pub start: Number,
+  pub items: Vec<((Number,Paragraph),Option<MDList>)>,
+}
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum MDList {
@@ -1054,6 +1059,14 @@ pub enum Number {
 }
 
 impl Number {
+
+  pub fn to_string(&self) -> String {
+    match self {
+      Number::Real(x) => x.to_string(),
+      Number::Imaginary(x) => x.to_string(),
+    }
+  }
+
   pub fn tokens(&self) -> Vec<Token> {
     match self {
       Number::Real(x) => x.tokens(),
@@ -1082,6 +1095,25 @@ impl RealNumber {
       _ => todo!(),
     }
   }
+  pub fn to_string(&self) -> String {
+    match self {
+      RealNumber::Integer(tkn) => tkn.to_string(),
+      RealNumber::Float((whole, part)) => format!("{}.{}", whole.to_string(), part.to_string()),
+      RealNumber::Binary(tkn) => format!("0b{}", tkn.to_string()),
+      RealNumber::Hexadecimal(tkn) => format!("0x{}", tkn.to_string()),
+      RealNumber::Octal(tkn) => format!("0o{}", tkn.to_string()),
+      RealNumber::Decimal(tkn) => format!("0d{}", tkn.to_string()),
+      RealNumber::Rational((num, den)) => format!("{}/{}", num.to_string(), den.to_string()),
+      RealNumber::Scientific(((whole,part), exponent)) => {
+        let (sign, whole, part) = exponent;
+        let sign_str = if *sign { "+" } else { "-" };
+        let whole_str = whole.to_string();
+        let part_str = part.to_string();
+        format!("{}{}.{}/10^{}", whole.to_string(), part.to_string(), sign_str, whole_str)
+      }
+      RealNumber::Negated(x) => format!("-{}", x.to_string()),
+    }
+  }
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
@@ -1093,6 +1125,26 @@ pub struct ImaginaryNumber {
 pub struct ComplexNumber {
   pub real: Option<RealNumber>,
   pub imaginary: ImaginaryNumber
+}
+
+impl ComplexNumber {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    if let Some(r) = &self.real {
+      tkns.append(&mut r.tokens());
+    }
+    tkns.append(&mut self.imaginary.number.tokens());
+    tkns
+  }
+
+  pub fn to_string(&self) -> String {
+    let mut out = "".to_string();
+    if let Some(r) = &self.real {
+      out.push_str(&r.to_string());
+    }
+    out.push_str("i");
+    out
+  }
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]

@@ -625,23 +625,23 @@ impl Formatter {
 
   pub fn ordered_list(&mut self, node: &OrderedList) -> String {
     let mut lis = "".to_string();
-    for (i, (item,sublist)) in node.iter().enumerate() {
+    for (i, ((num,item),sublst)) in node.items.iter().enumerate() {
       let it = self.paragraph(item);
       if self.html {
         lis = format!("{}<li class=\"mech-ol-list-item\">{}</li>",lis,it);
       } else {
         lis = format!("{}{}. {}\n",lis,i+1,it);
       }
-      match sublist {
-        Some(sublist) => {
-          let sublist_str = self.list(sublist);
+      match sublst {
+        Some(sublst) => {
+          let sublist_str = self.list(sublst);
           lis = format!("{}{}",lis,sublist_str);
         },
         None => {},
       }
     }
     if self.html {
-      format!("<ol class=\"mech-ordered-list\">{}</ol>",lis)
+      format!("<ol start=\"{}\" class=\"mech-ordered-list\">{}</ol>",node.start.to_string(),lis)
     } else {
       lis
     }

@@ -280,12 +280,12 @@ pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
 }
 
 // indented-ordered-list-item := ws, number, ".", +text, new_line*; 
-pub fn ordered_list_item(input: ParseString) -> ParseResult<Paragraph> {
+pub fn ordered_list_item(input: ParseString) -> ParseResult<(Number,Paragraph)> {
   let (input, number) = number(input)?;
   let (input, _) = period(input)?;
   let (input, list_item) = paragraph(input)?;
   let (input, _) = new_line(input)?;
-  Ok((input, (list_item)))
+  Ok((input, (number,list_item)))
 }
 
 // unordered_list := +list_item, ?new_line, *whitespace ;
@@ -393,7 +393,11 @@ pub fn ordered_list(mut input: ParseString, level: usize) -> ParseResult<MDList>
       continue;
     }
   }
-  Ok((input, MDList::Ordered(items)))
+  let start = match items.first() {
+    Some(((number,_), _)) =>number.clone(),
+    None => unreachable!(),
+  };
+  Ok((input, MDList::Ordered(OrderedList{start, items})))
 }
 
 pub fn sublist(input: ParseString, level: usize) -> ParseResult<MDList> {
