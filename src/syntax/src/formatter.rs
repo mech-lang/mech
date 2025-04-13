@@ -338,12 +338,11 @@ impl Formatter {
       SectionElement::Footnote(n) => self.footnote(n),
       SectionElement::Grammar(n) => self.grammar(n),
       SectionElement::MechCode(n) => self.mech_code(n),
-      SectionElement::OrderedList(n) => self.ordered_list(n),
       SectionElement::Paragraph(n) => self.paragraph(n),
       SectionElement::Section(n) => self.section(n),
       SectionElement::Table(n) => self.markdown_table(n),
       SectionElement::ThematicBreak => self.thematic_break(),
-      SectionElement::UnorderedList(n) => self.unordered_list(n),
+      SectionElement::List(n) => self.list(n),
     };
     if self.html {
       format!("<div class=\"mech-section-element\">{}</div>",element)
@@ -607,9 +606,16 @@ impl Formatter {
     }
   }
 
+  pub fn list(&mut self, node: &MDList) -> String {
+    match node {
+      MDList::Ordered(ordered_list) => self.ordered_list(ordered_list),
+      MDList::Unordered(unordered_list) => self.unordered_list(unordered_list),
+    }
+  }
+
   pub fn ordered_list(&mut self, node: &OrderedList) -> String {
     let mut lis = "".to_string();
-    for (i, (item,_)) in node.items.iter().enumerate() {
+    for (i, (item,_)) in node.iter().enumerate() {
       let it = self.paragraph(item);
       if self.html {
         lis = format!("{}<li class=\"mech-list-item\">{}</li>",lis,it);
@@ -626,7 +632,7 @@ impl Formatter {
 
   pub fn unordered_list(&mut self, node: &UnorderedList) -> String {
     let mut lis = "".to_string();
-    for (i, (bullet, item)) in node.items.iter().enumerate() {
+    for (i, (bullet, item)) in node.iter().enumerate() {
       let it = self.paragraph(item);
       match (bullet, self.html) {
         (Some(bullet_tok),true) => lis = format!("{}<li data-bullet=\"{}\" class=\"mech-list-item-emoji\">{}</li>",lis,bullet_tok.to_string(),it),

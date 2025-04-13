@@ -289,7 +289,7 @@ pub fn ordered_list_item(input: ParseString) -> ParseResult<Paragraph> {
 }
 
 //orderd-list := +ordered-list-item, ?new-line, *whitespace ;
-pub fn ordered_list(mut input: ParseString, level: usize) -> ParseResult<OrderedList> {
+pub fn ordered_list(mut input: ParseString, level: usize) -> ParseResult<MDList> {
   let mut items = vec![];
   let mut i = 0;
   loop {
@@ -339,15 +339,27 @@ pub fn ordered_list(mut input: ParseString, level: usize) -> ParseResult<Ordered
       continue;
     }
   }
-  Ok((input, OrderedList { items }))
+  Ok((input, MDList::Ordered(items)))
+}
+
+// mechdown-list := ordered-list | unordered-list ;
+pub fn mechdown_list(input: ParseString) -> ParseResult<MDList> {
+  let (input, list) = match ordered_list(input.clone(), 0) {
+    Ok((input, list)) => (input, list),
+    _ => match unordered_list(input.clone()) {
+      Ok((input, list)) => (input, list),
+      Err(err) => { return Err(err); }
+    }
+  };
+  Ok((input, list))
 }
 
 // unordered_list := +list_item, ?new_line, *whitespace ;
-pub fn unordered_list(input: ParseString) -> ParseResult<UnorderedList> {
+pub fn unordered_list(input: ParseString) -> ParseResult<MDList> {
   let (input, items) = many1(list_item)(input)?;
   let (input, _) = opt(new_line)(input)?;
   let (input, _) = whitespace0(input)?;
-  Ok((input,  UnorderedList{items}))
+  Ok((input,  MDList::Unordered(items)))
 }
 
 // list_item := dash, <space+>, <paragraph>, new_line* ;
@@ -484,26 +496,23 @@ pub fn blank_line(input: ParseString) -> ParseResult<Vec<Token>> {
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match many1(mech_code)(input.clone()) {
     Ok((input, code)) => (input, SectionElement::MechCode(code)),
-    _ =>match ordered_list(input.clone(), 0) {
-      Ok((input, list)) => (input, SectionElement::OrderedList(list)),
-      _ => match unordered_list(input.clone()) {
-        Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
-        _ => match footnote(input.clone()) {
-          Ok((input, ftnote)) => (input, SectionElement::Footnote(ftnote)),
-          _ => match markdown_table(input.clone()) {
-            Ok((input, table)) => (input, SectionElement::Table(table)),
-            _ => match block_quote(input.clone()) {   
-              Ok((input, quote)) => (input, SectionElement::BlockQuote(quote)),
-              _ => match code_block(input.clone()) {
-                Ok((input, m)) => (input,m),
-                _ => match thematic_break(input.clone()) {
-                  Ok((input, _)) => (input, SectionElement::ThematicBreak),
-                  _ => match sub_section(input.clone()) {
-                    Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
-                    _ => match paragraph(input) {
-                      Ok((input, p)) => (input, SectionElement::Paragraph(p)),
-                      Err(err) => { return Err(err); }
-                    }
+    _ =>match mechdown_list(input.clone()) {
+      Ok((input, lst)) => (input, SectionElement::List(lst)),
+      _ => match footnote(input.clone()) {
+        Ok((input, ftnote)) => (input, SectionElement::Footnote(ftnote)),
+        _ => match markdown_table(input.clone()) {
+          Ok((input, table)) => (input, SectionElement::Table(table)),
+          _ => match block_quote(input.clone()) {   
+            Ok((input, quote)) => (input, SectionElement::BlockQuote(quote)),
+            _ => match code_block(input.clone()) {
+              Ok((input, m)) => (input,m),
+              _ => match thematic_break(input.clone()) {
+                Ok((input, _)) => (input, SectionElement::ThematicBreak),
+                _ => match sub_section(input.clone()) {
+                  Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
+                  _ => match paragraph(input) {
+                    Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+                    Err(err) => { return Err(err); }
                   }
                 }
               }
@@ -521,8 +530,8 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
 pub fn sub_section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match many1(mech_code)(input.clone()) {
     Ok((input, code)) => (input, SectionElement::MechCode(code)),
-    _ => match unordered_list(input.clone()) {
-      Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
+    _ => match mechdown_list(input.clone()) {
+      Ok((input, list)) => (input, SectionElement::List(list)),
       _ => match markdown_table(input.clone()) {
         Ok((input, table)) => (input, SectionElement::Table(table)),
         _ => match block_quote(input.clone()) {   

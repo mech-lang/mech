@@ -426,12 +426,11 @@ pub enum SectionElement {
   Footnote(Footnote),
   Grammar(Grammar),
   MechCode(Vec<MechCode>),
-  OrderedList(OrderedList),
+  List(MDList),
   Paragraph(Paragraph),
   Section(Box<Section>),
   Table(MarkdownTable),
   ThematicBreak,
-  UnorderedList(UnorderedList),
 }
 
 impl SectionElement {
@@ -456,27 +455,19 @@ pub struct Image {
 }
 
 impl Image {
-
   pub fn to_string(&self) -> String {
     format!("![{}]({})", self.caption.as_ref().unwrap_or(&Token::default()).to_string(), self.src.to_string())
   }
-
 }
 
+
+pub type UnorderedList = Vec<(Option<Token>,Paragraph)>;
+pub type OrderedList = Vec<(Paragraph,Option<MDList>)>;
+
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
-pub enum List {
+pub enum MDList {
   Unordered(UnorderedList),
   Ordered(OrderedList),
-}
-
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
-pub struct UnorderedList {
-  pub items: Vec<(Option<Token>,Paragraph)>,
-}
-
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
-pub struct OrderedList {
-  pub items: Vec<(Paragraph,Option<OrderedList>)>,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]

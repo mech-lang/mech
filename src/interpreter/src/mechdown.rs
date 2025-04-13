@@ -73,12 +73,11 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
         }
       }
     },
-    SectionElement::UnorderedList(x) => x.hash(&mut hasher),
     SectionElement::Grammar(x) => x.hash(&mut hasher),
     SectionElement::Table(x) => x.hash(&mut hasher),
     SectionElement::BlockQuote(x) => x.hash(&mut hasher),
     SectionElement::ThematicBreak => {return Ok(Value::Empty);}
-    SectionElement::OrderedList(x) => x.hash(&mut hasher),
+    SectionElement::List(x) => x.hash(&mut hasher),
   };
   let hash = hasher.finish();
   Ok(Value::Id(hash))
