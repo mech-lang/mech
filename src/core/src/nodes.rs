@@ -463,16 +463,20 @@ impl Image {
 
 }
 
-pub type ListItem = Paragraph;
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub enum List {
+  Unordered(UnorderedList),
+  Ordered(OrderedList),
+}
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct UnorderedList {
-  pub items: Vec<(Option<Token>,ListItem)>,
+  pub items: Vec<(Option<Token>,Paragraph)>,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct OrderedList {
-  pub items: Vec<(Option<Token>,ListItem)>,
+  pub items: Vec<(Paragraph,Option<OrderedList>)>,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
