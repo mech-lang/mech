@@ -357,7 +357,7 @@ h4:before{
 
 
 .mech-grammar-terminal {
-    color: #ef5f90;
+    color: #ee6262;
 }
 
 
@@ -676,84 +676,45 @@ code {
 }
 
 .mech-comment {
-    color: #ef5f90;
+    color: #ee6262;
     font-style: italic;
     padding-top: 20px;
 }
 
 .mech-string {
-    color: #ef5f90;
+    color: #ee6262;
 }
 
-.mech-unordered-list {
+ol {
+    color: #ee6262;
 }
 
-.mech-figure {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin: 40px auto;
+.mech-list-item-emoji {
+    list-style-type: none;
+    color: #ee6262;
 }
 
-.mech-image {
-    max-width: 120%;
-}
-
-.mech-figure-caption {
-    margin-top: 1em;
-    color: #ada594;
-    font-size: 12pt;
-    text-align: left;;
-    line-height: 1.4;
-    font-style: italic;
-    padding: 1em;
-}
-  
-.mech-list-item::before {
-    content: "•";
-    position: relative;         
-    font-size: 1.2rem;          
-    color: #ef5f90;;    
-    right: 20px;
-    top: 18px;
-    font-weight: bold;
-    font-size: 18pt;
-}
-
-.mech-list-item {
+.mech-list-item-emoji {
     line-height: 0px;
-    color: #ef5f90;
-    padding-left: 20px;
+    color: #ee6262;
 }
 
 .mech-list-item-emoji::before {
     content: attr(data-bullet); 
     position: relative;         
-    font-size: 1.2rem;          
-    color: #ef5f90;;    
-    right: 35px;
-    top: 17px;
+    font-size: 12pt;          
+    color: #ee6262;;    
+    right: 30px;
+    top: 13px;
 }
 
-.mech-list-item-emoji {
-    line-height: 0px;
-    color: #ef5f90;
-    padding-left: 30px;
+li {
+    padding-left: 5px;
 }
-
-ul {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;   
-}
-
-
 
 li p {
-    margin: 0px;
-    padding: 0px;
-    margin-top: 5px;
-    margin-bottom: 5px;
+    margin-top: 2px;
+    margin-bottom: 2px;
 }
 
 .mech-table-header {
