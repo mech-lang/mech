@@ -460,8 +460,7 @@ impl Image {
   }
 }
 
-
-pub type UnorderedList = Vec<(Option<Token>,Paragraph)>;
+pub type UnorderedList = Vec<((Option<Token>,Paragraph),Option<MDList>)>;
 pub type OrderedList = Vec<(Paragraph,Option<MDList>)>;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
