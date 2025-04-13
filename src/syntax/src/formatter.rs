@@ -615,12 +615,19 @@ impl Formatter {
 
   pub fn ordered_list(&mut self, node: &OrderedList) -> String {
     let mut lis = "".to_string();
-    for (i, (item,_)) in node.iter().enumerate() {
+    for (i, (item,sublist)) in node.iter().enumerate() {
       let it = self.paragraph(item);
       if self.html {
-        lis = format!("{}<li class=\"mech-list-item\">{}</li>",lis,it);
+        lis = format!("{}<li class=\"mech-ol-list-item\">{}</li>",lis,it);
       } else {
         lis = format!("{}{}. {}\n",lis,i+1,it);
+      }
+      match sublist {
+        Some(sublist) => {
+          let sublist_str = self.list(sublist);
+          lis = format!("{}{}",lis,sublist_str);
+        },
+        None => {},
       }
     }
     if self.html {
@@ -636,8 +643,15 @@ impl Formatter {
       let it = self.paragraph(item);
       match (bullet, self.html) {
         (Some(bullet_tok),true) => lis = format!("{}<li data-bullet=\"{}\" class=\"mech-list-item-emoji\">{}</li>",lis,bullet_tok.to_string(),it),
-        (None,true) => lis = format!("{}<li class=\"mech-list-item\">{}</li>",lis,it),
+        (None,true) => lis = format!("{}<li class=\"mech-ul-list-item\">{}</li>",lis,it),
         (_,false) => lis = format!("{}* {}\n",lis,it),
+      }
+      match sublist {
+        Some(sublist) => {
+          let sublist_str = self.list(sublist);
+          lis = format!("{}{}",lis,sublist_str);
+        },
+        None => {},
       }
     }
     if self.html {
