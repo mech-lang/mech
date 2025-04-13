@@ -694,6 +694,48 @@ ol {
     color: #ee6262;
 }
 
+
+.mech-check-list {
+    list-style: none;
+    padding-left: 9px;
+    margin-top: 0.5em;
+}
+
+.mech-check-list-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5em;
+    margin: 0;
+    color: #dcd4c9;
+}
+
+.mech-check-list-item input[type="checkbox"] {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 3px;
+    border: 2px solid #777;
+    border-radius: 3px;
+    background-color: #171D21;
+    cursor: pointer;
+    position: relative;
+}
+
+.mech-check-list-item input[type="checkbox"]:checked {
+    background-color: #ee6262;
+    border-color: #c65353;
+}
+
+.mech-check-list-item input[type="checkbox"]:checked::after {
+    content: "✓";
+    color: #fff;
+    position: absolute;
+    top: 0px;
+    left: px;
+    font-size: 12px;
+    line-height: 1;
+}
+
 .mech-list-item-emoji {
     list-style-type: none;
     color: #ee6262;
@@ -878,23 +920,23 @@ li p {
     margin-top: 1em;
     font-size: 0.9em;
     color: #ada594;
-  }
-  
-  .mech-footnote-id {
+}
+
+.mech-footnote-id {
     color: #ee6262;
     font-weight: bold;
     min-width: 2em;
     text-align: right;
     font-family: monospace;
-  }
-  
-  .mech-footnote .mech-paragraph {
+}
+
+.mech-footnote .mech-paragraph {
     margin: 0;
     line-height: 1.6;
     color: #f2ead9;
-  }
+}
 
-  .mech-footnote-reference {
+.mech-footnote-reference {
     font-size: 0.7em;
     vertical-align: super;
     text-decoration: none;
@@ -902,65 +944,24 @@ li p {
     color: #ee6262;
     cursor: pointer;
     transition: color 0.2s;
-  }
-  
-  .mech-footnote-reference:hover {
+}
+
+.mech-footnote-reference:hover {
     color: #f28b82;
     text-decoration: underline;
-  }
-  
-  .mech-abstract {
+}
+
+.mech-abstract {
     background-color: #1f252a;
     border: 1px solid #F3B62D;
     padding: 2em 2em;
     margin: 2em 2em;
     border-radius: 8px;
     color: #dcd4c9;
-  }
+}
 
-  .mech-abstract p {
+.mech-abstract p {
     line-height: 25pt;
     margin: 0px;
     text-align: justify;
-  }
-
-  .mech-check-list {
-    list-style: none;
-    padding-left: 1.5em;
-    margin-top: 0.5em;
-  }
-  
-  .mech-check-list-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5em;
-    margin: 0.4em 0;
-    color: #dcd4c9;
-  }
-  
-  .mech-check-list-item input[type="checkbox"] {
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    margin-top: 3px;
-    border: 2px solid #777;
-    border-radius: 3px;
-    background-color: #171D21;
-    cursor: pointer;
-    position: relative;
-  }
-  
-  .mech-check-list-item input[type="checkbox"]:checked {
-    background-color: #ee6262;
-    border-color: #c65353;
-  }
-  
-  .mech-check-list-item input[type="checkbox"]:checked::after {
-    content: "✓";
-    color: #fff;
-    position: absolute;
-    top: 0px;
-    left: 2px;
-    font-size: 12px;
-    line-height: 1;
-  }
+}
