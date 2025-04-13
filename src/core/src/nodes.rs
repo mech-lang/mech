@@ -462,6 +462,7 @@ impl Image {
 }
 
 pub type UnorderedList = Vec<((Option<Token>,Paragraph),Option<MDList>)>;
+pub type CheckList = Vec<((bool,Paragraph),Option<MDList>)>;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct OrderedList {
@@ -473,6 +474,7 @@ pub struct OrderedList {
 pub enum MDList {
   Unordered(UnorderedList),
   Ordered(OrderedList),
+  Check(CheckList)
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]

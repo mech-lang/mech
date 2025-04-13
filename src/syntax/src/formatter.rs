@@ -620,21 +620,46 @@ impl Formatter {
     match node {
       MDList::Ordered(ordered_list) => self.ordered_list(ordered_list),
       MDList::Unordered(unordered_list) => self.unordered_list(unordered_list),
+      MDList::Check(check_list) => self.check_list(check_list),
+    }
+  }
+
+  pub fn check_list(&mut self, node: &CheckList) -> String {
+    let mut lis = "".to_string();
+    for (i, ((checked, item), sublist)) in node.iter().enumerate() {
+      let it = self.paragraph(item);
+      if self.html {
+        lis = format!("{}<li class=\"mech-check-list-item\"><input type=\"checkbox\" {}>{}</li>", lis, if *checked { "checked" } else { "" }, it);
+      } else {
+        lis = format!("{}* [{}] {}\n", lis, if *checked { "x" } else { " " }, it);
+      }
+      match sublist {
+        Some(sublist) => {
+          let sublist_str = self.list(sublist);
+          lis = format!("{}{}", lis, sublist_str);
+        },
+        None => {},
+      }
+    }
+    if self.html {
+      format!("<ul class=\"mech-check-list\">{}</ul>", lis)
+    } else {
+      lis
     }
   }
 
   pub fn ordered_list(&mut self, node: &OrderedList) -> String {
     let mut lis = "".to_string();
-    for (i, ((num,item),sublst)) in node.items.iter().enumerate() {
+    for (i, ((num,item),sublist)) in node.items.iter().enumerate() {
       let it = self.paragraph(item);
       if self.html {
         lis = format!("{}<li class=\"mech-ol-list-item\">{}</li>",lis,it);
       } else {
         lis = format!("{}{}. {}\n",lis,i+1,it);
       }
-      match sublst {
-        Some(sublst) => {
-          let sublist_str = self.list(sublst);
+      match sublist {
+        Some(sublist) => {
+          let sublist_str = self.list(sublist);
           lis = format!("{}{}",lis,sublist_str);
         },
         None => {},
