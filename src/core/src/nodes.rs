@@ -85,7 +85,7 @@ pub fn merge_src_range(r1: SourceRange, r2: SourceRange) -> SourceRange {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TokenKind {
-  Alpha, Ampersand, Any, Apostrophe, AssignOperator, Asterisk, AsyncTransitionOperator, At,
+  AbstractPrefix, Alpha, Ampersand, Any, Apostrophe, AssignOperator, Asterisk, AsyncTransitionOperator, At,
   Backslash, Bar, BoxDrawing,
   Caret, CarriageReturn, CarriageReturnNewLine, Colon, CodeBlock, Comma,
   Dash, DefineOperator, Digit, Dollar,
@@ -419,6 +419,7 @@ pub type Footnote = (Token, Paragraph);
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SectionElement {
+  Abstract(Paragraph),
   BlockQuote(Paragraph),
   CodeBlock(Token),
   Comment(Comment),

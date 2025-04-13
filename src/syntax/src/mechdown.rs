@@ -548,6 +548,13 @@ pub fn blank_line(input: ParseString) -> ParseResult<Vec<Token>> {
   Ok((input, st))
 }
 
+pub fn abstract_el(input: ParseString) -> ParseResult<Paragraph> {
+  let (input, _) = abstract_prefix(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, text) = paragraph(input)?;
+  Ok((input, text))
+}
+
 
 // section_element := mech_code | unordered_list | comment | paragraph | code_block | sub_section;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
@@ -557,19 +564,22 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
       Ok((input, lst)) => (input, SectionElement::List(lst)),
       _ => match footnote(input.clone()) {
         Ok((input, ftnote)) => (input, SectionElement::Footnote(ftnote)),
-        _ => match markdown_table(input.clone()) {
-          Ok((input, table)) => (input, SectionElement::Table(table)),
-          _ => match block_quote(input.clone()) {   
-            Ok((input, quote)) => (input, SectionElement::BlockQuote(quote)),
-            _ => match code_block(input.clone()) {
-              Ok((input, m)) => (input,m),
-              _ => match thematic_break(input.clone()) {
-                Ok((input, _)) => (input, SectionElement::ThematicBreak),
-                _ => match sub_section(input.clone()) {
-                  Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
-                  _ => match paragraph(input) {
-                    Ok((input, p)) => (input, SectionElement::Paragraph(p)),
-                    Err(err) => { return Err(err); }
+        _ => match abstract_el(input.clone()) {
+          Ok((input, abstrct)) => (input, SectionElement::Abstract(abstrct)),
+          _ => match markdown_table(input.clone()) {
+            Ok((input, table)) => (input, SectionElement::Table(table)),
+            _ => match block_quote(input.clone()) {   
+              Ok((input, quote)) => (input, SectionElement::BlockQuote(quote)),
+              _ => match code_block(input.clone()) {
+                Ok((input, m)) => (input,m),
+                _ => match thematic_break(input.clone()) {
+                  Ok((input, _)) => (input, SectionElement::ThematicBreak),
+                  _ => match sub_section(input.clone()) {
+                    Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
+                    _ => match paragraph(input) {
+                      Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+                      Err(err) => { return Err(err); }
+                    }
                   }
                 }
               }

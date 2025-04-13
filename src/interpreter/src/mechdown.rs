@@ -24,6 +24,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
   let mut hasher = DefaultHasher::new();
   let mut out = Value::Empty; 
   match element {
+    SectionElement::Abstract(x) => x.hash(&mut hasher),
     SectionElement::MechCode(code) => {
       for c in code {
         out = mech_code(&c, p)?;

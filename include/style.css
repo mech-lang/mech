@@ -909,3 +909,17 @@ li p {
     text-decoration: underline;
   }
   
+  .mech-abstract {
+    background-color: #1f252a;
+    border: 1px solid #F3B62D;
+    padding: 2em 2em;
+    margin: 2em 2em;
+    border-radius: 8px;
+    color: #dcd4c9;
+  }
+
+  .mech-abstract p {
+    line-height: 25pt;
+    margin: 0px;
+    text-align: justify;
+  }

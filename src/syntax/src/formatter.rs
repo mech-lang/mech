@@ -123,7 +123,7 @@ impl Formatter {
       let s = self.section(section);
       src = format!("{}{}", src, s);
     }
-    format!("<div class=\"mech-toc-sections\">{}</div>",src)
+    format!("<section class=\"mech-toc-sections\">{}</section>",src)
   }
 
   pub fn program(&mut self, node: &Program) -> String {
@@ -329,8 +329,18 @@ impl Formatter {
     }
   }
 
+  pub fn abstract_el(&mut self, node: &Paragraph) -> String {
+    let abstract_paragraph = self.paragraph(node);
+    if self.html {
+      format!("<div id=\"abstract\" class=\"mech-abstract\">{}</div>",abstract_paragraph)
+    } else {
+      format!("{}\n",abstract_paragraph)
+    }
+  }
+
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     let element = match node {
+      SectionElement::Abstract(n) => self.abstract_el(n),
       SectionElement::BlockQuote(n) => self.block_quote(n),
       SectionElement::CodeBlock(n) => self.code_block(n),
       SectionElement::Comment(n) => self.comment(n),
