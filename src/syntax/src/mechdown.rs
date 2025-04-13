@@ -11,7 +11,7 @@ use nom::{
   sequence::tuple as nom_tuple,
   combinator::{opt, eof, peek},
   multi::{many1, many_till, many0, separated_list1,separated_list0},
-  bytes::complete::take_until,
+  bytes::complete::{take_until, take_while},
   Err,
   Err::Failure
 };
@@ -279,6 +279,69 @@ pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
   Ok((input, Paragraph{elements}))
 }
 
+// indented-ordered-list-item := ws, number, ".", +text, new_line*; 
+pub fn ordered_list_item(input: ParseString) -> ParseResult<Paragraph> {
+  let (input, number) = number(input)?;
+  let (input, _) = period(input)?;
+  let (input, list_item) = paragraph(input)?;
+  let (input, _) = new_line(input)?;
+  Ok((input, (list_item)))
+}
+
+//orderd-list := +ordered-list-item, ?new-line, *whitespace ;
+pub fn ordered_list(mut input: ParseString, level: usize) -> ParseResult<OrderedList> {
+  let mut items = vec![];
+  let mut i = 0;
+  loop {
+    let mut indent = 0;
+    let mut current = input.peek(indent);
+    while current == Some(" ") || current == Some("\t") {
+      current = input.peek(indent);
+      indent += 1;
+    }  
+    // If we are at list level, parse a list item
+    let (next_input, _) = many0(space_tab)(input)?;
+    let (next_input, list_item) = match ordered_list_item(next_input.clone()) {
+      Ok((next_input, list_item)) => (next_input, list_item),
+      Err(err) => {
+        if items.len() != 0 {
+          input = next_input.clone();
+          break;
+        } else {
+          return Err(err);
+        }
+      }
+    };
+    // The current input should be either a number or a space.
+    // If it's a number, we are at the margin, and so we can continue.
+    // If it's a space, we need to see if we are at the right level, of if maybe there is a sublist.
+    let mut indent = 0;
+    let mut current = next_input.peek(indent);
+    while current == Some(" ") || current == Some("\t") {
+      current = next_input.peek(indent);
+      indent += 1;
+    }
+    input = next_input;
+    // if the indent of the next line is less than the level, we are done with the list.
+    if indent < level {
+      items.push((list_item, None));
+      break;
+    // if the indent is the same level, then we continue the list and parse the next line
+    } else if indent == level {
+      items.push((list_item, None));
+      continue;
+    // if the indent is greater, we are going to parse a sublist
+    } else if indent > level {
+      // We are in a nested list, so we need to parse the nested list
+      let (next_input, list) = ordered_list(input.clone(), indent)?;
+      items.push((list_item, Some(list)));
+      input = next_input;
+      continue;
+    }
+  }
+  Ok((input, OrderedList { items }))
+}
+
 // unordered_list := +list_item, ?new_line, *whitespace ;
 pub fn unordered_list(input: ParseString) -> ParseResult<UnorderedList> {
   let (input, items) = many1(list_item)(input)?;
@@ -409,27 +472,38 @@ pub fn footnote(input: ParseString) -> ParseResult<Footnote> {
   Ok((input, footnote))
 }
 
+pub fn blank_line(input: ParseString) -> ParseResult<Vec<Token>> {
+  let (input, mut st) = many0(space_tab)(input)?;
+  let (input, n) = new_line(input)?;
+  st.push(n);
+  Ok((input, st))
+}
+
+
 // section_element := mech_code | unordered_list | comment | paragraph | code_block | sub_section;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match many1(mech_code)(input.clone()) {
     Ok((input, code)) => (input, SectionElement::MechCode(code)),
-    _ => match unordered_list(input.clone()) {
-      Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
-      _ => match footnote(input.clone()) {
-        Ok((input, ftnote)) => (input, SectionElement::Footnote(ftnote)),
-        _ => match markdown_table(input.clone()) {
-          Ok((input, table)) => (input, SectionElement::Table(table)),
-          _ => match block_quote(input.clone()) {   
-            Ok((input, quote)) => (input, SectionElement::BlockQuote(quote)),
-            _ => match code_block(input.clone()) {
-              Ok((input, m)) => (input,m),
-              _ => match thematic_break(input.clone()) {
-                Ok((input, _)) => (input, SectionElement::ThematicBreak),
-                _ => match sub_section(input.clone()) {
-                  Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
-                  _ => match paragraph(input) {
-                    Ok((input, p)) => (input, SectionElement::Paragraph(p)),
-                    Err(err) => { return Err(err); }
+    _ =>match ordered_list(input.clone(), 0) {
+      Ok((input, list)) => (input, SectionElement::OrderedList(list)),
+      _ => match unordered_list(input.clone()) {
+        Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
+        _ => match footnote(input.clone()) {
+          Ok((input, ftnote)) => (input, SectionElement::Footnote(ftnote)),
+          _ => match markdown_table(input.clone()) {
+            Ok((input, table)) => (input, SectionElement::Table(table)),
+            _ => match block_quote(input.clone()) {   
+              Ok((input, quote)) => (input, SectionElement::BlockQuote(quote)),
+              _ => match code_block(input.clone()) {
+                Ok((input, m)) => (input,m),
+                _ => match thematic_break(input.clone()) {
+                  Ok((input, _)) => (input, SectionElement::ThematicBreak),
+                  _ => match sub_section(input.clone()) {
+                    Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
+                    _ => match paragraph(input) {
+                      Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+                      Err(err) => { return Err(err); }
+                    }
                   }
                 }
               }
@@ -439,7 +513,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
       }
     }
   };
-  let (input, _) = whitespace0(input)?;
+  let (input, _) = many0(blank_line)(input)?;
   Ok((input, section_element))
 }
 

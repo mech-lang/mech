@@ -331,19 +331,19 @@ impl Formatter {
 
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     let element = match node {
-      SectionElement::Section(n) => self.section(n),
-      SectionElement::Comment(n) => self.comment(n),
-      SectionElement::Paragraph(n) => self.paragraph(n),
-      SectionElement::MechCode(n) => self.mech_code(n),
-      SectionElement::FencedMechCode((n,s)) => self.fenced_mech_code(n,s),
-      SectionElement::UnorderedList(n) => self.unordered_list(n),
-      SectionElement::CodeBlock(n) => self.code_block(n),
-      SectionElement::Grammar(n) => self.grammar(n),
-      SectionElement::Footnote(n) => self.footnote(n),
-      SectionElement::Table(n) => self.markdown_table(n),
       SectionElement::BlockQuote(n) => self.block_quote(n),
+      SectionElement::CodeBlock(n) => self.code_block(n),
+      SectionElement::Comment(n) => self.comment(n),
+      SectionElement::FencedMechCode((n,s)) => self.fenced_mech_code(n,s),
+      SectionElement::Footnote(n) => self.footnote(n),
+      SectionElement::Grammar(n) => self.grammar(n),
+      SectionElement::MechCode(n) => self.mech_code(n),
+      SectionElement::OrderedList(n) => self.ordered_list(n),
+      SectionElement::Paragraph(n) => self.paragraph(n),
+      SectionElement::Section(n) => self.section(n),
+      SectionElement::Table(n) => self.markdown_table(n),
       SectionElement::ThematicBreak => self.thematic_break(),
-      SectionElement::OrderedList => todo!(),
+      SectionElement::UnorderedList(n) => self.unordered_list(n),
     };
     if self.html {
       format!("<div class=\"mech-section-element\">{}</div>",element)
@@ -604,6 +604,23 @@ impl Formatter {
       format!("<div class=\"mech-comment\">-- {}</div>",node.text.to_string())
     } else {
       format!("{}\n",node.text.to_string())
+    }
+  }
+
+  pub fn ordered_list(&mut self, node: &OrderedList) -> String {
+    let mut lis = "".to_string();
+    for (i, (item,_)) in node.items.iter().enumerate() {
+      let it = self.paragraph(item);
+      if self.html {
+        lis = format!("{}<li class=\"mech-list-item\">{}</li>",lis,it);
+      } else {
+        lis = format!("{}{}. {}\n",lis,i+1,it);
+      }
+    }
+    if self.html {
+      format!("<ol class=\"mech-ordered-list\">{}</ol>",lis)
+    } else {
+      lis
     }
   }
 
