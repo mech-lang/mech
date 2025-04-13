@@ -676,7 +676,7 @@ code {
 }
 
 .mech-comment {
-    color: #ee6262;
+    color: #ef5f90;;
     font-style: italic;
     padding-top: 20px;
 }
@@ -706,6 +706,27 @@ ol {
     color: #ee6262;;    
     right: 30px;
     top: 13px;
+}
+
+.mech-figure {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 40px auto;
+}
+
+.mech-image {
+    max-width: 120%;
+}
+
+.mech-figure-caption {
+    margin-top: 1em;
+    color: #ada594;
+    font-size: 12pt;
+    text-align: left;;
+    line-height: 1.4;
+    font-style: italic;
+    padding: 1em;
 }
 
 li {
