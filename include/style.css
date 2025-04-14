@@ -222,6 +222,7 @@ h2:before{
 
 h3:before{
     counter-increment: sub-section;
+    counter-reset: sub-sub-section;
     color: #F3B62D;
     content: counter(section) "." counter(sub-section) " ";
 }
@@ -242,10 +243,10 @@ h3:before{
 }
 
 h4:before {
-    counter-increment: h4-section;
+    counter-increment: sub-sub-section;
     color: #F3B62D;
     font-weight: bold;
-    content: counter(section) "." counter(sub-section) "." counter(h4-section) " ";
+    content: counter(section) "." counter(sub-section) "." counter(sub-sub-section) " ";
 }
 
 .mech-program h4 a {
