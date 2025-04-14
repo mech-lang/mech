@@ -4,8 +4,13 @@ html {
     scroll-behavior: smooth;
 }
 
-.mech-program{counter-reset: section}
-.mech-toc{counter-reset: section}
+.mech-program {
+    counter-reset: section;
+    margin: auto;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    width: 700px;
+}
 
 body {
     font-family: 'Roboto', sans-serif;
@@ -16,31 +21,40 @@ body {
 }
 
 .mech-root {
+    width: 100%;
     display: flex;
     flex-direction: row;
 }
 
-.mech-output {
+#mech-output {
+    max-width: 700px;
+    min-width: 250px;
     background-color: #171D21;
     color: #f2ead9;
-    padding: 20px;
-    margin: 20px;
     border-radius: 10px;
-    flex-grow: 1;
-    overflow-y: auto;
 }
 
 .mech-toc {
+    width: 250px;
+    min-width: 250px;
+    counter-reset: section;
     background-color: #171D21;
     color: #f2ead9;
     overflow-y: auto;
     margin-right: 20px;
     padding-right: 15px;
-    width: 250px;
     padding-left: 10px;
     position: sticky; 
     top: 0; 
     height: 100vh;
+}
+
+.mech-toc h2 {
+    line-height: 23px;
+}
+
+.mech-toc h3 {
+    line-height: 23px;
 }
 
 .mech-toc::-webkit-scrollbar {
@@ -76,42 +90,47 @@ body {
     padding-left: 15px;
 }
 
+h2.toc::before {
+    padding-right: 5px;
+}
+
+h3.toc::before {
+    font-size: 12pt;
+    padding-right: 5px;
+    color: rgba(255, 255, 255, 0.55);
+}
+
 .mech-toc h2 a {
     color: #f2ead9;
     text-decoration: none;
 }
 
+.mech-toc h2:hover::before {
+    color: #ee6262;
+}
+
 .mech-toc h2 a:hover {
-    color: #ffd139;
-    text-decoration: none;
-}
-
-.mech-toc h4 {
-    font-size: 12pt;
-    padding-left: 30px;
-    font-weight: normal;
-}
-
-.mech-toc h4 a {
-    color: #f2ead9;
-    text-decoration: none;
-}
-
-.mech-toc h4 a:hover {
     color: #ee6262;
     text-decoration: none;
 }
 
-
-.mech-program {
-    margin: auto;
-    margin-top: 20px;
-    margin-bottom: 20px;
-    width: 690px;
+.mech-toc h3 {
+    font-size: 12pt;
+    padding-left: 30px;
 }
 
-.mech-output {
-    flex-grow: 1;
+.mech-toc h3 a {
+    color: #f2ead9;
+    text-decoration: none;
+}
+
+.mech-toc h3:hover::before {
+    color: #ee6262;
+}
+
+.mech-toc h3 a:hover {
+    color: #ee6262;
+    text-decoration: none;
 }
 
 .mech-matrix {
@@ -168,29 +187,18 @@ h2:before{
     content: counter(section) " ";
 }
 
-h4:before{
-    counter-increment: sub-section;
-    color: #ee6262;
-    content: counter(section) "." counter(sub-section) " ";
-}
-
 .mech-program .mech-program-title {
+    width: 900px;
     font-family: 'FiraCodeRegular', monospace;
+    padding-bottom: 10px;
+    border-bottom: 4px dashed #d19710;
     color: #f2ead9;
     letter-spacing: 2px;
     font-size: 22pt;
     font-weight: bold;
     text-align: center;
     margin-bottom: 16px;
-}
-.mech-program .mech-program-title::after {
-    letter-spacing: 0px;
-    content: "==============================================================================";
-    color: #F3B62D; 
-    font-size: 12pt; 
-    display: block;
-    text-align: left; 
-    margin-top: 5px; 
+    margin-left: -100px;
 }
 
 .mech-program h2 a {
@@ -199,23 +207,23 @@ h4:before{
 }
 
 .mech-program h2 {
+    width: 850px;
     font-family: 'FiraCodeRegular', monospace;
+    padding-bottom: 10px;
+    border-bottom: 3px dashed #d19710;
     color: #f2ead9;
     font-size: 16pt;
     font-weight: bold;
     letter-spacing: 2px;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
     margin-top: 50px;
-    margin-left: -50px;
+    margin-left: -75px;
 }
-.mech-program h2::after {
-    content: "------------------------------------------------------------------------------------";
-    letter-spacing: 0px;
-    color: #F3B62D; 
-    font-size: 12pt; 
-    display: block;
-    text-align: left; 
-    margin-top: 5px; 
+
+h3:before{
+    counter-increment: sub-section;
+    color: #F3B62D;
+    content: counter(section) "." counter(sub-section) " ";
 }
 
 .mech-program h3 a {
@@ -230,6 +238,14 @@ h4:before{
     font-weight: bold;
     margin-bottom: 10px;
     letter-spacing: 1px;
+    margin-left: -48px;
+}
+
+h4:before {
+    counter-increment: h4-section;
+    color: #F3B62D;
+    font-weight: bold;
+    content: counter(section) "." counter(sub-section) "." counter(h4-section) " ";
 }
 
 .mech-program h4 a {
@@ -240,10 +256,28 @@ h4:before{
 .mech-program h4 {
     font-family: 'FiraCodeRegular', monospace;
     color: #f2ead9;
-    font-size: 14pt;
+    font-size: 12pt;
     font-weight: bold;
     margin-bottom: 10px;
     letter-spacing: 1px;
+}
+
+.mech-program h4 a {
+    color: #f2ead9;
+    text-decoration: none;
+}
+
+.mech-program h4 {
+    font-family: 'FiraCodeRegular', monospace;
+    color: #f2ead9;
+    font-size: 12pt;
+    font-weight: bold;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+h4.toc {
+    display: none;
 }
 
 .mech-variable-mutable {
@@ -687,11 +721,13 @@ code {
 
 
 ul {
-    color: #ee6262;
+    color: #F3B62D;
+    font-weight: bold;
 }
 
 ol {
-    color: #ee6262;
+    color: #F3B62D;
+    font-weight: bold;
 }
 
 
@@ -722,16 +758,16 @@ ol {
 }
 
 .mech-check-list-item input[type="checkbox"]:checked {
-    background-color: #ee6262;
-    border-color: #c65353;
+    background-color: #171D21;
+    border-color: #F3B62D;
 }
 
 .mech-check-list-item input[type="checkbox"]:checked::after {
     content: "✓";
-    color: #fff;
+    color: #F3B62D;
     position: absolute;
     top: 0px;
-    left: px;
+    left: 1px;
     font-size: 12px;
     line-height: 1;
 }
@@ -766,9 +802,14 @@ ol {
     max-width: 120%;
 }
 
+.mech-figure-label {
+    color: #F3B62D; 
+    font-size: 12pt;
+}
+
 .mech-figure-caption {
     margin-top: 1em;
-    color: #ada594;
+    color: #eadec2;
     font-size: 12pt;
     text-align: left;;
     line-height: 1.4;
@@ -783,6 +824,7 @@ li {
 li p {
     margin-top: 2px;
     margin-bottom: 2px;
+    font-weight: normal;
 }
 
 .mech-table-header {
@@ -845,7 +887,7 @@ li p {
 .mech-block-quote {
     width: 80%;
     background-color: #232A30; 
-    border-left: 5px solid #ee6262; 
+    border-left: 4px solid #F3B62D;; 
     padding: 15px 20px;
     color: #f2ead9; 
     font-style: italic; 
