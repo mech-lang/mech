@@ -157,7 +157,7 @@ impl Formatter {
     let title_id = hash_str(&format!("{}{}{}",level,node.to_string(),toc));
     let link_id = hash_str(&format!("{}{}",level,node.to_string()));
     if self.html {
-      format!("<h{} id=\"{}\" class=\"mech-program-subtitle\"><a href=\"#{}\">{}</a></h{}>", level, title_id, link_id, node.to_string(), level)
+      format!("<h{} id=\"{}\" class=\"mech-program-subtitle {}\"><a href=\"#{}\">{}</a></h{}>", level, title_id, toc, link_id, node.to_string(), level)
     } else {
       format!("{}\n-------------------------------------------------------------------------------\n",node.to_string())
     }

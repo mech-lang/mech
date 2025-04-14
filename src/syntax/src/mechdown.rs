@@ -134,7 +134,7 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
 pub fn number_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = left_parenthesis(input)?;
-  let (input, _) = integer_literal(input)?;
+  let (input, num) = separated_list1(period,integer_literal)(input)?;
   let (input, _) = right_parenthesis(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, text) = paragraph(input)?;
@@ -147,13 +147,14 @@ pub fn number_subtitle(input: ParseString) -> ParseResult<Subtitle> {
 pub fn alpha_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = left_parenthesis(input)?;
-  let (input, _) = alpha(input)?;
+  let (input, num) = separated_list1(period,alt((many1(alpha),many1(digit))))(input)?;
   let (input, _) = right_parenthesis(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, text) = paragraph(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = whitespace0(input)?;
-  Ok((input, Subtitle{text, level: 4}))
+  let level: u8 = if num.len() < 3 { 3 } else { num.len() as u8 + 1 };
+  Ok((input, Subtitle{text, level}))
 }
 
 // strong := (asterisk, asterisk), +paragraph_element, (asterisk, asterisk) ;
@@ -331,7 +332,6 @@ pub fn check_list(mut input: ParseString, level: usize) -> ParseResult<MDList> {
     let (next_input,list_item) = match check_list_item(next_input.clone()) {
       Ok((next_input, list_item)) => (next_input, list_item),
       Err(err) => {
-        println!("ERRRROROROROROR");  
         if items.len() != 0 {
           input = next_input.clone();
           break;
