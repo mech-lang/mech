@@ -1,20 +1,23 @@
 stats
-=====
+===============================================================================
 
 1. Description
----------------
+-------------------------------------------------------------------------------
 
 Statistics related functions.
 
 2. Provided Functions
-----------------------
+-------------------------------------------------------------------------------
+
+- `stats/sum/column`
+- `stats/sum/row`
 
 3. Info
---------
+-------------------------------------------------------------------------------
 
-math/machine = {
+stats/machine := {
   name: "stats" 
-  version: "v0.2.35"
+  version: "v0.2.38"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/stats"
   license: "Apache-2.0"}
