@@ -1,6 +1,6 @@
 [package]
 name = "mech-compare"
-version = "0.2.33"
+version = "0.2.38"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Comparison library for the Mech language"
 documentation = "http://docs.mech-lang.org"
@@ -58,6 +58,4 @@ VectorD = []
 MatrixD = []
 
 [dependencies]
-mech-core = "0.2.36"
-nalgebra = "0.33.2"
-paste = "1.0.15"
+mech-core = "0.2.38"

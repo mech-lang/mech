@@ -1,20 +1,27 @@
 compare
-=======
+===============================================================================
 
 1. Description
----------------
+-------------------------------------------------------------------------------
 
-Provides standard comparison functions.
+Functions to compare values.
 
 2. Provided Functions
-----------------------
+-------------------------------------------------------------------------------
+
+- `compare/greater-than`
+- `compare/less-than`
+- `compare/greater-than-equal`
+- `compare/less-than-equal`
+- `compare/equal`
+- `compare/not-equal`
 
 3. Info
---------
+-------------------------------------------------------------------------------
 
-math/machine = {
+compare/machine := {
   name: "compare" 
-  version: "v0.2.35"
+  version: "v0.2.38"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/compare"
   license: "Apache-2.0"}
