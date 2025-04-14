@@ -5,7 +5,7 @@ html {
 }
 
 .mech-program {
-    counter-reset: section;
+    counter-reset: h2;
     margin: auto;
     margin-top: 20px;
     margin-bottom: 20px;
@@ -37,7 +37,7 @@ body {
 .mech-toc {
     width: 250px;
     min-width: 250px;
-    counter-reset: section;
+    counter-reset: h2;
     background-color: #171D21;
     color: #f2ead9;
     overflow-y: auto;
@@ -179,14 +179,6 @@ h3.toc::before {
     padding-right: 6px;
 }
 
-h2{counter-reset: sub-section}
-
-h2:before{
-    counter-increment: section;
-    color: #F3B62D;
-    content: counter(section) " ";
-}
-
 .mech-program .mech-program-title {
     width: 900px;
     font-family: 'FiraCodeRegular', monospace;
@@ -220,13 +212,6 @@ h2:before{
     margin-left: -75px;
 }
 
-h3:before{
-    counter-increment: sub-section;
-    counter-reset: sub-sub-section;
-    color: #F3B62D;
-    content: counter(section) "." counter(sub-section) " ";
-}
-
 .mech-program h3 a {
     color: #f2ead9;
     text-decoration: none;
@@ -240,13 +225,6 @@ h3:before{
     margin-bottom: 10px;
     letter-spacing: 1px;
     margin-left: -48px;
-}
-
-h4:before {
-    counter-increment: sub-sub-section;
-    color: #F3B62D;
-    font-weight: bold;
-    content: counter(section) "." counter(sub-section) "." counter(sub-sub-section) " ";
 }
 
 .mech-program h4 a {
@@ -1007,4 +985,27 @@ li p {
     line-height: 25pt;
     margin: 0px;
     text-align: justify;
+}
+
+h2 {
+    counter-reset: h3;
+}
+
+h3 {
+    counter-reset: h4;
+}
+
+h2::before {
+    counter-increment: h2;
+    content: counter(h2) ". ";
+}
+
+h3::before {
+    counter-increment: h3;
+    content: counter(h2) "." counter(h3) " ";
+}
+
+h4::before {
+    counter-increment: h4;
+    content: counter(h2) "." counter(h3) "." counter(h4) " ";
 }

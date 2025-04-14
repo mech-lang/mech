@@ -339,7 +339,7 @@ impl Formatter {
   }
 
   pub fn section_element(&mut self, node: &SectionElement) -> String {
-    let element = match node {
+    match node {
       SectionElement::Abstract(n) => self.abstract_el(n),
       SectionElement::BlockQuote(n) => self.block_quote(n),
       SectionElement::CodeBlock(n) => self.code_block(n),
@@ -349,15 +349,10 @@ impl Formatter {
       SectionElement::Grammar(n) => self.grammar(n),
       SectionElement::MechCode(n) => self.mech_code(n),
       SectionElement::Paragraph(n) => self.paragraph(n),
-      SectionElement::Section(n) => self.section(n),
+      SectionElement::Subtitle(n) => self.subtitle(n),
       SectionElement::Table(n) => self.markdown_table(n),
       SectionElement::ThematicBreak => self.thematic_break(),
       SectionElement::List(n) => self.list(n),
-    };
-    if self.html {
-      format!("<div class=\"mech-section-element\">{}</div>",element)
-    } else {
-      element
     }
   }
 

@@ -344,15 +344,10 @@ pub struct Section {
 impl Section {
 
   pub fn table_of_contents(&self) -> Section {
-    let mut elements = vec![];
-    for e in &self.elements {
-      match e {
-        SectionElement::Section(s) => {
-          elements.push(SectionElement::Section(Box::new(s.table_of_contents())));
-        },
-        _ => (),
-      }
-    }
+    let elements: Vec<_> = self.elements.iter()
+      .filter(|e| matches!(e, SectionElement::Subtitle(_)))
+      .cloned()
+      .collect();
     Section {
       subtitle: self.subtitle.clone(),
       elements,
@@ -426,10 +421,10 @@ pub enum SectionElement {
   FencedMechCode((Vec<MechCode>, BlockConfig)),
   Footnote(Footnote),
   Grammar(Grammar),
-  MechCode(Vec<MechCode>),
   List(MDList),
+  MechCode(Vec<MechCode>),
   Paragraph(Paragraph),
-  Section(Box<Section>),
+  Subtitle(Subtitle),
   Table(MarkdownTable),
   ThematicBreak,
 }

@@ -58,7 +58,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
       }
       return Ok(out)
     },
-    SectionElement::Section(sctn) => {return section(sctn, p);},
+    SectionElement::Subtitle(x) => x.hash(&mut hasher),
     SectionElement::CodeBlock(x) => x.hash(&mut hasher),
     SectionElement::Comment(x) => x.hash(&mut hasher),
     SectionElement::Footnote(x) => x.hash(&mut hasher),

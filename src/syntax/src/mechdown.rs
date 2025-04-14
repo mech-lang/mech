@@ -130,21 +130,8 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   Ok((input, Subtitle{text, level: 2}))
 }
 
-// number_subtitle := (space|tab)*, "(", integer_literal, ")", (space|tab)+, text+, (space|tab)*, whitespace* ;
-pub fn number_subtitle(input: ParseString) -> ParseResult<Subtitle> {
-  let (input, _) = many0(space_tab)(input)?;
-  let (input, _) = left_parenthesis(input)?;
-  let (input, num) = separated_list1(period,integer_literal)(input)?;
-  let (input, _) = right_parenthesis(input)?;
-  let (input, _) = many0(space_tab)(input)?;
-  let (input, text) = paragraph(input)?;
-  let (input, _) = many0(space_tab)(input)?;
-  let (input, _) = whitespace0(input)?;
-  Ok((input, Subtitle{text, level: 3}))
-}
-
 // alpha_subtitle := (space|tab)*, "(", alpha, ")", (space|tab)+, text+, (space|tab)*, whitespace* ;
-pub fn alpha_subtitle(input: ParseString) -> ParseResult<Subtitle> {
+pub fn subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = left_parenthesis(input)?;
   let (input, num) = separated_list1(period,alt((many1(alpha),many1(digit))))(input)?;
@@ -666,8 +653,8 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
                 Ok((input, m)) => (input,m),
                 _ => match thematic_break(input.clone()) {
                   Ok((input, _)) => (input, SectionElement::ThematicBreak),
-                  _ => match sub_section(input.clone()) {
-                    Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
+                  _ => match subtitle(input.clone()) {
+                    Ok((input, subtitle)) => (input, SectionElement::Subtitle(subtitle)),
                     _ => match paragraph(input) {
                       Ok((input, p)) => (input, SectionElement::Paragraph(p)),
                       Err(err) => { return Err(err); }
@@ -728,15 +715,6 @@ pub fn section_elements(input: ParseString) -> ParseResult<Section> {
   let (input, elements) = many1(tuple((is_not(ul_subtitle),section_element)))(input)?;
   let elements = elements.into_iter().map(|(_,e)| e).collect();
   Ok((input, Section{subtitle: None, elements}))
-}
-
-// sub_section := alpha_subtitle, sub_section_element* ;
-pub fn sub_section(input: ParseString) -> ParseResult<Section> {
-  let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
-  let (input, subtitle) = alpha_subtitle(input)?;
-  let (input, elements) = many0(tuple((is_not(alt((ul_subtitle,alpha_subtitle))),sub_section_element)))(input)?;
-  let elements = elements.into_iter().map(|(_,e)| e).collect();
-  Ok((input, Section{subtitle: Some(subtitle), elements}))
 }
 
 // body := whitespace0, (section | section_elements)+, whitespace0 ;
