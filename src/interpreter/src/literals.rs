@@ -3,18 +3,18 @@ use crate::*;
 // Literals
 // ----------------------------------------------------------------------------
 
-pub fn literal(ltrl: &Literal, functions: FunctionsRef) -> MResult<Value> {
+pub fn literal(ltrl: &Literal, p: &Interpreter) -> MResult<Value> {
   match &ltrl {
     Literal::Empty(_) => Ok(empty()),
     Literal::Boolean(bln) => Ok(boolean(bln)),
     Literal::Number(num) => Ok(number(num)),
     Literal::String(strng) => Ok(string(strng)),
     Literal::Atom(atm) => Ok(atom(atm)),
-    Literal::TypedLiteral((ltrl,kind)) => typed_literal(ltrl,kind,functions),
+    Literal::TypedLiteral((ltrl,kind)) => typed_literal(ltrl,kind,p),
   }
 }
 
-pub fn kind_annotation(knd: &NodeKind, functions: FunctionsRef) -> MResult<Kind> {
+pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
   match knd {
     NodeKind::Scalar(id) => {
       let kind_id = id.hash();
@@ -23,12 +23,12 @@ pub fn kind_annotation(knd: &NodeKind, functions: FunctionsRef) -> MResult<Kind>
     NodeKind::Bracket((el_knds, size)) => {
       let mut knds = vec![];
       for knd in el_knds {
-        let knd = kind_annotation(knd, functions.clone())?;
+        let knd = kind_annotation(knd, p)?;
         knds.push(knd);
       }
       let mut dims = vec![];
       for dim in size {
-        let dim_val = literal(dim, functions.clone())?;
+        let dim_val = literal(dim, p)?;
         match dim_val.as_usize() {
           Some(size_val) => dims.push(size_val.clone()),
           None => { return Err(MechError{file: file!().to_string(), tokens: knd.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
@@ -43,10 +43,11 @@ pub fn kind_annotation(knd: &NodeKind, functions: FunctionsRef) -> MResult<Kind>
   }
 }
 
-pub fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, functions: FunctionsRef) -> MResult<Value> {
-  let value = literal(ltrl,functions.clone())?;
+pub fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, p: &Interpreter) -> MResult<Value> {
+  let functions = p.functions();
+  let value = literal(ltrl,p)?;
   let knd_tkns = knd_attn.tokens();
-  let kind = kind_annotation(&knd_attn.kind, functions.clone())?;
+  let kind = kind_annotation(&knd_attn.kind, p)?;
   match (&value,kind) {
     (Value::I64(num), Kind::Scalar(to_kind_id)) => {
       match functions.borrow().kinds.get(&to_kind_id) {

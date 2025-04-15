@@ -128,7 +128,10 @@ leaf!{box_t_bottom, "┴", TokenKind::BoxDrawing}
 leaf!{box_vert, "│", TokenKind::BoxDrawing}
 leaf!{box_vert_bold, "┃", TokenKind::BoxDrawing}
 
-leaf!(http_prefix, "http", TokenKind::Http);
+leaf!(http_prefix, "http", TokenKind::HttpPrefix);
+leaf!(img_prefix, "![", TokenKind::ImgPrefix);
+leaf!(footnote_prefix, "[^", TokenKind::FootnotePrefix);
+leaf!(abstract_prefix, "%%", TokenKind::AbstractPrefix);
 
 ws0_leaf!(define_operator, ":=", TokenKind::DefineOperator);
 ws0_leaf!(assign_operator, "=", TokenKind::AssignOperator);
@@ -253,13 +256,13 @@ pub fn escaped_char(input: ParseString) -> ParseResult<Token> {
 
 // symbol := ampersand | bar | at | slash | hashtag | equal | backslash | tilde | plus | dash | asterisk | caret | underscore ;
 pub fn symbol(input: ParseString) -> ParseResult<Token> {
-  let (input, symbol) = alt((ampersand, bar, at, slash, hashtag, equal, backslash, tilde, plus, dash, asterisk, caret, underscore))(input)?;
+  let (input, symbol) = alt((ampersand, bar, percent, at, slash, hashtag, equal, backslash, tilde, plus, dash, asterisk, caret, underscore))(input)?;
   Ok((input, symbol))
 }
 
 // text := alpha | digit | space | tab | escaped_char | punctuation | grouping_symbol | symbol ;
 pub fn text(input: ParseString) -> ParseResult<Token> {
-  let (input, text) = alt((alpha_token, digit_token, emoji, space, tab, escaped_char, punctuation, grouping_symbol, symbol))(input)?;
+  let (input, text) = alt((alpha_token, digit_token, emoji, forbidden_emoji, space, tab, escaped_char, punctuation, grouping_symbol, symbol))(input)?;
   Ok((input, text))
 }
 

@@ -4,34 +4,34 @@ use std::collections::HashMap;
 // Structures
 // ----------------------------------------------------------------------------
 
-pub fn structure(strct: &Structure, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+pub fn structure(strct: &Structure, p: &Interpreter) -> MResult<Value> {
   match strct {
     Structure::Empty => Ok(Value::Empty),
-    Structure::Record(x) => record(&x, plan.clone(), symbols.clone(), functions.clone()),
-    Structure::Matrix(x) => matrix(&x, plan.clone(), symbols.clone(), functions.clone()),
-    Structure::Table(x) => table(&x, plan.clone(), symbols.clone(), functions.clone()),
-    Structure::Tuple(x) => tuple(&x, plan.clone(), symbols.clone(), functions.clone()),
+    Structure::Record(x) => record(&x, p),
+    Structure::Matrix(x) => matrix(&x, p),
+    Structure::Table(x) => table(&x, p),
+    Structure::Tuple(x) => tuple(&x, p),
     Structure::TupleStruct(x) => todo!(),
-    Structure::Set(x) => set(&x, plan.clone(), symbols.clone(), functions.clone()),
-    Structure::Map(x) => map(&x, plan.clone(), symbols.clone(), functions.clone()),
+    Structure::Set(x) => set(&x, p),
+    Structure::Map(x) => map(&x, p),
   }
 }
 
-pub fn tuple(tpl: &Tuple, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+pub fn tuple(tpl: &Tuple, p: &Interpreter) -> MResult<Value> {
   let mut elements = vec![];
   for el in &tpl.elements {
-    let result = expression(el,plan.clone(),symbols.clone(), functions.clone())?;
+    let result = expression(el,p)?;
     elements.push(Box::new(result));
   }
   let mech_tuple = MechTuple{elements};
   Ok(Value::Tuple(mech_tuple))
 }
 
-pub fn map(mp: &Map, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+pub fn map(mp: &Map, p: &Interpreter) -> MResult<Value> {
   let mut m = IndexMap::new();
   for b in &mp.elements {
-    let key = expression(&b.key, plan.clone(), symbols.clone(), functions.clone())?;
-    let val = expression(&b.value, plan.clone(), symbols.clone(), functions.clone())?;
+    let key = expression(&b.key, p)?;
+    let val = expression(&b.value, p)?;
     m.insert(key,val);
   }
   
@@ -58,16 +58,16 @@ pub fn map(mp: &Map, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRe
   }))
 }
 
-pub fn record(rcrd: &Record, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
   let mut data: IndexMap<u64,Value> = IndexMap::new();
   let cols: usize = rcrd.bindings.len();
   let mut kinds: Vec<ValueKind> = Vec::new();
 
   for b in &rcrd.bindings {
     let name = b.name.hash();
-    let val = expression(&b.value, plan.clone(), symbols.clone(), functions.clone())?;
+    let val = expression(&b.value, p)?;
     let knd: ValueKind = match &b.kind {
-      Some(k) => kind_annotation(&k.kind, functions.clone())?.to_value_kind(functions.clone())?,
+      Some(k) => kind_annotation(&k.kind, p)?.to_value_kind(p.functions())?,
       None => val.kind(),
     };
     kinds.push(knd);
@@ -80,10 +80,10 @@ pub fn record(rcrd: &Record, plan: Plan, symbols: SymbolTableRef, functions: Fun
   }))
 }
 
-pub fn set(m: &Set, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> { 
+pub fn set(m: &Set, p: &Interpreter) -> MResult<Value> { 
   let mut out = IndexSet::new();
   for el in &m.elements {
-    let result = expression(el, plan.clone(), symbols.clone(), functions.clone())?;
+    let result = expression(el, p)?;
     out.insert(result);
   }
 
@@ -119,13 +119,13 @@ macro_rules! handle_value_kind {
     $data_map.insert($field_label.clone(), ($value_kind.clone(), Value::to_matrix(vals.clone(), vals.len(), 1)));
   }};}
 
-pub fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> { 
+pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> { 
   let mut rows = vec![];
-  let headings = table_header(&t.header, functions.clone())?;
+  let headings = table_header(&t.header, p)?;
   let mut cols = 0;
   // Interpret the rows
   for row in &t.rows {
-    let result = table_row(row, plan.clone(), symbols.clone(), functions.clone())?;
+    let result = table_row(row, p)?;
     cols = result.len();
     rows.push(result);
   }
@@ -169,38 +169,39 @@ pub fn table(t: &Table, plan: Plan, symbols: SymbolTableRef, functions: Function
   Ok(Value::Table(tbl))
 }
 
-pub fn table_header(fields: &Vec<Field>, functions: FunctionsRef) -> MResult<Vec<(Value,ValueKind,Identifier)>> {
+pub fn table_header(fields: &Vec<Field>, p: &Interpreter) -> MResult<Vec<(Value,ValueKind,Identifier)>> {
   let mut headings: Vec<(Value,ValueKind,Identifier)> = Vec::new();
   for f in fields {
     let id = f.name.hash();
     let kind = match &f.kind {
-      Some(k) => kind_annotation(&k.kind, functions.clone())?,
+      Some(k) => kind_annotation(&k.kind, p)?,
       None => Kind::Any,
     };
-    headings.push((Value::Id(id),kind.to_value_kind(functions.clone())?,f.name.clone()));
+    headings.push((Value::Id(id),kind.to_value_kind(p.functions())?,f.name.clone()));
   }
   Ok(headings)
 }
 
-pub fn table_row(r: &TableRow, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Vec<Value>> {
+pub fn table_row(r: &TableRow, p: &Interpreter) -> MResult<Vec<Value>> {
   let mut row: Vec<Value> = Vec::new();
   for col in &r.columns {
-    let result = table_column(col, plan.clone(), symbols.clone(), functions.clone())?;
+    let result = table_column(col, p)?;
     row.push(result);
   }
   Ok(row)
 }
 
-pub fn table_column(r: &TableColumn, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> { 
-  expression(&r.element, plan.clone(), symbols.clone(), functions.clone())
+pub fn table_column(r: &TableColumn, p: &Interpreter) -> MResult<Value> { 
+  expression(&r.element, p)
 }
 
-pub fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+pub fn matrix(m: &Mat, p: &Interpreter) -> MResult<Value> {
+  let plan = p.plan();
   let mut shape = vec![0, 0];
   let mut col: Vec<Value> = Vec::new();
   let mut kind = ValueKind::Empty;
   for row in &m.rows {
-    let result = matrix_row(row, plan.clone(), symbols.clone(), functions.clone())?;
+    let result = matrix_row(row, p)?;
     if shape == vec![0,0] {
       shape = result.shape();
       kind = result.kind();
@@ -224,12 +225,13 @@ pub fn matrix(m: &Mat, plan: Plan, symbols: SymbolTableRef, functions: Functions
   Ok(out)
 }
 
-pub fn matrix_row(r: &MatrixRow, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+pub fn matrix_row(r: &MatrixRow, p: &Interpreter) -> MResult<Value> {
+  let plan = p.plan();
   let mut row: Vec<Value> = Vec::new();
   let mut shape = vec![0, 0];
   let mut kind = ValueKind::Empty;
   for col in &r.columns {
-    let result = matrix_column(col, plan.clone(), symbols.clone(), functions.clone())?;
+    let result = matrix_column(col, p)?;
     if shape == vec![0,0] {
       shape = result.shape();
       kind = result.kind();
@@ -248,6 +250,6 @@ pub fn matrix_row(r: &MatrixRow, plan: Plan, symbols: SymbolTableRef, functions:
   Ok(out)
 }
 
-pub fn matrix_column(r: &MatrixColumn, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> { 
-  expression(&r.element, plan.clone(), symbols.clone(), functions.clone())
+pub fn matrix_column(r: &MatrixColumn, p: &Interpreter) -> MResult<Value> { 
+  expression(&r.element, p)
 }

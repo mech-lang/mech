@@ -141,8 +141,16 @@ impl<'a> ParseString<'a> {
     }
   }
 
+  pub fn peek(&self, n: usize) -> Option<&str> {
+    self.graphemes.get(self.cursor + n).copied()
+  }
+
   pub fn current(&self) -> Option<&str> {
     self.graphemes.get(self.cursor).copied()
+  }
+
+  pub fn next(&self) -> Option<&str> {
+    self.graphemes.get(self.cursor + 1).copied()
   }
 
   /// If current location matches the tag, consume the matched string.
@@ -367,8 +375,6 @@ impl<'a> nom::error::ParseError<ParseString<'a>> for ParseError<'a> {
     }
   }
 }
-
-
 
 /// This struct is responsible for analysing text, interpreting indices
 /// and ranges, and producing formatted messages.

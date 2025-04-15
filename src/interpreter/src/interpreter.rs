@@ -1,17 +1,22 @@
 use crate::*;
+use std::rc::Rc;
+use std::collections::HashMap;
 
 // Interpreter 
 // ----------------------------------------------------------------------------
 
 pub struct Interpreter {
+  pub id: u64,
   symbols: SymbolTableRef,
   plan: Plan,
   functions: FunctionsRef,
   out: Value,
+  pub out_values: Ref<HashMap<u64, Value>>,
+  pub sub_interpreters: Ref<HashMap<u64, Box<Interpreter>>>,
 }
 
 impl Interpreter {
-  pub fn new() -> Interpreter {
+  pub fn new(id: u64) -> Interpreter {
     
     // Preload functions
     let mut fxns = Functions::new();
@@ -38,10 +43,13 @@ impl Interpreter {
     fxns.kinds.insert(hash_str("bool"),ValueKind::Bool);
 
     Interpreter {
+      id,
       symbols: new_ref(SymbolTable::new()),
       plan: new_ref(Vec::new()),
       functions: new_ref(fxns),
       out: Value::Empty,
+      sub_interpreters: new_ref(HashMap::new()),
+      out_values: new_ref(HashMap::new()),
     }
   }
 
@@ -56,6 +64,20 @@ impl Interpreter {
 
   pub fn symbols(&self) -> SymbolTableRef {
     self.symbols.clone()
+  }
+
+  pub fn functions(&self) -> FunctionsRef {
+    self.functions.clone()
+  }
+
+  pub fn add_plan_step(&self, step: Box<dyn MechFunction>) {
+    let mut plan_brrw = self.plan.borrow_mut();
+    plan_brrw.push(step);
+  }
+
+  pub fn insert_function(&self, fxn: FunctionDefinition) {
+    let mut fxns_brrw = self.functions.borrow_mut();
+    fxns_brrw.functions.insert(fxn.id, fxn);
   }
 
   pub fn pretty_print_symbols(&self) -> String {
@@ -81,12 +103,12 @@ impl Interpreter {
   }
 
   pub fn interpret(&mut self, tree: &Program) -> MResult<Value> {
-    program(tree, self.plan.clone(), self.symbols.clone(), self.functions.clone())
+    program(tree, &self)
   }
 }
 
 //-----------------------------------------------------------------------------
 
-pub fn program(program: &Program, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
-  body(&program.body, plan.clone(), symbols.clone(), functions.clone())
+pub fn program(program: &Program, p: &Interpreter) -> MResult<Value> {
+  body(&program.body, p)
 }

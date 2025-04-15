@@ -13,6 +13,9 @@ pub struct Formatter{
   html: bool,
   nested: bool,
   toc: bool,
+  figure_num: usize,
+  section_num: usize,
+  interpreter_id: u64,
 }
 
 
@@ -24,9 +27,12 @@ impl Formatter {
       rows: 0,
       cols: 0,
       indent: 0,
+      section_num: 0,
+      figure_num: 0,
       html: false,
       nested: false,
       toc: false,
+      interpreter_id: 0,
     }
   }
 
@@ -117,7 +123,7 @@ impl Formatter {
       let s = self.section(section);
       src = format!("{}{}", src, s);
     }
-    format!("<div class=\"mech-toc-sections\">{}</div>",src)
+    format!("<section class=\"mech-toc-sections\">{}</section>",src)
   }
 
   pub fn program(&mut self, node: &Program) -> String {
@@ -143,11 +149,15 @@ impl Formatter {
 
   pub fn subtitle(&mut self, node: &Subtitle) -> String {
     let level = node.level;
+    if level == 2 && !self.toc {
+      self.section_num += 1;
+      self.figure_num = 0;
+    }
     let toc = if self.toc { "toc" } else { "" };
     let title_id = hash_str(&format!("{}{}{}",level,node.to_string(),toc));
     let link_id = hash_str(&format!("{}{}",level,node.to_string()));
     if self.html {
-      format!("<h{} id=\"{}\" class=\"mech-program-subtitle\"><a href=\"#{}\">{}</a></h{}>", level, title_id, link_id, node.to_string(), level)
+      format!("<h{} id=\"{}\" class=\"mech-program-subtitle {}\"><a href=\"#{}\">{}</a></h{}>", level, title_id, toc, link_id, node.to_string(), level)
     } else {
       format!("{}\n-------------------------------------------------------------------------------\n",node.to_string())
     }
@@ -196,9 +206,21 @@ impl Formatter {
     }
   }
 
+  fn footnote_reference(&mut self, node: &Token) -> String {
+    let id_string = node.to_string();
+    let id_hash = hash_str(&format!("footnote-{}",id_string));
+    if self.html {
+      format!("<a href=\"#{}\" class=\"mech-footnote-reference\">{}</a>",id_hash, id_string)
+    } else {
+      format!("[^{}]",id_string)
+    }
+  }
+
   pub fn paragraph_element(&mut self, node: &ParagraphElement) -> String {
     match node {
       ParagraphElement::Text(n) => n.to_string(),
+      ParagraphElement::FootnoteReference(n) => self.footnote_reference(n),
+      ParagraphElement::Image(n) => self.image(n),
       ParagraphElement::Strong(n) => {
         if self.html {
           format!("<strong class=\"mech-strong\">{}</strong>", n.to_string())
@@ -243,29 +265,108 @@ impl Formatter {
           format!("`{}`", n.to_string())
         }
       },
+      ParagraphElement::InlineMechCode(expr) => {
+        let code_id = hash_str(&format!("{:?}", expr));
+        let result = self.expression(expr);
+        if self.html {
+          format!("<code id=\"{}\" class=\"mech-inline-mech-code\">{}</code>", code_id, result)
+        } else {
+          format!("{{{}}}", result)
+        }
+      },
       _ => todo!(),
     }
   }
 
-  pub fn section_element(&mut self, node: &SectionElement) -> String {
-    let element = match node {
-      SectionElement::Section(n) => self.section(n),
-      SectionElement::Comment(n) => self.comment(n),
-      SectionElement::Paragraph(n) => self.paragraph(n),
-      SectionElement::MechCode(n) => self.mech_code(n),
-      SectionElement::UnorderedList(n) => self.unordered_list(n),
-      SectionElement::CodeBlock(n) => self.code_block(n),
-      SectionElement::Grammar(n) => self.grammar(n),
-      SectionElement::Table(n) => self.markdown_table(n),
-      SectionElement::BlockQuote(n) => self.block_quote(n),
-      SectionElement::ThematicBreak => self.thematic_break(),
-      SectionElement::OrderedList => todo!(),
-      SectionElement::Image => todo!(),
-    };
+  pub fn fenced_mech_code(&mut self, node: &Vec<MechCode>, interpreter_id: &u64) -> String {
+    self.interpreter_id = *interpreter_id;
+    let mut src = "".to_string();
+    for code in node {
+      let c = match code {
+        MechCode::Expression(expr) => self.expression(expr),
+        MechCode::Statement(stmt) => self.statement(stmt),
+        MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
+        MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
+        MechCode::Comment(cmnt) => self.comment(cmnt),
+        _ => todo!(),
+      };
+      if self.html {
+        src.push_str(&format!("<div class=\"mech-code\">{}</div>", c));
+      } else {
+        src.push_str(&format!("{}\n", c));
+      }
+    }
+    self.interpreter_id = 0;
     if self.html {
-      format!("<div class=\"mech-section-element\">{}</div>",element)
+      let out_node = node.last().unwrap();
+      let output_id = hash_str(&format!("{:?}", out_node));
+      format!("<div class=\"mech-fenced-mech-block\">
+        <pre class=\"mech-code-block\">{}</pre>
+        <pre id=\"{}:{}\" class=\"mech-block-output\"></pre>
+      </div>",src, output_id, interpreter_id)
     } else {
-      element
+      format!("```mech\n{}\n```", src)
+    }
+  }
+
+  pub fn image(&mut self, node: &Image) -> String {
+    self.figure_num += 1;
+    let src = node.src.to_string();
+    let caption = match &node.caption {
+      Some(caption) => caption.to_string(),
+      None => "".to_string(),
+    };
+    let figure_label = format!("Fig {}.{}:",self.section_num, self.figure_num);
+    let image_id = hash_str(&src);
+    let figure_id = hash_str(&figure_label);
+    if self.html {
+      format!("<figure id=\"{}\" class=\"mech-figure\">
+        <img id=\"{}\" class=\"mech-image\" src=\"{}\" alt=\"{}\" />
+        <figcaption class=\"mech-figure-caption\"><strong class=\"mech-figure-label\">{}</strong> {}</figcaption>
+      </figure>", figure_id, image_id, src, caption, figure_label, caption)
+    } else {
+      format!("![{}]({})",caption, src)
+    }
+  }
+
+  pub fn abstract_el(&mut self, node: &Paragraph) -> String {
+    let abstract_paragraph = self.paragraph(node);
+    if self.html {
+      format!("<div id=\"abstract\" class=\"mech-abstract\">{}</div>",abstract_paragraph)
+    } else {
+      format!("{}\n",abstract_paragraph)
+    }
+  }
+
+  pub fn section_element(&mut self, node: &SectionElement) -> String {
+    match node {
+      SectionElement::Abstract(n) => self.abstract_el(n),
+      SectionElement::BlockQuote(n) => self.block_quote(n),
+      SectionElement::CodeBlock(n) => self.code_block(n),
+      SectionElement::Comment(n) => self.comment(n),
+      SectionElement::FencedMechCode((n,s)) => self.fenced_mech_code(n,s),
+      SectionElement::Footnote(n) => self.footnote(n),
+      SectionElement::Grammar(n) => self.grammar(n),
+      SectionElement::MechCode(n) => self.mech_code(n),
+      SectionElement::Paragraph(n) => self.paragraph(n),
+      SectionElement::Subtitle(n) => self.subtitle(n),
+      SectionElement::Table(n) => self.markdown_table(n),
+      SectionElement::ThematicBreak => self.thematic_break(),
+      SectionElement::List(n) => self.list(n),
+    }
+  }
+
+  pub fn footnote(&mut self, node: &Footnote) -> String {
+    let (id_name, p) = node;
+    let note_paragraph = self.paragraph(p);
+    let id: u64 = hash_str(&format!("footnote-{}",id_name.to_string()));
+    if self.html {
+      format!("<div class=\"mech-footnote\" id=\"{}\">
+        <div class=\"mech-footnote-id\">{}:</div>
+        {}
+      </div>",id, id_name.to_string(), note_paragraph)  
+    } else {
+      format!("[^{}]: {}\n",id_name.to_string(), note_paragraph)
     }
   }
 
@@ -510,14 +611,77 @@ impl Formatter {
     }
   }
 
-  pub fn unordered_list(&mut self, node: &UnorderedList) -> String {
+  pub fn list(&mut self, node: &MDList) -> String {
+    match node {
+      MDList::Ordered(ordered_list) => self.ordered_list(ordered_list),
+      MDList::Unordered(unordered_list) => self.unordered_list(unordered_list),
+      MDList::Check(check_list) => self.check_list(check_list),
+    }
+  }
+
+  pub fn check_list(&mut self, node: &CheckList) -> String {
     let mut lis = "".to_string();
-    for (i, item) in node.items.iter().enumerate() {
+    for (i, ((checked, item), sublist)) in node.iter().enumerate() {
       let it = self.paragraph(item);
       if self.html {
-        lis = format!("{}<li class=\"mech-list-item\">{}</li>",lis,it);
+        lis = format!("{}<li class=\"mech-check-list-item\"><input type=\"checkbox\" {}>{}</li>", lis, if *checked { "checked" } else { "" }, it);
       } else {
-        lis = format!("{}- {}\n",lis,it); 
+        lis = format!("{}* [{}] {}\n", lis, if *checked { "x" } else { " " }, it);
+      }
+      match sublist {
+        Some(sublist) => {
+          let sublist_str = self.list(sublist);
+          lis = format!("{}{}", lis, sublist_str);
+        },
+        None => {},
+      }
+    }
+    if self.html {
+      format!("<ul class=\"mech-check-list\">{}</ul>", lis)
+    } else {
+      lis
+    }
+  }
+
+  pub fn ordered_list(&mut self, node: &OrderedList) -> String {
+    let mut lis = "".to_string();
+    for (i, ((num,item),sublist)) in node.items.iter().enumerate() {
+      let it = self.paragraph(item);
+      if self.html {
+        lis = format!("{}<li class=\"mech-ol-list-item\">{}</li>",lis,it);
+      } else {
+        lis = format!("{}{}. {}\n",lis,i+1,it);
+      }
+      match sublist {
+        Some(sublist) => {
+          let sublist_str = self.list(sublist);
+          lis = format!("{}{}",lis,sublist_str);
+        },
+        None => {},
+      }
+    }
+    if self.html {
+      format!("<ol start=\"{}\" class=\"mech-ordered-list\">{}</ol>",node.start.to_string(),lis)
+    } else {
+      lis
+    }
+  }
+
+  pub fn unordered_list(&mut self, node: &UnorderedList) -> String {
+    let mut lis = "".to_string();
+    for (i, ((bullet, item),sublist)) in node.iter().enumerate() {
+      let it = self.paragraph(item);
+      match (bullet, self.html) {
+        (Some(bullet_tok),true) => lis = format!("{}<li data-bullet=\"{}\" class=\"mech-list-item-emoji\">{}</li>",lis,bullet_tok.to_string(),it),
+        (None,true) => lis = format!("{}<li class=\"mech-ul-list-item\">{}</li>",lis,it),
+        (_,false) => lis = format!("{}* {}\n",lis,it),
+      }
+      match sublist {
+        Some(sublist) => {
+          let sublist_str = self.list(sublist);
+          lis = format!("{}{}",lis,sublist_str);
+        },
+        None => {},
       }
     }
     if self.html {
@@ -938,8 +1102,9 @@ impl Formatter {
       },
       None => {},
     }
+    let id = format!("{}:{}",hash_str(&name),self.interpreter_id);
     if self.html {
-      format!("<span class=\"mech-slice-ref\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",hash_str(&name),name,subscript)
+      format!("<span class=\"mech-slice-ref\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",id,name,subscript)
     } else {
       format!("{}{}", name, subscript)
     }
@@ -967,14 +1132,14 @@ impl Formatter {
   pub fn range_expression(&mut self, node: &RangeExpression) -> String {
     let start = self.factor(&node.start);
     let operator = match &node.operator {
-      RangeOp::Inclusive => "..".to_string(),
+      RangeOp::Inclusive => "..=".to_string(),
       RangeOp::Exclusive => "..".to_string(),
     };
     let terminal = self.factor(&node.terminal);
     let increment = match &node.increment {
       Some((op, factor)) => {
         let o = match op {
-          RangeOp::Inclusive => "=..".to_string(),
+          RangeOp::Inclusive => "..=".to_string(),
           RangeOp::Exclusive => "..".to_string(),
         };
         let f = self.factor(factor);
@@ -1004,8 +1169,9 @@ impl Formatter {
         args = format!("{}, {}", args, a);
       }
     }
+    let id = format!("{}:{}",hash_str(&name),self.interpreter_id);
     if self.html {
-      format!("<span class=\"mech-function-call\"><span id=\"{}\" class=\"mech-function-name mech-clickable\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-argument-list\">{}</span><span class=\"mech-right-paren\">)</span></span>",hash_str(&name),name,args)
+      format!("<span class=\"mech-function-call\"><span id=\"{}\" class=\"mech-function-name mech-clickable\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-argument-list\">{}</span><span class=\"mech-right-paren\">)</span></span>",id,name,args)
     } else {
       format!("{}({})", name, args)
     }
@@ -1032,8 +1198,9 @@ impl Formatter {
       let s = self.subscript(sub);
       subscript = format!("{}{}", subscript, s);
     }
+    let id = format!("{}:{}",hash_str(&name),self.interpreter_id);
     if self.html {
-      format!("<span class=\"mech-slice\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",hash_str(&name),name,subscript)
+      format!("<span class=\"mech-slice\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",id,name,subscript)
     } else {
       format!("{}{}", name, subscript)
     }
@@ -1404,8 +1571,10 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
     } else {
       "".to_string()
     };
+    let name = &node.name.to_string();
+    let id = format!("{}:{}",hash_str(&name),self.interpreter_id);
     if self.html {
-      format!("<span class=\"mech-var-name mech-clickable\" id=\"{}\">{}</span>{}",hash_str(&node.name.to_string()), node.name.to_string(), annotation)
+      format!("<span class=\"mech-var-name mech-clickable\" id=\"{}\">{}</span>{}", id, node.name.to_string(), annotation)
     } else {
       format!("{}{}", node.name.to_string(), annotation)
     }

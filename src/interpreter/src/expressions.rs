@@ -3,22 +3,23 @@ use crate::*;
 // Expressions
 // ----------------------------------------------------------------------------
 
-pub fn expression(expr: &Expression, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+pub fn expression(expr: &Expression, p: &Interpreter) -> MResult<Value> {
   match &expr {
-    Expression::Var(v) => var(&v, symbols.clone()),
-    Expression::Range(rng) => range(&rng, plan.clone(), symbols.clone(), functions.clone()),
-    Expression::Slice(slc) => slice(&slc, plan.clone(), symbols.clone(), functions.clone()),
-    Expression::Formula(fctr) => factor(fctr, plan.clone(), symbols.clone(), functions.clone()),
-    Expression::Structure(strct) => structure(strct, plan.clone(), symbols.clone(), functions.clone()),
-    Expression::Literal(ltrl) => literal(&ltrl, functions.clone()),
-    Expression::FunctionCall(fxn_call) => function_call(fxn_call, plan.clone(), symbols.clone(), functions.clone()),
+    Expression::Var(v) => var(&v, p),
+    Expression::Range(rng) => range(&rng, p),
+    Expression::Slice(slc) => slice(&slc, p),
+    Expression::Formula(fctr) => factor(fctr, p),
+    Expression::Structure(strct) => structure(strct, p),
+    Expression::Literal(ltrl) => literal(&ltrl, p),
+    Expression::FunctionCall(fxn_call) => function_call(fxn_call, p),
     Expression::FsmPipe(_) => todo!(),
   }
 }
 
-pub fn range(rng: &RangeExpression, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
-  let start = factor(&rng.start, plan.clone(),symbols.clone(), functions.clone())?;
-  let terminal = factor(&rng.terminal, plan.clone(),symbols.clone(), functions.clone())?;
+pub fn range(rng: &RangeExpression, p: &Interpreter) -> MResult<Value> {
+  let plan = p.plan();
+  let start = factor(&rng.start, p)?;
+  let terminal = factor(&rng.terminal, p)?;
   let new_fxn = match &rng.operator {
     RangeOp::Exclusive => RangeExclusive{}.compile(&vec![start,terminal])?,
     RangeOp::Inclusive => RangeInclusive{}.compile(&vec![start,terminal])?,
@@ -32,7 +33,10 @@ pub fn range(rng: &RangeExpression, plan: Plan, symbols: SymbolTableRef, functio
   Ok(res)
 }
 
-pub fn slice(slc: &Slice, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+pub fn slice(slc: &Slice, p: &Interpreter) -> MResult<Value> {
+  let symbols = p.symbols();
+  let plan = p.plan();
+  let functions = p.functions();
   let name = slc.name.hash();
   let symbols_brrw = symbols.borrow();
   let val: Value = match symbols_brrw.get(name) {
@@ -40,26 +44,26 @@ pub fn slice(slc: &Slice, plan: Plan, symbols: SymbolTableRef, functions: Functi
     None => {return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
   };
   for s in &slc.subscript {
-    let s_result = subscript(&s, &val, plan.clone(), symbols.clone(), functions.clone())?;
+    let s_result = subscript(&s, &val, p)?;
     return Ok(s_result);
   }
   unreachable!() // subscript should have thrown an error if we can't access an element
 }
 
-pub fn subscript_formula(sbscrpt: &Subscript, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+pub fn subscript_formula(sbscrpt: &Subscript, p: &Interpreter) -> MResult<Value> {
   match sbscrpt {
     Subscript::Formula(fctr) => {
-      let result = factor(fctr,plan.clone(), symbols.clone(), functions.clone())?;
+      let result = factor(fctr,p)?;
       result.as_index()
     }
     _ => unreachable!()
   }
 }
 
-pub fn subscript_range(sbscrpt: &Subscript, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+pub fn subscript_range(sbscrpt: &Subscript, p: &Interpreter) -> MResult<Value> {
   match sbscrpt {
     Subscript::Range(rng) => {
-      let result = range(rng,plan.clone(), symbols.clone(), functions.clone())?;
+      let result = range(rng,p)?;
       match result.as_vecusize() {
         Some(v) => Ok(v.to_value()),
         None => Err(MechError{file: file!().to_string(), tokens: rng.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
@@ -69,7 +73,8 @@ pub fn subscript_range(sbscrpt: &Subscript, plan: Plan, symbols: SymbolTableRef,
   }
 }
 
-pub fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<Value> {
+  let plan = p.plan();
   match sbscrpt {
     Subscript::Dot(x) => {
       let key = x.hash();
@@ -104,7 +109,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTa
       let mut fxn_input = vec![val.clone()];
       match &subs[..] {
         [Subscript::Formula(ix)] => {
-          let result = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_formula(&subs[0], p)?;
           let shape = result.shape();
           fxn_input.push(result);
           match shape[..] {
@@ -115,7 +120,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTa
           }
         },
         [Subscript::Range(ix)] => {
-          let result = subscript_range(&subs[0],plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_range(&subs[0],p)?;
           fxn_input.push(result);
           plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?);
         },
@@ -125,10 +130,10 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTa
         },
         [Subscript::All,Subscript::All] => todo!(),
         [Subscript::Formula(ix1),Subscript::Formula(ix2)] => {
-          let result = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_formula(&subs[0], p)?;
           let shape1 = result.shape();
           fxn_input.push(result);
-          let result = subscript_formula(&subs[1], plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_formula(&subs[1], p)?;
           let shape2 = result.shape();
           fxn_input.push(result);
           match ((shape1[0],shape1[1]),(shape2[0],shape2[1])) {
@@ -140,15 +145,15 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTa
           }
         },
         [Subscript::Range(ix1),Subscript::Range(ix2)] => {
-          let result = subscript_range(&subs[0],plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_range(&subs[0],p)?;
           fxn_input.push(result);
-          let result = subscript_range(&subs[1],plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_range(&subs[1],p)?;
           fxn_input.push(result);
           plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?);
         },
         [Subscript::All,Subscript::Formula(ix2)] => {
           fxn_input.push(Value::IndexAll);
-          let result = subscript_formula(&subs[1], plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_formula(&subs[1], p)?;
           let shape = result.shape();
           fxn_input.push(result);
           match &shape[..] {
@@ -159,7 +164,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTa
           }
         },
         [Subscript::Formula(ix1),Subscript::All] => {
-          let result = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_formula(&subs[0], p)?;
           let shape = result.shape();
           fxn_input.push(result);
           fxn_input.push(Value::IndexAll);
@@ -171,9 +176,9 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTa
           }
         },
         [Subscript::Range(ix1),Subscript::Formula(ix2)] => {
-          let result = subscript_range(&subs[0],plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_range(&subs[0],p)?;
           fxn_input.push(result);
-          let result = subscript_formula(&subs[1], plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_formula(&subs[1], p)?;
           let shape = result.shape();
           fxn_input.push(result);
           match &shape[..] {
@@ -184,10 +189,10 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTa
           }
         },
         [Subscript::Formula(ix1),Subscript::Range(ix2)] => {
-          let result = subscript_formula(&subs[0], plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_formula(&subs[0], p)?;
           let shape = result.shape();
           fxn_input.push(result);
-          let result = subscript_range(&subs[1],plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_range(&subs[1],p)?;
           fxn_input.push(result);
           match &shape[..] {
             [1,1] => plan.borrow_mut().push(MatrixAccessScalarRange{}.compile(&fxn_input)?),
@@ -198,12 +203,12 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTa
         },
         [Subscript::All,Subscript::Range(ix2)] => {
           fxn_input.push(Value::IndexAll);
-          let result = subscript_range(&subs[1],plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_range(&subs[1],p)?;
           fxn_input.push(result);
           plan.borrow_mut().push(MatrixAccessAllRange{}.compile(&fxn_input)?);
         },
         [Subscript::Range(ix1),Subscript::All] => {
-          let result = subscript_range(&subs[0],plan.clone(), symbols.clone(), functions.clone())?;
+          let result = subscript_range(&subs[0],p)?;
           fxn_input.push(result);
           fxn_input.push(Value::IndexAll);
           plan.borrow_mut().push(MatrixAccessRangeAll{}.compile(&fxn_input)?);
@@ -221,7 +226,8 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, plan: Plan, symbols: SymbolTa
   }
 }
 
-pub fn var(v: &Var, symbols: SymbolTableRef) -> MResult<Value> {
+pub fn var(v: &Var, p: &Interpreter) -> MResult<Value> {
+  let symbols = p.symbols();
   let id = v.name.hash();
   let symbols_brrw = symbols.borrow();
   match symbols_brrw.get(id) {
@@ -234,16 +240,17 @@ pub fn var(v: &Var, symbols: SymbolTableRef) -> MResult<Value> {
   }
 }
 
-pub fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
+pub fn factor(fctr: &Factor, p: &Interpreter) -> MResult<Value> {
+  let plan = p.plan();
   match fctr {
     Factor::Term(trm) => {
-      let result = term(trm, plan.clone(), symbols.clone(), functions.clone())?;
+      let result = term(trm, p)?;
       Ok(result)
     },
-    Factor::Parenthetical(paren) => factor(&*paren, plan.clone(), symbols.clone(), functions.clone()),
-    Factor::Expression(expr) => expression(expr, plan.clone(), symbols.clone(), functions.clone()),
+    Factor::Parenthetical(paren) => factor(&*paren, p),
+    Factor::Expression(expr) => expression(expr, p),
     Factor::Negate(neg) => {
-      let value = factor(neg, plan.clone(), symbols.clone(), functions.clone())?;
+      let value = factor(neg, p)?;
       let new_fxn = MathNegate{}.compile(&vec![value])?;
       new_fxn.solve();
       let out = new_fxn.out();
@@ -252,7 +259,7 @@ pub fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: Fun
       Ok(out)
     },
     Factor::Not(neg) => {
-      let value = factor(neg, plan.clone(), symbols.clone(), functions.clone())?;
+      let value = factor(neg, p)?;
       let new_fxn = LogicNot{}.compile(&vec![value])?;
       new_fxn.solve();
       let out = new_fxn.out();
@@ -261,7 +268,7 @@ pub fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: Fun
       Ok(out)
     },
     Factor::Transpose(fctr) => {
-      let value = factor(fctr, plan.clone(), symbols.clone(), functions.clone())?;
+      let value = factor(fctr, p)?;
       let new_fxn = MatrixTranspose{}.compile(&vec![value])?;
       new_fxn.solve();
       let out = new_fxn.out();
@@ -272,11 +279,12 @@ pub fn factor(fctr: &Factor, plan: Plan, symbols: SymbolTableRef, functions: Fun
   }
 }
 
-pub fn term(trm: &Term, plan: Plan, symbols: SymbolTableRef, functions: FunctionsRef) -> MResult<Value> {
-  let mut lhs = factor(&trm.lhs, plan.clone(), symbols.clone(), functions.clone())?;
+pub fn term(trm: &Term, p: &Interpreter) -> MResult<Value> {
+  let plan = p.plan();
+  let mut lhs = factor(&trm.lhs, p)?;
   let mut term_plan: Vec<Box<dyn MechFunction>> = vec![];
   for (op,rhs) in &trm.rhs {
-    let rhs = factor(&rhs, plan.clone(), symbols.clone(), functions.clone())?;
+    let rhs = factor(&rhs, p)?;
     let new_fxn = match op {
       FormulaOperator::AddSub(AddSubOp::Add) => MathAdd{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::AddSub(AddSubOp::Sub) => MathSub{}.compile(&vec![lhs,rhs])?,
