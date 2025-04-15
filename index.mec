@@ -1,20 +1,23 @@
 range
-=====
+===============================================================================
 
 1. Description
----------------
+-------------------------------------------------------------------------------
 
 Provides functions that produce a range of values.
 
 2. Provided Functions
-----------------------
+-------------------------------------------------------------------------------
+
+- `range/inclusive`
+- `range/exclusive`
 
 3. Info
---------
+-------------------------------------------------------------------------------
 
-math/machine = {
+range/machine = {
   name: "range" 
-  version: "v0.2.35"
+  version: "v0.2.38"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/range"
   license: "Apache-2.0"}
