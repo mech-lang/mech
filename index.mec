@@ -1,20 +1,36 @@
 math
-=====
+===============================================================================
 
 1. Description
----------------
+-------------------------------------------------------------------------------
 
-Provides standard mathematical functions.
+Provides standard math functions.
 
 2. Provided Functions
-----------------------
+-------------------------------------------------------------------------------
+
+- Arithmetic
+  - `math/add`
+  - `math/subtract`
+  - `math/multiply`
+  - `math/divide`
+  - `math/modulus`
+  - `math/power`
+- Trigonometry
+  - `math/sin`
+  - `math/cos`
+  - `math/tan`
+  - `math/asin`
+  - `math/acos` 
+  - `math/atan`
+  - `math/atan2`
 
 3. Info
---------
+-------------------------------------------------------------------------------
 
-math/machine = {
+math/machine := {
   name: "math" 
-  version: "v0.2.35"
+  version: "v0.2.39"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/math"
   license: "Apache-2.0"}
