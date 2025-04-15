@@ -1,6 +1,6 @@
 [package]
 name = "mech"
-version = "0.2.36"
+version = "0.2.38"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Mech is a reactive programming language for building robots, games, and animations."
 documentation = "https://mech-lang.org/docs"
@@ -18,9 +18,9 @@ gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = "0.2.36"
-mech-syntax = "0.2.36"
-mech-interpreter = "0.2.36"
+mech-core = "0.2.38"
+mech-syntax = "0.2.38"
+mech-interpreter = "0.2.38"
 
 clap = {version = "4.5.32", features = ["cargo"]}
 colored = "3.0.0"
@@ -73,13 +73,13 @@ mech-wasm = { path = 'src/wasm'}
 #mech-logic = { path = '../machines/logic' }
 
 [patch.'https://gitlab.com/mech-lang/core']
-mech-core = { path = 'src/core', version = '0.2.35' }
+mech-core = { path = 'src/core', version = '0.2.38' }
 
 [patch.'https://gitlab.com/mech-lang/syntax']
-mech-syntax = { path = 'src/syntax', version = '0.2.35' }
+mech-syntax = { path = 'src/syntax', version = '0.2.38' }
 
 [patch.'https://gitlab.com/mech-lang/interpreter']
-mech-interpreter = { path = 'src/interpreter', version = '0.2.35' }
+mech-interpreter = { path = 'src/interpreter', version = '0.2.38' }
 
 [patch.'https://gitlab.com/mech-lang/wasm']
-mech-wasm = { path = 'src/wasm', version = '0.2.35' }
+mech-wasm = { path = 'src/wasm', version = '0.2.38' }
