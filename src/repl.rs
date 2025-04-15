@@ -45,8 +45,8 @@ pub struct MechRepl {
 impl MechRepl {
 
   pub fn new() -> MechRepl {
-    let intrp = Interpreter::new();
     let intrp_id = generate_uuid();
+    let intrp = Interpreter::new(intrp_id);
     let mut interpreters = HashMap::new();
     interpreters.insert(intrp_id,intrp);
     MechRepl {
@@ -83,7 +83,8 @@ impl MechRepl {
       ReplCommand::Whos(name) => {return Ok(whos(&intrp));}
       ReplCommand::Clear(name) => {
         // Drop the old interpreter replace it with a new one
-        *intrp = Interpreter::new();
+        let id = intrp.id;
+        *intrp = Interpreter::new(id);
         return Ok("".to_string());
       }
       ReplCommand::Ls => {

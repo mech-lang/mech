@@ -98,7 +98,7 @@ impl MechServer {
                 }
               }
             } else {
-              let msg = format!("Failed to download file from URL (status: {}).", response.status());
+              let msg = format!("Failed to download file from URL: {} (status: {}).", backup_url, response.status());
               Err(MechError{file: file!().to_string(), tokens: vec![], msg, id: line!(), kind: MechErrorKind::None})
             }
           },

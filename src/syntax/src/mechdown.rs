@@ -11,7 +11,7 @@ use nom::{
   sequence::tuple as nom_tuple,
   combinator::{opt, eof, peek},
   multi::{many1, many_till, many0, separated_list1,separated_list0},
-  bytes::complete::take_until,
+  bytes::complete::{take_until, take_while},
   Err,
   Err::Failure
 };
@@ -73,8 +73,21 @@ pub fn alignment_separator(input: ParseString) -> ParseResult<ColumnAlignment> {
 }
 
 pub fn markdown_table(input: ParseString) -> ParseResult<MarkdownTable> {
+  let (input, _) = whitespace0(input)?;
+  let (input, table) = alt((markdown_table_with_header, markdown_table_no_header))(input)?;
+  Ok((input, table))
+}
+
+pub fn markdown_table_with_header(input: ParseString) -> ParseResult<MarkdownTable> {
   let (input, (header,alignment)) = markdown_table_header(input)?;
-  let (input, rows) = many0(markdown_table_row)(input)?;
+  let (input, rows) = many1(markdown_table_row)(input)?;
+  Ok((input, MarkdownTable{header, rows, alignment}))
+}
+
+pub fn markdown_table_no_header(input: ParseString) -> ParseResult<MarkdownTable> {
+  let (input, rows) = many1(markdown_table_row)(input)?;
+  let header = vec![];
+  let alignment = vec![];
   Ok((input, MarkdownTable{header, rows, alignment}))
 }
 
@@ -117,30 +130,18 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
   Ok((input, Subtitle{text, level: 2}))
 }
 
-// number_subtitle := (space|tab)*, "(", integer_literal, ")", (space|tab)+, text+, (space|tab)*, whitespace* ;
-pub fn number_subtitle(input: ParseString) -> ParseResult<Subtitle> {
-  let (input, _) = many0(space_tab)(input)?;
-  let (input, _) = left_parenthesis(input)?;
-  let (input, _) = integer_literal(input)?;
-  let (input, _) = right_parenthesis(input)?;
-  let (input, _) = many0(space_tab)(input)?;
-  let (input, text) = paragraph(input)?;
-  let (input, _) = many0(space_tab)(input)?;
-  let (input, _) = whitespace0(input)?;
-  Ok((input, Subtitle{text, level: 3}))
-}
-
 // alpha_subtitle := (space|tab)*, "(", alpha, ")", (space|tab)+, text+, (space|tab)*, whitespace* ;
-pub fn alpha_subtitle(input: ParseString) -> ParseResult<Subtitle> {
+pub fn subtitle(input: ParseString) -> ParseResult<Subtitle> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = left_parenthesis(input)?;
-  let (input, _) = alpha(input)?;
+  let (input, num) = separated_list1(period,alt((many1(alpha),many1(digit))))(input)?;
   let (input, _) = right_parenthesis(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, text) = paragraph(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = whitespace0(input)?;
-  Ok((input, Subtitle{text, level: 4}))
+  let level: u8 = if num.len() < 3 { 3 } else { num.len() as u8 + 1 };
+  Ok((input, Subtitle{text, level}))
 }
 
 // strong := (asterisk, asterisk), +paragraph_element, (asterisk, asterisk) ;
@@ -210,9 +211,22 @@ pub fn raw_hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Hyperlink((url.clone(), url))))
 }
 
-// paragraph_text := ¬(http_prefix | left_bracket | tilde | asterisk | underscore | grave | define_operator | bar), +text ;
+// img := "![", +text, "]", "(", +text, ")" ;
+pub fn img(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, _) = img_prefix(input)?;
+  let (input, caption_text) = many1(tuple((is_not(right_bracket),text)))(input)?;
+  let (input, _) = right_bracket(input)?;
+  let (input, _) = left_parenthesis(input)?;
+  let (input, src) = many1(tuple((is_not(right_parenthesis),text)))(input)?;
+  let (input, _) = right_parenthesis(input)?;
+  let merged_caption = Token::merge_tokens(&mut caption_text.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>()).unwrap();
+  let merged_src = Token::merge_tokens(&mut src.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>()).unwrap();
+  Ok((input, ParagraphElement::Image( Image{src: merged_src, caption: Some(merged_caption)} )))
+}
+
+// paragraph_text := ¬(img_prefix | http_prefix | left_bracket | tilde | asterisk | underscore | grave | define_operator | bar), +text ;
 pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
-  let (input, elements) = match many1(nom_tuple((is_not(alt((http_prefix,left_bracket,tilde,asterisk,underscore,grave,define_operator,bar))),text)))(input) {
+  let (input, elements) = match many1(nom_tuple((is_not(alt((footnote_prefix, img_prefix,http_prefix,left_brace,left_bracket,tilde,asterisk,underscore,grave,define_operator,bar))),text)))(input) {
     Ok((input, mut text)) => {
       let mut text = text.into_iter().map(|(_,tkn)| tkn).collect();
       let mut text = Token::merge_tokens(&mut text).unwrap();
@@ -224,9 +238,27 @@ pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, elements))
 }
 
-// paragraph_element := hyperlink | raw_hyperlink | paragraph_text | strong | emphasis | inline_code | strikethrough | underline ;
+// inline-mech-cdoe := "{", expression, "}" ;`
+pub fn inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, _) = left_brace(input)?;
+  let (input, expr) = expression(input)?;
+  let (input, _) = right_brace(input)?;
+  Ok((input, ParagraphElement::InlineMechCode(expr)))
+}
+
+// footnote-reference := "[^", +text, "]" ;
+pub fn footnote_reference(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, _) = footnote_prefix(input)?;
+  let (input, text) = many1(tuple((is_not(right_bracket),text)))(input)?;
+  let (input, _) = right_bracket(input)?;
+  let mut tokens = text.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>();
+  let footnote_text = Token::merge_tokens(&mut tokens).unwrap();
+  Ok((input, ParagraphElement::FootnoteReference(footnote_text)))
+}
+
+// paragraph-element := hyperlink | raw-hyperlink | footnote-reference | img | paragraph-text | strong | emphasis | inline-code | strikethrough | underline ;
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
-  alt((hyperlink, raw_hyperlink, paragraph_text, strong, emphasis, inline_code, strikethrough, underline))(input)
+  alt((hyperlink, raw_hyperlink, footnote_reference, img, inline_mech_code, paragraph_text, strong, emphasis, inline_code, strikethrough, underline))(input)
 }
 
 // paragraph := +paragraph_element ;
@@ -235,23 +267,251 @@ pub fn paragraph(input: ParseString) -> ParseResult<Paragraph> {
   Ok((input, Paragraph{elements}))
 }
 
-// unordered_list := +list_item, ?new_line, *whitespace ;
-pub fn unordered_list(input: ParseString) -> ParseResult<UnorderedList> {
-  let (input, items) = many1(list_item)(input)?;
-  let (input, _) = opt(new_line)(input)?;
+// indented-ordered-list-item := ws, number, ".", +text, new_line*; 
+pub fn ordered_list_item(input: ParseString) -> ParseResult<(Number,Paragraph)> {
+  let (input, number) = number(input)?;
+  let (input, _) = period(input)?;
+  let (input, list_item) = paragraph(input)?;
+  let (input, _) = new_line(input)?;
+  Ok((input, (number,list_item)))
+}
+
+// checked-item := "-", ("[", "x", "]"), paragraph ;
+pub fn checked_item(input: ParseString) -> ParseResult<(bool,Paragraph)> {
+  let (input, _) = dash(input)?;
+  let (input, _) = left_bracket(input)?;
+  let (input, _) = alt((tag("x"),tag("✓"),tag("✗")))(input)?;
+  let (input, _) = right_bracket(input)?;
+  let (input, list_item) = paragraph(input)?;
+  let (input, _) = new_line(input)?;
+  Ok((input, (true,list_item)))
+}
+
+// unchecked-item := "-", ("[", whitespace0, "]"), paragraph ;
+pub fn unchecked_item(input: ParseString) -> ParseResult<(bool,Paragraph)> {
+  let (input, _) = dash(input)?;
+  let (input, _) = left_bracket(input)?;
   let (input, _) = whitespace0(input)?;
-  Ok((input,  UnorderedList{items}))
+  let (input, _) = right_bracket(input)?;
+  let (input, list_item) = paragraph(input)?;
+  let (input, _) = new_line(input)?;
+  Ok((input, (false,list_item)))
+}
+
+// check-list-item := checked-item | unchecked-item ;
+pub fn check_list_item(input: ParseString) -> ParseResult<(bool,Paragraph)> {
+  let (input, item) = alt((checked_item, unchecked_item))(input)?;
+  Ok((input, item))
+}
+
+pub fn check_list(mut input: ParseString, level: usize) -> ParseResult<MDList> {
+  let mut items = vec![];
+  let mut i = 0;
+  loop {
+    let mut indent = 0;
+    let mut current = input.peek(indent);
+    while current == Some(" ") || current == Some("\t") {
+      current = input.peek(indent);
+      indent += 1;
+    }  
+    // If we are at list level, parse a list item
+    let (next_input, _) = many0(space_tab)(input)?;
+    let (next_input,list_item) = match check_list_item(next_input.clone()) {
+      Ok((next_input, list_item)) => (next_input, list_item),
+      Err(err) => {
+        if items.len() != 0 {
+          input = next_input.clone();
+          break;
+        } else {
+          return Err(err);
+        }
+      }
+    };
+    // The current input should be either a number or a space.
+    // If it's a number, we are at the margin, and so we can continue.
+    // If it's a space, we need to see if we are at the right level, of if maybe there is a sublist.
+    let mut indent = 0;
+    let mut current = next_input.peek(indent);
+    while current == Some(" ") || current == Some("\t") {
+      current = next_input.peek(indent);
+      indent += 1;
+    }
+    input = next_input;
+    // if the indent of the next line is less than the level, we are done with the list.
+    if indent < level {
+      items.push((list_item, None));
+      break;
+    // if the indent is the same level, then we continue the list and parse the next line
+    } else if indent == level {
+      items.push((list_item, None));
+      continue;
+    // if the indent is greater, we are going to parse a sublist
+    } else if indent > level {
+      // We are in a nested list, so we need to parse the nested list
+      let (next_input, list) = sublist(input.clone(), indent)?;
+      items.push((list_item, Some(list)));
+      input = next_input;
+      continue;
+    }
+  }
+  Ok((input, MDList::Check(items)))
+}
+
+// unordered_list := +list_item, ?new_line, *whitespace ;
+pub fn unordered_list(mut input: ParseString, level: usize) -> ParseResult<MDList> {
+  let mut items = vec![];
+  let mut i = 0;
+  loop {
+    let mut indent = 0;
+    let mut current = input.peek(indent);
+    while current == Some(" ") || current == Some("\t") {
+      current = input.peek(indent);
+      indent += 1;
+    }  
+    // If we are at list level, parse a list item
+    let (next_input, _) = many0(space_tab)(input)?;
+    let (next_input,list_item) = match unordered_list_item(next_input.clone()) {
+      Ok((next_input, list_item)) => (next_input, list_item),
+      Err(err) => {
+        if items.len() != 0 {
+          input = next_input.clone();
+          break;
+        } else {
+          return Err(err);
+        }
+      }
+    };
+    // The current input should be either a number or a space.
+    // If it's a number, we are at the margin, and so we can continue.
+    // If it's a space, we need to see if we are at the right level, of if maybe there is a sublist.
+    let mut indent = 0;
+    let mut current = next_input.peek(indent);
+    while current == Some(" ") || current == Some("\t") {
+      current = next_input.peek(indent);
+      indent += 1;
+    }
+    input = next_input;
+    // if the indent of the next line is less than the level, we are done with the list.
+    if indent < level {
+      items.push((list_item, None));
+      break;
+    // if the indent is the same level, then we continue the list and parse the next line
+    } else if indent == level {
+      items.push((list_item, None));
+      continue;
+    // if the indent is greater, we are going to parse a sublist
+    } else if indent > level {
+      // We are in a nested list, so we need to parse the nested list
+      let (next_input, list) = sublist(input.clone(), indent)?;
+      items.push((list_item, Some(list)));
+      input = next_input;
+      continue;
+    }
+  }
+  Ok((input, MDList::Unordered(items)))
+}
+
+//orderd-list := +ordered-list-item, ?new-line, *whitespace ;
+pub fn ordered_list(mut input: ParseString, level: usize) -> ParseResult<MDList> {
+  let mut items = vec![];
+  let mut i = 0;
+  loop {
+    let mut indent = 0;
+    let mut current = input.peek(indent);
+    while current == Some(" ") || current == Some("\t") {
+      current = input.peek(indent);
+      indent += 1;
+    }  
+    // If we are at list level, parse a list item
+    let (next_input, _) = many0(space_tab)(input)?;
+    let (next_input, list_item) = match ordered_list_item(next_input.clone()) {
+      Ok((next_input, list_item)) => (next_input, list_item),
+      Err(err) => {
+        if items.len() != 0 {
+          input = next_input.clone();
+          break;
+        } else {
+          return Err(err);
+        }
+      }
+    };
+    // The current input should be either a number or a space.
+    // If it's a number, we are at the margin, and so we can continue.
+    // If it's a space, we need to see if we are at the right level, of if maybe there is a sublist.
+    let mut indent = 0;
+    let mut current = next_input.peek(indent);
+    while current == Some(" ") || current == Some("\t") {
+      current = next_input.peek(indent);
+      indent += 1;
+    }
+    input = next_input;
+    // if the indent of the next line is less than the level, we are done with the list.
+    if indent < level {
+      items.push((list_item, None));
+      break;
+    // if the indent is the same level, then we continue the list and parse the next line
+    } else if indent == level {
+      items.push((list_item, None));
+      continue;
+    // if the indent is greater, we are going to parse a sublist
+    } else if indent > level {
+      // We are in a nested list, so we need to parse the nested list
+      let (next_input, list) = sublist(input.clone(), indent)?;
+      items.push((list_item, Some(list)));
+      input = next_input;
+      continue;
+    }
+  }
+  let start = match items.first() {
+    Some(((number,_), _)) =>number.clone(),
+    None => unreachable!(),
+  };
+  Ok((input, MDList::Ordered(OrderedList{start, items})))
+}
+
+pub fn sublist(input: ParseString, level: usize) -> ParseResult<MDList> {
+  let (input, list) = match ordered_list(input.clone(), level) {
+    Ok((input, list)) => (input, list),
+    _ => match check_list(input.clone(), level) {
+      Ok((input, list)) => (input, list),
+      _ => match unordered_list(input.clone(), level) {
+        Ok((input, list)) => (input, list),
+        Err(err) => { return Err(err); }
+      }
+    }
+  };
+  Ok((input, list))
+}
+
+// mechdown-list := ordered-list | unordered-list ;
+pub fn mechdown_list(input: ParseString) -> ParseResult<MDList> {
+  let (input, list) = match ordered_list(input.clone(), 0) {
+    Ok((input, list)) => (input, list),
+    _ => match check_list(input.clone(), 0) {
+      Ok((input, list)) => (input, list),
+      _ => match unordered_list(input.clone(), 0) {
+        Ok((input, list)) => (input, list),
+        Err(err) => { return Err(err); }
+      }
+    }
+  };
+  Ok((input, list))
 }
 
 // list_item := dash, <space+>, <paragraph>, new_line* ;
-pub fn list_item(input: ParseString) -> ParseResult<Paragraph> {
+pub fn unordered_list_item(input: ParseString) -> ParseResult<(Option<Token>,Paragraph)> {
   let msg1 = "Expects space after dash";
   let msg2 = "Expects paragraph as list item";
   let (input, _) = dash(input)?;
+  let (input, bullet) = opt(tuple((left_parenthesis, emoji, right_parenthesis)))(input)?;
   let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
   let (input, list_item) = label!(paragraph, msg2)(input)?;
   let (input, _) = many0(new_line)(input)?;
-  Ok((input,  list_item))
+  let bullet = match bullet {
+    Some((_,b,_)) => Some(b),
+    None => None,
+  };
+  Ok((input,  (bullet, list_item)))
 }
 
 
@@ -280,24 +540,54 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
   let (input, _) = nom_tuple((grave, grave, grave))(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = new_line(input)?;
-  let filtered_text: Vec<char> = text.into_iter().flat_map(|(_, s)| s.chars().collect::<Vec<char>>()).collect();
+  let block_src: Vec<char> = text.into_iter().flat_map(|(_, s)| s.chars().collect::<Vec<char>>()).collect();
  
   match code_id {
     Some(id) => { 
-      if id.to_string() == "ebnf" {
-        let ebnf_text = filtered_text.iter().collect::<String>();
-        match parse_grammar(&ebnf_text) {
-          Ok(grammar_tree) => {return Ok((input, SectionElement::Grammar(grammar_tree)));},
-          Err(err) => {
-            println!("Error parsing EBNF grammar: {:?}", err);
-            todo!();
+      match id.to_string().as_str() {
+        "ebnf" => {
+          let ebnf_text = block_src.iter().collect::<String>();
+          match parse_grammar(&ebnf_text) {
+            Ok(grammar_tree) => {return Ok((input, SectionElement::Grammar(grammar_tree)));},
+            Err(err) => {
+              println!("Error parsing EBNF grammar: {:?}", err);
+              todo!();
+            }
           }
         }
-      }
+        tag => {
+          // if x begins with mec, mech, or 🤖
+          if tag.starts_with("mech") || tag.starts_with("mec") || tag.starts_with("🤖") {
+
+            // get rid of the prefix and then treat the rest of the string as an identifier
+            let rest = tag.trim_start_matches("mech").trim_start_matches("mec").trim_start_matches("🤖");
+            let code_id = if rest == "" { 0 } else {
+              hash_str(rest)
+            };
+
+            let mech_src = block_src.iter().collect::<String>();
+            let graphemes = graphemes::init_source(&mech_src);
+            let parse_string = ParseString::new(&graphemes);
+
+            match many1(mech_code)(parse_string) {
+              Ok((_, mech_tree)) => {
+                // TODO what if not all the input is parsed? Is that handled?
+                return Ok((input, SectionElement::FencedMechCode((mech_tree,code_id))));
+              },
+              Err(err) => {
+                println!("Error parsing Mech code: {:?}", err);
+                todo!();
+              }
+            };
+          } else {
+            // Some other code block, just keep moving although we might want to do something with it later
+          }
+        }
+      } 
     },
     None => (),
   }
-  let code_token = Token::new(TokenKind::CodeBlock, src_range, filtered_text);
+  let code_token = Token::new(TokenKind::CodeBlock, src_range, block_src);
   Ok((input, SectionElement::CodeBlock(code_token)))
 }
 
@@ -316,25 +606,60 @@ pub fn thematic_break(input: ParseString) -> ParseResult<SectionElement> {
   Ok((input, SectionElement::ThematicBreak))
 }
 
+// footnote := "[^", +text, "]", ":", ws0, paragraph ;
+pub fn footnote(input: ParseString) -> ParseResult<Footnote> {
+  let (input, _) = footnote_prefix(input)?;
+  let (input, text) = many1(tuple((is_not(right_bracket),text)))(input)?;
+  let (input, _) = right_bracket(input)?;
+  let (input, _) = colon(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, paragraph) = paragraph(input)?;
+  let mut tokens = text.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>();
+  let footnote_text = Token::merge_tokens(&mut tokens).unwrap();
+  let footnote = (footnote_text, paragraph);
+  Ok((input, footnote))
+}
+
+pub fn blank_line(input: ParseString) -> ParseResult<Vec<Token>> {
+  let (input, mut st) = many0(space_tab)(input)?;
+  let (input, n) = new_line(input)?;
+  st.push(n);
+  Ok((input, st))
+}
+
+pub fn abstract_el(input: ParseString) -> ParseResult<Paragraph> {
+  let (input, _) = abstract_prefix(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, text) = paragraph(input)?;
+  Ok((input, text))
+}
+
+
 // section_element := mech_code | unordered_list | comment | paragraph | code_block | sub_section;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match many1(mech_code)(input.clone()) {
     Ok((input, code)) => (input, SectionElement::MechCode(code)),
-    _ => match unordered_list(input.clone()) {
-      Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
-      _ => match markdown_table(input.clone()) {
-        Ok((input, table)) => (input, SectionElement::Table(table)),
-        _ => match block_quote(input.clone()) {   
-          Ok((input, quote)) => (input, SectionElement::BlockQuote(quote)),
-          _ => match code_block(input.clone()) {
-            Ok((input, m)) => (input,m),
-            _ => match thematic_break(input.clone()) {
-              Ok((input, _)) => (input, SectionElement::ThematicBreak),
-              _ => match sub_section(input.clone()) {
-                Ok((input, s)) => (input, SectionElement::Section(Box::new(s))),
-                _ => match paragraph(input) {
-                  Ok((input, p)) => (input, SectionElement::Paragraph(p)),
-                  Err(err) => { return Err(err); }
+    _ =>match mechdown_list(input.clone()) {
+      Ok((input, lst)) => (input, SectionElement::List(lst)),
+      _ => match footnote(input.clone()) {
+        Ok((input, ftnote)) => (input, SectionElement::Footnote(ftnote)),
+        _ => match abstract_el(input.clone()) {
+          Ok((input, abstrct)) => (input, SectionElement::Abstract(abstrct)),
+          _ => match markdown_table(input.clone()) {
+            Ok((input, table)) => (input, SectionElement::Table(table)),
+            _ => match block_quote(input.clone()) {   
+              Ok((input, quote)) => (input, SectionElement::BlockQuote(quote)),
+              _ => match code_block(input.clone()) {
+                Ok((input, m)) => (input,m),
+                _ => match thematic_break(input.clone()) {
+                  Ok((input, _)) => (input, SectionElement::ThematicBreak),
+                  _ => match subtitle(input.clone()) {
+                    Ok((input, subtitle)) => (input, SectionElement::Subtitle(subtitle)),
+                    _ => match paragraph(input) {
+                      Ok((input, p)) => (input, SectionElement::Paragraph(p)),
+                      Err(err) => { return Err(err); }
+                    }
+                  }
                 }
               }
             }
@@ -343,7 +668,7 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
       }
     }
   };
-  let (input, _) = whitespace0(input)?;
+  let (input, _) = many0(blank_line)(input)?;
   Ok((input, section_element))
 }
 
@@ -351,8 +676,8 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
 pub fn sub_section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match many1(mech_code)(input.clone()) {
     Ok((input, code)) => (input, SectionElement::MechCode(code)),
-    _ => match unordered_list(input.clone()) {
-      Ok((input, list)) => (input, SectionElement::UnorderedList(list)),
+    _ => match mechdown_list(input.clone()) {
+      Ok((input, list)) => (input, SectionElement::List(list)),
       _ => match markdown_table(input.clone()) {
         Ok((input, table)) => (input, SectionElement::Table(table)),
         _ => match block_quote(input.clone()) {   
@@ -392,19 +717,10 @@ pub fn section_elements(input: ParseString) -> ParseResult<Section> {
   Ok((input, Section{subtitle: None, elements}))
 }
 
-// sub_section := alpha_subtitle, sub_section_element* ;
-pub fn sub_section(input: ParseString) -> ParseResult<Section> {
-  let msg = "Expects user function, block, mech code block, code block, statement, paragraph, or unordered list";
-  let (input, subtitle) = alpha_subtitle(input)?;
-  let (input, elements) = many0(tuple((is_not(alt((ul_subtitle,alpha_subtitle))),sub_section_element)))(input)?;
-  let elements = elements.into_iter().map(|(_,e)| e).collect();
-  Ok((input, Section{subtitle: Some(subtitle), elements}))
-}
-
 // body := whitespace0, (section | section_elements)+, whitespace0 ;
 pub fn body(input: ParseString) -> ParseResult<Body> {
   let (input, _) = whitespace0(input)?;
-  let (input, sections) = many1(alt((section,section_elements)))(input)?;
+  let (input, sections) = many0(alt((section,section_elements)))(input)?;
   let (input, _) = whitespace0(input)?;
   Ok((input, Body{sections}))
 }

@@ -128,7 +128,8 @@ async fn main() -> Result<(), MechError> {
   let mut repl_flag = matches.get_flag("repl");
   let time_flag = matches.get_flag("time");
 
-  let mut intrp = Interpreter::new();
+  let uuid = generate_uuid();
+  let mut intrp = Interpreter::new(uuid);
 
   // --------------------------------------------------------------------------
   // Serve

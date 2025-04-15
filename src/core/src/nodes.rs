@@ -85,15 +85,15 @@ pub fn merge_src_range(r1: SourceRange, r2: SourceRange) -> SourceRange {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TokenKind {
-  Alpha, Ampersand, Any, Apostrophe, AssignOperator, Asterisk, AsyncTransitionOperator, At,
+  AbstractPrefix, Alpha, Ampersand, Any, Apostrophe, AssignOperator, Asterisk, AsyncTransitionOperator, At,
   Backslash, Bar, BoxDrawing,
   Caret, CarriageReturn, CarriageReturnNewLine, Colon, CodeBlock, Comma,
   Dash, DefineOperator, Digit, Dollar,
   Emoji, Empty, Equal, Exclamation,
-  False,
+  False, FootnotePrefix,
   Grave,
-  HashTag, Http,
-  Identifier, InlineCode, 
+  HashTag, HttpPrefix,
+  Identifier, ImgPrefix, InlineCode, 
   LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
   Newline, Not, Number,
   OutputOperator,
@@ -344,15 +344,10 @@ pub struct Section {
 impl Section {
 
   pub fn table_of_contents(&self) -> Section {
-    let mut elements = vec![];
-    for e in &self.elements {
-      match e {
-        SectionElement::Section(s) => {
-          elements.push(SectionElement::Section(Box::new(s.table_of_contents())));
-        },
-        _ => (),
-      }
-    }
+    let elements: Vec<_> = self.elements.iter()
+      .filter(|e| matches!(e, SectionElement::Subtitle(_)))
+      .cloned()
+      .collect();
     Section {
       subtitle: self.subtitle.clone(),
       elements,
@@ -398,33 +393,40 @@ pub struct Rule {
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum GrammarExpression {
   Choice(Vec<GrammarExpression>),
-  Sequence(Vec<GrammarExpression>),
+  Definition(GrammarIdentifier),
+  Group(Box<GrammarExpression>),
+  List(Box<GrammarExpression>, Box<GrammarExpression>),
+  Not(Box<GrammarExpression>),
+  Optional(Box<GrammarExpression>),
+  Peek(Box<GrammarExpression>),
   Repeat0(Box<GrammarExpression>),
   Repeat1(Box<GrammarExpression>),
-  Optional(Box<GrammarExpression>),
-  Terminal(Token),
-  List(Box<GrammarExpression>, Box<GrammarExpression>),
-  Definition(GrammarIdentifier),
-  Peek(Box<GrammarExpression>),
-  Not(Box<GrammarExpression>),
   Range(Token,Token),
-  Group(Box<GrammarExpression>),
+  Sequence(Vec<GrammarExpression>),
+  Terminal(Token),
 }
+
+// This is just a temporary flag to store block state, 
+// I don't know exactly what I want to put in here yet
+type BlockConfig = u64; 
+
+pub type Footnote = (Token, Paragraph);
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SectionElement {
-  Section(Box<Section>),
-  Comment(Comment),
-  Paragraph(Paragraph),
-  MechCode(Vec<MechCode>),
-  UnorderedList(UnorderedList),
-  Table(MarkdownTable),
-  CodeBlock(Token),
-  Grammar(Grammar),
+  Abstract(Paragraph),
   BlockQuote(Paragraph),
+  CodeBlock(Token),
+  Comment(Comment),
+  FencedMechCode((Vec<MechCode>, BlockConfig)),
+  Footnote(Footnote),
+  Grammar(Grammar),
+  List(MDList),
+  MechCode(Vec<MechCode>),
+  Paragraph(Paragraph),
+  Subtitle(Subtitle),
+  Table(MarkdownTable),
   ThematicBreak,
-  OrderedList,     // todo
-  Image,           // todo
 }
 
 impl SectionElement {
@@ -442,21 +444,42 @@ impl SectionElement {
   }
 }
 
-pub type ListItem = Paragraph;
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Image {
+  pub src: Token,
+  pub caption: Option<Token>,
+}
+
+impl Image {
+  pub fn to_string(&self) -> String {
+    format!("![{}]({})", self.caption.as_ref().unwrap_or(&Token::default()).to_string(), self.src.to_string())
+  }
+}
+
+pub type UnorderedList = Vec<((Option<Token>,Paragraph),Option<MDList>)>;
+pub type CheckList = Vec<((bool,Paragraph),Option<MDList>)>;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
-pub struct UnorderedList {
-  pub items: Vec<ListItem>,
+pub struct OrderedList {
+  pub start: Number,
+  pub items: Vec<((Number,Paragraph),Option<MDList>)>,
+}
+
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub enum MDList {
+  Unordered(UnorderedList),
+  Ordered(OrderedList),
+  Check(CheckList)
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum MechCode {
-  Expression(Expression),
-  Statement(Statement),
-  FsmSpecification(FsmSpecification),
-  FsmImplementation(FsmImplementation),
-  FunctionDefine(FunctionDefine),
   Comment(Comment),
+  Expression(Expression),
+  FsmImplementation(FsmImplementation),
+  FsmSpecification(FsmSpecification),
+  FunctionDefine(FunctionDefine),
+  Statement(Statement),
 }
 
 impl MechCode {
@@ -516,19 +539,19 @@ pub struct Guard {
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Transition {
-  Next(Pattern),
-  Output(Pattern),
   Async(Pattern),
   CodeBlock(Vec<MechCode>),
+  Next(Pattern),
+  Output(Pattern),
   Statement(Statement),
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Pattern {
-  Wildcard,
-  Formula(Factor),
   Expression(Expression),
+  Formula(Factor),
   TupleStruct(PatternTupleStruct),
+  Wildcard,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
@@ -555,12 +578,12 @@ pub struct StateDefinition {
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Statement {
-  VariableDefine(VariableDefine),
-  VariableAssign(VariableAssign),
-  KindDefine(KindDefine),
   EnumDefine(EnumDefine),
-  FsmDeclare(FsmDeclare),    
-  OpAssign(OpAssign), 
+  FsmDeclare(FsmDeclare),
+  KindDefine(KindDefine),
+  OpAssign(OpAssign),
+  VariableAssign(VariableAssign),
+  VariableDefine(VariableDefine),
   SplitTable,     // todo
   FlattenTable,   // todo
 }
@@ -625,13 +648,13 @@ pub struct Record {
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Structure {
   Empty,
-  Record(Record),
+  Map(Map),
   Matrix(Matrix),
+  Record(Record),
+  Set(Set),
   Table(Table),
   Tuple(Tuple),
   TupleStruct(TupleStruct),
-  Set(Set),
-  Map(Map),
 }
 
 impl Structure {
@@ -815,26 +838,26 @@ pub struct SliceRef {
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Subscript {
-  Dot(Identifier),          // a.b
-  Swizzle(Vec<Identifier>), // a.b,c
-  Range(RangeExpression),   // a[1 + 1]
-  Formula(Factor),          // a[1 + 1]
   All,                      // a[:]
-  Bracket(Vec<Subscript>),  // a[1,2,3]
   Brace(Vec<Subscript>),    // a{"foo"}
-  DotInt(RealNumber)        // a.1
+  Bracket(Vec<Subscript>),  // a[1,2,3]
+  Dot(Identifier),          // a.b
+  DotInt(RealNumber),       // a.1
+  Formula(Factor),          // a[1 + 1]
+  Range(RangeExpression),   // a[1 + 1]
+  Swizzle(Vec<Identifier>), // a.b,c
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Expression {
-  Var(Var),
-  Range(Box<RangeExpression>),
-  Slice(Slice),
   Formula(Factor),
-  Structure(Structure),
-  Literal(Literal),
   FunctionCall(FunctionCall),
   FsmPipe(FsmPipe),
+  Literal(Literal),
+  Range(Box<RangeExpression>),
+  Slice(Slice),
+  Structure(Structure),
+  Var(Var),
 }
 
 impl Expression {
@@ -896,15 +919,15 @@ impl KindAnnotation {
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize,Eq, PartialEq)]
 pub enum Kind {
-  Tuple(Vec<Kind>),
-  Bracket((Vec<Kind>,Vec<Literal>)),
+  Atom(Identifier),
   Brace((Vec<Kind>,Vec<Literal>)),
+  Bracket((Vec<Kind>,Vec<Literal>)),
+  Empty,
+  Fsm(Vec<Kind>,Vec<Kind>),
+  Function(Vec<Kind>,Vec<Kind>),
   Map(Box<Kind>,Box<Kind>),
   Scalar(Identifier),
-  Atom(Identifier),
-  Function(Vec<Kind>,Vec<Kind>),
-  Fsm(Vec<Kind>,Vec<Kind>),
-  Empty,
+  Tuple(Vec<Kind>),
 }
 
 impl Kind {
@@ -941,21 +964,21 @@ impl Kind {
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
 pub enum Literal {
-  Empty(Token),
+  Atom(Atom),
   Boolean(Token),
+  Empty(Token),
   Number(Number),
   String(MechString),
-  Atom(Atom),
   TypedLiteral((Box<Literal>,KindAnnotation))
 }
 
 impl Literal {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
-      Literal::Number(x) => x.tokens(),
-      Literal::Boolean(tkn) => vec![tkn.clone()],
-      Literal::String(strng) => vec![strng.text.clone()],
       Literal::Atom(atm) => atm.name.tokens(),
+      Literal::Boolean(tkn) => vec![tkn.clone()],
+      Literal::Number(x) => x.tokens(),
+      Literal::String(strng) => vec![strng.text.clone()],
       _ => todo!(),
     }
   }
@@ -968,30 +991,34 @@ pub struct MechString {
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ParagraphElement {
-  Text(Token),
-  Strong(Box<ParagraphElement>),            
   Emphasis(Box<ParagraphElement>),
-  Underline(Box<ParagraphElement>),
-  Strikethrough(Box<ParagraphElement>),
+  FootnoteReference(Token),
   Hyperlink((Token, Token)),
-  InlineCode(Token),                 
-  Link
+  Image(Image),
+  InlineCode(Token),
+  InlineMechCode(Expression),
+  Strikethrough(Box<ParagraphElement>),
+  Strong(Box<ParagraphElement>),
+  Text(Token),
+  Underline(Box<ParagraphElement>),
 }
 
 impl ParagraphElement {
 
   pub fn to_string(&self) -> String {
     match self {
-      ParagraphElement::Text(t) => t.to_string(),
-      ParagraphElement::Strong(t) => t.to_string(),
       ParagraphElement::Emphasis(t) => t.to_string(),
-      ParagraphElement::Underline(t) => t.to_string(),
-      ParagraphElement::Strikethrough(t) => t.to_string(),
-      ParagraphElement::InlineCode(t) => t.to_string(),
+      ParagraphElement::FootnoteReference(t) => t.to_string(),
       ParagraphElement::Hyperlink((t, u)) => {
         format!("[{}]({})", t.to_string(), u.to_string())
       }
-      _ => todo!(),
+      ParagraphElement::Image(t) => t.src.to_string(),
+      ParagraphElement::InlineCode(t) => t.to_string(),
+      ParagraphElement::InlineMechCode(t) => format!("{:?}", t),
+      ParagraphElement::Strikethrough(t) => t.to_string(),
+      ParagraphElement::Strong(t) => t.to_string(),
+      ParagraphElement::Text(t) => t.to_string(),
+      ParagraphElement::Underline(t) => t.to_string(),
     }
   }
 
@@ -1029,6 +1056,14 @@ pub enum Number {
 }
 
 impl Number {
+
+  pub fn to_string(&self) -> String {
+    match self {
+      Number::Real(x) => x.to_string(),
+      Number::Imaginary(x) => x.to_string(),
+    }
+  }
+
   pub fn tokens(&self) -> Vec<Token> {
     match self {
       Number::Real(x) => x.tokens(),
@@ -1039,15 +1074,15 @@ impl Number {
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
 pub enum RealNumber {
-  Negated(Box<RealNumber>),
-  Integer(Token),
-  Float((Whole,Part)),
-  Decimal(Token),
-  Hexadecimal(Token),
-  Octal(Token),
   Binary(Token),
-  Scientific((Base,Exponent)),
+  Decimal(Token),
+  Float((Whole,Part)),
+  Hexadecimal(Token),
+  Integer(Token),
+  Negated(Box<RealNumber>),
+  Octal(Token),
   Rational((Numerator,Denominator)),
+  Scientific((Base,Exponent)),
 }
 
 impl RealNumber {
@@ -1055,6 +1090,25 @@ impl RealNumber {
     match self {
       RealNumber::Integer(tkn) => vec![tkn.clone()],
       _ => todo!(),
+    }
+  }
+  pub fn to_string(&self) -> String {
+    match self {
+      RealNumber::Integer(tkn) => tkn.to_string(),
+      RealNumber::Float((whole, part)) => format!("{}.{}", whole.to_string(), part.to_string()),
+      RealNumber::Binary(tkn) => format!("0b{}", tkn.to_string()),
+      RealNumber::Hexadecimal(tkn) => format!("0x{}", tkn.to_string()),
+      RealNumber::Octal(tkn) => format!("0o{}", tkn.to_string()),
+      RealNumber::Decimal(tkn) => format!("0d{}", tkn.to_string()),
+      RealNumber::Rational((num, den)) => format!("{}/{}", num.to_string(), den.to_string()),
+      RealNumber::Scientific(((whole,part), exponent)) => {
+        let (sign, whole, part) = exponent;
+        let sign_str = if *sign { "+" } else { "-" };
+        let whole_str = whole.to_string();
+        let part_str = part.to_string();
+        format!("{}{}.{}/10^{}", whole.to_string(), part.to_string(), sign_str, whole_str)
+      }
+      RealNumber::Negated(x) => format!("-{}", x.to_string()),
     }
   }
 }
@@ -1068,6 +1122,26 @@ pub struct ImaginaryNumber {
 pub struct ComplexNumber {
   pub real: Option<RealNumber>,
   pub imaginary: ImaginaryNumber
+}
+
+impl ComplexNumber {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = vec![];
+    if let Some(r) = &self.real {
+      tkns.append(&mut r.tokens());
+    }
+    tkns.append(&mut self.imaginary.number.tokens());
+    tkns
+  }
+
+  pub fn to_string(&self) -> String {
+    let mut out = "".to_string();
+    if let Some(r) = &self.real {
+      out.push_str(&r.to_string());
+    }
+    out.push_str("i");
+    out
+  }
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
@@ -1085,36 +1159,36 @@ pub struct OpAssign {
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum OpAssignOp {
   Add,
-  Sub,   
-  Mul,
   Div,
   Exp,   
+  Mul,
+  Sub,   
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum RangeOp {
-  Inclusive,
   Exclusive,      
+  Inclusive,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum AddSubOp {
   Add,
-  Sub
+  Sub,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum MulDivOp {
+  Div,
   Mul,
-  Div
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum VecOp {
+  Cross,
+  Dot,
   MatMul,
   Solve,
-  Dot,
-  Cross,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
@@ -1124,29 +1198,29 @@ pub enum ExponentOp {
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ComparisonOp {
-  LessThan,
-  GreaterThan,
-  LessThanEqual,
-  GreaterThanEqual,
   Equal,
+  GreaterThan,
+  GreaterThanEqual,
+  LessThan,
+  LessThanEqual,
   NotEqual,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum LogicOp {
   And,
-  Or,
   Not,
+  Or,
   Xor,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum FormulaOperator {
-  Logic(LogicOp),
-  Comparison(ComparisonOp),
   AddSub(AddSubOp),
-  MulDiv(MulDivOp),
+  Comparison(ComparisonOp),
   Exponent(ExponentOp),
+  Logic(LogicOp),
+  MulDiv(MulDivOp),
   Vec(VecOp),
 }
 
@@ -1187,23 +1261,23 @@ impl Term {
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Factor {
-  Term(Box<Term>),
-  Parenthetical(Box<Factor>),
   Expression(Box<Expression>),
   Negate(Box<Factor>),
   Not(Box<Factor>),
+  Parenthetical(Box<Factor>),
+  Term(Box<Term>),
   Transpose(Box<Factor>),
 }
 
 impl Factor {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
-      Factor::Term(x) => x.tokens(),
       Factor::Expression(x) => x.tokens(),
       Factor::Negate(x) => x.tokens(),
       Factor::Not(x) => x.tokens(),
-      Factor::Transpose(x) => x.tokens(),
       Factor::Parenthetical(x) => x.tokens(),
+      Factor::Term(x) => x.tokens(),
+      Factor::Transpose(x) => x.tokens(),
     }
   }
 }
