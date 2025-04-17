@@ -90,7 +90,7 @@ entries
   .forEach(entry => {{
     if (entry.isIntersecting) {{
       const id = entry.target.id;
-      console.log("Activating:", id);
+      //console.log("Activating:", id);
 
       // Remove 'active' class from all nav items
       navItems.forEach(item => item.classList.remove("active"));
@@ -144,80 +144,28 @@ window.addEventListener("scroll", () => {{
     lastScrollY = currentScrollY;
   }}
 
-  // THIS IS THE SCROLLING DOWN PHASE
-  if (scrolling_down) {{
-    //console.log("Scrolling down:", percent);
-    console.log("Margin:", margin);
-    if (percent < 0.05 && margin < 9) {{
-      console.log("NOW +100%");
-      margin = 10;
-      createObserver("0px 0px -90% 0px", scrolling_down);
-    }} else if (percent > 0.4 && margin > 9) {{
-      console.log("NOW +90%");
-      margin = 9;
-      createObserver("0px 0px -90% 0px", scrolling_down);
-    }} else if (percent > 0.4 && margin > 8) {{
-      console.log("NOW +80%");
-      margin = 8;
-      createObserver("0px 0px -80% 0px", scrolling_down);
-    }} else if (percent > 0.4 && margin > 7) {{
-      console.log("NOW +70%");
-      margin = 7;
-      createObserver("0px 0px -70% 0px", scrolling_down);
-    }} else if (percent > 0.5 && margin > 6) {{
-      console.log("NOW +60%");
-      margin = 6;
-      createObserver("0px 0px -60% 0px", scrolling_down);
-    }} else if (percent > 0.6 && margin > 5) {{
-      console.log("NOW +50%");
-      margin = 5;
-      createObserver("0px 0px -50% 0px", scrolling_down);
-    }} else if (percent > 0.7 && margin > 4) {{
-      console.log("NOW +40%");
-      margin = 4;
-      createObserver("0px 0px -40% 0px", scrolling_down);
-    }} else if (percent > 0.8 && margin > 3) {{
-      console.log("NOW +30%");
-      margin = 3;
-      createObserver("0px 0px -30% 0px", scrolling_down);
-    }} else if (percent > 0.9 && margin > 2) {{
-      console.log("NOW +20%");
-      margin = 2;
-      createObserver("0px 0px -20% 0px", scrolling_down);
-    }} else if (percent >= 0.95 && margin > 1) {{
-      console.log("NOW +0%");
-      margin = 0;
-      createObserver("0px 0px 0% 0px", scrolling_down);
-    }}
-  }} else {{
-   console.log("Scrolling up:", percent);
-   console.log("Margin:", margin);
-    if (percent <= 0.99 && margin < 1) {{
-      console.log("NOW -70%");
-      margin = 7;
-      createObserver("-70% 0px 0px 0px", scrolling_down);
-    }} else if (percent < 0.9 && margin > 6) {{
-      console.log("NOW -60%");
-      margin = 6;
-      createObserver("-60% 0px 0px 0px", scrolling_down);
-    }} else if (percent < 0.8 && margin > 5) {{
-      console.log("NOW -50%");
-      margin = 5;
-      createObserver("-50% 0px 0px 0px", scrolling_down);
-    }} else if (percent < 0.7 && margin > 4) {{
-      console.log("NOW -40%");
-      margin = 4;
-      createObserver("-40% 0px 0px 0px", scrolling_down);
-    }} else if (percent < 0.6 && margin > 3) {{
-      console.log("NOW -30%");
-      margin = 3;
-      createObserver("-30% 0px 0px 0px", scrolling_down);
-    }} else if (percent < 0.5 && margin > 2) {{
-      console.log("NOW -20%");
-      margin = 2;
-      createObserver("-20% 0px 0px 0px", scrolling_down);
-    }}
+  if (percent < 0.05) {{
+    createObserver("0px 0px -90% 0px", scrolling_down);
+  }} else if (percent < 0.2) {{
+    createObserver("-0% 0px -90% 0px", scrolling_down);
+  }} else if (percent < 0.3) {{
+    createObserver("-10% 0px -80% 0px", scrolling_down);
+  }} else if (percent < 0.4) {{
+    createObserver("-20% 0px -70% 0px", scrolling_down);
+  }} else if (percent < 0.5) {{
+    createObserver("-30% 0px -60% 0px", scrolling_down);
+  }} else if (percent < 0.6) {{
+    createObserver("-40% 0px -50% 0px", scrolling_down);
+  }} else if (percent < 0.7) {{
+    createObserver("-50% 0px -40% 0px", scrolling_down);
+  }} else if (percent < 0.8) {{
+    createObserver("-60% 0px -30% 0px", scrolling_down);
+  }} else if (percent < 0.9) {{
+    createObserver("-70% 0px -20% 0px", scrolling_down);
+  }} else if (percent <= 0.95) {{
+    createObserver("-80% 0px 0% 0px", scrolling_down);
   }}
+
 
 }});
 
