@@ -1012,3 +1012,11 @@ h4::before {
     counter-increment: h4;
     content: counter(h2) "." counter(h3) "." counter(h4) " ";
 }
+
+.mech-program-subtitle.toc.active::before{
+    color: #ee6262;
+}
+
+.mech-program-subtitle.toc.active a{
+    color: #ee6262;
+}
