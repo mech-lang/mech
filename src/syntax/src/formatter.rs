@@ -69,7 +69,174 @@ impl Formatter {
     let foot = format!(r#"
       <div id = "mech-output"></div>
     </div>
+    <script>
+
+let observer = null;
+
+function createObserver(rootMarginValue,scrolling_down) {{
+  if (observer) observer.disconnect(); // Clean up old observer
+  const headings = document.querySelectorAll(".mech-program-subtitle:not(.toc)");
+  const navItems = document.querySelectorAll(".mech-program-subtitle.toc");
+  observer = new IntersectionObserver((entries) => {{
+
+entries
+  .slice() // Create a shallow copy to avoid mutating the original entries array
+  .sort((a, b) => {{
+    // Sort entries based on scroll direction
+    return scrolling_down
+      ? a.boundingClientRect.top - b.boundingClientRect.top // Ascending for scrolling down
+      : b.boundingClientRect.top - a.boundingClientRect.top; // Descending for scrolling up
+  }})
+  .forEach(entry => {{
+    if (entry.isIntersecting) {{
+      const id = entry.target.id;
+      console.log("Activating:", id);
+
+      // Remove 'active' class from all nav items
+      navItems.forEach(item => item.classList.remove("active"));
+
+      // Find the corresponding nav item and add 'active' class
+      const activeNav = Array.from(navItems).find(item => {{
+        const link = item.querySelector("a[href]");
+        return link && link.getAttribute("href") === `#${{id}}`;
+      }});
+
+      if (activeNav) activeNav.classList.add("active");
+
+      // Exit the loop after activating the first relevant entry
+      return;
+    }}
+  }});
+
+
+
+
+
+  }}, {{
+    root: null,
+    rootMargin: rootMarginValue,
+    threshold: 0
+  }});
+
+  headings.forEach(heading => observer.observe(heading));
+}}
+
+createObserver("0px 0px -70% 0px");
+let lastScrollY = window.scrollY;
+let scrolling_down = true;
+let margin = 10;
+
+function getScrollPercentage() {{
+  const scrollTop = window.scrollY || window.pageYOffset;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+
+  if (docHeight === 0) return 0; // avoid division by zero on short pages
+  return scrollTop / docHeight;
+}}
+
+window.addEventListener("scroll", () => {{
+  const percent = getScrollPercentage();
+  const currentScrollY = window.scrollY;
+  scrolling_down = currentScrollY > lastScrollY;
+
+
+  if (currentScrollY !== lastScrollY) {{
+    lastScrollY = currentScrollY;
+  }}
+
+  // THIS IS THE SCROLLING DOWN PHASE
+  if (scrolling_down) {{
+    //console.log("Scrolling down:", percent);
+    console.log("Margin:", margin);
+    if (percent < 0.05 && margin < 9) {{
+      console.log("NOW +100%");
+      margin = 10;
+      createObserver("0px 0px -90% 0px", scrolling_down);
+    }} else if (percent > 0.4 && margin > 9) {{
+      console.log("NOW +90%");
+      margin = 9;
+      createObserver("0px 0px -90% 0px", scrolling_down);
+    }} else if (percent > 0.4 && margin > 8) {{
+      console.log("NOW +80%");
+      margin = 8;
+      createObserver("0px 0px -80% 0px", scrolling_down);
+    }} else if (percent > 0.4 && margin > 7) {{
+      console.log("NOW +70%");
+      margin = 7;
+      createObserver("0px 0px -70% 0px", scrolling_down);
+    }} else if (percent > 0.5 && margin > 6) {{
+      console.log("NOW +60%");
+      margin = 6;
+      createObserver("0px 0px -60% 0px", scrolling_down);
+    }} else if (percent > 0.6 && margin > 5) {{
+      console.log("NOW +50%");
+      margin = 5;
+      createObserver("0px 0px -50% 0px", scrolling_down);
+    }} else if (percent > 0.7 && margin > 4) {{
+      console.log("NOW +40%");
+      margin = 4;
+      createObserver("0px 0px -40% 0px", scrolling_down);
+    }} else if (percent > 0.8 && margin > 3) {{
+      console.log("NOW +30%");
+      margin = 3;
+      createObserver("0px 0px -30% 0px", scrolling_down);
+    }} else if (percent > 0.9 && margin > 2) {{
+      console.log("NOW +20%");
+      margin = 2;
+      createObserver("0px 0px -20% 0px", scrolling_down);
+    }} else if (percent >= 0.95 && margin > 1) {{
+      console.log("NOW +0%");
+      margin = 0;
+      createObserver("0px 0px 0% 0px", scrolling_down);
+    }}
+  }} else {{
+   console.log("Scrolling up:", percent);
+   console.log("Margin:", margin);
+    if (percent <= 0.99 && margin < 1) {{
+      console.log("NOW -70%");
+      margin = 7;
+      createObserver("-70% 0px 0px 0px", scrolling_down);
+    }} else if (percent < 0.9 && margin > 6) {{
+      console.log("NOW -60%");
+      margin = 6;
+      createObserver("-60% 0px 0px 0px", scrolling_down);
+    }} else if (percent < 0.8 && margin > 5) {{
+      console.log("NOW -50%");
+      margin = 5;
+      createObserver("-50% 0px 0px 0px", scrolling_down);
+    }} else if (percent < 0.7 && margin > 4) {{
+      console.log("NOW -40%");
+      margin = 4;
+      createObserver("-40% 0px 0px 0px", scrolling_down);
+    }} else if (percent < 0.6 && margin > 3) {{
+      console.log("NOW -30%");
+      margin = 3;
+      createObserver("-30% 0px 0px 0px", scrolling_down);
+    }} else if (percent < 0.5 && margin > 2) {{
+      console.log("NOW -20%");
+      margin = 2;
+      createObserver("-20% 0px 0px 0px", scrolling_down);
+    }}
+  }}
+
+}});
+
+
+window.addEventListener("resize", () => {{
+  const height = window.innerHeight;
+  if (height < 600) {{
+    console.log("NOW 50%");
+    //createObserver("0px 0px -50% 0px");
+  }} else {{
+    console.log("NOW 70%");
+    //createObserver("0px 0px -70% 0px");
+  }}
+}});
+
+</script>
     <script type="module">
+
+
       import init, {{WasmMech}} from '/pkg/mech_wasm.js';
       let wasm_core;
       async function run() {{
