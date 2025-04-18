@@ -14,7 +14,11 @@ pub struct Formatter{
   nested: bool,
   toc: bool,
   figure_num: usize,
-  section_num: usize,
+  h2_num: usize,
+  h3_num: usize,
+  h4_num: usize,
+  h5_num: usize,
+  h6_num: usize,
   interpreter_id: u64,
 }
 
@@ -27,7 +31,11 @@ impl Formatter {
       rows: 0,
       cols: 0,
       indent: 0,
-      section_num: 0,
+      h2_num: 0,
+      h3_num: 0,
+      h4_num: 0,
+      h5_num: 0,
+      h6_num: 0,
       figure_num: 0,
       html: false,
       nested: false,
@@ -46,11 +54,21 @@ impl Formatter {
     self.grammar(tree)
   }*/
 
+  pub fn reset_numbering(&mut self) {
+    self.h2_num = 0;
+    self.h3_num = 0;
+    self.h4_num = 0;
+    self.h5_num = 0;
+    self.h6_num = 0;
+    self.figure_num = 0;
+  }
+
   pub fn format_html(&mut self, tree: &Program, style: String) -> String {
 
     self.html = true;
     let toc = tree.table_of_contents();
     let formatted_toc = self.table_of_contents(&toc);
+    self.reset_numbering();
     let formatted_src = self.program(tree);
     let head = format!(r#"<html>
     <head>
@@ -169,18 +187,6 @@ window.addEventListener("scroll", () => {{
 
 }});
 
-
-window.addEventListener("resize", () => {{
-  const height = window.innerHeight;
-  if (height < 600) {{
-    console.log("NOW 50%");
-    //createObserver("0px 0px -50% 0px");
-  }} else {{
-    console.log("NOW 70%");
-    //createObserver("0px 0px -70% 0px");
-  }}
-}});
-
 </script>
     <script type="module">
 
@@ -264,13 +270,27 @@ window.addEventListener("resize", () => {{
 
   pub fn subtitle(&mut self, node: &Subtitle) -> String {
     let level = node.level;
-    if level == 2 && !self.toc {
-      self.section_num += 1;
+    if level == 2 {
+      self.h2_num  += 1;
+      self.h3_num = 0;
+      self.h4_num = 0;
+      self.h5_num = 0;
+      self.h6_num = 0;
       self.figure_num = 0;
+    } else if level == 3 {
+      self.h3_num += 1;
+    } else if level == 4 {
+      self.h4_num += 1;
+    } else if level == 5 {
+      self.h5_num += 1;
+    } else if level == 6 {
+      self.h6_num += 1;
     }
+    
     let toc = if self.toc { "toc" } else { "" };
-    let title_id = hash_str(&format!("{}{}{}",level,node.to_string(),toc));
-    let link_id = hash_str(&format!("{}{}",level,node.to_string()));
+    let title_id = hash_str(&format!("{}.{}.{}.{}.{}.{}.{}{}",self.h2_num,self.h3_num,self.h4_num,self.h5_num,self.h6_num,level,node.to_string(),toc));
+    let link_id  = hash_str(&format!("{}.{}.{}.{}.{}.{}.{}",self.h2_num,self.h3_num,self.h4_num,self.h5_num,self.h6_num,level,node.to_string()));
+
     if self.html {
       format!("<h{} id=\"{}\" class=\"mech-program-subtitle {}\"><a href=\"#{}\">{}</a></h{}>", level, title_id, toc, link_id, node.to_string(), level)
     } else {
@@ -431,7 +451,7 @@ window.addEventListener("resize", () => {{
       Some(caption) => caption.to_string(),
       None => "".to_string(),
     };
-    let figure_label = format!("Fig {}.{}:",self.section_num, self.figure_num);
+    let figure_label = format!("Fig {}.{}:",self.h2_num, self.figure_num);
     let image_id = hash_str(&src);
     let figure_id = hash_str(&figure_label);
     if self.html {
