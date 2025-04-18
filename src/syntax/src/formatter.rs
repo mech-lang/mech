@@ -106,36 +106,63 @@ entries
       : b.boundingClientRect.top - a.boundingClientRect.top; // Descending for scrolling up
   }})
   .forEach(entry => {{
-    if (entry.isIntersecting) {{
-      const id = entry.target.id;
-      //console.log("Activating:", id);
+      if (entry.isIntersecting) {{
+        const id = entry.target.id;
+        const tag = entry.target.tagName; // H1, H2, H3, etc.
 
-      // Remove 'active' class from all nav items
-      navItems.forEach(item => item.classList.remove("active"));
+        const activeNav = Array.from(navItems).find(item => {{
+          const link = item.querySelector("a[href]");
+          return link && link.getAttribute("href") === `#${{id}}`;
+        }});
 
-      // Find the corresponding nav item and add 'active' class
-      const activeNav = Array.from(navItems).find(item => {{
-        const link = item.querySelector("a[href]");
-        return link && link.getAttribute("href") === `#${{id}}`;
-      }});
+        if (!activeNav) return;
 
-      if (activeNav) activeNav.classList.add("active");
+        // Deactivate all TOC items
+        navItems.forEach(item => item.classList.remove("active"));
 
-      // Exit the loop after activating the first relevant entry
-      return;
-    }}
-  }});
+        // Activate the current section's top-level H2
+        const section = entry.target.closest("section");
+        if (section) {{
+
+          // Now grab the h2, h3, and h4 elements within that section
+          const h3s = Array.from(section.querySelectorAll('h3'));
+          //console.log("H3s",h3s);
+          //console.log(tag);
+
+          if (tag === "H4") {{
+            const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
+            const H3Nav = Array.from(navItems).find(item => {{
+              const link = item.querySelector("a[href]");
+              return link && link.getAttribute("href") === `#${{closestH3.id}}`;
+            }});
+            if (H3Nav) {{
+              H3Nav.classList.add("active");
+            }}
+          }}
+
+          const topLevelHeading = section.querySelector("h2");
+          if (topLevelHeading) {{
+            const topLevelNav = Array.from(navItems).find(item => {{
+              const link = item.querySelector("a[href]");
+              return link && link.getAttribute("href") === `#${{topLevelHeading.id}}`;
+            }});
+            if (topLevelNav) {{
+              topLevelNav.classList.add("active");
+            }}
+          }}
+        }}
+        activeNav.classList.add("active");
+        currentActiveTag = tag;
+      }}
+    }});
 
 
-
-
-
+  
   }}, {{
     root: null,
     rootMargin: rootMarginValue,
     threshold: 0
   }});
-
   headings.forEach(heading => observer.observe(heading));
 }}
 
@@ -156,7 +183,6 @@ window.addEventListener("scroll", () => {{
   const percent = getScrollPercentage();
   const currentScrollY = window.scrollY;
   scrolling_down = currentScrollY > lastScrollY;
-
 
   if (currentScrollY !== lastScrollY) {{
     lastScrollY = currentScrollY;
@@ -183,8 +209,6 @@ window.addEventListener("scroll", () => {{
   }} else if (percent <= 0.95) {{
     createObserver("-80% 0px 0% 0px", scrolling_down);
   }}
-
-
 }});
 
 </script>
