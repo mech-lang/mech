@@ -42,18 +42,14 @@ body {
     color: #f2ead9;
     overflow-y: auto;
     margin-right: 20px;
-    padding-right: 15px;
-    padding-left: 10px;
+    padding-right: 0px;
+    padding-left: 0px;
     position: sticky; 
     top: 0; 
     height: 100vh;
 }
 
 .mech-toc h2 {
-    line-height: 23px;
-}
-
-.mech-toc h3 {
     line-height: 23px;
 }
 
@@ -94,12 +90,6 @@ h2.toc::before {
     padding-right: 5px;
 }
 
-h3.toc::before {
-    font-size: 12pt;
-    padding-right: 5px;
-    color: rgba(255, 255, 255, 0.55);
-}
-
 .mech-toc h2 a {
     color: #f2ead9;
     text-decoration: none;
@@ -112,6 +102,15 @@ h3.toc::before {
 .mech-toc h2 a:hover {
     color: #ee6262;
     text-decoration: none;
+}
+
+h3.toc::before {
+    font-size: 12pt;
+    padding-right: 5px;
+    color: rgba(255, 255, 255, 0.55);
+}
+.mech-toc h3 {
+    line-height: 23px;
 }
 
 .mech-toc h3 {
@@ -129,6 +128,31 @@ h3.toc::before {
 }
 
 .mech-toc h3 a:hover {
+    color: #ee6262;
+    text-decoration: none;
+}
+
+h4.toc::before {
+    font-size: 12pt;
+    padding-right: 5px;
+    color: rgba(255, 255, 255, 0.55);
+}
+.mech-toc h4 {
+    line-height: 15px;
+    font-size: 12pt;
+    padding-left: 60px;
+}
+
+.mech-toc h4 a {
+    color: #f2ead9;
+    text-decoration: none;
+}
+
+.mech-toc h4:hover::before {
+    color: #ee6262;
+}
+
+.mech-toc h4 a:hover {
     color: #ee6262;
     text-decoration: none;
 }
@@ -1019,4 +1043,20 @@ h4::before {
 
 .mech-program-subtitle.toc.active a{
     color: #ee6262;
+}
+
+.mech-program-section.toc.active{
+    background-color: #0e0b10;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.mech-program-section {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.mech-program-subtitle.toc.visible {
+    display: block;
+    visibility: visible;
 }

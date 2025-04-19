@@ -95,7 +95,10 @@ function createObserver(rootMarginValue,scrolling_down) {{
   if (observer) observer.disconnect(); // Clean up old observer
   const headings = document.querySelectorAll(".mech-program-subtitle:not(.toc)");
   const navItems = document.querySelectorAll(".mech-program-subtitle.toc");
+  const sections = document.querySelectorAll(".mech-program-section.toc");
+  const all_the_headers = Array.from(document.querySelectorAll('[section]'));
   observer = new IntersectionObserver((entries) => {{
+
 
 entries
   .slice() // Create a shallow copy to avoid mutating the original entries array
@@ -119,15 +122,18 @@ entries
 
         // Deactivate all TOC items
         navItems.forEach(item => item.classList.remove("active"));
+        sections.forEach(item => item.classList.remove("active"));
 
         // Activate the current section's top-level H2
         const section = entry.target.closest("section");
         if (section) {{
+          const matchingTocSection = Array.from(sections).find(item => item.id === section.id);
+          if (matchingTocSection) {{
+            matchingTocSection.classList.add("active");
+          }}
 
           // Now grab the h2, h3, and h4 elements within that section
           const h3s = Array.from(section.querySelectorAll('h3'));
-          //console.log("H3s",h3s);
-          //console.log(tag);
 
           if (tag === "H4") {{
             const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
@@ -138,6 +144,19 @@ entries
             if (H3Nav) {{
               H3Nav.classList.add("active");
             }}
+          }}
+
+          // if tag is h3 then we want to add a "visible" class to all of the headings with the same section
+          if (tag === "H3") {{
+            const h3_id = entry.target.getAttribute("section");
+            all_the_headers.forEach(item => {{
+              const item_id = item.getAttribute("section");
+              if (item_id === h3_id) {{
+                item.classList.add("visible");
+              }} else {{
+                item.classList.remove("visible");
+              }}
+            }});
           }}
 
           const topLevelHeading = section.querySelector("h2");
@@ -316,7 +335,7 @@ window.addEventListener("scroll", () => {{
     let link_id  = hash_str(&format!("{}.{}.{}.{}.{}.{}.{}",self.h2_num,self.h3_num,self.h4_num,self.h5_num,self.h6_num,level,node.to_string()));
 
     if self.html {
-      format!("<h{} id=\"{}\" class=\"mech-program-subtitle {}\"><a href=\"#{}\">{}</a></h{}>", level, title_id, toc, link_id, node.to_string(), level)
+      format!("<h{} id=\"{}\" section=\"{}.{}\" class=\"mech-program-subtitle {}\"><a href=\"#{}\">{}</a></h{}>", level, title_id, self.h2_num, self.h3_num, toc, link_id, node.to_string(), level)
     } else {
       format!("{}\n-------------------------------------------------------------------------------\n",node.to_string())
     }
@@ -345,8 +364,10 @@ window.addEventListener("scroll", () => {{
       let el_str = self.section_element(el);
       src = format!("{}{}", src, el_str);
     }
-    if self.html {
-      format!("<section class=\"mech-program-section\">{}</section>",src)
+    let toc = if self.toc { "toc" } else { "" };
+    let section_id = hash_str(&format!("{}",self.h2_num + 1));
+     if self.html {
+      format!("<section id=\"{}\" class=\"mech-program-section {}\">{}</section>",section_id,toc,src)
     } else {
       src
     }
