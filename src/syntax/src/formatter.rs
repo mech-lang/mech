@@ -239,7 +239,7 @@ entries
             }});
             if (H3Nav) {{
               H3Nav.classList.add("active");
-              const h3_id = H3Nav.target.getAttribute("section");
+              const h3_id = H3Nav.getAttribute("section");
               all_the_headers.forEach(item => {{
                 const item_id = item.getAttribute("section");
                 if (item_id === h3_id) {{
@@ -287,7 +287,11 @@ entries
   headings.forEach(heading => observer.observe(heading));
 }}
 
-createObserver("0px 0px -70% 0px");
+
+window.addEventListener("DOMContentLoaded", () => {{
+  createObserver("0px 0px -70% 0px");
+}});
+
 let lastScrollY = window.scrollY;
 let scrolling_down = true;
 let margin = 10;
