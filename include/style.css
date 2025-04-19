@@ -1,7 +1,7 @@
 @import url(https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/fira_code.css);
 
 html {
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
 }
 
 .mech-program {
@@ -1046,9 +1046,21 @@ h4::before {
 }
 
 .mech-program-section.toc.active{
-    background-color: #0e0b10;
+    background-color: #0d1013;
     padding-top: 10px;
     padding-bottom: 10px;
+}
+
+h2:hover a {
+    color: #ee6262;
+}
+
+h3:hover a {
+    color: #ee6262;
+}
+
+h4:hover a {
+    color: #ee6262;
 }
 
 .mech-program-section {

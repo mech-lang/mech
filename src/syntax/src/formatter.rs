@@ -90,8 +90,79 @@ impl Formatter {
     <script>
 
 let observer = null;
+let userScrolling = false;
+let scrollTimeout = null;
+let scrollLock = false;
+
+
+document.querySelectorAll('.mech-program-subtitle.toc').forEach(entry => {{
+  entry.addEventListener('click', () => {{
+    scrollLock = true;
+    console.log("click");
+    if (observer) observer.disconnect();
+    const id = entry.id;
+    const tag = entry.tagName; // H1, H2, H3, etc.
+
+
+    const headings = document.querySelectorAll(".mech-program-subtitle:not(.toc)");
+    const navItems = document.querySelectorAll(".mech-program-subtitle.toc");
+    const sections = document.querySelectorAll(".mech-program-section.toc");
+    const all_the_headers = Array.from(document.querySelectorAll('[section]'));
+
+    navItems.forEach(item => item.classList.remove("active"));
+    sections.forEach(item => item.classList.remove("active"));
+
+    const section = entry.closest("section");
+
+    if (section) {{
+      section.scrollIntoView();
+      const matchingTocSection = Array.from(sections).find(item => item.id === section.id);
+      if (matchingTocSection) {{
+        matchingTocSection.classList.add("active");
+      }}
+
+      // Now grab the h2, h3, and h4 elements within that section
+      const h3s = Array.from(section.querySelectorAll('h3'));
+
+      if (tag === "H4") {{
+        const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING);
+        const H3Nav = Array.from(navItems).find(item => {{
+            const link = item.querySelector("a[href]");
+            return link && link.getAttribute("href") === `#${{closestH3.id}}`;
+        }});
+        closestH3.classList.add("active");
+      }}
+
+      // if tag is h3 then we want to add a "visible" class to all of the headings with the same section
+      if (tag === "H3") {{
+        const h3_id = entry.getAttribute("section");
+        all_the_headers.forEach(item => {{
+          const item_id = item.getAttribute("section");
+          if (item_id === h3_id) {{
+            item.classList.add("visible");
+          }} else {{
+            item.classList.remove("visible");
+          }}
+        }});
+      }}
+
+      const topLevelHeading = section.querySelector("h2");
+      topLevelHeading.classList.add("active");
+
+    }}
+    entry.classList.add("active");
+    currentActiveTag = tag;
+    const link = entry.querySelector('a[href]');
+    if (link) {{
+      window.location.hash = link.getAttribute('href');
+    }}
+    console.log("end click");
+  }});
+}});
 
 function createObserver(rootMarginValue,scrolling_down) {{
+
+  if (!userScrolling) return;
   if (observer) observer.disconnect(); // Clean up old observer
   const headings = document.querySelectorAll(".mech-program-subtitle:not(.toc)");
   const navItems = document.querySelectorAll(".mech-program-subtitle.toc");
@@ -127,9 +198,34 @@ entries
         // Activate the current section's top-level H2
         const section = entry.target.closest("section");
         if (section) {{
-          const matchingTocSection = Array.from(sections).find(item => item.id === section.id);
+          const matchingTocSection = Array.from(sections).find(item => {{
+            const toc_section_id = item.getAttribute("section");
+            const section_id = section.getAttribute("section");
+            if (toc_section_id && section_id) {{
+              return toc_section_id === section_id;
+            }}
+          }});
           if (matchingTocSection) {{
             matchingTocSection.classList.add("active");
+            const toc = document.querySelector(".mech-toc");
+
+            if (toc && matchingTocSection) {{
+              const itemOffsetTop = matchingTocSection.offsetTop;
+              const itemHeight = matchingTocSection.offsetHeight;
+              const tocHeight = toc.clientHeight;
+              const scrollTop = toc.scrollTop;
+
+              // Center the item manually if it's out of view
+              const visibleTop = scrollTop;
+              const visibleBottom = scrollTop + tocHeight;
+
+              if (itemOffsetTop < visibleTop || itemOffsetTop + itemHeight > visibleBottom) {{
+                toc.scrollTo({{
+                  top: itemOffsetTop - tocHeight / 2 + itemHeight / 2,
+                  behavior: "smooth"
+                }});
+              }}
+            }}
           }}
 
           // Now grab the h2, h3, and h4 elements within that section
@@ -143,6 +239,15 @@ entries
             }});
             if (H3Nav) {{
               H3Nav.classList.add("active");
+              const h3_id = H3Nav.target.getAttribute("section");
+              all_the_headers.forEach(item => {{
+                const item_id = item.getAttribute("section");
+                if (item_id === h3_id) {{
+                  item.classList.add("visible");
+                }} else {{
+                  item.classList.remove("visible");
+                }}
+              }});
             }}
           }}
 
@@ -174,9 +279,6 @@ entries
         currentActiveTag = tag;
       }}
     }});
-
-
-  
   }}, {{
     root: null,
     rootMargin: rootMarginValue,
@@ -199,6 +301,12 @@ function getScrollPercentage() {{
 }}
 
 window.addEventListener("scroll", () => {{
+  if (scrollLock) {{
+    scrollLock = false;
+    return;
+  }}
+  userScrolling = true;
+  
   const percent = getScrollPercentage();
   const currentScrollY = window.scrollY;
   scrolling_down = currentScrollY > lastScrollY;
@@ -335,7 +443,7 @@ window.addEventListener("scroll", () => {{
     let link_id  = hash_str(&format!("{}.{}.{}.{}.{}.{}.{}",self.h2_num,self.h3_num,self.h4_num,self.h5_num,self.h6_num,level,node.to_string()));
 
     if self.html {
-      format!("<h{} id=\"{}\" section=\"{}.{}\" class=\"mech-program-subtitle {}\"><a href=\"#{}\">{}</a></h{}>", level, title_id, self.h2_num, self.h3_num, toc, link_id, node.to_string(), level)
+      format!("<h{} id=\"{}\" section=\"{}.{}\" class=\"mech-program-subtitle {}\"><a class=\"mech-program-subtitle-link {}\" href=\"#{}\">{}</a></h{}>", level, title_id, self.h2_num, self.h3_num, toc, toc, link_id, node.to_string(), level)
     } else {
       format!("{}\n-------------------------------------------------------------------------------\n",node.to_string())
     }
@@ -366,8 +474,9 @@ window.addEventListener("scroll", () => {{
     }
     let toc = if self.toc { "toc" } else { "" };
     let section_id = hash_str(&format!("{}",self.h2_num + 1));
+    let id = hash_str(&format!("{}{}",self.h2_num + 1, toc));
      if self.html {
-      format!("<section id=\"{}\" class=\"mech-program-section {}\">{}</section>",section_id,toc,src)
+      format!("<section id=\"{}\" section=\"{}\" class=\"mech-program-section {}\">{}</section>",id,section_id,toc,src)
     } else {
       src
     }
