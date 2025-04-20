@@ -1077,3 +1077,8 @@ h4:hover a {
     text-align: center;
     color: #f2ead9;
 }
+
+.mech-inline-equation {
+    font-size: 10pt;
+    color: #efe4cd;
+}

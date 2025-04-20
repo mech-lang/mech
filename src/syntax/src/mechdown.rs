@@ -187,6 +187,17 @@ pub fn inline_code(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::InlineCode(text)))
 }
 
+// inline_code := grave, +text, grave ;
+pub fn inline_equation(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, _) = equation_prefix(input)?;
+  let (input, txt) = many0(tuple((is_not(equation_prefix),text)))(input)?;
+  let (input, _) = equation_prefix(input)?;
+  let mut txt = txt.into_iter().map(|(_,tkn)| tkn).collect();
+  let mut eqn = Token::merge_tokens(&mut txt).unwrap();
+  eqn.kind = TokenKind::Text;
+  Ok((input, ParagraphElement::InlineEquation(eqn)))
+}
+
 // hyperlink := "[", +text, "]", "(", +text, ")" ;
 pub fn hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = left_bracket(input)?;
@@ -226,7 +237,7 @@ pub fn img(input: ParseString) -> ParseResult<ParagraphElement> {
 
 // paragraph_text := ¬(img_prefix | http_prefix | left_bracket | tilde | asterisk | underscore | grave | define_operator | bar), +text ;
 pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
-  let (input, elements) = match many1(nom_tuple((is_not(alt((footnote_prefix, img_prefix,http_prefix,left_brace,left_bracket,tilde,asterisk,underscore,grave,define_operator,bar))),text)))(input) {
+  let (input, elements) = match many1(nom_tuple((is_not(alt((footnote_prefix, equation_prefix, img_prefix, http_prefix, left_brace, left_bracket, tilde, asterisk, underscore, grave, define_operator, bar))),text)))(input) {
     Ok((input, mut text)) => {
       let mut text = text.into_iter().map(|(_,tkn)| tkn).collect();
       let mut text = Token::merge_tokens(&mut text).unwrap();
@@ -258,7 +269,7 @@ pub fn footnote_reference(input: ParseString) -> ParseResult<ParagraphElement> {
 
 // paragraph-element := hyperlink | raw-hyperlink | footnote-reference | img | paragraph-text | strong | emphasis | inline-code | strikethrough | underline ;
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
-  alt((hyperlink, raw_hyperlink, footnote_reference, img, inline_mech_code, paragraph_text, strong, emphasis, inline_code, strikethrough, underline))(input)
+  alt((hyperlink, raw_hyperlink, footnote_reference, img, inline_mech_code, inline_equation, paragraph_text, strong, emphasis, inline_code, strikethrough, underline))(input)
 }
 
 // paragraph := +paragraph_element ;

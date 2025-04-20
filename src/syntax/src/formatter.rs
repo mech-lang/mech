@@ -300,6 +300,13 @@ window.addEventListener("DOMContentLoaded", () => {{
       katex.render(eq, el, {{ throwOnError: false }});
     }}
   }});
+  const inline_elements = document.querySelectorAll(".mech-inline-equation");
+  inline_elements.forEach(el => {{
+    const eq = el.getAttribute("equation");
+    if (eq) {{
+      katex.render(eq, el, {{ throwOnError: false }});
+    }}
+  }});
 }});
 
 let lastScrollY = window.scrollY;
@@ -518,8 +525,18 @@ window.addEventListener("scroll", () => {{
     }
   }
 
+  fn inline_equation(&mut self, node: &Token) -> String {
+    let id = hash_str(&format!("inline-equation-{}",node.to_string()));
+    if self.html {
+      format!("<span id=\"{}\" equation=\"{}\" class=\"mech-inline-equation\"></span>",id, node.to_string())
+    } else {
+      format!("$${}$$", node.to_string())
+    }
+  }
+
   pub fn paragraph_element(&mut self, node: &ParagraphElement) -> String {
     match node {
+      ParagraphElement::InlineEquation(exq) => self.inline_equation(exq),
       ParagraphElement::Text(n) => n.to_string(),
       ParagraphElement::FootnoteReference(n) => self.footnote_reference(n),
       ParagraphElement::Image(n) => self.image(n),
@@ -576,7 +593,6 @@ window.addEventListener("scroll", () => {{
           format!("{{{}}}", result)
         }
       },
-      _ => todo!(),
     }
   }
 

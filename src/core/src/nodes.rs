@@ -998,6 +998,7 @@ pub enum ParagraphElement {
   Image(Image),
   InlineCode(Token),
   InlineMechCode(Expression),
+  InlineEquation(Token),
   Strikethrough(Box<ParagraphElement>),
   Strong(Box<ParagraphElement>),
   Text(Token),
@@ -1020,6 +1021,7 @@ impl ParagraphElement {
       ParagraphElement::Strong(t) => t.to_string(),
       ParagraphElement::Text(t) => t.to_string(),
       ParagraphElement::Underline(t) => t.to_string(),
+      ParagraphElement::InlineEquation(t) => t.to_string(),
     }
   }
 
