@@ -98,7 +98,6 @@ let scrollLock = false;
 document.querySelectorAll('.mech-program-subtitle.toc').forEach(entry => {{
   entry.addEventListener('click', () => {{
     scrollLock = true;
-    console.log("click");
     if (observer) observer.disconnect();
     const id = entry.id;
     const tag = entry.tagName; // H1, H2, H3, etc.
@@ -156,13 +155,10 @@ document.querySelectorAll('.mech-program-subtitle.toc').forEach(entry => {{
     if (link) {{
       window.location.hash = link.getAttribute('href');
     }}
-    console.log("end click");
   }});
 }});
 
 function createObserver(rootMarginValue,scrolling_down) {{
-
-  if (!userScrolling) return;
   if (observer) observer.disconnect(); // Clean up old observer
   const headings = document.querySelectorAll(".mech-program-subtitle:not(.toc)");
   const navItems = document.querySelectorAll(".mech-program-subtitle.toc");
@@ -289,7 +285,7 @@ entries
 
 
 window.addEventListener("DOMContentLoaded", () => {{
-  createObserver("0px 0px -70% 0px");
+  createObserver("0px 0px 0px 0px");
 }});
 
 let lastScrollY = window.scrollY;
@@ -309,7 +305,6 @@ window.addEventListener("scroll", () => {{
     scrollLock = false;
     return;
   }}
-  userScrolling = true;
   
   const percent = getScrollPercentage();
   const currentScrollY = window.scrollY;
