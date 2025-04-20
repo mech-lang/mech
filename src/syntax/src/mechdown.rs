@@ -176,6 +176,14 @@ pub fn underline(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Underline(Box::new(text))))
 }
 
+/// highlight := "!!", +paragraph_element, "!!" ;
+pub fn highlight(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, _) = highlight_sigil(input)?;
+  let (input, text) = paragraph_element(input)?;
+  let (input, _) = highlight_sigil(input)?;
+  Ok((input, ParagraphElement::Highlight(Box::new(text))))
+}
+
 // inline_code := grave, +text, grave ;
 pub fn inline_code(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = grave(input)?;
@@ -189,9 +197,9 @@ pub fn inline_code(input: ParseString) -> ParseResult<ParagraphElement> {
 
 // inline_code := grave, +text, grave ;
 pub fn inline_equation(input: ParseString) -> ParseResult<ParagraphElement> {
-  let (input, _) = equation_prefix(input)?;
-  let (input, txt) = many0(tuple((is_not(equation_prefix),text)))(input)?;
-  let (input, _) = equation_prefix(input)?;
+  let (input, _) = equation_sigil(input)?;
+  let (input, txt) = many0(tuple((is_not(equation_sigil),text)))(input)?;
+  let (input, _) = equation_sigil(input)?;
   let mut txt = txt.into_iter().map(|(_,tkn)| tkn).collect();
   let mut eqn = Token::merge_tokens(&mut txt).unwrap();
   eqn.kind = TokenKind::Text;
@@ -237,7 +245,7 @@ pub fn img(input: ParseString) -> ParseResult<ParagraphElement> {
 
 // paragraph_text := ¬(img_prefix | http_prefix | left_bracket | tilde | asterisk | underscore | grave | define_operator | bar), +text ;
 pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
-  let (input, elements) = match many1(nom_tuple((is_not(alt((footnote_prefix, equation_prefix, img_prefix, http_prefix, left_brace, left_bracket, tilde, asterisk, underscore, grave, define_operator, bar))),text)))(input) {
+  let (input, elements) = match many1(nom_tuple((is_not(alt((footnote_prefix, highlight_sigil, equation_sigil, img_prefix, http_prefix, left_brace, left_bracket, tilde, asterisk, underscore, grave, define_operator, bar))),text)))(input) {
     Ok((input, mut text)) => {
       let mut text = text.into_iter().map(|(_,tkn)| tkn).collect();
       let mut text = Token::merge_tokens(&mut text).unwrap();
@@ -267,9 +275,9 @@ pub fn footnote_reference(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::FootnoteReference(footnote_text)))
 }
 
-// paragraph-element := hyperlink | raw-hyperlink | footnote-reference | img | paragraph-text | strong | emphasis | inline-code | strikethrough | underline ;
+// paragraph-element := hyperlink | raw-hyperlink | footnote-reference | img | paragraph-text | strong | highlight | emphasis | inline-code | strikethrough | underline ;
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
-  alt((hyperlink, raw_hyperlink, footnote_reference, img, inline_mech_code, inline_equation, paragraph_text, strong, emphasis, inline_code, strikethrough, underline))(input)
+  alt((hyperlink, raw_hyperlink, highlight, footnote_reference, img, inline_mech_code, inline_equation, paragraph_text, strong, highlight, emphasis, inline_code, strikethrough, underline))(input)
 }
 
 // paragraph := +paragraph_element ;
@@ -603,7 +611,7 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
 }
 
 pub fn block_quote(input: ParseString) -> ParseResult<Paragraph> {
-  let (input, _) = right_angle(input)?;
+  let (input, _) = quote_sigil(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, text) = paragraph(input)?;
   let (input, _) = many0(space_tab)(input)?;
@@ -639,7 +647,7 @@ pub fn blank_line(input: ParseString) -> ParseResult<Vec<Token>> {
 }
 
 pub fn abstract_el(input: ParseString) -> ParseResult<Paragraph> {
-  let (input, _) = abstract_prefix(input)?;
+  let (input, _) = abstract_sigil(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, text) = paragraph(input)?;
   Ok((input, text))
@@ -647,7 +655,7 @@ pub fn abstract_el(input: ParseString) -> ParseResult<Paragraph> {
 
 // equation := "$$" , +text ;
 pub fn equation(input: ParseString) -> ParseResult<Token> {
-  let (input, _) = equation_prefix(input)?;
+  let (input, _) = equation_sigil(input)?;
   let (input, mut txt) = many1(text)(input)?;
   let mut eqn = Token::merge_tokens(&mut txt).unwrap();
   Ok((input, eqn))
@@ -691,34 +699,6 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
     }
   };
   let (input, _) = many0(blank_line)(input)?;
-  Ok((input, section_element))
-}
-
-// sub_section_element := comment | unordered_list | mech_code | paragraph | code_block;
-pub fn sub_section_element(input: ParseString) -> ParseResult<SectionElement> {
-  let (input, section_element) = match many1(mech_code)(input.clone()) {
-    Ok((input, code)) => (input, SectionElement::MechCode(code)),
-    _ => match mechdown_list(input.clone()) {
-      Ok((input, list)) => (input, SectionElement::List(list)),
-      _ => match markdown_table(input.clone()) {
-        Ok((input, table)) => (input, SectionElement::Table(table)),
-        _ => match block_quote(input.clone()) {   
-          Ok((input, quote)) => (input, SectionElement::BlockQuote(quote)),
-          _ => match code_block(input.clone()) {
-            Ok((input, m)) => (input,m),
-            _ => match thematic_break(input.clone()) {
-              Ok((input, _)) => (input, SectionElement::ThematicBreak),
-              _ => match paragraph(input) {
-                Ok((input, p)) => (input, SectionElement::Paragraph(p)),
-                Err(err) => { return Err(err); }
-              }
-            }
-          }
-        }
-      }
-    }
-  };
-  let (input, _) = whitespace0(input)?;
   Ok((input, section_element))
 }
 

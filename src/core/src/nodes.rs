@@ -85,24 +85,24 @@ pub fn merge_src_range(r1: SourceRange, r2: SourceRange) -> SourceRange {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TokenKind {
-  AbstractPrefix, Alpha, Ampersand, Any, Apostrophe, AssignOperator, Asterisk, AsyncTransitionOperator, At,
+  AbstractSigil, Alpha, Ampersand, Any, Apostrophe, AssignOperator, Asterisk, AsyncTransitionOperator, At,
   Backslash, Bar, BoxDrawing,
   Caret, CarriageReturn, CarriageReturnNewLine, Colon, CodeBlock, Comma,
   Dash, DefineOperator, Digit, Dollar,
-  Emoji, Empty, Equal, EquationPrefix, Exclamation, 
+  Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Exclamation, 
   False, FootnotePrefix,
   Grave,
-  HashTag, HttpPrefix,
+  HashTag, HighlightSigil, HttpPrefix,
   Identifier, ImgPrefix, InlineCode, 
   LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
   Newline, Not, Number,
   OutputOperator,
   Percent, Period, Plus,
-  Question, Quote,
+  QuerySigil, Question, Quote, QuoteSigil,
   RightAngle, RightBrace, RightBracket, RightParenthesis,
-  Semicolon, Space, Slash, String,
+  Semicolon, Space, Slash, String, StrikeSigil, StrongSigil,
   Tab, Text, Tilde, Title, TransitionOperator, True,
-  Underscore,
+  UnderlineSigil, Underscore,
 }
 
 #[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -1001,6 +1001,7 @@ pub enum ParagraphElement {
   InlineEquation(Token),
   Strikethrough(Box<ParagraphElement>),
   Strong(Box<ParagraphElement>),
+  Highlight(Box<ParagraphElement>),
   Text(Token),
   Underline(Box<ParagraphElement>),
 }
@@ -1022,6 +1023,7 @@ impl ParagraphElement {
       ParagraphElement::Text(t) => t.to_string(),
       ParagraphElement::Underline(t) => t.to_string(),
       ParagraphElement::InlineEquation(t) => t.to_string(),
+      ParagraphElement::Highlight(t) => t.to_string(),
     }
   }
 

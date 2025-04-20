@@ -131,8 +131,15 @@ leaf!{box_vert_bold, "┃", TokenKind::BoxDrawing}
 leaf!(http_prefix, "http", TokenKind::HttpPrefix);
 leaf!(img_prefix, "![", TokenKind::ImgPrefix);
 leaf!(footnote_prefix, "[^", TokenKind::FootnotePrefix);
-leaf!(abstract_prefix, "%%", TokenKind::AbstractPrefix);
-leaf!(equation_prefix, "$$", TokenKind::EquationPrefix);
+leaf!(abstract_sigil, "%%", TokenKind::AbstractSigil);
+leaf!(equation_sigil, "$$", TokenKind::EquationSigil);
+leaf!(highlight_sigil, "!!", TokenKind::HighlightSigil);
+leaf!(quote_sigil, ">>", TokenKind::QuoteSigil);
+leaf!(strong_sigil, "**", TokenKind::StrongSigil);
+leaf!(emphasis_sigil, "*", TokenKind::EmphasisSigil);
+leaf!(underline_sigil, "__", TokenKind::UnderlineSigil);
+leaf!(strike_sigil, "~~", TokenKind::StrikeSigil);
+leaf!(query_sigil, "??", TokenKind::QuerySigil);
 
 ws0_leaf!(define_operator, ":=", TokenKind::DefineOperator);
 ws0_leaf!(assign_operator, "=", TokenKind::AssignOperator);

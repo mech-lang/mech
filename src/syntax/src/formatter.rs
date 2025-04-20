@@ -534,8 +534,23 @@ window.addEventListener("scroll", () => {{
     }
   }
 
+  fn highlight(&mut self, node: &Token) -> String {
+    if self.html {
+      format!("<mark class=\"mech-highlight\">{}</mark>", node.to_string())
+    } else {
+      format!("!!{}!!", node.to_string())
+    }
+  }
+
   pub fn paragraph_element(&mut self, node: &ParagraphElement) -> String {
     match node {
+      ParagraphElement::Highlight(n) => {
+        if self.html {
+          format!("<mark class=\"mech-highlight\">{}</mark>", n.to_string())
+        } else {
+          format!("!!{}!!", n.to_string())
+        }
+      },
       ParagraphElement::InlineEquation(exq) => self.inline_equation(exq),
       ParagraphElement::Text(n) => n.to_string(),
       ParagraphElement::FootnoteReference(n) => self.footnote_reference(n),

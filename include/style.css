@@ -1082,3 +1082,11 @@ h4:hover a {
     font-size: 10pt;
     color: #efe4cd;
 }
+
+mark {
+    background-color: #F3B62D;
+    color: #2F353B;
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    margin: 0px 7px 0px 3px;
+}
