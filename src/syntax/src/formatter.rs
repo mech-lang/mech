@@ -626,6 +626,15 @@ window.addEventListener("scroll", () => {{
     }
   }
 
+  pub fn equation(&mut self, node: &Token) -> String {
+    let id = hash_str(&format!("equation-{}",node.to_string()));
+    if self.html {
+      format!("<div id=\"{}\" equation=\"{}\" class=\"mech-equation\"></div>",id, node.to_string())
+    } else {
+      format!("$$ {}\n", node.to_string())
+    }
+  }
+
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     match node {
       SectionElement::Abstract(n) => self.abstract_el(n),
@@ -641,6 +650,7 @@ window.addEventListener("scroll", () => {{
       SectionElement::Table(n) => self.markdown_table(n),
       SectionElement::ThematicBreak => self.thematic_break(),
       SectionElement::List(n) => self.list(n),
+      SectionElement::Equation(n) => self.equation(n),
     }
   }
 
