@@ -70,8 +70,15 @@ impl Formatter {
     let formatted_toc = self.table_of_contents(&toc);
     self.reset_numbering();
     let formatted_src = self.program(tree);
-    let head = format!(r#"<html>
+    let head = format!(r#"<!DOCTYPE html>
+<html>
     <head>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" integrity="sha384-5TcZemv2l/9On385z///+d7MSYlvIEw9FuZTIdZ14vJLqWphw7e7ZPuOiCHJcFCP" crossorigin="anonymous">
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" integrity="sha384-cMkvdD8LoxVzGF/RPUKAcvmm49FQ0oxwDF3BGKtDXcEc+T1b2N+teh/OJfpU0jr6" crossorigin="anonymous"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"
+        onload="renderMathInElement(document.body);"></script>
+
+
         <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
         <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
         <style>
@@ -286,6 +293,13 @@ entries
 
 window.addEventListener("DOMContentLoaded", () => {{
   createObserver("0px 0px 0px 0px");
+  const elements = document.querySelectorAll(".mech-equation");
+  elements.forEach(el => {{
+    const eq = el.getAttribute("equation");
+    if (eq) {{
+      katex.render(eq, el, {{ throwOnError: false }});
+    }}
+  }});
 }});
 
 let lastScrollY = window.scrollY;

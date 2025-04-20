@@ -1072,3 +1072,8 @@ h4:hover a {
     display: block;
     visibility: visible;
 }
+
+.mech-equation {
+    text-align: center;
+    color: #f2ead9;
+}
