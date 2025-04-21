@@ -406,6 +406,17 @@ pub enum GrammarExpression {
   Terminal(Token),
 }
 
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Citation {
+  pub id: Token,
+  pub url: Hyperlink,
+}
+
+impl Citation {
+  pub fn to_string(&self) -> String {
+    format!("[{}]: {}", self.id.to_string(), self.url.1.to_string())
+  }
+}
 // This is just a temporary flag to store block state, 
 // I don't know exactly what I want to put in here yet
 type BlockConfig = u64; 
@@ -422,6 +433,7 @@ pub enum SectionElement {
   Footnote(Footnote),
   Grammar(Grammar),
   List(MDList),
+  Citation(Citation),
   Equation(Token),
   MechCode(Vec<MechCode>),
   Paragraph(Paragraph),
@@ -990,11 +1002,13 @@ pub struct MechString {
   pub text: Token,
 }
 
+pub type Hyperlink = (Token, Token);
+
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ParagraphElement {
   Emphasis(Box<ParagraphElement>),
   FootnoteReference(Token),
-  Hyperlink((Token, Token)),
+  Hyperlink(Hyperlink),
   Image(Image),
   InlineCode(Token),
   InlineMechCode(Expression),

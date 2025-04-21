@@ -1090,3 +1090,28 @@ mark {
     border-radius: 4px;
     margin: 0px 7px 0px 3px;
 }
+
+.mech-citation {
+    display: flex;
+    align-items: baseline;
+    color: #f2ead9;
+}
+
+.mech-citation-id {
+    color: #F3B62D;
+    font-family: 'FiraCodeRegular', monospace;
+    flex-shrink: 0;
+    padding: 5px 10px 5px 10px;
+}
+
+.mech-citation-link {
+    color: #eedcb4;
+    text-decoration: none;
+    word-break: break-all;
+    transition: color 0.2s ease;
+}
+
+.mech-citation-link:hover {
+    color: #ee6262;
+    text-decoration: underline;
+}

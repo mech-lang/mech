@@ -227,6 +227,12 @@ pub fn digit_token(input: ParseString) -> ParseResult<Token> {
   Ok((input, Token{kind: TokenKind::Digit, chars: g.chars().collect::<Vec<char>>(), src_range}))
 }
 
+// alphanumeric := alpha | digit ;
+pub fn alphanumeric(input: ParseString) -> ParseResult<Token> {
+  let (input, token) = alt((alpha_token, digit_token))(input)?; 
+  Ok((input, token))
+}
+
 // underscore_digit := underscore, digit ;
 pub fn underscore_digit(input: ParseString) -> ParseResult<Token> {
   let (input, _) = underscore(input)?;

@@ -680,6 +680,20 @@ window.addEventListener("scroll", () => {{
     }
   }
 
+  pub fn citation(&mut self, node: &Citation) -> String {
+    let id = hash_str(&format!("citation-{}",node.id.to_string()));
+    let (txt, url) = &node.url;
+    if self.html {
+      format!("<div id=\"{}\" class=\"mech-citation\">
+      <div class=\"mech-citation-id\">[{}]:</div>
+      <a href=\"{}\" class=\"mech-citation-link\">{}</a>
+    </div>",id, node.id.to_string(), url.to_string(), url.to_string())
+    } else {
+      format!("[{}]: {}",node.id.to_string(), url.to_string())
+    }
+
+  }
+
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     match node {
       SectionElement::Abstract(n) => self.abstract_el(n),
@@ -696,6 +710,7 @@ window.addEventListener("scroll", () => {{
       SectionElement::ThematicBreak => self.thematic_break(),
       SectionElement::List(n) => self.list(n),
       SectionElement::Equation(n) => self.equation(n),
+      SectionElement::Citation(n) => self.citation(n),
     }
   }
 
