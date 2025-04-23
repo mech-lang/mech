@@ -96,11 +96,11 @@ h2.toc::before {
 }
 
 .mech-toc h2:hover::before {
-    color: #ee6262;
+    color: #f18181;
 }
 
 .mech-toc h2 a:hover {
-    color: #ee6262;
+    color: #f18181;
     text-decoration: none;
 }
 
@@ -124,11 +124,11 @@ h3.toc::before {
 }
 
 .mech-toc h3:hover::before {
-    color: #ee6262;
+    color: #f18181;
 }
 
 .mech-toc h3 a:hover {
-    color: #ee6262;
+    color: #f18181;
     text-decoration: none;
 }
 
@@ -149,11 +149,11 @@ h4.toc::before {
 }
 
 .mech-toc h4:hover::before {
-    color: #ee6262;
+    color: #f18181;
 }
 
 .mech-toc h4 a:hover {
-    color: #ee6262;
+    color: #f18181;
     text-decoration: none;
 }
 
@@ -477,12 +477,12 @@ code {
 }
 
 .mech-paragraph a {
-    color: #ffd781;
+    color: #F8D07A;
     text-decoration: underline;
 }
 
 .mech-paragraph a:hover {
-    color: #ee6262;
+    color: #f18181;
     text-decoration: underline;
 }
 
@@ -880,12 +880,12 @@ li p {
 }
 
 .mech-table a {
-    color: #ee6262; 
-    text-decoration: none;
+    color: #F8D07A;
+    text-decoration: underline;
 }
 
 .mech-table a:hover {
-    color: #f2ead9;
+    color: #f18181;
 }
 
 .mech-block-quote {
@@ -993,7 +993,7 @@ li p {
 }
 
 .mech-footnote-reference:hover {
-    color: #f28b82;
+    color: #f18181;
     text-decoration: underline;
 }
 
@@ -1039,10 +1039,10 @@ h4::before {
 }
 
 .mech-program-subtitle.toc.active::before{
-    color: #ee6262;
+    color: #d65858;
 }
 
-.mech-program-subtitle.toc.active a{
+.mech-program-subtitle.toc.active a {
     color: #ee6262;
 }
 
@@ -1053,15 +1053,15 @@ h4::before {
 }
 
 h2:hover a {
-    color: #ee6262;
+    color: #f18181;
 }
 
 h3:hover a {
-    color: #ee6262;
+    color: #f18181;
 }
 
 h4:hover a {
-    color: #ee6262;
+    color: #f18181;
 }
 
 .mech-program-section {
@@ -1106,28 +1106,29 @@ mark {
 }
 
 .mech-citation-link {
-    color: #ffd781;
+    color: #F8D07A;
     text-decoration: none;
     word-break: break-all;
     transition: color 0.2s ease;
 }
 
 .mech-citation-link:hover {
-    color: #ee6262;
+    color: #f18181;
     text-decoration: underline;
 }
 
 .mech-reference {
     font-family: 'FiraCodeRegular', monospace;
     align-items: baseline;
-    color: #ffd781;
+    color: #F8D07A;
 }
 
 .mech-reference a:hover {
-    color: #ee6262;
+    color: #f18181;
 }
 
 .mech-reference a {
-    color: #ffd781;
+    color: #F8D07A;
     text-decoration: none;
+
 }
