@@ -275,9 +275,18 @@ pub fn footnote_reference(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::FootnoteReference(footnote_text)))
 }
 
+// reference := "[", +alphanumeric, "]" ;
+pub fn reference(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, _) = left_bracket(input)?;
+  let (input, mut txt) = many1(alphanumeric)(input)?;
+  let (input, _) = right_bracket(input)?;
+  let ref_text = Token::merge_tokens(&mut txt).unwrap();
+  Ok((input, ParagraphElement::Reference(ref_text)))
+}
+
 // paragraph-element := hyperlink | raw-hyperlink | footnote-reference | img | paragraph-text | strong | highlight | emphasis | inline-code | strikethrough | underline ;
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
-  alt((hyperlink, raw_hyperlink, highlight, footnote_reference, img, inline_mech_code, inline_equation, paragraph_text, strong, highlight, emphasis, inline_code, strikethrough, underline))(input)
+  alt((hyperlink, reference, raw_hyperlink, highlight, footnote_reference, img, inline_mech_code, inline_equation, paragraph_text, strong, highlight, emphasis, inline_code, strikethrough, underline))(input)
 }
 
 // paragraph := +paragraph_element ;

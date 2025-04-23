@@ -477,11 +477,12 @@ code {
 }
 
 .mech-paragraph a {
-    color: #ee6262;
-    text-decoration: none;
+    color: #ffd781;
+    text-decoration: underline;
 }
 
 .mech-paragraph a:hover {
+    color: #ee6262;
     text-decoration: underline;
 }
 
@@ -1105,7 +1106,7 @@ mark {
 }
 
 .mech-citation-link {
-    color: #eedcb4;
+    color: #ffd781;
     text-decoration: none;
     word-break: break-all;
     transition: color 0.2s ease;
@@ -1114,4 +1115,19 @@ mark {
 .mech-citation-link:hover {
     color: #ee6262;
     text-decoration: underline;
+}
+
+.mech-reference {
+    font-family: 'FiraCodeRegular', monospace;
+    align-items: baseline;
+    color: #ffd781;
+}
+
+.mech-reference a:hover {
+    color: #ee6262;
+}
+
+.mech-reference a {
+    color: #ffd781;
+    text-decoration: none;
 }

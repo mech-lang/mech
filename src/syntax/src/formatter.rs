@@ -493,8 +493,8 @@ window.addEventListener("scroll", () => {{
       src = format!("{}{}", src, el_str);
     }
     let toc = if self.toc { "toc" } else { "" };
-    let section_id = hash_str(&format!("{}",self.h2_num + 1));
-    let id = hash_str(&format!("{}{}",self.h2_num + 1, toc));
+    let section_id = hash_str(&format!("section-{}",self.h2_num + 1));
+    let id = hash_str(&format!("section-{}{}",self.h2_num + 1, toc));
      if self.html {
       format!("<section id=\"{}\" section=\"{}\" class=\"mech-program-section {}\">{}</section>",id,section_id,toc,src)
     } else {
@@ -542,7 +542,17 @@ window.addEventListener("scroll", () => {{
     }
   }
 
-  pub fn paragraph_element(&mut self, node: &ParagraphElement) -> String {
+  fn reference(&mut self, node: &Token) -> String {
+    let id = hash_str(&format!("reference-{}",node.to_string()));
+    let ref_id = hash_str(&format!("{}",node.to_string()));
+    if self.html {
+      format!("<span id=\"{}\" class=\"mech-reference\">[<a href=\"#{}\" class=\"mech-reference-link\">{}</a>]</span>",id, ref_id, node.to_string())
+    } else {
+      format!("[{}]",node.to_string())
+    }
+  }
+  pub
+   fn paragraph_element(&mut self, node: &ParagraphElement) -> String {
     match node {
       ParagraphElement::Highlight(n) => {
         if self.html {
@@ -551,6 +561,7 @@ window.addEventListener("scroll", () => {{
           format!("!!{}!!", n.to_string())
         }
       },
+      ParagraphElement::Reference(n) => self.reference(n),
       ParagraphElement::InlineEquation(exq) => self.inline_equation(exq),
       ParagraphElement::Text(n) => n.to_string(),
       ParagraphElement::FootnoteReference(n) => self.footnote_reference(n),
@@ -649,7 +660,7 @@ window.addEventListener("scroll", () => {{
       Some(caption) => caption.to_string(),
       None => "".to_string(),
     };
-    let figure_label = format!("Fig {}.{}:",self.h2_num, self.figure_num);
+    let figure_label = format!("Fig {}.{}",self.h2_num, self.figure_num);
     let image_id = hash_str(&src);
     let figure_id = hash_str(&figure_label);
     if self.html {
@@ -681,7 +692,7 @@ window.addEventListener("scroll", () => {{
   }
 
   pub fn citation(&mut self, node: &Citation) -> String {
-    let id = hash_str(&format!("citation-{}",node.id.to_string()));
+    let id = hash_str(&format!("{}",node.id.to_string()));
     let (txt, url) = &node.url;
     if self.html {
       format!("<div id=\"{}\" class=\"mech-citation\">

@@ -1008,14 +1008,15 @@ pub type Hyperlink = (Token, Token);
 pub enum ParagraphElement {
   Emphasis(Box<ParagraphElement>),
   FootnoteReference(Token),
+  Highlight(Box<ParagraphElement>),
   Hyperlink(Hyperlink),
   Image(Image),
   InlineCode(Token),
   InlineMechCode(Expression),
   InlineEquation(Token),
+  Reference(Token),
   Strikethrough(Box<ParagraphElement>),
   Strong(Box<ParagraphElement>),
-  Highlight(Box<ParagraphElement>),
   Text(Token),
   Underline(Box<ParagraphElement>),
 }
@@ -1026,18 +1027,19 @@ impl ParagraphElement {
     match self {
       ParagraphElement::Emphasis(t) => t.to_string(),
       ParagraphElement::FootnoteReference(t) => t.to_string(),
+      ParagraphElement::Highlight(t) => t.to_string(),
       ParagraphElement::Hyperlink((t, u)) => {
         format!("[{}]({})", t.to_string(), u.to_string())
       }
       ParagraphElement::Image(t) => t.src.to_string(),
       ParagraphElement::InlineCode(t) => t.to_string(),
+      ParagraphElement::InlineEquation(t) => t.to_string(),
       ParagraphElement::InlineMechCode(t) => format!("{:?}", t),
+      ParagraphElement::Reference(t) => t.to_string(),
       ParagraphElement::Strikethrough(t) => t.to_string(),
       ParagraphElement::Strong(t) => t.to_string(),
       ParagraphElement::Text(t) => t.to_string(),
       ParagraphElement::Underline(t) => t.to_string(),
-      ParagraphElement::InlineEquation(t) => t.to_string(),
-      ParagraphElement::Highlight(t) => t.to_string(),
     }
   }
 
