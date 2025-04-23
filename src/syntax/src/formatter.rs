@@ -101,6 +101,15 @@ let userScrolling = false;
 let scrollTimeout = null;
 let scrollLock = false;
 
+function isFullyVisible(el) {{
+  const rect = el.getBoundingClientRect();
+  return (
+    rect.top >= 0 &&
+    rect.left >= 0 &&
+    rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+    rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+  );
+}}
 
 document.querySelectorAll('.mech-program-subtitle.toc').forEach(entry => {{
   entry.addEventListener('click', () => {{
@@ -121,7 +130,9 @@ document.querySelectorAll('.mech-program-subtitle.toc').forEach(entry => {{
     const section = entry.closest("section");
 
     if (section) {{
-      section.scrollIntoView();
+      if (!isFullyVisible(section)) {{
+        section.scrollIntoView();
+      }}
       const matchingTocSection = Array.from(sections).find(item => item.id === section.id);
       if (matchingTocSection) {{
         matchingTocSection.classList.add("active");
