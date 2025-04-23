@@ -969,7 +969,7 @@ li p {
 }
 
 .mech-footnote-id {
-    color: #ee6262;
+    color: #F3B62D;
     font-weight: bold;
     min-width: 2em;
     text-align: right;
@@ -982,13 +982,17 @@ li p {
     color: #f2ead9;
 }
 
-.mech-footnote-reference {
+a.mech-footnote-reference {
+    text-decoration: none;
     font-size: 0.7em;
     vertical-align: super;
-    text-decoration: none;
     margin-left: 0.1em;
-    color: #ee6262;
+    color: #F8D07A;
+    font-weight: bold;
+    min-width: 2em;
+    text-align: right;
     cursor: pointer;
+    font-family: monospace;
     transition: color 0.2s;
 }
 
