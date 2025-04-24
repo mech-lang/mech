@@ -3,6 +3,7 @@ use mech_core::nodes::{Kind, Matrix};
 use std::collections::{HashMap, HashSet};
 use colored::Colorize;
 use std::io::{Read, Write, Cursor};
+use crate::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Formatter{
@@ -19,6 +20,9 @@ pub struct Formatter{
   h4_num: usize,
   h5_num: usize,
   h6_num: usize,
+  citation_num: usize,
+  citation_map: HashMap<u64, usize>,
+  citations: Vec<String>,
   interpreter_id: u64,
 }
 
@@ -36,6 +40,9 @@ impl Formatter {
       h4_num: 0,
       h5_num: 0,
       h6_num: 0,
+      citation_num: 0,
+      citation_map: HashMap::new(),
+      citations: Vec::new(),
       figure_num: 0,
       html: false,
       nested: false,
@@ -63,13 +70,33 @@ impl Formatter {
     self.figure_num = 0;
   }
 
+  pub fn works_cited(&mut self) -> String {
+    if self.citation_num == 0 {
+      return "".to_string();
+    }
+    let id = hash_str("works-cited");
+
+    let gs = graphemes::init_source("Works Cited"); 
+    let (_,text) = paragraph(ParseString::new(&gs)).unwrap();
+    let h2 = self.subtitle(&Subtitle { level: 2, text });
+
+    let mut src = format!(r#"<section id="{}" class="mech-works-cited">"#, id);
+    src.push_str(&h2);
+    for citation in &self.citations {
+      src.push_str(citation);
+    }
+    src.push_str("</section>\n");
+    src
+  }
+
   pub fn format_html(&mut self, tree: &Program, style: String) -> String {
 
     self.html = true;
     let toc = tree.table_of_contents();
-    let formatted_toc = self.table_of_contents(&toc);
-    self.reset_numbering();
     let formatted_src = self.program(tree);
+    self.reset_numbering();
+    let formatted_toc = self.table_of_contents(&toc);
+    
     let head = format!(r#"<!DOCTYPE html>
 <html>
     <head>
@@ -416,7 +443,16 @@ window.addEventListener("scroll", () => {{
     };
     let sections = self.sections(&toc.sections);
     self.toc = false;
-    format!("<div class=\"mech-toc\">{}{}</div>",title,sections)
+    let formatted_works_cited = if self.html {
+      format!("<section id=\"\" section=\"{}\" class=\"mech-program-section toc\">
+  <h2 id=\"\" section=\"\" class=\"mech-program-subtitle toc active\">
+    <a class=\"mech-program-subtitle-link toc\" href=\"#7343258629960070\">Works Cited</a>
+  </h2>
+</section>", self.h2_num)
+    } else {
+      "".to_string()
+    };
+    format!("<div class=\"mech-toc\">{}{}{}</div>",title,sections,formatted_works_cited)
   }
 
   pub fn sections(&mut self, sections: &Vec<Section>) -> String {
@@ -435,10 +471,11 @@ window.addEventListener("scroll", () => {{
       None => "".to_string(),
     };
     let body = self.body(&node.body);
+    let formatted_works_cited = self.works_cited();
     if self.html {
-      format!("<div class=\"mech-program\">{}{}</div>",title,body)
+      format!("<div class=\"mech-program\">{}{}{}</div>",title,body,formatted_works_cited)
     } else {
-      format!("{}{}",title,body)
+      format!("{}{}{}",title,body,formatted_works_cited)
     }
   }
 
@@ -554,16 +591,18 @@ window.addEventListener("scroll", () => {{
   }
 
   fn reference(&mut self, node: &Token) -> String {
+    self.citation_num += 1;
     let id = hash_str(&format!("reference-{}",node.to_string()));
     let ref_id = hash_str(&format!("{}",node.to_string()));
+    self.citation_map.insert(ref_id, self.citation_num);
     if self.html {
-      format!("<span id=\"{}\" class=\"mech-reference\">[<a href=\"#{}\" class=\"mech-reference-link\">{}</a>]</span>",id, ref_id, node.to_string())
+      format!("<span id=\"{}\" class=\"mech-reference\">[<a href=\"#{}\" class=\"mech-reference-link\">{}</a>]</span>",id, ref_id, self.citation_num)
     } else {
       format!("[{}]",node.to_string())
     }
   }
-  pub
-   fn paragraph_element(&mut self, node: &ParagraphElement) -> String {
+  
+  pub fn paragraph_element(&mut self, node: &ParagraphElement) -> String {
     match node {
       ParagraphElement::Highlight(n) => {
         if self.html {
@@ -704,16 +743,19 @@ window.addEventListener("scroll", () => {{
 
   pub fn citation(&mut self, node: &Citation) -> String {
     let id = hash_str(&format!("{}",node.id.to_string()));
+    self.citations.resize(self.citation_num, String::new());
+    let citation_num = self.citation_map.get(&id).unwrap_or(&0);
     let (txt, url) = &node.url;
-    if self.html {
+    let formatted_citation = if self.html {
       format!("<div id=\"{}\" class=\"mech-citation\">
       <div class=\"mech-citation-id\">[{}]:</div>
       <a href=\"{}\" class=\"mech-citation-link\">{}</a>
-    </div>",id, node.id.to_string(), url.to_string(), url.to_string())
+    </div>",id, citation_num, url.to_string(), url.to_string())
     } else {
       format!("[{}]: {}",node.id.to_string(), url.to_string())
-    }
-
+    };
+    self.citations[citation_num - 1] = formatted_citation;
+    String::new()
   }
 
   pub fn section_element(&mut self, node: &SectionElement) -> String {
