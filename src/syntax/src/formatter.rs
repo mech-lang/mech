@@ -616,7 +616,6 @@ window.addEventListener("scroll", () => {{
       ParagraphElement::InlineEquation(exq) => self.inline_equation(exq),
       ParagraphElement::Text(n) => n.to_string(),
       ParagraphElement::FootnoteReference(n) => self.footnote_reference(n),
-      ParagraphElement::Image(n) => self.image(n),
       ParagraphElement::Strong(n) => {
         if self.html {
           format!("<strong class=\"mech-strong\">{}</strong>", n.to_string())
@@ -759,23 +758,40 @@ window.addEventListener("scroll", () => {{
     String::new()
   }
 
+  pub fn float(&mut self, node: &Box<SectionElement>, float_dir: &FloatDirection) -> String {
+    let mut src = "".to_string();
+    let id = hash_str(&format!("float-{:?}",*node));
+    let (float_class,float_sigil) = match float_dir {
+      FloatDirection::Left => ("mech-float left","<<"),
+      FloatDirection::Right => ("mech-float right",">>"),
+    };
+    let el = self.section_element(node);
+    if self.html {
+      format!("<div id=\"{}\" class=\"{}\">{}</div>",id,float_class,el)
+    } else {
+      format!("{}{}\n",float_sigil, el)
+    }
+  }
+
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     match node {
       SectionElement::Abstract(n) => self.abstract_el(n),
       SectionElement::BlockQuote(n) => self.block_quote(n),
+      SectionElement::Citation(n) => self.citation(n),
       SectionElement::CodeBlock(n) => self.code_block(n),
       SectionElement::Comment(n) => self.comment(n),
+      SectionElement::Equation(n) => self.equation(n),
       SectionElement::FencedMechCode((n,s)) => self.fenced_mech_code(n,s),
+      SectionElement::Float((n,f)) => self.float(n,f),
       SectionElement::Footnote(n) => self.footnote(n),
       SectionElement::Grammar(n) => self.grammar(n),
+      SectionElement::Image(n) => self.image(n),
+      SectionElement::List(n) => self.list(n),
       SectionElement::MechCode(n) => self.mech_code(n),
       SectionElement::Paragraph(n) => self.paragraph(n),
       SectionElement::Subtitle(n) => self.subtitle(n),
       SectionElement::Table(n) => self.markdown_table(n),
       SectionElement::ThematicBreak => self.thematic_break(),
-      SectionElement::List(n) => self.list(n),
-      SectionElement::Equation(n) => self.equation(n),
-      SectionElement::Citation(n) => self.citation(n),
     }
   }
 

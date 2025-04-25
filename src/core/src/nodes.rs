@@ -90,7 +90,7 @@ pub enum TokenKind {
   Caret, CarriageReturn, CarriageReturnNewLine, Colon, CodeBlock, Comma,
   Dash, DefineOperator, Digit, Dollar,
   Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Exclamation, 
-  False, FootnotePrefix,
+  False, FloatLeft, FloatRight, FootnotePrefix,
   Grave,
   HashTag, HighlightSigil, HttpPrefix,
   Identifier, ImgPrefix, InlineCode, 
@@ -424,17 +424,25 @@ type BlockConfig = u64;
 pub type Footnote = (Token, Paragraph);
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub enum FloatDirection {
+  Left,
+  Right,
+}
+
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SectionElement {
   Abstract(Paragraph),
   BlockQuote(Paragraph),
+  Citation(Citation),
   CodeBlock(Token),
   Comment(Comment),
+  Equation(Token),
   FencedMechCode((Vec<MechCode>, BlockConfig)),
+  Float((Box<SectionElement>, FloatDirection)),
   Footnote(Footnote),
   Grammar(Grammar),
+  Image(Image),
   List(MDList),
-  Citation(Citation),
-  Equation(Token),
   MechCode(Vec<MechCode>),
   Paragraph(Paragraph),
   Subtitle(Subtitle),
@@ -1010,7 +1018,6 @@ pub enum ParagraphElement {
   FootnoteReference(Token),
   Highlight(Box<ParagraphElement>),
   Hyperlink(Hyperlink),
-  Image(Image),
   InlineCode(Token),
   InlineMechCode(Expression),
   InlineEquation(Token),
@@ -1031,7 +1038,6 @@ impl ParagraphElement {
       ParagraphElement::Hyperlink((t, u)) => {
         format!("[{}]({})", t.to_string(), u.to_string())
       }
-      ParagraphElement::Image(t) => t.src.to_string(),
       ParagraphElement::InlineCode(t) => t.to_string(),
       ParagraphElement::InlineEquation(t) => t.to_string(),
       ParagraphElement::InlineMechCode(t) => format!("{:?}", t),

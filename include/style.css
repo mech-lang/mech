@@ -1135,5 +1135,16 @@ mark {
 .mech-reference a {
     color: #F8D07A;
     text-decoration: none;
+}
 
+.mech-float.left {
+    float: left;
+    margin-right: 20px;
+    margin-left: -75px;
+}
+
+.mech-float.right {
+    float: right;
+    margin-left: 20px;
+    margin-right: -75px;
 }
