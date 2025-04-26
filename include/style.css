@@ -800,7 +800,7 @@ ol {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 40px auto;
+    margin: 20px auto;
 }
 
 .mech-image {
@@ -810,6 +810,16 @@ ol {
 .mech-figure-label {
     color: #F3B62D; 
     font-size: 12pt;
+    min-width: 60px;
+    text-align: right;
+}
+
+.mech-figure-caption {
+    width: 110%;
+}
+
+.mech-float .mech-figure-caption {
+    width: 350px;
 }
 
 .mech-figure-caption {
@@ -819,7 +829,18 @@ ol {
     text-align: left;;
     line-height: 1.4;
     font-style: italic;
-    padding: 1em;
+    display: flex;
+    flex-direction: row;
+    gap: 0.5em;
+}
+
+.mech-float .mech-figure {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.mech-figure-caption p {
+    margin: 0;
 }
 
 li {
@@ -1097,10 +1118,19 @@ mark {
     margin: 0px 7px 0px 3px;
 }
 
+.mech-works-cited {
+    width: 300px;
+}
+
 .mech-citation {
     display: flex;
     align-items: baseline;
     color: #f2ead9;
+}
+
+.mech-citation p {
+    margin-top: 0px;
+    margin-bottom: 10px;
 }
 
 .mech-citation-id {

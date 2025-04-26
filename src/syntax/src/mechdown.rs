@@ -230,22 +230,21 @@ pub fn raw_hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, ParagraphElement::Hyperlink((url.clone(), url))))
 }
 
-// img := "![", +text, "]", "(", +text, ")" ;
+// img := "![", paragraph, "]", "(", +text, ")" ;
 pub fn img(input: ParseString) -> ParseResult<Image> {
   let (input, _) = img_prefix(input)?;
-  let (input, caption_text) = many1(tuple((is_not(right_bracket),text)))(input)?;
+  let (input, caption_text) = paragraph(input)?;
   let (input, _) = right_bracket(input)?;
   let (input, _) = left_parenthesis(input)?;
   let (input, src) = many1(tuple((is_not(right_parenthesis),text)))(input)?;
   let (input, _) = right_parenthesis(input)?;
-  let merged_caption = Token::merge_tokens(&mut caption_text.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>()).unwrap();
   let merged_src = Token::merge_tokens(&mut src.into_iter().map(|(_,tkn)| tkn).collect::<Vec<Token>>()).unwrap();
-  Ok((input, Image{src: merged_src, caption: Some(merged_caption)} ))
+  Ok((input, Image{src: merged_src, caption: Some(caption_text)} ))
 }
 
 // paragraph_text := ¬(img_prefix | http_prefix | left_bracket | tilde | asterisk | underscore | grave | define_operator | bar), +text ;
 pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
-  let (input, elements) = match many1(nom_tuple((is_not(alt((footnote_prefix, highlight_sigil, equation_sigil, img_prefix, http_prefix, left_brace, left_bracket, tilde, asterisk, underscore, grave, define_operator, bar))),text)))(input) {
+  let (input, elements) = match many1(nom_tuple((is_not(alt((footnote_prefix, highlight_sigil, equation_sigil, img_prefix, http_prefix, left_brace, left_bracket, right_bracket, tilde, asterisk, underscore, grave, define_operator, bar))),text)))(input) {
     Ok((input, mut text)) => {
       let mut text = text.into_iter().map(|(_,tkn)| tkn).collect();
       let mut text = Token::merge_tokens(&mut text).unwrap();
@@ -670,26 +669,17 @@ pub fn equation(input: ParseString) -> ParseResult<Token> {
   Ok((input, eqn))
 }
 
-// citation := "[", (identifier | number), "]", ":", ws0, raw_hyperlink, ws0, ?("(", +text, ")") ;
+// citation := "[", (identifier | number), "]", ":", ws0, paragraph, ws0, ?("(", +text, ")") ;
 pub fn citation(input: ParseString) -> ParseResult<Citation> {
   let (input, _) = left_bracket(input)?;
   let (input, mut id) = many1(alphanumeric)(input)?;
   let (input, _) = right_bracket(input)?;
   let (input, _) = colon(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, url) = raw_hyperlink(input)?;
+  let (input, txt) = paragraph(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, citation_text) = opt(tuple((left_parenthesis, many1(text), right_parenthesis)))(input)?;
-  let citation_text = match citation_text {
-    Some((_,text,_)) => Some(text),
-    None => None,
-  };
   let id = Token::merge_tokens(&mut id).unwrap();
-  let url = match url {
-    ParagraphElement::Hyperlink(url) => url,
-    _ => unreachable!(),
-  };
-  Ok((input, Citation{id, url}))
+  Ok((input, Citation{id, text: txt}))
 }
 
 // float-sigil := ">>" | "<<" ;

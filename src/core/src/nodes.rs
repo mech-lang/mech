@@ -409,12 +409,12 @@ pub enum GrammarExpression {
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Citation {
   pub id: Token,
-  pub url: Hyperlink,
+  pub text: Paragraph,
 }
 
 impl Citation {
   pub fn to_string(&self) -> String {
-    format!("[{}]: {}", self.id.to_string(), self.url.1.to_string())
+    format!("[{}]: {}", self.id.to_string(), self.text.to_string())
   }
 }
 // This is just a temporary flag to store block state, 
@@ -468,12 +468,16 @@ impl SectionElement {
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Image {
   pub src: Token,
-  pub caption: Option<Token>,
+  pub caption: Option<Paragraph>,
 }
 
 impl Image {
   pub fn to_string(&self) -> String {
-    format!("![{}]({})", self.caption.as_ref().unwrap_or(&Token::default()).to_string(), self.src.to_string())
+    let caption = match &self.caption {
+      Some(c) => c.to_string(),
+      None => "".to_string(),
+    };
+    format!("![{}]({})", caption, self.src.to_string())
   }
 }
 

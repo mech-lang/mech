@@ -706,8 +706,8 @@ window.addEventListener("scroll", () => {{
   pub fn image(&mut self, node: &Image) -> String {
     self.figure_num += 1;
     let src = node.src.to_string();
-    let caption = match &node.caption {
-      Some(caption) => caption.to_string(),
+    let caption_p = match &node.caption {
+      Some(caption) => self.paragraph(caption),
       None => "".to_string(),
     };
     let figure_label = format!("Fig {}.{}",self.h2_num, self.figure_num);
@@ -715,11 +715,11 @@ window.addEventListener("scroll", () => {{
     let figure_id = hash_str(&figure_label);
     if self.html {
       format!("<figure id=\"{}\" class=\"mech-figure\">
-        <img id=\"{}\" class=\"mech-image\" src=\"{}\" alt=\"{}\" />
+        <img id=\"{}\" class=\"mech-image\" src=\"{}\" />
         <figcaption class=\"mech-figure-caption\"><strong class=\"mech-figure-label\">{}</strong> {}</figcaption>
-      </figure>", figure_id, image_id, src, caption, figure_label, caption)
+      </figure>", figure_id, image_id, src, figure_label, caption_p)
     } else {
-      format!("![{}]({})",caption, src)
+      format!("![{}]({})",caption_p, src)
     }
   }
 
@@ -744,15 +744,15 @@ window.addEventListener("scroll", () => {{
   pub fn citation(&mut self, node: &Citation) -> String {
     let id = hash_str(&format!("{}",node.id.to_string()));
     self.citations.resize(self.citation_num, String::new());
+    let citation_text = self.paragraph(&node.text);
     let citation_num = self.citation_map.get(&id).unwrap_or(&0);
-    let (txt, url) = &node.url;
     let formatted_citation = if self.html {
       format!("<div id=\"{}\" class=\"mech-citation\">
       <div class=\"mech-citation-id\">[{}]:</div>
-      <a href=\"{}\" class=\"mech-citation-link\">{}</a>
-    </div>",id, citation_num, url.to_string(), url.to_string())
+      {}
+    </div>",id, citation_num, citation_text)
     } else {
-      format!("[{}]: {}",node.id.to_string(), url.to_string())
+      format!("[{}]: {}",node.id.to_string(), citation_text)
     };
     self.citations[citation_num - 1] = formatted_citation;
     String::new()
