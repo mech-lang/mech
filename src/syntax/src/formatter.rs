@@ -80,7 +80,7 @@ impl Formatter {
     let (_,text) = paragraph(ParseString::new(&gs)).unwrap();
     let h2 = self.subtitle(&Subtitle { level: 2, text });
 
-    let mut src = format!(r#"<section id="{}" class="mech-works-cited">"#, id);
+    let mut src = format!(r#"<section id="67320967384727436" class="mech-works-cited">"#);
     src.push_str(&h2);
     for citation in &self.citations {
       src.push_str(citation);
@@ -447,7 +447,7 @@ window.addEventListener("scroll", () => {{
     let formatted_works_cited = if self.html && self.citation_num > 0 {
       format!("<section id=\"\" section=\"{}\" class=\"mech-program-section toc\">
   <h2 id=\"\" section=\"{}\" class=\"mech-program-subtitle toc active\">
-    <a class=\"mech-program-subtitle-link toc\" href=\"#7343258629960070\">Works Cited</a>
+    <a class=\"mech-program-subtitle-link toc\" href=\"#67320967384727436\">Works Cited</a>
   </h2>
 </section>", section_id, self.h2_num + 1)
     } else {
