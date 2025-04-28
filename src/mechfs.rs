@@ -214,8 +214,8 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
       
       // update the html
       let mut formatter = Formatter::new();
-      let formatted_mech = formatter.format_html(&new_tree,self.stylesheet.clone());
-      let mech_html = Formatter::humanize_html(formatted_mech);
+      let mech_html = formatter.format_html(&new_tree,self.stylesheet.clone());
+      //let mech_html = Formatter::humanize_html(mech_html);
       
       // update
       *source = new_source;
@@ -235,8 +235,8 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
         MechSourceCode::String(ref source) => {
           let tree = parser::parse(&source)?;
           let mut formatter = Formatter::new();
-          let formatted_mech = formatter.format_html(&tree,self.stylesheet.clone());
-          let mech_html = Formatter::humanize_html(formatted_mech);
+          let mech_html = formatter.format_html(&tree,self.stylesheet.clone());
+          //let mech_html = Formatter::humanize_html(mech_html);
   
           // Save all this so we don't have to do it later.
           let file_id = hash_str(&source);
@@ -247,8 +247,8 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
         },
         MechSourceCode::Tree(ref tree) => {
           let mut formatter = Formatter::new();
-          let formatted_mech = formatter.format_html(&tree,self.stylesheet.clone());
-          let mech_html = Formatter::humanize_html(formatted_mech);
+          let mech_html = formatter.format_html(&tree,self.stylesheet.clone());
+          //let mech_html = Formatter::humanize_html(mech_html);
   
           // Save all this so we don't have to do it later.
           let file_id = hash_str(&format!("{:?}", tree));
@@ -287,8 +287,8 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
           };
   
           let mut formatter = Formatter::new();
-          let formatted_mech = formatter.format_html(&tree,self.stylesheet.clone());
-          let mech_html = Formatter::humanize_html(formatted_mech);
+          let mech_html = formatter.format_html(&tree,self.stylesheet.clone());
+          //let mech_html = Formatter::humanize_html(mech_html);
   
           // Save all this so we don't have to do it later.
           self.sources.insert(file_id, src.clone());

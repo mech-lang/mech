@@ -1,6 +1,6 @@
 [package]
 name = "mech"
-version = "0.2.38"
+version = "0.2.39"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Mech is a reactive programming language for building robots, games, and animations."
 documentation = "https://mech-lang.org/docs"
@@ -18,9 +18,9 @@ gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-mech-core = "0.2.38"
-mech-syntax = "0.2.38"
-mech-interpreter = "0.2.38"
+mech-core = "0.2.39"
+mech-syntax = "0.2.39"
+mech-interpreter = "0.2.39"
 
 clap = {version = "4.5.32", features = ["cargo"]}
 colored = "3.0.0"

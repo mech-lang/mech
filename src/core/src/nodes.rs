@@ -85,24 +85,24 @@ pub fn merge_src_range(r1: SourceRange, r2: SourceRange) -> SourceRange {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TokenKind {
-  AbstractPrefix, Alpha, Ampersand, Any, Apostrophe, AssignOperator, Asterisk, AsyncTransitionOperator, At,
+  AbstractSigil, Alpha, Ampersand, Any, Apostrophe, AssignOperator, Asterisk, AsyncTransitionOperator, At,
   Backslash, Bar, BoxDrawing,
   Caret, CarriageReturn, CarriageReturnNewLine, Colon, CodeBlock, Comma,
   Dash, DefineOperator, Digit, Dollar,
-  Emoji, Empty, Equal, Exclamation,
-  False, FootnotePrefix,
+  Emoji, EmphasisSigil, Empty, Equal, EquationSigil, Exclamation, 
+  False, FloatLeft, FloatRight, FootnotePrefix,
   Grave,
-  HashTag, HttpPrefix,
+  HashTag, HighlightSigil, HttpPrefix,
   Identifier, ImgPrefix, InlineCode, 
   LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
   Newline, Not, Number,
   OutputOperator,
   Percent, Period, Plus,
-  Question, Quote,
+  QuerySigil, Question, Quote, QuoteSigil,
   RightAngle, RightBrace, RightBracket, RightParenthesis,
-  Semicolon, Space, Slash, String,
+  Semicolon, Space, Slash, String, StrikeSigil, StrongSigil,
   Tab, Text, Tilde, Title, TransitionOperator, True,
-  Underscore,
+  UnderlineSigil, Underscore,
 }
 
 #[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -406,6 +406,17 @@ pub enum GrammarExpression {
   Terminal(Token),
 }
 
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Citation {
+  pub id: Token,
+  pub text: Paragraph,
+}
+
+impl Citation {
+  pub fn to_string(&self) -> String {
+    format!("[{}]: {}", self.id.to_string(), self.text.to_string())
+  }
+}
 // This is just a temporary flag to store block state, 
 // I don't know exactly what I want to put in here yet
 type BlockConfig = u64; 
@@ -413,14 +424,24 @@ type BlockConfig = u64;
 pub type Footnote = (Token, Paragraph);
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub enum FloatDirection {
+  Left,
+  Right,
+}
+
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SectionElement {
   Abstract(Paragraph),
   BlockQuote(Paragraph),
+  Citation(Citation),
   CodeBlock(Token),
   Comment(Comment),
+  Equation(Token),
   FencedMechCode((Vec<MechCode>, BlockConfig)),
+  Float((Box<SectionElement>, FloatDirection)),
   Footnote(Footnote),
   Grammar(Grammar),
+  Image(Image),
   List(MDList),
   MechCode(Vec<MechCode>),
   Paragraph(Paragraph),
@@ -447,12 +468,16 @@ impl SectionElement {
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Image {
   pub src: Token,
-  pub caption: Option<Token>,
+  pub caption: Option<Paragraph>,
 }
 
 impl Image {
   pub fn to_string(&self) -> String {
-    format!("![{}]({})", self.caption.as_ref().unwrap_or(&Token::default()).to_string(), self.src.to_string())
+    let caption = match &self.caption {
+      Some(c) => c.to_string(),
+      None => "".to_string(),
+    };
+    format!("![{}]({})", caption, self.src.to_string())
   }
 }
 
@@ -989,14 +1014,18 @@ pub struct MechString {
   pub text: Token,
 }
 
+pub type Hyperlink = (Token, Token);
+
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ParagraphElement {
   Emphasis(Box<ParagraphElement>),
   FootnoteReference(Token),
-  Hyperlink((Token, Token)),
-  Image(Image),
+  Highlight(Box<ParagraphElement>),
+  Hyperlink(Hyperlink),
   InlineCode(Token),
   InlineMechCode(Expression),
+  InlineEquation(Token),
+  Reference(Token),
   Strikethrough(Box<ParagraphElement>),
   Strong(Box<ParagraphElement>),
   Text(Token),
@@ -1009,12 +1038,14 @@ impl ParagraphElement {
     match self {
       ParagraphElement::Emphasis(t) => t.to_string(),
       ParagraphElement::FootnoteReference(t) => t.to_string(),
+      ParagraphElement::Highlight(t) => t.to_string(),
       ParagraphElement::Hyperlink((t, u)) => {
         format!("[{}]({})", t.to_string(), u.to_string())
       }
-      ParagraphElement::Image(t) => t.src.to_string(),
       ParagraphElement::InlineCode(t) => t.to_string(),
+      ParagraphElement::InlineEquation(t) => t.to_string(),
       ParagraphElement::InlineMechCode(t) => format!("{:?}", t),
+      ParagraphElement::Reference(t) => t.to_string(),
       ParagraphElement::Strikethrough(t) => t.to_string(),
       ParagraphElement::Strong(t) => t.to_string(),
       ParagraphElement::Text(t) => t.to_string(),

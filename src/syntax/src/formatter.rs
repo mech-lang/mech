@@ -3,6 +3,7 @@ use mech_core::nodes::{Kind, Matrix};
 use std::collections::{HashMap, HashSet};
 use colored::Colorize;
 use std::io::{Read, Write, Cursor};
+use crate::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Formatter{
@@ -14,7 +15,14 @@ pub struct Formatter{
   nested: bool,
   toc: bool,
   figure_num: usize,
-  section_num: usize,
+  h2_num: usize,
+  h3_num: usize,
+  h4_num: usize,
+  h5_num: usize,
+  h6_num: usize,
+  citation_num: usize,
+  citation_map: HashMap<u64, usize>,
+  citations: Vec<String>,
   interpreter_id: u64,
 }
 
@@ -27,7 +35,14 @@ impl Formatter {
       rows: 0,
       cols: 0,
       indent: 0,
-      section_num: 0,
+      h2_num: 0,
+      h3_num: 0,
+      h4_num: 0,
+      h5_num: 0,
+      h6_num: 0,
+      citation_num: 0,
+      citation_map: HashMap::new(),
+      citations: Vec::new(),
       figure_num: 0,
       html: false,
       nested: false,
@@ -46,14 +61,51 @@ impl Formatter {
     self.grammar(tree)
   }*/
 
+  pub fn reset_numbering(&mut self) {
+    self.h2_num = 0;
+    self.h3_num = 0;
+    self.h4_num = 0;
+    self.h5_num = 0;
+    self.h6_num = 0;
+    self.figure_num = 0;
+  }
+
+  pub fn works_cited(&mut self) -> String {
+    if self.citation_num == 0 {
+      return "".to_string();
+    }
+    let id = hash_str("works-cited");
+
+    let gs = graphemes::init_source("Works Cited"); 
+    let (_,text) = paragraph(ParseString::new(&gs)).unwrap();
+    let h2 = self.subtitle(&Subtitle { level: 2, text });
+
+    let mut src = format!(r#"<section id="67320967384727436" class="mech-works-cited">"#);
+    src.push_str(&h2);
+    for citation in &self.citations {
+      src.push_str(citation);
+    }
+    src.push_str("</section>\n");
+    src
+  }
+
   pub fn format_html(&mut self, tree: &Program, style: String) -> String {
 
     self.html = true;
     let toc = tree.table_of_contents();
-    let formatted_toc = self.table_of_contents(&toc);
     let formatted_src = self.program(tree);
-    let head = format!(r#"<html>
+    self.reset_numbering();
+    let formatted_toc = self.table_of_contents(&toc);
+    
+    let head = format!(r#"<!DOCTYPE html>
+<html>
     <head>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" integrity="sha384-5TcZemv2l/9On385z///+d7MSYlvIEw9FuZTIdZ14vJLqWphw7e7ZPuOiCHJcFCP" crossorigin="anonymous">
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" integrity="sha384-cMkvdD8LoxVzGF/RPUKAcvmm49FQ0oxwDF3BGKtDXcEc+T1b2N+teh/OJfpU0jr6" crossorigin="anonymous"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"
+        onload="renderMathInElement(document.body);"></script>
+
+
         <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
         <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
         <style>
@@ -69,7 +121,285 @@ impl Formatter {
     let foot = format!(r#"
       <div id = "mech-output"></div>
     </div>
+    <script>
+
+let observer = null;
+let userScrolling = false;
+let scrollTimeout = null;
+let scrollLock = false;
+
+function isFullyVisible(el) {{
+  const rect = el.getBoundingClientRect();
+  return (
+    rect.top >= 0 &&
+    rect.left >= 0 &&
+    rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+    rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+  );
+}}
+
+document.querySelectorAll('.mech-program-subtitle.toc').forEach(entry => {{
+  entry.addEventListener('click', () => {{
+    scrollLock = true;
+    if (observer) observer.disconnect();
+    const id = entry.id;
+    const tag = entry.tagName; // H1, H2, H3, etc.
+
+
+    const headings = document.querySelectorAll(".mech-program-subtitle:not(.toc)");
+    const navItems = document.querySelectorAll(".mech-program-subtitle.toc");
+    const sections = document.querySelectorAll(".mech-program-section.toc");
+    const all_the_headers = Array.from(document.querySelectorAll('[section]'));
+
+    navItems.forEach(item => item.classList.remove("active"));
+    sections.forEach(item => item.classList.remove("active"));
+
+    const section = entry.closest("section");
+
+    if (section) {{
+      if (!isFullyVisible(section)) {{
+        section.scrollIntoView();
+      }}
+      const matchingTocSection = Array.from(sections).find(item => item.id === section.id);
+      if (matchingTocSection) {{
+        matchingTocSection.classList.add("active");
+      }}
+
+      // Now grab the h2, h3, and h4 elements within that section
+      const h3s = Array.from(section.querySelectorAll('h3'));
+
+      if (tag === "H4") {{
+        const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING);
+        const H3Nav = Array.from(navItems).find(item => {{
+            const link = item.querySelector("a[href]");
+            return link && link.getAttribute("href") === `#${{closestH3.id}}`;
+        }});
+        closestH3.classList.add("active");
+      }}
+
+      // if tag is h3 then we want to add a "visible" class to all of the headings with the same section
+      if (tag === "H3") {{
+        const h3_id = entry.getAttribute("section");
+        all_the_headers.forEach(item => {{
+          const item_id = item.getAttribute("section");
+          if (item_id === h3_id) {{
+            item.classList.add("visible");
+          }} else {{
+            item.classList.remove("visible");
+          }}
+        }});
+      }}
+
+      const topLevelHeading = section.querySelector("h2");
+      topLevelHeading.classList.add("active");
+
+    }}
+    entry.classList.add("active");
+    currentActiveTag = tag;
+    const link = entry.querySelector('a[href]');
+    if (link) {{
+      window.location.hash = link.getAttribute('href');
+    }}
+  }});
+}});
+
+function createObserver(rootMarginValue,scrolling_down) {{
+  if (observer) observer.disconnect(); // Clean up old observer
+  const headings = document.querySelectorAll(".mech-program-subtitle:not(.toc)");
+  const navItems = document.querySelectorAll(".mech-program-subtitle.toc");
+  const sections = document.querySelectorAll(".mech-program-section.toc");
+  const all_the_headers = Array.from(document.querySelectorAll('[section]'));
+  observer = new IntersectionObserver((entries) => {{
+
+
+entries
+  .slice() // Create a shallow copy to avoid mutating the original entries array
+  .sort((a, b) => {{
+    // Sort entries based on scroll direction
+    return scrolling_down
+      ? a.boundingClientRect.top - b.boundingClientRect.top // Ascending for scrolling down
+      : b.boundingClientRect.top - a.boundingClientRect.top; // Descending for scrolling up
+  }})
+  .forEach(entry => {{
+      if (entry.isIntersecting) {{
+        const id = entry.target.id;
+        const tag = entry.target.tagName; // H1, H2, H3, etc.
+
+        const activeNav = Array.from(navItems).find(item => {{
+          const link = item.querySelector("a[href]");
+          return link && link.getAttribute("href") === `#${{id}}`;
+        }});
+
+        if (!activeNav) return;
+
+        // Deactivate all TOC items
+        navItems.forEach(item => item.classList.remove("active"));
+        sections.forEach(item => item.classList.remove("active"));
+
+        // Activate the current section's top-level H2
+        const section = entry.target.closest("section");
+        if (section) {{
+          const matchingTocSection = Array.from(sections).find(item => {{
+            const toc_section_id = item.getAttribute("section");
+            const section_id = section.getAttribute("section");
+            if (toc_section_id && section_id) {{
+              return toc_section_id === section_id;
+            }}
+          }});
+          if (matchingTocSection) {{
+            matchingTocSection.classList.add("active");
+            const toc = document.querySelector(".mech-toc");
+
+            if (toc && matchingTocSection) {{
+              const itemOffsetTop = matchingTocSection.offsetTop;
+              const itemHeight = matchingTocSection.offsetHeight;
+              const tocHeight = toc.clientHeight;
+              const scrollTop = toc.scrollTop;
+
+              // Center the item manually if it's out of view
+              const visibleTop = scrollTop;
+              const visibleBottom = scrollTop + tocHeight;
+
+              if (itemOffsetTop < visibleTop || itemOffsetTop + itemHeight > visibleBottom) {{
+                toc.scrollTo({{
+                  top: itemOffsetTop - tocHeight / 2 + itemHeight / 2,
+                  behavior: "smooth"
+                }});
+              }}
+            }}
+          }}
+
+          // Now grab the h2, h3, and h4 elements within that section
+          const h3s = Array.from(section.querySelectorAll('h3'));
+
+          if (tag === "H4") {{
+            const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
+            const H3Nav = Array.from(navItems).find(item => {{
+              const link = item.querySelector("a[href]");
+              return link && link.getAttribute("href") === `#${{closestH3.id}}`;
+            }});
+            if (H3Nav) {{
+              H3Nav.classList.add("active");
+              const h3_id = H3Nav.getAttribute("section");
+              all_the_headers.forEach(item => {{
+                const item_id = item.getAttribute("section");
+                if (item_id === h3_id) {{
+                  item.classList.add("visible");
+                }} else {{
+                  item.classList.remove("visible");
+                }}
+              }});
+            }}
+          }}
+
+          // if tag is h3 then we want to add a "visible" class to all of the headings with the same section
+          if (tag === "H3") {{
+            const h3_id = entry.target.getAttribute("section");
+            all_the_headers.forEach(item => {{
+              const item_id = item.getAttribute("section");
+              if (item_id === h3_id) {{
+                item.classList.add("visible");
+              }} else {{
+                item.classList.remove("visible");
+              }}
+            }});
+          }}
+
+          const topLevelHeading = section.querySelector("h2");
+          if (topLevelHeading) {{
+            const topLevelNav = Array.from(navItems).find(item => {{
+              const link = item.querySelector("a[href]");
+              return link && link.getAttribute("href") === `#${{topLevelHeading.id}}`;
+            }});
+            if (topLevelNav) {{
+              topLevelNav.classList.add("active");
+            }}
+          }}
+        }}
+        activeNav.classList.add("active");
+        currentActiveTag = tag;
+      }}
+    }});
+  }}, {{
+    root: null,
+    rootMargin: rootMarginValue,
+    threshold: 0
+  }});
+  headings.forEach(heading => observer.observe(heading));
+}}
+
+
+window.addEventListener("DOMContentLoaded", () => {{
+  createObserver("0px 0px 0px 0px");
+  const elements = document.querySelectorAll(".mech-equation");
+  elements.forEach(el => {{
+    const eq = el.getAttribute("equation");
+    if (eq) {{
+      katex.render(eq, el, {{ throwOnError: false }});
+    }}
+  }});
+  const inline_elements = document.querySelectorAll(".mech-inline-equation");
+  inline_elements.forEach(el => {{
+    const eq = el.getAttribute("equation");
+    if (eq) {{
+      katex.render(eq, el, {{ throwOnError: false }});
+    }}
+  }});
+}});
+
+let lastScrollY = window.scrollY;
+let scrolling_down = true;
+let margin = 10;
+
+function getScrollPercentage() {{
+  const scrollTop = window.scrollY || window.pageYOffset;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+
+  if (docHeight === 0) return 0; // avoid division by zero on short pages
+  return scrollTop / docHeight;
+}}
+
+window.addEventListener("scroll", () => {{
+  if (scrollLock) {{
+    scrollLock = false;
+    return;
+  }}
+  
+  const percent = getScrollPercentage();
+  const currentScrollY = window.scrollY;
+  scrolling_down = currentScrollY > lastScrollY;
+
+  if (currentScrollY !== lastScrollY) {{
+    lastScrollY = currentScrollY;
+  }}
+
+  if (percent < 0.05) {{
+    createObserver("0px 0px -90% 0px", scrolling_down);
+  }} else if (percent < 0.2) {{
+    createObserver("-0% 0px -90% 0px", scrolling_down);
+  }} else if (percent < 0.3) {{
+    createObserver("-10% 0px -80% 0px", scrolling_down);
+  }} else if (percent < 0.4) {{
+    createObserver("-20% 0px -70% 0px", scrolling_down);
+  }} else if (percent < 0.5) {{
+    createObserver("-30% 0px -60% 0px", scrolling_down);
+  }} else if (percent < 0.6) {{
+    createObserver("-40% 0px -50% 0px", scrolling_down);
+  }} else if (percent < 0.7) {{
+    createObserver("-50% 0px -40% 0px", scrolling_down);
+  }} else if (percent < 0.8) {{
+    createObserver("-60% 0px -30% 0px", scrolling_down);
+  }} else if (percent < 0.9) {{
+    createObserver("-70% 0px -20% 0px", scrolling_down);
+  }} else if (percent <= 0.95) {{
+    createObserver("-80% 0px 0% 0px", scrolling_down);
+  }}
+}});
+
+</script>
     <script type="module">
+
+
       import init, {{WasmMech}} from '/pkg/mech_wasm.js';
       let wasm_core;
       async function run() {{
@@ -113,7 +443,17 @@ impl Formatter {
     };
     let sections = self.sections(&toc.sections);
     self.toc = false;
-    format!("<div class=\"mech-toc\">{}{}</div>",title,sections)
+    let section_id = hash_str(&format!("section-{}",self.h2_num + 1));
+    let formatted_works_cited = if self.html && self.citation_num > 0 {
+      format!("<section id=\"\" section=\"{}\" class=\"mech-program-section toc\">
+  <h2 id=\"\" section=\"{}\" class=\"mech-program-subtitle toc active\">
+    <a class=\"mech-program-subtitle-link toc\" href=\"#67320967384727436\">Works Cited</a>
+  </h2>
+</section>", section_id, self.h2_num + 1)
+    } else {
+      "".to_string()
+    };
+    format!("<div class=\"mech-toc\">{}{}{}</div>",title,sections,formatted_works_cited)
   }
 
   pub fn sections(&mut self, sections: &Vec<Section>) -> String {
@@ -132,10 +472,11 @@ impl Formatter {
       None => "".to_string(),
     };
     let body = self.body(&node.body);
+    let formatted_works_cited = self.works_cited();
     if self.html {
-      format!("<div class=\"mech-program\">{}{}</div>",title,body)
+      format!("<div class=\"mech-program\">{}{}{}</div>",title,body,formatted_works_cited)
     } else {
-      format!("{}{}",title,body)
+      format!("{}{}{}",title,body,formatted_works_cited)
     }
   }
 
@@ -149,15 +490,29 @@ impl Formatter {
 
   pub fn subtitle(&mut self, node: &Subtitle) -> String {
     let level = node.level;
-    if level == 2 && !self.toc {
-      self.section_num += 1;
+    if level == 2 {
+      self.h2_num  += 1;
+      self.h3_num = 0;
+      self.h4_num = 0;
+      self.h5_num = 0;
+      self.h6_num = 0;
       self.figure_num = 0;
+    } else if level == 3 {
+      self.h3_num += 1;
+    } else if level == 4 {
+      self.h4_num += 1;
+    } else if level == 5 {
+      self.h5_num += 1;
+    } else if level == 6 {
+      self.h6_num += 1;
     }
+    
     let toc = if self.toc { "toc" } else { "" };
-    let title_id = hash_str(&format!("{}{}{}",level,node.to_string(),toc));
-    let link_id = hash_str(&format!("{}{}",level,node.to_string()));
+    let title_id = hash_str(&format!("{}.{}.{}.{}.{}.{}.{}{}",self.h2_num,self.h3_num,self.h4_num,self.h5_num,self.h6_num,level,node.to_string(),toc));
+    let link_id  = hash_str(&format!("{}.{}.{}.{}.{}.{}.{}",self.h2_num,self.h3_num,self.h4_num,self.h5_num,self.h6_num,level,node.to_string()));
+
     if self.html {
-      format!("<h{} id=\"{}\" class=\"mech-program-subtitle {}\"><a href=\"#{}\">{}</a></h{}>", level, title_id, toc, link_id, node.to_string(), level)
+      format!("<h{} id=\"{}\" section=\"{}.{}\" class=\"mech-program-subtitle {}\"><a class=\"mech-program-subtitle-link {}\" href=\"#{}\">{}</a></h{}>", level, title_id, self.h2_num, self.h3_num, toc, toc, link_id, node.to_string(), level)
     } else {
       format!("{}\n-------------------------------------------------------------------------------\n",node.to_string())
     }
@@ -186,8 +541,11 @@ impl Formatter {
       let el_str = self.section_element(el);
       src = format!("{}{}", src, el_str);
     }
-    if self.html {
-      format!("<section class=\"mech-program-section\">{}</section>",src)
+    let toc = if self.toc { "toc" } else { "" };
+    let section_id = hash_str(&format!("section-{}",self.h2_num + 1));
+    let id = hash_str(&format!("section-{}{}",self.h2_num + 1, toc));
+     if self.html {
+      format!("<section id=\"{}\" section=\"{}\" class=\"mech-program-section {}\">{}</section>",id,section_id,toc,src)
     } else {
       src
     }
@@ -216,11 +574,48 @@ impl Formatter {
     }
   }
 
+  fn inline_equation(&mut self, node: &Token) -> String {
+    let id = hash_str(&format!("inline-equation-{}",node.to_string()));
+    if self.html {
+      format!("<span id=\"{}\" equation=\"{}\" class=\"mech-inline-equation\"></span>",id, node.to_string())
+    } else {
+      format!("$${}$$", node.to_string())
+    }
+  }
+
+  fn highlight(&mut self, node: &Token) -> String {
+    if self.html {
+      format!("<mark class=\"mech-highlight\">{}</mark>", node.to_string())
+    } else {
+      format!("!!{}!!", node.to_string())
+    }
+  }
+
+  fn reference(&mut self, node: &Token) -> String {
+    self.citation_num += 1;
+    let id = hash_str(&format!("reference-{}",node.to_string()));
+    let ref_id = hash_str(&format!("{}",node.to_string()));
+    self.citation_map.insert(ref_id, self.citation_num);
+    if self.html {
+      format!("<span id=\"{}\" class=\"mech-reference\">[<a href=\"#{}\" class=\"mech-reference-link\">{}</a>]</span>",id, ref_id, self.citation_num)
+    } else {
+      format!("[{}]",node.to_string())
+    }
+  }
+  
   pub fn paragraph_element(&mut self, node: &ParagraphElement) -> String {
     match node {
+      ParagraphElement::Highlight(n) => {
+        if self.html {
+          format!("<mark class=\"mech-highlight\">{}</mark>", n.to_string())
+        } else {
+          format!("!!{}!!", n.to_string())
+        }
+      },
+      ParagraphElement::Reference(n) => self.reference(n),
+      ParagraphElement::InlineEquation(exq) => self.inline_equation(exq),
       ParagraphElement::Text(n) => n.to_string(),
       ParagraphElement::FootnoteReference(n) => self.footnote_reference(n),
-      ParagraphElement::Image(n) => self.image(n),
       ParagraphElement::Strong(n) => {
         if self.html {
           format!("<strong class=\"mech-strong\">{}</strong>", n.to_string())
@@ -274,7 +669,6 @@ impl Formatter {
           format!("{{{}}}", result)
         }
       },
-      _ => todo!(),
     }
   }
 
@@ -312,20 +706,20 @@ impl Formatter {
   pub fn image(&mut self, node: &Image) -> String {
     self.figure_num += 1;
     let src = node.src.to_string();
-    let caption = match &node.caption {
-      Some(caption) => caption.to_string(),
+    let caption_p = match &node.caption {
+      Some(caption) => self.paragraph(caption),
       None => "".to_string(),
     };
-    let figure_label = format!("Fig {}.{}:",self.section_num, self.figure_num);
+    let figure_label = format!("Fig {}.{}",self.h2_num, self.figure_num);
     let image_id = hash_str(&src);
     let figure_id = hash_str(&figure_label);
     if self.html {
       format!("<figure id=\"{}\" class=\"mech-figure\">
-        <img id=\"{}\" class=\"mech-image\" src=\"{}\" alt=\"{}\" />
+        <img id=\"{}\" class=\"mech-image\" src=\"{}\" />
         <figcaption class=\"mech-figure-caption\"><strong class=\"mech-figure-label\">{}</strong> {}</figcaption>
-      </figure>", figure_id, image_id, src, caption, figure_label, caption)
+      </figure>", figure_id, image_id, src, figure_label, caption_p)
     } else {
-      format!("![{}]({})",caption, src)
+      format!("![{}]({})",caption_p, src)
     }
   }
 
@@ -338,21 +732,66 @@ impl Formatter {
     }
   }
 
+  pub fn equation(&mut self, node: &Token) -> String {
+    let id = hash_str(&format!("equation-{}",node.to_string()));
+    if self.html {
+      format!("<div id=\"{}\" equation=\"{}\" class=\"mech-equation\"></div>",id, node.to_string())
+    } else {
+      format!("$$ {}\n", node.to_string())
+    }
+  }
+
+  pub fn citation(&mut self, node: &Citation) -> String {
+    let id = hash_str(&format!("{}",node.id.to_string()));
+    self.citations.resize(self.citation_num, String::new());
+    let citation_text = self.paragraph(&node.text);
+    let citation_num = self.citation_map.get(&id).unwrap_or(&0);
+    let formatted_citation = if self.html {
+      format!("<div id=\"{}\" class=\"mech-citation\">
+      <div class=\"mech-citation-id\">[{}]:</div>
+      {}
+    </div>",id, citation_num, citation_text)
+    } else {
+      format!("[{}]: {}",node.id.to_string(), citation_text)
+    };
+    self.citations[citation_num - 1] = formatted_citation;
+    String::new()
+  }
+
+  pub fn float(&mut self, node: &Box<SectionElement>, float_dir: &FloatDirection) -> String {
+    let mut src = "".to_string();
+    let id = hash_str(&format!("float-{:?}",*node));
+    let (float_class,float_sigil) = match float_dir {
+      FloatDirection::Left => ("mech-float left","<<"),
+      FloatDirection::Right => ("mech-float right",">>"),
+    };
+    let el = self.section_element(node);
+    if self.html {
+      format!("<div id=\"{}\" class=\"{}\">{}</div>",id,float_class,el)
+    } else {
+      format!("{}{}\n",float_sigil, el)
+    }
+  }
+
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     match node {
       SectionElement::Abstract(n) => self.abstract_el(n),
       SectionElement::BlockQuote(n) => self.block_quote(n),
+      SectionElement::Citation(n) => self.citation(n),
       SectionElement::CodeBlock(n) => self.code_block(n),
       SectionElement::Comment(n) => self.comment(n),
+      SectionElement::Equation(n) => self.equation(n),
       SectionElement::FencedMechCode((n,s)) => self.fenced_mech_code(n,s),
+      SectionElement::Float((n,f)) => self.float(n,f),
       SectionElement::Footnote(n) => self.footnote(n),
       SectionElement::Grammar(n) => self.grammar(n),
+      SectionElement::Image(n) => self.image(n),
+      SectionElement::List(n) => self.list(n),
       SectionElement::MechCode(n) => self.mech_code(n),
       SectionElement::Paragraph(n) => self.paragraph(n),
       SectionElement::Subtitle(n) => self.subtitle(n),
       SectionElement::Table(n) => self.markdown_table(n),
       SectionElement::ThematicBreak => self.thematic_break(),
-      SectionElement::List(n) => self.list(n),
     }
   }
 

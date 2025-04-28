@@ -1,7 +1,7 @@
 @import url(https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/fira_code.css);
 
 html {
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
 }
 
 .mech-program {
@@ -42,18 +42,14 @@ body {
     color: #f2ead9;
     overflow-y: auto;
     margin-right: 20px;
-    padding-right: 15px;
-    padding-left: 10px;
+    padding-right: 0px;
+    padding-left: 0px;
     position: sticky; 
     top: 0; 
     height: 100vh;
 }
 
 .mech-toc h2 {
-    line-height: 23px;
-}
-
-.mech-toc h3 {
     line-height: 23px;
 }
 
@@ -94,24 +90,27 @@ h2.toc::before {
     padding-right: 5px;
 }
 
-h3.toc::before {
-    font-size: 12pt;
-    padding-right: 5px;
-    color: rgba(255, 255, 255, 0.55);
-}
-
 .mech-toc h2 a {
     color: #f2ead9;
     text-decoration: none;
 }
 
 .mech-toc h2:hover::before {
-    color: #ee6262;
+    color: #f18181;
 }
 
 .mech-toc h2 a:hover {
-    color: #ee6262;
+    color: #f18181;
     text-decoration: none;
+}
+
+h3.toc::before {
+    font-size: 12pt;
+    padding-right: 5px;
+    color: rgba(255, 255, 255, 0.55);
+}
+.mech-toc h3 {
+    line-height: 23px;
 }
 
 .mech-toc h3 {
@@ -125,11 +124,37 @@ h3.toc::before {
 }
 
 .mech-toc h3:hover::before {
-    color: #ee6262;
+    color: #f18181;
 }
 
 .mech-toc h3 a:hover {
-    color: #ee6262;
+    color: #f18181;
+    text-decoration: none;
+}
+
+h4.toc::before {
+    font-size: 12pt;
+    padding-right: 5px;
+    color: rgba(255, 255, 255, 0.55);
+}
+.mech-toc h4 {
+    line-height: 23px;
+    font-size: 12pt;
+    padding-left: 60px;
+    margin: 10px;
+}
+
+.mech-toc h4 a {
+    color: #f2ead9;
+    text-decoration: none;
+}
+
+.mech-toc h4:hover::before {
+    color: #f18181;
+}
+
+.mech-toc h4 a:hover {
+    color: #f18181;
     text-decoration: none;
 }
 
@@ -453,11 +478,12 @@ code {
 }
 
 .mech-paragraph a {
-    color: #ee6262;
-    text-decoration: none;
+    color: #F8D07A;
+    text-decoration: underline;
 }
 
 .mech-paragraph a:hover {
+    color: #f18181;
     text-decoration: underline;
 }
 
@@ -774,7 +800,7 @@ ol {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 40px auto;
+    margin: 20px auto;
 }
 
 .mech-image {
@@ -784,6 +810,16 @@ ol {
 .mech-figure-label {
     color: #F3B62D; 
     font-size: 12pt;
+    min-width: 60px;
+    text-align: right;
+}
+
+.mech-figure-caption {
+    width: 110%;
+}
+
+.mech-float .mech-figure-caption {
+    width: 350px;
 }
 
 .mech-figure-caption {
@@ -793,7 +829,18 @@ ol {
     text-align: left;;
     line-height: 1.4;
     font-style: italic;
-    padding: 1em;
+    display: flex;
+    flex-direction: row;
+    gap: 0.5em;
+}
+
+.mech-float .mech-figure {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.mech-figure-caption p {
+    margin: 0;
 }
 
 li {
@@ -855,12 +902,12 @@ li p {
 }
 
 .mech-table a {
-    color: #ee6262; 
-    text-decoration: none;
+    color: #F8D07A;
+    text-decoration: underline;
 }
 
 .mech-table a:hover {
-    color: #f2ead9;
+    color: #f18181;
 }
 
 .mech-block-quote {
@@ -944,7 +991,7 @@ li p {
 }
 
 .mech-footnote-id {
-    color: #ee6262;
+    color: #F3B62D;
     font-weight: bold;
     min-width: 2em;
     text-align: right;
@@ -957,18 +1004,22 @@ li p {
     color: #f2ead9;
 }
 
-.mech-footnote-reference {
+a.mech-footnote-reference {
+    text-decoration: none;
     font-size: 0.7em;
     vertical-align: super;
-    text-decoration: none;
     margin-left: 0.1em;
-    color: #ee6262;
+    color: #F8D07A;
+    font-weight: bold;
+    min-width: 2em;
+    text-align: right;
     cursor: pointer;
+    font-family: monospace;
     transition: color 0.2s;
 }
 
 .mech-footnote-reference:hover {
-    color: #f28b82;
+    color: #f18181;
     text-decoration: underline;
 }
 
@@ -1011,4 +1062,119 @@ h4::before {
     color: #F3B62D;
     counter-increment: h4;
     content: counter(h2) "." counter(h3) "." counter(h4) " ";
+}
+
+.mech-program-subtitle.toc.active::before{
+    color: #d65858;
+}
+
+.mech-program-subtitle.toc.active a {
+    color: #ee6262;
+}
+
+.mech-program-section.toc.active{
+    background-color: #0d1013;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+h2:hover a {
+    color: #f18181;
+}
+
+h3:hover a {
+    color: #f18181;
+}
+
+h4:hover a {
+    color: #f18181;
+}
+
+.mech-program-section {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.mech-program-subtitle.toc.visible {
+    display: block;
+    visibility: visible;
+}
+
+.mech-equation {
+    text-align: center;
+    color: #f2ead9;
+}
+
+.mech-inline-equation {
+    font-size: 10pt;
+    color: #efe4cd;
+}
+
+mark {
+    background-color: #F3B62D;
+    color: #2F353B;
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    margin: 0px 7px 0px 3px;
+}
+
+.mech-works-cited {
+    width: 100%;
+}
+
+.mech-citation {
+    display: flex;
+    align-items: baseline;
+    color: #f2ead9;
+}
+
+.mech-citation p {
+    margin-top: 0px;
+    margin-bottom: 10px;
+}
+
+.mech-citation-id {
+    color: #F3B62D;
+    font-family: 'FiraCodeRegular', monospace;
+    flex-shrink: 0;
+    padding: 5px 10px 5px 10px;
+}
+
+.mech-citation-link {
+    color: #F8D07A;
+    text-decoration: none;
+    word-break: break-all;
+    transition: color 0.2s ease;
+}
+
+.mech-citation-link:hover {
+    color: #f18181;
+    text-decoration: underline;
+}
+
+.mech-reference {
+    font-family: 'FiraCodeRegular', monospace;
+    align-items: baseline;
+    color: #F8D07A;
+}
+
+.mech-reference a:hover {
+    color: #f18181;
+}
+
+.mech-reference a {
+    color: #F8D07A;
+    text-decoration: none;
+}
+
+.mech-float.left {
+    float: left;
+    margin-right: 20px;
+    margin-left: -75px;
+}
+
+.mech-float.right {
+    float: right;
+    margin-left: 20px;
+    margin-right: -75px;
 }

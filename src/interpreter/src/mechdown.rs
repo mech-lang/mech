@@ -24,6 +24,10 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
   let mut hasher = DefaultHasher::new();
   let mut out = Value::Empty; 
   match element {
+    SectionElement::Image(x) => x.hash(&mut hasher),
+    SectionElement::Float(x) => x.hash(&mut hasher),
+    SectionElement::Citation(x) => x.hash(&mut hasher),
+    SectionElement::Equation(x) => x.hash(&mut hasher),
     SectionElement::Abstract(x) => x.hash(&mut hasher),
     SectionElement::MechCode(code) => {
       for c in code {

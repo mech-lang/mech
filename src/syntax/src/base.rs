@@ -131,7 +131,17 @@ leaf!{box_vert_bold, "┃", TokenKind::BoxDrawing}
 leaf!(http_prefix, "http", TokenKind::HttpPrefix);
 leaf!(img_prefix, "![", TokenKind::ImgPrefix);
 leaf!(footnote_prefix, "[^", TokenKind::FootnotePrefix);
-leaf!(abstract_prefix, "%%", TokenKind::AbstractPrefix);
+leaf!(abstract_sigil, "%%", TokenKind::AbstractSigil);
+leaf!(equation_sigil, "$$", TokenKind::EquationSigil);
+leaf!(highlight_sigil, "!!", TokenKind::HighlightSigil);
+leaf!(quote_sigil, ">", TokenKind::QuoteSigil);
+leaf!(float_left, "<<", TokenKind::FloatLeft);
+leaf!(float_right, ">>", TokenKind::FloatRight);
+leaf!(strong_sigil, "**", TokenKind::StrongSigil);
+leaf!(emphasis_sigil, "*", TokenKind::EmphasisSigil);
+leaf!(underline_sigil, "__", TokenKind::UnderlineSigil);
+leaf!(strike_sigil, "~~", TokenKind::StrikeSigil);
+leaf!(query_sigil, "??", TokenKind::QuerySigil);
 
 ws0_leaf!(define_operator, ":=", TokenKind::DefineOperator);
 ws0_leaf!(assign_operator, "=", TokenKind::AssignOperator);
@@ -219,6 +229,12 @@ pub fn digit_token(input: ParseString) -> ParseResult<Token> {
   Ok((input, Token{kind: TokenKind::Digit, chars: g.chars().collect::<Vec<char>>(), src_range}))
 }
 
+// alphanumeric := alpha | digit ;
+pub fn alphanumeric(input: ParseString) -> ParseResult<Token> {
+  let (input, token) = alt((alpha_token, digit_token))(input)?; 
+  Ok((input, token))
+}
+
 // underscore_digit := underscore, digit ;
 pub fn underscore_digit(input: ParseString) -> ParseResult<Token> {
   let (input, _) = underscore(input)?;
@@ -256,7 +272,7 @@ pub fn escaped_char(input: ParseString) -> ParseResult<Token> {
 
 // symbol := ampersand | bar | at | slash | hashtag | equal | backslash | tilde | plus | dash | asterisk | caret | underscore ;
 pub fn symbol(input: ParseString) -> ParseResult<Token> {
-  let (input, symbol) = alt((ampersand, bar, percent, at, slash, hashtag, equal, backslash, tilde, plus, dash, asterisk, caret, underscore))(input)?;
+  let (input, symbol) = alt((ampersand, dollar, bar, percent, at, slash, hashtag, equal, backslash, tilde, plus, dash, asterisk, caret, underscore))(input)?;
   Ok((input, symbol))
 }
 
