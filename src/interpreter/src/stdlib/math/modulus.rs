@@ -151,8 +151,8 @@ fn impl_mod_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
     U32,  U32  => MatrixU32,  u32,  u32::zero(), "U32";
     U64,  U64  => MatrixU64,  u64,  u64::zero(), "U64";
     U128, U128 => MatrixU128, u128, u128::zero(), "U128";
-    //F32,  F32  => MatrixF32,  F32,  F32::zero(), "F32";
-    //F64,  F64  => MatrixF64,  F64,  F64::zero(), "F64";
+    F32,  F32  => MatrixF32,  F32,  F32::zero(), "F32";
+    F64,  F64  => MatrixF64,  F64,  F64::zero(), "F64";
   )
 }
 

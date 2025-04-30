@@ -105,6 +105,17 @@ impl DivAssign for F64 {
     self.0 /= other.0;
   }
 }
+impl Rem for F64 {
+  type Output = F64;
+  fn rem(self, other: F64) -> F64 {
+    F64(self.0 % other.0)
+  }
+}
+impl RemAssign for F64 {
+  fn rem_assign(&mut self, other: F64) {
+    self.0 = self.0 % other.0;
+  }
+}
 impl Zero for F64 {
   fn zero() -> Self {
     F64(0.0)
@@ -255,6 +266,17 @@ impl Add for F32 {
 impl AddAssign for F32 {
   fn add_assign(&mut self, other: F32) {
     self.0 += other.0;
+  }
+}
+impl Rem for F32 {
+  type Output = F32;
+  fn rem(self, other: F32) -> F32 {
+    F32(self.0 % other.0)
+  }
+}
+impl RemAssign for F32 {
+  fn rem_assign(&mut self, other: F32) {
+    self.0 = self.0 % other.0;
   }
 }
 impl Zero for F32 {
