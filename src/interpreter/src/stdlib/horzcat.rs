@@ -12,7 +12,7 @@ macro_rules! horzcat_one_arg {
     }
     impl<T> MechFunction for $fxn<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$out<T>>: ToValue
     {
       fn solve(&self) { 
@@ -37,7 +37,7 @@ macro_rules! horzcat_two_args {
     }
     impl<T> MechFunction for $fxn<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$out<T>>: ToValue
     {
       fn solve(&self) { 
@@ -64,7 +64,7 @@ macro_rules! horzcat_three_args {
     }
     impl<T> MechFunction for $fxn<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$out<T>>: ToValue
     {
       fn solve(&self) { 
@@ -93,7 +93,7 @@ macro_rules! horzcat_four_args {
     }
     impl<T> MechFunction for $fxn<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$out<T>>: ToValue
     {
       fn solve(&self) { 
@@ -118,7 +118,7 @@ struct HorizontalConcatenateTwoArgs<T> {
 }
 impl<T> MechFunction for HorizontalConcatenateTwoArgs<T>
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DMatrix<T>>: ToValue
 {
   fn solve(&self) {
@@ -137,7 +137,7 @@ struct HorizontalConcatenateThreeArgs<T> {
 }
 impl<T> MechFunction for HorizontalConcatenateThreeArgs<T>
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DMatrix<T>>: ToValue
 {
   fn solve(&self) {
@@ -158,7 +158,7 @@ struct HorizontalConcatenateFourArgs<T> {
 }
 impl<T> MechFunction for HorizontalConcatenateFourArgs<T>
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DMatrix<T>>: ToValue
 {
   fn solve(&self) {
@@ -178,7 +178,7 @@ struct HorizontalConcatenateNArgs<T> {
 }
 impl<T> MechFunction for HorizontalConcatenateNArgs<T>
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DMatrix<T>>: ToValue
 {
   fn solve(&self) {
@@ -201,7 +201,7 @@ macro_rules! horizontal_concatenate {
 
       impl<T> MechFunction for $name<T> 
       where
-        T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+        T: Debug + Clone + Sync + Send + PartialEq + 'static,
         Ref<[<RowVector $vec_size>]<T>>: ToValue
       {
         fn solve(&self) {}
@@ -218,7 +218,7 @@ struct HorizontalConcatenateRD<T> {
 
 impl<T> MechFunction for HorizontalConcatenateRD<T> 
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowDVector<T>>: ToValue
 {
   fn solve(&self) {}
@@ -234,7 +234,7 @@ struct HorizontalConcatenateRD2<T> {
 }
 impl<T> MechFunction for HorizontalConcatenateRD2<T>
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowDVector<T>>: ToValue
 {
   fn solve(&self) {
@@ -254,7 +254,7 @@ struct HorizontalConcatenateRD3<T> {
 
 impl<T> MechFunction for HorizontalConcatenateRD3<T>
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowDVector<T>>: ToValue
 {
   fn solve(&self) {
@@ -276,7 +276,7 @@ struct HorizontalConcatenateRD4<T> {
 
 impl <T> MechFunction for HorizontalConcatenateRD4<T>
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowDVector<T>>: ToValue
 {
   fn solve(&self) {
@@ -297,7 +297,7 @@ struct HorizontalConcatenateRDN<T> {
 
 impl<T> MechFunction for HorizontalConcatenateRDN<T> 
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowDVector<T>>: ToValue
 {
   fn solve(&self) {
@@ -322,7 +322,7 @@ struct HorizontalConcatenateS1<T> {
 
 impl<T> MechFunction for HorizontalConcatenateS1<T> 
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<Matrix1<T>>: ToValue
 {
   fn solve(&self) {}
@@ -343,7 +343,7 @@ struct HorizontalConcatenateSD<T> {
 }
 impl<T> MechFunction for HorizontalConcatenateSD<T>
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowDVector<T>>: ToValue
 {
   fn solve(&self) { }
@@ -359,7 +359,7 @@ macro_rules! horzcat_single {
     }
     impl<T> MechFunction for $name<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$shape<T>>: ToValue
     {
       fn solve(&self) { }
@@ -757,7 +757,7 @@ struct HorizontalConcatenateM1M1M1M1<T> {
 }
 impl<T> MechFunction for HorizontalConcatenateM1M1M1M1<T>
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
 {
   fn solve(&self) { 
@@ -1973,7 +1973,7 @@ macro_rules! impl_horzcat_arms {
                 _ => todo!(),
               }
             }
-            Ok(Box::new(HorizontalConcatenateNArgs{e0: args, out:new_ref(out)}))
+            Ok(Box::new(HorizontalConcatenateNArgs{e0: args, out:new_ref(out.clone())}))
           }
           _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind});}
         }
@@ -1992,6 +1992,8 @@ fn impl_horzcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U64)  { impl_horzcat_arms!(u64,arguments,u64::zero())    
   } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U128)  { impl_horzcat_arms!(u128,arguments,u128::zero())    
   } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::Bool)  { impl_horzcat_arms!(bool,arguments,false)
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::String)  { 
+    impl_horzcat_arms!(String,arguments,"".to_string())    
   } else {
     todo!();
   }

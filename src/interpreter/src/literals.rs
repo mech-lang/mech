@@ -171,7 +171,7 @@ pub fn integer(int: &Token) -> Value {
 
 pub fn string(tkn: &MechString) -> Value {
   let strng: String = tkn.text.chars.iter().collect::<String>();
-  Value::String(strng)
+  Value::String(new_ref(strng))
 }
 
 pub fn empty() -> Value {

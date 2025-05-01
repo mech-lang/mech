@@ -40,7 +40,7 @@ test_interpreter!(interpret_literal_sci, "1.23e2", Value::F64(new_ref(F64::new(1
 //test_interpreter!(interpret_literal_oct, "0o1234", Value::F64(new_ref(F64::new(668.0)));
 //test_interpreter!(interpret_literal_dec, "0d1234", Value::F64(new_ref(F64::new(1234.0)));
 test_interpreter!(interpret_literal_float, "1.23", Value::F64(new_ref(F64::new(1.23))));
-test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String("Hello".to_string()));
+test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String(new_ref("Hello".to_string())));
 test_interpreter!(interpret_literal_true, "true", Value::Bool(new_ref(true)));
 test_interpreter!(interpret_literal_false, "false", Value::Bool(new_ref(false)));
 test_interpreter!(interpret_literal_atom, "`A", Value::Atom(55450514845822917));
@@ -222,6 +222,8 @@ test_interpreter!(interpret_matrixmatmul_mat2x3_ref, "a := [1.0 2.0 3.0; 4.0 5.0
 test_interpreter!(interpret_matrixmatmul_r3m3, "a := [1.0 2.0 3.0]; b := [4.0 5.0 6.0; 7.0 8.0 9.0; 10 11 12]; c := a ** b", new_ref(RowVector3::from_vec(vec![F64::new(48.0),F64::new(54.0),F64::new(60.0)])).to_value());  
 test_interpreter!(interpret_matrixmatmul_m3v3, "b := [4.0 5.0 6.0; 7.0 8.0 9.0; 10 11 12]; a := [1.0 2.0 3.0]'; c := b ** a", new_ref(Vector3::from_vec(vec![F64::new(32.0),F64::new(50.0),F64::new(68.0)])).to_value());  
 
+test_interpreter!(interpret_matrix_string, r#"["Hello" "World"]"#, Value::MatrixString(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec!["Hello".to_string(), "World".to_string()])))));
+
 // 2x2 Nominal Operations 
 //test_interpreter!(interpret_matrix_add_2x2, "[1 2; 3 4] + [5 6; 7 8]", new_ref(Matrix2::from_vec(vec![6i64, 8, 10, 12])).to_value());
 test_interpreter!(interpret_matrix_sub_2x2, "[1 2; 3 4] - [5 6; 7 8]", new_ref(Matrix2::from_vec(vec![F64::new(-4.0), F64::new(-4.0),F64::new(-4.0),F64::new(-4.0)])).to_value());
@@ -290,7 +292,7 @@ test_interpreter!(interpret_matrix_sub_3x2, "[1 2; 3 4; 5 6] - [7 8; 9 10; 11 12
 
 
 test_interpreter!(interpret_tuple, "(1,true)", Value::Tuple(MechTuple::from_vec(vec![Value::F64(new_ref(F64::new(1.0))), Value::Bool(new_ref(true))])));
-test_interpreter!(interpret_tuple_nested, r#"(1,("Hello",false))"#, Value::Tuple(MechTuple::from_vec(vec![Value::F64(new_ref(F64::new(1.0))), Value::Tuple(MechTuple::from_vec(vec![Value::String("Hello".to_string()), Value::Bool(new_ref(false))]))])));
+test_interpreter!(interpret_tuple_nested, r#"(1,("Hello",false))"#, Value::Tuple(MechTuple::from_vec(vec![Value::F64(new_ref(F64::new(1.0))), Value::Tuple(MechTuple::from_vec(vec![Value::String(new_ref("Hello".to_string())), Value::Bool(new_ref(false))]))])));
 
 test_interpreter!(interpret_slice, "a := [1,2,3]; a[2]", Value::F64(new_ref(F64::new(2.0))));
 test_interpreter!(interpret_slice_v, "a := [1,2,3]'; a[2]", Value::F64(new_ref(F64::new(2.0))));
@@ -335,9 +337,9 @@ test_interpreter!(interpret_dot_index_table6, "x := {x<u32> y<f32> z<i8>|1 2 3;4
 
 test_interpreter!(interpret_set_empty,"{_}", Value::Set(MechSet::from_vec(vec![])));
 test_interpreter!(interpret_set, "{1,2,3}", Value::Set(MechSet::from_vec(vec![Value::F64(new_ref(F64::new(1.0))), Value::F64(new_ref(F64::new(2.0))), Value::F64(new_ref(F64::new(3.0)))])));
-test_interpreter!(interpret_record,r#"{a: 1, b: "Hello"}"#, Value::Record(MechRecord::from_vec(vec![(55170961230981453,Value::F64(new_ref(F64::new(1.0)))),(44311847522083591,Value::String("Hello".to_string()))])));
+test_interpreter!(interpret_record,r#"{a: 1, b: "Hello"}"#, Value::Record(MechRecord::from_vec(vec![(55170961230981453,Value::F64(new_ref(F64::new(1.0)))),(44311847522083591,Value::String(new_ref("Hello".to_string())))])));
 test_interpreter!(interpret_record_field_access,r#"a := {x: 1,  y: 2}; a.y"#, Value::F64(new_ref(F64::new(2.0))));
-test_interpreter!(interpret_map, r#"{"a": 1, "b": 2}"#, Value::Map(MechMap::from_vec(vec![(Value::String("a".to_string()),Value::F64(new_ref(F64::new(1.0)))), (Value::String("b".to_string()),Value::F64(new_ref(F64::new(2.0))))])));
+test_interpreter!(interpret_map, r#"{"a": 1, "b": 2}"#, Value::Map(MechMap::from_vec(vec![(Value::String(new_ref("a".to_string())),Value::F64(new_ref(F64::new(1.0)))), (Value::String(new_ref("b".to_string())),Value::F64(new_ref(F64::new(2.0))))])));
 /*test_interpreter!(interpret_function_define,r#"foo(x<f64>) = z<f64> :=
 z := 10 + x. 
 foo(10)"#, Value::F64(new_ref(F64::new(20.0))));
