@@ -485,6 +485,27 @@ impl Value {
   impl_as_type!(u64);
   impl_as_type!(u128);
 
+  pub fn as_string(&self) -> Option<Ref<String>> {
+    match self {
+      Value::String(v) => Some(v.clone()),
+      Value::U8(v) => Some(new_ref(v.borrow().to_string())),
+      Value::U16(v) => Some(new_ref(v.borrow().to_string())),
+      Value::U32(v) => Some(new_ref(v.borrow().to_string())),
+      Value::U64(v) => Some(new_ref(v.borrow().to_string())),
+      Value::U128(v) => Some(new_ref(v.borrow().to_string())),
+      Value::I8(v) => Some(new_ref(v.borrow().to_string())),
+      Value::I16(v) => Some(new_ref(v.borrow().to_string())),
+      Value::I32(v) => Some(new_ref(v.borrow().to_string())),
+      Value::I64(v) => Some(new_ref(v.borrow().to_string())),
+      Value::I128(v) => Some(new_ref(v.borrow().to_string())),
+      Value::F32(v) => Some(new_ref(format!("{}", v.borrow().0))),
+      Value::F64(v) => Some(new_ref(format!("{}", v.borrow().0))),
+      Value::Bool(v) => Some(new_ref(format!("{}", v.borrow()))),
+      Value::MutableReference(val) => val.borrow().as_string(),
+      _ => None,
+    }
+  }
+
   pub fn as_f32(&self) -> Option<Ref<F32>> {
     match self {
       Value::U8(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
