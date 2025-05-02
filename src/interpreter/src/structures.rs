@@ -157,6 +157,7 @@ pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> {
       ValueKind::U128 => handle_value_kind!(knd, val, id, data_map, as_u128),
       ValueKind::F32  => handle_value_kind!(knd, val, id, data_map, as_f32),
       ValueKind::F64  => handle_value_kind!(knd, val, id, data_map, as_f64),
+      ValueKind::String  => handle_value_kind!(knd, val, id, data_map, as_string),
       ValueKind::Bool => {
         let vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_bool().unwrap().to_value()).collect::<Vec<Value>>();
         data_map.insert(id.clone(),(knd.clone(),Value::to_matrix(vals.clone(),vals.len(),1)));
