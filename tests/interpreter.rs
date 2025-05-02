@@ -224,6 +224,7 @@ test_interpreter!(interpret_matrixmatmul_m3v3, "b := [4.0 5.0 6.0; 7.0 8.0 9.0; 
 
 test_interpreter!(interpret_matrix_string, r#"["Hello" "World"]"#, Value::MatrixString(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec!["Hello".to_string(), "World".to_string()])))));
 test_interpreter!(interpret_matrix_string_access, r#"x:=["Hello" "World"];x[2]"#, Value::String(new_ref("World".to_string())));
+test_interpreter!(interpret_table_string_access, r#"x:={x<string> y<string> | "a" "b"; "c" "d"}; x.y"#, Value::MatrixString(Matrix::Vector2(new_ref(Vector2::from_vec(vec!["b".to_string(), "d".to_string()])))));
 
 // 2x2 Nominal Operations 
 //test_interpreter!(interpret_matrix_add_2x2, "[1 2; 3 4] + [5 6; 7 8]", new_ref(Matrix2::from_vec(vec![6i64, 8, 10, 12])).to_value());
