@@ -35,7 +35,7 @@ macro_rules! access_1d_slice_bool {
         }
       }
       if j != out_len {
-        (*$out).resize_vertically_mut(j, (*$out)[0]);
+        (*$out).resize_vertically_mut(j, (*$out)[0].clone());
       }
       j = 0;
       for i in 0..(*$source).len() {
@@ -57,7 +57,7 @@ macro_rules! access_1d_slice_bool_v {
         }
       }
       if j != out_len {
-        (*$out).resize_vertically_mut(j, (*$out)[0]);
+        (*$out).resize_vertically_mut(j, (*$out)[0].clone());
       }
       j = 0;
       for i in 0..(*$source).len() {
@@ -81,7 +81,7 @@ macro_rules! access_2d_row_slice_bool {
         }
       }
       if j != out_len {
-        (*$out).resize_horizontally_mut(j, (*$out)[0]);
+        (*$out).resize_horizontally_mut(j, (*$out)[0].clone());
       }
       j = 0;
       for i in 0..vec_ix.len() {
@@ -105,7 +105,7 @@ macro_rules! access_2d_col_slice_bool {
         }
       }
       if j != out_len {
-        (*$out).resize_vertically_mut(j, (*$out)[0]);
+        (*$out).resize_vertically_mut(j, (*$out)[0].clone());
       }
       j = 0;
       for i in 0..vec_ix.len() {
@@ -143,7 +143,7 @@ macro_rules! access_2d_slice_bool {
         }
       }
       if j != (*$out).nrows() {
-        (*$out).resize_vertically_mut(j, (*$out)[0]);
+        (*$out).resize_vertically_mut(j, (*$out)[0].clone());
       }
       j = 0;
       for k in 0..ix2.len() {
@@ -169,7 +169,7 @@ macro_rules! access_2d_slice_bool2 {
         }
       }
       if j != (*$out).ncols() {
-        (*$out).resize_horizontally_mut(j, (*$out)[0]);
+        (*$out).resize_horizontally_mut(j, (*$out)[0].clone());
       }
       j = 0;
       for k in 0..ix2.len() {
@@ -201,7 +201,7 @@ macro_rules! access_2d_slice_bool_bool {
         }
       }
       if j != (*$out).nrows() || k != (*$out).ncols() {
-        (*$out).resize_mut(j, k, (*$out)[0]);
+        (*$out).resize_mut(j, k, (*$out)[0].clone());
       }
       let mut out_ix = 0;
       for k in 0..ix2.len() {
@@ -240,7 +240,7 @@ macro_rules! access_2d_slice_all_bool {
         }
       }
       if j != out_len {
-        (*$out).resize_vertically_mut(j, (*$out)[0]);
+        (*$out).resize_vertically_mut(j, (*$out)[0].clone());
       }
       j = 0;
       for i in 0..vec_ix.len() {
@@ -265,7 +265,7 @@ macro_rules! access_2d_all_slice_bool {
         }
       }
       if j != out_len {
-        (*$out).resize_horizontally_mut(j, (*$out)[0]);
+        (*$out).resize_horizontally_mut(j, (*$out)[0].clone());
       }
       j = 0;
       for k in 0..(*$source).nrows() {
@@ -352,7 +352,7 @@ macro_rules! impl_access_fxn {
     }
     impl<T> MechFunction for $struct_name<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$out_type>: ToValue
     {
       fn solve(&self) {
@@ -461,6 +461,7 @@ macro_rules! impl_access_match_arms {
         U128 => MatrixU128, u128, u128::zero(), "U128";
         F32  => MatrixF32,  F32,  F32::zero(), "F32";
         F64  => MatrixF64,  F64,  F64::zero(), "F64";
+        String => MatrixString, String, String::new(), "String";
       )
     }
   }
