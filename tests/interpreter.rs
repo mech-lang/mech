@@ -152,6 +152,8 @@ test_interpreter!(interpret_formula_math_multiple_terms, "1 + 2 + 3", Value::F64
 test_interpreter!(interpret_formula_comparison_bool, "true == false", Value::Bool(new_ref(false)));
 test_interpreter!(interpret_formula_comparison_bool2, "true == true", Value::Bool(new_ref(true)));
 test_interpreter!(interpret_formula_comparison_eq, "10 == 11", Value::Bool(new_ref(false)));
+test_interpreter!(interpret_formula_comparison_string_eq, r#"["a" "b"] == ["a" "b"]"#, Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true,true])))));
+test_interpreter!(interpret_formula_comparison_string_neq, r#"["a" "b"] != ["a" "c"]"#, Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![false,true])))));
 test_interpreter!(interpret_formula_comparison_neq, "10 != 11", Value::Bool(new_ref(true)));
 test_interpreter!(interpret_formula_comparison_neq_bool, "false != true", Value::Bool(new_ref(true)));
 test_interpreter!(interpret_formula_comparison_gt, "10 > 11", Value::Bool(new_ref(false)));

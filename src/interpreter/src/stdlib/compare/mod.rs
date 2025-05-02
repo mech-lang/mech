@@ -30,7 +30,7 @@ macro_rules! impl_compare_binop {
     }
     impl<T> MechFunction for $struct_name<T>
     where
-    T: Copy + Debug + Clone + Sync + Send + 'static + 
+    T: Debug + Clone + Sync + Send + 'static + 
     PartialEq + PartialOrd,
     Ref<$out_type>: ToValue
     {
