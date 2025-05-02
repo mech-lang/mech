@@ -423,3 +423,108 @@ impl NativeFunctionCompiler for ConvertKind {
     }
   }
 }
+
+macro_rules! impl_convert_scalar_to_vec {
+  ($name:ident, $scalar_type:ty, $vector_type:ty) => {
+    #[derive(Debug)]
+    struct $name {
+      arg: Ref<$scalar_type>,
+      out: Ref<$vector_type>,
+    }
+    impl MechFunction for $name
+    where
+      Ref<$vector_type>: ToValue,
+    {
+      fn solve(&self) {
+        let arg_ptr = self.arg.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        unsafe {
+          let out_ptr_deref = &mut *out_ptr;
+          for i in 0..out_ptr_deref.len() {
+            out_ptr_deref[i] = (*arg_ptr).clone();
+          }
+        }
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+  };
+}
+
+macro_rules! for_all_scalar_types {
+  ($macro:ident) => {
+    $macro!(F32);  
+    $macro!(F64);
+    $macro!(String);
+  };
+}
+
+macro_rules! define_convert_for_type {
+  ($scalar:ident) => {
+      paste!{
+      impl_convert_scalar_to_vec!([<Convert $scalar ToR2>],   $scalar, RowVector2<$scalar>);
+      impl_convert_scalar_to_vec!([<Convert $scalar ToR3>],   $scalar, RowVector3<$scalar>);
+      impl_convert_scalar_to_vec!([<Convert $scalar ToR4>],   $scalar, RowVector4<$scalar>);
+      impl_convert_scalar_to_vec!([<Convert $scalar ToV2>],   $scalar, Vector2<$scalar>);
+      impl_convert_scalar_to_vec!([<Convert $scalar ToV3>],   $scalar, Vector3<$scalar>);
+      impl_convert_scalar_to_vec!([<Convert $scalar ToV4>],   $scalar, Vector4<$scalar>);
+      impl_convert_scalar_to_vec!([<Convert $scalar ToM1>],   $scalar, Matrix1<$scalar>);
+      impl_convert_scalar_to_vec!([<Convert $scalar ToM2>],   $scalar, Matrix2<$scalar>);
+      impl_convert_scalar_to_vec!([<Convert $scalar ToM3>],   $scalar, Matrix3<$scalar>);
+      impl_convert_scalar_to_vec!([<Convert $scalar ToM4>],   $scalar, Matrix4<$scalar>);
+      impl_convert_scalar_to_vec!([<Convert $scalar ToM3x2>], $scalar, Matrix3x2<$scalar>);
+      impl_convert_scalar_to_vec!([<Convert $scalar ToM2x3>], $scalar, Matrix2x3<$scalar>);
+      impl_convert_scalar_to_vec!([<Convert $scalar ToMD>], $scalar, DMatrix<$scalar>);
+    }
+  };
+}
+
+for_all_scalar_types!(define_convert_for_type);
+
+pub struct ConvertScalarToVec {}
+
+impl NativeFunctionCompiler for ConvertScalarToVec {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() != 2 {
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    let source_value = arguments[0].clone();
+    let source_kind = source_value.kind();
+    let target_kind = arguments[1].kind();
+    match (source_value,target_kind) {
+      (Value::String(v), ValueKind::Matrix(box ValueKind::String, dims)) => {
+        let out = match dims[..] {
+          [1,1] => {
+            let out = Matrix1::from_element(v.borrow().clone());
+            return Ok(Box::new(ConvertStringToM1{arg: v, out: new_ref(out)}));
+          },
+          [2,2] => {let out = Matrix2::from_element(v.clone());},
+          [3,3] => {let out = Matrix3::from_element(v.clone());},
+          [4,4] => {let out = Matrix4::from_element(v.clone());},
+          [2,3] => {let out = Matrix2x3::from_element(v.clone());},
+          [3,2] => {let out = Matrix3x2::from_element(v.clone());},
+          [1,2] => {let out = RowVector2::from_element(v.clone());},
+          [1,3] => {let out = RowVector3::from_element(v.clone());},
+          [1,4] => {
+            let out = RowVector4::from_element(v.borrow().clone());
+            return Ok(Box::new(ConvertStringToR4{arg: v, out: new_ref(out)}));
+          },
+          [2,1] => {let out = Vector2::from_element(v.clone());},
+          [3,1] => {let out = Vector3::from_element(v.clone());},
+          [4,1] => {let out = Vector4::from_element(v.clone());},
+          _ => todo!(),
+        };
+      }
+      _ => todo!(),
+    }
+    
+  
+    todo!();
+
+  }
+}
+
+
+
+
+
