@@ -1,5 +1,6 @@
 #![allow(warnings)]
 #![feature(step_trait)]
+#![feature(box_patterns)]
 
 extern crate nalgebra as na;
 #[macro_use]
