@@ -297,7 +297,7 @@ impl Value {
       Value::Atom(x) => {builder.push_record(vec![format!("{}",x)]);},
       Value::Set(x)  => {return x.pretty_print();}
       Value::Map(x)  => {return x.pretty_print();}
-      Value::String(x) => {builder.push_record(vec![x.borrow().clone()]);},
+      Value::String(x) => {builder.push_record(vec![format!("\"{}\"",x.borrow().clone())]);},
       Value::Table(x)  => {return x.pretty_print();},
       Value::Tuple(x)  => {return x.pretty_print();},
       Value::Record(x) => {return x.pretty_print();},
