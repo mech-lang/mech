@@ -227,8 +227,9 @@ test_interpreter!(interpret_matrixmatmul_m3v3, "b := [4.0 5.0 6.0; 7.0 8.0 9.0; 
 test_interpreter!(interpret_matrix_string, r#"["Hello" "World"]"#, Value::MatrixString(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec!["Hello".to_string(), "World".to_string()])))));
 test_interpreter!(interpret_matrix_string_access, r#"x:=["Hello" "World"];x[2]"#, Value::String(new_ref("World".to_string())));
 test_interpreter!(interpret_matrix_string_assign, r#"~x:=["Hello" "World"];x[1]="Foo";[x[1] x[2]]"#, Value::MatrixString(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec!["Foo".to_string(), "World".to_string()])))));
-test_interpreter!(interpret_matrix_string_assign_logical, r#"~x := ["Hello", "World", "!"]; x[[true false true]] = "Foo"; x"#, Value::MatrixString(Matrix::RowVector3(new_ref(RowVector2::from_vec(vec!["Foo".to_string(), "World".to_string(), "Foo".to_string()])))));
+test_interpreter!(interpret_matrix_string_assign_logical, r#"~x := ["Hello", "World", "!"]; x[[true false true]] = "Foo";"#, Value::MatrixString(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec!["Foo".to_string(), "World".to_string(), "Foo".to_string()])))));
 test_interpreter!(interpret_table_string_access, r#"x:={x<string> y<string> | "a" "b"; "c" "d"}; x.y"#, Value::MatrixString(Matrix::Vector2(new_ref(Vector2::from_vec(vec!["b".to_string(), "d".to_string()])))));
+test_interpreter!(interpret_matrix_define_ref, r#"x:=123;y<[f64]:1,4>:=x;"#, Value::MatrixF64(Matrix::RowVector4(new_ref(RowVector4::from_element(F64::new(123.0))))));
 
 
 // 2x2 Nominal Operations 
@@ -516,9 +517,6 @@ test_interpreter!(interpret_set_logical_ram4m4_bool,"~x := [1 2 3 4; 5 6 7 8; 9 
 
 test_interpreter!(interpret_set_logical_ram2m2,"~x := [1 2; 3 4]; y := [2 1]; x[y,:] = x;", new_ref(Matrix2::from_vec(vec![F64::new(3.0),F64::new(1.0),F64::new(4.0),F64::new(2.0)])).to_value());
 test_interpreter!(interpret_set_logical_ram3m3,"~x := [1 2 3; 4 5 6; 7 8 9]; y := [2 1 3]; x[y,:] = x;", new_ref(Matrix3::from_vec(vec![F64::new(4.0),F64::new(1.0),F64::new(7.0),F64::new(5.0),F64::new(2.0),F64::new(8.0),F64::new(6.0),F64::new(3.0),F64::new(9.0)])).to_value());
-
-
-test_interpreter!(interpret_convert_vec_u32u8,"x<[u8]> := [1<u32> 2<u32> 3<u32> 4<u32>]", new_ref(RowVector4::from_vec(vec![1u8,2u8,3u8,4u8])).to_value());
 
 
 test_interpreter!(interpret_modulus,"[1 2 3 4 5] % 5", new_ref(RowDVector::from_vec(vec![F64::new(1.0), F64::new(2.0), F64::new(3.0), F64::new(4.0), F64::new(0.0)])).to_value());

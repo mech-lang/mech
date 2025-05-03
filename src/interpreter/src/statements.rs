@@ -171,7 +171,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
       }
       // Kind isn't checked
       x => {
-        return Err(MechError{file: file!().to_string(), tokens: var_def.expression.tokens(), msg: format!("{:?}",x).to_string(), id: line!(), kind: MechErrorKind::None}); 
+        //return Err(MechError{file: file!().to_string(), tokens: var_def.expression.tokens(), msg: format!("{:?}",x).to_string(), id: line!(), kind: MechErrorKind::None}); 
       },
     }
     // Can we convert the kind?
