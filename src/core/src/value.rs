@@ -106,7 +106,10 @@ impl fmt::Debug for ValueKind {
       ValueKind::F64 => write!(f, "f64"),
       ValueKind::String => write!(f, "string"),
       ValueKind::Bool => write!(f, "bool"),
-      ValueKind::Matrix(x,s) => write!(f, "[{:?}]:{:?},{:?}",x,s[0],s[1]),
+      ValueKind::Matrix(x,s) => {
+        let s = if s.len() == 2 { s.clone() } else if s.len() == 1 { vec![s[0], 1] } else { vec![0, 0] };
+        write!(f, "[{:?}]:{:?},{:?}",x,s[0],s[1]).clone()
+      }
       ValueKind::Enum(x) => write!(f, "{:?}",x),
       ValueKind::Set(x,el) => write!(f, "{{{:?}}}:{}", x, el),
       ValueKind::Map(x,y) => write!(f, "{{{:?}:{:?}}}",x,y),
