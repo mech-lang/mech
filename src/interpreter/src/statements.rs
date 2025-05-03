@@ -155,8 +155,15 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
         dict_brrw.insert(id,var_def.var.name.to_string());
         return Ok(result);
       }
-      (value, ValueKind::Matrix(_,_)) => {
+      (value, ValueKind::Matrix(box target_matrix_knd,_)) => {
         let value_kind = value.kind();
+        if value_kind.deref_kind() != Some(target_matrix_knd.clone()) && value_kind != *target_matrix_knd {
+          let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_matrix_knd.clone())])?;
+          convert_fxn.solve();
+          let converted_result = convert_fxn.out();
+          p.add_plan_step(convert_fxn);
+          result = converted_result;
+        };
         let convert_fxn = ConvertScalarToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
         convert_fxn.solve();
         let converted_result = convert_fxn.out();

@@ -54,6 +54,17 @@ pub enum ValueKind {
   Map(Box<ValueKind>,Box<ValueKind>), Record(Vec<ValueKind>), Table(Vec<ValueKind>, usize), Tuple(Vec<ValueKind>), Id, Index, Reference(Box<ValueKind>), Atom(u64), Empty, Any
 }
 
+impl ValueKind {
+
+  pub fn deref_kind(&self) -> Option<ValueKind> {
+    match self {
+      ValueKind::Reference(x) => Some(*x.clone()),
+      _ => None,
+    }
+  }
+
+}
+
 impl std::fmt::Display for ValueKind {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match self {
@@ -118,7 +129,7 @@ impl fmt::Debug for ValueKind {
       ValueKind::Tuple(x) => write!(f, "({})",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
       ValueKind::Id => write!(f, "id"),
       ValueKind::Index => write!(f, "ix"),
-      ValueKind::Reference(x) => write!(f, "{:?}",x),
+      ValueKind::Reference(x) => write!(f, "&{:?}",x),
       ValueKind::Atom(x) => write!(f, "`{:?}",x),
       ValueKind::Empty => write!(f, "_"),
       ValueKind::Any => write!(f, "_"),

@@ -374,7 +374,7 @@ macro_rules! impl_conversion_match_arms {
           let val = Value::Enum(Box::new(enm.clone()));
           Ok(Box::new(ConvertSEnum{out: val}))
         }
-        x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+        x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
       }
     }
   }
@@ -414,10 +414,7 @@ impl NativeFunctionCompiler for ConvertKind {
           Value::MutableReference(rhs) => impl_conversion_fxn(rhs.borrow().clone(), target_kind.clone()),
           Value::Atom(atom_id) => impl_conversion_fxn(source_value, target_kind.clone()),
           Value::MatrixU32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-          x => {
-            println!("{:?}",x);
-            todo!();
-          }
+          x => todo!(),
         }
       }
     }
@@ -561,9 +558,9 @@ macro_rules! define_convert_for_type {
       impl_convert_scalar_to_vec!([<Convert $scalar:upper ToM4>],   $scalar, Matrix4<$scalar>);
       impl_convert_scalar_to_vec!([<Convert $scalar:upper ToM3x2>], $scalar, Matrix3x2<$scalar>);
       impl_convert_scalar_to_vec!([<Convert $scalar:upper ToM2x3>], $scalar, Matrix2x3<$scalar>);
-      impl_convert_scalar_to_vec!([<Convert $scalar:upper ToMD>], $scalar, DMatrix<$scalar>);
-      impl_convert_scalar_to_vec!([<Convert $scalar:upper ToRD>], $scalar, RowDVector<$scalar>);
-      impl_convert_scalar_to_vec!([<Convert $scalar:upper ToVD>], $scalar, DVector<$scalar>);
+      impl_convert_scalar_to_vec!([<Convert $scalar:upper ToMD>],   $scalar, DMatrix<$scalar>);
+      impl_convert_scalar_to_vec!([<Convert $scalar:upper ToRD>],   $scalar, RowDVector<$scalar>);
+      impl_convert_scalar_to_vec!([<Convert $scalar:upper ToVD>],   $scalar, DVector<$scalar>);
     }
   };
 }
@@ -578,21 +575,22 @@ macro_rules! impl_conversion_scalar_to_mat_match_arms {
           $(
             (Value::$input_type(v), ValueKind::Matrix(box ValueKind::$target_type, dims)) => {
               match dims[..] {
-                [1,1] => {let out = Matrix1::from_element(v.borrow().clone()); return Ok(Box::new([<Convert $input_type:upper ToM1>]{arg: v, out: new_ref(out)}));},
-                [2,2] => {let out = Matrix2::from_element(v.borrow().clone()); return Ok(Box::new([<Convert $input_type:upper ToM2>]{arg: v, out: new_ref(out)}));},
-                [3,3] => {let out = Matrix3::from_element(v.borrow().clone()); return Ok(Box::new([<Convert $input_type:upper ToM3>]{arg: v, out: new_ref(out)}));},
-                [4,4] => {let out = Matrix4::from_element(v.borrow().clone()); return Ok(Box::new([<Convert $input_type:upper ToM4>]{arg: v, out: new_ref(out)}));},
-                [2,3] => {let out = Matrix2x3::from_element(v.borrow().clone()); return Ok(Box::new([<Convert $input_type:upper ToM2x3>]{arg: v, out: new_ref(out)}));},
-                [3,2] => {let out = Matrix3x2::from_element(v.borrow().clone()); return Ok(Box::new([<Convert $input_type:upper ToM3x2>]{arg: v, out: new_ref(out)}));},
-                [1,2] => {let out = RowVector2::from_element(v.borrow().clone()); return Ok(Box::new([<Convert $input_type:upper ToR2>]{arg: v, out: new_ref(out)}));},
-                [1,3] => {let out = RowVector3::from_element(v.borrow().clone()); return Ok(Box::new([<Convert $input_type:upper ToR3>]{arg: v, out: new_ref(out)}));},
-                [1,4] => {let out = RowVector4::from_element(v.borrow().clone()); return Ok(Box::new([<Convert $input_type:upper ToR4>]{arg: v, out: new_ref(out)}));},
+                [1,1] => {let out = Matrix1::from_element(v.borrow().clone());      return Ok(Box::new([<Convert $input_type:upper ToM1>]{arg: v, out: new_ref(out)}));},
+                [2,2] => {let out = Matrix2::from_element(v.borrow().clone());      return Ok(Box::new([<Convert $input_type:upper ToM2>]{arg: v, out: new_ref(out)}));},
+                [3,3] => {let out = Matrix3::from_element(v.borrow().clone());      return Ok(Box::new([<Convert $input_type:upper ToM3>]{arg: v, out: new_ref(out)}));},
+                [4,4] => {let out = Matrix4::from_element(v.borrow().clone());      return Ok(Box::new([<Convert $input_type:upper ToM4>]{arg: v, out: new_ref(out)}));},
+                [2,3] => {let out = Matrix2x3::from_element(v.borrow().clone());    return Ok(Box::new([<Convert $input_type:upper ToM2x3>]{arg: v, out: new_ref(out)}));},
+                [3,2] => {let out = Matrix3x2::from_element(v.borrow().clone());    return Ok(Box::new([<Convert $input_type:upper ToM3x2>]{arg: v, out: new_ref(out)}));},
+                [1,2] => {let out = RowVector2::from_element(v.borrow().clone());   return Ok(Box::new([<Convert $input_type:upper ToR2>]{arg: v, out: new_ref(out)}));},
+                [1,3] => {let out = RowVector3::from_element(v.borrow().clone());   return Ok(Box::new([<Convert $input_type:upper ToR3>]{arg: v, out: new_ref(out)}));},
+                [1,4] => {let out = RowVector4::from_element(v.borrow().clone());   return Ok(Box::new([<Convert $input_type:upper ToR4>]{arg: v, out: new_ref(out)}));},
+                [2,1] => {let out = Vector2::from_element(v.borrow().clone());      return Ok(Box::new([<Convert $input_type:upper ToV2>]{arg: v, out: new_ref(out)}));},
+                [3,1] => {let out = Vector3::from_element(v.borrow().clone());      return Ok(Box::new([<Convert $input_type:upper ToV3>]{arg: v, out: new_ref(out)}));},
+                [4,1] => {let out = Vector4::from_element(v.borrow().clone());      return Ok(Box::new([<Convert $input_type:upper ToV4>]{arg: v, out: new_ref(out)}));},
                 [1,n] => {let out = RowDVector::from_element(n,v.borrow().clone()); return Ok(Box::new([<Convert $input_type:upper ToRD>]{arg: v, out: new_ref(out)}));},
-                [2,1] => {let out = Vector2::from_element(v.borrow().clone()); return Ok(Box::new([<Convert $input_type:upper ToV2>]{arg: v, out: new_ref(out)}));},
-                [3,1] => {let out = Vector3::from_element(v.borrow().clone()); return Ok(Box::new([<Convert $input_type:upper ToV3>]{arg: v, out: new_ref(out)}));},
-                [4,1] => {let out = Vector4::from_element(v.borrow().clone()); return Ok(Box::new([<Convert $input_type:upper ToV4>]{arg: v, out: new_ref(out)}));},
-                [n,1] => {let out = DVector::from_element(n,v.borrow().clone()); return Ok(Box::new([<Convert $input_type:upper ToVD>]{arg: v, out: new_ref(out)}));},
-                [n,m] => {let out = DMatrix::from_element(n,m,v.borrow().clone()); return Ok(Box::new([<Convert $input_type:upper ToMD>]{arg: v, out: new_ref(out)}));},
+                [n,1] => {let out = DVector::from_element(n,v.borrow().clone());    return Ok(Box::new([<Convert $input_type:upper ToVD>]{arg: v, out: new_ref(out)}));},
+                [n,m] => {let out = DMatrix::from_element(n,m,v.borrow().clone());  return Ok(Box::new([<Convert $input_type:upper ToMD>]{arg: v, out: new_ref(out)}));},
+                [] => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Cannot convert to zero-dimension matrix".to_string(), id: line!(), kind: MechErrorKind::None});},
                 _ => todo!(),
               }
             }
