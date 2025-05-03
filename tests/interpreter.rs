@@ -227,6 +227,7 @@ test_interpreter!(interpret_matrixmatmul_m3v3, "b := [4.0 5.0 6.0; 7.0 8.0 9.0; 
 test_interpreter!(interpret_matrix_string, r#"["Hello" "World"]"#, Value::MatrixString(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec!["Hello".to_string(), "World".to_string()])))));
 test_interpreter!(interpret_matrix_string_access, r#"x:=["Hello" "World"];x[2]"#, Value::String(new_ref("World".to_string())));
 test_interpreter!(interpret_matrix_string_assign, r#"~x:=["Hello" "World"];x[1]="Foo";[x[1] x[2]]"#, Value::MatrixString(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec!["Foo".to_string(), "World".to_string()])))));
+test_interpreter!(interpret_matrix_string_assign_logical, r#"~x := ["Hello", "World", "!"]; x[[true false true]] = "Foo"; x"#, Value::MatrixString(Matrix::RowVector3(new_ref(RowVector2::from_vec(vec!["Foo".to_string(), "World".to_string(), "Foo".to_string()])))));
 test_interpreter!(interpret_table_string_access, r#"x:={x<string> y<string> | "a" "b"; "c" "d"}; x.y"#, Value::MatrixString(Matrix::Vector2(new_ref(Vector2::from_vec(vec!["b".to_string(), "d".to_string()])))));
 
 

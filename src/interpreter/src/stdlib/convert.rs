@@ -424,6 +424,89 @@ impl NativeFunctionCompiler for ConvertKind {
   }
 }
 
+macro_rules! impl_convert_num_mat_to_string_mat {
+  ($name:ident, $from_type:ty, $mat_shape:tt) => {
+    #[derive(Debug)]
+    struct $name {
+      arg: Ref<$mat_shape<$from_type>>,
+      out: Ref<$mat_shape<String>>,
+    }
+    impl MechFunction for $name
+    where
+      Ref<$mat_shape<String>>: ToValue,
+    {
+      fn solve(&self) {
+        let arg_ptr = self.arg.as_ptr();
+        let out_ptr = self.out.as_ptr();
+        unsafe {
+          let out_ptr_deref = &mut *out_ptr;
+          let arg_ptr_deref = &*arg_ptr;
+          for i in 0..out_ptr_deref.len() {
+            out_ptr_deref[i] = format!("{}",arg_ptr_deref[i]);
+          }
+        }
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+  };
+}
+
+impl_convert_num_mat_to_string_mat!(ConvertMatToMatF64StringM1, F64, Matrix1);
+impl_convert_num_mat_to_string_mat!(ConvertMatToMatF64StringM2, F64, Matrix2);
+impl_convert_num_mat_to_string_mat!(ConvertMatToMatF64StringVD, F64, DVector);
+impl_convert_num_mat_to_string_mat!(ConvertMatToMatF64StringRD, F64, RowDVector);
+
+
+
+pub struct ConvertMatToMat {}
+
+impl NativeFunctionCompiler for ConvertMatToMat {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() != 2 {
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    let source_value = arguments[0].clone();
+    let source_kind = source_value.kind();
+    let target_kind = arguments[1].kind();
+    match (source_value,target_kind) {
+      (Value::MatrixF64(v), ValueKind::Matrix(box ValueKind::String, dims)) => {
+        let shape = v.shape();
+        if dims.is_empty() || ((shape[0] == dims[0]) && (shape[1] == dims[1])) {
+
+          match v {
+            Matrix::Matrix1(v) => { let out = Matrix1::from_element("".to_string()); return Ok(Box::new(ConvertMatToMatF64StringM1{arg: v, out: new_ref(out)})); },
+            Matrix::Matrix2(v) => { let out = Matrix2::from_element("".to_string()); return Ok(Box::new(ConvertMatToMatF64StringM2{arg: v, out: new_ref(out)})); },
+            Matrix::DVector(v) => { let out = DVector::from_element(shape[0], "".to_string()); return Ok(Box::new(ConvertMatToMatF64StringVD{arg: v, out: new_ref(out)})); },
+            Matrix::RowDVector(v) => { let out = RowDVector::from_element(shape[1], "".to_string()); return Ok(Box::new(ConvertMatToMatF64StringRD{arg: v, out: new_ref(out)})); },
+            x => todo!("{:?}",x),
+          }
+
+        } else {
+          return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix dimensions do not match".to_string(), id: line!(), kind: MechErrorKind::None});
+        }
+      }
+      x => todo!("{:?}",x),
+    }
+    
+  
+    todo!();
+
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 macro_rules! impl_convert_scalar_to_vec {
   ($name:ident, $scalar_type:ty, $vector_type:ty) => {
     #[derive(Debug)]
@@ -481,9 +564,9 @@ macro_rules! define_convert_for_type {
 
 for_all_scalar_types!(define_convert_for_type);
 
-pub struct ConvertScalarToVec {}
+pub struct ConvertScalarToMat {}
 
-impl NativeFunctionCompiler for ConvertScalarToVec {
+impl NativeFunctionCompiler for ConvertScalarToMat {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
@@ -515,7 +598,7 @@ impl NativeFunctionCompiler for ConvertScalarToVec {
           _ => todo!(),
         };
       }
-      _ => todo!(),
+      x => todo!("{:?}",x),
     }
     
   

@@ -141,9 +141,37 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
       (Value::Atom(given_variant_id), target_kind) => {
         return Err(MechError{file: file!().to_string(), tokens: var_def.expression.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UnableToConvertValueKind}); 
       }
+      (Value::MatrixF64(v), ValueKind::Matrix(box ValueKind::String, _)) => {
+        let value_kind = result.kind();
+        let convert_fxn = ConvertMatToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
+        convert_fxn.solve();
+        let converted_result = convert_fxn.out();
+        p.add_plan_step(convert_fxn);
+        result = converted_result;
+        let mut symbols_brrw = symbols.borrow_mut();
+        // All variables get added to the symbol table.
+        symbols_brrw.insert(id,result.clone(),var_def.mutable);
+        let mut dict_brrw = symbols_brrw.dictionary.borrow_mut();
+        dict_brrw.insert(id,var_def.var.name.to_string());
+        return Ok(result);
+      }
+      (value, ValueKind::Matrix(_,_)) => {
+        let value_kind = value.kind();
+        let convert_fxn = ConvertScalarToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
+        convert_fxn.solve();
+        let converted_result = convert_fxn.out();
+        p.add_plan_step(convert_fxn);
+        result = converted_result;
+        let mut symbols_brrw = symbols.borrow_mut();
+        // All variables get added to the symbol table.
+        symbols_brrw.insert(id,result.clone(),var_def.mutable);
+        let mut dict_brrw = symbols_brrw.dictionary.borrow_mut();
+        dict_brrw.insert(id,var_def.var.name.to_string());
+        return Ok(result);
+      }
       // Kind isn't checked
       x => {
-        //return Err(MechError{file: file!().to_string(), tokens: var_def.expression.tokens(), msg: format!("{:?}",x).to_string(), id: line!(), kind: MechErrorKind::None}); 
+        return Err(MechError{file: file!().to_string(), tokens: var_def.expression.tokens(), msg: format!("{:?}",x).to_string(), id: line!(), kind: MechErrorKind::None}); 
       },
     }
     // Can we convert the kind?
