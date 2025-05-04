@@ -47,6 +47,12 @@ impl fmt::Display for F64 {
   }
 }
 
+impl From<F64> for String {
+  fn from(f: F64) -> Self {
+      f.to_string()
+  }
+}
+
 impl Eq for F64 {}
 impl Hash for F64 {
   fn hash<H: Hasher>(&self, state: &mut H) {
@@ -241,6 +247,12 @@ impl fmt::Display for F32 {
 impl fmt::Debug for F32 {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
       write!(f, "{}", self.0)
+  }
+}
+
+impl From<F32> for String {
+  fn from(f: F32) -> Self {
+      f.to_string()
   }
 }
 
