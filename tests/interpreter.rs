@@ -35,10 +35,10 @@ use na::{Vector3, DVector, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, Ro
 
 test_interpreter!(interpret_literal_integer, "123", Value::F64(new_ref(F64::new(123.0))));
 test_interpreter!(interpret_literal_sci, "1.23e2", Value::F64(new_ref(F64::new(123.0))));
-//test_interpreter!(interpret_literal_bin, "0b10101", Value::I64(new_ref(F64::new(21.0)));
-//test_interpreter!(interpret_literal_hex, "0x123abc", Value::F64(new_ref(F64::new(1194684.0)));
-//test_interpreter!(interpret_literal_oct, "0o1234", Value::F64(new_ref(F64::new(668.0)));
-//test_interpreter!(interpret_literal_dec, "0d1234", Value::F64(new_ref(F64::new(1234.0)));
+test_interpreter!(interpret_literal_bin, "0b10101", Value::I64(new_ref(0b10101)));
+test_interpreter!(interpret_literal_hex, "0x123abc", Value::I64(new_ref(0x123abc)));
+test_interpreter!(interpret_literal_oct, "0o1234", Value::I64(new_ref(0o1234)));
+test_interpreter!(interpret_literal_dec, "0d1234", Value::I64(new_ref(1234)));
 test_interpreter!(interpret_literal_float, "1.23", Value::F64(new_ref(F64::new(1.23))));
 test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String(new_ref("Hello".to_string())));
 test_interpreter!(interpret_literal_true, "true", Value::Bool(new_ref(true)));
@@ -129,15 +129,15 @@ test_interpreter!(interpret_formula_math_mul_i128, "2<i128> * 2<i128>", Value::I
 
 // New tests for nominal with type def - floats
 // f32
-//test_interpreter!(interpret_formula_math_add_f32, "2.0<f32> + 2.0<f32>", Value::F32(new_ref(F32::new(4.0))));
-//test_interpreter!(interpret_formula_math_sub_f32, "2.0<f32> - 2.0<f32>", Value::F32(new_ref(F32::new(0.0))));
-//test_interpreter!(interpret_formula_math_div_f32, "2.0<f32> / 2.0<f32>", Value::F32(new_ref(F32::new(1.0))));
-//interpret_formula_math_div_f64test_interpreter!(interpret_formula_math_mul_f32, "2.0<f32> * 2.0<f32>", Value::F32(new_ref(F32::new(4.0))));
+test_interpreter!(interpret_formula_math_add_f32, "2.0<f32> + 2.0<f32>", Value::F32(new_ref(F32::new(4.0))));
+test_interpreter!(interpret_formula_math_sub_f32, "2.0<f32> - 2.0<f32>", Value::F32(new_ref(F32::new(0.0))));
+test_interpreter!(interpret_formula_math_div_f32, "2.0<f32> / 2.0<f32>", Value::F32(new_ref(F32::new(1.0))));
+test_interpreter!(interpret_formula_math_mul_f32, "2.0<f32> * 2.0<f32>", Value::F32(new_ref(F32::new(4.0))));
 //f64
-//test_interpreter!(interpret_formula_math_add_f64, "2.0<f64> + 2.0<f64>", Value::F64(new_ref(F64::new(4.0))));
-//test_interpreter!(interpret_formula_math_sub_f64, "2.0<f64> - 2.0<f64>", Value::F64(new_ref(F64::new(0.0))));
-//test_interpreter!(interpret_formula_math_div_f64, "2.0<f64> / 2.0<f64>", Value::F64(new_ref(F64::new(1.0))));
-//test_interpreter!(interpret_formula_math_mul_f64, "2.0<f64> * 2.0<f64>", Value::F64(new_ref(F64::new(4.0))));
+test_interpreter!(interpret_formula_math_add_f64, "2.0<f64> + 2.0<f64>", Value::F64(new_ref(F64::new(4.0))));
+test_interpreter!(interpret_formula_math_sub_f64, "2.0<f64> - 2.0<f64>", Value::F64(new_ref(F64::new(0.0))));
+test_interpreter!(interpret_formula_math_div_f64, "2.0<f64> / 2.0<f64>", Value::F64(new_ref(F64::new(1.0))));
+test_interpreter!(interpret_formula_math_mul_f64, "2.0<f64> * 2.0<f64>", Value::F64(new_ref(F64::new(4.0))));
 
 test_interpreter!(interpret_kind_math_no_overflow, "255<u16> + 1<u16>", Value::U16(new_ref(256)));
 test_interpreter!(interpret_kind_matrix_row3, "[1<u8> 2<u8> 3<u8>]", Value::MatrixU8(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![1,2,3])))));
@@ -236,15 +236,15 @@ test_interpreter!(interpret_matrix_define_convert_matrix, r#"x := [1 2 3];y<[u64
 
 
 // 2x2 Nominal Operations 
-//test_interpreter!(interpret_matrix_add_2x2, "[1 2; 3 4] + [5 6; 7 8]", new_ref(Matrix2::from_vec(vec![6i64, 8, 10, 12])).to_value());
+test_interpreter!(interpret_matrix_add_2x2, "[1 2; 3 4] + [5 6; 7 8]", new_ref(Matrix2::from_vec(vec![F64::new(6.0), F64::new(10.0), F64::new(8.0), F64::new(12.0)])).to_value());
 test_interpreter!(interpret_matrix_sub_2x2, "[1 2; 3 4] - [5 6; 7 8]", new_ref(Matrix2::from_vec(vec![F64::new(-4.0), F64::new(-4.0),F64::new(-4.0),F64::new(-4.0)])).to_value());
-//test_interpreter!(interpret_matrix_mul_2x2, "[1 2; 3 4] * [5 6; 7 8]", new_ref(Matrix2::from_vec(vec![19i64, 22, 43, 50])).to_value());
-//test_interpreter!(interpret_matrix_div_2x2, "[10 20; 30 40] / [2 3; 4 5]", new_ref(Matrix2::from_vec(vec![1i64, 2, 3, 4])).to_value());
+test_interpreter!(interpret_matrix_mul_2x2, "[1 2; 3 4] * [5 6; 7 8]", new_ref(Matrix2::from_vec(vec![F64::new(5.0), F64::new(21.0), F64::new(12.0), F64::new(32.0)])).to_value());
+test_interpreter!(interpret_matrix_div_2x2, "[20 30; 40 50] / [2 3; 4 5]", new_ref(Matrix2::from_vec(vec![F64::new(10.0), F64::new(10.0), F64::new(10.0), F64::new(10.0)])).to_value());
 
 // 3x3 Nominal Operations
 test_interpreter!(interpret_matrix_add_3x3, "[1 2 3; 4 5 6; 7 8 9] + [9 8 7; 6 5 4; 3 2 1]", new_ref(Matrix3::from_vec(vec![F64::new(10.0), F64::new(10.0), F64::new(10.0), F64::new(10.0), F64::new(10.0), F64::new(10.0), F64::new(10.0), F64::new(10.0), F64::new(10.0)])).to_value());//test_interpreter!(interpret_matrix_sub_3x3, "[1 2 3; 4 5 6; 7 8 9] - [9 8 7; 6 5 4; 3 2 1]", new_ref(Matrix3::from_vec(vec![-8i64, -6, -4, -2, 0, 2, 4, 6, 8])).to_value());
-//test_interpreter!(interpret_matrix_mul_3x3, "[1 2 3; 4 5 6; 7 8 9] * [9 8 7; 6 5 4; 3 2 1]", new_ref(Matrix3::from_vec(vec![30i64, 24, 18, 84, 69, 54, 138, 114, 90])).to_value());
-//test_interpreter!(interpret_matrix_div_3x3, "[10 20 30; 40 50 60; 70 80 90] / [2 3 4; 5 6 7; 8 9 10]", new_ref(Matrix3::from_vec(vec![1i64, 2, 3, 4, 5, 6, 7, 8, 9])).to_value());
+test_interpreter!(interpret_matrix_mul_3x3, "[1 2 3; 4 5 6; 7 8 9] * [9 8 7; 6 5 4; 3 2 1]", new_ref(Matrix3::from_vec(vec![F64::new(9.0), F64::new(24.0), F64::new(21.0), F64::new(16.0), F64::new(25.0), F64::new(16.0), F64::new(21.0), F64::new(24.0), F64::new(9.0)])).to_value());
+test_interpreter!(interpret_matrix_div_3x3, "[10 20 30; 40 50 60; 70 80 90] / [10 10 10; 10 10 10; 10 10 10]", new_ref(Matrix3::from_vec(vec![F64::new(1.0), F64::new(4.0), F64::new(7.0), F64::new(2.0), F64::new(5.0), F64::new(8.0), F64::new(3.0), F64::new(6.0), F64::new(9.0)])).to_value());
 
 // 4x4 Nominal Operations
 test_interpreter!(interpret_matrix_add_4x4, 
