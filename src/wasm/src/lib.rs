@@ -30,6 +30,16 @@ impl WasmMech {
   pub fn new() -> Self {
     Self { interpreter: Interpreter::new(0) }
   }
+
+  #[wasm_bindgen]
+  pub fn out_string(&self) -> String {
+    self.interpreter.out.to_string()
+  }
+
+  #[wasm_bindgen]
+  pub fn clear(&mut self) {
+    self.interpreter = Interpreter::new(0);
+  }
   
   #[wasm_bindgen]
   pub fn init(&self) {
@@ -143,7 +153,22 @@ impl WasmMech {
         }
       },
       Err(err) => {
-        log!("{:?}", err);
+        match parse(src) {
+          Ok(tree) => {
+            match self.interpreter.interpret(&tree) {
+              Ok(result) => {
+                log!("{}", result.pretty_print());
+              },
+              Err(err) => {
+                log!("{:?}", err);
+              }
+            }
+          },
+          Err(parse_err) => {
+            log!("Error parsing program: {:?}", parse_err);
+          }
+        }
+        
       }
     }
   
