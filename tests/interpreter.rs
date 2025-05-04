@@ -231,6 +231,7 @@ test_interpreter!(interpret_matrix_string_assign_logical, r#"~x := ["Hello", "Wo
 test_interpreter!(interpret_table_string_access, r#"x:={x<string> y<string> | "a" "b"; "c" "d"}; x.y"#, Value::MatrixString(Matrix::Vector2(new_ref(Vector2::from_vec(vec!["b".to_string(), "d".to_string()])))));
 test_interpreter!(interpret_matrix_define_ref, r#"x:=123;y<[f64]:1,4>:=x;"#, Value::MatrixF64(Matrix::RowVector4(new_ref(RowVector4::from_element(F64::new(123.0))))));
 test_interpreter!(interpret_matrix_define_convert, r#"y<[f64]:1,3> := 123<u8>;"#, Value::MatrixF64(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![F64::new(123.0), F64::new(123.0), F64::new(123.0)])))));
+test_interpreter!(interpret_matrix_define_convert_matrix, r#"x := [1 2 3];y<[u64]> := x;z<[u8]> := y;"#, Value::MatrixU8(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![1u8, 2, 3])))));
 
 
 
