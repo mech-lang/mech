@@ -10,7 +10,7 @@ pub struct Interpreter {
   symbols: SymbolTableRef,
   plan: Plan,
   functions: FunctionsRef,
-  out: Value,
+  pub out: Value,
   pub out_values: Ref<HashMap<u64, Value>>,
   pub sub_interpreters: Ref<HashMap<u64, Box<Interpreter>>>,
 }
@@ -103,7 +103,13 @@ impl Interpreter {
   }
 
   pub fn interpret(&mut self, tree: &Program) -> MResult<Value> {
-    program(tree, &self)
+    let result = program(tree, &self);
+    if let Some(last_step) = self.plan.borrow().last() {
+      self.out = last_step.out().clone();
+    } else {
+      self.out = Value::Empty;
+    }
+    result
   }
 }
 
