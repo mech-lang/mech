@@ -25,6 +25,21 @@ impl Interpreter {
     fxns.function_compilers.insert(hash_str("math/sin"),Box::new(MathSin{}));
     fxns.function_compilers.insert(hash_str("math/cos"),Box::new(MathCos{}));
     fxns.function_compilers.insert(hash_str("math/atan2"),Box::new(MathAtan2{}));
+    fxns.function_compilers.insert(hash_str("math/atan"),Box::new(MathAtan{}));
+    fxns.function_compilers.insert(hash_str("math/acos"),Box::new(MathAcos{}));
+    fxns.function_compilers.insert(hash_str("math/acosh"),Box::new(MathAcosh{}));
+    fxns.function_compilers.insert(hash_str("math/acot"),Box::new(MathAcot{}));
+    fxns.function_compilers.insert(hash_str("math/acsc"),Box::new(MathAcsc{}));
+    fxns.function_compilers.insert(hash_str("math/asec"),Box::new(MathAsec{}));
+    fxns.function_compilers.insert(hash_str("math/asin"),Box::new(MathAsin{}));
+    fxns.function_compilers.insert(hash_str("math/sinh"),Box::new(MathSinh{}));
+    fxns.function_compilers.insert(hash_str("math/cosh"),Box::new(MathCosh{}));
+    fxns.function_compilers.insert(hash_str("math/tanh"),Box::new(MathTanh{}));
+    //fxns.function_compilers.insert(hash_str("math/atanh"),Box::new(MathAtanh{}));
+    fxns.function_compilers.insert(hash_str("math/cot"),Box::new(MathCot{}));
+    fxns.function_compilers.insert(hash_str("math/csc"),Box::new(MathCsc{}));
+    fxns.function_compilers.insert(hash_str("math/sec"),Box::new(MathSec{}));
+    fxns.function_compilers.insert(hash_str("math/tan"),Box::new(MathTan{}));
 
     // Preload kinds
     fxns.kinds.insert(hash_str("u8"),ValueKind::U8);
