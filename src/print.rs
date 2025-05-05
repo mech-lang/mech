@@ -39,7 +39,7 @@ macro_rules! impl_print_match_arms {
 fn impl_print_fxn(source_value: Value) -> MResult<Box<dyn MechFunction>>  {
   impl_print_match_arms!(
     (source_value),
-    i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, f32, f64, String,
+    i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, f32, f64, String
   )
 }
 
