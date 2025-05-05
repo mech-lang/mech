@@ -1,6 +1,0 @@
-unstable_features = true
-condense_wildcard_suffixes = true
-error_on_line_overflow = false
-reorder_imports = true
-use_try_shorthand = true
-format_strings = true

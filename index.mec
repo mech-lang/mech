@@ -1,60 +1,22 @@
 io
-===
+===============================================================================
 
 1. Description
----------------
+-------------------------------------------------------------------------------
 
-Handles various input and output devices, including standard streams, mice, keyboards, gamepads, touch, and digital pens.
+This machine provides functions for printing output to the console and getting input from the user.
 
-2. Provided Tables
--------------------
+2. Provided Functions
+-------------------------------------------------------------------------------
 
-a. Standard Streams
+- `io/print`
 
-- `#io/out[|text<string> color<u32>|]` - writes data to stdout
-- `#io/in[|text<string>|]` - reads data from stdin (not implemented yet)
-- `#io/error[|text<string>|]` - writes data to stderr (not implemented yet)
+3. Info
+-------------------------------------------------------------------------------
 
-b. Keyboard
-
-- `#io/keyboard[|code<string>|]` - a list of keyboard keys
-
-c. Gamepad
-
-- `#io/gamepad[|id<u64> left-stick-x<f32> left-stick-y<f32> north<bool> south<bool> east<bool> west<bool>|]
-
-Supported Platforms (see the Notes section):
-  
-  - Windows
-  - Linux (coming soon...)
-  - Mac (coming soon...)
-  - wasm (coming soon...)
-
-d. Mouse
-
-...
-
-e. Touch
-
-...
-
-f. Pen
-
-...
-
-3. Notes
----------
-
-The `gilrs` Rust crate has been vendored because the code is non-blocking, and we wanted a blocking version.
-
-Right now blocking behavior has only been added to the Windows gamepad driver.
-
-4. Info
---------
-
-#io/machine = [
+matrix/machine = {
   name: "io" 
-  version: "v0.1.0"
-  authors: "Corey Montella" 
+  version: "v0.2.39"
+  authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/io"
-  license: "Apache-2.0"]
+  license: "Apache-2.0"}

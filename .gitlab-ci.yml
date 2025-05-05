@@ -1,9 +1,5 @@
-image: "rust:latest"
-
 test:cargo:
   script:
-  - rustup default nightly-2023-05-19
   - rustup show
-  - rustc --version && cargo --version
-  - rustup component add rust-src
-  - cargo build --release
+  - rustup default nightly-2025-01-15
+  - cargo build
