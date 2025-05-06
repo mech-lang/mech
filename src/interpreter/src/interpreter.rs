@@ -20,8 +20,12 @@ impl Interpreter {
     
     // Preload functions
     let mut fxns = Functions::new();
+
+    // Preload stats functions
     fxns.function_compilers.insert(hash_str("stats/sum/row"),Box::new(StatsSumRow{}));
     fxns.function_compilers.insert(hash_str("stats/sum/column"),Box::new(StatsSumColumn{}));
+    
+    // Preload math functions
     fxns.function_compilers.insert(hash_str("math/sin"),Box::new(MathSin{}));
     fxns.function_compilers.insert(hash_str("math/cos"),Box::new(MathCos{}));
     fxns.function_compilers.insert(hash_str("math/atan2"),Box::new(MathAtan2{}));
@@ -40,6 +44,10 @@ impl Interpreter {
     fxns.function_compilers.insert(hash_str("math/csc"),Box::new(MathCsc{}));
     fxns.function_compilers.insert(hash_str("math/sec"),Box::new(MathSec{}));
     fxns.function_compilers.insert(hash_str("math/tan"),Box::new(MathTan{}));
+
+    // Preload io functions
+    fxns.function_compilers.insert(hash_str("io/print"),Box::new(IoPrint{}));
+    fxns.function_compilers.insert(hash_str("io/println"),Box::new(IoPrintln{}));
 
     // Preload kinds
     fxns.kinds.insert(hash_str("u8"),ValueKind::U8);
