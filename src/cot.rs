@@ -28,21 +28,21 @@ macro_rules! cotf_vec_op {
         ((*$out)[i]).0 = 1.0 / tanf(((*$arg)[i]).0);
       }}};}
 
-impl_math_urop!(Mathcot, F32, cotf);
-impl_math_urop!(Mathcot, F64, cot);
+impl_math_urop!(MathCot, F32, cotf);
+impl_math_urop!(MathCot, F64, cot);
 
 fn impl_cot_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_urnop_match_arms2!(
-    Mathcot,
+    MathCot,
     (lhs_value),
     F32 => MatrixF32, F32, F32::zero(), "F32";
     F64 => MatrixF64, F64, F64::zero(), "F64";
   )
 }
 
-pub struct Mathcot {}
+pub struct MathCot {}
 
-impl NativeFunctionCompiler for Mathcot {
+impl NativeFunctionCompiler for MathCot {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
