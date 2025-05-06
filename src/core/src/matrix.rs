@@ -131,13 +131,6 @@ pub enum Matrix<T> {
   DMatrix(Ref<DMatrix<T>>),
 }
 
-impl<T> fmt::Display for Matrix<T>
-where T: Debug + Display + Clone + PartialEq + 'static {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    std::fmt::Display::fmt(&self.pretty_print(), f)
-  }
-}
-
 pub trait CopyMat<T> {
   fn copy_into(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize;
   fn copy_into_v(&self, dst: &Ref<DVector<T>>, offset: usize) -> usize;
@@ -244,8 +237,127 @@ where T: Hash + na::Scalar
   }
 }
 
+
+pub trait PrettyPrint {
+  fn pretty_print(&self) -> String;
+}
+
+impl PrettyPrint for String {
+  fn pretty_print(&self) -> String {
+      format!("\"{}\"", self)
+  }
+}
+
+impl PrettyPrint for Value {
+  fn  pretty_print(&self) -> String {
+    self.pretty_print()
+  }
+}
+
+macro_rules! impl_pretty_print {
+  ($t:ty) => {
+    impl PrettyPrint for $t {
+      fn pretty_print(&self) -> String {
+        format!("{}", self)
+      }
+    }
+  };
+}
+
+impl_pretty_print!(bool);
+impl_pretty_print!(i8);
+impl_pretty_print!(i16);
+impl_pretty_print!(i32);
+impl_pretty_print!(i64);
+impl_pretty_print!(i128);
+impl_pretty_print!(u8);
+impl_pretty_print!(u16);
+impl_pretty_print!(u32);
+impl_pretty_print!(u64);
+impl_pretty_print!(u128);
+impl_pretty_print!(F32);
+impl_pretty_print!(F64);
+impl_pretty_print!(usize);
+
+impl<T> PrettyPrint for Matrix<T>
+where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
+{
+  fn pretty_print(&self) -> String {
+    let mut builder = Builder::default();
+    match self {
+      #[cfg(feature = "RowVector4")]
+      Matrix::RowVector4(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
+      #[cfg(feature = "RowVector3")]
+      Matrix::RowVector3(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
+      #[cfg(feature = "RowVector2")]
+      Matrix::RowVector2(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
+      #[cfg(feature = "RowVectorD")]
+      Matrix::RowDVector(vec) => {
+        let vec_brrw = vec.borrow();
+        let vec_str = if vec_brrw.ncols() > 20 {
+          let mut vec_str = vec_brrw.row(0).iter().take(10).chain(vec_brrw.row(0).iter().rev().take(9).rev()).map(|x| x.pretty_print()).collect::<Vec<_>>();
+          vec_str.insert(10,"...".to_string());
+          vec_str
+        } else {
+          vec_brrw.row(0).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()
+        };
+        builder.push_record(vec_str);
+      }
+      #[cfg(feature = "Vector4")]
+      Matrix::Vector4(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
+      #[cfg(feature = "Vector3")]
+      Matrix::Vector3(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
+      #[cfg(feature = "Vector2")]
+      Matrix::Vector2(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
+      #[cfg(feature = "VectorD")]
+      Matrix::DVector(vec) => {
+        let vec_brrw = vec.borrow();
+        let vec_str = if vec_brrw.nrows() > 20 {
+          let mut vec_str = vec_brrw.column(0).iter().take(10).chain(vec_brrw.column(0).iter().rev().take(9).rev()).map(|x| x.pretty_print()).collect::<Vec<_>>();
+          vec_str.insert(10,"...".to_string());
+          vec_str
+        } else {
+          vec_brrw.column(0).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()
+        };
+        for r in vec_str {
+          builder.push_record(vec![r]);
+        }
+      }
+      #[cfg(feature = "Matrix4")]
+      Matrix::Matrix4(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
+      #[cfg(feature = "Matrix3")]
+      Matrix::Matrix3(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
+      #[cfg(feature = "Matrix2")]
+      Matrix::Matrix2(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
+      #[cfg(feature = "Matrix1")]
+      Matrix::Matrix1(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
+      #[cfg(feature = "Matrix3x2")]
+      Matrix::Matrix3x2(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
+      #[cfg(feature = "Matrix2x3")]
+      Matrix::Matrix2x3(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
+      #[cfg(feature = "MatrixD")]
+      Matrix::DMatrix(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
+      _ => todo!(),
+    };
+    let matrix_style = Style::empty()
+    .top(' ')
+    .left('┃')
+    .right('┃')
+    .bottom(' ')
+    .vertical(' ')
+    .intersection_bottom(' ')
+    .corner_top_left('┏')
+    .corner_top_right('┓')
+    .corner_bottom_left('┗')
+    .corner_bottom_right('┛');
+    let mut table = builder.build();
+    table.with(matrix_style);
+    format!("{table}")
+  }
+}
+
 impl<T> Matrix<T> 
-where T: Debug + Display + Clone + PartialEq + 'static
+where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 {
 
   pub fn size_of(&self) -> usize {
@@ -286,80 +398,6 @@ where T: Debug + Display + Clone + PartialEq + 'static
       #[cfg(feature = "MatrixD")]
       Matrix::DMatrix(ref x) => Box::new(x.clone()),
     }
-  }
-
-
-  pub fn pretty_print(&self) -> String {
-    let mut builder = Builder::default();
-    match self {
-      #[cfg(feature = "RowVector4")]
-      Matrix::RowVector4(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{}", x)).collect::<Vec<_>>()));}
-      #[cfg(feature = "RowVector3")]
-      Matrix::RowVector3(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{}", x)).collect::<Vec<_>>()));}
-      #[cfg(feature = "RowVector2")]
-      Matrix::RowVector2(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{}", x)).collect::<Vec<_>>()));}
-      #[cfg(feature = "RowVectorD")]
-      Matrix::RowDVector(vec) => {
-        let vec_brrw = vec.borrow();
-        let vec_str = if vec_brrw.ncols() > 20 {
-          let mut vec_str = vec_brrw.row(0).iter().take(10).chain(vec_brrw.row(0).iter().rev().take(9).rev()).map(|x| format!("{}", x)).collect::<Vec<_>>();
-          vec_str.insert(10,"...".to_string());
-          vec_str
-        } else {
-          vec_brrw.row(0).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()
-        };
-        builder.push_record(vec_str);
-      }
-      #[cfg(feature = "Vector4")]
-      Matrix::Vector4(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{}", x)).collect::<Vec<_>>()));}
-      #[cfg(feature = "Vector3")]
-      Matrix::Vector3(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{}", x)).collect::<Vec<_>>()));}
-      #[cfg(feature = "Vector2")]
-      Matrix::Vector2(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{}", x)).collect::<Vec<_>>()));}
-      #[cfg(feature = "VectorD")]
-      Matrix::DVector(vec) => {
-        let vec_brrw = vec.borrow();
-        let vec_str = if vec_brrw.nrows() > 20 {
-          let mut vec_str = vec_brrw.column(0).iter().take(10).chain(vec_brrw.column(0).iter().rev().take(9).rev()).map(|x| format!("{}", x)).collect::<Vec<_>>();
-          vec_str.insert(10,"...".to_string());
-          vec_str
-        } else {
-          vec_brrw.column(0).iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>()
-        };
-        for r in vec_str {
-          builder.push_record(vec![r]);
-        }
-      }
-      #[cfg(feature = "Matrix4")]
-      Matrix::Matrix4(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{}", x)).collect::<Vec<_>>()));}
-      #[cfg(feature = "Matrix3")]
-      Matrix::Matrix3(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{}", x)).collect::<Vec<_>>()));}
-      #[cfg(feature = "Matrix2")]
-      Matrix::Matrix2(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{}", x)).collect::<Vec<_>>()));}
-      #[cfg(feature = "Matrix1")]
-      Matrix::Matrix1(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{}", x)).collect::<Vec<_>>()));}
-      #[cfg(feature = "Matrix3x2")]
-      Matrix::Matrix3x2(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{}", x)).collect::<Vec<_>>()));}
-      #[cfg(feature = "Matrix2x3")]
-      Matrix::Matrix2x3(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{}", x)).collect::<Vec<_>>()));}
-      #[cfg(feature = "MatrixD")]
-      Matrix::DMatrix(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| format!("{}", x)).collect::<Vec<_>>()));}
-      _ => todo!(),
-    };
-    let matrix_style = Style::empty()
-    .top(' ')
-    .left('┃')
-    .right('┃')
-    .bottom(' ')
-    .vertical(' ')
-    .intersection_bottom(' ')
-    .corner_top_left('┏')
-    .corner_top_right('┓')
-    .corner_bottom_left('┗')
-    .corner_bottom_right('┛');
-    let mut table = builder.build();
-    table.with(matrix_style);
-    format!("{table}")
   }
 
   pub fn shape(&self) -> Vec<usize> {

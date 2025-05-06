@@ -1517,10 +1517,11 @@ window.addEventListener("scroll", () => {{
   pub fn op_assign_op(&mut self, node: &OpAssignOp) -> String {
     let op = match node {
       OpAssignOp::Add => "+=".to_string(),
-      OpAssignOp::Sub => "-=".to_string(),
-      OpAssignOp::Mul => "*=".to_string(),
       OpAssignOp::Div => "/=".to_string(),
       OpAssignOp::Exp => "^=".to_string(),
+      OpAssignOp::Mod => "%=".to_string(),
+      OpAssignOp::Mul => "*=".to_string(),
+      OpAssignOp::Sub => "-=".to_string(),
     };
     if self.html {
       format!("<span class=\"mech-op-assign-op\">{}</span>",op)
@@ -2181,8 +2182,9 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn mul_div_op(&mut self, node: &MulDivOp) -> String {
     match node {
-      MulDivOp::Mul => "*".to_string(),
       MulDivOp::Div => "/".to_string(),
+      MulDivOp::Mod => "%".to_string(),
+      MulDivOp::Mul => "*".to_string(),
     }
   }
 

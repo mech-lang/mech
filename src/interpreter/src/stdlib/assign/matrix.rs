@@ -22,6 +22,7 @@ macro_rules! impl_set_match_arms {
         U128, "U128";
         F32, "F32"; 
         F64, "F64" ;
+        String, "String"
       )
     }
   }
@@ -53,7 +54,7 @@ macro_rules! impl_set_scalar_fxn {
     }
     impl<T> MechFunction for $struct_name<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {
@@ -271,7 +272,7 @@ macro_rules! impl_set_fxn {
     }
     impl<T> MechFunction for $struct_name<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {
@@ -410,9 +411,9 @@ macro_rules! impl_set_range_match_arms {
           (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)),[Value::MatrixBool(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3x2B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone() })),            
           #[cfg(all(feature = $value_string, feature = "MatrixD"))]
           (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)),[Value::MatrixBool(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MDB>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "DVector"))]
+          #[cfg(all(feature = $value_string, feature = "VectorD"))]
           (Value::[<Matrix $value_kind>](Matrix::DVector(sink)),[Value::MatrixBool(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name VDB>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "RowDVector"))]
+          #[cfg(all(feature = $value_string, feature = "RowVectorD"))]
           (Value::[<Matrix $value_kind>](Matrix::RowDVector(sink)),[Value::MatrixBool(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name RDB>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone() })),                      
         )+
         x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
@@ -437,6 +438,7 @@ impl NativeFunctionCompiler for MatrixSetRange {
     match impl_set_range_fxn(sink.clone(),source.clone(),ixes.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(x) => {
+        println!("FOFOFOFOOF: {:?}", x);
         match (sink,source) {
           (Value::MutableReference(sink),Value::MutableReference(source)) => { impl_set_range_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
           (sink,Value::MutableReference(source)) => { impl_set_range_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
@@ -459,7 +461,7 @@ macro_rules! impl_set_all_fxn {
     }
     impl<T> MechFunction for $struct_name<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {
@@ -575,7 +577,7 @@ macro_rules! impl_set_scalar_scalar_fxn {
     }
     impl<T> MechFunction for $struct_name<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {
@@ -677,7 +679,7 @@ macro_rules! impl_set_all_scalar_fxn {
     }
     impl<T> MechFunction for $struct_name<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {
@@ -778,7 +780,7 @@ macro_rules! impl_set_scalar_all_fxn {
     }
     impl<T> MechFunction for $struct_name<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {
@@ -882,7 +884,7 @@ macro_rules! impl_set_range_scalar_fxn {
     }
     impl<T> MechFunction for $struct_name<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {
@@ -1012,7 +1014,7 @@ macro_rules! impl_set_scalar_range_fxn {
     }
     impl<T> MechFunction for $struct_name<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {
@@ -1145,7 +1147,7 @@ macro_rules! impl_set_range_range_fxn {
     }
     impl<T> MechFunction for $struct_name<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {
@@ -1275,7 +1277,7 @@ macro_rules! impl_set_all_range_fxn {
     }
     impl<T> MechFunction for $struct_name<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$matrix_shape<T>>: ToValue
     {
       fn solve(&self) {

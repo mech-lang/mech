@@ -1,10 +1,6 @@
 #[macro_use]
 use crate::stdlib::*;
 
-// ----------------------------------------------------------------------------
-// Type Conversion Library
-// ----------------------------------------------------------------------------
-
 // Convert --------------------------------------------------------------------
 
 #[macro_export]  
@@ -374,7 +370,7 @@ macro_rules! impl_conversion_match_arms {
           let val = Value::Enum(Box::new(enm.clone()));
           Ok(Box::new(ConvertSEnum{out: val}))
         }
-        x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+        x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
       }
     }
   }
@@ -414,10 +410,7 @@ impl NativeFunctionCompiler for ConvertKind {
           Value::MutableReference(rhs) => impl_conversion_fxn(rhs.borrow().clone(), target_kind.clone()),
           Value::Atom(atom_id) => impl_conversion_fxn(source_value, target_kind.clone()),
           Value::MatrixU32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-          x => {
-            println!("{:?}",x);
-            todo!();
-          }
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }

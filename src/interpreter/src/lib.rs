@@ -1,5 +1,7 @@
 #![allow(warnings)]
 #![feature(step_trait)]
+#![feature(box_patterns)]
+#![feature(trivial_bounds)]
 
 extern crate nalgebra as na;
 #[macro_use]
@@ -22,6 +24,7 @@ use crate::stdlib::{
                   };
 use mech_core::{MechError, MechErrorKind, hash_str, new_ref, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 
+use mech_io::*;
 use mech_matrix::*;
 use mech_stats::*;
 use mech_math::*;

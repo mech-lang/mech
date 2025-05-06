@@ -80,6 +80,14 @@ pub fn divide(input: ParseString) -> ParseResult<MulDivOp> {
   Ok((input, MulDivOp::Div))
 }
 
+// modulus := "%" ;
+pub fn modulus(input: ParseString) -> ParseResult<MulDivOp> {
+  let (input, _) = whitespace1(input)?;
+  let (input, _) = tag("%")(input)?;
+  let (input, _) = whitespace1(input)?;
+  Ok((input, MulDivOp::Mod))
+}
+
 // matrix_multiply := "**" ;
 pub fn matrix_multiply(input: ParseString) -> ParseResult<VecOp> {
   let (input, _) = whitespace1(input)?;
@@ -158,9 +166,9 @@ pub fn l1(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// mul_div_operator := multiply | divide ;
+// mul_div_operator := multiply | divide | modulus ;
 pub fn mul_div_operator(input: ParseString) -> ParseResult<FormulaOperator> {
-  let (input, op) = alt((multiply, divide))(input)?;
+  let (input, op) = alt((multiply, divide, modulus))(input)?;
   Ok((input, FormulaOperator::MulDiv(op)))
 }
 

@@ -1,6 +1,6 @@
 [package]
 name = "mech-core"
-version = "0.2.39"
+version = "0.2.40"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "The Mech language runtime."
 documentation = "http://docs.mech-lang.org"
@@ -19,7 +19,7 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = ["stdlib", "parallel"]
-stdlib = ["Bool", "unsigned-ints", "signed-ints", "floats", "matrix"]
+stdlib = ["Bool", "String", "unsigned-ints", "signed-ints", "floats", "matrix"]
 parallel = ["rayon"]
 no-std = ["rlibc"]
 wasm = ["web-sys", "wasm-bindgen"]
@@ -27,6 +27,7 @@ signed-ints = ["I8", "I16", "I32", "I64"]
 unsigned-ints = ["U8", "U16", "U32", "U64"]
 floats = ["F32", "F64"]
 Bool = []
+String = []
 U8 = []
 U16 = []
 U32 = []

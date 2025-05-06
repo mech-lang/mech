@@ -57,6 +57,7 @@ impl_col_set_fxn_shapes!(u64);
 impl_col_set_fxn_shapes!(u128);
 impl_col_set_fxn_shapes!(F32);
 impl_col_set_fxn_shapes!(F64);
+impl_col_set_fxn_shapes!(String);
 
 macro_rules! impl_set_column_match_arms {
   ($arg:expr, $($lhs_type:ident, $($default:expr),+);+ $(;)?) => {
@@ -115,6 +116,7 @@ fn impl_set_column_fxn(sink: Value, source: Value, key: Value) -> Result<Box<dyn
     U128,u128::zero();
     F32,F32::zero();
     F64,F64::zero();
+    String,String::new();
   )
 }
 

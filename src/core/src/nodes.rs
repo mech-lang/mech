@@ -1191,7 +1191,8 @@ pub struct OpAssign {
 pub enum OpAssignOp {
   Add,
   Div,
-  Exp,   
+  Exp, 
+  Mod,  
   Mul,
   Sub,   
 }
@@ -1211,6 +1212,7 @@ pub enum AddSubOp {
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum MulDivOp {
   Div,
+  Mod,
   Mul,
 }
 

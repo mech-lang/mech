@@ -47,6 +47,12 @@ impl fmt::Display for F64 {
   }
 }
 
+impl From<F64> for String {
+  fn from(f: F64) -> Self {
+      f.to_string()
+  }
+}
+
 impl Eq for F64 {}
 impl Hash for F64 {
   fn hash<H: Hasher>(&self, state: &mut H) {
@@ -103,6 +109,17 @@ impl Div for F64 {
 impl DivAssign for F64 {
   fn div_assign(&mut self, other: F64) {
     self.0 /= other.0;
+  }
+}
+impl Rem for F64 {
+  type Output = F64;
+  fn rem(self, other: F64) -> F64 {
+    F64(self.0 % other.0)
+  }
+}
+impl RemAssign for F64 {
+  fn rem_assign(&mut self, other: F64) {
+    self.0 = self.0 % other.0;
   }
 }
 impl Zero for F64 {
@@ -233,6 +250,12 @@ impl fmt::Debug for F32 {
   }
 }
 
+impl From<F32> for String {
+  fn from(f: F32) -> Self {
+      f.to_string()
+  }
+}
+
 impl Pow<F32> for F32 {
   type Output = F32;
   fn pow(self, rhs: F32) -> Self::Output {
@@ -255,6 +278,17 @@ impl Add for F32 {
 impl AddAssign for F32 {
   fn add_assign(&mut self, other: F32) {
     self.0 += other.0;
+  }
+}
+impl Rem for F32 {
+  type Output = F32;
+  fn rem(self, other: F32) -> F32 {
+    F32(self.0 % other.0)
+  }
+}
+impl RemAssign for F32 {
+  fn rem_assign(&mut self, other: F32) {
+    self.0 = self.0 % other.0;
   }
 }
 impl Zero for F32 {

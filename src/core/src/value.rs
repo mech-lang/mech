@@ -54,6 +54,17 @@ pub enum ValueKind {
   Map(Box<ValueKind>,Box<ValueKind>), Record(Vec<ValueKind>), Table(Vec<ValueKind>, usize), Tuple(Vec<ValueKind>), Id, Index, Reference(Box<ValueKind>), Atom(u64), Empty, Any
 }
 
+impl ValueKind {
+
+  pub fn deref_kind(&self) -> Option<ValueKind> {
+    match self {
+      ValueKind::Reference(x) => Some(*x.clone()),
+      _ => None,
+    }
+  }
+
+}
+
 impl std::fmt::Display for ValueKind {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match self {
@@ -106,7 +117,10 @@ impl fmt::Debug for ValueKind {
       ValueKind::F64 => write!(f, "f64"),
       ValueKind::String => write!(f, "string"),
       ValueKind::Bool => write!(f, "bool"),
-      ValueKind::Matrix(x,s) => write!(f, "[{:?}]:{:?},{:?}",x,s[0],s[1]),
+      ValueKind::Matrix(x,s) => {
+        let s = if s.len() == 2 { s.clone() } else if s.len() == 1 { vec![s[0], 1] } else { vec![0, 0] };
+        write!(f, "[{:?}]:{:?},{:?}",x,s[0],s[1]).clone()
+      }
       ValueKind::Enum(x) => write!(f, "{:?}",x),
       ValueKind::Set(x,el) => write!(f, "{{{:?}}}:{}", x, el),
       ValueKind::Map(x,y) => write!(f, "{{{:?}:{:?}}}",x,y),
@@ -115,7 +129,7 @@ impl fmt::Debug for ValueKind {
       ValueKind::Tuple(x) => write!(f, "({})",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
       ValueKind::Id => write!(f, "id"),
       ValueKind::Index => write!(f, "ix"),
-      ValueKind::Reference(x) => write!(f, "{:?}",x),
+      ValueKind::Reference(x) => write!(f, "&{:?}",x),
       ValueKind::Atom(x) => write!(f, "`{:?}",x),
       ValueKind::Empty => write!(f, "_"),
       ValueKind::Any => write!(f, "_"),
@@ -151,7 +165,7 @@ pub enum Value {
   I128(Ref<i128>),
   F32(Ref<F32>),
   F64(Ref<F64>),
-  String(String),
+  String(Ref<String>),
   Bool(Ref<bool>),
   Atom(u64),
   MatrixIndex(Matrix<usize>),
@@ -168,6 +182,7 @@ pub enum Value {
   MatrixI128(Matrix<i128>),
   MatrixF32(Matrix<F32>),
   MatrixF64(Matrix<F64>),
+  MatrixString(Matrix<String>),
   MatrixValue(Matrix<Value>),
   Set(MechSet),
   Map(MechMap),
@@ -215,7 +230,7 @@ impl Hash for Value {
       Value::Tuple(x) => x.hash(state),
       Value::Record(x) => x.hash(state),
       Value::Enum(x) => x.hash(state),
-      Value::String(x) => x.hash(state),
+      Value::String(x) => x.borrow().hash(state),
       Value::MatrixBool(x) => x.hash(state),
       Value::MatrixIndex(x) => x.hash(state),
       Value::MatrixU8(x)   => x.hash(state),
@@ -230,6 +245,7 @@ impl Hash for Value {
       Value::MatrixI128(x) => x.hash(state),
       Value::MatrixF32(x)  => x.hash(state),
       Value::MatrixF64(x)  => x.hash(state),
+      Value::MatrixString(x) => x.hash(state),
       Value::MatrixValue(x)  => x.hash(state),
       Value::MutableReference(x) => x.borrow().hash(state),
       Value::Empty => Value::Empty.hash(state),
@@ -270,6 +286,7 @@ impl Value {
       Value::MatrixF32(x)  => x.size_of(),
       Value::MatrixF64(x)  => x.size_of(),
       Value::MatrixValue(x)  => x.size_of(),
+      Value::MatrixString(x) => x.size_of(),
       _ => 0,
     }
   }
@@ -294,7 +311,7 @@ impl Value {
       Value::Atom(x) => {builder.push_record(vec![format!("{}",x)]);},
       Value::Set(x)  => {return x.pretty_print();}
       Value::Map(x)  => {return x.pretty_print();}
-      Value::String(x) => {builder.push_record(vec![x])},
+      Value::String(x) => {builder.push_record(vec![format!("\"{}\"",x.borrow().clone())]);},
       Value::Table(x)  => {return x.pretty_print();},
       Value::Tuple(x)  => {return x.pretty_print();},
       Value::Record(x) => {return x.pretty_print();},
@@ -314,6 +331,7 @@ impl Value {
       Value::MatrixF32(x)  => {return x.pretty_print();},
       Value::MatrixF64(x)  => {return x.pretty_print();},
       Value::MatrixValue(x)  => {return x.pretty_print();},
+      Value::MatrixString(x)  => {return x.pretty_print();},
       Value::MutableReference(x) => {return x.borrow().pretty_print();},
       Value::Empty => builder.push_record(vec!["_"]),
       Value::IndexAll => builder.push_record(vec![":"]),
@@ -368,6 +386,7 @@ impl Value {
       Value::MatrixI128(x) => x.shape(),
       Value::MatrixF32(x) => x.shape(),
       Value::MatrixF64(x) => x.shape(),
+      Value::MatrixString(x) => x.shape(),
       Value::MatrixValue(x) => x.shape(),
       Value::Enum(x) => vec![1,1],
       Value::Table(x) => x.shape(),
@@ -414,6 +433,7 @@ impl Value {
       Value::MatrixI128(x) => ValueKind::Matrix(Box::new(ValueKind::U128,),x.shape()),
       Value::MatrixF32(x) => ValueKind::Matrix(Box::new(ValueKind::F32),x.shape()),
       Value::MatrixF64(x) => ValueKind::Matrix(Box::new(ValueKind::F64),x.shape()),
+      Value::MatrixString(x) => ValueKind::Matrix(Box::new(ValueKind::String),x.shape()),
       Value::MatrixValue(x) => ValueKind::Matrix(Box::new(ValueKind::Any),x.shape()),
       Value::Table(x) => x.kind(),
       Value::Set(x) => x.kind(),
@@ -430,39 +450,27 @@ impl Value {
     }
   }
 
+  pub fn is_matrix(&self) -> bool {
+    match self {
+      Value::MatrixIndex(_) | Value::MatrixBool(_) | Value::MatrixU8(_) | 
+      Value::MatrixU16(_) | Value::MatrixU32(_) | Value::MatrixU64(_) | 
+      Value::MatrixU128(_) | Value::MatrixI8(_) | Value::MatrixI16(_) | 
+      Value::MatrixI32(_) | Value::MatrixI64(_) | Value::MatrixI128(_) | 
+      Value::MatrixF32(_) | Value::MatrixF64(_) | Value::MatrixString(_) |
+      Value::MatrixValue(_) => true,
+      _ => false,
+    }
+  }
+
   pub fn is_scalar(&self) -> bool {
     match self {
-      Value::U8(_)  | Value::U16(_) | Value::U32(_) | Value::U64(_) | Value::U128(_) | 
-      Value::I8(_)  | Value::I16(_) | Value::I32(_) | Value::I64(_) | Value::I128(_) | 
-      Value::F32(_) | Value::F64(_) | Value::String(_)  | Value::Bool(_) | Value::Atom(_) => true,
-      _ => todo!(), 
-      /*Value::MatrixIndex(x) => ValueKind::Matrix(Box::new(ValueKind::Index),(x.shape()[0],x.shape()[1])),
-      Value::MatrixBool(x) => ValueKind::Matrix(Box::new(ValueKind::Bool),(x.shape()[0],x.shape()[1])),
-      Value::MatrixU8(x) => ValueKind::Matrix(Box::new(ValueKind::U8),(x.shape()[0],x.shape()[1])),
-      Value::MatrixU16(x) => ValueKind::Matrix(Box::new(ValueKind::U16),(x.shape()[0],x.shape()[1])),
-      Value::MatrixU32(x) => ValueKind::Matrix(Box::new(ValueKind::U32),(x.shape()[0],x.shape()[1])),
-      Value::MatrixU64(x) => ValueKind::Matrix(Box::new(ValueKind::U64),(x.shape()[0],x.shape()[1])),
-      Value::MatrixU128(x) => ValueKind::Matrix(Box::new(ValueKind::U128),(x.shape()[0],x.shape()[1])),
-      Value::MatrixI8(x) => ValueKind::Matrix(Box::new(ValueKind::I8),(x.shape()[0],x.shape()[1])),
-      Value::MatrixI16(x) => ValueKind::Matrix(Box::new(ValueKind::I16),(x.shape()[0],x.shape()[1])),
-      Value::MatrixI32(x) => ValueKind::Matrix(Box::new(ValueKind::I32),(x.shape()[0],x.shape()[1])),
-      Value::MatrixI64(x) => ValueKind::Matrix(Box::new(ValueKind::I64),(x.shape()[0],x.shape()[1])),
-      Value::MatrixI128(x) => ValueKind::Matrix(Box::new(ValueKind::U128,),(x.shape()[0],x.shape()[1])),
-      Value::MatrixF32(x) => ValueKind::Matrix(Box::new(ValueKind::F32),(x.shape()[0],x.shape()[1])),
-      Value::MatrixF64(x) => ValueKind::Matrix(Box::new(ValueKind::F64),(x.shape()[0],x.shape()[1])),
-      Value::MatrixValue(x) => ValueKind::Matrix(Box::new(ValueKind::Any),(x.shape()[0],x.shape()[1])),
-      Value::Table(x) => ValueKind::Table,
-      Value::Set(x) => ValueKind::Set,
-      Value::Map(x) => ValueKind::Map,
-      Value::Record(x) => ValueKind::Record,
-      Value::Tuple(x) => ValueKind::Tuple,
-      Value::Enum(x) => ValueKind::Enum(x.id),
-      Value::MutableReference(x) => ValueKind::Reference,
-      Value::Empty => ValueKind::Empty,
-      Value::IndexAll => ValueKind::Empty,
-      Value::Id(x) => ValueKind::Id,
-      Value::Index(x) => ValueKind::Index,
-      Value::Kind(x) => x.clone(),*/
+      Value::U8(_) | Value::U16(_) | Value::U32(_) | 
+      Value::U64(_) | Value::U128(_) | Value::I8(_) | 
+      Value::I16(_) | Value::I32(_) | Value::I64(_) | 
+      Value::I128(_) | Value::F32(_) | Value::F64(_) | 
+      Value::Bool(_) | Value::String(_) | 
+      Value::Atom(_) | Value::Index(_) => true,
+      _ => false,
     }
   }
 
@@ -478,6 +486,27 @@ impl Value {
   impl_as_type!(u32);
   impl_as_type!(u64);
   impl_as_type!(u128);
+
+  pub fn as_string(&self) -> Option<Ref<String>> {
+    match self {
+      Value::String(v) => Some(v.clone()),
+      Value::U8(v) => Some(new_ref(v.borrow().to_string())),
+      Value::U16(v) => Some(new_ref(v.borrow().to_string())),
+      Value::U32(v) => Some(new_ref(v.borrow().to_string())),
+      Value::U64(v) => Some(new_ref(v.borrow().to_string())),
+      Value::U128(v) => Some(new_ref(v.borrow().to_string())),
+      Value::I8(v) => Some(new_ref(v.borrow().to_string())),
+      Value::I16(v) => Some(new_ref(v.borrow().to_string())),
+      Value::I32(v) => Some(new_ref(v.borrow().to_string())),
+      Value::I64(v) => Some(new_ref(v.borrow().to_string())),
+      Value::I128(v) => Some(new_ref(v.borrow().to_string())),
+      Value::F32(v) => Some(new_ref(format!("{}", v.borrow().0))),
+      Value::F64(v) => Some(new_ref(format!("{}", v.borrow().0))),
+      Value::Bool(v) => Some(new_ref(format!("{}", v.borrow()))),
+      Value::MutableReference(val) => val.borrow().as_string(),
+      _ => None,
+    }
+  }
 
   pub fn as_f32(&self) -> Option<Ref<F32>> {
     match self {
@@ -532,6 +561,9 @@ impl Value {
   pub fn as_veci32(&self)   -> Option<Vec<i32>>  {if let Value::MatrixI32(v)  = self { Some(v.as_vec()) } else if let Value::I32(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci32()  } else { None }}
   pub fn as_veci64(&self)   -> Option<Vec<i64>>  {if let Value::MatrixI64(v)  = self { Some(v.as_vec()) } else if let Value::I64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci64()  } else { None }}
   pub fn as_veci128(&self)   -> Option<Vec<i128>>  {if let Value::MatrixI128(v)  = self { Some(v.as_vec()) } else if let Value::I128(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci128()  } else { None }}
+
+  pub fn as_vecstring(&self)   -> Option<Vec<String>>  {if let Value::MatrixString(v)  = self { Some(v.as_vec()) } else if let Value::String(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecstring()  } else { None }}
+
 
   pub fn as_vecusize(&self) -> Option<Vec<usize>> {
     match self {
@@ -633,6 +665,7 @@ impl ToValue for Ref<i128>  { fn to_value(&self) -> Value { Value::I128(self.clo
 impl ToValue for Ref<F32>   { fn to_value(&self) -> Value { Value::F32(self.clone())   } }
 impl ToValue for Ref<F64>   { fn to_value(&self) -> Value { Value::F64(self.clone())   } }
 impl ToValue for Ref<bool>  { fn to_value(&self) -> Value { Value::Bool(self.clone())  } }
+impl ToValue for Ref<String>  { fn to_value(&self) -> Value { Value::String(self.clone())  } }
 
 macro_rules! to_value_matrix {
   ($($nd_matrix_kind:ident, $matrix_kind:ident, $base_type:ty),+ $(,)?) => {
@@ -648,20 +681,21 @@ macro_rules! to_value_matrix {
 macro_rules! impl_to_value_matrix {
   ($matrix_kind:ident) => {
     to_value_matrix!(
-      $matrix_kind, MatrixIndex, usize,
-      $matrix_kind, MatrixBool,  bool,
-      $matrix_kind, MatrixI8,    i8,
-      $matrix_kind, MatrixI16,   i16,
-      $matrix_kind, MatrixI32,   i32,
-      $matrix_kind, MatrixI64,   i64,
-      $matrix_kind, MatrixI128,  i128,
-      $matrix_kind, MatrixU8,    u8,
-      $matrix_kind, MatrixU16,   u16,
-      $matrix_kind, MatrixU32,   u32,
-      $matrix_kind, MatrixU64,   u64,
-      $matrix_kind, MatrixU128,  u128,
-      $matrix_kind, MatrixF32,   F32,
-      $matrix_kind, MatrixF64,   F64,
+      $matrix_kind, MatrixIndex,  usize,
+      $matrix_kind, MatrixBool,   bool,
+      $matrix_kind, MatrixI8,     i8,
+      $matrix_kind, MatrixI16,    i16,
+      $matrix_kind, MatrixI32,    i32,
+      $matrix_kind, MatrixI64,    i64,
+      $matrix_kind, MatrixI128,   i128,
+      $matrix_kind, MatrixU8,     u8,
+      $matrix_kind, MatrixU16,    u16,
+      $matrix_kind, MatrixU32,    u32,
+      $matrix_kind, MatrixU64,    u64,
+      $matrix_kind, MatrixU128,   u128,
+      $matrix_kind, MatrixF32,    F32,
+      $matrix_kind, MatrixF64,    F64,
+      $matrix_kind, MatrixString, String,
     );
   }
 }

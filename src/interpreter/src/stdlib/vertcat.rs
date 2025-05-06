@@ -12,7 +12,7 @@ macro_rules! vertcat_one_arg {
     }
     impl<T> MechFunction for $fxn<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$out<T>>: ToValue
     {
       fn solve(&self) { 
@@ -37,7 +37,7 @@ macro_rules! vertcat_two_args {
     }
     impl<T> MechFunction for $fxn<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$out<T>>: ToValue
     {
       fn solve(&self) { 
@@ -64,7 +64,7 @@ macro_rules! vertcat_three_args {
     }
     impl<T> MechFunction for $fxn<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$out<T>>: ToValue
     {
       fn solve(&self) { 
@@ -93,7 +93,7 @@ macro_rules! vertcat_four_args {
     }
     impl<T> MechFunction for $fxn<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$out<T>>: ToValue
     {
       fn solve(&self) { 
@@ -118,7 +118,7 @@ struct VerticalConcatenateTwoArgs<T> {
 }
 impl<T> MechFunction for VerticalConcatenateTwoArgs<T>
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DMatrix<T>>: ToValue
 {
   fn solve(&self) {
@@ -137,7 +137,7 @@ struct VerticalConcatenateThreeArgs<T> {
 }
 impl<T> MechFunction for VerticalConcatenateThreeArgs<T>
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DMatrix<T>>: ToValue
 {
   fn solve(&self) {
@@ -158,7 +158,7 @@ struct VerticalConcatenateFourArgs<T> {
 }
 impl<T> MechFunction for VerticalConcatenateFourArgs<T>
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DMatrix<T>>: ToValue
 {
   fn solve(&self) {
@@ -178,7 +178,7 @@ struct VerticalConcatenateNArgs<T> {
 }
 impl<T> MechFunction for VerticalConcatenateNArgs<T>
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DMatrix<T>>: ToValue
 {
   fn solve(&self) {
@@ -201,7 +201,7 @@ macro_rules! vertical_concatenate {
 
       impl<T> MechFunction for $name<T> 
       where
-        T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+        T: Debug + Clone + Sync + Send + PartialEq + 'static,
         Ref<[<$vec_size>]<T>>: ToValue
       {
         fn solve(&self) {}
@@ -219,7 +219,7 @@ struct VerticalConcatenateVD2<T> {
 
 impl<T> MechFunction for VerticalConcatenateVD2<T> 
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DVector<T>>: ToValue
 {
   fn solve(&self) {   
@@ -239,7 +239,7 @@ struct VerticalConcatenateVD3<T> {
 
 impl<T> MechFunction for VerticalConcatenateVD3<T> 
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DVector<T>>: ToValue
 {
   fn solve(&self) {   
@@ -261,7 +261,7 @@ struct VerticalConcatenateVD4<T> {
 
 impl<T> MechFunction for VerticalConcatenateVD4<T> 
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DVector<T>>: ToValue
 {
   fn solve(&self) {   
@@ -282,7 +282,7 @@ struct VerticalConcatenateVDN<T> {
 
 impl<T> MechFunction for VerticalConcatenateVDN<T> 
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DVector<T>>: ToValue
 {
   fn solve(&self) {
@@ -307,7 +307,7 @@ struct VerticalConcatenateS1<T> {
 
 impl<T> MechFunction for VerticalConcatenateS1<T> 
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<Matrix1<T>>: ToValue
 {
   fn solve(&self) {}
@@ -335,7 +335,7 @@ struct VerticalConcatenateSD<T> {
 }
 impl<T> MechFunction for VerticalConcatenateSD<T>
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DVector<T>>: ToValue
 {
   fn solve(&self) { }
@@ -444,7 +444,7 @@ struct VerticalConcatenateM1M1M1M1<T> {
 }
 impl<T> MechFunction for VerticalConcatenateM1M1M1M1<T>
 where
-  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<Vector4<T>>: ToValue
 {
   fn solve(&self) { 
@@ -1071,6 +1071,7 @@ fn impl_vertcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U64)  { impl_vertcat_arms!(u64,arguments,u64::zero())    
   } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U128)  { impl_vertcat_arms!(u128,arguments,u128::zero())    
   } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::Bool)  { impl_vertcat_arms!(bool,arguments,false)
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::String)  { impl_vertcat_arms!(String,arguments,String::new())
   } else {
     todo!();
   }
