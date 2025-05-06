@@ -69,6 +69,7 @@ mech-wasm = { path = 'src/wasm'}
 #mech-matrix = { path = '../machines/matrix' }
 #mech-stats = { path = '../machines/stats' }
 #mech-math = { path = '../machines/math' }
+#mech-io = { path = '../machines/io' }
 #mech-range = { path = '../machines/range' }
 #mech-logic = { path = '../machines/logic' }
 
