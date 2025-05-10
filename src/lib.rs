@@ -40,8 +40,6 @@ use std::collections::HashMap;
 use crossbeam_channel::Sender;
 use crossbeam_channel::{unbounded, Receiver};
 use std::{fs,env};
-#[macro_use]
-extern crate lazy_static;
 
 #[cfg(feature = "wasm")]
 use web_sys::{Crypto, Window, console};
@@ -51,10 +49,6 @@ use notify::{recommended_watcher, Event, RecursiveMode, Result as NResult, Watch
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::collections::HashSet;
-
-lazy_static! {
-  static ref CORE_MAP: Mutex<HashMap<SocketAddr, (String, SystemTime)>> = Mutex::new(HashMap::new());
-}
 
 mod repl;
 mod serve;
