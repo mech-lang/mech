@@ -16,9 +16,6 @@ use simba::scalar::ClosedNeg;
 use num_traits::Pow;
 use mech_core::matrix::Matrix;
 
-//#[macro_use]
-//extern crate lazy_static;
-
 static PI: f64 = 3.14159265358979323846264338327950288;
 
 pub mod acos;
