@@ -451,7 +451,7 @@ pub fn ordered_list(mut input: ParseString, level: usize) -> ParseResult<MDList>
     }  
     // If we are at list level, parse a list item
     let (next_input, _) = many0(space_tab)(input)?;
-    let (next_input, list_item) = match ordered_list_item(next_input.clone()) {
+    let (next_input, (list_item,_)) = match tuple((ordered_list_item,is_not(tuple((dash,dash)))))(next_input.clone()) {
       Ok((next_input, list_item)) => (next_input, list_item),
       Err(err) => {
         if items.len() != 0 {
