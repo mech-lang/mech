@@ -34,7 +34,7 @@ cargo install mech
 
 New to Mech? Start with [Learn Mech in Fifteen Minutes](https://gitlab.com/mech-lang/docs/-/raw/v0.2-beta/III.guides/MechFifteen.mec).
 
-Comprehensive documentation is available at [mech-lang.org](https://mech-lang.org/docs) and open-sourced on [GitHub](http://github.com/mech-lang/docs).
+Comprehensive documentation is available at [docs.mech-lang.org](https://docs.mech-lang.org) and open-sourced on [GitHub](https://github.com/mech-lang/docs).
 
 ## 🪐 Community
 
@@ -59,7 +59,7 @@ A Brief Roadmap:
 - ☐ v0.3 - program specification - functions, modules, state machines
 - ☐ v0.4 - system specification - tools, distributed programs, capabilities
 
-For more details, read the [ROADMAP](ROADMAP.mec).
+For more details, read the [ROADMAP](https://docs.mech-lang.org/IV.design/roadmap.html).
 
 A new version of Mech is [released every week](https://github.com/mech-lang/mech/releases).
 
