@@ -14,8 +14,6 @@ extern crate mech_core;
 extern crate hashbrown;
 extern crate nom;
 extern crate nom_unicode;
-#[macro_use]
-extern crate lazy_static;
 extern crate nalgebra as na;
 extern crate tabled;
 extern crate libm;
