@@ -1,8 +1,6 @@
 #![allow(warnings)]
 extern crate mech_syntax;
 extern crate mech_core;
-#[macro_use]
-extern crate lazy_static;
 extern crate nalgebra as na;
 use std::cell::RefCell;
 use std::rc::Rc;
