@@ -34,7 +34,7 @@ cargo install mech
 
 New to Mech? Start with [Learn Mech in Fifteen Minutes](https://gitlab.com/mech-lang/docs/-/raw/v0.2-beta/III.guides/MechFifteen.mec).
 
-Comprehensive documentation is available at [mech-lang.org](https://mech-lang.org/docs) and open-sourced on [GitHub](http://github.com/mech-lang/docs).
+Comprehensive documentation is available at [docs.mech-lang.org](https://docs.mech-lang.org) and open-sourced on [GitHub](http://github.com/mech-lang/docs).
 
 ## 🪐 Community
 
