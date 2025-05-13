@@ -10,8 +10,6 @@
 
 #[cfg(feature="no-std")] #[macro_use] extern crate alloc;
 #[cfg(not(feature = "no-std"))] extern crate core;
-#[macro_use]
-extern crate lazy_static;
 extern crate nalgebra as na;
 extern crate tabled;
 extern crate libm;
