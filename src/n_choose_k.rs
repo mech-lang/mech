@@ -157,7 +157,7 @@ pub struct CombinatoricsNChooseK {}
 
 impl NativeFunctionCompiler for CombinatoricsNChooseK {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 1 {
+    if arguments.len() != 2 {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let n = arguments[0].clone();
