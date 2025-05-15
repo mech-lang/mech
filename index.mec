@@ -1,0 +1,22 @@
+combinatorics
+===============================================================================
+
+1. Description
+-------------------------------------------------------------------------------
+
+Functions to compute combinatorial values.
+
+2. Provided Functions
+-------------------------------------------------------------------------------
+
+- `combinatorics/n-choose-k`
+
+3. Info
+-------------------------------------------------------------------------------
+
+combinatorics/machine := {
+  name: "combinatorics" 
+  version: "v0.2.41"
+  authors: ["Corey Montella"] 
+  machine-url: "https://gitlab.com/mech-lang/machines/combinatorics"
+  license: "Apache-2.0"}
