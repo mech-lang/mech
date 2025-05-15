@@ -65,6 +65,7 @@ mech-core = { path = 'src/core' }
 mech-syntax = { path = 'src/syntax'}
 mech-interpreter = { path = 'src/interpreter'}
 mech-wasm = { path = 'src/wasm'}
+#mech-combinatorics = { path = '../machines/combinatorics' }
 #mech-matrix = { path = '../machines/matrix' }
 #mech-stats = { path = '../machines/stats' }
 #mech-math = { path = '../machines/math' }
