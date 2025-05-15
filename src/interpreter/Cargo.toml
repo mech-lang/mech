@@ -65,6 +65,7 @@ mech-range = "0.2.41"
 mech-matrix = "0.2.41"
 mech-stats = "0.2.41"
 mech-io = "0.2.41"
+mech-combinatorics = "0.2.41"
 
 nalgebra = "0.33.2"
 indexmap = "2.8.0"
