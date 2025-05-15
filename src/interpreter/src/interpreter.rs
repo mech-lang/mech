@@ -22,7 +22,7 @@ impl Interpreter {
     let mut fxns = Functions::new();
 
     // Preload combinatorics functions
-    fxns.function_compilers.insert(hash_str("combinatorics/n_choose_k"),Box::new(CombinatoricsNChooseK{}));
+    fxns.function_compilers.insert(hash_str("combinatorics/n-choose-k"),Box::new(CombinatoricsNChooseK{}));
 
     // Preload stats functions
     fxns.function_compilers.insert(hash_str("stats/sum/row"),Box::new(StatsSumRow{}));
