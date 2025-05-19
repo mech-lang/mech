@@ -58,14 +58,14 @@ VectorD = []
 MatrixD = []
 
 [dependencies]
-mech-core = "0.2.41"
-mech-math = "0.2.41"
-mech-logic = "0.2.41"
-mech-range = "0.2.41"
-mech-matrix = "0.2.41"
-mech-stats = "0.2.41"
-mech-io = "0.2.41"
-mech-combinatorics = "0.2.41"
+mech-core = "0.2.42"
+mech-math = "0.2.42"
+mech-logic = "0.2.42"
+mech-range = "0.2.42"
+mech-matrix = "0.2.42"
+mech-stats = "0.2.42"
+mech-io = "0.2.42"
+mech-combinatorics = "0.2.42"
 
 nalgebra = "0.33.2"
 indexmap = "2.9.0"
