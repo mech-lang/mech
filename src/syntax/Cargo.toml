@@ -24,7 +24,7 @@ no-std = ["mech-core/no-std", "rlibc"]
 [dependencies]
 mech-core = "0.2.41"
 
-hashbrown = "0.15.2"
+hashbrown = "0.15.3"
 nom = "7.1.3"
 nom-unicode = "0.4.0"
 unicode-segmentation = "1.12.0"
