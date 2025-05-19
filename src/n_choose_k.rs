@@ -1,97 +1,12 @@
 use crate::*;
 use mech_core::*;
 
-// Combinatorics N Choose K----------------------------------------------------
-/*
-macro_rules! sum_column_op {
-    ($arg:expr, $out:expr) => {
-      unsafe { 
-        *$out = (*$arg).column_sum();
-      }
-    };}
-
-#[cfg(feature = "Matrix1")]
-impl_stats_urop!(StatsSumColumnM1, Matrix1<T>, Matrix1<T>, sum_column_op);
-#[cfg(feature = "Matrix2")]
-impl_stats_urop!(StatsSumColumnM2, Matrix2<T>, Vector2<T>, sum_column_op);
-#[cfg(feature = "Matrix3")]
-impl_stats_urop!(StatsSumColumnM3, Matrix3<T>, Vector3<T>, sum_column_op);
-#[cfg(feature = "Matrix4")]
-impl_stats_urop!(StatsSumColumnM4, Matrix4<T>, Vector4<T>, sum_column_op);
-#[cfg(feature = "Matrix2x3")]
-impl_stats_urop!(StatsSumColumnM2x3, Matrix2x3<T>, Vector2<T>, sum_column_op);
-#[cfg(feature = "Matrix3x2")]
-impl_stats_urop!(StatsSumColumnM3x2, Matrix3x2<T>, Vector3<T>, sum_column_op);
-#[cfg(feature = "MatrixD")]
-impl_stats_urop!(StatsSumColumnMD, DMatrix<T>, DVector<T>, sum_column_op);
-#[cfg(feature = "Vector2")]
-impl_stats_urop!(StatsSumColumnV2, Vector2<T>, Vector2<T>, sum_column_op);
-#[cfg(feature = "Vector3")]
-impl_stats_urop!(StatsSumColumnV3, Vector3<T>, Vector3<T>, sum_column_op);
-#[cfg(feature = "Vector4")]
-impl_stats_urop!(StatsSumColumnV4, Vector4<T>, Vector4<T>, sum_column_op); 
-#[cfg(feature = "VectorD")]
-impl_stats_urop!(StatsSumColumnVD, DVector<T>, DVector<T>, sum_column_op);
-#[cfg(feature = "Vector2")]
-impl_stats_urop!(StatsSumColumnR2, RowVector2<T>, Matrix1<T>, sum_column_op);
-#[cfg(feature = "Vector3")]
-impl_stats_urop!(StatsSumColumnR3, RowVector3<T>, Matrix1<T>, sum_column_op);
-#[cfg(feature = "Vector4")]
-impl_stats_urop!(StatsSumColumnR4, RowVector4<T>, Matrix1<T>, sum_column_op); 
-#[cfg(feature = "VectorD")]
-impl_stats_urop!(StatsSumColumnRD, RowDVector<T>, Matrix1<T>, sum_column_op);
-
-macro_rules! impl_combinatorics_n_choose_k_match_arms {
-  ($arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr, $value_string:tt),+);+ $(;)?) => {
-    paste!{ 
-      match $arg {
-        $(
-          $(
-            #[cfg(feature = "Vector4")]
-            Value::[<Matrix $input_type>](m) => {
-              // determine the size of the output matrix for n choose k
-              let out_size = 
-              Ok(Box::new([<CombinatoricsNChooseKMatrix $input_type>]{arg: arg.clone(), out: new_ref(Matrix1::from_element($default)) }))
-            },
-            #[cfg(feature = "Vector3")]
-            Value::$matrix_kind(Matrix::<$target_type>::RowVector3(arg)) => Ok(Box::new(StatsSumColumnR3{arg: arg.clone(), out: new_ref(Matrix1::from_element($default)) })),
-            #[cfg(feature = "Vector2")]
-            Value::$matrix_kind(Matrix::<$target_type>::RowVector2(arg)) => Ok(Box::new(StatsSumColumnR2{arg: arg.clone(), out: new_ref(Matrix1::from_element($default)) })),
-            #[cfg(feature = "Vector4")]
-            Value::$matrix_kind(Matrix::<$target_type>::Vector4(arg))    => Ok(Box::new(StatsSumColumnV4{arg: arg.clone(), out: new_ref(Vector4::from_element($default)) })),
-            #[cfg(feature = "Vector3")]
-            Value::$matrix_kind(Matrix::<$target_type>::Vector3(arg))    => Ok(Box::new(StatsSumColumnV3{arg: arg.clone(), out: new_ref(Vector3::from_element($default)) })),
-            #[cfg(feature = "Vector2")]
-            Value::$matrix_kind(Matrix::<$target_type>::Vector2(arg))    => Ok(Box::new(StatsSumColumnV2{arg: arg.clone(), out: new_ref(Vector2::from_element($default)) })),
-            #[cfg(feature = "Matrix4")]
-            Value::$matrix_kind(Matrix::<$target_type>::Matrix4(arg))    => Ok(Box::new(StatsSumColumnM4{arg: arg.clone(), out: new_ref(Vector4::from_element($default))})),
-            #[cfg(feature = "Matrix3")]
-            Value::$matrix_kind(Matrix::<$target_type>::Matrix3(arg))    => Ok(Box::new(StatsSumColumnM3{arg: arg.clone(), out: new_ref(Vector3::from_element($default))})),
-            #[cfg(feature = "Matrix2")]
-            Value::$matrix_kind(Matrix::<$target_type>::Matrix2(arg))    => Ok(Box::new(StatsSumColumnM2{arg: arg.clone(), out: new_ref(Vector2::from_element($default))})),
-            #[cfg(feature = "Matrix1")]
-            Value::$matrix_kind(Matrix::<$target_type>::Matrix1(arg))    => Ok(Box::new(StatsSumColumnM1{arg: arg.clone(), out: new_ref(Matrix1::from_element($default))})),
-            #[cfg(feature = "Matrix2x3")]
-            Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(arg))  => Ok(Box::new(StatsSumColumnM2x3{arg: arg.clone(), out: new_ref(Vector2::from_element($default))})),          
-            #[cfg(feature = "Matrix3x2")]
-            Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(arg))  => Ok(Box::new(StatsSumColumnM3x2{arg: arg.clone(), out: new_ref(Vector3::from_element($default))})),          
-            #[cfg(feature = "VectorD")]
-            Value::$matrix_kind(Matrix::<$target_type>::DVector(arg))    => Ok(Box::new(StatsSumColumnVD{arg: arg.clone(), out: new_ref(DVector::from_element(arg.borrow().len(),$default))})),
-            #[cfg(feature = "VectorD")]
-            Value::$matrix_kind(Matrix::<$target_type>::RowDVector(arg)) => Ok(Box::new(StatsSumColumnRD{arg: arg.clone(), out: new_ref(Matrix1::from_element($default))})),
-            #[cfg(feature = "MatrixD")]
-            Value::$matrix_kind(Matrix::<$target_type>::DMatrix(arg)) => Ok(Box::new(StatsSumColumnMD{arg: arg.clone(), out: new_ref(DVector::from_element(arg.borrow().nrows(),$default))})),
-          )+
-        )+
-        _ => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-      }
-    }
-  }
-}*/
-
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Sub, Div, Mul};
 use num_traits::{Zero, One};
+use itertools::Itertools;
+
+// Combinatorics N Choose K----------------------------------------------------
 
 #[derive(Debug)]
 pub struct NChooseK<T> {
@@ -135,6 +50,49 @@ where
   fn to_string(&self) -> String {format!("{:#?}", self)}
 }
 
+#[derive(Debug)]
+pub struct NChooseKMatrix<T> {
+  n: Ref<Matrix<T>>,
+  k: Ref<T>,
+  out: Ref<Matrix<T>>,
+}
+
+impl<T> MechFunction for NChooseKMatrix<T>
+where
+    T: Copy + Debug + Clone + Sync + Send + 'static +
+       Into<usize> + std::fmt::Display + PrettyPrint +
+       Add<Output = T> + AddAssign +
+       Sub<Output = T> + Mul<Output = T> + Div<Output = T> +
+       Zero + One +
+       PartialEq + PartialOrd + ToMatrix,
+    Ref<T>: ToValue,
+    Matrix<T>: ToValue,
+{
+  fn solve(&self) {
+      let n_matrix = self.n.borrow();
+      let k_scalar = *self.k.borrow();
+      let elements: Vec<T> = n_matrix.as_vec();
+      let k_usize: usize = k_scalar.into();
+      // Check if k is greater than the number of elements. If it is, return an empty matrix.
+      if k_usize > elements.len() {
+          let empty = T::to_matrix(vec![], 0, k_usize);
+          *self.out.borrow_mut() = empty;
+          return;
+      }
+      // Generate combinations
+      let combinations: Vec<Vec<T>> = elements.iter().copied().combinations(k_usize).collect();
+      
+      // Reshape into output matrix
+      let rows = combinations.len();
+      let cols = k_usize;
+      let flat_data: Vec<T> = combinations.into_iter().flatten().collect();
+      let result = T::to_matrix(flat_data, rows, cols);
+      *self.out.borrow_mut() = result;
+  }
+  fn out(&self) -> Value { (*self.out.borrow()).to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
 fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> Result<Box<dyn MechFunction>, MechError> {
   match (n,k) {
     (Value::U8(n), Value::U8(k)) => Ok(Box::new(NChooseK::<u8>{n: n, k: k, out: new_ref(u8::zero())})),
@@ -149,7 +107,12 @@ fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> Result<Box<dyn MechF
     (Value::I128(n), Value::I128(k)) => Ok(Box::new(NChooseK::<i128>{n: n, k: k, out: new_ref(i128::zero())})),
     (Value::F32(n), Value::F32(k)) => Ok(Box::new(NChooseK::<F32>{n: n, k: k, out: new_ref(F32::zero())})),
     (Value::F64(n), Value::F64(k)) => Ok(Box::new(NChooseK::<F64>{n: n, k: k, out: new_ref(F64::zero())})),
-    _ => todo!(),
+    (Value::MatrixF64(n), Value::F64(k)) => {
+      let out = new_ref(F64::to_matrix(vec![], 0, 0));
+      let n = new_ref(n);
+      Ok(Box::new(NChooseKMatrix::<F64>{n, k, out}))
+    },
+    x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
   }
 }
  
@@ -170,7 +133,7 @@ impl NativeFunctionCompiler for CombinatoricsNChooseK {
           (Value::MutableReference(n),Value::MutableReference(k)) => {let n_brrw = n.borrow();let k_brrw = k.borrow();impl_combinatorics_n_choose_k_fxn(n_brrw.clone(),k_brrw.clone())}
           (n,Value::MutableReference(k)) => {let k_brrw = k.borrow(); impl_combinatorics_n_choose_k_fxn(n.clone(),k_brrw.clone())}
           (Value::MutableReference(n),k) => {let n_brrw = n.borrow();impl_combinatorics_n_choose_k_fxn(n_brrw.clone(),k.clone())}
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }
