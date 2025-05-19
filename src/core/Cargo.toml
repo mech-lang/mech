@@ -75,7 +75,7 @@ seahash = "4.1.0"
 serde = {version = "1.0.219", default-features = false, features = ["alloc", "derive"] }
 serde_derive = "1.0.219"
 serde_json = "1.0.140"
-tabled = "0.19.0"
+tabled = "0.18.0"
 wasm-bindgen = {version = "0.2.100", optional = true}
 #time = {version = "0.3.40", optional = true}
 #ed25519-dalek = {version = "2.1.1", default-features = false, features = ["rand_core"]}
