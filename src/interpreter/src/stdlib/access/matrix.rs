@@ -329,7 +329,7 @@ macro_rules! access_col {
 macro_rules! access_row {
   ($source:expr, $ix:expr, $out:expr) => {
     unsafe { 
-      for i in 0..(*$source).nrows() {
+      for i in 0..(*$source).ncols() {
         (*$out)[i] = (*$source).index((*$ix - 1, i)).clone();
       }
     }};}
@@ -424,7 +424,20 @@ impl_access_fxn_shape!(Access1DA, Value, DVector<T>, access_1d_all);
 impl_access_fxn_shape!(Access2DAS, usize, DVector<T>, access_col);
 
 // x[1,:]
-impl_access_fxn_shape!(Access2DSA, usize, RowDVector<T>, access_row);
+#[cfg(feature = "Matrix1")]
+impl_access_fxn!(Access2DSAM1,   Matrix1<T>,    usize, Matrix1<T>, access_row);
+#[cfg(feature = "Matrix2")]
+impl_access_fxn!(Access2DSAM2,   Matrix2<T>,    usize, RowVector2<T>, access_row);
+#[cfg(feature = "Matrix3")]
+impl_access_fxn!(Access2DSAM3,   Matrix3<T>,    usize, RowVector3<T>, access_row);
+#[cfg(feature = "Matrix4")]
+impl_access_fxn!(Access2DSAM4,   Matrix4<T>,    usize, RowVector4<T>, access_row);
+#[cfg(feature = "Matrix2x3")]
+impl_access_fxn!(Access2DSAM2x3, Matrix2x3<T>,  usize, RowVector3<T>, access_row);
+#[cfg(feature = "Matrix3x2")]
+impl_access_fxn!(Access2DSAM3x2, Matrix3x2<T>,  usize, RowVector2<T>, access_row);
+#[cfg(feature = "MatrixD")]
+impl_access_fxn!(Access2DSAMD,   DMatrix<T>,    usize, RowDVector<T>, access_row);
 
 // x[1..3,:]
 impl_access_fxn_shape!(Access2DVDA, DVector<usize>,    DMatrix<T>, access_2d_slice_all);
@@ -938,19 +951,19 @@ macro_rules! impl_access_scalar_all_match_arms {
         $(
           $(
             #[cfg(all(feature = $value_string, feature = "Matrix4"))]
-            (Value::$matrix_kind(Matrix::Matrix4(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM4{source: input.clone(), ixes: ix.clone(), out: new_ref(RowDVector::from_element(input.borrow().nrows(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix4(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM4{source: input.clone(), ixes: ix.clone(), out: new_ref(RowVector4::from_element($default)) })),
             #[cfg(all(feature = $value_string, feature = "Matrix3"))]
-            (Value::$matrix_kind(Matrix::Matrix3(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM3{source: input.clone(), ixes: ix.clone(), out: new_ref(RowDVector::from_element(input.borrow().nrows(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix3(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM3{source: input.clone(), ixes: ix.clone(), out: new_ref(RowVector3::from_element($default)) })),
             #[cfg(all(feature = $value_string, feature = "Matrix2"))]
-            (Value::$matrix_kind(Matrix::Matrix2(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM2{source: input.clone(), ixes: ix.clone(), out: new_ref(RowDVector::from_element(input.borrow().nrows(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix2(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM2{source: input.clone(), ixes: ix.clone(), out: new_ref(RowVector2::from_element($default)) })),
             #[cfg(all(feature = $value_string, feature = "Matrix1"))]
-            (Value::$matrix_kind(Matrix::Matrix1(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM1{source: input.clone(), ixes: ix.clone(), out: new_ref(RowDVector::from_element(input.borrow().nrows(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix1(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM1{source: input.clone(), ixes: ix.clone(), out: new_ref(Matrix1::from_element($default)) })),
             #[cfg(all(feature = $value_string, feature = "Matrix3x2"))]
-            (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM3x2{source: input.clone(), ixes: ix.clone(), out: new_ref(RowDVector::from_element(input.borrow().nrows(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM3x2{source: input.clone(), ixes: ix.clone(), out: new_ref(RowVector2::from_element($default)) })),
             #[cfg(all(feature = $value_string, feature = "Matrix2x3"))]
-            (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM2x3{source: input.clone(), ixes: ix.clone(), out: new_ref(RowDVector::from_element(input.borrow().nrows(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM2x3{source: input.clone(), ixes: ix.clone(), out: new_ref(RowVector3::from_element($default)) })),
             #[cfg(all(feature = $value_string, feature = "MatrixD"))]
-            (Value::$matrix_kind(Matrix::DMatrix(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAMD{source: input.clone(), ixes: ix.clone(), out: new_ref(RowDVector::from_element(input.borrow().nrows(),$default)) })),
+            (Value::$matrix_kind(Matrix::DMatrix(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAMD{source: input.clone(), ixes: ix.clone(), out: new_ref(RowDVector::from_element(input.borrow().ncols(),$default)) })),
           )+
         )+
         x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
