@@ -21,6 +21,9 @@ impl Interpreter {
     // Preload functions
     let mut fxns = Functions::new();
 
+    // Preload combinatorics functions
+    fxns.function_compilers.insert(hash_str("combinatorics/n-choose-k"),Box::new(CombinatoricsNChooseK{}));
+
     // Preload stats functions
     fxns.function_compilers.insert(hash_str("stats/sum/row"),Box::new(StatsSumRow{}));
     fxns.function_compilers.insert(hash_str("stats/sum/column"),Box::new(StatsSumColumn{}));

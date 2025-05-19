@@ -363,7 +363,7 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
   pub fn size_of(&self) -> usize {
     let vec = self.as_vec();
     vec.capacity() * size_of::<T>()
-  }
+  }       
 
   pub fn get_copyable_matrix(&self) -> Box<dyn CopyMat<T>> {
     match self {
@@ -659,11 +659,28 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 
 }
 
-
-impl ToValue for Matrix<Value> {
-
-  fn to_value(&self) -> Value {
-    Value::MatrixValue(self.clone())
-  }
-  
+macro_rules! impl_to_value_for_matrix {
+  ($t:ty, $variant:ident) => {
+    impl ToValue for Matrix<$t> {
+      fn to_value(&self) -> Value {
+        Value::$variant(self.clone())
+      }
+    }
+  };
 }
+
+impl_to_value_for_matrix!(Value, MatrixValue);
+impl_to_value_for_matrix!(F64, MatrixF64);
+impl_to_value_for_matrix!(F32, MatrixF32);
+impl_to_value_for_matrix!(i8, MatrixI8);
+impl_to_value_for_matrix!(i16, MatrixI16);
+impl_to_value_for_matrix!(i32, MatrixI32);
+impl_to_value_for_matrix!(i64, MatrixI64);
+impl_to_value_for_matrix!(i128, MatrixI128);
+impl_to_value_for_matrix!(u8, MatrixU8);
+impl_to_value_for_matrix!(u16, MatrixU16);
+impl_to_value_for_matrix!(u32, MatrixU32);
+impl_to_value_for_matrix!(u64, MatrixU64);
+impl_to_value_for_matrix!(u128, MatrixU128);
+impl_to_value_for_matrix!(bool, MatrixBool);
+impl_to_value_for_matrix!(String, MatrixString);

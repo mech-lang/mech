@@ -53,6 +53,12 @@ impl From<F64> for String {
   }
 }
 
+impl From<F64> for usize {
+  fn from(value: F64) -> Self {
+    value.0 as usize
+  }
+}
+
 impl Eq for F64 {}
 impl Hash for F64 {
   fn hash<H: Hasher>(&self, state: &mut H) {
@@ -253,6 +259,12 @@ impl fmt::Debug for F32 {
 impl From<F32> for String {
   fn from(f: F32) -> Self {
       f.to_string()
+  }
+}
+
+impl From<F32> for usize {
+  fn from(value: F32) -> Self {
+    value.0 as usize
   }
 }
 
