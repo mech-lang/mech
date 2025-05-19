@@ -86,7 +86,7 @@ where
       let rows = combinations.len();
       let cols = k_usize;
       let flat_data: Vec<T> = combinations.into_iter().flatten().collect();
-      let result = T::to_matrix(flat_data, rows, cols);
+      let result = T::to_matrix(flat_data, cols, rows);
       *self.out.borrow_mut() = result;
   }
   fn out(&self) -> Value { (*self.out.borrow()).to_value() }
