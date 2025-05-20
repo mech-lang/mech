@@ -9,6 +9,10 @@ use nom::{
 };
 use crate::nodes::Kind;
 
+// Lexical Elements
+// ============================================================================
+// Ref: #58393432045966419
+
 macro_rules! leaf {
   ($name:ident, $byte:expr, $token:expr) => (
     pub fn $name(input: ParseString) -> ParseResult<Token> {
@@ -60,6 +64,10 @@ macro_rules! ws1_leaf {
     }
   )
 }
+
+// Tokens
+// ----------------------------------------------------------------------------
+// Ref: 39003557984811317
 
 leaf!{at, "@", TokenKind::At}
 leaf!{hashtag, "#", TokenKind::HashTag}
@@ -242,7 +250,7 @@ pub fn underscore_digit(input: ParseString) -> ParseResult<Token> {
   Ok((input,digit))
 }
 
-// digit_sequence := digit, (underscore_digit | digit)* ;
+// digit-sequence := digit, (underscore-digit | digit)* ;
 pub fn digit_sequence(input: ParseString) -> ParseResult<Vec<Token>> {
   let (input, mut start) = digit_token(input)?;
   let (input, mut tokens) = many0(alt((underscore_digit,digit_token)))(input)?;
@@ -251,7 +259,7 @@ pub fn digit_sequence(input: ParseString) -> ParseResult<Vec<Token>> {
   Ok((input,all))
 }
 
-// grouping_symbol := left_parenthesis | right_parenthesis | left_angle | right_angle | left_brace | right_brace | left_bracket | right_bracket ;
+// grouping-symbol := left-parenthesis | right_parenthesis | left-angle | right-angle | left-brace | right-brace | left-bracket | right-bracket ;
 pub fn grouping_symbol(input: ParseString) -> ParseResult<Token> {
   let (input, grouping) = alt((left_parenthesis, right_parenthesis, left_angle, right_angle, left_brace, right_brace, left_bracket, right_bracket))(input)?;
   Ok((input, grouping))
@@ -270,7 +278,7 @@ pub fn escaped_char(input: ParseString) -> ParseResult<Token> {
   Ok((input, symbol))
 }
 
-// symbol := ampersand | bar | at | slash | hashtag | equal | backslash | tilde | plus | dash | asterisk | caret | underscore ;
+// symbol := ampersand | dollar | bar | percent | at | slash | hashtag | equal | backslash | tilde | plus | dash | asterisk | caret | underscore ;
 pub fn symbol(input: ParseString) -> ParseResult<Token> {
   let (input, symbol) = alt((ampersand, dollar, bar, percent, at, slash, hashtag, equal, backslash, tilde, plus, dash, asterisk, caret, underscore))(input)?;
   Ok((input, symbol))
@@ -282,17 +290,11 @@ pub fn text(input: ParseString) -> ParseResult<Token> {
   Ok((input, text))
 }
 
-// identifier := (alpha | emoji), (alpha | digit | symbol | emoji)* ;
-pub fn identifier(input: ParseString) -> ParseResult<Identifier> {
-  let (input, (first, mut rest)) = nom_tuple((alt((alpha_token, emoji)), many0(alt((alpha_token, digit_token, symbol, emoji)))))(input)?;
-  let mut tokens = vec![first];
-  tokens.append(&mut rest);
-  let mut merged = Token::merge_tokens(&mut tokens).unwrap();
-  merged.kind = TokenKind::Identifier; 
-  Ok((input, Identifier{name: merged}))
-}
+// Whitespace
+// ============================================================================
+// Ref: #35070717845239353
 
-// new_line := carriage_return_new_line | new_line_char | carriage_return ;
+// new-line := (carriage-return, new-line) | new-line-char | carriage-return ;
 pub fn new_line(input: ParseString) -> ParseResult<Token> {
   let (input, result) = alt((carriage_return_new_line,new_line_char,carriage_return))(input)?;
   Ok((input, result))
@@ -304,32 +306,46 @@ pub fn whitespace(input: ParseString) -> ParseResult<Token> {
   Ok((input, space))
 }
 
-// whitespace0 := whitespace* ;
+// ws0 := *whitespace ;
 pub fn whitespace0(input: ParseString) -> ParseResult<()> {
   let (input, _) = many0(whitespace)(input)?;
   Ok((input, ()))
 }
 
-// whitespace1 := whitespace+ ;
+// ws1 := +whitespace ;
 pub fn whitespace1(input: ParseString) -> ParseResult<()> {
   let (input, _) = many1(whitespace)(input)?;
   Ok((input, ()))
 }
 
-// space_tab := space | tab ;
+// space-tab := space | tab ;
 pub fn space_tab(input: ParseString) -> ParseResult<Token> {
   let (input, space) = alt((space,tab))(input)?;
   Ok((input, space))
 }
 
-// list_separator := whitespace*, ",", whitespace* ;
+// list-separator := ws0, ",", ws0 ;
 pub fn list_separator(input: ParseString) -> ParseResult<()> {
   let (input,_) = nom_tuple((whitespace0,tag(","),whitespace0))(input)?;
   Ok((input, ()))
 }
 
-// enum_separator := whitespace*, "|", whitespace* ;
+// enum-separator := ws0*, "|", ws0 ;
 pub fn enum_separator(input: ParseString) -> ParseResult<()> {
   let (input,_) = nom_tuple((whitespace0,tag("|"),whitespace0))(input)?;
   Ok((input, ()))
+}
+
+// Identifiers
+// ============================================================================
+// Ref: #40075932908181571
+
+// identifier := (alpha | emoji), (alpha | digit | symbol | emoji)* ;
+pub fn identifier(input: ParseString) -> ParseResult<Identifier> {
+  let (input, (first, mut rest)) = nom_tuple((alt((alpha_token, emoji)), many0(alt((alpha_token, digit_token, symbol, emoji)))))(input)?;
+  let mut tokens = vec![first];
+  tokens.append(&mut rest);
+  let mut merged = Token::merge_tokens(&mut tokens).unwrap();
+  merged.kind = TokenKind::Identifier; 
+  Ok((input, Identifier{name: merged}))
 }
