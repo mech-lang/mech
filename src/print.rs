@@ -1,6 +1,17 @@
 use crate::*;
 use mech_core::*;
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::prelude::*;
+#[cfg(target_arch = "wasm32")]
+use web_sys::console;
 
+
+#[cfg(target_arch = "wasm32")]
+macro_rules! log {
+  ( $( $t:tt )* ) => {
+    web_sys::console::log_1(&format!( $( $t )* ).into());
+  }
+}
 
 macro_rules! impl_io_print_matrix {
   ($matrix_shape:tt) => {
@@ -17,7 +28,10 @@ macro_rules! impl_io_print_matrix {
           unsafe {
             let e0_ptr = (*(self.e0.as_ptr())).clone();
             for i in 0..e0_ptr.len() {
+              #[cfg(not(target_arch = "wasm32"))]
               print!("{} ", e0_ptr[i]);
+              #[cfg(target_arch = "wasm32")]
+              log!("{} ", e0_ptr[i]);
             }  
           }
         }
