@@ -47,6 +47,9 @@ pub mod base;
 pub mod parser;
 pub mod formatter;
 pub mod grammar;
+pub mod literals;
+pub mod state_machines;
+pub mod functions;
 
 pub use crate::parser::*;
 pub use crate::mechdown::*;
@@ -56,6 +59,9 @@ pub use crate::structures::*;
 pub use crate::base::*;
 pub use crate::formatter::*;
 pub use crate::grammar::*;
+pub use crate::literals::*;
+pub use crate::state_machines::*;
+pub use crate::functions::*;
 
 
 /// Unicode grapheme group utilities.
