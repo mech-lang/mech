@@ -1088,6 +1088,10 @@ pub enum Number {
 
 impl Number {
 
+  pub fn from_integer(x: i64) -> Number {
+    Number::Real(RealNumber::Integer(Token::new(TokenKind::Digit, SourceRange::default(), x.to_string().chars().collect())))
+  }
+
   pub fn to_string(&self) -> String {
     match self {
       Number::Real(x) => x.to_string(),
