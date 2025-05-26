@@ -333,168 +333,172 @@ pub fn check_list_item(input: ParseString) -> ParseResult<(bool,Paragraph)> {
 
 pub fn check_list(mut input: ParseString, level: usize) -> ParseResult<MDList> {
   let mut items = vec![];
-  let mut i = 0;
   loop {
+    // Calculate current line indent
     let mut indent = 0;
     let mut current = input.peek(indent);
     while current == Some(" ") || current == Some("\t") {
-      current = input.peek(indent);
       indent += 1;
-    }  
-    // If we are at list level, parse a list item
-    let (next_input, _) = many0(space_tab)(input)?;
-    let (next_input,list_item) = match check_list_item(next_input.clone()) {
+      current = input.peek(indent);
+    }
+    // If indent is less than current level, we are done parsing this list level
+    if indent < level {
+      break;
+    }
+    // Consume whitespace
+    let (next_input, _) = many0(space_tab)(input.clone())?;
+    // Try parsing a checklist item
+    let (next_input, list_item) = match check_list_item(next_input.clone()) {
       Ok((next_input, list_item)) => (next_input, list_item),
       Err(err) => {
-        if items.len() != 0 {
-          input = next_input.clone();
+        if !items.is_empty() {
           break;
         } else {
           return Err(err);
         }
       }
     };
-    // The current input should be either a number or a space.
-    // If it's a number, we are at the margin, and so we can continue.
-    // If it's a space, we need to see if we are at the right level, of if maybe there is a sublist.
-    let mut indent = 0;
-    let mut current = next_input.peek(indent);
+    // Look ahead to next line's indent
+    let mut lookahead_indent = 0;
+    let mut current = next_input.peek(lookahead_indent);
     while current == Some(" ") || current == Some("\t") {
-      current = next_input.peek(indent);
-      indent += 1;
+      lookahead_indent += 1;
+      current = next_input.peek(lookahead_indent);
     }
     input = next_input;
-    // if the indent of the next line is less than the level, we are done with the list.
-    if indent < level {
+    if lookahead_indent < level {
+      // End of this list level
       items.push((list_item, None));
       break;
-    // if the indent is the same level, then we continue the list and parse the next line
-    } else if indent == level {
+    } else if lookahead_indent == level {
+      // Same level, continue
       items.push((list_item, None));
       continue;
-    // if the indent is greater, we are going to parse a sublist
-    } else if indent > level {
-      // We are in a nested list, so we need to parse the nested list
-      let (next_input, list) = sublist(input.clone(), indent)?;
-      items.push((list_item, Some(list)));
+    } else {
+      // Nested sublist: parse recursively
+      let (next_input, sublist_md) = sublist(input.clone(), lookahead_indent)?;
+      items.push((list_item, Some(sublist_md)));
       input = next_input;
-      continue;
     }
   }
   Ok((input, MDList::Check(items)))
 }
 
+
 // unordered_list := +list_item, ?new_line, *whitespace ;
 pub fn unordered_list(mut input: ParseString, level: usize) -> ParseResult<MDList> {
   let mut items = vec![];
-  let mut i = 0;
   loop {
     let mut indent = 0;
     let mut current = input.peek(indent);
     while current == Some(" ") || current == Some("\t") {
-      current = input.peek(indent);
       indent += 1;
-    }  
-    // If we are at list level, parse a list item
-    let (next_input, _) = many0(space_tab)(input)?;
-    let (next_input,list_item) = match unordered_list_item(next_input.clone()) {
+      current = input.peek(indent);
+    }
+    // If indentation is less than the current level, return to parent list
+    if indent < level {
+      return Ok((input, MDList::Unordered(items)));
+    }
+    let (next_input, _) = many0(space_tab)(input.clone())?;
+    // Try to parse a list item
+    let (next_input, list_item) = match unordered_list_item(next_input.clone()) {
       Ok((next_input, list_item)) => (next_input, list_item),
       Err(err) => {
-        if items.len() != 0 {
-          input = next_input.clone();
-          break;
+        if !items.is_empty() {
+          return Ok((input, MDList::Unordered(items)));
         } else {
           return Err(err);
         }
       }
     };
-    // The current input should be either a number or a space.
-    // If it's a number, we are at the margin, and so we can continue.
-    // If it's a space, we need to see if we are at the right level, of if maybe there is a sublist.
-    let mut indent = 0;
-    let mut current = next_input.peek(indent);
+    // Look ahead at the next line to determine indent
+    let mut lookahead_indent = 0;
+    let mut current = next_input.peek(lookahead_indent);
     while current == Some(" ") || current == Some("\t") {
-      current = next_input.peek(indent);
-      indent += 1;
+      lookahead_indent += 1;
+      current = next_input.peek(lookahead_indent);
     }
     input = next_input;
-    // if the indent of the next line is less than the level, we are done with the list.
-    if indent < level {
+    if lookahead_indent < level {
+      // This is the last item at the current list level
       items.push((list_item, None));
-      break;
-    // if the indent is the same level, then we continue the list and parse the next line
-    } else if indent == level {
+      return Ok((input, MDList::Unordered(items)));
+    } else if lookahead_indent == level {
+      // Continue at the same level
       items.push((list_item, None));
       continue;
-    // if the indent is greater, we are going to parse a sublist
-    } else if indent > level {
-      // We are in a nested list, so we need to parse the nested list
-      let (next_input, list) = sublist(input.clone(), indent)?;
-      items.push((list_item, Some(list)));
+    } else {
+      // Nested list detected
+      let (next_input, sub) = sublist(input.clone(), lookahead_indent)?;
+      items.push((list_item, Some(sub)));
       input = next_input;
-      continue;
     }
   }
-  Ok((input, MDList::Unordered(items)))
 }
 
-//orderd-list := +ordered-list-item, ?new-line, *whitespace ;
+// ordered-list := +ordered-list-item, ?new-line, *whitespace ;
 pub fn ordered_list(mut input: ParseString, level: usize) -> ParseResult<MDList> {
   let mut items = vec![];
-  let mut i = 0;
   loop {
     let mut indent = 0;
     let mut current = input.peek(indent);
     while current == Some(" ") || current == Some("\t") {
-      current = input.peek(indent);
       indent += 1;
-    }  
-    // If we are at list level, parse a list item
-    let (next_input, _) = many0(space_tab)(input)?;
-    let (next_input, (list_item,_)) = match tuple((ordered_list_item,is_not(tuple((dash,dash)))))(next_input.clone()) {
-      Ok((next_input, list_item)) => (next_input, list_item),
+      current = input.peek(indent);
+    }
+    // If indent drops below current level, return to parent
+    if indent < level {
+      let start = items.first()
+        .map(|item: &((Number, Paragraph), Option<MDList>)| item.0.0.clone())
+        .unwrap_or(Number::from_integer(1));
+      return Ok((input, MDList::Ordered(OrderedList { start, items })));
+    }
+    // Consume whitespace
+    let (next_input, _) = many0(space_tab)(input.clone())?;
+    // Try to parse an ordered list item
+    let (next_input, (list_item, _)) = match tuple((ordered_list_item, is_not(tuple((dash, dash)))))(next_input.clone()) {
+      Ok((next_input, res)) => (next_input, res),
       Err(err) => {
-        if items.len() != 0 {
-          input = next_input.clone();
-          break;
+        if !items.is_empty() {
+          let start = items.first()
+            .map(|((number, _), _)| number.clone())
+            .unwrap_or(Number::from_integer(1));
+          return Ok((input, MDList::Ordered(OrderedList { start, items })));
         } else {
           return Err(err);
         }
       }
     };
-    // The current input should be either a number or a space.
-    // If it's a number, we are at the margin, and so we can continue.
-    // If it's a space, we need to see if we are at the right level, of if maybe there is a sublist.
-    let mut indent = 0;
-    let mut current = next_input.peek(indent);
+
+    // Determine indentation of the next line
+    let mut lookahead_indent = 0;
+    let mut current = next_input.peek(lookahead_indent);
     while current == Some(" ") || current == Some("\t") {
-      current = next_input.peek(indent);
-      indent += 1;
+      lookahead_indent += 1;
+      current = next_input.peek(lookahead_indent);
     }
+
     input = next_input;
-    // if the indent of the next line is less than the level, we are done with the list.
-    if indent < level {
+
+    if lookahead_indent < level {
       items.push((list_item, None));
-      break;
-    // if the indent is the same level, then we continue the list and parse the next line
-    } else if indent == level {
+      let start = items.first()
+        .map(|((number, _), _)| number.clone())
+        .unwrap_or(Number::from_integer(1));
+      return Ok((input, MDList::Ordered(OrderedList { start, items })));
+    } else if lookahead_indent == level {
       items.push((list_item, None));
       continue;
-    // if the indent is greater, we are going to parse a sublist
-    } else if indent > level {
-      // We are in a nested list, so we need to parse the nested list
-      let (next_input, list) = sublist(input.clone(), indent)?;
-      items.push((list_item, Some(list)));
+    } else {
+      // Nested sublist
+      let (next_input, sub) = sublist(input.clone(), lookahead_indent)?;
+      items.push((list_item, Some(sub)));
       input = next_input;
-      continue;
     }
   }
-  let start = match items.first() {
-    Some(((number,_), _)) =>number.clone(),
-    None => unreachable!(),
-  };
-  Ok((input, MDList::Ordered(OrderedList{start, items})))
 }
+
+
 
 pub fn sublist(input: ParseString, level: usize) -> ParseResult<MDList> {
   let (input, list) = match ordered_list(input.clone(), level) {

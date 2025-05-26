@@ -12,7 +12,7 @@
 // ------------
 
 use crate::*;
-use crate::expressions::function_define;
+use crate::functions::function_define;
 
 use mech_core::{MechError, MechErrorKind, ParserErrorContext, ParserErrorReport};
 use mech_core::nodes::*;
