@@ -445,6 +445,7 @@ code {
 
 .mech-inline-code {
     background-color: #171D21;
+    border: 1px solid #444;
     color: #ada594;
     font-family: 'FiraCodeLight', monospace;
     font-size: 12pt;
