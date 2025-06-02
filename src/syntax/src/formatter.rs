@@ -2232,9 +2232,18 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
     }
   }
 
+  pub fn empty(&mut self, node: &Token) -> String {
+    let e = node.to_string();
+    if self.html {
+      format!("<span class=\"mech-empty\">{}</span>", e)
+    } else {
+      e
+    }
+  }
+
   pub fn literal(&mut self, node: &Literal) -> String {
     let l = match node {
-      Literal::Empty(token) => "_".to_string(),
+      Literal::Empty(token) => self.empty(token),
       Literal::Boolean(token) => self.boolean(token),
       Literal::Number(number) => self.number(number),
       Literal::String(mech_string) => self.string(mech_string),
