@@ -2218,15 +2218,24 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
     match node {
       LogicOp::And => "&".to_string(),
       LogicOp::Or => "|".to_string(),
-      LogicOp::Xor => "xor".to_string(),
+      LogicOp::Xor => "⊻".to_string(),
       LogicOp::Not => "¬".to_string(),
+    }
+  }
+
+  pub fn boolean(&mut self, node: &Token) -> String {
+    let b = node.to_string();
+    if self.html {
+      format!("<span class=\"mech-boolean\">{}</span>", b)
+    } else {
+      b
     }
   }
 
   pub fn literal(&mut self, node: &Literal) -> String {
     let l = match node {
       Literal::Empty(token) => "_".to_string(),
-      Literal::Boolean(token) => token.to_string(),
+      Literal::Boolean(token) => self.boolean(token),
       Literal::Number(number) => self.number(number),
       Literal::String(mech_string) => self.string(mech_string),
       Literal::Atom(atom) => self.atom(atom),
