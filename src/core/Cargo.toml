@@ -1,6 +1,6 @@
 [package]
 name = "mech-core"
-version = "0.2.43"
+version = "0.2.44"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "The Mech language runtime."
 documentation = "http://docs.mech-lang.org"
