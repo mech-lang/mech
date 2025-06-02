@@ -421,6 +421,22 @@ h4.toc {
     color: #ccbbc2;
 }
 
+.mech-boolean {
+    color: #C7DCAE;
+}
+
+.mech-atom {
+    color: #C7DCAE;
+}
+
+.mech-empty {
+    color: #C7DCAE;
+}
+
+.mech-grammar-define-op {
+    padding-right: 12px;
+}
+
 .mech-expression {
 }
 
