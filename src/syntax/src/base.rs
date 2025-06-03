@@ -271,10 +271,10 @@ pub fn punctuation(input: ParseString) -> ParseResult<Token> {
   Ok((input, punctuation))
 }
 
-// escaped_char := "\" ,  symbol | punctuation ;
+// escaped_char := "\" ,  alpha | symbol | punctuation ;
 pub fn escaped_char(input: ParseString) -> ParseResult<Token> {
   let (input, _) = backslash(input)?;
-  let (input, symbol) = alt((symbol, punctuation))(input)?;
+  let (input, symbol) = alt((alpha_token, symbol, punctuation))(input)?;
   Ok((input, symbol))
 }
 
