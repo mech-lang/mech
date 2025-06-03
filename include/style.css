@@ -421,6 +421,22 @@ h4.toc {
     color: #ccbbc2;
 }
 
+.mech-boolean {
+    color: #C7DCAE;
+}
+
+.mech-atom {
+    color: #C7DCAE;
+}
+
+.mech-empty {
+    color: #C7DCAE;
+}
+
+.mech-grammar-define-op {
+    padding-right: 12px;
+}
+
 .mech-expression {
 }
 
@@ -445,6 +461,7 @@ code {
 
 .mech-inline-code {
     background-color: #171D21;
+    border: 1px solid #444;
     color: #ada594;
     font-family: 'FiraCodeLight', monospace;
     font-size: 12pt;
