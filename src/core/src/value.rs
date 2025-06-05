@@ -287,6 +287,7 @@ impl Value {
       Value::MatrixF64(x)  => x.size_of(),
       Value::MatrixValue(x)  => x.size_of(),
       Value::MatrixString(x) => x.size_of(),
+      Value::String(x) => x.borrow().len(),
       _ => 0,
     }
   }
