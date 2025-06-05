@@ -340,16 +340,16 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
       _ => todo!(),
     };
     let matrix_style = Style::empty()
-    .top(' ')
-    .left('┃')
-    .right('┃')
-    .bottom(' ')
-    .vertical(' ')
-    .intersection_bottom(' ')
-    .corner_top_left('┏')
-    .corner_top_right('┓')
-    .corner_bottom_left('┗')
-    .corner_bottom_right('┛');
+      .top(' ')
+      .left('┃')
+      .right('┃')
+      .bottom(' ')
+      .vertical(' ')
+      .intersection_bottom(' ')
+      .corner_top_left('┏')
+      .corner_top_right('┓')
+      .corner_bottom_left('┗')
+      .corner_bottom_right('┛');
     let mut table = builder.build();
     table.with(matrix_style);
     format!("{table}")
