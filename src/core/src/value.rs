@@ -288,7 +288,19 @@ impl Value {
       Value::MatrixValue(x)  => x.size_of(),
       Value::MatrixString(x) => x.size_of(),
       Value::String(x) => x.borrow().len(),
-      _ => 0,
+      Value::Atom(x) => 8,
+      Value::Set(x) => x.size_of(),
+      Value::Map(x) => x.size_of(),
+      Value::Table(x) => x.size_of(),
+      Value::Record(x) => x.size_of(),
+      Value::Tuple(x) => x.size_of(),
+      Value::Enum(x) => x.size_of(),
+      Value::MutableReference(x) => x.borrow().size_of(),
+      Value::Id(_) => 8,
+      Value::Index(x) => 8,
+      Value::Kind(_) => 0, // Kind is not a value, so it has no size
+      Value::Empty => 0,
+      Value::IndexAll => 0, // IndexAll is a special value, so it has no size
     }
   }
 
@@ -732,6 +744,10 @@ impl MechSet {
     ValueKind::Set(Box::new(self.kind.clone()), self.num_elements)
   }
 
+  pub fn size_of(&self) -> usize {
+    self.set.iter().map(|x| x.size_of()).sum()
+  }
+
   pub fn from_vec(vec: Vec<Value>) -> MechSet {
     let mut set = IndexSet::new();
     for v in vec {
@@ -780,6 +796,10 @@ impl MechMap {
 
   pub fn kind(&self) -> ValueKind {
     ValueKind::Map(Box::new(self.key_kind.clone()), Box::new(self.value_kind.clone()))
+  }
+
+  pub fn size_of(&self) -> usize {
+    self.map.iter().map(|(k,v)| k.size_of() + v.size_of()).sum()
   }
 
   pub fn pretty_print(&self) -> String {
@@ -838,6 +858,10 @@ impl MechTable {
     ValueKind::Table(
       self.data.iter().map(|(_,v)| v.0.clone()).collect(),
       self.rows)
+  }
+
+  pub fn size_of(&self) -> usize {
+    self.data.iter().map(|(_,(_,v))| v.size_of()).sum()
   }
 
   pub fn rows(&self) -> usize {
@@ -913,6 +937,10 @@ impl MechRecord {
     ValueKind::Record(self.kinds.clone())
   }
 
+  pub fn size_of(&self) -> usize {
+    self.data.iter().map(|(_,v)| v.size_of()).sum()
+  }
+
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     let mut key_strings = vec![];
@@ -972,6 +1000,10 @@ impl MechTuple {
     ValueKind::Tuple(self.elements.iter().map(|x| x.kind()).collect())
   }
 
+  pub fn size_of(&self) -> usize {
+    self.elements.iter().map(|x| x.size_of()).sum()
+  }
+
 }
 
 impl Hash for MechTuple {
@@ -994,6 +1026,10 @@ impl MechEnum {
 
   pub fn kind(&self) -> ValueKind {
     ValueKind::Enum(self.id)
+  }
+
+  pub fn size_of(&self) -> usize {
+    self.variants.iter().map(|(_,v)| v.as_ref().map_or(0, |x| x.size_of())).sum()
   }
 
   pub fn pretty_print(&self) -> String {
