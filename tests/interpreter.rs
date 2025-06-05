@@ -39,6 +39,8 @@ test_interpreter!(interpret_literal_oct, "0o1234", Value::I64(new_ref(0o1234)));
 test_interpreter!(interpret_literal_dec, "0d1234", Value::I64(new_ref(1234)));
 test_interpreter!(interpret_literal_float, "1.23", Value::F64(new_ref(F64::new(1.23))));
 test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String(new_ref("Hello".to_string())));
+test_interpreter!(interpret_literal_string_multiline, r#""Hello 
+ World""#, Value::String(new_ref("Hello \n World".to_string())));
 test_interpreter!(interpret_literal_true, "true", Value::Bool(new_ref(true)));
 test_interpreter!(interpret_literal_false, "false", Value::Bool(new_ref(false)));
 test_interpreter!(interpret_literal_atom, "`A", Value::Atom(55450514845822917));
