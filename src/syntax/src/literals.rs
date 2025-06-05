@@ -6,6 +6,18 @@ use nom::{
 };
 use crate::nodes::Kind;
 
+// string := quote, (!quote, text)*, quote ;
+pub fn string(input: ParseString) -> ParseResult<MechString> {
+  let msg = "Character not allowed in string";
+  let (input, _) = quote(input)?;
+  let (input, matched) = many0(nom_tuple((is_not(quote), label!(text, msg))))(input)?;
+  let (input, _) = quote(input)?;
+  let (_, mut text): ((), Vec<_>) = matched.into_iter().unzip();
+  let mut merged = Token::merge_tokens(&mut text).unwrap();
+  merged.kind = TokenKind::String;
+  Ok((input, MechString { text: merged }))
+}
+
 // boolean_literal := true_literal | false_literal ;
 pub fn boolean(input: ParseString) -> ParseResult<Token> {
   let (input, boolean) = alt((true_literal, false_literal))(input)?;
