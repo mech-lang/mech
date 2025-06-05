@@ -892,7 +892,11 @@ impl MechTable {
     let mut builder = Builder::default();
     for (k,(knd,val)) in &self.data {
       let name = self.col_names.get(k).unwrap();
-      let mut col_string = vec![format!("{}<{}>", name.to_string(), knd), val.pretty_print()];
+      let val_string: String = val.as_vec().iter()
+        .map(|x| x.pretty_print())
+        .collect::<Vec<String>>()
+        .join("\n");
+      let mut col_string = vec![format!("{}<{}>", name.to_string(), knd), val_string];
       builder.push_column(col_string);
     }
     let mut table = builder.build();
@@ -922,6 +926,7 @@ pub struct MechRecord {
   pub cols: usize,
   pub kinds: Vec<ValueKind>,
   pub data: IndexMap<u64,Value>,
+  pub field_names: HashMap<u64,String>,
 }
 
 impl MechRecord {
@@ -930,13 +935,15 @@ impl MechRecord {
     self.data.get(key)
   }
 
-  pub fn from_vec(vec: Vec<(u64,Value)>) -> MechRecord {
+  pub fn from_vec(vec: Vec<((u64,String),Value)>) -> MechRecord {
     let mut data = IndexMap::new();
-    for (k,v) in vec {
+    let mut field_names = HashMap::new();
+    for ((k,s),v) in vec {
+      field_names.insert(k,s);
       data.insert(k,v);
     }
     let kinds = data.iter().map(|(_,v)| v.kind()).collect();
-    MechRecord{cols: data.len(), kinds, data}
+    MechRecord{cols: data.len(), kinds, data, field_names}
   }
 
   pub fn insert_field(&mut self, key: u64, value: Value) {
@@ -958,7 +965,8 @@ impl MechRecord {
     let mut key_strings = vec![];
     let mut element_strings = vec![];
     for (k,v) in &self.data {
-      key_strings.push(format!("{:?}",humanize(k)));
+      let field_name = self.field_names.get(k).unwrap();
+      key_strings.push(format!("{}<{}>",field_name, v.kind()));
       element_strings.push(v.pretty_print());
     }
     builder.push_record(key_strings);
@@ -996,7 +1004,18 @@ impl MechTuple {
     let string_elements: Vec<String> = self.elements.iter().map(|e| e.pretty_print()).collect::<Vec<String>>();
     builder.push_record(string_elements);
     let mut table = builder.build();
-    table.with(Style::modern_rounded());
+    let style = Style::empty()
+      .top(' ')
+      .left('│')
+      .right('│')
+      .bottom(' ')
+      .vertical(' ')
+      .intersection_bottom('ʼ')
+      .corner_top_left('╭')
+      .corner_top_right('╮')
+      .corner_bottom_left('╰')
+      .corner_bottom_right('╯');
+    table.with(style);
     format!("{table}")
   }
 
