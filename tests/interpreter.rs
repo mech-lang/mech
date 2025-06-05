@@ -349,7 +349,7 @@ test_interpreter!(interpret_dot_index_table6, "x := {x<u32> y<f32> z<i8>|1 2 3;4
 
 test_interpreter!(interpret_set_empty,"{_}", Value::Set(MechSet::from_vec(vec![])));
 test_interpreter!(interpret_set, "{1,2,3}", Value::Set(MechSet::from_vec(vec![Value::F64(new_ref(F64::new(1.0))), Value::F64(new_ref(F64::new(2.0))), Value::F64(new_ref(F64::new(3.0)))])));
-test_interpreter!(interpret_record,r#"{a: 1, b: "Hello"}"#, Value::Record(MechRecord::from_vec(vec![(55170961230981453,Value::F64(new_ref(F64::new(1.0)))),(44311847522083591,Value::String(new_ref("Hello".to_string())))])));
+test_interpreter!(interpret_record,r#"{a: 1, b: "Hello"}"#, Value::Record(MechRecord::from_vec(vec![((55170961230981453,"a".to_string()),Value::F64(new_ref(F64::new(1.0)))),((44311847522083591,"b".to_string()),Value::String(new_ref("Hello".to_string())))])));
 test_interpreter!(interpret_record_field_access,r#"a := {x: 1,  y: 2}; a.y"#, Value::F64(new_ref(F64::new(2.0))));
 test_interpreter!(interpret_map, r#"{"a": 1, "b": 2}"#, Value::Map(MechMap::from_vec(vec![(Value::String(new_ref("a".to_string())),Value::F64(new_ref(F64::new(1.0)))), (Value::String(new_ref("b".to_string())),Value::F64(new_ref(F64::new(2.0))))])));
 /*test_interpreter!(interpret_function_define,r#"foo(x<f64>) = z<f64> :=
