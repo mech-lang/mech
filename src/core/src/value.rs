@@ -767,8 +767,20 @@ impl MechSet {
       element_strings.push(x.pretty_print());
     }
     builder.push_record(element_strings);
+
+    let style = Style::empty()
+      .top(' ')
+      .left('║')
+      .right('║')
+      .bottom(' ')
+      .vertical(' ')
+      .intersection_bottom(' ')
+      .corner_top_left('╔')
+      .corner_top_right('╗')
+      .corner_bottom_left('╚')
+      .corner_bottom_right('╝');
     let mut table = builder.build();
-    table.with(Style::modern_rounded());
+    table.with(style);
     format!("{table}")
   }
 
