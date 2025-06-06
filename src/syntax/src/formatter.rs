@@ -695,7 +695,7 @@ window.addEventListener("scroll", () => {{
       let out_node = node.last().unwrap();
       let output_id = hash_str(&format!("{:?}", out_node));
       format!("<div class=\"mech-fenced-mech-block\">
-        <pre class=\"mech-code-block\">{}</pre>
+        <div class=\"mech-code-block\">{}</div>
         <pre id=\"{}:{}\" class=\"mech-block-output\"></pre>
       </div>",src, output_id, interpreter_id)
     } else {
@@ -2041,7 +2041,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
           if i == 0 {
             src = format!("{}", k);
           } else {
-            src = format!("{}, {}", src, k);
+            src = format!("{},{}", src, k);
           }
         }
         format!("({})", src)
@@ -2053,19 +2053,19 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
           if i == 0 {
             src = format!("{}", k);
           } else {
-            src = format!("{}, {}", src, k);
+            src = format!("{},{}", src, k);
           }
         }
         let mut src2 = "".to_string();
         for (i, literal) in literals.iter().enumerate() {
           let l = self.literal(literal);
           if i == 0 {
-            src2 = format!("{}", l);
+            src2 = format!(":{}", l);
           } else {
-            src2 = format!("{}, {}", src2, l);
+            src2 = format!(":{},{}", src2, l);
           }
         }
-        format!("[{}]:{}", src, src2)
+        format!("[{}]{}", src, src2)
       },
       Kind::Brace((kinds, literals)) => {
         let mut src = "".to_string();
@@ -2074,19 +2074,19 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
           if i == 0 {
             src = format!("{}", k);
           } else {
-            src = format!("{}, {}", src, k);
+            src = format!("{},{}", src, k);
           }
         }
         let mut src2 = "".to_string();
         for (i, literal) in literals.iter().enumerate() {
           let l = self.literal(literal);
           if i == 0 {
-            src2 = format!("{}", l);
+            src2 = format!(":{}", l);
           } else {
-            src2 = format!("{}, {}", src2, l);
+            src2 = format!(":{},{}", src2, l);
           }
         }
-        format!("{{{}}}:{}", src, src2)
+        format!("{{{}}}{}", src, src2)
       },
       Kind::Map(kind1, kind2) => {
         let k1 = self.kind(kind1);

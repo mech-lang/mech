@@ -1,5 +1,9 @@
 @import url(https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/fira_code.css);
 
+:root {
+  --op-color: #82b89e;
+}
+
 html {
     scroll-behavior: auto;
 }
@@ -180,19 +184,27 @@ h4.toc::before {
 .mech-variable-assign-op {
     padding-left:  6px;
     padding-right: 6px;
-    color: #ffd139;
+    color: var(--op-color);
+}
+
+.mech-range-operator {
+    color: var(--op-color);
+}
+
+.mech-assign-op {
+    color: var(--op-color);
 }
 
 .mech-transition-statement {
-    color: #ffd139;
+    color: var(--op-color);
 }
 
 .mech-transition-output {
-    color: #ffd139;
+    color: var(--op-color);
 }
 
 .mech-fsm-arm-last {
-    color: #ffd139;
+    color: var(--op-color);
 }
 
 .mech-term {
@@ -414,11 +426,11 @@ h4.toc {
 }
 
 .mech-variable-mutable {
-    color: #ffd139;
+    color: var(--op-color);
 }
 
 .mech-var-name {
-    color: #ccbbc2;
+    color: #d5b8c3;
 }
 
 .mech-boolean {
@@ -444,7 +456,7 @@ h4.toc {
 }
 
 .mech-number {
-    color: #C7DCAE;
+    color: #9ccdf4;
 }
 
 .mech-factor {
@@ -482,11 +494,11 @@ code {
 
 
 .mech-formula-operator {
-    color: #ffd139;
+    color: var(--op-color);
 }
 
 .mech-op-assign-op {
-    color: #ffd139;
+    color: var(--op-color);
 }
 
 .mech-paragraph {
@@ -505,15 +517,15 @@ code {
 }
 
 .mech-all {
-    color: #ffd139;
+    color: var(--op-color);
 }
 
 .mech-transpose-op {
-    color: #ffd139;
+    color: var(--op-color);
 }
 
 .mech-negate-op {
-    color: #ffd139;
+    color: var(--op-color);
 }
 
 .mech-record {
@@ -598,7 +610,7 @@ code {
 
 .mech-fsm-output { 
     padding-left: 6px;
-    color: #ffd139;
+    color: var(--op-color);
 }
 
 .mech-fsm-input {
@@ -648,15 +660,15 @@ code {
 
 .mech-tuple-struct {
     display: inline-flex;
-    color: #ffd139;
+    color: var(--op-color);
 }
 
 .mech-fsm-sigil {
-    color: #ffd139;
+    color: var(--op-color);
 }
 
 .mech-fsm-state {
-    color: #ffd139;
+    color: var(--op-color);
 }
 
 .mech-tuple-struct-patterns {
@@ -665,7 +677,7 @@ code {
 
 .mech-fsm-define-op {
     padding-right: 6px;
-    color: #ffd139;
+    color: var(--op-color);
 }
 
 .mech-matrix.empty .end  {
@@ -683,7 +695,7 @@ code {
 }
 
 .mech-fsm-guard-arm {
-    color: #ffd139;
+    color: var(--op-color);
     display: inline-flex;
 }
 
@@ -701,7 +713,7 @@ code {
 
 .mech-transition-next {
     padding-left: 0px;
-    color: #ffd139;
+    color: var(--op-color);
 }
 
 .mech-guard-condition {
