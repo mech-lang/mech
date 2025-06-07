@@ -311,15 +311,34 @@ impl Value {
       Value::U32(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       Value::U64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       Value::I8(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::I128(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       Value::I16(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       Value::I32(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       Value::I64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::I128(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       Value::F32(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       Value::F64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       Value::String(s) => format!("<span class='mech-string'>\"{}\"</span>", s.borrow()),
       Value::Bool(b) => format!("<span class='mech-bool'>{}</span>", b.borrow()),
-      Value::MatrixF64(m) => {
-        format!("<div class='mech-matrix-outer'><div class='mech-matrix-inner'></div>{}</div>", m.to_html())
+      Value::MatrixU8(m) => m.to_html(),
+      Value::MatrixU16(m) => m.to_html(),
+      Value::MatrixU32(m) => m.to_html(),
+      Value::MatrixU64(m) => m.to_html(),
+      Value::MatrixU128(m) => m.to_html(),
+      Value::MatrixI8(m) => m.to_html(),
+      Value::MatrixI16(m) => m.to_html(),
+      Value::MatrixI32(m) => m.to_html(),
+      Value::MatrixI64(m) => m.to_html(),
+      Value::MatrixI128(m) => m.to_html(),
+      Value::MatrixF64(m) => m.to_html(),
+      Value::MatrixF32(m) => m.to_html(),
+      Value::MatrixIndex(m) => m.to_html(),
+      Value::MatrixBool(m) => m.to_html(),
+      Value::MatrixString(m) => m.to_html(),
+      Value::MatrixValue(m) => m.to_html(),
+      Value::MutableReference(m) => {
+        let inner = m.borrow();
+        format!("<span class='mech-reference'>{}</span>", inner.to_html())
       },
       _ => todo!(),
     }
