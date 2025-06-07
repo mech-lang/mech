@@ -87,11 +87,11 @@ body {
 
 .mech-toc h2 {
     font-size: 12pt;
-    padding-left: 15px;
+    padding-left: 13px;
 }
 
 h2.toc::before {
-    padding-right: 5px;
+    padding-right: 3px;
 }
 
 .mech-toc h2 a {
@@ -110,7 +110,7 @@ h2.toc::before {
 
 h3.toc::before {
     font-size: 12pt;
-    padding-right: 5px;
+    padding-right: 3px;
     color: rgba(255, 255, 255, 0.55);
 }
 .mech-toc h3 {
@@ -138,7 +138,7 @@ h3.toc::before {
 
 h4.toc::before {
     font-size: 12pt;
-    padding-right: 5px;
+    padding-right: 3px;
     color: rgba(255, 255, 255, 0.55);
 }
 .mech-toc h4 {
@@ -246,7 +246,7 @@ h4.toc::before {
     letter-spacing: 2px;
     margin-bottom: 20px;
     margin-top: 50px;
-    margin-left: -75px;
+    margin-left: -73px;
 }
 
 .mech-program h3 a {
@@ -433,6 +433,10 @@ h4.toc {
     color: #ddc0e6;
 }
 
+.mech-output-kind {
+    margin-bottom: 10px;
+}
+
 .mech-boolean {
     color: #C7DCAE;
 }
@@ -479,7 +483,7 @@ code {
     font-size: 12pt;
     padding: 3px;
     margin: 0px;
-    border-radius: 5px;
+    border-radius: 3px;
 }
 
 .mech-inline-mech-code {
@@ -489,7 +493,7 @@ code {
     font-size: 12pt;
     padding: 3px;
     margin: 0px;
-    border-radius: 5px;
+    border-radius: 3px;
 }
 
 
@@ -503,7 +507,7 @@ code {
 
 .mech-paragraph {
     color: #f2ead9;
-    line-height: 25px;
+    line-height: 23px;
 }
 
 .mech-paragraph a {
@@ -873,7 +877,7 @@ ol {
 }
 
 li {
-    padding-left: 5px;
+    padding-left: 3px;
 }
 
 li p {
@@ -943,11 +947,11 @@ li p {
     width: 80%;
     background-color: #232A30; 
     border-left: 4px solid #F3B62D;; 
-    padding: 15px 20px;
+    padding: 13px 20px;
     color: #f2ead9; 
     font-style: italic; 
     margin: auto;
-    border-radius: 5px;
+    border-radius: 3px;
 }
 
 .mech-block-quote blockquote {
@@ -1166,7 +1170,7 @@ mark {
     color: #F3B62D;
     font-family: 'FiraCodeRegular', monospace;
     flex-shrink: 0;
-    padding: 5px 10px 5px 10px;
+    padding: 3px 10px 3px 10px;
 }
 
 .mech-citation-link {
@@ -1199,11 +1203,58 @@ mark {
 .mech-float.left {
     float: left;
     margin-right: 20px;
-    margin-left: -75px;
+    margin-left: -73px;
 }
 
 .mech-float.right {
     float: right;
     margin-left: 20px;
-    margin-right: -75px;
+    margin-right: -73px;
+}
+
+.mech-matrix {
+    margin: 5px;
+}
+
+.mech-matrix td {
+    padding: 5px;
+}
+
+
+.mech-matrix-outer{
+    width: fit-content;
+    position:relative;
+    border-left: 3px solid #f2ead9;
+    border-right: 3px solid #f2ead9;
+}
+.mech-matrix-outer:after{
+    content:'';
+    position:absolute;
+    height:3px;
+    width: 3px;
+    right:0;
+    border-top: 3px solid #f2ead9;
+}
+.mech-matrix-outer:before{
+      content:'';
+    position:absolute;
+    height:3px;
+    width: 3px;
+    border-top: 3px solid #f2ead9;
+}
+.mech-matrix-inner:before{
+      content:'';
+    position:absolute;
+    height:3px;
+    width: 3px;
+    bottom:0;
+    border-bottom: 3px solid #f2ead9;
+}
+.mech-matrix-inner:after {
+      content:'';
+    position:absolute;
+    height:3px;
+    width: 3px;
+    bottom:0; right:0;
+    border-bottom: 3px solid #f2ead9;
 }
