@@ -2,6 +2,7 @@
 
 :root {
   --op-color: #82b89e;
+  --bracket-color: rgb(177, 187, 196);
 }
 
 html {
@@ -1220,12 +1221,15 @@ mark {
     padding: 5px;
 }
 
+.mech-output-value {
+    padding-left: 10px;
+}
 
 .mech-matrix-outer{
     width: fit-content;
     position:relative;
-    border-left: 3px solid #f2ead9;
-    border-right: 3px solid #f2ead9;
+    border-left: 3px solid var(--bracket-color);
+    border-right: 3px solid var(--bracket-color);
 }
 .mech-matrix-outer:after{
     content:'';
@@ -1233,14 +1237,14 @@ mark {
     height:3px;
     width: 3px;
     right:0;
-    border-top: 3px solid #f2ead9;
+    border-top: 3px solid var(--bracket-color);
 }
 .mech-matrix-outer:before{
       content:'';
     position:absolute;
     height:3px;
     width: 3px;
-    border-top: 3px solid #f2ead9;
+    border-top: 3px solid var(--bracket-color);
 }
 .mech-matrix-inner:before{
       content:'';
@@ -1248,7 +1252,7 @@ mark {
     height:3px;
     width: 3px;
     bottom:0;
-    border-bottom: 3px solid #f2ead9;
+    border-bottom: 3px solid var(--bracket-color);
 }
 .mech-matrix-inner:after {
       content:'';
@@ -1256,5 +1260,12 @@ mark {
     height:3px;
     width: 3px;
     bottom:0; right:0;
-    border-bottom: 3px solid #f2ead9;
+    border-bottom: 3px solid var(--bracket-color);
+}
+
+.mech-output-kind {
+    color: #ec8e8e;
+    font-weight: bold;
+    font-family: 'FiraCodeRegular', monospace;
+    margin-bottom: 10px;
 }
