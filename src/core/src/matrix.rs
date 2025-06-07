@@ -11,6 +11,7 @@ use std::hash::{Hash, Hasher};
 use std::slice::Iter;
 use std::iter::Peekable;
 use serde::ser::{Serialize, Serializer, SerializeStruct};
+use std::any::Any;
 
 // Matrix ---------------------------------------------------------------------
 
@@ -356,6 +357,14 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
   }
 }
 
+fn quoted<T: Display + Any>(val: &T) -> String {
+    if let Some(s) = (val as &dyn Any).downcast_ref::<String>() {
+        format!("\"{}\"", s)
+    } else {
+        format!("{}", val)
+    }
+}
+
 impl<T> Matrix<T> 
 where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 {
@@ -444,11 +453,11 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
       html.push_str("<tr>");
       for j in 0..size[1] {
         let value = self.index2d(i+1, j+1);
-        html.push_str(&format!("<td>{}</td>", value));
+        html.push_str(&format!("<td>{}</td>", quoted(&value)));
       }
       html.push_str("</tr>");
     }
-    html
+    format!("<div class='mech-matrix-outer'><div class='mech-matrix-inner'></div>{}</div>", html)
   }
 
   pub fn index1d(&self, ix: usize) -> T {
