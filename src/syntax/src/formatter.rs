@@ -696,7 +696,7 @@ window.addEventListener("scroll", () => {{
       let output_id = hash_str(&format!("{:?}", out_node));
       format!("<div class=\"mech-fenced-mech-block\">
         <div class=\"mech-code-block\">{}</div>
-        <pre id=\"{}:{}\" class=\"mech-block-output\"></pre>
+        <div id=\"{}:{}\" class=\"mech-block-output\"></div>
       </div>",src, output_id, interpreter_id)
     } else {
       format!("```mech\n{}\n```", src)
