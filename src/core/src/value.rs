@@ -304,6 +304,27 @@ impl Value {
     }
   }
 
+  pub fn to_html(&self) -> String {
+    match self {
+      Value::U8(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::U16(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::U32(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::U64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::I8(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::I16(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::I32(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::I64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::F32(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::F64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::String(s) => format!("<span class='mech-string'>\"{}\"</span>", s.borrow()),
+      Value::Bool(b) => format!("<span class='mech-bool'>{}</span>", b.borrow()),
+      Value::MatrixF64(m) => {
+        format!("<div class='mech-matrix-outer'><div class='mech-matrix-inner'></div>{}</div>", m.to_html())
+      },
+      _ => todo!(),
+    }
+  }
+
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     match self {
