@@ -1,8 +1,12 @@
 use crate::*;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-// Statements
+// Mechdown
 // ----------------------------------------------------------------------------
+
+pub fn program(program: &Program, p: &Interpreter) -> MResult<Value> {
+  body(&program.body, p)
+}
 
 pub fn body(body: &Body, p: &Interpreter) -> MResult<Value> {
   let mut result = Ok(Value::Empty);
@@ -68,24 +72,51 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     SectionElement::Footnote(x) => x.hash(&mut hasher),
     SectionElement::Paragraph(x) => {
       for el in x.elements.iter() {
-        match el {
-          ParagraphElement::InlineMechCode(expr) => {
-            let value = expression(&expr, p)?;
-            let code_id = hash_str(&format!("{:?}", expr));
-            p.out_values.borrow_mut().insert(code_id, value.clone());
-          } 
-          _ => (),
-        }
+        let (code_id,value) = match paragraph_element(&el, p) {
+          Ok(val) => val,
+          _ => continue,
+        };
+        p.out_values.borrow_mut().insert(code_id, value.clone());
       }
     },
     SectionElement::Grammar(x) => x.hash(&mut hasher),
-    SectionElement::Table(x) => x.hash(&mut hasher),
+    SectionElement::Table(x) => {
+      for row in &x.rows {
+        for cell in row {
+          for el in &cell.elements {
+            let (code_id,value) = match paragraph_element(&el, p) {
+              Ok(val) => val,
+              _ => continue,
+            };
+            p.out_values.borrow_mut().insert(code_id, value.clone());
+          }
+        }
+      }
+      x.hash(&mut hasher); 
+    },
     SectionElement::BlockQuote(x) => x.hash(&mut hasher),
     SectionElement::ThematicBreak => {return Ok(Value::Empty);}
     SectionElement::List(x) => x.hash(&mut hasher),
   };
   let hash = hasher.finish();
   Ok(Value::Id(hash))
+}
+
+pub fn paragraph_element(element: &ParagraphElement, p: &Interpreter) -> MResult<(u64,Value)> {
+  let result = match element {
+    ParagraphElement::InlineMechCode(expr) => {
+      let code_id = hash_str(&format!("{:?}", expr));
+      match expression(&expr, p) {
+        Ok(val) => (code_id,val),
+        Err(e) => (code_id,Value::Empty), // the expression failed perhaps because the value isn't defined yet.
+        _ => todo!(), // What do we do in the case when it really is an error though?
+                      // What we really need to do is just defer the execution of this thing to the very end,
+                      // And 
+      }
+    }
+    _ => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None});}
+  };
+  Ok(result)
 }
 
 pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
