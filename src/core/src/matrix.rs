@@ -358,11 +358,11 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 }
 
 fn quoted<T: Display + Any>(val: &T) -> String {
-    if let Some(s) = (val as &dyn Any).downcast_ref::<String>() {
-        format!("\"{}\"", s)
-    } else {
-        format!("{}", val)
-    }
+  if let Some(s) = (val as &dyn Any).downcast_ref::<String>() {
+    format!("\"{}\"", s)
+  } else {
+    format!("{}", val)
+  }
 }
 
 impl<T> Matrix<T> 
