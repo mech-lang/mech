@@ -78,9 +78,14 @@ impl WasmMech {
       element.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref());
       closure.forget();
     }
+  }
 
-    // Write block output each element that needs it, rendering it appropriately
-    // based on its data type.
+  // Write block output each element that needs it, rendering it appropriately
+  // based on its data type.
+  #[wasm_bindgen]
+  pub fn render_codeblock_output_values(&mut self) {
+    let window = web_sys::window().expect("global window does not exists");    
+		let document = window.document().expect("expecting a document on window"); 
     let output_elements = document.get_elements_by_class_name("mech-block-output");
     for i in 0..output_elements.length() {
       let block = output_elements.get_with_index(i).unwrap();
@@ -113,11 +118,14 @@ impl WasmMech {
       let formatted_output = format!("<div class=\"mech-output-kind\">{:?}</div><div class=\"mech-output-value\">{}</div>", output.kind(), output.to_html());
       block.set_inner_html(&formatted_output);
     }
+  }
 
+  #[wasm_bindgen]
+  pub fn render_inline_values(&mut self) {
+    let window = web_sys::window().expect("global window does not exists");    
+		let document = window.document().expect("expecting a document on window"); 
     let inline_elements = document.get_elements_by_class_name("mech-inline-mech-code");
-
     let out_values_brrw = self.interpreter.out_values.borrow();
-
     for j in 0..inline_elements.length() {
       let inline_block = inline_elements.get_with_index(j).unwrap();
       let inline_id = inline_block.id();
@@ -133,7 +141,6 @@ impl WasmMech {
       let formatted_output = format!("{}", inline_output.to_string());
       inline_block.set_inner_html(&formatted_output.trim());
     }
-
   }
 
   #[wasm_bindgen]
@@ -166,10 +173,7 @@ impl WasmMech {
             log!("Error parsing program: {:?}", parse_err);
           }
         }
-        
       }
     }
-  
   }
-
 }
