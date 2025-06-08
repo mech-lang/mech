@@ -415,10 +415,14 @@ window.addEventListener("scroll", () => {{
               var src = xhr.responseText;
               wasm_core.run_program(src);
               wasm_core.init();
+              wasm_core.render_inline_values();
+              wasm_core.render_codeblock_output_values();
             }} else {{
-              console.error("Defaulting to included code");
+              console.error("Defaulting to included program");
               wasm_core.run_program(code);
               wasm_core.init();
+              wasm_core.render_inline_values();
+              wasm_core.render_codeblock_output_values();
             }}
           }}
         }};
@@ -842,7 +846,7 @@ window.addEventListener("scroll", () => {{
         };
         let cell_html = self.paragraph(cell);
         html.push_str(&format!(
-          "<th class=\"mech-table-header-cell\" style=\"text-align:{}\">{}</th>", 
+          "<th class=\"mech-table-header-cell {}\">{}</th>", 
           align, cell_html
         ));
       }
@@ -863,7 +867,7 @@ window.addEventListener("scroll", () => {{
         };
         let cell_html = self.paragraph(cell);
         html.push_str(&format!(
-          "<td class=\"mech-table-cell\" style=\"text-align:{}\">{}</td>", 
+          "<td class=\"mech-table-cell {}\">{}</td>", 
           align, cell_html
         ));
       }
