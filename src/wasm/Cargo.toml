@@ -31,7 +31,7 @@ js-sys = "0.3.77"
 miniz_oxide = "0.8.5"
 bincode = "2.0.1"
 base64 = "0.22.1"
-brotli = "7.0.0"
+brotli = "8.0.1"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.50"

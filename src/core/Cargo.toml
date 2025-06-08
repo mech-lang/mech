@@ -63,7 +63,7 @@ MatrixD = []
 [dependencies]
 base64 = "0.22.1"
 bincode = {version = "2.0.1", features = ["serde"]}
-brotli = "7.0.0"
+brotli = "8.0.1"
 hashbrown = "0.15.3"
 indexmap = {version = "2.9.0", features = ["serde"]}
 libm = "0.2.11"
