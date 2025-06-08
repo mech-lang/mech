@@ -316,9 +316,10 @@ h4.toc {
     font-family: 'FiraCodeLight', monospace;
     font-size: 12pt;
     line-height: 18px;
-    border-radius: 0px;
     padding: 30px;
     border-radius: 10px;
+    border: 1px solid #888f92;
+    margin-bottom: 20px;
     overflow-x: auto;
 }
 
@@ -860,7 +861,7 @@ ol {
     margin-top: 1em;
     color: #eadec2;
     font-size: 12pt;
-    text-align: left;;
+    text-align: left;
     line-height: 1.4;
     font-style: italic;
     display: flex;
@@ -889,6 +890,25 @@ li p {
 
 .mech-table-header {
     color: #dbc3a5;
+    text-align: center;
+    font-weight: bold;
+    border-bottom: 1px solid #333; 
+}
+
+.mech-table-cell.left {
+    text-align: left;
+}
+
+.mech-table-cell.right {
+    text-align: right;
+}
+
+.mech-table-cell.center {
+    text-align: center;
+}
+
+.mech-table .mech-table-header-cell {
+    text-align: center;
 }
 
 .mech-table-rows {
@@ -898,11 +918,12 @@ li p {
 }
 
 .mech-table {
-    border-collapse: collapse;
     background-color: #2F353B;
     color: #f2ead9; 
     margin: auto;
     margin-bottom: 20px;
+    padding: 0px;
+    border: 1px solid #888f92;
 }
 
 .mech-table thead {
@@ -910,11 +931,7 @@ li p {
 }
 
 .mech-table .mech-table-header-cell {
-    color: #f2ead9; 
     padding: 10px;
-    text-align: left;
-    font-weight: bold;
-    border-bottom: 2px solid #333; 
 }
 
 .mech-table .mech-table-row-even {
@@ -928,7 +945,6 @@ li p {
 .mech-table .mech-table-cell {
     padding: 10px;
     border-bottom: 1px solid #333; 
-    text-align: left;
 }
 
 .mech-table tbody tr:hover {
