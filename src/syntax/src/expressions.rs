@@ -50,81 +50,81 @@ pub fn not_factor(input: ParseString) -> ParseResult<Factor> {
 
 // add := "+" ;
 pub fn add(input: ParseString) -> ParseResult<AddSubOp> {
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = tag("+")(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, AddSubOp::Add))
 }
 
 // subtract := "-" ;
 pub fn subtract(input: ParseString) -> ParseResult<AddSubOp> {
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = tag("-")(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, AddSubOp::Sub))
 }
 
 // multiply := "*" ;
 pub fn multiply(input: ParseString) -> ParseResult<MulDivOp> {
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = tag("*")(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, MulDivOp::Mul))
 }
 
 // divide := "/" ;
 pub fn divide(input: ParseString) -> ParseResult<MulDivOp> {
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = tag("/")(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, MulDivOp::Div))
 }
 
 // modulus := "%" ;
 pub fn modulus(input: ParseString) -> ParseResult<MulDivOp> {
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = tag("%")(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, MulDivOp::Mod))
 }
 
 // matrix_multiply := "**" ;
 pub fn matrix_multiply(input: ParseString) -> ParseResult<VecOp> {
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = tag("**")(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, VecOp::MatMul))
 }
 
 // matrix_solve := "\" ;
 pub fn matrix_solve(input: ParseString) -> ParseResult<VecOp> {
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = tag("\\")(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, VecOp::Solve))
 }
 
 // dot_product := "·" ;
 pub fn dot_product(input: ParseString) -> ParseResult<VecOp> {
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = tag("·")(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, VecOp::Dot))
 }
 
 // cross_product := "⨯" ;
 pub fn cross_product(input: ParseString) -> ParseResult<VecOp> {
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = tag("⨯")(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, VecOp::Cross))
 }
 
 // exponent := "^" ;
 pub fn exponent(input: ParseString) -> ParseResult<ExponentOp> {
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = tag("^")(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, ExponentOp::Exp))
 }
 
@@ -276,49 +276,49 @@ pub fn statement_separator(input: ParseString) -> ParseResult<()> {
 
 // not_equal := "!=" | "¬=" | "≠" ;
 pub fn not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = alt((tag("!="),tag("¬="),tag("≠")))(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, ComparisonOp::NotEqual))
 }
 
 // equal_to := "==" ;
 pub fn equal_to(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = tag("==")(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, ComparisonOp::Equal))
 }
 
 // greater_than := ">" ;
 pub fn greater_than(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = tag(">")(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, ComparisonOp::GreaterThan))
 }
 
 // less_than := "<" ;
 pub fn less_than(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = tag("<")(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, ComparisonOp::LessThan))
 }
 
 // greater_than_equal := ">=" | "≥" ;
 pub fn greater_than_equal(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = alt((tag(">="),tag("≥")))(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, ComparisonOp::GreaterThanEqual))
 }
 
 // less_than_equal := "<=" | "≤" ;
 pub fn less_than_equal(input: ParseString) -> ParseResult<ComparisonOp> {
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = alt((tag("<="),tag("≤")))(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, ComparisonOp::LessThanEqual))
 }
 
@@ -326,17 +326,17 @@ pub fn less_than_equal(input: ParseString) -> ParseResult<ComparisonOp> {
 
 // or := "|" ;
 pub fn or(input: ParseString) -> ParseResult<LogicOp> {
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = tag("|")(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, LogicOp::Or))
 }
 
 // and := "&" ;
 pub fn and(input: ParseString) -> ParseResult<LogicOp> {
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = tag("&")(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, LogicOp::And))
 }
 
@@ -348,9 +348,9 @@ pub fn not(input: ParseString) -> ParseResult<LogicOp> {
 
 // xor := "xor" | "⊕" | "⊻" ;
 pub fn xor(input: ParseString) -> ParseResult<LogicOp> {
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   let (input, _) = alt((tag("xor"), tag("⊕"), tag("⊻")))(input)?;
-  let (input, _) = whitespace1(input)?;
+  let (input, _) = ws1e(input)?;
   Ok((input, LogicOp::Xor))
 }
 
