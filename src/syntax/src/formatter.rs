@@ -561,11 +561,12 @@ window.addEventListener("scroll", () => {{
       let el_str = self.paragraph_element(el);
       src = format!("{}{}", src, el_str);
     }
-    if self.html {
+    let result = if self.html {
       format!("<p class=\"mech-paragraph\">{}</p>",src)
     } else {
       format!("{}\n",src)
-    }
+    };
+    result
   }
 
   fn footnote_reference(&mut self, node: &Token) -> String {
@@ -618,7 +619,13 @@ window.addEventListener("scroll", () => {{
       },
       ParagraphElement::Reference(n) => self.reference(n),
       ParagraphElement::InlineEquation(exq) => self.inline_equation(exq),
-      ParagraphElement::Text(n) => n.to_string(),
+      ParagraphElement::Text(n) => {
+        if self.html {
+          format!("<span class=\"mech-text\">{}</span>", n.to_string())
+        } else {
+          n.to_string()
+        }
+      }
       ParagraphElement::FootnoteReference(n) => self.footnote_reference(n),
       ParagraphElement::Strong(n) => {
         if self.html {
@@ -664,7 +671,15 @@ window.addEventListener("scroll", () => {{
           format!("`{}`", n.to_string())
         }
       },
-      ParagraphElement::InlineMechCode(expr) => {
+      ParagraphElement::InlineMechCode(code) => {
+        let result = self.mech_code(&vec![code.clone()]);
+        if self.html {
+          format!("<span class=\"mech-inline-mech-code-formatted\">{}</span>", result)
+        } else {
+          format!("{{{}}}", result)
+        }
+      },
+      ParagraphElement::EvalInlineMechCode(expr) => {
         let code_id = hash_str(&format!("{:?}", expr));
         let result = self.expression(expr);
         if self.html {
@@ -1138,22 +1153,22 @@ window.addEventListener("scroll", () => {{
     let mut src = String::new();
     for code in node {
       let c = match code {
-      MechCode::Expression(expr) => self.expression(expr),
-      MechCode::Statement(stmt) => self.statement(stmt),
-      MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
-      MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
-      MechCode::Comment(cmnt) => self.comment(cmnt),
-      _ => todo!(),
-      //MechCode::FunctionDefine(func_def) => self.function_define(func_def, src),
+        MechCode::Comment(cmnt) => self.comment(cmnt),
+        MechCode::Expression(expr) => self.expression(expr),
+        //MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
+        //MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
+        //MechCode::FunctionDefine(func_def) => self.function_define(func_def, src),
+        MechCode::Statement(stmt) => self.statement(stmt),
+        _ => todo!(),
       };
       if self.html {
-        src.push_str(&format!("<div class=\"mech-code\">{}</div>", c));
+        src.push_str(&format!("<span class=\"mech-code\">{}</span>", c));
       } else {
         src.push_str(&format!("{}\n", c));
       }
     }
     if self.html {
-      format!("<div class=\"mech-code-block\">{}</div>",src)
+      format!("<span class=\"mech-code-block\">{}</span>",src)
     } else {
       src
     }

@@ -256,10 +256,20 @@ pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, elements))
 }
 
-// inline-mech-cdoe := "{", expression, "}" ;`
-pub fn inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
+// eval-inline-mech-cdoe := "{", expression, "}" ;`
+pub fn eval_inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = left_brace(input)?;
   let (input, expr) = expression(input)?;
+  let (input, _) = right_brace(input)?;
+  Ok((input, ParagraphElement::EvalInlineMechCode(expr)))
+}
+
+// inline-mech-cdoe := "{{", expression, "}}" ;`
+pub fn inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, _) = left_brace(input)?;
+  let (input, _) = left_brace(input)?;
+  let (input, expr) = mech_code(input)?;
+  let (input, _) = right_brace(input)?;
   let (input, _) = right_brace(input)?;
   Ok((input, ParagraphElement::InlineMechCode(expr)))
 }
@@ -285,7 +295,7 @@ pub fn reference(input: ParseString) -> ParseResult<ParagraphElement> {
 
 // paragraph-element := hyperlink | raw-hyperlink | footnote-reference | paragraph-text | strong | highlight | emphasis | inline-code | strikethrough | underline ;
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
-  alt((hyperlink, reference, raw_hyperlink, highlight, footnote_reference, inline_mech_code, inline_equation, paragraph_text, strong, highlight, emphasis, inline_code, strikethrough, underline))(input)
+  alt((hyperlink, reference, raw_hyperlink, highlight, footnote_reference, inline_mech_code, eval_inline_mech_code, inline_equation, paragraph_text, strong, highlight, emphasis, inline_code, strikethrough, underline))(input)
 }
 
 // paragraph := +paragraph_element ;
