@@ -11,6 +11,7 @@ html {
 
 .mech-program {
     counter-reset: h2;
+    counter-reset: equation;
     margin: auto;
     margin-top: 20px;
     margin-bottom: 20px;
@@ -1140,8 +1141,20 @@ h4:hover a {
 }
 
 .mech-equation {
+    counter-increment: equation;
     text-align: center;
     color: #efd5cd;
+}
+
+.mech-equation::after {
+    content: "Eq. " counter(equation); 
+    font-style: italic;
+    float: right;
+    color: #F8D07A;
+    font-size: 10pt;
+    line-height: 1.4;
+    font-style: italic;
+    gap: 0.5em;
 }
 
 .mech-inline-equation {
