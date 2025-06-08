@@ -1,7 +1,7 @@
 @import url(https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/fira_code.css);
 
 :root {
-  --op-color: #82b89e;
+  --op-color: #73b997;
   --bracket-color: rgb(177, 187, 196);
 }
 
@@ -298,6 +298,7 @@ h4.toc {
 }
 
 .mech-code-block {
+    display: block;
     background-color: #171D21;
     color: #ada594;
     font-family: 'FiraCodeLight', monospace;
@@ -464,23 +465,39 @@ code {
 
 .mech-inline-code {
     background-color: #171D21;
-    border: 1px solid #444;
+    border: 1px solid #777;
     color: #ada594;
     font-family: 'FiraCodeLight', monospace;
     font-size: 12pt;
-    padding: 3px;
-    margin: 0px;
+    padding: 0px 6px 0px 6px;
+    margin: 0px 2px 0px 2px;
     border-radius: 3px;
+    box-shadow: 0 0px 2px rgba(0, 0, 0, 0.7);
+}
+
+.mech-inline-mech-code-formatted .mech-code-block {
+    display: inline-flex;
+    vertical-align: middle;
+    background-color: #171D21;
+    border: 1px solid #777;
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 12pt;
+    padding: 0px 6px 0px 6px;
+    margin: 0px 2px 0px 2px;
+    border-radius: 3px;
+    box-shadow: 0 0px 2px rgba(0, 0, 0, 0.7);
 }
 
 .mech-inline-mech-code {
     background-color: #171D21;
+    border: 1px solid #777;
     color: #9ccdf4;
     font-family: 'FiraCodeLight', monospace;
     font-size: 12pt;
-    padding: 3px;
-    margin: 0px;
+    padding: 0px 6px 0px 6px;
+    margin: 0px 2px 0px 2px;
     border-radius: 3px;
+    box-shadow: 0 0px 2px rgba(0, 0, 0, 0.7);
 }
 
 
