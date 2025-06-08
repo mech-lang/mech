@@ -1236,7 +1236,9 @@ mark {
 }
 
 .mech-output-value .mech-matrix td {
-    padding: 5px;
+    max-width: 150px;
+    overflow: hidden;
+    padding: 5px 10px 5px 10px;
 }
 
 .mech-output-value {
