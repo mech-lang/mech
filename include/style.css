@@ -279,20 +279,6 @@ h4.toc::before {
     letter-spacing: 1px;
 }
 
-.mech-program h4 a {
-    color: #f2ead9;
-    text-decoration: none;
-}
-
-.mech-program h4 {
-    font-family: 'FiraCodeRegular', monospace;
-    color: #f2ead9;
-    font-size: 12pt;
-    font-weight: bold;
-    margin-bottom: 10px;
-    letter-spacing: 1px;
-}
-
 h4.toc {
     display: none;
 }
@@ -321,6 +307,7 @@ h4.toc {
     border: 1px solid #888f92;
     margin-bottom: 20px;
     overflow-x: auto;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 .mech-code-block::-webkit-scrollbar {
@@ -432,7 +419,7 @@ h4.toc {
 }
 
 .mech-var-name {
-    color: #ddc0e6;
+    color: #eddaf1;
 }
 
 .mech-output-kind {
@@ -453,9 +440,6 @@ h4.toc {
 
 .mech-grammar-define-op {
     padding-right: 12px;
-}
-
-.mech-expression {
 }
 
 .mech-literal {
@@ -490,7 +474,7 @@ code {
 
 .mech-inline-mech-code {
     background-color: #171D21;
-    color: #C7DCAE;
+    color: #9ccdf4;
     font-family: 'FiraCodeLight', monospace;
     font-size: 12pt;
     padding: 3px;
@@ -504,6 +488,8 @@ code {
 }
 
 .mech-op-assign-op {
+    padding-left: 6px;
+    padding-right: 6px;
     color: var(--op-color);
 }
 
@@ -892,7 +878,7 @@ li p {
     color: #dbc3a5;
     text-align: center;
     font-weight: bold;
-    border-bottom: 1px solid #333; 
+    border-bottom: 1px solid #888f92;
 }
 
 .mech-table-cell.left {
@@ -923,7 +909,9 @@ li p {
     margin: auto;
     margin-bottom: 20px;
     padding: 0px;
+    border-collapse: collapse;
     border: 1px solid #888f92;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 .mech-table thead {
@@ -943,8 +931,8 @@ li p {
 }
 
 .mech-table .mech-table-cell {
-    padding: 10px;
-    border-bottom: 1px solid #333; 
+    padding: 20px 10px 20px 10px;
+    border-bottom: 1px solid #888f92; 
 }
 
 .mech-table tbody tr:hover {
@@ -1004,6 +992,7 @@ li p {
     font-family: 'FiraCodeLight', monospace;
     font-size: 12pt;
     padding: 20px;
+    border: 1px solid #888f92;
     border-radius: 0px 0px 10px 10px; /* Only bottom corners rounded */
     overflow-x: auto;
 }
@@ -1152,12 +1141,12 @@ h4:hover a {
 
 .mech-equation {
     text-align: center;
-    color: #f2ead9;
+    color: #efd5cd;
 }
 
 .mech-inline-equation {
     font-size: 10pt;
-    color: #efe4cd;
+    color: #efd5cd;
 }
 
 mark {
@@ -1229,11 +1218,11 @@ mark {
     margin-right: -73px;
 }
 
-.mech-matrix {
+.mech-output-value .mech-matrix {
     margin: 5px;
 }
 
-.mech-matrix td {
+.mech-output-value .mech-matrix td {
     padding: 5px;
 }
 
@@ -1284,4 +1273,9 @@ mark {
     font-weight: bold;
     font-family: 'FiraCodeRegular', monospace;
     margin-bottom: 10px;
+}
+
+.mech-table-cell .mech-paragraph {
+    margin: 0;
+    padding: 0;
 }
