@@ -9,7 +9,6 @@ use crate::*;
     
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-
 pub struct MechServer {
   badge: ColoredString,
   init: bool,
@@ -24,25 +23,23 @@ pub struct MechServer {
 
 impl MechServer {
 
-  pub fn new(full_address: &str) -> Self {
-    let stylesheet_path = "include/style.css";
-    let stylesheet_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/style.css";
-    
-    let wasm_path = "src/wasm/pkg/mech_wasm_bg.wasm";
+  pub fn new(full_address: String, stylesheet_path: String, wasm_pkg: String) -> Self {
+    let stylesheet_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/style.css".to_string();
     let wasm_backup_url = format!("https://github.com/mech-lang/mech/releases/download/v{}-beta/mech_wasm_bg.wasm", VERSION);
-    
-    let js_path = "src/wasm/pkg/mech_wasm.js";
     let js_backup_url = format!("https://github.com/mech-lang/mech/releases/download/v{}-beta/mech_wasm.js", VERSION);
+
+    let wasm_path = format!("{}/mech_wasm_bg.wasm", wasm_pkg);
+    let js_path = format!("{}/mech_wasm.js", wasm_pkg);
 
     let mut mechfs = MechFileSystem::new();
 
     Self {
       badge: "[Mech Server]".truecolor(34, 204, 187),
       init: false,
-      stylesheet_path: (stylesheet_path.to_string(), stylesheet_backup_url.to_string()),
-      wasm_path: (wasm_path.to_string(), wasm_backup_url.to_string()),
-      js_path: (js_path.to_string(), js_backup_url.to_string()),
-      full_address: full_address.to_string(),
+      stylesheet_path: (stylesheet_path, stylesheet_backup_url),
+      wasm_path: (wasm_path, wasm_backup_url),
+      js_path: (js_path, js_backup_url),
+      full_address: full_address,
       mechfs,
       js: vec![],
       wasm: vec![],

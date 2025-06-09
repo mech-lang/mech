@@ -11,6 +11,7 @@ use std::hash::{Hash, Hasher};
 use std::slice::Iter;
 use std::iter::Peekable;
 use serde::ser::{Serialize, Serializer, SerializeStruct};
+use std::any::Any;
 
 // Matrix ---------------------------------------------------------------------
 
@@ -340,19 +341,27 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
       _ => todo!(),
     };
     let matrix_style = Style::empty()
-    .top(' ')
-    .left('┃')
-    .right('┃')
-    .bottom(' ')
-    .vertical(' ')
-    .intersection_bottom(' ')
-    .corner_top_left('┏')
-    .corner_top_right('┓')
-    .corner_bottom_left('┗')
-    .corner_bottom_right('┛');
+      .top(' ')
+      .left('┃')
+      .right('┃')
+      .bottom(' ')
+      .vertical(' ')
+      .intersection_bottom(' ')
+      .corner_top_left('┏')
+      .corner_top_right('┓')
+      .corner_bottom_left('┗')
+      .corner_bottom_right('┛');
     let mut table = builder.build();
     table.with(matrix_style);
     format!("{table}")
+  }
+}
+
+fn quoted<T: Display + Any>(val: &T) -> String {
+  if let Some(s) = (val as &dyn Any).downcast_ref::<String>() {
+    format!("\"{}\"", s)
+  } else {
+    format!("{}", val)
   }
 }
 
@@ -434,6 +443,21 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
       Matrix::DMatrix(x) => x.borrow().shape(),
     };
     vec![shape.0, shape.1]
+  }
+
+  pub fn to_html(&self) -> String {
+    let size = self.shape();
+    let mut html = String::new();
+    html.push_str("<table class='mech-matrix'>");
+    for i in 0..size[0] {
+      html.push_str("<tr>");
+      for j in 0..size[1] {
+        let value = self.index2d(i+1, j+1);
+        html.push_str(&format!("<td>{}</td>", quoted(&value)));
+      }
+      html.push_str("</tr>");
+    }
+    format!("<div class='mech-matrix-outer'><div class='mech-matrix-inner'></div>{}</div>", html)
   }
 
   pub fn index1d(&self, ix: usize) -> T {

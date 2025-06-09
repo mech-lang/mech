@@ -415,10 +415,14 @@ window.addEventListener("scroll", () => {{
               var src = xhr.responseText;
               wasm_core.run_program(src);
               wasm_core.init();
+              wasm_core.render_inline_values();
+              wasm_core.render_codeblock_output_values();
             }} else {{
-              console.error("Defaulting to included code");
+              console.error("Defaulting to included program");
               wasm_core.run_program(code);
               wasm_core.init();
+              wasm_core.render_inline_values();
+              wasm_core.render_codeblock_output_values();
             }}
           }}
         }};
@@ -557,11 +561,12 @@ window.addEventListener("scroll", () => {{
       let el_str = self.paragraph_element(el);
       src = format!("{}{}", src, el_str);
     }
-    if self.html {
+    let result = if self.html {
       format!("<p class=\"mech-paragraph\">{}</p>",src)
     } else {
       format!("{}\n",src)
-    }
+    };
+    result
   }
 
   fn footnote_reference(&mut self, node: &Token) -> String {
@@ -614,7 +619,13 @@ window.addEventListener("scroll", () => {{
       },
       ParagraphElement::Reference(n) => self.reference(n),
       ParagraphElement::InlineEquation(exq) => self.inline_equation(exq),
-      ParagraphElement::Text(n) => n.to_string(),
+      ParagraphElement::Text(n) => {
+        if self.html {
+          format!("<span class=\"mech-text\">{}</span>", n.to_string())
+        } else {
+          n.to_string()
+        }
+      }
       ParagraphElement::FootnoteReference(n) => self.footnote_reference(n),
       ParagraphElement::Strong(n) => {
         if self.html {
@@ -660,7 +671,15 @@ window.addEventListener("scroll", () => {{
           format!("`{}`", n.to_string())
         }
       },
-      ParagraphElement::InlineMechCode(expr) => {
+      ParagraphElement::InlineMechCode(code) => {
+        let result = self.mech_code(&vec![(code.clone(),None)]);
+        if self.html {
+          format!("<span class=\"mech-inline-mech-code-formatted\">{}</span>", result)
+        } else {
+          format!("{{{}}}", result)
+        }
+      },
+      ParagraphElement::EvalInlineMechCode(expr) => {
         let code_id = hash_str(&format!("{:?}", expr));
         let result = self.expression(expr);
         if self.html {
@@ -672,10 +691,10 @@ window.addEventListener("scroll", () => {{
     }
   }
 
-  pub fn fenced_mech_code(&mut self, node: &Vec<MechCode>, interpreter_id: &u64) -> String {
+  pub fn fenced_mech_code(&mut self, node: &Vec<(MechCode, Option<Comment>)>, interpreter_id: &u64) -> String {
     self.interpreter_id = *interpreter_id;
     let mut src = "".to_string();
-    for code in node {
+    for (code,cmmnt) in node {
       let c = match code {
         MechCode::Expression(expr) => self.expression(expr),
         MechCode::Statement(stmt) => self.statement(stmt),
@@ -692,11 +711,11 @@ window.addEventListener("scroll", () => {{
     }
     self.interpreter_id = 0;
     if self.html {
-      let out_node = node.last().unwrap();
+      let (out_node,_) = node.last().unwrap();
       let output_id = hash_str(&format!("{:?}", out_node));
       format!("<div class=\"mech-fenced-mech-block\">
-        <pre class=\"mech-code-block\">{}</pre>
-        <pre id=\"{}:{}\" class=\"mech-block-output\"></pre>
+        <div class=\"mech-code-block\">{}</div>
+        <div id=\"{}:{}\" class=\"mech-block-output\"></div>
       </div>",src, output_id, interpreter_id)
     } else {
       format!("```mech\n{}\n```", src)
@@ -842,7 +861,7 @@ window.addEventListener("scroll", () => {{
         };
         let cell_html = self.paragraph(cell);
         html.push_str(&format!(
-          "<th class=\"mech-table-header-cell\" style=\"text-align:{}\">{}</th>", 
+          "<th class=\"mech-table-header-cell {}\">{}</th>", 
           align, cell_html
         ));
       }
@@ -863,7 +882,7 @@ window.addEventListener("scroll", () => {{
         };
         let cell_html = self.paragraph(cell);
         html.push_str(&format!(
-          "<td class=\"mech-table-cell\" style=\"text-align:{}\">{}</td>", 
+          "<td class=\"mech-table-cell {}\">{}</td>", 
           align, cell_html
         ));
       }
@@ -1043,10 +1062,11 @@ window.addEventListener("scroll", () => {{
   }
 
   pub fn comment(&mut self, node: &Comment) -> String {
+    let comment_text = self.paragraph(&node.paragraph);
     if self.html {
-      format!("<div class=\"mech-comment\">-- {}</div>",node.text.to_string())
+      format!("<span class=\"mech-comment\"><span class=\"mech-comment-sigil\">--</span>{}</span>", comment_text)
     } else {
-      format!("{}\n",node.text.to_string())
+      format!("{}\n",comment_text)
     }
   }
 
@@ -1130,26 +1150,30 @@ window.addEventListener("scroll", () => {{
     }
   }
 
-  pub fn mech_code(&mut self, node: &Vec<MechCode>) -> String {
+  pub fn mech_code(&mut self, node: &Vec<(MechCode,Option<Comment>)>) -> String {
     let mut src = String::new();
-    for code in node {
+    for (code,cmmnt) in node {
       let c = match code {
-      MechCode::Expression(expr) => self.expression(expr),
-      MechCode::Statement(stmt) => self.statement(stmt),
-      MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
-      MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
-      MechCode::Comment(cmnt) => self.comment(cmnt),
-      _ => todo!(),
-      //MechCode::FunctionDefine(func_def) => self.function_define(func_def, src),
+        MechCode::Comment(cmnt) => self.comment(cmnt),
+        MechCode::Expression(expr) => self.expression(expr),
+        //MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
+        //MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
+        //MechCode::FunctionDefine(func_def) => self.function_define(func_def, src),
+        MechCode::Statement(stmt) => self.statement(stmt),
+        _ => todo!(),
+      };
+      let formatted_comment = match cmmnt {
+        Some(cmmt) => self.comment(cmmt),
+        None => String::new(),
       };
       if self.html {
-        src.push_str(&format!("<div class=\"mech-code\">{}</div>", c));
+        src.push_str(&format!("<span class=\"mech-code\">{}{}</span>", c, formatted_comment));
       } else {
-        src.push_str(&format!("{}\n", c));
+        src.push_str(&format!("{}{}\n", c, formatted_comment));
       }
     }
     if self.html {
-      format!("<div class=\"mech-code-block\">{}</div>",src)
+      format!("<span class=\"mech-code-block\">{}</span>",src)
     } else {
       src
     }
@@ -2041,7 +2065,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
           if i == 0 {
             src = format!("{}", k);
           } else {
-            src = format!("{}, {}", src, k);
+            src = format!("{},{}", src, k);
           }
         }
         format!("({})", src)
@@ -2053,19 +2077,19 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
           if i == 0 {
             src = format!("{}", k);
           } else {
-            src = format!("{}, {}", src, k);
+            src = format!("{},{}", src, k);
           }
         }
         let mut src2 = "".to_string();
         for (i, literal) in literals.iter().enumerate() {
           let l = self.literal(literal);
           if i == 0 {
-            src2 = format!("{}", l);
+            src2 = format!(":{}", l);
           } else {
-            src2 = format!("{}, {}", src2, l);
+            src2 = format!(":{},{}", src2, l);
           }
         }
-        format!("[{}]:{}", src, src2)
+        format!("[{}]{}", src, src2)
       },
       Kind::Brace((kinds, literals)) => {
         let mut src = "".to_string();
@@ -2074,19 +2098,19 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
           if i == 0 {
             src = format!("{}", k);
           } else {
-            src = format!("{}, {}", src, k);
+            src = format!("{},{}", src, k);
           }
         }
         let mut src2 = "".to_string();
         for (i, literal) in literals.iter().enumerate() {
           let l = self.literal(literal);
           if i == 0 {
-            src2 = format!("{}", l);
+            src2 = format!(":{}", l);
           } else {
-            src2 = format!("{}, {}", src2, l);
+            src2 = format!(":{},{}", src2, l);
           }
         }
-        format!("{{{}}}:{}", src, src2)
+        format!("{{{}}}{}", src, src2)
       },
       Kind::Map(kind1, kind2) => {
         let k1 = self.kind(kind1);

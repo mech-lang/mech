@@ -62,21 +62,25 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
   let mut data: IndexMap<u64,Value> = IndexMap::new();
   let cols: usize = rcrd.bindings.len();
   let mut kinds: Vec<ValueKind> = Vec::new();
+  let mut field_names: HashMap<u64,String> = HashMap::new();
 
   for b in &rcrd.bindings {
-    let name = b.name.hash();
+    let name_hash = b.name.hash();
+    let name_str = b.name.to_string();
     let val = expression(&b.value, p)?;
     let knd: ValueKind = match &b.kind {
       Some(k) => kind_annotation(&k.kind, p)?.to_value_kind(p.functions())?,
       None => val.kind(),
     };
     kinds.push(knd);
-    data.insert(name, val);
+    data.insert(name_hash, val);
+    field_names.insert(name_hash, name_str);
   }
   Ok(Value::Record(MechRecord{
     cols,
     kinds,
     data,
+    field_names,
   }))
 }
 

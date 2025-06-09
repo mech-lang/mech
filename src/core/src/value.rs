@@ -287,7 +287,60 @@ impl Value {
       Value::MatrixF64(x)  => x.size_of(),
       Value::MatrixValue(x)  => x.size_of(),
       Value::MatrixString(x) => x.size_of(),
-      _ => 0,
+      Value::String(x) => x.borrow().len(),
+      Value::Atom(x) => 8,
+      Value::Set(x) => x.size_of(),
+      Value::Map(x) => x.size_of(),
+      Value::Table(x) => x.size_of(),
+      Value::Record(x) => x.size_of(),
+      Value::Tuple(x) => x.size_of(),
+      Value::Enum(x) => x.size_of(),
+      Value::MutableReference(x) => x.borrow().size_of(),
+      Value::Id(_) => 8,
+      Value::Index(x) => 8,
+      Value::Kind(_) => 0, // Kind is not a value, so it has no size
+      Value::Empty => 0,
+      Value::IndexAll => 0, // IndexAll is a special value, so it has no size
+    }
+  }
+
+  pub fn to_html(&self) -> String {
+    match self {
+      Value::U8(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::U16(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::U32(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::U64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::I8(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::I128(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::I16(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::I32(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::I64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::I128(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::F32(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::F64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
+      Value::String(s) => format!("<span class='mech-string'>\"{}\"</span>", s.borrow()),
+      Value::Bool(b) => format!("<span class='mech-bool'>{}</span>", b.borrow()),
+      Value::MatrixU8(m) => m.to_html(),
+      Value::MatrixU16(m) => m.to_html(),
+      Value::MatrixU32(m) => m.to_html(),
+      Value::MatrixU64(m) => m.to_html(),
+      Value::MatrixU128(m) => m.to_html(),
+      Value::MatrixI8(m) => m.to_html(),
+      Value::MatrixI16(m) => m.to_html(),
+      Value::MatrixI32(m) => m.to_html(),
+      Value::MatrixI64(m) => m.to_html(),
+      Value::MatrixI128(m) => m.to_html(),
+      Value::MatrixF64(m) => m.to_html(),
+      Value::MatrixF32(m) => m.to_html(),
+      Value::MatrixIndex(m) => m.to_html(),
+      Value::MatrixBool(m) => m.to_html(),
+      Value::MatrixString(m) => m.to_html(),
+      Value::MatrixValue(m) => m.to_html(),
+      Value::MutableReference(m) => {
+        let inner = m.borrow();
+        format!("<span class='mech-reference'>{}</span>", inner.to_html())
+      },
+      _ => todo!(),
     }
   }
 
@@ -311,7 +364,7 @@ impl Value {
       Value::Atom(x) => {builder.push_record(vec![format!("{}",x)]);},
       Value::Set(x)  => {return x.pretty_print();}
       Value::Map(x)  => {return x.pretty_print();}
-      Value::String(x) => {builder.push_record(vec![format!("\"{}\"",x.borrow().clone())]);},
+      Value::String(x) => {return format!("\"{}\"",x.borrow().clone());},
       Value::Table(x)  => {return x.pretty_print();},
       Value::Tuple(x)  => {return x.pretty_print();},
       Value::Record(x) => {return x.pretty_print();},
@@ -731,6 +784,10 @@ impl MechSet {
     ValueKind::Set(Box::new(self.kind.clone()), self.num_elements)
   }
 
+  pub fn size_of(&self) -> usize {
+    self.set.iter().map(|x| x.size_of()).sum()
+  }
+
   pub fn from_vec(vec: Vec<Value>) -> MechSet {
     let mut set = IndexSet::new();
     for v in vec {
@@ -750,8 +807,20 @@ impl MechSet {
       element_strings.push(x.pretty_print());
     }
     builder.push_record(element_strings);
+
+    let style = Style::empty()
+      .top(' ')
+      .left('║')
+      .right('║')
+      .bottom(' ')
+      .vertical(' ')
+      .intersection_bottom(' ')
+      .corner_top_left('╔')
+      .corner_top_right('╗')
+      .corner_bottom_left('╚')
+      .corner_bottom_right('╝');
     let mut table = builder.build();
-    table.with(Style::modern_rounded());
+    table.with(style);
     format!("{table}")
   }
 
@@ -779,6 +848,10 @@ impl MechMap {
 
   pub fn kind(&self) -> ValueKind {
     ValueKind::Map(Box::new(self.key_kind.clone()), Box::new(self.value_kind.clone()))
+  }
+
+  pub fn size_of(&self) -> usize {
+    self.map.iter().map(|(k,v)| k.size_of() + v.size_of()).sum()
   }
 
   pub fn pretty_print(&self) -> String {
@@ -839,6 +912,10 @@ impl MechTable {
       self.rows)
   }
 
+  pub fn size_of(&self) -> usize {
+    self.data.iter().map(|(_,(_,v))| v.size_of()).sum()
+  }
+
   pub fn rows(&self) -> usize {
     self.rows
   }
@@ -855,7 +932,11 @@ impl MechTable {
     let mut builder = Builder::default();
     for (k,(knd,val)) in &self.data {
       let name = self.col_names.get(k).unwrap();
-      let mut col_string = vec![format!("{}<{}>", name.to_string(), knd), val.pretty_print()];
+      let val_string: String = val.as_vec().iter()
+        .map(|x| x.pretty_print())
+        .collect::<Vec<String>>()
+        .join("\n");
+      let mut col_string = vec![format!("{}<{}>", name.to_string(), knd), val_string];
       builder.push_column(col_string);
     }
     let mut table = builder.build();
@@ -885,6 +966,7 @@ pub struct MechRecord {
   pub cols: usize,
   pub kinds: Vec<ValueKind>,
   pub data: IndexMap<u64,Value>,
+  pub field_names: HashMap<u64,String>,
 }
 
 impl MechRecord {
@@ -893,13 +975,15 @@ impl MechRecord {
     self.data.get(key)
   }
 
-  pub fn from_vec(vec: Vec<(u64,Value)>) -> MechRecord {
+  pub fn from_vec(vec: Vec<((u64,String),Value)>) -> MechRecord {
     let mut data = IndexMap::new();
-    for (k,v) in vec {
+    let mut field_names = HashMap::new();
+    for ((k,s),v) in vec {
+      field_names.insert(k,s);
       data.insert(k,v);
     }
     let kinds = data.iter().map(|(_,v)| v.kind()).collect();
-    MechRecord{cols: data.len(), kinds, data}
+    MechRecord{cols: data.len(), kinds, data, field_names}
   }
 
   pub fn insert_field(&mut self, key: u64, value: Value) {
@@ -912,12 +996,17 @@ impl MechRecord {
     ValueKind::Record(self.kinds.clone())
   }
 
+  pub fn size_of(&self) -> usize {
+    self.data.iter().map(|(_,v)| v.size_of()).sum()
+  }
+
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     let mut key_strings = vec![];
     let mut element_strings = vec![];
     for (k,v) in &self.data {
-      key_strings.push(format!("{:?}",humanize(k)));
+      let field_name = self.field_names.get(k).unwrap();
+      key_strings.push(format!("{}<{}>",field_name, v.kind()));
       element_strings.push(v.pretty_print());
     }
     builder.push_record(key_strings);
@@ -955,7 +1044,18 @@ impl MechTuple {
     let string_elements: Vec<String> = self.elements.iter().map(|e| e.pretty_print()).collect::<Vec<String>>();
     builder.push_record(string_elements);
     let mut table = builder.build();
-    table.with(Style::modern_rounded());
+    let style = Style::empty()
+      .top(' ')
+      .left('│')
+      .right('│')
+      .bottom(' ')
+      .vertical(' ')
+      .intersection_bottom('ʼ')
+      .corner_top_left('╭')
+      .corner_top_right('╮')
+      .corner_bottom_left('╰')
+      .corner_bottom_right('╯');
+    table.with(style);
     format!("{table}")
   }
 
@@ -969,6 +1069,10 @@ impl MechTuple {
 
   pub fn kind(&self) -> ValueKind {
     ValueKind::Tuple(self.elements.iter().map(|x| x.kind()).collect())
+  }
+
+  pub fn size_of(&self) -> usize {
+    self.elements.iter().map(|x| x.size_of()).sum()
   }
 
 }
@@ -993,6 +1097,10 @@ impl MechEnum {
 
   pub fn kind(&self) -> ValueKind {
     ValueKind::Enum(self.id)
+  }
+
+  pub fn size_of(&self) -> usize {
+    self.variants.iter().map(|(_,v)| v.as_ref().map_or(0, |x| x.size_of())).sum()
   }
 
   pub fn pretty_print(&self) -> String {

@@ -198,7 +198,7 @@ pub fn inline_code(input: ParseString) -> ParseResult<ParagraphElement> {
 // inline_code := grave, +text, grave ;
 pub fn inline_equation(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = equation_sigil(input)?;
-  let (input, txt) = many0(tuple((is_not(equation_sigil),text)))(input)?;
+  let (input, txt) = many0(tuple((is_not(equation_sigil),alt((backslash,text)))))(input)?;
   let (input, _) = equation_sigil(input)?;
   let mut txt = txt.into_iter().map(|(_,tkn)| tkn).collect();
   let mut eqn = Token::merge_tokens(&mut txt).unwrap();
@@ -256,10 +256,20 @@ pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
   Ok((input, elements))
 }
 
-// inline-mech-cdoe := "{", expression, "}" ;`
-pub fn inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
+// eval-inline-mech-cdoe := "{", expression, "}" ;`
+pub fn eval_inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = left_brace(input)?;
   let (input, expr) = expression(input)?;
+  let (input, _) = right_brace(input)?;
+  Ok((input, ParagraphElement::EvalInlineMechCode(expr)))
+}
+
+// inline-mech-cdoe := "{{", expression, "}}" ;`
+pub fn inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
+  let (input, _) = left_brace(input)?;
+  let (input, _) = left_brace(input)?;
+  let (input, (expr,_)) = mech_code(input)?;
+  let (input, _) = right_brace(input)?;
   let (input, _) = right_brace(input)?;
   Ok((input, ParagraphElement::InlineMechCode(expr)))
 }
@@ -285,7 +295,7 @@ pub fn reference(input: ParseString) -> ParseResult<ParagraphElement> {
 
 // paragraph-element := hyperlink | raw-hyperlink | footnote-reference | paragraph-text | strong | highlight | emphasis | inline-code | strikethrough | underline ;
 pub fn paragraph_element(input: ParseString) -> ParseResult<ParagraphElement> {
-  alt((hyperlink, reference, raw_hyperlink, highlight, footnote_reference, inline_mech_code, inline_equation, paragraph_text, strong, highlight, emphasis, inline_code, strikethrough, underline))(input)
+  alt((hyperlink, reference, raw_hyperlink, highlight, footnote_reference, inline_mech_code, eval_inline_mech_code, inline_equation, paragraph_text, strong, highlight, emphasis, inline_code, strikethrough, underline))(input)
 }
 
 // paragraph := +paragraph_element ;
@@ -668,7 +678,7 @@ pub fn abstract_el(input: ParseString) -> ParseResult<Paragraph> {
 // equation := "$$" , +text ;
 pub fn equation(input: ParseString) -> ParseResult<Token> {
   let (input, _) = equation_sigil(input)?;
-  let (input, mut txt) = many1(text)(input)?;
+  let (input, mut txt) = many1(alt((backslash,text)))(input)?;
   let mut eqn = Token::merge_tokens(&mut txt).unwrap();
   Ok((input, eqn))
 }
@@ -705,7 +715,7 @@ pub fn float(input: ParseString) -> ParseResult<(Box<SectionElement>,FloatDirect
   Ok((input, (Box::new(el), direction)))
 }
 
-// section_element := mech_code | unordered_list | comment | paragraph | code_block | sub_section;
+// sectio-_element := mech-code | list | footnote | citation | abstract | img | equation | markdown-table | float | block-quote | code-block | thematic-break | subtitle | paragraph ;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match many1(mech_code)(input.clone()) {
     Ok((input, code)) => (input, SectionElement::MechCode(code)),

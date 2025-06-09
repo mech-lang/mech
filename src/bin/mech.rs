@@ -101,6 +101,16 @@ async fn main() -> Result<(), MechError> {
         .long("port")
         .value_name("PORT")
         .help("Sets the port for the server (8081)"))
+      .arg(Arg::new("stylesheet")
+        .short('s')
+        .long("stylesheet")
+        .value_name("STYLESHEET")
+        .help("Sets the stylesheet for the HTML output (include/style.css)"))
+      .arg(Arg::new("wasm")
+        .short('w')
+        .long("wasm")
+        .value_name("WASM")
+        .help("Sets the the path to the wasm package (src/wasm/pkg"))
       .arg(Arg::new("address")
         .short('a')
         .long("address")
@@ -140,9 +150,10 @@ async fn main() -> Result<(), MechError> {
     let address = matches.get_one::<String>("address").cloned().unwrap_or("127.0.0.1".to_string());
     let full_address: String = format!("{}:{}",address,port);
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_serve_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
-    
-
-    let mut server = MechServer::new(&full_address);
+    let stylesheet = matches.get_one::<String>("stylesheet").cloned().unwrap_or("include/style.css".to_string());
+    let wasm_pkg = matches.get_one::<String>("wasm").cloned().unwrap_or("src/wasm/pkg".to_string());
+   
+    let mut server = MechServer::new(full_address, stylesheet.to_string(), wasm_pkg.to_string());
     server.init().await?;
     server.load_sources(&mech_paths)?;
     server.serve().await?;

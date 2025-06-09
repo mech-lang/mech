@@ -319,19 +319,18 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
   }
 }
 
-// This is here to satisfy the type checker for this: alt((new_line, semicolon, comment_token))(input)?;
-pub fn comment_token(input: ParseString) -> ParseResult<Token> {
-  let (input, c) = comment(input)?;
-  Ok((input, c.text))
-}
-
 // mech_code := mech_code_alt, ("\n" | ";" | comment) ;
-pub fn mech_code(input: ParseString) -> ParseResult<MechCode> {
+pub fn mech_code(input: ParseString) -> ParseResult<(MechCode,Option<Comment>)> {
   let (input, code) = mech_code_alt(input)?;
   let (input, _) = many0(space_tab)(input)?;
-  let (input, _) = alt((new_line, semicolon, comment_token))(input)?;
+  let (input, cmmnt) = opt(tuple((opt(semicolon),many0(space_tab),comment)))(input)?;
+  let (input, _) = alt((null(new_line), null(semicolon)))(input)?;
   let (input, _) = whitespace0(input)?;
-  Ok((input, code))
+  let cmmt = match cmmnt {
+    Some((_, _, cmnt)) => Some(cmnt),
+    None => None,
+  };
+  Ok((input,(code,cmmt)))
 }
 
 

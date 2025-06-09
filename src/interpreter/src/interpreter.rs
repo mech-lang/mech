@@ -138,9 +138,3 @@ impl Interpreter {
     result
   }
 }
-
-//-----------------------------------------------------------------------------
-
-pub fn program(program: &Program, p: &Interpreter) -> MResult<Value> {
-  body(&program.body, p)
-}

@@ -271,10 +271,10 @@ pub fn punctuation(input: ParseString) -> ParseResult<Token> {
   Ok((input, punctuation))
 }
 
-// escaped_char := "\" ,  symbol | punctuation ;
+// escaped_char := "\" ,  alpha | symbol | punctuation ;
 pub fn escaped_char(input: ParseString) -> ParseResult<Token> {
   let (input, _) = backslash(input)?;
-  let (input, symbol) = alt((symbol, punctuation))(input)?;
+  let (input, symbol) = alt((alpha_token, symbol, punctuation))(input)?;
   Ok((input, symbol))
 }
 
@@ -315,6 +315,20 @@ pub fn whitespace0(input: ParseString) -> ParseResult<()> {
 // ws1 := +whitespace ;
 pub fn whitespace1(input: ParseString) -> ParseResult<()> {
   let (input, _) = many1(whitespace)(input)?;
+  Ok((input, ()))
+}
+
+// newline-indent := new-line, *space-tab ;
+pub fn newline_indent(input: ParseString) -> ParseResult<()> {
+  let (input, _) = new_line(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  Ok((input, ()))
+}
+
+// ws0e := ws0, newline_indent? ;
+pub fn ws1e(input: ParseString) -> ParseResult<()> {
+  let (input, _) = many1(space_tab)(input)?;
+  let (input, _) = opt(newline_indent)(input)?;
   Ok((input, ()))
 }
 
