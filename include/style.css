@@ -754,9 +754,21 @@ code {
 }
 
 .mech-comment {
-    color: #ef5f90;;
+    color: #ef5f90;
     font-style: italic;
     padding-top: 20px;
+    display: flex; /* align contents horizontally */
+    gap: 4px;
+}
+
+.mech-comment p {
+    margin: 0;
+    color: #ef5f90;
+    display: inline;
+}
+
+.mech-comment-sigil {
+    white-space: nowrap;
 }
 
 .mech-string {
