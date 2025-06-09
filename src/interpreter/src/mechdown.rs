@@ -129,7 +129,16 @@ pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
       p.insert_function(usr_fxn);
       Ok(Value::Empty)
     },
-    MechCode::Comment(_) => Ok(Value::Empty),
+    MechCode::Comment(par) => {
+      for el in par.paragraph.elements.iter() {
+        let (code_id,value) = match paragraph_element(&el, p) {
+          Ok(val) => val,
+          _ => continue,
+        };
+        p.out_values.borrow_mut().insert(code_id, value.clone());
+      }
+      Ok(Value::Empty)
+    },
   }
 }
   
