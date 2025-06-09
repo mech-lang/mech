@@ -46,7 +46,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
         }
         // Save the output of the last code block in the parent interpreter
         // so we can reference it later.
-        let last_code = code.last().unwrap();
+        let (last_code, _) = code.last().unwrap();
         let out_id = hash_str(&format!("{:?}", last_code));
         p.out_values.borrow_mut().insert(out_id, out.clone());
       } else {
@@ -60,7 +60,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
         }
         // Save the output of the last code block in the parent interpreter
         // so we can reference it later.
-        let last_code = code.last().unwrap();
+        let (last_code,_) = code.last().unwrap();
         let out_id = hash_str(&format!("{:?}", last_code));
         pp.out_values.borrow_mut().insert(out_id, out.clone());
       }
@@ -68,7 +68,16 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     },
     SectionElement::Subtitle(x) => x.hash(&mut hasher),
     SectionElement::CodeBlock(x) => x.hash(&mut hasher),
-    SectionElement::Comment(x) => x.hash(&mut hasher),
+    SectionElement::Comment(par) => {
+      for el in par.paragraph.elements.iter() {
+        let (code_id,value) = match paragraph_element(&el, p) {
+          Ok(val) => val,
+          _ => continue,
+        };
+        p.out_values.borrow_mut().insert(code_id, value.clone());
+      }
+      return Ok(Value::Empty);
+    },
     SectionElement::Footnote(x) => x.hash(&mut hasher),
     SectionElement::Paragraph(x) => {
       for el in x.elements.iter() {

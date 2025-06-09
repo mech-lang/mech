@@ -711,7 +711,7 @@ window.addEventListener("scroll", () => {{
     }
     self.interpreter_id = 0;
     if self.html {
-      let out_node = node.last().unwrap();
+      let (out_node,_) = node.last().unwrap();
       let output_id = hash_str(&format!("{:?}", out_node));
       format!("<div class=\"mech-fenced-mech-block\">
         <div class=\"mech-code-block\">{}</div>
