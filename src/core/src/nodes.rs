@@ -1183,7 +1183,7 @@ impl ComplexNumber {
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Comment {
-  pub text: Token,
+  pub paragraph: Paragraph,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
