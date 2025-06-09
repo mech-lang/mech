@@ -12,7 +12,7 @@ pub fn comment_sigil(input: ParseString) -> ParseResult<()> {
 
 // comment := comment_singleline | comment_multiline ;
 pub fn comment(input: ParseString) -> ParseResult<Comment> {
-  let (input, _) = whitespace0(input)?;
+  let (input, _) = many0(space_tab)(input)?;
   let (input, _) = comment_sigil(input)?;
   let (input, p) = paragraph(input)?;
   Ok((input, Comment{paragraph: p}))
