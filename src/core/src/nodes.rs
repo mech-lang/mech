@@ -437,13 +437,13 @@ pub enum SectionElement {
   CodeBlock(Token),
   Comment(Comment),
   Equation(Token),
-  FencedMechCode((Vec<MechCode>, BlockConfig)),
+  FencedMechCode((Vec<(MechCode,Option<Comment>)>, BlockConfig)),
   Float((Box<SectionElement>, FloatDirection)),
   Footnote(Footnote),
   Grammar(Grammar),
   Image(Image),
   List(MDList),
-  MechCode(Vec<MechCode>),
+  MechCode(Vec<(MechCode,Option<Comment>)>),
   Paragraph(Paragraph),
   Subtitle(Subtitle),
   Table(MarkdownTable),
@@ -453,9 +453,16 @@ pub enum SectionElement {
 impl SectionElement {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
+      SectionElement::FencedMechCode((code,config)) => {
+        let mut tokens = vec![];
+        for (c,_) in code {
+          tokens.append(&mut c.tokens());
+        }
+        tokens
+      }
       SectionElement::MechCode(codes) => {
         let mut tokens = vec![];
-        for code in codes {
+        for (code,_) in codes {
           tokens.append(&mut code.tokens());
         }
         tokens
@@ -565,7 +572,7 @@ pub struct Guard {
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Transition {
   Async(Pattern),
-  CodeBlock(Vec<MechCode>),
+  CodeBlock(Vec<(MechCode, Option<Comment>)>),
   Next(Pattern),
   Output(Pattern),
   Statement(Statement),

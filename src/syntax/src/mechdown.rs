@@ -268,7 +268,7 @@ pub fn eval_inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement
 pub fn inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, _) = left_brace(input)?;
   let (input, _) = left_brace(input)?;
-  let (input, expr) = mech_code(input)?;
+  let (input, (expr,_)) = mech_code(input)?;
   let (input, _) = right_brace(input)?;
   let (input, _) = right_brace(input)?;
   Ok((input, ParagraphElement::InlineMechCode(expr)))

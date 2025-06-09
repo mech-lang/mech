@@ -34,14 +34,14 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     SectionElement::Equation(x) => x.hash(&mut hasher),
     SectionElement::Abstract(x) => x.hash(&mut hasher),
     SectionElement::MechCode(code) => {
-      for c in code {
+      for (c,_) in code {
         out = mech_code(&c, p)?;
       }
       return Ok(out)
     },
     SectionElement::FencedMechCode((code,code_id)) => {
       if *code_id == 0 {
-        for c in code {
+        for (c,_) in code {
           out = mech_code(&c, &p)?;
         }
         // Save the output of the last code block in the parent interpreter
@@ -55,7 +55,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
           .entry(*code_id)
           .or_insert(Box::new(Interpreter::new(*code_id)))
           .as_mut();
-        for c in code {
+        for (c,_) in code {
           out = mech_code(&c, &pp)?;
         }
         // Save the output of the last code block in the parent interpreter

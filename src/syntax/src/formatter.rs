@@ -672,7 +672,7 @@ window.addEventListener("scroll", () => {{
         }
       },
       ParagraphElement::InlineMechCode(code) => {
-        let result = self.mech_code(&vec![code.clone()]);
+        let result = self.mech_code(&vec![(code.clone(),None)]);
         if self.html {
           format!("<span class=\"mech-inline-mech-code-formatted\">{}</span>", result)
         } else {
@@ -691,10 +691,10 @@ window.addEventListener("scroll", () => {{
     }
   }
 
-  pub fn fenced_mech_code(&mut self, node: &Vec<MechCode>, interpreter_id: &u64) -> String {
+  pub fn fenced_mech_code(&mut self, node: &Vec<(MechCode, Option<Comment>)>, interpreter_id: &u64) -> String {
     self.interpreter_id = *interpreter_id;
     let mut src = "".to_string();
-    for code in node {
+    for (code,cmmnt) in node {
       let c = match code {
         MechCode::Expression(expr) => self.expression(expr),
         MechCode::Statement(stmt) => self.statement(stmt),
@@ -1150,9 +1150,9 @@ window.addEventListener("scroll", () => {{
     }
   }
 
-  pub fn mech_code(&mut self, node: &Vec<MechCode>) -> String {
+  pub fn mech_code(&mut self, node: &Vec<(MechCode,Option<Comment>)>) -> String {
     let mut src = String::new();
-    for code in node {
+    for (code,cmmnt) in node {
       let c = match code {
         MechCode::Comment(cmnt) => self.comment(cmnt),
         MechCode::Expression(expr) => self.expression(expr),
