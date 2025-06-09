@@ -1162,10 +1162,14 @@ window.addEventListener("scroll", () => {{
         MechCode::Statement(stmt) => self.statement(stmt),
         _ => todo!(),
       };
+      let formatted_comment = match cmmnt {
+        Some(cmmt) => self.comment(cmmt),
+        None => String::new(),
+      };
       if self.html {
-        src.push_str(&format!("<span class=\"mech-code\">{}</span>", c));
+        src.push_str(&format!("<span class=\"mech-code\">{}{}</span>", c, formatted_comment));
       } else {
-        src.push_str(&format!("{}\n", c));
+        src.push_str(&format!("{}{}\n", c, formatted_comment));
       }
     }
     if self.html {
