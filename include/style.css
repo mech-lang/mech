@@ -10,8 +10,7 @@ html {
 }
 
 .mech-program {
-    counter-reset: h2;
-    counter-reset: equation;
+    counter-reset: h2 equation;
     margin: auto;
     margin-top: 20px;
     margin-bottom: 20px;
