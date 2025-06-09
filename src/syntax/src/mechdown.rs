@@ -715,7 +715,7 @@ pub fn float(input: ParseString) -> ParseResult<(Box<SectionElement>,FloatDirect
   Ok((input, (Box::new(el), direction)))
 }
 
-// section_element := mech_code | unordered_list | comment | paragraph | code_block | sub_section;
+// sectio-_element := mech-code | list | footnote | citation | abstract | img | equation | markdown-table | float | block-quote | code-block | thematic-break | subtitle | paragraph ;
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match many1(mech_code)(input.clone()) {
     Ok((input, code)) => (input, SectionElement::MechCode(code)),
