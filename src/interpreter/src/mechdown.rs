@@ -34,8 +34,14 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     SectionElement::Equation(x) => x.hash(&mut hasher),
     SectionElement::Abstract(x) => x.hash(&mut hasher),
     SectionElement::MechCode(code) => {
-      for (c,_) in code {
+      for (c,cmmnt) in code {
         out = mech_code(&c, p)?;
+        match cmmnt {
+          Some(cmmnt) => {
+            let cmmnt_value = comment(cmmnt, p)?;
+          }
+          None => {}
+        }
       }
       return Ok(out)
     },
@@ -127,6 +133,18 @@ pub fn paragraph_element(element: &ParagraphElement, p: &Interpreter) -> MResult
   Ok(result)
 }
 
+pub fn comment(cmmt: &Comment, p: &Interpreter) -> MResult<Value> {
+  let par = &cmmt.paragraph;
+  for el in par.elements.iter() {
+    let (code_id,value) = match paragraph_element(&el, p) {
+      Ok(val) => val,
+      _ => continue,
+    };
+    p.out_values.borrow_mut().insert(code_id, value.clone());
+  }
+  Ok(Value::Empty)
+}
+
 pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
   match &code {
     MechCode::Expression(expr) => expression(&expr, p),
@@ -138,16 +156,7 @@ pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
       p.insert_function(usr_fxn);
       Ok(Value::Empty)
     },
-    MechCode::Comment(par) => {
-      for el in par.paragraph.elements.iter() {
-        let (code_id,value) = match paragraph_element(&el, p) {
-          Ok(val) => val,
-          _ => continue,
-        };
-        p.out_values.borrow_mut().insert(code_id, value.clone());
-      }
-      Ok(Value::Empty)
-    },
+    MechCode::Comment(cmmt) => comment(&cmmt, p),
   }
 }
   
