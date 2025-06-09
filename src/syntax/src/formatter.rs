@@ -1062,10 +1062,11 @@ window.addEventListener("scroll", () => {{
   }
 
   pub fn comment(&mut self, node: &Comment) -> String {
+    let comment_text = self.paragraph(&node.paragraph);
     if self.html {
-      format!("<div class=\"mech-comment\">-- {}</div>",node.text.to_string())
+      format!("<span class=\"mech-comment\"><span class=\"mech-comment-sigil\">--</span>{}</span>", comment_text)
     } else {
-      format!("{}\n",node.text.to_string())
+      format!("{}\n",comment_text)
     }
   }
 
