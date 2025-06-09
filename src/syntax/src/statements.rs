@@ -12,27 +12,10 @@ pub fn comment_sigil(input: ParseString) -> ParseResult<()> {
 
 // comment := comment_singleline | comment_multiline ;
 pub fn comment(input: ParseString) -> ParseResult<Comment> {
-  let (input, cmmnt) = alt((comment_singleline, comment_multiline))(input)?;
-  Ok((input, cmmnt))
-}
-
-// comment_singleline := ws0, comment_sigil, text+ ;
-pub fn comment_singleline(input: ParseString) -> ParseResult<Comment> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = comment_sigil(input)?;
-  let (input, mut text) = many1(text)(input)?;
-  Ok((input, Comment{text: Token::merge_tokens(&mut text).unwrap()}))
-}
-
-// comment_multiline := whitespace*, "/*", (!"*/", whitespace* | text)+, "*/" ;
-pub fn comment_multiline(input: ParseString) -> ParseResult<Comment> {
-  let (input, _) = whitespace0(input)?;
-  let (input, _) = tag("/*")(input)?;
-  let (input, text) = many1(nom_tuple((is_not(tag("*/")),alt((text,whitespace)))))(input)?;
-  let mut text = text.iter().map(|(_,a)| a).cloned().collect::<Vec<Token>>();
-  let (input, _) = tag("*/")(input)?;
-  let (input, _) = whitespace0(input)?;
-  Ok((input, Comment{text: Token::merge_tokens(&mut text).unwrap()}))
+  let (input, p) = paragraph(input)?;
+  Ok((input, Comment{paragraph: p}))
 }
 
 // op_assign_operator := add_assign_operator | sub_assign_operator | mul_assign_operator | div_assign_operator | exp_assign_operator ;
