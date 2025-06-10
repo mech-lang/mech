@@ -693,20 +693,25 @@ window.addEventListener("scroll", () => {{
 
   pub fn fenced_mech_code(&mut self, node: &Vec<(MechCode, Option<Comment>)>, interpreter_id: &u64) -> String {
     self.interpreter_id = *interpreter_id;
-    let mut src = "".to_string();
+    let mut src = String::new();
     for (code,cmmnt) in node {
       let c = match code {
-        MechCode::Expression(expr) => self.expression(expr),
-        MechCode::Statement(stmt) => self.statement(stmt),
-        MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
-        MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
         MechCode::Comment(cmnt) => self.comment(cmnt),
+        MechCode::Expression(expr) => self.expression(expr),
+        //MechCode::FsmSpecification(fsm_spec) => self.fsm_specification(fsm_spec),
+        //MechCode::FsmImplementation(fsm_impl) => self.fsm_implementation(fsm_impl),
+        //MechCode::FunctionDefine(func_def) => self.function_define(func_def),
+        MechCode::Statement(stmt) => self.statement(stmt),
         _ => todo!(),
       };
+      let formatted_comment = match cmmnt {
+        Some(cmmt) => self.comment(cmmt),
+        None => String::new(),
+      };
       if self.html {
-        src.push_str(&format!("<div class=\"mech-code\">{}</div>", c));
+        src.push_str(&format!("<span class=\"mech-code\">{}{}</span>", c, formatted_comment));
       } else {
-        src.push_str(&format!("{}\n", c));
+        src.push_str(&format!("{}{}\n", c, formatted_comment));
       }
     }
     self.interpreter_id = 0;
