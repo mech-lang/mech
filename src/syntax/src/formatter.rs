@@ -105,7 +105,7 @@ impl Formatter {
         <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"
         onload="renderMathInElement(document.body);"></script>
 
-
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
         <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
         <style>
@@ -478,7 +478,7 @@ window.addEventListener("scroll", () => {{
     let body = self.body(&node.body);
     let formatted_works_cited = self.works_cited();
     if self.html {
-      format!("<div class=\"mech-program\">{}{}{}</div>",title,body,formatted_works_cited)
+      format!("<div class=\"mech-content\"><div class=\"mech-program\">{}{}{}</div></div>",title,body,formatted_works_cited)
     } else {
       format!("{}{}{}",title,body,formatted_works_cited)
     }

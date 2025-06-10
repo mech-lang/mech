@@ -9,20 +9,12 @@ html {
     scroll-behavior: auto;
 }
 
-.mech-program {
-    counter-reset: h2 equation;
-    margin: auto;
-    margin-top: 20px;
-    margin-bottom: 20px;
-    width: 700px;
-}
-
 body {
     font-family: 'Roboto', sans-serif;
     background-color: #2F353B;
     margin: 0;
     padding: 0;
-    font-size: 12pt;
+    font-size: 1rem;
 }
 
 .mech-root {
@@ -31,27 +23,33 @@ body {
     flex-direction: row;
 }
 
-#mech-output {
+.mech-content {
+    min-width: 800px;
+    counter-reset: h2 equation;
+    flex: 2;
+}
+
+.mech-program {
     max-width: 700px;
-    min-width: 250px;
+    margin: auto;
+}
+
+#mech-output {
     background-color: #171D21;
     color: #f2ead9;
-    border-radius: 10px;
+    flex: 1;
 }
 
 .mech-toc {
     width: 250px;
-    min-width: 250px;
     counter-reset: h2;
     background-color: #171D21;
     color: #f2ead9;
     overflow-y: auto;
-    margin-right: 20px;
-    padding-right: 0px;
-    padding-left: 0px;
     position: sticky; 
     top: 0; 
     height: 100vh;
+    flex-shrink: 0;
 }
 
 .mech-toc h2 {
@@ -83,11 +81,11 @@ body {
 
 .mech-toc h1 {
     visibility: hidden;
-    font-size: 12pt;
+    font-size: 1rem;
 }
 
 .mech-toc h2 {
-    font-size: 12pt;
+    font-size: 1rem;
     padding-left: 13px;
 }
 
@@ -110,7 +108,7 @@ h2.toc::before {
 }
 
 h3.toc::before {
-    font-size: 12pt;
+    font-size: 1rem;
     padding-right: 3px;
     color: rgba(255, 255, 255, 0.55);
 }
@@ -119,7 +117,7 @@ h3.toc::before {
 }
 
 .mech-toc h3 {
-    font-size: 12pt;
+    font-size: 1rem;
     padding-left: 30px;
 }
 
@@ -138,13 +136,13 @@ h3.toc::before {
 }
 
 h4.toc::before {
-    font-size: 12pt;
+    font-size: 1rem;
     padding-right: 3px;
     color: rgba(255, 255, 255, 0.55);
 }
 .mech-toc h4 {
     line-height: 23px;
-    font-size: 12pt;
+    font-size: 1rem;
     padding-left: 60px;
     margin: 10px;
 }
@@ -217,14 +215,14 @@ h4.toc::before {
     padding-right: 6px;
 }
 
-.mech-program .mech-program-title {
+.mech-program-title {
     width: 900px;
     font-family: 'FiraCodeRegular', monospace;
     padding-bottom: 10px;
     border-bottom: 4px dashed #d19710;
     color: #f2ead9;
     letter-spacing: 2px;
-    font-size: 22pt;
+    font-size: 1.83rem;
     font-weight: bold;
     text-align: center;
     margin-bottom: 16px;
@@ -242,7 +240,7 @@ h4.toc::before {
     padding-bottom: 10px;
     border-bottom: 3px dashed #d19710;
     color: #f2ead9;
-    font-size: 16pt;
+    font-size: 1.33rem;
     font-weight: bold;
     letter-spacing: 2px;
     margin-bottom: 20px;
@@ -258,7 +256,7 @@ h4.toc::before {
 .mech-program h3 {
     font-family: 'FiraCodeRegular', monospace;
     color: #f2ead9;
-    font-size: 14pt;
+    font-size: 1.17rem;
     font-weight: bold;
     margin-bottom: 10px;
     letter-spacing: 1px;
@@ -273,7 +271,7 @@ h4.toc::before {
 .mech-program h4 {
     font-family: 'FiraCodeRegular', monospace;
     color: #f2ead9;
-    font-size: 12pt;
+    font-size: 1rem;
     font-weight: bold;
     margin-bottom: 10px;
     letter-spacing: 1px;
@@ -301,7 +299,7 @@ h4.toc {
     background-color: #171D21;
     color: #ada594;
     font-family: 'FiraCodeLight', monospace;
-    font-size: 12pt;
+    font-size: 1rem;
     line-height: 18px;
     padding: 20px;
     border-radius: 10px;
@@ -338,7 +336,7 @@ h4.toc {
     background-color: #171D21;
     color: #ada594;
     font-family: 'FiraCodeLight', monospace;
-    font-size: 12pt;
+    font-size: 1rem;
     line-height: 18px;
     border-radius: 0px;
     padding: 30px;
@@ -481,7 +479,7 @@ code {
     border: 1px solid #777;
     color: #eddaf1;
     font-family: 'FiraCodeLight', monospace;
-    font-size: 12pt;
+    font-size: 1rem;
     padding: 0px 6px 0px 6px;
     margin: 0px 2px 0px 2px;
     border-radius: 3px;
@@ -494,7 +492,7 @@ code {
     background-color: #171D21;
     border: 1px solid #777;
     font-family: 'FiraCodeLight', monospace;
-    font-size: 12pt;
+    font-size: 1rem;
     padding: 0px 6px 0px 6px;
     margin: 0px 2px 0px 2px;
     border-radius: 3px;
@@ -506,7 +504,7 @@ code {
     border: 1px solid #777;
     color: #9ccdf4;
     font-family: 'FiraCodeLight', monospace;
-    font-size: 12pt;
+    font-size: 1rem;
     padding: 0px 6px 0px 6px;
     margin: 0px 2px 0px 2px;
     border-radius: 3px;
@@ -854,7 +852,7 @@ ol {
 .mech-list-item-emoji::before {
     content: attr(data-bullet); 
     position: relative;         
-    font-size: 12pt;          
+    font-size: 1rem;          
     color: #ee6262;;    
     right: 30px;
     top: 13px;
@@ -873,7 +871,7 @@ ol {
 
 .mech-figure-label {
     color: #F3B62D; 
-    font-size: 12pt;
+    font-size: 1rem;
     min-width: 60px;
     text-align: right;
 }
@@ -889,7 +887,7 @@ ol {
 .mech-figure-caption {
     margin-top: 1em;
     color: #eadec2;
-    font-size: 12pt;
+    font-size: 1rem;
     text-align: left;
     line-height: 1.4;
     font-style: italic;
@@ -1033,7 +1031,7 @@ li p {
     background-color: #222A30; 
     color: #f2ead9;
     font-family: 'FiraCodeLight', monospace;
-    font-size: 12pt;
+    font-size: 1rem;
     padding: 20px;
     border: 1px solid #888f92;
     border-radius: 0px 0px 10px 10px; /* Only bottom corners rounded */
@@ -1335,4 +1333,66 @@ mark {
 .mech-table-cell .mech-paragraph {
     margin: 0;
     padding: 0;
+}
+
+@media (max-width: 1650px) {
+    .mech-program-title {
+        width: 700px;
+        margin-left: 0px;
+    }
+    .mech-program h2 {
+        width: 700px;
+        margin-left: -10px;
+    }
+    .mech-program h3 {
+        margin-left: 0px;
+    }
+}
+
+@media (max-width: 1200px) {
+    #mech-output {
+        display: none;
+    }
+}
+
+@media (max-width: 1100px) {
+    .mech-toc {
+        display: none;
+    }
+}
+
+@media (max-width: 750px) {
+    .mech-content {
+        max-width: 100%;
+        min-width: 300px;
+        margin: 10px;
+    }
+
+    .mech-program {
+        max-width: 100%;
+        min-width: 0px;
+    }
+
+    .mech-program-title {
+        width: 100%;
+        margin-left: 0px;
+    }
+    .mech-program h2 {
+        width: 100%;
+        margin-left: 0px;
+    }
+    .mech-program h3 {
+        margin-left: 0px;
+    }
+    
+    .mech-program-section {
+        padding-left: 0px;
+        padding-right: 0px;
+    }
+
+    .mech-table {
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
 }
