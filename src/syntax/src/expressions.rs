@@ -222,9 +222,9 @@ pub fn l5(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// comparison_operator := not_equal | equal_to | greater_than_equal | greater_than | less_than_equal | less_than ;
+// comparison-operator := strict-equal | strict-not-equal | not-equal | equal-to | greater-than-equal | greater-than | less-than-equal | less-than ;
 pub fn comparison_operator(input: ParseString) -> ParseResult<FormulaOperator> {
-  let (input, op) = alt((not_equal, equal_to, greater_than_equal, greater_than, less_than_equal, less_than))(input)?;
+  let (input, op) = alt((strict_equal, strict_not_equal, not_equal, equal_to, greater_than_equal, greater_than, less_than_equal, less_than))(input)?;
   Ok((input, FormulaOperator::Comparison(op)))
 }
 
@@ -274,7 +274,7 @@ pub fn statement_separator(input: ParseString) -> ParseResult<()> {
 
 // ##### Comparison expressions
 
-// not_equal := "!=" | "¬=" | "≠" ;
+// not-equal := "!=" | "¬=" | "≠" ;
 pub fn not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = ws1e(input)?;
   let (input, _) = alt((tag("!="),tag("¬="),tag("≠")))(input)?;
@@ -282,12 +282,28 @@ pub fn not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
   Ok((input, ComparisonOp::NotEqual))
 }
 
-// equal_to := "==" ;
+// equal-to := "==" ;
 pub fn equal_to(input: ParseString) -> ParseResult<ComparisonOp> {
   let (input, _) = ws1e(input)?;
   let (input, _) = tag("==")(input)?;
   let (input, _) = ws1e(input)?;
   Ok((input, ComparisonOp::Equal))
+}
+
+// strict-not-equal := "=!=" | "=¬=" ;
+pub fn strict_not_equal(input: ParseString) -> ParseResult<ComparisonOp> {
+  let (input, _) = ws1e(input)?;
+  let (input, _) = alt((tag("=!="),tag("=¬=")))(input)?;
+  let (input, _) = ws1e(input)?;
+  Ok((input, ComparisonOp::StrictNotEqual))
+}
+
+// strict-equal := "=:=" | "≡" ;
+pub fn strict_equal(input: ParseString) -> ParseResult<ComparisonOp> {
+  let (input, _) = ws1e(input)?;
+  let (input, _) = alt((tag("=:="),tag("≡")))(input)?;
+  let (input, _) = ws1e(input)?;
+  Ok((input, ComparisonOp::StrictEqual))
 }
 
 // greater_than := ">" ;

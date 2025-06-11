@@ -1250,6 +1250,8 @@ pub enum ComparisonOp {
   LessThan,
   LessThanEqual,
   NotEqual,
+  StrictEqual,
+  StrictNotEqual,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]

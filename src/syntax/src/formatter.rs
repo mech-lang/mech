@@ -2235,6 +2235,8 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
   pub fn comparison_op(&mut self, node: &ComparisonOp) -> String {
     match node {
       ComparisonOp::Equal => "⩵".to_string(),
+      ComparisonOp::StrictEqual => "=:=".to_string(),
+      ComparisonOp::StrictNotEqual => "=/=".to_string(),
       ComparisonOp::NotEqual => "≠".to_string(),
       ComparisonOp::GreaterThan => ">".to_string(),
       ComparisonOp::GreaterThanEqual => "≥".to_string(),
