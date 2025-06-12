@@ -995,19 +995,21 @@ li p {
 
 .mech-block-quote {
     width: 80%;
-    background-color: #232A30; 
+    background-color: #1d2227; 
     border-left: 4px solid #F3B62D;; 
-    padding: 13px 20px;
+    padding: 40px 30px 40px 30px;
+    margin: 40px auto;
     color: #f2ead9; 
-    font-style: italic; 
-    margin: auto;
     border-radius: 3px;
+    font-style: italic;
+    font-family: 'Georgia', serif;
+    /* optional visual tweaks */
 }
 
-.mech-block-quote blockquote {
+.mech-block-quote p {
     margin: 0;
-    padding: 0;
-    font-size: 1.2em;
+    line-height: 1.6;
+    font-size: 14pt;
 }
 
 .mech-thematic-break {
