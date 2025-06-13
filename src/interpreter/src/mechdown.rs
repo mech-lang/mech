@@ -33,6 +33,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
     SectionElement::Citation(x) => x.hash(&mut hasher),
     SectionElement::Equation(x) => x.hash(&mut hasher),
     SectionElement::Abstract(x) => x.hash(&mut hasher),
+    SectionElement::Diagram(x) => x.hash(&mut hasher),
     SectionElement::MechCode(code) => {
       for (c,cmmnt) in code {
         out = mech_code(&c, p)?;
