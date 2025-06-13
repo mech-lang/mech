@@ -436,6 +436,7 @@ pub enum SectionElement {
   Citation(Citation),
   CodeBlock(Token),
   Comment(Comment),
+  Diagram(Token),
   Equation(Token),
   FencedMechCode((Vec<(MechCode,Option<Comment>)>, BlockConfig)),
   Float((Box<SectionElement>, FloatDirection)),
