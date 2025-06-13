@@ -582,7 +582,8 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = new_line(input)?;
   let block_src: Vec<char> = text.into_iter().flat_map(|(_, s)| s.chars().collect::<Vec<char>>()).collect();
- 
+  let code_token = Token::new(TokenKind::CodeBlock, src_range, block_src.clone());
+
   match code_id {
     Some(id) => { 
       match id.to_string().as_str() {
@@ -620,6 +621,10 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
                 todo!();
               }
             };
+          } else if tag.starts_with("equation") || tag.starts_with("eq") || tag.starts_with("math") || tag.starts_with("latex") || tag.starts_with("tex") {
+              return Ok((input, SectionElement::Equation(code_token)));
+          } else if tag.starts_with("diagram") || tag.starts_with("chart") || tag.starts_with("mermaid") {
+              return Ok((input, SectionElement::Diagram(code_token)));          
           } else {
             // Some other code block, just keep moving although we might want to do something with it later
           }
@@ -628,7 +633,6 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
     },
     None => (),
   }
-  let code_token = Token::new(TokenKind::CodeBlock, src_range, block_src);
   Ok((input, SectionElement::CodeBlock(code_token)))
 }
 
