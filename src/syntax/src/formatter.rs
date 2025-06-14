@@ -781,7 +781,12 @@ window.addEventListener("scroll", () => {{
     let id = hash_str(&format!("{}",node.id.to_string()));
     self.citations.resize(self.citation_num, String::new());
     let citation_text = self.paragraph(&node.text);
-    let citation_num = self.citation_map.get(&id).unwrap_or(&0);
+    let citation_num = match self.citation_map.get(&id) {
+      Some(&num) => num,
+      None => {
+        return format!("Citation {} not found in citation map.", id);
+      }
+    };
     let formatted_citation = if self.html {
       format!("<div id=\"{}\" class=\"mech-citation\">
       <div class=\"mech-citation-id\">[{}]:</div>
