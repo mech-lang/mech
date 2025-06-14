@@ -1,0 +1,161 @@
+EKF Localization
+===============================================================================
+
+Initialize the simulation
+
+Δt := 10<ms>
+#sim-timer := #time/timer(period: Δt)
+robot := [x<m>: 45, y<m>: 15, θ<rad>: 0]
+μ := [x<m>: 55, y<m>: 25, θ<rad>: 0.4 ]
+u := [v<m/s>: 1, ω<rad/s>: 0]
+camera := [x<m/s>: 140 y<m/s>: 12]
+Σ := [100   0 0
+        0 100 0
+        0   0 0.15]
+
+1. Time Update
+-------------------------------------------------------------------------------
+
+time-update(μ, Σ, u, Δt, Q) = (μ, Σ) :=
+  θ :=  μ.θ
+  Gt := [1  0 -u.v * math/sin(θ) * Δt
+         0  1  u.v * math/cos(θ) * Δt
+         0  0  1]
+  Vt := [math/cos(θ) * Δt  0
+         math/sin(θ) * Δt  0
+         0                 Δt]
+  μ := μ + u.v,v,ω * [math/cos(θ), math/sin(θ), 1] * Δt
+  Σ := Gt ** Σ ** Gt' + Vt ** Q ** Vt'.
+
+2. Measurement Update
+-------------------------------------------------------------------------------
+
+measurement-update(μ<[f32]:3>, Σ<[f32]:3,3>) = (μ<[f32]:3>, Σ<[f32]:3,3>) :=
+  Δy := camera.y - μ.y
+  Δx := camera.x - μ.x
+  q := Δx ^ 2 + Δy ^ 2
+  Ẑ := math/atan2(y: Δy, x: Δx) - μ.θ
+  H := [Δy / q, -Δx / q, -1]
+  S := H ** Σ ** H' + Q
+  K := Σ ** H' / S
+  μ := (μ + K * (z -  Ẑ))
+  Σ := ([1 0 0; 0 1 0; 0 0 1] - K ** H) ** Σ.
+
+3. Controller
+-------------------------------------------------------------------------------
+
+Switch the robot control when it hits particular 
+
+When sim timer changes, update robot. 
+Match any timer update, integrate robot position.
+
+#sim-timer => #robot + u.v,v,ω * [math/cos(robot.θ), math/sin(robot.θ), 1] * Δt
+
+When robot changes, update position estimate and position covariance
+Match any robot position, run time update and then measurement update.
+
+#extended-kalman-filter(μ, Σ, camera, u, Δt, Q) => (μ, Σ) :=
+  ├ Time-Update(μ, Σ) -> Measurement-Update(μ, Σ)
+  ├ Measurement-Update(μ, Σ) -> Done
+  ╰ Done => (μ, Σ).
+
+#extended-kalman-filter(μ, Σ)
+  ├ time-update(μ, Σ, u, Δt, Q)
+  ╰ measurement-update(μ, Σ, camera, z, Q)
+
+When robot changes, update control
+Match x < 400m, set linear velocity to 1m/s
+Match x > 400m turn in place
+Match θ > 1.52, stop and continue forward    
+
+(#robot.x,#robot.θ) -> (<m/s>, <rad/s>) 
+  (< 400<m>,_)   -> (1.0<m/s>, 0.0<rad/s>)
+  (> 400<m>,_)   -> (0.0<m/s>, 0.1<rad/s>)
+  (_,>1.52<rad>) -> (1.0<m/s>, 0.0<rad/s>)
+
+5. Draw
+-------------------------------------------------------------------------------
+
+Calculate the major and minor axes of the covariance ellipse
+  a := Σ[1,1]
+  b := Σ[1,2]
+  c := Σ[2,2]
+  q := (((a - c) / 2) ^ 2 + b ^ 2) ^ 0.5
+  λ1 := ((a + c) / 2) + q
+  λ1 := λ1
+  λ2 := ((a + c) / 2) - q
+  θ := math/atan2(y: λ1 - a, x: b)
+
+Define the shapes
+  robot-drawing := {
+    shape: `Ellipse 
+    parameters: {
+      center-x: robot.x
+      center-y: robot.y + 200
+      major-axis: 16
+      minor-axis: 8
+      rotate: robot.θ
+      fill: 0xFF0000    
+      line-width: 1.0
+    }
+  }
+  robot-hat-drawing := {
+    shape: `Ellipse 
+    parameters: {
+      center-x: robot-hat.x
+      center-y: robot-hat.y + 200
+      major-axis: 16
+      minor-axis: 8 
+      rotate: robot-hat.θ
+      fill: 0x00FF00    
+      line-width: 1.0
+    }
+  }
+  camera-drawing := {
+    shape: `Circle
+    parameters: {
+      center-x: camera.x
+      center-y: camera.y + 200
+      radius: 10.0      
+      fill: 0x0000FF    
+      line-width: 1.0
+    }
+  }
+  covariance := {
+    shape: `Ellipse
+    parameters: {
+      center-x: robot-hat.x
+      center-y: robot-hat.y + 200
+      major-axis: λ1 ^ 0.5
+      minor-axis: λ2 ^ 0.5
+      radius: 35.0      
+      fill: 0xFFAEC9    
+      line-width: 1.0
+      rotate: θ
+    }
+  }
+  text := {
+    shape: `Text
+    parameters: {
+      x: 100.0   
+      y: 200.0   
+      text: x
+      fill: 0xFF0000    
+      font: {size: 50.0, face: "Ariel"}
+    }
+  }
+  
+Draw a shape to the canvas
+  shapes := {
+    covariance
+    robot-drawing
+    robot-hat-drawing
+    camera-drawing
+  }
+  canvas := {
+    kind: `Canvas 
+    contains: {shape parameters| shapes} 
+    parameters: {width: 800.0, height: 800.0}
+  }
+  app := {root: "mech-root"contains: {kind contains parameters| canvas}}
+  ~app -> #html/app

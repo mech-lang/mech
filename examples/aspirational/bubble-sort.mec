@@ -1,0 +1,106 @@
+Bubble Sort Algorithm
+===============================================================================
+
+1. Algorithm Summary
+-------------------------------------------------------------------------------
+
+Bubble Sort is a simple comparison-based sorting algorithm that repeatedly 
+steps through the list, compares adjacent elements, and swaps them if they are 
+in the wrong order. The pass through the list is repeated until the list is 
+sorted.
+
+(a) Key Features --------------------------------------------------------------
+
+- In-place, meaning it doesn't require extra space for sorting.
+- Stable, meaning the relative order of equal elements is preserved.
+
+(b) Pseudocode ----------------------------------------------------------------
+
+- Start from the beginning of the list.
+- Compare adjacent elements and swap them if they are in the wrong order.
+- Repeat this process for each pair of adjacent elements in the list until no 
+  swaps are needed.
+
+
+2. Complexity Analysis
+-------------------------------------------------------------------------------
+
+(a) Time Complexity -----------------------------------------------------------
+
+Best-case: **O(n)** when the list is already sorted.
+
+Average-case and worst-case: **O(n^2)** comparisons and swaps, where n is the 
+number of elements in the list.
+
+(b) Space Complexity ----------------------------------------------------------
+
+In all cases, space complexity is **O(1)** because Bubble Sort is an in-place 
+sorting algorithm.
+
+
+3. Further Considerations
+-------------------------------------------------------------------------------
+
+Bubble Sort is not suitable for large datasets due to its quadratic time 
+complexity. It is often used as a teaching tool due to its simplicity, but it's 
+rarely used in practice for real-world applications where efficiency is 
+critical.
+
+
+4. Implementation
+-------------------------------------------------------------------------------
+
+We implement bubble sort as a finite state machine with the following states:
+
+#bubble-sort(arr<[number]>,ix<usize>) => <[number]> :=
+   ├ `Start(arr,ix)
+   ├ `Comparison(arr,ix) 
+   ├ `Check(arr,ix)
+   └ `Done(arr).
+
+Here's the implementation of the machine:
+
+#bubble-sort(arr) -> `Start(arr,0)
+    -- Begin the sorting process by comparing elements in the input array and 
+    -- keeping track of the number of swapsmade so far.
+    `Start(arr, swaps) -> `Comparison(arr, swaps)
+    -- If the input array is empty, move on to the next step (checking if the 
+    -- sort is done).
+    `Comparison([], swaps) -> `Check(arr, swaps)
+    -- Compare adjacent elements in the array and decide what to do based on 
+    -- the result.
+    `Comparison([a, b, tail], swaps)
+        ├ a > b -> `Comparison([b, a, tail], swaps + 1)
+        └ * -> `Comparison(tail, swaps)
+    -- If no swaps were made during the sorting process, the array is sorted, 
+    -- so signal that the sort is done.
+    `Check(arr, 0) -> `Done(arr)
+    -- If swaps were made, the array is not yet sorted, so start the comparison 
+    -- process again from the beginning.
+    `Check(arr, swaps) -> `Comparison(arr,0)
+    -- The final step: return the sorted array.
+    `Done(arr) => arr.
+
+5. Interface
+-------------------------------------------------------------------------------
+
+Take a list, a, that's just a list of numbers
+
+    a = [4 2 1 3]
+
+We can create an instance of the bubble sort FSM
+
+    #b := #bubble-sort
+    #c := #bubble-sort(a)
+
+The following demonstrates 5 different ways to call a state machine.
+
+    a -> #b => a-sorted-1.
+    #b(a) => a-sorted-2.
+    #bubble-sort(a) => a-sorted-3.
+    #b([4 2 1 3]) => a-sorted-4.
+    a -> #bubble-sort => a-sorted-5.
+    #c => a-sorted-6.
+
+
+    ~ a -> #b ~> #c => a-sorted-1.
