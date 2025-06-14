@@ -437,9 +437,6 @@ window.addEventListener("scroll", () => {{
       }}
       run();
     </script>
-    <script>
-      mermaid.initialize({{ startOnLoad: true }});
-    </script>
   </body>
 </html>"#, encoded_tree);
     format!("{}{}{}{}", head, formatted_toc, formatted_src, foot)
