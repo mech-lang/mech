@@ -1,5 +1,0 @@
-image: "mechlang/mech:latest"
-
-test:cargo:
-  script:
-  - mech test test.mec
