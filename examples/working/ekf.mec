@@ -1,0 +1,87 @@
+EKF Localization
+===============================================================================
+
+The Ektended Kalman Filter (EKF) is a mathematical algorithm used for estimating the state of a dynamic system from noisy measurements. It is an extension of the Kalman Filter that can handle non-linear systems by linearizing them around the current estimate.
+
+This Extended Kalman Filter (EKF) is used to estimate the state of a robot based on noisy measurements from a camera. The robot's state includes its position and orientation, while the camera provides measurements of the robot's position in the world.
+
+1. Kalman Filter Overview
+--------------------------------------------------------------------------------
+
+The Kalman Filter is a iterative algorithm that estimates the state of a system over time. It consists of two main steps: the time update (prediction) and the measurement update (correction). 
+
+- The input to the algorithm is a starting state, a stream of noisy measurements and control inputs, along with a model of the system dynamics.
+- In the **predction phase**, the algorithm predicts the next state of the system based on the current state and next control input.
+- In the **correction phase**, it updates the predicted state based on the next measurement, taking into account the uncertainty in both the prediction and the measurement.
+
+It's an optimal estimator that minimizes the mean squared error of the state estimate over successive time steps. These optimality guarantee, while very useful, only holds under the following assumptions:
+
+1. **Linear Dynamics**: The system dynamics and measurement models are linear functions of the state.
+2. **Gaussian Process**: The process and measurement noise are Gaussian distributed.
+
+Under these assumptions, the Kalman Filter provides an optimal estimate of the state of a system given noisy measurements, which is quite a thing, as optimal guarantees are hard to come by [^1]. But this restriction tends to limit the usefulness of the Kalman Filter in practice, as many real-world systems are non-linear and have non-Gaussian noise characteristics.
+
+For example, consider a simple robot that moves on a 2D plane and can change its orientation. Its state is represented by $$\mathbf{x} = [x, y, \theta]^T $$, where $$x$$ and $$y$$ denote its position and $$\theta$$ its orientation. Suppose the robot receives control inputs $$\mathbf{u} = [v, \omega]^T$$, where $$v$$ is the linear velocity and $$\omega$$ is the angular velocity. The continuous-time motion model is:
+
+$$ \dot{x} = v \cos(\theta)
+$$ \dot{y} = v \sin(\theta)
+$$ \dot{\theta} = \omega
+
+To apply the Kalman Filter, we typically discretize this model using a time step $$\Delta t$$:
+
+$$ x_{k+1} = x_k + v_k \cos(\theta_k) \Delta t
+$$ y_{k+1} = y_k + v_k \sin(\theta_k) \Delta t
+$$ \theta_{k+1} = \theta_k + \omega_k \Delta t
+
+This is a nonlinear system due to the sine and cosine functions of $$\theta$$, which violates the assumptions of the Kalman Filter. So it would seem the Kalman Filter cannot be used even on the simplest of robots. 
+
+This is where the EKF comes in. The EKF linearizes the system around the current estimate of the state, allowing it to handle non-linear dynamics by treating them as linear, and not projecting out too far.
+
+(1.1) Linearization
+(1.1.1) Taylor Expansion
+(1.1.2) Jacobian Matrix
+
+2. Setup
+--------------------------------------------------------------------------------
+
+Initialize the simulation
+
+  Δt := 10
+  robot := {x: 45, y: 15, θ: 0}
+  μ := [55 25 0.4]
+  u := {v: 1, ω: 0}
+  camera := {x: 140 y: 12}
+  Σ := [100   0 0
+          0 100 0
+          0   0 0.15]
+  Q := [0.01 0; 0 0.0025]
+  R := [0.25]
+
+3. Time Update
+-------------------------------------------------------------------------------
+
+  θ :=  μ[3]
+  Gt := [1  0 -u.v * math/sin(θ) * Δt
+        0  1  u.v * math/cos(θ) * Δt
+        0  0  1]
+  Vt := [math/cos(θ) * Δt  0
+        math/sin(θ) * Δt  0
+        0                 Δt]
+  μ2 := μ + [u.v u.v u.ω] * [math/cos(θ), math/sin(θ), 1] * Δt
+  Σ2 := Gt ** Σ ** Gt' + Vt ** Q ** Vt'
+
+4. Measurement Update
+-------------------------------------------------------------------------------
+
+  Δy := camera.y - μ[2]
+  Δx := camera.x - μ[1]
+  q := Δx ^ 2 + Δy ^ 2
+  Ẑ := math/atan2(Δy,Δx) - θ
+  H := [Δy / q, -Δx / q, -1]
+  S := H ** Σ ** H' + R
+  K := Σ ** H' / S[1]
+  μ3 := μ' + K * Ẑ
+  Σ3 := ([1 0 0; 0 1 0; 0 0 1] - K ** H) ** Σ2
+
+
+[^1]: My algorithms professor, Dr. Henry Baird used to say, there are algorithms, and then there are heuristics. Algorithms halt, and therefore require a proof of correctness, which is no small ask. A true algorithm always halts and comes with a proof of correctness under given assumptions. A heuristic is a practical method that may not guarantee optimality or termination. For example, Simulated Annealing is often called an algorithm but is really a heuristic. It can run indefinitely and does not guarantee finding the optimal solution in finite time. In contrast, the Kalman Filter is a proven algorithm that always halts and optimally estimates system states under linear, Gaussian assumptions.
