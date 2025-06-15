@@ -3,7 +3,7 @@ Extended Kalman Filter State Estimation
 
 %% The Ektended Kalman Filter (EKF) is a mathematical algorithm used for estimating the state of a dynamic system from noisy measurements. It is an extension of the Kalman Filter that can handle non-linear systems by linearizing them around the current estimate. Unlike a Kalman Filter, which depends on linear dynamics and Gaussian noise, the EKF can be applied to a wider range of problems, including those with non-linear dynamics and non-Gaussian noise. Therefore, an EKF can be used to estimate the state of systems with inherently nonlinear dynamics, like a mobile robot with noisy sensor measurements. In this program we will introduce the Kalman Filter by deriving it and showing why it can't be used even for the simplest of robots. Then we will show how to relax the linear and Gaussian assumptions to derive the EKF. Finally, we will implement the EKF to estimate the state of a simple robot moving on a 2D plane, using noisy measurements from a camera.
 
-1. Kalman Filter Overview
+1. State Estimation
 --------------------------------------------------------------------------------
 
 State estimation is a fundamental problem in control systems and robotics, where the goal is to estimate the internal state of a system based on measurements from one or more sources, which may have significant noise. The Kalman Filter, introduced by Rudolf Kalman in 1960 [1], is a powerful algorithm that provides an optimal solution to this problem under certain assumptions. 
@@ -79,9 +79,10 @@ This equation breaks down into:
 
 Let's assume we have the following information:
 
-- $$P(\text{Disease}) = 0.01 $$  (1% of the population has the disease)  
-- $$P(\text{Positive} \mid \text{Disease}) = 0.99 $$ (the test correctly identifies 99% of cases)  
-- $$P(\text{Positive} \mid \text{No Disease}) = 0.05 $$ (5% false positive rate)  
+
+P-Disease := 0.01          -- 1% of the population has the disease
+P-Pos-Disease := 0.99      -- true positive rate is 99%
+P-Pos-No-Disease := 0.05   -- false positive rate is 5%
 
 Then the total probability of a positive test is:
 
@@ -91,17 +92,16 @@ P(\text{Positive} \mid \text{Disease}) \cdot P(\text{Disease}) +
 P(\text{Positive} \mid \text{No Disease}) \cdot P(\text{No Disease}) 
 ```
 
-Plugging in the values we get:
+Plugging in the values:
 
-```equation
-P(\text{Positive}) = 0.99 \cdot 0.01 + 0.05 \cdot 0.99 = 0.0099 + 0.0495 = 0.0594
+```mech
+P-Pos := P-Pos-Disease * P-Disease + P-Pos-No-Disease * P-Pos-Disease
 ```
 
-Now apply Bayes’ Theorem:
+Now apply Bayes' Theorem:
 
-```equation
-P(\text{Disease} \mid \text{Positive}) =
-\frac{0.99 \cdot 0.01}{0.0594} \approx 0.1667
+```mech
+P-Disease-Pos := P-Pos-Disease * P-Disease / P-Pos
 ```
 
 Despite a very accurate test, the probability that someone who tests positive *actually* has the disease is only about **16.7%**. This is due to the low base rate (prior probability) of the disease in the general population.
@@ -132,7 +132,8 @@ This equation consists of two steps:
 
 Here, $$\eta$$ is a normalization constant ensuring the result is a valid probability distribution.
 
-(1.3) Kalman Filter Derivation
+2. Kalman Filter
+--------------------------------------------------------------------------------
 
 As a Bayesian state estimator, the Kalman Filter can be derived from the principles of Bayesian inference. The key steps in the derivation are as follows:
 
@@ -147,17 +148,17 @@ where:
 - $$\mathbf{u}_k$$ is the control input,
 - $$\mathbf{w}_k$$ is the process noise, assumed to be Gaussian with zero mean and covariance $$\mathbf{Q}$$.
 
-(1.2) Assumptions: Linear, Gaussian, Continuous
+(2.2) Assumptions: Linear, Gaussian, Continuous
 
 - Linear Dynamics: 
 - Gaussian Process Noise
 - Continuous System 
 
-(1.3) Derivation
+(2.3) Derivation
 
-(1.4) Complexity Analysis
+(2.4) Complexity Analysis
 
-2. Extended Kalman Filter (EKF)
+3. Extended Kalman Filter (EKF)
 --------------------------------------------------------------------------------
 
 Under these assumptions, the Kalman Filter provides an optimal estimate of the state of a system given noisy measurements, which is quite a thing, as optimal guarantees are hard to come by [^1]. But this restriction tends to limit the usefulness of the Kalman Filter in practice, as many real-world systems are non-linear and have non-Gaussian noise characteristics.
@@ -178,12 +179,17 @@ This is a nonlinear system due to the sine and cosine functions of $$\theta$$, w
 
 This is where the EKF comes in. The EKF linearizes the system around the current estimate of the state, allowing it to handle non-linear dynamics by treating them as linear, and not projecting out too far.
 
-(1.1) Linearization
-(1.1.1) Taylor Expansion
-(1.1.2) Jacobian Matrix
+(3.1) Linearization
+(3.1.1) Taylor Expansion
+(3.1.2) Jacobian Matrix
 
-3. Setup
+4. Example - EKF for Mobile Robot Localization
 --------------------------------------------------------------------------------
+
+(4.1) Problem Statement
+We will implement an Extended Kalman Filter (EKF) to estimate the state of a simple mobile robot moving on a 2D plane, using noisy measurements from a camera. The robot's state is represented by its position and orientation, and the camera provides range and bearing measurements to a landmark.
+
+(4.2) System Model
 
 Initialize the simulation
 
@@ -198,8 +204,8 @@ Initialize the simulation
   Q := [0.01 0; 0 0.0025]
   R := [0.25]
 
-4. Time Update
--------------------------------------------------------------------------------
+(4.3) Time Update
+
 
   θ :=  μ[3]
   Gt := [1  0 -u.v * math/sin(θ) * Δt
@@ -211,8 +217,7 @@ Initialize the simulation
   μ2 := μ + [u.v u.v u.ω] * [math/cos(θ), math/sin(θ), 1] * Δt
   Σ2 := Gt ** Σ ** Gt' + Vt ** Q ** Vt'
 
-5. Measurement Update
--------------------------------------------------------------------------------
+(4.4) Measurement Update
 
   Δy := camera.y - μ[2]
   Δx := camera.x - μ[1]
