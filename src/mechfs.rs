@@ -273,10 +273,13 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
     }
   
     pub fn add_source(&mut self, src: &str) -> MResult<MechSourceCode> {
+      let src = src.trim_start_matches("./").trim_start_matches(".\\");
       let src_path = Path::new(src);
       let id = hash_str(&src_path.display().to_string());
       let canonical_path = src_path.canonicalize().unwrap();
+
       self.directory.insert(src_path.to_path_buf(),canonical_path.clone());
+
       self.reverse_lookup.insert(canonical_path.clone(),src_path.to_path_buf());
       let file_id = hash_str(&canonical_path.display().to_string());
       match read_mech_source_file(src_path) {
@@ -393,6 +396,7 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
         };
       }
       let absolute_path = self.directory.get(Path::new(src));
+      
       match absolute_path {
         Some(path) => {
           let file_id = hash_str(&path.display().to_string());
