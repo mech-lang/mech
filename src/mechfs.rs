@@ -155,7 +155,15 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
     reverse_lookup: HashMap<PathBuf, PathBuf>,        // absolute source -> relative source
     id_map: HashMap<u64,PathBuf>,                     // hash -> path
   }
-  
+
+  impl std::fmt::Debug for MechSources {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+      f.debug_struct("MechSources")
+      .field("sources", &self.sources)
+      .finish()
+    }
+  }
+    
   impl MechSources {
   
     pub fn new() -> Self {

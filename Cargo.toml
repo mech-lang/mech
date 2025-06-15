@@ -51,7 +51,8 @@ members = [
   "src/core",
   "src/syntax",
   "src/interpreter",
-  "src/wasm"]
+  "src/wasm",
+  "notebook"]
 
 [build-dependencies]
 winres = "0.1.12"
