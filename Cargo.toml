@@ -44,6 +44,7 @@ base64 = "0.22.1"
 rand = "0.8.5"
 notify = "8.0.0"
 sevenz-rust = "0.6.1"
+include_dir = {version = "0.7.4", features = ["glob"]}
 
 [workspace]
 

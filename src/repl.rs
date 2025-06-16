@@ -13,7 +13,10 @@ use nom::{
   multi::separated_list1,
   character::complete::{space0,space1,digit1},
 };
-//use crate::{minify_blocks, read_mech_files};
+use include_dir::{include_dir, Dir};
+
+static DOCS_DIR: Dir = include_dir!("docs");
+static EXAMPLES_DIR: Dir = include_dir!("examples/working");
 
 #[derive(Debug, Clone)]
 pub enum ReplCommand {
@@ -23,6 +26,7 @@ pub enum ReplCommand {
   //Resume,
   //Stop,
   //Save(String),
+  Docs(Option<String>),
   Code(Vec<(String,MechSourceCode)>),
   Ls,
   Cd(String),
@@ -38,6 +42,8 @@ pub enum ReplCommand {
 }
 
 pub struct MechRepl {
+  pub docs: Dir<'static>,
+  pub examples: Dir<'static>,
   pub active: u64,
   pub interpreters: HashMap<u64,Interpreter>,
 }
@@ -52,6 +58,8 @@ impl MechRepl {
     MechRepl {
       active: intrp_id,
       interpreters,
+      docs: DOCS_DIR.clone(),
+      examples: EXAMPLES_DIR.clone(),
     }
   }
 
@@ -60,6 +68,8 @@ impl MechRepl {
     let mut interpreters = HashMap::new();
     interpreters.insert(intrp_id,interpreter);
     MechRepl {
+      docs: DOCS_DIR.clone(),
+      examples: EXAMPLES_DIR.clone(),
       active: intrp_id,
       interpreters,
     }
@@ -77,6 +87,33 @@ impl MechRepl {
       ReplCommand::Quit => {
         // exit from the program
         process::exit(0);
+      }
+      ReplCommand::Docs(name) => {
+        if let Some(name) = name {
+          let glob = format!("**/*{}*.mec",name);
+          for entry in self.docs.find(&glob).unwrap() {
+            println!("Found {}", entry.path().display());
+            // print out hte contents of hte file
+            match entry.as_file() {
+              Some(file) => {
+                match file.contents_utf8() {
+                  Some(doc_content) => {
+                    return Ok(format!("Documentation for {}:\n\n{}", name, doc_content));
+                  },
+                  None => {
+                    return Ok(format!("No documentation found for {}", name));
+                  }
+                }
+              },
+              None => {
+                return Ok(format!("No documentation found for {}", name));
+              }
+            }
+          }
+          Ok("No documentation found".to_string())
+        } else {
+          todo!("Display all documentation");
+        }
       }
       ReplCommand::Symbols(name) => {return Ok(pretty_print_symbols(&intrp));}
       ReplCommand::Plan => {return Ok(pretty_print_plan(&intrp));}
@@ -146,8 +183,16 @@ impl MechRepl {
       MechRepl::clear_rpl,
       MechRepl::clc_rpl,
       MechRepl::load_rpl,
+      MechRepl::docs_rpl,
     ))(input)?;
     Ok((input, command))
+  }
+
+  fn docs_rpl(input: &str) -> IResult<&str, ReplCommand> {
+    let (input, _) = alt((tag("docs"), tag("d")))(input)?;
+    let (input, _) = space0(input)?;
+    let (input, name) = opt(take_while(|c: char| c.is_alphanumeric()))(input)?;
+    Ok((input, ReplCommand::Docs(name.map(|s| s.to_string()))))
   }
 
   fn help_rpl(input: &str) -> IResult<&str, ReplCommand> {
