@@ -90,7 +90,7 @@ impl MechRepl {
       }
       ReplCommand::Docs(name) => {
         if let Some(name) = name {
-          let glob = format!("**/*{}*.mec",name);
+          let glob = format!("*{}*",name);
           for entry in self.docs.find(&glob).unwrap() {
             println!("Found {}", entry.path().display());
             // print out hte contents of hte file
@@ -98,7 +98,7 @@ impl MechRepl {
               Some(file) => {
                 match file.contents_utf8() {
                   Some(doc_content) => {
-                    return Ok(format!("Documentation for {}:\n\n{}", name, doc_content));
+                    return Ok(format!("{}", doc_content));
                   },
                   None => {
                     return Ok(format!("No documentation found for {}", name));
@@ -110,9 +110,9 @@ impl MechRepl {
               }
             }
           }
-          Ok("No documentation found".to_string())
+          Ok(format!("No documentation found for {}", name))
         } else {
-          todo!("Display all documentation");
+          Ok("Enter a doc to search for.".to_string())
         }
       }
       ReplCommand::Symbols(name) => {return Ok(pretty_print_symbols(&intrp));}
