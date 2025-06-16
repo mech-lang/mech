@@ -1,0 +1,142 @@
+Introduction
+==============================================================================
+
+1. Welcome to Mech!
+------------------------------------------------------------------------------
+
+Hello and welcome to the documentation for Mech, a programming language for developing data-driven, reactive systems. Mech authors build programs by defining data dependencies, transformations, and state machines. This makes Mech particularly well-suited for applications that require real-time data processing, such as simulations, visualizations, and cyber-physical systems like robots.
+
+(1.1) An Example: FizzBuzz
+
+Let's get right to it, here's Mech some code:
+
+```mech
+  x := 1..=10                -- A row vector of numbers from 1 to 10
+  ~out<[string]> := x       -- Convert `x` into string vec
+  
+  ix2 := (x % 2) == 0       -- Indices for multiples of 2
+  ix3 := (x % 3) == 0       -- Indices for multiples of 3
+  
+  out[ix2] = "✨"           -- Set multiples of 2 to "✨"
+  out[ix3] = "🐝"           -- Set multiples of 3 to "🐝"
+  out[ix2 & ix3] = "✨🐝"  -- Set multiples of both to "✨🐝"
+```
+
+This short example demonstrates several key features of the language:
+
+- The syntax is concise, expressive and flexible, without the need for keywords and semicolons. In general, Mech programs should be much shorter than equivalent programs in other languages.
+- Logical indexing manipulates elements of vectors based on conditions, a declarative way to express iteration and choice, which lends to parallel execution.
+- Operations are broadcast elementwise across vectors without needing to write loops, which allows for more efficient execution and automatic vectorization resulting code.
+- Type inference is used to determine the types of variables and expressions, so you don't have to specify all types explicitly.
+- Variables are immutable by default, which encourages safer programming practices and makes reasoning about code easier.
+- Rich text formatting is supported throughout Mech, including in comments, allowing you to document your code in a way that is easy to read and understand.
+
+(1.2) Why Mech?
+
+> "To invent the future, instead of innovating out from the present, what you want to do is invent the future **from** the future, and bring it back." - Alan Kay
+
+Today's most popular programming languages were designed around the assumptions of a different era.
+
+In the past few decades, hardware has evolved from simple, single-threaded, solitary machines to complex, interconnected systems that process large volumes of data in real time across any number of executiuon units. These systems are expected to be interactive, run on heterogeneous distributed hardware, and to even control and move in the physical world. Computers that get up and walk around are a recent development.
+
+Yet, mainstream languages still assume a single-threaded, imperative hardware model by default, creating an impedance mismatch between the programming model and the underlying system. To deal with this, developers rely on frameworks and libraries that add functionality to the language, but don't solve the underlying problem. This creates **incidental complexity**[^1], which manifests as verbose code, data marshalling, manual state management, and concurrency via locks and queues. This is what makes reasoning about concurrent, distributed systems difficult and error-prone in most modern languages.
+
+**The Mech Thesis**
+
+The Mech project is based on a few core ideas:
+
+- New programming languages and models are needed to take advantage of the complexity of modern systems.
+- Actually, this idea isn't new, and many good ideas about this topic have been proposed and tried, but they have not been widely adopted or implemented in a way that is practical for everyday use.
+- We can build on these ideas, incorporating decades of research and experience.
+- With careful design, we can create a language that supports features once considered impossible, but which are now both feasible and necessary.
+
+Mech embraces the complexity of today's systems by providing a programming model that allows you to define how your system should behave in response to changes in data. Whereas other languages pretend the world is single-threaded and imperative, Mech admits the world is inherently concurrent and distributed, and provides a programming model that allows you to work with this complexity directly.
+
+So why Mech?
+
+- Mech allows you to define how your system should behave in response to changes in data or user input, making it easy to build interactive applications that can process and respond to real-time data.
+- Mech provides a distributed programming model that allows you to build systems that can run on multiple devices or machines, making it easy to scale your applications.
+- Mech is designed to be fast and efficient, allowing you to build applications that can run on a wide range of hardware, from embedded devices to high-performance computing clusters.
+- Mech supports live programming and rapid prototyping, allowing you to iterate quickly and experiment with new ideas.
+And more to come.
+
+(1.3) Is Mech for you?
+
+Mech is for you if:
+
+-(📊) You're a data scientist who would like to make an interactive visualization of your data and host it on the internet or in a native desktop application.
+-(🎮) You're a game designer who wants to build a game that requires networking and real-time data processing for multiplayer interactions.
+-(🧑‍🎨) You're an artist who is not a programmer, but would like to create interactive installations or generative art.
+-(🤖) You're an engineer who wants to build a device or robot that interacts with the real-world via embedded microcontrollers, sensors, and actuators.
+-(🧑‍🏫) You're an educator who'd like to use animations and visualizations to teach concepts in math, science, or art.
+-(🧑‍🔬) You're a researcher and you want to build a simulation or model of a complex system, and you'd like to distribute it on the web, the desktop, or embed it inside of your journal paper.
+-(🧑‍💻) You're a developer who wants to build GPU accelerated applications that work natively across windows, mac, linux, and the web.
+-(🕴️) You're a business owner who wants to go beyond spreadsheets for your business management system, to something that can scale to automate business processes as well.
+-(🧙) You're a programming language enthusiast who wants to get involved in a project that is researching new directions in language design and tooling.
+
+3. Programming System
+-------------------------------------------------------------------------------
+
+Whereas traditional languages provide only syntax and a runtime, Mech comes with integrated tools for data transformation, distribution, resource monitoring, and program optimization. As a result, you can focus on defining system behavior rather than managing infrastructure, enabling faster, more reliable development of complex, interconnected systems.
+
+(3.1) Overview
+
+The Mech programming system consists of four parts:
+
+1. **A data description language**, which allows you to define the structure of your data and how it can be transformed.
+2. **A reactive programming model**, based on state machines, which allows authors to write systems that can take advantage of asynchrouns and parallel program execution. (WIP)
+3. **A distributed execution engine**, which allows you to run Mech programs across multiple machines in a variety of environments, including CPUs, GPUs, embedded devices, and the web. (WIP)
+4. **A rich set of "machines"**, libraries, tools, and data sources which provide a wide range of functionality, including data visualization, machine learning, simulation, and more. (WIP)
+
+(3.2) Tools
+
+- `mech` - the Mech programming language toolchain, which includes:
+    - Parser and compiler for the text-based Mech syntax
+    - Runtime for executing Mech programs
+    - REPL for interactive programming
+    - Formatter for formatting Mech code into canonical style or HTML documentation.
+    - Server for serving Mech programs to a wasm client
+    - Language Server Protocol implementation
+- `mech-wasm` - a wasm-based client for running Mech programs in the browser or other wasm environments.
+- `mech-notebook` - a notebook editor for Mech that runs natively on Windows, macOS, and Linux, and also supports running in the browser via `mech-wasm`.
+
+4. About this Documentation
+-------------------------------------------------------------------------------
+
+This documentation is designed to help you get started with Mech, understand its core concepts, and provide guidance on how to use the language effectively. It is structured as follows:
+
+1. **Getting Started**: an introduction to Mech, how to install it, and how to build and run Mech programs. It also covers the Mech REPL (Read-Eval-Print Loop) for interactive programming.
+2. **Reference**: a detailed reference for the Mech language, including its data model, programming model, system model, standard library, and Mechdown reference.
+3. **Guides**: provides practical guides and tutorials for using Mech, including a quick introduction to the language, tutorials for specific use cases, and guides for developers coming from other programming languages.
+4. **Design Documents**: information on the design principles behind Mech, including the language specification, design principles, syntax design notes, and the roadmap for future development, as well as the history of the language.
+
+**Note** - This documentation is written in Mechdown, a lightweight markup language that is compatible with Mech. This means that each document is a valid Mech program that can be executed.
+
+5. Getting Involved
+-------------------------------------------------------------------------------
+
+The Mech community stays active at a few places around the Internet:
+
+-(👾) [Discord](https://discord.gg/asqP25NNTH) - for live chat
+-(🐙) [GitHub](https://github.com/mech-lang) - for code and issues
+-(📺) [YouTube](https://www.youtube.com/@MechLang) - for video tutorials
+-(🛸) [Reddit](https://www.reddit.com/r/mechlang/) - for help and general discussion
+-(📧) [Mailing List](https://groups.google.com/g/mechtalk) - for dev discussion
+
+6. Project Status
+-------------------------------------------------------------------------------
+
+Mech has been in [active development since 2018](https://github.com/mech-lang/mech/graphs/contributors), and reached beta status in 2022.
+
+The beta phase has focused on stabilizing the language and fixing some of the shortcomings of the initial design. We anticipate four stages of development in the beta stage:
+
+-(☑️) [v0.1](https://github.com/mech-lang/mech/tree/v0.1-beta) - proof of concept system - minimum viable language implementation
+-(📍) [v0.2](https://github.com/mech-lang/mech/tree/v0.2-beta) - data specification - formulas, defining and manipulating data
+-(☐) v0.3 - program specification - functions, modules, state machines
+-(☐) v0.4 - system specification - tools, distributed programs, capabilities
+
+Currently the languages version is `v0.2`. This version require a rewrite of most of hte `v0.1` codebase to accomodate changes to the data model and programming model, so many of the features in `v0.1` have yet to be reimplemented. 
+
+Visit the [Roadmap](https://docs.mech-lang.org/IV.design/roadmap.html) for more information on the current status of features.
+
+[^1]: A well-known example is "callback hell," where the imperative model struggles to express relationships between data and events. As a result, developers are forced to chain callbacks, promises, and event handlers in convoluted ways, making the code harder to read, reason about, and maintain.

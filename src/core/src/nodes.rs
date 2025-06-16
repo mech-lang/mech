@@ -436,6 +436,7 @@ pub enum SectionElement {
   Citation(Citation),
   CodeBlock(Token),
   Comment(Comment),
+  Diagram(Token),
   Equation(Token),
   FencedMechCode((Vec<(MechCode,Option<Comment>)>, BlockConfig)),
   Float((Box<SectionElement>, FloatDirection)),
@@ -1250,6 +1251,8 @@ pub enum ComparisonOp {
   LessThan,
   LessThanEqual,
   NotEqual,
+  StrictEqual,
+  StrictNotEqual,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]

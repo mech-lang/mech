@@ -10,7 +10,7 @@ use nom::{
 use crate::nodes::Kind;
 
 // Lexical Elements
-// ============================================================================
+// ----------------------------------------------------------------------------
 // Ref: #58393432045966419
 
 macro_rules! leaf {
@@ -69,48 +69,52 @@ macro_rules! ws1_leaf {
 // ----------------------------------------------------------------------------
 // Ref: 39003557984811317
 
-leaf!{at, "@", TokenKind::At}
-leaf!{hashtag, "#", TokenKind::HashTag}
-leaf!{period, ".", TokenKind::Period}
-leaf!{colon, ":", TokenKind::Colon}
-leaf!{comma, ",", TokenKind::Comma}
-leaf!{percent, "%", TokenKind::Percent}
+leaf!{ampersand, "&", TokenKind::Ampersand}
 leaf!{apostrophe, "'", TokenKind::Apostrophe}
-leaf!{left_bracket, "[", TokenKind::LeftBracket}
-leaf!{right_bracket, "]", TokenKind::RightBracket}
-leaf!{left_parenthesis, "(", TokenKind::LeftParenthesis}
-leaf!{right_parenthesis, ")", TokenKind::RightParenthesis}
-leaf!{left_brace, "{", TokenKind::LeftBrace}
-leaf!{right_brace, "}", TokenKind::RightBrace}
-leaf!{dollar, "$", TokenKind::Dollar}
-leaf!{equal, "=", TokenKind::Equal}
-leaf!{left_angle, "<", TokenKind::LeftAngle}
-leaf!{right_angle, ">", TokenKind::RightAngle}
-leaf!{exclamation, "!", TokenKind::Exclamation}
-leaf!{question, "?", TokenKind::Question}
-leaf!{plus, "+", TokenKind::Plus}
-leaf!{dash, "-", TokenKind::Dash}
-leaf!{underscore, "_", TokenKind::Underscore}
 leaf!{asterisk, "*", TokenKind::Asterisk}
-leaf!{slash, "/", TokenKind::Slash}
+leaf!{at, "@", TokenKind::At}
+leaf!{bar, "|", TokenKind::Bar}
 leaf!{backslash, "\\", TokenKind::Backslash}
 leaf!{caret, "^", TokenKind::Caret}
-leaf!{space, " ", TokenKind::Space}
-leaf!{tab, "\t", TokenKind::Tab}
-leaf!{tilde, "~", TokenKind::Tilde}
+leaf!{colon, ":", TokenKind::Colon}
+leaf!{comma, ",", TokenKind::Comma}
+leaf!{dash, "-", TokenKind::Dash}
+leaf!{dollar, "$", TokenKind::Dollar}
+leaf!{equal, "=", TokenKind::Equal}
+leaf!{exclamation, "!", TokenKind::Exclamation}
 leaf!{grave, "`", TokenKind::Grave}
-leaf!{bar, "|", TokenKind::Bar}
+leaf!{hashtag, "#", TokenKind::HashTag}
+leaf!{negate, "¬", TokenKind::Not}
+leaf!{percent, "%", TokenKind::Percent}
+leaf!{period, ".", TokenKind::Period}
+leaf!{plus, "+", TokenKind::Plus}
+leaf!{question, "?", TokenKind::Question}
 leaf!{quote, "\"", TokenKind::Quote}
-leaf!{ampersand, "&", TokenKind::Ampersand}
 leaf!{semicolon, ";", TokenKind::Semicolon}
+leaf!{slash, "/", TokenKind::Slash}
+leaf!{tilde, "~", TokenKind::Tilde}
+leaf!{underscore, "_", TokenKind::Underscore}
+
+leaf!{check_mark, "✓", TokenKind::True}
+leaf!{cross, "✗", TokenKind::False}
+leaf!{english_true_literal, "true", TokenKind::True}
+leaf!{english_false_literal, "false", TokenKind::False}
+
+leaf!{space, " ", TokenKind::Space}
 leaf!{new_line_char, "\n", TokenKind::Newline}
 leaf!{carriage_return, "\r", TokenKind::CarriageReturn}
 leaf!{carriage_return_new_line, "\r\n", TokenKind::CarriageReturn}
-leaf!{english_true_literal, "true", TokenKind::True}
-leaf!{english_false_literal, "false", TokenKind::False}
-leaf!{check_mark, "✓", TokenKind::True}
-leaf!{cross, "✗", TokenKind::False}
-leaf!{negate, "¬", TokenKind::Not}
+leaf!{tab, "\t", TokenKind::Tab}
+
+leaf!{left_bracket, "[", TokenKind::LeftBracket}
+leaf!{left_parenthesis, "(", TokenKind::LeftParenthesis}
+leaf!{left_brace, "{", TokenKind::LeftBrace}
+leaf!{left_angle, "<", TokenKind::LeftAngle}
+
+leaf!{right_bracket, "]", TokenKind::RightBracket}
+leaf!{right_parenthesis, ")", TokenKind::RightParenthesis}
+leaf!{right_brace, "}", TokenKind::RightBrace}
+leaf!{right_angle, ">", TokenKind::RightAngle}
 
 leaf!{box_tl_round, "╭", TokenKind::BoxDrawing}
 leaf!{box_tr_round, "╮", TokenKind::BoxDrawing}
@@ -136,29 +140,29 @@ leaf!{box_t_bottom, "┴", TokenKind::BoxDrawing}
 leaf!{box_vert, "│", TokenKind::BoxDrawing}
 leaf!{box_vert_bold, "┃", TokenKind::BoxDrawing}
 
-leaf!(http_prefix, "http", TokenKind::HttpPrefix);
-leaf!(img_prefix, "![", TokenKind::ImgPrefix);
-leaf!(footnote_prefix, "[^", TokenKind::FootnotePrefix);
 leaf!(abstract_sigil, "%%", TokenKind::AbstractSigil);
+leaf!(emphasis_sigil, "*", TokenKind::EmphasisSigil);
 leaf!(equation_sigil, "$$", TokenKind::EquationSigil);
-leaf!(highlight_sigil, "!!", TokenKind::HighlightSigil);
-leaf!(quote_sigil, ">", TokenKind::QuoteSigil);
+leaf!(footnote_prefix, "[^", TokenKind::FootnotePrefix);
 leaf!(float_left, "<<", TokenKind::FloatLeft);
 leaf!(float_right, ">>", TokenKind::FloatRight);
-leaf!(strong_sigil, "**", TokenKind::StrongSigil);
-leaf!(emphasis_sigil, "*", TokenKind::EmphasisSigil);
-leaf!(underline_sigil, "__", TokenKind::UnderlineSigil);
-leaf!(strike_sigil, "~~", TokenKind::StrikeSigil);
+leaf!(http_prefix, "http", TokenKind::HttpPrefix);
+leaf!(highlight_sigil, "!!", TokenKind::HighlightSigil);
+leaf!(img_prefix, "![", TokenKind::ImgPrefix);
 leaf!(query_sigil, "??", TokenKind::QuerySigil);
+leaf!(quote_sigil, ">", TokenKind::QuoteSigil);
+leaf!(strike_sigil, "~~", TokenKind::StrikeSigil);
+leaf!(strong_sigil, "**", TokenKind::StrongSigil);
+leaf!(underline_sigil, "__", TokenKind::UnderlineSigil);
 
-ws0_leaf!(define_operator, ":=", TokenKind::DefineOperator);
 ws0_leaf!(assign_operator, "=", TokenKind::AssignOperator);
-ws0_leaf!(output_operator, "=>", TokenKind::OutputOperator);
 ws0_leaf!(async_transition_operator, "~>", TokenKind::AsyncTransitionOperator);
+ws0_leaf!(define_operator, ":=", TokenKind::DefineOperator);
+ws0_leaf!(output_operator, "=>", TokenKind::OutputOperator);
 ws0_leaf!(transition_operator, "->", TokenKind::TransitionOperator);
 
 
-// emoji_grapheme := ?emoji_grapheme_literal? ;
+// emoji-grapheme := ?emoji-grapheme-literal? ;
 pub fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_emoji() {
     Ok((input, matched))
@@ -167,7 +171,7 @@ pub fn emoji_grapheme(mut input: ParseString) -> ParseResult<String> {
   }
 }
 
-// alpha := ?alpha_literal? ;
+// alpha := ?alpha-literal? ;
 pub fn alpha(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_alpha() {
     Ok((input, matched))
@@ -176,7 +180,7 @@ pub fn alpha(mut input: ParseString) -> ParseResult<String> {
   }
 }
 
-// digit := ?digit_literal? ;
+// digit := ?digit-literal? ;
 pub fn digit(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_digit() {
     Ok((input, matched))
@@ -185,7 +189,7 @@ pub fn digit(mut input: ParseString) -> ParseResult<String> {
   }
 }
 
-// any := ?any_character? ;
+// any := ?any-character? ;
 pub fn any(mut input: ParseString) -> ParseResult<String> {
   if let Some(matched) = input.consume_one() {
     Ok((input, matched))
@@ -209,12 +213,12 @@ pub fn any_token(mut input: ParseString) -> ParseResult<Token> {
   }
 }
 
-// forbidden_emoji := box_drawing | other_forbidden_shapes ;
+// forbidden-emoji := box-drawing | other-forbidden-shapes ;
 pub fn forbidden_emoji(input: ParseString) -> ParseResult<Token> {
   alt((box_tl, box_br, box_bl, box_tr, box_tr_bold, box_tl_bold, box_br_bold, box_bl_bold, box_t_left,box_tl_round,box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
-// emoji := (!forbidden_emoji, emoji_grapheme) ;
+// emoji := (!forbidden-emoji, emoji-grapheme) ;
 pub fn emoji(input: ParseString) -> ParseResult<Token> {
   let msg1 = "Cannot be a box-drawing emoji";
   let start = input.loc();
@@ -225,13 +229,13 @@ pub fn emoji(input: ParseString) -> ParseResult<Token> {
   Ok((input, Token{kind: TokenKind::Emoji, chars: g.chars().collect::<Vec<char>>(), src_range}))
 }
 
-// alpha_token := alpha_literal_token ;
+// alpha-token := alpha-literal-token ;
 pub fn alpha_token(input: ParseString) -> ParseResult<Token> {
   let (input, (g, src_range)) = range(alpha)(input)?;
   Ok((input, Token{kind: TokenKind::Alpha, chars: g.chars().collect::<Vec<char>>(), src_range}))
 }
 
-// digit_token := digit_literal_token ;
+// digit-token := digit-literal-token ;
 pub fn digit_token(input: ParseString) -> ParseResult<Token> {
   let (input, (g, src_range)) = range(digit)(input)?;
   Ok((input, Token{kind: TokenKind::Digit, chars: g.chars().collect::<Vec<char>>(), src_range}))
@@ -243,7 +247,7 @@ pub fn alphanumeric(input: ParseString) -> ParseResult<Token> {
   Ok((input, token))
 }
 
-// underscore_digit := underscore, digit ;
+// underscore-digit := underscore, digit ;
 pub fn underscore_digit(input: ParseString) -> ParseResult<Token> {
   let (input, _) = underscore(input)?;
   let (input, digit) = digit_token(input)?;
@@ -259,7 +263,7 @@ pub fn digit_sequence(input: ParseString) -> ParseResult<Vec<Token>> {
   Ok((input,all))
 }
 
-// grouping-symbol := left-parenthesis | right_parenthesis | left-angle | right-angle | left-brace | right-brace | left-bracket | right-bracket ;
+// grouping-symbol := left-parenthesis | right-parenthesis | left-angle | right-angle | left-brace | right-brace | left-bracket | right-bracket ;
 pub fn grouping_symbol(input: ParseString) -> ParseResult<Token> {
   let (input, grouping) = alt((left_parenthesis, right_parenthesis, left_angle, right_angle, left_brace, right_brace, left_bracket, right_bracket))(input)?;
   Ok((input, grouping))
@@ -271,7 +275,7 @@ pub fn punctuation(input: ParseString) -> ParseResult<Token> {
   Ok((input, punctuation))
 }
 
-// escaped_char := "\" ,  alpha | symbol | punctuation ;
+// escaped-char := "\" ,  alpha | symbol | punctuation ;
 pub fn escaped_char(input: ParseString) -> ParseResult<Token> {
   let (input, _) = backslash(input)?;
   let (input, symbol) = alt((alpha_token, symbol, punctuation))(input)?;
@@ -300,7 +304,7 @@ pub fn new_line(input: ParseString) -> ParseResult<Token> {
   Ok((input, result))
 }
 
-// whitespace := space | new_line | tab ;
+// whitespace := space | new-line | tab ;
 pub fn whitespace(input: ParseString) -> ParseResult<Token> {
   let (input, space) = alt((space,tab,new_line))(input)?;
   Ok((input, space))
@@ -325,7 +329,7 @@ pub fn newline_indent(input: ParseString) -> ParseResult<()> {
   Ok((input, ()))
 }
 
-// ws0e := ws0, newline_indent? ;
+// ws0e := ws0, newline-indent? ;
 pub fn ws1e(input: ParseString) -> ParseResult<()> {
   let (input, _) = many1(space_tab)(input)?;
   let (input, _) = opt(newline_indent)(input)?;
@@ -351,7 +355,7 @@ pub fn enum_separator(input: ParseString) -> ParseResult<()> {
 }
 
 // Identifiers
-// ============================================================================
+// ----------------------------------------------------------------------------
 // Ref: #40075932908181571
 
 // identifier := (alpha | emoji), (alpha | digit | symbol | emoji)* ;

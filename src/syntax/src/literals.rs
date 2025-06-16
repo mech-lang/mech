@@ -6,6 +6,32 @@ use nom::{
 };
 use crate::nodes::Kind;
 
+// literal := (number | string | atom | boolean | empty), kind-annotation? ;
+pub fn literal(input: ParseString) -> ParseResult<Literal> {
+  let (input, result) = match number(input.clone()) {
+    Ok((input, num)) => (input, Literal::Number(num)),
+    _ => match string(input.clone()) {
+      Ok((input, s)) => (input, Literal::String(s)),
+      _ => match atom(input.clone()) {
+        Ok((input, atm)) => (input, Literal::Atom(atm)),
+        _ => match boolean(input.clone()) {
+          Ok((input, boolean)) => (input, Literal::Boolean(boolean)),
+          _ => match empty(input.clone()) {
+            Ok((input, empty)) => (input, Literal::Empty(empty)), 
+            Err(err) => {return Err(err);}
+          }
+        }
+      }
+    }
+  };
+  let (input, result) = match opt(kind_annotation)(input.clone()) {
+    Ok((input, Some(knd))) => ((input, Literal::TypedLiteral((Box::new(result),knd)))),
+    Ok((input, None)) => (input,result),
+    Err(err) => {return Err(err);}
+  };
+  Ok((input, result))
+}
+
 // string := quote, (!quote, text)*, quote ;
 pub fn string(input: ParseString) -> ParseResult<MechString> {
   let msg = "Character not allowed in string";

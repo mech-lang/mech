@@ -1,0 +1,52 @@
+Fizz Buzz
+==========
+
+The Fizz Buzz problem is a simple programming exercise that involves printing numbers from 1 to 100, but with a twist. 
+
+- For multiples of 3, print "Fizz" instead of the number, 
+- For multiples of 5 print "Buzz"
+- For numbers that are multiples of both 3 and 5, print "FizzBuzz". 
+
+This is a common exercise in programming interviews to test a candidate's understanding of control flow and basic programming concepts.
+
+In most imperative progrmaming languages you'd solve FizzBuzz like this:
+
+```
+for i in 1..100 {
+  if (i % 3 == 0 && i % 5 == 0) {
+    println("FizzBuzz");
+  } else if (i % 3 == 0) {
+    println("Fizz");
+  } else if (i % 5 == 0) {
+    println("Buzz");
+  } else {
+    println(i);
+  }
+}
+```
+
+One of the "tricks" of the problem is that when you implement it using a control-flow statement like `if`,  you have to handle the "FizzBuzz" case first, otherwise you will print "Fizz" or "Buzz" instead of "FizzBuzz"; a naive implementor might code the conditions in the order they are presented in the problem statement, which would lead to incorrect results.
+
+But in Mech we can achieve this in a more concise way. First get a vector of numbers from 1 to 100:
+
+  x := 1..=100
+  ~y<[string]> := 1..=100
+
+then replace the values based on the conditions specified using a feature called "logical indexing", which allows us to directly manipulate elements of a vector based on conditions. First we can create an index for all the multiples of 3 and 5:
+
+  ix3 := (x % 3) == 0
+  ix5 := (x % 5) == 0
+
+Then we can use these indices to replace the values in the vector `y`:
+
+  y[ix3] = "✨"
+  y[ix5] = "🐝"
+  y[ix3 & ix5] = "✨🐝"
+
+The statement {{y[ix3] = "✨";}} is equivalent to saying "for all elements in y where the corresponding element in ix3 is true, set that element to '✨'".
+
+Then we can print them all out at once:
+
+```mech
+  y
+```

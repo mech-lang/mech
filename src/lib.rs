@@ -95,34 +95,10 @@ pub fn help() -> String {
   let mut builder = Builder::default();
   builder.push_record(vec!["Command","Short","Parameters","Description"]);
   builder.push_record(vec![
-    ":help".to_string(),
-    ":h".to_string(),
+    ":cd".to_string(),
     "".to_string(),
-    "Display this help message".to_string()
-  ]);
-  builder.push_record(vec![
-    ":quit".to_string(),
-    ":q".to_string(),
-    "".to_string(),
-    "Quit the REPL".to_string()
-  ]);
-  builder.push_record(vec![
-    ":symbols".to_string(),
-    ":s".to_string(),
-    "[search pattern]".to_string(),
-    "Search symbols".to_string()
-  ]);
-  builder.push_record(vec![
-    ":plan".to_string(),
-    ":p".to_string(),
-    "".to_string(),
-    "Display the plan".to_string()
-  ]);
-  builder.push_record(vec![
-    ":whos".to_string(),
-    ":w".to_string(),
-    "[search pattern]".to_string(),
-    "Search symbol directory".to_string()
+    "[target path]".to_string(),
+    "Change directory".to_string()
   ]);
   builder.push_record(vec![
     ":clc".to_string(),
@@ -137,6 +113,18 @@ pub fn help() -> String {
     "Clear the interpreter state".to_string()
   ]);
   builder.push_record(vec![
+    ":docs".to_string(),
+    ":d".to_string(),
+    "[doc name]".to_string(),
+    "Search documentation for a given doc".to_string()
+  ]);
+  builder.push_record(vec![
+    ":help".to_string(),
+    ":h".to_string(),
+    "".to_string(),
+    "Display this help message".to_string()
+  ]);
+  builder.push_record(vec![
     ":load".to_string(),
     "".to_string(),
     "[file path]".to_string(),
@@ -149,16 +137,34 @@ pub fn help() -> String {
     "List directory contents".to_string()
   ]);
   builder.push_record(vec![
-    ":cd".to_string(),
+    ":plan".to_string(),
+    ":p".to_string(),
     "".to_string(),
-    "[target path]".to_string(),
-    "Change directory".to_string()
+    "Display the plan".to_string()
+    ]);
+  builder.push_record(vec![
+    ":quit".to_string(),
+    ":q".to_string(),
+    "".to_string(),
+    "Quit the REPL".to_string()
   ]);
   builder.push_record(vec![
     ":step".to_string(),
     "".to_string(),
     "[step count]".to_string(),
     "Iterate plan".to_string()
+  ]);
+  builder.push_record(vec![
+    ":symbols".to_string(),
+    ":s".to_string(),
+    "[search pattern]".to_string(),
+    "Search symbols".to_string()
+  ]);
+  builder.push_record(vec![
+    ":whos".to_string(),
+    ":w".to_string(),
+    "[search pattern]".to_string(),
+    "Search symbol directory".to_string()
   ]);
   let mut table = builder.build();
   table.with(mech_table_style())

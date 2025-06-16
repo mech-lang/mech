@@ -100,7 +100,10 @@ impl Formatter {
     let head = format!(r#"<!DOCTYPE html>
 <html>
     <head>
+        <link rel="icon" href="https://gitlab.com/mech-lang/assets/-/raw/main/images/favicon.ico" type="image/x-icon" />
+        
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" integrity="sha384-5TcZemv2l/9On385z///+d7MSYlvIEw9FuZTIdZ14vJLqWphw7e7ZPuOiCHJcFCP" crossorigin="anonymous">
+        <script defer src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
         <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" integrity="sha384-cMkvdD8LoxVzGF/RPUKAcvmm49FQ0oxwDF3BGKtDXcEc+T1b2N+teh/OJfpU0jr6" crossorigin="anonymous"></script>
         <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"
         onload="renderMathInElement(document.body);"></script>
@@ -765,11 +768,25 @@ window.addEventListener("scroll", () => {{
     }
   }
 
+  pub fn diagram(&mut self, node: &Token) -> String {
+    let id = hash_str(&format!("diagram-{}",node.to_string()));
+    if self.html {
+      format!("<div id=\"{}\" class=\"mech-diagram mermaid\">{}</div>",id, node.to_string())
+    } else {
+      format!("```{{diagram}}\n{}\n```", node.to_string())
+    }
+  }
+
   pub fn citation(&mut self, node: &Citation) -> String {
     let id = hash_str(&format!("{}",node.id.to_string()));
     self.citations.resize(self.citation_num, String::new());
     let citation_text = self.paragraph(&node.text);
-    let citation_num = self.citation_map.get(&id).unwrap_or(&0);
+    let citation_num = match self.citation_map.get(&id) {
+      Some(&num) => num,
+      None => {
+        return format!("Citation {} not found in citation map.", id);
+      }
+    };
     let formatted_citation = if self.html {
       format!("<div id=\"{}\" class=\"mech-citation\">
       <div class=\"mech-citation-id\">[{}]:</div>
@@ -804,6 +821,7 @@ window.addEventListener("scroll", () => {{
       SectionElement::Citation(n) => self.citation(n),
       SectionElement::CodeBlock(n) => self.code_block(n),
       SectionElement::Comment(n) => self.comment(n),
+      SectionElement::Diagram(n) => self.diagram(n),
       SectionElement::Equation(n) => self.equation(n),
       SectionElement::FencedMechCode((n,s)) => self.fenced_mech_code(n,s),
       SectionElement::Float((n,f)) => self.float(n,f),
@@ -2235,6 +2253,8 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
   pub fn comparison_op(&mut self, node: &ComparisonOp) -> String {
     match node {
       ComparisonOp::Equal => "⩵".to_string(),
+      ComparisonOp::StrictEqual => "=:=".to_string(),
+      ComparisonOp::StrictNotEqual => "=/=".to_string(),
       ComparisonOp::NotEqual => "≠".to_string(),
       ComparisonOp::GreaterThan => ">".to_string(),
       ComparisonOp::GreaterThanEqual => "≥".to_string(),

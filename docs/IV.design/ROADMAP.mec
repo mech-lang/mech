@@ -1,0 +1,268 @@
+Mech Project Roadmap
+===============================================================================
+
+1. Project Status
+-------------------------------------------------------------------------------
+
+(1.1) Stage 1 - Alpha v0.0.1 - v0.0.6
+
+Conception: started 2014
+Implementation: started 2018
+
+(1.2) Stage 2 - Beta v0.1.0 - v0.4+ (???)
+
+Started: December 2022
+Currently: v0.2.40 (Spring 2025)
+
+- v0.2 (data specification)    (Wrapping Up)
+- v0.3 (program specification) (Starting in 2025)
+- v0.4 (system specification)
+
+(1.3) Stage 3 - Stable v1.0.0
+
+Target release date: ???
+
+2. Feature Status
+-------------------------------------------------------------------------------
+
+-(💭) concept
+-(🥚) proof of concept implementation
+-(🐣) alpha implementation
+-(🐤) beta implementation
+-(🐓) feature complete
+-(🍗) deprecated
+
+(2.1) Data Specification
+
+-(🥚) imaginary and scientific numbers
+-(🐣) typed tables for heterogeneous data
+-(🐣) sets
+-(🐣) maps
+-(🐣) enums
+-(🐣) strings
+-(🐣) atoms
+-(🐤) bools
+-(🐤) matrix slicing
+-(🐤) operator broadcasting
+-(🐤) builtin linear algebra tools
+-(🐤) logical indexing
+-(🐤) matrix builder notation
+-(🐤) variable type and size checking
+-(🐤) variable type inference
+-(🐤) standard library functions
+-(🐤) multiple dynamic dispatch
+-(🐤) value semantics
+-(🐤) Mutable value semantics
+-(🐤) data notation
+-(🐓) variety of numerical datatypes
+-(🐓) flexible matrix type with fixed and dynamic sizes for homogeneous data
+
+(2.2) Program Specification
+
+-(💭) state machines
+-(💭) automatic differentiation
+-(💭) introspection
+-(🥚) physical units with dimension checking
+-(🥚) file/parameter server
+-(🥚) self-contained binary executables
+-(🥚) time travel debugging
+-(🥚) language server
+-(🐣) user defined functions
+-(🐣) tests
+-(🐣) profiler
+-(🐣) gui
+-(🐣) live coding
+-(🐤) repl
+-(🐤) literate programming
+
+(2.3) System specification
+
+-(💭) gpgpu
+-(🐣) capability permissions
+-(🐣) distributed programs
+-(🐣) concurrent programming
+
+3. Nearterm Goals
+-------------------------------------------------------------------------------
+
+(3.1) Version 0.2.0
+
+Current work is focused on reimplementing the core of the Mech language to reorient programs around state machines. Version 0.2 will be focused on dataspecification - entering data into the system, slicing, remixing, and reshaping it for use in program logic.
+
+-[x] Monorepo
+- New Literals
+  -[x] Enums
+  -[x] Atoms
+  -[x] Specifying units
+  -[x] Scientific notation
+- Table redo
+  -[x] Different kinds: Table, Matrix, Record, Set, Tuple
+  -[x] Simplify indexing
+  -[x] HashTable/HashSet support
+- Stdlib Redo
+  -[x] Math
+  -[x] Compare
+  -[x] Logic
+  -[x] Range
+  -[x] Access
+  -[x] Convert
+- Parser Redo
+  -[x] Mechdown
+  -[x] Statements
+  -[x] Expressions
+  -[x] Structures
+  -[x] Formatter
+- Mechdown Redo
+  -[x] Headers
+  -[x] Paragraphs
+  -[x] Code Block
+  -[x] Ordered List
+- Expression
+  -[x] Var  
+  -[x] Range
+  -[x] Slice
+  -[x] Forumula
+  -[x] Struct
+  -[x] Literal
+  -[x] Function call
+- Statement
+  -[x] VarDefine
+  -[x] VarAssign
+  -[x] Kind Define
+  -[x] Enum Define
+- Matrix
+  -[x] Multiply
+  -[x] Transpose
+- Docs
+  -[x] Language Spec
+  -[x] Learn Mech in 15 Minutes
+
+(3.2) Version 0.3.0 (Summer 2025)
+
+-[ ] Dec64
+-[ ] Currency
+-[ ] Autograd syntax
+-[ ] History syntax
+-[ ] Database redo
+  -[ ] ACID
+  -[ ] Persistence
+  -[ ] Time travel debugging
+  -[ ] Capabilities
+-[ ] Distributed runtime redo
+  -[ ] Core syntax
+  -[ ] CAP
+  -[ ] QOS
+  -[ ] Inbox
+  -[ ] Capabilities
+-[ ] Machines revamp
+  -[ ] Packaging
+  -[ ] Reuse
+  -[ ] Composition
+  -[ ] Explicit importing
+  -[ ] Remapping
+  -[ ] Specifying versions  
+-[ ] Editor
+  -[ ] Start and stop cores
+  -[ ] Save and load programs
+  -[ ] Workspace explorer
+  -[ ] API endpoint server
+  -[ ] Syntax highlighting
+  -[ ] Embed programs
+  -[ ] Display errors
+-[ ] Machines
+  -[ ] json
+  -[ ] sockets
+  -[ ] serial
+  -[ ] bluetooth
+  -[ ] audio
+  -[ ] maps
+  -[ ] plot
+  -[ ] gpgpu
+- State machines
+  -[ ] Specification
+  -[ ] Definition
+-[ ] Split 
+-[ ] Flatten 
+-[ ] Solve linear system
+-[ ] FSM Pipe
+-[ ] Tutorials
+-[ ] How-Tos
+-[ ] Mech for X
+- Website
+  -[ ] Homepage
+  -[ ] Blog
+  -[ ] Docs
+  -[ ] Try
+- Function Redo
+  -[x] FXN Call
+  -[x] FXN Defintiion
+
+4. Project History
+-------------------------------------------------------------------------------
+
+(4.1) Version 0.0.6 Alpha (unreleased)
+
+-[x] Testing
+-[x] Machines 
+  -[x]HTML
+    -[x] Mouse
+    -[x] Keyboard
+    -[x] Canvas Drawing
+  -[x] File I/O
+  -[x] Standard Streams
+  -[x] Strings
+  -[x] Number Literals
+  -[x] HTTP
+  -[x] Math
+  -[x] Stats
+  -[x] Random
+  -[x] Time
+  -[x] Set
+  -[x] System
+    -[x] Input Arguments
+    -[x] Exit
+  -[x] Mech Compiler
+  -[x] Table
+
+(4.2) Version 0.1.0 (December 2022)
+
+-[x] User defined functions
+-[x] Errors
+-[x] Distribution
+-[x] Paralell operators
+-[x] Async blocks
+-[x] Units
+-[x] Type checking
+-[x] Multiple dispatch
+-[x] JIT Block Compiler
+-[x] Native executables
+-[x] REPL
+-[x] Machines
+  -[x] Matrix
+  -[x] GUI
+
+(4.3) Version 0.1.1 (Spring 2023)
+
+- Core
+  -[x] Automatic differentiation
+  -[x] Capability system
+  -[x] New parser
+- Language Server
+  -[x] Syntax Highlighter
+  -[x] Autocomplete
+  -[x] Goto Definition
+  -[x] Goto Docs
+  -[x] Hover inspector
+  -[x] Workspace support
+  -[x] Database watcher
+- Editor
+  -[x] Compile programs
+  -[x] Database Explorer
+- Docs
+  - Mech platform references
+    -[x] User Guide
+    -[x] Ecosystem
+    -[x] Architecture
+- Machines
+  - More gui
+  - ai

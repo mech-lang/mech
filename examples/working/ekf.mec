@@ -1,0 +1,238 @@
+Extended Kalman Filter State Estimation
+===============================================================================
+
+%% The Ektended Kalman Filter (EKF) is a mathematical algorithm used for estimating the state of a dynamic system from noisy measurements. It is an extension of the Kalman Filter that can handle non-linear systems by linearizing them around the current estimate. Unlike a Kalman Filter, which depends on linear dynamics and Gaussian noise, the EKF can be applied to a wider range of problems, including those with non-linear dynamics and non-Gaussian noise. Therefore, an EKF can be used to estimate the state of systems with inherently nonlinear dynamics, like a mobile robot with noisy sensor measurements. In this program we will introduce the Kalman Filter by deriving it and showing why it can't be used even for the simplest of robots. Then we will show how to relax the linear and Gaussian assumptions to derive the EKF. Finally, we will implement the EKF to estimate the state of a simple robot moving on a 2D plane, using noisy measurements from a camera.
+
+1. State Estimation
+--------------------------------------------------------------------------------
+
+State estimation is a fundamental problem in control systems and robotics, where the goal is to estimate the internal state of a system based on measurements from one or more sources, which may have significant noise. The Kalman Filter, introduced by Rudolf Kalman in 1960 [1], is a powerful algorithm that provides an optimal solution to this problem under certain assumptions. 
+
+Before the Kalman Filter, internal state was often estimated using dead reckoning, which involves predicting the state based on previous states and control inputs. However, dead reckoning is prone to accumulating errors over time, especially in the presence of noise.
+
+This is an example of feedforward state estimation, where the control input is used to predict the next state of the system, but the state of the system is never directly measured or observed in any way.
+ 
+```diagram
+graph LR
+    START:::hidden -- input --> A((✖))
+    A --> B[plant] -- output --> END:::hidden
+    classDef hidden display: none;
+```
+
+In this diagram, the plant is the system being controlled, and the input is the control signal, which is integrated to predict the next state of the system and then fed directly into the "plant" (another word from the system being controlled, think power plant). The output is the state of the system, which is not measured or observed.
+
+An example is a robot estimating its position and orientaation simply by integrating its velocity, which is obtained from internal odometry sensors that measure the rate of rotation of its wheels. This technique is error-prone, because what happens if the robot slips or skids? The odometer will note that the the wills are spinning at one rate, but the robot actually moves at a different rate. This error will accumulate over time, because once incurred it will never be corrected.
+
+The Kalman Filter by contrast is a feedback (or closed-loop) state estimation algorithm that uses measurements from sensors to correct the state estimate over time. 
+
+We can update the feedforward diagram by adding a feedback line, which observes the output of the plant and "feeds it back" into the input of the state estimator. We use the feedback to correct the state, given the errors in the prediction.
+
+```diagram
+graph LR
+    START:::hidden -- input --> A((✖))
+    A --> B[plant] --> C((‒)) 
+    C -- output --> END:::hidden
+    C -.-> |feedback| A
+    classDef hidden display: none;
+```
+
+The algorithm works iteratively in two phases: the time update (prediction) and the measurement update (correction). 
+
+- The input to the algorithm is a starting state, a stream of noisy measurements and control inputs, along with a model of the system dynamics.
+- In the **predction phase**, the algorithm predicts the next state of the system based on the current state and next control input.
+- In the **correction phase**, it updates the predicted state based on the next measurement, taking into account the uncertainty in both the prediction and the measurement.
+
+The brilliance and utility of the Kalman Filter is that it's an *optimal estimator*; it minimizes the mean squared error of the state estimate over successive time steps. But, this optimality guarantee, while very useful, only holds under the following assumptions: the system has *linear* dynamics, it's *continuous*, and the distribution of process noise is *Gaussian*.
+
+Let's derive the Kalman Filter to see why these assumptions are necessary.
+
+(1.1) General Bayesian State Estimation
+
+Kalman Filters belong to a class of algorithms known as Bayesian state estimation methods. These methods use Bayes' theorem to update the probability distribution of the state of a system based on new measurements. The key idea is to maintain a belief about the state of the system, represented as a probability distribution, and update this belief as new information becomes available.
+
+Bayes' theorem states that the posterior probability of a state given a measurement is proportional to the product of the prior probability of the state and the likelihood of the measurement given that state:
+
+$$ P(\mathbf{x} | \mathbf{z}) = \frac{P(\mathbf{z} | \mathbf{x}) P(\mathbf{x})}{P(\mathbf{z})}
+
+Where:
+
+- $$ P(\mathbf{x} | \mathbf{z}) $$ is the posterior probability of the state $$\mathbf{x}$$ given the measurement $$\mathbf{z}$$.
+- $$ P(\mathbf{z} | \mathbf{x}) $$ is the likelihood of the measurement given the state.
+- $$ P(\mathbf{x}) $$ is the prior probability of the state.
+- $$ P(\mathbf{z}) $$ is the marginal likelihood of the measurement.
+
+A classic example of Bayesian state estimation is estimating the probability of having a disease, given the result of a diagnostic test.
+
+We use Bayes' Theorem to compute the *posterior* probability:
+
+```equation
+P(\text{Disease} \mid \text{Positive}) = 
+\frac{P(\text{Positive} \mid \text{Disease}) \cdot P(\text{Disease})}
+     {P(\text{Positive})}
+```
+
+This equation breaks down into:
+
+- **Prior**: $$ P(\text{Disease}) $$ — the baseline probability of having the disease  
+- **Likelihood**: $$ P(\text{Positive} \mid \text{Disease}) $$ — the probability of testing positive if you have the disease  
+- **Evidence**: $$ P(\text{Positive}) $$ — the total probability of testing positive, regardless of disease status
+
+Let's assume we have the following information:
+
+
+P-Disease := 0.01          -- 1% of the population has the disease
+P-Pos-Disease := 0.99      -- true positive rate is 99%
+P-Pos-No-Disease := 0.05   -- false positive rate is 5%
+
+Then the total probability of a positive test is:
+
+```equation
+P(\text{Positive}) = 
+P(\text{Positive} \mid \text{Disease}) \cdot P(\text{Disease}) +
+P(\text{Positive} \mid \text{No Disease}) \cdot P(\text{No Disease}) 
+```
+
+Plugging in the values:
+
+```mech
+P-Pos := P-Pos-Disease * P-Disease + P-Pos-No-Disease * P-Pos-Disease
+```
+
+Now apply Bayes' Theorem:
+
+```mech
+P-Disease-Pos := P-Pos-Disease * P-Disease / P-Pos
+```
+
+Despite a very accurate test, the probability that someone who tests positive *actually* has the disease is only about **16.7%**. This is due to the low base rate (prior probability) of the disease in the general population.
+
+This example illustrates the power of Bayesian reasoning, which updates our belief $$P(\text{Disease})$$ based on observed evidence (a positive test).
+
+(1.2) Bayesian Filtrs
+
+Bayesian filters use Bayes' law to estimate the unobservable state, meaning we cannot mesaure it directly, of a system from observable data, typically from sensors. They achieve this by recursively updating a posterior probability distribution over the system's state using a transition model of the system's dynamics, and incoming observations. 
+
+Let's call the systems **state** $$s_t$$. You can think of the state as the pose of a robot in its environment, or the configuration of joints in an actuator.
+
+The observable data consists of:
+
+- A **control input** $$u_t$$, which directs the robot's motion (such as velocity commands to wheels or desired joint angles)  
+- An **observation** $$z_t$$, which represents sensor measurements (such as range and bearing to an obstacle).
+
+Using Bayes' law and the Markov assumption[^2] — that the current state depends only on the immediately preceding state — we can express the Bayesian filter recursion as:
+
+```equation
+p(s_t \mid z_{1:t}, u_{1:t}) = \eta \cdot p(z_t \mid s_t) \int p(s_t \mid s_{t-1}, u_t) \cdot p(s_{t-1} \mid z_{1:t-1}, u_{1:t-1}) \, ds_{t-1}
+```
+
+This equation consists of two steps:
+
+- **Prediction**: The transition model $$p(s_t \mid s_{t-1}, u_t)$$ propagates the previous belief based on the control input.
+- **Update**: The observation model $$p(z_t \mid s_t)$$ corrects the predicted belief using sensor data.
+
+Here, $$\eta$$ is a normalization constant ensuring the result is a valid probability distribution.
+
+2. Kalman Filter
+--------------------------------------------------------------------------------
+
+As a Bayesian state estimator, the Kalman Filter can be derived from the principles of Bayesian inference. The key steps in the derivation are as follows:
+
+1. **State Representation**: The state of the system is represented as a random variable $$\mathbf{x}$$, which follows a Gaussian distribution with mean $$\boldsymbol{\mu}$$ and covariance $$\Sigma$$.
+2. **Prediction Step**: The state at the next time step is predicted based on the current state and control inputs. This is done using a linear motion model:
+
+$$ \mathbf{x}_{k+1} = \mathbf{F} \mathbf{x}_k + \mathbf{B} \mathbf{u}_k + \mathbf{w}_k
+
+where:
+- $$\mathbf{F}$$ is the state transition matrix,
+- $$\mathbf{B}$$ is the control input matrix,
+- $$\mathbf{u}_k$$ is the control input,
+- $$\mathbf{w}_k$$ is the process noise, assumed to be Gaussian with zero mean and covariance $$\mathbf{Q}$$.
+
+(2.2) Assumptions: Linear, Gaussian, Continuous
+
+- Linear Dynamics: 
+- Gaussian Process Noise
+- Continuous System 
+
+(2.3) Derivation
+
+(2.4) Complexity Analysis
+
+3. Extended Kalman Filter (EKF)
+--------------------------------------------------------------------------------
+
+Under these assumptions, the Kalman Filter provides an optimal estimate of the state of a system given noisy measurements, which is quite a thing, as optimal guarantees are hard to come by [^1]. But this restriction tends to limit the usefulness of the Kalman Filter in practice, as many real-world systems are non-linear and have non-Gaussian noise characteristics.
+
+For example, consider a simple robot that moves on a 2D plane and can change its orientation. Its state is represented by $$\mathbf{x} = [x, y, \theta]^T $$, where $$x$$ and $$y$$ denote its position and $$\theta$$ its orientation. Suppose the robot receives control inputs $$\mathbf{u} = [v, \omega]^T$$, where $$v$$ is the linear velocity and $$\omega$$ is the angular velocity. The continuous-time motion model is:
+
+$$ \dot{x} = v \cos(\theta)
+$$ \dot{y} = v \sin(\theta)
+$$ \dot{\theta} = \omega
+
+To apply the Kalman Filter, we typically discretize this model using a time step $$\Delta t$$:
+
+$$ x_{k+1} = x_k + v_k \cos(\theta_k) \Delta t
+$$ y_{k+1} = y_k + v_k \sin(\theta_k) \Delta t
+$$ \theta_{k+1} = \theta_k + \omega_k \Delta t
+
+This is a nonlinear system due to the sine and cosine functions of $$\theta$$, which violates the assumptions of the Kalman Filter. So it would seem the Kalman Filter cannot be used even on the simplest of robots. 
+
+This is where the EKF comes in. The EKF linearizes the system around the current estimate of the state, allowing it to handle non-linear dynamics by treating them as linear, and not projecting out too far.
+
+(3.1) Linearization
+(3.1.1) Taylor Expansion
+(3.1.2) Jacobian Matrix
+
+4. Example - EKF for Mobile Robot Localization
+--------------------------------------------------------------------------------
+
+(4.1) Problem Statement
+We will implement an Extended Kalman Filter (EKF) to estimate the state of a simple mobile robot moving on a 2D plane, using noisy measurements from a camera. The robot's state is represented by its position and orientation, and the camera provides range and bearing measurements to a landmark.
+
+(4.2) System Model
+
+Initialize the simulation
+
+  Δt := 10
+  robot := {x: 45, y: 15, θ: 0}
+  μ := [55 25 0.4]
+  u := {v: 1, ω: 0}
+  camera := {x: 140 y: 12}
+  Σ := [100   0 0
+          0 100 0
+          0   0 0.15]
+  Q := [0.01 0; 0 0.0025]
+  R := [0.25]
+
+(4.3) Time Update
+
+
+  θ :=  μ[3]
+  Gt := [1  0 -u.v * math/sin(θ) * Δt
+        0  1  u.v * math/cos(θ) * Δt
+        0  0  1]
+  Vt := [math/cos(θ) * Δt  0
+        math/sin(θ) * Δt  0
+        0                 Δt]
+  μ2 := μ + [u.v u.v u.ω] * [math/cos(θ), math/sin(θ), 1] * Δt
+  Σ2 := Gt ** Σ ** Gt' + Vt ** Q ** Vt'
+
+(4.4) Measurement Update
+
+  Δy := camera.y - μ[2]
+  Δx := camera.x - μ[1]
+  q := Δx ^ 2 + Δy ^ 2
+  Ẑ := math/atan2(Δy,Δx) - θ
+  H := [Δy / q, -Δx / q, -1]
+  S := H ** Σ ** H' + R
+  K := Σ ** H' / S[1]
+  μ3 := μ' + K * Ẑ
+  Σ3 := ([1 0 0; 0 1 0; 0 0 1] - K ** H) ** Σ2
+
+
+[^1]: My algorithms professor, Dr. Henry Baird used to say, there are algorithms, and then there are heuristics. Algorithms halt, and therefore require a proof of correctness, which is no small ask. A true algorithm always halts and comes with a proof of correctness under given assumptions. A heuristic is a practical method that may not guarantee optimality or termination. For example, Simulated Annealing is often called an algorithm but is really a heuristic. It can run indefinitely and does not guarantee finding the optimal solution in finite time. In contrast, the Kalman Filter is a proven algorithm that always halts and optimally estimates system states under linear, Gaussian assumptions.
+
+[^2]: The Markov assumption states that the future state of a system depends only on its current state and not on its past states. This is a fundamental assumption in many state estimation algorithms, because it simplifies the modeling of dynamic systems by allowing us to focus on the current state without needing to consider the entire history of past states. An example of the Markov in real life is a weather forecast, which predicts the weather based only on the current conditions, without considering the entire history of past weather patterns. An example of a non-Markovian process is a stock market, where the future price of a stock may depend on its past prices, trends, and other factors, making it difficult to model as a Markov process.
+
+[1]:  Kalman, R. E. (1960). A New Approach to Linear Filtering and Prediction Problems. Transaction of the ASME - Journal of Basic Engineering, 35-45.
+

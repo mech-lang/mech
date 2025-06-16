@@ -139,6 +139,7 @@ impl MechServer {
             // check to see if teh first thing is code i.e. code/index.mec should serve the compressed and encoded tree rather than the html
             if url.starts_with("code/") {
               let url = url.strip_prefix("code/").unwrap();
+
               match sources.get_tree(url) {
                 Some(tree) => {
                   let tree: Program = if let MechSourceCode::Tree(tree) = tree { tree } else { 
