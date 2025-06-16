@@ -63,3 +63,10 @@ Mech Programming Language Documentation
 1. [Fizz Buzz](V.examples/fizzbuzz.html) - a classic programming exercise that demonstrates the use of Mech's data model and operators.
 2. [N-Body Simulation](V.examples/n-body.html) - a simulation of gravitational interactions between multiple bodies.
 3. [Extended Kalman Filter](V.examples/ekf.html) - an implementation of the Extended Kalman Filter algorithm for state estimation.
+
+docs/machine := {
+  name: "docs" 
+  version: "v0.2.45"
+  authors: ["Corey Montella"] 
+  machine-url: "https://gitlab.com/mech-lang/mech/docs"
+  license: "Apache-2.0"}
