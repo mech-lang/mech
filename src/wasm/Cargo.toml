@@ -21,9 +21,9 @@ maintenance = { status = "actively-developed" }
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-mech-core = "0.2.45"
-mech-syntax = "0.2.45"
-mech-interpreter = "0.2.45"
+mech-core = "0.2.46"
+mech-syntax = "0.2.46"
+mech-interpreter = "0.2.46"
 
 hashbrown = "0.15.3"
 wasm-bindgen = "0.2.100"
