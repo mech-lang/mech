@@ -5,8 +5,8 @@ Mech Programming Language Documentation
 -------------------------------------------------------------------------------
 
 1. [Introduction](I.getting-started/introduction.html)
-2. [Installing Mech](I.getting-started/install.html)
-3. [Building and Running Mech Programs](I.getting-started/build-and-run.html)
+2. [Install Mech](I.getting-started/install.html)
+3. [Build and Run Mech Programs](I.getting-started/build-and-run.html)
 4. [Mech REPL](I.getting-started/repl.html) 
 
 2. Language Reference
