@@ -136,8 +136,26 @@ impl WasmMech {
   }
 
   pub fn eval(&mut self, input: &str) -> String {
-    // Your interpreter logic here
-    format!("Evaluated: {}", input)
+    // Parse the input code
+    match parse(input) {
+      Ok(tree) => {
+        // Interpret the parsed tree
+        match self.interpreter.interpret(&tree) {
+          Ok(result) => {
+            log!("{}", result.pretty_print());
+            result.pretty_print()
+          },
+          Err(err) => {
+            log!("{:?}", err);
+            format!("Error: {:?}", err)
+          }
+        }
+      },
+      Err(parse_err) => {
+        log!("Error parsing program: {:?}", parse_err);
+        format!("Parse Error: {:?}", parse_err)
+      }
+    }
   }
 
   
