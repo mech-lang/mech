@@ -2,6 +2,14 @@ use wasm_bindgen::prelude::*;
 use mech_core::*;
 use mech_syntax::*;
 use mech_interpreter::*;
+use wasm_bindgen::JsCast;
+use web_sys::{HtmlElement, HtmlInputElement};
+use std::rc::Rc;
+use std::cell::RefCell;
+
+thread_local! {
+    static CURRENT_MECH: RefCell<Option<*mut WasmMech>> = RefCell::new(None);
+}
 
 #[macro_export]
 macro_rules! log {
@@ -25,6 +33,114 @@ pub struct WasmMech {
 
 #[wasm_bindgen]
 impl WasmMech {
+
+  #[wasm_bindgen]
+  pub fn attach_repl(&mut self, repl_id: &str) {
+    CURRENT_MECH.with(|c| *c.borrow_mut() = Some(self as *mut _));
+    let window = web_sys::window().expect("global window does not exists");    
+    let document = window.document().expect("should have a document");
+    let container = document
+      .get_element_by_id(repl_id)
+      .expect("REPL element not found")
+      .dyn_into::<HtmlElement>()
+      .expect("Element should be HtmlElement");
+
+    let create_prompt: Rc<RefCell<Option<Box<dyn Fn()>>>> = Rc::new(RefCell::new(None));
+    let create_prompt_clone = create_prompt.clone();
+    let document_clone = document.clone();
+    let container_clone = container.clone();
+
+    *create_prompt.borrow_mut() = Some(Box::new(move || {
+      let line = document_clone.create_element("div").unwrap();
+      line.set_class_name("repl-line");
+
+      let prompt = document_clone.create_element("span").unwrap();
+      prompt.set_inner_html("&gt;: ");
+      prompt.set_class_name("repl-prompt");
+
+      let input = document_clone.create_element("input")
+                                .unwrap()
+                                .dyn_into::<HtmlInputElement>()
+                                .unwrap();
+      let input_for_closure = input.clone();
+      input.set_class_name("repl-input");
+      input.unchecked_ref::<HtmlElement>()
+            .set_autofocus(true);
+            
+      line.append_child(&prompt).unwrap();
+      line.append_child(&input).unwrap();
+      container_clone.append_child(&line).unwrap();
+      let _ = input.focus();
+            
+      let document_inner = document_clone.clone();
+      let container_inner = container_clone.clone();
+      let create_prompt_inner = create_prompt_clone.clone();
+
+      let closure = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
+        if event.key() == "Enter" {
+          let code = input_for_closure.value();
+
+          // Replace input field with text
+          let input_parent = input_for_closure
+            .parent_node()
+            .expect("input should have a parent");
+
+          let input_span = document_inner.create_element("span").unwrap();
+          input_span.set_class_name("repl-code");
+          input_span.set_text_content(Some(&code));
+
+          // Replace the input element in the DOM
+          input_parent
+            .replace_child(&input_span, &input_for_closure)
+            .unwrap();
+
+          let _ = input_for_closure.focus();
+
+
+          if code.trim().is_empty() {
+            return;
+          }
+
+          let result_line = document_inner.create_element("div").unwrap();
+          result_line.set_class_name("repl-result");
+
+          // SAFELY call back into WasmMech
+          let output = CURRENT_MECH.with(|mech_ref| {
+            if let Some(ptr) = *mech_ref.borrow() {
+              // UNSAFE but valid: we trust that `self` lives
+              unsafe {
+                (*ptr).eval(&code)
+              }
+            } else {
+              "[no interpreter]".to_string()
+            }
+          });
+
+          result_line.set_inner_html(&output);
+          container_inner.append_child(&result_line).unwrap();
+
+          if let Some(cb) = &*create_prompt_inner.borrow() {
+            cb();
+          }
+        }
+      }) as Box<dyn FnMut(_)>);
+
+      input.add_event_listener_with_callback("keydown", closure.as_ref().unchecked_ref())
+            .unwrap();
+      closure.forget();
+    }));
+
+    if let Some(cb) = &*create_prompt.borrow() {
+      cb();
+    };
+  }
+
+  pub fn eval(&mut self, input: &str) -> String {
+    // Your interpreter logic here
+    format!("Evaluated: {}", input)
+  }
+
+  
 
   #[wasm_bindgen(constructor)]
   pub fn new() -> Self {

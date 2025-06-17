@@ -420,12 +420,14 @@ window.addEventListener("scroll", () => {{
               wasm_core.init();
               wasm_core.render_inline_values();
               wasm_core.render_codeblock_output_values();
+              wasm_core.attach_repl("mech-output");
             }} else {{
               console.error("Defaulting to included program");
               wasm_core.run_program(code);
               wasm_core.init();
               wasm_core.render_inline_values();
               wasm_core.render_codeblock_output_values();
+              wasm_core.attach_repl("mech-output");
             }}
           }}
         }};
