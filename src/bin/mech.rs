@@ -217,42 +217,22 @@ async fn main() -> Result<(), MechError> {
       }
     }
 
-
-    // Create a function to handle file writing
-    let save_to_file = |path: PathBuf, content: &str| {
-      match fs::File::create(&path) {
-        Ok(mut file) => {
-          if let Err(err) = file.write_all(content.as_bytes()) {
-            println!("Error writing to file: {:?}", err);
-            false
-          } else {
-            println!("{} File saved as {}", "[Saved]".truecolor(153,221,85), path.display());
-            true
-          }
-        },
-        Err(err) => {
-          println!("Error writing to file: {:?}", err);
-          false
-        }
-      }
-    };
-
     // Process files based on the flag
     if html_flag {
       for (fid, mech_src) in read_sources.html_iter() {
         if let MechSourceCode::Html(content) = mech_src {
           let mut filename = read_sources.get_path_from_id(*fid).unwrap().clone();
           filename = filename.with_extension("html");
-          let output_file = output_path.join(filename.file_name().unwrap());
-          save_to_file(output_file, content);
+          let output_file = output_path.join(filename);
+          save_to_file(output_file, content)?;
         }
       }
     } else {
       for (fid, mech_src) in read_sources.sources_iter() {
         let content = mech_src.to_string();
         let filename = read_sources.get_path_from_id(*fid).unwrap().clone();
-        let output_file = output_path.join(filename.file_name().unwrap());
-        save_to_file(output_file, &content);
+        let output_file = output_path.join(filename);
+        save_to_file(output_file, &content)?;
       }
     }
 
