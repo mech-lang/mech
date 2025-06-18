@@ -3,7 +3,7 @@ use mech_core::*;
 use mech_syntax::*;
 use mech_interpreter::*;
 use wasm_bindgen::JsCast;
-use web_sys::{HtmlElement, HtmlInputElement};
+use web_sys::{window, HtmlElement, HtmlInputElement, Node};
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -49,6 +49,24 @@ impl WasmMech {
     let create_prompt_clone = create_prompt.clone();
     let document_clone = document.clone();
     let container_clone = container.clone();
+    let mech_output = container.clone();
+    let mech_output_for_event = mech_output.clone();
+
+
+    let closure = Closure::wrap(Box::new(move |_event: web_sys::MouseEvent| {
+      if let Some(input) = mech_output
+        .owner_document()
+        .unwrap()
+        .get_element_by_id("repl-active-input")
+      {
+        let _ = input
+          .dyn_ref::<web_sys::HtmlElement>()
+          .unwrap()
+          .focus();
+      }
+    }) as Box<dyn FnMut(_)>);
+    mech_output_for_event.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref()).unwrap();
+    closure.forget();
 
     *create_prompt.borrow_mut() = Some(Box::new(move || {
       let line = document_clone.create_element("div").unwrap();
@@ -64,6 +82,7 @@ impl WasmMech {
                                 .unwrap();
       let input_for_closure = input.clone();
       input.set_class_name("repl-input");
+      input.set_id("repl-active-input");
       input.unchecked_ref::<HtmlElement>()
             .set_autofocus(true);
             
@@ -81,21 +100,17 @@ impl WasmMech {
           let code = input_for_closure.value();
 
           // Replace input field with text
-          let input_parent = input_for_closure
-            .parent_node()
-            .expect("input should have a parent");
+          let input_parent = input_for_closure.parent_node().expect("input should have a parent");
 
           let input_span = document_inner.create_element("span").unwrap();
           input_span.set_class_name("repl-code");
           input_span.set_text_content(Some(&code));
 
           // Replace the input element in the DOM
-          input_parent
-            .replace_child(&input_span, &input_for_closure)
-            .unwrap();
+          input_parent.replace_child(&input_span, &input_for_closure).unwrap();
 
           let _ = input_for_closure.focus();
-
+          input_for_closure.set_id("repl-active-input");
 
           if code.trim().is_empty() {
             return;
@@ -125,8 +140,7 @@ impl WasmMech {
         }
       }) as Box<dyn FnMut(_)>);
 
-      input.add_event_listener_with_callback("keydown", closure.as_ref().unchecked_ref())
-            .unwrap();
+      input.add_event_listener_with_callback("keydown", closure.as_ref().unchecked_ref()).unwrap();
       closure.forget();
     }));
 
@@ -135,26 +149,74 @@ impl WasmMech {
     };
   }
 
-  pub fn eval(&mut self, input: &str) -> String {
-    // Parse the input code
-    match parse(input) {
-      Ok(tree) => {
-        // Interpret the parsed tree
-        match self.interpreter.interpret(&tree) {
-          Ok(result) => {
-            log!("{}", result.pretty_print());
-            result.pretty_print()
-          },
-          Err(err) => {
-            log!("{:?}", err);
-            format!("Error: {:?}", err)
+  fn run_mech_code(&mut self, code: &Vec<(String,MechSourceCode)>) -> MResult<Value> {
+    for (file, source) in code {
+      match source {
+        MechSourceCode::String(s) => {
+          let parse_result = parser::parse(&s.trim());
+          match parse_result {
+            Ok(tree) => { 
+              let result = self.interpreter.interpret(&tree);
+              return result;
+            },
+            Err(err) => return Err(err),
           }
         }
-      },
-      Err(parse_err) => {
-        log!("Error parsing program: {:?}", parse_err);
-        format!("Parse Error: {:?}", parse_err)
+        _ => todo!(),
       }
+    }
+    Ok(Value::Empty)
+  }
+
+  fn execute_repl_command(&mut self, repl_cmd: ReplCommand) -> String {
+    let mut intrp = &mut self.interpreter;
+    match repl_cmd {
+      ReplCommand::Clear(_) => {
+        *intrp = Interpreter::new(intrp.id);
+        "".to_string()
+      }
+      ReplCommand::Clc => {
+        let window = web_sys::window().expect("global window does not exists");    
+        let document = window.document().expect("expecting a document on window");
+        let output_element = document.get_element_by_id("mech-output").expect("REPL output element not found");
+        // Remove all children except the last one
+        while output_element.child_nodes().length() > 0 {
+          let first_child = output_element
+            .first_child()
+            .expect("Expected a child node");
+          output_element
+            .remove_child(&first_child)
+            .expect("Failed to remove child");
+        }
+        "".to_string()
+      }
+      ReplCommand::Code(code) => {
+        match self.run_mech_code(&code)  {
+          Ok(output) => { 
+            return format!("<div class=\"mech-output-kind\">{:?}</div><div class=\"mech-output-value\">{}</div>", output.kind(), output.to_html());
+          },
+          Err(err) => { return format!("{:?}",err); }
+        }
+      }
+      _ => todo!("Implement other REPL commands"),
+    }
+  }
+
+  pub fn eval(&mut self, input: &str) -> String {
+    if input.chars().nth(0) == Some(':') {
+      match parse_repl_command(&input.to_string()) {
+        Ok((_, repl_command)) => {
+          self.execute_repl_command(repl_command)
+        }
+        Err(x) => {
+          format!("Unrecognized command: {}", x)
+        }
+      }
+    } else if input.trim() == "" {
+      "".to_string()
+    } else {
+      let cmd = ReplCommand::Code(vec![("repl".to_string(),MechSourceCode::String(input.to_string()))]);
+      self.execute_repl_command(cmd)
     }
   }
 
