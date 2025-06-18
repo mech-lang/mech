@@ -28,7 +28,7 @@ body {
     padding-top: 20px;
     padding-bottom: 20px;
     counter-reset: h2 equation;
-    margin-right: 600px;
+    margin-right: clamp(300px, 30vw, 800px);
     flex: 2;
 }
 
@@ -46,7 +46,7 @@ body {
   top: 0;
   right: 0;
   height: 100vh;
-  width: 600px;
+  width: clamp(300px, 30vw, 800px);
   overflow-y: auto;
   box-sizing: border-box;
   padding: 1rem;
@@ -1452,14 +1452,17 @@ mark {
     }
 }
 
-@media (max-width: 1200px) {
-    #mech-output {
+@media (max-width: 1470px) {
+    .mech-toc {
         display: none;
     }
 }
 
 @media (max-width: 1100px) {
-    .mech-toc {
+    .mech-content {
+        margin: auto;
+    }
+    #mech-output {
         display: none;
     }
 }
