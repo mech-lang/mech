@@ -525,3 +525,4 @@ test_interpreter!(interpret_set_logical_ram3m3,"~x := [1 2 3; 4 5 6; 7 8 9]; y :
 
 test_interpreter!(interpret_modulus,"[1 2 3 4 5] % 5", new_ref(RowDVector::from_vec(vec![F64::new(1.0), F64::new(2.0), F64::new(3.0), F64::new(4.0), F64::new(0.0)])).to_value());
 
+test_interpreter!(interpret_horzcat_implicit_convert,"[1<u8> 2 3 4 5]", new_ref(RowDVector::from_vec(vec![1_u8, 2_u8, 3_u8, 4_u8, 5_u8])).to_value());
