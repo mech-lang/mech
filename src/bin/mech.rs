@@ -319,7 +319,7 @@ async fn main() -> Result<(), MechError> {
 
     // Parse the input
     if input.chars().nth(0) == Some(':') {
-      match MechRepl::parse_repl_command(&input.as_str()) {
+      match parse_repl_command(&input.as_str()) {
         Ok((_, repl_command)) => {
           match repl.execute_repl_command(repl_command) {
             Ok(output) => {

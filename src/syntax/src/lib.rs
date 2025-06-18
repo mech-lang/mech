@@ -50,6 +50,7 @@ pub mod grammar;
 pub mod literals;
 pub mod state_machines;
 pub mod functions;
+pub mod repl;
 
 pub use crate::parser::*;
 pub use crate::mechdown::*;
@@ -62,6 +63,7 @@ pub use crate::grammar::*;
 pub use crate::literals::*;
 pub use crate::state_machines::*;
 pub use crate::functions::*;
+pub use crate::repl::*;
 
 
 /// Unicode grapheme group utilities.
