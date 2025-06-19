@@ -62,6 +62,10 @@ body {
   display: none;             /* Chrome, Safari, Edge */
 }
 
+.repl-line {
+    margin-top: 10px;
+}
+
 .repl-prompt {
     color: #F3B62D;
 }
