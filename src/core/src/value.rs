@@ -344,9 +344,9 @@ impl Value {
       Value::Set(s) => s.to_html(),
       Value::Map(m) => m.to_html(),
       Value::Table(t) => t.to_html(),
-      //Value::Record(r) => r.to_html(),
-      //Value::Tuple(t) => t.to_html(),
-      //Value::Enum(e) => e.to_html(),
+      Value::Record(r) => r.to_html(),
+      Value::Tuple(t) => t.to_html(),
+      Value::Enum(e) => e.to_html(),
       _ => "".to_string(),
     }
   }
@@ -1036,6 +1036,33 @@ pub struct MechRecord {
 
 impl MechRecord {
 
+  pub fn to_html(&self) -> String {
+    let mut bindings = Vec::new();
+
+    for (key, value) in &self.data {
+      let name = self.field_names.get(key).unwrap();
+
+      let binding_html = format!(
+        "<span class=\"mech-binding\">\
+          <span class=\"mech-binding-name\">{}</span>\
+          <span class=\"mech-binding-colon-op\">:</span>\
+          <span class=\"mech-binding-value\">{}</span>\
+        </span>",
+        name,
+        value.to_html(),
+      );
+
+      bindings.push(binding_html);
+    }
+
+    format!(
+      "<span class=\"mech-record\">\
+        <span class=\"mech-start-brace\">{{</span>{}<span class=\"mech-end-brace\">}}</span>\
+      </span>",
+      bindings.join("<span class=\"mech-separator\">, </span>")
+    )
+  }
+
   pub fn get(&self, key: &u64) -> Option<&Value> {
     self.data.get(key)
   }
@@ -1104,6 +1131,14 @@ pub struct MechTuple {
 
 impl MechTuple {
 
+  pub fn to_html(&self) -> String {
+    let mut elements = Vec::new();
+    for element in &self.elements {
+      elements.push(element.to_html());
+    }
+    format!("<span class=\"mech-tuple\"><span class=\"mech-start-brace\">(</span>{}<span class=\"mech-end-brace\">)</span></span>", elements.join(", "))
+  }
+
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     let string_elements: Vec<String> = self.elements.iter().map(|e| e.pretty_print()).collect::<Vec<String>>();
@@ -1159,6 +1194,18 @@ pub struct MechEnum {
 }
 
 impl MechEnum {
+
+  pub fn to_html(&self) -> String {
+    let mut variants = Vec::new();
+    for (id, value) in &self.variants {
+      let value_html = match value {
+        Some(v) => v.to_html(),
+        None => "None".to_string(),
+      };
+      variants.push(format!("<span class=\"mech-enum-variant\">{}: {}</span>", id, value_html));
+    }
+    format!("<span class=\"mech-enum\"><span class=\"mech-start-brace\">{{</span>{}<span class=\"mech-end-brace\">}}</span></span>", variants.join(", "))
+  }
 
   pub fn kind(&self) -> ValueKind {
     ValueKind::Enum(self.id)
