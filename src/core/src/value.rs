@@ -791,7 +791,7 @@ impl MechSet {
   pub fn to_html(&self) -> String {
     let mut src = String::new();
     for (i, element) in self.set.iter().enumerate() {
-      let e = element.pretty_print();
+      let e = element.to_html();
       if i == 0 {
         src = format!("{}", e);
       } else {
