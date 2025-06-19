@@ -56,17 +56,24 @@ impl WasmMech {
 
 
     let closure = Closure::wrap(Box::new(move |_event: web_sys::MouseEvent| {
-      if let Some(input) = mech_output
-        .owner_document()
-        .unwrap()
-        .get_element_by_id("repl-active-input")
-      {
-        let _ = input
-          .dyn_ref::<web_sys::HtmlElement>()
+      let window = web_sys::window().unwrap();
+      let selection = window.get_selection().unwrap().unwrap();
+
+      // Only focus the input if the selection is collapsed (no text is selected)
+      if selection.is_collapsed() {
+        if let Some(input) = mech_output
+          .owner_document()
           .unwrap()
-          .focus();
+          .get_element_by_id("repl-active-input")
+        {
+          let _ = input
+            .dyn_ref::<web_sys::HtmlElement>()
+            .unwrap()
+            .focus();
+        }
       }
     }) as Box<dyn FnMut(_)>);
+
     mech_output_for_event.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref()).unwrap();
     closure.forget();
 
@@ -114,10 +121,6 @@ impl WasmMech {
             let _ = input_for_closure.focus();
             input_for_closure.set_id("repl-active-input");
 
-            if code.trim().is_empty() {
-              return;
-            }
-
             let result_line = document_inner.create_element("div").unwrap();
             result_line.set_class_name("repl-result");
 
@@ -127,9 +130,13 @@ impl WasmMech {
                 // UNSAFE but valid: we trust that `self` lives
                 unsafe {
                   let mech = &mut *ptr;
-                  mech.repl_history.push(code.clone());
-                  mech.repl_history_index = None;
-                  mech.eval(&code)
+                  if !code.trim().is_empty() {
+                    mech.repl_history.push(code.clone());
+                    mech.repl_history_index = None;
+                    mech.eval(&code)
+                  } else {
+                    "".to_string()
+                  }
                 }
               } else {
                 "[no interpreter]".to_string()
@@ -209,6 +216,7 @@ impl WasmMech {
       match source {
         MechSourceCode::String(s) => {
           let parse_result = parser::parse(&s.trim());
+          log!("fooooo");
           match parse_result {
             Ok(tree) => { 
               let result = self.interpreter.interpret(&tree);
@@ -217,7 +225,10 @@ impl WasmMech {
             Err(err) => return Err(err),
           }
         }
-        _ => todo!(),
+        x => {
+          log!("Unsupported source code type: {:?}", x);
+          todo!();
+        },
       }
     }
     Ok(Value::Empty)
@@ -246,8 +257,10 @@ impl WasmMech {
         "".to_string()
       }
       ReplCommand::Code(code) => {
+        log!("Running code: {:?}", code);
         match self.run_mech_code(&code)  {
           Ok(output) => { 
+            log!("Output: {:?}", output);
             return format!("<div class=\"mech-output-kind\">{:?}</div><div class=\"mech-output-value\">{}</div>", output.kind(), output.to_html());
           },
           Err(err) => { return format!("{:?}",err); }
@@ -267,8 +280,6 @@ impl WasmMech {
           format!("Unrecognized command: {}", x)
         }
       }
-    } else if input.trim() == "" {
-      "".to_string()
     } else {
       let cmd = ReplCommand::Code(vec![("repl".to_string(),MechSourceCode::String(input.to_string()))]);
       self.execute_repl_command(cmd)
