@@ -261,15 +261,50 @@ impl WasmMech {
       };
       
       let closure = Closure::wrap(Box::new(move || {
-        match symbols.borrow().get(element_id) {
-          Some(value) => {
-            log!("{}", value.borrow().pretty_print());
+        let window = web_sys::window().unwrap();
+        let document = window.document().unwrap();
+        let mech_output = document.get_element_by_id("mech-output").unwrap();
+        let last_child = mech_output.last_child().unwrap();
+        let symbols_brrw = symbols.borrow();
+
+        match symbols_brrw.get(element_id) {
+          Some(output) => {
+            let output_brrw = output.borrow();
+            let result_html = format!(
+              "<div class=\"mech-output-kind\">{:?}</div><div class=\"mech-output-value\">{}</div>",
+              output_brrw.kind(),
+              output_brrw.to_html()
+            );
+
+            let symbol_name = symbols_brrw.get_symbol_name_by_id(element_id).unwrap();
+
+            let prompt_line = document.create_element("div").unwrap();
+            prompt_line.set_class_name("repl-line");
+            let prompt_span = document.create_element("span").unwrap();
+            prompt_span.set_class_name("repl-prompt");
+            prompt_span.set_inner_html("&gt;: ");
+            prompt_line.append_child(&prompt_span).unwrap();
+            let input_span = document.create_element("span").unwrap();
+            input_span.set_class_name("repl-code");
+            input_span.set_inner_html(&symbol_name);
+            prompt_line.append_child(&input_span).unwrap();
+            mech_output.insert_before(&prompt_line, Some(&last_child)).unwrap();
+
+            let result_line = document.create_element("div").unwrap();
+            result_line.set_class_name("repl-result");
+            result_line.set_inner_html(&result_html);
+            mech_output.insert_before(&result_line, Some(&last_child)).unwrap();
           },
           None => {
-            log!("No value found for element id: {}", element_id);
+            let error_message = format!("No value found for element id: {}", element_id);
+            let result_line = document.create_element("div").unwrap();
+            result_line.set_class_name("repl-result");
+            result_line.set_inner_html(&error_message);
+            mech_output.insert_before(&result_line, Some(&last_child)).unwrap();
           }
         }
       }) as Box<dyn Fn()>);
+
   
       element.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref());
       closure.forget();
