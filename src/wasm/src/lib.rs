@@ -303,6 +303,7 @@ impl WasmMech {
             mech_output.insert_before(&result_line, Some(&last_child)).unwrap();
           }
         }
+        mech_output.set_scroll_top(mech_output.scroll_height());
       }) as Box<dyn Fn()>);
 
   
