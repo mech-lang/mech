@@ -870,8 +870,8 @@ impl MechMap {
   pub fn to_html(&self) -> String {
     let mut src = String::new();
     for (i, (key, value)) in self.map.iter().enumerate() {
-      let k = key.pretty_print();
-      let v = value.pretty_print();
+      let k = key.to_html();
+      let v = value.to_html();
       if i == 0 {
         src = format!("{}: {}", k, v);
       } else {
