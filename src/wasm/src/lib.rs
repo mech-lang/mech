@@ -29,6 +29,8 @@ pub fn main() -> Result<(), JsValue> {
 #[wasm_bindgen]
 pub struct WasmMech {
   interpreter: Interpreter,
+  repl_history: Vec<String>,
+  repl_history_index: Option<usize>,
 }
 
 #[wasm_bindgen]
@@ -83,8 +85,7 @@ impl WasmMech {
       let input_for_closure = input.clone();
       input.set_class_name("repl-input");
       input.set_id("repl-active-input");
-      input.unchecked_ref::<HtmlElement>()
-            .set_autofocus(true);
+      input.unchecked_ref::<HtmlElement>().set_autofocus(true);
             
       line.append_child(&prompt).unwrap();
       line.append_child(&input).unwrap();
@@ -96,47 +97,101 @@ impl WasmMech {
       let create_prompt_inner = create_prompt_clone.clone();
 
       let closure = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
-        if event.key() == "Enter" {
-          let code = input_for_closure.value();
+        match event.key().as_str() {
+          "Enter" => {
+            let code = input_for_closure.value();
 
-          // Replace input field with text
-          let input_parent = input_for_closure.parent_node().expect("input should have a parent");
+            // Replace input field with text
+            let input_parent = input_for_closure.parent_node().expect("input should have a parent");
 
-          let input_span = document_inner.create_element("span").unwrap();
-          input_span.set_class_name("repl-code");
-          input_span.set_text_content(Some(&code));
+            let input_span = document_inner.create_element("span").unwrap();
+            input_span.set_class_name("repl-code");
+            input_span.set_text_content(Some(&code));
 
-          // Replace the input element in the DOM
-          input_parent.replace_child(&input_span, &input_for_closure).unwrap();
+            // Replace the input element in the DOM
+            input_parent.replace_child(&input_span, &input_for_closure).unwrap();
 
-          let _ = input_for_closure.focus();
-          input_for_closure.set_id("repl-active-input");
+            let _ = input_for_closure.focus();
+            input_for_closure.set_id("repl-active-input");
 
-          if code.trim().is_empty() {
-            return;
-          }
-
-          let result_line = document_inner.create_element("div").unwrap();
-          result_line.set_class_name("repl-result");
-
-          // SAFELY call back into WasmMech
-          let output = CURRENT_MECH.with(|mech_ref| {
-            if let Some(ptr) = *mech_ref.borrow() {
-              // UNSAFE but valid: we trust that `self` lives
-              unsafe {
-                (*ptr).eval(&code)
-              }
-            } else {
-              "[no interpreter]".to_string()
+            if code.trim().is_empty() {
+              return;
             }
-          });
 
-          result_line.set_inner_html(&output);
-          container_inner.append_child(&result_line).unwrap();
+            let result_line = document_inner.create_element("div").unwrap();
+            result_line.set_class_name("repl-result");
 
-          if let Some(cb) = &*create_prompt_inner.borrow() {
-            cb();
+            // SAFELY call back into WasmMech
+            let output = CURRENT_MECH.with(|mech_ref| {
+              if let Some(ptr) = *mech_ref.borrow() {
+                // UNSAFE but valid: we trust that `self` lives
+                unsafe {
+                  let mech = &mut *ptr;
+                  mech.repl_history.push(code.clone());
+                  mech.repl_history_index = None;
+                  mech.eval(&code)
+                }
+              } else {
+                "[no interpreter]".to_string()
+              }
+            });
+
+            result_line.set_inner_html(&output);
+            container_inner.append_child(&result_line).unwrap();
+
+            if let Some(cb) = &*create_prompt_inner.borrow() {
+              cb();
+            }
           }
+          "ArrowUp" => {
+            event.prevent_default();
+            CURRENT_MECH.with(|mech_ref| {
+              if let Some(ptr) = *mech_ref.borrow() {
+                unsafe {
+                  let mech = &mut *ptr;
+                  if !mech.repl_history.is_empty() {
+                    let new_index = match mech.repl_history_index {
+                      Some(i) if i > 0 => Some(i - 1),
+                      None => Some(mech.repl_history.len().saturating_sub(1)),
+                      Some(0) => Some(0),
+                      _ => None,
+                    };
+
+                    if let Some(i) = new_index {
+                      input_for_closure.set_value(&mech.repl_history[i]);
+                      mech.repl_history_index = Some(i);
+                    }
+                  }
+                }
+              }
+            });
+          }
+          "ArrowDown" => {
+            event.prevent_default(); // prevent cursor jump
+            CURRENT_MECH.with(|mech_ref| {
+              if let Some(ptr) = *mech_ref.borrow() {
+                unsafe {
+                  let mech = &mut *ptr;
+                  if let Some(i) = mech.repl_history_index {
+                    let new_index = if i + 1 < mech.repl_history.len() {
+                      Some(i + 1)
+                    } else {
+                      None
+                    };
+
+                    if let Some(i) = new_index {
+                      input_for_closure.set_value(&mech.repl_history[i]);
+                      mech.repl_history_index = Some(i);
+                    } else {
+                      input_for_closure.set_value("");
+                      mech.repl_history_index = None;
+                    }
+                  }
+                }
+              }
+            });
+          }
+          _ => (),
         }
       }) as Box<dyn FnMut(_)>);
 
@@ -224,7 +279,11 @@ impl WasmMech {
 
   #[wasm_bindgen(constructor)]
   pub fn new() -> Self {
-    Self { interpreter: Interpreter::new(0) }
+    Self { 
+      interpreter: Interpreter::new(0),
+      repl_history: Vec::new(), 
+      repl_history_index: None,
+    }
   }
 
   #[wasm_bindgen]
@@ -294,6 +353,17 @@ impl WasmMech {
             result_line.set_class_name("repl-result");
             result_line.set_inner_html(&result_html);
             mech_output.insert_before(&result_line, Some(&last_child)).unwrap();
+
+            let output = CURRENT_MECH.with(|mech_ref| {
+              if let Some(ptr) = *mech_ref.borrow() {
+                unsafe {
+                  (*ptr).repl_history.push(symbol_name.clone());
+                }
+              } else {
+                log!("[no interpreter]");
+              }
+            });
+
           },
           None => {
             let error_message = format!("No value found for element id: {}", element_id);
