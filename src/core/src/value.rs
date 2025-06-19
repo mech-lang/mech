@@ -342,7 +342,7 @@ impl Value {
       },
       Value::Atom(a) => format!("<span class=\"mech-atom\"><span class=\"mech-atom-grave\">`</span><span class=\"mech-atom-name\">{}</span></span>",a),
       Value::Set(s) => s.to_html(),
-      //Value::Map(m) => m.to_html(),
+      Value::Map(m) => m.to_html(),
       //Value::Table(t) => t.to_html(),
       //Value::Record(r) => r.to_html(),
       //Value::Tuple(t) => t.to_html(),
@@ -866,6 +866,20 @@ pub struct MechMap {
 }
 
 impl MechMap {
+
+  pub fn to_html(&self) -> String {
+    let mut src = String::new();
+    for (i, (key, value)) in self.map.iter().enumerate() {
+      let k = key.pretty_print();
+      let v = value.pretty_print();
+      if i == 0 {
+        src = format!("{}: {}", k, v);
+      } else {
+        src = format!("{}, {}: {}", src, k, v);
+      }
+    }
+    format!("<span class=\"mech-map\"><span class=\"mech-start-brace\">{{</span>{}<span class=\"mech-end-brace\">}}</span></span>",src)
+  }
 
   pub fn kind(&self) -> ValueKind {
     ValueKind::Map(Box::new(self.key_kind.clone()), Box::new(self.value_kind.clone()))
