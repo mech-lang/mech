@@ -257,10 +257,8 @@ impl WasmMech {
         "".to_string()
       }
       ReplCommand::Code(code) => {
-        log!("Running code: {:?}", code);
         match self.run_mech_code(&code)  {
           Ok(output) => { 
-            log!("Output: {:?}", output);
             return format!("<div class=\"mech-output-kind\">{:?}</div><div class=\"mech-output-value\">{}</div>", output.kind(), output.to_html());
           },
           Err(err) => { return format!("{:?}",err); }
