@@ -147,6 +147,10 @@ impl SymbolTable {
     }
   }
 
+  pub fn get_symbol_name_by_id(&self, id: u64) -> Option<String> {
+    self.dictionary.borrow().get(&id).cloned()
+  }
+
   pub fn get_mutable(&self, key: u64) -> Option<ValRef> {
     self.mutable_variables.get(&key).cloned()
   }
