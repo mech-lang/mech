@@ -245,7 +245,7 @@ impl WasmMech {
         let window = web_sys::window().expect("global window does not exists");    
         let document = window.document().expect("expecting a document on window");
         let output_element = document.get_element_by_id("mech-output").expect("REPL output element not found");
-        // Remove all children except the last one
+        // Remove all children
         while output_element.child_nodes().length() > 0 {
           let first_child = output_element
             .first_child()
