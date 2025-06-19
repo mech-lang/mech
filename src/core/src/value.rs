@@ -340,7 +340,14 @@ impl Value {
         let inner = m.borrow();
         format!("<span class='mech-reference'>{}</span>", inner.to_html())
       },
-      _ => todo!(),
+      Value::Atom(a) => format!("<span class=\"mech-atom\"><span class=\"mech-atom-grave\">`</span><span class=\"mech-atom-name\">{}</span></span>",a),
+      Value::Set(s) => s.to_html(),
+      //Value::Map(m) => m.to_html(),
+      //Value::Table(t) => t.to_html(),
+      //Value::Record(r) => r.to_html(),
+      //Value::Tuple(t) => t.to_html(),
+      //Value::Enum(e) => e.to_html(),
+      _ => "".to_string(),
     }
   }
 
@@ -780,6 +787,19 @@ pub struct MechSet {
 }
 
 impl MechSet {
+
+  pub fn to_html(&self) -> String {
+    let mut src = String::new();
+    for (i, element) in self.set.iter().enumerate() {
+      let e = element.pretty_print();
+      if i == 0 {
+        src = format!("{}", e);
+      } else {
+        src = format!("{}, {}", src, e);
+      }
+    }
+    format!("<span class=\"mech-set\"><span class=\"mech-start-brace\">{{</span>{}<span class=\"mech-end-brace\">}}</span></span>",src)
+  }
 
   pub fn kind(&self) -> ValueKind {
     ValueKind::Set(Box::new(self.kind.clone()), self.num_elements)
