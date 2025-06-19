@@ -66,8 +66,18 @@ body {
     color: #F3B62D;
 }
 
-.repl-line {
+.repl-result .mech-output-value {
     margin-top: 10px;
+}
+
+.repl-result .mech-output-value {
+    overflow-x: auto;
+    scrollbar-width: none;     /* Firefox */
+    -ms-overflow-style: none;  /* IE 10+ */
+}
+
+.repl-result .mech-output-value::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Edge */
 }
 
 .repl-result {
