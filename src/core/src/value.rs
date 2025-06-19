@@ -343,7 +343,7 @@ impl Value {
       Value::Atom(a) => format!("<span class=\"mech-atom\"><span class=\"mech-atom-grave\">`</span><span class=\"mech-atom-name\">{}</span></span>",a),
       Value::Set(s) => s.to_html(),
       Value::Map(m) => m.to_html(),
-      //Value::Table(t) => t.to_html(),
+      Value::Table(t) => t.to_html(),
       //Value::Record(r) => r.to_html(),
       //Value::Tuple(t) => t.to_html(),
       //Value::Enum(e) => e.to_html(),
@@ -936,6 +936,36 @@ pub struct MechTable {
 }
 
 impl MechTable {
+
+  pub fn to_html(&self) -> String {
+    let mut table = String::new();
+
+    // Start table
+    table.push_str("<table class=\"mech-table\">");
+
+    // Header
+    table.push_str("<thead class=\"mech-table-header\"><tr>");
+    for key in self.data.keys() {
+      let col_name = self.col_names.get(key).unwrap();
+      table.push_str(&format!("<th class=\"mech-table-field\">{}</th>", col_name));
+    }
+    table.push_str("</tr></thead>");
+
+    // Body
+    table.push_str("<tbody class=\"mech-table-body\">");
+
+    for row_idx in 0..self.rows {
+      table.push_str("<tr class=\"mech-table-row\">");
+      for (_key, (_kind, matrix)) in self.data.iter() {
+        let value = matrix.index1d(row_idx);
+        table.push_str(&format!("<td class=\"mech-table-column\">{}</td>", value));
+      }
+      table.push_str("</tr>");
+    }
+
+    table.push_str("</tbody></table>");
+    table
+  }
 
   pub fn new(rows: usize, cols: usize, data: IndexMap<Value,(ValueKind,Matrix<Value>)>, col_names: HashMap<Value,String>) -> MechTable {
     MechTable{rows, cols, data, col_names}
