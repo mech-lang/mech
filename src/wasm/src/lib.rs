@@ -264,6 +264,18 @@ impl WasmMech {
           Err(err) => { return format!("{:?}",err); }
         }
       }
+      ReplCommand::Step(count) => {
+        let n = match count {
+          Some(n) => n,
+          None => 1,
+        };
+        //let now = std::time::Instant::now();
+        intrp.step(n as u64);
+        //let elapsed_time = now.elapsed();
+        //let cycle_duration = elapsed_time.as_nanos() as f64;
+        //format!("{} cycles in {:0.2?} ns\n", n, cycle_duration)s
+        "".to_string()
+      }
       _ => todo!("Implement other REPL commands"),
     }
   }
