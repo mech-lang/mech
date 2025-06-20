@@ -1,6 +1,7 @@
 use crate::*;
 use std::rc::Rc;
 use std::collections::HashMap;
+use std::panic::{catch_unwind, AssertUnwindSafe};
 
 // Interpreter 
 // ----------------------------------------------------------------------------
@@ -129,12 +130,38 @@ impl Interpreter {
   }
 
   pub fn interpret(&mut self, tree: &Program) -> MResult<Value> {
-    let result = program(tree, &self);
-    if let Some(last_step) = self.plan.borrow().last() {
-      self.out = last_step.out().clone();
-    } else {
-      self.out = Value::Empty;
-    }
-    result
+    catch_unwind(AssertUnwindSafe(|| {
+      let result = program(tree, &self);
+      if let Some(last_step) = self.plan.borrow().last() {
+        self.out = last_step.out().clone();
+      } else {
+        self.out = Value::Empty;
+      }
+      result
+    }))
+    .map_err(|err| {
+      
+      let kind = {
+        if let Some(raw_msg) = err.downcast_ref::<&'static str>() {
+          if raw_msg.contains("Index out of bounds") {
+            MechErrorKind::IndexOutOfBounds
+          } else if raw_msg.contains("attempt to subtract with overflow") {
+            MechErrorKind::IndexOutOfBounds
+          } else {
+            MechErrorKind::GenericError(raw_msg.to_string())
+          }
+        } else {
+          MechErrorKind::GenericError("Unknown panic".to_string())
+        }
+      };
+      MechError {
+        file: file!().to_string(),
+        tokens: vec![],
+        msg: "Interpreter panicked".to_string(),
+        id: line!(),
+        kind
+      }
+    })?
   }
+  
 }

@@ -33,17 +33,9 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[tokio::main]
 async fn main() -> Result<(), MechError> {
-  /*panic::set_hook(Box::new(|panic_info| {
-    if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
-      println!("Mech Language Error: {}", s);
-      // Check for underflow error message
-      if s.contains("underflow") {
-          println!("Underflow error occurred!");
-      }
-    } else {
-        println!("Mech Language Error: Unknown panic");
-    }
-  }));*/
+  panic::set_hook(Box::new(|panic_info| {
+    // do nothing.
+  }));
   
   let text_logo = r#"
   ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐   ┌─┐
