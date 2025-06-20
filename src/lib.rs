@@ -227,42 +227,41 @@ pub fn pretty_print_tree(tree: &Program) -> String {
 }
 
 pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
-    let mut builder = Builder::default();
-    builder.push_record(vec!["Name", "Size", "Bytes", "Kind"]);
+  let mut builder = Builder::default();
+  builder.push_record(vec!["Name", "Size", "Bytes", "Kind"]);
 
-    let dictionary = intrp.dictionary();
+  let dictionary = intrp.dictionary();
 
-    if names.is_empty() {
-        // Print all symbols
-        for (id, name) in dictionary.borrow().iter() {
-            let value = intrp.get_symbol(*id).unwrap();
-            let value_brrw = value.borrow();
-            builder.push_record(vec![
-                name.clone(),
-                format!("{:?}", value_brrw.shape()),
-                format!("{:?}", value_brrw.size_of()),
-                format!("{:?}", value_brrw.kind()),
-            ]);
-        }
-    } else {
-        // Create a hash set for fast lookup
-        let names_set: HashSet<_> = names.iter().collect();
-
-        // Print only symbols in names
-        for (id, name) in dictionary.borrow().iter() {
-            if names_set.contains(name) {
-                let value = intrp.get_symbol(*id).unwrap();
-                let value_brrw = value.borrow();
-                builder.push_record(vec![
-                    name.clone(),
-                    format!("{:?}", value_brrw.shape()),
-                    format!("{:?}", value_brrw.size_of()),
-                    format!("{:?}", value_brrw.kind()),
-                ]);
-            }
-        }
+  if names.is_empty() {
+    // Print all symbols
+    for (id, name) in dictionary.borrow().iter() {
+      let value = intrp.get_symbol(*id).unwrap();
+      let value_brrw = value.borrow();
+      builder.push_record(vec![
+        name.clone(),
+        format!("{:?}", value_brrw.shape()),
+        format!("{:?}", value_brrw.size_of()),
+        format!("{:?}", value_brrw.kind()),
+      ]);
     }
+  } else {
+    // Create a hash set for fast lookup
+    let names_set: HashSet<_> = names.iter().collect();
 
+    // Print only symbols in names
+    for (id, name) in dictionary.borrow().iter() {
+      if names_set.contains(name) {
+        let value = intrp.get_symbol(*id).unwrap();
+        let value_brrw = value.borrow();
+        builder.push_record(vec![
+          name.clone(),
+          format!("{:?}", value_brrw.shape()),
+          format!("{:?}", value_brrw.size_of()),
+          format!("{:?}", value_brrw.kind()),
+        ]);
+      }
+    }
+  }
   let mut table = builder.build();
   table.with(mech_table_style())
       .with(Panel::header(format!("{}","🔍 Whos".truecolor(0xdf,0xb9,0x9f))));
