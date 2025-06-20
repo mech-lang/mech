@@ -94,7 +94,7 @@ impl MechRepl {
       }
       ReplCommand::Symbols(name) => {return Ok(pretty_print_symbols(&intrp));}
       ReplCommand::Plan => {return Ok(pretty_print_plan(&intrp));}
-      ReplCommand::Whos(name) => {return Ok(whos(&intrp));}
+      ReplCommand::Whos(names) => {return Ok(whos(&intrp,names));}
       ReplCommand::Clear(name) => {
         // Drop the old interpreter replace it with a new one
         let id = intrp.id;
