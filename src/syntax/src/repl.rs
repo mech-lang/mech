@@ -4,10 +4,11 @@ use nom::{
   IResult,
   bytes::complete::tag,
   branch::alt,
-  bytes::complete::{take_while, take_until},
+  bytes::complete::{take_while, take_until, take_till1},
   combinator::{opt, not},
-  multi::separated_list1,
+  multi::{separated_list1, separated_list0},
   character::complete::{space0,space1,digit1},
+  sequence::tuple as nom_tuple,
 };
 
 #[derive(Debug, Clone)]
@@ -24,7 +25,7 @@ pub enum ReplCommand {
   Cd(String),
   Step(Option<usize>),
   Load(Vec<String>),
-  Whos(Option<String>),
+  Whos(Vec<String>),
   Plan,
   Symbols(Option<String>),
   Clear(Option<String>),
@@ -49,6 +50,7 @@ pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand> {
     load_rpl,
     docs_rpl,
   ))(input)?;
+  let (input, _) = opt(tag("\r\n"))(input)?;
   Ok((input, command))
 }
 
@@ -88,11 +90,16 @@ fn plan_rpl(input: &str) -> IResult<&str, ReplCommand> {
   Ok((input, ReplCommand::Plan))
 }
 
+fn identifier(input: &str) -> IResult<&str, String> {
+    let (input, id) = take_till1(|c| c == ' ' || c == '\n' || c == '\r')(input)?;
+    Ok((input, id.to_string()))
+}
+
 fn whos_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = alt((tag("w"), tag("whos")))(input)?;
-  let (input, _) = space0(input)?;
-  let (input, name) = opt(take_while(|c: char| c.is_alphanumeric()))(input)?;
-  Ok((input, ReplCommand::Whos(name.map(|s| s.to_string()))))
+    let (input, _) = alt((tag("whos"), tag("w")))(input)?;
+    let (input, _) = space0(input)?;
+    let (input, names) = separated_list0(many1(tag(" ")), identifier)(input)?;
+    Ok((input, ReplCommand::Whos(names)))
 }
 
 fn clear_rpl(input: &str) -> IResult<&str, ReplCommand> {
