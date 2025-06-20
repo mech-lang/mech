@@ -1456,6 +1456,14 @@ mark {
   stroke-width: 2.5px !important;
 }
 
+.repl-result .mech-table td { 
+    padding: 10px;
+}
+
+.repl-result .mech-table th { 
+    padding: 10px;
+}
+
 @media (max-width: 1650px) {
     .mech-program-title {
         width: 700px;
