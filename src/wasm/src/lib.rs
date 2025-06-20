@@ -126,26 +126,24 @@ impl WasmMech {
             result_line.set_class_name("repl-result");
 
             // SAFELY call back into WasmMech
-            let output = CURRENT_MECH.with(|mech_ref| {
+            CURRENT_MECH.with(|mech_ref| {
               if let Some(ptr) = *mech_ref.borrow() {
                 // UNSAFE but valid: we trust that `self` lives
                 unsafe {
                   let mech = &mut *ptr;
-                  if !code.trim().is_empty() {
+                  let output = if !code.trim().is_empty() {
                     mech.repl_history.push(code.clone());
                     mech.repl_history_index = None;
                     mech.eval(&code)
                   } else {
                     "".to_string()
-                  }
+                  };
+                  result_line.set_inner_html(&output);
+                  container_inner.append_child(&result_line).unwrap();
+                  mech.init();
                 }
-              } else {
-                "[no interpreter]".to_string()
               }
             });
-
-            result_line.set_inner_html(&output);
-            container_inner.append_child(&result_line).unwrap();
 
             if let Some(cb) = &*create_prompt_inner.borrow() {
               cb();
