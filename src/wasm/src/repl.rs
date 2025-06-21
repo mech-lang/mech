@@ -63,35 +63,33 @@ pub fn help_html() -> String {
   let version = env!("CARGO_PKG_VERSION");
   let mut html = String::new();
   
-html.push_str("<div class=\"mech-help\">");
-    html.push_str(&format!("<div class=\"mech-text-logo\">{}</div>", text_logo));  
-    html.push_str(&format!("<div class=\"mech-version\">Version: {}</div>", version));
-    html.push_str("<p>Welcome to the Mech REPL!</p>");
-    html.push_str("<p>Full documentation: <a href=\"https://docs.mech-lang.org\">docs.mech-lang.org</a>.</p>"); 
-    html.push_str("<table class=\"mech-help-table\">");
-        html.push_str("<thead><tr><th>Command</th><th>Description</th></tr></thead>");
-        html.push_str("<tbody>");
-        html.push_str("<tr><td><span class=\"mech-command\">:clc</span></td><td>Clear the REPL output.</td></tr>");
-        html.push_str("<tr><td><span class=\"mech-command\">:clear</span></td><td>Clear the interpreter state.</td></tr>");
-        html.push_str("<tr><td><span class=\"mech-command\">:h</span>, <span class=\"mech-command\">:help</span></td><td>Show this help message.</td></tr>");
-        html.push_str("<tr><td><span class=\"mech-command\">:step [count]</span></td><td>Run the plan for a specified number of steps.</td></tr>");
-        html.push_str("<tr><td><span class=\"mech-command\">:w</span>, <span class=\"mech-command\">:whos [names...]</span></td><td>Show the current symbol directory.</td></tr>");
-        html.push_str("</tbody>");
-    html.push_str("</table>");
+  html.push_str("<div class=\"mech-help\">");
+  html.push_str(&format!("<div class=\"mech-text-logo\">{}</div>", text_logo));  
+  html.push_str(&format!("<div class=\"mech-version\">Version: {}</div>", version));
+  html.push_str("<p>Welcome to the Mech REPL!</p>");
+  html.push_str("<p>Full documentation: <a href=\"https://docs.mech-lang.org\">docs.mech-lang.org</a>.</p>"); 
+  html.push_str("<table class=\"mech-help-table\">");
+    html.push_str("<thead><tr><th>Command</th><th>Options</th><th>Description</th></tr></thead>");
+    html.push_str("<tbody>");
+    html.push_str("<tr><td><span class=\"mech-command\">:clc</span></td><td></td><td>Clear the REPL output.</td></tr>");
+    html.push_str("<tr><td><span class=\"mech-command\">:clear</span></td><td></td><td>Clear the interpreter state.</td></tr>");
+    html.push_str("<tr><td><span class=\"mech-command\">:h</span></td><td><span class=\"mech-command\">:help</span></td><td>Show this help message.</td></tr>");
+    html.push_str("<tr><td><span class=\"mech-command\">:step</span></td><td>[count]</td><td>Run the plan for a specified number of steps.</td></tr>");
+    html.push_str("<tr><td><span class=\"mech-command\">:w</span></td><td><span class=\"mech-command\">:whos [names...]</span></td><td>Show the current symbol directory.</td></tr>");
+    html.push_str("</tbody>");
+  html.push_str("</table>");
   html.push_str("</div>");
   html
-
 }
-
 pub fn whos_html(intrp: &Interpreter, names: Vec<String>) -> String {
   let mut html = String::new();
 
   html.push_str("<table class=\"mech-table\">");
     html.push_str("<thead class=\"mech-table-header\"><tr>");
-        html.push_str("<th class=\"mech-table-field\">Name</th>");
-        html.push_str("<th class=\"mech-table-field\">Size</th>");
-        html.push_str("<th class=\"mech-table-field\">Bytes</th>");
-        html.push_str("<th class=\"mech-table-field\">Kind</th>");
+      html.push_str("<th class=\"mech-table-field\">Name</th>");
+      html.push_str("<th class=\"mech-table-field\">Size</th>");
+      html.push_str("<th class=\"mech-table-field\">Bytes</th>");
+      html.push_str("<th class=\"mech-table-field\">Kind</th>");
     html.push_str("</tr></thead>");
   html.push_str("<tbody class=\"mech-table-body\">");
 
