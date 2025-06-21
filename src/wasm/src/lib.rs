@@ -328,6 +328,14 @@ impl WasmMech {
     for i in 0..clickable_elements.length() {
       let element = clickable_elements.get_with_index(i).unwrap();
 
+      // Skip if listener already added
+      if element.get_attribute("data-click-bound").is_some() {
+        continue;
+      }
+
+      // Mark it as handled
+      element.set_attribute("data-click-bound", "true").unwrap();
+
       // the element id is formed like this : let id = format!("{}:{}",hash_str(&name),self.interpreter_id);
       // so we need to parse it to get the id and the interpreter id
       let id = element.id();
