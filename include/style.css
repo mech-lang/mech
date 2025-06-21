@@ -10,7 +10,7 @@ html {
 }
 
 body {
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Lato', sans-serif;
     background-color: #0d1013;
     margin: 0;
     padding: 0;
@@ -1177,11 +1177,24 @@ a.mech-footnote-reference {
     text-align: justify;
 }
 
-h2 {
+#mech-output {
+    counter-reset: h2;
+}
+
+#mech-output h2 {
     counter-reset: h3;
 }
 
-h3 {
+#mech-output h2 {
+    counter-reset: h3;
+}
+
+
+.mech-content h2 {
+    counter-reset: h3;
+}
+
+.mech-content h3 {
     counter-reset: h4;
 }
 
@@ -1456,6 +1469,15 @@ mark {
   stroke-width: 2.5px !important;
 }
 
+#mech-output li {
+    color: #f2ead9;
+}
+
+#mech-output li::marker {
+    color: #F3B62D;
+    font-weight: bold;
+}
+
 .repl-result .mech-table td { 
     padding: 10px;
 }
@@ -1463,6 +1485,41 @@ mark {
 .repl-result .mech-table th { 
     padding: 10px;
 }
+
+.mech-text-logo {
+    white-space: pre;
+    color: rgb(246,192,78);
+    text-align: center;
+    margin: 20px auto;
+}
+
+#mech-output a {
+    color: #F8D07A;
+    text-decoration: underline;
+}
+
+#mech-output a:hover {
+    color: #f18181;
+    text-decoration: underline;
+}
+
+.mech-command {
+    background-color: #171D21;
+    border: 1px solid #777;
+    color: #eddaf1;
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 1rem;
+    padding: 0px 6px 0px 6px;
+    margin: 0px 2px 0px 2px;
+    border-radius: 3px;
+    box-shadow: 0 0px 2px rgba(0, 0, 0, 0.7);
+}
+
+.mech-version {
+    text-align: center;
+}
+
+
 
 @media (max-width: 1650px) {
     .mech-program-title {
