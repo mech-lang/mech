@@ -7,6 +7,10 @@ use web_sys::{window, HtmlElement, HtmlInputElement, Node};
 use std::rc::Rc;
 use std::cell::RefCell;
 
+pub mod repl;
+
+pub use crate::repl::*;
+
 thread_local! {
     static CURRENT_MECH: RefCell<Option<*mut WasmMech>> = RefCell::new(None);
 }
@@ -24,6 +28,29 @@ pub fn main() -> Result<(), JsValue> {
   //wasm_mech.init();
   //wasm_mech.run_program("1 + 1");
   Ok(())
+}
+
+
+fn run_mech_code(intrp: &mut Interpreter, code: &Vec<(String,MechSourceCode)>) -> MResult<Value> {
+  for (file, source) in code {
+    match source {
+      MechSourceCode::String(s) => {
+        let parse_result = parser::parse(&s.trim());
+        match parse_result {
+          Ok(tree) => { 
+            let result = intrp.interpret(&tree);
+            return result;
+          },
+          Err(err) => return Err(err),
+        }
+      }
+      x => {
+        log!("Unsupported source code type: {:?}", x);
+        todo!();
+      },
+    }
+  }
+  Ok(Value::Empty)
 }
 
 #[wasm_bindgen]
@@ -210,83 +237,11 @@ impl WasmMech {
     };
   }
 
-  fn run_mech_code(&mut self, code: &Vec<(String,MechSourceCode)>) -> MResult<Value> {
-    for (file, source) in code {
-      match source {
-        MechSourceCode::String(s) => {
-          let parse_result = parser::parse(&s.trim());
-          log!("fooooo");
-          match parse_result {
-            Ok(tree) => { 
-              let result = self.interpreter.interpret(&tree);
-              return result;
-            },
-            Err(err) => return Err(err),
-          }
-        }
-        x => {
-          log!("Unsupported source code type: {:?}", x);
-          todo!();
-        },
-      }
-    }
-    Ok(Value::Empty)
-  }
-
-  fn execute_repl_command(&mut self, repl_cmd: ReplCommand) -> String {
-    let mut intrp = &mut self.interpreter;
-    match repl_cmd {
-      ReplCommand::Clear(_) => {
-        *intrp = Interpreter::new(intrp.id);
-        "".to_string()
-      }
-      ReplCommand::Clc => {
-        let window = web_sys::window().expect("global window does not exists");    
-        let document = window.document().expect("expecting a document on window");
-        let output_element = document.get_element_by_id("mech-output").expect("REPL output element not found");
-        // Remove all children
-        while output_element.child_nodes().length() > 0 {
-          let first_child = output_element
-            .first_child()
-            .expect("Expected a child node");
-          output_element
-            .remove_child(&first_child)
-            .expect("Failed to remove child");
-        }
-        "".to_string()
-      }
-      ReplCommand::Code(code) => {
-        match self.run_mech_code(&code)  {
-          Ok(output) => { 
-            return format!("<div class=\"mech-output-kind\">{:?}</div><div class=\"mech-output-value\">{}</div>", output.kind(), output.to_html());
-          },
-          Err(err) => { return format!("{:?}",err); }
-        }
-      }
-      ReplCommand::Step(count) => {
-        let n = match count {
-          Some(n) => n,
-          None => 1,
-        };
-        //let now = std::time::Instant::now();
-        intrp.step(n as u64);
-        //let elapsed_time = now.elapsed();
-        //let cycle_duration = elapsed_time.as_nanos() as f64;
-        //format!("{} cycles in {:0.2?} ns\n", n, cycle_duration)s
-        "".to_string()
-      }
-      ReplCommand::Whos(names) => {
-        whos_html(intrp, names)
-      }
-      _ => todo!("Implement other REPL commands"),
-    }
-  }
-
   pub fn eval(&mut self, input: &str) -> String {
     if input.chars().nth(0) == Some(':') {
       match parse_repl_command(&input.to_string()) {
         Ok((_, repl_command)) => {
-          self.execute_repl_command(repl_command)
+          execute_repl_command(&mut self.interpreter, repl_command)
         }
         Err(x) => {
           format!("Unrecognized command: {}", x)
@@ -294,7 +249,7 @@ impl WasmMech {
       }
     } else {
       let cmd = ReplCommand::Code(vec![("repl".to_string(),MechSourceCode::String(input.to_string()))]);
-      self.execute_repl_command(cmd)
+      execute_repl_command(&mut self.interpreter, cmd)
     }
   }
 
@@ -513,65 +468,4 @@ impl WasmMech {
       }
     }
   }
-}
-
-pub fn whos_html(intrp: &Interpreter, names: Vec<String>) -> String {
-  let mut html = String::new();
-
-  html.push_str("<table class=\"mech-table\">");
-  html.push_str("<thead class=\"mech-table-header\"><tr>");
-  html.push_str("<th class=\"mech-table-field\">Name</th>");
-  html.push_str("<th class=\"mech-table-field\">Size</th>");
-  html.push_str("<th class=\"mech-table-field\">Bytes</th>");
-  html.push_str("<th class=\"mech-table-field\">Kind</th>");
-  html.push_str("</tr></thead>");
-  html.push_str("<tbody class=\"mech-table-body\">");
-
-  let dictionary = intrp.dictionary();
-  if !names.is_empty() {
-    for target_name in names {
-      for (id, var_name) in dictionary.borrow().iter() {
-        if *var_name == target_name {
-          if let Some(value_rc) = intrp.get_symbol(*id) {
-            let value = value_rc.borrow();
-            append_row(&mut html, var_name, &value);
-          }
-          break;
-        }
-      }
-    }
-  } else {
-    for (id, var_name) in dictionary.borrow().iter() {
-      log!("Processing variable: {} with id: {}", var_name, id);
-      if let Some(value_rc) = intrp.get_symbol(*id) {
-        let value = value_rc.borrow();
-        append_row(&mut html, var_name, &value);
-      }
-    }
-  }
-  html.push_str("</tbody></table>");
-  html
-}
-
-fn append_row(html: &mut String, name: &str, value: &Value) {
-  let name = html_escape(name);
-  let size = html_escape(&format!("{:?}", value.shape()));
-  let bytes = html_escape(&format!("{:?}", value.size_of()));
-  let kind = html_escape(&format!("{:?}", value.kind()));
-
-  html.push_str("<tr class=\"mech-table-row\">");
-
-  let id = hash_str(&name);
-  html.push_str(&format!("<td class=\"mech-table-column\"><span class=\"mech-var-name mech-clickable\" id=\"{}:0\">{}</span></td>",id, name));
-  html.push_str(&format!("<td class=\"mech-table-column\">{}</td>", size));
-  html.push_str(&format!("<td class=\"mech-table-column\">{}</td>", bytes));
-  html.push_str(&format!("<td class=\"mech-table-column\">{}</td>", kind));
-  html.push_str("</tr>");
-}
-
-fn html_escape(input: &str) -> String {
-  input
-    .replace('&', "&amp;")
-    .replace('<', "&lt;")
-    .replace('>', "&gt;")
 }
