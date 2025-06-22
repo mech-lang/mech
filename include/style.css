@@ -1478,8 +1478,19 @@ mark {
     font-weight: bold;
 }
 
-#mech-output th {
+.mech-help th {
     text-align: left;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-right: 10px;
+}
+
+.mech-help tr {
+    vertical-align: top;
+}
+
+.mech-help td {
+    padding-bottom: 10px;
 }
 
 
