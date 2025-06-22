@@ -1,76 +1,68 @@
-`math/sin` 
+math/sin
 ===============================================================================
 
-Sine of argument in radians
+%% Sine of argument in radians
 
-1. How to Use It  
+1. Usage
 -------------------------------------------------------------------------------
 
-```mech
 Y := math/sin(X)
-```
 
-2. What It Does
+2. Description
 -------------------------------------------------------------------------------
 
-The `math/sin(x)` function finds the sine of `x`. It works on numbers or lists of numbers, and `x` should be in radians.
+Computes the sine of each element of `X`. The input `X` is interpreted in radians, not degrees. The result `Y` has the same size as `X` and contains the sine of each corresponding element.
 
-- If `x` is a regular number, the result is between `-1` and `1`.
-- If `x` is a complex number, the function finds the sine of that complex number.
+3. Arguments
+-------------------------------------------------------------------------------
 
-3. Examples  
+| Argument | Kind                     | Description |
+|----------|--------------------------|-------------|
+| `X`      | `float`, `[float]`       | Input angle(s) specified in radians. Can be real or complex. If `X` is complex, sin returns complex results. |
+
+4. Returns
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description |
+|----------|--------------------------|-------------|
+| `Y`      | matches input            | Sine of the input values. If `X` is real, `Y` is real in the range `[-1,1]`. If `X` is complex, `Y` may have both real and imaginary parts. The shape of `Y` matches the shape of `X`. |
+
+4. Examples  
 -------------------------------------------------------------------------------
 
 (a) Find the sine of a number 
 
-```mech
-y = math/sin(3.14)
+```mech-ex1
+y := math/sin(3.14)
 ```
 
 (b) Find the sine for a vector of numbers
 
-```mech
-x = [0, 1.57, 3.14]
-y = math/sin(x)
+```mech-ex2
+x := [0, 1.57, 3.14]
+y := math/sin(x)
 ```
 
 (c) Find the sine for a matrix of numbers
 
-```mech
-x = [0, 1; 3 4]
-y = math/sin(x)
+```mech-ex3
+x := [0, 1; 3 4]
+y := math/sin(x)
 ```
 
-(d) Find the sine of a complex number
-
-```mech
-x = 1 + 2i
-y = math/sin(x)
-```
-
-4. Details
+5. Details
 -------------------------------------------------------------------------------
 
-The sine function is a fundamental concept in trigonometry, which deals with the relationships between angles and sides in triangles.
+The sine function is a key idea in trigonometry, which studies the relationships between angles and sides of triangles.
 
-For a right triangle, the sine of an angle x is defined as the ratio of the length of the opposite side to the length of the hypotenuse:
+In a right triangle, the sine of an angle $$x$$ is defined as the ratio of the length of the opposite side to the hypotenuse:
 
-```latex
-sin(x) = opposite / hypotenuse
-```
+$$ sin(x) = opposite / hypotenuse
 
 In the unit circle, which is a circle with a radius of 1 centered at the origin, the sine of an angle corresponds to the y-coordinate of a point on the circle at that angle.
 
 For complex numbers, the sine function is defined using exponentials:
 
-```latex
-sin(x) = (e^{ix} - e^{-ix}) / 2i
-```
+$$ sin(x) = (e^{ix} - e^{-ix}) / 2i
 
 This definition extends the sine function to work beyond real numbers, allowing it to handle complex inputs.
-
-5. See Also
--------------------------------------------------------------------------------
-
-- math/cos
-- math/tan
