@@ -182,20 +182,15 @@ pub fn load_doc(doc: &str) {
 }
 
 async fn fetch_docs(doc: &str) -> String {
-  log!("Fetching doc: {}", doc);
   // the doc will be formatted as machine/doc
   let parts: Vec<&str> = doc.split('/').collect();
-  log!("Parts: {:?}", parts);
   if parts.len() >= 2 {
-      log!("Parts: {:?}", parts);
       let machine = parts[0];
       let doc = parts[1];
       let url = format!("https://raw.githubusercontent.com/mech-machines/{}/main/docs/{}.mec", machine, doc);
-      log!("Fetching URL: {}", url);
       match Request::get(&url).send().await {
         Ok(response) => match response.text().await {
           Ok(text) => {
-            web_sys::console::log_1(&format!("Got: {}", text).into());
             text
           }
           Err(e) => {
