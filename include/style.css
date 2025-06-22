@@ -1478,6 +1478,11 @@ mark {
     font-weight: bold;
 }
 
+#mech-output th {
+    text-align: left;
+}
+
+
 .repl-result .mech-table td { 
     padding: 10px;
 }
