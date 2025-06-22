@@ -1546,6 +1546,12 @@ mark {
     padding: 10px;
 }
 
+#mech-output .mech-abstract p {
+    line-height: 25pt;
+    margin: 0px;
+    text-align: justify;
+}
+
 #mech-output h1 {
     width: 100%;
     margin: auto;
