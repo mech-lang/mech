@@ -264,7 +264,7 @@ h4.toc::before {
     padding-right: 6px;
 }
 
-.mech-program-title {
+.mech-program h1 {
     width: 900px;
     font-family: 'FiraCodeRegular', monospace;
     padding-bottom: 10px;
@@ -1535,7 +1535,81 @@ mark {
     text-align: center;
 }
 
+#mech-output .mech-content {
+    max-width: 100%;
+    min-width: 300px;
+    margin: 10px;
+}
 
+#mech-output .mech-abstract {
+    margin: 10px auto;
+    padding: 10px;
+}
+
+#mech-output h1 {
+    width: 100%;
+    margin: auto;
+    font-family: 'FiraCodeRegular', monospace;
+    color: #f2ead9;
+    font-weight: bold;
+    border-bottom: none;
+    font-size: 1rem;
+}
+
+#mech-output h2 {
+    width: 100%;
+    margin: auto;
+    font-family: 'FiraCodeRegular', monospace;
+    color: #f2ead9;
+    font-weight: bold;
+    border-bottom: none;
+    font-size: 1rem;
+}
+
+#mech-output h3 {
+    width: 100%;
+    margin: auto;
+    font-family: 'FiraCodeRegular', monospace;
+    color: #f2ead9;
+    font-weight: bold;
+    font-size: 1rem;
+    margin-bottom: 10px;
+}
+
+#mech-output h4 {
+    width: 100%;
+    margin: auto;
+    font-family: 'FiraCodeRegular', monospace;
+    color: #f2ead9;
+    font-weight: bold;
+    border-bottom: none;
+    font-size: 1rem;
+}
+
+#mech-output h2 a {
+    text-decoration: none;
+}
+
+#mech-output h3 a {
+    text-decoration: none;
+}
+
+#mech-output h4 a {
+    text-decoration: none;
+}
+
+#mech-output p {
+    margin-top: 0px;
+    margin-bottom: 10px;
+}
+
+#mech-output .mech-code-block {
+    padding: 10px;
+}
+
+#mech-output td {
+    padding: 10px;
+}
 
 @media (max-width: 1650px) {
     .mech-program-title {
