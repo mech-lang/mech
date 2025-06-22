@@ -336,21 +336,50 @@ entries
 
 window.addEventListener("DOMContentLoaded", () => {{
   createObserver("0px 0px 0px 0px");
-  const elements = document.querySelectorAll(".mech-equation");
-  elements.forEach(el => {{
-    const eq = el.getAttribute("equation");
-    if (eq) {{
-      katex.render(eq, el, {{ throwOnError: false }});
+
+  function renderEquations(root = document) {{
+    const blockElements = root.querySelectorAll(".mech-equation");
+    blockElements.forEach(el => {{
+      if (!el.getAttribute("data-rendered")) {{
+        const eq = el.getAttribute("equation");
+        if (eq) {{
+          katex.render(eq, el, {{ throwOnError: false }});
+          el.setAttribute("data-rendered", "true");
+        }}
+      }}
+    }});
+
+    const inlineElements = root.querySelectorAll(".mech-inline-equation");
+    inlineElements.forEach(el => {{
+      if (!el.getAttribute("data-rendered")) {{
+        const eq = el.getAttribute("equation");
+        if (eq) {{
+          katex.render(eq, el, {{ throwOnError: false }});
+          el.setAttribute("data-rendered", "true");
+        }}
+      }}
+    }});
+  }}
+
+  renderEquations();
+
+  // Set up a MutationObserver to watch for new elements
+  const observer = new MutationObserver(mutations => {{
+    for (const mutation of mutations) {{
+      for (const node of mutation.addedNodes) {{
+        if (node.nodeType === Node.ELEMENT_NODE) {{
+          renderEquations(node);
+        }}
+      }}
     }}
   }});
-  const inline_elements = document.querySelectorAll(".mech-inline-equation");
-  inline_elements.forEach(el => {{
-    const eq = el.getAttribute("equation");
-    if (eq) {{
-      katex.render(eq, el, {{ throwOnError: false }});
-    }}
+
+  observer.observe(document.body, {{
+    childList: true,
+    subtree: true,
   }});
 }});
+
 
 let lastScrollY = window.scrollY;
 let scrolling_down = true;
