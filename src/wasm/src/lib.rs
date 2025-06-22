@@ -372,6 +372,12 @@ impl WasmMech {
     self.add_clickable_event_listeners();
   }
 
+   #[wasm_bindgen]
+   pub fn render_values(&mut self) {
+    self.render_codeblock_output_values();
+    self.render_inline_values();
+  }
+
   // Write block output each element that needs it, rendering it appropriately
   // based on its data type.
   #[wasm_bindgen]
