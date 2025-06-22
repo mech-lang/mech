@@ -65,17 +65,17 @@ pub fn help_html() -> String {
   
   html.push_str("<div class=\"mech-help\">");
   html.push_str(&format!("<div class=\"mech-text-logo\">{}</div>", text_logo));  
-  html.push_str(&format!("<div class=\"mech-version\">Version: {}</div>", version));
+  html.push_str(&format!("<div class=\"mech-version\">Version: <a href=\"https://github.com/mech-lang/mech/releases/tag/v{}-beta\">{}</a></div>", version, version));
   html.push_str("<p>Welcome to the Mech REPL!</p>");
   html.push_str("<p>Full documentation: <a href=\"https://docs.mech-lang.org\">docs.mech-lang.org</a>.</p>"); 
   html.push_str("<table class=\"mech-help-table\">");
-    html.push_str("<thead><tr><th>Command</th><th>Options</th><th>Description</th></tr></thead>");
+    html.push_str("<thead><tr><th>Command</th><th>Short</th><th>Options</th><th>Description</th></tr></thead>");
     html.push_str("<tbody>");
-    html.push_str("<tr><td><span class=\"mech-command\">:clc</span></td><td></td><td>Clear the REPL output.</td></tr>");
-    html.push_str("<tr><td><span class=\"mech-command\">:clear</span></td><td></td><td>Clear the interpreter state.</td></tr>");
-    html.push_str("<tr><td><span class=\"mech-command\">:h</span></td><td><span class=\"mech-command\">:help</span></td><td>Show this help message.</td></tr>");
-    html.push_str("<tr><td><span class=\"mech-command\">:step</span></td><td>[count]</td><td>Run the plan for a specified number of steps.</td></tr>");
-    html.push_str("<tr><td><span class=\"mech-command\">:w</span></td><td><span class=\"mech-command\">:whos [names...]</span></td><td>Show the current symbol directory.</td></tr>");
+    html.push_str("<tr><td><span class=\"mech-command\">:clc</span></td><td></span></td><td></td><td>Clear the REPL output.</td></tr>");
+    html.push_str("<tr><td><span class=\"mech-command\">:clear</span><td></span></td></td><td></td><td>Clear the interpreter state.</td></tr>");
+    html.push_str("<tr><td><span class=\"mech-command\">:help</span></td><td><span class=\"mech-command\">:h</span></td><td></td><td>Show this help message.</td></tr>");
+    html.push_str("<tr><td><span class=\"mech-command\">:step</span></td><td></td><td><span class=\"mech-command\">[count]</span></td><td>Run the plan for a specified number of steps.</td></tr>");
+    html.push_str("<tr><td><span class=\"mech-command\">:whos</span></td><td><span class=\"mech-command\">:w</span></td><td><span class=\"mech-command\">[names...]</span></td><td>Show the current symbol directory.</td></tr>");
     html.push_str("</tbody>");
   html.push_str("</table>");
   html.push_str("</div>");
