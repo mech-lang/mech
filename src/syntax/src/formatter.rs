@@ -11,7 +11,7 @@ pub struct Formatter{
   rows: usize,
   cols: usize,
   indent: usize,
-  html: bool,
+  pub html: bool,
   nested: bool,
   toc: bool,
   figure_num: usize,
@@ -873,6 +873,62 @@ window.addEventListener("scroll", () => {{
   }
 
   pub fn markdown_table(&mut self, node: &MarkdownTable) -> String {
+    if self.html {
+      self.markdown_table_html(node)
+    } else {
+      self.markdown_table_string(node)
+    }
+  }
+
+
+  pub fn markdown_table_string(&mut self, node: &MarkdownTable) -> String {
+    // Helper to render a row of Paragraphs as `| ... | ... |`
+    fn render_row(cells: &[Paragraph], f: &mut impl FnMut(&Paragraph) -> String) -> String {
+        let mut row = String::from("|");
+        for cell in cells {
+            row.push_str(" ");
+            row.push_str(&f(cell));
+            row.push_str(" |");
+        }
+        row
+    }
+
+    // Render header
+    let header_line = render_row(&node.header, &mut |p| self.paragraph(p));
+
+    // Render alignment row
+    let mut align_line = String::from("|");
+    for align in &node.alignment {
+        let spec = match align {
+            ColumnAlignment::Left => ":---",
+            ColumnAlignment::Center => ":---:",
+            ColumnAlignment::Right => "---:",
+        };
+        align_line.push_str(&format!(" {} |", spec));
+    }
+
+    // Render body rows
+    let mut body_lines = vec![];
+    for row in &node.rows {
+        body_lines.push(render_row(row, &mut |p| self.paragraph(p)));
+    }
+
+    // Join everything
+    let mut markdown = String::new();
+    markdown.push_str(&header_line);
+    markdown.push('\n');
+    markdown.push_str(&align_line);
+    markdown.push('\n');
+    for line in body_lines {
+        markdown.push_str(&line);
+        markdown.push('\n');
+    }
+
+    markdown
+}
+
+
+  pub fn markdown_table_html(&mut self, node: &MarkdownTable) -> String {
     let mut html = String::new();
     html.push_str("<table class=\"mech-table\">");
 
