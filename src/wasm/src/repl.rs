@@ -1,5 +1,7 @@
 use crate::*;
 use gloo_net::http::Request;
+use wasm_bindgen_futures::spawn_local;
+
 
 pub fn execute_repl_command(intrp:  &mut Interpreter, repl_cmd: ReplCommand) -> String {
   match repl_cmd {
@@ -47,6 +49,16 @@ pub fn execute_repl_command(intrp:  &mut Interpreter, repl_cmd: ReplCommand) -> 
     }
     ReplCommand::Help => {
       help_html()
+    }
+    ReplCommand::Docs(doc) => {
+      log!("Loading doc: {:?}", doc);
+      match doc {
+        Some(d) => {
+          load_doc(&d);
+          "".to_string()
+        },
+        None => "".to_string(),
+      } 
     }
     _ => todo!("Implement other REPL commands"),
   }
@@ -142,4 +154,62 @@ fn html_escape(input: &str) -> String {
     .replace('&', "&amp;")
     .replace('<', "&lt;")
     .replace('>', "&gt;")
+}
+
+pub fn load_doc(doc: &str) {
+  let doc = doc.to_string();
+  spawn_local(async move {
+    log!("Loading doc: {}", doc);
+    let doc_mec = fetch_docs(&doc).await;
+    let window = web_sys::window().expect("global window does not exists");
+    let document = window.document().expect("expecting a document on window");
+    match parser::parse(&doc_mec) {
+      Ok(tree) => {
+        let mut formatter = Formatter::new();
+        formatter.html = true;
+        let doc_html = formatter.program(&tree);
+        let output_element = document.get_element_by_id("mech-output").expect("REPL output element not found");
+        // Make sure it's added to the end of the repl, and that we put the prompt at the end
+        output_element.set_inner_html(&doc_html);
+      },
+      Err(err) => {
+        web_sys::console::log_1(&format!("Error formatting doc: {:?}", err).into());
+      }
+    }
+
+    let output_element = document.get_element_by_id("mech-output").expect("REPL output element not found");
+  });
+}
+
+async fn fetch_docs(doc: &str) -> String {
+  log!("Fetching doc: {}", doc);
+  // the doc will be formatted as machine/doc
+  let parts: Vec<&str> = doc.split('/').collect();
+  log!("Parts: {:?}", parts);
+  if parts.len() >= 2 {
+      log!("Parts: {:?}", parts);
+      let machine = parts[0];
+      let doc = parts[1];
+      let url = format!("https://raw.githubusercontent.com/mech-machines/{}/main/docs/{}.mec", machine, doc);
+      log!("Fetching URL: {}", url);
+      match Request::get(&url).send().await {
+        Ok(response) => match response.text().await {
+          Ok(text) => {
+            web_sys::console::log_1(&format!("Got: {}", text).into());
+            text
+          }
+          Err(e) => {
+            web_sys::console::log_1(&format!("Error reading response text: {:?}", e).into());
+            "".to_string()
+          }
+        },
+        Err(err) => {
+          web_sys::console::log_1(&format!("Fetch error: {:?}", err).into());
+          "".to_string()
+        }
+      }
+  } else {
+    web_sys::console::log_1(&format!("Invalid doc format: {}", doc).into());
+    "".to_string()
+  }
 }
