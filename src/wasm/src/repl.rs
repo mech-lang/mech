@@ -122,7 +122,6 @@ pub fn whos_html(intrp: &Interpreter, names: Vec<String>) -> String {
     }
   } else {
     for (id, var_name) in dictionary.borrow().iter() {
-      log!("Processing variable: {} with id: {}", var_name, id);
       if let Some(value_rc) = intrp.get_symbol(*id) {
         let value = value_rc.borrow();
         append_row(&mut html, var_name, &value);
@@ -159,7 +158,6 @@ fn html_escape(input: &str) -> String {
 pub fn load_doc(doc: &str) {
   let doc = doc.to_string();
   spawn_local(async move {
-    log!("Loading doc: {}", doc);
     let doc_mec = fetch_docs(&doc).await;
     let window = web_sys::window().expect("global window does not exists");
     let document = window.document().expect("expecting a document on window");
@@ -169,8 +167,15 @@ pub fn load_doc(doc: &str) {
         formatter.html = true;
         let doc_html = formatter.program(&tree);
         let output_element = document.get_element_by_id("mech-output").expect("REPL output element not found");
-        // Make sure it's added to the end of the repl, and that we put the prompt at the end
-        output_element.set_inner_html(&doc_html);
+        // Insert the doc to be the second to last child of the output_element, making the last element the prompt, and keeping all of the former output.
+        let doc_div = document.create_element("div").expect("Failed to create doc div");
+        doc_div.set_inner_html(&doc_html);
+        doc_div.set_class_name("mech-doc");
+        if let Some(last_child) = output_element.last_child() {
+          output_element.insert_before(&doc_div, Some(&last_child)).expect("Failed to insert doc div");
+        } else {
+          output_element.append_child(&doc_div).expect("Failed to append doc div");
+        }
       },
       Err(err) => {
         web_sys::console::log_1(&format!("Error formatting doc: {:?}", err).into());
