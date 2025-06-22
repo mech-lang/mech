@@ -14,29 +14,47 @@ use num_traits::*;
 use std::fmt::Debug;
 use simba::scalar::ClosedNeg;
 use num_traits::Pow;
+use mech_core::matrix::Matrix;
 
-//#[macro_use]
-//extern crate lazy_static;
+static PI: f64 = 3.14159265358979323846264338327950288;
 
-static PI: f32 = 3.14159265358979323846264338327950288;
-
+pub mod acos;
+pub mod acosh;
+pub mod acot;
+pub mod acsc;
+pub mod asec;
+pub mod asin;
+pub mod asinh;
+pub mod atan;
+pub mod atan2;
 pub mod cos;
+pub mod cosh;
+pub mod cot;
+pub mod csc;
+pub mod sec;
 pub mod sin;
-pub mod add;
-pub mod sub;
-pub mod mul;
-pub mod div;
-pub mod exp;
-pub mod negate;
+pub mod sinh;
+pub mod tan;
+pub mod tanh;
 
+pub use self::acos::*;
+pub use self::acosh::*;
+pub use self::acot::*;
+pub use self::acsc::*;
+pub use self::asec::*;
+pub use self::asin::*;
+pub use self::asinh::*;
+pub use self::atan::*;
+pub use self::atan2::*;
 pub use self::cos::*;
+pub use self::cosh::*;
+pub use self::cot::*;
+pub use self::csc::*;
+pub use self::sec::*;
 pub use self::sin::*;
-pub use self::add::*;
-pub use self::sub::*;
-pub use self::mul::*;
-pub use self::div::*;
-pub use self::exp::*;
-pub use self::negate::*;
+pub use self::sinh::*;
+pub use self::tan::*;
+pub use self::tanh::*;
 
 // ----------------------------------------------------------------------------
 // Math Library
@@ -46,8 +64,7 @@ pub use self::negate::*;
 macro_rules! impl_math_fxns {
   ($lib:ident) => {
     impl_fxns!($lib,T,T,impl_binop);
-  }
-}
+  }}
 
 #[macro_export]
 macro_rules! impl_urnop_match_arms2 {
@@ -91,11 +108,8 @@ macro_rules! impl_urnop_match_arms2 {
               Ok(Box::new([<$lib $lhs_type MD>]{arg, out: new_ref(DMatrix::from_element(rows,cols,$default))}))},
           )+
         )+
-        x => Err(MechError { tokens: vec![], msg: file!().to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-      }
-    }
-  }
-}
+        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}", x).to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+      }}}}
 
 #[macro_export]
 macro_rules! impl_math_urop {
@@ -132,6 +146,4 @@ macro_rules! impl_math_urop {
       impl_urop!([<$fxn_name $type V4>], Vector4<$type>, Vector4<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "VectorD")]
       impl_urop!([<$fxn_name $type VD>], DVector<$type>, DVector<$type>, [<$op_fxn _vec_op>]);
-    }
-  }
-}
+    }}}

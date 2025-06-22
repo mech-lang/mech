@@ -1,58 +1,58 @@
 use crate::*;
 use mech_core::*;
 
-// Sin ------------------------------------------------------------------------
+// Acot ------------------------------------------------------------------------
 
-use libm::{sin,sinf};
-macro_rules! sin_op {
+use libm::{atan, atanf};
+macro_rules! acot_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = sin((*$arg).0);}
+    unsafe{(*$out).0 = atan(1.0 / (*$arg).0);}
   };}
 
-macro_rules! sin_vec_op {
+macro_rules! acot_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = sin(((*$arg)[i]).0);
+        ((*$out)[i]).0 = atan(1.0 / ((*$arg)[i]).0);
       }}};}
 
-macro_rules! sinf_op {
+macro_rules! acotf_op {
   ($arg:expr, $out:expr) => {
-    unsafe{(*$out).0 = sinf((*$arg).0);}
+    unsafe{(*$out).0 = atanf(1.0 / (*$arg).0);}
   };}  
 
-macro_rules! sinf_vec_op {
+macro_rules! acotf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = sinf(((*$arg)[i]).0);
+        ((*$out)[i]).0 = atanf(1.0 / ((*$arg)[i]).0);
       }}};}
 
-impl_math_urop!(MathSin, F32, sinf);
-impl_math_urop!(MathSin, F64, sin);
+impl_math_urop!(MathAcot, F32, acotf);
+impl_math_urop!(MathAcot, F64, acot);
 
-fn impl_sin_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_acot_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_urnop_match_arms2!(
-    MathSin,
+    MathAcot,
     (lhs_value),
     F32 => MatrixF32, F32, F32::zero(), "F32";
     F64 => MatrixF64, F64, F64::zero(), "F64";
   )
 }
 
-pub struct MathSin {}
+pub struct MathAcot {}
 
-impl NativeFunctionCompiler for MathSin {
+impl NativeFunctionCompiler for MathAcot {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let input = arguments[0].clone();
-    match impl_sin_fxn(input.clone()) {
+    match impl_acot_fxn(input.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
         match (input) {
-          (Value::MutableReference(input)) => {impl_sin_fxn(input.borrow().clone())}
+          (Value::MutableReference(input)) => {impl_acot_fxn(input.borrow().clone())}
           x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
