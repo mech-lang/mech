@@ -32,7 +32,8 @@ miniz_oxide = "0.8.5"
 bincode = "2.0.1"
 base64 = "0.22.1"
 brotli = "8.0.1"
-gloo-net = "0.6.0"
+gloo-net = {version = "0.6.0", features = ["http"]}
+wasm-bindgen-futures = "0.4.50"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.50"
