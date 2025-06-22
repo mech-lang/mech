@@ -1,55 +1,56 @@
 use crate::*;
+use gloo_net::http::Request;
 
 pub fn execute_repl_command(intrp:  &mut Interpreter, repl_cmd: ReplCommand) -> String {
-    match repl_cmd {
-      ReplCommand::Clear(_) => {
-        *intrp = Interpreter::new(intrp.id);
-        "".to_string()
-      }
-      ReplCommand::Clc => {
-        let window = web_sys::window().expect("global window does not exists");    
-        let document = window.document().expect("expecting a document on window");
-        let output_element = document.get_element_by_id("mech-output").expect("REPL output element not found");
-        // Remove all children
-        while output_element.child_nodes().length() > 0 {
-          let first_child = output_element
-            .first_child()
-            .expect("Expected a child node");
-          output_element
-            .remove_child(&first_child)
-            .expect("Failed to remove child");
-        }
-        "".to_string()
-      }
-      ReplCommand::Code(code) => {
-        match run_mech_code(intrp, &code)  {
-          Ok(output) => { 
-            return format!("<div class=\"mech-output-kind\">{:?}</div><div class=\"mech-output-value\">{}</div>", output.kind(), output.to_html());
-          },
-          Err(err) => { return format!("{:?}",err); }
-        }
-      }
-      ReplCommand::Step(count) => {
-        let n = match count {
-          Some(n) => n,
-          None => 1,
-        };
-        //let now = std::time::Instant::now();
-        intrp.step(n as u64);
-        //let elapsed_time = now.elapsed();
-        //let cycle_duration = elapsed_time.as_nanos() as f64;
-        //format!("{} cycles in {:0.2?} ns\n", n, cycle_duration)s
-        "".to_string()
-      }
-      ReplCommand::Whos(names) => {
-        whos_html(intrp, names)
-      }
-      ReplCommand::Help => {
-        help_html()
-      }
-      _ => todo!("Implement other REPL commands"),
+  match repl_cmd {
+    ReplCommand::Clear(_) => {
+      *intrp = Interpreter::new(intrp.id);
+      "".to_string()
     }
+    ReplCommand::Clc => {
+      let window = web_sys::window().expect("global window does not exists");    
+      let document = window.document().expect("expecting a document on window");
+      let output_element = document.get_element_by_id("mech-output").expect("REPL output element not found");
+      // Remove all children
+      while output_element.child_nodes().length() > 0 {
+        let first_child = output_element
+          .first_child()
+          .expect("Expected a child node");
+        output_element
+          .remove_child(&first_child)
+          .expect("Failed to remove child");
+      }
+      "".to_string()
+    }
+    ReplCommand::Code(code) => {
+      match run_mech_code(intrp, &code)  {
+        Ok(output) => { 
+          return format!("<div class=\"mech-output-kind\">{:?}</div><div class=\"mech-output-value\">{}</div>", output.kind(), output.to_html());
+        },
+        Err(err) => { return format!("{:?}",err); }
+      }
+    }
+    ReplCommand::Step(count) => {
+      let n = match count {
+        Some(n) => n,
+        None => 1,
+      };
+      //let now = std::time::Instant::now();
+      intrp.step(n as u64);
+      //let elapsed_time = now.elapsed();
+      //let cycle_duration = elapsed_time.as_nanos() as f64;
+      //format!("{} cycles in {:0.2?} ns\n", n, cycle_duration)s
+      "".to_string()
+    }
+    ReplCommand::Whos(names) => {
+      whos_html(intrp, names)
+    }
+    ReplCommand::Help => {
+      help_html()
+    }
+    _ => todo!("Implement other REPL commands"),
   }
+}
 
 // Print out help information in HTML format
 pub fn help_html() -> String {
@@ -81,6 +82,7 @@ pub fn help_html() -> String {
   html.push_str("</div>");
   html
 }
+
 pub fn whos_html(intrp: &Interpreter, names: Vec<String>) -> String {
   let mut html = String::new();
 
