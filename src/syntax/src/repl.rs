@@ -57,8 +57,9 @@ pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand> {
 fn docs_rpl(input: &str) -> IResult<&str, ReplCommand> {
   let (input, _) = alt((tag("docs"), tag("d")))(input)?;
   let (input, _) = space0(input)?;
-  let (input, name) = opt(take_while(|c: char| c.is_alphanumeric()))(input)?;
-  Ok((input, ReplCommand::Docs(name.map(|s| s.to_string()))))
+  let (input, name) = opt(take_till1(|c| c == '\r' || c == '\n'))(input)?;
+  let name = name.map(|s| s.to_string());
+  Ok((input, ReplCommand::Docs(name)))
 }
 
 fn help_rpl(input: &str) -> IResult<&str, ReplCommand> {
