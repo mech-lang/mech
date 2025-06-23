@@ -2,11 +2,19 @@ use crate::*;
 use gloo_net::http::Request;
 use wasm_bindgen_futures::spawn_local;
 
+use crate::CURRENT_MECH;
 
-pub fn execute_repl_command(intrp:  &mut Interpreter, repl_cmd: ReplCommand) -> String {
+pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
   match repl_cmd {
     ReplCommand::Clear(_) => {
-      *intrp = Interpreter::new(intrp.id);
+      CURRENT_MECH.with(|mech_ref| {
+        if let Some(ptr) = *mech_ref.borrow() {
+          unsafe {
+            let mut mech = &mut *ptr;
+            mech.interpreter.clear();
+          }
+        }
+      });
       "".to_string()
     }
     ReplCommand::Clc => {
@@ -25,27 +33,47 @@ pub fn execute_repl_command(intrp:  &mut Interpreter, repl_cmd: ReplCommand) -> 
       "".to_string()
     }
     ReplCommand::Code(code) => {
-      match run_mech_code(intrp, &code)  {
-        Ok(output) => { 
-          return format!("<div class=\"mech-output-kind\">{:?}</div><div class=\"mech-output-value\">{}</div>", output.kind(), output.to_html());
-        },
-        Err(err) => { return format!("{:?}",err); }
-      }
+      CURRENT_MECH.with(|mech_ref| {
+        if let Some(ptr) = *mech_ref.borrow() {
+          unsafe {
+            let mut mech = &mut *ptr;
+            match run_mech_code(&mut mech.interpreter, &code)  {
+              Ok(output) => { 
+                return format!("<div class=\"mech-output-kind\">{:?}</div><div class=\"mech-output-value\">{}</div>", output.kind(), output.to_html());
+              },
+              Err(err) => { return format!("{:?}",err); }
+            }
+          }
+        }
+        "Error: No interpreter found.".to_string()
+      })
     }
     ReplCommand::Step(count) => {
-      let n = match count {
-        Some(n) => n,
-        None => 1,
-      };
-      //let now = std::time::Instant::now();
-      intrp.step(n as u64);
-      //let elapsed_time = now.elapsed();
-      //let cycle_duration = elapsed_time.as_nanos() as f64;
-      //format!("{} cycles in {:0.2?} ns\n", n, cycle_duration)s
-      "".to_string()
+      CURRENT_MECH.with(|mech_ref| {
+        if let Some(ptr) = *mech_ref.borrow() {
+          unsafe {
+            let mut mech = &mut *ptr;
+            let n = match count {
+              Some(n) => n,
+              None => 1,
+            };
+            mech.interpreter.step(n as u64);
+            return format!("<div class=\"mech-output-kind\">Step</div><div class=\"mech-output-value\">Executed {} step(s).</div>",n);
+          }
+        }
+        "Error: No interpreter found.".to_string()
+      })
     }
     ReplCommand::Whos(names) => {
-      whos_html(intrp, names)
+      CURRENT_MECH.with(|mech_ref| {
+        if let Some(ptr) = *mech_ref.borrow() {
+          unsafe {
+            let mut mech = &mut *ptr;
+            return whos_html(&mech.interpreter, names)
+          }
+        }
+        "Error: No interpreter found.".to_string()
+      })
     }
     ReplCommand::Help => {
       help_html()
@@ -54,7 +82,7 @@ pub fn execute_repl_command(intrp:  &mut Interpreter, repl_cmd: ReplCommand) -> 
       match doc {
         Some(d) => {
           load_doc(&d);
-          format!("Loading doc: {}", d)
+          format!("Fetching doc: {}...", d)
         },
         None => "Enter the name of a doc to load.".to_string(),
       } 
@@ -152,63 +180,4 @@ fn html_escape(input: &str) -> String {
     .replace('&', "&amp;")
     .replace('<', "&lt;")
     .replace('>', "&gt;")
-}
-
-pub fn load_doc(doc: &str) {
-  let doc = doc.to_string();
-  spawn_local(async move {
-    let doc_mec = fetch_docs(&doc).await;
-    let window = web_sys::window().expect("global window does not exists");
-    let document = window.document().expect("expecting a document on window");
-    match parser::parse(&doc_mec) {
-      Ok(tree) => {
-        let mut formatter = Formatter::new();
-        formatter.html = true;
-        let doc_html = formatter.program(&tree);
-        let output_element = document.get_element_by_id("mech-output").expect("REPL output element not found");
-        // Get the second to last element of mech-output. IT should be a repl-result from when teh user pressed enter.
-        // Set the inner html of the repl result element to be the formatted doc.
-        let children = output_element.children();
-        let len = children.length();
-        if len >= 2 {
-            let repl_result = children.item(len - 2).expect("Failed to get second-to-last child");
-            repl_result.set_inner_html(&doc_html);
-        } else {
-            web_sys::console::log_1(&"Not enough children in #mech-output to update.".into());
-        }
-      },
-      Err(err) => {
-        web_sys::console::log_1(&format!("Error formatting doc: {:?}", err).into());
-      }
-    }
-  });
-}
-
-async fn fetch_docs(doc: &str) -> String {
-  // the doc will be formatted as machine/doc
-  let parts: Vec<&str> = doc.split('/').collect();
-  if parts.len() >= 2 {
-      let machine = parts[0];
-      let doc = parts[1];
-      let url = format!("https://raw.githubusercontent.com/mech-machines/{}/main/docs/{}.mec", machine, doc);
-      match Request::get(&url).send().await {
-        Ok(response) => match response.text().await {
-          Ok(text) => {
-            log!("Fetched doc: {}", text);
-            text
-          }
-          Err(e) => {
-            web_sys::console::log_1(&format!("Error reading response text: {:?}", e).into());
-            "".to_string()
-          }
-        },
-        Err(err) => {
-          web_sys::console::log_1(&format!("Fetch error: {:?}", err).into());
-          "".to_string()
-        }
-      }
-  } else {
-    web_sys::console::log_1(&format!("Invalid doc format: {}", doc).into());
-    "".to_string()
-  }
 }

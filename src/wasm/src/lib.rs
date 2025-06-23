@@ -7,12 +7,19 @@ use web_sys::{window, HtmlElement, HtmlInputElement, Node};
 use std::rc::Rc;
 use std::cell::RefCell;
 
+use gloo_net::http::Request;
+use wasm_bindgen_futures::spawn_local;
+
 pub mod repl;
 
 pub use crate::repl::*;
 
+
+// This monstrosity lets us pass a references to WasmMech to callbacks and such.
+// Using it is unsafe. But we trust that the WasmMech instance will be around
+// for the lifetime of the website.
 thread_local! {
-    static CURRENT_MECH: RefCell<Option<*mut WasmMech>> = RefCell::new(None);
+  pub static CURRENT_MECH: RefCell<Option<*mut WasmMech>> = RefCell::new(None);
 }
 
 #[macro_export]
@@ -63,8 +70,29 @@ pub struct WasmMech {
 #[wasm_bindgen]
 impl WasmMech {
 
+  #[wasm_bindgen(constructor)]
+  pub fn new() -> Self {
+    Self { 
+      interpreter: Interpreter::new(0),
+      repl_history: Vec::new(), 
+      repl_history_index: None,
+    }
+  }
+
+  #[wasm_bindgen]
+  pub fn out_string(&self) -> String {
+    self.interpreter.out.to_string()
+  }
+
+  #[wasm_bindgen]
+  pub fn clear(&mut self) {
+    self.interpreter = Interpreter::new(0);
+  }
+
   #[wasm_bindgen]
   pub fn attach_repl(&mut self, repl_id: &str) {
+    // Assign self to the CURRENT_MECH thread local variable
+    // so that we can access it from the callbacks. Unsafe.
     CURRENT_MECH.with(|c| *c.borrow_mut() = Some(self as *mut _));
     let window = web_sys::window().expect("global window does not exists");    
     let document = window.document().expect("should have a document");
@@ -80,7 +108,6 @@ impl WasmMech {
     let container_clone = container.clone();
     let mech_output = container.clone();
     let mech_output_for_event = mech_output.clone();
-
 
     let closure = Closure::wrap(Box::new(move |_event: web_sys::MouseEvent| {
       let window = web_sys::window().unwrap();
@@ -136,7 +163,7 @@ impl WasmMech {
         match event.key().as_str() {
           "Enter" => {
             let code = input_for_closure.value();
-
+            
             // Replace input field with text
             let input_parent = input_for_closure.parent_node().expect("input should have a parent");
 
@@ -152,7 +179,6 @@ impl WasmMech {
 
             let result_line = document_inner.create_element("div").unwrap();
             result_line.set_class_name("repl-result");
-
             // SAFELY call back into WasmMech
             CURRENT_MECH.with(|mech_ref| {
               if let Some(ptr) = *mech_ref.borrow() {
@@ -162,9 +188,9 @@ impl WasmMech {
                   let output = if !code.trim().is_empty() {
                     mech.repl_history.push(code.clone());
                     mech.repl_history_index = None;
-                    mech.eval(&code)
-                  } else {
-                    "".to_string()
+                  mech.eval(&code)
+                } else {
+                  "".to_string()
                   };
                   result_line.set_inner_html(&output);
                   container_inner.append_child(&result_line).unwrap();
@@ -242,7 +268,7 @@ impl WasmMech {
     if input.chars().nth(0) == Some(':') {
       match parse_repl_command(&input.to_string()) {
         Ok((_, repl_command)) => {
-          execute_repl_command(&mut self.interpreter, repl_command)
+          execute_repl_command(repl_command)
         }
         Err(x) => {
           format!("Unrecognized command: {}", x)
@@ -250,29 +276,8 @@ impl WasmMech {
       }
     } else {
       let cmd = ReplCommand::Code(vec![("repl".to_string(),MechSourceCode::String(input.to_string()))]);
-      execute_repl_command(&mut self.interpreter, cmd)
+      execute_repl_command(cmd)
     }
-  }
-
-  
-
-  #[wasm_bindgen(constructor)]
-  pub fn new() -> Self {
-    Self { 
-      interpreter: Interpreter::new(0),
-      repl_history: Vec::new(), 
-      repl_history_index: None,
-    }
-  }
-
-  #[wasm_bindgen]
-  pub fn out_string(&self) -> String {
-    self.interpreter.out.to_string()
-  }
-
-  #[wasm_bindgen]
-  pub fn clear(&mut self) {
-    self.interpreter = Interpreter::new(0);
   }
 
   #[wasm_bindgen]
@@ -283,15 +288,12 @@ impl WasmMech {
     let clickable_elements = document.get_elements_by_class_name("mech-clickable");
     for i in 0..clickable_elements.length() {
       let element = clickable_elements.get_with_index(i).unwrap();
-
       // Skip if listener already added
       if element.get_attribute("data-click-bound").is_some() {
         continue;
       }
-
       // Mark it as handled
       element.set_attribute("data-click-bound", "true").unwrap();
-
       // the element id is formed like this : let id = format!("{}:{}",hash_str(&name),self.interpreter_id);
       // so we need to parse it to get the id and the interpreter id
       let id = element.id();
@@ -302,9 +304,16 @@ impl WasmMech {
         // if the interpreter id is 0, we are in the main interpreter
         0 => self.interpreter.symbols(), 
         // if the interpreter id is not 0, we are in a sub interpreter
-        id => self.interpreter.sub_interpreters.borrow().get(&id).unwrap().symbols(),
+        id => {
+          match self.interpreter.sub_interpreters.borrow().get(&id) {
+            Some(sub_interpreter) => sub_interpreter.symbols(),
+            None => {
+              log!("No sub interpreter found for id: {}", id);
+              continue;
+            }
+          }
+        }
       };
-      
       let closure = Closure::wrap(Box::new(move || {
         let window = web_sys::window().unwrap();
         let document = window.document().unwrap();
@@ -474,5 +483,67 @@ impl WasmMech {
         }
       }
     }
+  }
+}
+
+pub fn load_doc(doc: &str) {
+  let doc = doc.to_string();
+  spawn_local(async move {
+    let doc_mec = fetch_docs(&doc).await;
+    let doc_hash = hash_str(&doc_mec);
+    let window = web_sys::window().expect("global window does not exists");
+    let document = window.document().expect("expecting a document on window");
+    match parser::parse(&doc_mec) {
+      Ok(tree) => {
+        let mut formatter = Formatter::new();
+        formatter.html = true;
+        let doc_html = formatter.program(&tree);
+        let mut doc_intrp = Interpreter::new(doc_hash);
+        let doc_result = doc_intrp.interpret(&tree);
+        log!("Doc result: {:?}", doc_result);
+        let output_element = document.get_element_by_id("mech-output").expect("REPL output element not found");
+        // Get the second to last element of mech-output. It should be a repl-result from when teh user pressed enter.
+        // Set the inner html of the repl result element to be the formatted doc.
+        let children = output_element.children();
+        let len = children.length();
+        if len >= 2 {
+            let repl_result = children.item(len - 2).expect("Failed to get second-to-last child");
+            repl_result.set_inner_html(&doc_html);
+        } else {
+            web_sys::console::log_1(&"Not enough children in #mech-output to update.".into());
+        }
+      },
+      Err(err) => {
+        web_sys::console::log_1(&format!("Error formatting doc: {:?}", err).into());
+      }
+    }
+  });
+}
+
+async fn fetch_docs(doc: &str) -> String {
+  // the doc will be formatted as machine/doc
+  let parts: Vec<&str> = doc.split('/').collect();
+  if parts.len() >= 2 {
+      let machine = parts[0];
+      let doc = parts[1];
+      let url = format!("https://raw.githubusercontent.com/mech-machines/{}/main/docs/{}.mec", machine, doc);
+      match Request::get(&url).send().await {
+        Ok(response) => match response.text().await {
+          Ok(text) => {
+            text
+          }
+          Err(e) => {
+            web_sys::console::log_1(&format!("Error reading response text: {:?}", e).into());
+            "".to_string()
+          }
+        },
+        Err(err) => {
+          web_sys::console::log_1(&format!("Fetch error: {:?}", err).into());
+          "".to_string()
+        }
+      }
+  } else {
+    web_sys::console::log_1(&format!("Invalid doc format: {}", doc).into());
+    "".to_string()
   }
 }
