@@ -119,6 +119,7 @@ impl WasmMech {
       let input_for_closure = input.clone();
       input.set_class_name("repl-input");
       input.set_id("repl-active-input");
+      input.set_attribute("autocomplete", "off").unwrap();
       input.unchecked_ref::<HtmlElement>().set_autofocus(true);
             
       line.append_child(&prompt).unwrap();
