@@ -51,13 +51,12 @@ pub fn execute_repl_command(intrp:  &mut Interpreter, repl_cmd: ReplCommand) -> 
       help_html()
     }
     ReplCommand::Docs(doc) => {
-      log!("Loading doc: {:?}", doc);
       match doc {
         Some(d) => {
           load_doc(&d);
-          "".to_string()
+          format!("Loading doc: {}", d)
         },
-        None => "".to_string(),
+        None => "Enter the name of a doc to load.".to_string(),
       } 
     }
     _ => todo!("Implement other REPL commands"),
@@ -167,22 +166,21 @@ pub fn load_doc(doc: &str) {
         formatter.html = true;
         let doc_html = formatter.program(&tree);
         let output_element = document.get_element_by_id("mech-output").expect("REPL output element not found");
-        // Insert the doc to be the second to last child of the output_element, making the last element the prompt, and keeping all of the former output.
-        let doc_div = document.create_element("div").expect("Failed to create doc div");
-        doc_div.set_inner_html(&doc_html);
-        doc_div.set_class_name("mech-doc");
-        if let Some(last_child) = output_element.last_child() {
-          output_element.insert_before(&doc_div, Some(&last_child)).expect("Failed to insert doc div");
+        // Get the second to last element of mech-output. IT should be a repl-result from when teh user pressed enter.
+        // Set the inner html of the repl result element to be the formatted doc.
+        let children = output_element.children();
+        let len = children.length();
+        if len >= 2 {
+            let repl_result = children.item(len - 2).expect("Failed to get second-to-last child");
+            repl_result.set_inner_html(&doc_html);
         } else {
-          output_element.append_child(&doc_div).expect("Failed to append doc div");
+            web_sys::console::log_1(&"Not enough children in #mech-output to update.".into());
         }
       },
       Err(err) => {
         web_sys::console::log_1(&format!("Error formatting doc: {:?}", err).into());
       }
     }
-
-    let output_element = document.get_element_by_id("mech-output").expect("REPL output element not found");
   });
 }
 
@@ -196,6 +194,7 @@ async fn fetch_docs(doc: &str) -> String {
       match Request::get(&url).send().await {
         Ok(response) => match response.text().await {
           Ok(text) => {
+            log!("Fetched doc: {}", text);
             text
           }
           Err(e) => {
