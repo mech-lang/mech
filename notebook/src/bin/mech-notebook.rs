@@ -64,7 +64,7 @@ fn main() -> eframe::Result {
         if response.lost_focus() && ctx.input(|i| i.key_pressed(egui::Key::Enter)) {
           terminal_output.push_str(&format!(">: {}\n", input));
           if input.chars().nth(0) == Some(':') {
-            match MechRepl::parse_repl_command(&input.as_str()) {
+            match parse_repl_command(&input.as_str()) {
               Ok((_, repl_command)) => {
                 match repl.execute_repl_command(repl_command) {
                   Ok(output) => {
