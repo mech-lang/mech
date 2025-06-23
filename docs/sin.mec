@@ -57,8 +57,12 @@ The sine function is a key idea in trigonometry, which studies the relationships
 
 In a right triangle, the sine of an angle $$x$$ is defined as the ratio of the length of the opposite side to the hypotenuse:
 
+$$ sin(x) = \frac{\text{opposite}}{\text{hypotenuse}}
+
 In the unit circle, which is a circle with a radius of 1 centered at the origin, the sine of an angle corresponds to the y-coordinate of a point on the circle at that angle.
 
 For complex numbers, the sine function is defined using exponentials:
+
+$$ sin(x) = \frac{e^{ix} - e^{-ix}}{2i}
 
 This definition extends the sine function to work beyond real numbers, allowing it to handle complex inputs.
