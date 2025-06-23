@@ -959,7 +959,21 @@ macro_rules! impl_horzcat_arms {
           _ => false,
       }});
       if no_refs {
-        let mat: Vec<$kind> = arguments.iter().flat_map(|v| v.[<as_vec $kind:lower>]().unwrap()).collect::<Vec<$kind>>();
+        let mut mat: Vec<$kind> = Vec::new();
+        for v in arguments.iter() {
+          match v.[<as_vec $kind:lower>]() {
+            Some(vals) => mat.extend(vals),
+            None => {
+              return Err(MechError {
+          file: file!().to_string(),
+          tokens: vec![],
+          msg: format!("Failed to convert argument to Vec<{}> in horizontal concatenation", stringify!($kind)),
+          id: line!(),
+          kind: MechErrorKind::UnhandledFunctionArgumentKind,
+              });
+            }
+          }
+        }
         match &mat[..] {
           [e0]             => {return Ok(Box::new(HorizontalConcatenateS1{out:new_ref(Matrix1::from_vec(mat))}));}
           [e0, e1]         => {return Ok(Box::new(HorizontalConcatenateS2{out:new_ref(RowVector2::from_vec(mat))}));}
@@ -1995,7 +2009,13 @@ fn impl_horzcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::String)  { 
     impl_horzcat_arms!(String,arguments,"".to_string())    
   } else {
-    todo!();
+    return Err(MechError {
+      file: file!().to_string(),
+      tokens: vec![],
+      msg: format!("Horizontal concatenation not implemented for type {:?}", target_kind),
+      id: line!(),
+      kind: MechErrorKind::UnhandledFunctionArgumentKind,
+    });
   }
 }
 

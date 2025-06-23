@@ -5,8 +5,8 @@ Mech Programming Language Documentation
 -------------------------------------------------------------------------------
 
 1. [Introduction](I.getting-started/introduction.html)
-2. [Installing Mech](I.getting-started/install.html)
-3. [Building and Running Mech Programs](I.getting-started/build-and-run.html)
+2. [Install Mech](I.getting-started/install.html)
+3. [Build and Run Mech Programs](I.getting-started/build-and-run.html)
 4. [Mech REPL](I.getting-started/repl.html) 
 
 2. Language Reference
@@ -66,7 +66,7 @@ Mech Programming Language Documentation
 
 docs/machine := {
   name: "docs" 
-  version: "v0.2.45"
+  version: "v0.2.47"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/mech/docs"
   license: "Apache-2.0"}

@@ -172,6 +172,26 @@ pub fn help() -> String {
   format!("\n{table}\n")
 }
 
+// Create a function to handle file writing
+pub fn save_to_file(path: PathBuf, content: &str) -> MResult<()> {
+  if let Some(parent) = path.parent() {
+    if let Err(err) = fs::create_dir_all(parent) {
+      return Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Error writing to file: {:?}", err),id: line!(),kind: MechErrorKind::None});
+    }
+  }
+  match fs::File::create(&path) {
+    Ok(mut file) => {
+      match file.write_all(content.as_bytes()) {
+        Ok(_) => {
+          println!("{} File saved as {}", "[Save]".truecolor(153,221,85), path.display());
+          Ok(())
+        }
+        Err(err) => Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Error writing to file: {:?}", err),id: line!(),kind: MechErrorKind::None}),
+      }
+    },
+    Err(err) => Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Error writing to file: {:?}", err),id: line!(),kind: MechErrorKind::None}),
+  }
+}
 
 pub fn ls() -> String {
   let current_dir = env::current_dir().unwrap();
@@ -206,26 +226,49 @@ pub fn pretty_print_tree(tree: &Program) -> String {
   format!("{table}")
 }
 
-pub fn whos(intrp: &Interpreter) -> String {
+pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
   let mut builder = Builder::default();
-  builder.push_record(vec!["Name","Size","Bytes","Kind"]);
-  let dictionary = intrp.dictionary();
-  for (id,name) in dictionary.borrow().iter() {
-    let value = intrp.get_symbol(*id).unwrap();
-    let value_brrw = value.borrow();
-    builder.push_record(vec![
-      name.clone(),
-      format!("{:?}",value_brrw.shape()),
-      format!("{:?}",value_brrw.size_of()),
-      format!("{:?}",value_brrw.kind()),
-    ]);
-  }
+  builder.push_record(vec!["Name", "Size", "Bytes", "Kind"]);
 
+  let dictionary = intrp.dictionary();
+
+  if names.is_empty() {
+    // Print all symbols
+    for (id, name) in dictionary.borrow().iter() {
+      let value = intrp.get_symbol(*id).unwrap();
+      let value_brrw = value.borrow();
+      builder.push_record(vec![
+        name.clone(),
+        format!("{:?}", value_brrw.shape()),
+        format!("{:?}", value_brrw.size_of()),
+        format!("{:?}", value_brrw.kind()),
+      ]);
+    }
+  } else {
+    // Create a hash set for fast lookup
+    let names_set: HashSet<_> = names.iter().collect();
+
+    // Print only symbols in names
+    for (id, name) in dictionary.borrow().iter() {
+      if names_set.contains(name) {
+        let value = intrp.get_symbol(*id).unwrap();
+        let value_brrw = value.borrow();
+        builder.push_record(vec![
+          name.clone(),
+          format!("{:?}", value_brrw.shape()),
+          format!("{:?}", value_brrw.size_of()),
+          format!("{:?}", value_brrw.kind()),
+        ]);
+      }
+    }
+  }
   let mut table = builder.build();
-  table.with(mech_table_style())   
-        .with(Panel::header(format!("{}","🔍 Whos".truecolor(0xdf,0xb9,0x9f))));
+  table.with(mech_table_style())
+      .with(Panel::header(format!("{}","🔍 Whos".truecolor(0xdf,0xb9,0x9f))));
+
   format!("\n{table}\n")
 }
+
 
 pub fn pretty_print_symbols(intrp: &Interpreter) -> String {
   let mut builder = Builder::default();

@@ -46,8 +46,12 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
       }
       return Ok(out)
     },
-    SectionElement::FencedMechCode((code,code_id)) => {
-      if *code_id == 0 {
+    SectionElement::FencedMechCode((code,config)) => {
+      if config.disabled == true {
+        return Ok(Value::Empty);
+      }
+      let code_id = config.namespace;
+      if code_id == 0 {
         for (c,_) in code {
           out = mech_code(&c, &p)?;
         }
@@ -59,8 +63,8 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
       } else {
         let mut sub_interpreters = p.sub_interpreters.borrow_mut();
         let mut pp = sub_interpreters
-          .entry(*code_id)
-          .or_insert(Box::new(Interpreter::new(*code_id)))
+          .entry(code_id)
+          .or_insert(Box::new(Interpreter::new(code_id)))
           .as_mut();
         for (c,_) in code {
           out = mech_code(&c, &pp)?;

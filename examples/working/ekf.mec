@@ -195,10 +195,10 @@ Initialize the simulation
 
   Δt := 10
   robot := {x: 45, y: 15, θ: 0}
-  μ := [55 25 0.4]
+  ~μ := [55 25 0.4]
   u := {v: 1, ω: 0}
   camera := {x: 140 y: 12}
-  Σ := [100   0 0
+  ~Σ := [100   0 0
           0 100 0
           0   0 0.15]
   Q := [0.01 0; 0 0.0025]
@@ -214,8 +214,8 @@ Initialize the simulation
   Vt := [math/cos(θ) * Δt  0
         math/sin(θ) * Δt  0
         0                 Δt]
-  μ2 := μ + [u.v u.v u.ω] * [math/cos(θ), math/sin(θ), 1] * Δt
-  Σ2 := Gt ** Σ ** Gt' + Vt ** Q ** Vt'
+  μ = μ + [u.v u.v u.ω] * [math/cos(θ), math/sin(θ), 1] * Δt
+  Σ = Gt ** Σ ** Gt' + Vt ** Q ** Vt'
 
 (4.4) Measurement Update
 
@@ -226,8 +226,8 @@ Initialize the simulation
   H := [Δy / q, -Δx / q, -1]
   S := H ** Σ ** H' + R
   K := Σ ** H' / S[1]
-  μ3 := μ' + K * Ẑ
-  Σ3 := ([1 0 0; 0 1 0; 0 0 1] - K ** H) ** Σ2
+  μ = μ + (K * Ẑ)'
+  Σ = ([1 0 0; 0 1 0; 0 0 1] - K ** H) ** Σ
 
 
 [^1]: My algorithms professor, Dr. Henry Baird used to say, there are algorithms, and then there are heuristics. Algorithms halt, and therefore require a proof of correctness, which is no small ask. A true algorithm always halts and comes with a proof of correctness under given assumptions. A heuristic is a practical method that may not guarantee optimality or termination. For example, Simulated Annealing is often called an algorithm but is really a heuristic. It can run indefinitely and does not guarantee finding the optimal solution in finite time. In contrast, the Kalman Filter is a proven algorithm that always halts and optimally estimates system states under linear, Gaussian assumptions.

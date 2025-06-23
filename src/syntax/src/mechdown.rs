@@ -571,8 +571,7 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
     label!(grave, msg1),
     label!(grave, msg1),
   )))(input)?;
-  let (input, code_id) = opt(identifier)(input)?;
-  let (input, _) = many0(space_tab)(input)?;
+  let (input, code_id) = many0(text)(input)?;
   let (input, _) = label!(new_line, msg2)(input)?;
   let (input, (text,src_range)) = range(many0(nom_tuple((
     is_not(nom_tuple((grave, grave, grave))),
@@ -584,55 +583,52 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
   let block_src: Vec<char> = text.into_iter().flat_map(|(_, s)| s.chars().collect::<Vec<char>>()).collect();
   let code_token = Token::new(TokenKind::CodeBlock, src_range, block_src.clone());
 
-  match code_id {
-    Some(id) => { 
-      match id.to_string().as_str() {
-        "ebnf" => {
-          let ebnf_text = block_src.iter().collect::<String>();
-          match parse_grammar(&ebnf_text) {
-            Ok(grammar_tree) => {return Ok((input, SectionElement::Grammar(grammar_tree)));},
-            Err(err) => {
-              println!("Error parsing EBNF grammar: {:?}", err);
-              todo!();
-            }
-          }
+  let code_id = code_id.iter().flat_map(|tkn| tkn.chars.clone().into_iter().collect::<Vec<char>>()).collect::<String>();
+  match code_id.as_str() {
+    "ebnf" => {
+      let ebnf_text = block_src.iter().collect::<String>();
+      match parse_grammar(&ebnf_text) {
+        Ok(grammar_tree) => {return Ok((input, SectionElement::Grammar(grammar_tree)));},
+        Err(err) => {
+          println!("Error parsing EBNF grammar: {:?}", err);
+          todo!();
         }
-        tag => {
-          // if x begins with mec, mech, or 🤖
-          if tag.starts_with("mech") || tag.starts_with("mec") || tag.starts_with("🤖") {
+      }
+    }
+    tag => {
+      // if x begins with mec, mech, or 🤖
+      if tag.starts_with("mech") || tag.starts_with("mec") || tag.starts_with("🤖") {
 
-            // get rid of the prefix and then treat the rest of the string as an identifier
-            let rest = tag.trim_start_matches("mech").trim_start_matches("mec").trim_start_matches("🤖");
-            let code_id = if rest == "" { 0 } else {
-              hash_str(rest)
-            };
+        // get rid of the prefix and then treat the rest of the string after : as an identifier
+        let rest = tag.trim_start_matches("mech").trim_start_matches("mec").trim_start_matches("🤖").trim_start_matches(":");
+        
+        let config = if rest == "" {BlockConfig { namespace: 0, disabled: false}}
+        else if rest == "disabled" { BlockConfig { namespace: hash_str(rest), disabled: true }} 
+        else { BlockConfig { namespace: hash_str(rest), disabled: false} };
 
-            let mech_src = block_src.iter().collect::<String>();
-            let graphemes = graphemes::init_source(&mech_src);
-            let parse_string = ParseString::new(&graphemes);
+        let mech_src = block_src.iter().collect::<String>();
+        let graphemes = graphemes::init_source(&mech_src);
+        let parse_string = ParseString::new(&graphemes);
 
-            match many1(mech_code)(parse_string) {
-              Ok((_, mech_tree)) => {
-                // TODO what if not all the input is parsed? Is that handled?
-                return Ok((input, SectionElement::FencedMechCode((mech_tree,code_id))));
-              },
-              Err(err) => {
-                println!("Error parsing Mech code: {:?}", err);
-                todo!();
-              }
-            };
-          } else if tag.starts_with("equation") || tag.starts_with("eq") || tag.starts_with("math") || tag.starts_with("latex") || tag.starts_with("tex") {
-              return Ok((input, SectionElement::Equation(code_token)));
-          } else if tag.starts_with("diagram") || tag.starts_with("chart") || tag.starts_with("mermaid") {
-              return Ok((input, SectionElement::Diagram(code_token)));          
-          } else {
-            // Some other code block, just keep moving although we might want to do something with it later
+        match many1(mech_code)(parse_string) {
+          Ok((_, mech_tree)) => {
+            // TODO what if not all the input is parsed? Is that handled?
+            return Ok((input, SectionElement::FencedMechCode((mech_tree,config))));
+          },
+          Err(err) => {
+            println!("Error parsing Mech code: {:?}", err);
+            todo!();
           }
-        }
-      } 
-    },
-    None => (),
-  }
+        };
+      } else if tag.starts_with("equation") || tag.starts_with("eq") || tag.starts_with("math") || tag.starts_with("latex") || tag.starts_with("tex") {
+          return Ok((input, SectionElement::Equation(code_token)));
+      } else if tag.starts_with("diagram") || tag.starts_with("chart") || tag.starts_with("mermaid") {
+          return Ok((input, SectionElement::Diagram(code_token)));          
+      } else {
+        // Some other code block, just keep moving although we might want to do something with it later
+      }
+    }
+  } 
   Ok((input, SectionElement::CodeBlock(code_token)))
 }
 

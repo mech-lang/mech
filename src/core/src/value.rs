@@ -340,7 +340,14 @@ impl Value {
         let inner = m.borrow();
         format!("<span class='mech-reference'>{}</span>", inner.to_html())
       },
-      _ => todo!(),
+      Value::Atom(a) => format!("<span class=\"mech-atom\"><span class=\"mech-atom-grave\">`</span><span class=\"mech-atom-name\">{}</span></span>",a),
+      Value::Set(s) => s.to_html(),
+      Value::Map(m) => m.to_html(),
+      Value::Table(t) => t.to_html(),
+      Value::Record(r) => r.to_html(),
+      Value::Tuple(t) => t.to_html(),
+      Value::Enum(e) => e.to_html(),
+      _ => "".to_string(),
     }
   }
 
@@ -600,20 +607,21 @@ impl Value {
   }
 
   pub fn as_vecbool(&self)   -> Option<Vec<bool>>  {if let Value::MatrixBool(v)  = self { Some(v.as_vec()) } else if let Value::Bool(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecbool()  } else { None }}
-  pub fn as_vecf64(&self)   -> Option<Vec<F64>>  {if let Value::MatrixF64(v)  = self { Some(v.as_vec()) } else if let Value::F64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf64()  } else { None }}
-  pub fn as_vecf32(&self)   -> Option<Vec<F32>>  {if let Value::MatrixF32(v)  = self { Some(v.as_vec()) } else if let Value::F32(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf32()  } else { None }}
+  
+  pub fn as_vecf64(&self) -> Option<Vec<F64>> { if let Value::MatrixF64(v) = self { Some(v.as_vec()) } else if let Value::F64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf64() } else if let Some(v) = self.as_f64() { Some(vec![v.borrow().clone()]) } else { None } }
+  pub fn as_vecf32(&self) -> Option<Vec<F32>> { if let Value::MatrixF32(v) = self { Some(v.as_vec()) } else if let Value::F32(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf32() } else if let Some(v) = self.as_f32() { Some(vec![v.borrow().clone()]) } else { None } }
 
-  pub fn as_vecu8(&self)   -> Option<Vec<u8>>  {if let Value::MatrixU8(v)  = self { Some(v.as_vec()) } else if let Value::U8(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu8()  } else { None }}
-  pub fn as_vecu16(&self)   -> Option<Vec<u16>>  {if let Value::MatrixU16(v)  = self { Some(v.as_vec()) } else if let Value::U16(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu16()  } else { None }}
-  pub fn as_vecu32(&self)   -> Option<Vec<u32>>  {if let Value::MatrixU32(v)  = self { Some(v.as_vec()) } else if let Value::U32(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu32()  } else { None }}
-  pub fn as_vecu64(&self)   -> Option<Vec<u64>>  {if let Value::MatrixU64(v)  = self { Some(v.as_vec()) } else if let Value::U64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu64()  } else { None }}
-  pub fn as_vecu128(&self)   -> Option<Vec<u128>>  {if let Value::MatrixU128(v)  = self { Some(v.as_vec()) } else if let Value::U128(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu128()  } else { None }}
+  pub fn as_vecu8(&self) -> Option<Vec<u8>> { if let Value::MatrixU8(v) = self { Some(v.as_vec()) } else if let Value::U8(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu8() } else if let Some(v) = self.as_u8() { Some(vec![v.borrow().clone()]) } else { None } }
+  pub fn as_vecu16(&self) -> Option<Vec<u16>> { if let Value::MatrixU16(v) = self { Some(v.as_vec()) } else if let Value::U16(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu16() } else if let Some(v) = self.as_u16() { Some(vec![v.borrow().clone()]) } else { None } }
+  pub fn as_vecu32(&self) -> Option<Vec<u32>> { if let Value::MatrixU32(v) = self { Some(v.as_vec()) } else if let Value::U32(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu32() } else if let Some(v) = self.as_u32() { Some(vec![v.borrow().clone()]) } else { None } }
+  pub fn as_vecu64(&self) -> Option<Vec<u64>> { if let Value::MatrixU64(v) = self { Some(v.as_vec()) } else if let Value::U64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu64() } else if let Some(v) = self.as_u64() { Some(vec![v.borrow().clone()]) } else { None } }
+  pub fn as_vecu128(&self) -> Option<Vec<u128>> { if let Value::MatrixU128(v) = self { Some(v.as_vec()) } else if let Value::U128(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu128() } else if let Some(v) = self.as_u128() { Some(vec![v.borrow().clone()]) } else { None } }
 
-  pub fn as_veci8(&self)   -> Option<Vec<i8>>  {if let Value::MatrixI8(v)  = self { Some(v.as_vec()) } else if let Value::I8(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci8()  } else { None }}
-  pub fn as_veci16(&self)   -> Option<Vec<i16>>  {if let Value::MatrixI16(v)  = self { Some(v.as_vec()) } else if let Value::I16(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci16()  } else { None }}
-  pub fn as_veci32(&self)   -> Option<Vec<i32>>  {if let Value::MatrixI32(v)  = self { Some(v.as_vec()) } else if let Value::I32(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci32()  } else { None }}
-  pub fn as_veci64(&self)   -> Option<Vec<i64>>  {if let Value::MatrixI64(v)  = self { Some(v.as_vec()) } else if let Value::I64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci64()  } else { None }}
-  pub fn as_veci128(&self)   -> Option<Vec<i128>>  {if let Value::MatrixI128(v)  = self { Some(v.as_vec()) } else if let Value::I128(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci128()  } else { None }}
+  pub fn as_veci8(&self) -> Option<Vec<i8>> { if let Value::MatrixI8(v) = self { Some(v.as_vec()) } else if let Value::I8(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci8() } else if let Some(v) = self.as_i8() { Some(vec![v.borrow().clone()]) } else { None } }
+  pub fn as_veci16(&self) -> Option<Vec<i16>> { if let Value::MatrixI16(v) = self { Some(v.as_vec()) } else if let Value::I16(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci16() } else if let Some(v) = self.as_i16() { Some(vec![v.borrow().clone()]) } else { None } }
+  pub fn as_veci32(&self) -> Option<Vec<i32>> { if let Value::MatrixI32(v) = self { Some(v.as_vec()) } else if let Value::I32(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci32() } else if let Some(v) = self.as_i32() { Some(vec![v.borrow().clone()]) } else { None } }
+  pub fn as_veci64(&self) -> Option<Vec<i64>> { if let Value::MatrixI64(v) = self { Some(v.as_vec()) } else if let Value::I64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci64() } else if let Some(v) = self.as_i64() { Some(vec![v.borrow().clone()]) } else { None } }
+  pub fn as_veci128(&self) -> Option<Vec<i128>> { if let Value::MatrixI128(v) = self { Some(v.as_vec()) } else if let Value::I128(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci128() } else if let Some(v) = self.as_i128() { Some(vec![v.borrow().clone()]) } else { None } }
 
   pub fn as_vecstring(&self)   -> Option<Vec<String>>  {if let Value::MatrixString(v)  = self { Some(v.as_vec()) } else if let Value::String(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecstring()  } else { None }}
 
@@ -780,6 +788,19 @@ pub struct MechSet {
 
 impl MechSet {
 
+  pub fn to_html(&self) -> String {
+    let mut src = String::new();
+    for (i, element) in self.set.iter().enumerate() {
+      let e = element.to_html();
+      if i == 0 {
+        src = format!("{}", e);
+      } else {
+        src = format!("{}, {}", src, e);
+      }
+    }
+    format!("<span class=\"mech-set\"><span class=\"mech-start-brace\">{{</span>{}<span class=\"mech-end-brace\">}}</span></span>",src)
+  }
+
   pub fn kind(&self) -> ValueKind {
     ValueKind::Set(Box::new(self.kind.clone()), self.num_elements)
   }
@@ -846,6 +867,20 @@ pub struct MechMap {
 
 impl MechMap {
 
+  pub fn to_html(&self) -> String {
+    let mut src = String::new();
+    for (i, (key, value)) in self.map.iter().enumerate() {
+      let k = key.to_html();
+      let v = value.to_html();
+      if i == 0 {
+        src = format!("{}: {}", k, v);
+      } else {
+        src = format!("{}, {}: {}", src, k, v);
+      }
+    }
+    format!("<span class=\"mech-map\"><span class=\"mech-start-brace\">{{</span>{}<span class=\"mech-end-brace\">}}</span></span>",src)
+  }
+
   pub fn kind(&self) -> ValueKind {
     ValueKind::Map(Box::new(self.key_kind.clone()), Box::new(self.value_kind.clone()))
   }
@@ -901,6 +936,36 @@ pub struct MechTable {
 }
 
 impl MechTable {
+
+  pub fn to_html(&self) -> String {
+    let mut table = String::new();
+
+    // Start table
+    table.push_str("<table class=\"mech-table\">");
+
+    // Header
+    table.push_str("<thead class=\"mech-table-header\"><tr>");
+    for key in self.data.keys() {
+      let col_name = self.col_names.get(key).unwrap();
+      table.push_str(&format!("<th class=\"mech-table-field\">{}</th>", col_name));
+    }
+    table.push_str("</tr></thead>");
+
+    // Body
+    table.push_str("<tbody class=\"mech-table-body\">");
+
+    for row_idx in 0..self.rows {
+      table.push_str("<tr class=\"mech-table-row\">");
+      for (_key, (_kind, matrix)) in self.data.iter() {
+        let value = matrix.index1d(row_idx);
+        table.push_str(&format!("<td class=\"mech-table-column\">{}</td>", value));
+      }
+      table.push_str("</tr>");
+    }
+
+    table.push_str("</tbody></table>");
+    table
+  }
 
   pub fn new(rows: usize, cols: usize, data: IndexMap<Value,(ValueKind,Matrix<Value>)>, col_names: HashMap<Value,String>) -> MechTable {
     MechTable{rows, cols, data, col_names}
@@ -971,6 +1036,33 @@ pub struct MechRecord {
 
 impl MechRecord {
 
+  pub fn to_html(&self) -> String {
+    let mut bindings = Vec::new();
+
+    for (key, value) in &self.data {
+      let name = self.field_names.get(key).unwrap();
+
+      let binding_html = format!(
+        "<span class=\"mech-binding\">\
+          <span class=\"mech-binding-name\">{}</span>\
+          <span class=\"mech-binding-colon-op\">:</span>\
+          <span class=\"mech-binding-value\">{}</span>\
+        </span>",
+        name,
+        value.to_html(),
+      );
+
+      bindings.push(binding_html);
+    }
+
+    format!(
+      "<span class=\"mech-record\">\
+        <span class=\"mech-start-brace\">{{</span>{}<span class=\"mech-end-brace\">}}</span>\
+      </span>",
+      bindings.join("<span class=\"mech-separator\">, </span>")
+    )
+  }
+
   pub fn get(&self, key: &u64) -> Option<&Value> {
     self.data.get(key)
   }
@@ -1039,6 +1131,14 @@ pub struct MechTuple {
 
 impl MechTuple {
 
+  pub fn to_html(&self) -> String {
+    let mut elements = Vec::new();
+    for element in &self.elements {
+      elements.push(element.to_html());
+    }
+    format!("<span class=\"mech-tuple\"><span class=\"mech-start-brace\">(</span>{}<span class=\"mech-end-brace\">)</span></span>", elements.join(", "))
+  }
+
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     let string_elements: Vec<String> = self.elements.iter().map(|e| e.pretty_print()).collect::<Vec<String>>();
@@ -1094,6 +1194,18 @@ pub struct MechEnum {
 }
 
 impl MechEnum {
+
+  pub fn to_html(&self) -> String {
+    let mut variants = Vec::new();
+    for (id, value) in &self.variants {
+      let value_html = match value {
+        Some(v) => v.to_html(),
+        None => "None".to_string(),
+      };
+      variants.push(format!("<span class=\"mech-enum-variant\">{}: {}</span>", id, value_html));
+    }
+    format!("<span class=\"mech-enum\"><span class=\"mech-start-brace\">{{</span>{}<span class=\"mech-end-brace\">}}</span></span>", variants.join(", "))
+  }
 
   pub fn kind(&self) -> ValueKind {
     ValueKind::Enum(self.id)

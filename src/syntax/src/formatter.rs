@@ -11,7 +11,7 @@ pub struct Formatter{
   rows: usize,
   cols: usize,
   indent: usize,
-  html: bool,
+  pub html: bool,
   nested: bool,
   toc: bool,
   figure_num: usize,
@@ -110,13 +110,15 @@ impl Formatter {
 
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
-        <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+        </style>
         <style>
                   {}
         </style>
     </head>
     <body>
-      <div class="mech-root">"#, style);
+      <div class="mech-root" mech-interpreter-id=0>"#, style);
     let encoded_tree = match compress_and_encode(&tree) {
       Ok(encoded) => encoded,
       Err(e) => todo!(),
@@ -334,21 +336,50 @@ entries
 
 window.addEventListener("DOMContentLoaded", () => {{
   createObserver("0px 0px 0px 0px");
-  const elements = document.querySelectorAll(".mech-equation");
-  elements.forEach(el => {{
-    const eq = el.getAttribute("equation");
-    if (eq) {{
-      katex.render(eq, el, {{ throwOnError: false }});
+
+  function renderEquations(root = document) {{
+    const blockElements = root.querySelectorAll(".mech-equation");
+    blockElements.forEach(el => {{
+      if (!el.getAttribute("data-rendered")) {{
+        const eq = el.getAttribute("equation");
+        if (eq) {{
+          katex.render(eq, el, {{ throwOnError: false }});
+          el.setAttribute("data-rendered", "true");
+        }}
+      }}
+    }});
+
+    const inlineElements = root.querySelectorAll(".mech-inline-equation");
+    inlineElements.forEach(el => {{
+      if (!el.getAttribute("data-rendered")) {{
+        const eq = el.getAttribute("equation");
+        if (eq) {{
+          katex.render(eq, el, {{ throwOnError: false }});
+          el.setAttribute("data-rendered", "true");
+        }}
+      }}
+    }});
+  }}
+
+  renderEquations();
+
+  // Set up a MutationObserver to watch for new elements
+  const observer = new MutationObserver(mutations => {{
+    for (const mutation of mutations) {{
+      for (const node of mutation.addedNodes) {{
+        if (node.nodeType === Node.ELEMENT_NODE) {{
+          renderEquations(node);
+        }}
+      }}
     }}
   }});
-  const inline_elements = document.querySelectorAll(".mech-inline-equation");
-  inline_elements.forEach(el => {{
-    const eq = el.getAttribute("equation");
-    if (eq) {{
-      katex.render(eq, el, {{ throwOnError: false }});
-    }}
+
+  observer.observe(document.body, {{
+    childList: true,
+    subtree: true,
   }});
 }});
+
 
 let lastScrollY = window.scrollY;
 let scrolling_down = true;
@@ -420,12 +451,14 @@ window.addEventListener("scroll", () => {{
               wasm_core.init();
               wasm_core.render_inline_values();
               wasm_core.render_codeblock_output_values();
+              wasm_core.attach_repl("mech-output");
             }} else {{
               console.error("Defaulting to included program");
               wasm_core.run_program(code);
               wasm_core.init();
               wasm_core.render_inline_values();
               wasm_core.render_codeblock_output_values();
+              wasm_core.attach_repl("mech-output");
             }}
           }}
         }};
@@ -694,8 +727,8 @@ window.addEventListener("scroll", () => {{
     }
   }
 
-  pub fn fenced_mech_code(&mut self, node: &Vec<(MechCode, Option<Comment>)>, interpreter_id: &u64) -> String {
-    self.interpreter_id = *interpreter_id;
+  pub fn fenced_mech_code(&mut self, node: &Vec<(MechCode, Option<Comment>)>, config: &BlockConfig) -> String {
+    self.interpreter_id = config.namespace;
     let mut src = String::new();
     for (code,cmmnt) in node {
       let c = match code {
@@ -717,16 +750,25 @@ window.addEventListener("scroll", () => {{
         src.push_str(&format!("{}{}\n", c, formatted_comment));
       }
     }
+    let intrp_id = self.interpreter_id;
     self.interpreter_id = 0;
+    let disabled_tag = match config.disabled {
+      true => "disabled".to_string(),
+      false => "".to_string(),
+    };
     if self.html {
       let (out_node,_) = node.last().unwrap();
       let output_id = hash_str(&format!("{:?}", out_node));
-      format!("<div class=\"mech-fenced-mech-block\">
-        <div class=\"mech-code-block\">{}</div>
-        <div id=\"{}:{}\" class=\"mech-block-output\"></div>
-      </div>",src, output_id, interpreter_id)
+      if config.disabled {
+        format!("<pre class=\"mech-code-block\">{}</pre>", src)
+      } else {
+        format!("<div class=\"mech-fenced-mech-block\">
+          <div class=\"mech-code-block\">{}</div>
+          <div class=\"mech-block-output\" id=\"{}:{}\"></div>
+        </div>", src, output_id, intrp_id)
+      }
     } else {
-      format!("```mech\n{}\n```", src)
+      format!("```mech{}\n{}\n```", src, format!(":{}", disabled_tag))
     }
   }
 
@@ -869,6 +911,62 @@ window.addEventListener("scroll", () => {{
   }
 
   pub fn markdown_table(&mut self, node: &MarkdownTable) -> String {
+    if self.html {
+      self.markdown_table_html(node)
+    } else {
+      self.markdown_table_string(node)
+    }
+  }
+
+
+  pub fn markdown_table_string(&mut self, node: &MarkdownTable) -> String {
+    // Helper to render a row of Paragraphs as `| ... | ... |`
+    fn render_row(cells: &[Paragraph], f: &mut impl FnMut(&Paragraph) -> String) -> String {
+        let mut row = String::from("|");
+        for cell in cells {
+            row.push_str(" ");
+            row.push_str(&f(cell));
+            row.push_str(" |");
+        }
+        row
+    }
+
+    // Render header
+    let header_line = render_row(&node.header, &mut |p| self.paragraph(p));
+
+    // Render alignment row
+    let mut align_line = String::from("|");
+    for align in &node.alignment {
+        let spec = match align {
+            ColumnAlignment::Left => ":---",
+            ColumnAlignment::Center => ":---:",
+            ColumnAlignment::Right => "---:",
+        };
+        align_line.push_str(&format!(" {} |", spec));
+    }
+
+    // Render body rows
+    let mut body_lines = vec![];
+    for row in &node.rows {
+        body_lines.push(render_row(row, &mut |p| self.paragraph(p)));
+    }
+
+    // Join everything
+    let mut markdown = String::new();
+    markdown.push_str(&header_line);
+    markdown.push('\n');
+    markdown.push_str(&align_line);
+    markdown.push('\n');
+    for line in body_lines {
+        markdown.push_str(&line);
+        markdown.push('\n');
+    }
+
+    markdown
+}
+
+
+  pub fn markdown_table_html(&mut self, node: &MarkdownTable) -> String {
     let mut html = String::new();
     html.push_str("<table class=\"mech-table\">");
 

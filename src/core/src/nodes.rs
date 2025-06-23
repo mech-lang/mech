@@ -417,9 +417,13 @@ impl Citation {
     format!("[{}]: {}", self.id.to_string(), self.text.to_string())
   }
 }
-// This is just a temporary flag to store block state, 
-// I don't know exactly what I want to put in here yet
-type BlockConfig = u64; 
+
+// Stores code block configuration
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub struct BlockConfig {
+  pub namespace: u64,
+  pub disabled: bool,
+}
 
 pub type Footnote = (Token, Paragraph);
 
