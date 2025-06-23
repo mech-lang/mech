@@ -33,9 +33,9 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[tokio::main]
 async fn main() -> Result<(), MechError> {
-  panic::set_hook(Box::new(|panic_info| {
+  /*panic::set_hook(Box::new(|panic_info| {
     // do nothing.
-  }));
+  }));*/
   
   let text_logo = r#"
   ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐   ┌─┐
