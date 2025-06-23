@@ -1617,6 +1617,14 @@ mark {
     padding: 10px;
 }
 
+#mech-output .mech-equation {
+    margin-bottom: 10px;
+}
+
+#mech-output th p {
+    margin-bottom: 0px;
+}
+
 @media (max-width: 1650px) {
     .mech-program-title {
         width: 700px;
