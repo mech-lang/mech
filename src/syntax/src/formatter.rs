@@ -118,7 +118,7 @@ impl Formatter {
         </style>
     </head>
     <body>
-      <div class="mech-root">"#, style);
+      <div class="mech-root" mech-interpreter-id=0>"#, style);
     let encoded_tree = match compress_and_encode(&tree) {
       Ok(encoded) => encoded,
       Err(e) => todo!(),

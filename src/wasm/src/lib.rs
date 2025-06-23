@@ -3,7 +3,7 @@ use mech_core::*;
 use mech_syntax::*;
 use mech_interpreter::*;
 use wasm_bindgen::JsCast;
-use web_sys::{window, HtmlElement, HtmlInputElement, Node};
+use web_sys::{window, HtmlElement, HtmlInputElement, Node, Element};
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -394,37 +394,79 @@ impl WasmMech {
   pub fn render_codeblock_output_values(&mut self) {
     let window = web_sys::window().expect("global window does not exists");    
 		let document = window.document().expect("expecting a document on window"); 
-    let output_elements = document.get_elements_by_class_name("mech-block-output");
-    for i in 0..output_elements.length() {
-      let block = output_elements.get_with_index(i).unwrap();
-      // the id looks like this
-      // output_id:interpreter_id
-      // so we need to parse it to get the id and the interpreter id
-      let id = block.id();
-      let parsed_id: Vec<&str> = id.split(":").collect();
-      let output_id = parsed_id[0].parse::<u64>().unwrap();
-      let interpreter_id = parsed_id[1].parse::<u64>().unwrap();
-      // get the interpreter id from the block id
-      let out_values = match interpreter_id {
-        // if the interpreter id is 0, we are in the main interpreter
-        0 => self.interpreter.out_values.clone(), 
-        // if the interpreter id is not 0, we are in a sub interpreter
-        id => self.interpreter.sub_interpreters.borrow().get(&id).unwrap().out_values.clone(),
-      };
+    // Get all elements with an attribute of "mech-interpreter-id"
+    let programs = document.query_selector_all("[mech-interpreter-id]");
+    if let Ok(programs) = programs {
+      for i in 0..programs.length() {
+        let program_node = programs.item(i).expect("No node at index");
+        let program_el = program_node
+            .dyn_into::<Element>()
+            .expect("Node was not an Element");
 
-      // get the output id from the block id
-      let out_value_brrw = out_values.borrow();
-      let output = match out_value_brrw.get(&output_id) {
-        Some(value) => value,
-        None => {
-          log!("No value found for output id: {}", output_id);
-          continue;
+        // Get the mech-interpreter-id attribute from the element
+        let interpreter_id: String = program_el.get_attribute("mech-interpreter-id").unwrap();
+        let interpreter_id: u64 = interpreter_id.parse().unwrap();
+        let sub_interpreter_brrw = self.interpreter.sub_interpreters.borrow();
+        let intrp = match interpreter_id {
+          0 => &self.interpreter, 
+          id => {
+            match sub_interpreter_brrw.get(&id) {
+              Some(sub_interpreter) => sub_interpreter,
+              None => {
+                log!("No sub interpreter found for id: {}", id);
+                continue;
+              }
+            }
+          }
+        };
+
+        // Get all elements with the class "mech-block-output" that are children of the program element
+        let output_elements = program_el.query_selector_all(".mech-block-output");
+        if let Ok(output_elements) = output_elements {
+          for j in 0..output_elements.length() {
+            let block_node = output_elements.item(j).expect("No output element at index");
+            let block = block_node
+                .dyn_into::<web_sys::Element>()
+                .expect("Output node was not an Element");
+
+            // the id looks like this
+            // output_id:interpreter_id
+            // so we need to parse it to get the id and the interpreter id
+            let id = block.id();
+            let parsed_id: Vec<&str> = id.split(":").collect();
+            let output_id = parsed_id[0].parse::<u64>().unwrap();
+            let interpreter_id = parsed_id[1].parse::<u64>().unwrap();
+            // get the interpreter id from the block id
+            let out_values = match interpreter_id {
+              // if the interpreter id is 0, we are in the main interpreter
+              0 => intrp.out_values.clone(), 
+              // if the interpreter id is not 0, we are in a sub interpreter
+              id => {
+                match intrp.sub_interpreters.borrow().get(&id) {
+                  Some(sub_interpreter) => sub_interpreter.out_values.clone(),
+                  None => {
+                    log!("No sub interpreter found for id: {}", id);
+                    continue;
+                  }
+                }
+              }
+            };
+
+            // get the output id from the block id
+            let out_value_brrw = out_values.borrow();
+            let output = match out_value_brrw.get(&output_id) {
+              Some(value) => value,
+              None => {
+                log!("No value found for output id: {}", output_id);
+                continue;
+              }
+            };
+            // set the inner html of the block to the output value html
+            let formatted_output = format!("<div class=\"mech-output-kind\">{:?}</div><div class=\"mech-output-value\">{}</div>", output.kind(), output.to_html());
+            block.set_inner_html(&formatted_output);
+          }
         }
-      };
-
-      // set the inner html of the block to the output value html
-      let formatted_output = format!("<div class=\"mech-output-kind\">{:?}</div><div class=\"mech-output-value\">{}</div>", output.kind(), output.to_html());
-      block.set_inner_html(&formatted_output);
+      }
     }
   }
 
@@ -508,7 +550,17 @@ pub fn load_doc(doc: &str) {
         let len = children.length();
         if len >= 2 {
             let repl_result = children.item(len - 2).expect("Failed to get second-to-last child");
+            repl_result.set_attribute("mech-interpreter-id", &format!("{}",doc_hash)).unwrap();
             repl_result.set_inner_html(&doc_html);
+            CURRENT_MECH.with(|mech_ref| {
+              if let Some(ptr) = *mech_ref.borrow() {
+                unsafe {
+                  let mut mech = &mut *ptr;
+                  mech.interpreter.sub_interpreters.borrow_mut().insert(doc_hash, Box::new(doc_intrp));
+                  mech.render_codeblock_output_values();
+                }
+              }
+            })
         } else {
             web_sys::console::log_1(&"Not enough children in #mech-output to update.".into());
         }
