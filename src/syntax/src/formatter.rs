@@ -727,8 +727,8 @@ window.addEventListener("scroll", () => {{
     }
   }
 
-  pub fn fenced_mech_code(&mut self, node: &Vec<(MechCode, Option<Comment>)>, interpreter_id: &u64) -> String {
-    self.interpreter_id = *interpreter_id;
+  pub fn fenced_mech_code(&mut self, node: &Vec<(MechCode, Option<Comment>)>, config: &BlockConfig) -> String {
+    self.interpreter_id = config.namespace;
     let mut src = String::new();
     for (code,cmmnt) in node {
       let c = match code {
@@ -750,16 +750,25 @@ window.addEventListener("scroll", () => {{
         src.push_str(&format!("{}{}\n", c, formatted_comment));
       }
     }
+    let intrp_id = self.interpreter_id;
     self.interpreter_id = 0;
+    let disabled_tag = match config.disabled {
+      true => "disabled".to_string(),
+      false => "".to_string(),
+    };
     if self.html {
       let (out_node,_) = node.last().unwrap();
       let output_id = hash_str(&format!("{:?}", out_node));
-      format!("<div class=\"mech-fenced-mech-block\">
-        <div class=\"mech-code-block\">{}</div>
-        <div id=\"{}:{}\" class=\"mech-block-output\"></div>
-      </div>",src, output_id, interpreter_id)
+      if config.disabled {
+        format!("<pre class=\"mech-code-block\">{}</pre>", src)
+      } else {
+        format!("<div class=\"mech-fenced-mech-block\">
+          <div class=\"mech-code-block\">{}</div>
+          <div class=\"mech-block-output\" id=\"{}:{}\"></div>
+        </div>", src, output_id, intrp_id)
+      }
     } else {
-      format!("```mech\n{}\n```", src)
+      format!("```mech{}\n{}\n```", src, format!(":{}", disabled_tag))
     }
   }
 

@@ -599,11 +599,12 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
       // if x begins with mec, mech, or 🤖
       if tag.starts_with("mech") || tag.starts_with("mec") || tag.starts_with("🤖") {
 
-        // get rid of the prefix and then treat the rest of the string as an identifier
-        let rest = tag.trim_start_matches("mech").trim_start_matches("mec").trim_start_matches("🤖");
-        let code_id = if rest == "" { 0 } else {
-          hash_str(rest)
-        };
+        // get rid of the prefix and then treat the rest of the string after : as an identifier
+        let rest = tag.trim_start_matches("mech").trim_start_matches("mec").trim_start_matches("🤖").trim_start_matches(":");
+        
+        let config = if rest == "" {BlockConfig { namespace: 0, disabled: false}}
+        else if rest == "disabled" { BlockConfig { namespace: hash_str(rest), disabled: true }} 
+        else { BlockConfig { namespace: hash_str(rest), disabled: false} };
 
         let mech_src = block_src.iter().collect::<String>();
         let graphemes = graphemes::init_source(&mech_src);
@@ -612,7 +613,7 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
         match many1(mech_code)(parse_string) {
           Ok((_, mech_tree)) => {
             // TODO what if not all the input is parsed? Is that handled?
-            return Ok((input, SectionElement::FencedMechCode((mech_tree,code_id))));
+            return Ok((input, SectionElement::FencedMechCode((mech_tree,config))));
           },
           Err(err) => {
             println!("Error parsing Mech code: {:?}", err);
