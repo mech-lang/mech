@@ -13,7 +13,7 @@ Y := math/sin(X)
 2. Description
 -------------------------------------------------------------------------------
 
-Computes the sine of each element of `X`. The input `X` is interpreted in radians, not degrees. The result `Y` has the same shame as `X`.
+Computes the sine of each element of `X`. The input `X` is interpreted in radians, not degrees. The result `Y` has the same shape as the input `X`.
 
 3. Arguments
 -------------------------------------------------------------------------------
