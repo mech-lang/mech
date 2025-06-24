@@ -29,7 +29,7 @@ Computes the sine of each element of `X`. The input `X` is interpreted in radian
 |----------|--------------------------|---------------------------------------|
 | `Y`      | matches input            | Sine of the input values. If `X` is real, `Y` is real in the range `[-1,1]`. If `X` is complex, `Y` may have both real and imaginary parts. The shape of `Y` matches the shape of `X`. |
 
-4. Examples  
+5. Examples  
 -------------------------------------------------------------------------------
 
 (a) Find the sine of a number 
@@ -52,7 +52,7 @@ x := [0, 1; 3 4]
 y := math/sin(x)
 ```
 
-5. Details
+6. Details
 -------------------------------------------------------------------------------
 
 The sine function is a key idea in trigonometry, which studies the relationships between angles and sides of triangles.
