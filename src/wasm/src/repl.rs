@@ -92,6 +92,7 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
 }
 
 // Print out help information in HTML format
+#[wasm_bindgen]
 pub fn help_html() -> String {
   let text_logo = r#"
 ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐   ┌─┐
