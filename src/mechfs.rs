@@ -105,16 +105,35 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
           Ok(mut sources) => {
             for f in files {
               // if the file extension is not .mec, or .🤖, continue
-              if f.extension() != Some(OsStr::new("mec")) && f.extension() != Some(OsStr::new("🤖")) {
-                continue;
-              }
-              match sources.add_source(&f.display().to_string()) {
-                Ok(_) => {
-                  println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
-                },
-                Err(e) => {
-                  return Err(e);
-                },
+              if f.extension() == Some(OsStr::new("mec")) && f.extension() == Some(OsStr::new("🤖")) {
+                match sources.add_source(&f.display().to_string()) {
+                  Ok(_) => {
+                    println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
+                  },
+                  Err(e) => {
+                    return Err(e);
+                  },
+                }
+              } else if f.extension() == Some(OsStr::new("html")) || f.extension() == Some(OsStr::new("htm")) {
+                match sources.add_source(&f.display().to_string()) {
+                  Ok(_) => {
+                    println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
+                  },
+                  Err(e) => {
+                    return Err(e);
+                  },
+                }
+              } else if f.extension() == Some(OsStr::new("md")) {
+                match sources.add_source(&f.display().to_string()) {
+                  Ok(_) => {
+                    println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
+                  },
+                  Err(e) => {
+                    return Err(e);
+                  },
+                }
+              } else {
+                //println!("{} Skipping: {}", "[Skip]".truecolor(153,221,85), f.display());
               }
             }
           }
@@ -208,27 +227,30 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
   
       
       // update the tree
-      let new_tree = match source {
+      let (new_tree, new_html) = match source {
         MechSourceCode::String(ref source) => match parser::parse(&source) {
-          Ok(tree) => tree,
-          Err(err) => {
-            todo!("Handle parse error");
+          Ok(tree) => {
+            let mut formatter = Formatter::new();
+            let mech_html = formatter.format_html(&tree,self.stylesheet.clone());
+            (MechSourceCode::Tree(tree), 
+             MechSourceCode::Html(mech_html))
           }
+          Err(err) => {return Err(err)},
+        },
+        MechSourceCode::Html(ref html) => {
+          // TODO If it's HTML, we can parse it as a Mech source code.
+          (MechSourceCode::Tree(core::Program{title: None, body: core::Body{sections: vec![]}}), 
+           MechSourceCode::Html(html.clone()))
         },
         _ => {
           todo!("Handle other source formats?");
         }
       };
-      
-      // update the html
-      let mut formatter = Formatter::new();
-      let mech_html = formatter.format_html(&new_tree,self.stylesheet.clone());
-      //let mech_html = Formatter::humanize_html(mech_html);
-      
+            
       // update
       *source = new_source;
-      *html = MechSourceCode::Html(mech_html);
-      *tree = MechSourceCode::Tree(new_tree);
+      *html = new_html;
+      *tree = new_tree;
       
       Ok(())
     }
@@ -284,29 +306,32 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
       let file_id = hash_str(&canonical_path.display().to_string());
       match read_mech_source_file(src_path) {
         Ok(src) => {
-          let tree = match src {
+          let (tree, mech_html) = match src {
             MechSourceCode::String(ref source) => match parser::parse(&source) {
-              Ok(tree) => tree,
+              Ok(tree) => {
+                let mut formatter = Formatter::new();
+                let mech_html = formatter.format_html(&tree,self.stylesheet.clone());
+                (MechSourceCode::Tree(tree), MechSourceCode::Html(mech_html))
+              }
               Err(err) => {
                 println!("{} {:?}", "[Parse Error]".truecolor(255,0,0), err);
-                todo!("Handle parse error");
+                return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Failed to parse source code".to_string(), id: line!(), kind: MechErrorKind::None});
               }
+            },
+            MechSourceCode::Html(ref html) => {
+              // TODO If it's HTML, we can parse it as a Mech source code.
+              (MechSourceCode::Tree(core::Program{title: None, body: core::Body{sections: vec![]}}), src.clone())
             },
             _ => {
               todo!("Handle other source formats?");
             }
           };
   
-          let mut formatter = Formatter::new();
-          let mech_html = formatter.format_html(&tree,self.stylesheet.clone());
-          //let mech_html = Formatter::humanize_html(mech_html);
-  
           // Save all this so we don't have to do it later.
           self.sources.insert(file_id, src.clone());
-          self.trees.insert(file_id, MechSourceCode::Tree(tree));
-          self.html.insert(file_id, MechSourceCode::Html(mech_html));
+          self.trees.insert(file_id, tree);
+          self.html.insert(file_id, mech_html);
           self.id_map.insert(file_id,src_path.to_path_buf());
-  
   
           if self.index == 0 {
             self.index = file_id;
@@ -480,6 +505,17 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
                 let mut buffer = String::new();
                 file.read_to_string(&mut buffer);
                 Ok(MechSourceCode::String(buffer))
+              }
+              Err(err) => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
+            }
+          }
+          Some("html") | Some("htm") | Some("md") => {
+            match File::open(path) {
+              Ok(mut file) => {
+                //println!("{} {}", "[Loading]".truecolor(153,221,85), path.display());
+                let mut buffer = String::new();
+                file.read_to_string(&mut buffer);
+                Ok(MechSourceCode::Html(buffer))
               }
               Err(err) => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
             }
