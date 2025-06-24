@@ -106,7 +106,7 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
             for f in files {
               // if the file extension is not .mec, or .🤖, continue
               if f.extension() == Some(OsStr::new("mec")) && f.extension() == Some(OsStr::new("🤖")) {
-                match sources.add_source(&f.display().to_string()) {
+                match sources.add_source(&f.display().to_string(),src) {
                   Ok(_) => {
                     println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
                   },
@@ -114,8 +114,10 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
                     return Err(e);
                   },
                 }
-              } else if f.extension() == Some(OsStr::new("html")) || f.extension() == Some(OsStr::new("htm")) {
-                match sources.add_source(&f.display().to_string()) {
+              } else if f.extension() == Some(OsStr::new("html")) 
+                     || f.extension() == Some(OsStr::new("htm"))
+                     || f.extension() == Some(OsStr::new("css")) {
+                match sources.add_source(&f.display().to_string(),src) {
                   Ok(_) => {
                     println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
                   },
@@ -124,7 +126,7 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
                   },
                 }
               } else if f.extension() == Some(OsStr::new("md")) {
-                match sources.add_source(&f.display().to_string()) {
+                match sources.add_source(&f.display().to_string(),src) {
                   Ok(_) => {
                     println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
                   },
@@ -170,7 +172,7 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
     trees: HashMap<u64,MechSourceCode>,               // stores the ast for the sources
     errors: HashMap<u64,Vec<MechError>>,              // stores the errors for the sources
     html: HashMap<u64,MechSourceCode>,                // stores the html for the sources
-    directory: HashMap<PathBuf, PathBuf>,             // relative source -> absolute source
+    pub directory: HashMap<PathBuf, PathBuf>,             // relative source -> absolute source
     reverse_lookup: HashMap<PathBuf, PathBuf>,        // absolute source -> relative source
     id_map: HashMap<u64,PathBuf>,                     // hash -> path
   }
@@ -214,7 +216,7 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
     pub fn get_path_from_id(&self, id: u64) -> Option<&PathBuf> {
       self.id_map.get(&id)
     }
-    
+
     pub fn reload_source(&mut self, path: &PathBuf) -> MResult<()> {
   
       let file_id = hash_str(&path.display().to_string());
@@ -294,56 +296,76 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
       Ok(())
     }
   
-    pub fn add_source(&mut self, src: &str) -> MResult<MechSourceCode> {
-      let src = src.trim_start_matches("./").trim_start_matches(".\\");
-      let src_path = Path::new(src);
-      let id = hash_str(&src_path.display().to_string());
+    pub fn add_source(&mut self, src_str: &str, src_root: &str) -> MResult<MechSourceCode> {
+      // Canonicalize the root and the source path
+      let src_path = Path::new(src_str);
       let canonical_path = src_path.canonicalize().unwrap();
+      let canonical_root = Path::new(src_root).canonicalize().unwrap();
 
-      self.directory.insert(src_path.to_path_buf(),canonical_path.clone());
+      // Strip root prefix to get relative path
+      let relative_path = match canonical_path.strip_prefix(&canonical_root) {
+        Ok(p) => p,
+        Err(_) => canonical_path.as_path(),
+      };
 
-      self.reverse_lookup.insert(canonical_path.clone(),src_path.to_path_buf());
-      let file_id = hash_str(&canonical_path.display().to_string());
-      match read_mech_source_file(src_path) {
+      // Read the file
+      match read_mech_source_file(&canonical_path) {
         Ok(src) => {
           let (tree, mech_html) = match src {
             MechSourceCode::String(ref source) => match parser::parse(&source) {
               Ok(tree) => {
                 let mut formatter = Formatter::new();
-                let mech_html = formatter.format_html(&tree,self.stylesheet.clone());
+                let mech_html = formatter.format_html(&tree, self.stylesheet.clone());
                 (MechSourceCode::Tree(tree), MechSourceCode::Html(mech_html))
               }
               Err(err) => {
-                println!("{} {:?}", "[Parse Error]".truecolor(255,0,0), err);
-                return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Failed to parse source code".to_string(), id: line!(), kind: MechErrorKind::None});
+                println!("{} {:?}", "[Parse Error]".truecolor(255, 0, 0), err);
+                return Err(MechError {
+                  file: file!().to_string(),
+                  tokens: vec![],
+                  msg: "Failed to parse source code".to_string(),
+                  id: line!(),
+                  kind: MechErrorKind::None,
+                });
               }
             },
             MechSourceCode::Html(ref html) => {
               // TODO If it's HTML, we can parse it as a Mech source code.
-              (MechSourceCode::Tree(core::Program{title: None, body: core::Body{sections: vec![]}}), src.clone())
-            },
+              (MechSourceCode::Tree(core::Program {
+                title: None,
+                body: core::Body { sections: vec![] },
+              }), src.clone())
+            }
             _ => {
               todo!("Handle other source formats?");
             }
           };
-  
+
           // Save all this so we don't have to do it later.
+          let file_id = hash_str(&canonical_path.display().to_string());
+
+          self.directory.insert(relative_path.to_path_buf(), canonical_path.clone());
+          self.reverse_lookup.insert(canonical_path.clone(), relative_path.to_path_buf());
           self.sources.insert(file_id, src.clone());
           self.trees.insert(file_id, tree);
           self.html.insert(file_id, mech_html);
-          self.id_map.insert(file_id,src_path.to_path_buf());
-  
+          self.id_map.insert(file_id, relative_path.to_path_buf());
+
+          let relative_path_str = relative_path.display().to_string();
+          let src_path_hash = hash_str(&relative_path_str);
+
           if self.index == 0 {
             self.index = file_id;
-          } else if id == hash_str("index.mec") || id == hash_str("index.html") || id == hash_str("index.md") {
+          } else if src_path_hash == hash_str("index.mec")
+            || src_path_hash == hash_str("index.html")
+            || src_path_hash == hash_str("index.md")
+          {
             self.index = file_id;
           }
-  
-          return Ok(src); 
-        },
-        Err(err) => {
-          return Err(err);
-        },
+
+          Ok(src)
+        }
+        Err(err) => Err(err),
       }
     }
   
@@ -509,7 +531,7 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
               Err(err) => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
             }
           }
-          Some("html") | Some("htm") | Some("md") => {
+          Some("html") | Some("htm") | Some("md") | Some("css") => {
             match File::open(path) {
               Ok(mut file) => {
                 //println!("{} {}", "[Loading]".truecolor(153,221,85), path.display());
