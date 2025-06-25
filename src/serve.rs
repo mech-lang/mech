@@ -170,8 +170,6 @@ impl MechServer {
             } else {
               println!("{} {} -- New request from unknown address -- /{}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), url);
             }
-            println!("{} {} -- URL: {}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), url);
-            println!("{:#?}", sources.directory);
             // search for a document named index.mec, index.html. If not found return a default page.
             let mech_html = match sources.get_html(url) {
               Some(MechSourceCode::Html(source)) => source,
