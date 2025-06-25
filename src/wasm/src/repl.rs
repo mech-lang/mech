@@ -18,19 +18,27 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
       "".to_string()
     }
     ReplCommand::Clc => {
-      let window = web_sys::window().expect("global window does not exists");    
-      let document = window.document().expect("expecting a document on window");
-      let output_element = document.get_element_by_id("mech-output").expect("REPL output element not found");
-      // Remove all children
-      while output_element.child_nodes().length() > 0 {
-        let first_child = output_element
-          .first_child()
-          .expect("Expected a child node");
-        output_element
-          .remove_child(&first_child)
-          .expect("Failed to remove child");
-      }
-      "".to_string()
+      CURRENT_MECH.with(|mech_ref| {
+        if let Some(ptr) = *mech_ref.borrow() {
+          unsafe {
+            let mut mech = &mut *ptr;
+            let window = web_sys::window().expect("global window does not exists");    
+            let document = window.document().expect("expecting a document on window");
+            let output_element = document.get_element_by_id(&mech.repl_id.as_ref().unwrap().clone()).expect("REPL output element not found");
+            // Remove all children
+            while output_element.child_nodes().length() > 0 {
+              let first_child = output_element
+                .first_child()
+                .expect("Expected a child node");
+              output_element
+                .remove_child(&first_child)
+                .expect("Failed to remove child");
+            }
+          }
+          return "".to_string();
+        }
+        "Error: No interpreter found.".to_string()
+      })
     }
     ReplCommand::Code(code) => {
       CURRENT_MECH.with(|mech_ref| {
