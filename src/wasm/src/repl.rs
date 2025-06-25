@@ -81,7 +81,15 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
     ReplCommand::Docs(doc) => {
       match doc {
         Some(d) => {
-          load_doc(&d);
+          CURRENT_MECH.with(|mech_ref| {
+            if let Some(ptr) = *mech_ref.borrow() {
+              unsafe {
+                let mut mech = &mut *ptr;
+                load_doc(&d, mech.repl_id.as_ref().unwrap().clone());
+              }
+            }
+            "Error: No interpreter found.".to_string()
+          });
           format!("Fetching doc: {}...", d)
         },
         None => "Enter the name of a doc to load.".to_string(),

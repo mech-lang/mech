@@ -65,6 +65,7 @@ pub struct WasmMech {
   interpreter: Interpreter,
   repl_history: Vec<String>,
   repl_history_index: Option<usize>,
+  repl_id: Option<String>,
 }
 
 #[wasm_bindgen]
@@ -76,6 +77,7 @@ impl WasmMech {
       interpreter: Interpreter::new(0),
       repl_history: Vec::new(), 
       repl_history_index: None,
+      repl_id: None,
     }
   }
 
@@ -91,6 +93,7 @@ impl WasmMech {
 
   #[wasm_bindgen]
   pub fn attach_repl(&mut self, repl_id: &str) {
+    self.repl_id = Some(repl_id.to_string());
     // Assign self to the CURRENT_MECH thread local variable
     // so that we can access it from the callbacks. Unsafe.
     CURRENT_MECH.with(|c| *c.borrow_mut() = Some(self as *mut _));
@@ -528,7 +531,7 @@ impl WasmMech {
   }
 }
 
-pub fn load_doc(doc: &str) {
+pub fn load_doc(doc: &str, element_id: String) {
   let doc = doc.to_string();
   spawn_local(async move {
     let doc_mec = fetch_docs(&doc).await;
@@ -542,8 +545,7 @@ pub fn load_doc(doc: &str) {
         let doc_html = formatter.program(&tree);
         let mut doc_intrp = Interpreter::new(doc_hash);
         let doc_result = doc_intrp.interpret(&tree);
-        log!("Doc result: {:?}", doc_result);
-        let output_element = document.get_element_by_id("mech-output").expect("REPL output element not found");
+        let output_element = document.get_element_by_id(&element_id).expect("REPL output element not found");
         // Get the second to last element of mech-output. It should be a repl-result from when teh user pressed enter.
         // Set the inner html of the repl result element to be the formatted doc.
         let children = output_element.children();
