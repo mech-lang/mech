@@ -15,14 +15,14 @@ Y := math/sin(X)
 
 Computes the sine of each element of `X`. The input `X` is interpreted in radians, not degrees. The result `Y` has the same shape as the input `X`.
 
-3. Arguments
+3. Input
 -------------------------------------------------------------------------------
 
 | Argument | Kind                     | Description                           |
 |----------|--------------------------|---------------------------------------|
 | `X`      | `float`, `[float]`       | Input angle(s) specified in radians. Can be real or complex. If `X` is complex, sin returns complex results. |
 
-4. Returns
+4. Output
 -------------------------------------------------------------------------------
 
 | Argument | Kind                     | Description                           |
@@ -50,6 +50,13 @@ y := math/sin(x)
 ```mech:ex3
 x := [0, 1; 3 4]
 y := math/sin(x)
+```
+
+(d) Find the sine for a matrix of degrees
+
+```mech:ex4
+x := [0, 90; 180, 270]
+y := math/sin(x * 3.14 / 180)
 ```
 
 6. Details
