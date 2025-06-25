@@ -114,6 +114,7 @@ pub fn help_html() -> String {
     html.push_str("<tbody>");
     html.push_str("<tr><td><span class=\"mech-command\">:clc</span></td><td></span></td><td></td><td>Clear the REPL output.</td></tr>");
     html.push_str("<tr><td><span class=\"mech-command\">:clear</span><td></span></td></td><td></td><td>Clear the interpreter state.</td></tr>");
+    html.push_str("<tr><td><span class=\"mech-command\">:docs</span></td><td></td><td><span class=\"mech-command\">[doc]</span></td><td>Display the given doc in the REPL.</td></tr>");
     html.push_str("<tr><td><span class=\"mech-command\">:help</span></td><td><span class=\"mech-command\">:h</span></td><td></td><td>Show this help message.</td></tr>");
     html.push_str("<tr><td><span class=\"mech-command\">:step</span></td><td></td><td><span class=\"mech-command\">[count]</span></td><td>Run the plan for a specified number of steps.</td></tr>");
     html.push_str("<tr><td><span class=\"mech-command\">:whos</span></td><td><span class=\"mech-command\">:w</span></td><td><span class=\"mech-command\">[names...]</span></td><td>Show the current symbol directory.</td></tr>");
