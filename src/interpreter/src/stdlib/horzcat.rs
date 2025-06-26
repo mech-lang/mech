@@ -226,69 +226,6 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
-
-struct HorizontalConcatenateRD2<T> {
-  e0: Box<dyn CopyMat<T>>,
-  e1: Box<dyn CopyMat<T>>,
-  out: Ref<RowDVector<T>>,
-}
-impl<T> MechFunction for HorizontalConcatenateRD2<T>
-where
-  T: Debug + Clone + Sync + Send + PartialEq + 'static,
-  Ref<RowDVector<T>>: ToValue
-{
-  fn solve(&self) {
-    let mut offset = self.e0.copy_into_r(&self.out,0);
-    offset += self.e1.copy_into_r(&self.out,offset);
-  }
-  fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("HorizontalConcatenateRD2\n{:#?}", self.out) }
-}
-
-struct HorizontalConcatenateRD3<T> {
-  e0: Box<dyn CopyMat<T>>,
-  e1: Box<dyn CopyMat<T>>,
-  e2: Box<dyn CopyMat<T>>,
-  out: Ref<RowDVector<T>>,
-}
-
-impl<T> MechFunction for HorizontalConcatenateRD3<T>
-where
-  T: Debug + Clone + Sync + Send + PartialEq + 'static,
-  Ref<RowDVector<T>>: ToValue
-{
-  fn solve(&self) {
-    let mut offset = self.e0.copy_into_r(&self.out,0);
-    offset += self.e1.copy_into_r(&self.out,offset);
-    self.e2.copy_into_r(&self.out,offset);
-  }
-  fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("HorizontalConcatenateRD3\n{:#?}", self.out) }
-}
-
-struct HorizontalConcatenateRD4<T> {
-  e0: Box<dyn CopyMat<T>>,
-  e1: Box<dyn CopyMat<T>>,
-  e2: Box<dyn CopyMat<T>>,
-  e3: Box<dyn CopyMat<T>>,
-  out: Ref<RowDVector<T>>,
-}
-
-impl <T> MechFunction for HorizontalConcatenateRD4<T>
-where
-  T: Debug + Clone + Sync + Send + PartialEq + 'static,
-  Ref<RowDVector<T>>: ToValue
-{
-  fn solve(&self) {
-    let mut offset = self.e0.copy_into_r(&self.out,0);
-    offset += self.e1.copy_into_r(&self.out,offset);
-    offset += self.e2.copy_into_r(&self.out,offset);
-    self.e3.copy_into_r(&self.out,offset);
-  }
-  fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("HorizontalConcatenateRD4\n{:#?}", self.out) }
-}
-
 struct HorizontalConcatenateRDN<T> {
   scalar: Vec<(Ref<T>,usize)>,
   matrix: Vec<(Box<dyn CopyMat<T>>,usize)>,
@@ -947,30 +884,6 @@ macro_rules! impl_horzcat_arms {
   ($kind:ident, $args:expr, $default:expr) => {
     paste!{
     {
-
-      fn extract_matrix(arg: &Value) -> MResult<Box<dyn CopyMat<$kind>>> {
-        match arg {
-          Value::[<Matrix $kind:camel>](m) => Ok(m.get_copyable_matrix()),
-          Value::MutableReference(inner) => match &*inner.borrow() {
-            Value::[<Matrix $kind:camel>](m) => Ok(m.get_copyable_matrix()),
-            _ => Err(MechError {
-              file: file!().to_string(),
-              tokens: vec![],
-              msg: format!("Expected a Matrix<{}> or MutableReference to Matrix<{}>, found {:?}", stringify!($kind), stringify!($kind), inner),
-              id: line!(),
-              kind: MechErrorKind::UnhandledFunctionArgumentKind,
-            }),
-          },
-          _ => Err(MechError {
-            file: file!().to_string(),
-            tokens: vec![],
-            msg: format!("Expected a Matrix<{}> or MutableReference to Matrix<{}>, found {:?}", stringify!($kind), stringify!($kind), arg),
-            id: line!(),
-            kind: MechErrorKind::UnhandledFunctionArgumentKind,
-          }),
-        }
-      }
-
       let arguments = $args;   
       let rows = arguments[0].shape()[0];
       let columns:usize = arguments.iter().fold(0, |acc, x| acc + x.shape()[1]);
@@ -1223,13 +1136,6 @@ macro_rules! impl_horzcat_arms {
               _ => todo!(),
             }
           } 
-          #[cfg(feature = "RowVectorD")]
-          (2,1,n) => {
-            let mut out = RowDVector::from_element(n,$default);
-            let e0 = extract_matrix(&arguments[0])?;
-            let e1 = extract_matrix(&arguments[1])?;
-            return Ok(Box::new(HorizontalConcatenateRD2 { e0, e1, out: new_ref(out) }));
-          }
           #[cfg(feature = "RowVector3")]
           (3,1,3) => {  
             let mut out = RowVector3::from_element($default);
@@ -1416,14 +1322,6 @@ macro_rules! impl_horzcat_arms {
               }
               _ => todo!()
             }
-          }
-          #[cfg(feature = "RowVectorD")]
-          (3,1,n) => {
-            let mut out: RowDVector<$kind> = RowDVector::from_element(n, $default);
-            let e0 = extract_matrix(&arguments[0])?;
-            let e1 = extract_matrix(&arguments[1])?;
-            let e2 = extract_matrix(&arguments[2])?;
-            return Ok(Box::new(HorizontalConcatenateRD3 { e0, e1, e2, out: new_ref(out) }));
           }
           #[cfg(feature = "RowVector4")]
           (4,1,4) => {
@@ -1617,15 +1515,6 @@ macro_rules! impl_horzcat_arms {
             }
           }
           #[cfg(feature = "RowVectorD")]
-          (4,1,n) => {
-            let mut out = RowDVector::from_element(n,$default);
-            let e0 = extract_matrix(&arguments[0])?;
-            let e1 = extract_matrix(&arguments[1])?;
-            let e2 = extract_matrix(&arguments[2])?;
-            let e3 = extract_matrix(&arguments[3])?;
-            return Ok(Box::new(HorizontalConcatenateRD4 { e0, e1, e2, e3, out: new_ref(out) }));
-          }
-          #[cfg(feature = "RowVectorD")]
           (m,1,n) => {
             let mut out = RowDVector::from_element(n,$default);
             let mut matrix_args: Vec<(Box<dyn CopyMat<$kind>>,usize)> = vec![];
@@ -1636,6 +1525,10 @@ macro_rules! impl_horzcat_arms {
                 Value::[<$kind:camel>](e0) => {
                   scalar_args.push((e0.clone(),i));
                   i += 1;
+                }
+                Value::[<Matrix $kind:camel>](e0) => {
+                  matrix_args.push((e0.get_copyable_matrix(),i));
+                  i += e0.shape()[1];
                 }
                 Value::MutableReference(e0) => {
                   match e0.borrow().clone() {
@@ -1993,15 +1886,20 @@ fn impl_horzcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   //let same = kinds.iter().all(|x| *x == target_kind);
   let kinds: Vec<ValueKind> = arguments.iter().map(|x| x.kind()).collect::<Vec<ValueKind>>();
   let target_kind = kinds[0].clone();
-  if ValueKind::is_compatible(target_kind.clone(), ValueKind::F64)  { impl_horzcat_arms!(F64,arguments,F64::zero())
+         if ValueKind::is_compatible(target_kind.clone(), ValueKind::F64)  { impl_horzcat_arms!(F64,arguments,F64::zero())
   } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::F32)  { impl_horzcat_arms!(F32,arguments,F32::zero())
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U8)  { impl_horzcat_arms!(u8,arguments,u8::zero())    
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U8)   { impl_horzcat_arms!(u8,arguments,u8::zero())    
   } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U16)  { impl_horzcat_arms!(u16,arguments,u16::zero())    
   } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U32)  { impl_horzcat_arms!(u32,arguments,u32::zero())    
   } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U64)  { impl_horzcat_arms!(u64,arguments,u64::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U128)  { impl_horzcat_arms!(u128,arguments,u128::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::Bool)  { impl_horzcat_arms!(bool,arguments,false)
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::String)  { 
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U128) { impl_horzcat_arms!(u128,arguments,u128::zero())  
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I8)   { impl_horzcat_arms!(i8,arguments,i8::zero())  
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I16)   { impl_horzcat_arms!(i16,arguments,i16::zero())
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I32)   { impl_horzcat_arms!(i32,arguments,i32::zero())
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I64)   { impl_horzcat_arms!(i64,arguments,i64::zero())
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I128)  { impl_horzcat_arms!(i128,arguments,i128::zero())
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::Bool) { impl_horzcat_arms!(bool,arguments,false)
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::String) { 
     impl_horzcat_arms!(String,arguments,"".to_string())    
   } else {
     return Err(MechError {
