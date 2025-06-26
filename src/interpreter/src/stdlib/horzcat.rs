@@ -947,6 +947,30 @@ macro_rules! impl_horzcat_arms {
   ($kind:ident, $args:expr, $default:expr) => {
     paste!{
     {
+
+      fn extract_matrix(arg: &Value) -> MResult<Box<dyn CopyMat<$kind>>> {
+        match arg {
+          Value::[<Matrix $kind:camel>](m) => Ok(m.get_copyable_matrix()),
+          Value::MutableReference(inner) => match &*inner.borrow() {
+            Value::[<Matrix $kind:camel>](m) => Ok(m.get_copyable_matrix()),
+            _ => Err(MechError {
+              file: file!().to_string(),
+              tokens: vec![],
+              msg: format!("Expected a Matrix<{}> or MutableReference to Matrix<{}>, found {:?}", stringify!($kind), stringify!($kind), inner),
+              id: line!(),
+              kind: MechErrorKind::UnhandledFunctionArgumentKind,
+            }),
+          },
+          _ => Err(MechError {
+            file: file!().to_string(),
+            tokens: vec![],
+            msg: format!("Expected a Matrix<{}> or MutableReference to Matrix<{}>, found {:?}", stringify!($kind), stringify!($kind), arg),
+            id: line!(),
+            kind: MechErrorKind::UnhandledFunctionArgumentKind,
+          }),
+        }
+      }
+
       let arguments = $args;   
       let rows = arguments[0].shape()[0];
       let columns:usize = arguments.iter().fold(0, |acc, x| acc + x.shape()[1]);
@@ -958,6 +982,7 @@ macro_rules! impl_horzcat_arms {
           ValueKind::Reference(_) => true,
           _ => false,
       }});
+
       if no_refs {
         let mut mat: Vec<$kind> = Vec::new();
         for v in arguments.iter() {
@@ -1201,19 +1226,9 @@ macro_rules! impl_horzcat_arms {
           #[cfg(feature = "RowVectorD")]
           (2,1,n) => {
             let mut out = RowDVector::from_element(n,$default);
-            match &arguments[..] {
-              [Value::MutableReference(e0),Value::MutableReference(e1)] => {
-                match (&*e0.borrow(),&*e1.borrow()) {
-                  (Value::[<Matrix $kind:camel>](e0),Value::[<Matrix $kind:camel>](e1)) => {
-                    let e0 = e0.get_copyable_matrix();
-                    let e1 = e1.get_copyable_matrix();
-                    return Ok(Box::new(HorizontalConcatenateRD2{e0: e0, e1: e1, out: new_ref(out)}));
-                  }
-                  _ => todo!(),
-                }
-              }
-              _ => todo!(),
-            }
+            let e0 = extract_matrix(&arguments[0])?;
+            let e1 = extract_matrix(&arguments[1])?;
+            return Ok(Box::new(HorizontalConcatenateRD2 { e0, e1, out: new_ref(out) }));
           }
           #[cfg(feature = "RowVector3")]
           (3,1,3) => {  
@@ -1404,21 +1419,11 @@ macro_rules! impl_horzcat_arms {
           }
           #[cfg(feature = "RowVectorD")]
           (3,1,n) => {
-            let mut out = RowDVector::from_element(n,$default);
-            match &arguments[..] {
-              [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2)] => {
-                match (e0.borrow().clone(),e1.borrow().clone(),e2.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](e0),Value::[<Matrix $kind:camel>](e1),Value::[<Matrix $kind:camel>](e2)) => {
-                    let e0 = e0.get_copyable_matrix();
-                    let e1 = e1.get_copyable_matrix();
-                    let e2 = e2.get_copyable_matrix();
-                    return Ok(Box::new(HorizontalConcatenateRD3{e0: e0, e1: e1, e2: e2, out: new_ref(out)}));
-                  }
-                  _ => todo!(),
-                }
-              }
-              _ => todo!(),
-            }
+            let mut out: RowDVector<$kind> = RowDVector::from_element(n, $default);
+            let e0 = extract_matrix(&arguments[0])?;
+            let e1 = extract_matrix(&arguments[1])?;
+            let e2 = extract_matrix(&arguments[2])?;
+            return Ok(Box::new(HorizontalConcatenateRD3 { e0, e1, e2, out: new_ref(out) }));
           }
           #[cfg(feature = "RowVector4")]
           (4,1,4) => {
@@ -1614,21 +1619,11 @@ macro_rules! impl_horzcat_arms {
           #[cfg(feature = "RowVectorD")]
           (4,1,n) => {
             let mut out = RowDVector::from_element(n,$default);
-            match &arguments[..] {
-              [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2), Value::MutableReference(e3)] => {
-                match (e0.borrow().clone(), e1.borrow().clone(), e2.borrow().clone(), e3.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](e0),Value::[<Matrix $kind:camel>](e1),Value::[<Matrix $kind:camel>](e2),Value::[<Matrix $kind:camel>](e3)) => {
-                    let e0 = e0.get_copyable_matrix();
-                    let e1 = e1.get_copyable_matrix();
-                    let e2 = e2.get_copyable_matrix();
-                    let e3 = e3.get_copyable_matrix();
-                    return Ok(Box::new(HorizontalConcatenateRD4{e0: e0, e1: e1, e2: e2, e3: e3, out: new_ref(out)}));
-                  }
-                  _ => todo!(),
-                }
-              }
-              _ => todo!(),
-            }
+            let e0 = extract_matrix(&arguments[0])?;
+            let e1 = extract_matrix(&arguments[1])?;
+            let e2 = extract_matrix(&arguments[2])?;
+            let e3 = extract_matrix(&arguments[3])?;
+            return Ok(Box::new(HorizontalConcatenateRD4 { e0, e1, e2, e3, out: new_ref(out) }));
           }
           #[cfg(feature = "RowVectorD")]
           (m,1,n) => {
@@ -1873,7 +1868,7 @@ macro_rules! impl_horzcat_arms {
             }
           }
           #[cfg(feature = "Matrix2x3")]
-          (3, 2, 3) => {
+          (3,2,3) => {
             let mut out = Matrix2x3::from_element($default);
             match &arguments[..] {
               [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2)] => {
@@ -1887,7 +1882,7 @@ macro_rules! impl_horzcat_arms {
             }
           }
           #[cfg(feature = "Matrix3")]
-          (3, 3, 3) => {
+          (3,3,3) => {
             let mut out = Matrix3::from_element($default);
             match &arguments[..] {
               [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2)] => {
@@ -1901,7 +1896,7 @@ macro_rules! impl_horzcat_arms {
             }
           }
           #[cfg(feature = "Matrix4")]
-          (3, 4, 4) => {
+          (3,4,4) => {
             let mut out = Matrix4::from_element($default);
             match &arguments[..] {
               [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2)] => {
@@ -1919,7 +1914,7 @@ macro_rules! impl_horzcat_arms {
             }
           }
           #[cfg(feature = "MatrixD")]
-          (3, m, n) => {
+          (3,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             match &arguments[..] {
               [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2)] => {
@@ -1937,7 +1932,7 @@ macro_rules! impl_horzcat_arms {
             }
           }
           #[cfg(feature = "Matrix4")]
-          (4, 4, 4) => {
+          (4,4,4) => {
             let mut out = Matrix4::from_element($default);
             match &arguments[..] {
               [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2), Value::MutableReference(e3)] => {
@@ -1951,7 +1946,7 @@ macro_rules! impl_horzcat_arms {
             }
           }
           #[cfg(feature = "MatrixD")]
-          (4, m, n) => {
+          (4,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             match &arguments[..] {
               [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2), Value::MutableReference(e3)] => {
@@ -1970,7 +1965,7 @@ macro_rules! impl_horzcat_arms {
             }
           }
           #[cfg(feature = "MatrixD")]
-          (l, m, n) => {
+          (l,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             let mut args = vec![];
             for arg in arguments {
