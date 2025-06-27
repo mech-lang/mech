@@ -53,7 +53,8 @@ members = [
   "src/syntax",
   "src/interpreter",
   "src/wasm",
-  "notebook"]
+  "notebook",
+  "mech-app/src-tauri"]
 
 [build-dependencies]
 winres = "0.1.12"
