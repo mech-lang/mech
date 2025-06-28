@@ -172,8 +172,18 @@ document.querySelectorAll('.mech-program-subtitle.toc').forEach(entry => {{
 
       // Now grab the h2, h3, and h4 elements within that section
       const h3s = Array.from(section.querySelectorAll('h3'));
+      const h4s = Array.from(section.querySelectorAll('h4'));
 
-      if (tag === "H4") {{
+      if (tag === "H5") {{
+        const closestH4 = h4s.reverse().find(h4 => h4.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING);
+        const H4Nav = Array.from(navItems).find(item => {{
+            const link = item.querySelector("a[href]");
+            return link && link.getAttribute("href") === `#${{closestH4.id}}`;
+        }});
+        closestH4.classList.add("active");
+      }}
+
+      if (tag === "H4" || tag === "H5") {{
         const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING);
         const H3Nav = Array.from(navItems).find(item => {{
             const link = item.querySelector("a[href]");
@@ -276,8 +286,29 @@ entries
 
           // Now grab the h2, h3, and h4 elements within that section
           const h3s = Array.from(section.querySelectorAll('h3'));
+          const h4s = Array.from(section.querySelectorAll('h4'));
 
-          if (tag === "H4") {{
+          if (tag === "H5") {{
+            const closestH4 = h4s.reverse().find(h4 => h4.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
+            const H4Nav = Array.from(navItems).find(item => {{
+                const link = item.querySelector("a[href]");
+                return link && link.getAttribute("href") === `#${{closestH4.id}}`;
+            }});
+            if (H4Nav) {{
+              H4Nav.classList.add("active");
+              const h4_id = H4Nav.getAttribute("section");
+              all_the_headers.forEach(item => {{
+                const item_id = item.getAttribute("section");
+                if (item_id === h4_id) {{
+                  item.classList.add("visible");
+                }} else {{
+                  item.classList.remove("visible");
+                }}
+              }});
+            }}
+          }}
+
+          if (tag === "H4" || tag == "H5") {{
             const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
             const H3Nav = Array.from(navItems).find(item => {{
               const link = item.querySelector("a[href]");
@@ -1535,7 +1566,7 @@ window.addEventListener("scroll", () => {{
       }
     }
     let output = match &node.output {
-      Some(kind) => format!(" {} {}", "⇒", self.kind_annotation(kind)),
+      Some(kind) => format!(" {} {}", "⇒", self.kind_annotation(&kind.kind)),
       None => "".to_string(),
     };
     let mut states = "".to_string();
@@ -2019,7 +2050,7 @@ window.addEventListener("scroll", () => {{
   pub fn field(&mut self, node: &Field) -> String {
     let name = node.name.to_string();
     let kind = if let Some(kind) = &node.kind {
-      self.kind_annotation(kind)
+      self.kind_annotation(&kind.kind)
     } else {
       "".to_string()
     };
@@ -2152,7 +2183,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn var(&mut self, node: &Var) -> String {
     let annotation = if let Some(kind) = &node.kind {
-      self.kind_annotation(kind)
+      self.kind_annotation(&kind.kind)
     } else {
       "".to_string()
     };
@@ -2165,8 +2196,8 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
     }
   }
 
-  pub fn kind_annotation(&mut self, node: &KindAnnotation) -> String {
-    let kind = self.kind(&node.kind);
+  pub fn kind_annotation(&mut self, node: &Kind) -> String {
+    let kind = self.kind(node);
     if self.html {
       format!("<span class=\"mech-kind-annotation\"><{}></span>",kind)
     } else {
@@ -2390,14 +2421,15 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn literal(&mut self, node: &Literal) -> String {
     let l = match node {
-      Literal::Empty(token) => self.empty(token),
-      Literal::Boolean(token) => self.boolean(token),
-      Literal::Number(number) => self.number(number),
+      Literal::Empty(tkn) => self.empty(tkn),
+      Literal::Boolean(tkn) => self.boolean(tkn),
+      Literal::Number(num) => self.number(num),
       Literal::String(mech_string) => self.string(mech_string),
-      Literal::Atom(atom) => self.atom(atom),
+      Literal::Atom(atm) => self.atom(atm),
+      Literal::Kind(knd) => self.kind_annotation(knd),
       Literal::TypedLiteral((boxed_literal, kind_annotation)) => {
         let literal = self.literal(boxed_literal);
-        let annotation = self.kind_annotation(kind_annotation);
+        let annotation = self.kind_annotation(&kind_annotation.kind);
         format!("{}{}", literal, annotation)
       }
     };
