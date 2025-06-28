@@ -10,8 +10,14 @@ pub fn literal(ltrl: &Literal, p: &Interpreter) -> MResult<Value> {
     Literal::Number(num) => Ok(number(num)),
     Literal::String(strng) => Ok(string(strng)),
     Literal::Atom(atm) => Ok(atom(atm)),
+    Literal::Kind(knd) => kind_value(knd, p),
     Literal::TypedLiteral((ltrl,kind)) => typed_literal(ltrl,kind,p),
   }
+}
+
+pub fn kind_value(knd: &NodeKind, p: &Interpreter) -> MResult<Value> {
+  let kind = kind_annotation(knd, p)?;
+  Ok(Value::Kind(kind.to_value_kind(p.functions())?))
 }
 
 pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
