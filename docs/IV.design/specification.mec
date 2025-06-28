@@ -281,12 +281,13 @@ Mech supports several types of literals, which are used to represent values in t
       - `f32` - 32-bit floating-point number
       - `f64` - 64-bit floating-point number
   - **Imaginary** - Represent imaginary components of complex numbers.
-- **String** - A sequence of UTF-8 characters representing text.
-  - `string` - A sequence of characters enclosed in double quotes.
-- **Boolean** - Represents logical truth values.
+- **String**
+      - `string` - A sequence of UTF-8 characters representing text.
+- **Boolean** 
+      - `bool` - Represents logical truth values.
 - **Atom** - A symbolic constant, often used for tags or enums.
-- **Empty** - Represents an empty value, placeholder, or the absence of a value.
-- **Kind** - A meta-type that categorizes types
+- **Empty**
+      - `_` - Represents an empty value, placeholder, or the absence of a value.
 
 (4.1) Kinds
 
@@ -334,15 +335,12 @@ Kinds are used to specify the type of a literal or expression in Mech. Kinds are
 
 **Examples:**
 
-```
 <_>             -- Empty         
 <`A>            -- Atom         
 <{A:B}>         -- Map          
-<(A,B)=(C,D)>   -- Function                    
 <{A}>           -- Set              
 <[A]>           -- Matrix              
 <(A,B,C)>       -- Tuple              
-```
 
 (4.2) Numbers
 
@@ -364,7 +362,7 @@ An integer literal is a sequence of digits representing a whole number. Mech sup
 - Octal: Prefixed with 0o, containing digits 0-7 (e.g., 0o755).
 - Binary: Prefixed with 0b, containing only 0 and 1 (e.g., 0b1010).
 
-**Examples:**
+(4.2.1.1) Examples
 
   42                  -- decimal
   0d42                -- decimal
@@ -373,13 +371,15 @@ An integer literal is a sequence of digits representing a whole number. Mech sup
   0o12345670          -- octal 
   0b100110101         -- binary
 
+(4.2.1.2) Kind
+
 By default, Mech can represent integers in the following data types:
 
 - Signed: `i8`, `i16`, `i32`, `i64`, `i128`
 - Unsigned: `u8`, `u16`, `u32`, `u64`, `u128`
 - Float: `f32`, `f64`
 
-Unless specified or inferred, the default data type for integer literals is `f64`. This is different from many systems languages but consist with other languages like Python, JavaScript, and Ruby.
+Unless specified or inferred, the default data type for integer literals is `f64`. This is different from many systems languages but consist with other languages like Matlab, Python, and Javascript.
 
 (4.2.2) Fractional Numbers
 
@@ -657,9 +657,14 @@ A Set is defined using curly braces `{}` and contains a comma-separated list of 
 
 (5.2.4) Kind
 
-```
-<{u8}:3>
-```
+The kind of a set consists of:
+
+- The kind of the elements
+- The number of elements, which can be dynamic or fixed
+
+<{u8}>            -- Generic set of unsigned 8-bit integers
+<{u8}:3>          -- Set of 3 unsigned 8-bit integers
+<{{i8}}>          -- Set of sets of signed 8-bit integers 
 
 (5.3) Map
 
@@ -696,27 +701,30 @@ A Map is defined using curly braces `{}` and contains a set of key-value mapping
 
 (5.3.3) Examples
 
-```
-- Empty:             {_:_}
-- Single element:    {"a":1}
-- Multiple elements: {"a":10, "b":20, "c": 30}
-- Nested:            {"a":{"a":10}}
-- Multiline:
-    { "a" : 10 
-      "b" : 20
-      "c" : 30 }
-```
+{_:_}                       -- Empty map
+{"a": 1}                    -- Map with a single key-value pair
+{1: 0xA, 2: 0xB, 3: 0xC}    -- Map with multiple key-value pairs
+{"a": {"b": 10}}            -- Nested map
+{ "a" : 10                 
+  "b" : 20
+  "c" : 30 }                -- Multiline map
 
 **Edge Cases**
 
 - `{_:_}` represents an empty map.
-- Duplicate keys result in an overwrite of the previous value, as long as the map is mutable.
-- `{1: "hello", 2: "world"}` is valid, but `{1: "hello", "one": "world"}` results in a type error if homogeneity is enforced.
+- If the map is mutable, inserting a duplicate key overwrites the previous value
+- `{1: "hello", 2: "world"}` is valid, but `{1: "hello", "one": "world"}` results in an error, as the keys are not homogenous.
 
 (5.3.4) Kind
 
-- A map of strings to u8s: `<{string:u8}>`
-- A map of strings to a map of strings to u8: `<{string:{string:u8}}>`
+The kind of a map consists of:
+
+- The kind of the keys
+- The kind of the values
+- The number of key-value pairs, which can be dynamic or fixed
+
+<{string:u8}>           -- A map of strings to unsigned 8-bit integers
+<{string:{string:u8}}>  -- A map of strings to a map of strings to unsigned 8-bit integers
 
 (5.4) Tuple
 
