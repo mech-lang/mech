@@ -447,8 +447,8 @@ where
 
 #[derive(Debug)]
 struct HorizontalConcatenateSM1<T> {
-  e0: Ref<T>,           // scalar
-  e1: Ref<Matrix1<T>>,  // Matrix1
+  e0: Ref<T>,         
+  e1: Ref<Matrix1<T>>,
   out: Ref<RowVector2<T>>,
 }
 impl<T> MechFunction for HorizontalConcatenateSM1<T>
