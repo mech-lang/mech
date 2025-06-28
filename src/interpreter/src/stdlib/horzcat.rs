@@ -459,33 +459,125 @@ macro_rules! horzcat_m1s {
 }
 horzcat_one_arg!(HorizontalConcatenateM1S, Matrix1, RowVector2, horzcat_m1s);
 
-macro_rules! horzcat_sssm1 {
-  ($out:expr, $e0:expr) => {
-    $out[3] = $e0[0].clone();
-  };
+#[derive(Debug)]
+struct HorizontalConcatenateSSSM1<T> {
+  e0: Ref<T>,
+  e1: Ref<T>,
+  e2: Ref<T>,
+  e3: Ref<Matrix1<T>>,
+  out: Ref<RowVector4<T>>,
 }
-horzcat_one_arg!(HorizontalConcatenateSSSM1, Matrix1, RowVector4, horzcat_sssm1);
+impl<T> MechFunction for HorizontalConcatenateSSSM1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
+  fn solve(&self) { 
+    unsafe {
+      let e0_val = self.e0.borrow().clone();
+      let e1_val = self.e1.borrow().clone();
+      let e2_val = self.e2.borrow().clone();
+      let e3_ptr = (*(self.e3.as_ptr())).clone();
+      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      out_ptr[0] = e0_val;
+      out_ptr[1] = e1_val;
+      out_ptr[2] = e2_val;
+      out_ptr[3] = e3_ptr[0].clone();
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
 
-macro_rules! horzcat_ssm1s {
-  ($out:expr, $e0:expr) => {
-    $out[2] = $e0[0].clone();
-  };
+#[derive(Debug)]
+struct HorizontalConcatenateSSM1S<T> {
+  e0: Ref<T>,
+  e1: Ref<T>,
+  e2: Ref<Matrix1<T>>,
+  e3: Ref<T>,
+  out: Ref<RowVector4<T>>,
 }
-horzcat_one_arg!(HorizontalConcatenateSSM1S, Matrix1, RowVector4, horzcat_ssm1s);
+impl<T> MechFunction for HorizontalConcatenateSSM1S<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
+  fn solve(&self) { 
+    unsafe {
+      let e0_val = self.e0.borrow().clone();
+      let e1_val = self.e1.borrow().clone();
+      let e2_ptr = (*(self.e2.as_ptr())).clone();
+      let e3_val = self.e3.borrow().clone();
+      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      out_ptr[0] = e0_val;
+      out_ptr[1] = e1_val;
+      out_ptr[2] = e2_ptr[0].clone();
+      out_ptr[3] = e3_val;
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
 
-macro_rules! horzcat_sm1ss {
-  ($out:expr, $e0:expr) => {
-    $out[1] = $e0[0].clone();
-  };
+#[derive(Debug)]
+struct HorizontalConcatenateSM1SS<T> {
+  e0: Ref<T>,
+  e1: Ref<Matrix1<T>>,
+  e2: Ref<T>,
+  e3: Ref<T>,
+  out: Ref<RowVector4<T>>,
 }
-horzcat_one_arg!(HorizontalConcatenateSM1SS, Matrix1, RowVector4, horzcat_sm1ss);
+impl<T> MechFunction for HorizontalConcatenateSM1SS<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
+  fn solve(&self) { 
+    unsafe {
+      let e0_val = self.e0.borrow().clone();
+      let e1_ptr = (*(self.e1.as_ptr())).clone();
+      let e2_val = self.e2.borrow().clone();
+      let e3_val = self.e3.borrow().clone();
+      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      out_ptr[0] = e0_val;
+      out_ptr[1] = e1_ptr[0].clone();
+      out_ptr[2] = e2_val;
+      out_ptr[3] = e3_val;
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
 
-macro_rules! horzcat_m1sss {
-  ($out:expr, $e0:expr) => {
-    $out[0] = $e0[0].clone();
-  };
+#[derive(Debug)]
+struct HorizontalConcatenateM1SSS<T> {
+  e0: Ref<Matrix1<T>>,
+  e1: Ref<T>,
+  e2: Ref<T>,
+  e3: Ref<T>,
+  out: Ref<RowVector4<T>>,
 }
-horzcat_one_arg!(HorizontalConcatenateM1SSS, Matrix1, RowVector4, horzcat_m1sss);
+impl<T> MechFunction for HorizontalConcatenateM1SSS<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
+  fn solve(&self) { 
+    unsafe {
+      let e0_ptr = (*(self.e0.as_ptr())).clone();
+      let e1_val = self.e1.borrow().clone();
+      let e2_val = self.e2.borrow().clone();
+      let e3_val = self.e3.borrow().clone();
+      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      out_ptr[0] = e0_ptr[0].clone();
+      out_ptr[1] = e1_val;
+      out_ptr[2] = e2_val;
+      out_ptr[3] = e3_val;
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
 
 #[derive(Debug)]
 struct HorizontalConcatenateSR3<T> {
@@ -879,12 +971,36 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
   
-macro_rules! horzcat_sm1sm1 {
-  ($out:expr, $e0:expr, $e1:expr) => {
-    $out[1] = $e0[0].clone();
-    $out[3] = $e1[0].clone();
-  };} 
-horzcat_two_args!(HorizontalConcatenateSM1SM1,Matrix1,Matrix1,RowVector4,horzcat_sm1sm1);
+#[derive(Debug)]
+struct HorizontalConcatenateSM1SM1<T> {
+  e0: Ref<T>,          
+  e1: Ref<Matrix1<T>>, 
+  e2: Ref<T>,          
+  e3: Ref<Matrix1<T>>, 
+  out: Ref<RowVector4<T>>,
+}
+
+impl<T> MechFunction for HorizontalConcatenateSM1SM1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
+  fn solve(&self) {
+    unsafe {
+      let e0_val = self.e0.borrow().clone();
+      let e1_ptr = (*(self.e1.as_ptr())).clone();
+      let e2_val = self.e2.borrow().clone();
+      let e3_ptr = (*(self.e3.as_ptr())).clone();
+      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      out_ptr[0] = e0_val;
+      out_ptr[1] = e1_ptr[0].clone();
+      out_ptr[2] = e2_val;
+      out_ptr[3] = e3_ptr[0].clone();
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
 
 #[derive(Debug)]
 struct HorizontalConcatenateM1R2S<T> {
@@ -999,45 +1115,155 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
-macro_rules! horzcat_ssm1m1 {
-  ($out:expr, $e0:expr, $e1:expr) => {
-    $out[2] = $e0[0].clone();
-    $out[3] = $e1[0].clone();
-  };
+#[derive(Debug)]
+struct HorizontalConcatenateSSM1M1<T> {
+  e0: Ref<T>,
+  e1: Ref<T>,
+  e2: Ref<Matrix1<T>>,
+  e3: Ref<Matrix1<T>>,
+  out: Ref<RowVector4<T>>,
 }
-horzcat_two_args!(HorizontalConcatenateSSM1M1, Matrix1, Matrix1, RowVector4, horzcat_ssm1m1);
+impl<T> MechFunction for HorizontalConcatenateSSM1M1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
+  fn solve(&self) {
+    unsafe {
+      let e0_val = self.e0.borrow().clone();
+      let e1_val = self.e1.borrow().clone();
+      let e2_ptr = (*(self.e2.as_ptr())).clone();
+      let e3_ptr = (*(self.e3.as_ptr())).clone();
+      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      out_ptr[0] = e0_val;
+      out_ptr[1] = e1_val;
+      out_ptr[2] = e2_ptr[0].clone();
+      out_ptr[3] = e3_ptr[0].clone();
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
 
-macro_rules! horzcat_m1m1ss {
-  ($out:expr, $e0:expr, $e1:expr) => {
-    $out[0] = $e0[0].clone();
-    $out[1] = $e1[0].clone();
-  };
+#[derive(Debug)]
+struct HorizontalConcatenateM1M1SS<T> {
+  e0: Ref<Matrix1<T>>,
+  e1: Ref<Matrix1<T>>,
+  e2: Ref<T>,
+  e3: Ref<T>,
+  out: Ref<RowVector4<T>>,
 }
-horzcat_two_args!(HorizontalConcatenateM1M1SS, Matrix1, Matrix1, RowVector4, horzcat_m1m1ss);
+impl<T> MechFunction for HorizontalConcatenateM1M1SS<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
+  fn solve(&self) {
+    unsafe {
+      let e0_ptr = (*(self.e0.as_ptr())).clone();
+      let e1_ptr = (*(self.e1.as_ptr())).clone();
+      let e2_val = self.e2.borrow().clone();
+      let e3_val = self.e3.borrow().clone();
+      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      out_ptr[0] = e0_ptr[0].clone();
+      out_ptr[1] = e1_ptr[0].clone();
+      out_ptr[2] = e2_val;
+      out_ptr[3] = e3_val;
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
 
-macro_rules! horzcat_sm1m1s {
-  ($out:expr, $e0:expr, $e1:expr) => {
-    $out[1] = $e0[0].clone();
-    $out[2] = $e1[0].clone();
-  };
+#[derive(Debug)]
+struct HorizontalConcatenateSM1M1S<T> {
+  e0: Ref<T>,
+  e1: Ref<Matrix1<T>>,
+  e2: Ref<Matrix1<T>>,
+  e3: Ref<T>,
+  out: Ref<RowVector4<T>>,
 }
-horzcat_two_args!(HorizontalConcatenateSM1M1S, Matrix1, Matrix1, RowVector4, horzcat_sm1m1s);
+impl<T> MechFunction for HorizontalConcatenateSM1M1S<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
+  fn solve(&self) {
+    unsafe {
+      let e0_val = self.e0.borrow().clone();
+      let e1_ptr = (*(self.e1.as_ptr())).clone();
+      let e2_ptr = (*(self.e2.as_ptr())).clone();
+      let e3_val = self.e3.borrow().clone();
+      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      out_ptr[0] = e0_val;
+      out_ptr[1] = e1_ptr[0].clone();
+      out_ptr[2] = e2_ptr[0].clone();
+      out_ptr[3] = e3_val;
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
 
-macro_rules! horzcat_m1ssm1 {
-  ($out:expr, $e0:expr, $e1:expr) => {
-    $out[0] = $e0[0].clone();
-    $out[3] = $e1[0].clone();
-  };
+#[derive(Debug)]
+struct HorizontalConcatenateM1SSM1<T> {
+  e0: Ref<Matrix1<T>>,
+  e1: Ref<T>,
+  e2: Ref<T>,
+  e3: Ref<Matrix1<T>>,
+  out: Ref<RowVector4<T>>,
 }
-horzcat_two_args!(HorizontalConcatenateM1SSM1, Matrix1, Matrix1, RowVector4, horzcat_m1ssm1);
+impl<T> MechFunction for HorizontalConcatenateM1SSM1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
+  fn solve(&self) {
+    unsafe {
+      let e0_ptr = (*(self.e0.as_ptr())).clone();
+      let e1_val = self.e1.borrow().clone();
+      let e2_val = self.e2.borrow().clone();
+      let e3_ptr = (*(self.e3.as_ptr())).clone();
+      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      out_ptr[0] = e0_ptr[0].clone();
+      out_ptr[1] = e1_val;
+      out_ptr[2] = e2_val;
+      out_ptr[3] = e3_ptr[0].clone();
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
 
-macro_rules! horzcat_m1sm1s {
-  ($out:expr, $e0:expr, $e1:expr) => {
-    $out[0] = $e0[0].clone();
-    $out[2] = $e1[0].clone();
-  };
+#[derive(Debug)]
+struct HorizontalConcatenateM1SM1S<T> {
+  e0: Ref<Matrix1<T>>,
+  e1: Ref<T>,
+  e2: Ref<Matrix1<T>>,
+  e3: Ref<T>,
+  out: Ref<RowVector4<T>>,
 }
-horzcat_two_args!(HorizontalConcatenateM1SM1S, Matrix1, Matrix1, RowVector4, horzcat_m1sm1s);
+impl<T> MechFunction for HorizontalConcatenateM1SM1S<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
+  fn solve(&self) {
+    unsafe {
+      let e0_ptr = (*(self.e0.as_ptr())).clone();
+      let e1_val = self.e1.borrow().clone();
+      let e2_ptr = (*(self.e2.as_ptr())).clone();
+      let e3_val = self.e3.borrow().clone();
+      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      out_ptr[0] = e0_ptr[0].clone();
+      out_ptr[1] = e1_val;
+      out_ptr[2] = e2_ptr[0].clone();
+      out_ptr[3] = e3_val;
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
 
 macro_rules! horzcat_m1r2 {
   ($out:expr, $e0:expr, $e1:expr) => {
@@ -1096,41 +1322,125 @@ macro_rules! horzcat_r2m1m1 {
 }
 horzcat_three_args!(HorizontalConcatenateR2M1M1, RowVector2, Matrix1, Matrix1, RowVector4, horzcat_r2m1m1);
 
-macro_rules! horzcat_sm1m1m1 {
-  ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
-    $out[1] = $e0[0].clone();
-    $out[2] = $e1[0].clone();
-    $out[3] = $e2[0].clone();
-  };
+#[derive(Debug)]
+struct HorizontalConcatenateSM1M1M1<T> {
+  e0: Ref<T>,
+  e1: Ref<Matrix1<T>>,
+  e2: Ref<Matrix1<T>>,
+  e3: Ref<Matrix1<T>>,
+  out: Ref<RowVector4<T>>,
 }
-horzcat_three_args!(HorizontalConcatenateSM1M1M1, Matrix1, Matrix1, Matrix1, RowVector4, horzcat_sm1m1m1);
+impl<T> MechFunction for HorizontalConcatenateSM1M1M1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
+  fn solve(&self) { 
+    unsafe {
+      let e0_val = self.e0.borrow().clone();
+      let e1_ptr = (*(self.e1.as_ptr())).clone();
+      let e2_ptr = (*(self.e2.as_ptr())).clone();
+      let e3_ptr = (*(self.e3.as_ptr())).clone();
+      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      out_ptr[0] = e0_val;
+      out_ptr[1] = e1_ptr[0].clone();
+      out_ptr[2] = e2_ptr[0].clone();
+      out_ptr[3] = e3_ptr[0].clone();
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
 
-macro_rules! horzcat_m1sm1m1 {
-  ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
-    $out[0] = $e0[0].clone();
-    $out[2] = $e1[0].clone();
-    $out[3] = $e2[0].clone();
-  };
+#[derive(Debug)]
+struct HorizontalConcatenateM1SM1M1<T> {
+  e0: Ref<Matrix1<T>>,
+  e1: Ref<T>,
+  e2: Ref<Matrix1<T>>,
+  e3: Ref<Matrix1<T>>,
+  out: Ref<RowVector4<T>>,
 }
-horzcat_three_args!(HorizontalConcatenateM1SM1M1, Matrix1, Matrix1, Matrix1, RowVector4, horzcat_m1sm1m1);
+impl<T> MechFunction for HorizontalConcatenateM1SM1M1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
+  fn solve(&self) { 
+    unsafe {
+      let e0_ptr = (*(self.e0.as_ptr())).clone();
+      let e1_val = self.e1.borrow().clone();
+      let e2_ptr = (*(self.e2.as_ptr())).clone();
+      let e3_ptr = (*(self.e3.as_ptr())).clone();
+      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      out_ptr[0] = e0_ptr[0].clone();
+      out_ptr[1] = e1_val;
+      out_ptr[2] = e2_ptr[0].clone();
+      out_ptr[3] = e3_ptr[0].clone();
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
 
-macro_rules! horzcat_m1m1sm1 {
-  ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
-    $out[0] = $e0[0].clone();
-    $out[1] = $e1[0].clone();
-    $out[3] = $e2[0].clone();
-  };
+#[derive(Debug)]
+struct HorizontalConcatenateM1M1SM1<T> {
+  e0: Ref<Matrix1<T>>,
+  e1: Ref<Matrix1<T>>,
+  e2: Ref<T>,
+  e3: Ref<Matrix1<T>>,
+  out: Ref<RowVector4<T>>,
 }
-horzcat_three_args!(HorizontalConcatenateM1M1SM1, Matrix1, Matrix1, Matrix1, RowVector4, horzcat_m1m1sm1);
+impl<T> MechFunction for HorizontalConcatenateM1M1SM1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
+  fn solve(&self) { 
+    unsafe {
+      let e0_ptr = (*(self.e0.as_ptr())).clone();
+      let e1_ptr = (*(self.e1.as_ptr())).clone();
+      let e2_val = self.e2.borrow().clone();
+      let e3_ptr = (*(self.e3.as_ptr())).clone();
+      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      out_ptr[0] = e0_ptr[0].clone();
+      out_ptr[1] = e1_ptr[0].clone();
+      out_ptr[2] = e2_val;
+      out_ptr[3] = e3_ptr[0].clone();
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
 
-macro_rules! horzcat_m1m1m1s {
-  ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
-    $out[0] = $e0[0].clone();
-    $out[1] = $e1[0].clone();
-    $out[2] = $e2[0].clone();
-  };
+#[derive(Debug)]
+struct HorizontalConcatenateM1M1M1S<T> {
+  e0: Ref<Matrix1<T>>,
+  e1: Ref<Matrix1<T>>,
+  e2: Ref<Matrix1<T>>,
+  e3: Ref<T>,
+  out: Ref<RowVector4<T>>,
 }
-horzcat_three_args!(HorizontalConcatenateM1M1M1S, Matrix1, Matrix1, Matrix1, RowVector4, horzcat_m1m1m1s);
+impl<T> MechFunction for HorizontalConcatenateM1M1M1S<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
+  fn solve(&self) { 
+    unsafe {
+      let e0_ptr = (*(self.e0.as_ptr())).clone();
+      let e1_ptr = (*(self.e1.as_ptr())).clone();
+      let e2_ptr = (*(self.e2.as_ptr())).clone();
+      let e3_val = self.e3.borrow().clone();
+      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      out_ptr[0] = e0_ptr[0].clone();
+      out_ptr[1] = e1_ptr[0].clone();
+      out_ptr[2] = e2_ptr[0].clone();
+      out_ptr[3] = e3_val;
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
 
 #[derive(Debug)]
 struct HorizontalConcatenateM1M1M1M1<T> {
@@ -1647,9 +1957,6 @@ macro_rules! impl_horzcat_arms {
             let a_m1 = get_m1(&arguments[0]);
             let b_m1 = get_m1(&arguments[1]);
             let c_m1 = get_m1(&arguments[2]);
-            println!("a_sc: {:?}, b_sc: {:?}, c_sc: {:?}", a_sc, b_sc, c_sc);
-            println!("a_r2: {:?}, b_r2: {:?}, c_r2: {:?}", a_r2, b_r2, c_r2);
-            println!("a_m1: {:?}, b_m1: {:?}, c_m1: {:?}", a_m1, b_m1, c_m1);
             match (a_sc, b_sc, c_sc, a_r2, b_r2, c_r2, a_m1, b_m1, c_m1) {
               (Some(ref e0), Some(ref e1), _, _, _, Some(ref e2), _, _, _) => return Ok(Box::new(HorizontalConcatenateSSR2{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: new_ref(out)})),
               (Some(ref e0), _, Some(ref e2), _, Some(ref e1), _, _, _, _) => return Ok(Box::new(HorizontalConcatenateSR2S{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: new_ref(out)})),
@@ -1669,201 +1976,32 @@ macro_rules! impl_horzcat_arms {
           #[cfg(feature = "RowVector4")]
           (4,1,4) => {
             let mut out = RowVector4::from_element($default);
-            match &arguments[..] {
-              // s s s s
-              [Value::[<$kind:camel>](e0), Value::[<$kind:camel>](e1), Value::[<$kind:camel>](e2), Value::[<$kind:camel>](e3)] => {
-                out[0] = e0.borrow().clone();
-                out[1] = e1.borrow().clone();
-                out[2] = e2.borrow().clone();
-                out[3] = e3.borrow().clone();
-                return Ok(Box::new(HorizontalConcatenateS4{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out)}));
-              }
-              // s s s m1
-              [Value::[<$kind:camel>](e0), Value::[<$kind:camel>](e1), Value::[<$kind:camel>](e2), Value::MutableReference(e3)] => {
-                match (e3.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e3))) => {
-                    out[0] = e0.borrow().clone();
-                    out[1] = e1.borrow().clone();
-                    out[2] = e2.borrow().clone();
-                    return Ok(Box::new(HorizontalConcatenateSSSM1 { e0: e3.clone(), out: new_ref(out) }));
-                  }
-                  _ => todo!(),
-                }
-              }
-
-              // s s m1 s
-              [Value::[<$kind:camel>](e0), Value::[<$kind:camel>](e1), Value::MutableReference(e2), Value::[<$kind:camel>](e3)] => {
-                match (e2.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e2))) => {
-                    out[0] = e0.borrow().clone();
-                    out[1] = e1.borrow().clone();
-                    out[3] = e3.borrow().clone();
-                    return Ok(Box::new(HorizontalConcatenateSSM1S { e0: e2.clone(), out: new_ref(out) }));
-                  }
-                  _ => todo!(),
-                }
-              }
-              
-              // s m1 s s
-              [Value::[<$kind:camel>](e0), Value::MutableReference(e1), Value::[<$kind:camel>](e2), Value::[<$kind:camel>](e3)] => {
-                match (e1.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e1))) => {
-                    out[0] = e0.borrow().clone();
-                    out[2] = e2.borrow().clone();
-                    out[3] = e3.borrow().clone();
-                    return Ok(Box::new(HorizontalConcatenateSM1SS { e0: e1.clone(), out: new_ref(out) }));
-                  }
-                  _ => todo!(),
-                }
-              }
-              // m1 s s s
-              [Value::MutableReference(e0), Value::[<$kind:camel>](e1), Value::[<$kind:camel>](e2), Value::[<$kind:camel>](e3)] => {
-                match (e0.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e0))) => {
-                    out[1] = e1.borrow().clone();
-                    out[2] = e2.borrow().clone();
-                    out[3] = e3.borrow().clone();
-                    return Ok(Box::new(HorizontalConcatenateM1SSS { e0: e0.clone(), out: new_ref(out) }));
-                  }
-                  _ => todo!(),
-                }
-              }
-              
-              // s s m1 m1
-              [Value::[<$kind:camel>](e0), Value::[<$kind:camel>](e1), Value::MutableReference(e2), Value::MutableReference(e3)] => {
-                match (e2.borrow().clone(), e3.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e2)), Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e3))) => {
-                    out[0] = e0.borrow().clone();
-                    out[1] = e1.borrow().clone();
-                    return Ok(Box::new(HorizontalConcatenateSSM1M1 { e0: e2.clone(), e1: e3.clone(), out: new_ref(out) }));
-                  }
-                  _ => todo!(),
-                }
-              }
-              
-              // m1 m1 s s
-              [Value::MutableReference(e0), Value::MutableReference(e1), Value::[<$kind:camel>](e2), Value::[<$kind:camel>](e3)] => {
-                match (e0.borrow().clone(), e1.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e0)),Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e1))) => {
-                    out[2] = e2.borrow().clone();
-                    out[3] = e3.borrow().clone();
-                    return Ok(Box::new(HorizontalConcatenateM1M1SS { e0: e0.clone(), e1: e1.clone(), out: new_ref(out) }));
-                  }
-                  _ => todo!(),
-                }
-              }
-              
-              // s m1 m1 s
-              [Value::[<$kind:camel>](e0), Value::MutableReference(e1), Value::MutableReference(e2), Value::[<$kind:camel>](e3)] => {
-                match (e1.borrow().clone(), e2.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e1)),Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e2))) => {
-                    out[0] = e0.borrow().clone();
-                    out[3] = e3.borrow().clone();
-                    return Ok(Box::new(HorizontalConcatenateSM1M1S { e0: e1.clone(), e1: e2.clone(), out: new_ref(out) }));
-                  }
-                  _ => todo!(),
-                }
-              }
-              
-              // m1 s s m1
-              [Value::MutableReference(e0), Value::[<$kind:camel>](e1), Value::[<$kind:camel>](e2), Value::MutableReference(e3)] => {
-                match (e0.borrow().clone(), e3.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e0)),Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e3))) => {
-                    out[1] = e1.borrow().clone();
-                    out[2] = e2.borrow().clone();
-                    return Ok(Box::new(HorizontalConcatenateM1SSM1 { e0: e0.clone(), e1: e3.clone(), out: new_ref(out) }));
-                  }
-                  _ => todo!(),
-                }
-              }
-              
-              // m1 s m1 s
-              [Value::MutableReference(e0), Value::[<$kind:camel>](e1), Value::MutableReference(e2), Value::[<$kind:camel>](e3)] => {
-                match (e0.borrow().clone(), e2.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e0)),Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e2))) => {
-                    out[1] = e1.borrow().clone();
-                    out[3] = e3.borrow().clone();
-                    return Ok(Box::new(HorizontalConcatenateM1SM1S { e0: e0.clone(), e1: e2.clone(), out: new_ref(out) }));
-                  }
-                  _ => todo!(),
-                }
-              }
-              
-              // s m1 s m1
-              [Value::[<$kind:camel>](e0), Value::MutableReference(e1), Value::[<$kind:camel>](e2), Value::MutableReference(e3)] => {
-                match (e1.borrow().clone(), e3.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e1)),Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e3))) => {
-                    out[0] = e0.borrow().clone();
-                    out[2] = e2.borrow().clone();
-                    return Ok(Box::new(HorizontalConcatenateSM1SM1 { e0: e1.clone(), e1: e3.clone(), out: new_ref(out) }));
-                  }
-                  _ => todo!(),
-                }
-              }
-
-              // s m1 m1 m1
-              [Value::[<$kind:camel>](e0), Value::MutableReference(e1), Value::MutableReference(e2), Value::MutableReference(e3)] => {
-                match (e1.borrow().clone(), e2.borrow().clone(), e3.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e1)),Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e2)),Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e3))) => {
-                    out[0] = e0.borrow().clone();
-                    return Ok(Box::new(HorizontalConcatenateSM1M1M1 { e0: e1.clone(), e1: e2.clone(), e2: e3.clone(), out: new_ref(out) }));
-                  }
-                  _ => todo!(),
-                }
-              }
-
-              // m1 s m1 m1
-              [Value::MutableReference(e0), Value::[<$kind:camel>](e1), Value::MutableReference(e2), Value::MutableReference(e3)] => {
-                match (e0.borrow().clone(), e2.borrow().clone(), e3.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e0)),
-                   Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e2)),
-                   Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e3))) => {
-                    out[1] = e1.borrow().clone();
-                    return Ok(Box::new(HorizontalConcatenateM1SM1M1 { e0: e0.clone(), e1: e2.clone(), e2: e3.clone(), out: new_ref(out) }));
-                  }
-                  _ => todo!(),
-                }
-              }
-
-              // m1 m1 s m1
-              [Value::MutableReference(e0), Value::MutableReference(e1), Value::[<$kind:camel>](e2), Value::MutableReference(e3)] => {
-                match (e0.borrow().clone(), e1.borrow().clone(), e3.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e0)),
-                   Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e1)),
-                   Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e3))) => {
-                    out[2] = e2.borrow().clone();
-                    return Ok(Box::new(HorizontalConcatenateM1M1SM1 { e0: e0.clone(), e1: e1.clone(), e2: e3.clone(), out: new_ref(out) }));
-                  }
-                  _ => todo!(),
-                }
-              }
-
-              // m1 m1 m1 s
-              [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2), Value::[<$kind:camel>](e3)] => {
-                match (e0.borrow().clone(), e1.borrow().clone(), e2.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e0)),
-                   Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e1)),
-                   Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e2))) => {
-                    out[3] = e3.borrow().clone();
-                    return Ok(Box::new(HorizontalConcatenateM1M1M1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: new_ref(out) }));
-                  }
-                  _ => todo!(),
-                }
-              }
-
-              // m1 m1 m1 m1
-              [Value::MutableReference(e0), Value::MutableReference(e1), Value::MutableReference(e2), Value::MutableReference(e3)] => {
-                match (e0.borrow().clone(), e1.borrow().clone(), e2.borrow().clone(), e3.borrow().clone()) {
-                  (Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e0)),
-                   Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e1)),
-                   Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e2)),
-                   Value::[<Matrix $kind:camel>](Matrix::Matrix1(ref e3))) => {
-                    return Ok(Box::new(HorizontalConcatenateM1M1M1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out) }));
-                  }
-                  _ => todo!(),
-                }
-              }
-              _ => todo!(),
+            let a_s = get_s(&arguments[0]);
+            let b_s = get_s(&arguments[1]);
+            let c_s = get_s(&arguments[2]);
+            let d_s = get_s(&arguments[3]);
+            let a_m1 = get_m1(&arguments[0]);
+            let b_m1 = get_m1(&arguments[1]);
+            let c_m1 = get_m1(&arguments[2]);
+            let d_m1 = get_m1(&arguments[3]);
+            match (a_s, b_s, c_s, d_s, a_m1, b_m1, c_m1, d_m1) {
+              (Some(ref e0), Some(ref e1), Some(ref e2), Some(ref e3), _, _, _, _) => return Ok(Box::new(HorizontalConcatenateS4 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out) })),
+              (Some(ref e0), Some(ref e1), Some(ref e2), _, _, _, _, Some(ref e3)) => return Ok(Box::new(HorizontalConcatenateSSSM1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out) })),
+              (Some(ref e0), Some(ref e1), _, Some(ref e3), _, _, Some(ref e2), _) => return Ok(Box::new(HorizontalConcatenateSSM1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out) })),
+              (Some(ref e0), _, Some(ref e2), Some(ref e3), _, Some(ref e1), _, _) => return Ok(Box::new(HorizontalConcatenateSM1SS { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out) })),
+              (_, Some(ref e1), Some(ref e2), Some(ref e3), Some(ref e0), _, _, _) => return Ok(Box::new(HorizontalConcatenateM1SSS { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out) })),
+              (Some(ref e0), Some(ref e1), _, _, _, Some(ref e2), _, Some(ref e3)) => return Ok(Box::new(HorizontalConcatenateSSM1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out) })),
+              (Some(ref e0), _, Some(ref e2), _, _, Some(ref e1), _, Some(ref e3)) => return Ok(Box::new(HorizontalConcatenateSM1SM1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out) })),
+              (_, _, Some(ref e2), Some(ref e3), Some(ref e0), Some(ref e1), _, _) => return Ok(Box::new(HorizontalConcatenateM1M1SS { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out) })),
+              (Some(ref e0), _, _, Some(ref e3), _, Some(ref e1), Some(ref e2), _) => return Ok(Box::new(HorizontalConcatenateSM1M1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out) })),
+              (_, Some(ref e1), Some(ref e2), _, Some(ref e0), _, _, Some(ref e3)) => return Ok(Box::new(HorizontalConcatenateM1SSM1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out) })),
+              (_, Some(ref e1), _, Some(ref e3), Some(ref e0), _, Some(ref e2), _) => return Ok(Box::new(HorizontalConcatenateM1SM1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out) })),
+              (Some(ref e0), _, _, _, _, Some(ref e1), Some(ref e2), Some(ref e3)) => return Ok(Box::new(HorizontalConcatenateSM1M1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out) })),
+              (_, Some(ref e1), _, _, Some(ref e0), _, Some(ref e2), Some(ref e3)) => return Ok(Box::new(HorizontalConcatenateM1SM1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out) })),
+              (_, _, Some(ref e2), _, Some(ref e0), Some(ref e1), _, Some(ref e3)) => return Ok(Box::new(HorizontalConcatenateM1M1SM1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out) })),
+              (_, _, _, Some(ref e3), Some(ref e0), Some(ref e1), Some(ref e2), _) => return Ok(Box::new(HorizontalConcatenateM1M1M1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out) })),
+              (_, _, _, _, Some(ref e0), Some(ref e1), Some(ref e2), Some(ref e3)) => return Ok(Box::new(HorizontalConcatenateM1M1M1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: new_ref(out) })),
+              _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Scalar<{}> or Matrix1<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), arguments), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
           #[cfg(feature = "RowVectorD")]
@@ -1934,14 +2072,9 @@ macro_rules! impl_horzcat_arms {
           }
           #[cfg(feature = "Matrix3x2")]
           (1, 3, 2) => {
-            match &arguments[..] {
-              [a] => {
-                let am3x2 = get_m3x2(a);
-                match &am3x2 {
-                  Some(ref e0) => return Ok(Box::new(HorizontalConcatenateM3x2{out: e0.clone()})),
-                  _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
-                }
-              }
+            let am3x2 = get_m3x2(&arguments[0]);
+            match &am3x2 {
+              Some(ref e0) => return Ok(Box::new(HorizontalConcatenateM3x2{out: e0.clone()})),
               _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
             }
           }
