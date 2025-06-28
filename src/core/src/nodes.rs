@@ -1006,6 +1006,7 @@ pub enum Literal {
   Empty(Token),
   Number(Number),
   String(MechString),
+  Kind(Kind),
   TypedLiteral((Box<Literal>,KindAnnotation))
 }
 
