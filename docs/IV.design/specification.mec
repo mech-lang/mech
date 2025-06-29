@@ -122,7 +122,7 @@ punctuation := period
       | apostrophe ;
 ```
 
-**Examples:**
+(3.2.2.1) Examples
 
 ```
 . ! ? , : ; " ' 
@@ -148,7 +148,7 @@ symbol := ampersand
       | underscore ;
 ```
 
-**Examples:**
+(3.2.3.1) Examples
 
 ```
 & $ | % @ / # = \ ~ + - * ^ _
@@ -167,7 +167,7 @@ grouping-symbol := left-parenthesis
       | right-bracket ;
 ```
 
-**Examples:**      
+(3.2.4.1) Examples
 
 ```
 ( ) < > { } [ ]
@@ -207,32 +207,38 @@ Because Mech has a focus on literate programming, comment have less of an emphas
 
 Therefore, comments are primarily used for writing notes inline with the code that cannot be broken out into a paragraph. For example, to make a note within a state machine definition.
 
-**Examples:**
+(3.3.1) Examples
 
 Here are some ways to write a comment in Mech:
 
 ```
-  -- Single line comment.
-  // Also a single line comment.
+  -- Comment prefix with --
+  // Comment prefixed with //
+  -- Supports formatting like **bold**, __underline__, `inline code`, and [links](https://example.com).
   x := 1 -- Comment after an expression
 ```
 
 When parsed and rendered, these become:
 
-```mech-comment
+```mech:disabled
   -- Comment prefix with --
   // Comment prefixed with //
+  -- Supports formatting like **bold**, __underline__, `inline code`, and [links](https://example.com).
   x := 1 -- Comment after an expression
 ```
+
+One special ability comments have is they can be used to print out the evaluation of a Mech code statement.
+
+qq := 10 * 20     -- The value of qq is {qq}
 
 (3.4) Keywords
 
 There are only two keywords in Mech: `true` and `false`. Because Mech is designed to be used by non-English speakers, the syntax allows for an alternative representation, which can be used in place of the English keywords.
 
-| Keyword | Alternative |
-|---------|-------------|
-| true    | ✓           |
-| false   | ✗           |
+| Keyword   | Alternative |
+|-----------|-------------|
+| `true`    | `✓`         |
+| `false`   | `✗`         |
 
 This allows users to write code in their native language without the need to learn English keywords.
 
@@ -404,7 +410,7 @@ A floating-point literal represents a real number, potentially with a fractional
 - **Scientific notation**: A number followed by e or E, then an optional sign and exponent (e.g., `2.5e10`, `1e-3`)
 - **Rational literals**: A fraction of two integers separated by `/` (e.g., `3/4`, `22/7`) — these may be evaluated as exact values or approximated depending on context.
 
-**Examples:**
+(4.2.2.1) Examples
 
   3.14         -- decimal float
   0.001        -- decimal float
