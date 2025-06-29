@@ -198,7 +198,7 @@ document.querySelectorAll('.mech-program-subtitle.toc').forEach(entry => {{
         all_the_headers.forEach(item => {{
           const item_id = item.getAttribute("section");
           if (item_id === h3_id) {{
-            item.classList.add("visible");
+            //item.classList.add("visible");
           }} else {{
             item.classList.remove("visible");
           }}
@@ -226,7 +226,6 @@ function createObserver(rootMarginValue,scrolling_down) {{
   const all_the_headers = Array.from(document.querySelectorAll('[section]'));
   observer = new IntersectionObserver((entries) => {{
 
-
 entries
   .slice() // Create a shallow copy to avoid mutating the original entries array
   .sort((a, b) => {{
@@ -236,7 +235,8 @@ entries
       : b.boundingClientRect.top - a.boundingClientRect.top; // Descending for scrolling up
   }})
   .forEach(entry => {{
-      if (entry.isIntersecting) {{
+    if (entry.isIntersecting) {{
+      console.log(entry);
         const id = entry.target.id;
         const tag = entry.target.tagName; // H1, H2, H3, etc.
 
@@ -284,9 +284,10 @@ entries
             }}
           }}
 
-          // Now grab the h2, h3, and h4 elements within that section
+          // Now grab the h3, h4, h5 elements within that section
           const h3s = Array.from(section.querySelectorAll('h3'));
           const h4s = Array.from(section.querySelectorAll('h4'));
+          const h5s = Array.from(section.querySelectorAll('h5'));
 
           if (tag === "H5") {{
             const closestH4 = h4s.reverse().find(h4 => h4.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
@@ -297,10 +298,10 @@ entries
             if (H4Nav) {{
               H4Nav.classList.add("active");
               const h4_id = H4Nav.getAttribute("section");
+              console.log(h4_id);
               all_the_headers.forEach(item => {{
                 const item_id = item.getAttribute("section");
-                if (item_id === h4_id) {{
-                  item.classList.add("visible");
+                if (item_id && item_id.startsWith(h4_id) && item.tagName === "H4") {{
                 }} else {{
                   item.classList.remove("visible");
                 }}
@@ -309,6 +310,7 @@ entries
           }}
 
           if (tag === "H4" || tag == "H5") {{
+            const entry_section = entry.target.getAttribute("section");
             const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
             const H3Nav = Array.from(navItems).find(item => {{
               const link = item.querySelector("a[href]");
@@ -319,7 +321,9 @@ entries
               const h3_id = H3Nav.getAttribute("section");
               all_the_headers.forEach(item => {{
                 const item_id = item.getAttribute("section");
-                if (item_id === h3_id) {{
+                // Check if the item_id starts with the h3_id and is an H4, if so, add "visible", if not, remove "visible"
+                console.log(item.tagName);
+                if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {{
                   item.classList.add("visible");
                 }} else {{
                   item.classList.remove("visible");
@@ -333,7 +337,8 @@ entries
             const h3_id = entry.target.getAttribute("section");
             all_the_headers.forEach(item => {{
               const item_id = item.getAttribute("section");
-              if (item_id === h3_id) {{
+              // Check if the item_id starts with the h3_id and is an H4, if so, add "visible", if not, remove "visible"
+              if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {{
                 item.classList.add("visible");
               }} else {{
                 item.classList.remove("visible");
@@ -582,8 +587,15 @@ window.addEventListener("scroll", () => {{
     let title_id = hash_str(&format!("{}.{}.{}.{}.{}.{}.{}{}",self.h2_num,self.h3_num,self.h4_num,self.h5_num,self.h6_num,level,node.to_string(),toc));
     let link_id  = hash_str(&format!("{}.{}.{}.{}.{}.{}.{}",self.h2_num,self.h3_num,self.h4_num,self.h5_num,self.h6_num,level,node.to_string()));
 
+    let section = if level == 2 { format!("section=\"{}.{}\"", self.h2_num, self.h3_num) } 
+    else if level == 3 { format!("section=\"{}.{}\"", self.h2_num, self.h3_num) }
+    else if level == 4 { format!("section=\"{}.{}.{}\"", self.h2_num, self.h3_num, self.h4_num) }
+    else if level == 5 { format!("section=\"{}.{}.{}.{}\"", self.h2_num, self.h3_num, self.h4_num, self.h5_num) }
+    else if level == 6 { format!("section=\"{}.{}.{}.{}.{}\"", self.h2_num, self.h3_num, self.h4_num, self.h5_num, self.h6_num) }
+    else { "".to_string() };    
+
     if self.html {
-      format!("<h{} id=\"{}\" section=\"{}.{}\" class=\"mech-program-subtitle {}\"><a class=\"mech-program-subtitle-link {}\" href=\"#{}\">{}</a></h{}>", level, title_id, self.h2_num, self.h3_num, toc, toc, link_id, node.to_string(), level)
+      format!("<h{} id=\"{}\" {} class=\"mech-program-subtitle {}\"><a class=\"mech-program-subtitle-link {}\" href=\"#{}\">{}</a></h{}>", level, title_id, section, toc, toc, link_id, node.to_string(), level)
     } else {
       format!("{}\n-------------------------------------------------------------------------------\n",node.to_string())
     }
