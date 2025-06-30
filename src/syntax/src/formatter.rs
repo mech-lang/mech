@@ -1665,6 +1665,7 @@ window.addEventListener("scroll", () => {{
       Statement::VariableDefine(var_def) => self.variable_define(var_def),
       Statement::OpAssign(op_asgn) => self.op_assign(op_asgn),
       Statement::VariableAssign(var_asgn) => self.variable_assign(var_asgn),
+      Statement::TupleDestructure(tpl_dstrct) => self.tuple_destructure(tpl_dstrct),
       _ => todo!(),
       //Statement::EnumDefine(enum_def) => self.enum_define(enum_def, src),
       //Statement::FsmDeclare(fsm_decl) => self.fsm_declare(fsm_decl, src),
@@ -1674,6 +1675,33 @@ window.addEventListener("scroll", () => {{
       format!("<span class=\"mech-statement\">{}</span>",s)
     } else {
       format!("{}", s)
+    }
+  }
+
+
+  // Tuple Destructure node looks like this:
+  // #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+//pub struct TupleDestructure {
+//  pub vars: Vec<Identifier>,
+//  pub expression: Expression,
+//}
+  // It's defined like (a,b,c) := foo
+  // where foo is an expression
+  pub fn tuple_destructure(&mut self, node: &TupleDestructure) -> String {
+    let mut vars = "".to_string();
+    for (i, var) in node.vars.iter().enumerate() {
+      let v = var.to_string();
+      if i == 0 {
+        vars = format!("{}", v);
+      } else {
+        vars = format!("{}, {}", vars, v);
+      }
+    }
+    let expression = self.expression(&node.expression);
+    if self.html {
+      format!("<span class=\"mech-tuple-destructure\"><span class=\"mech-tuple-vars\">({})</span><span class=\"mech-assign-op\">:=</span><span class=\"mech-tuple-expression\">{}</span></span>",vars,expression)
+    } else {
+      format!("({}) := {}", vars, expression)
     }
   }
 
