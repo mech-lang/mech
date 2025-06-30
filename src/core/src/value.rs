@@ -1166,6 +1166,14 @@ impl MechTuple {
     format!("{table}")
   }
 
+  pub fn get(&self, index: usize) -> Option<&Value> {
+    if index < self.elements.len() {
+      Some(self.elements[index].as_ref())
+    } else {
+      None
+    }
+  }
+
   pub fn from_vec(elements: Vec<Value>) -> Self {
     MechTuple{elements: elements.iter().map(|m| Box::new(m.clone())).collect::<Vec<Box<Value>>>()}
   }
