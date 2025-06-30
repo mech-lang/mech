@@ -1,6 +1,6 @@
 [package]
 name = "mech-math"
-version = "0.2.47"
+version = "0.2.48"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Math library for the Mech language"
 documentation = "http://docs.mech-lang.org"
@@ -59,7 +59,7 @@ VectorD = []
 MatrixD = []
 
 [dependencies]
-mech-core = "0.2.47"
+mech-core = "0.2.48"
 
 libm = "0.2.11"
 simba = "0.9.0"
