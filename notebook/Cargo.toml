@@ -1,6 +1,6 @@
 [package]
 name = "mech-notebook"
-version = "0.2.47"
+version = "0.2.48"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Gui notebook interface for the Mech programming language."
 documentation = "http://docs.mech-lang.org"
@@ -14,7 +14,7 @@ edition = "2021"
 rust-version = "1.84"
 
 [dependencies]
-mech = {version="0.2.47"}
+mech = {version="0.2.48"}
 egui = "0.31.1"
 eframe = "0.31.1"
 
