@@ -89,11 +89,30 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
       let mut fxn_input = vec![val.clone()];
       let result = real(&x.clone());
       fxn_input.push(result.as_index()?);
-      let new_fxn = MatrixAccessScalar{}.compile(&fxn_input)?; // This presumes the thing is a matrix...
-      new_fxn.solve();
-      let res = new_fxn.out();
-      plan.borrow_mut().push(new_fxn);
-      return Ok(res);
+      match val.deref_kind() {
+        ValueKind::Matrix(..) => {
+          let new_fxn = MatrixAccessScalar{}.compile(&fxn_input)?;
+          new_fxn.solve();
+          let res = new_fxn.out();
+          plan.borrow_mut().push(new_fxn);
+          return Ok(res);
+        },
+        ValueKind::Tuple(..) => {
+          let new_fxn = TupleAccess{}.compile(&fxn_input)?;
+          new_fxn.solve();
+          let res = new_fxn.out();
+          plan.borrow_mut().push(new_fxn);
+          return Ok(res);
+        },
+        /*ValueKind::Record(_) => {
+          let new_fxn = RecordAccessScalar{}.compile(&fxn_input)?;
+          new_fxn.solve();
+          let res = new_fxn.out();
+          plan.borrow_mut().push(new_fxn);
+          return Ok(res);
+        },*/
+        _ => todo!("Implement access for dot int"),
+      }
     },
     Subscript::Swizzle(x) => {
       let mut keys = x.iter().map(|x| Value::Id(x.hash())).collect::<Vec<Value>>();

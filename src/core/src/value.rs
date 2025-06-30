@@ -462,6 +462,13 @@ impl Value {
     }
   }
 
+  pub fn deref_kind(&self) -> ValueKind {
+    match self {
+      Value::MutableReference(x) => x.borrow().kind(),
+      x => x.kind(),
+    }
+  }
+
   pub fn kind(&self) -> ValueKind {
     match self {
       Value::U8(_) => ValueKind::U8,

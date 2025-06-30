@@ -304,6 +304,7 @@ test_interpreter!(interpret_matrix_sub_3x2, "[1 2; 3 4; 5 6] - [7 8; 9 10; 11 12
 
 test_interpreter!(interpret_tuple, "(1,true)", Value::Tuple(MechTuple::from_vec(vec![Value::F64(new_ref(F64::new(1.0))), Value::Bool(new_ref(true))])));
 test_interpreter!(interpret_tuple_nested, r#"(1,("Hello",false))"#, Value::Tuple(MechTuple::from_vec(vec![Value::F64(new_ref(F64::new(1.0))), Value::Tuple(MechTuple::from_vec(vec![Value::String(new_ref("Hello".to_string())), Value::Bool(new_ref(false))]))])));
+test_interpreter!(interpret_tuple_access, r#"q := (10, "b", true); r := (q.3, q.2, q.1)"#, Value::Tuple(MechTuple::from_vec(vec![Value::Bool(new_ref(true)), Value::String(new_ref("b".to_string())), Value::F64(new_ref(F64::new(10.0)))])));
 
 test_interpreter!(interpret_slice, "a := [1,2,3]; a[2]", Value::F64(new_ref(F64::new(2.0))));
 test_interpreter!(interpret_slice_v, "a := [1,2,3]'; a[2]", Value::F64(new_ref(F64::new(2.0))));
