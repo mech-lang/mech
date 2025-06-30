@@ -197,8 +197,8 @@ document.querySelectorAll('.mech-program-subtitle.toc').forEach(entry => {{
         const h3_id = entry.getAttribute("section");
         all_the_headers.forEach(item => {{
           const item_id = item.getAttribute("section");
-          if (item_id === h3_id) {{
-            //item.classList.add("visible");
+          if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {{
+            item.classList.add("visible");
           }} else {{
             item.classList.remove("visible");
           }}
