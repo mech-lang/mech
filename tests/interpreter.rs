@@ -304,6 +304,8 @@ test_interpreter!(interpret_matrix_sub_3x2, "[1 2; 3 4; 5 6] - [7 8; 9 10; 11 12
 
 test_interpreter!(interpret_tuple, "(1,true)", Value::Tuple(MechTuple::from_vec(vec![Value::F64(new_ref(F64::new(1.0))), Value::Bool(new_ref(true))])));
 test_interpreter!(interpret_tuple_nested, r#"(1,("Hello",false))"#, Value::Tuple(MechTuple::from_vec(vec![Value::F64(new_ref(F64::new(1.0))), Value::Tuple(MechTuple::from_vec(vec![Value::String(new_ref("Hello".to_string())), Value::Bool(new_ref(false))]))])));
+test_interpreter!(interpret_tuple_access, r#"q := (10, "b", true); r := (q.3, q.2, q.1)"#, Value::Tuple(MechTuple::from_vec(vec![Value::Bool(new_ref(true)), Value::String(new_ref("b".to_string())), Value::F64(new_ref(F64::new(10.0)))])));
+test_interpreter!(interpret_tuple_destructure, r#"a := (10, 11, 12); (x,y,z) := a; x + y + z"#, Value::F64(new_ref(F64::new(33.0))));
 
 test_interpreter!(interpret_slice, "a := [1,2,3]; a[2]", Value::F64(new_ref(F64::new(2.0))));
 test_interpreter!(interpret_slice_v, "a := [1,2,3]'; a[2]", Value::F64(new_ref(F64::new(2.0))));
@@ -525,4 +527,4 @@ test_interpreter!(interpret_set_logical_ram3m3,"~x := [1 2 3; 4 5 6; 7 8 9]; y :
 
 test_interpreter!(interpret_modulus,"[1 2 3 4 5] % 5", new_ref(RowDVector::from_vec(vec![F64::new(1.0), F64::new(2.0), F64::new(3.0), F64::new(4.0), F64::new(0.0)])).to_value());
 
-test_interpreter!(interpret_horzcat_implicit_convert,"[1<u8> 2 3 4 5]", new_ref(RowDVector::from_vec(vec![1_u8, 2_u8, 3_u8, 4_u8, 5_u8])).to_value());
+test_interpreter!(interpret_horzcat_rdn2, "y := [4 5 6]; [y y y * 2]", new_ref(RowDVector::from_vec(vec![F64::new(4.0), F64::new(5.0), F64::new(6.0), F64::new(4.0), F64::new(5.0), F64::new(6.0), F64::new(8.0), F64::new(10.0), F64::new(12.0)])).to_value());

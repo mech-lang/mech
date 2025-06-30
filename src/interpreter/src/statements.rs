@@ -6,6 +6,7 @@ use paste::paste;
 
 pub fn statement(stmt: &Statement, p: &Interpreter) -> MResult<Value> {
   match stmt {
+    Statement::TupleDestructure(tpl_dstrct) => tuple_destructure(&tpl_dstrct, p),
     Statement::VariableDefine(var_def) => variable_define(&var_def, p),
     Statement::VariableAssign(var_assgn) => variable_assign(&var_assgn, p),
     Statement::KindDefine(knd_def) => kind_define(&knd_def, p),
@@ -15,6 +16,36 @@ pub fn statement(stmt: &Statement, p: &Interpreter) -> MResult<Value> {
     Statement::SplitTable => todo!(),
     Statement::FlattenTable => todo!(),
   }
+}
+
+pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &Interpreter) -> MResult<Value> {
+  let source = expression(&tpl_dstrct.expression, p)?;
+  let tpl = match &source {
+    Value::Tuple(tpl) => tpl,
+    Value::MutableReference(ref r) => {
+      let r_brrw = r.borrow();
+      &match &*r_brrw {
+        Value::Tuple(tpl) => tpl.clone(),
+        _ => return Err(MechError{file:file!().to_string(),tokens:tpl_dstrct.vars[0].tokens(),msg:"Expected a tuple.".to_string(),id:line!(),kind:MechErrorKind::GenericError("Expected a tuple.".to_string())}),
+      }
+    },
+    _ => return Err(MechError{file:file!().to_string(),tokens:tpl_dstrct.vars[0].tokens(),msg:format!("Expected a tuple, found: {}", source.kind()),id:line!(),kind:MechErrorKind::GenericError(format!("Expected a tuple, found: {}", source.kind()))}),
+  };
+  let symbols = p.symbols();
+  let mut symbols_brrw = symbols.borrow_mut();
+  for (i, var) in tpl_dstrct.vars.iter().enumerate() {
+    let id = var.hash();
+    if symbols_brrw.contains(id) {
+      return Err(MechError{file:file!().to_string(),tokens:var.tokens(),msg:"Note: Variables are defined with the := operator.".to_string(),id:line!(),kind:MechErrorKind::VariableRedefined(id)});
+    }
+    if let Some(element) = tpl.get(i) {
+      symbols_brrw.insert(id, element.clone(), true);
+      symbols_brrw.dictionary.borrow_mut().insert(id, var.name.to_string());
+    } else {
+      return Err(MechError{file:file!().to_string(),tokens:var.tokens(),msg:"Tuple destructure has more variables than elements in the tuple.".to_string(),id:line!(),kind:MechErrorKind::IndexOutOfBounds});
+    }
+  }
+  Ok(source)
 }
 
 pub fn op_assign(op_assgn: &OpAssign, p: &Interpreter) -> MResult<Value> {

@@ -18,19 +18,27 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
       "".to_string()
     }
     ReplCommand::Clc => {
-      let window = web_sys::window().expect("global window does not exists");    
-      let document = window.document().expect("expecting a document on window");
-      let output_element = document.get_element_by_id("mech-output").expect("REPL output element not found");
-      // Remove all children
-      while output_element.child_nodes().length() > 0 {
-        let first_child = output_element
-          .first_child()
-          .expect("Expected a child node");
-        output_element
-          .remove_child(&first_child)
-          .expect("Failed to remove child");
-      }
-      "".to_string()
+      CURRENT_MECH.with(|mech_ref| {
+        if let Some(ptr) = *mech_ref.borrow() {
+          unsafe {
+            let mut mech = &mut *ptr;
+            let window = web_sys::window().expect("global window does not exists");    
+            let document = window.document().expect("expecting a document on window");
+            let output_element = document.get_element_by_id(&mech.repl_id.as_ref().unwrap().clone()).expect("REPL output element not found");
+            // Remove all children
+            while output_element.child_nodes().length() > 0 {
+              let first_child = output_element
+                .first_child()
+                .expect("Expected a child node");
+              output_element
+                .remove_child(&first_child)
+                .expect("Failed to remove child");
+            }
+          }
+          return "".to_string();
+        }
+        "Error: No interpreter found.".to_string()
+      })
     }
     ReplCommand::Code(code) => {
       CURRENT_MECH.with(|mech_ref| {
@@ -81,7 +89,15 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
     ReplCommand::Docs(doc) => {
       match doc {
         Some(d) => {
-          load_doc(&d);
+          CURRENT_MECH.with(|mech_ref| {
+            if let Some(ptr) = *mech_ref.borrow() {
+              unsafe {
+                let mut mech = &mut *ptr;
+                load_doc(&d, mech.repl_id.as_ref().unwrap().clone());
+              }
+            }
+            "Error: No interpreter found.".to_string()
+          });
           format!("Fetching doc: {}...", d)
         },
         None => "Enter the name of a doc to load.".to_string(),
@@ -92,6 +108,7 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
 }
 
 // Print out help information in HTML format
+#[wasm_bindgen]
 pub fn help_html() -> String {
   let text_logo = r#"
 ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐   ┌─┐
@@ -113,6 +130,7 @@ pub fn help_html() -> String {
     html.push_str("<tbody>");
     html.push_str("<tr><td><span class=\"mech-command\">:clc</span></td><td></span></td><td></td><td>Clear the REPL output.</td></tr>");
     html.push_str("<tr><td><span class=\"mech-command\">:clear</span><td></span></td></td><td></td><td>Clear the interpreter state.</td></tr>");
+    html.push_str("<tr><td><span class=\"mech-command\">:docs</span></td><td></td><td><span class=\"mech-command\">[doc]</span></td><td>Display the given doc in the REPL.</td></tr>");
     html.push_str("<tr><td><span class=\"mech-command\">:help</span></td><td><span class=\"mech-command\">:h</span></td><td></td><td>Show this help message.</td></tr>");
     html.push_str("<tr><td><span class=\"mech-command\">:step</span></td><td></td><td><span class=\"mech-command\">[count]</span></td><td>Run the plan for a specified number of steps.</td></tr>");
     html.push_str("<tr><td><span class=\"mech-command\">:whos</span></td><td><span class=\"mech-command\">:w</span></td><td><span class=\"mech-command\">[names...]</span></td><td>Show the current symbol directory.</td></tr>");

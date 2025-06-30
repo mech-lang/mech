@@ -621,8 +621,15 @@ pub enum Statement {
   OpAssign(OpAssign),
   VariableAssign(VariableAssign),
   VariableDefine(VariableDefine),
+  TupleDestructure(TupleDestructure),
   SplitTable,     // todo
   FlattenTable,   // todo
+}
+
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub struct TupleDestructure {
+  pub vars: Vec<Identifier>,
+  pub expression: Expression,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
@@ -1006,6 +1013,7 @@ pub enum Literal {
   Empty(Token),
   Number(Number),
   String(MechString),
+  Kind(Kind),
   TypedLiteral((Box<Literal>,KindAnnotation))
 }
 

@@ -172,8 +172,18 @@ document.querySelectorAll('.mech-program-subtitle.toc').forEach(entry => {{
 
       // Now grab the h2, h3, and h4 elements within that section
       const h3s = Array.from(section.querySelectorAll('h3'));
+      const h4s = Array.from(section.querySelectorAll('h4'));
 
-      if (tag === "H4") {{
+      if (tag === "H5") {{
+        const closestH4 = h4s.reverse().find(h4 => h4.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING);
+        const H4Nav = Array.from(navItems).find(item => {{
+            const link = item.querySelector("a[href]");
+            return link && link.getAttribute("href") === `#${{closestH4.id}}`;
+        }});
+        closestH4.classList.add("active");
+      }}
+
+      if (tag === "H4" || tag === "H5") {{
         const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry) & Node.DOCUMENT_POSITION_FOLLOWING);
         const H3Nav = Array.from(navItems).find(item => {{
             const link = item.querySelector("a[href]");
@@ -187,7 +197,7 @@ document.querySelectorAll('.mech-program-subtitle.toc').forEach(entry => {{
         const h3_id = entry.getAttribute("section");
         all_the_headers.forEach(item => {{
           const item_id = item.getAttribute("section");
-          if (item_id === h3_id) {{
+          if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {{
             item.classList.add("visible");
           }} else {{
             item.classList.remove("visible");
@@ -216,7 +226,6 @@ function createObserver(rootMarginValue,scrolling_down) {{
   const all_the_headers = Array.from(document.querySelectorAll('[section]'));
   observer = new IntersectionObserver((entries) => {{
 
-
 entries
   .slice() // Create a shallow copy to avoid mutating the original entries array
   .sort((a, b) => {{
@@ -226,7 +235,8 @@ entries
       : b.boundingClientRect.top - a.boundingClientRect.top; // Descending for scrolling up
   }})
   .forEach(entry => {{
-      if (entry.isIntersecting) {{
+    if (entry.isIntersecting) {{
+      console.log(entry);
         const id = entry.target.id;
         const tag = entry.target.tagName; // H1, H2, H3, etc.
 
@@ -274,10 +284,33 @@ entries
             }}
           }}
 
-          // Now grab the h2, h3, and h4 elements within that section
+          // Now grab the h3, h4, h5 elements within that section
           const h3s = Array.from(section.querySelectorAll('h3'));
+          const h4s = Array.from(section.querySelectorAll('h4'));
+          const h5s = Array.from(section.querySelectorAll('h5'));
 
-          if (tag === "H4") {{
+          if (tag === "H5") {{
+            const closestH4 = h4s.reverse().find(h4 => h4.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
+            const H4Nav = Array.from(navItems).find(item => {{
+                const link = item.querySelector("a[href]");
+                return link && link.getAttribute("href") === `#${{closestH4.id}}`;
+            }});
+            if (H4Nav) {{
+              H4Nav.classList.add("active");
+              const h4_id = H4Nav.getAttribute("section");
+              console.log(h4_id);
+              all_the_headers.forEach(item => {{
+                const item_id = item.getAttribute("section");
+                if (item_id && item_id.startsWith(h4_id) && item.tagName === "H4") {{
+                }} else {{
+                  item.classList.remove("visible");
+                }}
+              }});
+            }}
+          }}
+
+          if (tag === "H4" || tag == "H5") {{
+            const entry_section = entry.target.getAttribute("section");
             const closestH3 = h3s.reverse().find(h3 => h3.compareDocumentPosition(entry.target) & Node.DOCUMENT_POSITION_FOLLOWING);
             const H3Nav = Array.from(navItems).find(item => {{
               const link = item.querySelector("a[href]");
@@ -288,7 +321,9 @@ entries
               const h3_id = H3Nav.getAttribute("section");
               all_the_headers.forEach(item => {{
                 const item_id = item.getAttribute("section");
-                if (item_id === h3_id) {{
+                // Check if the item_id starts with the h3_id and is an H4, if so, add "visible", if not, remove "visible"
+                console.log(item.tagName);
+                if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {{
                   item.classList.add("visible");
                 }} else {{
                   item.classList.remove("visible");
@@ -302,7 +337,8 @@ entries
             const h3_id = entry.target.getAttribute("section");
             all_the_headers.forEach(item => {{
               const item_id = item.getAttribute("section");
-              if (item_id === h3_id) {{
+              // Check if the item_id starts with the h3_id and is an H4, if so, add "visible", if not, remove "visible"
+              if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {{
                 item.classList.add("visible");
               }} else {{
                 item.classList.remove("visible");
@@ -551,8 +587,15 @@ window.addEventListener("scroll", () => {{
     let title_id = hash_str(&format!("{}.{}.{}.{}.{}.{}.{}{}",self.h2_num,self.h3_num,self.h4_num,self.h5_num,self.h6_num,level,node.to_string(),toc));
     let link_id  = hash_str(&format!("{}.{}.{}.{}.{}.{}.{}",self.h2_num,self.h3_num,self.h4_num,self.h5_num,self.h6_num,level,node.to_string()));
 
+    let section = if level == 2 { format!("section=\"{}.{}\"", self.h2_num, self.h3_num) } 
+    else if level == 3 { format!("section=\"{}.{}\"", self.h2_num, self.h3_num) }
+    else if level == 4 { format!("section=\"{}.{}.{}\"", self.h2_num, self.h3_num, self.h4_num) }
+    else if level == 5 { format!("section=\"{}.{}.{}.{}\"", self.h2_num, self.h3_num, self.h4_num, self.h5_num) }
+    else if level == 6 { format!("section=\"{}.{}.{}.{}.{}\"", self.h2_num, self.h3_num, self.h4_num, self.h5_num, self.h6_num) }
+    else { "".to_string() };    
+
     if self.html {
-      format!("<h{} id=\"{}\" section=\"{}.{}\" class=\"mech-program-subtitle {}\"><a class=\"mech-program-subtitle-link {}\" href=\"#{}\">{}</a></h{}>", level, title_id, self.h2_num, self.h3_num, toc, toc, link_id, node.to_string(), level)
+      format!("<h{} id=\"{}\" {} class=\"mech-program-subtitle {}\"><a class=\"mech-program-subtitle-link {}\" href=\"#{}\">{}</a></h{}>", level, title_id, section, toc, toc, link_id, node.to_string(), level)
     } else {
       format!("{}\n-------------------------------------------------------------------------------\n",node.to_string())
     }
@@ -1535,7 +1578,7 @@ window.addEventListener("scroll", () => {{
       }
     }
     let output = match &node.output {
-      Some(kind) => format!(" {} {}", "⇒", self.kind_annotation(kind)),
+      Some(kind) => format!(" {} {}", "⇒", self.kind_annotation(&kind.kind)),
       None => "".to_string(),
     };
     let mut states = "".to_string();
@@ -1622,6 +1665,7 @@ window.addEventListener("scroll", () => {{
       Statement::VariableDefine(var_def) => self.variable_define(var_def),
       Statement::OpAssign(op_asgn) => self.op_assign(op_asgn),
       Statement::VariableAssign(var_asgn) => self.variable_assign(var_asgn),
+      Statement::TupleDestructure(tpl_dstrct) => self.tuple_destructure(tpl_dstrct),
       _ => todo!(),
       //Statement::EnumDefine(enum_def) => self.enum_define(enum_def, src),
       //Statement::FsmDeclare(fsm_decl) => self.fsm_declare(fsm_decl, src),
@@ -1631,6 +1675,33 @@ window.addEventListener("scroll", () => {{
       format!("<span class=\"mech-statement\">{}</span>",s)
     } else {
       format!("{}", s)
+    }
+  }
+
+
+  // Tuple Destructure node looks like this:
+  // #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+//pub struct TupleDestructure {
+//  pub vars: Vec<Identifier>,
+//  pub expression: Expression,
+//}
+  // It's defined like (a,b,c) := foo
+  // where foo is an expression
+  pub fn tuple_destructure(&mut self, node: &TupleDestructure) -> String {
+    let mut vars = "".to_string();
+    for (i, var) in node.vars.iter().enumerate() {
+      let v = var.to_string();
+      if i == 0 {
+        vars = format!("{}", v);
+      } else {
+        vars = format!("{}, {}", vars, v);
+      }
+    }
+    let expression = self.expression(&node.expression);
+    if self.html {
+      format!("<span class=\"mech-tuple-destructure\"><span class=\"mech-tuple-vars\">({})</span><span class=\"mech-assign-op\">:=</span><span class=\"mech-tuple-expression\">{}</span></span>",vars,expression)
+    } else {
+      format!("({}) := {}", vars, expression)
     }
   }
 
@@ -2019,7 +2090,7 @@ window.addEventListener("scroll", () => {{
   pub fn field(&mut self, node: &Field) -> String {
     let name = node.name.to_string();
     let kind = if let Some(kind) = &node.kind {
-      self.kind_annotation(kind)
+      self.kind_annotation(&kind.kind)
     } else {
       "".to_string()
     };
@@ -2152,7 +2223,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn var(&mut self, node: &Var) -> String {
     let annotation = if let Some(kind) = &node.kind {
-      self.kind_annotation(kind)
+      self.kind_annotation(&kind.kind)
     } else {
       "".to_string()
     };
@@ -2165,8 +2236,8 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
     }
   }
 
-  pub fn kind_annotation(&mut self, node: &KindAnnotation) -> String {
-    let kind = self.kind(&node.kind);
+  pub fn kind_annotation(&mut self, node: &Kind) -> String {
+    let kind = self.kind(node);
     if self.html {
       format!("<span class=\"mech-kind-annotation\"><{}></span>",kind)
     } else {
@@ -2390,14 +2461,15 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn literal(&mut self, node: &Literal) -> String {
     let l = match node {
-      Literal::Empty(token) => self.empty(token),
-      Literal::Boolean(token) => self.boolean(token),
-      Literal::Number(number) => self.number(number),
+      Literal::Empty(tkn) => self.empty(tkn),
+      Literal::Boolean(tkn) => self.boolean(tkn),
+      Literal::Number(num) => self.number(num),
       Literal::String(mech_string) => self.string(mech_string),
-      Literal::Atom(atom) => self.atom(atom),
+      Literal::Atom(atm) => self.atom(atm),
+      Literal::Kind(knd) => self.kind_annotation(knd),
       Literal::TypedLiteral((boxed_literal, kind_annotation)) => {
         let literal = self.literal(boxed_literal);
-        let annotation = self.kind_annotation(kind_annotation);
+        let annotation = self.kind_annotation(&kind_annotation.kind);
         format!("{}{}", literal, annotation)
       }
     };

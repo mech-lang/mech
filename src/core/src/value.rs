@@ -462,6 +462,13 @@ impl Value {
     }
   }
 
+  pub fn deref_kind(&self) -> ValueKind {
+    match self {
+      Value::MutableReference(x) => x.borrow().kind(),
+      x => x.kind(),
+    }
+  }
+
   pub fn kind(&self) -> ValueKind {
     match self {
       Value::U8(_) => ValueKind::U8,
@@ -1157,6 +1164,14 @@ impl MechTuple {
       .corner_bottom_right('╯');
     table.with(style);
     format!("{table}")
+  }
+
+  pub fn get(&self, index: usize) -> Option<&Value> {
+    if index < self.elements.len() {
+      Some(self.elements[index].as_ref())
+    } else {
+      None
+    }
   }
 
   pub fn from_vec(elements: Vec<Value>) -> Self {

@@ -141,6 +141,17 @@ pub fn op_assign(input: ParseString) -> ParseResult<OpAssign> {
   Ok((input, ParserNode::Null))
 }*/
 
+
+// tuple-destructure := "(", list1(identifier, comma), ")", ":=", expression ;
+fn tuple_destructure(input: ParseString) -> ParseResult<TupleDestructure> {
+  let (input, _) = left_parenthesis(input)?;
+  let (input, vars) = separated_list1(comma, identifier)(input)?;
+  let (input, _) = right_parenthesis(input)?;
+  let (input, _) = define_operator(input)?;
+  let (input, expression) = expression(input)?;
+  Ok((input, TupleDestructure{vars, expression}))
+}
+
 // statement := variable_define | variable_assign | enum_define | fsm_declare | kind_define ;
 pub fn statement(input: ParseString) -> ParseResult<Statement> {
   match variable_define(input.clone()) {
@@ -160,6 +171,11 @@ pub fn statement(input: ParseString) -> ParseResult<Statement> {
   }
   match enum_define(input.clone()) {
     Ok((input, enm_def)) => { return Ok((input, Statement::EnumDefine(enm_def))); },
+    //Err(Failure(err)) => {return Err(Failure(err))},
+    _ => (),
+  }
+  match tuple_destructure(input.clone()) {
+    Ok((input, tpl_dstr)) => { return Ok((input, Statement::TupleDestructure(tpl_dstr))); },
     //Err(Failure(err)) => {return Err(Failure(err))},
     _ => (),
   }

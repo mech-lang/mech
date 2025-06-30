@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" integrity="sha384-5TcZemv2l/9On385z///+d7MSYlvIEw9FuZTIdZ14vJLqWphw7e7ZPuOiCHJcFCP" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" integrity="sha384-cMkvdD8LoxVzGF/RPUKAcvmm49FQ0oxwDF3BGKtDXcEc+T1b2N+teh/OJfpU0jr6" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"
+  onload="renderMathInElement(document.body);"></script>
+
+  <title>Try Mech REPL</title>
+  <link rel="icon" href="https://gitlab.com/mech-lang/assets/-/raw/main/images/favicon.ico" type="image/x-icon" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+  </style>
+
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      box-sizing: border-box;
+      background-color: #0d1013;
+    }
+
+    *, *::before, *::after {
+      box-sizing: inherit;
+    }
+
+    .container {
+      display: flex;
+      height: 100%;
+      width: 100%;
+    }
+
+    .content {
+      min-width: 0px;
+      width: 0%;  
+      background-color: #0d1013;
+      color: #f2ead9;
+      padding: 1rem;
+      overflow: auto;
+      flex-grow: 1;
+    }
+
+    .resizer {
+      width: 3px;
+      margin-left:10px;
+      background: #35393d;
+      cursor: col-resize;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .toggle-button {
+      position: absolute;
+      top: 50%;
+      height: 50px;
+      width: 11px;
+      left: -4px;
+      transform: translateY(-50%);
+      background: rgb(246,192,78);
+      border: 2px solid rgb(195, 146, 39);
+      color: #35393d;
+      padding: 2px 6px;
+      cursor: pointer;
+      font-size: 20px;
+      font-weight: bold;
+      border-radius: 2px;
+      padding: 0px;
+      user-select: none;
+      box-shadow: 0 0px 4px rgba(0, 0, 0, 0.8);
+    }
+
+    .toggle-button:focus {
+      outline: none;
+    }
+
+    .sidebar {
+      background-color: #040608;
+      color: #f2ead9;
+      padding: 1rem;
+      overflow: auto;
+      height: 100%;
+      flex-shrink: 0;
+      transition: width 0.2s ease;
+      width: clamp(300px, 70%, 100%);
+    }
+
+    .sidebar.hidden {
+      transform: translateX(100%);
+      width: 0 !important;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    body.resizing .sidebar {
+      transition: none !important; 
+    }
+
+    body.resizing {
+      cursor: col-resize;
+      user-select: none;
+    }
+
+    body::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    body::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    body::-webkit-scrollbar-thumb {
+        background: rgba(128, 128, 128, 0.7);
+        border-radius: 10px;
+    }
+
+    body::-webkit-scrollbar-thumb:hover {
+        background: rgba(128, 128, 128, 0.7);
+    }
+
+    body {
+        scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
+        scrollbar-width: thin;
+    }
+    .toggle-button.edge-left:hover,
+    .toggle-button.edge-right:hover {
+
+    }
+  </style>
+  <link rel="stylesheet" href="css/style.css" />
+
+</head>
+<body>
+  <div class="container mech-root">
+    <div class="content mech-content" id="left-pane">
+    </div>
+    <div class="resizer" id="resizer">
+      <button class="toggle-button" id="toggle-repl">|</button>
+    </div>
+    <div class="sidebar mech-repl" id="sidebar">
+    </div>
+  </div>
+
+  <script>
+    const left_pane = document.getElementById('left-pane');
+    const resizer = document.getElementById('resizer');
+    const sidebar = document.getElementById('sidebar');
+    const toggleButton = document.getElementById('toggle-repl');
+
+    let isDragging = false;
+    let replVisible = true;
+    let replFull = false;
+    let lastSidebarWidth = sidebar.offsetWidth;
+
+    resizer.addEventListener('mousedown', () => {
+      if (!replVisible) return;
+      isDragging = true;
+      document.body.classList.add('resizing');
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+
+      const container = document.querySelector('.container');
+      const containerWidth = container.offsetWidth;
+      const minWidth = 370;
+      const edgeThreshold = 2; // px near screen edges
+
+      const newWidth = containerWidth - e.clientX;
+
+      const nearLeftEdge = e.clientX <= edgeThreshold;
+      const nearRightEdge = e.clientX >= containerWidth - edgeThreshold;
+
+      if (nearLeftEdge) {
+        fullscreen_repl()
+        return;
+      }
+
+      if (nearRightEdge) {
+        fullscreen_content()
+        return;
+      }
+      console.log("Normal Drag!!!");
+      // Normal drag within range
+      const maxWidth = containerWidth * 0.8;
+      const clampedWidth = Math.min(Math.max(newWidth, minWidth), maxWidth);
+
+      sidebar.style.width = clampedWidth + 'px';
+      lastSidebarWidth = clampedWidth;
+      sidebar.classList.remove('hidden');
+      replVisible = true;
+      replFull = false;
+
+      left_pane.style.display = 'block';
+      resizer.style.marginLeft = '10px';
+      resizer.style.width = '3px';
+      toggleButton.style.left = `-4px`;
+      sidebar.style.width = lastSidebarWidth + 'px';
+      sidebar.style.marginLeft = `0px`;
+    });
+
+    function fullscreen_repl() {
+      replFull = true;
+      replVisible = true;
+      sidebar.style.width = "100%";
+      left_pane.style.display = 'none';
+      resizer.style.marginLeft = '0px';
+      resizer.style.width = '0px';
+      toggleButton.style.left = `-8px`;
+      toggleButton.classList.add('edge-left');
+      toggleButton.classList.remove('edge-right');
+    } 
+
+    function fullscreen_content() {
+      replVisible = false;
+      replFull = false;
+      sidebar.classList.add('hidden');
+      left_pane.style.display = 'block';
+      sidebar.style.width = '0';
+      sidebar.style.marginLeft = `-4px`;
+      toggleButton.classList.add('edge-right');
+      toggleButton.classList.remove('edge-left');
+    }
+
+
+    document.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        document.body.classList.remove('resizing');
+      }
+    });
+
+    toggleButton.addEventListener('click', () => {
+      if (!replVisible) {
+        replVisible = true;
+        sidebar.classList.remove('hidden');
+        sidebar.style.width = lastSidebarWidth + 'px';
+        sidebar.style.marginLeft = `0px`;
+        toggleButton.innerHTML = '|';
+        toggleButton.style.left = `-4px`;
+        toggleButton.style.width = `11px`;
+        toggleButton.style.textAlign = `center`;
+        toggleButton.classList.remove('edge-left', 'edge-right');
+      }
+    });
+
+    toggleButton.addEventListener('dblclick', () => {
+      if (replVisible && !replFull) {
+        fullscreen_content()
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '`' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+
+        if (replVisible) {
+          fullscreen_content();
+        } else {
+          toggleButton.click();
+        }
+      }
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+
+      function renderEquations(root = document) {
+        const blockElements = root.querySelectorAll(".mech-equation");
+        blockElements.forEach(el => {
+          if (!el.getAttribute("data-rendered")) {
+            const eq = el.getAttribute("equation");
+            if (eq) {
+              katex.render(eq, el, { throwOnError: false });
+              el.setAttribute("data-rendered", "true");
+            }
+          }
+        });
+
+        const inlineElements = root.querySelectorAll(".mech-inline-equation");
+        inlineElements.forEach(el => {
+          if (!el.getAttribute("data-rendered")) {
+            const eq = el.getAttribute("equation");
+            if (eq) {
+              katex.render(eq, el, { throwOnError: false });
+              el.setAttribute("data-rendered", "true");
+            }
+          }
+        });
+      }
+
+      renderEquations();
+
+      // Set up a MutationObserver to watch for new elements
+      const observer = new MutationObserver(mutations => {
+        for (const mutation of mutations) {
+          for (const node of mutation.addedNodes) {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              renderEquations(node);
+            }
+          }
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+
+    });
+    
+  </script>
+  <script type="module">
+    import init, { WasmMech, help_html } from '/pkg/mech_wasm.js';
+
+    let wasm_core;
+
+    async function initializeWasm() {
+      await init();
+      wasm_core = new WasmMech();
+      wasm_core.init();
+      wasm_core.attach_repl("sidebar");
+      let help = help_html();
+      document.getElementById("left-pane").innerHTML = help;
+      const sidebar = document.getElementById('sidebar');
+    }
+    initializeWasm();
+  </script>
+
+</body>
+</html>

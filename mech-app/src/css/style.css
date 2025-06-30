@@ -1,0 +1,1730 @@
+@import url(https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/fira_code.css);
+
+:root {
+  --op-color: #73b997;
+  --bracket-color: rgb(177, 187, 196);
+}
+
+html {
+    scroll-behavior: auto;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    min-width: 300px;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Lato', sans-serif;
+    min-width: 300px;
+    background-color: #0d1013;
+    color: #f2ead9;
+    margin: 0;
+    padding: 0;
+    font-size: 1rem;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.mech-root {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    box-sizing: border-box;
+}
+
+.mech-content {
+    height: 100%;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    counter-reset: h2 equation;
+    flex: 2;
+    box-sizing: border-box;
+}
+
+.mech-output {
+    width: 50%;
+    border-left: 1px solid rgb(246,192,78);
+}
+
+.mech-content a {
+    color: #F8D07A;
+    text-decoration: underline;
+}
+
+.mech-content a:hover {
+    color: #f18181;
+    text-decoration: underline;
+}
+
+.mech-program {
+    max-width: 700px;
+    margin: auto;
+}
+
+.sidebar {
+    box-sizing: border-box;
+}
+
+.mech-repl {
+  background-color: #040608;
+  color: #f2ead9;
+  font-family: 'FiraCodeLight', monospace;
+  font-size: 1rem;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  scrollbar-width: none;     /* Firefox */
+  -ms-overflow-style: none;  /* IE 10+ */
+}
+
+.mech-repl::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Edge */
+}
+
+.repl-line {
+    margin-top: 10px;
+}
+
+.repl-prompt {
+    color: #F3B62D;
+}
+
+.repl-result .mech-output-value {
+    margin-top: 10px;
+}
+
+.repl-result .mech-output-value {
+    overflow-x: auto;
+    scrollbar-width: none;     /* Firefox */
+    -ms-overflow-style: none;  /* IE 10+ */
+}
+
+.repl-result .mech-output-value::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Edge */
+}
+
+.repl-result {
+    margin-top: 10px;
+}
+
+.repl-input,
+.repl-code {
+  display: inline-block;       
+  font-family: 'FiraCodeLight', monospace;     
+  font-size: 1em;
+  line-height: 1.2em;
+  color: #f2ead9;
+  padding: 0;
+  margin: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+}
+.mech-toc {
+    width: 250px;
+    counter-reset: h2;
+    background-color: #171D21;
+    color: #f2ead9;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: sticky; 
+    top: 0; 
+    height: 100vh;
+    flex-shrink: 0;
+}
+
+.mech-toc h2 {
+    line-height: 23px;
+}
+
+.mech-toc {
+  overflow: auto;              /* Enables scrolling */
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE 10+ */
+}
+
+.mech-toc::-webkit-scrollbar {
+  display: none;               /* Chrome, Safari, Edge */
+}
+
+.mech-toc h1 {
+    visibility: hidden;
+    font-size: 1rem;
+}
+
+.mech-toc h2 {
+    font-size: 1rem;
+    padding-left: 13px;
+}
+
+h2.toc::before {
+    padding-right: 3px;
+}
+
+.mech-toc h2 a {
+    color: #f2ead9;
+    text-decoration: none;
+}
+
+.mech-toc h2:hover::before {
+    color: #f18181;
+}
+
+.mech-toc h2 a:hover {
+    color: #f18181;
+    text-decoration: none;
+}
+
+h3.toc::before {
+    font-size: 1rem;
+    padding-right: 3px;
+    color: rgba(255, 255, 255, 0.55);
+}
+.mech-toc h3 {
+    line-height: 23px;
+}
+
+.mech-toc h3 {
+    font-size: 1rem;
+    padding-left: 30px;
+}
+
+.mech-toc h3 a {
+    color: #f2ead9;
+    text-decoration: none;
+}
+
+.mech-toc h3:hover::before {
+    color: #f18181;
+}
+
+.mech-toc h3 a:hover {
+    color: #f18181;
+    text-decoration: none;
+}
+
+h4.toc::before {
+    font-size: 1rem;
+    padding-right: 3px;
+    color: rgba(255, 255, 255, 0.55);
+}
+.mech-toc h4 {
+    line-height: 23px;
+    font-size: 1rem;
+    padding-left: 60px;
+    margin: 10px;
+}
+
+.mech-toc h4 a {
+    color: #f2ead9;
+    text-decoration: none;
+}
+
+.mech-toc h4:hover::before {
+    color: #f18181;
+}
+
+.mech-toc h4 a:hover {
+    color: #f18181;
+    text-decoration: none;
+}
+
+.mech-matrix {
+    display: inline-flex;
+}
+
+.mech-bracket.end {
+    align-self: flex-end;
+    margin-left: -10px;
+}
+
+.mech-slice-ref {
+    display: inline-flex;
+}
+
+.mech-matrix-column {
+    display: flex;
+    flex-direction: column;
+    padding-right: 10px;
+}
+
+.mech-variable-assign-op {
+    padding-left:  6px;
+    padding-right: 6px;
+    color: var(--op-color);
+}
+
+.mech-range-operator {
+    color: var(--op-color);
+}
+
+.mech-assign-op {
+    color: var(--op-color);
+}
+
+.mech-transition-statement {
+    color: var(--op-color);
+}
+
+.mech-transition-output {
+    color: var(--op-color);
+}
+
+.mech-fsm-arm-last {
+    color: var(--op-color);
+}
+
+.mech-term {
+    display: inline-flex;
+}
+
+.mech-formula-operator {
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+.mech-program h1 {
+    width: 900px;
+    font-family: 'FiraCodeRegular', monospace;
+    padding-bottom: 10px;
+    border-bottom: 4px dashed #d19710;
+    color: #f2ead9;
+    letter-spacing: 2px;
+    font-size: 1.83rem;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 16px;
+    margin-left: -100px;
+}
+
+.mech-program h2 a {
+    color: #f2ead9;
+    text-decoration: none;
+}
+
+.mech-program h2 {
+    width: 850px;
+    font-family: 'FiraCodeRegular', monospace;
+    padding-bottom: 10px;
+    border-bottom: 3px dashed #d19710;
+    color: #f2ead9;
+    font-size: 1.33rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+    margin-top: 50px;
+    margin-left: -73px;
+}
+
+.mech-program h3 a {
+    color: #f2ead9;
+    text-decoration: none;
+}
+
+.mech-program h3 {
+    font-family: 'FiraCodeRegular', monospace;
+    color: #f2ead9;
+    font-size: 1.17rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+    margin-left: -48px;
+}
+
+.mech-program h4 a {
+    color: #f2ead9;
+    text-decoration: none;
+}
+
+.mech-program h4 {
+    font-family: 'FiraCodeRegular', monospace;
+    color: #f2ead9;
+    font-size: 1rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+h4.toc {
+    display: none;
+}
+
+.mech-variable-mutable {
+    color: #ada594;
+}
+
+.mech-section-element {
+}
+
+.mech-fsm-specification
+
+.mech-fsm-sigil{
+    display: inline-flex;
+}
+
+.mech-code-block {
+    display: block;
+    background-color: #171D21;
+    color: #e6dac2;
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 1rem;
+    line-height: 18px;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #888f92;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.mech-code-block::-webkit-scrollbar {
+    height: 8px; /* Horizontal scrollbar height */
+}
+
+.mech-code-block::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.mech-code-block::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.7);
+    border-radius: 10px;
+}
+
+.mech-code-block::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 0.9);
+}
+
+/* Firefox */
+.mech-code-block {
+    scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
+    scrollbar-width: thin;
+}
+
+.mech-grammar {
+    display: block;
+    background-color: #171D21;
+    color: #ada594;
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 1rem;
+    line-height: 18px;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #888f92;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.mech-grammar::-webkit-scrollbar {
+    height: 8px; /* Horizontal scrollbar height */
+}
+
+.mech-grammar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.mech-grammar::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.7);
+    border-radius: 10px;
+}
+
+.mech-grammar::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 0.9);
+}
+
+/* Firefox */
+.mech-grammar {
+    scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
+    scrollbar-width: thin;
+}
+
+.mech-grammar-identifier {
+    color: #ccbbc2;
+}
+
+.mech-grammar-definition {
+    color: #ccbbc2;
+}
+
+.mech-grammar-definition a {
+    color: #ccbbc2;
+    text-decoration: none;
+}
+
+.mech-grammar-definition a:hover {
+    color: #ccbbc2;
+    text-decoration: underline;
+}
+
+.mech-grammar-choice {
+    margin-left: 20px;
+}
+
+.mech-grammar-sequence {
+    margin-left: 20px;
+}
+
+
+.mech-grammar-terminal {
+    color: #ee6262;
+}
+
+
+.mech-code {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 20px;
+    line-height: 24px;
+}
+
+.mech-code .mech-comment {
+    margin: 0px;
+    padding: 0px;
+}
+
+.mech-code .mech-comment p {
+    line-height: inherit;
+}
+
+.mech-statement {
+    min-width: 225px;
+}
+
+.mech-inline-mech-code-formatted  .mech-statement {
+    min-width:fit-content;
+}
+
+.mech-variable-define {
+    display: flex;
+}
+
+.mech-fsm-specification-header {
+    display: inline-flex;
+}
+
+.mech-variable-mutable {
+    color: var(--op-color);
+}
+
+.mech-var-name {
+    color: #eddaf1;
+}
+
+.mech-output-kind {
+    margin-bottom: 10px;
+}
+
+.mech-boolean {
+    color: #C7DCAE;
+}
+
+.mech-atom {
+    color: #C7DCAE;
+}
+
+.mech-empty {
+    color: #C7DCAE;
+}
+
+.mech-grammar-define-op {
+    padding-right: 12px;
+}
+
+.mech-literal {
+}
+
+.mech-number {
+    color: #9ccdf4;
+}
+
+.mech-factor {
+    display: inline-flex;
+}
+
+.mech-term {
+}
+
+code {
+    margin: 0px;
+    padding: 0px;
+}
+
+.mech-inline-code {
+    background-color: #171D21;
+    border: 1px solid #777;
+    color: #eddaf1;
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 1rem;
+    padding: 0px 6px 0px 6px;
+    margin: 0px 2px 0px 2px;
+    border-radius: 3px;
+    box-shadow: 0 0px 2px rgba(0, 0, 0, 0.7);
+}
+
+.mech-inline-mech-code-formatted .mech-code-block {
+    display: inline-flex;
+    vertical-align: middle;
+    background-color: #171D21;
+    border: 1px solid #777;
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 1rem;
+    padding: 0px 6px 0px 6px;
+    margin: 0px 2px 0px 2px;
+    border-radius: 3px;
+    box-shadow: 0 0px 2px rgba(0, 0, 0, 0.7);
+}
+
+.mech-inline-mech-code {
+    background-color: #171D21;
+    border: 1px solid #777;
+    color: #9ccdf4;
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 1rem;
+    padding: 0px 6px 0px 6px;
+    margin: 0px 2px 0px 2px;
+    border-radius: 3px;
+    box-shadow: 0 0px 2px rgba(0, 0, 0, 0.7);
+}
+
+
+.mech-formula-operator {
+    color: var(--op-color);
+}
+
+.mech-op-assign-op {
+    padding-left: 6px;
+    padding-right: 6px;
+    color: var(--op-color);
+}
+
+.mech-paragraph {
+    color: #f2ead9;
+    line-height: 23px;
+}
+
+.mech-paragraph a {
+    color: #F8D07A;
+    text-decoration: underline;
+}
+
+.mech-paragraph a:hover {
+    color: #f18181;
+    text-decoration: underline;
+}
+
+.mech-all {
+    color: var(--op-color);
+}
+
+.mech-transpose-op {
+    color: var(--op-color);
+}
+
+.mech-negate-op {
+    color: var(--op-color);
+}
+
+.mech-record {
+    display: flex;
+}
+
+.mech-binding {
+    display: inline-flex;
+}
+
+.mech-function-call {
+    display: inline-flex;
+}
+
+.mech-slice {
+    display: inline-flex;
+}
+
+.mech-subscript {
+    display: inline-flex;
+}
+
+.mech-bracket {
+    display: inline-flex;
+    color: #A157B5
+}
+
+.mech-start-brace {
+    color: #a157b5
+}
+
+.mech-clickable:hover {
+    background-color: #2a2b34;
+    cursor: pointer;
+}
+
+.mech-end-brace {
+    color: #a157b5
+}
+
+.mech-dot {
+    color: #9cc7f3;
+}
+
+.mech-binding-colon-op {
+    padding-right: 6px;
+}
+
+.mech-right-paren {
+    color: #a157b5
+}
+
+.mech-left-paren {
+    color: #a157b5
+}
+
+.mech-binding-name {
+    color: #9cc7f3;
+    padding-left: 6px;
+}
+
+.mech-parenthetical {
+    color: #a157b5;
+}
+
+.mech-function-name {
+    color: #d8a5e4;
+}
+
+.mech-kind-annotation {
+    display: inline-flex;
+}
+
+.mech-kind {
+    color: #ec8e8e;
+    display: inline-flex;
+}
+
+.mech-fsm-define-op {
+    padding-left: 6px;
+}
+
+.mech-fsm-output { 
+    padding-left: 6px;
+    color: var(--op-color);
+}
+
+.mech-fsm-input {
+    color: #ccbbc2;
+    display: inline-flex;
+}
+
+.mech-fsm-name {
+    color: #d8a5e4;
+}
+
+.mech-kind-annotation {
+    color: #ee6262;
+}
+
+.mech-kind .mech-literal .mech-number {
+    color: #ec8e8e;
+}
+
+.mech-fsm-state {
+    display: inline-flex;
+}
+
+.mech-fsm-states {
+    display: flex;
+    flex-direction: column;
+    margin-left: 20px;
+}
+
+.mech-state-definition {
+    display: inline-flex;
+}
+
+.mech-fsm-arms {
+    margin-left: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.mech-fsm-arm {
+    display: inline-flex;
+}
+
+.mech-fsm-implementation-header {
+    display: inline-flex;
+}
+
+.mech-tuple-struct {
+    display: inline-flex;
+    color: var(--op-color);
+}
+
+.mech-fsm-sigil {
+    color: var(--op-color);
+}
+
+.mech-fsm-state {
+    color: var(--op-color);
+}
+
+.mech-tuple-struct-patterns {
+    display: inline-flex;
+}
+
+.mech-fsm-define-op {
+    padding-right: 6px;
+    color: var(--op-color);
+}
+
+.mech-matrix.empty .end  {
+    margin-left: 0px;
+}
+
+.mech-fsm-implementation {
+    margin-top: 20px;
+}
+
+.mech-fsm-guards {
+    display: flex;
+    flex-direction: column;
+    margin-left: 20px;
+}
+
+.mech-fsm-guard-arm {
+    color: var(--op-color);
+    display: inline-flex;
+}
+
+.mech-guard-condition {
+    padding-left: 6px;
+}
+
+.mech-transition-output {
+    padding-left: 0px;
+}
+
+.mech-state-variables {
+    display: inline-flex;
+}
+
+.mech-transition-next {
+    padding-left: 0px;
+    color: var(--op-color);
+}
+
+.mech-guard-condition {
+    display: inline-flex;
+    margin: 0px;
+}
+
+.mech-pattern-wildcard {
+    display: inline-flex;
+    color: #ee6262;
+}
+
+.mech-tuple-struct {
+    margin-right: 6px;
+}
+
+.mech-state-name {
+    color: #dbc3a5;
+}
+
+.mech-tuple-struct-name {
+    color: #dbc3a5;
+}
+
+.mech-code-block .mech-code:first-child .mech-comment {
+    margin-top: 0px;
+    padding-top: 0px;
+}
+
+.mech-comment {
+    color: #ef5f90;
+    font-style: italic;
+    padding-top: 20px;
+    display: flex; /* align contents horizontally */
+    gap: 4px;
+}
+
+.mech-comment p {
+    margin: 0;
+    color: #ef5f90;
+    display: inline;
+}
+
+.mech-comment-sigil {
+    white-space: nowrap;
+}
+
+.mech-string {
+    color: #ee6262;
+}
+
+
+ul {
+    color: #F3B62D;
+    font-weight: bold;
+}
+
+ol {
+    color: #F3B62D;
+    font-weight: bold;
+}
+
+
+.mech-check-list {
+    list-style: none;
+    padding-left: 9px;
+    margin-top: 0.5em;
+}
+
+.mech-check-list-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5em;
+    margin: 0;
+    color: #dcd4c9;
+}
+
+.mech-check-list-item input[type="checkbox"] {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 3px;
+    border: 2px solid #777;
+    border-radius: 3px;
+    background-color: #171D21;
+    cursor: pointer;
+    position: relative;
+}
+
+.mech-check-list-item input[type="checkbox"]:checked {
+    background-color: #171D21;
+    border-color: #F3B62D;
+}
+
+.mech-check-list-item input[type="checkbox"]:checked::after {
+    content: "✓";
+    color: #F3B62D;
+    position: absolute;
+    top: 0px;
+    left: 1px;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.mech-list-item-emoji {
+    list-style-type: none;
+    color: #ee6262;
+}
+
+.mech-list-item-emoji {
+    line-height: 0px;
+    color: #ee6262;
+}
+
+.mech-list-item-emoji::before {
+    content: attr(data-bullet); 
+    position: relative;         
+    font-size: 1rem;          
+    color: #ee6262;;    
+    right: 30px;
+    top: 13px;
+}
+
+.mech-figure {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px auto;
+}
+
+.mech-image {
+    max-width: 110%;
+}
+
+.mech-figure-label {
+    color: #F3B62D; 
+    font-size: 1rem;
+    min-width: 60px;
+    text-align: right;
+}
+
+.mech-figure-caption {
+    width: 110%;
+}
+
+.mech-float .mech-figure-caption {
+    width: 350px;
+}
+
+.mech-figure-caption {
+    margin-top: 1em;
+    color: #eadec2;
+    font-size: 1rem;
+    text-align: left;
+    line-height: 1.4;
+    font-style: italic;
+    display: flex;
+    flex-direction: row;
+    gap: 0.5em;
+}
+
+.mech-float .mech-figure {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.mech-figure-caption p {
+    margin: 0;
+}
+
+li {
+    padding-left: 3px;
+}
+
+li p {
+    margin-top: 2px;
+    margin-bottom: 2px;
+    font-weight: normal;
+}
+
+.mech-table-header {
+    color: #dbc3a5;
+    text-align: center;
+    font-weight: bold;
+    border-bottom: 1px solid #888f92;
+}
+
+.mech-table-cell.left {
+    text-align: left;
+}
+
+.mech-table-cell.right {
+    text-align: right;
+}
+
+.mech-table-cell.center {
+    text-align: center;
+}
+
+.mech-table .mech-table-header-cell {
+    text-align: center;
+}
+
+.mech-table-rows {
+}
+
+.mech-table-row {
+}
+
+.mech-table {
+    background-color: #2F353B;
+    color: #f2ead9; 
+    margin: auto;
+    margin-bottom: 20px;
+    padding: 0px;
+    border-collapse: collapse;
+    border: 1px solid #888f92;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.mech-table thead {
+    background-color: #171D21;
+}
+
+.mech-table .mech-table-header-cell {
+    padding: 10px;
+}
+
+.mech-table .mech-table-row-even {
+    background-color: #232A30; 
+}
+
+.mech-table .mech-table-row-odd {
+    background-color: #171D21; 
+}
+
+.mech-table .mech-table-cell {
+    padding: 20px 10px 20px 10px;
+    border-bottom: 1px solid #888f92; 
+}
+
+.mech-table tbody tr:hover {
+    background-color: #3A4148; 
+}
+
+.mech-table a {
+    color: #F8D07A;
+    text-decoration: underline;
+}
+
+.mech-table a:hover {
+    color: #f18181;
+}
+
+.mech-block-quote {
+    width: 80%;
+    background-color: #1d2227; 
+    border-left: 4px solid #F3B62D;; 
+    padding: 40px 30px 40px 30px;
+    margin: 40px auto;
+    color: #f2ead9; 
+    border-radius: 3px;
+    font-style: italic;
+    font-family: 'Georgia', serif;
+    /* optional visual tweaks */
+}
+
+.mech-block-quote p {
+    margin: 0;
+    line-height: 1.6;
+    font-size: 14pt;
+}
+
+.mech-thematic-break {
+    border: 0;
+    border-top: 2px solid #7e8892;
+    margin: 30px 0;
+    width: 100%;
+    opacity: 0.7;
+}
+
+.mech-fenced-mech-block {
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.mech-fenced-mech-block .mech-code-block {
+    background-color: #171D21;
+    border-radius: 10px 10px 0px 0px;  
+    border-bottom: 2px solid rgb(199, 220, 174);
+    margin-bottom: 0px;
+}
+
+.mech-block-output {
+    margin-top: 0px;
+    background-color: #222A30; 
+    color: #f2ead9;
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 1rem;
+    padding: 20px;
+    border: 1px solid #888f92;
+    border-radius: 0px 0px 10px 10px; /* Only bottom corners rounded */
+    overflow-x: auto;
+}
+
+.mech-block-output::-webkit-scrollbar {
+    height: 8px; /* Horizontal scrollbar height */
+}
+
+.mech-block-output::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.mech-block-output::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.7);
+    border-radius: 10px;
+}
+
+.mech-block-output::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 0.9);
+}
+
+/* Firefox */
+.mech-block-output {
+    scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
+    scrollbar-width: thin;
+}
+
+.mech-footnote {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75em;
+    margin-top: 1em;
+    font-size: 0.9em;
+    color: #ada594;
+}
+
+.mech-footnote-id {
+    color: #F3B62D;
+    font-weight: bold;
+    min-width: 2em;
+    text-align: right;
+    font-family: monospace;
+}
+
+.mech-footnote .mech-paragraph {
+    margin: 0;
+    line-height: 1.6;
+    color: #f2ead9;
+}
+
+a.mech-footnote-reference {
+    text-decoration: none;
+    font-size: 0.7em;
+    vertical-align: super;
+    margin-left: 0.1em;
+    color: #F8D07A;
+    font-weight: bold;
+    min-width: 2em;
+    text-align: right;
+    cursor: pointer;
+    font-family: monospace;
+    transition: color 0.2s;
+}
+
+.mech-footnote-reference:hover {
+    color: #f18181;
+    text-decoration: underline;
+}
+
+.mech-abstract {
+    background-color: #1f252a;
+    border: 1px solid #F3B62D;
+    padding: 2em 2em;
+    margin: 2em 2em;
+    border-radius: 8px;
+    color: #dcd4c9;
+}
+
+.mech-abstract p {
+    line-height: 25pt;
+    margin: 0px;
+    text-align: justify;
+}
+
+.mech-repl {
+    counter-reset: h2;
+}
+
+.mech-repl h2 {
+    counter-reset: h3;
+}
+
+.mech-repl h2 {
+    counter-reset: h3;
+}
+
+
+.mech-content h2 {
+    counter-reset: h3;
+}
+
+.mech-content h3 {
+    counter-reset: h4;
+}
+
+h2::before {
+    color: #F3B62D;
+    counter-increment: h2;
+    content: counter(h2) ". ";
+}
+
+h3::before {
+    color: #F3B62D;
+    counter-increment: h3;
+    content: counter(h2) "." counter(h3) " ";
+}
+
+h4::before {
+    color: #F3B62D;
+    counter-increment: h4;
+    content: counter(h2) "." counter(h3) "." counter(h4) " ";
+}
+
+.mech-program-subtitle.toc.active::before{
+    color: #d65858;
+}
+
+.mech-program-subtitle.toc.active a {
+    color: #ee6262;
+}
+
+.mech-program-section.toc.active{
+    background-color: #0d1013;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+h2:hover a {
+    color: #f18181;
+}
+
+h3:hover a {
+    color: #f18181;
+}
+
+h4:hover a {
+    color: #f18181;
+}
+
+.mech-program-section {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.mech-program-subtitle.toc.visible {
+    display: block;
+    visibility: visible;
+}
+
+.mech-equation {
+    counter-increment: equation;
+    text-align: center;
+    color: #efd5cd;
+}
+
+.mech-equation::after {
+    content: "Eq. " counter(equation); 
+    font-style: italic;
+    float: right;
+    color: #F8D07A;
+    font-size: 10pt;
+    line-height: 1.4;
+    font-style: italic;
+    gap: 0.5em;
+}
+
+.mech-inline-equation {
+    font-size: 10pt;
+    color: #efd5cd;
+}
+
+mark {
+    background-color: #F3B62D;
+    color: #2F353B;
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    margin: 0px 7px 0px 3px;
+}
+
+.mech-works-cited {
+    width: 100%;
+}
+
+.mech-citation {
+    display: flex;
+    align-items: baseline;
+    color: #f2ead9;
+}
+
+.mech-citation p {
+    margin-top: 0px;
+    margin-bottom: 10px;
+}
+
+.mech-citation-id {
+    color: #F3B62D;
+    font-family: 'FiraCodeRegular', monospace;
+    flex-shrink: 0;
+    padding: 3px 10px 3px 10px;
+}
+
+.mech-citation-link {
+    color: #F8D07A;
+    text-decoration: none;
+    word-break: break-all;
+    transition: color 0.2s ease;
+}
+
+.mech-citation-link:hover {
+    color: #f18181;
+    text-decoration: underline;
+}
+
+.mech-reference {
+    font-family: 'FiraCodeRegular', monospace;
+    align-items: baseline;
+    color: #F8D07A;
+}
+
+.mech-reference a:hover {
+    color: #f18181;
+}
+
+.mech-reference a {
+    color: #F8D07A;
+    text-decoration: none;
+}
+
+.mech-float.left {
+    float: left;
+    margin-right: 20px;
+    margin-left: -73px;
+}
+
+.mech-float.right {
+    float: right;
+    margin-left: 20px;
+    margin-right: -73px;
+}
+
+.mech-output-value .mech-matrix {
+    margin: 5px;
+}
+
+.mech-output-value .mech-matrix td {
+    max-width: 150px;
+    overflow: hidden;
+    padding: 5px 10px 5px 10px;
+}
+
+.mech-output-value {
+    padding-left: 10px;
+}
+
+.mech-matrix-outer{
+    width: fit-content;
+    position:relative;
+    border-left: 3px solid var(--bracket-color);
+    border-right: 3px solid var(--bracket-color);
+}
+.mech-matrix-outer:after{
+    content:'';
+    position:absolute;
+    height:3px;
+    width: 3px;
+    right:0;
+    border-top: 3px solid var(--bracket-color);
+}
+.mech-matrix-outer:before{
+      content:'';
+    position:absolute;
+    height:3px;
+    width: 3px;
+    border-top: 3px solid var(--bracket-color);
+}
+.mech-matrix-inner:before{
+      content:'';
+    position:absolute;
+    height:3px;
+    width: 3px;
+    bottom:0;
+    border-bottom: 3px solid var(--bracket-color);
+}
+.mech-matrix-inner:after {
+      content:'';
+    position:absolute;
+    height:3px;
+    width: 3px;
+    bottom:0; right:0;
+    border-bottom: 3px solid var(--bracket-color);
+}
+
+.mech-output-kind {
+    color: #ec8e8e;
+    font-weight: bold;
+    font-family: 'FiraCodeRegular', monospace;
+    margin-bottom: 10px;
+}
+
+.mech-table-cell .mech-paragraph {
+    margin: 0;
+    padding: 0;
+}
+
+.mech-diagram {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+.mech-diagram .node rect {
+  fill: #d0e6f7 !important;
+  stroke: #219900 !important;
+}
+
+.mech-diagram .edgePath path {
+  stroke: #0077cc !important;
+  stroke-width: 2px !important;
+}
+
+.mech-diagram .edgePath marker,
+.mech-diagram marker {
+  fill: #34c510 !important; 
+}
+
+.mech-diagram .edgeLabel {
+  background-color: transparent !important;
+  color: #ebdede !important;
+  fill: #dc9f9f !important;
+  font-size: 14px !important;
+}
+
+.mech-diagram .edgeLabel p {
+    background-color: transparent !important;
+}
+
+.mech-diagram .edgeLabel rect {
+  fill: transparent !important;
+  fill-opacity: 0 !important;
+  stroke: none !important;
+}
+
+.mech-diagram .labelBkg {
+  text-shadow: 0px 0px 4px #000000 !important;
+  background-color: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.mech-diagram .edgePath path {
+  stroke: #00bfa5 !important;
+  stroke-width: 2.5px !important;
+  fill: none !important;
+}
+.mech-diagram .edgePath marker,
+.mech-diagram marker {
+  fill: #00bfa5 !important;
+  stroke: #00bfa5 !important;
+}
+
+.mech-diagram .flowchart-link {
+  stroke: #00bfa5 !important;
+  stroke-width: 2.5px !important;
+}
+
+.mech-repl li {
+    color: #f2ead9;
+}
+
+.mech-repl li::marker {
+    color: #F3B62D;
+    font-weight: bold;
+}
+
+.mech-help th {
+    text-align: left;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-right: 10px;
+}
+
+.mech-help tr {
+    vertical-align: top;
+}
+
+.mech-help td {
+    padding-bottom: 10px;
+}
+
+
+.repl-result .mech-table td { 
+    padding: 10px;
+}
+
+.repl-result .mech-table th { 
+    padding: 10px;
+}
+
+.mech-text-logo {
+    white-space: pre;
+    font-family: 'FiraCodeRegular', monospace;
+    color: rgb(246,192,78);
+    text-align: center;
+    margin: 20px auto;
+}
+
+.mech-repl a {
+    color: #F8D07A;
+    text-decoration: underline;
+}
+
+.mech-repl a:hover {
+    color: #f18181;
+    text-decoration: underline;
+}
+
+.mech-command {
+    background-color: #171D21;
+    border: 1px solid #777;
+    color: #eddaf1;
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 1rem;
+    padding: 0px 6px 0px 6px;
+    margin: 0px 2px 0px 2px;
+    border-radius: 3px;
+    box-shadow: 0 0px 2px rgba(0, 0, 0, 0.7);
+}
+
+.mech-version {
+    text-align: center;
+}
+
+.mech-repl .mech-content {
+    width: 100%;
+    padding: 0px;
+    margin: 0px;
+    box-sizing: border-box;
+}
+
+.mech-repl .mech-abstract {
+    margin: 10px auto;
+    padding: 10px;
+}
+
+.mech-repl .mech-abstract p {
+    line-height: 25pt;
+    margin: 0px;
+    text-align: justify;
+}
+
+.mech-repl h1 {
+    width: 100%;
+    margin: auto;
+    font-family: 'FiraCodeRegular', monospace;
+    color: #f2ead9;
+    font-weight: bold;
+    border-bottom: none;
+    font-size: 1rem;
+}
+
+.mech-repl h2 {
+    width: 100%;
+    margin: auto;
+    font-family: 'FiraCodeRegular', monospace;
+    color: #f2ead9;
+    font-weight: bold;
+    border-bottom: none;
+    font-size: 1rem;
+}
+
+.mech-repl h3 {
+    width: 100%;
+    margin: auto;
+    font-family: 'FiraCodeRegular', monospace;
+    color: #f2ead9;
+    font-weight: bold;
+    font-size: 1rem;
+    margin-bottom: 10px;
+}
+
+.mech-repl h4 {
+    width: 100%;
+    margin: auto;
+    font-family: 'FiraCodeRegular', monospace;
+    color: #f2ead9;
+    font-weight: bold;
+    border-bottom: none;
+    font-size: 1rem;
+}
+
+.mech-repl h2 a {
+    text-decoration: none;
+}
+
+.mech-repl h3 a {
+    text-decoration: none;
+}
+
+.mech-repl h4 a {
+    text-decoration: none;
+}
+
+.mech-repl p {
+    margin-top: 0px;
+    margin-bottom: 10px;
+}
+
+.mech-repl .mech-code-block {
+    padding: 10px;
+}
+
+.mech-repl td {
+    padding: 10px;
+}
+
+.mech-repl .mech-equation {
+    margin-bottom: 10px;
+}
+
+.mech-repl th p {
+    margin-bottom: 0px;
+}
+
+@media (max-width: 1650px) {
+    .mech-program-title {
+        width: 700px;
+        margin-left: 0px;
+    }
+    .mech-program h2 {
+        width: 700px;
+        margin-left: -10px;
+    }
+    .mech-program h3 {
+        margin-left: 0px;
+    }
+}
+
+@media (max-width: 1470px) {
+    .mech-toc {
+        display: none;
+    }
+}
+
+@media (max-width: 750px) {
+    #left-pane {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        z-index: 0;
+    }
+
+    .resizer {
+        z-index: 2;
+    }
+
+    #sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        height: 100%; /* optional: full height */
+        margin-left: 0px !important;
+        z-index: 1;
+    }
+
+    .mech-program {
+        max-width: 100%;
+        min-width: 0px;
+    }
+
+    .mech-program-title {
+        width: 100%;
+        margin-left: 0px;
+    }
+    .mech-program h2 {
+        width: 100%;
+        margin-left: 0px;
+    }
+    .mech-program h3 {
+        margin-left: 0px;
+    }
+    
+    .mech-program-section {
+        padding-left: 0px;
+        padding-right: 0px;
+    }
+
+    .mech-table {
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
+    .mech-statement {
+        min-width: fit-content;
+    }
+
+}

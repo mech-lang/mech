@@ -123,8 +123,6 @@ impl MechServer {
     let code_source = self.mechfs.sources();
 
     // Serve the HTML file which includes the JS
-    let mut headers = HeaderMap::new();
-    headers.insert("content-type", HeaderValue::from_static("text/html"));
     let index = warp::get()
       .and(warp::filters::addr::remote()) // Capture remote address
       .and(warp::path::full())            // Capture full path
@@ -132,7 +130,13 @@ impl MechServer {
         let date = Local::now();
         // strip leading "/" from path
         let url = path.as_str().strip_prefix("/").unwrap_or("");
-        
+        let content_type = match std::path::Path::new(path.as_str()).extension().and_then(|e| e.to_str()) {
+            Some("html") | Some("mec") => "text/html",
+            Some("css") => "text/css",
+            Some("js") => "application/javascript",
+            _ => "text/html",
+        };
+
         match code_source.read() {
           Ok(sources) => {
 
@@ -166,7 +170,6 @@ impl MechServer {
             } else {
               println!("{} {} -- New request from unknown address -- /{}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), url);
             }
-
             // search for a document named index.mec, index.html. If not found return a default page.
             let mech_html = match sources.get_html(url) {
               Some(MechSourceCode::Html(source)) => source,
@@ -176,15 +179,14 @@ impl MechServer {
                 return warp::reply::with_header(mech_html, "content-type", "text/html");
               }
             };
-            return warp::reply::with_header(mech_html, "content-type", "text/html");
+            return warp::reply::with_header(mech_html, "content-type", content_type);
           },
           Err(e) => {
             println!("{} Error writing sources: {}", server_badge(), e);
             todo!();
           }
         }
-      })
-      .with(warp::reply::with::headers(headers));
+      });
 
     // Serve the JS file which includes the wasm
     let mech_js: Vec<u8> = self.js.clone();

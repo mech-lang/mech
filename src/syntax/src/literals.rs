@@ -6,7 +6,7 @@ use nom::{
 };
 use crate::nodes::Kind;
 
-// literal := (number | string | atom | boolean | empty), kind-annotation? ;
+// literal := (number | string | atom | boolean | empty | kind-annotation), kind-annotation? ;
 pub fn literal(input: ParseString) -> ParseResult<Literal> {
   let (input, result) = match number(input.clone()) {
     Ok((input, num)) => (input, Literal::Number(num)),
@@ -18,7 +18,10 @@ pub fn literal(input: ParseString) -> ParseResult<Literal> {
           Ok((input, boolean)) => (input, Literal::Boolean(boolean)),
           _ => match empty(input.clone()) {
             Ok((input, empty)) => (input, Literal::Empty(empty)), 
-            Err(err) => {return Err(err);}
+            Err(err) => match kind_annotation(input.clone()) {
+              Ok((input, knd)) => (input, Literal::Kind(knd.kind)),
+              Err(err) => return Err(err),
+            }
           }
         }
       }
