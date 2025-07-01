@@ -33,45 +33,20 @@ This short example demonstrates several key features of the language:
 
 (1.2) Why Mech?
 
-> "To invent the future, instead of innovating out from the present, what you want to do is invent the future **from** the future, and bring it back." - Alan Kay
 
-Today's most popular programming languages were designed around the assumptions of a different era.
-
-In the past few decades, hardware has evolved from simple, single-threaded, solitary machines to complex, interconnected systems that process large volumes of data in real time across any number of executiuon units. These systems are expected to be interactive, run on heterogeneous distributed hardware, and to even control and move in the physical world. Computers that get up and walk around are a recent development.
-
-Yet, mainstream languages still assume a single-threaded, imperative hardware model by default, creating an impedance mismatch between the programming model and the underlying system. To deal with this, developers rely on frameworks and libraries that add functionality to the language, but don't solve the underlying problem. This creates **incidental complexity**[^1], which manifests as verbose code, data marshalling, manual state management, and concurrency via locks and queues. This is what makes reasoning about concurrent, distributed systems difficult and error-prone in most modern languages.
-
-**The Mech Thesis**
-
-The Mech project is based on a few core ideas:
-
-- New programming languages and models are needed to take advantage of the complexity of modern systems.
-- Actually, this idea isn't new, and many good ideas about this topic have been proposed and tried, but they have not been widely adopted or implemented in a way that is practical for everyday use.
-- We can build on these ideas, incorporating decades of research and experience.
-- With careful design, we can create a language that supports features once considered impossible, but which are now both feasible and necessary.
-
-Mech embraces the complexity of today's systems by providing a programming model that allows you to define how your system should behave in response to changes in data. Whereas other languages pretend the world is single-threaded and imperative, Mech admits the world is inherently concurrent and distributed, and provides a programming model that allows you to work with this complexity directly.
-
-So why Mech?
-
-- Mech allows you to define how your system should behave in response to changes in data or user input, making it easy to build interactive applications that can process and respond to real-time data.
-- Mech provides a distributed programming model that allows you to build systems that can run on multiple devices or machines, making it easy to scale your applications.
-- Mech is designed to be fast and efficient, allowing you to build applications that can run on a wide range of hardware, from embedded devices to high-performance computing clusters.
-- Mech supports live programming and rapid prototyping, allowing you to iterate quickly and experiment with new ideas.
-And more to come.
 
 (1.3) Is Mech for you?
 
 Mech is for you if:
 
--(📊) You're a data scientist who would like to make an interactive visualization of your data and host it on the internet or in a native desktop application.
+-(📊) You're a data scientist makes interactive visualizations of data, and you'd like host it on the internet or embed it in a native desktop application.
 -(🎮) You're a game designer who wants to build a game that requires networking and real-time data processing for multiplayer interactions.
--(🧑‍🎨) You're an artist who is not a programmer, but would like to create interactive installations or generative art.
--(🤖) You're an engineer who wants to build a device or robot that interacts with the real-world via embedded microcontrollers, sensors, and actuators.
--(🧑‍🏫) You're an educator who'd like to use animations and visualizations to teach concepts in math, science, or art.
--(🧑‍🔬) You're a researcher and you want to build a simulation or model of a complex system, and you'd like to distribute it on the web, the desktop, or embed it inside of your journal paper.
--(🧑‍💻) You're a developer who wants to build GPU accelerated applications that work natively across windows, mac, linux, and the web.
--(🕴️) You're a business owner who wants to go beyond spreadsheets for your business management system, to something that can scale to automate business processes as well.
+-(🧑‍🎨) You're an artist who creates interactive installations or generative art that make use of sensors and servos.
+-(🤖) You're an engineer builds devices or robot that interact with the real-world via embedded microcontrollers, sensors, and motors.
+-(🧑‍🏫) You're an educator uses animations and visualizations to teach concepts in math, science, or art.
+-(🧑‍🔬) You're a researcher who builds simulations or models of a complex system, and you'd like to distribute it on the web or embed it inside of your journal article.
+-(🧑‍💻) You're a developer builds GPU accelerated applications that work natively across windows, mac, linux, and the web.
+-(🕴️) You're a business person is comfortable with spreadsheets  to something that can scale to automate business processes as well.
 -(🧙) You're a programming language enthusiast who wants to get involved in a project that is researching new directions in language design and tooling.
 
 3. Programming System
