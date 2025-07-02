@@ -13,23 +13,23 @@ Mech Programming Language Documentation
 -------------------------------------------------------------------------------
 
 1. Data Model
-    - Variables and Values
+    - Values, Kinds, and Variables
     - Data Structures
-        - Matrix - a ND array of values
-        - Map - a key-value store
-        - Set - a collection of unique values
-        - Tuple - an ordered collection of values
-        - Record - a collection of named values
-        - Table - a collection of Records
+        - Matrix - ND array of values
+        - Map - key-value store
+        - Set - unordered collection of unique values
+        - Tuple - ordered collection of values
+        - Record - collection of named values
+        - Table - collection of Records
     - Operators and Expressions
-        - Broadcasting
-    - Indexing
-2. Programming Model
+        - Operators
+        - Indexing
+2. Programming Model (Coming v0.3)
     - State Machines
     - Functions
     - Machines
     - Mech Programs
-3. System Model
+3. System Model (Coming v0.4)
     - Capabilities
     - Distributed Computation
     - Concurrency and Parallelism
@@ -41,12 +41,6 @@ Mech Programming Language Documentation
 
 1. [Mech in Fifteen Minutes](III.guides/mech-in-fifteen-minutes.html)
 2. Tutorials
-3. Mech for X
-    - Mech for Game Devs
-    - Mech for Web Devs
-    - Mech for ROS Devs
-    - Mech for Matlab Devs
-    - Mech for Python Devs
 
 4. Language Design Documents
 -------------------------------------------------------------------------------
