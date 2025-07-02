@@ -760,8 +760,7 @@ A Tuple is defined using parentheses `()` and contains an ordered collection of 
   (1,1,3)                
   (1,(2,3))                
   (1, true, "Hello")
-  ([1, 2; 3, 4], 7, false)
-  ()                 
+  ([1, 2, 3, 4], 7, false)          
 
 **Edge Cases:**
 
