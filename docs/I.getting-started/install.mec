@@ -10,6 +10,12 @@ The easiest way to install Mech is to use the installer provided for your platfo
 
 Right now, the installer is only available for Windows, but we are working on providing installers for other platforms in the future.
 
+
+(1.1) Desktop App
+
+We're experimenting with a Tauri-based app for Mech as well, which is kind of like Electron but Rust's version; it uses the system's webview to render the UI, which makes it much more lightweight and efficient. Right now all it does is wrap the Mech REPL, and it works, but it's not clear if this is the right direction for the project. If you want to try it out, you can [download the Mech Tauri app for Windows](https://github.com/mech-lang/mech/releases/download/v0.2.48-beta/mech-app_0.2.48_x86-64-setup.exe).
+
+
 2. Binary
 -------------------------------------------------------------------------------
 
