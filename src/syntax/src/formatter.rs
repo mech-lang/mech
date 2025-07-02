@@ -236,7 +236,6 @@ entries
   }})
   .forEach(entry => {{
     if (entry.isIntersecting) {{
-      console.log(entry);
         const id = entry.target.id;
         const tag = entry.target.tagName; // H1, H2, H3, etc.
 
@@ -298,7 +297,6 @@ entries
             if (H4Nav) {{
               H4Nav.classList.add("active");
               const h4_id = H4Nav.getAttribute("section");
-              console.log(h4_id);
               all_the_headers.forEach(item => {{
                 const item_id = item.getAttribute("section");
                 if (item_id && item_id.startsWith(h4_id) && item.tagName === "H4") {{
@@ -322,7 +320,6 @@ entries
               all_the_headers.forEach(item => {{
                 const item_id = item.getAttribute("section");
                 // Check if the item_id starts with the h3_id and is an H4, if so, add "visible", if not, remove "visible"
-                console.log(item.tagName);
                 if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {{
                   item.classList.add("visible");
                 }} else {{
