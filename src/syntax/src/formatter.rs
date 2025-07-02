@@ -392,6 +392,13 @@ window.addEventListener("DOMContentLoaded", () => {{
         }}
       }}
     }});
+
+    document.querySelectorAll(".mermaid svg").forEach(svg => {{
+      const labels = svg.querySelector(".node-labels");
+      if (labels && svg.lastElementChild !== labels) {{
+        svg.appendChild(labels); // Move labels to end = on top
+      }}
+    }});
   }}
 
   renderEquations();
