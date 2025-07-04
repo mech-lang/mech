@@ -201,7 +201,6 @@ Currently the languages version is `v0.2`. This version require a rewrite of mos
 
 Visit the [Roadmap](https://docs.mech-lang.org/IV.design/roadmap.html) for more information on the current status of features.
 
-
 [CMU1]: CMU: http://www.tartanracing.org/team.html
 [CMU2]: CMU: https://www.ri.cmu.edu/pub_files/2007/4/Tartan_Racing.pdf
 [CMU3]: CMU: https://www.cs.cmu.edu/~aldrich/courses/654/tools/coverity-on-boss.pdf
