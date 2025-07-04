@@ -70,7 +70,7 @@ Of the 35 semifinalist teams, 11 advanced to the final event -- with 7 from Trac
 | `#3`  | **VictorTango** [VT1][VT2][VT3]        | Odin        | 50        | ?                         | $1M     |
 | `#4`  | **Team MIT** [MIT1][MIT2]              | Talos       | 41        | 140 KLOC; C, Java, Python | $1M     |
 | `#5`  | **Ben Franklin Racing** [BFRT1][BFRT2] | Little Ben  | 20        | !!5KLOC; MATLAB!!         | $250K   |
-| `#6`  | **Cornell** [CU1][CU2]                | Skynet      | 20        | ? KLOC; C++               | $1M     |
+| `#6`  | **Cornell** [CU1][CU2]                 | Skynet      | 20        | ? KLOC; C++               | $1M     |
 
 When you look at the table above it's clear that despite their small size and limited funding, BFRT had a significant competitive advantage; whereas other teams invested in a C++ codebase that comprised hundreds of thousands of lines of code, Little Ben ran on just 5,000 lines of MATLAB code -- two orders of magnitude fewer lines of code than any other team.
 
