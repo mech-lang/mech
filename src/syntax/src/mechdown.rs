@@ -108,10 +108,10 @@ pub fn markdown_table_header(input: ParseString) -> ParseResult<(Vec<Paragraph>,
 // markdown_table_row := +(bar, paragraph), bar, *whitespace ;
 pub fn markdown_table_row(input: ParseString) -> ParseResult<Vec<Paragraph>> {
   let (input, _) = whitespace0(input)?;
-  let (input, row) = many1(tuple((bar, paragraph)))(input)?;
+  let (input, row) = many1(tuple((bar, tuple((whitespace0, paragraph)))))(input)?;
   let (input, _) = bar(input)?;
   let (input, _) = whitespace0(input)?;
-  let row = row.into_iter().map(|(_,tkn)| tkn).collect();
+  let row = row.into_iter().map(|(_,(_,tkn))| tkn).collect();
   Ok((input, row))
 }
 
