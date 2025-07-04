@@ -12,7 +12,7 @@ Let's get right to it, here's Mech some code:
 
 ```mech
   x := 1..=10                -- A row vector of numbers from 1 to 10
-  ~out<[string]> := x       -- Convert `x` into string vec
+  ~out<[string]> := x       -- Convert `x` into mutable string vec
   
   ix2 := (x % 2) == 0       -- Indices for multiples of 2
   ix3 := (x % 3) == 0       -- Indices for multiples of 3
@@ -33,9 +33,90 @@ This short example demonstrates several key features of the language:
 
 (1.2) Why Mech?
 
+(1.2.1) The Big Idea
 
+First, a little story... 
 
-(1.3) Is Mech for you?
+In 2007, DARPA[^1] hosted a "Grand Urban Challenge" in which researchers were tasked with building autonomous vehicles that could navigate a city environment. The competition was structured in two phases: first, a qualifying round where teams had to demonstrate their vehicles could navigate a simple course, and then a final round where they had to navigate a more complex urban environment. 
+
+```diagram
+---
+config:
+  sankey:
+    height: 175
+---
+sankey-beta
+
+%% source,target,value
+Site Visit,Semifinalists,35
+Site Visit,Did Not Qualify,18
+Semifinalists,Track A Finalists,7
+Semifinalists,Track B Finalists,4
+Semifinalists,Did Not Qualify,24
+Track A Finalists,Finished,5
+Track A Finalists,Did Not Finish,2
+Track B Finalists,Finished,1
+Track B Finalists,Did Not Finish,3
+```
+
+Qualifying teams were sorted into two groups: Track A teams were granted $1 million each to fund their competition entry; while Track B teams were invited to compete without any direct funding support from DARPA. 
+
+Of the 35 semifinalist teams, 11 advanced to the final event -- with 7 from Track A and 4 from Track B. It's not a surprise that of the 6 teams that finished the race, 5 were Track A. Just one team from Track B, the Ben Franklin Racing Team[^2], managed against all odds to finish the race. How did they do it?
+
+| Place | Team Name                              | Robot Name  | Team Size | Tech Stack                | Funding |
+|-------|----------------------------------------|:-----------:|:---------:|:-------------------------:|--------:|
+| `#1`  | **Tartan Racing** [CMU1][CMU2][CMU3]   | Boss        | 50        | !!500 KLOC; C++!!         | $1M     |
+| `#2`  | **Stanford Racing** [STAN1][STAN2]     | Junior      | 44        | 600 KLOC; C++             | $1M     |
+| `#3`  | **VictorTango** [VT1][VT2][VT3]        | Odin        | 50        | ?                         | $1M     |
+| `#4`  | **Team MIT** [MIT1][MIT2]              | Talos       | 41        | 140 KLOC; C, Java, Python | $1M     |
+| `#5`  | **Ben Franklin Racing** [BFRT1][BFRT2] | Little Ben  | 20        | !!5KLOC; MATLAB!!         | $250K   |
+| `#6`  | **Cornell** [CU1][CMU2]                | Skynet      | 20        | ? KLOC; C++               | $1M     |
+
+When you look at the table above it's clear that despite their small size and limited funding, BFRT had a significant competitive advantage; whereas other teams invested in a C++ codebase that comprised hundreds of thousands of lines of code, Little Ben ran on just 5,000 lines of MATLAB code -- two orders of magnitude fewer lines of code than any other team.
+
+This is a striking result, and it serves to challenge some conventional wisdom in robotic system design; high-level languages like MATLAB, which are sometimes considered "scripting languages", are often dismissed as being too slow or limited for serious applications. But in this case, BFRT was able to leverage MATLAB's extensive toolboxes and high-level abstractions to rapidly prototype, simulate, and deploy their autonomous driving logic.
+
+**This is where Mech comes in.** Because the truth is, despite it working out so for the BFRT, MATLAB still has a lot of shortcomings -- critically that it's not free and open source, so it can never really be a viable option for most developers. Therefore, Mech is our attempt to build an open-source language in this space that combines the best features of MATLAB with the performance and flexibility of a systems programming language like C++ in the context of robot programming. 
+
+Mech includes all of the matrix operations, data manipulation, and high-level abstractions that make MATLAB so powerful, but it also provides features such as: 
+
+- blazing fast performance
+- more data types and structures
+- static typing, including physical units
+- state machines
+- capability permission system
+- reactive programming model 
+- concurrent and distrubted runtime
+- live programming environment
+- advanced debugging modalities, like time travel debugging
+
+which make it more suitable for building complex, distributed systems from prototypign to production. 
+
+So why Mech? If you're looking to build a complex system, something on the order of a robot car, Mech will allow you to implement it in fewer lines of code, with performance on par with systems langauges, but safety and flexibility that you would expect from a high-level language.
+
+(1.2.2) Lineage
+
+Mech is growing on a strange branch of the programming language family tree. We've already mentioned MATLAB as a major influence, but Mech also draws inspiration from a number of other languages and paradigms, including:
+
+- **Eve** - Aside from MATLAB, Eve is the most direct influence on Mech. Eve was a dataflow language and environment focused on reactivity, declarative programming, and live coding. Mech builds on Eve's strengths—such as its spreadsheet-like model and automatic updates—while addressing its limitations by adding static typing, formal concurrency, and hardware integration.
+
+- **Rust** - A systems programming language that is designed for safety and performance. The Mech compiler is implemented in Rust, and so it inherits some of Rust's design principles, such as its focus on safety, concurrency, and performance.
+
+- **Smalltalk** - 
+
+- **Logo** - A language designed for teaching programming concepts to children, which uses a turtle graphics model to visualize program execution. Mech shares in Logo's mission of being accessible to beginners, and its focus on interactive, visual programming..
+
+- **Hypercard** - A visual programming language that was popular in the 1980s and 1990s. Mech takes inspiration from Hypercard's focus on building interactive applications, its use of a card metaphor for organizing content, and its support for multimedia.
+
+- **Visual Basic 6** - The best version of Visual Basic, which was a popular language for building Windows applications in the 1990s. Mech takes inspiration from VB6's event-driven programming model and its focus on building interactive applications.
+
+- **ROS** - Not a programming language, but a middleware for building robot applications. Mech draws inspiration from ROS's modular architecture, its focus on data-driven design, and its use of a publish-subscribe messaging model for communication between components.
+
+- **Lucid** - The first dataflow programming language, designed for building data-drive programs. Mech takes inspiration from Lucid's focus on data dependencies, its use of a declarative programming model, and its support for parallel execution.
+
+(1.2.4) Is Mech for you?
+
+Mech isn't just for building robots -- its reactive programming model and data-driven design make it suitable for a wide range of applications, from data science to game development, from art to education, and more. If you can model your project as a feedback control loop, or a data transformation pipeline, then Mech is a good fit for you.
 
 Mech is for you if:
 
@@ -114,4 +195,26 @@ Currently the languages version is `v0.2`. This version require a rewrite of mos
 
 Visit the [Roadmap](https://docs.mech-lang.org/IV.design/roadmap.html) for more information on the current status of features.
 
-[^1]: A well-known example is "callback hell," where the imperative model struggles to express relationships between data and events. As a result, developers are forced to chain callbacks, promises, and event handlers in convoluted ways, making the code harder to read, reason about, and maintain.
+[^1]: The United States Defense Advanced Research Projects Agency, formerly ARPA, which is responsible for developing emerging technologies for the United States military. Its most famous project is the ARPANET, which was the precursor to the modern Internet.
+
+[^2]: The Ben Franklin Racing Team was a partnership between University of Pennsylvania, Lehigh University, and Lockheed Martin. As a matter of disclosure, although the author of this document was not a member of the team, Lehigh University is his graduate alma mater. Carnegie Mellon 
+
+[CMU1]: CMU: http://www.tartanracing.org/team.html
+[CMU2]: CMU: https://www.ri.cmu.edu/pub_files/2007/4/Tartan_Racing.pdf
+[CMU3]: CMU: https://www.cs.cmu.edu/~aldrich/courses/654/tools/coverity-on-boss.pdf
+
+[STAN1]: Stanford: https://cs.stanford.edu/group/roadrunner/team.html
+[STAN2]: Stanford: https://robots.stanford.edu/papers/junior08.pdf
+
+[MIT1]: MIT: https://grandchallenge.mit.edu/index.shtml
+[MIT2]: MIT: https://dspace.mit.edu/handle/1721.1/39822
+
+[VT1]: Virginia Tech: https://www.romela.org/wp-content/uploads/2015/05/Odin-Team-VictorTango’s-Entry-in-the-DARPA-Urban-Challenge.pdf
+[VT2]: Virginia Tech: https://web.archive.org/web/20080524000738/http://www.victortango.org/
+[VT3]: https://news.vt.edu/articles/2007/08/2007-429.html
+
+[BFRT1]: BFRT: https://vaderlab.wordpress.com/the-ben-franklin-racing-team/
+[BFRT2]: BFRT: https://onlinelibrary.wiley.com/doi/abs/10.1002/rob.20260
+
+[CU1]: Cornell: https://onlinelibrary.wiley.com/doi/abs/10.1002/rob.20253
+[CU2]: http://www.coep.ufrj.br/~ramon/COE-841/robotics/book%202009%20-%20The%20DARPA%20Urban%20Challenge%20-%20Buehler,%20Iagnemma%20&%20Singh.pdf
