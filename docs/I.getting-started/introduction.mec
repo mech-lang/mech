@@ -76,7 +76,7 @@ When you look at the table above it's clear that despite their small size and li
 
 This is a striking result, and it serves to challenge some conventional wisdom in robotic system design; high-level languages like MATLAB, which are sometimes considered "scripting languages", are often dismissed as being too slow or limited for serious applications. But in this case, BFRT was able to leverage MATLAB's extensive toolboxes and high-level abstractions to rapidly prototype, simulate, and deploy their autonomous driving logic.
 
-**This is where Mech comes in.** Because the truth is, despite it working out so for the BFRT, MATLAB still has a lot of shortcomings -- critically that it's not free and open source, so it can never really be a viable option for most developers. Therefore, Mech is our attempt to build an open-source language in this space that combines the best features of MATLAB with the performance and flexibility of a systems programming language like C++ in the context of robot programming. 
+**This is where Mech comes in.** Because the truth is, despite it working out for the BFRT, MATLAB still has a lot of shortcomings -- critically that it's not free and open source, so it can never really be a viable option for most developers. Therefore, Mech is our attempt to build an open-source language in this space that combines the best features of MATLAB with the performance and flexibility of a systems programming language like C++ in the context of robot programming. 
 
 Mech includes all of the matrix operations, data manipulation, and high-level abstractions that make MATLAB so powerful, but it also provides features such as: 
 
