@@ -70,7 +70,7 @@ Of the 35 semifinalist teams, 11 advanced to the final event -- with 7 from Trac
 | `#3`  | **VictorTango** [VT1][VT2][VT3]        | Odin        | 50        | ?                         | $1M     |
 | `#4`  | **Team MIT** [MIT1][MIT2]              | Talos       | 41        | 140 KLOC; C, Java, Python | $1M     |
 | `#5`  | **Ben Franklin Racing** [BFRT1][BFRT2] | Little Ben  | 20        | !!5KLOC; MATLAB!!         | $250K   |
-| `#6`  | **Cornell** [CU1][CMU2]                | Skynet      | 20        | ? KLOC; C++               | $1M     |
+| `#6`  | **Cornell** [CU1][CU2]                | Skynet      | 20        | ? KLOC; C++               | $1M     |
 
 When you look at the table above it's clear that despite their small size and limited funding, BFRT had a significant competitive advantage; whereas other teams invested in a C++ codebase that comprised hundreds of thousands of lines of code, Little Ben ran on just 5,000 lines of MATLAB code -- two orders of magnitude fewer lines of code than any other team.
 
@@ -112,6 +112,8 @@ Mech is growing on a strange branch of the programming language family tree. We'
 
 - **Lucid** - The first dataflow programming language, designed for building data-driven programs. Mech is inspired by Lucid's focus on data dependencies, its use of a declarative programming model, and its support for temporal operators.
 
+If you've used or loved these languages, then you might find similar features in Mech that make it a good fit for your projects! 
+
 (1.2.4) Is Mech for you?
 
 Mech isn't just for building robots -- its reactive programming model and data-driven design make it suitable for a wide range of applications, from data science to game development. If you can model your project as a feedback control loop, or a data transformation pipeline, then Mech is a good fit for you.
@@ -128,10 +130,16 @@ Mech is for you if:
 -(🕴️) You're a business person is comfortable with spreadsheets  to something that can scale to automate business processes as well.
 -(🧙) You're a programming language enthusiast who wants to get involved in a project that is researching new directions in language design and tooling.
 
+*****
+
+[^1]: The United States Defense Advanced Research Projects Agency, formerly ARPA, which is responsible for developing emerging technologies for the United States military. Its most famous project is the ARPANET, which was the precursor to the modern Internet.
+
+[^2]: The Ben Franklin Racing Team was a partnership between University of Pennsylvania, Lehigh University, and Lockheed Martin. As a matter of disclosure, although the author of this document was not a member of the team, Lehigh University is his graduate alma mater. Carnegie Mellon 
+
 3. Programming System
 -------------------------------------------------------------------------------
 
-Whereas traditional languages provide only syntax and a runtime, Mech comes with integrated tools for data transformation, distribution, resource monitoring, and program optimization. As a result, you can focus on defining system behavior rather than managing infrastructure, enabling faster, more reliable development of complex, interconnected systems.
+Whereas traditional languages provide only syntax and a runtime, Mech comes with integrated tools for data transformation, distribution, resource monitoring, and program optimization.
 
 (3.1) Overview
 
@@ -193,9 +201,6 @@ Currently the languages version is `v0.2`. This version require a rewrite of mos
 
 Visit the [Roadmap](https://docs.mech-lang.org/IV.design/roadmap.html) for more information on the current status of features.
 
-[^1]: The United States Defense Advanced Research Projects Agency, formerly ARPA, which is responsible for developing emerging technologies for the United States military. Its most famous project is the ARPANET, which was the precursor to the modern Internet.
-
-[^2]: The Ben Franklin Racing Team was a partnership between University of Pennsylvania, Lehigh University, and Lockheed Martin. As a matter of disclosure, although the author of this document was not a member of the team, Lehigh University is his graduate alma mater. Carnegie Mellon 
 
 [CMU1]: CMU: http://www.tartanracing.org/team.html
 [CMU2]: CMU: https://www.ri.cmu.edu/pub_files/2007/4/Tartan_Racing.pdf
@@ -209,10 +214,10 @@ Visit the [Roadmap](https://docs.mech-lang.org/IV.design/roadmap.html) for more 
 
 [VT1]: Virginia Tech: https://www.romela.org/wp-content/uploads/2015/05/Odin-Team-VictorTango’s-Entry-in-the-DARPA-Urban-Challenge.pdf
 [VT2]: Virginia Tech: https://web.archive.org/web/20080524000738/http://www.victortango.org/
-[VT3]: https://news.vt.edu/articles/2007/08/2007-429.html
+[VT3]: Virginia Tech: https://news.vt.edu/articles/2007/08/2007-429.html
 
 [BFRT1]: BFRT: https://vaderlab.wordpress.com/the-ben-franklin-racing-team/
 [BFRT2]: BFRT: https://onlinelibrary.wiley.com/doi/abs/10.1002/rob.20260
 
 [CU1]: Cornell: https://onlinelibrary.wiley.com/doi/abs/10.1002/rob.20253
-[CU2]: http://www.coep.ufrj.br/~ramon/COE-841/robotics/book%202009%20-%20The%20DARPA%20Urban%20Challenge%20-%20Buehler,%20Iagnemma%20&%20Singh.pdf
+[CU2]: Corenell: http://www.coep.ufrj.br/~ramon/COE-841/robotics/book%202009%20-%20The%20DARPA%20Urban%20Challenge%20-%20Buehler,%20Iagnemma%20&%20Singh.pdf
