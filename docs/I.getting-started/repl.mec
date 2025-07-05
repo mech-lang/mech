@@ -18,12 +18,44 @@ You can load a script into the REPL by running with the `--repl` option:
 mech --repl my_script.mec
 ```
 
-Once inside, you can enter commands prefixed with `:`, otherwise the REPL will interpret the input as a Mech expression and evaluate it, and print the result and the associated type.
+Once inside, you can enter commands prefixed with `:`, otherwise the REPL will interpret the input as a Mech expression and evaluate it, and print the result with the associated type.
 
 2. Commands
 -------------------------------------------------------------------------------
 
-(a) `:help` (`:h`)
+(a) `:cd PATH`
+
+Changes the current working directory.
+
+```sh
+:cd /my/directory
+```
+
+(b) `:clc` (`:c`)
+
+Clears the screen, resets the cursor position.
+
+```sh
+:clc
+```
+
+(c) `:clear`
+Clears the interpreter state. If a target variable is provided, only that variable is cleared.
+```sh
+:clear
+:clear x
+```
+
+(c) `:docs [NAME]` (`:d`)
+
+Displays documentation for the specified name.
+
+```sh
+:docs install
+:docs math/sin
+```
+
+(d) `:help` (`:h`)
 
 Displays this help message with a list of available commands.
 
@@ -31,7 +63,33 @@ Displays this help message with a list of available commands.
 :help
 ```
 
-(b) `:quit` (`:q`)
+(e) `:load`
+
+Loads and executes the supplied Mech file(s) into the session.
+
+```sh
+:load my_script.mec
+:load my_script.mec my_other_script.mec
+:load my_directory
+```
+
+(f) `:ls [PATH]`
+Lists contents of working directory. Optionally, provide a target path.
+
+```sh
+:ls
+:ls /my/directory
+```
+
+(g) `:plan` (`:p`)
+
+Displays the execution plan.
+
+```sh
+:plan
+```
+
+(h) `:quit` (`:q`)
 
 Exits the REPL.
 
@@ -39,7 +97,18 @@ Exits the REPL.
 :quit
 ```
 
-(c) `:symbols` (`:s`)
+(i) `:step [N]`
+
+Iterates the execution plan by the specified number of steps. If N is not provided, defaults to 1 step.
+
+```sh
+~x := 10
+x += 1
+:step 10
+x == 21  -- true
+```
+
+(j) `:symbols` (`:s`)
 
 Searches for symbols in the current session. You can provide an optional search pattern to filter results.
 
@@ -48,74 +117,11 @@ Searches for symbols in the current session. You can provide an optional search 
 :s velocity
 ```
 
-(d) `:plan` (`:p`)
-
-Displays the execution plan.
-
-```sh
-:plan
-```
-
-(e) `:whos` (`:w`)
+(k) `:whos` (`:w`)
 
 Searches the symbol directory. Optionally, provide a search pattern to filter results.
 
 ```sh
 :whos
 :whos position
-```
-
-(f) `:clc` (`:c`)
-
-Clears the screen, resets the cursor position. 
-
-```sh
-:clc
-```
-
-(g) `:clear`
-
-Clears the interpreter state. If a target variable is provided, only that variable is cleared.
-
-```sh
-:clear
-:clear x
-```
-
-(h) `:load`
-
-Loads and executes the supplied a Mech file(s) into the session.
-
-```sh
-:load my_script.mec
-:load my_script.mec my_other_script.mec
-:load my_directory
-```
-
-(i) `:ls [PATH]`
-
-Lists contents of working directory. Optionally, provide a target path.
-
-```sh
->: :ls
->: :ls /my/directory
-```
-
-(j) `:cd PATH`
-
-Changes the current working directory.
-
-```sh
->: :cd /my/directory
-```
-
-(k) `:step [N]`
-
-Iterates the execution plan by the specified number of steps. If N is not provided, defaults to 1 step.
-
-```sh
->: ~x := 10
->: x += 1
->: :step 10
->: x == 21  -- true
 ```
