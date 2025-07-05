@@ -1,8 +1,0 @@
-x = 2
-y = 4.5
-a = x + y
-b = x - y
-c = x * y
-d = x / y
-e = x ^ y
-f = a * b * c * d * e
