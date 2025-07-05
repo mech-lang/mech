@@ -1,0 +1,76 @@
+[package]
+name = "mech-wasm"
+version = "0.2.48"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "A web assembly wrapper for Mech core and syntax. Allows Mech to be embedded in the browser."
+documentation = "http://docs.mech-lang.org"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-lang/mech"
+keywords = ["mech", "language", "programming", "wasm", "reactive"]
+categories = ["science::robotics", "science", "wasm", "web-programming"]
+license = "Apache-2.0"
+readme = "README.md"
+edition = "2021"
+rust-version = "1.84"
+
+[badges]
+gitlab = { repository = "mech-lang/mech", branch = "main" }
+maintenance = { status = "actively-developed" }
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+mech-core = "0.2.48"
+mech-syntax = "0.2.48"
+mech-interpreter = "0.2.48"
+
+hashbrown = "0.15.4"
+wasm-bindgen = "0.2.100"
+js-sys = "0.3.77"
+miniz_oxide = "0.8.5"
+bincode = "2.0.1"
+base64 = "0.22.1"
+brotli = "8.0.1"
+gloo-net = {version = "0.6.0", features = ["http"]}
+wasm-bindgen-futures = "0.4.50"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.50"
+
+[dependencies.web-sys]
+version = "0.3.77"
+features = [
+  'BinaryType',
+  'Blob',
+  'CanvasRenderingContext2d',
+  'console',
+  'Crypto',
+  'Document',
+  'Element',
+  'Event',
+  'ErrorEvent',
+  'EventTarget',
+  'FileReader',
+  'HashChangeEvent',
+  'HtmlCanvasElement',
+  'HtmlCollection',
+  'HtmlDivElement',
+  'HtmlElement',
+  'HtmlImageElement',
+  'HtmlInputElement',
+  'InputEvent',
+  'KeyboardEvent',
+  'Location',
+  'MessageEvent',
+  'MouseEvent',
+  'Node',
+  'NodeList',
+  'ProgressEvent',
+  'Range',
+  'Selection',
+  'TouchEvent',
+  'WebSocket',
+  'Window',
+  'XmlHttpRequest',
+]

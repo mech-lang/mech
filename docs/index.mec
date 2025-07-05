@@ -1,0 +1,72 @@
+Mech Programming Language Documentation
+===============================================================================
+
+1. Getting Started
+-------------------------------------------------------------------------------
+
+1. [Introduction](I.getting-started/introduction.html)
+2. [Install Mech](I.getting-started/install.html)
+3. [Build and Run Mech Programs](I.getting-started/build-and-run.html)
+4. [Mech REPL](I.getting-started/repl.html) 
+
+2. Language Reference
+-------------------------------------------------------------------------------
+
+1. Data Model
+    - Variables and Values
+    - Data Structures
+        - Matrix - a ND array of values
+        - Map - a key-value store
+        - Set - a collection of unique values
+        - Tuple - an ordered collection of values
+        - Record - a collection of named values
+        - Table - a collection of Records
+    - Operators and Expressions
+        - Broadcasting
+    - Indexing
+2. Programming Model
+    - State Machines
+    - Functions
+    - Machines
+    - Mech Programs
+3. System Model
+    - Capabilities
+    - Distributed Computation
+    - Concurrency and Parallelism
+4. Standard Library
+5. Mechdown Reference
+
+3. Guides
+-------------------------------------------------------------------------------
+
+1. [Mech in Fifteen Minutes](III.guides/mech-in-fifteen-minutes.html)
+2. Tutorials
+3. Mech for X
+    - Mech for Game Devs
+    - Mech for Web Devs
+    - Mech for ROS Devs
+    - Mech for Matlab Devs
+    - Mech for Python Devs
+
+4. Language Design Documents
+-------------------------------------------------------------------------------
+
+1. [Language Specification](IV.design/specification.html)
+2. Language Design Principles
+3. Syntax Design Notes
+4. History
+5. [Roadmap](IV.design/roadmap.html)
+
+5. Examples
+-------------------------------------------------------------------------------
+
+1. [Fizz Buzz](V.examples/fizzbuzz.html) - a classic programming exercise that demonstrates the use of Mech's data model and operators.
+2. [N-Body Simulation](V.examples/n-body.html) - a simulation of gravitational interactions between multiple bodies.
+3. [Extended Kalman Filter](V.examples/ekf.html) - an implementation of the Extended Kalman Filter algorithm for state estimation.
+
+docs/machine := {
+  name: "docs" 
+  version: "v0.2.48"
+  authors: ["Corey Montella"] 
+  machine-url: "https://gitlab.com/mech-lang/mech/docs"
+  license: "Apache-2.0"}

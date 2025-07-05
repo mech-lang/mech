@@ -1,0 +1,32 @@
+[package]
+name = "mech-app"
+version = "0.2.48"
+description = "Mech is a reactive programming language for building robots, games, and animations."
+authors = ["Corey Montella <corey@mech-lang.org>"]
+documentation = "https://mech-lang.org/docs"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-lang/mech"
+keywords = ["mech", "language", "programming", "dataflow", "runtime"]
+categories = ["science::robotics", "science", "game-engines", "web-programming"]
+license = "Apache-2.0"
+readme = "README.md"
+edition = "2021"
+rust-version = "1.84"
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "mech_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.3.0", features = [] }
+
+[dependencies]
+mech = "0.2.48"
+tauri = { version = "2.6.2", features = [] }
+tauri-plugin-opener = "2.4.0"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+

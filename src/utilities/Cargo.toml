@@ -1,0 +1,34 @@
+[package]
+name = "mech-utilities"
+version = "0.2.44"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "Shared components and utilities for Mech"
+documentation = "http://docs.mech-lang.org"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-lang"
+keywords = ["mech"]
+categories = ["science::robotics", "science"]
+license = "Apache-2.0"
+readme = "README.md"
+edition = "2021"
+
+[badges]
+gitlab = { repository = "mech-lang/mech", branch = "main" }
+maintenance = { status = "actively-developed" }
+
+#[features]
+#default = ["web"]
+#web = ["websocket"]
+
+[dependencies]
+mech-core = "0.2.44"
+mech-syntax = "0.2.44"
+mech-interpreter = "0.2.44"
+
+#serde = {version = "1.0.219", default-features = false, features = ["alloc"] }
+#serde_derive = "1.0.219"
+#hashbrown = "0.15.3"
+#crossbeam-channel = "0.5.15"
+
+#[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+#websocket = {version = "0.26.5", optional = true, default-features = false, features = ["sync"]}

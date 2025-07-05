@@ -1,0 +1,1955 @@
+Mech Platform Specification 
+===============================================================================
+
+1. Introduction
+-------------------------------------------------------------------------------
+
+This document specifies the default syntax and semantics of the Mech programming platform, which is designed for developing reactive systems like robots, games, and user interfaces. The syntax specified herein is one of many possible syntaxes and interfaces for Mech, but it may be thought of as the default texual representation of Mech.
+
+This specification starts by defining the most atomic elements of the language, and then builds up to more complex structures.
+
+This document is for:
+
+- Language designers who want to implement a parser for Mech.
+- Tool developers who want to build tools that work with Mech code.
+- Anyone who want to understand the syntax and structure of Mech programs.
+
+2. Source Code Representation
+-------------------------------------------------------------------------------
+
+(2.1) File Format
+
+Mech source code can be stored in files with either the `.mec` or `.🤖` extension. 
+
+Source code is ecoded with UTF-8, which allows for Unicode support directly in the code. This choice has several benefits:
+
+- Makes code more accessible to non-English speakers
+- Enables domain experts to use notation from their fields directly in code
+- Allows for more expressive and intuitive naming conventions
+- Supports mathematical notation that closely resembles standard written forms
+
+(2.2) Literate Programming and Mechdown
+
+Literate programming presents programs as structured documents where explanations take precedence over code. Mech supports this concept through a format called Mechdown, a Markdown varient with extensions to support embedded Mech syntax. This document is formatted with Mechdown to demonstrate how it is used.
+
+For more information, see the [Mechdown Section](#45036232896389885).
+
+(2.3) Whitespace
+
+Whitespace in Mech is used to separate tokens and is generally ignored. This includes spaces, tabs, and newlines. However, whitespace can be significant in certain contexts:
+
+- In lists, whitespace can be used to separate items.
+- In matrix and table definitions, whitespace can deliniate columns and rows.
+- In formulas, whitespace is required around operators.
+
+Semicolons and commas are treated as whitespace in most cases. Except in these contexts:
+
+- Semicolons can be used to separate statements so they can be written inline.
+- Semicolons can be used in a matrix to separate rows, so they can be written inline.
+
+For more information, see the [Whitespace Design Document](#).
+
+3. Lexical Elements
+-------------------------------------------------------------------------------
+
+(3.1) Tokens
+
+Tokens are the smallest units of meaning in Mech. They include letters, digits, punctuation, and special symbols.
+
+Some Unicode characters are reserved for box drawing, and therefore are excluded from valid identifiers.
+
+(3.1.1) Character Classes
+
+```ebnf
+alpha := "a".."z" | "A".."Z";
+digit := "0".."9";
+emoji := +emoji-grapheme ;
+bin-digit := "0" | "1" ;
+hex-digit := digit | "a" .. "f" | "A" .. "F" ;
+oct-digit := "0" .. "7" ;
+```
+
+(3.1.2) Alphanumeric Sequences
+
+```ebnf
+word := +alpha ;
+digit0 := *digit ;
+digit1 := +digit ;
+number := digit1 ;
+alphanumeric := alpha | digit ;
+digit-sequence := digit, *((underscore, digit) | digit) ;
+```
+
+(3.1.4) Whitespace and Separators
+
+```ebnf
+new-line := (carriage-return, new-line) | new-line-char | carriage-return ;
+whitespace := space | new-line | tab ;
+ws0 := *whitespace ;
+ws1 := +whitespace ;
+stb := space | tab ;
+list-separator := ws0, ",", ws0 ;
+enum-separator := ws0, "|", ws0 ;
+```
+
+(3.2) Operators and Text
+
+(3.2.1) Operators
+
+| Category     | Operators                                 |
+|--------------|-------------------------------------------|
+| Assign       | `:=` `=` `+=` `-=` `*=` `/=` `^=`         |
+| Arithmetic   | `+` `-` `*` `/` `^` `%`                   |
+| Split / Merge| `>-` `-<`                                 |
+| Matrix       | `**` `·` `⨯` `\` `'`                      |
+| Logic        | `|` `&` `xor` `⊕` `⊻` `!` `¬`            |
+| Set          | `∪` `∩` `∖` `∁` `⊆` `⊇` `⊊` `⊋` `∈` `∉` |
+| Range        | `..` `..=`                                |
+| Condition    | `!=` `¬=` `≠` `==` `>` `<` `>=` `≤` `≥`   |
+| Transition   | `=>` `->` `~>`                            |
+| Guard        | `|` `│` `├` `└`                           |
+
+(3.2.2) Punctutation
+
+```ebnf
+punctuation := period 
+      | exclamation 
+      | question 
+      | comma 
+      | colon 
+      | semicolon 
+      | quote 
+      | apostrophe ;
+```
+
+(3.2.2.1) Examples
+
+```
+. ! ? , : ; " ' 
+```
+
+(3.2.3) Symbols
+
+```ebnf
+symbol := ampersand 
+      | dollar
+      | bar 
+      | percent
+      | at 
+      | slash 
+      | hashtag 
+      | equal 
+      | backslash 
+      | tilde 
+      | plus 
+      | dash 
+      | asterisk 
+      | caret 
+      | underscore ;
+```
+
+(3.2.3.1) Examples
+
+```
+& $ | % @ / # = \ ~ + - * ^ _
+```
+
+(3.2.4) Grouping Symbols
+
+```ebnf
+grouping-symbol := left-parenthesis 
+      | right-parenthesis 
+      | left-angle 
+      | right-angle 
+      | left-brace 
+      | right-brace 
+      | left-bracket 
+      | right-bracket ;
+```
+
+(3.2.4.1) Examples
+
+```
+( ) < > { } [ ]
+```
+
+(3.4.5) Text
+
+```ebnf
+escaped-char := backslash,  symbol | punctuation | alpha ;
+text := alpha 
+      | digit 
+      | space 
+      | tab 
+      | escaped-char 
+      | punctuation 
+      | grouping-symbol 
+      | symbol ;
+```
+
+(3.3) Comments
+
+```ebnf
+comment-sigil := "--" | "//" ;
+comment :=  ws0
+      , comment-sigil
+      , +text ;
+```
+
+There are two options for single line comments in Mech:
+
+- `--` for those familiar with languages like Lua, Haskell, and SQL.
+- `//` for those familiar with languages like C, C++, Java, and JavaScript.
+
+There is no difference between the two, and they can be used interchangeably. However, 
+
+Because Mech has a focus on literate programming, comment have less of an emphasis compared to other programming languages. For example, there is no support for block comments in Mech; instead, programmers are encouraged to use Mechdown to express their comments in a more structured way.
+
+Therefore, comments are primarily used for writing notes inline with the code that cannot be broken out into a paragraph. For example, to make a note within a state machine definition.
+
+(3.3.1) Examples
+
+Here are some ways to write a comment in Mech:
+
+```
+  -- Comment prefix with --
+  // Comment prefixed with //
+  -- Supports formatting like **bold**, __underline__, `inline code`, and [links](https://example.com).
+  x := 1 -- Comment after an expression
+```
+
+When parsed and rendered, these become:
+
+```mech:disabled
+  -- Comment prefix with --
+  // Comment prefixed with //
+  -- Supports formatting like **bold**, __underline__, `inline code`, and [links](https://example.com).
+  x := 1 -- Comment after an expression
+```
+
+One special ability comments have is they can be used to print out the evaluation of a Mech code statement.
+
+qq := 10 * 20     -- The value of qq is {qq}
+
+(3.4) Keywords
+
+There are only two keywords in Mech: `true` and `false`. Because Mech is designed to be used by non-English speakers, the syntax allows for an alternative representation, which can be used in place of the English keywords.
+
+| Keyword   | Alternative |
+|-----------|-------------|
+| `true`    | `✓`         |
+| `false`   | `✗`         |
+
+This allows users to write code in their native language without the need to learn English keywords.
+
+(3.5) Identifiers
+
+```ebnf
+identifier := (alpha | emoji), *(alpha | digit | symbol | emoji) ;
+```
+
+Identifiers start with letters or most UTF-8 encoded emoji characters, and can contain alphanumeric, most emojis, `/`, `*`, `+`, `-`, and `^` characters.
+
+**Examples:**
+
+  Hello-World
+  io/print
+  Δx^2
+  🤖
+  A*
+
+Note: Underscores `_` are not allowed in identifiers, as kebab-case is the preferred style in Mech. Underscores will be reported as syntax errors.
+
+4. Literals
+-------------------------------------------------------------------------------
+
+```ebnf
+literal := (number | string | atom | boolean | empty), ?kind-annotation ;
+```
+Mech supports several types of literals, which are used to represent values in the code. Each literal type has its own syntax and semantics. Each literal has an associated "kind", which describes the data type of the literal. Mech supports the following literal types:
+
+- **Number** - Represents numeric values, including integers, floating-point numbers, and complex numbers.
+  - **Real** - Real numbers, including integers and floats.
+    - **Integers** - Whole numbers, which can be positive, negative, or zero.
+      - **Signed** - Can represent both negative and positive values.
+        - `i8` - 8-bit signed integer
+        - `i16` - 16-bit signed integer
+        - `i32` - 32-bit signed integer
+        - `i64` - 64-bit signed integer
+        - `i128` - 128-bit signed integer
+      - **Unsigned** - Can only represent zero and positive values.
+        - `u8` - 8-bit unsigned integer
+        - `u16` - 16-bit unsigned integer
+        - `u32` - 32-bit unsigned integer
+        - `u64` - 64-bit unsigned integer
+        - `u128` - 128-bit unsigned integer
+    - **Fractional** - Decimal numbers with fractional components.
+      - `f32` - 32-bit floating-point number
+      - `f64` - 64-bit floating-point number
+  - **Imaginary** - Represent imaginary components of complex numbers.
+- **String**
+      - `string` - A sequence of UTF-8 characters representing text.
+- **Boolean** 
+      - `bool` - Represents logical truth values.
+- **Atom** - A symbolic constant, often used for tags or enums.
+- **Empty**
+      - `_` - Represents an empty value, placeholder, or the absence of a value.
+
+(4.1) Kinds
+
+```ebnf
+kind-annotation := "<", kind, ">" ;
+kind := kind-fxn 
+      | kind-empty 
+      | kind-atom 
+      | kind-tuple 
+      | kind-scalar 
+      | kind-bracket 
+      | kind-map 
+      | kind-brace ;
+kind-empty := +"_" ;
+kind-atom := "`", identifier ;
+kind-map := "{"
+      , kind
+      , ":"
+      , kind
+      , "}" ;
+kind-fxn := "("
+      , ?[",", kind]
+      , ")"
+      , "="
+      , "("
+      , ?[",", kind]
+      , ")" ;
+kind-brace := "{"
+      , [",", kind]
+      , "}"
+      , ?":"
+      , ?[",", literal] ;
+kind-bracket := "["
+      , [",", kind]
+      , "]"
+      , ?":"
+      , ?[",", literal] ;
+kind-tuple := "("
+      , [",", kind]
+      , ")" ;
+kind-scalar := identifier ;
+```
+
+Kinds are used to specify the type of a literal or expression in Mech. Kinds are specified with a syntax structure called a "kirby" e.g. `<string>`, which indicates a String data type; or `<[u64]:3,1>`, which indicates a 3x1 matrix of 32-bit unsigned integeres.
+
+**Examples:**
+
+<_>             -- Empty         
+<`A>            -- Atom         
+<{A:B}>         -- Map          
+<{A}>           -- Set              
+<[A]>           -- Matrix              
+<(A,B,C)>       -- Tuple              
+
+(4.2) Numbers
+
+(4.2.1) Integer Numbers
+
+```ebnf
+number := real-number, ?"i" | ?("+", real-number, "i") ;
+integer-literal := +digit;
+decimal-literal := "0d", +digit ;
+hexadecimal-literal := "0x", +hex-digit ;
+octal-literal := "0o", +oct-digit ;
+binary-literal := "0b", +bin-digit ;
+```
+
+An integer literal is a sequence of digits representing a whole number. Mech supports decimal, binary, octal, and hexadecimal integer literals, each distinguished by a unique prefix:
+
+- Decimal: A sequence of digits without a prefix (e.g., 42, 123456).
+- Hexadecimal: Prefixed with 0x, containing digits 0-9 and a-f or A-F (e.g., 0x1A3F).
+- Octal: Prefixed with 0o, containing digits 0-7 (e.g., 0o755).
+- Binary: Prefixed with 0b, containing only 0 and 1 (e.g., 0b1010).
+
+(4.2.1.1) Examples
+
+  42                  -- decimal
+  0d42                -- decimal
+  0x1234567890ABCDEF  -- hexadecimal
+  0x1234567890abcdef  
+  0o12345670          -- octal 
+  0b100110101         -- binary
+
+(4.2.1.2) Kind
+
+By default, Mech can represent integers in the following data types:
+
+- Signed: `i8`, `i16`, `i32`, `i64`, `i128`
+- Unsigned: `u8`, `u16`, `u32`, `u64`, `u128`
+- Float: `f32`, `f64`
+
+Unless specified or inferred, the default data type for integer literals is `f64`. This is different from many systems languages but consist with other languages like Matlab, Python, and Javascript.
+
+(4.2.2) Fractional Numbers
+
+```ebnf
+scientific-literal :=  (float-literal | integer-literal)
+      , ("e" | "E")
+      , ?plus
+      , ?dash
+      , (float-literal | integer-literal) ;
+rational-literal := integer-literal
+      , slash
+      , integer-literal ;
+float-literal := ?"."
+      , +digit
+      , ?"."
+      , *digit ;
+```
+
+A floating-point literal represents a real number, potentially with a fractional component. Mech supports several forms of floating-point literals:
+
+- **Decimal floats**: Numbers with a decimal point (e.g., `3.14`, `.123`, `0.0`)
+- **Scientific notation**: A number followed by e or E, then an optional sign and exponent (e.g., `2.5e10`, `1e-3`)
+- **Rational literals**: A fraction of two integers separated by `/` (e.g., `3/4`, `22/7`) — these may be evaluated as exact values or approximated depending on context.
+
+(4.2.2.1) Examples
+
+  3.14         -- decimal float
+  0.001        -- decimal float
+  2.5e10       -- scientific notation
+  -2.5         -- negative float
+  .123         -- leading-dot float
+  3/4          -- rational
+
+By default, floating-point literals are inferred to be of type f64, unless explicitly annotated or inferred from context.
+
+(4.3) Strings
+
+```ebnf
+string := quote, *(¬quote, text), quote ;
+```
+
+Strings are enclosed in double quotes `"` and can contain any character, including whitespace, except for the quote character itself. To include a quote character in a string, it must be escaped with a backslash `\`.
+
+Strings heap-allocate their contents, so they can be of any length. They are encoded in UTF-8, allowing for Unicode characters.
+
+**Examples:**
+
+  "Hello, World!"
+  "characters like \" and \\ are escaped with, \\ e.g. \\\""
+  "This string contains emojis: 🤖, 🐦, and 🐍"
+
+(4.4) Boolean
+
+```ebnf
+boolean := true-literal | false-literal ;
+true-literal := english-true-literal | true-symbol ;
+false-literal := english-false-literal | false-symbol ;
+true-symbol := "✓" ;
+false-symbol := "✗" ;
+english-true-literal := "true" ;
+english-false-literal := "false" ;
+```
+A boolean literal represents a logical truth value, and can be expressed in either textual or symbolic form. Thre reason Mech supports both is tho allow for code that doesn't contain any English keywords, which is useful for non-English speakers.
+
+**Examples:**
+
+  true
+  false
+  ✓
+  ✗
+
+(4.5) Atoms
+
+```ebnf
+atom := "`", identifier ;
+```
+
+An atom is a symbolic constant used to represent a fixed, named value. Atoms are prefixed with a backtick and followed by an identifier. They are used to represent tags, enums, or other symbolic values in the code.
+
+**Examples:**
+
+  `A
+  `MyAtom
+  `🐦
+  `Δx^2
+
+(4.6) Empty
+
+```ebnf
+empty := +underscore ;
+```
+
+Empty literals are used to represent the absence of a value or a placeholder. They are represented by one or more underscores `_`. Empty literals can be used in various contexts, such as in tables, to indicate missing values.
+
+**Examples:**
+
+  _
+  ___
+
+5. Data Structures
+-------------------------------------------------------------------------------
+
+```ebnf
+structure := empty-set 
+      | empty-table 
+      | table 
+      | matrix 
+      | tuple 
+      | tuple-struct 
+      | record 
+      | map 
+      | set ;
+```
+
+Data structures in Mech can be broadly classified into two categories: ordered collections that allow duplicated elements, and unordered collections that do now allow duplicated elements.
+
+**Ordered elements, duplicates allowed**
+    - Vector (Nx1)
+    - Row Vector (1xN)
+    - Matrix (N-D)
+    - Tuple
+
+**Unordered elements, no duplicates**
+    - Record
+    - Table
+    - Set
+    - Map
+
+Each data structure has its own semantics, which will be described in this section.
+
+(5.1) Matrix
+
+```ebnf
+matrix-column := *space-tab 
+      , expression 
+      , (*space-tab, ?("," | table-separator), *space-tab) ;
+matrix-row := ?table-separator
+      , *space-tab
+      , +matrix-column
+      , ?semicolon
+      , ?new-line
+      , ?(+box-drawing-char, new-line) ;
+matrix := matrix-start
+      , *(box-drawing-char | whitespace)
+      , *matrix-row
+      , *box-drawing-char
+      , matrix-end ;
+```
+
+A Matrix is a structured, numbered sequence of elements of a single kind, arranged in rows and columns, enclosed bt square brackets, `[]`. The number of elements in the matrix is called its length, and the shape of a matrix is defined as a pair of non-negative integers representing the number of rows and columns.
+
+(5.1.1) Semantics
+
+- Homogeneous Elements: All elements in a matrix must be of the same kind.
+- Fixed Shape: A static matrix's shape (rows, columns) is part of its kind and is always a tuple of non-negative integers.
+- One-Based Access: Elements are accessed using 1-based indexing for both rows and columns.
+- Column-Major Order: Matrix elements are stored and accessed in column-major order.
+
+Matrix kinds are always two-dimensional, so row vectors and column vectors are also represented as matrices with a single row or column, respectively.
+
+(5.1.2) Indexing
+
+Matrix elements can be accessed using either 1D or 2D indexing:
+
+- 1D Indexing (Column-Major Order): Elements are stored in column-major order, meaning the first element is the top-left element, proceeding down the first column before moving to the next.
+- 2D Indexing: Elements can be referenced using `[row, column]` notation, starting from 1 for both indices.
+- Negative Indices: Negative indices count from the end of the matrix, with -1 being the last element.
+
+See the Indexing section for more details and examples.
+
+(4.1.3) Examples
+
+  -- Empty Matrix
+  []
+
+  -- 1x1 Matrix
+  [1]
+
+  -- 3x3 Matrix
+  [1 2 3
+   4 5 6
+   7 8 9]
+
+  -- 3x2 Matrix
+  [1, 2; 3, 4; 5, 6]
+
+  -- 1x3 Row Vector
+  [1 2 3]
+
+  -- 3x1 Column Vector
+  [1
+   2
+   3]
+  
+  -- 4x1 Column Vector
+  [1; 2; 3; 4]
+
+Fancy matrix syntax is supported so that formatted output from the Mech REPL can be used as program source or input.
+
+```
+┏           ┓
+┃ 1   2   3 ┃
+┃ 4   5   6 ┃
+┗           ┛
+```
+The elements of a matrix are indexed in the following ways:
+
+- **1D** - by their position in the matrix, starting from 1, in a column-major order starting at the top left corner of the matrix and proceeding down and to the right. The last element of the matrix, called the end of the matrix, is the most bottom right element.
+
+- **2D** - by the row and column index, starting from 1 for each.
+
+Negative indices indicate counting from the end of the matrix. For example, `-1` is the last element, `-2` is the second to last element, and so on.
+
+(4.1.4) Kind
+
+The kind of a matrix includes the type of its elements and its shape. For example, a matrix of unsigned 8-bit integers with 2 rows and 3 columns has the kind `<[u8]:2,3>`.
+
+| Description    | Kind           |
+|----------------|----------------|
+| Dynamic matrix | `<[u8]>`       |
+| Col Vector     | `<[u8]:2`      |
+| Row Vector     | `<[u8]:1,2`    |
+| 2D Matrix      | `<[u8]:2,3>`   |
+| 3D Matrix      | `<[u8]:2,3,4>` |
+| Dynamic cols   | `<[u8]:2,_>`   |
+| Dynamic rows   | `<[u8]:_,3>`   |
+
+
+(5.2) Set
+
+```ebnf
+set := "{"
+      , ws0
+      , ?[expression, list-separator]
+      , ws0
+      , "}" ;
+empty-set := table-start
+      , ws0
+      , empty
+      , ws0
+      , table-end ;
+```
+
+A Set is defined using curly braces `{}` and contains a comma-separated list of expressions. Sets do not maintain order and contain only unique elements.
+
+(5.2.1) Semantics
+
+- Homogeneity: All elements in a set must be of the same type.
+- Unordered: The order of elements within a set is not preserved.
+- Uniqueness: Duplicate elements are not allowed in a set.
+
+(5.2.2) Operations
+
+- Insertion: Adding an element to a set does not affect its order and only - succeeds if the element is not already present.
+- Deletion: Removing an element, if present, maintains the set property.
+- Union: Combines two sets, keeping only unique elements.
+- Intersection: Produces a set containing elements common to both sets.
+- Difference: Returns a set containing elements in the first set but not in the second.
+
+(5.2.3) Examples
+
+| Description | Example                         |
+|-------------|---------------------------------|
+| Empty       | `{}` or `{_}`                   |
+| Singleton   | `{1}`                           |
+| Basic       | `{1,2,3}`                       |
+| Strings     | `{"apple", "banana", "cherry"}` |
+| Nested      | `{{1,2},{3,4}}`                 |
+
+**Edge Cases**
+
+- `{}` represents an empty set.
+- `{1, 1, 2}` results in `{1, 2}` due to uniqueness constraints.
+- `{1, "hello"}` results in a type error due to homogeneity constraints.
+
+(5.2.4) Kind
+
+The kind of a set consists of:
+
+- The kind of the elements
+- The number of elements, which can be dynamic or fixed
+
+<{u8}>            -- Generic set of unsigned 8-bit integers
+<{u8}:3>          -- Set of 3 unsigned 8-bit integers
+<{{i8}}>          -- Set of sets of signed 8-bit integers 
+
+(5.3) Map
+
+```ebnf
+map := "{"
+      , ws0
+      , *mapping
+      , ws0
+      , "}" ;
+mapping :=  ws0
+      , expression
+      , ws0
+      , ":"
+      , ws0
+      , expression
+      , ?comma
+      , ws0 ;
+```
+
+A Map is defined using curly braces `{}` and contains a set of key-value mappings. Each key is unique and associated with a corresponding value.
+
+(5.3.1) Semantics
+
+- Key Uniqueness: Each key in a map must be unique.
+- Unordered: The order of key-value pairs within a map is not preserved.
+- Key-Value Association: Each key is mapped to exactly one value.
+
+(5.3.2) Operations
+
+- Insertion: Adding a key-value pair updates the map. If the key already exists, its value is updated.
+- Deletion: Removing a key-value pair removes the key and its associated value.
+- Lookup: Retrieving the value associated with a key.
+- Merge: Combining two maps, where duplicate keys take precedence from the second map.
+
+(5.3.3) Examples
+
+{_:_}                       -- Empty map
+{"a": 1}                    -- Map with a single key-value pair
+{1: 0xA, 2: 0xB, 3: 0xC}    -- Map with multiple key-value pairs
+{"a": {"b": 10}}            -- Nested map
+{ "a" : 10                 
+  "b" : 20
+  "c" : 30 }                -- Multiline map
+
+**Edge Cases**
+
+- `{_:_}` represents an empty map.
+- If the map is mutable, inserting a duplicate key overwrites the previous value
+- `{1: "hello", 2: "world"}` is valid, but `{1: "hello", "one": "world"}` results in an error, as the keys are not homogenous.
+
+(5.3.4) Kind
+
+The kind of a map consists of:
+
+- The kind of the keys
+- The kind of the values
+- The number of key-value pairs, which can be dynamic or fixed
+
+<{string:u8}>           -- A map of strings to unsigned 8-bit integers
+<{string:{string:u8}}>  -- A map of strings to a map of strings to unsigned 8-bit integers
+
+(5.4) Tuple
+
+```ebnf
+tuple := "(", ?[expression, ","], ")" ;
+tuple-struct := atom, "(", expression, ")" ;
+```
+
+A Tuple is defined using parentheses `()` and contains an ordered collection of elements, which can be of different types. 
+
+(5.4.1) Semantics
+
+- Ordered: The order of elements within a tuple is preserved.
+- Heterogeneous: A tuple can contain elements of different types.
+- Immutable: Once created, the elements in a tuple cannot be changed.
+
+(5.4.2) Operations
+
+- Access: Elements can be accessed by their position (zero-based index).
+- Concatenation: Tuples can be combined to form a larger tuple.
+- Decomposition: Tuples can be unpacked into individual variables.
+
+(5.4.3) Examples
+
+  ()                 
+  (1)                
+  (1,1,3)                
+  (1,(2,3))                
+  (1, true, "Hello")
+  ([1, 2; 3, 4], 7, false)
+  ()                 
+
+**Edge Cases:**
+
+- `()` represents an empty tuple.
+
+- `(1)` is a single-element tuple, not a parenthetical expression that evaluates to `1`.
+
+- Tuples maintain the type of each element, so `(1, "hello")` has the kind `<(f64,string)>`,, unlike sets which require homogeneity.
+
+(5.4.4) Kind
+
+```
+-- Two-tuple of u8 and string    <(u8,string)>
+-- Three-tuple of u8s            <(u8,u8,u8)>
+```
+
+(5.5) Table
+
+```ebnf
+table := table-start
+      , *(box-drawing-char | whitespace)
+      , table-header
+      , *(box-drawing-char | whitespace)
+      , +table-row
+      , *box-drawing-char
+      , ws0
+      , table-end ;
+binding := identifier
+      , ?kind-annotation
+      , colon
+      , expression
+      , ?"," ;
+table-column := *(space | tab)
+      , expression
+      , *((space | tab)
+            , ?("," | table-separator)
+            , *(space | tab)) ;
+table-row := ?table-separator
+      , *(space | tab)
+      , +table-column
+      , ?semicolon
+      , ?new-line
+      , ?(+box-drawing-char, new-line) ;
+table-header := [field, +space-tab]
+      , *(space | tab)
+      , (bar| box-vert)
+      , ws0 ;
+field := identifier, ?kind-annotation ;
+empty-table := table-start
+      , ws0
+      , table-end ;
+```
+
+A Table represents a structured collection of records, where each record consists of multiple fields (columns). Tables allow organizing data in a flexible, expressive manner.
+
+(5.5.1) Semantics
+
+- Structured: Each record consists of ordered fields (columns).
+- Heterogeneous: Fields can have different kinds (types).
+- Homogeneous: Each row has a similar structure, with the same fields.
+- Sparse: Tables allow missing values (denoted by `_`).
+
+Tables are enclosed in `{}` and contain a header row specifying column names and kinds. The pipe \| separates the header from the data rows.
+
+  { x<f32>  y<u8> | 
+    1.2     9 
+    1.3     8     }
+
+This defines a table with two columns:
+
+- `x<f32>`: A floating-point column.
+- `y<u8>`: An unsigned 8-bit integer column.
+
+The same table can be written in a compact, inline format using semicolons (;) to separate rows.
+
+```
+{ x<f32> y<u8> | 1.2 9; 1.3 8 }
+```
+
+Where `|` denotes the end of the header, and each row is separated by a semicolon `;`.
+
+**Any Fields**
+
+The `_` is the "any" kind and allows columns to contain data from mixed kinds.
+
+  { x<_>   y<_> |
+    1.2    true 
+    "Hi"   8<u8>}
+
+Here, `x` holds both floats and strings, and y holds both integers and booleans. This can be useful for dealing with data whose type is not known at compiletime.
+
+**Incomplete Tables**
+
+When used as a value in a table, `_` indicates that a cell is missing and will be filled in later.
+
+  { x<u8>  y<string> z<[u8]:3> |
+     _      "a"       [1;2;3] 
+     4      "b"          _    
+     7       _        [7;8;9]  }
+
+**Fancy Representation**
+
+The Mech REPL prints tables using a fancy represntation, which is valid as input to a Mech program as well. The above table is equavlent to the following fancy table:
+
+```
+╭──────────────────────────────╮
+│ x<u8>   y<string>  z<[u8]:3> │
+├───────┬──────────┬───────────┤
+│   _   │   "a"    │  [1;2;3]  │
+├───────┼──────────┼───────────┤
+│   4   │   "b"    │     _     │
+├───────┼──────────┼───────────┤
+│   7   │    _     │  [7;8;9]  │
+╰───────┴──────────┴───────────╯
+```
+
+(5.5.3) Kind
+
+A table's kind includes the column types and table dimensions. For example, the pretty print table's kind is: `<{u8, string, [u8]:3}:3,3>`.
+
+**This denotes:**
+
+- Columns: `{ u8, string, [u8]:3 }` (a mix of an -integer, a string, and a fixed-size array).
+
+- Shape: `3,3` (3 rows, 3 columns).
+
+The kind of a table row is equivalent to a record with the same column kinds.
+
+```
+<{u8, string, [u8]:3}>
+```
+
+The kind of a table column is equivalent to a vector of the table column kind. For example the kind of the first column in the above table is:
+
+```
+<[u8]:3,1>
+```
+
+**Performance Considerations:**
+
+Tables are more expressive and flexible than matrices, because they can support missing values and mixed types. However, they may be slower due to additional metadata and dynamic typing associated with each cell, and the unwrapping involved in accessing data.
+
+Table columns are stored in a column matrix with unboxed value element, so operating column-wise on table values can be fast.
+
+However, "any" kinded columns resolve to a column matrix of fully wrapped values, so they will not work with matrix operations that expect unboxed values.
+
+(5.6) Record
+
+
+```ebnf
+record := table-start
+      , ws0
+      , +binding
+      , ws0
+      , table-end ;
+```
+A Record is a collection of named fields, where each field consists of a key-value pair. Records provide a structured way to group related data while allowing heterogeneous types.
+
+(5.6.1) Semantics
+
+- Named Fields: Each field is identified by a unique name.
+- Heterogeneous: Fields can have different types.
+- Nested: Records can contain other records.
+
+**Defining Records:**
+
+Records are enclosed in `{}` and contain bindings of the form key: value. The type of each field can be inferred or explicitly specified.
+
+**Comparison to Tables**
+
+- Records group related attributes of a single entity.
+- Access a field on a record yields a scalar of that type, rather than a column matrix.
+- A table with one row is not the same as a record, as they have to be stored differently internally.
+- A table can be thought of as a vector of records.
+
+Tables represent multiple records (rows) sharing a common structure.
+
+(5.6.2) Examples
+
+**Examples 1: Implicitly Typed Records**
+
+  { x: 1 y: "a", z: [1; 2; 3] }
+
+This defines a record with three fields:
+
+- x (implicitly an float).
+- y (implicitly a string).
+- z (implicitly a column matrix of floats).
+
+**Example 2: Explicitly Typed Record**
+
+  { x<u8>: 1, y<string>: "a", z<[u8]:3,1>: [1; 2; 3] }
+
+Here, each field has an explicit kind:
+
+- `x<u8>`: A `u8` integer.
+- `y<string>`: A string.
+- `z<[u8]:3,1>`: A fixed-size 3×1 matrix of `u8` integers.
+
+**Example 3: Nested Records**
+
+  { a: {b: 1, c: "hi"}, b: [1;2;3] }
+
+This record contains:
+
+- a: A nested record `{b: 1, c: "hi"}`.
+- b: A columm matrix `[1;2;3]`.
+
+(5.6.3) Kind
+
+A record's kind describes the types of its fields:
+
+```
+<{x: u8, y: string, z: [u8]:3,1}>
+```
+
+This denotes a record with:
+
+- x: `u8`
+- y: `string`
+- z: `[u8]:3,1` (a 3×1 array of u8 values)
+
+6. Expressions
+-------------------------------------------------------------------------------
+
+```ebnf
+expression := range-expression | formula ;
+```
+
+Expressions define computations in Mech. Most expressions operate elementwise over collections according to the rules of broadcasting.
+
+**Broadcasting Rules:**
+
+- Scalars expand to match the shape of collections.
+- Operations between collections are elementwise when shapes are compatible.
+- Higher-dimensional collections expand along singleton dimensions when necessary.
+- Tables support column-wise elementwise operations but use set-based operations (e.g., unions, joins) for whole-table manipulation.
+
+**Expression Categories:**
+
+- Arithmetic: Addition, subtraction, multiplication, and division over scalars, vectors, and matrices.
+- Matrix Operations: Matrix multiplication, transposition, and other matrix-specific operations.
+- Comparison: Elementwise relational comparisons (<, >, ==, etc.).
+- Logical Operations: Boolean elementwise operations (and, or, not).
+- Set Operations: Union, intersection, and other set-specific operations.
+- Range Expressions: Constructing sequences of values.
+- Indexing: Accessing elements within collections using direct and computed indices.
+
+(6.1) Formula 
+
+```ebnf
+parenthetical-term := left-parenthesis, formula, right-parenthesis ;
+negate-factor := "-", factor ;
+
+formula := l1, *(range-operator, l1) ;
+add-sub-operator := add | subtract ;
+l1 := l2, *(add-sub-operator, l2) ;
+mul-div-operator := multiply | divide ;
+matrix-operator := matrix-multiply 
+      | multiply 
+      | divide 
+      | matrix-solve ;
+l2 := l3, *(mul-div-operator | matrix-operator, l3) ;
+exponent-operator := exponent ;
+l3 := l4, *(exponent-operator, l4) ;
+logic-operator := and 
+      | or 
+      | xor ;
+l4 := l5, *(logic-operator, l5) ;
+comparison-operator := not-equal 
+      | equal-to 
+      | greater-than-equal 
+      | greater-than 
+      | less-than-equal 
+      | less-than ;
+l5 := factor, *(comparison-operator, factor) ;  
+factor := (parenthetical-term 
+      | structure 
+      | fsm-pipe 
+      | function-call 
+      | literal 
+      | slice 
+      | var), ?transpose ;
+```
+
+A formula is an expression that follows operator precedence rules and consists of arithmetic, logical, comparison, matrix, and range expressions. Expressions in formulas are evaluated according to their precedence, with higher-precedence operations being evaluated first.
+
+(6.1.1) Operator Precedence
+
+Operators in formulas are applied according to the following precedence, from highest to lowest:
+
+1. Parentheses - Explicit grouping of expressions.
+2. Negation and Logical NOT - Unary operations.
+3. Exponentiation - Raising to a power.
+4. Multiplication, Division, and Matrix Operations - Elementwise and matrix operations.
+5. Addition and Subtraction - Binary arithmetic operations.
+6. Comparison Operators - Elementwise comparisons.
+7. Logical Operators - and, or, xor.
+8. Range Operators - Used in range expressions.
+
+(6.1.2) Evaluation Order and Associativity
+
+- Left-to-right associativity applies to all operators, including exponentiation.
+- Parentheses explicitly override precedence rules.
+
+(6.2) Arithmetic
+
+```ebnf
+add       := "+" ;
+subtract  := "-" ;
+multiply  := "*" ;
+divide    := "/" ;
+exponent  := "^" ;
+remainder := "%" ;
+```
+
+(6.3) Matrix
+
+```ebnf
+solve           := "\\" ;
+dot-product     := "·" ;
+cross-product   := "⨯" ;
+matrix-multiply := "**" ;
+transpose       := "'" ;
+```
+
+(6.4) Comparison
+
+```ebnf
+not-equal        := "!=" | "¬=" | "≠" ;    
+equal            := "==" ;             
+greater          := "> " ;            
+less             := "< " ;            
+greater-or-equal := ">=" | "≥"  ;       
+less-or-equal    := "<=" | "≤"  ;       
+```
+
+(6.5) Logical
+
+```ebnf
+or           := "|" ;            
+and          := "&" ;            
+not          := "!" | "¬";         
+exclusive-or := "xor" | "⊕" | "⊻" ;   
+```
+
+(6.6) Set
+
+```ebnf
+union := "∪";       
+intersection := "∩";       
+difference := "∖";       
+complement := "∁" | "'" ;  
+subset := "⊆";       
+superset := "⊇";       
+proper-subset := "⊊";       
+proper-superset := "⊋";       
+element-of := "∈";       
+not-element-of := "∉";       
+```
+
+(6.7) Range
+
+```ebnf
+range-inclusive := "..=" ;
+range-exclusive := ".." ;
+```
+
+7. Indexing
+-------------------------------------------------------------------------------
+
+```ebnf
+subscript := swizzle-subscript 
+      | dot-subscript-int 
+      | dot-subscript 
+      | bracket-subscript 
+      | brace-subscript ; 
+index := identifier, +subscript ;
+```
+
+(7.1) Slicing
+
+```ebnf
+bracket-subscript := "["
+      , [(select-all | range-subscript | formula-subscript), ","]
+      , "]" ;
+
+brace-subscript := "{"
+      , [(select-all | formula-subscript), ","]
+      , "}" ;
+formula-subscript := formula ;
+range-subscript := range-expression ;
+select-all := ":" ;
+```
+
+(7.1.1) Examples
+
+```
+    array := [10, 20, 30, 40, 50]
+    slice_1 := array[1:]                -- Select all from index 1 to the end (select-all)
+    slice_2 := array[1, 3]              -- Range subscript (from index 1 to 3)
+    slice_3 := array[2, 4]              -- Another range from index 2 to 4
+    slice_4 := array[:4]                -- Select all up to index 4
+    slice_formula := array[(x + y), 3]  -- Formula-based subscript, with a calculated index
+
+    matrix := { {1, 2}, {3, 4}, {5, 6} }
+    brace_index := matrix{(x * y)}      -- Formula-based indexing within braces
+```
+
+(7.2) Dot Index
+
+```ebnf
+dot-subscript := ".", identifier ;
+dot-subscript-int := ".", integer-literal ;
+```
+(7.2.1) Examples
+    dot_result_1 := object.field        -- Dot subscript with identifier
+    dot_result_2 := object.42           -- Dot subscript with integer literal
+
+(7.3) Swizzle
+
+```ebnf
+swizzle-subscript := "."
+      , identifier
+      , "," 
+      , [identifier, ","] ;
+```
+(7.3.1) Examples
+
+```
+    vector := {x: 1, y: 2, z: 3}
+    swizzle_result := vector.x, y      -- Swizzling: selecting x and y
+    swizzle_combined := vector.x, y, z -- Swizzling: selecting x, y, z
+```
+
+8. Statements
+-------------------------------------------------------------------------------
+
+```ebnf
+statement := variable-define 
+      | variable-assign 
+      | enum-define 
+      | fsm-declare 
+      | kind-define ;
+```
+
+(8.1) Variable Define
+
+```ebnf
+define-operator := ":=" ;
+variable-define := ?tilde, var
+      , ¬assign-operator
+      , define-operator
+      , expression ;
+```
+**Examples** 
+
+```
+    intVar := 10                                -- Variable definition with initialization
+    optionalVar := ~stringVar                   -- Variable definition with optional tilde
+    varWithExpression := ~calculatedValue * 5   -- Variable definition with expression
+```
+
+(8.2) Variable Assign
+
+```ebnf
+assign-operator := "=";
+variable-assign := slice-ref
+      , ¬define-operator
+      , assign-operator
+      , expression ;
+```
+**Examples**
+    numbers := [1, 2, 3, 4, 5]
+    numbers[2] = 10             -- Assign value 10 to index 2 of the array
+
+(8.3) Op-Assign
+
+```ebnf
+add-assign-operator := "+=";
+sub-assign-operator := "-=";
+mul-assign-operator := "*=";
+div-assign-operator := "/=";
+exp-assign-operator := "^=";
+op-assign-operator := add-assign-operator 
+      | sub-assign-operator 
+      | mul-assign-operator 
+      | div-assign-operator 
+      | exp-assign-operator ;
+op-assign := slice-ref
+      , ¬define-operator
+      , op-assign-operator
+      , expression ;
+```
+(8.3.1) Examples
+    counter := 0
+    counter += 5                 -- Add 5 to counter (addition assignment)
+    counter -= 3                 -- Subtract 3 from counter (subtraction assignment)
+    counter *= 2                 -- Multiply counter by 2 (multiplication assignment)
+    counter /= 4                 -- Divide counter by 4 (division assignment)
+    counter ^= 2                 -- Exponentiate counter by 2 (exponentiation assignment)
+
+(8.4) Enum Define
+
+```ebnf
+enum-define := "<"
+      , identifier, ">"
+      , define-operator
+      , [enum-variant, enum-separator];
+enum-variant := ?grave
+      , identifier
+      , ?enum-variant-kind ;
+enum-variant-kind := "("
+      , kind-annotation
+      , ")" ;
+```
+(8.4.1) Examples
+    status < Active | Inactive | Pending  -- Enum definition with variants
+    priority < High | Medium | Low        -- Enum definition for priority levels
+
+(8.5) Kind Define
+
+```ebnf
+kind-define := "<"
+      , identifier
+      , ">"
+      , define-operator
+      , kind-annotation ;
+```
+(8.5.1) Examples
+
+```
+    userKind < Person > :< string | int -- Kind definition with annotation
+```
+
+9. Functions
+-------------------------------------------------------------------------------
+
+(a) Function Define
+
+```ebnf
+function-define := identifier
+      , "("
+      , ?[function-arg,list-separator]
+      , ")"
+      , "="
+      , (function-out-args | function-out-arg)
+      , define-operator
+      , [statement, (ws1 | statement-separator)]
+      , "." ;
+function-out-args := "("
+      , [function-arg, list-separator]
+      ,")" ;      
+function-out-arg := function-arg ;
+function-arg := identifier, kind-annotation ;
+argument-list := "(", ?[(call-arg-with-biding | call-arg), ","], ")" ;
+```
+
+**Examples**
+
+```
+    -- Simple function definition with no return value
+    addNumbers(x: int, y: int) = (result: int) := 
+        result = x + y
+        .  -- Return result (implicitly)
+
+    -- Function with multiple output arguments
+    createRectangle(length: int, width: int) = (area: int, perimeter: int) := 
+        area = length * width
+        perimeter = 2 * (length + width)
+        .  -- Return both area and perimeter
+
+    -- Function with an optional argument (no output)
+    greetUser(name: string) = := 
+        print("Hello, " + name)
+        .  -- No output, just side-effect
+
+    -- Function with complex arguments and output
+    calculateStats(x: int, y: int, z: int) = (average: float, max: int) := 
+        average = (x + y + z) / 3.0
+        max = max(x, max(y, z))  -- Function calls inside function body
+        .  -- Return both average and max
+```
+
+(b) Function Call
+
+```ebnf
+function-call := identifier, argument-list ;
+call-arg-with-binding := identifier
+      , colon
+      , expression ;
+call-arg := expression ;
+var := identifier, ?kind-annotation ;
+```
+**Examples**
+    -- Call function with simple arguments
+    sumResult = addNumbers(5, 10)   -- Call addNumbers with two integer arguments
+
+    // Call function with binding (using colon syntax to bind a specific argument)
+    rectangleDetails = createRectangle(10, 20)  -- Call with two integers
+    area = rectangleDetails.area                -- Accessing the area
+    perimeter = rectangleDetails.perimeter      -- Accessing the perimeter
+
+    // Call function with complex arguments and output
+    stats = calculateStats(10, 20, 30)          -- Call calculateStats
+    average = stats.average                     -- Extract average
+    maxValue = stats.max                        -- Extract max value
+
+    // Call function with optional argument
+    greetUser("Alice")      -- Function call with a single string argument
+
+10. State Machines
+-------------------------------------------------------------------------------
+
+```ebnf
+fsm := "#"
+      , identifier
+      , ?argument-list
+      , ?kind-annotation ;
+```
+
+(a) Operators
+
+```ebnf
+output-operator := "=>" ;
+transition-operator := "->" ;
+async-transition-operator := "~>" ;
+guard-operator := "|" 
+      | "│" 
+      | "├" 
+      | "└" ;
+```
+
+(b) Specification
+
+```ebnf
+fsm-specification := "#"
+      , identifier
+      , "("
+      , ?[var, ","]
+      , ")"
+      , ?output-operator
+      , ?kind-annotation, define-operator, +fsm-state-definition, "." ;
+fsm-tuple-struct := grave
+      , identifier
+      , "("
+      , [fsm-pattern, ","]
+      , ")" ;
+fsm-state-definition := guard-operator
+      , grave
+      , identifier
+      , ?fsm-state-definition-variables ;
+fsm-state-definition-variables := "("
+      , ?[var, list-separator]
+      , ")" ;
+fsm-pipe := fsm-instance, *(fsm-state-transition | fsm-async-transition | fsm-output) ;
+fsm-declare := fsm
+      , define-operator
+      , fsm-pipe ;
+fsm-instance := "#"
+      , identifier
+      , ?fsm-args ;
+fsm-args := "("
+      , ?[(call-arg-with-binding | call-arg), list-separator]
+      , ")" ;
+```
+
+(c) Implementation
+
+```ebnf
+fsm-implementation := "#"
+      , identifier
+      , "("
+      , ?[identifier, list-separator]
+      , ")"
+      , transition-operator
+      , fsm-pattern
+      , ws0
+      , +fsm-arm
+      , "." ;
+fsm-arm := *comment
+      , (fsm-transition | fsm-guard-arm)
+      , ws0 ;
+fsm-guard-arm := *comment
+      , fsm-pattern
+      , +fsm-guard ;
+fsm-guard := guard-operator
+      , fsm-pattern
+      , +(fsm-statement-transition | fsm-state-transition | fsm-output | fsm-async-transition | fsm-block-transition) ;
+fsm-transition := *comment
+      , fsm-pattern
+      , +(fsm-statement-transition | fsm-state-transition | fsm-output | fsm-async-transition | fsm-block-transition) ;
+fsm-state-transition := transition-operator, fsm-pattern ;
+fsm-async-transition := async-transition-operator, fsm-pattern ;
+fsm-statement-transition := transition-operator, statement ;
+fsm-block-transition := transition-operator
+      , left-brace
+      , +mech-code
+      , right-brace ;
+fsm-output := output-operator, fsm-pattern ;
+fsm-pattern := fsm-tuple-struct 
+      | wildcard 
+      | formula ;
+wildcard := "*" ;
+```
+**Examples**
+
+```
+    -- Simple FSM Declaration
+    fsm SimpleFSM
+        (var1, var2)         -- Variables for FSM
+        =>                   -- Output operator
+        ;                    -- End of the state machine definition
+
+    -- FSM with states and transitions
+    fsm StateMachine1
+        (state1, state2)
+        => "StateMachineOutput"   -- Output operator for the FSM
+        kind "simple"
+        define
+        #state1
+            -> state2    -- Transition operator
+            | guard1     -- Guard operator for conditional transitions
+        .
+
+    fsm-instance MyFSM
+        (stateA, stateB)
+        -> stateB         -- Simple state transition
+        ~> stateA         -- Asynchronous transition operator
+
+
+    -- FSM with variables and multiple states
+    fsm ComplexFSM
+        (state1, state2, state3)
+        => "Processing"
+        define
+        #state1
+            -> state2    -- Transition from state1 to state2
+        | state2
+            -> state3    -- Transition from state2 to state3
+            ~> state1    -- Asynchronous transition back to state1
+        .
+
+    fsm-instance ComplexFSMInstance
+        (stateX, stateY, stateZ)
+        -> stateX       -- Transition to stateX
+        ~> stateY       -- Async transition to stateY
+        => outputX      -- FSM Output
+        .
+
+
+    -- FSM with guards and output operators
+    fsm-implementation MyFSMImpl
+        #FSMTransition1
+        (state1, state2)
+        -> state3         -- Transition from state1 to state3
+        => stateOutput    -- Output from this FSM transition
+        .
+
+    fsm-guard-arm MyFSMGuard
+        #FSMGuardState
+        (stateGuard)
+        | guard-condition  -- Guard operator for conditional checking
+        .
+
+    fsm-guard MyFSMGuardExample
+        | FSMGuardPattern
+        -> FSMGuardTransition
+        ~> FSMAsyncGuard
+        .
+
+    fsm-block-transition MyFSMBlockTransition
+        -> {
+            // Complex code block executed during state transition
+            set stateA = true
+            set stateB = false
+        }
+        .
+
+
+    -- FSM pattern with tuple struct
+    fsm-pattern MyFSMPattern
+        grave TupleState
+        (varA, varB)
+        .
+
+
+    -- FSM instance with arguments
+    fsm-instance ComplexArgsFSM
+        (stateStart, stateEnd)
+        (inputData1, inputData2) -- Call arguments with bindings
+        -> stateStart
+        .
+
+
+    -- FSM State definition with guard and pattern matching
+    fsm-state-definition MyStateDefinition
+        | stateGuard
+        grave stateDefinition
+        (variableX, variableY)
+        .
+
+
+    -- FSM with wildcards and formulas in patterns
+    fsm-pattern MyWildcardPattern
+        *
+        .
+
+    fsm-pattern MyFormulaPattern
+        formula("x + y = 10")
+        .
+```
+
+11. Mech Programs
+-------------------------------------------------------------------------------
+
+```ebnf
+mech := mechdown-program | statement ;
+```
+
+12. Mechdown
+-------------------------------------------------------------------------------
+
+Mechdown is a markup language for writing Mech programs. It is designed to maintain vague compatibility with Markdown, it is *not* a superset of Markdown. Rather, Mechdown is a distinct markup language with its own syntax and semantics. For instance, hashtag notation is not supported for titles, which is a departure from Markdown. 
+
+Moreover, Mechdown supports tables and other features that are not present in Markdown, but can be found in extension to Markdown like Github Flavored Markdown (GFM), and Mech-specific features like that ability to query Mech values and print them inline using `{}` syntax.
+
+Mech programs and scripts can be written entirely without Mechdown, but literate programming with Mechdown is idomatic.
+
+(a) Body
+
+```ebnf
+program := ?title, body ;
+body := +section ;
+```
+
+(b) Sections and Section Elements
+
+```ebnf
+section-element := +mech-code 
+      | unordered-list 
+      | markdown-table
+      | block-quote
+      | code-block
+      | thematic-break
+      | equation
+      | paragraph ;
+section := ?ul-subtitle, +section-element ;
+```
+
+(b) Titles
+
+```ebnf
+title := +text
+      , new-line
+      , +"="
+      , *(space|tab)
+      , ws0 ;
+paragraph-element := +(¬define-operator, text) ;
+paragraph := paragraph-starter, *paragraph-element ;
+subtitle := +digit-token
+      , "."
+      , *space
+      , +text
+      , new-line
+      , +"-"
+      , *(space|tab)
+      , new-line
+      , *(space|tab)
+      , ws0 ;
+number-subtitle := *(space|tab)
+      , "("
+      , integer-literal
+      , ")"
+      , +(space|tab)
+      , +text
+      , *(space|tab)
+      , ws0 ;
+alpha-subtitle := *(space|tab)
+      , "(", alpha, ")"
+      , +(space|tab)
+      , +text
+      , *(space|tab)
+      , ws0 ;
+```
+
+There are 4 levels of titles: the document title, section titles, and two levels of sub section titles. 
+
+**Example:**
+
+```
+Title
+========
+
+1. Section Title
+----------------
+
+(2) Sub Section Title
+
+(a) Sub Sub Section Title
+```
+
+Section titles and the first level of sub-section titles comprise the table of contents, which is generated automatically.
+
+(c) Paragraphs and Paragraph Elements
+
+```ebnf
+paragraph := +paragraph-element;
+paragraph-element := hyperlink
+      | raw-hyperlink
+      | paragraph-text
+      | strong
+      | emphasis
+      | inline-code
+      | strikethrough
+      | underline ;
+paragraph-exclude := http-prefix | left-bracket | tilde | asterisk | underscore | grave | define-operator | bar ;
+paragraph-text := +(¬(paragraph-exclude), text) ;
+```
+
+Paragraphs are a block element that can contain a number of inline elements including:
+
+- **Strong text:** `**text**`
+- **Emphasis text:** `*text*`
+- **Strikethrough text:** `~text~`
+- **Underlined text:** `_text_`
+- **Inline code:** code 
+- **Hyperlinks:** `[text](url)` also raw links `http://example.com`
+- **Inline Mech:** `{expression}`
+
+(b) Lists
+
+```ebnf
+unordered-list := +list-item, ?new-line, ws0 ;
+ordered-list := +ordered-list-item, ?new-line, ws0 ;
+ordered-list-item := integer-literal
+      , "."
+      , *space
+      , paragraph
+      , *new-line ;
+list-item := dash
+      , +space
+      , paragraph
+      , *new-line ;
+```
+
+There are two varities of lists, unordered, which are delinated with a `-` or a graphicl and ordered list, which are delinated with a numeral like `1.`, and are numbered in order automatically when formatted.
+
+**Example:**
+
+```
+- Item 1
+- Item 2
+- Item 3
+
+1. Item 1
+2. Item 2
+3. Item 3
+```
+
+When rendered, they look like this:
+
+- Item 1
+- Item 2
+- Item 3
+
+List items are paragraphs, and can contain any inline elements.
+
+**Example:**
+
+```
+- **First**: item 1
+- **Second**: item 2
+- **Third**: item 3
+```
+
+Here's a list of some of the features of lists:
+
+1. Bullet lists
+    - One
+    - Two
+    - Three
+2. Custom lists
+    -(🦜) Four
+    -(🏴‍☠️) Five
+    -(🐷) Six
+3. Numbered lists
+    1. One
+    2. Two
+    3. Three
+4. Custom start number
+    7. One
+    8. Two
+    9. Three
+5. Check lists
+    -[ ] One
+    -[x] Two
+    -[ ] Three
+
+(b) Thematic Breaks
+
+```ebnf
+thematic-break := asterisks, asterisks, +asterisks ;
+```
+
+Thematic breaks are horizontal lines that can be used to separate sections of a document. They are created using three or more asterisks.
+
+**Example:**
+
+```
+***
+***********
+```
+
+When rendered, they look like this:
+
+***
+
+(b) Code Blocks
+
+```ebnf
+code-block := (grave, grave, grave), new-line, any, (grave, grave, grave), new-line, ws0 ;
+```
+
+Mechdown supports code blocks, which are enclosed in triple backticks (graves) and can contain any text. Code blocks are useful for including Mech code snippets or other text that should be displayed verbatim.
+
+(b) Equations
+
+```ebnf
+equation := (dollar, dollar), +text, new-line;
+```
+
+Equations are orefixed with `$$` and can contain any text. They are used to display mathematical expressions or formulas expressed in LaTeX syntax.
+
+For instance,
+
+```
+$$ c = \pm\sqrt{a^2 + b^2}
+```
+
+when rendered will look like this:
+
+$$ c = \pm\sqrt{a^2 + b^2}
+
+Mechdown also supports inline equations, which begin and conclude with a `$$`. They are expressed with LaTeX syntax, like so: `$$c^2 = a^2 + b^2$$`. This is rendered by a third-party library into $$c^2 = a^2 + b^2$$.
+
+(b) Block Quotes
+
+```ebnf
+block-quote := ">" , ws0, +paragraph ;
+```
+
+Block quotes are used to indicate quoted text. They are created using the `>` character followed by a space, and can contain any text until a newline.
+
+**Example:**
+
+```
+> This is a block quote.
+```
+
+When rendered, they look like this:
+
+> This is a block quote.
+
+(b) Tables
+
+```ebnf
+markdown-table := markdown-table-header, *markdown-table-row ;
+markdown-table-header := whitespace0
+      , +column-header
+      , bar
+      , new-line
+      , whitespace0
+      , +column-alignment
+      , bar
+      , new-line ;
+column-header := bar, paragraph ;
+column-alignment := bar
+      , whitespace0
+      , alignment-separator
+      , whitespace0;
+alignment-separator := center-alignment 
+      | left-alignment 
+      | right-alignment 
+      | no-alignment ;
+no-alignment := +dash ;
+left-alignment := colon, +dash ;
+right-alignment := +dash, colon ;
+center-alignment := colon, +dash, colon ;
+markdown-table-row := whitespace0
+      , +column-cell
+      , bar
+      , new-line ;
+column-cell := bar, paragraph ;
+```
+
+Markdown tables consist of a header, and a body. The header is defined using a pipe `|` to separate columns, and a row of dashes `-` to indicate the alignment of each column. The body of the table contains rows of data, also separated by pipes. 
+
+**Table Heading::**
+
+The header of a table is defined using a row of text followed by a row of dashes. The dashes indicate the alignment of each column.
+
+**Column Alignment:**
+
+Columns can be aligned in one of three ways:
+
+- Left-aligned: `:--` or `--`
+- Right-aligned: `--:`
+- Center-aligned: `:--:`
+
+Any number of dashes can be used to indicate the width of the column, and they can be of different lengths.
+
+**Table Body:**
+
+The body of a table is defined using rows of text separated by pipes. Each row can contain any number of columns, and the number of columns in each row must match the number of columns in the header.
+
+**Example:**
+
+```
+| Left  | Center | Right |
+|:------|-------:|:-----:|
+| One   | Four   | 10    |
+| Two   | Five   | 100   |
+| Three | Six    | 1000  |
+```
+
+Renders the following table:
+
+| Left  | Center | Right |
+|:------|:------:|------:|
+| One   | Four   | 10    |
+| Two   | Five   | 100   |
+| Three | Six    | 1000  |
+
+
+(b) Mech Extensions 
+
+```ebnf
+mech-code := mech-code-alt, ("\n" | ";" | comment) ;
+mech-code-alt := fsm-specification | fsm-implementation | function-define | statement | expression | comment ;
+```
+
+13. Notation
+-------------------------------------------------------------------------------
+
+The grammar is specified using extended Extended Backus-Naur Form (EBNF):
+
+| Symbol   | Meaning  | Semantics                     |
+|----------|----------|-------------------------------|
+| `"abc"`  | terminal | string literal "abc"          |
+| `p1, p2` | sequence | `p1` followed by `p2`         |
+| `p1 | p2`| choice   | `p1` or `p2`                  |
+| `[p, q]` | list     | list of `p` deliniated by `q` |
+|   `*p`   | repeat 0 | `p` for 0 or more times       |
+|   `+p`   | repeat 1 | `p` for 1 or more times       |
+|   `?p`   | optional | `p` for 0 or 1 time           |
+|   `>p`   | peek     | `p`; do not consume input     |
+|   `¬p`   | not      | does not match `p`            |
+|  `(...)` | group    | incrase precedence            |
+
+
+The grammar grammar:
+
+```ebnf
+grammar := +rule ;
+identifier := alpha-token, *(alpha-token | digit-token | dash) ;
+rule := identifier
+      , ":="
+      , expression
+      , ";" ;
+expression := term, *( "|", term ) ;
+term := factor, *( ",", factor ) ;
+definition := identifier ;
+repeat0 := "*", factor ;
+repeat1 := "+", factor ;
+optional := "?", factor ;
+peek := ">", factor ;
+not := "¬", factor ;
+list := "[", expression, terminal, "]" ;
+factor := repeat0 
+      | repeat1 
+      | optional 
+      | peek 
+      | not 
+      | list
+      | group 
+      | definition 
+      | terminal ;
+group := "(", expression, ")" ;
+terminal := quote, +any-token, quote ;
+```

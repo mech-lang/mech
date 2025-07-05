@@ -1,0 +1,35 @@
+Traffic Signals
+------------------
+
+<color>  = 🟢 | 🔴 | 🟡
+<signal> = 🚶‍♀ | ✋ | 🛑
+
+(#🚦/north<color>, #🚦/east<color>) ?
+
+  -- East light turns green, signal north crosswalk
+  (🟡, 🔴) => 6<s> => (🔴, 🔴)
+  (🔴, 🔴) => 2<s> => (🔴, 🟢)
+  (🔴, 🟢) => #crosswalk/north? => (🔴, 🟡)
+
+  -- North light turns green, signal east crosswalk
+  (🔴, 🟡) => 6<s> => (🔴, 🔴) 
+  (🔴, 🔴) => 2<s> => (🟢, 🔴)
+  (🟢, 🔴) => #crosswalk/east? => (🟡, 🔴)
+
+#crosswalk/north ?
+  🚶‍♀️ => 20<s> => ✋
+  ✋ => 10<s> => 🛑. 
+
+#crosswalk/east ?
+  🚶‍♀️ => 20<s> => ✋
+  ✋ => 10<s> => 🛑.
+
+Linearized Emojified
+----------------------
+
+(#🚦/north<color>, #🚦/east<color>) ?
+  (🟡, 🔴) ~> 6<s> => (🔴,🔴) ~> 2<s> => (🔴, 🟢) ~> 30<s> => (🔴, 🟡)
+  (🔴, 🟡) ~> 6<s> => (🔴,🔴) ~> (#crosswalk/north?,#crosswalk/north?) => (🟢, 🔴) ~> 30<s> => (🟡, 🔴)
+
+#crosswalk/north ? 🚶‍♀️ => 20<s> => ✋ => 10<s> => 🛑.
+#crosswalk/east ? 🚶‍♀️ => 20<s> => ✋ => 10<s> => 🛑.

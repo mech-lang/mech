@@ -1,0 +1,454 @@
+Learn Mech in Fifteen Minutes                                
+===============================================================================
+
+
+Table of Contents:
+
+- 1. Comments
+- 2. Identifiers
+- 3. Kinds 
+- 4. Literals
+- 5. Variables
+- 6. Collections
+- 7. Functions (todo)
+- 8. State Machines (todo)
+
+1. Comments 
+-------------------------------------------------------------------------------
+
+```
+-- Single line comment.
+
+// Also a single line comment.
+```
+
+Mech does not support multiline comments. Instead, Mech encourages literate programming through a Markdown-esque syntax
+called Mechdown, exemplified by this document.
+
+Comments are therefore to be used primarily inside of code blocks.
+
+Comments support formatting, such as bold, underline, links, etc. For example:
+
+```
+ -- **bold** and __underline__ and [links](https://mech-lang.org) are supported in comments.
+```
+
+2. Identifiers
+-------------------------------------------------------------------------------
+
+Identifiers start with letters or most UTF-8 encoded emoji characters, and can contain alphanumeric, most emojis, `/`, `*`, `+`, `-`, and `^` characters.
+
+- {{Hello-Word}}
+- {{io/stdout}}
+- {{Δx^2}}
+- {{🤖}}
+- {{A*}}
+
+Note: The preferred identifier case in Mech is kebab-case (words deliniated by dashes). Slashes also allow identifiers to be scoped to a particular namespace. For example, functions in the math machine are prefixed with `math/`:
+
+- Cosine: `math/sin`
+- Sine: `math/cos` 
+- Log: `math/log` 
+
+Mech doesn't support underscores in identifiers.
+
+
+3. Kinds 
+-------------------------------------------------------------------------------
+
+Every variable has an associated "kind" or "datatype". They are indicated with a kind annotation.
+
+Builtin kinds:
+
+- number
+    - Unsigned intengers: u8, u16, u32, u64, u128
+    - Signed intengers: i8, i16, i32, i64, i128
+    - IEEE 754 Floating Point: f32, f64
+- string
+- bool
+- atom
+- empty
+
+(3.1) Kind Annotations
+
+Kinds are indicated with a kind annotation, which is the kind identifier encolsed in `<>` e.g.:
+
+```
+<u8>
+```
+
+Literals can be annotated with a kind:
+
+- 32-bit floating point number: 123.456<f32>
+- 64-bit floating point number: 123.456<f64>
+
+So can identifiers
+ 
+- Cast `a` to unsigned 64 bit datatype: `a<u64>`
+
+(3.2) Collections
+
+Multidimensional data can be expressed with teh foloowing collection data structures representing collections of values:
+
+`[]`: vectors, matrices
+`()`: tuples
+`{}`: sets, maps, records, and tables
+
+- Unsized set of unsigned 8-bit integers: `<{u8}>`
+- 1x3 vector of strings: `<[string]:3>` or `<[string]:1,3>`
+- 3x1 column vector of bools: `<[bool]:3,1>`
+- 2x3 matrix of 32-bit floats: `<[f32]:2,3>`
+- Nx3 matrix of 32-bit floats: `<[f32]:_,3>`
+
+(3.3) Custom Kinds
+
+Create a kind that is an alias for `(u8,bool)`:
+
+```
+<my-kind> := <(u8,bool)>
+```
+
+Define a kind that is a matrix with an unspecified number of rows and 3 columns:
+
+```
+<matrix-3d> := <[u8]:_,3>
+```
+
+This type implies that the matrix can grow in rows, which adds flexibility but impacts performance.
+
+
+4. Literals
+-------------------------------------------------------------------------------
+
+Supported literals include:
+
+- (a) Numbers
+- (b) Strings
+- (c) Booleans
+- (d) Atoms
+- (e) Empty
+
+(4.1) Numbers
+
+- Integers: `1234`
+- Floats: `123.456`
+- Decimal: `0d1234567890`
+- Hexadecimal: `0x1234567890ABCDEF`
+- Octal: `0o12345670`
+- Binary: `0b100110101`
+- Scientific: `123e456` or `123E456`
+- Rational: `1/2` is the rational number 1 over 2, not 1 divided by 2.
+- Imaginary: `1234i`
+- Complex: `12.34+5.67i`
+
+Kind:
+
+`<number>` is a generic, unsized number type. Mech also supports fixed sized numbers e.g.: <u8>, <f32>, <i64> etc.
+
+(4.2) Strings
+
+Strings are encoded with UTF-8 and support linebreaks.
+
+```
+"Hello World"
+
+"Mulitline 
+Strings"
+
+"characters like \" and \\ are escaped with, \\ e.g. \\\""
+```
+
+Kind: 
+
+```
+<string>
+```
+
+(4.3) Boolean
+
+- True: `true` or `✓`
+- False: `false` or `✗`
+
+Note: `true` and `false` are the only keywords built into the language.
+
+Kind:
+
+```
+<bool>
+```
+
+(4.4) Atoms
+
+Atoms are used as enum variants and unique keys. They are identifiers prefixed 
+with a grave. An atom evaluates to iteself and its kind is its identifier.
+
+```
+`A
+```
+
+Kind:
+
+```
+<`A>
+```
+
+(4.5) Empty
+
+Empty is a hole, it represents a value that has not been initialized yet, or a 
+collection that is empty. Empty's expressed as any number of underscore 
+characters:
+
+```
+_
+___
+```
+
+Kind:
+
+```
+<_>
+```
+
+5. Variables
+-------------------------------------------------------------------------------
+
+Any of the afforementioned datatypes or literals can be assigned to a variable 
+for reference in other places.
+
+Define a variable x with value 123:
+
+```
+x := 123
+```
+
+By default, all numbers are f64 for maximum flexibility. For performance, you
+can specify a smaller-sized number. For instance, you can create an unsigned 
+8-bit integer:
+
+```
+y<u8> := 123
+z := 123<u8>
+```
+
+Semicolons can be used to write multiple statements on one line:
+
+```
+a := 123; b := 456;
+```
+
+Here are some more examples:
+
+```
+c := [1 2 3]                -- a 1x3 row vector of f64 numbers
+d<[i64]:1,3> := [1 2 3]     -- a 1x3 row vector of i64 numbers
+```
+
+6. Collections
+-------------------------------------------------------------------------------
+
+- Ordered elements, duplicates allowed
+    - (a) Vector (row/column)
+    - (b) Matrix (N-D)
+    - (c) Tuple
+- Unordered elements, no duplicates
+    - (d) Record
+    - (e) Table
+    - (f) Set
+    - (g) Map
+
+(6.1) Vector
+
+A matrix is a N-D collection of homogenous datatypes.
+
+```
+- Empty                 []              (0x0)
+- Scalar                [1]             (1x1) 
+- Row Vector            [1 2 3]         (1x3) 
+- Column Vector         [1;2;3]         (3x1) 
+- Also Column           [1              (3x1)
+                         2  
+                         3]
+- Nested                [[1],[2],[3]]   (1x3x1)                                     
+- Transpose             [1 2 3]'        (3x1)
+```
+
+Kind: 
+
+```
+- Dynamic Row vector    <[u8]:1,_>
+- Scalar matrix         <[u8]:1> or <[u8]:1,1>
+- Column vector         <[u8]:5> or <[u8]:5,1>
+- Row vector            <[u8]:1,5>
+```
+
+Note: Vectors have at least 1 scalar dimension.
+
+(6.2) Matrix
+
+```
+- Matrix                [1 2; 3 4]       (2x2)
+- Also Matrix           [1 2             (2x2)
+                         3 4]            
+- Transpose             [1 2; 3 4; 5 6]' (2x3)
+- Nested                [[1 2] [3 4]    
+                         [5 6] [7 8]]    (2x2x2)
+```
+
+Mech supports fancy box drawing tables:
+
+```
+╭───┬───┬───╮
+│ 1 │ 2 │ 3 │
+├───┼───┼───┤
+│ 4 │ 5 │ 6 │
+├───┼───┼───┤
+│ 7 │ 8 │ 9 │
+╰───┴───┴───╯
+```
+
+Kind:
+
+```
+- Dynamic matrix        <[u8]>
+- 2D Matrix             <[u8]:2,3>
+- 3D Matrix             <[u8]:2,3,4>
+```
+
+(6.3) Tuple
+
+A tuple is a collection of values of different data types stored in a single 
+entity, allowing for the storage and manipulation of multiple values together.
+
+```
+- Empty   ()
+- Single  (1)
+- Multi   (1,1,3)
+- Nested  (1,(2,3))
+- Mixed   (1, true, "Hello")
+```
+
+Kind:
+
+```
+- Two-tuple of u8 and string    <(u8,string)>
+- Three-tuple of u8s            <(u8,u8,u8)>
+```
+
+(6.4) Record
+
+A set of heterogeneously typed fields and their associated data.
+
+```
+- Simple:   { x: 1 y: "a", z: [1 2 3] }
+- Typed:    { x<u8>: 1, y<string>: "a", z<[u8]:3,1>: [1;2;3] }
+- Nested:   { a: {b: 1, c: "hi"}, b: [1;2;3] }
+- Multiline
+```
+
+```
+{
+    a: {
+        b: 1, 
+        c: "hi"
+    }, 
+    b: [
+        1
+        2
+        3
+    ]
+}
+```
+
+Kind:
+
+```
+<{u8,string}:1,2>
+```
+
+(6.5) Table 
+
+A table is set of records.
+
+Define a table with two columns -- one named `x` of kind `f32`; and the named 
+`y` of kind `u8`:
+
+```
+{ x<f32>  y<u8> | 
+  1.2     9 
+  1.3     8     }
+```
+
+They can be written inline:
+
+```
+{ x<f32> y<u8> | 1.2 9; 1.3 8 }
+```
+
+The `_` kind indicates column elements can be hetergeneous.
+
+```
+{ x<_>   y<_> |
+  1.2    true 
+  "Hi"   8    }
+```
+
+Elements do not have to be fully filled in:
+
+```
+{ x<u8>  y<string> z<[u8]:3> |
+   _      "a"       [1;2;3] 
+   4      "b"          _    
+   7       _        [7;8;9]  }
+```
+
+Tables can be fancy too:
+
+```
+╭──────────────────────────────╮
+│ x<u8>   y<string>  z<[u8]:3> │
+├───────┬──────────┬───────────┤
+│   _   │   "a"    │  [1;2;3]  │
+├───────┼──────────┼───────────┤
+│   4   │   "b"    │     _     │
+├───────┼──────────┼───────────┤
+│   7   │    _     │  [7;8;9]  │
+╰───────┴──────────┴───────────╯
+```
+
+Kind: 
+
+```
+<{u8,string,[u8]:3}:3,3>
+```
+Note: Tables are more flexible and expressive than matricies, but are slower.
+
+(6.6) Set
+
+An unordered collection of unique, homogenous elements.
+```
+- Empty:     {} or {_}
+- Singleton: {1}
+- Basic:     {1,2,3}
+- Nested:    {{1,2},{3,4}}
+```
+Kind:
+```
+<{u8}:3>
+```
+(6.7) Map
+
+An unordered collection of unique keys associated with a corresponding value.
+```
+- Empty:             {_:_}
+- Single element:    {"a":1}
+- Multiple elements: {"a":10, "b":20, "c": 30}
+- Nested:            {"a":{"a":10}}
+- Multiline:
+    { "a" : 10 
+      "b" : 20
+      "c" : 30 }
+```
+Kind:
+
+- A map of strings to u8s: `<{string:u8}>`
+- A map of strings to a map of strings to u8: `<{string:{string:u8}}>`

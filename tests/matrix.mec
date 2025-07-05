@@ -1,0 +1,110 @@
+Matrix Unit Tests
+================
+
+Matrix : Column
+----------------
+
+Test column matrix multiplcation with f32
+  x = [1<f32> 2<f32> 3<f32>; 4<f32> 5<f32> 6<f32>; 7<f32> 8<f32> 9<f32>] ** [1<f32>; 2<f32>; 3<f32>]
+  mat-result = stats/sum(column: x)
+  #test += ["Matrix Mult Column:Column f32" 96.0<f32> mat-result]
+
+Test column matrix multiplcation with f64
+  x = [1<f64> 2<f64> 3<f64>; 4<f64> 5<f64> 6<f64>; 7<f64> 8<f64> 9<f64>] ** [1<f64>; 2<f64>; 3<f64>]
+  mat-result = stats/sum(column: x)
+  #test += ["Matrix Mult Column:Column f64" 96.0<f64> mat-result]
+
+Column : Row
+----------------
+
+Test row matrix multiplcation with f32
+  x = [1<f32>; 2<f32>] ** [3<f32> 4<f32>]
+  mat-result = stats/sum(table: x)
+  #test += ["Matrix Mult Column:Row f32" 21.0<f32> mat-result]
+
+Test row matrix multiplcation with f64
+  x = [1<f64>; 2<f64>] ** [3<f64> 4<f64>]
+  mat-result = stats/sum(table: x)
+  #test += ["Matrix Mult Column:Row f64" 21.0<f64> mat-result]
+
+Row : Column
+----------------
+
+Test row matrix multiplcation with f32
+  mat-result = [1<f32> 2<f32>] ** [3<f32>;4<f32>]
+  #test += ["Matrix Mult Row:Column f32" 11.0<f32> mat-result]
+
+Test row matrix multiplcation with f64
+  mat-result = [1<f64> 2<f64>] ** [3<f64>;4<f64>]
+  #test += ["Matrix Mult Row:Column f64" 11.0<f64> mat-result]
+
+Transpose Row
+----------------
+
+Test transpose row with f32
+  x = [1<f32> 2<f32> 3<f32>]
+  mat-result = x ** x'
+  #test += ["Transpose Matrix Row f32" 14.0<f32> mat-result]
+
+Test transpose row with f64
+  x = [1<f64> 2<f64> 3<f64>]
+  mat-result = x ** x'
+  #test += ["Transpose Matrix Row  f64" 14.0<f64> mat-result]
+
+Transpose Matrix
+----------------
+
+Test transpose matrix with f32
+  x = [1<f32> 2<f32>; 3<f32> 4<f32>]
+  y = x ** x'
+  mat-result = stats/sum(table: y)
+  #test += ["Matrix Transpose f32" 52.0<f32> mat-result]
+
+Test transpose matrix with f64
+  x = [1<f64> 2<f64>; 3<f64> 4<f64>]
+  y = x ** x'
+  mat-result = stats/sum(table: y)
+  #test += ["Matrix Transpose f64" 52.0<f64> mat-result]
+
+Matrix : Matrix
+----------------
+
+Test matrix matrix multiplication with f32
+  x = [1<f32> 2<f32>; 3<f32> 4<f32>] ** [5<f32> 6<f32>; 7<f32> 8<f32>]
+  mat-result = stats/sum(table: x)
+  #test += ["Matrix : Matrix Multiplication f32" 134.0<f32> mat-result]
+
+Test matrix  matrix multiplication with f64
+  x = [1<f64> 2<f64>; 3<f64> 4<f64>] ** [5<f64> 6<f64>; 7<f64> 8<f64>]
+  mat-result = stats/sum(table: x)
+  #test += ["Matrix : Matrix Multiplication f64" 134.0<f64> mat-result]
+
+Matrix : Matrix (Different size matrices)
+----------------
+
+Test matrix  (matrix different size matrices) multiplication with f32
+  x = [1<f32> 2<f32>; 3<f32> 4<f32>] ** [5<f32> 6<f32> 7<f32>; 8<f32> 9<f32> 10<f32>]
+  mat-result = stats/sum(table: x)
+  #test += ["Matrix : Matrix Multiplication f32" 234.0<f32> mat-result]
+
+Test matrix  (matrix different size matrices) multiplication with f64
+  x = [1<f64> 2<f64>; 3<f64> 4<f64>] ** [5<f64> 6<f64> 7<f64>; 8<f64> 9<f64> 10<f64>]
+  mat-result = stats/sum(table: x)
+  #test += ["Matrix : Matrix Multiplication f64" 234.0<f64> mat-result]
+
+Row : Matrix
+----------------
+
+Test row matrix multiplication with f32
+  x = [1<f32> 2<f32> 3<f32>]
+  y = [4<f32> 5<f32>; 6<f32> 7<f32>; 8<f32> 9<f32>]
+  z = x ** y
+  mat-result = stats/sum(row: z)
+  #test += ["Row : Matrix Multiplication f32" 86.0<f32> mat-result]
+
+Test row matrix multiplication with f64
+  x = [1<f64> 2<f64> 3<f64>]
+  y = [4<f64> 5<f64>; 6<f64> 7<f64>; 8<f64> 9<f64>]
+  z = x ** y
+  mat-result = stats/sum(row: z)
+  #test += ["Row : Matrix Multiplication f64" 86.0<f64> mat-result]

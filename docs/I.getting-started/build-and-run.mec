@@ -1,0 +1,105 @@
+Build and Run Mech Programs
+===============================================================================
+
+The `mech` command-line tool provides various functionalities for working with Mech programs, including executing scripts, debugging, formatting code, and serving applications over HTTP. Below are the available options and subcommands.
+
+1. Basic Usage
+-------------------------------------------------------------------------------
+
+(1.1) Usage
+
+```sh
+mech [OPTIONS] [mech_paths]... [COMMAND]
+```
+
+(1.2) Commands
+
+| Command   | Description                                   |
+|-----------|-----------------------------------------------|
+| `format`  | Format Mech source code into standard format. |
+| `serve`   | Serve Mech program over an HTTP server.       |
+| `help`    | Print help message.                           |
+
+(1.3) Arguments
+
+Source .mec files and directories. You can specify one or more `.mec` files or directories containing Mech scripts. The command will execute the specified files in the order they are provided, and alpha-numeric sorting is applied to the files.
+
+```
+  [mech_paths]... 
+```
+
+(1.4) Options
+
+| Option                | Description                                      |
+|-----------------------|--------------------------------------------------|
+| `-d`, `--debug`       | Prints debug information.                        |
+| `-e`, `--tree`        | Prints the parse tree of the Mech program.       |
+| `-t`, `--time`        | Measures execution time of the program.          |
+| `-r`, `--repl`        | Starts the Mech Read-Eval-Print Loop (REPL).     |
+
+2. Running a Mech Program
+-----------------------------------------------------------------------------
+
+To execute a Mech script, provide the path to one or more `.mec` files or directories containing Mech scripts. The command will execute the specified files in the order they are provided:
+
+```sh
+mech program.mec
+mech script1.mec script2.mec dir1
+```
+
+3. Subcommands
+-------------------------------------------------------------------------------
+
+(3.1) format
+
+Formats Mech source code into a standard format.
+
+```sh
+mech format [OPTIONS] [FILES]
+```
+*Options:*
+
+| Option               | Value               | Description                          |
+|----------------------|---------------------|--------------------------------------|
+| `-o`, `--out`        | `PATH`              | Specifies the output directory.      |
+| `-s`, `--stylesheet` | `STYLESHEET`        | Sets the stylesheet for HTML output. |
+| `-t`, `--html`       |                     | Outputs formatted code as HTML.      |
+
+
+*Example:*
+
+```sh
+mech format -o formatted/ my_script.mec
+```
+
+(2.3) serve
+
+Serves a Mech program over an HTTP server.
+
+```sh
+mech serve [OPTIONS] [FILES]
+```
+
+*Options:*
+
+| Option            | Value      | Description                                   |
+|-------------------|------------|-----------------------------------------------|
+| `-p`, `--port`    | `PORT`     | Sets the port for the server (default: 8081). |
+| `-a`, `--address` | `ADDRESS`  | Sets the server address (default: 127.0.0.1). |
+
+*Example:*
+
+```sh
+mech serve -p 3000 -a 0.0.0.0 my_script.mec
+```
+
+4. Additional Help
+-------------------------------------------------------------------------------
+
+For more information on a specific command, you can use the `--help` option with that command. For example:
+
+```sh
+mech --help
+mech serve --help
+```
+

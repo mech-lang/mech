@@ -1,0 +1,61 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "mech",
+	"patterns": [
+		{
+      		"match": "^=+$",
+      		"name": "markup.heading.underline.mech"
+		},
+		{
+			"match": "^-+$",
+			"name": "markup.heading.underline.mech"
+    	},
+		{
+			"match": "^(\\d+\\. )",
+			"name": "markup.heading.mech"
+		},
+		{
+			"match": "^\\(\\d+(?:\\.\\d+)+\\)",
+			"name": "markup.heading.mech"
+		},
+		{
+			"begin": "\\$\\$",
+			"end": "\\$\\$|\\n",
+			"name": "string"
+		},
+		{
+		    "match": "\\b\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?\\b",
+  		    "name": "constant.numeric"
+		},
+		{
+			"begin": "^\\s*([^\\s\\+\\-\\*\\/\\^]+(?:\\[[^\\]]*\\])?)\\s*([\\+\\-\\*\\/\\^]=|:=)",
+			"end": "$",
+			"beginCaptures": {
+				"1": {
+				"name": "variable.name"
+				},
+				"2": {
+				"name": "string"
+				}
+			},
+			"patterns": [
+				{
+				"match": "[^\\s\\d\\.\\^\\*\\+\\-\\/\\(\\)]+(?:\\/[\\w\\/]+)*(?:\\[[^\\]]*\\])?",
+				"name": "variable.name"
+				},
+				{
+				"match": "\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?",
+				"name": "constant.numeric"
+				},
+				{
+				"match": "[\\+\\-\\*\\/\\^]",
+				"name": "string"
+				}
+			]
+		}
+	],
+	"repository": {
+		
+	},
+	"scopeName": "source.mech"
+}

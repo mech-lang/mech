@@ -1,0 +1,110 @@
+Download and Install Mech
+===============================================================================
+
+1. Installer
+-------------------------------------------------------------------------------
+
+The easiest way to install Mech is to use the installer provided for your platform. The installer includes the `mech` command-line tool, which is a standalone executable that includes everything you need to get started with Mech.
+
+- **Windows** - [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.48-beta/mech-installer-v0.2.48-beta-win-x86-64.exe)
+
+Right now, the installer is only available for Windows, but we are working on providing installers for other platforms in the future.
+
+2. Binary
+-------------------------------------------------------------------------------
+
+Mech is easy to install without the installer -- the whole toolchain is just a single binary executable file.
+
+Precompiled binaries are available for the following platforms:
+
+| OS         | Architecture                                                                                                 |
+| ---------- | ------------------------------------------------------------------------------------------------------------ |
+| **Wndows** | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.48-beta/mech-v0.2.48-beta-win-x86-64.7z)   |
+| **Linux**  | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.48-beta/mech-v0.2.48-beta-win-x86-64.7z)   |
+| **macOS**  | [aarch64](https://github.com/mech-lang/mech/releases/download/v0.2.48-beta/mech-v0.2.48-beta-mac-aarch64.zip) |
+| **Web**    | [wasm](https://github.com/mech-lang/mech/releases/download/v0.2.48-beta/mech_wasm_bg.wasm.br)                |
+
+You can find previous releases and release notes at [/mech-lang/mech/releases](https://github.com/mech-lang/mech/releases).
+
+To install, download the appropriate binary for your operating system and extract it to a directory of your choice. The Mech toolchain is distributed as a singular executable file and doesn't require an installer.
+
+See the toolchain documation for more information on how this program works.
+
+2. Source
+----------------------------------------------------------------------------
+
+If mech is not available for your platform, or if you want to build it from source, follow these steps:
+
+(2.1) Install Rust and Cargo
+
+First you will need [Rust](https://www.rust-lang.org/learn/get-started). Make sure to install a recent version on the nightly release channel, currently `nightly-2025-01-15`.
+
+In Bash:
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal --default-toolchain nightly-2025-01-15
+```
+
+This command will download and install the Rust toolchain, including Cargo, the Rust package manager. Rustup is a tool for managing Rust versions and associated tools.
+
+In PowerShell:
+
+```powershell
+irm https://win.rustup.rs -OutFile rustup-init.exe; Start-Process -Wait -FilePath .\rustup-init.exe -ArgumentList "-y --default-toolchain nightly-2025-01-15"; Remove-Item .\rustup-init.exe
+```
+
+This command will: 
+
+- Download Rustup for Windows (rustup-init.exe)
+- Run the installer with `-y` ("yes" to all, no prompts) and set the correct nightly toolchain
+- Delete the installer after completion
+
+You may need to allow scripts by running the following before executing the above command:
+
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force
+```
+
+(2.2) Download and Build Mech
+
+```bash
+git clone https://gitlab.com/mech-lang/mech
+cd mech
+cargo build --bin mech --release
+```
+
+(2.3) Build the Wasm Target
+
+If you want to build the WebAssembly target, you will need to install the `wasm-pack` tool. You can do this using Cargo:
+
+```bash
+cargo install wasm-pack
+```
+
+Then, navigate to the `wasm` directory and build the target:
+
+```bash
+cd mech\src\wasm
+wasm-pack build --target web
+```
+
+3. Cargo
+-------------------------------------------------------------------------------
+
+If you prefer to install Mech using Rust's Cargo package manager, you can use the following commands, first install Rust as described above. Then run:
+
+```bash
+cargo install mech
+```
+
+This will download the lasted version of Mech published to the cargo package manager, found here: https://crates.io/crates/mech.
+
+
+4. Verifying Installation
+-------------------------------------------------------------------------------
+    
+After installation, confirm that Mech is installed correctly by running:
+
+```bash
+mech --version
+```
