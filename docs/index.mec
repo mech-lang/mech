@@ -24,12 +24,12 @@ Mech Programming Language Documentation
     - Operators and Expressions
         - Operators
         - Indexing
-2. Programming Model (Coming v0.3)
+2. Programming Model `Coming v0.3`
     - State Machines
     - Functions
     - Machines
     - Mech Programs
-3. System Model (Coming v0.4)
+3. System Model `Coming v0.4`
     - Capabilities
     - Distributed Computation
     - Concurrency and Parallelism

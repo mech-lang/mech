@@ -90,7 +90,7 @@ Mech includes all of the matrix operations, data manipulation, and high-level ab
 - live programming environment
 - advanced debugging modalities, like time travel debugging
 
-which make it more suitable for building complex, distributed systems from prototypign to production. 
+which make it more suitable for building complex, distributed systems from prototype to production. 
 
 So why Mech? If you're looking to build a complex system, something on the order of a robot car, Mech will allow you to implement it in fewer lines of code, with performance on par with systems langauges, but safety and flexibility that you would expect from a high-level language.
 
@@ -197,7 +197,7 @@ The beta phase has focused on stabilizing the language and fixing some of the sh
 -(☐) v0.3 - program specification - functions, modules, state machines
 -(☐) v0.4 - system specification - tools, distributed programs, capabilities
 
-Currently the languages version is `v0.2`. This version require a rewrite of most of hte `v0.1` codebase to accomodate changes to the data model and programming model, so many of the features in `v0.1` have yet to be reimplemented. 
+Currently the languages version is `v0.2`. This version require a rewrite of most of the `v0.1` codebase to accomodate changes to the data model and programming model, so many of the features in `v0.1` have yet to be reimplemented. 
 
 Visit the [Roadmap](https://docs.mech-lang.org/IV.design/roadmap.html) for more information on the current status of features.
 
