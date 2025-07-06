@@ -93,15 +93,14 @@ pub fn markdown_table_no_header(input: ParseString) -> ParseResult<MarkdownTable
 
 pub fn markdown_table_header(input: ParseString) -> ParseResult<(Vec<Paragraph>,Vec<ColumnAlignment>)> {
   let (input, _) = whitespace0(input)?;
-  let (input, header) = many1(tuple((bar, paragraph)))(input)?;
+  let (input, header) = many1(tuple((bar, tuple((many0(space_tab), paragraph)))))(input)?;
   let (input, _) = bar(input)?;
-  let (input, _) = new_line(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, alignment) = many1(tuple((bar, alignment_separator)))(input)?;
+  let (input, alignment) = many1(tuple((bar, tuple((many0(space_tab), alignment_separator)))))(input)?;
   let (input, _) = bar(input)?;
-  let (input, _) = new_line(input)?;
-  let column_names: Vec<Paragraph> = header.into_iter().map(|(_,tkn)| tkn).collect();
-  let column_alignments = alignment.into_iter().map(|(_,tkn)| tkn).collect();
+  let (input, _) = whitespace0(input)?;
+  let column_names: Vec<Paragraph> = header.into_iter().map(|(_,(_,tkn))| tkn).collect();
+  let column_alignments = alignment.into_iter().map(|(_,(_,tkn))| tkn).collect();
   Ok((input, (column_names,column_alignments)))
 }
 
