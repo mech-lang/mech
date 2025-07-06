@@ -442,9 +442,7 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
           None => None,
         };
       }
-      let absolute_path = self.directory.get(Path::new(src));
-      
-      match absolute_path {
+      match self.directory.get(Path::new(src)) {
         Some(path) => {
           let file_id = hash_str(&path.display().to_string());
           match self.html.get(&file_id) {
@@ -456,7 +454,20 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
           let file_id = hash_str(&src);
           match self.html.get(&file_id) {
             Some(code) => Some(code.clone()),
-            None => None,
+            None => {
+              // replace file extension with .mec and search for it again
+              let new_src = Path::new(src).with_extension("mec");
+              match self.directory.get(&new_src) {
+                Some(path) => {
+                  let file_id = hash_str(&path.display().to_string());
+                  match self.html.get(&file_id) {
+                    Some(code) => Some(code.clone()),
+                    None => None,
+                  }
+                }
+                None => None,
+              }
+            },
           }
         },
       }
