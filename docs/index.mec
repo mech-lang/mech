@@ -17,7 +17,7 @@ Mech Programming Language Documentation
     - Data Structures
         - Enum - enumeration of named values
         - Map - key-value store
-        - Matrix - ND array of values
+        - [Matrix](II.reference/matrix.html) - 2D collection of values
         - Record - collection of named values
         - Set - unordered collection of unique values
         - Table - collection of Records
