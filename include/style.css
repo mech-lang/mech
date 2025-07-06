@@ -1671,7 +1671,7 @@ mark {
 }
 
 @media (max-width: 1650px) {
-    .mech-program-title {
+    .mech-program h1 {
         width: 700px;
         margin-left: 0px;
     }
@@ -1711,7 +1711,7 @@ mark {
         min-width: 0px;
     }
 
-    .mech-program-title {
+    .mech-program h1 {
         width: 100%;
         margin-left: 0px;
     }
