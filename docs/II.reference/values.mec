@@ -160,3 +160,24 @@ Kinds compose into more complex kinds based on the data structures they represen
 | Table          | `{arg1<T1>,arg2<T2>,arg3<T3>}` | `<{name<string>,age<u8>}>;`   |
 | Tuple          | `(T1,T2,T3)`                   | {{<(u8,string,bool)>;}}       |
 | Enum           | `enum`                         | {{<enum>;}}                   |
+
+(3.3) Custom Kinds
+
+You can define a custom kind with the following syntax:
+
+```mech:disabled
+<T> := <S> -- Defines custom kind `T`, an alias for `S`
+```
+
+For example, if you wanted to represted a 3D point as a vector of three `f32` values, you could define a custom kind like this:
+
+```mech:disabled
+<point3> := <[f32]:3>
+```
+
+Then you could use this kind to define a variable:
+
+```mech:disabled
+v1<point3> := [1 2 3]   -- Defines v1, a 3-element vector of f32 values
+v2<point3> := [4 5]     -- Error: kind mismatch, expected 3 elements but got 2
+```
