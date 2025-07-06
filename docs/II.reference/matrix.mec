@@ -1,0 +1,110 @@
+Matrix
+===============================================================================
+
+A matrix is a collection of homogenous datatypes in 2-Dimensions. Because the datatypes are assumed to be homogenous, they are unwrapped from their container types and therefore offer the most efficient access to the underlying data in Mech.
+
+Matricies can contain the following kinds: `number`, `string`, `bool`.
+
+**Note:** More kinds and dimensions will be supported in the future.
+
+1. Syntax
+-------------------------------------------------------------------------------
+
+You can declare a matrix using square brackets `[]`. 
+
+Use semicolons `;` or newlines to separate rows. 
+
+Use commas `,` or spaces to separate columns.
+
+```
+[1,2,3]   -- A row vector (1x3)
+[1 2 3]   -- The same row vector
+
+[1;2;3]   -- A column vector (3x1)
+[1        
+ 2
+ 3]       -- The same column vector
+
+[1,2;3,4] -- A matrix (2x2)
+[1 2
+ 3 4]     -- The same matrix
+```
+
+When parsed and formatted, they look like this:
+
+-- Row Vector
+[1 2 3]  
+-- Column Vector
+[1;2;3]  
+-- Matrix
+[1 2;3 4]
+
+(1.1) Fancy Syntax
+
+The Mech REPL formats matrix output using fancy box drawing characters for better readability.
+
+```
+┏           ┓
+┃ 1   2   3 ┃
+┃ 4   5   6 ┃
+┃ 7   8   9 ┃
+┗           ┛
+```
+
+Mech can parse data formatted this way, allowing you to copy or pipe REPL output directly into a Mech program that expects a matrix. The above example evaluates to:
+
+┏           ┓
+┃ 1   2   3 ┃
+┃ 4   5   6 ┃
+┃ 7   8   9 ┃
+┗           ┛
+
+2. Kind
+-------------------------------------------------------------------------------
+
+The kind of a matrix is determined by its dimensions and the kind of its elements. For example, a matrix of `u8` values with 2 rows and 3 columns has the kind:
+
+<[u8]:2,3>
+
+A general matrix can be represented as:
+
+<[u8]>
+
+A dynamic dimension is noted with an underscore `_`, such as:
+
+<[u8]:_,_>  -- A dynamic matrix with 2 dimensions
+<[u8]:_,3>  -- A dynamic matrix with 3 columns
+<[u8]:2,_>  -- A dynamic matrix with 2 rows
+
+Row vectors and column vectors are special cases of matrices:
+
+<[u8]:3>    -- A row vector with 3 elements
+<[u8]:3,1>  -- A column vector with 3 elements
+
+3. Construction
+-------------------------------------------------------------------------------
+
+You can construct new matricies from existing ones using concatenation.
+
+Vertical concatenation is done bay stacking rows on top of each other, referencing another matrix or vector within the brackets.
+
+```mech:ex1
+x := [1 2 3]  -- A row vector (1x3)
+y := [x;x;x]  -- A matrix (3x3)
+```
+
+Horizontal concatenation:
+
+```mech:ex2
+x := [1;2;3]  -- A column vector (3x1)
+y := [x,x,x]  -- A matrix (3x3)
+```
+
+4. Indexing
+-------------------------------------------------------------------------------
+
+5. Operations
+-------------------------------------------------------------------------------
+
+- Matrix multiply
+- Matrix transpoe
