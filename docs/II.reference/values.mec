@@ -1,3 +1,97 @@
-Values and Kinds
+Data - Types, Structures, and Kinds
 ===============================================================================
 
+Mech supports various primitive data types, each associated with one or more kinds. For example, the number `42` can be represented by an `i32` datatype, which is of kind `i32`, `signed`, `integer`, `real`, `number`, and `value` (the latter of which is a sort of superset of all kinds).
+
+Data types can be combined to form more complex structures, such as matrices, maps, sets, tuples, records, and tables. Each of these structures can also have associated kinds that are derived from the kinds of their constituent elements.
+
+1. Datatypes
+-------------------------------------------------------------------------------
+
+Data in Mech is represented using one of the following primitive datatypes:
+
+(1.1) Number
+
+**Number** - Represents numeric values, including integers, floating-point numbers, and complex numbers.
+
+- **Real** - Real numbers, including integers and floats.
+    - **Integers** - Whole numbers, which can be positive, negative, or zero.
+        - **Signed** - Can represent both negative and positive values.
+            - `i8` - 8-bit signed integer
+            - `i16` - 16-bit signed integer
+            - `i32` - 32-bit signed integer
+            - `i64` - 64-bit signed integer
+            - `i128` - 128-bit signed integer
+        - **Unsigned** - Can only represent zero and positive values.
+            - `u8` - 8-bit unsigned integer
+            - `u16` - 16-bit unsigned integer
+            - `u32` - 32-bit unsigned integer
+            - `u64` - 64-bit unsigned integer
+            - `u128` - 128-bit unsigned integer
+    - **Fractional** - Decimal numbers with fractional components.
+        - `f32` - 32-bit floating-point number
+        - `f64` - 64-bit floating-point number
+- **Imaginary** - Represent imaginary components of complex numbers.
+
+(1.2) String
+
+A sequence of UTF-8 characters representing text.
+
+(1.2.1) Kind
+
+<string>
+
+(1.3) Boolean
+
+Represents logical truth values.
+
+(1.3.1) Kind
+
+<bool>
+
+(1.4) Atom
+
+A symbolic constant, often used for tags or enums.
+
+(1.5.1) Kind
+
+The kind of an atom is itself. For example, the atom {`A} has the kind:
+
+<`A>
+
+(1.5) Kind
+
+Represents a type or category of values, such as `i32`, `f64`, `string`, etc. Kinds can be used to classify values and determine their operations.
+
+(1.5.1) Kind
+
+The kind of a kind is itself, and `kind`. For example, the kind {<i32>} has the kind:
+
+<i32>
+<kind>
+
+(1.5) Empty
+
+Represents an empty value, placeholder, or the absence of a value.
+
+(1.5.1) Kind
+
+<_>
+
+(1.5.2) Examples
+
+2. Data Structures
+-------------------------------------------------------------------------------
+
+- Enum - enumeration of named values
+- Map - key-value store
+- Matrix - ND array of values
+- Record - collection of named values
+- Set - unordered collection of unique values
+- Tuple - ordered collection of values
+- Table - collection of Records
+
+3. Kinds
+-------------------------------------------------------------------------------
+
+Every value in Mech has one or more associated kinds.
