@@ -1670,15 +1670,25 @@ window.addEventListener("scroll", () => {{
       Statement::OpAssign(op_asgn) => self.op_assign(op_asgn),
       Statement::VariableAssign(var_asgn) => self.variable_assign(var_asgn),
       Statement::TupleDestructure(tpl_dstrct) => self.tuple_destructure(tpl_dstrct),
+      Statement::KindDefine(kind_def) => self.kind_define(kind_def),
       _ => todo!(),
       //Statement::EnumDefine(enum_def) => self.enum_define(enum_def, src),
       //Statement::FsmDeclare(fsm_decl) => self.fsm_declare(fsm_decl, src),
-      //Statement::KindDefine(kind_def) => self.kind_define(kind_def, src),
     };
     if self.html {
       format!("<span class=\"mech-statement\">{}</span>",s)
     } else {
       format!("{}", s)
+    }
+  }
+
+  pub fn kind_define(&mut self, node: &KindDefine) -> String {
+    let name = node.name.to_string();
+    let kind = self.kind_annotation(&node.kind.kind);
+    if self.html {
+      format!("<span class=\"mech-kind-define\"><span class=\"mech-kind-annotation\">&lt;<span class=\"mech-kind\">{}</span>&gt;</span><span class=\"mech-kind-define-op\">:=</span><span class=\"mech-kind-annotation\">{}</span></span>",name,kind)
+    } else {
+      format!("<{}> := {}", name, kind)
     }
   }
 
