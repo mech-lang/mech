@@ -68,18 +68,20 @@ The kind of a matrix is determined by its dimensions and the kind of its element
 
 A general matrix can be represented as:
 
-<[u8]>
+<[T]>
 
 A dynamic dimension is noted with an underscore `_`, such as:
 
-<[u8]:_,_>  -- A dynamic matrix with 2 dimensions
-<[u8]:_,3>  -- A dynamic matrix with 3 columns
-<[u8]:2,_>  -- A dynamic matrix with 2 rows
+<[T]:_,3>  -- A dynamic matrix with 3 columns
+<[T]:2,_>  -- A dynamic matrix with 2 rows
+<[T]:_,_>  -- A dynamic matrix in 2 dimensions
 
 Row vectors and column vectors are special cases of matrices:
 
-<[u8]:3>    -- A row vector with 3 elements
-<[u8]:3,1>  -- A column vector with 3 elements
+<[T]:3>    -- A row vector with 3 elements
+<[T]:3,1>  -- A column vector with 3 elements
+<[T]:_>    -- A dynamic row vector with an unspecified number of elements
+<[T]:_,1>  -- A dynamic column vector with an unspecified number of elements
 
 3. Construction
 -------------------------------------------------------------------------------
