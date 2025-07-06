@@ -13,20 +13,21 @@ Mech Programming Language Documentation
 -------------------------------------------------------------------------------
 
 1. Data Model
-    - Values, Kinds, and Variables
+    - [Values, Kinds, and Variables](II.reference/values.html)
     - Data Structures
-        - Matrix - ND array of values
+        - Enum - enumeration of named values
         - Map - key-value store
-        - Set - unordered collection of unique values
-        - Tuple - ordered collection of values
+        - Matrix - ND array of values
         - Record - collection of named values
+        - Set - unordered collection of unique values
         - Table - collection of Records
+        - Tuple - ordered collection of values
     - Operators and Expressions
         - Operators
         - Indexing
 2. Programming Model `Coming v0.3`
-    - State Machines
     - Functions
+    - State Machines
     - Machines
     - Mech Programs
 3. System Model `Coming v0.4`
