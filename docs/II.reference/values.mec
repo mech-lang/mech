@@ -94,4 +94,69 @@ Represents an empty value, placeholder, or the absence of a value.
 3. Kinds
 -------------------------------------------------------------------------------
 
-Every value in Mech has one or more associated kinds.
+Every value in Mech has one or more associated kinds, which describe its type and properties.
+
+(3.1) Syntax
+
+Any valid identifier can be used as a kind as long as it is unique in the program. Mech provides a set of predefined kinds for common data types, but you can also define your own kinds as well, and construct compound kinds from other kinds.
+
+For example, the kind of a signed 32-bit integer is represented as: `u8`. The kind of a matrix is represented at `[T]`. These can be combined into the kind `[u8]`, which represents a matrix of unsigned 8-bit integers.
+
+(3.1.2) Kind Annotations
+
+Kind annotations are a tag that you can apply to values and expressions to specify their type explicitly. Syntatically they are specified with a form called a "kirby", which encases the kind in angle brackets:
+
+<u8>    -- A value of kind `u8`
+<[u8]>  -- A matrix of unsigned 8-bit integers
+<(o,O)> -- A tuple of two elements of kind `o` and `O` respectively
+
+Kind annotations can be used to annotate literals with their data type:
+
+```mech:disabled
+x := 42<u8> -- defines `x` as an unsigned 8-bit integer with the value 42
+```
+
+They can be used for type conversions as well:
+
+```mech:disabled
+x := [1 2 3]         -- 1x3 row vec of f64 numbers: `[f64]:1,3`
+y<[u8]> := [4 5 6]   -- 1x3 row vec of u8 numbers: `[u8]:1,3`
+z<[u8]> := x         -- Convert `[f64]:1,3` to `[u8]:1,3`
+```
+
+Kind annotations can also be assigned to variables:
+
+```mech:disabled
+x := <u8>  -- Assigns the kind `u8` as the value of `x`
+```
+
+The kind of {{x;}} is its value, {{<[u8]>;}}.
+
+(3.2) Simple Kinds
+
+Kinds start from one of the primitive data types:
+
+| Data Type         | Kind                                                        |
+|-------------------|-------------------------------------------------------------|
+| Signed integers   | {{<i8>;}}, {{<i16>;}}, {{<i32>;}}, {{<i64>;}}, {{<i128>;}}  |
+| Unsigned integers | {{<u8>;}}, {{<u16>;}}, {{<u32>;}}, {{<u64>;}}, {{<u128>;}}  |
+| Floating-point    | {{<f32>;}}, {{<f64>;}}                                      |   
+| String            | {{<string>;}}                                               |
+| Boolean           | {{<bool>;}}                                                 |
+| Atom              | {{<atom>;}}                                                 |
+| Kind              | {{<kind>;}}                                                 |
+| Empty             | {{<_>;}}                                                    |
+
+(3.3) Compound Kinds
+
+Kinds compose into more complex kinds based on the data structures they represent.
+
+| Data Structure | Kind                           | Example                  |
+|----------------|--------------------------------|--------------------------|
+| Matrix         | `[T]:N,M`                      | {{<[u8]:2,3>;}}               |
+| Set            | `{T}:N`                        | {{<{u8}:3>;}}                 |
+| Record         | `{T1,T2,T3}`                   | {{<{u8,string,bool}>;}}       |
+| Map            | `{K:V}`                        | {{<{string:i32}>;}}           |
+| Table          | `{arg1<T1>,arg2<T2>,arg3<T3>}` | `<{name<string>,age<u8>}>;`   |
+| Tuple          | `(T1,T2,T3)`                   | {{<(u8,string,bool)>;}}       |
+| Enum           | `enum`                         | {{<enum>;}}                   |
