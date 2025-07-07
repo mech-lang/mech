@@ -1,6 +1,6 @@
 [package]
 name = "mech-combinatorics"
-version = "0.2.48"
+version = "0.2.49"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Combinatorics library for the Mech language"
 documentation = "http://docs.mech-lang.org"
@@ -59,7 +59,7 @@ VectorD = []
 MatrixD = []
 
 [dependencies]
-mech-core = "0.2.48"
+mech-core = "0.2.49"
 
 libm = "0.2.11"
 simba = "0.9.0"
