@@ -19,7 +19,7 @@ This machine provides functions for logical operations such as AND, OR, NOT, and
 
 logic/machine := {
   name: "logic" 
-  version: "v0.2.48"
+  version: "v0.2.49"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/logic"
   license: "Apache-2.0"}
