@@ -30,7 +30,7 @@ Provides standard math functions.
 
 math/machine := {
   name: "math" 
-  version: "v0.2.48"
+  version: "v0.2.49"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/math"
   license: "Apache-2.0"}
