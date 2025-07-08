@@ -238,7 +238,7 @@ Logical indexing can also be used for assignment. For example, to set all even n
 
 ```mech:ex53
 ~m := [1 2 3 4 5 6]
-m[m % 2 == 0] = 0  -- Sets all even numbers to zero
+m[(m % 2) == 0] = 0  -- Sets all even numbers to zero
 ```
 
 
