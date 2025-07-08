@@ -234,9 +234,17 @@ You can assign an entire row or column:
 m[2,:] = 42  -- Assigns a new row to the second row
 ```
 
-Logical indexing can also be used for assignment. For example, to set all even numbers in a matrix to zero:
+Logical indexing can also be used for assignment. 
 
 ```mech:ex53
+~m := [1 2 3 4 5 6]
+ix := [true false false true true false]  -- A logical index
+m[ix] = 0 -- Sets elements at the logical index to zero
+```
+
+For example, to set all even numbers in a matrix to zero:
+
+```mech:ex54
 ~m := [1 2 3 4 5 6]
 m[(m % 2) == 0] = 0  -- Sets all even numbers to zero
 ```
@@ -285,7 +293,7 @@ m ** m'
 7. Conversion
 -------------------------------------------------------------------------------
 
-You can convert a matrix to a vector using a kind annotation. For example:
+You can convert a matrix to another kind using a kind annotation. For example:
 
 ```mech:ex71
 m := [1 2 3]
