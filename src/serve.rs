@@ -1,6 +1,5 @@
 use warp::http::header::{HeaderMap, HeaderValue};
-use warp::Filter;
-use warp::Future;
+use warp::{Filter, Future, Reply};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use base64::{encode, decode};
 use chrono::Local;
@@ -122,71 +121,98 @@ impl MechServer {
 
     let code_source = self.mechfs.sources();
 
-    // Serve the HTML file which includes the JS
     let index = warp::get()
-      .and(warp::filters::addr::remote()) // Capture remote address
-      .and(warp::path::full())            // Capture full path
-      .map(move |remote: Option<SocketAddr>, path: warp::path::FullPath| {  
+      .and(warp::filters::addr::remote())
+      .and(warp::path::full())
+      .map(move |remote: Option<SocketAddr>, path: warp::path::FullPath| {
         let date = Local::now();
-        // strip leading "/" from path
         let url = path.as_str().strip_prefix("/").unwrap_or("");
         let content_type = match std::path::Path::new(path.as_str()).extension().and_then(|e| e.to_str()) {
-            Some("html") | Some("mec") => "text/html",
-            Some("css") => "text/css",
-            Some("js") => "application/javascript",
-            _ => "text/html",
+          Some("html") | Some("mec") => "text/html",
+          Some("css") => "text/css",
+          Some("js") => "application/javascript",
+          _ => "text/html",
         };
 
         match code_source.read() {
           Ok(sources) => {
-
-            // check to see if teh first thing is code i.e. code/index.mec should serve the compressed and encoded tree rather than the html
             if url.starts_with("code/") {
               let url = url.strip_prefix("code/").unwrap();
 
               match sources.get_tree(url) {
                 Some(tree) => {
-                  let tree: Program = if let MechSourceCode::Tree(tree) = tree { tree } else { 
+                  let tree: Program = if let MechSourceCode::Tree(tree) = tree {
+                    tree
+                  } else {
                     todo!("{} Error getting tree from sources", server_badge());
                   };
                   match compress_and_encode(&tree) {
                     Ok(encoded) => {
-                      return warp::reply::with_header(encoded, "content-type", "text/plain");
-                    },
+                      return warp::reply::with_header(encoded, "content-type", "text/plain").into_response();
+                    }
                     Err(e) => {
                       todo!("{} Error compressing and encoding tree: {}", server_badge(), e);
                     }
                   }
                 }
                 None => {
-                  let mech_html = format!("<html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The requested URL {} was not found on this server.</p></body></html>", url);
-                  return warp::reply::with_header(mech_html, "content-type", "text/html");
+                  let mech_html = format!(
+                    "<html><head><title>404 Not Found</title></head>\
+                    <body><h1>404 Not Found</h1>\
+                    <p>The requested URL {} was not found on this server.</p></body></html>",
+                    url
+                  );
+                  return warp::reply::with_status(
+                    warp::reply::with_header(mech_html, "content-type", "text/html"),
+                    warp::http::StatusCode::NOT_FOUND,
+                  )
+                  .into_response();
                 }
               }
             }
 
             if let Some(addr) = remote {
-              println!("{} {} -- New request: {} -- /{}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), addr, url);
+              println!(
+                "{} {} -- New request: {} -- /{}",
+                server_badge(),
+                date.format("%Y-%m-%d %H:%M:%S"),
+                addr,
+                url
+              );
             } else {
-              println!("{} {} -- New request from unknown address -- /{}", server_badge(), date.format("%Y-%m-%d %H:%M:%S"), url);
+              println!(
+                "{} {} -- New request from unknown address -- /{}",
+                server_badge(),
+                date.format("%Y-%m-%d %H:%M:%S"),
+                url
+              );
             }
-            // search for a document named index.mec, index.html. If not found return a default page.
+
             let mech_html = match sources.get_html(url) {
               Some(MechSourceCode::Html(source)) => source,
               _ => {
-                // return a html page nothing the page is missing
-                let mech_html = format!("<html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>The requested URL {} was not found on this server.</p></body></html>", url);
-                return warp::reply::with_header(mech_html, "content-type", "text/html");
+                let mech_html = format!(
+                  "<html><head><title>404 Not Found</title></head>\
+                  <body><h1>404 Not Found</h1>\
+                  <p>The requested URL {} was not found on this server.</p></body></html>",
+                  url
+                );
+                return warp::reply::with_status(
+                  warp::reply::with_header(mech_html, "content-type", "text/html"),
+                  warp::http::StatusCode::NOT_FOUND,
+                )
+                .into_response();
               }
             };
-            return warp::reply::with_header(mech_html, "content-type", content_type);
-          },
+            return warp::reply::with_header(mech_html, "content-type", content_type).into_response();
+          }
           Err(e) => {
             println!("{} Error writing sources: {}", server_badge(), e);
             todo!();
           }
         }
       });
+
 
     // Serve the JS file which includes the wasm
     let mech_js: Vec<u8> = self.js.clone();
