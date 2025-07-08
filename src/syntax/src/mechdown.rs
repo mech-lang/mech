@@ -189,7 +189,13 @@ pub fn inline_code(input: ParseString) -> ParseResult<ParagraphElement> {
   let (input, text) = many0(tuple((is_not(grave),text)))(input)?;
   let (input, _) = grave(input)?;
   let mut text = text.into_iter().map(|(_,tkn)| tkn).collect();
-  let mut text = Token::merge_tokens(&mut text).unwrap();
+  // return empty token if there's nothing between the graves
+  let mut text = match Token::merge_tokens(&mut text) {
+    Some(t) => t,
+    None => {
+      return Ok((input, ParagraphElement::InlineCode(Token::default())));
+    }
+  };
   text.kind = TokenKind::Text;
   Ok((input, ParagraphElement::InlineCode(text)))
 }
