@@ -241,8 +241,6 @@ Logical indexing can also be used for assignment. For example, to set all even n
 m[(m % 2) == 0] = 0  -- Sets all even numbers to zero
 ```
 
-
-
 6. Operations
 -------------------------------------------------------------------------------
 
@@ -282,4 +280,21 @@ The transpose of a matrix is obtained by swapping its rows and columns. This can
 ```mech:ex63
 m := [1 2 3; 4 5 6]
 m ** m'
+```
+
+7. Conversion
+-------------------------------------------------------------------------------
+
+You can convert a matrix to a vector using a kind annotation. For example:
+
+```mech:ex71
+m := [1 2 3]
+v<[u8]> := m  -- Converts `[f64]` to `[u8]`
+```
+
+You can also convert a vector of numbers into a vector of strings:
+
+```mech:ex72
+v := [1 2 3]
+s<[string]> := v  -- Converts `[f64]` to `[string]`
 ```
