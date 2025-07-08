@@ -147,6 +147,15 @@ impl<'a> ParseString<'a> {
     }
   }
 
+  pub fn rest(&self) -> String {
+    // Return the rest of the string from current cursor
+    let mut s = String::new();
+    for i in self.cursor..self.graphemes.len() {
+      s.push_str(self.graphemes[i]);
+    }
+    s
+  }
+
   pub fn peek(&self, n: usize) -> Option<&str> {
     self.graphemes.get(self.cursor + n).copied()
   }

@@ -3,6 +3,8 @@
 *.so
 *.rlib
 *.dll
+*.exe
+*.wasm
 
 # Database files
 *.mdb
@@ -25,6 +27,7 @@ Cargo.lock
 # Build directory
 /build/
 .vscode/settings.json
+/mech-app/src/pkg
 
 # Machines directory
 /machines/

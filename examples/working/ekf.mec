@@ -108,7 +108,7 @@ Despite a very accurate test, the probability that someone who tests positive *a
 
 This example illustrates the power of Bayesian reasoning, which updates our belief $$P(\text{Disease})$$ based on observed evidence (a positive test).
 
-(1.2) Bayesian Filtrs
+(1.2) Bayesian Filters
 
 Bayesian filters use Bayes' law to estimate the unobservable state, meaning we cannot mesaure it directly, of a system from observable data, typically from sensors. They achieve this by recursively updating a posterior probability distribution over the system's state using a transition model of the system's dynamics, and incoming observations. 
 

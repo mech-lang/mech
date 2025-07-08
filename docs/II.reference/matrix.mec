@@ -1,0 +1,308 @@
+Matrix
+===============================================================================
+
+A matrix is a collection of homogenous datatypes in 2-Dimensions. Because the datatypes are assumed to be homogenous, they are unwrapped from their container types and therefore offer the most efficient access to the underlying data in Mech.
+
+Matricies can contain the following kinds: `number`, `string`, `bool`.
+
+**Note:** More kinds and dimensions will be supported in the future.
+
+1. Syntax
+-------------------------------------------------------------------------------
+
+You can declare a matrix using square brackets `[]`. 
+
+Use semicolons `;` or newlines to separate rows. 
+
+Use commas `,` or spaces to separate columns.
+
+```
+[1,2,3]   -- A row vector (1x3)
+[1 2 3]   -- The same row vector
+
+[1;2;3]   -- A column vector (3x1)
+[1        
+ 2
+ 3]       -- The same column vector
+
+[1,2;3,4] -- A matrix (2x2)
+[1 2
+ 3 4]     -- The same matrix
+```
+
+When parsed and formatted, they look like this:
+
+```mech:disabled
+-- Row Vector
+[1 2 3]  
+-- Column Vector
+[1;2;3]  
+-- Matrix
+[1 2;3 4]
+```
+
+(1.1) Fancy Syntax
+
+The Mech REPL formats matrix output using fancy box drawing characters for better readability.
+
+```
+┏           ┓
+┃ 1   2   3 ┃
+┃ 4   5   6 ┃
+┃ 7   8   9 ┃
+┗           ┛
+```
+
+Mech can parse data formatted this way, allowing you to copy or pipe REPL output directly into a Mech program that expects a matrix. The above example evaluates to:
+
+┏           ┓
+┃ 1   2   3 ┃
+┃ 4   5   6 ┃
+┃ 7   8   9 ┃
+┗           ┛
+
+2. Kind
+-------------------------------------------------------------------------------
+
+The kind of a matrix is determined by its dimensions and the kind of its elements. For example, a matrix of `u8` values with 2 rows and 3 columns has the kind:
+
+```mech:disabled
+<[u8]:2,3>
+```
+
+A general matrix can be represented as:
+
+```mech:disabled
+<[T]>
+```
+
+A dynamic dimension is noted with an underscore `_`, such as:
+
+```mech:disabled
+<[T]:_,3>  -- A dynamic matrix with 3 columns
+<[T]:2,_>  -- A dynamic matrix with 2 rows
+<[T]:_,_>  -- A dynamic matrix in 2 dimensions
+```
+
+Row vectors and column vectors are special cases of matrices:
+
+```mech:disabled
+<[T]:3>    -- A row vector with 3 elements
+<[T]:3,1>  -- A column vector with 3 elements
+<[T]:_>    -- A dynamic row vector with an unspecified number of elements
+<[T]:_,1>  -- A dynamic column vector with an unspecified number of elements
+```
+
+3. Construction
+-------------------------------------------------------------------------------
+
+You can construct new matricies from existing ones using concatenation.
+
+Vertical concatenation is done bay stacking rows on top of each other, referencing another matrix or vector within the brackets.
+
+```mech:ex31
+x := [1 2 3]  -- A row vector (1x3)
+y := [x;x;x]  -- A matrix (3x3)
+```
+
+Horizontal concatenation:
+
+```mech:ex32
+x := [1;2;3]  -- A column vector (3x1)
+y := [x,x,x]  -- A matrix (3x3)
+```
+
+4. Accessing Elements
+-------------------------------------------------------------------------------
+
+Matrix elements can be accessed using indexing, which is done with square brackets `[]` and a comma-separated list of indices.
+
+(4.1) Indexing
+
+Indexing starts at 1, not 0, so the first element is accessed with `1`.
+
+```mech:ex411
+m := ["a" "b" "c" "d"]
+(m[1], m[4])  -- Access the first and fourth elements
+```
+
+Indexing into a column vector is similar:
+
+```mech:ex412
+m := ["a";"b";"c";"d"]
+(m[1], m[4])  -- Access the first and fourth elements
+```
+
+For a 2D matrix, you can access elements using two indices, in a `[row, column]` format:
+
+```mech:ex413
+m := [1 2 3; 4 5 6]
+m[2,3] -- Access the element in the second row and third column
+```
+
+(4.2) Slicing
+
+Slicing allows you to access multiple elements at once, either entire rows or columns, or specific ranges of rows and columns.
+
+The `:` operator can be used to access entire rows or columns:
+
+You can slice it in various ways. For a matrix x with `N` rows and `M` columns, the following indexing operations are valid:
+
+| Syntax              | Description                        | Resulting Size   |
+|---------------------|------------------------------------|------------------|
+| `x[:]`              | Slice all elements                 | `[N*M x 1]`      |
+| `x[1,:]`            | Slice a row                        | `[1 x M]`        |
+| `x[:,2]`            | Slice a column                     | `[N x 1]`        |
+| `x[1..=2,:]`        | Slice a range of rows              | `[2 x M]`        |
+| `x[[1,3],:]`        | Slice specific rows                | `[2 x M]`        |
+| `x[[1,3],[1,3]]`    | Slice specific rows and columns    | `[2 x 2]`        |
+| `x[[1 1 2 2],:]`    | Slice the rows multiple times      | `[4 x M]`        |
+
+(4.2.1) Examples
+
+Given the matrix:
+
+```mech:ex421
+m := [1 2 3; 4 5 6; 7 8 9]
+```
+
+Slice the entire matrix:
+
+```mech:ex421
+m[:]
+```
+Slice the first row:
+
+```mech:ex421
+m[1,:]
+```
+Slice the second colum:
+
+```mech:ex421
+m[:,2]
+```
+
+Slice the first two rows:
+
+```mech:ex421
+m[1..=2,:]
+```
+
+Slice rows 1 and 3:
+
+```mech:ex421
+m[[1,3],:]
+```
+
+Slice the corners:
+
+```mech:ex421
+m[[1,3],[1,3]]
+```
+
+Slice the first rows multiple times:
+
+```mech:ex421
+m[[1 1 1 1],:]
+```
+
+(4.3) Logical Indexing
+
+Logical indexing allows you to select elements based on a condition. For example, if you have a matrix of numbers and want to select only those greater than 5:
+
+```mech:ex431
+m := 1..=10
+m[m > 5]  -- Selects elements greater than 5
+```
+
+5. Assigning Elements
+--------------------------------------------------------------------------------
+
+Assignment indexing follows the same syntax as accessing elements, but uses the `=` operator to assign a new value.
+
+Assignment only works if the matrix is mutable:
+
+```mech:ex51
+~m := [1 2 3 4 5 6] -- A mutable matrix
+m[3] = 42  -- Assigns the value 10 to the element in the second row and third Column
+```
+
+You can assign an entire row or column:
+
+```mech:ex52
+~m := [1 2 3; 4 5 6; 7 8 9]
+m[2,:] = 42  -- Assigns a new row to the second row
+```
+
+Logical indexing can also be used for assignment. 
+
+```mech:ex53
+~m := [1 2 3 4 5 6]
+ix := [true false false true true false]  -- A logical index
+m[ix] = 0 -- Sets elements at the logical index to zero
+```
+
+For example, to set all even numbers in a matrix to zero:
+
+```mech:ex54
+~m := [1 2 3 4 5 6]
+m[(m % 2) == 0] = 0  -- Sets all even numbers to zero
+```
+
+6. Operations
+-------------------------------------------------------------------------------
+
+Matrix operations include addition, subtraction, multiplication, and division. These operations are performed element-wise.
+
+(6.1) Arithmetic Operations 
+
+If matrices have the same dimension, standard arithmetic operations are performed element-wise:
+
+```mech:ex611
+m1 := [1 2 3; 4 5 6]
+m2 := [7 8 9; 10 11 12]
+m1 + m2  -- Adds the two matrices element-wise
+```
+
+If one of the operands is a scalar, it will be added or subtracted from each element of the matrix:
+
+```mech:ex612
+m := [1 2 3 4 5] 
+m + 10  -- Adds 10 to each element of the vector
+```
+
+(6.2) Matrix multiplication
+
+Matrix multiplication is performed using the `**` operator. For the operation to be valid, the number of columns in the first matrix must match the number of rows in the second matrix:
+
+```mech:ex621
+m1 := [1 2 3; 4 5 6 ]
+m2 := [7 8; 9 10; 11 12]
+m1 ** m2  -- Multiplies the two matrices
+```
+
+(6.3) Matrix Transpose
+
+The transpose of a matrix is obtained by swapping its rows and columns. This can be done using the `grave` operator:
+
+```mech:ex63
+m := [1 2 3; 4 5 6]
+m ** m'
+```
+
+7. Conversion
+-------------------------------------------------------------------------------
+
+You can convert a matrix to another kind using a kind annotation. For example:
+
+```mech:ex71
+m := [1 2 3]
+v<[u8]> := m  -- Converts `[f64]` to `[u8]`
+```
+
+You can also convert a vector of numbers into a vector of strings:
+
+```mech:ex72
+v := [1 2 3]
+s<[string]> := v  -- Converts `[f64]` to `[string]`
+```
