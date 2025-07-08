@@ -13,27 +13,28 @@ Mech Programming Language Documentation
 -------------------------------------------------------------------------------
 
 1. Data Model
-    - Variables and Values
+    - [Values, Kinds, and Variables](II.reference/values.html)
     - Data Structures
-        - Matrix - a ND array of values
-        - Map - a key-value store
-        - Set - a collection of unique values
-        - Tuple - an ordered collection of values
-        - Record - a collection of named values
-        - Table - a collection of Records
+        - Enum - enumeration of named values
+        - Map - key-value store
+        - [Matrix](II.reference/matrix.html) - 2D collection of values
+        - Record - collection of named values
+        - Set - unordered collection of unique values
+        - Table - collection of Records
+        - Tuple - ordered collection of values
     - Operators and Expressions
-        - Broadcasting
-    - Indexing
-2. Programming Model
-    - State Machines
+        - Operators
+        - Indexing
+2. Programming Model `Coming v0.3`
     - Functions
+    - State Machines
     - Machines
     - Mech Programs
-3. System Model
+3. System Model `Coming v0.4`
     - Capabilities
     - Distributed Computation
     - Concurrency and Parallelism
-4. Standard Library
+4. [Standard Library](II.reference/stdlib/index.html)
 5. Mechdown Reference
 
 3. Guides
@@ -41,12 +42,6 @@ Mech Programming Language Documentation
 
 1. [Mech in Fifteen Minutes](III.guides/mech-in-fifteen-minutes.html)
 2. Tutorials
-3. Mech for X
-    - Mech for Game Devs
-    - Mech for Web Devs
-    - Mech for ROS Devs
-    - Mech for Matlab Devs
-    - Mech for Python Devs
 
 4. Language Design Documents
 -------------------------------------------------------------------------------
@@ -66,7 +61,7 @@ Mech Programming Language Documentation
 
 docs/machine := {
   name: "docs" 
-  version: "v0.2.48"
+  version: "v0.2.49"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/mech/docs"
   license: "Apache-2.0"}

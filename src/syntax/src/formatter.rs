@@ -236,7 +236,6 @@ entries
   }})
   .forEach(entry => {{
     if (entry.isIntersecting) {{
-      console.log(entry);
         const id = entry.target.id;
         const tag = entry.target.tagName; // H1, H2, H3, etc.
 
@@ -298,7 +297,6 @@ entries
             if (H4Nav) {{
               H4Nav.classList.add("active");
               const h4_id = H4Nav.getAttribute("section");
-              console.log(h4_id);
               all_the_headers.forEach(item => {{
                 const item_id = item.getAttribute("section");
                 if (item_id && item_id.startsWith(h4_id) && item.tagName === "H4") {{
@@ -322,7 +320,6 @@ entries
               all_the_headers.forEach(item => {{
                 const item_id = item.getAttribute("section");
                 // Check if the item_id starts with the h3_id and is an H4, if so, add "visible", if not, remove "visible"
-                console.log(item.tagName);
                 if (item_id && item_id.startsWith(h3_id) && item.tagName === "H4") {{
                   item.classList.add("visible");
                 }} else {{
@@ -393,6 +390,13 @@ window.addEventListener("DOMContentLoaded", () => {{
           katex.render(eq, el, {{ throwOnError: false }});
           el.setAttribute("data-rendered", "true");
         }}
+      }}
+    }});
+
+    document.querySelectorAll(".mermaid svg").forEach(svg => {{
+      const labels = svg.querySelector(".node-labels");
+      if (labels && svg.lastElementChild !== labels) {{
+        svg.appendChild(labels); // Move labels to end = on top
       }}
     }});
   }}
@@ -1666,15 +1670,25 @@ window.addEventListener("scroll", () => {{
       Statement::OpAssign(op_asgn) => self.op_assign(op_asgn),
       Statement::VariableAssign(var_asgn) => self.variable_assign(var_asgn),
       Statement::TupleDestructure(tpl_dstrct) => self.tuple_destructure(tpl_dstrct),
+      Statement::KindDefine(kind_def) => self.kind_define(kind_def),
       _ => todo!(),
       //Statement::EnumDefine(enum_def) => self.enum_define(enum_def, src),
       //Statement::FsmDeclare(fsm_decl) => self.fsm_declare(fsm_decl, src),
-      //Statement::KindDefine(kind_def) => self.kind_define(kind_def, src),
     };
     if self.html {
       format!("<span class=\"mech-statement\">{}</span>",s)
     } else {
       format!("{}", s)
+    }
+  }
+
+  pub fn kind_define(&mut self, node: &KindDefine) -> String {
+    let name = node.name.to_string();
+    let kind = self.kind_annotation(&node.kind.kind);
+    if self.html {
+      format!("<span class=\"mech-kind-define\"><span class=\"mech-kind-annotation\">&lt;<span class=\"mech-kind\">{}</span>&gt;</span><span class=\"mech-kind-define-op\">:=</span><span class=\"mech-kind-annotation\">{}</span></span>",name,kind)
+    } else {
+      format!("<{}> := {}", name, kind)
     }
   }
 
