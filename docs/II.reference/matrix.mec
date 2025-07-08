@@ -100,14 +100,14 @@ You can construct new matricies from existing ones using concatenation.
 
 Vertical concatenation is done bay stacking rows on top of each other, referencing another matrix or vector within the brackets.
 
-```mech:ex1
+```mech:ex31
 x := [1 2 3]  -- A row vector (1x3)
 y := [x;x;x]  -- A matrix (3x3)
 ```
 
 Horizontal concatenation:
 
-```mech:ex2
+```mech:ex32
 x := [1;2;3]  -- A column vector (3x1)
 y := [x,x,x]  -- A matrix (3x3)
 ```
@@ -121,68 +121,88 @@ Matrix elements can be accessed using indexing, which is done with square bracke
 
 Indexing starts at 1, not 0, so the first element is accessed with `1`.
 
-```mech:ex3
+```mech:ex411
 m := ["a" "b" "c" "d"]
 (m[1], m[4])  -- Access the first and fourth elements
 ```
 
 Indexing into a column vector is similar:
 
-```mech:ex4
+```mech:ex412
 m := ["a";"b";"c";"d"]
 (m[1], m[4])  -- Access the first and fourth elements
 ```
 
 For a 2D matrix, you can access elements using two indices, in a `[row, column]` format:
 
-```mech:ex5
+```mech:ex413
 m := [1 2 3; 4 5 6]
 m[2,3] -- Access the element in the second row and third column
 ```
 
 (4.2) Slicing
 
+Slicing allows you to access multiple elements at once, either entire rows or columns, or specific ranges of rows and columns.
 
 The `:` operator can be used to access entire rows or columns:
 
-For example, given the matrix:
+You can slice it in various ways. For a matrix x with `N` rows and `M` columns, the following indexing operations are valid:
 
-```mech:ex6
+| Syntax              | Description                        | Resulting Size   |
+|---------------------|------------------------------------|------------------|
+| `x[:]`                | Slice all elements                 | `[N*M x 1]`      |
+| `x[1,:]`              | Slice a row                        | `[1 x M]`        |
+| `x[:,2]`              | Slice a column                     | `[N x 1]`        |
+| `x[1..=2,:]`          | Slice a range of rows              | `[2 x M]`        |
+| `x[[1,3],:]`          | Slice specific rows                | `[2 x M]`        |
+| `x[[1,3],[1,3]]`      | Slice specific rows and columns    | `[2 x 2]`        |
+| `x[[1 1 2 2],:]`      | Slice the rows multiple times      | `[4 x M]`        |
+
+(4.2.1) Examples
+
+Given the matrix:
+
+```mech:ex421
 m := [1 2 3; 4 5 6; 7 8 9]
 ```
 
+Slice the entire matrix:
+
+```mech:ex421
+m[:]
+```
 Slice the first row:
 
-```mech:ex6
+```mech:ex421
 m[1,:]
 ```
 Slice the second colum:
 
-```mech:ex6
+```mech:ex421
 m[:,2]
 ```
 
 Slice the first two rows:
 
-```mech:ex6
+```mech:ex421
 m[1..=2,:]
 ```
 
 Slice rows 1 and 3:
 
-```mech:ex6
+```mech:ex421
 m[[1,3],:]
 ```
 
 Slice the corners:
 
-```mech:ex6
+```mech:ex421
 m[[1,3],[1,3]]
 ```
 
 Slice the first rows multiple times:
 
-```mech:ex6
+```mech:ex421
 m[[1 1 1 1],:]
 ```
 
@@ -190,12 +210,10 @@ m[[1 1 1 1],:]
 
 Logical indexing allows you to select elements based on a condition. For example, if you have a matrix of numbers and want to select only those greater than 5:
 
-```mech:ex7
+```mech:ex431
 m := 1..=10
 m[m > 5]  -- Selects elements greater than 5
 ```
-
-
 
 5. Assigning Elements
 --------------------------------------------------------------------------------
@@ -204,21 +222,64 @@ Assignment indexing follows the same syntax as accessing elements, but uses the 
 
 Assignment only works if the matrix is mutable:
 
-```mech:ex8
+```mech:ex51
 ~m := [1 2 3 4 5 6] -- A mutable matrix
 m[3] = 42  -- Assigns the value 10 to the element in the second row and third Column
 ```
 
 You can assign an entire row or column:
 
-```mech:ex8
+```mech:ex52
 ~m := [1 2 3; 4 5 6; 7 8 9]
-m[2,:] = [10 11 12]  -- Assigns a new row to the second row
+m[2,:] = 42  -- Assigns a new row to the second row
+```
+
+Logical indexing can also be used for assignment. For example, to set all even numbers in a matrix to zero:
+
+```mech:ex53
+~m := [1 2 3 4 5 6]
+m[m % 2 == 0] = 0  -- Sets all even numbers to zero
 ```
 
 
-5. Operations
+
+6. Operations
 -------------------------------------------------------------------------------
 
-- Matrix multiply
-- Matrix transpoe
+Matrix operations include addition, subtraction, multiplication, and division. These operations are performed element-wise.
+
+(6.1) Arithmetic Operations 
+
+If matrices have the same dimension, standard arithmetic operations are performed element-wise:
+
+```mech:ex611
+m1 := [1 2 3; 4 5 6]
+m2 := [7 8 9; 10 11 12]
+m1 + m2  -- Adds the two matrices element-wise
+```
+
+If one of the operands is a scalar, it will be added or subtracted from each element of the matrix:
+
+```mech:ex612
+m := [1 2 3 4 5] 
+m + 10  -- Adds 10 to each element of the vector
+```
+
+(6.2) Matrix multiplication
+
+Matrix multiplication is performed using the `**` operator. For the operation to be valid, the number of columns in the first matrix must match the number of rows in the second matrix:
+
+```mech:ex621
+m1 := [1 2 3; 4 5 6 ]
+m2 := [7 8; 9 10; 11 12]
+m1 ** m2  -- Multiplies the two matrices
+```
+
+(6.3) Matrix Transpose
+
+The transpose of a matrix is obtained by swapping its rows and columns. This can be done using the `grave` operator:
+
+```mech:ex63
+m := [1 2 3; 4 5 6]
+m ** m'
+```
