@@ -38,9 +38,9 @@ Target release date: ???
 -(🐣) typed tables for heterogeneous data
 -(🐣) sets
 -(🐣) maps
--(🐣) enums
--(🐣) strings
+
 -(🐣) atoms
+-(🐤) strings
 -(🐤) bools
 -(🐤) matrix slicing
 -(🐤) operator broadcasting
@@ -67,6 +67,7 @@ Target release date: ???
 -(🥚) self-contained binary executables
 -(🥚) time travel debugging
 -(🥚) language server
+-(🥚) enums
 -(🐣) user defined functions
 -(🐣) tests
 -(🐣) profiler
@@ -91,7 +92,6 @@ Current work is focused on reimplementing the core of the Mech language to reori
 
 -[x] Monorepo
 - New Literals
-  -[x] Enums
   -[x] Atoms
   -[x] Specifying units
   -[x] Scientific notation
@@ -143,6 +143,7 @@ Current work is focused on reimplementing the core of the Mech language to reori
 -[ ] Currency
 -[ ] Autograd syntax
 -[ ] History syntax
+-[ ] Enums
 -[ ] Database redo
   -[ ] ACID
   -[ ] Persistence
