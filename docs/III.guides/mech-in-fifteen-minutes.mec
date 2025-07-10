@@ -290,8 +290,6 @@ Note: Vectors have at least 1 scalar dimension.
 - Also Matrix           [1 2             (2x2)
                          3 4]            
 - Transpose             [1 2; 3 4; 5 6]' (2x3)
-- Nested                [[1 2] [3 4]    
-                         [5 6] [7 8]]    (2x2x2)
 ```
 
 Mech supports fancy box drawing tables:

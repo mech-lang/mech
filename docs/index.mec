@@ -15,7 +15,7 @@ Mech Programming Language Documentation
 1. Data Model
     - [Values, Kinds, and Variables](II.reference/values.html)
     - Data Structures
-        - Enum - enumeration of named values
+        - Enum - enumeration of named values `Coming v0.3`
         - Map - key-value store
         - [Matrix](II.reference/matrix.html) - 2D collection of values
         - Record - collection of named values
