@@ -1,0 +1,111 @@
+Map
+===============================================================================
+
+A `Map` in Mech is an unordered collection of unique keys, each associated with a corresponding value. Maps are useful for representing associative data, such as key-value pairs, dictionaries, or lookup tables.
+
+Unlike matrices, maps do not require homogeneous values, but keys must be unique within the map.
+
+1. Syntax
+-------------------------------------------------------------------------------
+
+You can define maps using curly braces `{}` with a colon `:` to separate keys from values.
+
+**Examples:**
+
+```
+{}                       -- An empty map
+{"a": 1}                 -- A single key-value pair
+{"a": 10, "b": 20}       -- Multiple key-value pairs
+{"a": {"b": 2}}          -- Nested maps
+{
+  "a": 10
+  "b": 20
+  "c": 30
+}                        -- Multi-line format
+```
+
+Evaluates to:
+
+```mech:disabled
+{}                       -- An empty map
+{"a": 1}                 -- A single key-value pair
+{"a": 10, "b": 20}       -- Multiple key-value pairs
+{"a": {"b": 2}}          -- Nested maps
+{
+  "a": 10
+  "b": 20
+  "c": 30
+}                        -- Multi-line format
+```
+
+**Notes:**
+
+- Keys are typically strings but may support additional types in future.
+- Keys must be unique.
+- Values can be any Mech kind (number, string, bool, matrix, another map, etc).
+
+2. Kind
+-------------------------------------------------------------------------------
+
+The kind of a map describes the type of its keys and values:
+
+```mech:disabled
+<{string:u8}>                 -- A map from strings to unsigned 8-bit integers
+<{string:{string:u8}}>       -- A nested map
+<{T:U}>                      -- A generic map from kind `T` to kind `U`
+```
+
+If either key or value kinds are dynamic, an underscore `_` is used:
+
+```mech:disabled
+<{_:_}>                      -- A fully dynamic map
+<{string:_}>                 -- A map with known key kind but unknown value kind
+```
+
+3. Construction
+-------------------------------------------------------------------------------
+
+Maps can be constructed inline or from other data sources (e.g., parsed JSON, CSV headers, or computed results).
+
+```mech:disabled
+m := {"name": "Alice", "age": 30}
+```
+
+You can also dynamically insert or build maps using assignment (see Section 5).
+
+4. Accessing Elements
+-------------------------------------------------------------------------------
+
+Elements in a map are accessed using square brackets `[]` with the key.
+
+```mech:ex1
+m := {"a": 10, "b": 20}
+m{"a"}     -- Returns 10
+```
+
+If the key does not exist, the result is `none`.
+
+For nested maps, use multiple brackets:
+
+```
+m := {"a": {"b": 2}}
+m["a"]["b"]   -- Returns 2
+```
+
+5. Assigning Elements
+-------------------------------------------------------------------------------
+
+Maps can be modified if they are declared mutable with `~`.
+
+```
+~m := {}
+m["a"] = 42     -- Adds or updates key "a"
+m["b"] = 17     -- Adds key "b"
+```
+
+You can also assign to nested keys:
+
+```
+~m := {"config": {}}
+m["config"]["theme"] = "dark"
+```
