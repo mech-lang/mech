@@ -1,0 +1,98 @@
+Table
+===============================================================================
+
+A `Table` in Mech is a set of records, where each record corresponds to a row and each column has a name and kind. Tables provide structured, columnar data that is flexible and human-readable.
+
+1. Syntax
+-------------------------------------------------------------------------------
+
+Tables are defined using curly braces `{}` with named columns and a vertical bar `|` to separate column headers from data rows.
+
+```mech
+| x<f32>  y<u8> | 
+|  1.2     9    |
+|  1.3     8    |
+```
+
+This creates a table with two columns, `x` of kind `f32` and `y` of kind `u8`.
+
+You can write tables inline using semicolons to separate rows:
+
+```mech
+| x<f32> y<u8> |{ 1.2 9; 1.3 8 }
+```
+
+2. Heterogeneous Columns
+
+---
+
+The kind `_` indicates that a column may contain heterogeneous data:
+
+```mech
+| x<_>   y<_> |
+|  1.2    true| 
+|  "Hi"   8   |
+```
+
+Each cell in the column may hold a different type of value.
+
+3. Partial Rows
+
+---
+
+You can omit values in certain rows using `_` to indicate a missing value:
+
+```mech
+| x<u8>  y<string> z<[u8]:3> |
+|   _      "a"       [1;2;3] |
+|   4      "b"          _    |
+|   7       _        [7;8;9] |
+```
+
+4. Fancy Formatting
+
+---
+
+Tables can be displayed using a box-drawn format in the REPL for improved readability:
+
+```
+╭────────────────────────────────╮
+│ x<u8>   y<string>  z<[u8]:1,3> │
+├───────┬──────────┬─────────────┤
+│   _   │   "a"    │  [1,2,3,4]  │
+├───────┼──────────┼─────────────┤
+│   4   │   "b"    │     _       │
+├───────┼──────────┼─────────────┤
+│   7   │    _     │  [5,6,7,8]  │
+╰───────┴──────────┴─────────────╯
+```
+
+```
+╭────────────────────────────────╮
+│ x<u8>   y<string>  z<[u8]:1,3> │
+├───────┬──────────┬─────────────┤
+│   _   │   "a"    │  [1,2,3,4]  │
+│   4   │   "b"    │     _       │
+│   7   │    _     │  [5,6,7,8]  │
+╰───────┴──────────┴─────────────╯
+```
+
+5. Kind
+
+---
+
+A table's kind describes the types and structure of its columns and dimensions. For example:
+
+```mech
+<{u8,string,[u8]:3}:3,3>
+```
+
+This represents a table with three columns of kinds `u8`, `string`, and `[u8]:3`, and three rows.
+
+6. Notes
+
+---
+
+* Tables are more expressive than matrices and can store structured data.
+* They support mixed kinds per column and partial rows.
+* Tables are generally slower than matrices due to their flexibility.
