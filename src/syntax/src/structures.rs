@@ -25,7 +25,7 @@ pub fn structure(input: ParseString) -> ParseResult<Structure> {
     Ok((input, map)) => {return Ok((input, Structure::Map(map)));},
     _ => (),
   }
-  match table(input.clone()) {
+  match markdown_table(input.clone()) {
     Ok((input, tbl)) => {return Ok((input, Structure::Table(tbl)));},
     //Err(Failure(err)) => { return Err(Failure(err)); }, 
     _ => (),
