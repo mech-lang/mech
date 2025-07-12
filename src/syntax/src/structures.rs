@@ -21,7 +21,8 @@ use colored::*;
 use crate::*;
 use crate::nodes::Matrix;
 
-// #### Structures
+// Structures
+// =============================================================================
 
 pub fn max_err<'a>(x: Option<ParseError<'a>>, y: ParseError<'a>) -> ParseError<'a> {
   match (x,&y) {
@@ -343,11 +344,4 @@ pub fn tuple_struct(input: ParseString) -> ParseResult<TupleStruct> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = right_parenthesis(input)?;
   Ok((input, TupleStruct{name, value: Box::new(value)}))
-}
-
-// atom := "`", identifier ;
-pub fn atom(input: ParseString) -> ParseResult<Atom> {
-  let (input, _) = grave(input)?;
-  let (input, name) = identifier(input)?;
-  Ok((input, Atom{name}))
 }

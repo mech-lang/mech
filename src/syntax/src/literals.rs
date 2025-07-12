@@ -6,6 +6,9 @@ use nom::{
 };
 use crate::nodes::Kind;
 
+// Literals
+// =============================================================================
+
 // literal := (number | string | atom | boolean | empty | kind-annotation), kind-annotation? ;
 pub fn literal(input: ParseString) -> ParseResult<Literal> {
   let (input, result) = match number(input.clone()) {
@@ -35,6 +38,13 @@ pub fn literal(input: ParseString) -> ParseResult<Literal> {
   Ok((input, result))
 }
 
+// atom := "`", identifier ;
+pub fn atom(input: ParseString) -> ParseResult<Atom> {
+  let (input, _) = grave(input)?;
+  let (input, name) = identifier(input)?;
+  Ok((input, Atom{name}))
+}
+
 // string := quote, (!quote, text)*, quote ;
 pub fn string(input: ParseString) -> ParseResult<MechString> {
   let msg = "Character not allowed in string";
@@ -46,6 +56,9 @@ pub fn string(input: ParseString) -> ParseResult<MechString> {
   merged.kind = TokenKind::String;
   Ok((input, MechString { text: merged }))
 }
+
+// Boolean
+// ----------------------------------------------------------------------------
 
 // boolean_literal := true_literal | false_literal ;
 pub fn boolean(input: ParseString) -> ParseResult<Token> {
@@ -64,6 +77,9 @@ pub fn false_literal(input: ParseString) -> ParseResult<Token> {
   let (input, token) = alt((english_false_literal, cross))(input)?;
   Ok((input, token))
 }
+
+// Number
+// ----------------------------------------------------------------------------
 
 // number := real_number, "i"? | ("+", real_number, "i")? ;
 pub fn number(input: ParseString) -> ParseResult<Number> {
@@ -231,7 +247,8 @@ pub fn empty(input: ParseString) -> ParseResult<Token> {
   Ok((input, Token{kind: TokenKind::Empty, chars: g.join("").chars().collect(), src_range}))
 }
 
-// #### Kind Annotations
+// Kind Annotations
+// ----------------------------------------------------------------------------
 
 // kind_annotation := left_angle, kind, right_angle ;
 pub fn kind_annotation(input: ParseString) -> ParseResult<KindAnnotation> {
