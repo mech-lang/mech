@@ -137,8 +137,33 @@ pub fn matrix_end(input: ParseString) -> ParseResult<Token> {
 // Table
 // ----------------------------------------------------------------------------
 
-// table := table_start, (box_drawing_char | whitespace)*, table_header, (box_drawing_char | whitespace)*, table_row+, box_drawing_char*, whitespace*, table_end ;
-pub fn table(input: ParseString) -> ParseResult<Table> {
+// table := inline-table | fancy-table ;
+fn table(input: ParseString) -> ParseResult<Table> { 
+  alt((inline_table, fancy_table))(input)
+}
+
+// inline-table := table-separator, *whitespace, table-header, *whitespace, +table-row;
+pub fn inline_table(input: ParseString) -> ParseResult<Table> {
+  let (input, _) = table_separator(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, header) = table_header(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, rows) = many1(inline_table_row)(input)?;
+  Ok((input, Table{header, rows}))
+}
+
+// table-row := bar, list1((space | tab)*, expression), (space | tab)*, bar, new-line ;
+pub fn inline_table_row(input: ParseString) -> ParseResult<TableRow> {
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, row) = many1(nom_tuple((many0(space_tab), expression)))(input)?;
+  let (input, _) = many0(space_tab)(input)?;
+  let (input, _) = table_separator(input)?;
+  let row = row.into_iter().map(|(_,tkn)| TableColumn{element:tkn}).collect();
+  Ok((input, TableRow{columns: row}))
+}
+
+// fancy-table := table_start, (box_drawing_char | whitespace)*, table_header, (box_drawing_char | whitespace)*, table_row+, box_drawing_char*, whitespace*, table_end ;
+pub fn fancy_table(input: ParseString) -> ParseResult<Table> {
   let msg = "Expects right bracket '}' to finish the table";
   let (input, (_, r)) = range(table_start)(input)?;
   let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
@@ -152,7 +177,7 @@ pub fn table(input: ParseString) -> ParseResult<Table> {
 pub fn table_header(input: ParseString) -> ParseResult<Vec<Field>> {
   let (input, fields) = separated_list1(many1(space_tab),field)(input)?;
   let (input, _) = many0(space_tab)(input)?;
-  let (input, _) = alt((bar,box_vert,box_vert_bold))(input)?;
+  let (input, _) = table_separator(input)?;
   let (input, _) = whitespace0(input)?;
   Ok((input, fields))
 }
