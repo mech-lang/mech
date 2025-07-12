@@ -21,7 +21,8 @@ use colored::*;
 
 use crate::*;
 
-// ### Mechdown
+// Mechdown
+// ============================================================================
 
 // title := text+, new_line, equal+, (space|tab)*, whitespace* ;
 pub fn title(input: ParseString) -> ParseResult<Title> {
