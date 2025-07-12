@@ -1,9 +1,24 @@
 #[macro_use]
 use crate::*;
+
+#[cfg(not(feature = "no-std"))] use core::fmt;
+#[cfg(feature = "no-std")] use alloc::fmt;
+#[cfg(feature = "no-std")] use alloc::string::String;
+#[cfg(feature = "no-std")] use alloc::vec::Vec;
 use nom::{
-  multi::separated_list0,
+  IResult,
+  branch::alt,
   sequence::tuple as nom_tuple,
+  combinator::{opt, eof, peek},
+  multi::{many1, many_till, many0, separated_list1,separated_list0},
+  bytes::complete::{take_until, take_while},
+  Err,
+  Err::Failure
 };
+use std::collections::HashMap;
+use colored::*;
+
+use crate::*;
 use crate::nodes::Matrix;
 
 // #### Structures
@@ -25,8 +40,10 @@ pub fn structure(input: ParseString) -> ParseResult<Structure> {
     Ok((input, map)) => {return Ok((input, Structure::Map(map)));},
     _ => (),
   }
-  match markdown_table(input.clone()) {
-    Ok((input, tbl)) => {return Ok((input, Structure::Table(tbl)));},
+  match table(input.clone()) {
+    Ok((input, tbl)) => {
+      return Ok((input, Structure::Table(tbl)));
+    },
     //Err(Failure(err)) => { return Err(Failure(err)); }, 
     _ => (),
   }
@@ -132,20 +149,16 @@ pub fn matrix_column(input: ParseString) -> ParseResult<MatrixColumn> {
   Ok((input, MatrixColumn{element}))
 }
 
-
-// table_row := table_separator?, (space | tab)*, table_column+, semicolon?, new_line?, (box_drawing_char+, new_line)? ;
+// table-row := bar, list1((space | tab)*, expression), (space | tab)*, bar, new-line ;
 pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
-  let (input, _) = opt(table_separator)(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = bar(input)?;
+  let (input, row) = many1(nom_tuple((many0(space_tab), expression)))(input)?;
   let (input, _) = many0(space_tab)(input)?;
-  let (input, columns) = match many1(table_column)(input) {
-    Ok(result) => result,
-    Err(error) => {
-      return Err(error);
-    }
-  };
-  let (input, _) = nom_tuple((opt(semicolon), opt(new_line)))(input)?;
-  let (input, _) = opt(nom_tuple((many1(box_drawing_char),new_line)))(input)?;
-  Ok((input, TableRow{columns}))
+  let (input, _) = bar(input)?;
+  let (input, _) = new_line(input)?;
+  let row = row.into_iter().map(|(_,tkn)| TableColumn{element:tkn}).collect();
+  Ok((input, TableRow{columns: row}))
 }
 
 // matrix_row := table_separator?, (space | tab)*, matrix_column+, semicolon?, new_line?, (box_drawing_char+, new_line)? ;
@@ -202,18 +215,23 @@ pub fn matrix_end(input: ParseString) -> ParseResult<Token> {
 
 // table_start := box_tl_round | box_tl | left_brace ;
 pub fn table_start(input: ParseString) -> ParseResult<Token> {
-  alt((box_tl_round, box_tl, box_tl_bold, left_brace))(input)
+  alt((box_tl_round, box_tl, box_tl_bold, left_brace, table_separator))(input)
 }
 
 // table_end := box_br_round | box_br | right_brace ;
 pub fn table_end(input: ParseString) -> ParseResult<Token> {
-  let result = alt((box_br_round, box_br, box_br_bold, right_brace))(input);
+  let result = alt((box_br_round, box_br, box_br_bold, right_brace, table_separator))(input);
   result
 }
 
 // table_separator := box_vert ;
 pub fn table_separator(input: ParseString) -> ParseResult<Token> {
-  let (input, token) = alt((box_vert,box_vert_bold))(input)?;
+  let (input, token) = alt((box_vert,box_vert_bold,bar))(input)?;
+  Ok((input, token))
+}
+
+pub fn table_horz(input: ParseString) -> ParseResult<Token> {
+  let (input, token) = alt((dash,box_horz))(input)?;
   Ok((input, token))
 }
 
@@ -242,32 +260,26 @@ pub fn table(input: ParseString) -> ParseResult<Table> {
   let (input, header) = table_header(input)?;
   let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
   let (input, rows) = many1(table_row)(input)?;
-  let (input, _) = many0(box_drawing_char)(input)?;
-  let (input, _) = whitespace0(input)?;
-  let (input, _) = match label!(table_end, msg, r)(input) {
-    Ok(k) => k,
-    Err(err) => {
-      return Err(err);
-    }
-  };
   Ok((input, Table{header,rows}))
 }
 
 // empty_table := table_start, whitespace*, table_end ;
 pub fn empty_map(input: ParseString) -> ParseResult<Map> {
-  let (input, _) = table_start(input)?;
+  let (input, _) = left_brace(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, _) = table_end(input)?;
+  let (input, _) = colon(input)?;
+  let (input, _) = whitespace0(input)?;
+  let (input, _) = right_brace(input)?;
   Ok((input, Map{elements: vec![]}))
 }
 
 // empty_set := table_start, whitespace*, empty, whitespace*, table_end ;
 pub fn empty_set(input: ParseString) -> ParseResult<Set> {
-  let (input, _) = table_start(input)?;
+  let (input, _) = left_brace(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, _) = empty(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, _) = table_end(input)?;
+  let (input, _) = right_brace(input)?;
   Ok((input,  Set{elements: vec![]}))
 }
 
