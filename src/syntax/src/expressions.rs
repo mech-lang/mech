@@ -408,7 +408,7 @@ pub fn logic_operator(input: ParseString) -> ParseResult<FormulaOperator> {
 // or := "|" ;
 pub fn or(input: ParseString) -> ParseResult<LogicOp> {
   let (input, _) = ws1e(input)?;
-  let (input, _) = tag("|")(input)?;
+  let (input, _) = tag("||")(input)?;
   let (input, _) = ws1e(input)?;
   Ok((input, LogicOp::Or))
 }
