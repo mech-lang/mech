@@ -322,6 +322,9 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
 // mech_code := mech_code_alt, ("\n" | ";" | comment) ;
 pub fn mech_code(input: ParseString) -> ParseResult<(MechCode,Option<Comment>)> {
   let (input, code) = mech_code_alt(input)?;
+  if input.is_empty() {
+    return Ok((input, (code, None)));
+  }
   let (input, _) = many0(space_tab)(input)?;
   let (input, cmmnt) = opt(tuple((opt(semicolon),many0(space_tab),comment)))(input)?;
   let (input, _) = alt((null(new_line), null(semicolon)))(input)?;
