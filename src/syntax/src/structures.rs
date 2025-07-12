@@ -110,6 +110,7 @@ pub fn matrix_column(input: ParseString) -> ParseResult<MatrixColumn> {
 
 // matrix_row := table_separator?, (space | tab)*, matrix_column+, semicolon?, new_line?, (box_drawing_char+, new_line)? ;
 pub fn matrix_row(input: ParseString) -> ParseResult<MatrixRow> {
+  let (input, _) = many0(space_tab)(input)?;
   let (input, _) = opt(table_separator)(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, columns) = match many1(matrix_column)(input) {
@@ -169,7 +170,7 @@ pub fn fancy_table(input: ParseString) -> ParseResult<Table> {
   let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
   let (input, header) = table_header(input)?;
   let (input, _) = many0(alt((box_drawing_char,whitespace)))(input)?;
-  let (input, rows) = many1(table_row)(input)?;
+  let (input, rows) = separated_list1(new_line,table_row)(input)?;
   Ok((input, Table{header,rows}))
 }
 
@@ -189,7 +190,7 @@ pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
   let (input, row) = many1(nom_tuple((many0(space_tab), expression)))(input)?;
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = bar(input)?;
-  let (input, _) = new_line(input)?;
+  let (input, _) = many0(space_tab)(input)?;
   let row = row.into_iter().map(|(_,tkn)| TableColumn{element:tkn}).collect();
   Ok((input, TableRow{columns: row}))
 }

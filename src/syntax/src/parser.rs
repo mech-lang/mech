@@ -305,7 +305,7 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
     _ => () 
   }
   match statement(input.clone()) {
-    Ok((input, stmt)) => { return Ok((input, MechCode::Statement(stmt)));},
+    Ok((input, stmt)) => {return Ok((input, MechCode::Statement(stmt)));},
     //Err(Failure(err)) => { return Err(Failure(err)); }
     _ => ()
   }

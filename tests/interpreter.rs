@@ -527,3 +527,16 @@ test_interpreter!(interpret_set_logical_ram3m3,"~x := [1 2 3; 4 5 6; 7 8 9]; y :
 test_interpreter!(interpret_modulus,"[1 2 3 4 5] % 5", new_ref(RowDVector::from_vec(vec![F64::new(1.0), F64::new(2.0), F64::new(3.0), F64::new(4.0), F64::new(0.0)])).to_value());
 
 test_interpreter!(interpret_horzcat_rdn2, "y := [4 5 6]; [y y y * 2]", new_ref(RowDVector::from_vec(vec![F64::new(4.0), F64::new(5.0), F64::new(6.0), F64::new(4.0), F64::new(5.0), F64::new(6.0), F64::new(8.0), F64::new(10.0), F64::new(12.0)])).to_value());
+
+
+test_interpreter!(interpret_fancy_table, r#"x := |x<f64> y<u8>|
+     |1      2    |
+     |3      4    |
+     |5      6    |
+x.x"#, new_ref(Vector3::from_vec(vec![F64::new(1.0), F64::new(3.0), F64::new(5.0)])).to_value());
+
+test_interpreter!(interpret_fancy_matrix, r#"
+x := ┏       ┓
+     ┃ 1   2 ┃
+     ┃ 3   4 ┃
+     ┗       ┛"#, new_ref(Matrix2::from_vec(vec![F64::new(1.0), F64::new(3.0), F64::new(2.0), F64::new(4.0)])).to_value());
