@@ -540,3 +540,34 @@ x := ┏       ┓
      ┃ 1   2 ┃
      ┃ 3   4 ┃
      ┗       ┛"#, new_ref(Matrix2::from_vec(vec![F64::new(1.0), F64::new(3.0), F64::new(2.0), F64::new(4.0)])).to_value());
+
+test_interpreter!(interpret_fancy_table2, r#"
+x:=╭────────┬────────╮
+   │ x<u64> │ y<f32> │
+   ├────────┼────────┤
+   │   1    │   2    │
+   ├────────┼────────┤
+   │   3    │   4    │
+   ╰────────┴────────╯
+x.x"#, new_ref(Vector2::from_vec(vec![1_u64, 3])).to_value());
+
+test_interpreter!(interpret_fancy_table3, r#"
+x:=╭────────┬────────╮
+   │ x<u64> │ y<f32> │
+   │   1    │   2    │
+   │   3    │   4    │
+   ╰────────┴────────╯
+x.x"#, new_ref(Vector2::from_vec(vec![1_u64, 3])).to_value());
+
+test_interpreter!(interpret_fancy_table4, r#"
+x:=╭────────┬────────╮
+   │ x<u64> │ y<f32> │
+   ├────────┼────────┤
+   │        │        │
+   │   1    │   2    │
+   │        │        │
+   │        │        │
+   │   3    │   4    │
+   │        │        │
+   ╰────────┴────────╯
+x.x"#, new_ref(Vector2::from_vec(vec![1_u64, 3])).to_value());
