@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Mech"
-#define MyAppVersion "0.2.49"
+#define MyAppVersion "0.2.50"
 #define MyAppPublisher "Mech Labs"
 #define MyAppURL "https://mech-lang.org"
 #define MyAppExeName "mech.exe"
