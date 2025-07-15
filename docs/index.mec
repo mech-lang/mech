@@ -20,7 +20,7 @@ Mech Programming Language Documentation
         - [Matrix](II.reference/matrix.html) - 2D collection of values
         - Record - collection of named values
         - Set - unordered collection of unique values
-        - Table - collection of Records
+        - [Table](II.reference/table.html) - collection of Records
         - Tuple - ordered collection of values
     - Operators and Expressions
         - Operators
