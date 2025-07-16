@@ -2292,14 +2292,15 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
         }
         format!("[{}]{}", src, src2)
       },
-      Kind::Brace((kinds, literals)) => {
+      Kind::Table((kinds, literals)) => {
         let mut src = "".to_string();
-        for (i, kind) in kinds.iter().enumerate() {
+        for (i, (ident,kind)) in kinds.iter().enumerate() {
           let k = self.kind(kind);
+          let ident_s = ident.to_string();
           if i == 0 {
-            src = format!("{}", k);
+            src = format!("{}{}", ident_s, k);
           } else {
-            src = format!("{},{}", src, k);
+            src = format!("{},{}{}", src, ident_s, k);
           }
         }
         let mut src2 = "".to_string();
@@ -2308,10 +2309,10 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
           if i == 0 {
             src2 = format!(":{}", l);
           } else {
-            src2 = format!(":{},{}", src2, l);
+            src2 = format!("{},{}", src2, l);
           }
         }
-        format!("{{{}}}{}", src, src2)
+        format!("|{}|{}", src, src2)
       },
       Kind::Map(kind1, kind2) => {
         let k1 = self.kind(kind1);

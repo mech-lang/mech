@@ -965,7 +965,7 @@ impl KindAnnotation {
 pub enum Kind {
   Any,
   Atom(Identifier),
-  Brace((Vec<Kind>,Vec<Literal>)),
+  Table((Vec<(Identifier,Kind)>,Vec<Literal>)),
   Empty,
   Fsm(Vec<Kind>,Vec<Kind>),
   Function(Vec<Kind>,Vec<Kind>),
@@ -986,10 +986,16 @@ impl Kind {
         }
         tokens
       },
-      Kind::Brace((kinds, literals)) => {
-        kinds.iter().flat_map(|k| k.tokens())
-            .chain(literals.iter().flat_map(|l| l.tokens()))
-            .collect()
+      Kind::Table((kinds, literals)) => {
+        let mut tokens = vec![];
+        for (id, kind) in kinds {
+          tokens.append(&mut id.tokens());
+          tokens.append(&mut kind.tokens());
+        }
+        for lit in literals {
+          tokens.append(&mut lit.tokens());
+        }
+        tokens
       }
       Kind::Map(x, y) => x.tokens().into_iter().chain(y.tokens()).collect(),
       Kind::Scalar(x) => x.tokens(),

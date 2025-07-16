@@ -310,11 +310,11 @@ pub fn kind_fxn(input: ParseString) -> ParseResult<Kind> {
 // kind-brace := "{", list1(",", kind), "}", ":"?, list0("," , literal) ;
 pub fn kind_brace(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_brace(input)?;
-  let (input, kinds) = separated_list1(list_separator,kind)(input)?;
+  let (input, kinds) = separated_list1(list_separator,nom_tuple((identifier,kind)))(input)?;
   let (input, _) = right_brace(input)?;
   let (input, _) = opt(colon)(input)?;
   let (input, size) = separated_list0(list_separator,literal)(input)?;
-  Ok((input, Kind::Brace((kinds,size))))
+  Ok((input, Kind::Table((kinds,size))))
 }
 
 // kind-matrox := "[", list1(",",kind), "]", ":"?, list0(",", literal) ;

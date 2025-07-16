@@ -179,7 +179,7 @@ impl SymbolTable {
     for (k,v) in &self.symbols {
       let name = dict_brrw.get(k).unwrap_or(&"??".to_string()).clone();
       let v_brrw = v.borrow();
-      builder.push_record(vec![format!("\n{} : {:?}\n{}\n",name, v_brrw.kind(), v_brrw.pretty_print())])
+      builder.push_record(vec![format!("\n{} : {}\n{}\n",name, v_brrw.kind(), v_brrw.pretty_print())])
     }
     if self.symbols.is_empty() {
       builder.push_record(vec!["".to_string()]);

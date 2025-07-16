@@ -51,7 +51,7 @@ macro_rules! impl_as_type {
 pub enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, 
   String, Bool, Matrix(Box<ValueKind>,Vec<usize>), Enum(u64), Set(Box<ValueKind>, usize), 
-  Map(Box<ValueKind>,Box<ValueKind>), Record(Vec<ValueKind>), Table(Vec<ValueKind>, usize), Tuple(Vec<ValueKind>), Id, Index, Reference(Box<ValueKind>), Atom(u64), Empty, Any
+  Map(Box<ValueKind>,Box<ValueKind>), Record(Vec<ValueKind>), Table(Vec<(u64,ValueKind)>, usize), Tuple(Vec<ValueKind>), Id, Index, Reference(Box<ValueKind>), Atom(u64), Empty, Any
 }
 
 impl ValueKind {
@@ -82,60 +82,28 @@ impl std::fmt::Display for ValueKind {
       ValueKind::F64 => write!(f, "f64"),
       ValueKind::String => write!(f, "string"),
       ValueKind::Bool => write!(f, "bool"),
-      ValueKind::Matrix(x,s) => write!(f, "[{:?}]:{:?},{:?}",x,s[0],s[1]),
+      ValueKind::Matrix(x,s) => write!(f, "[{}]:{},{}",x,s[0],s[1]),
       ValueKind::Enum(x) => write!(f, "{:?}",x),
-      ValueKind::Set(x,el) => write!(f, "{{{:?}}}:{}", x, el),
-      ValueKind::Map(x,y) => write!(f, "{{{:?}:{:?}}}",x,y),
-      ValueKind::Record(x) => write!(f, "{{{}}}",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
-      ValueKind::Table(x,y) => write!(f, "{{{}}}:{}",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(","),y),
-      ValueKind::Tuple(x) => write!(f, "({})",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
+      ValueKind::Set(x,el) => write!(f, "{{{}}}:{}", x, el),
+      ValueKind::Map(x,y) => write!(f, "{{{}:{}}}",x,y),
+      ValueKind::Record(x) => write!(f, "{{{}}}",x.iter().map(|x| format!("{}",x)).collect::<Vec<String>>().join(",")),
+      ValueKind::Table(x,y) => write!(f, "|{}|:{}",x.iter().map(|(i,k)| format!("{}<{}>",i.to_string(),k)).collect::<Vec<String>>().join(" "),y),
+      ValueKind::Tuple(x) => write!(f, "({})",x.iter().map(|x| format!("{}",x)).collect::<Vec<String>>().join(",")),
       ValueKind::Id => write!(f, "id"),
       ValueKind::Index => write!(f, "ix"),
-      ValueKind::Reference(x) => write!(f, "{:?}",x),
-      ValueKind::Atom(x) => write!(f, "`{:?}",x),
+      ValueKind::Reference(x) => write!(f, "{}",x),
+      ValueKind::Atom(x) => write!(f, "`{}",x),
       ValueKind::Empty => write!(f, "_"),
       ValueKind::Any => write!(f, "_"),
     }
   }
 }
-
 
 impl fmt::Debug for ValueKind {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match self {
-      ValueKind::U8 => write!(f, "u8"),
-      ValueKind::U16 => write!(f, "u16"),
-      ValueKind::U32 => write!(f, "u32"),
-      ValueKind::U64 => write!(f, "u64"),
-      ValueKind::U128 => write!(f, "u128"),
-      ValueKind::I8 => write!(f, "i8"),
-      ValueKind::I16 => write!(f, "i16"),
-      ValueKind::I32 => write!(f, "i32"),
-      ValueKind::I64 => write!(f, "i64"),
-      ValueKind::I128 => write!(f, "i128"),
-      ValueKind::F32 => write!(f, "f32"),
-      ValueKind::F64 => write!(f, "f64"),
-      ValueKind::String => write!(f, "string"),
-      ValueKind::Bool => write!(f, "bool"),
-      ValueKind::Matrix(x,s) => {
-        let s = if s.len() == 2 { s.clone() } else if s.len() == 1 { vec![s[0], 1] } else { vec![0, 0] };
-        write!(f, "[{:?}]:{:?},{:?}",x,s[0],s[1]).clone()
-      }
-      ValueKind::Enum(x) => write!(f, "{:?}",x),
-      ValueKind::Set(x,el) => write!(f, "{{{:?}}}:{}", x, el),
-      ValueKind::Map(x,y) => write!(f, "{{{:?}:{:?}}}",x,y),
-      ValueKind::Record(x) => write!(f, "{{{}}}",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
-      ValueKind::Table(x,y) => write!(f, "{{{}}}:{}",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(","),y),
-      ValueKind::Tuple(x) => write!(f, "({})",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
-      ValueKind::Id => write!(f, "id"),
-      ValueKind::Index => write!(f, "ix"),
-      ValueKind::Reference(x) => write!(f, "&{:?}",x),
-      ValueKind::Atom(x) => write!(f, "`{:?}",x),
-      ValueKind::Empty => write!(f, "_"),
-      ValueKind::Any => write!(f, "_"),
-    }
+    write!(f, "{}", self)
   }
-}
+} 
 
 impl ValueKind {
   pub fn is_compatible(k1: ValueKind, k2: ValueKind) -> bool {
@@ -395,8 +363,8 @@ impl Value {
       Value::MutableReference(x) => {return x.borrow().pretty_print();},
       Value::Empty => builder.push_record(vec!["_"]),
       Value::IndexAll => builder.push_record(vec![":"]),
-      Value::Id(x) => builder.push_record(vec![format!("{:?}",humanize(x))]),
-      Value::Kind(x) => builder.push_record(vec![format!("{:?}",x)]),
+      Value::Id(x) => builder.push_record(vec![format!("{}",humanize(x))]),
+      Value::Kind(x) => builder.push_record(vec![format!("{}",x)]),
     };
     let value_style = Style::empty()
       .top(' ')
@@ -979,11 +947,18 @@ impl MechTable {
   }
 
   pub fn kind(&self) -> ValueKind {
-    ValueKind::Table(
-      self.data.iter().map(|(_,v)| v.0.clone()).collect(),
-      self.rows)
+    let column_kinds: Vec<(u64, ValueKind)> = self.data.iter()
+      .filter_map(|(key, (kind, _))| {
+        if let Value::Id(id) = key {
+          Some((*id, kind.clone()))
+        } else {
+          None
+        }
+      })
+      .collect();
+    ValueKind::Table(column_kinds, self.rows)
   }
-
+  
   pub fn size_of(&self) -> usize {
     self.data.iter().map(|(_,(_,v))| v.size_of()).sum()
   }

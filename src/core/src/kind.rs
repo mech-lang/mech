@@ -8,7 +8,7 @@ pub enum Kind {
   Matrix(Box<Kind>,Vec<usize>),
   Set(Box<Kind>,usize),
   Map(Box<Kind>,Box<Kind>),
-  Table(Vec<Kind>,usize),
+  Table(Vec<(u64,Kind)>,usize),
   Record(Vec<Kind>),
   Enum(u64),
   Scalar(u64),
@@ -49,10 +49,12 @@ impl Kind {
         let val_knd = vals.to_value_kind(functions.clone())?;
         Ok(ValueKind::Map(Box::new(key_knd),Box::new(val_knd)))
       },
-      Kind::Table(elements,size) => {
-        let val_knds = elements.iter().map(|k| k.to_value_kind(functions.clone())).collect::<MResult<Vec<ValueKind>>>()?;
-        Ok(ValueKind::Table(val_knds,*size))
-      },
+      Kind::Table(elements, size) => {
+        let val_knds: Vec<(u64, ValueKind)> = elements.iter()
+          .map(|(id, k)| k.to_value_kind(functions.clone()).map(|kind| (id.clone(), kind)))
+          .collect::<MResult<_>>()?;
+        Ok(ValueKind::Table(val_knds, *size))
+      }
       Kind::Record(elements) => {
         let val_knds = elements.iter().map(|k| k.to_value_kind(functions.clone())).collect::<MResult<Vec<ValueKind>>>()?;
         Ok(ValueKind::Record(val_knds))
