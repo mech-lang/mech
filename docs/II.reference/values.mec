@@ -83,13 +83,13 @@ Represents an empty value, placeholder, or the absence of a value.
 2. Data Structures
 -------------------------------------------------------------------------------
 
-- Enum - enumeration of named values
-- Map - key-value store
-- Matrix - ND array of values
-- Record - collection of named values
-- Set - unordered collection of unique values
-- Tuple - ordered collection of values
-- Table - collection of Records
+- **Enum** - enumeration of named values
+- **Map** - key-value store
+- **Matrix** - ND array of values
+- **Record** - collection of named values
+- **Set** - unordered collection of unique values
+- **Tuple** - ordered collection of values
+- **Table** - collection of Records
 
 3. Kinds
 -------------------------------------------------------------------------------
@@ -151,15 +151,15 @@ Kinds start from one of the primitive data types:
 
 Kinds compose into more complex kinds based on the data structures they represent.
 
-| Data Structure | Kind                           | Example                  |
-|----------------|--------------------------------|--------------------------|
-| Matrix         | `[T]:N,M`                      | {{<[u8]:2,3>;}}               |
-| Set            | `{T}:N`                        | {{<{u8}:3>;}}                 |
-| Record         | `{T1,T2,T3}`                   | {{<{u8,string,bool}>;}}       |
-| Map            | `{K:V}`                        | {{<{string:i32}>;}}           |
-| Table          | `{arg1<T1>,arg2<T2>,arg3<T3>}` | `<{name<string>,age<u8>}>;`   |
-| Tuple          | `(T1,T2,T3)`                   | {{<(u8,string,bool)>;}}       |
-| Enum           | `enum`                         | {{<enum>;}}                   |
+| Data Structure | Kind                             | Example                       |
+|----------------|----------------------------------|-------------------------------|
+| Matrix         | `[T]:N,M`                        | {{<[u8]:2,3>;}}               |
+| Set            | `{T}:N`                          | {{<{u8}:3>;}}                 |
+| Record         | `{T1,T2,T3}`                     | {{<{u8,string,bool}>;}}       |
+| Map            | `{K:V}`                          | {{<{string:i32}>;}}           |
+| Table          | `|arg1<T1>,arg2<T2>,arg3<T3>|:N` | `<|name<string>,age<u8>|:3>;` |
+| Tuple          | `(T1,T2,T3)`                     | {{<(u8,string,bool)>;}}       |
+| Enum           | `enum`                           | {{<enum>;}}                   |
 
 (3.3) Custom Kinds
 
