@@ -1062,6 +1062,11 @@ li p {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
+.mech-table th,
+.mech-table td {
+  padding: 5px;
+}
+
 .mech-table thead {
     background-color: #171D21;
 }
