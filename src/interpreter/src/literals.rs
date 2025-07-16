@@ -26,12 +26,8 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
       let kind_id = id.hash();
       Ok(Kind::Scalar(kind_id))
     }
-    NodeKind::Bracket((el_knds, size)) => {
-      let mut knds = vec![];
-      for knd in el_knds {
-        let knd = kind_annotation(knd, p)?;
-        knds.push(knd);
-      }
+    NodeKind::Matrix((knd, size)) => {
+      let knda = kind_annotation(knd, p)?;
       let mut dims = vec![];
       for dim in size {
         let dim_val = literal(dim, p)?;
@@ -40,10 +36,7 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
           None => { return Err(MechError{file: file!().to_string(), tokens: knd.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
         }
       }
-      if knds.len() != 1 {
-        return Err(MechError{file: file!().to_string(), tokens: knd.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::MatrixMustHaveHomogenousKind});
-      }
-      Ok(Kind::Matrix(Box::new(knds[0].clone()),dims))
+      Ok(Kind::Matrix(Box::new(knda.clone()),dims))
     }
     _ => todo!(),
   }

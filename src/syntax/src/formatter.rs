@@ -2261,6 +2261,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn kind(&mut self, node: &Kind) -> String {
     let annotation = match node {
+      Kind::Any => "*".to_string(),
       Kind::Scalar(ident) => ident.to_string(),
       Kind::Empty => "_".to_string(),
       Kind::Atom(ident) => format!("`{}",ident.to_string()),
@@ -2276,23 +2277,17 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
         }
         format!("({})", src)
       },
-      Kind::Bracket((kinds, literals)) => {
+      Kind::Matrix((kind, literals)) => {
         let mut src = "".to_string();
-        for (i, kind) in kinds.iter().enumerate() {
-          let k = self.kind(kind);
-          if i == 0 {
-            src = format!("{}", k);
-          } else {
-            src = format!("{},{}", src, k);
-          }
-        }
+        let k = self.kind(kind);
+        src = format!("{}", k);
         let mut src2 = "".to_string();
         for (i, literal) in literals.iter().enumerate() {
           let l = self.literal(literal);
           if i == 0 {
             src2 = format!(":{}", l);
           } else {
-            src2 = format!(":{},{}", src2, l);
+            src2 = format!("{},{}", src2, l);
           }
         }
         format!("[{}]{}", src, src2)

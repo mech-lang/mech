@@ -963,13 +963,14 @@ impl KindAnnotation {
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize,Eq, PartialEq)]
 pub enum Kind {
+  Any,
   Atom(Identifier),
   Brace((Vec<Kind>,Vec<Literal>)),
-  Bracket((Vec<Kind>,Vec<Literal>)),
   Empty,
   Fsm(Vec<Kind>,Vec<Kind>),
   Function(Vec<Kind>,Vec<Kind>),
   Map(Box<Kind>,Box<Kind>),
+  Matrix((Box<Kind>,Vec<Literal>)),
   Scalar(Identifier),
   Tuple(Vec<Kind>),
 }
@@ -978,10 +979,12 @@ impl Kind {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
       Kind::Tuple(x) => x.iter().flat_map(|k| k.tokens()).collect(),
-      Kind::Bracket((kinds, literals)) => {
-        kinds.iter().flat_map(|k| k.tokens())
-            .chain(literals.iter().flat_map(|l| l.tokens()))
-            .collect()
+      Kind::Matrix((kind, literals)) => {
+        let mut tokens = kind.tokens();
+        for l in literals {
+          tokens.append(&mut l.tokens());
+        }
+        tokens
       },
       Kind::Brace((kinds, literals)) => {
         kinds.iter().flat_map(|k| k.tokens())
@@ -1002,6 +1005,7 @@ impl Kind {
             .collect()
       }
       Kind::Empty => vec![],
+      Kind::Any => vec![],
     }
   }
 }
@@ -1024,7 +1028,13 @@ impl Literal {
       Literal::Boolean(tkn) => vec![tkn.clone()],
       Literal::Number(x) => x.tokens(),
       Literal::String(strng) => vec![strng.text.clone()],
-      _ => todo!(),
+      Literal::Empty(tkn) => vec![tkn.clone()],
+      Literal::Kind(knd) => knd.tokens(),
+      Literal::TypedLiteral((lit, knd)) => {
+        let mut tokens = lit.tokens();
+        tokens.append(&mut knd.tokens());
+        tokens
+      }
     }
   }
 }
