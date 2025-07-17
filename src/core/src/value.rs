@@ -51,7 +51,7 @@ macro_rules! impl_as_type {
 pub enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, 
   String, Bool, Matrix(Box<ValueKind>,Vec<usize>), Enum(u64), Set(Box<ValueKind>, usize), 
-  Map(Box<ValueKind>,Box<ValueKind>), Record(Vec<ValueKind>), Table(Vec<(u64,ValueKind)>, usize), Tuple(Vec<ValueKind>), Id, Index, Reference(Box<ValueKind>), Atom(u64), Empty, Any
+  Map(Box<ValueKind>,Box<ValueKind>), Record(Vec<ValueKind>), Table(Vec<(String,ValueKind)>, usize), Tuple(Vec<ValueKind>), Id, Index, Reference(Box<ValueKind>), Atom(u64), Empty, Any
 }
 
 impl ValueKind {

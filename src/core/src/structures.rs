@@ -215,12 +215,14 @@ impl MechTable {
   }
 
   pub fn kind(&self) -> ValueKind {
-    let column_kinds: Vec<(u64, ValueKind)> = self.data.iter()
+    let column_kinds: Vec<(String, ValueKind)> = self.data.iter()
       .filter_map(|(key, (kind, _))| {
-        if let Value::Id(id) = key {
-          Some((*id, kind.clone()))
-        } else {
-          None
+        match key {
+          Value::Id(_) => match self.col_names.get(key) {
+            Some(col_name) => Some((col_name.clone(), kind.clone())),
+            None => None,
+          },
+          _ => None,
         }
       })
       .collect();

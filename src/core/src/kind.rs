@@ -1,4 +1,5 @@
 use crate::*;
+use hashbrown::HashMap;
 
 // Kind -----------------------------------------------------------------------
 
@@ -8,7 +9,7 @@ pub enum Kind {
   Matrix(Box<Kind>,Vec<usize>),
   Set(Box<Kind>,usize),
   Map(Box<Kind>,Box<Kind>),
-  Table(Vec<(u64,Kind)>,usize),
+  Table(Vec<(String,Kind)>,usize),
   Record(Vec<Kind>),
   Enum(u64),
   Scalar(u64),
@@ -50,7 +51,7 @@ impl Kind {
         Ok(ValueKind::Map(Box::new(key_knd),Box::new(val_knd)))
       },
       Kind::Table(elements, size) => {
-        let val_knds: Vec<(u64, ValueKind)> = elements.iter()
+        let val_knds: Vec<(String, ValueKind)> = elements.iter()
           .map(|(id, k)| k.to_value_kind(functions.clone()).map(|kind| (id.clone(), kind)))
           .collect::<MResult<_>>()?;
         Ok(ValueKind::Table(val_knds, *size))
