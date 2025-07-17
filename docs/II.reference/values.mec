@@ -1,4 +1,4 @@
-Data - Types, Structures, and Kinds
+aData - Types, Structures, and Kinds
 ===============================================================================
 
 Mech supports various primitive data types, each associated with one or more kinds. For example, the number `42` can be represented by an `i32` datatype, which is of kind `i32`, `signed`, `integer`, `real`, `number`, and `value` (the latter of which is a sort of superset of all kinds).
@@ -67,8 +67,10 @@ Represents a type or category of values, such as `i32`, `f64`, `string`, etc. Ki
 
 The kind of a kind is itself, and `kind`. For example, the kind {<i32>} has the kind:
 
+```mech:disabled
   <i32>
   <kind>
+```
 
 (1.5) Empty
 
@@ -106,9 +108,11 @@ For example, the kind of a signed 32-bit integer is represented as: `u8`. The ki
 
 Kind annotations are a tag that you can apply to values and expressions to specify their type explicitly. Syntatically they are specified with a form called a "kirby", which encases the kind in angle brackets:
 
+```mech:disabled
   <u8>    -- A value of kind `u8`
   <[u8]>  -- A matrix of unsigned 8-bit integers
   <(o,O)> -- A tuple of two elements of kind `o` and `O` respectively
+```
 
 Kind annotations can be used to annotate literals with their data type:
 

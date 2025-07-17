@@ -1003,8 +1003,8 @@ Expressions define computations in Mech. Most expressions operate elementwise ov
 
 - Arithmetic: Addition, subtraction, multiplication, and division over scalars, vectors, and matrices.
 - Matrix Operations: Matrix multiplication, transposition, and other matrix-specific operations.
-- Comparison: Elementwise relational comparisons (<, >, ==, etc.).
-- Logical Operations: Boolean elementwise operations (and, or, not).
+- Comparison: Elementwise relational comparisons (`<`, `>`, `==`, etc.).
+- Logical Operations: Boolean elementwise operations (`and`, `or`, `not`).
 - Set Operations: Union, intersection, and other set-specific operations.
 - Range Expressions: Constructing sequences of values.
 - Indexing: Accessing elements within collections using direct and computed indices.
