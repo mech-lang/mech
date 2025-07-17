@@ -1,7 +1,7 @@
 Table
 ===============================================================================
 
-A trable in Mech is a set of records, where each record corresponds to a row and each column has a name and kind. Tables provide structured, columnar data that is flexible and human-readable.
+A table in Mech is a set of records, where each record corresponds to a row and each column has a name and kind. Tables provide structured, columnar data that is flexible and human-readable.
 
 1. Syntax
 -------------------------------------------------------------------------------
@@ -106,7 +106,7 @@ Tables can be constructed of vectors, matrices, or records.
 The kind `_` indicates that a column may contain heterogeneous data:
 
 ```mech:disabled
-| x<_>   y<_> |
+| x<*>   y<*> |
 |  1.2    true| 
 |  "Hi"   8   |
 ```
