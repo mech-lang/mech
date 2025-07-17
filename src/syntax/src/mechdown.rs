@@ -250,7 +250,7 @@ pub fn img(input: ParseString) -> ParseResult<Image> {
 
 // paragraph_text := ¬(img_prefix | http_prefix | left_bracket | tilde | asterisk | underscore | grave | define_operator | bar), +text ;
 pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
-  let (input, elements) = match many1(nom_tuple((is_not(alt((footnote_prefix, highlight_sigil, equation_sigil, img_prefix, http_prefix, left_brace, left_bracket, right_bracket, tilde, asterisk, underscore, grave, define_operator, bar))),text)))(input) {
+  let (input, elements) = match many1(nom_tuple((is_not(alt((footnote_prefix, highlight_sigil, equation_sigil, img_prefix, http_prefix, left_brace, left_bracket, left_angle, right_bracket, tilde, asterisk, underscore, grave, define_operator, bar))),text)))(input) {
     Ok((input, mut text)) => {
       let mut text = text.into_iter().map(|(_,tkn)| tkn).collect();
       let mut text = Token::merge_tokens(&mut text).unwrap();
