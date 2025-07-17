@@ -22,6 +22,30 @@ pub fn kind_value(knd: &NodeKind, p: &Interpreter) -> MResult<Value> {
 
 pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
   match knd {
+    NodeKind::Any => Ok(Kind::Any),
+    NodeKind::Atom(id) => Ok(Kind::Atom(id.hash())),
+    NodeKind::Empty => Ok(Kind::Empty),
+    NodeKind::Record(elements) => {
+      let mut knds = vec![];
+      for (id, knd) in elements {
+        let knda = kind_annotation(knd, p)?;
+        knds.push((id.to_string().clone(), knda));
+      }
+      Ok(Kind::Record(knds))
+    }
+    NodeKind::Tuple(elements) => {
+      let mut knds = vec![];
+      for knd in elements {
+        let knda = kind_annotation(knd, p)?;
+        knds.push(knda);
+      }
+      Ok(Kind::Tuple(knds))
+    }
+    NodeKind::Map(keys, vals) => {
+      let key_knd = kind_annotation(keys, p)?;
+      let val_knd = kind_annotation(vals, p)?;
+      Ok(Kind::Map(Box::new(key_knd), Box::new(val_knd)))
+    }
     NodeKind::Scalar(id) => {
       let kind_id = id.hash();
       Ok(Kind::Scalar(kind_id))
@@ -61,7 +85,6 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
         None => Ok(Kind::Set(Box::new(knda.clone()), None)),
       }
     }
-    _ => todo!(),
   }
 }
 

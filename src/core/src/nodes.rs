@@ -969,8 +969,8 @@ pub enum Kind {
   Set(Box<Kind>,Option<Box<Literal>>),
   Record((Vec<(Identifier,Kind)>)),
   Empty,
-  Fsm(Vec<Kind>,Vec<Kind>),
-  Function(Vec<Kind>,Vec<Kind>),
+  //Fsm(Vec<Kind>,Vec<Kind>),
+  //Function(Vec<Kind>,Vec<Kind>),
   Map(Box<Kind>,Box<Kind>),
   Matrix((Box<Kind>,Vec<Literal>)),
   Scalar(Identifier),
@@ -1015,16 +1015,6 @@ impl Kind {
       Kind::Map(x, y) => x.tokens().into_iter().chain(y.tokens()).collect(),
       Kind::Scalar(x) => x.tokens(),
       Kind::Atom(x) => x.tokens(),
-      Kind::Function(args, rets) => {
-        args.iter().flat_map(|k| k.tokens())
-            .chain(rets.iter().flat_map(|k| k.tokens()))
-            .collect()
-      }
-      Kind::Fsm(args, rets) => {
-        args.iter().flat_map(|k| k.tokens())
-            .chain(rets.iter().flat_map(|k| k.tokens()))
-            .collect()
-      }
       Kind::Empty => vec![],
       Kind::Any => vec![],
     }

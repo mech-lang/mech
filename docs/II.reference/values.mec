@@ -106,9 +106,9 @@ For example, the kind of a signed 32-bit integer is represented as: `u8`. The ki
 
 Kind annotations are a tag that you can apply to values and expressions to specify their type explicitly. Syntatically they are specified with a form called a "kirby", which encases the kind in angle brackets:
 
-<u8>    -- A value of kind `u8`
-<[u8]>  -- A matrix of unsigned 8-bit integers
-<(o,O)> -- A tuple of two elements of kind `o` and `O` respectively
+  <u8>    -- A value of kind `u8`
+  <[u8]>  -- A matrix of unsigned 8-bit integers
+  <(o,O)> -- A tuple of two elements of kind `o` and `O` respectively
 
 Kind annotations can be used to annotate literals with their data type:
 
@@ -151,15 +151,15 @@ Kinds start from one of the primitive data types:
 
 Kinds compose into more complex kinds based on the data structures they represent.
 
-| Data Structure | Kind                             | Example                       |
-|----------------|----------------------------------|-------------------------------|
-| Matrix         | `[T]:N,M`                        | {{<[u8]:2,3>;}}               |
-| Set            | `{T}:N`                          | {{<{u8}:3>;}}                 |
-| Record         | `{T1,T2,T3}`                     | {{<{u8,string,bool}>;}}       |
-| Map            | `{K:V}`                          | {{<{string:i32}>;}}           |
-| Table          | `|arg1<T1>,arg2<T2>,arg3<T3>|:N` | `<|name<string>,age<u8>|:3>;` |
-| Tuple          | `(T1,T2,T3)`                     | {{<(u8,string,bool)>;}}       |
-| Enum           | `enum`                           | {{<enum>;}}                   |
+| Data Structure | Kind                       | Example                    |
+|----------------|----------------------------|----------------------------|
+| Matrix         | `[T]:N,M`                  | {{<[u8]:2,3>;}}            |
+| Set            | `{T}:N`                    | {{<{u8}:3>;}}              |
+| Record         | `{T1,T2,..}`               | {{<{x<u8>,y<string>}>;}}   |
+| Map            | `{K:V}`                    | {{<{string:i32}>;}}        |
+| Table          | `|arg1<T1>,arg2<T2>,..|:N` | {{<|x<u8>,y<string>|:3>;}} |
+| Tuple          | `(T1,T2,T3)`               | {{<(u8,string,bool)>;}}    |
+| Enum           | `enum`                     | {{<enum>;}}                |
 
 (3.3) Custom Kinds
 

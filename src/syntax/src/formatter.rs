@@ -2253,7 +2253,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
   pub fn kind_annotation(&mut self, node: &Kind) -> String {
     let kind = self.kind(node);
     if self.html {
-      format!("<span class=\"mech-kind-annotation\"><{}></span>",kind)
+      format!("<span class=\"mech-kind-annotation\">&lt;{}&gt;</span>",kind)
     } else {
       format!("<{}>", kind)
     }
@@ -2264,7 +2264,10 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
       Kind::Set(kind,size) => {
         let k = self.kind(kind);
         let size_str = match size{
-          Some(size) => format!(":{:?}", size),
+          Some(size) => {
+            let size_ltrl = self.literal(size);
+            format!(":{}", size_ltrl)
+          }
           None => "".to_string(),
         };
         format!("{{{}}}{}", k, size_str)
@@ -2306,9 +2309,9 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
           let k = self.kind(kind);
           let ident_s = ident.to_string();
           if i == 0 {
-            src = format!("{}<{}>", ident_s, k);
+            src = format!("{}&lt;{}&gt;", ident_s, k);
           } else {
-            src = format!("{},{}<{}>", src, ident_s, k);
+            src = format!("{},{}&lt;{}&gt;", src, ident_s, k);
           }
         }
         format!("{{{}}}", src)
@@ -2319,9 +2322,9 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
           let k = self.kind(kind);
           let ident_s = ident.to_string();
           if i == 0 {
-            src = format!("{}{}", ident_s, k);
+            src = format!("{}&lt;{}&gt;", ident_s, k);
           } else {
-            src = format!("{},{}{}", src, ident_s, k);
+            src = format!("{},{}&lt;{}&gt;", src, ident_s, k);
           }
         }
         let mut src2 = "".to_string();
@@ -2334,8 +2337,6 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
         let k2 = self.kind(kind2);
         format!("{}:{}", k1, k2)
       },
-      Kind::Function(input, output) => todo!(),
-      Kind::Fsm(input, output) => todo!(),
     };
     if self.html {
       format!("<span class=\"mech-kind\">{}</span>",annotation)

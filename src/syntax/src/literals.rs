@@ -260,19 +260,19 @@ pub fn kind_annotation(input: ParseString) -> ParseResult<KindAnnotation> {
   Ok((input, KindAnnotation{ kind }))
 }
 
-// kind := kind-fxn | kind-empty | kind-atom | kind-tuple | kind-scalar | kind-matrix | kind-map ;
+// kind := kind-fxn | kind-empty | kind-record | kind-atom | kind-tuple | kind-scalar | kind-matrix | kind-map ;
 pub fn kind(input: ParseString) -> ParseResult<Kind> {
   let (input, kind) = alt((
     kind_any,
     kind_atom,
     kind_empty,
-    kind_fxn,
     kind_map,
     kind_matrix,
-    kind_table, 
-    kind_tuple,
+    kind_record,
     kind_scalar,
     kind_set,
+    kind_table, 
+    kind_tuple,
   ))(input)?;
   Ok((input, kind))
 }
@@ -330,8 +330,17 @@ pub fn kind_map(input: ParseString) -> ParseResult<Kind> {
   Ok((input, Kind::Map(Box::new(key_kind),Box::new(value_kind))))
 }
 
+// kind-record := "{", list1(",", (identifier, kind)), "}" ;
+pub fn kind_record(input: ParseString) -> ParseResult<Kind> {
+  let (input, _) = left_brace(input)?;
+  let (input, elements) = separated_list1(list_separator, nom_tuple((identifier, kind_annotation)))(input)?;
+  let (input, _) = right_brace(input)?;
+  let elements = elements.into_iter().map(|(id, knd)| (id, knd.kind)).collect();
+  Ok((input, Kind::Record(elements)))
+}
+
 // kind-fxn := "(", list0(list_separator, kind), ")", "=", "(", list0(list_separator, kind), ")" ;
-pub fn kind_fxn(input: ParseString) -> ParseResult<Kind> {
+/*pub fn kind_fxn(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = left_parenthesis(input)?;
   let (input, input_kinds) = separated_list0(list_separator,kind)(input)?;
   let (input, _) = right_parenthesis(input)?;
@@ -340,7 +349,7 @@ pub fn kind_fxn(input: ParseString) -> ParseResult<Kind> {
   let (input, output_kinds) = separated_list0(list_separator,kind)(input)?;
   let (input, _) = right_parenthesis(input)?;
   Ok((input, Kind::Function(input_kinds,output_kinds)))
-}
+}*/
 
 // kind-matrox := "[", list1(",",kind), "]", ":"?, list0(",", literal) ;
 pub fn kind_matrix(input: ParseString) -> ParseResult<Kind> {
