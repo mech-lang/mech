@@ -35,25 +35,24 @@ Target release date: ???
 (2.1) Data Specification
 
 -(🥚) imaginary and scientific numbers
--(🐣) typed tables for heterogeneous data
+-(🥚) language server
 -(🐣) sets
 -(🐣) maps
-
 -(🐣) atoms
+-(🐤) tables (dataframe)
 -(🐤) strings
 -(🐤) bools
--(🐤) matrix slicing
--(🐤) operator broadcasting
--(🐤) builtin linear algebra tools
--(🐤) logical indexing
--(🐤) matrix builder notation
 -(🐤) variable type and size checking
 -(🐤) variable type inference
 -(🐤) standard library functions
--(🐤) multiple dynamic dispatch
 -(🐤) value semantics
 -(🐤) Mutable value semantics
 -(🐤) data notation
+-(🐤) builtin linear algebra tools
+-(🐓) operator broadcasting
+-(🐓) logical indexing
+-(🐓) matrix builder notation
+-(🐓) matrix slicing
 -(🐓) variety of numerical datatypes
 -(🐓) flexible matrix type with fixed and dynamic sizes for homogeneous data
 
@@ -66,7 +65,6 @@ Target release date: ???
 -(🥚) file/parameter server
 -(🥚) self-contained binary executables
 -(🥚) time travel debugging
--(🥚) language server
 -(🥚) enums
 -(🐣) user defined functions
 -(🐣) tests
