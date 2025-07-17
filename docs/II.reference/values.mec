@@ -1,4 +1,4 @@
-aData - Types, Structures, and Kinds
+Data - Types and Kinds
 ===============================================================================
 
 Mech supports various primitive data types, each associated with one or more kinds. For example, the number `42` can be represented by an `i32` datatype, which is of kind `i32`, `signed`, `integer`, `real`, `number`, and `value` (the latter of which is a sort of superset of all kinds).
