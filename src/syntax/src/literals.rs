@@ -262,8 +262,19 @@ pub fn kind_annotation(input: ParseString) -> ParseResult<KindAnnotation> {
 
 // kind := kind-fxn | kind-empty | kind-atom | kind-tuple | kind-scalar | kind-matrix | kind-map | kind-brace ;
 pub fn kind(input: ParseString) -> ParseResult<Kind> {
-  let (input, kind) = alt((kind_fxn,kind_empty,kind_atom,kind_tuple,kind_scalar,kind_matrix,kind_map,kind_brace,kind_any))(input)?;
+  let (input, kind) = alt((kind_fxn,kind_table, kind_empty,kind_atom,kind_tuple,kind_scalar,kind_matrix,kind_map,kind_any))(input)?;
   Ok((input, kind))
+}
+
+// kind-table := "|" , list1(",", (identifier, kind)), "|", ":", list0(",", literal) ;
+pub fn kind_table(input: ParseString) -> ParseResult<Kind> {
+  let (input, _) = bar(input)?;
+  let (input, elements) = separated_list1(list_separator, nom_tuple((identifier, kind_annotation)))(input)?;
+  let (input, _) = bar(input)?;
+  let (input, _) = opt(colon)(input)?;
+  let (input, size) = literal(input)?; 
+  let elements = elements.into_iter().map(|(id, knd)| (id, knd.kind)).collect();
+  Ok((input, Kind::Table((elements, Box::new(size)))))
 }
 
 // kind-any := "*";
@@ -305,16 +316,6 @@ pub fn kind_fxn(input: ParseString) -> ParseResult<Kind> {
   let (input, output_kinds) = separated_list0(list_separator,kind)(input)?;
   let (input, _) = right_parenthesis(input)?;
   Ok((input, Kind::Function(input_kinds,output_kinds)))
-}
-
-// kind-brace := "{", list1(",", kind), "}", ":"?, list0("," , literal) ;
-pub fn kind_brace(input: ParseString) -> ParseResult<Kind> {
-  let (input, _) = left_brace(input)?;
-  let (input, kinds) = separated_list1(list_separator,nom_tuple((identifier,kind)))(input)?;
-  let (input, _) = right_brace(input)?;
-  let (input, _) = opt(colon)(input)?;
-  let (input, size) = separated_list0(list_separator,literal)(input)?;
-  Ok((input, Kind::Table((kinds,size))))
 }
 
 // kind-matrox := "[", list1(",",kind), "]", ":"?, list0(",", literal) ;

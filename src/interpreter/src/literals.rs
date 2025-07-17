@@ -38,6 +38,18 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
       }
       Ok(Kind::Matrix(Box::new(knda.clone()),dims))
     }
+    NodeKind::Table((elements, size)) => {
+      let mut knds = vec![];
+      for (id, knd) in elements {
+        let knda = kind_annotation(knd, p)?;
+        knds.push((id.to_string().clone(), knda));
+      }
+      let size_val = literal(size, p)?;
+      match size_val.as_usize() {
+        Some(size_val) => Ok(Kind::Table(knds, size_val)),
+        None => Err(MechError{file: file!().to_string(), tokens: size.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize}),
+      }
+    }
     _ => todo!(),
   }
 }
