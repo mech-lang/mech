@@ -7,10 +7,10 @@ use hashbrown::HashMap;
 pub enum Kind {
   Tuple(Vec<Kind>),
   Matrix(Box<Kind>,Vec<usize>),
-  Set(Box<Kind>,usize),
+  Set(Box<Kind>,Option<usize>),
   Map(Box<Kind>,Box<Kind>),
   Table(Vec<(String,Kind)>,usize),
-  Record(Vec<Kind>),
+  Record((Vec<(String,Kind)>)),
   Enum(u64),
   Scalar(u64),
   Atom(u64),
@@ -57,7 +57,9 @@ impl Kind {
         Ok(ValueKind::Table(val_knds, *size))
       }
       Kind::Record(elements) => {
-        let val_knds = elements.iter().map(|k| k.to_value_kind(functions.clone())).collect::<MResult<Vec<ValueKind>>>()?;
+        let val_knds: Vec<(String, ValueKind)> = elements.iter()
+          .map(|(id, k)| k.to_value_kind(functions.clone()).map(|kind| (id.clone(), kind)))
+          .collect::<MResult<_>>()?;
         Ok(ValueKind::Record(val_knds))
       },
       Kind::Enum(id) => Ok(ValueKind::Enum(*id)),

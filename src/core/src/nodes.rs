@@ -966,6 +966,8 @@ pub enum Kind {
   Any,
   Atom(Identifier),
   Table((Vec<(Identifier,Kind)>,Box<Literal>)),
+  Set(Box<Kind>,Option<Box<Literal>>),
+  Record((Vec<(Identifier,Kind)>)),
   Empty,
   Fsm(Vec<Kind>,Vec<Kind>),
   Function(Vec<Kind>,Vec<Kind>),
@@ -986,6 +988,21 @@ impl Kind {
         }
         tokens
       },
+      Kind::Record(kinds) => {
+        let mut tokens = vec![];
+        for (id, kind) in kinds {
+          tokens.append(&mut id.tokens());
+          tokens.append(&mut kind.tokens());
+        }
+        tokens
+      }
+      Kind::Set(kind, size) => {
+        let mut tokens = kind.tokens();
+        if let Some(literal) = size {
+          tokens.append(&mut literal.tokens());
+        }
+        tokens
+      }
       Kind::Table((kinds, literal)) => {
         let mut tokens = vec![];
         for (id, kind) in kinds {

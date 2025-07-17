@@ -260,9 +260,20 @@ pub fn kind_annotation(input: ParseString) -> ParseResult<KindAnnotation> {
   Ok((input, KindAnnotation{ kind }))
 }
 
-// kind := kind-fxn | kind-empty | kind-atom | kind-tuple | kind-scalar | kind-matrix | kind-map | kind-brace ;
+// kind := kind-fxn | kind-empty | kind-atom | kind-tuple | kind-scalar | kind-matrix | kind-map ;
 pub fn kind(input: ParseString) -> ParseResult<Kind> {
-  let (input, kind) = alt((kind_fxn,kind_table, kind_empty,kind_atom,kind_tuple,kind_scalar,kind_matrix,kind_map,kind_any))(input)?;
+  let (input, kind) = alt((
+    kind_any,
+    kind_atom,
+    kind_empty,
+    kind_fxn,
+    kind_map,
+    kind_matrix,
+    kind_table, 
+    kind_tuple,
+    kind_scalar,
+    kind_set,
+  ))(input)?;
   Ok((input, kind))
 }
 
@@ -294,6 +305,19 @@ pub fn kind_atom(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = grave(input)?;
   let (input, atm) = identifier(input)?;
   Ok((input, Kind::Atom(atm)))
+}
+
+// kind-set := "{", kind, "}", (":", literal)? ;
+pub fn kind_set(input: ParseString) -> ParseResult<Kind> {
+  let (input, _) = left_brace(input)?;
+  let (input, kind) = kind(input)?;
+  let (input, _) = right_brace(input)?;
+  let (input, opt_lit) = opt(nom_tuple((colon, literal)))(input)?;
+  let ltrl = match opt_lit {
+    Some((_, ltrl)) => Some(Box::new(ltrl)),
+    None => None,
+  };
+  Ok((input, Kind::Set(Box::new(kind), ltrl)))
 }
 
 // kind-map := "{", kind, ":", kind, "}" ;

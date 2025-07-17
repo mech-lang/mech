@@ -50,8 +50,10 @@ macro_rules! impl_as_type {
 #[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, 
-  String, Bool, Matrix(Box<ValueKind>,Vec<usize>), Enum(u64), Set(Box<ValueKind>, usize), 
-  Map(Box<ValueKind>,Box<ValueKind>), Record(Vec<ValueKind>), Table(Vec<(String,ValueKind)>, usize), Tuple(Vec<ValueKind>), Id, Index, Reference(Box<ValueKind>), Atom(u64), Empty, Any
+  String, Bool, Id, Index, Empty, Any, 
+  Matrix(Box<ValueKind>,Vec<usize>),  Enum(u64),                  Record(Vec<(String,ValueKind)>),
+  Map(Box<ValueKind>,Box<ValueKind>), Atom(u64),                  Table(Vec<(String,ValueKind)>, usize), 
+  Tuple(Vec<ValueKind>),              Reference(Box<ValueKind>),  Set(Box<ValueKind>, Option<usize>) 
 }
 
 impl ValueKind {
@@ -82,11 +84,11 @@ impl std::fmt::Display for ValueKind {
       ValueKind::F64 => write!(f, "f64"),
       ValueKind::String => write!(f, "string"),
       ValueKind::Bool => write!(f, "bool"),
-      ValueKind::Matrix(x,s) => write!(f, "[{}]:{},{}",x,s[0],s[1]),
+      ValueKind::Matrix(x,s) => write!(f, "[{}]:{}", x, s.iter().map(|s| s.to_string()).collect::<Vec<String>>().join(",")),
       ValueKind::Enum(x) => write!(f, "{:?}",x),
-      ValueKind::Set(x,el) => write!(f, "{{{}}}:{}", x, el),
+      ValueKind::Set(x,el) => write!(f, "{{{}}}{}", x, el.map_or("".to_string(), |e| format!(":{}", e))),
       ValueKind::Map(x,y) => write!(f, "{{{}:{}}}",x,y),
-      ValueKind::Record(x) => write!(f, "{{{}}}",x.iter().map(|x| format!("{}",x)).collect::<Vec<String>>().join(",")),
+      ValueKind::Record(x) => write!(f, "{{{}}}",x.iter().map(|(i,k)| format!("{}<{}>",i.to_string(),k)).collect::<Vec<String>>().join(" ")),
       ValueKind::Table(x,y) => write!(f, "|{}|:{}",x.iter().map(|(i,k)| format!("{}<{}>",i.to_string(),k)).collect::<Vec<String>>().join(" "),y),
       ValueKind::Tuple(x) => write!(f, "({})",x.iter().map(|x| format!("{}",x)).collect::<Vec<String>>().join(",")),
       ValueKind::Id => write!(f, "id"),

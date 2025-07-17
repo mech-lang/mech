@@ -45,7 +45,8 @@ impl MechSet {
   }
 
   pub fn kind(&self) -> ValueKind {
-    ValueKind::Set(Box::new(self.kind.clone()), self.num_elements)
+    let size = if self.num_elements > 0 { Some(self.num_elements) } else { None };
+    ValueKind::Set(Box::new(self.kind.clone()), size)
   }
 
   pub fn size_of(&self) -> usize {
@@ -337,7 +338,9 @@ impl MechRecord {
   }
 
   pub fn kind(&self) -> ValueKind {
-    ValueKind::Record(self.kinds.clone())
+    ValueKind::Record(self.data.iter()
+      .map(|(k,v)| (self.field_names.get(k).unwrap().to_string(), v.kind()))
+      .collect())
   }
 
   pub fn size_of(&self) -> usize {

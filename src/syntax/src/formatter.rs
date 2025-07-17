@@ -2261,6 +2261,14 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn kind(&mut self, node: &Kind) -> String {
     let annotation = match node {
+      Kind::Set(kind,size) => {
+        let k = self.kind(kind);
+        let size_str = match size{
+          Some(size) => format!(":{:?}", size),
+          None => "".to_string(),
+        };
+        format!("{{{}}}{}", k, size_str)
+      },
       Kind::Any => "*".to_string(),
       Kind::Scalar(ident) => ident.to_string(),
       Kind::Empty => "_".to_string(),
@@ -2291,6 +2299,19 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
           }
         }
         format!("[{}]{}", src, src2)
+      },
+      Kind::Record(kinds) => {
+        let mut src = "".to_string();
+        for (i, (ident, kind)) in kinds.iter().enumerate() {
+          let k = self.kind(kind);
+          let ident_s = ident.to_string();
+          if i == 0 {
+            src = format!("{}<{}>", ident_s, k);
+          } else {
+            src = format!("{},{}<{}>", src, ident_s, k);
+          }
+        }
+        format!("{{{}}}", src)
       },
       Kind::Table((kinds, literal)) => {
         let mut src = "".to_string();

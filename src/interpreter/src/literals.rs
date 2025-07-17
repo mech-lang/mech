@@ -50,6 +50,17 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
         None => Err(MechError{file: file!().to_string(), tokens: size.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize}),
       }
     }
+    NodeKind::Set(knd, size) => {
+      let knda = kind_annotation(knd, p)?;
+      let size_val = match size {
+        Some(size) => literal(size, p)?,
+        None => Value::Empty,
+      };
+      match size_val.as_usize() {
+        Some(size_val) => Ok(Kind::Set(Box::new(knda.clone()), Some(size_val))),
+        None => Ok(Kind::Set(Box::new(knda.clone()), None)),
+      }
+    }
     _ => todo!(),
   }
 }
