@@ -43,11 +43,12 @@ pub fn slice(slc: &Slice, p: &Interpreter) -> MResult<Value> {
     Some(val) => Value::MutableReference(val.clone()),
     None => {return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
   };
+  let mut v = val;
   for s in &slc.subscript {
-    let s_result = subscript(&s, &val, p)?;
-    return Ok(s_result);
+    let s_result = subscript(&s, &v, p)?;
+    v = s_result;
   }
-  unreachable!() // subscript should have thrown an error if we can't access an element
+  return Ok(v);
 }
 
 pub fn subscript_formula(sbscrpt: &Subscript, p: &Interpreter) -> MResult<Value> {
