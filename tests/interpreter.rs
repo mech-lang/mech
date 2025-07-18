@@ -571,3 +571,5 @@ x:=╭────────┬────────╮
    │        │        │
    ╰────────┴────────╯
 x.x"#, new_ref(Vector2::from_vec(vec![1_u64, 3])).to_value());
+
+test_interpreter!(interpret_table_access_element, r#"a:=|x<f32>|1.2|1.3|; a.x[1]"#, new_ref(F32::new(1.2)).to_value());
