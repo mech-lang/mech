@@ -2109,7 +2109,7 @@ window.addEventListener("scroll", () => {{
       "".to_string()
     };
     if self.html {
-      format!("<div class=\"mech-field\"><span class=\"mech-field-name\">{}</span><span class=\"mech-field-colon-op\">:</span><span class=\"mech-field-kind\">{}</span></div>",name,kind)
+      format!("<div class=\"mech-field\"><span class=\"mech-field-name\">{}</span><span class=\"mech-field-kind\">{}</span></div>",name,kind)
     } else {
       format!("{}: {}", name, kind)
     }
