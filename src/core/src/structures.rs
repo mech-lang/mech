@@ -182,33 +182,52 @@ pub struct MechTable {
 impl MechTable {
 
   pub fn to_html(&self) -> String {
-    let mut table = String::new();
+    let mut html = String::new();
 
     // Start table
-    table.push_str("<table class=\"mech-table\">");
+    html.push_str("<table class=\"mech-table\">");
 
-    // Header
-    table.push_str("<thead class=\"mech-table-header\"><tr>");
-    for key in self.data.keys() {
-      let col_name = self.col_names.get(key).unwrap();
-      table.push_str(&format!("<th class=\"mech-table-field\">{}</th>", col_name));
+    // Build thead
+    html.push_str("<thead class=\"mech-table-header\"><tr>");
+    for (key, (kind, _matrix)) in self.data.iter() {
+        let col_name = self
+            .col_names
+            .get(key)
+            .cloned()
+            .unwrap_or_else(|| key.to_string());
+
+        let kind_str = format!(
+            "<span class=\"mech-kind-annotation\">&lt;<span class=\"mech-kind\">{}</span>&gt;</span>",
+            kind
+        );
+
+        html.push_str(&format!(
+            "<th class=\"mech-table-field\">\
+                <div class=\"mech-field\">\
+                  <span class=\"mech-field-name\">{}</span>\
+                  <span class=\"mech-field-kind\">{}</span>\
+                </div>\
+            </th>",
+            col_name, kind_str
+        ));
     }
-    table.push_str("</tr></thead>");
+    html.push_str("</tr></thead>");
 
-    // Body
-    table.push_str("<tbody class=\"mech-table-body\">");
-
-    for row_idx in 0..self.rows {
-      table.push_str("<tr class=\"mech-table-row\">");
-      for (_key, (_kind, matrix)) in self.data.iter() {
-        let value = matrix.index1d(row_idx);
-        table.push_str(&format!("<td class=\"mech-table-column\">{}</td>", value));
-      }
-      table.push_str("</tr>");
+    // Build tbody
+    html.push_str("<tbody class=\"mech-table-body\">");
+    for row_idx in 1..=self.rows {
+        html.push_str("<tr class=\"mech-table-row\">");
+        for (_key, (_kind, matrix)) in self.data.iter() {
+            let value = matrix.index1d(row_idx);
+            html.push_str(&format!(
+                "<td class=\"mech-table-column\">{}</td>",
+                value.to_html()
+            ));
+        }
+        html.push_str("</tr>");
     }
-
-    table.push_str("</tbody></table>");
-    table
+    html.push_str("</tbody></table>");
+    html
   }
 
   pub fn new(rows: usize, cols: usize, data: IndexMap<Value,(ValueKind,Matrix<Value>)>, col_names: HashMap<Value,String>) -> MechTable {
