@@ -361,7 +361,7 @@ fn quoted<T: Display + Any>(val: &T) -> String {
   if let Some(s) = (val as &dyn Any).downcast_ref::<String>() {
     format!("<div class='mech-string'>\"{}\"</div>", s)
   } else if let Some(s) = (val as &dyn Any).downcast_ref::<bool>() {
-    format!("<div class='mech-bool'>{}</div<", s)
+    format!("<div class='mech-boolean'>{}</div<", s)
   } else {
     format!("<div class='mech-number'>{}</div>", val)
   }
