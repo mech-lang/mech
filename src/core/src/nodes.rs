@@ -2,7 +2,8 @@ use std::cmp::Ordering;
 use crate::*; 
 use std::fmt;
 use std::io::{Write, Cursor, Read};
-
+use std::hash::Hash;
+use std::hash::Hasher;
 
 pub fn compress_and_encode<T: serde::Serialize>(tree: &T) -> Result<String, Box<dyn std::error::Error>> {
   let serialized_code = bincode::serde::encode_to_vec(tree,bincode::config::standard())?;
@@ -874,6 +875,17 @@ pub struct Slice {
   pub subscript: Vec<Subscript>
 }
 
+impl Slice {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.name.tokens();
+    for sub in &self.subscript {
+      let mut sub_tkns = sub.tokens();
+      tkns.append(&mut sub_tkns);
+    }
+    tkns
+  }
+}
+
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SliceRef {
   pub name: Identifier,
@@ -890,6 +902,40 @@ pub enum Subscript {
   Formula(Factor),          // a[1 + 1]
   Range(RangeExpression),   // a[1 + 1]
   Swizzle(Vec<Identifier>), // a.b,c
+}
+
+impl Subscript {
+
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      Subscript::All => vec![
+        Token::new(TokenKind::Colon, SourceRange::default(), vec![':']),
+      ],
+      Subscript::Brace(subs) => {
+        let mut tkns = vec![Token::new(TokenKind::LeftBrace, SourceRange::default(), vec!['{'])];
+        for sub in subs {
+          let mut sub_tkns = sub.tokens();
+          tkns.append(&mut sub_tkns);
+        }
+        tkns.push(Token::new(TokenKind::RightBrace, SourceRange::default(), vec!['}']));
+        tkns
+      },
+      Subscript::Bracket(subs) => {
+        let mut tkns = vec![Token::new(TokenKind::LeftBracket, SourceRange::default(), vec!['['])];
+        for sub in subs {
+          let mut sub_tkns = sub.tokens();
+          tkns.append(&mut sub_tkns);
+        }
+        tkns.push(Token::new(TokenKind::RightBracket, SourceRange::default(), vec![']']));
+        tkns
+      },
+      Subscript::Dot(id) => id.tokens(),
+      Subscript::DotInt(num) => num.tokens(),
+      Subscript::Formula(factor) => factor.tokens(),
+      Subscript::Range(range) => range.tokens(),
+      Subscript::Swizzle(ids) => ids.iter().flat_map(|id| id.tokens()).collect(),
+    }
+  }
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
@@ -911,6 +957,8 @@ impl Expression {
       Expression::Literal(ltrl) => ltrl.tokens(),
       Expression::Structure(strct) => strct.tokens(),
       Expression::Formula(fctr) => fctr.tokens(),
+      Expression::Range(range) => range.tokens(),
+      Expression::Slice(slice) => slice.tokens(),
       _ => todo!(),
     }
   }
@@ -944,16 +992,15 @@ pub struct Binding {
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
 pub struct KindAnnotation {
-  pub kind: Kind
+  pub kind: Kind,
 }
 
 impl KindAnnotation {
 
   pub fn hash(&self) -> u64 {
-    match &self.kind {
-      Kind::Scalar(id) => id.hash(),
-      _ => todo!(),
-    }
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    self.kind.hash(&mut hasher);
+    hasher.finish()
   }
 
   pub fn tokens(&self) -> Vec<Token> {
@@ -973,6 +1020,7 @@ pub enum Kind {
   //Function(Vec<Kind>,Vec<Kind>),
   Map(Box<Kind>,Box<Kind>),
   Matrix((Box<Kind>,Vec<Literal>)),
+  Option(Box<Kind>),
   Scalar(Identifier),
   Tuple(Vec<Kind>),
 }
@@ -980,6 +1028,7 @@ pub enum Kind {
 impl Kind {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
+      Kind::Option(x) => x.tokens(),
       Kind::Tuple(x) => x.iter().flat_map(|k| k.tokens()).collect(),
       Kind::Matrix((kind, literals)) => {
         let mut tokens = kind.tokens();

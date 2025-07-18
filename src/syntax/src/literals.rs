@@ -250,13 +250,18 @@ pub fn empty(input: ParseString) -> ParseResult<Token> {
 // Kind Annotations
 // ----------------------------------------------------------------------------
 
-// kind_annotation := left_angle, kind, right_angle ;
+// kind_annotation := left_angle, kind, ?question, right_angle ;
 pub fn kind_annotation(input: ParseString) -> ParseResult<KindAnnotation> {
   let msg2 = "Expects at least one unit in kind annotation";
   let msg3 = "Expects right angle";
   let (input, (_, r)) = range(left_angle)(input)?;
   let (input, kind) = kind(input)?;
+  let (input, optional) = opt(question)(input)?;
   let (input, _) = label!(right_angle, msg3, r)(input)?;
+  let kind = match optional {
+    Some(_) => Kind::Option(Box::new(kind)),
+    None => kind,
+  };
   Ok((input, KindAnnotation{ kind }))
 }
 

@@ -53,7 +53,8 @@ pub enum ValueKind {
   String, Bool, Id, Index, Empty, Any, 
   Matrix(Box<ValueKind>,Vec<usize>),  Enum(u64),                  Record(Vec<(String,ValueKind)>),
   Map(Box<ValueKind>,Box<ValueKind>), Atom(u64),                  Table(Vec<(String,ValueKind)>, usize), 
-  Tuple(Vec<ValueKind>),              Reference(Box<ValueKind>),  Set(Box<ValueKind>, Option<usize>) 
+  Tuple(Vec<ValueKind>),              Reference(Box<ValueKind>),  Set(Box<ValueKind>, Option<usize>), 
+  Option(Box<ValueKind>),
 }
 
 impl ValueKind {
@@ -97,6 +98,7 @@ impl std::fmt::Display for ValueKind {
       ValueKind::Atom(x) => write!(f, "`{}",x),
       ValueKind::Empty => write!(f, "_"),
       ValueKind::Any => write!(f, "_"),
+      ValueKind::Option(x) => write!(f, "{}?", x),
     }
   }
 }

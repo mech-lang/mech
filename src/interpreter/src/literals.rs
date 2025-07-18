@@ -62,6 +62,10 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
       }
       Ok(Kind::Matrix(Box::new(knda.clone()),dims))
     }
+    NodeKind::Option(knd) => {
+      let knda = kind_annotation(knd, p)?;
+      Ok(Kind::Option(Box::new(knda)))
+    }
     NodeKind::Table((elements, size)) => {
       let mut knds = vec![];
       for (id, knd) in elements {

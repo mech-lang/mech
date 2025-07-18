@@ -2261,6 +2261,14 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn kind(&mut self, node: &Kind) -> String {
     let annotation = match node {
+      Kind::Option(kind) => {
+        let k = self.kind(kind);
+        if self.html {
+          format!("{}<span class=\"mech-option-question\">?</span>", k)
+        } else {
+          format!("{}?", k)
+        }
+      },
       Kind::Set(kind,size) => {
         let k = self.kind(kind);
         let size_str = match size{
