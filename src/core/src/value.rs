@@ -289,7 +289,7 @@ impl Value {
       Value::F32(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       Value::F64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       Value::String(s) => format!("<span class='mech-string'>\"{}\"</span>", s.borrow()),
-      Value::Bool(b) => format!("<span class='mech-bool'>{}</span>", b.borrow()),
+      Value::Bool(b) => format!("<span class='mech-boolean'>{}</span>", b.borrow()),
       Value::MatrixU8(m) => m.to_html(),
       Value::MatrixU16(m) => m.to_html(),
       Value::MatrixU32(m) => m.to_html(),
