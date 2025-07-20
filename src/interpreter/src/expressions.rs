@@ -125,6 +125,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
       plan.borrow_mut().push(new_fxn);
       return Ok(res);
     },
+    Subscript::Brace(subs) |
     Subscript::Bracket(subs) => {
       let mut fxn_input = vec![val.clone()];
       match &subs[..] {
@@ -241,7 +242,6 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
       let res = new_fxn.out();
       return Ok(res);
     },
-    Subscript::Brace(x) => todo!(),
     _ => unreachable!(),
   }
 }
