@@ -150,3 +150,11 @@ a.x[1]  -- Select the first element of column `x`, which has kind `f32`
 ```
 
 Table columns are just vectors, so they support the same indexing operations as vectors.
+
+(5.3) Access a Record
+
+You can access a record in a table by specifying the row index on the table itself:
+
+```mech
+a{1}  -- Select the first record in the table, which has kind `record`
+```

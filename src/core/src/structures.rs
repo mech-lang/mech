@@ -173,13 +173,34 @@ impl Hash for MechMap {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MechTable {
-  rows: usize,
-  cols: usize,
-  data: IndexMap<Value,(ValueKind,Matrix<Value>)>,
-  col_names: HashMap<Value,String>,
+  pub rows: usize,
+  pub cols: usize,
+  pub data: IndexMap<u64,(ValueKind,Matrix<Value>)>,
+  pub col_names: HashMap<u64,String>,
 }
 
 impl MechTable {
+
+  pub fn get_record(&self, ix: usize) -> Option<MechRecord> {
+    if ix > self.rows {
+      return None;
+    }
+
+    let mut data: IndexMap<u64, Value> = IndexMap::new();
+    data = self.data.iter().map(|(key, (kind, matrix))| {
+      let value = matrix.index1d(ix);
+      let name = self.col_names.get(key).unwrap();
+      (hash_str(name), value.clone())
+    }).collect();
+
+    let mut kinds = Vec::with_capacity(self.cols);
+    kinds = self.data.iter().map(|(_, (kind, _))| kind.clone()).collect();
+
+    let mut field_names = self.col_names.clone();
+   
+    Some(MechRecord{cols: self.cols, kinds, data, field_names})
+  }
+
 
   pub fn to_html(&self) -> String {
     let mut html = String::new();
@@ -230,20 +251,15 @@ impl MechTable {
     html
   }
 
-  pub fn new(rows: usize, cols: usize, data: IndexMap<Value,(ValueKind,Matrix<Value>)>, col_names: HashMap<Value,String>) -> MechTable {
+  pub fn new(rows: usize, cols: usize, data: IndexMap<u64,(ValueKind,Matrix<Value>)>, col_names: HashMap<u64,String>) -> MechTable {
     MechTable{rows, cols, data, col_names}
   }
 
   pub fn kind(&self) -> ValueKind {
     let column_kinds: Vec<(String, ValueKind)> = self.data.iter()
       .filter_map(|(key, (kind, _))| {
-        match key {
-          Value::Id(_) => match self.col_names.get(key) {
-            Some(col_name) => Some((col_name.clone(), kind.clone())),
-            None => None,
-          },
-          _ => None,
-        }
+        let col_name = self.col_names.get(key)?;
+        Some((col_name.clone(), kind.clone()))
       })
       .collect();
     ValueKind::Table(column_kinds, self.rows)
@@ -261,7 +277,7 @@ impl MechTable {
     self.cols
   }
 
-  pub fn get(&self, key: &Value) -> Option<&(ValueKind,Matrix<Value>)> {
+  pub fn get(&self, key: &u64) -> Option<&(ValueKind,Matrix<Value>)> {
     self.data.get(key)
   }
 

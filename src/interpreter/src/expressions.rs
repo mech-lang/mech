@@ -134,7 +134,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
           let shape = result.shape();
           fxn_input.push(result);
           match shape[..] {
-            [1,1] => plan.borrow_mut().push(MatrixAccessScalar{}.compile(&fxn_input)?),
+            [1,1] => plan.borrow_mut().push(AccessScalar{}.compile(&fxn_input)?),
             [1,n] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
             [n,1] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
             _ => todo!(),

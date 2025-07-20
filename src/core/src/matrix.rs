@@ -371,6 +371,16 @@ impl<T> Matrix<T>
 where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 {
 
+  pub fn rows(&self) -> usize {
+    let size = self.shape();
+    size[0]
+  }
+
+  pub fn cols(&self) -> usize {
+    let size = self.shape();
+    size[1]
+  }
+
   pub fn size_of(&self) -> usize {
     let vec = self.as_vec();
     vec.capacity() * size_of::<T>()

@@ -47,7 +47,7 @@ macro_rules! impl_as_type {
 
 // Value ----------------------------------------------------------------------
 
-#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, 
   String, Bool, Id, Index, Empty, Any, 
@@ -59,10 +59,10 @@ pub enum ValueKind {
 
 impl ValueKind {
 
-  pub fn deref_kind(&self) -> Option<ValueKind> {
+  pub fn deref_kind(&self) -> ValueKind {
     match self {
-      ValueKind::Reference(x) => Some(*x.clone()),
-      _ => None,
+      ValueKind::Reference(x) => *x.clone(),
+      _ => self.clone(),
     }
   }
 
@@ -102,12 +102,6 @@ impl std::fmt::Display for ValueKind {
     }
   }
 }
-
-impl fmt::Debug for ValueKind {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "{}", self)
-  }
-} 
 
 impl ValueKind {
   pub fn is_compatible(k1: ValueKind, k2: ValueKind) -> bool {
@@ -158,8 +152,8 @@ pub enum Value {
   MatrixValue(Matrix<Value>),
   Set(MechSet),
   Map(MechMap),
-  Record(MechRecord),
-  Table(MechTable),
+  Record(Ref<MechRecord>),
+  Table(Ref<MechTable>),
   Tuple(MechTuple),
   Enum(Box<MechEnum>),
   Id(u64),
@@ -198,9 +192,9 @@ impl Hash for Value {
       Value::Atom(x) => x.hash(state),
       Value::Set(x)  => x.hash(state),
       Value::Map(x)  => x.hash(state),
-      Value::Table(x) => x.hash(state),
+      Value::Table(x) => x.borrow().hash(state),
       Value::Tuple(x) => x.hash(state),
-      Value::Record(x) => x.hash(state),
+      Value::Record(x) => x.borrow().hash(state),
       Value::Enum(x) => x.hash(state),
       Value::String(x) => x.borrow().hash(state),
       Value::MatrixBool(x) => x.hash(state),
@@ -263,8 +257,8 @@ impl Value {
       Value::Atom(x) => 8,
       Value::Set(x) => x.size_of(),
       Value::Map(x) => x.size_of(),
-      Value::Table(x) => x.size_of(),
-      Value::Record(x) => x.size_of(),
+      Value::Table(x) => x.borrow().size_of(),
+      Value::Record(x) => x.borrow().size_of(),
       Value::Tuple(x) => x.size_of(),
       Value::Enum(x) => x.size_of(),
       Value::MutableReference(x) => x.borrow().size_of(),
@@ -315,8 +309,8 @@ impl Value {
       Value::Atom(a) => format!("<span class=\"mech-atom\"><span class=\"mech-atom-grave\">`</span><span class=\"mech-atom-name\">{}</span></span>",a),
       Value::Set(s) => s.to_html(),
       Value::Map(m) => m.to_html(),
-      Value::Table(t) => t.to_html(),
-      Value::Record(r) => r.to_html(),
+      Value::Table(t) => t.borrow().to_html(),
+      Value::Record(r) => r.borrow().to_html(),
       Value::Tuple(t) => t.to_html(),
       Value::Enum(e) => e.to_html(),
       _ => "".to_string(),
@@ -344,9 +338,9 @@ impl Value {
       Value::Set(x)  => {return x.pretty_print();}
       Value::Map(x)  => {return x.pretty_print();}
       Value::String(x) => {return format!("\"{}\"",x.borrow().clone());},
-      Value::Table(x)  => {return x.pretty_print();},
+      Value::Table(x)  => {return x.borrow().pretty_print();},
       Value::Tuple(x)  => {return x.pretty_print();},
-      Value::Record(x) => {return x.pretty_print();},
+      Value::Record(x) => {return x.borrow().pretty_print();},
       Value::Enum(x) => {return x.pretty_print();},
       Value::MatrixIndex(x) => {return x.pretty_print();}
       Value::MatrixBool(x) => {return x.pretty_print();}
@@ -421,10 +415,10 @@ impl Value {
       Value::MatrixString(x) => x.shape(),
       Value::MatrixValue(x) => x.shape(),
       Value::Enum(x) => vec![1,1],
-      Value::Table(x) => x.shape(),
+      Value::Table(x) => x.borrow().shape(),
       Value::Set(x) => vec![1,x.set.len()],
       Value::Map(x) => vec![1,x.map.len()],
-      Value::Record(x) => x.shape(),
+      Value::Record(x) => x.borrow().shape(),
       Value::Tuple(x) => vec![1,x.size()],
       Value::MutableReference(x) => x.borrow().shape(),
       Value::Empty => vec![0,0],
@@ -474,10 +468,10 @@ impl Value {
       Value::MatrixF64(x) => ValueKind::Matrix(Box::new(ValueKind::F64),x.shape()),
       Value::MatrixString(x) => ValueKind::Matrix(Box::new(ValueKind::String),x.shape()),
       Value::MatrixValue(x) => ValueKind::Matrix(Box::new(ValueKind::Any),x.shape()),
-      Value::Table(x) => x.kind(),
+      Value::Table(x) => x.borrow().kind(),
       Value::Set(x) => x.kind(),
       Value::Map(x) => x.kind(),
-      Value::Record(x) => x.kind(),
+      Value::Record(x) => x.borrow().kind(),
       Value::Tuple(x) => x.kind(),
       Value::Enum(x) => x.kind(),
       Value::MutableReference(x) => ValueKind::Reference(Box::new(x.borrow().kind())),
