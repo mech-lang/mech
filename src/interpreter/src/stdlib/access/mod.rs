@@ -47,7 +47,7 @@ impl NativeFunctionCompiler for AccessSwizzle {
       Value::Record(rcrd) => {
         let mut values = vec![];
         for key in keys {
-          let k = key.as_usize().unwrap() as u64;
+          let k = key.as_u64().unwrap().borrow().clone();
           match rcrd.borrow().get(&k) {
             Some(value) => values.push(value.clone()),
             None => { return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)});}
@@ -77,7 +77,7 @@ impl NativeFunctionCompiler for AccessSwizzle {
         Value::Record(rcrd) => {
           let mut values = vec![];
           for key in keys {
-            let k = key.as_usize().unwrap() as u64;
+            let k = key.as_u64().unwrap().borrow().clone();
             match rcrd.borrow().get(&k) {
               Some(value) => values.push(value.clone()),
               None => { return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)});}
@@ -88,7 +88,7 @@ impl NativeFunctionCompiler for AccessSwizzle {
         Value::Table(tbl) => {
           let mut elements = vec![];
           for key in keys {
-            let k = key.as_usize().unwrap() as u64;
+            let k = key.as_u64().unwrap().borrow().clone();
             match tbl.borrow().get(&k) {
               Some((kind, mat_values)) => {
                 elements.push(Box::new(mat_values.to_value()));

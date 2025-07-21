@@ -37,6 +37,7 @@ macro_rules! impl_as_type {
           Value::I128(v) => Some(new_ref(*v.borrow() as $target_type)),
           Value::F32(v) => Some(new_ref((*v.borrow()).0 as $target_type)),
           Value::F64(v) => Some(new_ref((*v.borrow()).0 as $target_type)),
+          Value::Id(v) => Some(new_ref(*v as $target_type)),
           Value::MutableReference(val) => val.borrow().[<as_ $target_type>](),
           _ => None,
         }
@@ -655,7 +656,6 @@ impl Value {
       Value::I128(v) => Some(*v.borrow() as usize),
       Value::F32(v) => Some((*v.borrow()).0 as usize),
       Value::F64(v) => Some((*v.borrow()).0 as usize),
-      Value::Id(v) => Some(*v as usize),
       Value::MutableReference(v) => v.borrow().as_usize(),
       _ => None,
     }

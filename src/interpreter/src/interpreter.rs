@@ -159,7 +159,6 @@ impl Interpreter {
       result
     }))
     .map_err(|err| {
-      
       let kind = {
         if let Some(raw_msg) = err.downcast_ref::<&'static str>() {
           if raw_msg.contains("Index out of bounds") {

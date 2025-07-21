@@ -120,7 +120,7 @@ macro_rules! handle_value_kind {
         None => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::WrongTableColumnKind});}
       }
     }
-    let id = $field_label.as_usize().unwrap() as u64;
+    let id = $field_label.as_u64().unwrap().borrow().clone();
     $data_map.insert(id, ($value_kind.clone(), Value::to_matrix(vals.clone(), vals.len(), 1)));
   }};}
 
@@ -165,13 +165,13 @@ pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> {
       ValueKind::String  => handle_value_kind!(knd, val, id, data_map, as_string),
       ValueKind::Bool => {
         let vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_bool().unwrap().to_value()).collect::<Vec<Value>>();
-        let id = id.as_usize().unwrap() as u64;
+        let id = id.as_u64().unwrap().borrow().clone();
         data_map.insert(id.clone(),(knd.clone(),Value::to_matrix(vals.clone(),vals.len(),1)));
       },
       _ => todo!(),
     };
   }
-  let names: HashMap<u64,String> = headings.iter().map(|(id,_,name)| (id.as_usize().unwrap() as u64, name.to_string())).collect();
+  let names: HashMap<u64,String> = headings.iter().map(|(id,_,name)| (id.as_u64().unwrap().borrow().clone(), name.to_string())).collect();
   let tbl = MechTable::new(t.rows.len(), cols, data_map.clone(), names);
   Ok(Value::Table(new_ref(tbl)))
 }
