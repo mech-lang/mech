@@ -285,7 +285,7 @@ pub fn kind(input: ParseString) -> ParseResult<Kind> {
 // kind-table := "|" , list1(",", (identifier, kind)), "|", ":", list0(",", literal) ;
 pub fn kind_table(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = bar(input)?;
-  let (input, elements) = separated_list1(list_separator, nom_tuple((identifier, kind_annotation)))(input)?;
+  let (input, elements) = separated_list1(alt((null(list_separator),null(many1(space_tab)))), nom_tuple((identifier, kind_annotation)))(input)?;
   let (input, _) = bar(input)?;
   let (input, _) = opt(colon)(input)?;
   let (input, size) = literal(input)?; 
