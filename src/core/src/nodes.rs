@@ -94,7 +94,7 @@ pub enum TokenKind {
   False, FloatLeft, FloatRight, FootnotePrefix,
   Grave,
   HashTag, HighlightSigil, HttpPrefix,
-  Identifier, ImgPrefix, InlineCode, 
+  Identifier, ImgPrefix, InfoSigil, InlineCode, 
   LeftAngle, LeftBrace, LeftBracket, LeftParenthesis,
   Newline, Not, Number,
   OutputOperator,
@@ -436,8 +436,10 @@ pub enum FloatDirection {
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SectionElement {
-  Abstract(Paragraph),
-  BlockQuote(Paragraph),
+  Abstract(Vec<Paragraph>),
+  QuoteBlock(Vec<Paragraph>),
+  InfoBlock(Vec<Paragraph>),
+  QuestionBlock(Vec<Paragraph>),
   Citation(Citation),
   CodeBlock(Token),
   Comment(Comment),

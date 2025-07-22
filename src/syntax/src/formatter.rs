@@ -839,12 +839,12 @@ window.addEventListener("scroll", () => {{
     }
   }
 
-  pub fn abstract_el(&mut self, node: &Paragraph) -> String {
-    let abstract_paragraph = self.paragraph(node);
+  pub fn abstract_el(&mut self, node: &Vec<Paragraph>) -> String {
+    let abstract_paragraph = node.iter().map(|p| self.paragraph(p)).collect::<String>();
     if self.html {
-      format!("<div id=\"abstract\" class=\"mech-abstract\">{}</div>",abstract_paragraph)
+      format!("<div id=\"abstract\" class=\"mech-abstract\">{}</div>", abstract_paragraph)
     } else {
-      format!("{}\n",abstract_paragraph)
+      format!("{}\n", abstract_paragraph)
     }
   }
 
@@ -903,10 +903,30 @@ window.addEventListener("scroll", () => {{
     }
   }
 
+  pub fn info_block(&mut self, node: &Vec<Paragraph>) -> String {
+    let info_paragraph = node.iter().map(|p| self.paragraph(p)).collect::<String>();
+    if self.html {
+      format!("<div class=\"mech-info-block\">{}</div>",info_paragraph)
+    } else {
+      format!("!!! info\n{}\n",info_paragraph)
+    }
+  }
+
+  pub fn question_block(&mut self, node: &Vec<Paragraph>) -> String {
+    let question_paragraph = node.iter().map(|p| self.paragraph(p)).collect::<String>();
+    if self.html {
+      format!("<div class=\"mech-question-block\">{}</div>",question_paragraph)
+    } else {
+      format!("!!! question\n{}\n",question_paragraph)
+    }
+  }
+
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     match node {
       SectionElement::Abstract(n) => self.abstract_el(n),
-      SectionElement::BlockQuote(n) => self.block_quote(n),
+      SectionElement::QuoteBlock(n) => self.quote_block(n),
+      SectionElement::InfoBlock(n) => self.info_block(n),
+      SectionElement::QuestionBlock(n) => self.question_block(n),
       SectionElement::Citation(n) => self.citation(n),
       SectionElement::CodeBlock(n) => self.code_block(n),
       SectionElement::Comment(n) => self.comment(n),
@@ -940,8 +960,8 @@ window.addEventListener("scroll", () => {{
     }
   }
 
-  pub fn block_quote(&mut self, node: &Paragraph) -> String {
-    let quote_paragraph = self.paragraph(node);
+  pub fn quote_block(&mut self, node: &Vec<Paragraph>) -> String {
+    let quote_paragraph = node.iter().map(|p| self.paragraph(p)).collect::<String>();
     if self.html {
       format!("<blockquote class=\"mech-block-quote\">{}</blockquote>",quote_paragraph)
     } else {

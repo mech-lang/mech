@@ -638,14 +638,6 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
   Ok((input, SectionElement::CodeBlock(code_token)))
 }
 
-pub fn block_quote(input: ParseString) -> ParseResult<Paragraph> {
-  let (input, _) = quote_sigil(input)?;
-  let (input, _) = many0(space_tab)(input)?;
-  let (input, text) = paragraph(input)?;
-  let (input, _) = many0(space_tab)(input)?;
-  Ok((input, text))
-}
-
 pub fn thematic_break(input: ParseString) -> ParseResult<SectionElement> {
   let (input, _) = many1(asterisk)(input)?;
   let (input, _) = many0(space_tab)(input)?;
@@ -674,11 +666,81 @@ pub fn blank_line(input: ParseString) -> ParseResult<Vec<Token>> {
   Ok((input, st))
 }
 
-pub fn abstract_el(input: ParseString) -> ParseResult<Paragraph> {
-  let (input, _) = abstract_sigil(input)?;
-  let (input, _) = many0(space_tab)(input)?;
-  let (input, text) = paragraph(input)?;
-  Ok((input, text))
+pub fn question_block(input: ParseString) -> ParseResult<SectionElement> {
+    let (input, _) = query_sigil(input)?;
+    let (input, _) = many0(space_tab)(input)?;
+    let (input, first_para) = paragraph(input)?;
+
+    // Parse *(newline, *space, paragraph)
+    let (input, mut rest_paras) = many0(|input| {
+        let (input, _) = new_line(input)?;
+        let (input, _) = many0(space_tab)(input)?;
+        let (input, para) = paragraph(input)?;
+        Ok((input, para))
+    })(input)?;
+
+    let mut all_paragraphs = vec![first_para];
+    all_paragraphs.append(&mut rest_paras);
+
+    Ok((input, SectionElement::QuestionBlock(all_paragraphs)))
+}
+
+pub fn info_block(input: ParseString) -> ParseResult<SectionElement> {
+    let (input, _) = info_sigil(input)?;
+    let (input, _) = many0(space_tab)(input)?;
+    let (input, first_para) = paragraph(input)?;
+
+    // Parse *(newline, *space, paragraph)
+    let (input, mut rest_paras) = many0(|input| {
+        let (input, _) = new_line(input)?;
+        let (input, _) = many0(space_tab)(input)?;
+        let (input, para) = paragraph(input)?;
+        Ok((input, para))
+    })(input)?;
+
+    let mut all_paragraphs = vec![first_para];
+    all_paragraphs.append(&mut rest_paras);
+
+    Ok((input, SectionElement::InfoBlock(all_paragraphs)))
+}
+
+pub fn quote_block(input: ParseString) -> ParseResult<SectionElement> {
+    let (input, _) = quote_sigil(input)?;
+    let (input, _) = many0(space_tab)(input)?;
+    let (input, first_para) = paragraph(input)?;
+
+    // Parse *(newline, *space, paragraph)
+    let (input, mut rest_paras) = many0(|input| {
+        let (input, _) = new_line(input)?;
+        let (input, _) = many0(space_tab)(input)?;
+        let (input, para) = paragraph(input)?;
+        Ok((input, para))
+    })(input)?;
+
+    let mut all_paragraphs = vec![first_para];
+    all_paragraphs.append(&mut rest_paras);
+
+    Ok((input, SectionElement::QuoteBlock(all_paragraphs)))
+}
+
+// abstract-element := abstract-sigil, *space, paragraph, *(new_line, *space, paragraph)));
+pub fn abstract_el(input: ParseString) -> ParseResult<SectionElement> {
+    let (input, _) = abstract_sigil(input)?;
+    let (input, _) = many0(space_tab)(input)?;
+    let (input, first_para) = paragraph(input)?;
+
+    // Parse *(newline, *space, paragraph)
+    let (input, mut rest_paras) = many0(|input| {
+        let (input, _) = new_line(input)?;
+        let (input, _) = many0(space_tab)(input)?;
+        let (input, para) = paragraph(input)?;
+        Ok((input, para))
+    })(input)?;
+
+    let mut all_paragraphs = vec![first_para];
+    all_paragraphs.append(&mut rest_paras);
+
+    Ok((input, SectionElement::Abstract(all_paragraphs)))
 }
 
 // equation := "$$" , +text ;
@@ -725,14 +787,14 @@ pub fn float(input: ParseString) -> ParseResult<(Box<SectionElement>,FloatDirect
 pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
   let (input, section_element) = match many1(mech_code)(input.clone()) {
     Ok((input, code)) => (input, SectionElement::MechCode(code)),
-    _ =>match mechdown_list(input.clone()) {
+    _ => match mechdown_list(input.clone()) {
       Ok((input, lst)) => (input, SectionElement::List(lst)),
       _ => match footnote(input.clone()) {
         Ok((input, ftnote)) => (input, SectionElement::Footnote(ftnote)),
         _ => match citation(input.clone()) {
           Ok((input, citation)) => (input, SectionElement::Citation(citation)),
           _ => match abstract_el(input.clone()) {
-            Ok((input, abstrct)) => (input, SectionElement::Abstract(abstrct)),
+            Ok((input, abstrct)) => (input, abstrct),
             _ => match img(input.clone()) {
               Ok((input, img)) => (input, SectionElement::Image(img)),
               _ => match equation(input.clone()) {
@@ -741,8 +803,8 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
                   Ok((input, table)) => (input, SectionElement::Table(table)),
                   _ => match float(input.clone()) {
                     Ok((input, flt)) => (input, SectionElement::Float(flt)),
-                    _ => match block_quote(input.clone()) {   
-                      Ok((input, quote)) => (input, SectionElement::BlockQuote(quote)),
+                    _ => match quote_block(input.clone()) {   
+                      Ok((input, quote)) => (input, quote),
                       _ => match code_block(input.clone()) {
                         Ok((input, m)) => (input,m),
                         _ => match thematic_break(input.clone()) {
