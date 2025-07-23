@@ -8,11 +8,11 @@ use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matri
 // Table Set ------------------------------------------------------------------
 
 macro_rules! impl_col_set_fxn {
-  ($fxn_name:ident, $vector_size:ident, $out_type:ty) => {
+  ($fxn_name:ident, $vector_size_in:ident, $vector_size_out:ident, $out_type:ty) => {
     #[derive(Debug)]
     struct $fxn_name {
-      source: Ref<$vector_size<$out_type>>,
-      sink: Ref<$vector_size<Value>>,
+      source: Ref<$vector_size_in<$out_type>>,
+      sink: Ref<$vector_size_out<Value>>,
     }
     impl MechFunction for $fxn_name {
       fn solve(&self) {
@@ -26,7 +26,7 @@ macro_rules! impl_col_set_fxn {
           }
         }
       }
-      fn out(&self) -> Value { Value::MatrixValue(Matrix::$vector_size(self.sink.clone())) }
+      fn out(&self) -> Value { Value::MatrixValue(Matrix::$vector_size_out(self.sink.clone())) }
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }
   }
@@ -35,11 +35,15 @@ macro_rules! impl_col_set_fxn {
 macro_rules! impl_col_set_fxn_shapes {
   ($type:ident) => {
     paste!{
-      impl_col_set_fxn!([<TableSetCol $type:camel M1>], Matrix1, $type);
-      impl_col_set_fxn!([<TableSetCol $type:camel V2>], Vector2, $type);
-      impl_col_set_fxn!([<TableSetCol $type:camel V3>], Vector3, $type);
-      impl_col_set_fxn!([<TableSetCol $type:camel V4>], Vector4, $type);
-      impl_col_set_fxn!([<TableSetCol $type:camel VD>], DVector, $type);
+      impl_col_set_fxn!([<TableSetCol $type:camel M1>], Matrix1, Matrix1, $type);
+      impl_col_set_fxn!([<TableSetCol $type:camel V2>], Vector2, Vector2, $type);
+      impl_col_set_fxn!([<TableSetCol $type:camel V3>], Vector3, Vector3, $type);
+      impl_col_set_fxn!([<TableSetCol $type:camel V4>], Vector4, Vector4, $type);
+      impl_col_set_fxn!([<TableSetCol $type:camel VD>], DVector, DVector, $type);
+      impl_col_set_fxn!([<TableSetCol $type:camel VDV4>], Vector4, DVector, $type);
+      impl_col_set_fxn!([<TableSetCol $type:camel VDV3>], Vector3, DVector, $type);
+      impl_col_set_fxn!([<TableSetCol $type:camel VDV2>], Vector2, DVector, $type);
+      impl_col_set_fxn!([<TableSetCol $type:camel VDM1>], Matrix1, DVector, $type);  
     }
   }
 }
@@ -91,6 +95,10 @@ macro_rules! impl_set_column_match_arms {
                 (Some((ValueKind::$lhs_type,Matrix::Vector3(sink))),3,Value::[<Matrix $lhs_type>](Matrix::Vector3(source))) => Ok(Box::new([<TableSetCol $lhs_type V3>]{source: source.clone(), sink: sink.clone() })),
                 (Some((ValueKind::$lhs_type,Matrix::Vector4(sink))),4,Value::[<Matrix $lhs_type>](Matrix::Vector4(source))) => Ok(Box::new([<TableSetCol $lhs_type V4>]{source: source.clone(), sink: sink.clone() })),
                 (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::DVector(source))) => Ok(Box::new([<TableSetCol $lhs_type VD>]{source: source.clone(), sink: sink.clone() })),
+                (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Vector4(source))) => Ok(Box::new([<TableSetCol $lhs_type VDV4>]{source: source.clone(), sink: sink.clone() })),
+                (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Vector3(source))) => Ok(Box::new([<TableSetCol $lhs_type VDV3>]{source: source.clone(), sink: sink.clone() })),
+                (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Vector2(source))) => Ok(Box::new([<TableSetCol $lhs_type VDV2>]{source: source.clone(), sink: sink.clone() })),
+                (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Matrix1(source))) => Ok(Box::new([<TableSetCol $lhs_type VDM1>]{source: source.clone(), sink: sink.clone() })),
             )+
             x => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)}),
           }

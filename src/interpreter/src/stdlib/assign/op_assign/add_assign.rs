@@ -106,8 +106,29 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
+#[derive(Debug)]
+struct TableAppendRecord {
+  sink: Ref<MechTable>,
+  source: Ref<MechRecord>,
+}
+impl MechFunction for TableAppendRecord {
+  fn solve(&self) {
+    unsafe {
+      let mut sink_ptr = (&mut *(self.sink.as_ptr()));
+      let source_ptr = &(*(self.source.as_ptr()));
+      sink_ptr.append_record(source_ptr.clone());
+    }
+  }
+  fn out(&self) -> Value { Value::Table(self.sink.clone()) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
 fn add_assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
   match (sink,source) {
+    (Value::Table(tbl), Value::Record(rcrd)) => {
+      tbl.borrow().check_record_schema(&rcrd.borrow())?;
+      Ok(Box::new(TableAppendRecord{ sink: tbl, source: rcrd }))
+    }
     (Value::U8(sink),Value::U8(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
     (Value::U16(sink),Value::U16(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),
     (Value::U32(sink),Value::U32(source)) => Ok(Box::new(AddAssignVV{sink: sink.clone(), source: source.clone()})),

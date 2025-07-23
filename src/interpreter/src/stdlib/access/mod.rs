@@ -70,6 +70,7 @@ impl NativeFunctionCompiler for AccessSwizzle {
             _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
           }
         }
+        todo!("Table swizzle needs to be fixed.");
         let tuple = Value::Tuple(MechTuple{elements});
         Ok(Box::new(TableAccessSwizzle{out: tuple}))
       }

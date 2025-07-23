@@ -121,7 +121,7 @@ macro_rules! handle_value_kind {
       }
     }
     let id = $field_label.as_u64().unwrap().borrow().clone();
-    $data_map.insert(id, ($value_kind.clone(), Value::to_matrix(vals.clone(), vals.len(), 1)));
+    $data_map.insert(id, ($value_kind.clone(), Value::to_matrixd(vals.clone(), vals.len(), 1)));
   }};}
 
 pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> { 

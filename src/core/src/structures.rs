@@ -181,6 +181,56 @@ pub struct MechTable {
 
 impl MechTable {
 
+
+  pub fn check_record_schema(&self, record: &MechRecord) -> MResult<bool> {
+    // Check column count
+    if self.cols != record.cols {
+      return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Schema mismatch: column count differs (table: {}, record: {})",self.cols, record.cols),kind: MechErrorKind::None});
+    }
+
+    for (&col_id, record_value) in &record.data {
+      // Check that the column exists in the table
+      let (expected_kind, _) = self.data.get(&col_id).ok_or(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Schema mismatch: column id {} not found in table", col_id),kind: MechErrorKind::None,})?;
+
+      // Check actual value kind
+      let actual_kind = record_value.kind();
+
+      if expected_kind != &actual_kind {
+        return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Schema mismatch: column {} kind mismatch (expected: {:?}, found: {:?})",col_id, expected_kind, actual_kind),kind: MechErrorKind::None,});
+      }
+
+      // (Optional) Check column name
+      if let Some(expected_name) = self.col_names.get(&col_id) {
+        if let Some(field_name) = record.field_names.get(&col_id) {
+          if expected_name != field_name {
+            return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Schema mismatch: column {} name mismatch (expected: '{}', found: '{}')",col_id, expected_name, field_name),kind: MechErrorKind::None,});
+          }
+        }
+      }
+    }
+
+    Ok(true)
+  }
+
+  pub fn append_record(&mut self, record: MechRecord) -> MResult<()> {
+    // Validate schema (this includes column count, types, and optional name checks)
+    self.check_record_schema(&record)?;
+
+    // Append each value to the corresponding column in the matrix
+    for (&col_id, value) in &record.data {
+      if let Some((_kind, column_matrix)) = self.data.get_mut(&col_id) {
+        let result = column_matrix.push(value.clone());
+      } else {
+        return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Column id {} not found in table", col_id),kind: MechErrorKind::None});
+      }
+    }
+
+    // Increment row count
+    self.rows += 1;
+
+    Ok(())
+  }
+
   pub fn get_record(&self, ix: usize) -> Option<MechRecord> {
     if ix > self.rows {
       return None;
