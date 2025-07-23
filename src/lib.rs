@@ -240,8 +240,8 @@ pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
       builder.push_record(vec![
         name.clone(),
         format!("{:?}", value_brrw.shape()),
-        format!("{:?}", value_brrw.size_of()),
-        format!("{:?}", value_brrw.kind()),
+        format!("{}", value_brrw.size_of()),
+        format!("{}", value_brrw.kind()),
       ]);
     }
   } else {
@@ -256,8 +256,8 @@ pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
         builder.push_record(vec![
           name.clone(),
           format!("{:?}", value_brrw.shape()),
-          format!("{:?}", value_brrw.size_of()),
-          format!("{:?}", value_brrw.kind()),
+          format!("{}", value_brrw.size_of()),
+          format!("{}", value_brrw.kind()),
         ]);
       }
     }

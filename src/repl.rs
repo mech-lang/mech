@@ -118,7 +118,7 @@ impl MechRepl {
           mechfs.watch_source(&source)?;
         }
         match run_mech_code(&mut intrp, &mechfs, false,false,false) {
-          Ok(r) => {return Ok(format!("\n{:?}\n{}\n", r.kind(), r.pretty_print()));},
+          Ok(r) => {return Ok(format!("\n{}\n{}\n", r.kind(), r.pretty_print()));},
           Err(err) => {return Err(err);}
         }
       }
@@ -127,7 +127,7 @@ impl MechRepl {
           mechfs.add_code(&src)?;
         }
         match run_mech_code(&mut intrp, &mechfs, false,false,false)  {
-          Ok(r) => { return Ok(format!("\n{:?}\n{}\n", r.kind(), r.pretty_print()));},
+          Ok(r) => { return Ok(format!("\n{}\n{}\n", r.kind(), r.pretty_print()));},
           Err(err) => { return Err(err); }
         }
       }
