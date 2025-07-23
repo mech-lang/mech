@@ -43,11 +43,12 @@ pub fn slice(slc: &Slice, p: &Interpreter) -> MResult<Value> {
     Some(val) => Value::MutableReference(val.clone()),
     None => {return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
   };
+  let mut v = val;
   for s in &slc.subscript {
-    let s_result = subscript(&s, &val, p)?;
-    return Ok(s_result);
+    let s_result = subscript(&s, &v, p)?;
+    v = s_result;
   }
-  unreachable!() // subscript should have thrown an error if we can't access an element
+  return Ok(v);
 }
 
 pub fn subscript_formula(sbscrpt: &Subscript, p: &Interpreter) -> MResult<Value> {
@@ -124,6 +125,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
       plan.borrow_mut().push(new_fxn);
       return Ok(res);
     },
+    Subscript::Brace(subs) |
     Subscript::Bracket(subs) => {
       let mut fxn_input = vec![val.clone()];
       match &subs[..] {
@@ -132,7 +134,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
           let shape = result.shape();
           fxn_input.push(result);
           match shape[..] {
-            [1,1] => plan.borrow_mut().push(MatrixAccessScalar{}.compile(&fxn_input)?),
+            [1,1] => plan.borrow_mut().push(AccessScalar{}.compile(&fxn_input)?),
             [1,n] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
             [n,1] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
             _ => todo!(),
@@ -240,7 +242,6 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
       let res = new_fxn.out();
       return Ok(res);
     },
-    Subscript::Brace(x) => todo!(),
     _ => unreachable!(),
   }
 }

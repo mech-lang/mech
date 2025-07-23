@@ -37,6 +37,7 @@ macro_rules! impl_as_type {
           Value::I128(v) => Some(new_ref(*v.borrow() as $target_type)),
           Value::F32(v) => Some(new_ref((*v.borrow()).0 as $target_type)),
           Value::F64(v) => Some(new_ref((*v.borrow()).0 as $target_type)),
+          Value::Id(v) => Some(new_ref(*v as $target_type)),
           Value::MutableReference(val) => val.borrow().[<as_ $target_type>](),
           _ => None,
         }
@@ -47,19 +48,22 @@ macro_rules! impl_as_type {
 
 // Value ----------------------------------------------------------------------
 
-#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, 
-  String, Bool, Matrix(Box<ValueKind>,Vec<usize>), Enum(u64), Set(Box<ValueKind>, usize), 
-  Map(Box<ValueKind>,Box<ValueKind>), Record(Vec<ValueKind>), Table(Vec<ValueKind>, usize), Tuple(Vec<ValueKind>), Id, Index, Reference(Box<ValueKind>), Atom(u64), Empty, Any
+  String, Bool, Id, Index, Empty, Any, 
+  Matrix(Box<ValueKind>,Vec<usize>),  Enum(u64),                  Record(Vec<(String,ValueKind)>),
+  Map(Box<ValueKind>,Box<ValueKind>), Atom(u64),                  Table(Vec<(String,ValueKind)>, usize), 
+  Tuple(Vec<ValueKind>),              Reference(Box<ValueKind>),  Set(Box<ValueKind>, Option<usize>), 
+  Option(Box<ValueKind>),
 }
 
 impl ValueKind {
 
-  pub fn deref_kind(&self) -> Option<ValueKind> {
+  pub fn deref_kind(&self) -> ValueKind {
     match self {
-      ValueKind::Reference(x) => Some(*x.clone()),
-      _ => None,
+      ValueKind::Reference(x) => *x.clone(),
+      _ => self.clone(),
     }
   }
 
@@ -82,57 +86,20 @@ impl std::fmt::Display for ValueKind {
       ValueKind::F64 => write!(f, "f64"),
       ValueKind::String => write!(f, "string"),
       ValueKind::Bool => write!(f, "bool"),
-      ValueKind::Matrix(x,s) => write!(f, "[{:?}]:{:?},{:?}",x,s[0],s[1]),
+      ValueKind::Matrix(x,s) => write!(f, "[{}]:{}", x, s.iter().map(|s| s.to_string()).collect::<Vec<String>>().join(",")),
       ValueKind::Enum(x) => write!(f, "{:?}",x),
-      ValueKind::Set(x,el) => write!(f, "{{{:?}}}:{}", x, el),
-      ValueKind::Map(x,y) => write!(f, "{{{:?}:{:?}}}",x,y),
-      ValueKind::Record(x) => write!(f, "{{{}}}",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
-      ValueKind::Table(x,y) => write!(f, "{{{}}}:{}",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(","),y),
-      ValueKind::Tuple(x) => write!(f, "({})",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
+      ValueKind::Set(x,el) => write!(f, "{{{}}}{}", x, el.map_or("".to_string(), |e| format!(":{}", e))),
+      ValueKind::Map(x,y) => write!(f, "{{{}:{}}}",x,y),
+      ValueKind::Record(x) => write!(f, "{{{}}}",x.iter().map(|(i,k)| format!("{}<{}>",i.to_string(),k)).collect::<Vec<String>>().join(" ")),
+      ValueKind::Table(x,y) => write!(f, "|{}|:{}",x.iter().map(|(i,k)| format!("{}<{}>",i.to_string(),k)).collect::<Vec<String>>().join(" "),y),
+      ValueKind::Tuple(x) => write!(f, "({})",x.iter().map(|x| format!("{}",x)).collect::<Vec<String>>().join(",")),
       ValueKind::Id => write!(f, "id"),
       ValueKind::Index => write!(f, "ix"),
-      ValueKind::Reference(x) => write!(f, "{:?}",x),
-      ValueKind::Atom(x) => write!(f, "`{:?}",x),
+      ValueKind::Reference(x) => write!(f, "{}",x),
+      ValueKind::Atom(x) => write!(f, "`{}",x),
       ValueKind::Empty => write!(f, "_"),
       ValueKind::Any => write!(f, "_"),
-    }
-  }
-}
-
-
-impl fmt::Debug for ValueKind {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    match self {
-      ValueKind::U8 => write!(f, "u8"),
-      ValueKind::U16 => write!(f, "u16"),
-      ValueKind::U32 => write!(f, "u32"),
-      ValueKind::U64 => write!(f, "u64"),
-      ValueKind::U128 => write!(f, "u128"),
-      ValueKind::I8 => write!(f, "i8"),
-      ValueKind::I16 => write!(f, "i16"),
-      ValueKind::I32 => write!(f, "i32"),
-      ValueKind::I64 => write!(f, "i64"),
-      ValueKind::I128 => write!(f, "i128"),
-      ValueKind::F32 => write!(f, "f32"),
-      ValueKind::F64 => write!(f, "f64"),
-      ValueKind::String => write!(f, "string"),
-      ValueKind::Bool => write!(f, "bool"),
-      ValueKind::Matrix(x,s) => {
-        let s = if s.len() == 2 { s.clone() } else if s.len() == 1 { vec![s[0], 1] } else { vec![0, 0] };
-        write!(f, "[{:?}]:{:?},{:?}",x,s[0],s[1]).clone()
-      }
-      ValueKind::Enum(x) => write!(f, "{:?}",x),
-      ValueKind::Set(x,el) => write!(f, "{{{:?}}}:{}", x, el),
-      ValueKind::Map(x,y) => write!(f, "{{{:?}:{:?}}}",x,y),
-      ValueKind::Record(x) => write!(f, "{{{}}}",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
-      ValueKind::Table(x,y) => write!(f, "{{{}}}:{}",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(","),y),
-      ValueKind::Tuple(x) => write!(f, "({})",x.iter().map(|x| format!("{:?}",x)).collect::<Vec<String>>().join(",")),
-      ValueKind::Id => write!(f, "id"),
-      ValueKind::Index => write!(f, "ix"),
-      ValueKind::Reference(x) => write!(f, "&{:?}",x),
-      ValueKind::Atom(x) => write!(f, "`{:?}",x),
-      ValueKind::Empty => write!(f, "_"),
-      ValueKind::Any => write!(f, "_"),
+      ValueKind::Option(x) => write!(f, "{}?", x),
     }
   }
 }
@@ -186,8 +153,8 @@ pub enum Value {
   MatrixValue(Matrix<Value>),
   Set(MechSet),
   Map(MechMap),
-  Record(MechRecord),
-  Table(MechTable),
+  Record(Ref<MechRecord>),
+  Table(Ref<MechTable>),
   Tuple(MechTuple),
   Enum(Box<MechEnum>),
   Id(u64),
@@ -226,9 +193,9 @@ impl Hash for Value {
       Value::Atom(x) => x.hash(state),
       Value::Set(x)  => x.hash(state),
       Value::Map(x)  => x.hash(state),
-      Value::Table(x) => x.hash(state),
+      Value::Table(x) => x.borrow().hash(state),
       Value::Tuple(x) => x.hash(state),
-      Value::Record(x) => x.hash(state),
+      Value::Record(x) => x.borrow().hash(state),
       Value::Enum(x) => x.hash(state),
       Value::String(x) => x.borrow().hash(state),
       Value::MatrixBool(x) => x.hash(state),
@@ -291,8 +258,8 @@ impl Value {
       Value::Atom(x) => 8,
       Value::Set(x) => x.size_of(),
       Value::Map(x) => x.size_of(),
-      Value::Table(x) => x.size_of(),
-      Value::Record(x) => x.size_of(),
+      Value::Table(x) => x.borrow().size_of(),
+      Value::Record(x) => x.borrow().size_of(),
       Value::Tuple(x) => x.size_of(),
       Value::Enum(x) => x.size_of(),
       Value::MutableReference(x) => x.borrow().size_of(),
@@ -319,7 +286,7 @@ impl Value {
       Value::F32(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       Value::F64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       Value::String(s) => format!("<span class='mech-string'>\"{}\"</span>", s.borrow()),
-      Value::Bool(b) => format!("<span class='mech-bool'>{}</span>", b.borrow()),
+      Value::Bool(b) => format!("<span class='mech-boolean'>{}</span>", b.borrow()),
       Value::MatrixU8(m) => m.to_html(),
       Value::MatrixU16(m) => m.to_html(),
       Value::MatrixU32(m) => m.to_html(),
@@ -343,8 +310,8 @@ impl Value {
       Value::Atom(a) => format!("<span class=\"mech-atom\"><span class=\"mech-atom-grave\">`</span><span class=\"mech-atom-name\">{}</span></span>",a),
       Value::Set(s) => s.to_html(),
       Value::Map(m) => m.to_html(),
-      Value::Table(t) => t.to_html(),
-      Value::Record(r) => r.to_html(),
+      Value::Table(t) => t.borrow().to_html(),
+      Value::Record(r) => r.borrow().to_html(),
       Value::Tuple(t) => t.to_html(),
       Value::Enum(e) => e.to_html(),
       _ => "".to_string(),
@@ -372,9 +339,9 @@ impl Value {
       Value::Set(x)  => {return x.pretty_print();}
       Value::Map(x)  => {return x.pretty_print();}
       Value::String(x) => {return format!("\"{}\"",x.borrow().clone());},
-      Value::Table(x)  => {return x.pretty_print();},
+      Value::Table(x)  => {return x.borrow().pretty_print();},
       Value::Tuple(x)  => {return x.pretty_print();},
-      Value::Record(x) => {return x.pretty_print();},
+      Value::Record(x) => {return x.borrow().pretty_print();},
       Value::Enum(x) => {return x.pretty_print();},
       Value::MatrixIndex(x) => {return x.pretty_print();}
       Value::MatrixBool(x) => {return x.pretty_print();}
@@ -395,8 +362,8 @@ impl Value {
       Value::MutableReference(x) => {return x.borrow().pretty_print();},
       Value::Empty => builder.push_record(vec!["_"]),
       Value::IndexAll => builder.push_record(vec![":"]),
-      Value::Id(x) => builder.push_record(vec![format!("{:?}",humanize(x))]),
-      Value::Kind(x) => builder.push_record(vec![format!("{:?}",x)]),
+      Value::Id(x) => builder.push_record(vec![format!("{}",humanize(x))]),
+      Value::Kind(x) => builder.push_record(vec![format!("{}",x)]),
     };
     let value_style = Style::empty()
       .top(' ')
@@ -449,10 +416,10 @@ impl Value {
       Value::MatrixString(x) => x.shape(),
       Value::MatrixValue(x) => x.shape(),
       Value::Enum(x) => vec![1,1],
-      Value::Table(x) => x.shape(),
+      Value::Table(x) => x.borrow().shape(),
       Value::Set(x) => vec![1,x.set.len()],
       Value::Map(x) => vec![1,x.map.len()],
-      Value::Record(x) => x.shape(),
+      Value::Record(x) => x.borrow().shape(),
       Value::Tuple(x) => vec![1,x.size()],
       Value::MutableReference(x) => x.borrow().shape(),
       Value::Empty => vec![0,0],
@@ -502,10 +469,10 @@ impl Value {
       Value::MatrixF64(x) => ValueKind::Matrix(Box::new(ValueKind::F64),x.shape()),
       Value::MatrixString(x) => ValueKind::Matrix(Box::new(ValueKind::String),x.shape()),
       Value::MatrixValue(x) => ValueKind::Matrix(Box::new(ValueKind::Any),x.shape()),
-      Value::Table(x) => x.kind(),
+      Value::Table(x) => x.borrow().kind(),
       Value::Set(x) => x.kind(),
       Value::Map(x) => x.kind(),
-      Value::Record(x) => x.kind(),
+      Value::Record(x) => x.borrow().kind(),
       Value::Tuple(x) => x.kind(),
       Value::Enum(x) => x.kind(),
       Value::MutableReference(x) => ValueKind::Reference(Box::new(x.borrow().kind())),
@@ -689,7 +656,6 @@ impl Value {
       Value::I128(v) => Some(*v.borrow() as usize),
       Value::F32(v) => Some((*v.borrow()).0 as usize),
       Value::F64(v) => Some((*v.borrow()).0 as usize),
-      Value::Id(v) => Some(*v as usize),
       Value::MutableReference(v) => v.borrow().as_usize(),
       _ => None,
     }
@@ -783,467 +749,3 @@ impl_to_value_matrix!(RowVector4);
 impl_to_value_matrix!(RowDVector);
 impl_to_value_matrix!(DVector);
 impl_to_value_matrix!(DMatrix);
-
-// Set --------------------------------------------------------------------------
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MechSet {
-  pub kind: ValueKind,
-  pub num_elements: usize,
-  pub set: IndexSet<Value>,
-}
-
-impl MechSet {
-
-  pub fn to_html(&self) -> String {
-    let mut src = String::new();
-    for (i, element) in self.set.iter().enumerate() {
-      let e = element.to_html();
-      if i == 0 {
-        src = format!("{}", e);
-      } else {
-        src = format!("{}, {}", src, e);
-      }
-    }
-    format!("<span class=\"mech-set\"><span class=\"mech-start-brace\">{{</span>{}<span class=\"mech-end-brace\">}}</span></span>",src)
-  }
-
-  pub fn kind(&self) -> ValueKind {
-    ValueKind::Set(Box::new(self.kind.clone()), self.num_elements)
-  }
-
-  pub fn size_of(&self) -> usize {
-    self.set.iter().map(|x| x.size_of()).sum()
-  }
-
-  pub fn from_vec(vec: Vec<Value>) -> MechSet {
-    let mut set = IndexSet::new();
-    for v in vec {
-      set.insert(v);
-    }
-    let kind = if set.len() > 0 { set.iter().next().unwrap().kind() } else { ValueKind::Empty };
-    MechSet{
-      kind,
-      num_elements: set.len(),
-      set}
-  }
-
-  pub fn pretty_print(&self) -> String {
-    let mut builder = Builder::default();
-    let mut element_strings = vec![];
-    for x in self.set.iter() {
-      element_strings.push(x.pretty_print());
-    }
-    builder.push_record(element_strings);
-
-    let style = Style::empty()
-      .top(' ')
-      .left('║')
-      .right('║')
-      .bottom(' ')
-      .vertical(' ')
-      .intersection_bottom(' ')
-      .corner_top_left('╔')
-      .corner_top_right('╗')
-      .corner_bottom_left('╚')
-      .corner_bottom_right('╝');
-    let mut table = builder.build();
-    table.with(style);
-    format!("{table}")
-  }
-
-}
-
-impl Hash for MechSet {
-  fn hash<H: Hasher>(&self, state: &mut H) {
-    for x in self.set.iter() {
-      x.hash(state)
-    }
-  }
-}
-
-// Map ------------------------------------------------------------------
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MechMap {
-  pub key_kind: ValueKind,
-  pub value_kind: ValueKind,
-  pub num_elements: usize,
-  pub map: IndexMap<Value,Value>,
-}
-
-impl MechMap {
-
-  pub fn to_html(&self) -> String {
-    let mut src = String::new();
-    for (i, (key, value)) in self.map.iter().enumerate() {
-      let k = key.to_html();
-      let v = value.to_html();
-      if i == 0 {
-        src = format!("{}: {}", k, v);
-      } else {
-        src = format!("{}, {}: {}", src, k, v);
-      }
-    }
-    format!("<span class=\"mech-map\"><span class=\"mech-start-brace\">{{</span>{}<span class=\"mech-end-brace\">}}</span></span>",src)
-  }
-
-  pub fn kind(&self) -> ValueKind {
-    ValueKind::Map(Box::new(self.key_kind.clone()), Box::new(self.value_kind.clone()))
-  }
-
-  pub fn size_of(&self) -> usize {
-    self.map.iter().map(|(k,v)| k.size_of() + v.size_of()).sum()
-  }
-
-  pub fn pretty_print(&self) -> String {
-    let mut builder = Builder::default();
-    let mut element_strings = vec![];
-    let mut key_strings = vec![];
-    for (k,v) in self.map.iter() {
-      element_strings.push(v.pretty_print());
-      key_strings.push(k.pretty_print());
-    }    
-    builder.push_record(key_strings);
-    builder.push_record(element_strings);
-    let mut table = builder.build();
-    table.with(Style::modern_rounded());
-    format!("{table}")
-  }
-
-  pub fn from_vec(vec: Vec<(Value,Value)>) -> MechMap {
-    let mut map = IndexMap::new();
-    for (k,v) in vec {
-      map.insert(k,v);
-    }
-    MechMap{
-      key_kind: map.keys().next().unwrap().kind(),
-      value_kind: map.values().next().unwrap().kind(),
-      num_elements: map.len(),
-      map}
-  }
-}
-
-impl Hash for MechMap {
-  fn hash<H: Hasher>(&self, state: &mut H) {
-    for x in self.map.iter() {
-      x.hash(state)
-    }
-  }
-}
-
-// Table ------------------------------------------------------------------
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MechTable {
-  rows: usize,
-  cols: usize,
-  data: IndexMap<Value,(ValueKind,Matrix<Value>)>,
-  col_names: HashMap<Value,String>,
-}
-
-impl MechTable {
-
-  pub fn to_html(&self) -> String {
-    let mut table = String::new();
-
-    // Start table
-    table.push_str("<table class=\"mech-table\">");
-
-    // Header
-    table.push_str("<thead class=\"mech-table-header\"><tr>");
-    for key in self.data.keys() {
-      let col_name = self.col_names.get(key).unwrap();
-      table.push_str(&format!("<th class=\"mech-table-field\">{}</th>", col_name));
-    }
-    table.push_str("</tr></thead>");
-
-    // Body
-    table.push_str("<tbody class=\"mech-table-body\">");
-
-    for row_idx in 0..self.rows {
-      table.push_str("<tr class=\"mech-table-row\">");
-      for (_key, (_kind, matrix)) in self.data.iter() {
-        let value = matrix.index1d(row_idx);
-        table.push_str(&format!("<td class=\"mech-table-column\">{}</td>", value));
-      }
-      table.push_str("</tr>");
-    }
-
-    table.push_str("</tbody></table>");
-    table
-  }
-
-  pub fn new(rows: usize, cols: usize, data: IndexMap<Value,(ValueKind,Matrix<Value>)>, col_names: HashMap<Value,String>) -> MechTable {
-    MechTable{rows, cols, data, col_names}
-  }
-
-  pub fn kind(&self) -> ValueKind {
-    ValueKind::Table(
-      self.data.iter().map(|(_,v)| v.0.clone()).collect(),
-      self.rows)
-  }
-
-  pub fn size_of(&self) -> usize {
-    self.data.iter().map(|(_,(_,v))| v.size_of()).sum()
-  }
-
-  pub fn rows(&self) -> usize {
-    self.rows
-  }
-
-  pub fn cols(&self) -> usize {
-    self.cols
-  }
-
-  pub fn get(&self, key: &Value) -> Option<&(ValueKind,Matrix<Value>)> {
-    self.data.get(key)
-  }
-
-  pub fn pretty_print(&self) -> String {
-    let mut builder = Builder::default();
-    for (k,(knd,val)) in &self.data {
-      let name = self.col_names.get(k).unwrap();
-      let val_string: String = val.as_vec().iter()
-        .map(|x| x.pretty_print())
-        .collect::<Vec<String>>()
-        .join("\n");
-      let mut col_string = vec![format!("{}<{}>", name.to_string(), knd), val_string];
-      builder.push_column(col_string);
-    }
-    let mut table = builder.build();
-    table.with(Style::modern_rounded());
-    format!("{table}")
-  }
-
-  pub fn shape(&self) -> Vec<usize> {
-    vec![self.rows,self.cols]
-  }
-}
-
-impl Hash for MechTable {
-  fn hash<H: Hasher>(&self, state: &mut H) {
-    for (k,(knd,val)) in self.data.iter() {
-      k.hash(state);
-      knd.hash(state);
-      val.hash(state);
-    }
-  }
-}
-
-// Record ------------------------------------------------------------------
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MechRecord {
-  pub cols: usize,
-  pub kinds: Vec<ValueKind>,
-  pub data: IndexMap<u64,Value>,
-  pub field_names: HashMap<u64,String>,
-}
-
-impl MechRecord {
-
-  pub fn to_html(&self) -> String {
-    let mut bindings = Vec::new();
-
-    for (key, value) in &self.data {
-      let name = self.field_names.get(key).unwrap();
-
-      let binding_html = format!(
-        "<span class=\"mech-binding\">\
-          <span class=\"mech-binding-name\">{}</span>\
-          <span class=\"mech-binding-colon-op\">:</span>\
-          <span class=\"mech-binding-value\">{}</span>\
-        </span>",
-        name,
-        value.to_html(),
-      );
-
-      bindings.push(binding_html);
-    }
-
-    format!(
-      "<span class=\"mech-record\">\
-        <span class=\"mech-start-brace\">{{</span>{}<span class=\"mech-end-brace\">}}</span>\
-      </span>",
-      bindings.join("<span class=\"mech-separator\">, </span>")
-    )
-  }
-
-  pub fn get(&self, key: &u64) -> Option<&Value> {
-    self.data.get(key)
-  }
-
-  pub fn from_vec(vec: Vec<((u64,String),Value)>) -> MechRecord {
-    let mut data = IndexMap::new();
-    let mut field_names = HashMap::new();
-    for ((k,s),v) in vec {
-      field_names.insert(k,s);
-      data.insert(k,v);
-    }
-    let kinds = data.iter().map(|(_,v)| v.kind()).collect();
-    MechRecord{cols: data.len(), kinds, data, field_names}
-  }
-
-  pub fn insert_field(&mut self, key: u64, value: Value) {
-    self.cols += 1;
-    self.kinds.push(value.kind());
-    self.data.insert(key, value);
-  }
-
-  pub fn kind(&self) -> ValueKind {
-    ValueKind::Record(self.kinds.clone())
-  }
-
-  pub fn size_of(&self) -> usize {
-    self.data.iter().map(|(_,v)| v.size_of()).sum()
-  }
-
-  pub fn pretty_print(&self) -> String {
-    let mut builder = Builder::default();
-    let mut key_strings = vec![];
-    let mut element_strings = vec![];
-    for (k,v) in &self.data {
-      let field_name = self.field_names.get(k).unwrap();
-      key_strings.push(format!("{}<{}>",field_name, v.kind()));
-      element_strings.push(v.pretty_print());
-    }
-    builder.push_record(key_strings);
-    builder.push_record(element_strings);
-    let mut table = builder.build();
-    table.with(Style::modern_rounded());
-    format!("{table}")
-  }
-
-  pub fn shape(&self) -> Vec<usize> {
-    vec![1,self.cols]
-  }
-}
-
-impl Hash for MechRecord {
-  fn hash<H: Hasher>(&self, state: &mut H) {
-    for (k,v) in self.data.iter() {
-      k.hash(state);
-      v.hash(state);
-    }
-  }
-}
-
-// Tuple ----------------------------------------------------------------------
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MechTuple {
-  pub elements: Vec<Box<Value>>
-}
-
-impl MechTuple {
-
-  pub fn to_html(&self) -> String {
-    let mut elements = Vec::new();
-    for element in &self.elements {
-      elements.push(element.to_html());
-    }
-    format!("<span class=\"mech-tuple\"><span class=\"mech-start-brace\">(</span>{}<span class=\"mech-end-brace\">)</span></span>", elements.join(", "))
-  }
-
-  pub fn pretty_print(&self) -> String {
-    let mut builder = Builder::default();
-    let string_elements: Vec<String> = self.elements.iter().map(|e| e.pretty_print()).collect::<Vec<String>>();
-    builder.push_record(string_elements);
-    let mut table = builder.build();
-    let style = Style::empty()
-      .top(' ')
-      .left('│')
-      .right('│')
-      .bottom(' ')
-      .vertical(' ')
-      .intersection_bottom('ʼ')
-      .corner_top_left('╭')
-      .corner_top_right('╮')
-      .corner_bottom_left('╰')
-      .corner_bottom_right('╯');
-    table.with(style);
-    format!("{table}")
-  }
-
-  pub fn get(&self, index: usize) -> Option<&Value> {
-    if index < self.elements.len() {
-      Some(self.elements[index].as_ref())
-    } else {
-      None
-    }
-  }
-
-  pub fn from_vec(elements: Vec<Value>) -> Self {
-    MechTuple{elements: elements.iter().map(|m| Box::new(m.clone())).collect::<Vec<Box<Value>>>()}
-  }
-
-  pub fn size(&self) -> usize {
-    self.elements.len()
-  }
-
-  pub fn kind(&self) -> ValueKind {
-    ValueKind::Tuple(self.elements.iter().map(|x| x.kind()).collect())
-  }
-
-  pub fn size_of(&self) -> usize {
-    self.elements.iter().map(|x| x.size_of()).sum()
-  }
-
-}
-
-impl Hash for MechTuple {
-  fn hash<H: Hasher>(&self, state: &mut H) {
-    for x in self.elements.iter() {
-        x.hash(state)
-    }
-  }
-}
-
-// Enum -----------------------------------------------------------------------
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MechEnum {
-  pub id: u64,
-  pub variants: Vec<(u64, Option<Value>)>,
-}
-
-impl MechEnum {
-
-  pub fn to_html(&self) -> String {
-    let mut variants = Vec::new();
-    for (id, value) in &self.variants {
-      let value_html = match value {
-        Some(v) => v.to_html(),
-        None => "None".to_string(),
-      };
-      variants.push(format!("<span class=\"mech-enum-variant\">{}: {}</span>", id, value_html));
-    }
-    format!("<span class=\"mech-enum\"><span class=\"mech-start-brace\">{{</span>{}<span class=\"mech-end-brace\">}}</span></span>", variants.join(", "))
-  }
-
-  pub fn kind(&self) -> ValueKind {
-    ValueKind::Enum(self.id)
-  }
-
-  pub fn size_of(&self) -> usize {
-    self.variants.iter().map(|(_,v)| v.as_ref().map_or(0, |x| x.size_of())).sum()
-  }
-
-  pub fn pretty_print(&self) -> String {
-    let mut builder = Builder::default();
-    let string_elements: Vec<String> = vec![format!("{}{:?}",self.id,self.variants)];
-    builder.push_record(string_elements);
-    let mut table = builder.build();
-    table.with(Style::modern_rounded());
-    format!("{table}")
-  }
-
-}
-
-impl Hash for MechEnum {
-  fn hash<H: Hasher>(&self, state: &mut H) {
-    self.id.hash(state);
-    self.variants.hash(state);
-  }
-}

@@ -182,7 +182,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
           result = converted_result;
         } else {
           let value_kind = value.kind();
-          if value_kind.deref_kind() != Some(target_matrix_knd.clone()) && value_kind != *target_matrix_knd {
+          if value_kind.deref_kind() != target_matrix_knd.clone() && value_kind != *target_matrix_knd {
             let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_matrix_knd.clone())])?;
             convert_fxn.solve();
             let converted_result = convert_fxn.out();
@@ -205,7 +205,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
           result = converted_result;
         } else {
           let value_kind = value.kind();
-          if value_kind.deref_kind() != Some(target_matrix_knd.clone()) && value_kind != *target_matrix_knd {
+          if value_kind.deref_kind() != target_matrix_knd.clone() && value_kind != *target_matrix_knd {
             let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_matrix_knd.clone())])?;
             convert_fxn.solve();
             let converted_result = convert_fxn.out();

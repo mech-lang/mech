@@ -22,16 +22,36 @@ pub fn kind_value(knd: &NodeKind, p: &Interpreter) -> MResult<Value> {
 
 pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
   match knd {
+    NodeKind::Any => Ok(Kind::Any),
+    NodeKind::Atom(id) => Ok(Kind::Atom(id.hash())),
+    NodeKind::Empty => Ok(Kind::Empty),
+    NodeKind::Record(elements) => {
+      let mut knds = vec![];
+      for (id, knd) in elements {
+        let knda = kind_annotation(knd, p)?;
+        knds.push((id.to_string().clone(), knda));
+      }
+      Ok(Kind::Record(knds))
+    }
+    NodeKind::Tuple(elements) => {
+      let mut knds = vec![];
+      for knd in elements {
+        let knda = kind_annotation(knd, p)?;
+        knds.push(knda);
+      }
+      Ok(Kind::Tuple(knds))
+    }
+    NodeKind::Map(keys, vals) => {
+      let key_knd = kind_annotation(keys, p)?;
+      let val_knd = kind_annotation(vals, p)?;
+      Ok(Kind::Map(Box::new(key_knd), Box::new(val_knd)))
+    }
     NodeKind::Scalar(id) => {
       let kind_id = id.hash();
       Ok(Kind::Scalar(kind_id))
     }
-    NodeKind::Bracket((el_knds, size)) => {
-      let mut knds = vec![];
-      for knd in el_knds {
-        let knd = kind_annotation(knd, p)?;
-        knds.push(knd);
-      }
+    NodeKind::Matrix((knd, size)) => {
+      let knda = kind_annotation(knd, p)?;
       let mut dims = vec![];
       for dim in size {
         let dim_val = literal(dim, p)?;
@@ -40,12 +60,35 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
           None => { return Err(MechError{file: file!().to_string(), tokens: knd.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
         }
       }
-      if knds.len() != 1 {
-        return Err(MechError{file: file!().to_string(), tokens: knd.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::MatrixMustHaveHomogenousKind});
-      }
-      Ok(Kind::Matrix(Box::new(knds[0].clone()),dims))
+      Ok(Kind::Matrix(Box::new(knda.clone()),dims))
     }
-    _ => todo!(),
+    NodeKind::Option(knd) => {
+      let knda = kind_annotation(knd, p)?;
+      Ok(Kind::Option(Box::new(knda)))
+    }
+    NodeKind::Table((elements, size)) => {
+      let mut knds = vec![];
+      for (id, knd) in elements {
+        let knda = kind_annotation(knd, p)?;
+        knds.push((id.to_string().clone(), knda));
+      }
+      let size_val = literal(size, p)?;
+      match size_val.as_usize() {
+        Some(size_val) => Ok(Kind::Table(knds, size_val)),
+        None => Err(MechError{file: file!().to_string(), tokens: size.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize}),
+      }
+    }
+    NodeKind::Set(knd, size) => {
+      let knda = kind_annotation(knd, p)?;
+      let size_val = match size {
+        Some(size) => literal(size, p)?,
+        None => Value::Empty,
+      };
+      match size_val.as_usize() {
+        Some(size_val) => Ok(Kind::Set(Box::new(knda.clone()), Some(size_val))),
+        None => Ok(Kind::Set(Box::new(knda.clone()), None)),
+      }
+    }
   }
 }
 

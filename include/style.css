@@ -1054,12 +1054,16 @@ li p {
 .mech-table {
     background-color: #2F353B;
     color: #f2ead9; 
-    margin: auto;
     margin-bottom: 20px;
     padding: 0px;
     border-collapse: collapse;
     border: 1px solid #888f92;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.mech-table th,
+.mech-table td {
+  padding: 5px;
 }
 
 .mech-table thead {

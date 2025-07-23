@@ -41,6 +41,7 @@ pub mod functions;
 pub mod kind;
 pub mod error;
 pub mod nodes;
+pub mod structures;
 
 pub use self::value::*;
 pub use self::matrix::*;
@@ -49,6 +50,7 @@ pub use self::functions::*;
 pub use self::kind::*;
 pub use self::error::*;
 pub use self::nodes::*;
+pub use self::structures::*;
 
 pub fn hash_chars(input: &Vec<char>) -> u64 {
   seahash::hash(input.iter().map(|s| String::from(*s)).collect::<String>().as_bytes()) & 0x00FFFFFFFFFFFFFF

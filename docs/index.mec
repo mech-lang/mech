@@ -13,14 +13,14 @@ Mech Programming Language Documentation
 -------------------------------------------------------------------------------
 
 1. Data Model
-    - [Values, Kinds, and Variables](II.reference/values.html)
+    - [Data Types and Kinds](II.reference/values.html)
     - Data Structures
         - Enum - enumeration of named values `Coming v0.3`
         - Map - key-value store
         - [Matrix](II.reference/matrix.html) - 2D collection of values
         - Record - collection of named values
         - Set - unordered collection of unique values
-        - Table - collection of Records
+        - [Table](II.reference/table.html) - collection of Records
         - Tuple - ordered collection of values
     - Operators and Expressions
         - Operators
@@ -61,7 +61,7 @@ Mech Programming Language Documentation
 
 docs/machine := {
   name: "docs" 
-  version: "v0.2.49"
+  version: "v0.2.51"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/mech/docs"
   license: "Apache-2.0"}
