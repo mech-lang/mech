@@ -86,7 +86,7 @@ Mech is inspired by the following programming languages:
 - **Rust** - Mech is implemented in Rust, and so adopts some of the design principles and expressions of Rust, like pattern matching.
 - **Smalltalk** - Mech is a programming system like Smalltalk, with a focus on interactive programming and live coding.
 - **Logo** - the design principle of Logo which make it a language accessible to children have 
-
+- **Lucid** - the first dataflow programming language.
 
 
 [^1]: If you squit (and not especially hard) C++, Java, Python, Javascript, are all the same programming language.  Jakubovic, Edwards and Petricek have referred to this as a ["Hornets Nest" of programming languages](https://tomasp.net/techdims/#footer=index,navigation;left=catalogue,list;top=catalogue,index). This is not to say that these languages are not distinct, but rather that they are all variations on a well-studied theme. There is still a lot of unexplored territory in the programming language design space.

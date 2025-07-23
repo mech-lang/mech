@@ -28,6 +28,8 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
   let mut hasher = DefaultHasher::new();
   let mut out = Value::Empty; 
   match element {
+    SectionElement::InfoBlock(x) => x.hash(&mut hasher),
+    SectionElement::QuestionBlock(x) => x.hash(&mut hasher),
     SectionElement::Image(x) => x.hash(&mut hasher),
     SectionElement::Float(x) => x.hash(&mut hasher),
     SectionElement::Citation(x) => x.hash(&mut hasher),
@@ -114,7 +116,7 @@ pub fn section_element(element: &SectionElement, p: &Interpreter) -> MResult<Val
       }
       x.hash(&mut hasher); 
     },
-    SectionElement::BlockQuote(x) => x.hash(&mut hasher),
+    SectionElement::QuoteBlock(x) => x.hash(&mut hasher),
     SectionElement::ThematicBreak => {return Ok(Value::Empty);}
     SectionElement::List(x) => x.hash(&mut hasher),
   };

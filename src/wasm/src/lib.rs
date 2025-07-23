@@ -465,7 +465,7 @@ impl WasmMech {
               }
             };
             // set the inner html of the block to the output value html
-            let formatted_output = format!("<div class=\"mech-output-kind\">{:?}</div><div class=\"mech-output-value\">{}</div>", output.kind(), output.to_html());
+            let formatted_output = format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", output.kind(), output.to_html());
             block.set_inner_html(&formatted_output);
           }
         }

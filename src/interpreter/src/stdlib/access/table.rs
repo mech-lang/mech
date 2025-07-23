@@ -60,14 +60,14 @@ macro_rules! impl_access_column_match_arms {
     paste!{
       match $arg {
         (Value::Record(rcrd),Value::Id(k)) => {
-          match rcrd.get(&k) {
+          match rcrd.borrow().get(&k) {
             Some(value) => Ok(Box::new(RecordAccess{source: value.clone()})),
             _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)}),
           }
         }
         (Value::Table(tbl),Value::Id(k)) => {
-          let key = Value::Id(k);
-          match (tbl.get(&key),tbl.rows()) {
+          let tbl_brrw = tbl.borrow();
+          match (tbl_brrw.get(&k),tbl_brrw.rows()) {
             $(
               $(
                 (Some((ValueKind::$lhs_type,value)),1) => Ok(Box::new([<TableAccessCol $lhs_type M1>]{source: value.clone(), out: new_ref(Matrix1::from_element($default)) })),
@@ -77,7 +77,7 @@ macro_rules! impl_access_column_match_arms {
                 (Some((ValueKind::$lhs_type,value)),n) => Ok(Box::new([<TableAccessCol $lhs_type VD>]{source: value.clone(), out: new_ref(DVector::from_element(n,$default)) })),
               )+
             )+
-            _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)}),
+            x => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
           }
         }
         x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
@@ -129,21 +129,8 @@ impl NativeFunctionCompiler for AccessColumn {
 // Table Access Swizzle -------------------------------------------------------
 
 #[derive(Debug)]
-struct RecordAccessSwizzle {
-  source: Value,
-}
-
-impl MechFunction for RecordAccessSwizzle {
-  fn solve(&self) {
-    ()
-  }
-  fn out(&self) -> Value { self.source.clone() }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
-}
-
-#[derive(Debug)]
-struct TableAccessSwizzle {
-  out: Value,
+pub struct TableAccessSwizzle {
+  pub out: Value,
 }
 
 impl MechFunction for TableAccessSwizzle {
@@ -153,68 +140,61 @@ impl MechFunction for TableAccessSwizzle {
   fn out(&self) -> Value { self.out.clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
-  
-pub struct AccessSwizzle {}
-impl NativeFunctionCompiler for AccessSwizzle {
+
+// Table Access Scalar -------------------------------------------------------
+
+#[derive(Debug)]
+pub struct TableAccessScalarF {
+  pub source: Ref<MechTable>,
+  pub ix: Ref<usize>,
+  pub out: Ref<MechRecord>,
+}
+
+impl MechFunction for TableAccessScalarF {
+  fn solve(&self) {
+    let table = self.source.borrow();
+    let mut record = self.out.borrow_mut();
+    let row_ix = *self.ix.borrow();
+    for (key, (kind, matrix)) in table.data.iter() {
+      let value = matrix.index1d(row_ix);
+      record.data.insert(*key, value.clone());
+    }
+  }
+  fn out(&self) -> Value { Value::Record(self.out.clone()) }
+  fn to_string(&self) -> String {format!("{:#?}", self)}
+}
+
+pub struct TableAccessScalar{}
+
+impl NativeFunctionCompiler for TableAccessScalar {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() < 3 {
+    if arguments.len() <= 1 {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
-    let keys = &arguments.clone().split_off(1);
-    let src = &arguments[0];
-    match src {
-      Value::Record(rcrd) => {
-        let mut values = vec![];
-        for key in keys {
-          let k = key.as_usize().unwrap() as u64;
-          match rcrd.get(&k) {
-            Some(value) => values.push(value.clone()),
-            None => { return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)});}
-          }
-        }
-        Ok(Box::new(RecordAccessSwizzle{source: Value::Tuple(MechTuple::from_vec(values))}))
+    let tbl = arguments[0].clone();
+    let ix = arguments[1].clone();
+    match (tbl, ix) {
+      (Value::Table(source), Value::Index(ix)) => {
+        let record = match source.borrow().get_record(*ix.borrow()) {
+          Some(record) => record,
+          None => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
+        };
+        Ok(Box::new(TableAccessScalarF{source: source.clone(), ix: ix.clone(), out: new_ref(record) }))
       }
-      Value::Table(tbl) => {
-        let mut elements = vec![];
-        for k in keys {
-          match tbl.get(k) {
-            Some((kind, mat_values)) => {
-              elements.push(Box::new(mat_values.to_value()));
-            }
-            None => { return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(*k.as_u64().unwrap().borrow())});}
+      (Value::MutableReference(src_ref), Value::Index(ix)) => {
+        let src_ref_brrw = src_ref.borrow();
+        match &*src_ref_brrw {
+          Value::Table(source) => {
+            let record = match source.borrow().get_record(*ix.borrow()) {
+              Some(record) => record,
+              None => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
+            };
+            Ok(Box::new(TableAccessScalarF{source: source.clone(), ix: ix.clone(), out: new_ref(record) }))
           }
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
         }
-        let tuple = Value::Tuple(MechTuple{elements});
-        Ok(Box::new(TableAccessSwizzle{out: tuple}))
       }
-      Value::MutableReference(r) => match &*r.borrow() {
-        Value::Record(rcrd) => {
-          let mut values = vec![];
-          for key in keys {
-            let k = key.as_usize().unwrap() as u64;
-            match rcrd.get(&k) {
-              Some(value) => values.push(value.clone()),
-              None => { return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)});}
-            }
-          }
-          Ok(Box::new(RecordAccessSwizzle{source: Value::Tuple(MechTuple::from_vec(values))}))
-        }
-        Value::Table(tbl) => {
-          let mut elements = vec![];
-          for k in keys {
-            match tbl.get(k) {
-              Some((kind, mat_values)) => {
-                elements.push(Box::new(mat_values.to_value()));
-              }
-              None => { return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(*k.as_u64().unwrap().borrow())});}
-            }
-          }
-          let tuple = Value::Tuple(MechTuple{elements});
-          Ok(Box::new(TableAccessSwizzle{out: tuple}))
-        }
-        _ => todo!(),
-      }
-      _ => todo!(),
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
     }
   }
 }

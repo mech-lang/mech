@@ -76,12 +76,12 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
     data.insert(name_hash, val);
     field_names.insert(name_hash, name_str);
   }
-  Ok(Value::Record(MechRecord{
+  Ok(Value::Record(new_ref(MechRecord{
     cols,
     kinds,
     data,
     field_names,
-  }))
+  })))
 }
 
 pub fn set(m: &Set, p: &Interpreter) -> MResult<Value> { 
@@ -120,7 +120,8 @@ macro_rules! handle_value_kind {
         None => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::WrongTableColumnKind});}
       }
     }
-    $data_map.insert($field_label.clone(), ($value_kind.clone(), Value::to_matrix(vals.clone(), vals.len(), 1)));
+    let id = $field_label.as_u64().unwrap().borrow().clone();
+    $data_map.insert(id, ($value_kind.clone(), Value::to_matrix(vals.clone(), vals.len(), 1)));
   }};}
 
 pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> { 
@@ -145,7 +146,7 @@ pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> {
     }
   }
   // Build the table
-  let mut data_map = IndexMap::new();
+  let mut data_map: IndexMap<u64,(ValueKind,Matrix<Value>)> = IndexMap::new();
   for ((id,knd,name),(column)) in headings.iter().zip(data.iter()) {
     let val = Value::to_matrix(column.clone(),column.len(),1);
     match knd {
@@ -164,14 +165,15 @@ pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> {
       ValueKind::String  => handle_value_kind!(knd, val, id, data_map, as_string),
       ValueKind::Bool => {
         let vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_bool().unwrap().to_value()).collect::<Vec<Value>>();
+        let id = id.as_u64().unwrap().borrow().clone();
         data_map.insert(id.clone(),(knd.clone(),Value::to_matrix(vals.clone(),vals.len(),1)));
       },
       _ => todo!(),
     };
   }
-  let names: HashMap<Value,String> = headings.iter().map(|(id,_,name)| (id.clone(), name.to_string())).collect();
+  let names: HashMap<u64,String> = headings.iter().map(|(id,_,name)| (id.as_u64().unwrap().borrow().clone(), name.to_string())).collect();
   let tbl = MechTable::new(t.rows.len(), cols, data_map.clone(), names);
-  Ok(Value::Table(tbl))
+  Ok(Value::Table(new_ref(tbl)))
 }
 
 pub fn table_header(fields: &Vec<Field>, p: &Interpreter) -> MResult<Vec<(Value,ValueKind,Identifier)>> {

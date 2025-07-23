@@ -825,9 +825,9 @@ A Table represents a structured collection of records, where each record consist
 
 Tables are enclosed in `{}` and contain a header row specifying column names and kinds. The pipe \| separates the header from the data rows.
 
-  { x<f32>  y<u8> | 
-    1.2     9 
-    1.3     8     }
+  | x<f32>  y<u8> | 
+  | 1.2     9     |
+  | 1.3     8     |
 
 This defines a table with two columns:
 
@@ -837,7 +837,7 @@ This defines a table with two columns:
 The same table can be written in a compact, inline format using semicolons (;) to separate rows.
 
 ```
-{ x<f32> y<u8> | 1.2 9; 1.3 8 }
+| x<f32> y<u8> | 1.2 9 | 1.3 8 |
 ```
 
 Where `|` denotes the end of the header, and each row is separated by a semicolon `;`.
@@ -846,9 +846,9 @@ Where `|` denotes the end of the header, and each row is separated by a semicolo
 
 The `_` is the "any" kind and allows columns to contain data from mixed kinds.
 
-  { x<_>   y<_> |
-    1.2    true 
-    "Hi"   8<u8>}
+  | x<_>   y<_> |
+  | 1.2    true |
+  | "Hi"   8<u8>|
 
 Here, `x` holds both floats and strings, and y holds both integers and booleans. This can be useful for dealing with data whose type is not known at compiletime.
 
@@ -856,10 +856,10 @@ Here, `x` holds both floats and strings, and y holds both integers and booleans.
 
 When used as a value in a table, `_` indicates that a cell is missing and will be filled in later.
 
-  { x<u8>  y<string> z<[u8]:3> |
-     _      "a"       [1;2;3] 
-     4      "b"          _    
-     7       _        [7;8;9]  }
+  | x<u8>  y<string> z<[u8]:3> |
+  |  _      "a"       [1;2;3]  |
+  |  4      "b"          _     |
+  |  7       _        [7;8;9]  |
 
 **Fancy Representation**
 
@@ -1003,8 +1003,8 @@ Expressions define computations in Mech. Most expressions operate elementwise ov
 
 - Arithmetic: Addition, subtraction, multiplication, and division over scalars, vectors, and matrices.
 - Matrix Operations: Matrix multiplication, transposition, and other matrix-specific operations.
-- Comparison: Elementwise relational comparisons (<, >, ==, etc.).
-- Logical Operations: Boolean elementwise operations (and, or, not).
+- Comparison: Elementwise relational comparisons (`<`, `>`, `==`, etc.).
+- Logical Operations: Boolean elementwise operations (`and`, `or`, `not`).
 - Set Operations: Union, intersection, and other set-specific operations.
 - Range Expressions: Constructing sequences of values.
 - Indexing: Accessing elements within collections using direct and computed indices.
@@ -1278,8 +1278,11 @@ enum-variant-kind := "("
       , ")" ;
 ```
 (8.4.1) Examples
+
+```
     status < Active | Inactive | Pending  -- Enum definition with variants
     priority < High | Medium | Low        -- Enum definition for priority levels
+```
 
 (8.5) Kind Define
 

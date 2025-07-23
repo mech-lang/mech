@@ -64,7 +64,8 @@ macro_rules! impl_set_column_match_arms {
     paste!{
       match $arg {
         (Value::Record(rcrd),source,Value::Id(k)) => {
-          match (rcrd.data.get(&k),source) {
+          let rcrd_brrw = rcrd.borrow();
+          match (rcrd_brrw.data.get(&k),source) {
             (Some(Value::Bool(sink)), Value::Bool(source)) => Ok(Box::new(RecordSet{sink: sink.clone(), source: source.clone()})),
             (Some(Value::I8(sink)), Value::I8(source)) => Ok(Box::new(RecordSet{sink: sink.clone(), source: source.clone()})),
             (Some(Value::I16(sink)), Value::I16(source)) => Ok(Box::new(RecordSet{sink: sink.clone(), source: source.clone()})),
@@ -82,8 +83,8 @@ macro_rules! impl_set_column_match_arms {
           }
         }
         (Value::Table(tbl),source,Value::Id(k)) => {
-          let key = Value::Id(k);
-          match (tbl.get(&key),tbl.rows(),source) {
+          let tbl_brrw = tbl.borrow();
+          match (tbl_brrw.get(&k),tbl_brrw.rows(),source) {
             $(
                 (Some((ValueKind::$lhs_type,Matrix::Matrix1(sink))),1,Value::[<Matrix $lhs_type>](Matrix::Matrix1(source))) => Ok(Box::new([<TableSetCol $lhs_type M1>]{source: source.clone(), sink: sink.clone() })),
                 (Some((ValueKind::$lhs_type,Matrix::Vector2(sink))),2,Value::[<Matrix $lhs_type>](Matrix::Vector2(source))) => Ok(Box::new([<TableSetCol $lhs_type V2>]{source: source.clone(), sink: sink.clone() })),

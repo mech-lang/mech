@@ -1,98 +1,158 @@
 Table
 ===============================================================================
 
-A `Table` in Mech is a set of records, where each record corresponds to a row and each column has a name and kind. Tables provide structured, columnar data that is flexible and human-readable.
+A table in Mech is a set of records, where each record corresponds to a row and each column has a name and kind. Tables provide structured, columnar data that is flexible and human-readable.
 
 1. Syntax
 -------------------------------------------------------------------------------
 
-Tables are defined using curly braces `{}` with named columns and a vertical bar `|` to separate column headers from data rows.
+(1.1) Basic Syntax
 
-```mech
-| x<f32>  y<u8> | 
-|  1.2     9    |
-|  1.3     8    |
+Tables are defined using the pipe `|` character. Each column is defined with a name and a kind, which describes the type of data it holds.
+
+```
+| x&ltf32&gt  y&ltbool&gt | 
+|  1.2     true   |
+|  1.3     false  |
 ```
 
-This creates a table with two columns, `x` of kind `f32` and `y` of kind `u8`.
+This creates a table with two columns, `x` of kind `f32` and `y` of kind `bool`:
 
-You can write tables inline using semicolons to separate rows:
-
-```mech
-| x<f32> y<u8> |{ 1.2 9; 1.3 8 }
+```mech:disabled
+| x<f32>  y<bool> | 
+|  1.2     true   |
+|  1.3     false  |
 ```
 
-2. Heterogeneous Columns
+(1.2) Inline Syntax
 
----
+You can write tables inline as well:
 
-The kind `_` indicates that a column may contain heterogeneous data:
+```
+| x&ltf32&gt  y&ltbool&gt | 1.2 true | 1.3 false |
+```
+
+(1.3) Fancy Syntax
+
+The Mech REPL formats matrix output using fancy box drawing characters for better readability.
+
+```
+╭────────┬─────────╮
+│ x&ltf32&gt │ y&ltbool&gt │
+├────────┼─────────┤
+│  1.2   │  true   │
+│  1.3   │  false  │
+╰────────┴─────────╯
+```
+
+Mech can parse data formatted this way, allowing you to copy or pipe REPL output directly into a Mech program that expects a table. The above example evaluates to:
+
+```mech:disabled
+╭────────┬─────────╮
+│ x<u64> │ y<bool> │
+├────────┼─────────┤
+│  1.2   │  true   │
+│  1.3   │  false  │
+╰────────┴─────────╯
+```
+
+Fancy tables can be formatted in a variety of ways:
+
+```
+╭────────┬────────╮
+│ x&ltu64&gt │ y&ltf32&gt │
+├────────┼────────┤
+│   1    │   2    │
+├────────┼────────┤
+│   3    │   4    │
+╰────────┴────────╯
+```
+
+This one has no horizontal lines between rows, making it more compact:
+
+```
+╭────────┬────────╮
+│ x&ltu64&gt │ y&ltf32&gt │
+│   1    │   2    │
+│   3    │   4    │
+╰────────┴────────╯
+```
+
+2. Kind
+--------------------------------------------------------------------------------
+
+A table's kind describes the names and kinds of the columns, as well as the number of rows in the table. For example:
+
+  <|x<u8> y<f32>|:3>
+
+This represents a table with two columns, `x` of kind `u8` and `y` of kind `f32`, and 3 rows.
+
+3. Construction
+-------------------------------------------------------------------------------
+
+Tables can be constructed of vectors, matrices, or records.
+
+(3.1) From vectors
+
+(3.2) From a matrix
+
+(3.3) From records
+
+4. Accessing Elements
+-------------------------------------------------------------------------------
+
+Consider the table:
+
+a:=| x<f32>  y<bool> | 
+   |  1.2     true   |
+   |  1.3     false  |
+
+(4.1) Access a Column
+
+Use dot indexing to access columns. For example {{a.x;}}. The kind of the result is a column vector with elements of the column's kind. For instance, column `x` has kind `f32`, so the result of accessing that column is a column vector of kind `[f32]`, with the same number of rows as the table:
 
 ```mech
-| x<_>   y<_> |
+a.x  -- Select column `x`, which has kind `[f32]`
+```
+
+(4.2) Access Elements
+
+You can access an individual element in a table column by specifying the row index on the selected column:
+
+```mech
+a.x[1]  -- Select the first element of column `x`, which has kind `f32`
+```
+
+Table columns are just vectors, so they support the same indexing operations as vectors.
+
+(4.3) Access a Record
+
+You can access a record in a table by specifying the row index on the table itself:
+
+```mech
+a{1}  -- Select the first record in the table, which has kind `record`
+```
+
+5. Heterogeneous Columns
+-------------------------------------------------------------------------------
+
+The kind `*` indicates that a column may contain heterogeneous data:
+
+```mech:disabled
+| x<*>   y<*> |
 |  1.2    true| 
 |  "Hi"   8   |
 ```
 
 Each cell in the column may hold a different type of value.
 
-3. Partial Rows
+(5.1) Partial Columns
 
----
+You can omit values in the table using using `_` to indicate a missing value. In this case, the kind of the column must be annotated with an `option` kind,  indicated by a `?` suffix:
 
-You can omit values in certain rows using `_` to indicate a missing value:
-
-```mech
-| x<u8>  y<string> z<[u8]:3> |
-|   _      "a"       [1;2;3] |
-|   4      "b"          _    |
-|   7       _        [7;8;9] |
+```mech:disabled
+| x<u8?>  y<string?> z<[u8]:1,3?> |
+|   _      "a"          [1 2 3]   |
+|   4      "b"             _      |
+|   7       _           [7 8 9]   |
 ```
-
-4. Fancy Formatting
-
----
-
-Tables can be displayed using a box-drawn format in the REPL for improved readability:
-
-```
-╭────────────────────────────────╮
-│ x<u8>   y<string>  z<[u8]:1,3> │
-├───────┬──────────┬─────────────┤
-│   _   │   "a"    │  [1,2,3,4]  │
-├───────┼──────────┼─────────────┤
-│   4   │   "b"    │     _       │
-├───────┼──────────┼─────────────┤
-│   7   │    _     │  [5,6,7,8]  │
-╰───────┴──────────┴─────────────╯
-```
-
-```
-╭────────────────────────────────╮
-│ x<u8>   y<string>  z<[u8]:1,3> │
-├───────┬──────────┬─────────────┤
-│   _   │   "a"    │  [1,2,3,4]  │
-│   4   │   "b"    │     _       │
-│   7   │    _     │  [5,6,7,8]  │
-╰───────┴──────────┴─────────────╯
-```
-
-5. Kind
-
----
-
-A table's kind describes the types and structure of its columns and dimensions. For example:
-
-```mech
-<{u8,string,[u8]:3}:3,3>
-```
-
-This represents a table with three columns of kinds `u8`, `string`, and `[u8]:3`, and three rows.
-
-6. Notes
-
----
-
-* Tables are more expressive than matrices and can store structured data.
-* They support mixed kinds per column and partial rows.
-* Tables are generally slower than matrices due to their flexibility.

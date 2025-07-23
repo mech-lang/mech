@@ -143,7 +143,7 @@ Supported literals include:
 
 Kind:
 
-`<number>` is a generic, unsized number type. Mech also supports fixed sized numbers e.g.: <u8>, <f32>, <i64> etc.
+`<number>` is a generic, unsized number type. Mech also supports fixed sized numbers e.g.: `<u8>`, `<f32>`, `<i64>` etc.
 
 (4.2) Strings
 

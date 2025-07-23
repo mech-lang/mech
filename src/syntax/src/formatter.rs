@@ -839,12 +839,12 @@ window.addEventListener("scroll", () => {{
     }
   }
 
-  pub fn abstract_el(&mut self, node: &Paragraph) -> String {
-    let abstract_paragraph = self.paragraph(node);
+  pub fn abstract_el(&mut self, node: &Vec<Paragraph>) -> String {
+    let abstract_paragraph = node.iter().map(|p| self.paragraph(p)).collect::<String>();
     if self.html {
-      format!("<div id=\"abstract\" class=\"mech-abstract\">{}</div>",abstract_paragraph)
+      format!("<div id=\"abstract\" class=\"mech-abstract\">{}</div>", abstract_paragraph)
     } else {
-      format!("{}\n",abstract_paragraph)
+      format!("{}\n", abstract_paragraph)
     }
   }
 
@@ -903,10 +903,30 @@ window.addEventListener("scroll", () => {{
     }
   }
 
+  pub fn info_block(&mut self, node: &Vec<Paragraph>) -> String {
+    let info_paragraph = node.iter().map(|p| self.paragraph(p)).collect::<String>();
+    if self.html {
+      format!("<div class=\"mech-info-block\">{}</div>",info_paragraph)
+    } else {
+      format!("!!! info\n{}\n",info_paragraph)
+    }
+  }
+
+  pub fn question_block(&mut self, node: &Vec<Paragraph>) -> String {
+    let question_paragraph = node.iter().map(|p| self.paragraph(p)).collect::<String>();
+    if self.html {
+      format!("<div class=\"mech-question-block\">{}</div>",question_paragraph)
+    } else {
+      format!("!!! question\n{}\n",question_paragraph)
+    }
+  }
+
   pub fn section_element(&mut self, node: &SectionElement) -> String {
     match node {
       SectionElement::Abstract(n) => self.abstract_el(n),
-      SectionElement::BlockQuote(n) => self.block_quote(n),
+      SectionElement::QuoteBlock(n) => self.quote_block(n),
+      SectionElement::InfoBlock(n) => self.info_block(n),
+      SectionElement::QuestionBlock(n) => self.question_block(n),
       SectionElement::Citation(n) => self.citation(n),
       SectionElement::CodeBlock(n) => self.code_block(n),
       SectionElement::Comment(n) => self.comment(n),
@@ -940,8 +960,8 @@ window.addEventListener("scroll", () => {{
     }
   }
 
-  pub fn block_quote(&mut self, node: &Paragraph) -> String {
-    let quote_paragraph = self.paragraph(node);
+  pub fn quote_block(&mut self, node: &Vec<Paragraph>) -> String {
+    let quote_paragraph = node.iter().map(|p| self.paragraph(p)).collect::<String>();
     if self.html {
       format!("<blockquote class=\"mech-block-quote\">{}</blockquote>",quote_paragraph)
     } else {
@@ -2109,7 +2129,7 @@ window.addEventListener("scroll", () => {{
       "".to_string()
     };
     if self.html {
-      format!("<div class=\"mech-field\"><span class=\"mech-field-name\">{}</span><span class=\"mech-field-colon-op\">:</span><span class=\"mech-field-kind\">{}</span></div>",name,kind)
+      format!("<div class=\"mech-field\"><span class=\"mech-field-name\">{}</span><span class=\"mech-field-kind\">{}</span></div>",name,kind)
     } else {
       format!("{}: {}", name, kind)
     }
@@ -2253,7 +2273,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
   pub fn kind_annotation(&mut self, node: &Kind) -> String {
     let kind = self.kind(node);
     if self.html {
-      format!("<span class=\"mech-kind-annotation\"><{}></span>",kind)
+      format!("<span class=\"mech-kind-annotation\">&lt;{}&gt;</span>",kind)
     } else {
       format!("<{}>", kind)
     }
@@ -2261,6 +2281,26 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
 
   pub fn kind(&mut self, node: &Kind) -> String {
     let annotation = match node {
+      Kind::Option(kind) => {
+        let k = self.kind(kind);
+        if self.html {
+          format!("{}<span class=\"mech-option-question\">?</span>", k)
+        } else {
+          format!("{}?", k)
+        }
+      },
+      Kind::Set(kind,size) => {
+        let k = self.kind(kind);
+        let size_str = match size{
+          Some(size) => {
+            let size_ltrl = self.literal(size);
+            format!(":{}", size_ltrl)
+          }
+          None => "".to_string(),
+        };
+        format!("{{{}}}{}", k, size_str)
+      },
+      Kind::Any => "*".to_string(),
       Kind::Scalar(ident) => ident.to_string(),
       Kind::Empty => "_".to_string(),
       Kind::Atom(ident) => format!("`{}",ident.to_string()),
@@ -2276,55 +2316,55 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
         }
         format!("({})", src)
       },
-      Kind::Bracket((kinds, literals)) => {
+      Kind::Matrix((kind, literals)) => {
         let mut src = "".to_string();
-        for (i, kind) in kinds.iter().enumerate() {
-          let k = self.kind(kind);
-          if i == 0 {
-            src = format!("{}", k);
-          } else {
-            src = format!("{},{}", src, k);
-          }
-        }
+        let k = self.kind(kind);
+        src = format!("{}", k);
         let mut src2 = "".to_string();
         for (i, literal) in literals.iter().enumerate() {
           let l = self.literal(literal);
           if i == 0 {
             src2 = format!(":{}", l);
           } else {
-            src2 = format!(":{},{}", src2, l);
+            src2 = format!("{},{}", src2, l);
           }
         }
         format!("[{}]{}", src, src2)
       },
-      Kind::Brace((kinds, literals)) => {
+      Kind::Record(kinds) => {
         let mut src = "".to_string();
-        for (i, kind) in kinds.iter().enumerate() {
+        for (i, (ident, kind)) in kinds.iter().enumerate() {
           let k = self.kind(kind);
+          let ident_s = ident.to_string();
           if i == 0 {
-            src = format!("{}", k);
+            src = format!("{}&lt;{}&gt;", ident_s, k);
           } else {
-            src = format!("{},{}", src, k);
+            src = format!("{},{}&lt;{}&gt;", src, ident_s, k);
+          }
+        }
+        format!("{{{}}}", src)
+      },
+      Kind::Table((kinds, literal)) => {
+        let mut src = "".to_string();
+        for (i, (ident,kind)) in kinds.iter().enumerate() {
+          let k = self.kind(kind);
+          let ident_s = ident.to_string();
+          if i == 0 {
+            src = format!("{}&lt;{}&gt;", ident_s, k);
+          } else {
+            src = format!("{},{}&lt;{}&gt;", src, ident_s, k);
           }
         }
         let mut src2 = "".to_string();
-        for (i, literal) in literals.iter().enumerate() {
-          let l = self.literal(literal);
-          if i == 0 {
-            src2 = format!(":{}", l);
-          } else {
-            src2 = format!(":{},{}", src2, l);
-          }
-        }
-        format!("{{{}}}{}", src, src2)
+        let l = self.literal(literal);
+        src2 = format!(":{}", l);
+        format!("|{}|{}", src, src2)
       },
       Kind::Map(kind1, kind2) => {
         let k1 = self.kind(kind1);
         let k2 = self.kind(kind2);
         format!("{}:{}", k1, k2)
       },
-      Kind::Function(input, output) => todo!(),
-      Kind::Fsm(input, output) => todo!(),
     };
     if self.html {
       format!("<span class=\"mech-kind\">{}</span>",annotation)

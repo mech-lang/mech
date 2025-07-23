@@ -361,7 +361,7 @@ fn quoted<T: Display + Any>(val: &T) -> String {
   if let Some(s) = (val as &dyn Any).downcast_ref::<String>() {
     format!("<div class='mech-string'>\"{}\"</div>", s)
   } else if let Some(s) = (val as &dyn Any).downcast_ref::<bool>() {
-    format!("<div class='mech-bool'>{}</div<", s)
+    format!("<div class='mech-boolean'>{}</div<", s)
   } else {
     format!("<div class='mech-number'>{}</div>", val)
   }
@@ -370,6 +370,16 @@ fn quoted<T: Display + Any>(val: &T) -> String {
 impl<T> Matrix<T> 
 where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 {
+
+  pub fn rows(&self) -> usize {
+    let size = self.shape();
+    size[0]
+  }
+
+  pub fn cols(&self) -> usize {
+    let size = self.shape();
+    size[1]
+  }
 
   pub fn size_of(&self) -> usize {
     let vec = self.as_vec();
