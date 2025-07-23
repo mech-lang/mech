@@ -17,6 +17,7 @@ use std::any::Any;
 
 pub trait ToMatrix: Clone {
   fn to_matrix(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self>;
+  fn to_matrixd(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self>;
 }
   
 macro_rules! impl_to_matrix {
@@ -54,10 +55,31 @@ macro_rules! impl_to_matrix {
           (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
           #[cfg(feature = "MatrixD")]
           (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
-        }}}};}
+        }
+      }
+      fn to_matrixd(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
+        match (rows,cols) {
+          #[cfg(feature = "RowVectorD")]
+          (1,n) => Matrix::RowDVector(new_ref(RowDVector::from_vec(elements))),
+          #[cfg(feature = "VectorD")]
+          (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
+          #[cfg(feature = "MatrixD")]
+          (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
+        }
+      }
+    }
+  };    
+}
 
 impl ToMatrix for usize {
   fn to_matrix(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
+    match (rows,cols) {
+      (1,n) => Matrix::RowDVector(new_ref(RowDVector::from_vec(elements))),
+      (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
+      (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
+    }
+  }
+  fn to_matrixd(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
     match (rows,cols) {
       (1,n) => Matrix::RowDVector(new_ref(RowDVector::from_vec(elements))),
       (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
@@ -370,6 +392,34 @@ fn quoted<T: Display + Any>(val: &T) -> String {
 impl<T> Matrix<T> 
 where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 {
+
+  pub fn push(&mut self, value: T) -> MResult<()> {
+    match self {
+      #[cfg(feature = "RowVectorD")]
+      Matrix::RowDVector(vec) => {
+          let mut vec = vec.borrow_mut();
+          let new_len = vec.ncols() + 1;
+          vec.resize_horizontally_mut(new_len, value.clone()); // row vector: increase columns
+          Ok(())
+      }
+      #[cfg(feature = "VectorD")]
+      Matrix::DVector(vec) => {
+          let mut vec = vec.borrow_mut();
+          let new_len = vec.nrows() + 1;
+          vec.resize_vertically_mut(new_len, value.clone()); // column vector: increase rows
+          Ok(())
+      }
+      _ => {
+        return Err(MechError{
+          id: line!(),
+          file: file!().to_string(),
+          tokens: vec![],
+          msg: "".to_string(),
+          kind: MechErrorKind::None,
+        });
+      }
+    }
+  }
 
   pub fn rows(&self) -> usize {
     let size = self.shape();
