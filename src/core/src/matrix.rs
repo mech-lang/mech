@@ -393,6 +393,42 @@ impl<T> Matrix<T>
 where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 {
 
+  pub fn append(&mut self, other: &Matrix<T>) -> MResult<()> {
+    match (self, other) {
+      #[cfg(feature = "VectorD")]
+      (Matrix::DVector(lhs), Matrix::DVector(rhs)) => {
+        let mut lhs = lhs.borrow_mut();
+        let rhs = rhs.borrow();
+        let old_len = lhs.len();
+        lhs.resize_vertically_mut(old_len + rhs.len(), rhs[0].clone());
+        for (i, val) in rhs.iter().enumerate() {
+          lhs[old_len + i] = val.clone();
+        }
+        Ok(())
+      }
+      #[cfg(feature = "RowVectorD")]
+      (Matrix::RowDVector(lhs), Matrix::RowDVector(rhs)) => {
+        let mut lhs = lhs.borrow_mut();
+        let rhs = rhs.borrow();
+        let old_len = lhs.len();
+        lhs.resize_horizontally_mut(old_len + rhs.len(), rhs[0].clone());
+        for (i, val) in rhs.iter().enumerate() {
+          lhs[old_len + i] = val.clone();
+        }
+        Ok(())
+      }
+      _ => {
+        return Err(MechError{
+          id: line!(),
+          file: file!().to_string(),
+          tokens: vec![],
+          msg: "".to_string(),
+          kind: MechErrorKind::None,
+        });
+      }    
+    }
+  }
+
   pub fn push(&mut self, value: T) -> MResult<()> {
     match self {
       #[cfg(feature = "RowVectorD")]

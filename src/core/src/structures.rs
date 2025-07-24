@@ -213,6 +213,56 @@ impl MechTable {
 
     Ok(true)
   }
+  
+  pub fn check_table_schema(&self, record: &MechTable) -> MResult<bool> {
+
+    // Check that the column names match
+    for (&col_id, col_name) in &self.col_names {
+      if let Some(record_name) = record.col_names.get(&col_id) {
+        if col_name != record_name {
+          return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Schema mismatch: column {} name mismatch (expected: '{}', found: '{}')",col_id, col_name, record_name),kind: MechErrorKind::None,});
+        }
+      } else {
+        return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Schema mismatch: column {} not found in record",col_id),kind: MechErrorKind::None,});
+      }
+    }
+
+    // Check that the data kinds match
+    for (&col_id, (expected_kind, _)) in &self.data {
+      if let Some((record_kind, _)) = record.data.get(&col_id) {
+        if expected_kind != record_kind {
+          return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Schema mismatch: column {} kind mismatch (expected: {:?}, found: {:?})",col_id, expected_kind, record_kind),kind: MechErrorKind::None,});
+        }
+      } else {
+        return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Schema mismatch: column {} not found in record",col_id),kind: MechErrorKind::None,});
+      }
+    }
+
+    Ok(true)
+  }
+
+  pub fn append_table(&mut self, other: &MechTable) -> MResult<()> {
+    self.check_table_schema(other)?;
+    for (&col_id, (_, other_matrix)) in &other.data {
+      let (_, self_matrix) = self.data.get_mut(&col_id).ok_or(MechError {
+        id: line!(),
+        file: file!().to_string(),
+        tokens: vec![],
+        msg: format!("Column {} not found in destination table", col_id),
+        kind: MechErrorKind::None,
+      })?;
+
+      self_matrix.append(other_matrix).map_err(|err| MechError {
+        id: line!(),
+        file: file!().to_string(),
+        tokens: vec![],
+        msg: "".to_string(),
+        kind: MechErrorKind::None,
+      })?;
+    }
+    self.rows += other.rows;
+    Ok(())
+  }
 
   pub fn append_record(&mut self, record: MechRecord) -> MResult<()> {
     // Validate schema (this includes column count, types, and optional name checks)
