@@ -32,9 +32,9 @@ cargo install mech
 
 ## 📚 Documentation
 
-New to Mech? Start with [Learn Mech in Fifteen Minutes](https://gitlab.com/mech-lang/docs/-/raw/v0.2-beta/III.guides/MechFifteen.mec).
+New to Mech? Start with [Learn Mech in Fifteen Minutes](https://docs.mech-lang.org/III.guides/mech-in-fifteen-minutes.html).
 
-Comprehensive documentation is available at [docs.mech-lang.org](https://docs.mech-lang.org) and open-sourced on [GitHub](https://github.com/mech-lang/docs).
+Comprehensive documentation is available at [docs.mech-lang.org](https://docs.mech-lang.org) and open-sourced on [GitHub](https://github.com/mech-lang/mech/tree/main/docs).
 
 ## 🪐 Community
 
