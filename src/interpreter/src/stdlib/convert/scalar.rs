@@ -344,8 +344,8 @@ macro_rules! impl_conversion_match_arms {
       match $arg {
         $(
           $(
-            (Value::[<$input_type:upper>](arg), ValueKind::[<$target_type:upper>]) => {Ok(Box::new([<ConvertS $input_type:upper $target_type:upper>]{arg: arg.clone(), out: new_ref($target_type::zero())}))},
-            (Value::[<Matrix $input_type:upper>](arg), ValueKind::Matrix(kind,size)) => {
+            (Value::[<$input_type:upper>](arg), Value::Kind(ValueKind::[<$target_type:upper>])) => {Ok(Box::new([<ConvertS $input_type:upper $target_type:upper>]{arg: arg.clone(), out: new_ref($target_type::zero())}))},
+            (Value::[<Matrix $input_type:upper>](arg), Value::Kind(ValueKind::Matrix(kind,size))) => {
               match *kind {
                 ValueKind::U8 => {let in_shape = arg.shape();let out = u8::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:upper MU8>]{arg: arg.clone(), out}))}
                 ValueKind::U16 => {let in_shape = arg.shape();let out = u16::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:upper MU16>]{arg: arg.clone(), out}))}
@@ -364,7 +364,7 @@ macro_rules! impl_conversion_match_arms {
             },
           )+
         )+
-        (Value::Atom(varian_id), ValueKind::Enum(enum_id)) => {
+        (Value::Atom(varian_id), Value::Kind(ValueKind::Enum(enum_id))) => {
           let variants = vec![(varian_id,None)];
           let enm = MechEnum{id: enum_id, variants};
           let val = Value::Enum(Box::new(enm.clone()));
@@ -376,7 +376,7 @@ macro_rules! impl_conversion_match_arms {
   }
 }
 
-fn impl_conversion_fxn(source_value: Value, target_kind: ValueKind) -> MResult<Box<dyn MechFunction>>  {
+fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<dyn MechFunction>>  {
   impl_conversion_match_arms!(
     (source_value, target_kind),
     i8   => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
@@ -402,14 +402,25 @@ impl NativeFunctionCompiler for ConvertKind {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let source_value = arguments[0].clone();
-    let target_kind = arguments[1].kind();
+    let target_kind = arguments[1].clone();
     match impl_conversion_fxn(source_value.clone(), target_kind.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
         match source_value {
           Value::MutableReference(rhs) => impl_conversion_fxn(rhs.borrow().clone(), target_kind.clone()),
           Value::Atom(atom_id) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixU8(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixU16(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
           Value::MatrixU32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixU64(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixU128(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixI8(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixI16(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixI32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),  
+          Value::MatrixI64(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixI128(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixF32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixF64(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
           x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }

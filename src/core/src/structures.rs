@@ -183,14 +183,16 @@ impl MechTable {
 
 
   pub fn check_record_schema(&self, record: &MechRecord) -> MResult<bool> {
-    // Check column count
-    if self.cols != record.cols {
-      return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Schema mismatch: column count differs (table: {}, record: {})",self.cols, record.cols),kind: MechErrorKind::None});
-    }
 
     for (&col_id, record_value) in &record.data {
       // Check that the column exists in the table
-      let (expected_kind, _) = self.data.get(&col_id).ok_or(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Schema mismatch: column id {} not found in table", col_id),kind: MechErrorKind::None,})?;
+      // self.get data col id _or continue to the next column
+      let (expected_kind, column_matrix) = match self.data.get(&col_id) {
+        Some(data) => data,
+        None => {
+          continue;
+        }
+      };
 
       // Check actual value kind
       let actual_kind = record_value.kind();
@@ -199,7 +201,7 @@ impl MechTable {
         return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Schema mismatch: column {} kind mismatch (expected: {:?}, found: {:?})",col_id, expected_kind, actual_kind),kind: MechErrorKind::None,});
       }
 
-      // (Optional) Check column name
+      // Check column name
       if let Some(expected_name) = self.col_names.get(&col_id) {
         if let Some(field_name) = record.field_names.get(&col_id) {
           if expected_name != field_name {
@@ -221,7 +223,7 @@ impl MechTable {
       if let Some((_kind, column_matrix)) = self.data.get_mut(&col_id) {
         let result = column_matrix.push(value.clone());
       } else {
-        return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Column id {} not found in table", col_id),kind: MechErrorKind::None});
+        continue;
       }
     }
 
