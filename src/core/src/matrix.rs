@@ -593,6 +593,41 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
     }
   }
 
+  pub fn set_index1d(&self, index: usize, value: T) {
+    match self {
+      #[cfg(feature = "RowVector4")]
+      Matrix::RowVector4(v) => v.borrow_mut()[index] = value,
+      #[cfg(feature = "RowVector3")]
+      Matrix::RowVector3(v) => v.borrow_mut()[index] = value,
+      #[cfg(feature = "RowVector2")]
+      Matrix::RowVector2(v) => v.borrow_mut()[index] = value,
+      #[cfg(feature = "RowVectorD")]
+      Matrix::RowDVector(v) => v.borrow_mut()[index] = value,
+      #[cfg(feature = "Vector4")]
+      Matrix::Vector4(v) => v.borrow_mut()[index] = value,
+      #[cfg(feature = "Vector3")]
+      Matrix::Vector3(v) => v.borrow_mut()[index] = value,
+      #[cfg(feature = "Vector2")]
+      Matrix::Vector2(v) => v.borrow_mut()[index] = value,
+      #[cfg(feature = "VectorD")]
+      Matrix::DVector(v) => v.borrow_mut()[index] = value,
+      #[cfg(feature = "Matrix1")]
+      Matrix::Matrix1(m) => m.borrow_mut()[index] = value,
+      #[cfg(feature = "Matrix2")]
+      Matrix::Matrix2(m) => m.borrow_mut()[index] = value,
+      #[cfg(feature = "Matrix3")]
+      Matrix::Matrix3(m) => m.borrow_mut()[index] = value,
+      #[cfg(feature = "Matrix4")]
+      Matrix::Matrix4(m) => m.borrow_mut()[index] = value,
+      #[cfg(feature = "Matrix2x3")]
+      Matrix::Matrix2x3(m) => m.borrow_mut()[index] = value,
+      #[cfg(feature = "Matrix3x2")]
+      Matrix::Matrix3x2(m) => m.borrow_mut()[index] = value,
+      #[cfg(feature = "MatrixD")]
+      Matrix::DMatrix(m) => m.borrow_mut()[index] = value,
+    }
+  }
+
   pub fn set(&self, elements: Vec<T>) {
     match self {
       #[cfg(feature = "RowVector4")]
