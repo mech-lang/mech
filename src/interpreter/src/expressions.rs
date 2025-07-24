@@ -135,15 +135,15 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
           fxn_input.push(result);
           match shape[..] {
             [1,1] => plan.borrow_mut().push(AccessScalar{}.compile(&fxn_input)?),
-            [1,n] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
-            [n,1] => plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(AccessRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(AccessRange{}.compile(&fxn_input)?),
             _ => todo!(),
           }
         },
         [Subscript::Range(ix)] => {
           let result = subscript_range(&subs[0],p)?;
           fxn_input.push(result);
-          plan.borrow_mut().push(MatrixAccessRange{}.compile(&fxn_input)?);
+          plan.borrow_mut().push(AccessRange{}.compile(&fxn_input)?);
         },
         [Subscript::All] => {
           fxn_input.push(Value::IndexAll);

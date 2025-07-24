@@ -198,3 +198,59 @@ impl NativeFunctionCompiler for TableAccessScalar {
     }
   }
 }
+
+// Table Access Range -------------------------------------------------------
+
+#[derive(Debug)]
+pub struct TableAccessRangeF {
+  pub source: Ref<MechTable>,
+  pub ix: Ref<DVector<usize>>,
+  pub out: Ref<MechTable>,
+}
+
+impl MechFunction for TableAccessRangeF {
+  fn solve(&self) {
+    let table = self.source.borrow();
+    let mut out_table = self.out.borrow_mut();
+    let ix_brrw = self.ix.borrow();
+
+    for (key, (_kind, matrix)) in table.data.iter() {
+      let (_out_kind, out_matrix) = out_table.data.get_mut(key).unwrap();
+      for (out_i, i) in ix_brrw.iter().enumerate() {
+        let value = matrix.index1d(*i);
+        out_matrix.set_index1d(out_i, value.clone());
+      }
+    }
+  }
+  fn out(&self) -> Value { Value::Table(self.out.clone()) }
+  fn to_string(&self) -> String {format!("{:#?}", self)}
+}
+
+pub struct TableAccessRange{}
+
+impl NativeFunctionCompiler for TableAccessRange {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() <= 1 {
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    let ixes = arguments.clone().split_off(1);
+    let tbl = arguments[0].clone();
+    match (tbl, ixes.as_slice()) {
+      (Value::Table(source), [Value::MatrixIndex(Matrix::DVector(ix))])  => {
+        let out_table = source.borrow().empty_table(ix.borrow().len());
+        Ok(Box::new(TableAccessRangeF{source: source.clone(), ix: ix.clone(), out: new_ref(out_table) }))
+      }
+      (Value::MutableReference(src_ref), [Value::MatrixIndex(Matrix::DVector(ix))]) => {
+        let src_ref_brrw = src_ref.borrow();
+        match &*src_ref_brrw {
+          Value::Table(source) => {
+            let out_table = source.borrow().empty_table(ix.borrow().len());
+            Ok(Box::new(TableAccessRangeF{source: source.clone(), ix: ix.clone(), out: new_ref(out_table) }))
+          }
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+        }
+      }
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+    }
+  }
+}
