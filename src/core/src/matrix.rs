@@ -472,6 +472,32 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
     vec.capacity() * size_of::<T>()
   }       
 
+  pub fn resize_vertically(&mut self, new_size: usize, fill_value: T) -> MResult<()> {
+    match self {
+      #[cfg(feature = "RowVectorD")]
+      Matrix::RowDVector(vec) => {
+        let mut vec = vec.borrow_mut();
+        vec.resize_horizontally_mut(new_size, fill_value);
+        Ok(())
+      }
+      #[cfg(feature = "VectorD")]
+      Matrix::DVector(vec) => {
+        let mut vec = vec.borrow_mut();
+        vec.resize_vertically_mut(new_size, fill_value);
+        Ok(())
+      }
+      _ => {
+        return Err(MechError{
+          id: line!(),
+          file: file!().to_string(),
+          tokens: vec![],
+          msg: "".to_string(),
+          kind: MechErrorKind::None,
+        });
+      }
+    }
+  }
+
   pub fn get_copyable_matrix(&self) -> Box<dyn CopyMat<T>> {
     match self {
       #[cfg(feature = "RowVector4")]
