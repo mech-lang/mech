@@ -181,6 +181,58 @@ pub struct MechTable {
 
 impl MechTable {
 
+  pub fn from_records(records: Vec<MechRecord>) -> MResult<MechTable> {
+    if records.is_empty() {
+      return Err(MechError { id: line!(), file: file!().to_string(), tokens: vec![], msg: "Cannot create MechTable from empty record list.".to_string(), kind: MechErrorKind::None});
+    }
+
+    let first = &records[0];
+    let rows = records.len();
+    let cols = first.cols;
+
+    let mut col_data: IndexMap<u64, Vec<Value>> = IndexMap::new();
+
+    for (&col_id, value) in &first.data {
+      col_data.insert(col_id, vec![value.clone()]);
+    }
+
+    let mut kinds = IndexMap::new();
+    for (col_id, kind) in first.data.keys().zip(&first.kinds) {
+      kinds.insert(*col_id, kind.clone());
+    }
+
+    let col_names = first.field_names.clone();
+
+    for record in records.iter().skip(1) {
+      first.check_record_schema(record)?;
+      for (&col_id, value) in &record.data {
+        col_data.entry(col_id).or_insert_with(Vec::new).push(value.clone());
+      }
+    }
+
+    let data: IndexMap<u64, (ValueKind, Matrix<Value>)> = col_data
+      .into_iter()
+      .map(|(col_id, values)| {
+        let kind = kinds[&col_id].clone();
+        let matrix = Matrix::DVector(new_ref(DVector::from_vec(values)));
+        (col_id, (kind, matrix))
+      })
+      .collect();
+
+    Ok(MechTable {rows,cols,data,col_names})
+  }
+  
+  pub fn empty_table(&self, rows: usize) -> MechTable {
+    let mut data = IndexMap::new();
+    for col in self.data.iter() {
+      let (key, (kind, matrix)) = col;
+      // make a new vector the length of ix with values Value::Empty
+      let elements = vec![Value::Empty; rows];
+      let new_matrix = Matrix::DVector(new_ref(DVector::from_vec(elements)));
+      data.insert(*key, (kind.clone(), new_matrix));
+    }
+    MechTable { rows: rows, cols: self.cols, data, col_names: self.col_names.clone() }
+  }
 
   pub fn check_record_schema(&self, record: &MechRecord) -> MResult<bool> {
 
@@ -426,6 +478,46 @@ pub struct MechRecord {
 
 impl MechRecord {
 
+  pub fn check_record_schema(&self, record: &MechRecord) -> MResult<()> {
+    for (&col_id, _value) in &self.data {
+      // Check column existence
+      if !record.data.contains_key(&col_id) {
+        return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Missing column {} in record data", col_id),kind: MechErrorKind::None});
+      }
+
+      // Get expected kind
+      let expected_kind = self.kinds.get(self.key_index(col_id)?).ok_or_else(|| MechError { id: line!(), file: file!().to_string(), tokens: vec![], msg: format!("Missing kind for column {}", col_id), kind: MechErrorKind::None})?;
+
+      // Get actual kind
+      let actual_kind = record.kinds.get(record.key_index(col_id)?).ok_or_else(|| MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Missing kind for column {} in compared record", col_id),kind: MechErrorKind::None,})?;
+
+      // Compare kinds
+      if expected_kind != actual_kind {
+        return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: format!("Kind mismatch for column {} (expected {:?}, found {:?})", col_id, expected_kind, actual_kind),kind: MechErrorKind::None,});
+      }
+
+      // Check field names
+      let expected_name = self.field_names.get(&col_id);
+      let actual_name = record.field_names.get(&col_id);
+
+      if expected_name != actual_name {
+        return Err(MechError {id: line!(),file: file!().to_string(),tokens: vec![],msg: "".to_string(),kind: MechErrorKind::None,});
+      }
+    }
+
+    Ok(())
+  }
+
+  fn key_index(&self, col_id: u64) -> MResult<usize> {
+    self.data.keys().position(|&id| id == col_id).ok_or_else(|| MechError {
+      id: line!(),
+      file: file!().to_string(),
+      tokens: vec![],
+      msg: format!("Column id {} not found in key_index", col_id),
+      kind: MechErrorKind::None,
+    })
+  }
+
   pub fn to_html(&self) -> String {
     let mut bindings = Vec::new();
 
@@ -455,6 +547,30 @@ impl MechRecord {
 
   pub fn get(&self, key: &u64) -> Option<&Value> {
     self.data.get(key)
+  }
+
+  pub fn new(vec: Vec<(&str, Value)>) -> MechRecord {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+
+    let mut data = IndexMap::new();
+    let mut field_names = HashMap::new();
+
+    for (name, value) in vec {
+      let col_id = hash_str(name);
+
+      field_names.insert(col_id, name.to_string());
+      data.insert(col_id, value);
+    }
+
+    let kinds = data.iter().map(|(_, v)| v.kind()).collect();
+
+    MechRecord {
+      cols: data.len(),
+      kinds,
+      data,
+      field_names,
+    }
   }
 
   pub fn from_vec(vec: Vec<((u64,String),Value)>) -> MechRecord {
