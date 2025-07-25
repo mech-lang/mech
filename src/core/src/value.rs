@@ -58,17 +58,6 @@ pub enum ValueKind {
   Option(Box<ValueKind>),
 }
 
-impl ValueKind {
-
-  pub fn deref_kind(&self) -> ValueKind {
-    match self {
-      ValueKind::Reference(x) => *x.clone(),
-      _ => self.clone(),
-    }
-  }
-
-}
-
 impl std::fmt::Display for ValueKind {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match self {
@@ -91,7 +80,10 @@ impl std::fmt::Display for ValueKind {
       ValueKind::Set(x,el) => write!(f, "{{{}}}{}", x, el.map_or("".to_string(), |e| format!(":{}", e))),
       ValueKind::Map(x,y) => write!(f, "{{{}:{}}}",x,y),
       ValueKind::Record(x) => write!(f, "{{{}}}",x.iter().map(|(i,k)| format!("{}<{}>",i.to_string(),k)).collect::<Vec<String>>().join(" ")),
-      ValueKind::Table(x,y) => write!(f, "|{}|:{}",x.iter().map(|(i,k)| format!("{}<{}>",i.to_string(),k)).collect::<Vec<String>>().join(" "),y),
+      ValueKind::Table(x,y) => {
+        let size_str = if y > &0 { format!(":{}", y) } else { "".to_string() };
+        write!(f, "|{}|{}",x.iter().map(|(i,k)| format!("{}<{}>",i.to_string(),k)).collect::<Vec<String>>().join(" "),size_str)
+      }
       ValueKind::Tuple(x) => write!(f, "({})",x.iter().map(|x| format!("{}",x)).collect::<Vec<String>>().join(",")),
       ValueKind::Id => write!(f, "id"),
       ValueKind::Index => write!(f, "ix"),
@@ -105,6 +97,22 @@ impl std::fmt::Display for ValueKind {
 }
 
 impl ValueKind {
+
+  pub fn collection_kind(&self) -> Option<ValueKind> {
+    match self {
+      ValueKind::Matrix(x,_) => Some(*x.clone()),
+      ValueKind::Set(x,_) => Some(*x.clone()),
+      _ => None,
+    }
+  }
+
+  pub fn deref_kind(&self) -> ValueKind {
+    match self {
+      ValueKind::Reference(x) => *x.clone(),
+      _ => self.clone(),
+    }
+  }
+
   pub fn is_compatible(k1: ValueKind, k2: ValueKind) -> bool {
     match k1 {
       ValueKind::Reference(x) => {
