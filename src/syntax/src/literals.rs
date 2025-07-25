@@ -287,8 +287,8 @@ pub fn kind_table(input: ParseString) -> ParseResult<Kind> {
   let (input, _) = bar(input)?;
   let (input, elements) = separated_list1(alt((null(list_separator),null(many1(space_tab)))), nom_tuple((identifier, kind_annotation)))(input)?;
   let (input, _) = bar(input)?;
-  let (input, _) = opt(colon)(input)?;
-  let (input, size) = literal(input)?; 
+  let (input, size) = opt(tuple((colon,literal)))(input)?;
+  let size = size.map(|(_, ltrl)| ltrl).unwrap_or_else(|| Literal::Empty(Token::default()));
   let elements = elements.into_iter().map(|(id, knd)| (id, knd.kind)).collect();
   Ok((input, Kind::Table((elements, Box::new(size)))))
 }
