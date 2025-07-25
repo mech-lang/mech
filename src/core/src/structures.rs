@@ -222,6 +222,23 @@ impl MechTable {
     Ok(MechTable {rows,cols,data,col_names})
   }
   
+  pub fn from_kind(kind: ValueKind) -> MResult<MechTable> {
+    match kind {
+      ValueKind::Table(tbl,sze) => {
+        let mut data = IndexMap::new();
+        let col_names = HashMap::new();
+        for (col_id, col_kind) in &tbl {
+          let matrix = Matrix::DVector(new_ref(DVector::from_vec(vec![Value::Empty; sze])));
+          data.insert(hash_str(&col_id), (col_kind.clone(), matrix));
+        }
+        Ok(MechTable {rows: sze, cols: tbl.len(), data, col_names})
+      }
+      _ => {
+        return Err(MechError { id: line!(), file: file!().to_string(), tokens: vec![], msg: "Cannot create MechTable from non-table kind.".to_string(), kind: MechErrorKind::None });
+      }
+    }
+  }
+
   pub fn empty_table(&self, rows: usize) -> MechTable {
     let mut data = IndexMap::new();
     for col in self.data.iter() {
