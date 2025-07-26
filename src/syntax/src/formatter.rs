@@ -2365,7 +2365,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
       Kind::Map(kind1, kind2) => {
         let k1 = self.kind(kind1);
         let k2 = self.kind(kind2);
-        format!("{}:{}", k1, k2)
+        format!("{{{}:{}}}", k1, k2)
       },
     };
     if self.html {

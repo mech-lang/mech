@@ -76,7 +76,7 @@ impl std::fmt::Display for ValueKind {
       ValueKind::String => write!(f, "string"),
       ValueKind::Bool => write!(f, "bool"),
       ValueKind::Matrix(x,s) => write!(f, "[{}]:{}", x, s.iter().map(|s| s.to_string()).collect::<Vec<String>>().join(",")),
-      ValueKind::Enum(x) => write!(f, "{:?}",x),
+      ValueKind::Enum(x) => write!(f, "{}",x),
       ValueKind::Set(x,el) => write!(f, "{{{}}}{}", x, el.map_or("".to_string(), |e| format!(":{}", e))),
       ValueKind::Map(x,y) => write!(f, "{{{}:{}}}",x,y),
       ValueKind::Record(x) => write!(f, "{{{}}}",x.iter().map(|(i,k)| format!("{}<{}>",i.to_string(),k)).collect::<Vec<String>>().join(" ")),

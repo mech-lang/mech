@@ -162,7 +162,7 @@ Kinds compose into more complex kinds based on the data structures they represen
 | Record         | `{T1,T2,..}`               | {{<{x<u8>,y<string>}>;}}   |
 | Map            | `{K:V}`                    | {{<{string:i32}>;}}        |
 | Table          | `|arg1<T1>,arg2<T2>,..|:N` | {{<|x<u8>,y<string>|:3>;}} |
-| Tuple          | `(T1,T2,T3)`               | {{<(u8,string,bool)>;}}    |
+| Tuple          | `(T1,T2,...)`              | {{<(u8,string,bool)>;}}    |
 | Enum           | `enum`                     | {{<enum>;}}                |
 
 (3.3) Custom Kinds
