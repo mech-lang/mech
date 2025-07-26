@@ -2356,9 +2356,11 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
           }
         }
         let mut src2 = "".to_string();
-        let l = self.literal(literal);
-        src2 = format!(":{}", l);
-        format!("|{}|{}", src, src2)
+        let sz = match &**literal {
+          Literal::Empty(_) => "".to_string(),
+          _ => format!(":{}", self.literal(literal)),
+        };
+        format!("|{}|{}", src, sz)
       },
       Kind::Map(kind1, kind2) => {
         let k1 = self.kind(kind1);

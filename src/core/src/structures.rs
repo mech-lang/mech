@@ -226,9 +226,10 @@ impl MechTable {
     match kind {
       ValueKind::Table(tbl,sze) => {
         let mut data = IndexMap::new();
-        let col_names = HashMap::new();
+        let mut col_names = HashMap::new();
         for (col_id, col_kind) in &tbl {
           let matrix = Matrix::DVector(new_ref(DVector::from_vec(vec![Value::Empty; sze])));
+          col_names.insert(hash_str(col_id), col_id.clone());
           data.insert(hash_str(&col_id), (col_kind.clone(), matrix));
         }
         Ok(MechTable {rows: sze, cols: tbl.len(), data, col_names})
@@ -453,6 +454,7 @@ impl MechTable {
   }
 
   pub fn pretty_print(&self) -> String {
+    println!("{:?}", self);
     let mut builder = Builder::default();
     for (k,(knd,val)) in &self.data {
       let name = self.col_names.get(k).unwrap();

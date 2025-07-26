@@ -187,6 +187,12 @@ impl Step for F64 {
   }
 }
 
+impl From<F64> for Value {
+  fn from(val: F64) -> Self {
+    Value::F64(new_ref(val))
+  }
+}
+
 #[derive(PartialEq, Clone, Copy, PartialOrd, Serialize, Deserialize)]
 pub struct F32(pub f32);
 impl F32 {
@@ -393,5 +399,11 @@ impl Step for F32 {
 
   fn backward(start: Self, count: usize) -> Self {
     F32(start.0 - count as f32) 
+  }
+}
+
+impl From<F32> for Value {
+  fn from(val: F32) -> Self {
+    Value::F32(new_ref(val))
   }
 }

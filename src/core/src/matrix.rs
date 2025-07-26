@@ -393,7 +393,27 @@ impl<T> Matrix<T>
 where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 {
 
-  pub fn append(&mut self, other: &Matrix<T>) -> MResult<()> {
+  pub fn to_html(&self) -> String {
+    let size = self.shape();
+    let mut html = String::new();
+    html.push_str("<table class='mech-matrix'>");
+    for i in 0..size[0] {
+      html.push_str("<tr>");
+      for j in 0..size[1] {
+        let value = self.index2d(i+1, j+1);
+        html.push_str(&format!("<td>{}</td>", quoted(&value)));
+      }
+      html.push_str("</tr>");
+    }
+    format!("<div class='mech-matrix-outer'><div class='mech-matrix-inner'></div>{}</div>", html)
+  }
+
+}
+
+impl<T> Matrix<T> 
+where T: Debug + Clone + PartialEq + 'static
+{
+pub fn append(&mut self, other: &Matrix<T>) -> MResult<()> {
     match (self, other) {
       #[cfg(feature = "VectorD")]
       (Matrix::DVector(lhs), Matrix::DVector(rhs)) => {
@@ -567,21 +587,6 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
       Matrix::DMatrix(x) => x.borrow().shape(),
     };
     vec![shape.0, shape.1]
-  }
-
-  pub fn to_html(&self) -> String {
-    let size = self.shape();
-    let mut html = String::new();
-    html.push_str("<table class='mech-matrix'>");
-    for i in 0..size[0] {
-      html.push_str("<tr>");
-      for j in 0..size[1] {
-        let value = self.index2d(i+1, j+1);
-        html.push_str(&format!("<td>{}</td>", quoted(&value)));
-      }
-      html.push_str("</tr>");
-    }
-    format!("<div class='mech-matrix-outer'><div class='mech-matrix-inner'></div>{}</div>", html)
   }
 
   pub fn index1d(&self, ix: usize) -> T {

@@ -96,6 +96,18 @@ Tables can be constructed of vectors, matrices, or records.
 
 (3.2) From a matrix
 
+You can create a table from a matrix using a kind annotation, as long as the kinds of the table columns are compatible with the matrix kind. For example, if you have a matrix of kind `f64`, you can create a table with columns of kind `f64`:
+
+For example:
+
+```mech:ex3
+x := [1 2; 3 4]; 
+a<|foo<f64>,bar<f64>|> := x
+```
+This creates a table `a` with two columns, `foo` and `bar`, both of kind `f64`, and two rows corresponding to the rows of the matrix `x`.
+
+The matrix `[a.foo a.bar]` is identical to the original matrix `x`.
+
 (3.3) From records
 
 4. Accessing Elements
@@ -146,7 +158,7 @@ a{2..=3}  -- Select records 2 through 3, returns a `table`
 It's possible to select the same row multiple times:
 
 ```mech
-a{[1 1 2 2]}  -- Select records 1, 1, 2, and 2
+a{[1 1 2 2]}  -- Select records 1 and 2 twice
 ```
 
 (4.5) Filter Records

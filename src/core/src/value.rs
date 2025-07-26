@@ -757,3 +757,75 @@ impl_to_value_matrix!(RowVector4);
 impl_to_value_matrix!(RowDVector);
 impl_to_value_matrix!(DVector);
 impl_to_value_matrix!(DMatrix);
+
+impl From<u8> for Value {
+  fn from(val: u8) -> Self {
+    Value::U8(new_ref(val))
+  }
+}
+
+impl From<u16> for Value {
+  fn from(val: u16) -> Self {
+    Value::U16(new_ref(val))
+  }
+}
+
+impl From<u32> for Value {
+  fn from(val: u32) -> Self {
+    Value::U32(new_ref(val))
+  }
+}
+
+impl From<u64> for Value {
+  fn from(val: u64) -> Self {
+    Value::U64(new_ref(val))
+  }
+}
+
+impl From<u128> for Value {
+  fn from(val: u128) -> Self {
+    Value::U128(new_ref(val))
+  }
+}
+
+impl From<i8> for Value {
+  fn from(val: i8) -> Self {
+    Value::I8(new_ref(val))
+  }
+}
+
+impl From<i16> for Value {
+  fn from(val: i16) -> Self {
+    Value::I16(new_ref(val))
+  }
+}
+
+impl From<i32> for Value {
+  fn from(val: i32) -> Self {
+    Value::I32(new_ref(val))
+  }
+}
+
+impl From<i64> for Value {
+  fn from(val: i64) -> Self {
+    Value::I64(new_ref(val))
+  }
+}
+
+impl From<i128> for Value {
+  fn from(val: i128) -> Self {
+    Value::I128(new_ref(val))
+  }
+}
+
+impl From<bool> for Value {
+  fn from(val: bool) -> Self {
+    Value::Bool(new_ref(val))
+  }
+}
+
+impl From<String> for Value {
+  fn from(val: String) -> Self {
+    Value::String(new_ref(val))
+  }
+}
