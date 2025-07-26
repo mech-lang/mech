@@ -55,7 +55,7 @@ A symbolic constant, often used for tags or enums.
 
 (1.5.1) Kind
 
-The kind of an atom is itself. For example, the atom {`A} has the kind:
+The kind of an atom is itself. For example, the atom {{`A;}} has the kind:
 
   <`A>
 
@@ -87,11 +87,11 @@ Represents an empty value, placeholder, or the absence of a value.
 
 - **Enum** - enumeration of named values
 - **Map** - key-value store
-- **Matrix** - ND array of values
+- **[Matrix](/II.reference/matrix.html)** - ND array of values
 - **Record** - collection of named values
 - **Set** - unordered collection of unique values
 - **Tuple** - ordered collection of values
-- **Table** - collection of Records
+- **[Table](/II.reference/table.html)** - collection of Records
 
 3. Kinds
 -------------------------------------------------------------------------------

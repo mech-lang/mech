@@ -711,10 +711,11 @@ window.addEventListener("scroll", () => {{
       }
       ParagraphElement::FootnoteReference(n) => self.footnote_reference(n),
       ParagraphElement::Strong(n) => {
+        let p = self.paragraph_element(n);
         if self.html {
-          format!("<strong class=\"mech-strong\">{}</strong>", n.to_string())
+          format!("<strong class=\"mech-strong\">{}</strong>", p)
         } else {
-          format!("**{}**", n.to_string())
+          format!("**{}**", p)
         }
       },
       ParagraphElement::Hyperlink((text, url)) => {
