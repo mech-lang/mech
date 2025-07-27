@@ -113,6 +113,94 @@ impl ValueKind {
     }
   }
 
+  pub fn is_convertible_to(&self, other: &ValueKind) -> bool {
+    use ValueKind::*;
+    match (self, other) {
+      // Unsigned widening
+      (U8, U16) | (U8, U32) | (U8, U64) | (U8, U128) |
+      (U16, U32) | (U16, U64) | (U16, U128) |
+      (U32, U64) | (U32, U128) |
+      (U64, U128) => true,
+
+      // Signed widening
+      (I8, I16) | (I8, I32) | (I8, I64) | (I8, I128) |
+      (I16, I32) | (I16, I64) | (I16, I128) |
+      (I32, I64) | (I32, I128) |
+      (I64, I128) => true,
+
+      // Unsigned -> signed widening
+      (U8, I16) | (U8, I32) | (U8, I64) | (U8, I128) |
+      (U16, I32) | (U16, I64) | (U16, I128) |
+      (U32, I64) | (U32, I128) |
+      (U64, I128) => true,
+
+      // Signed -> unsigned widening (runtime safety not enforced here)
+      (I8, U16) | (I8, U32) | (I8, U64) | (I8, U128) |
+      (I16, U32) | (I16, U64) | (I16, U128) |
+      (I32, U64) | (I32, U128) |
+      (I64, U128) => true,
+
+      // Integer -> float
+      (U8, F32) | (U8, F64) |
+      (U16, F32) | (U16, F64) |
+      (U32, F32) | (U32, F64) |
+      (U64, F32) | (U64, F64) |
+      (U128, F32) | (U128, F64) |
+      (I8, F32) | (I8, F64) |
+      (I16, F32) | (I16, F64) |
+      (I32, F32) | (I32, F64) |
+      (I64, F32) | (I64, F64) |
+      (I128, F32) | (I128, F64) => true,
+
+      // Float widening + narrowing
+      (F32, F64) | (F64, F32) => true,
+
+      // Float -> integer (allowed, but lossy)
+      (F32, I8) | (F32, I16) | (F32, I32) | (F32, I64) | (F32, I128) |
+      (F32, U8) | (F32, U16) | (F32, U32) | (F32, U64) | (F32, U128) |
+      (F64, I8) | (F64, I16) | (F64, I32) | (F64, I64) | (F64, I128) |
+      (F64, U8) | (F64, U16) | (F64, U32) | (F64, U64) | (F64, U128) => true,
+
+      // Index conversions (both ways)
+      (Index, U8) | (Index, U16) | (Index, U32) | (Index, U64) | (Index, U128) |
+      (Index, I8) | (Index, I16) | (Index, I32) | (Index, I64) | (Index, I128) |
+      (Index, F32) | (Index, F64) |
+      (U8, Index) | (U16, Index) | (U32, Index) | (U64, Index) | (U128, Index) |
+      (I8, Index) | (I16, Index) | (I32, Index) | (I64, Index) | (I128, Index) => true,
+
+      // Matrix: element type convertible and shape matches
+      (Matrix(box a, ashape), Matrix(box b, bshape)) if ashape.into_iter().product::<usize>() == bshape.into_iter().product::<usize>() && a.is_convertible_to(b) => true,
+
+      // Option conversions
+      (Option(box a), Option(box b)) if a.is_convertible_to(b) => true,
+
+      // Reference conversions
+      (Reference(box a), Reference(box b)) if a.is_convertible_to(b) => true,
+
+      // Tuple conversions (element-wise)
+      (Tuple(a), Tuple(b)) if a.len() == b.len() && a.iter().zip(b.iter()).all(|(x, y)| x.is_convertible_to(y)) => true,
+
+      // Set conversions
+      (Set(box a, _), Set(box b, _)) if a.is_convertible_to(b) => true,
+
+      // Map conversions
+      (Map(box ak, box av), Map(box bk, box bv)) if ak.is_convertible_to(bk) && av.is_convertible_to(bv) => true,
+
+      // Table conversions: allow source to have extra columns
+      (Table(acols, _), Table(bcols, _)) if bcols.iter().all(|(bk, bv)| 
+        acols.iter().any(|(ak, av)| ak == bk && av.is_convertible_to(bv))
+      ) => true,
+
+      // Record conversions: allow source to have extra fields
+      (Record(afields), Record(bfields)) if bfields.iter().all(|(bk, bv)| 
+        afields.iter().any(|(ak, av)| ak == bk && av.is_convertible_to(bv))
+      ) => true,
+
+      // Direct match
+      _ => self == other,
+    }
+  }
+
   pub fn is_compatible(k1: ValueKind, k2: ValueKind) -> bool {
     match k1 {
       ValueKind::Reference(x) => {
@@ -230,6 +318,186 @@ impl Hash for Value {
 }
 
 impl Value {
+
+  pub fn convert_to(&self, other: &ValueKind) -> Option<Value> {
+
+    if self.kind() == *other {
+        return Some(self.clone());
+    }
+
+    if !self.kind().is_convertible_to(other) {
+        return None;
+    }
+
+    match (self, other) {
+    // ==== Unsigned widening and narrowing ====
+    (Value::U8(v), ValueKind::U16) => Some(Value::U16(new_ref((*v.borrow()) as u16))),
+    (Value::U8(v), ValueKind::U32) => Some(Value::U32(new_ref((*v.borrow()) as u32))),
+    (Value::U8(v), ValueKind::U64) => Some(Value::U64(new_ref((*v.borrow()) as u64))),
+    (Value::U8(v), ValueKind::U128) => Some(Value::U128(new_ref((*v.borrow()) as u128))),
+    (Value::U8(v), ValueKind::I16) => Some(Value::I16(new_ref((*v.borrow()) as i16))),
+    (Value::U8(v), ValueKind::I32) => Some(Value::I32(new_ref((*v.borrow()) as i32))),
+    (Value::U8(v), ValueKind::I64) => Some(Value::I64(new_ref((*v.borrow()) as i64))),
+    (Value::U8(v), ValueKind::I128) => Some(Value::I128(new_ref((*v.borrow()) as i128))),
+    (Value::U8(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::U8(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+
+    (Value::U16(v), ValueKind::U8) => Some(Value::U8(new_ref((*v.borrow()) as u8))),
+    (Value::U16(v), ValueKind::U32) => Some(Value::U32(new_ref((*v.borrow()) as u32))),
+    (Value::U16(v), ValueKind::U64) => Some(Value::U64(new_ref((*v.borrow()) as u64))),
+    (Value::U16(v), ValueKind::U128) => Some(Value::U128(new_ref((*v.borrow()) as u128))),
+    (Value::U16(v), ValueKind::I8) => Some(Value::I8(new_ref((*v.borrow()) as i8))),
+    (Value::U16(v), ValueKind::I32) => Some(Value::I32(new_ref((*v.borrow()) as i32))),
+    (Value::U16(v), ValueKind::I64) => Some(Value::I64(new_ref((*v.borrow()) as i64))),
+    (Value::U16(v), ValueKind::I128) => Some(Value::I128(new_ref((*v.borrow()) as i128))),
+    (Value::U16(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::U16(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+
+    (Value::U32(v), ValueKind::U8) => Some(Value::U8(new_ref((*v.borrow()) as u8))),
+    (Value::U32(v), ValueKind::U16) => Some(Value::U16(new_ref((*v.borrow()) as u16))),
+    (Value::U32(v), ValueKind::U64) => Some(Value::U64(new_ref((*v.borrow()) as u64))),
+    (Value::U32(v), ValueKind::U128) => Some(Value::U128(new_ref((*v.borrow()) as u128))),
+    (Value::U32(v), ValueKind::I8) => Some(Value::I8(new_ref((*v.borrow()) as i8))),
+    (Value::U32(v), ValueKind::I16) => Some(Value::I16(new_ref((*v.borrow()) as i16))),
+    (Value::U32(v), ValueKind::I64) => Some(Value::I64(new_ref((*v.borrow()) as i64))),
+    (Value::U32(v), ValueKind::I128) => Some(Value::I128(new_ref((*v.borrow()) as i128))),
+    (Value::U32(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::U32(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+
+    (Value::U64(v), ValueKind::U8) => Some(Value::U8(new_ref((*v.borrow()) as u8))),
+    (Value::U64(v), ValueKind::U16) => Some(Value::U16(new_ref((*v.borrow()) as u16))),
+    (Value::U64(v), ValueKind::U32) => Some(Value::U32(new_ref((*v.borrow()) as u32))),
+    (Value::U64(v), ValueKind::U128) => Some(Value::U128(new_ref((*v.borrow()) as u128))),
+    (Value::U64(v), ValueKind::I8) => Some(Value::I8(new_ref((*v.borrow()) as i8))),
+    (Value::U64(v), ValueKind::I16) => Some(Value::I16(new_ref((*v.borrow()) as i16))),
+    (Value::U64(v), ValueKind::I32) => Some(Value::I32(new_ref((*v.borrow()) as i32))),
+    (Value::U64(v), ValueKind::I128) => Some(Value::I128(new_ref((*v.borrow()) as i128))),
+    (Value::U64(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::U64(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+
+    (Value::U128(v), ValueKind::U8) => Some(Value::U8(new_ref((*v.borrow()) as u8))),
+    (Value::U128(v), ValueKind::U16) => Some(Value::U16(new_ref((*v.borrow()) as u16))),
+    (Value::U128(v), ValueKind::U32) => Some(Value::U32(new_ref((*v.borrow()) as u32))),
+    (Value::U128(v), ValueKind::U64) => Some(Value::U64(new_ref((*v.borrow()) as u64))),
+    (Value::U128(v), ValueKind::I8) => Some(Value::I8(new_ref((*v.borrow()) as i8))),
+    (Value::U128(v), ValueKind::I16) => Some(Value::I16(new_ref((*v.borrow()) as i16))),
+    (Value::U128(v), ValueKind::I32) => Some(Value::I32(new_ref((*v.borrow()) as i32))),
+    (Value::U128(v), ValueKind::I64) => Some(Value::I64(new_ref((*v.borrow()) as i64))),
+    (Value::U128(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::U128(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+
+    // ==== Signed widening and narrowing ====
+    (Value::I8(v), ValueKind::I16) => Some(Value::I16(new_ref((*v.borrow()) as i16))),
+    (Value::I8(v), ValueKind::I32) => Some(Value::I32(new_ref((*v.borrow()) as i32))),
+    (Value::I8(v), ValueKind::I64) => Some(Value::I64(new_ref((*v.borrow()) as i64))),
+    (Value::I8(v), ValueKind::I128) => Some(Value::I128(new_ref((*v.borrow()) as i128))),
+    (Value::I8(v), ValueKind::U16) => Some(Value::U16(new_ref((*v.borrow()) as u16))),
+    (Value::I8(v), ValueKind::U32) => Some(Value::U32(new_ref((*v.borrow()) as u32))),
+    (Value::I8(v), ValueKind::U64) => Some(Value::U64(new_ref((*v.borrow()) as u64))),
+    (Value::I8(v), ValueKind::U128) => Some(Value::U128(new_ref((*v.borrow()) as u128))),
+    (Value::I8(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::I8(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+
+    (Value::I16(v), ValueKind::I8) => Some(Value::I8(new_ref((*v.borrow()) as i8))),
+    (Value::I16(v), ValueKind::I32) => Some(Value::I32(new_ref((*v.borrow()) as i32))),
+    (Value::I16(v), ValueKind::I64) => Some(Value::I64(new_ref((*v.borrow()) as i64))),
+    (Value::I16(v), ValueKind::I128) => Some(Value::I128(new_ref((*v.borrow()) as i128))),
+    (Value::I16(v), ValueKind::U8) => Some(Value::U8(new_ref((*v.borrow()) as u8))),
+    (Value::I16(v), ValueKind::U32) => Some(Value::U32(new_ref((*v.borrow()) as u32))),
+    (Value::I16(v), ValueKind::U64) => Some(Value::U64(new_ref((*v.borrow()) as u64))),
+    (Value::I16(v), ValueKind::U128) => Some(Value::U128(new_ref((*v.borrow()) as u128))),
+    (Value::I16(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::I16(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+
+    (Value::I32(v), ValueKind::I8) => Some(Value::I8(new_ref((*v.borrow()) as i8))),
+    (Value::I32(v), ValueKind::I16) => Some(Value::I16(new_ref((*v.borrow()) as i16))),
+    (Value::I32(v), ValueKind::I64) => Some(Value::I64(new_ref((*v.borrow()) as i64))),
+    (Value::I32(v), ValueKind::I128) => Some(Value::I128(new_ref((*v.borrow()) as i128))),
+    (Value::I32(v), ValueKind::U8) => Some(Value::U8(new_ref((*v.borrow()) as u8))),
+    (Value::I32(v), ValueKind::U16) => Some(Value::U16(new_ref((*v.borrow()) as u16))),
+    (Value::I32(v), ValueKind::U64) => Some(Value::U64(new_ref((*v.borrow()) as u64))),
+    (Value::I32(v), ValueKind::U128) => Some(Value::U128(new_ref((*v.borrow()) as u128))),
+    (Value::I32(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::I32(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+
+    (Value::I64(v), ValueKind::I8) => Some(Value::I8(new_ref((*v.borrow()) as i8))),
+    (Value::I64(v), ValueKind::I16) => Some(Value::I16(new_ref((*v.borrow()) as i16))),
+    (Value::I64(v), ValueKind::I32) => Some(Value::I32(new_ref((*v.borrow()) as i32))),
+    (Value::I64(v), ValueKind::I128) => Some(Value::I128(new_ref((*v.borrow()) as i128))),
+    (Value::I64(v), ValueKind::U8) => Some(Value::U8(new_ref((*v.borrow()) as u8))),
+    (Value::I64(v), ValueKind::U16) => Some(Value::U16(new_ref((*v.borrow()) as u16))),
+    (Value::I64(v), ValueKind::U32) => Some(Value::U32(new_ref((*v.borrow()) as u32))),
+    (Value::I64(v), ValueKind::U128) => Some(Value::U128(new_ref((*v.borrow()) as u128))),
+    (Value::I64(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::I64(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+
+    (Value::I128(v), ValueKind::I8) => Some(Value::I8(new_ref((*v.borrow()) as i8))),
+    (Value::I128(v), ValueKind::I16) => Some(Value::I16(new_ref((*v.borrow()) as i16))),
+    (Value::I128(v), ValueKind::I32) => Some(Value::I32(new_ref((*v.borrow()) as i32))),
+    (Value::I128(v), ValueKind::I64) => Some(Value::I64(new_ref((*v.borrow()) as i64))),
+    (Value::I128(v), ValueKind::U8) => Some(Value::U8(new_ref((*v.borrow()) as u8))),
+    (Value::I128(v), ValueKind::U16) => Some(Value::U16(new_ref((*v.borrow()) as u16))),
+    (Value::I128(v), ValueKind::U32) => Some(Value::U32(new_ref((*v.borrow()) as u32))),
+    (Value::I128(v), ValueKind::U64) => Some(Value::U64(new_ref((*v.borrow()) as u64))),
+    (Value::I128(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::I128(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+
+    // ==== Float widening and narrowing ====
+    (Value::F32(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(v.borrow().0 as f64)))),
+    (Value::F64(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(v.borrow().0 as f32)))),
+
+    // ==== Float to integer conversions (truncate) ====
+    (Value::F32(v), ValueKind::I8) => Some(Value::I8(new_ref(v.borrow().0 as i8))),
+    (Value::F32(v), ValueKind::I16) => Some(Value::I16(new_ref(v.borrow().0 as i16))),
+    (Value::F32(v), ValueKind::I32) => Some(Value::I32(new_ref(v.borrow().0 as i32))),
+    (Value::F32(v), ValueKind::I64) => Some(Value::I64(new_ref(v.borrow().0 as i64))),
+    (Value::F32(v), ValueKind::I128) => Some(Value::I128(new_ref(v.borrow().0 as i128))),
+    (Value::F32(v), ValueKind::U8) => Some(Value::U8(new_ref(v.borrow().0 as u8))),
+    (Value::F32(v), ValueKind::U16) => Some(Value::U16(new_ref(v.borrow().0 as u16))),
+    (Value::F32(v), ValueKind::U32) => Some(Value::U32(new_ref(v.borrow().0 as u32))),
+    (Value::F32(v), ValueKind::U64) => Some(Value::U64(new_ref(v.borrow().0 as u64))),
+    (Value::F32(v), ValueKind::U128) => Some(Value::U128(new_ref(v.borrow().0 as u128))),
+
+    (Value::F64(v), ValueKind::I8) => Some(Value::I8(new_ref(v.borrow().0 as i8))),
+    (Value::F64(v), ValueKind::I16) => Some(Value::I16(new_ref(v.borrow().0 as i16))),
+    (Value::F64(v), ValueKind::I32) => Some(Value::I32(new_ref(v.borrow().0 as i32))),
+    (Value::F64(v), ValueKind::I64) => Some(Value::I64(new_ref(v.borrow().0 as i64))),
+    (Value::F64(v), ValueKind::I128) => Some(Value::I128(new_ref(v.borrow().0 as i128))),
+    (Value::F64(v), ValueKind::U8) => Some(Value::U8(new_ref(v.borrow().0 as u8))),
+    (Value::F64(v), ValueKind::U16) => Some(Value::U16(new_ref(v.borrow().0 as u16))),
+    (Value::F64(v), ValueKind::U32) => Some(Value::U32(new_ref(v.borrow().0 as u32))),
+    (Value::F64(v), ValueKind::U64) => Some(Value::U64(new_ref(v.borrow().0 as u64))),
+    (Value::F64(v), ValueKind::U128) => Some(Value::U128(new_ref(v.borrow().0 as u128))),
+
+      /*
+      // ==== INDEX conversions ====
+      (Value::Index(i), U32) => Some(Value::U32(new_ref((*i.borrow()) as u32))),
+      (Value::U32(v), Index) => Some(Value::Index(new_ref((*v.borrow()) as usize))),
+
+
+      // ==== MATRIX conversions (element-wise) ====
+      (Value::MatrixU8(m), MatrixU16) => Some(Value::MatrixU16(m.map(|x| *x as u16))),
+      (Value::MatrixI32(m), MatrixF64) => Some(Value::MatrixF64(m.map(|x| (*x) as f64))),
+      // You can expand other matrix conversions similarly...
+
+      // ==== COMPLEX TYPES (stubs) ====
+      (Value::Set(set), Set(_)) => Some(Value::Set(set.clone())), // TODO: element-wise convert
+      (Value::Map(map), Map(_)) => Some(Value::Map(map.clone())), // TODO: key/value convert
+      (Value::Record(r), Record(_)) => Some(Value::Record(r.clone())), // TODO: field convert
+      (Value::Table(t), Table(_)) => Some(Value::Table(t.clone())), // TODO: column convert
+
+      // ==== ENUM, KIND ====
+      (Value::Enum(e), Enum(_)) => Some(Value::Enum(e.clone())),
+      (Value::Kind(k), Kind(_)) => Some(Value::Kind(k.clone())),
+
+      // ==== SPECIAL CASES ====
+      (Value::IndexAll, IndexAll) => Some(Value::IndexAll),
+      (Value::Empty, Empty) => Some(Value::Empty),
+      */
+      // ==== FALLBACK ====
+      _ => None,
+    }
+  }
 
   pub fn size_of(&self) -> usize {
     match self {
@@ -588,7 +856,7 @@ impl Value {
     }
   }
 
-  pub fn as_vecbool(&self)   -> Option<Vec<bool>>  {if let Value::MatrixBool(v)  = self { Some(v.as_vec()) } else if let Value::Bool(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecbool()  } else { None }}
+  pub fn as_vecbool(&self) -> Option<Vec<bool>> {if let Value::MatrixBool(v)  = self { Some(v.as_vec()) } else if let Value::Bool(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecbool()  } else { None }}
   
   pub fn as_vecf64(&self) -> Option<Vec<F64>> { if let Value::MatrixF64(v) = self { Some(v.as_vec()) } else if let Value::F64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf64() } else if let Some(v) = self.as_f64() { Some(vec![v.borrow().clone()]) } else { None } }
   pub fn as_vecf32(&self) -> Option<Vec<F32>> { if let Value::MatrixF32(v) = self { Some(v.as_vec()) } else if let Value::F32(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf32() } else if let Some(v) = self.as_f32() { Some(vec![v.borrow().clone()]) } else { None } }
@@ -605,7 +873,7 @@ impl Value {
   pub fn as_veci64(&self) -> Option<Vec<i64>> { if let Value::MatrixI64(v) = self { Some(v.as_vec()) } else if let Value::I64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci64() } else if let Some(v) = self.as_i64() { Some(vec![v.borrow().clone()]) } else { None } }
   pub fn as_veci128(&self) -> Option<Vec<i128>> { if let Value::MatrixI128(v) = self { Some(v.as_vec()) } else if let Value::I128(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci128() } else if let Some(v) = self.as_i128() { Some(vec![v.borrow().clone()]) } else { None } }
 
-  pub fn as_vecstring(&self)   -> Option<Vec<String>>  {if let Value::MatrixString(v)  = self { Some(v.as_vec()) } else if let Value::String(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecstring()  } else { None }}
+  pub fn as_vecstring(&self) -> Option<Vec<String>> {if let Value::MatrixString(v)  = self { Some(v.as_vec()) } else if let Value::String(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecstring()  } else { None }}
 
 
   pub fn as_vecusize(&self) -> Option<Vec<usize>> {
@@ -693,21 +961,21 @@ impl ToValue for Vec<usize> {
   }
 }
 
-impl ToValue for Ref<usize> { fn to_value(&self) -> Value { Value::Index(self.clone()) } }
-impl ToValue for Ref<u8>    { fn to_value(&self) -> Value { Value::U8(self.clone())    } }
-impl ToValue for Ref<u16>   { fn to_value(&self) -> Value { Value::U16(self.clone())   } }
-impl ToValue for Ref<u32>   { fn to_value(&self) -> Value { Value::U32(self.clone())   } }
-impl ToValue for Ref<u64>   { fn to_value(&self) -> Value { Value::U64(self.clone())   } }
-impl ToValue for Ref<u128>  { fn to_value(&self) -> Value { Value::U128(self.clone())  } }
-impl ToValue for Ref<i8>    { fn to_value(&self) -> Value { Value::I8(self.clone())    } }
-impl ToValue for Ref<i16>   { fn to_value(&self) -> Value { Value::I16(self.clone())   } }
-impl ToValue for Ref<i32>   { fn to_value(&self) -> Value { Value::I32(self.clone())   } }
-impl ToValue for Ref<i64>   { fn to_value(&self) -> Value { Value::I64(self.clone())   } }
-impl ToValue for Ref<i128>  { fn to_value(&self) -> Value { Value::I128(self.clone())  } }
-impl ToValue for Ref<F32>   { fn to_value(&self) -> Value { Value::F32(self.clone())   } }
-impl ToValue for Ref<F64>   { fn to_value(&self) -> Value { Value::F64(self.clone())   } }
-impl ToValue for Ref<bool>  { fn to_value(&self) -> Value { Value::Bool(self.clone())  } }
-impl ToValue for Ref<String>  { fn to_value(&self) -> Value { Value::String(self.clone())  } }
+impl ToValue for Ref<usize>  { fn to_value(&self) -> Value { Value::Index(self.clone())  } }
+impl ToValue for Ref<u8>     { fn to_value(&self) -> Value { Value::U8(self.clone())     } }
+impl ToValue for Ref<u16>    { fn to_value(&self) -> Value { Value::U16(self.clone())    } }
+impl ToValue for Ref<u32>    { fn to_value(&self) -> Value { Value::U32(self.clone())    } }
+impl ToValue for Ref<u64>    { fn to_value(&self) -> Value { Value::U64(self.clone())    } }
+impl ToValue for Ref<u128>   { fn to_value(&self) -> Value { Value::U128(self.clone())   } }
+impl ToValue for Ref<i8>     { fn to_value(&self) -> Value { Value::I8(self.clone())     } }
+impl ToValue for Ref<i16>    { fn to_value(&self) -> Value { Value::I16(self.clone())    } }
+impl ToValue for Ref<i32>    { fn to_value(&self) -> Value { Value::I32(self.clone())    } }
+impl ToValue for Ref<i64>    { fn to_value(&self) -> Value { Value::I64(self.clone())    } }
+impl ToValue for Ref<i128>   { fn to_value(&self) -> Value { Value::I128(self.clone())   } }
+impl ToValue for Ref<F32>    { fn to_value(&self) -> Value { Value::F32(self.clone())    } }
+impl ToValue for Ref<F64>    { fn to_value(&self) -> Value { Value::F64(self.clone())    } }
+impl ToValue for Ref<bool>   { fn to_value(&self) -> Value { Value::Bool(self.clone())   } }
+impl ToValue for Ref<String> { fn to_value(&self) -> Value { Value::String(self.clone()) } }
 
 macro_rules! to_value_matrix {
   ($($nd_matrix_kind:ident, $matrix_kind:ident, $base_type:ty),+ $(,)?) => {

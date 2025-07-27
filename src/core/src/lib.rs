@@ -7,6 +7,7 @@
 #![cfg_attr(feature = "no-std", alloc)]
 #![allow(dead_code)]
 #![feature(step_trait)]
+#![feature(box_patterns)]
 
 #[cfg(feature="no-std")] #[macro_use] extern crate alloc;
 #[cfg(not(feature = "no-std"))] extern crate core;

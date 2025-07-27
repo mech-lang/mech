@@ -454,7 +454,6 @@ impl MechTable {
   }
 
   pub fn pretty_print(&self) -> String {
-    println!("{:?}", self);
     let mut builder = Builder::default();
     for (k,(knd,val)) in &self.data {
       let name = self.col_names.get(k).unwrap();
