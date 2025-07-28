@@ -977,7 +977,7 @@ impl ToValue for Ref<F64>    { fn to_value(&self) -> Value { Value::F64(self.clo
 impl ToValue for Ref<bool>   { fn to_value(&self) -> Value { Value::Bool(self.clone())   } }
 impl ToValue for Ref<String> { fn to_value(&self) -> Value { Value::String(self.clone()) } }
 
-macro_rules! to_value_matrix {
+macro_rules! to_value_ndmatrix {
   ($($nd_matrix_kind:ident, $matrix_kind:ident, $base_type:ty),+ $(,)?) => {
     $(
       impl ToValue for Ref<$nd_matrix_kind<$base_type>> {
@@ -990,7 +990,7 @@ macro_rules! to_value_matrix {
 
 macro_rules! impl_to_value_matrix {
   ($matrix_kind:ident) => {
-    to_value_matrix!(
+    to_value_ndmatrix!(
       $matrix_kind, MatrixIndex,  usize,
       $matrix_kind, MatrixBool,   bool,
       $matrix_kind, MatrixI8,     i8,

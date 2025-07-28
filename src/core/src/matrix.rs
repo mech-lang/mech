@@ -74,15 +74,21 @@ macro_rules! impl_to_matrix {
 impl ToMatrix for usize {
   fn to_matrix(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
     match (rows,cols) {
+      #[cfg(feature = "RowVectorD")]
       (1,n) => Matrix::RowDVector(new_ref(RowDVector::from_vec(elements))),
+      #[cfg(feature = "VectorD")]
       (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
+      #[cfg(feature = "MatrixD")]
       (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
     }
   }
   fn to_matrixd(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
     match (rows,cols) {
+      #[cfg(feature = "RowVectorD")]
       (1,n) => Matrix::RowDVector(new_ref(RowDVector::from_vec(elements))),
+      #[cfg(feature = "VectorD")]
       (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
+      #[cfg(feature = "MatrixD")]
       (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
     }
   }
@@ -205,20 +211,35 @@ macro_rules! copy_mat {
         src_rows
       }}};}
       
+#[cfg(feature = "MatrixD")]
 copy_mat!(DMatrix);
+#[cfg(feature = "Matrix1")]
 copy_mat!(Matrix1);
+#[cfg(feature = "Matrix2")]
 copy_mat!(Matrix2);
+#[cfg(feature = "Matrix3")]
 copy_mat!(Matrix3);
+#[cfg(feature = "Matrix4")]
 copy_mat!(Matrix4);
+#[cfg(feature = "Matrix2x3")]
 copy_mat!(Matrix2x3);
+#[cfg(feature = "Matrix3x2")]
 copy_mat!(Matrix3x2);
+#[cfg(feature = "Vector2")]
 copy_mat!(Vector2);
+#[cfg(feature = "Vector3")]
 copy_mat!(Vector3);
+#[cfg(feature = "Vector4")]
 copy_mat!(Vector4);
+#[cfg(feature = "VectorD")]
 copy_mat!(DVector);
+#[cfg(feature = "RowVector2")]
 copy_mat!(RowVector2);
+#[cfg(feature = "RowVector3")]
 copy_mat!(RowVector3);
+#[cfg(feature = "RowVector4")]
 copy_mat!(RowVector4);
+#[cfg(feature = "RowVectorD")]
 copy_mat!(RowDVector);
 
 impl<T> Hash for Matrix<T> 
@@ -413,7 +434,8 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 impl<T> Matrix<T> 
 where T: Debug + Clone + PartialEq + 'static
 {
-pub fn append(&mut self, other: &Matrix<T>) -> MResult<()> {
+
+  pub fn append(&mut self, other: &Matrix<T>) -> MResult<()> {
     match (self, other) {
       #[cfg(feature = "VectorD")]
       (Matrix::DVector(lhs), Matrix::DVector(rhs)) => {

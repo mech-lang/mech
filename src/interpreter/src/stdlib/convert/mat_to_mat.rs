@@ -33,7 +33,7 @@ where
     }
   }
   fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("ConvertMatToMat2 {{ arg: {:?}, out: {:?}, elements: {} }}", self.arg, self.out, self.elements) }
+  fn to_string(&self) -> String { format!("ConvertMatToMat2 {{\narg: {:#?}\nout: {:#?}\nelements: {:#?} }}", self.arg, self.out, self.elements) }
 }
 
 fn create_convert_mat_to_mat<TFrom, TTo>(
@@ -225,7 +225,9 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
           $(
             $(
               (Value::[<Matrix $src:camel>](v), ValueKind::Matrix(box ValueKind::[<$dst:camel>], dims)) => {
-                if dims.is_empty() || ((shape[0] == dims[0]) && (shape[1] == dims[1])) {
+                if dims.is_empty() { 
+                  create_convert_mat_to_mat::<$src, $dst>(v, &shape)
+                } else if ((shape[0] == dims[0]) && (shape[1] == dims[1])) {
                   create_convert_mat_to_mat::<$src, $dst>(v, &dims)
                 } else if shape[0] * shape[1] == dims[0] * dims[1] {
                   create_reshape_mat_to_mat::<$src, $dst>(v, &dims)
