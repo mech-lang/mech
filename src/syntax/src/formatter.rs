@@ -711,10 +711,11 @@ window.addEventListener("scroll", () => {{
       }
       ParagraphElement::FootnoteReference(n) => self.footnote_reference(n),
       ParagraphElement::Strong(n) => {
+        let p = self.paragraph_element(n);
         if self.html {
-          format!("<strong class=\"mech-strong\">{}</strong>", n.to_string())
+          format!("<strong class=\"mech-strong\">{}</strong>", p)
         } else {
-          format!("**{}**", n.to_string())
+          format!("**{}**", p)
         }
       },
       ParagraphElement::Hyperlink((text, url)) => {
@@ -2356,14 +2357,16 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
           }
         }
         let mut src2 = "".to_string();
-        let l = self.literal(literal);
-        src2 = format!(":{}", l);
-        format!("|{}|{}", src, src2)
+        let sz = match &**literal {
+          Literal::Empty(_) => "".to_string(),
+          _ => format!(":{}", self.literal(literal)),
+        };
+        format!("|{}|{}", src, sz)
       },
       Kind::Map(kind1, kind2) => {
         let k1 = self.kind(kind1);
         let k2 = self.kind(kind2);
-        format!("{}:{}", k1, k2)
+        format!("{{{}:{}}}", k1, k2)
       },
     };
     if self.html {

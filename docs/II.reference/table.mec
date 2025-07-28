@@ -96,6 +96,24 @@ Tables can be constructed of vectors, matrices, or records.
 
 (3.2) From a matrix
 
+You can create a table from a matrix using a kind annotation, as long as the kinds of the table columns are compatible with the matrix kind. For example, if you have a matrix of kind `f64`, you can create a table with columns of kind `f64`:
+
+For example:
+
+```mech:ex3
+x := [1 2; 3 4]; 
+a<|foo<f64>,bar<f64>|> := x
+```
+This creates a table `a` with two columns, `foo` and `bar`, both of kind `f64`, and two rows corresponding to the rows of the matrix `x`.
+
+The matrix `[a.foo a.bar]` is identical to the original matrix `x`.
+
+It's possible to convert a matrix of one kind to a table of different kinded columns, as long as the conversion is valid. For example, you can convert a matrix of `f64` to a table with `u8` columns:
+
+```mech:ex3
+b<|foo<u8>,bar<i8>|> := x
+```
+
 (3.3) From records
 
 4. Accessing Elements
@@ -103,9 +121,11 @@ Tables can be constructed of vectors, matrices, or records.
 
 Consider the table:
 
-a:=| x<f32>  y<bool> | 
-   |  1.2     true   |
+a:=| x<f64>  y<bool> | 
+   |  1.6     true   |
    |  1.3     false  |
+   |  2.7     false  |
+   |  1.5     true   |
 
 (4.1) Access a Column
 
@@ -115,7 +135,7 @@ Use dot indexing to access columns. For example {{a.x;}}. The kind of the result
 a.x  -- Select column `x`, which has kind `[f32]`
 ```
 
-(4.2) Access Elements
+(4.2) Access an Element
 
 You can access an individual element in a table column by specifying the row index on the selected column:
 
@@ -130,7 +150,35 @@ Table columns are just vectors, so they support the same indexing operations as 
 You can access a record in a table by specifying the row index on the table itself:
 
 ```mech
-a{1}  -- Select the first record in the table, which has kind `record`
+a{1}  -- Select the first record in the table, returns a `record`
+```
+
+(4.4) Access Several Records
+
+You can access a range of records by using a vector as an index:
+
+```mech
+a{2..=3}  -- Select records 2 through 3, returns a `table`
+```
+
+It's possible to select the same row multiple times:
+
+```mech
+a{[1 1 2 2]}  -- Select records 1 and 2 twice
+```
+
+(4.5) Filter Records
+
+You can filter records using logical indexing. For example, to select records where `y` is `true`:
+
+```mech
+a{a.y}  -- Select records where `y` is `true`
+```
+
+Or to filter records where `x` is greater than `1.5`:
+
+```mech
+a{a.x > 1.5}  -- Select records where `x` is greater than `1.5`
 ```
 
 5. Heterogeneous Columns

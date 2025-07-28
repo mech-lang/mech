@@ -47,7 +47,8 @@ pub fn execute_repl_command(repl_cmd: ReplCommand) -> String {
             let mut mech = &mut *ptr;
             match run_mech_code(&mut mech.interpreter, &code)  {
               Ok(output) => { 
-                return format!("<div class=\"mech-output-kind\">{:?}</div><div class=\"mech-output-value\">{}</div>", output.kind(), output.to_html());
+                let kind_str = html_escape(&format!("{}",output.kind()));
+                return format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", kind_str, output.to_html());
               },
               Err(err) => { return format!("{:?}",err); }
             }
@@ -180,8 +181,8 @@ pub fn whos_html(intrp: &Interpreter, names: Vec<String>) -> String {
 fn append_row(html: &mut String, name: &str, value: &Value) {
   let name = html_escape(name);
   let size = html_escape(&format!("{:?}", value.shape()));
-  let bytes = html_escape(&format!("{:?}", value.size_of()));
-  let kind = html_escape(&format!("{:?}", value.kind()));
+  let bytes = html_escape(&format!("{}", value.size_of()));
+  let kind = html_escape(&format!("{}", value.kind()));
 
   html.push_str("<tr class=\"mech-table-row\">");
 
@@ -193,7 +194,7 @@ fn append_row(html: &mut String, name: &str, value: &Value) {
   html.push_str("</tr>");
 }
 
-fn html_escape(input: &str) -> String {
+pub fn html_escape(input: &str) -> String {
   input
     .replace('&', "&amp;")
     .replace('<', "&lt;")

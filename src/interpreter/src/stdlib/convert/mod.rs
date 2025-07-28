@@ -47,7 +47,9 @@ lossless_into!(u128);
 lossless_into!(F32);
 lossless_into!(F64);
 lossless_into!(bool);
+lossless_into!(String);
 
+lossless_into!(u8,u8);
 lossless_into!(u8,u16);
 lossless_into!(u8,u32);
 lossless_into!(u8,u64);
@@ -59,6 +61,7 @@ lossless_into!(u8,i64);
 lossless_into!(u8,i128);
 
 lossless_into!(u16,u8);
+lossless_into!(u16,u16);
 lossless_into!(u16,u32);
 lossless_into!(u16,u64);
 lossless_into!(u16,u128);
@@ -70,6 +73,7 @@ lossless_into!(u16,i128);
 
 lossless_into!(u32,u8);
 lossless_into!(u32,u16);
+lossless_into!(u32,u32);
 lossless_into!(u32,u64);
 lossless_into!(u32,u128);
 lossless_into!(u32,i8);
@@ -81,6 +85,7 @@ lossless_into!(u32,i128);
 lossless_into!(u64,u8);
 lossless_into!(u64,u16);
 lossless_into!(u64,u32);
+lossless_into!(u64,u64);
 lossless_into!(u64,u128);
 lossless_into!(u64,i8);
 lossless_into!(u64,i16);
@@ -92,12 +97,14 @@ lossless_into!(u128,u8);
 lossless_into!(u128,u16);
 lossless_into!(u128,u32);
 lossless_into!(u128,u64);
+lossless_into!(u128,u128);
 lossless_into!(u128,i8);
 lossless_into!(u128,i16);
 lossless_into!(u128,i32);
 lossless_into!(u128,i64);
 lossless_into!(u128,i128);
 
+lossless_into!(i8,i8);
 lossless_into!(i8,i16);
 lossless_into!(i8,i32);
 lossless_into!(i8,i64);
@@ -109,6 +116,7 @@ lossless_into!(i8,u64);
 lossless_into!(i8,u128);
 
 lossless_into!(i16,i8);
+lossless_into!(i16,i16);
 lossless_into!(i16,i32);
 lossless_into!(i16,i64);
 lossless_into!(i16,i128);
@@ -120,6 +128,7 @@ lossless_into!(i16,u128);
 
 lossless_into!(i32,i8);
 lossless_into!(i32,i16);
+lossless_into!(i32,i32);
 lossless_into!(i32,i64);
 lossless_into!(i32,i128);
 lossless_into!(i32,u8);
@@ -131,6 +140,7 @@ lossless_into!(i32,u128);
 lossless_into!(i64,i8);
 lossless_into!(i64,i16);
 lossless_into!(i64,i32);
+lossless_into!(i64,i64);
 lossless_into!(i64,i128);
 lossless_into!(i64,u8);
 lossless_into!(i64,u16);
@@ -142,6 +152,7 @@ lossless_into!(i128,i8);
 lossless_into!(i128,i16);
 lossless_into!(i128,i32);
 lossless_into!(i128,i64);
+lossless_into!(i128,i128);
 lossless_into!(i128,u8);
 lossless_into!(i128,u16);
 lossless_into!(i128,u32);
@@ -217,5 +228,17 @@ impl LosslessInto<F32> for F64 {
 impl LosslessInto<F64> for F32 {
   fn lossless_into(self) -> F64 {
     F64::new(self.0 as f64)
+  }
+}
+
+impl LosslessInto<F64> for F64 {
+  fn lossless_into(self) -> F64 {
+    self
+  }
+}
+
+impl LosslessInto<F32> for F32 {
+  fn lossless_into(self) -> F32 {
+    self
   }
 }

@@ -23,10 +23,8 @@ impl NativeFunctionCompiler for AccessScalar {
     }
     let src = &arguments[0];
     let index = &arguments[1];
-    println!("Kind: {:?}", src.kind().deref_kind());
     match src.kind().deref_kind() {
       ValueKind::Matrix(mat,_) => {
-        println!("Matrix Access Scalar");
         MatrixAccessScalar{}.compile(&arguments)
       },
       ValueKind::Table(tble,_) => TableAccessScalar{}.compile(&arguments),
@@ -34,6 +32,25 @@ impl NativeFunctionCompiler for AccessScalar {
     }
   }
 }
+
+pub struct AccessRange {}
+impl NativeFunctionCompiler for AccessRange {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() != 2 {
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    let src = &arguments[0];
+    let index = &arguments[1];
+    match src.kind().deref_kind() {
+      ValueKind::Matrix(mat,_) => {
+        MatrixAccessRange{}.compile(&arguments)
+      },
+      ValueKind::Table(tble,_) => TableAccessRange{}.compile(&arguments),
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+    }
+  }
+}
+
 
 pub struct AccessSwizzle {}
 impl NativeFunctionCompiler for AccessSwizzle {
@@ -70,6 +87,7 @@ impl NativeFunctionCompiler for AccessSwizzle {
             _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
           }
         }
+        todo!("Table swizzle needs to be fixed.");
         let tuple = Value::Tuple(MechTuple{elements});
         Ok(Box::new(TableAccessSwizzle{out: tuple}))
       }

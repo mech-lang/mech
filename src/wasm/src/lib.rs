@@ -327,9 +327,10 @@ impl WasmMech {
         match symbols_brrw.get(element_id) {
           Some(output) => {
             let output_brrw = output.borrow();
+            let kind_str = html_escape(&format!("{}", output_brrw.kind()));
             let result_html = format!(
-              "<div class=\"mech-output-kind\">{:?}</div><div class=\"mech-output-value\">{}</div>",
-              output_brrw.kind(),
+              "<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>",
+              kind_str,
               output_brrw.to_html()
             );
 
@@ -465,7 +466,8 @@ impl WasmMech {
               }
             };
             // set the inner html of the block to the output value html
-            let formatted_output = format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", output.kind(), output.to_html());
+            let kind_str = html_escape(&format!("{}",output.kind()));
+            let formatted_output = format!("<div class=\"mech-output-kind\">{}</div><div class=\"mech-output-value\">{}</div>", kind_str, output.to_html());
             block.set_inner_html(&formatted_output);
           }
         }

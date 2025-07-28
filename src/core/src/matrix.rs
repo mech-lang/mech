@@ -17,6 +17,7 @@ use std::any::Any;
 
 pub trait ToMatrix: Clone {
   fn to_matrix(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self>;
+  fn to_matrixd(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self>;
 }
   
 macro_rules! impl_to_matrix {
@@ -54,13 +55,40 @@ macro_rules! impl_to_matrix {
           (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
           #[cfg(feature = "MatrixD")]
           (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
-        }}}};}
+        }
+      }
+      fn to_matrixd(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
+        match (rows,cols) {
+          #[cfg(feature = "RowVectorD")]
+          (1,n) => Matrix::RowDVector(new_ref(RowDVector::from_vec(elements))),
+          #[cfg(feature = "VectorD")]
+          (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
+          #[cfg(feature = "MatrixD")]
+          (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
+        }
+      }
+    }
+  };    
+}
 
 impl ToMatrix for usize {
   fn to_matrix(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
     match (rows,cols) {
+      #[cfg(feature = "RowVectorD")]
       (1,n) => Matrix::RowDVector(new_ref(RowDVector::from_vec(elements))),
+      #[cfg(feature = "VectorD")]
       (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
+      #[cfg(feature = "MatrixD")]
+      (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
+    }
+  }
+  fn to_matrixd(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
+    match (rows,cols) {
+      #[cfg(feature = "RowVectorD")]
+      (1,n) => Matrix::RowDVector(new_ref(RowDVector::from_vec(elements))),
+      #[cfg(feature = "VectorD")]
+      (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
+      #[cfg(feature = "MatrixD")]
       (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
     }
   }
@@ -183,20 +211,35 @@ macro_rules! copy_mat {
         src_rows
       }}};}
       
+#[cfg(feature = "MatrixD")]
 copy_mat!(DMatrix);
+#[cfg(feature = "Matrix1")]
 copy_mat!(Matrix1);
+#[cfg(feature = "Matrix2")]
 copy_mat!(Matrix2);
+#[cfg(feature = "Matrix3")]
 copy_mat!(Matrix3);
+#[cfg(feature = "Matrix4")]
 copy_mat!(Matrix4);
+#[cfg(feature = "Matrix2x3")]
 copy_mat!(Matrix2x3);
+#[cfg(feature = "Matrix3x2")]
 copy_mat!(Matrix3x2);
+#[cfg(feature = "Vector2")]
 copy_mat!(Vector2);
+#[cfg(feature = "Vector3")]
 copy_mat!(Vector3);
+#[cfg(feature = "Vector4")]
 copy_mat!(Vector4);
+#[cfg(feature = "VectorD")]
 copy_mat!(DVector);
+#[cfg(feature = "RowVector2")]
 copy_mat!(RowVector2);
+#[cfg(feature = "RowVector3")]
 copy_mat!(RowVector3);
+#[cfg(feature = "RowVector4")]
 copy_mat!(RowVector4);
+#[cfg(feature = "RowVectorD")]
 copy_mat!(RowDVector);
 
 impl<T> Hash for Matrix<T> 
@@ -371,6 +414,91 @@ impl<T> Matrix<T>
 where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 {
 
+  pub fn to_html(&self) -> String {
+    let size = self.shape();
+    let mut html = String::new();
+    html.push_str("<table class='mech-matrix'>");
+    for i in 0..size[0] {
+      html.push_str("<tr>");
+      for j in 0..size[1] {
+        let value = self.index2d(i+1, j+1);
+        html.push_str(&format!("<td>{}</td>", quoted(&value)));
+      }
+      html.push_str("</tr>");
+    }
+    format!("<div class='mech-matrix-outer'><div class='mech-matrix-inner'></div>{}</div>", html)
+  }
+
+}
+
+impl<T> Matrix<T> 
+where T: Debug + Clone + PartialEq + 'static
+{
+
+  pub fn append(&mut self, other: &Matrix<T>) -> MResult<()> {
+    match (self, other) {
+      #[cfg(feature = "VectorD")]
+      (Matrix::DVector(lhs), Matrix::DVector(rhs)) => {
+        let mut lhs = lhs.borrow_mut();
+        let rhs = rhs.borrow();
+        let old_len = lhs.len();
+        lhs.resize_vertically_mut(old_len + rhs.len(), rhs[0].clone());
+        for (i, val) in rhs.iter().enumerate() {
+          lhs[old_len + i] = val.clone();
+        }
+        Ok(())
+      }
+      #[cfg(feature = "RowVectorD")]
+      (Matrix::RowDVector(lhs), Matrix::RowDVector(rhs)) => {
+        let mut lhs = lhs.borrow_mut();
+        let rhs = rhs.borrow();
+        let old_len = lhs.len();
+        lhs.resize_horizontally_mut(old_len + rhs.len(), rhs[0].clone());
+        for (i, val) in rhs.iter().enumerate() {
+          lhs[old_len + i] = val.clone();
+        }
+        Ok(())
+      }
+      _ => {
+        return Err(MechError{
+          id: line!(),
+          file: file!().to_string(),
+          tokens: vec![],
+          msg: "".to_string(),
+          kind: MechErrorKind::None,
+        });
+      }    
+    }
+  }
+
+  pub fn push(&mut self, value: T) -> MResult<()> {
+    match self {
+      #[cfg(feature = "RowVectorD")]
+      Matrix::RowDVector(vec) => {
+          let mut vec = vec.borrow_mut();
+          let new_len = vec.ncols() + 1;
+          vec.resize_horizontally_mut(new_len, value.clone()); // row vector: increase columns
+          Ok(())
+      }
+      #[cfg(feature = "VectorD")]
+      Matrix::DVector(vec) => {
+          let mut vec = vec.borrow_mut();
+          let new_len = vec.nrows() + 1;
+          vec.resize_vertically_mut(new_len, value.clone()); // column vector: increase rows
+          Ok(())
+      }
+      _ => {
+        return Err(MechError{
+          id: line!(),
+          file: file!().to_string(),
+          tokens: vec![],
+          msg: "".to_string(),
+          kind: MechErrorKind::None,
+        });
+      }
+    }
+  }
+
   pub fn rows(&self) -> usize {
     let size = self.shape();
     size[0]
@@ -385,6 +513,32 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
     let vec = self.as_vec();
     vec.capacity() * size_of::<T>()
   }       
+
+  pub fn resize_vertically(&mut self, new_size: usize, fill_value: T) -> MResult<()> {
+    match self {
+      #[cfg(feature = "RowVectorD")]
+      Matrix::RowDVector(vec) => {
+        let mut vec = vec.borrow_mut();
+        vec.resize_horizontally_mut(new_size, fill_value);
+        Ok(())
+      }
+      #[cfg(feature = "VectorD")]
+      Matrix::DVector(vec) => {
+        let mut vec = vec.borrow_mut();
+        vec.resize_vertically_mut(new_size, fill_value);
+        Ok(())
+      }
+      _ => {
+        return Err(MechError{
+          id: line!(),
+          file: file!().to_string(),
+          tokens: vec![],
+          msg: "".to_string(),
+          kind: MechErrorKind::None,
+        });
+      }
+    }
+  }
 
   pub fn get_copyable_matrix(&self) -> Box<dyn CopyMat<T>> {
     match self {
@@ -457,21 +611,6 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
     vec![shape.0, shape.1]
   }
 
-  pub fn to_html(&self) -> String {
-    let size = self.shape();
-    let mut html = String::new();
-    html.push_str("<table class='mech-matrix'>");
-    for i in 0..size[0] {
-      html.push_str("<tr>");
-      for j in 0..size[1] {
-        let value = self.index2d(i+1, j+1);
-        html.push_str(&format!("<td>{}</td>", quoted(&value)));
-      }
-      html.push_str("</tr>");
-    }
-    format!("<div class='mech-matrix-outer'><div class='mech-matrix-inner'></div>{}</div>", html)
-  }
-
   pub fn index1d(&self, ix: usize) -> T {
     match self {
       #[cfg(feature = "RowVector4")]
@@ -504,6 +643,41 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
       Matrix::Matrix2x3(x) => (*x.borrow().index(ix-1)).clone(),
       #[cfg(feature = "MatrixD")]
       Matrix::DMatrix(x) => (*x.borrow().index(ix-1)).clone(),
+    }
+  }
+
+  pub fn set_index1d(&self, index: usize, value: T) {
+    match self {
+      #[cfg(feature = "RowVector4")]
+      Matrix::RowVector4(v) => v.borrow_mut()[index] = value,
+      #[cfg(feature = "RowVector3")]
+      Matrix::RowVector3(v) => v.borrow_mut()[index] = value,
+      #[cfg(feature = "RowVector2")]
+      Matrix::RowVector2(v) => v.borrow_mut()[index] = value,
+      #[cfg(feature = "RowVectorD")]
+      Matrix::RowDVector(v) => v.borrow_mut()[index] = value,
+      #[cfg(feature = "Vector4")]
+      Matrix::Vector4(v) => v.borrow_mut()[index] = value,
+      #[cfg(feature = "Vector3")]
+      Matrix::Vector3(v) => v.borrow_mut()[index] = value,
+      #[cfg(feature = "Vector2")]
+      Matrix::Vector2(v) => v.borrow_mut()[index] = value,
+      #[cfg(feature = "VectorD")]
+      Matrix::DVector(v) => v.borrow_mut()[index] = value,
+      #[cfg(feature = "Matrix1")]
+      Matrix::Matrix1(m) => m.borrow_mut()[index] = value,
+      #[cfg(feature = "Matrix2")]
+      Matrix::Matrix2(m) => m.borrow_mut()[index] = value,
+      #[cfg(feature = "Matrix3")]
+      Matrix::Matrix3(m) => m.borrow_mut()[index] = value,
+      #[cfg(feature = "Matrix4")]
+      Matrix::Matrix4(m) => m.borrow_mut()[index] = value,
+      #[cfg(feature = "Matrix2x3")]
+      Matrix::Matrix2x3(m) => m.borrow_mut()[index] = value,
+      #[cfg(feature = "Matrix3x2")]
+      Matrix::Matrix3x2(m) => m.borrow_mut()[index] = value,
+      #[cfg(feature = "MatrixD")]
+      Matrix::DMatrix(m) => m.borrow_mut()[index] = value,
     }
   }
 

@@ -72,8 +72,24 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
       Some(k) => kind_annotation(&k.kind, p)?.to_value_kind(p.functions())?,
       None => val.kind(),
     };
-    kinds.push(knd);
-    data.insert(name_hash, val);
+    // If the kinds are different, do a conversion.
+    kinds.push(knd.clone());
+    if knd != val.kind() {
+      let fxn = ConvertKind{}.compile(&vec![val.clone(), Value::Kind(knd)]);
+      match fxn {
+        Ok(convert_fxn) => {
+          convert_fxn.solve();
+          let converted_result = convert_fxn.out();
+          p.add_plan_step(convert_fxn);
+          data.insert(name_hash, converted_result);
+        },
+        Err(e) => {
+          return Err(MechError{id: line!(), file: file!().to_string(), tokens: vec![], msg: "".to_string(), kind: MechErrorKind::None});
+        }
+      }
+    } else {
+      data.insert(name_hash, val);
+    }
     field_names.insert(name_hash, name_str);
   }
   Ok(Value::Record(new_ref(MechRecord{
@@ -121,7 +137,7 @@ macro_rules! handle_value_kind {
       }
     }
     let id = $field_label.as_u64().unwrap().borrow().clone();
-    $data_map.insert(id, ($value_kind.clone(), Value::to_matrix(vals.clone(), vals.len(), 1)));
+    $data_map.insert(id, ($value_kind.clone(), Value::to_matrixd(vals.clone(), vals.len(), 1)));
   }};}
 
 pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> { 

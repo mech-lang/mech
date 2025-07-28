@@ -338,14 +338,64 @@ convertf2m!(F32, i128);
 convertf2f!(F32, F32);
 convertf2f!(F32, F64);
 
+
+#[derive(Debug)]
+struct ConvertMat2Table<T> {
+  arg: Matrix<T>,
+  out: Ref<MechTable>,
+}
+impl<T> MechFunction for ConvertMat2Table<T>
+where T: Debug + Clone + PartialEq + Into<Value> + 'static,
+{
+  fn solve(&self) {
+    let arg = &self.arg;
+    let mut out_table = self.out.borrow_mut();
+    let (rows, cols) = (arg.rows(), arg.cols());
+
+    for (col_ix, (ix, (col_kind, out_col))) in out_table.data.iter_mut().enumerate() {
+      for row_ix in 0..rows {
+        let value = arg.index2d(row_ix + 1, col_ix + 1).clone().into();
+        let converted_value = value.convert_to(col_kind).unwrap();
+        out_col.set_index1d(row_ix, converted_value);
+      }
+    }
+  }
+  fn out(&self) -> Value { Value::Table(self.out.clone()) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+  
+
+
 macro_rules! impl_conversion_match_arms {
   ($arg:expr, $($input_type:ident => $($target_type:ident),+);+ $(;)?) => {
     paste!{
       match $arg {
         $(
+          (Value::[<Matrix $input_type:upper>](mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
+            let in_shape = mat.shape();
+            let tbl_cols = tbl.len();
+            let mat_knd = ValueKind::[<$input_type:upper>];
+            // Verify the table has the correct number of columns
+            if in_shape[1] != tbl_cols {
+              return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Matrix has {} columns, but table expects {}", in_shape[1], tbl_cols), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+            }
+            // Verify each column of the matrix can be converted to the target type of the table
+            for (_, knd) in &tbl {
+              if *knd == mat_knd {
+                continue;
+              } else if mat_knd.is_convertible_to(knd) {
+                continue;
+              } else {
+                return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Matrix column type {} does not match table column type {}", mat_knd, knd), id: line!(), kind: MechErrorKind::None});
+              }
+            }
+            // Create a blank table, with as many rows as the matrix has
+            let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), in_shape[0]))?;
+            Ok(Box::new(ConvertMat2Table::<$input_type>{arg: mat.clone(), out: new_ref(out)}))
+          }
           $(
-            (Value::[<$input_type:upper>](arg), ValueKind::[<$target_type:upper>]) => {Ok(Box::new([<ConvertS $input_type:upper $target_type:upper>]{arg: arg.clone(), out: new_ref($target_type::zero())}))},
-            (Value::[<Matrix $input_type:upper>](arg), ValueKind::Matrix(kind,size)) => {
+            (Value::[<$input_type:upper>](arg), Value::Kind(ValueKind::[<$target_type:upper>])) => {Ok(Box::new([<ConvertS $input_type:upper $target_type:upper>]{arg: arg.clone(), out: new_ref($target_type::zero())}))},
+            (Value::[<Matrix $input_type:upper>](arg), Value::Kind(ValueKind::Matrix(kind,size))) => {
               match *kind {
                 ValueKind::U8 => {let in_shape = arg.shape();let out = u8::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:upper MU8>]{arg: arg.clone(), out}))}
                 ValueKind::U16 => {let in_shape = arg.shape();let out = u16::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:upper MU16>]{arg: arg.clone(), out}))}
@@ -364,7 +414,7 @@ macro_rules! impl_conversion_match_arms {
             },
           )+
         )+
-        (Value::Atom(varian_id), ValueKind::Enum(enum_id)) => {
+        (Value::Atom(varian_id), Value::Kind(ValueKind::Enum(enum_id))) => {
           let variants = vec![(varian_id,None)];
           let enm = MechEnum{id: enum_id, variants};
           let val = Value::Enum(Box::new(enm.clone()));
@@ -372,11 +422,34 @@ macro_rules! impl_conversion_match_arms {
         }
         x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
       }
-    }
+    };
   }
 }
 
-fn impl_conversion_fxn(source_value: Value, target_kind: ValueKind) -> MResult<Box<dyn MechFunction>>  {
+fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<dyn MechFunction>>  {
+  match (&source_value, &target_kind) {
+    (Value::MatrixString(ref mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
+      let in_shape = mat.shape();
+      // Verify the table has the correct number of columns
+      if in_shape[1] != tbl.len() {
+        return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Matrix has {} columns, but table expects {}", in_shape[1], tbl.len()), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      }
+      // Create a blank table, with as many rows as the matrix has
+      let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), in_shape[0]))?;
+      return Ok(Box::new(ConvertMat2Table::<String>{arg: mat.clone(), out: new_ref(out)}));
+    }
+    (Value::MatrixBool(ref mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
+      let in_shape = mat.shape();
+      // Verify the table has the correct number of columns
+      if in_shape[1] != tbl.len() {
+        return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Matrix has {} columns, but table expects {}", in_shape[1], tbl.len()), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+      }
+      // Create a blank table, with as many rows as the matrix has
+      let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), in_shape[0]))?;
+      return Ok(Box::new(ConvertMat2Table::<bool>{arg: mat.clone(), out: new_ref(out)}));
+    }
+    _ =>(),
+  }
   impl_conversion_match_arms!(
     (source_value, target_kind),
     i8   => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
@@ -402,14 +475,25 @@ impl NativeFunctionCompiler for ConvertKind {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let source_value = arguments[0].clone();
-    let target_kind = arguments[1].kind();
+    let target_kind = arguments[1].clone();
     match impl_conversion_fxn(source_value.clone(), target_kind.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
         match source_value {
           Value::MutableReference(rhs) => impl_conversion_fxn(rhs.borrow().clone(), target_kind.clone()),
           Value::Atom(atom_id) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixU8(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixU16(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
           Value::MatrixU32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixU64(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixU128(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixI8(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixI16(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixI32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),  
+          Value::MatrixI64(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixI128(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixF32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::MatrixF64(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
           x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }

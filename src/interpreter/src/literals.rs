@@ -55,9 +55,14 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
       let mut dims = vec![];
       for dim in size {
         let dim_val = literal(dim, p)?;
-        match dim_val.as_usize() {
-          Some(size_val) => dims.push(size_val.clone()),
-          None => { return Err(MechError{file: file!().to_string(), tokens: knd.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
+        match dim_val {
+          Value::Empty => { dims.push(0); }
+          _ => {
+            match dim_val.as_usize() {
+              Some(size_val) => dims.push(size_val.clone()),
+              None => { return Err(MechError{file: file!().to_string(), tokens: knd.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
+            }
+          }
         }
       }
       Ok(Kind::Matrix(Box::new(knda.clone()),dims))
@@ -73,10 +78,16 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
         knds.push((id.to_string().clone(), knda));
       }
       let size_val = literal(size, p)?;
-      match size_val.as_usize() {
-        Some(size_val) => Ok(Kind::Table(knds, size_val)),
-        None => Err(MechError{file: file!().to_string(), tokens: size.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize}),
-      }
+      let size_val = match size_val {
+        Value::Empty => 0,
+        _ => {
+          match size_val.as_usize() {
+            Some(size_val) => size_val,
+            None => { return Err(MechError{file: file!().to_string(), tokens: knd.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::ExpectedNumericForSize});} 
+          }
+        }
+      };
+      Ok(Kind::Table(knds, size_val))
     }
     NodeKind::Set(knd, size) => {
       let knda = kind_annotation(knd, p)?;

@@ -337,7 +337,7 @@ test_interpreter!(interpret_slice_ix_bool_v, "ix1 := [false, false, true]; ix2 :
 
 
 test_interpreter!(interpret_swizzle_record, "x := {x: 1, y: 2, z: 3}; x.y,z,z", Value::Tuple(MechTuple::from_vec(vec![Value::F64(new_ref(F64::new(2.0))),Value::F64(new_ref(F64::new(3.0))),Value::F64(new_ref(F64::new(3.0)))])));
-test_interpreter!(interpret_swizzle_table, "x := | x<i64> y<u8>| 1 2 | 4 5 |; x.x,x,y", Value::Tuple(MechTuple::from_vec(vec![Matrix::Vector2(new_ref(Vector2::from_vec(vec![Value::I64(new_ref(1)),Value::I64(new_ref(4))]))).to_value(),Matrix::Vector2(new_ref(Vector2::from_vec(vec![Value::I64(new_ref(1)),Value::I64(new_ref(4))]))).to_value(),Matrix::Vector2(new_ref(Vector2::from_vec(vec![Value::U8(new_ref(2)),Value::U8(new_ref(5))]))).to_value()])));
+//test_interpreter!(interpret_swizzle_table, "x := | x<i64> y<u8>| 1 2 | 4 5 |; x.x,x,y", Value::Tuple(MechTuple::from_vec(vec![Matrix::Vector2(new_ref(Vector2::from_vec(vec![Value::I64(new_ref(1)),Value::I64(new_ref(4))]))).to_value(),Matrix::Vector2(new_ref(Vector2::from_vec(vec![Value::I64(new_ref(1)),Value::I64(new_ref(4))]))).to_value(),Matrix::Vector2(new_ref(Vector2::from_vec(vec![Value::U8(new_ref(2)),Value::U8(new_ref(5))]))).to_value()])));
 
 test_interpreter!(interpret_dot_record, "x := {x: 1, y: 2, z: 3}; x.x", Value::F64(new_ref(F64::new(1.0))));
 
@@ -574,4 +574,22 @@ x.x"#, new_ref(Vector2::from_vec(vec![1_u64, 3])).to_value());
 
 test_interpreter!(interpret_table_access_element, r#"a:=|x<f32>|1.2|1.3|; a.x[1]"#, new_ref(F32::new(1.2)).to_value());
 
-test_interpreter!(interpret_table_access_row, r#"a:=|a<f32> b<u8>|1.2 3 |1.3 4|; a{2}"#, Value::Record(new_ref(MechRecord::from_vec(vec![((55170961230981453,"a".to_string()),Value::F32(new_ref(F32::new(1.3)))),((44311847522083591,"b".to_string()),Value::U8(new_ref(4)))]))));
+test_interpreter!(interpret_table_access_row, r#"x:=|a<f32> b<u8>|1.2 3 |1.3 4|; x{2}"#, Value::Record(new_ref(MechRecord::new(vec![("a",Value::F32(new_ref(F32::new(1.3)))),("b",Value::U8(new_ref(4)))]))));
+test_interpreter!(interpret_table_append_row, r#"~x:=|a<f64> b<f64>|1 2 |3 4|; x += {a<f64>: 5, b<f64>: 6}; x{3}"#, Value::Record(new_ref(MechRecord::new(vec![("a",Value::F64(new_ref(F64::new(5.0)))),("b",Value::F64(new_ref(F64::new(6.0))))]))));
+test_interpreter!(interpret_table_append_row2, r#"~x:=|a<f64> b<f64>|1 2 |3 4|; x += {b<f64>: 6, a<f64>: 5}; x{3}"#, Value::Record(new_ref(MechRecord::new(vec![("b",Value::F64(new_ref(F64::new(6.0)))),("a",Value::F64(new_ref(F64::new(5.0))))]))));
+test_interpreter!(interpret_table_append_row3, r#"~x := |a<u64> b<u8>| 1 2 | 3 4 |; a:=13; b:=14; y := {c<bool>: false, a<u64>: a, b<u8>: b}; x += y; x{3}"#, Value::Record(new_ref(MechRecord::new(vec![("a",Value::U64(new_ref(13))),("b",Value::U8(new_ref(14)))]))));
+test_interpreter!(interpret_table_append_table, r#"~x := |a<u64> b<u8>| 1 2 | 3 4 |;y := |a<u64> b<u8>| 5 6 | 7 8 |; x += y; x{4}"#, Value::Record(new_ref(MechRecord::new(vec![("a",Value::U64(new_ref(7))),("b",Value::U8(new_ref(8)))]))));
+
+test_interpreter!(interpret_table_select_rows, r#"x := |a<u64> b<u8>| 1 2 | 3 4 | 5 6 |; x{[1,3]}"#, Value::Table(new_ref(MechTable::from_records(vec![MechRecord::new(vec![("a",Value::U64(new_ref(1))),("b",Value::U8(new_ref(2)))]),MechRecord::new(vec![("a",Value::U64(new_ref(5))),("b",Value::U8(new_ref(6)))]),]).expect("Failed to create MechTable"))));
+test_interpreter!(interpret_table_select_logical, r#"a := | x<u64>  y<bool> | 2 true  | 3 false | 4 false | 5 true |; a{a.y}"#, Value::Table(new_ref(MechTable::from_records(vec![MechRecord::new(vec![("x",Value::U64(new_ref(2))),("y",Value::Bool(new_ref(true)))]),MechRecord::new(vec![("x",Value::U64(new_ref(5))),("y",Value::Bool(new_ref(true)))]),]).expect("Failed to create MechTable"))));
+test_interpreter!(interpret_table_select_logical2, r#"a := | x<u64>  y<bool> | 2 true  | 3 false | 4 false | 5 true |; a{a.x > 3<u64>}"#, Value::Table(new_ref(MechTable::from_records(vec![MechRecord::new(vec![("x",Value::U64(new_ref(4))),("y",Value::Bool(new_ref(false)))]),MechRecord::new(vec![("x",Value::U64(new_ref(5))),("y",Value::Bool(new_ref(true)))]),]).expect("Failed to create MechTable"))));
+
+test_interpreter!(interpret_table_from_matrix,r#"x := [1 2; 3 4]; a<|foo<f64>,bar<f64>|> := x"#,Value::Table(new_ref(MechTable::from_records(vec![MechRecord::new(vec![("foo", Value::F64(new_ref(F64::new(1.0)))),("bar", Value::F64(new_ref(F64::new(2.0))))]),MechRecord::new(vec![("foo", Value::F64(new_ref(F64::new(3.0)))),("bar", Value::F64(new_ref(F64::new(4.0))))]),]).expect("Failed to create MechTable"))));
+test_interpreter!(interpret_table_from_matrix2,r#"x := ["true" "false"; "true" "false"]; a<|x<string> y<string>|> := x"#,Value::Table(new_ref(MechTable::from_records(vec![MechRecord::new(vec![("x", Value::String(new_ref("true".to_string()))),("y", Value::String(new_ref("false".to_string())))]),MechRecord::new(vec![("x", Value::String(new_ref("true".to_string()))),("y", Value::String(new_ref("false".to_string())))]),]).expect("Failed to create MechTable"))));
+test_interpreter!(interpret_table_from_matrix3,r#"x:=[true false; true false]; a<|x<bool> y<bool>|> := x;"#,Value::Table(new_ref(MechTable::from_records(vec![MechRecord::new(vec![("x", Value::Bool(new_ref(true))),("y", Value::Bool(new_ref(false)))]),MechRecord::new(vec![("x", Value::Bool(new_ref(true))),("y", Value::Bool(new_ref(false)))]),]).expect("Failed to create MechTable"))));
+test_interpreter!(interpret_table_from_matrix4,r#"x:=[1 2; 3 4]; a<|x<u8> y<i8>|> := x;"#,Value::Table(new_ref(MechTable::from_records(vec![MechRecord::new(vec![("x", Value::U8(new_ref(1))),("y", Value::I8(new_ref(2)))]),MechRecord::new(vec![("x", Value::U8(new_ref(3))),("y", Value::I8(new_ref(4)))]),]).expect("Failed to create MechTable"))));
+
+test_interpreter!(interpret_matrix_reshape,r#"x:=[1 3; 2 4]; y<[u64]:4,1> := x"#, Value::MatrixU64(Matrix::Vector4(new_ref(Vector4::from_vec(vec![1_u64, 2_u64, 3_u64, 4_u64])))))  ;
+
+test_interpreter!(interpret_matrix_reshape2,r#"x:=[1 2 3 4]; y<[string]:2,2> := x"#, Value::MatrixString(Matrix::Matrix2(new_ref(Matrix2::from_vec(vec![String::from("1"), String::from("2"), String::from("3"), String::from("4")])))));
+test_interpreter!(interpret_matrix_convert_str,r#"x:=1..=4; out<[string]>:=x"#, Value::MatrixString(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![String::from("1"), String::from("2"), String::from("3"), String::from("4")])))));

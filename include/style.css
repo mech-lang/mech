@@ -1061,6 +1061,14 @@ li p {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
+.mech-output-value .mech-table:last-child {
+  margin-bottom: 0;
+}
+
+.mech-code-block .mech-table:last-child {
+  margin-bottom: 0;
+}
+
 .mech-table th,
 .mech-table td {
   padding: 5px;

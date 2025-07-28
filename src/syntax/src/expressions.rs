@@ -492,10 +492,10 @@ pub fn bracket_subscript(input: ParseString) -> ParseResult<Subscript> {
   Ok((input, Subscript::Bracket(subscripts)))
 }
 
-// brace-subscript := "{", list1(",", select-all | formula-subscript), "}" ;
+// brace-subscript := "{", list1(",", select-all | range-subscript | formula-subscript), "}" ;
 pub fn brace_subscript(input: ParseString) -> ParseResult<Subscript> {
   let (input, _) = left_brace(input)?;
-  let (input, subscripts) = separated_list1(list_separator,alt((select_all,formula_subscript)))(input)?;
+  let (input, subscripts) = separated_list1(list_separator,alt((select_all,range_subscript,formula_subscript)))(input)?;
   let (input, _) = right_brace(input)?;
   Ok((input, Subscript::Brace(subscripts)))
 }
