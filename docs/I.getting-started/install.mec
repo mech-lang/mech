@@ -6,14 +6,14 @@ Download and Install Mech
 
 The easiest way to install Mech is to use the installer provided for your platform. The installer includes the `mech` command-line tool, which is a standalone executable that includes everything you need to get started with Mech.
 
-- **Windows** - [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.51-beta/mech-installer-v0.2.51-beta-win-x86-64.exe)
+- **Windows** - [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.52-beta/mech-installer-v0.2.52-beta-win-x86-64.exe)
 
 Right now, the installer is only available for Windows, but we are working on providing installers for other platforms in the future.
 
 
 (1.1) Desktop App
 
-We're experimenting with a Tauri-based app for Mech as well, which is kind of like Electron but Rust's version; it uses the system's webview to render the UI, which makes it much more lightweight and efficient. Right now all it does is wrap the Mech REPL, and it works, but it's not clear if this is the right direction for the project. If you want to try it out, you can [download the Mech Tauri app for Windows](https://github.com/mech-lang/mech/releases/download/v0.2.51-beta/mech-app_0.2.51_x86-64-setup.exe).
+We're experimenting with a Tauri-based app for Mech as well, which is kind of like Electron but Rust's version; it uses the system's webview to render the UI, which makes it much more lightweight and efficient. Right now all it does is wrap the Mech REPL, and it works, but it's not clear if this is the right direction for the project. If you want to try it out, you can [download the Mech Tauri app for Windows](https://github.com/mech-lang/mech/releases/download/v0.2.52-beta/mech-app_0.2.52_x86-64-setup.exe).
 
 
 2. Binary
@@ -25,10 +25,10 @@ Precompiled binaries are available for the following platforms:
 
 | OS         | Architecture                                                                                                 |
 | ---------- | ------------------------------------------------------------------------------------------------------------ |
-| **Wndows** | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.51-beta/mech-v0.2.51-beta-win-x86-64.7z)   |
-| **Linux**  | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.51-beta/mech-v0.2.51-beta-win-x86-64.7z)   |
-| **macOS**  | [aarch64](https://github.com/mech-lang/mech/releases/download/v0.2.51-beta/mech-v0.2.51-beta-mac-aarch64.zip) |
-| **Web**    | [wasm](https://github.com/mech-lang/mech/releases/download/v0.2.51-beta/mech_wasm_bg.wasm.br)                |
+| **Wndows** | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.52-beta/mech-v0.2.52-beta-win-x86-64.7z)   |
+| **Linux**  | [x86-64](https://github.com/mech-lang/mech/releases/download/v0.2.52-beta/mech-v0.2.52-beta-win-x86-64.7z)   |
+| **macOS**  | [aarch64](https://github.com/mech-lang/mech/releases/download/v0.2.52-beta/mech-v0.2.52-beta-mac-aarch64.zip) |
+| **Web**    | [wasm](https://github.com/mech-lang/mech/releases/download/v0.2.52-beta/mech_wasm_bg.wasm.br)                |
 
 You can find previous releases and release notes at [/mech-lang/mech/releases](https://github.com/mech-lang/mech/releases).
 
