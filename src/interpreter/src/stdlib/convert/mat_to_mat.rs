@@ -242,7 +242,7 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
   };
 }
 
-
+#[cfg(not(target_arch = "wasm32"))]
 impl_conversion_mat_to_mat_fxn! {
   F64 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
   F32 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
@@ -256,6 +256,21 @@ impl_conversion_mat_to_mat_fxn! {
   i32 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
   i64 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
   i128 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
+  String => [String];
+}
+
+#[cfg(target_arch = "wasm32")]
+impl_conversion_mat_to_mat_fxn! {
+  F64 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
+  F32 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
+  u8  => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
+  u16 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
+  u32 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
+  u64 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
+  i8  => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
+  i16 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
+  i32 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
+  i64 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
   String => [String];
 }
 
