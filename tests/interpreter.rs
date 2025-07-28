@@ -590,3 +590,5 @@ test_interpreter!(interpret_table_from_matrix3,r#"x:=[true false; true false]; a
 test_interpreter!(interpret_table_from_matrix4,r#"x:=[1 2; 3 4]; a<|x<u8> y<i8>|> := x;"#,Value::Table(new_ref(MechTable::from_records(vec![MechRecord::new(vec![("x", Value::U8(new_ref(1))),("y", Value::I8(new_ref(2)))]),MechRecord::new(vec![("x", Value::U8(new_ref(3))),("y", Value::I8(new_ref(4)))]),]).expect("Failed to create MechTable"))));
 
 test_interpreter!(interpret_matrix_reshape,r#"x:=[1 3; 2 4]; y<[u64]:4,1> := x"#, Value::MatrixU64(Matrix::Vector4(new_ref(Vector4::from_vec(vec![1_u64, 2_u64, 3_u64, 4_u64])))))  ;
+
+test_interpreter!(interpret_matrix_reshape2,r#"x:=[1 2 3 4]; y<[string]:2,2> := x"#, Value::MatrixString(Matrix::Matrix2(new_ref(Matrix2::from_vec(vec![String::from("1"), String::from("2"), String::from("3"), String::from("4")])))));
