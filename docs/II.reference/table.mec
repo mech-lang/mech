@@ -108,6 +108,12 @@ This creates a table `a` with two columns, `foo` and `bar`, both of kind `f64`, 
 
 The matrix `[a.foo a.bar]` is identical to the original matrix `x`.
 
+It's possible to convert a matrix of one kind to a table of different kinded columns, as long as the conversion is valid. For example, you can convert a matrix of `f64` to a table with `u8` columns:
+
+```mech:ex3
+b<|foo<u8>,bar<i8>|> := x
+```
+
 (3.3) From records
 
 4. Accessing Elements
