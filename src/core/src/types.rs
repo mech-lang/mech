@@ -128,6 +128,13 @@ impl RemAssign for F64 {
     self.0 = self.0 % other.0;
   }
 }
+
+impl Default for F64 {
+  fn default() -> Self {
+    F64(0.0)
+  }
+}
+
 impl Zero for F64 {
   fn zero() -> Self {
     F64(0.0)
@@ -136,6 +143,7 @@ impl Zero for F64 {
     self.0 == 0.0
   }
 }
+
 impl One for F64 {
   fn one() -> Self {
     F64(1.0)
@@ -405,5 +413,11 @@ impl Step for F32 {
 impl From<F32> for Value {
   fn from(val: F32) -> Self {
     Value::F32(new_ref(val))
+  }
+}
+
+impl Default for F32 {
+  fn default() -> Self {
+    F32(0.0)
   }
 }

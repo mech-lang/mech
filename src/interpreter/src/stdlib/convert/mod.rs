@@ -47,6 +47,7 @@ lossless_into!(u128);
 lossless_into!(F32);
 lossless_into!(F64);
 lossless_into!(bool);
+lossless_into!(String);
 
 lossless_into!(u8,u8);
 lossless_into!(u8,u16);
