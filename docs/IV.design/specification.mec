@@ -1911,18 +1911,20 @@ mech-code-alt := fsm-specification | fsm-implementation | function-define | stat
 
 The grammar is specified using extended Extended Backus-Naur Form (EBNF):
 
-| Symbol   | Meaning  | Semantics                     |
-|----------|----------|-------------------------------|
-| `"abc"`  | terminal | string literal "abc"          |
-| `p1, p2` | sequence | `p1` followed by `p2`         |
-| `p1 | p2`| choice   | `p1` or `p2`                  |
-| `[p, q]` | list     | list of `p` deliniated by `q` |
-|   `*p`   | repeat 0 | `p` for 0 or more times       |
-|   `+p`   | repeat 1 | `p` for 1 or more times       |
-|   `?p`   | optional | `p` for 0 or 1 time           |
-|   `>p`   | peek     | `p`; do not consume input     |
-|   `¬p`   | not      | does not match `p`            |
-|  `(...)` | group    | incrase precedence            |
+| Symbol   | Meaning    | Semantics                     |
+|:--------:|------------|-------------------------------|
+| `p`      | rule       | `p` is a rule in the grammar  |
+| `p := q;`| definition | `p` is defined as `q`         |
+| `"abc"`  | terminal   | string literal "abc"          |
+| `p, q`   | sequence   | `p` followed by `q`           |
+| `p | q`  | choice     | `p` or `q`                    |
+| `[p, q]` | list       | list of `p` deliniated by `q` |
+|   `*p`   | repeat 0   | `p` for 0 or more times       |
+|   `+p`   | repeat 1   | `p` for 1 or more times       |
+|   `?p`   | optional   | `p` for 0 or 1 time           |
+|   `>p`   | peek       | `p`; do not consume input     |
+|   `¬p`   | not        | does not match `p`            |
+|  `(...)` | group      | increase precedence           |
 
 
 The grammar grammar:
