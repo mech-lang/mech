@@ -57,6 +57,7 @@ test_interpreter!(interpret_formula_math_mul, "2 * 2", Value::F64(new_ref(F64::n
 test_interpreter!(interpret_formula_math_div, "2 / 2", Value::F64(new_ref(F64::new(1.0))));
 test_interpreter!(interpret_formula_math_exp, "2<u8> ^ 2<u8>", Value::U8(new_ref(4)));
 test_interpreter!(interpret_formula_math_exp_f64, "2.0 ^ 2.0", Value::F64(new_ref(F64::new(4.0))));
+test_interpreter!(interpret_formulat_math_add_rational, "1/10 + 2/10 + 3/10", Value::RationalNumber(new_ref(RationalNumber::new(6, 10))));
 
 test_interpreter!(interpret_kind_annotation, "1<u64>", Value::U64(new_ref(1)));
 test_interpreter!(interpret_kind_annotation_math, "1<u64> + 1<u64>", Value::U64(new_ref(2)));

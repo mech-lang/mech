@@ -73,7 +73,38 @@ macro_rules! add_scalar_rhs_op {
 
 impl_math_fxns!(Add);
 
+#[derive(Debug)]
+pub struct AddRational {
+  pub lhs: Ref<RationalNumber>,
+  pub rhs: Ref<RationalNumber>,
+  pub out: Ref<RationalNumber>,
+}
+
+
+impl MechFunction for AddRational {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {
+      (*out_ptr).0 = (*lhs_ptr).0 + (*rhs_ptr).0;
+    }
+  }
+  fn out(&self) -> Value { Value::RationalNumber(self.out.clone()) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+
 fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  match (&lhs_value, &rhs_value) {
+    (Value::RationalNumber(lhs), Value::RationalNumber(rhs)) => {return Ok(Box::new(AddRational {
+      lhs: lhs.clone(),
+      rhs: rhs.clone(),
+      out: new_ref(RationalNumber::default()),
+    }));},
+    _ => (),
+  }
+
   impl_binop_match_arms!(
     Add,
     (lhs_value, rhs_value),

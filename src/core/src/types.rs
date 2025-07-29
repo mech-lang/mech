@@ -465,7 +465,7 @@ impl ComplexNumber2 {
 // Rational Numbers
 
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
-pub struct RationalNumber(Rational64);
+pub struct RationalNumber(pub Rational64);
 
 impl RationalNumber {
   pub fn new(numer: i64, denom: i64) -> RationalNumber {
@@ -478,6 +478,12 @@ impl RationalNumber {
 
   pub fn denom(&self) -> &i64 {
     self.0.denom()
+  }
+}
+
+impl Default for RationalNumber {
+  fn default() -> Self {
+    RationalNumber(Rational64::default())
   }
 }
 
