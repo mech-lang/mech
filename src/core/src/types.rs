@@ -462,3 +462,27 @@ impl ComplexNumber2 {
 
 }
 
+// Rational Numbers
+
+#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
+pub struct RationalNumber(Rational64);
+
+impl RationalNumber {
+  pub fn new(numer: i64, denom: i64) -> RationalNumber {
+    RationalNumber(Rational64::new(numer, denom))
+  }
+
+  pub fn numer(&self) -> &i64 {
+    self.0.numer()
+  }
+
+  pub fn denom(&self) -> &i64 {
+    self.0.denom()
+  }
+}
+
+impl PrettyPrint for RationalNumber {
+  fn pretty_print(&self) -> String {
+    format!("{}/{}", self.numer(), self.denom())
+  }
+}

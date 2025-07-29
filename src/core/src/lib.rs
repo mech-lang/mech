@@ -34,6 +34,7 @@ use std::fmt;
 use num_traits::*;
 use std::ops::*;
 use std::mem;
+use num_rational::Rational64;
 
 pub mod value;
 pub mod matrix;

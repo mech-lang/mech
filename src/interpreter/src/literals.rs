@@ -1,5 +1,4 @@
 use crate::*;
-use mech_core::ComplexNumber2;
 
 // Literals
 // ----------------------------------------------------------------------------
@@ -189,8 +188,19 @@ pub fn real(rl: &RealNumber) -> Value {
     RealNumber::Octal(num) => oct(num),
     RealNumber::Binary(num) => binary(num),
     RealNumber::Scientific(num) => scientific(num),
-    RealNumber::Rational(num) => todo!(),
+    RealNumber::Rational(num) => rational(num),
   }
+}
+
+pub fn rational(rat: &(Token,Token)) -> Value {
+  let (num, denom) = rat;
+  let num = num.chars.iter().collect::<String>().parse::<i64>().unwrap();
+  let denom = denom.chars.iter().collect::<String>().parse::<i64>().unwrap();
+  if denom == 0 {
+    panic!("Denominator cannot be zero in a rational number");
+  }
+  let rat_num = RationalNumber::new(num, denom);
+  Value::RationalNumber(new_ref(rat_num))
 }
 
 pub fn dec(bnry: &Token) -> Value {

@@ -20,6 +20,7 @@ use serde::de::{self, Deserialize, SeqAccess, Deserializer, MapAccess, Visitor};
 use std::fmt;
 use std::cell::RefCell;
 use std::rc::Rc;
+use num_rational::Rational64;
 
 macro_rules! impl_as_type {
   ($target_type:ty) => {
@@ -51,7 +52,7 @@ macro_rules! impl_as_type {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ValueKind {
-  U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, ComplexNumber,
+  U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, ComplexNumber, RationalNumber,
   String, Bool, Id, Index, Empty, Any, 
   Matrix(Box<ValueKind>,Vec<usize>),  Enum(u64),                  Record(Vec<(String,ValueKind)>),
   Map(Box<ValueKind>,Box<ValueKind>), Atom(u64),                  Table(Vec<(String,ValueKind)>, usize), 
@@ -62,7 +63,8 @@ pub enum ValueKind {
 impl std::fmt::Display for ValueKind {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match self {
-      ValueKind::ComplexNumber => write!(f, "c"),
+      ValueKind::RationalNumber => write!(f, "r64"),
+      ValueKind::ComplexNumber => write!(f, "c64"),
       ValueKind::U8 => write!(f, "u8"),
       ValueKind::U16 => write!(f, "u16"),
       ValueKind::U32 => write!(f, "u32"),
@@ -250,6 +252,7 @@ pub enum Value {
   MatrixString(Matrix<String>),
   MatrixValue(Matrix<Value>),
   ComplexNumber(Ref<ComplexNumber2>),
+  RationalNumber(Ref<RationalNumber>),
   Set(MechSet),
   Map(MechMap),
   Record(Ref<MechRecord>),
@@ -273,6 +276,7 @@ impl fmt::Display for Value {
 impl Hash for Value {
   fn hash<H: Hasher>(&self, state: &mut H) {
     match self {
+      Value::RationalNumber(x) => x.borrow().hash(state),
       Value::Id(x)   => x.hash(state),
       Value::Kind(x) => x.hash(state),
       Value::U8(x)   => x.borrow().hash(state),
@@ -505,6 +509,7 @@ impl Value {
 
   pub fn size_of(&self) -> usize {
     match self {
+      Value::RationalNumber(x) => 16,
       Value::U8(x) => 1,
       Value::U16(x) => 2,
       Value::U32(x) => 4,
@@ -618,6 +623,7 @@ impl Value {
       Value::Bool(x) => {builder.push_record(vec![format!("{}",x.borrow())]);},
       Value::Index(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
       Value::ComplexNumber(x) => {builder.push_record(vec![x.borrow().pretty_print()]);},
+      Value::RationalNumber(x) => {builder.push_record(vec![format!("{}",x.borrow().pretty_print())]);},
       Value::Atom(x) => {builder.push_record(vec![format!("{}",x)]);},
       Value::Set(x)  => {return x.pretty_print();}
       Value::Map(x)  => {return x.pretty_print();}
@@ -666,6 +672,7 @@ impl Value {
 
   pub fn shape(&self) -> Vec<usize> {
     match self {
+      Value::RationalNumber(x) => vec![1,1],
       Value::ComplexNumber(x) => vec![1,1],
       Value::U8(x) => vec![1,1],
       Value::U16(x) => vec![1,1],
@@ -723,6 +730,7 @@ impl Value {
   pub fn kind(&self) -> ValueKind {
     match self {
       Value::ComplexNumber(_) => ValueKind::ComplexNumber,
+      Value::RationalNumber(_) => ValueKind::RationalNumber,
       Value::U8(_) => ValueKind::U8,
       Value::U16(_) => ValueKind::U16,
       Value::U32(_) => ValueKind::U32,
