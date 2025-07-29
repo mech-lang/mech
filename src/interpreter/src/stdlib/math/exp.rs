@@ -124,7 +124,38 @@ macro_rules! impl_math_fxns_exp {
 
 impl_math_fxns_exp!(Exp);
 
+#[derive(Debug)]
+pub struct ExpRational {
+  pub lhs: Ref<RationalNumber>,
+  pub rhs: Ref<i32>,
+  pub out: Ref<RationalNumber>,
+}
+
+impl MechFunction for ExpRational {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {
+      (*out_ptr).0 = (*lhs_ptr).0.pow((*rhs_ptr));
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
 fn impl_exp_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  match (&lhs_value, &rhs_value) {
+    (Value::RationalNumber(lhs), Value::I32(rhs)) => {
+      return Ok(Box::new(ExpRational {
+        lhs: lhs.clone(),
+        rhs: rhs.clone(),
+        out: new_ref(RationalNumber::default()),
+      }));
+    },
+    _ => (),
+  }
+  
   impl_binop_match_arms!(
       Exp,
       (lhs_value, rhs_value),

@@ -993,6 +993,8 @@ impl ToValue for Ref<F32>    { fn to_value(&self) -> Value { Value::F32(self.clo
 impl ToValue for Ref<F64>    { fn to_value(&self) -> Value { Value::F64(self.clone())    } }
 impl ToValue for Ref<bool>   { fn to_value(&self) -> Value { Value::Bool(self.clone())   } }
 impl ToValue for Ref<String> { fn to_value(&self) -> Value { Value::String(self.clone()) } }
+impl ToValue for Ref<RationalNumber> { fn to_value(&self) -> Value { Value::RationalNumber(self.clone()) } }
+impl ToValue for Ref<ComplexNumber2> { fn to_value(&self) -> Value { Value::ComplexNumber(self.clone()) } }
 
 macro_rules! to_value_ndmatrix {
   ($($nd_matrix_kind:ident, $matrix_kind:ident, $base_type:ty),+ $(,)?) => {
