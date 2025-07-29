@@ -144,9 +144,11 @@ y := [x,x,x]  -- A matrix (3x3)
 
 Matrix elements can be accessed using indexing, which is done with square brackets `[]` and a comma-separated list of indices.
 
+Indexing starts at 1, not 0, so the first element is accessed with `1`.
+
 (4.1) Indexing
 
-Indexing starts at 1, not 0, so the first element is accessed with `1`.
+For a 1D vector, you can access elements using a single index:
 
 ```mech:ex411
 m := ["a" "b" "c" "d"]
@@ -165,6 +167,12 @@ For a 2D matrix, you can access elements using two indices, in a `[row, column]`
 ```mech:ex413
 m := [1 2 3; 4 5 6]
 m[2,3] -- Access the element in the second row and third column
+```
+
+The first index is the row, and the second index is the column. It's possible to use a single index to access matrix elements, which will return the element at that index in a column-major order. For example, considering the matrix above:
+
+```mech:ex413
+m[2] -- returns {m[2]}
 ```
 
 (4.2) Slicing
@@ -264,8 +272,8 @@ m[2,:] = 42  -- Assigns a new row to the second row
 Logical indexing can also be used for assignment. 
 
 ```mech:ex53
-~m := [1 2 3 4 5 6]
-ix := [true false false true true false]  -- A logical index
+~m := [1 2 3 4]
+ix := [true false false true]  -- A logical index
 m[ix] = 0 -- Sets elements at the logical index to zero
 ```
 
