@@ -47,7 +47,6 @@ Target release date: ???
 -(🐣)scientific numbers
 -(🐤) tables (dataframe)
 -(🐤) strings
--(🐤) bools
 -(🐤) repl
 -(🐤) variable type and size checking
 -(🐤) variable type inference
@@ -56,6 +55,7 @@ Target release date: ???
 -(🐤) Mutable value semantics
 -(🐤) builtin linear algebra tools
 -(🐤) literate programming
+-(🐓) bools
 -(🐓) operator broadcasting
 -(🐓) logical indexing
 -(🐓) matrix builder notation
