@@ -213,7 +213,7 @@ Here are some ways to write a comment in Mech:
 
 ```
   -- Comment prefix with --
-  // Comment prefixed with //
+  // Comment prefixed with // (renders with --)
   -- Supports formatting like **bold**, __underline__, `inline code`, and [links](https://example.com).
   x := 1 -- Comment after an expression
 ```
@@ -222,7 +222,7 @@ When parsed and rendered, these become:
 
 ```mech:disabled
   -- Comment prefix with --
-  // Comment prefixed with //
+  // Comment prefixed with // (renders with --)
   -- Supports formatting like **bold**, __underline__, `inline code`, and [links](https://example.com).
   x := 1 -- Comment after an expression
 ```
@@ -1299,292 +1299,14 @@ kind-define := "<"
     userKind < Person > :< string | int -- Kind definition with annotation
 ```
 
-9. Functions
--------------------------------------------------------------------------------
-
-(a) Function Define
-
-```ebnf
-function-define := identifier
-      , "("
-      , ?[function-arg,list-separator]
-      , ")"
-      , "="
-      , (function-out-args | function-out-arg)
-      , define-operator
-      , [statement, (ws1 | statement-separator)]
-      , "." ;
-function-out-args := "("
-      , [function-arg, list-separator]
-      ,")" ;      
-function-out-arg := function-arg ;
-function-arg := identifier, kind-annotation ;
-argument-list := "(", ?[(call-arg-with-biding | call-arg), ","], ")" ;
-```
-
-**Examples**
-
-```
-    -- Simple function definition with no return value
-    addNumbers(x: int, y: int) = (result: int) := 
-        result = x + y
-        .  -- Return result (implicitly)
-
-    -- Function with multiple output arguments
-    createRectangle(length: int, width: int) = (area: int, perimeter: int) := 
-        area = length * width
-        perimeter = 2 * (length + width)
-        .  -- Return both area and perimeter
-
-    -- Function with an optional argument (no output)
-    greetUser(name: string) = := 
-        print("Hello, " + name)
-        .  -- No output, just side-effect
-
-    -- Function with complex arguments and output
-    calculateStats(x: int, y: int, z: int) = (average: float, max: int) := 
-        average = (x + y + z) / 3.0
-        max = max(x, max(y, z))  -- Function calls inside function body
-        .  -- Return both average and max
-```
-
-(b) Function Call
-
-```ebnf
-function-call := identifier, argument-list ;
-call-arg-with-binding := identifier
-      , colon
-      , expression ;
-call-arg := expression ;
-var := identifier, ?kind-annotation ;
-```
-**Examples**
-    -- Call function with simple arguments
-    sumResult = addNumbers(5, 10)   -- Call addNumbers with two integer arguments
-
-    // Call function with binding (using colon syntax to bind a specific argument)
-    rectangleDetails = createRectangle(10, 20)  -- Call with two integers
-    area = rectangleDetails.area                -- Accessing the area
-    perimeter = rectangleDetails.perimeter      -- Accessing the perimeter
-
-    // Call function with complex arguments and output
-    stats = calculateStats(10, 20, 30)          -- Call calculateStats
-    average = stats.average                     -- Extract average
-    maxValue = stats.max                        -- Extract max value
-
-    // Call function with optional argument
-    greetUser("Alice")      -- Function call with a single string argument
-
-10. State Machines
--------------------------------------------------------------------------------
-
-```ebnf
-fsm := "#"
-      , identifier
-      , ?argument-list
-      , ?kind-annotation ;
-```
-
-(a) Operators
-
-```ebnf
-output-operator := "=>" ;
-transition-operator := "->" ;
-async-transition-operator := "~>" ;
-guard-operator := "|" 
-      | "│" 
-      | "├" 
-      | "└" ;
-```
-
-(b) Specification
-
-```ebnf
-fsm-specification := "#"
-      , identifier
-      , "("
-      , ?[var, ","]
-      , ")"
-      , ?output-operator
-      , ?kind-annotation, define-operator, +fsm-state-definition, "." ;
-fsm-tuple-struct := grave
-      , identifier
-      , "("
-      , [fsm-pattern, ","]
-      , ")" ;
-fsm-state-definition := guard-operator
-      , grave
-      , identifier
-      , ?fsm-state-definition-variables ;
-fsm-state-definition-variables := "("
-      , ?[var, list-separator]
-      , ")" ;
-fsm-pipe := fsm-instance, *(fsm-state-transition | fsm-async-transition | fsm-output) ;
-fsm-declare := fsm
-      , define-operator
-      , fsm-pipe ;
-fsm-instance := "#"
-      , identifier
-      , ?fsm-args ;
-fsm-args := "("
-      , ?[(call-arg-with-binding | call-arg), list-separator]
-      , ")" ;
-```
-
-(c) Implementation
-
-```ebnf
-fsm-implementation := "#"
-      , identifier
-      , "("
-      , ?[identifier, list-separator]
-      , ")"
-      , transition-operator
-      , fsm-pattern
-      , ws0
-      , +fsm-arm
-      , "." ;
-fsm-arm := *comment
-      , (fsm-transition | fsm-guard-arm)
-      , ws0 ;
-fsm-guard-arm := *comment
-      , fsm-pattern
-      , +fsm-guard ;
-fsm-guard := guard-operator
-      , fsm-pattern
-      , +(fsm-statement-transition | fsm-state-transition | fsm-output | fsm-async-transition | fsm-block-transition) ;
-fsm-transition := *comment
-      , fsm-pattern
-      , +(fsm-statement-transition | fsm-state-transition | fsm-output | fsm-async-transition | fsm-block-transition) ;
-fsm-state-transition := transition-operator, fsm-pattern ;
-fsm-async-transition := async-transition-operator, fsm-pattern ;
-fsm-statement-transition := transition-operator, statement ;
-fsm-block-transition := transition-operator
-      , left-brace
-      , +mech-code
-      , right-brace ;
-fsm-output := output-operator, fsm-pattern ;
-fsm-pattern := fsm-tuple-struct 
-      | wildcard 
-      | formula ;
-wildcard := "*" ;
-```
-**Examples**
-
-```
-    -- Simple FSM Declaration
-    fsm SimpleFSM
-        (var1, var2)         -- Variables for FSM
-        =>                   -- Output operator
-        ;                    -- End of the state machine definition
-
-    -- FSM with states and transitions
-    fsm StateMachine1
-        (state1, state2)
-        => "StateMachineOutput"   -- Output operator for the FSM
-        kind "simple"
-        define
-        #state1
-            -> state2    -- Transition operator
-            | guard1     -- Guard operator for conditional transitions
-        .
-
-    fsm-instance MyFSM
-        (stateA, stateB)
-        -> stateB         -- Simple state transition
-        ~> stateA         -- Asynchronous transition operator
-
-
-    -- FSM with variables and multiple states
-    fsm ComplexFSM
-        (state1, state2, state3)
-        => "Processing"
-        define
-        #state1
-            -> state2    -- Transition from state1 to state2
-        | state2
-            -> state3    -- Transition from state2 to state3
-            ~> state1    -- Asynchronous transition back to state1
-        .
-
-    fsm-instance ComplexFSMInstance
-        (stateX, stateY, stateZ)
-        -> stateX       -- Transition to stateX
-        ~> stateY       -- Async transition to stateY
-        => outputX      -- FSM Output
-        .
-
-
-    -- FSM with guards and output operators
-    fsm-implementation MyFSMImpl
-        #FSMTransition1
-        (state1, state2)
-        -> state3         -- Transition from state1 to state3
-        => stateOutput    -- Output from this FSM transition
-        .
-
-    fsm-guard-arm MyFSMGuard
-        #FSMGuardState
-        (stateGuard)
-        | guard-condition  -- Guard operator for conditional checking
-        .
-
-    fsm-guard MyFSMGuardExample
-        | FSMGuardPattern
-        -> FSMGuardTransition
-        ~> FSMAsyncGuard
-        .
-
-    fsm-block-transition MyFSMBlockTransition
-        -> {
-            // Complex code block executed during state transition
-            set stateA = true
-            set stateB = false
-        }
-        .
-
-
-    -- FSM pattern with tuple struct
-    fsm-pattern MyFSMPattern
-        grave TupleState
-        (varA, varB)
-        .
-
-
-    -- FSM instance with arguments
-    fsm-instance ComplexArgsFSM
-        (stateStart, stateEnd)
-        (inputData1, inputData2) -- Call arguments with bindings
-        -> stateStart
-        .
-
-
-    -- FSM State definition with guard and pattern matching
-    fsm-state-definition MyStateDefinition
-        | stateGuard
-        grave stateDefinition
-        (variableX, variableY)
-        .
-
-
-    -- FSM with wildcards and formulas in patterns
-    fsm-pattern MyWildcardPattern
-        *
-        .
-
-    fsm-pattern MyFormulaPattern
-        formula("x + y = 10")
-        .
-```
-
-11. Mech Programs
+9. Mech Programs
 -------------------------------------------------------------------------------
 
 ```ebnf
 mech := mechdown-program | statement ;
 ```
 
-12. Mechdown
+10. Mechdown
 -------------------------------------------------------------------------------
 
 Mechdown is a markup language for writing Mech programs. It is designed to maintain vague compatibility with Markdown, it is *not* a superset of Markdown. Rather, Mechdown is a distinct markup language with its own syntax and semantics. For instance, hashtag notation is not supported for titles, which is a departure from Markdown. 
@@ -1906,14 +1628,14 @@ mech-code := mech-code-alt, ("\n" | ";" | comment) ;
 mech-code-alt := fsm-specification | fsm-implementation | function-define | statement | expression | comment ;
 ```
 
-13. Notation
+11. Notation
 -------------------------------------------------------------------------------
 
 The grammar is specified using extended Extended Backus-Naur Form (EBNF):
 
 | Symbol   | Meaning    | Semantics                     |
 |:--------:|------------|-------------------------------|
-| `p`      | rule       | `p` is a rule in the grammar  |
+|   `p`    | rule       | `p` is a rule in the grammar  |
 | `p := q;`| definition | `p` is defined as `q`         |
 | `"abc"`  | terminal   | string literal "abc"          |
 | `p, q`   | sequence   | `p` followed by `q`           |

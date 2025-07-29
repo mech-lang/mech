@@ -43,13 +43,14 @@ Target release date: ???
 -(🐤) tables (dataframe)
 -(🐤) strings
 -(🐤) bools
+-(🐤) repl
 -(🐤) variable type and size checking
 -(🐤) variable type inference
 -(🐤) standard library functions
 -(🐤) value semantics
 -(🐤) Mutable value semantics
--(🐤) data notation
 -(🐤) builtin linear algebra tools
+-(🐤) literate programming
 -(🐓) operator broadcasting
 -(🐓) logical indexing
 -(🐓) matrix builder notation
@@ -71,8 +72,6 @@ Target release date: ???
 -(🐣) profiler
 -(🐣) gui
 -(🐣) live coding
--(🐤) repl
--(🐤) literate programming
 
 (2.3) System specification
 
