@@ -14,7 +14,7 @@ Implementation: started 2018
 Started: December 2022
 Currently: v0.2.52 (Summer 2025)
 
-- v0.2 (data specification)    (Happening Now)
+- v0.2 (data specification)    (Current Work)
 - v0.3 (program specification) (Starting in 2026)
 - v0.4 (system specification)
 
@@ -40,6 +40,9 @@ Target release date: ???
 -(🐣) sets
 -(🐣) maps
 -(🐣) atoms
+-(🐣) error system
+-(🐣) records
+-(🐣) tuples
 -(🐤) tables (dataframe)
 -(🐤) strings
 -(🐤) bools
