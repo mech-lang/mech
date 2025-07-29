@@ -201,11 +201,11 @@ There are two options for single line comments in Mech:
 - `--` for those familiar with languages like Lua, Haskell, and SQL.
 - `//` for those familiar with languages like C, C++, Java, and JavaScript.
 
-There is no difference between the two, and they can be used interchangeably. However, 
+There is no difference between the two, and they can be used interchangeably. 
 
-Because Mech has a focus on literate programming, comment have less of an emphasis compared to other programming languages. For example, there is no support for block comments in Mech; instead, programmers are encouraged to use Mechdown to express their comments in a more structured way.
+Because Mech has a focus on literate programming, comments have less of an emphasis compared to other programming languages. For example, there is no support for block comments in Mech; instead, programmers are encouraged to use Mechdown to express their comments in a more structured way.
 
-Therefore, comments are primarily used for writing notes inline with the code that cannot be broken out into a paragraph. For example, to make a note within a state machine definition.
+Therefore, comments are primarily used for writing notes inline with code that cannot be broken out into a paragraph.
 
 (3.3.1) Examples
 
@@ -250,7 +250,7 @@ identifier := (alpha | emoji), *(alpha | digit | symbol | emoji) ;
 
 Identifiers start with letters or most UTF-8 encoded emoji characters, and can contain alphanumeric, most emojis, `/`, `*`, `+`, `-`, and `^` characters.
 
-**Examples:**
+(3.5.1) Examples
 
   Hello-World
   io/print
@@ -258,7 +258,7 @@ Identifiers start with letters or most UTF-8 encoded emoji characters, and can c
   🤖
   A*
 
-Note: Underscores `_` are not allowed in identifiers, as kebab-case is the preferred style in Mech. Underscores will be reported as syntax errors.
+Note: Underscores `_` are not allowed in identifiers, as kebab-case is the preferred style in Mech. Underscores are reported as syntax errors.
 
 4. Literals
 -------------------------------------------------------------------------------
@@ -346,7 +346,8 @@ Kinds are used to specify the type of a literal or expression in Mech. Kinds are
 <{A:B}>         -- Map          
 <{A}>           -- Set              
 <[A]>           -- Matrix              
-<(A,B,C)>       -- Tuple              
+<(A,B,C)>       -- Tuple
+<|x<A>, y<B>|>  -- Table              
 
 (4.2) Numbers
 

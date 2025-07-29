@@ -34,15 +34,17 @@ Target release date: ???
 
 (2.1) Data Specification
 
--(🥚) imaginary and scientific numbers
 -(🥚) language server
 -(🥚) enums
+-(🐣) imaginary numbers
+-(🐣) rational numbers
 -(🐣) sets
 -(🐣) maps
 -(🐣) atoms
 -(🐣) error system
 -(🐣) records
 -(🐣) tuples
+-(🐣)scientific numbers
 -(🐤) tables (dataframe)
 -(🐤) strings
 -(🐤) bools
