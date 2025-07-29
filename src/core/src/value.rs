@@ -1,6 +1,7 @@
 use crate::matrix::Matrix;
 use crate::*;
 use crate::nodes::Matrix as Mat;
+use crate::types::ComplexNumber2;
 use crate::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*, humanize};
 use std::collections::HashMap;
 
@@ -50,7 +51,7 @@ macro_rules! impl_as_type {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ValueKind {
-  U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, 
+  U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, ComplexNumber,
   String, Bool, Id, Index, Empty, Any, 
   Matrix(Box<ValueKind>,Vec<usize>),  Enum(u64),                  Record(Vec<(String,ValueKind)>),
   Map(Box<ValueKind>,Box<ValueKind>), Atom(u64),                  Table(Vec<(String,ValueKind)>, usize), 
@@ -61,6 +62,7 @@ pub enum ValueKind {
 impl std::fmt::Display for ValueKind {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match self {
+      ValueKind::ComplexNumber => write!(f, "c"),
       ValueKind::U8 => write!(f, "u8"),
       ValueKind::U16 => write!(f, "u16"),
       ValueKind::U32 => write!(f, "u32"),
@@ -247,6 +249,7 @@ pub enum Value {
   MatrixF64(Matrix<F64>),
   MatrixString(Matrix<String>),
   MatrixValue(Matrix<Value>),
+  ComplexNumber(Ref<ComplexNumber2>),
   Set(MechSet),
   Map(MechMap),
   Record(Ref<MechRecord>),
@@ -284,6 +287,7 @@ impl Hash for Value {
       Value::I128(x) => x.borrow().hash(state),
       Value::F32(x)  => x.borrow().hash(state),
       Value::F64(x)  => x.borrow().hash(state),
+      Value::ComplexNumber(x) => x.borrow().hash(state),
       Value::Index(x)=> x.borrow().hash(state),
       Value::Bool(x) => x.borrow().hash(state),
       Value::Atom(x) => x.hash(state),
@@ -514,6 +518,7 @@ impl Value {
       Value::F32(x) => 4,
       Value::F64(x) => 8,
       Value::Bool(x) => 1,
+      Value::ComplexNumber(x) => 16,
       Value::MatrixIndex(x) =>x.size_of(),
       Value::MatrixBool(x) =>x.size_of(),
       Value::MatrixU8(x)   => x.size_of(),
@@ -563,6 +568,7 @@ impl Value {
       Value::F64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       Value::String(s) => format!("<span class='mech-string'>\"{}\"</span>", s.borrow()),
       Value::Bool(b) => format!("<span class='mech-boolean'>{}</span>", b.borrow()),
+      Value::ComplexNumber(c) => c.borrow().to_html(),
       Value::MatrixU8(m) => m.to_html(),
       Value::MatrixU16(m) => m.to_html(),
       Value::MatrixU32(m) => m.to_html(),
@@ -611,6 +617,7 @@ impl Value {
       Value::F64(x)  => {builder.push_record(vec![format!("{}",x.borrow().0)]);},
       Value::Bool(x) => {builder.push_record(vec![format!("{}",x.borrow())]);},
       Value::Index(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      Value::ComplexNumber(x) => {builder.push_record(vec![x.borrow().pretty_print()]);},
       Value::Atom(x) => {builder.push_record(vec![format!("{}",x)]);},
       Value::Set(x)  => {return x.pretty_print();}
       Value::Map(x)  => {return x.pretty_print();}
@@ -659,6 +666,7 @@ impl Value {
 
   pub fn shape(&self) -> Vec<usize> {
     match self {
+      Value::ComplexNumber(x) => vec![1,1],
       Value::U8(x) => vec![1,1],
       Value::U16(x) => vec![1,1],
       Value::U32(x) => vec![1,1],
@@ -714,6 +722,7 @@ impl Value {
 
   pub fn kind(&self) -> ValueKind {
     match self {
+      Value::ComplexNumber(_) => ValueKind::ComplexNumber,
       Value::U8(_) => ValueKind::U8,
       Value::U16(_) => ValueKind::U16,
       Value::U32(_) => ValueKind::U32,

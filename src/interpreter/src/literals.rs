@@ -1,4 +1,5 @@
 use crate::*;
+use mech_core::ComplexNumber2;
 
 // Literals
 // ----------------------------------------------------------------------------
@@ -157,7 +158,24 @@ pub fn atom(atm: &Atom) -> Value {
 pub fn number(num: &Number) -> Value {
   match num {
     Number::Real(num) => real(num),
-    Number::Imaginary(num) => todo!(),
+    Number::Imaginary(num) => imaginary(num),
+  }
+}
+
+fn imaginary(num: &ComplexNumber) -> Value {
+  let im: f64 = match real(&num.imaginary.number).as_f64() {
+    Some(val) => val.borrow().0,
+    None => 0.0,
+  };
+  match &num.real {
+    Some(real_val) => {
+      let re: f64 = match real(&real_val).as_f64() {
+        Some(val) => val.borrow().0,
+        None => 0.0,
+      };      
+      Value::ComplexNumber(new_ref(ComplexNumber2::new(re, im)))
+    },
+    None => Value::ComplexNumber(new_ref(ComplexNumber2::new(0.0, im))),
   }
 }
 

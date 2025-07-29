@@ -13,6 +13,8 @@ use std::hash::{Hash, Hasher};
 use libm::{pow,powf};
 use paste::paste;
 
+use nalgebra::Complex;
+
 pub type FunctionsRef = Ref<Functions>;
 pub type Plan = Ref<Vec<Box<dyn MechFunction>>>;
 pub type MutableReference = Ref<Value>;
@@ -421,3 +423,42 @@ impl Default for F32 {
     F32(0.0)
   }
 }
+
+// Complex Numbers
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct ComplexNumber2(Complex<f64>);
+
+impl fmt::Display for ComplexNumber2 {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "{}", self.pretty_print())
+  }
+}
+
+impl Eq for ComplexNumber2 {}
+
+impl Hash for ComplexNumber2 {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    self.0.re.to_bits().hash(state);
+    self.0.im.to_bits().hash(state);
+  }
+}
+
+impl PrettyPrint for ComplexNumber2 {
+  fn pretty_print(&self) -> String {
+    format!("{}+{}i", self.0.re, self.0.im)
+  }
+}
+
+impl ComplexNumber2 {
+  pub fn new(real: f64, imag: f64) -> ComplexNumber2 {
+    ComplexNumber2(Complex::new(real, imag))
+  }
+
+  pub fn to_html(&self) -> String {
+    let pretty = self.pretty_print();
+    format!("<span class='mech-complex-number'>{}</span>", pretty)
+  }
+
+}
+
