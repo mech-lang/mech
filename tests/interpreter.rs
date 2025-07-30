@@ -64,6 +64,8 @@ test_interpreter!(interpret_formula_math_mul_rational, "1/10 * 2/10 * 3/10", Val
 test_interpreter!(interpret_formula_math_div_rational, "1/10 / 2/10 / 3/10", Value::RationalNumber(new_ref(RationalNumber::new(5, 3))));
 test_interpreter!(interpret_formula_math_add_complex, "1+2i + 3+4i", Value::ComplexNumber(new_ref(ComplexNumber2::new(4.0, 6.0))));
 test_interpreter!(interpret_formula_math_sub_complex, "1+2i - 3+4i", Value::ComplexNumber(new_ref(ComplexNumber2::new(-2.0, -2.0))));
+test_interpreter!(interpret_formula_math_mul_complex, "1+2i * 3+4i", Value::ComplexNumber(new_ref(ComplexNumber2::new(-5.0, 10.0))));
+test_interpreter!(interpret_formula_math_div_complex, "1+2i / 3+4i", Value::ComplexNumber(new_ref(ComplexNumber2::new(0.44, 0.08))));
 
 test_interpreter!(interpret_kind_annotation, "1<u64>", Value::U64(new_ref(1)));
 test_interpreter!(interpret_kind_annotation_math, "1<u64> + 1<u64>", Value::U64(new_ref(2)));

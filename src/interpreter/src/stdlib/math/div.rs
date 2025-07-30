@@ -105,13 +105,30 @@ impl MechFunction for DivRational {
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
+#[derive(Debug)]
+pub struct DivComplex {
+  pub lhs: Ref<ComplexNumber2>,
+  pub rhs: Ref<ComplexNumber2>,
+  pub out: Ref<ComplexNumber2>,
+}
+
+impl MechFunction for DivComplex {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {
+      (*out_ptr).0 = (*lhs_ptr).0 / (*rhs_ptr).0;
+    }
+  }
+  fn out(&self) -> Value { self.out.clone().to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
 fn impl_div_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   match (&lhs_value, &rhs_value) {
-    (Value::RationalNumber(lhs), Value::RationalNumber(rhs)) => {return Ok(Box::new(DivRational {
-      lhs: lhs.clone(),
-      rhs: rhs.clone(),
-      out: new_ref(RationalNumber::default()),
-    }));},
+    (Value::RationalNumber(lhs), Value::RationalNumber(rhs)) => {return Ok(Box::new(DivRational {lhs: lhs.clone(),rhs: rhs.clone(),out: new_ref(RationalNumber::default()),}));},
+    (Value::ComplexNumber(lhs), Value::ComplexNumber(rhs)) => {return Ok(Box::new(DivComplex {lhs: lhs.clone(),rhs: rhs.clone(),out: new_ref(ComplexNumber2::default()),}));},
     _ => (),
   }
   impl_binop_match_arms!(
