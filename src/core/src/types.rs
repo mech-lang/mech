@@ -427,30 +427,30 @@ impl Default for F32 {
 // Complex Numbers
 
 #[derive(Debug, PartialEq, Clone, Copy)]
-pub struct ComplexNumber2(pub Complex<f64>);
+pub struct ComplexNumber(pub Complex<f64>);
 
-impl fmt::Display for ComplexNumber2 {
+impl fmt::Display for ComplexNumber {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(f, "{}", self.pretty_print())
   }
 }
 
-impl Default for ComplexNumber2 {
+impl Default for ComplexNumber {
   fn default() -> Self {
-    ComplexNumber2(Complex::new(0.0, 0.0))
+    ComplexNumber(Complex::new(0.0, 0.0))
   }
 }
 
-impl Eq for ComplexNumber2 {}
+impl Eq for ComplexNumber {}
 
-impl Hash for ComplexNumber2 {
+impl Hash for ComplexNumber {
   fn hash<H: Hasher>(&self, state: &mut H) {
     self.0.re.to_bits().hash(state);
     self.0.im.to_bits().hash(state);
   }
 }
 
-impl PrettyPrint for ComplexNumber2 {
+impl PrettyPrint for ComplexNumber {
   fn pretty_print(&self) -> String {
     if self.0.re == 0.0 {
       return format!("{}i", self.0.im);
@@ -462,9 +462,9 @@ impl PrettyPrint for ComplexNumber2 {
   }
 }
 
-impl ComplexNumber2 {
-  pub fn new(real: f64, imag: f64) -> ComplexNumber2 {
-    ComplexNumber2(Complex::new(real, imag))
+impl ComplexNumber {
+  pub fn new(real: f64, imag: f64) -> ComplexNumber {
+    ComplexNumber(Complex::new(real, imag))
   }
 
   pub fn to_html(&self) -> String {
@@ -490,6 +490,12 @@ impl RationalNumber {
 
   pub fn denom(&self) -> &i64 {
     self.0.denom()
+  }
+}
+
+impl std::fmt::Display for RationalNumber {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "{}", self.pretty_print())
   }
 }
 

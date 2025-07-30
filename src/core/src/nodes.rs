@@ -1177,7 +1177,7 @@ pub type Exponent = (Sign, Whole, Part);
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
 pub enum Number {
   Real(RealNumber),
-  Imaginary(ComplexNumber),
+  Imaginary(ComplexNumberNode),
 }
 
 impl Number {
@@ -1248,12 +1248,12 @@ pub struct ImaginaryNumber {
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
-pub struct ComplexNumber {
+pub struct ComplexNumberNode {
   pub real: Option<RealNumber>,
   pub imaginary: ImaginaryNumber
 }
 
-impl ComplexNumber {
+impl ComplexNumberNode {
   pub fn tokens(&self) -> Vec<Token> {
     let mut tkns = vec![];
     if let Some(r) = &self.real {

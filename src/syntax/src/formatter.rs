@@ -2579,7 +2579,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
     }
   }
 
-  pub fn complex_numer(&mut self, node: &ComplexNumber) -> String {
+  pub fn complex_numer(&mut self, node: &ComplexNumberNode) -> String {
     let real = if let Some(real) = &node.real {
       let num = self.real_number(&real);
       format!("{}+", num)

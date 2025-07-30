@@ -107,9 +107,9 @@ impl MechFunction for DivRational {
 
 #[derive(Debug)]
 pub struct DivComplex {
-  pub lhs: Ref<ComplexNumber2>,
-  pub rhs: Ref<ComplexNumber2>,
-  pub out: Ref<ComplexNumber2>,
+  pub lhs: Ref<ComplexNumber>,
+  pub rhs: Ref<ComplexNumber>,
+  pub out: Ref<ComplexNumber>,
 }
 
 impl MechFunction for DivComplex {
@@ -128,7 +128,7 @@ impl MechFunction for DivComplex {
 fn impl_div_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   match (&lhs_value, &rhs_value) {
     (Value::RationalNumber(lhs), Value::RationalNumber(rhs)) => {return Ok(Box::new(DivRational {lhs: lhs.clone(),rhs: rhs.clone(),out: new_ref(RationalNumber::default()),}));},
-    (Value::ComplexNumber(lhs), Value::ComplexNumber(rhs)) => {return Ok(Box::new(DivComplex {lhs: lhs.clone(),rhs: rhs.clone(),out: new_ref(ComplexNumber2::default()),}));},
+    (Value::ComplexNumber(lhs), Value::ComplexNumber(rhs)) => {return Ok(Box::new(DivComplex {lhs: lhs.clone(),rhs: rhs.clone(),out: new_ref(ComplexNumber::default()),}));},
     _ => (),
   }
   impl_binop_match_arms!(

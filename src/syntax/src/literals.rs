@@ -87,7 +87,7 @@ pub fn number(input: ParseString) -> ParseResult<Number> {
   match tag("i")(input.clone()) {
     Ok((input,_)) => {
       return Ok((input, Number::Imaginary(
-        ComplexNumber{
+        ComplexNumberNode{
           real: None, 
           imaginary: ImaginaryNumber{number: real_num}
         })));
@@ -98,14 +98,14 @@ pub fn number(input: ParseString) -> ParseResult<Number> {
         match sign.kind {
           TokenKind::Plus => {
             return Ok((input, Number::Imaginary(
-              ComplexNumber{
+              ComplexNumberNode{
                 real: Some(real_num), 
                 imaginary: ImaginaryNumber{number: imaginary_num},
               })));
           }
           TokenKind::Dash => {
             return Ok((input, Number::Imaginary(
-              ComplexNumber{
+              ComplexNumberNode{
                 real: Some(real_num), 
                 imaginary: ImaginaryNumber{number: RealNumber::Negated(Box::new(imaginary_num))},
               })));

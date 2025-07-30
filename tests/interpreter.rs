@@ -45,8 +45,8 @@ test_interpreter!(interpret_literal_true, "true", Value::Bool(new_ref(true)));
 test_interpreter!(interpret_literal_false, "false", Value::Bool(new_ref(false)));
 test_interpreter!(interpret_literal_atom, "`A", Value::Atom(55450514845822917));
 test_interpreter!(interpret_literal_empty, "_", Value::Empty);
-test_interpreter!(interpret_literal_complex, "5+4i", Value::ComplexNumber(new_ref(ComplexNumber2::new(5.0, 4.0))));
-test_interpreter!(interpret_literal_complex2, "5-4i", Value::ComplexNumber(new_ref(ComplexNumber2::new(5.0, -4.0))));
+test_interpreter!(interpret_literal_complex, "5+4i", Value::ComplexNumber(new_ref(ComplexNumber::new(5.0, 4.0))));
+test_interpreter!(interpret_literal_complex2, "5-4i", Value::ComplexNumber(new_ref(ComplexNumber::new(5.0, -4.0))));
 test_interpreter!(interpret_literal_rational, "1/2", Value::RationalNumber(new_ref(RationalNumber::new(1, 2))));
 
 test_interpreter!(interpret_comment, "123 -- comment", Value::F64(new_ref(F64::new(123.0))));
@@ -62,10 +62,13 @@ test_interpreter!(interpret_formulat_math_add_rational, "1/10 + 2/10 + 3/10", Va
 test_interpreter!(interpret_formulat_math_sub_rational, "1/10 - 2/10 - 3/10", Value::RationalNumber(new_ref(RationalNumber::new(-4, 10))));
 test_interpreter!(interpret_formula_math_mul_rational, "1/10 * 2/10 * 3/10", Value::RationalNumber(new_ref(RationalNumber::new(3, 500))));
 test_interpreter!(interpret_formula_math_div_rational, "1/10 / 2/10 / 3/10", Value::RationalNumber(new_ref(RationalNumber::new(5, 3))));
-test_interpreter!(interpret_formula_math_add_complex, "1+2i + 3+4i", Value::ComplexNumber(new_ref(ComplexNumber2::new(4.0, 6.0))));
-test_interpreter!(interpret_formula_math_sub_complex, "1+2i - 3+4i", Value::ComplexNumber(new_ref(ComplexNumber2::new(-2.0, -2.0))));
-test_interpreter!(interpret_formula_math_mul_complex, "1+2i * 3+4i", Value::ComplexNumber(new_ref(ComplexNumber2::new(-5.0, 10.0))));
-test_interpreter!(interpret_formula_math_div_complex, "1+2i / 3+4i", Value::ComplexNumber(new_ref(ComplexNumber2::new(0.44, 0.08))));
+test_interpreter!(interpret_formula_math_add_complex, "1+2i + 3+4i", Value::ComplexNumber(new_ref(ComplexNumber::new(4.0, 6.0))));
+test_interpreter!(interpret_formula_math_sub_complex, "1+2i - 3+4i", Value::ComplexNumber(new_ref(ComplexNumber::new(-2.0, -2.0))));
+test_interpreter!(interpret_formula_math_mul_complex, "1+2i * 3+4i", Value::ComplexNumber(new_ref(ComplexNumber::new(-5.0, 10.0))));
+test_interpreter!(interpret_formula_math_div_complex, "1+2i / 3+4i", Value::ComplexNumber(new_ref(ComplexNumber::new(0.44, 0.08))));
+
+test_interpreter!(interpret_matrix_rational, "[1/2 3/4]", Value::MatrixRationalNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![RationalNumber::new(1, 2), RationalNumber::new(3, 4)])))));
+test_interpreter!(interpret_matrix_complex, "[1+2i 3+4i]", Value::MatrixComplexNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![ComplexNumber::new(1.0, 2.0), ComplexNumber::new(3.0, 4.0)])))));
 
 test_interpreter!(interpret_kind_annotation, "1<u64>", Value::U64(new_ref(1)));
 test_interpreter!(interpret_kind_annotation_math, "1<u64> + 1<u64>", Value::U64(new_ref(2)));

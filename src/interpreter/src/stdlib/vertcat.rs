@@ -1063,25 +1063,25 @@ fn impl_vertcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   //let same = kinds.iter().all(|x| *x == target_kind);
   let kinds: Vec<ValueKind> = arguments.iter().map(|x| x.kind()).collect::<Vec<ValueKind>>();
   let target_kind = kinds[0].clone();
-  if ValueKind::is_compatible(target_kind.clone(), ValueKind::F64)  { impl_vertcat_arms!(F64,arguments,F64::zero())
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::F32)  { impl_vertcat_arms!(F32,arguments,F32::zero())
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U8)  { impl_vertcat_arms!(u8,arguments,u8::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U16)  { impl_vertcat_arms!(u16,arguments,u16::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U32)  { impl_vertcat_arms!(u32,arguments,u32::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U64)  { impl_vertcat_arms!(u64,arguments,u64::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U128)  { impl_vertcat_arms!(u128,arguments,u128::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::Bool)  { impl_vertcat_arms!(bool,arguments,false)
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::String)  { impl_vertcat_arms!(String,arguments,String::new())
+  if ValueKind::is_compatible(target_kind.clone(), ValueKind::F64)                   { impl_vertcat_arms!(F64,arguments,F64::zero())
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::F32)            { impl_vertcat_arms!(F32,arguments,F32::zero())
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U8)             { impl_vertcat_arms!(u8,arguments,u8::zero())    
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U16)            { impl_vertcat_arms!(u16,arguments,u16::zero())    
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U32)            { impl_vertcat_arms!(u32,arguments,u32::zero())    
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U64)            { impl_vertcat_arms!(u64,arguments,u64::zero())    
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U128)           { impl_vertcat_arms!(u128,arguments,u128::zero())    
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::Bool)           { impl_vertcat_arms!(bool,arguments,false)
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::String)         { impl_vertcat_arms!(String,arguments,String::new())
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::RationalNumber) { impl_vertcat_arms!(RationalNumber,arguments,RationalNumber::default())
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::ComplexNumber)  { impl_vertcat_arms!(ComplexNumber,arguments,ComplexNumber::default())
   } else {
-    todo!();
+    todo!("VerticalConcatenate for {} not yet implemented.", target_kind);
   }
 }
 
 pub struct MaxtrixVertCat {}
 impl NativeFunctionCompiler for MaxtrixVertCat {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    // First, get the size of the output matrix
-    // rows are consistent already so we can just get nrows from the first element
     impl_vertcat_fxn(arguments)
   }
 }

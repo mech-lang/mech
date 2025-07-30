@@ -161,7 +161,7 @@ pub fn number(num: &Number) -> Value {
   }
 }
 
-fn imaginary(num: &ComplexNumber) -> Value {
+fn imaginary(num: &ComplexNumberNode) -> Value {
   let im: f64 = match real(&num.imaginary.number).as_f64() {
     Some(val) => val.borrow().0,
     None => 0.0,
@@ -172,9 +172,9 @@ fn imaginary(num: &ComplexNumber) -> Value {
         Some(val) => val.borrow().0,
         None => 0.0,
       };      
-      Value::ComplexNumber(new_ref(ComplexNumber2::new(re, im)))
+      Value::ComplexNumber(new_ref(ComplexNumber::new(re, im)))
     },
-    None => Value::ComplexNumber(new_ref(ComplexNumber2::new(0.0, im))),
+    None => Value::ComplexNumber(new_ref(ComplexNumber::new(0.0, im))),
   }
 }
 
