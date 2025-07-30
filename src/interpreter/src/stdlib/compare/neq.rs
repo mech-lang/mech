@@ -106,6 +106,8 @@ fn impl_neq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
     F32,  F32  => MatrixF32,  F32,  false, "F32";
     F64,  F64  => MatrixF64,  F64,  false, "F64";
     String,  String  => MatrixString,  String,  false, "String";
+    RationalNumber,  RationalNumber  => MatrixRationalNumber,  RationalNumber,  false, "RationalNumber";
+    ComplexNumber,  ComplexNumber  => MatrixComplexNumber,  ComplexNumber,  false, "ComplexNumber";    
   )
 }
 

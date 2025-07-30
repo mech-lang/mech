@@ -78,6 +78,19 @@ test_interpreter!(interpret_matrix_mul_complex, "[1+2i 3+4i] * [5+6i 7+8i]", Val
 test_interpreter!(interpret_matrix_div_rational, "[1/2 3/4] / [1/4 1/2]", Value::MatrixRationalNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![RationalNumber::new(2, 1), RationalNumber::new(3, 2)])))));
 test_interpreter!(interpret_matrix_div_complex, "[1+2i 3+4i] / [5+6i 7+8i]", Value::MatrixComplexNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![ComplexNumber::new( 0.2786885245901639,  0.06557377049180328 ), ComplexNumber::new(0.4690265486725664, 0.035398230088495575)])))));
 
+test_interpreter!(interpret_matrix_eq_rational, "[1/2 3/4] == [1/2 3/4]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, true])))));
+test_interpreter!(interpret_matrix_eq_complex, "[1+2i 3+4i] == [1+2i 3+4i]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, true])))));
+test_interpreter!(interpret_matrix_neq_rational, "[1/2 3/4] != [1/2 3/5]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![false, true])))));
+test_interpreter!(interpret_matrix_neq_complex, "[1+2i 3+4i] != [1+2i 3+5i]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![false, true])))));
+test_interpreter!(interpret_matrix_gt_rational, "[1/2 3/4] > [1/4 1/2]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, true])))));
+test_interpreter!(interpret_matrix_gt_complex, "[1+2i 3+4i] > [1+1i 3+3i]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, true])))));
+test_interpreter!(interpret_matrix_gte_rational, "[1/2 3/4] >= [1/2 3/4]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, true])))));
+test_interpreter!(interpret_matrix_gte_complex, "[1+2i 3+4i] >= [1+2i 3+4i]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, true])))));
+test_interpreter!(interpret_matrix_lt_rational, "[1/2 3/4] < [3/4 1/2]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, false])))));
+test_interpreter!(interpret_matrix_lt_complex, "[1+2i 3+4i] < [2+3i 4+5i]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, true])))));
+test_interpreter!(interpret_matrix_lte_rational, "[1/2 3/4] <= [1/2 3/4]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, true])))));
+test_interpreter!(interpret_matrix_lte_complex, "[1+2i 3+4i] <= [1+2i 3+4i]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, true])))));
+
 test_interpreter!(interpret_kind_annotation, "1<u64>", Value::U64(new_ref(1)));
 test_interpreter!(interpret_kind_annotation_math, "1<u64> + 1<u64>", Value::U64(new_ref(2)));
 

@@ -104,6 +104,8 @@ fn impl_lt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunctio
     U128, U128 => MatrixU128, u128, false, "U128";
     F32,  F32  => MatrixF32,  F32,  false, "F32";
     F64,  F64  => MatrixF64,  F64,  false, "F64";
+    RationalNumber,  RationalNumber  => MatrixRationalNumber,  RationalNumber,  false, "RationalNumber";
+    ComplexNumber,  ComplexNumber  => MatrixComplexNumber,  ComplexNumber,  false, "ComplexNumber";    
   )
 }
 
