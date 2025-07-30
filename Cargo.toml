@@ -19,7 +19,10 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = ["stdlib"]
-stdlib = ["Bool", "String", "unsigned-ints", "signed-ints", "floats", "Matrix", "Set", "Map", "Table", "Tuple", "Record", "Atom"]
+stdlib = ["Bool", "String", "numbers", "Matrix", "Set", "Map", "Table", "Tuple", "Record", "Atom"]
+numbers = ["signed-ints", "unsigned-ints", "floats", "ComplexNumber", "RationalNumber"]
+ComplexNumber = []
+RationalNumber = []
 signed-ints = ["I8", "I16", "I32", "I64", "I128"]
 unsigned-ints = ["U8", "U16", "U32", "U64", "U128"]
 floats = ["F32", "F64"]

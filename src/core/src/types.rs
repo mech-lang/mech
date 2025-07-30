@@ -435,6 +435,12 @@ impl fmt::Display for ComplexNumber {
   }
 }
 
+impl PartialOrd for ComplexNumber {
+  fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    Some(self.0.norm().partial_cmp(&other.0.norm()).unwrap())
+  }
+}
+
 impl Default for ComplexNumber {
   fn default() -> Self {
     ComplexNumber(Complex::new(0.0, 0.0))
@@ -474,9 +480,79 @@ impl ComplexNumber {
 
 }
 
+impl Add for ComplexNumber {
+  type Output = ComplexNumber;
+  fn add(self, other: ComplexNumber) -> ComplexNumber {
+    ComplexNumber(self.0 + other.0)
+  }
+}
+
+impl Mul for ComplexNumber {
+  type Output = ComplexNumber;
+  fn mul(self, other: ComplexNumber) -> ComplexNumber {
+    ComplexNumber(self.0 * other.0)
+  }
+}
+
+impl Sub for ComplexNumber {
+  type Output = ComplexNumber;
+  fn sub(self, other: ComplexNumber) -> ComplexNumber {
+    ComplexNumber(self.0 - other.0)
+  }
+}
+
+impl Div for ComplexNumber {
+  type Output = ComplexNumber;
+  fn div(self, other: ComplexNumber) -> ComplexNumber {
+    ComplexNumber(self.0 / other.0)
+  }
+}
+
+impl AddAssign for ComplexNumber {
+  fn add_assign(&mut self, other: ComplexNumber) {
+    self.0 += other.0;
+  }
+}
+
+impl SubAssign for ComplexNumber {
+  fn sub_assign(&mut self, other: ComplexNumber) {
+    self.0 -= other.0;
+  }
+}
+
+impl MulAssign for ComplexNumber {
+  fn mul_assign(&mut self, other: ComplexNumber) {
+    self.0 *= other.0;
+  }
+}
+
+impl DivAssign for ComplexNumber {
+  fn div_assign(&mut self, other: ComplexNumber) {
+    self.0 /= other.0;
+  }
+}
+
+impl Zero for ComplexNumber {
+  fn zero() -> Self {
+    ComplexNumber(Complex::new(0.0, 0.0))
+  }
+  fn is_zero(&self) -> bool {
+    self.0.re == 0.0 && self.0.im == 0.0
+  }
+}
+
+impl One for ComplexNumber {
+  fn one() -> Self {
+    ComplexNumber(Complex::new(1.0, 0.0))
+  }
+  fn is_one(&self) -> bool {
+    self.0 == Complex::new(1.0, 0.0)
+  }
+}
+
 // Rational Numbers
 
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, PartialOrd)]
 pub struct RationalNumber(pub Rational64);
 
 impl RationalNumber {
@@ -508,5 +584,75 @@ impl Default for RationalNumber {
 impl PrettyPrint for RationalNumber {
   fn pretty_print(&self) -> String {
     format!("{}/{}", self.numer(), self.denom())
+  }
+}
+
+impl Mul<RationalNumber> for RationalNumber {
+  type Output = RationalNumber;
+  fn mul(self, other: RationalNumber) -> RationalNumber {
+    RationalNumber(self.0 * other.0)
+  }
+}
+
+impl One for RationalNumber {
+  fn one() -> Self {
+    RationalNumber(Rational64::one())
+  }
+  fn is_one(&self) -> bool {
+    self.0.is_one()
+  }
+}
+
+impl Add<RationalNumber> for RationalNumber {
+  type Output = RationalNumber;
+  fn add(self, other: RationalNumber) -> RationalNumber {
+    RationalNumber(self.0 + other.0)
+  }
+}
+
+impl AddAssign<RationalNumber> for RationalNumber {
+  fn add_assign(&mut self, other: RationalNumber) {
+    self.0 += other.0;
+  }
+}
+
+impl Sub<RationalNumber> for RationalNumber {
+  type Output = RationalNumber;
+  fn sub(self, other: RationalNumber) -> RationalNumber {
+    RationalNumber(self.0 - other.0)
+  }
+}
+
+impl Div<RationalNumber> for RationalNumber {
+  type Output = RationalNumber;
+  fn div(self, other: RationalNumber) -> RationalNumber {
+    RationalNumber(self.0 / other.0)
+  }
+}
+
+impl DivAssign<RationalNumber> for RationalNumber {
+  fn div_assign(&mut self, other: RationalNumber) {
+    self.0 /= other.0;
+  }
+}
+
+impl SubAssign<RationalNumber> for RationalNumber {
+  fn sub_assign(&mut self, other: RationalNumber) {
+    self.0 -= other.0;
+  }
+}
+
+impl MulAssign<RationalNumber> for RationalNumber {
+  fn mul_assign(&mut self, other: RationalNumber) {
+    self.0 *= other.0;
+  }
+}
+
+impl Zero for RationalNumber {
+  fn zero() -> Self {
+    RationalNumber(Rational64::zero())
+  }
+  fn is_zero(&self) -> bool {
+    self.0.is_zero()
   }
 }

@@ -74,26 +74,6 @@ macro_rules! add_scalar_rhs_op {
 impl_math_fxns!(Add);
 
 #[derive(Debug)]
-pub struct AddRational {
-  pub lhs: Ref<RationalNumber>,
-  pub rhs: Ref<RationalNumber>,
-  pub out: Ref<RationalNumber>,
-}
-
-impl MechFunction for AddRational {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {
-      (*out_ptr).0 = (*lhs_ptr).0 + (*rhs_ptr).0;
-    }
-  }
-  fn out(&self) -> Value { Value::RationalNumber(self.out.clone()) }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
-}
-
-#[derive(Debug)]
 pub struct AddComplex {
   pub lhs: Ref<ComplexNumber>,
   pub rhs: Ref<ComplexNumber>,
@@ -114,11 +94,6 @@ impl MechFunction for AddComplex {
 }
 
 fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  match (&lhs_value, &rhs_value) {
-    (Value::RationalNumber(lhs), Value::RationalNumber(rhs)) => {return Ok(Box::new(AddRational {lhs: lhs.clone(),rhs: rhs.clone(),out: new_ref(RationalNumber::default()),}));},
-    (Value::ComplexNumber(lhs), Value::ComplexNumber(rhs)) => {return Ok(Box::new(AddComplex {lhs: lhs.clone(),rhs: rhs.clone(),out: new_ref(ComplexNumber::default()),}));},
-    _ => (),
-  }
   impl_binop_match_arms!(
     Add,
     (lhs_value, rhs_value),
@@ -134,6 +109,8 @@ fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
     U128, U128 => MatrixU128, u128, u128::zero(), "U128";
     F32,  F32  => MatrixF32,  F32,  F32::zero(), "F32";
     F64,  F64  => MatrixF64,  F64,  F64::zero(), "F64";
+    RationalNumber,  RationalNumber  => MatrixRationalNumber,  RationalNumber,  RationalNumber::zero(), "RationalNumber";
+    ComplexNumber,  ComplexNumber  => MatrixComplexNumber,  ComplexNumber,  ComplexNumber::zero(), "ComplexNumber";
   )
 }
 

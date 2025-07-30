@@ -505,6 +505,7 @@ macro_rules! impl_binop_match_arms {
         $(
           $(
             // Scalar Scalar
+            #[cfg(all(feature = $value_string))]
             (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => Ok(Box::new([<$lib SS>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($default) })),
             // Scalar Matrix
             #[cfg(all(feature = $value_string, feature = "Matrix1"))]

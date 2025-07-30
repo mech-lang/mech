@@ -69,6 +69,8 @@ test_interpreter!(interpret_formula_math_div_complex, "1+2i / 3+4i", Value::Comp
 
 test_interpreter!(interpret_matrix_rational, "[1/2 3/4]", Value::MatrixRationalNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![RationalNumber::new(1, 2), RationalNumber::new(3, 4)])))));
 test_interpreter!(interpret_matrix_complex, "[1+2i 3+4i]", Value::MatrixComplexNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![ComplexNumber::new(1.0, 2.0), ComplexNumber::new(3.0, 4.0)])))));
+test_interpreter!(interpret_matrix_add_rational, "[1/2 3/4] + [1/4 1/2]", Value::MatrixRationalNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![RationalNumber::new(3, 4), RationalNumber::new(5, 4)])))));
+test_interpreter!(interpret_matrix_add_complex, "[1+2i 3+4i] + [5+6i 7+8i]", Value::MatrixComplexNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![ComplexNumber::new(6.0, 8.0), ComplexNumber::new(10.0, 12.0)])))));
 
 test_interpreter!(interpret_kind_annotation, "1<u64>", Value::U64(new_ref(1)));
 test_interpreter!(interpret_kind_annotation_math, "1<u64> + 1<u64>", Value::U64(new_ref(2)));
