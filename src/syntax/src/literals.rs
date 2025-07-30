@@ -92,14 +92,27 @@ pub fn number(input: ParseString) -> ParseResult<Number> {
           imaginary: ImaginaryNumber{number: real_num}
         })));
       }
-    _ => match nom_tuple((plus,real_number,tag("i")))(input.clone()) {
-      Ok((input, (_,imaginary_num,_))) => {
-        return Ok((input, Number::Imaginary(
-          ComplexNumber{
-            real: Some(real_num), 
-            imaginary: ImaginaryNumber{number: imaginary_num},
-          })));
+    _ => match nom_tuple((alt((plus,dash)),real_number,tag("i")))(input.clone()) {
+      Ok((input, (sign,imaginary_num,_))) => {
+        // Handle the sign of the imaginary part
+        match sign.kind {
+          TokenKind::Plus => {
+            return Ok((input, Number::Imaginary(
+              ComplexNumber{
+                real: Some(real_num), 
+                imaginary: ImaginaryNumber{number: imaginary_num},
+              })));
+          }
+          TokenKind::Dash => {
+            return Ok((input, Number::Imaginary(
+              ComplexNumber{
+                real: Some(real_num), 
+                imaginary: ImaginaryNumber{number: RealNumber::Negated(Box::new(imaginary_num))},
+              })));
+          }
+          _ => unreachable!(),
         }
+      }
       _ => ()
     }
   }

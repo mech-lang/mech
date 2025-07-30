@@ -180,7 +180,7 @@ fn imaginary(num: &ComplexNumber) -> Value {
 
 pub fn real(rl: &RealNumber) -> Value {
   match rl {
-    RealNumber::Negated(num) => todo!(),
+    RealNumber::Negated(num) => negated(num),
     RealNumber::Integer(num) => integer(num),
     RealNumber::Float(num) => float(num),
     RealNumber::Decimal(num) => dec(num),
@@ -189,6 +189,20 @@ pub fn real(rl: &RealNumber) -> Value {
     RealNumber::Binary(num) => binary(num),
     RealNumber::Scientific(num) => scientific(num),
     RealNumber::Rational(num) => rational(num),
+  }
+}
+
+pub fn negated(num: &RealNumber) -> Value {
+  let num_val = real(&num);
+  match num_val {
+    Value::I8(val) => Value::I8(new_ref(-*val.borrow())),
+    Value::I16(val) => Value::I16(new_ref(-*val.borrow())),
+    Value::I32(val) => Value::I32(new_ref(-*val.borrow())),
+    Value::I64(val) => Value::I64(new_ref(-*val.borrow())),
+    Value::I128(val) => Value::I128(new_ref(-*val.borrow())),
+    Value::F64(val) => Value::F64(new_ref(F64::new(-((*val.borrow()).0)))),
+    Value::F32(val) => Value::F32(new_ref(F32::new(-((*val.borrow()).0)))),
+    _ => panic!("Negation is only supported for integer and float types"),
   }
 }
 

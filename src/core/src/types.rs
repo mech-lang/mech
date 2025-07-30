@@ -446,7 +446,13 @@ impl Hash for ComplexNumber2 {
 
 impl PrettyPrint for ComplexNumber2 {
   fn pretty_print(&self) -> String {
-    format!("{}+{}i", self.0.re, self.0.im)
+    if self.0.re == 0.0 {
+      return format!("{}i", self.0.im);
+    } else if self.0.im >= 0.0 {
+      format!("{}+{}i", self.0.re, self.0.im)
+    } else {
+      format!("{}{}i", self.0.re, self.0.im)
+    }
   }
 }
 
