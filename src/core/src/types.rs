@@ -427,11 +427,17 @@ impl Default for F32 {
 // Complex Numbers
 
 #[derive(Debug, PartialEq, Clone, Copy)]
-pub struct ComplexNumber2(Complex<f64>);
+pub struct ComplexNumber2(pub Complex<f64>);
 
 impl fmt::Display for ComplexNumber2 {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(f, "{}", self.pretty_print())
+  }
+}
+
+impl Default for ComplexNumber2 {
+  fn default() -> Self {
+    ComplexNumber2(Complex::new(0.0, 0.0))
   }
 }
 
