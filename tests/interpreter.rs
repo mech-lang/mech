@@ -198,9 +198,9 @@ test_interpreter!(interpret_formula_comparison_lte, "10 <= 10", Value::Bool(new_
 test_interpreter!(interpret_formula_comparison_gt_vec, "[1 8; 10 5] > [7 2; 4 11]", Value::MatrixBool(Matrix::Matrix2(new_ref(Matrix2::from_vec(vec![false,true,true,false])))));
 test_interpreter!(interpret_formula_comparison_lt_vec, "[1 8 10 5] < [7 2 4 11]", Value::MatrixBool(Matrix::RowVector4(new_ref(RowVector4::from_vec(vec![true,false,false,true])))));
 test_interpreter!(interpret_formula_unicode, "😃:=1;🤦🏼‍♂️:=2;y̆és:=🤦🏼‍♂️ + 😃", Value::F64(new_ref(F64::new(3.0))));
-test_interpreter!(interpret_formula_logic_and, "true & true", Value::Bool(new_ref(true)));
-test_interpreter!(interpret_formula_logic_and_vec, "[true false] & [false false]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![false,false])))));
-test_interpreter!(interpret_formula_logic_and2, "true & false", Value::Bool(new_ref(false)));
+test_interpreter!(interpret_formula_logic_and, "true && true", Value::Bool(new_ref(true)));
+test_interpreter!(interpret_formula_logic_and_vec, "[true false] && [false false]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![false,false])))));
+test_interpreter!(interpret_formula_logic_and2, "true && false", Value::Bool(new_ref(false)));
 test_interpreter!(interpret_formula_logic_or_vec, "[true false true] || [false false true]", Value::MatrixBool(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![true,false,true])))));
 test_interpreter!(interpret_formula_logic_or, "true || false", Value::Bool(new_ref(true)));
 test_interpreter!(interpret_formula_logic_or2, "false || false", Value::Bool(new_ref(false)));
@@ -211,8 +211,8 @@ test_interpreter!(interpret_formula_logic_not_vec1, "![false]", Value::MatrixBoo
 
 test_interpreter!(interpret_statement_variable_define, "x := 123", Value::F64(new_ref(F64::new(123.0))));
 
-test_interpreter!(interpret_reference_bool, "x := false; y := true; x & y", Value::Bool(new_ref(false)));
-test_interpreter!(interpret_reference_bool2, "x := false; x & true", Value::Bool(new_ref(false)));
+test_interpreter!(interpret_reference_bool, "x := false; y := true; x && y", Value::Bool(new_ref(false)));
+test_interpreter!(interpret_reference_bool2, "x := false; x && true", Value::Bool(new_ref(false)));
 
 test_interpreter!(interpret_variable_recall, "a := 1; b := 2; a", Value::MutableReference(new_ref(Value::F64(new_ref(F64::new(1.0))))));
 

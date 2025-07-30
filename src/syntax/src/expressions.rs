@@ -408,7 +408,7 @@ pub fn logic_operator(input: ParseString) -> ParseResult<FormulaOperator> {
 // or := "|" ;
 pub fn or(input: ParseString) -> ParseResult<LogicOp> {
   let (input, _) = ws1e(input)?;
-  let (input, _) = tag("||")(input)?;
+  let (input, _) = alt((tag("||"), tag("∨"), tag("⋁")))(input)?;
   let (input, _) = ws1e(input)?;
   Ok((input, LogicOp::Or))
 }
@@ -416,7 +416,7 @@ pub fn or(input: ParseString) -> ParseResult<LogicOp> {
 // and := "&" ;
 pub fn and(input: ParseString) -> ParseResult<LogicOp> {
   let (input, _) = ws1e(input)?;
-  let (input, _) = tag("&")(input)?;
+  let (input, _) = alt((tag("&&"), tag("∧"), tag("⋀")))(input)?;
   let (input, _) = ws1e(input)?;
   Ok((input, LogicOp::And))
 }
@@ -430,7 +430,7 @@ pub fn not(input: ParseString) -> ParseResult<LogicOp> {
 // xor := "xor" | "⊕" | "⊻" ;
 pub fn xor(input: ParseString) -> ParseResult<LogicOp> {
   let (input, _) = ws1e(input)?;
-  let (input, _) = alt((tag("xor"), tag("⊕"), tag("⊻")))(input)?;
+  let (input, _) = alt((tag("^^"), tag("⊕"), tag("⊻")))(input)?;
   let (input, _) = ws1e(input)?;
   Ok((input, LogicOp::Xor))
 }
