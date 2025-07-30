@@ -71,6 +71,12 @@ test_interpreter!(interpret_matrix_rational, "[1/2 3/4]", Value::MatrixRationalN
 test_interpreter!(interpret_matrix_complex, "[1+2i 3+4i]", Value::MatrixComplexNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![ComplexNumber::new(1.0, 2.0), ComplexNumber::new(3.0, 4.0)])))));
 test_interpreter!(interpret_matrix_add_rational, "[1/2 3/4] + [1/4 1/2]", Value::MatrixRationalNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![RationalNumber::new(3, 4), RationalNumber::new(5, 4)])))));
 test_interpreter!(interpret_matrix_add_complex, "[1+2i 3+4i] + [5+6i 7+8i]", Value::MatrixComplexNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![ComplexNumber::new(6.0, 8.0), ComplexNumber::new(10.0, 12.0)])))));
+test_interpreter!(interpret_matrix_sub_rational, "[1/2 3/4] - [1/4 1/2]", Value::MatrixRationalNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![RationalNumber::new(1, 4), RationalNumber::new(1, 4)])))));
+test_interpreter!(interpret_matrix_sub_complex, "[1+2i 3+4i] - [5+6i 7+8i]", Value::MatrixComplexNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![ComplexNumber::new(-4.0, -4.0), ComplexNumber::new(-4.0, -4.0)])))));
+test_interpreter!(interpret_matrix_mul_rational, "[1/2 3/4] * [1/4 1/2]", Value::MatrixRationalNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![RationalNumber::new(1, 8), RationalNumber::new(3, 8)])))));
+test_interpreter!(interpret_matrix_mul_complex, "[1+2i 3+4i] * [5+6i 7+8i]", Value::MatrixComplexNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![ComplexNumber::new(-7.0, 16.0), ComplexNumber::new(-11.0, 52.0)])))));
+test_interpreter!(interpret_matrix_div_rational, "[1/2 3/4] / [1/4 1/2]", Value::MatrixRationalNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![RationalNumber::new(2, 1), RationalNumber::new(3, 2)])))));
+test_interpreter!(interpret_matrix_div_complex, "[1+2i 3+4i] / [5+6i 7+8i]", Value::MatrixComplexNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![ComplexNumber::new( 0.2786885245901639,  0.06557377049180328 ), ComplexNumber::new(0.4690265486725664, 0.035398230088495575)])))));
 
 test_interpreter!(interpret_kind_annotation, "1<u64>", Value::U64(new_ref(1)));
 test_interpreter!(interpret_kind_annotation_math, "1<u64> + 1<u64>", Value::U64(new_ref(2)));

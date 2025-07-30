@@ -550,6 +550,13 @@ impl One for ComplexNumber {
   }
 }
 
+impl Neg for ComplexNumber {
+  type Output = Self;
+  fn neg(self) -> Self::Output {
+    ComplexNumber(-self.0)
+  }
+}
+
 // Rational Numbers
 
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, PartialOrd)]
@@ -654,5 +661,12 @@ impl Zero for RationalNumber {
   }
   fn is_zero(&self) -> bool {
     self.0.is_zero()
+  }
+}
+
+impl Neg for RationalNumber {
+  type Output = Self;
+  fn neg(self) -> Self::Output {
+    RationalNumber(-self.0)
   }
 }

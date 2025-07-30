@@ -146,6 +146,8 @@ fn impl_sub_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
     U128, U128 => MatrixU128, u128, u128::zero(), "U128";
     F32,  F32  => MatrixF32,  F32,  F32::zero(), "F32";
     F64,  F64  => MatrixF64,  F64,  F64::zero(), "F64";
+    RationalNumber,  RationalNumber  => MatrixRationalNumber,  RationalNumber,  RationalNumber::zero(), "RationalNumber";
+    ComplexNumber,  ComplexNumber  => MatrixComplexNumber,  ComplexNumber,  ComplexNumber::zero(), "ComplexNumber";  
   )
 }
 

@@ -104,6 +104,8 @@ fn impl_neg_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
     I128 => MatrixI128, i128, i128::zero(), "I128";
     F32 => MatrixF32, F32, F32::zero(), "F32";
     F64 => MatrixF64, F64, F64::zero(), "F64";
+    RationalNumber => MatrixRationalNumber,  RationalNumber,  RationalNumber::zero(), "RationalNumber";
+    ComplexNumber => MatrixComplexNumber,  ComplexNumber,  ComplexNumber::zero(), "ComplexNumber";
   )
 }
 
