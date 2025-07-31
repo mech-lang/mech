@@ -1,7 +1,27 @@
 test:cargo:
+  stage: test
+  variables:
+    CARGO_TERM_COLOR: always
+    RUST_BACKTRACE: full
+  cache:
+    key: cargo-cache
+    paths:
+      - target
+      - $HOME/.cargo/registry
+      - $HOME/.cargo/git
+  before_script:
+    # Show current toolchain info
+    - rustup show
+    # Ensure the required nightly is installed
+    - rustup install nightly-2025-01-15
+    # Use the correct nightly toolchain
+    - rustup default nightly-2025-01-15
   script:
-  - rustup show
-  - rustup default nightly-2025-01-15
-  - cargo clean
-  - cargo build --bin mech
-  - cargo test interpret
+    # Clean only if needed (faster than always cleaning)
+    - cargo clean
+    # Verify dependencies first
+    - cargo fetch
+    # Build in debug mode for tests
+    - cargo build --locked --bin mech
+    # Run only the relevant tests
+    - cargo test --locked interpret
