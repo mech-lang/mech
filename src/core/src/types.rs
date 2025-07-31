@@ -555,6 +555,13 @@ impl RationalNumber {
     RationalNumber(Rational64::new(numer, denom))
   }
 
+  pub fn from_f64(f: f64) -> Option<RationalNumber> {
+    match Rational64::from_f64(f) {
+      Some(r) => Some(RationalNumber(r)),
+      None => None,
+    }
+  }
+
   pub fn to_f64(&self) -> Option<f64> {
     match self.0.to_f64() {
       Some(val) => Some(val),
