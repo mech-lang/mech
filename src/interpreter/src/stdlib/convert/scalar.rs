@@ -142,15 +142,15 @@ macro_rules! impl_conversion_match_arms {
 
 #[derive(Debug)]
 pub struct ConvertScalarToScalar<F, T> {
-    pub arg: Ref<F>,
-    pub out: Ref<T>,
+  pub arg: Ref<F>,
+  pub out: Ref<T>,
 }
 
 impl<F, T> MechFunction for ConvertScalarToScalar<F, T>
 where
-    Ref<T>: ToValue,
-    F: LosslessInto<T> + Debug + Clone,
-    T: Debug,
+  Ref<T>: ToValue,
+  F: LosslessInto<T> + Debug + Clone,
+  T: Debug,
 {
   fn solve(&self) {
     let arg_ptr = self.arg.as_ptr();
@@ -166,7 +166,7 @@ where
 }
 
 pub trait LossyFrom<T> {
-    fn lossy_from(value: T) -> Self;
+  fn lossy_from(value: T) -> Self;
 }
 
 macro_rules! impl_lossy_from {
@@ -175,7 +175,7 @@ macro_rules! impl_lossy_from {
       $(
         impl LossyFrom<$from> for $to {
           fn lossy_from(value: $from) -> Self {
-              value as $to
+            value as $to
           }
         }
       )*
