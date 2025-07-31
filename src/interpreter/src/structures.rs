@@ -69,7 +69,7 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
     let name_str = b.name.to_string();
     let val = expression(&b.value, p)?;
     let knd: ValueKind = match &b.kind {
-      Some(k) => kind_annotation(&k.kind, p)?.to_value_kind(p.functions())?,
+      Some(k) => kind_annotation(&k.kind, p)?.to_value_kind(&p.functions())?,
       None => val.kind(),
     };
     // If the kinds are different, do a conversion.
@@ -202,7 +202,7 @@ pub fn table_header(fields: &Vec<Field>, p: &Interpreter) -> MResult<Vec<(Value,
       Some(k) => kind_annotation(&k.kind, p)?,
       None => Kind::Any,
     };
-    headings.push((Value::Id(id),kind.to_value_kind(p.functions())?,f.name.clone()));
+    headings.push((Value::Id(id),kind.to_value_kind(&p.functions())?,f.name.clone()));
   }
   Ok(headings)
 }
