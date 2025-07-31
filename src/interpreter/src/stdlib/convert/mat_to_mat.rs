@@ -248,8 +248,8 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl_conversion_mat_to_mat_fxn! {
-  F64 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
-  F32 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
+  F64 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, RationalNumber];
+  F32 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, RationalNumber];
   u8  => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
   u16 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
   u32 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
@@ -262,12 +262,13 @@ impl_conversion_mat_to_mat_fxn! {
   i128 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
   String => [String];
   RationalNumber => [String];
+  ComplexNumber => [String];
 }
 
 #[cfg(target_arch = "wasm32")]
 impl_conversion_mat_to_mat_fxn! {
-  F64 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
-  F32 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
+  F64 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64, RationalNumber];
+  F32 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64, RationalNumber];
   u8  => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
   u16 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
   u32 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
@@ -278,6 +279,7 @@ impl_conversion_mat_to_mat_fxn! {
   i64 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
   String => [String];
   RationalNumber => [String];
+  ComplexNumber => [String];
 }
 
 pub struct ConvertMatToMat {}
