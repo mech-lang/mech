@@ -1,27 +1,20 @@
 test:cargo:
-  stage: test
+  image: rust:1.80  # Use a pinned Rust Docker image for reproducibility
   variables:
     CARGO_TERM_COLOR: always
     RUST_BACKTRACE: full
+    RUSTUP_HOME: /usr/local/rustup
+    CARGO_HOME: /usr/local/cargo
   cache:
-    key: cargo-cache
+    key: "$CI_JOB_NAME"
     paths:
       - target
-      - $HOME/.cargo/registry
-      - $HOME/.cargo/git
+      - /usr/local/cargo/registry
+      - /usr/local/cargo/git
   before_script:
-    # Show current toolchain info
     - rustup show
-    # Ensure the required nightly is installed
-    - rustup install nightly-2025-01-15
-    # Use the correct nightly toolchain
     - rustup default nightly-2025-01-15
   script:
-    # Clean only if needed (faster than always cleaning)
-    - cargo clean
-    # Verify dependencies first
     - cargo fetch
-    # Build in debug mode for tests
-    - cargo build --locked --bin mech
-    # Run only the relevant tests
+    - cargo build --locked --bin mech --release
     - cargo test --locked interpret
