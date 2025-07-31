@@ -83,6 +83,8 @@ fn impl_conversion_scalar_to_mat_fxn(source_value: Value, target_kind: ValueKind
     F32 => F32;
     F64 => F64;
     String => String;
+    RationalNumber => RationalNumber;
+    ComplexNumber => ComplexNumber;
   )
 }
 
