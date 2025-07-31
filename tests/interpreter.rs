@@ -633,3 +633,8 @@ test_interpreter!(interpret_matrix_reshape2,r#"x:=[1 2 3 4]; y<[string]:2,2> := 
 test_interpreter!(interpret_matrix_convert_str,r#"x:=1..=4; out<[string]>:=x"#, Value::MatrixString(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![String::from("1"), String::from("2"), String::from("3"), String::from("4")])))));
 
 test_interpreter!(interpret_matrix_build_rational,r#"x<[r64]:1,2> := 1/2"#, Value::MatrixRationalNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![RationalNumber::new(1, 2), RationalNumber::new(1, 2)])))));
+
+test_interpreter!(interpret_convert_rational_to_string,r#"x<string>:=1/2"#, Value::String(new_ref(String::from("1/2"))));
+test_interpreter!(interpret_convert_f64_to_string2,r#"x<string>:=123"#, Value::String(new_ref(String::from("123"))));
+
+test_interpreter!(interpret_convert_f64_to_rational_to_string,r#"x<string> := 0.5<r64>"#,Value::String(new_ref(String::from("1/2"))));

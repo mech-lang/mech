@@ -17,7 +17,7 @@ pub fn literal(ltrl: &Literal, p: &Interpreter) -> MResult<Value> {
 
 pub fn kind_value(knd: &NodeKind, p: &Interpreter) -> MResult<Value> {
   let kind = kind_annotation(knd, p)?;
-  Ok(Value::Kind(kind.to_value_kind(p.functions())?))
+  Ok(Value::Kind(kind.to_value_kind(&p.functions())?))
 }
 
 pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
@@ -104,49 +104,14 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
 }
 
 pub fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, p: &Interpreter) -> MResult<Value> {
-  let functions = p.functions();
   let value = literal(ltrl,p)?;
-  let knd_tkns = knd_attn.tokens();
   let kind = kind_annotation(&knd_attn.kind, p)?;
-  match (&value,kind) {
-    (Value::I64(num), Kind::Scalar(to_kind_id)) => {
-      match functions.borrow().kinds.get(&to_kind_id) {
-        Some(ValueKind::I8)   => Ok(Value::I8(new_ref(*num.borrow() as i8))),
-        Some(ValueKind::I16)  => Ok(Value::I16(new_ref(*num.borrow() as i16))),
-        Some(ValueKind::I32)  => Ok(Value::I32(new_ref(*num.borrow() as i32))),
-        Some(ValueKind::I64)  => Ok(value),
-        Some(ValueKind::I128) => Ok(Value::I128(new_ref(*num.borrow() as i128))),
-        Some(ValueKind::U8)   => Ok(Value::U8(new_ref(*num.borrow() as u8))),
-        Some(ValueKind::U16)  => Ok(Value::U16(new_ref(*num.borrow() as u16))),
-        Some(ValueKind::U32)  => Ok(Value::U32(new_ref(*num.borrow() as u32))),
-        Some(ValueKind::U64)  => Ok(Value::U64(new_ref(*num.borrow() as u64))),
-        Some(ValueKind::U128) => Ok(Value::U128(new_ref(*num.borrow() as u128))),
-        Some(ValueKind::F32)  => Ok(Value::F32(new_ref(F32::new(*num.borrow() as f32)))),
-        Some(ValueKind::F64)  => Ok(Value::F64(new_ref(F64::new(*num.borrow() as f64)))),
-        None => Err(MechError{file: file!().to_string(), tokens: knd_tkns, msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(to_kind_id)}),
-        _ => Err(MechError{file: file!().to_string(), tokens: knd_tkns, msg: "".to_string(), id: line!(), kind: MechErrorKind::CouldNotAssignKindToValue}),
-      }
-    }
-    (Value::F64(num), Kind::Scalar(to_kind_id)) => {
-      match functions.borrow().kinds.get(&to_kind_id) {
-        Some(ValueKind::I8)   => Ok(Value::I8(new_ref((*num.borrow()).0 as i8))),
-        Some(ValueKind::I16)  => Ok(Value::I16(new_ref((*num.borrow()).0 as i16))),
-        Some(ValueKind::I32)  => Ok(Value::I32(new_ref((*num.borrow()).0 as i32))),
-        Some(ValueKind::I64)  => Ok(Value::I64(new_ref((*num.borrow()).0 as i64))),
-        Some(ValueKind::I128) => Ok(Value::I128(new_ref((*num.borrow()).0 as i128))),
-        Some(ValueKind::U8)   => Ok(Value::U8(new_ref((*num.borrow()).0 as u8))),
-        Some(ValueKind::U16)  => Ok(Value::U16(new_ref((*num.borrow()).0 as u16))),
-        Some(ValueKind::U32)  => Ok(Value::U32(new_ref((*num.borrow()).0 as u32))),
-        Some(ValueKind::U64)  => Ok(Value::U64(new_ref((*num.borrow()).0 as u64))),
-        Some(ValueKind::U128) => Ok(Value::U128(new_ref((*num.borrow()).0 as u128))),
-        Some(ValueKind::F32)  => Ok(Value::F32(new_ref(F32::new((*num.borrow()).0 as f32)))),
-        Some(ValueKind::F64)  => Ok(value),
-        None => Err(MechError{file: file!().to_string(), tokens: knd_tkns, msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(to_kind_id)}),
-        _ => Err(MechError{file: file!().to_string(), tokens: knd_tkns, msg: "".to_string(), id: line!(), kind: MechErrorKind::CouldNotAssignKindToValue}),
-      }
-    }
-    _ => todo!(),
-  }
+  let args = vec![value, kind.to_value(&p.functions())?];
+  let convert_fxn = ConvertKind{}.compile(&args)?;
+  convert_fxn.solve();
+  let converted_result = convert_fxn.out();
+  p.add_plan_step(convert_fxn);
+  Ok(converted_result)
 }
 
 pub fn atom(atm: &Atom) -> Value {
