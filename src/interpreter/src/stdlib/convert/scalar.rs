@@ -46,12 +46,17 @@ macro_rules! convert_op4 {
   ($arg:expr, $out:expr, $out_type:ty) => {
     unsafe{ (*$out).0 = (*$arg).0 as $out_type }
   };}
+  
+macro_rules! convert_op5 {
+  ($arg:expr, $out:expr, $out_type:ty) => {
+    unsafe{ (*$out) = (*$arg).into() }
+  };}
 
 macro_rules! impl_convert_op_group {
   ($from:ty, [$($to:ty),*], $func:ident) => {
     paste!{
       $(
-        impl_convert_op!([<ConvertS $from:upper $to:upper>], $from, $to, [<$to:lower>], $func);
+        impl_convert_op!([<ConvertS $from:camel $to:camel>], $from, $to, [<$to:lower>], $func);
       )*
     }
   };
@@ -86,6 +91,7 @@ impl_convert_op_group!(u128, [F32, F64], convert_op3);
 
 impl_convert_op_group!(F32,  [F32, F64], convert_op4);
 impl_convert_op_group!(F64,  [F32, F64], convert_op4);
+impl_convert_op_group!(F64,  [RationalNumber], convert_op5);
 
 #[derive(Debug)]
 struct ConvertSEnum {
@@ -363,18 +369,32 @@ where T: Debug + Clone + PartialEq + Into<Value> + 'static,
   fn out(&self) -> Value { Value::Table(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
-  
 
+#[derive(Debug)]
+struct ConvertSRationalToF64 {
+  arg: Ref<RationalNumber>,
+  out: Ref<F64>,
+}
+
+impl MechFunction for ConvertSRationalToF64 {
+  fn solve(&self) {
+    let arg_ptr = self.arg.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe{ *out_ptr = (*arg_ptr).into(); }
+  }
+  fn out(&self) -> Value { Value::F64(self.out.clone()) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
 
 macro_rules! impl_conversion_match_arms {
   ($arg:expr, $($input_type:ident => $($target_type:ident),+);+ $(;)?) => {
     paste!{
       match $arg {
         $(
-          (Value::[<Matrix $input_type:upper>](mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
+          (Value::[<Matrix $input_type:camel>](mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
             let in_shape = mat.shape();
             let tbl_cols = tbl.len();
-            let mat_knd = ValueKind::[<$input_type:upper>];
+            let mat_knd = ValueKind::[<$input_type:camel>];
             // Verify the table has the correct number of columns
             if in_shape[1] != tbl_cols {
               return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Matrix has {} columns, but table expects {}", in_shape[1], tbl_cols), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
@@ -394,26 +414,29 @@ macro_rules! impl_conversion_match_arms {
             Ok(Box::new(ConvertMat2Table::<$input_type>{arg: mat.clone(), out: new_ref(out)}))
           }
           $(
-            (Value::[<$input_type:upper>](arg), Value::Kind(ValueKind::[<$target_type:upper>])) => {Ok(Box::new([<ConvertS $input_type:upper $target_type:upper>]{arg: arg.clone(), out: new_ref($target_type::zero())}))},
-            (Value::[<Matrix $input_type:upper>](arg), Value::Kind(ValueKind::Matrix(kind,size))) => {
+            (Value::[<$input_type:camel>](arg), Value::Kind(ValueKind::[<$target_type:camel>])) => {Ok(Box::new([<ConvertS $input_type:camel $target_type:camel>]{arg: arg.clone(), out: new_ref($target_type::zero())}))},
+            (Value::[<Matrix $input_type:camel>](arg), Value::Kind(ValueKind::Matrix(kind,size))) => {
               match *kind {
-                ValueKind::U8 => {let in_shape = arg.shape();let out = u8::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:upper MU8>]{arg: arg.clone(), out}))}
-                ValueKind::U16 => {let in_shape = arg.shape();let out = u16::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:upper MU16>]{arg: arg.clone(), out}))}
-                ValueKind::U32 => {let in_shape = arg.shape();let out = u32::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:upper MU32>]{arg: arg.clone(), out}))}
-                ValueKind::U64 => {let in_shape = arg.shape();let out = u64::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:upper MU64>]{arg: arg.clone(), out}))}
+                ValueKind::U8 => {let in_shape = arg.shape();let out = u8::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:camel MU8>]{arg: arg.clone(), out}))}
+                ValueKind::U16 => {let in_shape = arg.shape();let out = u16::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:camel MU16>]{arg: arg.clone(), out}))}
+                ValueKind::U32 => {let in_shape = arg.shape();let out = u32::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:camel MU32>]{arg: arg.clone(), out}))}
+                ValueKind::U64 => {let in_shape = arg.shape();let out = u64::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:camel MU64>]{arg: arg.clone(), out}))}
                 //ValueKind::U128 => {let in_shape = arg.shape();let out = u128::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:upper MU128>]{arg: arg.clone(), out}))}
-                ValueKind::I8 => {let in_shape = arg.shape();let out = i8::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:upper MI8>]{arg: arg.clone(), out}))}
-                ValueKind::I16 => {let in_shape = arg.shape();let out = i16::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:upper MI16>]{arg: arg.clone(), out}))}
-                ValueKind::I32 => {let in_shape = arg.shape();let out = i32::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:upper MI32>]{arg: arg.clone(), out}))}
-                ValueKind::I64 => {let in_shape = arg.shape();let out = i64::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:upper MI64>]{arg: arg.clone(), out}))}
+                ValueKind::I8 => {let in_shape = arg.shape();let out = i8::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:camel MI8>]{arg: arg.clone(), out}))}
+                ValueKind::I16 => {let in_shape = arg.shape();let out = i16::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:camel MI16>]{arg: arg.clone(), out}))}
+                ValueKind::I32 => {let in_shape = arg.shape();let out = i32::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:camel MI32>]{arg: arg.clone(), out}))}
+                ValueKind::I64 => {let in_shape = arg.shape();let out = i64::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:camel MI64>]{arg: arg.clone(), out}))}
                 //ValueKind::I128 => {let in_shape = arg.shape();let out = i128::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:upper MI128>]{arg: arg.clone(), out}))}
-                ValueKind::F32 => {let in_shape = arg.shape();let out = F32::to_matrix(vec![F32::zero(); in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:upper MF32>]{arg: arg.clone(), out}))}
-                ValueKind::F64 => {let in_shape = arg.shape();let out = F64::to_matrix(vec![F64::zero(); in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:upper MF64>]{arg: arg.clone(), out}))}
+                ValueKind::F32 => {let in_shape = arg.shape();let out = F32::to_matrix(vec![F32::zero(); in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:camel MF32>]{arg: arg.clone(), out}))}
+                ValueKind::F64 => {let in_shape = arg.shape();let out = F64::to_matrix(vec![F64::zero(); in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new([<ConvertM $input_type:camel MF64>]{arg: arg.clone(), out}))}
                 _ => todo!(),
               }
             },
           )+
         )+
+        (Value::RationalNumber(ref rat), Value::Kind(ValueKind::F64)) => {
+          Ok(Box::new(ConvertSRationalToF64{arg: rat.clone(), out: new_ref(F64::zero())}))
+        }
         (Value::Atom(varian_id), Value::Kind(ValueKind::Enum(enum_id))) => {
           let variants = vec![(varian_id,None)];
           let enm = MechEnum{id: enum_id, variants};
@@ -463,7 +486,7 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
     u64  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
     u128 => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
     F32  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    F64  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    F64  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64, RationalNumber;
   )
 }
 

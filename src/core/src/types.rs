@@ -670,3 +670,15 @@ impl Neg for RationalNumber {
     RationalNumber(-self.0)
   }
 }
+
+impl From<RationalNumber> for F64 {
+  fn from(r: RationalNumber) -> Self {
+    F64::new(r.0.to_f64().unwrap())
+  }
+}
+
+impl From<F64> for RationalNumber {
+  fn from(f: F64) -> Self {
+    RationalNumber(Rational64::from_f64(f.0).unwrap())
+  }
+}

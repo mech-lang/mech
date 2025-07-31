@@ -179,6 +179,8 @@ test_interpreter!(interpret_kind_matrix_row3, "[1<u8> 2<u8> 3<u8>]", Value::Matr
 test_interpreter!(interpret_kind_lhs_define, "x<u64> := 1", Value::U64(new_ref(1)));
 test_interpreter!(interpret_kind_convert_twice, "x<u64> := 1; y<i8> := x", Value::I8(new_ref(1)));
 test_interpreter!(interpret_kind_convert_float, "x<f32> := 123;", Value::F32(new_ref(F32::new(123.0))));
+test_interpreter!(interpret_kind_convert_rational, "x<r64> := 1 / 2; y<f64> := x", Value::F64(new_ref(F64::new(0.5))));
+test_interpreter!(interpret_kind_convert_rational2, "x<f64> := 1/2; y<r64> := x", Value::RationalNumber(new_ref(RationalNumber::new(1, 2))));
 
 test_interpreter!(interpret_kind_define, "<foo> := <f64>; x<foo> := 123", Value::F64(new_ref(F64::new(123.0))));
 
