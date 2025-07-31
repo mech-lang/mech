@@ -15,28 +15,6 @@ impl MechFunction for ConvertSEnum
 }
 
 #[derive(Debug)]
-struct ConvertMatrixBasic<F, T> {
-  arg: Matrix<F>,
-  out: Matrix<T>,
-}
-
-impl<F, T> MechFunction for ConvertMatrixBasic<F, T>
-where
-  Matrix<T>: ToValue,
-  T: LossyFrom<F> + Clone + Debug + PartialEq + 'static,
-  F: Clone + Debug + PartialEq + 'static,
-{
-  fn solve(&self) {
-  let arg_vec = self.arg.as_vec();
-  self.out.set(arg_vec.iter().cloned().map(T::lossy_from).collect::<Vec<T>>());
-  }
-  fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String {
-    format!("{:#?}", self)
-  }
-}
-
-#[derive(Debug)]
 struct ConvertMat2Table<T> {
   arg: Matrix<T>,
   out: Ref<MechTable>,
@@ -105,24 +83,7 @@ macro_rules! impl_conversion_match_arms {
             Ok(Box::new(ConvertMat2Table::<$input_type>{arg: mat.clone(), out: new_ref(out)}))
           }
           $(
-            (Value::[<$input_type:camel>](arg), Value::Kind(ValueKind::[<$target_type:camel>])) => {Ok(Box::new(ConvertScalarToScalarBasic::<$input_type,$target_type>{arg: arg.clone(), out: new_ref($target_type::zero())}))},
-            (Value::[<Matrix $input_type:camel>](arg), Value::Kind(ValueKind::Matrix(kind,size))) => {
-              match *kind {
-                ValueKind::U8 => {let in_shape = arg.shape();let out = u8::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new(ConvertMatrixBasic::<$input_type,u8>{arg: arg.clone(), out}))}
-                ValueKind::U16 => {let in_shape = arg.shape();let out = u16::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new(ConvertMatrixBasic::<$input_type,u16>{arg: arg.clone(), out}))}
-                ValueKind::U32 => {let in_shape = arg.shape();let out = u32::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new(ConvertMatrixBasic::<$input_type,u32>{arg: arg.clone(), out}))}
-                ValueKind::U64 => {let in_shape = arg.shape();let out = u64::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new(ConvertMatrixBasic::<$input_type,u64>{arg: arg.clone(), out}))}
-                ValueKind::U128 => {let in_shape = arg.shape();let out = u128::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new(ConvertMatrixBasic::<$input_type,u128>{arg: arg.clone(), out}))}
-                ValueKind::I8 =>  {let in_shape = arg.shape();let out = i8::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0],  in_shape[1]);Ok(Box::new(ConvertMatrixBasic::<$input_type,i8>{arg: arg.clone(), out}))}
-                ValueKind::I16 => {let in_shape = arg.shape();let out = i16::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new(ConvertMatrixBasic::<$input_type,i16>{arg: arg.clone(), out}))}
-                ValueKind::I32 => {let in_shape = arg.shape();let out = i32::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new(ConvertMatrixBasic::<$input_type,i32>{arg: arg.clone(), out}))}
-                ValueKind::I64 => {let in_shape = arg.shape();let out = i64::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new(ConvertMatrixBasic::<$input_type,i64>{arg: arg.clone(), out}))}
-                ValueKind::I128 => {let in_shape = arg.shape();let out = i128::to_matrix(vec![0; in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new(ConvertMatrixBasic::<$input_type,i128>{arg: arg.clone(), out}))}
-                ValueKind::F32 => {let in_shape = arg.shape();let out = F32::to_matrix(vec![F32::zero(); in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new(ConvertMatrixBasic::<$input_type,F32>{arg: arg.clone(), out}))}
-                ValueKind::F64 => {let in_shape = arg.shape();let out = F64::to_matrix(vec![F64::zero(); in_shape[0]*in_shape[1]], in_shape[0], in_shape[1]);Ok(Box::new(ConvertMatrixBasic::<$input_type,F64>{arg: arg.clone(), out}))}
-                _ => todo!(),
-              }
-            },
+            (Value::[<$input_type:camel>](arg), Value::Kind(ValueKind::[<$target_type:camel>])) => {Ok(Box::new(ConvertScalarToScalarBasic{arg: arg.clone(), out: new_ref($target_type::default())}))},
           )+
         )+
         (Value::RationalNumber(ref rat), Value::Kind(ValueKind::F64)) => {
@@ -165,85 +126,6 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
-pub trait LossyFrom<T> {
-  fn lossy_from(value: T) -> Self;
-}
-
-macro_rules! impl_lossy_from {
-  ($($from:ty => $($to:ty),*);* $(;)?) => {
-    $(
-      $(
-        impl LossyFrom<$from> for $to {
-          fn lossy_from(value: $from) -> Self {
-            value as $to
-          }
-        }
-      )*
-    )*
-  };
-}
-
-impl_lossy_from!(u8 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
-impl_lossy_from!(u16 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
-impl_lossy_from!(u32 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
-impl_lossy_from!(u64 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
-impl_lossy_from!(i8 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
-impl_lossy_from!(i16 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
-impl_lossy_from!(i32 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
-impl_lossy_from!(i64 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
-impl_lossy_from!(i128 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
-impl_lossy_from!(u128 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
-
-macro_rules! impl_lossy_from_wrapper {
-  ($wrapper:ident, $inner:ty, $($prim:ty),*) => {
-    $(
-      impl LossyFrom<$wrapper> for $prim {
-        fn lossy_from(value: $wrapper) -> Self {
-          value.0 as $prim
-        }
-      }
-      impl LossyFrom<$prim> for $wrapper {
-        fn lossy_from(value: $prim) -> Self {
-          $wrapper(value as $inner)
-        }
-      }
-    )*
-  };
-}
-
-impl_lossy_from_wrapper!(F64, f64, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, f32, f64);
-impl_lossy_from_wrapper!(F32, f32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, f32, f64);
-
-impl LossyFrom<F64> for F32 {
-  fn lossy_from(value: F64) -> Self {
-    F32(value.0 as f32)
-  }
-}
-
-impl LossyFrom<F32> for F64 {
-  fn lossy_from(value: F32) -> Self {
-    F64(value.0 as f64)
-  }
-}
-
-impl LossyFrom<F64> for F64 {
-  fn lossy_from(value: F64) -> Self {
-    F64(value.0)
-  }
-}
-
-impl LossyFrom<F32> for F32 {
-  fn lossy_from(value: F32) -> Self {
-    F32(value.0)
-  }
-}
-
-impl LossyFrom<F64> for RationalNumber {
-  fn lossy_from(value: F64) -> Self {
-    RationalNumber::from(value)
-  }
-}
-
 #[derive(Debug)]
 pub struct ConvertScalarToScalarBasic<F, T> {
   pub arg: Ref<F>,
@@ -271,8 +153,7 @@ where
 
 fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<dyn MechFunction>>  {
   match (&source_value, &target_kind) {
-    (Value::RationalNumber(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar::<RationalNumber, F64>{arg: r.clone(),out: new_ref(F64::zero()),}));}
-    (Value::RationalNumber(r), Value::Kind(ValueKind::String)) => {return Ok(Box::new(ConvertScalarToScalar::<RationalNumber, String>{arg: r.clone(),out: new_ref(String::default()),}));}
+    (Value::RationalNumber(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar{arg: r.clone(),out: new_ref(F64::zero()),}));}
     (Value::MatrixString(ref mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
       let in_shape = mat.shape();
       // Verify the table has the correct number of columns
@@ -297,18 +178,19 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
   }
   impl_conversion_match_arms!(
     (source_value, target_kind),
-    i8   => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    i16  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    i32  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    i64  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    i128 => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    u8   => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    u16  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    u32  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    u64  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    u128 => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    F32  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    F64  => i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64, RationalNumber;
+    i8   => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    i16  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    i32  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    i64  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    i128 => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    u8   => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    u16  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    u32  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    u64  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    u128 => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    F32  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
+    F64  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64, RationalNumber;
+    RationalNumber => String, F64;
   )
 }
 
