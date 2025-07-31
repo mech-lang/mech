@@ -248,18 +248,6 @@ impl_into_float!(i128 => f32, f64);
 impl_into!(F64 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
 impl_into!(F32 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
 
-impl Into<F32> for F64 {
-  fn into(self) -> F32 {
-    F32::new(self.0 as f32)
-  }
-}
-
-impl Into<F64> for F32 {
-  fn into(self) -> F64 {
-    F64::new(self.0 as f64)
-  }
-}
-
 impl fmt::Display for F32 {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
       write!(f, "{}", self.0)
@@ -567,6 +555,13 @@ impl RationalNumber {
     RationalNumber(Rational64::new(numer, denom))
   }
 
+  pub fn to_f64(&self) -> Option<f64> {
+    match self.0.to_f64() {
+      Some(val) => Some(val),
+      None => None,
+    }
+  }
+
   pub fn numer(&self) -> &i64 {
     self.0.numer()
   }
@@ -680,5 +675,17 @@ impl From<RationalNumber> for F64 {
 impl From<F64> for RationalNumber {
   fn from(f: F64) -> Self {
     RationalNumber(Rational64::from_f64(f.0).unwrap())
+  }
+}
+
+impl From<F32> for F64 {
+  fn from(value: F32) -> Self {
+    F64::new(value.0 as f64)
+  }
+}
+
+impl From<F64> for F32 {
+  fn from(value: F64) -> Self {
+    F32::new(value.0 as f32)
   }
 }
