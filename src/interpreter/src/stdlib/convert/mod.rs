@@ -242,3 +242,18 @@ impl LosslessInto<F32> for F32 {
     self
   }
 }
+
+impl LosslessInto<String> for RationalNumber {
+  fn lossless_into(self) -> String {
+    self.pretty_print()
+  }
+}
+
+impl LosslessInto<F64> for RationalNumber {
+  fn lossless_into(self) -> F64 {
+    match self.to_f64() {
+      Some(val) => F64::new(val),
+      None => panic!("Cannot convert RationalNumber to F64: value is not representable"),
+    }
+  }
+}

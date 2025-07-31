@@ -47,6 +47,7 @@ test_interpreter!(interpret_literal_atom, "`A", Value::Atom(55450514845822917));
 test_interpreter!(interpret_literal_empty, "_", Value::Empty);
 test_interpreter!(interpret_literal_complex, "5+4i", Value::ComplexNumber(new_ref(ComplexNumber::new(5.0, 4.0))));
 test_interpreter!(interpret_literal_complex2, "5-4i", Value::ComplexNumber(new_ref(ComplexNumber::new(5.0, -4.0))));
+test_interpreter!(interpret_literal_complex3, "5-4j", Value::ComplexNumber(new_ref(ComplexNumber::new(5.0, -4.0))));
 test_interpreter!(interpret_literal_rational, "1/2", Value::RationalNumber(new_ref(RationalNumber::new(1, 2))));
 
 test_interpreter!(interpret_comment, "123 -- comment", Value::F64(new_ref(F64::new(123.0))));

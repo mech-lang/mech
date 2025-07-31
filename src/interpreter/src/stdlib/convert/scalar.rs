@@ -449,8 +449,62 @@ macro_rules! impl_conversion_match_arms {
   }
 }
 
+#[derive(Debug)]
+pub struct ConvertScalarToScalar<F, T> {
+    pub arg: Ref<F>,
+    pub out: Ref<T>,
+}
+
+impl<F, T> MechFunction for ConvertScalarToScalar<F, T>
+where
+    Ref<T>: ToValue,
+    F: LosslessInto<T> + Debug + Clone,
+    T: Debug,
+{
+  fn solve(&self) {
+    let arg_ptr = self.arg.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {
+      let out_ref: &mut T = &mut *out_ptr;
+      let arg_ref: &F = &*arg_ptr;
+      *out_ref = arg_ref.clone().lossless_into();
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+
+#[derive(Debug)]
+pub struct ConvertScalarToScalarBasic<F, T> {
+  pub arg: Ref<F>,
+  pub out: Ref<T>,
+}
+
+impl<F, T> MechFunction for ConvertScalarToScalarBasic<F, T>
+where
+  Ref<T>: ToValue,
+  F: Debug + Clone,
+  T: Debug + From<F>,
+{
+  fn solve(&self) {
+    let arg_ptr = self.arg.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {
+      let out_ref: &mut T = &mut *out_ptr;
+      let arg_ref: &F = &*arg_ptr;
+      *out_ref = T::from(arg_ref.clone());
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
 fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<dyn MechFunction>>  {
   match (&source_value, &target_kind) {
+    (Value::RationalNumber(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar::<RationalNumber, F64>{arg: r.clone(),out: new_ref(F64::zero()),}));}
+    (Value::RationalNumber(r), Value::Kind(ValueKind::String)) => {return Ok(Box::new(ConvertScalarToScalar::<RationalNumber, String>{arg: r.clone(),out: new_ref(String::default()),}));}
+    (Value::F64(r), Value::Kind(ValueKind::F32)) => {return Ok(Box::new(ConvertScalarToScalarBasic::<F64, F32>{arg: r.clone(),out: new_ref(F32::default()),}));}
     (Value::MatrixString(ref mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
       let in_shape = mat.shape();
       // Verify the table has the correct number of columns

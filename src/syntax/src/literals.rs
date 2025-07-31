@@ -81,10 +81,10 @@ pub fn false_literal(input: ParseString) -> ParseResult<Token> {
 // Number
 // ----------------------------------------------------------------------------
 
-// number := real_number, "i"? | ("+", real_number, "i")? ;
+// number := real_number, ("i"|"j")? | ("+", real_number, ("i"|"j"))? ;
 pub fn number(input: ParseString) -> ParseResult<Number> {
   let (input, real_num) = real_number(input)?;
-  match tag("i")(input.clone()) {
+  match alt((tag("i"),tag("j")))(input.clone()) {
     Ok((input,_)) => {
       return Ok((input, Number::Imaginary(
         ComplexNumberNode{
@@ -92,7 +92,7 @@ pub fn number(input: ParseString) -> ParseResult<Number> {
           imaginary: ImaginaryNumber{number: real_num}
         })));
       }
-    _ => match nom_tuple((alt((plus,dash)),real_number,tag("i")))(input.clone()) {
+    _ => match nom_tuple((alt((plus,dash)),real_number,alt((tag("i"),tag("j")))))(input.clone()) {
       Ok((input, (sign,imaginary_num,_))) => {
         // Handle the sign of the imaginary part
         match sign.kind {

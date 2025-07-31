@@ -259,6 +259,7 @@ impl_conversion_mat_to_mat_fxn! {
   i64 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
   i128 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
   String => [String];
+  RationalNumber => [String];
 }
 
 #[cfg(target_arch = "wasm32")]
