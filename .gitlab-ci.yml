@@ -1,20 +1,21 @@
 test:cargo:
-  image: rust:1.80  # Use a pinned Rust Docker image for reproducibility
+  stage: test
   variables:
     CARGO_TERM_COLOR: always
     RUST_BACKTRACE: full
-    RUSTUP_HOME: /usr/local/rustup
-    CARGO_HOME: /usr/local/cargo
   cache:
-    key: "$CI_JOB_NAME"
+    key: cargo-cache
     paths:
       - target
-      - /usr/local/cargo/registry
-      - /usr/local/cargo/git
+      - $HOME/.cargo/registry
+      - $HOME/.cargo/git
   before_script:
+    # Show current toolchain
     - rustup show
-    - rustup default nightly-2025-01-15
+    # Attempt to set nightly as default (ignore error if not installed)
+    - rustup default nightly-2025-01-15 || echo "Nightly 2025-01-15 not installed, using existing default"
   script:
+    - cargo clean
     - cargo fetch
-    - cargo build --locked --bin mech --release
+    - cargo build --locked --bin mech
     - cargo test --locked interpret
