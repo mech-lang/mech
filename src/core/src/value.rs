@@ -849,6 +849,46 @@ impl Value {
     }
   }
 
+  pub fn as_rationalnumber(&self) -> Option<Ref<RationalNumber>> {
+    match self {
+      Value::RationalNumber(v) => Some(v.clone()),
+      Value::F32(v) => Some(new_ref(RationalNumber::new(v.borrow().0 as i64, 1))),
+      Value::F64(v) => Some(new_ref(RationalNumber::new(v.borrow().0 as i64, 1))),
+      Value::U8(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::U16(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::U32(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::U64(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::U128(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::I8(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::I16(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::I32(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::I64(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::I128(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::MutableReference(val) => val.borrow().as_rationalnumber(),
+      _ => None,
+    }
+  }
+
+  pub fn as_complexnumber(&self) -> Option<Ref<ComplexNumber>> {
+    match self {
+      Value::ComplexNumber(v) => Some(v.clone()),
+      Value::F32(v) =>  Some(new_ref(ComplexNumber::new(v.borrow().0 as f64, 0.0))),
+      Value::F64(v) =>  Some(new_ref(ComplexNumber::new(v.borrow().0, 0.0))),
+      Value::U8(v) =>   Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::U16(v) =>  Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::U32(v) =>  Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::U64(v) =>  Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::U128(v) => Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::I8(v) =>   Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::I16(v) =>  Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::I32(v) =>  Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::I64(v) =>  Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::I128(v) => Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::MutableReference(val) => val.borrow().as_complexnumber(),
+      _ => None,
+    }
+  }
+
   pub fn as_f32(&self) -> Option<Ref<F32>> {
     match self {
       Value::U8(v) => Some(new_ref(F32::new(*v.borrow() as f32))),

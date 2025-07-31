@@ -268,8 +268,6 @@ test_interpreter!(interpret_matrix_define_ref, r#"x:=123;y<[f64]:1,4>:=x;"#, Val
 test_interpreter!(interpret_matrix_define_convert, r#"y<[f64]:1,3> := 123<u8>;"#, Value::MatrixF64(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![F64::new(123.0), F64::new(123.0), F64::new(123.0)])))));
 test_interpreter!(interpret_matrix_define_convert_matrix, r#"x := [1 2 3];y<[u64]> := x;z<[u8]> := y;"#, Value::MatrixU8(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![1u8, 2, 3])))));
 
-
-
 // 2x2 Nominal Operations 
 test_interpreter!(interpret_matrix_add_2x2, "[1 2; 3 4] + [5 6; 7 8]", new_ref(Matrix2::from_vec(vec![F64::new(6.0), F64::new(10.0), F64::new(8.0), F64::new(12.0)])).to_value());
 test_interpreter!(interpret_matrix_sub_2x2, "[1 2; 3 4] - [5 6; 7 8]", new_ref(Matrix2::from_vec(vec![F64::new(-4.0), F64::new(-4.0),F64::new(-4.0),F64::new(-4.0)])).to_value());
@@ -390,6 +388,8 @@ test_interpreter!(interpret_set, "{1,2,3}", Value::Set(MechSet::from_vec(vec![Va
 test_interpreter!(interpret_record,r#"{a: 1, b: "Hello"}"#, Value::Record(new_ref(MechRecord::from_vec(vec![((55170961230981453,"a".to_string()),Value::F64(new_ref(F64::new(1.0)))),((44311847522083591,"b".to_string()),Value::String(new_ref("Hello".to_string())))]))));
 test_interpreter!(interpret_record_field_access,r#"a := {x: 1,  y: 2}; a.y"#, Value::F64(new_ref(F64::new(2.0))));
 test_interpreter!(interpret_map, r#"{"a": 1, "b": 2}"#, Value::Map(MechMap::from_vec(vec![(Value::String(new_ref("a".to_string())),Value::F64(new_ref(F64::new(1.0)))), (Value::String(new_ref("b".to_string())),Value::F64(new_ref(F64::new(2.0))))])));
+test_interpreter!(interpret_set_rational, r#"{1/2, 3/4}"#, Value::Set(MechSet::from_vec(vec![Value::RationalNumber(new_ref(RationalNumber::new(1, 2))), Value::RationalNumber(new_ref(RationalNumber::new(3, 4)))])));
+
 /*test_interpreter!(interpret_function_define,r#"foo(x<f64>) = z<f64> :=
 z := 10 + x. 
 foo(10)"#, Value::F64(new_ref(F64::new(20.0))));

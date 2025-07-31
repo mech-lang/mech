@@ -179,6 +179,8 @@ pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> {
       ValueKind::F32  => handle_value_kind!(knd, val, id, data_map, as_f32),
       ValueKind::F64  => handle_value_kind!(knd, val, id, data_map, as_f64),
       ValueKind::String  => handle_value_kind!(knd, val, id, data_map, as_string),
+      ValueKind::ComplexNumber  => handle_value_kind!(knd, val, id, data_map, as_complexnumber),
+      ValueKind::RationalNumber  => handle_value_kind!(knd, val, id, data_map, as_rationalnumber),
       ValueKind::Bool => {
         let vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_bool().unwrap().to_value()).collect::<Vec<Value>>();
         let id = id.as_u64().unwrap().borrow().clone();
