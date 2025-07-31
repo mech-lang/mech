@@ -1,21 +1,10 @@
 test:cargo:
-  stage: test
   variables:
     CARGO_TERM_COLOR: always
     RUST_BACKTRACE: full
-  cache:
-    key: cargo-cache
-    paths:
-      - target
-      - $HOME/.cargo/registry
-      - $HOME/.cargo/git
-  before_script:
-    # Show current toolchain
-    - rustup show
-    # Attempt to set nightly as default (ignore error if not installed)
-    - rustup default nightly-2025-01-15 || echo "Nightly 2025-01-15 not installed, using existing default"
   script:
-    - cargo clean
-    - cargo fetch
-    - cargo build --locked --bin mech
-    - cargo test --locked interpret
+  - rustup show
+  - rustup default nightly-2025-01-15
+  - cargo clean
+  - cargo build --bin mech
+  - cargo test interpret
