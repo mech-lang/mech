@@ -14,9 +14,7 @@ extern crate mech_core;
 extern crate hashbrown;
 extern crate nom;
 extern crate nom_unicode;
-extern crate nalgebra as na;
 extern crate tabled;
-extern crate libm;
 
 use mech_core::*;
 use mech_core::nodes::*;

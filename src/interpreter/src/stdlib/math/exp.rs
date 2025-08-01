@@ -5,29 +5,41 @@ use crate::stdlib::*;
 
 macro_rules! exp_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {*$out = (*$lhs).pow(*$rhs);}
-  };}
-  
+    unsafe {
+      *$out = (&*$lhs).pow(*$rhs);
+    }
+  };
+}
+
 macro_rules! exp_vec_op {
-($lhs:expr, $rhs:expr, $out:expr) => {
-  unsafe {
-  for i in 0..(*$lhs).len() {
-    (*$out)[i] = (*$lhs)[i].pow((*$rhs)[i]);
-  }}};}
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(&*$lhs).len() {
+        (&mut *$out)[i] = (&*$lhs)[i].pow((&*$rhs)[i]);
+      }
+    }
+  };
+}
 
 macro_rules! exp_scalar_lhs_op {
-($lhs:expr, $rhs:expr, $out:expr) => {
-  unsafe {
-  for i in 0..(*$lhs).len() {
-    (*$out)[i] = (*$lhs)[i].pow((*$rhs));
-  }}};}
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(&*$lhs).len() {
+        (&mut *$out)[i] = (&*$lhs)[i].pow(*$rhs);
+      }
+    }
+  };
+}
 
 macro_rules! exp_scalar_rhs_op {
-($lhs:expr, $rhs:expr, $out:expr) => {
-  unsafe {
-  for i in 0..(*$rhs).len() {
-    (*$out)[i] = (*$lhs).pow((*$rhs)[i]);
-  }}};}
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(&*$rhs).len() {
+        (&mut *$out)[i] = (*$lhs).pow((&*$rhs)[i]);
+      }
+    }
+  };
+}
 
 macro_rules! exp_mat_vec_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {

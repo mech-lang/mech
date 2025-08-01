@@ -11,7 +11,7 @@ categories = ["science::robotics", "science", "game-engines", "web-programming"]
 license = "Apache-2.0"
 readme = "README.md"
 edition = "2021"
-rust-version = "1.84"
+rust-version = "1.88"
 
 [lib]
 # The `_lib` suffix may seem redundant but it is necessary

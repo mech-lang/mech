@@ -5,27 +5,39 @@ use crate::stdlib::*;
 
 macro_rules! div_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = *$lhs / *$rhs; }
-  };}
-  
+    unsafe {
+      *$out = *$lhs / *$rhs;
+    }
+  };
+}
+
 macro_rules! div_vec_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe { *$out = (*$lhs).component_div(&*$rhs); }
-    };}
+    unsafe {
+      *$out = (&*$lhs).component_div(&*$rhs);
+    }
+  };
+}
 
 macro_rules! div_scalar_lhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
-      for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] / (*$rhs);
-      }}};}
+      for i in 0..(&*$lhs).len() {
+        (&mut *$out)[i] = (&*$lhs)[i] / *$rhs;
+      }
+    }
+  };
+}
 
 macro_rules! div_scalar_rhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
-      for i in 0..(*$rhs).len() {
-        (*$out)[i] = (*$lhs) / (*$rhs)[i];
-      }}};}
+      for i in 0..(&*$rhs).len() {
+        (&mut *$out)[i] = *$lhs / (&*$rhs)[i];
+      }
+    }
+  };
+}
 
 macro_rules! div_mat_vec_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {

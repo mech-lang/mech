@@ -6,23 +6,32 @@ use crate::stdlib::*;
 macro_rules! gte_scalar_lhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
-      for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] >= (*$rhs);
-      }}};}
+      for i in 0..(&*$lhs).len() {
+        (&mut *$out)[i] = (&*$lhs)[i] >= *$rhs;
+      }
+    }
+  };
+}
 
 macro_rules! gte_scalar_rhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
-      for i in 0..(*$rhs).len() {
-        (*$out)[i] = (*$lhs) >= (*$rhs)[i];
-      }}};}
+      for i in 0..(&*$rhs).len() {
+        (&mut *$out)[i] = *$lhs >= (&*$rhs)[i];
+      }
+    }
+  };
+}
 
 macro_rules! gte_vec_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
-      for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] >= (*$rhs)[i];
-      }}};}
+      for i in 0..(&*$lhs).len() {
+        (&mut *$out)[i] = (&*$lhs)[i] >= (&*$rhs)[i];
+      }
+    }
+  };
+}
 
 macro_rules! gte_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {

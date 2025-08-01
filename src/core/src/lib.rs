@@ -1,5 +1,4 @@
 #![feature(get_mut_unchecked)]
-#![feature(concat_idents)]
 #![allow(warnings)]
 #![feature(iter_intersperse)]
 #![feature(extract_if)]

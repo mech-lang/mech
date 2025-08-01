@@ -7,21 +7,21 @@ macro_rules! gt_scalar_lhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] > (*$rhs);
+        (&mut (*$out))[i] = (&(*$lhs))[i] > (*$rhs);
       }}};}
 
 macro_rules! gt_scalar_rhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$rhs).len() {
-        (*$out)[i] = (*$lhs) > (*$rhs)[i];
+        (&mut (*$out))[i] = (*$lhs) > (&(*$rhs))[i];
       }}};}
 
 macro_rules! gt_vec_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$lhs).len() {
-        (*$out)[i] = (*$lhs)[i] > (*$rhs)[i];
+        (&mut (*$out))[i] = (&(*$lhs))[i] > (&(*$rhs))[i];
       }}};}
 
 macro_rules! gt_op {
