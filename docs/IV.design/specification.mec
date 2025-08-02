@@ -286,7 +286,9 @@ Mech supports several types of literals, which are used to represent values in t
     - **Fractional** - Decimal numbers with fractional components.
       - `f32` - 32-bit floating-point number
       - `f64` - 64-bit floating-point number
-  - **Imaginary** - Represent imaginary components of complex numbers.
+      - `r64` - 64-bit rational number, which can be represented as a fraction of two `i64` integers.
+  - **Complex** - Represent imaginary components of complex numbers.
+      - `c64` - 64-bit complex number, which can be represented as a pair of `f64` values (real and imaginary parts).
 - **String**
       - `string` - A sequence of UTF-8 characters representing text.
 - **Boolean** 
