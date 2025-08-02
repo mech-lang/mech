@@ -1177,7 +1177,7 @@ pub type Exponent = (Sign, Whole, Part);
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
 pub enum Number {
   Real(RealNumber),
-  Imaginary(ComplexNumberNode),
+  Complex(ComplexNumberNode),
 }
 
 impl Number {
@@ -1189,14 +1189,14 @@ impl Number {
   pub fn to_string(&self) -> String {
     match self {
       Number::Real(x) => x.to_string(),
-      Number::Imaginary(x) => x.to_string(),
+      Number::Complex(x) => x.to_string(),
     }
   }
 
   pub fn tokens(&self) -> Vec<Token> {
     match self {
       Number::Real(x) => x.tokens(),
-      _ => todo!(),
+      Number::Complex(x) => x.tokens(),
     }
   }
 }

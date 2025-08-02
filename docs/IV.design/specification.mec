@@ -356,7 +356,8 @@ Kinds are used to specify the type of a literal or expression in Mech. Kinds are
 (4.2.1) Integer Numbers
 
 ```ebnf
-number := real-number, ?"i" | ?("+", real-number, "i") ;
+number := complex-number | real-number ;
+real-number := ?dash, (hexadecimal-literal | decimal-literal | octal-literal | binary-literal | scientific-literal | rational-literal | float-literal | integer-literal) ;
 integer-literal := +digit;
 decimal-literal := "0d", +digit ;
 hexadecimal-literal := "0x", +hex-digit ;
@@ -401,10 +402,9 @@ scientific-literal :=  (float-literal | integer-literal)
 rational-literal := integer-literal
       , slash
       , integer-literal ;
-float-literal := ?"."
-      , +digit
-      , ?"."
-      , *digit ;
+float-literal := float-decimal-start | float-full;
+float-full := digit-sequence, ".", digit-sequnce ;
+float-decimal-start := ".", digit-sequence ;
 ```
 
 A floating-point literal represents a real number, potentially with a fractional component. Mech supports several forms of floating-point literals:
@@ -423,6 +423,21 @@ A floating-point literal represents a real number, potentially with a fractional
   3/4          -- rational
 
 By default, floating-point literals are inferred to be of type f64, unless explicitly annotated or inferred from context.
+
+(4.2.3) Complex Numbers
+
+```ebnf
+complex-number := real-number, ?("i"|"j") | (("+"|"-"), real-number, ("i"|"j")) ;
+```
+
+A complex number literal represents a number with both real and imaginary parts. To support a wide range of mathematical expressions, Mech allows complex numbers to be expressed with `i` or `j`. The real and imaginary parts can be any real number.
+
+(4.2.3.1) Examples
+
+  3+4i         -- complex number with real and imaginary parts
+  2-3j         -- complex number with negative imaginary part
+  5i           -- purely imaginary number
+  -2+0i        -- complex number with negative real part
 
 (4.3) Strings
 

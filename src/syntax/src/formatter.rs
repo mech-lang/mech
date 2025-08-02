@@ -2556,7 +2556,7 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
   pub fn number(&mut self, node: &Number) -> String {
     let n = match node {
       Number::Real(real) => self.real_number(real),
-      Number::Imaginary(complex) => self.complex_numer(complex),
+      Number::Complex(complex) => self.complex_numer(complex),
     };
     if self.html {
       format!("<span class=\"mech-number\">{}</span>",n)

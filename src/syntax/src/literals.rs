@@ -81,45 +81,53 @@ pub fn false_literal(input: ParseString) -> ParseResult<Token> {
 // Number
 // ----------------------------------------------------------------------------
 
-// number := real_number, ("i"|"j")? | ("+", real_number, ("i"|"j"))? ;
+// number := complex-number | real-number ;
 pub fn number(input: ParseString) -> ParseResult<Number> {
-  let (input, real_num) = real_number(input)?;
-  match alt((tag("i"),tag("j")))(input.clone()) {
-    Ok((input,_)) => {
-      return Ok((input, Number::Imaginary(
-        ComplexNumberNode{
-          real: None, 
-          imaginary: ImaginaryNumber{number: real_num}
-        })));
-      }
-    _ => match nom_tuple((alt((plus,dash)),real_number,alt((tag("i"),tag("j")))))(input.clone()) {
-      Ok((input, (sign,imaginary_num,_))) => {
-        // Handle the sign of the imaginary part
-        match sign.kind {
-          TokenKind::Plus => {
-            return Ok((input, Number::Imaginary(
-              ComplexNumberNode{
-                real: Some(real_num), 
-                imaginary: ImaginaryNumber{number: imaginary_num},
-              })));
-          }
-          TokenKind::Dash => {
-            return Ok((input, Number::Imaginary(
-              ComplexNumberNode{
-                real: Some(real_num), 
-                imaginary: ImaginaryNumber{number: RealNumber::Negated(Box::new(imaginary_num))},
-              })));
-          }
-          _ => unreachable!(),
-        }
-      }
-      _ => ()
-    }
+  match complex_number(input.clone()) {
+    Ok((input, complex_num)) => Ok((input, Number::Complex(complex_num))),
+    _ => match real_number(input.clone()) {
+      Ok((input, real_num)) => Ok((input, Number::Real(real_num))),
+      Err(err) => return Err(err),
+    },
   }
-  Ok((input, Number::Real(real_num)))
 }
 
-// real_number := dash?, (hexadecimal_literal | decimal_literal | octal_literal | binary_literal | scientific_literal | rational_literal | float_literal | integer_literal) ;
+// complex-number := real-number, ("i"|"j")? | (("+"|"-"), real-number, ("i"|"j")) ;
+pub fn complex_number(input: ParseString) -> ParseResult<ComplexNumberNode> {
+  let (input, real_num) = real_number(input)?;
+  if let Ok((input, _)) = alt((tag("i"), tag("j")))(input.clone()) {
+    return Ok((
+      input,
+      ComplexNumberNode {
+        real: None,
+        imaginary: ImaginaryNumber { number: real_num },
+      },
+    ));
+  }
+  if let Ok((input, (sign, imaginary_num, _))) = 
+    nom_tuple((alt((plus, dash)), real_number, alt((tag("i"), tag("j")))))(input.clone())
+  {
+    let imaginary = match sign.kind {
+      TokenKind::Plus => imaginary_num,
+      TokenKind::Dash => RealNumber::Negated(Box::new(imaginary_num)),
+      _ => unreachable!(),
+    };
+    return Ok((
+      input,
+      ComplexNumberNode {
+        real: Some(real_num),
+        imaginary: ImaginaryNumber { number: imaginary },
+      },
+    ));
+  } else {
+    return Err(nom::Err::Error(nom::error::make_error(
+      input,
+      nom::error::ErrorKind::Alt,
+    )));
+  }
+}
+
+// real-number := ?dash, (hexadecimal-literal | decimal-literal | octal-literal | binary-literal | scientific-literal | rational-literal | float-literal | integer-literal) ;
 pub fn real_number(input: ParseString) -> ParseResult<RealNumber> {
   let (input, neg) = opt(dash)(input)?;
   let (input, result) = alt((hexadecimal_literal, decimal_literal, octal_literal, binary_literal, scientific_literal, rational_literal, float_literal, integer_literal))(input)?;
@@ -130,7 +138,7 @@ pub fn real_number(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, result))
 }
 
-// rational_literal := integer_literal, "/", integer_literal ;
+// rational-literal := integer-literal, slash, integer-literal ;
 pub fn rational_literal(input: ParseString) -> ParseResult<RealNumber> {
   let (input, RealNumber::Integer(numerator)) = integer_literal(input)? else { unreachable!() };
   let (input, _) = slash(input)?;
@@ -138,7 +146,7 @@ pub fn rational_literal(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Rational((numerator,denominator))))
 }
 
-// scientific_literal := (float_literal | integer_literal), ("e" | "E"), plus?, dash?, (float_literal | integer_literal) ;
+// scientific-literal := (float-literal | integer-literal), ("e" | "E"), ?plus, ?dash, (float-literal | integer-literal) ;
 pub fn scientific_literal(input: ParseString) -> ParseResult<RealNumber> {
   let (input, base) = match float_literal(input.clone()) {
     Ok((input, RealNumber::Float(base))) => {
@@ -174,7 +182,7 @@ pub fn scientific_literal(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Scientific((base,(ex_sign,ex_whole,ex_part)))))
 }
 
-// float_decimal_start := ".", digit_sequence ;
+// float-decimal-start := ".", digit-sequence ;
 pub fn float_decimal_start(input: ParseString) -> ParseResult<RealNumber> {
   let (input, _) = period(input)?;
   let (input, part) = digit_sequence(input)?;
@@ -184,7 +192,7 @@ pub fn float_decimal_start(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Float((Token::default(),merged))))
 }
 
-// float_full := digit_sequence, ".", digit_sequnce ;
+// float-full := digit-sequence, ".", digit-sequnce ;
 pub fn float_full(input: ParseString) -> ParseResult<RealNumber> {
   let (input, mut whole) = digit_sequence(input)?;
   let (input, _) = period(input)?;
@@ -196,7 +204,7 @@ pub fn float_full(input: ParseString) -> ParseResult<RealNumber> {
   Ok((input, RealNumber::Float((whole,part))))
 }
 
-// float_literal := float_decimal_start | float_full;
+// float-literal := float-decimal-start | float-full;
 pub fn float_literal(input: ParseString) -> ParseResult<RealNumber> {
   let (input, result) = alt((float_decimal_start,float_full))(input)?;
   Ok((input, result))

@@ -122,11 +122,11 @@ pub fn atom(atm: &Atom) -> Value {
 pub fn number(num: &Number) -> Value {
   match num {
     Number::Real(num) => real(num),
-    Number::Imaginary(num) => imaginary(num),
+    Number::Complex(num) => complex(num),
   }
 }
 
-fn imaginary(num: &ComplexNumberNode) -> Value {
+fn complex(num: &ComplexNumberNode) -> Value {
   let im: f64 = match real(&num.imaginary.number).as_f64() {
     Some(val) => val.borrow().0,
     None => 0.0,
