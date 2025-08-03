@@ -47,7 +47,7 @@ Semicolons and commas are treated as whitespace in most cases. Except in these c
 - Semicolons can be used to separate statements so they can be written inline.
 - Semicolons can be used in a matrix to separate rows, so they can be written inline.
 
-For more information, see the [Whitespace Design Document](#).
+For more information, see the [Syntax Design Document](#).
 
 3. Lexical Elements
 -------------------------------------------------------------------------------
@@ -268,9 +268,9 @@ literal := (number | string | atom | boolean | empty), ?kind-annotation ;
 ```
 Mech supports several types of literals, which are used to represent values in the code. Each literal type has its own syntax and semantics. Each literal has an associated "kind", which describes the data type of the literal. Mech supports the following literal types:
 
-- **Number** - Represents numeric values, including integers, floating-point numbers, and complex numbers.
+- **[Number](#37267966290163346)** - Represents numeric values, including integers, floating-point numbers, and complex numbers.
   - **Real** - Real numbers, including integers and floats.
-    - **Integers** - Whole numbers, which can be positive, negative, or zero.
+    - **[Integer](#37267966290163346)** - Whole numbers, which can be positive, negative, or zero.
       - **Signed** - Can represent both negative and positive values.
         - `i8` - 8-bit signed integer
         - `i16` - 16-bit signed integer
@@ -286,18 +286,18 @@ Mech supports several types of literals, which are used to represent values in t
       - **Floating-point** - Decimal numbers, which can represent fractions.
         - `f32` - 32-bit floating-point number, can represent integers up to `2^24`.
         - `f64` - 64-bit floating-point number, can represent integers up to `2^53`.
-    - **Fractional** - Decimal numbers with fractional components.
+    - **[Fractional](#42081371828028886)** - Decimal numbers with fractional components.
       - `f32` - 32-bit floating-point number
       - `f64` - 64-bit floating-point number
       - `r64` - 64-bit rational number, which can be represented as a fraction of two `i64` integers.
-  - **Complex** - Represent imaginary components of complex numbers.
+  - **[Complex](#56240170191408726)** - Represent imaginary components of complex numbers.
       - `c64` - 64-bit complex number, which can be represented as a pair of `f64` values corresponding to the real and imaginary parts.
-- **String**
+- **[String](#47529497278632120)**
       - `string` - A sequence of UTF-8 characters representing text.
-- **Boolean** 
+- **[Boolean](#48514366102391185)** 
       - `bool` - Represents logical truth values.
-- **Atom** - A symbolic constant, often used for tags or enums.
-- **Empty**
+- **[Atom](#44296553944821468)** - A symbolic constant, often used for tags or enums.
+- **[Empty](#71073114937685177)**
       - `_` - Represents an empty value, placeholder, or the absence of a value.
 
 (4.1) Kinds
@@ -344,7 +344,11 @@ kind-scalar := identifier ;
 
 Kinds are used to specify the type of a literal or expression in Mech. Kinds are specified with a syntax structure called a "kirby" e.g. `<string>`, which indicates a String data type; or `<[u64]:3,1>`, which indicates a 3x1 matrix of 32-bit unsigned integeres.
 
-**Examples:**
+(4.1.1) Kind
+
+The kind of a kind is itself. For example, the kind `<[u8]:2,3>` has the kind {<[u8]:2,3>}.
+
+(4.1.2) Examples
 
 <_>             -- Empty         
 <`A>            -- Atom         
@@ -352,7 +356,8 @@ Kinds are used to specify the type of a literal or expression in Mech. Kinds are
 <{A}>           -- Set              
 <[A]>           -- Matrix              
 <(A,B,C)>       -- Tuple
-<|x<A>, y<B>|>  -- Table              
+<|x<A>, y<B>|>  -- Table
+<{x<A>, y<B>}>  -- Record      
 
 (4.2) Numbers
 
@@ -801,10 +806,8 @@ A Tuple is defined using parentheses `()` and contains an ordered collection of 
 
 (5.4.1) Kind
 
-```
--- Two-tuple of u8 and string    <(u8,string)>
--- Three-tuple of u8s            <(u8,u8,u8)>
-```
+  <(u8,string)>    -- Two-tuple of u8 and string    
+  <(u8,u8,u8)>     -- Three-tuple of u8s            
 
 (5.4.2) Examples
 
@@ -876,25 +879,28 @@ A Table represents a structured collection of records, where each record consist
 
 (5.5.1) Kind
 
-A table's kind includes the column types and table dimensions. For example, the pretty print table's kind is: `<{u8, string, [u8]:3}:3,3>`.
+A table's kind includes the column types and table dimensions. For example:
 
-**This denotes:**
+<|x<u8>, y<string>, z<[u8]:1,3>|:4>
 
-- Columns: `{ u8, string, [u8]:3 }` (a mix of an -integer, a string, and a fixed-size array).
+This denotes:
 
-- Shape: `3,3` (3 rows, 3 columns).
+- Columns: `|x<u8>, y<string>, z<[u8]:3>|`
+      - `x<u8>`: An unsigned 8-bit integer column.
+      - `y<string>`: A string column.
+      - `z<[u8]:1,3>`: A column containing row vectors of `u8` with a fixed length of 3 elements.
 
-The kind of a table row is equivalent to a record with the same column kinds.
+- Shape: The `4` indicates there are 4 rows in the table. 
+      - An underscore `_` can be used to indicate that the number of rows is dynamic,
+      - Rows can be omitted if the number of rows is to be inferred from an expression.
 
-```
-<{u8, string, [u8]:3}>
-```
+The kind of a table row is equivalent to a record with the same column kinds. Each row of the table has kind:
+
+<{x<u8>,y<string>,z<[u8]:1,3>}> -- A table row is a record.
 
 The kind of a table column is equivalent to a vector of the table column kind. For example the kind of the first column in the above table is:
 
-```
-<[u8]:3,1>
-```
+<[u8]:1,3> -- A table column is a vector.
 
 (5.5.2) Examples
 
@@ -909,7 +915,7 @@ This defines a table with two columns:
 - `x<f32>`: A floating-point column.
 - `y<u8>`: An unsigned 8-bit integer column.
 
-The same table can be written in a compact, inline format using semicolons (;) to separate rows.
+The same table can be written in a compact, inline format using semicolons `|` to separate rows.
 
 ```
 | x<f32> y<u8> | 1.2 9 | 1.3 8 |
@@ -983,11 +989,11 @@ A Record is a collection of named fields, where each field consists of a key-val
 
 A record's kind describes the types of its fields:
 
-```
-<{x: u8, y: string, z: [u8]:1,3}>
-```
 
-This denotes a record with:
+<{x<u8>,y<string>,z<[u8]:1,3>}>
+
+
+This denotes a record with three fields:
 
 - x: `u8`
 - y: `string`
