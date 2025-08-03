@@ -442,7 +442,7 @@ A complex number literal represents a number with both real and imaginary parts.
 (4.3) Strings
 
 ```ebnf
-string := quote, *(¬quote, text), quote ;
+string := quote, *(¬quote, (text | new-line)), quote ;
 ```
 
 Strings are enclosed in double quotes `"` and can contain any character, including whitespace, except for the quote character itself. To include a quote character in a string, it must be escaped with a backslash `\`.
@@ -454,6 +454,10 @@ Strings heap-allocate their contents, so they can be of any length. They are enc
   "Hello, World!"
   "characters like \" and \\ are escaped with, \\ e.g. \\\""
   "This string contains emojis: 🤖, 🐦, and 🐍"
+  "Multiline 
+  strings 
+  are supported"
+
 
 (4.4) Boolean
 

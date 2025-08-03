@@ -45,7 +45,8 @@ pub fn atom(input: ParseString) -> ParseResult<Atom> {
   Ok((input, Atom{name}))
 }
 
-// string := quote, (!quote, text)*, quote ;
+
+// string := quote, *(¬quote, (text | new-line)), quote ;
 pub fn string(input: ParseString) -> ParseResult<MechString> {
   let msg = "Character not allowed in string";
   let (input, _) = quote(input)?;
