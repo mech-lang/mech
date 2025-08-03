@@ -306,7 +306,7 @@ m := [1 2 3 4 5]
 m + 10  -- Adds 10 to each element of the vector
 ```
 
-(6.2) Matrix multiplication
+(6.2) Matrix Multiplication
 
 Matrix multiplication is performed using the `**` operator. For the operation to be valid, the number of columns in the first matrix must match the number of rows in the second matrix:
 
