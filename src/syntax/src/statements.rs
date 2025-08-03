@@ -4,13 +4,13 @@ use nom::sequence::tuple as nom_tuple;
 
 // #### Statements
 
-// comment_sigil := "--" | "//" ;
+// comment-sigil := "--" | "//" ;
 pub fn comment_sigil(input: ParseString) -> ParseResult<()> {
   let (input, _) = alt((tag("--"),tag("//")))(input)?;
   Ok((input, ()))
 }
 
-// comment := comment_singleline | comment_multiline ;
+// comment := comment_sigil, paragraph ;
 pub fn comment(input: ParseString) -> ParseResult<Comment> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = comment_sigil(input)?;
@@ -18,12 +18,12 @@ pub fn comment(input: ParseString) -> ParseResult<Comment> {
   Ok((input, Comment{paragraph: p}))
 }
 
-// op_assign_operator := add_assign_operator | sub_assign_operator | mul_assign_operator | div_assign_operator | exp_assign_operator ;
+// op-assign-operator := add-assign-operator | sub-assign-operator | mul-assign-operator | div-assign-operator | exp-assign-operator ;
 pub fn op_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   alt((add_assign_operator, sub_assign_operator, mul_assign_operator, div_assign_operator, exp_assign_operator))(input)
 }
 
-// add_assign_operator := "+=" ;
+// add-assign-operator := "+=" ;
 pub fn add_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("+=")(input)?;
@@ -31,7 +31,7 @@ pub fn add_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   Ok((input, OpAssignOp::Add))
 }
 
-// sub_assign_operator := "-=" ;
+// sub-assign-operator := "-=" ;
 pub fn sub_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("-=")(input)?;
@@ -39,14 +39,14 @@ pub fn sub_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   Ok((input, OpAssignOp::Sub))
 }
 
-// mul_assign_operator := "*=" ;
+// mul-assign-operator := "*=" ;
 pub fn mul_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("*=")(input)?;
   let (input, _) = whitespace0(input)?;
   Ok((input, OpAssignOp::Mul))
 }
-// div_assign_operator := "/=" ;
+// div-assign-operator := "/=" ;
 pub fn div_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("/=")(input)?;
@@ -54,7 +54,7 @@ pub fn div_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   Ok((input, OpAssignOp::Div))
 }
 
-// exp_assign_operator := "^=" ;
+// exp-assign-operator := "^=" ;
 pub fn exp_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   let (input, _) = whitespace0(input)?;
   let (input, _) = tag("^=")(input)?;
@@ -88,7 +88,7 @@ pub fn exp_assign_operator(input: ParseString) -> ParseResult<OpAssignOp> {
   Ok((input, ParserNode::FlattenData{children: vec![]}))
 }*/
 
-// variable_define := tilde?, var, !assign_operator, define_operator, expression ;
+// variable-define := tilde?, var, !assign-operator, define-operator, expression ;
 pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
@@ -104,7 +104,7 @@ pub fn variable_define(input: ParseString) -> ParseResult<VariableDefine> {
   Ok((input, VariableDefine{mutable, var, expression}))
 }
 
-// variable_assign := slice_ref, !define_operator, assign_operator, expression ;
+// variable-assign := slice-ref, !define-operator, assign-operator, expression ;
 pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
@@ -115,7 +115,7 @@ pub fn variable_assign(input: ParseString) -> ParseResult<VariableAssign> {
   Ok((input, VariableAssign{target,expression}))
 }
 
-// op_assign := slice_ref, !define-operator, op_assign_operator, expression ;
+// op-assign := slice-ref, !define-operator, op-assign-operator, expression ;
 pub fn op_assign(input: ParseString) -> ParseResult<OpAssign> {
   let msg1 = "Expects spaces around operator";
   let msg2 = "Expects expression";
@@ -152,7 +152,7 @@ fn tuple_destructure(input: ParseString) -> ParseResult<TupleDestructure> {
   Ok((input, TupleDestructure{vars, expression}))
 }
 
-// statement := variable_define | variable_assign | enum_define | fsm_declare | kind_define ;
+// statement := variable-define | variable-assign | enum-define | fsm-declare | kind-define ;
 pub fn statement(input: ParseString) -> ParseResult<Statement> {
   match variable_define(input.clone()) {
     Ok((input, var_def)) => { return Ok((input, Statement::VariableDefine(var_def))); },
@@ -190,7 +190,7 @@ pub fn statement(input: ParseString) -> ParseResult<Statement> {
   }
 }
 
-// enum_define := "<", identifier, ">", define_operator, list1(enum_separator, enum_variant);
+// enum-define := "<", identifier, ">", define-operator, list1(enum-separator, enum-variant);
 pub fn enum_define(input: ParseString) -> ParseResult<EnumDefine> {
   let (input, _) = left_angle(input)?;
   let (input, name) = identifier(input)?;
@@ -200,7 +200,7 @@ pub fn enum_define(input: ParseString) -> ParseResult<EnumDefine> {
   Ok((input, EnumDefine{name, variants}))
 }
 
-// enum_variant := grave?, identifier, enum_variant_kind? ;
+// enum-variant := grave?, identifier, enum-variant-kind? ;
 pub fn enum_variant(input: ParseString) -> ParseResult<EnumVariant> {
   let (input, _) = opt(grave)(input)?;
   let (input, name) = identifier(input)?;
@@ -208,7 +208,7 @@ pub fn enum_variant(input: ParseString) -> ParseResult<EnumVariant> {
   Ok((input, EnumVariant{name, value}))
 }
 
-// enum_variant_kind := "(", kind_annotation, ")" ;
+// enum-variant-kind := "(", kind-annotation, ")" ;
 pub fn enum_variant_kind(input: ParseString) -> ParseResult<KindAnnotation> {
   let (input, _) = left_parenthesis(input)?;
   let (input, annotation) = kind_annotation(input)?;
@@ -216,7 +216,7 @@ pub fn enum_variant_kind(input: ParseString) -> ParseResult<KindAnnotation> {
   Ok((input, annotation))
 }
 
-// kind_define := "<", identifier, ">", define_operator, kind_annotation ;
+// kind-define := "<", identifier, ">", define-operator, kind-annotation ;
 pub fn kind_define(input: ParseString) -> ParseResult<KindDefine> {
   let (input, _) = left_angle(input)?;
   let (input, name) = identifier(input)?;
