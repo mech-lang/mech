@@ -2018,7 +2018,7 @@ window.addEventListener("scroll", () => {{
       }
     }
     if self.html {
-      format!("<span class=\"mech-map\"><span class=\"mech-start-brace\">{{</span>{}}}<span class=\"mech-end-brace\">}}</span></span>",src)
+      format!("<span class=\"mech-map\"><span class=\"mech-start-brace\">{{</span>{}<span class=\"mech-end-brace\">}}</span></span>",src)
     } else {
       format!("{{{}}}", src)
     }

@@ -31,7 +31,7 @@ pub fn max_err<'a>(x: Option<ParseError<'a>>, y: ParseError<'a>) -> ParseError<'
   }
 }
 
-// structure := empty_set | empty_table | table | matrix | tuple | tuple_struct | record | map | set ;
+// structure := empty-set | empty-table | table | matrix | tuple | tuple-struct | record | map | set ;
 pub fn structure(input: ParseString) -> ParseResult<Structure> {
   match empty_set(input.clone()) {
     Ok((input, set)) => {return Ok((input, Structure::Set(set)));},
@@ -78,7 +78,7 @@ pub fn structure(input: ParseString) -> ParseResult<Structure> {
 // Matrix
 // ----------------------------------------------------------------------------
 
-// matrix := matrix_start, (box_drawing_char | whitespace)*, matrix_row*, box_drawing_char*, matrix_end ;
+// matrix := matrix-start, (box-drawing-char | whitespace)*, matrix-row*, box-drawing-char*, matrix-end ;
 pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
   let msg = "Expects right bracket ']' to finish the matrix";
   let (input, (_, r)) = range(matrix_start)(input)?;
@@ -95,7 +95,7 @@ pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
   Ok((input, Matrix{rows}))
 }
 
-// matrix_column := (space | tab)*, expression, ((space | tab)*, ("," | table_separator)?, (space | tab)*) ;
+// matrix-column := (space | tab)*, expression, ((space | tab)*, ("," | table-separator)?, (space | tab)*) ;
 pub fn matrix_column(input: ParseString) -> ParseResult<MatrixColumn> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, element) = match expression(input) {
@@ -108,7 +108,7 @@ pub fn matrix_column(input: ParseString) -> ParseResult<MatrixColumn> {
   Ok((input, MatrixColumn{element}))
 }
 
-// matrix_row := table_separator?, (space | tab)*, matrix_column+, semicolon?, new_line?, (box_drawing_char+, new_line)? ;
+// matrix-row := table-separator?, (space | tab)*, matrix-column+, semicolon?, new-line?, (box-drawing-char+, new-line)? ;
 pub fn matrix_row(input: ParseString) -> ParseResult<MatrixRow> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, _) = opt(table_separator)(input)?;
@@ -124,12 +124,12 @@ pub fn matrix_row(input: ParseString) -> ParseResult<MatrixRow> {
   Ok((input, MatrixRow{columns}))
 }
 
-// matrix_start := box_tl_round | box_tl | left_bracket ;
+// matrix-start := box-tl-round | box-tl | left-bracket ;
 pub fn matrix_start(input: ParseString) -> ParseResult<Token> {
   alt((box_tl_round, box_tl, box_tl_bold, left_bracket))(input)
 }
 
-// matrix_end := box_br_round | box_br | right_bracket ;
+// matrix-end := box-br-round | box-br | right-bracket ;
 pub fn matrix_end(input: ParseString) -> ParseResult<Token> {
   let result = alt((box_br_round, box_br, box_br_bold, right_bracket))(input);
   result
@@ -198,7 +198,7 @@ pub fn inline_table_row(input: ParseString) -> ParseResult<TableRow> {
   Ok((input, TableRow{columns: row}))
 }
 
-// fancy-table := table_start, (box_drawing_char | whitespace)*, table_header, (box_drawing_char | whitespace)*, table_row+, box_drawing_char*, whitespace*, table_end ;
+// fancy-table := table-start, (box-drawing-char | whitespace)*, table-header, (box-drawing-char | whitespace)*, table-row+, box-drawing-char*, whitespace*, table-end ;
 pub fn regular_table(input: ParseString) -> ParseResult<Table> {
   let (input, _) = table_separator(input)?;
   let (input, _) = whitespace0(input)?;
@@ -207,7 +207,7 @@ pub fn regular_table(input: ParseString) -> ParseResult<Table> {
   Ok((input, Table{header,rows}))
 }
 
-// table_header := list1(space_tab+, field), (space | tab)*, (bar| box_vert), whitespace* ;
+// table-header := list1(space-tab+, field), (space | tab)*, (bar| box-vert), whitespace* ;
 pub fn table_header(input: ParseString) -> ParseResult<Vec<Field>> {
   let (input, fields) = separated_list1(many1(alt((space_tab, table_separator))),field)(input)?;
   let (input, _) = many0(space_tab)(input)?;
@@ -228,7 +228,7 @@ pub fn table_row(input: ParseString) -> ParseResult<TableRow> {
   Ok((input, TableRow{columns: row}))
 }
 
-// table_column := (space | tab)*, expression, ((space | tab)*, ("," | table_separator)?, (space | tab)*) ;
+// table-column := (space | tab)*, expression, ((space | tab)*, ("," | table-separator)?, (space | tab)*) ;
 pub fn table_column(input: ParseString) -> ParseResult<TableColumn> {
   let (input, _) = many0(space_tab)(input)?;
   let (input, element) = match expression(input) {
@@ -241,35 +241,35 @@ pub fn table_column(input: ParseString) -> ParseResult<TableColumn> {
   Ok((input, TableColumn{element}))
 }
 
-// field := identifier, kind_annotation? ;
+// field := identifier, kind-annotation? ;
 pub fn field(input: ParseString) -> ParseResult<Field> {
   let (input, name) = identifier(input)?;
   let (input, kind) = opt(kind_annotation)(input)?;
   Ok((input, Field{name, kind}))
 }
 
-// box_drawing_char := box_tl | box_br | box_bl | box_tr | box_tr_round | box_bl_round | box_vert | box_cross | box_horz | box_t_left | box_t_right | box_t_top | box_t_bottom ;
+// box-drawing-char := box-tl | box-br | box-bl | box-tr | box-tr-round | box-bl-round | box-vert | box-cross | box-horz | box-t-left | box-t-right | box-t-top | box-t-bottom ;
 pub fn box_drawing_char(input: ParseString) -> ParseResult<Token> {
   alt((box_tl, box_bl, box_tr, box_tl_bold, box_bl_bold, box_tr_bold, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
-// box_drawing_emoji := box_tl | box_br | box_bl | box_tr | box_tl_round | box_br_round | box_tr_round | box_bl_round | box_vert | box_cross | box_horz | box_t_left | box_t_right | box_t_top | box_t_bottom ;
+// box-drawing-emoji := box-tl | box-br | box-bl | box-tr | box-tl-round | box-br-round | box-tr-round | box-bl-round | box-vert | box-cross | box-horz | box-t-left | box-t-right | box-t-top | box-t-bottom ;
 pub fn box_drawing_emoji(input: ParseString) -> ParseResult<Token> {
   alt((box_tl, box_bl, box_tr, box_tl_bold, box_bl_bold, box_tr_bold, box_tl_round, box_br_round, box_tr_round, box_bl_round, box_vert, box_cross, box_horz, box_t_left, box_t_right, box_t_top, box_t_bottom))(input)
 }
 
-// table_start := box_tl_round | box_tl | left_brace ;
+// table-start := box-tl-round | box-tl | left-brace ;
 pub fn table_start(input: ParseString) -> ParseResult<Token> {
   alt((box_tl_round, box_tl, box_tl_bold, left_brace, table_separator))(input)
 }
 
-// table_end := box_br_round | box_br | right_brace ;
+// table-end := box-br-round | box-br | right-brace ;
 pub fn table_end(input: ParseString) -> ParseResult<Token> {
   let result = alt((box_br_round, box_br, box_br_bold, right_brace, table_separator))(input);
   result
 }
 
-// table_separator := box_vert ;
+// table-separator := box_vert ;
 pub fn table_separator(input: ParseString) -> ParseResult<Token> {
   let (input, token) = alt((box_vert,box_vert_bold,bar))(input)?;
   Ok((input, token))
@@ -283,7 +283,7 @@ pub fn table_horz(input: ParseString) -> ParseResult<Token> {
 // Map
 // ----------------------------------------------------------------------------
 
-// empty_table := table_start, whitespace*, table_end ;
+// empty-table := table-start, whitespace*, table-end ;
 pub fn empty_map(input: ParseString) -> ParseResult<Map> {
   let (input, _) = left_brace(input)?;
   let (input, _) = whitespace0(input)?;
@@ -298,7 +298,7 @@ pub fn map(input: ParseString) -> ParseResult<Map> {
   let msg = "Expects right bracket '}' to terminate inline table";
   let (input, (_, r)) = range(left_brace)(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, elements) = many0(mapping)(input)?;
+  let (input, elements) = many1(mapping)(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, _) = label!(right_brace, msg, r)(input)?;
   Ok((input, Map{elements}))
@@ -326,7 +326,7 @@ pub fn mapping(input: ParseString) -> ParseResult<Mapping> {
 // Record
 // ----------------------------------------------------------------------------
 
-// record := table_start, whitespace*, binding+, whitespace*, table_end ;
+// record := table-start, whitespace*, binding+, whitespace*, table_end ;
 pub fn record(input: ParseString) -> ParseResult<Record> {
   let msg = "Expects right bracket ']' to terminate inline table";
   let (input, (_, r)) = range(table_start)(input)?;
@@ -359,11 +359,11 @@ pub fn binding(input: ParseString) -> ParseResult<Binding> {
 // Set
 // ----------------------------------------------------------------------------
 
-// empty_set := table_start, whitespace*, empty, whitespace*, table_end ;
+// empty-set := table-start, whitespace*, empty, whitespace*, table-end ;
 pub fn empty_set(input: ParseString) -> ParseResult<Set> {
   let (input, _) = left_brace(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, _) = empty(input)?;
+  let (input, _) = opt(empty)(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, _) = right_brace(input)?;
   Ok((input,  Set{elements: vec![]}))
@@ -374,7 +374,7 @@ pub fn set(input: ParseString) -> ParseResult<Set> {
   let msg = "Expects right bracket '}' to terminate inline table";
   let (input, (_, r)) = range(left_brace)(input)?;
   let (input, _) = whitespace0(input)?;
-  let (input, elements) = separated_list0(alt((list_separator,whitespace1)), expression)(input)?;
+  let (input, elements) = separated_list1(alt((list_separator,whitespace1)), expression)(input)?;
   let (input, _) = whitespace0(input)?;
   let (input, _) = label!(right_brace, msg, r)(input)?;
   Ok((input, Set{elements}))
@@ -393,7 +393,7 @@ pub fn tuple(input: ParseString) -> ParseResult<Tuple> {
   Ok((input, Tuple{elements: exprs}))
 }
 
-// tuple_struct = atom, "(", expression, ")" ;
+// tuple-struct = atom, "(", expression, ")" ;
 pub fn tuple_struct(input: ParseString) -> ParseResult<TupleStruct> {
   let (input, _) = grave(input)?;
   let (input, name) = identifier(input)?;
