@@ -372,7 +372,16 @@ An integer literal is a sequence of digits representing a whole number. Mech sup
 - Octal: Prefixed with 0o, containing digits 0-7 (e.g., 0o755).
 - Binary: Prefixed with 0b, containing only 0 and 1 (e.g., 0b1010).
 
-(4.2.1.1) Examples
+(4.2.1.1) Kind
+
+By default, Mech can represent integers in the following data types:
+
+- Signed: `i8`, `i16`, `i32`, `i64`, `i128`
+- Unsigned: `u8`, `u16`, `u32`, `u64`, `u128`
+- Float: `f32`, `f64`
+
+Unless specified or inferred, the default data type for integer literals is `f64`. You can change the datatype of an integer literal by annotating it with a kind, such as `<i32>` or `<u64>`.
+(4.2.1.2) Examples
 
   42                  -- decimal
   0d42                -- decimal
@@ -381,16 +390,12 @@ An integer literal is a sequence of digits representing a whole number. Mech sup
   0o12345670          -- octal 
   0b100110101         -- binary
 
-(4.2.1.2) Kind
+Numerical literals annotated with a kind to specify their type:
 
-By default, Mech can represent integers in the following data types:
-
-- Signed: `i8`, `i16`, `i32`, `i64`, `i128`
-- Unsigned: `u8`, `u16`, `u32`, `u64`, `u128`
-- Float: `f32`, `f64`
-
-Unless specified or inferred, the default data type for integer literals is `f64`. This is different from many systems languages but consist with other languages like Matlab, Python, and Javascript.
-
+  1234       -- 1234 as a 64-bit float-point number
+  1234<i32>  -- 1234 as a signed 32-bit integer
+  1234<u8>   -- Convert 1234 to an unsigned 8-bit integer (will saturate to 255)
+  
 (4.2.2) Fractional Numbers
 
 ```ebnf
@@ -413,7 +418,15 @@ A floating-point literal represents a real number, potentially with a fractional
 - **Scientific notation**: A number followed by e or E, then an optional sign and exponent (e.g., `2.5e10`, `1e-3`)
 - **Rational literals**: A fraction of two integers separated by `/` (e.g., `3/4`, `22/7`) — these may be evaluated as exact values or approximated depending on context.
 
-(4.2.2.1) Examples
+(4.7.2.1) Kind
+
+Fractional numbers can be represented using various kinds, including:
+
+  <f32>  -- 32-bit floating-point number
+  <f64>  -- 64-bit floating-point number
+  <r64>  -- 64-bit rational number, which can be represented as a fraction of two `i64` integers.
+
+(4.2.2.2) Examples
 
   3.14         -- decimal float
   0.001        -- decimal float
@@ -422,7 +435,7 @@ A floating-point literal represents a real number, potentially with a fractional
   .123         -- leading-dot float
   3/4          -- rational
 
-By default, floating-point literals are inferred to be of type f64, unless explicitly annotated or inferred from context.
+By default, floating-point literals are inferred to be of type `f64`, unless explicitly annotated or inferred from context.
 
 (4.2.3) Complex Numbers
 
@@ -432,11 +445,17 @@ complex-number := real-number, ?("i"|"j") | (("+"|"-"), real-number, ("i"|"j")) 
 
 A complex number literal represents a number with both real and imaginary parts. To support a wide range of mathematical expressions, Mech allows complex numbers to be expressed with `i` or `j`. The real and imaginary parts can be any real number.
 
+(4.2.3.1) Kind
+
+  <c64> -- 64-bit complex number, which can be represented as a pair of `f64` values (real and imaginary parts).
+
+Complex numbers can be represented using the `c64` kind, which indicates a 64-bit complex number. This kind is typically represented as a pair of `f64` values (real and imaginary parts).
+
 (4.2.3.1) Examples
 
+  5i           -- purely imaginary number
   3+4i         -- complex number with real and imaginary parts
   2-3j         -- complex number with negative imaginary part
-  5i           -- purely imaginary number
   -2+0i        -- complex number with negative real part
 
 (4.3) Strings
@@ -449,7 +468,11 @@ Strings are enclosed in double quotes `"` and can contain any character, includi
 
 Strings heap-allocate their contents, so they can be of any length. They are encoded in UTF-8, allowing for Unicode characters.
 
-**Examples:**
+(4.3.1) Kind
+
+  <string> -- Represents a sequence of UTF-8 characters.
+
+(4.3.2) Examples
 
   "Hello, World!"
   "characters like \" and \\ are escaped with, \\ e.g. \\\""
@@ -457,7 +480,6 @@ Strings heap-allocate their contents, so they can be of any length. They are enc
   "Multiline 
   strings 
   are supported"
-
 
 (4.4) Boolean
 
@@ -472,12 +494,16 @@ english-false-literal := "false" ;
 ```
 A boolean literal represents a logical truth value, and can be expressed in either textual or symbolic form. Thre reason Mech supports both is tho allow for code that doesn't contain any English keywords, which is useful for non-English speakers.
 
-**Examples:**
+(4.4.1) Kind
+
+  <bool> -- Represents a boolean value, which can be either true or false.
+
+(4.4.2) Examples
 
   true
   false
   ✓
-  ✗
+  ✗  
 
 (4.5) Atoms
 
@@ -487,7 +513,13 @@ atom := "`", identifier ;
 
 An atom is a symbolic constant used to represent a fixed, named value. Atoms are prefixed with a backtick and followed by an identifier. They are used to represent tags, enums, or other symbolic values in the code.
 
-**Examples:**
+(4.5.1) Kind
+
+The kind of an atom is itself. For example, the atom {`A} has the kind {<`A>}.
+
+  <`A> -- Represents an atom with the name `A`.
+
+(4.5.2) Examples
 
   `A
   `MyAtom
@@ -502,7 +534,11 @@ empty := +underscore ;
 
 Empty literals are used to represent the absence of a value or a placeholder. They are represented by one or more underscores `_`. Empty literals can be used in various contexts, such as in tables, to indicate missing values.
 
-**Examples:**
+(4.6.1) Kind
+
+  <_> -- Represents an empty value.
+
+(4.6.2) Examples
 
   _
   ___
@@ -559,7 +595,21 @@ matrix := matrix-start
 
 A Matrix is a structured, numbered sequence of elements of a single kind, arranged in rows and columns, enclosed bt square brackets, `[]`. The number of elements in the matrix is called its length, and the shape of a matrix is defined as a pair of non-negative integers representing the number of rows and columns.
 
-(5.1.1) Semantics
+(5.1.1) Kind
+
+The kind of a matrix includes the type of its elements and its shape. For example, a matrix of unsigned 8-bit integers with 2 rows and 3 columns has the kind `<[u8]:2,3>`.
+
+| Description    | Kind           |
+|----------------|----------------|
+| Dynamic matrix | {<[u8]>}       |
+| Col Vector     | {<[u8]:2>}     |
+| Row Vector     | {<[u8]:1,2>}   |
+| 2D Matrix      | {<[u8]:2,3>}   |
+| 3D Matrix      | {<[u8]:2,3,4>} |
+| Dynamic cols   | {<[u8]:2,_>}   |
+| Dynamic rows   | {<[u8]:_,3>}   |
+
+(5.1.2) Semantics
 
 - Homogeneous Elements: All elements in a matrix must be of the same kind.
 - Fixed Shape: A static matrix's shape (rows, columns) is part of its kind and is always a tuple of non-negative integers.
@@ -568,7 +618,7 @@ A Matrix is a structured, numbered sequence of elements of a single kind, arrang
 
 Matrix kinds are always two-dimensional, so row vectors and column vectors are also represented as matrices with a single row or column, respectively.
 
-(5.1.2) Indexing
+(5.1.3) Indexing
 
 Matrix elements can be accessed using either 1D or 2D indexing:
 
@@ -576,9 +626,22 @@ Matrix elements can be accessed using either 1D or 2D indexing:
 - 2D Indexing: Elements can be referenced using `[row, column]` notation, starting from 1 for both indices.
 - Negative Indices: Negative indices count from the end of the matrix, with -1 being the last element.
 
-See the Indexing section for more details and examples.
+See the [indexing section](#41353925203355102) for more details on syntax and semantics of matrix indexing.
 
-(4.1.3) Examples
+(5.1.4) Operations
+
+By default, basic operations on matrices are broadcasted, meaning they are applied element-wise across the matrix. For example:
+
+  [1 2 3] + [4 5 6] -- Results in `[5 7 9]`
+
+This works as long as both matrices have the same shape. If not, the operation will fail with a type error at compile time.
+
+The exception is if either of the operands are scalar, then the scalar is broadcasted across the matrix. For example:
+
+  [1 2 3] + 10 -- Results in `[11 12 13]`
+  10 + [1 2 3] -- Results in `[11 12 13]`
+
+(5.1.5) Examples
 
   -- Empty Matrix
   []
@@ -604,37 +667,6 @@ See the Indexing section for more details and examples.
   
   -- 4x1 Column Vector
   [1; 2; 3; 4]
-
-Fancy matrix syntax is supported so that formatted output from the Mech REPL can be used as program source or input.
-
-```
-┏           ┓
-┃ 1   2   3 ┃
-┃ 4   5   6 ┃
-┗           ┛
-```
-The elements of a matrix are indexed in the following ways:
-
-- **1D** - by their position in the matrix, starting from 1, in a column-major order starting at the top left corner of the matrix and proceeding down and to the right. The last element of the matrix, called the end of the matrix, is the most bottom right element.
-
-- **2D** - by the row and column index, starting from 1 for each.
-
-Negative indices indicate counting from the end of the matrix. For example, `-1` is the last element, `-2` is the second to last element, and so on.
-
-(4.1.4) Kind
-
-The kind of a matrix includes the type of its elements and its shape. For example, a matrix of unsigned 8-bit integers with 2 rows and 3 columns has the kind `<[u8]:2,3>`.
-
-| Description    | Kind           |
-|----------------|----------------|
-| Dynamic matrix | `<[u8]>`       |
-| Col Vector     | `<[u8]:2`      |
-| Row Vector     | `<[u8]:1,2`    |
-| 2D Matrix      | `<[u8]:2,3>`   |
-| 3D Matrix      | `<[u8]:2,3,4>` |
-| Dynamic cols   | `<[u8]:2,_>`   |
-| Dynamic rows   | `<[u8]:_,3>`   |
-
 
 (5.2) Set
 
