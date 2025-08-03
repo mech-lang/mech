@@ -796,7 +796,14 @@ tuple-struct := atom, "(", expression, ")" ;
 
 A Tuple is defined using parentheses `()` and contains an ordered collection of elements, which can be of different types. 
 
-(5.4.1) Examples
+(5.4.1) Kind
+
+```
+-- Two-tuple of u8 and string    <(u8,string)>
+-- Three-tuple of u8s            <(u8,u8,u8)>
+```
+
+(5.4.2) Examples
 
   ()                 
   (1)                
@@ -812,13 +819,6 @@ A Tuple is defined using parentheses `()` and contains an ordered collection of 
 - `(1)` is a single-element tuple, not a parenthetical expression that evaluates to `1`.
 
 - Tuples maintain the type of each element, so `(1, "hello")` has the kind `<(f64,string)>`,, unlike sets which require homogeneity.
-
-(5.4.2) Kind
-
-```
--- Two-tuple of u8 and string    <(u8,string)>
--- Three-tuple of u8s            <(u8,u8,u8)>
-```
 
 (5.4.3) Semantics
 
