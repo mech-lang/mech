@@ -193,7 +193,7 @@ text := alpha
 comment-sigil := "--" | "//" ;
 comment :=  ws0
       , comment-sigil
-      , +text ;
+      , paragraph ;
 ```
 
 There are two options for single line comments in Mech:
