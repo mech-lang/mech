@@ -97,14 +97,14 @@ Row vectors and column vectors are special cases of matrices:
 
 You can convert a matrix to another kind using a kind annotation. For example:
 
-```mech:ex71
+```mech:ex211
 m := [1 2 3]
 v<[u8]> := m  -- Converts `[f64]` to `[u8]`
 ```
 
 You can also convert a vector of numbers into a vector of strings:
 
-```mech:ex72
+```mech:ex212
 v := [1 2 3]
 s<[string]> := v  -- Converts `[f64]` to `[string]`
 ```
@@ -113,7 +113,7 @@ s<[string]> := v  -- Converts `[f64]` to `[string]`
 
 You can reshape a matrix to a different size as long as the total number of elements remains the same. For example, you can reshape a 2x3 matrix into a 3x2 matrix:
 
-```mech:ex81
+```mech:ex222
 m := [1 2 3 4 5 6]
 v<[f64]:3,2> := m  -- Reshapes the matrix to a 3x2 matrix
 ```
@@ -323,4 +323,55 @@ The transpose of a matrix is obtained by swapping its rows and columns. This can
 ```mech:ex63
 m := [1 2 3 4 5 6]
 m'  -- Transposes the matrix to `6x1`
+```
+
+7. Concatenation
+-------------------------------------------------------------------------------
+
+Matrix concatenation allows you to combine multiple matrices or vectors into a single matrix. There are two types of concatenation: vertical and horizontal. Horizontal concatenation combines matrices side by side, while vertical concatenation stacks them on top of each other.
+
+When concatenating matrices, they must have compatible dimensions. For horizontal concatenation, the number of rows must match, and for vertical concatenation, the number of columns must match.
+
+(7.1) Horizontal Concatenation
+
+Horizontal concatenation is done by placing matrices or vectors next to each other, separated by commas or spaces. For example:
+
+```mech:ex71
+m1 := [1 2]
+m2 := [3 4]
+m := [m1, m2]  -- Evaluates to `[1 2 3 4]`
+```
+
+The concated matrices must have the same number of rows, but they can have different numbers of columns.
+
+```mech:ex72
+m1 := [1]
+m2 := [2 3]
+m := [m1, m2]  -- Evaluates to `[1 2 3]`
+```
+
+Contatenate a 2x2 matrix with a 2x1 vector:
+
+```mech:ex73
+m1 := [1 2; 4 5]
+m2 := [3; 6]
+m := [m1, m2]  -- Evaluates to `[1 2 3; 4 5 6]`
+```
+
+(7.2) Vertical Concatenation
+
+Vertical concatenation is done by stacking matrices or vectors on top of each other, separated by semicolons or newlines. The matrices must have the same number of columns, but they can have different numbers of rows.
+
+```mech:ex74
+m1 := [1 2]'
+m2 := [3 4]'
+m := [m1; m2]  -- Evaluates to `[1 2 3 4]'`
+```
+
+You can also concatenate matrices of different sizes as long as the number of columns matches:
+
+```mech:ex75
+m1 := [1 2; 3 4]
+m2 := [5 6]
+m := [m1; m2]  -- Evaluates to `[1 2; 4 5; 3 6]`
 ```
