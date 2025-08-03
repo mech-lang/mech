@@ -609,39 +609,7 @@ The kind of a matrix includes the type of its elements and its shape. For exampl
 | Dynamic cols   | {<[u8]:2,_>}   |
 | Dynamic rows   | {<[u8]:_,3>}   |
 
-(5.1.2) Semantics
-
-- Homogeneous Elements: All elements in a matrix must be of the same kind.
-- Fixed Shape: A static matrix's shape (rows, columns) is part of its kind and is always a tuple of non-negative integers.
-- One-Based Access: Elements are accessed using 1-based indexing for both rows and columns.
-- Column-Major Order: Matrix elements are stored and accessed in column-major order.
-
-Matrix kinds are always two-dimensional, so row vectors and column vectors are also represented as matrices with a single row or column, respectively.
-
-(5.1.3) Indexing
-
-Matrix elements can be accessed using either 1D or 2D indexing:
-
-- 1D Indexing (Column-Major Order): Elements are stored in column-major order, meaning the first element is the top-left element, proceeding down the first column before moving to the next.
-- 2D Indexing: Elements can be referenced using `[row, column]` notation, starting from 1 for both indices.
-- Negative Indices: Negative indices count from the end of the matrix, with -1 being the last element.
-
-See the [indexing section](#41353925203355102) for more details on syntax and semantics of matrix indexing.
-
-(5.1.4) Operations
-
-By default, basic operations on matrices are broadcasted, meaning they are applied element-wise across the matrix. For example:
-
-  [1 2 3] + [4 5 6] -- Results in `[5 7 9]`
-
-This works as long as both matrices have the same shape. If not, the operation will fail with a type error at compile time.
-
-The exception is if either of the operands are scalar, then the scalar is broadcasted across the matrix. For example:
-
-  [1 2 3] + 10 -- Results in `[11 12 13]`
-  10 + [1 2 3] -- Results in `[11 12 13]`
-
-(5.1.5) Examples
+(5.1.2) Examples
 
   -- Empty Matrix
   []
@@ -668,6 +636,38 @@ The exception is if either of the operands are scalar, then the scalar is broadc
   -- 4x1 Column Vector
   [1; 2; 3; 4]
 
+(5.1.3) Semantics
+
+- Homogeneous Elements: All elements in a matrix must be of the same kind.
+- Fixed Shape: A static matrix's shape (rows, columns) is part of its kind and is always a tuple of non-negative integers.
+- One-Based Access: Elements are accessed using 1-based indexing for both rows and columns.
+- Column-Major Order: Matrix elements are stored and accessed in column-major order.
+
+Matrix kinds are always two-dimensional, so row vectors and column vectors are also represented as matrices with a single row or column, respectively.
+
+(5.1.4) Indexing
+
+Matrix elements can be accessed using either 1D or 2D indexing:
+
+- 1D Indexing (Column-Major Order): Elements are stored in column-major order, meaning the first element is the top-left element, proceeding down the first column before moving to the next.
+- 2D Indexing: Elements can be referenced using `[row, column]` notation, starting from 1 for both indices.
+- Negative Indices: Negative indices count from the end of the matrix, with -1 being the last element.
+
+See the [indexing section](#41353925203355102) for more details on syntax and semantics of matrix indexing.
+
+(5.1.5) Operations
+
+By default, basic operations on matrices are broadcasted, meaning they are applied element-wise across the matrix. For example:
+
+  [1 2 3] + [4 5 6] -- Results in `[5 7 9]`
+
+This works as long as both matrices have the same shape. If not, the operation will fail with a type error at compile time.
+
+The exception is if either of the operands are scalar, then the scalar is broadcasted across the matrix. For example:
+
+  [1 2 3] + 10 -- Results in `[11 12 13]`
+  10 + [1 2 3] -- Results in `[11 12 13]`
+
 (5.2) Set
 
 ```ebnf
@@ -685,29 +685,26 @@ empty-set := table-start
 
 A Set is defined using curly braces `{}` and contains a comma-separated list of expressions. Sets do not maintain order and contain only unique elements.
 
-(5.2.1) Semantics
+(5.2.1) Kind
 
-- Homogeneity: All elements in a set must be of the same type.
-- Unordered: The order of elements within a set is not preserved.
-- Uniqueness: Duplicate elements are not allowed in a set.
+The kind of a set consists of:
 
-(5.2.2) Operations
+- The kind of the elements
+- The number of elements, which can be dynamic or fixed
 
-- Insertion: Adding an element to a set does not affect its order and only - succeeds if the element is not already present.
-- Deletion: Removing an element, if present, maintains the set property.
-- Union: Combines two sets, keeping only unique elements.
-- Intersection: Produces a set containing elements common to both sets.
-- Difference: Returns a set containing elements in the first set but not in the second.
+```mech:disabled
+  <{u8}>            -- Generic set of unsigned 8-bit integers
+  <{u8}:3>          -- Set of 3 unsigned 8-bit integers
+  <{{i8}}>          -- Set of sets of signed 8-bit integers 
+```
 
-(5.2.3) Examples
+(5.2.2) Examples
 
-| Description | Example                         |
-|-------------|---------------------------------|
-| Empty       | `{}` or `{_}`                   |
-| Singleton   | `{1}`                           |
-| Basic       | `{1,2,3}`                       |
-| Strings     | `{"apple", "banana", "cherry"}` |
-| Nested      | `{{1,2},{3,4}}`                 |
+  {}               -- Empty set
+  {1}              -- Singleton set with one element
+  {1.2, 3.4, 5.6}  -- Set of floags
+  {"a", "b", "c"}  -- Set of strings
+  {{1,2},{3,4}}    -- Nested set of sets
 
 **Edge Cases**
 
@@ -715,16 +712,19 @@ A Set is defined using curly braces `{}` and contains a comma-separated list of 
 - `{1, 1, 2}` results in `{1, 2}` due to uniqueness constraints.
 - `{1, "hello"}` results in a type error due to homogeneity constraints.
 
-(5.2.4) Kind
+(5.2.3) Semantics
 
-The kind of a set consists of:
+- Homogeneity: All elements in a set must be of the same type.
+- Unordered: The order of elements within a set is not preserved.
+- Uniqueness: Duplicate elements are not allowed in a set.
 
-- The kind of the elements
-- The number of elements, which can be dynamic or fixed
+(5.2.4) Operations
 
-<{u8}>            -- Generic set of unsigned 8-bit integers
-<{u8}:3>          -- Set of 3 unsigned 8-bit integers
-<{{i8}}>          -- Set of sets of signed 8-bit integers 
+- Insertion: Adding an element to a set does not affect its order and only - succeeds if the element is not already present.
+- Deletion: Removing an element, if present, maintains the set property.
+- Union: Combines two sets, keeping only unique elements.
+- Intersection: Produces a set containing elements common to both sets.
+- Difference: Returns a set containing elements in the first set but not in the second.
 
 (5.3) Map
 
@@ -746,20 +746,19 @@ mapping :=  ws0
 
 A Map is defined using curly braces `{}` and contains a set of key-value mappings. Each key is unique and associated with a corresponding value.
 
-(5.3.1) Semantics
+(5.3.1) Kind
 
-- Key Uniqueness: Each key in a map must be unique.
-- Unordered: The order of key-value pairs within a map is not preserved.
-- Key-Value Association: Each key is mapped to exactly one value.
+The kind of a map consists of:
 
-(5.3.2) Operations
+- The kind of the keys
+- The kind of the values
+- The number of key-value pairs, which can be dynamic or fixed
 
-- Insertion: Adding a key-value pair updates the map. If the key already exists, its value is updated.
-- Deletion: Removing a key-value pair removes the key and its associated value.
-- Lookup: Retrieving the value associated with a key.
-- Merge: Combining two maps, where duplicate keys take precedence from the second map.
+<{string:u8}>           -- A map of strings to unsigned 8-bit integers
+<{string:{string:u8}}>  -- A map of strings to a map of strings to unsigned 8-bit integers
 
-(5.3.3) Examples
+
+(5.3.2) Examples
 
 {_:_}                       -- Empty map
 {"a": 1}                    -- Map with a single key-value pair
@@ -775,16 +774,18 @@ A Map is defined using curly braces `{}` and contains a set of key-value mapping
 - If the map is mutable, inserting a duplicate key overwrites the previous value
 - `{1: "hello", 2: "world"}` is valid, but `{1: "hello", "one": "world"}` results in an error, as the keys are not homogenous.
 
-(5.3.4) Kind
+(5.3.3) Semantics
 
-The kind of a map consists of:
+- Key Uniqueness: Each key in a map must be unique.
+- Unordered: The order of key-value pairs within a map is not preserved.
+- Key-Value Association: Each key is mapped to exactly one value.
 
-- The kind of the keys
-- The kind of the values
-- The number of key-value pairs, which can be dynamic or fixed
+(5.3.4) Operations
 
-<{string:u8}>           -- A map of strings to unsigned 8-bit integers
-<{string:{string:u8}}>  -- A map of strings to a map of strings to unsigned 8-bit integers
+- Insertion: Adding a key-value pair updates the map. If the key already exists, its value is updated.
+- Deletion: Removing a key-value pair removes the key and its associated value.
+- Lookup: Retrieving the value associated with a key.
+- Merge: Combining two maps, where duplicate keys take precedence from the second map.
 
 (5.4) Tuple
 
@@ -795,19 +796,7 @@ tuple-struct := atom, "(", expression, ")" ;
 
 A Tuple is defined using parentheses `()` and contains an ordered collection of elements, which can be of different types. 
 
-(5.4.1) Semantics
-
-- Ordered: The order of elements within a tuple is preserved.
-- Heterogeneous: A tuple can contain elements of different types.
-- Immutable: Once created, the elements in a tuple cannot be changed.
-
-(5.4.2) Operations
-
-- Access: Elements can be accessed by their position (zero-based index).
-- Concatenation: Tuples can be combined to form a larger tuple.
-- Decomposition: Tuples can be unpacked into individual variables.
-
-(5.4.3) Examples
+(5.4.1) Examples
 
   ()                 
   (1)                
@@ -824,12 +813,24 @@ A Tuple is defined using parentheses `()` and contains an ordered collection of 
 
 - Tuples maintain the type of each element, so `(1, "hello")` has the kind `<(f64,string)>`,, unlike sets which require homogeneity.
 
-(5.4.4) Kind
+(5.4.2) Kind
 
 ```
 -- Two-tuple of u8 and string    <(u8,string)>
 -- Three-tuple of u8s            <(u8,u8,u8)>
 ```
+
+(5.4.3) Semantics
+
+- Ordered: The order of elements within a tuple is preserved.
+- Heterogeneous: A tuple can contain elements of different types.
+- Immutable: Once created, the elements in a tuple cannot be changed.
+
+(5.4.4) Operations
+
+- Access: Elements can be accessed by their position (zero-based index).
+- Concatenation: Tuples can be combined to form a larger tuple.
+- Decomposition: Tuples can be unpacked into individual variables.
 
 (5.5) Table
 
@@ -870,68 +871,7 @@ empty-table := table-start
 
 A Table represents a structured collection of records, where each record consists of multiple fields (columns). Tables allow organizing data in a flexible, expressive manner.
 
-(5.5.1) Semantics
-
-- Structured: Each record consists of ordered fields (columns).
-- Heterogeneous: Fields can have different kinds (types).
-- Homogeneous: Each row has a similar structure, with the same fields.
-- Sparse: Tables allow missing values (denoted by `_`).
-
-Tables are enclosed in `{}` and contain a header row specifying column names and kinds. The pipe \| separates the header from the data rows.
-
-  | x<f32>  y<u8> | 
-  | 1.2     9     |
-  | 1.3     8     |
-
-This defines a table with two columns:
-
-- `x<f32>`: A floating-point column.
-- `y<u8>`: An unsigned 8-bit integer column.
-
-The same table can be written in a compact, inline format using semicolons (;) to separate rows.
-
-```
-| x<f32> y<u8> | 1.2 9 | 1.3 8 |
-```
-
-Where `|` denotes the end of the header, and each row is separated by a semicolon `;`.
-
-**Any Fields**
-
-The `_` is the "any" kind and allows columns to contain data from mixed kinds.
-
-  | x<_>   y<_> |
-  | 1.2    true |
-  | "Hi"   8<u8>|
-
-Here, `x` holds both floats and strings, and y holds both integers and booleans. This can be useful for dealing with data whose type is not known at compiletime.
-
-**Incomplete Tables**
-
-When used as a value in a table, `_` indicates that a cell is missing and will be filled in later.
-
-  | x<u8>  y<string> z<[u8]:3> |
-  |  _      "a"       [1;2;3]  |
-  |  4      "b"          _     |
-  |  7       _        [7;8;9]  |
-
-**Fancy Representation**
-
-The Mech REPL prints tables using a fancy represntation, which is valid as input to a Mech program as well. The above table is equavlent to the following fancy table:
-
-```
-╭──────────────────────────────╮
-│ x<u8>   y<string>  z<[u8]:3> │
-├───────┬──────────┬───────────┤
-│   _   │   "a"    │  [1;2;3]  │
-├───────┼──────────┼───────────┤
-│   4   │   "b"    │     _     │
-├───────┼──────────┼───────────┤
-│   7   │    _     │  [7;8;9]  │
-╰───────┴──────────┴───────────╯
-```
-
-(5.5.3) Kind
+(5.5.1) Kind
 
 A table's kind includes the column types and table dimensions. For example, the pretty print table's kind is: `<{u8, string, [u8]:3}:3,3>`.
 
@@ -953,6 +893,69 @@ The kind of a table column is equivalent to a vector of the table column kind. F
 <[u8]:3,1>
 ```
 
+(5.5.2) Examples
+
+Tables are enclosed in `{}` and contain a header row specifying column names and kinds. The pipe \| separates the header from the data rows.
+
+  | x<f32>  y<u8> | 
+  | 1.2     9     |
+  | 1.3     8     |
+
+This defines a table with two columns:
+
+- `x<f32>`: A floating-point column.
+- `y<u8>`: An unsigned 8-bit integer column.
+
+The same table can be written in a compact, inline format using semicolons (;) to separate rows.
+
+```
+| x<f32> y<u8> | 1.2 9 | 1.3 8 |
+```
+
+Where the first cell is the header row, and the subsequent cells are the data rows, with each column separated by a space or comma.
+
+(5.5.1) Semantics
+
+- Structured: Each record consists of ordered fields (columns).
+- Heterogeneous: Fields can have different kinds (types).
+- Homogeneous: Each row has a similar structure, with the same fields.
+- Sparse: Tables allow missing values (denoted by `_`).
+
+**Any Fields**
+
+The `_` is the "any" kind and allows columns to contain data from mixed kinds.
+
+  | x<_>   y<_> |
+  | 1.2    true |
+  | "Hi"   8<u8>|
+
+Here, `x` holds both floats and strings, and y holds both integers and booleans. This can be useful for dealing with data whose type is not known at compiletime.
+
+**Incomplete Tables**
+
+When used as a value in a table, `_` indicates that a cell is missing and will be filled in later.
+
+  | x<u8>  y<string> z<[u8]:1,3> |
+  |  _      "a"       [1 2 3]    |
+  |  4      "b"          _       |
+  |  7       _        [7 8; ]    |
+
+**Fancy Representation**
+
+The Mech REPL prints tables using a fancy represntation, which is valid as input to a Mech program as well. The above table is equavlent to the following fancy table:
+
+```
+╭────────────────────────────────╮
+│ x<u8>   y<string>  z<[u8]:1,3> │
+├───────┬──────────┬─────────────┤
+│   _   │   "a"    │   [1 2 3]   │
+├───────┼──────────┼─────────────┤
+│   4   │   "b"    │     _       │
+├───────┼──────────┼─────────────┤
+│   7   │    _     │   [7 8 9]   │
+╰───────┴──────────┴─────────────╯
+```
+
 **Performance Considerations:**
 
 Tables are more expressive and flexible than matrices, because they can support missing values and mixed types. However, they may be slower due to additional metadata and dynamic typing associated with each cell, and the unwrapping involved in accessing data.
@@ -963,7 +966,6 @@ However, "any" kinded columns resolve to a column matrix of fully wrapped values
 
 (5.6) Record
 
-
 ```ebnf
 record := table-start
       , ws0
@@ -973,7 +975,53 @@ record := table-start
 ```
 A Record is a collection of named fields, where each field consists of a key-value pair. Records provide a structured way to group related data while allowing heterogeneous types.
 
-(5.6.1) Semantics
+
+(5.6.1) Kind
+
+A record's kind describes the types of its fields:
+
+```
+<{x: u8, y: string, z: [u8]:1,3}>
+```
+
+This denotes a record with:
+
+- x: `u8`
+- y: `string`
+- z: `[u8]:1,3` (a 1×3 array of u8 values)
+
+(5.6.2) Examples
+
+**Examples 1: Implicitly Typed Records**
+
+  { x: 1 y: "a", z: [1 2 3] }
+
+This defines a record with three fields:
+
+- x (implicitly an float).
+- y (implicitly a string).
+- z (implicitly a column matrix of floats).
+
+**Example 2: Explicitly Typed Record**
+
+  { x<u8>: 1, y<string>: "a", z<[u8]:1,3>: [1 2 3] }
+
+Here, each field has an explicit kind:
+
+- `x<u8>`: A `u8` integer.
+- `y<string>`: A string.
+- `z<[u8]:3,1>`: A fixed-size 3×1 matrix of `u8` integers.
+
+**Example 3: Nested Records**
+
+  { a: {b: 1, c: "hi"}, b: [1;2;3] }
+
+This record contains:
+
+- a: A nested record `{b: 1, c: "hi"}`.
+- b: A columm matrix `[1;2;3]`.
+
+(5.6.3) Semantics
 
 - Named Fields: Each field is identified by a unique name.
 - Heterogeneous: Fields can have different types.
@@ -991,51 +1039,6 @@ Records are enclosed in `{}` and contain bindings of the form key: value. The ty
 - A table can be thought of as a vector of records.
 
 Tables represent multiple records (rows) sharing a common structure.
-
-(5.6.2) Examples
-
-**Examples 1: Implicitly Typed Records**
-
-  { x: 1 y: "a", z: [1; 2; 3] }
-
-This defines a record with three fields:
-
-- x (implicitly an float).
-- y (implicitly a string).
-- z (implicitly a column matrix of floats).
-
-**Example 2: Explicitly Typed Record**
-
-  { x<u8>: 1, y<string>: "a", z<[u8]:3,1>: [1; 2; 3] }
-
-Here, each field has an explicit kind:
-
-- `x<u8>`: A `u8` integer.
-- `y<string>`: A string.
-- `z<[u8]:3,1>`: A fixed-size 3×1 matrix of `u8` integers.
-
-**Example 3: Nested Records**
-
-  { a: {b: 1, c: "hi"}, b: [1;2;3] }
-
-This record contains:
-
-- a: A nested record `{b: 1, c: "hi"}`.
-- b: A columm matrix `[1;2;3]`.
-
-(5.6.3) Kind
-
-A record's kind describes the types of its fields:
-
-```
-<{x: u8, y: string, z: [u8]:3,1}>
-```
-
-This denotes a record with:
-
-- x: `u8`
-- y: `string`
-- z: `[u8]:3,1` (a 3×1 array of u8 values)
 
 6. Expressions
 -------------------------------------------------------------------------------
