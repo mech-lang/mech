@@ -1,6 +1,6 @@
 [package]
 name = "mech-logic"
-version = "0.2.52"
+version = "0.2.53"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Logic library for the Mech language"
 documentation = "http://docs.mech-lang.org"
@@ -68,6 +68,6 @@ VectorD = []
 MatrixD = []
 
 [dependencies]
-mech-core = "0.2.52"
+mech-core = "0.2.53"
 nalgebra = "0.33.2"
 paste = "1.0.15"
