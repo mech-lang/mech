@@ -12,7 +12,7 @@ macro_rules! not_op {
     ($arg:expr, $out:expr) => {
       unsafe {
         for i in 0..(*$arg).len() {
-          (*$out)[i] = !(*$arg)[i];
+          (&mut (*$out))[i] = !(&(*$arg))[i];
         }}};}
   
   impl_logic_urnop!(NotS, bool, bool, not_op);
