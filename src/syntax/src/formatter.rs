@@ -2438,11 +2438,39 @@ pub fn matrix_column_elements(&mut self, column_elements: &[&MatrixColumn]) -> S
       FormulaOperator::Vec(op) => self.vec_op(op),
       FormulaOperator::Comparison(op) => self.comparison_op(op),
       FormulaOperator::Logic(op) => self.logic_op(op),
+      FormulaOperator::Table(op) => self.table_op(op),
+      FormulaOperator::Set(op) => self.set_op(op),
     };
     if self.html {
       format!("<span class=\"mech-formula-operator\">{}</span>",f)
     } else {
       format!(" {} ", f)
+    }
+  }
+
+  pub fn table_op(&mut self, node: &TableOp) -> String {
+    match node {
+      TableOp::InnerJoin => "⋈".to_string(),
+      TableOp::LeftOuterJoin => "⟕".to_string(),
+      TableOp::RightOuterJoin => "⟖".to_string(),
+      TableOp::FullOuterJoin => "⟗".to_string(),
+      TableOp::LeftSemiJoin => "⋉".to_string(),
+      TableOp::LeftAntiJoin => "▷".to_string(),
+    }
+  }
+
+  pub fn set_op(&mut self, node: &SetOp) -> String {
+    match node {
+      SetOp::Union => "∪".to_string(),
+      SetOp::Intersection => "∩".to_string(),
+      SetOp::Difference => "∖".to_string(),
+      SetOp::Complement => "∁".to_string(),
+      SetOp::Subset => "⊂".to_string(),
+      SetOp::Superset => "⊃".to_string(),
+      SetOp::ProperSubset => "⊊".to_string(),
+      SetOp::ProperSuperset => "⊋".to_string(),
+      SetOp::ElementOf => "∈".to_string(),
+      SetOp::NotElementOf => "∉".to_string(),
     }
   }
 
