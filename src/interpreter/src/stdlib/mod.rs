@@ -16,4 +16,3 @@ pub mod horzcat;
 pub mod vertcat;
 pub mod convert;
 pub mod math;
-pub mod compare;
