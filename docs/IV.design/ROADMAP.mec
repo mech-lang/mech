@@ -36,8 +36,7 @@ Target release date: ???
 
 -(🥚) language server
 -(🥚) enums
--(🐣) imaginary numbers
--(🐣) rational numbers
+-(🐣) option types
 -(🐣) sets
 -(🐣) maps
 -(🐣) atoms
@@ -45,6 +44,8 @@ Target release date: ???
 -(🐣) records
 -(🐣) tuples
 -(🐣) scientific numbers
+-(🐤) imaginary numbers
+-(🐤) rational numbers
 -(🐤) tables (dataframe)
 -(🐤) strings
 -(🐤) repl
