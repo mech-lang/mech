@@ -1355,6 +1355,32 @@ pub enum FormulaOperator {
   Logic(LogicOp),
   MulDiv(MulDivOp),
   Vec(VecOp),
+  Table(TableOp),
+  Set(SetOp),
+}
+
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub enum TableOp {
+  InnerJoin,
+  LeftOuterJoin,
+  RightOuterJoin	,
+  FullOuterJoin	,
+  LeftSemiJoin,  
+  LeftAntiJoin,
+}
+
+#[derive (Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub enum SetOp {
+  Union,
+  Intersection,
+  Difference,
+  Complement,
+  Subset,
+  Superset,
+  ProperSubset,
+  ProperSuperset,
+  ElementOf,
+  NotElementOf,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
