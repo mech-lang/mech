@@ -16,7 +16,7 @@ gitlab = { repository = "mech-lang/machines/logic", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [lib]
-crate-type = ["dylib", "rlib"]
+crate-type = ["staticlib"]
 
 [features]
 default = ["stdlib"]
