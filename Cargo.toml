@@ -16,7 +16,7 @@ gitlab = { repository = "mech-lang/machines/compare", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [lib]
-crate-type = ["dylib", "rlib"]
+crate-type = ["staticlib"]
 
 [features]
 default = ["stdlib"]
@@ -69,3 +69,5 @@ MatrixD = []
 
 [dependencies]
 mech-core = "0.2.53"
+paste = "1.0.15"
+nalgebra = "0.33.2"
