@@ -96,18 +96,18 @@ enum-separator := ws0, "|", ws0 ;
 
 (3.2.1) Operators
 
-| Category     | Operators                                 |
-|--------------|-------------------------------------------|
-| Assign       | `:=` `=` `+=` `-=` `*=` `/=` `^=`         |
-| Arithmetic   | `+` `-` `*` `/` `÷` `^` `%`               |
-| Condition    | `!=` `¬=` `≠` `==` `>` `<` `>=` `≤` `≥`   |
-| Matrix       | `**` `·` `⨯` `\` `'`                      |
-| Logic        | `||` `&&` `^^` `⊕` `⊻` `∧` `∨` `¬` `!`   |
-| Set          | `∪` `∩` `∖` `∁` `⊆` `⊇` `⊊` `⊋` `∈` `∉` |
-| Table        | `⋈` `⟕` `⟖` `⟗` `⋉` `▷`               |
-| Range        | `..` `..=`                                |
-| Transition   | `=>` `->` `~>`                            |
-| Guard        | `|` `│` `├` `└`                           |
+| Category     | Operators                                          |
+|--------------|----------------------------------------------------|
+| Assign       | `:=` `=` `+=` `-=` `*=` `/=` `^=`                  |
+| Arithmetic   | `+` `-` `*` `/` `÷` `^` `%`                        |
+| Condition    | `!=` `¬=` `≠` `==` `>` `<` `>=` `≤` `≥`            |
+| Matrix       | `**` `·` `⨯` `\` `'`                               |
+| Logic        | `||` `&&` `^^` `⊕` `⊻` `∧` `∨` `¬` `!`            |
+| Set          | `∪` `∩` `∖` `∁` `⊂` `⊃` `⊆` `⊇` `⊊` `⊋` `∈` `∉` |
+| Table        | `⋈` `⟕` `⟖` `⟗` `⋉` `▷`                        |
+| Range        | `..` `..=`                                         |
+| Transition   | `=>` `->` `~>`                                     |
+| Guard        | `|` `│` `├` `└`                                    |
 
 (3.2.2) Punctutation
 
@@ -932,9 +932,9 @@ Where the first cell is the header row, and the subsequent cells are the data ro
 
 **Any Fields**
 
-The `_` is the "any" kind and allows columns to contain data from mixed kinds.
+The `*` is the "any" kind and allows columns to contain data from mixed kinds.
 
-  | x<_>   y<_> |
+  | x<*>   y<*> |
   | 1.2    true |
   | "Hi"   8<u8>|
 
@@ -945,24 +945,24 @@ Here, `x` holds both floats and strings, and y holds both integers and booleans.
 When used as a value in a table, `_` indicates that a cell is missing and will be filled in later.
 
   | x<u8>  y<string> z<[u8]:1,3> |
-  |  _      "a"       [1 2 3]    |
-  |  4      "b"          _       |
-  |  7       _        [7 8; ]    |
+  |  _      "a"        [1 2 3]   |
+  |  4      "b"           _      |
+  |  7       _         [7 8; ]   |
 
 **Fancy Representation**
 
 The Mech REPL prints tables using a fancy represntation, which is valid as input to a Mech program as well. The above table is equavlent to the following fancy table:
 
 ```
-╭────────────────────────────────╮
-│ x<u8>   y<string>  z<[u8]:1,3> │
-├───────┬──────────┬─────────────┤
-│   _   │   "a"    │   [1 2 3]   │
-├───────┼──────────┼─────────────┤
-│   4   │   "b"    │     _       │
-├───────┼──────────┼─────────────┤
-│   7   │    _     │   [7 8 9]   │
-╰───────┴──────────┴─────────────╯
+╭───────────────────────────────────╮
+│ x<u8?>   y<string?>  z<[u8]:1,4?> │
+├────────┬───────────┬──────────────┤
+│   _    │    "a"    │   [1 2 3]    │
+├────────┼───────────┼──────────────┤
+│   4    │    "b"    │      _       │
+├────────┼───────────┼──────────────┤
+│   7    │     _     │   [7 8 9]    │
+╰────────┴───────────┴──────────────╯
 ```
 
 **Performance Considerations:**
@@ -1103,8 +1103,8 @@ comparison-operator := not-equal
       | less-than-equal 
       | less-than ;
 l5 := factor, *(comparison-operator, factor) ;  
-factor := (parenthetical-term 
-      | structure 
+factor := (structure
+      | parenthetical-term 
       | fsm-pipe 
       | function-call 
       | literal 
