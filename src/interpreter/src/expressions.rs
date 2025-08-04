@@ -331,6 +331,24 @@ pub fn term(trm: &Term, p: &Interpreter) -> MResult<Value> {
       FormulaOperator::Logic(LogicOp::Or)  => LogicOr{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Logic(LogicOp::Not) => LogicNot{}.compile(&vec![lhs,rhs])?,
       FormulaOperator::Logic(LogicOp::Xor) => LogicXor{}.compile(&vec![lhs,rhs])?,
+      
+      FormulaOperator::Table(TableOp::InnerJoin) => todo!(),
+      FormulaOperator::Table(TableOp::LeftOuterJoin) => todo!(),
+      FormulaOperator::Table(TableOp::RightOuterJoin) => todo!(),
+      FormulaOperator::Table(TableOp::FullOuterJoin) => todo!(),
+      FormulaOperator::Table(TableOp::LeftSemiJoin) => todo!(),
+      FormulaOperator::Table(TableOp::LeftAntiJoin) => todo!(),
+
+      FormulaOperator::Set(SetOp::Union) => todo!(),
+      FormulaOperator::Set(SetOp::Intersection) => todo!(),
+      FormulaOperator::Set(SetOp::Difference) => todo!(),
+      FormulaOperator::Set(SetOp::Complement) => todo!(),
+      FormulaOperator::Set(SetOp::Subset) => todo!(),
+      FormulaOperator::Set(SetOp::Superset) => todo!(),
+      FormulaOperator::Set(SetOp::ProperSubset) => todo!(),
+      FormulaOperator::Set(SetOp::ProperSuperset) => todo!(),
+      FormulaOperator::Set(SetOp::ElementOf) => todo!(),
+      FormulaOperator::Set(SetOp::NotElementOf) => todo!(),
     };
     new_fxn.solve();
     let res = new_fxn.out();
