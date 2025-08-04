@@ -1,5 +1,6 @@
 #[macro_use]
 use crate::*;
+use crate::structures::tuple;
 
 #[cfg(not(feature = "no-std"))] use core::fmt;
 #[cfg(feature = "no-std")] use alloc::fmt;
@@ -97,27 +98,30 @@ pub fn l5(input: ParseString) -> ParseResult<Factor> {
   Ok((input, factor))
 }
 
-// factor := (parenthetical-term | structure | fsm-pipe | function-call | literal | slice | var), transpose? ;
+// factor := (structure| parenthetical-term | fsm-pipe | function-call | literal | slice | var), ?transpose ;
 pub fn factor(input: ParseString) -> ParseResult<Factor> {
-  let (input, fctr) = match parenthetical_term(input.clone()) {
-    Ok((input, term)) => (input, term),
-    Err(_) => match negate_factor(input.clone()) {
-      Ok((input, neg)) => (input, neg),
-      Err(_) => match not_factor(input.clone()) {
+  let (input, fctr) = match structure(input.clone()) {
+    Ok((input, strct)) => (input, Factor::Expression(Box::new(Expression::Structure(strct)))),
+    Err(_) => match parenthetical_term(input.clone()) {
+      Ok((input, term)) => (input, term),
+      Err(_) => match negate_factor(input.clone()) {
         Ok((input, neg)) => (input, neg),
-        Err(_) => match structure(input.clone()) {
-          Ok((input, strct)) => (input, Factor::Expression(Box::new(Expression::Structure(strct)))),
-          Err(_) => match fsm_pipe(input.clone()) {
-            Ok((input, pipe)) => (input, Factor::Expression(Box::new(Expression::FsmPipe(pipe)))),
-            Err(_) => match function_call(input.clone()) {
-              Ok((input, fxn)) => (input, Factor::Expression(Box::new(Expression::FunctionCall(fxn)))),
-              Err(_) => match literal(input.clone()) {
-                Ok((input, ltrl)) => (input, Factor::Expression(Box::new(Expression::Literal(ltrl)))),
-                Err(_) => match slice(input.clone()) {
-                  Ok((input, slc)) => (input, Factor::Expression(Box::new(Expression::Slice(slc)))),
-                  Err(_) => match var(input.clone()) {
-                    Ok((input, var)) => (input, Factor::Expression(Box::new(Expression::Var(var)))),
-                    Err(err) => { return Err(err); },
+        Err(_) => match not_factor(input.clone()) {
+          Ok((input, neg)) => (input, neg),
+          Err(_) => match structure(input.clone()) {
+            Ok((input, strct)) => (input, Factor::Expression(Box::new(Expression::Structure(strct)))),
+            Err(_) => match fsm_pipe(input.clone()) {
+              Ok((input, pipe)) => (input, Factor::Expression(Box::new(Expression::FsmPipe(pipe)))),
+              Err(_) => match function_call(input.clone()) {
+                Ok((input, fxn)) => (input, Factor::Expression(Box::new(Expression::FunctionCall(fxn)))),
+                Err(_) => match literal(input.clone()) {
+                  Ok((input, ltrl)) => (input, Factor::Expression(Box::new(Expression::Literal(ltrl)))),
+                  Err(_) => match slice(input.clone()) {
+                    Ok((input, slc)) => (input, Factor::Expression(Box::new(Expression::Slice(slc)))),
+                    Err(_) => match var(input.clone()) {
+                      Ok((input, var)) => (input, Factor::Expression(Box::new(Expression::Var(var)))),
+                      Err(err) => { return Err(err); },
+                    },
                   },
                 },
               },
@@ -145,7 +149,7 @@ pub fn parenthetical_term(input: ParseString) -> ParseResult<Factor> {
   Ok((input, Factor::Parenthetical(Box::new(frmla))))
 }
 
-// var := identifier, kind-annotation? ;
+// var := identifier, ?kind-annotation ;
 pub fn var(input: ParseString) -> ParseResult<Var> {
   let ((input, name)) = identifier(input)?;
   let ((input, kind)) = opt(kind_annotation)(input)?;
@@ -187,7 +191,7 @@ pub fn negate_factor(input: ParseString) -> ParseResult<Factor> {
   Ok((input, Factor::Negate(Box::new(expr))))
 }
 
-// not-factor := "not", factor ;
+// not-factor := not, factor ;
 pub fn not_factor(input: ParseString) -> ParseResult<Factor> {
   let (input, _) = not(input)?;
   let (input, expr) = factor(input)?;
