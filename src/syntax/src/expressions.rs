@@ -92,8 +92,24 @@ pub fn l4(input: ParseString) -> ParseResult<Factor> {
 
 // l5 := factor, (comparison-operator, factor)* ;
 pub fn l5(input: ParseString) -> ParseResult<Factor> {
+  let (input, lhs) = l6(input)?;
+  let (input, rhs) = many0(nom_tuple((comparison_operator,l6)))(input)?;
+  let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
+  Ok((input, factor))
+}
+
+// l6 := factor, (table-operator, factor)* ;
+pub fn l6(input: ParseString) -> ParseResult<Factor> {
+  let (input, lhs) = l7(input)?;
+  let (input, rhs) = many0(nom_tuple((table_operator,l7)))(input)?;
+  let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
+  Ok((input, factor))
+}
+
+// l7 := factor, (set-operator, factor)* ;
+pub fn l7(input: ParseString) -> ParseResult<Factor> {
   let (input, lhs) = factor(input)?;
-  let (input, rhs) = many0(nom_tuple((comparison_operator,factor)))(input)?;
+  let (input, rhs) = many0(nom_tuple((set_operator,factor)))(input)?;
   let factor = if rhs.is_empty() { lhs } else { Factor::Term(Box::new(Term { lhs, rhs })) };
   Ok((input, factor))
 }
@@ -439,6 +455,152 @@ pub fn xor(input: ParseString) -> ParseResult<LogicOp> {
   Ok((input, LogicOp::Xor))
 }
 
+// Table Operations
+// ----------------------------------------------------------------------------
+
+// table-operator := join | left-join | right-join | full-join | left-semi-join | left-anti-join ;
+fn table_operator(input: ParseString) -> ParseResult<FormulaOperator> {
+  let (input, op) = alt((join,left_join,right_join,full_join,left_semi_join,left_anti_join))(input)?;
+  Ok((input, FormulaOperator::Table(op)))
+}
+
+// join := "⋈" ;
+fn join(input: ParseString) -> ParseResult<TableOp> {
+  let (input, _) = ws1e(input)?;
+  let (input, _) = tag("⋈")(input)?;
+  let (input, _) = ws1e(input)?;
+  Ok((input, TableOp::InnerJoin))
+}
+
+// left-join := "⟕" ;
+fn left_join(input: ParseString) -> ParseResult<TableOp> {
+  let (input, _) = ws1e(input)?;
+  let (input, _) = tag("⟕")(input)?;
+  let (input, _) = ws1e(input)?;
+  Ok((input, TableOp::LeftOuterJoin))
+}
+
+// right-join := "⟖" ;
+fn right_join(input: ParseString) -> ParseResult<TableOp> {
+  let (input, _) = ws1e(input)?;
+  let (input, _) = tag("⟖")(input)?;
+  let (input, _) = ws1e(input)?;
+  Ok((input, TableOp::RightOuterJoin))
+}
+
+// full-join := "⟗" ;
+fn full_join(input: ParseString) -> ParseResult<TableOp> {
+  let (input, _) = ws1e(input)?;
+  let (input, _) = tag("⟗")(input)?;
+  let (input, _) = ws1e(input)?;
+  Ok((input, TableOp::FullOuterJoin))
+}
+
+// left-semi-join := "⋉" ;
+fn left_semi_join(input: ParseString) -> ParseResult<TableOp> {
+  let (input, _) = ws1e(input)?;
+  let (input, _) = tag("⋉")(input)?;
+  let (input, _) = ws1e(input)?;
+  Ok((input, TableOp::LeftSemiJoin))
+}
+
+// left-anti-join := "▷" ;
+fn left_anti_join(input: ParseString) -> ParseResult<TableOp> {
+  let (input, _) = ws1e(input)?;
+  let (input, _) = tag("▷")(input)?;
+  let (input, _) = ws1e(input)?;
+  Ok((input, TableOp::LeftAntiJoin))
+}
+
+
+// Set Operations
+// ----------------------------------------------------------------------------
+
+// set-operator := union | intersection | difference | complement | subset | superset | proper-subset | proper-superset | element-of | not-element-of ;
+pub fn set_operator(input: ParseString) -> ParseResult<FormulaOperator> {
+  let (input, op) = alt((union_op,intersection,difference,complement,subset,superset,proper_subset,proper_superset,element_of,not_element_of))(input)?;
+  Ok((input, FormulaOperator::Set(op)))
+}
+
+// union := "∪" ;
+pub fn union_op(input: ParseString) -> ParseResult<SetOp> {
+  let (input, _) = ws1e(input)?;
+  let (input, _) = tag("∪")(input)?;
+  let (input, _) = ws1e(input)?;
+  Ok((input, SetOp::Union))
+}
+
+// intersection := "∩" ;
+pub fn intersection(input: ParseString) -> ParseResult<SetOp> {
+  let (input, _) = ws1e(input)?;
+  let (input, _) = tag("∩")(input)?;
+  let (input, _) = ws1e(input)?;
+  Ok((input, SetOp::Intersection))
+}
+
+// difference := "∖" ;
+pub fn difference(input: ParseString) -> ParseResult<SetOp> {
+  let (input, _) = ws1e(input)?;
+  let (input, _) = tag("∖")(input)?;
+  let (input, _) = ws1e(input)?;
+  Ok((input, SetOp::Difference))
+}
+
+// complement := "∁" ;
+pub fn complement(input: ParseString) -> ParseResult<SetOp> {
+  let (input, _) = ws1e(input)?;
+  let (input, _) = tag("∁")(input)?;
+  let (input, _) = ws1e(input)?;
+  Ok((input, SetOp::Complement))
+}
+
+// subset := "⊆" ;
+pub fn subset(input: ParseString) -> ParseResult<SetOp> { 
+  let (input, _) = ws1e(input)?;
+  let (input, _) = tag("⊆")(input)?;
+  let (input, _) = ws1e(input)?;
+  Ok((input, SetOp::Subset))
+}
+
+// superset := "⊇" ;
+pub fn superset(input: ParseString) -> ParseResult<SetOp> {
+  let (input, _) = ws1e(input)?;
+  let (input, _) = tag("⊇")(input)?;
+  let (input, _) = ws1e(input)?;
+  Ok((input, SetOp::Superset))
+}
+
+// proper-subset := "⊊" ;
+pub fn proper_subset(input: ParseString) -> ParseResult<SetOp> {
+  let (input, _) = ws1e(input)?;
+  let (input, _) = alt((tag("⊊"), tag("⊂")))(input)?;
+  let (input, _) = ws1e(input)?;
+  Ok((input, SetOp::ProperSubset))
+}
+
+// proper-superset := "⊋" ;
+pub fn proper_superset(input: ParseString) -> ParseResult<SetOp> {
+  let (input, _) = ws1e(input)?;
+  let (input, _) = alt((tag("⊋"), tag("⊃")))(input)?;
+  let (input, _) = ws1e(input)?;
+  Ok((input, SetOp::ProperSuperset))
+}
+
+// element-of := "∈" ;
+pub fn element_of(input: ParseString) -> ParseResult<SetOp> { 
+  let (input, _) = ws1e(input)?;
+  let (input, _) = tag("∈")(input)?;
+  let (input, _) = ws1e(input)?;
+  Ok((input, SetOp::ElementOf))
+}
+
+// not-element-of := "∉" ;
+pub fn not_element_of(input: ParseString) -> ParseResult<SetOp> {
+  let (input, _) = ws1e(input)?;
+  let (input, _) = tag("∉")(input)?;
+  let (input, _) = ws1e(input)?;
+  Ok((input, SetOp::NotElementOf))
+}
 
 // Subscript Operations
 // ----------------------------------------------------------------------------
