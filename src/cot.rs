@@ -13,7 +13,7 @@ macro_rules! cot_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = 1.0 / tan(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]).0 = 1.0 / tan(((&(*$arg))[i]).0);
       }}};}
 
 macro_rules! cotf_op {
@@ -25,7 +25,7 @@ macro_rules! cotf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = 1.0 / tanf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]).0 = 1.0 / tanf(((&(*$arg))[i]).0);
       }}};}
 
 impl_math_urop!(MathCot, F32, cotf);

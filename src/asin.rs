@@ -13,7 +13,7 @@ macro_rules! asin_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = asin(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]).0 = asin(((&(*$arg))[i]).0);
       }}};}
 
 macro_rules! asinf_op {
@@ -25,7 +25,7 @@ macro_rules! asinf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = asinf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]).0 = asinf(((&(*$arg))[i]).0);
       }}};}
 
 impl_math_urop!(MathAsin, F32, asinf);

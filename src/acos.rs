@@ -13,7 +13,7 @@ macro_rules! acos_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = acos(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]).0 = acos(((&(*$arg))[i]).0);
       }}};}
 
 macro_rules! acosf_op {
@@ -25,7 +25,7 @@ macro_rules! acosf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = acosf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]).0 = acosf(((&(*$arg))[i]).0);
       }}};}
 
 impl_math_urop!(MathAcos, F32, acosf);

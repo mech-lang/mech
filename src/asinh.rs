@@ -13,7 +13,7 @@ macro_rules! asinh_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = asinh(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]).0 = asinh(((&(*$arg))[i]).0);
       }
     }
   };
@@ -29,7 +29,7 @@ macro_rules! asinhf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = asinhf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]).0 = asinhf(((&(*$arg))[i]).0);
       }
     }
   };

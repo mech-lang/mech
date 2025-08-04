@@ -13,7 +13,7 @@ macro_rules! sinh_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = sinh(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]).0 = sinh(((&(*$arg))[i]).0);
       }}};}
 
 macro_rules! sinhf_op {
@@ -26,7 +26,7 @@ macro_rules! sinhf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = sinhf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]).0 = sinhf(((&(*$arg))[i]).0);
       }
     }
   };

@@ -13,7 +13,7 @@ macro_rules! cosh_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = cosh(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]).0 = cosh(((&(*$arg))[i]).0);
       }
     }
   };
@@ -29,7 +29,7 @@ macro_rules! coshf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = coshf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]).0 = coshf(((&(*$arg))[i]).0);
       }
     }
   };

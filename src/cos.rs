@@ -13,7 +13,7 @@ macro_rules! cos_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = cos(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]).0 = cos(((&(*$arg))[i]).0);
       }}};}
 
 macro_rules! cosf_op {
@@ -25,7 +25,7 @@ macro_rules! cosf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = cosf(((&(*$arg))[i]).0);
+        ((&mut (*$out))[i]).0 = cosf(((&(*$arg))[i]).0);
       }}};}
 
 impl_math_urop!(MathCos, F32, cosf);
