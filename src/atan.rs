@@ -13,7 +13,7 @@ macro_rules! atan_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = atan(((*$arg)[i]).0);
+        ((*$out)[i]).0 = atan(((&(*$arg))[i]).0);
       }}};}
 
 macro_rules! atanf_op {
@@ -25,7 +25,7 @@ macro_rules! atanf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = atanf(((*$arg)[i]).0);
+        ((*$out)[i]).0 = atanf(((&(*$arg))[i]).0);
       }}};}
 
 impl_math_urop!(MathAtan, F32, atanf);

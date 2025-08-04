@@ -13,7 +13,7 @@ macro_rules! sin_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = sin(((*$arg)[i]).0);
+        ((*$out)[i]).0 = sin(((&(*$arg))[i]).0);
       }}};}
 
 macro_rules! sinf_op {
@@ -25,7 +25,7 @@ macro_rules! sinf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = sinf(((*$arg)[i]).0);
+        ((*$out)[i]).0 = sinf(((&(*$arg))[i]).0);
       }}};}
 
 impl_math_urop!(MathSin, F32, sinf);

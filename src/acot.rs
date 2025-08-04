@@ -13,7 +13,7 @@ macro_rules! acot_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = atan(1.0 / ((*$arg)[i]).0);
+        ((*$out)[i]).0 = atan(1.0 / ((&(*$arg))[i]).0);
       }}};}
 
 macro_rules! acotf_op {
@@ -25,7 +25,7 @@ macro_rules! acotf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = atanf(1.0 / ((*$arg)[i]).0);
+        ((*$out)[i]).0 = atanf(1.0 / ((&(*$arg))[i]).0);
       }}};}
 
 impl_math_urop!(MathAcot, F32, acotf);

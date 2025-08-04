@@ -13,7 +13,7 @@ macro_rules! asec_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = acos(1.0 / ((*$arg)[i]).0);
+        ((*$out)[i]).0 = acos(1.0 / ((&(*$arg))[i]).0);
       }}};}
 
 macro_rules! asecf_op {
@@ -25,7 +25,7 @@ macro_rules! asecf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = acosf(1.0 / ((*$arg)[i]).0);
+        ((*$out)[i]).0 = acosf(1.0 / ((&(*$arg))[i]).0);
       }}};}
 
 impl_math_urop!(MathAsec, F32, asecf);

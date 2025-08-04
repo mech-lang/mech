@@ -13,7 +13,7 @@ macro_rules! acosh_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = acosh(((*$arg)[i]).0);
+        ((*$out)[i]).0 = acosh(((&(*$arg))[i]).0);
       }
     }
   };
@@ -29,7 +29,7 @@ macro_rules! acoshf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = acoshf(((*$arg)[i]).0);
+        ((*$out)[i]).0 = acoshf(((&(*$arg))[i]).0);
       }
     }
   };

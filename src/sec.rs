@@ -13,7 +13,7 @@ macro_rules! sec_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = 1.0 / cos(((*$arg)[i]).0);
+        ((*$out)[i]).0 = 1.0 / cos(((&(*$arg))[i]).0);
       }}};}
 
 macro_rules! secf_op {
@@ -25,7 +25,7 @@ macro_rules! secf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = 1.0 / cosf(((*$arg)[i]).0);
+        ((*$out)[i]).0 = 1.0 / cosf(((&(*$arg))[i]).0);
       }}};}
 
 impl_math_urop!(MathSec, F32, secf);

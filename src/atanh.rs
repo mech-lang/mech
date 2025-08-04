@@ -13,7 +13,7 @@ macro_rules! atanh_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = atanh(((*$arg)[i]).0);
+        ((*$out)[i]).0 = atanh(((&(*$arg))[i]).0);
       }
     }
   };
@@ -29,7 +29,7 @@ macro_rules! atanhf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = atanhf(((*$arg)[i]).0);
+        ((*$out)[i]).0 = atanhf(((&(*$arg))[i]).0);
       }
     }
   };

@@ -13,7 +13,7 @@ macro_rules! tanh_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = tanh(((*$arg)[i]).0);
+        ((*$out)[i]).0 = tanh(((&(*$arg))[i]).0);
       }
     }
   };
@@ -29,7 +29,7 @@ macro_rules! tanhf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = tanhf(((*$arg)[i]).0);
+        ((*$out)[i]).0 = tanhf(((&(*$arg))[i]).0);
       }
     }
   };
