@@ -2,7 +2,7 @@
     "name": "mech",
     "displayName": "Mech",
     "description": "Support for the Mech programming language.",
-    "version": "0.2.53",
+    "version": "0.2.55",
     "publisher": "Mech",
     "icon": "images/logo.png",
     "engines": {
