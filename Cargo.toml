@@ -1,6 +1,6 @@
 [package]
 name = "mech-compare"
-version = "0.2.53"
+version = "0.2.54"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Comparison library for the Mech language"
 documentation = "http://docs.mech-lang.org"
@@ -16,7 +16,7 @@ gitlab = { repository = "mech-lang/machines/compare", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [lib]
-crate-type = ["staticlib"]
+crate-type = ["rlib"]
 
 [features]
 default = ["stdlib"]
@@ -70,4 +70,4 @@ MatrixD = []
 [dependencies]
 mech-core = "0.2.53"
 paste = "1.0.15"
-nalgebra = "0.33.2"
+nalgebra = "0.34.0"
