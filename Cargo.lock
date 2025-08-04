@@ -272,9 +272,9 @@ dependencies = [
 
 [[package]]
 name = "mech-core"
-version = "0.2.53"
+version = "0.2.54"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a8183f1dc5c9a059e7774ac5ab54ebb5921decc3eb40777c799ddd7cac0ca8b8"
+checksum = "632d9cc23a7245da4cf58f483e66c9e54fa910c7260f414cab9cff76885fefed"
 dependencies = [
  "base64",
  "bincode",
