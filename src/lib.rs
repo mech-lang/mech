@@ -7,10 +7,10 @@ use std::ops::*;
 use std::fmt::Debug;
 use mech_core::matrix::Matrix;
 
-//pub mod sum_column;
+pub mod sum_column;
 pub mod sum_row;
 
-//pub use self::sum_column::*;
+pub use self::sum_column::*;
 pub use self::sum_row::*;
 
 #[macro_export]  
