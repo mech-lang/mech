@@ -45,6 +45,10 @@ test_interpreter!(interpret_literal_true, "true", Value::Bool(new_ref(true)));
 test_interpreter!(interpret_literal_false, "false", Value::Bool(new_ref(false)));
 test_interpreter!(interpret_literal_atom, "`A", Value::Atom(55450514845822917));
 test_interpreter!(interpret_literal_empty, "_", Value::Empty);
+test_interpreter!(interpret_literal_complex, "5+4i", Value::ComplexNumber(new_ref(ComplexNumber::new(5.0, 4.0))));
+test_interpreter!(interpret_literal_complex2, "5-4i", Value::ComplexNumber(new_ref(ComplexNumber::new(5.0, -4.0))));
+test_interpreter!(interpret_literal_complex3, "5-4j", Value::ComplexNumber(new_ref(ComplexNumber::new(5.0, -4.0))));
+test_interpreter!(interpret_literal_rational, "1/2", Value::RationalNumber(new_ref(RationalNumber::new(1, 2))));
 
 test_interpreter!(interpret_comment, "123 -- comment", Value::F64(new_ref(F64::new(123.0))));
 test_interpreter!(interpret_comment2, "123 // comment", Value::F64(new_ref(F64::new(123.0))));
@@ -55,6 +59,38 @@ test_interpreter!(interpret_formula_math_mul, "2 * 2", Value::F64(new_ref(F64::n
 test_interpreter!(interpret_formula_math_div, "2 / 2", Value::F64(new_ref(F64::new(1.0))));
 test_interpreter!(interpret_formula_math_exp, "2<u8> ^ 2<u8>", Value::U8(new_ref(4)));
 test_interpreter!(interpret_formula_math_exp_f64, "2.0 ^ 2.0", Value::F64(new_ref(F64::new(4.0))));
+test_interpreter!(interpret_formulat_math_add_rational, "1/10 + 2/10 + 3/10", Value::RationalNumber(new_ref(RationalNumber::new(6, 10))));
+test_interpreter!(interpret_formulat_math_sub_rational, "1/10 - 2/10 - 3/10", Value::RationalNumber(new_ref(RationalNumber::new(-4, 10))));
+test_interpreter!(interpret_formula_math_mul_rational, "1/10 * 2/10 * 3/10", Value::RationalNumber(new_ref(RationalNumber::new(3, 500))));
+test_interpreter!(interpret_formula_math_div_rational, "1/10 / 2/10 / 3/10", Value::RationalNumber(new_ref(RationalNumber::new(5, 3))));
+test_interpreter!(interpret_formula_math_add_complex, "1+2i + 3+4i", Value::ComplexNumber(new_ref(ComplexNumber::new(4.0, 6.0))));
+test_interpreter!(interpret_formula_math_sub_complex, "1+2i - 3+4i", Value::ComplexNumber(new_ref(ComplexNumber::new(-2.0, -2.0))));
+test_interpreter!(interpret_formula_math_mul_complex, "1+2i * 3+4i", Value::ComplexNumber(new_ref(ComplexNumber::new(-5.0, 10.0))));
+test_interpreter!(interpret_formula_math_div_complex, "1+2i / 3+4i", Value::ComplexNumber(new_ref(ComplexNumber::new(0.44, 0.08))));
+
+test_interpreter!(interpret_matrix_rational, "[1/2 3/4]", Value::MatrixRationalNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![RationalNumber::new(1, 2), RationalNumber::new(3, 4)])))));
+test_interpreter!(interpret_matrix_complex, "[1+2i 3+4i]", Value::MatrixComplexNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![ComplexNumber::new(1.0, 2.0), ComplexNumber::new(3.0, 4.0)])))));
+test_interpreter!(interpret_matrix_add_rational, "[1/2 3/4] + [1/4 1/2]", Value::MatrixRationalNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![RationalNumber::new(3, 4), RationalNumber::new(5, 4)])))));
+test_interpreter!(interpret_matrix_add_complex, "[1+2i 3+4i] + [5+6i 7+8i]", Value::MatrixComplexNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![ComplexNumber::new(6.0, 8.0), ComplexNumber::new(10.0, 12.0)])))));
+test_interpreter!(interpret_matrix_sub_rational, "[1/2 3/4] - [1/4 1/2]", Value::MatrixRationalNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![RationalNumber::new(1, 4), RationalNumber::new(1, 4)])))));
+test_interpreter!(interpret_matrix_sub_complex, "[1+2i 3+4i] - [5+6i 7+8i]", Value::MatrixComplexNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![ComplexNumber::new(-4.0, -4.0), ComplexNumber::new(-4.0, -4.0)])))));
+test_interpreter!(interpret_matrix_mul_rational, "[1/2 3/4] * [1/4 1/2]", Value::MatrixRationalNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![RationalNumber::new(1, 8), RationalNumber::new(3, 8)])))));
+test_interpreter!(interpret_matrix_mul_complex, "[1+2i 3+4i] * [5+6i 7+8i]", Value::MatrixComplexNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![ComplexNumber::new(-7.0, 16.0), ComplexNumber::new(-11.0, 52.0)])))));
+test_interpreter!(interpret_matrix_div_rational, "[1/2 3/4] / [1/4 1/2]", Value::MatrixRationalNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![RationalNumber::new(2, 1), RationalNumber::new(3, 2)])))));
+test_interpreter!(interpret_matrix_div_complex, "[1+2i 3+4i] / [5+6i 7+8i]", Value::MatrixComplexNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![ComplexNumber::new( 0.2786885245901639,  0.06557377049180328 ), ComplexNumber::new(0.4690265486725664, 0.035398230088495575)])))));
+
+test_interpreter!(interpret_matrix_eq_rational, "[1/2 3/4] == [1/2 3/4]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, true])))));
+test_interpreter!(interpret_matrix_eq_complex, "[1+2i 3+4i] == [1+2i 3+4i]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, true])))));
+test_interpreter!(interpret_matrix_neq_rational, "[1/2 3/4] != [1/2 3/5]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![false, true])))));
+test_interpreter!(interpret_matrix_neq_complex, "[1+2i 3+4i] != [1+2i 3+5i]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![false, true])))));
+test_interpreter!(interpret_matrix_gt_rational, "[1/2 3/4] > [1/4 1/2]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, true])))));
+test_interpreter!(interpret_matrix_gt_complex, "[1+2i 3+4i] > [1+1i 3+3i]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, true])))));
+test_interpreter!(interpret_matrix_gte_rational, "[1/2 3/4] >= [1/2 3/4]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, true])))));
+test_interpreter!(interpret_matrix_gte_complex, "[1+2i 3+4i] >= [1+2i 3+4i]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, true])))));
+test_interpreter!(interpret_matrix_lt_rational, "[1/2 3/4] < [3/4 1/2]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, false])))));
+test_interpreter!(interpret_matrix_lt_complex, "[1+2i 3+4i] < [2+3i 4+5i]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, true])))));
+test_interpreter!(interpret_matrix_lte_rational, "[1/2 3/4] <= [1/2 3/4]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, true])))));
+test_interpreter!(interpret_matrix_lte_complex, "[1+2i 3+4i] <= [1+2i 3+4i]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![true, true])))));
 
 test_interpreter!(interpret_kind_annotation, "1<u64>", Value::U64(new_ref(1)));
 test_interpreter!(interpret_kind_annotation_math, "1<u64> + 1<u64>", Value::U64(new_ref(2)));
@@ -144,6 +180,8 @@ test_interpreter!(interpret_kind_matrix_row3, "[1<u8> 2<u8> 3<u8>]", Value::Matr
 test_interpreter!(interpret_kind_lhs_define, "x<u64> := 1", Value::U64(new_ref(1)));
 test_interpreter!(interpret_kind_convert_twice, "x<u64> := 1; y<i8> := x", Value::I8(new_ref(1)));
 test_interpreter!(interpret_kind_convert_float, "x<f32> := 123;", Value::F32(new_ref(F32::new(123.0))));
+test_interpreter!(interpret_kind_convert_rational, "x<r64> := 1 / 2; y<f64> := x", Value::F64(new_ref(F64::new(0.5))));
+test_interpreter!(interpret_kind_convert_rational2, "x<f64> := 1/2; y<r64> := x", Value::RationalNumber(new_ref(RationalNumber::new(1, 2))));
 
 test_interpreter!(interpret_kind_define, "<foo> := <f64>; x<foo> := 123", Value::F64(new_ref(F64::new(123.0))));
 
@@ -163,9 +201,9 @@ test_interpreter!(interpret_formula_comparison_lte, "10 <= 10", Value::Bool(new_
 test_interpreter!(interpret_formula_comparison_gt_vec, "[1 8; 10 5] > [7 2; 4 11]", Value::MatrixBool(Matrix::Matrix2(new_ref(Matrix2::from_vec(vec![false,true,true,false])))));
 test_interpreter!(interpret_formula_comparison_lt_vec, "[1 8 10 5] < [7 2 4 11]", Value::MatrixBool(Matrix::RowVector4(new_ref(RowVector4::from_vec(vec![true,false,false,true])))));
 test_interpreter!(interpret_formula_unicode, "😃:=1;🤦🏼‍♂️:=2;y̆és:=🤦🏼‍♂️ + 😃", Value::F64(new_ref(F64::new(3.0))));
-test_interpreter!(interpret_formula_logic_and, "true & true", Value::Bool(new_ref(true)));
-test_interpreter!(interpret_formula_logic_and_vec, "[true false] & [false false]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![false,false])))));
-test_interpreter!(interpret_formula_logic_and2, "true & false", Value::Bool(new_ref(false)));
+test_interpreter!(interpret_formula_logic_and, "true && true", Value::Bool(new_ref(true)));
+test_interpreter!(interpret_formula_logic_and_vec, "[true false] && [false false]", Value::MatrixBool(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![false,false])))));
+test_interpreter!(interpret_formula_logic_and2, "true && false", Value::Bool(new_ref(false)));
 test_interpreter!(interpret_formula_logic_or_vec, "[true false true] || [false false true]", Value::MatrixBool(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![true,false,true])))));
 test_interpreter!(interpret_formula_logic_or, "true || false", Value::Bool(new_ref(true)));
 test_interpreter!(interpret_formula_logic_or2, "false || false", Value::Bool(new_ref(false)));
@@ -176,8 +214,8 @@ test_interpreter!(interpret_formula_logic_not_vec1, "![false]", Value::MatrixBoo
 
 test_interpreter!(interpret_statement_variable_define, "x := 123", Value::F64(new_ref(F64::new(123.0))));
 
-test_interpreter!(interpret_reference_bool, "x := false; y := true; x & y", Value::Bool(new_ref(false)));
-test_interpreter!(interpret_reference_bool2, "x := false; x & true", Value::Bool(new_ref(false)));
+test_interpreter!(interpret_reference_bool, "x := false; y := true; x && y", Value::Bool(new_ref(false)));
+test_interpreter!(interpret_reference_bool2, "x := false; x && true", Value::Bool(new_ref(false)));
 
 test_interpreter!(interpret_variable_recall, "a := 1; b := 2; a", Value::MutableReference(new_ref(Value::F64(new_ref(F64::new(1.0))))));
 
@@ -232,8 +270,6 @@ test_interpreter!(interpret_table_string_access, r#"x:=|x<string> y<string> | "a
 test_interpreter!(interpret_matrix_define_ref, r#"x:=123;y<[f64]:1,4>:=x;"#, Value::MatrixF64(Matrix::RowVector4(new_ref(RowVector4::from_element(F64::new(123.0))))));
 test_interpreter!(interpret_matrix_define_convert, r#"y<[f64]:1,3> := 123<u8>;"#, Value::MatrixF64(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![F64::new(123.0), F64::new(123.0), F64::new(123.0)])))));
 test_interpreter!(interpret_matrix_define_convert_matrix, r#"x := [1 2 3];y<[u64]> := x;z<[u8]> := y;"#, Value::MatrixU8(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![1u8, 2, 3])))));
-
-
 
 // 2x2 Nominal Operations 
 test_interpreter!(interpret_matrix_add_2x2, "[1 2; 3 4] + [5 6; 7 8]", new_ref(Matrix2::from_vec(vec![F64::new(6.0), F64::new(10.0), F64::new(8.0), F64::new(12.0)])).to_value());
@@ -303,6 +339,7 @@ test_interpreter!(interpret_matrix_sub_3x2, "[1 2; 3 4; 5 6] - [7 8; 9 10; 11 12
 
 
 test_interpreter!(interpret_tuple, "(1,true)", Value::Tuple(MechTuple::from_vec(vec![Value::F64(new_ref(F64::new(1.0))), Value::Bool(new_ref(true))])));
+test_interpreter!(interpret_tuple_one, "(1)", Value::Tuple(MechTuple::from_vec(vec![Value::F64(new_ref(F64::new(1.0)))])));
 test_interpreter!(interpret_tuple_nested, r#"(1,("Hello",false))"#, Value::Tuple(MechTuple::from_vec(vec![Value::F64(new_ref(F64::new(1.0))), Value::Tuple(MechTuple::from_vec(vec![Value::String(new_ref("Hello".to_string())), Value::Bool(new_ref(false))]))])));
 test_interpreter!(interpret_tuple_access, r#"q := (10, "b", true); r := (q.3, q.2, q.1)"#, Value::Tuple(MechTuple::from_vec(vec![Value::Bool(new_ref(true)), Value::String(new_ref("b".to_string())), Value::F64(new_ref(F64::new(10.0)))])));
 test_interpreter!(interpret_tuple_destructure, r#"a := (10, 11, 12); (x,y,z) := a; x + y + z"#, Value::F64(new_ref(F64::new(33.0))));
@@ -351,10 +388,13 @@ test_interpreter!(interpret_dot_index_table5, "x := | x<i64> y<i8>| 1 2| 3 4| 5 
 test_interpreter!(interpret_dot_index_table6, "x := | x<u32> y<f32> z<i8>|1 2 3|4 5 6|; x.y", Value::MatrixF32(Matrix::Vector2(new_ref(Vector2::from_vec(vec![F32::new(2.0),F32::new(5.0)])))));
 
 test_interpreter!(interpret_set_empty,"{_}", Value::Set(MechSet::from_vec(vec![])));
+test_interpreter!(interpret_set_empty2,"{}", Value::Set(MechSet::from_vec(vec![])));
 test_interpreter!(interpret_set, "{1,2,3}", Value::Set(MechSet::from_vec(vec![Value::F64(new_ref(F64::new(1.0))), Value::F64(new_ref(F64::new(2.0))), Value::F64(new_ref(F64::new(3.0)))])));
 test_interpreter!(interpret_record,r#"{a: 1, b: "Hello"}"#, Value::Record(new_ref(MechRecord::from_vec(vec![((55170961230981453,"a".to_string()),Value::F64(new_ref(F64::new(1.0)))),((44311847522083591,"b".to_string()),Value::String(new_ref("Hello".to_string())))]))));
 test_interpreter!(interpret_record_field_access,r#"a := {x: 1,  y: 2}; a.y"#, Value::F64(new_ref(F64::new(2.0))));
 test_interpreter!(interpret_map, r#"{"a": 1, "b": 2}"#, Value::Map(MechMap::from_vec(vec![(Value::String(new_ref("a".to_string())),Value::F64(new_ref(F64::new(1.0)))), (Value::String(new_ref("b".to_string())),Value::F64(new_ref(F64::new(2.0))))])));
+test_interpreter!(interpret_set_rational, r#"{1/2, 3/4}"#, Value::Set(MechSet::from_vec(vec![Value::RationalNumber(new_ref(RationalNumber::new(1, 2))), Value::RationalNumber(new_ref(RationalNumber::new(3, 4)))])));
+
 /*test_interpreter!(interpret_function_define,r#"foo(x<f64>) = z<f64> :=
 z := 10 + x. 
 foo(10)"#, Value::F64(new_ref(F64::new(20.0))));
@@ -593,3 +633,10 @@ test_interpreter!(interpret_matrix_reshape,r#"x:=[1 3; 2 4]; y<[u64]:4,1> := x"#
 
 test_interpreter!(interpret_matrix_reshape2,r#"x:=[1 2 3 4]; y<[string]:2,2> := x"#, Value::MatrixString(Matrix::Matrix2(new_ref(Matrix2::from_vec(vec![String::from("1"), String::from("2"), String::from("3"), String::from("4")])))));
 test_interpreter!(interpret_matrix_convert_str,r#"x:=1..=4; out<[string]>:=x"#, Value::MatrixString(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![String::from("1"), String::from("2"), String::from("3"), String::from("4")])))));
+
+test_interpreter!(interpret_matrix_build_rational,r#"x<[r64]:1,2> := 1/2"#, Value::MatrixRationalNumber(Matrix::RowVector2(new_ref(RowVector2::from_vec(vec![RationalNumber::new(1, 2), RationalNumber::new(1, 2)])))));
+
+test_interpreter!(interpret_convert_rational_to_string,r#"x<string>:=1/2"#, Value::String(new_ref(String::from("1/2"))));
+test_interpreter!(interpret_convert_f64_to_string2,r#"x<string>:=123"#, Value::String(new_ref(String::from("123"))));
+
+test_interpreter!(interpret_convert_f64_to_rational_to_string,r#"x<string> := 0.5<r64>"#,Value::String(new_ref(String::from("1/2"))));

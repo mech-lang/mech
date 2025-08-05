@@ -4,22 +4,22 @@ use crate::stdlib::*;
 // Mul ------------------------------------------------------------------------
 
 macro_rules! mul_op {
-    ($lhs:expr, $rhs:expr, $out:expr) => {
-      unsafe { *$out = *$lhs * *$rhs; }};}
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe { *$out = *$lhs * *$rhs; }};}
   
 macro_rules! mul_vec_op {
-($lhs:expr, $rhs:expr, $out:expr) => {
-  unsafe {
-    let mut out_deref = &mut (*$out);
-    let lhs_deref = &(*$lhs);
-    let rhs_deref = &(*$rhs);
-    for (o,(l,r)) in out_deref.iter_mut().zip(lhs_deref.iter().zip(rhs_deref.iter())) {
-      *o = *l * *r;
-    }
-  }};}
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      let mut out_deref = &mut (*$out);
+      let lhs_deref = &(*$lhs);
+      let rhs_deref = &(*$rhs);
+      for (o,(l,r)) in out_deref.iter_mut().zip(lhs_deref.iter().zip(rhs_deref.iter())) {
+        *o = *l * *r;
+      }
+    }};}
 
 macro_rules! mul_scalar_lhs_op {
-($lhs:expr, $rhs:expr, $out:expr) => {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { 
       let mut out_deref = &mut (*$out);
       let lhs_deref = &(*$lhs);
@@ -30,15 +30,15 @@ macro_rules! mul_scalar_lhs_op {
     }};}
 
 macro_rules! mul_scalar_rhs_op {
-($lhs:expr, $rhs:expr, $out:expr) => {
-  unsafe {
-    let mut out_deref = &mut (*$out);
-    let lhs_deref = (*$lhs);
-    let rhs_deref = &(*$rhs);
-    for (o,r) in out_deref.iter_mut().zip(rhs_deref.iter()) {
-      *o = lhs_deref * *r;
-    }
-  }};}
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      let mut out_deref = &mut (*$out);
+      let lhs_deref = (*$lhs);
+      let rhs_deref = &(*$rhs);
+      for (o,r) in out_deref.iter_mut().zip(rhs_deref.iter()) {
+        *o = lhs_deref * *r;
+      }
+    }};}
 
 macro_rules! mul_mat_vec_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
@@ -98,7 +98,52 @@ macro_rules! mul_row_mat_op {
 
 impl_math_fxns!(Mul);
 
+#[derive(Debug)]
+pub struct MulRational {
+  lhs: Ref<RationalNumber>,
+  rhs: Ref<RationalNumber>,
+  out: Ref<RationalNumber>,
+}
+
+impl MechFunction for MulRational {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {
+      (*out_ptr).0 = (*lhs_ptr).0 * (*rhs_ptr).0;
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[derive(Debug)]
+pub struct MulComplex {
+  pub lhs: Ref<ComplexNumber>,
+  pub rhs: Ref<ComplexNumber>,
+  pub out: Ref<ComplexNumber>,
+}
+
+impl MechFunction for MulComplex {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {
+      (*out_ptr).0 = (*lhs_ptr).0 * (*rhs_ptr).0;
+    }
+  }
+  fn out(&self) -> Value { self.out.clone().to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
 fn impl_mul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  match (&lhs_value, &rhs_value) {
+    (Value::RationalNumber(lhs), Value::RationalNumber(rhs)) => {return Ok(Box::new(MulRational {lhs: lhs.clone(),rhs: rhs.clone(),out: new_ref(RationalNumber::default()),}));},
+    (Value::ComplexNumber(lhs), Value::ComplexNumber(rhs)) => {return Ok(Box::new(MulComplex {lhs: lhs.clone(),rhs: rhs.clone(),out: new_ref(ComplexNumber::default()),}));},
+    _ => (),
+  }
   impl_binop_match_arms!(
     Mul,
     (lhs_value, rhs_value),
@@ -114,6 +159,8 @@ fn impl_mul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
     U128, U128 => MatrixU128, u128, u128::zero(), "U128";
     F32,  F32  => MatrixF32,  F32,  F32::zero(), "F32";
     F64,  F64  => MatrixF64,  F64,  F64::zero(), "F64";
+    RationalNumber,  RationalNumber  => MatrixRationalNumber,  RationalNumber,  RationalNumber::zero(), "RationalNumber";
+    ComplexNumber,  ComplexNumber  => MatrixComplexNumber,  ComplexNumber,  ComplexNumber::zero(), "ComplexNumber";  
   )
 }
 

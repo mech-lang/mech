@@ -69,7 +69,7 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
     let name_str = b.name.to_string();
     let val = expression(&b.value, p)?;
     let knd: ValueKind = match &b.kind {
-      Some(k) => kind_annotation(&k.kind, p)?.to_value_kind(p.functions())?,
+      Some(k) => kind_annotation(&k.kind, p)?.to_value_kind(&p.functions())?,
       None => val.kind(),
     };
     // If the kinds are different, do a conversion.
@@ -179,6 +179,8 @@ pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> {
       ValueKind::F32  => handle_value_kind!(knd, val, id, data_map, as_f32),
       ValueKind::F64  => handle_value_kind!(knd, val, id, data_map, as_f64),
       ValueKind::String  => handle_value_kind!(knd, val, id, data_map, as_string),
+      ValueKind::ComplexNumber  => handle_value_kind!(knd, val, id, data_map, as_complexnumber),
+      ValueKind::RationalNumber  => handle_value_kind!(knd, val, id, data_map, as_rationalnumber),
       ValueKind::Bool => {
         let vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_bool().unwrap().to_value()).collect::<Vec<Value>>();
         let id = id.as_u64().unwrap().borrow().clone();
@@ -200,7 +202,7 @@ pub fn table_header(fields: &Vec<Field>, p: &Interpreter) -> MResult<Vec<(Value,
       Some(k) => kind_annotation(&k.kind, p)?,
       None => Kind::Any,
     };
-    headings.push((Value::Id(id),kind.to_value_kind(p.functions())?,f.name.clone()));
+    headings.push((Value::Id(id),kind.to_value_kind(&p.functions())?,f.name.clone()));
   }
   Ok(headings)
 }

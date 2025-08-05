@@ -73,6 +73,26 @@ macro_rules! add_scalar_rhs_op {
 
 impl_math_fxns!(Add);
 
+#[derive(Debug)]
+pub struct AddComplex {
+  pub lhs: Ref<ComplexNumber>,
+  pub rhs: Ref<ComplexNumber>,
+  pub out: Ref<ComplexNumber>,
+}
+
+impl MechFunction for AddComplex {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {
+      (*out_ptr).0 = (*lhs_ptr).0 + (*rhs_ptr).0;
+    }
+  }
+  fn out(&self) -> Value { self.out.clone().to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
 fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_binop_match_arms!(
     Add,
@@ -89,6 +109,8 @@ fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
     U128, U128 => MatrixU128, u128, u128::zero(), "U128";
     F32,  F32  => MatrixF32,  F32,  F32::zero(), "F32";
     F64,  F64  => MatrixF64,  F64,  F64::zero(), "F64";
+    RationalNumber,  RationalNumber  => MatrixRationalNumber,  RationalNumber,  RationalNumber::zero(), "RationalNumber";
+    ComplexNumber,  ComplexNumber  => MatrixComplexNumber,  ComplexNumber,  ComplexNumber::zero(), "ComplexNumber";
   )
 }
 

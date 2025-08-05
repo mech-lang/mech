@@ -1,5 +1,4 @@
 #![feature(get_mut_unchecked)]
-#![feature(concat_idents)]
 #![allow(warnings)]
 #![feature(iter_intersperse)]
 #![feature(extract_if)]
@@ -34,6 +33,7 @@ use std::fmt;
 use num_traits::*;
 use std::ops::*;
 use std::mem;
+use num_rational::Rational64;
 
 pub mod value;
 pub mod matrix;
@@ -504,6 +504,7 @@ macro_rules! impl_binop_match_arms {
         $(
           $(
             // Scalar Scalar
+            #[cfg(all(feature = $value_string))]
             (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => Ok(Box::new([<$lib SS>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($default) })),
             // Scalar Matrix
             #[cfg(all(feature = $value_string, feature = "Matrix1"))]

@@ -48,6 +48,8 @@ impl Interpreter {
     fxns.kinds.insert(hash_str("i128"),ValueKind::I128);
     fxns.kinds.insert(hash_str("f32"),ValueKind::F32);
     fxns.kinds.insert(hash_str("f64"),ValueKind::F64);
+    fxns.kinds.insert(hash_str("c64"),ValueKind::ComplexNumber);
+    fxns.kinds.insert(hash_str("r64"),ValueKind::RationalNumber);
     fxns.kinds.insert(hash_str("string"),ValueKind::String);
     fxns.kinds.insert(hash_str("bool"),ValueKind::Bool);
   }

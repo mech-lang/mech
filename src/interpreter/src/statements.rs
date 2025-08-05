@@ -136,7 +136,7 @@ pub fn enum_define(enm_def: &EnumDefine, p: &Interpreter) -> MResult<Value> {
 pub fn kind_define(knd_def: &KindDefine, p: &Interpreter) -> MResult<Value> {
   let id = knd_def.name.hash();
   let kind = kind_annotation(&knd_def.kind.kind, p)?;
-  let value_kind = kind.to_value_kind(p.functions())?;
+  let value_kind = kind.to_value_kind(&p.functions())?;
   let functions = p.functions();
   let mut fxns_brrw = functions.borrow_mut();
   fxns_brrw.kinds.insert(id, value_kind.clone());
@@ -153,7 +153,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
   let mut result = expression(&var_def.expression, p)?;
   if let Some(knd_anntn) =  &var_def.var.kind {
     let knd = kind_annotation(&knd_anntn.kind,p)?;
-    let target_knd = knd.to_value_kind(p.functions())?;
+    let target_knd = knd.to_value_kind(&p.functions())?;
     // Do kind checking
     match (&result, &target_knd) {
       // Atom is a variant of an enum

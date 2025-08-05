@@ -6,10 +6,10 @@ use std::fmt::Debug;
 use std::ops::{Index, IndexMut};
 use std::marker::PhantomData;
 
+#[derive(Debug)]
 pub struct ConvertMatToMat2<TFrom, TTo, FromMat, ToMat> {
     pub arg: Ref<FromMat>,
     pub out: Ref<ToMat>,
-    pub elements: usize,
     _marker: PhantomData<(TFrom, TTo)>, 
 }
 
@@ -18,22 +18,24 @@ where
     Ref<ToMat>: ToValue,
     TFrom: LosslessInto<TTo> + Debug + Scalar + Clone,
     TTo: Debug + Scalar,
-    FromMat: Debug + Index<usize, Output = TFrom>,
-    ToMat: Debug + IndexMut<usize, Output = TTo>,
+    for<'a> &'a FromMat: IntoIterator<Item = &'a TFrom>,
+    for<'a> &'a mut ToMat: IntoIterator<Item = &'a mut TTo>,
+    FromMat: Debug,
+    ToMat: Debug,
 {
-  fn solve(&self) {
-    let arg_ptr = self.arg.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {
-      let out_ref: &mut ToMat = &mut *out_ptr;
-      let arg_ref: &FromMat = &*arg_ptr;
-      for i in 0..self.elements {
-        out_ref[i] = arg_ref[i].clone().lossless_into();
+    fn solve(&self) {
+      let arg_ptr = self.arg.as_ptr();
+      let out_ptr = self.out.as_ptr();
+      unsafe {
+        let arg_ref: &FromMat = &*arg_ptr;
+        let out_ref: &mut ToMat = &mut *out_ptr;
+        for (dst, src) in (&mut *out_ref).into_iter().zip((&*arg_ref).into_iter()) {
+          *dst = src.clone().lossless_into();
+        }
       }
     }
-  }
-  fn out(&self) -> Value { self.out.to_value() }
-  fn to_string(&self) -> String { format!("ConvertMatToMat2 {{\narg: {:#?}\nout: {:#?}\nelements: {:#?} }}", self.arg, self.out, self.elements) }
+    fn out(&self) -> Value {self.out.to_value()}
+    fn to_string(&self) -> String {format!("{:#?}",self)}
 }
 
 fn create_convert_mat_to_mat<TFrom, TTo>(
@@ -62,35 +64,35 @@ where
   let zero = TTo::default();
   match v {
     #[cfg(feature = "Matrix1")]
-    Matrix::Matrix1(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix1::from_element(zero)), elements: 1, _marker: PhantomData })),
+    Matrix::Matrix1(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix1::from_element(zero)), _marker: PhantomData })),
     #[cfg(feature = "Matrix2")]
-    Matrix::Matrix2(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix2::from_element(zero)), elements: 4, _marker: PhantomData })),
+    Matrix::Matrix2(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix2::from_element(zero)), _marker: PhantomData })),
     #[cfg(feature = "Matrix3")]
-    Matrix::Matrix3(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix3::from_element(zero)), elements: 9, _marker: PhantomData })),
+    Matrix::Matrix3(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix3::from_element(zero)), _marker: PhantomData })),
     #[cfg(feature = "Matrix4")]
-    Matrix::Matrix4(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix4::from_element(zero)), elements: 16, _marker: PhantomData })),
+    Matrix::Matrix4(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix4::from_element(zero)), _marker: PhantomData })),
     #[cfg(feature = "Matrix3x2")]
-    Matrix::Matrix3x2(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix3x2::from_element(zero)), elements: 6, _marker: PhantomData })),
+    Matrix::Matrix3x2(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix3x2::from_element(zero)), _marker: PhantomData })),
     #[cfg(feature = "Matrix2x3")]
-    Matrix::Matrix2x3(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix2x3::from_element(zero)), elements: 6, _marker: PhantomData })),
+    Matrix::Matrix2x3(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix2x3::from_element(zero)), _marker: PhantomData })),
     #[cfg(feature = "RowVector2")]
-    Matrix::RowVector2(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowVector2::from_element(zero)), elements: 2, _marker: PhantomData })),
+    Matrix::RowVector2(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowVector2::from_element(zero)), _marker: PhantomData })),
     #[cfg(feature = "RowVector3")]
-    Matrix::RowVector3(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowVector3::from_element(zero)), elements: 3, _marker: PhantomData })),
+    Matrix::RowVector3(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowVector3::from_element(zero)), _marker: PhantomData })),
     #[cfg(feature = "RowVector4")]
-    Matrix::RowVector4(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowVector4::from_element(zero)), elements: 4, _marker: PhantomData })),
+    Matrix::RowVector4(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowVector4::from_element(zero)), _marker: PhantomData })),
     #[cfg(feature = "Vector2")]
-    Matrix::Vector2(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Vector2::from_element(zero)), elements: 2, _marker: PhantomData })),
+    Matrix::Vector2(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Vector2::from_element(zero)), _marker: PhantomData })),
     #[cfg(feature = "Vector3")]
-    Matrix::Vector3(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Vector3::from_element(zero)), elements: 3, _marker: PhantomData })),
+    Matrix::Vector3(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Vector3::from_element(zero)), _marker: PhantomData })),
     #[cfg(feature = "Vector4")]
-    Matrix::Vector4(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Vector4::from_element(zero)), elements: 4, _marker: PhantomData })),
+    Matrix::Vector4(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Vector4::from_element(zero)), _marker: PhantomData })),
     #[cfg(feature = "VectorD")]
-    Matrix::DVector(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(DVector::from_element(shape[0], zero)), elements: shape[0], _marker: PhantomData })),
+    Matrix::DVector(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(DVector::from_element(shape[0], zero)), _marker: PhantomData })),
     #[cfg(feature = "RowVectorD")]
-    Matrix::RowDVector(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowDVector::from_element(shape[1], zero)), elements: shape[1], _marker: PhantomData })),
+    Matrix::RowDVector(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowDVector::from_element(shape[1], zero)), _marker: PhantomData })),
     #[cfg(feature = "MatrixD")]
-    Matrix::DMatrix(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(DMatrix::from_element(shape[0], shape[1], zero)), elements: shape[0] * shape[1], _marker: PhantomData })),
+    Matrix::DMatrix(v) => Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(DMatrix::from_element(shape[0], shape[1], zero)), _marker: PhantomData })),
     _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Unknown matrix type".to_string(), id: line!(), kind: MechErrorKind::None}),
   }
 }
@@ -122,86 +124,86 @@ where
   let dims = v.shape();
   match (v,shape[0],shape[1]) {
     #[cfg(feature = "Matrix2")]
-    (Matrix::Matrix2(v), 1, 4) => {return Ok(Box::new(ConvertMatToMat2 {arg: v,out: new_ref(RowVector4::from_element(zero)),elements: 4,_marker: PhantomData}));},
+    (Matrix::Matrix2(v), 1, 4) => {return Ok(Box::new(ConvertMatToMat2 {arg: v,out: new_ref(RowVector4::from_element(zero)), _marker: PhantomData}));},
     #[cfg(feature = "Matrix2")]
-    (Matrix::Matrix2(v), 4, 1) => {return Ok(Box::new(ConvertMatToMat2 {arg: v,out: new_ref(Vector4::from_element(zero)),elements: 4,_marker: PhantomData}));},
+    (Matrix::Matrix2(v), 4, 1) => {return Ok(Box::new(ConvertMatToMat2 {arg: v,out: new_ref(Vector4::from_element(zero)), _marker: PhantomData}));},
 
     #[cfg(feature = "Matrix3")]
-    (Matrix::Matrix3(v), 1, 9) => {return Ok(Box::new(ConvertMatToMat2 {arg: v,out: new_ref(RowDVector::from_element(9, zero)), elements: 9, _marker: PhantomData}));},
+    (Matrix::Matrix3(v), 1, 9) => {return Ok(Box::new(ConvertMatToMat2 {arg: v,out: new_ref(RowDVector::from_element(9, zero)), _marker: PhantomData}));},
     #[cfg(feature = "Matrix3")]
-    (Matrix::Matrix3(v), 9, 1) => {return Ok(Box::new(ConvertMatToMat2 {arg: v,out: new_ref(DVector::from_element(9, zero)), elements: 9, _marker: PhantomData}));},
+    (Matrix::Matrix3(v), 9, 1) => {return Ok(Box::new(ConvertMatToMat2 {arg: v,out: new_ref(DVector::from_element(9, zero)), _marker: PhantomData}));},
 
     #[cfg(feature = "Matrix4")]
-    (Matrix::Matrix4(v), 1, 16) => {return Ok(Box::new(ConvertMatToMat2 {arg: v,out: new_ref(RowDVector::from_element(16, zero)), elements: 16, _marker: PhantomData}));},
+    (Matrix::Matrix4(v), 1, 16) => {return Ok(Box::new(ConvertMatToMat2 {arg: v,out: new_ref(RowDVector::from_element(16, zero)), _marker: PhantomData}));},
     #[cfg(feature = "Matrix4")]
-    (Matrix::Matrix4(v), 16, 1) => {return Ok(Box::new(ConvertMatToMat2 {arg: v,out: new_ref(DVector::from_element(16, zero)), elements: 16, _marker: PhantomData}));},
+    (Matrix::Matrix4(v), 16, 1) => {return Ok(Box::new(ConvertMatToMat2 {arg: v,out: new_ref(DVector::from_element(16, zero)), _marker: PhantomData}));},
     
     #[cfg(feature = "Matrix3x2")]
-    (Matrix::Matrix3x2(v), 1, 6) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowDVector::from_element(6, zero)), elements: 6, _marker: PhantomData })); },
+    (Matrix::Matrix3x2(v), 1, 6) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowDVector::from_element(6, zero)), _marker: PhantomData })); },
     #[cfg(feature = "Matrix3x2")]
-    (Matrix::Matrix3x2(v), 6, 1) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(DVector::from_element(6, zero)), elements: 6, _marker: PhantomData })); },
+    (Matrix::Matrix3x2(v), 6, 1) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(DVector::from_element(6, zero)), _marker: PhantomData })); },
     #[cfg(feature = "Matrix3x2")]
-    (Matrix::Matrix3x2(v), 2, 3) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix2x3::from_element(zero)), elements: 6, _marker: PhantomData })); },
+    (Matrix::Matrix3x2(v), 2, 3) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix2x3::from_element(zero)), _marker: PhantomData })); },
 
     #[cfg(feature = "Matrix2x3")]
-    (Matrix::Matrix2x3(v), 1, 6) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowDVector::from_element(6, zero)), elements: 6, _marker: PhantomData })); },
+    (Matrix::Matrix2x3(v), 1, 6) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowDVector::from_element(6, zero)), _marker: PhantomData })); },
     #[cfg(feature = "Matrix2x3")]
-    (Matrix::Matrix2x3(v), 6, 1) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(DVector::from_element(6, zero)), elements: 6, _marker: PhantomData })); },
+    (Matrix::Matrix2x3(v), 6, 1) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(DVector::from_element(6, zero)), _marker: PhantomData })); },
     #[cfg(feature = "Matrix2x3")]
-    (Matrix::Matrix2x3(v), 3, 2) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix3x2::from_element(zero)), elements: 6, _marker: PhantomData })); },
+    (Matrix::Matrix2x3(v), 3, 2) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix3x2::from_element(zero)), _marker: PhantomData })); },
 
     #[cfg(feature = "Vector2")]
-    (Matrix::Vector2(v), 1, 2) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowVector2::from_element(zero)), elements: 2, _marker: PhantomData })); },
+    (Matrix::Vector2(v), 1, 2) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowVector2::from_element(zero)), _marker: PhantomData })); },
     #[cfg(feature = "Vector3")]
-    (Matrix::Vector3(v), 1, 3) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowVector3::from_element(zero)), elements: 3, _marker: PhantomData })); },
+    (Matrix::Vector3(v), 1, 3) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowVector3::from_element(zero)), _marker: PhantomData })); },
     
     #[cfg(feature = "Vector4")]
-    (Matrix::Vector4(v), 1, 4) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowVector4::from_element(zero)), elements: 4, _marker: PhantomData })); },
+    (Matrix::Vector4(v), 1, 4) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowVector4::from_element(zero)), _marker: PhantomData })); },
     #[cfg(feature = "Vector4")]
-    (Matrix::Vector4(v), 2, 2) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix2::from_element(zero)), elements: 4, _marker: PhantomData })); },
+    (Matrix::Vector4(v), 2, 2) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix2::from_element(zero)), _marker: PhantomData })); },
 
     #[cfg(feature = "RowVector2")]
-    (Matrix::RowVector2(v), 2, 1) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Vector2::from_element(zero)), elements: 2, _marker: PhantomData })); },
+    (Matrix::RowVector2(v), 2, 1) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Vector2::from_element(zero)), _marker: PhantomData })); },
     #[cfg(feature = "RowVector3")]
-    (Matrix::RowVector3(v), 3, 1) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Vector3::from_element(zero)), elements: 3, _marker: PhantomData })); },
+    (Matrix::RowVector3(v), 3, 1) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Vector3::from_element(zero)), _marker: PhantomData })); },
     
     #[cfg(feature = "RowVector4")]
-    (Matrix::RowVector4(v), 4, 1) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Vector4::from_element(zero)), elements: 4, _marker: PhantomData })); },
+    (Matrix::RowVector4(v), 4, 1) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Vector4::from_element(zero)), _marker: PhantomData })); },
     #[cfg(feature = "RowVector4")]
-    (Matrix::RowVector4(v), 2, 2) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix2::from_element(zero)), elements: 4, _marker: PhantomData })); },
+    (Matrix::RowVector4(v), 2, 2) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix2::from_element(zero)), _marker: PhantomData })); },
     
     #[cfg(feature = "RowVectorD")]
-    (Matrix::RowDVector(v), 3, 3) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix3::from_element(zero)), elements: 9, _marker: PhantomData })); },
+    (Matrix::RowDVector(v), 3, 3) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix3::from_element(zero)), _marker: PhantomData })); },
     #[cfg(feature = "RowVectorD")]
-    (Matrix::RowDVector(v), 4, 4) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix4::from_element(zero)), elements: 16, _marker: PhantomData })); },
+    (Matrix::RowDVector(v), 4, 4) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix4::from_element(zero)), _marker: PhantomData })); },
     #[cfg(feature = "RowVectorD")]
-    (Matrix::RowDVector(v), 2, 3) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix2x3::from_element(zero)), elements: 6, _marker: PhantomData })); },
+    (Matrix::RowDVector(v), 2, 3) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix2x3::from_element(zero)), _marker: PhantomData })); },
     #[cfg(feature = "RowVectorD")]
-    (Matrix::RowDVector(v), 3, 2) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix3x2::from_element(zero)), elements: 6, _marker: PhantomData })); },
+    (Matrix::RowDVector(v), 3, 2) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix3x2::from_element(zero)), _marker: PhantomData })); },
     #[cfg(feature = "RowVectorD")]
-    (Matrix::RowDVector(v), n, 1) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(DVector::from_element(n, zero)), elements: n, _marker: PhantomData })); },
+    (Matrix::RowDVector(v), n, 1) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(DVector::from_element(n, zero)), _marker: PhantomData })); },
     #[cfg(feature = "RowVectorD")]
-    (Matrix::RowDVector(v), n, m) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(DMatrix::from_element(n, m, zero)), elements: n * m, _marker: PhantomData })); },
+    (Matrix::RowDVector(v), n, m) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(DMatrix::from_element(n, m, zero)), _marker: PhantomData })); },
     
     #[cfg(feature = "VectorD")]
-    (Matrix::DVector(v), 3, 3) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix3::from_element(zero)), elements: 9, _marker: PhantomData })); },
+    (Matrix::DVector(v), 3, 3) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix3::from_element(zero)), _marker: PhantomData })); },
     #[cfg(feature = "VectorD")]
-    (Matrix::DVector(v), 4, 4) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix4::from_element(zero)), elements: 16, _marker: PhantomData })); },
+    (Matrix::DVector(v), 4, 4) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix4::from_element(zero)), _marker: PhantomData })); },
     #[cfg(feature = "VectorD")]
-    (Matrix::DVector(v), 3, 2) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix3x2::from_element(zero)), elements: 6, _marker: PhantomData })); },
+    (Matrix::DVector(v), 3, 2) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix3x2::from_element(zero)), _marker: PhantomData })); },
     #[cfg(feature = "VectorD")]
-    (Matrix::DVector(v), 2, 3) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix2x3::from_element(zero)), elements: 6, _marker: PhantomData })); },
+    (Matrix::DVector(v), 2, 3) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(Matrix2x3::from_element(zero)), _marker: PhantomData })); },
     #[cfg(feature = "VectorD")]
-    (Matrix::DVector(v), 1, n) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowDVector::from_element(n, zero)), elements: n, _marker: PhantomData })); },
+    (Matrix::DVector(v), 1, n) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowDVector::from_element(n, zero)), _marker: PhantomData })); },
     #[cfg(feature = "VectorD")]
-    (Matrix::DVector(v), n, m) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(DMatrix::from_element(n, m, zero)), elements: n * m, _marker: PhantomData })); },
+    (Matrix::DVector(v), n, m) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(DMatrix::from_element(n, m, zero)), _marker: PhantomData })); },
     
     #[cfg(feature = "MatrixD")]
-    (Matrix::DMatrix(v), n, 1) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(DVector::from_element(n, zero)), elements: n, _marker: PhantomData })); },
+    (Matrix::DMatrix(v), n, 1) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(DVector::from_element(n, zero)), _marker: PhantomData })); },
     #[cfg(feature = "MatrixD")]
-    (Matrix::DMatrix(v), 1, n) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowDVector::from_element(n, zero)), elements: n, _marker: PhantomData })); },
+    (Matrix::DMatrix(v), 1, n) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(RowDVector::from_element(n, zero)), _marker: PhantomData })); },
     #[cfg(feature = "MatrixD")]
-    (Matrix::DMatrix(v), n, m) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(DMatrix::from_element(n, m, zero)), elements: n * m, _marker: PhantomData })); },
+    (Matrix::DMatrix(v), n, m) => { return Ok(Box::new(ConvertMatToMat2 { arg: v, out: new_ref(DMatrix::from_element(n, m, zero)), _marker: PhantomData })); },
     _ => {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Cannot convert {:?} to {:?}", shape, dims), id: line!(), kind: MechErrorKind::None});
     }
@@ -246,8 +248,8 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl_conversion_mat_to_mat_fxn! {
-  F64 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
-  F32 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
+  F64 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, RationalNumber];
+  F32 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, RationalNumber];
   u8  => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
   u16 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
   u32 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
@@ -259,12 +261,14 @@ impl_conversion_mat_to_mat_fxn! {
   i64 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
   i128 => [String, F64, F32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128];
   String => [String];
+  RationalNumber => [String];
+  ComplexNumber => [String];
 }
 
 #[cfg(target_arch = "wasm32")]
 impl_conversion_mat_to_mat_fxn! {
-  F64 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
-  F32 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
+  F64 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64, RationalNumber];
+  F32 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64, RationalNumber];
   u8  => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
   u16 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
   u32 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
@@ -274,6 +278,8 @@ impl_conversion_mat_to_mat_fxn! {
   i32 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
   i64 => [String, F64, F32, u8, u16, u32, u64, i8, i16, i32, i64];
   String => [String];
+  RationalNumber => [String];
+  ComplexNumber => [String];
 }
 
 pub struct ConvertMatToMat {}

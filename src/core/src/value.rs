@@ -1,6 +1,7 @@
 use crate::matrix::Matrix;
 use crate::*;
 use crate::nodes::Matrix as Mat;
+use crate::types::ComplexNumber;
 use crate::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*, humanize};
 use std::collections::HashMap;
 
@@ -19,6 +20,7 @@ use serde::de::{self, Deserialize, SeqAccess, Deserializer, MapAccess, Visitor};
 use std::fmt;
 use std::cell::RefCell;
 use std::rc::Rc;
+use num_rational::Rational64;
 
 macro_rules! impl_as_type {
   ($target_type:ty) => {
@@ -50,7 +52,7 @@ macro_rules! impl_as_type {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ValueKind {
-  U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, 
+  U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, ComplexNumber, RationalNumber,
   String, Bool, Id, Index, Empty, Any, 
   Matrix(Box<ValueKind>,Vec<usize>),  Enum(u64),                  Record(Vec<(String,ValueKind)>),
   Map(Box<ValueKind>,Box<ValueKind>), Atom(u64),                  Table(Vec<(String,ValueKind)>, usize), 
@@ -61,6 +63,8 @@ pub enum ValueKind {
 impl std::fmt::Display for ValueKind {
   fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
     match self {
+      ValueKind::RationalNumber => write!(f, "r64"),
+      ValueKind::ComplexNumber => write!(f, "c64"),
       ValueKind::U8 => write!(f, "u8"),
       ValueKind::U16 => write!(f, "u16"),
       ValueKind::U32 => write!(f, "u32"),
@@ -246,7 +250,11 @@ pub enum Value {
   MatrixF32(Matrix<F32>),
   MatrixF64(Matrix<F64>),
   MatrixString(Matrix<String>),
+  MatrixRationalNumber(Matrix<RationalNumber>),
+  MatrixComplexNumber(Matrix<ComplexNumber>),
   MatrixValue(Matrix<Value>),
+  ComplexNumber(Ref<ComplexNumber>),
+  RationalNumber(Ref<RationalNumber>),
   Set(MechSet),
   Map(MechMap),
   Record(Ref<MechRecord>),
@@ -270,6 +278,7 @@ impl fmt::Display for Value {
 impl Hash for Value {
   fn hash<H: Hasher>(&self, state: &mut H) {
     match self {
+      Value::RationalNumber(x) => x.borrow().hash(state),
       Value::Id(x)   => x.hash(state),
       Value::Kind(x) => x.hash(state),
       Value::U8(x)   => x.borrow().hash(state),
@@ -284,6 +293,7 @@ impl Hash for Value {
       Value::I128(x) => x.borrow().hash(state),
       Value::F32(x)  => x.borrow().hash(state),
       Value::F64(x)  => x.borrow().hash(state),
+      Value::ComplexNumber(x) => x.borrow().hash(state),
       Value::Index(x)=> x.borrow().hash(state),
       Value::Bool(x) => x.borrow().hash(state),
       Value::Atom(x) => x.hash(state),
@@ -310,6 +320,8 @@ impl Hash for Value {
       Value::MatrixF64(x)  => x.hash(state),
       Value::MatrixString(x) => x.hash(state),
       Value::MatrixValue(x)  => x.hash(state),
+      Value::MatrixRationalNumber(x) => x.hash(state),
+      Value::MatrixComplexNumber(x) => x.hash(state),
       Value::MutableReference(x) => x.borrow().hash(state),
       Value::Empty => Value::Empty.hash(state),
       Value::IndexAll => Value::IndexAll.hash(state),
@@ -501,6 +513,7 @@ impl Value {
 
   pub fn size_of(&self) -> usize {
     match self {
+      Value::RationalNumber(x) => 16,
       Value::U8(x) => 1,
       Value::U16(x) => 2,
       Value::U32(x) => 4,
@@ -514,6 +527,7 @@ impl Value {
       Value::F32(x) => 4,
       Value::F64(x) => 8,
       Value::Bool(x) => 1,
+      Value::ComplexNumber(x) => 16,
       Value::MatrixIndex(x) =>x.size_of(),
       Value::MatrixBool(x) =>x.size_of(),
       Value::MatrixU8(x)   => x.size_of(),
@@ -530,6 +544,8 @@ impl Value {
       Value::MatrixF64(x)  => x.size_of(),
       Value::MatrixValue(x)  => x.size_of(),
       Value::MatrixString(x) => x.size_of(),
+      Value::MatrixRationalNumber(x) => x.size_of(),
+      Value::MatrixComplexNumber(x) => x.size_of(),
       Value::String(x) => x.borrow().len(),
       Value::Atom(x) => 8,
       Value::Set(x) => x.size_of(),
@@ -563,6 +579,7 @@ impl Value {
       Value::F64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       Value::String(s) => format!("<span class='mech-string'>\"{}\"</span>", s.borrow()),
       Value::Bool(b) => format!("<span class='mech-boolean'>{}</span>", b.borrow()),
+      Value::ComplexNumber(c) => c.borrow().to_html(),
       Value::MatrixU8(m) => m.to_html(),
       Value::MatrixU16(m) => m.to_html(),
       Value::MatrixU32(m) => m.to_html(),
@@ -579,6 +596,8 @@ impl Value {
       Value::MatrixBool(m) => m.to_html(),
       Value::MatrixString(m) => m.to_html(),
       Value::MatrixValue(m) => m.to_html(),
+      Value::MatrixRationalNumber(m) => m.to_html(),
+      Value::MatrixComplexNumber(m) => m.to_html(),
       Value::MutableReference(m) => {
         let inner = m.borrow();
         format!("<span class='mech-reference'>{}</span>", inner.to_html())
@@ -611,6 +630,8 @@ impl Value {
       Value::F64(x)  => {builder.push_record(vec![format!("{}",x.borrow().0)]);},
       Value::Bool(x) => {builder.push_record(vec![format!("{}",x.borrow())]);},
       Value::Index(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      Value::ComplexNumber(x) => {builder.push_record(vec![x.borrow().pretty_print()]);},
+      Value::RationalNumber(x) => {builder.push_record(vec![format!("{}",x.borrow().pretty_print())]);},
       Value::Atom(x) => {builder.push_record(vec![format!("{}",x)]);},
       Value::Set(x)  => {return x.pretty_print();}
       Value::Map(x)  => {return x.pretty_print();}
@@ -635,6 +656,8 @@ impl Value {
       Value::MatrixF64(x)  => {return x.pretty_print();},
       Value::MatrixValue(x)  => {return x.pretty_print();},
       Value::MatrixString(x)  => {return x.pretty_print();},
+      Value::MatrixRationalNumber(x) => {return x.pretty_print();},
+      Value::MatrixComplexNumber(x) => {return x.pretty_print();},
       Value::MutableReference(x) => {return x.borrow().pretty_print();},
       Value::Empty => builder.push_record(vec!["_"]),
       Value::IndexAll => builder.push_record(vec![":"]),
@@ -659,6 +682,8 @@ impl Value {
 
   pub fn shape(&self) -> Vec<usize> {
     match self {
+      Value::RationalNumber(x) => vec![1,1],
+      Value::ComplexNumber(x) => vec![1,1],
       Value::U8(x) => vec![1,1],
       Value::U16(x) => vec![1,1],
       Value::U32(x) => vec![1,1],
@@ -691,6 +716,8 @@ impl Value {
       Value::MatrixF64(x) => x.shape(),
       Value::MatrixString(x) => x.shape(),
       Value::MatrixValue(x) => x.shape(),
+      Value::MatrixRationalNumber(x) => x.shape(),
+      Value::MatrixComplexNumber(x) => x.shape(),
       Value::Enum(x) => vec![1,1],
       Value::Table(x) => x.borrow().shape(),
       Value::Set(x) => vec![1,x.set.len()],
@@ -714,6 +741,8 @@ impl Value {
 
   pub fn kind(&self) -> ValueKind {
     match self {
+      Value::ComplexNumber(_) => ValueKind::ComplexNumber,
+      Value::RationalNumber(_) => ValueKind::RationalNumber,
       Value::U8(_) => ValueKind::U8,
       Value::U16(_) => ValueKind::U16,
       Value::U32(_) => ValueKind::U32,
@@ -745,6 +774,8 @@ impl Value {
       Value::MatrixF64(x) => ValueKind::Matrix(Box::new(ValueKind::F64),x.shape()),
       Value::MatrixString(x) => ValueKind::Matrix(Box::new(ValueKind::String),x.shape()),
       Value::MatrixValue(x) => ValueKind::Matrix(Box::new(ValueKind::Any),x.shape()),
+      Value::MatrixRationalNumber(x) => ValueKind::Matrix(Box::new(ValueKind::RationalNumber),x.shape()),
+      Value::MatrixComplexNumber(x) => ValueKind::Matrix(Box::new(ValueKind::ComplexNumber),x.shape()),
       Value::Table(x) => x.borrow().kind(),
       Value::Set(x) => x.kind(),
       Value::Map(x) => x.kind(),
@@ -818,6 +849,46 @@ impl Value {
     }
   }
 
+  pub fn as_rationalnumber(&self) -> Option<Ref<RationalNumber>> {
+    match self {
+      Value::RationalNumber(v) => Some(v.clone()),
+      Value::F32(v) => Some(new_ref(RationalNumber::new(v.borrow().0 as i64, 1))),
+      Value::F64(v) => Some(new_ref(RationalNumber::new(v.borrow().0 as i64, 1))),
+      Value::U8(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::U16(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::U32(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::U64(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::U128(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::I8(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::I16(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::I32(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::I64(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::I128(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::MutableReference(val) => val.borrow().as_rationalnumber(),
+      _ => None,
+    }
+  }
+
+  pub fn as_complexnumber(&self) -> Option<Ref<ComplexNumber>> {
+    match self {
+      Value::ComplexNumber(v) => Some(v.clone()),
+      Value::F32(v) =>  Some(new_ref(ComplexNumber::new(v.borrow().0 as f64, 0.0))),
+      Value::F64(v) =>  Some(new_ref(ComplexNumber::new(v.borrow().0, 0.0))),
+      Value::U8(v) =>   Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::U16(v) =>  Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::U32(v) =>  Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::U64(v) =>  Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::U128(v) => Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::I8(v) =>   Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::I16(v) =>  Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::I32(v) =>  Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::I64(v) =>  Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::I128(v) => Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::MutableReference(val) => val.borrow().as_complexnumber(),
+      _ => None,
+    }
+  }
+
   pub fn as_f32(&self) -> Option<Ref<F32>> {
     match self {
       Value::U8(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
@@ -875,6 +946,8 @@ impl Value {
 
   pub fn as_vecstring(&self) -> Option<Vec<String>> {if let Value::MatrixString(v)  = self { Some(v.as_vec()) } else if let Value::String(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecstring()  } else { None }}
 
+  pub fn as_vecrationalnumber(&self) -> Option<Vec<RationalNumber>> {if let Value::MatrixRationalNumber(v)  = self { Some(v.as_vec()) } else if let Value::RationalNumber(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecrationalnumber()  } else { None }}
+  pub fn as_veccomplexnumber(&self) -> Option<Vec<ComplexNumber>> {if let Value::MatrixComplexNumber(v)  = self { Some(v.as_vec()) } else if let Value::ComplexNumber(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veccomplexnumber()  } else { None }}
 
   pub fn as_vecusize(&self) -> Option<Vec<usize>> {
     match self {
@@ -976,6 +1049,8 @@ impl ToValue for Ref<F32>    { fn to_value(&self) -> Value { Value::F32(self.clo
 impl ToValue for Ref<F64>    { fn to_value(&self) -> Value { Value::F64(self.clone())    } }
 impl ToValue for Ref<bool>   { fn to_value(&self) -> Value { Value::Bool(self.clone())   } }
 impl ToValue for Ref<String> { fn to_value(&self) -> Value { Value::String(self.clone()) } }
+impl ToValue for Ref<RationalNumber> { fn to_value(&self) -> Value { Value::RationalNumber(self.clone()) } }
+impl ToValue for Ref<ComplexNumber> { fn to_value(&self) -> Value { Value::ComplexNumber(self.clone()) } }
 
 macro_rules! to_value_ndmatrix {
   ($($nd_matrix_kind:ident, $matrix_kind:ident, $base_type:ty),+ $(,)?) => {
@@ -1006,6 +1081,8 @@ macro_rules! impl_to_value_matrix {
       $matrix_kind, MatrixF32,    F32,
       $matrix_kind, MatrixF64,    F64,
       $matrix_kind, MatrixString, String,
+      $matrix_kind, MatrixRationalNumber, RationalNumber,
+      $matrix_kind, MatrixComplexNumber, ComplexNumber,
     );
   }
 }
@@ -1097,3 +1174,10 @@ impl From<String> for Value {
     Value::String(new_ref(val))
   }
 }
+
+impl From<RationalNumber> for Value {
+  fn from(val: RationalNumber) -> Self {
+    Value::RationalNumber(new_ref(val))
+  }
+}
+

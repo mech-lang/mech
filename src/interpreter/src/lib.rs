@@ -12,6 +12,7 @@ use mech_core::kind::Kind;
 use mech_core::{Dictionary, Ref, Value, ValueKind, ValRef, ToValue};
 use mech_core::{MechMap, MechFunction, MechRecord, MechTable, MechSet, MechTuple, MechEnum};
 use mech_core::{F64, F32};
+use mech_core::{ComplexNumber, RationalNumber};
 use mech_core::{Functions, FunctionsRef, FunctionDefinition, NativeFunctionCompiler, Plan, UserFunction, SymbolTableRef, SymbolTable};
 use crate::stdlib::{
                     access::*,
@@ -20,7 +21,6 @@ use crate::stdlib::{
                     horzcat::*,
                     vertcat::*,
                     math::*,
-                    compare::*,
                   };
 use mech_core::{MechError, MechErrorKind, hash_str, new_ref, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 
@@ -30,6 +30,7 @@ use mech_matrix::*;
 use mech_stats::*;
 use mech_math::*;
 use mech_logic::*;
+use mech_compare::*;
 use mech_range::{
   inclusive::RangeInclusive,
   exclusive::RangeExclusive,

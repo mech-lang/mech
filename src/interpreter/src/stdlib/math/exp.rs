@@ -5,29 +5,41 @@ use crate::stdlib::*;
 
 macro_rules! exp_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
-    unsafe {*$out = (*$lhs).pow(*$rhs);}
-  };}
-  
+    unsafe {
+      *$out = (&*$lhs).pow(*$rhs);
+    }
+  };
+}
+
 macro_rules! exp_vec_op {
-($lhs:expr, $rhs:expr, $out:expr) => {
-  unsafe {
-  for i in 0..(*$lhs).len() {
-    (*$out)[i] = (*$lhs)[i].pow((*$rhs)[i]);
-  }}};}
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(&*$lhs).len() {
+        (&mut *$out)[i] = (&*$lhs)[i].pow((&*$rhs)[i]);
+      }
+    }
+  };
+}
 
 macro_rules! exp_scalar_lhs_op {
-($lhs:expr, $rhs:expr, $out:expr) => {
-  unsafe {
-  for i in 0..(*$lhs).len() {
-    (*$out)[i] = (*$lhs)[i].pow((*$rhs));
-  }}};}
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(&*$lhs).len() {
+        (&mut *$out)[i] = (&*$lhs)[i].pow(*$rhs);
+      }
+    }
+  };
+}
 
 macro_rules! exp_scalar_rhs_op {
-($lhs:expr, $rhs:expr, $out:expr) => {
-  unsafe {
-  for i in 0..(*$rhs).len() {
-    (*$out)[i] = (*$lhs).pow((*$rhs)[i]);
-  }}};}
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      for i in 0..(&*$rhs).len() {
+        (&mut *$out)[i] = (*$lhs).pow((&*$rhs)[i]);
+      }
+    }
+  };
+}
 
 macro_rules! exp_mat_vec_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
@@ -124,7 +136,38 @@ macro_rules! impl_math_fxns_exp {
 
 impl_math_fxns_exp!(Exp);
 
+#[derive(Debug)]
+pub struct ExpRational {
+  pub lhs: Ref<RationalNumber>,
+  pub rhs: Ref<i32>,
+  pub out: Ref<RationalNumber>,
+}
+
+impl MechFunction for ExpRational {
+  fn solve(&self) {
+    let lhs_ptr = self.lhs.as_ptr();
+    let rhs_ptr = self.rhs.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {
+      (*out_ptr).0 = (*lhs_ptr).0.pow((*rhs_ptr));
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
 fn impl_exp_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  match (&lhs_value, &rhs_value) {
+    (Value::RationalNumber(lhs), Value::I32(rhs)) => {
+      return Ok(Box::new(ExpRational {
+        lhs: lhs.clone(),
+        rhs: rhs.clone(),
+        out: new_ref(RationalNumber::default()),
+      }));
+    },
+    _ => (),
+  }
+  
   impl_binop_match_arms!(
       Exp,
       (lhs_value, rhs_value),

@@ -1,6 +1,6 @@
 [package]
 name = "mech-interpreter"
-version = "0.2.52"
+version = "0.2.56"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "The Mech language runtime."
 documentation = "http://docs.mech-lang.org"
@@ -11,7 +11,7 @@ categories = ["no-std", "science::robotics", "science", "game-engines", "databas
 license = "Apache-2.0"
 readme = "README.md"
 edition = "2021"
-rust-version = "1.84"
+rust-version = "1.88"
 
 [badges]
 gitlab = { repository = "mech-lang/mech", branch = "main" }
@@ -19,9 +19,12 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = ["stdlib"]
-stdlib = ["Bool", "String", "unsigned-ints", "signed-ints", "floats", "matrix"]
-signed-ints = ["I8", "I16", "I32", "I64"]
-unsigned-ints = ["U8", "U16", "U32", "U64"]
+stdlib = ["Bool", "String", "numbers", "Matrix", "Set", "Map", "Table", "Tuple", "Record", "Atom"]
+numbers = ["signed-ints", "unsigned-ints", "floats", "ComplexNumber", "RationalNumber"]
+ComplexNumber = []
+RationalNumber = []
+signed-ints = ["I8", "I16", "I32", "I64", "I128"]
+unsigned-ints = ["U8", "U16", "U32", "U64", "U128"]
 floats = ["F32", "F64"]
 Bool = []
 String = []
@@ -37,7 +40,13 @@ I64 = []
 I128 = []
 F32 = []
 F64 = []
-matrix = ["fixed-matrix", "fixed-vector", "fixed-row-vector", "RowVectorD", "VectorD", "MatrixD"]
+Set = []
+Map = []
+Table = []
+Tuple = []
+Record = []
+Atom = []
+Matrix = ["fixed-matrix", "fixed-vector", "fixed-row-vector", "RowVectorD", "VectorD", "MatrixD"]
 fixed-row-vector = ["RowVector4", "RowVector3", "RowVector2"]
 fixed-vector = ["Vector4", "Vector3", "Vector2"]
 fixed-matrix = ["Matrix4", "Matrix3", "Matrix2", "Matrix1", "Matrix2x3", "Matrix3x2"]
@@ -58,18 +67,19 @@ VectorD = []
 MatrixD = []
 
 [dependencies]
-mech-core = "0.2.52"
-mech-math = "0.2.52"
-mech-logic = "0.2.52"
-mech-range = "0.2.52"
-mech-matrix = "0.2.52"
-mech-stats = "0.2.52"
-mech-io = "0.2.52"
-mech-combinatorics = "0.2.52"
+mech-core = "0.2.56"
+mech-math = "0.2.56"
+mech-logic = "0.2.56"
+mech-range = "0.2.56"
+mech-matrix = "0.2.56"
+mech-compare = "0.2.56"
+mech-stats = "0.2.56"
+mech-io = "0.2.56"
+mech-combinatorics = "0.2.56"
 
-nalgebra = "0.33.2"
+nalgebra = "0.34.0"
 indexmap = "2.10.0"
-libm = "0.2.11"
+libm = "0.2.15"
 simba = "0.9.0"
 paste = "1.0.15"
 

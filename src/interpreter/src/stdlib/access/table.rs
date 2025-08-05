@@ -17,7 +17,7 @@ macro_rules! impl_col_access_fxn {
         unsafe { 
           for i in 1..=self.source.shape()[0] {
             paste! {
-              (*out_ptr)[i-1] = self.source.index1d(i).[<as_ $out_type:lower>]().unwrap().borrow().clone();
+              (&mut (*out_ptr))[i-1] = self.source.index1d(i).[<as_ $out_type:lower>]().unwrap().borrow().clone();
             }
           }
         }

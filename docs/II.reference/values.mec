@@ -15,23 +15,26 @@ Data in Mech is represented using one of the following primitive datatypes:
 **Number** - Represents numeric values, including integers, floating-point numbers, and complex numbers.
 
 - **Real** - Real numbers, including integers and floats.
-    - **Integers** - Whole numbers, which can be positive, negative, or zero.
-        - **Signed** - Can represent both negative and positive values.
-            - `i8` - 8-bit signed integer
-            - `i16` - 16-bit signed integer
-            - `i32` - 32-bit signed integer
-            - `i64` - 64-bit signed integer
-            - `i128` - 128-bit signed integer
-        - **Unsigned** - Can only represent zero and positive values.
-            - `u8` - 8-bit unsigned integer
-            - `u16` - 16-bit unsigned integer
-            - `u32` - 32-bit unsigned integer
-            - `u64` - 64-bit unsigned integer
-            - `u128` - 128-bit unsigned integer
-    - **Fractional** - Decimal numbers with fractional components.
-        - `f32` - 32-bit floating-point number
-        - `f64` - 64-bit floating-point number
+  - **Integers** - Whole numbers, which can be positive, negative, or zero.
+    - **Signed** - Can represent both negative and positive values.
+      - `i8` - 8-bit signed integer
+      - `i16` - 16-bit signed integer
+      - `i32` - 32-bit signed integer
+      - `i64` - 64-bit signed integer
+      - `i128` - 128-bit signed integer
+    - **Unsigned** - Can only represent zero and positive values.
+      - `u8` - 8-bit unsigned integer
+      - `u16` - 16-bit unsigned integer
+      - `u32` - 32-bit unsigned integer
+      - `u64` - 64-bit unsigned integer
+      - `u128` - 128-bit unsigned integer
+  - **Fractional** - Decimal numbers with fractional components.
+    - `f32` - 32-bit floating-point number
+    - `f64` - 64-bit floating-point number
+  - **Rational** - Represents rational numbers as a fraction of two integers.
+    - `r64` - 64-bit rational number (with numerator and denominator as a pair of `i64`)
 - **Imaginary** - Represent imaginary components of complex numbers.
+  - `c64` - 64-bit complex number (with real and imaginary parts as a pair of `f64`)
 
 (1.2) String
 
@@ -144,7 +147,9 @@ Kinds start from one of the primitive data types:
 |-------------------|-------------------------------------------------------------|
 | Signed integers   | {{<i8>;}}, {{<i16>;}}, {{<i32>;}}, {{<i64>;}}, {{<i128>;}}  |
 | Unsigned integers | {{<u8>;}}, {{<u16>;}}, {{<u32>;}}, {{<u64>;}}, {{<u128>;}}  |
-| Floating-point    | {{<f32>;}}, {{<f64>;}}                                      |   
+| Floating-point    | {{<f32>;}}, {{<f64>;}}                                      |
+| Rational          | {{<r64>;}}                                                  |  
+| Complex           | {{<c64>;}}                                                  |
 | String            | {{<string>;}}                                               |
 | Boolean           | {{<bool>;}}                                                 |
 | Atom              | {{<atom>;}}                                                 |

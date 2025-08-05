@@ -20,7 +20,7 @@ macro_rules! access_1d_slice {
   ($source:expr, $ix:expr, $out:expr) => {
     unsafe { 
       for i in 0..(*$ix).len() {
-        (*$out)[i] = (*$source).index((*$ix)[i] - 1).clone();
+        ((&mut *$out))[i] = (*$source).index((&(*$ix))[i] - 1).clone();
       }
     }};}    
 
@@ -35,12 +35,12 @@ macro_rules! access_1d_slice_bool {
         }
       }
       if j != out_len {
-        (*$out).resize_vertically_mut(j, (*$out)[0].clone());
+        (*$out).resize_vertically_mut(j, (&(*$out))[0].clone());
       }
       j = 0;
       for i in 0..(*$source).len() {
         if (*$ix)[i] == true {
-          (*$out)[j] = (*$source).index(i).clone();
+          (&mut (*$out))[j] = (*$source).index(i).clone();
           j += 1;
         }
       }
@@ -52,17 +52,17 @@ macro_rules! access_1d_slice_bool_v {
       let mut j = 0;
       let out_len = (*$out).len();
       for i in 0..(*$ix).len() {
-        if (*$ix)[i] == true {
+        if (&(*$ix))[i] == true {
           j += 1;
         }
       }
       if j != out_len {
-        (*$out).resize_vertically_mut(j, (*$out)[0].clone());
+        (*$out).resize_vertically_mut(j, (&(*$out))[0].clone());
       }
       j = 0;
       for i in 0..(*$source).len() {
-        if (*$ix)[i] == true {
-          (*$out)[j] = (*$source).index(i).clone();
+        if (&(*$ix))[i] == true {
+          (&mut (*$out))[j] = (*$source).index(i).clone();
           j += 1;
         }
       }
@@ -81,12 +81,12 @@ macro_rules! access_2d_row_slice_bool {
         }
       }
       if j != out_len {
-        (*$out).resize_horizontally_mut(j, (*$out)[0].clone());
+        (*$out).resize_horizontally_mut(j, (&(*$out))[0].clone());
       }
       j = 0;
       for i in 0..vec_ix.len() {
         if vec_ix[i] == true {
-          (*$out)[j] = (*$source).index((scalar_ix - 1, i)).clone();
+          (&mut (*$out))[j] = (*$source).index((scalar_ix - 1, i)).clone();
           j += 1;
         }
       }
@@ -105,12 +105,12 @@ macro_rules! access_2d_col_slice_bool {
         }
       }
       if j != out_len {
-        (*$out).resize_vertically_mut(j, (*$out)[0].clone());
+        (*$out).resize_vertically_mut(j, (&(*$out))[0].clone());
       }
       j = 0;
       for i in 0..vec_ix.len() {
         if vec_ix[i] == true {
-          (*$out)[j] = (*$source).index((i, scalar_ix - 1)).clone();
+          (&mut (*$out))[j] = (*$source).index((i, scalar_ix - 1)).clone();
           j += 1;
         }
       }
@@ -124,7 +124,7 @@ macro_rules! access_2d_slice {
       let mut out_ix = 0;
       for j in 0..ncols {
         for i in 0..nrows {
-          (*$out)[out_ix] = (*$source).index(((*$ix).0[i] - 1, (*$ix).1[j] - 1)).clone();
+          (&mut (*$out))[out_ix] = (*$source).index(((&(*$ix)).0[i] - 1, (&(*$ix)).1[j] - 1)).clone();
           out_ix += 1;
         }
       }
@@ -143,13 +143,13 @@ macro_rules! access_2d_slice_bool {
         }
       }
       if j != (*$out).nrows() {
-        (*$out).resize_vertically_mut(j, (*$out)[0].clone());
+        (*$out).resize_vertically_mut(j, (&(*$out))[0].clone());
       }
       j = 0;
       for k in 0..ix2.len() {
         for i in 0..ix1.len() {
           if ix1[i] == true {
-            (*$out)[j] = (*$source).index((i, ix2[k] - 1)).clone();
+            (&mut (*$out))[j] = (*$source).index((i, ix2[k] - 1)).clone();
             j += 1;
           }
         }
@@ -169,13 +169,13 @@ macro_rules! access_2d_slice_bool2 {
         }
       }
       if j != (*$out).ncols() {
-        (*$out).resize_horizontally_mut(j, (*$out)[0].clone());
+        (*$out).resize_horizontally_mut(j, (& (*$out))[0].clone());
       }
       j = 0;
       for k in 0..ix2.len() {
         for i in 0..ix1.len() {
           if ix2[k] == true {
-            (*$out)[j] = (*$source).index((ix1[i] - 1, k)).clone();
+            (&mut (*$out))[j] = (*$source).index((ix1[i] - 1, k)).clone();
             j += 1;
           }
         }
@@ -201,13 +201,13 @@ macro_rules! access_2d_slice_bool_bool {
         }
       }
       if j != (*$out).nrows() || k != (*$out).ncols() {
-        (*$out).resize_mut(j, k, (*$out)[0].clone());
+        (*$out).resize_mut(j, k, (&(*$out))[0].clone());
       }
       let mut out_ix = 0;
       for k in 0..ix2.len() {
         for j in 0..ix1.len() {
           if ix1[j] == true && ix2[k] == true {
-            (*$out)[out_ix] = (*$source).index((j, k)).clone();
+            (&mut (*$out))[out_ix] = (*$source).index((j, k)).clone();
             out_ix += 1;
           }
         }
@@ -222,7 +222,7 @@ macro_rules! access_2d_slice_all {
       let mut out_ix = 0;
       for c in 0..n_cols {
         for r in 0..n_rows {
-          (*$out)[out_ix] = (*$source).index(((*$ix)[r] - 1, c)).clone();
+          (&mut (*$out))[out_ix] = (*$source).index(((&(*$ix))[r] - 1, c)).clone();
           out_ix += 1;
         }
       }
@@ -240,13 +240,13 @@ macro_rules! access_2d_slice_all_bool {
         }
       }
       if j != out_len {
-        (*$out).resize_vertically_mut(j, (*$out)[0].clone());
+        (*$out).resize_vertically_mut(j, (&mut (*$out))[0].clone());
       }
       j = 0;
       for i in 0..vec_ix.len() {
         for k in 0..(*$source).ncols() {
           if vec_ix[i] == true {
-            (*$out)[j] = (*$source).index((i, k)).clone();
+            (&mut (*$out))[j] = (*$source).index((i, k)).clone();
             j += 1;
           }
         }
@@ -265,13 +265,13 @@ macro_rules! access_2d_all_slice_bool {
         }
       }
       if j != out_len {
-        (*$out).resize_horizontally_mut(j, (*$out)[0].clone());
+        (*$out).resize_horizontally_mut(j, (&mut (*$out))[0].clone());
       }
       j = 0;
       for k in 0..(*$source).nrows() {
         for i in 0..vec_ix.len() {
           if vec_ix[i] == true {
-            (*$out)[j] = (*$source).index((k, i)).clone();
+            (&mut (*$out))[j] = (*$source).index((k, i)).clone();
             j += 1;
           }
         }
@@ -286,7 +286,7 @@ macro_rules! access_2d_all_slice {
       let mut out_ix = 0;
       for c in 0..n_cols {
         for r in 0..n_rows {
-          (*$out)[out_ix] = (*$source).index((r, (*$ix)[c] - 1)).clone();
+          (&mut (*$out))[out_ix] = (*$source).index((r, ((&*$ix))[c] - 1)).clone();
           out_ix += 1;
         }
       }
@@ -300,7 +300,7 @@ macro_rules! access_2d_row_slice {
       let out_cols = ix2.nrows();
       let mut out_ix = 0;
       for c in 0..out_cols {
-        (*$out)[out_ix] = (*$source).index((ix1 - 1, ix2[c] - 1)).clone();
+        (&mut (*$out))[out_ix] = (*$source).index((ix1 - 1, ix2[c] - 1)).clone();
         out_ix += 1;
       }
     }};}    
@@ -313,7 +313,7 @@ macro_rules! access_2d_col_slice {
       let out_rows = ix1.nrows();
       let mut out_ix = 0;
       for c in 0..out_rows {
-        (*$out)[out_ix] = (*$source).index((ix1[c] - 1, ix2 - 1)).clone();
+        (&mut (*$out))[out_ix] = (*$source).index((ix1[c] - 1, ix2 - 1)).clone();
         out_ix += 1;
       }
     }};}    
@@ -322,7 +322,7 @@ macro_rules! access_col {
   ($source:expr, $ix:expr, $out:expr) => {
     unsafe { 
       for i in 0..(*$source).nrows() {
-        (*$out)[i] = (*$source).index((i, *$ix - 1)).clone();
+        (&mut (*$out))[i] = (*$source).index((i, *$ix - 1)).clone();
       }
     }};}
 
@@ -330,7 +330,7 @@ macro_rules! access_row {
   ($source:expr, $ix:expr, $out:expr) => {
     unsafe { 
       for i in 0..(*$source).ncols() {
-        (*$out)[i] = (*$source).index((*$ix - 1, i)).clone();
+        (&mut (*$out))[i] = (*$source).index((*$ix - 1, i)).clone();
       }
     }};}
 
@@ -338,7 +338,7 @@ macro_rules! access_1d_all {
   ($source:expr, $ix:expr, $out:expr) => {
     unsafe { 
       for i in 0..(*$source).len() {
-        (*$out)[i] = (*$source).index(i).clone();
+        (&mut (*$out))[i] = (*$source).index(i).clone();
       }
     }};}
 

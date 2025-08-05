@@ -2148,21 +2148,22 @@ fn impl_horzcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   //let same = kinds.iter().all(|x| *x == target_kind);
   let kinds: Vec<ValueKind> = arguments.iter().map(|x| x.kind()).collect::<Vec<ValueKind>>();
   let target_kind = kinds[0].clone();
-         if ValueKind::is_compatible(target_kind.clone(), ValueKind::F64)  { impl_horzcat_arms!(F64,arguments,F64::zero())
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::F32)  { impl_horzcat_arms!(F32,arguments,F32::zero())
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U8)   { impl_horzcat_arms!(u8,arguments,u8::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U16)  { impl_horzcat_arms!(u16,arguments,u16::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U32)  { impl_horzcat_arms!(u32,arguments,u32::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U64)  { impl_horzcat_arms!(u64,arguments,u64::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U128) { impl_horzcat_arms!(u128,arguments,u128::zero())  
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I8)   { impl_horzcat_arms!(i8,arguments,i8::zero())  
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I16)   { impl_horzcat_arms!(i16,arguments,i16::zero())
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I32)   { impl_horzcat_arms!(i32,arguments,i32::zero())
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I64)   { impl_horzcat_arms!(i64,arguments,i64::zero())
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I128)  { impl_horzcat_arms!(i128,arguments,i128::zero())
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::Bool) { impl_horzcat_arms!(bool,arguments,false)
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::String) { 
-    impl_horzcat_arms!(String,arguments,"".to_string())    
+         if ValueKind::is_compatible(target_kind.clone(), ValueKind::F64)            { impl_horzcat_arms!(F64,arguments,F64::zero())
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::F32)            { impl_horzcat_arms!(F32,arguments,F32::zero())
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U8)             { impl_horzcat_arms!(u8,arguments,u8::zero())    
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U16)            { impl_horzcat_arms!(u16,arguments,u16::zero())    
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U32)            { impl_horzcat_arms!(u32,arguments,u32::zero())    
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U64)            { impl_horzcat_arms!(u64,arguments,u64::zero())    
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U128)           { impl_horzcat_arms!(u128,arguments,u128::zero())  
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I8)             { impl_horzcat_arms!(i8,arguments,i8::zero())  
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I16)            { impl_horzcat_arms!(i16,arguments,i16::zero())
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I32)            { impl_horzcat_arms!(i32,arguments,i32::zero())
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I64)            { impl_horzcat_arms!(i64,arguments,i64::zero())
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I128)           { impl_horzcat_arms!(i128,arguments,i128::zero())
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::Bool)           { impl_horzcat_arms!(bool,arguments,false)
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::String)         { impl_horzcat_arms!(String,arguments,"".to_string())    
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::RationalNumber) { impl_horzcat_arms!(RationalNumber,arguments,RationalNumber::default())    
+  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::ComplexNumber)  { impl_horzcat_arms!(ComplexNumber,arguments,ComplexNumber::default())    
   } else {
     return Err(MechError {
       file: file!().to_string(),

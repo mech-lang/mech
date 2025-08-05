@@ -4,34 +4,34 @@ use crate::stdlib::*;
 // Negate ---------------------------------------------------------------------
   
 macro_rules! neg_op {
-    ($arg:expr, $out:expr) => {
-      unsafe { *$out = -*$arg; }
-    };}
+  ($arg:expr, $out:expr) => {
+    unsafe { *$out = -*$arg; }
+  };}
   
 macro_rules! neg_vec_op {
-($arg:expr, $out:expr) => {
+  ($arg:expr, $out:expr) => {
     unsafe { *$out = (*$arg).clone().neg(); }
     };}
 
 macro_rules! impl_neg_op {
-($struct_name:ident, $out_type:ty, $op:ident) => {
+  ($struct_name:ident, $out_type:ty, $op:ident) => {
     #[derive(Debug)]
     struct $struct_name<T> {
-    arg: Ref<$out_type>,
-    out: Ref<$out_type>,
+      arg: Ref<$out_type>,
+      out: Ref<$out_type>,
     }
     impl<T> MechFunction for $struct_name<T>
     where
-    T: Copy + Debug + Clone + Sync + Send + Neg + ClosedNeg + PartialEq + 'static,
-    Ref<$out_type>: ToValue
+      T: Copy + Debug + Clone + Sync + Send + Neg + ClosedNeg + PartialEq + 'static,
+      Ref<$out_type>: ToValue
     {
-    fn solve(&self) {
+      fn solve(&self) {
         let arg_ptr = self.arg.as_ptr();
         let out_ptr = self.out.as_ptr();
         $op!(arg_ptr,out_ptr);
-    }
-    fn out(&self) -> Value { self.out.to_value() }
-    fn to_string(&self) -> String { format!("{:#?}", self) }
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }};}
 
 impl_neg_op!(NegateS, T, neg_op);
@@ -66,8 +66,35 @@ impl_neg_op!(NegateV4, Vector4<T>,neg_op);
 #[cfg(feature = "VectorD")]
 impl_neg_op!(NegateVD, DVector<T>,neg_vec_op);
 
+#[derive(Debug)]
+pub struct NegateRational {
+  pub arg: Ref<RationalNumber>,
+  pub out: Ref<RationalNumber>,
+}
+
+impl MechFunction for NegateRational {
+  fn solve(&self) {
+    let arg_ptr = self.arg.as_ptr();
+    let out_ptr = self.out.as_ptr();
+    unsafe {
+      (*out_ptr).0 = -(*arg_ptr).0;
+    }
+  }
+  fn out(&self) -> Value { self.out.clone().to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
 fn impl_neg_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-impl_urnop_match_arms!(
+  match lhs_value {
+    Value::RationalNumber(lhs) => {
+      return Ok(Box::new(NegateRational {
+        arg: lhs.clone(),
+        out: new_ref(RationalNumber::default()),
+      }));
+    }
+    _ => (),
+  }
+  impl_urnop_match_arms!(
     Negate,
     (lhs_value),
     I8 => MatrixI8, i8, i8::zero(), "I8";
@@ -77,7 +104,9 @@ impl_urnop_match_arms!(
     I128 => MatrixI128, i128, i128::zero(), "I128";
     F32 => MatrixF32, F32, F32::zero(), "F32";
     F64 => MatrixF64, F64, F64::zero(), "F64";
-)
+    RationalNumber => MatrixRationalNumber,  RationalNumber,  RationalNumber::zero(), "RationalNumber";
+    ComplexNumber => MatrixComplexNumber,  ComplexNumber,  ComplexNumber::zero(), "ComplexNumber";
+  )
 }
 
 impl_mech_urnop_fxn!(MathNegate,impl_neg_fxn);

@@ -1177,7 +1177,7 @@ pub type Exponent = (Sign, Whole, Part);
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
 pub enum Number {
   Real(RealNumber),
-  Imaginary(ComplexNumber),
+  Complex(ComplexNumberNode),
 }
 
 impl Number {
@@ -1189,14 +1189,14 @@ impl Number {
   pub fn to_string(&self) -> String {
     match self {
       Number::Real(x) => x.to_string(),
-      Number::Imaginary(x) => x.to_string(),
+      Number::Complex(x) => x.to_string(),
     }
   }
 
   pub fn tokens(&self) -> Vec<Token> {
     match self {
       Number::Real(x) => x.tokens(),
-      _ => todo!(),
+      Number::Complex(x) => x.tokens(),
     }
   }
 }
@@ -1248,12 +1248,12 @@ pub struct ImaginaryNumber {
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
-pub struct ComplexNumber {
+pub struct ComplexNumberNode {
   pub real: Option<RealNumber>,
   pub imaginary: ImaginaryNumber
 }
 
-impl ComplexNumber {
+impl ComplexNumberNode {
   pub fn tokens(&self) -> Vec<Token> {
     let mut tkns = vec![];
     if let Some(r) = &self.real {
@@ -1355,6 +1355,32 @@ pub enum FormulaOperator {
   Logic(LogicOp),
   MulDiv(MulDivOp),
   Vec(VecOp),
+  Table(TableOp),
+  Set(SetOp),
+}
+
+#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub enum TableOp {
+  InnerJoin,
+  LeftOuterJoin,
+  RightOuterJoin	,
+  FullOuterJoin	,
+  LeftSemiJoin,  
+  LeftAntiJoin,
+}
+
+#[derive (Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+pub enum SetOp {
+  Union,
+  Intersection,
+  Difference,
+  Complement,
+  Subset,
+  Superset,
+  ProperSubset,
+  ProperSuperset,
+  ElementOf,
+  NotElementOf,
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]

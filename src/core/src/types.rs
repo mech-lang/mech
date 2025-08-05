@@ -13,6 +13,8 @@ use std::hash::{Hash, Hasher};
 use libm::{pow,powf};
 use paste::paste;
 
+use nalgebra::Complex;
+
 pub type FunctionsRef = Ref<Functions>;
 pub type Plan = Ref<Vec<Box<dyn MechFunction>>>;
 pub type MutableReference = Ref<Value>;
@@ -246,18 +248,6 @@ impl_into_float!(i128 => f32, f64);
 impl_into!(F64 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
 impl_into!(F32 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
 
-impl Into<F32> for F64 {
-  fn into(self) -> F32 {
-    F32::new(self.0 as f32)
-  }
-}
-
-impl Into<F64> for F32 {
-  fn into(self) -> F64 {
-    F64::new(self.0 as f64)
-  }
-}
-
 impl fmt::Display for F32 {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
       write!(f, "{}", self.0)
@@ -419,5 +409,290 @@ impl From<F32> for Value {
 impl Default for F32 {
   fn default() -> Self {
     F32(0.0)
+  }
+}
+
+// Complex Numbers
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct ComplexNumber(pub Complex<f64>);
+
+impl fmt::Display for ComplexNumber {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "{}", self.pretty_print())
+  }
+}
+
+impl PartialOrd for ComplexNumber {
+  fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    Some(self.0.norm().partial_cmp(&other.0.norm()).unwrap())
+  }
+}
+
+impl Default for ComplexNumber {
+  fn default() -> Self {
+    ComplexNumber(Complex::new(0.0, 0.0))
+  }
+}
+
+impl Eq for ComplexNumber {}
+
+impl Hash for ComplexNumber {
+  fn hash<H: Hasher>(&self, state: &mut H) {
+    self.0.re.to_bits().hash(state);
+    self.0.im.to_bits().hash(state);
+  }
+}
+
+impl PrettyPrint for ComplexNumber {
+  fn pretty_print(&self) -> String {
+    if self.0.re == 0.0 {
+      return format!("{}i", self.0.im);
+    } else if self.0.im >= 0.0 {
+      format!("{}+{}i", self.0.re, self.0.im)
+    } else {
+      format!("{}{}i", self.0.re, self.0.im)
+    }
+  }
+}
+
+impl ComplexNumber {
+  pub fn new(real: f64, imag: f64) -> ComplexNumber {
+    ComplexNumber(Complex::new(real, imag))
+  }
+
+  pub fn to_html(&self) -> String {
+    let pretty = self.pretty_print();
+    format!("<span class='mech-complex-number'>{}</span>", pretty)
+  }
+
+}
+
+impl Add for ComplexNumber {
+  type Output = ComplexNumber;
+  fn add(self, other: ComplexNumber) -> ComplexNumber {
+    ComplexNumber(self.0 + other.0)
+  }
+}
+
+impl Mul for ComplexNumber {
+  type Output = ComplexNumber;
+  fn mul(self, other: ComplexNumber) -> ComplexNumber {
+    ComplexNumber(self.0 * other.0)
+  }
+}
+
+impl Sub for ComplexNumber {
+  type Output = ComplexNumber;
+  fn sub(self, other: ComplexNumber) -> ComplexNumber {
+    ComplexNumber(self.0 - other.0)
+  }
+}
+
+impl Div for ComplexNumber {
+  type Output = ComplexNumber;
+  fn div(self, other: ComplexNumber) -> ComplexNumber {
+    ComplexNumber(self.0 / other.0)
+  }
+}
+
+impl AddAssign for ComplexNumber {
+  fn add_assign(&mut self, other: ComplexNumber) {
+    self.0 += other.0;
+  }
+}
+
+impl SubAssign for ComplexNumber {
+  fn sub_assign(&mut self, other: ComplexNumber) {
+    self.0 -= other.0;
+  }
+}
+
+impl MulAssign for ComplexNumber {
+  fn mul_assign(&mut self, other: ComplexNumber) {
+    self.0 *= other.0;
+  }
+}
+
+impl DivAssign for ComplexNumber {
+  fn div_assign(&mut self, other: ComplexNumber) {
+    self.0 /= other.0;
+  }
+}
+
+impl Zero for ComplexNumber {
+  fn zero() -> Self {
+    ComplexNumber(Complex::new(0.0, 0.0))
+  }
+  fn is_zero(&self) -> bool {
+    self.0.re == 0.0 && self.0.im == 0.0
+  }
+}
+
+impl One for ComplexNumber {
+  fn one() -> Self {
+    ComplexNumber(Complex::new(1.0, 0.0))
+  }
+  fn is_one(&self) -> bool {
+    self.0 == Complex::new(1.0, 0.0)
+  }
+}
+
+impl Neg for ComplexNumber {
+  type Output = Self;
+  fn neg(self) -> Self::Output {
+    ComplexNumber(-self.0)
+  }
+}
+
+// Rational Numbers
+
+#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, PartialOrd)]
+pub struct RationalNumber(pub Rational64);
+
+impl RationalNumber {
+  pub fn new(numer: i64, denom: i64) -> RationalNumber {
+    RationalNumber(Rational64::new(numer, denom))
+  }
+
+  pub fn from_f64(f: f64) -> Option<RationalNumber> {
+    match Rational64::from_f64(f) {
+      Some(r) => Some(RationalNumber(r)),
+      None => None,
+    }
+  }
+
+  pub fn to_f64(&self) -> Option<f64> {
+    match self.0.to_f64() {
+      Some(val) => Some(val),
+      None => None,
+    }
+  }
+
+  pub fn numer(&self) -> &i64 {
+    self.0.numer()
+  }
+
+  pub fn denom(&self) -> &i64 {
+    self.0.denom()
+  }
+}
+
+impl std::fmt::Display for RationalNumber {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "{}", self.pretty_print())
+  }
+}
+
+impl Default for RationalNumber {
+  fn default() -> Self {
+    RationalNumber(Rational64::default())
+  }
+}
+
+impl PrettyPrint for RationalNumber {
+  fn pretty_print(&self) -> String {
+    format!("{}/{}", self.numer(), self.denom())
+  }
+}
+
+impl Mul<RationalNumber> for RationalNumber {
+  type Output = RationalNumber;
+  fn mul(self, other: RationalNumber) -> RationalNumber {
+    RationalNumber(self.0 * other.0)
+  }
+}
+
+impl One for RationalNumber {
+  fn one() -> Self {
+    RationalNumber(Rational64::one())
+  }
+  fn is_one(&self) -> bool {
+    self.0.is_one()
+  }
+}
+
+impl Add<RationalNumber> for RationalNumber {
+  type Output = RationalNumber;
+  fn add(self, other: RationalNumber) -> RationalNumber {
+    RationalNumber(self.0 + other.0)
+  }
+}
+
+impl AddAssign<RationalNumber> for RationalNumber {
+  fn add_assign(&mut self, other: RationalNumber) {
+    self.0 += other.0;
+  }
+}
+
+impl Sub<RationalNumber> for RationalNumber {
+  type Output = RationalNumber;
+  fn sub(self, other: RationalNumber) -> RationalNumber {
+    RationalNumber(self.0 - other.0)
+  }
+}
+
+impl Div<RationalNumber> for RationalNumber {
+  type Output = RationalNumber;
+  fn div(self, other: RationalNumber) -> RationalNumber {
+    RationalNumber(self.0 / other.0)
+  }
+}
+
+impl DivAssign<RationalNumber> for RationalNumber {
+  fn div_assign(&mut self, other: RationalNumber) {
+    self.0 /= other.0;
+  }
+}
+
+impl SubAssign<RationalNumber> for RationalNumber {
+  fn sub_assign(&mut self, other: RationalNumber) {
+    self.0 -= other.0;
+  }
+}
+
+impl MulAssign<RationalNumber> for RationalNumber {
+  fn mul_assign(&mut self, other: RationalNumber) {
+    self.0 *= other.0;
+  }
+}
+
+impl Zero for RationalNumber {
+  fn zero() -> Self {
+    RationalNumber(Rational64::zero())
+  }
+  fn is_zero(&self) -> bool {
+    self.0.is_zero()
+  }
+}
+
+impl Neg for RationalNumber {
+  type Output = Self;
+  fn neg(self) -> Self::Output {
+    RationalNumber(-self.0)
+  }
+}
+
+impl From<RationalNumber> for F64 {
+  fn from(r: RationalNumber) -> Self {
+    F64::new(r.0.to_f64().unwrap())
+  }
+}
+
+impl From<F64> for RationalNumber {
+  fn from(f: F64) -> Self {
+    RationalNumber(Rational64::from_f64(f.0).unwrap())
+  }
+}
+
+impl From<F32> for F64 {
+  fn from(value: F32) -> Self {
+    F64::new(value.0 as f64)
+  }
+}
+
+impl From<F64> for F32 {
+  fn from(value: F64) -> Self {
+    F32::new(value.0 as f32)
   }
 }

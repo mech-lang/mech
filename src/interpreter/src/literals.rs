@@ -17,7 +17,7 @@ pub fn literal(ltrl: &Literal, p: &Interpreter) -> MResult<Value> {
 
 pub fn kind_value(knd: &NodeKind, p: &Interpreter) -> MResult<Value> {
   let kind = kind_annotation(knd, p)?;
-  Ok(Value::Kind(kind.to_value_kind(p.functions())?))
+  Ok(Value::Kind(kind.to_value_kind(&p.functions())?))
 }
 
 pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
@@ -104,49 +104,14 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
 }
 
 pub fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, p: &Interpreter) -> MResult<Value> {
-  let functions = p.functions();
   let value = literal(ltrl,p)?;
-  let knd_tkns = knd_attn.tokens();
   let kind = kind_annotation(&knd_attn.kind, p)?;
-  match (&value,kind) {
-    (Value::I64(num), Kind::Scalar(to_kind_id)) => {
-      match functions.borrow().kinds.get(&to_kind_id) {
-        Some(ValueKind::I8)   => Ok(Value::I8(new_ref(*num.borrow() as i8))),
-        Some(ValueKind::I16)  => Ok(Value::I16(new_ref(*num.borrow() as i16))),
-        Some(ValueKind::I32)  => Ok(Value::I32(new_ref(*num.borrow() as i32))),
-        Some(ValueKind::I64)  => Ok(value),
-        Some(ValueKind::I128) => Ok(Value::I128(new_ref(*num.borrow() as i128))),
-        Some(ValueKind::U8)   => Ok(Value::U8(new_ref(*num.borrow() as u8))),
-        Some(ValueKind::U16)  => Ok(Value::U16(new_ref(*num.borrow() as u16))),
-        Some(ValueKind::U32)  => Ok(Value::U32(new_ref(*num.borrow() as u32))),
-        Some(ValueKind::U64)  => Ok(Value::U64(new_ref(*num.borrow() as u64))),
-        Some(ValueKind::U128) => Ok(Value::U128(new_ref(*num.borrow() as u128))),
-        Some(ValueKind::F32)  => Ok(Value::F32(new_ref(F32::new(*num.borrow() as f32)))),
-        Some(ValueKind::F64)  => Ok(Value::F64(new_ref(F64::new(*num.borrow() as f64)))),
-        None => Err(MechError{file: file!().to_string(), tokens: knd_tkns, msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(to_kind_id)}),
-        _ => Err(MechError{file: file!().to_string(), tokens: knd_tkns, msg: "".to_string(), id: line!(), kind: MechErrorKind::CouldNotAssignKindToValue}),
-      }
-    }
-    (Value::F64(num), Kind::Scalar(to_kind_id)) => {
-      match functions.borrow().kinds.get(&to_kind_id) {
-        Some(ValueKind::I8)   => Ok(Value::I8(new_ref((*num.borrow()).0 as i8))),
-        Some(ValueKind::I16)  => Ok(Value::I16(new_ref((*num.borrow()).0 as i16))),
-        Some(ValueKind::I32)  => Ok(Value::I32(new_ref((*num.borrow()).0 as i32))),
-        Some(ValueKind::I64)  => Ok(Value::I64(new_ref((*num.borrow()).0 as i64))),
-        Some(ValueKind::I128) => Ok(Value::I128(new_ref((*num.borrow()).0 as i128))),
-        Some(ValueKind::U8)   => Ok(Value::U8(new_ref((*num.borrow()).0 as u8))),
-        Some(ValueKind::U16)  => Ok(Value::U16(new_ref((*num.borrow()).0 as u16))),
-        Some(ValueKind::U32)  => Ok(Value::U32(new_ref((*num.borrow()).0 as u32))),
-        Some(ValueKind::U64)  => Ok(Value::U64(new_ref((*num.borrow()).0 as u64))),
-        Some(ValueKind::U128) => Ok(Value::U128(new_ref((*num.borrow()).0 as u128))),
-        Some(ValueKind::F32)  => Ok(Value::F32(new_ref(F32::new((*num.borrow()).0 as f32)))),
-        Some(ValueKind::F64)  => Ok(value),
-        None => Err(MechError{file: file!().to_string(), tokens: knd_tkns, msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedKind(to_kind_id)}),
-        _ => Err(MechError{file: file!().to_string(), tokens: knd_tkns, msg: "".to_string(), id: line!(), kind: MechErrorKind::CouldNotAssignKindToValue}),
-      }
-    }
-    _ => todo!(),
-  }
+  let args = vec![value, kind.to_value(&p.functions())?];
+  let convert_fxn = ConvertKind{}.compile(&args)?;
+  convert_fxn.solve();
+  let converted_result = convert_fxn.out();
+  p.add_plan_step(convert_fxn);
+  Ok(converted_result)
 }
 
 pub fn atom(atm: &Atom) -> Value {
@@ -157,13 +122,30 @@ pub fn atom(atm: &Atom) -> Value {
 pub fn number(num: &Number) -> Value {
   match num {
     Number::Real(num) => real(num),
-    Number::Imaginary(num) => todo!(),
+    Number::Complex(num) => complex(num),
+  }
+}
+
+fn complex(num: &ComplexNumberNode) -> Value {
+  let im: f64 = match real(&num.imaginary.number).as_f64() {
+    Some(val) => val.borrow().0,
+    None => 0.0,
+  };
+  match &num.real {
+    Some(real_val) => {
+      let re: f64 = match real(&real_val).as_f64() {
+        Some(val) => val.borrow().0,
+        None => 0.0,
+      };      
+      Value::ComplexNumber(new_ref(ComplexNumber::new(re, im)))
+    },
+    None => Value::ComplexNumber(new_ref(ComplexNumber::new(0.0, im))),
   }
 }
 
 pub fn real(rl: &RealNumber) -> Value {
   match rl {
-    RealNumber::Negated(num) => todo!(),
+    RealNumber::Negated(num) => negated(num),
     RealNumber::Integer(num) => integer(num),
     RealNumber::Float(num) => float(num),
     RealNumber::Decimal(num) => dec(num),
@@ -171,8 +153,33 @@ pub fn real(rl: &RealNumber) -> Value {
     RealNumber::Octal(num) => oct(num),
     RealNumber::Binary(num) => binary(num),
     RealNumber::Scientific(num) => scientific(num),
-    RealNumber::Rational(num) => todo!(),
+    RealNumber::Rational(num) => rational(num),
   }
+}
+
+pub fn negated(num: &RealNumber) -> Value {
+  let num_val = real(&num);
+  match num_val {
+    Value::I8(val) => Value::I8(new_ref(-*val.borrow())),
+    Value::I16(val) => Value::I16(new_ref(-*val.borrow())),
+    Value::I32(val) => Value::I32(new_ref(-*val.borrow())),
+    Value::I64(val) => Value::I64(new_ref(-*val.borrow())),
+    Value::I128(val) => Value::I128(new_ref(-*val.borrow())),
+    Value::F64(val) => Value::F64(new_ref(F64::new(-((*val.borrow()).0)))),
+    Value::F32(val) => Value::F32(new_ref(F32::new(-((*val.borrow()).0)))),
+    _ => panic!("Negation is only supported for integer and float types"),
+  }
+}
+
+pub fn rational(rat: &(Token,Token)) -> Value {
+  let (num, denom) = rat;
+  let num = num.chars.iter().collect::<String>().parse::<i64>().unwrap();
+  let denom = denom.chars.iter().collect::<String>().parse::<i64>().unwrap();
+  if denom == 0 {
+    panic!("Denominator cannot be zero in a rational number");
+  }
+  let rat_num = RationalNumber::new(num, denom);
+  Value::RationalNumber(new_ref(rat_num))
 }
 
 pub fn dec(bnry: &Token) -> Value {

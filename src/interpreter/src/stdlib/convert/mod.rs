@@ -242,3 +242,155 @@ impl LosslessInto<F32> for F32 {
     self
   }
 }
+
+impl LosslessInto<String> for RationalNumber {
+  fn lossless_into(self) -> String {
+    self.pretty_print()
+  }
+}
+
+impl LosslessInto<F64> for RationalNumber {
+  fn lossless_into(self) -> F64 {
+    match self.to_f64() {
+      Some(val) => F64::new(val),
+      None => panic!("Cannot convert RationalNumber to F64: value is not representable"),
+    }
+  }
+}
+
+impl LosslessInto<RationalNumber> for F64 {
+  fn lossless_into(self) -> RationalNumber {
+    RationalNumber::from_f64(self.0).unwrap_or_else(|| panic!("Cannot convert F64 to RationalNumber: value is not representable"))
+  }
+}
+
+impl LosslessInto<RationalNumber> for F32 {
+  fn lossless_into(self) -> RationalNumber {
+    RationalNumber::from_f64(self.0 as f64).unwrap_or_else(|| panic!("Cannot convert F32 to RationalNumber: value is not representable"))
+  }
+}
+
+impl LosslessInto<String> for ComplexNumber {
+  fn lossless_into(self) -> String {
+    self.pretty_print()
+  }
+}
+
+
+pub trait LossyFrom<T> {
+  fn lossy_from(value: T) -> Self;
+}
+
+macro_rules! impl_lossy_from {
+  ($($from:ty => $($to:ty),*);* $(;)?) => {
+    $(
+      $(
+        impl LossyFrom<$from> for $to {
+          fn lossy_from(value: $from) -> Self {
+            value as $to
+          }
+        }
+      )*
+    )*
+  };
+}
+
+impl_lossy_from!(u8 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
+impl_lossy_from!(u16 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
+impl_lossy_from!(u32 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
+impl_lossy_from!(u64 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
+impl_lossy_from!(i8 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
+impl_lossy_from!(i16 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
+impl_lossy_from!(i32 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
+impl_lossy_from!(i64 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
+impl_lossy_from!(i128 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
+impl_lossy_from!(u128 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
+
+macro_rules! impl_lossy_from_wrapper {
+  ($wrapper:ident, $inner:ty, $($prim:ty),*) => {
+    $(
+      impl LossyFrom<$wrapper> for $prim {
+        fn lossy_from(value: $wrapper) -> Self {
+          value.0 as $prim
+        }
+      }
+      impl LossyFrom<$prim> for $wrapper {
+        fn lossy_from(value: $prim) -> Self {
+          $wrapper(value as $inner)
+        }
+      }
+    )*
+  };
+}
+
+impl_lossy_from_wrapper!(F64, f64, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, f32, f64);
+impl_lossy_from_wrapper!(F32, f32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, f32, f64);
+
+impl LossyFrom<F64> for F32 {
+  fn lossy_from(value: F64) -> Self {
+    F32(value.0 as f32)
+  }
+}
+
+impl LossyFrom<F32> for F64 {
+  fn lossy_from(value: F32) -> Self {
+    F64(value.0 as f64)
+  }
+}
+
+impl LossyFrom<F64> for F64 {
+  fn lossy_from(value: F64) -> Self {
+    F64(value.0)
+  }
+}
+
+impl LossyFrom<F32> for F32 {
+  fn lossy_from(value: F32) -> Self {
+    F32(value.0)
+  }
+}
+
+impl LossyFrom<F64> for RationalNumber {
+  fn lossy_from(value: F64) -> Self {
+    RationalNumber::from(value)
+  }
+}
+
+impl LossyFrom<RationalNumber> for String {
+  fn lossy_from(value: RationalNumber) -> Self {
+    value.pretty_print()
+  }
+}
+
+impl LossyFrom<RationalNumber> for F64 {
+  fn lossy_from(value: RationalNumber) -> Self {
+    F64(value.to_f64().unwrap_or_else(|| panic!("Cannot convert RationalNumber to F64: value is not representable")))
+  }
+}
+
+impl LossyFrom<F64> for String {
+  fn lossy_from(value: F64) -> Self {
+    value.to_string()
+  }
+}
+
+
+impl LossyFrom<F32> for String {
+  fn lossy_from(value: F32) -> Self {
+    value.to_string()
+  }
+}
+
+macro_rules! impl_lossy_from_numeric_to_string {
+  ($($t:ty),*) => {
+    $(
+      impl LossyFrom<$t> for String {
+        fn lossy_from(value: $t) -> Self {
+          value.to_string()
+        }
+      }
+    )*
+  };
+}
+
+impl_lossy_from_numeric_to_string!(u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
