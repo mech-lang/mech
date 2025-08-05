@@ -65,6 +65,7 @@ pub fn op_assign(op_assgn: &OpAssign, p: &Interpreter) -> MResult<Value> {
         let fxn = match op_assgn.op {
           OpAssignOp::Add => add_assign(&s, &sink, &source, p)?,
           OpAssignOp::Sub => sub_assign(&s, &sink, &source, p)?,
+          OpAssignOp::Div => div_assign(&s, &sink, &source, p)?,
           _ => todo!(),
         };
         return Ok(fxn);
@@ -75,6 +76,7 @@ pub fn op_assign(op_assgn: &OpAssign, p: &Interpreter) -> MResult<Value> {
       let fxn = match op_assgn.op {
         OpAssignOp::Add => AddAssignValue{}.compile(&args)?,
         OpAssignOp::Sub => SubAssignValue{}.compile(&args)?,
+        OpAssignOp::Div => DivAssignValue{}.compile(&args)?,
         _ => todo!(),
       };
       fxn.solve();
@@ -254,7 +256,7 @@ macro_rules! op_assign {
             todo!()
           },
           Subscript::Swizzle(x) => {
-            unreachable!()
+            todo!()
           },
           Subscript::Bracket(subs) => {
             let mut fxn_input = vec![sink.clone()];
@@ -284,7 +286,20 @@ macro_rules! op_assign {
                   _ => todo!(),
                 }
               },
-              _ => unreachable!(),
+              [Subscript::Range(ix)] => {
+                fxn_input.push(source.clone());
+                let ixes = subscript_range(&subs[0], p)?;
+                fxn_input.push(ixes);
+                plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?);
+              },
+              [Subscript::Range(ix), Subscript::All] => {
+                fxn_input.push(source.clone());
+                let ixes = subscript_range(&subs[0], p)?;
+                fxn_input.push(ixes);
+                fxn_input.push(Value::IndexAll);
+                plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?);
+              },
+              x => todo!("{:?}", x),
             };
             let plan_brrw = plan.borrow();
             let mut new_fxn = &plan_brrw.last().unwrap();
@@ -293,7 +308,7 @@ macro_rules! op_assign {
             return Ok(res);
           },
           Subscript::Brace(x) => todo!(),
-          _ => unreachable!(),
+          x => todo!("{:?}", x),
         }
       }
     }}}
@@ -301,7 +316,7 @@ macro_rules! op_assign {
 op_assign!(add_assign, Add);
 op_assign!(sub_assign, Sub);
 //op_assign!(mul_assign, Mul);
-//op_assign!(div_assign, Div);
+op_assign!(div_assign, Div);
 //op_assign!(exp_assign, Exp);
 
 pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, p: &Interpreter) -> MResult<Value> {

@@ -554,7 +554,10 @@ test_interpreter!(interpret_stats_sum_rowm2, "x := [1 2; 4 5]; y := stats/sum/ro
 test_interpreter!(interpret_add_assign_formula, "ix := [1 1 2 3]; y := 5; x := [1 2 3 4]; x[ix] += y;", new_ref(RowVector4::from_vec(vec![F64::new(11.0),F64::new(7.0),F64::new(8.0),F64::new(4.0)])).to_value());
 test_interpreter!(interpret_add_assign_formula_all_m2m2,"x := [1 2; 3 4]; y := [1 1];z := [10 10; 20 20];x[y,:] += z;", new_ref(Matrix2::from_vec(vec![F64::new(31.0),F64::new(3.0),F64::new(32.0),F64::new(4.0)])).to_value());
 test_interpreter!(interpret_sub_assign_formula, "ix := [1 1 2 3]; y := 5; x := [1 2 3 4]; x[ix] -= y;", new_ref(RowVector4::from_vec(vec![F64::new(-9.0),F64::new(-3.0),F64::new(-2.0),F64::new(4.0)])).to_value());
-
+test_interpreter!(interpret_add_assign_range, "~x := [1 2; 3 4]; x[1..3] += 1", new_ref(Matrix2::from_vec(vec![F64::new(2.0),F64::new(4.0),F64::new(2.0),F64::new(4.0)])).to_value());
+test_interpreter!(interpret_div_assign_range_all, "~x := [1 2; 3 4; 5 6]; x[1..3,:] /= [1 2; 3 4];", new_ref(Matrix3x2::from_vec(vec![F64::new(1.0),F64::new(1.0),F64::new(5.0),F64::new(1.0),F64::new(1.0),F64::new(6.0)])).to_value());
+test_interpreter!(interpret_div_assign_range, "~x := [1 2 3 4]; x[1..3] /= 2;", new_ref(RowVector4::from_vec(vec![F64::new(0.5),F64::new(1.0),F64::new(3.0),F64::new(4.0)])).to_value());
+test_interpreter!(interpret_add_assign_range_vec, "~x := [1 2 3 4]; x[1..3] += 2;", new_ref(RowVector4::from_vec(vec![F64::new(3.0),F64::new(4.0),F64::new(3.0),F64::new(4.0)])).to_value());
 
 test_interpreter!(interpret_set_logical_ram2m2_bool,"~x := [1 2; 3 4]; y := [true false]; z := [10 20; 30 40]; x[y,:] = z;", new_ref(Matrix2::from_vec(vec![F64::new(10.0),F64::new(3.0),F64::new(20.0),F64::new(4.0)])).to_value());
 test_interpreter!(interpret_set_logical_ram3m3_bool,"~x := [1 2 3; 4 5 6; 7 8 9]; y := [true false true]; z := [10 20 30; 40 50 60; 70 80 90]; x[y,:] = z;", new_ref(Matrix3::from_vec(vec![F64::new(10.0),F64::new(4.0),F64::new(70.0),F64::new(20.0),F64::new(5.0),F64::new(80.0),F64::new(30.0),F64::new(6.0),F64::new(90.0)])).to_value());
@@ -640,3 +643,4 @@ test_interpreter!(interpret_convert_rational_to_string,r#"x<string>:=1/2"#, Valu
 test_interpreter!(interpret_convert_f64_to_string2,r#"x<string>:=123"#, Value::String(new_ref(String::from("123"))));
 
 test_interpreter!(interpret_convert_f64_to_rational_to_string,r#"x<string> := 0.5<r64>"#,Value::String(new_ref(String::from("1/2"))));
+

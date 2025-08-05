@@ -9,7 +9,6 @@ use crate::stdlib::*;
 macro_rules! impl_add_assign_match_arms {
   ($fxn_name:ident,$macro_name:ident, $arg:expr) => {
     paste!{
-      //VVVVVVVVV right there is where the assign macros come in.
       [<impl_set_ $macro_name _match_arms>]!(
         $fxn_name,
         $arg,
@@ -25,6 +24,8 @@ macro_rules! impl_add_assign_match_arms {
         U128, "U128";
         F32, "F32"; 
         F64, "F64" ;
+        ComplexNumber, "ComplexNumber";
+        RationalNumber, "RationalNumber";
       )
     }
   }
@@ -275,7 +276,6 @@ impl_add_assign_fxn!(AddAssign1DRV4V2,Vector4,Vector2<T>,add_assign_1d_range_vec
 
 impl_add_assign_fxn!(AddAssign1DRMDMD,DMatrix,DMatrix<T>,add_assign_1d_range_vec,usize);
 
-
 fn add_assign_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
   impl_add_assign_match_arms!(AddAssign1DR, range, (sink, ixes.as_slice(), source))
 }
@@ -304,35 +304,6 @@ impl NativeFunctionCompiler for AddAssignRange {
 }
 
 // x[1..3,:] += 1 ------------------------------------------------------------------
-
-#[derive(Debug)]
-struct AddAssign2DRAMDMD<T> {
-  source: Ref<DMatrix<T>>,
-  ixes: Ref<DVector<usize>>,
-  sink: Ref<DMatrix<T>>,
-}
-impl<T> MechFunction for AddAssign2DRAMDMD<T>
-where
-  T: Copy + Debug + Clone + Sync + Send + 'static +
-  Add<Output = T> + AddAssign +
-  Zero + One +
-  PartialEq + PartialOrd,
-  Ref<DMatrix<T>>: ToValue
-{
-  fn solve(&self) {
-    unsafe {
-      let ix_ptr = &(*(self.ixes.as_ptr()));
-      let mut sink_ptr = (&mut *(self.sink.as_ptr()));
-      let source_ptr = &(*(self.source.as_ptr()));
-      for (i,rix) in (ix_ptr).iter().enumerate() {
-        let mut row = sink_ptr.row_mut(rix - 1);
-        row += (source_ptr).row(i);
-      }
-    }
-  }
-  fn out(&self) -> Value { self.sink.to_value() }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
-}
 
 macro_rules! add_assign_2d_vector_all {
   ($source:expr, $ix:expr, $sink:expr) => {
@@ -381,7 +352,7 @@ impl_add_assign_fxn!(AddAssign2DRAM1,Matrix1,T,add_assign_2d_vector_all,usize);
 impl_add_assign_fxn!(AddAssign2DRAM2x3,Matrix2x3,T,add_assign_2d_vector_all,usize);
 impl_add_assign_fxn!(AddAssign2DRAM3x2,Matrix3x2,T,add_assign_2d_vector_all,usize);
 
-//impl_add_assign_fxn!(AddAssign2DRAMDMD,DMatrix,DMatrix<T>,add_assign_2d_vector_all_mat,usize);
+impl_add_assign_fxn!(AddAssign2DRAMDMD,DMatrix,DMatrix<T>,add_assign_2d_vector_all_mat,usize);
 
 impl_add_assign_fxn!(AddAssign2DRAMDM2,DMatrix,Matrix2<T>,add_assign_2d_vector_all_mat,usize);
 impl_add_assign_fxn!(AddAssign2DRAMDM2x3,DMatrix,Matrix2x3<T>,add_assign_2d_vector_all_mat,usize);

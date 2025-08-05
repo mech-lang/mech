@@ -3,13 +3,10 @@ use crate::stdlib::*;
 
 // Sub Assign -----------------------------------------------------------------
 
-// We will mostly use the assign macros for this
-
 #[macro_export]
 macro_rules! impl_sub_assign_match_arms {
   ($fxn_name:ident,$macro_name:ident, $arg:expr) => {
     paste!{
-      //VVVVVVVVV right there is where the assign macros come in.
       [<impl_set_ $macro_name _match_arms>]!(
         $fxn_name,
         $arg,
@@ -25,6 +22,8 @@ macro_rules! impl_sub_assign_match_arms {
         U128, "U128";
         F32, "F32"; 
         F64, "F64" ;
+        ComplexNumber, "ComplexNumber";
+        RationalNumber, "RationalNumber";
       )
     }
   }
