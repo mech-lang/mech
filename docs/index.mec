@@ -61,7 +61,7 @@ Mech Programming Language Documentation
 
 docs/machine := {
   name: "docs" 
-  version: "v0.2.55"
+  version: "v0.2.56"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/mech/docs"
   license: "Apache-2.0"}
