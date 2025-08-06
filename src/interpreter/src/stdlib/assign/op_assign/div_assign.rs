@@ -3,6 +3,10 @@ use crate::stdlib::*;
 use std::fmt::Debug;
 use std::ops::DivAssign;
 use std::marker::PhantomData;
+use nalgebra::{
+  base::{Matrix as naMatrix, Storage, StorageMut},
+  Dim, Scalar,
+};
 
 // Div Assign -----------------------------------------------------------------
 
@@ -85,6 +89,45 @@ where
   }
   fn out(&self) -> Value { self.sink.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[derive(Debug)]
+pub struct DivAssign2DRA<T, MatA, MatB, IxVec> {
+  pub sink: Ref<MatA>,
+  pub source: Ref<MatB>,
+  pub ixes: Ref<IxVec>,
+  pub _marker: PhantomData<T>,
+}
+
+impl<T, R1, C1, S1, R2, C2, S2, IxVec>
+  MechFunction for DivAssign2DRA<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
+where
+  Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+  T: Scalar + Copy + Debug + Clone + Sync + Send + 'static + DivAssign + Div<Output = T>,
+  IxVec: AsRef<[usize]> + Debug,
+  R1: Dim,
+  C1: Dim,
+  S1: StorageMut<T, R1, C1> + Debug,
+  R2: Dim,
+  C2: Dim,
+  S2: Storage<T, R2, C2> + Debug,
+{
+  fn solve(&self) {
+    unsafe {
+      let sink_ref = &mut *self.sink.as_ptr();
+      let source_ref = &*self.source.as_ptr();
+      let ixes = &(*self.ixes.as_ptr()).as_ref();
+      for (i, &rix) in ixes.iter().enumerate() {
+        let mut sink_row = sink_ref.row_mut(rix - 1);
+        let src_row = source_ref.row(i);
+        for (dst, src) in sink_row.iter_mut().zip(src_row.iter()) {
+          *dst /= *src;
+        }
+      }
+    }
+  }
+  fn out(&self) -> Value {self.sink.to_value()}
+  fn to_string(&self) -> String {format!("{:#?}", self)}
 }
 
 #[derive(Debug)]
@@ -329,33 +372,6 @@ impl_div_assign_fxn!(DivAssign2DRAM2,Matrix2,T,div_assign_2d_vector_all,usize);
 impl_div_assign_fxn!(DivAssign2DRAM1,Matrix1,T,div_assign_2d_vector_all,usize);
 impl_div_assign_fxn!(DivAssign2DRAM2x3,Matrix2x3,T,div_assign_2d_vector_all,usize);
 impl_div_assign_fxn!(DivAssign2DRAM3x2,Matrix3x2,T,div_assign_2d_vector_all,usize);
-
-impl_div_assign_fxn!(DivAssign2DRAMDMD,DMatrix,DMatrix<T>,div_assign_2d_vector_all_mat,usize);
-
-impl_div_assign_fxn!(DivAssign2DRAMDM2,DMatrix,Matrix2<T>,div_assign_2d_vector_all_mat,usize);
-impl_div_assign_fxn!(DivAssign2DRAMDM2x3,DMatrix,Matrix2x3<T>,div_assign_2d_vector_all_mat,usize);
-impl_div_assign_fxn!(DivAssign2DRAMDM3,DMatrix,Matrix3<T>,div_assign_2d_vector_all_mat,usize);
-impl_div_assign_fxn!(DivAssign2DRAMDM3x2,DMatrix,Matrix3x2<T>,div_assign_2d_vector_all_mat,usize);
-impl_div_assign_fxn!(DivAssign2DRAMDM4,DMatrix,Matrix4<T>,div_assign_2d_vector_all_mat,usize);
-
-impl_div_assign_fxn!(DivAssign2DRAM2M2,Matrix2,Matrix2<T>,div_assign_2d_vector_all_mat,usize);
-impl_div_assign_fxn!(DivAssign2DRAM2M3x2,Matrix2,Matrix3x2<T>,div_assign_2d_vector_all_mat,usize);
-impl_div_assign_fxn!(DivAssign2DRAM2MD,Matrix2,DMatrix<T>,div_assign_2d_vector_all_mat,usize);
-
-impl_div_assign_fxn!(DivAssign2DRAM3M3,Matrix3,Matrix3<T>,div_assign_2d_vector_all_mat,usize);
-impl_div_assign_fxn!(DivAssign2DRAM3M2x3,Matrix3,Matrix2x3<T>,div_assign_2d_vector_all_mat,usize);
-impl_div_assign_fxn!(DivAssign2DRAM3MD,Matrix3,DMatrix<T>,div_assign_2d_vector_all_mat,usize);
-
-impl_div_assign_fxn!(DivAssign2DRAM3x2M3x2,Matrix3x2,Matrix3x2<T>,div_assign_2d_vector_all_mat,usize);
-impl_div_assign_fxn!(DivAssign2DRAM3x2M2,Matrix3x2,Matrix2<T>,div_assign_2d_vector_all_mat,usize);
-impl_div_assign_fxn!(DivAssign2DRAM3x2MD,Matrix3x2,DMatrix<T>,div_assign_2d_vector_all_mat,usize);
-
-impl_div_assign_fxn!(DivAssign2DRAM2x3M2x3,Matrix2x3,Matrix2x3<T>,div_assign_2d_vector_all_mat,usize);
-impl_div_assign_fxn!(DivAssign2DRAM2x3M3,Matrix2x3,Matrix3<T>,div_assign_2d_vector_all_mat,usize);
-impl_div_assign_fxn!(DivAssign2DRAM2x3MD,Matrix2x3,DMatrix<T>,div_assign_2d_vector_all_mat,usize);
-
-impl_div_assign_fxn!(DivAssign2DRAM4M4,Matrix4,Matrix4<T>,div_assign_2d_vector_all_mat,usize);
-impl_div_assign_fxn!(DivAssign2DRAM4MD,Matrix4,DMatrix<T>,div_assign_2d_vector_all_mat,usize);
 
 impl_div_assign_fxn!(DivAssign2DRAMDB,DMatrix,T,div_assign_2d_vector_all_b,bool);
 impl_div_assign_fxn!(DivAssign2DRAM4B,Matrix4,T,div_assign_2d_vector_all_b,bool);
