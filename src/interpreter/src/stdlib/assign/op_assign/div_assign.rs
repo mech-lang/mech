@@ -103,14 +103,11 @@ impl<T, R1, C1, S1, R2, C2, S2, IxVec>
   MechFunction for DivAssign2DRA<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
 where
   Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-  T: Scalar + Copy + Debug + Clone + Sync + Send + 'static + DivAssign + Div<Output = T>,
+  T: Scalar + Copy + Debug + Clone + Sync + Send + 'static + 
+  DivAssign + Div<Output = T>,
   IxVec: AsRef<[usize]> + Debug,
-  R1: Dim,
-  C1: Dim,
-  S1: StorageMut<T, R1, C1> + Debug,
-  R2: Dim,
-  C2: Dim,
-  S2: Storage<T, R2, C2> + Debug,
+  R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Debug,
+  R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Debug,
 {
   fn solve(&self) {
     unsafe {

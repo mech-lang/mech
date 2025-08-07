@@ -9,6 +9,7 @@ use num_traits::*;
 use std::fmt::Debug;
 use simba::scalar::ClosedNeg;
 use num_traits::Pow;
+use std::marker::PhantomData;
 
 pub mod access;
 pub mod assign;
