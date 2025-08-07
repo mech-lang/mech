@@ -63,8 +63,8 @@ pub fn op_assign(op_assgn: &OpAssign, p: &Interpreter) -> MResult<Value> {
       // todo: this only works for the first subscript, it needs to work for multiple subscripts
       for s in sbscrpt {
         let fxn = match op_assgn.op {
-          OpAssignOp::Add => add_assign(&s, &sink, &source, p)?,
-          OpAssignOp::Sub => sub_assign(&s, &sink, &source, p)?,
+          //OpAssignOp::Add => add_assign(&s, &sink, &source, p)?,
+          //OpAssignOp::Sub => sub_assign(&s, &sink, &source, p)?,
           OpAssignOp::Div => div_assign(&s, &sink, &source, p)?,
           _ => todo!(),
         };
@@ -74,8 +74,8 @@ pub fn op_assign(op_assgn: &OpAssign, p: &Interpreter) -> MResult<Value> {
     None => {
       let args = vec![sink,source];
       let fxn = match op_assgn.op {
-        OpAssignOp::Add => AddAssignValue{}.compile(&args)?,
-        OpAssignOp::Sub => SubAssignValue{}.compile(&args)?,
+        //OpAssignOp::Add => AddAssignValue{}.compile(&args)?,
+        //OpAssignOp::Sub => SubAssignValue{}.compile(&args)?,
         OpAssignOp::Div => DivAssignValue{}.compile(&args)?,
         _ => todo!(),
       };
@@ -313,8 +313,8 @@ macro_rules! op_assign {
       }
     }}}
 
-op_assign!(add_assign, Add);
-op_assign!(sub_assign, Sub);
+//op_assign!(add_assign, Add);
+//op_assign!(sub_assign, Sub);
 //op_assign!(mul_assign, Mul);
 op_assign!(div_assign, Div);
 //op_assign!(exp_assign, Exp);
