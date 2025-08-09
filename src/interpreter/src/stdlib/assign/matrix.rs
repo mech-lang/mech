@@ -1470,6 +1470,7 @@ macro_rules! impl_set_range_all_match_arms {
     paste!{
       match $arg {
         $(
+          // Vector Scalar
           #[cfg(all(feature = $value_string, feature = "Matrix4"))]
           (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)),   [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4>] { sink: sink.clone(), ixes:   ix.clone(), source: source.clone() })),
           #[cfg(all(feature = $value_string, feature = "Matrix3"))]
@@ -1485,6 +1486,7 @@ macro_rules! impl_set_range_all_match_arms {
           #[cfg(all(feature = $value_string, feature = "MatrixD"))]
           (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)),   [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MD>] { sink: sink.clone(), ixes:   ix.clone(), source: source.clone() })),
           
+          // Vector Vector
           #[cfg(all(feature = $value_string, feature = "MatrixD"))]
           (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::DMatrix(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new($fxn_name{ sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "MatrixD", feature = "Matrix2"))]
@@ -1532,6 +1534,7 @@ macro_rules! impl_set_range_all_match_arms {
           #[cfg(all(feature = $value_string, feature = "Matrix3x2", feature = "MatrixD"))]
           (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::DMatrix(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new($fxn_name{ sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
 
+          // Matrix Scalar Bool
           #[cfg(all(feature = $value_string, feature = "Matrix4"))]
           (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)),   [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4B>] { sink: sink.clone(), ixes:   ix.clone(), source: source.clone() })),
           #[cfg(all(feature = $value_string, feature = "Matrix3"))]
@@ -1547,6 +1550,7 @@ macro_rules! impl_set_range_all_match_arms {
           #[cfg(all(feature = $value_string, feature = "MatrixD"))]
           (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)),   [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MDB>] { sink: sink.clone(), ixes:   ix.clone(), source: source.clone() })),
         
+          // Matrix Vector Bool
           #[cfg(all(feature = $value_string, feature = "MatrixD"))]
           (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::DMatrix(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new([<$fxn_name MDMDB>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone() })),
           #[cfg(all(feature = $value_string, feature = "Matrix2"))]
