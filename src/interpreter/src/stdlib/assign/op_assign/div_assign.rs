@@ -175,7 +175,21 @@ fn div_assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFuncti
     (Value::F64(sink),Value::F64(source)) => Ok(Box::new(DivAssignSS{sink: sink.clone(), source: source.clone()})),
     
     (Value::MatrixU8(Matrix::Matrix1(sink)),Value::MatrixU8(Matrix::Matrix1(source))) => Ok(Box::new(DivAssignMatMat{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
-    
+    (Value::MatrixU8(Matrix::Matrix2(sink)),Value::MatrixU8(Matrix::Matrix2(source))) => Ok(Box::new(DivAssignMatMat{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+    (Value::MatrixU8(Matrix::Matrix2x3(sink)),Value::MatrixU8(Matrix::Matrix2x3(source))) => Ok(Box::new(DivAssignMatMat{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+    (Value::MatrixU8(Matrix::Matrix3x2(sink)),Value::MatrixU8(Matrix::Matrix3x2(source))) => Ok(Box::new(DivAssignMatMat{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+    (Value::MatrixU8(Matrix::Matrix3(sink)),Value::MatrixU8(Matrix::Matrix3(source))) => Ok(Box::new(DivAssignMatMat{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+    (Value::MatrixU8(Matrix::Matrix4(sink)),Value::MatrixU8(Matrix::Matrix4(source))) => Ok(Box::new(DivAssignMatMat{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+    (Value::MatrixU8(Matrix::DMatrix(sink)),Value::MatrixU8(Matrix::DMatrix(source))) => Ok(Box::new(DivAssignMatMat{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+    (Value::MatrixU8(Matrix::Vector2(sink)),Value::MatrixU8(Matrix::Vector2(source))) => Ok(Box::new(DivAssignMatMat{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+    (Value::MatrixU8(Matrix::Vector3(sink)),Value::MatrixU8(Matrix::Vector3(source))) => Ok(Box::new(DivAssignMatMat{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+    (Value::MatrixU8(Matrix::Vector4(sink)),Value::MatrixU8(Matrix::Vector4(source))) => Ok(Box::new(DivAssignMatMat{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+    (Value::MatrixU8(Matrix::DVector(sink)),Value::MatrixU8(Matrix::DVector(source))) => Ok(Box::new(DivAssignMatMat{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+    (Value::MatrixU8(Matrix::RowVector2(sink)),Value::MatrixU8(Matrix::RowVector2(source))) => Ok(Box::new(DivAssignMatMat{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+    (Value::MatrixU8(Matrix::RowVector3(sink)),Value::MatrixU8(Matrix::RowVector3(source))) => Ok(Box::new(DivAssignMatMat{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+    (Value::MatrixU8(Matrix::RowVector4(sink)),Value::MatrixU8(Matrix::RowVector4(source))) => Ok(Box::new(DivAssignMatMat{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+    (Value::MatrixU8(Matrix::RowDVector(sink)),Value::MatrixU8(Matrix::RowDVector(source))) => Ok(Box::new(DivAssignMatMat{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+
     (Value::MatrixF64(Matrix::Matrix1(sink)),Value::MatrixF64(Matrix::Matrix1(source))) => Ok(Box::new(DivAssignMatMat{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
     (Value::MatrixF64(Matrix::Matrix2(sink)),Value::MatrixF64(Matrix::Matrix2(source))) => Ok(Box::new(DivAssignMatMat{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
     (Value::MatrixF64(Matrix::Matrix2x3(sink)),Value::MatrixF64(Matrix::Matrix2x3(source))) => Ok(Box::new(DivAssignMatMat{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
