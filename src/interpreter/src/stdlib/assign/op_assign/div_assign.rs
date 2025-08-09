@@ -201,89 +201,56 @@ where
 
 #[macro_export]
 macro_rules! impl_div_assign_value_match_arms {
-    (
-        $arg:expr,
-        $($value_kind:ident, $feature:tt);+ $(;)?
-    ) => {
-        paste::paste! {
-            match $arg {
-                $(
-                    // Scalar types (e.g. F64, U8)
-                    #[cfg(feature = $feature)]
-                    (Value::$value_kind(sink), Value::$value_kind(source)) =>
-                        Ok(Box::new(DivAssignSS { sink: sink.clone(), source: source.clone() })),
-
-                    // Matrix types: expand all matrix variants for this type
-                    #[cfg(feature = $feature)]
-                    (Value::[<Matrix $value_kind>](Matrix::Matrix1(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix1(source))) =>
-                        Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-
-                    #[cfg(feature = $feature)]
-                    (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix2(source))) =>
-                        Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-
-                    #[cfg(feature = $feature)]
-                    (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix2x3(source))) =>
-                        Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-
-                    #[cfg(feature = $feature)]
-                    (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix3x2(source))) =>
-                        Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-
-                    #[cfg(feature = $feature)]
-                    (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix3(source))) =>
-                        Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-
-                    #[cfg(feature = $feature)]
-                    (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix4(source))) =>
-                        Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-
-                    #[cfg(feature = $feature)]
-                    (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)), Value::[<Matrix $value_kind>](Matrix::DMatrix(source))) =>
-                        Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-
-                    #[cfg(feature = $feature)]
-                    (Value::[<Matrix $value_kind>](Matrix::Vector2(sink)), Value::[<Matrix $value_kind>](Matrix::Vector2(source))) =>
-                        Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-
-                    #[cfg(feature = $feature)]
-                    (Value::[<Matrix $value_kind>](Matrix::Vector3(sink)), Value::[<Matrix $value_kind>](Matrix::Vector3(source))) =>
-                        Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-
-                    #[cfg(feature = $feature)]
-                    (Value::[<Matrix $value_kind>](Matrix::Vector4(sink)), Value::[<Matrix $value_kind>](Matrix::Vector4(source))) =>
-                        Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-
-                    #[cfg(feature = $feature)]
-                    (Value::[<Matrix $value_kind>](Matrix::DVector(sink)), Value::[<Matrix $value_kind>](Matrix::DVector(source))) =>
-                        Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-
-                    #[cfg(feature = $feature)]
-                    (Value::[<Matrix $value_kind>](Matrix::RowVector2(sink)), Value::[<Matrix $value_kind>](Matrix::RowVector2(source))) =>
-                        Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-
-                    #[cfg(feature = $feature)]
-                    (Value::[<Matrix $value_kind>](Matrix::RowVector3(sink)), Value::[<Matrix $value_kind>](Matrix::RowVector3(source))) =>
-                        Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-
-                    #[cfg(feature = $feature)]
-                    (Value::[<Matrix $value_kind>](Matrix::RowVector4(sink)), Value::[<Matrix $value_kind>](Matrix::RowVector4(source))) =>
-                        Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-
-                    #[cfg(feature = $feature)]
-                    (Value::[<Matrix $value_kind>](Matrix::RowDVector(sink)), Value::[<Matrix $value_kind>](Matrix::RowDVector(source))) =>
-                        Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-                )+
-                x => Err(MechError {
-                    file: file!().to_string(),
-                    tokens: vec![],
-                    msg: format!("Unhandled args {:?}", x),
-                    id: line!(),
-                    kind: MechErrorKind::UnhandledFunctionArgumentKind,
-                }),
-            }
-        }
-    };
+  ($arg:expr,$($value_kind:ident, $feature:tt);+ $(;)?) => {
+    paste::paste! {
+      match $arg {
+        $(
+          // Scalar types (e.g. F64, U8
+          #[cfg(feature = $feature)]
+          (Value::$value_kind(sink), Value::$value_kind(source)) => Ok(Box::new(DivAssignSS { sink: sink.clone(), source: source.clone() })),
+          // Matrix types: expand all matrix variants for this type
+          #[cfg(feature = $feature)]
+          (Value::[<Matrix $value_kind>](Matrix::Matrix1(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix1(source))) =>
+          Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
+          #[cfg(feature = $feature)]
+          (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix2(source))) => Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
+          #[cfg(feature = $feature)]
+          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix2x3(source))) => Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
+          #[cfg(feature = $feature)]
+          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix3x2(source))) => Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
+          #[cfg(feature = $feature)]
+          (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix3(source))) => Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
+          #[cfg(feature = $feature)]
+          (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix4(source))) => Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
+          #[cfg(feature = $feature)]
+          (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)), Value::[<Matrix $value_kind>](Matrix::DMatrix(source))) => Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
+          #[cfg(feature = $feature)]
+          (Value::[<Matrix $value_kind>](Matrix::Vector2(sink)), Value::[<Matrix $value_kind>](Matrix::Vector2(source))) => Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
+          #[cfg(feature = $feature)]
+          (Value::[<Matrix $value_kind>](Matrix::Vector3(sink)), Value::[<Matrix $value_kind>](Matrix::Vector3(source))) => Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
+          #[cfg(feature = $feature)]
+          (Value::[<Matrix $value_kind>](Matrix::Vector4(sink)), Value::[<Matrix $value_kind>](Matrix::Vector4(source))) => Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
+          #[cfg(feature = $feature)]
+          (Value::[<Matrix $value_kind>](Matrix::DVector(sink)), Value::[<Matrix $value_kind>](Matrix::DVector(source))) => Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
+          #[cfg(feature = $feature)]
+          (Value::[<Matrix $value_kind>](Matrix::RowVector2(sink)), Value::[<Matrix $value_kind>](Matrix::RowVector2(source))) => Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
+          #[cfg(feature = $feature)]
+          (Value::[<Matrix $value_kind>](Matrix::RowVector3(sink)), Value::[<Matrix $value_kind>](Matrix::RowVector3(source))) => Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
+          #[cfg(feature = $feature)]
+          (Value::[<Matrix $value_kind>](Matrix::RowVector4(sink)), Value::[<Matrix $value_kind>](Matrix::RowVector4(source))) => Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
+          #[cfg(feature = $feature)]
+          (Value::[<Matrix $value_kind>](Matrix::RowDVector(sink)), Value::[<Matrix $value_kind>](Matrix::RowDVector(source))) => Ok(Box::new(DivAssignMatMat { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
+        )+
+        x => Err(MechError {
+          file: file!().to_string(),
+          tokens: vec![],
+          msg: format!("Unhandled args {:?}", x),
+          id: line!(),
+          kind: MechErrorKind::UnhandledFunctionArgumentKind,
+        }),
+      }
+    }
+  };
 }
 
 fn div_assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
