@@ -216,8 +216,18 @@ macro_rules! impl_div_assign_value_match_arms {
 fn div_assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_div_assign_value_match_arms!(
     (sink, source),
-    F64, "f64";
     U8,  "u8";
+    U16, "u16";
+    U32, "u32";
+    U64, "u64";
+    U128, "u128";
+    I8,  "i8";
+    I16, "i16";
+    I32, "i32";
+    I64, "i64";
+    U128, "u128";
+    F32, "f32";
+    F64, "f64";
   )
 }
 
