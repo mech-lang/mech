@@ -1,5 +1,6 @@
 #[macro_use]
 use crate::stdlib::*;
+use super::*;
 
 // Sub Assign -----------------------------------------------------------------
 
@@ -28,6 +29,19 @@ macro_rules! impl_sub_assign_match_arms {
     }
   }
 }
+
+macro_rules! impl_sub_assign_range_fxn_s {
+  ($struct_name:ident, $op:ident, $ix:ty) => {
+    impl_op_assign_range_fxn_s!($struct_name, $op, $ix);
+  }
+}
+
+macro_rules! impl_sub_assign_range_fxn_v {
+  ($struct_name:ident, $op:ident, $ix:ty) => {
+    impl_op_assign_range_fxn_v!($struct_name, $op, $ix);
+  }
+}
+
 
 macro_rules! impl_sub_assign_fxn {
   ($struct_name:ident, $matrix_shape:ident, $source_matrix_shape:ty, $op:ident, $ix:ty) => {
@@ -129,7 +143,7 @@ macro_rules! sub_assign_1d_range {
   ($source:expr, $ix:expr, $sink:expr) => {
     unsafe { 
       for i in 0..($ix).len() {
-        ($sink)[($ix)[i] - 1] -= ($source);
+        ($sink)[($ix)[i] - 1] -= ($source).clone();
       }
     }
   };}
@@ -139,7 +153,7 @@ macro_rules! sub_assign_1d_range_b {
     unsafe { 
       for i in 0..($ix).len() {
         if $ix[i] == true {
-          ($sink)[i] -= ($source);
+          ($sink)[i] -= ($source).clone();
         }
       }
     }
@@ -149,52 +163,27 @@ macro_rules! sub_assign_1d_range_vec {
   ($source:expr, $ix:expr, $sink:expr) => {
     unsafe { 
       for i in 0..($ix).len() {
-        ($sink)[($ix)[i] - 1] -= ($source)[i];
+        ($sink)[($ix)[i] - 1] -= ($source)[i].clone();
       }
     }
   };}
 
-impl_sub_assign_fxn!(SubAssign1DRRD,RowDVector,T,sub_assign_1d_range,usize);
-impl_sub_assign_fxn!(SubAssign1DRVD,DVector,T,sub_assign_1d_range,usize);
-impl_sub_assign_fxn!(SubAssign1DRMD,DMatrix,T,sub_assign_1d_range,usize);
-impl_sub_assign_fxn!(SubAssign1DRR4,RowVector4,T,sub_assign_1d_range,usize);
-impl_sub_assign_fxn!(SubAssign1DRR3,RowVector3,T,sub_assign_1d_range,usize);
-impl_sub_assign_fxn!(SubAssign1DRR2,RowVector2,T,sub_assign_1d_range,usize);
-impl_sub_assign_fxn!(SubAssign1DRV4,Vector4,T,sub_assign_1d_range,usize);
-impl_sub_assign_fxn!(SubAssign1DRV3,Vector3,T,sub_assign_1d_range,usize);
-impl_sub_assign_fxn!(SubAssign1DRV2,Vector2,T,sub_assign_1d_range,usize);
-impl_sub_assign_fxn!(SubAssign1DRM4,Matrix4,T,sub_assign_1d_range,usize);
-impl_sub_assign_fxn!(SubAssign1DRM3,Matrix3,T,sub_assign_1d_range,usize);
-impl_sub_assign_fxn!(SubAssign1DRM2,Matrix2,T,sub_assign_1d_range,usize);
-impl_sub_assign_fxn!(SubAssign1DRM1,Matrix1,T,sub_assign_1d_range,usize);
-impl_sub_assign_fxn!(SubAssign1DRM2x3,Matrix2x3,T,sub_assign_1d_range,usize);
-impl_sub_assign_fxn!(SubAssign1DRM3x2,Matrix3x2,T,sub_assign_1d_range,usize);
+macro_rules! sub_assign_1d_range_vec_b {
+  ($source:expr, $ix:expr, $sink:expr) => {
+    unsafe { 
+      for i in 0..($ix).len() {
+        if $ix[i] == true {
+          ($sink)[i] -= ($source)[i].clone();
+        }
+      }
+    }
+  };}  
 
-impl_sub_assign_fxn!(SubAssign1DRRDB,RowDVector,T,sub_assign_1d_range_b,bool);
-impl_sub_assign_fxn!(SubAssign1DRVDB,DVector,T,sub_assign_1d_range_b,bool);
-impl_sub_assign_fxn!(SubAssign1DRMDB,DMatrix,T,sub_assign_1d_range_b,bool);
-impl_sub_assign_fxn!(SubAssign1DRR4B,RowVector4,T,sub_assign_1d_range_b,bool);
-impl_sub_assign_fxn!(SubAssign1DRR3B,RowVector3,T,sub_assign_1d_range_b,bool);
-impl_sub_assign_fxn!(SubAssign1DRR2B,RowVector2,T,sub_assign_1d_range_b,bool);
-impl_sub_assign_fxn!(SubAssign1DRV4B,Vector4,T,sub_assign_1d_range_b,bool);
-impl_sub_assign_fxn!(SubAssign1DRV3B,Vector3,T,sub_assign_1d_range_b,bool);
-impl_sub_assign_fxn!(SubAssign1DRV2B,Vector2,T,sub_assign_1d_range_b,bool);
-impl_sub_assign_fxn!(SubAssign1DRM4B,Matrix4,T,sub_assign_1d_range_b,bool);
-impl_sub_assign_fxn!(SubAssign1DRM3B,Matrix3,T,sub_assign_1d_range_b,bool);
-impl_sub_assign_fxn!(SubAssign1DRM2B,Matrix2,T,sub_assign_1d_range_b,bool);
-impl_sub_assign_fxn!(SubAssign1DRM1B,Matrix1,T,sub_assign_1d_range_b,bool);
-impl_sub_assign_fxn!(SubAssign1DRM2x3B,Matrix2x3,T,sub_assign_1d_range_b,bool);
-impl_sub_assign_fxn!(SubAssign1DRM3x2B,Matrix3x2,T,sub_assign_1d_range_b,bool);
 
-impl_sub_assign_fxn!(SubAssign1DRR4R4,RowVector4,RowVector4<T>,sub_assign_1d_range_vec,usize);
-impl_sub_assign_fxn!(SubAssign1DRR4R3,RowVector4,RowVector3<T>,sub_assign_1d_range_vec,usize);
-impl_sub_assign_fxn!(SubAssign1DRR4R2,RowVector4,RowVector2<T>,sub_assign_1d_range_vec,usize);
-impl_sub_assign_fxn!(SubAssign1DRV4V4,Vector4,Vector4<T>,sub_assign_1d_range_vec,usize);
-impl_sub_assign_fxn!(SubAssign1DRV4V3,Vector4,Vector3<T>,sub_assign_1d_range_vec,usize);
-impl_sub_assign_fxn!(SubAssign1DRV4V2,Vector4,Vector2<T>,sub_assign_1d_range_vec,usize);
-
-impl_sub_assign_fxn!(SubAssign1DRMDMD,DMatrix,DMatrix<T>,sub_assign_1d_range_vec,usize);
-
+impl_sub_assign_range_fxn_s!(SubAssign1DRS, sub_assign_1d_range,usize);
+impl_sub_assign_range_fxn_s!(SubAssign1DRB, sub_assign_1d_range_b,bool);
+impl_sub_assign_range_fxn_v!(SubAssign1DRV, sub_assign_1d_range_vec,usize);
+impl_sub_assign_range_fxn_v!(SubAssign1DRVB,sub_assign_1d_range_vec_b,bool);
 
 fn sub_assign_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
   impl_sub_assign_match_arms!(SubAssign1DR, range, (sink, ixes.as_slice(), source))
@@ -228,8 +217,8 @@ impl NativeFunctionCompiler for SubAssignRange {
 macro_rules! sub_assign_2d_vector_all {
   ($source:expr, $ix:expr, $sink:expr) => {
       for cix in 0..($sink).ncols() {
-        for rix in &$ix {
-          ($sink).column_mut(cix)[rix - 1] -= ($source);
+        for rix in $ix.iter() {
+          ($sink).column_mut(cix)[rix - 1] -= ($source).clone();
         }
       }
     };}
@@ -239,106 +228,40 @@ macro_rules! sub_assign_2d_vector_all_b {
     for cix in 0..($sink).ncols() {
       for rix in 0..$ix.len() {
         if $ix[rix] == true {
-          ($sink).column_mut(cix)[rix] -= ($source);
+          ($sink).column_mut(cix)[rix] -= ($source).clone();
         }
       }
     }
   };} 
 
-
-#[derive(Debug)]
-struct SubAssign2DRAMDMD<T> {
-  source: Ref<DMatrix<T>>,
-  ixes: Ref<DVector<usize>>,
-  sink: Ref<DMatrix<T>>,
-}
-impl<T> MechFunction for SubAssign2DRAMDMD<T>
-where
-  T: Copy + Debug + Clone + Sync + Send + 'static +
-  Sub<Output = T> + SubAssign +
-  Zero + One +
-  PartialEq + PartialOrd,
-  Ref<DMatrix<T>>: ToValue
-{
-  fn solve(&self) {
-    unsafe {
-      let ix_ptr = &(*(self.ixes.as_ptr()));
-      let mut sink_ptr = (&mut *(self.sink.as_ptr()));
-      let source_ptr = &(*(self.source.as_ptr()));
-      for (i,rix) in (ix_ptr).iter().enumerate() {
-        let mut row = sink_ptr.row_mut(rix - 1);
-        row -= (source_ptr).row(i);
-      }
-    }
-  }
-  fn out(&self) -> Value { self.sink.to_value() }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
-}
-
-
 macro_rules! sub_assign_2d_vector_all_mat {
   ($source:expr, $ix:expr, $sink:expr) => {
-
+    for (i,rix) in (&$ix).iter().enumerate() {
+      let mut sink_row = ($sink).row_mut(rix - 1);
+      let src_row = ($source).row(i);
+      for (dst, src) in sink_row.iter_mut().zip(src_row.iter()) {
+        *dst -= *src;
+      }
+    }
   };}
 
 macro_rules! sub_assign_2d_vector_all_mat_b {
   ($source:expr, $ix:expr, $sink:expr) => {
     for (i,rix) in (&$ix).iter().enumerate() {
       if *rix == true {
-        let mut row = ($sink).row_mut(i);
-        row -= ($source).row(i);
+        let mut sink_row = ($sink).row_mut(i);
+        let src_row = ($source).row(i);
+        for (dst, src) in sink_row.iter_mut().zip(src_row.iter()) {
+          *dst -= *src;
+        }
       }
     }
   };} 
 
-impl_sub_assign_fxn!(SubAssign2DRAMD,DMatrix,T,sub_assign_2d_vector_all,usize);
-impl_sub_assign_fxn!(SubAssign2DRAM4,Matrix4,T,sub_assign_2d_vector_all,usize);
-impl_sub_assign_fxn!(SubAssign2DRAM3,Matrix3,T,sub_assign_2d_vector_all,usize);
-impl_sub_assign_fxn!(SubAssign2DRAM2,Matrix2,T,sub_assign_2d_vector_all,usize);
-impl_sub_assign_fxn!(SubAssign2DRAM1,Matrix1,T,sub_assign_2d_vector_all,usize);
-impl_sub_assign_fxn!(SubAssign2DRAM2x3,Matrix2x3,T,sub_assign_2d_vector_all,usize);
-impl_sub_assign_fxn!(SubAssign2DRAM3x2,Matrix3x2,T,sub_assign_2d_vector_all,usize);
-
-//impl_sub_assign_fxn!(SubAssign2DRAMDMD,DMatrix,DMatrix<T>,sub_assign_2d_vector_all_mat,usize);
-impl_sub_assign_fxn!(SubAssign2DRAMDM2,DMatrix,Matrix2<T>,sub_assign_2d_vector_all_mat,usize);
-impl_sub_assign_fxn!(SubAssign2DRAMDM2x3,DMatrix,Matrix2x3<T>,sub_assign_2d_vector_all_mat,usize);
-impl_sub_assign_fxn!(SubAssign2DRAMDM3,DMatrix,Matrix3<T>,sub_assign_2d_vector_all_mat,usize);
-impl_sub_assign_fxn!(SubAssign2DRAMDM3x2,DMatrix,Matrix3x2<T>,sub_assign_2d_vector_all_mat,usize);
-impl_sub_assign_fxn!(SubAssign2DRAMDM4,DMatrix,Matrix4<T>,sub_assign_2d_vector_all_mat,usize);
-
-impl_sub_assign_fxn!(SubAssign2DRAM2M2,Matrix2,Matrix2<T>,sub_assign_2d_vector_all_mat,usize);
-impl_sub_assign_fxn!(SubAssign2DRAM2M3x2,Matrix2,Matrix3x2<T>,sub_assign_2d_vector_all_mat,usize);
-impl_sub_assign_fxn!(SubAssign2DRAM2MD,Matrix2,DMatrix<T>,sub_assign_2d_vector_all_mat,usize);
-
-impl_sub_assign_fxn!(SubAssign2DRAM3M3,Matrix3,Matrix3<T>,sub_assign_2d_vector_all_mat,usize);
-impl_sub_assign_fxn!(SubAssign2DRAM3M2x3,Matrix3,Matrix2x3<T>,sub_assign_2d_vector_all_mat,usize);
-impl_sub_assign_fxn!(SubAssign2DRAM3MD,Matrix3,DMatrix<T>,sub_assign_2d_vector_all_mat,usize);
-
-impl_sub_assign_fxn!(SubAssign2DRAM3x2M3x2,Matrix3x2,Matrix3x2<T>,sub_assign_2d_vector_all_mat,usize);
-impl_sub_assign_fxn!(SubAssign2DRAM3x2M2,Matrix3x2,Matrix2<T>,sub_assign_2d_vector_all_mat,usize);
-impl_sub_assign_fxn!(SubAssign2DRAM3x2MD,Matrix3x2,DMatrix<T>,sub_assign_2d_vector_all_mat,usize);
-
-impl_sub_assign_fxn!(SubAssign2DRAM2x3M2x3,Matrix2x3,Matrix2x3<T>,sub_assign_2d_vector_all_mat,usize);
-impl_sub_assign_fxn!(SubAssign2DRAM2x3M3,Matrix2x3,Matrix3<T>,sub_assign_2d_vector_all_mat,usize);
-impl_sub_assign_fxn!(SubAssign2DRAM2x3MD,Matrix2x3,DMatrix<T>,sub_assign_2d_vector_all_mat,usize);
-
-impl_sub_assign_fxn!(SubAssign2DRAM4M4,Matrix4,Matrix4<T>,sub_assign_2d_vector_all_mat,usize);
-impl_sub_assign_fxn!(SubAssign2DRAM4MD,Matrix4,DMatrix<T>,sub_assign_2d_vector_all_mat,usize);
-
-impl_sub_assign_fxn!(SubAssign2DRAMDB,DMatrix,T,sub_assign_2d_vector_all_b,bool);
-impl_sub_assign_fxn!(SubAssign2DRAM4B,Matrix4,T,sub_assign_2d_vector_all_b,bool);
-impl_sub_assign_fxn!(SubAssign2DRAM3B,Matrix3,T,sub_assign_2d_vector_all_b,bool);
-impl_sub_assign_fxn!(SubAssign2DRAM2B,Matrix2,T,sub_assign_2d_vector_all_b,bool);
-impl_sub_assign_fxn!(SubAssign2DRAM1B,Matrix1,T,sub_assign_2d_vector_all_b,bool);
-impl_sub_assign_fxn!(SubAssign2DRAM2x3B,Matrix2x3,T,sub_assign_2d_vector_all_b,bool);
-impl_sub_assign_fxn!(SubAssign2DRAM3x2B,Matrix3x2,T,sub_assign_2d_vector_all_b,bool);
-
-impl_sub_assign_fxn!(SubAssign2DRAMDMDB,DMatrix,DMatrix<T>,sub_assign_2d_vector_all_mat_b,bool);
-impl_sub_assign_fxn!(SubAssign2DRAM2M2B,Matrix2,Matrix2<T>,sub_assign_2d_vector_all_mat_b,bool);
-impl_sub_assign_fxn!(SubAssign2DRAM3M3B,Matrix3,Matrix3<T>,sub_assign_2d_vector_all_mat_b,bool);
-impl_sub_assign_fxn!(SubAssign2DRAM4M4B,Matrix4,Matrix4<T>,sub_assign_2d_vector_all_mat_b,bool);
-impl_sub_assign_fxn!(SubAssign2DRAM3x2M3x2B,Matrix3x2,Matrix3x2<T>,sub_assign_2d_vector_all_mat_b,bool);
-impl_sub_assign_fxn!(SubAssign2DRAM2x3M2x3B,Matrix2x3,Matrix2x3<T>,sub_assign_2d_vector_all_mat_b,bool);
+impl_sub_assign_range_fxn_s!(SubAssign2DRAS, sub_assign_2d_vector_all,usize);
+impl_sub_assign_range_fxn_s!(SubAssign2DRASB,sub_assign_2d_vector_all_b,bool);
+impl_sub_assign_range_fxn_v!(SubAssign2DRAV, sub_assign_2d_vector_all_mat,usize);
+impl_sub_assign_range_fxn_v!(SubAssign2DRAVB,sub_assign_2d_vector_all_mat_b,bool);
 
 fn sub_assign_vec_all_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
   impl_sub_assign_match_arms!(SubAssign2DRA, range_all, (sink, ixes.as_slice(), source))

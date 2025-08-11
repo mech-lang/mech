@@ -10,11 +10,11 @@ use nalgebra::{
 };
 
 pub mod add_assign;
-//pub mod sub_assign;
+pub mod sub_assign;
 pub mod div_assign;
 
 pub use self::add_assign::*;
-//pub use self::sub_assign::*;
+pub use self::sub_assign::*;
 pub use self::div_assign::*;
 
 #[macro_export]
@@ -33,6 +33,7 @@ macro_rules! impl_op_assign_range_fxn_s {
       T: Copy + Debug + Clone + Sync + Send + 'static +
         Div<Output = T> + DivAssign +
         Add<Output = T> + AddAssign +
+        Sub<Output = T> + SubAssign +
         Zero + One +
         PartialEq + PartialOrd,
       IxVec: AsRef<[$ix]> + Debug,
@@ -68,6 +69,7 @@ macro_rules! impl_op_assign_range_fxn_v {
       T: Copy + Debug + Clone + Sync + Send + 'static +
         Div<Output = T> + DivAssign +
         Add<Output = T> + AddAssign +
+        Sub<Output = T> + SubAssign +
         Zero + One +
         PartialEq + PartialOrd,
       IxVec: AsRef<[$ix]> + Debug,
