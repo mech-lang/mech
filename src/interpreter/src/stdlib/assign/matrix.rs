@@ -1457,7 +1457,7 @@ macro_rules! set_2d_vector_all_b {
     for cix in 0..($sink).ncols() {
       for rix in 0..$ix.len() {
         if $ix[rix] == true {
-          ($sink).column_mut(cix)[rix] = ($source).clone();
+          ($sink).column_mut(cix)[rix - 1] = ($source).clone();
         }
       }
     }
