@@ -28,7 +28,9 @@ macro_rules! impl_set_match_arms {
         U128, "U128";
         F32, "F32"; 
         F64, "F64" ;
-        String, "String"
+        String, "String";
+        ComplexNumber, "ComplexNumber";
+        RationalNumber, "RationalNumber";
       )
     }
   }
