@@ -38,6 +38,71 @@ macro_rules! impl_div_assign_match_arms {
   }
 }
 
+macro_rules! impl_div_assign_range_fxn_s {
+  ($struct_name:ident, $op:ident, $ix:ty) => {
+    #[derive(Debug)]
+    pub struct $struct_name<T, MatA, IxVec> {
+      pub source: Ref<T>,
+      pub ixes: Ref<IxVec>,
+      pub sink: Ref<MatA>,
+      pub _marker: PhantomData<T>,
+    }
+    impl<T, R1, C1, S1, IxVec> MechFunction for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
+    where
+      Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+      T: Copy + Debug + Clone + Sync + Send + 'static +
+        Div<Output = T> + DivAssign +
+        Zero + One +
+        PartialEq + PartialOrd,
+      IxVec: AsRef<[$ix]> + Debug,
+      R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
+    {
+      fn solve(&self) {
+        unsafe {
+          let sink_ptr = &mut *self.sink.as_ptr();
+          let source_ptr = &*self.source.as_ptr();
+          let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
+          $op!(source_ptr,ix_ptr,sink_ptr);
+        }
+      }
+      fn out(&self) -> Value {self.sink.to_value()}
+      fn to_string(&self) -> String {format!("{:#?}", self)}
+    }};}
+
+macro_rules! impl_div_assign_range_fxn_v {
+  ($struct_name:ident, $op:ident, $ix:ty) => {
+    #[derive(Debug)]
+    pub struct $struct_name<T, MatA, MatB, IxVec> {
+      pub source: Ref<MatB>,
+      pub ixes: Ref<IxVec>,
+      pub sink: Ref<MatA>,
+      pub _marker: PhantomData<T>,
+    }
+
+    impl<T, R1, C1, S1, R2, C2, S2, IxVec>
+      MechFunction for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
+    where
+      Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+      T: Copy + Debug + Clone + Sync + Send + 'static +
+        Div<Output = T> + DivAssign +
+        Zero + One +
+        PartialEq + PartialOrd,
+      IxVec: AsRef<[$ix]> + Debug,
+      R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
+      R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
+    {
+      fn solve(&self) {
+        unsafe {
+          let sink_ptr = &mut *self.sink.as_ptr();
+          let source_ptr = &*self.source.as_ptr();
+          let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
+          $op!(source_ptr,ix_ptr,sink_ptr);
+        }
+      }
+      fn out(&self) -> Value {self.sink.to_value()}
+      fn to_string(&self) -> String {format!("{:#?}", self)}
+    }};}
+
 macro_rules! impl_div_assign_fxn {
   ($struct_name:ident, $matrix_shape:ident, $source_matrix_shape:ty, $op:ident, $ix:ty) => {
     #[derive(Debug)]
@@ -89,42 +154,6 @@ where
   }
   fn out(&self) -> Value { self.sink.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
-}
-
-#[derive(Debug)]
-pub struct DivAssign2DRA<T, MatA, MatB, IxVec> {
-  pub sink: Ref<MatA>,
-  pub source: Ref<MatB>,
-  pub ixes: Ref<IxVec>,
-  pub _marker: PhantomData<T>,
-}
-
-impl<T, R1, C1, S1, R2, C2, S2, IxVec>
-  MechFunction for DivAssign2DRA<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
-where
-  Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-  T: Scalar + Copy + Debug + Clone + Sync + Send + 'static + 
-  DivAssign + Div<Output = T>,
-  IxVec: AsRef<[usize]> + Debug,
-  R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Debug,
-  R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Debug,
-{
-  fn solve(&self) {
-    unsafe {
-      let sink_ref = &mut *self.sink.as_ptr();
-      let source_ref = &*self.source.as_ptr();
-      let ixes = &(*self.ixes.as_ptr()).as_ref();
-      for (i, &rix) in ixes.iter().enumerate() {
-        let mut sink_row = sink_ref.row_mut(rix - 1);
-        let src_row = source_ref.row(i);
-        for (dst, src) in sink_row.iter_mut().zip(src_row.iter()) {
-          *dst /= *src;
-        }
-      }
-    }
-  }
-  fn out(&self) -> Value {self.sink.to_value()}
-  fn to_string(&self) -> String {format!("{:#?}", self)}
 }
 
 #[derive(Debug)]
@@ -252,7 +281,7 @@ macro_rules! div_assign_1d_range {
   ($source:expr, $ix:expr, $sink:expr) => {
     unsafe { 
       for i in 0..($ix).len() {
-        ($sink)[($ix)[i] - 1] /= ($source);
+        ($sink)[($ix)[i] - 1] /= *($source);
       }
     }
   };}
@@ -262,7 +291,7 @@ macro_rules! div_assign_1d_range_b {
     unsafe { 
       for i in 0..($ix).len() {
         if $ix[i] == true {
-          ($sink)[i] /= ($source);
+          ($sink)[i] /= *($source);
         }
       }
     }
@@ -277,51 +306,27 @@ macro_rules! div_assign_1d_range_vec {
     }
   };}
 
-impl_div_assign_fxn!(DivAssign1DRRD,RowDVector,T,div_assign_1d_range,usize);
-impl_div_assign_fxn!(DivAssign1DRVD,DVector,T,div_assign_1d_range,usize);
-impl_div_assign_fxn!(DivAssign1DRMD,DMatrix,T,div_assign_1d_range,usize);
-impl_div_assign_fxn!(DivAssign1DRR4,RowVector4,T,div_assign_1d_range,usize);
-impl_div_assign_fxn!(DivAssign1DRR3,RowVector3,T,div_assign_1d_range,usize);
-impl_div_assign_fxn!(DivAssign1DRR2,RowVector2,T,div_assign_1d_range,usize);
-impl_div_assign_fxn!(DivAssign1DRV4,Vector4,T,div_assign_1d_range,usize);
-impl_div_assign_fxn!(DivAssign1DRV3,Vector3,T,div_assign_1d_range,usize);
-impl_div_assign_fxn!(DivAssign1DRV2,Vector2,T,div_assign_1d_range,usize);
-impl_div_assign_fxn!(DivAssign1DRM4,Matrix4,T,div_assign_1d_range,usize);
-impl_div_assign_fxn!(DivAssign1DRM3,Matrix3,T,div_assign_1d_range,usize);
-impl_div_assign_fxn!(DivAssign1DRM2,Matrix2,T,div_assign_1d_range,usize);
-impl_div_assign_fxn!(DivAssign1DRM1,Matrix1,T,div_assign_1d_range,usize);
-impl_div_assign_fxn!(DivAssign1DRM2x3,Matrix2x3,T,div_assign_1d_range,usize);
-impl_div_assign_fxn!(DivAssign1DRM3x2,Matrix3x2,T,div_assign_1d_range,usize);
+macro_rules! div_assign_1d_range_vec_b {
+  ($source:expr, $ix:expr, $sink:expr) => {
+    unsafe { 
+      for i in 0..($ix).len() {
+        if $ix[i] == true {
+          ($sink)[i] /= ($source)[i];
+        }
+      }
+    }
+  };}
 
-impl_div_assign_fxn!(DivAssign1DRRDB,RowDVector,T,div_assign_1d_range_b,bool);
-impl_div_assign_fxn!(DivAssign1DRVDB,DVector,T,div_assign_1d_range_b,bool);
-impl_div_assign_fxn!(DivAssign1DRMDB,DMatrix,T,div_assign_1d_range_b,bool);
-impl_div_assign_fxn!(DivAssign1DRR4B,RowVector4,T,div_assign_1d_range_b,bool);
-impl_div_assign_fxn!(DivAssign1DRR3B,RowVector3,T,div_assign_1d_range_b,bool);
-impl_div_assign_fxn!(DivAssign1DRR2B,RowVector2,T,div_assign_1d_range_b,bool);
-impl_div_assign_fxn!(DivAssign1DRV4B,Vector4,T,div_assign_1d_range_b,bool);
-impl_div_assign_fxn!(DivAssign1DRV3B,Vector3,T,div_assign_1d_range_b,bool);
-impl_div_assign_fxn!(DivAssign1DRV2B,Vector2,T,div_assign_1d_range_b,bool);
-impl_div_assign_fxn!(DivAssign1DRM4B,Matrix4,T,div_assign_1d_range_b,bool);
-impl_div_assign_fxn!(DivAssign1DRM3B,Matrix3,T,div_assign_1d_range_b,bool);
-impl_div_assign_fxn!(DivAssign1DRM2B,Matrix2,T,div_assign_1d_range_b,bool);
-impl_div_assign_fxn!(DivAssign1DRM1B,Matrix1,T,div_assign_1d_range_b,bool);
-impl_div_assign_fxn!(DivAssign1DRM2x3B,Matrix2x3,T,div_assign_1d_range_b,bool);
-impl_div_assign_fxn!(DivAssign1DRM3x2B,Matrix3x2,T,div_assign_1d_range_b,bool);
 
-impl_div_assign_fxn!(DivAssign1DRR4R4,RowVector4,RowVector4<T>,div_assign_1d_range_vec,usize);
-impl_div_assign_fxn!(DivAssign1DRR4R3,RowVector4,RowVector3<T>,div_assign_1d_range_vec,usize);
-impl_div_assign_fxn!(DivAssign1DRR4R2,RowVector4,RowVector2<T>,div_assign_1d_range_vec,usize);
-impl_div_assign_fxn!(DivAssign1DRV4V4,Vector4,Vector4<T>,div_assign_1d_range_vec,usize);
-impl_div_assign_fxn!(DivAssign1DRV4V3,Vector4,Vector3<T>,div_assign_1d_range_vec,usize);
-impl_div_assign_fxn!(DivAssign1DRV4V2,Vector4,Vector2<T>,div_assign_1d_range_vec,usize);
-
-impl_div_assign_fxn!(DivAssign1DRMDMD,DMatrix,DMatrix<T>,div_assign_1d_range_vec,usize);
-
+impl_div_assign_range_fxn_s!(DivAssign1DRS,div_assign_1d_range,usize);
+impl_div_assign_range_fxn_s!(DivAssign1DRB,div_assign_1d_range_b,bool);
+impl_div_assign_range_fxn_v!(DivAssign1DRV,div_assign_1d_range_vec,usize);
+impl_div_assign_range_fxn_v!(DivAssign1DRVB,div_assign_1d_range_vec_b,bool);
 
 fn div_assign_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
   impl_div_assign_match_arms!(DivAssign1DR, range, (sink, ixes.as_slice(), source))
 }
+ 
 
 pub struct DivAssignRange {}
 impl NativeFunctionCompiler for DivAssignRange {
@@ -348,10 +353,11 @@ impl NativeFunctionCompiler for DivAssignRange {
 
 // x[1..3,:] /= 1 ------------------------------------------------------------------
 
+
 macro_rules! div_assign_2d_vector_all {
   ($source:expr, $ix:expr, $sink:expr) => {
     for val in ($sink).iter_mut() {
-      *val /= $source;
+      *val /= (*$source);
     }
   };}
 
@@ -361,7 +367,7 @@ macro_rules! div_assign_2d_vector_all_b {
     for (i, val) in ($sink).iter_mut().enumerate() {
       let row = i / ncols;
       if $ix[row] {
-        *val /= $source;
+        *val /= *($source);
       }
     }
   };}
@@ -391,29 +397,10 @@ macro_rules! div_assign_2d_vector_all_mat_b {
     }
   };}
 
-impl_div_assign_fxn!(DivAssign2DRAMD,DMatrix,T,div_assign_2d_vector_all,usize);
-impl_div_assign_fxn!(DivAssign2DRAM4,Matrix4,T,div_assign_2d_vector_all,usize);
-impl_div_assign_fxn!(DivAssign2DRAM3,Matrix3,T,div_assign_2d_vector_all,usize);
-impl_div_assign_fxn!(DivAssign2DRAM2,Matrix2,T,div_assign_2d_vector_all,usize);
-impl_div_assign_fxn!(DivAssign2DRAM1,Matrix1,T,div_assign_2d_vector_all,usize);
-impl_div_assign_fxn!(DivAssign2DRAM2x3,Matrix2x3,T,div_assign_2d_vector_all,usize);
-impl_div_assign_fxn!(DivAssign2DRAM3x2,Matrix3x2,T,div_assign_2d_vector_all,usize);
-
-impl_div_assign_fxn!(DivAssign2DRAMDB,DMatrix,T,div_assign_2d_vector_all_b,bool);
-impl_div_assign_fxn!(DivAssign2DRAM4B,Matrix4,T,div_assign_2d_vector_all_b,bool);
-impl_div_assign_fxn!(DivAssign2DRAM3B,Matrix3,T,div_assign_2d_vector_all_b,bool);
-impl_div_assign_fxn!(DivAssign2DRAM2B,Matrix2,T,div_assign_2d_vector_all_b,bool);
-impl_div_assign_fxn!(DivAssign2DRAM1B,Matrix1,T,div_assign_2d_vector_all_b,bool);
-impl_div_assign_fxn!(DivAssign2DRAM2x3B,Matrix2x3,T,div_assign_2d_vector_all_b,bool);
-impl_div_assign_fxn!(DivAssign2DRAM3x2B,Matrix3x2,T,div_assign_2d_vector_all_b,bool);
-
-
-impl_div_assign_fxn!(DivAssign2DRAMDMDB,DMatrix,DMatrix<T>,div_assign_2d_vector_all_mat_b,bool);
-impl_div_assign_fxn!(DivAssign2DRAM2M2B,Matrix2,Matrix2<T>,div_assign_2d_vector_all_mat_b,bool);
-impl_div_assign_fxn!(DivAssign2DRAM3M3B,Matrix3,Matrix3<T>,div_assign_2d_vector_all_mat_b,bool);
-impl_div_assign_fxn!(DivAssign2DRAM4M4B,Matrix4,Matrix4<T>,div_assign_2d_vector_all_mat_b,bool);
-impl_div_assign_fxn!(DivAssign2DRAM3x2M3x2B,Matrix3x2,Matrix3x2<T>,div_assign_2d_vector_all_mat_b,bool);
-impl_div_assign_fxn!(DivAssign2DRAM2x3M2x3B,Matrix2x3,Matrix2x3<T>,div_assign_2d_vector_all_mat_b,bool);
+impl_div_assign_range_fxn_s!(DivAssign2DRAS,div_assign_2d_vector_all,usize);
+impl_div_assign_range_fxn_s!(DivAssign2DRASB,div_assign_2d_vector_all_b,bool);
+impl_div_assign_range_fxn_v!(DivAssign2DRAV,div_assign_2d_vector_all_mat,usize);
+impl_div_assign_range_fxn_v!(DivAssign2DRAVB,div_assign_2d_vector_all_mat_b,bool);
 
 fn div_assign_vec_all_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
   impl_div_assign_match_arms!(DivAssign2DRA, range_all, (sink, ixes.as_slice(), source))
