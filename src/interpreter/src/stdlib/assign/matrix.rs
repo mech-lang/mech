@@ -1,6 +1,11 @@
 #[macro_use]
 use crate::stdlib::*;
 use std::marker::PhantomData;
+use std::fmt::Debug;
+use nalgebra::{
+  base::{Matrix as naMatrix, Storage, StorageMut},
+  Dim, Scalar,
+};
 
 // Set -----------------------------------------------------------------
 
@@ -1377,10 +1382,71 @@ impl NativeFunctionCompiler for MatrixSetAllRange {
 
 // x[1..3,:] = 1 ------------------------------------------------------------------
 
+macro_rules! impl_set_all_fxn_s {
+  ($struct_name:ident, $op:ident, $ix:ty) => {
+    #[derive(Debug)]
+    pub struct $struct_name<T, MatA, IxVec> {
+      pub sink: Ref<MatA>,
+      pub source: Ref<T>,
+      pub ixes: Ref<IxVec>,
+      pub _marker: PhantomData<T>,
+    }
+
+    impl<T, R1, C1, S1, IxVec>
+      MechFunction for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
+    where
+      Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+      T: Scalar + Clone + Debug + Clone + Sync + Send + 'static,
+      IxVec: AsRef<[$ix]> + Debug,
+      R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Debug,
+    {
+      fn solve(&self) {
+        unsafe {
+          let sink_ptr = &mut *self.sink.as_ptr();
+          let source_ptr = &*self.source.as_ptr();
+          let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
+          $op!(source_ptr,ix_ptr,sink_ptr);
+        }
+      }
+      fn out(&self) -> Value {self.sink.to_value()}
+      fn to_string(&self) -> String {format!("{:#?}", self)}
+    }};}
+
+macro_rules! impl_set_all_fxn {
+  ($struct_name:ident, $op:ident, $ix:ty) => {
+    #[derive(Debug)]
+    pub struct $struct_name<T, MatA, MatB, IxVec> {
+      pub sink: Ref<MatA>,
+      pub source: Ref<MatB>,
+      pub ixes: Ref<IxVec>,
+      pub _marker: PhantomData<T>,
+    }
+
+    impl<T, R1, C1, S1, R2, C2, S2, IxVec>
+      MechFunction for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
+    where
+      Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+      T: Scalar + Clone + Debug + Clone + Sync + Send + 'static,
+      IxVec: AsRef<[$ix]> + Debug,
+      R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Debug,
+      R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Debug,
+    {
+      fn solve(&self) {
+        unsafe {
+          let sink_ptr = &mut *self.sink.as_ptr();
+          let source_ptr = &*self.source.as_ptr();
+          let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
+          $op!(source_ptr,ix_ptr,sink_ptr);
+        }
+      }
+      fn out(&self) -> Value {self.sink.to_value()}
+      fn to_string(&self) -> String {format!("{:#?}", self)}
+    }};}
+
 macro_rules! set_2d_vector_all {
   ($source:expr, $ix:expr, $sink:expr) => {
       for cix in 0..($sink).ncols() {
-        for rix in &$ix {
+        for rix in $ix.iter() {
           ($sink).column_mut(cix)[rix - 1] = ($source).clone();
         }
       }
@@ -1399,70 +1465,33 @@ macro_rules! set_2d_vector_all_b {
 
 macro_rules! set_2d_vector_all_mat {
   ($source:expr, $ix:expr, $sink:expr) => {
-    for (i,rix) in (&$ix).iter().enumerate() {
-      let mut row = ($sink).row_mut(rix - 1);
-      row.copy_from(&($source).row(i));
+    for (i, &rix) in $ix.iter().enumerate() {
+      let mut sink_row = $sink.row_mut(rix - 1);
+      let src_row = $source.row(i);
+      for (dst, src) in sink_row.iter_mut().zip(src_row.iter()) {
+        *dst = src.clone();
+      }
     }
   };}
   
 macro_rules! set_2d_vector_all_mat_b {
   ($source:expr, $ix:expr, $sink:expr) => {
-    for (i,rix) in (&$ix).iter().enumerate() {
+    for (i, rix) in (&$ix).iter().enumerate() {
       if *rix == true {
         let mut row = ($sink).row_mut(i);
-        row.copy_from(&($source).row(i));
+        let src_row = ($source).row(i);
+        for (dst, src) in row.iter_mut().zip(src_row.iter()) {
+          *dst = src.clone();
+        }
       }
     }
-  };}   
+  };
+}
 
-impl_set_fxn!(Set2DRAMD,DMatrix,T,set_2d_vector_all,usize);
-impl_set_fxn!(Set2DRAM4,Matrix4,T,set_2d_vector_all,usize);
-impl_set_fxn!(Set2DRAM3,Matrix3,T,set_2d_vector_all,usize);
-impl_set_fxn!(Set2DRAM2,Matrix2,T,set_2d_vector_all,usize);
-impl_set_fxn!(Set2DRAM1,Matrix1,T,set_2d_vector_all,usize);
-impl_set_fxn!(Set2DRAM2x3,Matrix2x3,T,set_2d_vector_all,usize);
-impl_set_fxn!(Set2DRAM3x2,Matrix3x2,T,set_2d_vector_all,usize);
-
-impl_set_fxn!(Set2DRAMDMD,DMatrix,DMatrix<T>,set_2d_vector_all_mat,usize);
-impl_set_fxn!(Set2DRAMDM2,DMatrix,Matrix2<T>,set_2d_vector_all_mat,usize);
-impl_set_fxn!(Set2DRAMDM2x3,DMatrix,Matrix2x3<T>,set_2d_vector_all_mat,usize);
-impl_set_fxn!(Set2DRAMDM3,DMatrix,Matrix3<T>,set_2d_vector_all_mat,usize);
-impl_set_fxn!(Set2DRAMDM3x2,DMatrix,Matrix3x2<T>,set_2d_vector_all_mat,usize);
-impl_set_fxn!(Set2DRAMDM4,DMatrix,Matrix4<T>,set_2d_vector_all_mat,usize);
-
-impl_set_fxn!(Set2DRAM2M2,Matrix2,Matrix2<T>,set_2d_vector_all_mat,usize);
-impl_set_fxn!(Set2DRAM2M3x2,Matrix2,Matrix3x2<T>,set_2d_vector_all_mat,usize);
-impl_set_fxn!(Set2DRAM2MD,Matrix2,DMatrix<T>,set_2d_vector_all_mat,usize);
-
-impl_set_fxn!(Set2DRAM3M3,Matrix3,Matrix3<T>,set_2d_vector_all_mat,usize);
-impl_set_fxn!(Set2DRAM3M2x3,Matrix3,Matrix2x3<T>,set_2d_vector_all_mat,usize);
-impl_set_fxn!(Set2DRAM3MD,Matrix3,DMatrix<T>,set_2d_vector_all_mat,usize);
-
-impl_set_fxn!(Set2DRAM3x2M3x2,Matrix3x2,Matrix3x2<T>,set_2d_vector_all_mat,usize);
-impl_set_fxn!(Set2DRAM3x2M2,Matrix3x2,Matrix2<T>,set_2d_vector_all_mat,usize);
-impl_set_fxn!(Set2DRAM3x2MD,Matrix3x2,DMatrix<T>,set_2d_vector_all_mat,usize);
-
-impl_set_fxn!(Set2DRAM2x3M2x3,Matrix2x3,Matrix2x3<T>,set_2d_vector_all_mat,usize);
-impl_set_fxn!(Set2DRAM2x3M3,Matrix2x3,Matrix3<T>,set_2d_vector_all_mat,usize);
-impl_set_fxn!(Set2DRAM2x3MD,Matrix2x3,DMatrix<T>,set_2d_vector_all_mat,usize);
-
-impl_set_fxn!(Set2DRAM4M4,Matrix4,Matrix4<T>,set_2d_vector_all_mat,usize);
-impl_set_fxn!(Set2DRAM4MD,Matrix4,DMatrix<T>,set_2d_vector_all_mat,usize);
-
-impl_set_fxn!(Set2DRAMDB,DMatrix,T,set_2d_vector_all_b,bool);
-impl_set_fxn!(Set2DRAM4B,Matrix4,T,set_2d_vector_all_b,bool);
-impl_set_fxn!(Set2DRAM3B,Matrix3,T,set_2d_vector_all_b,bool);
-impl_set_fxn!(Set2DRAM2B,Matrix2,T,set_2d_vector_all_b,bool);
-impl_set_fxn!(Set2DRAM1B,Matrix1,T,set_2d_vector_all_b,bool);
-impl_set_fxn!(Set2DRAM2x3B,Matrix2x3,T,set_2d_vector_all_b,bool);
-impl_set_fxn!(Set2DRAM3x2B,Matrix3x2,T,set_2d_vector_all_b,bool);
-
-impl_set_fxn!(Set2DRAMDMDB,DMatrix,DMatrix<T>,set_2d_vector_all_mat_b,bool);
-impl_set_fxn!(Set2DRAM2M2B,Matrix2,Matrix2<T>,set_2d_vector_all_mat_b,bool);
-impl_set_fxn!(Set2DRAM3M3B,Matrix3,Matrix3<T>,set_2d_vector_all_mat_b,bool);
-impl_set_fxn!(Set2DRAM4M4B,Matrix4,Matrix4<T>,set_2d_vector_all_mat_b,bool);
-impl_set_fxn!(Set2DRAM3x2M3x2B,Matrix3x2,Matrix3x2<T>,set_2d_vector_all_mat_b,bool);
-impl_set_fxn!(Set2DRAM2x3M2x3B,Matrix2x3,Matrix2x3<T>,set_2d_vector_all_mat_b,bool);
+impl_set_all_fxn!(Set2DRA,set_2d_vector_all_mat,usize);
+impl_set_all_fxn_s!(Set2DRAS,set_2d_vector_all,usize);
+impl_set_all_fxn_s!(Set2DRASB,set_2d_vector_all_b,bool);
+impl_set_all_fxn!(Set2DRAVB,set_2d_vector_all_mat_b,bool);
 
 #[macro_export]
 macro_rules! impl_set_range_all_match_arms {
@@ -1472,26 +1501,26 @@ macro_rules! impl_set_range_all_match_arms {
         $(
           // Vector Scalar
           #[cfg(all(feature = $value_string, feature = "Matrix4"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)),   [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4>] { sink: sink.clone(), ixes:   ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "Matrix3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)),   [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3>] { sink: sink.clone(), ixes:   ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "Matrix2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)),   [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2>] { sink: sink.clone(), ixes:   ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "Matrix1"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix1(sink)),   [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M1>] { sink: sink.clone(), ixes:   ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix1(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "Matrix2x3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2x3>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "Matrix3x2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3x2>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "MatrixD"))]
-          (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)),   [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MD>] { sink: sink.clone(), ixes:   ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           
           // Vector Vector
           #[cfg(all(feature = $value_string, feature = "MatrixD"))]
           (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::DMatrix(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new($fxn_name{ sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "MatrixD", feature = "Matrix2"))]
           (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::Matrix2(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new($fxn_name{ sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-
+          
           #[cfg(all(feature = $value_string, feature = "MatrixD", feature = "Matrix2x3"))]
           (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::Matrix2x3(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new($fxn_name{ sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "MatrixD", feature = "Matrix3"))]
@@ -1500,7 +1529,7 @@ macro_rules! impl_set_range_all_match_arms {
           (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::Matrix3x2(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new($fxn_name{ sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "MatrixD", feature = "Matrix4"))]
           (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::Matrix4(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new($fxn_name{ sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-
+          
           #[cfg(all(feature = $value_string, feature = "Matrix2"))]
           (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)), [Value::MatrixIndex(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::Matrix2(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new($fxn_name{ sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "Matrix2", feature = "Matrix3x2"))]
@@ -1536,33 +1565,33 @@ macro_rules! impl_set_range_all_match_arms {
 
           // Matrix Scalar Bool
           #[cfg(all(feature = $value_string, feature = "Matrix4"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)),   [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4B>] { sink: sink.clone(), ixes:   ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)),   [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name SB>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "Matrix3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)),   [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3B>] { sink: sink.clone(), ixes:   ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)),   [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name SB>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "Matrix2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)),   [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2B>] { sink: sink.clone(), ixes:   ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)),   [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name SB>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "Matrix1"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix1(sink)),   [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M1B>] { sink: sink.clone(), ixes:   ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix1(sink)),   [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name SB>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "Matrix2x3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2x3B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name SB>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "Matrix3x2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3x2B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name SB>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "MatrixD"))]
-          (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)),   [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MDB>] { sink: sink.clone(), ixes:   ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)),   [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name SB>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
         
           // Matrix Vector Bool
           #[cfg(all(feature = $value_string, feature = "MatrixD"))]
-          (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::DMatrix(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new([<$fxn_name MDMDB>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::DMatrix(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "Matrix2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)), [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::Matrix2(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new([<$fxn_name M2M2B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)), [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::Matrix2(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "Matrix3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)), [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::Matrix3(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new([<$fxn_name M3M3B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)), [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::Matrix3(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "Matrix4"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)), [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::Matrix4(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new([<$fxn_name M4M4B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)), [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::Matrix4(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "Matrix2x3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::Matrix2x3(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new([<$fxn_name M2x3M2x3B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::Matrix2x3(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "Matrix3x2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::Matrix3x2(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new([<$fxn_name M3x2M3x2B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone() })),
+          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), [Value::MatrixBool(Matrix::DVector(ix)),Value::IndexAll], Value::[<Matrix $value_kind>](Matrix::Matrix3x2(source))) if ix.borrow().len() == source.borrow().nrows() && sink.borrow().ncols() == source.borrow().ncols() => Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
         )+
         x => {
           println!("{:#?}", x);
@@ -1574,8 +1603,7 @@ macro_rules! impl_set_range_all_match_arms {
 }
 
 fn impl_set_range_all_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
-  todo!();
-  //impl_set_match_arms!(Set2DRA, range_all, (sink, ixes.as_slice(), source))
+  impl_set_match_arms!(Set2DRA, range_all, (sink, ixes.as_slice(), source))
 }
 
 pub struct MatrixSetRangeAll {}
