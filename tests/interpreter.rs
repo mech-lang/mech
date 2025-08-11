@@ -563,8 +563,8 @@ test_interpreter!(interpret_set_logical_ram2m2_bool,"~x := [1 2; 3 4]; y := [tru
 test_interpreter!(interpret_set_logical_ram3m3_bool,"~x := [1 2 3; 4 5 6; 7 8 9]; y := [true false true]; z := [10 20 30; 40 50 60; 70 80 90]; x[y,:] = z;", new_ref(Matrix3::from_vec(vec![F64::new(10.0),F64::new(4.0),F64::new(70.0),F64::new(20.0),F64::new(5.0),F64::new(80.0),F64::new(30.0),F64::new(6.0),F64::new(90.0)])).to_value());
 test_interpreter!(interpret_set_logical_ram4m4_bool,"~x := [1 2 3 4; 5 6 7 8; 9 10 11 12; 13 14 15 16]; y := [true false true false]; z := [10 20 30 40; 50 60 70 80; 90 100 110 120; 130 140 150 160]; x[y,:] = z;", new_ref(Matrix4::from_vec(vec![F64::new(10.0),F64::new(5.0),F64::new(90.0),F64::new(13.0),F64::new(20.0),F64::new(6.0),F64::new(100.0),F64::new(14.0),F64::new(30.0),F64::new(7.0),F64::new(110.0),F64::new(15.0),F64::new(40.0),F64::new(8.0),F64::new(120.0),F64::new(16.0)])).to_value());
 
-test_interpreter!(interpret_set_logical_ram2m2,"~x := [1 2; 3 4]; y := [2 1]; x[y,:] = x;", new_ref(Matrix2::from_vec(vec![F64::new(3.0),F64::new(1.0),F64::new(4.0),F64::new(2.0)])).to_value());
-test_interpreter!(interpret_set_logical_ram3m3,"~x := [1 2 3; 4 5 6; 7 8 9]; y := [2 1 3]; x[y,:] = x;", new_ref(Matrix3::from_vec(vec![F64::new(4.0),F64::new(1.0),F64::new(7.0),F64::new(5.0),F64::new(2.0),F64::new(8.0),F64::new(6.0),F64::new(3.0),F64::new(9.0)])).to_value());
+test_interpreter!(interpret_set_logical_ram2m2,"~x := [1 2; 3 4]; y := [2 1]; x[y,:] = x;", new_ref(Matrix2::from_vec(vec![F64::new(1.0),F64::new(1.0),F64::new(2.0),F64::new(2.0)])).to_value());
+test_interpreter!(interpret_set_logical_ram3m3,"~x := [1 2 3; 4 5 6; 7 8 9]; y := [2 1 3]; x[y,:] = x;", new_ref(Matrix3::from_vec(vec![F64::new(1.0),F64::new(1.0),F64::new(7.0),F64::new(2.0),F64::new(2.0),F64::new(8.0),F64::new(3.0),F64::new(3.0),F64::new(9.0)])).to_value());
 
 
 test_interpreter!(interpret_modulus,"[1 2 3 4 5] % 5", new_ref(RowDVector::from_vec(vec![F64::new(1.0), F64::new(2.0), F64::new(3.0), F64::new(4.0), F64::new(0.0)])).to_value());
