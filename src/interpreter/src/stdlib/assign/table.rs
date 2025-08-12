@@ -92,15 +92,15 @@ macro_rules! impl_set_column_match_arms {
           let tbl_brrw = tbl.borrow();
           match (tbl_brrw.get(&k),tbl_brrw.rows(),source) {
             $(
-                (Some((ValueKind::$lhs_type,Matrix::Matrix1(sink))),1,Value::[<Matrix $lhs_type>](Matrix::Matrix1(source))) => Ok(Box::new([<TableSetCol $lhs_type M1>]{source: source.clone(), sink: sink.clone() })),
-                (Some((ValueKind::$lhs_type,Matrix::Vector2(sink))),2,Value::[<Matrix $lhs_type>](Matrix::Vector2(source))) => Ok(Box::new([<TableSetCol $lhs_type V2>]{source: source.clone(), sink: sink.clone() })),
-                (Some((ValueKind::$lhs_type,Matrix::Vector3(sink))),3,Value::[<Matrix $lhs_type>](Matrix::Vector3(source))) => Ok(Box::new([<TableSetCol $lhs_type V3>]{source: source.clone(), sink: sink.clone() })),
-                (Some((ValueKind::$lhs_type,Matrix::Vector4(sink))),4,Value::[<Matrix $lhs_type>](Matrix::Vector4(source))) => Ok(Box::new([<TableSetCol $lhs_type V4>]{source: source.clone(), sink: sink.clone() })),
-                (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::DVector(source))) => Ok(Box::new([<TableSetCol $lhs_type VD>]{source: source.clone(), sink: sink.clone() })),
-                (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Vector4(source))) => Ok(Box::new([<TableSetCol $lhs_type VDV4>]{source: source.clone(), sink: sink.clone() })),
-                (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Vector3(source))) => Ok(Box::new([<TableSetCol $lhs_type VDV3>]{source: source.clone(), sink: sink.clone() })),
-                (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Vector2(source))) => Ok(Box::new([<TableSetCol $lhs_type VDV2>]{source: source.clone(), sink: sink.clone() })),
-                (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Matrix1(source))) => Ok(Box::new([<TableSetCol $lhs_type VDM1>]{source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type,Matrix::Matrix1(sink))),1,Value::[<Matrix $lhs_type>](Matrix::Matrix1(source))) => Ok(Box::new([<TableSetCol $lhs_type M1>]{source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type,Matrix::Vector2(sink))),2,Value::[<Matrix $lhs_type>](Matrix::Vector2(source))) => Ok(Box::new([<TableSetCol $lhs_type V2>]{source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type,Matrix::Vector3(sink))),3,Value::[<Matrix $lhs_type>](Matrix::Vector3(source))) => Ok(Box::new([<TableSetCol $lhs_type V3>]{source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type,Matrix::Vector4(sink))),4,Value::[<Matrix $lhs_type>](Matrix::Vector4(source))) => Ok(Box::new([<TableSetCol $lhs_type V4>]{source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::DVector(source))) => Ok(Box::new([<TableSetCol $lhs_type VD>]{source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Vector4(source))) => Ok(Box::new([<TableSetCol $lhs_type VDV4>]{source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Vector3(source))) => Ok(Box::new([<TableSetCol $lhs_type VDV3>]{source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Vector2(source))) => Ok(Box::new([<TableSetCol $lhs_type VDV2>]{source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Matrix1(source))) => Ok(Box::new([<TableSetCol $lhs_type VDM1>]{source: source.clone(), sink: sink.clone() })),
             )+
             x => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)}),
           }
