@@ -310,7 +310,7 @@ macro_rules! impl_urop {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
-    }};}  
+    }};} 
 
 #[macro_export]
 macro_rules! impl_fxns {
@@ -498,144 +498,144 @@ macro_rules! impl_fxns {
 
 #[macro_export]
 macro_rules! impl_binop_match_arms {
-  ($lib:ident, $arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr, $value_string:tt),+);+ $(;)?) => {
+  ($lib:ident, $arg:expr, $($lhs_type:ident, $($target_type:ident, $value_string:tt),+);+ $(;)?) => {
     paste!{
       match $arg {
         $(
           $(
             // Scalar Scalar
             #[cfg(all(feature = $value_string))]
-            (Value::$lhs_type(lhs), Value::$rhs_type(rhs)) => Ok(Box::new([<$lib SS>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($default) })),
+            (Value::$lhs_type(lhs), Value::$lhs_type(rhs)) => Ok(Box::new([<$lib SS>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref($target_type::default()) })),
             // Scalar Matrix
             #[cfg(all(feature = $value_string, feature = "Matrix1"))]
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::Matrix1(rhs))) => Ok(Box::new([<$lib SM1>]{lhs, rhs, out: new_ref(Matrix1::from_element($default))})),
+            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::Matrix1(rhs))) => Ok(Box::new([<$lib SM1>]{lhs, rhs, out: new_ref(Matrix1::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "Matrix2"))]
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::Matrix2(rhs))) => Ok(Box::new([<$lib SM2>]{lhs, rhs, out: new_ref(Matrix2::from_element($default))})),
+            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::Matrix2(rhs))) => Ok(Box::new([<$lib SM2>]{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "Matrix3"))]
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::Matrix3(rhs))) => Ok(Box::new([<$lib SM3>]{lhs, rhs, out: new_ref(Matrix3::from_element($default))})),
+            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::Matrix3(rhs))) => Ok(Box::new([<$lib SM3>]{lhs, rhs, out: new_ref(Matrix3::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "Matrix4"))]
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::Matrix4(rhs))) => Ok(Box::new([<$lib SM4>]{lhs, rhs, out: new_ref(Matrix4::from_element($default))})),
+            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::Matrix4(rhs))) => Ok(Box::new([<$lib SM4>]{lhs, rhs, out: new_ref(Matrix4::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "Matrix2x3"))]
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::Matrix2x3(rhs))) => Ok(Box::new([<$lib SM2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($default))})),
+            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::Matrix2x3(rhs))) => Ok(Box::new([<$lib SM2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "Matrix3x2"))]
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::Matrix3x2(rhs))) => Ok(Box::new([<$lib SM3x2>]{lhs, rhs, out: new_ref(Matrix3x2::from_element($default))})),
+            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::Matrix3x2(rhs))) => Ok(Box::new([<$lib SM3x2>]{lhs, rhs, out: new_ref(Matrix3x2::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "MatrixD"))]
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::DMatrix(rhs))) => {
+            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::DMatrix(rhs))) => {
               let (rows,cols) = {rhs.borrow().shape()};
-              Ok(Box::new([<$lib SMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))}))},   
+              Ok(Box::new([<$lib SMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::default()))}))},   
             // Scalar Row
             #[cfg(all(feature = $value_string, feature = "RowVector2"))]
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::RowVector2(rhs))) => Ok(Box::new([<$lib SR2>]{lhs, rhs, out: new_ref(RowVector2::from_element($default))})),
+            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::RowVector2(rhs))) => Ok(Box::new([<$lib SR2>]{lhs, rhs, out: new_ref(RowVector2::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "RowVector3"))]
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::RowVector3(rhs))) => Ok(Box::new([<$lib SR3>]{lhs, rhs, out: new_ref(RowVector3::from_element($default))})),
+            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::RowVector3(rhs))) => Ok(Box::new([<$lib SR3>]{lhs, rhs, out: new_ref(RowVector3::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "RowVector4"))]
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::RowVector4(rhs))) => Ok(Box::new([<$lib SR4>]{lhs, rhs, out: new_ref(RowVector4::from_element($default))})),
+            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::RowVector4(rhs))) => Ok(Box::new([<$lib SR4>]{lhs, rhs, out: new_ref(RowVector4::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "RowVectorD"))]
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::RowDVector(rhs))) => Ok(Box::new([<$lib SRD>]{lhs, rhs: rhs.clone(), out: new_ref(RowDVector::from_element(rhs.borrow().len(),$default))})),
+            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::RowDVector(rhs))) => Ok(Box::new([<$lib SRD>]{lhs, rhs: rhs.clone(), out: new_ref(RowDVector::from_element(rhs.borrow().len(),$target_type::default()))})),
             // Scalar Vector
             #[cfg(all(feature = $value_string, feature = "Vector2"))]
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::Vector2(rhs))) => Ok(Box::new([<$lib SV2>]{lhs, rhs, out: new_ref(Vector2::from_element($default))})),
+            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::Vector2(rhs))) => Ok(Box::new([<$lib SV2>]{lhs, rhs, out: new_ref(Vector2::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "Vector3"))]
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::Vector3(rhs))) => Ok(Box::new([<$lib SV3>]{lhs, rhs, out: new_ref(Vector3::from_element($default))})),
+            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::Vector3(rhs))) => Ok(Box::new([<$lib SV3>]{lhs, rhs, out: new_ref(Vector3::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "Vector4"))]
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::Vector4(rhs))) => Ok(Box::new([<$lib SV4>]{lhs, rhs, out: new_ref(Vector4::from_element($default))})),
+            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::Vector4(rhs))) => Ok(Box::new([<$lib SV4>]{lhs, rhs, out: new_ref(Vector4::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "VectorD"))]
-            (Value::$lhs_type(lhs), Value::$matrix_kind(Matrix::DVector(rhs))) => Ok(Box::new([<$lib SVD>]{lhs, rhs: rhs.clone(), out: new_ref(DVector::from_element(rhs.borrow().len(),$default))})),
+            (Value::$lhs_type(lhs), Value::[<Matrix $lhs_type>](Matrix::DVector(rhs))) => Ok(Box::new([<$lib SVD>]{lhs, rhs: rhs.clone(), out: new_ref(DVector::from_element(rhs.borrow().len(),$target_type::default()))})),
             // Matrix Scalar
             #[cfg(all(feature = $value_string, feature = "Matrix1"))]
-            (Value::$matrix_kind(Matrix::Matrix1(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib M1S>]{lhs, rhs, out: new_ref(Matrix1::from_element($default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix1(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib M1S>]{lhs, rhs, out: new_ref(Matrix1::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "Matrix2"))]
-            (Value::$matrix_kind(Matrix::Matrix2(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib M2S>]{lhs, rhs, out: new_ref(Matrix2::from_element($default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix2(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib M2S>]{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "Matrix3"))]
-            (Value::$matrix_kind(Matrix::Matrix3(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib M3S>]{lhs, rhs, out: new_ref(Matrix3::from_element($default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix3(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib M3S>]{lhs, rhs, out: new_ref(Matrix3::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "Matrix4"))]
-            (Value::$matrix_kind(Matrix::Matrix4(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib M4S>]{lhs, rhs, out: new_ref(Matrix4::from_element($default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix4(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib M4S>]{lhs, rhs, out: new_ref(Matrix4::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "Matrix2x3"))]
-            (Value::$matrix_kind(Matrix::Matrix2x3(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib M2x3S>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix2x3(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib M2x3S>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "Matrix3x2"))]
-            (Value::$matrix_kind(Matrix::Matrix3x2(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib M3x2S>]{lhs, rhs, out: new_ref(Matrix3x2::from_element($default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix3x2(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib M3x2S>]{lhs, rhs, out: new_ref(Matrix3x2::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "MatrixD"))]
-            (Value::$matrix_kind(Matrix::DMatrix(lhs)),Value::$lhs_type(rhs)) => {
+            (Value::[<Matrix $lhs_type>](Matrix::DMatrix(lhs)),Value::$lhs_type(rhs)) => {
               let (rows,cols) = {lhs.borrow().shape()};
-              Ok(Box::new([<$lib MDS>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))}))},
+              Ok(Box::new([<$lib MDS>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::default()))}))},
             // Row Scalar
             #[cfg(all(feature = $value_string, feature = "RowVector2"))]
-            (Value::$matrix_kind(Matrix::RowVector2(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib R2S>]{lhs, rhs, out: new_ref(RowVector2::from_element($default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::RowVector2(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib R2S>]{lhs, rhs, out: new_ref(RowVector2::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "RowVector3"))]
-            (Value::$matrix_kind(Matrix::RowVector3(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib R3S>]{lhs, rhs, out: new_ref(RowVector3::from_element($default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::RowVector3(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib R3S>]{lhs, rhs, out: new_ref(RowVector3::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "RowVector4"))]
-            (Value::$matrix_kind(Matrix::RowVector4(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib R4S>]{lhs, rhs, out: new_ref(RowVector4::from_element($default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::RowVector4(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib R4S>]{lhs, rhs, out: new_ref(RowVector4::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "RowVectorD"))]
-            (Value::$matrix_kind(Matrix::RowDVector(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib RDS>]{lhs: lhs.clone(), rhs, out: new_ref(RowDVector::from_element(lhs.borrow().len(),$default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::RowDVector(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib RDS>]{lhs: lhs.clone(), rhs, out: new_ref(RowDVector::from_element(lhs.borrow().len(),$target_type::default()))})),
             // Vector Scalar
             #[cfg(all(feature = $value_string, feature = "Vector2"))]
-            (Value::$matrix_kind(Matrix::Vector2(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib V2S>]{lhs, rhs, out: new_ref(Vector2::from_element($default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::Vector2(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib V2S>]{lhs, rhs, out: new_ref(Vector2::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "Vector3"))]
-            (Value::$matrix_kind(Matrix::Vector3(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib V3S>]{lhs, rhs, out: new_ref(Vector3::from_element($default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::Vector3(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib V3S>]{lhs, rhs, out: new_ref(Vector3::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "Vector4"))]
-            (Value::$matrix_kind(Matrix::Vector4(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib V4S>]{lhs, rhs, out: new_ref(Vector4::from_element($default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::Vector4(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib V4S>]{lhs, rhs, out: new_ref(Vector4::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "VectorD"))]
-            (Value::$matrix_kind(Matrix::DVector(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib VDS>]{lhs: lhs.clone(), rhs, out: new_ref(DVector::from_element(lhs.borrow().len(),$default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::DVector(lhs)),Value::$lhs_type(rhs)) => Ok(Box::new([<$lib VDS>]{lhs: lhs.clone(), rhs, out: new_ref(DVector::from_element(lhs.borrow().len(),$target_type::default()))})),
             // Matrix Matrix
             #[cfg(all(feature = $value_string, feature = "Matrix1"))]
-            (Value::$matrix_kind(Matrix::Matrix1(lhs)), Value::$matrix_kind(Matrix::Matrix1(rhs))) => Ok(Box::new([<$lib M1M1>]{lhs, rhs, out: new_ref(Matrix1::from_element($default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix1(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix1(rhs))) => Ok(Box::new([<$lib M1M1>]{lhs, rhs, out: new_ref(Matrix1::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "Matrix2"))]
-            (Value::$matrix_kind(Matrix::Matrix2(lhs)), Value::$matrix_kind(Matrix::Matrix2(rhs))) => Ok(Box::new([<$lib M2M2>]{lhs, rhs, out: new_ref(Matrix2::from_element($default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix2(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix2(rhs))) => Ok(Box::new([<$lib M2M2>]{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "Matrix3"))]
-            (Value::$matrix_kind(Matrix::Matrix3(lhs)), Value::$matrix_kind(Matrix::Matrix3(rhs))) => Ok(Box::new([<$lib M3M3>]{lhs, rhs, out: new_ref(Matrix3::from_element($default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix3(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix3(rhs))) => Ok(Box::new([<$lib M3M3>]{lhs, rhs, out: new_ref(Matrix3::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "Matrix4"))]
-            (Value::$matrix_kind(Matrix::Matrix4(lhs)), Value::$matrix_kind(Matrix::Matrix4(rhs))) => Ok(Box::new([<$lib M4M4>]{lhs, rhs, out: new_ref(Matrix4::from_element($default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix4(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix4(rhs))) => Ok(Box::new([<$lib M4M4>]{lhs, rhs, out: new_ref(Matrix4::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "Matrix2x3"))]
-            (Value::$matrix_kind(Matrix::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::Matrix2x3(rhs))) => Ok(Box::new([<$lib M2x3M2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($default))})),  
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix2x3(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix2x3(rhs))) => Ok(Box::new([<$lib M2x3M2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($target_type::default()))})),  
             #[cfg(all(feature = $value_string, feature = "Matrix3x2"))]
-            (Value::$matrix_kind(Matrix::Matrix3x2(lhs)), Value::$matrix_kind(Matrix::Matrix3x2(rhs))) => Ok(Box::new([<$lib M3x2M3x2>]{lhs, rhs, out: new_ref(Matrix3x2::from_element($default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix3x2(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix3x2(rhs))) => Ok(Box::new([<$lib M3x2M3x2>]{lhs, rhs, out: new_ref(Matrix3x2::from_element($target_type::default()))})),
             #[cfg(all(feature = $value_string, feature = "MatrixD"))]
-            (Value::$matrix_kind(Matrix::DMatrix(lhs)), Value::$matrix_kind(Matrix::DMatrix(rhs))) => {
+            (Value::[<Matrix $lhs_type>](Matrix::DMatrix(lhs)), Value::[<Matrix $lhs_type>](Matrix::DMatrix(rhs))) => {
               let (rows,cols) = {lhs.borrow().shape()};
-              Ok(Box::new([<$lib MDMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))}))},
+              Ok(Box::new([<$lib MDMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::default()))}))},
             // Row Row
             #[cfg(all(feature = $value_string, feature = "RowVector2"))]
-            (Value::$matrix_kind(Matrix::RowVector2(lhs)), Value::$matrix_kind(Matrix::RowVector2(rhs))) => Ok(Box::new([<$lib R2R2>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element($default)) })),
+            (Value::[<Matrix $lhs_type>](Matrix::RowVector2(lhs)), Value::[<Matrix $lhs_type>](Matrix::RowVector2(rhs))) => Ok(Box::new([<$lib R2R2>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector2::from_element($target_type::default())) })),
             #[cfg(all(feature = $value_string, feature = "RowVector3"))]
-            (Value::$matrix_kind(Matrix::RowVector3(lhs)), Value::$matrix_kind(Matrix::RowVector3(rhs))) => Ok(Box::new([<$lib R3R3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($default)) })),
+            (Value::[<Matrix $lhs_type>](Matrix::RowVector3(lhs)), Value::[<Matrix $lhs_type>](Matrix::RowVector3(rhs))) => Ok(Box::new([<$lib R3R3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector3::from_element($target_type::default())) })),
             #[cfg(all(feature = $value_string, feature = "RowVector4"))]
-            (Value::$matrix_kind(Matrix::RowVector4(lhs)), Value::$matrix_kind(Matrix::RowVector4(rhs))) => Ok(Box::new([<$lib R4R4>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element($default)) })),
+            (Value::[<Matrix $lhs_type>](Matrix::RowVector4(lhs)), Value::[<Matrix $lhs_type>](Matrix::RowVector4(rhs))) => Ok(Box::new([<$lib R4R4>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(RowVector4::from_element($target_type::default())) })),
             #[cfg(all(feature = $value_string, feature = "RowVectorD"))]
-            (Value::$matrix_kind(Matrix::RowDVector(lhs)), Value::$matrix_kind(Matrix::RowDVector(rhs))) => Ok(Box::new([<$lib RDRD>]{lhs: lhs.clone(), rhs, out: new_ref(RowDVector::from_element(lhs.borrow().len(),$default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::RowDVector(lhs)), Value::[<Matrix $lhs_type>](Matrix::RowDVector(rhs))) => Ok(Box::new([<$lib RDRD>]{lhs: lhs.clone(), rhs, out: new_ref(RowDVector::from_element(lhs.borrow().len(),$target_type::default()))})),
             // Vector Vector
             #[cfg(all(feature = $value_string, feature = "Vector2"))]
-            (Value::$matrix_kind(Matrix::Vector2(lhs)), Value::$matrix_kind(Matrix::Vector2(rhs))) => Ok(Box::new([<$lib V2V2>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Vector2::from_element($default)) })),
+            (Value::[<Matrix $lhs_type>](Matrix::Vector2(lhs)), Value::[<Matrix $lhs_type>](Matrix::Vector2(rhs))) => Ok(Box::new([<$lib V2V2>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Vector2::from_element($target_type::default())) })),
             #[cfg(all(feature = $value_string, feature = "Vector3"))]
-            (Value::$matrix_kind(Matrix::Vector3(lhs)), Value::$matrix_kind(Matrix::Vector3(rhs))) => Ok(Box::new([<$lib V3V3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Vector3::from_element($default)) })),
+            (Value::[<Matrix $lhs_type>](Matrix::Vector3(lhs)), Value::[<Matrix $lhs_type>](Matrix::Vector3(rhs))) => Ok(Box::new([<$lib V3V3>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Vector3::from_element($target_type::default())) })),
             #[cfg(all(feature = $value_string, feature = "Vector4"))]
-            (Value::$matrix_kind(Matrix::Vector4(lhs)), Value::$matrix_kind(Matrix::Vector4(rhs))) => Ok(Box::new([<$lib V4V4>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Vector4::from_element($default)) })),
+            (Value::[<Matrix $lhs_type>](Matrix::Vector4(lhs)), Value::[<Matrix $lhs_type>](Matrix::Vector4(rhs))) => Ok(Box::new([<$lib V4V4>]{lhs: lhs.clone(), rhs: rhs.clone(), out: new_ref(Vector4::from_element($target_type::default())) })),
             #[cfg(all(feature = $value_string, feature = "VectorD"))]
-            (Value::$matrix_kind(Matrix::DVector(lhs)), Value::$matrix_kind(Matrix::DVector(rhs))) => Ok(Box::new([<$lib VDVD>]{lhs: lhs.clone(), rhs, out: new_ref(DVector::from_element(lhs.borrow().len(),$default))})),
+            (Value::[<Matrix $lhs_type>](Matrix::DVector(lhs)), Value::[<Matrix $lhs_type>](Matrix::DVector(rhs))) => Ok(Box::new([<$lib VDVD>]{lhs: lhs.clone(), rhs, out: new_ref(DVector::from_element(lhs.borrow().len(),$target_type::default()))})),
             // Matrix Vector     
             #[cfg(all(feature = $value_string, feature = "Matrix2"))]
-            (Value::$matrix_kind(Matrix::Matrix2(lhs)),Value::$matrix_kind(Matrix::Vector2(rhs))) => Ok(Box::new([<$lib M2V2>]{lhs, rhs, out: new_ref(Matrix2::from_element($default))})),         
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix2(lhs)),Value::[<Matrix $lhs_type>](Matrix::Vector2(rhs))) => Ok(Box::new([<$lib M2V2>]{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::default()))})),         
             #[cfg(all(feature = $value_string, feature = "Matrix3"))]
-            (Value::$matrix_kind(Matrix::Matrix3(lhs)),Value::$matrix_kind(Matrix::Vector3(rhs))) => Ok(Box::new([<$lib M3V3>]{lhs, rhs, out: new_ref(Matrix3::from_element($default))})),         
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix3(lhs)),Value::[<Matrix $lhs_type>](Matrix::Vector3(rhs))) => Ok(Box::new([<$lib M3V3>]{lhs, rhs, out: new_ref(Matrix3::from_element($target_type::default()))})),         
             #[cfg(all(feature = $value_string, feature = "Matrix2x3"))]
-            (Value::$matrix_kind(Matrix::Matrix2x3(lhs)),Value::$matrix_kind(Matrix::Vector2(rhs))) => Ok(Box::new([<$lib M2x3V2>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($default))})),         
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix2x3(lhs)),Value::[<Matrix $lhs_type>](Matrix::Vector2(rhs))) => Ok(Box::new([<$lib M2x3V2>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($target_type::default()))})),         
             #[cfg(all(feature = $value_string, feature = "Matrix3x2"))]
-            (Value::$matrix_kind(Matrix::Matrix3x2(lhs)),Value::$matrix_kind(Matrix::Vector3(rhs))) => Ok(Box::new([<$lib M3x2V3>]{lhs, rhs, out: new_ref(Matrix3x2::from_element($default))})),         
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix3x2(lhs)),Value::[<Matrix $lhs_type>](Matrix::Vector3(rhs))) => Ok(Box::new([<$lib M3x2V3>]{lhs, rhs, out: new_ref(Matrix3x2::from_element($target_type::default()))})),         
             #[cfg(all(feature = $value_string, feature = "Matrix4"))]
-            (Value::$matrix_kind(Matrix::Matrix4(lhs)),Value::$matrix_kind(Matrix::Vector4(rhs))) => Ok(Box::new([<$lib M4V4>]{lhs, rhs, out: new_ref(Matrix4::from_element($default))})),         
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix4(lhs)),Value::[<Matrix $lhs_type>](Matrix::Vector4(rhs))) => Ok(Box::new([<$lib M4V4>]{lhs, rhs, out: new_ref(Matrix4::from_element($target_type::default()))})),         
             #[cfg(all(feature = $value_string, feature = "MatrixD"))]
             // Matrix Row     
             #[cfg(all(feature = $value_string, feature = "Matrix2"))]
-            (Value::$matrix_kind(Matrix::Matrix2(lhs)),Value::$matrix_kind(Matrix::RowVector2(rhs))) => Ok(Box::new([<$lib M2R2>]{lhs, rhs, out: new_ref(Matrix2::from_element($default))})),         
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix2(lhs)),Value::[<Matrix $lhs_type>](Matrix::RowVector2(rhs))) => Ok(Box::new([<$lib M2R2>]{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::default()))})),         
             #[cfg(all(feature = $value_string, feature = "Matrix3"))]
-            (Value::$matrix_kind(Matrix::Matrix3(lhs)),Value::$matrix_kind(Matrix::RowVector3(rhs))) => Ok(Box::new([<$lib M3R3>]{lhs, rhs, out: new_ref(Matrix3::from_element($default))})),         
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix3(lhs)),Value::[<Matrix $lhs_type>](Matrix::RowVector3(rhs))) => Ok(Box::new([<$lib M3R3>]{lhs, rhs, out: new_ref(Matrix3::from_element($target_type::default()))})),         
             #[cfg(all(feature = $value_string, feature = "Matrix2x3"))]
-            (Value::$matrix_kind(Matrix::Matrix2x3(lhs)),Value::$matrix_kind(Matrix::RowVector3(rhs))) => Ok(Box::new([<$lib M2x3R3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($default))})),         
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix2x3(lhs)),Value::[<Matrix $lhs_type>](Matrix::RowVector3(rhs))) => Ok(Box::new([<$lib M2x3R3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($target_type::default()))})),         
             #[cfg(all(feature = $value_string, feature = "Matrix3x2"))]
-            (Value::$matrix_kind(Matrix::Matrix3x2(lhs)),Value::$matrix_kind(Matrix::RowVector2(rhs))) => Ok(Box::new([<$lib M3x2R2>]{lhs, rhs, out: new_ref(Matrix3x2::from_element($default))})),         
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix3x2(lhs)),Value::[<Matrix $lhs_type>](Matrix::RowVector2(rhs))) => Ok(Box::new([<$lib M3x2R2>]{lhs, rhs, out: new_ref(Matrix3x2::from_element($target_type::default()))})),         
             #[cfg(all(feature = $value_string, feature = "Matrix4"))]
-            (Value::$matrix_kind(Matrix::Matrix4(lhs)),Value::$matrix_kind(Matrix::RowVector4(rhs))) => Ok(Box::new([<$lib M4R4>]{lhs, rhs, out: new_ref(Matrix4::from_element($default))})),         
+            (Value::[<Matrix $lhs_type>](Matrix::Matrix4(lhs)),Value::[<Matrix $lhs_type>](Matrix::RowVector4(rhs))) => Ok(Box::new([<$lib M4R4>]{lhs, rhs, out: new_ref(Matrix4::from_element($target_type::default()))})),         
             #[cfg(all(feature = $value_string, feature = "MatrixD"))]
-            (Value::$matrix_kind(Matrix::DMatrix(lhs)),Value::$matrix_kind(rhs)) => {
+            (Value::[<Matrix $lhs_type>](Matrix::DMatrix(lhs)),Value::[<Matrix $lhs_type>](rhs)) => {
               let (rows,cols) = {lhs.borrow().shape()};
               let rhs_shape = rhs.shape();
               match (rows,cols,rhs_shape[0],rhs_shape[1]) {
@@ -647,41 +647,41 @@ macro_rules! impl_binop_match_arms {
                 _ => {return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![]) });},
               }
               match rhs {
-                Matrix::Vector2(rhs) => Ok(Box::new([<$lib MDV2>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))})),
-                Matrix::Vector3(rhs) => Ok(Box::new([<$lib MDV3>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))})),
-                Matrix::Vector4(rhs) => Ok(Box::new([<$lib MDV4>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))})),
-                Matrix::DVector(rhs) => Ok(Box::new([<$lib MDVD>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))})),
-                Matrix::RowVector2(rhs) => Ok(Box::new([<$lib MDR2>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))})),
-                Matrix::RowVector3(rhs) => Ok(Box::new([<$lib MDR3>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))})),
-                Matrix::RowVector4(rhs) => Ok(Box::new([<$lib MDR4>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))})),
-                Matrix::RowDVector(rhs) => Ok(Box::new([<$lib MDRD>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))})),
+                Matrix::Vector2(rhs) => Ok(Box::new([<$lib MDV2>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::default()))})),
+                Matrix::Vector3(rhs) => Ok(Box::new([<$lib MDV3>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::default()))})),
+                Matrix::Vector4(rhs) => Ok(Box::new([<$lib MDV4>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::default()))})),
+                Matrix::DVector(rhs) => Ok(Box::new([<$lib MDVD>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::default()))})),
+                Matrix::RowVector2(rhs) => Ok(Box::new([<$lib MDR2>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::default()))})),
+                Matrix::RowVector3(rhs) => Ok(Box::new([<$lib MDR3>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::default()))})),
+                Matrix::RowVector4(rhs) => Ok(Box::new([<$lib MDR4>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::default()))})),
+                Matrix::RowDVector(rhs) => Ok(Box::new([<$lib MDRD>]{lhs: lhs.clone(), rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::default()))})),
                 _ => {return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![]) });},
               }
             },
             // Vector Matrix
             #[cfg(all(feature = $value_string, feature = "Matrix2"))]
-            (Value::$matrix_kind(Matrix::Vector2(lhs)), Value::$matrix_kind(Matrix::Matrix2(rhs))) => Ok(Box::new([<$lib V2M2>]{lhs, rhs, out: new_ref(Matrix2::from_element($default))})),         
+            (Value::[<Matrix $lhs_type>](Matrix::Vector2(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix2(rhs))) => Ok(Box::new([<$lib V2M2>]{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::default()))})),         
             #[cfg(all(feature = $value_string, feature = "Matrix3"))]
-            (Value::$matrix_kind(Matrix::Vector3(lhs)), Value::$matrix_kind(Matrix::Matrix3(rhs))) => Ok(Box::new([<$lib V3M3>]{lhs, rhs, out: new_ref(Matrix3::from_element($default))})),         
+            (Value::[<Matrix $lhs_type>](Matrix::Vector3(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix3(rhs))) => Ok(Box::new([<$lib V3M3>]{lhs, rhs, out: new_ref(Matrix3::from_element($target_type::default()))})),         
             #[cfg(all(feature = $value_string, feature = "Matrix2x3"))]
-            (Value::$matrix_kind(Matrix::Vector2(lhs)), Value::$matrix_kind(Matrix::Matrix2x3(rhs))) => Ok(Box::new([<$lib V2M2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($default))})),         
+            (Value::[<Matrix $lhs_type>](Matrix::Vector2(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix2x3(rhs))) => Ok(Box::new([<$lib V2M2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($target_type::default()))})),         
             #[cfg(all(feature = $value_string, feature = "Matrix3x2"))]
-            (Value::$matrix_kind(Matrix::Vector3(lhs)), Value::$matrix_kind(Matrix::Matrix3x2(rhs))) => Ok(Box::new([<$lib V3M3x2>]{lhs, rhs, out: new_ref(Matrix3x2::from_element($default))})),                     
+            (Value::[<Matrix $lhs_type>](Matrix::Vector3(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix3x2(rhs))) => Ok(Box::new([<$lib V3M3x2>]{lhs, rhs, out: new_ref(Matrix3x2::from_element($target_type::default()))})),                     
             #[cfg(all(feature = $value_string, feature = "Matrix4"))]
-            (Value::$matrix_kind(Matrix::Vector4(lhs)), Value::$matrix_kind(Matrix::Matrix4(rhs))) => Ok(Box::new([<$lib V4M4>]{lhs, rhs, out: new_ref(Matrix4::from_element($default))})),                     
+            (Value::[<Matrix $lhs_type>](Matrix::Vector4(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix4(rhs))) => Ok(Box::new([<$lib V4M4>]{lhs, rhs, out: new_ref(Matrix4::from_element($target_type::default()))})),                     
             // Row Matrix     
             #[cfg(all(feature = $value_string, feature = "RowVector2"))]
-            (Value::$matrix_kind(Matrix::RowVector2(lhs)), Value::$matrix_kind(Matrix::Matrix2(rhs))) => Ok(Box::new([<$lib R2M2>]{lhs, rhs, out: new_ref(Matrix2::from_element($default))})),         
+            (Value::[<Matrix $lhs_type>](Matrix::RowVector2(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix2(rhs))) => Ok(Box::new([<$lib R2M2>]{lhs, rhs, out: new_ref(Matrix2::from_element($target_type::default()))})),         
             #[cfg(all(feature = $value_string, feature = "RowVector3"))]
-            (Value::$matrix_kind(Matrix::RowVector3(lhs)), Value::$matrix_kind(Matrix::Matrix3(rhs))) => Ok(Box::new([<$lib R3M3>]{lhs, rhs, out: new_ref(Matrix3::from_element($default))})),         
+            (Value::[<Matrix $lhs_type>](Matrix::RowVector3(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix3(rhs))) => Ok(Box::new([<$lib R3M3>]{lhs, rhs, out: new_ref(Matrix3::from_element($target_type::default()))})),         
             #[cfg(all(feature = $value_string, feature = "RowVector3"))]
-            (Value::$matrix_kind(Matrix::RowVector3(lhs)), Value::$matrix_kind(Matrix::Matrix2x3(rhs))) => Ok(Box::new([<$lib R3M2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($default))})),         
+            (Value::[<Matrix $lhs_type>](Matrix::RowVector3(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix2x3(rhs))) => Ok(Box::new([<$lib R3M2x3>]{lhs, rhs, out: new_ref(Matrix2x3::from_element($target_type::default()))})),         
             #[cfg(all(feature = $value_string, feature = "RowVector2"))]
-            (Value::$matrix_kind(Matrix::RowVector2(lhs)), Value::$matrix_kind(Matrix::Matrix3x2(rhs))) => Ok(Box::new([<$lib R2M3x2>]{lhs, rhs, out: new_ref(Matrix3x2::from_element($default))})),         
+            (Value::[<Matrix $lhs_type>](Matrix::RowVector2(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix3x2(rhs))) => Ok(Box::new([<$lib R2M3x2>]{lhs, rhs, out: new_ref(Matrix3x2::from_element($target_type::default()))})),         
             #[cfg(all(feature = $value_string, feature = "RowVector4"))]
-            (Value::$matrix_kind(Matrix::RowVector4(lhs)), Value::$matrix_kind(Matrix::Matrix4(rhs))) => Ok(Box::new([<$lib R4M4>]{lhs, rhs, out: new_ref(Matrix4::from_element($default))})),         
+            (Value::[<Matrix $lhs_type>](Matrix::RowVector4(lhs)), Value::[<Matrix $lhs_type>](Matrix::Matrix4(rhs))) => Ok(Box::new([<$lib R4M4>]{lhs, rhs, out: new_ref(Matrix4::from_element($target_type::default()))})),         
             #[cfg(all(feature = $value_string, feature = "MatrixD"))]
-            (Value::$matrix_kind(lhs),Value::$matrix_kind(Matrix::DMatrix(rhs))) => {
+            (Value::[<Matrix $lhs_type>](lhs),Value::[<Matrix $lhs_type>](Matrix::DMatrix(rhs))) => {
               let (rows,cols) = {rhs.borrow().shape()};
               let lhs_shape = lhs.shape();
               match (lhs_shape[0],lhs_shape[1],rows,cols) {
@@ -693,14 +693,14 @@ macro_rules! impl_binop_match_arms {
                 _ => {return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![]) });},
               }
               match lhs {
-                Matrix::Vector2(lhs) => Ok(Box::new([<$lib V2MD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))})),
-                Matrix::Vector3(lhs) => Ok(Box::new([<$lib V3MD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))})),
-                Matrix::Vector4(lhs) => Ok(Box::new([<$lib V4MD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))})),
-                Matrix::DVector(lhs) => Ok(Box::new([<$lib VDMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))})),
-                Matrix::RowVector2(lhs) => Ok(Box::new([<$lib R2MD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))})),
-                Matrix::RowVector3(lhs) => Ok(Box::new([<$lib R3MD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))})),
-                Matrix::RowVector4(lhs) => Ok(Box::new([<$lib R4MD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))})),
-                Matrix::RowDVector(lhs) => Ok(Box::new([<$lib RDMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$default))})),
+                Matrix::Vector2(lhs) => Ok(Box::new([<$lib V2MD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::default()))})),
+                Matrix::Vector3(lhs) => Ok(Box::new([<$lib V3MD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::default()))})),
+                Matrix::Vector4(lhs) => Ok(Box::new([<$lib V4MD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::default()))})),
+                Matrix::DVector(lhs) => Ok(Box::new([<$lib VDMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::default()))})),
+                Matrix::RowVector2(lhs) => Ok(Box::new([<$lib R2MD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::default()))})),
+                Matrix::RowVector3(lhs) => Ok(Box::new([<$lib R3MD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::default()))})),
+                Matrix::RowVector4(lhs) => Ok(Box::new([<$lib R4MD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::default()))})),
+                Matrix::RowDVector(lhs) => Ok(Box::new([<$lib RDMD>]{lhs, rhs, out: new_ref(DMatrix::from_element(rows,cols,$target_type::default()))})),
                 _ => {return Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![]) });},
               }
             }
@@ -710,7 +710,7 @@ macro_rules! impl_binop_match_arms {
       }
     }
   }
-}
+}  
 
 #[macro_export]
 macro_rules! impl_urnop_match_arms {
