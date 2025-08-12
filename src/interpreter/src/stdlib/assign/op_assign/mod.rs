@@ -2,7 +2,6 @@
 use crate::stdlib::*;
 
 use std::fmt::Debug;
-use std::ops::DivAssign;
 use std::marker::PhantomData;
 use nalgebra::{
   base::{Matrix as naMatrix, Storage, StorageMut},
@@ -12,10 +11,12 @@ use nalgebra::{
 pub mod add_assign;
 pub mod sub_assign;
 pub mod div_assign;
+pub mod mul_assign;
 
 pub use self::add_assign::*;
 pub use self::sub_assign::*;
 pub use self::div_assign::*;
+pub use self::mul_assign::*;
 
 #[macro_export]
 macro_rules! impl_op_assign_range_fxn_s {
@@ -34,6 +35,7 @@ macro_rules! impl_op_assign_range_fxn_s {
         Div<Output = T> + DivAssign +
         Add<Output = T> + AddAssign +
         Sub<Output = T> + SubAssign +
+        Mul<Output = T> + MulAssign +
         Zero + One +
         PartialEq + PartialOrd,
       IxVec: AsRef<[$ix]> + Debug,
@@ -70,6 +72,7 @@ macro_rules! impl_op_assign_range_fxn_v {
         Div<Output = T> + DivAssign +
         Add<Output = T> + AddAssign +
         Sub<Output = T> + SubAssign +
+        Mul<Output = T> + MulAssign +
         Zero + One +
         PartialEq + PartialOrd,
       IxVec: AsRef<[$ix]> + Debug,
