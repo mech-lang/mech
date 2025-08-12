@@ -45,24 +45,6 @@ macro_rules! impl_logic_binop {
     }};}
 
 #[macro_export]
-macro_rules! impl_logic_urnop {
-  ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident) => {
-    #[derive(Debug)]
-    struct $struct_name {
-      arg: Ref<$arg_type>,
-      out: Ref<$out_type>,
-    }
-    impl MechFunction for $struct_name {
-      fn solve(&self) {
-        let arg_ptr = self.arg.as_ptr();
-        let out_ptr = self.out.as_ptr();
-        $op!(arg_ptr,out_ptr);
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:#?}", self) }
-    }};}
-
-#[macro_export]
 macro_rules! impl_logic_fxns {
   ($lib:ident) => {
     impl_fxns!($lib,bool,bool,impl_logic_binop);
