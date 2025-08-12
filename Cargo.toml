@@ -68,6 +68,6 @@ VectorD = []
 MatrixD = []
 
 [dependencies]
-mech-core = "0.2.56"
+mech-core = {path = "../../mech/src/core"}
 nalgebra = "0.34.0"
 paste = "1.0.15"
