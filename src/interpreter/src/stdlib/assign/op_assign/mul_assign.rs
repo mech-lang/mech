@@ -44,60 +44,8 @@ macro_rules! impl_mul_assign_range_fxn_v {
 
 // x = 1 ----------------------------------------------------------------------
 
-#[derive(Debug)]
-struct MulAssignSS<T> {
-  sink: Ref<T>,
-  source: Ref<T>,
-}
-impl<T> MechFunction for MulAssignSS<T> 
-where
-  T: Debug + Clone + Sync + Send + 'static +
-  Mul<Output = T> + MulAssign +
-  PartialEq + PartialOrd,
-  Ref<T>: ToValue
-{
-  fn solve(&self) {
-    let sink_ptr = self.sink.as_ptr();
-    let source_ptr = self.source.as_ptr();
-    unsafe {
-      *sink_ptr *= (*source_ptr).clone();
-    }
-  }
-  fn out(&self) -> Value { self.sink.to_value() }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
-}
-
-#[derive(Debug)]
-pub struct MulAssignVV<T, MatA, MatB> {
-  pub sink: Ref<MatA>,
-  pub source: Ref<MatB>,
-  _marker: PhantomData<T>,
-}
-
-impl<T, MatA, MatB> MechFunction for MulAssignVV<T, MatA, MatB>
-where
-  Ref<MatA>: ToValue,
-  T: Debug + Clone + Sync + Send + 'static + MulAssign,
-  for<'a> &'a MatA: IntoIterator<Item = &'a T>,
-  for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-  for<'a> &'a MatB: IntoIterator<Item = &'a T>,
-  MatA: Debug,
-  MatB: Debug,
-{
-  fn solve(&self) {
-    unsafe {
-      let sink_ptr = self.sink.as_ptr();
-      let source_ptr = self.source.as_ptr();
-      let sink_ref: &mut MatA = &mut *sink_ptr;
-      let source_ref: &MatB = &*source_ptr;
-      for (dst, src) in (&mut *sink_ref).into_iter().zip((&*source_ref).into_iter()) {
-        *dst *= src.clone();
-      }
-    }
-  }
-  fn out(&self) -> Value {self.sink.to_value()}
-  fn to_string(&self) -> String {format!("{:#?}", self)}
-}
+impl_assign_scalar_scalar!(Mul, *=);
+impl_assign_vector_vector!(Mul, *=);
 
 fn mul_assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_op_assign_value_match_arms!(
@@ -141,7 +89,6 @@ impl NativeFunctionCompiler for MulAssignValue {
     }
   }
 }
-
 
 // x[1..3] *= 1 ----------------------------------------------------------------
 

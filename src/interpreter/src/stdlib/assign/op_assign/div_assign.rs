@@ -52,60 +52,8 @@ macro_rules! impl_div_assign_range_fxn_v {
 
 // x /= 1 ----------------------------------------------------------------------
 
-#[derive(Debug)]
-struct DivAssignSS<T> {
-  sink: Ref<T>,
-  source: Ref<T>,
-}
-impl<T> MechFunction for DivAssignSS<T> 
-where
-  T: Debug + Clone + Sync + Send + 'static +
-  Div<Output = T> + DivAssign +
-  PartialEq + PartialOrd,
-  Ref<T>: ToValue
-{
-  fn solve(&self) {
-    unsafe {
-      let mut sink_ptr = (&mut *(self.sink.as_ptr()));
-      let source_ptr = &(*(self.source.as_ptr()));
-      *sink_ptr /= source_ptr.clone();
-    }
-  }
-  fn out(&self) -> Value { self.sink.to_value() }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
-}
-
-#[derive(Debug)]
-pub struct DivAssignVV<T, MatA, MatB> {
-  pub sink: Ref<MatA>,
-  pub source: Ref<MatB>,
-  _marker: PhantomData<T>,
-}
-
-impl<T, MatA, MatB> MechFunction for DivAssignVV<T, MatA, MatB>
-where
-  Ref<MatA>: ToValue,
-  T: Debug + Clone + Sync + Send + 'static + DivAssign,
-  for<'a> &'a MatA: IntoIterator<Item = &'a T>,
-  for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-  for<'a> &'a MatB: IntoIterator<Item = &'a T>,
-  MatA: Debug,
-  MatB: Debug,
-{
-  fn solve(&self) {
-    unsafe {
-      let sink_ptr = self.sink.as_ptr();
-      let source_ptr = self.source.as_ptr();
-      let sink_ref: &mut MatA = &mut *sink_ptr;
-      let source_ref: &MatB = &*source_ptr;
-      for (dst, src) in (&mut *sink_ref).into_iter().zip((&*source_ref).into_iter()) {
-        *dst /= src.clone();
-      }
-    }
-  }
-  fn out(&self) -> Value {self.sink.to_value()}
-  fn to_string(&self) -> String {format!("{:#?}", self)}
-}
+impl_assign_scalar_scalar!(Div, /=);
+impl_assign_vector_vector!(Div, /=);
 
 fn div_assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_op_assign_value_match_arms!(
