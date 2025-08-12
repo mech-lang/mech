@@ -129,6 +129,27 @@ where
   fn to_string(&self) -> String {format!("{:#?}", self)}
 }
 
+fn mul_assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_op_assign_value_match_arms!(
+    Mul,
+    (sink, source),
+    U8,  "U8";
+    U16, "U16";
+    U32, "U32";
+    U64, "U64";
+    U128, "U128";
+    I8,  "I8";
+    I16, "I16";
+    I32, "I32";
+    I64, "I64";
+    U128, "U128";
+    F32, "F32";
+    F64, "F64";
+    RationalNumber, "RationalNumber";
+    ComplexNumber, "ComplexNumber";
+  )
+}
+
 pub struct MulAssignValue {}
 impl NativeFunctionCompiler for MulAssignValue {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
@@ -137,38 +158,20 @@ impl NativeFunctionCompiler for MulAssignValue {
     }
     let sink = arguments[0].clone();
     let source = arguments[1].clone();
-    match (sink,source) {
-      (Value::U8(sink),Value::U8(source)) => Ok(Box::new(MulAssignSS{sink: sink.clone(), source: source.clone()})),
-      (Value::U16(sink),Value::U16(source)) => Ok(Box::new(MulAssignSS{sink: sink.clone(), source: source.clone()})),
-      (Value::U32(sink),Value::U32(source)) => Ok(Box::new(MulAssignSS{sink: sink.clone(), source: source.clone()})),
-      (Value::U64(sink),Value::U64(source)) => Ok(Box::new(MulAssignSS{sink: sink.clone(), source: source.clone()})),
-      (Value::U128(sink),Value::U128(source)) => Ok(Box::new(MulAssignSS{sink: sink.clone(), source: source.clone()})),
-      (Value::I8(sink),Value::I8(source)) => Ok(Box::new(MulAssignSS{sink: sink.clone(), source: source.clone()})),
-      (Value::I16(sink),Value::I16(source)) => Ok(Box::new(MulAssignSS{sink: sink.clone(), source: source.clone()})),
-      (Value::I32(sink),Value::I32(source)) => Ok(Box::new(MulAssignSS{sink: sink.clone(), source: source.clone()})),
-      (Value::I64(sink),Value::I64(source)) => Ok(Box::new(MulAssignSS{sink: sink.clone(), source: source.clone()})),
-      (Value::I128(sink),Value::I128(source)) => Ok(Box::new(MulAssignSS{sink: sink.clone(), source: source.clone()})),
-      (Value::F32(sink),Value::F32(source)) => Ok(Box::new(MulAssignSS{sink: sink.clone(), source: source.clone()})),
-      (Value::F64(sink),Value::F64(source)) => Ok(Box::new(MulAssignSS{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::Matrix1(sink)),Value::MatrixF64(Matrix::Matrix1(source))) => Ok(Box::new(MulAssignVV{sink: sink.clone(), source: source.clone(), _marker: PhantomData})),
-      (Value::MatrixF64(Matrix::Matrix2(sink)),Value::MatrixF64(Matrix::Matrix2(source))) => Ok(Box::new(MulAssignVV{sink: sink.clone(), source: source.clone(), _marker: PhantomData})),
-      (Value::MatrixF64(Matrix::Matrix2x3(sink)),Value::MatrixF64(Matrix::Matrix2x3(source))) => Ok(Box::new(MulAssignVV{sink: sink.clone(), source: source.clone(), _marker: PhantomData})),
-      (Value::MatrixF64(Matrix::Matrix3x2(sink)),Value::MatrixF64(Matrix::Matrix3x2(source))) => Ok(Box::new(MulAssignVV{sink: sink.clone(), source: source.clone(), _marker: PhantomData})),
-      (Value::MatrixF64(Matrix::Matrix3(sink)),Value::MatrixF64(Matrix::Matrix3(source))) => Ok(Box::new(MulAssignVV{sink: sink.clone(), source: source.clone(), _marker: PhantomData})),
-      (Value::MatrixF64(Matrix::Matrix4(sink)),Value::MatrixF64(Matrix::Matrix4(source))) => Ok(Box::new(MulAssignVV{sink: sink.clone(), source: source.clone(), _marker: PhantomData})),
-      (Value::MatrixF64(Matrix::DMatrix(sink)),Value::MatrixF64(Matrix::DMatrix(source))) => Ok(Box::new(MulAssignVV{sink: sink.clone(), source: source.clone(), _marker: PhantomData})),
-      (Value::MatrixF64(Matrix::Vector2(sink)),Value::MatrixF64(Matrix::Vector2(source))) => Ok(Box::new(MulAssignVV{sink: sink.clone(), source: source.clone(), _marker: PhantomData})),
-      (Value::MatrixF64(Matrix::Vector3(sink)),Value::MatrixF64(Matrix::Vector3(source))) => Ok(Box::new(MulAssignVV{sink: sink.clone(), source: source.clone(), _marker: PhantomData})),
-      (Value::MatrixF64(Matrix::Vector4(sink)),Value::MatrixF64(Matrix::Vector4(source))) => Ok(Box::new(MulAssignVV{sink: sink.clone(), source: source.clone(), _marker: PhantomData})),
-      (Value::MatrixF64(Matrix::DVector(sink)),Value::MatrixF64(Matrix::DVector(source))) => Ok(Box::new(MulAssignVV{sink: sink.clone(), source: source.clone(), _marker: PhantomData})),
-      (Value::MatrixF64(Matrix::RowVector2(sink)),Value::MatrixF64(Matrix::RowVector2(source))) => Ok(Box::new(MulAssignVV{sink: sink.clone(), source: source.clone(), _marker: PhantomData})),
-      (Value::MatrixF64(Matrix::RowVector3(sink)),Value::MatrixF64(Matrix::RowVector3(source))) => Ok(Box::new(MulAssignVV{sink: sink.clone(), source: source.clone(), _marker: PhantomData})),
-      (Value::MatrixF64(Matrix::RowVector4(sink)),Value::MatrixF64(Matrix::RowVector4(source))) => Ok(Box::new(MulAssignVV{sink: sink.clone(), source: source.clone(), _marker: PhantomData})),
-      (Value::MatrixF64(Matrix::RowDVector(sink)),Value::MatrixF64(Matrix::RowDVector(source))) => Ok(Box::new(MulAssignVV{sink: sink.clone(), source: source.clone(), _marker: PhantomData})),
-      x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+    match mul_assign_value_fxn(sink.clone(),source.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match (sink,source) {
+          (Value::MutableReference(sink),Value::MutableReference(source)) => { mul_assign_value_fxn(sink.borrow().clone(),source.borrow().clone()) },
+          (sink,Value::MutableReference(source)) => { mul_assign_value_fxn(sink.clone(),source.borrow().clone()) },
+          (Value::MutableReference(sink),source) => { mul_assign_value_fxn(sink.borrow().clone(),source.clone()) },
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
     }
   }
 }
+
 
 // x[1..3] *= 1 ----------------------------------------------------------------
 
