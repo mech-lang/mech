@@ -7,6 +7,8 @@ extern crate nalgebra as na;
 extern crate paste;
 extern crate simba;
 
+use mech_core::*;
+
 use paste::paste;
 use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix3x2, Matrix6, Matrix2};
 use std::ops::*;
@@ -14,47 +16,16 @@ use num_traits::*;
 use std::fmt::Debug;
 use simba::scalar::ClosedNeg;
 use num_traits::Pow;
+use std::marker::PhantomData;
 use mech_core::matrix::Matrix;
 
 static PI: f64 = 3.14159265358979323846264338327950288;
 
-pub mod acos;
-pub mod acosh;
-pub mod acot;
-pub mod acsc;
-pub mod asec;
-pub mod asin;
-pub mod asinh;
-pub mod atan;
-pub mod atan2;
-pub mod cos;
-pub mod cosh;
-pub mod cot;
-pub mod csc;
-pub mod sec;
-pub mod sin;
-pub mod sinh;
-pub mod tan;
-pub mod tanh;
+pub mod trig;
+pub mod ops;
 
-pub use self::acos::*;
-pub use self::acosh::*;
-pub use self::acot::*;
-pub use self::acsc::*;
-pub use self::asec::*;
-pub use self::asin::*;
-pub use self::asinh::*;
-pub use self::atan::*;
-pub use self::atan2::*;
-pub use self::cos::*;
-pub use self::cosh::*;
-pub use self::cot::*;
-pub use self::csc::*;
-pub use self::sec::*;
-pub use self::sin::*;
-pub use self::sinh::*;
-pub use self::tan::*;
-pub use self::tanh::*;
+pub use self::trig::*;
+pub use self::ops::*;
 
 // ----------------------------------------------------------------------------
 // Math Library

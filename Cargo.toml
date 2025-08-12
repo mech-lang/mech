@@ -68,7 +68,7 @@ VectorD = []
 MatrixD = []
 
 [dependencies]
-mech-core = "0.2.56"
+mech-core = {path = "../../mech/src/core"}
 
 libm = "0.2.15"
 simba = "0.9.0"
