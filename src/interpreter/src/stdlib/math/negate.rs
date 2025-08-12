@@ -45,34 +45,7 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
-#[derive(Debug)]
-pub struct NegateRational {
-  pub arg: Ref<RationalNumber>,
-  pub out: Ref<RationalNumber>,
-}
-
-impl MechFunction for NegateRational {
-  fn solve(&self) {
-    let arg_ptr = self.arg.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {
-      (*out_ptr).0 = -(*arg_ptr).0;
-    }
-  }
-  fn out(&self) -> Value { self.out.clone().to_value() }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
-}
-
 fn impl_neg_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  match lhs_value {
-    Value::RationalNumber(lhs) => {
-      return Ok(Box::new(NegateRational {
-        arg: lhs.clone(),
-        out: new_ref(RationalNumber::default()),
-      }));
-    }
-    _ => (),
-  }
   impl_urnop_match_arms3!(
     Negate,
     (lhs_value),
