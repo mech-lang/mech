@@ -101,7 +101,7 @@ macro_rules! and_row_mat_op {
     impl_binop_match_arms!(
       And,
       (lhs_value, rhs_value),
-      Bool, Bool => MatrixBool, bool, false, "Bool";
+      Bool, bool, "Bool";
     )
   }
   
