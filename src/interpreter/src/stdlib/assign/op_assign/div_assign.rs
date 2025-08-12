@@ -107,8 +107,6 @@ where
   fn to_string(&self) -> String {format!("{:#?}", self)}
 }
 
-
-
 fn div_assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_op_assign_value_match_arms!(
     Div,
