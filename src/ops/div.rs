@@ -97,69 +97,24 @@ macro_rules! div_row_mat_op {
 
 impl_math_fxns!(Div);
 
-#[derive(Debug)]
-pub struct DivRational {
-  pub lhs: Ref<RationalNumber>,
-  pub rhs: Ref<RationalNumber>,
-  pub out: Ref<RationalNumber>,
-}
-
-impl MechFunction for DivRational {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {
-      (*out_ptr).0 = (*lhs_ptr).0 / (*rhs_ptr).0;
-    }
-  }
-  fn out(&self) -> Value { Value::RationalNumber(self.out.clone()) }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
-}
-
-#[derive(Debug)]
-pub struct DivComplex {
-  pub lhs: Ref<ComplexNumber>,
-  pub rhs: Ref<ComplexNumber>,
-  pub out: Ref<ComplexNumber>,
-}
-
-impl MechFunction for DivComplex {
-  fn solve(&self) {
-    let lhs_ptr = self.lhs.as_ptr();
-    let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
-    unsafe {
-      (*out_ptr).0 = (*lhs_ptr).0 / (*rhs_ptr).0;
-    }
-  }
-  fn out(&self) -> Value { self.out.clone().to_value() }
-  fn to_string(&self) -> String { format!("{:#?}", self) }
-}
-
 fn impl_div_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  match (&lhs_value, &rhs_value) {
-    (Value::RationalNumber(lhs), Value::RationalNumber(rhs)) => {return Ok(Box::new(DivRational {lhs: lhs.clone(),rhs: rhs.clone(),out: new_ref(RationalNumber::default()),}));},
-    (Value::ComplexNumber(lhs), Value::ComplexNumber(rhs)) => {return Ok(Box::new(DivComplex {lhs: lhs.clone(),rhs: rhs.clone(),out: new_ref(ComplexNumber::default()),}));},
-    _ => (),
-  }
   impl_binop_match_arms!(
     Div,
     (lhs_value, rhs_value),
-    I8,   I8   => MatrixI8,   i8,   i8::zero(), "I8";
-    I16,  I16  => MatrixI16,  i16,  i16::zero(), "I16";
-    I32,  I32  => MatrixI32,  i32,  i32::zero(), "I32";
-    I64,  I64  => MatrixI64,  i64,  i64::zero(), "I64";
-    I128, I128 => MatrixI128, i128, i128::zero(), "I128";
-    U8,   U8   => MatrixU8,   u8,   u8::zero(), "U8";
-    U16,  U16  => MatrixU16,  u16,  u16::zero(), "U16";
-    U32,  U32  => MatrixU32,  u32,  u32::zero(), "U32";
-    U64,  U64  => MatrixU64,  u64,  u64::zero(), "U64";
-    U128, U128 => MatrixU128, u128, u128::zero(), "U128";
-    F32,  F32  => MatrixF32,  F32,  F32::zero(), "F32";
-    F64,  F64  => MatrixF64,  F64,  F64::zero(), "F64";
-    RationalNumber,  RationalNumber  => MatrixRationalNumber,  RationalNumber,  RationalNumber::zero(), "RationalNumber";
-    ComplexNumber,  ComplexNumber  => MatrixComplexNumber,  ComplexNumber,  ComplexNumber::zero(), "ComplexNumber";
+    I8,   i8,   "I8";
+    I16,  i16,  "I16";
+    I32,  i32,  "I32";
+    I64,  i64,  "I64";
+    I128, i128, "I128";
+    U8,   u8,   "U8";
+    U16,  u16,  "U16";
+    U32,  u32,  "U32";
+    U64,  u64,  "U64";
+    U128, u128, "U128";
+    F32,  F32,  "F32";
+    F64,  F64,  "F64";
+    RationalNumber, RationalNumber, "RationalNumber";
+    ComplexNumber, ComplexNumber, "ComplexNumber";
   )
 }
 

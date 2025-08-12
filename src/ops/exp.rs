@@ -167,15 +167,15 @@ fn impl_exp_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
     },
     _ => (),
   }
-  
   impl_binop_match_arms!(
-      Exp,
-      (lhs_value, rhs_value),
-      U8,   U8   => MatrixU8,  u8,  u8::zero(), "U8";
-      U16,  U16  => MatrixU16, u16, u16::zero(), "U16";
-      U32,  U32  => MatrixU32, u32, u32::zero(), "U32";
-      F32,  F32  => MatrixF32,  F32,  F32::zero(), "F32";
-      F64,  F64  => MatrixF64,  F64,  F64::zero(), "F64";
-  )}
+    Exp,
+    (lhs_value, rhs_value),
+    U8,   u8,   "U8";
+    U16,  u16,  "U16";
+    U32,  u32,  "U32";
+    F32,  F32,  "F32";
+    F64,  F64,  "F64";
+  )
+}
 
 impl_mech_binop_fxn!(MathExp,impl_exp_fxn);
