@@ -101,20 +101,20 @@ fn impl_lt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunctio
   impl_binop_match_arms!(
     LT,
     (lhs_value, rhs_value),
-    I8,   I8   => MatrixI8,   i8,   false, "I8";
-    I16,  I16  => MatrixI16,  i16,  false, "I16";
-    I32,  I32  => MatrixI32,  i32,  false, "I32";
-    I64,  I64  => MatrixI64,  i64,  false, "I64";
-    I128, I128 => MatrixI128, i128, false, "I128";
-    U8,   U8   => MatrixU8,   u8,   false, "U8";
-    U16,  U16  => MatrixU16,  u16,  false, "U16";
-    U32,  U32  => MatrixU32,  u32,  false, "U32";
-    U64,  U64  => MatrixU64,  u64,  false, "U64";
-    U128, U128 => MatrixU128, u128, false, "U128";
-    F32,  F32  => MatrixF32,  F32,  false, "F32";
-    F64,  F64  => MatrixF64,  F64,  false, "F64";
-    RationalNumber,  RationalNumber  => MatrixRationalNumber,  RationalNumber,  false, "RationalNumber";
-    ComplexNumber,  ComplexNumber  => MatrixComplexNumber,  ComplexNumber,  false, "ComplexNumber";    
+    I8,   bool, "I8";
+    I16,  bool, "I16";
+    I32,  bool, "I32";
+    I64,  bool, "I64";
+    I128, bool, "I128";
+    U8,   bool, "U8";
+    U16,  bool, "U16";
+    U32,  bool, "U32";
+    U64,  bool, "U64";
+    U128, bool, "U128";
+    F32,  bool, "F32";
+    F64,  bool, "F64";
+    RationalNumber, bool, "RationalNumber";
+    ComplexNumber, bool, "ComplexNumber";
   )
 }
 
