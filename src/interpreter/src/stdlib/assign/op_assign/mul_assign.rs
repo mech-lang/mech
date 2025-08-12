@@ -42,37 +42,7 @@ macro_rules! impl_mul_assign_range_fxn_v {
   }
 }
 
-
-macro_rules! impl_mul_assign_fxn {
-  ($struct_name:ident, $matrix_shape:ident, $source_matrix_shape:ty, $op:ident, $ix:ty) => {
-    #[derive(Debug)]
-    struct $struct_name<T> {
-      source: Ref<$source_matrix_shape>,
-      ixes: Ref<DVector<$ix>>,
-      sink: Ref<$matrix_shape<T>>,
-    }
-    impl<T> MechFunction for $struct_name<T>
-    where
-      T: Copy + Debug + Clone + Sync + Send + 'static +
-      Mul<Output = T> + MulAssign +
-      Zero + One +
-      PartialEq + PartialOrd,
-      Ref<$matrix_shape<T>>: ToValue
-    {
-      fn solve(&self) {
-        unsafe {
-          let ix_ptr = (*(self.ixes.as_ptr())).clone();
-          let mut sink_ptr = (&mut *(self.sink.as_ptr()));
-          let source_ptr = (*(self.source.as_ptr())).clone();
-          $op!(source_ptr,ix_ptr,sink_ptr);
-        }
-      }
-      fn out(&self) -> Value { self.sink.to_value() }
-      fn to_string(&self) -> String { format!("{:#?}", self) }
-    }};}
-
 // x = 1 ----------------------------------------------------------------------
-
 
 #[derive(Debug)]
 struct MulAssignSS<T> {
