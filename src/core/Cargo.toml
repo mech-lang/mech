@@ -19,6 +19,7 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = ["stdlib"]
+no_std = ["rlibc"]
 stdlib = ["bool", "string", "numbers", "matrix", "set", "map", "table", "tuple", "record", "atom"]
 numbers = ["signed_ints", "unsigned_ints", "floats", "complex", "rational"]
 complex = ["c64"]

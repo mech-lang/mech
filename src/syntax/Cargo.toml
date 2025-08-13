@@ -19,7 +19,7 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = []
-no-std = ["mech-core/no-std", "rlibc"]
+no-std = ["mech-core/no_std", "rlibc"]
 
 [dependencies]
 mech-core = "0.2.57"
