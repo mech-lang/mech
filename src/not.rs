@@ -66,7 +66,7 @@ fn impl_not_fxn(arg_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_urnop_match_arms!(
     Not,
     (arg_value),
-    Bool, bool, "Bool";
+    Bool, bool, "bool";
   )
 }
 

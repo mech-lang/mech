@@ -92,7 +92,7 @@ fn impl_xor_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
   impl_binop_match_arms!(
     Xor,
     (lhs_value, rhs_value),
-    Bool, bool, "Bool";
+    Bool, bool, "bool";
   )
 }
 

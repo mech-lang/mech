@@ -92,7 +92,7 @@ fn impl_or_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunctio
   impl_binop_match_arms!(
     Or,
     (lhs_value, rhs_value),
-    Bool, bool, "Bool";
+    Bool, bool, "bool";
   )
 }
 
