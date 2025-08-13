@@ -42,62 +42,67 @@ macro_rules! sum_row_op {
   impl_stats_urop!(StatsSumRowRD, RowDVector<T>, RowDVector<T>, sum_row_op);
   
   macro_rules! impl_stats_sum_row_match_arms {
-    ($arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr, $value_string:tt),+);+ $(;)?) => {
+  ($arg:expr, $($input_type:ident, $($target_type:ident, $value_string:tt),+);+ $(;)?) => {
+    paste!{
       match $arg {
         $(
           $(
-            #[cfg(feature = "RowVector4")]
-            Value::$matrix_kind(Matrix::<$target_type>::RowVector4(arg)) => Ok(Box::new(StatsSumRowR4{arg: arg.clone(), out: new_ref(RowVector4::from_element($default)) })),
-            #[cfg(feature = "RowVector3")]
-            Value::$matrix_kind(Matrix::<$target_type>::RowVector3(arg)) => Ok(Box::new(StatsSumRowR3{arg: arg.clone(), out: new_ref(RowVector3::from_element($default)) })),
-            #[cfg(feature = "RowVector2")]
-            Value::$matrix_kind(Matrix::<$target_type>::RowVector2(arg)) => Ok(Box::new(StatsSumRowR2{arg: arg.clone(), out: new_ref(RowVector2::from_element($default)) })),
-            #[cfg(feature = "Vector4")]
-            Value::$matrix_kind(Matrix::<$target_type>::Vector4(arg))    => Ok(Box::new(StatsSumRowV4{arg: arg.clone(), out: new_ref(Matrix1::from_element($default)) })),
-            #[cfg(feature = "Vector3")]
-            Value::$matrix_kind(Matrix::<$target_type>::Vector3(arg))    => Ok(Box::new(StatsSumRowV3{arg: arg.clone(), out: new_ref(Matrix1::from_element($default)) })),
-            #[cfg(feature = "Vector2")]
-            Value::$matrix_kind(Matrix::<$target_type>::Vector2(arg))    => Ok(Box::new(StatsSumRowV2{arg: arg.clone(), out: new_ref(Matrix1::from_element($default)) })),
-            #[cfg(feature = "Matrix4")]
-            Value::$matrix_kind(Matrix::<$target_type>::Matrix4(arg))    => Ok(Box::new(StatsSumRowM4{arg: arg.clone(), out: new_ref(RowVector4::from_element($default))})),
-            #[cfg(feature = "Matrix3")]
-            Value::$matrix_kind(Matrix::<$target_type>::Matrix3(arg))    => Ok(Box::new(StatsSumRowM3{arg: arg.clone(), out: new_ref(RowVector3::from_element($default))})),
-            #[cfg(feature = "Matrix2")]
-            Value::$matrix_kind(Matrix::<$target_type>::Matrix2(arg))    => Ok(Box::new(StatsSumRowM2{arg: arg.clone(), out: new_ref(RowVector2::from_element($default))})),
-            #[cfg(feature = "Matrix1")]
-            Value::$matrix_kind(Matrix::<$target_type>::Matrix1(arg))    => Ok(Box::new(StatsSumRowM1{arg: arg.clone(), out: new_ref(Matrix1::from_element($default))})),
-            #[cfg(feature = "Matrix2x3")]
-            Value::$matrix_kind(Matrix::<$target_type>::Matrix2x3(arg))  => Ok(Box::new(StatsSumRowM2x3{arg: arg.clone(), out: new_ref(RowVector3::from_element($default))})),          
-            #[cfg(feature = "Matrix3x2")]
-            Value::$matrix_kind(Matrix::<$target_type>::Matrix3x2(arg))  => Ok(Box::new(StatsSumRowM3x2{arg: arg.clone(), out: new_ref(RowVector2::from_element($default))})),          
-            #[cfg(feature = "VectorD")]
-            Value::$matrix_kind(Matrix::<$target_type>::DVector(arg))    => Ok(Box::new(StatsSumRowVD{arg: arg.clone(), out: new_ref(Matrix1::from_element($default))})),
-            #[cfg(feature = "RowVectorD")]
-            Value::$matrix_kind(Matrix::<$target_type>::RowDVector(arg)) => Ok(Box::new(StatsSumRowRD{arg: arg.clone(), out: new_ref(RowDVector::from_element(arg.borrow().len(),$default))})),
-            #[cfg(feature = "MatrixD")]
-            Value::$matrix_kind(Matrix::<$target_type>::DMatrix(arg)) => Ok(Box::new(StatsSumRowMD{arg: arg.clone(), out: new_ref(RowDVector::from_element(arg.borrow().ncols(),$default))})),
+            #[cfg(all(feature = $value_string, feature = "RowVector4"))]
+            Value::[<Matrix $input_type>](Matrix::<$target_type>::RowVector4(arg)) =>Ok(Box::new(StatsSumRowR4{arg: arg.clone(), out: new_ref(RowVector4::from_element($target_type::default())) })),
+            #[cfg(all(feature = $value_string, feature = "RowVector3"))]
+            Value::[<Matrix $input_type>](Matrix::<$target_type>::RowVector3(arg)) =>Ok(Box::new(StatsSumRowR3{arg: arg.clone(), out: new_ref(RowVector3::from_element($target_type::default())) })),
+            #[cfg(all(feature = $value_string, feature = "RowVector2"))]
+            Value::[<Matrix $input_type>](Matrix::<$target_type>::RowVector2(arg)) =>Ok(Box::new(StatsSumRowR2{arg: arg.clone(), out: new_ref(RowVector2::from_element($target_type::default())) })),
+            #[cfg(all(feature = $value_string, feature = "Vector4"))]
+            Value::[<Matrix $input_type>](Matrix::<$target_type>::Vector4(arg)) =>Ok(Box::new(StatsSumRowV4{arg: arg.clone(), out: new_ref(Matrix1::from_element($target_type::default())) })),
+            #[cfg(all(feature = $value_string, feature = "Vector3"))]
+            Value::[<Matrix $input_type>](Matrix::<$target_type>::Vector3(arg)) =>Ok(Box::new(StatsSumRowV3{arg: arg.clone(), out: new_ref(Matrix1::from_element($target_type::default())) })),
+            #[cfg(all(feature = $value_string, feature = "Vector2"))]
+            Value::[<Matrix $input_type>](Matrix::<$target_type>::Vector2(arg)) =>Ok(Box::new(StatsSumRowV2{arg: arg.clone(), out: new_ref(Matrix1::from_element($target_type::default())) })),
+            #[cfg(all(feature = $value_string, feature = "Matrix4"))]
+            Value::[<Matrix $input_type>](Matrix::<$target_type>::Matrix4(arg)) =>Ok(Box::new(StatsSumRowM4{arg: arg.clone(), out: new_ref(RowVector4::from_element($target_type::default()))})),
+            #[cfg(all(feature = $value_string, feature = "Matrix3"))]
+            Value::[<Matrix $input_type>](Matrix::<$target_type>::Matrix3(arg)) =>Ok(Box::new(StatsSumRowM3{arg: arg.clone(), out: new_ref(RowVector3::from_element($target_type::default()))})),
+            #[cfg(all(feature = $value_string, feature = "Matrix2"))]
+            Value::[<Matrix $input_type>](Matrix::<$target_type>::Matrix2(arg)) =>Ok(Box::new(StatsSumRowM2{arg: arg.clone(), out: new_ref(RowVector2::from_element($target_type::default()))})),
+            #[cfg(all(feature = $value_string, feature = "Matrix1"))]
+            Value::[<Matrix $input_type>](Matrix::<$target_type>::Matrix1(arg)) =>Ok(Box::new(StatsSumRowM1{arg: arg.clone(), out: new_ref(Matrix1::from_element($target_type::default()))})),
+            #[cfg(all(feature = $value_string, feature = "Matrix2x3"))]
+            Value::[<Matrix $input_type>](Matrix::<$target_type>::Matrix2x3(arg)) => Ok(Box::new(StatsSumRowM2x3{arg: arg.clone(), out: new_ref(RowVector3::from_element($target_type::default()))})),          
+            #[cfg(all(feature = $value_string, feature = "Matrix3x2"))]
+            Value::[<Matrix $input_type>](Matrix::<$target_type>::Matrix3x2(arg)) => Ok(Box::new(StatsSumRowM3x2{arg: arg.clone(), out: new_ref(RowVector2::from_element($target_type::default()))})),          
+            #[cfg(all(feature = $value_string, feature = "VectorD"))]
+            Value::[<Matrix $input_type>](Matrix::<$target_type>::DVector(arg)) =>Ok(Box::new(StatsSumRowVD{arg: arg.clone(), out: new_ref(Matrix1::from_element($target_type::default()))})),
+            #[cfg(all(feature = $value_string, feature = "RowVectorD"))]
+            Value::[<Matrix $input_type>](Matrix::<$target_type>::RowDVector(arg)) =>Ok(Box::new(StatsSumRowRD{arg: arg.clone(), out: new_ref(RowDVector::from_element(arg.borrow().len(), $target_type::default()))})),
+            #[cfg(all(feature = $value_string, feature = "MatrixD"))]
+            Value::[<Matrix $input_type>](Matrix::<$target_type>::DMatrix(arg)) =>Ok(Box::new(StatsSumRowMD{arg: arg.clone(), out: new_ref(RowDVector::from_element(arg.borrow().ncols(), $target_type::default()))})),
           )+
         )+
-        _ => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
     }
   }
+}
+
   
   fn impl_stats_sum_row_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
     impl_stats_sum_row_match_arms!(
       lhs_value,
-      I8   => MatrixI8,   i8,   i8::zero(), "I8";
-      I16  => MatrixI16,  i16,  i16::zero(), "I16";
-      I32  => MatrixI32,  i32,  i32::zero(), "I32";
-      I64  => MatrixI64,  i64,  i64::zero(), "I64";
-      I128 => MatrixI128, i128, i128::zero(), "I128";
-      U8   => MatrixU8,   u8,   u8::zero(), "U8";
-      U16  => MatrixU16,  u16,  u16::zero(), "U16";
-      U32  => MatrixU32,  u32,  u32::zero(), "U32";
-      U64  => MatrixU64,  u64,  u64::zero(), "U64";
-      U128 => MatrixU128, u128, u128::zero(), "U128";
-      F32  => MatrixF32,  F32,  F32::zero(), "F32";
-      F64  => MatrixF64,  F64,  F64::zero(), "F64";
+      I8,   i8,   "I8";
+      I16,  i16,  "I16";
+      I32,  i32,  "I32";
+      I64,  i64,  "I64";
+      I128, i128, "I128";
+      U8,   u8,   "U8";
+      U16,  u16,  "U16";
+      U32,  u32,  "U32";
+      U64,  u64,  "U64";
+      U128, u128, "U128";
+      F32,  F32,  "F32";
+      F64,  F64,  "F64";
+      ComplexNumber, ComplexNumber, "ComplexNumber";
+      RationalNumber, RationalNumber, "RationalNumber";
     )
   }
     

@@ -6,6 +6,7 @@ use num_traits::*;
 use std::ops::*;
 use std::fmt::Debug;
 use mech_core::matrix::Matrix;
+use paste::paste;
 
 pub mod sum_column;
 pub mod sum_row;
