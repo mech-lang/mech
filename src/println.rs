@@ -55,7 +55,7 @@ macro_rules! impl_print_match_arms {
           (Value::[<Matrix $input_type:camel>](Matrix::RowDVector(input))) => Ok(Box::new(IoPrintlnMatrix{e0: input.clone(), _marker: PhantomData::default()})),
           #[cfg(all(feature = $value_string, feature = "MatrixD"))]
           (Value::[<Matrix $input_type:camel>](Matrix::DMatrix(input))) => Ok(Box::new(IoPrintlnMatrix{e0: input.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $value_string, feature = "VectorV"))]
+          #[cfg(all(feature = $value_string, feature = "VectorD"))]
           (Value::[<Matrix $input_type:camel>](Matrix::DVector(input))) => Ok(Box::new(IoPrintlnMatrix{e0: input.clone(), _marker: PhantomData::default()})),
         )+
         x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
@@ -87,21 +87,37 @@ impl<T> MechFunction for IoPrintlnScalar<T>
 fn impl_print_fxn(source_value: Value) -> MResult<Box<dyn MechFunction>>  {
   if source_value.is_scalar() {
     match source_value {
+      #[cfg(feature = "I8")]
       Value::I8(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
+      #[cfg(feature = "I16")]
       Value::I16(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
+      #[cfg(feature = "I32")]
       Value::I32(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
+      #[cfg(feature = "I64")]
       Value::I64(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
+      #[cfg(feature = "I128")]
       Value::I128(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
+      #[cfg(feature = "U8")]
       Value::U8(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
+      #[cfg(feature = "U16")]
       Value::U16(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
+      #[cfg(feature = "U32")]
       Value::U32(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
+      #[cfg(feature = "U64")]
       Value::U64(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
+      #[cfg(feature = "U128")]
       Value::U128(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
+      #[cfg(feature = "F32")]
       Value::F32(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
+      #[cfg(feature = "F64")]
       Value::F64(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
+      #[cfg(feature = "String")]
       Value::String(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
+      #[cfg(feature = "Bool")]
       Value::Bool(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
+      #[cfg(feature = "ComplexNumber")]
       Value::ComplexNumber(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
+      #[cfg(feature = "RationalNumber")]
       Value::RationalNumber(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
       _ => todo!(),
     }
