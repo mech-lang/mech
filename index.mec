@@ -21,7 +21,7 @@ Functions to compare values.
 
 compare/machine := {
   name: "compare" 
-  version: "v0.2.53"
+  version: "v0.2.57"
   authors: ["Corey Montella"] 
   machine-url: "https://gitlab.com/mech-lang/machines/compare"
   license: "Apache-2.0"}
