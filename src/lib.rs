@@ -1,11 +1,7 @@
 #![no_main]
 #![allow(warnings)]
-#[macro_use]
-extern crate mech_core;
-extern crate libm;
+
 extern crate nalgebra as na;
-extern crate paste;
-extern crate simba;
 
 use mech_core::*;
 
@@ -15,16 +11,16 @@ use std::ops::*;
 use num_traits::*;
 use std::fmt::Debug;
 use simba::scalar::ClosedNeg;
-use num_traits::Pow;
 use std::marker::PhantomData;
-use mech_core::matrix::Matrix;
 
-static PI: f64 = 3.14159265358979323846264338327950288;
-
+#[cfg(feature = "trig")]
 pub mod trig;
+#[cfg(feature = "ops")]
 pub mod ops;
 
+#[cfg(feature = "trig")]
 pub use self::trig::*;
+#[cfg(feature = "ops")]
 pub use self::ops::*;
 
 // ----------------------------------------------------------------------------
