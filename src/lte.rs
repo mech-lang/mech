@@ -102,20 +102,20 @@ fn impl_lte_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
   impl_binop_match_arms!(
     LTE,
     (lhs_value, rhs_value),
-    I8,   bool, "I8";
-    I16,  bool, "I16";
-    I32,  bool, "I32";
-    I64,  bool, "I64";
-    I128, bool, "I128";
-    U8,   bool, "U8";
-    U16,  bool, "U16";
-    U32,  bool, "U32";
-    U64,  bool, "U64";
-    U128, bool, "U128";
-    F32,  bool, "F32";
-    F64,  bool, "F64";
-    RationalNumber, bool, "RationalNumber";
-    ComplexNumber, bool, "ComplexNumber";
+    I8,   bool, "i8";
+    I16,  bool, "i16";
+    I32,  bool, "i32";
+    I64,  bool, "i64";
+    I128, bool, "i128";
+    U8,   bool, "u8";
+    U16,  bool, "u16";
+    U32,  bool, "u32";
+    U64,  bool, "u64";
+    U128, bool, "u128";
+    F32,  bool, "f32";
+    F64,  bool, "f64";
+    RationalNumber, bool, "rational";
+    ComplexNumber, bool, "complex";
   )
 }
 
