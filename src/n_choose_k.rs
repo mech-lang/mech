@@ -1,5 +1,6 @@
 use crate::*;
 use mech_core::*;
+use mech_core::value::ToUsize;
 
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Sub, Div, Mul};
@@ -10,19 +11,19 @@ use itertools::Itertools;
 
 #[derive(Debug)]
 pub struct NChooseK<T> {
-    n: Ref<T>,
-    k: Ref<T>,
-    out: Ref<T>,
+  n: Ref<T>,
+  k: Ref<T>,
+  out: Ref<T>,
 }
 
 impl<T> MechFunction for NChooseK<T>
 where
-    T: Copy + Debug + Clone + Sync + Send + 'static +
-       Add<Output = T> + AddAssign +
-       Sub<Output = T> + Mul<Output = T> + Div<Output = T> +
-       Zero + One +
-       PartialEq + PartialOrd,
-    Ref<T>: ToValue,
+  T: Copy + Debug + Clone + Sync + Send + 'static +
+      Add<Output = T> + AddAssign +
+      Sub<Output = T> + Mul<Output = T> + Div<Output = T> +
+      Zero + One +
+      PartialEq + PartialOrd,
+  Ref<T>: ToValue,
 {
   fn solve(&self) {
     let n_ptr = self.n.as_ptr();
@@ -60,7 +61,7 @@ pub struct NChooseKMatrix<T> {
 impl<T> MechFunction for NChooseKMatrix<T>
 where
     T: Copy + Debug + Clone + Sync + Send + 'static +
-       Into<usize> + std::fmt::Display + PrettyPrint +
+       ToUsize + std::fmt::Display + PrettyPrint +
        Add<Output = T> + AddAssign +
        Sub<Output = T> + Mul<Output = T> + Div<Output = T> +
        Zero + One +
@@ -72,7 +73,7 @@ where
       let n_matrix = self.n.borrow();
       let k_scalar = *self.k.borrow();
       let elements: Vec<T> = n_matrix.as_vec();
-      let k_usize: usize = k_scalar.into();
+      let k_usize: usize = k_scalar.to_usize();
       // Check if k is greater than the number of elements. If it is, return an empty matrix.
       if k_usize > elements.len() {
           let empty = T::to_matrix(vec![], 0, k_usize);
@@ -95,23 +96,34 @@ where
 
 fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> Result<Box<dyn MechFunction>, MechError> {
   match (n,k) {
-    (Value::U8(n), Value::U8(k)) => Ok(Box::new(NChooseK::<u8>{n: n, k: k, out: new_ref(u8::zero())})),
-    (Value::U16(n), Value::U16(k)) => Ok(Box::new(NChooseK::<u16>{n: n, k: k, out: new_ref(u16::zero())})),
-    (Value::U32(n), Value::U32(k)) => Ok(Box::new(NChooseK::<u32>{n: n, k: k, out: new_ref(u32::zero())})),
-    (Value::U64(n), Value::U64(k)) => Ok(Box::new(NChooseK::<u64>{n: n, k: k, out: new_ref(u64::zero())})),
-    (Value::U128(n), Value::U128(k)) => Ok(Box::new(NChooseK::<u128>{n: n, k: k, out: new_ref(u128::zero())})),
-    (Value::I8(n), Value::I8(k)) => Ok(Box::new(NChooseK::<i8>{n: n, k: k, out: new_ref(i8::zero())})),
-    (Value::I16(n), Value::I16(k)) => Ok(Box::new(NChooseK::<i16>{n: n, k: k, out: new_ref(i16::zero())})),
-    (Value::I32(n), Value::I32(k)) => Ok(Box::new(NChooseK::<i32>{n: n, k: k, out: new_ref(i32::zero())})),
-    (Value::I64(n), Value::I64(k)) => Ok(Box::new(NChooseK::<i64>{n: n, k: k, out: new_ref(i64::zero())})),
-    (Value::I128(n), Value::I128(k)) => Ok(Box::new(NChooseK::<i128>{n: n, k: k, out: new_ref(i128::zero())})),
-    (Value::F32(n), Value::F32(k)) => Ok(Box::new(NChooseK::<F32>{n: n, k: k, out: new_ref(F32::zero())})),
-    (Value::F64(n), Value::F64(k)) => Ok(Box::new(NChooseK::<F64>{n: n, k: k, out: new_ref(F64::zero())})),
-    (Value::MatrixF64(n), Value::F64(k)) => {
-      let out = new_ref(F64::to_matrix(vec![], 0, 0));
-      let n = new_ref(n);
-      Ok(Box::new(NChooseKMatrix::<F64>{n, k, out}))
-    },
+    (Value::U8(n), Value::U8(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: new_ref(u8::zero())})),
+    (Value::U16(n), Value::U16(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: new_ref(u16::zero())})),
+    (Value::U32(n), Value::U32(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: new_ref(u32::zero())})),
+    (Value::U64(n), Value::U64(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: new_ref(u64::zero())})),
+    (Value::U128(n), Value::U128(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: new_ref(u128::zero())})),
+    (Value::I8(n), Value::I8(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: new_ref(i8::zero())})),
+    (Value::I16(n), Value::I16(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: new_ref(i16::zero())})),
+    (Value::I32(n), Value::I32(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: new_ref(i32::zero())})),
+    (Value::I64(n), Value::I64(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: new_ref(i64::zero())})),
+    (Value::I128(n), Value::I128(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: new_ref(i128::zero())})),
+    (Value::F32(n), Value::F32(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: new_ref(F32::zero())})),
+    (Value::F64(n), Value::F64(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: new_ref(F64::zero())})),
+    (Value::RationalNumber(n), Value::RationalNumber(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: new_ref(RationalNumber::zero())})),
+    (Value::ComplexNumber(n), Value::ComplexNumber(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: new_ref(ComplexNumber::zero())})),
+    (Value::MatrixU8(n), Value::U8(k)) => Ok(Box::new(NChooseKMatrix{n: new_ref(n), k, out: new_ref(u8::to_matrix(vec![], 0, 0))})),
+    (Value::MatrixU16(n), Value::U16(k)) => Ok(Box::new(NChooseKMatrix{n: new_ref(n), k, out: new_ref(u16::to_matrix(vec![], 0, 0))})),
+    (Value::MatrixU32(n), Value::U32(k)) => Ok(Box::new(NChooseKMatrix{n: new_ref(n), k, out: new_ref(u32::to_matrix(vec![], 0, 0))})),
+    (Value::MatrixU64(n), Value::U64(k)) => Ok(Box::new(NChooseKMatrix{n: new_ref(n), k, out: new_ref(u64::to_matrix(vec![], 0, 0))})),
+    (Value::MatrixU128(n), Value::U128(k)) => Ok(Box::new(NChooseKMatrix{n: new_ref(n), k, out: new_ref(u128::to_matrix(vec![], 0, 0))})),
+    (Value::MatrixI8(n), Value::I8(k)) => Ok(Box::new(NChooseKMatrix{n: new_ref(n), k, out: new_ref(i8::to_matrix(vec![], 0, 0))})),
+    (Value::MatrixI16(n), Value::I16(k)) => Ok(Box::new(NChooseKMatrix{n: new_ref(n), k, out: new_ref(i16::to_matrix(vec![], 0, 0))})),
+    (Value::MatrixI32(n), Value::I32(k)) => Ok(Box::new(NChooseKMatrix{n: new_ref(n), k, out: new_ref(i32::to_matrix(vec![], 0, 0))})),
+    (Value::MatrixI64(n), Value::I64(k)) => Ok(Box::new(NChooseKMatrix{n: new_ref(n), k, out: new_ref(i64::to_matrix(vec![], 0, 0))})),
+    (Value::MatrixI128(n), Value::I128(k)) => Ok(Box::new(NChooseKMatrix{n: new_ref(n), k, out: new_ref(i128::to_matrix(vec![], 0, 0))})),
+    (Value::MatrixF32(n), Value::F32(k)) => Ok(Box::new(NChooseKMatrix{n: new_ref(n), k, out: new_ref(F32::to_matrix(vec![], 0, 0))})),
+    (Value::MatrixF64(n), Value::F64(k)) => Ok(Box::new(NChooseKMatrix{n: new_ref(n), k, out: new_ref(F64::to_matrix(vec![], 0, 0))})),
+    (Value::MatrixRationalNumber(n), Value::RationalNumber(k)) => Ok(Box::new(NChooseKMatrix{n: new_ref(n), k, out: new_ref(RationalNumber::to_matrix(vec![], 0, 0))})),
+    (Value::MatrixComplexNumber(n), Value::ComplexNumber(k)) => Ok(Box::new(NChooseKMatrix{n: new_ref(n), k, out: new_ref(ComplexNumber::to_matrix(vec![], 0, 0))})),
     x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
   }
 }
