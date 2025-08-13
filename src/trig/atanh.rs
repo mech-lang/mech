@@ -42,8 +42,8 @@ fn impl_atanh_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> 
   impl_urnop_match_arms2!(
     MathAtanh,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "F32";
-    F64 => MatrixF64, F64, F64::zero(), "F64";
+    F32 => MatrixF32, F32, F32::zero(), "f32";
+    F64 => MatrixF64, F64, F64::zero(), "f64";
   )
 }
 

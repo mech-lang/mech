@@ -54,67 +54,67 @@ macro_rules! impl_two_arg_fxn {
     }};}
 
 impl_two_arg_fxn!(Atan2F32, F32, F32, F32, atan2f_op);
-#[cfg(feature = "Matrix1")]
+#[cfg(feature = "matrix1")]
 impl_two_arg_fxn!(Atan2M1F32, Matrix1<F32>, Matrix1<F32>, Matrix1<F32>, atan2f_vec_op);
-#[cfg(feature = "Matrix2")]
+#[cfg(feature = "matrix2")]
 impl_two_arg_fxn!(Atan2M2F32, Matrix2<F32>, Matrix2<F32>, Matrix2<F32>, atan2f_vec_op);
-#[cfg(feature = "Matrix3")]
+#[cfg(feature = "matrix3")]
 impl_two_arg_fxn!(Atan2M3F32, Matrix3<F32>, Matrix3<F32>, Matrix3<F32>, atan2f_vec_op);
-#[cfg(feature = "Matrix2x3")]
+#[cfg(feature = "matrix2x3")]
 impl_two_arg_fxn!(Atan2M2x3F32, Matrix2x3<F32>, Matrix2x3<F32>, Matrix2x3<F32>, atan2f_vec_op);
-#[cfg(feature = "Matrix3")]
+#[cfg(feature = "matrix3")]
 impl_two_arg_fxn!(Atan2M3x2F32, Matrix3x2<F32>, Matrix3x2<F32>, Matrix3x2<F32>, atan2f_vec_op);
-#[cfg(feature = "Matrix4")]
+#[cfg(feature = "matrix4")]
 impl_two_arg_fxn!(Atan2M4F32, Matrix4<F32>, Matrix4<F32>, Matrix4<F32>, atan2f_vec_op);
-#[cfg(feature = "Vector2")]
+#[cfg(feature = "vector2")]
 impl_two_arg_fxn!(Atan2V2F32, Vector2<F32>, Vector2<F32>, Vector2<F32>, atan2f_vec_op);
-#[cfg(feature = "Vector3")]
+#[cfg(feature = "vector3")]
 impl_two_arg_fxn!(Atan2V3F32, Vector3<F32>, Vector3<F32>, Vector3<F32>, atan2f_vec_op);
-#[cfg(feature = "Vector4")]
+#[cfg(feature = "vector4")]
 impl_two_arg_fxn!(Atan2V4F32, Vector4<F32>, Vector4<F32>, Vector4<F32>, atan2f_vec_op);
-#[cfg(feature = "RowVector2")]
+#[cfg(feature = "row_vector2")]
 impl_two_arg_fxn!(Atan2R2F32, RowVector2<F32>, RowVector2<F32>, RowVector2<F32>, atan2f_vec_op);
-#[cfg(feature = "RowVector3")]
+#[cfg(feature = "row_vector3")]
 impl_two_arg_fxn!(Atan2R3F32, RowVector3<F32>, RowVector3<F32>, RowVector3<F32>, atan2f_vec_op);
-#[cfg(feature = "RowVector4")]
+#[cfg(feature = "row_vector4")]
 impl_two_arg_fxn!(Atan2R4F32, RowVector4<F32>, RowVector4<F32>, RowVector4<F32>, atan2f_vec_op);
-#[cfg(feature = "RowVectorD")]
+#[cfg(feature = "row_vectord")]
 impl_two_arg_fxn!(Atan2RDF32, RowDVector<F32>, RowDVector<F32>, RowDVector<F32>, atan2f_vec_op);
-#[cfg(feature = "VectorD")]
+#[cfg(feature = "vectord")]
 impl_two_arg_fxn!(Atan2VDF32, DVector<F32>, DVector<F32>, DVector<F32>, atan2f_vec_op);
-#[cfg(feature = "MatrixD")]
+#[cfg(feature = "matrixd")]
 impl_two_arg_fxn!(Atan2MDF32, DMatrix<F32>, DMatrix<F32>, DMatrix<F32>, atan2f_vec_op);
 
 impl_two_arg_fxn!(Atan2F64, F64, F64, F64, atan2_op);
-#[cfg(feature = "Matrix1")]
+#[cfg(feature = "matrix1")]
 impl_two_arg_fxn!(Atan2M1F64, Matrix1<F64>, Matrix1<F64>, Matrix1<F64>, atan2_vec_op);
-#[cfg(feature = "Matrix2")]
+#[cfg(feature = "matrix2")]
 impl_two_arg_fxn!(Atan2M2F64, Matrix2<F64>, Matrix2<F64>, Matrix2<F64>, atan2_vec_op);
-#[cfg(feature = "Matrix3")]
+#[cfg(feature = "matrix3")]
 impl_two_arg_fxn!(Atan2M3F64, Matrix3<F64>, Matrix3<F64>, Matrix3<F64>, atan2_vec_op);
-#[cfg(feature = "Matrix2x3")]
+#[cfg(feature = "matrix2x3")]
 impl_two_arg_fxn!(Atan2M2x3F64, Matrix2x3<F64>, Matrix2x3<F64>, Matrix2x3<F64>, atan2_vec_op);
-#[cfg(feature = "Matrix3")]
+#[cfg(feature = "matrix3")]
 impl_two_arg_fxn!(Atan2M3x2F64, Matrix3x2<F64>, Matrix3x2<F64>, Matrix3x2<F64>, atan2_vec_op);
-#[cfg(feature = "Matrix4")]
+#[cfg(feature = "matrix4")]
 impl_two_arg_fxn!(Atan2M4F64, Matrix4<F64>, Matrix4<F64>, Matrix4<F64>, atan2_vec_op);
-#[cfg(feature = "Vector2")]
+#[cfg(feature = "vector2")]
 impl_two_arg_fxn!(Atan2V2F64, Vector2<F64>, Vector2<F64>, Vector2<F64>, atan2_vec_op);
-#[cfg(feature = "Vector3")]
+#[cfg(feature = "vector3")]
 impl_two_arg_fxn!(Atan2V3F64, Vector3<F64>, Vector3<F64>, Vector3<F64>, atan2_vec_op);
-#[cfg(feature = "Vector4")]
+#[cfg(feature = "vector4")]
 impl_two_arg_fxn!(Atan2V4F64, Vector4<F64>, Vector4<F64>, Vector4<F64>, atan2_vec_op);
-#[cfg(feature = "RowVector2")]
+#[cfg(feature = "row_vector2")]
 impl_two_arg_fxn!(Atan2R2F64, RowVector2<F64>, RowVector2<F64>, RowVector2<F64>, atan2_vec_op);
-#[cfg(feature = "RowVector3")]
+#[cfg(feature = "row_vector3")]
 impl_two_arg_fxn!(Atan2R3F64, RowVector3<F64>, RowVector3<F64>, RowVector3<F64>, atan2_vec_op);
-#[cfg(feature = "RowVector4")]
+#[cfg(feature = "row_vector4")]
 impl_two_arg_fxn!(Atan2R4F64, RowVector4<F64>, RowVector4<F64>, RowVector4<F64>, atan2_vec_op);
-#[cfg(feature = "RowVectorD")]
+#[cfg(feature = "row_vectord")]
 impl_two_arg_fxn!(Atan2RDF64, RowDVector<F64>, RowDVector<F64>, RowDVector<F64>, atan2_vec_op);
-#[cfg(feature = "VectorD")]
+#[cfg(feature = "vectord")]
 impl_two_arg_fxn!(Atan2VDF64, DVector<F64>, DVector<F64>, DVector<F64>, atan2_vec_op);
-#[cfg(feature = "MatrixD")]
+#[cfg(feature = "matrixd")]
 impl_two_arg_fxn!(Atan2MDF64, DMatrix<F64>, DMatrix<F64>, DMatrix<F64>, atan2_vec_op);
 
 

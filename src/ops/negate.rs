@@ -49,15 +49,15 @@ fn impl_neg_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_urnop_match_arms!(
     Negate,
     (lhs_value),
-    I8,   i8,   "I8";
-    I16,  i16,  "I16";
-    I32,  i32,  "I32";
-    I64,  i64,  "I64";
-    I128, i128, "I128";
-    F32,  F32,  "F32";
-    F64,  F64,  "F64";
-    RationalNumber, RationalNumber, "RationalNumber";
-    ComplexNumber, ComplexNumber, "ComplexNumber";
+    I8,   i8,   "i8";
+    I16,  i16,  "i16";
+    I32,  i32,  "i32";
+    I64,  i64,  "i64";
+    I128, i128, "i128";
+    F32,  F32,  "f32";
+    F64,  F64,  "f64";
+    RationalNumber, RationalNumber, "rational";
+    ComplexNumber, ComplexNumber, "complex";
   )
 }
 

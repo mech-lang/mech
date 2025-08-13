@@ -170,11 +170,11 @@ fn impl_exp_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
   impl_binop_match_arms!(
     Exp,
     (lhs_value, rhs_value),
-    U8,   u8,   "U8";
-    U16,  u16,  "U16";
-    U32,  u32,  "U32";
-    F32,  F32,  "F32";
-    F64,  F64,  "F64";
+    U8,   u8,   "u8";
+    U16,  u16,  "u16";
+    U32,  u32,  "u32";
+    F32,  F32,  "f32";
+    F64,  F64,  "f64";
   )
 }
 
