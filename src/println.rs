@@ -31,31 +31,31 @@ macro_rules! impl_print_match_arms {
     paste!{
       match $arg {
         $(
-          #[cfg(all(feature = $value_string, feature = "Matrix1"))]
+          #[cfg(all(feature = $value_string, feature = "matrix1"))]
           (Value::[<Matrix $input_type:camel>](Matrix::Matrix1(input))) => Ok(Box::new(IoPrintlnMatrix{e0: input.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $value_string, feature = "Matrix2"))]
+          #[cfg(all(feature = $value_string, feature = "matrix2"))]
           (Value::[<Matrix $input_type:camel>](Matrix::Matrix2(input))) => Ok(Box::new(IoPrintlnMatrix{e0: input.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $value_string, feature = "Matrix3"))]
+          #[cfg(all(feature = $value_string, feature = "matrix3"))]
           (Value::[<Matrix $input_type:camel>](Matrix::Matrix3(input))) => Ok(Box::new(IoPrintlnMatrix{e0: input.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $value_string, feature = "Matrix4"))]
+          #[cfg(all(feature = $value_string, feature = "matrix4"))]
           (Value::[<Matrix $input_type:camel>](Matrix::Matrix4(input))) => Ok(Box::new(IoPrintlnMatrix{e0: input.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $value_string, feature = "Vector2"))]
+          #[cfg(all(feature = $value_string, feature = "vector2"))]
           (Value::[<Matrix $input_type:camel>](Matrix::Vector2(input))) => Ok(Box::new(IoPrintlnMatrix{e0: input.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $value_string, feature = "Vector3"))]
+          #[cfg(all(feature = $value_string, feature = "vector3"))]
           (Value::[<Matrix $input_type:camel>](Matrix::Vector3(input))) => Ok(Box::new(IoPrintlnMatrix{e0: input.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $value_string, feature = "Vector4"))]
+          #[cfg(all(feature = $value_string, feature = "vector4"))]
           (Value::[<Matrix $input_type:camel>](Matrix::Vector4(input))) => Ok(Box::new(IoPrintlnMatrix{e0: input.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $value_string, feature = "RowVector2"))]
+          #[cfg(all(feature = $value_string, feature = "row_vector2"))]
           (Value::[<Matrix $input_type:camel>](Matrix::RowVector2(input))) => Ok(Box::new(IoPrintlnMatrix{e0: input.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $value_string, feature = "RowVector3"))]
+          #[cfg(all(feature = $value_string, feature = "row_vector3"))]
           (Value::[<Matrix $input_type:camel>](Matrix::RowVector3(input))) => Ok(Box::new(IoPrintlnMatrix{e0: input.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $value_string, feature = "RowVector4"))]
+          #[cfg(all(feature = $value_string, feature = "row_vector4"))]
           (Value::[<Matrix $input_type:camel>](Matrix::RowVector4(input))) => Ok(Box::new(IoPrintlnMatrix{e0: input.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $value_string, feature = "RowVectorD"))]
+          #[cfg(all(feature = $value_string, feature = "row_vectord"))]
           (Value::[<Matrix $input_type:camel>](Matrix::RowDVector(input))) => Ok(Box::new(IoPrintlnMatrix{e0: input.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $value_string, feature = "MatrixD"))]
+          #[cfg(all(feature = $value_string, feature = "matrixd"))]
           (Value::[<Matrix $input_type:camel>](Matrix::DMatrix(input))) => Ok(Box::new(IoPrintlnMatrix{e0: input.clone(), _marker: PhantomData::default()})),
-          #[cfg(all(feature = $value_string, feature = "VectorD"))]
+          #[cfg(all(feature = $value_string, feature = "vectord"))]
           (Value::[<Matrix $input_type:camel>](Matrix::DVector(input))) => Ok(Box::new(IoPrintlnMatrix{e0: input.clone(), _marker: PhantomData::default()})),
         )+
         x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
@@ -87,59 +87,59 @@ impl<T> MechFunction for IoPrintlnScalar<T>
 fn impl_print_fxn(source_value: Value) -> MResult<Box<dyn MechFunction>>  {
   if source_value.is_scalar() {
     match source_value {
-      #[cfg(feature = "I8")]
+      #[cfg(feature = "i8")]
       Value::I8(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
-      #[cfg(feature = "I16")]
+      #[cfg(feature = "i16")]
       Value::I16(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
-      #[cfg(feature = "I32")]
+      #[cfg(feature = "i32")]
       Value::I32(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
-      #[cfg(feature = "I64")]
+      #[cfg(feature = "i64")]
       Value::I64(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
-      #[cfg(feature = "I128")]
+      #[cfg(feature = "i128")]
       Value::I128(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
-      #[cfg(feature = "U8")]
+      #[cfg(feature = "u8")]
       Value::U8(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
-      #[cfg(feature = "U16")]
+      #[cfg(feature = "u16")]
       Value::U16(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
-      #[cfg(feature = "U32")]
+      #[cfg(feature = "u32")]
       Value::U32(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
-      #[cfg(feature = "U64")]
+      #[cfg(feature = "u64")]
       Value::U64(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
-      #[cfg(feature = "U128")]
+      #[cfg(feature = "u128")]
       Value::U128(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
-      #[cfg(feature = "F32")]
+      #[cfg(feature = "f32")]
       Value::F32(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
-      #[cfg(feature = "F64")]
+      #[cfg(feature = "f64")]
       Value::F64(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
-      #[cfg(feature = "String")]
+      #[cfg(feature = "string")]
       Value::String(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
-      #[cfg(feature = "Bool")]
+      #[cfg(feature = "bool")]
       Value::Bool(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
-      #[cfg(feature = "ComplexNumber")]
+      #[cfg(feature = "complex")]
       Value::ComplexNumber(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
-      #[cfg(feature = "RationalNumber")]
+      #[cfg(feature = "rational")]
       Value::RationalNumber(value) => { return Ok(Box::new(IoPrintlnScalar { e0: value })); }
       _ => todo!(),
     }
   }
   impl_print_match_arms!(
     (source_value),
-    i8,   "I8",
-    i16,  "I16",
-    i32,  "I32",
-    i64,  "I64",
-    i128, "I128",
-    u8,   "U8",
-    u16,  "U16",
-    u32,  "U32",
-    u64,  "U64",
-    u128, "U128",
-    F32,  "F32",
-    F64,  "F64",
-    bool, "Bool",
-    String, "String",
-    ComplexNumber, "ComplexNumber",
-    RationalNumber, "RationalNumber"
+    i8,   "i8",
+    i16,  "i16",
+    i32,  "i32",
+    i64,  "i64",
+    i128, "i128",
+    u8,   "u8",
+    u16,  "u16",
+    u32,  "u32",
+    u64,  "u64",
+    u128, "u128",
+    F32,  "f32",
+    F64,  "f64",
+    bool, "bool",
+    String, "string",
+    ComplexNumber, "complex",
+    RationalNumber, "rational"
   )
 }
 
