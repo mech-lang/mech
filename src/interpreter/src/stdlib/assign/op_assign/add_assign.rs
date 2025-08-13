@@ -13,20 +13,20 @@ macro_rules! impl_add_assign_match_arms {
       [<impl_set_ $macro_name _match_arms>]!(
         $fxn_name,
         $arg,
-        U8, "U8";
-        U16, "U16";
-        U32, "U32";
-        U64, "U64";
-        U128, "U128";
-        I8, "I8";
-        I16, "I16";
-        I32, "I32";
-        I64, "I64";
-        U128, "U128";
-        F32, "F32"; 
-        F64, "F64" ;
-        ComplexNumber, "ComplexNumber";
-        RationalNumber, "RationalNumber";
+        U8, "u8";
+        U16, "u16";
+        U32, "u32";
+        U64, "u64";
+        U128, "u128";
+        I8, "i8";
+        I16, "i16";
+        I32, "i32";
+        I64, "i64";
+        U128, "u128";
+        F32, "f32"; 
+        F64, "f64" ;
+        ComplexNumber, "complex";
+        RationalNumber, "rational";
       )
     }
   }
@@ -98,20 +98,20 @@ fn add_assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFuncti
   impl_op_assign_value_match_arms!(
     Add,
     (sink, source),
-    U8,  "U8";
-    U16, "U16";
-    U32, "U32";
-    U64, "U64";
-    U128, "U128";
-    I8,  "I8";
-    I16, "I16";
-    I32, "I32";
-    I64, "I64";
-    U128, "U128";
-    F32, "F32";
-    F64, "F64";
-    RationalNumber, "RationalNumber";
-    ComplexNumber, "ComplexNumber";
+    U8,  "u8";
+    U16, "u16";
+    U32, "u32";
+    U64, "u64";
+    U128, "u128";
+    I8,  "i8";
+    I16, "i16";
+    I32, "i32";
+    I64, "i64";
+    U128, "u128";
+    F32, "f32";
+    F64, "f64";
+    RationalNumber, "rational";
+    ComplexNumber, "complex";
   )
 }
 

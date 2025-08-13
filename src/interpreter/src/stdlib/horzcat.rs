@@ -1715,7 +1715,7 @@ macro_rules! impl_horzcat_arms {
           _ => false,
       }});
         match (nargs,rows,columns) {
-          #[cfg(feature = "Matrix1")]
+          #[cfg(feature = "matrix1")]
           (1,1,1) => {
             let a_m1 = get_m1(&arguments[0]);
             let a_sc = get_s(&arguments[0]);
@@ -1725,7 +1725,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Matrix1<{}> or Scalar<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), arguments), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "RowVector2")]
+          #[cfg(feature = "row_vector2")]
           (1, 1, 2) => {
             let er2 = get_r2(&arguments[0]);
             match &er2 {
@@ -1733,7 +1733,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "RowVector3")]
+          #[cfg(feature = "row_vector3")]
           (1, 1, 3) => {
             let er3 = get_r3(&arguments[0]);
             match &er3 {
@@ -1741,7 +1741,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError {file: file!().to_string(),tokens: vec![],msg: "".to_string(),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind}),
             }
           }
-          #[cfg(feature = "RowVector4")]
+          #[cfg(feature = "row_vector4")]
           (1, 1, 4) => {
             let er4 = get_r4(&arguments[0]);
             match &er4 {
@@ -1749,7 +1749,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError{file: file!().to_string(),tokens: vec![],msg: "".to_string(),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind}),
             }
           }
-          #[cfg(feature = "RowVectorD")]
+          #[cfg(feature = "row_vectord")]
           (1, 1, n) => {
             let erd = get_rd(&arguments[0]);
             match &erd {
@@ -1757,7 +1757,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError{file: file!().to_string(),tokens: vec![],msg: "".to_string(),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind}),
             }
           }
-          #[cfg(feature = "RowVector2")]
+          #[cfg(feature = "row_vector2")]
           (2,1,2) => {
             let mut out = RowVector2::from_element($default);
             let am1 = get_m1(&arguments[0]);
@@ -1772,7 +1772,7 @@ macro_rules! impl_horzcat_arms {
               _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Matrix1<{}> or Scalar<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), arguments), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "RowVector3")]
+          #[cfg(feature = "row_vector3")]
           (2,1,3) => {
             let mut out = RowVector3::from_element($default);
             let a_r2 = get_r2(&arguments[0]);
@@ -1789,7 +1789,7 @@ macro_rules! impl_horzcat_arms {
               _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a RowVector2<{}>, Scalar<{}> or Matrix1<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), stringify!($kind), arguments), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "RowVector4")]
+          #[cfg(feature = "row_vector4")]
           (2,1,4) => {
             let mut out = RowVector4::from_element($default);
             let a_r3 = get_r3(&arguments[0]);
@@ -1809,7 +1809,7 @@ macro_rules! impl_horzcat_arms {
               _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a RowVector3<{}>, Scalar<{}>, Matrix1<{}> or RowVector2<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), stringify!($kind), stringify!($kind), arguments), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           } 
-          #[cfg(feature = "RowVector3")]
+          #[cfg(feature = "row_vector3")]
           (3,1,3) => {  
             let mut out = RowVector3::from_element($default);
             let a_m1 = get_m1(&arguments[0]);
@@ -1830,7 +1830,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Matrix1<{}> or Scalar<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), arguments), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "RowVector4")]
+          #[cfg(feature = "row_vector4")]
           (3,1,4) => {
             let mut out = RowVector4::from_element($default);
             let a_sc = get_s(&arguments[0]);
@@ -1858,7 +1858,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
             }
           }
-          #[cfg(feature = "RowVector4")]
+          #[cfg(feature = "row_vector4")]
           (4,1,4) => {
             let mut out = RowVector4::from_element($default);
             let a_s = get_s(&arguments[0]);
@@ -1889,7 +1889,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Scalar<{}> or Matrix1<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), arguments), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "RowVectorD")]
+          #[cfg(feature = "row_vectord")]
           (m,1,n) => {
             let mut out = RowDVector::from_element(n,$default);
             let mut matrix_args: Vec<(Box<dyn CopyMat<$kind>>,usize)> = vec![];
@@ -1923,7 +1923,7 @@ macro_rules! impl_horzcat_arms {
             }
             return Ok(Box::new(HorizontalConcatenateRDN{scalar: scalar_args, matrix: matrix_args, out: new_ref(out)}));
           }
-          #[cfg(feature = "Vector2")]
+          #[cfg(feature = "vector2")]
           (1, 2, 1) => {
             let ev2 = get_v2(&arguments[0]);
             match &ev2 {
@@ -1931,7 +1931,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "Matrix2")]
+          #[cfg(feature = "matrix2")]
           (1, 2, 2) => {
             let em2 = get_m2(&arguments[0]);
             match &em2 {
@@ -1939,7 +1939,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "Matrix2x3")]
+          #[cfg(feature = "matrix2x3")]
           (1, 2, 3) => {
             let em2x3 = get_m2x3(&arguments[0]);
             match &em2x3 {
@@ -1947,7 +1947,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "Vector3")]
+          #[cfg(feature = "vector3")]
           (1, 3, 1) => {
             let ev3 = get_v3(&arguments[0]);
             match &ev3 {
@@ -1955,7 +1955,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "Matrix3x2")]
+          #[cfg(feature = "matrix3x2")]
           (1, 3, 2) => {
             let am3x2 = get_m3x2(&arguments[0]);
             match &am3x2 {
@@ -1963,7 +1963,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
             }
           }
-          #[cfg(feature = "Matrix3")]
+          #[cfg(feature = "matrix3")]
           (1, 3, 3) => {
             let em3 = get_m3(&arguments[0]);
             match &em3 {
@@ -1971,7 +1971,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "Vector4")]
+          #[cfg(feature = "vector4")]
           (1, 4, 1) => {
             let ev4 = get_v4(&arguments[0]);
             match &ev4 {
@@ -1979,7 +1979,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "Matrix4")]
+          #[cfg(feature = "matrix4")]
           (1, 4, 4) => {
             let em4 = get_m4(&arguments[0]);
             match &em4 {
@@ -1987,7 +1987,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "MatrixD")]
+          #[cfg(feature = "matrixd")]
           (1, m, n) => {
             let emd = get_md(&arguments[0]);
             match &emd {
@@ -1995,7 +1995,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
             }
           }
-          #[cfg(feature = "Matrix2")]
+          #[cfg(feature = "matrix2")]
           (2, 2, 2) => {
             let mut out = Matrix2::from_element($default);
             let av2 = get_v2(&arguments[0]);
@@ -2005,7 +2005,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "Matrix3x2")]
+          #[cfg(feature = "matrix3x2")]
           (2, 3, 2) => {
             let mut out = Matrix3x2::from_element($default);
             let av3 = get_v3(&arguments[0]);
@@ -2015,7 +2015,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "Matrix2x3")]
+          #[cfg(feature = "matrix2x3")]
           (2,2,3) => {
             let mut out = Matrix2x3::from_element($default);
             let av2 = get_v2(&arguments[0]);
@@ -2028,7 +2028,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "Matrix3")]
+          #[cfg(feature = "matrix3")]
           (2, 3, 3) => {
             let mut out = Matrix3::from_element($default);
             let av3 = get_v3(&arguments[0]);
@@ -2041,7 +2041,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "Matrix4")]
+          #[cfg(feature = "matrix4")]
           (2, 4, 4) => {
             let mut out = Matrix4::from_element($default);
             let av4 = get_v4(&arguments[0]);
@@ -2055,14 +2055,14 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "MatrixD")]
+          #[cfg(feature = "matrixd")]
           (2,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             let e0 = extract_matrix(&arguments[0])?;
             let e1 = extract_matrix(&arguments[1])?;   
             Ok(Box::new(HorizontalConcatenateTwoArgs{e0,e1,out:new_ref(out)}))
           }
-          #[cfg(feature = "Matrix2x3")]
+          #[cfg(feature = "matrix2x3")]
           (3, 2, 3) => {
             let mut out = Matrix2x3::from_element($default);
             let av2 = get_v2(&arguments[0]);
@@ -2073,7 +2073,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "Matrix3")]
+          #[cfg(feature = "matrix3")]
           (3, 3, 3) => {
             let mut out = Matrix3::from_element($default);
             let av3 = get_v3(&arguments[0]);
@@ -2084,7 +2084,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "Matrix4")]
+          #[cfg(feature = "matrix4")]
           (3, 4, 4) => {
             let mut out = Matrix4::from_element($default);
             let av4 = get_v4(&arguments[0]);
@@ -2100,7 +2100,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "MatrixD")]
+          #[cfg(feature = "matrixd")]
           (3,m,n) => {
             let mut out = DMatrix::from_element(m, n, $default);
             let e0 = extract_matrix(&arguments[0])?;
@@ -2108,7 +2108,7 @@ macro_rules! impl_horzcat_arms {
             let e2 = extract_matrix(&arguments[2])?;
             return Ok(Box::new(HorizontalConcatenateThreeArgs {e0,e1,e2,out: new_ref(out)}));
           }
-          #[cfg(feature = "Matrix4")]
+          #[cfg(feature = "matrix4")]
           (4, 4, 4) => {
             let mut out = Matrix4::from_element($default);
             let av4 = get_v4(&arguments[0]);
@@ -2120,7 +2120,7 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
-          #[cfg(feature = "MatrixD")]
+          #[cfg(feature = "matrixd")]
           (4,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             let e0 = extract_matrix(&arguments[0])?;
@@ -2129,7 +2129,7 @@ macro_rules! impl_horzcat_arms {
             let e3 = extract_matrix(&arguments[3])?;
             return Ok(Box::new(HorizontalConcatenateFourArgs {e0,e1,e2,e3,out: new_ref(out)}));
           }
-          #[cfg(feature = "MatrixD")]
+          #[cfg(feature = "matrixd")]
           (l,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             let mut args = vec![];
