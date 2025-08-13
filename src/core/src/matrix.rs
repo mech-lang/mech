@@ -121,6 +121,12 @@ impl_to_matrix!(i128);
 impl_to_matrix!(F32);
 #[cfg(feature = "F64")]
 impl_to_matrix!(F64);
+#[cfg(feature = "String")]
+impl_to_matrix!(String);
+#[cfg(feature = "ComplexNumber")]
+impl_to_matrix!(ComplexNumber);
+#[cfg(feature = "RationalNumber")]
+impl_to_matrix!(RationalNumber);
   
 pub trait ToIndex: Clone {
   fn to_index(elements: Vec<Self>) -> Matrix<Self>;
@@ -894,3 +900,5 @@ impl_to_value_for_matrix!(u64, MatrixU64);
 impl_to_value_for_matrix!(u128, MatrixU128);
 impl_to_value_for_matrix!(bool, MatrixBool);
 impl_to_value_for_matrix!(String, MatrixString);
+impl_to_value_for_matrix!(ComplexNumber, MatrixComplexNumber);
+impl_to_value_for_matrix!(RationalNumber, MatrixRationalNumber);

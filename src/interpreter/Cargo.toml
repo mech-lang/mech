@@ -1,6 +1,6 @@
 [package]
 name = "mech-interpreter"
-version = "0.2.56"
+version = "0.2.57"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "The Mech language runtime."
 documentation = "http://docs.mech-lang.org"
@@ -67,15 +67,15 @@ VectorD = []
 MatrixD = []
 
 [dependencies]
-mech-core = "0.2.56"
-mech-math = "0.2.56"
-mech-logic = "0.2.56"
-mech-range = "0.2.56"
-mech-matrix = "0.2.56"
-mech-compare = "0.2.56"
-mech-stats = "0.2.56"
-mech-io = "0.2.56"
-mech-combinatorics = "0.2.56"
+mech-core = "0.2.57"
+mech-math = "0.2.57"
+mech-logic = "0.2.57"
+mech-range = "0.2.57"
+mech-matrix = "0.2.57"
+mech-compare = "0.2.57"
+mech-stats = "0.2.57"
+mech-io = "0.2.57"
+mech-combinatorics = "0.2.57"
 
 nalgebra = "0.34.0"
 indexmap = "2.10.0"

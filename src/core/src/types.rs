@@ -696,3 +696,39 @@ impl From<F64> for F32 {
     F32::new(value.0 as f32)
   }
 }
+
+impl ToUsize for F32 {
+  fn to_usize(&self) -> usize {
+    self.0 as usize
+  }
+}
+
+impl ToUsize for F64 {
+  fn to_usize(&self) -> usize {
+    self.0 as usize
+  }
+}
+
+impl ToUsize for RationalNumber {
+  fn to_usize(&self) -> usize {
+    self.0.to_integer() as usize
+  }
+}
+
+impl ToUsize for ComplexNumber {
+  fn to_usize(&self) -> usize {
+    self.0.norm() as usize
+  }
+}
+
+impl ToValue for ComplexNumber {
+  fn to_value(&self) -> Value {
+    Value::ComplexNumber(new_ref(*self))
+  }
+}
+
+impl ToValue for RationalNumber {
+  fn to_value(&self) -> Value {
+    Value::RationalNumber(new_ref(*self))
+  }
+}

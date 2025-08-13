@@ -20,7 +20,6 @@ use crate::stdlib::{
                     convert::*,
                     horzcat::*,
                     vertcat::*,
-                    math::*,
                   };
 use mech_core::{MechError, MechErrorKind, hash_str, new_ref, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 

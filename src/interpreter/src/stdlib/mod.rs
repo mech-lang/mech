@@ -9,10 +9,10 @@ use num_traits::*;
 use std::fmt::Debug;
 use simba::scalar::ClosedNeg;
 use num_traits::Pow;
+use std::marker::PhantomData;
 
 pub mod access;
 pub mod assign;
 pub mod horzcat;
 pub mod vertcat;
 pub mod convert;
-pub mod math;

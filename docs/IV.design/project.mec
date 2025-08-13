@@ -1,0 +1,91 @@
+Project Documentation
+===============================================================================
+
+This document contains information about the Mech project structure.
+
+1. Repository Structure
+-------------------------------------------------------------------------------
+
+- Assets
+
+- Docs
+
+- Core
+- Syntax
+- Interpreter
+- Program
+- Mech
+- Utilities
+
+- Mech Notebook
+- Mech App
+
+- Machines
+    - math
+    - matrix
+    - logic
+    - compare
+    - stats
+    - range
+    - combinatorics
+    - io
+
+2. Release Process
+-------------------------------------------------------------------------------
+
+This section documents the release process for the Mech project.
+
+1. Update `core` version number in `src/core/Cargo.toml`.
+  - `git commit`
+  - `cargo publish`
+2. Update the version numbers for all crates in the `machines` directory.
+  - Update version in `Cargo.toml` files.
+  - Update machine version in `index.mec`.
+  - `git commit`
+  - `cargo publish`
+3. Update `syntax` version number.
+  - Update mech versions in `src/syntax/Cargo.toml`.
+  - Update `editor-modes\vscode\package.json` with the new version.
+  - `git commit`
+  - `cargo publish`
+4. Update `interpreter` version number.
+    - Update mech versions in `src/interpreter/Cargo.toml`.
+    - `git commit`
+    - `cargo publish`
+5. Update `wasm` version number.
+    - Update mech versions in `src/wasm/Cargo.toml`.
+    - `git commit`
+    - `cargo publish`
+6. Update `mech` version number.
+    - Update mech versions in `src/mech/Cargo.toml`.
+    - `git commit`
+    - `cargo publish`
+7. Update the rest of the version numbers:
+    - Update docs.
+    - Update `mech-app`.
+    - Update `mech-notebook`.
+8. Build `wasm`.
+    - `wasm-pack build --target web` in the `src/wasm` directory.
+    - Compress `brotli -Z --force pkg/mech_wasm_bg.wasm`.
+    - This will give us: 
+        - `mech_wasm_bg.wasm`
+        - `mech_wasm.js`
+        - `mech_wasm_bg.wasm.br`
+9. Copy `/src/wasm/pkg` (files above) to the following locations:
+    - `~/mech-lang/mech/mech-app/public/pkg`
+    - `~/mech-lang/web/website/public/pkg`
+    - `~/mech-lang/web/docs-page/public/pkg`
+    - `~/mech-lang/web/try/public/pkg`
+10. Build `mech`
+    - Windows:
+        - In `mech` project root dir: `cargo build --bin mech --release`
+        - Then zip the resulting .exe using 7zip:
+        - `7z a mech-v0.2.NN-beta-win-x86-64.7z target/release/mech.exe`
+    - Linux:
+        - In `mech` project root dir: `cargo build --bin mech --release`
+        - Then zip the resulting binary using 7zip:
+        - `7z a mech-v0.2.NN-beta-linux-x86-64.7z target/release/mech`
+    - Mac
+        - In `mech` project root dir: `cargo build --bin mech --release`
+        - Then zip the resulting binary using 7zip:
+        - `7z a mech-v0.2.NN-beta-mac-x86-64.7z target/release/mech`

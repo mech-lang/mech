@@ -62,6 +62,8 @@ impl_col_set_fxn_shapes!(u128);
 impl_col_set_fxn_shapes!(F32);
 impl_col_set_fxn_shapes!(F64);
 impl_col_set_fxn_shapes!(String);
+impl_col_set_fxn_shapes!(ComplexNumber);
+impl_col_set_fxn_shapes!(RationalNumber);
 
 macro_rules! impl_set_column_match_arms {
   ($arg:expr, $($lhs_type:ident, $($default:expr),+);+ $(;)?) => {
@@ -90,15 +92,15 @@ macro_rules! impl_set_column_match_arms {
           let tbl_brrw = tbl.borrow();
           match (tbl_brrw.get(&k),tbl_brrw.rows(),source) {
             $(
-                (Some((ValueKind::$lhs_type,Matrix::Matrix1(sink))),1,Value::[<Matrix $lhs_type>](Matrix::Matrix1(source))) => Ok(Box::new([<TableSetCol $lhs_type M1>]{source: source.clone(), sink: sink.clone() })),
-                (Some((ValueKind::$lhs_type,Matrix::Vector2(sink))),2,Value::[<Matrix $lhs_type>](Matrix::Vector2(source))) => Ok(Box::new([<TableSetCol $lhs_type V2>]{source: source.clone(), sink: sink.clone() })),
-                (Some((ValueKind::$lhs_type,Matrix::Vector3(sink))),3,Value::[<Matrix $lhs_type>](Matrix::Vector3(source))) => Ok(Box::new([<TableSetCol $lhs_type V3>]{source: source.clone(), sink: sink.clone() })),
-                (Some((ValueKind::$lhs_type,Matrix::Vector4(sink))),4,Value::[<Matrix $lhs_type>](Matrix::Vector4(source))) => Ok(Box::new([<TableSetCol $lhs_type V4>]{source: source.clone(), sink: sink.clone() })),
-                (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::DVector(source))) => Ok(Box::new([<TableSetCol $lhs_type VD>]{source: source.clone(), sink: sink.clone() })),
-                (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Vector4(source))) => Ok(Box::new([<TableSetCol $lhs_type VDV4>]{source: source.clone(), sink: sink.clone() })),
-                (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Vector3(source))) => Ok(Box::new([<TableSetCol $lhs_type VDV3>]{source: source.clone(), sink: sink.clone() })),
-                (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Vector2(source))) => Ok(Box::new([<TableSetCol $lhs_type VDV2>]{source: source.clone(), sink: sink.clone() })),
-                (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Matrix1(source))) => Ok(Box::new([<TableSetCol $lhs_type VDM1>]{source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type,Matrix::Matrix1(sink))),1,Value::[<Matrix $lhs_type>](Matrix::Matrix1(source))) => Ok(Box::new([<TableSetCol $lhs_type M1>]{source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type,Matrix::Vector2(sink))),2,Value::[<Matrix $lhs_type>](Matrix::Vector2(source))) => Ok(Box::new([<TableSetCol $lhs_type V2>]{source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type,Matrix::Vector3(sink))),3,Value::[<Matrix $lhs_type>](Matrix::Vector3(source))) => Ok(Box::new([<TableSetCol $lhs_type V3>]{source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type,Matrix::Vector4(sink))),4,Value::[<Matrix $lhs_type>](Matrix::Vector4(source))) => Ok(Box::new([<TableSetCol $lhs_type V4>]{source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::DVector(source))) => Ok(Box::new([<TableSetCol $lhs_type VD>]{source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Vector4(source))) => Ok(Box::new([<TableSetCol $lhs_type VDV4>]{source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Vector3(source))) => Ok(Box::new([<TableSetCol $lhs_type VDV3>]{source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Vector2(source))) => Ok(Box::new([<TableSetCol $lhs_type VDV2>]{source: source.clone(), sink: sink.clone() })),
+              (Some((ValueKind::$lhs_type,Matrix::DVector(sink))),n,Value::[<Matrix $lhs_type>](Matrix::Matrix1(source))) => Ok(Box::new([<TableSetCol $lhs_type VDM1>]{source: source.clone(), sink: sink.clone() })),
             )+
             x => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)}),
           }
@@ -126,6 +128,8 @@ fn impl_set_column_fxn(sink: Value, source: Value, key: Value) -> Result<Box<dyn
     F32,F32::zero();
     F64,F64::zero();
     String,String::new();
+    ComplexNumber,ComplexNumber::default();
+    RationalNumber,RationalNumber::default();
   )
 }
 

@@ -412,7 +412,7 @@ impl_access_fxn_shape!(Access1DVD, DVector<usize>, DVector<T>, access_1d_slice);
 impl_access_fxn_shape!(Access1DVDb, DVector<bool>, DVector<T>, access_1d_slice_bool_v);
 
 // x[1..3,1..3]
-impl_access_fxn_shape!(Access2DVDVD, (DVector<usize>,DVector<usize>),       DMatrix<T>, access_2d_slice);
+impl_access_fxn_shape!(Access2DVDVD, (DVector<usize>,DVector<usize>), DMatrix<T>, access_2d_slice);
 impl_access_fxn_shape!(Access2DVDbVD, (DVector<bool>,DVector<usize>), DMatrix<T>, access_2d_slice_bool);
 impl_access_fxn_shape!(Access2DVDVDb, (DVector<usize>,DVector<bool>), DMatrix<T>, access_2d_slice_bool2);
 impl_access_fxn_shape!(Access2DVDbVDb, (DVector<bool>,DVector<bool>), DMatrix<T>, access_2d_slice_bool_bool);
@@ -475,6 +475,8 @@ macro_rules! impl_access_match_arms {
         F32  => MatrixF32,  F32,  F32::zero(), "F32";
         F64  => MatrixF64,  F64,  F64::zero(), "F64";
         String => MatrixString, String, String::new(), "String";
+        ComplexNumber => MatrixComplexNumber, ComplexNumber, ComplexNumber::default(), "ComplexNumber";
+        RationalNumber => MatrixRationalNumber, RationalNumber, RationalNumber::default(), "RationalNumber";
       )
     }
   }
