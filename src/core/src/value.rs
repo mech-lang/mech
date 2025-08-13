@@ -1181,3 +1181,34 @@ impl From<RationalNumber> for Value {
   }
 }
 
+
+pub trait ToUsize {
+  fn to_usize(&self) -> usize;
+}
+
+macro_rules! impl_to_usize_for {
+  ($t:ty) => {
+    impl ToUsize for $t {
+      fn to_usize(&self) -> usize {
+        #[allow(unused_comparisons)]
+        if *self < 0 as $t {
+          panic!("Cannot convert negative number to usize");
+        }
+        *self as usize
+      }
+    }
+  };
+}
+
+impl_to_usize_for!(u8);
+impl_to_usize_for!(u16);
+impl_to_usize_for!(u32);
+impl_to_usize_for!(u64);
+impl_to_usize_for!(u128);
+impl_to_usize_for!(usize);
+
+impl_to_usize_for!(i8);
+impl_to_usize_for!(i16);
+impl_to_usize_for!(i32);
+impl_to_usize_for!(i64);
+impl_to_usize_for!(i128);
