@@ -19,7 +19,8 @@ maintenance = { status = "actively-developed" }
 crate-type = ["rlib"]
 
 [features]
-default = ["stdlib"]
+default = ["stdlib", "sum"]
+sum = []
 stdlib = ["bool", "string", "numbers", "matrix", "set", "map", "table", "tuple", "record", "atom"]
 numbers = ["signed_ints", "unsigned_ints", "floats", "complex", "rational"]
 complex = ["c64"]

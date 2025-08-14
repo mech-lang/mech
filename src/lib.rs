@@ -8,10 +8,14 @@ use std::fmt::Debug;
 use mech_core::matrix::Matrix;
 use paste::paste;
 
+#[cfg(feature = "sum")]
 pub mod sum_column;
+#[cfg(feature = "sum")]
 pub mod sum_row;
 
+#[cfg(feature = "sum")]
 pub use self::sum_column::*;
+#[cfg(feature = "sum")]
 pub use self::sum_row::*;
 
 #[macro_export]  
