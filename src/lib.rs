@@ -10,14 +10,22 @@ use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matri
 use paste::paste;
 use mech_core::matrix::Matrix;
 
+#[cfg(feature = "or")]
 pub mod or;
+#[cfg(feature = "and")]
 pub mod and;
+#[cfg(feature = "not")]
 pub mod not;
+#[cfg(feature = "xor")]
 pub mod xor;
 
+#[cfg(feature = "or")]
 pub use self::or::*;
+#[cfg(feature = "and")]
 pub use self::and::*;
+#[cfg(feature = "not")]
 pub use self::not::*;
+#[cfg(feature = "xor")]
 pub use self::xor::*;
 
 // ----------------------------------------------------------------------------
