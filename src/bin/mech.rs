@@ -1,6 +1,5 @@
 #![feature(hash_extract_if)]
 #![allow(warnings)]
-extern crate tokio;
 use mech::*;
 use mech_core::*;
 use mech_syntax::parser;
@@ -170,11 +169,15 @@ async fn main() -> Result<(), MechError> {
     let stylesheet = matches.get_one::<String>("stylesheet").cloned().unwrap_or("include/style.css".to_string());
     let wasm_pkg = matches.get_one::<String>("wasm").cloned().unwrap_or("src/wasm/pkg".to_string());
    
-    let mut server = MechServer::new(full_address, stylesheet.to_string(), wasm_pkg.to_string());
-    server.init().await?;
-    server.load_sources(&mech_paths)?;
-    server.serve().await?;
-    
+    if cfg!(feature = "serve") {
+      let mut server = MechServer::new(full_address, stylesheet.to_string(), wasm_pkg.to_string());
+      #[cfg(feature = "serve")]
+      server.init().await?;
+      #[cfg(feature = "serve")]
+      server.load_sources(&mech_paths)?;
+      #[cfg(feature = "serve")]
+      server.serve().await?;
+    }    
   }
   // --------------------------------------------------------------------------
   // Format
@@ -188,32 +191,11 @@ async fn main() -> Result<(), MechError> {
     let mut mechfs = MechFileSystem::new();
     
     // open file or url. If it's a local file load it from disk, if it's a url fetch it from internet
-    let stylesheet = if stylesheet_url.starts_with("http") {
-      match reqwest::get(&stylesheet_url).await {
-        Ok(response) => match response.text().await {
-          Ok(text) => text,
-          Err(err) => {
-            println!("Error fetching stylesheet text: {:?}", err);
-            //return Err(MechError::new(MechErrorKind::NetworkError));
-            todo!()
-          }
-        },
-        Err(err) => {
-          println!("Error fetching stylesheet: {:?}", err);
-          //return Err(MechError::new(MechErrorKind::NetworkError));
-          todo!()
-        }
-      }
-    } else {
-      match fs::read_to_string(&stylesheet_url) {
-        Ok(content) => content,
-        Err(err) => {
-          println!("Error reading stylesheet file: {:?}", err);
-          //return Err(MechError::new(MechErrorKind::FileReadError));
-          todo!()
-        }
-      }
-    };
+    #[cfg(feature = "async")]
+    let stylesheet = load_stylesheet(&stylesheet_url).await;
+
+    #[cfg(not(feature = "async"))]
+    let stylesheet = load_stylesheet(&stylesheet_url);
 
     mechfs.set_stylesheet(&stylesheet);
     for path in mech_paths {
@@ -367,4 +349,58 @@ async fn main() -> Result<(), MechError> {
   }
   
   Ok(())
+}
+
+#[cfg(feature = "async")]
+async fn load_stylesheet(stylesheet_url: &str) -> String {
+  if stylesheet_url.starts_with("http") {
+    match reqwest::get(stylesheet_url).await {
+      Ok(response) => match response.text().await {
+        Ok(text) => text,
+        Err(err) => {
+          println!("Error fetching stylesheet text: {:?}", err);
+          todo!()
+        }
+      },
+      Err(err) => {
+        println!("Error fetching stylesheet: {:?}", err);
+        todo!()
+      }
+    }
+  } else {
+    match tokio::fs::read_to_string(stylesheet_url).await {
+      Ok(content) => content,
+      Err(err) => {
+        println!("Error reading stylesheet file: {:?}", err);
+        todo!()
+      }
+    }
+  }
+}
+
+#[cfg(not(feature = "async"))]
+fn load_stylesheet(stylesheet_url: &str) -> String {
+  if stylesheet_url.starts_with("http") {
+    match reqwest::blocking::get(stylesheet_url) {
+      Ok(response) => match response.text() {
+        Ok(text) => text,
+        Err(err) => {
+          println!("Error fetching stylesheet text: {:?}", err);
+          todo!()
+        }
+      },
+      Err(err) => {
+        println!("Error fetching stylesheet: {:?}", err);
+        todo!()
+      }
+    }
+  } else {
+    match std::fs::read_to_string(stylesheet_url) {
+      Ok(content) => content,
+      Err(err) => {
+        println!("Error reading stylesheet file: {:?}", err);
+        todo!()
+      }
+    }
+  }
 }
