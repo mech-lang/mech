@@ -3,8 +3,7 @@
 // Defines a struct for errors and an enum which enumerates the error types
 
 // ## Prelude
-use crate::ValueKind;
-use crate::nodes::{SourceRange, Token};
+use crate::*;
 use std::fmt;
 
 type Rows = usize;
@@ -54,6 +53,7 @@ pub enum MechErrorKind {
   NotMutable(u64), 
   BlockDisabled,
   IoError,
+  UnhandledFormulaOperator(FormulaOperator),
   GenericError(String),
   FileNotFound(String),
   Unhandled,
