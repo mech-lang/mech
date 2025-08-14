@@ -17,10 +17,14 @@ use simba::scalar::ClosedNeg;
 use num_traits::Pow;
 use mech_core::matrix::Matrix;
 
+#[cfg(feature = "exclusive")]
 pub mod exclusive;
+#[cfg(feature = "inclusive")]
 pub mod inclusive;
 
+#[cfg(feature = "exclusive")]
 pub use self::exclusive::*;
+#[cfg(feature = "inclusive")]
 pub use self::inclusive::*;
 
 // ----------------------------------------------------------------------------
