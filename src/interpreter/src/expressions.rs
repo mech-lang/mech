@@ -21,7 +21,9 @@ pub fn range(rng: &RangeExpression, p: &Interpreter) -> MResult<Value> {
   let start = factor(&rng.start, p)?;
   let terminal = factor(&rng.terminal, p)?;
   let new_fxn = match &rng.operator {
+    #[cfg(feature = "range_exclusive")]
     RangeOp::Exclusive => RangeExclusive{}.compile(&vec![start,terminal])?,
+    #[cfg(feature = "range_inclusive")]
     RangeOp::Inclusive => RangeInclusive{}.compile(&vec![start,terminal])?,
     x => unreachable!(),
   };
@@ -77,6 +79,7 @@ pub fn subscript_range(sbscrpt: &Subscript, p: &Interpreter) -> MResult<Value> {
 pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<Value> {
   let plan = p.plan();
   match sbscrpt {
+    #[cfg(feature = "table")]
     Subscript::Dot(x) => {
       let key = x.hash();
       let fxn_input: Vec<Value> = vec![val.clone(), Value::Id(key)];
