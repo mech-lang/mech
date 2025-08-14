@@ -151,6 +151,7 @@ fn complex(num: &ComplexNumberNode) -> Value {
 
 pub fn real(rl: &RealNumber) -> Value {
   match rl {
+    #[cfg(feature = "math_neg")]
     RealNumber::Negated(num) => negated(num),
     #[cfg(any(feature = "unsigned_ints", feature = "f64"))]
     RealNumber::Integer(num) => integer(num),
