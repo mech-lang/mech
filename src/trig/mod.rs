@@ -18,6 +18,8 @@ pub mod asinh;
 pub mod atan;
 #[cfg(feature = "atan2")]
 pub mod atan2;
+#[cfg(feature = "atanh")]
+pub mod atanh;
 #[cfg(feature = "cos")]
 pub mod cos;
 #[cfg(feature = "cosh")]
@@ -55,6 +57,8 @@ pub use self::asinh::*;
 pub use self::atan::*;
 #[cfg(feature = "atan2")]
 pub use self::atan2::*;
+#[cfg(feature = "atanh")]
+pub use self::atanh::*;
 #[cfg(feature = "cos")]
 pub use self::cos::*;
 #[cfg(feature = "cosh")]
