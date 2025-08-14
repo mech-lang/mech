@@ -32,9 +32,9 @@ impl NativeFunctionCompiler for AccessScalar {
     let src = &arguments[0];
     let index = &arguments[1];
     match src.kind().deref_kind() {
-      ValueKind::Matrix(mat,_) => {
-        MatrixAccessScalar{}.compile(&arguments)
-      },
+      #[cfg(feature = "matrix")]
+      ValueKind::Matrix(mat,_) => MatrixAccessScalar{}.compile(&arguments),
+      #[cfg(feature = "table")]
       ValueKind::Table(tble,_) => TableAccessScalar{}.compile(&arguments),
       _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
     }
@@ -50,15 +50,14 @@ impl NativeFunctionCompiler for AccessRange {
     let src = &arguments[0];
     let index = &arguments[1];
     match src.kind().deref_kind() {
-      ValueKind::Matrix(mat,_) => {
-        MatrixAccessRange{}.compile(&arguments)
-      },
+      #[cfg(feature = "matrix")]
+      ValueKind::Matrix(mat,_) => MatrixAccessRange{}.compile(&arguments),
+      #[cfg(feature = "table")]
       ValueKind::Table(tble,_) => TableAccessRange{}.compile(&arguments),
       _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
     }
   }
 }
-
 
 pub struct AccessSwizzle {}
 impl NativeFunctionCompiler for AccessSwizzle {
@@ -69,6 +68,7 @@ impl NativeFunctionCompiler for AccessSwizzle {
     let keys = &arguments.clone().split_off(1);
     let src = &arguments[0];
     match src {
+      #[cfg(feature = "record")]
       Value::Record(rcrd) => {
         let mut values = vec![];
         for key in keys {
@@ -80,6 +80,7 @@ impl NativeFunctionCompiler for AccessSwizzle {
         }
         Ok(Box::new(RecordAccessSwizzle{source: Value::Tuple(MechTuple::from_vec(values))}))
       }
+      #[cfg(feature = "table")]
       Value::Table(tbl) => {
         let mut elements = vec![];
         for k in keys {
@@ -100,6 +101,7 @@ impl NativeFunctionCompiler for AccessSwizzle {
         Ok(Box::new(TableAccessSwizzle{out: tuple}))
       }
       Value::MutableReference(r) => match &*r.borrow() {
+        #[cfg(feature = "record")]
         Value::Record(rcrd) => {
           let mut values = vec![];
           for key in keys {
@@ -111,6 +113,7 @@ impl NativeFunctionCompiler for AccessSwizzle {
           }
           Ok(Box::new(RecordAccessSwizzle{source: Value::Tuple(MechTuple::from_vec(values))}))
         }
+        #[cfg(feature = "table")]
         Value::Table(tbl) => {
           let mut elements = vec![];
           for key in keys {

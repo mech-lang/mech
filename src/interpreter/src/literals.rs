@@ -6,12 +6,16 @@ use crate::*;
 pub fn literal(ltrl: &Literal, p: &Interpreter) -> MResult<Value> {
   match &ltrl {
     Literal::Empty(_) => Ok(empty()),
+    #[cfg(feature = "bool")]
     Literal::Boolean(bln) => Ok(boolean(bln)),
     Literal::Number(num) => Ok(number(num)),
+    #[cfg(feature = "string")]
     Literal::String(strng) => Ok(string(strng)),
+    #[cfg(feature = "atom")]
     Literal::Atom(atm) => Ok(atom(atm)),
     Literal::Kind(knd) => kind_value(knd, p),
     Literal::TypedLiteral((ltrl,kind)) => typed_literal(ltrl,kind,p),
+    _ => Err(MechError{file: file!().to_string(), tokens: ltrl.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
   }
 }
 
@@ -122,7 +126,9 @@ pub fn atom(atm: &Atom) -> Value {
 pub fn number(num: &Number) -> Value {
   match num {
     Number::Real(num) => real(num),
+    #[cfg(feature = "complex")]
     Number::Complex(num) => complex(num),
+    _ => panic!("Number type not supported."),
   }
 }
 
@@ -146,26 +152,42 @@ fn complex(num: &ComplexNumberNode) -> Value {
 pub fn real(rl: &RealNumber) -> Value {
   match rl {
     RealNumber::Negated(num) => negated(num),
+    #[cfg(any(feature = "unsigned_ints", feature = "f64"))]
     RealNumber::Integer(num) => integer(num),
+    #[cfg(feature = "floats")]
     RealNumber::Float(num) => float(num),
+    #[cfg(feature = "i64")]
     RealNumber::Decimal(num) => dec(num),
+    #[cfg(feature = "i64")]
     RealNumber::Hexadecimal(num) => hex(num),
+    #[cfg(feature = "i64")]
     RealNumber::Octal(num) => oct(num),
+    #[cfg(feature = "i64")]
     RealNumber::Binary(num) => binary(num),
+    #[cfg(feature = "floats")]
     RealNumber::Scientific(num) => scientific(num),
+    #[cfg(feature = "rational")]
     RealNumber::Rational(num) => rational(num),
+    _ => panic!("Number type not supported."),
   }
 }
 
 pub fn negated(num: &RealNumber) -> Value {
   let num_val = real(&num);
   match num_val {
+    #[cfg(feature = "i8")]
     Value::I8(val) => Value::I8(new_ref(-*val.borrow())),
+    #[cfg(feature = "i16")]
     Value::I16(val) => Value::I16(new_ref(-*val.borrow())),
+    #[cfg(feature = "i32")]
     Value::I32(val) => Value::I32(new_ref(-*val.borrow())),
+    #[cfg(feature = "i64")]
     Value::I64(val) => Value::I64(new_ref(-*val.borrow())),
+    #[cfg(feature = "i128")]
     Value::I128(val) => Value::I128(new_ref(-*val.borrow())),
+    #[cfg(feature = "u8")]
     Value::F64(val) => Value::F64(new_ref(F64::new(-((*val.borrow()).0)))),
+    #[cfg(feature = "u16")]
     Value::F32(val) => Value::F32(new_ref(F32::new(-((*val.borrow()).0)))),
     _ => panic!("Negation is only supported for integer and float types"),
   }

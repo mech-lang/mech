@@ -1,13 +1,19 @@
 #[macro_use]
 use crate::stdlib::*;
 
+#[cfg(feature = "matrix")]
 pub mod matrix;
+#[cfg(feature = "record")]
 pub mod record;
+#[cfg(feature = "table")]
 pub mod table;
 pub mod op_assign;
 
+#[cfg(feature = "matrix")]
 pub use self::matrix::*;
+#[cfg(feature = "record")]
 pub use self::record::*;
+#[cfg(feature = "table")]
 pub use self::table::*;
 pub use self::op_assign::*;
 
@@ -38,6 +44,73 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
+#[macro_export]
+macro_rules! impl_assign_value_match_arms {
+  ($arg:expr,$($value_kind:ident, $feature:tt);+ $(;)?) => {
+    paste::paste! {
+      match $arg {
+        $(
+          #[cfg(feature = $feature)]
+          (Value::$value_kind(sink), Value::$value_kind(source)) => Ok(Box::new(Assign{ sink: sink.clone(), source: source.clone() })),
+          #[cfg(all(feature = $feature, feature = "matrix1"))]
+          (Value::[<Matrix $value_kind>](Matrix::Matrix1(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix1(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          #[cfg(all(feature = $feature, feature = "matrix2"))]
+          (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix2(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          #[cfg(all(feature = $feature, feature = "matrix2x3"))]
+          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix2x3(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          #[cfg(all(feature = $feature, feature = "matrix3x2"))]
+          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix3x2(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          #[cfg(all(feature = $feature, feature = "matrix3"))]
+          (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix3(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          #[cfg(all(feature = $feature, feature = "matrix4"))]
+          (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix4(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          #[cfg(all(feature = $feature, feature = "matrixd"))]
+          (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)), Value::[<Matrix $value_kind>](Matrix::DMatrix(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          #[cfg(all(feature = $feature, feature = "vector2"))]
+          (Value::[<Matrix $value_kind>](Matrix::Vector2(sink)), Value::[<Matrix $value_kind>](Matrix::Vector2(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          #[cfg(all(feature = $feature, feature = "vector3"))]
+          (Value::[<Matrix $value_kind>](Matrix::Vector3(sink)), Value::[<Matrix $value_kind>](Matrix::Vector3(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          #[cfg(all(feature = $feature, feature = "vector4"))]
+          (Value::[<Matrix $value_kind>](Matrix::Vector4(sink)), Value::[<Matrix $value_kind>](Matrix::Vector4(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          #[cfg(all(feature = $feature, feature = "vectord"))]
+          (Value::[<Matrix $value_kind>](Matrix::DVector(sink)), Value::[<Matrix $value_kind>](Matrix::DVector(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          #[cfg(all(feature = $feature, feature = "row_vector2"))]
+          (Value::[<Matrix $value_kind>](Matrix::RowVector2(sink)), Value::[<Matrix $value_kind>](Matrix::RowVector2(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          #[cfg(all(feature = $feature, feature = "row_vector3"))]
+          (Value::[<Matrix $value_kind>](Matrix::RowVector3(sink)), Value::[<Matrix $value_kind>](Matrix::RowVector3(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          #[cfg(all(feature = $feature, feature = "row_vector4"))]
+          (Value::[<Matrix $value_kind>](Matrix::RowVector4(sink)), Value::[<Matrix $value_kind>](Matrix::RowVector4(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+          #[cfg(all(feature = $feature, feature = "row_vectord"))]
+          (Value::[<Matrix $value_kind>](Matrix::RowDVector(sink)), Value::[<Matrix $value_kind>](Matrix::RowDVector(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
+        )+
+        x => Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Unhandled args {:?}", x),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,}),
+      }
+    }
+  };
+}
+
+fn assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_assign_value_match_arms!(
+    (sink, source),
+    Bool,   "bool";
+    String, "string";
+    U8,     "u8";
+    U16,    "u16";
+    U32,    "u32";
+    U64,    "u64";
+    U128,   "u128";
+    I8,     "i8";
+    I16,    "i16";
+    I32,    "i32";
+    I64,    "i64";
+    U128,   "u128";
+    F32,    "f32";
+    F64,    "f64";
+    RationalNumber, "rational";
+    ComplexNumber, "complex";
+  )
+}
+
 pub struct AssignValue {}
 impl NativeFunctionCompiler for AssignValue {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
@@ -46,36 +119,34 @@ impl NativeFunctionCompiler for AssignValue {
     }
     let sink = arguments[0].clone();
     let source = arguments[1].clone();
-    match (sink,source) {
-      (Value::U8(sink),Value::U8(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::U16(sink),Value::U16(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::U32(sink),Value::U32(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::U64(sink),Value::U64(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::U128(sink),Value::U128(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::I8(sink),Value::I8(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::I16(sink),Value::I16(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::I32(sink),Value::I32(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::I64(sink),Value::I64(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::I128(sink),Value::I128(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::F32(sink),Value::F32(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::F64(sink),Value::F64(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::Bool(sink),Value::Bool(source)) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::Matrix1(sink)),Value::MatrixF64(Matrix::Matrix1(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::Matrix2(sink)),Value::MatrixF64(Matrix::Matrix2(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::Matrix2x3(sink)),Value::MatrixF64(Matrix::Matrix2x3(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::Matrix3x2(sink)),Value::MatrixF64(Matrix::Matrix3x2(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::Matrix3(sink)),Value::MatrixF64(Matrix::Matrix3(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::Matrix4(sink)),Value::MatrixF64(Matrix::Matrix4(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::DMatrix(sink)),Value::MatrixF64(Matrix::DMatrix(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::Vector2(sink)),Value::MatrixF64(Matrix::Vector2(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::Vector3(sink)),Value::MatrixF64(Matrix::Vector3(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::Vector4(sink)),Value::MatrixF64(Matrix::Vector4(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::DVector(sink)),Value::MatrixF64(Matrix::DVector(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::RowVector2(sink)),Value::MatrixF64(Matrix::RowVector2(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::RowVector3(sink)),Value::MatrixF64(Matrix::RowVector3(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::RowVector4(sink)),Value::MatrixF64(Matrix::RowVector4(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      (Value::MatrixF64(Matrix::RowDVector(sink)),Value::MatrixF64(Matrix::RowDVector(source))) => Ok(Box::new(Assign{sink: sink.clone(), source: source.clone()})),
-      x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+    match assign_value_fxn(sink.clone(),source.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(x) => {
+        match (sink,source) {
+          (Value::MutableReference(sink),Value::MutableReference(source)) => { assign_value_fxn(sink.borrow().clone(),source.borrow().clone()) },
+          (sink,Value::MutableReference(source)) => { assign_value_fxn(sink.clone(),source.borrow().clone()) },
+          (Value::MutableReference(sink),source) => { assign_value_fxn(sink.borrow().clone(),source.clone()) },
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
+    }
+  }
+}
+
+pub struct AssignColumn {}
+impl NativeFunctionCompiler for AssignColumn {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() != 2 {
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    let src = &arguments[0];
+    let index = &arguments[1];
+    match src.kind().deref_kind() {
+      #[cfg(feature = "table")]
+      ValueKind::Table(_,_) => AssignTableColumn{}.compile(&arguments),
+      #[cfg(feature = "record")]
+      ValueKind::Record(_) => AssignRecordColumn{}.compile(&arguments),
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
     }
   }
 }

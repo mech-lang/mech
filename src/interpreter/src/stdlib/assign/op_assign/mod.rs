@@ -8,14 +8,22 @@ use nalgebra::{
   Dim, Scalar,
 };
 
+#[cfg(feature = "math_add")]
 pub mod add_assign;
+#[cfg(feature = "math_sub")]
 pub mod sub_assign;
+#[cfg(feature = "math_div")]
 pub mod div_assign;
+#[cfg(feature = "math_mul")]
 pub mod mul_assign;
 
+#[cfg(feature = "math_add")]
 pub use self::add_assign::*;
+#[cfg(feature = "math_sub")]
 pub use self::sub_assign::*;
+#[cfg(feature = "math_div")]
 pub use self::div_assign::*;
+#[cfg(feature = "math_mul")]
 pub use self::mul_assign::*;
 
 #[macro_export]
