@@ -10,18 +10,30 @@ use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matri
 use paste::paste;
 use mech_core::matrix::Matrix;
 
+#[cfg(feature = "gt")]
 pub mod gt;
+#[cfg(feature = "lt")]
 pub mod lt;
+#[cfg(feature = "lte")]
 pub mod lte;
+#[cfg(feature = "gte")]
 pub mod gte;
+#[cfg(feature = "eq")]
 pub mod eq;
+#[cfg(feature = "neq")]
 pub mod neq;
 
+#[cfg(feature = "gt")]
 pub use self::gt::*;
+#[cfg(feature = "lt")]
 pub use self::lt::*;
+#[cfg(feature = "lte")]
 pub use self::lte::*;
+#[cfg(feature = "gte")]
 pub use self::gte::*;
+#[cfg(feature = "eq")]
 pub use self::eq::*;
+#[cfg(feature = "neq")]
 pub use self::neq::*;
 
 // ----------------------------------------------------------------------------
