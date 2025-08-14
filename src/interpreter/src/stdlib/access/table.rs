@@ -54,9 +54,11 @@ impl_col_access_fxn_shapes!(u128);
 impl_col_access_fxn_shapes!(F32);
 impl_col_access_fxn_shapes!(F64);
 impl_col_access_fxn_shapes!(String);
+impl_col_access_fxn_shapes!(ComplexNumber);
+impl_col_access_fxn_shapes!(RationalNumber);
 
 macro_rules! impl_access_column_match_arms {
-  ($arg:expr, $($lhs_type:ident, $($default:expr),+);+ $(;)?) => {
+  ($arg:expr, $($lhs_type:ident, $($default:expr, $type_string:tt),+);+ $(;)?) => {
     paste!{
       match $arg {
         (Value::Record(rcrd),Value::Id(k)) => {
@@ -70,10 +72,15 @@ macro_rules! impl_access_column_match_arms {
           match (tbl_brrw.get(&k),tbl_brrw.rows()) {
             $(
               $(
+                #[cfg(all(feature = $type_string, feature = "matrix1"))]
                 (Some((ValueKind::$lhs_type,value)),1) => Ok(Box::new([<TableAccessCol $lhs_type M1>]{source: value.clone(), out: new_ref(Matrix1::from_element($default)) })),
+                #[cfg(all(feature = $type_string, feature = "vector2"))]
                 (Some((ValueKind::$lhs_type,value)),2) => Ok(Box::new([<TableAccessCol $lhs_type V2>]{source: value.clone(), out: new_ref(Vector2::from_element($default)) })),
+                #[cfg(all(feature = $type_string, feature = "vector3"))]
                 (Some((ValueKind::$lhs_type,value)),3) => Ok(Box::new([<TableAccessCol $lhs_type V3>]{source: value.clone(), out: new_ref(Vector3::from_element($default)) })),
+                #[cfg(all(feature = $type_string, feature = "vector4"))]
                 (Some((ValueKind::$lhs_type,value)),4) => Ok(Box::new([<TableAccessCol $lhs_type V4>]{source: value.clone(), out: new_ref(Vector4::from_element($default)) })),
+                #[cfg(all(feature = $type_string, feature = "vectord"))]
                 (Some((ValueKind::$lhs_type,value)),n) => Ok(Box::new([<TableAccessCol $lhs_type VD>]{source: value.clone(), out: new_ref(DVector::from_element(n,$default)) })),
               )+
             )+
@@ -89,20 +96,22 @@ macro_rules! impl_access_column_match_arms {
 fn impl_access_column_fxn(source: Value, key: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_access_column_match_arms!(
     (source,key),
-    Bool,false;
-    I8,i8::zero();
-    I16,i16::zero();
-    I32,i32::zero();
-    I64,i64::zero();
-    I128,i128::zero();
-    U8,u8::zero();
-    U16,u16::zero();
-    U32,u32::zero();
-    U64,u64::zero();
-    U128,u128::zero();
-    F32,F32::zero();
-    F64,F64::zero();
-    String,String::new();
+    Bool,false,"bool";
+    I8,i8::zero(),"i8";
+    I16,i16::zero(),"i16";
+    I32,i32::zero(),"i32";
+    I64,i64::zero(),"i64";
+    I128,i128::zero(),"i128";
+    U8,u8::zero(),"u8";
+    U16,u16::zero(),"u16";
+    U32,u32::zero(),"u32";
+    U64,u64::zero(),"u64";
+    U128,u128::zero(),"u128";
+    F32,F32::zero(),"f32";
+    F64,F64::zero(),"f64";
+    String,String::new(),"string";
+    ComplexNumber,ComplexNumber::default(),"complex";
+    RationalNumber,RationalNumber::default(),"rational";
   )
 }
 

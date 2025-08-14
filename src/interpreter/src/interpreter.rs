@@ -36,21 +36,37 @@ impl Interpreter {
     let mut fxns = self.functions.borrow_mut();
     
     // Preload scalar kinds
+    #[cfg(feature = "u8")]
     fxns.kinds.insert(hash_str("u8"),ValueKind::U8);
+    #[cfg(feature = "u16")]
     fxns.kinds.insert(hash_str("u16"),ValueKind::U16);
+    #[cfg(feature = "u32")]
     fxns.kinds.insert(hash_str("u32"),ValueKind::U32);
+    #[cfg(feature = "u64")]
     fxns.kinds.insert(hash_str("u64"),ValueKind::U64);
+    #[cfg(feature = "u128")]
     fxns.kinds.insert(hash_str("u128"),ValueKind::U128);
+    #[cfg(feature = "i8")]
     fxns.kinds.insert(hash_str("i8"),ValueKind::I8);
+    #[cfg(feature = "i16")]
     fxns.kinds.insert(hash_str("i16"),ValueKind::I16);
+    #[cfg(feature = "i32")]
     fxns.kinds.insert(hash_str("i32"),ValueKind::I32);
+    #[cfg(feature = "i64")]
     fxns.kinds.insert(hash_str("i64"),ValueKind::I64);
+    #[cfg(feature = "i128")]
     fxns.kinds.insert(hash_str("i128"),ValueKind::I128);
+    #[cfg(feature = "f32")]
     fxns.kinds.insert(hash_str("f32"),ValueKind::F32);
+    #[cfg(feature = "f64")]
     fxns.kinds.insert(hash_str("f64"),ValueKind::F64);
+    #[cfg(feature = "c64")]
     fxns.kinds.insert(hash_str("c64"),ValueKind::ComplexNumber);
+    #[cfg(feature = "r64")]
     fxns.kinds.insert(hash_str("r64"),ValueKind::RationalNumber);
+    #[cfg(feature = "string")]
     fxns.kinds.insert(hash_str("string"),ValueKind::String);
+    #[cfg(feature = "bool")]
     fxns.kinds.insert(hash_str("bool"),ValueKind::Bool);
   }
 
@@ -59,35 +75,58 @@ impl Interpreter {
     let mut fxns = self.functions.borrow_mut();
 
     // Preload combinatorics functions
-    fxns.function_compilers.insert(hash_str("combinatorics/n-choose-k"),Box::new(CombinatoricsNChooseK{}));
+    #[cfg(feature = "combinatorics_n_choose-k")]
+    fxns.function_compilers.insert(hash_str("combinatorics/n-choose-k"), Box::new(CombinatoricsNChooseK{}));
 
     // Preload stats functions
-    fxns.function_compilers.insert(hash_str("stats/sum/row"),Box::new(StatsSumRow{}));
-    fxns.function_compilers.insert(hash_str("stats/sum/column"),Box::new(StatsSumColumn{}));
-    
+    #[cfg(feature = "stats_sum")]
+    fxns.function_compilers.insert(hash_str("stats/sum/row"), Box::new(StatsSumRow{}));
+    #[cfg(feature = "stats_sum")]
+    fxns.function_compilers.insert(hash_str("stats/sum/column"), Box::new(StatsSumColumn{}));
+
     // Preload math functions
+    #[cfg(feature = "math_sin")]
     fxns.function_compilers.insert(hash_str("math/sin"),Box::new(MathSin{}));
+    #[cfg(feature = "math_cos")]
     fxns.function_compilers.insert(hash_str("math/cos"),Box::new(MathCos{}));
+    #[cfg(feature = "math_atan2")]
     fxns.function_compilers.insert(hash_str("math/atan2"),Box::new(MathAtan2{}));
+    #[cfg(feature = "math_atan")]
     fxns.function_compilers.insert(hash_str("math/atan"),Box::new(MathAtan{}));
+    #[cfg(feature = "math_acos")]
     fxns.function_compilers.insert(hash_str("math/acos"),Box::new(MathAcos{}));
+    #[cfg(feature = "math_acosh")]
     fxns.function_compilers.insert(hash_str("math/acosh"),Box::new(MathAcosh{}));
+    #[cfg(feature = "math_acot")]
     fxns.function_compilers.insert(hash_str("math/acot"),Box::new(MathAcot{}));
+    #[cfg(feature = "math_acsc")]
     fxns.function_compilers.insert(hash_str("math/acsc"),Box::new(MathAcsc{}));
+    #[cfg(feature = "math_asec")]
     fxns.function_compilers.insert(hash_str("math/asec"),Box::new(MathAsec{}));
+    #[cfg(feature = "math_asin")]
     fxns.function_compilers.insert(hash_str("math/asin"),Box::new(MathAsin{}));
+    #[cfg(feature = "math_sinh")]
     fxns.function_compilers.insert(hash_str("math/sinh"),Box::new(MathSinh{}));
+    #[cfg(feature = "math_cosh")]
     fxns.function_compilers.insert(hash_str("math/cosh"),Box::new(MathCosh{}));
+    #[cfg(feature = "math_tanh")]
     fxns.function_compilers.insert(hash_str("math/tanh"),Box::new(MathTanh{}));
-    //fxns.function_compilers.insert(hash_str("math/atanh"),Box::new(MathAtanh{}));
+    #[cfg(feature = "math_atanh")]
+    fxns.function_compilers.insert(hash_str("math/atanh"),Box::new(MathAtanh{}));
+    #[cfg(feature = "math_cot")]
     fxns.function_compilers.insert(hash_str("math/cot"),Box::new(MathCot{}));
+    #[cfg(feature = "math_csc")]
     fxns.function_compilers.insert(hash_str("math/csc"),Box::new(MathCsc{}));
+    #[cfg(feature = "math_sec")]
     fxns.function_compilers.insert(hash_str("math/sec"),Box::new(MathSec{}));
+    #[cfg(feature = "math_tan")]
     fxns.function_compilers.insert(hash_str("math/tan"),Box::new(MathTan{}));
 
     // Preload io functions
-    fxns.function_compilers.insert(hash_str("io/print"),Box::new(IoPrint{}));
-    fxns.function_compilers.insert(hash_str("io/println"),Box::new(IoPrintln{}));
+    #[cfg(feature = "io_print")]
+    fxns.function_compilers.insert(hash_str("io/print"), Box::new(IoPrint{}));
+    #[cfg(feature = "io_println")]
+    fxns.function_compilers.insert(hash_str("io/println"), Box::new(IoPrintln{}));
   }
 
   pub fn plan(&self) -> Plan {

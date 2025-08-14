@@ -91,6 +91,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
       let result = real(&x.clone());
       fxn_input.push(result.as_index()?);
       match val.deref_kind() {
+        #[cfg(feature = "matrix")]
         ValueKind::Matrix(..) => {
           let new_fxn = MatrixAccessScalar{}.compile(&fxn_input)?;
           new_fxn.solve();
@@ -98,6 +99,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
           plan.borrow_mut().push(new_fxn);
           return Ok(res);
         },
+        #[cfg(feature = "tuple")]
         ValueKind::Tuple(..) => {
           let new_fxn = TupleAccess{}.compile(&fxn_input)?;
           new_fxn.solve();
@@ -147,6 +149,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
         },
         [Subscript::All] => {
           fxn_input.push(Value::IndexAll);
+          #[cfg(feature = "matrix")]
           plan.borrow_mut().push(MatrixAccessAll{}.compile(&fxn_input)?);
         },
         [Subscript::All,Subscript::All] => todo!(),
@@ -158,9 +161,13 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
           let shape2 = result.shape();
           fxn_input.push(result);
           match ((shape1[0],shape1[1]),(shape2[0],shape2[1])) {
+            #[cfg(feature = "matrix")]
             ((1,1),(1,1)) => plan.borrow_mut().push(MatrixAccessScalarScalar{}.compile(&fxn_input)?),
+            #[cfg(feature = "matrix")]
             ((1,1),(m,1)) => plan.borrow_mut().push(MatrixAccessScalarRange{}.compile(&fxn_input)?),
+            #[cfg(feature = "matrix")]
             ((n,1),(1,1)) => plan.borrow_mut().push(MatrixAccessRangeScalar{}.compile(&fxn_input)?),
+            #[cfg(feature = "matrix")]
             ((n,1),(m,1)) => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
             _ => unreachable!(),
           }
@@ -170,6 +177,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
           fxn_input.push(result);
           let result = subscript_range(&subs[1],p)?;
           fxn_input.push(result);
+          #[cfg(feature = "matrix")]
           plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?);
         },
         [Subscript::All,Subscript::Formula(ix2)] => {
@@ -178,8 +186,11 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
           let shape = result.shape();
           fxn_input.push(result);
           match &shape[..] {
+            #[cfg(feature = "matrix")]
             [1,1] => plan.borrow_mut().push(MatrixAccessAllScalar{}.compile(&fxn_input)?),
+            #[cfg(feature = "matrix")]
             [1,n] => plan.borrow_mut().push(MatrixAccessAllRange{}.compile(&fxn_input)?),
+            #[cfg(feature = "matrix")]
             [n,1] => plan.borrow_mut().push(MatrixAccessAllRange{}.compile(&fxn_input)?),
             _ => todo!(),
           }
@@ -190,8 +201,11 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
           fxn_input.push(result);
           fxn_input.push(Value::IndexAll);
           match &shape[..] {
+            #[cfg(feature = "matrix")]
             [1,1] => plan.borrow_mut().push(MatrixAccessScalarAll{}.compile(&fxn_input)?),
+            #[cfg(feature = "matrix")]
             [1,n] => plan.borrow_mut().push(MatrixAccessRangeAll{}.compile(&fxn_input)?),
+            #[cfg(feature = "matrix")]
             [n,1] => plan.borrow_mut().push(MatrixAccessRangeAll{}.compile(&fxn_input)?),
             _ => todo!(),
           }
@@ -203,8 +217,11 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
           let shape = result.shape();
           fxn_input.push(result);
           match &shape[..] {
+            #[cfg(feature = "matrix")]
             [1,1] => plan.borrow_mut().push(MatrixAccessRangeScalar{}.compile(&fxn_input)?),
+            #[cfg(feature = "matrix")]
             [1,n] => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
+            #[cfg(feature = "matrix")]
             [n,1] => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
             _ => todo!(),
           }
@@ -216,8 +233,11 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
           let result = subscript_range(&subs[1],p)?;
           fxn_input.push(result);
           match &shape[..] {
+            #[cfg(feature = "matrix")]
             [1,1] => plan.borrow_mut().push(MatrixAccessScalarRange{}.compile(&fxn_input)?),
+            #[cfg(feature = "matrix")]
             [1,n] => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
+            #[cfg(feature = "matrix")]
             [n,1] => plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?),
             _ => todo!(),
           }
@@ -226,12 +246,14 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
           fxn_input.push(Value::IndexAll);
           let result = subscript_range(&subs[1],p)?;
           fxn_input.push(result);
+          #[cfg(feature = "matrix")]
           plan.borrow_mut().push(MatrixAccessAllRange{}.compile(&fxn_input)?);
         },
         [Subscript::Range(ix1),Subscript::All] => {
           let result = subscript_range(&subs[0],p)?;
           fxn_input.push(result);
           fxn_input.push(Value::IndexAll);
+          #[cfg(feature = "matrix")]
           plan.borrow_mut().push(MatrixAccessRangeAll{}.compile(&fxn_input)?);
         },
         _ => unreachable!(),
@@ -269,6 +291,7 @@ pub fn factor(fctr: &Factor, p: &Interpreter) -> MResult<Value> {
     },
     Factor::Parenthetical(paren) => factor(&*paren, p),
     Factor::Expression(expr) => expression(expr, p),
+    #[cfg(feature = "math_negate")]
     Factor::Negate(neg) => {
       let value = factor(neg, p)?;
       let new_fxn = MathNegate{}.compile(&vec![value])?;
@@ -278,6 +301,7 @@ pub fn factor(fctr: &Factor, p: &Interpreter) -> MResult<Value> {
       plan_brrw.push(new_fxn);
       Ok(out)
     },
+    #[cfg(feature = "logic_not")]
     Factor::Not(neg) => {
       let value = factor(neg, p)?;
       let new_fxn = LogicNot{}.compile(&vec![value])?;
@@ -287,6 +311,7 @@ pub fn factor(fctr: &Factor, p: &Interpreter) -> MResult<Value> {
       plan_brrw.push(new_fxn);
       Ok(out)
     },
+    #[cfg(feature = "matrix_transpose")]
     Factor::Transpose(fctr) => {
       let value = factor(fctr, p)?;
       let new_fxn = MatrixTranspose{}.compile(&vec![value])?;
@@ -296,6 +321,7 @@ pub fn factor(fctr: &Factor, p: &Interpreter) -> MResult<Value> {
       plan_brrw.push(new_fxn);
       Ok(out)
     }
+    _ => todo!(),
   }
 }
 
@@ -305,50 +331,95 @@ pub fn term(trm: &Term, p: &Interpreter) -> MResult<Value> {
   let mut term_plan: Vec<Box<dyn MechFunction>> = vec![];
   for (op,rhs) in &trm.rhs {
     let rhs = factor(&rhs, p)?;
-    let new_fxn = match op {
+    let new_fxn: Box<dyn MechFunction> = match op {
+      // Math
+      #[cfg(feature = "math_add")]
       FormulaOperator::AddSub(AddSubOp::Add) => MathAdd{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "math_sub")]
       FormulaOperator::AddSub(AddSubOp::Sub) => MathSub{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "math_mul")]
       FormulaOperator::MulDiv(MulDivOp::Mul) => MathMul{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "math_div")]
       FormulaOperator::MulDiv(MulDivOp::Div) => MathDiv{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "math_mod")]
       FormulaOperator::MulDiv(MulDivOp::Mod) => MathMod{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "math_exp")]
       FormulaOperator::Exponent(ExponentOp::Exp) => MathExp{}.compile(&vec![lhs,rhs])?,
 
+      // Matrix
+      #[cfg(feature = "matrix_matmul")]
       FormulaOperator::Vec(VecOp::MatMul) => MatrixMatMul{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "matrix_solve")]
       FormulaOperator::Vec(VecOp::Solve) => todo!(),
+      #[cfg(feature = "matrix_cross")]
       FormulaOperator::Vec(VecOp::Cross) => todo!(),
+      #[cfg(feature = "matrix_dot")]
       FormulaOperator::Vec(VecOp::Dot) => todo!(),
 
+      // Compare
+      #[cfg(feature = "compare_equal")]
       FormulaOperator::Comparison(ComparisonOp::Equal) => CompareEqual{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "compare_strict_equal")]
       FormulaOperator::Comparison(ComparisonOp::StrictEqual) => todo!(), //CompareStrictEqual{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "compare_not_equal")]
       FormulaOperator::Comparison(ComparisonOp::NotEqual) => CompareNotEqual{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "compare_strict_not_equal")]
       FormulaOperator::Comparison(ComparisonOp::StrictNotEqual) => todo!(), //CompareStrictNotEqual{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "compare_less_than_equal")]
       FormulaOperator::Comparison(ComparisonOp::LessThanEqual) => CompareLessThanEqual{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "compare_greater_than_equal")]
       FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual) => CompareGreaterThanEqual{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "compare_less_than")]
       FormulaOperator::Comparison(ComparisonOp::LessThan) => CompareLessThan{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "compare_greater_than")]
       FormulaOperator::Comparison(ComparisonOp::GreaterThan) => CompareGreaterThan{}.compile(&vec![lhs,rhs])?,
 
+      // Logic
+      #[cfg(feature = "logic_and")]
       FormulaOperator::Logic(LogicOp::And) => LogicAnd{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "logic_or")]
       FormulaOperator::Logic(LogicOp::Or)  => LogicOr{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "logic_not")]
       FormulaOperator::Logic(LogicOp::Not) => LogicNot{}.compile(&vec![lhs,rhs])?,
+      #[cfg(feature = "logic_xor")]
       FormulaOperator::Logic(LogicOp::Xor) => LogicXor{}.compile(&vec![lhs,rhs])?,
       
+      // Table
+      #[cfg(feature = "table_inner_join")]
       FormulaOperator::Table(TableOp::InnerJoin) => todo!(),
+      #[cfg(feature = "table_left_outer_join")]
       FormulaOperator::Table(TableOp::LeftOuterJoin) => todo!(),
+      #[cfg(feature = "table_right_outer_join")]
       FormulaOperator::Table(TableOp::RightOuterJoin) => todo!(),
+      #[cfg(feature = "table_full_outer_join")]
       FormulaOperator::Table(TableOp::FullOuterJoin) => todo!(),
+      #[cfg(feature = "table_left_semi_join")]
       FormulaOperator::Table(TableOp::LeftSemiJoin) => todo!(),
+      #[cfg(feature = "table_left_anti_join")]
       FormulaOperator::Table(TableOp::LeftAntiJoin) => todo!(),
 
+      // Set
+      #[cfg(feature = "set_union")]
       FormulaOperator::Set(SetOp::Union) => todo!(),
+      #[cfg(feature = "set_intersection")]
       FormulaOperator::Set(SetOp::Intersection) => todo!(),
+      #[cfg(feature = "set_difference")]
       FormulaOperator::Set(SetOp::Difference) => todo!(),
+      #[cfg(feature = "set_complement")]
       FormulaOperator::Set(SetOp::Complement) => todo!(),
+      #[cfg(feature = "set_subset")]
       FormulaOperator::Set(SetOp::Subset) => todo!(),
+      #[cfg(feature = "set_superset")]
       FormulaOperator::Set(SetOp::Superset) => todo!(),
+      #[cfg(feature = "set_proper_subset")]
       FormulaOperator::Set(SetOp::ProperSubset) => todo!(),
+      #[cfg(feature = "set_proper_superset")]
       FormulaOperator::Set(SetOp::ProperSuperset) => todo!(),
+      #[cfg(feature = "set_element_of")]
       FormulaOperator::Set(SetOp::ElementOf) => todo!(),
+      #[cfg(feature = "set_not_element_of")]
       FormulaOperator::Set(SetOp::NotElementOf) => todo!(),
+      x => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFormulaOperator(x.clone())}),
     };
     new_fxn.solve();
     let res = new_fxn.out();

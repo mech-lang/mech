@@ -2,14 +2,22 @@
 // Access 
 // ----------------------------------------------------------------------------
 
+#[cfg(feature = "matrix")]
 pub mod matrix;
+#[cfg(feature = "record")]
 pub mod record;
+#[cfg(feature = "table")]
 pub mod table;
+#[cfg(feature = "tuple")]
 pub mod tuple;
 
+#[cfg(feature = "matrix")]
 pub use self::matrix::*;
+#[cfg(feature = "record")]
 pub use self::record::*;
+#[cfg(feature = "table")]
 pub use self::table::*;
+#[cfg(feature = "tuple")]
 pub use self::tuple::*;
 
 #[macro_use]
