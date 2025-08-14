@@ -119,10 +119,17 @@ table = ["mech-core/table", "mech-math/table", "mech-logic/table", "mech-range/t
 tuple = ["mech-core/tuple", "mech-math/tuple", "mech-logic/tuple", "mech-range/tuple", "mech-matrix/tuple", "mech-compare/tuple", "mech-stats/tuple", "mech-io/tuple", "mech-combinatorics/tuple"]
 record = ["mech-core/record", "mech-math/record", "mech-logic/record", "mech-range/record", "mech-matrix/record", "mech-compare/record", "mech-stats/record", "mech-io/record", "mech-combinatorics/record"]
 atom = ["mech-core/atom", "mech-math/atom", "mech-logic/atom", "mech-range/atom", "mech-matrix/atom", "mech-compare/atom", "mech-stats/atom", "mech-io/atom", "mech-combinatorics/atom"]
-matrix = ["mech-matrix/default", "fixed_matrix", "fixed_vector", "fixed_row_vector", "row_vectord", "vectord", "matrixd", "mech-core/matrix", "mech-math/matrix", "mech-logic/matrix", "mech-range/matrix", "mech-matrix/matrix", "mech-compare/matrix", "mech-stats/matrix", "mech-io/matrix", "mech-combinatorics/matrix"]
+
+matrix = [
+    "fixed_matrix", "fixed_vector", "fixed_row_vector", "row_vectord", "vectord", "matrixd",
+    "matrix_transpose", "matrix_matmul", 
+    "mech-core/matrix", "mech-math/matrix", "mech-logic/matrix", "mech-range/matrix", "mech-matrix/matrix", "mech-compare/matrix", "mech-stats/matrix", "mech-io/matrix", "mech-combinatorics/matrix"]
 fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2", "mech-core/fixed_row_vector", "mech-math/fixed_row_vector", "mech-logic/fixed_row_vector", "mech-range/fixed_row_vector", "mech-matrix/fixed_row_vector", "mech-compare/fixed_row_vector", "mech-stats/fixed_row_vector", "mech-io/fixed_row_vector", "mech-combinatorics/fixed_row_vector"]
 fixed_vector = ["vector4", "vector3", "vector2", "mech-core/fixed_vector", "mech-math/fixed_vector", "mech-logic/fixed_vector", "mech-range/fixed_vector", "mech-matrix/fixed_vector", "mech-compare/fixed_vector", "mech-stats/fixed_vector", "mech-io/fixed_vector", "mech-combinatorics/fixed_vector"]
 fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "mech-core/fixed_matrix", "mech-math/fixed_matrix", "mech-logic/fixed_matrix", "mech-range/fixed_matrix", "mech-matrix/fixed_matrix", "mech-compare/fixed_matrix", "mech-stats/fixed_matrix", "mech-io/fixed_matrix", "mech-combinatorics/fixed_matrix"]
+matrix_transpose = ["mech-matrix/transpose"]
+matrix_matmul = ["mech-matrix/matmul"]
+
 row_vector4 = ["mech-core/row_vector4", "mech-math/row_vector4", "mech-logic/row_vector4", "mech-range/row_vector4", "mech-matrix/row_vector4", "mech-compare/row_vector4", "mech-stats/row_vector4", "mech-io/row_vector4", "mech-combinatorics/row_vector4"]
 row_vector3 = ["mech-core/row_vector3", "mech-math/row_vector3", "mech-logic/row_vector3", "mech-range/row_vector3", "mech-matrix/row_vector3", "mech-compare/row_vector3", "mech-stats/row_vector3", "mech-io/row_vector3", "mech-combinatorics/row_vector3"]
 row_vector2 = ["mech-core/row_vector2", "mech-math/row_vector2", "mech-logic/row_vector2", "mech-range/row_vector2", "mech-matrix/row_vector2", "mech-compare/row_vector2", "mech-stats/row_vector2", "mech-io/row_vector2", "mech-combinatorics/row_vector2"]

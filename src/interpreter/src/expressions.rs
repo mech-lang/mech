@@ -294,7 +294,7 @@ pub fn factor(fctr: &Factor, p: &Interpreter) -> MResult<Value> {
     },
     Factor::Parenthetical(paren) => factor(&*paren, p),
     Factor::Expression(expr) => expression(expr, p),
-    #[cfg(feature = "math_negate")]
+    #[cfg(feature = "math_neg")]
     Factor::Negate(neg) => {
       let value = factor(neg, p)?;
       let new_fxn = MathNegate{}.compile(&vec![value])?;
@@ -360,21 +360,21 @@ pub fn term(trm: &Term, p: &Interpreter) -> MResult<Value> {
       FormulaOperator::Vec(VecOp::Dot) => todo!(),
 
       // Compare
-      #[cfg(feature = "compare_equal")]
+      #[cfg(feature = "compare_eq")]
       FormulaOperator::Comparison(ComparisonOp::Equal) => CompareEqual{}.compile(&vec![lhs,rhs])?,
-      #[cfg(feature = "compare_strict_equal")]
+      #[cfg(feature = "compare_seq")]
       FormulaOperator::Comparison(ComparisonOp::StrictEqual) => todo!(), //CompareStrictEqual{}.compile(&vec![lhs,rhs])?,
-      #[cfg(feature = "compare_not_equal")]
+      #[cfg(feature = "compare_neq")]
       FormulaOperator::Comparison(ComparisonOp::NotEqual) => CompareNotEqual{}.compile(&vec![lhs,rhs])?,
-      #[cfg(feature = "compare_strict_not_equal")]
+      #[cfg(feature = "compare_sneq")]
       FormulaOperator::Comparison(ComparisonOp::StrictNotEqual) => todo!(), //CompareStrictNotEqual{}.compile(&vec![lhs,rhs])?,
-      #[cfg(feature = "compare_less_than_equal")]
+      #[cfg(feature = "compare_lte")]
       FormulaOperator::Comparison(ComparisonOp::LessThanEqual) => CompareLessThanEqual{}.compile(&vec![lhs,rhs])?,
-      #[cfg(feature = "compare_greater_than_equal")]
+      #[cfg(feature = "compare_gte")]
       FormulaOperator::Comparison(ComparisonOp::GreaterThanEqual) => CompareGreaterThanEqual{}.compile(&vec![lhs,rhs])?,
-      #[cfg(feature = "compare_less_than")]
+      #[cfg(feature = "compare_lt")]
       FormulaOperator::Comparison(ComparisonOp::LessThan) => CompareLessThan{}.compile(&vec![lhs,rhs])?,
-      #[cfg(feature = "compare_greater_than")]
+      #[cfg(feature = "compare_gt")]
       FormulaOperator::Comparison(ComparisonOp::GreaterThan) => CompareGreaterThan{}.compile(&vec![lhs,rhs])?,
 
       // Logic

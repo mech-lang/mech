@@ -136,11 +136,10 @@ impl NativeFunctionCompiler for AssignValue {
 pub struct AssignColumn {}
 impl NativeFunctionCompiler for AssignColumn {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    if arguments.len() != 2 {
+    if arguments.len() < 1 {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let src = &arguments[0];
-    let index = &arguments[1];
     match src.kind().deref_kind() {
       #[cfg(feature = "table")]
       ValueKind::Table(_,_) => AssignTableColumn{}.compile(&arguments),
