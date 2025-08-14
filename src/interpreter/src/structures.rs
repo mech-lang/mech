@@ -7,13 +7,21 @@ use std::collections::HashMap;
 pub fn structure(strct: &Structure, p: &Interpreter) -> MResult<Value> {
   match strct {
     Structure::Empty => Ok(Value::Empty),
+    #[cfg(feature = "record")]
     Structure::Record(x) => record(&x, p),
+    #[cfg(feature = "matrix")]
     Structure::Matrix(x) => matrix(&x, p),
+    #[cfg(feature = "table")]
     Structure::Table(x) => table(&x, p),
+    #[cfg(feature = "tuple")]
     Structure::Tuple(x) => tuple(&x, p),
+    #[cfg(feature = "tuple_struct")]
     Structure::TupleStruct(x) => todo!(),
+    #[cfg(feature = "set")]
     Structure::Set(x) => set(&x, p),
+    #[cfg(feature = "map")]
     Structure::Map(x) => map(&x, p),
+    _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
   }
 }
 
@@ -166,21 +174,37 @@ pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> {
   for ((id,knd,name),(column)) in headings.iter().zip(data.iter()) {
     let val = Value::to_matrix(column.clone(),column.len(),1);
     match knd {
+      #[cfg(feature = "i8")]
       ValueKind::I8   => handle_value_kind!(knd, val, id, data_map, as_i8),
+      #[cfg(feature = "i16")]
       ValueKind::I16  => handle_value_kind!(knd, val, id, data_map, as_i16),
+      #[cfg(feature = "i32")]
       ValueKind::I32  => handle_value_kind!(knd, val, id, data_map, as_i32),
+      #[cfg(feature = "i64")]
       ValueKind::I64  => handle_value_kind!(knd, val, id, data_map, as_i64),
+      #[cfg(feature = "i128")]
       ValueKind::I128 => handle_value_kind!(knd, val, id, data_map, as_i128),      
+      #[cfg(feature = "u8")]
       ValueKind::U8   => handle_value_kind!(knd, val, id, data_map, as_u8),
+      #[cfg(feature = "u16")]
       ValueKind::U16  => handle_value_kind!(knd, val, id, data_map, as_u16),
+      #[cfg(feature = "u32")]
       ValueKind::U32  => handle_value_kind!(knd, val, id, data_map, as_u32),
+      #[cfg(feature = "u64")]
       ValueKind::U64  => handle_value_kind!(knd, val, id, data_map, as_u64),
+      #[cfg(feature = "u128")]
       ValueKind::U128 => handle_value_kind!(knd, val, id, data_map, as_u128),
+      #[cfg(feature = "f32")]
       ValueKind::F32  => handle_value_kind!(knd, val, id, data_map, as_f32),
+      #[cfg(feature = "f64")]
       ValueKind::F64  => handle_value_kind!(knd, val, id, data_map, as_f64),
+      #[cfg(feature = "string")]
       ValueKind::String  => handle_value_kind!(knd, val, id, data_map, as_string),
+      #[cfg(feature = "complex")]
       ValueKind::ComplexNumber  => handle_value_kind!(knd, val, id, data_map, as_complexnumber),
+      #[cfg(feature = "rational")]
       ValueKind::RationalNumber  => handle_value_kind!(knd, val, id, data_map, as_rationalnumber),
+      #[cfg(feature = "bool")]
       ValueKind::Bool => {
         let vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_bool().unwrap().to_value()).collect::<Vec<Value>>();
         let id = id.as_u64().unwrap().borrow().clone();
@@ -220,6 +244,7 @@ pub fn table_column(r: &TableColumn, p: &Interpreter) -> MResult<Value> {
   expression(&r.element, p)
 }
 
+#[cfg(feature = "matrix")]
 pub fn matrix(m: &Mat, p: &Interpreter) -> MResult<Value> {
   let plan = p.plan();
   let mut shape = vec![0, 0];
@@ -250,6 +275,7 @@ pub fn matrix(m: &Mat, p: &Interpreter) -> MResult<Value> {
   Ok(out)
 }
 
+#[cfg(feature = "matrix")]
 pub fn matrix_row(r: &MatrixRow, p: &Interpreter) -> MResult<Value> {
   let plan = p.plan();
   let mut row: Vec<Value> = Vec::new();
