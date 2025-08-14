@@ -13,6 +13,8 @@ use std::marker::PhantomData;
 
 pub mod access;
 pub mod assign;
+#[cfg(feature = "matrix")]
 pub mod horzcat;
+#[cfg(feature = "matrix")]
 pub mod vertcat;
 pub mod convert;

@@ -184,6 +184,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
       (Value::Atom(given_variant_id), target_kind) => {
         return Err(MechError{file: file!().to_string(), tokens: var_def.expression.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UnableToConvertValueKind}); 
       }
+      #[cfg(feature = "matrix")]
       (Value::MutableReference(v), ValueKind::Matrix(box target_matrix_knd,_)) => {
         let value = v.borrow().clone();
         if value.is_matrix() {
@@ -208,6 +209,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
           result = converted_result;          
         }
       }
+      #[cfg(feature = "matrix")]
       (value, ValueKind::Matrix(box target_matrix_knd,_)) => {
         if value.is_matrix() {
           let convert_fxn = ConvertMatToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
