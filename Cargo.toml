@@ -19,7 +19,8 @@ maintenance = { status = "actively-developed" }
 crate-type = ["dylib", "rlib"]
 
 [features]
-default = ["stdlib"]
+default = ["stdlib", "n_choose_k"]
+n_choose_k = []
 stdlib = ["bool", "string", "numbers", "matrix", "set", "map", "table", "tuple", "record", "atom"]
 numbers = ["signed_ints", "unsigned_ints", "floats", "complex", "rational"]
 complex = ["c64"]
