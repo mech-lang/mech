@@ -54,6 +54,7 @@ pub enum MechErrorKind {
   BlockDisabled,
   IoError,
   UnhandledFormulaOperator(FormulaOperator),
+  FeatureNotEnabled(String), // Feature is not enabled in the current build
   GenericError(String),
   FileNotFound(String),
   Unhandled,
