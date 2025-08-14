@@ -300,11 +300,13 @@ where
   fn to_string(&self) -> String { format!("VerticalConcatenateVDN\n{:#?}", self.out) }
 }
 
+#[cfg(feature = "matrix1")]
 #[derive(Debug)]
 struct VerticalConcatenateS1<T> {
   out: Ref<Matrix1<T>>,
 }
 
+#[cfg(feature = "matrix1")]
 impl<T> MechFunction for VerticalConcatenateS1<T> 
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -315,24 +317,39 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
+#[cfg(feature = "vector2")]
 vertical_concatenate!(VerticalConcatenateS2,Vector2);
+#[cfg(feature = "vector3")]
 vertical_concatenate!(VerticalConcatenateS3,Vector3);
+#[cfg(feature = "vector4")]
 vertical_concatenate!(VerticalConcatenateS4,Vector4);
+#[cfg(feature = "vector2")]
 vertical_concatenate!(VerticalConcatenateV2,Vector2);
+#[cfg(feature = "vector3")]
 vertical_concatenate!(VerticalConcatenateV3,Vector3);
+#[cfg(feature = "vector4")]
 vertical_concatenate!(VerticalConcatenateV4,Vector4);
+#[cfg(feature = "matrix2")]
 vertical_concatenate!(VerticalConcatenateM2,Matrix2);
+#[cfg(feature = "matrix3")]
 vertical_concatenate!(VerticalConcatenateM3,Matrix3);
+#[cfg(feature = "matrix2x3")]
 vertical_concatenate!(VerticalConcatenateM2x3,Matrix2x3);
+#[cfg(feature = "matrix3x2")]
 vertical_concatenate!(VerticalConcatenateM3x2,Matrix3x2);
+#[cfg(feature = "matrix4")]
 vertical_concatenate!(VerticalConcatenateM4,Matrix4);
+#[cfg(feature = "matrixd")]
 vertical_concatenate!(VerticalConcatenateMD,DMatrix);
+#[cfg(feature = "vectord")]
 vertical_concatenate!(VerticalConcatenateVD,DVector);
 
+#[cfg(feature = "vectord")]
 #[derive(Debug)]
 struct VerticalConcatenateSD<T> {
   out: Ref<DVector<T>>,
 }
+#[cfg(feature = "vectord")]
 impl<T> MechFunction for VerticalConcatenateSD<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -348,6 +365,7 @@ macro_rules! vertcat_m1m1 {
     $out[0] = $e0[0].clone();
     $out[1] = $e1[0].clone();
   };}
+#[cfg(feature = "matrix1")]
 vertcat_two_args!(VerticalConcatenateM1M1,Matrix1,Matrix1,Vector2,vertcat_m1m1);
 
 macro_rules! vertcat_r2r2 {
@@ -357,6 +375,7 @@ macro_rules! vertcat_r2r2 {
     $out[2] = $e1[0].clone();
     $out[3] = $e1[1].clone();
   };}
+#[cfg(feature = "vector2")]
 vertcat_two_args!(VerticalConcatenateV2V2,Vector2,Vector2,Vector4,vertcat_r2r2);
 
 macro_rules! vertcat_m1r3 {
@@ -366,6 +385,7 @@ macro_rules! vertcat_m1r3 {
     $out[2] = $e1[1].clone();
     $out[3] = $e1[2].clone();
   };}
+#[cfg(all(feature = "matrix1", feature = "vector3", feature = "vector4"))]
 vertcat_two_args!(VerticalConcatenateM1V3,Matrix1,Vector3,Vector4,vertcat_m1r3);
 
 macro_rules! vertcat_r3m1 {
@@ -375,6 +395,7 @@ macro_rules! vertcat_r3m1 {
     $out[2] = $e0[2].clone();
     $out[3] = $e1[0].clone();
   };}
+#[cfg(all(feature = "vector3", feature = "matrix1", feature = "vector4"))]
 vertcat_two_args!(VerticalConcatenateV3M1,Vector3,Matrix1,Vector4,vertcat_r3m1);
 
 macro_rules! vertcat_m1r2 {
@@ -384,6 +405,7 @@ macro_rules! vertcat_m1r2 {
     $out[2] = $e1[1].clone();
   };
 }
+#[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector3"))]
 vertcat_two_args!(VerticalConcatenateM1V2, Matrix1, Vector2, Vector3, vertcat_m1r2);
 
 macro_rules! vertcat_r2m1 {
@@ -393,6 +415,7 @@ macro_rules! vertcat_r2m1 {
     $out[2] = $e1[0].clone();
   };
 }
+#[cfg(all(feature = "vector2", feature = "matrix1", feature = "vector3"))]
 vertcat_two_args!(VerticalConcatenateV2M1, Vector2, Matrix1, Vector3, vertcat_r2m1);
 
 macro_rules! vertcat_m1m1m1 {
@@ -402,6 +425,7 @@ macro_rules! vertcat_m1m1m1 {
     $out[2] = $e2[0].clone();
   };
 }
+#[cfg(all(feature = "matrix1", feature = "vector3"))]
 vertcat_three_args!(VerticalConcatenateM1M1M1,Matrix1,Matrix1,Matrix1,Vector3, vertcat_m1m1m1);
 
 macro_rules! vertcat_m1m1r2 {
@@ -412,6 +436,7 @@ macro_rules! vertcat_m1m1r2 {
     $out[3] = $e2[1].clone();
   };
 }
+#[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))]
 vertcat_three_args!(VerticalConcatenateM1M1V2, Matrix1, Matrix1, Vector2, Vector4, vertcat_m1m1r2);
 
 macro_rules! vertcat_m1r2m1 {
@@ -422,6 +447,7 @@ macro_rules! vertcat_m1r2m1 {
     $out[3] = $e2[0].clone();
   };
 }
+#[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))]
 vertcat_three_args!(VerticalConcatenateM1V2M1, Matrix1, Vector2, Matrix1, Vector4, vertcat_m1r2m1);
 
 macro_rules! vertcat_r2m1m1 {
@@ -432,6 +458,7 @@ macro_rules! vertcat_r2m1m1 {
     $out[3] = $e2[0].clone();
   };
 }
+#[cfg(all(feature = "vector2", feature = "matrix1", feature = "vector4"))]
 vertcat_three_args!(VerticalConcatenateV2M1M1, Vector2, Matrix1, Matrix1, Vector4, vertcat_r2m1m1);
 
 #[derive(Debug)]
@@ -472,6 +499,7 @@ macro_rules! vertcat_r2r2 {
     $out[3] = $e1[1].clone();
   };
 }
+#[cfg(all(feature = "vector2", feature = "matrix2"))]
 vertcat_two_args!(VerticalConcatenateR2R2, RowVector2, RowVector2, Matrix2, vertcat_r2r2);
 
 macro_rules! vertcat_r3r3 {
@@ -484,6 +512,7 @@ macro_rules! vertcat_r3r3 {
     $out[5] = $e1[2].clone();
   };
 }
+#[cfg(all(feature = "row_vector3", feature = "matrix2x3"))]
 vertcat_two_args!(VerticalConcatenateR3R3, RowVector3, RowVector3, Matrix2x3, vertcat_r3r3);
 
 macro_rules! vertcat_r2m2 {
@@ -496,6 +525,7 @@ macro_rules! vertcat_r2m2 {
     $out[5] = $e1[3].clone();
   };
 }
+#[cfg(all(feature = "row_vector2", feature = "matrix2", feature = "matrix3x2"))]
 vertcat_two_args!(VerticalConcatenateR2M2, RowVector2, Matrix2, Matrix3x2, vertcat_r2m2);
 
 macro_rules! vertcat_m2r2 {
@@ -508,6 +538,7 @@ macro_rules! vertcat_m2r2 {
     $out[5] = $e1[1].clone();
   };
 }
+#[cfg(all(feature = "matrix2", feature = "row_vector2", feature = "matrix3x2"))]
 vertcat_two_args!(VerticalConcatenateM2R2, Matrix2, RowVector2, Matrix3x2, vertcat_m2r2);
 
 macro_rules! vertcat_m2x3r3 {
@@ -523,6 +554,7 @@ macro_rules! vertcat_m2x3r3 {
     $out[8] = $e1[2].clone();
   };
 }
+#[cfg(all(feature = "matrix2x3", feature = "row_vector3", feature = "matrix3"))]
 vertcat_two_args!(VerticalConcatenateM2x3R3, Matrix2x3, RowVector3, Matrix3, vertcat_m2x3r3);
 
 macro_rules! vertcat_r3m2x3 {
@@ -538,6 +570,7 @@ macro_rules! vertcat_r3m2x3 {
     $out[8] = $e1[5].clone();
   };
 }
+#[cfg(all(feature = "row_vector3", feature = "matrix2x3", feature = "matrix3"))]
 vertcat_two_args!(VerticalConcatenateR3M2x3, RowVector3, Matrix2x3, Matrix3, vertcat_r3m2x3);
 
 
@@ -554,6 +587,7 @@ macro_rules! vertcat_mdv4 {
     $out[offset + 3] = $e1[3].clone();
   };
 }
+#[cfg(all(feature = "matrixd", feature = "row_vector4", feature = "matrix4"))]
 vertcat_two_args!(VerticalConcatenateMDR4, DMatrix, RowVector4, Matrix4, vertcat_mdv4);
 
 macro_rules! vertcat_mdmd {
@@ -580,7 +614,9 @@ macro_rules! vertcat_mdmd {
     }
   };
 }
+#[cfg(all(feature = "matrixd", feature = "matrix4"))]
 vertcat_two_args!(VerticalConcatenateMDMD, DMatrix, DMatrix, Matrix4, vertcat_mdmd);
+#[cfg(all(feature = "matrixd", feature = "matrix4", feature = "row_vector4"))]
 vertcat_two_args!(VerticalConcatenateR4MD, RowVector4, DMatrix, Matrix4, vertcat_mdmd);
 
 
@@ -618,10 +654,15 @@ macro_rules! vertcat_mdmdmd {
   };
 }
 
+#[cfg(all(feature = "matrixd", feature = "matrix4", feature = "row_vector4"))]
 vertcat_three_args!(VerticalConcatenateR2R2R2, RowVector2, RowVector2, RowVector2, Matrix3x2, vertcat_mdmdmd);
+#[cfg(all(feature = "row_vector3", feature = "row_vector3", feature = "row_vector3", feature = "matrix3"))]
 vertcat_three_args!(VerticalConcatenateR3R3R3, RowVector3, RowVector3, RowVector3, Matrix3, vertcat_mdmdmd);
+#[cfg(all(feature = "row_vector4", feature = "row_vector4", feature = "matrixd", feature = "matrix4"))]
 vertcat_three_args!(VerticalConcatenateR4R4MD, RowVector4, RowVector4, DMatrix, Matrix4, vertcat_mdmdmd);
+#[cfg(all(feature = "row_vector4", feature = "matrixd", feature = "row_vector4", feature = "matrix4"))]
 vertcat_three_args!(VerticalConcatenateR4MDR4, RowVector4, DMatrix, RowVector4, Matrix4, vertcat_mdmdmd);
+#[cfg(all(feature = "matrixd", feature = "row_vector4", feature = "row_vector4", feature = "matrix4"))]
 vertcat_three_args!(VerticalConcatenateMDR4R4, DMatrix, RowVector4, RowVector4, Matrix4, vertcat_mdmdmd);
 
 macro_rules! vertcat_mdmdmdmd {
@@ -667,6 +708,7 @@ macro_rules! vertcat_mdmdmdmd {
   };
 }
 
+#[cfg(all(feature = "matrix4", feature = "row_vector4"))]
 vertcat_four_args!(VerticalConcatenateR4R4R4R4, RowVector4, RowVector4, RowVector4, RowVector4, Matrix4, vertcat_mdmdmdmd);
 
 macro_rules! impl_vertcat_arms {
@@ -692,15 +734,27 @@ macro_rules! impl_vertcat_arms {
         }
         let mat = to_column_major(&arguments, rows, columns, |v| v.[<as_vec $kind:lower>]());
         match (rows,columns) {
+          #[cfg(feature = "matrix1")]
+          (1,1) => {return Ok(Box::new(VerticalConcatenateS1{out:new_ref(Matrix1::from_vec(mat))}));}
+          #[cfg(feature = "vector2")]
           (2,1) => {return Ok(Box::new(VerticalConcatenateS2{out:new_ref(Vector2::from_vec(mat))}));}
+          #[cfg(feature = "vector3")]
           (3,1) => {return Ok(Box::new(VerticalConcatenateS3{out:new_ref(Vector3::from_vec(mat))}));}
+          #[cfg(feature = "vector4")]
           (4,1) => {return Ok(Box::new(VerticalConcatenateS4{out:new_ref(Vector4::from_vec(mat))}));}
+          #[cfg(feature = "vectord")]
           (m,1) => {return Ok(Box::new(VerticalConcatenateSD{out:new_ref(DVector::from_vec(mat))}));}
+          #[cfg(feature = "matrix2")]
           (2,2) => {return Ok(Box::new(VerticalConcatenateM2{out:new_ref(Matrix2::from_vec(mat))}));}
+          #[cfg(feature = "matrix3")]
           (3,3) => {return Ok(Box::new(VerticalConcatenateM3{out:new_ref(Matrix3::from_vec(mat))}));}
+          #[cfg(feature = "matrix4")]
           (4,4) => {return Ok(Box::new(VerticalConcatenateM4{out:new_ref(Matrix4::from_vec(mat))}));}
+          #[cfg(feature = "matrix2x3")]
           (2,3) => {return Ok(Box::new(VerticalConcatenateM2x3{out:new_ref(Matrix2x3::from_vec(mat))}));}
+          #[cfg(feature = "matrix3x2")]
           (3,2) => {return Ok(Box::new(VerticalConcatenateM3x2{out:new_ref(Matrix3x2::from_vec(mat))}));}
+          #[cfg(feature = "matrixd")]
           (m,n) => {return Ok(Box::new(VerticalConcatenateMD{out:new_ref(DMatrix::from_vec(m,n,mat))}));}
         }
       } else {

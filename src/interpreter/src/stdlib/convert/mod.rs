@@ -6,11 +6,15 @@ use crate::stdlib::*;
 // ----------------------------------------------------------------------------
 
 pub mod scalar;
+#[cfg(feature = "matrix")]
 pub mod scalar_to_mat;
+#[cfg(feature = "matrix")]
 pub mod mat_to_mat;
 
 pub use self::scalar::*;
+#[cfg(feature = "matrix")]
 pub use self::scalar_to_mat::*;
+#[cfg(feature = "matrix")]
 pub use self::mat_to_mat::*;
 
 pub trait LosslessInto<T> {
