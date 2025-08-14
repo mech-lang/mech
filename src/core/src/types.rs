@@ -732,3 +732,46 @@ impl ToValue for RationalNumber {
     Value::RationalNumber(new_ref(*self))
   }
 }
+
+
+
+pub trait PrettyPrint {
+  fn pretty_print(&self) -> String;
+}
+
+impl PrettyPrint for String {
+  fn pretty_print(&self) -> String {
+      format!("\"{}\"", self)
+  }
+}
+
+impl PrettyPrint for Value {
+  fn  pretty_print(&self) -> String {
+    self.pretty_print()
+  }
+}
+
+macro_rules! impl_pretty_print {
+  ($t:ty) => {
+    impl PrettyPrint for $t {
+      fn pretty_print(&self) -> String {
+        format!("{}", self)
+      }
+    }
+  };
+}
+
+impl_pretty_print!(bool);
+impl_pretty_print!(i8);
+impl_pretty_print!(i16);
+impl_pretty_print!(i32);
+impl_pretty_print!(i64);
+impl_pretty_print!(i128);
+impl_pretty_print!(u8);
+impl_pretty_print!(u16);
+impl_pretty_print!(u32);
+impl_pretty_print!(u64);
+impl_pretty_print!(u128);
+impl_pretty_print!(F32);
+impl_pretty_print!(F64);
+impl_pretty_print!(usize);
