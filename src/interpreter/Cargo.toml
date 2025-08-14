@@ -19,7 +19,7 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = ["stdlib", "math", "logic", "range", "matrix", "compare", "stats", "io", "combinatorics"]
-math = ["math_trig", "math_ops", "mech-math/trig", "mech-math/ops"]
+math = ["math_trig", "math_ops"]
 math_trig = [
     "math_sin", "math_cos", "math_tan", "math_asin", "math_acos", "math_atan", "math_sinh", "math_cosh", "math_tanh",
     "math_asinh", "math_acosh", "math_atanh", "math_sec", "math_csc", "math_cot", "math_acsc", "math_asec", "math_acot",
