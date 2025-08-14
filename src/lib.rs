@@ -1,3 +1,5 @@
+#![no_main]
+#![allow(warnings)]
 extern crate nalgebra as na;
 extern crate mech_core;
 
