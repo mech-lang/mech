@@ -19,7 +19,9 @@ maintenance = { status = "actively-developed" }
 crate-type = ["dylib", "rlib"]
 
 [features]
-default = ["stdlib"]
+default = ["stdlib", "print", "println"]
+print = []
+println = []
 stdlib = ["bool", "string", "numbers", "matrix", "set", "map", "table", "tuple", "record", "atom"]
 numbers = ["signed_ints", "unsigned_ints", "floats", "complex", "rational"]
 complex = ["c64"]

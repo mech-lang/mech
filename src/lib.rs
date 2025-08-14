@@ -23,8 +23,12 @@ macro_rules! log {
   }
 }
 
+#[cfg(feature = "print")]
 pub mod print;
+#[cfg(feature = "println")]
 pub mod println;
 
+#[cfg(feature = "print")]
 pub use self::print::*;
+#[cfg(feature = "println")]
 pub use self::println::*;
