@@ -844,6 +844,8 @@ impl Value {
       Value::F32(v) => Some(new_ref(format!("{}", v.borrow().0))),
       Value::F64(v) => Some(new_ref(format!("{}", v.borrow().0))),
       Value::Bool(v) => Some(new_ref(format!("{}", v.borrow()))),
+      Value::RationalNumber(v) => Some(new_ref(v.borrow().to_string())),
+      Value::ComplexNumber(v) => Some(new_ref(v.borrow().to_string())),
       Value::MutableReference(val) => val.borrow().as_string(),
       _ => None,
     }
@@ -1087,20 +1089,35 @@ macro_rules! impl_to_value_matrix {
   }
 }
 
+#[cfg(feature = "matrix2x3")]
 impl_to_value_matrix!(Matrix2x3);
+#[cfg(feature = "matrix3x2")]
 impl_to_value_matrix!(Matrix3x2);
+#[cfg(feature = "matrix1")]
 impl_to_value_matrix!(Matrix1);
+#[cfg(feature = "matrix2")]
 impl_to_value_matrix!(Matrix2);
+#[cfg(feature = "matrix3")]
 impl_to_value_matrix!(Matrix3);
+#[cfg(feature = "matrix4")]
 impl_to_value_matrix!(Matrix4);
+#[cfg(feature = "vector2")]
 impl_to_value_matrix!(Vector2);
+#[cfg(feature = "vector3")]
 impl_to_value_matrix!(Vector3);
+#[cfg(feature = "vector4")]
 impl_to_value_matrix!(Vector4);
+#[cfg(feature = "row_vector2")]
 impl_to_value_matrix!(RowVector2);
+#[cfg(feature = "row_vector3")]
 impl_to_value_matrix!(RowVector3);
+#[cfg(feature = "row_vector4")]
 impl_to_value_matrix!(RowVector4);
+#[cfg(feature = "row_vectord")]
 impl_to_value_matrix!(RowDVector);
+#[cfg(feature = "vectord")]
 impl_to_value_matrix!(DVector);
+#[cfg(feature = "matrixd")]
 impl_to_value_matrix!(DMatrix);
 
 impl From<u8> for Value {
