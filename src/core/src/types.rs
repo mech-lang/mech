@@ -30,45 +30,55 @@ pub fn new_ref<T>(item: T) -> Rc<RefCell<T>> {
 
 pub type MResult<T> = Result<T,MechError>;
 
+#[cfg(feature = "f64")]
 #[derive(PartialEq, Clone, Copy, PartialOrd, Serialize, Deserialize)]
 pub struct F64(pub f64);
+
+#[cfg(feature = "f64")]
 impl F64 {
   pub fn new(val: f64) -> F64 {
     F64(val)
   }
 }
 
+#[cfg(feature = "f64")]
 impl fmt::Debug for F64 {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
       write!(f, "{}", self.0)
   }
 }
 
+#[cfg(feature = "f64")]
 impl fmt::Display for F64 {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
       write!(f, "{}", self.0)
   }
 }
 
+#[cfg(feature = "f64")]
 impl From<F64> for String {
   fn from(f: F64) -> Self {
       f.to_string()
   }
 }
 
+#[cfg(feature = "f64")]
 impl From<F64> for usize {
   fn from(value: F64) -> Self {
     value.0 as usize
   }
 }
 
+#[cfg(all(feature = "f64", feature = "exp"))]
 impl Eq for F64 {}
+#[cfg(feature = "f64")]
 impl Hash for F64 {
   fn hash<H: Hasher>(&self, state: &mut H) {
     self.0.to_bits().hash(state);
   }
 }
 
+#[cfg(all(feature = "f64", feature = "exp"))]
 impl Pow<F64> for F64 {
   type Output = F64;
   fn pow(self, rhs: F64) -> Self::Output {
@@ -76,68 +86,87 @@ impl Pow<F64> for F64 {
   }
 }
 
+#[cfg(all(feature = "f64", feature = "add"))]
 impl Add for F64 {
   type Output = F64;
   fn add(self, other: F64) -> F64 {
     F64(self.0 + other.0)
   }
 }
+
+#[cfg(all(feature = "f64", feature = "add"))]
 impl AddAssign for F64 {
   fn add_assign(&mut self, other: F64) {
     self.0 += other.0;
   }
 }
+#[cfg(all(feature = "f64", feature = "sub"))]
 impl Sub for F64 {
   type Output = F64;
   fn sub(self, other: F64) -> F64 {
     F64(self.0 - other.0)
   }
 }
+#[cfg(all(feature = "f64", feature = "sub"))]
 impl SubAssign for F64 {
   fn sub_assign(&mut self, other: F64) {
     self.0 -= other.0;
   }
 }
+
+#[cfg(all(feature = "f64", feature = "mul"))]
 impl Mul for F64 {
   type Output = F64;
   fn mul(self, other: F64) -> F64 {
     F64(self.0 * other.0)
   }
 }
+
+#[cfg(all(feature = "f64", feature = "mul"))]
 impl MulAssign for F64 {
   fn mul_assign(&mut self, other: F64) {
     self.0 *= other.0;
   }
 }
+
+#[cfg(all(feature = "f64", feature = "div"))]
 impl Div for F64 {
   type Output = F64;
   fn div(self, other: F64) -> F64 {
     F64(self.0 / other.0)
   }
 }
+
+#[cfg(all(feature = "f64", feature = "div"))]
 impl DivAssign for F64 {
   fn div_assign(&mut self, other: F64) {
     self.0 /= other.0;
   }
 }
+
+#[cfg(all(feature = "f64", feature = "mod"))]
 impl Rem for F64 {
   type Output = F64;
   fn rem(self, other: F64) -> F64 {
     F64(self.0 % other.0)
   }
 }
+
+#[cfg(all(feature = "f64", feature = "mod"))]
 impl RemAssign for F64 {
   fn rem_assign(&mut self, other: F64) {
     self.0 = self.0 % other.0;
   }
 }
 
+#[cfg(feature = "f64")]
 impl Default for F64 {
   fn default() -> Self {
     F64(0.0)
   }
 }
 
+#[cfg(feature = "f64")]
 impl Zero for F64 {
   fn zero() -> Self {
     F64(0.0)
@@ -147,6 +176,7 @@ impl Zero for F64 {
   }
 }
 
+#[cfg(feature = "f64")]
 impl One for F64 {
   fn one() -> Self {
     F64(1.0)
@@ -155,12 +185,16 @@ impl One for F64 {
     self.0 == 1.0
   }
 }
+
+#[cfg(all(feature = "f64", feature = "neg"))]
 impl Neg for F64 {
   type Output = Self;
   fn neg(self) -> Self::Output {
     F64(-self.0)
   }
 }
+
+#[cfg(feature = "f64")]
 impl Step for F64 {
   fn steps_between(start: &Self, end: &Self) -> (usize, Option<usize>) {
     if start.0 > end.0 {
@@ -198,14 +232,18 @@ impl Step for F64 {
   }
 }
 
+#[cfg(feature = "f64")]
 impl From<F64> for Value {
   fn from(val: F64) -> Self {
     Value::F64(new_ref(val))
   }
 }
 
+#[cfg(feature = "f32")]
 #[derive(PartialEq, Clone, Copy, PartialOrd, Serialize, Deserialize)]
 pub struct F32(pub f32);
+
+#[cfg(feature = "f32")]
 impl F32 {
   pub fn new(val: f32) -> F32 {
     F32(val)
@@ -234,45 +272,62 @@ macro_rules! impl_into_float {
   };
 }
 
+#[cfg(feature = "u8")]
 impl_into_float!(u8 => f32, f64);
+#[cfg(feature = "u16")]
 impl_into_float!(u16 => f32, f64);
+#[cfg(feature = "u32")]
 impl_into_float!(u32 => f32, f64);
+#[cfg(feature = "u64")]
 impl_into_float!(u64 => f32, f64);
+#[cfg(feature = "u128")]
 impl_into_float!(u128 => f32, f64);
 
+#[cfg(feature = "i8")]
 impl_into_float!(i8 => f32, f64);
+#[cfg(feature = "i16")]
 impl_into_float!(i16 => f32, f64);
+#[cfg(feature = "i32")]
 impl_into_float!(i32 => f32, f64);
+#[cfg(feature = "i64")]
 impl_into_float!(i64 => f32, f64);
+#[cfg(feature = "i128")]
 impl_into_float!(i128 => f32, f64);
 
+#[cfg(feature = "f32")]
 impl_into!(F64 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
+#[cfg(feature = "f64")]
 impl_into!(F32 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
 
+#[cfg(feature = "f32")]
 impl fmt::Display for F32 {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
       write!(f, "{}", self.0)
   }
 }
 
+#[cfg(feature = "f32")]
 impl fmt::Debug for F32 {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
       write!(f, "{}", self.0)
   }
 }
 
+#[cfg(feature = "f32")]
 impl From<F32> for String {
   fn from(f: F32) -> Self {
       f.to_string()
   }
 }
 
+#[cfg(feature = "f32")]
 impl From<F32> for usize {
   fn from(value: F32) -> Self {
     value.0 as usize
   }
 }
 
+#[cfg(all(feature = "f32", feature = "exp"))]
 impl Pow<F32> for F32 {
   type Output = F32;
   fn pow(self, rhs: F32) -> Self::Output {
@@ -280,34 +335,47 @@ impl Pow<F32> for F32 {
   }
 }
 
+#[cfg(feature = "f32")]
 impl Eq for F32 {}
+
+#[cfg(feature = "f32")]
 impl Hash for F32 {
   fn hash<H: Hasher>(&self, state: &mut H) {
     self.0.to_bits().hash(state);
   }
 }
+
+#[cfg(all(feature = "f32", feature = "add"))]
 impl Add for F32 {
   type Output = F32;
   fn add(self, other: F32) -> F32 {
     F32(self.0 + other.0)
   }
 }
+
+#[cfg(all(feature = "f32", feature = "add"))]
 impl AddAssign for F32 {
   fn add_assign(&mut self, other: F32) {
     self.0 += other.0;
   }
 }
+
+#[cfg(all(feature = "f32", feature = "mod"))]
 impl Rem for F32 {
   type Output = F32;
   fn rem(self, other: F32) -> F32 {
     F32(self.0 % other.0)
   }
 }
+
+#[cfg(all(feature = "f32", feature = "mod"))]
 impl RemAssign for F32 {
   fn rem_assign(&mut self, other: F32) {
     self.0 = self.0 % other.0;
   }
 }
+
+#[cfg(feature = "f32")]
 impl Zero for F32 {
   fn zero() -> Self {
     F32(0.0)
@@ -316,6 +384,8 @@ impl Zero for F32 {
     self.0 == 0.0
   }
 }
+
+#[cfg(feature = "f32")]
 impl One for F32 {
   fn one() -> Self {
     F32(1.0)
@@ -324,45 +394,61 @@ impl One for F32 {
     self.0 == 1.0
   }
 }
+
+#[cfg(all(feature = "f32", feature = "sub"))]
 impl Sub for F32 {
   type Output = F32;
   fn sub(self, other: F32) -> F32 {
     F32(self.0 - other.0)
   }
 }
+
+#[cfg(all(feature = "f32", feature = "sub"))]
 impl SubAssign for F32 {
   fn sub_assign(&mut self, other: F32) {
     self.0 -= other.0;
   }
 }
+
+#[cfg(all(feature = "f32", feature = "mul"))]
 impl Mul for F32 {
   type Output = F32;
   fn mul(self, other: F32) -> F32 {
     F32(self.0 * other.0)
   }
 }
+
+#[cfg(all(feature = "f32", feature = "mul"))]
 impl MulAssign for F32 {
   fn mul_assign(&mut self, other: F32) {
     self.0 *= other.0;
   }
 }
+
+#[cfg(all(feature = "f32", feature = "div"))]
 impl Div for F32 {
   type Output = F32;
   fn div(self, other: F32) -> F32 {
     F32(self.0 / other.0)
   }
 }
+
+#[cfg(all(feature = "f32", feature = "neg"))]
 impl DivAssign for F32 {
   fn div_assign(&mut self, other: F32) {
     self.0 /= other.0;
   }
 }
+
+#[cfg(all(feature = "f32", feature = "neg"))]
 impl Neg for F32 {
   type Output = Self;
   fn neg(self) -> Self::Output {
     F32(-self.0)
   }
 }
+
+#[cfg(feature = "f32")]
 impl Step for F32 {
 
   fn steps_between(start: &Self, end: &Self) -> (usize, Option<usize>) {
@@ -401,12 +487,14 @@ impl Step for F32 {
   }
 }
 
+#[cfg(feature = "f32")]
 impl From<F32> for Value {
   fn from(val: F32) -> Self {
     Value::F32(new_ref(val))
   }
 }
 
+#[cfg(feature = "f32")]
 impl Default for F32 {
   fn default() -> Self {
     F32(0.0)
@@ -477,6 +565,7 @@ impl ComplexNumber {
 
 }
 
+#[cfg(all(feature = "complex", feature = "add"))]
 #[cfg(feature = "complex")]
 impl Add for ComplexNumber {
   type Output = ComplexNumber;
@@ -485,7 +574,7 @@ impl Add for ComplexNumber {
   }
 }
 
-#[cfg(feature = "complex")]
+#[cfg(all(feature = "complex", feature = "mul"))]
 impl Mul for ComplexNumber {
   type Output = ComplexNumber;
   fn mul(self, other: ComplexNumber) -> ComplexNumber {
@@ -493,7 +582,7 @@ impl Mul for ComplexNumber {
   }
 }
 
-#[cfg(feature = "complex")]
+#[cfg(all(feature = "complex", feature = "sub"))]
 impl Sub for ComplexNumber {
   type Output = ComplexNumber;
   fn sub(self, other: ComplexNumber) -> ComplexNumber {
@@ -501,7 +590,7 @@ impl Sub for ComplexNumber {
   }
 }
 
-#[cfg(feature = "complex")]
+#[cfg(all(feature = "complex", feature = "div"))]
 impl Div for ComplexNumber {
   type Output = ComplexNumber;
   fn div(self, other: ComplexNumber) -> ComplexNumber {
@@ -509,28 +598,28 @@ impl Div for ComplexNumber {
   }
 }
 
-#[cfg(feature = "complex")]
+#[cfg(all(feature = "complex", feature = "add"))]
 impl AddAssign for ComplexNumber {
   fn add_assign(&mut self, other: ComplexNumber) {
     self.0 += other.0;
   }
 }
 
-#[cfg(feature = "complex")]
+#[cfg(all(feature = "complex", feature = "sub"))]
 impl SubAssign for ComplexNumber {
   fn sub_assign(&mut self, other: ComplexNumber) {
     self.0 -= other.0;
   }
 }
 
-#[cfg(feature = "complex")]
+#[cfg(all(feature = "complex", feature = "mul"))]
 impl MulAssign for ComplexNumber {
   fn mul_assign(&mut self, other: ComplexNumber) {
     self.0 *= other.0;
   }
 }
 
-#[cfg(feature = "complex")]
+#[cfg(all(feature = "complex", feature = "div"))]
 impl DivAssign for ComplexNumber {
   fn div_assign(&mut self, other: ComplexNumber) {
     self.0 /= other.0;
@@ -557,7 +646,7 @@ impl One for ComplexNumber {
   }
 }
 
-#[cfg(feature = "complex")]
+#[cfg(all(feature = "complex", feature = "neg"))]
 impl Neg for ComplexNumber {
   type Output = Self;
   fn neg(self) -> Self::Output {
