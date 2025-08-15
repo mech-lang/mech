@@ -88,6 +88,7 @@ pub enum MechSourceCode {
   String(String),
   Tree(Program),
   Html(String),
+  Program(Vec<MechSourceCode>),
 }
 
 impl MechSourceCode {
@@ -97,6 +98,7 @@ impl MechSourceCode {
       MechSourceCode::String(s) => s.clone(),
       MechSourceCode::Tree(p) => todo!("Print the tree!"),
       MechSourceCode::Html(h) => h.clone(),
+      MechSourceCode::Program(v) => v.iter().map(|c| c.to_string()).collect::<Vec<String>>().join("\n"),
     }
   }
 
