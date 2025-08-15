@@ -66,7 +66,7 @@ impl fmt::Debug for FunctionDefinition {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     if cfg!(feature = "pretty_print") {
       #[cfg(feature = "pretty_print")]
-      return self.pretty_print();
+      return self.pretty_print().fmt(f);
       "".to_string().fmt(f)
     } else {
       write!(f, "FunctionDefinition {{ id: {}, name: {}, input: {:?}, output: {:?}, symbols: {:?} }}", 
@@ -93,8 +93,7 @@ impl PrettyPrint for FunctionDefinition {
     table.with(Style::modern_rounded())
          .with(Panel::header(format!("📈 UserFxn::{}\n({})", self.name, humanize(&self.id))))
          .with(Alignment::left());
-    println!("{table}");
-    Ok(())
+    format!("{table}")
   }
 }
 
