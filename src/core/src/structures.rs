@@ -19,7 +19,9 @@ use tabled::{
   Tabled,
 };
 use paste::paste;
+#[cfg(feature = "serde")]
 use serde::ser::{Serialize, Serializer, SerializeStruct};
+#[cfg(feature = "serde")]
 use serde::de::{self, Deserialize, SeqAccess, Deserializer, MapAccess, Visitor};
 use std::fmt;
 use std::cell::RefCell;

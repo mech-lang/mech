@@ -17,7 +17,9 @@ use tabled::{
   Tabled,
 };
 use paste::paste;
+#[cfg(feature = "serde")]
 use serde::ser::{Serialize, Serializer, SerializeStruct};
+#[cfg(feature = "serde")]
 use serde::de::{self, Deserialize, SeqAccess, Deserializer, MapAccess, Visitor};
 use std::fmt;
 use std::cell::RefCell;
@@ -65,7 +67,8 @@ macro_rules! impl_as_type {
 
 // Value ----------------------------------------------------------------------
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum ValueKind {
   U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, ComplexNumber, RationalNumber,
   String, Bool, Id, Index, Empty, Any, 

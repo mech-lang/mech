@@ -18,8 +18,10 @@ extern crate tabled;
 #[cfg(feature = "no-std")]
 extern crate alloc;
 extern crate core as rust_core;
+#[cfg(feature = "serde")]
 #[macro_use]
 extern crate serde_derive;
+#[cfg(feature = "serde")]
 extern crate serde;
 #[cfg(feature = "math_exp")]
 extern crate num_traits;
@@ -87,12 +89,13 @@ pub fn humanize(hash: &u64) -> String {
   string
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MechSourceCode {
-  String(String),
-  Tree(Program),
-  Html(String),
-  Program(Vec<MechSourceCode>),
+    String(String),
+    Tree(Program),
+    Html(String),
+    Program(Vec<MechSourceCode>),
 }
 
 impl MechSourceCode {

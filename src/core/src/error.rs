@@ -10,7 +10,8 @@ type Rows = usize;
 type Cols = usize;
 pub type ParserErrorReport = Vec<ParserErrorContext>;
 
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct MechError{ 
   pub id: u32,
   pub file: String,
@@ -19,14 +20,16 @@ pub struct MechError{
   pub msg: String,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ParserErrorContext {
   pub cause_rng: SourceRange,
   pub err_message: String,
   pub annotation_rngs: Vec<SourceRange>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum MechErrorKind {
   UndefinedField(u64),                               // Accessed a field of a record that's not defined
   UndefinedVariable(u64),                            // Accessed a variable that's not defined
