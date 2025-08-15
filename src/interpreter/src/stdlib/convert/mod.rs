@@ -556,6 +556,20 @@ impl LossyFrom<String> for String {
   }
 }
 
+#[cfg(feature = "bool")]
+impl LossyFrom<bool> for bool {
+  fn lossy_from(value: bool) -> Self {
+    value
+  }
+}
+
+#[cfg(all(feature = "bool", feature = "string"))]
+impl LossyFrom<bool> for String {
+  fn lossy_from(value: bool) -> Self {
+    format!("{}",value)
+  }
+}
+
 macro_rules! impl_lossy_from_numeric_to_string {
   ($($t:ty),*) => {
     $(
