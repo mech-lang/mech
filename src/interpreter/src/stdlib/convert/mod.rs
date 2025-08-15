@@ -38,129 +38,243 @@ macro_rules! lossless_into {
   };
 }
 
+#[cfg(feature = "i8")]
 lossless_into!(i8);
+#[cfg(feature = "i16")]
 lossless_into!(i16);
+#[cfg(feature = "i32")]
 lossless_into!(i32);
+#[cfg(feature = "i64")]
 lossless_into!(i64);
+#[cfg(feature = "i128")]
 lossless_into!(i128);
+#[cfg(feature = "u8")]
 lossless_into!(u8);
+#[cfg(feature = "u16")]
 lossless_into!(u16);
+#[cfg(feature = "u32")]
 lossless_into!(u32);
+#[cfg(feature = "u64")]
 lossless_into!(u64);
+#[cfg(feature = "u128")]
 lossless_into!(u128);
+#[cfg(feature = "f32")]
 lossless_into!(F32);
+#[cfg(feature = "f64")]
 lossless_into!(F64);
+#[cfg(feature = "bool")]
 lossless_into!(bool);
+#[cfg(feature = "string")]
 lossless_into!(String);
 
+#[cfg(all(feature = "u8", feature = "u8"))]
 lossless_into!(u8,u8);
+#[cfg(all(feature = "u8", feature = "u16"))]
 lossless_into!(u8,u16);
+#[cfg(all(feature = "u8", feature = "u32"))]
 lossless_into!(u8,u32);
+#[cfg(all(feature = "u8", feature = "u64"))]
 lossless_into!(u8,u64);
+#[cfg(all(feature = "u8", feature = "u128"))]
 lossless_into!(u8,u128);
+#[cfg(all(feature = "u8", feature = "i8"))]
 lossless_into!(u8,i8);
+#[cfg(all(feature = "u8", feature = "i16"))]
 lossless_into!(u8,i16);
+#[cfg(all(feature = "u8", feature = "i32"))]
 lossless_into!(u8,i32);
+#[cfg(all(feature = "u8", feature = "i64"))]
 lossless_into!(u8,i64);
+#[cfg(all(feature = "u8", feature = "i128"))]
 lossless_into!(u8,i128);
 
+#[cfg(all(feature = "u16", feature = "u8"))]
 lossless_into!(u16,u8);
+#[cfg(all(feature = "u16", feature = "u16"))]
 lossless_into!(u16,u16);
+#[cfg(all(feature = "u16", feature = "u32"))]
 lossless_into!(u16,u32);
+#[cfg(all(feature = "u16", feature = "u64"))]
 lossless_into!(u16,u64);
+#[cfg(all(feature = "u16", feature = "u128"))]
 lossless_into!(u16,u128);
+#[cfg(all(feature = "u16", feature = "i8"))]
 lossless_into!(u16,i8);
+#[cfg(all(feature = "u16", feature = "i16"))]
 lossless_into!(u16,i16);
+#[cfg(all(feature = "u16", feature = "i32"))]
 lossless_into!(u16,i32);
+#[cfg(all(feature = "u16", feature = "i64"))]
 lossless_into!(u16,i64);
+#[cfg(all(feature = "u16", feature = "i128"))]
 lossless_into!(u16,i128);
 
+#[cfg(all(feature = "u32", feature = "u8"))]
 lossless_into!(u32,u8);
+#[cfg(all(feature = "u32", feature = "u16"))]
 lossless_into!(u32,u16);
+#[cfg(all(feature = "u32", feature = "u32"))]
 lossless_into!(u32,u32);
+#[cfg(all(feature = "u32", feature = "u64"))]
 lossless_into!(u32,u64);
+#[cfg(all(feature = "u32", feature = "u128"))]
 lossless_into!(u32,u128);
+#[cfg(all(feature = "u32", feature = "i8"))]
 lossless_into!(u32,i8);
+#[cfg(all(feature = "u32", feature = "i16"))]
 lossless_into!(u32,i16);
+#[cfg(all(feature = "u32", feature = "i32"))]
 lossless_into!(u32,i32);
+#[cfg(all(feature = "u32", feature = "i64"))]
 lossless_into!(u32,i64);
+#[cfg(all(feature = "u32", feature = "i128"))]
 lossless_into!(u32,i128);
 
+#[cfg(all(feature = "u64", feature = "u8"))]
 lossless_into!(u64,u8);
+#[cfg(all(feature = "u64", feature = "u16"))]
 lossless_into!(u64,u16);
+#[cfg(all(feature = "u64", feature = "u32"))]
 lossless_into!(u64,u32);
+#[cfg(all(feature = "u64", feature = "u64"))]
 lossless_into!(u64,u64);
+#[cfg(all(feature = "u64", feature = "u128"))]
 lossless_into!(u64,u128);
+#[cfg(all(feature = "u64", feature = "i8"))]
 lossless_into!(u64,i8);
+#[cfg(all(feature = "u64", feature = "i16"))]
 lossless_into!(u64,i16);
+#[cfg(all(feature = "u64", feature = "i32"))]
 lossless_into!(u64,i32);
+#[cfg(all(feature = "u64", feature = "i64"))]
 lossless_into!(u64,i64);
+#[cfg(all(feature = "u64", feature = "i128"))]
 lossless_into!(u64,i128);
 
+#[cfg(all(feature = "u128", feature = "u8"))]
 lossless_into!(u128,u8);
+#[cfg(all(feature = "u128", feature = "u16"))]
 lossless_into!(u128,u16);
+#[cfg(all(feature = "u128", feature = "u32"))]
 lossless_into!(u128,u32);
+#[cfg(all(feature = "u128", feature = "u64"))]
 lossless_into!(u128,u64);
+#[cfg(all(feature = "u128", feature = "u128"))]
 lossless_into!(u128,u128);
+#[cfg(all(feature = "u128", feature = "i8"))]
 lossless_into!(u128,i8);
+#[cfg(all(feature = "u128", feature = "i16"))]
 lossless_into!(u128,i16);
+#[cfg(all(feature = "u128", feature = "i32"))]
 lossless_into!(u128,i32);
+#[cfg(all(feature = "u128", feature = "i64"))]
 lossless_into!(u128,i64);
+#[cfg(all(feature = "u128", feature = "i128"))]
 lossless_into!(u128,i128);
 
+#[cfg(all(feature = "i8", feature = "i8"))]
 lossless_into!(i8,i8);
+#[cfg(all(feature = "i8", feature = "i16"))]
 lossless_into!(i8,i16);
+#[cfg(all(feature = "i8", feature = "i32"))]
 lossless_into!(i8,i32);
+#[cfg(all(feature = "i8", feature = "i64"))]
 lossless_into!(i8,i64);
+#[cfg(all(feature = "i8", feature = "i128"))]
 lossless_into!(i8,i128);
+#[cfg(all(feature = "i8", feature = "u8"))]
 lossless_into!(i8,u8);
+#[cfg(all(feature = "i8", feature = "u16"))]
 lossless_into!(i8,u16);
+#[cfg(all(feature = "i8", feature = "u32"))]
 lossless_into!(i8,u32);
+#[cfg(all(feature = "i8", feature = "u64"))]
 lossless_into!(i8,u64);
+#[cfg(all(feature = "i8", feature = "u128"))]
 lossless_into!(i8,u128);
 
+#[cfg(all(feature = "i16", feature = "i8"))]
 lossless_into!(i16,i8);
+#[cfg(all(feature = "i16", feature = "i16"))]
 lossless_into!(i16,i16);
+#[cfg(all(feature = "i16", feature = "i32"))]
 lossless_into!(i16,i32);
+#[cfg(all(feature = "i16", feature = "i64"))]
 lossless_into!(i16,i64);
+#[cfg(all(feature = "i16", feature = "i128"))]
 lossless_into!(i16,i128);
+#[cfg(all(feature = "i16", feature = "u8"))]
 lossless_into!(i16,u8);
+#[cfg(all(feature = "i16", feature = "u16"))]
 lossless_into!(i16,u16);
+#[cfg(all(feature = "i16", feature = "u32"))]
 lossless_into!(i16,u32);
+#[cfg(all(feature = "i16", feature = "u64"))]
 lossless_into!(i16,u64);
+#[cfg(all(feature = "i16", feature = "u128"))]
 lossless_into!(i16,u128);
 
+#[cfg(all(feature = "i32", feature = "i8"))]
 lossless_into!(i32,i8);
+#[cfg(all(feature = "i32", feature = "i16"))]
 lossless_into!(i32,i16);
+#[cfg(all(feature = "i32", feature = "i32"))]
 lossless_into!(i32,i32);
+#[cfg(all(feature = "i32", feature = "i64"))]
 lossless_into!(i32,i64);
+#[cfg(all(feature = "i32", feature = "i128"))]
 lossless_into!(i32,i128);
+#[cfg(all(feature = "i32", feature = "u8"))]
 lossless_into!(i32,u8);
+#[cfg(all(feature = "i32", feature = "u16"))]
 lossless_into!(i32,u16);
+#[cfg(all(feature = "i32", feature = "u32"))]
 lossless_into!(i32,u32);
+#[cfg(all(feature = "i32", feature = "u64"))]
 lossless_into!(i32,u64);
+#[cfg(all(feature = "i32", feature = "u128"))]
 lossless_into!(i32,u128);
 
+#[cfg(all(feature = "i64", feature = "i8"))]
 lossless_into!(i64,i8);
+#[cfg(all(feature = "i64", feature = "i16"))]
 lossless_into!(i64,i16);
+#[cfg(all(feature = "i64", feature = "i32"))]
 lossless_into!(i64,i32);
+#[cfg(all(feature = "i64", feature = "i64"))]
 lossless_into!(i64,i64);
+#[cfg(all(feature = "i64", feature = "i128"))]
 lossless_into!(i64,i128);
+#[cfg(all(feature = "i64", feature = "u8"))]
 lossless_into!(i64,u8);
+#[cfg(all(feature = "i64", feature = "u16"))]
 lossless_into!(i64,u16);
+#[cfg(all(feature = "i64", feature = "u32"))]
 lossless_into!(i64,u32);
+#[cfg(all(feature = "i64", feature = "u64"))]
 lossless_into!(i64,u64);
+#[cfg(all(feature = "i64", feature = "u128"))]
 lossless_into!(i64,u128);
 
+#[cfg(all(feature = "i128", feature = "i8"))]
 lossless_into!(i128,i8);
+#[cfg(all(feature = "i128", feature = "i16"))]
 lossless_into!(i128,i16);
+#[cfg(all(feature = "i128", feature = "i32"))]
 lossless_into!(i128,i32);
+#[cfg(all(feature = "i128", feature = "i64"))]
 lossless_into!(i128,i64);
+#[cfg(all(feature = "i128", feature = "i128"))]
 lossless_into!(i128,i128);
+#[cfg(all(feature = "i128", feature = "u8"))]
 lossless_into!(i128,u8);
+#[cfg(all(feature = "i128", feature = "u16"))]
 lossless_into!(i128,u16);
+#[cfg(all(feature = "i128", feature = "u32"))]
 lossless_into!(i128,u32);
+#[cfg(all(feature = "i128", feature = "u64"))]
 lossless_into!(i128,u64);
+#[cfg(all(feature = "i128", feature = "u128"))]
 lossless_into!(i128,u128);
 
 macro_rules! lossless_into_float_to_int {
@@ -173,36 +287,58 @@ macro_rules! lossless_into_float_to_int {
   };
 }
 
+#[cfg(all(feature = "f64", feature = "u8"))]
 lossless_into_float_to_int!(F64, u8);
+#[cfg(all(feature = "f64", feature = "u16"))]
 lossless_into_float_to_int!(F64, u16);
+#[cfg(all(feature = "f64", feature = "u32"))]
 lossless_into_float_to_int!(F64, u32);
+#[cfg(all(feature = "f64", feature = "u64"))]
 lossless_into_float_to_int!(F64, u64);
+#[cfg(all(feature = "f64", feature = "u128"))]
 lossless_into_float_to_int!(F64, u128);
+#[cfg(all(feature = "f64", feature = "i8"))]
 lossless_into_float_to_int!(F64, i8);
+#[cfg(all(feature = "f64", feature = "i16"))]
 lossless_into_float_to_int!(F64, i16);
+#[cfg(all(feature = "f64", feature = "i32"))]
 lossless_into_float_to_int!(F64, i32);
+#[cfg(all(feature = "f64", feature = "i64"))]
 lossless_into_float_to_int!(F64, i64);
+#[cfg(all(feature = "f64", feature = "i128"))]
 lossless_into_float_to_int!(F64, i128);
 
+#[cfg(all(feature = "f32", feature = "u8"))]
 lossless_into_float_to_int!(F32, u8);
+#[cfg(all(feature = "f32", feature = "u16"))]
 lossless_into_float_to_int!(F32, u16);
+#[cfg(all(feature = "f32", feature = "u32"))]
 lossless_into_float_to_int!(F32, u32);
+#[cfg(all(feature = "f32", feature = "u64"))]
 lossless_into_float_to_int!(F32, u64);
+#[cfg(all(feature = "f32", feature = "u128"))]
 lossless_into_float_to_int!(F32, u128);
+#[cfg(all(feature = "f32", feature = "i8"))]
 lossless_into_float_to_int!(F32, i8);
+#[cfg(all(feature = "f32", feature = "i16"))]
 lossless_into_float_to_int!(F32, i16);
+#[cfg(all(feature = "f32", feature = "i32"))]
 lossless_into_float_to_int!(F32, i32);
+#[cfg(all(feature = "f32", feature = "i64"))]
 lossless_into_float_to_int!(F32, i64);
+#[cfg(all(feature = "f32", feature = "i128"))]
 lossless_into_float_to_int!(F32, i128);
 
 macro_rules! lossless_into_int_to_float {
   ($int_type:ty) => {
     paste!{
+      #[cfg(feature = "f32")]
       impl LosslessInto<F32> for $int_type {
         fn lossless_into(self) -> F32 {
           F32::new(self as f32)
         }
       }
+      #[cfg(feature = "f64")]
       impl LosslessInto<F64> for $int_type {
         fn lossless_into(self) -> F64 {
           F64::new(self as f64)
@@ -212,47 +348,63 @@ macro_rules! lossless_into_int_to_float {
   };
 }
 
+#[cfg(feature = "u8")]
 lossless_into_int_to_float!(u8);
+#[cfg(feature = "u16")]
 lossless_into_int_to_float!(u16);
+#[cfg(feature = "u32")]
 lossless_into_int_to_float!(u32);
+#[cfg(feature = "u64")]
 lossless_into_int_to_float!(u64);
+#[cfg(feature = "u128")]
 lossless_into_int_to_float!(u128);
+#[cfg(feature = "i8")]
 lossless_into_int_to_float!(i8);
+#[cfg(feature = "i16")]
 lossless_into_int_to_float!(i16);
+#[cfg(feature = "i32")]
 lossless_into_int_to_float!(i32);
+#[cfg(feature = "i64")]
 lossless_into_int_to_float!(i64);
+#[cfg(feature = "i128")]
 lossless_into_int_to_float!(i128);
 
+#[cfg(all(feature = "f64", feature = "f32"))]
 impl LosslessInto<F32> for F64 {
   fn lossless_into(self) -> F32 {
     F32::new(self.0 as f32)
   }
 }
 
+#[cfg(all(feature = "f32", feature = "f64"))]
 impl LosslessInto<F64> for F32 {
   fn lossless_into(self) -> F64 {
     F64::new(self.0 as f64)
   }
 }
 
+#[cfg(feature = "f64")]
 impl LosslessInto<F64> for F64 {
   fn lossless_into(self) -> F64 {
     self
   }
 }
 
+#[cfg(feature = "f32")]
 impl LosslessInto<F32> for F32 {
   fn lossless_into(self) -> F32 {
     self
   }
 }
 
+#[cfg(all(feature = "rational", feature = "string"))]
 impl LosslessInto<String> for RationalNumber {
   fn lossless_into(self) -> String {
     self.pretty_print()
   }
 }
 
+#[cfg(all(feature = "rational", feature = "f64"))]
 impl LosslessInto<F64> for RationalNumber {
   fn lossless_into(self) -> F64 {
     match self.to_f64() {
@@ -261,20 +413,21 @@ impl LosslessInto<F64> for RationalNumber {
     }
   }
 }
-
+#[cfg(all(feature = "rational", feature = "f64"))]
 impl LosslessInto<RationalNumber> for F64 {
   fn lossless_into(self) -> RationalNumber {
     RationalNumber::from_f64(self.0).unwrap_or_else(|| panic!("Cannot convert F64 to RationalNumber: value is not representable"))
   }
 }
 
+#[cfg(all(feature = "rational", feature = "f32"))]
 impl LosslessInto<RationalNumber> for F32 {
   fn lossless_into(self) -> RationalNumber {
     RationalNumber::from_f64(self.0 as f64).unwrap_or_else(|| panic!("Cannot convert F32 to RationalNumber: value is not representable"))
   }
 }
 
-#[cfg(feature = "complex")]
+#[cfg(all(feature = "complex", feature = "string"))]
 impl LosslessInto<String> for ComplexNumber {
   fn lossless_into(self) -> String {
     self.pretty_print()

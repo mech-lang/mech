@@ -90,9 +90,11 @@ macro_rules! impl_conversion_match_arms {
             (Value::[<$input_type:camel>](arg), Value::Kind(ValueKind::[<$target_type:camel>])) => {Ok(Box::new(ConvertScalarToScalarBasic{arg: arg.clone(), out: new_ref($target_type::default())}))},
           )+
         )+
+        #[cfg(feature = "rational")]
         (Value::RationalNumber(ref rat), Value::Kind(ValueKind::F64)) => {
           Ok(Box::new(ConvertSRationalToF64{arg: rat.clone(), out: new_ref(F64::zero())}))
         }
+        #[cfg(feature = "atom")]
         (Value::Atom(varian_id), Value::Kind(ValueKind::Enum(enum_id))) => {
           let variants = vec![(varian_id,None)];
           let enm = MechEnum{id: enum_id, variants};
@@ -157,6 +159,7 @@ where
 
 fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<dyn MechFunction>>  {
   match (&source_value, &target_kind) {
+    #[cfg(feature = "rational")]
     (Value::RationalNumber(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar{arg: r.clone(),out: new_ref(F64::zero()),}));}
     #[cfg(all(feature = "matrix", feature = "table"))]
     (Value::MatrixString(ref mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
