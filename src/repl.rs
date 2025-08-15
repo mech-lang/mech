@@ -13,6 +13,8 @@ use nom::{
   multi::separated_list1,
   character::complete::{space0,space1,digit1},
 };
+use bincode::serde::encode_to_vec;
+use bincode::config::standard;
 use include_dir::{include_dir, Dir};
 
 static DOCS_DIR: Dir = include_dir!("docs");
@@ -108,6 +110,14 @@ impl MechRepl {
         let path = PathBuf::from(path);
         env::set_current_dir(&path).unwrap();
         return Ok("".to_string());
+      }
+      ReplCommand::Save(path) => {
+        let path = PathBuf::from(path);
+        let intrp = self.interpreters.get(&self.active).unwrap();
+        let encoded = encode_to_vec(&MechSourceCode::Program(intrp.code.clone()), standard()).unwrap();
+        let mut file = File::create(&path)?;
+        file.write_all(&encoded)?;
+        return Ok(format!("Saved interpreter state to {}", path.display()));
       }
       ReplCommand::Clc => {
         clc();

@@ -9,6 +9,30 @@ pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: 
   let sources = sources.read().unwrap();
   for (file,source) in sources.sources_iter() {
     match source {
+      MechSourceCode::Program(ref code_vec) => {
+        for c in code_vec {
+          match c {
+            MechSourceCode::Tree(tree) => {
+              if tree_flag {
+                println!("{}", &tree.pretty_print());
+              }
+              let now = Instant::now();
+              let result = intrp.interpret(tree);
+              let elapsed_time = now.elapsed();
+              let cycle_duration = elapsed_time.as_nanos() as f64;
+              if time_flag {
+                println!("Cycle Time: {} ns", cycle_duration);
+              }
+              if debug_flag {
+                println!("{}", pretty_print_symbols(&intrp));
+                println!("{}", pretty_print_plan(&intrp)); 
+              }
+              return result;
+            },
+            _ => todo!(),
+          }
+        }
+      }
       MechSourceCode::String(s) => {
         let now = Instant::now();
         let parse_result = parser::parse(&s.trim());
@@ -36,7 +60,7 @@ pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: 
           Err(err) => return Err(err),
         }
       }
-      _ => todo!(),
+      x => todo!("Unsupported source code type: {:?}", x),
     }
   }
   Ok(Value::Empty)
