@@ -7,7 +7,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::ops::*;
 use std::iter::Step;
-use num_traits::*;
+#[cfg(feature = "math_exp")]
+use num_traits::Pow;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 #[cfg(feature = "math_exp")]
@@ -880,14 +881,9 @@ impl PrettyPrint for String {
   }
 }
 
-impl PrettyPrint for Value {
-  fn  pretty_print(&self) -> String {
-    self.pretty_print()
-  }
-}
-
 macro_rules! impl_pretty_print {
   ($t:ty) => {
+    #[cfg(feature = "pretty_print")]
     impl PrettyPrint for $t {
       fn pretty_print(&self) -> String {
         format!("{}", self)

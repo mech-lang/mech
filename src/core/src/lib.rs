@@ -22,6 +22,7 @@ extern crate hashbrown;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde;
+#[cfg(feature = "math_exp")]
 extern crate num_traits;
 //extern crate ed25519_dalek;
 //extern crate rand;
@@ -31,9 +32,11 @@ extern crate indexmap;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
+#[cfg(feature = "math_exp")]
 use num_traits::*;
 use std::ops::*;
 use std::mem;
+#[cfg(feature = "rational")]
 use num_rational::Rational64;
 
 pub mod value;

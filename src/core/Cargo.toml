@@ -18,15 +18,16 @@ gitlab = { repository = "mech-lang/core", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [features]
-default = ["stdlib", "pretty_print"]
+default = ["stdlib", "pretty_print", "serde"]
+serde = ["brotli", "base64"]
 no_std = ["rlibc"]
 stdlib = ["bool", "string", "numbers", "matrix", "set", "map", "table", "tuple", "record", "atom", "math"]
 math = ["math_exp"]
 pretty_print = ["tabled"]
-math_exp = ["libm"]
+math_exp = ["libm", "num-traits"]
 numbers = ["signed_ints", "unsigned_ints", "floats", "complex", "rational"]
 complex = ["c64", "nalgebra"]
-rational = ["r64"]
+rational = ["r64", "num-rational"]
 signed_ints = ["i8", "i16", "i32", "i64", "i128"]
 unsigned_ints = ["u8", "u16", "u32", "u64", "u128"]
 floats = ["f32", "f64"]
@@ -76,9 +77,9 @@ vectord = []
 matrixd = []
 
 [dependencies]
-base64 = "0.22.1"
+base64 = {version = "0.22.1", optional = true}
 bincode = {version = "2.0.1", features = ["serde"]}
-brotli = "8.0.1"
+brotli = {version = "8.0.1", optional = true}
 hashbrown = "0.15.5"
 indexmap = {version = "2.10.0", features = ["serde"]}
 libm = {version = "0.2.15", optional = true}
@@ -92,7 +93,7 @@ serde_derive = "1.0.219"
 serde_json = "1.0.142"
 tabled = {version="0.18.0", optional = true}
 wasm-bindgen = {version = "0.2.100", optional = true}
-num-rational = "0.4.2"
+num-rational = {version = "0.4.2", optional = true}
 #time = {version = "0.3.40", optional = true}
 #ed25519-dalek = {version = "2.1.1", default-features = false, features = ["rand_core"]}
 #rand = "0.9.0"
@@ -119,3 +120,4 @@ optional = true
 version = "0.2.19"
 default-features = false
 features = ["libm"]
+optional = true

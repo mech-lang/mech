@@ -178,7 +178,7 @@ impl SymbolTable {
 
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for SymbolTable {
-  pub fn pretty_print(&self) -> String {
+  fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     let dict_brrw = self.dictionary.borrow();
     for (k,v) in &self.symbols {

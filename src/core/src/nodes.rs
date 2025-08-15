@@ -5,6 +5,7 @@ use std::io::{Write, Cursor, Read};
 use std::hash::Hash;
 use std::hash::Hasher;
 
+#[cfg(feature = "serde")]
 pub fn compress_and_encode<T: serde::Serialize>(tree: &T) -> Result<String, Box<dyn std::error::Error>> {
   let serialized_code = bincode::serde::encode_to_vec(tree,bincode::config::standard())?;
   let mut compressed = Vec::new();
@@ -13,6 +14,7 @@ pub fn compress_and_encode<T: serde::Serialize>(tree: &T) -> Result<String, Box<
   Ok(base64::encode(compressed))
 }
 
+#[cfg(feature = "serde")]
 pub fn decode_and_decompress<T: serde::de::DeserializeOwned>(encoded: &str) -> Result<T, Box<dyn std::error::Error>> {
   let decoded = base64::decode(encoded)?;
   
@@ -191,7 +193,7 @@ impl Program {
     }
   }
 
-  pub fn pretty_print(&self) -> String {
+  fn pretty_print(&self) -> String {
     let json_string = serde_json::to_string_pretty(self).unwrap();
   
     let depth = |line: &str|->usize{line.chars().take_while(|&c| c == ' ').count()};

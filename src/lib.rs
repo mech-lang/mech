@@ -214,7 +214,7 @@ pub fn ls() -> String {
   format!("\nDirectory: {}\n\n{table}\n",current_dir.display())
 }
 
-pub fn pretty_print_tree(tree: &Program) -> String {
+fn pretty_print_tree(tree: &Program) -> String {
   let tree_hash = hash_str(&format!("{:#?}", tree));
   let formatted_tree = tree.pretty_print();
   let mut builder = Builder::default();
@@ -270,7 +270,7 @@ pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
 }
 
 
-pub fn pretty_print_symbols(intrp: &Interpreter) -> String {
+fn pretty_print_symbols(intrp: &Interpreter) -> String {
   let mut builder = Builder::default();
   let symbol_table = intrp.pretty_print_symbols();
   builder.push_record(vec![
@@ -289,7 +289,7 @@ pub fn clc() {
   stdo.execute(cursor::MoveTo(0,0));
 }
 
-pub fn pretty_print_plan(intrp: &Interpreter) -> String {
+fn pretty_print_plan(intrp: &Interpreter) -> String {
   let mut builder = Builder::default();
 
   let mut row = vec![];

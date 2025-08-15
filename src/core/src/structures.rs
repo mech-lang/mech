@@ -71,7 +71,7 @@ impl MechSet {
 
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for MechSet {
-  pub fn pretty_print(&self) -> String {
+  fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     let mut element_strings = vec![];
     for x in self.set.iter() {
@@ -153,7 +153,7 @@ impl MechMap {
 
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for MechMap {
-  pub fn pretty_print(&self) -> String {
+  fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     let mut element_strings = vec![];
     let mut key_strings = vec![];
@@ -463,7 +463,14 @@ impl MechTable {
     self.data.get(key)
   }
 
-  pub fn pretty_print(&self) -> String {
+   pub fn shape(&self) -> Vec<usize> {
+    vec![self.rows,self.cols]
+  }
+}
+
+#[cfg(feature = "pretty_print")]
+impl PrettyPrint for MechTable {
+  fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     for (k,(knd,val)) in &self.data {
       let name = self.col_names.get(k).unwrap();
@@ -477,10 +484,6 @@ impl MechTable {
     let mut table = builder.build();
     table.with(Style::modern_rounded());
     format!("{table}")
-  }
-
-  pub fn shape(&self) -> Vec<usize> {
-    vec![self.rows,self.cols]
   }
 }
 
@@ -636,7 +639,7 @@ impl MechRecord {
 
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for MechRecord {
-  pub fn pretty_print(&self) -> String {
+  fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     let mut key_strings = vec![];
     let mut element_strings = vec![];
@@ -707,7 +710,7 @@ impl MechTuple {
 
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for MechTuple {
-  pub fn pretty_print(&self) -> String {
+  fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     let string_elements: Vec<String> = self.elements.iter().map(|e| e.pretty_print()).collect::<Vec<String>>();
     builder.push_record(string_elements);
@@ -765,9 +768,11 @@ impl MechEnum {
   pub fn size_of(&self) -> usize {
     self.variants.iter().map(|(_,v)| v.as_ref().map_or(0, |x| x.size_of())).sum()
   }
+}
 
-  #[cfg(feature = "pretty_print")]
-  pub fn pretty_print(&self) -> String {
+#[cfg(feature = "pretty_print")]
+impl PrettyPrint for MechEnum {
+  fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     let string_elements: Vec<String> = vec![format!("{}{:?}",self.id,self.variants)];
     builder.push_record(string_elements);
@@ -775,7 +780,6 @@ impl MechEnum {
     table.with(Style::modern_rounded());
     format!("{table}")
   }
-
 }
 
 impl Hash for MechEnum {

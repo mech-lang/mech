@@ -170,7 +170,7 @@ impl Interpreter {
     fxns_brrw.functions.insert(fxn.id, fxn);
   }
 
-  pub fn pretty_print_symbols(&self) -> String {
+  fn pretty_print_symbols(&self) -> String {
     let symbol_table = self.symbols.borrow();
     symbol_table.pretty_print()
   }

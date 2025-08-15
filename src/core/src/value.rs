@@ -24,6 +24,7 @@ use serde::de::{self, Deserialize, SeqAccess, Deserializer, MapAccess, Visitor};
 use std::fmt;
 use std::cell::RefCell;
 use std::rc::Rc;
+#[cfg(feature = "rational")]
 use num_rational::Rational64;
 
 macro_rules! impl_as_type {
@@ -328,7 +329,13 @@ pub enum Value {
 
 impl fmt::Display for Value {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    self.pretty_print().fmt(f)
+    if cfg!(feature = "pretty_print") {
+      #[cfg(feature = "pretty_print")]
+      return self.pretty_print().fmt(f);
+      "".to_string().fmt(f) // kind of a hack to assuage the compiler
+    } else {
+      write!(f, "{:?}", self)
+    }
   }
 }
 
@@ -1508,7 +1515,7 @@ impl Value {
 
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for Value {
-  pub fn pretty_print(&self) -> String {
+  fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     match self {
       #[cfg(feature = "u8")]
