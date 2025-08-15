@@ -55,7 +55,7 @@ tuple = ["mech-core/tuple"]
 record = ["mech-core/record"]
 atom = ["mech-core/atom"]
 
-matrix = ["fixed_matrix", "fixed_vector", "fixed_row_vector", "row_vectord", "vectord", "matrixd", "mech-core/matrix"]
+matrix = ["nalgebra", "fixed_matrix", "fixed_vector", "fixed_row_vector", "row_vectord", "vectord", "matrixd", "mech-core/matrix"]
 fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2", "mech-core/fixed_row_vector"]
 fixed_vector = ["vector4", "vector3", "vector2", "mech-core/fixed_vector"]
 fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "mech-core/fixed_matrix"]
@@ -78,5 +78,5 @@ matrixd = ["mech-core/matrixd"]
 [dependencies]
 mech-core = {version = "0.2.57", default-features = false}
 
-nalgebra = "0.34.0"
+nalgebra = {version="0.34.0", optional = true}
 paste = "1.0.15"
