@@ -9,6 +9,7 @@ use std::panic::{catch_unwind, AssertUnwindSafe};
 pub struct Interpreter {
   pub id: u64,
   symbols: SymbolTableRef,
+  pub code: Vec<MechSourceCode>,
   plan: Plan,
   functions: FunctionsRef,
   pub out: Value,
@@ -26,6 +27,7 @@ impl Interpreter {
       out: Value::Empty,
       sub_interpreters: new_ref(HashMap::new()),
       out_values: new_ref(HashMap::new()),
+      code: Vec::new(),
     };
     interp.load_stdkinds();
     interp.load_stdlib();
@@ -139,6 +141,7 @@ impl Interpreter {
     self.functions = new_ref(Functions::new());
     self.out = Value::Empty;
     self.out_values = new_ref(HashMap::new());
+    self.code = Vec::new();
     self.sub_interpreters = new_ref(HashMap::new());
     self.load_stdkinds();
     self.load_stdlib();
@@ -190,6 +193,7 @@ impl Interpreter {
   }
 
   pub fn interpret(&mut self, tree: &Program) -> MResult<Value> {
+    self.code.push(MechSourceCode::Tree(tree.clone()));
     catch_unwind(AssertUnwindSafe(|| {
       let result = program(tree, &self);
       if let Some(last_step) = self.plan.borrow().last() {
