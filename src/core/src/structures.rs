@@ -8,7 +8,9 @@ use std::collections::HashMap;
 #[cfg(feature = "matrix")]
 use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix3x2, Matrix6, Matrix2};
 use std::hash::{Hash, Hasher};
+#[cfg(feature = "set")]
 use indexmap::set::IndexSet;
+#[cfg(any(feature = "map", feature = "table", feature = "record"))]
 use indexmap::map::*;
 #[cfg(feature = "pretty_print")]
 use tabled::{
@@ -25,6 +27,7 @@ use std::rc::Rc;
 
 // Set --------------------------------------------------------------------------
 
+#[cfg(feature = "set")]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MechSet {
   pub kind: ValueKind,
@@ -32,6 +35,7 @@ pub struct MechSet {
   pub set: IndexSet<Value>,
 }
 
+#[cfg(feature = "set")]
 impl MechSet {
 
   pub fn to_html(&self) -> String {
@@ -96,6 +100,7 @@ impl PrettyPrint for MechSet {
   }
 }
 
+#[cfg(feature = "set")]
 impl Hash for MechSet {
   fn hash<H: Hasher>(&self, state: &mut H) {
     for x in self.set.iter() {
@@ -106,6 +111,7 @@ impl Hash for MechSet {
 
 // Map ------------------------------------------------------------------
 
+#[cfg(feature = "map")]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MechMap {
   pub key_kind: ValueKind,
@@ -114,6 +120,7 @@ pub struct MechMap {
   pub map: IndexMap<Value,Value>,
 }
 
+#[cfg(feature = "map")]
 impl MechMap {
 
   pub fn to_html(&self) -> String {
@@ -169,6 +176,7 @@ impl PrettyPrint for MechMap {
   }
 }
 
+#[cfg(feature = "map")]
 impl Hash for MechMap {
   fn hash<H: Hasher>(&self, state: &mut H) {
     for x in self.map.iter() {
@@ -500,6 +508,7 @@ impl Hash for MechTable {
 
 // Record ------------------------------------------------------------------
 
+#[cfg(feature = "record")]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MechRecord {
   pub cols: usize,
@@ -508,6 +517,7 @@ pub struct MechRecord {
   pub field_names: HashMap<u64,String>,
 }
 
+#[cfg(feature = "record")]
 impl MechRecord {
 
   pub fn check_record_schema(&self, record: &MechRecord) -> MResult<()> {
@@ -656,6 +666,7 @@ impl PrettyPrint for MechRecord {
   }
 }
 
+#[cfg(feature = "record")]
 impl Hash for MechRecord {
   fn hash<H: Hasher>(&self, state: &mut H) {
     for (k,v) in self.data.iter() {

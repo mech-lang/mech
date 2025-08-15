@@ -3,7 +3,8 @@ use crate::value::*;
 use crate::nodes::*;
 use crate::*;
 
-use hashbrown::{HashMap, HashSet};
+use std::collections::HashMap;
+#[cfg(feature = "functions")]
 use indexmap::map::IndexMap;
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -28,15 +29,17 @@ pub trait NativeFunctionCompiler {
 }
 
 pub struct Functions {
+  #[cfg(feature = "functions")]
   pub functions: HashMap<u64,FunctionDefinition>,
   pub function_compilers: HashMap<u64, Box<dyn NativeFunctionCompiler>>,
   pub kinds: HashMap<u64,ValueKind>,
   pub enums: HashMap<u64,MechEnum>,
 }
-  
+
 impl Functions {
   pub fn new() -> Self {
     Self {
+      #[cfg(feature = "functions")]
       functions: HashMap::new(), 
       function_compilers: HashMap::new(), 
       kinds: HashMap::new(),
@@ -45,6 +48,7 @@ impl Functions {
   }
 }
 
+#[cfg(feature = "functions")]
 #[derive(Clone)]
 pub struct FunctionDefinition {
   pub code: FunctionDefine,
@@ -57,10 +61,23 @@ pub struct FunctionDefinition {
   pub plan: Plan,
 }
 
-#[cfg(feature = "pretty_print")]
+#[cfg(feature = "functions")]
 impl fmt::Debug for FunctionDefinition {
-  #[inline]
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    if cfg!(feature = "pretty_print") {
+      #[cfg(feature = "pretty_print")]
+      return self.pretty_print();
+      "".to_string().fmt(f)
+    } else {
+      write!(f, "FunctionDefinition {{ id: {}, name: {}, input: {:?}, output: {:?}, symbols: {:?} }}", 
+      self.id, self.name, self.input, self.output, self.symbols.borrow())
+    }
+  }
+}
+
+#[cfg(all(feature = "pretty_print", feature = "functions"))]
+impl PrettyPrint for FunctionDefinition {
+  fn pretty_print(&self) -> String {
     let input_str = format!("{:#?}", self.input);
     let output_str = format!("{:#?}", self.output);
     let symbols_str = format!("{:#?}", self.symbols);
@@ -81,6 +98,7 @@ impl fmt::Debug for FunctionDefinition {
   }
 }
 
+#[cfg(feature = "functions")]
 impl FunctionDefinition {
 
   pub fn new(id: u64, name: String, code: FunctionDefine) -> Self {
@@ -111,10 +129,12 @@ impl FunctionDefinition {
 
 // User Function --------------------------------------------------------------
 
+#[cfg(feature = "functions")]
 pub struct UserFunction {
   pub fxn: FunctionDefinition,
 }
 
+#[cfg(feature = "functions")]
 impl MechFunction for UserFunction {
   fn solve(&self) {
     self.fxn.solve();
@@ -127,7 +147,7 @@ impl MechFunction for UserFunction {
 
 // Symbol Table ---------------------------------------------------------------
 
-pub type Dictionary = IndexMap<u64,String>;
+pub type Dictionary = HashMap<u64,String>;
 
 #[derive(Clone, Debug)]
 pub struct SymbolTable {
@@ -143,7 +163,7 @@ impl SymbolTable {
     Self {
       symbols: HashMap::new(),
       mutable_variables: HashMap::new(),
-      dictionary: new_ref(IndexMap::new()),
+      dictionary: new_ref(HashMap::new()),
       reverse_lookup: HashMap::new(),
     }
   }

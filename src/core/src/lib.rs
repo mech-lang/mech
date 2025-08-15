@@ -18,7 +18,6 @@ extern crate tabled;
 #[cfg(feature = "no-std")]
 extern crate alloc;
 extern crate core as rust_core;
-extern crate hashbrown;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde;
@@ -28,7 +27,6 @@ extern crate num_traits;
 //extern crate rand;
 
 extern crate seahash;
-extern crate indexmap;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
