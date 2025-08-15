@@ -11,8 +11,10 @@ pub fn expression(expr: &Expression, p: &Interpreter) -> MResult<Value> {
     Expression::Formula(fctr) => factor(fctr, p),
     Expression::Structure(strct) => structure(strct, p),
     Expression::Literal(ltrl) => literal(&ltrl, p),
+    #[cfg(feature = "functions")]
     Expression::FunctionCall(fxn_call) => function_call(fxn_call, p),
     //Expression::FsmPipe(_) => todo!(),
+    x => Err(MechError{file: file!().to_string(), tokens: x.tokens(), msg: format!("Feature not enabled {:?}", x), id: line!(), kind: MechErrorKind::None}),
   }
 }
 

@@ -25,6 +25,7 @@ pub fn structure(strct: &Structure, p: &Interpreter) -> MResult<Value> {
   }
 }
 
+#[cfg(feature = "tuple")]
 pub fn tuple(tpl: &Tuple, p: &Interpreter) -> MResult<Value> {
   let mut elements = vec![];
   for el in &tpl.elements {
@@ -35,6 +36,7 @@ pub fn tuple(tpl: &Tuple, p: &Interpreter) -> MResult<Value> {
   Ok(Value::Tuple(mech_tuple))
 }
 
+#[cfg(feature = "map")]
 pub fn map(mp: &Map, p: &Interpreter) -> MResult<Value> {
   let mut m = IndexMap::new();
   for b in &mp.elements {
@@ -66,6 +68,7 @@ pub fn map(mp: &Map, p: &Interpreter) -> MResult<Value> {
   }))
 }
 
+#[cfg(feature = "record")]
 pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
   let mut data: IndexMap<u64,Value> = IndexMap::new();
   let cols: usize = rcrd.bindings.len();
@@ -108,6 +111,7 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
   })))
 }
 
+#[cfg(feature = "set")]
 pub fn set(m: &Set, p: &Interpreter) -> MResult<Value> { 
   let mut out = IndexSet::new();
   for el in &m.elements {

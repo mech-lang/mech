@@ -6,18 +6,23 @@ use paste::paste;
 
 pub fn statement(stmt: &Statement, p: &Interpreter) -> MResult<Value> {
   match stmt {
+    #[cfg(feature = "tuple")]
     Statement::TupleDestructure(tpl_dstrct) => tuple_destructure(&tpl_dstrct, p),
     Statement::VariableDefine(var_def) => variable_define(&var_def, p),
     Statement::VariableAssign(var_assgn) => variable_assign(&var_assgn, p),
     Statement::KindDefine(knd_def) => kind_define(&knd_def, p),
+    #[cfg(feature = "enum")]
     Statement::EnumDefine(enm_def) => enum_define(&enm_def, p),
+    #[cfg(feature = "math")]
     Statement::OpAssign(op_assgn) => op_assign(&op_assgn, p),
     //Statement::FsmDeclare(_) => todo!(),
     Statement::SplitTable => todo!(),
     Statement::FlattenTable => todo!(),
+    x => return Err(MechError{file:file!().to_string(),tokens:x.tokens(),msg: format!("Feature not enabled {:?}", x), id:line!(),kind:MechErrorKind::None}),
   }
 }
 
+#[cfg(feature = "tuple")]
 pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &Interpreter) -> MResult<Value> {
   let source = expression(&tpl_dstrct.expression, p)?;
   let tpl = match &source {
@@ -48,6 +53,7 @@ pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &Interpreter) -> MRes
   Ok(source)
 }
 
+#[cfg(feature = "math")]
 pub fn op_assign(op_assgn: &OpAssign, p: &Interpreter) -> MResult<Value> {
   let mut source = expression(&op_assgn.expression, p)?;
   let slc = &op_assgn.target;
@@ -133,6 +139,7 @@ pub fn variable_assign(var_assgn: &VariableAssign, p: &Interpreter) -> MResult<V
   unreachable!(); // subscript should have thrown an error if we can't access an element
 }
 
+#[cfg(feature = "enum")]
 pub fn enum_define(enm_def: &EnumDefine, p: &Interpreter) -> MResult<Value> {
   let id = enm_def.name.hash();
   let variants = enm_def.variants.iter().map(|v| (v.name.hash(),None)).collect::<Vec<(u64, Option<Value>)>>();
@@ -169,6 +176,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
     // Do kind checking
     match (&result, &target_knd) {
       // Atom is a variant of an enum
+      #[cfg(all(feature = "atom", feature = "enum"))]
       (Value::Atom(given_variant_id), ValueKind::Enum(enum_id)) => {
         let fxns_brrw = functions.borrow();
         let my_enum = match fxns_brrw.enums.get(enum_id) {
@@ -181,6 +189,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
         }
       }
       // Atoms can't convert into anything else.
+      #[cfg(feature = "atom")]
       (Value::Atom(given_variant_id), target_kind) => {
         return Err(MechError{file: file!().to_string(), tokens: var_def.expression.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UnableToConvertValueKind}); 
       }

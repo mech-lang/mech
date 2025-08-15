@@ -465,7 +465,7 @@ impl_lossy_from!(i128 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
 impl_lossy_from!(u128 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
 
 macro_rules! impl_lossy_from_wrapper {
-  ($wrapper:ident, $inner:ty, $($prim:ty),*) => {
+  ($wrapper:ident, $inner:ty => $($prim:ty),*) => {
     $(
       impl LossyFrom<$wrapper> for $prim {
         fn lossy_from(value: $wrapper) -> Self {
@@ -481,61 +481,78 @@ macro_rules! impl_lossy_from_wrapper {
   };
 }
 
-impl_lossy_from_wrapper!(F64, f64, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, f32, f64);
-impl_lossy_from_wrapper!(F32, f32, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, f32, f64);
+#[cfg(feature = "f64")]
+impl_lossy_from_wrapper!(F64, f64 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, f32, f64);
+#[cfg(feature = "f32")]
+impl_lossy_from_wrapper!(F32, f32 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, f32, f64);
 
+#[cfg(all(feature = "f64", feature = "f32"))]
 impl LossyFrom<F64> for F32 {
   fn lossy_from(value: F64) -> Self {
     F32(value.0 as f32)
   }
 }
 
+#[cfg(all(feature = "f32", feature = "f64"))]
 impl LossyFrom<F32> for F64 {
   fn lossy_from(value: F32) -> Self {
     F64(value.0 as f64)
   }
 }
 
+#[cfg(feature = "f64")]
 impl LossyFrom<F64> for F64 {
   fn lossy_from(value: F64) -> Self {
     F64(value.0)
   }
 }
 
+#[cfg(feature = "f32")]
 impl LossyFrom<F32> for F32 {
   fn lossy_from(value: F32) -> Self {
     F32(value.0)
   }
 }
 
+#[cfg(all(feature = "rational", feature = "f64"))]
 impl LossyFrom<F64> for RationalNumber {
   fn lossy_from(value: F64) -> Self {
     RationalNumber::from(value)
   }
 }
 
+#[cfg(all(feature = "rational", feature = "string"))]
 impl LossyFrom<RationalNumber> for String {
   fn lossy_from(value: RationalNumber) -> Self {
     value.pretty_print()
   }
 }
 
+#[cfg(all(feature = "rational", feature = "f64"))]
 impl LossyFrom<RationalNumber> for F64 {
   fn lossy_from(value: RationalNumber) -> Self {
     F64(value.to_f64().unwrap_or_else(|| panic!("Cannot convert RationalNumber to F64: value is not representable")))
   }
 }
 
+#[cfg(all(feature = "f64", feature = "string"))]
 impl LossyFrom<F64> for String {
   fn lossy_from(value: F64) -> Self {
     value.to_string()
   }
 }
 
-
+#[cfg(all(feature = "f32", feature = "string"))]
 impl LossyFrom<F32> for String {
   fn lossy_from(value: F32) -> Self {
     value.to_string()
+  }
+}
+
+#[cfg(feature = "string")]
+impl LossyFrom<String> for String {
+  fn lossy_from(value: String) -> Self {
+    value
   }
 }
 

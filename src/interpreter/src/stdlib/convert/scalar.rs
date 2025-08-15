@@ -42,12 +42,14 @@ where T: Debug + Clone + PartialEq + Into<Value> + 'static,
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
+#[cfg(all(feature = "rational", feature = "f64"))]
 #[derive(Debug)]
 struct ConvertSRationalToF64 {
   arg: Ref<RationalNumber>,
   out: Ref<F64>,
 }
 
+#[cfg(all(feature = "rational", feature = "f64"))]
 impl MechFunction for ConvertSRationalToF64 {
   fn solve(&self) {
     let arg_ptr = self.arg.as_ptr();
@@ -59,7 +61,7 @@ impl MechFunction for ConvertSRationalToF64 {
 }
 
 macro_rules! impl_conversion_match_arms {
-  ($arg:expr, $($input_type:ident => $($target_type:ident),+);+ $(;)?) => {
+  ($arg:expr, $($input_type:ident, $input_type_string:tt => $($target_type:ident, $target_type_string:tt),+);+ $(;)?) => {
     paste!{
       match $arg {
         $(
@@ -87,6 +89,7 @@ macro_rules! impl_conversion_match_arms {
             Ok(Box::new(ConvertMat2Table::<$input_type>{arg: mat.clone(), out: new_ref(out)}))
           }
           $(
+            #[cfg(all(feature = $input_type_string, feature = $target_type_string))]
             (Value::[<$input_type:camel>](arg), Value::Kind(ValueKind::[<$target_type:camel>])) => {Ok(Box::new(ConvertScalarToScalarBasic{arg: arg.clone(), out: new_ref($target_type::default())}))},
           )+
         )+
@@ -187,19 +190,21 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
   }
   impl_conversion_match_arms!(
     (source_value, target_kind),
-    i8   => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    i16  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    i32  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    i64  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    i128 => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    u8   => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    u16  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    u32  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    u64  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    u128 => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    F32  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    F64  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64, RationalNumber;
-    RationalNumber => String, F64;
+    i8, "i8" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "F32", F64, "F64";
+    i16, "i16" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "F32", F64, "F64";
+    i32, "i32" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "F32", F64, "F64";
+    i64, "i64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "F32", F64, "F64";
+    i128, "i128" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "F32", F64, "F64";
+    u8, "u8" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "F32", F64, "F64";
+    u16, "u16" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "F32", F64, "F64";
+    u32, "u32" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "F32", F64, "F64";
+    u64, "u64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "F32", F64, "F64";
+    u128, "u128" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "F32", F64, "F64";
+    F32, "F32" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "F32", F64, "F64";
+    F64, "F64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "F32", F64, "F64", RationalNumber, "rational";
+    RationalNumber, "rational" => String, "string", F64, "F64";
+    String, "string" => String, "string";
+    bool, "bool" => String, "string", bool, "bool";
   )
 }
 
@@ -217,30 +222,31 @@ impl NativeFunctionCompiler for ConvertKind {
       Err(_) => {
         match source_value {
           Value::MutableReference(rhs) => impl_conversion_fxn(rhs.borrow().clone(), target_kind.clone()),
+          #[cfg(feature = "atom")]
           Value::Atom(atom_id) => impl_conversion_fxn(source_value, target_kind.clone()),
-          #[cfg(feature = "matrix")]
+          #[cfg(all(feature = "matrix", feature = "u8"))]
           Value::MatrixU8(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-          #[cfg(feature = "matrix")]
+          #[cfg(all(feature = "matrix", feature = "u16"))]
           Value::MatrixU16(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-          #[cfg(feature = "matrix")]
+          #[cfg(all(feature = "matrix", feature = "u32"))]
           Value::MatrixU32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-          #[cfg(feature = "matrix")]
+          #[cfg(all(feature = "matrix", feature = "u64"))]
           Value::MatrixU64(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-          #[cfg(feature = "matrix")]
+          #[cfg(all(feature = "matrix", feature = "u128"))]
           Value::MatrixU128(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-          #[cfg(feature = "matrix")]
+          #[cfg(all(feature = "matrix", feature = "i8"))]
           Value::MatrixI8(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-          #[cfg(feature = "matrix")]
+          #[cfg(all(feature = "matrix", feature = "i16"))]
           Value::MatrixI16(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-          #[cfg(feature = "matrix")]
-          Value::MatrixI32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),  
-          #[cfg(feature = "matrix")]
+          #[cfg(all(feature = "matrix", feature = "i32"))]
+          Value::MatrixI32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          #[cfg(all(feature = "matrix", feature = "i64"))]
           Value::MatrixI64(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-          #[cfg(feature = "matrix")]
+          #[cfg(all(feature = "matrix", feature = "i128"))]
           Value::MatrixI128(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-          #[cfg(feature = "matrix")]
+          #[cfg(all(feature = "matrix", feature = "f32"))]
           Value::MatrixF32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-          #[cfg(feature = "matrix")]
+          #[cfg(all(feature = "matrix", feature = "f64"))]
           Value::MatrixF64(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
           x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }

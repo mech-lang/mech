@@ -16,9 +16,13 @@ use mech_core::{Dictionary, Ref, Value, ValueKind, ValRef, ToValue};
 use mech_core::{MechMap, MechFunction, MechRecord, MechSet, MechTuple, MechEnum};
 #[cfg(feature = "table")]
 use mech_core::MechTable;
-use mech_core::{F64, F32};
+#[cfg(feature = "f64")]
+use mech_core::F64;
+#[cfg(feature = "f32")]
+use mech_core::F32;
 #[cfg(feature = "complex")]
 use mech_core::ComplexNumber;
+#[cfg(feature = "rational")]
 use mech_core::RationalNumber;
 use mech_core::{Functions, FunctionsRef, FunctionDefinition, NativeFunctionCompiler, Plan, UserFunction, SymbolTableRef, SymbolTable};
 use crate::stdlib::{
@@ -61,7 +65,7 @@ pub mod literals;
 pub mod structures;
 pub mod interpreter;
 pub mod stdlib;
-pub mod functions;
+//pub mod functions;
 pub mod statements;
 pub mod expressions;
 pub mod mechdown;
@@ -69,7 +73,7 @@ pub mod mechdown;
 pub use crate::interpreter::*;
 pub use crate::literals::*;
 pub use crate::structures::*;
-pub use crate::functions::*;
+//pub use crate::functions::*;
 pub use crate::statements::*;
 pub use crate::expressions::*;
 pub use crate::mechdown::*;

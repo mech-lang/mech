@@ -1486,55 +1486,55 @@ impl Value {
     }
   }
 
-  #[cfg(any(feature = "matrix", feature = "bool"))]
+  #[cfg(all(feature = "matrix", feature = "bool"))]
   pub fn as_vecbool(&self) -> Option<Vec<bool>> {if let Value::MatrixBool(v)  = self { Some(v.as_vec()) } else if let Value::Bool(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecbool()  } else { None }}
   
-  #[cfg(any(feature = "matrix", feature = "f64"))]
+  #[cfg(all(feature = "matrix", feature = "f64"))]
   pub fn as_vecf64(&self) -> Option<Vec<F64>> { if let Value::MatrixF64(v) = self { Some(v.as_vec()) } else if let Value::F64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf64() } else if let Some(v) = self.as_f64() { Some(vec![v.borrow().clone()]) } else { None } }
-  #[cfg(any(feature = "matrix", feature = "f32"))]
+  #[cfg(all(feature = "matrix", feature = "f32"))]
   pub fn as_vecf32(&self) -> Option<Vec<F32>> { if let Value::MatrixF32(v) = self { Some(v.as_vec()) } else if let Value::F32(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf32() } else if let Some(v) = self.as_f32() { Some(vec![v.borrow().clone()]) } else { None } }
 
-  #[cfg(any(feature = "matrix", feature = "u8"))]
+  #[cfg(all(feature = "matrix", feature = "u8"))]
   pub fn as_vecu8(&self) -> Option<Vec<u8>> { if let Value::MatrixU8(v) = self { Some(v.as_vec()) } else if let Value::U8(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu8() } else if let Some(v) = self.as_u8() { Some(vec![v.borrow().clone()]) } else { None } }
-  #[cfg(any(feature = "matrix", feature = "u16"))]
+  #[cfg(all(feature = "matrix", feature = "u16"))]
   pub fn as_vecu16(&self) -> Option<Vec<u16>> { if let Value::MatrixU16(v) = self { Some(v.as_vec()) } else if let Value::U16(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu16() } else if let Some(v) = self.as_u16() { Some(vec![v.borrow().clone()]) } else { None } }
-  #[cfg(any(feature = "matrix", feature = "u32"))]
+  #[cfg(all(feature = "matrix", feature = "u32"))]
   pub fn as_vecu32(&self) -> Option<Vec<u32>> { if let Value::MatrixU32(v) = self { Some(v.as_vec()) } else if let Value::U32(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu32() } else if let Some(v) = self.as_u32() { Some(vec![v.borrow().clone()]) } else { None } }
-  #[cfg(any(feature = "matrix", feature = "u64"))]
+  #[cfg(all(feature = "matrix", feature = "u64"))]
   pub fn as_vecu64(&self) -> Option<Vec<u64>> { if let Value::MatrixU64(v) = self { Some(v.as_vec()) } else if let Value::U64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu64() } else if let Some(v) = self.as_u64() { Some(vec![v.borrow().clone()]) } else { None } }
-  #[cfg(any(feature = "matrix", feature = "u128"))]
+  #[cfg(all(feature = "matrix", feature = "u128"))]
   pub fn as_vecu128(&self) -> Option<Vec<u128>> { if let Value::MatrixU128(v) = self { Some(v.as_vec()) } else if let Value::U128(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu128() } else if let Some(v) = self.as_u128() { Some(vec![v.borrow().clone()]) } else { None } }
 
-  #[cfg(any(feature = "matrix", feature = "i8"))]
+  #[cfg(all(feature = "matrix", feature = "i8"))]
   pub fn as_veci8(&self) -> Option<Vec<i8>> { if let Value::MatrixI8(v) = self { Some(v.as_vec()) } else if let Value::I8(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci8() } else if let Some(v) = self.as_i8() { Some(vec![v.borrow().clone()]) } else { None } }
-  #[cfg(any(feature = "matrix", feature = "i16"))]
+  #[cfg(all(feature = "matrix", feature = "i16"))]
   pub fn as_veci16(&self) -> Option<Vec<i16>> { if let Value::MatrixI16(v) = self { Some(v.as_vec()) } else if let Value::I16(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci16() } else if let Some(v) = self.as_i16() { Some(vec![v.borrow().clone()]) } else { None } }
-  #[cfg(any(feature = "matrix", feature = "i32"))]
+  #[cfg(all(feature = "matrix", feature = "i32"))]
   pub fn as_veci32(&self) -> Option<Vec<i32>> { if let Value::MatrixI32(v) = self { Some(v.as_vec()) } else if let Value::I32(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci32() } else if let Some(v) = self.as_i32() { Some(vec![v.borrow().clone()]) } else { None } }
-  #[cfg(any(feature = "matrix", feature = "i64"))]
+  #[cfg(all(feature = "matrix", feature = "i64"))]
   pub fn as_veci64(&self) -> Option<Vec<i64>> { if let Value::MatrixI64(v) = self { Some(v.as_vec()) } else if let Value::I64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci64() } else if let Some(v) = self.as_i64() { Some(vec![v.borrow().clone()]) } else { None } }
-  #[cfg(any(feature = "matrix", feature = "i128"))]
+  #[cfg(all(feature = "matrix", feature = "i128"))]
   pub fn as_veci128(&self) -> Option<Vec<i128>> { if let Value::MatrixI128(v) = self { Some(v.as_vec()) } else if let Value::I128(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci128() } else if let Some(v) = self.as_i128() { Some(vec![v.borrow().clone()]) } else { None } }
 
-  #[cfg(any(feature = "matrix", feature = "string"))]
+  #[cfg(all(feature = "matrix", feature = "string"))]
   pub fn as_vecstring(&self) -> Option<Vec<String>> {if let Value::MatrixString(v)  = self { Some(v.as_vec()) } else if let Value::String(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecstring()  } else { None }}
 
-  #[cfg(any(feature = "matrix", feature = "rational"))]
+  #[cfg(all(feature = "matrix", feature = "rational"))]
   pub fn as_vecrationalnumber(&self) -> Option<Vec<RationalNumber>> {if let Value::MatrixRationalNumber(v)  = self { Some(v.as_vec()) } else if let Value::RationalNumber(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecrationalnumber()  } else { None }}
-  #[cfg(any(feature = "matrix", feature = "complex"))]
+  #[cfg(all(feature = "matrix", feature = "complex"))]
   pub fn as_veccomplexnumber(&self) -> Option<Vec<ComplexNumber>> {if let Value::MatrixComplexNumber(v)  = self { Some(v.as_vec()) } else if let Value::ComplexNumber(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veccomplexnumber()  } else { None }}
 
   pub fn as_vecusize(&self) -> Option<Vec<usize>> {
     match self {
       #[cfg(feature = "matrix")]
       Value::MatrixIndex(v) => Some(v.as_vec()),
-      #[cfg(any(feature = "matrix", feature = "i64"))]
+      #[cfg(all(feature = "matrix", feature = "i64"))]
       Value::MatrixI64(v) => Some(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
-      #[cfg(any(feature = "matrix", feature = "f64"))]
+      #[cfg(all(feature = "matrix", feature = "f64"))]
       Value::MatrixF64(v) => Some(v.as_vec().iter().map(|x| (*x).0 as usize).collect::<Vec<usize>>()),
-      #[cfg(any(feature = "matrix", feature = "f32"))]
+      #[cfg(all(feature = "matrix", feature = "f32"))]
       Value::MatrixF32(v) => Some(v.as_vec().iter().map(|x| (*x).0 as usize).collect::<Vec<usize>>()),
-      #[cfg(any(feature = "matrix", feature = "bool"))]
+      #[cfg(all(feature = "matrix", feature = "bool"))]
       Value::MatrixBool(_) => None,
       #[cfg(feature = "bool")]
       Value::Bool(_) => None,

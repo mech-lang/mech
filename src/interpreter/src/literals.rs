@@ -118,6 +118,7 @@ pub fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, p: &Interpreter)
   Ok(converted_result)
 }
 
+#[cfg(feature = "atom")]
 pub fn atom(atm: &Atom) -> Value {
   let id = atm.name.hash();
   Value::Atom(id)
@@ -174,6 +175,7 @@ pub fn real(rl: &RealNumber) -> Value {
   }
 }
 
+#[cfg(feature = "math_neg")]
 pub fn negated(num: &RealNumber) -> Value {
   let num_val = real(&num);
   match num_val {
@@ -195,6 +197,7 @@ pub fn negated(num: &RealNumber) -> Value {
   }
 }
 
+#[cfg(feature = "rational")]
 pub fn rational(rat: &(Token,Token)) -> Value {
   let (num, denom) = rat;
   let num = num.chars.iter().collect::<String>().parse::<i64>().unwrap();
@@ -206,30 +209,35 @@ pub fn rational(rat: &(Token,Token)) -> Value {
   Value::RationalNumber(new_ref(rat_num))
 }
 
+#[cfg(feature = "i64")]
 pub fn dec(bnry: &Token) -> Value {
   let binary_str: String = bnry.chars.iter().collect();
   let num = i64::from_str_radix(&binary_str, 10).unwrap();
   Value::I64(new_ref(num))
 }
 
+#[cfg(feature = "i64")]
 pub fn binary(bnry: &Token) -> Value {
   let binary_str: String = bnry.chars.iter().collect();
   let num = i64::from_str_radix(&binary_str, 2).unwrap();
   Value::I64(new_ref(num))
 }
 
+#[cfg(feature = "i64")]
 pub fn oct(octl: &Token) -> Value {
   let hex_str: String = octl.chars.iter().collect();
   let num = i64::from_str_radix(&hex_str, 8).unwrap();
   Value::I64(new_ref(num))
 }
 
+#[cfg(feature = "i64")]
 pub fn hex(hxdcml: &Token) -> Value {
   let hex_str: String = hxdcml.chars.iter().collect();
   let num = i64::from_str_radix(&hex_str, 16).unwrap();
   Value::I64(new_ref(num))
 }
 
+#[cfg(feature = "f64")]
 pub fn scientific(sci: &(Base,Exponent)) -> Value {
   let (base,exp): &(Base,Exponent) = sci;
   let (whole,part): &(Whole,Part) = base;
@@ -248,6 +256,7 @@ pub fn scientific(sci: &(Base,Exponent)) -> Value {
   Value::F64(new_ref(F64(num)))
 }
 
+#[cfg(feature = "floats")]
 pub fn float(flt: &(Token,Token)) -> Value {
   let a = flt.0.chars.iter().collect::<String>();
   let b = flt.1.chars.iter().collect::<String>();
@@ -255,11 +264,13 @@ pub fn float(flt: &(Token,Token)) -> Value {
   Value::F64(new_ref(F64(num)))
 }
 
+#[cfg(any(feature = "unsigned_ints", feature = "f64"))]
 pub fn integer(int: &Token) -> Value {
   let num: f64 = int.chars.iter().collect::<String>().parse::<f64>().unwrap();
   Value::F64(new_ref(F64::new(num)))
 }
 
+#[cfg(feature = "string")]
 pub fn string(tkn: &MechString) -> Value {
   let strng: String = tkn.text.chars.iter().collect::<String>();
   Value::String(new_ref(strng))
@@ -269,6 +280,7 @@ pub fn empty() -> Value {
   Value::Empty
 }
 
+#[cfg(feature = "bool")]
 pub fn boolean(tkn: &Token) -> Value {
   let strng: String = tkn.chars.iter().collect::<String>();
   let val = match strng.as_str() {
