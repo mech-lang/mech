@@ -126,18 +126,15 @@ pub fn factor(input: ParseString) -> ParseResult<Factor> {
           Ok((input, neg)) => (input, neg),
           Err(_) => match structure(input.clone()) {
             Ok((input, strct)) => (input, Factor::Expression(Box::new(Expression::Structure(strct)))),
-            Err(_) => match fsm_pipe(input.clone()) {
-              Ok((input, pipe)) => (input, Factor::Expression(Box::new(Expression::FsmPipe(pipe)))),
-              Err(_) => match function_call(input.clone()) {
-                Ok((input, fxn)) => (input, Factor::Expression(Box::new(Expression::FunctionCall(fxn)))),
-                Err(_) => match literal(input.clone()) {
-                  Ok((input, ltrl)) => (input, Factor::Expression(Box::new(Expression::Literal(ltrl)))),
-                  Err(_) => match slice(input.clone()) {
-                    Ok((input, slc)) => (input, Factor::Expression(Box::new(Expression::Slice(slc)))),
-                    Err(_) => match var(input.clone()) {
-                      Ok((input, var)) => (input, Factor::Expression(Box::new(Expression::Var(var)))),
-                      Err(err) => { return Err(err); },
-                    },
+            Err(_) => match function_call(input.clone()) {
+              Ok((input, fxn)) => (input, Factor::Expression(Box::new(Expression::FunctionCall(fxn)))),
+              Err(_) => match literal(input.clone()) {
+                Ok((input, ltrl)) => (input, Factor::Expression(Box::new(Expression::Literal(ltrl)))),
+                Err(_) => match slice(input.clone()) {
+                  Ok((input, slc)) => (input, Factor::Expression(Box::new(Expression::Slice(slc)))),
+                  Err(_) => match var(input.clone()) {
+                    Ok((input, var)) => (input, Factor::Expression(Box::new(Expression::Var(var)))),
+                    Err(err) => { return Err(err); },
                   },
                 },
               },

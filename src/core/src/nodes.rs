@@ -516,8 +516,8 @@ pub enum MDList {
 pub enum MechCode {
   Comment(Comment),
   Expression(Expression),
-  FsmImplementation(FsmImplementation),
-  FsmSpecification(FsmSpecification),
+  //FsmImplementation(FsmImplementation),
+  //FsmSpecification(FsmSpecification),
   FunctionDefine(FunctionDefine),
   Statement(Statement),
 }
@@ -526,8 +526,8 @@ impl MechCode {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
       MechCode::Expression(x) => x.tokens(),
+      MechCode::Statement(x) => x.tokens(),
       _ => todo!(),
-      //Statement(x) => x.tokens(),
       //FunctionDefine(x) => x.tokens(),
       //FsmSpecification(x) => x.tokens(),
       //FsmImplementation(x) => x.tokens(),
@@ -619,7 +619,7 @@ pub struct StateDefinition {
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Statement {
   EnumDefine(EnumDefine),
-  FsmDeclare(FsmDeclare),
+  //FsmDeclare(FsmDeclare),
   KindDefine(KindDefine),
   OpAssign(OpAssign),
   VariableAssign(VariableAssign),
@@ -629,10 +629,37 @@ pub enum Statement {
   FlattenTable,   // todo
 }
 
+impl Statement {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      Statement::EnumDefine(x) => x.tokens(),
+      //Statement::FsmDeclare(x) => x.tokens(),
+      Statement::KindDefine(x) => x.tokens(),
+      Statement::OpAssign(x) => x.tokens(),
+      Statement::VariableAssign(x) => x.tokens(),
+      Statement::VariableDefine(x) => x.tokens(),
+      Statement::TupleDestructure(x) => x.tokens(),
+      Statement::SplitTable => vec![], // todo
+      Statement::FlattenTable => vec![], // todo
+    }
+  }
+}
+
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct TupleDestructure {
   pub vars: Vec<Identifier>,
   pub expression: Expression,
+}
+
+impl TupleDestructure {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = vec![];
+    for var in &self.vars {
+      tokens.append(&mut var.tokens());
+    }
+    tokens.append(&mut self.expression.tokens());
+    tokens
+  }
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
@@ -675,16 +702,44 @@ pub struct EnumDefine {
   pub variants: Vec<EnumVariant>,
 }
 
+impl EnumDefine {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.name.tokens();
+    for v in &self.variants {
+      tokens.append(&mut v.tokens());
+    }
+    tokens
+  }
+}
+
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct EnumVariant {
   pub name: Identifier,
   pub value: Option<KindAnnotation>,
 }
 
+impl EnumVariant {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.name.tokens();
+    if let Some(value) = &self.value {
+      tokens.append(&mut value.tokens());
+    }
+    tokens
+  }
+}
+
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct KindDefine {
   pub name: Identifier,
   pub kind: KindAnnotation,
+}
+
+impl KindDefine {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.name.tokens();
+    tokens.append(&mut self.kind.tokens());
+    tokens
+  }
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
@@ -814,6 +869,14 @@ pub struct VariableDefine {
   pub expression: Expression,
 }
 
+impl VariableDefine {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.var.tokens();
+    tkns.append(&mut self.expression.tokens());
+    tkns
+  }
+}
+
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Var {
   pub name: Identifier,
@@ -836,6 +899,14 @@ impl Var {
 pub struct VariableAssign {
   pub target: SliceRef,
   pub expression: Expression,
+}
+
+impl VariableAssign {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.target.tokens();
+    tkns.append(&mut self.expression.tokens());
+    tkns
+  }
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
@@ -894,6 +965,19 @@ pub struct SliceRef {
   pub subscript: Option<Vec<Subscript>>
 }
 
+impl SliceRef {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.name.tokens();
+    if let Some(subs) = &self.subscript {
+      for sub in subs {
+        let mut sub_tkns = sub.tokens();
+        tkns.append(&mut sub_tkns);
+      }
+    }
+    tkns
+  }
+}
+
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Subscript {
   All,                      // a[:]
@@ -944,7 +1028,7 @@ impl Subscript {
 pub enum Expression {
   Formula(Factor),
   FunctionCall(FunctionCall),
-  FsmPipe(FsmPipe),
+  //FsmPipe(FsmPipe),
   Literal(Literal),
   Range(Box<RangeExpression>),
   Slice(Slice),
@@ -1285,6 +1369,15 @@ pub struct OpAssign {
   pub expression: Expression,
 }
 
+impl OpAssign {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.target.tokens();
+    tkns.append(&mut self.op.tokens());
+    tkns.append(&mut self.expression.tokens());
+    tkns
+  }
+}
+
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum OpAssignOp {
   Add,
@@ -1293,6 +1386,19 @@ pub enum OpAssignOp {
   Mod,  
   Mul,
   Sub,   
+}
+
+impl OpAssignOp {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      OpAssignOp::Add => vec![Token::new(TokenKind::Plus, SourceRange::default(), vec!['+'])],
+      OpAssignOp::Div => vec![Token::new(TokenKind::Slash, SourceRange::default(), vec!['/'])],
+      OpAssignOp::Exp => vec![Token::new(TokenKind::Caret, SourceRange::default(), vec!['^'])],
+      OpAssignOp::Mod => vec![Token::new(TokenKind::Percent, SourceRange::default(), vec!['%'])],
+      OpAssignOp::Mul => vec![Token::new(TokenKind::Asterisk, SourceRange::default(), vec!['*'])],
+      OpAssignOp::Sub => vec![Token::new(TokenKind::Dash, SourceRange::default(), vec!['-'])],
+    }
+  }
 }
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]

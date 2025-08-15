@@ -12,7 +12,7 @@ pub fn expression(expr: &Expression, p: &Interpreter) -> MResult<Value> {
     Expression::Structure(strct) => structure(strct, p),
     Expression::Literal(ltrl) => literal(&ltrl, p),
     Expression::FunctionCall(fxn_call) => function_call(fxn_call, p),
-    Expression::FsmPipe(_) => todo!(),
+    //Expression::FsmPipe(_) => todo!(),
   }
 }
 

@@ -156,8 +156,8 @@ pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
   match &code {
     MechCode::Expression(expr) => expression(&expr, p),
     MechCode::Statement(stmt) => statement(&stmt, p),
-    MechCode::FsmSpecification(_) => todo!(),
-    MechCode::FsmImplementation(_) => todo!(),
+    //MechCode::FsmSpecification(_) => todo!(),
+    //MechCode::FsmImplementation(_) => todo!(),
     MechCode::FunctionDefine(fxn_def) => {
       let usr_fxn = function_define(&fxn_def, p)?;
       p.insert_function(usr_fxn);

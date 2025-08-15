@@ -12,7 +12,7 @@ pub fn statement(stmt: &Statement, p: &Interpreter) -> MResult<Value> {
     Statement::KindDefine(knd_def) => kind_define(&knd_def, p),
     Statement::EnumDefine(enm_def) => enum_define(&enm_def, p),
     Statement::OpAssign(op_assgn) => op_assign(&op_assgn, p),
-    Statement::FsmDeclare(_) => todo!(),
+    //Statement::FsmDeclare(_) => todo!(),
     Statement::SplitTable => todo!(),
     Statement::FlattenTable => todo!(),
   }
