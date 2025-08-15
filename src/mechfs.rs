@@ -1,5 +1,6 @@
 use crate::*;
 use std::ffi::OsStr;
+use bincode::config::standard;
 
 fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
     if !path.is_dir() {
@@ -19,8 +20,7 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
     }
     Ok(files)
   }
-  
-  
+    
   pub struct MechFileSystem {
     sources: Arc<RwLock<MechSources>>,
     tx: Sender<Event>,                     
@@ -114,6 +114,15 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
                     return Err(e);
                   },
                 }
+              } else if f.extension() == Some(OsStr::new("blx"))  {
+                match sources.add_source(&f.display().to_string(),src) {
+                  Ok(_) => {
+                    println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
+                  },
+                  Err(e) => {
+                    return Err(e);
+                  },
+                }
               } else if f.extension() == Some(OsStr::new("html")) 
                      || f.extension() == Some(OsStr::new("htm"))
                      || f.extension() == Some(OsStr::new("css")) {
@@ -184,7 +193,7 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
       .finish()
     }
   }
-    
+      
   impl MechSources {
   
     pub fn new() -> Self {
@@ -295,60 +304,70 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
       }
       Ok(())
     }
-  
-    pub fn add_source(&mut self, src_str: &str, src_root: &str) -> MResult<MechSourceCode> {
-      // Canonicalize the root and the source path
-      let src_path = Path::new(src_str);
-      let canonical_path = src_path.canonicalize().unwrap();
-      let canonical_root = Path::new(src_root).canonicalize().unwrap();
 
-      // Strip root prefix to get relative path
+    fn to_tree_and_html(&mut self, node: &MechSourceCode) -> Result<(MechSourceCode, MechSourceCode), MechError> {
+      match node {
+        // Raw source text: parse it and format HTML
+        MechSourceCode::String(source) => {
+          let tree = match parser::parse(source) {
+            Ok(t) => t,
+            Err(err) => {
+              println!("{} {:?}", "[Parse Error]".truecolor(255, 0, 0), err);
+              return Err(MechError {file: file!().to_string(),tokens: vec![],msg: "Failed to parse source code".to_string(),id: line!(),kind: MechErrorKind::None,});
+            }
+          };
+          let mut formatter = Formatter::new();
+          let mech_html = formatter.format_html(&tree, self.stylesheet.clone());
+          Ok((MechSourceCode::Tree(tree), MechSourceCode::Html(mech_html)))
+        }
+        MechSourceCode::Program(code_vec) => {
+          let mut combined = core::Program {
+            title: None,
+            body: core::Body { sections: vec![] },
+          };
+          let mut combined_html = "".to_string();
+          for child in code_vec {
+            let (child_tree_sc, child_html_sc) = self.to_tree_and_html(child)?;
+            if let MechSourceCode::Tree(child_prog) = child_tree_sc {
+              combined.body.sections.extend(child_prog.body.sections.into_iter());
+            }
+            if let MechSourceCode::Html(h) = child_html_sc {
+              combined_html.push_str(&h);
+            }
+          }
+          Ok((MechSourceCode::Tree(combined), MechSourceCode::Html(combined_html)))
+        }
+        MechSourceCode::Html(html) => Ok((MechSourceCode::Tree(core::Program {title: None,body: core::Body { sections: vec![] },}),MechSourceCode::Html(html.clone()))),
+        MechSourceCode::Tree(t) => {
+          let mut formatter = Formatter::new();
+          let mech_html = formatter.format_html(t, self.stylesheet.clone());
+          Ok((MechSourceCode::Tree(t.clone()), MechSourceCode::Html(mech_html)))
+        }
+        _ => Ok((MechSourceCode::Tree(core::Program {title: None,body: core::Body { sections: vec![] },}),MechSourceCode::Html("".to_string()))),
+      }
+    }
+
+    pub fn add_source(&mut self, src_str: &str, src_root: &str) -> MResult<MechSourceCode> {
+      use MechSourceCode::*;
+      let src_path = std::path::Path::new(src_str);
+      let canonical_path = src_path.canonicalize().unwrap();
+      let canonical_root = std::path::Path::new(src_root).canonicalize().unwrap();
       let relative_path = match canonical_path.strip_prefix(&canonical_root) {
         Ok(p) => p,
         Err(_) => canonical_path.as_path(),
       };
-
-      // Read the file
       match read_mech_source_file(&canonical_path) {
         Ok(src) => {
-          let (tree, mech_html) = match src {
-            MechSourceCode::String(ref source) => match parser::parse(&source) {
-              Ok(tree) => {
-                let mut formatter = Formatter::new();
-                let mech_html = formatter.format_html(&tree, self.stylesheet.clone());
-                (MechSourceCode::Tree(tree), MechSourceCode::Html(mech_html))
-              }
-              Err(err) => {
-                println!("{} {:?}", "[Parse Error]".truecolor(255, 0, 0), err);
-                return Err(MechError {
-                  file: file!().to_string(),
-                  tokens: vec![],
-                  msg: "Failed to parse source code".to_string(),
-                  id: line!(),
-                  kind: MechErrorKind::None,
-                });
-              }
-            },
-            MechSourceCode::Html(ref html) => {
-              // TODO If it's HTML, we can parse it as a Mech source code.
-              (MechSourceCode::Tree(core::Program {
-                title: None,
-                body: core::Body { sections: vec![] },
-              }), src.clone())
-            }
-            _ => {
-              todo!("Handle other source formats?");
-            }
-          };
-
-          // Save all this so we don't have to do it later.
+          let (tree_sc, html_sc) = self.to_tree_and_html(&src)?;
           let file_id = hash_str(&canonical_path.display().to_string());
 
-          self.directory.insert(relative_path.to_path_buf(), canonical_path.clone());
-          self.reverse_lookup.insert(canonical_path.clone(), relative_path.to_path_buf());
+          self.directory
+            .insert(relative_path.to_path_buf(), canonical_path.clone());
+          self.reverse_lookup
+            .insert(canonical_path.clone(), relative_path.to_path_buf());
           self.sources.insert(file_id, src.clone());
-          self.trees.insert(file_id, tree);
-          self.html.insert(file_id, mech_html);
+          self.trees.insert(file_id, tree_sc);
+          self.html.insert(file_id, html_sc);
           self.id_map.insert(file_id, relative_path.to_path_buf());
 
           let relative_path_str = relative_path.display().to_string();
@@ -362,13 +381,12 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
           {
             self.index = file_id;
           }
-
           Ok(src)
         }
         Err(err) => Err(err),
       }
     }
-  
+
     pub fn contains(&self, src: &str) -> bool {
       let src_path = Path::new(src);
       if self.directory.contains_key(src_path) {
@@ -513,24 +531,12 @@ fn list_files(path: &Path) -> std::io::Result<Vec<std::path::PathBuf>> {
     match path.extension() {
       Some(extension) => {
         match extension.to_str() {
-          /*Some("blx") => {
-            match File::open(name) {
-              Ok(file) => {
-                println!("{} {}", "[Loading]".truecolor(153,221,85), name);
-                let mut reader = BufReader::new(file);
-                let mech_code: Result<MechSourceCode, bincode::Error> = bincode::deserialize_from(&mut reader);
-                match mech_code {
-                  Ok(c) => {code.push((name.to_string(),c));},
-                  Err(err) => {
-                    return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1247, kind: MechErrorKind::GenericError(format!("{:?}", err))});
-                  },
-                }
-              }
-              Err(err) => {
-                return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 1248, kind: MechErrorKind::None});
-              },
-            };
-          }*/
+          Some("blx") => {
+            let path = PathBuf::from(path);
+            let data = std::fs::read(&path)?;
+            let (decoded, _len): (MechSourceCode,_) = bincode::serde::decode_from_slice(&data, standard()).unwrap();
+            Ok(decoded)
+          }
           Some("mec") | Some("🤖") => {
             match File::open(path) {
               Ok(mut file) => {
