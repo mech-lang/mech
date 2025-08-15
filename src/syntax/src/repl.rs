@@ -18,7 +18,7 @@ pub enum ReplCommand {
   //Pause,
   //Resume,
   //Stop,
-  //Save(String),
+  Save(String),
   Docs(Option<String>),
   Code(Vec<(String,MechSourceCode)>),
   Ls,
@@ -40,6 +40,7 @@ pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand> {
     step_rpl,
     help_rpl,
     quit_rpl,
+    save_rpl,
     symbols_rpl,
     plan_rpl,
     ls_rpl,
@@ -52,6 +53,13 @@ pub fn parse_repl_command(input: &str) -> IResult<&str, ReplCommand> {
   ))(input)?;
   let (input, _) = opt(tag("\r\n"))(input)?;
   Ok((input, command))
+}
+
+fn save_rpl(input: &str) -> IResult<&str, ReplCommand> {
+  let (input, _) = tag("save")(input)?;
+  let (input, _) = space1(input)?;
+  let (input, path) = take_while(|c: char| c.is_alphanumeric() || c == '/' || c == '.' || c == '_')(input)?;
+  Ok((input, ReplCommand::Save(path.to_string())))
 }
 
 fn docs_rpl(input: &str) -> IResult<&str, ReplCommand> {
@@ -124,13 +132,6 @@ fn load_rpl(input: &str) -> IResult<&str, ReplCommand> {
   let (input, path_strings) = separated_list1(space1, alt((take_until(" "),take_until("\r\n"))))(input)?;
   Ok((input, ReplCommand::Load(path_strings.iter().map(|s| s.to_string()).collect())))
 }
-
-/*fn save_rpl(input: &str) -> IResult<&str, ReplCommand> {
-  let (input, _) = tag("save")(input)?;
-  let (input, _) = space1(input)?;
-  let (input, path) = take_while(|c: char| c.is_alphanumeric())(input)?;
-  Ok((input, ReplCommand::Save(path.to_string())))
-}*/
 
 fn step_rpl(input: &str) -> IResult<&str, ReplCommand> {
   let (input, _) = tag("step")(input)?;
