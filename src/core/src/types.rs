@@ -869,8 +869,6 @@ impl ToValue for RationalNumber {
   }
 }
 
-
-
 pub trait PrettyPrint {
   fn pretty_print(&self) -> String;
 }
@@ -898,16 +896,16 @@ macro_rules! impl_pretty_print {
 }
 
 #[cfg(feature = "bool")]impl_pretty_print!(bool);
-#[cfg(feature = "i8")]impl_pretty_print!(i8);
-#[cfg(feature = "i16")]impl_pretty_print!(i16);
-#[cfg(feature = "i32")]impl_pretty_print!(i32);
-#[cfg(feature = "i64")]impl_pretty_print!(i64);
+#[cfg(feature = "i8")]  impl_pretty_print!(i8);
+#[cfg(feature = "i16")] impl_pretty_print!(i16);
+#[cfg(feature = "i32")] impl_pretty_print!(i32);
+#[cfg(feature = "i64")] impl_pretty_print!(i64);
 #[cfg(feature = "i128")]impl_pretty_print!(i128);
-#[cfg(feature = "u8")]impl_pretty_print!(u8);
-#[cfg(feature = "u16")]impl_pretty_print!(u16);
-#[cfg(feature = "u32")]impl_pretty_print!(u32);
-#[cfg(feature = "u64")]impl_pretty_print!(u64);
+#[cfg(feature = "u8")]  impl_pretty_print!(u8);
+#[cfg(feature = "u16")] impl_pretty_print!(u16);
+#[cfg(feature = "u32")] impl_pretty_print!(u32);
+#[cfg(feature = "u64")] impl_pretty_print!(u64);
 #[cfg(feature = "u128")]impl_pretty_print!(u128);
-#[cfg(feature = "f32")]impl_pretty_print!(F32);
-#[cfg(feature = "f64")]impl_pretty_print!(F64);
+#[cfg(feature = "f32")] impl_pretty_print!(F32);
+#[cfg(feature = "f64")] impl_pretty_print!(F64);
 impl_pretty_print!(usize);

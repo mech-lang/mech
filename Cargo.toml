@@ -135,6 +135,9 @@ app = ["serve"]
 serve = ["async"]
 async = []
 
+[dev-dependencies]
+nalgebra = "0.34.0"
+
 [dependencies]
 mech-core        = { version = "0.2.57", default-features = false }
 mech-syntax      = { version = "0.2.57", default-features = false }
@@ -149,7 +152,6 @@ serde_json = "1.0.140"
 crossbeam-channel = "0.5.14"
 crossterm = "0.29.0"
 tabled = "0.18.0"
-nalgebra = {version="0.34.0", optional = true}
 indexmap = {version = "2.10.0", features = ["serde"]}
 nom = "7.1.3"
 ctrlc = "3.4.5"
