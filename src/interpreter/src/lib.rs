@@ -13,7 +13,16 @@ use mech_core::*;
 use mech_core::matrix::{Matrix, ToMatrix};
 use mech_core::kind::Kind;
 use mech_core::{Dictionary, Ref, Value, ValueKind, ValRef, ToValue};
-use mech_core::{MechMap, MechFunction, MechRecord, MechSet, MechTuple, MechEnum};
+#[cfg(feature = "map")]
+use mech_core::MechMap;
+#[cfg(feature = "record")]
+use mech_core::MechRecord;
+#[cfg(feature = "set")]
+use mech_core::MechSet;
+#[cfg(feature = "tuple")]
+use mech_core::MechTuple;
+#[cfg(feature = "enum")]
+use mech_core::MechEnum;
 #[cfg(feature = "table")]
 use mech_core::MechTable;
 #[cfg(feature = "f64")]
@@ -24,7 +33,7 @@ use mech_core::F32;
 use mech_core::ComplexNumber;
 #[cfg(feature = "rational")]
 use mech_core::RationalNumber;
-use mech_core::{Functions, FunctionsRef, FunctionDefinition, NativeFunctionCompiler, Plan, UserFunction, SymbolTableRef, SymbolTable};
+use mech_core::{Functions, MechFunction, FunctionsRef, FunctionDefinition, NativeFunctionCompiler, Plan, UserFunction, SymbolTableRef, SymbolTable};
 use crate::stdlib::{
                     access::*,
                     assign::*,

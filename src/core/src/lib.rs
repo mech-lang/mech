@@ -12,8 +12,8 @@
 #[cfg(not(feature = "no-std"))] extern crate core;
 #[cfg(feature = "matrix")]  
 extern crate nalgebra as na;
+#[cfg(feature = "pretty_print")]
 extern crate tabled;
-extern crate libm;
 
 #[cfg(feature = "no-std")]
 extern crate alloc;

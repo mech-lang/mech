@@ -7,6 +7,7 @@ use hashbrown::{HashMap, HashSet};
 use indexmap::map::IndexMap;
 use std::rc::Rc;
 use std::cell::RefCell;
+#[cfg(feature = "pretty_print")]
 use tabled::{
   builder::Builder,
   settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
@@ -56,6 +57,7 @@ pub struct FunctionDefinition {
   pub plan: Plan,
 }
 
+#[cfg(feature = "pretty_print")]
 impl fmt::Debug for FunctionDefinition {
   #[inline]
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -109,7 +111,6 @@ impl FunctionDefinition {
 
 // User Function --------------------------------------------------------------
 
-#[derive(Debug)]
 pub struct UserFunction {
   pub fxn: FunctionDefinition,
 }
@@ -173,6 +174,10 @@ impl SymbolTable {
     cell.clone()
   }
 
+}
+
+#[cfg(feature = "pretty_print")]
+impl PrettyPrint for SymbolTable {
   pub fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
     let dict_brrw = self.dictionary.borrow();

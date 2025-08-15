@@ -10,6 +10,7 @@ use std::iter::Step;
 use num_traits::*;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
+#[cfg(feature = "math_exp")]
 use libm::{pow,powf};
 use paste::paste;
 
@@ -79,7 +80,7 @@ impl Hash for F64 {
   }
 }
 
-#[cfg(feature = "f64")]
+#[cfg(all(feature = "f64", feature = "math_exp"))]
 impl Pow<F64> for F64 {
   type Output = F64;
   fn pow(self, rhs: F64) -> Self::Output {
@@ -328,7 +329,7 @@ impl From<F32> for usize {
   }
 }
 
-#[cfg(feature = "f32")]
+#[cfg(all(feature = "f32", feature = "math_exp"))]
 impl Pow<F32> for F32 {
   type Output = F32;
   fn pow(self, rhs: F32) -> Self::Output {

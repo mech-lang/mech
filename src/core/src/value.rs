@@ -12,6 +12,7 @@ use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matri
 use std::hash::{Hash, Hasher};
 use indexmap::set::IndexSet;
 use indexmap::map::*;
+#[cfg(feature = "pretty_print")]
 use tabled::{
   builder::Builder,
   settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
@@ -913,114 +914,6 @@ impl Value {
     }
   }
 
-  pub fn pretty_print(&self) -> String {
-    let mut builder = Builder::default();
-    match self {
-      #[cfg(feature = "u8")]
-      Value::U8(x)   => {builder.push_record(vec![format!("{}",x.borrow())]);},
-      #[cfg(feature = "u16")]
-      Value::U16(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
-      #[cfg(feature = "u32")]
-      Value::U32(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
-      #[cfg(feature = "u64")]
-      Value::U64(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
-      #[cfg(feature = "u128")]
-      Value::U128(x) => {builder.push_record(vec![format!("{}",x.borrow())]);},
-      #[cfg(feature = "i8")]
-      Value::I8(x)   => {builder.push_record(vec![format!("{}",x.borrow())]);},
-      #[cfg(feature = "i16")]
-      Value::I16(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
-      #[cfg(feature = "i32")]
-      Value::I32(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
-      #[cfg(feature = "i64")]
-      Value::I64(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
-      #[cfg(feature = "i128")]
-      Value::I128(x) => {builder.push_record(vec![format!("{}",x.borrow())]);},
-      #[cfg(feature = "f32")]
-      Value::F32(x)  => {builder.push_record(vec![format!("{}",x.borrow().0)]);},
-      #[cfg(feature = "f64")]
-      Value::F64(x)  => {builder.push_record(vec![format!("{}",x.borrow().0)]);},
-      #[cfg(feature = "bool")]
-      Value::Bool(x) => {builder.push_record(vec![format!("{}",x.borrow())]);},
-      #[cfg(feature = "complex")]
-      Value::ComplexNumber(x) => {builder.push_record(vec![x.borrow().pretty_print()]);},
-      #[cfg(feature = "rational")]
-      Value::RationalNumber(x) => {builder.push_record(vec![format!("{}",x.borrow().pretty_print())]);},
-      #[cfg(feature = "atom")]
-      Value::Atom(x) => {builder.push_record(vec![format!("{}",x)]);},
-      #[cfg(feature = "set")]
-      Value::Set(x)  => {return x.pretty_print();}
-      #[cfg(feature = "map")]
-      Value::Map(x)  => {return x.pretty_print();}
-      #[cfg(feature = "string")]
-      Value::String(x) => {return format!("\"{}\"",x.borrow().clone());},
-      #[cfg(feature = "table")]
-      Value::Table(x)  => {return x.borrow().pretty_print();},
-      #[cfg(feature = "tuple")]
-      Value::Tuple(x)  => {return x.pretty_print();},
-      #[cfg(feature = "record")]
-      Value::Record(x) => {return x.borrow().pretty_print();},
-      #[cfg(feature = "enum")]
-      Value::Enum(x) => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
-      Value::MatrixIndex(x) => {return x.pretty_print();}
-      #[cfg(feature = "matrix")]
-      Value::MatrixBool(x) => {return x.pretty_print();}
-      #[cfg(feature = "matrix")]
-      Value::MatrixU8(x)   => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
-      Value::MatrixU16(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
-      Value::MatrixU32(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
-      Value::MatrixU64(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
-      Value::MatrixU128(x) => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
-      Value::MatrixI8(x)   => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
-      Value::MatrixI16(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
-      Value::MatrixI32(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
-      Value::MatrixI64(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
-      Value::MatrixI128(x) => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
-      Value::MatrixF32(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
-      Value::MatrixF64(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
-      Value::MatrixValue(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
-      Value::MatrixString(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
-      Value::MatrixRationalNumber(x) => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
-      Value::MatrixComplexNumber(x) => {return x.pretty_print();},
-      Value::Index(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
-      Value::MutableReference(x) => {return x.borrow().pretty_print();},
-      Value::Empty => builder.push_record(vec!["_"]),
-      Value::IndexAll => builder.push_record(vec![":"]),
-      Value::Id(x) => builder.push_record(vec![format!("{}",humanize(x))]),
-      Value::Kind(x) => builder.push_record(vec![format!("{}",x)]),
-    };
-    let value_style = Style::empty()
-      .top(' ')
-      .left(' ')
-      .right(' ')
-      .bottom(' ')
-      .vertical(' ')
-      .intersection_bottom(' ')
-      .corner_top_left(' ')
-      .corner_top_right(' ')
-      .corner_bottom_left(' ')
-      .corner_bottom_right(' ');
-    let mut table = builder.build();
-    table.with(value_style);
-    format!("{table}")
-  }
-
   pub fn shape(&self) -> Vec<usize> {
     match self {
       #[cfg(feature = "rational")]
@@ -1612,6 +1505,118 @@ impl Value {
   }
 
 }
+
+#[cfg(feature = "pretty_print")]
+impl PrettyPrint for Value {
+  pub fn pretty_print(&self) -> String {
+    let mut builder = Builder::default();
+    match self {
+      #[cfg(feature = "u8")]
+      Value::U8(x)   => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      #[cfg(feature = "u16")]
+      Value::U16(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      #[cfg(feature = "u32")]
+      Value::U32(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      #[cfg(feature = "u64")]
+      Value::U64(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      #[cfg(feature = "u128")]
+      Value::U128(x) => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      #[cfg(feature = "i8")]
+      Value::I8(x)   => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      #[cfg(feature = "i16")]
+      Value::I16(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      #[cfg(feature = "i32")]
+      Value::I32(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      #[cfg(feature = "i64")]
+      Value::I64(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      #[cfg(feature = "i128")]
+      Value::I128(x) => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      #[cfg(feature = "f32")]
+      Value::F32(x)  => {builder.push_record(vec![format!("{}",x.borrow().0)]);},
+      #[cfg(feature = "f64")]
+      Value::F64(x)  => {builder.push_record(vec![format!("{}",x.borrow().0)]);},
+      #[cfg(feature = "bool")]
+      Value::Bool(x) => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      #[cfg(feature = "complex")]
+      Value::ComplexNumber(x) => {builder.push_record(vec![x.borrow().pretty_print()]);},
+      #[cfg(feature = "rational")]
+      Value::RationalNumber(x) => {builder.push_record(vec![format!("{}",x.borrow().pretty_print())]);},
+      #[cfg(feature = "atom")]
+      Value::Atom(x) => {builder.push_record(vec![format!("{}",x)]);},
+      #[cfg(feature = "set")]
+      Value::Set(x)  => {return x.pretty_print();}
+      #[cfg(feature = "map")]
+      Value::Map(x)  => {return x.pretty_print();}
+      #[cfg(feature = "string")]
+      Value::String(x) => {return format!("\"{}\"",x.borrow().clone());},
+      #[cfg(feature = "table")]
+      Value::Table(x)  => {return x.borrow().pretty_print();},
+      #[cfg(feature = "tuple")]
+      Value::Tuple(x)  => {return x.pretty_print();},
+      #[cfg(feature = "record")]
+      Value::Record(x) => {return x.borrow().pretty_print();},
+      #[cfg(feature = "enum")]
+      Value::Enum(x) => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
+      Value::MatrixIndex(x) => {return x.pretty_print();}
+      #[cfg(feature = "matrix")]
+      Value::MatrixBool(x) => {return x.pretty_print();}
+      #[cfg(feature = "matrix")]
+      Value::MatrixU8(x)   => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
+      Value::MatrixU16(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
+      Value::MatrixU32(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
+      Value::MatrixU64(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
+      Value::MatrixU128(x) => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
+      Value::MatrixI8(x)   => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
+      Value::MatrixI16(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
+      Value::MatrixI32(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
+      Value::MatrixI64(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
+      Value::MatrixI128(x) => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
+      Value::MatrixF32(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
+      Value::MatrixF64(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
+      Value::MatrixValue(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
+      Value::MatrixString(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
+      Value::MatrixRationalNumber(x) => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
+      Value::MatrixComplexNumber(x) => {return x.pretty_print();},
+      Value::Index(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      Value::MutableReference(x) => {return x.borrow().pretty_print();},
+      Value::Empty => builder.push_record(vec!["_"]),
+      Value::IndexAll => builder.push_record(vec![":"]),
+      Value::Id(x) => builder.push_record(vec![format!("{}",humanize(x))]),
+      Value::Kind(x) => builder.push_record(vec![format!("{}",x)]),
+    };
+    let value_style = Style::empty()
+      .top(' ')
+      .left(' ')
+      .right(' ')
+      .bottom(' ')
+      .vertical(' ')
+      .intersection_bottom(' ')
+      .corner_top_left(' ')
+      .corner_top_right(' ')
+      .corner_bottom_left(' ')
+      .corner_bottom_right(' ');
+    let mut table = builder.build();
+    table.with(value_style);
+    format!("{table}")
+  }
+}
+
 
 pub trait ToIndex {
   fn to_index(&self) -> Value;
