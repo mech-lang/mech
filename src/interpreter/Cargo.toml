@@ -17,6 +17,10 @@ rust-version = "1.88"
 gitlab = { repository = "mech-lang/mech", branch = "main" }
 maintenance = { status = "actively-developed" }
 
+[[bin]]
+name = "interpreter"
+path = "bin/interpreter.rs"
+
 [features]
 default = ["stdlib", "math", "logic", "range", "matrix", "compare", "stats", "io", "combinatorics"]
 math = ["math_trig", "math_ops"]
@@ -123,7 +127,8 @@ atom = ["mech-core/atom", "mech-math/atom", "mech-logic/atom", "mech-range/atom"
 matrix = [
     "fixed_matrix", "fixed_vector", "fixed_row_vector", "row_vectord", "vectord", "matrixd",
     "matrix_transpose", "matrix_matmul", 
-    "mech-core/matrix", "mech-math/matrix", "mech-logic/matrix", "mech-range/matrix", "mech-matrix/matrix", "mech-compare/matrix", "mech-stats/matrix", "mech-io/matrix", "mech-combinatorics/matrix"]
+    "mech-core/matrix", "mech-math/matrix", "mech-logic/matrix", "mech-range/matrix", "mech-matrix/matrix", "mech-compare/matrix", "mech-stats/matrix", "mech-io/matrix", "mech-combinatorics/matrix",
+    "nalgebra"]
 fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2", "mech-core/fixed_row_vector", "mech-math/fixed_row_vector", "mech-logic/fixed_row_vector", "mech-range/fixed_row_vector", "mech-matrix/fixed_row_vector", "mech-compare/fixed_row_vector", "mech-stats/fixed_row_vector", "mech-io/fixed_row_vector", "mech-combinatorics/fixed_row_vector"]
 fixed_vector = ["vector4", "vector3", "vector2", "mech-core/fixed_vector", "mech-math/fixed_vector", "mech-logic/fixed_vector", "mech-range/fixed_vector", "mech-matrix/fixed_vector", "mech-compare/fixed_vector", "mech-stats/fixed_vector", "mech-io/fixed_vector", "mech-combinatorics/fixed_vector"]
 fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "mech-core/fixed_matrix", "mech-math/fixed_matrix", "mech-logic/fixed_matrix", "mech-range/fixed_matrix", "mech-matrix/fixed_matrix", "mech-compare/fixed_matrix", "mech-stats/fixed_matrix", "mech-io/fixed_matrix", "mech-combinatorics/fixed_matrix"]
@@ -148,20 +153,20 @@ matrixd = ["mech-core/matrixd", "mech-math/matrixd", "mech-logic/matrixd", "mech
 
 [dependencies]
 mech-core = { version = "0.2.57", default-features = false }
-mech-math = { version = "0.2.57", default-features = false }
-mech-logic = { version = "0.2.57", default-features = false }
-mech-range = { version = "0.2.57", default-features = false }
-mech-matrix = { version = "0.2.57", default-features = false }
-mech-compare = { version = "0.2.57", default-features = false }
-mech-stats = { version = "0.2.57", default-features = false }
-mech-io = { version = "0.2.57", default-features = false }
-mech-combinatorics = { version = "0.2.57", default-features = false }
+mech-math = { version = "0.2.57", default-features = false, optional = true}
+mech-logic = { version = "0.2.57", default-features = false, optional = true }
+mech-range = { version = "0.2.57", default-features = false, optional = true }
+mech-matrix = { version = "0.2.57", default-features = false, optional = true }
+mech-compare = { version = "0.2.57", default-features = false, optional = true }
+mech-stats = { version = "0.2.57", default-features = false, optional = true }
+mech-io = { version = "0.2.57", default-features = false, optional = true }
+mech-combinatorics = { version = "0.2.57", default-features = false, optional = true }
 
-nalgebra = "0.34.0"
+nalgebra = {version="0.34.0", optional = true}
 indexmap = "2.10.0"
-libm = "0.2.15"
 simba = "0.9.0"
 paste = "1.0.15"
+bincode = "2.0.1"
 
 [dependencies.num-traits]
 version = "0.2.19"

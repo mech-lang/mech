@@ -148,6 +148,7 @@ macro_rules! handle_value_kind {
     $data_map.insert(id, ($value_kind.clone(), Value::to_matrixd(vals.clone(), vals.len(), 1)));
   }};}
 
+#[cfg(feature = "table")]
 pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> { 
   let mut rows = vec![];
   let headings = table_header(&t.header, p)?;

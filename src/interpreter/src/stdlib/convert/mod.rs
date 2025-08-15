@@ -274,6 +274,7 @@ impl LosslessInto<RationalNumber> for F32 {
   }
 }
 
+#[cfg(feature = "complex")]
 impl LosslessInto<String> for ComplexNumber {
   fn lossless_into(self) -> String {
     self.pretty_print()

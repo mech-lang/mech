@@ -3,6 +3,7 @@ use crate::stdlib::*;
 
 use std::fmt::Debug;
 use std::marker::PhantomData;
+#[cfg(feature = "matrix")]
 use nalgebra::{
   base::{Matrix as naMatrix, Storage, StorageMut},
   Dim, Scalar,

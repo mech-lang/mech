@@ -132,6 +132,7 @@ pub fn number(num: &Number) -> Value {
   }
 }
 
+#[cfg(feature = "complex")]
 fn complex(num: &ComplexNumberNode) -> Value {
   let im: f64 = match real(&num.imaginary.number).as_f64() {
     Some(val) => val.borrow().0,

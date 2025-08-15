@@ -3,17 +3,23 @@
 #![feature(box_patterns)]
 #![feature(trivial_bounds)]
 
+#[cfg(feature = "matrix")]
 extern crate nalgebra as na;
 #[macro_use]
 extern crate mech_core;
 
 use mech_core::*;
+#[cfg(feature = "matrix")]
 use mech_core::matrix::{Matrix, ToMatrix};
 use mech_core::kind::Kind;
 use mech_core::{Dictionary, Ref, Value, ValueKind, ValRef, ToValue};
-use mech_core::{MechMap, MechFunction, MechRecord, MechTable, MechSet, MechTuple, MechEnum};
+use mech_core::{MechMap, MechFunction, MechRecord, MechSet, MechTuple, MechEnum};
+#[cfg(feature = "table")]
+use mech_core::MechTable;
 use mech_core::{F64, F32};
-use mech_core::{ComplexNumber, RationalNumber};
+#[cfg(feature = "complex")]
+use mech_core::ComplexNumber;
+use mech_core::RationalNumber;
 use mech_core::{Functions, FunctionsRef, FunctionDefinition, NativeFunctionCompiler, Plan, UserFunction, SymbolTableRef, SymbolTable};
 use crate::stdlib::{
                     access::*,
@@ -46,6 +52,7 @@ use mech_range::{
   exclusive::RangeExclusive,
 };
 
+#[cfg(feature = "matrix")]
 use na::DMatrix;
 use indexmap::set::IndexSet;
 use indexmap::map::IndexMap;
