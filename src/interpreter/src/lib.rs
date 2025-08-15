@@ -7,6 +7,7 @@ extern crate nalgebra as na;
 #[macro_use]
 extern crate mech_core;
 
+use mech_core::*;
 use mech_core::matrix::{Matrix, ToMatrix};
 use mech_core::kind::Kind;
 use mech_core::{Dictionary, Ref, Value, ValueKind, ValRef, ToValue};
