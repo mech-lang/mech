@@ -223,20 +223,35 @@ impl ValueKind {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Value {
+  #[cfg(feature = "u8")]
   U8(Ref<u8>),
+  #[cfg(feature = "u16")]
   U16(Ref<u16>),
+  #[cfg(feature = "u32")]
   U32(Ref<u32>),
+  #[cfg(feature = "u64")]
   U64(Ref<u64>),
+  #[cfg(feature = "u128")]
   U128(Ref<u128>),
+  #[cfg(feature = "i8")]
   I8(Ref<i8>),
+  #[cfg(feature = "i16")]
   I16(Ref<i16>),
+  #[cfg(feature = "i32")]
   I32(Ref<i32>),
+  #[cfg(feature = "i64")]
   I64(Ref<i64>),
+  #[cfg(feature = "i128")]
   I128(Ref<i128>),
+  #[cfg(feature = "f32")]
   F32(Ref<F32>),
+  #[cfg(feature = "f64")]
   F64(Ref<F64>),
+  #[cfg(feature = "string")]
   String(Ref<String>),
+  #[cfg(feature = "bool")]
   Bool(Ref<bool>),
+  #[cfg(feature = "atom")]
   Atom(u64),
   #[cfg(feature = "matrix")]
   MatrixIndex(Matrix<usize>),
@@ -276,12 +291,17 @@ pub enum Value {
   MatrixValue(Matrix<Value>),
   #[cfg(feature = "complex")]
   ComplexNumber(Ref<ComplexNumber>),
+  #[cfg(feature = "rational")]
   RationalNumber(Ref<RationalNumber>),
+  #[cfg(feature = "set")]
   Set(MechSet),
+  #[cfg(feature = "map")]
   Map(MechMap),
+  #[cfg(feature = "record")]
   Record(Ref<MechRecord>),
   #[cfg(feature = "table")]
   Table(Ref<MechTable>),
+  #[cfg(feature = "tuple")]
   Tuple(MechTuple),
   Enum(Box<MechEnum>),
   Id(u64),

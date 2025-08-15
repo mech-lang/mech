@@ -567,9 +567,11 @@ impl Neg for ComplexNumber {
 
 // Rational Numbers
 
+#[cfg(feature = "rational")]
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, PartialOrd)]
 pub struct RationalNumber(pub Rational64);
 
+#[cfg(feature = "rational")]
 impl RationalNumber {
   pub fn new(numer: i64, denom: i64) -> RationalNumber {
     RationalNumber(Rational64::new(numer, denom))
@@ -598,24 +600,28 @@ impl RationalNumber {
   }
 }
 
+#[cfg(feature = "rational")]
 impl std::fmt::Display for RationalNumber {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(f, "{}", self.pretty_print())
   }
 }
 
+#[cfg(feature = "rational")]
 impl Default for RationalNumber {
   fn default() -> Self {
     RationalNumber(Rational64::default())
   }
 }
 
+#[cfg(feature = "rational")]
 impl PrettyPrint for RationalNumber {
   fn pretty_print(&self) -> String {
     format!("{}/{}", self.numer(), self.denom())
   }
 }
 
+#[cfg(all(feature = "rational", feature = "mul"))]
 impl Mul<RationalNumber> for RationalNumber {
   type Output = RationalNumber;
   fn mul(self, other: RationalNumber) -> RationalNumber {
@@ -623,6 +629,7 @@ impl Mul<RationalNumber> for RationalNumber {
   }
 }
 
+#[cfg(feature = "rational")]
 impl One for RationalNumber {
   fn one() -> Self {
     RationalNumber(Rational64::one())
@@ -632,6 +639,7 @@ impl One for RationalNumber {
   }
 }
 
+#[cfg(all(feature = "rational", feature = "add"))]
 impl Add<RationalNumber> for RationalNumber {
   type Output = RationalNumber;
   fn add(self, other: RationalNumber) -> RationalNumber {
@@ -639,12 +647,14 @@ impl Add<RationalNumber> for RationalNumber {
   }
 }
 
+#[cfg(all(feature = "rational", feature = "add"))]
 impl AddAssign<RationalNumber> for RationalNumber {
   fn add_assign(&mut self, other: RationalNumber) {
     self.0 += other.0;
   }
 }
 
+#[cfg(all(feature = "rational", feature = "sub"))]
 impl Sub<RationalNumber> for RationalNumber {
   type Output = RationalNumber;
   fn sub(self, other: RationalNumber) -> RationalNumber {
@@ -652,6 +662,7 @@ impl Sub<RationalNumber> for RationalNumber {
   }
 }
 
+#[cfg(all(feature = "rational", feature = "div"))]
 impl Div<RationalNumber> for RationalNumber {
   type Output = RationalNumber;
   fn div(self, other: RationalNumber) -> RationalNumber {
@@ -659,24 +670,28 @@ impl Div<RationalNumber> for RationalNumber {
   }
 }
 
+#[cfg(all(feature = "rational", feature = "div"))]
 impl DivAssign<RationalNumber> for RationalNumber {
   fn div_assign(&mut self, other: RationalNumber) {
     self.0 /= other.0;
   }
 }
 
+#[cfg(all(feature = "rational", feature = "sub"))]
 impl SubAssign<RationalNumber> for RationalNumber {
   fn sub_assign(&mut self, other: RationalNumber) {
     self.0 -= other.0;
   }
 }
 
+#[cfg(all(feature = "rational", feature = "mul"))]
 impl MulAssign<RationalNumber> for RationalNumber {
   fn mul_assign(&mut self, other: RationalNumber) {
     self.0 *= other.0;
   }
 }
 
+#[cfg(feature = "rational")]
 impl Zero for RationalNumber {
   fn zero() -> Self {
     RationalNumber(Rational64::zero())
@@ -686,6 +701,7 @@ impl Zero for RationalNumber {
   }
 }
 
+#[cfg(all(feature = "rational", feature = "neg"))]
 impl Neg for RationalNumber {
   type Output = Self;
   fn neg(self) -> Self::Output {
@@ -693,42 +709,49 @@ impl Neg for RationalNumber {
   }
 }
 
+#[cfg(feature = "f64")]
 impl From<RationalNumber> for F64 {
   fn from(r: RationalNumber) -> Self {
     F64::new(r.0.to_f64().unwrap())
   }
 }
 
+#[cfg(feature = "rational")]
 impl From<F64> for RationalNumber {
   fn from(f: F64) -> Self {
     RationalNumber(Rational64::from_f64(f.0).unwrap())
   }
 }
 
+#[cfg(feature = "f64")]
 impl From<F32> for F64 {
   fn from(value: F32) -> Self {
     F64::new(value.0 as f64)
   }
 }
 
+#[cfg(feature = "f32")]
 impl From<F64> for F32 {
   fn from(value: F64) -> Self {
     F32::new(value.0 as f32)
   }
 }
 
+#[cfg(feature = "f32")]
 impl ToUsize for F32 {
   fn to_usize(&self) -> usize {
     self.0 as usize
   }
 }
 
+#[cfg(feature = "f64")]
 impl ToUsize for F64 {
   fn to_usize(&self) -> usize {
     self.0 as usize
   }
 }
 
+#[cfg(feature = "rational")]
 impl ToUsize for RationalNumber {
   fn to_usize(&self) -> usize {
     self.0.to_integer() as usize
@@ -749,6 +772,7 @@ impl ToValue for ComplexNumber {
   }
 }
 
+#[cfg(feature = "rational")]
 impl ToValue for RationalNumber {
   fn to_value(&self) -> Value {
     Value::RationalNumber(new_ref(*self))
@@ -783,17 +807,17 @@ macro_rules! impl_pretty_print {
   };
 }
 
-impl_pretty_print!(bool);
-impl_pretty_print!(i8);
-impl_pretty_print!(i16);
-impl_pretty_print!(i32);
-impl_pretty_print!(i64);
-impl_pretty_print!(i128);
-impl_pretty_print!(u8);
-impl_pretty_print!(u16);
-impl_pretty_print!(u32);
-impl_pretty_print!(u64);
-impl_pretty_print!(u128);
-impl_pretty_print!(F32);
-impl_pretty_print!(F64);
+#[cfg(feature = "bool")]impl_pretty_print!(bool);
+#[cfg(feature = "i8")]impl_pretty_print!(i8);
+#[cfg(feature = "i16")]impl_pretty_print!(i16);
+#[cfg(feature = "i32")]impl_pretty_print!(i32);
+#[cfg(feature = "i64")]impl_pretty_print!(i64);
+#[cfg(feature = "i128")]impl_pretty_print!(i128);
+#[cfg(feature = "u8")]impl_pretty_print!(u8);
+#[cfg(feature = "u16")]impl_pretty_print!(u16);
+#[cfg(feature = "u32")]impl_pretty_print!(u32);
+#[cfg(feature = "u64")]impl_pretty_print!(u64);
+#[cfg(feature = "u128")]impl_pretty_print!(u128);
+#[cfg(feature = "f32")]impl_pretty_print!(F32);
+#[cfg(feature = "f64")]impl_pretty_print!(F64);
 impl_pretty_print!(usize);
