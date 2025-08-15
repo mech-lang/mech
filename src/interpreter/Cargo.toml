@@ -22,7 +22,12 @@ name = "interpreter"
 path = "bin/interpreter.rs"
 
 [features]
-default = ["stdlib", "math", "logic", "range", "matrix", "compare", "stats", "io", "combinatorics"]
+default = ["stdlib", "pretty_print", "serde",
+           "math", "logic", "range", "matrix", "compare", "stats", "io", "combinatorics"]
+
+serde = ["mech-core/serde", "bincode", "bincode/serde"]
+pretty_print = ["mech-core/pretty_print"]
+
 math = ["math_trig", "math_ops"]
 math_trig = [
     "math_sin", "math_cos", "math_tan", "math_asin", "math_acos", "math_atan", "math_sinh", "math_cosh", "math_tanh",
@@ -56,7 +61,10 @@ math_div = ["mech-math/div"]
 math_exp = ["mech-math/exp", "mech-core/math_exp"]
 math_mod = ["mech-math/mod"]
 math_neg = ["mech-math/neg"]
-math_ops = ["math_add", "math_sub", "math_mul", "math_div", "math_exp", "math_mod", "math_neg", "mech-math/ops"]
+math_ops = [
+    "math_add", "math_sub", "math_mul", "math_div", "math_exp", "math_mod", "math_neg", "mech-math/ops",
+    "num-traits"
+]
 
 logic = ["logic_and", "logic_or", "logic_not", "logic_xor"]
 logic_and = ["mech-logic/and"]
@@ -87,10 +95,11 @@ combinatorics = ["combinatorics_n_choose_k"]
 combinatorics_n_choose_k = ["mech-combinatorics/n_choose_k"]
 
 stdlib = [
-    "bool", "string", "numbers", "matrix", "set", "map", "table", "tuple", "record", "atom",
+    "bool", "functions", "string", "numbers", "matrix", "set", "map", "table", "tuple", "record", "atom",
     "mech-core/stdlib", "mech-math/stdlib", "mech-logic/stdlib", "mech-range/stdlib", "mech-matrix/stdlib",
     "mech-compare/stdlib", "mech-stats/stdlib", "mech-io/stdlib", "mech-combinatorics/stdlib"
 ]
+functions = ["mech-core/functions"]
 numbers = [
     "signed_ints", "unsigned_ints", "floats", "complex", "rational",
     "mech-core/numbers", "mech-math/numbers", "mech-logic/numbers", "mech-range/numbers", "mech-matrix/numbers",
@@ -117,11 +126,11 @@ f32 = ["mech-core/f32", "mech-math/f32", "mech-logic/f32", "mech-range/f32", "me
 f64 = ["mech-core/f64", "mech-math/f64", "mech-logic/f64", "mech-range/f64", "mech-matrix/f64", "mech-compare/f64", "mech-stats/f64", "mech-io/f64", "mech-combinatorics/f64"]
 c64 = ["mech-core/c64", "mech-math/c64", "mech-logic/c64", "mech-range/c64", "mech-matrix/c64", "mech-compare/c64", "mech-stats/c64", "mech-io/c64", "mech-combinatorics/c64"]
 r64 = ["mech-core/r64", "mech-math/r64", "mech-logic/r64", "mech-range/r64", "mech-matrix/r64", "mech-compare/r64", "mech-stats/r64", "mech-io/r64", "mech-combinatorics/r64"]
-set = ["mech-core/set", "mech-math/set", "mech-logic/set", "mech-range/set", "mech-matrix/set", "mech-compare/set", "mech-stats/set", "mech-io/set", "mech-combinatorics/set"]
-map = ["mech-core/map", "mech-math/map", "mech-logic/map", "mech-range/map", "mech-matrix/map", "mech-compare/map", "mech-stats/map", "mech-io/map", "mech-combinatorics/map"]
-table = ["mech-core/table", "mech-math/table", "mech-logic/table", "mech-range/table", "mech-matrix/table", "mech-compare/table", "mech-stats/table", "mech-io/table", "mech-combinatorics/table"]
+set = ["indexmap", "mech-core/set", "mech-math/set", "mech-logic/set", "mech-range/set", "mech-matrix/set", "mech-compare/set", "mech-stats/set", "mech-io/set", "mech-combinatorics/set"]
+map = ["indexmap", "mech-core/map", "mech-math/map", "mech-logic/map", "mech-range/map", "mech-matrix/map", "mech-compare/map", "mech-stats/map", "mech-io/map", "mech-combinatorics/map"]
+table = ["indexmap", "mech-core/table", "mech-math/table", "mech-logic/table", "mech-range/table", "mech-matrix/table", "mech-compare/table", "mech-stats/table", "mech-io/table", "mech-combinatorics/table"]
 tuple = ["mech-core/tuple", "mech-math/tuple", "mech-logic/tuple", "mech-range/tuple", "mech-matrix/tuple", "mech-compare/tuple", "mech-stats/tuple", "mech-io/tuple", "mech-combinatorics/tuple"]
-record = ["mech-core/record", "mech-math/record", "mech-logic/record", "mech-range/record", "mech-matrix/record", "mech-compare/record", "mech-stats/record", "mech-io/record", "mech-combinatorics/record"]
+record = ["indexmap", "mech-core/record", "mech-math/record", "mech-logic/record", "mech-range/record", "mech-matrix/record", "mech-compare/record", "mech-stats/record", "mech-io/record", "mech-combinatorics/record"]
 atom = ["mech-core/atom", "mech-math/atom", "mech-logic/atom", "mech-range/atom", "mech-matrix/atom", "mech-compare/atom", "mech-stats/atom", "mech-io/atom", "mech-combinatorics/atom"]
 
 matrix = [
@@ -163,12 +172,12 @@ mech-io = { version = "0.2.57", default-features = false, optional = true }
 mech-combinatorics = { version = "0.2.57", default-features = false, optional = true }
 
 nalgebra = {version="0.34.0", optional = true}
-indexmap = "2.10.0"
-simba = "0.9.0"
+indexmap = {version = "2.10.0", optional = true}
 paste = "1.0.15"
-bincode = "2.0.1"
+bincode = {version="2.0.1", optional = true}
 
 [dependencies.num-traits]
 version = "0.2.19"
 default-features = false
 features = ["libm"]
+optional = true

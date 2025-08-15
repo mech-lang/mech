@@ -165,12 +165,14 @@ impl Interpreter {
     plan_brrw.push(step);
   }
 
+  #[cfg(feature = "functions")]
   pub fn insert_function(&self, fxn: FunctionDefinition) {
     let mut fxns_brrw = self.functions.borrow_mut();
     fxns_brrw.functions.insert(fxn.id, fxn);
   }
 
-  fn pretty_print_symbols(&self) -> String {
+  #[cfg(feature = "pretty_print")]
+  pub fn pretty_print_symbols(&self) -> String {
     let symbol_table = self.symbols.borrow();
     symbol_table.pretty_print()
   }

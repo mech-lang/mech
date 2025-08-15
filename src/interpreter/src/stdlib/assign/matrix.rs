@@ -6,6 +6,7 @@ use nalgebra::{
   base::{Matrix as naMatrix, Storage, StorageMut},
   Dim, Scalar,
 };
+use num_traits::*;
 
 // Set -----------------------------------------------------------------
 

@@ -18,7 +18,9 @@ gitlab = { repository = "mech-lang/syntax", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [features]
-default = ["stdlib"]
+default = ["stdlib", "pretty_print", "serde"]
+serde = ["mech-core/serde"]
+pretty_print = ["mech-core/pretty_print"]
 no-std = ["mech-core/no_std", "rlibc"]
 
 stdlib = ["bool", "string", "numbers", "matrix", "set", "map", "table", "tuple", "record", "atom", "mech-core/stdlib"]

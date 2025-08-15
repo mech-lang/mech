@@ -1,6 +1,5 @@
 use mech_interpreter::*;
 use mech_core::*;
-use bincode::config::standard;
 
 fn main() {
   // 1. Create a new interpreter
@@ -11,9 +10,9 @@ fn main() {
   let serialized_code: &[u8] = include_bytes!("bar.blx");
 
   // 3. Deserialize into MechSourceCode
-  let (decoded_code, _len): (MechSourceCode, _) =
-      bincode::serde::decode_from_slice(serialized_code, standard()).unwrap();
-
+  //let (decoded_code, _len): (MechSourceCode, _) =
+      //bincode::serde::decode_from_slice(serialized_code, standard()).unwrap();
+  let decoded_code: MechSourceCode = MechSourceCode::String("This is a test".to_string());
   match decoded_code {
     MechSourceCode::Program(code_vec) => {
       for c in code_vec {

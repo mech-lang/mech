@@ -20,6 +20,7 @@ use mech_core::*;
 use mech_core::nodes::*;
 use std::cell::RefCell;
 use std::rc::Rc;
+use num_traits::*;
 
 #[cfg(not(feature = "no-std"))] use core::fmt;
 #[cfg(feature = "no-std")] use alloc::fmt;
@@ -358,7 +359,7 @@ impl<'a> ParseError<'a> {
 
   /// Add self to the error log of input string.
   fn log(&mut self) {
-    self.remaining_input.error_log.push((self.cause_range, self.error_detail.clone()));
+    self.remaining_input.error_log.push((self.cause_range.clone(), self.error_detail.clone()));
   }
 }
 
@@ -500,7 +501,7 @@ impl<'a> TextFormatter<'a> {
     let mut result = String::new();
 
     let mut annotation_rngs = ctx.annotation_rngs.clone();
-    annotation_rngs.push(ctx.cause_rng);
+    annotation_rngs.push(ctx.cause_rng.clone());
 
     // the lines to print (1-indexed)
     let mut lines_to_print: Vec<usize> = vec![];

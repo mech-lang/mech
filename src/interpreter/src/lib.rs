@@ -33,7 +33,9 @@ use mech_core::F32;
 use mech_core::ComplexNumber;
 #[cfg(feature = "rational")]
 use mech_core::RationalNumber;
-use mech_core::{Functions, MechFunction, FunctionsRef, FunctionDefinition, NativeFunctionCompiler, Plan, UserFunction, SymbolTableRef, SymbolTable};
+#[cfg(feature = "functions")]
+use mech_core::{FunctionDefinition, UserFunction};
+use mech_core::{Functions, MechFunction, FunctionsRef, NativeFunctionCompiler, Plan, SymbolTableRef, SymbolTable};
 use crate::stdlib::{
                     access::*,
                     assign::*,
@@ -67,13 +69,16 @@ use mech_range::{
 
 #[cfg(feature = "matrix")]
 use na::DMatrix;
+#[cfg(feature = "set")]
 use indexmap::set::IndexSet;
+#[cfg(any(feature = "map", feature = "table", feature = "record"))]
 use indexmap::map::IndexMap;
 
 pub mod literals;
 pub mod structures;
 pub mod interpreter;
 pub mod stdlib;
+#[cfg(feature = "functions")]
 pub mod functions;
 pub mod statements;
 pub mod expressions;
@@ -82,6 +87,7 @@ pub mod mechdown;
 pub use crate::interpreter::*;
 pub use crate::literals::*;
 pub use crate::structures::*;
+#[cfg(feature = "functions")]
 pub use crate::functions::*;
 pub use crate::statements::*;
 pub use crate::expressions::*;
