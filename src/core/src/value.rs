@@ -1,10 +1,13 @@
+#[cfg(feature = "matrix")]
 use crate::matrix::Matrix;
 use crate::*;
 use crate::nodes::Matrix as Mat;
+#[cfg(feature = "complex")]
 use crate::types::ComplexNumber;
 use crate::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*, humanize};
 use std::collections::HashMap;
 
+#[cfg(feature = "matrix")] 
 use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix3x2, Matrix6, Matrix2};
 use std::hash::{Hash, Hasher};
 use indexmap::set::IndexSet;
@@ -235,29 +238,49 @@ pub enum Value {
   String(Ref<String>),
   Bool(Ref<bool>),
   Atom(u64),
+  #[cfg(feature = "matrix")]
   MatrixIndex(Matrix<usize>),
+  #[cfg(feature = "matrix")]
   MatrixBool(Matrix<bool>),
+  #[cfg(feature = "matrix")]
   MatrixU8(Matrix<u8>),
+  #[cfg(feature = "matrix")]
   MatrixU16(Matrix<u16>),
+  #[cfg(feature = "matrix")]
   MatrixU32(Matrix<u32>),
+  #[cfg(feature = "matrix")]
   MatrixU64(Matrix<u64>),
+  #[cfg(feature = "matrix")]
   MatrixU128(Matrix<u128>),
+  #[cfg(feature = "matrix")]
   MatrixI8(Matrix<i8>),
+  #[cfg(feature = "matrix")]
   MatrixI16(Matrix<i16>),
+  #[cfg(feature = "matrix")]
   MatrixI32(Matrix<i32>),
+  #[cfg(feature = "matrix")]
   MatrixI64(Matrix<i64>),
+  #[cfg(feature = "matrix")]
   MatrixI128(Matrix<i128>),
+  #[cfg(feature = "matrix")]
   MatrixF32(Matrix<F32>),
+  #[cfg(feature = "matrix")]
   MatrixF64(Matrix<F64>),
+  #[cfg(feature = "matrix")]
   MatrixString(Matrix<String>),
+  #[cfg(feature = "matrix")]
   MatrixRationalNumber(Matrix<RationalNumber>),
+  #[cfg(feature = "matrix")]
   MatrixComplexNumber(Matrix<ComplexNumber>),
+  #[cfg(feature = "matrix")]
   MatrixValue(Matrix<Value>),
+  #[cfg(feature = "complex")]
   ComplexNumber(Ref<ComplexNumber>),
   RationalNumber(Ref<RationalNumber>),
   Set(MechSet),
   Map(MechMap),
   Record(Ref<MechRecord>),
+  #[cfg(feature = "table")]
   Table(Ref<MechTable>),
   Tuple(MechTuple),
   Enum(Box<MechEnum>),
@@ -293,34 +316,54 @@ impl Hash for Value {
       Value::I128(x) => x.borrow().hash(state),
       Value::F32(x)  => x.borrow().hash(state),
       Value::F64(x)  => x.borrow().hash(state),
+      #[cfg(feature = "complex")]
       Value::ComplexNumber(x) => x.borrow().hash(state),
       Value::Index(x)=> x.borrow().hash(state),
       Value::Bool(x) => x.borrow().hash(state),
       Value::Atom(x) => x.hash(state),
       Value::Set(x)  => x.hash(state),
       Value::Map(x)  => x.hash(state),
+      #[cfg(feature = "table")]
       Value::Table(x) => x.borrow().hash(state),
       Value::Tuple(x) => x.hash(state),
       Value::Record(x) => x.borrow().hash(state),
       Value::Enum(x) => x.hash(state),
       Value::String(x) => x.borrow().hash(state),
+      #[cfg(feature = "matrix")]
       Value::MatrixBool(x) => x.hash(state),
+      #[cfg(feature = "matrix")]
       Value::MatrixIndex(x) => x.hash(state),
+      #[cfg(feature = "matrix")]
       Value::MatrixU8(x)   => x.hash(state),
+      #[cfg(feature = "matrix")]
       Value::MatrixU16(x)  => x.hash(state),
+      #[cfg(feature = "matrix")]
       Value::MatrixU32(x)  => x.hash(state),
+      #[cfg(feature = "matrix")]
       Value::MatrixU64(x)  => x.hash(state),
+      #[cfg(feature = "matrix")]
       Value::MatrixU128(x) => x.hash(state),
+      #[cfg(feature = "matrix")]
       Value::MatrixI8(x)   => x.hash(state),
+      #[cfg(feature = "matrix")]
       Value::MatrixI16(x)  => x.hash(state),
+      #[cfg(feature = "matrix")]
       Value::MatrixI32(x)  => x.hash(state),
+      #[cfg(feature = "matrix")]
       Value::MatrixI64(x)  => x.hash(state),
+      #[cfg(feature = "matrix")]
       Value::MatrixI128(x) => x.hash(state),
+      #[cfg(feature = "matrix")]
       Value::MatrixF32(x)  => x.hash(state),
+      #[cfg(feature = "matrix")]
       Value::MatrixF64(x)  => x.hash(state),
+      #[cfg(feature = "matrix")]
       Value::MatrixString(x) => x.hash(state),
+      #[cfg(feature = "matrix")]
       Value::MatrixValue(x)  => x.hash(state),
+      #[cfg(feature = "matrix")]
       Value::MatrixRationalNumber(x) => x.hash(state),
+      #[cfg(feature = "matrix")]
       Value::MatrixComplexNumber(x) => x.hash(state),
       Value::MutableReference(x) => x.borrow().hash(state),
       Value::Empty => Value::Empty.hash(state),
@@ -527,29 +570,49 @@ impl Value {
       Value::F32(x) => 4,
       Value::F64(x) => 8,
       Value::Bool(x) => 1,
+      #[cfg(feature = "complex")]
       Value::ComplexNumber(x) => 16,
+      #[cfg(feature = "matrix")]
       Value::MatrixIndex(x) =>x.size_of(),
+      #[cfg(feature = "matrix")]
       Value::MatrixBool(x) =>x.size_of(),
+      #[cfg(feature = "matrix")]
       Value::MatrixU8(x)   => x.size_of(),
+      #[cfg(feature = "matrix")]
       Value::MatrixU16(x)  => x.size_of(),
+      #[cfg(feature = "matrix")]
       Value::MatrixU32(x)  => x.size_of(),
+      #[cfg(feature = "matrix")]
       Value::MatrixU64(x)  => x.size_of(),
+      #[cfg(feature = "matrix")]
       Value::MatrixU128(x) => x.size_of(),
+      #[cfg(feature = "matrix")]
       Value::MatrixI8(x)   => x.size_of(),
+      #[cfg(feature = "matrix")]
       Value::MatrixI16(x)  => x.size_of(),
+      #[cfg(feature = "matrix")]
       Value::MatrixI32(x)  => x.size_of(),
+      #[cfg(feature = "matrix")]
       Value::MatrixI64(x)  => x.size_of(),
+      #[cfg(feature = "matrix")]
       Value::MatrixI128(x) => x.size_of(),
+      #[cfg(feature = "matrix")]
       Value::MatrixF32(x)  => x.size_of(),
+      #[cfg(feature = "matrix")]
       Value::MatrixF64(x)  => x.size_of(),
+      #[cfg(feature = "matrix")]
       Value::MatrixValue(x)  => x.size_of(),
+      #[cfg(feature = "matrix")]
       Value::MatrixString(x) => x.size_of(),
+      #[cfg(feature = "matrix")]
       Value::MatrixRationalNumber(x) => x.size_of(),
+      #[cfg(feature = "matrix")]
       Value::MatrixComplexNumber(x) => x.size_of(),
       Value::String(x) => x.borrow().len(),
       Value::Atom(x) => 8,
       Value::Set(x) => x.size_of(),
       Value::Map(x) => x.size_of(),
+      #[cfg(feature = "table")]
       Value::Table(x) => x.borrow().size_of(),
       Value::Record(x) => x.borrow().size_of(),
       Value::Tuple(x) => x.size_of(),
@@ -579,24 +642,43 @@ impl Value {
       Value::F64(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
       Value::String(s) => format!("<span class='mech-string'>\"{}\"</span>", s.borrow()),
       Value::Bool(b) => format!("<span class='mech-boolean'>{}</span>", b.borrow()),
+      #[cfg(feature = "complex")]
       Value::ComplexNumber(c) => c.borrow().to_html(),
+      #[cfg(feature = "matrix")]
       Value::MatrixU8(m) => m.to_html(),
+      #[cfg(feature = "matrix")]
       Value::MatrixU16(m) => m.to_html(),
+      #[cfg(feature = "matrix")]
       Value::MatrixU32(m) => m.to_html(),
+      #[cfg(feature = "matrix")]
       Value::MatrixU64(m) => m.to_html(),
+      #[cfg(feature = "matrix")]
       Value::MatrixU128(m) => m.to_html(),
+      #[cfg(feature = "matrix")]
       Value::MatrixI8(m) => m.to_html(),
+      #[cfg(feature = "matrix")]
       Value::MatrixI16(m) => m.to_html(),
+      #[cfg(feature = "matrix")]
       Value::MatrixI32(m) => m.to_html(),
+      #[cfg(feature = "matrix")]
       Value::MatrixI64(m) => m.to_html(),
+      #[cfg(feature = "matrix")]
       Value::MatrixI128(m) => m.to_html(),
+      #[cfg(feature = "matrix")]
       Value::MatrixF64(m) => m.to_html(),
+      #[cfg(feature = "matrix")]
       Value::MatrixF32(m) => m.to_html(),
+      #[cfg(feature = "matrix")]
       Value::MatrixIndex(m) => m.to_html(),
+      #[cfg(feature = "matrix")]
       Value::MatrixBool(m) => m.to_html(),
+      #[cfg(feature = "matrix")]
       Value::MatrixString(m) => m.to_html(),
+      #[cfg(feature = "matrix")]
       Value::MatrixValue(m) => m.to_html(),
+      #[cfg(feature = "matrix")]
       Value::MatrixRationalNumber(m) => m.to_html(),
+      #[cfg(feature = "matrix")]
       Value::MatrixComplexNumber(m) => m.to_html(),
       Value::MutableReference(m) => {
         let inner = m.borrow();
@@ -605,6 +687,7 @@ impl Value {
       Value::Atom(a) => format!("<span class=\"mech-atom\"><span class=\"mech-atom-grave\">`</span><span class=\"mech-atom-name\">{}</span></span>",a),
       Value::Set(s) => s.to_html(),
       Value::Map(m) => m.to_html(),
+      #[cfg(feature = "table")]
       Value::Table(t) => t.borrow().to_html(),
       Value::Record(r) => r.borrow().to_html(),
       Value::Tuple(t) => t.to_html(),
@@ -630,33 +713,53 @@ impl Value {
       Value::F64(x)  => {builder.push_record(vec![format!("{}",x.borrow().0)]);},
       Value::Bool(x) => {builder.push_record(vec![format!("{}",x.borrow())]);},
       Value::Index(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
+      #[cfg(feature = "complex")]
       Value::ComplexNumber(x) => {builder.push_record(vec![x.borrow().pretty_print()]);},
       Value::RationalNumber(x) => {builder.push_record(vec![format!("{}",x.borrow().pretty_print())]);},
       Value::Atom(x) => {builder.push_record(vec![format!("{}",x)]);},
       Value::Set(x)  => {return x.pretty_print();}
       Value::Map(x)  => {return x.pretty_print();}
       Value::String(x) => {return format!("\"{}\"",x.borrow().clone());},
+      #[cfg(feature = "table")]
       Value::Table(x)  => {return x.borrow().pretty_print();},
       Value::Tuple(x)  => {return x.pretty_print();},
       Value::Record(x) => {return x.borrow().pretty_print();},
       Value::Enum(x) => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
       Value::MatrixIndex(x) => {return x.pretty_print();}
+      #[cfg(feature = "matrix")]
       Value::MatrixBool(x) => {return x.pretty_print();}
+      #[cfg(feature = "matrix")]
       Value::MatrixU8(x)   => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
       Value::MatrixU16(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
       Value::MatrixU32(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
       Value::MatrixU64(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
       Value::MatrixU128(x) => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
       Value::MatrixI8(x)   => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
       Value::MatrixI16(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
       Value::MatrixI32(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
       Value::MatrixI64(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
       Value::MatrixI128(x) => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
       Value::MatrixF32(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
       Value::MatrixF64(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
       Value::MatrixValue(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
       Value::MatrixString(x)  => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
       Value::MatrixRationalNumber(x) => {return x.pretty_print();},
+      #[cfg(feature = "matrix")]
       Value::MatrixComplexNumber(x) => {return x.pretty_print();},
       Value::MutableReference(x) => {return x.borrow().pretty_print();},
       Value::Empty => builder.push_record(vec!["_"]),
@@ -683,6 +786,7 @@ impl Value {
   pub fn shape(&self) -> Vec<usize> {
     match self {
       Value::RationalNumber(x) => vec![1,1],
+      #[cfg(feature = "complex")]
       Value::ComplexNumber(x) => vec![1,1],
       Value::U8(x) => vec![1,1],
       Value::U16(x) => vec![1,1],
@@ -700,25 +804,44 @@ impl Value {
       Value::String(x) => vec![1,1],
       Value::Bool(x) => vec![1,1],
       Value::Atom(x) => vec![1,1],
+      #[cfg(feature = "matrix")]
       Value::MatrixIndex(x) => x.shape(),
+      #[cfg(feature = "matrix")]
       Value::MatrixBool(x) => x.shape(),
+      #[cfg(feature = "matrix")]
       Value::MatrixU8(x) => x.shape(),
+      #[cfg(feature = "matrix")]
       Value::MatrixU16(x) => x.shape(),
+      #[cfg(feature = "matrix")]
       Value::MatrixU32(x) => x.shape(),
+      #[cfg(feature = "matrix")]
       Value::MatrixU64(x) => x.shape(),
+      #[cfg(feature = "matrix")]
       Value::MatrixU128(x) => x.shape(),
+      #[cfg(feature = "matrix")]
       Value::MatrixI8(x) => x.shape(),
+      #[cfg(feature = "matrix")]
       Value::MatrixI16(x) => x.shape(),
+      #[cfg(feature = "matrix")]
       Value::MatrixI32(x) => x.shape(),
+      #[cfg(feature = "matrix")]
       Value::MatrixI64(x) => x.shape(),
+      #[cfg(feature = "matrix")]
       Value::MatrixI128(x) => x.shape(),
+      #[cfg(feature = "matrix")]
       Value::MatrixF32(x) => x.shape(),
+      #[cfg(feature = "matrix")]
       Value::MatrixF64(x) => x.shape(),
+      #[cfg(feature = "matrix")]
       Value::MatrixString(x) => x.shape(),
+      #[cfg(feature = "matrix")]
       Value::MatrixValue(x) => x.shape(),
+      #[cfg(feature = "matrix")]
       Value::MatrixRationalNumber(x) => x.shape(),
+      #[cfg(feature = "matrix")]
       Value::MatrixComplexNumber(x) => x.shape(),
       Value::Enum(x) => vec![1,1],
+      #[cfg(feature = "table")]
       Value::Table(x) => x.borrow().shape(),
       Value::Set(x) => vec![1,x.set.len()],
       Value::Map(x) => vec![1,x.map.len()],
@@ -741,6 +864,7 @@ impl Value {
 
   pub fn kind(&self) -> ValueKind {
     match self {
+      #[cfg(feature = "complex")]
       Value::ComplexNumber(_) => ValueKind::ComplexNumber,
       Value::RationalNumber(_) => ValueKind::RationalNumber,
       Value::U8(_) => ValueKind::U8,
@@ -758,24 +882,43 @@ impl Value {
       Value::String(_) => ValueKind::String,
       Value::Bool(_) => ValueKind::Bool,
       Value::Atom(x) => ValueKind::Atom(*x),
+      #[cfg(feature = "matrix")]
       Value::MatrixIndex(x) => ValueKind::Matrix(Box::new(ValueKind::Index),x.shape()),
+      #[cfg(feature = "matrix")]
       Value::MatrixBool(x) => ValueKind::Matrix(Box::new(ValueKind::Bool),x.shape()),
+      #[cfg(feature = "matrix")]
       Value::MatrixU8(x) => ValueKind::Matrix(Box::new(ValueKind::U8),x.shape()),
+      #[cfg(feature = "matrix")]
       Value::MatrixU16(x) => ValueKind::Matrix(Box::new(ValueKind::U16),x.shape()),
+      #[cfg(feature = "matrix")]
       Value::MatrixU32(x) => ValueKind::Matrix(Box::new(ValueKind::U32),x.shape()),
+      #[cfg(feature = "matrix")]
       Value::MatrixU64(x) => ValueKind::Matrix(Box::new(ValueKind::U64),x.shape()),
+      #[cfg(feature = "matrix")]
       Value::MatrixU128(x) => ValueKind::Matrix(Box::new(ValueKind::U128),x.shape()),
+      #[cfg(feature = "matrix")]
       Value::MatrixI8(x) => ValueKind::Matrix(Box::new(ValueKind::I8),x.shape()),
+      #[cfg(feature = "matrix")]
       Value::MatrixI16(x) => ValueKind::Matrix(Box::new(ValueKind::I16),x.shape()),
+      #[cfg(feature = "matrix")]
       Value::MatrixI32(x) => ValueKind::Matrix(Box::new(ValueKind::I32),x.shape()),
+      #[cfg(feature = "matrix")]
       Value::MatrixI64(x) => ValueKind::Matrix(Box::new(ValueKind::I64),x.shape()),
+      #[cfg(feature = "matrix")]
       Value::MatrixI128(x) => ValueKind::Matrix(Box::new(ValueKind::U128,),x.shape()),
+      #[cfg(feature = "matrix")]
       Value::MatrixF32(x) => ValueKind::Matrix(Box::new(ValueKind::F32),x.shape()),
+      #[cfg(feature = "matrix")]
       Value::MatrixF64(x) => ValueKind::Matrix(Box::new(ValueKind::F64),x.shape()),
+      #[cfg(feature = "matrix")]
       Value::MatrixString(x) => ValueKind::Matrix(Box::new(ValueKind::String),x.shape()),
+      #[cfg(feature = "matrix")]
       Value::MatrixValue(x) => ValueKind::Matrix(Box::new(ValueKind::Any),x.shape()),
+      #[cfg(feature = "matrix")]
       Value::MatrixRationalNumber(x) => ValueKind::Matrix(Box::new(ValueKind::RationalNumber),x.shape()),
+      #[cfg(feature = "matrix")]
       Value::MatrixComplexNumber(x) => ValueKind::Matrix(Box::new(ValueKind::ComplexNumber),x.shape()),
+      #[cfg(feature = "table")]
       Value::Table(x) => x.borrow().kind(),
       Value::Set(x) => x.kind(),
       Value::Map(x) => x.kind(),
@@ -791,6 +934,7 @@ impl Value {
     }
   }
 
+  #[cfg(feature = "matrix")]
   pub fn is_matrix(&self) -> bool {
     match self {
       Value::MatrixIndex(_) | Value::MatrixBool(_) | Value::MatrixU8(_) | 
@@ -845,6 +989,7 @@ impl Value {
       Value::F64(v) => Some(new_ref(format!("{}", v.borrow().0))),
       Value::Bool(v) => Some(new_ref(format!("{}", v.borrow()))),
       Value::RationalNumber(v) => Some(new_ref(v.borrow().to_string())),
+      #[cfg(feature = "complex")]
       Value::ComplexNumber(v) => Some(new_ref(v.borrow().to_string())),
       Value::MutableReference(val) => val.borrow().as_string(),
       _ => None,
@@ -871,6 +1016,7 @@ impl Value {
     }
   }
 
+  #[cfg(feature = "complex")]
   pub fn as_complexnumber(&self) -> Option<Ref<ComplexNumber>> {
     match self {
       Value::ComplexNumber(v) => Some(v.clone()),
@@ -929,34 +1075,55 @@ impl Value {
     }
   }
 
+  #[cfg(feature = "matrix")]
   pub fn as_vecbool(&self) -> Option<Vec<bool>> {if let Value::MatrixBool(v)  = self { Some(v.as_vec()) } else if let Value::Bool(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecbool()  } else { None }}
   
+  #[cfg(feature = "matrix")]
   pub fn as_vecf64(&self) -> Option<Vec<F64>> { if let Value::MatrixF64(v) = self { Some(v.as_vec()) } else if let Value::F64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf64() } else if let Some(v) = self.as_f64() { Some(vec![v.borrow().clone()]) } else { None } }
+  #[cfg(feature = "matrix")]
   pub fn as_vecf32(&self) -> Option<Vec<F32>> { if let Value::MatrixF32(v) = self { Some(v.as_vec()) } else if let Value::F32(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecf32() } else if let Some(v) = self.as_f32() { Some(vec![v.borrow().clone()]) } else { None } }
 
+  #[cfg(feature = "matrix")]
   pub fn as_vecu8(&self) -> Option<Vec<u8>> { if let Value::MatrixU8(v) = self { Some(v.as_vec()) } else if let Value::U8(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu8() } else if let Some(v) = self.as_u8() { Some(vec![v.borrow().clone()]) } else { None } }
+  #[cfg(feature = "matrix")]
   pub fn as_vecu16(&self) -> Option<Vec<u16>> { if let Value::MatrixU16(v) = self { Some(v.as_vec()) } else if let Value::U16(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu16() } else if let Some(v) = self.as_u16() { Some(vec![v.borrow().clone()]) } else { None } }
+  #[cfg(feature = "matrix")]
   pub fn as_vecu32(&self) -> Option<Vec<u32>> { if let Value::MatrixU32(v) = self { Some(v.as_vec()) } else if let Value::U32(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu32() } else if let Some(v) = self.as_u32() { Some(vec![v.borrow().clone()]) } else { None } }
+  #[cfg(feature = "matrix")]
   pub fn as_vecu64(&self) -> Option<Vec<u64>> { if let Value::MatrixU64(v) = self { Some(v.as_vec()) } else if let Value::U64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu64() } else if let Some(v) = self.as_u64() { Some(vec![v.borrow().clone()]) } else { None } }
+  #[cfg(feature = "matrix")]
   pub fn as_vecu128(&self) -> Option<Vec<u128>> { if let Value::MatrixU128(v) = self { Some(v.as_vec()) } else if let Value::U128(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecu128() } else if let Some(v) = self.as_u128() { Some(vec![v.borrow().clone()]) } else { None } }
 
+  #[cfg(feature = "matrix")]
   pub fn as_veci8(&self) -> Option<Vec<i8>> { if let Value::MatrixI8(v) = self { Some(v.as_vec()) } else if let Value::I8(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci8() } else if let Some(v) = self.as_i8() { Some(vec![v.borrow().clone()]) } else { None } }
+  #[cfg(feature = "matrix")]
   pub fn as_veci16(&self) -> Option<Vec<i16>> { if let Value::MatrixI16(v) = self { Some(v.as_vec()) } else if let Value::I16(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci16() } else if let Some(v) = self.as_i16() { Some(vec![v.borrow().clone()]) } else { None } }
+  #[cfg(feature = "matrix")]
   pub fn as_veci32(&self) -> Option<Vec<i32>> { if let Value::MatrixI32(v) = self { Some(v.as_vec()) } else if let Value::I32(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci32() } else if let Some(v) = self.as_i32() { Some(vec![v.borrow().clone()]) } else { None } }
+  #[cfg(feature = "matrix")]
   pub fn as_veci64(&self) -> Option<Vec<i64>> { if let Value::MatrixI64(v) = self { Some(v.as_vec()) } else if let Value::I64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci64() } else if let Some(v) = self.as_i64() { Some(vec![v.borrow().clone()]) } else { None } }
+  #[cfg(feature = "matrix")]
   pub fn as_veci128(&self) -> Option<Vec<i128>> { if let Value::MatrixI128(v) = self { Some(v.as_vec()) } else if let Value::I128(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veci128() } else if let Some(v) = self.as_i128() { Some(vec![v.borrow().clone()]) } else { None } }
 
+  #[cfg(feature = "matrix")]
   pub fn as_vecstring(&self) -> Option<Vec<String>> {if let Value::MatrixString(v)  = self { Some(v.as_vec()) } else if let Value::String(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecstring()  } else { None }}
 
+  #[cfg(feature = "matrix")]
   pub fn as_vecrationalnumber(&self) -> Option<Vec<RationalNumber>> {if let Value::MatrixRationalNumber(v)  = self { Some(v.as_vec()) } else if let Value::RationalNumber(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecrationalnumber()  } else { None }}
+  #[cfg(feature = "matrix")]
   pub fn as_veccomplexnumber(&self) -> Option<Vec<ComplexNumber>> {if let Value::MatrixComplexNumber(v)  = self { Some(v.as_vec()) } else if let Value::ComplexNumber(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veccomplexnumber()  } else { None }}
 
   pub fn as_vecusize(&self) -> Option<Vec<usize>> {
     match self {
+      #[cfg(feature = "matrix")]
       Value::MatrixIndex(v) => Some(v.as_vec()),
+      #[cfg(feature = "matrix")]
       Value::MatrixI64(v) => Some(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
+      #[cfg(feature = "matrix")]
       Value::MatrixF64(v) => Some(v.as_vec().iter().map(|x| (*x).0 as usize).collect::<Vec<usize>>()),
+      #[cfg(feature = "matrix")]
       Value::MutableReference(x) => x.borrow().as_vecusize(),
+      #[cfg(feature = "matrix")]
       Value::MatrixBool(_) => None,
       Value::Bool(_) => None,
       _ => todo!(),
@@ -966,7 +1133,9 @@ impl Value {
   pub fn as_index(&self) -> MResult<Value> {
     match self.as_usize() {      
       Some(ix) => Ok(Value::Index(new_ref(ix))),
+      #[cfg(feature = "matrix")]
       None => match self.as_vecusize() {
+        #[cfg(feature = "matrix")]
         Some(x) => {
           let shape = self.shape();
           let out = Value::MatrixIndex(usize::to_matrix(x, shape[0] * shape[1],1 ));
@@ -976,10 +1145,15 @@ impl Value {
           Some(x) => {
             let shape = self.shape();
             let out = match (shape[0], shape[1]) {
+              #[cfg(feature = "bool")]
               (1,1) => Value::Bool(new_ref(x[0])),
+              #[cfg(feature = "matrix")]
               (1,n) => Value::MatrixBool(Matrix::DVector(new_ref(DVector::from_vec(x)))),
+              #[cfg(feature = "matrix")]
               (m,1) => Value::MatrixBool(Matrix::DVector(new_ref(DVector::from_vec(x)))),
+              #[cfg(feature = "matrix")]
               (m,n) => Value::MatrixBool(Matrix::DVector(new_ref(DVector::from_vec(x)))),
+              _ => todo!(),
             };
             Ok(out)
           }
@@ -989,6 +1163,7 @@ impl Value {
           }
         }
       }
+      _ => todo!(),
     }
   }
 
@@ -1031,7 +1206,9 @@ impl ToValue for Vec<usize> {
       //2 => Value::MatrixIndex(Matrix::RowVector2(new_ref(RowVector2::from_vec(self.clone())))),
       //3 => Value::MatrixIndex(Matrix::RowVector3(new_ref(RowVector3::from_vec(self.clone())))),
       //4 => Value::MatrixIndex(Matrix::RowVector4(new_ref(RowVector4::from_vec(self.clone())))),
+      #[cfg(feature = "matrix")]
       n => Value::MatrixIndex(Matrix::DVector(new_ref(DVector::from_vec(self.clone())))),
+      _ => todo!(),
     }
   }
 }
@@ -1052,6 +1229,7 @@ impl ToValue for Ref<F64>    { fn to_value(&self) -> Value { Value::F64(self.clo
 impl ToValue for Ref<bool>   { fn to_value(&self) -> Value { Value::Bool(self.clone())   } }
 impl ToValue for Ref<String> { fn to_value(&self) -> Value { Value::String(self.clone()) } }
 impl ToValue for Ref<RationalNumber> { fn to_value(&self) -> Value { Value::RationalNumber(self.clone()) } }
+#[cfg(feature = "complex")]
 impl ToValue for Ref<ComplexNumber> { fn to_value(&self) -> Value { Value::ComplexNumber(self.clone()) } }
 
 macro_rules! to_value_ndmatrix {

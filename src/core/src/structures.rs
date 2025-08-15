@@ -1,9 +1,11 @@
+#[cfg(feature = "matrix")]
 use crate::matrix::Matrix;
 use crate::*;
 use crate::nodes::Matrix as Mat;
 use crate::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*, humanize};
 use std::collections::HashMap;
 
+#[cfg(feature = "matrix")]
 use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix3x2, Matrix6, Matrix2};
 use std::hash::{Hash, Hasher};
 use indexmap::set::IndexSet;
@@ -171,6 +173,7 @@ impl Hash for MechMap {
 
 // Table ------------------------------------------------------------------
 
+#[cfg(feature = "table")]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MechTable {
   pub rows: usize,
@@ -179,6 +182,7 @@ pub struct MechTable {
   pub col_names: HashMap<u64,String>,
 }
 
+#[cfg(feature = "table")]
 impl MechTable {
 
   pub fn from_records(records: Vec<MechRecord>) -> MResult<MechTable> {
@@ -474,6 +478,7 @@ impl MechTable {
   }
 }
 
+#[cfg(feature = "table")]
 impl Hash for MechTable {
   fn hash<H: Hasher>(&self, state: &mut H) {
     for (k,(knd,val)) in self.data.iter() {

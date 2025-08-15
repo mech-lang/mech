@@ -10,6 +10,7 @@
 
 #[cfg(feature="no-std")] #[macro_use] extern crate alloc;
 #[cfg(not(feature = "no-std"))] extern crate core;
+#[cfg(feature = "matrix")]  
 extern crate nalgebra as na;
 extern crate tabled;
 extern crate libm;
@@ -36,6 +37,7 @@ use std::mem;
 use num_rational::Rational64;
 
 pub mod value;
+#[cfg(feature = "matrix")]
 pub mod matrix;
 pub mod types;
 pub mod functions;
@@ -45,6 +47,7 @@ pub mod nodes;
 pub mod structures;
 
 pub use self::value::*;
+#[cfg(feature = "matrix")]
 pub use self::matrix::*;
 pub use self::types::*;
 pub use self::functions::*;

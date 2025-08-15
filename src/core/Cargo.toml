@@ -22,7 +22,7 @@ default = ["stdlib"]
 no_std = ["rlibc"]
 stdlib = ["bool", "string", "numbers", "matrix", "set", "map", "table", "tuple", "record", "atom"]
 numbers = ["signed_ints", "unsigned_ints", "floats", "complex", "rational"]
-complex = ["c64"]
+complex = ["c64", "nalgebra"]
 rational = ["r64"]
 signed_ints = ["i8", "i16", "i32", "i64", "i128"]
 unsigned_ints = ["u8", "u16", "u32", "u64", "u128"]
@@ -45,11 +45,14 @@ c64 = []
 r64 = []
 set = []
 map = []
-table = []
+table = ["nalgebra"]
 tuple = []
 record = []
 atom = []
-matrix = ["fixed_matrix", "fixed_vector", "fixed_row_vector", "row_vectord", "vectord", "matrixd"]
+matrix = [
+  "fixed_matrix", "fixed_vector", "fixed_row_vector", "row_vectord", "vectord", "matrixd",
+  "nalgebra"
+  ]
 fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2"]
 fixed_vector = ["vector4", "vector3", "vector2"]
 fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2"]
@@ -76,7 +79,7 @@ brotli = "8.0.1"
 hashbrown = "0.15.5"
 indexmap = {version = "2.10.0", features = ["serde"]}
 libm = "0.2.15"
-nalgebra = "0.34.0"
+nalgebra = {version="0.34.0", optional = true}
 paste = "1.0.15"
 rayon = {version = "1.10.0", optional = true}
 rlibc = { version = "=1.0", optional = true }

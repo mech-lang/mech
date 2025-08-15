@@ -13,6 +13,7 @@ use std::hash::{Hash, Hasher};
 use libm::{pow,powf};
 use paste::paste;
 
+#[cfg(feature = "complex")]
 use nalgebra::Complex;
 
 pub type FunctionsRef = Ref<Functions>;
@@ -414,29 +415,35 @@ impl Default for F32 {
 
 // Complex Numbers
 
+#[cfg(feature = "complex")]
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct ComplexNumber(pub Complex<f64>);
 
+#[cfg(feature = "complex")]
 impl fmt::Display for ComplexNumber {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(f, "{}", self.pretty_print())
   }
 }
 
+#[cfg(feature = "complex")]
 impl PartialOrd for ComplexNumber {
   fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
     Some(self.0.norm().partial_cmp(&other.0.norm()).unwrap())
   }
 }
 
+#[cfg(feature = "complex")]
 impl Default for ComplexNumber {
   fn default() -> Self {
     ComplexNumber(Complex::new(0.0, 0.0))
   }
 }
 
+#[cfg(feature = "complex")]
 impl Eq for ComplexNumber {}
 
+#[cfg(feature = "complex")]
 impl Hash for ComplexNumber {
   fn hash<H: Hasher>(&self, state: &mut H) {
     self.0.re.to_bits().hash(state);
@@ -444,6 +451,7 @@ impl Hash for ComplexNumber {
   }
 }
 
+#[cfg(feature = "complex")]
 impl PrettyPrint for ComplexNumber {
   fn pretty_print(&self) -> String {
     if self.0.re == 0.0 {
@@ -456,6 +464,7 @@ impl PrettyPrint for ComplexNumber {
   }
 }
 
+#[cfg(feature = "complex")]
 impl ComplexNumber {
   pub fn new(real: f64, imag: f64) -> ComplexNumber {
     ComplexNumber(Complex::new(real, imag))
@@ -468,6 +477,7 @@ impl ComplexNumber {
 
 }
 
+#[cfg(feature = "complex")]
 impl Add for ComplexNumber {
   type Output = ComplexNumber;
   fn add(self, other: ComplexNumber) -> ComplexNumber {
@@ -475,6 +485,7 @@ impl Add for ComplexNumber {
   }
 }
 
+#[cfg(feature = "complex")]
 impl Mul for ComplexNumber {
   type Output = ComplexNumber;
   fn mul(self, other: ComplexNumber) -> ComplexNumber {
@@ -482,6 +493,7 @@ impl Mul for ComplexNumber {
   }
 }
 
+#[cfg(feature = "complex")]
 impl Sub for ComplexNumber {
   type Output = ComplexNumber;
   fn sub(self, other: ComplexNumber) -> ComplexNumber {
@@ -489,6 +501,7 @@ impl Sub for ComplexNumber {
   }
 }
 
+#[cfg(feature = "complex")]
 impl Div for ComplexNumber {
   type Output = ComplexNumber;
   fn div(self, other: ComplexNumber) -> ComplexNumber {
@@ -496,30 +509,35 @@ impl Div for ComplexNumber {
   }
 }
 
+#[cfg(feature = "complex")]
 impl AddAssign for ComplexNumber {
   fn add_assign(&mut self, other: ComplexNumber) {
     self.0 += other.0;
   }
 }
 
+#[cfg(feature = "complex")]
 impl SubAssign for ComplexNumber {
   fn sub_assign(&mut self, other: ComplexNumber) {
     self.0 -= other.0;
   }
 }
 
+#[cfg(feature = "complex")]
 impl MulAssign for ComplexNumber {
   fn mul_assign(&mut self, other: ComplexNumber) {
     self.0 *= other.0;
   }
 }
 
+#[cfg(feature = "complex")]
 impl DivAssign for ComplexNumber {
   fn div_assign(&mut self, other: ComplexNumber) {
     self.0 /= other.0;
   }
 }
 
+#[cfg(feature = "complex")]
 impl Zero for ComplexNumber {
   fn zero() -> Self {
     ComplexNumber(Complex::new(0.0, 0.0))
@@ -529,6 +547,7 @@ impl Zero for ComplexNumber {
   }
 }
 
+#[cfg(feature = "complex")]
 impl One for ComplexNumber {
   fn one() -> Self {
     ComplexNumber(Complex::new(1.0, 0.0))
@@ -538,6 +557,7 @@ impl One for ComplexNumber {
   }
 }
 
+#[cfg(feature = "complex")]
 impl Neg for ComplexNumber {
   type Output = Self;
   fn neg(self) -> Self::Output {
@@ -715,12 +735,14 @@ impl ToUsize for RationalNumber {
   }
 }
 
+#[cfg(feature = "complex")]
 impl ToUsize for ComplexNumber {
   fn to_usize(&self) -> usize {
     self.0.norm() as usize
   }
 }
 
+#[cfg(feature = "complex")]
 impl ToValue for ComplexNumber {
   fn to_value(&self) -> Value {
     Value::ComplexNumber(new_ref(*self))
