@@ -336,7 +336,6 @@ impl Hash for Value {
     match self {
       #[cfg(feature = "rational")]
       Value::RationalNumber(x) => x.borrow().hash(state),
-
       #[cfg(feature = "u8")]
       Value::U8(x)   => x.borrow().hash(state),
       #[cfg(feature = "u16")]
@@ -383,7 +382,7 @@ impl Hash for Value {
       Value::String(x) => x.borrow().hash(state),
       #[cfg(all(feature = "matrix", feature = "bool"))]
       Value::MatrixBool(x) => x.hash(state),
-      #[cfg(all(feature = "matrix", feature = "index"))]
+      #[cfg(feature = "matrix")]
       Value::MatrixIndex(x) => x.hash(state),
       #[cfg(all(feature = "matrix", feature = "u8"))]
       Value::MatrixU8(x)   => x.hash(state),
@@ -791,7 +790,7 @@ impl Value {
       Value::MatrixF32(x)  => x.size_of(),
       #[cfg(all(feature = "matrix", feature = "f64"))]
       Value::MatrixF64(x)  => x.size_of(),
-      #[cfg(all(feature = "matrix", feature = "any"))]
+      #[cfg(feature = "matrix")]
       Value::MatrixValue(x)  => x.size_of(),
       #[cfg(all(feature = "matrix", feature = "string"))]
       Value::MatrixString(x) => x.size_of(),

@@ -69,8 +69,9 @@ impl From<F64> for usize {
   }
 }
 
-#[cfg(all(feature = "f64", feature = "exp"))]
+#[cfg(feature = "f64")]
 impl Eq for F64 {}
+
 #[cfg(feature = "f64")]
 impl Hash for F64 {
   fn hash<H: Hasher>(&self, state: &mut H) {
@@ -78,7 +79,7 @@ impl Hash for F64 {
   }
 }
 
-#[cfg(all(feature = "f64", feature = "exp"))]
+#[cfg(feature = "f64")]
 impl Pow<F64> for F64 {
   type Output = F64;
   fn pow(self, rhs: F64) -> Self::Output {
@@ -86,7 +87,7 @@ impl Pow<F64> for F64 {
   }
 }
 
-#[cfg(all(feature = "f64", feature = "add"))]
+#[cfg(feature = "f64")]
 impl Add for F64 {
   type Output = F64;
   fn add(self, other: F64) -> F64 {
@@ -94,27 +95,27 @@ impl Add for F64 {
   }
 }
 
-#[cfg(all(feature = "f64", feature = "add"))]
+#[cfg(feature = "f64")]
 impl AddAssign for F64 {
   fn add_assign(&mut self, other: F64) {
     self.0 += other.0;
   }
 }
-#[cfg(all(feature = "f64", feature = "sub"))]
+#[cfg(feature = "f64")]
 impl Sub for F64 {
   type Output = F64;
   fn sub(self, other: F64) -> F64 {
     F64(self.0 - other.0)
   }
 }
-#[cfg(all(feature = "f64", feature = "sub"))]
+#[cfg(feature = "f64")]
 impl SubAssign for F64 {
   fn sub_assign(&mut self, other: F64) {
     self.0 -= other.0;
   }
 }
 
-#[cfg(all(feature = "f64", feature = "mul"))]
+#[cfg(feature = "f64")]
 impl Mul for F64 {
   type Output = F64;
   fn mul(self, other: F64) -> F64 {
@@ -122,14 +123,14 @@ impl Mul for F64 {
   }
 }
 
-#[cfg(all(feature = "f64", feature = "mul"))]
+#[cfg(feature = "f64")]
 impl MulAssign for F64 {
   fn mul_assign(&mut self, other: F64) {
     self.0 *= other.0;
   }
 }
 
-#[cfg(all(feature = "f64", feature = "div"))]
+#[cfg(feature = "f64")]
 impl Div for F64 {
   type Output = F64;
   fn div(self, other: F64) -> F64 {
@@ -137,14 +138,14 @@ impl Div for F64 {
   }
 }
 
-#[cfg(all(feature = "f64", feature = "div"))]
+#[cfg(feature = "f64")]
 impl DivAssign for F64 {
   fn div_assign(&mut self, other: F64) {
     self.0 /= other.0;
   }
 }
 
-#[cfg(all(feature = "f64", feature = "mod"))]
+#[cfg(feature = "f64")]
 impl Rem for F64 {
   type Output = F64;
   fn rem(self, other: F64) -> F64 {
@@ -152,7 +153,7 @@ impl Rem for F64 {
   }
 }
 
-#[cfg(all(feature = "f64", feature = "mod"))]
+#[cfg(feature = "f64")]
 impl RemAssign for F64 {
   fn rem_assign(&mut self, other: F64) {
     self.0 = self.0 % other.0;
@@ -186,7 +187,7 @@ impl One for F64 {
   }
 }
 
-#[cfg(all(feature = "f64", feature = "neg"))]
+#[cfg(feature = "f64")]
 impl Neg for F64 {
   type Output = Self;
   fn neg(self) -> Self::Output {
@@ -327,7 +328,7 @@ impl From<F32> for usize {
   }
 }
 
-#[cfg(all(feature = "f32", feature = "exp"))]
+#[cfg(feature = "f32")]
 impl Pow<F32> for F32 {
   type Output = F32;
   fn pow(self, rhs: F32) -> Self::Output {
@@ -345,7 +346,7 @@ impl Hash for F32 {
   }
 }
 
-#[cfg(all(feature = "f32", feature = "add"))]
+#[cfg(feature = "f32")]
 impl Add for F32 {
   type Output = F32;
   fn add(self, other: F32) -> F32 {
@@ -353,14 +354,14 @@ impl Add for F32 {
   }
 }
 
-#[cfg(all(feature = "f32", feature = "add"))]
+#[cfg(feature = "f32")]
 impl AddAssign for F32 {
   fn add_assign(&mut self, other: F32) {
     self.0 += other.0;
   }
 }
 
-#[cfg(all(feature = "f32", feature = "mod"))]
+#[cfg(feature = "f32")]
 impl Rem for F32 {
   type Output = F32;
   fn rem(self, other: F32) -> F32 {
@@ -368,7 +369,7 @@ impl Rem for F32 {
   }
 }
 
-#[cfg(all(feature = "f32", feature = "mod"))]
+#[cfg(feature = "f32")]
 impl RemAssign for F32 {
   fn rem_assign(&mut self, other: F32) {
     self.0 = self.0 % other.0;
@@ -395,7 +396,7 @@ impl One for F32 {
   }
 }
 
-#[cfg(all(feature = "f32", feature = "sub"))]
+#[cfg(feature = "f32")]
 impl Sub for F32 {
   type Output = F32;
   fn sub(self, other: F32) -> F32 {
@@ -403,14 +404,14 @@ impl Sub for F32 {
   }
 }
 
-#[cfg(all(feature = "f32", feature = "sub"))]
+#[cfg(feature = "f32")]
 impl SubAssign for F32 {
   fn sub_assign(&mut self, other: F32) {
     self.0 -= other.0;
   }
 }
 
-#[cfg(all(feature = "f32", feature = "mul"))]
+#[cfg(feature = "f32")]
 impl Mul for F32 {
   type Output = F32;
   fn mul(self, other: F32) -> F32 {
@@ -418,14 +419,14 @@ impl Mul for F32 {
   }
 }
 
-#[cfg(all(feature = "f32", feature = "mul"))]
+#[cfg(feature = "f32")]
 impl MulAssign for F32 {
   fn mul_assign(&mut self, other: F32) {
     self.0 *= other.0;
   }
 }
 
-#[cfg(all(feature = "f32", feature = "div"))]
+#[cfg(feature = "f32")]
 impl Div for F32 {
   type Output = F32;
   fn div(self, other: F32) -> F32 {
@@ -433,14 +434,14 @@ impl Div for F32 {
   }
 }
 
-#[cfg(all(feature = "f32", feature = "neg"))]
+#[cfg(feature = "f32")]
 impl DivAssign for F32 {
   fn div_assign(&mut self, other: F32) {
     self.0 /= other.0;
   }
 }
 
-#[cfg(all(feature = "f32", feature = "neg"))]
+#[cfg(feature = "f32")]
 impl Neg for F32 {
   type Output = Self;
   fn neg(self) -> Self::Output {
@@ -565,7 +566,7 @@ impl ComplexNumber {
 
 }
 
-#[cfg(all(feature = "complex", feature = "add"))]
+#[cfg(feature = "complex")]
 #[cfg(feature = "complex")]
 impl Add for ComplexNumber {
   type Output = ComplexNumber;
@@ -574,7 +575,7 @@ impl Add for ComplexNumber {
   }
 }
 
-#[cfg(all(feature = "complex", feature = "mul"))]
+#[cfg(feature = "complex")]
 impl Mul for ComplexNumber {
   type Output = ComplexNumber;
   fn mul(self, other: ComplexNumber) -> ComplexNumber {
@@ -582,7 +583,7 @@ impl Mul for ComplexNumber {
   }
 }
 
-#[cfg(all(feature = "complex", feature = "sub"))]
+#[cfg(feature = "complex")]
 impl Sub for ComplexNumber {
   type Output = ComplexNumber;
   fn sub(self, other: ComplexNumber) -> ComplexNumber {
@@ -590,7 +591,7 @@ impl Sub for ComplexNumber {
   }
 }
 
-#[cfg(all(feature = "complex", feature = "div"))]
+#[cfg(feature = "complex")]
 impl Div for ComplexNumber {
   type Output = ComplexNumber;
   fn div(self, other: ComplexNumber) -> ComplexNumber {
@@ -598,28 +599,28 @@ impl Div for ComplexNumber {
   }
 }
 
-#[cfg(all(feature = "complex", feature = "add"))]
+#[cfg(feature = "complex")]
 impl AddAssign for ComplexNumber {
   fn add_assign(&mut self, other: ComplexNumber) {
     self.0 += other.0;
   }
 }
 
-#[cfg(all(feature = "complex", feature = "sub"))]
+#[cfg(feature = "complex")]
 impl SubAssign for ComplexNumber {
   fn sub_assign(&mut self, other: ComplexNumber) {
     self.0 -= other.0;
   }
 }
 
-#[cfg(all(feature = "complex", feature = "mul"))]
+#[cfg(feature = "complex")]
 impl MulAssign for ComplexNumber {
   fn mul_assign(&mut self, other: ComplexNumber) {
     self.0 *= other.0;
   }
 }
 
-#[cfg(all(feature = "complex", feature = "div"))]
+#[cfg(feature = "complex")]
 impl DivAssign for ComplexNumber {
   fn div_assign(&mut self, other: ComplexNumber) {
     self.0 /= other.0;
@@ -646,7 +647,7 @@ impl One for ComplexNumber {
   }
 }
 
-#[cfg(all(feature = "complex", feature = "neg"))]
+#[cfg(feature = "complex")]
 impl Neg for ComplexNumber {
   type Output = Self;
   fn neg(self) -> Self::Output {
@@ -710,7 +711,7 @@ impl PrettyPrint for RationalNumber {
   }
 }
 
-#[cfg(all(feature = "rational", feature = "mul"))]
+#[cfg(feature = "rational")]
 impl Mul<RationalNumber> for RationalNumber {
   type Output = RationalNumber;
   fn mul(self, other: RationalNumber) -> RationalNumber {
@@ -728,7 +729,7 @@ impl One for RationalNumber {
   }
 }
 
-#[cfg(all(feature = "rational", feature = "add"))]
+#[cfg(feature = "rational")]
 impl Add<RationalNumber> for RationalNumber {
   type Output = RationalNumber;
   fn add(self, other: RationalNumber) -> RationalNumber {
@@ -736,14 +737,14 @@ impl Add<RationalNumber> for RationalNumber {
   }
 }
 
-#[cfg(all(feature = "rational", feature = "add"))]
+#[cfg(feature = "rational")]
 impl AddAssign<RationalNumber> for RationalNumber {
   fn add_assign(&mut self, other: RationalNumber) {
     self.0 += other.0;
   }
 }
 
-#[cfg(all(feature = "rational", feature = "sub"))]
+#[cfg(feature = "rational")]
 impl Sub<RationalNumber> for RationalNumber {
   type Output = RationalNumber;
   fn sub(self, other: RationalNumber) -> RationalNumber {
@@ -751,7 +752,7 @@ impl Sub<RationalNumber> for RationalNumber {
   }
 }
 
-#[cfg(all(feature = "rational", feature = "div"))]
+#[cfg(feature = "rational")]
 impl Div<RationalNumber> for RationalNumber {
   type Output = RationalNumber;
   fn div(self, other: RationalNumber) -> RationalNumber {
@@ -759,21 +760,21 @@ impl Div<RationalNumber> for RationalNumber {
   }
 }
 
-#[cfg(all(feature = "rational", feature = "div"))]
+#[cfg(feature = "rational")]
 impl DivAssign<RationalNumber> for RationalNumber {
   fn div_assign(&mut self, other: RationalNumber) {
     self.0 /= other.0;
   }
 }
 
-#[cfg(all(feature = "rational", feature = "sub"))]
+#[cfg(feature = "rational")]
 impl SubAssign<RationalNumber> for RationalNumber {
   fn sub_assign(&mut self, other: RationalNumber) {
     self.0 -= other.0;
   }
 }
 
-#[cfg(all(feature = "rational", feature = "mul"))]
+#[cfg(feature = "rational")]
 impl MulAssign<RationalNumber> for RationalNumber {
   fn mul_assign(&mut self, other: RationalNumber) {
     self.0 *= other.0;
@@ -790,7 +791,7 @@ impl Zero for RationalNumber {
   }
 }
 
-#[cfg(all(feature = "rational", feature = "neg"))]
+#[cfg(feature = "rational")]
 impl Neg for RationalNumber {
   type Output = Self;
   fn neg(self) -> Self::Output {
