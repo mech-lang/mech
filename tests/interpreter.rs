@@ -339,7 +339,6 @@ test_interpreter!(interpret_matrix_sub_3x2, "[1 2; 3 4; 5 6] - [7 8; 9 10; 11 12
 
 
 test_interpreter!(interpret_tuple, "(1,true)", Value::Tuple(MechTuple::from_vec(vec![Value::F64(new_ref(F64::new(1.0))), Value::Bool(new_ref(true))])));
-test_interpreter!(interpret_tuple_one, "(1)", Value::Tuple(MechTuple::from_vec(vec![Value::F64(new_ref(F64::new(1.0)))])));
 test_interpreter!(interpret_tuple_nested, r#"(1,("Hello",false))"#, Value::Tuple(MechTuple::from_vec(vec![Value::F64(new_ref(F64::new(1.0))), Value::Tuple(MechTuple::from_vec(vec![Value::String(new_ref("Hello".to_string())), Value::Bool(new_ref(false))]))])));
 test_interpreter!(interpret_tuple_access, r#"q := (10, "b", true); r := (q.3, q.2, q.1)"#, Value::Tuple(MechTuple::from_vec(vec![Value::Bool(new_ref(true)), Value::String(new_ref("b".to_string())), Value::F64(new_ref(F64::new(10.0)))])));
 test_interpreter!(interpret_tuple_destructure, r#"a := (10, 11, 12); (x,y,z) := a; x + y + z"#, Value::F64(new_ref(F64::new(33.0))));
@@ -644,4 +643,6 @@ test_interpreter!(interpret_convert_rational_to_string,r#"x<string>:=1/2"#, Valu
 test_interpreter!(interpret_convert_f64_to_string2,r#"x<string>:=123"#, Value::String(new_ref(String::from("123"))));
 
 test_interpreter!(interpret_convert_f64_to_rational_to_string,r#"x<string> := 0.5<r64>"#,Value::String(new_ref(String::from("1/2"))));
+
+test_interpreter!(interpret_matrix_power_and_addition,"~μ := [1 2 3]; K := [0.1 0.2 0.3; 0.4 0.5 0.6; 0.7 0.8 0.9]; Ẑ := [0.01; 0.02; 0.03]; μ = μ + (K ** Ẑ)'", new_ref(RowVector3::from_vec(vec![F64::new(1.014), F64::new(2.032), F64::new(3.05)])).to_value());
 

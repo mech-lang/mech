@@ -811,7 +811,7 @@ macro_rules! impl_mech_urnop_fxn {
           Err(_) => {
             match (input) {
               (Value::MutableReference(input)) => {$gen_fxn(input.borrow().clone())}
-              x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:#?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
         }
