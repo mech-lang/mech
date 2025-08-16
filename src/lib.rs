@@ -48,7 +48,7 @@ macro_rules! impl_logic_binop {
       fn solve(&self) {
         let lhs_ptr = self.lhs.as_ptr();
         let rhs_ptr = self.rhs.as_ptr();
-        let out_ptr = self.out.as_ptr();
+        let out_ptr = self.out.as_mut_ptr();
         $op!(lhs_ptr,rhs_ptr,out_ptr);
       }
       fn out(&self) -> Value { self.out.to_value() }

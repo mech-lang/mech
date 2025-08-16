@@ -25,7 +25,7 @@ where
 {
   fn solve(&self) {
     let arg_ptr = self.arg.as_ptr();
-    let out_ptr = self.out.as_ptr();
+    let out_ptr = self.out.as_mut_ptr();
     unsafe { *out_ptr = !*arg_ptr; }
   }
   fn out(&self) -> Value { self.out.to_value() }
@@ -49,7 +49,7 @@ where
 {
   fn solve(&self) {
     unsafe {
-      let sink_ptr = self.out.as_ptr();
+      let sink_ptr = self.out.as_mut_ptr();
       let source_ptr = self.arg.as_ptr();
       let sink_ref: &mut MatA = &mut *sink_ptr;
       let source_ref: &MatA = &*source_ptr;
