@@ -37,12 +37,12 @@ impl<T> Ref<T> {
   pub fn borrow_mut(&self) -> std::cell::RefMut<'_, T> { self.0.borrow_mut() }
 }
 
-impl<T> PartialEq for Ref<T> {
+impl<T: PartialEq> PartialEq for Ref<T> {
   fn eq(&self, other: &Self) -> bool {
-    Rc::ptr_eq(&self.0, &other.0)
+    *self.borrow() == *other.borrow()
   }
 }
-impl<T> Eq for Ref<T> {}
+impl<T: PartialEq> Eq for Ref<T> {}
 
 pub fn new_ref<T>(item: T) -> Ref<T> { Ref::new(item) }
 

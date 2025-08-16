@@ -40,6 +40,7 @@ pub struct MechSet {
 #[cfg(feature = "set")]
 impl MechSet {
 
+  #[cfg(feature = "pretty_print")]
   pub fn to_html(&self) -> String {
     let mut src = String::new();
     for (i, element) in self.set.iter().enumerate() {
@@ -125,6 +126,7 @@ pub struct MechMap {
 #[cfg(feature = "map")]
 impl MechMap {
 
+  #[cfg(feature = "pretty_print")]
   pub fn to_html(&self) -> String {
     let mut src = String::new();
     for (i, (key, value)) in self.map.iter().enumerate() {
@@ -393,7 +395,7 @@ impl MechTable {
     Some(MechRecord{cols: self.cols, kinds, data, field_names})
   }
 
-
+  #[cfg(feature = "pretty_print")]
   pub fn to_html(&self) -> String {
     let mut html = String::new();
 
@@ -562,6 +564,7 @@ impl MechRecord {
     })
   }
 
+  #[cfg(feature = "pretty_print")]
   pub fn to_html(&self) -> String {
     let mut bindings = Vec::new();
 

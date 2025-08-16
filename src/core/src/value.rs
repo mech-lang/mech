@@ -92,7 +92,7 @@ impl std::fmt::Display for ValueKind {
       ValueKind::Reference(x) => write!(f, "{}",x),
       ValueKind::Atom(x) => write!(f, "`{}",x),
       ValueKind::Empty => write!(f, "_"),
-      ValueKind::Any => write!(f, "_"),
+      ValueKind::Any => write!(f, "*"),
       ValueKind::Option(x) => write!(f, "{}?", x),
     }
   }

@@ -224,7 +224,7 @@ test_interpreter!(interpret_matrix_range_exclusive_u8, "1<u8>..4<u8>", Value::Ma
 test_interpreter!(interpret_matrix_range_inclusive, "1..=4", Value::MatrixF64(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0),F64::new(4.0)])))));
 test_interpreter!(interpret_matrix_range_inclusive_u8, "1<u8>..=4<u8>", Value::MatrixU8(Matrix::RowDVector(new_ref(RowDVector::from_vec(vec![1,2,3,4])))));
 
-test_interpreter!(interpret_matrix_empty, "[]", Value::MatrixF64(Matrix::DMatrix(new_ref(DMatrix::from_vec(0,0,vec![])))));
+test_interpreter!(interpret_matrix_empty, "[]", Value::MatrixValue(Matrix::DMatrix(new_ref(DMatrix::from_vec(0,0,vec![])))));
 test_interpreter!(interpret_matrix_row3, "[1 2 3]", new_ref(RowVector3::from_vec(vec![F64::new(1.0), F64::new(2.0), F64::new(3.0)])).to_value());
 test_interpreter!(interpret_matrix_mat1, "[123]", Value::MatrixF64(Matrix::Matrix1(new_ref(Matrix1::from_vec(vec![F64::new(123.0)])))));
 test_interpreter!(interpret_matrix_row3_float, "[1.2 2.3 3.4]", Value::MatrixF64(Matrix::RowVector3(new_ref(RowVector3::from_vec(vec![F64::new(1.2),F64::new(2.3),F64::new(3.4)])))));
