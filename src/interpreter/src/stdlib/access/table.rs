@@ -73,15 +73,15 @@ macro_rules! impl_access_column_match_arms {
             $(
               $(
                 #[cfg(all(feature = $type_string, feature = "matrix1"))]
-                (Some((ValueKind::$lhs_type,value)),1) => Ok(Box::new([<TableAccessCol $lhs_type M1>]{source: value.clone(), out: new_ref(Matrix1::from_element($default)) })),
+                (Some((ValueKind::$lhs_type,value)),1) => Ok(Box::new([<TableAccessCol $lhs_type M1>]{source: value.clone(), out: Ref::new(Matrix1::from_element($default)) })),
                 #[cfg(all(feature = $type_string, feature = "vector2"))]
-                (Some((ValueKind::$lhs_type,value)),2) => Ok(Box::new([<TableAccessCol $lhs_type V2>]{source: value.clone(), out: new_ref(Vector2::from_element($default)) })),
+                (Some((ValueKind::$lhs_type,value)),2) => Ok(Box::new([<TableAccessCol $lhs_type V2>]{source: value.clone(), out: Ref::new(Vector2::from_element($default)) })),
                 #[cfg(all(feature = $type_string, feature = "vector3"))]
-                (Some((ValueKind::$lhs_type,value)),3) => Ok(Box::new([<TableAccessCol $lhs_type V3>]{source: value.clone(), out: new_ref(Vector3::from_element($default)) })),
+                (Some((ValueKind::$lhs_type,value)),3) => Ok(Box::new([<TableAccessCol $lhs_type V3>]{source: value.clone(), out: Ref::new(Vector3::from_element($default)) })),
                 #[cfg(all(feature = $type_string, feature = "vector4"))]
-                (Some((ValueKind::$lhs_type,value)),4) => Ok(Box::new([<TableAccessCol $lhs_type V4>]{source: value.clone(), out: new_ref(Vector4::from_element($default)) })),
+                (Some((ValueKind::$lhs_type,value)),4) => Ok(Box::new([<TableAccessCol $lhs_type V4>]{source: value.clone(), out: Ref::new(Vector4::from_element($default)) })),
                 #[cfg(all(feature = $type_string, feature = "vectord"))]
-                (Some((ValueKind::$lhs_type,value)),n) => Ok(Box::new([<TableAccessCol $lhs_type VD>]{source: value.clone(), out: new_ref(DVector::from_element(n,$default)) })),
+                (Some((ValueKind::$lhs_type,value)),n) => Ok(Box::new([<TableAccessCol $lhs_type VD>]{source: value.clone(), out: Ref::new(DVector::from_element(n,$default)) })),
               )+
             )+
             x => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
@@ -188,7 +188,7 @@ impl NativeFunctionCompiler for TableAccessScalar {
           Some(record) => record,
           None => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
         };
-        Ok(Box::new(TableAccessScalarF{source: source.clone(), ix: ix.clone(), out: new_ref(record) }))
+        Ok(Box::new(TableAccessScalarF{source: source.clone(), ix: ix.clone(), out: Ref::new(record) }))
       }
       (Value::MutableReference(src_ref), Value::Index(ix)) => {
         let src_ref_brrw = src_ref.borrow();
@@ -198,7 +198,7 @@ impl NativeFunctionCompiler for TableAccessScalar {
               Some(record) => record,
               None => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
             };
-            Ok(Box::new(TableAccessScalarF{source: source.clone(), ix: ix.clone(), out: new_ref(record) }))
+            Ok(Box::new(TableAccessScalarF{source: source.clone(), ix: ix.clone(), out: Ref::new(record) }))
           }
           _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
         }
@@ -284,18 +284,18 @@ impl NativeFunctionCompiler for TableAccessRange {
     match (tbl, ixes.as_slice()) {
       (Value::Table(source), [Value::MatrixIndex(Matrix::DVector(ix))])  => {
         let out_table = source.borrow().empty_table(ix.borrow().len());
-        Ok(Box::new(TableAccessRangeIndex{source: source.clone(), ix: ix.clone(), out: new_ref(out_table) }))
+        Ok(Box::new(TableAccessRangeIndex{source: source.clone(), ix: ix.clone(), out: Ref::new(out_table) }))
       }
       (Value::Table(source), [Value::MatrixBool(Matrix::DVector(ix))])  => {
         let out_table = source.borrow().empty_table(ix.borrow().len());
-        Ok(Box::new(TableAccessRangeBool{source: source.clone(), ix: ix.clone(), out: new_ref(out_table) }))
+        Ok(Box::new(TableAccessRangeBool{source: source.clone(), ix: ix.clone(), out: Ref::new(out_table) }))
       }
       (Value::MutableReference(src_ref), [Value::MatrixIndex(Matrix::DVector(ix))]) => {
         let src_ref_brrw = src_ref.borrow();
         match &*src_ref_brrw {
           Value::Table(source) => {
             let out_table = source.borrow().empty_table(ix.borrow().len());
-            Ok(Box::new(TableAccessRangeIndex{source: source.clone(), ix: ix.clone(), out: new_ref(out_table) }))
+            Ok(Box::new(TableAccessRangeIndex{source: source.clone(), ix: ix.clone(), out: Ref::new(out_table) }))
           }
           _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
         }
@@ -305,7 +305,7 @@ impl NativeFunctionCompiler for TableAccessRange {
         match &*src_ref_brrw {
           Value::Table(source) => {
             let out_table = source.borrow().empty_table(ix.borrow().len());
-            Ok(Box::new(TableAccessRangeBool{source: source.clone(), ix: ix.clone(), out: new_ref(out_table) }))
+            Ok(Box::new(TableAccessRangeBool{source: source.clone(), ix: ix.clone(), out: Ref::new(out_table) }))
           }
           _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
         }

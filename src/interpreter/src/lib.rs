@@ -45,7 +45,7 @@ use crate::stdlib::{
 use crate::stdlib::horzcat::*;
 #[cfg(feature = "matrix")]
 use crate::stdlib::vertcat::*;
-use mech_core::{MechError, MechErrorKind, hash_str, new_ref, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
+use mech_core::{MechError, MechErrorKind, hash_str, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 
 #[cfg(feature = "combinatorics")]
 use mech_combinatorics::*;

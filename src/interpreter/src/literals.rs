@@ -145,9 +145,9 @@ fn complex(num: &ComplexNumberNode) -> Value {
         Some(val) => val.borrow().0,
         None => 0.0,
       };      
-      Value::ComplexNumber(new_ref(ComplexNumber::new(re, im)))
+      Value::ComplexNumber(Ref::new(ComplexNumber::new(re, im)))
     },
-    None => Value::ComplexNumber(new_ref(ComplexNumber::new(0.0, im))),
+    None => Value::ComplexNumber(Ref::new(ComplexNumber::new(0.0, im))),
   }
 }
 
@@ -180,19 +180,19 @@ pub fn negated(num: &RealNumber) -> Value {
   let num_val = real(&num);
   match num_val {
     #[cfg(feature = "i8")]
-    Value::I8(val) => Value::I8(new_ref(-*val.borrow())),
+    Value::I8(val) => Value::I8(Ref::new(-*val.borrow())),
     #[cfg(feature = "i16")]
-    Value::I16(val) => Value::I16(new_ref(-*val.borrow())),
+    Value::I16(val) => Value::I16(Ref::new(-*val.borrow())),
     #[cfg(feature = "i32")]
-    Value::I32(val) => Value::I32(new_ref(-*val.borrow())),
+    Value::I32(val) => Value::I32(Ref::new(-*val.borrow())),
     #[cfg(feature = "i64")]
-    Value::I64(val) => Value::I64(new_ref(-*val.borrow())),
+    Value::I64(val) => Value::I64(Ref::new(-*val.borrow())),
     #[cfg(feature = "i128")]
-    Value::I128(val) => Value::I128(new_ref(-*val.borrow())),
+    Value::I128(val) => Value::I128(Ref::new(-*val.borrow())),
     #[cfg(feature = "u8")]
-    Value::F64(val) => Value::F64(new_ref(F64::new(-((*val.borrow()).0)))),
+    Value::F64(val) => Value::F64(Ref::new(F64::new(-((*val.borrow()).0)))),
     #[cfg(feature = "u16")]
-    Value::F32(val) => Value::F32(new_ref(F32::new(-((*val.borrow()).0)))),
+    Value::F32(val) => Value::F32(Ref::new(F32::new(-((*val.borrow()).0)))),
     _ => panic!("Negation is only supported for integer and float types"),
   }
 }
@@ -206,35 +206,35 @@ pub fn rational(rat: &(Token,Token)) -> Value {
     panic!("Denominator cannot be zero in a rational number");
   }
   let rat_num = RationalNumber::new(num, denom);
-  Value::RationalNumber(new_ref(rat_num))
+  Value::RationalNumber(Ref::new(rat_num))
 }
 
 #[cfg(feature = "i64")]
 pub fn dec(bnry: &Token) -> Value {
   let binary_str: String = bnry.chars.iter().collect();
   let num = i64::from_str_radix(&binary_str, 10).unwrap();
-  Value::I64(new_ref(num))
+  Value::I64(Ref::new(num))
 }
 
 #[cfg(feature = "i64")]
 pub fn binary(bnry: &Token) -> Value {
   let binary_str: String = bnry.chars.iter().collect();
   let num = i64::from_str_radix(&binary_str, 2).unwrap();
-  Value::I64(new_ref(num))
+  Value::I64(Ref::new(num))
 }
 
 #[cfg(feature = "i64")]
 pub fn oct(octl: &Token) -> Value {
   let hex_str: String = octl.chars.iter().collect();
   let num = i64::from_str_radix(&hex_str, 8).unwrap();
-  Value::I64(new_ref(num))
+  Value::I64(Ref::new(num))
 }
 
 #[cfg(feature = "i64")]
 pub fn hex(hxdcml: &Token) -> Value {
   let hex_str: String = hxdcml.chars.iter().collect();
   let num = i64::from_str_radix(&hex_str, 16).unwrap();
-  Value::I64(new_ref(num))
+  Value::I64(Ref::new(num))
 }
 
 #[cfg(feature = "f64")]
@@ -253,7 +253,7 @@ pub fn scientific(sci: &(Base,Exponent)) -> Value {
     exp_f64 = -exp_f64;
   }
   let num = num_f64 * 10f64.powf(exp_f64);
-  Value::F64(new_ref(F64(num)))
+  Value::F64(Ref::new(F64(num)))
 }
 
 #[cfg(feature = "floats")]
@@ -261,19 +261,19 @@ pub fn float(flt: &(Token,Token)) -> Value {
   let a = flt.0.chars.iter().collect::<String>();
   let b = flt.1.chars.iter().collect::<String>();
   let num: f64 = format!("{}.{}",a,b).parse::<f64>().unwrap();
-  Value::F64(new_ref(F64(num)))
+  Value::F64(Ref::new(F64(num)))
 }
 
 #[cfg(any(feature = "unsigned_ints", feature = "f64"))]
 pub fn integer(int: &Token) -> Value {
   let num: f64 = int.chars.iter().collect::<String>().parse::<f64>().unwrap();
-  Value::F64(new_ref(F64::new(num)))
+  Value::F64(Ref::new(F64::new(num)))
 }
 
 #[cfg(feature = "string")]
 pub fn string(tkn: &MechString) -> Value {
   let strng: String = tkn.text.chars.iter().collect::<String>();
-  Value::String(new_ref(strng))
+  Value::String(Ref::new(strng))
 }
 
 pub fn empty() -> Value {
@@ -288,5 +288,5 @@ pub fn boolean(tkn: &Token) -> Value {
     "false" => false,
     _ => unreachable!(),
   };
-  Value::Bool(new_ref(val))
+  Value::Bool(Ref::new(val))
 }

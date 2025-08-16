@@ -103,7 +103,7 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
     }
     field_names.insert(name_hash, name_str);
   }
-  Ok(Value::Record(new_ref(MechRecord{
+  Ok(Value::Record(Ref::new(MechRecord{
     cols,
     kinds,
     data,
@@ -220,7 +220,7 @@ pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> {
   }
   let names: HashMap<u64,String> = headings.iter().map(|(id,_,name)| (id.as_u64().unwrap().borrow().clone(), name.to_string())).collect();
   let tbl = MechTable::new(t.rows.len(), cols, data_map.clone(), names);
-  Ok(Value::Table(new_ref(tbl)))
+  Ok(Value::Table(Ref::new(tbl)))
 }
 
 pub fn table_header(fields: &Vec<Field>, p: &Interpreter) -> MResult<Vec<(Value,ValueKind,Identifier)>> {
@@ -268,7 +268,7 @@ pub fn matrix(m: &Mat, p: &Interpreter) -> MResult<Value> {
     }
   }
   if col.is_empty() {
-    return Ok(Value::MatrixValue(Matrix::DMatrix(new_ref(DMatrix::from_vec(0, 0, vec![])))));
+    return Ok(Value::MatrixValue(Matrix::DMatrix(Ref::new(DMatrix::from_vec(0, 0, vec![])))));
   } else if col.len() == 1 {
     return Ok(col[0].clone());
   }

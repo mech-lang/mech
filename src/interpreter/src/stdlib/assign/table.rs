@@ -21,7 +21,7 @@ macro_rules! impl_col_set_fxn {
         unsafe { 
           for i in 0..(*source_ptr).len() {
             paste! {
-              (&mut (*sink_ptr))[i] = Value::[<$out_type:camel>](new_ref((*source_ptr).index(i).clone()));
+              (&mut (*sink_ptr))[i] = Value::[<$out_type:camel>](Ref::new((*source_ptr).index(i).clone()));
             }
           }
         }

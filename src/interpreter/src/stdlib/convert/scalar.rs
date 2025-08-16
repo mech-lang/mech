@@ -86,16 +86,16 @@ macro_rules! impl_conversion_match_arms {
             }
             // Create a blank table, with as many rows as the matrix has
             let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), in_shape[0]))?;
-            Ok(Box::new(ConvertMat2Table::<$input_type>{arg: mat.clone(), out: new_ref(out)}))
+            Ok(Box::new(ConvertMat2Table::<$input_type>{arg: mat.clone(), out: Ref::new(out)}))
           }
           $(
             #[cfg(all(feature = $input_type_string, feature = $target_type_string))]
-            (Value::[<$input_type:camel>](arg), Value::Kind(ValueKind::[<$target_type:camel>])) => {Ok(Box::new(ConvertScalarToScalarBasic{arg: arg.clone(), out: new_ref($target_type::default())}))},
+            (Value::[<$input_type:camel>](arg), Value::Kind(ValueKind::[<$target_type:camel>])) => {Ok(Box::new(ConvertScalarToScalarBasic{arg: arg.clone(), out: Ref::new($target_type::default())}))},
           )+
         )+
         #[cfg(feature = "rational")]
         (Value::RationalNumber(ref rat), Value::Kind(ValueKind::F64)) => {
-          Ok(Box::new(ConvertSRationalToF64{arg: rat.clone(), out: new_ref(F64::zero())}))
+          Ok(Box::new(ConvertSRationalToF64{arg: rat.clone(), out: Ref::new(F64::zero())}))
         }
         #[cfg(all(feature = "atom", feature = "enum"))]
         (Value::Atom(varian_id), Value::Kind(ValueKind::Enum(enum_id))) => {
@@ -163,7 +163,7 @@ where
 fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<dyn MechFunction>>  {
   match (&source_value, &target_kind) {
     #[cfg(feature = "rational")]
-    (Value::RationalNumber(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar{arg: r.clone(),out: new_ref(F64::zero()),}));}
+    (Value::RationalNumber(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar{arg: r.clone(),out: Ref::new(F64::zero()),}));}
     #[cfg(all(feature = "matrix", feature = "table"))]
     (Value::MatrixString(ref mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
       let in_shape = mat.shape();
@@ -173,7 +173,7 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
       }
       // Create a blank table, with as many rows as the matrix has
       let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), in_shape[0]))?;
-      return Ok(Box::new(ConvertMat2Table::<String>{arg: mat.clone(), out: new_ref(out)}));
+      return Ok(Box::new(ConvertMat2Table::<String>{arg: mat.clone(), out: Ref::new(out)}));
     }
     #[cfg(all(feature = "matrix", feature = "table", feature = "bool"))]
     (Value::MatrixBool(ref mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
@@ -184,7 +184,7 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
       }
       // Create a blank table, with as many rows as the matrix has
       let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), in_shape[0]))?;
-      return Ok(Box::new(ConvertMat2Table::<bool>{arg: mat.clone(), out: new_ref(out)}));
+      return Ok(Box::new(ConvertMat2Table::<bool>{arg: mat.clone(), out: Ref::new(out)}));
     }
     _ =>(),
   }

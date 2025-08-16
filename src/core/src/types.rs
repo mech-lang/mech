@@ -44,8 +44,6 @@ impl<T: PartialEq> PartialEq for Ref<T> {
 }
 impl<T: PartialEq> Eq for Ref<T> {}
 
-pub fn new_ref<T>(item: T) -> Ref<T> { Ref::new(item) }
-
 pub struct Plan(pub Ref<Vec<Box<dyn MechFunction>>>);
 
 impl Clone for Plan {
@@ -78,7 +76,7 @@ pub type ValRef = Ref<Value>;
 use std::num::FpCategory;
 
 //pub type Ref<T> = Rc<RefCell<T>>;
-//pub fn new_ref<T>(item: T) -> Rc<RefCell<T>> {
+//pub fn Ref::new<T>(item: T) -> Rc<RefCell<T>> {
 //  Rc::new(RefCell::new(item))
 //}
 
