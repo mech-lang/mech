@@ -83,22 +83,51 @@ pub fn hash_str(input: &str) -> u64 {
   seahash::hash(input.to_string().as_bytes()) & 0x00FFFFFFFFFFFFFF
 }
 
-pub fn humanize(hash: &u64) -> String {
-  let bytes: [u8; 8] = hash.to_be_bytes();
-  let mut string = "".to_string();
-  let mut ix = 0;
-  for byte in bytes.iter() {
-    if ix % 2 == 0 {
-      ix += 1;
-      continue;
-    }
-    string.push_str(&WORDLIST[*byte as usize]);
-    if ix < 7 {
-      string.push_str("-");
-    }
-    ix += 1;
+
+pub fn emojify_bytes(bytes: &[u8]) -> String {
+  let parts: Vec<&str> = bytes
+    .iter()
+    .enumerate()
+    .filter_map(|(ix, &b)| if ix % 2 == 1 { Some(EMOJILIST[b as usize]) } else { None })
+    .collect();
+  parts.join("")
+}
+
+pub fn humanize_bytes(bytes: &[u8]) -> String {
+  let parts: Vec<&str> = bytes
+    .iter()
+    .enumerate()
+    .filter_map(|(ix, &b)| if ix % 2 == 1 { Some(WORDLIST[b as usize]) } else { None })
+    .collect();
+  parts.join("-")
+}
+
+pub fn emojify<T>(num: &T) -> String
+where
+    T: ToPrimitive + std::fmt::Display,
+{
+  if let Some(v) = num.to_u128() {
+    let bytes = v.to_be_bytes();
+    let first_non_zero = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len() - 1);
+    let trimmed = &bytes[first_non_zero..];
+    emojify_bytes(trimmed)
+  } else {
+    format!("{}", num)
   }
-  string
+}
+
+pub fn humanize<T>(num: &T) -> String
+where
+    T: ToPrimitive + std::fmt::Display,
+{
+  if let Some(v) = num.to_u128() {
+    let bytes = v.to_be_bytes();
+    let first_non_zero = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len() - 1);
+    let trimmed = &bytes[first_non_zero..];
+    humanize_bytes(trimmed)
+  } else {
+    format!("{}", num)
+  }
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -111,7 +140,6 @@ pub enum MechSourceCode {
 }
 
 impl MechSourceCode {
-
   pub fn to_string(&self) -> String {
     match self {
       MechSourceCode::String(s) => s.clone(),
@@ -120,7 +148,6 @@ impl MechSourceCode {
       MechSourceCode::Program(v) => v.iter().map(|c| c.to_string()).collect::<Vec<String>>().join("\n"),
     }
   }
-
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -232,6 +259,19 @@ pub const WORDLIST: &[&str;256] = &[
   "wis", "olf", "wyo", "ray", "ank", "yel", "zeb",
   "ulu", "fix", "gry", "hol", "jup", "lam", "pas",
   "rom", "sne", "ten", "uta"];
+
+pub const EMOJILIST: &[&str; 256] = &[
+  "🐵","🐶","🐺","🦊","🦝","🐱","🐈","🐈","🦁","🐷","🐮","🦬","🐯","🐴","🫎","🦄","🦓","🦙","🦒","🐘","🦣","🦏","🦛","🐫","🐏","🐭","🐰","🐿️","🦫","🦔","🦇","🐻","🐨","🐼","🦥","🦦","🦨","🦘","🦡","🦃","🐔","🐦","🐧","🕊️","🦅","🦆","🐦‍🔥","🦉","🦤","🦩","🦚","🦜","🐸","🐊","🐢","🦎","🐍","🐲","🦖","🐳","🐬","🦭","🐠","🦈","🐙","🪼","🦀","🦞","🦐","🦑","🐌","🦋","🐛","🐝","🪲","🐞","🦗","🕸️","🪰","🪱","🦠",
+
+  "🌹","🌳","🌴","🌵","🍀","🍁","🍄","🌛","🌞","🪐","⭐","⛅","🌧️","🌨️","🌈","❄️","☃️","☄️","🔥",
+
+  "🍇","🍉","🍊","🍋","🍋‍🟩","🍌","🍍","🥭","🍎","🍐","🍓","🥝","🍅","🫒","🥥","🥔","🥕","🌽","🌶️","🫑","🥒","🥦","🧄","🧅","🫛","🍦","🍧","🍩","🍪","🍰","🧁","🥧","🍫","🍭","🍞","🥨","🥯","🧇","🍟","🍿",
+
+  "🎤","🎧","📻","🎷","🪗","🎸","🎹","🎺","🎻","🪕","🥁","🪇","📷","🧳","🌡️","🧸","🧶","🔎","🕯️","💡","🔦","🔒","🗝️","🪚","🔧","🪛","🔩","⚙️","🗜️","⚖️","🧰","🧲","🪜","🔬","📡","🛋️","🧴","🧷","🧹","🧺","🪣","🧼","🧽","🧯","🛒",  
+
+  "⏰","🛟","🛩️","🚁","🛰️","🚀","🛸","⚓","🚂","🚑","🚒","🚕","🚗","🚚","🚜","🏎️","🏍️","🛵","🦼","🚲","🛹","🛼","🛞","📰","📦","📫","✏️","🖊️","🖌️","🖍️","📌","📏","✂️","🗑️","🏆","⚽","⚾","🥎","🏀","🏐","🏈","🎾","🎳","🏏","🏑","🏒","🥍","🏓","🏸","🥊","🥋","⛳","⛸️","🤿","🛷","🎯","🪁","🧩","🪅","🎨","🧭","🏔️","🏝️","⛲","⛺","🎠","🛝","🎡","💈","🎪","🛎️"
+];
+
 
 // ============================================================================
 // The Standard Library!

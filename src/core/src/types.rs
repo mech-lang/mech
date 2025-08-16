@@ -7,21 +7,27 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::ops::*;
 use std::iter::Step;
+use paste::paste;
+use std::fmt::Debug;
+use std::hash::{Hash, Hasher};
 #[cfg(feature = "math_exp")]
 use num_traits::Pow;
 #[cfg(any(feature = "f64", feature = "f32"))]
 use num_traits::{Zero, One};
-use std::fmt::Debug;
-use std::hash::{Hash, Hasher};
 #[cfg(feature = "math_exp")]
 use libm::{pow,powf};
-use paste::paste;
-
 #[cfg(feature = "complex")]
 use nalgebra::Complex;
 
-#[derive(Debug)]
 pub struct Ref<T>(pub Rc<RefCell<T>>);
+
+impl<T: Debug> Debug for Ref<T> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    let addr = self.0.as_ptr() as usize;
+    let emojified = emojify(&(addr as u64));
+    write!(f, "@{}: {:#?}", emojified, self.borrow())
+  }
+}
 
 impl<T> Clone for Ref<T> {
   fn clone(&self) -> Self {
