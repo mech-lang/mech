@@ -162,12 +162,26 @@ pub fn kind_define(knd_def: &KindDefine, p: &Interpreter) -> MResult<Value> {
   Ok(Value::Kind(value_kind))
 }
 
+#[derive(Debug, Clone)]
+pub struct VariableDefineFxn {
+  id: u64,
+  name: String,
+  var: Ref<Value>,
+}
+impl MechFunction for VariableDefineFxn {
+  fn solve(&self) {}
+  fn out(&self) -> Value { self.var.borrow().clone() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
 pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Value> {
-  let id = var_def.var.name.hash();
+  let var_id = var_def.var.name.hash();
+  let var_name = var_def.var.name.to_string();
+
   let symbols = p.symbols();
   let functions = p.functions();
-  if symbols.borrow().contains(id) {
-    return Err(MechError{file: file!().to_string(), tokens: var_def.var.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::VariableRedefined(id)}); 
+  if symbols.borrow().contains(var_id) {
+    return Err(MechError{file: file!().to_string(), tokens: var_def.var.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::VariableRedefined(var_id)}); 
   }
   let mut result = expression(&var_def.expression, p)?;
   if let Some(knd_anntn) =  &var_def.var.kind {
@@ -251,17 +265,26 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
         result = converted_result;
       },
     };
+    // Save symbol to interpreter
     let mut symbols_brrw = symbols.borrow_mut();
-    symbols_brrw.insert(id,result.clone(),var_def.mutable);
+    let val_ref = symbols_brrw.insert(var_id,result.clone(),var_def.mutable);
     let mut dict_brrw = symbols_brrw.dictionary.borrow_mut();
-    dict_brrw.insert(id,var_def.var.name.to_string());
+    dict_brrw.insert(var_id,var_name.clone());
+    // Add variable define step to plan
+    let vdef = VariableDefineFxn{id: var_id, name: var_name.clone(), var: val_ref.clone()};
+    p.add_plan_step(Box::new(vdef.clone()));
+    return Ok(result);
+  } else { 
+    // Save symbol to interpreter
+    let mut symbols_brrw = symbols.borrow_mut();
+    let val_ref = symbols_brrw.insert(var_id,result.clone(),var_def.mutable);
+    let mut dict_brrw = symbols_brrw.dictionary.borrow_mut();
+    dict_brrw.insert(var_id,var_name.clone());
+    // Add variable define step to plan
+    let vdef = VariableDefineFxn{id: var_id, name: var_name.clone(), var: val_ref.clone()};
+    p.add_plan_step(Box::new(vdef.clone()));
     return Ok(result);
   }
-  let mut symbols_brrw = symbols.borrow_mut();
-  symbols_brrw.insert(id,result.clone(),var_def.mutable);
-  let mut dict_brrw = symbols_brrw.dictionary.borrow_mut();
-  dict_brrw.insert(id,var_def.var.name.to_string());
-  return Ok(result);
 }
 
 macro_rules! op_assign {
