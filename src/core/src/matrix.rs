@@ -28,40 +28,40 @@ macro_rules! impl_to_matrix {
       fn to_matrix(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
         match (rows,cols) {
           #[cfg(feature = "matrix1")]
-          (1,1) => Matrix::Matrix1(new_ref(Matrix1::from_element(elements[0].clone()))),
+          (1,1) => Matrix::Matrix1(Ref::new(Matrix1::from_element(elements[0].clone()))),
           #[cfg(feature = "matrix2")]
-          (2,2) => Matrix::Matrix2(new_ref(Matrix2::from_vec(elements))),
+          (2,2) => Matrix::Matrix2(Ref::new(Matrix2::from_vec(elements))),
           #[cfg(feature = "matrix3")]
-          (3,3) => Matrix::Matrix3(new_ref(Matrix3::from_vec(elements))),
+          (3,3) => Matrix::Matrix3(Ref::new(Matrix3::from_vec(elements))),
           #[cfg(feature = "matrix4")]
-          (4,4) => Matrix::Matrix4(new_ref(Matrix4::from_vec(elements))),
+          (4,4) => Matrix::Matrix4(Ref::new(Matrix4::from_vec(elements))),
           #[cfg(feature = "matrix2x3")]
-          (2,3) => Matrix::Matrix2x3(new_ref(Matrix2x3::from_vec(elements))),
+          (2,3) => Matrix::Matrix2x3(Ref::new(Matrix2x3::from_vec(elements))),
           #[cfg(feature = "matrix3x2")]
-          (3,2) => Matrix::Matrix3x2(new_ref(Matrix3x2::from_vec(elements))),
+          (3,2) => Matrix::Matrix3x2(Ref::new(Matrix3x2::from_vec(elements))),
           #[cfg(feature = "row_vector2")]
-          (1,2) => Matrix::RowVector2(new_ref(RowVector2::from_vec(elements))),
+          (1,2) => Matrix::RowVector2(Ref::new(RowVector2::from_vec(elements))),
           #[cfg(feature = "row_vector3")]
-          (1,3) => Matrix::RowVector3(new_ref(RowVector3::from_vec(elements))),
+          (1,3) => Matrix::RowVector3(Ref::new(RowVector3::from_vec(elements))),
           #[cfg(feature = "row_vector4")]
-          (1,4) => Matrix::RowVector4(new_ref(RowVector4::from_vec(elements))),
+          (1,4) => Matrix::RowVector4(Ref::new(RowVector4::from_vec(elements))),
           #[cfg(feature = "vector2")]
-          (2,1) => Matrix::Vector2(new_ref(Vector2::from_vec(elements))),
+          (2,1) => Matrix::Vector2(Ref::new(Vector2::from_vec(elements))),
           #[cfg(feature = "vector2")]
-          (3,1) => Matrix::Vector3(new_ref(Vector3::from_vec(elements))),
+          (3,1) => Matrix::Vector3(Ref::new(Vector3::from_vec(elements))),
           #[cfg(feature = "vector2")]
-          (4,1) => Matrix::Vector4(new_ref(Vector4::from_vec(elements))),
-          (1,n) => Matrix::RowDVector(new_ref(RowDVector::from_vec(elements))),
-          (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
-          (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
+          (4,1) => Matrix::Vector4(Ref::new(Vector4::from_vec(elements))),
+          (1,n) => Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements))),
+          (m,1) => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
+          (m,n) => Matrix::DMatrix(Ref::new(DMatrix::from_vec(m,n,elements))),
           _ => panic!("Cannot convert to matrix with rows: {rows} and cols: {cols}"),
         }
       }
       fn to_matrixd(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
         match (rows,cols) {
-          (1,n) => Matrix::RowDVector(new_ref(RowDVector::from_vec(elements))),
-          (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
-          (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
+          (1,n) => Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements))),
+          (m,1) => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
+          (m,n) => Matrix::DMatrix(Ref::new(DMatrix::from_vec(m,n,elements))),
           _ => panic!("Cannot convert to matrixd with rows: {rows} and cols: {cols}"),
         }
       }
@@ -72,17 +72,17 @@ macro_rules! impl_to_matrix {
 impl ToMatrix for usize {
   fn to_matrix(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
     match (rows,cols) {
-      (1,n) => Matrix::RowDVector(new_ref(RowDVector::from_vec(elements))),
-      (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
-      (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
+      (1,n) => Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements))),
+      (m,1) => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
+      (m,n) => Matrix::DMatrix(Ref::new(DMatrix::from_vec(m,n,elements))),
       _ => panic!("Cannot convert to matrix with rows: {rows} and cols: {cols}"),
     }
   }
   fn to_matrixd(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
     match (rows,cols) {
-      (1,n) => Matrix::RowDVector(new_ref(RowDVector::from_vec(elements))),
-      (m,1) => Matrix::DVector(new_ref(DVector::from_vec(elements))),
-      (m,n) => Matrix::DMatrix(new_ref(DMatrix::from_vec(m,n,elements))),
+      (1,n) => Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements))),
+      (m,1) => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
+      (m,n) => Matrix::DMatrix(Ref::new(DMatrix::from_vec(m,n,elements))),
       _ => panic!("Cannot convert to matrixd with rows: {rows} and cols: {cols}"),
     }
   }
@@ -171,7 +171,7 @@ macro_rules! copy_mat {
     {
       fn copy_into(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize {
         let src_ptr = unsafe { (*(self.as_ptr())).clone() };
-        let mut dst_ptr = unsafe { &mut *(dst.as_ptr()) };
+        let mut dst_ptr = unsafe { &mut *(dst.as_mut_ptr()) };
         for i in 0..src_ptr.len() {
             dst_ptr[i + offset] = src_ptr[i].clone();
         }
@@ -179,7 +179,7 @@ macro_rules! copy_mat {
       }
       fn copy_into_v(&self, dst: &Ref<DVector<T>>, offset: usize) -> usize {
         let src_ptr = unsafe { (*(self.as_ptr())).clone() };
-        let mut dst_ptr = unsafe { &mut *(dst.as_ptr()) };
+        let mut dst_ptr = unsafe { &mut *(dst.as_mut_ptr()) };
         for i in 0..src_ptr.len() {
             dst_ptr[i + offset] = src_ptr[i].clone();
         }
@@ -187,7 +187,7 @@ macro_rules! copy_mat {
       }
       fn copy_into_r(&self, dst: &Ref<RowDVector<T>>, offset: usize) -> usize {
         let src_ptr = unsafe { (*(self.as_ptr())).clone() };
-        let mut dst_ptr = unsafe { &mut *(dst.as_ptr()) };
+        let mut dst_ptr = unsafe { &mut *(dst.as_mut_ptr()) };
         for i in 0..src_ptr.len() {
             dst_ptr[i + offset] = src_ptr[i].clone();
         }
@@ -195,7 +195,7 @@ macro_rules! copy_mat {
       }
       fn copy_into_row_major(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize {
         let src_ptr = unsafe { (*(self.as_ptr())).clone() };
-        let mut dst_ptr = unsafe { &mut *(dst.as_ptr()) };
+        let mut dst_ptr = unsafe { &mut *(dst.as_mut_ptr()) };
         let src_rows = src_ptr.nrows();
         let dest_rows = dst_ptr.nrows();
 
@@ -842,3 +842,72 @@ impl_to_value_for_matrix!(String, MatrixString);
 impl_to_value_for_matrix!(ComplexNumber, MatrixComplexNumber);
 #[cfg(feature = "rational")]
 impl_to_value_for_matrix!(RationalNumber, MatrixRationalNumber);
+
+
+macro_rules! to_value_ndmatrix {
+  ($($nd_matrix_kind:ident, $matrix_kind:ident, $base_type:ty, $type_string:tt),+ $(,)?) => {
+    $(
+      #[cfg(all(feature = "matrix", feature = $type_string))]
+      impl ToValue for Ref<$nd_matrix_kind<$base_type>> {
+        fn to_value(&self) -> Value {
+          Value::$matrix_kind(Matrix::<$base_type>::$nd_matrix_kind(self.clone()))
+        }
+      }
+    )+
+  };}
+
+#[cfg(feature = "matrix")]
+macro_rules! impl_to_value_matrix {
+  ($matrix_kind:ident) => {
+    to_value_ndmatrix!(
+      $matrix_kind, MatrixIndex,  usize, "matrix",
+      $matrix_kind, MatrixBool,   bool, "bool",
+      $matrix_kind, MatrixI8,     i8, "i8",
+      $matrix_kind, MatrixI16,    i16, "i16",
+      $matrix_kind, MatrixI32,    i32, "i32",
+      $matrix_kind, MatrixI64,    i64, "i64",
+      $matrix_kind, MatrixI128,   i128, "i128",
+      $matrix_kind, MatrixU8,     u8, "u8",
+      $matrix_kind, MatrixU16,    u16, "u16",
+      $matrix_kind, MatrixU32,    u32, "u32",
+      $matrix_kind, MatrixU64,    u64, "u64",
+      $matrix_kind, MatrixU128,   u128, "u128",
+      $matrix_kind, MatrixF32,    F32, "f32",
+      $matrix_kind, MatrixF64,    F64, "f64",
+      $matrix_kind, MatrixString, String, "string",
+      $matrix_kind, MatrixRationalNumber, RationalNumber, "rational",
+      $matrix_kind, MatrixComplexNumber, ComplexNumber, "complex",
+    );
+  }
+}
+
+#[cfg(feature = "matrix2x3")]
+impl_to_value_matrix!(Matrix2x3);
+#[cfg(feature = "matrix3x2")]
+impl_to_value_matrix!(Matrix3x2);
+#[cfg(feature = "matrix1")]
+impl_to_value_matrix!(Matrix1);
+#[cfg(feature = "matrix2")]
+impl_to_value_matrix!(Matrix2);
+#[cfg(feature = "matrix3")]
+impl_to_value_matrix!(Matrix3);
+#[cfg(feature = "matrix4")]
+impl_to_value_matrix!(Matrix4);
+#[cfg(feature = "vector2")]
+impl_to_value_matrix!(Vector2);
+#[cfg(feature = "vector3")]
+impl_to_value_matrix!(Vector3);
+#[cfg(feature = "vector4")]
+impl_to_value_matrix!(Vector4);
+#[cfg(feature = "row_vector2")]
+impl_to_value_matrix!(RowVector2);
+#[cfg(feature = "row_vector3")]
+impl_to_value_matrix!(RowVector3);
+#[cfg(feature = "row_vector4")]
+impl_to_value_matrix!(RowVector4);
+#[cfg(feature = "row_vectord")]
+impl_to_value_matrix!(RowDVector);
+#[cfg(feature = "vectord")]
+impl_to_value_matrix!(DVector);
+#[cfg(feature = "matrixd")]
+impl_to_value_matrix!(DMatrix);

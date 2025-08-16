@@ -1,29 +1,9 @@
-#[cfg(feature = "matrix")]
-use crate::matrix::Matrix;
 use crate::*;
 use crate::nodes::Matrix as Mat;
+#[cfg(feature = "matrix")]
+use crate::matrix::Matrix;
 #[cfg(feature = "complex")]
 use crate::types::ComplexNumber;
-use crate::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*, humanize};
-use std::collections::HashMap;
-
-#[cfg(feature = "matrix")] 
-use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix3x2, Matrix6, Matrix2};
-use std::hash::{Hash, Hasher};
-#[cfg(feature = "pretty_print")]
-use tabled::{
-  builder::Builder,
-  settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
-  Tabled,
-};
-use paste::paste;
-#[cfg(feature = "serde")]
-use serde::ser::{Serialize, Serializer, SerializeStruct};
-#[cfg(feature = "serde")]
-use serde::de::{self, Deserialize, SeqAccess, Deserializer, MapAccess, Visitor};
-use std::fmt;
-use std::cell::RefCell;
-use std::rc::Rc;
 #[cfg(feature = "rational")]
 use num_rational::Rational64;
 
@@ -33,30 +13,30 @@ macro_rules! impl_as_type {
       pub fn [<as_ $target_type>](&self) -> Option<Ref<$target_type>> {
         match self {
           #[cfg(feature = "u8")]
-          Value::U8(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::U8(v) => Some(Ref::new(*v.borrow() as $target_type)),
           #[cfg(feature = "u16")]
-          Value::U16(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::U16(v) => Some(Ref::new(*v.borrow() as $target_type)),
           #[cfg(feature = "u32")]
-          Value::U32(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::U32(v) => Some(Ref::new(*v.borrow() as $target_type)),
           #[cfg(feature = "u64")]
-          Value::U64(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::U64(v) => Some(Ref::new(*v.borrow() as $target_type)),
           #[cfg(feature = "u128")]
-          Value::U128(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::U128(v) => Some(Ref::new(*v.borrow() as $target_type)),
           #[cfg(feature = "i8")]
-          Value::I8(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::I8(v) => Some(Ref::new(*v.borrow() as $target_type)),
           #[cfg(feature = "i16")]
-          Value::I16(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::I16(v) => Some(Ref::new(*v.borrow() as $target_type)),
           #[cfg(feature = "i32")]
-          Value::I32(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::I32(v) => Some(Ref::new(*v.borrow() as $target_type)),
           #[cfg(feature = "i64")]
-          Value::I64(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::I64(v) => Some(Ref::new(*v.borrow() as $target_type)),
           #[cfg(feature = "i128")]
-          Value::I128(v) => Some(new_ref(*v.borrow() as $target_type)),
+          Value::I128(v) => Some(Ref::new(*v.borrow() as $target_type)),
           #[cfg(feature = "f32")]
-          Value::F32(v) => Some(new_ref((*v.borrow()).0 as $target_type)),
+          Value::F32(v) => Some(Ref::new((*v.borrow()).0 as $target_type)),
           #[cfg(feature = "f64")]
-          Value::F64(v) => Some(new_ref((*v.borrow()).0 as $target_type)),
-          Value::Id(v) => Some(new_ref(*v as $target_type)),
+          Value::F64(v) => Some(Ref::new((*v.borrow()).0 as $target_type)),
+          Value::Id(v) => Some(Ref::new(*v as $target_type)),
           Value::MutableReference(val) => val.borrow().[<as_ $target_type>](),
           _ => None,
         }
@@ -450,269 +430,269 @@ impl Value {
     match (self, other) {
     // ==== Unsigned widening and narrowing ====
     #[cfg(all(feature = "u8", feature = "u16"))]
-    (Value::U8(v), ValueKind::U16) => Some(Value::U16(new_ref((*v.borrow()) as u16))),
+    (Value::U8(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
     #[cfg(all(feature = "u8", feature = "u32"))]
-    (Value::U8(v), ValueKind::U32) => Some(Value::U32(new_ref((*v.borrow()) as u32))),
+    (Value::U8(v), ValueKind::U32) => Some(Value::U32(Ref::new((*v.borrow()) as u32))),
     #[cfg(all(feature = "u8", feature = "u64"))]
-    (Value::U8(v), ValueKind::U64) => Some(Value::U64(new_ref((*v.borrow()) as u64))),
+    (Value::U8(v), ValueKind::U64) => Some(Value::U64(Ref::new((*v.borrow()) as u64))),
     #[cfg(all(feature = "u8", feature = "u128"))]
-    (Value::U8(v), ValueKind::U128) => Some(Value::U128(new_ref((*v.borrow()) as u128))),
+    (Value::U8(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
     #[cfg(all(feature = "u8", feature = "i16"))]
-    (Value::U8(v), ValueKind::I16) => Some(Value::I16(new_ref((*v.borrow()) as i16))),
+    (Value::U8(v), ValueKind::I16) => Some(Value::I16(Ref::new((*v.borrow()) as i16))),
     #[cfg(all(feature = "u8", feature = "i32"))]
-    (Value::U8(v), ValueKind::I32) => Some(Value::I32(new_ref((*v.borrow()) as i32))),
+    (Value::U8(v), ValueKind::I32) => Some(Value::I32(Ref::new((*v.borrow()) as i32))),
     #[cfg(all(feature = "u8", feature = "i64"))]
-    (Value::U8(v), ValueKind::I64) => Some(Value::I64(new_ref((*v.borrow()) as i64))),
+    (Value::U8(v), ValueKind::I64) => Some(Value::I64(Ref::new((*v.borrow()) as i64))),
     #[cfg(all(feature = "u8", feature = "i128"))]
-    (Value::U8(v), ValueKind::I128) => Some(Value::I128(new_ref((*v.borrow()) as i128))),
+    (Value::U8(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
     #[cfg(all(feature = "u8", feature = "f32"))]
-    (Value::U8(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::U8(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
     #[cfg(all(feature = "u8", feature = "f64"))]
-    (Value::U8(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+    (Value::U8(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
 
     #[cfg(all(feature = "u16", feature = "u8"))]
-    (Value::U16(v), ValueKind::U8) => Some(Value::U8(new_ref((*v.borrow()) as u8))),
+    (Value::U16(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
     #[cfg(all(feature = "u16", feature = "u32"))]
-    (Value::U16(v), ValueKind::U32) => Some(Value::U32(new_ref((*v.borrow()) as u32))),
+    (Value::U16(v), ValueKind::U32) => Some(Value::U32(Ref::new((*v.borrow()) as u32))),
     #[cfg(all(feature = "u16", feature = "u64"))]
-    (Value::U16(v), ValueKind::U64) => Some(Value::U64(new_ref((*v.borrow()) as u64))),
+    (Value::U16(v), ValueKind::U64) => Some(Value::U64(Ref::new((*v.borrow()) as u64))),
     #[cfg(all(feature = "u16", feature = "u128"))]
-    (Value::U16(v), ValueKind::U128) => Some(Value::U128(new_ref((*v.borrow()) as u128))),
+    (Value::U16(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
     #[cfg(all(feature = "u16", feature = "i8"))]
-    (Value::U16(v), ValueKind::I8) => Some(Value::I8(new_ref((*v.borrow()) as i8))),
+    (Value::U16(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
     #[cfg(all(feature = "u16", feature = "i32"))]
-    (Value::U16(v), ValueKind::I32) => Some(Value::I32(new_ref((*v.borrow()) as i32))),
+    (Value::U16(v), ValueKind::I32) => Some(Value::I32(Ref::new((*v.borrow()) as i32))),
     #[cfg(all(feature = "u16", feature = "i64"))]
-    (Value::U16(v), ValueKind::I64) => Some(Value::I64(new_ref((*v.borrow()) as i64))),
+    (Value::U16(v), ValueKind::I64) => Some(Value::I64(Ref::new((*v.borrow()) as i64))),
     #[cfg(all(feature = "u16", feature = "i128"))]
-    (Value::U16(v), ValueKind::I128) => Some(Value::I128(new_ref((*v.borrow()) as i128))),
+    (Value::U16(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
     #[cfg(all(feature = "u16", feature = "f32"))]
-    (Value::U16(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::U16(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
     #[cfg(all(feature = "u16", feature = "f64"))]
-    (Value::U16(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+    (Value::U16(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
 
     #[cfg(all(feature = "u32", feature = "u8"))]
-    (Value::U32(v), ValueKind::U8) => Some(Value::U8(new_ref((*v.borrow()) as u8))),
+    (Value::U32(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
     #[cfg(all(feature = "u32", feature = "u16"))]
-    (Value::U32(v), ValueKind::U16) => Some(Value::U16(new_ref((*v.borrow()) as u16))),
+    (Value::U32(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
     #[cfg(all(feature = "u32", feature = "u64"))]
-    (Value::U32(v), ValueKind::U64) => Some(Value::U64(new_ref((*v.borrow()) as u64))),
+    (Value::U32(v), ValueKind::U64) => Some(Value::U64(Ref::new((*v.borrow()) as u64))),
     #[cfg(all(feature = "u32", feature = "u128"))]
-    (Value::U32(v), ValueKind::U128) => Some(Value::U128(new_ref((*v.borrow()) as u128))),
+    (Value::U32(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
     #[cfg(all(feature = "u32", feature = "i8"))]
-    (Value::U32(v), ValueKind::I8) => Some(Value::I8(new_ref((*v.borrow()) as i8))),
+    (Value::U32(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
     #[cfg(all(feature = "u32", feature = "i16"))]
-    (Value::U32(v), ValueKind::I16) => Some(Value::I16(new_ref((*v.borrow()) as i16))),
+    (Value::U32(v), ValueKind::I16) => Some(Value::I16(Ref::new((*v.borrow()) as i16))),
     #[cfg(all(feature = "u32", feature = "i64"))]
-    (Value::U32(v), ValueKind::I64) => Some(Value::I64(new_ref((*v.borrow()) as i64))),
+    (Value::U32(v), ValueKind::I64) => Some(Value::I64(Ref::new((*v.borrow()) as i64))),
     #[cfg(all(feature = "u32", feature = "i128"))]
-    (Value::U32(v), ValueKind::I128) => Some(Value::I128(new_ref((*v.borrow()) as i128))),
+    (Value::U32(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
     #[cfg(all(feature = "u32", feature = "f32"))]
-    (Value::U32(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::U32(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
     #[cfg(all(feature = "u32", feature = "f64"))]
-    (Value::U32(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+    (Value::U32(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
 
     #[cfg(all(feature = "u64", feature = "u8"))]
-    (Value::U64(v), ValueKind::U8) => Some(Value::U8(new_ref((*v.borrow()) as u8))),
+    (Value::U64(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
     #[cfg(all(feature = "u64", feature = "u16"))]
-    (Value::U64(v), ValueKind::U16) => Some(Value::U16(new_ref((*v.borrow()) as u16))),
+    (Value::U64(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
     #[cfg(all(feature = "u64", feature = "u32"))]
-    (Value::U64(v), ValueKind::U32) => Some(Value::U32(new_ref((*v.borrow()) as u32))),
+    (Value::U64(v), ValueKind::U32) => Some(Value::U32(Ref::new((*v.borrow()) as u32))),
     #[cfg(all(feature = "u64", feature = "u128"))]
-    (Value::U64(v), ValueKind::U128) => Some(Value::U128(new_ref((*v.borrow()) as u128))),
+    (Value::U64(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
     #[cfg(all(feature = "u64", feature = "i8"))]
-    (Value::U64(v), ValueKind::I8) => Some(Value::I8(new_ref((*v.borrow()) as i8))),
+    (Value::U64(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
     #[cfg(all(feature = "u64", feature = "i16"))]
-    (Value::U64(v), ValueKind::I16) => Some(Value::I16(new_ref((*v.borrow()) as i16))),
+    (Value::U64(v), ValueKind::I16) => Some(Value::I16(Ref::new((*v.borrow()) as i16))),
     #[cfg(all(feature = "u64", feature = "i32"))]
-    (Value::U64(v), ValueKind::I32) => Some(Value::I32(new_ref((*v.borrow()) as i32))),
+    (Value::U64(v), ValueKind::I32) => Some(Value::I32(Ref::new((*v.borrow()) as i32))),
     #[cfg(all(feature = "u64", feature = "i128"))]
-    (Value::U64(v), ValueKind::I128) => Some(Value::I128(new_ref((*v.borrow()) as i128))),
+    (Value::U64(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
     #[cfg(all(feature = "u64", feature = "f32"))]
-    (Value::U64(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::U64(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
     #[cfg(all(feature = "u64", feature = "f64"))]
-    (Value::U64(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+    (Value::U64(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
 
     #[cfg(all(feature = "u128", feature = "u8"))]
-    (Value::U128(v), ValueKind::U8) => Some(Value::U8(new_ref((*v.borrow()) as u8))),
+    (Value::U128(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
     #[cfg(all(feature = "u128", feature = "u16"))]
-    (Value::U128(v), ValueKind::U16) => Some(Value::U16(new_ref((*v.borrow()) as u16))),
+    (Value::U128(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
     #[cfg(all(feature = "u128", feature = "u32"))]
-    (Value::U128(v), ValueKind::U32) => Some(Value::U32(new_ref((*v.borrow()) as u32))),
+    (Value::U128(v), ValueKind::U32) => Some(Value::U32(Ref::new((*v.borrow()) as u32))),
     #[cfg(all(feature = "u128", feature = "u64"))]
-    (Value::U128(v), ValueKind::U64) => Some(Value::U64(new_ref((*v.borrow()) as u64))),
+    (Value::U128(v), ValueKind::U64) => Some(Value::U64(Ref::new((*v.borrow()) as u64))),
     #[cfg(all(feature = "u128", feature = "i8"))]
-    (Value::U128(v), ValueKind::I8) => Some(Value::I8(new_ref((*v.borrow()) as i8))),
+    (Value::U128(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
     #[cfg(all(feature = "u128", feature = "i16"))]
-    (Value::U128(v), ValueKind::I16) => Some(Value::I16(new_ref((*v.borrow()) as i16))),
+    (Value::U128(v), ValueKind::I16) => Some(Value::I16(Ref::new((*v.borrow()) as i16))),
     #[cfg(all(feature = "u128", feature = "i32"))]
-    (Value::U128(v), ValueKind::I32) => Some(Value::I32(new_ref((*v.borrow()) as i32))),
+    (Value::U128(v), ValueKind::I32) => Some(Value::I32(Ref::new((*v.borrow()) as i32))),
     #[cfg(all(feature = "u128", feature = "i64"))]
-    (Value::U128(v), ValueKind::I64) => Some(Value::I64(new_ref((*v.borrow()) as i64))),
+    (Value::U128(v), ValueKind::I64) => Some(Value::I64(Ref::new((*v.borrow()) as i64))),
     #[cfg(all(feature = "u128", feature = "f32"))]
-    (Value::U128(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::U128(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
     #[cfg(all(feature = "u128", feature = "f64"))]
-    (Value::U128(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+    (Value::U128(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
 
     // ==== Signed widening and narrowing ====
     #[cfg(all(feature = "i8", feature = "i16"))]
-    (Value::I8(v), ValueKind::I16) => Some(Value::I16(new_ref((*v.borrow()) as i16))),
+    (Value::I8(v), ValueKind::I16) => Some(Value::I16(Ref::new((*v.borrow()) as i16))),
     #[cfg(all(feature = "i8", feature = "i32"))]
-    (Value::I8(v), ValueKind::I32) => Some(Value::I32(new_ref((*v.borrow()) as i32))),
+    (Value::I8(v), ValueKind::I32) => Some(Value::I32(Ref::new((*v.borrow()) as i32))),
     #[cfg(all(feature = "i8", feature = "i64"))]
-    (Value::I8(v), ValueKind::I64) => Some(Value::I64(new_ref((*v.borrow()) as i64))),
+    (Value::I8(v), ValueKind::I64) => Some(Value::I64(Ref::new((*v.borrow()) as i64))),
     #[cfg(all(feature = "i8", feature = "i128"))]
-    (Value::I8(v), ValueKind::I128) => Some(Value::I128(new_ref((*v.borrow()) as i128))),
+    (Value::I8(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
     #[cfg(all(feature = "i8", feature = "u16"))]
-    (Value::I8(v), ValueKind::U16) => Some(Value::U16(new_ref((*v.borrow()) as u16))),
+    (Value::I8(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
     #[cfg(all(feature = "i8", feature = "u32"))]
-    (Value::I8(v), ValueKind::U32) => Some(Value::U32(new_ref((*v.borrow()) as u32))),
+    (Value::I8(v), ValueKind::U32) => Some(Value::U32(Ref::new((*v.borrow()) as u32))),
     #[cfg(all(feature = "i8", feature = "u64"))]
-    (Value::I8(v), ValueKind::U64) => Some(Value::U64(new_ref((*v.borrow()) as u64))),
+    (Value::I8(v), ValueKind::U64) => Some(Value::U64(Ref::new((*v.borrow()) as u64))),
     #[cfg(all(feature = "i8", feature = "u128"))]
-    (Value::I8(v), ValueKind::U128) => Some(Value::U128(new_ref((*v.borrow()) as u128))),
+    (Value::I8(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
     #[cfg(all(feature = "i8", feature = "f32"))]
-    (Value::I8(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::I8(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
     #[cfg(all(feature = "i8", feature = "f64"))]
-    (Value::I8(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+    (Value::I8(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
 
     #[cfg(all(feature = "i16", feature = "i8"))]
-    (Value::I16(v), ValueKind::I8) => Some(Value::I8(new_ref((*v.borrow()) as i8))),
+    (Value::I16(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
     #[cfg(all(feature = "i16", feature = "i32"))]
-    (Value::I16(v), ValueKind::I32) => Some(Value::I32(new_ref((*v.borrow()) as i32))),
+    (Value::I16(v), ValueKind::I32) => Some(Value::I32(Ref::new((*v.borrow()) as i32))),
     #[cfg(all(feature = "i16", feature = "i64"))]
-    (Value::I16(v), ValueKind::I64) => Some(Value::I64(new_ref((*v.borrow()) as i64))),
+    (Value::I16(v), ValueKind::I64) => Some(Value::I64(Ref::new((*v.borrow()) as i64))),
     #[cfg(all(feature = "i16", feature = "i128"))]
-    (Value::I16(v), ValueKind::I128) => Some(Value::I128(new_ref((*v.borrow()) as i128))),
+    (Value::I16(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
     #[cfg(all(feature = "i16", feature = "u8"))]
-    (Value::I16(v), ValueKind::U8) => Some(Value::U8(new_ref((*v.borrow()) as u8))),
+    (Value::I16(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
     #[cfg(all(feature = "i16", feature = "u32"))]
-    (Value::I16(v), ValueKind::U32) => Some(Value::U32(new_ref((*v.borrow()) as u32))),
+    (Value::I16(v), ValueKind::U32) => Some(Value::U32(Ref::new((*v.borrow()) as u32))),
     #[cfg(all(feature = "i16", feature = "u64"))]
-    (Value::I16(v), ValueKind::U64) => Some(Value::U64(new_ref((*v.borrow()) as u64))),
+    (Value::I16(v), ValueKind::U64) => Some(Value::U64(Ref::new((*v.borrow()) as u64))),
     #[cfg(all(feature = "i16", feature = "u128"))]
-    (Value::I16(v), ValueKind::U128) => Some(Value::U128(new_ref((*v.borrow()) as u128))),
+    (Value::I16(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
     #[cfg(all(feature = "i16", feature = "f32"))]
-    (Value::I16(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::I16(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
     #[cfg(all(feature = "i16", feature = "f64"))]
-    (Value::I16(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+    (Value::I16(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
 
     #[cfg(all(feature = "i32", feature = "i8"))]
-    (Value::I32(v), ValueKind::I8) => Some(Value::I8(new_ref((*v.borrow()) as i8))),
+    (Value::I32(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
     #[cfg(all(feature = "i32", feature = "i16"))]
-    (Value::I32(v), ValueKind::I16) => Some(Value::I16(new_ref((*v.borrow()) as i16))),
+    (Value::I32(v), ValueKind::I16) => Some(Value::I16(Ref::new((*v.borrow()) as i16))),
     #[cfg(all(feature = "i32", feature = "i64"))]
-    (Value::I32(v), ValueKind::I64) => Some(Value::I64(new_ref((*v.borrow()) as i64))),
+    (Value::I32(v), ValueKind::I64) => Some(Value::I64(Ref::new((*v.borrow()) as i64))),
     #[cfg(all(feature = "i32", feature = "i128"))]
-    (Value::I32(v), ValueKind::I128) => Some(Value::I128(new_ref((*v.borrow()) as i128))),
+    (Value::I32(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
     #[cfg(all(feature = "i32", feature = "u8"))]
-    (Value::I32(v), ValueKind::U8) => Some(Value::U8(new_ref((*v.borrow()) as u8))),
+    (Value::I32(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
     #[cfg(all(feature = "i32", feature = "u16"))]
-    (Value::I32(v), ValueKind::U16) => Some(Value::U16(new_ref((*v.borrow()) as u16))),
+    (Value::I32(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
     #[cfg(all(feature = "i32", feature = "u64"))]
-    (Value::I32(v), ValueKind::U64) => Some(Value::U64(new_ref((*v.borrow()) as u64))),
+    (Value::I32(v), ValueKind::U64) => Some(Value::U64(Ref::new((*v.borrow()) as u64))),
     #[cfg(all(feature = "i32", feature = "u128"))]
-    (Value::I32(v), ValueKind::U128) => Some(Value::U128(new_ref((*v.borrow()) as u128))),
+    (Value::I32(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
     #[cfg(all(feature = "i32", feature = "f32"))]
-    (Value::I32(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::I32(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
     #[cfg(all(feature = "i32", feature = "f64"))]
-    (Value::I32(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+    (Value::I32(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
 
     #[cfg(all(feature = "i64", feature = "i8"))]
-    (Value::I64(v), ValueKind::I8) => Some(Value::I8(new_ref((*v.borrow()) as i8))),
+    (Value::I64(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
     #[cfg(all(feature = "i64", feature = "i16"))]
-    (Value::I64(v), ValueKind::I16) => Some(Value::I16(new_ref((*v.borrow()) as i16))),
+    (Value::I64(v), ValueKind::I16) => Some(Value::I16(Ref::new((*v.borrow()) as i16))),
     #[cfg(all(feature = "i64", feature = "i32"))]
-    (Value::I64(v), ValueKind::I32) => Some(Value::I32(new_ref((*v.borrow()) as i32))),
+    (Value::I64(v), ValueKind::I32) => Some(Value::I32(Ref::new((*v.borrow()) as i32))),
     #[cfg(all(feature = "i64", feature = "i128"))]
-    (Value::I64(v), ValueKind::I128) => Some(Value::I128(new_ref((*v.borrow()) as i128))),
+    (Value::I64(v), ValueKind::I128) => Some(Value::I128(Ref::new((*v.borrow()) as i128))),
     #[cfg(all(feature = "i64", feature = "u8"))]
-    (Value::I64(v), ValueKind::U8) => Some(Value::U8(new_ref((*v.borrow()) as u8))),
+    (Value::I64(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
     #[cfg(all(feature = "i64", feature = "u16"))]
-    (Value::I64(v), ValueKind::U16) => Some(Value::U16(new_ref((*v.borrow()) as u16))),
+    (Value::I64(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
     #[cfg(all(feature = "i64", feature = "u32"))]
-    (Value::I64(v), ValueKind::U32) => Some(Value::U32(new_ref((*v.borrow()) as u32))),
+    (Value::I64(v), ValueKind::U32) => Some(Value::U32(Ref::new((*v.borrow()) as u32))),
     #[cfg(all(feature = "i64", feature = "u128"))]
-    (Value::I64(v), ValueKind::U128) => Some(Value::U128(new_ref((*v.borrow()) as u128))),
+    (Value::I64(v), ValueKind::U128) => Some(Value::U128(Ref::new((*v.borrow()) as u128))),
     #[cfg(all(feature = "i64", feature = "f32"))]
-    (Value::I64(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::I64(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
     #[cfg(all(feature = "i64", feature = "f64"))]
-    (Value::I64(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+    (Value::I64(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
 
     #[cfg(all(feature = "i128", feature = "i8"))]
-    (Value::I128(v), ValueKind::I8) => Some(Value::I8(new_ref((*v.borrow()) as i8))),
+    (Value::I128(v), ValueKind::I8) => Some(Value::I8(Ref::new((*v.borrow()) as i8))),
     #[cfg(all(feature = "i128", feature = "i16"))]
-    (Value::I128(v), ValueKind::I16) => Some(Value::I16(new_ref((*v.borrow()) as i16))),
+    (Value::I128(v), ValueKind::I16) => Some(Value::I16(Ref::new((*v.borrow()) as i16))),
     #[cfg(all(feature = "i128", feature = "i32"))]
-    (Value::I128(v), ValueKind::I32) => Some(Value::I32(new_ref((*v.borrow()) as i32))),
+    (Value::I128(v), ValueKind::I32) => Some(Value::I32(Ref::new((*v.borrow()) as i32))),
     #[cfg(all(feature = "i128", feature = "i64"))]
-    (Value::I128(v), ValueKind::I64) => Some(Value::I64(new_ref((*v.borrow()) as i64))),
+    (Value::I128(v), ValueKind::I64) => Some(Value::I64(Ref::new((*v.borrow()) as i64))),
     #[cfg(all(feature = "i128", feature = "u8"))]
-    (Value::I128(v), ValueKind::U8) => Some(Value::U8(new_ref((*v.borrow()) as u8))),
+    (Value::I128(v), ValueKind::U8) => Some(Value::U8(Ref::new((*v.borrow()) as u8))),
     #[cfg(all(feature = "i128", feature = "u16"))]
-    (Value::I128(v), ValueKind::U16) => Some(Value::U16(new_ref((*v.borrow()) as u16))),
+    (Value::I128(v), ValueKind::U16) => Some(Value::U16(Ref::new((*v.borrow()) as u16))),
     #[cfg(all(feature = "i128", feature = "u32"))]
-    (Value::I128(v), ValueKind::U32) => Some(Value::U32(new_ref((*v.borrow()) as u32))),
+    (Value::I128(v), ValueKind::U32) => Some(Value::U32(Ref::new((*v.borrow()) as u32))),
     #[cfg(all(feature = "i128", feature = "u64"))]
-    (Value::I128(v), ValueKind::U64) => Some(Value::U64(new_ref((*v.borrow()) as u64))),
+    (Value::I128(v), ValueKind::U64) => Some(Value::U64(Ref::new((*v.borrow()) as u64))),
     #[cfg(all(feature = "i128", feature = "f32"))]
-    (Value::I128(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(*v.borrow() as f32)))),
+    (Value::I128(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(*v.borrow() as f32)))),
     #[cfg(all(feature = "i128", feature = "f64"))]
-    (Value::I128(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(*v.borrow() as f64)))),
+    (Value::I128(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(*v.borrow() as f64)))),
 
     // ==== Float widening and narrowing ====
     #[cfg(all(feature = "f32", feature = "f64"))]
-    (Value::F32(v), ValueKind::F64) => Some(Value::F64(new_ref(F64::new(v.borrow().0 as f64)))),
+    (Value::F32(v), ValueKind::F64) => Some(Value::F64(Ref::new(F64::new(v.borrow().0 as f64)))),
     #[cfg(all(feature = "f32", feature = "f64"))]
-    (Value::F64(v), ValueKind::F32) => Some(Value::F32(new_ref(F32::new(v.borrow().0 as f32)))),
+    (Value::F64(v), ValueKind::F32) => Some(Value::F32(Ref::new(F32::new(v.borrow().0 as f32)))),
 
     // ==== Float to integer conversions (truncate) ====
     #[cfg(all(feature = "f32", feature = "i8"))]
-    (Value::F32(v), ValueKind::I8) => Some(Value::I8(new_ref(v.borrow().0 as i8))),
+    (Value::F32(v), ValueKind::I8) => Some(Value::I8(Ref::new(v.borrow().0 as i8))),
     #[cfg(all(feature = "f32", feature = "i16"))]
-    (Value::F32(v), ValueKind::I16) => Some(Value::I16(new_ref(v.borrow().0 as i16))),
+    (Value::F32(v), ValueKind::I16) => Some(Value::I16(Ref::new(v.borrow().0 as i16))),
     #[cfg(all(feature = "f32", feature = "i32"))]
-    (Value::F32(v), ValueKind::I32) => Some(Value::I32(new_ref(v.borrow().0 as i32))),
+    (Value::F32(v), ValueKind::I32) => Some(Value::I32(Ref::new(v.borrow().0 as i32))),
     #[cfg(all(feature = "f32", feature = "i64"))]
-    (Value::F32(v), ValueKind::I64) => Some(Value::I64(new_ref(v.borrow().0 as i64))),
+    (Value::F32(v), ValueKind::I64) => Some(Value::I64(Ref::new(v.borrow().0 as i64))),
     #[cfg(all(feature = "f32", feature = "i128"))]
-    (Value::F32(v), ValueKind::I128) => Some(Value::I128(new_ref(v.borrow().0 as i128))),
+    (Value::F32(v), ValueKind::I128) => Some(Value::I128(Ref::new(v.borrow().0 as i128))),
     #[cfg(all(feature = "f32", feature = "u8"))]
-    (Value::F32(v), ValueKind::U8) => Some(Value::U8(new_ref(v.borrow().0 as u8))),
+    (Value::F32(v), ValueKind::U8) => Some(Value::U8(Ref::new(v.borrow().0 as u8))),
     #[cfg(all(feature = "f32", feature = "u16"))]
-    (Value::F32(v), ValueKind::U16) => Some(Value::U16(new_ref(v.borrow().0 as u16))),
+    (Value::F32(v), ValueKind::U16) => Some(Value::U16(Ref::new(v.borrow().0 as u16))),
     #[cfg(all(feature = "f32", feature = "u32"))]
-    (Value::F32(v), ValueKind::U32) => Some(Value::U32(new_ref(v.borrow().0 as u32))),
+    (Value::F32(v), ValueKind::U32) => Some(Value::U32(Ref::new(v.borrow().0 as u32))),
     #[cfg(all(feature = "f32", feature = "u64"))]
-    (Value::F32(v), ValueKind::U64) => Some(Value::U64(new_ref(v.borrow().0 as u64))),
+    (Value::F32(v), ValueKind::U64) => Some(Value::U64(Ref::new(v.borrow().0 as u64))),
     #[cfg(all(feature = "f32", feature = "u128"))]
-    (Value::F32(v), ValueKind::U128) => Some(Value::U128(new_ref(v.borrow().0 as u128))),
+    (Value::F32(v), ValueKind::U128) => Some(Value::U128(Ref::new(v.borrow().0 as u128))),
 
     #[cfg(all(feature = "f64", feature = "i8"))]
-    (Value::F64(v), ValueKind::I8) => Some(Value::I8(new_ref(v.borrow().0 as i8))),
+    (Value::F64(v), ValueKind::I8) => Some(Value::I8(Ref::new(v.borrow().0 as i8))),
     #[cfg(all(feature = "f64", feature = "i16"))]
-    (Value::F64(v), ValueKind::I16) => Some(Value::I16(new_ref(v.borrow().0 as i16))),
+    (Value::F64(v), ValueKind::I16) => Some(Value::I16(Ref::new(v.borrow().0 as i16))),
     #[cfg(all(feature = "f64", feature = "i32"))]
-    (Value::F64(v), ValueKind::I32) => Some(Value::I32(new_ref(v.borrow().0 as i32))),
+    (Value::F64(v), ValueKind::I32) => Some(Value::I32(Ref::new(v.borrow().0 as i32))),
     #[cfg(all(feature = "f64", feature = "i64"))]
-    (Value::F64(v), ValueKind::I64) => Some(Value::I64(new_ref(v.borrow().0 as i64))),
+    (Value::F64(v), ValueKind::I64) => Some(Value::I64(Ref::new(v.borrow().0 as i64))),
     #[cfg(all(feature = "f64", feature = "i128"))]
-    (Value::F64(v), ValueKind::I128) => Some(Value::I128(new_ref(v.borrow().0 as i128))),
+    (Value::F64(v), ValueKind::I128) => Some(Value::I128(Ref::new(v.borrow().0 as i128))),
     #[cfg(all(feature = "f64", feature = "u8"))]
-    (Value::F64(v), ValueKind::U8) => Some(Value::U8(new_ref(v.borrow().0 as u8))),
+    (Value::F64(v), ValueKind::U8) => Some(Value::U8(Ref::new(v.borrow().0 as u8))),
     #[cfg(all(feature = "f64", feature = "u16"))]
-    (Value::F64(v), ValueKind::U16) => Some(Value::U16(new_ref(v.borrow().0 as u16))),
+    (Value::F64(v), ValueKind::U16) => Some(Value::U16(Ref::new(v.borrow().0 as u16))),
     #[cfg(all(feature = "f64", feature = "u32"))]
-    (Value::F64(v), ValueKind::U32) => Some(Value::U32(new_ref(v.borrow().0 as u32))),
+    (Value::F64(v), ValueKind::U32) => Some(Value::U32(Ref::new(v.borrow().0 as u32))),
     #[cfg(all(feature = "f64", feature = "u64"))]
-    (Value::F64(v), ValueKind::U64) => Some(Value::U64(new_ref(v.borrow().0 as u64))),
+    (Value::F64(v), ValueKind::U64) => Some(Value::U64(Ref::new(v.borrow().0 as u64))),
     #[cfg(all(feature = "f64", feature = "u128"))]
-    (Value::F64(v), ValueKind::U128) => Some(Value::U128(new_ref(v.borrow().0 as u128))),
+    (Value::F64(v), ValueKind::U128) => Some(Value::U128(Ref::new(v.borrow().0 as u128))),
 
       /*
       // ==== INDEX conversions ====
-      (Value::Index(i), U32) => Some(Value::U32(new_ref((*i.borrow()) as u32))),
-      (Value::U32(v), Index) => Some(Value::Index(new_ref((*v.borrow()) as usize))),
+      (Value::Index(i), U32) => Some(Value::U32(Ref::new((*i.borrow()) as u32))),
+      (Value::U32(v), Index) => Some(Value::Index(Ref::new((*v.borrow()) as usize))),
 
 
       // ==== MATRIX conversions (element-wise) ====
@@ -1226,35 +1206,35 @@ impl Value {
       #[cfg(feature = "string")]
       Value::String(v) => Some(v.clone()),
       #[cfg(feature = "u8")]
-      Value::U8(v) => Some(new_ref(v.borrow().to_string())),
+      Value::U8(v) => Some(Ref::new(v.borrow().to_string())),
       #[cfg(feature = "u16")]
-      Value::U16(v) => Some(new_ref(v.borrow().to_string())),
+      Value::U16(v) => Some(Ref::new(v.borrow().to_string())),
       #[cfg(feature = "u32")]
-      Value::U32(v) => Some(new_ref(v.borrow().to_string())),
+      Value::U32(v) => Some(Ref::new(v.borrow().to_string())),
       #[cfg(feature = "u64")]
-      Value::U64(v) => Some(new_ref(v.borrow().to_string())),
+      Value::U64(v) => Some(Ref::new(v.borrow().to_string())),
       #[cfg(feature = "u128")]
-      Value::U128(v) => Some(new_ref(v.borrow().to_string())),
+      Value::U128(v) => Some(Ref::new(v.borrow().to_string())),
       #[cfg(feature = "i8")]
-      Value::I8(v) => Some(new_ref(v.borrow().to_string())),
+      Value::I8(v) => Some(Ref::new(v.borrow().to_string())),
       #[cfg(feature = "i16")]
-      Value::I16(v) => Some(new_ref(v.borrow().to_string())),
+      Value::I16(v) => Some(Ref::new(v.borrow().to_string())),
       #[cfg(feature = "i32")]
-      Value::I32(v) => Some(new_ref(v.borrow().to_string())),
+      Value::I32(v) => Some(Ref::new(v.borrow().to_string())),
       #[cfg(feature = "i64")]
-      Value::I64(v) => Some(new_ref(v.borrow().to_string())),
+      Value::I64(v) => Some(Ref::new(v.borrow().to_string())),
       #[cfg(feature = "i128")]
-      Value::I128(v) => Some(new_ref(v.borrow().to_string())),
+      Value::I128(v) => Some(Ref::new(v.borrow().to_string())),
       #[cfg(feature = "f32")]
-      Value::F32(v) => Some(new_ref(format!("{}", v.borrow().0))),
+      Value::F32(v) => Some(Ref::new(format!("{}", v.borrow().0))),
       #[cfg(feature = "f64")]
-      Value::F64(v) => Some(new_ref(format!("{}", v.borrow().0))),
+      Value::F64(v) => Some(Ref::new(format!("{}", v.borrow().0))),
       #[cfg(feature = "bool")]
-      Value::Bool(v) => Some(new_ref(format!("{}", v.borrow()))),
+      Value::Bool(v) => Some(Ref::new(format!("{}", v.borrow()))),
       #[cfg(feature = "rational")]
-      Value::RationalNumber(v) => Some(new_ref(v.borrow().to_string())),
+      Value::RationalNumber(v) => Some(Ref::new(v.borrow().to_string())),
       #[cfg(feature = "complex")]
-      Value::ComplexNumber(v) => Some(new_ref(v.borrow().to_string())),
+      Value::ComplexNumber(v) => Some(Ref::new(v.borrow().to_string())),
       Value::MutableReference(val) => val.borrow().as_string(),
       _ => None,
     }
@@ -1265,29 +1245,29 @@ impl Value {
     match self {
       Value::RationalNumber(v) => Some(v.clone()),
       #[cfg(feature = "f32")]
-      Value::F32(v) => Some(new_ref(RationalNumber::new(v.borrow().0 as i64, 1))),
+      Value::F32(v) => Some(Ref::new(RationalNumber::new(v.borrow().0 as i64, 1))),
       #[cfg(feature = "f64")]
-      Value::F64(v) => Some(new_ref(RationalNumber::new(v.borrow().0 as i64, 1))),
+      Value::F64(v) => Some(Ref::new(RationalNumber::new(v.borrow().0 as i64, 1))),
       #[cfg(feature = "u8")]
-      Value::U8(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::U8(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "u16")]
-      Value::U16(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::U16(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "u32")]
-      Value::U32(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::U32(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "u64")]
-      Value::U64(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::U64(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "u128")]
-      Value::U128(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::U128(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "i8")]
-      Value::I8(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::I8(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "i16")]
-      Value::I16(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::I16(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "i32")]
-      Value::I32(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::I32(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "i64")]
-      Value::I64(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::I64(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "i128")]
-      Value::I128(v) => Some(new_ref(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::I128(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
       Value::MutableReference(val) => val.borrow().as_rationalnumber(),
       _ => None,
     }
@@ -1298,29 +1278,29 @@ impl Value {
     match self {
       Value::ComplexNumber(v) => Some(v.clone()),
       #[cfg(feature = "f32")]
-      Value::F32(v) =>  Some(new_ref(ComplexNumber::new(v.borrow().0 as f64, 0.0))),
+      Value::F32(v) =>  Some(Ref::new(ComplexNumber::new(v.borrow().0 as f64, 0.0))),
       #[cfg(feature = "f64")]
-      Value::F64(v) =>  Some(new_ref(ComplexNumber::new(v.borrow().0, 0.0))),
+      Value::F64(v) =>  Some(Ref::new(ComplexNumber::new(v.borrow().0, 0.0))),
       #[cfg(feature = "u8")]
-      Value::U8(v) =>   Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::U8(v) =>   Some(Ref::new(ComplexNumber::new(*v.borrow() as f64, 0.0))),
       #[cfg(feature = "u16")]
-      Value::U16(v) =>  Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::U16(v) =>  Some(Ref::new(ComplexNumber::new(*v.borrow() as f64, 0.0))),
       #[cfg(feature = "u32")]
-      Value::U32(v) =>  Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::U32(v) =>  Some(Ref::new(ComplexNumber::new(*v.borrow() as f64, 0.0))),
       #[cfg(feature = "u64")]
-      Value::U64(v) =>  Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::U64(v) =>  Some(Ref::new(ComplexNumber::new(*v.borrow() as f64, 0.0))),
       #[cfg(feature = "u128")]
-      Value::U128(v) => Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::U128(v) => Some(Ref::new(ComplexNumber::new(*v.borrow() as f64, 0.0))),
       #[cfg(feature = "i8")]
-      Value::I8(v) =>   Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::I8(v) =>   Some(Ref::new(ComplexNumber::new(*v.borrow() as f64, 0.0))),
       #[cfg(feature = "i16")]
-      Value::I16(v) =>  Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::I16(v) =>  Some(Ref::new(ComplexNumber::new(*v.borrow() as f64, 0.0))),
       #[cfg(feature = "i32")]
-      Value::I32(v) =>  Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::I32(v) =>  Some(Ref::new(ComplexNumber::new(*v.borrow() as f64, 0.0))),
       #[cfg(feature = "i64")]
-      Value::I64(v) =>  Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::I64(v) =>  Some(Ref::new(ComplexNumber::new(*v.borrow() as f64, 0.0))),
       #[cfg(feature = "i128")]
-      Value::I128(v) => Some(new_ref(ComplexNumber::new(*v.borrow() as f64, 0.0))),
+      Value::I128(v) => Some(Ref::new(ComplexNumber::new(*v.borrow() as f64, 0.0))),
       Value::MutableReference(val) => val.borrow().as_complexnumber(),
       _ => None,
     }
@@ -1330,29 +1310,29 @@ impl Value {
   pub fn as_f32(&self) -> Option<Ref<F32>> {
     match self {
       #[cfg(feature = "u8")]
-      Value::U8(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::U8(v) => Some(Ref::new(F32::new(*v.borrow() as f32))),
       #[cfg(feature = "u16")]
-      Value::U16(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::U16(v) => Some(Ref::new(F32::new(*v.borrow() as f32))),
       #[cfg(feature = "u32")]
-      Value::U32(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::U32(v) => Some(Ref::new(F32::new(*v.borrow() as f32))),
       #[cfg(feature = "u64")]
-      Value::U64(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::U64(v) => Some(Ref::new(F32::new(*v.borrow() as f32))),
       #[cfg(feature = "u128")]
-      Value::U128(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::U128(v) => Some(Ref::new(F32::new(*v.borrow() as f32))),
       #[cfg(feature = "i8")]
-      Value::I8(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::I8(v) => Some(Ref::new(F32::new(*v.borrow() as f32))),
       #[cfg(feature = "i16")]
-      Value::I16(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::I16(v) => Some(Ref::new(F32::new(*v.borrow() as f32))),
       #[cfg(feature = "i32")]
-      Value::I32(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::I32(v) => Some(Ref::new(F32::new(*v.borrow() as f32))),
       #[cfg(feature = "i64")]
-      Value::I64(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::I64(v) => Some(Ref::new(F32::new(*v.borrow() as f32))),
       #[cfg(feature = "i128")]
-      Value::I128(v) => Some(new_ref(F32::new(*v.borrow() as f32))),
+      Value::I128(v) => Some(Ref::new(F32::new(*v.borrow() as f32))),
       #[cfg(feature = "f32")]
-      Value::F32(v) => Some(new_ref(F32::new((*v.borrow()).0 as f32))),
+      Value::F32(v) => Some(Ref::new(F32::new((*v.borrow()).0 as f32))),
       #[cfg(feature = "f64")]
-      Value::F64(v) => Some(new_ref(F32::new((*v.borrow()).0 as f32))),
+      Value::F64(v) => Some(Ref::new(F32::new((*v.borrow()).0 as f32))),
       Value::MutableReference(val) => val.borrow().as_f32(),
       _ => None,
     }
@@ -1362,26 +1342,26 @@ impl Value {
   pub fn as_f64(&self) -> Option<Ref<F64>> {
     match self {
       #[cfg(feature = "u8")]
-      Value::U8(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
+      Value::U8(v) => Some(Ref::new(F64::new(*v.borrow() as f64))),
       #[cfg(feature = "u16")]
-      Value::U16(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
+      Value::U16(v) => Some(Ref::new(F64::new(*v.borrow() as f64))),
       #[cfg(feature = "u32")]
-      Value::U32(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
+      Value::U32(v) => Some(Ref::new(F64::new(*v.borrow() as f64))),
       #[cfg(feature = "u64")]
-      Value::U64(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
+      Value::U64(v) => Some(Ref::new(F64::new(*v.borrow() as f64))),
       #[cfg(feature = "u128")]
-      Value::U128(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
+      Value::U128(v) => Some(Ref::new(F64::new(*v.borrow() as f64))),
       #[cfg(feature = "i8")]
-      Value::I8(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
+      Value::I8(v) => Some(Ref::new(F64::new(*v.borrow() as f64))),
       #[cfg(feature = "i16")]
-      Value::I16(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
+      Value::I16(v) => Some(Ref::new(F64::new(*v.borrow() as f64))),
       #[cfg(feature = "i32")]
-      Value::I32(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
+      Value::I32(v) => Some(Ref::new(F64::new(*v.borrow() as f64))),
       #[cfg(feature = "i64")]
-      Value::I64(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
+      Value::I64(v) => Some(Ref::new(F64::new(*v.borrow() as f64))),
       #[cfg(feature = "i128")]
-      Value::I128(v) => Some(new_ref(F64::new(*v.borrow() as f64))),
-      Value::F64(v) => Some(new_ref(F64::new((*v.borrow()).0 as f64))),
+      Value::I128(v) => Some(Ref::new(F64::new(*v.borrow() as f64))),
+      Value::F64(v) => Some(Ref::new(F64::new((*v.borrow()).0 as f64))),
       Value::MutableReference(val) => val.borrow().as_f64(),
       _ => None,
     }
@@ -1446,7 +1426,7 @@ impl Value {
 
   pub fn as_index(&self) -> MResult<Value> {
     match self.as_usize() {      
-      Some(ix) => Ok(Value::Index(new_ref(ix))),
+      Some(ix) => Ok(Value::Index(Ref::new(ix))),
       #[cfg(feature = "matrix")]
       None => match self.as_vecusize() {
         #[cfg(feature = "matrix")]
@@ -1460,10 +1440,10 @@ impl Value {
           Some(x) => {
             let shape = self.shape();
             let out = match (shape[0], shape[1]) {
-              (1,1) => Value::Bool(new_ref(x[0])),
-              (1,n) => Value::MatrixBool(Matrix::DVector(new_ref(DVector::from_vec(x)))),
-              (m,1) => Value::MatrixBool(Matrix::DVector(new_ref(DVector::from_vec(x)))),
-              (m,n) => Value::MatrixBool(Matrix::DVector(new_ref(DVector::from_vec(x)))),
+              (1,1) => Value::Bool(Ref::new(x[0])),
+              (1,n) => Value::MatrixBool(Matrix::DVector(Ref::new(DVector::from_vec(x)))),
+              (m,1) => Value::MatrixBool(Matrix::DVector(Ref::new(DVector::from_vec(x)))),
+              (m,n) => Value::MatrixBool(Matrix::DVector(Ref::new(DVector::from_vec(x)))),
               _ => todo!(),
             };
             Ok(out)
@@ -1638,12 +1618,12 @@ pub trait ToValue {
 impl ToValue for Vec<usize> {
   fn to_value(&self) -> Value {
     match self.len() {
-      1 => Value::Index(new_ref(self[0].clone())),
-      //2 => Value::MatrixIndex(Matrix::RowVector2(new_ref(RowVector2::from_vec(self.clone())))),
-      //3 => Value::MatrixIndex(Matrix::RowVector3(new_ref(RowVector3::from_vec(self.clone())))),
-      //4 => Value::MatrixIndex(Matrix::RowVector4(new_ref(RowVector4::from_vec(self.clone())))),
+      1 => Value::Index(Ref::new(self[0].clone())),
+      //2 => Value::MatrixIndex(Matrix::RowVector2(Ref::new(RowVector2::from_vec(self.clone())))),
+      //3 => Value::MatrixIndex(Matrix::RowVector3(Ref::new(RowVector3::from_vec(self.clone())))),
+      //4 => Value::MatrixIndex(Matrix::RowVector4(Ref::new(RowVector4::from_vec(self.clone())))),
       #[cfg(feature = "matrix")]
-      n => Value::MatrixIndex(Matrix::DVector(new_ref(DVector::from_vec(self.clone())))),
+      n => Value::MatrixIndex(Matrix::DVector(Ref::new(DVector::from_vec(self.clone())))),
       _ => todo!(),
     }
   }
@@ -1683,162 +1663,94 @@ impl ToValue for Ref<RationalNumber> { fn to_value(&self) -> Value { Value::Rati
 #[cfg(feature = "complex")]
 impl ToValue for Ref<ComplexNumber> { fn to_value(&self) -> Value { Value::ComplexNumber(self.clone()) } }
 
-macro_rules! to_value_ndmatrix {
-  ($($nd_matrix_kind:ident, $matrix_kind:ident, $base_type:ty, $type_string:tt),+ $(,)?) => {
-    $(
-      #[cfg(all(feature = "matrix", feature = $type_string))]
-      impl ToValue for Ref<$nd_matrix_kind<$base_type>> {
-        fn to_value(&self) -> Value {
-          Value::$matrix_kind(Matrix::<$base_type>::$nd_matrix_kind(self.clone()))
-        }
-      }
-    )+
-  };}
-
-#[cfg(feature = "matrix")]
-macro_rules! impl_to_value_matrix {
-  ($matrix_kind:ident) => {
-    to_value_ndmatrix!(
-      $matrix_kind, MatrixIndex,  usize, "matrix",
-      $matrix_kind, MatrixBool,   bool, "bool",
-      $matrix_kind, MatrixI8,     i8, "i8",
-      $matrix_kind, MatrixI16,    i16, "i16",
-      $matrix_kind, MatrixI32,    i32, "i32",
-      $matrix_kind, MatrixI64,    i64, "i64",
-      $matrix_kind, MatrixI128,   i128, "i128",
-      $matrix_kind, MatrixU8,     u8, "u8",
-      $matrix_kind, MatrixU16,    u16, "u16",
-      $matrix_kind, MatrixU32,    u32, "u32",
-      $matrix_kind, MatrixU64,    u64, "u64",
-      $matrix_kind, MatrixU128,   u128, "u128",
-      $matrix_kind, MatrixF32,    F32, "f32",
-      $matrix_kind, MatrixF64,    F64, "f64",
-      $matrix_kind, MatrixString, String, "string",
-      $matrix_kind, MatrixRationalNumber, RationalNumber, "rational",
-      $matrix_kind, MatrixComplexNumber, ComplexNumber, "complex",
-    );
-  }
-}
-
-#[cfg(feature = "matrix2x3")]
-impl_to_value_matrix!(Matrix2x3);
-#[cfg(feature = "matrix3x2")]
-impl_to_value_matrix!(Matrix3x2);
-#[cfg(feature = "matrix1")]
-impl_to_value_matrix!(Matrix1);
-#[cfg(feature = "matrix2")]
-impl_to_value_matrix!(Matrix2);
-#[cfg(feature = "matrix3")]
-impl_to_value_matrix!(Matrix3);
-#[cfg(feature = "matrix4")]
-impl_to_value_matrix!(Matrix4);
-#[cfg(feature = "vector2")]
-impl_to_value_matrix!(Vector2);
-#[cfg(feature = "vector3")]
-impl_to_value_matrix!(Vector3);
-#[cfg(feature = "vector4")]
-impl_to_value_matrix!(Vector4);
-#[cfg(feature = "row_vector2")]
-impl_to_value_matrix!(RowVector2);
-#[cfg(feature = "row_vector3")]
-impl_to_value_matrix!(RowVector3);
-#[cfg(feature = "row_vector4")]
-impl_to_value_matrix!(RowVector4);
-#[cfg(feature = "row_vectord")]
-impl_to_value_matrix!(RowDVector);
-#[cfg(feature = "vectord")]
-impl_to_value_matrix!(DVector);
-#[cfg(feature = "matrixd")]
-impl_to_value_matrix!(DMatrix);
-
 #[cfg(feature = "u8")]
 impl From<u8> for Value {
   fn from(val: u8) -> Self {
-    Value::U8(new_ref(val))
+    Value::U8(Ref::new(val))
   }
 }
 
 #[cfg(feature = "u16")]
 impl From<u16> for Value {
   fn from(val: u16) -> Self {
-    Value::U16(new_ref(val))
+    Value::U16(Ref::new(val))
   }
 }
 
 #[cfg(feature = "u32")]
 impl From<u32> for Value {
   fn from(val: u32) -> Self {
-    Value::U32(new_ref(val))
+    Value::U32(Ref::new(val))
   }
 }
 
 #[cfg(feature = "u64")]
 impl From<u64> for Value {
   fn from(val: u64) -> Self {
-    Value::U64(new_ref(val))
+    Value::U64(Ref::new(val))
   }
 }
 
 #[cfg(feature = "u128")]
 impl From<u128> for Value {
   fn from(val: u128) -> Self {
-    Value::U128(new_ref(val))
+    Value::U128(Ref::new(val))
   }
 }
 
 #[cfg(feature = "i8")]
 impl From<i8> for Value {
   fn from(val: i8) -> Self {
-    Value::I8(new_ref(val))
+    Value::I8(Ref::new(val))
   }
 }
 
 #[cfg(feature = "i16")]
 impl From<i16> for Value {
   fn from(val: i16) -> Self {
-    Value::I16(new_ref(val))
+    Value::I16(Ref::new(val))
   }
 }
 
 #[cfg(feature = "i32")]
 impl From<i32> for Value {
   fn from(val: i32) -> Self {
-    Value::I32(new_ref(val))
+    Value::I32(Ref::new(val))
   }
 }
 
 #[cfg(feature = "i64")]
 impl From<i64> for Value {
   fn from(val: i64) -> Self {
-    Value::I64(new_ref(val))
+    Value::I64(Ref::new(val))
   }
 }
 
 #[cfg(feature = "i128")]
 impl From<i128> for Value {
   fn from(val: i128) -> Self {
-    Value::I128(new_ref(val))
+    Value::I128(Ref::new(val))
   }
 }
 
 #[cfg(feature = "bool")]
 impl From<bool> for Value {
   fn from(val: bool) -> Self {
-    Value::Bool(new_ref(val))
+    Value::Bool(Ref::new(val))
   }
 }
 
 #[cfg(feature = "string")]
 impl From<String> for Value {
   fn from(val: String) -> Self {
-    Value::String(new_ref(val))
+    Value::String(Ref::new(val))
   }
 }
 
 #[cfg(feature = "rational")]
 impl From<RationalNumber> for Value {
   fn from(val: RationalNumber) -> Self {
-    Value::RationalNumber(new_ref(val))
+    Value::RationalNumber(Ref::new(val))
   }
 }
 

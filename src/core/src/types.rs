@@ -20,17 +20,67 @@ use paste::paste;
 #[cfg(feature = "complex")]
 use nalgebra::Complex;
 
+#[derive(Debug)]
+pub struct Ref<T>(pub Rc<RefCell<T>>);
+
+impl<T> Clone for Ref<T> {
+  fn clone(&self) -> Self {
+    Ref(self.0.clone())
+  }
+}
+
+impl<T> Ref<T> {
+  pub fn new(item: T) -> Self { Ref(Rc::new(RefCell::new(item))) }
+  pub fn as_ptr(&self) -> *const T { self.0.as_ptr() }
+  pub fn as_mut_ptr(&self) -> *mut T { self.0.as_ptr() as *mut T }
+  pub fn borrow(&self) -> std::cell::Ref<'_, T> { self.0.borrow() }
+  pub fn borrow_mut(&self) -> std::cell::RefMut<'_, T> { self.0.borrow_mut() }
+}
+
+impl<T> PartialEq for Ref<T> {
+  fn eq(&self, other: &Self) -> bool {
+    Rc::ptr_eq(&self.0, &other.0)
+  }
+}
+impl<T> Eq for Ref<T> {}
+
+pub fn new_ref<T>(item: T) -> Ref<T> { Ref::new(item) }
+
+pub struct Plan(pub Ref<Vec<Box<dyn MechFunction>>>);
+
+impl Clone for Plan {
+  fn clone(&self) -> Self { Plan(self.0.clone()) }
+}
+
+impl fmt::Debug for Plan {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    for p in &(*self.0.borrow()) {
+      writeln!(f, "{}", p.to_string())?;
+    }
+    Ok(())
+  }
+}
+
+impl Plan {
+  pub fn new() -> Self { Plan(Ref::new(vec![])) }
+  pub fn borrow(&self) -> std::cell::Ref<'_, Vec<Box<dyn MechFunction>>> { self.0.borrow() }
+  pub fn borrow_mut(&self) -> std::cell::RefMut<'_, Vec<Box<dyn MechFunction>>> { self.0.borrow_mut() }
+  pub fn add_function(&self, func: Box<dyn MechFunction>) { self.0.borrow_mut().push(func); }
+  pub fn get_functions(&self) -> std::cell::Ref<'_, Vec<Box<dyn MechFunction>>> { self.0.borrow() }
+  pub fn len(&self) -> usize { self.0.borrow().len() }
+  pub fn is_empty(&self) -> bool { self.0.borrow().is_empty() }
+}
+
 pub type FunctionsRef = Ref<Functions>;
-pub type Plan = Ref<Vec<Box<dyn MechFunction>>>;
 pub type MutableReference = Ref<Value>;
 pub type SymbolTableRef= Ref<SymbolTable>;
 pub type ValRef = Ref<Value>;
 use std::num::FpCategory;
 
-pub type Ref<T> = Rc<RefCell<T>>;
-pub fn new_ref<T>(item: T) -> Rc<RefCell<T>> {
-  Rc::new(RefCell::new(item))
-}
+//pub type Ref<T> = Rc<RefCell<T>>;
+//pub fn new_ref<T>(item: T) -> Rc<RefCell<T>> {
+//  Rc::new(RefCell::new(item))
+//}
 
 pub type MResult<T> = Result<T,MechError>;
 
@@ -241,7 +291,7 @@ impl Step for F64 {
 #[cfg(feature = "f64")]
 impl From<F64> for Value {
   fn from(val: F64) -> Self {
-    Value::F64(new_ref(val))
+    Value::F64(Ref::new(val))
   }
 }
 
@@ -497,7 +547,7 @@ impl Step for F32 {
 #[cfg(feature = "f32")]
 impl From<F32> for Value {
   fn from(val: F32) -> Self {
-    Value::F32(new_ref(val))
+    Value::F32(Ref::new(val))
   }
 }
 
@@ -864,14 +914,14 @@ impl ToUsize for ComplexNumber {
 #[cfg(feature = "complex")]
 impl ToValue for ComplexNumber {
   fn to_value(&self) -> Value {
-    Value::ComplexNumber(new_ref(*self))
+    Value::ComplexNumber(Ref::new(*self))
   }
 }
 
 #[cfg(feature = "rational")]
 impl ToValue for RationalNumber {
   fn to_value(&self) -> Value {
-    Value::RationalNumber(new_ref(*self))
+    Value::RationalNumber(Ref::new(*self))
   }
 }
 

@@ -18,7 +18,7 @@ macro_rules! horzcat_one_arg {
       fn solve(&self) { 
         unsafe {
           let e0_ptr = (*(self.e0.as_ptr())).clone();
-          let mut out_ptr = (&mut *(self.out.as_ptr()));
+          let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
           $opt!(out_ptr,e0_ptr);
         }
       }
@@ -44,7 +44,7 @@ macro_rules! horzcat_two_args {
         unsafe {
           let e0_ptr = (*(self.e0.as_ptr())).clone();
           let e1_ptr = (*(self.e1.as_ptr())).clone();
-          let mut out_ptr = (&mut *(self.out.as_ptr()));
+          let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
           $opt!(out_ptr,e0_ptr,e1_ptr);
         }
       }
@@ -72,7 +72,7 @@ macro_rules! horzcat_three_args {
           let e0_ptr = (*(self.e0.as_ptr())).clone();
           let e1_ptr = (*(self.e1.as_ptr())).clone();
           let e2_ptr = (*(self.e2.as_ptr())).clone();
-          let mut out_ptr = (&mut *(self.out.as_ptr()));
+          let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
           $opt!(out_ptr,e0_ptr,e1_ptr,e2_ptr);
         }
       }
@@ -102,7 +102,7 @@ macro_rules! horzcat_four_args {
           let e1_ptr = (*(self.e1.as_ptr())).clone();
           let e2_ptr = (*(self.e2.as_ptr())).clone();
           let e3_ptr = (*(self.e3.as_ptr())).clone();
-          let mut out_ptr = (&mut *(self.out.as_ptr()));
+          let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
           $opt!(out_ptr,e0_ptr,e1_ptr,e2_ptr,e3_ptr);
         }
       }
@@ -239,7 +239,7 @@ where
 {
   fn solve(&self) {
     unsafe {
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       for (e,i) in &self.matrix {
         let e0_ptr = e.copy_into_r(&self.out,*i);
       }
@@ -265,7 +265,7 @@ where
 {
   fn solve(&self) {
     unsafe {
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = self.arg.borrow().clone();
     }
   }
@@ -287,7 +287,7 @@ where
 {
   fn solve(&self) {
     unsafe {
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = self.e0.borrow().clone();
       out_ptr[1] = self.e1.borrow().clone();
     }
@@ -311,7 +311,7 @@ where
 {
   fn solve(&self) {
     unsafe {
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = self.e0.borrow().clone();
       out_ptr[1] = self.e1.borrow().clone();
       out_ptr[2] = self.e2.borrow().clone();
@@ -337,7 +337,7 @@ where
 {
   fn solve(&self) {
     unsafe {
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = self.e0.borrow().clone();
       out_ptr[1] = self.e1.borrow().clone();
       out_ptr[2] = self.e2.borrow().clone();
@@ -411,7 +411,7 @@ where
     unsafe {
       let e0_ptr = (*(self.e0.as_ptr())).clone();
       let e1_ptr = (*(self.e1.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr.clone();
       out_ptr[1] = e1_ptr[0].clone();
       out_ptr[2] = e1_ptr[1].clone();
@@ -435,7 +435,7 @@ where
   fn solve(&self) { 
     unsafe {
       let e0_ptr = (*(self.e0.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e0_ptr[1].clone();
       out_ptr[2] = self.e1.borrow().clone();
@@ -460,7 +460,7 @@ where
     unsafe {
       let e0_val = self.e0.borrow().clone();
       let e1_ptr = (*(self.e1.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_val;
       out_ptr[1] = e1_ptr[0].clone();
     }
@@ -484,7 +484,7 @@ where
     unsafe {
       let e0_ptr = (*(self.e0.as_ptr())).clone();
       let e1_val = self.e1.borrow().clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e1_val;
     }
@@ -512,7 +512,7 @@ where
       let e1_val = self.e1.borrow().clone();
       let e2_val = self.e2.borrow().clone();
       let e3_ptr = (*(self.e3.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_val;
       out_ptr[1] = e1_val;
       out_ptr[2] = e2_val;
@@ -542,7 +542,7 @@ where
       let e1_val = self.e1.borrow().clone();
       let e2_ptr = (*(self.e2.as_ptr())).clone();
       let e3_val = self.e3.borrow().clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_val;
       out_ptr[1] = e1_val;
       out_ptr[2] = e2_ptr[0].clone();
@@ -572,7 +572,7 @@ where
       let e1_ptr = (*(self.e1.as_ptr())).clone();
       let e2_val = self.e2.borrow().clone();
       let e3_val = self.e3.borrow().clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_val;
       out_ptr[1] = e1_ptr[0].clone();
       out_ptr[2] = e2_val;
@@ -602,7 +602,7 @@ where
       let e1_val = self.e1.borrow().clone();
       let e2_val = self.e2.borrow().clone();
       let e3_val = self.e3.borrow().clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e1_val;
       out_ptr[2] = e2_val;
@@ -628,7 +628,7 @@ where
     unsafe {
       let e0_ptr = (*(self.e0.as_ptr())).clone();
       let e1_ptr = (*(self.e1.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr.clone();
       out_ptr[1] = e1_ptr[0].clone();
       out_ptr[2] = e1_ptr[1].clone();
@@ -655,7 +655,7 @@ where
     unsafe {
       let e0_ptr = (*(self.e0.as_ptr())).clone();
       let e1_ptr = self.e1.borrow().clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e0_ptr[1].clone();
       out_ptr[2] = e0_ptr[2].clone();
@@ -683,7 +683,7 @@ where
       let e0_val = self.e0.borrow().clone();
       let e1_val = self.e1.borrow().clone();
       let e2_ptr = (*(self.e2.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_val;
       out_ptr[1] = e1_val;
       out_ptr[2] = e2_ptr[0].clone();
@@ -710,7 +710,7 @@ where
       let e0_val = self.e0.borrow().clone();
       let e1_ptr = (*(self.e1.as_ptr())).clone();
       let e2_val = self.e2.borrow().clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_val;
       out_ptr[1] = e1_ptr[0].clone();
       out_ptr[2] = e2_val;
@@ -737,7 +737,7 @@ where
       let e0_ptr = (*(self.e0.as_ptr())).clone();
       let e1_val = self.e1.borrow().clone();
       let e2_val = self.e2.borrow().clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e1_val;
       out_ptr[2] = e2_val;
@@ -765,7 +765,7 @@ where
       let e0_val = self.e0.borrow().clone();
       let e1_val = self.e1.borrow().clone();
       let e2_ptr = (*(self.e2.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_val;
       out_ptr[1] = e1_val;
       out_ptr[2] = e2_ptr[0].clone();
@@ -794,7 +794,7 @@ where
       let e0_val = self.e0.borrow().clone();
       let e1_ptr = (*(self.e1.as_ptr())).clone();
       let e2_val = self.e2.borrow().clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_val;
       out_ptr[1] = e1_ptr[0].clone();
       out_ptr[2] = e1_ptr[1].clone();
@@ -823,7 +823,7 @@ where
       let e0_ptr = (*(self.e0.as_ptr())).clone();
       let e1_val = self.e1.borrow().clone();
       let e2_val = self.e2.borrow().clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e0_ptr[1].clone();
       out_ptr[2] = e1_val;
@@ -851,7 +851,7 @@ where
       let e0_ptr = (*(self.e0.as_ptr())).clone();
       let e1_ptr = (*(self.e1.as_ptr())).clone();
       let e2_val = self.e2.borrow().clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e1_ptr[0].clone();
       out_ptr[2] = e2_val;
@@ -885,7 +885,7 @@ where
       let e0_ptr = (*(self.e0.as_ptr())).clone();
       let e1_val = self.e1.borrow().clone();
       let e2_ptr = (*(self.e2.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e1_val;
       out_ptr[2] = e2_ptr[0].clone();
@@ -912,7 +912,7 @@ where
       let e0_val = self.e0.borrow().clone();
       let e1_ptr = (*(self.e1.as_ptr())).clone();
       let e2_ptr = (*(self.e2.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_val;
       out_ptr[1] = e1_ptr[0].clone();
       out_ptr[2] = e2_ptr[0].clone();
@@ -966,7 +966,7 @@ where
       let e0_val = self.e0.borrow().clone();
       let e1_ptr = (*(self.e1.as_ptr())).clone();
       let e2_ptr = (*(self.e2.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_val;
       out_ptr[1] = e1_ptr[0].clone();
       out_ptr[2] = e2_ptr[0].clone();
@@ -994,7 +994,7 @@ where
       let e0_ptr = (*(self.e0.as_ptr())).clone();
       let e1_val = self.e1.borrow().clone();
       let e2_ptr = (*(self.e2.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e1_val;
       out_ptr[2] = e2_ptr[0].clone();
@@ -1025,7 +1025,7 @@ where
       let e1_ptr = (*(self.e1.as_ptr())).clone();
       let e2_val = self.e2.borrow().clone();
       let e3_ptr = (*(self.e3.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_val;
       out_ptr[1] = e1_ptr[0].clone();
       out_ptr[2] = e2_val;
@@ -1054,7 +1054,7 @@ where
       let e0_ptr = (*(self.e0.as_ptr())).clone();
       let e1_ptr = (*(self.e1.as_ptr())).clone();
       let e2_val = self.e2.borrow().clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e1_ptr[0].clone();
       out_ptr[2] = e1_ptr[1].clone();
@@ -1082,7 +1082,7 @@ where
       let e0_ptr = (*(self.e0.as_ptr())).clone();
       let e1_ptr = (*(self.e1.as_ptr())).clone();
       let e2_val = self.e2.borrow().clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e0_ptr[1].clone();
       out_ptr[2] = e1_ptr[0].clone();
@@ -1110,7 +1110,7 @@ where
       let e0_ptr = (*(self.e0.as_ptr())).clone();
       let e1_val = self.e1.borrow().clone();
       let e2_ptr = (*(self.e2.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e0_ptr[1].clone();
       out_ptr[2] = e1_val;
@@ -1138,7 +1138,7 @@ where
       let e0_val = self.e0.borrow().clone();
       let e1_ptr = (*(self.e1.as_ptr())).clone();
       let e2_ptr = (*(self.e2.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_val;
       out_ptr[1] = e1_ptr[0].clone();
       out_ptr[2] = e1_ptr[1].clone();
@@ -1168,7 +1168,7 @@ where
       let e1_val = self.e1.borrow().clone();
       let e2_ptr = (*(self.e2.as_ptr())).clone();
       let e3_ptr = (*(self.e3.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_val;
       out_ptr[1] = e1_val;
       out_ptr[2] = e2_ptr[0].clone();
@@ -1198,7 +1198,7 @@ where
       let e1_ptr = (*(self.e1.as_ptr())).clone();
       let e2_val = self.e2.borrow().clone();
       let e3_val = self.e3.borrow().clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e1_ptr[0].clone();
       out_ptr[2] = e2_val;
@@ -1228,7 +1228,7 @@ where
       let e1_ptr = (*(self.e1.as_ptr())).clone();
       let e2_ptr = (*(self.e2.as_ptr())).clone();
       let e3_val = self.e3.borrow().clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_val;
       out_ptr[1] = e1_ptr[0].clone();
       out_ptr[2] = e2_ptr[0].clone();
@@ -1258,7 +1258,7 @@ where
       let e1_val = self.e1.borrow().clone();
       let e2_val = self.e2.borrow().clone();
       let e3_ptr = (*(self.e3.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e1_val;
       out_ptr[2] = e2_val;
@@ -1288,7 +1288,7 @@ where
       let e1_val = self.e1.borrow().clone();
       let e2_ptr = (*(self.e2.as_ptr())).clone();
       let e3_val = self.e3.borrow().clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e1_val;
       out_ptr[2] = e2_ptr[0].clone();
@@ -1375,7 +1375,7 @@ where
       let e1_ptr = (*(self.e1.as_ptr())).clone();
       let e2_ptr = (*(self.e2.as_ptr())).clone();
       let e3_ptr = (*(self.e3.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_val;
       out_ptr[1] = e1_ptr[0].clone();
       out_ptr[2] = e2_ptr[0].clone();
@@ -1405,7 +1405,7 @@ where
       let e1_val = self.e1.borrow().clone();
       let e2_ptr = (*(self.e2.as_ptr())).clone();
       let e3_ptr = (*(self.e3.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e1_val;
       out_ptr[2] = e2_ptr[0].clone();
@@ -1435,7 +1435,7 @@ where
       let e1_ptr = (*(self.e1.as_ptr())).clone();
       let e2_val = self.e2.borrow().clone();
       let e3_ptr = (*(self.e3.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e1_ptr[0].clone();
       out_ptr[2] = e2_val;
@@ -1465,7 +1465,7 @@ where
       let e1_ptr = (*(self.e1.as_ptr())).clone();
       let e2_ptr = (*(self.e2.as_ptr())).clone();
       let e3_val = self.e3.borrow().clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e1_ptr[0].clone();
       out_ptr[2] = e2_ptr[0].clone();
@@ -1495,7 +1495,7 @@ where
       let e1_ptr = (*(self.e1.as_ptr())).clone();
       let e2_ptr = (*(self.e2.as_ptr())).clone();
       let e3_ptr = (*(self.e3.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e1_ptr[0].clone();
       out_ptr[2] = e2_ptr[0].clone();

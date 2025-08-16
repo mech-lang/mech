@@ -52,7 +52,7 @@ macro_rules! impl_op_assign_range_fxn_s {
     {
       fn solve(&self) {
         unsafe {
-          let sink_ptr = &mut *self.sink.as_ptr();
+          let sink_ptr = &mut *self.sink.as_mut_ptr();
           let source_ptr = &*self.source.as_ptr();
           let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
           $op!(source_ptr,ix_ptr,sink_ptr);
@@ -90,7 +90,7 @@ macro_rules! impl_op_assign_range_fxn_v {
     {
       fn solve(&self) {
         unsafe {
-          let sink_ptr = &mut *self.sink.as_ptr();
+          let sink_ptr = &mut *self.sink.as_mut_ptr();
           let source_ptr = &*self.source.as_ptr();
           let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
           $op!(source_ptr,ix_ptr,sink_ptr);
@@ -163,7 +163,7 @@ macro_rules! impl_assign_scalar_scalar {
         Ref<T>: ToValue
       {
         fn solve(&self) {
-          let sink_ptr = self.sink.as_ptr();
+          let sink_ptr = self.sink.as_mut_ptr();
           let source_ptr = self.source.as_ptr();
           unsafe {
             *sink_ptr $op_fn (*source_ptr).clone();
@@ -199,7 +199,7 @@ macro_rules! impl_assign_vector_vector {
       {
         fn solve(&self) {
           unsafe {
-            let sink_ptr = self.sink.as_ptr();
+            let sink_ptr = self.sink.as_mut_ptr();
             let source_ptr = self.source.as_ptr();
             let sink_ref: &mut MatA = &mut *sink_ptr;
             let source_ref: &MatB = &*source_ptr;

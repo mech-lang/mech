@@ -234,7 +234,7 @@ impl MechTable {
       .into_iter()
       .map(|(col_id, values)| {
         let kind = kinds[&col_id].clone();
-        let matrix = Matrix::DVector(new_ref(DVector::from_vec(values)));
+        let matrix = Matrix::DVector(Ref::new(DVector::from_vec(values)));
         (col_id, (kind, matrix))
       })
       .collect();
@@ -248,7 +248,7 @@ impl MechTable {
         let mut data = IndexMap::new();
         let mut col_names = HashMap::new();
         for (col_id, col_kind) in &tbl {
-          let matrix = Matrix::DVector(new_ref(DVector::from_vec(vec![Value::Empty; sze])));
+          let matrix = Matrix::DVector(Ref::new(DVector::from_vec(vec![Value::Empty; sze])));
           col_names.insert(hash_str(col_id), col_id.clone());
           data.insert(hash_str(&col_id), (col_kind.clone(), matrix));
         }
@@ -266,7 +266,7 @@ impl MechTable {
       let (key, (kind, matrix)) = col;
       // make a new vector the length of ix with values Value::Empty
       let elements = vec![Value::Empty; rows];
-      let new_matrix = Matrix::DVector(new_ref(DVector::from_vec(elements)));
+      let new_matrix = Matrix::DVector(Ref::new(DVector::from_vec(elements)));
       data.insert(*key, (kind.clone(), new_matrix));
     }
     MechTable { rows: rows, cols: self.cols, data, col_names: self.col_names.clone() }

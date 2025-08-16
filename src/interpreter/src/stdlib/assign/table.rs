@@ -17,7 +17,7 @@ macro_rules! impl_col_set_fxn {
     impl MechFunction for $fxn_name {
       fn solve(&self) {
         let source_ptr = self.source.as_ptr();
-        let sink_ptr = self.sink.as_ptr();
+        let sink_ptr = self.sink.as_mut_ptr();
         unsafe { 
           for i in 0..(*source_ptr).len() {
             paste! {

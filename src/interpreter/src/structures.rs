@@ -268,7 +268,7 @@ pub fn matrix(m: &Mat, p: &Interpreter) -> MResult<Value> {
     }
   }
   if col.is_empty() {
-    return Ok(Value::MatrixF64(Matrix::<F64>::DMatrix(new_ref(DMatrix::from_vec(0, 0, vec![])))));
+    return Ok(Value::MatrixValue(Matrix::DMatrix(new_ref(DMatrix::from_vec(0, 0, vec![])))));
   } else if col.len() == 1 {
     return Ok(col[0].clone());
   }

@@ -16,8 +16,8 @@ pub fn statement(stmt: &Statement, p: &Interpreter) -> MResult<Value> {
     #[cfg(feature = "math")]
     Statement::OpAssign(op_assgn) => op_assign(&op_assgn, p),
     //Statement::FsmDeclare(_) => todo!(),
-    Statement::SplitTable => todo!(),
-    Statement::FlattenTable => todo!(),
+    //Statement::SplitTable => todo!(),
+    //Statement::FlattenTable => todo!(),
     x => return Err(MechError{file:file!().to_string(),tokens:x.tokens(),msg: format!("Feature not enabled {:?}", x), id:line!(),kind:MechErrorKind::None}),
   }
 }

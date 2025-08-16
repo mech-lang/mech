@@ -107,9 +107,9 @@ impl FunctionDefinition {
       code,
       input: IndexMap::new(),
       output: IndexMap::new(),
-      out: new_ref(Value::Empty),
-      symbols: new_ref(SymbolTable::new()),
-      plan: new_ref(Vec::new()),
+      out: Ref::new(Value::Empty),
+      symbols: Ref::new(SymbolTable::new()),
+      plan: Plan::new(),
     }
   }
 
@@ -153,7 +153,7 @@ pub struct SymbolTable {
   pub symbols: HashMap<u64,ValRef>,
   pub mutable_variables: HashMap<u64,ValRef>,
   pub dictionary: Ref<Dictionary>,
-  pub reverse_lookup: HashMap<*const RefCell<Value>, u64>,
+  pub reverse_lookup: HashMap<*const Ref<Value>, u64>,
 }
 
 impl SymbolTable {
@@ -162,7 +162,7 @@ impl SymbolTable {
     Self {
       symbols: HashMap::new(),
       mutable_variables: HashMap::new(),
-      dictionary: new_ref(HashMap::new()),
+      dictionary: Ref::new(HashMap::new()),
       reverse_lookup: HashMap::new(),
     }
   }
@@ -184,8 +184,8 @@ impl SymbolTable {
   }
 
   pub fn insert(&mut self, key: u64, value: Value, mutable: bool) -> ValRef {
-    let cell = new_ref(value);
-    self.reverse_lookup.insert(Rc::as_ptr(&cell), key);
+    let cell = Ref::new(value);
+    self.reverse_lookup.insert(&cell, key);
     let old = self.symbols.insert(key,cell.clone());
     if mutable {
       self.mutable_variables.insert(key,cell.clone());

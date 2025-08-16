@@ -18,7 +18,7 @@ macro_rules! vertcat_one_arg {
       fn solve(&self) { 
         unsafe {
           let e0_ptr = (*(self.e0.as_ptr())).clone();
-          let mut out_ptr = (&mut *(self.out.as_ptr()));
+          let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
           $opt!(out_ptr,e0_ptr);
         }
       }
@@ -44,7 +44,7 @@ macro_rules! vertcat_two_args {
         unsafe {
           let e0_ptr = (*(self.e0.as_ptr())).clone();
           let e1_ptr = (*(self.e1.as_ptr())).clone();
-          let mut out_ptr = (&mut *(self.out.as_ptr()));
+          let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
           $opt!(out_ptr,e0_ptr,e1_ptr);
         }
       }
@@ -72,7 +72,7 @@ macro_rules! vertcat_three_args {
           let e0_ptr = (*(self.e0.as_ptr())).clone();
           let e1_ptr = (*(self.e1.as_ptr())).clone();
           let e2_ptr = (*(self.e2.as_ptr())).clone();
-          let mut out_ptr = (&mut *(self.out.as_ptr()));
+          let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
           $opt!(out_ptr,e0_ptr,e1_ptr,e2_ptr);
         }
       }
@@ -102,7 +102,7 @@ macro_rules! vertcat_four_args {
           let e1_ptr = (*(self.e1.as_ptr())).clone();
           let e2_ptr = (*(self.e2.as_ptr())).clone();
           let e3_ptr = (*(self.e3.as_ptr())).clone();
-          let mut out_ptr = (&mut *(self.out.as_ptr()));
+          let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
           $opt!(out_ptr,e0_ptr,e1_ptr,e2_ptr,e3_ptr);
         }
       }
@@ -287,7 +287,7 @@ where
 {
   fn solve(&self) {
     unsafe {
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       for (e,i) in &self.matrix {
         e.copy_into_v(&self.out,*i);
       }
@@ -480,7 +480,7 @@ where
       let e1_ptr = (*(self.e1.as_ptr())).clone();
       let e2_ptr = (*(self.e2.as_ptr())).clone();
       let e3_ptr = (*(self.e3.as_ptr())).clone();
-      let mut out_ptr = (&mut *(self.out.as_ptr()));
+      let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
       out_ptr[0] = e0_ptr[0].clone();
       out_ptr[1] = e1_ptr[0].clone();
       out_ptr[2] = e2_ptr[0].clone();

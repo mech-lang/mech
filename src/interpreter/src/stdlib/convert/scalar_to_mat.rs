@@ -18,7 +18,7 @@ where
 {
   fn solve(&self) {
     let arg_ptr = self.arg.as_ptr();
-    let out_ptr = self.out.as_ptr();
+    let out_ptr = self.out.as_mut_ptr();
     unsafe {
       let arg_ref: &F = &*arg_ptr;
       let out_ref: &mut T = &mut *out_ptr;

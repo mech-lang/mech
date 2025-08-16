@@ -53,7 +53,7 @@ struct ConvertSRationalToF64 {
 impl MechFunction for ConvertSRationalToF64 {
   fn solve(&self) {
     let arg_ptr = self.arg.as_ptr();
-    let out_ptr = self.out.as_ptr();
+    let out_ptr = self.out.as_mut_ptr();
     unsafe{ *out_ptr = (*arg_ptr).into(); }
   }
   fn out(&self) -> Value { Value::F64(self.out.clone()) }
@@ -124,7 +124,7 @@ where
 {
   fn solve(&self) {
     let arg_ptr = self.arg.as_ptr();
-    let out_ptr = self.out.as_ptr();
+    let out_ptr = self.out.as_mut_ptr();
     unsafe {
       let out_ref: &mut T = &mut *out_ptr;
       let arg_ref: &F = &*arg_ptr;
@@ -149,7 +149,7 @@ where
 {
   fn solve(&self) {
     let arg_ptr = self.arg.as_ptr();
-    let out_ptr = self.out.as_ptr();
+    let out_ptr = self.out.as_mut_ptr();
     unsafe {
       let out_ref: &mut T = &mut *out_ptr;
       let arg_ref: &F = &*arg_ptr;

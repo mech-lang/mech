@@ -54,7 +54,7 @@ macro_rules! impl_set_all_fxn_s {
     {
       fn solve(&self) {
         unsafe {
-          let sink_ptr = &mut *self.sink.as_ptr();
+          let sink_ptr = &mut *self.sink.as_mut_ptr();
           let source_ptr = &*self.source.as_ptr();
           let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
           $op!(source_ptr,ix_ptr,sink_ptr);
@@ -85,7 +85,7 @@ macro_rules! impl_set_all_fxn_v {
     {
       fn solve(&self) {
         unsafe {
-          let sink_ptr = &mut *self.sink.as_ptr();
+          let sink_ptr = &mut *self.sink.as_mut_ptr();
           let source_ptr = &*self.source.as_ptr();
           let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
           $op!(source_ptr,ix_ptr,sink_ptr);
@@ -121,7 +121,7 @@ macro_rules! impl_set_fxn_s {
     {
       fn solve(&self) {
         unsafe {
-          let mut sink_ptr = &mut *self.sink.as_ptr();
+          let mut sink_ptr = &mut *self.sink.as_mut_ptr();
           let ix_val = (*self.ixes.as_ptr()).clone();
           let source_val = (*self.source.as_ptr()).clone();
           $op!(source_val, ix_val, sink_ptr);
@@ -150,7 +150,7 @@ where
 {
   fn solve(&self) {
     unsafe {
-      let sink_ptr = &mut *self.sink.as_ptr();
+      let sink_ptr = &mut *self.sink.as_mut_ptr();
       let ix_val = (*self.ixes.as_ptr()).clone();
       let source_val = (*self.source.as_ptr()).clone();
       if ix_val {
@@ -448,7 +448,7 @@ where
 {
   fn solve(&self) {
     unsafe {
-      let sink = &mut *self.sink.as_ptr();
+      let sink = &mut *self.sink.as_mut_ptr();
       let source_val = (*self.source.as_ptr()).clone();
       let slice = sink.as_mut_slice();
       for elem in slice.iter_mut() {
@@ -544,7 +544,7 @@ macro_rules! impl_set_scalar_scalar_fxn {
     {
       fn solve(&self) {
         unsafe {
-          let mut sink_ptr = (&mut *(self.sink.as_ptr()));
+          let mut sink_ptr = (&mut *(self.sink.as_mut_ptr()));
           let source_ptr = (*(self.source.as_ptr())).clone();
           let (ix1,ix2) = &self.ixes;
           let ix1_ptr = (*(ix1.as_ptr())).clone();
@@ -656,7 +656,7 @@ macro_rules! impl_set_scalar_fxn_v {
     {
       fn solve(&self) {
         unsafe {
-          let sink_ptr = &mut *self.sink.as_ptr();
+          let sink_ptr = &mut *self.sink.as_mut_ptr();
           let source_ptr = &*self.source.as_ptr();
           let ix_ptr = &(*self.ixes.as_ptr());
           $op!(source_ptr,ix_ptr,sink_ptr);
@@ -750,7 +750,7 @@ macro_rules! impl_set_scalar_all_fxn {
       fn solve(&self) {
         unsafe {
           let ix_ptr = (*(self.ix.as_ptr())).clone();
-          let mut sink_ptr = (&mut *(self.sink.as_ptr()));
+          let mut sink_ptr = (&mut *(self.sink.as_mut_ptr()));
           let source_ptr = (*(self.source.as_ptr())).clone();
           $op!(sink_ptr,ix_ptr,source_ptr);
         }
@@ -853,7 +853,7 @@ macro_rules! impl_set_range_scalar_fxn {
     {
       fn solve(&self) {
         unsafe { 
-          let mut sink_ptr = (&mut *(self.sink.as_ptr()));
+          let mut sink_ptr = (&mut *(self.sink.as_mut_ptr()));
           let source_ptr = (*(self.source.as_ptr())).clone();
           let (ix1,ix2) = &self.ixes;
           let ix1_ptr = (*(ix1.as_ptr())).clone();
@@ -969,7 +969,7 @@ where
 {
   fn solve(&self) {
     unsafe {
-      let sink = &mut *self.sink.as_ptr();
+      let sink = &mut *self.sink.as_mut_ptr();
       let source = &*self.source.as_ptr();
       let ix1 = *self.ixes.0.as_ptr();
       let ix2 = (*self.ixes.1.as_ptr()).as_ref();
@@ -1002,7 +1002,7 @@ where
 {
   fn solve(&self) {
     unsafe {
-      let sink = &mut *self.sink.as_ptr();
+      let sink = &mut *self.sink.as_mut_ptr();
       let source = &*self.source.as_ptr();
       let ix1 = *self.ixes.0.as_ptr();
       let ix2 = (*self.ixes.1.as_ptr()).as_ref();
@@ -1105,7 +1105,7 @@ where
 {
   fn solve(&self) {
     unsafe {
-      let sink = &mut *self.sink.as_ptr();
+      let sink = &mut *self.sink.as_mut_ptr();
       let source = &*self.source.as_ptr();
       let ix1 = (*self.ixes.0.as_ptr()).as_ref();
       let ix2 = (*self.ixes.1.as_ptr()).as_ref();
@@ -1141,7 +1141,7 @@ where
 {
   fn solve(&self) {
     unsafe {
-      let sink = &mut *self.sink.as_ptr();
+      let sink = &mut *self.sink.as_mut_ptr();
       let source = &*self.source.as_ptr();
       let ix1 = (*self.ixes.0.as_ptr()).as_ref();
       let ix2 = (*self.ixes.1.as_ptr()).as_ref();

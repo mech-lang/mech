@@ -55,7 +55,7 @@ struct TableAppendRecord {
 impl MechFunction for TableAppendRecord {
   fn solve(&self) {
     unsafe {
-      let mut sink_ptr = (&mut *(self.sink.as_ptr()));
+      let mut sink_ptr = (&mut *(self.sink.as_mut_ptr()));
       let source_ptr = &(*(self.source.as_ptr()));
       sink_ptr.append_record(source_ptr.clone());
     }
@@ -72,7 +72,7 @@ struct TableAppendTable {
 impl MechFunction for TableAppendTable {
   fn solve(&self) {
     unsafe {
-      let mut sink_ptr = (&mut *(self.sink.as_ptr()));
+      let mut sink_ptr = (&mut *(self.sink.as_mut_ptr()));
       let source_ptr = &(*(self.source.as_ptr()));
       sink_ptr.append_table(&source_ptr);
     }

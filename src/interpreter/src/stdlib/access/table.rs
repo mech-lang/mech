@@ -13,7 +13,7 @@ macro_rules! impl_col_access_fxn {
     }
     impl MechFunction for $fxn_name {
       fn solve(&self) {
-        let out_ptr = self.out.as_ptr();
+        let out_ptr = self.out.as_mut_ptr();
         unsafe { 
           for i in 1..=self.source.shape()[0] {
             paste! {

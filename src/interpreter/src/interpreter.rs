@@ -21,12 +21,12 @@ impl Interpreter {
   pub fn new(id: u64) -> Interpreter {
     let mut interp = Interpreter {
       id,
-      symbols: new_ref(SymbolTable::new()),
-      plan: new_ref(Vec::new()),
-      functions: new_ref(Functions::new()),
+      symbols: Ref::new(SymbolTable::new()),
+      plan: Plan::new(),
+      functions: Ref::new(Functions::new()),
       out: Value::Empty,
-      sub_interpreters: new_ref(HashMap::new()),
-      out_values: new_ref(HashMap::new()),
+      sub_interpreters: Ref::new(HashMap::new()),
+      out_values: Ref::new(HashMap::new()),
       code: Vec::new(),
     };
     interp.load_stdkinds();
@@ -136,13 +136,13 @@ impl Interpreter {
   }
 
   pub fn clear(&mut self) {
-    self.symbols = new_ref(SymbolTable::new());
-    self.plan = new_ref(Vec::new());
-    self.functions = new_ref(Functions::new());
+    self.symbols = Ref::new(SymbolTable::new());
+    self.plan = Plan::new();
+    self.functions = Ref::new(Functions::new());
     self.out = Value::Empty;
-    self.out_values = new_ref(HashMap::new());
+    self.out_values = Ref::new(HashMap::new());
     self.code = Vec::new();
-    self.sub_interpreters = new_ref(HashMap::new());
+    self.sub_interpreters = Ref::new(HashMap::new());
     self.load_stdkinds();
     self.load_stdlib();
   }

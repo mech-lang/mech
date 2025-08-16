@@ -18,7 +18,7 @@ impl<T> MechFunction for RecordAssign<T>
 {
   fn solve(&self) {
     let source_ptr = self.source.as_ptr();
-    let sink_ptr = self.sink.as_ptr();
+    let sink_ptr = self.sink.as_mut_ptr();
     unsafe {
       *sink_ptr = (*source_ptr).clone();
     }

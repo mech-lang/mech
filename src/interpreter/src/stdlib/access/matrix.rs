@@ -358,7 +358,7 @@ macro_rules! impl_access_fxn {
       fn solve(&self) {
         let source_ptr = self.source.as_ptr();
         let ixes_ptr = self.ixes.as_ptr();
-        let out_ptr = self.out.as_ptr();
+        let out_ptr = self.out.as_mut_ptr();
         $op!(source_ptr,ixes_ptr,out_ptr);
       }
       fn out(&self) -> Value { self.out.to_value() }
