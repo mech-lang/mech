@@ -75,9 +75,9 @@ impl<T> MechFunction for IoPrintScalar<T>
     unsafe {
       let e0_ptr = (*(self.e0.as_ptr())).clone();
       #[cfg(not(target_arch = "wasm32"))]
-      print!("{} ", e0_ptr);
+      print!("{}", e0_ptr);
       #[cfg(target_arch = "wasm32")]
-      log!("{} ", e0_ptr);
+      log!("{}", e0_ptr);
     }
   }
   fn out(&self) -> Value { Value::Empty }
