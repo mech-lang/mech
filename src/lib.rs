@@ -43,7 +43,7 @@ macro_rules! impl_stats_urop {
     {
       fn solve(&self) {
         let arg_ptr = self.arg.as_ptr();
-        let out_ptr = self.out.as_ptr();
+        let out_ptr = self.out.as_mut_ptr();
         $op!(arg_ptr,out_ptr);
       }
       fn out(&self) -> Value { self.out.to_value() }
