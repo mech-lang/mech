@@ -77,7 +77,7 @@ impl Interpreter {
     let mut fxns = self.functions.borrow_mut();
 
     // Preload combinatorics functions
-    #[cfg(feature = "combinatorics_n_choose-k")]
+    #[cfg(feature = "combinatorics_n_choose_k")]
     fxns.function_compilers.insert(hash_str("combinatorics/n-choose-k"), Box::new(CombinatoricsNChooseK{}));
 
     // Preload stats functions
