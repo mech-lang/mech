@@ -1,6 +1,7 @@
 use crate::*;
 use crate::types::Ref;
 use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix3x2, Matrix6, Matrix2};
+#[cfg(feature = "pretty_print")]
 use tabled::{
     builder::Builder,
     settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
@@ -10,6 +11,7 @@ use std::fmt::{Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::slice::Iter;
 use std::iter::Peekable;
+#[cfg(feature = "serde")]
 use serde::ser::{Serialize, Serializer, SerializeStruct};
 use std::any::Any;
 
@@ -273,6 +275,7 @@ where T: Hash + na::Scalar
   }
 }
 
+#[cfg(feature = "pretty_print")]
 impl<T> PrettyPrint for Matrix<T>
 where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 {

@@ -832,6 +832,7 @@ impl Value {
     }
   }
 
+  #[cfg(feature = "pretty_print")]
   pub fn to_html(&self) -> String {
     match self {
       #[cfg(feature = "u8")]
@@ -1454,17 +1455,14 @@ impl Value {
           let out = Value::MatrixIndex(usize::to_matrix(x, shape[0] * shape[1],1 ));
           Ok(out)
         },
+        #[cfg(all(feature = "matrix", feature = "bool"))]
         None => match self.as_vecbool() {
           Some(x) => {
             let shape = self.shape();
             let out = match (shape[0], shape[1]) {
-              #[cfg(feature = "bool")]
               (1,1) => Value::Bool(new_ref(x[0])),
-              #[cfg(any(feature = "matrix", feature = "bool"))]
               (1,n) => Value::MatrixBool(Matrix::DVector(new_ref(DVector::from_vec(x)))),
-              #[cfg(any(feature = "matrix", feature = "bool"))]
               (m,1) => Value::MatrixBool(Matrix::DVector(new_ref(DVector::from_vec(x)))),
-              #[cfg(any(feature = "matrix", feature = "bool"))]
               (m,n) => Value::MatrixBool(Matrix::DVector(new_ref(DVector::from_vec(x)))),
               _ => todo!(),
             };
@@ -1475,6 +1473,7 @@ impl Value {
             None => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledIndexKind}),
           }
         }
+        x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
       }
       _ => todo!(),
     }
@@ -1685,8 +1684,9 @@ impl ToValue for Ref<RationalNumber> { fn to_value(&self) -> Value { Value::Rati
 impl ToValue for Ref<ComplexNumber> { fn to_value(&self) -> Value { Value::ComplexNumber(self.clone()) } }
 
 macro_rules! to_value_ndmatrix {
-  ($($nd_matrix_kind:ident, $matrix_kind:ident, $base_type:ty),+ $(,)?) => {
+  ($($nd_matrix_kind:ident, $matrix_kind:ident, $base_type:ty, $type_string:tt),+ $(,)?) => {
     $(
+      #[cfg(all(feature = "matrix", feature = $type_string))]
       impl ToValue for Ref<$nd_matrix_kind<$base_type>> {
         fn to_value(&self) -> Value {
           Value::$matrix_kind(Matrix::<$base_type>::$nd_matrix_kind(self.clone()))
@@ -1699,23 +1699,23 @@ macro_rules! to_value_ndmatrix {
 macro_rules! impl_to_value_matrix {
   ($matrix_kind:ident) => {
     to_value_ndmatrix!(
-      $matrix_kind, MatrixIndex,  usize,
-      $matrix_kind, MatrixBool,   bool,
-      $matrix_kind, MatrixI8,     i8,
-      $matrix_kind, MatrixI16,    i16,
-      $matrix_kind, MatrixI32,    i32,
-      $matrix_kind, MatrixI64,    i64,
-      $matrix_kind, MatrixI128,   i128,
-      $matrix_kind, MatrixU8,     u8,
-      $matrix_kind, MatrixU16,    u16,
-      $matrix_kind, MatrixU32,    u32,
-      $matrix_kind, MatrixU64,    u64,
-      $matrix_kind, MatrixU128,   u128,
-      $matrix_kind, MatrixF32,    F32,
-      $matrix_kind, MatrixF64,    F64,
-      $matrix_kind, MatrixString, String,
-      $matrix_kind, MatrixRationalNumber, RationalNumber,
-      $matrix_kind, MatrixComplexNumber, ComplexNumber,
+      $matrix_kind, MatrixIndex,  usize, "matrix",
+      $matrix_kind, MatrixBool,   bool, "bool",
+      $matrix_kind, MatrixI8,     i8, "i8",
+      $matrix_kind, MatrixI16,    i16, "i16",
+      $matrix_kind, MatrixI32,    i32, "i32",
+      $matrix_kind, MatrixI64,    i64, "i64",
+      $matrix_kind, MatrixI128,   i128, "i128",
+      $matrix_kind, MatrixU8,     u8, "u8",
+      $matrix_kind, MatrixU16,    u16, "u16",
+      $matrix_kind, MatrixU32,    u32, "u32",
+      $matrix_kind, MatrixU64,    u64, "u64",
+      $matrix_kind, MatrixU128,   u128, "u128",
+      $matrix_kind, MatrixF32,    F32, "f32",
+      $matrix_kind, MatrixF64,    F64, "f64",
+      $matrix_kind, MatrixString, String, "string",
+      $matrix_kind, MatrixRationalNumber, RationalNumber, "rational",
+      $matrix_kind, MatrixComplexNumber, ComplexNumber, "complex",
     );
   }
 }

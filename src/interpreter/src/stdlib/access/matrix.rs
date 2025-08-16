@@ -1,6 +1,5 @@
 #[macro_use]
 use crate::stdlib::*;
-use num_traits::*;
 
 // Access ---------------------------------------------------------------------
 
@@ -462,20 +461,20 @@ macro_rules! impl_access_match_arms {
       [<impl_access_ $macro_name _match_arms>]!(
         $fxn_name,
         $arg,
-        Bool => MatrixBool, bool, false, "bool";
-        I8   => MatrixI8,   i8,   i8::zero(),  "i8";
-        I16  => MatrixI16,  i16,  i16::zero(), "i16";
-        I32  => MatrixI32,  i32,  i32::zero(), "i32";
-        I64  => MatrixI64,  i64,  i64::zero(), "i64";
-        I128 => MatrixI128, i128, i128::zero(), "i128";
-        U8   => MatrixU8,   u8,   u8::zero(), "u8";
-        U16  => MatrixU16,  u16,  u16::zero(), "u16";
-        U32  => MatrixU32,  u32,  u32::zero(), "u32";
-        U64  => MatrixU64,  u64,  u64::zero(), "u64";
-        U128 => MatrixU128, u128, u128::zero(), "u128";
-        F32  => MatrixF32,  F32,  F32::zero(), "f32";
-        F64  => MatrixF64,  F64,  F64::zero(), "f64";
-        String => MatrixString, String, String::new(), "string";
+        Bool => MatrixBool, bool, bool::default(), "bool";
+        I8   => MatrixI8,   i8,   i8::default(),  "i8";
+        I16  => MatrixI16,  i16,  i16::default(), "i16";
+        I32  => MatrixI32,  i32,  i32::default(), "i32";
+        I64  => MatrixI64,  i64,  i64::default(), "i64";
+        I128 => MatrixI128, i128, i128::default(), "i128";
+        U8   => MatrixU8,   u8,   u8::default(), "u8";
+        U16  => MatrixU16,  u16,  u16::default(), "u16";
+        U32  => MatrixU32,  u32,  u32::default(), "u32";
+        U64  => MatrixU64,  u64,  u64::default(), "u64";
+        U128 => MatrixU128, u128, u128::default(), "u128";
+        F32  => MatrixF32,  F32,  F32::default(), "f32";
+        F64  => MatrixF64,  F64,  F64::default(), "f64";
+        String => MatrixString, String, String::default(), "string";
         ComplexNumber => MatrixComplexNumber, ComplexNumber, ComplexNumber::default(), "complex";
         RationalNumber => MatrixRationalNumber, RationalNumber, RationalNumber::default(), "rational";
       )
@@ -629,41 +628,41 @@ macro_rules! impl_access_range_match_arms {
       match $arg {
         $(
           $(
-            #[cfg(all(feature = $value_string, feature = "row_vector4"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "bool"))]
             (Value::$matrix_kind(Matrix::RowVector4(input)), [Value::MatrixBool(Matrix::DVector(ix))])     => Ok(Box::new(Access1DVDbR4{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            #[cfg(all(feature = $value_string, feature = "row_vector3"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "bool"))]
             (Value::$matrix_kind(Matrix::RowVector3(input)), [Value::MatrixBool(Matrix::DVector(ix))])     => Ok(Box::new(Access1DVDbR3{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            #[cfg(all(feature = $value_string, feature = "row_vector2"))]
+            #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "bool"))]
             (Value::$matrix_kind(Matrix::RowVector2(input)), [Value::MatrixBool(Matrix::DVector(ix))])     => Ok(Box::new(Access1DVDbR2{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            #[cfg(all(feature = $value_string, feature = "row_vectord"))]
+            #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "bool"))]
             (Value::$matrix_kind(Matrix::RowDVector(input)), [Value::MatrixBool(Matrix::DVector(ix))])     => Ok(Box::new(Access1DVDbRD{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),   
 
             // --
 
-            #[cfg(all(feature = $value_string, feature = "vector4"))]
+            #[cfg(all(feature = $value_string, feature = "vector4", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Vector4(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbV4{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            #[cfg(all(feature = $value_string, feature = "vector3"))]
+            #[cfg(all(feature = $value_string, feature = "vector3", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Vector3(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbV3{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            #[cfg(all(feature = $value_string, feature = "vector2"))]
+            #[cfg(all(feature = $value_string, feature = "vector2", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Vector2(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbV2{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            #[cfg(all(feature = $value_string, feature = "vectord"))]
+            #[cfg(all(feature = $value_string, feature = "vectord", feature = "bool"))]
             (Value::$matrix_kind(Matrix::DVector(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbVD{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),   
 
             // --
 
-            #[cfg(all(feature = $value_string, feature = "matrix4"))]
+            #[cfg(all(feature = $value_string, feature = "matrix4", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix4(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbM4{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),              
-            #[cfg(all(feature = $value_string, feature = "matrix3"))]
+            #[cfg(all(feature = $value_string, feature = "matrix3", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix3(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbM3{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            #[cfg(all(feature = $value_string, feature = "matrix2"))]
+            #[cfg(all(feature = $value_string, feature = "matrix2", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix2(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbM2{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            #[cfg(all(feature = $value_string, feature = "matrix1"))]
+            #[cfg(all(feature = $value_string, feature = "matrix1", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix1(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbM1{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),    
-            #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
+            #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbM3x2{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),              
-            #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
+            #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbM2x3{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),              
-            #[cfg(all(feature = $value_string, feature = "matrixd"))]
+            #[cfg(all(feature = $value_string, feature = "matrixd", feature = "bool"))]
             (Value::$matrix_kind(Matrix::DMatrix(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbMD{source: input.clone(), ixes: ix.clone(), out: new_ref(DVector::from_element(ix.borrow().len(),$default)) })),   
 
             // --
@@ -759,49 +758,49 @@ macro_rules! impl_access_range_range_match_arms {
             #[cfg(all(feature = $value_string, feature = "matrixd"))]
             (Value::$matrix_kind(Matrix::DMatrix(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
 
-            #[cfg(all(feature = $value_string, feature = "matrix4"))]
+            #[cfg(all(feature = $value_string, feature = "matrix4", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix4(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDM4{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix3"))]
+            #[cfg(all(feature = $value_string, feature = "matrix3", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix3(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDM3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix2"))]
+            #[cfg(all(feature = $value_string, feature = "matrix2", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix2(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDM2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix1"))]
+            #[cfg(all(feature = $value_string, feature = "matrix1", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix1(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDM1{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
+            #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDM3x2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
+            #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDM2x3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrixd"))]
+            #[cfg(all(feature = $value_string, feature = "matrixd", feature = "bool"))]
             (Value::$matrix_kind(Matrix::DMatrix(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
 
-            #[cfg(all(feature = $value_string, feature = "matrix4"))]
+            #[cfg(all(feature = $value_string, feature = "matrix4", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix4(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbM4{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix3"))]
+            #[cfg(all(feature = $value_string, feature = "matrix3", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix3(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbM3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix2"))]
+            #[cfg(all(feature = $value_string, feature = "matrix2", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix2(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbM2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix1"))]
+            #[cfg(all(feature = $value_string, feature = "matrix1", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix1(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbM1{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
+            #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbM3x2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
+            #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbM2x3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrixd"))]
+            #[cfg(all(feature = $value_string, feature = "matrixd", feature = "bool"))]
             (Value::$matrix_kind(Matrix::DMatrix(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
 
-            #[cfg(all(feature = $value_string, feature = "matrix4"))]
+            #[cfg(all(feature = $value_string, feature = "matrix4", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix4(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbM4{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix3"))]
+            #[cfg(all(feature = $value_string, feature = "matrix3", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix3(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbM3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix2"))]
+            #[cfg(all(feature = $value_string, feature = "matrix2", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix2(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbM2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix1"))]
+            #[cfg(all(feature = $value_string, feature = "matrix1", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix1(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbM1{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
+            #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbM3x2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
+            #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbM2x3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrixd"))]
+            #[cfg(all(feature = $value_string, feature = "matrixd", feature = "bool"))]
             (Value::$matrix_kind(Matrix::DMatrix(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
           )+
         )+
@@ -1021,17 +1020,17 @@ macro_rules! impl_access_all_range_match_arms {
             #[cfg(all(feature = $value_string, feature = "matrixd"))]
             (Value::$matrix_kind(Matrix::DMatrix(input)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))]) => Ok(Box::new(Access2DAVDMD{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) })),
             // All Bool Vector
-            #[cfg(all(feature = $value_string, feature = "matrix4"))]
+            #[cfg(all(feature = $value_string, feature = "matrix4", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix4(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => Ok(Box::new(Access2DAVDbM4{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix3"))]
+            #[cfg(all(feature = $value_string, feature = "matrix3", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix3(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => Ok(Box::new(Access2DAVDbM3{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix2"))]
+            #[cfg(all(feature = $value_string, feature = "matrix2", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix2(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => Ok(Box::new(Access2DAVDbM2{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
+            #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => Ok(Box::new(Access2DAVDbM3x2{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
+            #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => Ok(Box::new(Access2DAVDbM2x3{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrixd"))]
+            #[cfg(all(feature = $value_string, feature = "matrixd", feature = "bool"))]
             (Value::$matrix_kind(Matrix::DMatrix(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => Ok(Box::new(Access2DAVDbMD{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) })),
           )+
         )+
@@ -1087,17 +1086,17 @@ macro_rules! impl_access_range_all_match_arms {
             #[cfg(all(feature = $value_string, feature = "matrixd"))]
             (Value::$matrix_kind(Matrix::DMatrix(input)), [Value::MatrixIndex(Matrix::DVector(ix)), Value::IndexAll]) => Ok(Box::new(Access2DVDAMD{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) })),
             // Bool Vector All
-            #[cfg(all(feature = $value_string, feature = "matrix4"))]
+            #[cfg(all(feature = $value_string, feature = "matrix4", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix4(input)), [Value::MatrixBool(Matrix::DVector(ix)), Value::IndexAll]) => Ok(Box::new(Access2DVDbAM4{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix3"))]
+            #[cfg(all(feature = $value_string, feature = "matrix3", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix3(input)), [Value::MatrixBool(Matrix::DVector(ix)), Value::IndexAll]) => Ok(Box::new(Access2DVDbAM3{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix2"))]
+            #[cfg(all(feature = $value_string, feature = "matrix2", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix2(input)), [Value::MatrixBool(Matrix::DVector(ix)), Value::IndexAll]) => Ok(Box::new(Access2DVDbAM2{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
+            #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::MatrixBool(Matrix::DVector(ix)), Value::IndexAll]) => Ok(Box::new(Access2DVDbAM3x2{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
+            #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::MatrixBool(Matrix::DVector(ix)), Value::IndexAll]) => Ok(Box::new(Access2DVDbAM2x3{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrixd"))]
+            #[cfg(all(feature = $value_string, feature = "matrixd", feature = "bool"))]
             (Value::$matrix_kind(Matrix::DMatrix(input)), [Value::MatrixBool(Matrix::DVector(ix)), Value::IndexAll]) => Ok(Box::new(Access2DVDbAMD{source: input.clone(), ixes: ix.clone(), out: new_ref(DMatrix::from_element(ix.borrow().len(),input.borrow().ncols(),$default)) })),
           )+
         )+
@@ -1153,17 +1152,17 @@ macro_rules! impl_access_range_scalar_match_arms {
             #[cfg(all(feature = $value_string, feature = "matrixd"))]
             (Value::$matrix_kind(Matrix::DMatrix(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::Index(ix2)]) => Ok(Box::new(Access2DVDSMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DVector::from_element(ix1.borrow().len(),$default)) })),
             // Bool Vector Scalar
-            #[cfg(all(feature = $value_string, feature = "matrix4"))]
+            #[cfg(all(feature = $value_string, feature = "matrix4", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix4(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)]) => Ok(Box::new(Access2DVDbSM4{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DVector::from_element(ix1.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix3"))]
+            #[cfg(all(feature = $value_string, feature = "matrix3", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix2(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)]) => Ok(Box::new(Access2DVDbSM2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DVector::from_element(ix1.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix2"))]
+            #[cfg(all(feature = $value_string, feature = "matrix2", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix3(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)]) => Ok(Box::new(Access2DVDbSM3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DVector::from_element(ix1.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
+            #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)]) => Ok(Box::new(Access2DVDbSM2x3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DVector::from_element(ix1.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
+            #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)]) => Ok(Box::new(Access2DVDbSM3x2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DVector::from_element(ix1.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrixd"))]
+            #[cfg(all(feature = $value_string, feature = "matrixd", feature = "bool"))]
             (Value::$matrix_kind(Matrix::DMatrix(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::Index(ix2)]) => Ok(Box::new(Access2DVDbSMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(DVector::from_element(ix1.borrow().len(),$default)) })),
           )+
         )+
@@ -1219,17 +1218,17 @@ macro_rules! impl_access_scalar_range_match_arms {
             #[cfg(all(feature = $value_string, feature = "matrixd"))]
             (Value::$matrix_kind(Matrix::DMatrix(input)),   [Value::Index(ix1), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DSVDMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(RowDVector::from_element(ix2.borrow().len(),$default)) })),
             // Bool Scalar Vector
-            #[cfg(all(feature = $value_string, feature = "matrix4"))]
+            #[cfg(all(feature = $value_string, feature = "matrix4", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix4(input)),   [Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DSVDbM4{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(RowDVector::from_element(ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix3"))]
+            #[cfg(all(feature = $value_string, feature = "matrix3", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix3(input)),   [Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DSVDbM3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(RowDVector::from_element(ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix2"))]
+            #[cfg(all(feature = $value_string, feature = "matrix2", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix2(input)),   [Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DSVDbM2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(RowDVector::from_element(ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
+            #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DSVDbM3x2{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(RowDVector::from_element(ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
+            #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "bool"))]
             (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DSVDbM2x3{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(RowDVector::from_element(ix2.borrow().len(),$default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrixd"))]
+            #[cfg(all(feature = $value_string, feature = "matrixd", feature = "bool"))]
             (Value::$matrix_kind(Matrix::DMatrix(input)),   [Value::Index(ix1), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DSVDbMD{source: input.clone(), ixes: new_ref((ix1.borrow().clone(),ix2.borrow().clone())), out: new_ref(RowDVector::from_element(ix2.borrow().len(),$default)) })),
           )+
         )+

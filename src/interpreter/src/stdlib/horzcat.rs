@@ -2148,32 +2148,64 @@ fn impl_horzcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   //let same = kinds.iter().all(|x| *x == target_kind);
   let kinds: Vec<ValueKind> = arguments.iter().map(|x| x.kind()).collect::<Vec<ValueKind>>();
   let target_kind = kinds[0].clone();
-         if ValueKind::is_compatible(target_kind.clone(), ValueKind::F64)            { impl_horzcat_arms!(F64,arguments,F64::zero())
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::F32)            { impl_horzcat_arms!(F32,arguments,F32::zero())
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U8)             { impl_horzcat_arms!(u8,arguments,u8::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U16)            { impl_horzcat_arms!(u16,arguments,u16::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U32)            { impl_horzcat_arms!(u32,arguments,u32::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U64)            { impl_horzcat_arms!(u64,arguments,u64::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U128)           { impl_horzcat_arms!(u128,arguments,u128::zero())  
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I8)             { impl_horzcat_arms!(i8,arguments,i8::zero())  
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I16)            { impl_horzcat_arms!(i16,arguments,i16::zero())
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I32)            { impl_horzcat_arms!(i32,arguments,i32::zero())
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I64)            { impl_horzcat_arms!(i64,arguments,i64::zero())
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::I128)           { impl_horzcat_arms!(i128,arguments,i128::zero())
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::Bool)           { impl_horzcat_arms!(bool,arguments,false)
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::String)         { impl_horzcat_arms!(String,arguments,"".to_string())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::RationalNumber) { impl_horzcat_arms!(RationalNumber,arguments,RationalNumber::default())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::ComplexNumber)  { impl_horzcat_arms!(ComplexNumber,arguments,ComplexNumber::default())    
-  } else {
-    return Err(MechError {
-      file: file!().to_string(),
-      tokens: vec![],
-      msg: format!("Horizontal concatenation not implemented for type {:?}", target_kind),
-      id: line!(),
-      kind: MechErrorKind::UnhandledFunctionArgumentKind,
-    });
-  }
+
+  #[cfg(feature = "f64")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::F64) { return impl_horzcat_arms!(F64, arguments, F64::default()) } }
+
+  #[cfg(feature = "f32")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::F32) { return impl_horzcat_arms!(F32, arguments, F32::default()) } }
+
+  #[cfg(feature = "u8")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::U8)  { return impl_horzcat_arms!(u8,  arguments, u8::default()) } }
+
+  #[cfg(feature = "u16")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::U16) { return impl_horzcat_arms!(u16, arguments, u16::default()) } }
+
+  #[cfg(feature = "u32")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::U32) { return impl_horzcat_arms!(u32, arguments, u32::default()) } }
+
+  #[cfg(feature = "u64")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::U64) { return impl_horzcat_arms!(u64, arguments, u64::default()) } }
+
+  #[cfg(feature = "u128")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::U128){ return impl_horzcat_arms!(u128,arguments, u128::default()) } }
+
+  #[cfg(feature = "i8")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::I8)  { return impl_horzcat_arms!(i8,  arguments, i8::default()) } }
+
+  #[cfg(feature = "i16")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::I16) { return impl_horzcat_arms!(i16, arguments, i16::default()) } }
+
+  #[cfg(feature = "i32")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::I32) { return impl_horzcat_arms!(i32, arguments, i32::default()) } }
+
+  #[cfg(feature = "i64")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::I64) { return impl_horzcat_arms!(i64, arguments, i64::default()) } }
+
+  #[cfg(feature = "i128")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::I128){ return impl_horzcat_arms!(i128,arguments, i128::default()) } }
+
+  #[cfg(feature = "bool")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::Bool) { return impl_horzcat_arms!(bool, arguments, bool::default()) } }
+
+  #[cfg(feature = "string")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::String) { return impl_horzcat_arms!(String, arguments, String::default()) } }
+
+  #[cfg(feature = "rational")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::RationalNumber) { return impl_horzcat_arms!(RationalNumber, arguments, RationalNumber::default()) } }
+
+  #[cfg(feature = "complex")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::ComplexNumber) { return impl_horzcat_arms!(ComplexNumber, arguments, ComplexNumber::default()) } }
+
+  Err(MechError {
+    file: file!().to_string(),
+    tokens: vec![],
+    msg: format!("Horizontal concatenation not implemented for type {:?}", target_kind),
+    id: line!(),
+    kind: MechErrorKind::UnhandledFunctionArgumentKind,
+  })
 }
+
 
 pub struct MaxtrixHorzCat {}
 impl NativeFunctionCompiler for MaxtrixHorzCat {

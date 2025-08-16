@@ -687,6 +687,7 @@ pub struct MechTuple {
 
 impl MechTuple {
 
+  #[cfg(feature = "pretty_print")]
   pub fn to_html(&self) -> String {
     let mut elements = Vec::new();
     for element in &self.elements {
@@ -762,6 +763,7 @@ pub struct MechEnum {
 
 impl MechEnum {
 
+  #[cfg(feature = "pretty_print")]
   pub fn to_html(&self) -> String {
     let mut variants = Vec::new();
     for (id, value) in &self.variants {

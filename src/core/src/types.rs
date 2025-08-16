@@ -245,8 +245,9 @@ impl From<F64> for Value {
   }
 }
 
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg(feature = "f32")]
-#[derive(PartialEq, Clone, Copy, PartialOrd, Serialize, Deserialize)]
+#[derive(PartialEq, Clone, Copy, PartialOrd)]
 pub struct F32(pub f32);
 
 #[cfg(feature = "f32")]

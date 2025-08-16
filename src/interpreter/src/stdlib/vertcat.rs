@@ -1113,25 +1113,52 @@ macro_rules! impl_vertcat_arms {
   }}}}}
 
 fn impl_vertcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-  // are they all the same?
-  //let same = kinds.iter().all(|x| *x == target_kind);
+
   let kinds: Vec<ValueKind> = arguments.iter().map(|x| x.kind()).collect::<Vec<ValueKind>>();
   let target_kind = kinds[0].clone();
-  if ValueKind::is_compatible(target_kind.clone(), ValueKind::F64)                   { impl_vertcat_arms!(F64,arguments,F64::zero())
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::F32)            { impl_vertcat_arms!(F32,arguments,F32::zero())
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U8)             { impl_vertcat_arms!(u8,arguments,u8::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U16)            { impl_vertcat_arms!(u16,arguments,u16::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U32)            { impl_vertcat_arms!(u32,arguments,u32::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U64)            { impl_vertcat_arms!(u64,arguments,u64::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::U128)           { impl_vertcat_arms!(u128,arguments,u128::zero())    
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::Bool)           { impl_vertcat_arms!(bool,arguments,false)
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::String)         { impl_vertcat_arms!(String,arguments,String::new())
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::RationalNumber) { impl_vertcat_arms!(RationalNumber,arguments,RationalNumber::default())
-  } else if ValueKind::is_compatible(target_kind.clone(), ValueKind::ComplexNumber)  { impl_vertcat_arms!(ComplexNumber,arguments,ComplexNumber::default())
-  } else {
-    todo!("VerticalConcatenate for {} not yet implemented.", target_kind);
-  }
+
+  #[cfg(feature = "f64")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::F64) { return impl_vertcat_arms!(F64, arguments, F64::default()) } }
+
+  #[cfg(feature = "f32")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::F32) { return impl_vertcat_arms!(F32, arguments, F32::default()) } }
+
+  #[cfg(feature = "u8")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::U8)  { return impl_vertcat_arms!(u8,  arguments, u8::default()) } }
+
+  #[cfg(feature = "u16")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::U16) { return impl_vertcat_arms!(u16, arguments, u16::default()) } }
+
+  #[cfg(feature = "u32")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::U32) { return impl_vertcat_arms!(u32, arguments, u32::default()) } }
+
+  #[cfg(feature = "u64")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::U64) { return impl_vertcat_arms!(u64, arguments, u64::default()) } }
+
+  #[cfg(feature = "u128")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::U128){ return impl_vertcat_arms!(u128, arguments, u128::default()) } }
+
+  #[cfg(feature = "bool")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::Bool) { return impl_vertcat_arms!(bool, arguments, bool::default()) } }
+
+  #[cfg(feature = "string")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::String) { return impl_vertcat_arms!(String, arguments, String::default()) } }
+
+  #[cfg(feature = "rational")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::RationalNumber) { return impl_vertcat_arms!(RationalNumber, arguments, RationalNumber::default()) } }
+
+  #[cfg(feature = "complex")]
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::ComplexNumber) { return impl_vertcat_arms!(ComplexNumber, arguments, ComplexNumber::default()) } }
+
+  Err(MechError {
+    file: file!().to_string(),
+    tokens: vec![],
+    msg: format!("Vertical concatenation not implemented for type {:?}", target_kind),
+    id: line!(),
+    kind: MechErrorKind::UnhandledFunctionArgumentKind,
+  })
 }
+
 
 pub struct MaxtrixVertCat {}
 impl NativeFunctionCompiler for MaxtrixVertCat {

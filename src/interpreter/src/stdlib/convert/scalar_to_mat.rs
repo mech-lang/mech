@@ -32,27 +32,43 @@ where
 }
 
 macro_rules! impl_conversion_scalar_to_mat_match_arms {
-  ($arg:expr, $($input_type:ident => $($target_type:ident),+);+ $(;)?) => {
+  ($arg:expr, $($input_type:ident => $($target_type:ident, $type_string:tt),+);+ $(;)?) => {
     paste!{
       match $arg {
         $(
           $(
+            #[cfg(all(feature = "matrix", feature = $type_string))]
             (Value::$input_type(v), ValueKind::Matrix(box ValueKind::$target_type, dims)) => {
               match dims[..] {
+                #[cfg(feature = "matrix1")]
                 [1,1] => {let out = Matrix1::from_element(v.borrow().clone());      return Ok(Box::new(ConvertScalarToMat2{arg: v, out: new_ref(out)}));},
+                #[cfg(feature = "matrix2")]
                 [2,2] => {let out = Matrix2::from_element(v.borrow().clone());      return Ok(Box::new(ConvertScalarToMat2{arg: v, out: new_ref(out)}));},
+                #[cfg(feature = "matrix3")]
                 [3,3] => {let out = Matrix3::from_element(v.borrow().clone());      return Ok(Box::new(ConvertScalarToMat2{arg: v, out: new_ref(out)}));},
+                #[cfg(feature = "matrix4")]
                 [4,4] => {let out = Matrix4::from_element(v.borrow().clone());      return Ok(Box::new(ConvertScalarToMat2{arg: v, out: new_ref(out)}));},
+                #[cfg(feature = "matrix2x3")]
                 [2,3] => {let out = Matrix2x3::from_element(v.borrow().clone());    return Ok(Box::new(ConvertScalarToMat2{arg: v, out: new_ref(out)}));},
+                #[cfg(feature = "matrix3x2")]
                 [3,2] => {let out = Matrix3x2::from_element(v.borrow().clone());    return Ok(Box::new(ConvertScalarToMat2{arg: v, out: new_ref(out)}));},
+                #[cfg(feature = "row_vector2")]
                 [1,2] => {let out = RowVector2::from_element(v.borrow().clone());   return Ok(Box::new(ConvertScalarToMat2{arg: v, out: new_ref(out)}));},
+                #[cfg(feature = "row_vector3")]
                 [1,3] => {let out = RowVector3::from_element(v.borrow().clone());   return Ok(Box::new(ConvertScalarToMat2{arg: v, out: new_ref(out)}));},
+                #[cfg(feature = "row_vector4")]
                 [1,4] => {let out = RowVector4::from_element(v.borrow().clone());   return Ok(Box::new(ConvertScalarToMat2{arg: v, out: new_ref(out)}));},
+                #[cfg(feature = "vector2")]
                 [2,1] => {let out = Vector2::from_element(v.borrow().clone());      return Ok(Box::new(ConvertScalarToMat2{arg: v, out: new_ref(out)}));},
+                #[cfg(feature = "vector3")]
                 [3,1] => {let out = Vector3::from_element(v.borrow().clone());      return Ok(Box::new(ConvertScalarToMat2{arg: v, out: new_ref(out)}));},
+                #[cfg(feature = "vector4")]
                 [4,1] => {let out = Vector4::from_element(v.borrow().clone());      return Ok(Box::new(ConvertScalarToMat2{arg: v, out: new_ref(out)}));},
+                #[cfg(feature = "row_vectord")]
                 [1,n] => {let out = RowDVector::from_element(n,v.borrow().clone()); return Ok(Box::new(ConvertScalarToMat2{arg: v, out: new_ref(out)}));},
+                #[cfg(feature = "vectord")]
                 [n,1] => {let out = DVector::from_element(n,v.borrow().clone());    return Ok(Box::new(ConvertScalarToMat2{arg: v, out: new_ref(out)}));},
+                #[cfg(feature = "matrixd")]
                 [n,m] => {let out = DMatrix::from_element(n,m,v.borrow().clone());  return Ok(Box::new(ConvertScalarToMat2{arg: v, out: new_ref(out)}));},
                 [] => {return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Cannot convert to zero-dimension matrix".to_string(), id: line!(), kind: MechErrorKind::None});},
                 _ => todo!(),
@@ -69,22 +85,22 @@ macro_rules! impl_conversion_scalar_to_mat_match_arms {
 fn impl_conversion_scalar_to_mat_fxn(source_value: Value, target_kind: ValueKind) -> MResult<Box<dyn MechFunction>>  {
   impl_conversion_scalar_to_mat_match_arms!(
     (source_value, target_kind),
-    Bool => Bool;
-    U8 => U8;
-    U16 => U16;
-    U32 => U32;
-    U64 => U64;
-    U128 => U128;
-    I8 => I8;
-    I16 => I16;
-    I32 => I32;
-    I64 => I64;
-    I128 => I128;
-    F32 => F32;
-    F64 => F64;
-    String => String;
-    RationalNumber => RationalNumber;
-    ComplexNumber => ComplexNumber;
+    Bool => Bool, "bool";
+    U8 => U8, "u8";
+    U16 => U16, "u16";
+    U32 => U32, "u32";
+    U64 => U64, "u64";
+    U128 => U128, "u128";
+    I8 => I8, "i8";
+    I16 => I16, "i16";
+    I32 => I32, "i32";
+    I64 => I64, "i64";
+    I128 => I128, "i128";
+    F32 => F32, "f32";
+    F64 => F64, "f64";
+    String => String, "string";
+    RationalNumber => RationalNumber, "rational";
+    ComplexNumber => ComplexNumber, "complex";
   )
 }
 
