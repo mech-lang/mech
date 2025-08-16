@@ -9,6 +9,8 @@ use std::ops::*;
 use std::iter::Step;
 #[cfg(feature = "math_exp")]
 use num_traits::Pow;
+#[cfg(any(feature = "f64", feature = "f32"))]
+use num_traits::{Zero, One};
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 #[cfg(feature = "math_exp")]
@@ -33,7 +35,8 @@ pub fn new_ref<T>(item: T) -> Rc<RefCell<T>> {
 pub type MResult<T> = Result<T,MechError>;
 
 #[cfg(feature = "f64")]
-#[derive(PartialEq, Clone, Copy, PartialOrd, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(PartialEq, Clone, Copy, PartialOrd)]
 pub struct F64(pub f64);
 
 #[cfg(feature = "f64")]
@@ -297,9 +300,9 @@ impl_into_float!(i64 => f32, f64);
 #[cfg(feature = "i128")]
 impl_into_float!(i128 => f32, f64);
 
-#[cfg(feature = "f32")]
-impl_into!(F64 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
 #[cfg(feature = "f64")]
+impl_into!(F64 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
+#[cfg(feature = "f32")]
 impl_into!(F32 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
 
 #[cfg(feature = "f32")]
@@ -801,28 +804,28 @@ impl Neg for RationalNumber {
   }
 }
 
-#[cfg(feature = "f64")]
+#[cfg(all(feature = "rational", feature = "f64"))]
 impl From<RationalNumber> for F64 {
   fn from(r: RationalNumber) -> Self {
     F64::new(r.0.to_f64().unwrap())
   }
 }
 
-#[cfg(feature = "rational")]
+#[cfg(all(feature = "rational", feature = "f64"))]
 impl From<F64> for RationalNumber {
   fn from(f: F64) -> Self {
     RationalNumber(Rational64::from_f64(f.0).unwrap())
   }
 }
 
-#[cfg(feature = "f64")]
+#[cfg(all(feature = "f64", feature = "f32"))]
 impl From<F32> for F64 {
   fn from(value: F32) -> Self {
     F64::new(value.0 as f64)
   }
 }
 
-#[cfg(feature = "f32")]
+#[cfg(all(feature = "f64", feature = "f32"))]
 impl From<F64> for F32 {
   fn from(value: F64) -> Self {
     F32::new(value.0 as f32)

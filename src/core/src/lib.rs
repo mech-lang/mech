@@ -23,7 +23,7 @@ extern crate core as rust_core;
 extern crate serde_derive;
 #[cfg(feature = "serde")]
 extern crate serde;
-#[cfg(feature = "math_exp")]
+#[cfg(any(feature = "math_exp", feature = "f64"))]
 extern crate num_traits;
 //extern crate ed25519_dalek;
 //extern crate rand;

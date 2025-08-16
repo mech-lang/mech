@@ -175,7 +175,8 @@ members = [
   "src/interpreter",
   "src/wasm",
   "notebook",
-  "mech-app/src-tauri"]
+  "mech-app/src-tauri"
+]
 
 [build-dependencies]
 winres = "0.1.12"
