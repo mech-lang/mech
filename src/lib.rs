@@ -12,7 +12,6 @@ use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matri
 use paste::paste;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
-use num_traits::*;
 use std::ops::*;
 use std::fmt::Debug;
 
