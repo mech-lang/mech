@@ -121,7 +121,7 @@ macro_rules! impl_expop {
     fn solve(&self) {
       let lhs_ptr = self.lhs.as_ptr();
       let rhs_ptr = self.rhs.as_ptr();
-      let out_ptr = self.out.as_ptr();
+      let out_ptr = self.out.as_mut_ptr();
       $op!(lhs_ptr,rhs_ptr,out_ptr);
     }
     fn out(&self) -> Value { self.out.to_value() }
@@ -147,7 +147,7 @@ impl MechFunction for ExpRational {
   fn solve(&self) {
     let lhs_ptr = self.lhs.as_ptr();
     let rhs_ptr = self.rhs.as_ptr();
-    let out_ptr = self.out.as_ptr();
+    let out_ptr = self.out.as_mut_ptr();
     unsafe {
       (*out_ptr).0 = (*lhs_ptr).0.pow((*rhs_ptr));
     }
@@ -162,7 +162,7 @@ fn impl_exp_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
       return Ok(Box::new(ExpRational {
         lhs: lhs.clone(),
         rhs: rhs.clone(),
-        out: new_ref(RationalNumber::default()),
+        out: Ref::new(RationalNumber::default()),
       }));
     },
     _ => (),
