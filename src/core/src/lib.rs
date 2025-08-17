@@ -8,18 +8,20 @@
 #![feature(step_trait)]
 #![feature(box_patterns)]
 
-#[cfg(feature="no-std")] #[macro_use] extern crate alloc;
-#[cfg(not(feature = "no-std"))] extern crate core;
+extern crate core as rust_core;
+extern crate seahash;
+
+#[cfg(feature="no-std")] #[macro_use] 
+extern crate alloc;
+#[cfg(not(feature = "no-std"))] 
+extern crate core;
 #[cfg(feature = "matrix")]  
 extern crate nalgebra as na;
 #[cfg(feature = "pretty_print")]
 extern crate tabled;
-
 #[cfg(feature = "no-std")]
 extern crate alloc;
-extern crate core as rust_core;
-#[cfg(feature = "serde")]
-#[macro_use]
+#[cfg(feature = "serde")] #[macro_use] 
 extern crate serde_derive;
 #[cfg(feature = "serde")]
 extern crate serde;
@@ -28,21 +30,20 @@ extern crate num_traits;
 //extern crate ed25519_dalek;
 //extern crate rand;
 
-extern crate seahash;
 use paste::paste;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
-#[cfg(feature = "math_exp")]
-use num_traits::*;
 use std::ops::*;
 use std::mem;
+use std::hash::{Hash, Hasher};
+use std::convert::TryInto;
+#[cfg(feature = "math_exp")]
+use num_traits::*;
 #[cfg(feature = "rational")]
 use num_rational::Rational64;
-use std::hash::{Hash, Hasher};
 #[cfg(feature = "matrix")]  
 use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix3x2, Matrix6, Matrix2};
-
 
 #[cfg(feature = "pretty_print")]
 use tabled::{
@@ -104,31 +105,36 @@ pub fn humanize_bytes(bytes: &[u8]) -> String {
 
 pub fn emojify<T>(num: &T) -> String
 where
-    T: ToPrimitive + std::fmt::Display,
+    T: std::fmt::Display + Copy + TryInto<u128>,
+    <T as TryInto<u128>>::Error: std::fmt::Debug,
 {
-  if let Some(v) = num.to_u128() {
-    let bytes = v.to_be_bytes();
-    let first_non_zero = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len() - 1);
-    let trimmed = &bytes[first_non_zero..];
-    emojify_bytes(trimmed)
-  } else {
-    format!("{}", num)
-  }
+    match (*num).try_into() {
+        Ok(v) => {
+            let bytes = v.to_be_bytes();
+            let first_non_zero = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len() - 1);
+            let trimmed = &bytes[first_non_zero..];
+            emojify_bytes(trimmed)
+        }
+        Err(_) => format!("{}", num),
+    }
 }
 
 pub fn humanize<T>(num: &T) -> String
 where
-    T: ToPrimitive + std::fmt::Display,
+    T: std::fmt::Display + Copy + TryInto<u128>,
+    <T as TryInto<u128>>::Error: std::fmt::Debug,
 {
-  if let Some(v) = num.to_u128() {
-    let bytes = v.to_be_bytes();
-    let first_non_zero = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len() - 1);
-    let trimmed = &bytes[first_non_zero..];
-    humanize_bytes(trimmed)
-  } else {
-    format!("{}", num)
-  }
+    match (*num).try_into() {
+        Ok(v) => {
+            let bytes = v.to_be_bytes();
+            let first_non_zero = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len() - 1);
+            let trimmed = &bytes[first_non_zero..];
+            humanize_bytes(trimmed)
+        }
+        Err(_) => format!("{}", num),
+    }
 }
+
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -261,14 +267,10 @@ pub const WORDLIST: &[&str;256] = &[
   "rom", "sne", "ten", "uta"];
 
 pub const EMOJILIST: &[&str; 256] = &[
-  "🐵","🐶","🐺","🦊","🦝","🐱","🐈","🐈","🦁","🐷","🐮","🦬","🐯","🐴","🫎","🦄","🦓","🦙","🦒","🐘","🦣","🦏","🦛","🐫","🐏","🐭","🐰","🐿️","🦫","🦔","🦇","🐻","🐨","🐼","🦥","🦦","🦨","🦘","🦡","🦃","🐔","🐦","🐧","🕊️","🦅","🦆","🐦‍🔥","🦉","🦤","🦩","🦚","🦜","🐸","🐊","🐢","🦎","🐍","🐲","🦖","🐳","🐬","🦭","🐠","🦈","🐙","🪼","🦀","🦞","🦐","🦑","🐌","🦋","🐛","🐝","🪲","🐞","🦗","🕸️","🪰","🪱","🦠","👻","👽","🐶",  "🐮","🐚","🪸","🪶","🦧","🪿","🦢","🤖",
-
+  "🐵","🐶","🐺","🦊","🦝","🐱","🐈","🐈","🦁","🐷","🐮","🦬","🐯","🐴","🫎","🦄","🦓","🦙","🦒","🐘","🦣","🦏","🦛","🐫","🐏","🐭","🐰","🐿️","🦫","🦔","🦇","🐻","🐨","🐼","🦥","🦦","🦨","🦘","🦡","🦃","🐔","🐦","🐧","🕊️","🦅","🦆","🐦‍🔥","🦉","🦤","🦩","🦚","🦜","🐸","🐊","🐢","🦎","🐍","🐲","🦖","🐳","🐬","🦭","🐠","🦈","🐙","🪼","🦀","🦞","🦐","🦑","🐌","🦋","🐛","🐝","🪲","🐞","🦗","🕸️","🪰","🪱","🦠","👻","👽","🐶","🐮","🐚","🪸","🪶","🦧","🪿","🦢","🤖",
   "🌹","🌳","🌴","🌵","🍀","🍁","🍄","🌛","🌞","🪐","⭐","⛅","🌧️","🌨️","🌈","❄️","☃️","☄️","🔥","🌻",
-
   "🍇","🍉","🍊","🍋","🍋‍🟩","🍌","🍍","🥭","🍎","🍐","🍓","🥝","🍅","🫒","🥥","🥔","🥕","🌽","🌶️","🫑","🥒","🥦","🧄","🧅","🫛","🍦","🍧","🍩","🍪","🍰","🧁","🥧","🍫","🍭","🍞","🥨","🥯","🧇","🍟","🍿","🧃",
-
   "🎤","🎧","📻","🎷","🪗","🎸","🎹","🎺","🎻","🪕","🥁","🪇","📷","🧳","🌡️","🧸","🧶","🔎","🕯️","💡","🔦","🔒","🗝️","🪚","🔧","🪛","🔩","⚙️","⚖️","🧰","🧲","🪜","🔬","📡","🧷","🧹","🧺","🪣","🧼","🧽","🧯","🛒",  
-
   "⏰","🛟","🛩️","🚁","🛰️","🚀","🛸","⚓","🚂","🚑","🚒","🚕","🚗","🚚","🚜","🏎️","🏍️","🛵","🦼","🚲","🛹","🛼","🛞","📰","📦","📫","✏️","🖊️","🖌️","🖍️","📌","📏","✂️","🗑️","🏆","⚾","🏀","🎾","🎳","⛳","⛸️","🤿","🛷","🎯","🪁","🧩","🪅","🎨","🧭","🏔️","🏝️","⛲","⛺","🎠","🛝","🧵","💈","🎪","🛎️","💎","⛵"
 ];
 
