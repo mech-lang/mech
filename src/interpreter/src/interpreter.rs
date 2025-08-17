@@ -228,14 +228,4 @@ impl Interpreter {
       }
     })?
   }
-
-  pub fn compile(&self) -> MResult<Vec<u8>> {
-    let mut code = Vec::new();
-    for s in self.plan.borrow().iter() {
-
-
-    }
-    Ok(code)
-  }
-  
 }

@@ -83,6 +83,7 @@ pub mod functions;
 pub mod statements;
 pub mod expressions;
 pub mod mechdown;
+pub mod compiler;
 
 pub use crate::interpreter::*;
 pub use crate::literals::*;
@@ -92,3 +93,4 @@ pub use crate::functions::*;
 pub use crate::statements::*;
 pub use crate::expressions::*;
 pub use crate::mechdown::*;
+pub use crate::compiler::*;
