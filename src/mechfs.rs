@@ -532,13 +532,11 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
     Some(extension) => {
       match extension.to_str() {
         Some("blx") => {
+          use mech_interpreter::BytecodeInterpreter;
           let path = PathBuf::from(path);
           let data = std::fs::read(&path)?;
-          let program = load_program_from_file(path)?;
-          
-          println!("{:#?}", program);
-          //let (decoded, _len): (MechSourceCode,_) = bincode::serde::decode_from_slice(&data, standard()).unwrap();
-          todo!()
+          let program = load_program_from_file(path)?;   
+          Ok(MechSourceCode::ByteCode(program))
         }
         Some("mec") | Some("🤖") => {
           match File::open(path) {

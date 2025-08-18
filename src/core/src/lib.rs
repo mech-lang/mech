@@ -147,12 +147,15 @@ pub enum MechSourceCode {
     String(String),
     Tree(Program),
     Html(String),
+    ByteCode(ParsedProgram),
     Program(Vec<MechSourceCode>),
 }
 
 impl MechSourceCode {
+
   pub fn to_string(&self) -> String {
     match self {
+      MechSourceCode::ByteCode(bc) => format!("{:#?}", bc),
       MechSourceCode::String(s) => s.clone(),
       MechSourceCode::Tree(p) => todo!("Print the tree!"),
       MechSourceCode::Html(h) => h.clone(),

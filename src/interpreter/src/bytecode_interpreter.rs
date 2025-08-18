@@ -15,6 +15,7 @@ pub struct BytecodeInterpreter {
   const_cache: Vec<Value>,
   symbols: SymbolTableRef,
   plan: Plan,
+  constants: Vec<Value>,
   functions: FunctionsRef,
   pub code: ParsedProgram,
   pub out: Value,
@@ -38,6 +39,7 @@ impl BytecodeInterpreter {
       symbols: Ref::new(SymbolTable::new()),
       plan: Plan::new(),
       functions: fxns,
+      constants: Vec::new(),
       out: Value::Empty,
       sub_interpreters: Ref::new(HashMap::new()),
       out_values: Ref::new(HashMap::new()),
@@ -67,14 +69,15 @@ impl BytecodeInterpreter {
 
   pub fn run_program(&mut self) -> MResult<Value> {
     self.ip = 0;
+    // decode const entries
+    self.constants = self.code.decode_const_entries()?;
     while self.ip < self.code.instrs.len() {
       use DecodedInstr::*;
       let instr = &self.code.instrs[self.ip];
-      println!("IP {}: {:?}", self.ip, instr);
       match instr {
         DecodedInstr::ConstLoad { dst, const_id } => {
-          //let value = self.code.const_entries[*const_id as usize].value.clone();
-          //self.regs[*reg] = value;
+          let value = self.constants[*const_id as usize].clone();
+          self.regs[*dst as usize] = value;
         },
         _ => todo!(),
       }

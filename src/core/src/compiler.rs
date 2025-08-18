@@ -6,6 +6,7 @@ use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
 use std::io::{self, Write, Read, SeekFrom, Seek, Cursor};
 use std::fs::File;
 use std::path::Path;
+use std::hash::{Hash, Hasher};
 
 // Byetecode Compiler
 // ============================================================================
@@ -20,7 +21,7 @@ use std::path::Path;
 // Compilation Context
 // ----------------------------------------------------------------------------
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 pub struct ParsedProgram {
   pub header: ByteCodeHeader,
   pub features: Vec<u64>,
@@ -49,6 +50,81 @@ impl ParsedProgram {
     Ok(())
   }
 
+  pub fn decode_const_entries(&self) -> MResult<Vec<Value>> {
+    let mut out = Vec::with_capacity(self.const_entries.len());
+    let blob_len = self.const_blob.len() as u64;
+
+    for ce in &self.const_entries {
+      // Only support Inline encoding for now
+      if ce.enc != ConstEncoding::Inline as u8 {
+        return Err(MechError {file: file!().to_string(),tokens: vec![],msg: "Unsupported constant encoding".to_string(),id: line!(),kind: MechErrorKind::GenericError("Unsupported constant encoding".to_string())});
+      }
+
+      // Bounds check
+      if ce.offset.checked_add(ce.length).is_none() {
+          return Err(MechError {file: file!().to_string(),tokens: vec![],msg: "Constant entry out of bounds".to_string(),id: line!(),kind: MechErrorKind::GenericError("Constant entry out of bounds".to_string())});
+      }
+      let end = ce.offset + ce.length;
+      if end > blob_len {
+        return Err(MechError {file: file!().to_string(),tokens: vec![],msg: "Constant entry out of bounds".to_string(),id: line!(),kind: MechErrorKind::GenericError("Constant entry out of bounds".to_string())});
+      }
+
+      // Alignment check (if your alignment semantics differ, change this)
+      if !check_alignment(ce.offset, ce.align) {
+        return Err(MechError {file: file!().to_string(),tokens: vec![],msg: "Constant entry alignment error".to_string(),id: line!(),kind: MechErrorKind::GenericError("Constant entry alignment error".to_string())});
+      }
+
+      // Copy bytes out (we clone into Vec<u8> to own data)
+      let start = ce.offset as usize;
+      let len = ce.length as usize;
+      let data = self.const_blob[start .. start + len].to_vec();
+
+      // get the type from the id
+      let ty = &self.types.entries[ce.type_id as usize];
+      let val: Value = match ty.tag {
+        TypeTag::Bool => {
+          if data.len() != 1 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Bool const entry must be 1 byte".to_string(), id: line!(), kind: MechErrorKind::GenericError("Bool const entry must be 1 byte".to_string())});
+          }
+          let value = data[0] != 0;
+          Value::Bool(Ref::new(value))
+        },
+        TypeTag::U8 => {
+          if data.len() != 1 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "U8 const entry must be 1 byte".to_string(), id: line!(), kind: MechErrorKind::GenericError("U8 const entry must be 1 byte".to_string())});
+          }
+          let value = data[0];
+          Value::U8(Ref::new(value))
+        },
+        TypeTag::F64 => {
+          if data.len() != 8 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "F64 const entry must be 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("F64 const entry must be 8 bytes".to_string())});
+          }
+          let value = f64::from_le_bytes(data.try_into().unwrap());
+          Value::F64(Ref::new(F64::new(value)))
+        },
+        TypeTag::I64 => {
+          if data.len() != 8 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "I64 const entry must be 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("I64 const entry must be 8 bytes".to_string())});
+          }
+          let value = i64::from_le_bytes(data.try_into().unwrap());
+          Value::I64(Ref::new(value))
+        }
+        // Add more types as needed
+        _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Unsupported constant type {:?}", ty.tag), id: line!(), kind: MechErrorKind::GenericError(format!("Unsupported constant type {:?}", ty.tag))}),
+      };
+      out.push(val);
+    }
+    Ok(out)
+  }
+
+}
+
+fn check_alignment(offset: u64, align: u8) -> bool {
+  // treat align==0 as invalid
+  let align_val = align as u64;
+  if align_val == 0 { return false; }
+  (offset % align_val) == 0
 }
 
 #[derive(Debug)]
@@ -226,7 +302,7 @@ impl CompileCtx {
 // ----------------------------------------------------------------------------
 
 #[repr(C)]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ByteCodeHeader {
   pub magic:        [u8; 4],   // e.g., b"MECH"
   pub version:        u8,      // bytecode format version
@@ -423,7 +499,7 @@ impl FeatureFlag {
 // ----------------------------------------------------------------------------
 
 #[repr(u16)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TypeTag {
   U8=1, U16, U32, U64, U128, I8, I16, I32, I64, I128,
   F32, F64, ComplexNumber, RationalNumber, String, Bool, Id, Index, Empty, Any,
@@ -449,7 +525,7 @@ impl TypeTag {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 pub struct TypeEntry {
   pub tag: TypeTag,
   pub bytes: Vec<u8>,
@@ -462,7 +538,7 @@ impl TypeEntry {
 
 pub type TypeId = u32;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 pub struct TypeSection {
   interner: HashMap<ValueKind, TypeId>,
   entries:  Vec<TypeEntry>, // index is TypeId
@@ -805,7 +881,7 @@ pub fn decode_version_from_u16(v: u16) -> (u16, u16, u16) {
   (major, minor, patch)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ParsedConstEntry {
   pub type_id: u32,
   pub enc: u8,
@@ -864,7 +940,7 @@ fn verify_crc_trailer(mut f: &File) -> MResult<()> {
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DecodedInstr {
   ConstLoad { dst: u32, const_id: u32 },
   UnOp { opcode: u64, dst: u32, src: u32 },
