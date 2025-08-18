@@ -17,7 +17,7 @@ pub struct BytecodeInterpreter {
   plan: Plan,
   constants: Vec<Value>,
   functions: FunctionsRef,
-  pub code: ParsedProgram,
+  pub program: ParsedProgram,
   pub out: Value,
   pub out_values: Ref<HashMap<u64, Value>>,
   pub sub_interpreters: Ref<HashMap<u64, Box<BytecodeInterpreter>>>,
@@ -25,9 +25,9 @@ pub struct BytecodeInterpreter {
 
 impl BytecodeInterpreter {
   
-  pub fn new(id: u64, code: ParsedProgram) -> MResult<BytecodeInterpreter> {
-    code.validate()?;
-    let const_n = code.header.const_count as usize;
+  pub fn new(id: u64, program: ParsedProgram) -> MResult<BytecodeInterpreter> {
+    program.validate()?;
+    let const_n = program.header.const_count as usize;
     let fxns = Ref::new(Functions::new());
     load_stdkinds(&fxns);
     load_stdlib(&fxns);
@@ -43,7 +43,7 @@ impl BytecodeInterpreter {
       out: Value::Empty,
       sub_interpreters: Ref::new(HashMap::new()),
       out_values: Ref::new(HashMap::new()),
-      code,
+      program,
     };
     Ok(intrp)
   }
@@ -68,12 +68,15 @@ impl BytecodeInterpreter {
   }
 
   pub fn run_program(&mut self) -> MResult<Value> {
+
+    println!("Running program with {:#?} instructions", self.program);
+
     self.ip = 0;
     // decode const entries
-    self.constants = self.code.decode_const_entries()?;
-    while self.ip < self.code.instrs.len() {
+    self.constants = self.program.decode_const_entries()?;
+    while self.ip < self.program.instrs.len() {
       use DecodedInstr::*;
-      let instr = &self.code.instrs[self.ip];
+      let instr = &self.program.instrs[self.ip];
       match instr {
         DecodedInstr::ConstLoad { dst, const_id } => {
           let value = self.constants[*const_id as usize].clone();
