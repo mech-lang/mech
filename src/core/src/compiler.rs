@@ -30,6 +30,26 @@ pub struct ParsedProgram {
   pub instrs: Vec<DecodedInstr>,
 }
 
+impl ParsedProgram {
+
+  pub fn validate(&self) -> MResult<()> {
+    // Check magic number
+    if !self.header.validate_magic(b"MECH") {
+      return Err(MechError {file: file!().to_string(), tokens: vec![], msg: "Invalid magic number".to_string(), id: line!(), kind: MechErrorKind::GenericError("Invalid magic number".to_string())});
+    }
+    // Check version number
+    if self.header.version != 1 {
+      return Err(MechError {file: file!().to_string(), tokens: vec![], msg: "Unsupported bytecode version".to_string(), id: line!(), kind: MechErrorKind::GenericError("Unsupported bytecode version".to_string())});
+    }
+    // Check mech version
+    if self.header.mech_ver != parse_version_to_u16(env!("CARGO_PKG_VERSION")).unwrap() {
+      return Err(MechError {file: file!().to_string(), tokens: vec![], msg: "Incompatible Mech version".to_string(), id: line!(), kind: MechErrorKind::GenericError("Incompatible Mech version".to_string())});
+    }
+    Ok(())
+  }
+
+}
+
 #[derive(Debug)]
 pub struct CompileCtx {
   // pointer identity -> register index
