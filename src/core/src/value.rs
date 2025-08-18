@@ -101,6 +101,30 @@ impl std::fmt::Display for ValueKind {
 
 impl ValueKind {
 
+  pub fn to_feature_kind(&self) -> FeatureKind {
+    match self {
+      ValueKind::I8 => FeatureKind::I8,
+      ValueKind::I16 => FeatureKind::I16,
+      ValueKind::I32 => FeatureKind::I32,
+      ValueKind::I64 => FeatureKind::I64,
+      ValueKind::I128 => FeatureKind::I128,
+      ValueKind::U8 => FeatureKind::U8,
+      ValueKind::U16 => FeatureKind::U16,
+      ValueKind::U32 => FeatureKind::U32,
+      ValueKind::U64 => FeatureKind::U64,
+      ValueKind::U128 => FeatureKind::U128,
+      ValueKind::F32 => FeatureKind::F32,
+      ValueKind::F64 => FeatureKind::F64,
+      ValueKind::String => FeatureKind::String,
+      ValueKind::Bool => FeatureKind::Bool,
+      #[cfg(feature = "complex")]
+      ValueKind::ComplexNumber => FeatureKind::Complex,
+      #[cfg(feature = "rational")]
+      ValueKind::RationalNumber => FeatureKind::Rational,
+      _ => panic!("Unsupported feature kind for value kind: {}", self),
+    }
+  }
+
   pub fn collection_kind(&self) -> Option<ValueKind> {
     match self {
       ValueKind::Matrix(x,_) => Some(*x.clone()),
