@@ -13,40 +13,39 @@ use std::io::{self, Write, Read};
 // 5. Constant Blob
 // 6. Instruction Stream
 
-// 1. Header
+// Header
 // ----------------------------------------------------------------------------
 
 #[repr(C)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ByteCodeHeader {
-  pub magic:        [u8; 4],       // e.g., b"MECH"
-  pub version:        u8,          // bytecode format version
-  pub mech_ver:       u16,         // Mech language version
-  pub flags:          u16,         // reserved/feature bit
-  pub reg_count:      u32,         // total virtual registers used
-  pub instr_count:    u32,         // number of instructions
-  pub feature_count:  u32,         // number of feature flags  
-  pub feature_off:    u64,         // offset to feature flags (array of u64)
+  pub magic:        [u8; 4],   // e.g., b"MECH"
+  pub version:        u8,      // bytecode format version
+  pub mech_ver:       u16,     // Mech language version
+  pub flags:          u16,     // reserved/feature bit
+  pub reg_count:      u32,     // total virtual registers used
+  pub instr_count:    u32,     // number of instructions
+  pub feature_count:  u32,     // number of feature flags  
+  pub feature_off:    u64,     // offset to feature flags (array of u64)
 
-  pub const_count:    u32,         // number of constants (entries
-  pub const_tbl_off:  u64,         // offset to constant table (array of entries)
-  pub const_tbl_len:  u64,         // bytes in constant table area (entries only)
-  pub const_blob_off: u64,         // offset to raw constant blob data
-  pub const_blob_len: u64,         // bytes in blob (payloads
+  pub const_count:    u32,     // number of constants (entries
+  pub const_tbl_off:  u64,     // offset to constant table (array of entries)
+  pub const_tbl_len:  u64,     // bytes in constant table area (entries only)
+  pub const_blob_off: u64,     // offset to raw constant blob data
+  pub const_blob_len: u64,     // bytes in blob (payloads
                                
-  pub instr_off:      u64,         // offset to instruction stream
-  pub instr_len:      u64,         // bytes of instruction stream
-            
-  pub feat_off:       u64,         // offset to feature section
-  pub feat_len:       u64,         // bytes of feature section
+  pub instr_off:      u64,     // offset to instruction stream
+  pub instr_len:      u64,     // bytes of instruction stream
 
-  pub checksum:       u32,         // optional (CRC32/xxHash), or 0 if unused
-  pub reserved:       u32,         // pad/alignment
+  pub feat_off:       u64,     // offset to feature section
+  pub feat_len:       u64,     // bytes of feature section
+
+  pub reserved:       u32,     // pad/alignment
 }
 
 impl ByteCodeHeader {
-  /// Header byte size when serialized. This is the number of bytes `write_to` will write.
-  /// (Computed from the sum of sizes of each field written in little-endian.)
+  // Header byte size when serialized. This is the number of bytes `write_to` will write.
+  // (Computed from the sum of sizes of each field written in little-endian.)
   pub const HEADER_SIZE: usize = 4  // magic
     + 1   // version
     + 2   // mech_ver
@@ -64,10 +63,9 @@ impl ByteCodeHeader {
     + 8   // instr_len
     + 8   // feat_off
     + 8   // feat_len
-    + 4   // checksum
     + 4;  // reserved
 
-  /// Serialize header into `w` using little-endian encoding.
+  // Serialize header using little-endian encoding.
   pub fn write_to(&self, w: &mut impl Write) -> io::Result<()> {
     // magic (4 bytes)
     w.write_all(&self.magic)?;
@@ -101,12 +99,11 @@ impl ByteCodeHeader {
     w.write_u64::<LittleEndian>(self.feat_len)?;
 
     // footer
-    w.write_u32::<LittleEndian>(self.checksum)?;
     w.write_u32::<LittleEndian>(self.reserved)?;
     Ok(())
   }
 
-  /// Read a header from `r`. Expects the same layout as `write_to`.
+  // Read a header. Expects the same layout as `write_to`.
   pub fn read_from(r: &mut impl Read) -> io::Result<Self> {
     let mut magic = [0u8; 4];
     r.read_exact(&mut magic)?;
@@ -133,7 +130,6 @@ impl ByteCodeHeader {
     let feat_off = r.read_u64::<LittleEndian>()?;
     let feat_len = r.read_u64::<LittleEndian>()?;
 
-    let checksum = r.read_u32::<LittleEndian>()?;
     let reserved = r.read_u32::<LittleEndian>()?;
 
     Ok(Self {
@@ -154,12 +150,11 @@ impl ByteCodeHeader {
       instr_len,
       feat_off,
       feat_len,
-      checksum,
       reserved,
     })
   }
 
-  /// Quick check: does the header magic match the expected magic?
+  // Quick check: does the header magic match the expected magic?
   pub fn validate_magic(&self, expected: &[u8;4]) -> bool {
     &self.magic == expected
   }
