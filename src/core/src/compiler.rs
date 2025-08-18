@@ -18,7 +18,7 @@ pub struct TypeEntry {
 }
 pub type TypeId = u32;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct TypeSection {
   // canonicalize by structural equality of ValueKind
   interner: std::collections::HashMap<ValueKind, TypeId>,
@@ -163,11 +163,14 @@ fn encode_value_kind(ts: &mut TypeSection, vk: &ValueKind) -> (TypeTag, Vec<u8>)
   (tag, b)
 }
 
+#[derive(Debug)]
 pub struct CompileCtx {
   // pointer identity -> register index
   pub reg_map: HashMap<usize, Register>,
   // symbol identity -> register index
   pub symbols: HashMap<u64, Register>,
+  // symbol identity -> pointer identity
+  pub symbol_ptrs: HashMap<u64, usize>,
   // symbol identity -> symbol name
   pub dictionary: HashMap<u64, String>,
   pub types: TypeSection,
@@ -185,6 +188,7 @@ impl CompileCtx {
       symbols: HashMap::new(),
       dictionary: HashMap::new(),
       types: TypeSection::new(),
+      symbol_ptrs: HashMap::new(),
       features: Vec::new(),
       const_entries: Vec::new(),
       const_blob: Vec::new(),
@@ -205,10 +209,11 @@ impl CompileCtx {
     self.next_reg = 0;
   }
 
-  pub fn define_symbol(&mut self, name: &str, reg: Register) {
-    let id = hash_str(name);
-    self.symbols.insert(id, reg);
-    self.dictionary.insert(id, name.to_string());
+  pub fn define_symbol(&mut self, id: usize, reg: Register, name: &str) {
+    let symbol_id = hash_str(name);
+    self.symbols.insert(symbol_id, reg);
+    self.symbol_ptrs.insert(symbol_id, id);
+    self.dictionary.insert(symbol_id, name.to_string());
   }
 
   pub fn alloc_register_for_ptr(&mut self, ptr: usize) -> Register {
