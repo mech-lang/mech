@@ -136,7 +136,7 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
-  fn compile(&self, ctx: &mut CompileCtx) -> Register {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
 }
@@ -164,7 +164,7 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
-  fn compile(&self, ctx: &mut CompileCtx) -> Register {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
 }

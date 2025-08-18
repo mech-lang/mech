@@ -24,7 +24,7 @@ pub trait MechFunction {
   fn solve(&self);
   fn out(&self) -> Value;
   fn to_string(&self) -> String;
-  fn compile(&self, ctx: &mut CompileCtx) -> Register;
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register>;
 }
 
 pub trait NativeFunctionCompiler {

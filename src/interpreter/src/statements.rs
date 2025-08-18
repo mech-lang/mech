@@ -173,10 +173,13 @@ impl MechFunction for VariableDefineFxn {
   fn solve(&self) {}
   fn out(&self) -> Value { self.var.borrow().clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
-  fn compile(&self, ctx: &mut CompileCtx) -> Register {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let reg = ctx.alloc_register_for_ptr(self.var.addr());
     ctx.define_symbol(&self.name, reg);
-    reg
+    let val_brrw = self.var.borrow();
+    let const_id = val_brrw.compile_const(ctx)?;
+    ctx.emit_const_load(reg, const_id);
+    Ok(reg)
   }
 }
 
