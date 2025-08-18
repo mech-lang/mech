@@ -6,6 +6,7 @@ use crate::matrix::Matrix;
 use crate::types::ComplexNumber;
 #[cfg(feature = "rational")]
 use num_rational::Rational64;
+use std::mem;
 
 macro_rules! impl_as_type {
   ($target_type:ty) => {
@@ -214,7 +215,84 @@ impl ValueKind {
       x => x == k2,
     }
   }
+
+  pub fn align(&self) -> usize {
+    // pointer alignment (platform word size) for pointer-like kinds
+    let ptr_align = mem::align_of::<usize>();
+
+    match self {
+      // unsigned integers
+      ValueKind::U8   => 1,
+      ValueKind::U16  => 2,
+      ValueKind::U32  => 4,
+      ValueKind::U64  => 8,
+      ValueKind::U128 => 16,
+
+      // signed integers
+      ValueKind::I8   => 1,
+      ValueKind::I16  => 2,
+      ValueKind::I32  => 4,
+      ValueKind::I64  => 8,
+      ValueKind::I128 => 16,
+
+      // floats
+      ValueKind::F32  => 4,
+      ValueKind::F64  => 8,
+
+      // complex / rational (assume composed of f64 parts)
+      ValueKind::ComplexNumber => 8,
+      ValueKind::RationalNumber => 8,
+
+      // small simple payloads
+      ValueKind::Bool => 1,
+      ValueKind::String => 1, // strings are length+bytes; bytes are packed
+      ValueKind::Id | ValueKind::Index => 8, // id/index -> likely machine word (u64)
+      ValueKind::Empty => 1,
+      ValueKind::Any => ptr_align,
+
+      // compound types
+      ValueKind::Matrix(elem_ty, _dims) => {
+        // matrix alignment = alignment of element type
+        elem_ty.align()
+      }
+
+      ValueKind::Enum(_space) => 8, // enum tag stored in u64
+      ValueKind::Atom(_id) => 8,
+
+      ValueKind::Record(fields) => {
+        // record alignment = max alignment of fields (or 1 if empty)
+        fields.iter()
+            .map(|(_, ty)| ty.align())
+            .max()
+            .unwrap_or(1)
+      }
+
+      ValueKind::Map(_, _) => ptr_align,   // typically pointer-based representation
+      ValueKind::Table(cols, _pk) => {
+        // table: use max column alignment or pointer-align if empty
+        cols.iter()
+            .map(|(_, ty)| ty.align())
+            .max()
+            .unwrap_or(ptr_align)
+      }
+
+      ValueKind::Tuple(elems) => {
+        elems.iter().map(|ty| ty.align()).max().unwrap_or(1)
+      }
+
+      ValueKind::Reference(inner) => ptr_align, // references are pointers at runtime
+
+      ValueKind::Set(elem, _) => {
+        // set alignment equals element alignment (or ptr_align fallback)
+        match elem.as_ref() {
+          v => v.align()
+        }
+      }
+      ValueKind::Option(inner) => inner.align(),
+    }
+  }
 }
+
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Value {
@@ -1795,3 +1873,31 @@ impl_to_usize_for!(i32);
 impl_to_usize_for!(i64);
 #[cfg(feature = "i128")]
 impl_to_usize_for!(i128);
+
+impl Value {
+
+  pub fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    let mut payload = Vec::<u8>::new();
+    match self {
+      #[cfg(feature = "bool")]
+      Value::Bool(x) => payload.write_u8(if *x.borrow() { 1 } else { 0 })?,
+      #[cfg(feature = "string")]
+      Value::String(x) => {
+        let string_brrw = x.borrow();
+        let bytes = string_brrw.as_bytes();
+        payload.write_u32::<LittleEndian>(bytes.len() as u32)?;
+        payload.extend_from_slice(bytes);
+      },
+      #[cfg(feature = "f64")]
+      Value::F64(x) => payload.write_f64::<LittleEndian>(x.borrow().0)?,
+      #[cfg(all(feature = "matrix", feature = "f64"))]
+      Value::MatrixF64(x) => {return x.compile_const(ctx);}
+      _ => todo!(),
+    }
+    let type_kind = self.kind();
+    let type_id = ctx.types.get_or_intern(&type_kind);
+
+    todo!()
+  }
+
+}
