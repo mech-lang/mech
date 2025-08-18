@@ -1,6 +1,7 @@
 use crate::*;
+use std::collections::HashSet;
 
-// 2. Type Section
+// Type Section
 // ----------------------------------------------------------------------------
 
 #[repr(u16)]
@@ -163,6 +164,35 @@ fn encode_value_kind(ts: &mut TypeSection, vk: &ValueKind) -> (TypeTag, Vec<u8>)
   (tag, b)
 }
 
+// Features
+// ----------------------------------------------------------------------------
+
+#[repr(u16)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum FeatureKind {
+  I8=1, I16, I32, I64, I128,
+  U8, U16, U32, U64, U128,
+  F32, F64,
+  String,
+  Bool,
+  Complex,
+  Rational,
+  Matrix1, Matrix2, Matrix3, Matrix4,
+  Matrix2x3, Matrix3x2,
+  RowVector2, RowVector3, RowVector4,
+  Vector2, Vector3, Vector4,
+  Custom = 0xFFFF,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum FeatureFlag {
+  Builtin(FeatureKind),
+  Custom(u64),
+}
+
+// Compilation Context
+// ----------------------------------------------------------------------------
+
 #[derive(Debug)]
 pub struct CompileCtx {
   // pointer identity -> register index
@@ -174,7 +204,7 @@ pub struct CompileCtx {
   // symbol identity -> symbol name
   pub dictionary: HashMap<u64, String>,
   pub types: TypeSection,
-  pub features: Vec<u64>,
+  pub features: HashSet<FeatureFlag>,
   pub const_entries: Vec<ConstEntry>,
   pub const_blob: Vec<u8>,
   pub instrs: Vec<EncodedInstr>,
@@ -189,7 +219,7 @@ impl CompileCtx {
       dictionary: HashMap::new(),
       types: TypeSection::new(),
       symbol_ptrs: HashMap::new(),
-      features: Vec::new(),
+      features: HashSet::new(),
       const_entries: Vec::new(),
       const_blob: Vec::new(),
       instrs: Vec::new(),
@@ -223,11 +253,7 @@ impl CompileCtx {
     self.reg_map.insert(ptr, r);
     r
   }
-
-  pub fn ensure_feature(&mut self, fid: u64) {
-    if !self.features.contains(&fid) { self.features.push(fid); }
-  }
-
+  
   pub fn emit_const_load(&mut self, dst: Register, const_id: u32) {
     self.instrs.push(EncodedInstr::ConstLoad { dst, const_id });
   }
@@ -242,7 +268,7 @@ impl CompileCtx {
   }
 }
 
-// Instruction encoding (fixed forms)
+// Instruction Encoding (fixed forms)
 // ----------------------------------------------------------------------------
 
 pub const OP_CONST_LOAD: u64 = 0x01;
@@ -250,10 +276,10 @@ pub const OP_RETURN: u64 = 0xFF;
 
 #[derive(Debug, Clone)]
 pub enum EncodedInstr {
-  ConstLoad { dst: u32, const_id: u32 },           // [u64 opcode][u32 dst][u32 const_id]
-  UnOp      { opcode: u64, dst: u32, src: u32 },  // [u64 opcode][u32 dst][u32 src]
+  ConstLoad { dst: u32, const_id: u32 },                   // [u64 opcode][u32 dst][u32 const_id]
+  UnOp      { opcode: u64, dst: u32, src: u32 },           // [u64 opcode][u32 dst][u32 src]
   BinOp     { opcode: u64, dst: u32, lhs: u32, rhs: u32 }, // [u64 opcode][u32 dst][u32 lhs][u32 rhs]
-  Ret       { src: u32 },                          // [u64 opcode][u32 src]
+  Ret       { src: u32 },                                  // [u64 opcode][u32 src]
 }
 
 impl EncodedInstr {
@@ -291,7 +317,6 @@ impl EncodedInstr {
     Ok(())
   }
 }
-
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
