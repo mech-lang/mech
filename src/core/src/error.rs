@@ -83,7 +83,7 @@ pub enum MechErrorKind {
 
 impl From<std::io::Error> for MechError{ 
   fn from(n: std::io::Error) -> MechError{ 
-    MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 74892, kind: MechErrorKind::IoError}
+    MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IoError}
   } 
 }
 
