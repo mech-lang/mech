@@ -105,6 +105,17 @@ async fn main() -> Result<(), MechError> {
         .required(false)
         .help("Output as HTML")
         .action(ArgAction::SetTrue)))
+    .subcommand(Command::new("build")
+      .about("Build Mech program into a binary.")
+      .arg(Arg::new("mech_build_file_paths")
+        .help("Source .mec and .blx files")
+        .required(false)
+        .action(ArgAction::Append))
+      .arg(Arg::new("output_path")
+        .short('o')
+        .long("out")
+        .help("Destination folder.")
+        .required(false)))            
     .subcommand(Command::new("serve")
       .about("Serve Mech program over an HTTP server.")
       .arg(Arg::new("mech_serve_file_paths")
@@ -178,6 +189,40 @@ async fn main() -> Result<(), MechError> {
       server.serve().await?;
     }    
   }
+  // --------------------------------------------------------------------------
+  // build
+  // --------------------------------------------------------------------------
+  if let Some(matches) = matches.subcommand_matches("build") {
+    let mech_paths: Vec<String> = matches.get_many::<String>("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+    let output_path = PathBuf::from(matches.get_one::<String>("output_path").cloned().unwrap_or(".".to_string()));
+    let mut mechfs = MechFileSystem::new();
+
+    for path in mech_paths {
+      mechfs.watch_source(&path)?;
+    }
+    let sources = mechfs.sources();
+    let read_sources = sources.read().unwrap();
+
+    // Create the directory html_output_path
+    if output_path != PathBuf::from(".") {
+      match fs::create_dir_all(&output_path) {
+        Ok(_) => {
+          println!("{} Directory created: {}", "[Created]".truecolor(153,221,85), output_path.display());
+        }
+        Err(err) => {
+          println!("Error creating directory: {:?}", err);
+        }
+      }
+    }
+
+    let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag); 
+
+    let bytecode = intrp.compile()?;
+
+
+    return Ok(());
+  }
+
   // --------------------------------------------------------------------------
   // Format
   // --------------------------------------------------------------------------
