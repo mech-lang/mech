@@ -228,4 +228,73 @@ impl Interpreter {
       }
     })?
   }
+
+  pub fn compile(&self) -> MResult<Vec<u8>> {
+    let plan_brrw = self.plan.borrow();
+    let mut ctx = CompileCtx::new();
+    for step in plan_brrw.iter() {
+      step.compile(&mut ctx)?;
+    }
+    let header_size = ByteCodeHeader::HEADER_SIZE as u64;
+    let feat_bytes_len: u64 = 4 + (ctx.features.len() as u64) * 8;
+    let const_tbl_len: u64 = (ctx.const_entries.len() as u64) * ConstEntry::byte_len();
+    let const_blob_len: u64 = ctx.const_blob.len() as u64;
+    let instr_bytes_len: u64 = ctx.instrs.iter().map(|i| i.byte_len()).sum();
+
+    let mut offset = header_size;                           // bytes in header
+    let feature_off = offset; offset += feat_bytes_len;     // offset to feature section
+    let const_tbl_off = offset; offset += const_tbl_len;    // offset to constant table
+    let const_blob_off = offset; offset += const_blob_len;  // offset to constant blob
+    let instr_off = offset; offset += instr_bytes_len;      // offset to instruction stream
+    let feat_off = feature_off;                             // offset to feature section              
+    let feat_len = feat_bytes_len;                          // bytes in feature section                
+    
+    // The header!
+    let header = ByteCodeHeader {
+      magic: *b"MECH",
+      version: 1,             
+      mech_ver: parse_version_to_u16(env!("CARGO_PKG_VERSION")).unwrap(),
+      flags: 0,
+      reg_count: ctx.next_reg,
+      instr_count: ctx.instrs.len() as u32,
+      feature_count: ctx.features.len() as u32,
+      feature_off,
+
+      const_count: ctx.const_entries.len() as u32,
+      const_tbl_off,
+      const_tbl_len,
+      const_blob_off,
+      const_blob_len,
+
+      instr_off,
+      instr_len: instr_bytes_len,
+
+      feat_off,
+      feat_len,
+
+      checksum: 0,
+      reserved: 0,
+    };
+    
+    
+    println!("Header: {:?}", header);
+    todo!()
+  }
+}
+
+pub fn parse_version_to_u16(s: &str) -> Option<u16> {
+  let parts: Vec<&str> = s.split('.').collect();
+  if parts.len() != 3 { return None; }
+
+  let major = parts[0].parse::<u16>().ok()?;
+  let minor = parts[1].parse::<u16>().ok()?;
+  let patch = parts[2].parse::<u16>().ok()?; // parse to u16 to check bounds easily
+
+  if major > 0b111 { return None; }    // 3 bits => 0..7
+  if minor > 0b1_1111 { return None; } // 5 bits => 0..31
+  if patch > 0xFF { return None; }     // 8 bits => 0..255
+
+  // Pack: major in bits 15..13, minor in bits 12..8, patch in bits 7..0
+  let encoded = (major << 13) | (minor << 8) | patch;
+  Some(encoded as u16)
 }
