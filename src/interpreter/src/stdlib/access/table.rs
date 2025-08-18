@@ -177,6 +177,9 @@ impl MechFunction for TableAccessScalarF {
   }
   fn out(&self) -> Value { Value::Record(self.out.clone()) }
   fn to_string(&self) -> String {format!("{:#?}", self)}
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 pub struct TableAccessScalar{}
@@ -239,6 +242,9 @@ impl MechFunction for TableAccessRangeIndex {
   }
   fn out(&self) -> Value { Value::Table(self.out.clone()) }
   fn to_string(&self) -> String {format!("{:#?}", self)}
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 #[derive(Debug)]
@@ -276,6 +282,9 @@ impl MechFunction for TableAccessRangeBool {
   }
   fn out(&self) -> Value { Value::Table(self.out.clone()) }
   fn to_string(&self) -> String {format!("{:#?}", self)}
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 pub struct TableAccessRange{}

@@ -62,6 +62,9 @@ macro_rules! impl_set_all_fxn_s {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        todo!();
+      }
     }};}
 
 macro_rules! impl_set_all_fxn_v {
@@ -93,6 +96,9 @@ macro_rules! impl_set_all_fxn_v {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        todo!();
+      }
     }};}
 
 // x[1] = 1 ------------------------------------------------------------------
@@ -129,6 +135,9 @@ macro_rules! impl_set_fxn_s {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        todo!();
+      }
     }};}
 
 impl_set_fxn_s!(Set1DS, set_1d_scalar, usize);
@@ -162,6 +171,9 @@ where
   }
   fn out(&self) -> Value {self.sink.to_value()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 macro_rules! impl_set_scalar_match_arms {
@@ -458,6 +470,9 @@ where
   }
   fn out(&self) -> Value {self.sink.to_value()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 macro_rules! impl_set_all_match_arms {
@@ -667,6 +682,9 @@ macro_rules! impl_set_scalar_fxn_v {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        todo!();
+      }
     }};}    
 
 impl_set_fxn_s!(Set2DASS, set_2d_all_scalar, usize);
@@ -990,6 +1008,9 @@ where
   }
   fn out(&self) -> Value {self.sink.to_value()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 #[derive(Debug)]
@@ -1024,6 +1045,9 @@ where
   }
   fn out(&self) -> Value {self.sink.to_value()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 macro_rules! impl_set_scalar_range_match_arms {
@@ -1128,6 +1152,9 @@ where
   }
   fn out(&self) -> Value {self.sink.to_value()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 #[derive(Debug)]
@@ -1166,6 +1193,9 @@ where
   }
   fn out(&self) -> Value {self.sink.to_value()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 macro_rules! impl_set_range_range_match_arms {
