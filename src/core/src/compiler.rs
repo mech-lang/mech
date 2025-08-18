@@ -43,7 +43,6 @@ impl TypeSection {
   }
 
   pub fn write_to(&self, w: &mut impl std::io::Write) -> std::io::Result<()> {
-    use byteorder::{LittleEndian, WriteBytesExt};
     w.write_u32::<LittleEndian>(self.entries.len() as u32)?;
     for e in &self.entries {
       w.write_u16::<LittleEndian>(e.tag as u16)?;
@@ -62,7 +61,6 @@ impl TypeSection {
 }
 
 fn encode_value_kind(ts: &mut TypeSection, vk: &ValueKind) -> (TypeTag, Vec<u8>) {
-  use byteorder::{LittleEndian, WriteBytesExt};
   let mut b = Vec::new();
   let tag = match vk {
     ValueKind::U8 => TypeTag::U8, ValueKind::U16 => TypeTag::U16, ValueKind::U32 => TypeTag::U32,
@@ -88,8 +86,8 @@ fn encode_value_kind(ts: &mut TypeSection, vk: &ValueKind) -> (TypeTag, Vec<u8>)
     }
 
     ValueKind::Enum(space) => {
-        b.write_u64::<LittleEndian>(*space).unwrap();
-        TypeTag::EnumTag
+      b.write_u64::<LittleEndian>(*space).unwrap();
+      TypeTag::EnumTag
     }
 
     ValueKind::Record(fields) => {
@@ -190,6 +188,15 @@ pub enum FeatureFlag {
   Custom(u64),
 }
 
+impl FeatureFlag {
+  pub fn as_u64(&self) -> u64 {
+    match self {
+      FeatureFlag::Builtin(f) => *f as u64,
+      FeatureFlag::Custom(c) => *c,
+    }
+  }
+}
+
 // Compilation Context
 // ----------------------------------------------------------------------------
 
@@ -253,7 +260,7 @@ impl CompileCtx {
     self.reg_map.insert(ptr, r);
     r
   }
-  
+
   pub fn emit_const_load(&mut self, dst: Register, const_id: u32) {
     self.instrs.push(EncodedInstr::ConstLoad { dst, const_id });
   }
