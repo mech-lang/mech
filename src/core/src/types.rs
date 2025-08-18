@@ -77,6 +77,35 @@ impl Plan {
   pub fn is_empty(&self) -> bool { self.0.borrow().is_empty() }
 }
 
+#[cfg(feature = "pretty_print")]
+impl PrettyPrint for Plan {
+  fn pretty_print(&self) -> String {
+    let mut builder = Builder::default();
+
+    let mut row = vec![];
+    let plan_brrw = self.0.borrow();
+    if self.is_empty() {
+      builder.push_record(vec!["".to_string()]);
+    } else {
+      for (ix, fxn) in plan_brrw.iter().enumerate() {
+        let plan_str = format!("{}. {}\n", ix + 1, fxn.to_string());
+        row.push(plan_str.clone());
+        if row.len() == 4 {
+          builder.push_record(row.clone());
+          row.clear();
+        }
+      }
+    }
+    if row.is_empty() == false {
+      builder.push_record(row.clone());
+    }
+    let mut table = builder.build();
+    table.with(Style::modern_rounded())
+        .with(Panel::header("📋 Plan"));
+    format!("{table}")
+  }
+}
+
 pub type FunctionsRef = Ref<Functions>;
 pub type MutableReference = Ref<Value>;
 pub type SymbolTableRef= Ref<SymbolTable>;

@@ -25,7 +25,7 @@ pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: 
               }
               if debug_flag {
                 println!("{}", pretty_print_symbols(&intrp));
-                println!("{}", pretty_print_plan(&intrp)); 
+                println!("{}", intrp.plan().pretty_print()); 
               }
               return result;
             },
@@ -53,7 +53,7 @@ pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: 
             }
             if debug_flag {
               println!("{}", pretty_print_symbols(&intrp));
-              println!("{}", pretty_print_plan(&intrp)); 
+              println!("{}", intrp.plan().pretty_print()); 
             }
             return result;
           },

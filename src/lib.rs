@@ -288,30 +288,3 @@ pub fn clc() {
   stdo.execute(terminal::Clear(terminal::ClearType::All));
   stdo.execute(cursor::MoveTo(0,0));
 }
-
-fn pretty_print_plan(intrp: &Interpreter) -> String {
-  let mut builder = Builder::default();
-
-  let mut row = vec![];
-  let plan = intrp.plan();
-  let plan_brrw = plan.borrow();
-  if plan_brrw.is_empty() {
-    builder.push_record(vec!["".to_string()]);
-  } else {
-    for (ix, fxn) in plan_brrw.iter().enumerate() {
-      let plan_str = format!("{}. {}\n", ix + 1, fxn.to_string());
-      row.push(plan_str.clone());
-      if row.len() == 4 {
-        builder.push_record(row.clone());
-        row.clear();
-      }
-    }
-  }
-  if row.is_empty() == false {
-    builder.push_record(row.clone());
-  }
-  let mut table = builder.build();
-  table.with(Style::modern_rounded())
-       .with(Panel::header("📋 Plan"));
-  format!("{table}")
-}
