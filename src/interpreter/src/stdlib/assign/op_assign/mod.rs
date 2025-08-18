@@ -60,6 +60,9 @@ macro_rules! impl_op_assign_range_fxn_s {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        todo!();
+      }
     }};}
 
 #[macro_export]
@@ -98,6 +101,9 @@ macro_rules! impl_op_assign_range_fxn_v {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        todo!();
+      }
     }};}
 
 #[macro_export]
@@ -213,6 +219,9 @@ macro_rules! impl_assign_vector_vector {
         }
         fn out(&self) -> Value {self.sink.to_value()}
         fn to_string(&self) -> String {format!("{:#?}", self)}
+        fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+          todo!();
+        }
       }
     }
   };

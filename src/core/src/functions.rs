@@ -144,7 +144,10 @@ impl MechFunction for UserFunction {
   fn out(&self) -> Value {
     Value::MutableReference(self.fxn.out.clone())
   }
-  fn to_string(&self) -> String { format!("UserFxn::{:?}", self.fxn.name)}
+  fn to_string(&self) -> String { format!("UserFxn::{:?}", self.fxn.name) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 // Symbol Table ---------------------------------------------------------------

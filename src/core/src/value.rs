@@ -1898,7 +1898,7 @@ impl Value {
       #[cfg(feature = "f64")]
       Value::F64(x) => payload.write_f64::<LittleEndian>(x.borrow().0)?,
       #[cfg(all(feature = "matrix", feature = "f64"))]
-      Value::MatrixF64(x) => {return x.compile_const(ctx);}
+      Value::MatrixF64(x) => todo!(), //{return x.compile_const(ctx);}
       _ => todo!(),
     }
 

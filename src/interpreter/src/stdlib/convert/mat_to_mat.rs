@@ -35,7 +35,10 @@ where
       }
     }
     fn out(&self) -> Value {self.out.to_value()}
-    fn to_string(&self) -> String {format!("{:#?}",self)}
+    fn to_string(&self) -> String { format!("{:#?}",self) }
+    fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      todo!();
+    }
 }
 
 fn create_convert_mat_to_mat<TFrom, TTo>(

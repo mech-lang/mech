@@ -139,6 +139,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateTwoArgs\n{:#?}", self.out) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
     
 struct HorizontalConcatenateThreeArgs<T> {
@@ -159,6 +162,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateThreeArgs\n{:#?}", self.out) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 struct HorizontalConcatenateFourArgs<T> {
@@ -182,6 +188,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateFourArgs\n{:#?}", self.out) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 struct HorizontalConcatenateNArgs<T> {
@@ -201,6 +210,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateNArgs\n{:#?}", self.out) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 macro_rules! horizontal_concatenate {
@@ -268,6 +280,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateRDN\n{:#?}", self.out) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 #[derive(Debug)]
@@ -413,9 +428,9 @@ macro_rules! horzcat_single {
       fn solve(&self) { }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
-  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
-  }
+      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        todo!();
+      }
     }
   }
 }
