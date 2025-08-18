@@ -51,6 +51,9 @@ macro_rules! impl_two_arg_fxn {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        todo!();
+      }
     }};}
 
 impl_two_arg_fxn!(Atan2F32, F32, F32, F32, atan2f_op);
