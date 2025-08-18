@@ -1895,8 +1895,46 @@ impl Value {
         payload.write_u32::<LittleEndian>(bytes.len() as u32)?;
         payload.extend_from_slice(bytes);
       },
+      #[cfg(feature = "u8")]
+      Value::U8(x) => payload.write_u8(*x.borrow())?,
+      #[cfg(feature = "u16")]
+      Value::U16(x) => payload.write_u16::<LittleEndian>(*x.borrow())?,
+      #[cfg(feature = "u32")]
+      Value::U32(x) => payload.write_u32::<LittleEndian>(*x.borrow())?,
+      #[cfg(feature = "u64")]
+      Value::U64(x) => payload.write_u64::<LittleEndian>(*x.borrow())?,
+      #[cfg(feature = "u128")]
+      Value::U128(x) => payload.write_u128::<LittleEndian>(*x.borrow())?,
+      #[cfg(feature = "i8")]
+      Value::I8(x) => payload.write_i8(*x.borrow())?,
+      #[cfg(feature = "i16")]
+      Value::I16(x) => payload.write_i16::<LittleEndian>(*x.borrow())?,
+      #[cfg(feature = "i32")]
+      Value::I32(x) => payload.write_i32::<LittleEndian>(*x.borrow())?,
+      #[cfg(feature = "i64")]
+      Value::I64(x) => payload.write_i64::<LittleEndian>(*x.borrow())?,
+      #[cfg(feature = "i128")]
+      Value::I128(x) => payload.write_i128::<LittleEndian>(*x.borrow())?,
+      #[cfg(feature = "f32")]
+      Value::F32(x) => payload.write_f32::<LittleEndian>(x.borrow().0)?,
       #[cfg(feature = "f64")]
       Value::F64(x) => payload.write_f64::<LittleEndian>(x.borrow().0)?,
+      #[cfg(feature = "atom")]
+      Value::Atom(x) => payload.write_u64::<LittleEndian>(*x)?,
+      #[cfg(feature = "index")]
+      Value::Index(x) => payload.write_u64::<LittleEndian>(*x.borrow() as u64)?,
+      #[cfg(feature = "complex")]
+      Value::ComplexNumber(x) => {
+      let c = x.borrow();
+      payload.write_f64::<LittleEndian>(c.0.re)?;
+      payload.write_f64::<LittleEndian>(c.0.im)?;
+      },
+      #[cfg(feature = "rational")]
+      Value::RationalNumber(x) => {
+        let r = x.borrow();
+        payload.write_i64::<LittleEndian>(*r.numer())?;
+        payload.write_i64::<LittleEndian>(*r.denom())?;
+      },
       #[cfg(all(feature = "matrix", feature = "f64"))]
       Value::MatrixF64(x) => todo!(), //{return x.compile_const(ctx);}
       _ => todo!(),
