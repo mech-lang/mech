@@ -3,7 +3,9 @@ use std::collections::HashSet;
 
 use crate::*;
 use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
-use std::io::{self, Write, Read};
+use std::io::{self, Write, Read, SeekFrom, Seek, Cursor};
+use std::fs::File;
+use std::path::Path;
 
 // Byetecode Compiler
 // ============================================================================
@@ -17,6 +19,16 @@ use std::io::{self, Write, Read};
 
 // Compilation Context
 // ----------------------------------------------------------------------------
+
+#[derive(Debug)]
+pub struct ParsedProgram {
+  pub header: ByteCodeHeader,
+  pub features: Vec<u64>,
+  pub const_entries: Vec<ParsedConstEntry>,
+  pub const_blob: Vec<u8>,
+  pub instr_bytes: Vec<u8>,
+  pub instrs: Vec<DecodedInstr>,
+}
 
 #[derive(Debug)]
 pub struct CompileCtx {
@@ -90,6 +102,96 @@ impl CompileCtx {
   }
   pub fn emit_ret(&mut self, src: Register) {
     self.instrs.push(EncodedInstr::Ret { src })
+  }
+
+  pub fn compile(&mut self) -> MResult<Vec<u8>> {
+
+    let header_size = ByteCodeHeader::HEADER_SIZE as u64;
+    let feat_bytes_len: u64 = 4 + (self.features.len() as u64) * 8;
+    let const_tbl_len: u64 = (self.const_entries.len() as u64) * ConstEntry::byte_len();
+    let const_blob_len: u64 = self.const_blob.len() as u64;
+    let instr_bytes_len: u64 = self.instrs.iter().map(|i| i.byte_len()).sum();
+
+    let mut offset = header_size;                           // bytes in header
+    let feature_off = offset; offset += feat_bytes_len;     // offset to feature section
+    let const_tbl_off = offset; offset += const_tbl_len;    // offset to constant table
+    let const_blob_off = offset; offset += const_blob_len;  // offset to constant blob
+    let instr_off = offset;                                 // offset to instruction stream
+    offset += instr_bytes_len;                              
+    let feat_off = feature_off;                             // offset to feature section              
+    let feat_len = feat_bytes_len;                          // bytes in feature section                
+    
+    let file_len_before_trailer = offset;
+    let trailer_len = 4u64;
+    let full_file_len = file_len_before_trailer + trailer_len;
+
+    // The header!
+    let header = ByteCodeHeader {
+      magic: *b"MECH",
+      version: 1,             
+      mech_ver: parse_version_to_u16(env!("CARGO_PKG_VERSION")).unwrap(),
+      flags: 0,
+      reg_count: self.next_reg,
+      instr_count: self.instrs.len() as u32,
+      feature_count: self.features.len() as u32,
+      feature_off,
+
+      const_count: self.const_entries.len() as u32,
+      const_tbl_off,
+      const_tbl_len,
+      const_blob_off,
+      const_blob_len,
+
+      instr_off,
+      instr_len: instr_bytes_len,
+
+      feat_off,
+      feat_len,
+
+      reserved: 0,
+    };
+    
+    let mut buf = Cursor::new(Vec::<u8>::with_capacity(full_file_len as usize));
+
+    // 1. Write the header
+    header.write_to(&mut buf)?;
+
+    // 2. Write the feature section
+    buf.write_u32::<LittleEndian>(self.features.len() as u32)?;
+    for f in &self.features {
+      buf.write_u64::<LittleEndian>(f.as_u64())?;
+    }
+
+    // 3. write const table entries
+    for entry in &self.const_entries {
+      entry.write_to(&mut buf)?;
+    }
+
+    // 4. write const blob
+    if !self.const_blob.is_empty() {
+      buf.write_all(&self.const_blob)?;
+    }
+
+    // 5. write instructions. This is where the action is!
+    for ins in &self.instrs {
+      ins.write_to(&mut buf)?;
+    }
+
+    // sanity check: the position should equal file_len_before_trailer
+    let pos = buf.position();
+    if pos != file_len_before_trailer {
+      return Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Buffer position mismatch: expected {}, got {}", file_len_before_trailer, pos),id: line!(),kind: MechErrorKind::GenericError("Buffer position mismatch".to_string()),});
+    }
+
+    let bytes_so_far = buf.get_ref().as_slice();
+    let checksum = crc32fast::hash(bytes_so_far);
+    buf.write_u32::<LittleEndian>(checksum)?;
+
+    if buf.position() != full_file_len {
+      return Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Final buffer length mismatch: expected {}, got {}", full_file_len, buf.position()),id: line!(),kind: MechErrorKind::GenericError("Final buffer length mismatch".to_string()),});
+    }
+
+    Ok(buf.into_inner())
   }
 }
 
@@ -520,4 +622,205 @@ impl EncodedInstr {
     }
     Ok(())
   }
+}
+
+pub fn load_program_from_file(path: impl AsRef<Path>) -> MResult<ParsedProgram> {
+  let path = path.as_ref();
+  let mut f = File::open(path)?;
+
+  // verify CRC trailer first; this also ensures the file is fully readable
+  verify_crc_trailer(&f)?;
+  
+  // read header
+  f.seek(SeekFrom::Start(0))?;
+  let mut header_buf = vec![0u8; ByteCodeHeader::HEADER_SIZE];
+  f.read_exact(&mut header_buf)?;
+  let mut header_cursor = Cursor::new(&header_buf[..]);
+  let header = ByteCodeHeader::read_from(&mut header_cursor)?;
+  
+  // quick magic check
+  if !header.validate_magic(&(*b"MECH")) {
+    return Err(MechError {
+      file: file!().to_string(),
+      tokens: vec![],
+      msg: format!("Invalid magic in bytecode header: expected 'MECH', got {:?}", header.magic),
+      id: line!(),
+      kind: MechErrorKind::GenericError("Invalid magic".to_string()),
+    });
+  }
+    
+  // read features
+  let mut features = Vec::new();
+  if header.feature_off != 0 && header.feature_off + 4 <= (f.metadata()?.len() - 4) {
+    f.seek(SeekFrom::Start(header.feature_off))?;
+    let cnt = f.read_u32::<LittleEndian>()? as usize;
+    for _ in 0..cnt {
+      let v = f.read_u64::<LittleEndian>()?;
+      features.push(v);
+    }
+  }
+
+  // read const table
+  let mut const_entries = Vec::new();
+  if header.const_tbl_off != 0 && header.const_tbl_len > 0 {
+    f.seek(SeekFrom::Start(header.const_tbl_off))?;
+    let mut tbl_bytes = vec![0u8; header.const_tbl_len as usize];
+    f.read_exact(&mut tbl_bytes)?;
+    let cur = Cursor::new(&tbl_bytes[..]);
+    const_entries = parse_const_entries(cur, header.const_count as usize)?;
+  }
+
+  // read const blob
+  let mut const_blob = vec![];
+  if header.const_blob_off != 0 && header.const_blob_len > 0 {
+      f.seek(SeekFrom::Start(header.const_blob_off))?;
+      const_blob.resize(header.const_blob_len as usize, 0);
+      f.read_exact(&mut const_blob)?;
+  }
+
+  // read instr bytes
+  let mut instr_bytes = vec![];
+  if header.instr_off != 0 && header.instr_len > 0 {
+    f.seek(SeekFrom::Start(header.instr_off))?;
+    instr_bytes.resize(header.instr_len as usize, 0);
+    f.read_exact(&mut instr_bytes)?;
+  }
+
+  // decode instructions
+  let instrs = decode_instructions(Cursor::new(&instr_bytes[..]))?;
+  
+  Ok(ParsedProgram { header, features, const_entries, const_blob, instr_bytes, instrs })
+}
+
+pub fn parse_version_to_u16(s: &str) -> Option<u16> {
+  let parts: Vec<&str> = s.split('.').collect();
+  if parts.len() != 3 { return None; }
+
+  let major = parts[0].parse::<u16>().ok()?;
+  let minor = parts[1].parse::<u16>().ok()?;
+  let patch = parts[2].parse::<u16>().ok()?; // parse to u16 to check bounds easily
+
+  if major > 0b111 { return None; }    // 3 bits => 0..7
+  if minor > 0b1_1111 { return None; } // 5 bits => 0..31
+  if patch > 0xFF { return None; }     // 8 bits => 0..255
+
+  // Pack: major in bits 15..13, minor in bits 12..8, patch in bits 7..0
+  let encoded = (major << 13) | (minor << 8) | patch;
+  Some(encoded as u16)
+}
+
+pub fn decode_version_from_u16(v: u16) -> (u16, u16, u16) {
+  let major = (v >> 13) & 0b111;
+  let minor = (v >> 8) & 0b1_1111;
+  let patch = v & 0xFF;
+  (major, minor, patch)
+}
+
+#[derive(Debug, Clone)]
+pub struct ParsedConstEntry {
+    pub type_id: u32,
+    pub enc: u8,
+    pub align: u8,
+    pub flags: u8,
+    pub reserved: u8,
+    pub offset: u64,
+    pub length: u64,
+}
+
+fn parse_const_entries(mut cur: Cursor<&[u8]>, count: usize) -> io::Result<Vec<ParsedConstEntry>> {
+  let mut out = Vec::with_capacity(count);
+  for _ in 0..count {
+    let type_id = cur.read_u32::<LittleEndian>()?;
+    let enc = cur.read_u8()?;
+    let align = cur.read_u8()?;
+    let flags = cur.read_u8()?;
+    let reserved = cur.read_u8()?;
+    let offset = cur.read_u64::<LittleEndian>()?;
+    let length = cur.read_u64::<LittleEndian>()?;
+    out.push(ParsedConstEntry { type_id, enc, align, flags, reserved, offset, length });
+  }
+  Ok(out)
+}
+
+fn verify_crc_trailer(mut f: &File) -> MResult<()> {
+  let file_len = f.metadata()?.len();
+  if file_len < 4 {
+    return Err(MechError {
+      file: file!().to_string(),
+      tokens: vec![],
+      msg: "File too short to contain CRC trailer".to_string(),
+      id: line!(),
+      kind: MechErrorKind::GenericError("File too short".to_string()),
+    });
+  }
+  // read trailer
+  f.seek(SeekFrom::Start(file_len - 4))?;
+  let expected_crc = f.read_u32::<LittleEndian>()?;
+
+  // compute crc over prefix
+  f.seek(SeekFrom::Start(0))?;
+  let mut buf = vec![0u8; (file_len - 4) as usize];
+  f.read_exact(&mut buf)?;
+  let mut file_crc = crc32fast::hash(&buf);
+  if file_crc != expected_crc {
+    Err(MechError {
+      file: file!().to_string(),
+      tokens: vec![],
+      msg: format!("CRC mismatch: expected {}, got {}", expected_crc, file_crc),
+      id: line!(),
+      kind: MechErrorKind::GenericError("CRC mismatch".to_string()),
+    })
+  } else {
+    Ok(())
+  }
+}
+
+#[derive(Debug, Clone)]
+pub enum DecodedInstr {
+  ConstLoad { dst: u32, const_id: u32 },
+  UnOp { opcode: u64, dst: u32, src: u32 },
+  BinOp { opcode: u64, dst: u32, lhs: u32, rhs: u32 },
+  Ret { src: u32 },
+  Unknown { opcode: u64, rest: Vec<u8> }, // unknown opcode or dynamic form
+}
+
+
+fn decode_instructions(mut cur: Cursor<&[u8]>) -> io::Result<Vec<DecodedInstr>> {
+  let mut out = Vec::new();
+  while (cur.position() as usize) < cur.get_ref().len() {
+    // read opcode (u64)
+    let pos_before = cur.position();
+    // if remaining < 8, can't read opcode
+    let rem = cur.get_ref().len() - pos_before as usize;
+    if rem < 8 {
+      // leftover junk — treat as unknown and break
+      let mut rest = vec![];
+      let start = pos_before as usize;
+      rest.extend_from_slice(&cur.get_ref()[start..]);
+      out.push(DecodedInstr::Unknown { opcode: 0, rest });
+      break;
+    }
+    let opcode = cur.read_u64::<LittleEndian>()?;
+    match opcode {
+      OP_CONST_LOAD => {
+        // need 4+4 bytes
+        let dst = cur.read_u32::<LittleEndian>()?;
+        let const_id = cur.read_u32::<LittleEndian>()?;
+        out.push(DecodedInstr::ConstLoad { dst, const_id });
+      }
+      OP_RETURN => {
+        let src = cur.read_u32::<LittleEndian>()?;
+        out.push(DecodedInstr::Ret { src });
+      }
+      unknown => {
+        // Unknown opcode; we don't know how many args — try to be safe:
+        // We'll return the rest of the bytes as `rest` and stop decoding.
+        let start = cur.position() as usize;
+        let rest = cur.get_ref()[start..].to_vec();
+        out.push(DecodedInstr::Unknown { opcode: unknown, rest });
+        break;
+      }
+    }
+  }
+  Ok(out)
 }

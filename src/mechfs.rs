@@ -534,9 +534,9 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
         Some("blx") => {
           let path = PathBuf::from(path);
           let data = std::fs::read(&path)?;
-          println!("{:?}", data);
-
-
+          let program = load_program_from_file(path)?;
+          
+          println!("{:#?}", program);
           //let (decoded, _len): (MechSourceCode,_) = bincode::serde::decode_from_slice(&data, standard()).unwrap();
           todo!()
         }
