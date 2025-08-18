@@ -15,6 +15,9 @@ impl MechFunction for ConvertSEnum
   fn solve(&self) { }
   fn out(&self) -> Value { self.out.clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 #[cfg(all(feature = "matrix", feature = "table"))]
@@ -43,6 +46,9 @@ where T: Debug + Clone + PartialEq + Into<Value> + 'static,
   }
   fn out(&self) -> Value { Value::Table(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 #[cfg(all(feature = "rational", feature = "f64"))]
@@ -61,6 +67,9 @@ impl MechFunction for ConvertSRationalToF64 {
   }
   fn out(&self) -> Value { Value::F64(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 macro_rules! impl_conversion_match_arms {
@@ -139,6 +148,9 @@ where
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 #[derive(Debug)]
@@ -164,6 +176,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }

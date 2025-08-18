@@ -25,6 +25,9 @@ impl<T> MechFunction for RecordAssign<T>
   }
   fn out(&self) -> Value { self.sink.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 fn impl_set_record_column_fxn(sink: Value, source: Value, key: Value) -> MResult<Box<dyn MechFunction>> {

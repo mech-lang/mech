@@ -14,6 +14,9 @@ impl MechFunction for TupleAccessElement {
   }
   fn out(&self) -> Value { self.out.clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
   
 pub struct TupleAccess {}

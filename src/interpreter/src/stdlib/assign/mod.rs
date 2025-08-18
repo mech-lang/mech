@@ -45,6 +45,9 @@ where
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 #[macro_export]

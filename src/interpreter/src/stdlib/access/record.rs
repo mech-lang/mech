@@ -13,6 +13,9 @@ impl MechFunction for RecordAccess {
   }
   fn out(&self) -> Value { self.source.clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 #[derive(Debug)]
@@ -26,4 +29,7 @@ impl MechFunction for RecordAccessSwizzle {
   }
   fn out(&self) -> Value { self.source.clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }

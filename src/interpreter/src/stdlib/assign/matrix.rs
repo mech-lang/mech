@@ -554,6 +554,9 @@ macro_rules! impl_set_scalar_scalar_fxn {
       }
       fn out(&self) -> Value { self.sink.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        todo!();
+      }
     }};}
 
 macro_rules! set_2d_scalar_scalar {
@@ -757,6 +760,9 @@ macro_rules! impl_set_scalar_all_fxn {
       }
       fn out(&self) -> Value { self.sink.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        todo!();
+      }
     }};}
 
 impl_set_scalar_all_fxn!(Set2DSAMD,DMatrix, set_2d_scalar_all);
@@ -863,6 +869,9 @@ macro_rules! impl_set_range_scalar_fxn {
       }
       fn out(&self) -> Value { self.sink.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        todo!();
+      }
     }};}
 
 impl_set_range_scalar_fxn!(Set2DRSMD,DMatrix, set_2d_vector_scalar, usize);

@@ -62,6 +62,9 @@ impl MechFunction for TableAppendRecord {
   }
   fn out(&self) -> Value { Value::Table(self.sink.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 #[derive(Debug)]
@@ -79,6 +82,9 @@ impl MechFunction for TableAppendTable {
   }
   fn out(&self) -> Value { Value::Table(self.sink.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 impl_assign_scalar_scalar!(Add, +=);
