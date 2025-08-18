@@ -31,7 +31,7 @@ impl Interpreter {
       out_values: Ref::new(HashMap::new()),
       code: Vec::new(),
     };
-    let mut fxns = &mut interp.functions.borrow_mut();
+    let mut fxns = &interp.functions;
     load_stdkinds(fxns);
     load_stdlib(fxns);
     interp
@@ -49,9 +49,9 @@ impl Interpreter {
     self.out_values = Ref::new(HashMap::new());
     self.code = Vec::new();
     self.sub_interpreters = Ref::new(HashMap::new());
-    let fxns = self.functions;
-    load_stdkinds(self.functions.clon);
-    load_stdlib(fnxs);
+    let fxns = &self.functions;
+    load_stdkinds(fxns);
+    load_stdlib(fxns);
   }
 
   pub fn get_symbol(&self, id: u64) -> Option<Ref<Value>> {

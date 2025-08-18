@@ -94,7 +94,7 @@ pub use crate::expressions::*;
 pub use crate::mechdown::*;
 
 
-pub fn load_stdkinds(fxns_ref: FunctionsRef) {
+pub fn load_stdkinds(fxns_ref: &FunctionsRef) {
   let fxns = &mut fxns_ref.borrow_mut();
 
   // Preload scalar kinds
@@ -132,7 +132,8 @@ pub fn load_stdkinds(fxns_ref: FunctionsRef) {
   fxns.kinds.insert(hash_str("bool"),ValueKind::Bool);
 }
 
-pub fn load_stdlib(fxns: FunctionsRef) {
+pub fn load_stdlib(fxns_ref: &FunctionsRef) {
+  let fxns = &mut fxns_ref.borrow_mut();
 
   // Preload combinatorics functions
   #[cfg(feature = "combinatorics_n_choose_k")]
