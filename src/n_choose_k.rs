@@ -92,6 +92,9 @@ where
   }
   fn out(&self) -> Value { (*self.out.borrow()).to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> Result<Box<dyn MechFunction>, MechError> {
