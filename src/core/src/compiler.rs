@@ -1,7 +1,4 @@
 use crate::*;
-use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
-use std::io::{self, Write, Read};
-use std::collections::HashMap;
 
 // 2. Type Section
 // ----------------------------------------------------------------------------
@@ -28,13 +25,11 @@ pub struct TypeSection {
   entries:  Vec<TypeEntry>, // index is TypeId
 }
     
-
 impl TypeSection {
 
   pub fn new() -> Self {
     Self { interner: HashMap::new(), entries: Vec::new() }
   }
-
 
   pub fn get_or_intern(&mut self, vk: &ValueKind) -> TypeId {
     if let Some(id) = self.interner.get(vk) { return *id; }
@@ -170,37 +165,53 @@ fn encode_value_kind(ts: &mut TypeSection, vk: &ValueKind) -> (TypeTag, Vec<u8>)
 
 pub struct CompileCtx {
   // pointer identity -> register index
-  pub reg_map: HashMap<usize, u32>,
-  pub next_reg: u32,
-
-  // types
+  pub reg_map: HashMap<usize, Register>,
+  // symbol identity -> register index
+  pub symbols: HashMap<u64, Register>,
+  // symbol identity -> symbol name
+  pub dictionary: HashMap<u64, String>,
   pub types: TypeSection,
-
-  // constants
+  pub features: Vec<u64>,
   pub const_entries: Vec<ConstEntry>,
   pub const_blob: Vec<u8>,
-
-  // instructions
   pub instrs: Vec<EncodedInstr>,
-
-  // features
-  pub features: Vec<u64>,
+  pub next_reg: Register,
 }
 
 impl CompileCtx {
   pub fn new() -> Self {
     Self {
       reg_map: HashMap::new(),
-      next_reg: 0,
+      symbols: HashMap::new(),
+      dictionary: HashMap::new(),
       types: TypeSection::new(),
+      features: Vec::new(),
       const_entries: Vec::new(),
       const_blob: Vec::new(),
       instrs: Vec::new(),
-      features: Vec::new(),
+      next_reg: 0,
     }
   }
 
-  pub fn alloc_register_for_ptr(&mut self, ptr: usize) -> u32 {
+  pub fn clear(&mut self) {
+    self.reg_map.clear();
+    self.symbols.clear();
+    self.dictionary.clear();
+    self.types = TypeSection::new();
+    self.features.clear();
+    self.const_entries.clear();
+    self.const_blob.clear();
+    self.instrs.clear();
+    self.next_reg = 0;
+  }
+
+  pub fn define_symbol(&mut self, name: &str, reg: Register) {
+    let id = hash_str(name);
+    self.symbols.insert(id, reg);
+    self.dictionary.insert(id, name.to_string());
+  }
+
+  pub fn alloc_register_for_ptr(&mut self, ptr: usize) -> Register {
     if let Some(&r) = self.reg_map.get(&ptr) { return r; }
     let r = self.next_reg;
     self.next_reg += 1;
@@ -213,9 +224,9 @@ impl CompileCtx {
   }
 
   /// add a constant (value) -> returns const_id (u32)
-  pub fn add_constant(&mut self, val: &Value, vk: &ValueKind) -> u32 {
+  pub fn add_constant(&mut self, val: &Value) -> u32 {
     // compute type id
-    let t = self.types.get_or_intern(vk);
+    let t = self.types.get_or_intern(&val.kind());
 
     // offset = end of blob
     let off = self.const_blob.len() as u64;
@@ -247,16 +258,16 @@ impl CompileCtx {
     id
   }
 
-  pub fn emit_const_load(&mut self, dst: u32, const_id: u32) {
+  pub fn emit_const_load(&mut self, dst: Register, const_id: u32) {
     self.instrs.push(EncodedInstr::ConstLoad { dst, const_id });
   }
-  pub fn emit_unop(&mut self, opcode: u64, dst: u32, src: u32) {
+  pub fn emit_unop(&mut self, opcode: u64, dst: Register, src: Register) {
     self.instrs.push(EncodedInstr::UnOp { opcode, dst, src });
   }
-  pub fn emit_binop(&mut self, opcode: u64, dst: u32, lhs: u32, rhs: u32) {
+  pub fn emit_binop(&mut self, opcode: u64, dst: Register, lhs: Register, rhs: Register) {
     self.instrs.push(EncodedInstr::BinOp { opcode, dst, lhs, rhs });
   }
-  pub fn emit_ret(&mut self, src: u32) {
+  pub fn emit_ret(&mut self, src: Register) {
     self.instrs.push(EncodedInstr::Ret { src })
   }
 }
