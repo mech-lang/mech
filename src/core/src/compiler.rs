@@ -1,7 +1,248 @@
 use crate::*;
 use std::collections::HashSet;
 
-// Type Section
+use crate::*;
+use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
+use std::io::{self, Write, Read};
+
+// Byetecode Compiler
+// ============================================================================
+
+// Format:
+// 1. Header
+// 2. Types
+// 3. Features
+// 4. Constants
+// 5. Instructions
+
+// Compilation Context
+// ----------------------------------------------------------------------------
+
+#[derive(Debug)]
+pub struct CompileCtx {
+  // pointer identity -> register index
+  pub reg_map: HashMap<usize, Register>,
+  // symbol identity -> register index
+  pub symbols: HashMap<u64, Register>,
+  // symbol identity -> pointer identity
+  pub symbol_ptrs: HashMap<u64, usize>,
+  // symbol identity -> symbol name
+  pub dictionary: HashMap<u64, String>,
+  pub types: TypeSection,
+  pub features: HashSet<FeatureFlag>,
+  pub const_entries: Vec<ConstEntry>,
+  pub const_blob: Vec<u8>,
+  pub instrs: Vec<EncodedInstr>,
+  pub next_reg: Register,
+}
+
+impl CompileCtx {
+  pub fn new() -> Self {
+    Self {
+      reg_map: HashMap::new(),
+      symbols: HashMap::new(),
+      dictionary: HashMap::new(),
+      types: TypeSection::new(),
+      symbol_ptrs: HashMap::new(),
+      features: HashSet::new(),
+      const_entries: Vec::new(),
+      const_blob: Vec::new(),
+      instrs: Vec::new(),
+      next_reg: 0,
+    }
+  }
+
+  pub fn clear(&mut self) {
+    self.reg_map.clear();
+    self.symbols.clear();
+    self.dictionary.clear();
+    self.types = TypeSection::new();
+    self.features.clear();
+    self.const_entries.clear();
+    self.const_blob.clear();
+    self.instrs.clear();
+    self.next_reg = 0;
+  }
+
+  pub fn define_symbol(&mut self, id: usize, reg: Register, name: &str) {
+    let symbol_id = hash_str(name);
+    self.symbols.insert(symbol_id, reg);
+    self.symbol_ptrs.insert(symbol_id, id);
+    self.dictionary.insert(symbol_id, name.to_string());
+  }
+
+  pub fn alloc_register_for_ptr(&mut self, ptr: usize) -> Register {
+    if let Some(&r) = self.reg_map.get(&ptr) { return r; }
+    let r = self.next_reg;
+    self.next_reg += 1;
+    self.reg_map.insert(ptr, r);
+    r
+  }
+
+  pub fn emit_const_load(&mut self, dst: Register, const_id: u32) {
+    self.instrs.push(EncodedInstr::ConstLoad { dst, const_id });
+  }
+  pub fn emit_unop(&mut self, opcode: u64, dst: Register, src: Register) {
+    self.instrs.push(EncodedInstr::UnOp { opcode, dst, src });
+  }
+  pub fn emit_binop(&mut self, opcode: u64, dst: Register, lhs: Register, rhs: Register) {
+    self.instrs.push(EncodedInstr::BinOp { opcode, dst, lhs, rhs });
+  }
+  pub fn emit_ret(&mut self, src: Register) {
+    self.instrs.push(EncodedInstr::Ret { src })
+  }
+}
+
+// 1. Header
+// ----------------------------------------------------------------------------
+
+#[repr(C)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ByteCodeHeader {
+  pub magic:        [u8; 4],   // e.g., b"MECH"
+  pub version:        u8,      // bytecode format version
+  pub mech_ver:       u16,     // Mech language version
+  pub flags:          u16,     // reserved/feature bit
+  pub reg_count:      u32,     // total virtual registers used
+  pub instr_count:    u32,     // number of instructions
+  pub feature_count:  u32,     // number of feature flags  
+  pub feature_off:    u64,     // offset to feature flags (array of u64)
+
+  pub const_count:    u32,     // number of constants (entries
+  pub const_tbl_off:  u64,     // offset to constant table (array of entries)
+  pub const_tbl_len:  u64,     // bytes in constant table area (entries only)
+  pub const_blob_off: u64,     // offset to raw constant blob data
+  pub const_blob_len: u64,     // bytes in blob (payloads
+                               
+  pub instr_off:      u64,     // offset to instruction stream
+  pub instr_len:      u64,     // bytes of instruction stream
+
+  pub feat_off:       u64,     // offset to feature section
+  pub feat_len:       u64,     // bytes of feature section
+
+  pub reserved:       u32,     // pad/alignment
+}
+
+impl ByteCodeHeader {
+  // Header byte size when serialized. This is the number of bytes `write_to` will write.
+  // (Computed from the sum of sizes of each field written in little-endian.)
+  pub const HEADER_SIZE: usize = 4  // magic
+    + 1   // version
+    + 2   // mech_ver
+    + 2   // flags
+    + 4   // reg_count
+    + 4   // instr_count
+    + 4   // feature_count
+    + 8   // feature_off
+    + 4   // const_count
+    + 8   // const_tbl_off
+    + 8   // const_tbl_len
+    + 8   // const_blob_off
+    + 8   // const_blob_len
+    + 8   // instr_off
+    + 8   // instr_len
+    + 8   // feat_off
+    + 8   // feat_len
+    + 4;  // reserved
+
+  // Serialize header using little-endian encoding.
+  pub fn write_to(&self, w: &mut impl Write) -> io::Result<()> {
+    // magic (4 bytes)
+    w.write_all(&self.magic)?;
+
+    // small fields
+    w.write_u8(self.version)?;
+    w.write_u16::<LittleEndian>(self.mech_ver)?;
+    w.write_u16::<LittleEndian>(self.flags)?;
+
+    // counts
+    w.write_u32::<LittleEndian>(self.reg_count)?;
+    w.write_u32::<LittleEndian>(self.instr_count)?;
+
+    // features (count + offset)
+    w.write_u32::<LittleEndian>(self.feature_count)?;
+    w.write_u64::<LittleEndian>(self.feature_off)?;
+
+    // constants table / blob
+    w.write_u32::<LittleEndian>(self.const_count)?;
+    w.write_u64::<LittleEndian>(self.const_tbl_off)?;
+    w.write_u64::<LittleEndian>(self.const_tbl_len)?;
+    w.write_u64::<LittleEndian>(self.const_blob_off)?;
+    w.write_u64::<LittleEndian>(self.const_blob_len)?;
+
+    // instructions
+    w.write_u64::<LittleEndian>(self.instr_off)?;
+    w.write_u64::<LittleEndian>(self.instr_len)?;
+
+    // feature section (alternative/extra)
+    w.write_u64::<LittleEndian>(self.feat_off)?;
+    w.write_u64::<LittleEndian>(self.feat_len)?;
+
+    // footer
+    w.write_u32::<LittleEndian>(self.reserved)?;
+    Ok(())
+  }
+
+  // Read a header. Expects the same layout as `write_to`.
+  pub fn read_from(r: &mut impl Read) -> io::Result<Self> {
+    let mut magic = [0u8; 4];
+    r.read_exact(&mut magic)?;
+
+    let version = r.read_u8()?;
+    let mech_ver = r.read_u16::<LittleEndian>()?;
+    let flags = r.read_u16::<LittleEndian>()?;
+
+    let reg_count = r.read_u32::<LittleEndian>()?;
+    let instr_count = r.read_u32::<LittleEndian>()?;
+
+    let feature_count = r.read_u32::<LittleEndian>()?;
+    let feature_off = r.read_u64::<LittleEndian>()?;
+
+    let const_count = r.read_u32::<LittleEndian>()?;
+    let const_tbl_off = r.read_u64::<LittleEndian>()?;
+    let const_tbl_len = r.read_u64::<LittleEndian>()?;
+    let const_blob_off = r.read_u64::<LittleEndian>()?;
+    let const_blob_len = r.read_u64::<LittleEndian>()?;
+
+    let instr_off = r.read_u64::<LittleEndian>()?;
+    let instr_len = r.read_u64::<LittleEndian>()?;
+
+    let feat_off = r.read_u64::<LittleEndian>()?;
+    let feat_len = r.read_u64::<LittleEndian>()?;
+
+    let reserved = r.read_u32::<LittleEndian>()?;
+
+    Ok(Self {
+      magic,
+      version,
+      mech_ver,
+      flags,
+      reg_count,
+      instr_count,
+      feature_count,
+      feature_off,
+      const_count,
+      const_tbl_off,
+      const_tbl_len,
+      const_blob_off,
+      const_blob_len,
+      instr_off,
+      instr_len,
+      feat_off,
+      feat_len,
+      reserved,
+    })
+  }
+
+  // Quick check: does the header magic match the expected magic?
+  pub fn validate_magic(&self, expected: &[u8;4]) -> bool {
+    &self.magic == expected
+  }
+}
+
+
+
+// 2. Type Section
 // ----------------------------------------------------------------------------
 
 #[repr(u16)]
@@ -162,7 +403,7 @@ fn encode_value_kind(ts: &mut TypeSection, vk: &ValueKind) -> (TypeTag, Vec<u8>)
   (tag, b)
 }
 
-// Features
+// 3. Features
 // ----------------------------------------------------------------------------
 
 #[repr(u16)]
@@ -197,85 +438,41 @@ impl FeatureFlag {
   }
 }
 
-// Compilation Context
+// 4. Constants
 // ----------------------------------------------------------------------------
 
-#[derive(Debug)]
-pub struct CompileCtx {
-  // pointer identity -> register index
-  pub reg_map: HashMap<usize, Register>,
-  // symbol identity -> register index
-  pub symbols: HashMap<u64, Register>,
-  // symbol identity -> pointer identity
-  pub symbol_ptrs: HashMap<u64, usize>,
-  // symbol identity -> symbol name
-  pub dictionary: HashMap<u64, String>,
-  pub types: TypeSection,
-  pub features: HashSet<FeatureFlag>,
-  pub const_entries: Vec<ConstEntry>,
-  pub const_blob: Vec<u8>,
-  pub instrs: Vec<EncodedInstr>,
-  pub next_reg: Register,
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConstEncoding { 
+  Inline = 1 
 }
 
-impl CompileCtx {
-  pub fn new() -> Self {
-    Self {
-      reg_map: HashMap::new(),
-      symbols: HashMap::new(),
-      dictionary: HashMap::new(),
-      types: TypeSection::new(),
-      symbol_ptrs: HashMap::new(),
-      features: HashSet::new(),
-      const_entries: Vec::new(),
-      const_blob: Vec::new(),
-      instrs: Vec::new(),
-      next_reg: 0,
-    }
-  }
-
-  pub fn clear(&mut self) {
-    self.reg_map.clear();
-    self.symbols.clear();
-    self.dictionary.clear();
-    self.types = TypeSection::new();
-    self.features.clear();
-    self.const_entries.clear();
-    self.const_blob.clear();
-    self.instrs.clear();
-    self.next_reg = 0;
-  }
-
-  pub fn define_symbol(&mut self, id: usize, reg: Register, name: &str) {
-    let symbol_id = hash_str(name);
-    self.symbols.insert(symbol_id, reg);
-    self.symbol_ptrs.insert(symbol_id, id);
-    self.dictionary.insert(symbol_id, name.to_string());
-  }
-
-  pub fn alloc_register_for_ptr(&mut self, ptr: usize) -> Register {
-    if let Some(&r) = self.reg_map.get(&ptr) { return r; }
-    let r = self.next_reg;
-    self.next_reg += 1;
-    self.reg_map.insert(ptr, r);
-    r
-  }
-
-  pub fn emit_const_load(&mut self, dst: Register, const_id: u32) {
-    self.instrs.push(EncodedInstr::ConstLoad { dst, const_id });
-  }
-  pub fn emit_unop(&mut self, opcode: u64, dst: Register, src: Register) {
-    self.instrs.push(EncodedInstr::UnOp { opcode, dst, src });
-  }
-  pub fn emit_binop(&mut self, opcode: u64, dst: Register, lhs: Register, rhs: Register) {
-    self.instrs.push(EncodedInstr::BinOp { opcode, dst, lhs, rhs });
-  }
-  pub fn emit_ret(&mut self, src: Register) {
-    self.instrs.push(EncodedInstr::Ret { src })
-  }
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConstEntry {
+  pub type_id: u32,
+  pub enc:     ConstEncoding,
+  pub align:   u8,
+  pub flags:   u8,
+  pub reserved:u16,
+  pub offset:  u64,
+  pub length:  u64,
 }
 
-// Instruction Encoding (fixed forms)
+impl ConstEntry {
+  pub fn write_to(&self, w: &mut impl std::io::Write) -> std::io::Result<()> {
+    w.write_u32::<LittleEndian>(self.type_id)?;
+    w.write_u8(self.enc as u8)?;
+    w.write_u8(self.align)?;
+    w.write_u8(self.flags)?;
+    w.write_u8(0)?; // pad to 4 bytes for the small fields
+    w.write_u64::<LittleEndian>(self.offset)?;
+    w.write_u64::<LittleEndian>(self.length)?;
+    Ok(())
+  }
+  pub fn byte_len() -> u64 { 4 + 1 + 1 + 1 + 1 + 8 + 8 } // = 24 bytes
+}
+
+// 5. Instruction Encoding (fixed forms)
 // ----------------------------------------------------------------------------
 
 pub const OP_CONST_LOAD: u64 = 0x01;
@@ -323,35 +520,4 @@ impl EncodedInstr {
     }
     Ok(())
   }
-}
-
-#[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ConstEncoding { 
-  Inline = 1 
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ConstEntry {
-  pub type_id: u32,
-  pub enc:     ConstEncoding,
-  pub align:   u8,
-  pub flags:   u8,
-  pub reserved:u16,
-  pub offset:  u64,
-  pub length:  u64,
-}
-
-impl ConstEntry {
-  pub fn write_to(&self, w: &mut impl std::io::Write) -> std::io::Result<()> {
-    w.write_u32::<LittleEndian>(self.type_id)?;
-    w.write_u8(self.enc as u8)?;
-    w.write_u8(self.align)?;
-    w.write_u8(self.flags)?;
-    w.write_u8(0)?; // pad to 4 bytes for the small fields
-    w.write_u64::<LittleEndian>(self.offset)?;
-    w.write_u64::<LittleEndian>(self.length)?;
-    Ok(())
-  }
-  pub fn byte_len() -> u64 { 4 + 1 + 1 + 1 + 1 + 8 + 8 } // = 24 bytes
 }
