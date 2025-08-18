@@ -42,6 +42,7 @@ impl<T> Ref<T> {
   pub fn borrow(&self) -> std::cell::Ref<'_, T> { self.0.borrow() }
   pub fn borrow_mut(&self) -> std::cell::RefMut<'_, T> { self.0.borrow_mut() }
   pub fn addr(&self) -> usize { Rc::as_ptr(&self.0) as *const () as usize }
+  pub fn id(&self) -> u64 { Rc::as_ptr(&self.0) as *const () as u64 }
 }
 
 impl<T: PartialEq> PartialEq for Ref<T> {
