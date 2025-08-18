@@ -12,8 +12,8 @@ use std::path::Path;
 
 // Format:
 // 1. Header
-// 2. Types
-// 3. Features
+// 2. Features
+// 3. Types
 // 4. Constants
 // 5. Instructions
 
@@ -24,6 +24,7 @@ use std::path::Path;
 pub struct ParsedProgram {
   pub header: ByteCodeHeader,
   pub features: Vec<u64>,
+  pub types: TypeSection,
   pub const_entries: Vec<ParsedConstEntry>,
   pub const_blob: Vec<u8>,
   pub instr_bytes: Vec<u8>,
@@ -128,12 +129,14 @@ impl CompileCtx {
 
     let header_size = ByteCodeHeader::HEADER_SIZE as u64;
     let feat_bytes_len: u64 = 4 + (self.features.len() as u64) * 8;
+    let types_bytes_len: u64 = self.types.byte_len();
     let const_tbl_len: u64 = (self.const_entries.len() as u64) * ConstEntry::byte_len();
     let const_blob_len: u64 = self.const_blob.len() as u64;
     let instr_bytes_len: u64 = self.instrs.iter().map(|i| i.byte_len()).sum();
 
     let mut offset = header_size;                           // bytes in header
     let feature_off = offset; offset += feat_bytes_len;     // offset to feature section
+    let types_off = offset; offset += types_bytes_len;       // offset to types section
     let const_tbl_off = offset; offset += const_tbl_len;    // offset to constant table
     let const_blob_off = offset; offset += const_blob_len;  // offset to constant blob
     let instr_off = offset;                                 // offset to instruction stream
@@ -155,6 +158,8 @@ impl CompileCtx {
       instr_count: self.instrs.len() as u32,
       feature_count: self.features.len() as u32,
       feature_off,
+      types_count: self.types.entries.len() as u32,
+      types_off,
 
       const_count: self.const_entries.len() as u32,
       const_tbl_off,
@@ -176,18 +181,20 @@ impl CompileCtx {
     // 1. Write the header
     header.write_to(&mut buf)?;
 
-    // 2. Write the feature section
+    // 2. Write feature section
     buf.write_u32::<LittleEndian>(self.features.len() as u32)?;
     for f in &self.features {
       buf.write_u64::<LittleEndian>(f.as_u64())?;
     }
 
-    // 3. write const table entries
+    // 3. Write types section
+    self.types.write_to(&mut buf)?;
+
+    // 4. write const section
     for entry in &self.const_entries {
       entry.write_to(&mut buf)?;
     }
 
-    // 4. write const blob
     if !self.const_blob.is_empty() {
       buf.write_all(&self.const_blob)?;
     }
@@ -227,8 +234,12 @@ pub struct ByteCodeHeader {
   pub flags:          u16,     // reserved/feature bit
   pub reg_count:      u32,     // total virtual registers used
   pub instr_count:    u32,     // number of instructions
+  
   pub feature_count:  u32,     // number of feature flags  
   pub feature_off:    u64,     // offset to feature flags (array of u64)
+
+  pub types_count:    u32,     // number of types
+  pub types_off:      u64,     // offset to type section
 
   pub const_count:    u32,     // number of constants (entries
   pub const_tbl_off:  u64,     // offset to constant table (array of entries)
@@ -256,6 +267,8 @@ impl ByteCodeHeader {
     + 4   // instr_count
     + 4   // feature_count
     + 8   // feature_off
+    + 4   // types_count
+    + 8   // types_off
     + 4   // const_count
     + 8   // const_tbl_off
     + 8   // const_tbl_len
@@ -284,6 +297,10 @@ impl ByteCodeHeader {
     // features (count + offset)
     w.write_u32::<LittleEndian>(self.feature_count)?;
     w.write_u64::<LittleEndian>(self.feature_off)?;
+
+    // types
+    w.write_u32::<LittleEndian>(self.types_count)?;
+    w.write_u64::<LittleEndian>(self.types_off)?;
 
     // constants table / blob
     w.write_u32::<LittleEndian>(self.const_count)?;
@@ -320,6 +337,9 @@ impl ByteCodeHeader {
     let feature_count = r.read_u32::<LittleEndian>()?;
     let feature_off = r.read_u64::<LittleEndian>()?;
 
+    let types_count = r.read_u32::<LittleEndian>()?;
+    let types_off = r.read_u64::<LittleEndian>()?;
+
     let const_count = r.read_u32::<LittleEndian>()?;
     let const_tbl_off = r.read_u64::<LittleEndian>()?;
     let const_tbl_len = r.read_u64::<LittleEndian>()?;
@@ -343,6 +363,8 @@ impl ByteCodeHeader {
       instr_count,
       feature_count,
       feature_off,
+      types_count,
+      types_off,
       const_count,
       const_tbl_off,
       const_tbl_len,
@@ -362,9 +384,42 @@ impl ByteCodeHeader {
   }
 }
 
+// 2. Features
+// ----------------------------------------------------------------------------
 
+#[repr(u16)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum FeatureKind {
+  I8=1, I16, I32, I64, I128,
+  U8, U16, U32, U64, U128,
+  F32, F64,
+  String,
+  Bool,
+  Complex,
+  Rational,
+  Matrix1, Matrix2, Matrix3, Matrix4,
+  Matrix2x3, Matrix3x2,
+  RowVector2, RowVector3, RowVector4,
+  Vector2, Vector3, Vector4,
+  Custom = 0xFFFF,
+}
 
-// 2. Type Section
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum FeatureFlag {
+  Builtin(FeatureKind),
+  Custom(u64),
+}
+
+impl FeatureFlag {
+  pub fn as_u64(&self) -> u64 {
+    match self {
+      FeatureFlag::Builtin(f) => *f as u64,
+      FeatureFlag::Custom(c) => *c,
+    }
+  }
+}
+
+// 3. Type Section
 // ----------------------------------------------------------------------------
 
 #[repr(u16)]
@@ -375,17 +430,41 @@ pub enum TypeTag {
   Matrix, EnumTag, Record, Map, Atom, Table, Tuple, Reference, Set, OptionT,
 }
 
+impl TypeTag {
+  pub fn from_u16(tag: u16) -> Option<Self> {
+    match tag {
+      1 => Some(TypeTag::U8), 2 => Some(TypeTag::U16), 3 => Some(TypeTag::U32),
+      4 => Some(TypeTag::U64), 5 => Some(TypeTag::U128), 6 => Some(TypeTag::I8),
+      7 => Some(TypeTag::I16), 8 => Some(TypeTag::I32), 9 => Some(TypeTag::I64),
+      10 => Some(TypeTag::I128), 11 => Some(TypeTag::F32), 12 => Some(TypeTag::F64),
+      13 => Some(TypeTag::ComplexNumber), 14 => Some(TypeTag::RationalNumber),
+      15 => Some(TypeTag::String), 16 => Some(TypeTag::Bool),
+      17 => Some(TypeTag::Id), 18 => Some(TypeTag::Index),
+      19 => Some(TypeTag::Empty), 20 => Some(TypeTag::Any),
+      21 => Some(TypeTag::Matrix), 22 => Some(TypeTag::EnumTag),
+      23 => Some(TypeTag::Record), 24 => Some(TypeTag::Map),
+      25 => Some(TypeTag::Atom), 26 => Some(TypeTag::Table),
+      27 => Some(TypeTag::Tuple), _ => None,
+    }
+  }
+}
+
 #[derive(Debug)]
 pub struct TypeEntry {
   pub tag: TypeTag,
-  pub bytes: Vec<u8>, // encoded payload per rules above
+  pub bytes: Vec<u8>,
 }
+impl TypeEntry {
+  pub fn byte_len(&self) -> u64 {
+    2 + self.bytes.len() as u64
+  }
+}
+
 pub type TypeId = u32;
 
 #[derive(Default, Debug)]
 pub struct TypeSection {
-  // canonicalize by structural equality of ValueKind
-  interner: std::collections::HashMap<ValueKind, TypeId>,
+  interner: HashMap<ValueKind, TypeId>,
   entries:  Vec<TypeEntry>, // index is TypeId
 }
     
@@ -409,8 +488,8 @@ impl TypeSection {
     w.write_u32::<LittleEndian>(self.entries.len() as u32)?;
     for e in &self.entries {
       w.write_u16::<LittleEndian>(e.tag as u16)?;
-      w.write_u16::<LittleEndian>(0)?; // flags
-      w.write_u32::<LittleEndian>(1)?; // aux_count (not strictly used; kept for forward compatibility)
+      w.write_u16::<LittleEndian>(0)?;
+      w.write_u32::<LittleEndian>(1)?;
       w.write_u32::<LittleEndian>(e.bytes.len() as u32)?;
       w.write_all(&e.bytes)?;
     }
@@ -418,7 +497,6 @@ impl TypeSection {
   }
 
   pub fn byte_len(&self) -> u64 {
-    // 4 + sum( tag(2)+flags(2)+aux(4)+len(4)+bytes )
     4 + self.entries.iter().map(|e| 12 + e.bytes.len() as u64).sum::<u64>()
   }
 }
@@ -525,41 +603,6 @@ fn encode_value_kind(ts: &mut TypeSection, vk: &ValueKind) -> (TypeTag, Vec<u8>)
   (tag, b)
 }
 
-// 3. Features
-// ----------------------------------------------------------------------------
-
-#[repr(u16)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum FeatureKind {
-  I8=1, I16, I32, I64, I128,
-  U8, U16, U32, U64, U128,
-  F32, F64,
-  String,
-  Bool,
-  Complex,
-  Rational,
-  Matrix1, Matrix2, Matrix3, Matrix4,
-  Matrix2x3, Matrix3x2,
-  RowVector2, RowVector3, RowVector4,
-  Vector2, Vector3, Vector4,
-  Custom = 0xFFFF,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum FeatureFlag {
-  Builtin(FeatureKind),
-  Custom(u64),
-}
-
-impl FeatureFlag {
-  pub fn as_u64(&self) -> u64 {
-    match self {
-      FeatureFlag::Builtin(f) => *f as u64,
-      FeatureFlag::Custom(c) => *c,
-    }
-  }
-}
-
 // 4. Constants
 // ----------------------------------------------------------------------------
 
@@ -651,7 +694,7 @@ pub fn load_program_from_file(path: impl AsRef<Path>) -> MResult<ParsedProgram> 
   // verify CRC trailer first; this also ensures the file is fully readable
   verify_crc_trailer(&f)?;
   
-  // read header
+  // 1. read header
   f.seek(SeekFrom::Start(0))?;
   let mut header_buf = vec![0u8; ByteCodeHeader::HEADER_SIZE];
   f.read_exact(&mut header_buf)?;
@@ -669,7 +712,7 @@ pub fn load_program_from_file(path: impl AsRef<Path>) -> MResult<ParsedProgram> 
     });
   }
     
-  // read features
+  // 2. read features
   let mut features = Vec::new();
   if header.feature_off != 0 && header.feature_off + 4 <= (f.metadata()?.len() - 4) {
     f.seek(SeekFrom::Start(header.feature_off))?;
@@ -680,7 +723,30 @@ pub fn load_program_from_file(path: impl AsRef<Path>) -> MResult<ParsedProgram> 
     }
   }
 
-  // read const table
+  // 3. read types
+  let mut types = TypeSection::new();
+  if header.feature_off + header.feat_len <= f.metadata()?.len() {
+    f.seek(SeekFrom::Start(header.feat_off))?;
+    let type_count = f.read_u32::<LittleEndian>()? as usize;
+    for _ in 0..type_count {
+      let tag = f.read_u16::<LittleEndian>()?;
+      let flags = f.read_u16::<LittleEndian>()?;
+      let aux = f.read_u32::<LittleEndian>()?;
+      let len = f.read_u32::<LittleEndian>()? as usize;
+      let mut bytes = vec![0u8; len];
+      f.read_exact(&mut bytes)?;
+      let tag = TypeTag::from_u16(tag).ok_or_else(|| MechError {
+        file: file!().to_string(),
+        tokens: vec![],
+        msg: format!("Invalid type tag: {}", tag),
+        id: line!(),
+        kind: MechErrorKind::GenericError("Invalid type tag".to_string()),
+      })?;
+      types.entries.push(TypeEntry { tag, bytes });
+    }
+  }
+
+  // 4. read const table
   let mut const_entries = Vec::new();
   if header.const_tbl_off != 0 && header.const_tbl_len > 0 {
     f.seek(SeekFrom::Start(header.const_tbl_off))?;
@@ -693,12 +759,12 @@ pub fn load_program_from_file(path: impl AsRef<Path>) -> MResult<ParsedProgram> 
   // read const blob
   let mut const_blob = vec![];
   if header.const_blob_off != 0 && header.const_blob_len > 0 {
-      f.seek(SeekFrom::Start(header.const_blob_off))?;
-      const_blob.resize(header.const_blob_len as usize, 0);
-      f.read_exact(&mut const_blob)?;
+    f.seek(SeekFrom::Start(header.const_blob_off))?;
+    const_blob.resize(header.const_blob_len as usize, 0);
+    f.read_exact(&mut const_blob)?;
   }
 
-  // read instr bytes
+  // 5. read instr bytes
   let mut instr_bytes = vec![];
   if header.instr_off != 0 && header.instr_len > 0 {
     f.seek(SeekFrom::Start(header.instr_off))?;
@@ -709,7 +775,7 @@ pub fn load_program_from_file(path: impl AsRef<Path>) -> MResult<ParsedProgram> 
   // decode instructions
   let instrs = decode_instructions(Cursor::new(&instr_bytes[..]))?;
   
-  Ok(ParsedProgram { header, features, const_entries, const_blob, instr_bytes, instrs })
+  Ok(ParsedProgram { header, features, types, const_entries, const_blob, instr_bytes, instrs })
 }
 
 pub fn parse_version_to_u16(s: &str) -> Option<u16> {
@@ -738,13 +804,13 @@ pub fn decode_version_from_u16(v: u16) -> (u16, u16, u16) {
 
 #[derive(Debug, Clone)]
 pub struct ParsedConstEntry {
-    pub type_id: u32,
-    pub enc: u8,
-    pub align: u8,
-    pub flags: u8,
-    pub reserved: u8,
-    pub offset: u64,
-    pub length: u64,
+  pub type_id: u32,
+  pub enc: u8,
+  pub align: u8,
+  pub flags: u8,
+  pub reserved: u8,
+  pub offset: u64,
+  pub length: u64,
 }
 
 fn parse_const_entries(mut cur: Cursor<&[u8]>, count: usize) -> io::Result<Vec<ParsedConstEntry>> {
