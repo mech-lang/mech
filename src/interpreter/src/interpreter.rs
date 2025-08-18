@@ -2,6 +2,8 @@ use crate::*;
 use std::rc::Rc;
 use std::collections::HashMap;
 use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::io::{Cursor, Read, Write};
+use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
 
 // Interpreter 
 // ----------------------------------------------------------------------------
@@ -245,10 +247,15 @@ impl Interpreter {
     let feature_off = offset; offset += feat_bytes_len;     // offset to feature section
     let const_tbl_off = offset; offset += const_tbl_len;    // offset to constant table
     let const_blob_off = offset; offset += const_blob_len;  // offset to constant blob
-    let instr_off = offset; offset += instr_bytes_len;      // offset to instruction stream
+    let instr_off = offset;                                 // offset to instruction stream
+    offset += instr_bytes_len;                              
     let feat_off = feature_off;                             // offset to feature section              
     let feat_len = feat_bytes_len;                          // bytes in feature section                
     
+    let file_len_before_trailer = offset;
+    let trailer_len = 4u64;
+    let full_file_len = file_len_before_trailer + trailer_len;
+
     // The header!
     let header = ByteCodeHeader {
       magic: *b"MECH",
@@ -272,10 +279,46 @@ impl Interpreter {
       feat_off,
       feat_len,
 
-      checksum: 0,
       reserved: 0,
     };
     
+    let mut buf = Cursor::new(Vec::<u8>::with_capacity(full_file_len as usize));
+
+    // 1. Write the header
+    header.write_to(&mut buf)?;
+
+    // 2. Write the feature section
+    buf.write_u32::<LittleEndian>(ctx.features.len() as u32)?;
+    for f in &ctx.features {
+      buf.write_u64::<LittleEndian>(f.as_u64())?;
+    }
+
+    // 3. write const table entries
+    for entry in &ctx.const_entries {
+      entry.write_to(&mut buf)?;
+    }
+
+    // 4. write const blob
+    if !ctx.const_blob.is_empty() {
+      buf.write_all(&ctx.const_blob)?;
+    }
+
+    // 5. write instructions. This is where the action is!
+    for ins in &ctx.instrs {
+      ins.write_to(&mut buf)?;
+    }
+
+    // sanity check: the position should equal file_len_before_trailer
+    let pos = buf.position();
+    if pos != file_len_before_trailer {
+      return Err(MechError {
+        file: file!().to_string(),
+        tokens: vec![],
+        msg: format!("Buffer position mismatch: expected {}, got {}", file_len_before_trailer, pos),
+        id: line!(),
+        kind: MechErrorKind::GenericError("Buffer position mismatch".to_string()),
+      });
+    }
     
     println!("Header: {:?}", header);
     todo!()
