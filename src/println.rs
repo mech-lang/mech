@@ -24,6 +24,9 @@ where
   }
   fn out(&self) -> Value { Value::Empty }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 macro_rules! impl_print_match_arms {
@@ -82,6 +85,9 @@ impl<T> MechFunction for IoPrintlnScalar<T>
   }
   fn out(&self) -> Value { Value::Empty }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 fn impl_print_fxn(source_value: Value) -> MResult<Box<dyn MechFunction>>  {
