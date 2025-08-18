@@ -298,3 +298,10 @@ pub fn parse_version_to_u16(s: &str) -> Option<u16> {
   let encoded = (major << 13) | (minor << 8) | patch;
   Some(encoded as u16)
 }
+
+pub fn decode_version_from_u16(v: u16) -> (u16, u16, u16) {
+  let major = (v >> 13) & 0b111;
+  let minor = (v >> 8) & 0b1_1111;
+  let patch = v & 0xFF;
+  (major, minor, patch)
+}
