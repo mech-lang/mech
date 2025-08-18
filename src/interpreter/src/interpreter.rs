@@ -311,17 +311,18 @@ impl Interpreter {
     // sanity check: the position should equal file_len_before_trailer
     let pos = buf.position();
     if pos != file_len_before_trailer {
-      return Err(MechError {
-        file: file!().to_string(),
-        tokens: vec![],
-        msg: format!("Buffer position mismatch: expected {}, got {}", file_len_before_trailer, pos),
-        id: line!(),
-        kind: MechErrorKind::GenericError("Buffer position mismatch".to_string()),
-      });
+      return Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Buffer position mismatch: expected {}, got {}", file_len_before_trailer, pos),id: line!(),kind: MechErrorKind::GenericError("Buffer position mismatch".to_string()),});
     }
-    
-    println!("Header: {:?}", header);
-    todo!()
+
+    let bytes_so_far = buf.get_ref().as_slice();
+    let checksum = crc32fast::hash(bytes_so_far);
+    buf.write_u32::<LittleEndian>(checksum)?;
+
+    if buf.position() != full_file_len {
+      return Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Final buffer length mismatch: expected {}, got {}", full_file_len, buf.position()),id: line!(),kind: MechErrorKind::GenericError("Final buffer length mismatch".to_string()),});
+    }
+
+    Ok(buf.into_inner())
   }
 }
 
