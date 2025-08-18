@@ -219,6 +219,13 @@ async fn main() -> Result<(), MechError> {
 
     let bytecode = intrp.compile()?;
 
+    let mut output_file = output_path.join("output.blx");
+
+    let mut f = std::fs::File::create(&output_file)?;
+    f.write_all(&bytecode)?;
+    f.flush()?;
+
+    println!("{} Mech bytecode written to: {}", "[Output]".truecolor(153,221,85), output_file.display());
 
     return Ok(());
   }
