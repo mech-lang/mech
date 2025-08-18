@@ -223,41 +223,6 @@ impl CompileCtx {
     if !self.features.contains(&fid) { self.features.push(fid); }
   }
 
-  /// add a constant (value) -> returns const_id (u32)
-  pub fn add_constant(&mut self, val: &Value) -> u32 {
-    // compute type id
-    let t = self.types.get_or_intern(&val.kind());
-
-    // offset = end of blob
-    let off = self.const_blob.len() as u64;
-
-    /*
-    match val {
-      Value::F64(x) => {
-        self.const_blob.write_f64::<LittleEndian>(*x).unwrap();
-      }
-      Value::MatrixF64 { dims: _, data_row_major } => {
-        for v in data_row_major {
-          self.const_blob.write_f64::<LittleEndian>(*v).unwrap();
-        }
-      }
-    }*/
-    let len = (self.const_blob.len() as u64) - off;
-
-    let entry = ConstEntry {
-      type_id: t,
-      enc: ConstEncoding::Inline,
-      align: 8,
-      flags: 0,
-      reserved: 0,
-      offset: off,
-      length: len,
-    };
-    let id = self.const_entries.len() as u32;
-    self.const_entries.push(entry);
-    id
-  }
-
   pub fn emit_const_load(&mut self, dst: Register, const_id: u32) {
     self.instrs.push(EncodedInstr::ConstLoad { dst, const_id });
   }
@@ -325,7 +290,9 @@ impl EncodedInstr {
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ConstEncoding { Inline = 1 }
+pub enum ConstEncoding { 
+  Inline = 1 
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConstEntry {
