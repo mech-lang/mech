@@ -784,7 +784,6 @@ pub enum DecodedInstr {
   Unknown { opcode: u64, rest: Vec<u8> }, // unknown opcode or dynamic form
 }
 
-
 fn decode_instructions(mut cur: Cursor<&[u8]>) -> io::Result<Vec<DecodedInstr>> {
   let mut out = Vec::new();
   while (cur.position() as usize) < cur.get_ref().len() {

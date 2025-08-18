@@ -77,6 +77,7 @@ use indexmap::map::IndexMap;
 pub mod literals;
 pub mod structures;
 pub mod interpreter;
+pub mod bytecode_interpreter;
 pub mod stdlib;
 #[cfg(feature = "functions")]
 pub mod functions;
@@ -85,6 +86,7 @@ pub mod expressions;
 pub mod mechdown;
 
 pub use crate::interpreter::*;
+pub use crate::bytecode_interpreter::*;
 pub use crate::literals::*;
 pub use crate::structures::*;
 #[cfg(feature = "functions")]

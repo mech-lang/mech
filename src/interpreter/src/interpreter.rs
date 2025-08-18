@@ -21,7 +21,7 @@ pub struct Interpreter {
 
 impl Interpreter {
   pub fn new(id: u64) -> Interpreter {
-    let mut interp = Interpreter {
+    let mut intrp = Interpreter {
       id,
       symbols: Ref::new(SymbolTable::new()),
       plan: Plan::new(),
@@ -31,10 +31,10 @@ impl Interpreter {
       out_values: Ref::new(HashMap::new()),
       code: Vec::new(),
     };
-    let mut fxns = &interp.functions;
+    let mut fxns = &intrp.functions;
     load_stdkinds(fxns);
     load_stdlib(fxns);
-    interp
+    intrp
   }
 
   pub fn plan(&self) -> Plan {
