@@ -3,10 +3,13 @@ use crate::stdlib::*;
 
 // Convert --------------------------------------------------------------------
 
+#[cfg(feature = "enum")]
 #[derive(Debug)]
 struct ConvertSEnum {
   out: Value,
 }
+
+#[cfg(feature = "enum")]
 impl MechFunction for ConvertSEnum
 {
   fn solve(&self) { }
@@ -133,6 +136,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> Register {
+    todo!();
+  }
 }
 
 #[derive(Debug)]
@@ -158,6 +164,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> Register {
+    todo!();
+  }
 }
 
 fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<dyn MechFunction>>  {

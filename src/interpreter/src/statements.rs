@@ -166,12 +166,18 @@ pub fn kind_define(knd_def: &KindDefine, p: &Interpreter) -> MResult<Value> {
 pub struct VariableDefineFxn {
   id: u64,
   name: String,
+  mutable: bool,
   var: Ref<Value>,
 }
 impl MechFunction for VariableDefineFxn {
   fn solve(&self) {}
   fn out(&self) -> Value { self.var.borrow().clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> Register {
+    let reg = ctx.alloc_register_for_ptr(self.var.addr());
+    ctx.define_symbol(&self.name, reg);
+    reg
+  }
 }
 
 pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Value> {
@@ -271,8 +277,8 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
     let mut dict_brrw = symbols_brrw.dictionary.borrow_mut();
     dict_brrw.insert(var_id,var_name.clone());
     // Add variable define step to plan
-    let vdef = VariableDefineFxn{id: var_id, name: var_name.clone(), var: val_ref.clone()};
-    p.add_plan_step(Box::new(vdef.clone()));
+    let var_def_fxn = VariableDefineFxn{id: var_id, name: var_name.clone(), mutable: var_def.mutable, var: val_ref.clone()};
+    p.add_plan_step(Box::new(var_def_fxn.clone()));
     return Ok(result);
   } else { 
     // Save symbol to interpreter
@@ -281,8 +287,8 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
     let mut dict_brrw = symbols_brrw.dictionary.borrow_mut();
     dict_brrw.insert(var_id,var_name.clone());
     // Add variable define step to plan
-    let vdef = VariableDefineFxn{id: var_id, name: var_name.clone(), var: val_ref.clone()};
-    p.add_plan_step(Box::new(vdef.clone()));
+    let var_def_fxn = VariableDefineFxn{id: var_id, name: var_name.clone(), mutable: var_def.mutable, var: val_ref.clone()};
+    p.add_plan_step(Box::new(var_def_fxn.clone()));
     return Ok(result);
   }
 }

@@ -42,6 +42,9 @@ where
   }
   fn out(&self) -> Value { self.sink.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> Register {
+    todo!();
+  }
 }
 
 #[macro_export]
