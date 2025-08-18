@@ -62,7 +62,10 @@ where
     }
   }
   fn out(&self) -> Value {self.out.to_value()}
-  fn to_string(&self) -> String {format!("{:#?}", self)}
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 fn impl_not_fxn(arg_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
