@@ -23,24 +23,27 @@ pub struct BytecodeInterpreter {
 }
 
 impl BytecodeInterpreter {
-  pub fn new(id: u64, code: ParsedProgram) -> BytecodeInterpreter {
-    let mut intrp = BytecodeInterpreter {
+  
+  pub fn new(id: u64, code: ParsedProgram) -> MResult<BytecodeInterpreter> {
+    code.validate()?;
+    let const_n = code.header.const_count as usize;
+    let fxns = Ref::new(Functions::new());
+    load_stdkinds(&fxns);
+    load_stdlib(&fxns);
+    let intrp = BytecodeInterpreter {
       id,
       ip: 0,
-      regs: Vec::new(),
-      const_cache: Vec::new(),
+      regs: vec![Value::Empty; const_n],
+      const_cache: vec![Value::Empty; const_n],
       symbols: Ref::new(SymbolTable::new()),
       plan: Plan::new(),
-      functions: Ref::new(Functions::new()),
+      functions: fxns,
       out: Value::Empty,
       sub_interpreters: Ref::new(HashMap::new()),
       out_values: Ref::new(HashMap::new()),
       code,
     };
-    let fxns = &intrp.functions;
-    load_stdkinds(fxns);
-    load_stdlib(fxns);
-    intrp
+    Ok(intrp)
   }
 
   pub fn plan(&self) -> Plan {
@@ -62,25 +65,21 @@ impl BytecodeInterpreter {
     load_stdlib(fxns);
   }
 
-  pub fn load_program(&mut self, code: ParsedProgram) -> MResult<Value> {
-    // Validate the program before loading
-    code.validate()?;
-    self.code = code;
-    
-    // resize registers
-    let const_n = self.code.header.const_count as usize;
-    self.regs.clear();
-    self.regs = vec![Value::Empty; const_n];
-
-    // initialize constant cache
-    self.const_cache.clear();
-    self.const_cache = vec![Value::Empty; const_n];
-
+  pub fn run_program(&mut self) -> MResult<Value> {
     self.ip = 0;
-    self.out = Value::Empty;
-    self.out_values.borrow_mut().clear();
-
+    while self.ip < self.code.instrs.len() {
+      use DecodedInstr::*;
+      let instr = &self.code.instrs[self.ip];
+      println!("IP {}: {:?}", self.ip, instr);
+      match instr {
+        DecodedInstr::ConstLoad { dst, const_id } => {
+          //let value = self.code.const_entries[*const_id as usize].value.clone();
+          //self.regs[*reg] = value;
+        },
+        _ => todo!(),
+      }
+      self.ip += 1;
+    }
     Ok(Value::Empty)
   }
-
 }
