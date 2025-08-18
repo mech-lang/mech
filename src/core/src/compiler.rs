@@ -690,7 +690,7 @@ impl EncodedInstr {
 pub fn load_program_from_file(path: impl AsRef<Path>) -> MResult<ParsedProgram> {
   let path = path.as_ref();
   let mut f = File::open(path)?;
-
+  
   // verify CRC trailer first; this also ensures the file is fully readable
   verify_crc_trailer(&f)?;
   
@@ -711,7 +711,7 @@ pub fn load_program_from_file(path: impl AsRef<Path>) -> MResult<ParsedProgram> 
       kind: MechErrorKind::GenericError("Invalid magic".to_string()),
     });
   }
-    
+  
   // 2. read features
   let mut features = Vec::new();
   if header.feature_off != 0 && header.feature_off + 4 <= (f.metadata()?.len() - 4) {
@@ -725,24 +725,27 @@ pub fn load_program_from_file(path: impl AsRef<Path>) -> MResult<ParsedProgram> 
 
   // 3. read types
   let mut types = TypeSection::new();
-  if header.feature_off + header.feat_len <= f.metadata()?.len() {
-    f.seek(SeekFrom::Start(header.feat_off))?;
-    let type_count = f.read_u32::<LittleEndian>()? as usize;
-    for _ in 0..type_count {
+  if header.types_off != 0 && header.types_off + 4 <= (f.metadata()?.len() - 4) {
+    f.seek(SeekFrom::Start(header.types_off))?;
+    let types_count = f.read_u32::<LittleEndian>()? as usize;
+    for _ in 0..types_count {
       let tag = f.read_u16::<LittleEndian>()?;
-      let flags = f.read_u16::<LittleEndian>()?;
-      let aux = f.read_u32::<LittleEndian>()?;
-      let len = f.read_u32::<LittleEndian>()? as usize;
-      let mut bytes = vec![0u8; len];
+      let _reserved = f.read_u16::<LittleEndian>()?; // reserved, always 0
+      let _version = f.read_u32::<LittleEndian>()?; // version, always 1
+      let bytes_len = f.read_u32::<LittleEndian>()? as usize;
+      let mut bytes = vec![0u8; bytes_len];
       f.read_exact(&mut bytes)?;
-      let tag = TypeTag::from_u16(tag).ok_or_else(|| MechError {
-        file: file!().to_string(),
-        tokens: vec![],
-        msg: format!("Invalid type tag: {}", tag),
-        id: line!(),
-        kind: MechErrorKind::GenericError("Invalid type tag".to_string()),
-      })?;
-      types.entries.push(TypeEntry { tag, bytes });
+      if let Some(tag) = TypeTag::from_u16(tag) {
+        types.entries.push(TypeEntry { tag, bytes });
+      } else {
+        return Err(MechError {
+          file: file!().to_string(),
+          tokens: vec![],
+          msg: format!("Unknown type tag: {}", tag),
+          id: line!(),
+          kind: MechErrorKind::GenericError("Unknown type tag".to_string()),
+        });
+      }
     }
   }
 
