@@ -16,12 +16,15 @@ use tabled::{
 };
 use std::fmt;
 
+pub type Register = u32;
+
 // Functions ------------------------------------------------------------------
 
 pub trait MechFunction {
   fn solve(&self);
   fn out(&self) -> Value;
   fn to_string(&self) -> String;
+  fn compile(&self, ctx: &mut CompileCtx) -> Register;
 }
 
 pub trait NativeFunctionCompiler {
