@@ -1882,8 +1882,9 @@ fn align_up(offset: u64, align: u64) -> u64 {
 
 impl Value {
 
-  pub fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+  pub fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
+
     match self {
       #[cfg(feature = "bool")]
       Value::Bool(x) => payload.write_u8(if *x.borrow() { 1 } else { 0 })?,
@@ -1900,6 +1901,7 @@ impl Value {
       Value::MatrixF64(x) => {return x.compile_const(ctx);}
       _ => todo!(),
     }
+
     let type_kind = self.kind();
     let type_id = ctx.types.get_or_intern(&type_kind);
     let align = type_kind.align();
@@ -1925,7 +1927,7 @@ impl Value {
     };
     let const_id = ctx.const_entries.len() as u32;
     ctx.const_entries.push(entry);
-    Ok(const_id as Register)
+    Ok(const_id)
   }
 
 }
