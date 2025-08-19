@@ -16,6 +16,7 @@ use std::collections::{HashMap, HashSet};
 // 4. Constants
 // 5. Symbols
 // 6. Instructions
+// 7. Dictionary (optional for human-readable names)
 
 // Compilation Context
 // ----------------------------------------------------------------------------
@@ -30,6 +31,7 @@ pub struct ParsedProgram {
   pub instr_bytes: Vec<u8>,
   pub symbols: HashMap<u64, Register>,
   pub instrs: Vec<DecodedInstr>,
+  pub dictionary: HashMap<u64, String>,
 }
 
 impl ParsedProgram {
@@ -210,6 +212,7 @@ impl CompileCtx {
     let const_blob_len: u64 = self.const_blob.len() as u64;
     let symbols_len: u64 = (self.symbols.len() as u64) * 12; // 8 bytes for id, 4 for reg
     let instr_bytes_len: u64 = self.instrs.iter().map(|i| i.byte_len()).sum();
+    let dict_len: u64 = self.dictionary.values().map(|s| s.len() as u64 + 12).sum(); // 8 bytes for id, 4 for string length
 
     let mut offset = header_size;                           // bytes in header
     let feature_off = offset; offset += feat_bytes_len;     // offset to feature section
@@ -217,8 +220,8 @@ impl CompileCtx {
     let const_tbl_off = offset; offset += const_tbl_len;    // offset to constant table
     let const_blob_off = offset; offset += const_blob_len;  // offset to constant blob
     let symbols_off = offset; offset += symbols_len;        // offset to symbol section
-    let instr_off = offset;                                 // offset to instruction stream
-    offset += instr_bytes_len;                              
+    let instr_off = offset; offset += instr_bytes_len;      // offset to instruction stream
+    let dict_off = offset; offset += dict_len;              // offset to dictionary section
     
     let file_len_before_trailer = offset;
     let trailer_len = 4u64;
@@ -249,6 +252,9 @@ impl CompileCtx {
 
       instr_off,
       instr_len: instr_bytes_len,
+
+      dict_len,
+      dict_off,
 
       reserved: 0,
     };
@@ -285,6 +291,12 @@ impl CompileCtx {
     // 6. write instructions. This is where the action is!
     for ins in &self.instrs {
       ins.write_to(&mut buf)?;
+    }
+
+    // 7. write dictionary
+    for (id, name) in &self.dictionary {
+      let dict_entry = DictEntry::new(*id, name);
+      dict_entry.write_to(&mut buf)?;
     }
 
     // sanity check: the position should equal file_len_before_trailer
@@ -336,6 +348,9 @@ pub struct ByteCodeHeader {
   pub instr_off:      u64,     // offset to instruction stream
   pub instr_len:      u64,     // bytes of instruction stream
 
+  pub dict_off:       u64,     // offset to dictionary
+  pub dict_len:       u64,     // bytes in dictionary
+
   pub reserved:       u32,     // pad/alignment
 }
 
@@ -361,6 +376,8 @@ impl ByteCodeHeader {
     + 8   // symbosl_off
     + 8   // instr_off
     + 8   // instr_len
+    + 8   // dict_off
+    + 8   // dict_len
     + 4;  // reserved
 
   // Serialize header using little-endian encoding.
@@ -400,6 +417,10 @@ impl ByteCodeHeader {
     w.write_u64::<LittleEndian>(self.instr_off)?;
     w.write_u64::<LittleEndian>(self.instr_len)?;
 
+    // dictionary
+    w.write_u64::<LittleEndian>(self.dict_off)?;
+    w.write_u64::<LittleEndian>(self.dict_len)?;
+
     // footer
     w.write_u32::<LittleEndian>(self.reserved)?;
     Ok(())
@@ -435,6 +456,9 @@ impl ByteCodeHeader {
     let instr_off = r.read_u64::<LittleEndian>()?;
     let instr_len = r.read_u64::<LittleEndian>()?;
 
+    let dict_off = r.read_u64::<LittleEndian>()?;
+    let dict_len = r.read_u64::<LittleEndian>()?;
+
     let reserved = r.read_u32::<LittleEndian>()?;
 
     Ok(Self {
@@ -457,6 +481,8 @@ impl ByteCodeHeader {
       instr_len,
       symbols_len,
       symbols_off,
+      dict_off,
+      dict_len,
       reserved,
     })
   }
@@ -894,10 +920,33 @@ pub fn load_program_from_file(path: impl AsRef<Path>) -> MResult<ParsedProgram> 
     f.read_exact(&mut instr_bytes)?;
   }
 
+  // 7. read dictionary
+  let mut dictionary = HashMap::new();
+  if header.dict_off != 0 && header.dict_len > 0 {
+    f.seek(SeekFrom::Start(header.dict_off))?;
+    let mut dict_bytes = vec![0u8; header.dict_len as usize];
+    f.read_exact(&mut dict_bytes)?;
+    let mut cur = Cursor::new(&dict_bytes[..]);
+    while cur.position() < dict_bytes.len() as u64 {
+      let id = cur.read_u64::<LittleEndian>()?;
+      let name_len = cur.read_u32::<LittleEndian>()? as usize;
+      let mut name_bytes = vec![0u8; name_len];
+      cur.read_exact(&mut name_bytes)?;
+      let name = String::from_utf8(name_bytes).map_err(|_| MechError {
+        file: file!().to_string(),
+        tokens: vec![],
+        msg: "Invalid UTF-8 in dictionary entry".to_string(),
+        id: line!(),
+        kind: MechErrorKind::GenericError("Invalid UTF-8".to_string()),
+      })?;
+      dictionary.insert(id, name);
+    }
+  }
+
   // decode instructions
   let instrs = decode_instructions(Cursor::new(&instr_bytes[..]))?;
   
-  Ok(ParsedProgram { header, features, types, const_entries, const_blob, instr_bytes, symbols, instrs })
+  Ok(ParsedProgram { header, features, types, const_entries, const_blob, instr_bytes, symbols, instrs, dictionary })
 }
 
 pub fn parse_version_to_u16(s: &str) -> Option<u16> {
@@ -1030,4 +1079,27 @@ fn decode_instructions(mut cur: Cursor<&[u8]>) -> io::Result<Vec<DecodedInstr>> 
     }
   }
   Ok(out)
+}
+
+// 7. Dictionary
+// ----------------------------------------------------------------------------
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DictEntry {
+  pub id: u64,          // unique identifier for the dictionary entry
+  pub name: String,     // name of the entry
+} 
+
+impl DictEntry {
+  pub fn new(id: u64, name: &str) -> Self {
+    Self { id, name: name.to_string() }
+  }
+
+  pub fn write_to(&self, w: &mut impl Write) -> io::Result<()> {
+    w.write_u64::<LittleEndian>(self.id)?;
+    let name_bytes = self.name.as_bytes();
+    w.write_u32::<LittleEndian>(name_bytes.len() as u32)?;
+    w.write_all(name_bytes)?;
+    Ok(())
+  }
 }
