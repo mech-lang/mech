@@ -43,21 +43,37 @@ macro_rules! impl_col_access_fxn_shapes {
   }
 }
 
+#[cfg(all(feature = "bool", feature = "matrix"))]
 impl_col_access_fxn_shapes!(bool);
+#[cfg(all(feature = "i8", feature = "matrix"))]
 impl_col_access_fxn_shapes!(i8);
+#[cfg(all(feature = "i16", feature = "matrix"))]
 impl_col_access_fxn_shapes!(i16);
+#[cfg(all(feature = "i32", feature = "matrix"))]
 impl_col_access_fxn_shapes!(i32);
+#[cfg(all(feature = "i64", feature = "matrix"))]
 impl_col_access_fxn_shapes!(i64);
+#[cfg(all(feature = "i128", feature = "matrix"))]
 impl_col_access_fxn_shapes!(i128);
+#[cfg(all(feature = "u8", feature = "matrix"))]
 impl_col_access_fxn_shapes!(u8);
+#[cfg(all(feature = "u16", feature = "matrix"))]
 impl_col_access_fxn_shapes!(u16);
+#[cfg(all(feature = "u32", feature = "matrix"))]
 impl_col_access_fxn_shapes!(u32);
+#[cfg(all(feature = "u64", feature = "matrix"))]
 impl_col_access_fxn_shapes!(u64);
+#[cfg(all(feature = "u128", feature = "matrix"))]
 impl_col_access_fxn_shapes!(u128);
+#[cfg(all(feature = "f32", feature = "matrix"))]
 impl_col_access_fxn_shapes!(F32);
+#[cfg(all(feature = "f64", feature = "matrix"))]
 impl_col_access_fxn_shapes!(F64);
+#[cfg(all(feature = "string", feature = "matrix"))]
 impl_col_access_fxn_shapes!(String);
+#[cfg(all(feature = "complex", feature = "matrix"))]
 impl_col_access_fxn_shapes!(ComplexNumber);
+#[cfg(all(feature = "rational", feature = "matrix"))]
 impl_col_access_fxn_shapes!(RationalNumber);
 
 macro_rules! impl_access_column_match_arms {
@@ -192,6 +208,7 @@ impl NativeFunctionCompiler for TableAccessScalar {
     let tbl = arguments[0].clone();
     let ix = arguments[1].clone();
     match (tbl, ix) {
+      #[cfg(feature = "table")]
       (Value::Table(source), Value::Index(ix)) => {
         let record = match source.borrow().get_record(*ix.borrow()) {
           Some(record) => record,
@@ -202,6 +219,7 @@ impl NativeFunctionCompiler for TableAccessScalar {
       (Value::MutableReference(src_ref), Value::Index(ix)) => {
         let src_ref_brrw = src_ref.borrow();
         match &*src_ref_brrw {
+          #[cfg(feature = "table")]
           Value::Table(source) => {
             let record = match source.borrow().get_record(*ix.borrow()) {
               Some(record) => record,
@@ -297,14 +315,17 @@ impl NativeFunctionCompiler for TableAccessRange {
     let ixes = arguments.clone().split_off(1);
     let tbl = arguments[0].clone();
     match (tbl, ixes.as_slice()) {
+      #[cfg(all(feature = "table", feature = "matrix"))]
       (Value::Table(source), [Value::MatrixIndex(Matrix::DVector(ix))])  => {
         let out_table = source.borrow().empty_table(ix.borrow().len());
         Ok(Box::new(TableAccessRangeIndex{source: source.clone(), ix: ix.clone(), out: Ref::new(out_table) }))
       }
+      #[cfg(all(feature = "matrix", feature = "table", feature = "bool"))]
       (Value::Table(source), [Value::MatrixBool(Matrix::DVector(ix))])  => {
         let out_table = source.borrow().empty_table(ix.borrow().len());
         Ok(Box::new(TableAccessRangeBool{source: source.clone(), ix: ix.clone(), out: Ref::new(out_table) }))
       }
+      #[cfg(all(feature = "table", feature = "matrix"))]
       (Value::MutableReference(src_ref), [Value::MatrixIndex(Matrix::DVector(ix))]) => {
         let src_ref_brrw = src_ref.borrow();
         match &*src_ref_brrw {
@@ -315,6 +336,7 @@ impl NativeFunctionCompiler for TableAccessRange {
           _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
         }
       }
+      #[cfg(all(feature = "matrix", feature = "table", feature = "bool"))]
       (Value::MutableReference(src_ref), [Value::MatrixBool(Matrix::DVector(ix))]) => {
         let src_ref_brrw = src_ref.borrow();
         match &*src_ref_brrw {

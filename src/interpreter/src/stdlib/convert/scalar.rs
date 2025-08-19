@@ -77,7 +77,7 @@ macro_rules! impl_conversion_match_arms {
     paste!{
       match $arg {
         $(
-          #[cfg(all(feature = "matrix", feature = "table"))]
+          #[cfg(all(feature = "matrix", feature = "table", features = $input_type_string))]
           (Value::[<Matrix $input_type:camel>](mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
             let in_shape = mat.shape();
             let tbl_cols = tbl.len();
