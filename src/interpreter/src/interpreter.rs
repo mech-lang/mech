@@ -12,7 +12,7 @@ pub struct Interpreter {
   pub id: u64,
   ip: usize,  // instruction pointer
   registers: Vec<Value>,
-  constant_cache: Vec<Value>,
+  constants: Vec<Value>,
   symbols: SymbolTableRef,
   pub code: Vec<MechSourceCode>,
   plan: Plan,
@@ -28,7 +28,7 @@ impl Interpreter {
       id,
       ip: 0,
       registers: Vec::new(),
-      constant_cache: Vec::new(),
+      constants: Vec::new(),
       symbols: Ref::new(SymbolTable::new()),
       plan: Plan::new(),
       functions: Ref::new(Functions::new()),
@@ -51,7 +51,7 @@ impl Interpreter {
     self.ip = 0;
     self.symbols = Ref::new(SymbolTable::new());
     self.registers.clear();
-    self.constant_cache.clear();
+    self.constants.clear();
     self.plan = Plan::new();
     self.functions = Ref::new(Functions::new());
     self.out = Value::Empty;
@@ -143,6 +143,34 @@ impl Interpreter {
         kind
       }
     })?
+  }
+
+  pub fn run_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
+    println!("Program! {:#?}", program);
+    // Reset the instruction pointer
+    self.ip = 0;
+    // Resize the registers and constant table
+    self.registers = vec![Value::Empty; program.header.reg_count as usize];
+    self.constants = vec![Value::Empty; program.const_entries.len()];
+    // Load the constants
+    self.constants = program.decode_const_entries()?;
+    while self.ip < program.instrs.len() {
+      use DecodedInstr::*;
+      let instr = &program.instrs[self.ip];
+      match instr {
+        DecodedInstr::ConstLoad { dst, const_id } => {
+          let value = self.constants[*const_id as usize].clone();
+          self.registers[*dst as usize] = value;
+        },
+        _ => todo!(),
+      }
+      self.ip += 1;
+    }
+    // Load the symbol table
+    for (id, reg) in program.symbols.iter() {
+      self.symbols.borrow_mut().insert(*id, self.constants[*reg as usize].clone(), false); // the false indicates it's not mutable.
+    }
+    Ok(Value::Empty)
   }
 
   pub fn compile(&self) -> MResult<Vec<u8>> {

@@ -60,6 +60,20 @@ pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: 
           Err(err) => return Err(err),
         }
       }
+      MechSourceCode::ByteCode(program) => {
+        let now = Instant::now();
+        let result = intrp.run_program(&program);
+        let elapsed_time = now.elapsed();
+        let cycle_duration = elapsed_time.as_nanos() as f64;
+        if time_flag {
+          println!("Cycle Time: {} ns", cycle_duration);
+        }
+        if debug_flag {
+          println!("{}", pretty_print_symbols(&intrp));
+          println!("{}", intrp.plan().pretty_print()); 
+        }
+        return result;
+      }
       x => todo!("Unsupported source code type: {:?}", x),
     }
   }
