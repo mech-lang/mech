@@ -170,6 +170,10 @@ impl Interpreter {
     for (id, reg) in program.symbols.iter() {
       self.symbols.borrow_mut().insert(*id, self.constants[*reg as usize].clone(), false); // the false indicates it's not mutable.
     }
+    // Load the dictionary
+    for (id, name) in &program.dictionary {
+      self.symbols.borrow().dictionary.borrow_mut().insert(*id, name.clone());
+    } 
     Ok(Value::Empty)
   }
 
