@@ -532,7 +532,6 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
     Some(extension) => {
       match extension.to_str() {
         Some("blx") => {
-          use mech_interpreter::BytecodeInterpreter;
           let path = PathBuf::from(path);
           let data = std::fs::read(&path)?;
           let program = load_program_from_file(path)?;   

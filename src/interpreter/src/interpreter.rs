@@ -10,6 +10,9 @@ use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
 
 pub struct Interpreter {
   pub id: u64,
+  ip: usize,  // instruction pointer
+  registers: Vec<Value>,
+  constant_cache: Vec<Value>,
   symbols: SymbolTableRef,
   pub code: Vec<MechSourceCode>,
   plan: Plan,
@@ -23,6 +26,9 @@ impl Interpreter {
   pub fn new(id: u64) -> Interpreter {
     let mut intrp = Interpreter {
       id,
+      ip: 0,
+      registers: Vec::new(),
+      constant_cache: Vec::new(),
       symbols: Ref::new(SymbolTable::new()),
       plan: Plan::new(),
       functions: Ref::new(Functions::new()),
@@ -42,7 +48,10 @@ impl Interpreter {
   }
 
   pub fn clear(&mut self) {
+    self.ip = 0;
     self.symbols = Ref::new(SymbolTable::new());
+    self.registers.clear();
+    self.constant_cache.clear();
     self.plan = Plan::new();
     self.functions = Ref::new(Functions::new());
     self.out = Value::Empty;
