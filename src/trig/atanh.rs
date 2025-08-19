@@ -1,6 +1,7 @@
 use crate::*;
 use mech_core::*;
 use libm::{atanh, atanhf};
+use num_traits::*;
 
 // Atanh Macros
 macro_rules! atanh_op {

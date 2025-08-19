@@ -1,6 +1,7 @@
 use crate::*;
 use mech_core::*;
 use libm::{sinh, sinhf};
+use num_traits::*;
 
 // Sinh ------------------------------------------------------------------------
 macro_rules! sinh_op {

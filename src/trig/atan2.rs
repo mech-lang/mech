@@ -1,6 +1,7 @@
 use crate::*;
 use mech_core::*;
 use libm::{atan2,atan2f};
+use num_traits::*;
 
 // Atan2 ------------------------------------------------------------------------
 

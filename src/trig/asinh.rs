@@ -1,6 +1,7 @@
 use crate::*;
 use mech_core::*;
 use libm::{asinh, asinhf};
+use num_traits::*;
 
 // Asinh Macros
 macro_rules! asinh_op {

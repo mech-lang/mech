@@ -3,10 +3,6 @@ use crate::*;
 use std::fmt::Debug;
 use std::ops::DivAssign;
 use std::marker::PhantomData;
-use nalgebra::{
-  base::{Matrix as naMatrix, Storage, StorageMut},
-  Dim, Scalar,
-};
 use num_traits::*;
 
 // Div Assign -----------------------------------------------------------------
@@ -39,12 +35,14 @@ macro_rules! impl_div_assign_match_arms {
   }
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! impl_div_assign_range_fxn_s {
   ($struct_name:ident, $op:ident, $ix:ty) => {
     impl_op_assign_range_fxn_s!($struct_name, $op, $ix);
   }
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! impl_div_assign_range_fxn_v {
   ($struct_name:ident, $op:ident, $ix:ty) => {
     impl_op_assign_range_fxn_v!($struct_name, $op, $ix);
@@ -141,10 +139,13 @@ macro_rules! div_assign_1d_range_vec_b {
     }
   };}
 
-
+#[cfg(feature = "matrix")]
 impl_div_assign_range_fxn_s!(DivAssign1DRS,div_assign_1d_range,usize);
+#[cfg(feature = "matrix")]
 impl_div_assign_range_fxn_s!(DivAssign1DRB,div_assign_1d_range_b,bool);
+#[cfg(feature = "matrix")]
 impl_div_assign_range_fxn_v!(DivAssign1DRV,div_assign_1d_range_vec,usize);
+#[cfg(feature = "matrix")]
 impl_div_assign_range_fxn_v!(DivAssign1DRVB,div_assign_1d_range_vec_b,bool);
 
 fn div_assign_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
@@ -221,9 +222,13 @@ macro_rules! div_assign_2d_vector_all_mat_b {
     }
   };}
 
+#[cfg(feature = "matrix")]
 impl_div_assign_range_fxn_s!(DivAssign2DRAS,div_assign_2d_vector_all,usize);
+#[cfg(feature = "matrix")]
 impl_div_assign_range_fxn_s!(DivAssign2DRASB,div_assign_2d_vector_all_b,bool);
+#[cfg(feature = "matrix")]
 impl_div_assign_range_fxn_v!(DivAssign2DRAV,div_assign_2d_vector_all_mat,usize);
+#[cfg(feature = "matrix")]
 impl_div_assign_range_fxn_v!(DivAssign2DRAVB,div_assign_2d_vector_all_mat_b,bool);
 
 fn div_assign_vec_all_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {

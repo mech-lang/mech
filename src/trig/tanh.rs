@@ -1,6 +1,7 @@
 use crate::*;
 use mech_core::*;
 use libm::{tanh, tanhf};
+use num_traits::*;
 
 // Tanh ------------------------------------------------------------------------
 macro_rules! tanh_op {

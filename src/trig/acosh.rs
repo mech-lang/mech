@@ -1,6 +1,7 @@
 use crate::*;
 use mech_core::*;
 use libm::{acosh, acoshf};
+use num_traits::*;
 
 // Acosh Macros
 macro_rules! acosh_op {

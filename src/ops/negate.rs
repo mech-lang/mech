@@ -1,5 +1,7 @@
 #[macro_use]
 use crate::*;
+use simba::scalar::ClosedNeg;
+use num_traits::*;
 
 // Negate ---------------------------------------------------------------------
 

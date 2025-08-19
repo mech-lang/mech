@@ -1,6 +1,11 @@
 #![no_main]
 #![allow(warnings)]
 
+use nalgebra::{
+  base::{Matrix as naMatrix, Storage, StorageMut},
+  Dim, Scalar,
+};
+
 #[cfg(feature = "matrix")]
 extern crate nalgebra as na;
 
@@ -10,25 +15,15 @@ use paste::paste;
 #[cfg(feature = "matrix")]
 use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix3x2, Matrix6, Matrix2};
 use std::ops::*;
-#[cfg(any(feature = "trig", feature = "ops"))]
-use num_traits::*;
 use std::fmt::Debug;
-#[cfg(feature = "neg")]
-use simba::scalar::ClosedNeg;
 use std::marker::PhantomData;
 
-#[cfg(feature = "trig")]
 pub mod trig;
-#[cfg(feature = "ops")]
 pub mod ops;
-#[cfg(feature = "op_assign")]
 pub mod op_assign;
 
-#[cfg(feature = "trig")]
 pub use self::trig::*;
-#[cfg(feature = "ops")]
 pub use self::ops::*;
-#[cfg(feature = "op_assign")]
 pub use self::op_assign::*;
 
 // ----------------------------------------------------------------------------

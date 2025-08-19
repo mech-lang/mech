@@ -31,12 +31,14 @@ macro_rules! impl_sub_assign_match_arms {
   }
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! impl_sub_assign_range_fxn_s {
   ($struct_name:ident, $op:ident, $ix:ty) => {
     impl_op_assign_range_fxn_s!($struct_name, $op, $ix);
   }
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! impl_sub_assign_range_fxn_v {
   ($struct_name:ident, $op:ident, $ix:ty) => {
     impl_op_assign_range_fxn_v!($struct_name, $op, $ix);
@@ -134,9 +136,13 @@ macro_rules! sub_assign_1d_range_vec_b {
   };}  
 
 
+#[cfg(feature = "matrix")]
 impl_sub_assign_range_fxn_s!(SubAssign1DRS, sub_assign_1d_range,usize);
+#[cfg(feature = "matrix")]
 impl_sub_assign_range_fxn_s!(SubAssign1DRB, sub_assign_1d_range_b,bool);
+#[cfg(feature = "matrix")]
 impl_sub_assign_range_fxn_v!(SubAssign1DRV, sub_assign_1d_range_vec,usize);
+#[cfg(feature = "matrix")]
 impl_sub_assign_range_fxn_v!(SubAssign1DRVB,sub_assign_1d_range_vec_b,bool);
 
 fn sub_assign_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
@@ -212,9 +218,13 @@ macro_rules! sub_assign_2d_vector_all_mat_b {
     }
   };} 
 
+#[cfg(feature = "matrix")]
 impl_sub_assign_range_fxn_s!(SubAssign2DRAS, sub_assign_2d_vector_all,usize);
+#[cfg(feature = "matrix")]
 impl_sub_assign_range_fxn_s!(SubAssign2DRASB,sub_assign_2d_vector_all_b,bool);
+#[cfg(feature = "matrix")]
 impl_sub_assign_range_fxn_v!(SubAssign2DRAV, sub_assign_2d_vector_all_mat,usize);
+#[cfg(feature = "matrix")]
 impl_sub_assign_range_fxn_v!(SubAssign2DRAVB,sub_assign_2d_vector_all_mat_b,bool);
 
 fn sub_assign_vec_all_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {

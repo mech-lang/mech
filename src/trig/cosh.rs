@@ -1,6 +1,7 @@
 use crate::*;
 use mech_core::*;
 use libm::{cosh, coshf};
+use num_traits::*;
 
 // Cosh ------------------------------------------------------------------------
 macro_rules! cosh_op {
