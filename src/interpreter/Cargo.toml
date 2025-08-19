@@ -28,12 +28,17 @@ default = ["stdlib", "pretty_print", "serde",
 serde = ["mech-core/serde", "bincode", "bincode/serde"]
 pretty_print = ["mech-core/pretty_print"]
 
-math = ["math_trig", "math_ops"]
+math = ["math_trig", "math_ops", "math_op_assign"]
 math_trig = [
     "math_sin", "math_cos", "math_tan", "math_asin", "math_acos", "math_atan", "math_sinh", "math_cosh", "math_tanh",
     "math_asinh", "math_acosh", "math_atanh", "math_sec", "math_csc", "math_cot", "math_acsc", "math_asec", "math_acot",
     "math_atan2", "mech-math/trig"
 ]
+math_op_assign = ["math_add_assign", "math_sub_assign", "math_mul_assign", "math_div_assign", "mech-math/op_assign"]
+math_add_assign = ["mech-math/add_assign"]
+math_sub_assign = ["mech-math/sub_assign"]
+math_mul_assign = ["mech-math/mul_assign"]
+math_div_assign = ["mech-math/div_assign"]
 math_sin = ["mech-math/sin"]
 math_cos = ["mech-math/cos"]
 math_tan = ["mech-math/tan"]

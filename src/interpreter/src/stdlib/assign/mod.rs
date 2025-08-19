@@ -7,7 +7,6 @@ pub mod matrix;
 pub mod record;
 #[cfg(feature = "table")]
 pub mod table;
-pub mod op_assign;
 
 #[cfg(feature = "matrix")]
 pub use self::matrix::*;
@@ -15,7 +14,6 @@ pub use self::matrix::*;
 pub use self::record::*;
 #[cfg(feature = "table")]
 pub use self::table::*;
-pub use self::op_assign::*;
 
 // ----------------------------------------------------------------------------
 // Assign 

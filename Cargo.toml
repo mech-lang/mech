@@ -29,6 +29,7 @@ stdlib = [
 ]
 
 math = ["mech-interpreter/math"]
+
 combinatorics = ["mech-interpreter/combinatorics"]
 compare = ["mech-interpreter/compare"]
 io = ["mech-interpreter/io"]
