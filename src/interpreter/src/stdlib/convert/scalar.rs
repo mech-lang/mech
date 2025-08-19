@@ -182,7 +182,7 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
   match (&source_value, &target_kind) {
     #[cfg(feature = "rational")]
     (Value::RationalNumber(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar{arg: r.clone(),out: Ref::new(F64::zero()),}));}
-    #[cfg(all(feature = "matrix", feature = "table"))]
+    #[cfg(all(feature = "matrix", feature = "table", feature = "string"))]
     (Value::MatrixString(ref mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
       let in_shape = mat.shape();
       // Verify the table has the correct number of columns

@@ -243,7 +243,7 @@ impl MechTable {
 
     Ok(MechTable {rows,cols,data,col_names})
   }
-  
+
   pub fn from_kind(kind: ValueKind) -> MResult<MechTable> {
     match kind {
       ValueKind::Table(tbl,sze) => {

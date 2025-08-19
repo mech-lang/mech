@@ -1281,25 +1281,15 @@ impl Value {
   #[cfg(feature = "bool")]
   pub fn as_bool(&self) -> Option<Ref<bool>> {if let Value::Bool(v) = self { Some(v.clone()) } else if let Value::MutableReference(val) = self { val.borrow().as_bool() } else { None }}
   
-  #[cfg(feature = "i8")]
   impl_as_type!(i8);
-  #[cfg(feature = "i16")]
   impl_as_type!(i16);
-  #[cfg(feature = "i32")]
   impl_as_type!(i32);
-  #[cfg(feature = "i64")]
   impl_as_type!(i64);
-  #[cfg(feature = "i128")]
   impl_as_type!(i128);
-  #[cfg(feature = "u8")]
   impl_as_type!(u8);
-  #[cfg(feature = "u16")]
   impl_as_type!(u16);
-  #[cfg(feature = "u32")]
   impl_as_type!(u32);
-  #[cfg(feature = "u64")]
   impl_as_type!(u64);
-  #[cfg(feature = "u128")]
   impl_as_type!(u128);
 
   #[cfg(feature = "string")]
