@@ -1,12 +1,10 @@
 use crate::*;
-use std::collections::HashSet;
-
-use crate::*;
 use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
 use std::io::{self, Write, Read, SeekFrom, Seek, Cursor};
 use std::fs::File;
 use std::path::Path;
 use std::hash::{Hash, Hasher};
+use std::collections::{HashMap, HashSet};
 
 // Byetecode Compiler
 // ============================================================================
@@ -16,7 +14,8 @@ use std::hash::{Hash, Hasher};
 // 2. Features
 // 3. Types
 // 4. Constants
-// 5. Instructions
+// 5. Symbols
+// 6. Instructions
 
 // Compilation Context
 // ----------------------------------------------------------------------------
@@ -29,6 +28,7 @@ pub struct ParsedProgram {
   pub const_entries: Vec<ParsedConstEntry>,
   pub const_blob: Vec<u8>,
   pub instr_bytes: Vec<u8>,
+  pub symbols: HashMap<u64, Register>,
   pub instrs: Vec<DecodedInstr>,
 }
 
@@ -208,17 +208,17 @@ impl CompileCtx {
     let types_bytes_len: u64 = self.types.byte_len();
     let const_tbl_len: u64 = (self.const_entries.len() as u64) * ConstEntry::byte_len();
     let const_blob_len: u64 = self.const_blob.len() as u64;
+    let symbols_len: u64 = (self.symbols.len() as u64) * 12; // 8 bytes for id, 4 for reg
     let instr_bytes_len: u64 = self.instrs.iter().map(|i| i.byte_len()).sum();
 
     let mut offset = header_size;                           // bytes in header
     let feature_off = offset; offset += feat_bytes_len;     // offset to feature section
-    let types_off = offset; offset += types_bytes_len;       // offset to types section
+    let types_off = offset; offset += types_bytes_len;      // offset to types section
     let const_tbl_off = offset; offset += const_tbl_len;    // offset to constant table
     let const_blob_off = offset; offset += const_blob_len;  // offset to constant blob
+    let symbols_off = offset; offset += symbols_len;        // offset to symbol section
     let instr_off = offset;                                 // offset to instruction stream
     offset += instr_bytes_len;                              
-    let feat_off = feature_off;                             // offset to feature section              
-    let feat_len = feat_bytes_len;                          // bytes in feature section                
     
     let file_len_before_trailer = offset;
     let trailer_len = 4u64;
@@ -234,6 +234,7 @@ impl CompileCtx {
       instr_count: self.instrs.len() as u32,
       feature_count: self.features.len() as u32,
       feature_off,
+      
       types_count: self.types.entries.len() as u32,
       types_off,
 
@@ -243,11 +244,11 @@ impl CompileCtx {
       const_blob_off,
       const_blob_len,
 
+      symbols_len,
+      symbols_off,
+
       instr_off,
       instr_len: instr_bytes_len,
-
-      feat_off,
-      feat_len,
 
       reserved: 0,
     };
@@ -257,16 +258,16 @@ impl CompileCtx {
     // 1. Write the header
     header.write_to(&mut buf)?;
 
-    // 2. Write feature section
+    // 2. Write features
     buf.write_u32::<LittleEndian>(self.features.len() as u32)?;
     for f in &self.features {
       buf.write_u64::<LittleEndian>(f.as_u64())?;
     }
 
-    // 3. Write types section
+    // 3. Write types
     self.types.write_to(&mut buf)?;
 
-    // 4. write const section
+    // 4. write consts
     for entry in &self.const_entries {
       entry.write_to(&mut buf)?;
     }
@@ -275,7 +276,13 @@ impl CompileCtx {
       buf.write_all(&self.const_blob)?;
     }
 
-    // 5. write instructions. This is where the action is!
+    // 5. write symbols
+    for (id, reg) in &self.symbols {
+      let entry = SymbolEntry::new(*id, *reg);
+      entry.write_to(&mut buf)?;
+    }
+
+    // 6. write instructions. This is where the action is!
     for ins in &self.instrs {
       ins.write_to(&mut buf)?;
     }
@@ -322,12 +329,12 @@ pub struct ByteCodeHeader {
   pub const_tbl_len:  u64,     // bytes in constant table area (entries only)
   pub const_blob_off: u64,     // offset to raw constant blob data
   pub const_blob_len: u64,     // bytes in blob (payloads
+
+  pub symbols_len:    u64,     // number of symbols
+  pub symbols_off:    u64,     // offset to symbol section
                                
   pub instr_off:      u64,     // offset to instruction stream
   pub instr_len:      u64,     // bytes of instruction stream
-
-  pub feat_off:       u64,     // offset to feature section
-  pub feat_len:       u64,     // bytes of feature section
 
   pub reserved:       u32,     // pad/alignment
 }
@@ -350,10 +357,10 @@ impl ByteCodeHeader {
     + 8   // const_tbl_len
     + 8   // const_blob_off
     + 8   // const_blob_len
+    + 8   // symbols_len
+    + 8   // symbosl_off
     + 8   // instr_off
     + 8   // instr_len
-    + 8   // feat_off
-    + 8   // feat_len
     + 4;  // reserved
 
   // Serialize header using little-endian encoding.
@@ -385,13 +392,13 @@ impl ByteCodeHeader {
     w.write_u64::<LittleEndian>(self.const_blob_off)?;
     w.write_u64::<LittleEndian>(self.const_blob_len)?;
 
+    // symbols
+    w.write_u64::<LittleEndian>(self.symbols_len)?;
+    w.write_u64::<LittleEndian>(self.symbols_off)?;
+
     // instructions
     w.write_u64::<LittleEndian>(self.instr_off)?;
     w.write_u64::<LittleEndian>(self.instr_len)?;
-
-    // feature section (alternative/extra)
-    w.write_u64::<LittleEndian>(self.feat_off)?;
-    w.write_u64::<LittleEndian>(self.feat_len)?;
 
     // footer
     w.write_u32::<LittleEndian>(self.reserved)?;
@@ -422,11 +429,11 @@ impl ByteCodeHeader {
     let const_blob_off = r.read_u64::<LittleEndian>()?;
     let const_blob_len = r.read_u64::<LittleEndian>()?;
 
+    let symbols_len = r.read_u64::<LittleEndian>()?;
+    let symbols_off = r.read_u64::<LittleEndian>()?;
+
     let instr_off = r.read_u64::<LittleEndian>()?;
     let instr_len = r.read_u64::<LittleEndian>()?;
-
-    let feat_off = r.read_u64::<LittleEndian>()?;
-    let feat_len = r.read_u64::<LittleEndian>()?;
 
     let reserved = r.read_u32::<LittleEndian>()?;
 
@@ -448,8 +455,8 @@ impl ByteCodeHeader {
       const_blob_len,
       instr_off,
       instr_len,
-      feat_off,
-      feat_len,
+      symbols_len,
+      symbols_off,
       reserved,
     })
   }
@@ -713,7 +720,28 @@ impl ConstEntry {
   pub fn byte_len() -> u64 { 4 + 1 + 1 + 1 + 1 + 8 + 8 } // = 24 bytes
 }
 
-// 5. Instruction Encoding (fixed forms)
+// 5. Symbol Table
+// ----------------------------------------------------------------------------
+
+pub struct SymbolEntry {
+  pub id: u64,          // unique identifier for the symbol
+  pub reg: Register,    // register index this symbol maps to
+}
+
+impl SymbolEntry {
+
+  pub fn new(id: u64, reg: Register) -> Self {
+    Self { id, reg }
+  }
+
+  pub fn write_to(&self, w: &mut impl Write) -> io::Result<()> {
+    w.write_u64::<LittleEndian>(self.id)?;
+    w.write_u32::<LittleEndian>(self.reg)?;
+    Ok(())
+  }
+}
+
+// 6. Instruction Encoding (fixed forms)
 // ----------------------------------------------------------------------------
 
 pub const OP_CONST_LOAD: u64 = 0x01;
@@ -843,7 +871,22 @@ pub fn load_program_from_file(path: impl AsRef<Path>) -> MResult<ParsedProgram> 
     f.read_exact(&mut const_blob)?;
   }
 
-  // 5. read instr bytes
+  // 5. read symbols
+  let mut symbols = HashMap::new();
+  if header.symbols_off != 0 && header.symbols_len > 0 {
+    f.seek(SeekFrom::Start(header.symbols_off))?;
+    let mut symbols_bytes = vec![0u8; header.symbols_len as usize];
+    f.read_exact(&mut symbols_bytes)?;
+    let mut cur = Cursor::new(&symbols_bytes[..]);
+    for _ in 0..(header.symbols_len / 12) {
+      let id = cur.read_u64::<LittleEndian>()?;
+      let reg = cur.read_u32::<LittleEndian>()?;
+      let entry = SymbolEntry::new(id, reg);
+      symbols.insert(id, reg);
+    }
+  }
+
+  // 6. read instr bytes
   let mut instr_bytes = vec![];
   if header.instr_off != 0 && header.instr_len > 0 {
     f.seek(SeekFrom::Start(header.instr_off))?;
@@ -854,7 +897,7 @@ pub fn load_program_from_file(path: impl AsRef<Path>) -> MResult<ParsedProgram> 
   // decode instructions
   let instrs = decode_instructions(Cursor::new(&instr_bytes[..]))?;
   
-  Ok(ParsedProgram { header, features, types, const_entries, const_blob, instr_bytes, instrs })
+  Ok(ParsedProgram { header, features, types, const_entries, const_blob, instr_bytes, symbols, instrs })
 }
 
 pub fn parse_version_to_u16(s: &str) -> Option<u16> {
