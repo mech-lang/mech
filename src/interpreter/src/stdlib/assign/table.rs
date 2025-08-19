@@ -171,3 +171,81 @@ impl NativeFunctionCompiler for AssignTableColumn {
     }
   }
 }
+
+// table1 += table2 ------------------------------------------------------------
+
+#[derive(Debug)]
+struct TableAppendRecord {
+  sink: Ref<MechTable>,
+  source: Ref<MechRecord>,
+}
+impl MechFunction for TableAppendRecord {
+  fn solve(&self) {
+    unsafe {
+      let mut sink_ptr = (&mut *(self.sink.as_mut_ptr()));
+      let source_ptr = &(*(self.source.as_ptr()));
+      sink_ptr.append_record(source_ptr.clone());
+    }
+  }
+  fn out(&self) -> Value { Value::Table(self.sink.clone()) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
+}
+
+#[derive(Debug)]
+struct TableAppendTable {
+  sink: Ref<MechTable>,
+  source: Ref<MechTable>,
+}
+impl MechFunction for TableAppendTable {
+  fn solve(&self) {
+    unsafe {
+      let mut sink_ptr = (&mut *(self.sink.as_mut_ptr()));
+      let source_ptr = &(*(self.source.as_ptr()));
+      sink_ptr.append_table(&source_ptr);
+    }
+  }
+  fn out(&self) -> Value { Value::Table(self.sink.clone()) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
+}
+
+pub fn add_assign_table_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  match (sink.clone(),source.clone()) {
+    (Value::Table(tbl), Value::Record(rcrd)) => {
+      tbl.borrow().check_record_schema(&rcrd.borrow())?;
+      return Ok(Box::new(TableAppendRecord{ sink: tbl, source: rcrd }))
+    }
+    (Value::Table(tbl_sink), Value::Table(tbl_src)) => {
+      tbl_sink.borrow().check_table_schema(&tbl_src.borrow())?;
+      return Ok(Box::new(TableAppendTable{ sink: tbl_sink, source: tbl_src }))
+    }
+    x => return Err(MechError{file: file!().to_string(),tokens: vec![],msg: format!("Unhandled args {:?}, {:?}", sink, source),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,}),
+  }
+}
+
+pub struct AddAssignTable {}
+impl NativeFunctionCompiler for AddAssignTable {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() <= 1 {
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    let sink = arguments[0].clone();
+    let source = arguments[1].clone();
+    match add_assign_table_fxn(sink.clone(),source.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(x) => {
+        match (sink,source) {
+          (Value::MutableReference(sink),Value::MutableReference(source)) => { add_assign_table_fxn(sink.borrow().clone(),source.borrow().clone()) },
+          (sink,Value::MutableReference(source)) => { add_assign_table_fxn(sink.clone(),source.borrow().clone()) },
+          (Value::MutableReference(sink),source) => { add_assign_table_fxn(sink.borrow().clone(),source.clone()) },
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
+    }
+  }
+}

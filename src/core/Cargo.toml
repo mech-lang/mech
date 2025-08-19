@@ -52,7 +52,7 @@ set = ["indexmap"]
 map = ["indexmap"]
 table = ["matrix", "indexmap", "record"]
 tuple = []
-record = ["indexmap"]
+record = ["indexmap", "tuple"]
 atom = []
 matrix = [
   "fixed_matrix", "fixed_vector", "fixed_row_vector", "row_vectord", "vectord", "matrixd",

@@ -150,3 +150,37 @@ impl NativeFunctionCompiler for AssignColumn {
     }
   }
 }
+
+// x += y ----------------------------------------------------------------------
+
+pub fn add_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechFunction>> {
+  match sink {
+    #[cfg(feature = "table")]
+    Value::Table(_) => add_assign_table_fxn(sink, source),
+    #[cfg(feature = "add_assign")]
+    _ => add_assign_math_fxn(sink, source),
+    _ => Err(MechError{file: file!().to_string(),tokens: vec![],msg: format!("Unhandled args {:?}, {:?}", sink, source),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,}),
+  }
+}
+
+pub struct AddAssignValue {}
+impl NativeFunctionCompiler for AddAssignValue {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() <= 1 {
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    let sink = arguments[0].clone();
+    let source = arguments[1].clone();
+    match add_assign_value_fxn(sink.clone(),source.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(x) => {
+        match (sink,source) {
+          (Value::MutableReference(sink),Value::MutableReference(source)) => { add_assign_value_fxn(sink.borrow().clone(),source.borrow().clone()) },
+          (sink,Value::MutableReference(source)) => { add_assign_value_fxn(sink.clone(),source.borrow().clone()) },
+          (Value::MutableReference(sink),source) => { add_assign_value_fxn(sink.borrow().clone(),source.clone()) },
+          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
+    }
+  }
+}

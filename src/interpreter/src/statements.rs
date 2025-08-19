@@ -69,13 +69,13 @@ pub fn op_assign(op_assgn: &OpAssign, p: &Interpreter) -> MResult<Value> {
       // todo: this only works for the first subscript, it needs to work for multiple subscripts
       for s in sbscrpt {
         let fxn = match op_assgn.op {
-          #[cfg(feature = "math_add")]
+          #[cfg(feature = "math_add_assign")]
           OpAssignOp::Add => add_assign(&s, &sink, &source, p)?,
-          #[cfg(feature = "math_sub")]
+          #[cfg(feature = "math_sub_assign")]
           OpAssignOp::Sub => sub_assign(&s, &sink, &source, p)?,
-          #[cfg(feature = "math_div")]
+          #[cfg(feature = "math_div_assign")]
           OpAssignOp::Div => div_assign(&s, &sink, &source, p)?,
-          #[cfg(feature = "math_mul")]
+          #[cfg(feature = "math_mul_assign")]
           OpAssignOp::Mul => mul_assign(&s, &sink, &source, p)?,
           _ => todo!(),
         };
@@ -85,13 +85,13 @@ pub fn op_assign(op_assgn: &OpAssign, p: &Interpreter) -> MResult<Value> {
     None => {
       let args = vec![sink,source];
       let fxn: Box<dyn MechFunction> = match op_assgn.op {
-        #[cfg(feature = "math_add")]
+        #[cfg(feature = "math_add_assign")]
         OpAssignOp::Add => AddAssignValue{}.compile(&args)?,
-        #[cfg(feature = "math_sub")]
+        #[cfg(feature = "math_sub_assign")]
         OpAssignOp::Sub => SubAssignValue{}.compile(&args)?,
-        #[cfg(feature = "math_div")]
+        #[cfg(feature = "math_div_assign")]
         OpAssignOp::Div => DivAssignValue{}.compile(&args)?,
-        #[cfg(feature = "math_mul")]
+        #[cfg(feature = "math_mul_assign")]
         OpAssignOp::Mul => MulAssignValue{}.compile(&args)?,
         _ => todo!(),
       };
@@ -372,13 +372,13 @@ macro_rules! op_assign {
       }
     }}}
 
-#[cfg(feature = "math_add")]
+#[cfg(feature = "math_add_assign")]
 op_assign!(add_assign, Add);
-#[cfg(feature = "math_sub")]
+#[cfg(feature = "math_sub_assign")]
 op_assign!(sub_assign, Sub);
-#[cfg(feature = "math_div")]
+#[cfg(feature = "math_div_assign")]
 op_assign!(mul_assign, Mul);
-#[cfg(feature = "math_mul")]
+#[cfg(feature = "math_mul_assign")]
 op_assign!(div_assign, Div);
 //#[cfg(feature = "math_exp")]
 //op_assign!(exp_assign, Exp);

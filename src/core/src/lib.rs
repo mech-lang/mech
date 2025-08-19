@@ -41,7 +41,7 @@ use std::ops::*;
 use std::mem;
 use std::hash::{Hash, Hasher};
 use std::convert::TryInto;
-#[cfg(feature = "math_exp")]
+#[cfg(any(feature = "math_exp", feature = "f64"))]
 use num_traits::*;
 #[cfg(feature = "rational")]
 use num_rational::Rational64;

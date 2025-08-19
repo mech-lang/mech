@@ -107,7 +107,7 @@ macro_rules! impl_conversion_match_arms {
         )+
         #[cfg(feature = "rational")]
         (Value::RationalNumber(ref rat), Value::Kind(ValueKind::F64)) => {
-          Ok(Box::new(ConvertSRationalToF64{arg: rat.clone(), out: Ref::new(F64::zero())}))
+          Ok(Box::new(ConvertSRationalToF64{arg: rat.clone(), out: Ref::new(F64::default())}))
         }
         #[cfg(all(feature = "atom", feature = "enum"))]
         (Value::Atom(varian_id), Value::Kind(ValueKind::Enum(enum_id))) => {
@@ -181,7 +181,7 @@ where
 fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<dyn MechFunction>>  {
   match (&source_value, &target_kind) {
     #[cfg(feature = "rational")]
-    (Value::RationalNumber(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar{arg: r.clone(),out: Ref::new(F64::zero()),}));}
+    (Value::RationalNumber(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar{arg: r.clone(),out: Ref::new(F64::default()),}));}
     #[cfg(all(feature = "matrix", feature = "table", feature = "string"))]
     (Value::MatrixString(ref mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
       let in_shape = mat.shape();

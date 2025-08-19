@@ -134,3 +134,37 @@ impl NativeFunctionCompiler for AccessSwizzle {
     }
   }
 }
+
+// ----------------------------------------------------------------------------
+
+// Access Column
+
+pub fn impl_access_column_fxn(source: Value, key: Value) -> MResult<Box<dyn MechFunction>> {
+  match source.kind().deref_kind() {
+    #[cfg(feature = "record")]
+    ValueKind::Record(_) => RecordAccess{}.compile(&vec![source,key]),
+    #[cfg(feature = "table")]
+    ValueKind::Table(_,_) => TableAccessColumn{}.compile(&vec![source,key]),
+    _ => Err(MechError{file: file!().to_string(),tokens: vec![],msg: format!("Unhandled args {:?}, {:?}", source, key),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,}),
+  }
+}
+
+pub struct AccessColumn {}
+impl NativeFunctionCompiler for AccessColumn {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() != 2 {
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    let src = arguments[0].clone();
+    let key = arguments[1].clone();
+    match impl_access_column_fxn(src.clone(), key.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match (src,&key) {
+          (Value::MutableReference(src),_) => { impl_access_column_fxn(src.borrow().clone(), key.clone()) }
+          _ => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
+    }
+  }
+}

@@ -135,7 +135,7 @@ set = ["indexmap", "mech-core/set", "mech-math/set", "mech-logic/set", "mech-ran
 map = ["indexmap", "mech-core/map", "mech-math/map", "mech-logic/map", "mech-range/map", "mech-matrix/map", "mech-compare/map", "mech-stats/map", "mech-io/map", "mech-combinatorics/map"]
 table = ["matrix", "indexmap", "mech-core/table", "mech-math/table", "mech-logic/table", "mech-range/table", "mech-matrix/table", "mech-compare/table", "mech-stats/table", "mech-io/table", "mech-combinatorics/table"]
 tuple = ["mech-core/tuple", "mech-math/tuple", "mech-logic/tuple", "mech-range/tuple", "mech-matrix/tuple", "mech-compare/tuple", "mech-stats/tuple", "mech-io/tuple", "mech-combinatorics/tuple"]
-record = ["indexmap", "mech-core/record", "mech-math/record", "mech-logic/record", "mech-range/record", "mech-matrix/record", "mech-compare/record", "mech-stats/record", "mech-io/record", "mech-combinatorics/record"]
+record = ["tuple", "indexmap", "mech-core/record", "mech-math/record", "mech-logic/record", "mech-range/record", "mech-matrix/record", "mech-compare/record", "mech-stats/record", "mech-io/record", "mech-combinatorics/record"]
 atom = ["mech-core/atom", "mech-math/atom", "mech-logic/atom", "mech-range/atom", "mech-matrix/atom", "mech-compare/atom", "mech-stats/atom", "mech-io/atom", "mech-combinatorics/atom"]
 
 matrix = [

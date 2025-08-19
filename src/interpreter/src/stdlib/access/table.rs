@@ -76,7 +76,7 @@ impl_col_access_fxn_shapes!(ComplexNumber);
 #[cfg(all(feature = "rational", feature = "matrix"))]
 impl_col_access_fxn_shapes!(RationalNumber);
 
-macro_rules! impl_access_column_match_arms {
+macro_rules! impl_access_column_table_match_arms {
   ($arg:expr, $($lhs_type:ident, $($default:expr, $type_string:tt),+);+ $(;)?) => {
     paste!{
       match $arg {
@@ -97,17 +97,17 @@ macro_rules! impl_access_column_match_arms {
                 (Some((ValueKind::$lhs_type,value)),n) => Ok(Box::new([<TableAccessCol $lhs_type VD>]{source: value.clone(), out: Ref::new(DVector::from_element(n,$default)) })),
               )+
             )+
-            x => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+            x => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "no shape".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
           }
         }
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:#?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
     }
   }
 }
 
-fn impl_access_column_fxn(source: Value, key: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  impl_access_column_match_arms!(
+fn impl_access_column_table_fxn(source: Value, key: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_access_column_table_match_arms!(
     (source,key),
     Bool,false,"bool";
     I8,i8::zero(),"i8";
@@ -128,19 +128,19 @@ fn impl_access_column_fxn(source: Value, key: Value) -> Result<Box<dyn MechFunct
   )
 }
 
-pub struct AccessColumn {}
-impl NativeFunctionCompiler for AccessColumn {
+pub struct TableAccessColumn {}
+impl NativeFunctionCompiler for TableAccessColumn {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     let tbl = arguments[0].clone();
     let key = arguments[1].clone();
-    match impl_access_column_fxn(tbl.clone(), key.clone()) {
+    match impl_access_column_table_fxn(tbl.clone(), key.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
         match (tbl,&key) {
-          (Value::MutableReference(tbl),_) => { impl_access_column_fxn(tbl.borrow().clone(), key.clone()) }
+          (Value::MutableReference(tbl),_) => { impl_access_column_table_fxn(tbl.borrow().clone(), key.clone()) }
           x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
