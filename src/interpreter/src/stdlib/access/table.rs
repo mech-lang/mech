@@ -80,12 +80,6 @@ macro_rules! impl_access_column_match_arms {
   ($arg:expr, $($lhs_type:ident, $($default:expr, $type_string:tt),+);+ $(;)?) => {
     paste!{
       match $arg {
-        (Value::Record(rcrd),Value::Id(k)) => {
-          match rcrd.borrow().get(&k) {
-            Some(value) => Ok(Box::new(RecordAccess{source: value.clone()})),
-            _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)}),
-          }
-        }
         (Value::Table(tbl),Value::Id(k)) => {
           let tbl_brrw = tbl.borrow();
           match (tbl_brrw.get(&k),tbl_brrw.rows()) {
