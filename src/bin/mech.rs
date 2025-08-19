@@ -164,9 +164,6 @@ async fn main() -> Result<(), MechError> {
   let mut repl_flag = matches.get_flag("repl");
   let time_flag = matches.get_flag("time");
 
-  let uuid = generate_uuid();
-  let mut intrp = Interpreter::new(uuid);
-
   // --------------------------------------------------------------------------
   // Serve
   // --------------------------------------------------------------------------
@@ -214,6 +211,9 @@ async fn main() -> Result<(), MechError> {
         }
       }
     }
+
+    let uuid = generate_uuid();
+    let mut intrp = Interpreter::new(uuid);
 
     let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag); 
 
@@ -302,14 +302,8 @@ async fn main() -> Result<(), MechError> {
     mechfs.watch_source(&p)?;
   }
 
-  /*let code = match mechfs.read_mech_files(&paths) {
-    Ok(code) => code,
-    Err(err) => {
-      // treat the input args as a code instead of paths to files
-      let code = paths.join(" ");
-      vec![("shell".to_string(),MechSourceCode::String(code))]
-    }
-  };*/
+  let uuid = generate_uuid();
+  let mut intrp = Interpreter::new(uuid);
 
   let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag); 
   
