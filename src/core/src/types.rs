@@ -364,27 +364,46 @@ macro_rules! impl_into_float {
   };
 }
 
-#[cfg(feature = "u8")]
-impl_into_float!(u8 => f32, f64);
-#[cfg(feature = "u16")]
-impl_into_float!(u16 => f32, f64);
-#[cfg(feature = "u32")]
-impl_into_float!(u32 => f32, f64);
-#[cfg(feature = "u64")]
-impl_into_float!(u64 => f32, f64);
-#[cfg(feature = "u128")]
-impl_into_float!(u128 => f32, f64);
-
-#[cfg(feature = "i8")]
-impl_into_float!(i8 => f32, f64);
-#[cfg(feature = "i16")]
-impl_into_float!(i16 => f32, f64);
-#[cfg(feature = "i32")]
-impl_into_float!(i32 => f32, f64);
-#[cfg(feature = "i64")]
-impl_into_float!(i64 => f32, f64);
-#[cfg(feature = "i128")]
-impl_into_float!(i128 => f32, f64);
+#[cfg(all(feature = "f32", feature = "u8"))]
+impl_into_float!(u8 => f32);
+#[cfg(all(feature = "f64", feature = "u8"))]
+impl_into_float!(u8 => f64);
+#[cfg(all(feature = "f32", feature = "u16"))]
+impl_into_float!(u16 => f32);
+#[cfg(all(feature = "f64", feature = "u16"))]
+impl_into_float!(u16 => f64);
+#[cfg(all(feature = "f32", feature = "u32"))]
+impl_into_float!(u32 => f32);
+#[cfg(all(feature = "f64", feature = "u32"))]
+impl_into_float!(u32 => f64);
+#[cfg(all(feature = "f32", feature = "u64"))]
+impl_into_float!(u64 => f32);
+#[cfg(all(feature = "f64", feature = "u64"))]
+impl_into_float!(u64 => f64);
+#[cfg(all(feature = "f32", feature = "u128"))]
+impl_into_float!(u128 => f32);
+#[cfg(all(feature = "f64", feature = "u128"))]
+impl_into_float!(u128 => f64);
+#[cfg(all(feature = "f32", feature = "i8"))]
+impl_into_float!(i8 => f32);
+#[cfg(all(feature = "f64", feature = "i8"))]
+impl_into_float!(i8 => f64);
+#[cfg(all(feature = "f32", feature = "i16"))]
+impl_into_float!(i16 => f32);
+#[cfg(all(feature = "f64", feature = "i16"))]
+impl_into_float!(i16 => f64);
+#[cfg(all(feature = "f32", feature = "i32"))]
+impl_into_float!(i32 => f32);
+#[cfg(all(feature = "f64", feature = "i32"))]
+impl_into_float!(i32 => f64);
+#[cfg(all(feature = "f32", feature = "i64"))]
+impl_into_float!(i64 => f32);
+#[cfg(all(feature = "f64", feature = "i64"))]
+impl_into_float!(i64 => f64);
+#[cfg(all(feature = "f32", feature = "i128"))]
+impl_into_float!(i128 => f32);
+#[cfg(all(feature = "f64", feature = "i128"))]
+impl_into_float!(i128 => f64);
 
 #[cfg(feature = "f64")]
 impl_into!(F64 => u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);

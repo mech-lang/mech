@@ -21,7 +21,8 @@ use std::collections::{HashMap, HashSet};
 // Compilation Context
 // ----------------------------------------------------------------------------
 
-#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ParsedProgram {
   pub header: ByteCodeHeader,
   pub features: Vec<u64>,
@@ -84,6 +85,7 @@ impl ParsedProgram {
       // get the type from the id
       let ty = &self.types.entries[ce.type_id as usize];
       let val: Value = match ty.tag {
+        #[cfg(feature = "bool")]
         TypeTag::Bool => {
           if data.len() != 1 {
             return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Bool const entry must be 1 byte".to_string(), id: line!(), kind: MechErrorKind::GenericError("Bool const entry must be 1 byte".to_string())});
@@ -91,6 +93,7 @@ impl ParsedProgram {
           let value = data[0] != 0;
           Value::Bool(Ref::new(value))
         },
+        #[cfg(feature = "u8")]
         TypeTag::U8 => {
           if data.len() != 1 {
             return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "U8 const entry must be 1 byte".to_string(), id: line!(), kind: MechErrorKind::GenericError("U8 const entry must be 1 byte".to_string())});
@@ -98,6 +101,7 @@ impl ParsedProgram {
           let value = data[0];
           Value::U8(Ref::new(value))
         },
+        #[cfg(feature = "f64")]
         TypeTag::F64 => {
           if data.len() != 8 {
             return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "F64 const entry must be 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("F64 const entry must be 8 bytes".to_string())});
@@ -105,6 +109,7 @@ impl ParsedProgram {
           let value = f64::from_le_bytes(data.try_into().unwrap());
           Value::F64(Ref::new(F64::new(value)))
         },
+        #[cfg(feature = "i64")]
         TypeTag::I64 => {
           if data.len() != 8 {
             return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "I64 const entry must be 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("I64 const entry must be 8 bytes".to_string())});
@@ -321,7 +326,8 @@ impl CompileCtx {
 // ----------------------------------------------------------------------------
 
 #[repr(C)]
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ByteCodeHeader {
   pub magic:        [u8; 4],   // e.g., b"MECH"
   pub version:        u8,      // bytecode format version
@@ -532,7 +538,8 @@ impl FeatureFlag {
 // ----------------------------------------------------------------------------
 
 #[repr(u16)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum TypeTag {
   U8=1, U16, U32, U64, U128, I8, I16, I32, I64, I128,
   F32, F64, ComplexNumber, RationalNumber, String, Bool, Id, Index, Empty, Any,
@@ -558,7 +565,8 @@ impl TypeTag {
   }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TypeEntry {
   pub tag: TypeTag,
   pub bytes: Vec<u8>,
@@ -571,7 +579,8 @@ impl TypeEntry {
 
 pub type TypeId = u32;
 
-#[derive(Default, Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Default, Debug, Clone, Eq, PartialEq)]
 pub struct TypeSection {
   interner: HashMap<ValueKind, TypeId>,
   entries:  Vec<TypeEntry>, // index is TypeId
@@ -716,12 +725,14 @@ fn encode_value_kind(ts: &mut TypeSection, vk: &ValueKind) -> (TypeTag, Vec<u8>)
 // ----------------------------------------------------------------------------
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum ConstEncoding { 
   Inline = 1 
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ConstEntry {
   pub type_id: u32,
   pub enc:     ConstEncoding,
@@ -973,7 +984,8 @@ pub fn decode_version_from_u16(v: u16) -> (u16, u16, u16) {
   (major, minor, patch)
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ParsedConstEntry {
   pub type_id: u32,
   pub enc: u8,
@@ -1032,7 +1044,8 @@ fn verify_crc_trailer(mut f: &File) -> MResult<()> {
   }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum DecodedInstr {
   ConstLoad { dst: u32, const_id: u32 },
   UnOp { opcode: u64, dst: u32, src: u32 },
@@ -1084,7 +1097,8 @@ fn decode_instructions(mut cur: Cursor<&[u8]>) -> io::Result<Vec<DecodedInstr>> 
 // 7. Dictionary
 // ----------------------------------------------------------------------------
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct DictEntry {
   pub id: u64,          // unique identifier for the dictionary entry
   pub name: String,     // name of the entry
