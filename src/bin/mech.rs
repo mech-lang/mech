@@ -309,7 +309,10 @@ async fn main() -> Result<(), MechError> {
   
   let return_value = match &result {
     Ok(ref r) => {
+      #[cfg(feature = "pretty_print")]
       println!("{}", r.pretty_print());
+      #[cfg(not(feature = "pretty_print"))]
+      println!("{:#?}", r);
       Ok(())
     }
     Err(ref err) => {

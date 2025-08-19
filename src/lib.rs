@@ -214,6 +214,7 @@ pub fn ls() -> String {
   format!("\nDirectory: {}\n\n{table}\n",current_dir.display())
 }
 
+#[cfg(feature = "pretty_print")]
 fn pretty_print_tree(tree: &Program) -> String {
   let tree_hash = hash_str(&format!("{:#?}", tree));
   let formatted_tree = tree.pretty_print();
@@ -270,6 +271,7 @@ pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
 }
 
 
+#[cfg(feature = "pretty_print")]            
 fn pretty_print_symbols(intrp: &Interpreter) -> String {
   let mut builder = Builder::default();
   let symbol_table = intrp.pretty_print_symbols();
