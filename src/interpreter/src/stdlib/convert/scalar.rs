@@ -77,7 +77,7 @@ macro_rules! impl_conversion_match_arms {
     paste!{
       match $arg {
         $(
-          #[cfg(all(feature = "matrix", feature = "table", features = $input_type_string))]
+          #[cfg(all(feature = "matrix", feature = "table", feature = $input_type_string))]
           (Value::[<Matrix $input_type:camel>](mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
             let in_shape = mat.shape();
             let tbl_cols = tbl.len();
@@ -116,7 +116,7 @@ macro_rules! impl_conversion_match_arms {
           let val = Value::Enum(Box::new(enm.clone()));
           Ok(Box::new(ConvertSEnum{out: val}))
         }
-        x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+        x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Could not convert: {:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
       }
     };
   }
@@ -180,7 +180,7 @@ where
 
 fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<dyn MechFunction>>  {
   match (&source_value, &target_kind) {
-    #[cfg(feature = "rational")]
+    #[cfg(all(feature = "rational", feature = "f64"))]
     (Value::RationalNumber(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar{arg: r.clone(),out: Ref::new(F64::default()),}));}
     #[cfg(all(feature = "matrix", feature = "table", feature = "string"))]
     (Value::MatrixString(ref mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
