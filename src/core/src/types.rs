@@ -1014,3 +1014,104 @@ macro_rules! impl_pretty_print {
 #[cfg(feature = "f32")] impl_pretty_print!(F32);
 #[cfg(feature = "f64")] impl_pretty_print!(F64);
 impl_pretty_print!(usize);
+
+#[cfg(feature = "f64")]
+impl CompileConst for F64 {
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    let mut payload = Vec::<u8>::new();
+    payload.write_f64::<LittleEndian>(self.0)?;
+    ctx.compile_const(&payload, ValueKind::F64)
+  }
+}
+
+#[cfg(feature = "f32")]
+impl CompileConst for F32 {
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    let mut payload = Vec::<u8>::new();
+    payload.write_f32::<LittleEndian>(self.0)?;
+    ctx.compile_const(&payload, ValueKind::F32)
+  }
+}
+
+#[cfg(feature = "u8")]
+impl CompileConst for u8 {
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    let mut payload = Vec::<u8>::new();
+    payload.write_u8(*self)?;
+    ctx.compile_const(&payload, ValueKind::U8)
+  }
+}
+
+#[cfg(feature = "i8")]
+impl CompileConst for i8 {
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    let mut payload = Vec::<u8>::new();
+    payload.write_i8(*self)?;
+    ctx.compile_const(&payload, ValueKind::I8)
+  }
+}
+
+macro_rules! impl_compile_const {
+  ($feature:literal, $t:tt) => {
+    paste! {
+      #[cfg(feature = $feature)]
+      impl CompileConst for $t {
+        fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+          let mut payload = Vec::<u8>::new();
+          payload.[<write_ $t>]::<LittleEndian>(*self)?;
+          ctx.compile_const(&payload, ValueKind::[<$t:upper>])
+        }
+      }
+    }
+  };
+}
+
+impl_compile_const!("u16", u16);
+impl_compile_const!("u32", u32);
+impl_compile_const!("u64", u64);
+impl_compile_const!("u128", u128);
+impl_compile_const!("i16", i16);
+impl_compile_const!("i32", i32);
+impl_compile_const!("i64", i64);
+impl_compile_const!("i128", i128);
+
+#[cfg(feature = "bool")]
+impl CompileConst for bool {
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    let mut payload = Vec::<u8>::new();
+    payload.write_u8(if *self { 1 } else { 0 })?;
+    ctx.compile_const(&payload, ValueKind::Bool)
+  }
+}
+
+#[cfg(feature = "string")]
+impl CompileConst for String {
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    let mut payload = Vec::<u8>::new();
+    payload.write_u32::<LittleEndian>(self.len() as u32)?;
+    payload.extend_from_slice(self.as_bytes());
+    ctx.compile_const(&payload, ValueKind::String)
+  }
+}
+
+#[cfg(feature = "rational")]
+impl CompileConst for RationalNumber {
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    let mut payload = Vec::<u8>::new();
+    payload.write_i64::<LittleEndian>(*self.numer())?;
+    payload.write_i64::<LittleEndian>(*self.denom())?;
+    ctx.compile_const(&payload, ValueKind::RationalNumber)
+  }
+}
+
+#[cfg(feature = "complex")]
+impl CompileConst for ComplexNumber {
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    let mut payload = Vec::<u8>::new();
+    payload.write_f64::<LittleEndian>(self.0.re)?;
+    payload.write_f64::<LittleEndian>(self.0.im)?;
+    ctx.compile_const(&payload, ValueKind::ComplexNumber)
+  }
+}
+
+// End

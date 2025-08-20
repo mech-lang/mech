@@ -1888,15 +1888,13 @@ impl_to_usize_for!(i64);
 #[cfg(feature = "i128")]
 impl_to_usize_for!(i128);
 
-#[inline]
-fn align_up(offset: u64, align: u64) -> u64 {
-  if align == 0 { return offset; }
-  ((offset + align - 1) / align) * align
+pub trait CompileConst {
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32>;
 }
 
-impl Value {
+impl CompileConst for Value {
 
-  pub fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
 
     match self {
@@ -1939,9 +1937,9 @@ impl Value {
       Value::Index(x) => payload.write_u64::<LittleEndian>(*x.borrow() as u64)?,
       #[cfg(feature = "complex")]
       Value::ComplexNumber(x) => {
-      let c = x.borrow();
-      payload.write_f64::<LittleEndian>(c.0.re)?;
-      payload.write_f64::<LittleEndian>(c.0.im)?;
+        let c = x.borrow();
+        payload.write_f64::<LittleEndian>(c.0.re)?;
+        payload.write_f64::<LittleEndian>(c.0.im)?;
       },
       #[cfg(feature = "rational")]
       Value::RationalNumber(x) => {
@@ -1953,33 +1951,7 @@ impl Value {
       Value::MatrixF64(x) => todo!(), //{return x.compile_const(ctx);}
       _ => todo!(),
     }
-
-    let type_kind = self.kind();
-    let type_id = ctx.types.get_or_intern(&type_kind);
-    let align = type_kind.align();
-
-    let next_blob_len = ctx.const_blob.len() as u64;
-    let padded_off = align_up(next_blob_len, align as u64);
-    if padded_off > next_blob_len {
-      // add zero bytes padding to align the next write
-      ctx.const_blob.resize(padded_off as usize, 0);
-    }
-    let offset = ctx.const_blob.len() as u64;
-    ctx.const_blob.extend_from_slice(&payload);
-    let length = (ctx.const_blob.len() as u64) - offset;
-
-    let entry = ConstEntry {
-      type_id,
-      enc: ConstEncoding::Inline,
-      align: align as u8,
-      flags: 0,
-      reserved: 0,
-      offset,
-      length,
-    };
-    let const_id = ctx.const_entries.len() as u32;
-    ctx.const_entries.push(entry);
-    Ok(const_id)
+    ctx.compile_const(&payload, self.kind())
   }
 
 }
