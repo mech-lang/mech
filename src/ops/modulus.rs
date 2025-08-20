@@ -6,15 +6,15 @@ use num_traits::*;
 
 #[macro_export]
 macro_rules! impl_binop2 {
-  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
-      #[derive(Debug)]
-      struct $struct_name<T> {
+  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:ident) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
       lhs: Ref<$arg1_type>,
       rhs: Ref<$arg2_type>,
       out: Ref<$out_type>,
-      }
-      impl<T> MechFunction for $struct_name<T>
-      where
+    }
+    impl<T> MechFunction for $struct_name<T>
+    where
       T: Copy + Debug + Clone + Sync + Send + 'static + 
       PartialEq + PartialOrd +
       Add<Output = T> + AddAssign +
@@ -24,19 +24,19 @@ macro_rules! impl_binop2 {
       Rem<Output = T> + RemAssign +
       Zero + One,
       Ref<$out_type>: ToValue
-      {
-      fn solve(&self) {
-          let lhs_ptr = self.lhs.as_ptr();
-          let rhs_ptr = self.rhs.as_ptr();
-          let out_ptr = self.out.as_mut_ptr();
-          $op!(lhs_ptr,rhs_ptr,out_ptr);
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:#?}", self) }
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
-      }
-      }};}
+    {
+    fn solve(&self) {
+      let lhs_ptr = self.lhs.as_ptr();
+      let rhs_ptr = self.rhs.as_ptr();
+      let out_ptr = self.out.as_mut_ptr();
+      $op!(lhs_ptr,rhs_ptr,out_ptr);
+    }
+    fn out(&self) -> Value { self.out.to_value() }
+    fn to_string(&self) -> String { format!("{:#?}", self) }
+    fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      todo!();
+    }
+    }};}
 
 #[macro_export]
 macro_rules! impl_math_fxns2 {
@@ -44,25 +44,23 @@ macro_rules! impl_math_fxns2 {
     impl_fxns!($lib,T,T,impl_binop2);
   }}
 
-
-
 macro_rules! mod_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
       unsafe { *$out = *$lhs % *$rhs; }};}
   
 macro_rules! mod_vec_op {
-($lhs:expr, $rhs:expr, $out:expr) => {
-  unsafe {
-    let mut out_deref = &mut (*$out);
-    let lhs_deref = &(*$lhs);
-    let rhs_deref = &(*$rhs);
-    for (o,(l,r)) in out_deref.iter_mut().zip(lhs_deref.iter().zip(rhs_deref.iter())) {
-      *o = *l % *r;
-    }
-  }};}
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      let mut out_deref = &mut (*$out);
+      let lhs_deref = &(*$lhs);
+      let rhs_deref = &(*$rhs);
+      for (o,(l,r)) in out_deref.iter_mut().zip(lhs_deref.iter().zip(rhs_deref.iter())) {
+        *o = *l % *r;
+      }
+    }};}
 
 macro_rules! mod_scalar_lhs_op {
-($lhs:expr, $rhs:expr, $out:expr) => {
+  ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe { 
       let mut out_deref = &mut (*$out);
       let lhs_deref = &(*$lhs);
@@ -73,15 +71,15 @@ macro_rules! mod_scalar_lhs_op {
     }};}
 
 macro_rules! mod_scalar_rhs_op {
-($lhs:expr, $rhs:expr, $out:expr) => {
-  unsafe {
-    let mut out_deref = &mut (*$out);
-    let lhs_deref = (*$lhs);
-    let rhs_deref = &(*$rhs);
-    for (o,r) in out_deref.iter_mut().zip(rhs_deref.iter()) {
-      *o = lhs_deref % *r;
-    }
-  }};}
+  ($lhs:expr, $rhs:expr, $out:expr) => {
+    unsafe {
+      let mut out_deref = &mut (*$out);
+      let lhs_deref = (*$lhs);
+      let rhs_deref = &(*$rhs);
+      for (o,r) in out_deref.iter_mut().zip(rhs_deref.iter()) {
+        *o = lhs_deref % *r;
+      }
+    }};}
 
 macro_rules! mod_mat_vec_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {

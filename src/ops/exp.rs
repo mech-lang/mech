@@ -100,7 +100,7 @@ macro_rules! exp_row_mat_op {
   
 #[macro_export]
 macro_rules! impl_expop {
-($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
+($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:ident) => {
   #[derive(Debug)]
   struct $struct_name<T> {
     lhs: Ref<$arg1_type>,
