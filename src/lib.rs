@@ -37,7 +37,7 @@ pub use self::xor::*;
 
 #[macro_export]
 macro_rules! impl_logic_binop {
-  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {
+  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:ident) => {
     #[derive(Debug)]
     struct $struct_name {
       lhs: Ref<$arg1_type>,
