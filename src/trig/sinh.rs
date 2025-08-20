@@ -33,7 +33,9 @@ macro_rules! sinhf_vec_op {
   };
 }
 
+#[cfg(feature = "f32")]
 impl_math_urop!(MathSinh, F32, sinhf);
+#[cfg(feature = "f64")]
 impl_math_urop!(MathSinh, F64, sinh);
 
 fn impl_sinh_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {

@@ -29,7 +29,9 @@ macro_rules! acscf_vec_op {
         ((&mut (*$out))[i]).0 = asinf(1.0 / ((&(*$arg))[i]).0);
       }}};}
 
+#[cfg(feature = "f32")]      
 impl_math_urop!(MathAcsc, F32, acscf);
+#[cfg(feature = "f64")]
 impl_math_urop!(MathAcsc, F64, acsc);
 
 fn impl_acsc_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {

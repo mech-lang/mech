@@ -36,7 +36,9 @@ macro_rules! tanhf_vec_op {
   };
 }
 
+#[cfg(feature = "f32")]
 impl_math_urop!(MathTanh, F32, tanhf);
+#[cfg(feature = "f64")]
 impl_math_urop!(MathTanh, F64, tanh);
 
 fn impl_tanh_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {

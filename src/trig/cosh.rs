@@ -36,7 +36,9 @@ macro_rules! coshf_vec_op {
   };
 }
 
+#[cfg(feature = "f32")]
 impl_math_urop!(MathCosh, F32, coshf);
+#[cfg(feature = "f64")]
 impl_math_urop!(MathCosh, F64, cosh);
 
 fn impl_cosh_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {

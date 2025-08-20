@@ -38,6 +38,7 @@ macro_rules! impl_urnop_match_arms2 {
       match $arg {
         $(
           $(
+            #[cfg(feature = $value_string)]
             (Value::$lhs_type(arg)) => Ok(Box::new([<$lib $lhs_type S>]{arg: arg.clone(), out: Ref::new($default) })),
             #[cfg(all(feature = $value_string, feature = "matrix1"))]
             (Value::$matrix_kind(Matrix::Matrix1(arg))) => Ok(Box::new([<$lib $lhs_type M1>]{arg, out: Ref::new(Matrix1::from_element($default))})),

@@ -29,7 +29,9 @@ macro_rules! cotf_vec_op {
         ((&mut (*$out))[i]).0 = 1.0 / tanf(((&(*$arg))[i]).0);
       }}};}
 
+#[cfg(feature = "f32")]
 impl_math_urop!(MathCot, F32, cotf);
+#[cfg(feature = "f64")]
 impl_math_urop!(MathCot, F64, cot);
 
 fn impl_cot_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {

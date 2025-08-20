@@ -29,7 +29,9 @@ macro_rules! atanf_vec_op {
         ((&mut (*$out))[i]).0 = atanf(((&(*$arg))[i]).0);
       }}};}
 
+#[cfg(feature = "f32")]
 impl_math_urop!(MathAtan, F32, atanf);
+#[cfg(feature = "f64")]
 impl_math_urop!(MathAtan, F64, atan);
 
 fn impl_atan_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {

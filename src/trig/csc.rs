@@ -29,7 +29,9 @@ macro_rules! cscf_vec_op {
         ((&mut (*$out))[i]).0 = 1.0 / sinf(((&(*$arg))[i]).0);
       }}};}
 
+#[cfg(feature = "f32")]
 impl_math_urop!(MathCsc, F32, cscf);
+#[cfg(feature = "f64")]
 impl_math_urop!(MathCsc, F64, csc);
 
 fn impl_csc_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {

@@ -29,7 +29,9 @@ macro_rules! secf_vec_op {
         ((&mut (*$out))[i]).0 = 1.0 / cosf(((&(*$arg))[i]).0);
       }}};}
 
+#[cfg(feature = "f32")]
 impl_math_urop!(MathSec, F32, secf);
+#[cfg(feature = "f64")]
 impl_math_urop!(MathSec, F64, sec);
 
 fn impl_sec_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {

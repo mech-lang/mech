@@ -29,7 +29,9 @@ macro_rules! asinf_vec_op {
         ((&mut (*$out))[i]).0 = asinf(((&(*$arg))[i]).0);
       }}};}
 
+#[cfg(feature = "f32")]
 impl_math_urop!(MathAsin, F32, asinf);
+#[cfg(feature = "f64")]
 impl_math_urop!(MathAsin, F64, asin);
 
 fn impl_asin_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {

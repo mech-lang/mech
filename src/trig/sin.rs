@@ -29,7 +29,9 @@ macro_rules! sinf_vec_op {
         ((&mut (*$out))[i]).0 = sinf(((&(*$arg))[i]).0);
       }}};}
 
+#[cfg(feature = "f32")]      
 impl_math_urop!(MathSin, F32, sinf);
+#[cfg(feature = "f64")]
 impl_math_urop!(MathSin, F64, sin);
 
 fn impl_sin_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {

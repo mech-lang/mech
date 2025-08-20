@@ -29,7 +29,9 @@ macro_rules! acosf_vec_op {
         ((&mut (*$out))[i]).0 = acosf(((&(*$arg))[i]).0);
       }}};}
 
+#[cfg(feature = "f32")]
 impl_math_urop!(MathAcos, F32, acosf);
+#[cfg(feature = "f64")]
 impl_math_urop!(MathAcos, F64, acos);
 
 fn impl_acos_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {

@@ -29,7 +29,9 @@ macro_rules! tanf_vec_op {
         ((&mut (*$out))[i]).0 = tanf(((&(*$arg))[i]).0);
       }}};}
 
+#[cfg(feature = "f32")]      
 impl_math_urop!(MathTan, F32, tanf);
+#[cfg(feature = "f64")]
 impl_math_urop!(MathTan, F64, tan);
 
 fn impl_tan_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
