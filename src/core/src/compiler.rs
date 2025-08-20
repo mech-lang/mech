@@ -217,6 +217,7 @@ impl CompileCtx {
       // add zero bytes padding to align the next write
       self.const_blob.resize(padded_off as usize, 0);
     }
+    self.features.insert(FeatureFlag::Builtin(value_kind.to_feature_kind()));
     let offset = self.const_blob.len() as u64;
     self.const_blob.extend_from_slice(bytes);
     let length = (self.const_blob.len() as u64) - offset;    
@@ -542,6 +543,8 @@ pub enum FeatureKind {
   Matrix2x3, Matrix3x2,
   RowVector2, RowVector3, RowVector4,
   Vector2, Vector3, Vector4,
+  Add, Sub, Mul, Div, Mod,
+  MatMul,
   Custom = 0xFFFF,
 }
 
