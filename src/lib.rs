@@ -1,45 +1,28 @@
 #![no_main]
 #![allow(warnings)]
 
-#[cfg(feature = "matrix")]
+//#[cfg(feature = "matrix")]
 extern crate nalgebra as na;
 
 use mech_core::*;
 
 use paste::paste;
 
-#[cfg(feature = "vector3")]
-use nalgebra::Vector3;
-#[cfg(feature = "vectord")]
-use nalgebra::DVector;
-#[cfg(feature = "vector2")]
-use nalgebra::Vector2;
-#[cfg(feature = "vector4")]
-use nalgebra::Vector4;
-#[cfg(feature = "rowdvector")]
-use nalgebra::RowDVector;
-#[cfg(feature = "row_vectord")]
-use nalgebra::RowDVector;
-#[cfg(feature = "matrix1")]
-use nalgebra::Matrix1;
-#[cfg(feature = "matrix3")]
-use nalgebra::Matrix3;
-#[cfg(feature = "matrix4")]
-use nalgebra::Matrix4;
-#[cfg(feature = "row_vector3")]
-use nalgebra::RowVector3;
-#[cfg(feature = "row_vector4")]
-use nalgebra::RowVector4;
-#[cfg(feature = "row_vector2")]
-use nalgebra::RowVector2;
-#[cfg(feature = "matrixd")]
-use nalgebra::DMatrix;
-#[cfg(feature = "matrix2x3")]
-use nalgebra::Matrix2x3;
-#[cfg(feature = "matrix3x2")]
-use nalgebra::Matrix3x2;
-#[cfg(feature = "matrix2")]
-use nalgebra::Matrix2;
+use na::Vector2;
+use na::Vector3;
+use na::Vector4;
+use na::DVector;
+use na::Matrix1;
+use na::Matrix2;
+use na::Matrix3;
+use na::Matrix4;
+use na::Matrix2x3;
+use na::Matrix3x2;
+use na::DMatrix;
+use na::RowVector2;
+use na::RowVector3;
+use na::RowVector4;
+use na::RowDVector;
 
 use std::ops::*;
 use std::fmt::Debug;
