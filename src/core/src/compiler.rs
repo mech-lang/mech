@@ -208,6 +208,32 @@ impl CompileCtx {
     self.instrs.push(EncodedInstr::Ret { src })
   }
 
+  pub fn compile_const(&mut self, bytes: &[u8], value_kind: ValueKind) -> MResult<u32> {
+    let type_id = self.types.get_or_intern(&value_kind);
+    let align = value_kind.align();
+    let next_blob_len = self.const_blob.len() as u64;
+    let padded_off = align_up(next_blob_len, align as u64);
+    if padded_off > next_blob_len {
+      // add zero bytes padding to align the next write
+      self.const_blob.resize(padded_off as usize, 0);
+    }
+    let offset = self.const_blob.len() as u64;
+    self.const_blob.extend_from_slice(bytes);
+    let length = (self.const_blob.len() as u64) - offset;    
+    let entry = ConstEntry {
+      type_id,
+      enc: ConstEncoding::Inline,
+      align: align as u8,
+      flags: 0,
+      reserved: 0,
+      offset,
+      length,
+    };
+    let const_id = self.const_entries.len() as u32;
+    self.const_entries.push(entry);
+    Ok(const_id)    
+  }
+
   pub fn compile(&mut self) -> MResult<Vec<u8>> {
 
     let header_size = ByteCodeHeader::HEADER_SIZE as u64;
@@ -1116,4 +1142,10 @@ impl DictEntry {
     w.write_all(name_bytes)?;
     Ok(())
   }
+}
+
+#[inline]
+fn align_up(offset: u64, align: u64) -> u64 {
+  if align == 0 { return offset; }
+  ((offset + align - 1) / align) * align
 }
