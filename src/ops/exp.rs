@@ -140,6 +140,7 @@ macro_rules! impl_math_fxns_exp {
 
 impl_math_fxns_exp!(Exp);
 
+#[cfg(all(feature = "rational", feature = "i32"))]
 #[derive(Debug)]
 pub struct ExpRational {
   pub lhs: Ref<RationalNumber>,
@@ -147,6 +148,7 @@ pub struct ExpRational {
   pub out: Ref<RationalNumber>,
 }
 
+#[cfg(all(feature = "rational", feature = "i32"))]
 impl MechFunction for ExpRational {
   fn solve(&self) {
     let lhs_ptr = self.lhs.as_ptr();
@@ -165,6 +167,7 @@ impl MechFunction for ExpRational {
 
 fn impl_exp_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   match (&lhs_value, &rhs_value) {
+    #[cfg(all(feature = "rational", feature = "i32"))]
     (Value::RationalNumber(lhs), Value::I32(rhs)) => {
       return Ok(Box::new(ExpRational {
         lhs: lhs.clone(),
