@@ -3,9 +3,11 @@ use crate::*;
 
 use std::fmt::Debug;
 use std::marker::PhantomData;
-use num_traits::*;
 
+#[cfg(feature = "matrix")]
+use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix3x2, Matrix6, Matrix2};
 
+#[cfg(feature = "matrix")]
 use nalgebra::{
   base::{Matrix as naMatrix, Storage, StorageMut},
   Dim, Scalar,
@@ -70,6 +72,7 @@ macro_rules! impl_op_assign_range_fxn_s {
 #[macro_export]
 macro_rules! impl_op_assign_range_fxn_v {
   ($struct_name:ident, $op:ident, $ix:ty) => {
+    #[cfg(feature = "matrix")]
     #[derive(Debug)]
     pub struct $struct_name<T, MatA, MatB, IxVec> {
       pub source: Ref<MatB>,

@@ -1,7 +1,5 @@
 #[macro_use]
 use crate::*;
-#[macro_use]
-use mech_core::*;
 use super::*;
 use num_traits::*;
 

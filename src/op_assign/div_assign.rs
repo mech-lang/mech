@@ -1,9 +1,8 @@
 #[macro_use]
 use crate::*;
-use std::fmt::Debug;
-use std::ops::DivAssign;
-use std::marker::PhantomData;
+use super::*;
 use num_traits::*;
+use std::ops::DivAssign;
 
 // Div Assign -----------------------------------------------------------------
 

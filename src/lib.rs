@@ -1,11 +1,6 @@
 #![no_main]
 #![allow(warnings)]
 
-use nalgebra::{
-  base::{Matrix as naMatrix, Storage, StorageMut},
-  Dim, Scalar,
-};
-
 #[cfg(feature = "matrix")]
 extern crate nalgebra as na;
 
