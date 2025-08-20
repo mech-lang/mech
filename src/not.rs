@@ -1,6 +1,5 @@
 use crate::*;
 use mech_core::*;
-use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix3x2, Matrix6, Matrix2};
 use paste::paste;
 use mech_core::matrix::Matrix;
 use std::ops::Neg;
