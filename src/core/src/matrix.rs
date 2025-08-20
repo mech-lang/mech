@@ -1,6 +1,5 @@
 use crate::*;
 use crate::types::Ref;
-use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix3x2, Matrix6, Matrix2};
 #[cfg(feature = "pretty_print")]
 use tabled::{
     builder::Builder,
@@ -47,9 +46,9 @@ macro_rules! impl_to_matrix {
           (1,4) => Matrix::RowVector4(Ref::new(RowVector4::from_vec(elements))),
           #[cfg(feature = "vector2")]
           (2,1) => Matrix::Vector2(Ref::new(Vector2::from_vec(elements))),
-          #[cfg(feature = "vector2")]
+          #[cfg(feature = "vector3")]
           (3,1) => Matrix::Vector3(Ref::new(Vector3::from_vec(elements))),
-          #[cfg(feature = "vector2")]
+          #[cfg(feature = "vector4")]
           (4,1) => Matrix::Vector4(Ref::new(Vector4::from_vec(elements))),
           (1,n) => Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements))),
           (m,1) => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
@@ -238,7 +237,7 @@ copy_mat!(DMatrix);
 copy_mat!(RowDVector);
 
 impl<T> Hash for Matrix<T> 
-where T: Hash + na::Scalar
+where T: Hash + nalgebra::Scalar
 {
   fn hash<H: Hasher>(&self, state: &mut H) {
     match self {
@@ -856,7 +855,6 @@ macro_rules! to_value_ndmatrix {
     )+
   };}
 
-#[cfg(feature = "matrix")]
 macro_rules! impl_to_value_matrix {
   ($matrix_kind:ident) => {
     to_value_ndmatrix!(
@@ -911,3 +909,33 @@ impl_to_value_matrix!(RowDVector);
 impl_to_value_matrix!(DVector);
 #[cfg(feature = "matrixd")]
 impl_to_value_matrix!(DMatrix);
+
+/* -
+/*#[cfg(feature = "complex")]
+impl CompileConst for ComplexNumber {
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    let mut payload = Vec::<u8>::new();
+    payload.write_f64::<LittleEndian>(self.0.re)?;
+    payload.write_f64::<LittleEndian>(self.0.im)?;
+    ctx.compile_const(&payload, ValueKind::ComplexNumber)
+  }
+}*/
+
+#[cfg(feature = "row-vector4")]
+impl<T> CompileConst for RowVector4<T>
+where T: Debug + Display + Clone + PartialEq + 'static + CompileConst
+{
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    todo!();
+  }
+}
+
+#[cfg(feature = "vector4")]
+impl<T> CompileConst for Vector4<T>
+where T: Debug + Display + Clone + PartialEq + 'static + CompileConst
+{
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    todo!();
+  }
+}*/
+

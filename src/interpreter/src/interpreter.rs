@@ -162,7 +162,7 @@ impl Interpreter {
           let value = self.constants[*const_id as usize].clone();
           self.registers[*dst as usize] = value;
         },
-        _ => todo!(),
+        x => todo!("Implement instruction: {x:?}"),
       }
       self.ip += 1;
     }
