@@ -23,8 +23,22 @@ path = "bin/interpreter.rs"
 
 [features]
 default = ["stdlib", "pretty_print", "serde",
-           "math", "logic", "range", "matrix", "compare", "stats", "io", "combinatorics"]
+           "math_default", "logic_default", "range_default", "matrix_default", 
+           "compare_default", "stats_default", "io_default", "combinatorics_default"]
 
+math_default = ["math_add_assign", "math_sub_assign", "math_mul_assign", "math_div_assign",
+                "math_sin", "math_cos", "math_tan", "math_asin", "math_acos", "math_atan",
+                "math_sinh", "math_cosh", "math_tanh", "math_asinh", "math_acosh", "math_atanh",
+                "math_sec", "math_csc", "math_cot", "math_acsc", "math_asec", "math_acot",
+                "math_atan2"]
+logic_default = ["logic_and", "logic_or", "logic_not", "logic_xor"]
+range_default = ["range_inclusive", "range_exclusive"]
+matrix_default = ["matrix_matmul", "matrix_transpose"] 
+compare_default = ["compare_eq", "compare_neq", "compare_lte", "compare_lt", "compare_gt", "compare_gte"]
+stats_default = ["stats_sum"]
+io_default = ["io_print", "io_println"]
+combinatorics_default = ["combinatorics_n_choose_k"]
+          
 serde = ["mech-core/serde", "bincode", "bincode/serde"]
 pretty_print = ["mech-core/pretty_print"]
 
@@ -143,8 +157,8 @@ fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2", "mech-core/fixe
 fixed_vector = ["vector4", "vector3", "vector2", "mech-core/fixed_vector", "mech-math/fixed_vector", "mech-logic/fixed_vector", "mech-range/fixed_vector", "mech-matrix/fixed_vector", "mech-compare/fixed_vector", "mech-stats/fixed_vector", "mech-io/fixed_vector", "mech-combinatorics/fixed_vector"]
 fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "mech-core/fixed_matrix", "mech-math/fixed_matrix", "mech-logic/fixed_matrix", "mech-range/fixed_matrix", "mech-matrix/fixed_matrix", "mech-compare/fixed_matrix", "mech-stats/fixed_matrix", "mech-io/fixed_matrix", "mech-combinatorics/fixed_matrix"]
 dynamic_matrix = ["matrixd", "vectord", "row_vectord", "mech-core/dynamic_matrix", "mech-math/dynamic_matrix", "mech-logic/dynamic_matrix", "mech-range/dynamic_matrix", "mech-matrix/dynamic_matrix", "mech-compare/dynamic_matrix", "mech-stats/dynamic_matrix", "mech-io/dynamic_matrix", "mech-combinatorics/dynamic_matrix"]
-matrix_transpose = ["mech-matrix/transpose"]
-matrix_matmul = ["mech-matrix/matmul"]
+matrix_transpose = ["mech-matrix/transpose", "matrix"]
+matrix_matmul = ["mech-matrix/matmul", "matrix"]
 
 row_vector4 = ["mech-core/row_vector4", "mech-math/row_vector4", "mech-logic/row_vector4", "mech-range/row_vector4", "mech-matrix/row_vector4", "mech-compare/row_vector4", "mech-stats/row_vector4", "mech-io/row_vector4", "mech-combinatorics/row_vector4", "matrix", "dynamic_matrix"]
 row_vector3 = ["mech-core/row_vector3", "mech-math/row_vector3", "mech-logic/row_vector3", "mech-range/row_vector3", "mech-matrix/row_vector3", "mech-compare/row_vector3", "mech-stats/row_vector3", "mech-io/row_vector3", "mech-combinatorics/row_vector3", "matrix", "dynamic_matrix"]

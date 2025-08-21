@@ -109,20 +109,20 @@ macro_rules! impl_access_column_table_match_arms {
 fn impl_access_column_table_fxn(source: Value, key: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_access_column_table_match_arms!(
     (source,key),
-    Bool,false,"bool";
-    I8,i8::zero(),"i8";
-    I16,i16::zero(),"i16";
-    I32,i32::zero(),"i32";
-    I64,i64::zero(),"i64";
-    I128,i128::zero(),"i128";
-    U8,u8::zero(),"u8";
-    U16,u16::zero(),"u16";
-    U32,u32::zero(),"u32";
-    U64,u64::zero(),"u64";
-    U128,u128::zero(),"u128";
-    F32,F32::zero(),"f32";
-    F64,F64::zero(),"f64";
-    String,String::new(),"string";
+    Bool,bool::default(),"bool";
+    I8,i8::default(),"i8";
+    I16,i16::default(),"i16";
+    I32,i32::default(),"i32";
+    I64,i64::default(),"i64";
+    I128,i128::default(),"i128";
+    U8,u8::default(),"u8";
+    U16,u16::default(),"u16";
+    U32,u32::default(),"u32";
+    U64,u64::default(),"u64";
+    U128,u128::default(),"u128";
+    F32,F32::default(),"f32";
+    F64,F64::default(),"f64";
+    String,String::default(),"string";
     ComplexNumber,ComplexNumber::default(),"complex";
     RationalNumber,RationalNumber::default(),"rational";
   )

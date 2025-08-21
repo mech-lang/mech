@@ -437,7 +437,7 @@ pub fn term(trm: &Term, p: &Interpreter) -> MResult<Value> {
       FormulaOperator::Set(SetOp::ElementOf) => todo!(),
       #[cfg(feature = "set_not_element_of")]
       FormulaOperator::Set(SetOp::NotElementOf) => todo!(),
-      x => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFormulaOperator(x.clone())}),
+      x => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{x:#?}"), id: line!(), kind: MechErrorKind::UnhandledFormulaOperator(x.clone())}),
     };
     new_fxn.solve();
     let res = new_fxn.out();
