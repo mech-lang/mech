@@ -5,6 +5,7 @@ use std::iter::Step;
 
 // Inclusive ------------------------------------------------------------------
 
+#[cfg(feature = "row_vectord")]
 #[derive(Debug)]
 struct RangeInclusiveScalar<T> {
   max: Ref<T>,
@@ -12,6 +13,7 @@ struct RangeInclusiveScalar<T> {
   out: Ref<RowDVector<T>>,
 }
 
+#[cfg(feature = "row_vectord")]
 impl<T> MechFunction for RangeInclusiveScalar<T>
 where
     T: Copy + Debug + Clone + Sync + Send + Step + PartialEq + 'static,
@@ -42,29 +44,29 @@ impl NativeFunctionCompiler for RangeInclusive {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
     }
     match (arguments[0].clone(), arguments[1].clone()) {
-      #[cfg(feature = "i8")]
+      #[cfg(all(feature = "i8", feature = "row_vectord"))]
       (Value::I8(min),   Value::I8(max))   => Ok(Box::new(RangeInclusiveScalar{max,min, out: Ref::new(RowDVector::from_element(1,0))})),
-      #[cfg(feature = "i16")]
+      #[cfg(all(feature = "i16", feature = "row_vectord"))]
       (Value::I16(min),  Value::I16(max))  => Ok(Box::new(RangeInclusiveScalar{max,min, out: Ref::new(RowDVector::from_element(1,0))})),
-      #[cfg(feature = "i32")]
+      #[cfg(all(feature = "i32", feature = "row_vectord"))]
       (Value::I32(min),  Value::I32(max))  => Ok(Box::new(RangeInclusiveScalar{max,min, out: Ref::new(RowDVector::from_element(1,0))})),
-      #[cfg(feature = "i64")]
+      #[cfg(all(feature = "i64", feature = "row_vectord"))]
       (Value::I64(min),  Value::I64(max))  => Ok(Box::new(RangeInclusiveScalar{max,min, out: Ref::new(RowDVector::from_element(1,0))})),
-      #[cfg(feature = "i128")]
+      #[cfg(all(feature = "i128", feature = "row_vectord"))]
       (Value::I128(min), Value::I128(max)) => Ok(Box::new(RangeInclusiveScalar{max,min, out: Ref::new(RowDVector::from_element(1,0))})),
-      #[cfg(feature = "u8")]
+      #[cfg(all(feature = "u8", feature = "row_vectord"))]
       (Value::U8(min),   Value::U8(max))   => Ok(Box::new(RangeInclusiveScalar{max,min, out: Ref::new(RowDVector::from_element(1,0))})),
-      #[cfg(feature = "u16")]
+      #[cfg(all(feature = "u16", feature = "row_vectord"))]
       (Value::U16(min),  Value::U16(max))  => Ok(Box::new(RangeInclusiveScalar{max,min, out: Ref::new(RowDVector::from_element(1,0))})),
-      #[cfg(feature = "u32")]
+      #[cfg(all(feature = "u32", feature = "row_vectord"))]
       (Value::U32(min),  Value::U32(max))  => Ok(Box::new(RangeInclusiveScalar{max,min, out: Ref::new(RowDVector::from_element(1,0))})),
-      #[cfg(feature = "u64")]
+      #[cfg(all(feature = "u64", feature = "row_vectord"))]
       (Value::U64(min),  Value::U64(max))  => Ok(Box::new(RangeInclusiveScalar{max,min, out: Ref::new(RowDVector::from_element(1,0))})),
-      #[cfg(feature = "u128")]
+      #[cfg(all(feature = "u128", feature = "row_vectord"))]
       (Value::U128(min), Value::U128(max)) => Ok(Box::new(RangeInclusiveScalar{max,min, out: Ref::new(RowDVector::from_element(1,0))})),
-      #[cfg(feature = "f32")]
+      #[cfg(all(feature = "f32", feature = "row_vectord"))]
       (Value::F32(min),  Value::F32(max))  => Ok(Box::new(RangeInclusiveScalar{max,min, out: Ref::new(RowDVector::from_element(1,F32::new(0.0)))})),
-      #[cfg(feature = "f64")]
+      #[cfg(all(feature = "f64", feature = "row_vectord"))]
       (Value::F64(min),  Value::F64(max))  => Ok(Box::new(RangeInclusiveScalar{max,min, out: Ref::new(RowDVector::from_element(1,F64::new(0.0)))})),
       x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
     }
