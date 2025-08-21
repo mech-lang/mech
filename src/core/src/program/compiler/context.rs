@@ -1,6 +1,5 @@
 use crate::*;
-use std::io::Cursor;
-use std::collections::HashSet;
+use super::*;
 
 #[derive(Debug)]
 pub struct CompileCtx {

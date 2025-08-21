@@ -30,7 +30,7 @@ extern crate num_traits;
 //extern crate ed25519_dalek;
 //extern crate rand;
 
-use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
+
 use std::collections::HashMap;
 use std::io::{self, Write, Read};
 use paste::paste;
