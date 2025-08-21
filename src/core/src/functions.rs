@@ -24,6 +24,10 @@ pub type FunctionsRef = Ref<Functions>;
 pub type FunctionTable = HashMap<u64, u64>;
 pub type FunctionCompilerTable = HashMap<u64, Box<dyn NativeFunctionCompiler>>;
 
+// If there's no compiler, we'll just use a dummy struct that does nothing.
+#[cfg(not(feature = "compiler"))]
+pub struct CompileCtx {}
+
 pub trait MechFunction {
   fn solve(&self);
   fn out(&self) -> Value;

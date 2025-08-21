@@ -29,8 +29,8 @@ compiler = []
 program = []
 symbol_table = []
 
-subscript = ["subscript_range"]
-subscript_range = []
+subscript = []
+subscript_range = ["subscript"]
 
 math = ["math_exp"]
 functions = ["indexmap","symbol_table"]

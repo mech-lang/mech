@@ -912,8 +912,9 @@ impl_to_value_matrix!(DVector);
 #[cfg(feature = "matrixd")]
 impl_to_value_matrix!(DMatrix);
 
+#[cfg(feature = "compiler")]
 use na::{Dim, Storage};
-
+#[cfg(feature = "compiler")]
 impl<T, R, C, S> CompileConst for na::Matrix<T, R, C, S>
 where
   T: ConstElem + Copy + Debug + Display + Clone + PartialEq + 'static,
