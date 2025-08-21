@@ -173,8 +173,7 @@ pub enum MechSourceCode {
     String(String),
     Tree(Program),
     Html(String),
-    #[cfg(feature = "compiler")]
-    ByteCode(ParsedProgram),
+    ByteCode(Vec<u8>),
     Program(Vec<MechSourceCode>),
 }
 
@@ -182,7 +181,18 @@ impl MechSourceCode {
 
   pub fn to_string(&self) -> String {
     match self {
-      MechSourceCode::ByteCode(bc) => format!("{:#?}", bc),
+      MechSourceCode::ByteCode(bc) => {
+        #[cfg(feature = "compiler")]
+        match ParsedProgram::from_bytes(bc) {
+          Ok(program) => {
+            format!("{:#?}",program)
+          },
+          Err(e) => return format!("Error parsing bytecode: {:?}", e),
+        }
+        #[cfg(not(feature = "compiler"))]
+        format!("{:#?}", bc)
+        
+      }
       MechSourceCode::String(s) => s.clone(),
       MechSourceCode::Tree(p) => todo!("Print the tree!"),
       MechSourceCode::Html(h) => h.clone(),
