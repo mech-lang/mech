@@ -37,6 +37,10 @@ pub struct ParsedProgram {
 
 impl ParsedProgram {
 
+  pub fn from_bytes(bytes: &Vec<u8>) -> MResult<ParsedProgram> {
+    load_program_from_bytes(bytes)
+  }
+
   pub fn validate(&self) -> MResult<()> {
     // Check magic number
     if !self.header.validate_magic(b"MECH") {
@@ -923,20 +927,44 @@ impl EncodedInstr {
   }
 }
 
+// Load Program
+// ----------------------------------------------------------------------------
+
 pub fn load_program_from_file(path: impl AsRef<Path>) -> MResult<ParsedProgram> {
   let path = path.as_ref();
   let mut f = File::open(path)?;
-  
-  // verify CRC trailer first; this also ensures the file is fully readable
-  verify_crc_trailer(&f)?;
-  
-  // 1. read header
+
+  // total length for bounds checks
+  let total_len = f.metadata()?.len();
+
+  // Verify CRC trailer first; ensures fully readable, too.
+  verify_crc_trailer_seek(&mut f, total_len)?;
+
+  // Parse from the start
   f.seek(SeekFrom::Start(0))?;
+  load_program_from_reader(&mut f, total_len)
+}
+
+pub fn load_program_from_bytes(bytes: &Vec<u8>) -> MResult<ParsedProgram> {
+  let total_len = bytes.len() as u64;
+
+  let mut cur = Cursor::new(bytes);
+  verify_crc_trailer_seek(&mut cur, total_len)?;
+
+  // Parse from the start
+  cur.seek(SeekFrom::Start(0))?;
+  load_program_from_reader(&mut cur, total_len)
+}
+
+fn load_program_from_reader<R: Read + Seek>(r: &mut R, total_len: u64) -> MResult<ParsedProgram> {
+  r.seek(SeekFrom::Start(0))?;
   let mut header_buf = vec![0u8; ByteCodeHeader::HEADER_SIZE];
-  f.read_exact(&mut header_buf)?;
+  r.read_exact(&mut header_buf)?;
+
+  // 1) read header blob
   let mut header_cursor = Cursor::new(&header_buf[..]);
   let header = ByteCodeHeader::read_from(&mut header_cursor)?;
-  
+
   // quick magic check
   if !header.validate_magic(&(*b"MECH")) {
     return Err(MechError {
@@ -947,30 +975,30 @@ pub fn load_program_from_file(path: impl AsRef<Path>) -> MResult<ParsedProgram> 
       kind: MechErrorKind::GenericError("Invalid magic".to_string()),
     });
   }
-  
+
   // 2. read features
   let mut features = Vec::new();
-  if header.feature_off != 0 && header.feature_off + 4 <= (f.metadata()?.len() - 4) {
-    f.seek(SeekFrom::Start(header.feature_off))?;
-    let cnt = f.read_u32::<LittleEndian>()? as usize;
-    for _ in 0..cnt {
-      let v = f.read_u64::<LittleEndian>()?;
+  if header.feature_off != 0 && header.feature_off + 4 <= total_len.saturating_sub(4) {
+    r.seek(SeekFrom::Start(header.feature_off))?;
+    let c = r.read_u32::<LittleEndian>()? as usize;
+    for _ in 0..c {
+      let v = r.read_u64::<LittleEndian>()?;
       features.push(v);
     }
   }
 
   // 3. read types
   let mut types = TypeSection::new();
-  if header.types_off != 0 && header.types_off + 4 <= (f.metadata()?.len() - 4) {
-    f.seek(SeekFrom::Start(header.types_off))?;
-    let types_count = f.read_u32::<LittleEndian>()? as usize;
+  if header.types_off != 0 && header.types_off + 4 <= total_len.saturating_sub(4) {
+    r.seek(SeekFrom::Start(header.types_off))?;
+    let types_count = r.read_u32::<LittleEndian>()? as usize;
     for _ in 0..types_count {
-      let tag = f.read_u16::<LittleEndian>()?;
-      let _reserved = f.read_u16::<LittleEndian>()?; // reserved, always 0
-      let _version = f.read_u32::<LittleEndian>()?; // version, always 1
-      let bytes_len = f.read_u32::<LittleEndian>()? as usize;
+      let tag = r.read_u16::<LittleEndian>()?;
+      let _reserved = r.read_u16::<LittleEndian>()?; // reserved, always 0
+      let _version = r.read_u32::<LittleEndian>()?; // version, always 1
+      let bytes_len = r.read_u32::<LittleEndian>()? as usize;
       let mut bytes = vec![0u8; bytes_len];
-      f.read_exact(&mut bytes)?;
+      r.read_exact(&mut bytes)?;
       if let Some(tag) = TypeTag::from_u16(tag) {
         types.entries.push(TypeEntry { tag, bytes });
       } else {
@@ -988,9 +1016,9 @@ pub fn load_program_from_file(path: impl AsRef<Path>) -> MResult<ParsedProgram> 
   // 4. read const table
   let mut const_entries = Vec::new();
   if header.const_tbl_off != 0 && header.const_tbl_len > 0 {
-    f.seek(SeekFrom::Start(header.const_tbl_off))?;
+    r.seek(SeekFrom::Start(header.const_tbl_off))?;
     let mut tbl_bytes = vec![0u8; header.const_tbl_len as usize];
-    f.read_exact(&mut tbl_bytes)?;
+    r.read_exact(&mut tbl_bytes)?;
     let cur = Cursor::new(&tbl_bytes[..]);
     const_entries = parse_const_entries(cur, header.const_count as usize)?;
   }
@@ -998,17 +1026,17 @@ pub fn load_program_from_file(path: impl AsRef<Path>) -> MResult<ParsedProgram> 
   // read const blob
   let mut const_blob = vec![];
   if header.const_blob_off != 0 && header.const_blob_len > 0 {
-    f.seek(SeekFrom::Start(header.const_blob_off))?;
+    r.seek(SeekFrom::Start(header.const_blob_off))?;
     const_blob.resize(header.const_blob_len as usize, 0);
-    f.read_exact(&mut const_blob)?;
+    r.read_exact(&mut const_blob)?;
   }
 
   // 5. read symbols
   let mut symbols = HashMap::new();
   if header.symbols_off != 0 && header.symbols_len > 0 {
-    f.seek(SeekFrom::Start(header.symbols_off))?;
+    r.seek(SeekFrom::Start(header.symbols_off))?;
     let mut symbols_bytes = vec![0u8; header.symbols_len as usize];
-    f.read_exact(&mut symbols_bytes)?;
+    r.read_exact(&mut symbols_bytes)?;
     let mut cur = Cursor::new(&symbols_bytes[..]);
     for _ in 0..(header.symbols_len / 12) {
       let id = cur.read_u64::<LittleEndian>()?;
@@ -1021,17 +1049,17 @@ pub fn load_program_from_file(path: impl AsRef<Path>) -> MResult<ParsedProgram> 
   // 6. read instr bytes
   let mut instr_bytes = vec![];
   if header.instr_off != 0 && header.instr_len > 0 {
-    f.seek(SeekFrom::Start(header.instr_off))?;
+    r.seek(SeekFrom::Start(header.instr_off))?;
     instr_bytes.resize(header.instr_len as usize, 0);
-    f.read_exact(&mut instr_bytes)?;
+    r.read_exact(&mut instr_bytes)?;
   }
 
   // 7. read dictionary
   let mut dictionary = HashMap::new();
   if header.dict_off != 0 && header.dict_len > 0 {
-    f.seek(SeekFrom::Start(header.dict_off))?;
+    r.seek(SeekFrom::Start(header.dict_off))?;
     let mut dict_bytes = vec![0u8; header.dict_len as usize];
-    f.read_exact(&mut dict_bytes)?;
+    r.read_exact(&mut dict_bytes)?;
     let mut cur = Cursor::new(&dict_bytes[..]);
     while cur.position() < dict_bytes.len() as u64 {
       let id = cur.read_u64::<LittleEndian>()?;
@@ -1106,9 +1134,8 @@ fn parse_const_entries(mut cur: Cursor<&[u8]>, count: usize) -> io::Result<Vec<P
   Ok(out)
 }
 
-fn verify_crc_trailer(mut f: &File) -> MResult<()> {
-  let file_len = f.metadata()?.len();
-  if file_len < 4 {
+pub fn verify_crc_trailer_seek<R: Read + Seek>(r: &mut R, total_len: u64) -> MResult<()> {
+  if total_len < 4 {
     return Err(MechError {
       file: file!().to_string(),
       tokens: vec![],
@@ -1117,15 +1144,18 @@ fn verify_crc_trailer(mut f: &File) -> MResult<()> {
       kind: MechErrorKind::GenericError("File too short".to_string()),
     });
   }
-  // read trailer
-  f.seek(SeekFrom::Start(file_len - 4))?;
-  let expected_crc = f.read_u32::<LittleEndian>()?;
 
-  // compute crc over prefix
-  f.seek(SeekFrom::Start(0))?;
-  let mut buf = vec![0u8; (file_len - 4) as usize];
-  f.read_exact(&mut buf)?;
-  let mut file_crc = crc32fast::hash(&buf);
+  // Read expected CRC from the last 4 bytes
+  r.seek(SeekFrom::Start(total_len - 4))?;
+  let expected_crc = r.read_u32::<LittleEndian>()?;
+
+  // Compute CRC over the prefix (everything except the last 4 bytes).
+  r.seek(SeekFrom::Start(0))?;
+  let payload_len = (total_len - 4) as usize;
+  let mut buf = vec![0u8; payload_len];
+  r.read_exact(&mut buf)?;
+
+  let file_crc = crc32fast::hash(&buf);
   if file_crc != expected_crc {
     Err(MechError {
       file: file!().to_string(),
