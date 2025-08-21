@@ -3,7 +3,6 @@ use crate::*;
 // Symbol Table 
 // ----------------------------------------------------------------------------
 
-pub type Dictionary = HashMap<u64,String>;
 pub type SymbolTableRef= Ref<SymbolTable>;
 
 #[derive(Clone, Debug)]

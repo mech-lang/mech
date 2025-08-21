@@ -13,6 +13,7 @@ pub use self::symbol_table::*;
 // Program State
 // ----------------------------------------------------------------------------
 
+pub type Dictionary = HashMap<u64,String>;
 pub type KindTable = HashMap<u64, ValueKind>;
 #[cfg(feature = "enum")]
 pub type EnumTable = HashMap<u64, MechEnum>;
