@@ -26,13 +26,13 @@ pub enum Kind {
 impl Kind {
 
   #[cfg(feature = "functions")]
-  pub fn to_value(&self, functions: &FunctionsRef) -> MResult<Value> {
-    let value_kind = self.to_value_kind(functions)?;
+  pub fn to_value(&self, kinds: &KindTable) -> MResult<Value> {
+    let value_kind = self.to_value_kind(kinds)?;
     Ok(Value::Kind(value_kind))
   }
 
   #[cfg(feature = "functions")]
-  pub fn to_value_kind(&self, functions: &FunctionsRef) -> MResult<ValueKind> {
+  pub fn to_value_kind(&self, kinds: &KindTable) -> MResult<ValueKind> {
     match self {
       Kind::Any => Ok(ValueKind::Any),
       Kind::Atom(id) => Ok(ValueKind::Atom(*id)),
@@ -41,30 +41,30 @@ impl Kind {
       Kind::Id => Ok(ValueKind::Id),
       Kind::Index => Ok(ValueKind::Index),
       Kind::Map(keys, vals) => {
-        let key_knd = keys.to_value_kind(functions)?;
-        let val_knd = vals.to_value_kind(functions)?;
+        let key_knd = keys.to_value_kind(kinds)?;
+        let val_knd = vals.to_value_kind(kinds)?;
         Ok(ValueKind::Map(Box::new(key_knd), Box::new(val_knd)))
       },
       Kind::Matrix(knd, size) => {
-        let val_knd = knd.to_value_kind(functions)?;
+        let val_knd = knd.to_value_kind(kinds)?;
         Ok(ValueKind::Matrix(Box::new(val_knd), size.clone()))
       },
       Kind::Option(knd) => {
-        let val_knd = knd.to_value_kind(functions)?;
+        let val_knd = knd.to_value_kind(kinds)?;
         Ok(ValueKind::Option(Box::new(val_knd)))
       },
       Kind::Record(elements) => {
         let val_knds: Vec<(String, ValueKind)> = elements.iter()
-          .map(|(id, k)| k.to_value_kind(functions).map(|kind| (id.clone(), kind)))
+          .map(|(id, k)| k.to_value_kind(kinds).map(|kind| (id.clone(), kind)))
           .collect::<MResult<_>>()?;
         Ok(ValueKind::Record(val_knds))
       },
       Kind::Reference(kind) => {
-        let val_knd = kind.to_value_kind(functions)?;
+        let val_knd = kind.to_value_kind(kinds)?;
         Ok(ValueKind::Reference(Box::new(val_knd)))
       },
       Kind::Scalar(id) => {
-        match functions.borrow().kinds.get(id).cloned() {
+        match kinds.get(id).cloned() {
           Some(val_knd) => Ok(val_knd),
           None => Err(MechError {
             file: file!().to_string(),
@@ -76,17 +76,17 @@ impl Kind {
         }
       },
       Kind::Set(kind, size) => {
-        let val_knd = kind.to_value_kind(functions)?;
+        let val_knd = kind.to_value_kind(kinds)?;
         Ok(ValueKind::Set(Box::new(val_knd), *size))
       },
       Kind::Table(elements, size) => {
         let val_knds: Vec<(String, ValueKind)> = elements.iter()
-          .map(|(id, k)| k.to_value_kind(functions).map(|kind| (id.clone(), kind)))
+          .map(|(id, k)| k.to_value_kind(kinds).map(|kind| (id.clone(), kind)))
           .collect::<MResult<_>>()?;
         Ok(ValueKind::Table(val_knds, *size))
       },
       Kind::Tuple(elements) => {
-        let val_knds = elements.iter().map(|k| k.to_value_kind(functions)).collect::<MResult<Vec<ValueKind>>>()?;
+        let val_knds = elements.iter().map(|k| k.to_value_kind(kinds)).collect::<MResult<Vec<ValueKind>>>()?;
         Ok(ValueKind::Tuple(val_knds))
       }
     }

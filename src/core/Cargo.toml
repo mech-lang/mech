@@ -21,14 +21,19 @@ maintenance = { status = "actively-developed" }
 default = ["stdlib", "pretty_print", "serde"]
 serde = ["brotli", "base64", "serde_derive", "serde_json", "bincode", "indexmap/serde", "bincode/serde", "dep:serde"]
 no_std = ["rlibc"]
-stdlib = ["subscript", "bool", "functions", "string", "numbers", "dynamic_matrix", "set", "map", "table", "tuple", "record", "atom", "math"]
+
+stdlib = ["subscript", "bool", "functions", "compiler", "string", "numbers", "dynamic_matrix", "set", "map", "table", "tuple", "record", "atom", "math"]
 pretty_print = ["tabled", "serde_json"]
+
+compiler = []
+program = []
+symbol_table = []
 
 subscript = ["subscript_range"]
 subscript_range = []
 
 math = ["math_exp"]
-functions = ["indexmap"]
+functions = ["indexmap","symbol_table"]
 math_exp = ["libm", "num-traits"]
 numbers = ["signed_ints", "unsigned_ints", "floats", "complex", "rational"]
 complex = ["c64", "nalgebra"]

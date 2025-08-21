@@ -21,7 +21,7 @@ pub type Register = u32;
 // Functions ------------------------------------------------------------------
 
 pub type FunctionsRef = Ref<Functions>;
-pub type FunctionTable = HashMap<u64, MechEnum>;
+pub type FunctionTable = HashMap<u64, u64>;
 pub type FunctionCompilerTable = HashMap<u64, Box<dyn NativeFunctionCompiler>>;
 
 pub trait MechFunction {
@@ -38,8 +38,8 @@ pub trait NativeFunctionCompiler {
 pub struct Functions {
   pub functions: FunctionTable,
   pub function_compilers: FunctionCompilerTable,
-  pub kinds: KindTable,
-  pub enums: EnumTable,
+  pub kinds: HashMap<u64, u64>,
+  pub enums: HashMap<u64, u64>,
 }
 
 impl Functions {
