@@ -20,6 +20,10 @@ pub type Register = u32;
 
 // Functions ------------------------------------------------------------------
 
+pub type FunctionsRef = Ref<Functions>;
+pub type FunctionTable = HashMap<u64, MechEnum>;
+pub type FunctionCompilerTable = HashMap<u64, Box<dyn NativeFunctionCompiler>>;
+
 pub trait MechFunction {
   fn solve(&self);
   fn out(&self) -> Value;
@@ -32,17 +36,15 @@ pub trait NativeFunctionCompiler {
 }
 
 pub struct Functions {
-  #[cfg(feature = "functions")]
-  pub functions: HashMap<u64,FunctionDefinition>,
-  pub function_compilers: HashMap<u64, Box<dyn NativeFunctionCompiler>>,
-  pub kinds: HashMap<u64,ValueKind>,
-  pub enums: HashMap<u64,MechEnum>,
+  pub functions: FunctionTable,
+  pub function_compilers: FunctionCompilerTable,
+  pub kinds: KindTable,
+  pub enums: EnumTable,
 }
 
 impl Functions {
   pub fn new() -> Self {
     Self {
-      #[cfg(feature = "functions")]
       functions: HashMap::new(), 
       function_compilers: HashMap::new(), 
       kinds: HashMap::new(),
@@ -51,7 +53,6 @@ impl Functions {
   }
 }
 
-#[cfg(feature = "functions")]
 #[derive(Clone)]
 pub struct FunctionDefinition {
   pub code: FunctionDefine,
@@ -64,7 +65,6 @@ pub struct FunctionDefinition {
   pub plan: Plan,
 }
 
-#[cfg(feature = "functions")]
 impl fmt::Debug for FunctionDefinition {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     if cfg!(feature = "pretty_print") {
@@ -78,7 +78,7 @@ impl fmt::Debug for FunctionDefinition {
   }
 }
 
-#[cfg(all(feature = "pretty_print", feature = "functions"))]
+#[cfg(feature = "pretty_print")]
 impl PrettyPrint for FunctionDefinition {
   fn pretty_print(&self) -> String {
     let input_str = format!("{:#?}", self.input);
@@ -100,7 +100,6 @@ impl PrettyPrint for FunctionDefinition {
   }
 }
 
-#[cfg(feature = "functions")]
 impl FunctionDefinition {
 
   pub fn new(id: u64, name: String, code: FunctionDefine) -> Self {
@@ -131,12 +130,10 @@ impl FunctionDefinition {
 
 // User Function --------------------------------------------------------------
 
-#[cfg(feature = "functions")]
 pub struct UserFunction {
   pub fxn: FunctionDefinition,
 }
 
-#[cfg(feature = "functions")]
 impl MechFunction for UserFunction {
   fn solve(&self) {
     self.fxn.solve();
@@ -150,84 +147,59 @@ impl MechFunction for UserFunction {
   }
 }
 
-// Symbol Table ---------------------------------------------------------------
+// Plan
+// ----------------------------------------------------------------------------
 
-pub type Dictionary = HashMap<u64,String>;
+pub struct Plan(pub Ref<Vec<Box<dyn MechFunction>>>);
 
-#[derive(Clone, Debug)]
-pub struct SymbolTable {
-  pub symbols: HashMap<u64,ValRef>,
-  pub mutable_variables: HashMap<u64,ValRef>,
-  pub dictionary: Ref<Dictionary>,
-  pub reverse_lookup: HashMap<*const Ref<Value>, u64>,
+impl Clone for Plan {
+  fn clone(&self) -> Self { Plan(self.0.clone()) }
 }
 
-impl SymbolTable {
-
-  pub fn new() -> SymbolTable {
-    Self {
-      symbols: HashMap::new(),
-      mutable_variables: HashMap::new(),
-      dictionary: Ref::new(HashMap::new()),
-      reverse_lookup: HashMap::new(),
+impl fmt::Debug for Plan {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    for p in &(*self.0.borrow()) {
+      writeln!(f, "{}", p.to_string())?;
     }
+    Ok(())
   }
+}
 
-  pub fn get_symbol_name_by_id(&self, id: u64) -> Option<String> {
-    self.dictionary.borrow().get(&id).cloned()
-  }
-
-  pub fn get_mutable(&self, key: u64) -> Option<ValRef> {
-    self.mutable_variables.get(&key).cloned()
-  }
-
-  pub fn get(&self, key: u64) -> Option<ValRef> {
-    self.symbols.get(&key).cloned()
-  }
-
-  pub fn contains(&self, key: u64) -> bool {
-    self.symbols.contains_key(&key)
-  }
-
-  pub fn insert(&mut self, key: u64, value: Value, mutable: bool) -> ValRef {
-    let cell = Ref::new(value);
-    self.reverse_lookup.insert(&cell, key);
-    let old = self.symbols.insert(key,cell.clone());
-    if mutable {
-      self.mutable_variables.insert(key,cell.clone());
-    }
-    cell.clone()
-  }
-
+impl Plan {
+  pub fn new() -> Self { Plan(Ref::new(vec![])) }
+  pub fn borrow(&self) -> std::cell::Ref<'_, Vec<Box<dyn MechFunction>>> { self.0.borrow() }
+  pub fn borrow_mut(&self) -> std::cell::RefMut<'_, Vec<Box<dyn MechFunction>>> { self.0.borrow_mut() }
+  pub fn add_function(&self, func: Box<dyn MechFunction>) { self.0.borrow_mut().push(func); }
+  pub fn get_functions(&self) -> std::cell::Ref<'_, Vec<Box<dyn MechFunction>>> { self.0.borrow() }
+  pub fn len(&self) -> usize { self.0.borrow().len() }
+  pub fn is_empty(&self) -> bool { self.0.borrow().is_empty() }
 }
 
 #[cfg(feature = "pretty_print")]
-impl PrettyPrint for SymbolTable {
+impl PrettyPrint for Plan {
   fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
-    let dict_brrw = self.dictionary.borrow();
-    for (k,v) in &self.symbols {
-      let name = dict_brrw.get(k).unwrap_or(&"??".to_string()).clone();
-      let v_brrw = v.borrow();
-      builder.push_record(vec![format!("\n{} : {}\n{}\n",name, v_brrw.kind(), v_brrw.pretty_print())])
-    }
-    if self.symbols.is_empty() {
+
+    let mut row = vec![];
+    let plan_brrw = self.0.borrow();
+    if self.is_empty() {
       builder.push_record(vec!["".to_string()]);
+    } else {
+      for (ix, fxn) in plan_brrw.iter().enumerate() {
+        let plan_str = format!("{}. {}\n", ix + 1, fxn.to_string());
+        row.push(plan_str.clone());
+        if row.len() == 4 {
+          builder.push_record(row.clone());
+          row.clear();
+        }
+      }
+    }
+    if row.is_empty() == false {
+      builder.push_record(row.clone());
     }
     let mut table = builder.build();
-    let table_style = Style::empty()
-    .top(' ')
-    .left(' ')
-    .right(' ')
-    .bottom(' ')
-    .vertical(' ')
-    .horizontal('·')
-    .intersection_bottom(' ')
-    .corner_top_left(' ')
-    .corner_top_right(' ')
-    .corner_bottom_left(' ')
-    .corner_bottom_right(' ');
-    table.with(table_style);
+    table.with(Style::modern_rounded())
+        .with(Panel::header("📋 Plan"));
     format!("{table}")
   }
 }

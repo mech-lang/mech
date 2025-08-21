@@ -25,11 +25,13 @@ pub enum Kind {
 
 impl Kind {
 
+  #[cfg(feature = "functions")]
   pub fn to_value(&self, functions: &FunctionsRef) -> MResult<Value> {
     let value_kind = self.to_value_kind(functions)?;
     Ok(Value::Kind(value_kind))
   }
 
+  #[cfg(feature = "functions")]
   pub fn to_value_kind(&self, functions: &FunctionsRef) -> MResult<ValueKind> {
     match self {
       Kind::Any => Ok(ValueKind::Any),
