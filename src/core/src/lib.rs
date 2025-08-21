@@ -548,80 +548,80 @@ macro_rules! impl_fxns {
       #[cfg(feature = "matrixd")]
       $op!([<$lib MDMD>], DMatrix<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _vec_op>], $lib);
       // Matrix Vector
-      #[cfg(feature = "matrix2")]
+      #[cfg(all(feature = "matrix2", feature = "vector2"))]
       $op!([<$lib M2V2>], Matrix2<$in>, Vector2<$in>, Matrix2<$out>, [<$lib:lower _mat_vec_op>], $lib);
-      #[cfg(feature = "matrix3")]
+      #[cfg(all(feature = "matrix3", feature = "vector3"))]
       $op!([<$lib M3V3>], Matrix3<$in>, Vector3<$in>, Matrix3<$out>, [<$lib:lower _mat_vec_op>], $lib);
-      #[cfg(feature = "matrix4")]
+      #[cfg(all(feature = "matrix4", feature = "vector4"))]
       $op!([<$lib M4V4>], Matrix4<$in>, Vector4<$in>, Matrix4<$out>, [<$lib:lower _mat_vec_op>], $lib);
-      #[cfg(feature = "matrix2x3")]
+      #[cfg(all(feature = "matrix2x3", feature = "vector2"))]
       $op!([<$lib M2x3V2>], Matrix2x3<$in>, Vector2<$in>, Matrix2x3<$out>, [<$lib:lower _mat_vec_op>], $lib);
-      #[cfg(feature = "matrix3x2")]
+      #[cfg(all(feature = "matrix3x2", feature = "vector3"))]
       $op!([<$lib M3x2V3>], Matrix3x2<$in>, Vector3<$in>, Matrix3x2<$out>, [<$lib:lower _mat_vec_op>], $lib);
-      #[cfg(feature = "matrixd")]
+      #[cfg(all(feature = "matrixd", feature = "vectord"))]
       $op!([<$lib MDVD>], DMatrix<$in>, DVector<$in>, DMatrix<$out>, [<$lib:lower _mat_vec_op>], $lib);
-      #[cfg(feature = "matrixd")]
+      #[cfg(all(feature = "matrixd", feature = "vector2"))]
       $op!([<$lib MDV2>], DMatrix<$in>, Vector2<$in>, DMatrix<$out>, [<$lib:lower _mat_vec_op>], $lib);
-      #[cfg(feature = "matrixd")]
-      $op!([<$lib MDV3>], DMatrix<$in>, Vector3<$in>, DMatrix<$out>, [<$lib:lower _mat_vec_op>], $lib);
-      #[cfg(feature = "matrixd")]
+      #[cfg(all(feature = "matrixd", feature = "vector3"))]
+      $op!([<$lib MDV4>], DMatrix<$in>, Vector4<$in>, DMatrix<$out>, [<$lib:lower _mat_vec_op>], $lib);
+      #[cfg(all(feature = "matrixd", feature = "vector4"))]
       $op!([<$lib MDV4>], DMatrix<$in>, Vector4<$in>, DMatrix<$out>, [<$lib:lower _mat_vec_op>], $lib);
       // Vector Matrix
-      #[cfg(feature = "vector2")]
+      #[cfg(all(feature = "vector2", feature = "matrix2"))]
       $op!([<$lib V2M2>], Vector2<$in>, Matrix2<$in>, Matrix2<$out>, [<$lib:lower _vec_mat_op>], $lib);
-      #[cfg(feature = "vector3")]
+      #[cfg(all(feature = "vector3", feature = "matrix3"))]
       $op!([<$lib V3M3>], Vector3<$in>, Matrix3<$in>, Matrix3<$out>, [<$lib:lower _vec_mat_op>], $lib);
-      #[cfg(feature = "vector4")]
+      #[cfg(all(feature = "vector4", feature = "matrix4"))]
       $op!([<$lib V4M4>], Vector4<$in>, Matrix4<$in>, Matrix4<$out>, [<$lib:lower _vec_mat_op>], $lib);
-      #[cfg(feature = "vector2")]
+      #[cfg(all(feature = "vector2", feature = "matrix2x3"))]
       $op!([<$lib V2M2x3>], Vector2<$in>, Matrix2x3<$in>, Matrix2x3<$out>, [<$lib:lower _vec_mat_op>], $lib);
-      #[cfg(feature = "vector3")]
+      #[cfg(all(feature = "vector3", feature = "matrix3x2"))]
       $op!([<$lib V3M3x2>], Vector3<$in>, Matrix3x2<$in>, Matrix3x2<$out>, [<$lib:lower _vec_mat_op>], $lib);
-      #[cfg(feature = "vectord")]
+      #[cfg(all(feature = "vectord", feature = "matrixd"))]
       $op!([<$lib VDMD>], DVector<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _vec_mat_op>], $lib);
-      #[cfg(feature = "vector2")]
+      #[cfg(all(feature = "vector2", feature = "matrixd"))]
       $op!([<$lib V2MD>], Vector2<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _vec_mat_op>], $lib);
-      #[cfg(feature = "vector3")]
+      #[cfg(all(feature = "vector3", feature = "matrixd"))]
       $op!([<$lib V3MD>], Vector3<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _vec_mat_op>], $lib);
-      #[cfg(feature = "vector4")]
+      #[cfg(all(feature = "vector4", feature = "matrixd"))]
       $op!([<$lib V4MD>], Vector4<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _vec_mat_op>], $lib);
       // Matrix Row
-      #[cfg(feature = "matrix2")]
+      #[cfg(all(feature = "matrix2", feature = "row_vector2"))]
       $op!([<$lib M2R2>], Matrix2<$in>, RowVector2<$in>, Matrix2<$out>, [<$lib:lower _mat_row_op>], $lib); 
-      #[cfg(feature = "matrix3")]
+      #[cfg(all(feature = "matrix3", feature = "row_vector3"))]
       $op!([<$lib M3R3>], Matrix3<$in>, RowVector3<$in>, Matrix3<$out>, [<$lib:lower _mat_row_op>], $lib);
-      #[cfg(feature = "matrix4")]
+      #[cfg(all(feature = "matrix4", feature = "row_vector4"))]
       $op!([<$lib M4R4>], Matrix4<$in>, RowVector4<$in>, Matrix4<$out>, [<$lib:lower _mat_row_op>], $lib);
-      #[cfg(feature = "matrix2x3")]
+      #[cfg(all(feature = "matrix2x3", feature = "row_vector3"))]
       $op!([<$lib M2x3R3>], Matrix2x3<$in>, RowVector3<$in>, Matrix2x3<$out>, [<$lib:lower _mat_row_op>], $lib);
-      #[cfg(feature = "matrix3x2")]
+      #[cfg(all(feature = "matrix3x2", feature = "row_vector2"))]
       $op!([<$lib M3x2R2>], Matrix3x2<$in>, RowVector2<$in>, Matrix3x2<$out>, [<$lib:lower _mat_row_op>], $lib);
-      #[cfg(feature = "matrixd")]
+      #[cfg(all(feature = "matrixd", feature = "row_vectord"))]
       $op!([<$lib MDRD>], DMatrix<$in>, RowDVector<$in>, DMatrix<$out>, [<$lib:lower _mat_row_op>], $lib);
-      #[cfg(feature = "matrixd")]
+      #[cfg(all(feature = "matrixd", feature = "row_vector2"))]
       $op!([<$lib MDR2>], DMatrix<$in>, RowVector2<$in>, DMatrix<$out>, [<$lib:lower _mat_row_op>], $lib);
-      #[cfg(feature = "matrixd")]
+      #[cfg(all(feature = "matrixd", feature = "row_vector3"))]
       $op!([<$lib MDR3>], DMatrix<$in>, RowVector3<$in>, DMatrix<$out>, [<$lib:lower _mat_row_op>], $lib);
-      #[cfg(feature = "matrixd")]
+      #[cfg(all(feature = "matrixd", feature = "row_vector4"))]
       $op!([<$lib MDR4>], DMatrix<$in>, RowVector4<$in>, DMatrix<$out>, [<$lib:lower _mat_row_op>], $lib); 
       // Row Matrix
-      #[cfg(feature = "row_vector2")]
+      #[cfg(all(feature = "row_vector2", feature = "matrix2"))]
       $op!([<$lib R2M2>], RowVector2<$in>, Matrix2<$in>, Matrix2<$out>, [<$lib:lower _row_mat_op>], $lib); 
-      #[cfg(feature = "row_vector3")]
+      #[cfg(all(feature = "row_vector3", feature = "matrix3"))]
       $op!([<$lib R3M3>], RowVector3<$in>, Matrix3<$in>, Matrix3<$out>, [<$lib:lower _row_mat_op>], $lib);
-      #[cfg(feature = "row_vector4")]
+      #[cfg(all(feature = "row_vector4", feature = "matrix4"))]
       $op!([<$lib R4M4>], RowVector4<$in>, Matrix4<$in>, Matrix4<$out>, [<$lib:lower _row_mat_op>], $lib);
-      #[cfg(feature = "row_vector3")]
+      #[cfg(all(feature = "row_vector3", feature = "matrix2x3"))]
       $op!([<$lib R3M2x3>], RowVector3<$in>, Matrix2x3<$in>, Matrix2x3<$out>, [<$lib:lower _row_mat_op>], $lib);
-      #[cfg(feature = "row_vector2")]
+      #[cfg(all(feature = "row_vector2", feature = "matrix3x2"))]
       $op!([<$lib R2M3x2>], RowVector2<$in>, Matrix3x2<$in>, Matrix3x2<$out>, [<$lib:lower _row_mat_op>], $lib);
-      #[cfg(feature = "row_vectord")]
+      #[cfg(all(feature = "row_vectord", feature = "matrixd"))]
       $op!([<$lib RDMD>], RowDVector<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _row_mat_op>], $lib);
-      #[cfg(feature = "row_vector2")]
+      #[cfg(all(feature = "row_vector2", feature = "matrixd"))]
       $op!([<$lib R2MD>], RowVector2<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _row_mat_op>], $lib);
-      #[cfg(feature = "row_vector3")]
+      #[cfg(all(feature = "row_vector3", feature = "matrixd"))]
       $op!([<$lib R3MD>], RowVector3<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _row_mat_op>], $lib);
-      #[cfg(feature = "row_vector4")]
+      #[cfg(all(feature = "row_vector4", feature = "matrixd"))]
       $op!([<$lib R4MD>], RowVector4<$in>, DMatrix<$in>, DMatrix<$out>, [<$lib:lower _row_mat_op>], $lib);
       // Row Row
       #[cfg(feature = "row_vector2")]
