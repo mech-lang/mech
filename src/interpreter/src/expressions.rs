@@ -65,6 +65,7 @@ pub fn subscript_formula(sbscrpt: &Subscript, p: &Interpreter) -> MResult<Value>
   }
 }
 
+#[cfg(feature = "subscript_range")]
 pub fn subscript_range(sbscrpt: &Subscript, p: &Interpreter) -> MResult<Value> {
   match sbscrpt {
     Subscript::Range(rng) => {
@@ -142,22 +143,27 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
           fxn_input.push(result);
           match shape[..] {
             [1,1] => plan.borrow_mut().push(AccessScalar{}.compile(&fxn_input)?),
+            #[cfg(feature = "subscript_range")]
             [1,n] => plan.borrow_mut().push(AccessRange{}.compile(&fxn_input)?),
+            #[cfg(feature = "subscript_range")]
             [n,1] => plan.borrow_mut().push(AccessRange{}.compile(&fxn_input)?),
             _ => todo!(),
           }
         },
+        #[cfg(feature = "subscript_range")]
         [Subscript::Range(ix)] => {
           let result = subscript_range(&subs[0],p)?;
           fxn_input.push(result);
           plan.borrow_mut().push(AccessRange{}.compile(&fxn_input)?);
         },
+        #[cfg(feature = "subscript_range")]
         [Subscript::All] => {
           fxn_input.push(Value::IndexAll);
           #[cfg(feature = "matrix")]
           plan.borrow_mut().push(MatrixAccessAll{}.compile(&fxn_input)?);
         },
         [Subscript::All,Subscript::All] => todo!(),
+        #[cfg(feature = "subscript_range")]
         [Subscript::Formula(ix1),Subscript::Formula(ix2)] => {
           let result = subscript_formula(&subs[0], p)?;
           let shape1 = result.shape();
@@ -177,6 +183,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
             _ => unreachable!(),
           }
         },
+        #[cfg(feature = "subscript_range")]
         [Subscript::Range(ix1),Subscript::Range(ix2)] => {
           let result = subscript_range(&subs[0],p)?;
           fxn_input.push(result);
@@ -185,6 +192,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
           #[cfg(feature = "matrix")]
           plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?);
         },
+        #[cfg(feature = "subscript_range")]
         [Subscript::All,Subscript::Formula(ix2)] => {
           fxn_input.push(Value::IndexAll);
           let result = subscript_formula(&subs[1], p)?;
@@ -200,6 +208,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
             _ => todo!(),
           }
         },
+        #[cfg(feature = "subscript_range")]
         [Subscript::Formula(ix1),Subscript::All] => {
           let result = subscript_formula(&subs[0], p)?;
           let shape = result.shape();
@@ -215,6 +224,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
             _ => todo!(),
           }
         },
+        #[cfg(feature = "subscript_range")]
         [Subscript::Range(ix1),Subscript::Formula(ix2)] => {
           let result = subscript_range(&subs[0],p)?;
           fxn_input.push(result);
@@ -231,6 +241,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
             _ => todo!(),
           }
         },
+        #[cfg(feature = "subscript_range")]
         [Subscript::Formula(ix1),Subscript::Range(ix2)] => {
           let result = subscript_formula(&subs[0], p)?;
           let shape = result.shape();
@@ -247,6 +258,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
             _ => todo!(),
           }
         },
+        #[cfg(feature = "subscript_range")]
         [Subscript::All,Subscript::Range(ix2)] => {
           fxn_input.push(Value::IndexAll);
           let result = subscript_range(&subs[1],p)?;
@@ -254,6 +266,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
           #[cfg(feature = "matrix")]
           plan.borrow_mut().push(MatrixAccessAllRange{}.compile(&fxn_input)?);
         },
+        #[cfg(feature = "subscript_range")]
         [Subscript::Range(ix1),Subscript::All] => {
           let result = subscript_range(&subs[0],p)?;
           fxn_input.push(result);
