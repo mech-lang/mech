@@ -103,69 +103,8 @@ pub use self::value::*;
 pub use self::functions::*;
 pub use self::program::*;
 
-pub fn hash_chars(input: &Vec<char>) -> u64 {
-  seahash::hash(input.iter().map(|s| String::from(*s)).collect::<String>().as_bytes()) & 0x00FFFFFFFFFFFFFF
-}
-
-pub fn hash_bytes(input: &Vec<u8>) -> u64 {
-  seahash::hash(input) & 0x00FFFFFFFFFFFFFF
-}
-
-pub fn hash_str(input: &str) -> u64 {
-  seahash::hash(input.to_string().as_bytes()) & 0x00FFFFFFFFFFFFFF
-}
-
-
-pub fn emojify_bytes(bytes: &[u8]) -> String {
-  let parts: Vec<&str> = bytes
-    .iter()
-    .enumerate()
-    .filter_map(|(ix, &b)| if ix % 2 == 1 { Some(EMOJILIST[b as usize]) } else { None })
-    .collect();
-  parts.join("")
-}
-
-pub fn humanize_bytes(bytes: &[u8]) -> String {
-  let parts: Vec<&str> = bytes
-    .iter()
-    .enumerate()
-    .filter_map(|(ix, &b)| if ix % 2 == 1 { Some(WORDLIST[b as usize]) } else { None })
-    .collect();
-  parts.join("-")
-}
-
-pub fn emojify<T>(num: &T) -> String
-where
-    T: std::fmt::Display + Copy + TryInto<u128>,
-    <T as TryInto<u128>>::Error: std::fmt::Debug,
-{
-    match (*num).try_into() {
-        Ok(v) => {
-            let bytes = v.to_be_bytes();
-            let first_non_zero = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len() - 1);
-            let trimmed = &bytes[first_non_zero..];
-            emojify_bytes(trimmed)
-        }
-        Err(_) => format!("{}", num),
-    }
-}
-
-pub fn humanize<T>(num: &T) -> String
-where
-    T: std::fmt::Display + Copy + TryInto<u128>,
-    <T as TryInto<u128>>::Error: std::fmt::Debug,
-{
-    match (*num).try_into() {
-        Ok(v) => {
-            let bytes = v.to_be_bytes();
-            let first_non_zero = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len() - 1);
-            let trimmed = &bytes[first_non_zero..];
-            humanize_bytes(trimmed)
-        }
-        Err(_) => format!("{}", num),
-    }
-}
-
+// Mech Source Code
+// ---------------------------------------------------------------------------
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -272,6 +211,75 @@ impl IndexedString {
   }
 }
 
+// Humanize
+// ---------------------------------------------------------------------------
+
+// Turn bytes into something more readable by humans
+// Useful for visualizing register dumps, hashes, etc.
+
+pub fn hash_chars(input: &Vec<char>) -> u64 {
+  seahash::hash(input.iter().map(|s| String::from(*s)).collect::<String>().as_bytes()) & 0x00FFFFFFFFFFFFFF
+}
+
+pub fn hash_bytes(input: &Vec<u8>) -> u64 {
+  seahash::hash(input) & 0x00FFFFFFFFFFFFFF
+}
+
+pub fn hash_str(input: &str) -> u64 {
+  seahash::hash(input.to_string().as_bytes()) & 0x00FFFFFFFFFFFFFF
+}
+
+
+pub fn emojify_bytes(bytes: &[u8]) -> String {
+  let parts: Vec<&str> = bytes
+    .iter()
+    .enumerate()
+    .filter_map(|(ix, &b)| if ix % 2 == 1 { Some(EMOJILIST[b as usize]) } else { None })
+    .collect();
+  parts.join("")
+}
+
+pub fn humanize_bytes(bytes: &[u8]) -> String {
+  let parts: Vec<&str> = bytes
+    .iter()
+    .enumerate()
+    .filter_map(|(ix, &b)| if ix % 2 == 1 { Some(WORDLIST[b as usize]) } else { None })
+    .collect();
+  parts.join("-")
+}
+
+pub fn emojify<T>(num: &T) -> String
+where
+    T: std::fmt::Display + Copy + TryInto<u128>,
+    <T as TryInto<u128>>::Error: std::fmt::Debug,
+{
+    match (*num).try_into() {
+        Ok(v) => {
+            let bytes = v.to_be_bytes();
+            let first_non_zero = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len() - 1);
+            let trimmed = &bytes[first_non_zero..];
+            emojify_bytes(trimmed)
+        }
+        Err(_) => format!("{}", num),
+    }
+}
+
+pub fn humanize<T>(num: &T) -> String
+where
+    T: std::fmt::Display + Copy + TryInto<u128>,
+    <T as TryInto<u128>>::Error: std::fmt::Debug,
+{
+    match (*num).try_into() {
+        Ok(v) => {
+            let bytes = v.to_be_bytes();
+            let first_non_zero = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len() - 1);
+            let trimmed = &bytes[first_non_zero..];
+            humanize_bytes(trimmed)
+        }
+        Err(_) => format!("{}", num),
+    }
+}
+
 pub const WORDLIST: &[&str;256] = &[
   "nil", "ama", "ine", "ska", "pha", "gel", "art", 
   "ona", "sas", "ist", "aus", "pen", "ust", "umn",
@@ -311,6 +319,8 @@ pub const WORDLIST: &[&str;256] = &[
   "ulu", "fix", "gry", "hol", "jup", "lam", "pas",
   "rom", "sne", "ten", "uta"];
 
+// Emoji list is for quicker visual scanning/recognition when comparing registers
+
 pub const EMOJILIST: &[&str; 256] = &[
   "🐵","🐶","🐺","🦊","🦝","🐱","🐈","🐈","🦁","🐷","🐮","🦬","🐯","🐴","🫎","🦄","🦓","🦙","🦒","🐘","🦣","🦏","🦛","🐫","🐏","🐭","🐰","🐿️","🦫","🦔","🦇","🐻","🐨","🐼","🦥","🦦","🦨","🦘","🦡","🦃","🐔","🐦","🐧","🕊️","🦅","🦆","🐦‍🔥","🦉","🦤","🦩","🦚","🦜","🐸","🐊","🐢","🦎","🐍","🐲","🦖","🐳","🐬","🦭","🐠","🦈","🐙","🪼","🦀","🦞","🦐","🦑","🐌","🦋","🐛","🐝","🪲","🐞","🦗","🕸️","🪰","🪱","🦠","👻","👽","🐶","🐮","🐚","🪸","🪶","🦧","🪿","🦢","🤖",
   "🌹","🌳","🌴","🌵","🍀","🍁","🍄","🌛","🌞","🪐","⭐","⛅","🌧️","🌨️","🌈","❄️","☃️","☄️","🔥","🌻",
@@ -318,7 +328,6 @@ pub const EMOJILIST: &[&str; 256] = &[
   "🎤","🎧","📻","🎷","🪗","🎸","🎹","🎺","🎻","🪕","🥁","🪇","📷","🧳","🌡️","🧸","🧶","🔎","🕯️","💡","🔦","🔒","🗝️","🪚","🔧","🪛","🔩","⚙️","⚖️","🧰","🧲","🪜","🔬","📡","🧷","🧹","🧺","🪣","🧼","🧽","🧯","🛒",  
   "⏰","🛟","🛩️","🚁","🛰️","🚀","🛸","⚓","🚂","🚑","🚒","🚕","🚗","🚚","🚜","🏎️","🏍️","🛵","🦼","🚲","🛹","🛼","🛞","📰","📦","📫","✏️","🖊️","🖌️","🖍️","📌","📏","✂️","🗑️","🏆","⚾","🏀","🎾","🎳","⛳","⛸️","🤿","🛷","🎯","🪁","🧩","🪅","🎨","🧭","🏔️","🏝️","⛲","⛺","🎠","🛝","🧵","💈","🎪","🛎️","💎","⛵"
 ];
-
 
 // ============================================================================
 // The Standard Library!

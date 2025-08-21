@@ -10,7 +10,7 @@ use crate::*;
 // 4. Constants
 // 5. Symbols
 // 6. Instructions
-// 7. Dictionary (optional for human-readable names)
+// 7. Dictionary
 
 // 1. Header
 // ----------------------------------------------------------------------------
@@ -252,7 +252,9 @@ impl TypeTag {
       21 => Some(TypeTag::Matrix), 22 => Some(TypeTag::EnumTag),
       23 => Some(TypeTag::Record), 24 => Some(TypeTag::Map),
       25 => Some(TypeTag::Atom), 26 => Some(TypeTag::Table),
-      27 => Some(TypeTag::Tuple), _ => None,
+      27 => Some(TypeTag::Tuple), 28 => Some(TypeTag::Reference),
+      29 => Some(TypeTag::Set), 30 => Some(TypeTag::OptionT),
+      _ => None,
     }
   }
 }
@@ -311,108 +313,6 @@ impl TypeSection {
   }
 }
 
-fn encode_value_kind(ts: &mut TypeSection, vk: &ValueKind) -> (TypeTag, Vec<u8>) {
-  let mut b = Vec::new();
-  let tag = match vk {
-    ValueKind::U8 => TypeTag::U8, ValueKind::U16 => TypeTag::U16, ValueKind::U32 => TypeTag::U32,
-    ValueKind::U64 => TypeTag::U64, ValueKind::U128 => TypeTag::U128,
-    ValueKind::I8 => TypeTag::I8, ValueKind::I16 => TypeTag::I16, ValueKind::I32 => TypeTag::I32,
-    ValueKind::I64 => TypeTag::I64, ValueKind::I128 => TypeTag::I128,
-    ValueKind::F32 => TypeTag::F32, ValueKind::F64 => TypeTag::F64,
-    ValueKind::ComplexNumber => TypeTag::ComplexNumber,
-    ValueKind::RationalNumber => TypeTag::RationalNumber,
-    ValueKind::String => TypeTag::String,
-    ValueKind::Bool => TypeTag::Bool,
-    ValueKind::Id => TypeTag::Id,
-    ValueKind::Index => TypeTag::Index,
-    ValueKind::Empty => TypeTag::Empty,
-    ValueKind::Any => TypeTag::Any,
-
-    ValueKind::Matrix(elem, dims) => {
-      let elem_id = ts.get_or_intern(elem);
-      b.write_u32::<LittleEndian>(elem_id).unwrap();
-      b.write_u32::<LittleEndian>(dims.len() as u32).unwrap();
-      for &d in dims { b.write_u32::<LittleEndian>(d as u32).unwrap(); }
-      TypeTag::Matrix
-    }
-
-    ValueKind::Enum(space) => {
-      b.write_u64::<LittleEndian>(*space).unwrap();
-      TypeTag::EnumTag
-    }
-
-    ValueKind::Record(fields) => {
-      b.write_u32::<LittleEndian>(fields.len() as u32).unwrap();
-      for (name, ty) in fields {
-        let name_bytes = name.as_bytes();
-        b.write_u32::<LittleEndian>(name_bytes.len() as u32).unwrap();
-        b.extend_from_slice(name_bytes);
-        let tid = ts.get_or_intern(ty);
-        b.write_u32::<LittleEndian>(tid).unwrap();
-      }
-      TypeTag::Record
-    }
-
-    ValueKind::Map(k,v) => {
-      let kid = ts.get_or_intern(k);
-      let vid = ts.get_or_intern(v);
-      b.write_u32::<LittleEndian>(kid).unwrap();
-      b.write_u32::<LittleEndian>(vid).unwrap();
-      TypeTag::Map
-    }
-
-    ValueKind::Atom(id) => {
-      b.write_u64::<LittleEndian>(*id).unwrap();
-      TypeTag::Atom
-    }
-
-    ValueKind::Table(cols, pk_col) => {
-      b.write_u32::<LittleEndian>(cols.len() as u32).unwrap();
-      for (name, ty) in cols {
-        let name_b = name.as_bytes();
-        b.write_u32::<LittleEndian>(name_b.len() as u32).unwrap();
-        b.extend_from_slice(name_b);
-        let tid = ts.get_or_intern(ty);
-        b.write_u32::<LittleEndian>(tid).unwrap();
-      }
-      b.write_u32::<LittleEndian>(*pk_col as u32).unwrap();
-      TypeTag::Table
-    }
-
-    ValueKind::Tuple(elems) => {
-      b.write_u32::<LittleEndian>(elems.len() as u32).unwrap();
-      for t in elems {
-        let tid = ts.get_or_intern(t);
-        b.write_u32::<LittleEndian>(tid).unwrap();
-      }
-      TypeTag::Tuple
-    }
-
-    ValueKind::Reference(inner) => {
-      let id = ts.get_or_intern(inner);
-      b.write_u32::<LittleEndian>(id).unwrap();
-      TypeTag::Reference
-    }
-
-    ValueKind::Set(elem, max) => {
-      let id = ts.get_or_intern(elem);
-      b.write_u32::<LittleEndian>(id).unwrap();
-      match max {
-        Some(m) => { b.push(1); use byteorder::WriteBytesExt; b.write_u32::<LittleEndian>(*m as u32).unwrap(); }
-        None => { b.push(0); }
-      }
-      TypeTag::Set
-    }
-
-    ValueKind::Option(inner) => {
-      let id = ts.get_or_intern(inner);
-      b.write_u32::<LittleEndian>(id).unwrap();
-      TypeTag::OptionT
-    }
-  };
-  (tag, b)
-}
-
 // 4. Constants
 // ----------------------------------------------------------------------------
 
@@ -447,73 +347,6 @@ impl ConstEntry {
     Ok(())
   }
   pub fn byte_len() -> u64 { 4 + 1 + 1 + 1 + 1 + 8 + 8 } // = 24 bytes
-}
-
-pub trait CompileConst {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32>;
-}
-
-impl CompileConst for Value {
-
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
-    let mut payload = Vec::<u8>::new();
-
-    match self {
-      #[cfg(feature = "bool")]
-      Value::Bool(x) => payload.write_u8(if *x.borrow() { 1 } else { 0 })?,
-      #[cfg(feature = "string")]
-      Value::String(x) => {
-        let string_brrw = x.borrow();
-        let bytes = string_brrw.as_bytes();
-        payload.write_u32::<LittleEndian>(bytes.len() as u32)?;
-        payload.extend_from_slice(bytes);
-      },
-      #[cfg(feature = "u8")]
-      Value::U8(x) => payload.write_u8(*x.borrow())?,
-      #[cfg(feature = "u16")]
-      Value::U16(x) => payload.write_u16::<LittleEndian>(*x.borrow())?,
-      #[cfg(feature = "u32")]
-      Value::U32(x) => payload.write_u32::<LittleEndian>(*x.borrow())?,
-      #[cfg(feature = "u64")]
-      Value::U64(x) => payload.write_u64::<LittleEndian>(*x.borrow())?,
-      #[cfg(feature = "u128")]
-      Value::U128(x) => payload.write_u128::<LittleEndian>(*x.borrow())?,
-      #[cfg(feature = "i8")]
-      Value::I8(x) => payload.write_i8(*x.borrow())?,
-      #[cfg(feature = "i16")]
-      Value::I16(x) => payload.write_i16::<LittleEndian>(*x.borrow())?,
-      #[cfg(feature = "i32")]
-      Value::I32(x) => payload.write_i32::<LittleEndian>(*x.borrow())?,
-      #[cfg(feature = "i64")]
-      Value::I64(x) => payload.write_i64::<LittleEndian>(*x.borrow())?,
-      #[cfg(feature = "i128")]
-      Value::I128(x) => payload.write_i128::<LittleEndian>(*x.borrow())?,
-      #[cfg(feature = "f32")]
-      Value::F32(x) => payload.write_f32::<LittleEndian>(x.borrow().0)?,
-      #[cfg(feature = "f64")]
-      Value::F64(x) => payload.write_f64::<LittleEndian>(x.borrow().0)?,
-      #[cfg(feature = "atom")]
-      Value::Atom(x) => payload.write_u64::<LittleEndian>(*x)?,
-      #[cfg(feature = "index")]
-      Value::Index(x) => payload.write_u64::<LittleEndian>(*x.borrow() as u64)?,
-      #[cfg(feature = "complex")]
-      Value::ComplexNumber(x) => {
-        let c = x.borrow();
-        payload.write_f64::<LittleEndian>(c.0.re)?;
-        payload.write_f64::<LittleEndian>(c.0.im)?;
-      },
-      #[cfg(feature = "rational")]
-      Value::RationalNumber(x) => {
-        let r = x.borrow();
-        payload.write_i64::<LittleEndian>(*r.numer())?;
-        payload.write_i64::<LittleEndian>(*r.denom())?;
-      },
-      #[cfg(all(feature = "matrix", feature = "f64"))]
-      Value::MatrixF64(x) => todo!(), //{return x.compile_const(ctx);}
-      _ => todo!(),
-    }
-    ctx.compile_const(&payload, self.kind())
-  }
 }
 
 // 5. Symbol Table
