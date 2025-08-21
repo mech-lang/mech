@@ -8,6 +8,9 @@ use crate::types::ComplexNumber;
 use num_rational::Rational64;
 use std::mem;
 
+#[cfg(feature = "matrix")]
+use nalgebra::DVector;
+
 macro_rules! impl_as_type {
   ($target_type:ty) => {
     paste!{
@@ -1533,8 +1536,11 @@ impl Value {
             let shape = self.shape();
             let out = match (shape[0], shape[1]) {
               (1,1) => Value::Bool(Ref::new(x[0])),
+              #[cfg(all(feature = "vectord", feature = "bool"))]
               (1,n) => Value::MatrixBool(Matrix::DVector(Ref::new(DVector::from_vec(x)))),
+              #[cfg(all(feature = "vectord", feature = "bool"))]
               (m,1) => Value::MatrixBool(Matrix::DVector(Ref::new(DVector::from_vec(x)))),
+              #[cfg(all(feature = "vectord", feature = "bool"))]
               (m,n) => Value::MatrixBool(Matrix::DVector(Ref::new(DVector::from_vec(x)))),
               _ => todo!(),
             };
@@ -1701,12 +1707,14 @@ pub trait ToIndex {
   fn to_index(&self) -> Value;
 }
 
+#[cfg(feature = "matrix")]
 impl ToIndex for Ref<Vec<i64>> { fn to_index(&self) -> Value { (*self.borrow()).iter().map(|x| *x as usize).collect::<Vec<usize>>().to_value() } }
 
 pub trait ToValue {
   fn to_value(&self) -> Value;
 }
 
+#[cfg(feature = "matrix")]
 impl ToValue for Vec<usize> {
   fn to_value(&self) -> Value {
     match self.len() {
@@ -1714,7 +1722,6 @@ impl ToValue for Vec<usize> {
       //2 => Value::MatrixIndex(Matrix::RowVector2(Ref::new(RowVector2::from_vec(self.clone())))),
       //3 => Value::MatrixIndex(Matrix::RowVector3(Ref::new(RowVector3::from_vec(self.clone())))),
       //4 => Value::MatrixIndex(Matrix::RowVector4(Ref::new(RowVector4::from_vec(self.clone())))),
-      #[cfg(feature = "matrix")]
       n => Value::MatrixIndex(Matrix::DVector(Ref::new(DVector::from_vec(self.clone())))),
       _ => todo!(),
     }

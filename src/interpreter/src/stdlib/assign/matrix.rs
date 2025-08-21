@@ -627,9 +627,9 @@ macro_rules! impl_set_all_scalar_match_arms {
           #[cfg(all(feature = $value_string, feature = "matrixd"))]
           (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)),   [Value::IndexAll, Value::Index(ix)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           
-          #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
+          #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "vector2"))]
           (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)),   [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind>](Matrix::Vector2(source))) => Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
+          #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "vector3"))]
           (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)),   [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind>](Matrix::Vector3(source))) => Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
         )+
         x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),

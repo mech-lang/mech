@@ -14,6 +14,8 @@ use std::iter::Peekable;
 use serde::ser::{Serialize, Serializer, SerializeStruct};
 use std::any::Any;
 
+use na::{DMatrix, DVector, RowDVector};
+
 // Matrix ---------------------------------------------------------------------
 
 pub trait ToMatrix: Clone {
@@ -910,32 +912,27 @@ impl_to_value_matrix!(DVector);
 #[cfg(feature = "matrixd")]
 impl_to_value_matrix!(DMatrix);
 
-/* -
-/*#[cfg(feature = "complex")]
-impl CompileConst for ComplexNumber {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
-    let mut payload = Vec::<u8>::new();
-    payload.write_f64::<LittleEndian>(self.0.re)?;
-    payload.write_f64::<LittleEndian>(self.0.im)?;
-    ctx.compile_const(&payload, ValueKind::ComplexNumber)
-  }
-}*/
+use na::{Dim, Storage};
 
-#[cfg(feature = "row-vector4")]
-impl<T> CompileConst for RowVector4<T>
-where T: Debug + Display + Clone + PartialEq + 'static + CompileConst
+impl<T, R, C, S> CompileConst for na::Matrix<T, R, C, S>
+where
+  T: ConstElem + Copy + Debug + Display + Clone + PartialEq + 'static,
+  R: Dim,
+  C: Dim,
+  S: Storage<T, R, C>,
 {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
-    todo!();
+    let rows = self.nrows();
+    let cols = self.ncols();
+    let mut payload = Vec::<u8>::with_capacity((rows*cols) as usize * 8);
+    let elem_vk = T::value_kind();
+    let mat_vk = ValueKind::Matrix(Box::new(elem_vk), vec![rows as usize, cols as usize]);
+    for c in 0..cols {
+      for r in 0..rows {
+        let v = self[(r, c)];
+        v.write_le(&mut payload);
+      }
+    }
+    ctx.compile_const(&payload, mat_vk)
   }
 }
-
-#[cfg(feature = "vector4")]
-impl<T> CompileConst for Vector4<T>
-where T: Debug + Display + Clone + PartialEq + 'static + CompileConst
-{
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
-    todo!();
-  }
-}*/
-

@@ -435,16 +435,27 @@ macro_rules! horzcat_single {
   }
 }
 
+#[cfg(feature = "matrix1")]
 horzcat_single!(HorizontalConcatenateM1,Matrix1);
+#[cfg(feature = "matrix2")]
 horzcat_single!(HorizontalConcatenateM2,Matrix2);
+#[cfg(feature = "matrix3")]
 horzcat_single!(HorizontalConcatenateM3,Matrix3);
+#[cfg(feature = "matrix4")]
 horzcat_single!(HorizontalConcatenateM4,Matrix4);
+#[cfg(feature = "matrix2x3")]
 horzcat_single!(HorizontalConcatenateM2x3,Matrix2x3);
+#[cfg(feature = "matrix3x2")]
 horzcat_single!(HorizontalConcatenateM3x2,Matrix3x2);
+#[cfg(feature = "matrixd")]
 horzcat_single!(HorizontalConcatenateMD,DMatrix);
+#[cfg(feature = "vector2")]
 horzcat_single!(HorizontalConcatenateV2,Vector2);
+#[cfg(feature = "vector3")]
 horzcat_single!(HorizontalConcatenateV3,Vector3);
+#[cfg(feature = "vector4")]
 horzcat_single!(HorizontalConcatenateV4,Vector4);
+#[cfg(feature = "vectord")]
 horzcat_single!(HorizontalConcatenateVD,DVector);
 
 #[derive(Debug)]
@@ -1801,10 +1812,15 @@ macro_rules! horzcat_mdmdmd {
   };
 }
 
+#[cfg(feature = "vector2")]
 horzcat_three_args!(HorizontalConcatenateV2V2V2, Vector2, Vector2, Vector2, Matrix2x3, horzcat_mdmdmd);
+#[cfg(feature = "vector3")]
 horzcat_three_args!(HorizontalConcatenateV3V3V3, Vector3, Vector3, Vector3, Matrix3, horzcat_mdmdmd);
+#[cfg(all(feature = "matrixd", feature = "vector4"))]
 horzcat_three_args!(HorizontalConcatenateV4V4MD, Vector4, Vector4, DMatrix, Matrix4, horzcat_mdmdmd);
+#[cfg(all(feature = "matrixd", feature = "vector4"))]
 horzcat_three_args!(HorizontalConcatenateV4MDV4, Vector4, DMatrix, Vector4, Matrix4, horzcat_mdmdmd);
+#[cfg(all(feature = "matrixd", feature = "vector4"))]
 horzcat_three_args!(HorizontalConcatenateMDV4V4, DMatrix, Vector4, Vector4, Matrix4, horzcat_mdmdmd);
 
 
@@ -1829,6 +1845,7 @@ macro_rules! horzcat_mdmdmdmd {
   };
 }
 
+#[cfg(all(feature = "matrix4", feature = "vector4"))]
 horzcat_four_args!(HorizontalConcatenateV4V4V4V4, Vector4, Vector4, Vector4, Vector4, Matrix4, horzcat_mdmdmdmd);
 
 macro_rules! impl_horzcat_arms {
@@ -1836,6 +1853,7 @@ macro_rules! impl_horzcat_arms {
     paste!{
     {
 
+      #[cfg(feature = "matrix")]
       fn extract_matrix(arg: &Value) -> MResult<Box<dyn CopyMat<$kind>>> {
         match arg {
           Value::[<Matrix $kind:camel>](m) => Ok(m.get_copyable_matrix()),
@@ -1846,23 +1864,79 @@ macro_rules! impl_horzcat_arms {
           _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Matrix<{}> or MutableReference to Matrix<{}>, found {:?}", stringify!($kind), stringify!($kind), arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
         }
       }
+      #[cfg(feature = "row_vector2")] // get_r2
       fn get_r2(value: &Value) -> Option<Ref<RowVector2<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::RowVector2(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::RowVector2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "row_vector2"))]
+      fn get_r2(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "row_vector3")] // get_r3
       fn get_r3(value: &Value) -> Option<Ref<RowVector3<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::RowVector3(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::RowVector3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "row_vector3"))]
+      fn get_r3(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "row_vector4")] // get_r4
       fn get_r4(value: &Value) -> Option<Ref<RowVector4<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::RowVector4(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::RowVector4(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "row_vector4"))]
+      fn get_r4(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "vector2")] // get_v2
       fn get_v2(value: &Value) -> Option<Ref<Vector2<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Vector2(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Vector2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "vector2"))]
+      fn get_v2(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "vector3")] // get_v3
       fn get_v3(value: &Value) -> Option<Ref<Vector3<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Vector3(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Vector3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "vector3"))]
+      fn get_v3(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "vector4")] // get_v4
       fn get_v4(value: &Value) -> Option<Ref<Vector4<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Vector4(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Vector4(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "vector4"))]
+      fn get_v4(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "matrixd")] // get_md
       fn get_md(value: &Value) -> Option<Ref<DMatrix<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::DMatrix(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::DMatrix(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "matrixd"))]
+      fn get_md(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "row_vectord")] // get_rd
       fn get_rd(value: &Value) -> Option<Ref<RowDVector<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::RowDVector(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::RowDVector(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "row_vectord"))]
+      fn get_rd(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "matrix3x2")] // get_m3x2
       fn get_m3x2(value: &Value) -> Option<Ref<Matrix3x2<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Matrix3x2(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Matrix3x2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "matrix3x2"))]
+      fn get_m3x2(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "matrix2x3")] // get_m2x3
       fn get_m2x3(value: &Value) -> Option<Ref<Matrix2x3<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Matrix2x3(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Matrix2x3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "matrix2x3"))]
+      fn get_m2x3(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "matrix1")] // get_m1
       fn get_m1(value: &Value) -> Option<Ref<Matrix1<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Matrix1(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Matrix1(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "matrix1"))]
+      fn get_m1(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "matrix2")] // get_m2
       fn get_m2(value: &Value) -> Option<Ref<Matrix2<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Matrix2(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Matrix2(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "matrix2"))]
+      fn get_m2(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "matrix3")] // get_m3
       fn get_m3(value: &Value) -> Option<Ref<Matrix3<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Matrix3(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Matrix3(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "matrix3"))]
+      fn get_m3(_value: &Value) -> Option<()> { None }
+
+      #[cfg(feature = "matrix4")] // get_m4
       fn get_m4(value: &Value) -> Option<Ref<Matrix4<$kind>>> { match value { Value::[<Matrix $kind:camel>](Matrix::Matrix4(v)) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<Matrix $kind:camel>](Matrix::Matrix4(v)) => Some(v.clone()), _ => None, }, _ => None, } }
+      #[cfg(not(feature = "matrix4"))]
+      fn get_m4(_value: &Value) -> Option<()> { None }
+
       fn get_s(value: &Value) -> Option<Ref<$kind>> { match value { Value::[<$kind:camel>](v) => Some(v.clone()), Value::MutableReference(inner) => match &*inner.borrow() { Value::[<$kind:camel>](v) => Some(v.clone()), _ => None, }, _ => None, } }
 
-      let arguments = $args;   
+      let arguments = $args;
       let rows = arguments[0].shape()[0];
       let columns:usize = arguments.iter().fold(0, |acc, x| acc + x.shape()[1]);
       let rows:usize = arguments[0].shape()[0];
@@ -1924,8 +1998,11 @@ macro_rules! impl_horzcat_arms {
             let asc = get_s(&arguments[0]);
             let bsc = get_s(&arguments[1]);
             match (am1, bm1, asc, bsc) {
+              #[cfg(feature = "matrix1")]
               (Some(ref e0), Some(ref e1), None, None) => return Ok(Box::new(HorizontalConcatenateM1M1 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (Some(ref e0), None, None, Some(ref e1)) => return Ok(Box::new(HorizontalConcatenateM1S { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (None, Some(ref e1), Some(ref e0), None) => return Ok(Box::new(HorizontalConcatenateSM1 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
               (None, None, Some(ref e0), Some(ref e1)) => return Ok(Box::new(HorizontalConcatenateS2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
               _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Matrix1<{}> or Scalar<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), arguments), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
@@ -1941,9 +2018,13 @@ macro_rules! impl_horzcat_arms {
             let a_m1 = get_m1(&arguments[0]);
             let b_m1 = get_m1(&arguments[1]);
             match (a_r2, b_r2, a_sc, b_sc, a_m1, b_m1) {
+              #[cfg(feature = "matrix1")]
               (Some(ref e0), _, _, _, _, Some(ref e1)) => return Ok(Box::new(HorizontalConcatenateR2M1 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "row_vector2")]
               (Some(ref e0), _, _, Some(ref e1), _, _) => return Ok(Box::new(HorizontalConcatenateR2S { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
               (_, Some(ref e1), _, _, Some(ref e0), _) => return Ok(Box::new(HorizontalConcatenateM1R2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "row_vector2")]
               (_, Some(ref e1), Some(ref e0), _, _, _) => return Ok(Box::new(HorizontalConcatenateSR2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
               _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a RowVector2<{}>, Scalar<{}> or Matrix1<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), stringify!($kind), arguments), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
@@ -1960,10 +2041,15 @@ macro_rules! impl_horzcat_arms {
             let a_r2 = get_r2(&arguments[0]);
             let b_r2 = get_r2(&arguments[1]);
             match (a_r3, b_r3, a_sc, b_sc, a_m1, b_m1, a_r2, b_r2) {
+              #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
               (Some(ref e0), _, _, _, _, Some(ref e1), _, _) => return Ok(Box::new(HorizontalConcatenateR3M1 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "row_vector3")]
               (Some(ref e0), _, _, Some(ref e1), _, _, _, _) => return Ok(Box::new(HorizontalConcatenateR3S { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
               (_, Some(ref e1), _, _, Some(ref e0), _, _, _) => return Ok(Box::new(HorizontalConcatenateM1R3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "row_vector3")]
               (_, Some(ref e1), Some(ref e0), _, _, _, _, _) => return Ok(Box::new(HorizontalConcatenateSR3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "row_vector2")]
               (_, _, _, _, _, _, Some(ref e0), Some(ref e1)) => return Ok(Box::new(HorizontalConcatenateR2R2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
               _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a RowVector3<{}>, Scalar<{}>, Matrix1<{}> or RowVector2<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), stringify!($kind), stringify!($kind), arguments), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
@@ -1978,13 +2064,19 @@ macro_rules! impl_horzcat_arms {
             let b_sc = get_s(&arguments[1]);
             let c_sc = get_s(&arguments[2]);
             match (a_m1, b_m1, c_m1, a_sc, b_sc, c_sc) {
+              #[cfg(feature = "matrix1")]
               (_, _, _, Some(ref e0), Some(ref e1), Some(ref e2)) => return Ok(Box::new(HorizontalConcatenateS3 {e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
-              (Some(ref e0), Some(ref e1), Some(ref e2), _, _, _) => return Ok(Box::new(HorizontalConcatenateM1M1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (Some(ref e0), Some(ref e1), _, _, _, Some(ref e2)) => return Ok(Box::new(HorizontalConcatenateM1M1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (Some(ref e0), _, Some(ref e2), _, Some(ref e1), _) => return Ok(Box::new(HorizontalConcatenateM1SM1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (_, Some(ref e1), Some(ref e2), Some(ref e0), _, _) => return Ok(Box::new(HorizontalConcatenateSM1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (_, Some(ref e1), _, Some(ref e0), _, Some(ref e2)) => return Ok(Box::new(HorizontalConcatenateSM1S {e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(feature = "matrix1")]
               (_, _, Some(ref e2), Some(ref e0), Some(ref e1), _) => return Ok(Box::new(HorizontalConcatenateSSM1 {e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(feature = "matrix1")]
               (Some(ref e0), _, _, _, Some(ref e1), Some(ref e2)) => return Ok(Box::new(HorizontalConcatenateM1SS {e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Matrix1<{}> or Scalar<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), arguments), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
@@ -2002,17 +2094,29 @@ macro_rules! impl_horzcat_arms {
             let b_m1 = get_m1(&arguments[1]);
             let c_m1 = get_m1(&arguments[2]);
             match (a_sc, b_sc, c_sc, a_r2, b_r2, c_r2, a_m1, b_m1, c_m1) {
+              #[cfg(feature = "row_vector2")]
               (Some(ref e0), Some(ref e1), _, _, _, Some(ref e2), _, _, _) => return Ok(Box::new(HorizontalConcatenateSSR2{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(feature = "row_vector2")]
               (Some(ref e0), _, Some(ref e2), _, Some(ref e1), _, _, _, _) => return Ok(Box::new(HorizontalConcatenateSR2S{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(feature = "row_vector2")]
               (_, Some(ref e1), Some(ref e2), Some(ref e0), _, _, _, _, _) => return Ok(Box::new(HorizontalConcatenateR2SS{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
               (_, _, _, _, _, Some(ref e2), Some(ref e0), Some(ref e1), _) => return Ok(Box::new(HorizontalConcatenateM1M1R2{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
               (_, _, _, _, Some(ref e1), _, Some(ref e0), _, Some(ref e2)) => return Ok(Box::new(HorizontalConcatenateM1R2M1{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
               (_, _, _, Some(ref e0), _, _, _, Some(ref e1), Some(ref e2)) => return Ok(Box::new(HorizontalConcatenateR2M1M1{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
               (Some(ref e0), _, _, _, _, Some(ref e2), _, Some(ref e1), _) => return Ok(Box::new(HorizontalConcatenateSM1R2{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
               (Some(ref e0), _, _, _, Some(ref e1), _, _, _, Some(ref e2)) => return Ok(Box::new(HorizontalConcatenateSR2M1{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
               (_, Some(ref e1), _, _, _, Some(ref e2), Some(ref e0), _, _) => return Ok(Box::new(HorizontalConcatenateM1SR2{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
               (_, Some(ref e1), _, Some(ref e0), _, _, _, _, Some(ref e2)) => return Ok(Box::new(HorizontalConcatenateR2SM1{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
               (_, _, Some(ref e2), _, Some(ref e1), _, Some(ref e0), _, _) => return Ok(Box::new(HorizontalConcatenateM1R2S{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
+              #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
               (_, _, Some(ref e2), Some(ref e0), _, _, _, Some(ref e1), _) => return Ok(Box::new(HorizontalConcatenateR2M1S{e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out)})),
               _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
             }
@@ -2030,20 +2134,35 @@ macro_rules! impl_horzcat_arms {
             let d_m1 = get_m1(&arguments[3]);
             match (a_s, b_s, c_s, d_s, a_m1, b_m1, c_m1, d_m1) {
               (Some(ref e0), Some(ref e1), Some(ref e2), Some(ref e3), _, _, _, _) => return Ok(Box::new(HorizontalConcatenateS4 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (Some(ref e0), Some(ref e1), Some(ref e2), _, _, _, _, Some(ref e3)) => return Ok(Box::new(HorizontalConcatenateSSSM1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (Some(ref e0), Some(ref e1), _, Some(ref e3), _, _, Some(ref e2), _) => return Ok(Box::new(HorizontalConcatenateSSM1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (Some(ref e0), _, Some(ref e2), Some(ref e3), _, Some(ref e1), _, _) => return Ok(Box::new(HorizontalConcatenateSM1SS { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (_, Some(ref e1), Some(ref e2), Some(ref e3), Some(ref e0), _, _, _) => return Ok(Box::new(HorizontalConcatenateM1SSS { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (Some(ref e0), Some(ref e1), _, _, _, Some(ref e2), _, Some(ref e3)) => return Ok(Box::new(HorizontalConcatenateSSM1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (Some(ref e0), _, Some(ref e2), _, _, Some(ref e1), _, Some(ref e3)) => return Ok(Box::new(HorizontalConcatenateSM1SM1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (_, _, Some(ref e2), Some(ref e3), Some(ref e0), Some(ref e1), _, _) => return Ok(Box::new(HorizontalConcatenateM1M1SS { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (Some(ref e0), _, _, Some(ref e3), _, Some(ref e1), Some(ref e2), _) => return Ok(Box::new(HorizontalConcatenateSM1M1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (_, Some(ref e1), Some(ref e2), _, Some(ref e0), _, _, Some(ref e3)) => return Ok(Box::new(HorizontalConcatenateM1SSM1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (_, Some(ref e1), _, Some(ref e3), Some(ref e0), _, Some(ref e2), _) => return Ok(Box::new(HorizontalConcatenateM1SM1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (Some(ref e0), _, _, _, _, Some(ref e1), Some(ref e2), Some(ref e3)) => return Ok(Box::new(HorizontalConcatenateSM1M1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (_, Some(ref e1), _, _, Some(ref e0), _, Some(ref e2), Some(ref e3)) => return Ok(Box::new(HorizontalConcatenateM1SM1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (_, _, Some(ref e2), _, Some(ref e0), Some(ref e1), _, Some(ref e3)) => return Ok(Box::new(HorizontalConcatenateM1M1SM1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (_, _, _, Some(ref e3), Some(ref e0), Some(ref e1), Some(ref e2), _) => return Ok(Box::new(HorizontalConcatenateM1M1M1S { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrix1")]
               (_, _, _, _, Some(ref e0), Some(ref e1), Some(ref e2), Some(ref e3)) => return Ok(Box::new(HorizontalConcatenateM1M1M1M1 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Scalar<{}> or Matrix1<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), arguments), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
@@ -2154,12 +2273,13 @@ macro_rules! impl_horzcat_arms {
               _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
             }
           }
-          #[cfg(feature = "matrix2")]
+          #[cfg(all(feature = "matrix2", feature ="vector2"))]
           (2, 2, 2) => {
             let mut out = Matrix2::from_element($default);
             let av2 = get_v2(&arguments[0]);
             let bv2 = get_v2(&arguments[1]);
             match (av2, bv2) {
+              #[cfg(feature = "vector2")]
               (Some(e0), Some(e1)) => return Ok(Box::new(HorizontalConcatenateV2V2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
@@ -2170,6 +2290,7 @@ macro_rules! impl_horzcat_arms {
             let av3 = get_v3(&arguments[0]);
             let bv3 = get_v3(&arguments[1]);
             match (av3, bv3) {
+              #[cfg(feature = "vector3")]
               (Some(e0), Some(e1)) => return Ok(Box::new(HorizontalConcatenateV3V3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
@@ -2182,7 +2303,9 @@ macro_rules! impl_horzcat_arms {
             let bv2 = get_v2(&arguments[1]);
             let bm2 = get_m2(&arguments[1]);
             match (av2, bv2, am2, bm2) {
+              #[cfg(all(feature = "vector2", feature = "matrix2"))]
               (Some(ref e0), _, _, Some(ref e1)) => return Ok(Box::new(HorizontalConcatenateV2M2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(all(feature = "vector2", feature = "matrix2"))]
               (_, Some(ref e1), Some(ref e0), _) => return Ok(Box::new(HorizontalConcatenateM2V2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
@@ -2195,7 +2318,9 @@ macro_rules! impl_horzcat_arms {
             let bv3 = get_v3(&arguments[1]);
             let bm3x2 = get_m3x2(&arguments[1]);
             match (av3, bv3, am3x2, bm3x2) {
+              #[cfg(all(feature = "vector3", feature = "matrix3x2"))]
               (Some(ref e0), _, _, Some(ref e1)) => return Ok(Box::new(HorizontalConcatenateV3M3x2 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(all(feature = "vector3", feature = "matrix3x2"))]
               (_, Some(ref e1), Some(ref e0), _) => return Ok(Box::new(HorizontalConcatenateM3x2V3 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
@@ -2208,8 +2333,11 @@ macro_rules! impl_horzcat_arms {
             let amd = get_md(&arguments[0]);
             let bmd = get_md(&arguments[1]);
             match (av4, bv4, amd, bmd) {
+              #[cfg(all(feature = "vector4", feature = "matrixd"))]
               (Some(ref e0), _, _, Some(ref e1)) => return Ok(Box::new(HorizontalConcatenateV4MD { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(all(feature = "vector4", feature = "matrixd"))]
               (_, Some(ref e1), Some(ref e0), _) => return Ok(Box::new(HorizontalConcatenateMDV4 { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
+              #[cfg(feature = "matrixd")]
               (_, _, Some(ref e0), Some(ref e1)) => return Ok(Box::new(HorizontalConcatenateMDMD { e0: e0.clone(), e1: e1.clone(), out: Ref::new(out) })),
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
@@ -2228,6 +2356,7 @@ macro_rules! impl_horzcat_arms {
             let bv2 = get_v2(&arguments[1]);
             let cv2 = get_v2(&arguments[2]);
             match (av2, bv2, cv2) {
+              #[cfg(feature = "vector2")]
               (Some(ref e0), Some(ref e1), Some(ref e2)) => return Ok(Box::new(HorizontalConcatenateV2V2V2 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
@@ -2239,6 +2368,7 @@ macro_rules! impl_horzcat_arms {
             let bv3 = get_v3(&arguments[1]);
             let cv3 = get_v3(&arguments[2]);
             match (&av3, &bv3, &cv3) {
+              #[cfg(feature = "vector3")]
               (Some(ref e0), Some(ref e1), Some(ref e2)) => return Ok(Box::new(HorizontalConcatenateV3V3V3 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
@@ -2253,8 +2383,11 @@ macro_rules! impl_horzcat_arms {
             let bmd = get_md(&arguments[1]);
             let cmd = get_md(&arguments[2]);
             match (av4, bv4, cv4, amd, bmd, cmd) {
+              #[cfg(all(feature = "vector4", feature = "matrixd"))]
               (Some(ref e0), Some(ref e1), _, _, _, Some(ref e2)) => return Ok(Box::new(HorizontalConcatenateV4V4MD { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
+              #[cfg(all(feature = "vector4", feature = "matrixd"))]
               (Some(ref e0), _, Some(ref e2), _, Some(ref e1), _) => return Ok(Box::new(HorizontalConcatenateV4MDV4 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
+              #[cfg(all(feature = "matrixd", feature = "vector4"))]
               (_, Some(ref e1), Some(ref e2), Some(ref e0), _, _) => return Ok(Box::new(HorizontalConcatenateMDV4V4 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), out: Ref::new(out) })),
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
@@ -2275,6 +2408,7 @@ macro_rules! impl_horzcat_arms {
             let cv4 = get_v4(&arguments[2]);
             let dv4 = get_v4(&arguments[3]);
             match (&av4, &bv4, &cv4, &dv4) {
+              #[cfg(feature = "vector4")]
               (Some(ref e0), Some(ref e1), Some(ref e2), Some(ref e3)) => return Ok(Box::new(HorizontalConcatenateV4V4V4V4 { e0: e0.clone(), e1: e1.clone(), e2: e2.clone(), e3: e3.clone(), out: Ref::new(out) })),
               _ => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }

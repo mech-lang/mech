@@ -25,7 +25,7 @@ extern crate alloc;
 extern crate serde_derive;
 #[cfg(feature = "serde")]
 extern crate serde;
-#[cfg(any(feature = "math_exp", feature = "f64"))]
+#[cfg(any(feature = "math_exp", feature = "f64", feature = "f32", feature = "complex", feature = "rational"))]
 extern crate num_traits;
 //extern crate ed25519_dalek;
 //extern crate rand;
@@ -326,8 +326,8 @@ macro_rules! impl_binop {
     }
     impl<T> MechFunction for $struct_name<T>
     where
-      T: Copy + Debug + Clone + Sync + Send + 'static + 
-      PartialEq + PartialOrd + CompileConst +
+      T: Copy + Debug + Display + Clone + Sync + Send + 'static + 
+      PartialEq + PartialOrd + ConstElem + CompileConst +
       Add<Output = T> + AddAssign +
       Sub<Output = T> + SubAssign +
       Mul<Output = T> + MulAssign +
@@ -473,6 +473,7 @@ macro_rules! impl_fxns {
       $op!([<$lib SM2>], $in, Matrix2<$in>, Matrix2<$out>,[<$lib:lower _scalar_rhs_op>], $lib);
       #[cfg(feature = "matrix3")]
       $op!([<$lib SM3>], $in, Matrix3<$in>, Matrix3<$out>,[<$lib:lower _scalar_rhs_op>], $lib);
+      
       #[cfg(feature = "matrix4")]
       $op!([<$lib SM4>], $in, Matrix4<$in>, Matrix4<$out>,[<$lib:lower _scalar_rhs_op>], $lib);
       #[cfg(feature = "matrix2x3")]
@@ -1096,15 +1097,15 @@ macro_rules! impl_set_range_match_arms {
           // Set vector
           #[cfg(all(feature = $value_string, feature = "row_vector4"))]
           (Value::[<Matrix $value_kind>](Matrix::RowVector4(sink)),[Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind>](Matrix::RowVector4(source))) => Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "row_vector4"))]
+          #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "row_vector3"))]
           (Value::[<Matrix $value_kind>](Matrix::RowVector4(sink)),[Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind>](Matrix::RowVector3(source))) => Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "row_vector4"))]
+          #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "row_vector2"))]
           (Value::[<Matrix $value_kind>](Matrix::RowVector4(sink)),[Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind>](Matrix::RowVector2(source))) => Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
           #[cfg(all(feature = $value_string, feature = "vector4"))]
           (Value::[<Matrix $value_kind>](Matrix::Vector4(sink)),[Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind>](Matrix::Vector4(source))) => Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "vector4"))]
+          #[cfg(all(feature = $value_string, feature = "vector4", feature = "vector3"))]
           (Value::[<Matrix $value_kind>](Matrix::Vector4(sink)),[Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind>](Matrix::Vector3(source))) => Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "vector4"))]
+          #[cfg(all(feature = $value_string, feature = "vector4", feature = "vector2"))]
           (Value::[<Matrix $value_kind>](Matrix::Vector4(sink)),[Value::MatrixIndex(Matrix::DVector(ix))], Value::[<Matrix $value_kind>](Matrix::Vector2(source))) => Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
 
           // Set Matrix

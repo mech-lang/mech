@@ -124,7 +124,6 @@ impl ParsedProgram {
     }
     Ok(out)
   }
-
 }
 
 fn check_alignment(offset: u64, align: u8) -> bool {
