@@ -2,6 +2,7 @@
 #![feature(step_trait)]
 #![feature(box_patterns)]
 #![feature(trivial_bounds)]
+#![feature(where_clause_attrs)]
 
 #[cfg(feature = "matrix")]
 extern crate nalgebra as na;
