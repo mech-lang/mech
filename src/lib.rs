@@ -1,31 +1,46 @@
 #![no_main]
 #![allow(warnings)]
 
-//#[cfg(feature = "matrix")]
+#[cfg(feature = "matrix")]
 extern crate nalgebra as na;
 
 use mech_core::*;
 
 use paste::paste;
 
+#[cfg(feature = "vector2")]
 use na::Vector2;
+#[cfg(feature = "vector3")]
 use na::Vector3;
+#[cfg(feature = "vector4")]
 use na::Vector4;
+#[cfg(feature = "vectord")]
 use na::DVector;
+#[cfg(feature = "matrix1")]
 use na::Matrix1;
+#[cfg(feature = "matrix2")]
 use na::Matrix2;
+#[cfg(feature = "matrix3")]
 use na::Matrix3;
+#[cfg(feature = "matrix4")]
 use na::Matrix4;
+#[cfg(feature = "matrix2x3")]
 use na::Matrix2x3;
+#[cfg(feature = "matrix3x2")]
 use na::Matrix3x2;
+#[cfg(feature = "matrixd")]
 use na::DMatrix;
+#[cfg(feature = "row_vector2")]
 use na::RowVector2;
+#[cfg(feature = "row_vector3")]
 use na::RowVector3;
+#[cfg(feature = "row_vector4")]
 use na::RowVector4;
+#[cfg(feature = "row_vectord")]
 use na::RowDVector;
 
 use std::ops::*;
-use std::fmt::Debug;
+use std::fmt::{Display, Debug};
 use std::marker::PhantomData;
 
 pub mod trig;
