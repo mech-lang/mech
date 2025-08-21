@@ -34,10 +34,15 @@ macro_rules! impl_col_access_fxn {
 macro_rules! impl_col_access_fxn_shapes {
   ($type:ident) => {
     paste!{
+      #[cfg(feature = "matrix1")]
       impl_col_access_fxn!([<TableAccessCol $type:camel M1>], Matrix1, [<$type>]);
+      #[cfg(feature = "vector2")]
       impl_col_access_fxn!([<TableAccessCol $type:camel V2>], Vector2, [<$type>]);
+      #[cfg(feature = "vector3")]
       impl_col_access_fxn!([<TableAccessCol $type:camel V3>], Vector3, [<$type>]);
+      #[cfg(feature = "vector4")]
       impl_col_access_fxn!([<TableAccessCol $type:camel V4>], Vector4, [<$type>]);
+      #[cfg(feature = "vectord")]
       impl_col_access_fxn!([<TableAccessCol $type:camel VD>], DVector, [<$type>]);
     }
   }
