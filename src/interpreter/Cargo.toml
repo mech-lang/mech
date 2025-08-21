@@ -30,10 +30,10 @@ math_default = ["math_add_assign", "math_sub_assign", "math_mul_assign", "math_d
                 "math_sin", "math_cos", "math_tan", "math_asin", "math_acos", "math_atan",
                 "math_sinh", "math_cosh", "math_tanh", "math_asinh", "math_acosh", "math_atanh",
                 "math_sec", "math_csc", "math_cot", "math_acsc", "math_asec", "math_acot",
-                "math_atan2"]
+                "math_atan2", "math_add", "math_sub", "math_mul", "math_div", "math_exp", "math_mod", "math_neg"]
 logic_default = ["logic_and", "logic_or", "logic_not", "logic_xor"]
 range_default = ["range_inclusive", "range_exclusive"]
-matrix_default = ["matrix_matmul", "matrix_transpose"] 
+matrix_default = ["matrix_matmul", "matrix_transpose", "dynamic_matrix", "fixed_row_vector", "fixed_vector"] 
 compare_default = ["compare_eq", "compare_neq", "compare_lte", "compare_lt", "compare_gt", "compare_gte"]
 stats_default = ["stats_sum"]
 io_default = ["io_print", "io_println"]

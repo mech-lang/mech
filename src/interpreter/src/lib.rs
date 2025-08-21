@@ -48,12 +48,19 @@ use crate::stdlib::horzcat::*;
 use crate::stdlib::vertcat::*;
 use mech_core::{MechError, MechErrorKind, hash_str, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 
+#[cfg(feature = "combinatorics")]
 use mech_combinatorics::*;
+#[cfg(feature = "io")]
 use mech_io::*;
+#[cfg(feature = "matrix")]
 use mech_matrix::*;
+#[cfg(feature = "stats")]
 use mech_stats::*;
+#[cfg(feature = "math")]
 use mech_math::*;
+#[cfg(feature = "logic")]
 use mech_logic::*;
+#[cfg(feature = "compare")]
 use mech_compare::*;
 #[cfg(feature = "range_inclusive")]
 use mech_range::inclusive::RangeInclusive;
