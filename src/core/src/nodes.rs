@@ -202,8 +202,11 @@ impl Program {
 #[cfg(feature = "pretty_print")]
 impl PrettyPrint for Program {
 fn pretty_print(&self) -> String {
+    #[cfg(feature = "serde")]
     let json_string = serde_json::to_string_pretty(self).unwrap();
-  
+    #[cfg(not(feature = "serde"))]
+    let json_string = "Error: Enable Serde to prettt print trees.".to_string();
+
     let depth = |line: &str|->usize{line.chars().take_while(|&c| c == ' ').count()};
     let mut result = String::new();
     let lines: Vec<&str> = json_string.lines().collect();

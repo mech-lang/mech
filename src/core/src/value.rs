@@ -1644,40 +1644,40 @@ impl PrettyPrint for Value {
       #[cfg(feature = "enum")]
       Value::Enum(x) => {return x.pretty_print();},
       #[cfg(feature = "matrix")]
-      Value::MatrixIndex(x) => {return x.pretty_print();}
-      #[cfg(feature = "matrix")]
-      Value::MatrixBool(x) => {return x.pretty_print();}
-      #[cfg(feature = "matrix")]
+      Value::MatrixIndex(x) => {return x.pretty_print();},
+      #[cfg(all(feature = "matrix", feature = "bool"))]
+      Value::MatrixBool(x) => {return x.pretty_print();},
+      #[cfg(all(feature = "matrix", feature = "u8"))]
       Value::MatrixU8(x)   => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
+      #[cfg(all(feature = "matrix", feature = "u16"))]
       Value::MatrixU16(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
+      #[cfg(all(feature = "matrix", feature = "u32"))]
       Value::MatrixU32(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
+      #[cfg(all(feature = "matrix", feature = "u64"))]
       Value::MatrixU64(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
+      #[cfg(all(feature = "matrix", feature = "u128"))]
       Value::MatrixU128(x) => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
+      #[cfg(all(feature = "matrix", feature = "i8"))]
       Value::MatrixI8(x)   => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
+      #[cfg(all(feature = "matrix", feature = "i16"))]
       Value::MatrixI16(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
+      #[cfg(all(feature = "matrix", feature = "i32"))]
       Value::MatrixI32(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
+      #[cfg(all(feature = "matrix", feature = "i64"))]
       Value::MatrixI64(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
+      #[cfg(all(feature = "matrix", feature = "i128"))]
       Value::MatrixI128(x) => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
+      #[cfg(all(feature = "matrix", feature = "f32"))]
       Value::MatrixF32(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
+      #[cfg(all(feature = "matrix", feature = "f64"))]
       Value::MatrixF64(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
+      #[cfg(all(feature = "matrix", feature = "any"))]
       Value::MatrixValue(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
+      #[cfg(all(feature = "matrix", feature = "string"))]
       Value::MatrixString(x)  => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
+      #[cfg(all(feature = "matrix", feature = "rational"))]
       Value::MatrixRationalNumber(x) => {return x.pretty_print();},
-      #[cfg(feature = "matrix")]
+      #[cfg(all(feature = "matrix", feature = "complex"))]
       Value::MatrixComplexNumber(x) => {return x.pretty_print();},
       Value::Index(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
       Value::MutableReference(x) => {return x.borrow().pretty_print();},
@@ -1685,6 +1685,9 @@ impl PrettyPrint for Value {
       Value::IndexAll => builder.push_record(vec![":"]),
       Value::Id(x) => builder.push_record(vec![format!("{}",humanize(x))]),
       Value::Kind(x) => builder.push_record(vec![format!("{}",x)]),
+      x => {
+        todo!("{x:#?}");
+      },
     };
     let value_style = Style::empty()
       .top(' ')
