@@ -83,27 +83,25 @@ use tabled::{
   Tabled,
 };
 
-pub mod value;
-#[cfg(feature = "matrix")]
-pub mod matrix;
-pub mod types;
-pub mod functions;
-pub mod kind;
 pub mod error;
+pub mod kind;
 pub mod nodes;
 pub mod structures;
-pub mod compiler;
+pub mod types;
+pub mod value;
+#[cfg(feature = "functions")]
+pub mod functions;
+pub mod program;
 
-pub use self::value::*;
-#[cfg(feature = "matrix")]
-pub use self::matrix::*;
-pub use self::types::*;
-pub use self::functions::*;
-pub use self::kind::*;
 pub use self::error::*;
+pub use self::kind::*;
 pub use self::nodes::*;
 pub use self::structures::*;
-pub use self::compiler::*;
+pub use self::types::*;
+pub use self::value::*;
+#[cfg(feature = "functions")]
+pub use self::functions::*;
+pub use self::program::*;
 
 pub fn hash_chars(input: &Vec<char>) -> u64 {
   seahash::hash(input.iter().map(|s| String::from(*s)).collect::<String>().as_bytes()) & 0x00FFFFFFFFFFFFFF
@@ -175,6 +173,7 @@ pub enum MechSourceCode {
     String(String),
     Tree(Program),
     Html(String),
+    #[cfg(feature = "compiler")]
     ByteCode(ParsedProgram),
     Program(Vec<MechSourceCode>),
 }
