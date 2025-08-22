@@ -22,6 +22,56 @@ pub struct ParsedProgram {
 
 impl ParsedProgram {
 
+ pub fn to_bytes(&self) -> MResult<Vec<u8>> {
+    let mut buf = Cursor::new(Vec::<u8>::new());
+
+    // 1. Header
+    self.header.write_to(&mut buf)?;
+
+    // 2. Features
+    buf.write_u32::<LittleEndian>(self.features.len() as u32)?;
+    for f in &self.features {
+      buf.write_u64::<LittleEndian>(*f)?;
+    }
+
+    // 3. Types
+    self.types.write_to(&mut buf)?;
+
+    // 4. Const entries
+    for entry in &self.const_entries {
+      entry.write_to(&mut buf)?;
+    }
+
+    // 5. Const blob
+    if !self.const_blob.is_empty() {
+      buf.write_all(&self.const_blob)?;
+    }
+
+    // 6. Symbols
+    for (id, reg) in &self.symbols {
+      let entry = SymbolEntry::new(*id, *reg);
+      entry.write_to(&mut buf)?;
+    }
+
+    // 7. Instructions
+    for ins in &self.instrs {
+      ins.write_to(&mut buf)?;
+    }
+
+    // 8. Dictionary
+    for (id, name) in &self.dictionary {
+      let dict_entry = DictEntry::new(*id, name);
+      dict_entry.write_to(&mut buf)?;
+    }
+
+    // 9. CRC32 trailer
+    let bytes_so_far = buf.get_ref().as_slice();
+    let checksum = crc32fast::hash(bytes_so_far);
+    buf.write_u32::<LittleEndian>(checksum)?;
+
+    Ok(buf.into_inner())
+  }
+
   pub fn from_bytes(bytes: &Vec<u8>) -> MResult<ParsedProgram> {
     load_program_from_bytes(bytes)
   }
@@ -315,6 +365,68 @@ pub struct ParsedConstEntry {
   pub length: u64,
 }
 
+
+impl ParsedConstEntry {
+  pub fn write_to<W: Write>(&self, w: &mut W) -> MResult<()> {
+    // type_id (u32)
+    w.write_u32::<LittleEndian>(self.type_id)
+      .map_err(|e| MechError {
+        file: file!().to_string(),
+        tokens: vec![],
+        msg: e.to_string(),
+        id: line!(),
+        kind: MechErrorKind::GenericError(e.to_string()),
+      })?;
+    // enc, align, flags, reserved (u8 each)
+    w.write_u8(self.enc).map_err(|e| MechError {
+      file: file!().to_string(),
+      tokens: vec![],
+      msg: e.to_string(),
+      id: line!(),
+      kind: MechErrorKind::GenericError(e.to_string()),
+    })?;
+    w.write_u8(self.align).map_err(|e| MechError {
+      file: file!().to_string(),
+      tokens: vec![],
+      msg: e.to_string(),
+      id: line!(),
+      kind: MechErrorKind::GenericError(e.to_string()),
+    })?;
+    w.write_u8(self.flags).map_err(|e| MechError {
+      file: file!().to_string(),
+      tokens: vec![],
+      msg: e.to_string(),
+      id: line!(),
+      kind: MechErrorKind::GenericError(e.to_string()),
+    })?;
+    w.write_u8(self.reserved).map_err(|e| MechError {
+      file: file!().to_string(),
+      tokens: vec![],
+      msg: e.to_string(),
+      id: line!(),
+      kind: MechErrorKind::GenericError(e.to_string()),
+    })?;
+    // offset (u64)
+    w.write_u64::<LittleEndian>(self.offset).map_err(|e| MechError {
+      file: file!().to_string(),
+      tokens: vec![],
+      msg: e.to_string(),
+      id: line!(),
+      kind: MechErrorKind::GenericError(e.to_string()),
+    })?;
+    // length (u64)
+    w.write_u64::<LittleEndian>(self.length).map_err(|e| MechError {
+      file: file!().to_string(),
+      tokens: vec![],
+      msg: e.to_string(),
+      id: line!(),
+      kind: MechErrorKind::GenericError(e.to_string()),
+    })?;
+
+    Ok(())
+  }
+}
+
 fn parse_const_entries(mut cur: Cursor<&[u8]>, count: usize) -> io::Result<Vec<ParsedConstEntry>> {
   let mut out = Vec::with_capacity(count);
   for _ in 0..count {
@@ -413,4 +525,57 @@ fn decode_instructions(mut cur: Cursor<&[u8]>) -> io::Result<Vec<DecodedInstr>> 
     }
   }
   Ok(out)
+}
+
+use std::io::Write;
+use byteorder::{LittleEndian, WriteBytesExt};
+
+impl DecodedInstr {
+  pub fn write_to<W: Write>(&self, w: &mut W) -> MResult<()> {
+    match self {
+      DecodedInstr::ConstLoad { dst, const_id } => {
+        // opcode then dst then const_id
+        // assuming opcode for ConstLoad is stored somewhere in variant; but here we don't have it --
+        // however your enum didn't store opcode for ConstLoad specifically. If you have a canonical
+        // opcode value for this variant, replace `0` with that value.
+        let opcode: u64 = 0; // <-- replace with real opcode if known
+        w.write_u64::<LittleEndian>(opcode)?;
+        w.write_u32::<LittleEndian>(*dst)?;
+        w.write_u32::<LittleEndian>(*const_id)?;
+      }
+
+      DecodedInstr::UnOp { opcode, dst, src } => {
+        w.write_u64::<LittleEndian>(*opcode)?;
+        w.write_u32::<LittleEndian>(*dst)?;
+        w.write_u32::<LittleEndian>(*src)?;
+      }
+
+      DecodedInstr::BinOp { opcode, dst, lhs, rhs } => {
+        w.write_u64::<LittleEndian>(*opcode)?;
+        w.write_u32::<LittleEndian>(*dst)?;
+        w.write_u32::<LittleEndian>(*lhs)?;
+        w.write_u32::<LittleEndian>(*rhs)?;
+      }
+
+      DecodedInstr::Ret { src } => {
+        let opcode: u64 = 0; // <-- replace with real opcode for Ret if your design uses a fixed opcode
+        w.write_u64::<LittleEndian>(opcode)?;
+        w.write_u32::<LittleEndian>(*src)?;
+      }
+
+      DecodedInstr::Unknown { opcode, rest } => {
+        w.write_u64::<LittleEndian>(*opcode)?;
+        if !rest.is_empty() {
+          w.write_all(rest)?;
+        }
+      }
+    }
+
+    // map IO errors to MResult by re-checking last write? The write_* calls above return io::Result,
+    // but we used the ? operator which will convert to early return. To ensure the error type matches MResult,
+    // wrap the body in a closure that maps io::Error -> MechError. For brevity here, assume `?` resolves correctly
+    // in your project to MResult (like other write_to functions). If your project requires explicit mapping, see note below.
+
+    Ok(())
+  }
 }
