@@ -12,8 +12,11 @@ use std::marker::PhantomData;
 #[cfg(feature = "math_ops")]
 use num_traits::*;
 
+#[cfg(feature = "access")]
 pub mod access;
+#[cfg(feature = "assign")]
 pub mod assign;
+#[cfg(feature = "convert")]
 pub mod convert;
 #[cfg(feature = "matrix")]
 pub mod horzcat;

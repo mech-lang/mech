@@ -61,6 +61,10 @@ impl Interpreter {
     self.state.borrow().symbol_table.clone()
   }
 
+  pub fn dictionary(&self) -> Ref<Dictionary> {
+    self.state.borrow().dictionary.clone()
+  }
+
   #[cfg(feature = "functions")]
   pub fn functions(&self) -> FunctionsRef {
     self.state.borrow().functions.clone()
