@@ -31,13 +31,7 @@ where
   fn to_string(&self) -> String { format!("{:#?}",self) }
 }
 #[cfg(feature = "compiler")]
-impl<F, T> MechFunctionCompiler for ConvertScalarToMat2<F, T> 
-where
-  Ref<T>: ToValue,
-  F: Debug + Scalar + Clone,
-  for<'a> &'a mut T: IntoIterator<Item = &'a mut F>,
-  T: Debug,
-{
+impl<F, T> MechFunctionCompiler for ConvertScalarToMat2<F, T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }

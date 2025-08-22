@@ -10,7 +10,7 @@ macro_rules! vertcat_one_arg {
       e0: Ref<$e0<T>>,
       out: Ref<$out<T>>,
     }
-    impl<T> MechFunction for $fxn<T>
+    impl<T> MechFunctionImpl for $fxn<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$out<T>>: ToValue
@@ -24,6 +24,9 @@ macro_rules! vertcat_one_arg {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+    #[cfg(feature = "compiler")]
+    impl<T> MechFunctionCompiler for $fxn<T> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -38,7 +41,7 @@ macro_rules! vertcat_two_args {
       e1: Ref<$e2<T>>,
       out: Ref<$out<T>>,
     }
-    impl<T> MechFunction for $fxn<T>
+    impl<T> MechFunctionImpl for $fxn<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$out<T>>: ToValue
@@ -53,6 +56,9 @@ macro_rules! vertcat_two_args {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+    #[cfg(feature = "compiler")]
+    impl<T> MechFunctionCompiler for $fxn<T> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -68,7 +74,7 @@ macro_rules! vertcat_three_args {
       e2: Ref<$e2<T>>,
       out: Ref<$out<T>>,
     }
-    impl<T> MechFunction for $fxn<T>
+    impl<T> MechFunctionImpl for $fxn<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$out<T>>: ToValue
@@ -84,6 +90,9 @@ macro_rules! vertcat_three_args {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+    #[cfg(feature = "compiler")]
+    impl<T> MechFunctionCompiler for $fxn<T> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -100,7 +109,7 @@ macro_rules! vertcat_four_args {
       e3: Ref<$e3<T>>,
       out: Ref<$out<T>>,
     }
-    impl<T> MechFunction for $fxn<T>
+    impl<T> MechFunctionImpl for $fxn<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$out<T>>: ToValue
@@ -117,6 +126,9 @@ macro_rules! vertcat_four_args {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+    #[cfg(feature = "compiler")]
+    impl<T> MechFunctionCompiler for $fxn<T> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -128,7 +140,7 @@ struct VerticalConcatenateTwoArgs<T> {
   e1: Box<dyn CopyMat<T>>,
   out: Ref<DMatrix<T>>,
 }
-impl<T> MechFunction for VerticalConcatenateTwoArgs<T>
+impl<T> MechFunctionImpl for VerticalConcatenateTwoArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DMatrix<T>>: ToValue
@@ -139,6 +151,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateTwoArgs\n{:#?}", self.out) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for VerticalConcatenateTwoArgs<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -150,7 +165,7 @@ struct VerticalConcatenateThreeArgs<T> {
   e2: Box<dyn CopyMat<T>>,
   out: Ref<DMatrix<T>>,
 }
-impl<T> MechFunction for VerticalConcatenateThreeArgs<T>
+impl<T> MechFunctionImpl for VerticalConcatenateThreeArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DMatrix<T>>: ToValue
@@ -162,6 +177,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateThreeArgs\n{:#?}", self.out) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for VerticalConcatenateThreeArgs<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -174,7 +192,7 @@ struct VerticalConcatenateFourArgs<T> {
   e3: Box<dyn CopyMat<T>>,
   out: Ref<DMatrix<T>>,
 }
-impl<T> MechFunction for VerticalConcatenateFourArgs<T>
+impl<T> MechFunctionImpl for VerticalConcatenateFourArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DMatrix<T>>: ToValue
@@ -188,6 +206,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateFourArgs\n{:#?}", self.out) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for VerticalConcatenateFourArgs<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -197,7 +218,7 @@ struct VerticalConcatenateNArgs<T> {
   e0: Vec<Box<dyn CopyMat<T>>>,
   out: Ref<DMatrix<T>>,
 }
-impl<T> MechFunction for VerticalConcatenateNArgs<T>
+impl<T> MechFunctionImpl for VerticalConcatenateNArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DMatrix<T>>: ToValue
@@ -210,6 +231,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateNArgs\n{:#?}", self.out) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for VerticalConcatenateNArgs<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -223,7 +247,7 @@ macro_rules! vertical_concatenate {
         out: Ref<[<$vec_size>]<T>>,
       }
 
-      impl<T> MechFunction for $name<T> 
+      impl<T> MechFunctionImpl for $name<T> 
       where
         T: Debug + Clone + Sync + Send + PartialEq + 'static,
         Ref<[<$vec_size>]<T>>: ToValue
@@ -231,6 +255,9 @@ macro_rules! vertical_concatenate {
         fn solve(&self) {}
         fn out(&self) -> Value { self.out.to_value() }
         fn to_string(&self) -> String { format!("{:#?}", self) }
+      }
+      #[cfg(feature = "compiler")]
+      impl<T> MechFunctionCompiler for $name<T> {
         fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
           todo!();
         }
@@ -244,7 +271,7 @@ struct VerticalConcatenateVD2<T> {
   out: Ref<DVector<T>>,
 }
 
-impl<T> MechFunction for VerticalConcatenateVD2<T> 
+impl<T> MechFunctionImpl for VerticalConcatenateVD2<T> 
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DVector<T>>: ToValue
@@ -255,6 +282,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateVD2\n{:#?}", self.out) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for VerticalConcatenateVD2<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -267,7 +297,7 @@ struct VerticalConcatenateVD3<T> {
   out: Ref<DVector<T>>,
 }
 
-impl<T> MechFunction for VerticalConcatenateVD3<T> 
+impl<T> MechFunctionImpl for VerticalConcatenateVD3<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DVector<T>>: ToValue
@@ -279,6 +309,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateVD3\n{:#?}", self.out) }
+}
+
+impl<T> MechFunctionCompiler for VerticalConcatenateVD3<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -292,7 +325,7 @@ struct VerticalConcatenateVD4<T> {
   out: Ref<DVector<T>>,
 }
 
-impl<T> MechFunction for VerticalConcatenateVD4<T> 
+impl<T> MechFunctionImpl for VerticalConcatenateVD4<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DVector<T>>: ToValue
@@ -305,6 +338,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateVD3\n{:#?}", self.out) }
+}
+
+impl<T> MechFunctionCompiler for VerticalConcatenateVD4<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -316,7 +352,7 @@ struct VerticalConcatenateVDN<T> {
   out: Ref<DVector<T>>,
 }
 
-impl<T> MechFunction for VerticalConcatenateVDN<T> 
+impl<T> MechFunctionImpl for VerticalConcatenateVDN<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DVector<T>>: ToValue
@@ -334,6 +370,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateVDN\n{:#?}", self.out) }
+}
+
+impl<T> MechFunctionCompiler for VerticalConcatenateVDN<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -346,7 +385,7 @@ struct VerticalConcatenateS1<T> {
 }
 
 #[cfg(feature = "matrix1")]
-impl<T> MechFunction for VerticalConcatenateS1<T> 
+impl<T> MechFunctionImpl for VerticalConcatenateS1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<Matrix1<T>>: ToValue
@@ -354,6 +393,10 @@ where
   fn solve(&self) {}
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "matrix1")]
+impl<T> MechFunctionCompiler for VerticalConcatenateS1<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -392,7 +435,7 @@ struct VerticalConcatenateSD<T> {
   out: Ref<DVector<T>>,
 }
 #[cfg(feature = "vectord")]
-impl<T> MechFunction for VerticalConcatenateSD<T>
+impl<T> MechFunctionImpl for VerticalConcatenateSD<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DVector<T>>: ToValue
@@ -400,6 +443,9 @@ where
   fn solve(&self) { }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for VerticalConcatenateSD<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -516,7 +562,7 @@ struct VerticalConcatenateM1M1M1M1<T> {
   out: Ref<Vector4<T>>,
 }
 #[cfg(all(feature = "matrix1", feature = "vector4"))]
-impl<T> MechFunction for VerticalConcatenateM1M1M1M1<T>
+impl<T> MechFunctionImpl for VerticalConcatenateM1M1M1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<Vector4<T>>: ToValue
@@ -536,6 +582,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for VerticalConcatenateM1M1M1M1<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }

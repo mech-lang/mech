@@ -7,12 +7,15 @@ use crate::stdlib::*;
 pub struct RecordAccessField {
   pub source: Value,
 }
-impl MechFunction for RecordAccessField {
+impl MechFunctionImpl for RecordAccessField {
   fn solve(&self) {
     ()
   }
   fn out(&self) -> Value { self.source.clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for RecordAccessField {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -57,12 +60,15 @@ pub struct RecordAccessSwizzle {
   pub source: Value,
 }
 
-impl MechFunction for RecordAccessSwizzle {
+impl MechFunctionImpl for RecordAccessSwizzle {
   fn solve(&self) {
     ()
   }
   fn out(&self) -> Value { self.source.clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for RecordAccessSwizzle {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }

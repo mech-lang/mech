@@ -519,7 +519,7 @@ macro_rules! horzcat_single {
     struct $name<T> {
       out: Ref<$shape<T>>,
     }
-    impl<T> MechFunction for $name<T>
+    impl<T> MechFunctionImpl for $name<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$shape<T>>: ToValue
@@ -529,7 +529,7 @@ macro_rules! horzcat_single {
        fn to_string(&self) -> String { format!("{:#?}", self) }
     }
     #[cfg(feature = "compiler")]
-    impl<T> MechFunctionCompiler for $fxn<T> {
+    impl<T> MechFunctionCompiler for $name<T> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }

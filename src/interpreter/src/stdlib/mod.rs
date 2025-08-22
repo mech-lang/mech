@@ -12,10 +12,10 @@ use std::marker::PhantomData;
 #[cfg(feature = "math_ops")]
 use num_traits::*;
 
-//pub mod access;
+pub mod access;
 pub mod assign;
+pub mod convert;
 #[cfg(feature = "matrix")]
 pub mod horzcat;
-//#[cfg(feature = "matrix")]
-//pub mod vertcat;
-pub mod convert;
+#[cfg(feature = "matrix")]
+pub mod vertcat;

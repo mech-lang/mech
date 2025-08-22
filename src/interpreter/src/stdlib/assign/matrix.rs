@@ -47,7 +47,7 @@ macro_rules! impl_set_all_fxn_s {
       pub sink: Ref<MatA>,
       pub _marker: PhantomData<T>,
     }
-    impl<T, R1, C1, S1, IxVec> MechFunction for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
+    impl<T, R1, C1, S1, IxVec> MechFunctionImpl for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
     where
       Ref<naMatrix<T, R1, C1, S1>>: ToValue,
       T: Scalar + Clone + Debug + Sync + Send + 'static,
@@ -64,6 +64,9 @@ macro_rules! impl_set_all_fxn_s {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+    }
+    #[cfg(feature = "compiler")]
+    impl<T, R1, C1, S1, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -81,7 +84,7 @@ macro_rules! impl_set_all_fxn_v {
     }
 
     impl<T, R1, C1, S1, R2, C2, S2, IxVec>
-      MechFunction for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
+      MechFunctionImpl for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
     where
       Ref<naMatrix<T, R1, C1, S1>>: ToValue,
       T: Scalar + Clone + Debug + Sync + Send + 'static,
@@ -99,6 +102,9 @@ macro_rules! impl_set_all_fxn_v {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+    }
+    #[cfg(feature = "compiler")]
+    impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -122,7 +128,7 @@ macro_rules! impl_set_fxn_s {
       pub sink: Ref<MatA>,
       pub _marker: PhantomData<T>,
     }
-    impl<T, R, C, S> MechFunction for $struct_name<T, naMatrix<T, R, C, S>>
+    impl<T, R, C, S> MechFunctionImpl for $struct_name<T, naMatrix<T, R, C, S>>
     where
       Ref<naMatrix<T, R, C, S>>: ToValue,
       T: Scalar + Clone + Debug + Sync + Send + 'static,
@@ -140,6 +146,9 @@ macro_rules! impl_set_fxn_s {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+    }
+    #[cfg(feature = "compiler")]
+    impl<T, R, C, S> MechFunctionCompiler for $struct_name<T, naMatrix<T, R, C, S>> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -154,7 +163,7 @@ pub struct Set1DSB<T, MatA> {
   pub sink: Ref<MatA>,
   pub _marker: PhantomData<T>,
 }
-impl<T, R, C, S> MechFunction for Set1DSB<T, naMatrix<T, R, C, S>>
+impl<T, R, C, S> MechFunctionImpl for Set1DSB<T, naMatrix<T, R, C, S>>
 where
   Ref<naMatrix<T, R, C, S>>: ToValue,
   T: Scalar + Clone + Debug + Sync + Send + 'static,
@@ -176,6 +185,9 @@ where
   }
   fn out(&self) -> Value {self.sink.to_value()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
+}
+#[cfg(feature = "compiler")]
+impl<T, R, C, S> MechFunctionCompiler for Set1DSB<T, naMatrix<T, R, C, S>> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -362,7 +374,7 @@ pub struct Set1DA<T, Sink> {
   pub _marker: PhantomData<T>,
 }
 
-impl<T, R, C, S> MechFunction for Set1DA<T, naMatrix<T, R, C, S>>
+impl<T, R, C, S> MechFunctionImpl for Set1DA<T, naMatrix<T, R, C, S>>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   R: Dim,
@@ -382,6 +394,9 @@ where
   }
   fn out(&self) -> Value {self.sink.to_value()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
+}
+#[cfg(feature = "compiler")]
+impl<T, R, C, S> MechFunctionCompiler for Set1DA<T, naMatrix<T, R, C, S>> { 
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -466,7 +481,7 @@ macro_rules! impl_set_scalar_scalar_fxn {
       ixes: (Ref<usize>,Ref<usize>),
       sink: Ref<$matrix_shape<T>>,
     }
-    impl<T> MechFunction for $struct_name<T>
+    impl<T> MechFunctionImpl for $struct_name<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$matrix_shape<T>>: ToValue
@@ -483,6 +498,9 @@ macro_rules! impl_set_scalar_scalar_fxn {
       }
       fn out(&self) -> Value { self.sink.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+    #[cfg(feature = "compiler")]
+    impl<T> MechFunctionCompiler for $struct_name<T> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -581,7 +599,7 @@ macro_rules! impl_set_scalar_fxn_v {
     }
 
     impl<T, R1, C1, S1, R2, C2, S2>
-      MechFunction for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>>
+      MechFunctionImpl for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>>
     where
       Ref<naMatrix<T, R1, C1, S1>>: ToValue,
       T: Scalar + Clone + Debug + Sync + Send + 'static,
@@ -598,6 +616,9 @@ macro_rules! impl_set_scalar_fxn_v {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+    }
+    #[cfg(feature = "compiler")] 
+    impl<T, R1, C1, S1, R2, C2, S2> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -681,7 +702,7 @@ macro_rules! impl_set_scalar_all_fxn {
       ix: Ref<usize>,
       sink: Ref<$matrix_shape<T>>,
     }
-    impl<T> MechFunction for $struct_name<T>
+    impl<T> MechFunctionImpl for $struct_name<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$matrix_shape<T>>: ToValue
@@ -696,6 +717,9 @@ macro_rules! impl_set_scalar_all_fxn {
       }
       fn out(&self) -> Value { self.sink.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+    #[cfg(feature = "compiler")]
+    impl<T> MechFunctionCompiler for $struct_name<T> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -790,7 +814,7 @@ macro_rules! impl_set_range_scalar_fxn {
       ixes: (Ref<DVector<$ix_type>>,Ref<usize>),
       sink: Ref<$matrix_shape<T>>,
     }
-    impl<T> MechFunction for $struct_name<T>
+    impl<T> MechFunctionImpl for $struct_name<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$matrix_shape<T>>: ToValue
@@ -807,6 +831,9 @@ macro_rules! impl_set_range_scalar_fxn {
       }
       fn out(&self) -> Value { self.sink.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+    #[cfg(feature = "compiler")]
+    impl<T> MechFunctionCompiler for $struct_name<T> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -906,7 +933,7 @@ pub struct Set2DSR<T, MatA, IxVec> {
   pub _marker: PhantomData<T>,
 }
 
-impl<T, R, C, S, IxVec> MechFunction for Set2DSR<T, na::Matrix<T, R, C, S>, IxVec>
+impl<T, R, C, S, IxVec> MechFunctionImpl for Set2DSR<T, na::Matrix<T, R, C, S>, IxVec>
 where
   Ref<na::Matrix<T, R, C, S>>: ToValue,
   T: Scalar + Clone + Debug + Sync + Send + 'static,
@@ -929,6 +956,9 @@ where
   }
   fn out(&self) -> Value {self.sink.to_value()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
+}
+#[cfg(feature = "compiler")]
+impl<T, R, C, S, IxVec> MechFunctionCompiler for Set2DSR<T, na::Matrix<T, R, C, S>, IxVec> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -942,7 +972,7 @@ pub struct Set2DSRB<T, MatA, IxVec> {
   pub _marker: PhantomData<T>,
 }
 
-impl<T, R, C, S, IxVec> MechFunction for Set2DSRB<T, na::Matrix<T, R, C, S>, IxVec>
+impl<T, R, C, S, IxVec> MechFunctionImpl for Set2DSRB<T, na::Matrix<T, R, C, S>, IxVec>
 where
   Ref<na::Matrix<T, R, C, S>>: ToValue,
   T: Scalar + Clone + Debug + Sync + Send + 'static,
@@ -966,6 +996,9 @@ where
   }
   fn out(&self) -> Value {self.sink.to_value()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
+}
+#[cfg(feature = "compiler")]
+impl<T, R, C, S, IxVec> MechFunctionCompiler for Set2DSRB<T, na::Matrix<T, R, C, S>, IxVec> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1048,7 +1081,7 @@ pub struct Set2DRRS<T, MatA, IxVec1, IxVec2> {
   pub _marker: PhantomData<T>,
 }
 
-impl<T, R, C, S, IxVec1, IxVec2> MechFunction for Set2DRRS<T, na::Matrix<T, R, C, S>, IxVec1, IxVec2>
+impl<T, R, C, S, IxVec1, IxVec2> MechFunctionImpl for Set2DRRS<T, na::Matrix<T, R, C, S>, IxVec1, IxVec2>
 where
   Ref<na::Matrix<T, R, C, S>>: ToValue,
   T: Scalar + Clone + Debug + Sync + Send + 'static,
@@ -1074,6 +1107,9 @@ where
   }
   fn out(&self) -> Value {self.sink.to_value()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
+}
+#[cfg(feature = "compiler")]
+impl<T, R, C, S, IxVec1, IxVec2> MechFunctionCompiler for Set2DRRS<T, na::Matrix<T, R, C, S>, IxVec1, IxVec2> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1087,7 +1123,7 @@ pub struct Set2DRRSB<T, MatA, IxVec1, IxVec2> {
   pub _marker: PhantomData<T>,
 }
 
-impl<T, R, C, S, IxVec1, IxVec2> MechFunction for Set2DRRSB<T, na::Matrix<T, R, C, S>, IxVec1, IxVec2>
+impl<T, R, C, S, IxVec1, IxVec2> MechFunctionImpl for Set2DRRSB<T, na::Matrix<T, R, C, S>, IxVec1, IxVec2>
 where
   Ref<na::Matrix<T, R, C, S>>: ToValue,
   T: Scalar + Clone + Debug + Sync + Send + 'static,
@@ -1115,6 +1151,8 @@ where
   }
   fn out(&self) -> Value {self.sink.to_value()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
+}
+impl<T, R, C, S, IxVec1, IxVec2> MechFunctionCompiler for Set2DRRSB<T, na::Matrix<T, R, C, S>, IxVec1, IxVec2> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1165,6 +1203,7 @@ macro_rules! impl_set_range_range_match_arms {
 fn impl_set_range_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
   impl_set_match_arms!(Set2DRR, range_range, (sink, ixes.as_slice(), source))
 }
+
 pub struct MatrixSetRangeRange {}
 impl NativeFunctionCompiler for MatrixSetRangeRange {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {

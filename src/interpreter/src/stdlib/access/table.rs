@@ -11,7 +11,7 @@ macro_rules! impl_col_access_fxn {
       source: Matrix<Value>,
       out: Ref<$vector_size<$out_type>>,
     }
-    impl MechFunction for $fxn_name {
+    impl MechFunctionImpl for $fxn_name {
       fn solve(&self) {
         let out_ptr = self.out.as_mut_ptr();
         unsafe { 
@@ -24,6 +24,9 @@ macro_rules! impl_col_access_fxn {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+    #[cfg(feature = "compiler")]
+    impl MechFunctionCompiler for $fxn_name {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -160,12 +163,15 @@ pub struct TableAccessSwizzle {
   pub out: Value,
 }
 
-impl MechFunction for TableAccessSwizzle {
+impl MechFunctionImpl for TableAccessSwizzle {
   fn solve(&self) {
     ()
   }
   fn out(&self) -> Value { self.out.clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for TableAccessSwizzle {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -180,7 +186,7 @@ pub struct TableAccessScalarF {
   pub out: Ref<MechRecord>,
 }
 
-impl MechFunction for TableAccessScalarF {
+impl MechFunctionImpl for TableAccessScalarF {
   fn solve(&self) {
     let table = self.source.borrow();
     let mut record = self.out.borrow_mut();
@@ -192,6 +198,9 @@ impl MechFunction for TableAccessScalarF {
   }
   fn out(&self) -> Value { Value::Record(self.out.clone()) }
   fn to_string(&self) -> String {format!("{:#?}", self)}
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for TableAccessScalarF {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -243,7 +252,7 @@ pub struct TableAccessRangeIndex {
   pub out: Ref<MechTable>,
 }
 
-impl MechFunction for TableAccessRangeIndex {
+impl MechFunctionImpl for TableAccessRangeIndex {
   fn solve(&self) {
     let table = self.source.borrow();
     let mut out_table = self.out.borrow_mut();
@@ -259,6 +268,9 @@ impl MechFunction for TableAccessRangeIndex {
   }
   fn out(&self) -> Value { Value::Table(self.out.clone()) }
   fn to_string(&self) -> String {format!("{:#?}", self)}
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for TableAccessRangeIndex {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -271,7 +283,7 @@ pub struct TableAccessRangeBool {
   pub out: Ref<MechTable>,
 }
 
-impl MechFunction for TableAccessRangeBool {
+impl MechFunctionImpl for TableAccessRangeBool {
   fn solve(&self) {
     let table = self.source.borrow();
     let ix_brrw = self.ix.borrow();
@@ -299,6 +311,9 @@ impl MechFunction for TableAccessRangeBool {
   }
   fn out(&self) -> Value { Value::Table(self.out.clone()) }
   fn to_string(&self) -> String {format!("{:#?}", self)}
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for TableAccessRangeBool {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
