@@ -188,6 +188,7 @@ async fn main() -> Result<(), MechError> {
       server.serve().await?;
     }    
   }
+  
   // --------------------------------------------------------------------------
   // build
   // --------------------------------------------------------------------------
@@ -296,6 +297,9 @@ async fn main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   // Run
   // --------------------------------------------------------------------------
+  let mut caught_inturrupts = Arc::new(Mutex::new(0));
+  let uuid = generate_uuid();
+  let mut intrp = Interpreter::new(uuid);
   #[cfg(feature = "run")]
   {
     let mut paths = if let Some(m) = matches.get_many::<String>("mech_paths") {
@@ -307,9 +311,6 @@ async fn main() -> Result<(), MechError> {
     for p in paths {
       mechfs.watch_source(&p)?;
     }
-
-    let uuid = generate_uuid();
-    let mut intrp = Interpreter::new(uuid);
 
     let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag); 
     
@@ -329,8 +330,6 @@ async fn main() -> Result<(), MechError> {
     if !repl_flag {
       return return_value;
     }
-
-    let mut repl = MechRepl::from(intrp);
     
     #[cfg(windows)]
     control::set_virtual_terminal(true).unwrap();
@@ -343,7 +342,6 @@ async fn main() -> Result<(), MechError> {
     println!("Enter \":help\" for a list of all commands.\n");
 
     // Catch Ctrl-C a couple times before quitting
-    let mut caught_inturrupts = Arc::new(Mutex::new(0));
     let mut ci = caught_inturrupts.clone();
     ctrlc::set_handler(move || {
       println!("[Ctrl+C]");
@@ -357,9 +355,12 @@ async fn main() -> Result<(), MechError> {
       print_prompt();
     }).expect("Error setting Ctrl-C handler");
   }
+
   // --------------------------------------------------------------------------
   // REPL
   // --------------------------------------------------------------------------
+  #[cfg(feature = "repl")]
+  let mut repl = MechRepl::from(intrp);
   #[cfg(feature = "repl")]
   'REPL: loop {
     {

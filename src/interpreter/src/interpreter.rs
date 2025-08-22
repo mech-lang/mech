@@ -91,13 +91,6 @@ impl Interpreter {
     syms.pretty_print()
   }
 
-  #[cfg(feature = "symbol_table")]
-  pub fn dictionary(&self) -> Ref<Dictionary> {
-    let state = &self.state.borrow();
-    let syms = state.symbol_table.borrow();
-    syms.dictionary.clone()
-  }
-
   #[cfg(feature = "functions")]
   pub fn step(&mut self, steps: u64) -> &Value {
     let state_brrw = self.state.borrow();
