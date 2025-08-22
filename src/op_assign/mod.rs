@@ -38,7 +38,7 @@ macro_rules! impl_op_assign_range_fxn_s {
       pub sink: Ref<MatA>,
       pub _marker: PhantomData<T>,
     }
-    impl<T, R1, C1, S1, IxVec> MechFunction for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
+    impl<T, R1, C1, S1, IxVec> MechFunctionImpl for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
     where
       Ref<naMatrix<T, R1, C1, S1>>: ToValue,
       T: Copy + Debug + Clone + Sync + Send + 'static +
@@ -61,6 +61,8 @@ macro_rules! impl_op_assign_range_fxn_s {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+    }
+    impl<T, R1, C1, S1, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -79,7 +81,7 @@ macro_rules! impl_op_assign_range_fxn_v {
     }
 
     impl<T, R1, C1, S1, R2, C2, S2, IxVec>
-      MechFunction for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
+      MechFunctionImpl for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
     where
       Ref<naMatrix<T, R1, C1, S1>>: ToValue,
       T: Copy + Debug + Clone + Sync + Send + 'static +
@@ -103,6 +105,8 @@ macro_rules! impl_op_assign_range_fxn_v {
       }
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
+    }
+    impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -163,7 +167,7 @@ macro_rules! impl_assign_scalar_scalar {
         source: Ref<T>,
       }
 
-      impl<T> MechFunction for [<$op_name AssignSS>]<T>
+      impl<T> MechFunctionImpl for [<$op_name AssignSS>]<T>
       where
         T: Debug + Clone + Sync + Send + 'static +
            $op_name<Output = T> + [<$op_name Assign>] +
@@ -179,6 +183,8 @@ macro_rules! impl_assign_scalar_scalar {
         }
         fn out(&self) -> Value { self.sink.to_value() }
         fn to_string(&self) -> String { format!("{:#?}", self) }
+      }
+      impl<T> MechFunctionCompiler for [<$op_name AssignSS>]<T> {
         fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
           todo!();
         }
@@ -198,7 +204,7 @@ macro_rules! impl_assign_vector_vector {
         _marker: PhantomData<T>,
       }
 
-      impl<T, MatA, MatB> MechFunction for [<$op_name AssignVV>]<T, MatA, MatB>
+      impl<T, MatA, MatB> MechFunctionImpl for [<$op_name AssignVV>]<T, MatA, MatB>
       where
         Ref<MatA>: ToValue,
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>],
@@ -221,6 +227,8 @@ macro_rules! impl_assign_vector_vector {
         }
         fn out(&self) -> Value {self.sink.to_value()}
         fn to_string(&self) -> String {format!("{:#?}", self)}
+      }
+      impl<T, MatA, MatB> MechFunctionCompiler for [<$op_name AssignVV>]<T, MatA, MatB> {
         fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
           todo!();
         }
