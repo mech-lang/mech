@@ -30,3 +30,20 @@ pub struct ProgramState {
   pub enums: EnumTable,
   pub dictionary: Ref<Dictionary>,
 }
+
+impl ProgramState {
+  pub fn new() -> Self {
+    Self {
+      #[cfg(feature = "symbol_table")]
+      symbol_table: SymbolTable::new(),
+      #[cfg(feature = "functions")]
+      functions: Ref::new(Functions::new()),
+      #[cfg(feature = "functions")]
+      plan: Plan::new(),
+      kinds: KindTable::new(),
+      #[cfg(feature = "enum")]
+      enums: EnumTable::new(),
+      dictionary: Ref::new(Dictionary::new()),
+    }
+  }
+}
