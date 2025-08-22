@@ -17,10 +17,6 @@ pub use self::scalar_to_mat::*;
 #[cfg(feature = "matrix")]
 pub use self::mat_to_mat::*;
 
-pub trait LosslessInto<T> {
-  fn lossless_into(self) -> T;
-}
-
 macro_rules! lossless_into {
   ($from_type:ty) => {
     impl LosslessInto<String> for $from_type {
@@ -432,11 +428,6 @@ impl LosslessInto<String> for ComplexNumber {
   fn lossless_into(self) -> String {
     self.pretty_print()
   }
-}
-
-
-pub trait LossyFrom<T> {
-  fn lossy_from(value: T) -> Self;
 }
 
 macro_rules! impl_lossy_from {

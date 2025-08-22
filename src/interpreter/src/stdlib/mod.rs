@@ -19,3 +19,11 @@ pub mod convert;
 pub mod horzcat;
 #[cfg(feature = "matrix")]
 pub mod vertcat;
+
+pub trait LosslessInto<T> {
+  fn lossless_into(self) -> T;
+}
+
+pub trait LossyFrom<T> {
+  fn lossy_from(value: T) -> Self;
+}

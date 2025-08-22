@@ -97,7 +97,7 @@ record = ["indexmap", "tuple", "mech-core/record"]
 atom = ["mech-core/atom"]
 
 # Matrix
-matrix = ["nalgebra", "mech-core/matrix"]
+matrix = ["nalgebra", "mech-core/matrix", "matrix_horzcat", "matrix_vertcat"]
 fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2", "mech-core/fixed_row_vector"]
 fixed_vector = ["vector4", "vector3", "vector2", "mech-core/fixed_vector"]
 fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "mech-core/fixed_matrix"]
@@ -173,6 +173,11 @@ div = ["ops", "mech-math/div"]
 exp = ["ops", "mech-math/exp"]
 mod = ["ops", "mech-math/mod"]
 neg = ["ops", "mech-math/neg"]
+
+# Horzcat and Vertcat
+
+matrix_horzcat = ["matrix"]
+matrix_vertcat = ["matrix"]
 
 [dependencies]
 mech-core = { version = "0.2.57", default-features = false }

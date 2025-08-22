@@ -34,7 +34,7 @@ use mech_core::F32;
 use mech_core::ComplexNumber;
 #[cfg(feature = "rational")]
 use mech_core::RationalNumber;
-#[cfg(feature = "functions")]
+#[cfg(feature = "stdlib")]
 use crate::stdlib::{
                     access::*,
                     assign::*,
@@ -42,9 +42,9 @@ use crate::stdlib::{
                   };
 #[cfg(feature = "functions")]
 use crate::functions::*;
-#[cfg(feature = "matrix")]
+#[cfg(feature = "matrix_horzcat")]
 use crate::stdlib::horzcat::*;
-#[cfg(feature = "matrix")]
+#[cfg(feature = "matrix_vertcat")]
 use crate::stdlib::vertcat::*;
 use mech_core::{MechError, MechErrorKind, hash_str, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 
@@ -77,7 +77,6 @@ use indexmap::map::IndexMap;
 pub mod literals;
 pub mod structures;
 pub mod interpreter;
-#[cfg(feature = "stdlib")]
 pub mod stdlib;
 #[cfg(feature = "functions")]
 pub mod functions;
