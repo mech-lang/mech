@@ -20,7 +20,7 @@ pub type EnumTable = HashMap<u64, MechEnum>;
 
 pub struct ProgramState {
   #[cfg(feature = "symbol_table")]
-  pub symbol_table: SymbolTable,
+  pub symbol_table: SymbolTableRef,
   #[cfg(feature = "functions")]
   pub functions: FunctionsRef,
   #[cfg(feature = "functions")]
@@ -35,7 +35,7 @@ impl ProgramState {
   pub fn new() -> Self {
     Self {
       #[cfg(feature = "symbol_table")]
-      symbol_table: SymbolTable::new(),
+      symbol_table: Ref::new(SymbolTable::new()),
       #[cfg(feature = "functions")]
       functions: Ref::new(Functions::new()),
       #[cfg(feature = "functions")]

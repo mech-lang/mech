@@ -20,11 +20,11 @@ maintenance = { status = "actively-developed" }
 [features]
 no_std = ["rlibc", "hashbrown", "embedded-io", "fxhash"]
 
-default = ["stdlib", "pretty_print", "serde", "compiler"]
-
-pretty_print = ["tabled", "serde_json"]
-serde = ["brotli", "base64", "serde_derive", "serde_json", "bincode", "indexmap/serde", "bincode/serde", "dep:serde"]
-compiler = ["crc32fast", "byteorder"]
+default = ["stdlib", "pretty_print", "serde", "compiler",
+            "statements_default", "subscript_default",
+          ]
+statements_default = ["variable_assign","variable_define","kind_define"]
+subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
 
 stdlib = ["bool", "string", 
           "u8", "u16", "u32", "u64", "u128", 
@@ -35,22 +35,37 @@ stdlib = ["bool", "string",
           "row_vector2", "row_vector3", "row_vector4",
           "vector2", "vector3", "vector4",
           "row_vectord", "vectord", "matrixd",
-          "subscript_range", "logical_indexing",
-          "functions"
+          "subscript_range", "logical_indexing", "swizzle",
+          "subscript_formula", "dot_indexing",
+          "variable_define", "variable_assign", "kind_define",
+          "kind_annotation", "variables",
+          "functions", "formulas"
         ]
 
-symbol_table = []
+compiler = ["crc32fast", "byteorder"]
+pretty_print = ["tabled", "serde_json"]
+serde = ["brotli", "base64", "serde_derive", "serde_json", "bincode", "indexmap/serde", "bincode/serde", "dep:serde"]
+
+statements = []
+variables = ["variable_define", "symbol_table"]
+variable_define = ["statements"]
+variable_assign = ["statements"]
+kind_define = ["kind_annotation", "statements"]
+kind_annotation = ["functions"]
+formulas = []
 functions = ["indexmap","symbol_table"]
+symbol_table = []
 
 bool = []
 string = []
 
+# Numbers
 numbers = []
-complex = ["f64", "nalgebra", "num-traits","numbers"]
-rational = ["i64", "num-rational", "num-traits","numbers"]
+complex = ["num-traits", "dep:nalgebra", "f64", "numbers"]
+rational = ["num-traits", "num-rational", "i64", "numbers"]
 signed_ints = ["numbers"]
 unsigned_ints = ["numbers"]
-floats = ["num-traits","numbers"]
+floats = ["num-traits", "numbers"]
 u8 = ["unsigned_ints"]
 u16 = ["unsigned_ints"]
 u32 = ["unsigned_ints"]
@@ -65,15 +80,20 @@ f32 = ["floats"]
 f64 = ["floats"]
 c64 = ["complex"]
 r64 = ["rational"]
+
+math_exp = ["libm", "num-traits"]
+
+# Structs
 set = ["indexmap"]
 map = ["indexmap"]
-table = ["vectord", "indexmap", "record"]
+table = ["indexmap", "vectord", "record"]
 tuple = []
 enum = []
 record = ["indexmap", "tuple"]
 atom = []
 
-matrix = ["nalgebra"]
+# Matrix
+matrix = ["dep:nalgebra"]
 fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2"]
 fixed_vector = ["vector4", "vector3", "vector2"]
 fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2"]
@@ -90,15 +110,18 @@ matrix2 = ["dynamic_matrix","matrix"]
 matrix1 = ["dynamic_matrix","matrix"]
 matrix2x3 = ["dynamic_matrix","matrix"]
 matrix3x2 = ["dynamic_matrix","matrix"]
-row_vectord =["matrix", "dynamic_matrix"]
-vectord = ["matrix", "dynamic_matrix"]
-matrixd = ["matrix", "dynamic_matrix"]
+row_vectord =["dynamic_matrix", "matrix"]
+vectord = ["dynamic_matrix", "matrix"]
+matrixd = ["dynamic_matrix", "matrix"]
 
-math_exp = ["libm", "num-traits"]
-
+# Subscripts
 subscript = []
-subscript_range = ["subscript","vectord"]
+subscript_slice = ["subscript", "vectord"]
+subscript_range = ["subscript_slice","vectord"]
+subscript_formula = ["subscript_slice","formulas"]
 logical_indexing = ["subscript","vectord","bool"]
+dot_indexing = ["subscript"]
+swizzle = ["subscript"]
 
 [dependencies]
 seahash = "4.1.0"

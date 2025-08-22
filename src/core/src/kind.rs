@@ -25,13 +25,13 @@ pub enum Kind {
 
 impl Kind {
 
-  #[cfg(feature = "functions")]
+  #[cfg(feature = "kind_annotation")]
   pub fn to_value(&self, kinds: &KindTable) -> MResult<Value> {
     let value_kind = self.to_value_kind(kinds)?;
     Ok(Value::Kind(value_kind))
   }
 
-  #[cfg(feature = "functions")]
+  #[cfg(feature = "kind_annotation")]
   pub fn to_value_kind(&self, kinds: &KindTable) -> MResult<ValueKind> {
     match self {
       Kind::Any => Ok(ValueKind::Any),
