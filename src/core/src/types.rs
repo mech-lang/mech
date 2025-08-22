@@ -1,14 +1,31 @@
-use crate::value::*;
 use crate::*;
+use crate::value::*;
 use crate::nodes::*;
 
-use std::cell::RefCell;
-use std::rc::Rc;
+#[cfg(feature = "no_std")]
+use core::ops::*;
+#[cfg(not(feature = "no_std"))]
 use std::ops::*;
+
+#[cfg(feature = "no_std")]
+use core::cell::RefCell;
+#[cfg(not(feature = "no_std"))]
+use std::cell::RefCell;
+
+#[cfg(feature = "no_std")]
+use alloc::rc::Rc; 
+#[cfg(not(feature = "no_std"))]
+use std::rc::Rc;
+
+#[cfg(feature = "no_std")]
+use core::num::FpCategory;
+#[cfg(not(feature = "no_std"))]
+use std::num::FpCategory;
+
+#[cfg(not(feature = "no_std"))]
 use std::iter::Step;
+
 use paste::paste;
-use std::fmt::Debug;
-use std::hash::{Hash, Hasher};
 #[cfg(feature = "math_exp")]
 use num_traits::Pow;
 #[cfg(any(feature = "f64", feature = "f32", feature = "complex", feature = "rational"))]
@@ -34,12 +51,17 @@ impl<T> Clone for Ref<T> {
   }
 }
 
+#[cfg(feature = "no_std")]
+use core::cell;
+#[cfg(not(feature = "no_std"))]
+use std::cell;
+
 impl<T> Ref<T> {
   pub fn new(item: T) -> Self { Ref(Rc::new(RefCell::new(item))) }
   pub fn as_ptr(&self) -> *const T { self.0.as_ptr() }
   pub fn as_mut_ptr(&self) -> *mut T { self.0.as_ptr() as *mut T }
-  pub fn borrow(&self) -> std::cell::Ref<'_, T> { self.0.borrow() }
-  pub fn borrow_mut(&self) -> std::cell::RefMut<'_, T> { self.0.borrow_mut() }
+  pub fn borrow(&self) -> cell::Ref<'_, T> { self.0.borrow() }
+  pub fn borrow_mut(&self) -> cell::RefMut<'_, T> { self.0.borrow_mut() }
   pub fn addr(&self) -> usize { Rc::as_ptr(&self.0) as *const () as usize }
   pub fn id(&self) -> u64 { Rc::as_ptr(&self.0) as *const () as u64 }
 }
@@ -53,7 +75,6 @@ impl<T: PartialEq> Eq for Ref<T> {}
 
 pub type MutableReference = Ref<Value>;
 pub type ValRef = Ref<Value>;
-use std::num::FpCategory;
 
 //pub type Ref<T> = Rc<RefCell<T>>;
 //pub fn Ref::new<T>(item: T) -> Rc<RefCell<T>> {

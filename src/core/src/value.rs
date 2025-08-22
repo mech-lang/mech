@@ -6,6 +6,10 @@ use crate::matrix::Matrix;
 use crate::types::ComplexNumber;
 #[cfg(feature = "rational")]
 use num_rational::Rational64;
+
+#[cfg(feature = "no_std")]
+use core::mem;
+#[cfg(not(feature = "no_std"))]
 use std::mem;
 
 #[cfg(feature = "matrix")]
@@ -62,8 +66,8 @@ pub enum ValueKind {
   Option(Box<ValueKind>),
 }
 
-impl std::fmt::Display for ValueKind {
-  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl Display for ValueKind {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       ValueKind::RationalNumber => write!(f, "r64"),
       ValueKind::ComplexNumber => write!(f, "c64"),
@@ -418,8 +422,8 @@ impl fmt::Display for Value {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     if cfg!(feature = "pretty_print") {
       #[cfg(feature = "pretty_print")]
-      return self.pretty_print().fmt(f);
-      "".to_string().fmt(f) // kind of a hack to assuage the compiler
+      return fmt::Display::fmt(&self.pretty_print(), f);
+      fmt::Display::fmt(&"".to_string(), f) // kind of a hack to assuage the compiler
     } else {
       write!(f, "{:?}", self)
     }

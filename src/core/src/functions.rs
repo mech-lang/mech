@@ -73,8 +73,8 @@ impl fmt::Debug for FunctionDefinition {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     if cfg!(feature = "pretty_print") {
       #[cfg(feature = "pretty_print")]
-      return self.pretty_print().fmt(f);
-      "".to_string().fmt(f)
+      return fmt::Display::fmt(&self.pretty_print(), f);
+      fmt::Display::fmt(&"".to_string(), f)
     } else {
       write!(f, "FunctionDefinition {{ id: {}, name: {}, input: {:?}, output: {:?}, symbols: {:?} }}", 
       self.id, self.name, self.input, self.output, self.symbols.borrow())

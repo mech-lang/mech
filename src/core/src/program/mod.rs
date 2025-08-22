@@ -18,7 +18,6 @@ pub type KindTable = HashMap<u64, ValueKind>;
 #[cfg(feature = "enum")]
 pub type EnumTable = HashMap<u64, MechEnum>;
 
-#[derive(Clone)]
 pub struct ProgramState {
   #[cfg(feature = "symbol_table")]
   pub symbol_table: SymbolTable,

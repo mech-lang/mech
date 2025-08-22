@@ -1,9 +1,8 @@
-use std::cmp::Ordering;
 use crate::*; 
-use std::fmt;
-use std::io::{Write, Cursor, Read};
-use std::hash::Hash;
-use std::hash::Hasher;
+#[cfg(feature = "no_std")]
+use core::cmp::Ordering;
+#[cfg(not(feature = "no_std"))] 
+use std::cmp::Ordering;
 
 #[cfg(feature = "serde")]
 pub fn compress_and_encode<T: serde::Serialize>(tree: &T) -> Result<String, Box<dyn std::error::Error>> {
@@ -1162,6 +1161,9 @@ pub struct KindAnnotation {
 impl KindAnnotation {
 
   pub fn hash(&self) -> u64 {
+    #[cfg(feature = "no_std")]
+    let mut hasher = FxHasher::default();
+    #[cfg(not(feature = "no_std"))]
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     self.kind.hash(&mut hasher);
     hasher.finish()

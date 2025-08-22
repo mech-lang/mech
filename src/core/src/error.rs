@@ -1,10 +1,9 @@
-// # Errors
+use crate::*;
+
+// Errors
+// ----------------------------------------------------------------------------
 
 // Defines a struct for errors and an enum which enumerates the error types
-
-// ## Prelude
-use crate::*;
-use std::fmt;
 
 type Rows = usize;
 type Cols = usize;
@@ -81,6 +80,7 @@ pub enum MechErrorKind {
   None,
 }
 
+#[cfg(not(feature = "no_std"))]
 impl From<std::io::Error> for MechError{ 
   fn from(n: std::io::Error) -> MechError{ 
     MechError{ 
@@ -91,6 +91,19 @@ impl From<std::io::Error> for MechError{
       msg: n.to_string(),
     }
   } 
+}
+
+#[cfg(feature = "no_std")]
+impl From<()> for MechError {
+  fn from(_: ()) -> Self {
+    MechError {
+      id: line!(),
+      file: file!().to_string(),
+      tokens: Vec::new(),
+      kind: MechErrorKind::IoError,
+      msg: "embedded-io error".into(),
+    }
+  }
 }
 
 /*

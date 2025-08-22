@@ -1,46 +1,65 @@
+#![cfg_attr(feature = "no_std", no_std)]
 #![feature(get_mut_unchecked)]
 #![allow(warnings)]
 #![feature(iter_intersperse)]
 #![feature(extract_if)]
-#![cfg_attr(feature = "no-std", no_std)]
-#![cfg_attr(feature = "no-std", alloc)]
 #![allow(dead_code)]
 #![feature(step_trait)]
 #![feature(box_patterns)]
 
-extern crate core as rust_core;
+//extern crate core as rust_core;
 extern crate seahash;
 
-#[cfg(feature="no-std")] #[macro_use] 
+#[cfg(feature="no_std")] #[macro_use] 
 extern crate alloc;
-#[cfg(not(feature = "no-std"))] 
+#[cfg(not(feature = "no_std"))] 
 extern crate core;
+
+#[cfg(feature="no_std")]
+use hashbrown::HashMap;
+#[cfg(not(feature = "no_std"))] 
+use std::collections::HashMap;
+
+#[cfg(feature="no_std")]
+use alloc::fmt::{self, Debug, Display};
+#[cfg(not(feature = "no_std"))] 
+use std::fmt::{self, Debug, Display};
+
+#[cfg(feature="no_std")]
+use alloc::vec::Vec;
+
+#[cfg(feature="no_std")]
+use fxhash::FxHasher;
+
+#[cfg(feature = "no_std")]
+use embedded_io::{self, Read, Write};
+#[cfg(not(feature = "no_std"))] 
+use std::io::{self, Error as ioError, Cursor, Read, Write};
+
+#[cfg(feature = "no_std")]
+use alloc::string::{String, ToString};
+
+#[cfg(feature = "no_std")]
+use core::hash::{Hash, Hasher};
+#[cfg(not(feature = "no_std"))] 
+use std::hash::{Hash, Hasher};
+
+#[cfg(feature = "no_std")]
+use alloc::boxed::Box;
+
 #[cfg(feature = "matrix")]  
 extern crate nalgebra as na;
 #[cfg(feature = "pretty_print")]
 extern crate tabled;
-#[cfg(feature = "no-std")]
-extern crate alloc;
 #[cfg(feature = "serde")] #[macro_use] 
 extern crate serde_derive;
 #[cfg(feature = "serde")]
 extern crate serde;
 #[cfg(any(feature = "math_exp", feature = "f64", feature = "f32", feature = "complex", feature = "rational"))]
 extern crate num_traits;
-//extern crate ed25519_dalek;
-//extern crate rand;
 
-
-use std::collections::HashMap;
-use std::io::{self, Write, Read};
 use paste::paste;
-use std::rc::Rc;
-use std::cell::RefCell;
-use std::fmt;
-use std::ops::*;
-use std::mem;
-use std::hash::{Hash, Hasher};
-use std::convert::TryInto;
+
 #[cfg(any(feature = "math_exp", feature = "f64"))]
 use num_traits::*;
 #[cfg(feature = "rational")]
@@ -250,8 +269,8 @@ pub fn humanize_bytes(bytes: &[u8]) -> String {
 
 pub fn emojify<T>(num: &T) -> String
 where
-    T: std::fmt::Display + Copy + TryInto<u128>,
-    <T as TryInto<u128>>::Error: std::fmt::Debug,
+    T: Display + Copy + TryInto<u128>,
+    <T as TryInto<u128>>::Error: Debug,
 {
     match (*num).try_into() {
         Ok(v) => {
@@ -266,8 +285,8 @@ where
 
 pub fn humanize<T>(num: &T) -> String
 where
-    T: std::fmt::Display + Copy + TryInto<u128>,
-    <T as TryInto<u128>>::Error: std::fmt::Debug,
+    T: Display + Copy + TryInto<u128>,
+    <T as TryInto<u128>>::Error: Debug,
 {
     match (*num).try_into() {
         Ok(v) => {
