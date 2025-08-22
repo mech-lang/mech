@@ -20,15 +20,25 @@ maintenance = { status = "actively-developed" }
 [features]
 no_std = ["rlibc", "hashbrown", "embedded-io", "fxhash"]
 
-default = ["stdlib", "pretty_print", "serde"]
+default = ["stdlib", "pretty_print", "serde", "compiler"]
 
 pretty_print = ["tabled", "serde_json"]
 serde = ["brotli", "base64", "serde_derive", "serde_json", "bincode", "indexmap/serde", "bincode/serde", "dep:serde"]
-
-stdlib = ["subscript", "bool", "functions", "compiler", "string", "numbers", "dynamic_matrix", "set", "map", "table", "tuple", "record", "atom", "math", "enum"]
-
 compiler = ["crc32fast", "byteorder"]
-program = []
+
+stdlib = ["bool", "string", 
+          "u8", "u16", "u32", "u64", "u128", 
+          "i8", "i16", "i32", "i64", "i128", 
+          "f32", "f64", "c64", "r64", 
+          "set", "map", "table", "tuple", "record", "atom",
+          "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
+          "row_vector2", "row_vector3", "row_vector4",
+          "vector2", "vector3", "vector4",
+          "row_vectord", "vectord", "matrixd",
+          "subscript_range", "logical_indexing",
+          "functions"
+        ]
+
 symbol_table = []
 functions = ["indexmap","symbol_table"]
 
@@ -57,7 +67,7 @@ c64 = ["complex"]
 r64 = ["rational"]
 set = ["indexmap"]
 map = ["indexmap"]
-table = ["matrix", "indexmap", "record"]
+table = ["vectord", "indexmap", "record"]
 tuple = []
 enum = []
 record = ["indexmap", "tuple"]
@@ -80,11 +90,10 @@ matrix2 = ["dynamic_matrix","matrix"]
 matrix1 = ["dynamic_matrix","matrix"]
 matrix2x3 = ["dynamic_matrix","matrix"]
 matrix3x2 = ["dynamic_matrix","matrix"]
-row_vectord =["matrix"]
-vectord = ["matrix"]
-matrixd = ["matrix"]
+row_vectord =["matrix", "dynamic_matrix"]
+vectord = ["matrix", "dynamic_matrix"]
+matrixd = ["matrix", "dynamic_matrix"]
 
-math = ["math_exp"]
 math_exp = ["libm", "num-traits"]
 
 subscript = []
