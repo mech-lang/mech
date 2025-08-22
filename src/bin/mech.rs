@@ -3,6 +3,7 @@
 use mech::*;
 use mech_core::*;
 use mech_syntax::parser;
+#[cfg(feature = "formatter")]
 use mech_syntax::formatter::*;
 use mech_interpreter::interpreter::*;
 use std::time::Instant;
@@ -167,6 +168,7 @@ async fn main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   // Serve
   // --------------------------------------------------------------------------
+  #[cfg(feature = "serve")]
   if let Some(matches) = matches.subcommand_matches("serve") {
 
     let port: String = matches.get_one::<String>("port").cloned().unwrap_or("8081".to_string());
@@ -189,6 +191,7 @@ async fn main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   // build
   // --------------------------------------------------------------------------
+  #[cfg(feature = "build")]
   if let Some(matches) = matches.subcommand_matches("build") {
     let mech_paths: Vec<String> = matches.get_many::<String>("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
     let output_path = PathBuf::from(matches.get_one::<String>("output_path").cloned().unwrap_or(".".to_string()));
@@ -233,6 +236,7 @@ async fn main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   // Format
   // --------------------------------------------------------------------------
+  #[cfg(feature = "formatter")]
   if let Some(matches) = matches.subcommand_matches("format") {
     let html_flag = matches.get_flag("html");
     let stylesheet_url = matches.get_one::<String>("stylesheet").cloned().unwrap_or("https://gitlab.com/mech-lang/mech/-/raw/v0.2-beta/include/style.css?ref_type=heads".to_string());
@@ -292,68 +296,71 @@ async fn main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   // Run
   // --------------------------------------------------------------------------
-  let mut paths = if let Some(m) = matches.get_many::<String>("mech_paths") {
-    m.map(|s| s.to_string()).collect()
-  } else { repl_flag = true; vec![] };
+  #[cfg(feature = "run")]
+  {
+    let mut paths = if let Some(m) = matches.get_many::<String>("mech_paths") {
+      m.map(|s| s.to_string()).collect()
+    } else { repl_flag = true; vec![] };
 
-  // Run the code
-  let mut mechfs = MechFileSystem::new();
-  for p in paths {
-    mechfs.watch_source(&p)?;
+    // Run the code
+    let mut mechfs = MechFileSystem::new();
+    for p in paths {
+      mechfs.watch_source(&p)?;
+    }
+
+    let uuid = generate_uuid();
+    let mut intrp = Interpreter::new(uuid);
+
+    let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag); 
+    
+    let return_value = match &result {
+      Ok(ref r) => {
+        #[cfg(feature = "pretty_print")]
+        println!("{}", r.pretty_print());
+        #[cfg(not(feature = "pretty_print"))]
+        println!("{:#?}", r);
+        Ok(())
+      }
+      Err(ref err) => {
+        Err(err.clone())
+      }
+    };
+
+    if !repl_flag {
+      return return_value;
+    }
+
+    let mut repl = MechRepl::from(intrp);
+    
+    #[cfg(windows)]
+    control::set_virtual_terminal(true).unwrap();
+    clc();
+    let mut stdo = stdout();
+    stdo.execute(Print(text_logo));
+    stdo.execute(cursor::MoveToNextLine(1));
+    println!("\n                {}                ",format!("v{}",VERSION).truecolor(246,192,78));
+    println!("           {}           \n", "www.mech-lang.org");
+    println!("Enter \":help\" for a list of all commands.\n");
+
+    // Catch Ctrl-C a couple times before quitting
+    let mut caught_inturrupts = Arc::new(Mutex::new(0));
+    let mut ci = caught_inturrupts.clone();
+    ctrlc::set_handler(move || {
+      println!("[Ctrl+C]");
+      let mut caught_inturrupts = ci.lock().unwrap();
+      *caught_inturrupts += 1;
+      if *caught_inturrupts >= 3 {
+        println!("Okay, cya!");
+        std::process::exit(0);
+      }
+      println!("Enter \":quit\" to terminate this REPL session.");
+      print_prompt();
+    }).expect("Error setting Ctrl-C handler");
   }
-
-  let uuid = generate_uuid();
-  let mut intrp = Interpreter::new(uuid);
-
-  let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag); 
-  
-  let return_value = match &result {
-    Ok(ref r) => {
-      #[cfg(feature = "pretty_print")]
-      println!("{}", r.pretty_print());
-      #[cfg(not(feature = "pretty_print"))]
-      println!("{:#?}", r);
-      Ok(())
-    }
-    Err(ref err) => {
-      Err(err.clone())
-    }
-  };
-
-  if !repl_flag {
-    return return_value;
-  }
-
-  let mut repl = MechRepl::from(intrp);
-  
-  #[cfg(windows)]
-  control::set_virtual_terminal(true).unwrap();
-  clc();
-  let mut stdo = stdout();
-  stdo.execute(Print(text_logo));
-  stdo.execute(cursor::MoveToNextLine(1));
-  println!("\n                {}                ",format!("v{}",VERSION).truecolor(246,192,78));
-  println!("           {}           \n", "www.mech-lang.org");
-  println!("Enter \":help\" for a list of all commands.\n");
-
-  // Catch Ctrl-C a couple times before quitting
-  let mut caught_inturrupts = Arc::new(Mutex::new(0));
-  let mut ci = caught_inturrupts.clone();
-  ctrlc::set_handler(move || {
-    println!("[Ctrl+C]");
-    let mut caught_inturrupts = ci.lock().unwrap();
-    *caught_inturrupts += 1;
-    if *caught_inturrupts >= 3 {
-      println!("Okay, cya!");
-      std::process::exit(0);
-    }
-    println!("Enter \":quit\" to terminate this REPL session.");
-    print_prompt();
-  }).expect("Error setting Ctrl-C handler");
-  
   // --------------------------------------------------------------------------
   // REPL
   // --------------------------------------------------------------------------
+  #[cfg(feature = "repl")]
   'REPL: loop {
     {
       let mut ci = caught_inturrupts.lock().unwrap();

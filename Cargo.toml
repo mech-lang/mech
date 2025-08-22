@@ -22,10 +22,15 @@ no_std = ["mech-core/no_std", "mech-interpreter/no_std", "mech-syntax/no_std"]
 
 default = ["stdlib", "pretty_print", "serde", "compiler",
       "statements_default", "subscript_default",
-      "formatter",
+      "formatter", "mechfs", "serve", "run", "repl", "build",
       "mech-core/default", "mech-interpreter/default", "mech-syntax/default",
       ]
-formatter = []
+build = ["compiler"]
+repl = []
+run = ["mechfs"]
+serve = ["mechfs"]
+mechfs = ["formatter"]
+formatter = ["mech-syntax/formatter"]
 
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]

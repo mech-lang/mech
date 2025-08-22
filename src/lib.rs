@@ -50,14 +50,22 @@ use std::sync::mpsc;
 use std::sync::Arc;
 use std::collections::HashSet;
 
+#[cfg(feature = "repl")]
 mod repl;
+#[cfg(feature = "serve")]
 mod serve;
+#[cfg(feature = "run")]
 mod run;
+#[cfg(feature = "mechfs")]
 mod mechfs;
 
+#[cfg(feature = "repl")]
 pub use self::repl::*;
+#[cfg(feature = "serve")]
 pub use self::serve::*;
+#[cfg(feature = "run")]
 pub use self::run::*;
+#[cfg(feature = "mechfs")]
 pub use self::mechfs::*;
 
 pub use mech_core::*;
@@ -227,6 +235,7 @@ fn pretty_print_tree(tree: &Program) -> String {
   format!("{table}")
 }
 
+#[cfg(all(feature = "pretty_print", feature = "variables"))]
 pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
   let mut builder = Builder::default();
   builder.push_record(vec!["Name", "Size", "Bytes", "Kind"]);
