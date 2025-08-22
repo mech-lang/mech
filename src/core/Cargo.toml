@@ -48,7 +48,7 @@ serde = ["brotli", "base64", "serde_derive", "serde_json", "bincode", "indexmap/
 
 statements = []
 variables = ["variable_define", "symbol_table"]
-variable_define = ["statements"]
+variable_define = ["statements", "functions"]
 variable_assign = ["statements"]
 kind_define = ["kind_annotation", "statements"]
 kind_annotation = ["functions"]

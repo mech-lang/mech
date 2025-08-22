@@ -8,8 +8,11 @@ pub fn statement(stmt: &Statement, p: &Interpreter) -> MResult<Value> {
   match stmt {
     #[cfg(feature = "tuple")]
     Statement::TupleDestructure(tpl_dstrct) => tuple_destructure(&tpl_dstrct, p),
+    #[cfg(feature = "variable_define")]
     Statement::VariableDefine(var_def) => variable_define(&var_def, p),
+    #[cfg(feature = "variable_assign")]
     Statement::VariableAssign(var_assgn) => variable_assign(&var_assgn, p),
+    #[cfg(feature = "kind_define")]
     Statement::KindDefine(knd_def) => kind_define(&knd_def, p),
     #[cfg(feature = "enum")]
     Statement::EnumDefine(enm_def) => enum_define(&enm_def, p),
@@ -104,6 +107,7 @@ pub fn op_assign(op_assgn: &OpAssign, p: &Interpreter) -> MResult<Value> {
   unreachable!(); // subscript should have thrown an error if we can't access an element
 }
 
+#[cfg(feature = "variable_assign")]
 pub fn variable_assign(var_assgn: &VariableAssign, p: &Interpreter) -> MResult<Value> {
   let mut source = expression(&var_assgn.expression, p)?;
   let slc = &var_assgn.target;
@@ -152,6 +156,7 @@ pub fn enum_define(enm_def: &EnumDefine, p: &Interpreter) -> MResult<Value> {
   Ok(val)
 }
 
+#[cfg(feature = "kind_define")]
 pub fn kind_define(knd_def: &KindDefine, p: &Interpreter) -> MResult<Value> {
   let id = knd_def.name.hash();
   let kind = kind_annotation(&knd_def.kind.kind, p)?;
@@ -162,6 +167,7 @@ pub fn kind_define(knd_def: &KindDefine, p: &Interpreter) -> MResult<Value> {
   Ok(Value::Kind(value_kind))
 }
 
+#[cfg(feature = "variable_define")]
 #[derive(Debug, Clone)]
 pub struct VariableDefineFxn {
   id: u64,
@@ -169,12 +175,13 @@ pub struct VariableDefineFxn {
   mutable: bool,
   var: Ref<Value>,
 }
+#[cfg(feature = "variable_define")]
 impl MechFunctionImpl for VariableDefineFxn {
   fn solve(&self) {}
   fn out(&self) -> Value { self.var.borrow().clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
-#[cfg(feature = "compiler")]
+#[cfg(all(feature = "variable_define", feature = "compiler"))]
 impl MechFunctionCompiler for VariableDefineFxn {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     // Define the variable in the symbol table
@@ -192,6 +199,7 @@ impl MechFunctionCompiler for VariableDefineFxn {
   }
 }
 
+#[cfg(feature = "variable_define")]
 pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Value> {
   let var_id = var_def.var.name.hash();
   let var_name = var_def.var.name.to_string();
@@ -388,6 +396,7 @@ op_assign!(div_assign, Div);
 //#[cfg(feature = "math_exp")]
 //op_assign!(exp_assign, Exp);
 
+#[cfg(feature = "subscript")]
 pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, p: &Interpreter) -> MResult<Value> {
   let plan = p.plan();
   let symbols = p.symbols();

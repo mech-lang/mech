@@ -54,7 +54,7 @@ serde = ["mech-core/serde"]
 
 statements = ["mech-core/statements"]
 variables = ["variable_define", "symbol_table", "mech-core/variables"]
-variable_define = ["statements", "mech-core/variable_define"]
+variable_define = ["statements", "functions", "mech-core/variable_define"]
 variable_assign = ["statements", "mech-core/variable_assign"]
 kind_define = ["kind_annotation", "statements", "mech-core/kind_define"]
 kind_annotation = ["functions", "mech-core/kind_annotation"]
@@ -121,7 +121,7 @@ matrixd = ["matrix", "dynamic_matrix", "mech-core/matrixd"]
 # Subscripts
 subscript = ["mech-core/subscript"]
 subscript_slice = ["subscript", "vectord", "mech-core/subscript_slice"]
-subscript_range = ["subscript_slice","vectord", "mech-core/subscript_range"]
+subscript_range = ["range", "subscript_slice","vectord", "mech-core/subscript_range"]
 subscript_formula = ["subscript_slice","formulas", "mech-core/subscript_formula"]
 logical_indexing = ["subscript","vectord","bool", "mech-core/logical_indexing"]
 dot_indexing = ["subscript", "mech-core/dot_indexing"]
@@ -129,6 +129,10 @@ swizzle = ["subscript", "mech-core/swizzle"]
 
 #Libs
 # -----------------------------------------------------------------------------
+
+# Range
+
+range = []
 
 # Math
 math_default = ["ops_default", "ops_assign_default", "trig_default", "mech-core/default"]

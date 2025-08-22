@@ -77,6 +77,7 @@ use indexmap::map::IndexMap;
 pub mod literals;
 pub mod structures;
 pub mod interpreter;
+#[cfg(feature = "stdlib")]
 pub mod stdlib;
 #[cfg(feature = "functions")]
 pub mod functions;
@@ -129,6 +130,7 @@ pub fn load_stdkinds(kinds: &mut KindTable) {
   kinds.insert(hash_str("bool"),ValueKind::Bool);
 }
 
+#[cfg(feature = "functions")]
 pub fn load_stdlib(fxns: &mut Functions) {
 
   // Preload combinatorics functions

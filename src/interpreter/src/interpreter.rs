@@ -14,10 +14,7 @@ pub struct Interpreter {
   pub state: Ref<ProgramState>,
   registers: Vec<Value>,
   constants: Vec<Value>,
-  symbols: SymbolTableRef,
   pub code: Vec<MechSourceCode>,
-  plan: Plan,
-  functions: FunctionsRef,
   pub out: Value,
   pub out_values: Ref<HashMap<u64, Value>>,
   pub sub_interpreters: Ref<HashMap<u64, Box<Interpreter>>>,
@@ -27,17 +24,14 @@ impl Interpreter {
   pub fn new(id: u64) -> Self {
     let mut state = ProgramState::new();
     load_stdkinds(&mut state.kinds);
-    let mut fxns = Functions::new();
-    load_stdlib(&mut fxns);
+    #[cfg(feature = "functions")]
+    load_stdlib(&mut state.functions.borrow_mut());
     Self {
       id,
       ip: 0,
       state: Ref::new(state),
       registers: Vec::new(),
       constants: Vec::new(),
-      symbols: Ref::new(SymbolTable::new()),
-      plan: Plan::new(),
-      functions: Ref::new(fxns),
       out: Value::Empty,
       sub_interpreters: Ref::new(HashMap::new()),
       out_values: Ref::new(HashMap::new()),
@@ -45,70 +39,65 @@ impl Interpreter {
     }
   }
 
+  #[cfg(feature = "functions")]
   pub fn plan(&self) -> Plan {
-    self.plan.clone()
+    self.state.borrow().plan.clone()
   }
 
   pub fn clear(&mut self) {
-    self.ip = 0;
-    let mut state = ProgramState::new();
-    self.symbols = Ref::new(SymbolTable::new());
-    self.registers.clear();
-    self.constants.clear();
-    self.plan = Plan::new();
-    self.out = Value::Empty;
-    self.out_values = Ref::new(HashMap::new());
-    self.code = Vec::new();
-    self.sub_interpreters = Ref::new(HashMap::new());
-    let mut fxns = Functions::new();
-    load_stdkinds(&mut state.kinds);
-    load_stdlib(&mut fxns);
-    self.functions = Ref::new(fxns);
-    self.state = Ref::new(ProgramState::new());
+    let id = self.id;
+    *self = Interpreter::new(id);
   }
 
   #[cfg(feature = "symbol_table")]
   pub fn get_symbol(&self, id: u64) -> Option<Ref<Value>> {
-    let symbols_brrw = self.symbols.borrow();
-    symbols_brrw.get(id)
+    let state = self.state.borrow();
+    let syms = state.symbol_table.borrow();
+    syms.get(id)
   }
 
   #[cfg(feature = "symbol_table")]
   pub fn symbols(&self) -> SymbolTableRef {
-    self.symbols.clone()
+    self.state.borrow().symbol_table.clone()
   }
 
   #[cfg(feature = "functions")]
   pub fn functions(&self) -> FunctionsRef {
-    self.functions.clone()
+    self.state.borrow().functions.clone()
   }
   
   #[cfg(feature = "functions")]
   pub fn add_plan_step(&self, step: Box<dyn MechFunction>) {
-    let mut plan_brrw = self.plan.borrow_mut();
+    let state_brrw = self.state.borrow();
+    let mut plan_brrw = state_brrw.plan.borrow_mut();
     plan_brrw.push(step);
   }
 
   #[cfg(feature = "functions")]
   pub fn insert_function(&self, fxn: FunctionDefinition) {
-    let mut fxns_brrw = self.functions.borrow_mut();
+    let mut state = self.state.borrow_mut();
+    let mut fxns_brrw = state.functions.borrow_mut();
     fxns_brrw.functions.insert(fxn.id, fxn);
   }
 
   #[cfg(feature = "pretty_print")]
   pub fn pretty_print_symbols(&self) -> String {
-    let symbol_table = self.symbols.borrow();
-    symbol_table.pretty_print()
+    let state = &self.state.borrow();
+    let syms = state.symbol_table.borrow();
+    syms.pretty_print()
   }
 
+  #[cfg(feature = "symbol_table")]
   pub fn dictionary(&self) -> Ref<Dictionary> {
-    let symbols_ref = self.symbols.borrow();
-    symbols_ref.dictionary.clone()
+    let state = &self.state.borrow();
+    let syms = state.symbol_table.borrow();
+    syms.dictionary.clone()
   }
 
   #[cfg(feature = "functions")]
   pub fn step(&mut self, steps: u64) -> &Value {
-    let plan_brrw = self.plan.borrow();
+    let state_brrw = self.state.borrow();
+    let mut plan_brrw = state_brrw.plan.borrow_mut();
     let mut result = Value::Empty;
     for i in 0..steps {
       for fxn in plan_brrw.iter() {
@@ -119,11 +108,12 @@ impl Interpreter {
     &self.out
   }
 
+  #[cfg(feature = "functions")]
   pub fn interpret(&mut self, tree: &Program) -> MResult<Value> {
     self.code.push(MechSourceCode::Tree(tree.clone()));
     catch_unwind(AssertUnwindSafe(|| {
       let result = program(tree, &self);
-      if let Some(last_step) = self.plan.borrow().last() {
+      if let Some(last_step) = self.state.borrow().plan.borrow().last() {
         self.out = last_step.out().clone();
       } else {
         self.out = Value::Empty;
@@ -177,18 +167,19 @@ impl Interpreter {
     }
     // Load the symbol table
     for (id, reg) in program.symbols.iter() {
-      self.symbols.borrow_mut().insert(*id, self.constants[*reg as usize].clone(), false); // the false indicates it's not mutable.
+      //self.symbols.borrow_mut().insert(*id, self.constants[*reg as usize].clone(), false); // the false indicates it's not mutable.
     }
     // Load the dictionary
     for (id, name) in &program.dictionary {
-      self.symbols.borrow().dictionary.borrow_mut().insert(*id, name.clone());
+      //self.state.borrow_mut().symbol_table.borrow_mut().dictionary.borrow_mut().insert(*id, name.clone());
     } 
     Ok(Value::Empty)
   }
 
   #[cfg(feature = "compiler")]
   pub fn compile(&self) -> MResult<Vec<u8>> {
-    let plan_brrw = self.plan.borrow();
+    let state_brrw = self.state.borrow();
+    let mut plan_brrw = state_brrw.plan.borrow_mut();
     let mut ctx = CompileCtx::new();
     for step in plan_brrw.iter() {
       step.compile(&mut ctx)?;

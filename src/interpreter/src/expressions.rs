@@ -5,7 +5,9 @@ use crate::*;
 
 pub fn expression(expr: &Expression, p: &Interpreter) -> MResult<Value> {
   match &expr {
+    #[cfg(feature = "variiables")]
     Expression::Var(v) => var(&v, p),
+    #[cfg(feature = "range")]
     Expression::Range(rng) => range(&rng, p),
     Expression::Slice(slc) => slice(&slc, p),
     Expression::Formula(fctr) => factor(fctr, p),
@@ -18,6 +20,7 @@ pub fn expression(expr: &Expression, p: &Interpreter) -> MResult<Value> {
   }
 }
 
+#[cfg(feature = "range")]
 pub fn range(rng: &RangeExpression, p: &Interpreter) -> MResult<Value> {
   let plan = p.plan();
   let start = factor(&rng.start, p)?;
@@ -37,6 +40,7 @@ pub fn range(rng: &RangeExpression, p: &Interpreter) -> MResult<Value> {
   Ok(res)
 }
 
+#[cfg(feature = "subscript")]
 pub fn slice(slc: &Slice, p: &Interpreter) -> MResult<Value> {
   let symbols = p.symbols();
   let plan = p.plan();
@@ -79,6 +83,7 @@ pub fn subscript_range(sbscrpt: &Subscript, p: &Interpreter) -> MResult<Value> {
   }
 }
 
+#[cfg(feature = "subscript")]
 pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<Value> {
   let plan = p.plan();
   match sbscrpt {
@@ -286,10 +291,11 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
   }
 }
 
+#[cfg(feature = "symbol_table")]
 pub fn var(v: &Var, p: &Interpreter) -> MResult<Value> {
-  let symbols = p.symbols();
+  let state_brrw = p.state.borrow();
+  let symbols_brrw = state_brrw.symbol_table.borrow();
   let id = v.name.hash();
-  let symbols_brrw = symbols.borrow();
   match symbols_brrw.get(id) {
     Some(value) => {
       return Ok(Value::MutableReference(value.clone()))
@@ -343,6 +349,7 @@ pub fn factor(fctr: &Factor, p: &Interpreter) -> MResult<Value> {
   }
 }
 
+#[cfg(feature = "functions")]
 pub fn term(trm: &Term, p: &Interpreter) -> MResult<Value> {
   let plan = p.plan();
   let mut lhs = factor(&trm.lhs, p)?;

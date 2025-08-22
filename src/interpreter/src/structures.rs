@@ -223,6 +223,7 @@ pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> {
   Ok(Value::Table(Ref::new(tbl)))
 }
 
+#[cfg(feature = "kind_annotation")]
 pub fn table_header(fields: &Vec<Field>, p: &Interpreter) -> MResult<Vec<(Value,ValueKind,Identifier)>> {
   let mut headings: Vec<(Value,ValueKind,Identifier)> = Vec::new();
   for f in fields {
