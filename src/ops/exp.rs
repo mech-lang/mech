@@ -107,7 +107,7 @@ macro_rules! impl_expop {
     rhs: Ref<$arg2_type>,
     out: Ref<$out_type>,
   }
-  impl<T> MechFunction for $struct_name<T>
+  impl<T> MechFunctionImpl for $struct_name<T>
   where
     T: Copy + Debug + Clone + Sync + Send + 'static + 
     PartialEq + PartialOrd +
@@ -127,6 +127,9 @@ macro_rules! impl_expop {
     }
     fn out(&self) -> Value { self.out.to_value() }
     fn to_string(&self) -> String { format!("{:#?}", self) }
+  }
+  #[cfg(feature = "compiler")]
+  impl<T> MechFunctionCompiler for $struct_name<T> {
     fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
       todo!();
     }
@@ -149,7 +152,7 @@ pub struct ExpRational {
 }
 
 #[cfg(all(feature = "rational", feature = "i32"))]
-impl MechFunction for ExpRational {
+impl MechFunctionImpl for ExpRational {
   fn solve(&self) {
     let lhs_ptr = self.lhs.as_ptr();
     let rhs_ptr = self.rhs.as_ptr();
@@ -160,6 +163,9 @@ impl MechFunction for ExpRational {
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for ExpRational {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }

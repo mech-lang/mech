@@ -52,7 +52,7 @@ macro_rules! impl_add_assign_range_fxn_v {
 impl_assign_scalar_scalar!(Add, +=);
 impl_assign_vector_vector!(Add, +=);
 
-fn add_assign_math_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
+pub fn add_assign_math_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_op_assign_value_match_arms!(
     Add,
     (sink, source),

@@ -12,7 +12,7 @@ struct NegateV<O> {
   _marker: PhantomData<O>,
 }
 
-impl<O> MechFunction for NegateV<O>
+impl<O> MechFunctionImpl for NegateV<O>
 where
   O: Debug + Clone + Sync + Send + Neg<Output = O> + ClosedNeg + PartialEq + 'static,
   Ref<O>: ToValue,
@@ -24,6 +24,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<O> MechFunctionCompiler for NegateV<O> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -36,7 +39,7 @@ struct NegateS<O> {
   _marker: PhantomData<O>,
 }
 
-impl<O> MechFunction for NegateS<O>
+impl<O> MechFunctionImpl for NegateS<O>
 where
   O: Copy + Debug + Clone + Sync + Send + Neg<Output = O> + ClosedNeg + PartialEq + 'static,
   Ref<O>: ToValue,
@@ -48,6 +51,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<O> MechFunctionCompiler for NegateS<O> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
