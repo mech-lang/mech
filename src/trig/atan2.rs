@@ -43,7 +43,7 @@ macro_rules! impl_two_arg_fxn {
       arg2: Ref<$kind2>,
       out: Ref<$out_kind>,
     }
-    impl MechFunction for $struct_name {
+    impl MechFunctionImpl for $struct_name {
       fn solve(&self) {
         let arg1_ptr = self.arg1.as_ptr();
         let arg2_ptr = self.arg2.as_ptr();
@@ -52,6 +52,9 @@ macro_rules! impl_two_arg_fxn {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+    #[cfg(feature = "compiler")]
+    impl MechFunctionCompiler for $struct_name {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
