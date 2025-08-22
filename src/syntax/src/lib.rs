@@ -44,6 +44,7 @@ pub mod statements;
 pub mod structures;
 pub mod base;
 pub mod parser;
+#[cfg(feature = "formatter")]
 pub mod formatter;
 pub mod grammar;
 pub mod literals;
@@ -57,6 +58,7 @@ pub use crate::expressions::*;
 pub use crate::statements::*;
 pub use crate::structures::*;
 pub use crate::base::*;
+#[cfg(feature = "formatter")]
 pub use crate::formatter::*;
 pub use crate::grammar::*;
 pub use crate::literals::*;
