@@ -9,7 +9,7 @@ pub struct ConvertScalarToMat2<F, T> {
   pub out: Ref<T>,
 }
 
-impl<F, T> MechFunction for ConvertScalarToMat2<F, T>
+impl<F, T> MechFunctionImpl for ConvertScalarToMat2<F, T>
 where
   Ref<T>: ToValue,
   F: Debug + Scalar + Clone,
@@ -29,6 +29,15 @@ where
   }
   fn out(&self) -> Value {self.out.to_value()}
   fn to_string(&self) -> String { format!("{:#?}",self) }
+}
+#[cfg(feature = "compiler")]
+impl<F, T> MechFunctionCompiler for ConvertScalarToMat2<F, T> 
+where
+  Ref<T>: ToValue,
+  F: Debug + Scalar + Clone,
+  for<'a> &'a mut T: IntoIterator<Item = &'a mut F>,
+  T: Debug,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }

@@ -10,7 +10,7 @@ macro_rules! horzcat_one_arg {
       e0: Ref<$e0<T>>,
       out: Ref<$out<T>>,
     }
-    impl<T> MechFunction for $fxn<T>
+    impl<T> MechFunctionImpl for $fxn<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$out<T>>: ToValue
@@ -24,6 +24,9 @@ macro_rules! horzcat_one_arg {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+    #[cfg(feature = "compiler")]
+    impl<T> MechFunctionCompiler for $fxn<T> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -38,7 +41,7 @@ macro_rules! horzcat_two_args {
       e1: Ref<$e2<T>>,
       out: Ref<$out<T>>,
     }
-    impl<T> MechFunction for $fxn<T>
+    impl<T> MechFunctionImpl for $fxn<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$out<T>>: ToValue
@@ -53,6 +56,9 @@ macro_rules! horzcat_two_args {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+    #[cfg(feature = "compiler")]
+    impl<T> MechFunctionCompiler for $fxn<T> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -68,7 +74,7 @@ macro_rules! horzcat_three_args {
       e2: Ref<$e2<T>>,
       out: Ref<$out<T>>,
     }
-    impl<T> MechFunction for $fxn<T>
+    impl<T> MechFunctionImpl for $fxn<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$out<T>>: ToValue
@@ -84,6 +90,9 @@ macro_rules! horzcat_three_args {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+    #[cfg(feature = "compiler")]
+    impl<T> MechFunctionCompiler for $fxn<T> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -100,7 +109,7 @@ macro_rules! horzcat_four_args {
       e3: Ref<$e3<T>>,
       out: Ref<$out<T>>,
     }
-    impl<T> MechFunction for $fxn<T>
+    impl<T> MechFunctionImpl for $fxn<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static,
       Ref<$out<T>>: ToValue
@@ -117,6 +126,9 @@ macro_rules! horzcat_four_args {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+    #[cfg(feature = "compiler")]
+    impl<T> MechFunctionCompiler for $fxn<T> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -128,17 +140,25 @@ struct HorizontalConcatenateTwoArgs<T> {
   e1: Box<dyn CopyMat<T>>,
   out: Ref<DMatrix<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateTwoArgs<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateTwoArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DMatrix<T>>: ToValue
 {
   fn solve(&self) {
-    let offset = self.e0.copy_into(&self.out,0);
-    self.e1.copy_into(&self.out,offset);
+    let offset = self.e0.copy_into(&self.out, 0);
+    self.e1.copy_into(&self.out, offset);
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateTwoArgs\n{:#?}", self.out) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateTwoArgs<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<DMatrix<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -150,7 +170,7 @@ struct HorizontalConcatenateThreeArgs<T> {
   e2: Box<dyn CopyMat<T>>,
   out: Ref<DMatrix<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateThreeArgs<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateThreeArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<DMatrix<T>>: ToValue
@@ -162,6 +182,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateThreeArgs\n{:#?}", self.out) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateThreeArgs<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -174,20 +197,23 @@ struct HorizontalConcatenateFourArgs<T> {
   e3: Box<dyn CopyMat<T>>,
   out: Ref<DMatrix<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateFourArgs<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateFourArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
-  Ref<DMatrix<T>>: ToValue
+  Ref<DMatrix<T>>: ToValue,
 {
   fn solve(&self) {
-    let mut offset = self.e0.copy_into(&self.out,0);
-    offset += self.e1.copy_into(&self.out,offset);
-    offset += self.e2.copy_into(&self.out,offset);
-    self.e3.copy_into(&self.out,offset);
-
+    let mut offset = self.e0.copy_into(&self.out, 0);
+    offset += self.e1.copy_into(&self.out, offset);
+    offset += self.e2.copy_into(&self.out, offset);
+    self.e3.copy_into(&self.out, offset);
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateFourArgs\n{:#?}", self.out) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateFourArgs<T>
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -197,19 +223,27 @@ struct HorizontalConcatenateNArgs<T> {
   e0: Vec<Box<dyn CopyMat<T>>>,
   out: Ref<DMatrix<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateNArgs<T>
+
+impl<T> MechFunctionImpl for HorizontalConcatenateNArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
-  Ref<DMatrix<T>>: ToValue
+  Ref<DMatrix<T>>: ToValue,
 {
   fn solve(&self) {
     let mut offset = 0;
     for e in &self.e0 {
-      offset += e.copy_into(&self.out,offset);
+      offset += e.copy_into(&self.out, offset);
     }
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateNArgs\n{:#?}", self.out) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateNArgs<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<DMatrix<T>>: ToValue,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -223,7 +257,7 @@ macro_rules! horizontal_concatenate {
         out: Ref<[<RowVector $vec_size>]<T>>,
       }
 
-      impl<T> MechFunction for $name<T> 
+      impl<T> MechFunctionImpl for $name<T>
       where
         T: Debug + Clone + Sync + Send + PartialEq + 'static,
         Ref<[<RowVector $vec_size>]<T>>: ToValue
@@ -231,19 +265,28 @@ macro_rules! horizontal_concatenate {
         fn solve(&self) {}
         fn out(&self) -> Value { self.out.to_value() }
         fn to_string(&self) -> String { format!("{:#?}", self) }
+      }
+
+      #[cfg(feature = "compiler")]
+      impl<T> MechFunctionCompiler for $name<T>
+      where
+        T: Debug + Clone + Sync + Send + PartialEq + 'static,
+        Ref<[<RowVector $vec_size>]<T>>: ToValue
+      {
         fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
           todo!();
         }
       }
     }
-  };}  
+  };
+}
 
 #[derive(Debug)]
 struct HorizontalConcatenateRD<T> {
   out: Ref<RowDVector<T>>,
 }
 
-impl<T> MechFunction for HorizontalConcatenateRD<T> 
+impl<T> MechFunctionImpl for HorizontalConcatenateRD<T> 
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowDVector<T>>: ToValue
@@ -251,6 +294,14 @@ where
   fn solve(&self) {}
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateRD<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowDVector<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -262,7 +313,7 @@ struct HorizontalConcatenateRDN<T> {
   out: Ref<RowDVector<T>>,
 }
 
-impl<T> MechFunction for HorizontalConcatenateRDN<T> 
+impl<T> MechFunctionImpl for HorizontalConcatenateRDN<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowDVector<T>>: ToValue
@@ -270,16 +321,24 @@ where
   fn solve(&self) {
     unsafe {
       let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
-      for (e,i) in &self.matrix {
-        let e0_ptr = e.copy_into_r(&self.out,*i);
+      for (e, i) in &self.matrix {
+        let _ = e.copy_into_r(&self.out, *i);
       }
-      for (e,i) in &self.scalar {
+      for (e, i) in &self.scalar {
         out_ptr[*i] = e.borrow().clone();
       }
     }
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateRDN\n{:#?}", self.out) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateRDN<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowDVector<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -291,7 +350,7 @@ struct HorizontalConcatenateS1<T> {
   out: Ref<Matrix1<T>>,
 }
 
-impl<T> MechFunction for HorizontalConcatenateS1<T> 
+impl<T> MechFunctionImpl for HorizontalConcatenateS1<T> 
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<Matrix1<T>>: ToValue
@@ -304,6 +363,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateS1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<Matrix1<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -316,7 +383,7 @@ struct HorizontalConcatenateS2<T> {
   out: Ref<RowVector2<T>>,
 }
 
-impl<T> MechFunction for HorizontalConcatenateS2<T> 
+impl<T> MechFunctionImpl for HorizontalConcatenateS2<T> 
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector2<T>>: ToValue
@@ -330,6 +397,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateS2<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector2<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -343,7 +418,7 @@ struct HorizontalConcatenateS3<T> {
   out: Ref<RowVector3<T>>,
 }
 
-impl<T> MechFunction for HorizontalConcatenateS3<T> 
+impl<T> MechFunctionImpl for HorizontalConcatenateS3<T> 
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector3<T>>: ToValue
@@ -358,6 +433,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateS3<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector3<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -372,7 +455,7 @@ struct HorizontalConcatenateS4<T> {
   out: Ref<RowVector4<T>>,
 }
 
-impl<T> MechFunction for HorizontalConcatenateS4<T> 
+impl<T> MechFunctionImpl for HorizontalConcatenateS4<T> 
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
@@ -388,20 +471,31 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateS4<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
 }
 
+#[cfg(feature = "row_vector2")]
 horizontal_concatenate!(HorizontalConcatenateR2,2);
+#[cfg(feature = "row_vector3")]
 horizontal_concatenate!(HorizontalConcatenateR3,3);
+#[cfg(feature = "row_vector4")]
 horizontal_concatenate!(HorizontalConcatenateR4,4);
 
 #[derive(Debug)]
 struct HorizontalConcatenateSD<T> {
   out: Ref<RowDVector<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateSD<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateSD<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowDVector<T>>: ToValue
@@ -409,6 +503,11 @@ where
   fn solve(&self) { }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSD<T>
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -427,7 +526,10 @@ macro_rules! horzcat_single {
     {
       fn solve(&self) { }
       fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:#?}", self) }
+       fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+    #[cfg(feature = "compiler")]
+    impl<T> MechFunctionCompiler for $fxn<T> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -464,7 +566,8 @@ struct HorizontalConcatenateSR2<T> {
   e1: Ref<RowVector2<T>>,
   out: Ref<RowVector3<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateSR2<T>
+
+impl<T> MechFunctionImpl for HorizontalConcatenateSR2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector3<T>>: ToValue
@@ -481,6 +584,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSR2<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector3<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -492,7 +603,8 @@ struct HorizontalConcatenateR2S<T> {
   e1: Ref<T>,
   out: Ref<RowVector3<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateR2S<T>
+
+impl<T> MechFunctionImpl for HorizontalConcatenateR2S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector3<T>>: ToValue
@@ -508,6 +620,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateR2S<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector3<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -519,7 +639,7 @@ struct HorizontalConcatenateSM1<T> {
   e1: Ref<Matrix1<T>>,
   out: Ref<RowVector2<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateSM1<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateSM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector2<T>>: ToValue
@@ -535,6 +655,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSM1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector2<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -546,7 +674,7 @@ struct HorizontalConcatenateM1S<T> {
   e1: Ref<T>,           // scalar
   out: Ref<RowVector2<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateM1S<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateM1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector2<T>>: ToValue
@@ -562,6 +690,13 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1S<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector2<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -575,7 +710,7 @@ struct HorizontalConcatenateSSSM1<T> {
   e3: Ref<Matrix1<T>>,
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateSSSM1<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateSSSM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
@@ -595,6 +730,13 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSSSM1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -608,7 +750,7 @@ struct HorizontalConcatenateSSM1S<T> {
   e3: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateSSM1S<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateSSM1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
@@ -628,6 +770,13 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1S<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -641,7 +790,7 @@ struct HorizontalConcatenateSM1SS<T> {
   e3: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateSM1SS<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateSM1SS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
@@ -661,6 +810,13 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSM1SS<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -674,7 +830,7 @@ struct HorizontalConcatenateM1SSS<T> {
   e3: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateM1SSS<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateM1SSS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
@@ -694,6 +850,13 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1SSS<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -705,7 +868,7 @@ struct HorizontalConcatenateSR3<T> {
   e1: Ref<RowVector3<T>>,
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateSR3<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateSR3<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
@@ -723,6 +886,13 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSR3<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -735,7 +905,7 @@ struct HorizontalConcatenateR3S<T> {
   out: Ref<RowVector4<T>>,
 }
 
-impl<T> MechFunction for HorizontalConcatenateR3S<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateR3S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue,
@@ -753,6 +923,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateR3S<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -765,7 +943,7 @@ struct HorizontalConcatenateSSM1<T> {
   e2: Ref<Matrix1<T>>,  // Matrix1
   out: Ref<RowVector3<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateSSM1<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateSSM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector3<T>>: ToValue
@@ -783,6 +961,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector3<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -795,7 +981,7 @@ struct HorizontalConcatenateSM1S<T> {
   e2: Ref<T>,           // scalar
   out: Ref<RowVector3<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateSM1S<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateSM1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector3<T>>: ToValue
@@ -813,6 +999,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSM1S<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector3<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -825,7 +1019,7 @@ struct HorizontalConcatenateM1SS<T> {
   e2: Ref<T>,           // scalar
   out: Ref<RowVector3<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateM1SS<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateM1SS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector3<T>>: ToValue
@@ -843,6 +1037,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1SS<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector3<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -856,7 +1058,7 @@ struct HorizontalConcatenateSSR2<T> {
   out: Ref<RowVector4<T>>,
 }
 
-impl<T> MechFunction for HorizontalConcatenateSSR2<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateSSR2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue,
@@ -875,6 +1077,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSSR2<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -888,7 +1098,7 @@ struct HorizontalConcatenateSR2S<T> {
   out: Ref<RowVector4<T>>,
 }
 
-impl<T> MechFunction for HorizontalConcatenateSR2S<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateSR2S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue,
@@ -907,6 +1117,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSR2S<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -920,7 +1138,7 @@ struct HorizontalConcatenateR2SS<T> {
   out: Ref<RowVector4<T>>,
 }
 
-impl<T> MechFunction for HorizontalConcatenateR2SS<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateR2SS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue,
@@ -939,6 +1157,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateR2SS<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -951,7 +1177,7 @@ struct HorizontalConcatenateM1M1S<T> {
   e2: Ref<T>,
   out: Ref<RowVector3<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateM1M1S<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateM1M1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector3<T>>: ToValue
@@ -969,6 +1195,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1S<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector3<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -988,7 +1222,7 @@ struct HorizontalConcatenateM1SM1<T> {
   e2: Ref<Matrix1<T>>,
   out: Ref<RowVector3<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateM1SM1<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateM1SM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector3<T>>: ToValue
@@ -1006,6 +1240,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector3<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1018,7 +1260,7 @@ struct HorizontalConcatenateSM1M1<T> {
   e2: Ref<Matrix1<T>>,
   out: Ref<RowVector3<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateSM1M1<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateSM1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector3<T>>: ToValue
@@ -1036,6 +1278,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector3<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1075,7 +1325,7 @@ struct HorizontalConcatenateSM1R2<T> {
   e2: Ref<RowVector2<T>>,
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateSM1R2<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateSM1R2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
@@ -1094,6 +1344,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSM1R2<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1106,7 +1364,7 @@ struct HorizontalConcatenateM1SR2<T> {
   e2: Ref<RowVector2<T>>,
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateM1SR2<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateM1SR2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
@@ -1125,6 +1383,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1SR2<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1139,7 +1405,7 @@ struct HorizontalConcatenateSM1SM1<T> {
   out: Ref<RowVector4<T>>,
 }
 
-impl<T> MechFunction for HorizontalConcatenateSM1SM1<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateSM1SM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
@@ -1159,6 +1425,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSM1SM1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1172,7 +1446,7 @@ struct HorizontalConcatenateM1R2S<T> {
   out: Ref<RowVector4<T>>,
 }
 
-impl<T> MechFunction for HorizontalConcatenateM1R2S<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateM1R2S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue,
@@ -1191,6 +1465,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1R2S<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1203,7 +1485,7 @@ struct HorizontalConcatenateR2M1S<T> {
   e2: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateR2M1S<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateR2M1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
@@ -1222,6 +1504,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateR2M1S<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1234,12 +1524,12 @@ struct HorizontalConcatenateR2SM1<T> {
   e2: Ref<Matrix1<T>>,    
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateR2SM1<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateR2SM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
-  Ref<RowVector4<T>>: ToValue
+  Ref<RowVector4<T>>: ToValue,
 {
-  fn solve(&self) { 
+  fn solve(&self) {
     unsafe {
       let e0_ptr = (*(self.e0.as_ptr())).clone();
       let e1_val = self.e1.borrow().clone();
@@ -1253,6 +1543,13 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateR2SM1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1265,7 +1562,7 @@ struct HorizontalConcatenateSR2M1<T> {
   e2: Ref<Matrix1<T>>,    
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateSR2M1<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateSR2M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
@@ -1284,6 +1581,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSR2M1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1297,7 +1602,7 @@ struct HorizontalConcatenateSSM1M1<T> {
   e3: Ref<Matrix1<T>>,
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateSSM1M1<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateSSM1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
@@ -1317,6 +1622,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1M1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1330,7 +1643,7 @@ struct HorizontalConcatenateM1M1SS<T> {
   e3: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateM1M1SS<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateM1M1SS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
@@ -1350,6 +1663,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1SS<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1363,7 +1684,7 @@ struct HorizontalConcatenateSM1M1S<T> {
   e3: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateSM1M1S<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateSM1M1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
@@ -1383,6 +1704,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1S<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1396,7 +1725,7 @@ struct HorizontalConcatenateM1SSM1<T> {
   e3: Ref<Matrix1<T>>,
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateM1SSM1<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateM1SSM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
@@ -1416,6 +1745,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1SSM1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1429,7 +1766,7 @@ struct HorizontalConcatenateM1SM1S<T> {
   e3: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateM1SM1S<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateM1SM1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
@@ -1449,6 +1786,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1S<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1519,10 +1864,11 @@ struct HorizontalConcatenateSM1M1M1<T> {
   e3: Ref<Matrix1<T>>,
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateSM1M1M1<T>
+
+impl<T> MechFunctionImpl for HorizontalConcatenateSM1M1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
-  Ref<RowVector4<T>>: ToValue
+  Ref<RowVector4<T>>: ToValue,
 {
   fn solve(&self) { 
     unsafe {
@@ -1539,6 +1885,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1M1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1552,7 +1906,7 @@ struct HorizontalConcatenateM1SM1M1<T> {
   e3: Ref<Matrix1<T>>,
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateM1SM1M1<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateM1SM1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
@@ -1572,6 +1926,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1M1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1585,7 +1947,7 @@ struct HorizontalConcatenateM1M1SM1<T> {
   e3: Ref<Matrix1<T>>,
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateM1M1SM1<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateM1M1SM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
@@ -1605,6 +1967,13 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1SM1<T> 
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1618,7 +1987,7 @@ struct HorizontalConcatenateM1M1M1S<T> {
   e3: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateM1M1M1S<T>
+impl<T> MechFunctionImpl for HorizontalConcatenateM1M1M1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<RowVector4<T>>: ToValue
@@ -1638,6 +2007,13 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1M1S<T> 
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -1651,10 +2027,11 @@ struct HorizontalConcatenateM1M1M1M1<T> {
   e3: Ref<Matrix1<T>>,
   out: Ref<RowVector4<T>>,
 }
-impl<T> MechFunction for HorizontalConcatenateM1M1M1M1<T>
+
+impl<T> MechFunctionImpl for HorizontalConcatenateM1M1M1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
-  Ref<RowVector4<T>>: ToValue
+  Ref<RowVector4<T>>: ToValue,
 {
   fn solve(&self) { 
     unsafe {
@@ -1671,6 +2048,14 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1M1M1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  Ref<RowVector4<T>>: ToValue,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }

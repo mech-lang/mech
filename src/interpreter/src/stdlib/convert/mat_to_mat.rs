@@ -13,7 +13,7 @@ pub struct ConvertMatToMat2<TFrom, TTo, FromMat, ToMat> {
     _marker: PhantomData<(TFrom, TTo)>, 
 }
 
-impl<TFrom, TTo, FromMat, ToMat> MechFunction for ConvertMatToMat2<TFrom, TTo, FromMat, ToMat>
+impl<TFrom, TTo, FromMat, ToMat> MechFunctionImpl for ConvertMatToMat2<TFrom, TTo, FromMat, ToMat>
 where
     Ref<ToMat>: ToValue,
     TFrom: LosslessInto<TTo> + Debug + Scalar + Clone,
@@ -22,7 +22,7 @@ where
     for<'a> &'a mut ToMat: IntoIterator<Item = &'a mut TTo>,
     FromMat: Debug,
     ToMat: Debug,
-{
+  {
     fn solve(&self) {
       let arg_ptr = self.arg.as_ptr();
       let out_ptr = self.out.as_mut_ptr();
@@ -36,9 +36,12 @@ where
     }
     fn out(&self) -> Value {self.out.to_value()}
     fn to_string(&self) -> String { format!("{:#?}",self) }
-    fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-      todo!();
-    }
+  }
+  #[cfg(feature = "compiler")]
+  impl<TFrom, TTo, FromMat, ToMat> MechFunctionCompiler for ConvertMatToMat2<TFrom, TTo, FromMat, ToMat> {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
 fn create_convert_mat_to_mat<TFrom, TTo>(

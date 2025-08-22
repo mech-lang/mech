@@ -14,7 +14,7 @@ macro_rules! impl_col_set_fxn {
       source: Ref<$vector_size_in<$out_type>>,
       sink: Ref<$vector_size_out<Value>>,
     }
-    impl MechFunction for $fxn_name {
+    impl MechFunctionImpl for $fxn_name {
       fn solve(&self) {
         let source_ptr = self.source.as_ptr();
         let sink_ptr = self.sink.as_mut_ptr();
@@ -28,6 +28,9 @@ macro_rules! impl_col_set_fxn {
       }
       fn out(&self) -> Value { Value::MatrixValue(Matrix::$vector_size_out(self.sink.clone())) }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+    #[cfg(feature = "compiler")]
+    impl MechFunctionCompiler for $fxn_name {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -179,7 +182,7 @@ struct TableAppendRecord {
   sink: Ref<MechTable>,
   source: Ref<MechRecord>,
 }
-impl MechFunction for TableAppendRecord {
+impl MechFunctionImpl for TableAppendRecord {
   fn solve(&self) {
     unsafe {
       let mut sink_ptr = (&mut *(self.sink.as_mut_ptr()));
@@ -189,6 +192,9 @@ impl MechFunction for TableAppendRecord {
   }
   fn out(&self) -> Value { Value::Table(self.sink.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for TableAppendRecord {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -199,7 +205,7 @@ struct TableAppendTable {
   sink: Ref<MechTable>,
   source: Ref<MechTable>,
 }
-impl MechFunction for TableAppendTable {
+impl MechFunctionImpl for TableAppendTable {
   fn solve(&self) {
     unsafe {
       let mut sink_ptr = (&mut *(self.sink.as_mut_ptr()));
@@ -209,6 +215,9 @@ impl MechFunction for TableAppendTable {
   }
   fn out(&self) -> Value { Value::Table(self.sink.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for TableAppendTable {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }

@@ -80,7 +80,7 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
     let name_str = b.name.to_string();
     let val = expression(&b.value, p)?;
     let knd: ValueKind = match &b.kind {
-      Some(k) => kind_annotation(&k.kind, p)?.to_value_kind(&p.functions())?,
+      Some(k) => kind_annotation(&k.kind, p)?.to_value_kind(&p.state.borrow().kinds)?,
       None => val.kind(),
     };
     // If the kinds are different, do a conversion.

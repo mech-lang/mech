@@ -11,7 +11,7 @@ pub struct RecordAssign<T> {
   pub sink: Ref<T>,
   pub source: Ref<T>,
 }
-impl<T> MechFunction for RecordAssign<T> 
+impl<T> MechFunctionImpl for RecordAssign<T> 
   where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   Ref<T>: ToValue
@@ -25,6 +25,9 @@ impl<T> MechFunction for RecordAssign<T>
   }
   fn out(&self) -> Value { self.sink.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for RecordAssign<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }

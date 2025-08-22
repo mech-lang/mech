@@ -170,6 +170,32 @@ impl CompileConst for ComplexNumber {
   }
 }
 
+#[cfg(feature = "matrix")]
+use na::{Dim, Storage};
+#[cfg(feature = "matrix")]
+impl<T, R, C, S> CompileConst for na::Matrix<T, R, C, S>
+where
+  T: ConstElem + Copy + Debug + Display + Clone + PartialEq + 'static,
+  R: Dim,
+  C: Dim,
+  S: Storage<T, R, C>,
+{
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    let rows = self.nrows();
+    let cols = self.ncols();
+    let mut payload = Vec::<u8>::with_capacity((rows*cols) as usize * 8);
+    let elem_vk = T::value_kind();
+    let mat_vk = ValueKind::Matrix(Box::new(elem_vk), vec![rows as usize, cols as usize]);
+    for c in 0..cols {
+      for r in 0..rows {
+        let v = self[(r, c)];
+        v.write_le(&mut payload);
+      }
+    }
+    ctx.compile_const(&payload, mat_vk)
+  }
+}
+
 // ConstElem Trait
 // ----------------------------------------------------------------------------
 

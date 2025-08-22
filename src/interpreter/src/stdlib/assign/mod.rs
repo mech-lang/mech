@@ -1,15 +1,15 @@
 #[macro_use]
 use crate::stdlib::*;
 
-#[cfg(feature = "matrix")]
-pub mod matrix;
+//#[cfg(feature = "matrix")]
+//pub mod matrix;
 #[cfg(feature = "record")]
 pub mod record;
 #[cfg(feature = "table")]
 pub mod table;
 
-#[cfg(feature = "matrix")]
-pub use self::matrix::*;
+//#[cfg(feature = "matrix")]
+//pub use self::matrix::*;
 #[cfg(feature = "record")]
 pub use self::record::*;
 #[cfg(feature = "table")]

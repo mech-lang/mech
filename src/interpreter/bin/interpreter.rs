@@ -1,10 +1,10 @@
-use mech_interpreter::*;
-use mech_core::*;
-#[cfg(feature = "serde")]
-use bincode::config::standard;
+//use mech_interpreter::*;
+//use mech_core::*;
+//#[cfg(feature = "serde")]
+//use bincode::config::standard;
 
 fn main() {
-  // 1. Create a new interpreter
+  /*// 1. Create a new interpreter
   let mut intrp = Interpreter::new(0);
 
   // 2. Include the serialized code at compile time
@@ -41,5 +41,5 @@ fn main() {
       //println!("The included file does not contain a valid Mech program.");
     }
   }
-  //println!("Loaded interpreter code: {:?}", intrp.code);
+  //println!("Loaded interpreter code: {:?}", intrp.code);*/
 }

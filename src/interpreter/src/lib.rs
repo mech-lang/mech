@@ -36,22 +36,22 @@ use mech_core::ComplexNumber;
 use mech_core::RationalNumber;
 #[cfg(feature = "functions")]
 use crate::stdlib::{
-                    access::*,
-                    assign::*,
+//                    access::*,
+//                    assign::*,
                     convert::*,
                   };
-#[cfg(feature = "matrix")]
-use crate::stdlib::horzcat::*;
-#[cfg(feature = "matrix")]
-use crate::stdlib::vertcat::*;
+//#[cfg(feature = "matrix")]
+//use crate::stdlib::horzcat::*;
+//#[cfg(feature = "matrix")]
+//use crate::stdlib::vertcat::*;
 use mech_core::{MechError, MechErrorKind, hash_str, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 
 #[cfg(feature = "combinatorics")]
 use mech_combinatorics::*;
 #[cfg(feature = "io")]
 use mech_io::*;
-#[cfg(feature = "matrix")]
-use mech_matrix::*;
+//#[cfg(feature = "matrix")]
+//use mech_matrix::*;
 #[cfg(feature = "stats")]
 use mech_stats::*;
 #[cfg(feature = "math")]
@@ -85,7 +85,7 @@ pub mod mechdown;
 pub use crate::interpreter::*;
 pub use crate::literals::*;
 pub use crate::structures::*;
-#[cfg(feature = "functions")]
+#[cfg(feature = "functifons")]
 pub use crate::functions::*;
 pub use crate::statements::*;
 pub use crate::expressions::*;
