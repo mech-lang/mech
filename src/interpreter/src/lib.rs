@@ -36,14 +36,16 @@ use mech_core::ComplexNumber;
 use mech_core::RationalNumber;
 #[cfg(feature = "functions")]
 use crate::stdlib::{
-//                    access::*,
-//                    assign::*,
+                    access::*,
+                    assign::*,
                     convert::*,
                   };
-//#[cfg(feature = "matrix")]
-//use crate::stdlib::horzcat::*;
-//#[cfg(feature = "matrix")]
-//use crate::stdlib::vertcat::*;
+#[cfg(feature = "functions")]
+use crate::functions::*;
+#[cfg(feature = "matrix")]
+use crate::stdlib::horzcat::*;
+#[cfg(feature = "matrix")]
+use crate::stdlib::vertcat::*;
 use mech_core::{MechError, MechErrorKind, hash_str, MResult, nodes::Kind as NodeKind, nodes::Matrix as Mat, nodes::*};
 
 #[cfg(feature = "combinatorics")]
@@ -72,24 +74,24 @@ use indexmap::set::IndexSet;
 #[cfg(any(feature = "map", feature = "table", feature = "record"))]
 use indexmap::map::IndexMap;
 
-//pub mod literals;
-//pub mod structures;
-//pub mod interpreter;
+pub mod literals;
+pub mod structures;
+pub mod interpreter;
 pub mod stdlib;
-//#[cfg(feature = "functions")]
-//pub mod functions;
-//pub mod statements;
-//pub mod expressions;
-//pub mod mechdown;
+#[cfg(feature = "functions")]
+pub mod functions;
+pub mod statements;
+pub mod expressions;
+pub mod mechdown;
 
-//pub use crate::interpreter::*;
-//pub use crate::literals::*;
-//pub use crate::structures::*;
-//#[cfg(feature = "functifons")]
-//pub use crate::functions::*;
-//pub use crate::statements::*;
-//pub use crate::expressions::*;
-//pub use crate::mechdown::*;
+pub use crate::literals::*;
+pub use crate::interpreter::*;
+pub use crate::structures::*;
+#[cfg(feature = "functifons")]
+pub use crate::functions::*;
+pub use crate::statements::*;
+pub use crate::expressions::*;
+pub use crate::mechdown::*;
 
 
 pub fn load_stdkinds(kinds: &mut KindTable) {
