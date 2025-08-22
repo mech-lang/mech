@@ -9,7 +9,9 @@ pub fn expression(expr: &Expression, p: &Interpreter) -> MResult<Value> {
     Expression::Var(v) => var(&v, p),
     #[cfg(feature = "range")]
     Expression::Range(rng) => range(&rng, p),
+    #[cfg(feature = "subscript_slice")]
     Expression::Slice(slc) => slice(&slc, p),
+    #[cfg(feature = "formulas")]
     Expression::Formula(fctr) => factor(fctr, p),
     Expression::Structure(strct) => structure(strct, p),
     Expression::Literal(ltrl) => literal(&ltrl, p),
@@ -59,6 +61,7 @@ pub fn slice(slc: &Slice, p: &Interpreter) -> MResult<Value> {
   return Ok(v);
 }
 
+#[cfg(feature = "subscript_formula")]
 pub fn subscript_formula(sbscrpt: &Subscript, p: &Interpreter) -> MResult<Value> {
   match sbscrpt {
     Subscript::Formula(fctr) => {
@@ -128,6 +131,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
         _ => todo!("Implement access for dot int"),
       }
     },
+    #[cfg(feature = "swizzle")]
     Subscript::Swizzle(x) => {
       let mut keys = x.iter().map(|x| Value::Id(x.hash())).collect::<Vec<Value>>();
       let mut fxn_input: Vec<Value> = vec![val.clone()];
@@ -138,6 +142,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
       plan.borrow_mut().push(new_fxn);
       return Ok(res);
     },
+    #[cfg(feature = "subscript_slice")]
     Subscript::Brace(subs) |
     Subscript::Bracket(subs) => {
       let mut fxn_input = vec![val.clone()];
@@ -197,7 +202,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
           #[cfg(feature = "matrix")]
           plan.borrow_mut().push(MatrixAccessRangeRange{}.compile(&fxn_input)?);
         },
-        #[cfg(feature = "subscript_range")]
+        #[cfg(all(feature = "subscript_range", feature = "subscript_formula"))]
         [Subscript::All,Subscript::Formula(ix2)] => {
           fxn_input.push(Value::IndexAll);
           let result = subscript_formula(&subs[1], p)?;
@@ -213,7 +218,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
             _ => todo!(),
           }
         },
-        #[cfg(feature = "subscript_range")]
+        #[cfg(all(feature = "subscript_range", feature = "subscript_formula"))]
         [Subscript::Formula(ix1),Subscript::All] => {
           let result = subscript_formula(&subs[0], p)?;
           let shape = result.shape();
@@ -229,7 +234,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
             _ => todo!(),
           }
         },
-        #[cfg(feature = "subscript_range")]
+        #[cfg(all(feature = "subscript_range", feature = "subscript_formula"))]
         [Subscript::Range(ix1),Subscript::Formula(ix2)] => {
           let result = subscript_range(&subs[0],p)?;
           fxn_input.push(result);
@@ -246,7 +251,7 @@ pub fn subscript(sbscrpt: &Subscript, val: &Value, p: &Interpreter) -> MResult<V
             _ => todo!(),
           }
         },
-        #[cfg(feature = "subscript_range")]
+        #[cfg(all(feature = "subscript_range", feature = "subscript_formula"))]
         [Subscript::Formula(ix1),Subscript::Range(ix2)] => {
           let result = subscript_formula(&subs[0], p)?;
           let shape = result.shape();
@@ -306,8 +311,8 @@ pub fn var(v: &Var, p: &Interpreter) -> MResult<Value> {
   }
 }
 
+#[cfg(feature = "formulas")]
 pub fn factor(fctr: &Factor, p: &Interpreter) -> MResult<Value> {
-  let plan = p.plan();
   match fctr {
     Factor::Term(trm) => {
       let result = term(trm, p)?;
@@ -321,7 +326,7 @@ pub fn factor(fctr: &Factor, p: &Interpreter) -> MResult<Value> {
       let new_fxn = MathNegate{}.compile(&vec![value])?;
       new_fxn.solve();
       let out = new_fxn.out();
-      let mut plan_brrw = plan.borrow_mut();
+      p.add_plan_step(new_fxn);
       plan_brrw.push(new_fxn);
       Ok(out)
     },
@@ -331,8 +336,7 @@ pub fn factor(fctr: &Factor, p: &Interpreter) -> MResult<Value> {
       let new_fxn = LogicNot{}.compile(&vec![value])?;
       new_fxn.solve();
       let out = new_fxn.out();
-      let mut plan_brrw = plan.borrow_mut();
-      plan_brrw.push(new_fxn);
+      p.add_plan_step(new_fxn);
       Ok(out)
     },
     #[cfg(feature = "matrix_transpose")]
@@ -341,8 +345,7 @@ pub fn factor(fctr: &Factor, p: &Interpreter) -> MResult<Value> {
       let new_fxn = MatrixTranspose{}.compile(&vec![value])?;
       new_fxn.solve();
       let out = new_fxn.out();
-      let mut plan_brrw = plan.borrow_mut();
-      plan_brrw.push(new_fxn);
+      p.add_plan_step(new_fxn);
       Ok(out)
     }
     _ => todo!(),
