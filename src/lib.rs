@@ -3,7 +3,6 @@
 
 #[cfg(feature = "matrix")]
 extern crate nalgebra as na;
-extern crate mech_core;
 
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;

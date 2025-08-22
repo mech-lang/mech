@@ -1,9 +1,10 @@
-use crate::*;
 use mech_core::*;
 use mech_core::value::ToUsize;
+#[cfg(feature = "matrix")]
+use mech_core::structures::matrix::Matrix;
 
 use std::fmt::Debug;
-use std::ops::{Add, AddAssign, Sub, Div, Mul};
+use std::ops::{Add, AddAssign, Sub, Div};
 use num_traits::{Zero, One};
 use itertools::Itertools;
 
@@ -20,7 +21,7 @@ impl<T> MechFunction for NChooseK<T>
 where
   T: Copy + Debug + Clone + Sync + Send + 'static +
       Add<Output = T> + AddAssign +
-      Sub<Output = T> + Mul<Output = T> + Div<Output = T> +
+      Sub<Output = T> + Div<Output = T> +
       Zero + One +
       PartialEq + PartialOrd,
   Ref<T>: ToValue,
@@ -54,6 +55,7 @@ where
   }
 }
 
+#[cfg(feature = "matrix")]
 #[derive(Debug)]
 pub struct NChooseKMatrix<T> {
   n: Ref<Matrix<T>>,
@@ -61,12 +63,13 @@ pub struct NChooseKMatrix<T> {
   out: Ref<Matrix<T>>,
 }
 
+#[cfg(feature = "matrix")]
 impl<T> MechFunction for NChooseKMatrix<T>
 where
     T: Copy + Debug + Clone + Sync + Send + 'static +
        ToUsize + std::fmt::Display + PrettyPrint +
        Add<Output = T> + AddAssign +
-       Sub<Output = T> + Mul<Output = T> + Div<Output = T> +
+       Sub<Output = T> + Div<Output = T> +
        Zero + One +
        PartialEq + PartialOrd + ToMatrix,
     Ref<T>: ToValue,
@@ -103,33 +106,33 @@ where
 fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> Result<Box<dyn MechFunction>, MechError> {
   match (n,k) {
     #[cfg(feature = "u8")]
-    (Value::U8(n), Value::U8(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(u8::zero())})),
+    (Value::U8(n), Value::U8(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(u8::default())})),
     #[cfg(feature = "u16")]
-    (Value::U16(n), Value::U16(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(u16::zero())})),
+    (Value::U16(n), Value::U16(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(u16::default())})),
     #[cfg(feature = "u32")]
-    (Value::U32(n), Value::U32(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(u32::zero())})),
+    (Value::U32(n), Value::U32(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(u32::default())})),
     #[cfg(feature = "u64")]
-    (Value::U64(n), Value::U64(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(u64::zero())})),
+    (Value::U64(n), Value::U64(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(u64::default())})),
     #[cfg(feature = "u128")]
-    (Value::U128(n), Value::U128(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(u128::zero())})),
+    (Value::U128(n), Value::U128(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(u128::default())})),
     #[cfg(feature = "i8")]
-    (Value::I8(n), Value::I8(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(i8::zero())})),
+    (Value::I8(n), Value::I8(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(i8::default())})),
     #[cfg(feature = "i16")]
-    (Value::I16(n), Value::I16(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(i16::zero())})),
+    (Value::I16(n), Value::I16(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(i16::default())})),
     #[cfg(feature = "i32")]
-    (Value::I32(n), Value::I32(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(i32::zero())})),
+    (Value::I32(n), Value::I32(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(i32::default())})),
     #[cfg(feature = "i64")]
-    (Value::I64(n), Value::I64(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(i64::zero())})),
+    (Value::I64(n), Value::I64(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(i64::default())})),
     #[cfg(feature = "i128")]
-    (Value::I128(n), Value::I128(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(i128::zero())})),
+    (Value::I128(n), Value::I128(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(i128::default())})),
     #[cfg(feature = "f32")]
-    (Value::F32(n), Value::F32(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(F32::zero())})),
+    (Value::F32(n), Value::F32(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(F32::default())})),
     #[cfg(feature = "f64")]
-    (Value::F64(n), Value::F64(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(F64::zero())})),
+    (Value::F64(n), Value::F64(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(F64::default())})),
     #[cfg(feature = "rational")]
-    (Value::RationalNumber(n), Value::RationalNumber(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(RationalNumber::zero())})),
+    (Value::RationalNumber(n), Value::RationalNumber(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(RationalNumber::default())})),
     #[cfg(feature = "complex")]
-    (Value::ComplexNumber(n), Value::ComplexNumber(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(ComplexNumber::zero())})),
+    (Value::ComplexNumber(n), Value::ComplexNumber(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(ComplexNumber::default())})),
     #[cfg(all(feature = "matrix", feature = "u8"))]
     (Value::MatrixU8(n), Value::U8(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(u8::to_matrix(vec![], 0, 0))})),
     #[cfg(all(feature = "matrix", feature = "u16"))]
