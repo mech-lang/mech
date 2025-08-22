@@ -1,7 +1,9 @@
 use crate::*;
 use super::*;
-use std::io::{self, Write, Read, SeekFrom, Seek, Cursor};
+use std::io::{self, SeekFrom, Seek, Cursor};
+#[cfg(not(feature = "no_std"))]
 use std::fs::File;
+#[cfg(not(feature = "no_std"))]
 use std::path::Path;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -123,6 +125,7 @@ fn check_alignment(offset: u64, align: u8) -> bool {
 // Load Program
 // ----------------------------------------------------------------------------
 
+#[cfg(not(feature = "no_std"))]
 pub fn load_program_from_file(path: impl AsRef<Path>) -> MResult<ParsedProgram> {
   let path = path.as_ref();
   let mut f = File::open(path)?;

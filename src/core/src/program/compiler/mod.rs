@@ -1,7 +1,10 @@
 use crate::*;
 use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
 use std::io::Cursor;
+#[cfg(not(feature = "no_std"))]
 use std::collections::HashSet;
+#[cfg(feature = "no_std")]
+use hashbrown::HashSet;
 
 pub mod sections;
 pub mod constants;
@@ -12,6 +15,8 @@ pub use self::sections::*;
 pub use self::constants::*;
 pub use self::context::*;
 pub use self::program::*;
+
+pub type Register = u32;
 
 pub fn encode_value_kind(ts: &mut TypeSection, vk: &ValueKind) -> (TypeTag, Vec<u8>) {
   let mut b = Vec::new();

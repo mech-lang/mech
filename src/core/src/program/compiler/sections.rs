@@ -78,7 +78,7 @@ impl ByteCodeHeader {
     + 4;  // reserved
 
   // Serialize header using little-endian encoding.
-  pub fn write_to(&self, w: &mut impl Write) -> io::Result<()> {
+  pub fn write_to(&self, w: &mut impl Write) -> MResult<()> {
     // magic (4 bytes)
     w.write_all(&self.magic)?;
 
@@ -124,7 +124,7 @@ impl ByteCodeHeader {
   }
 
   // Read a header. Expects the same layout as `write_to`.
-  pub fn read_from(r: &mut impl Read) -> io::Result<Self> {
+  pub fn read_from(r: &mut impl Read) -> MResult<Self> {
     let mut magic = [0u8; 4];
     r.read_exact(&mut magic)?;
 
@@ -297,7 +297,7 @@ impl TypeSection {
     id
   }
 
-  pub fn write_to(&self, w: &mut impl std::io::Write) -> std::io::Result<()> {
+  pub fn write_to(&self, w: &mut impl Write) -> MResult<()> {
     w.write_u32::<LittleEndian>(self.entries.len() as u32)?;
     for e in &self.entries {
       w.write_u16::<LittleEndian>(e.tag as u16)?;
@@ -337,7 +337,7 @@ pub struct ConstEntry {
 }
 
 impl ConstEntry {
-  pub fn write_to(&self, w: &mut impl std::io::Write) -> std::io::Result<()> {
+  pub fn write_to(&self, w: &mut impl Write) -> MResult<()> {
     w.write_u32::<LittleEndian>(self.type_id)?;
     w.write_u8(self.enc as u8)?;
     w.write_u8(self.align)?;
@@ -364,7 +364,7 @@ impl SymbolEntry {
     Self { id, reg }
   }
 
-  pub fn write_to(&self, w: &mut impl Write) -> io::Result<()> {
+  pub fn write_to(&self, w: &mut impl Write) -> MResult<()> {
     w.write_u64::<LittleEndian>(self.id)?;
     w.write_u32::<LittleEndian>(self.reg)?;
     Ok(())
@@ -394,7 +394,7 @@ impl EncodedInstr {
       EncodedInstr::Ret{..}       => 8 + 4,
     }
   }
-  pub fn write_to(&self, w: &mut impl Write) -> io::Result<()> {
+  pub fn write_to(&self, w: &mut impl Write) -> MResult<()> {
     match self {
       EncodedInstr::ConstLoad{ dst, const_id } => {
         w.write_u64::<LittleEndian>(OP_CONST_LOAD)?;
@@ -436,7 +436,7 @@ impl DictEntry {
     Self { id, name: name.to_string() }
   }
 
-  pub fn write_to(&self, w: &mut impl Write) -> io::Result<()> {
+  pub fn write_to(&self, w: &mut impl Write) -> MResult<()> {
     w.write_u64::<LittleEndian>(self.id)?;
     let name_bytes = self.name.as_bytes();
     w.write_u32::<LittleEndian>(name_bytes.len() as u32)?;

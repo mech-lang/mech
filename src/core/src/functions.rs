@@ -16,8 +16,6 @@ use tabled::{
 };
 use std::fmt;
 
-pub type Register = u32;
-
 // Functions ------------------------------------------------------------------
 
 pub type FunctionsRef = Ref<Functions>;
