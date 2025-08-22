@@ -35,8 +35,6 @@ use mech_core::ComplexNumber;
 #[cfg(feature = "rational")]
 use mech_core::RationalNumber;
 #[cfg(feature = "functions")]
-use mech_core::{FunctionDefinition, UserFunction};
-use mech_core::{Functions, MechFunction, FunctionsRef, NativeFunctionCompiler, Plan, SymbolTableRef, SymbolTable};
 use crate::stdlib::{
                     access::*,
                     assign::*,
@@ -94,46 +92,42 @@ pub use crate::expressions::*;
 pub use crate::mechdown::*;
 
 
-pub fn load_stdkinds(fxns_ref: &FunctionsRef) {
-  let fxns = &mut fxns_ref.borrow_mut();
-
-  // Preload scalar kinds
+pub fn load_stdkinds(kinds: &mut KindTable) {
   #[cfg(feature = "u8")]
-  fxns.kinds.insert(hash_str("u8"),ValueKind::U8);
+  kinds.insert(hash_str("u8"),ValueKind::U8);
   #[cfg(feature = "u16")]
-  fxns.kinds.insert(hash_str("u16"),ValueKind::U16);
+  kinds.insert(hash_str("u16"),ValueKind::U16);
   #[cfg(feature = "u32")]
-  fxns.kinds.insert(hash_str("u32"),ValueKind::U32);
+  kinds.insert(hash_str("u32"),ValueKind::U32);
   #[cfg(feature = "u64")]
-  fxns.kinds.insert(hash_str("u64"),ValueKind::U64);
+  kinds.insert(hash_str("u64"),ValueKind::U64);
   #[cfg(feature = "u128")]
-  fxns.kinds.insert(hash_str("u128"),ValueKind::U128);
+  kinds.insert(hash_str("u128"),ValueKind::U128);
   #[cfg(feature = "i8")]
-  fxns.kinds.insert(hash_str("i8"),ValueKind::I8);
+  kinds.insert(hash_str("i8"),ValueKind::I8);
   #[cfg(feature = "i16")]
-  fxns.kinds.insert(hash_str("i16"),ValueKind::I16);
+  kinds.insert(hash_str("i16"),ValueKind::I16);
   #[cfg(feature = "i32")]
-  fxns.kinds.insert(hash_str("i32"),ValueKind::I32);
+  kinds.insert(hash_str("i32"),ValueKind::I32);
   #[cfg(feature = "i64")]
-  fxns.kinds.insert(hash_str("i64"),ValueKind::I64);
+  kinds.insert(hash_str("i64"),ValueKind::I64);
   #[cfg(feature = "i128")]
-  fxns.kinds.insert(hash_str("i128"),ValueKind::I128);
+  kinds.insert(hash_str("i128"),ValueKind::I128);
   #[cfg(feature = "f32")]
-  fxns.kinds.insert(hash_str("f32"),ValueKind::F32);
+  kinds.insert(hash_str("f32"),ValueKind::F32);
   #[cfg(feature = "f64")]
-  fxns.kinds.insert(hash_str("f64"),ValueKind::F64);
+  kinds.insert(hash_str("f64"),ValueKind::F64);
   #[cfg(feature = "c64")]
-  fxns.kinds.insert(hash_str("c64"),ValueKind::ComplexNumber);
+  kinds.insert(hash_str("c64"),ValueKind::ComplexNumber);
   #[cfg(feature = "r64")]
-  fxns.kinds.insert(hash_str("r64"),ValueKind::RationalNumber);
+  kinds.insert(hash_str("r64"),ValueKind::RationalNumber);
   #[cfg(feature = "string")]
-  fxns.kinds.insert(hash_str("string"),ValueKind::String);
+  kinds.insert(hash_str("string"),ValueKind::String);
   #[cfg(feature = "bool")]
-  fxns.kinds.insert(hash_str("bool"),ValueKind::Bool);
+  kinds.insert(hash_str("bool"),ValueKind::Bool);
 }
 
-pub fn load_stdlib(fxns_ref: &FunctionsRef) {
-  let fxns = &mut fxns_ref.borrow_mut();
+pub fn load_stdlib(fxns: &mut Functions) {
 
   // Preload combinatorics functions
   #[cfg(feature = "combinatorics_n_choose_k")]

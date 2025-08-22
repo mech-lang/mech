@@ -21,7 +21,7 @@ pub fn literal(ltrl: &Literal, p: &Interpreter) -> MResult<Value> {
 
 pub fn kind_value(knd: &NodeKind, p: &Interpreter) -> MResult<Value> {
   let kind = kind_annotation(knd, p)?;
-  Ok(Value::Kind(kind.to_value_kind(&p.functions())?))
+  Ok(Value::Kind(kind.to_value_kind(&p.state.borrow().kinds)?))
 }
 
 pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
@@ -110,7 +110,7 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
 pub fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, p: &Interpreter) -> MResult<Value> {
   let value = literal(ltrl,p)?;
   let kind = kind_annotation(&knd_attn.kind, p)?;
-  let args = vec![value, kind.to_value(&p.functions())?];
+  let args = vec![value, kind.to_value(&p.state.borrow().kinds)?];
   let convert_fxn = ConvertKind{}.compile(&args)?;
   convert_fxn.solve();
   let converted_result = convert_fxn.out();

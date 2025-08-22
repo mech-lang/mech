@@ -26,7 +26,7 @@ struct Assign<T> {
   sink: Ref<T>,
   source: Ref<T>,
 }
-impl<T> MechFunction for Assign<T> 
+impl<T> MechFunctionImpl for Assign<T> 
 where
   T: Clone + Debug,
   Ref<T>: ToValue
@@ -40,6 +40,9 @@ where
   }
   fn out(&self) -> Value { self.sink.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for Assign<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }

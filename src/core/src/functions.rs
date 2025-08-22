@@ -19,7 +19,7 @@ use std::fmt;
 // Functions ------------------------------------------------------------------
 
 pub type FunctionsRef = Ref<Functions>;
-pub type FunctionTable = HashMap<u64, u64>;
+pub type FunctionTable = HashMap<u64, FunctionDefinition>;
 pub type FunctionCompilerTable = HashMap<u64, Box<dyn NativeFunctionCompiler>>;
 
 pub trait MechFunctionImpl {
@@ -47,8 +47,6 @@ pub trait NativeFunctionCompiler {
 pub struct Functions {
   pub functions: FunctionTable,
   pub function_compilers: FunctionCompilerTable,
-  pub kinds: HashMap<u64, u64>,
-  pub enums: HashMap<u64, u64>,
 }
 
 impl Functions {
@@ -56,8 +54,6 @@ impl Functions {
     Self {
       functions: HashMap::new(), 
       function_compilers: HashMap::new(), 
-      kinds: HashMap::new(),
-      enums: HashMap::new(),
     }
   }
 }
@@ -152,6 +148,7 @@ impl MechFunctionImpl for UserFunction {
   }
   fn to_string(&self) -> String { format!("UserFxn::{:?}", self.fxn.name) }
 }
+#[cfg(feature = "compiler")]
 impl MechFunctionCompiler for UserFunction {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();

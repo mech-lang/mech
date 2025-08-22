@@ -10,11 +10,14 @@ struct ConvertSEnum {
 }
 
 #[cfg(feature = "enum")]
-impl MechFunction for ConvertSEnum
+impl MechFunctionImpl for ConvertSEnum
 {
   fn solve(&self) { }
   fn out(&self) -> Value { self.out.clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(all(feature = "compiler", feature = "enum"))]
+impl MechFunctionCompiler for ConvertSEnum {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -28,7 +31,7 @@ struct ConvertMat2Table<T> {
 }
 
 #[cfg(all(feature = "matrix", feature = "table"))]
-impl<T> MechFunction for ConvertMat2Table<T>
+impl<T> MechFunctionImpl for ConvertMat2Table<T>
 where T: Debug + Clone + PartialEq + Into<Value> + 'static,
 {
   fn solve(&self) {
@@ -46,6 +49,9 @@ where T: Debug + Clone + PartialEq + Into<Value> + 'static,
   }
   fn out(&self) -> Value { Value::Table(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(all(feature = "compiler", feature = "matrix", feature = "table"))]
+impl<T> MechFunctionCompiler for ConvertMat2Table<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -59,7 +65,7 @@ struct ConvertSRationalToF64 {
 }
 
 #[cfg(all(feature = "rational", feature = "f64"))]
-impl MechFunction for ConvertSRationalToF64 {
+impl MechFunctionImpl for ConvertSRationalToF64 {
   fn solve(&self) {
     let arg_ptr = self.arg.as_ptr();
     let out_ptr = self.out.as_mut_ptr();
@@ -67,6 +73,9 @@ impl MechFunction for ConvertSRationalToF64 {
   }
   fn out(&self) -> Value { Value::F64(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(all(feature = "compiler", feature = "rational", feature = "f64"))]
+impl MechFunctionCompiler for ConvertSRationalToF64 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -128,7 +137,7 @@ pub struct ConvertScalarToScalar<F, T> {
   pub out: Ref<T>,
 }
 
-impl<F, T> MechFunction for ConvertScalarToScalar<F, T>
+impl<F, T> MechFunctionImpl for ConvertScalarToScalar<F, T>
 where
   Ref<T>: ToValue,
   F: LosslessInto<T> + Debug + Clone,
@@ -145,6 +154,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<F, T> MechFunctionCompiler for ConvertScalarToScalar<F, T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -156,7 +168,7 @@ pub struct ConvertScalarToScalarBasic<F, T> {
   pub out: Ref<T>,
 }
 
-impl<F, T> MechFunction for ConvertScalarToScalarBasic<F, T>
+impl<F, T> MechFunctionImpl for ConvertScalarToScalarBasic<F, T>
 where
   Ref<T>: ToValue,
   F: Debug + Clone,
@@ -173,6 +185,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<F,T> MechFunctionCompiler for ConvertScalarToScalarBasic<F, T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }

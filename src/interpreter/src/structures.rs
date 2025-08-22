@@ -231,7 +231,7 @@ pub fn table_header(fields: &Vec<Field>, p: &Interpreter) -> MResult<Vec<(Value,
       Some(k) => kind_annotation(&k.kind, p)?,
       None => Kind::Any,
     };
-    headings.push((Value::Id(id),kind.to_value_kind(&p.functions())?,f.name.clone()));
+    headings.push((Value::Id(id),kind.to_value_kind(&p.state.borrow().kinds)?,f.name.clone()));
   }
   Ok(headings)
 }

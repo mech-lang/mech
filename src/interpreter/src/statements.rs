@@ -143,22 +143,22 @@ pub fn variable_assign(var_assgn: &VariableAssign, p: &Interpreter) -> MResult<V
 pub fn enum_define(enm_def: &EnumDefine, p: &Interpreter) -> MResult<Value> {
   let id = enm_def.name.hash();
   let variants = enm_def.variants.iter().map(|v| (v.name.hash(),None)).collect::<Vec<(u64, Option<Value>)>>();
-  let functions = p.functions();
-  let mut fxns_brrw = functions.borrow_mut();
+  let state = &p.state;
+  let mut state_brrw = state.borrow_mut();
   let enm = MechEnum{id, variants};
   let val = Value::Enum(Box::new(enm.clone()));
-  fxns_brrw.enums.insert(id, enm.clone());
-  fxns_brrw.kinds.insert(id, val.kind());
+  state_brrw.enums.insert(id, enm.clone());
+  state_brrw.kinds.insert(id, val.kind());
   Ok(val)
 }
 
 pub fn kind_define(knd_def: &KindDefine, p: &Interpreter) -> MResult<Value> {
   let id = knd_def.name.hash();
   let kind = kind_annotation(&knd_def.kind.kind, p)?;
-  let value_kind = kind.to_value_kind(&p.functions())?;
+  let value_kind = kind.to_value_kind(&p.state.borrow().kinds)?;
   let functions = p.functions();
-  let mut fxns_brrw = functions.borrow_mut();
-  fxns_brrw.kinds.insert(id, value_kind.clone());
+  let mut kinds = &mut p.state.borrow_mut().kinds;
+  kinds.insert(id, value_kind.clone());
   Ok(Value::Kind(value_kind))
 }
 
@@ -169,10 +169,13 @@ pub struct VariableDefineFxn {
   mutable: bool,
   var: Ref<Value>,
 }
-impl MechFunction for VariableDefineFxn {
+impl MechFunctionImpl for VariableDefineFxn {
   fn solve(&self) {}
   fn out(&self) -> Value { self.var.borrow().clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for VariableDefineFxn {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     // Define the variable in the symbol table
     let addr = self.var.addr();
@@ -195,20 +198,22 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
 
   let symbols = p.symbols();
   let functions = p.functions();
+  let mut state_brrw = p.state.borrow_mut();
   if symbols.borrow().contains(var_id) {
     return Err(MechError{file: file!().to_string(), tokens: var_def.var.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::VariableRedefined(var_id)}); 
   }
   let mut result = expression(&var_def.expression, p)?;
   if let Some(knd_anntn) =  &var_def.var.kind {
     let knd = kind_annotation(&knd_anntn.kind,p)?;
-    let target_knd = knd.to_value_kind(&p.functions())?;
+    let mut kinds = &mut state_brrw.kinds;
+    let target_knd = knd.to_value_kind(&mut kinds)?;
     // Do kind checking
     match (&result, &target_knd) {
       // Atom is a variant of an enum
       #[cfg(all(feature = "atom", feature = "enum"))]
       (Value::Atom(given_variant_id), ValueKind::Enum(enum_id)) => {
-        let fxns_brrw = functions.borrow();
-        let my_enum = match fxns_brrw.enums.get(enum_id) {
+        let enums = &state_brrw.enums;
+        let my_enum = match enums.get(enum_id) {
           Some(my_enum) => my_enum,
           None => todo!(),
         };

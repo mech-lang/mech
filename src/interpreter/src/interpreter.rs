@@ -11,6 +11,7 @@ use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
 pub struct Interpreter {
   pub id: u64,
   ip: usize,  // instruction pointer
+  pub state: Ref<ProgramState>,
   registers: Vec<Value>,
   constants: Vec<Value>,
   symbols: SymbolTableRef,
@@ -23,24 +24,25 @@ pub struct Interpreter {
 }
 
 impl Interpreter {
-  pub fn new(id: u64) -> Interpreter {
-    let mut intrp = Interpreter {
+  pub fn new(id: u64) -> Self {
+    let mut state = ProgramState::new();
+    load_stdkinds(&mut state.kinds);
+    let mut fxns = Functions::new();
+    load_stdlib(&mut fxns);
+    Self {
       id,
       ip: 0,
+      state: Ref::new(state),
       registers: Vec::new(),
       constants: Vec::new(),
       symbols: Ref::new(SymbolTable::new()),
       plan: Plan::new(),
-      functions: Ref::new(Functions::new()),
+      functions: Ref::new(fxns),
       out: Value::Empty,
       sub_interpreters: Ref::new(HashMap::new()),
       out_values: Ref::new(HashMap::new()),
       code: Vec::new(),
-    };
-    let mut fxns = &intrp.functions;
-    load_stdkinds(fxns);
-    load_stdlib(fxns);
-    intrp
+    }
   }
 
   pub fn plan(&self) -> Plan {
@@ -49,33 +51,39 @@ impl Interpreter {
 
   pub fn clear(&mut self) {
     self.ip = 0;
+    let mut state = ProgramState::new();
     self.symbols = Ref::new(SymbolTable::new());
     self.registers.clear();
     self.constants.clear();
     self.plan = Plan::new();
-    self.functions = Ref::new(Functions::new());
     self.out = Value::Empty;
     self.out_values = Ref::new(HashMap::new());
     self.code = Vec::new();
     self.sub_interpreters = Ref::new(HashMap::new());
-    let fxns = &self.functions;
-    load_stdkinds(fxns);
-    load_stdlib(fxns);
+    let mut fxns = Functions::new();
+    load_stdkinds(&mut state.kinds);
+    load_stdlib(&mut fxns);
+    self.functions = Ref::new(fxns);
+    self.state = Ref::new(ProgramState::new());
   }
 
+  #[cfg(feature = "symbol_table")]
   pub fn get_symbol(&self, id: u64) -> Option<Ref<Value>> {
     let symbols_brrw = self.symbols.borrow();
     symbols_brrw.get(id)
   }
 
+  #[cfg(feature = "symbol_table")]
   pub fn symbols(&self) -> SymbolTableRef {
     self.symbols.clone()
   }
 
+  #[cfg(feature = "functions")]
   pub fn functions(&self) -> FunctionsRef {
     self.functions.clone()
   }
-
+  
+  #[cfg(feature = "functions")]
   pub fn add_plan_step(&self, step: Box<dyn MechFunction>) {
     let mut plan_brrw = self.plan.borrow_mut();
     plan_brrw.push(step);
@@ -98,6 +106,7 @@ impl Interpreter {
     symbols_ref.dictionary.clone()
   }
 
+  #[cfg(feature = "functions")]
   pub fn step(&mut self, steps: u64) -> &Value {
     let plan_brrw = self.plan.borrow();
     let mut result = Value::Empty;
@@ -145,6 +154,7 @@ impl Interpreter {
     })?
   }
 
+  #[cfg(feature = "compiler")]
   pub fn run_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
     println!("Program! {:#?}", program);
     // Reset the instruction pointer
@@ -155,7 +165,6 @@ impl Interpreter {
     // Load the constants
     self.constants = program.decode_const_entries()?;
     while self.ip < program.instrs.len() {
-      use DecodedInstr::*;
       let instr = &program.instrs[self.ip];
       match instr {
         DecodedInstr::ConstLoad { dst, const_id } => {
@@ -177,6 +186,7 @@ impl Interpreter {
     Ok(Value::Empty)
   }
 
+  #[cfg(feature = "compiler")]
   pub fn compile(&self) -> MResult<Vec<u8>> {
     let plan_brrw = self.plan.borrow();
     let mut ctx = CompileCtx::new();
