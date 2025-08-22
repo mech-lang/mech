@@ -361,7 +361,7 @@ macro_rules! impl_binop {
       rhs: Ref<$arg2_type>,
       out: Ref<$out_type>,
     }
-    impl<T> MechFunction for $struct_name<T>
+    impl<T> MechFunctionImpl for $struct_name<T>
     where
       T: Copy + Debug + Display + Clone + Sync + Send + 'static + 
       PartialEq + PartialOrd + ConstElem + CompileConst +
@@ -372,55 +372,60 @@ macro_rules! impl_binop {
       Zero + One,
       Ref<$out_type>: ToValue
     {
-    fn solve(&self) {
-        let lhs_ptr = self.lhs.as_ptr();
-        let rhs_ptr = self.rhs.as_ptr();
-        let out_ptr = self.out.as_mut_ptr();
-        $op!(lhs_ptr,rhs_ptr,out_ptr);
+      fn solve(&self) {
+          let lhs_ptr = self.lhs.as_ptr();
+          let rhs_ptr = self.rhs.as_ptr();
+          let out_ptr = self.out.as_mut_ptr();
+          $op!(lhs_ptr,rhs_ptr,out_ptr);
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
     }
-    fn out(&self) -> Value { self.out.to_value() }
-          fn to_string(&self) -> String { format!("{:#?}", self) }
-    fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-      // allocate three registers as an array
-      let mut registers = [0,0,0];
+    impl<T> MechFunctionCompiler for $struct_name<T> 
+    where
+      T: ConstElem + CompileConst
+    {
+      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        // allocate three registers as an array
+        let mut registers = [0,0,0];
 
-      // Compile lhs
-      let lhs_addr = self.lhs.addr();
-      let lhs_reg = ctx.alloc_register_for_ptr(lhs_addr);
-      let lhs_borrow = self.lhs.borrow();
-      let lhs_const_id = lhs_borrow.compile_const(ctx).unwrap();
-      ctx.emit_const_load(lhs_reg, lhs_const_id);
-      registers[0] = lhs_reg;
+        // Compile lhs
+        let lhs_addr = self.lhs.addr();
+        let lhs_reg = ctx.alloc_register_for_ptr(lhs_addr);
+        let lhs_borrow = self.lhs.borrow();
+        let lhs_const_id = lhs_borrow.compile_const(ctx).unwrap();
+        ctx.emit_const_load(lhs_reg, lhs_const_id);
+        registers[0] = lhs_reg;
 
-      // Compile rhs
-      let rhs_addr = self.rhs.addr();
-      let rhs_reg = ctx.alloc_register_for_ptr(rhs_addr);
-      let rhs_borrow = self.rhs.borrow();
-      let rhs_const_id = rhs_borrow.compile_const(ctx).unwrap();
-      ctx.emit_const_load(rhs_reg, rhs_const_id);
-      registers[1] = rhs_reg;
+        // Compile rhs
+        let rhs_addr = self.rhs.addr();
+        let rhs_reg = ctx.alloc_register_for_ptr(rhs_addr);
+        let rhs_borrow = self.rhs.borrow();
+        let rhs_const_id = rhs_borrow.compile_const(ctx).unwrap();
+        ctx.emit_const_load(rhs_reg, rhs_const_id);
+        registers[1] = rhs_reg;
 
-      // Compile out
-      let out_addr = self.out.addr();
-      let out_reg = ctx.alloc_register_for_ptr(out_addr);
-      let out_borrow = self.out.borrow();
-      let out_const_id = out_borrow.compile_const(ctx).unwrap();
-      ctx.emit_const_load(out_reg, out_const_id);
-      registers[2] = out_reg;
+        // Compile out
+        let out_addr = self.out.addr();
+        let out_reg = ctx.alloc_register_for_ptr(out_addr);
+        let out_borrow = self.out.borrow();
+        let out_const_id = out_borrow.compile_const(ctx).unwrap();
+        ctx.emit_const_load(out_reg, out_const_id);
+        registers[2] = out_reg;
 
-      ctx.features.insert(FeatureFlag::Builtin(FeatureKind::$feature_flag));
+        ctx.features.insert(FeatureFlag::Builtin(FeatureKind::$feature_flag));
 
-      // Emit the operation
-      ctx.emit_binop(
-        hash_str(stringify!($struct_name)),
-        registers[0],
-        registers[1],
-        registers[2],
-      );
+        // Emit the operation
+        ctx.emit_binop(
+          hash_str(stringify!($struct_name)),
+          registers[0],
+          registers[1],
+          registers[2],
+        );
 
-      Ok(registers[2])
-    }
-  }};}
+        Ok(registers[2])
+      }
+    }};}
 
 #[macro_export]
 macro_rules! impl_bool_binop {
@@ -431,7 +436,7 @@ macro_rules! impl_bool_binop {
       rhs: Ref<$arg2_type>,
       out: Ref<$out_type>,
     }
-    impl<T> MechFunction for $struct_name<T>
+    impl<T> MechFunctionImpl for $struct_name<T>
     where
       T: Copy + Debug + Clone + Sync + Send + 'static + 
       PartialEq + PartialOrd,
@@ -445,6 +450,8 @@ macro_rules! impl_bool_binop {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+    impl<T> MechFunctionCompiler for $struct_name<T> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -458,7 +465,7 @@ macro_rules! impl_bool_urop {
       arg: Ref<$arg_type>,
       out: Ref<$out_type>,
     }
-    impl<T> MechFunction for $struct_name<T>
+    impl<T> MechFunctionImpl for $struct_name<T>
     where
       T: Debug + Clone + Sync + Send + 'static + 
       PartialEq + PartialOrd,
@@ -471,6 +478,8 @@ macro_rules! impl_bool_urop {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+    impl<T> MechFunctionCompiler for $struct_name<T> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }
@@ -484,7 +493,7 @@ macro_rules! impl_urop {
       arg: Ref<$arg_type>,
       out: Ref<$out_type>,
     }
-    impl MechFunction for $struct_name {
+    impl MechFunctionImpl for $struct_name {
       fn solve(&self) {
         let arg_ptr = self.arg.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
@@ -492,6 +501,8 @@ macro_rules! impl_urop {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+    impl MechFunctionCompiler for $struct_name {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
       }

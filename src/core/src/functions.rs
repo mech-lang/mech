@@ -22,16 +22,23 @@ pub type FunctionsRef = Ref<Functions>;
 pub type FunctionTable = HashMap<u64, u64>;
 pub type FunctionCompilerTable = HashMap<u64, Box<dyn NativeFunctionCompiler>>;
 
-// If there's no compiler, we'll just use a dummy struct that does nothing.
-#[cfg(not(feature = "compiler"))]
-pub struct CompileCtx {}
-
-pub trait MechFunction {
+pub trait MechFunctionImpl {
   fn solve(&self);
   fn out(&self) -> Value;
   fn to_string(&self) -> String;
+}
+
+#[cfg(feature = "compiler")]
+pub trait MechFunctionCompiler {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register>;
 }
+
+#[cfg(feature = "compiler")]
+pub trait MechFunction: MechFunctionImpl + MechFunctionCompiler {}
+#[cfg(not(feature = "compiler"))]
+pub trait MechFunction: MechFunctionImpl {}
+#[cfg(feature = "compiler")]
+impl<T> MechFunction for T where T: MechFunctionImpl + MechFunctionCompiler {}
 
 pub trait NativeFunctionCompiler {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>>;
@@ -136,7 +143,7 @@ pub struct UserFunction {
   pub fxn: FunctionDefinition,
 }
 
-impl MechFunction for UserFunction {
+impl MechFunctionImpl for UserFunction {
   fn solve(&self) {
     self.fxn.solve();
   }
@@ -144,6 +151,8 @@ impl MechFunction for UserFunction {
     Value::MutableReference(self.fxn.out.clone())
   }
   fn to_string(&self) -> String { format!("UserFxn::{:?}", self.fxn.name) }
+}
+impl MechFunctionCompiler for UserFunction {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
