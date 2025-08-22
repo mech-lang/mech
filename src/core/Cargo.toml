@@ -25,7 +25,7 @@ default = ["stdlib", "pretty_print", "serde"]
 pretty_print = ["tabled", "serde_json"]
 serde = ["brotli", "base64", "serde_derive", "serde_json", "bincode", "indexmap/serde", "bincode/serde", "dep:serde"]
 
-stdlib = ["subscript", "bool", "functions", "compiler", "string", "numbers", "dynamic_matrix", "set", "map", "table", "tuple", "record", "atom", "math"]
+stdlib = ["subscript", "bool", "functions", "compiler", "string", "numbers", "dynamic_matrix", "set", "map", "table", "tuple", "record", "atom", "math", "enum"]
 
 compiler = ["crc32fast", "byteorder"]
 program = []
@@ -59,6 +59,7 @@ set = ["indexmap"]
 map = ["indexmap"]
 table = ["matrix", "indexmap", "record"]
 tuple = []
+enum = []
 record = ["indexmap", "tuple"]
 atom = []
 

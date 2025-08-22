@@ -88,9 +88,6 @@ impl MechRecord {
   }
 
   pub fn new(vec: Vec<(&str, Value)>) -> MechRecord {
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
-
     let mut data = IndexMap::new();
     let mut field_names = HashMap::new();
 

@@ -3,6 +3,8 @@ use crate::*;
 use crate::matrix::Matrix;
 use indexmap::map::*;
 
+use nalgebra::{DMatrix, DVector, RowDVector};
+
 // Table ------------------------------------------------------------------
 
 #[cfg(feature = "table")]

@@ -1,5 +1,11 @@
 use crate::*;
+
+#[cfg(feature = "no_std")]
+use core::any::Any;
+#[cfg(not(feature = "no_std"))]
 use std::any::Any;
+
+use nalgebra::{DMatrix, DVector, RowDVector};
 
 // Matrix ---------------------------------------------------------------------
 
