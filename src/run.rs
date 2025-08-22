@@ -93,9 +93,9 @@ pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: 
           Err(err) => return Err(err),
         }
       }
-      MechSourceCode::ByteCode(program) => {
+      MechSourceCode::ByteCode(bc_program) => {
         let now = Instant::now();
-        let result = intrp.run_program(&program);
+        let result = intrp.run_program(&ParsedProgram::from_bytes(bc_program)?);
         let elapsed_time = now.elapsed();
         let cycle_duration = elapsed_time.as_nanos() as f64;
         if time_flag {

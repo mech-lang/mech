@@ -535,7 +535,7 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
           let path = PathBuf::from(path);
           let data = std::fs::read(&path)?;
           let program = load_program_from_file(path)?;   
-          Ok(MechSourceCode::ByteCode(program))
+          Ok(MechSourceCode::ByteCode(program.to_bytes()?))
         }
         Some("mec") | Some("🤖") => {
           match File::open(path) {
