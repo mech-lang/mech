@@ -1,23 +1,5 @@
 use crate::*;
-use crate::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*, humanize};
-use std::collections::HashMap;
-
-use std::hash::{Hash, Hasher};
 use indexmap::set::IndexSet;
-#[cfg(feature = "pretty_print")]
-use tabled::{
-  builder::Builder,
-  settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
-  Tabled,
-};
-use paste::paste;
-#[cfg(feature = "serde")]
-use serde::ser::{Serialize, Serializer, SerializeStruct};
-#[cfg(feature = "serde")]
-use serde::de::{self, Deserialize, SeqAccess, Deserializer, MapAccess, Visitor};
-use std::fmt;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 // Set --------------------------------------------------------------------------
 

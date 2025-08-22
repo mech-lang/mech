@@ -1,20 +1,5 @@
 use crate::*;
-use crate::types::Ref;
-#[cfg(feature = "pretty_print")]
-use tabled::{
-    builder::Builder,
-    settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
-    Tabled,
-  };
-use std::fmt::{Debug, Display};
-use std::hash::{Hash, Hasher};
-use std::slice::Iter;
-use std::iter::Peekable;
-#[cfg(feature = "serde")]
-use serde::ser::{Serialize, Serializer, SerializeStruct};
 use std::any::Any;
-
-use na::{DMatrix, DVector, RowDVector};
 
 // Matrix ---------------------------------------------------------------------
 

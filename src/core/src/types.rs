@@ -249,7 +249,7 @@ impl Neg for F64 {
   }
 }
 
-#[cfg(feature = "f64")]
+#[cfg(all(feature = "f64", feature = "range"))]
 impl Step for F64 {
   fn steps_between(start: &Self, end: &Self) -> (usize, Option<usize>) {
     if start.0 > end.0 {
@@ -523,7 +523,7 @@ impl Neg for F32 {
   }
 }
 
-#[cfg(feature = "f32")]
+#[cfg(all(feature = "f32", feature = "range"))]
 impl Step for F32 {
 
   fn steps_between(start: &Self, end: &Self) -> (usize, Option<usize>) {

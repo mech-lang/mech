@@ -1,31 +1,7 @@
+use crate::*;
 #[cfg(feature = "matrix")]
 use crate::matrix::Matrix;
-use crate::*;
-use crate::nodes::Matrix as Mat;
-use crate::{MechError, MechErrorKind, hash_str, nodes::Kind as NodeKind, nodes::*, humanize};
-use std::collections::HashMap;
-
-#[cfg(feature = "matrix")]
-use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matrix4, RowVector3, RowVector4, RowVector2, DMatrix, Rotation3, Matrix2x3, Matrix3x2, Matrix6, Matrix2};
-use std::hash::{Hash, Hasher};
-#[cfg(feature = "set")]
-use indexmap::set::IndexSet;
-#[cfg(any(feature = "map", feature = "table", feature = "record"))]
 use indexmap::map::*;
-#[cfg(feature = "pretty_print")]
-use tabled::{
-  builder::Builder,
-  settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
-  Tabled,
-};
-use paste::paste;
-#[cfg(feature = "serde")]
-use serde::ser::{Serialize, Serializer, SerializeStruct};
-#[cfg(feature = "serde")]
-use serde::de::{self, Deserialize, SeqAccess, Deserializer, MapAccess, Visitor};
-use std::fmt;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 // Table ------------------------------------------------------------------
 
