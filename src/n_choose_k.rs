@@ -51,6 +51,7 @@ where
   fn out(&self) -> Value {self.out.to_value()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
 }
+#[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for NChooseK<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
@@ -101,7 +102,7 @@ where
   fn out(&self) -> Value { (*self.out.borrow()).to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "compiler"))]
 impl<T> MechFunctionCompiler for NChooseKMatrix<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
@@ -171,7 +172,6 @@ fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> Result<Box<dyn MechF
 }
  
 pub struct CombinatoricsNChooseK {}
-
 impl NativeFunctionCompiler for CombinatoricsNChooseK {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 2 {

@@ -45,7 +45,6 @@ stdlib = ["bool", "string",
           "variable_define", "variable_assign", "kind_define",
           "kind_annotation", "variables",
           "functions", "formulas",
-          "access", "assign", "convert",
         ]
 
 compiler = ["mech-core/compiler"]
@@ -61,10 +60,6 @@ kind_annotation = ["functions", "mech-core/kind_annotation"]
 formulas = ["mech-core/formulas"]
 functions = ["symbol_table", "mech-core/functions"]
 symbol_table = ["mech-core/symbol_table"]
-
-access = ["functions"]
-assign = ["functions"]
-convert = ["functions"]
 
 bool = ["mech-core/bool"]
 string = ["mech-core/string"]
