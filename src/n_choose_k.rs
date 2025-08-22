@@ -17,7 +17,7 @@ pub struct NChooseK<T> {
   out: Ref<T>,
 }
 
-impl<T> MechFunction for NChooseK<T>
+impl<T> MechFunctionImpl for NChooseK<T>
 where
   T: Copy + Debug + Clone + Sync + Send + 'static +
       Add<Output = T> + AddAssign +
@@ -50,6 +50,8 @@ where
   }
   fn out(&self) -> Value {self.out.to_value()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
+}
+impl<T> MechFunctionCompiler for NChooseK<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -64,10 +66,10 @@ pub struct NChooseKMatrix<T> {
 }
 
 #[cfg(feature = "matrix")]
-impl<T> MechFunction for NChooseKMatrix<T>
+impl<T> MechFunctionImpl for NChooseKMatrix<T>
 where
     T: Copy + Debug + Clone + Sync + Send + 'static +
-       ToUsize + std::fmt::Display + PrettyPrint +
+       ToUsize + std::fmt::Display +
        Add<Output = T> + AddAssign +
        Sub<Output = T> + Div<Output = T> +
        Zero + One +
@@ -98,6 +100,9 @@ where
   }
   fn out(&self) -> Value { (*self.out.borrow()).to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "matrix")]
+impl<T> MechFunctionCompiler for NChooseKMatrix<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
