@@ -35,10 +35,13 @@ pub trait MechFunctionCompiler {
 
 #[cfg(feature = "compiler")]
 pub trait MechFunction: MechFunctionImpl + MechFunctionCompiler {}
-#[cfg(not(feature = "compiler"))]
-pub trait MechFunction: MechFunctionImpl {}
 #[cfg(feature = "compiler")]
 impl<T> MechFunction for T where T: MechFunctionImpl + MechFunctionCompiler {}
+
+#[cfg(not(feature = "compiler"))]
+pub trait MechFunction: MechFunctionImpl {}
+#[cfg(not(feature = "compiler"))]
+impl<T> MechFunction for T where T: MechFunctionImpl {}
 
 pub trait NativeFunctionCompiler {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>>;
