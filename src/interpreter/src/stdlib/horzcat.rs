@@ -332,7 +332,6 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateRDN\n{:#?}", self.out) }
 }
-
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateRDN<T>
 where

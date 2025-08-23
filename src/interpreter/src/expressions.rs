@@ -352,7 +352,7 @@ pub fn factor(fctr: &Factor, p: &Interpreter) -> MResult<Value> {
   }
 }
 
-#[cfg(feature = "functions")]
+#[cfg(feature = "formulas")]
 pub fn term(trm: &Term, p: &Interpreter) -> MResult<Value> {
   let plan = p.plan();
   let mut lhs = factor(&trm.lhs, p)?;

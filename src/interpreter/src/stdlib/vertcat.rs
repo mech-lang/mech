@@ -311,6 +311,7 @@ where
   fn to_string(&self) -> String { format!("VerticalConcatenateVD3\n{:#?}", self.out) }
 }
 
+#[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateVD3<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
@@ -339,7 +340,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateVD3\n{:#?}", self.out) }
 }
-
+#[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateVD4<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
@@ -371,7 +372,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("VerticalConcatenateVDN\n{:#?}", self.out) }
 }
-
+#[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateVDN<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
@@ -395,7 +396,7 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 
-#[cfg(feature = "matrix1")]
+#[cfg(all(feature = "matrix1", feature = "compiler"))]
 impl<T> MechFunctionCompiler for VerticalConcatenateS1<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
