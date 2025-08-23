@@ -88,7 +88,7 @@ macro_rules! neq_row_mat_op {
       }
   };}    
 
-impl_compare_fxns_bool!(NEQ);
+impl_compare_fxns!(NEQ);
 
 fn impl_neq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_binop_match_arms!(

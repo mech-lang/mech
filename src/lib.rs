@@ -100,17 +100,10 @@ macro_rules! impl_compare_binop {
     fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
       todo!();
     }
-    }};}
+  }};}
 
 #[macro_export]
 macro_rules! impl_compare_fxns {
-  ($lib:ident) => {
-    impl_fxns!($lib,T,bool,impl_compare_binop);
-  }
-}
-
-#[macro_export]
-macro_rules! impl_compare_fxns_bool {
   ($lib:ident) => {
     impl_fxns!($lib,T,bool,impl_compare_binop);
   }

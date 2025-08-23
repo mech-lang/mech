@@ -16,9 +16,8 @@ macro_rules! eq_scalar_rhs_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$rhs).len() {
-        (&mut (*$out))[i] = (*$lhs) != (&(*$rhs))[i];
+        (&mut (*$out))[i] = (*$lhs) == (&(*$rhs))[i];
       }}};}
-
 
 macro_rules! eq_vec_op {
   ($lhs:expr, $rhs:expr, $out:expr) => {
@@ -87,9 +86,9 @@ macro_rules! eq_row_mat_op {
           }
       }
       }
-  };}
+  };}    
 
-impl_compare_fxns_bool!(EQ);
+impl_compare_fxns!(EQ);
 
 fn impl_eq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_binop_match_arms!(
@@ -115,4 +114,3 @@ fn impl_eq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunctio
 }
 
 impl_mech_binop_fxn!(CompareEqual,impl_eq_fxn);
-  
