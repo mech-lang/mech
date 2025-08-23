@@ -80,7 +80,7 @@ macro_rules! impl_compare_binop {
     rhs: Ref<$arg2_type>,
     out: Ref<$out_type>,
     }
-    impl<T> MechFunction for $struct_name<T>
+    impl<T> MechFunctionImpl for $struct_name<T>
     where
     T: std::fmt::Debug + Clone + Sync + Send + 'static + 
     PartialEq + PartialOrd,
@@ -94,6 +94,9 @@ macro_rules! impl_compare_binop {
     }
     fn out(&self) -> Value { self.out.to_value() }
     fn to_string(&self) -> String { format!("{:#?}", self) }
+  }
+  #[cfg(feature = "compiler")]
+  impl<T> MechFunctionCompiler for $struct_name<T> {
     fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
       todo!();
     }

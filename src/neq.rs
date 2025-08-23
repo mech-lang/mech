@@ -1,5 +1,7 @@
 use crate::*;
 use mech_core::*;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 
 // Not Equal ---------------------------------------------------------------
 

@@ -1,5 +1,7 @@
 use crate::*;
 use mech_core::*;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 
 // Less Than Equal ---------------------------------------------------------------
 
@@ -77,7 +79,7 @@ macro_rules! lte_mat_row_op {
           for i in 0..row.len() {
           row[i] = lhs_row[i] <= rhs_deref[i];
           }
-        }
+      }
       }
   };}
 
@@ -91,10 +93,9 @@ macro_rules! lte_row_mat_op {
           for i in 0..row.len() {
           row[i] = lhs_deref[i] <= rhs_row[i];
           }
-        }
       }
-  };}    
-
+      }
+  };}
 
 impl_compare_fxns!(LTE);
 
