@@ -22,11 +22,13 @@ crate-type = ["rlib"]
 no_std = ["mech-core/no_std"]
 
 default = ["stdlib", "pretty_print", "serde", "compiler",
-            "n_choose_k",
+            "combinatorics_default",
             "statements_default", "subscript_default",
             "mech-core/default",
           ]
-n_choose_k = ["itertools", "num-traits"]
+combinatorics_default = ["n_choose_k"]
+combinatorics = ["functions"]
+n_choose_k = ["itertools", "num-traits", "combinatorics"]
 
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
