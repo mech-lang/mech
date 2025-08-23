@@ -26,7 +26,7 @@ no_std = ["mech-core/no_std", "mech-math/no_std", "mech-compare/no_std", "mech-c
 
 default = ["stdlib", "pretty_print", "serde", "compiler",
   "math_default", "compare_default", "combinatorics_default", "logic_default",
-  "matrix_default", "io_default",
+  "matrix_default", "io_default", "range_default", "stats_default",
   "statements_default", "subscript_default",
   "mech-core/default",
   "mech-math/default", "mech-compare/default", "mech-combinatorics/default", "mech-logic/default", "mech-matrix/default", "mech-io/default", "mech-stats/default",
@@ -182,7 +182,10 @@ compare_lte = ["compare", "mech-compare/lte"]
 compare_gte = ["compare", "mech-compare/gte"]
 
 # Range
-range = []
+range_default = ["range_inclusive", "range_exclusive", "mech-range/range_default"]
+range = ["functions", "formulas", "mech-range/range"]
+range_inclusive = ["range", "mech-range/inclusive"]
+range_exclusive = ["range", "mech-range/exclusive"]
 
 # Math
 math_default = ["math_ops_default", "math_ops_assign_default", "math_trig_default", "mech-core/default"]
@@ -228,7 +231,7 @@ math_neg = ["math_ops", "mech-math/neg"]
 mech-core = { version = "0.2.57", default-features = false }
 mech-math = { version = "0.2.57", default-features = false, optional = true}
 mech-logic = { version = "0.2.57", default-features = false, optional = true }
-#mech-range = { version = "0.2.57", default-features = false, optional = true }
+mech-range = { version = "0.2.57", default-features = false, optional = true }
 mech-matrix = { version = "0.2.57", default-features = false, optional = true }
 mech-compare = { version = "0.2.57", default-features = false, optional = true }
 mech-stats = { version = "0.2.57", default-features = false, optional = true }

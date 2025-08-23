@@ -82,6 +82,7 @@ c64 = ["complex"]
 r64 = ["rational"]
 
 math_exp = ["libm", "num-traits"]
+range = []
 
 # Structs
 set = ["indexmap"]
