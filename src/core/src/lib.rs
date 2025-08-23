@@ -364,7 +364,7 @@ macro_rules! impl_binop {
     impl<T> MechFunctionImpl for $struct_name<T>
     where
       T: Copy + Debug + Display + Clone + Sync + Send + 'static + 
-      PartialEq + PartialOrd + ConstElem + CompileConst +
+      PartialEq + PartialOrd +
       Add<Output = T> + AddAssign +
       Sub<Output = T> + SubAssign +
       Mul<Output = T> + MulAssign +
@@ -381,6 +381,7 @@ macro_rules! impl_binop {
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }
+    #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $struct_name<T> 
     where
       T: ConstElem + CompileConst
@@ -451,6 +452,7 @@ macro_rules! impl_bool_binop {
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }
+    #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $struct_name<T> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
@@ -479,6 +481,7 @@ macro_rules! impl_bool_urop {
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }
+    #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $struct_name<T> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
@@ -502,6 +505,7 @@ macro_rules! impl_urop {
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }
+    #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for $struct_name {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
@@ -612,7 +616,7 @@ macro_rules! impl_fxns {
       #[cfg(all(feature = "matrixd", feature = "vector2"))]
       $op!([<$lib MDV2>], DMatrix<$in>, Vector2<$in>, DMatrix<$out>, [<$lib:lower _mat_vec_op>], $lib);
       #[cfg(all(feature = "matrixd", feature = "vector3"))]
-      $op!([<$lib MDV4>], DMatrix<$in>, Vector4<$in>, DMatrix<$out>, [<$lib:lower _mat_vec_op>], $lib);
+      $op!([<$lib MDV3>], DMatrix<$in>, Vector3<$in>, DMatrix<$out>, [<$lib:lower _mat_vec_op>], $lib);
       #[cfg(all(feature = "matrixd", feature = "vector4"))]
       $op!([<$lib MDV4>], DMatrix<$in>, Vector4<$in>, DMatrix<$out>, [<$lib:lower _mat_vec_op>], $lib);
       // Vector Matrix

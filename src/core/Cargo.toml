@@ -61,7 +61,7 @@ string = []
 
 # Numbers
 numbers = []
-complex = ["num-traits", "dep:nalgebra", "f64", "numbers"]
+complex = ["num-traits", "nalgebra", "f64", "numbers"]
 rational = ["num-traits", "num-rational", "i64", "numbers"]
 signed_ints = ["numbers"]
 unsigned_ints = ["numbers"]
@@ -93,7 +93,7 @@ record = ["indexmap", "tuple"]
 atom = []
 
 # Matrix
-matrix = ["dep:nalgebra"]
+matrix = ["nalgebra"]
 fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2"]
 fixed_vector = ["vector4", "vector3", "vector2"]
 fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2"]

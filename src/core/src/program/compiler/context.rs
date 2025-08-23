@@ -74,7 +74,7 @@ impl CompileCtx {
   pub fn emit_ret(&mut self, src: Register) {
     self.instrs.push(EncodedInstr::Ret { src })
   }
-
+  
   pub fn compile_const(&mut self, bytes: &[u8], value_kind: ValueKind) -> MResult<u32> {
     let type_id = self.types.get_or_intern(&value_kind);
     let align = value_kind.align();

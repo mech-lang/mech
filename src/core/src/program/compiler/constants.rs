@@ -170,31 +170,65 @@ impl CompileConst for ComplexNumber {
   }
 }
 
-#[cfg(feature = "matrix")]
-use na::{Dim, Storage};
-#[cfg(feature = "matrix")]
-impl<T, R, C, S> CompileConst for na::Matrix<T, R, C, S>
-where
-  T: ConstElem + Copy + Debug + Display + Clone + PartialEq + 'static,
-  R: Dim,
-  C: Dim,
-  S: Storage<T, R, C>,
-{
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
-    let rows = self.nrows();
-    let cols = self.ncols();
-    let mut payload = Vec::<u8>::with_capacity((rows*cols) as usize * 8);
-    let elem_vk = T::value_kind();
-    let mat_vk = ValueKind::Matrix(Box::new(elem_vk), vec![rows as usize, cols as usize]);
-    for c in 0..cols {
-      for r in 0..rows {
-        let v = self[(r, c)];
-        v.write_le(&mut payload);
+macro_rules! impl_compile_const_matrix {
+  ($matrix_type:ty) => {
+    impl<T> CompileConst for $matrix_type
+    where
+      T: ConstElem,
+    {
+      fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+        let rows = self.nrows() as u32;
+        let cols = self.ncols() as u32;
+        let mut payload = Vec::<u8>::with_capacity((rows * cols) as usize * 8);
+
+        // write header: rows, cols
+        payload.write_u32::<LittleEndian>(rows)?;
+        payload.write_u32::<LittleEndian>(cols)?;
+
+        // write elements column-major
+        for c in 0..cols as usize {
+          for r in 0..rows as usize {
+            self[(r, c)].write_le(&mut payload);
+          }
+        }
+        let elem_vk = T::value_kind();
+        let mat_vk = ValueKind::Matrix(Box::new(elem_vk), vec![rows as usize, cols as usize]);
+        ctx.compile_const(&payload, mat_vk)
       }
     }
-    ctx.compile_const(&payload, mat_vk)
-  }
+  };
 }
+
+#[cfg(feature = "matrix1")]
+impl_compile_const_matrix!(na::Matrix1<T>);
+#[cfg(feature = "matrix2")]
+impl_compile_const_matrix!(na::Matrix2<T>);
+#[cfg(feature = "matrix3")]
+impl_compile_const_matrix!(na::Matrix3<T>);
+#[cfg(feature = "matrix4")]
+impl_compile_const_matrix!(na::Matrix4<T>);
+#[cfg(feature = "matrix2x3")]
+impl_compile_const_matrix!(na::Matrix2x3<T>);
+#[cfg(feature = "matrix3x2")]
+impl_compile_const_matrix!(na::Matrix3x2<T>);
+#[cfg(feature = "row_vector2")]
+impl_compile_const_matrix!(na::RowVector2<T>);
+#[cfg(feature = "row_vector3")]
+impl_compile_const_matrix!(na::RowVector3<T>);
+#[cfg(feature = "row_vector4")]
+impl_compile_const_matrix!(na::RowVector4<T>);
+#[cfg(feature = "vector2")]
+impl_compile_const_matrix!(na::Vector2<T>);
+#[cfg(feature = "vector3")]
+impl_compile_const_matrix!(na::Vector3<T>);
+#[cfg(feature = "vector4")]
+impl_compile_const_matrix!(na::Vector4<T>);
+#[cfg(feature = "matrixd")]
+impl_compile_const_matrix!(na::DMatrix<T>);
+#[cfg(feature = "vectord")]
+impl_compile_const_matrix!(na::DVector<T>);
+#[cfg(feature = "row_vectord")]
+impl_compile_const_matrix!(na::RowDVector<T>);
 
 // ConstElem Trait
 // ----------------------------------------------------------------------------
