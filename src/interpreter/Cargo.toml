@@ -132,52 +132,56 @@ logical_indexing = ["subscript","vectord","bool", "mech-core/logical_indexing"]
 dot_indexing = ["subscript", "mech-core/dot_indexing"]
 swizzle = ["subscript", "mech-core/swizzle"]
 
-#Libs
+# Libs
 # -----------------------------------------------------------------------------
 
-# Range
+# Combinatorics
+combinatorics_default = ["combinatorics_n_choose_k", "mech-combinatorics/combinatorics_default"]
+combinatorics = ["num-traits", "functions", "mech-combinatorics/combinatorics"]
+combinatorics_n_choose_k = ["combinatorics", "mech-combinatorics/n_choose_k"]
 
+# Range
 range = []
 
 # Math
-math_default = ["ops_default", "ops_assign_default", "trig_default", "mech-core/default"]
-ops_default = ["add", "sub", "mul", "div", "exp", "mod"]
-ops_assign_default = ["add_assign", "sub_assign", "mul_assign", "div_assign"]
-trig_default = ["acos", "acosh", "acot", "acsc", "asec", "asin", "asinh", "atan", "atan2", "atanh", "cos", "cosh", "cot", "csc", "sec", "sin", "sinh", "tan", "tanh"]
-math = ["mech-math/math", "formulas"]
-trig = ["math", "mech-math/trig"]
-ops = ["math", "mech-math/ops"]
-op_assign = ["math", "mech-math/op_assign"]
-add_assign = ["op_assign", "mech-math/add_assign"]
-sub_assign = ["op_assign", "mech-math/sub_assign"]
-mul_assign = ["op_assign", "mech-math/mul_assign"]
-div_assign = ["op_assign", "mech-math/div_assign"]
-acos = ["trig", "mech-math/acos"]
-acosh = ["trig", "mech-math/acosh"]
-acot = ["trig", "mech-math/acot"]
-acsc = ["trig", "mech-math/acsc"]
-asec = ["trig", "mech-math/asec"]
-asin = ["trig", "mech-math/asin"]
-asinh = ["trig", "mech-math/asinh"]
-atan = ["trig", "mech-math/atan"]
-atan2 = ["trig", "mech-math/atan2"]
-atanh = ["trig", "mech-math/atanh"]
-cos = ["trig", "mech-math/cos"]
-cosh = ["trig", "mech-math/cosh"]
-cot = ["trig", "mech-math/cot"]
-csc = ["trig", "mech-math/csc"]
-sec = ["trig", "mech-math/sec"]
-sin = ["trig", "mech-math/sin"]
-sinh = ["trig", "mech-math/sinh"]
-tan = ["trig", "mech-math/tan"]
-tanh = ["trig", "mech-math/tanh"]
-add = ["ops", "mech-math/add"]
-sub = ["ops", "mech-math/sub"]
-mul = ["ops", "mech-math/mul"]
-div = ["ops", "mech-math/div"]
-exp = ["ops", "mech-math/exp"]
-mod = ["ops", "mech-math/mod"]
-neg = ["ops", "mech-math/neg"]
+math_default = ["math_ops_default", "math_ops_assign_default", "math_trig_default", "mech-core/default"]
+math = ["mech-math/math", "formulas", "functions"]
+math_ops_default = ["math_add", "math_sub", "math_mul", "math_div", "math_exp", "math_mod"]
+math_ops_assign_default = ["math_add_assign", "math_sub_assign", "math_mul_assign", "math_div_assign"]
+math_trig_default = ["math_acos", "math_acosh", "math_acot", "math_acsc", "math_asec", "math_asin", "math_asinh", "math_atan", "math_atan2", "math_atanh", "math_cos", "math_cosh", "math_cot", "math_csc", "math_sec", "math_sin", "math_sinh", "math_tan", "math_tanh"]
+math_trig = ["math", "mech-math/trig"]
+math_ops = ["math", "mech-math/ops"]
+math_op_assign = ["math", "mech-math/op_assign"]
+math_add_assign = ["math_op_assign", "mech-math/add_assign"]
+math_sub_assign = ["math_op_assign", "mech-math/sub_assign"]
+math_mul_assign = ["math_op_assign", "mech-math/mul_assign"]
+math_div_assign = ["math_op_assign", "mech-math/div_assign"]
+math_acos = ["math_trig", "mech-math/acos"]
+math_acosh = ["math_trig", "mech-math/acosh"]
+math_acot = ["math_trig", "mech-math/acot"]
+math_acsc = ["math_trig", "mech-math/acsc"]
+math_asec = ["math_trig", "mech-math/asec"]
+math_asin = ["math_trig", "mech-math/asin"]
+math_asinh = ["math_trig", "mech-math/asinh"]
+math_atan = ["math_trig", "mech-math/atan"]
+math_atan2 = ["math_trig", "mech-math/atan2"]
+math_atanh = ["math_trig", "mech-math/atanh"]
+math_cos = ["math_trig", "mech-math/cos"]
+math_cosh = ["math_trig", "mech-math/cosh"]
+math_cot = ["math_trig", "mech-math/cot"]
+math_csc = ["math_trig", "mech-math/csc"]
+math_sec = ["math_trig", "mech-math/sec"]
+math_sin = ["math_trig", "mech-math/sin"]
+math_sinh = ["math_trig", "mech-math/sinh"]
+math_tan = ["math_trig", "mech-math/tan"]
+math_tanh = ["math_trig", "mech-math/tanh"]
+math_add = ["math_ops", "mech-math/add"]
+math_sub = ["math_ops", "mech-math/sub"]
+math_mul = ["math_ops", "mech-math/mul"]
+math_div = ["math_ops", "mech-math/div"]
+math_exp = ["math_ops", "mech-math/exp"]
+math_mod = ["math_ops", "mech-math/mod"]
+math_neg = ["math_ops", "mech-math/neg"]
 
 # Horzcat and Vertcat
 
@@ -193,7 +197,7 @@ mech-math = { version = "0.2.57", default-features = false, optional = true}
 #mech-compare = { version = "0.2.57", default-features = false, optional = true }
 #mech-stats = { version = "0.2.57", default-features = false, optional = true }
 #mech-io = { version = "0.2.57", default-features = false, optional = true }
-#mech-combinatorics = { version = "0.2.57", default-features = false, optional = true }
+mech-combinatorics = { version = "0.2.57", default-features = false, optional = true }
 
 paste = "1.0.15"
 byteorder = "1.5.0"

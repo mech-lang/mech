@@ -9,7 +9,7 @@ use na::{Vector3, DVector, Vector2, Vector4, RowDVector, Matrix1, Matrix3, Matri
 use std::ops::*;
 use std::fmt::Debug;
 use std::marker::PhantomData;
-#[cfg(feature = "math_ops")]
+#[cfg(any(feature = "num-traits"))]
 use num_traits::*;
 
 #[cfg(feature = "access")]
