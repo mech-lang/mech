@@ -105,6 +105,16 @@ impl Interpreter {
     &self.out
   }
 
+  #[cfg(feature = "symbol_table")]
+  pub fn save_symbol(&self, id: u64, name: String, value: Value, mutable: bool) -> ValRef {
+    let state_brrw = self.state.borrow();
+    let mut symbols_brrw = state_brrw.symbol_table.borrow_mut();
+    let val_ref = symbols_brrw.insert(id,value,mutable);
+    let mut dict_brrw = symbols_brrw.dictionary.borrow_mut();
+    dict_brrw.insert(id,name);
+    val_ref
+  }
+
   #[cfg(feature = "functions")]
   pub fn interpret(&mut self, tree: &Program) -> MResult<Value> {
     self.code.push(MechSourceCode::Tree(tree.clone()));
