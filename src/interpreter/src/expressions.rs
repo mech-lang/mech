@@ -5,7 +5,7 @@ use crate::*;
 
 pub fn expression(expr: &Expression, p: &Interpreter) -> MResult<Value> {
   match &expr {
-    #[cfg(feature = "variiables")]
+    #[cfg(feature = "variables")]
     Expression::Var(v) => var(&v, p),
     #[cfg(feature = "range")]
     Expression::Range(rng) => range(&rng, p),
