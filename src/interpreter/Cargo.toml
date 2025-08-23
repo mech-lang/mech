@@ -190,7 +190,7 @@ range_exclusive = ["range", "mech-range/exclusive"]
 # Math
 math_default = ["math_ops_default", "math_ops_assign_default", "math_trig_default", "mech-core/default"]
 math = ["mech-math/math", "formulas", "functions"]
-math_ops_default = ["math_add", "math_sub", "math_mul", "math_div", "math_exp", "math_mod"]
+math_ops_default = ["math_add", "math_sub", "math_mul", "math_div", "math_exp", "math_mod", "math_neg"]
 math_ops_assign_default = ["math_add_assign", "math_sub_assign", "math_mul_assign", "math_div_assign"]
 math_trig_default = ["math_acos", "math_acosh", "math_acot", "math_acsc", "math_asec", "math_asin", "math_asinh", "math_atan", "math_atan2", "math_atanh", "math_cos", "math_cosh", "math_cot", "math_csc", "math_sec", "math_sin", "math_sinh", "math_tan", "math_tanh"]
 math_trig = ["math", "mech-math/trig"]

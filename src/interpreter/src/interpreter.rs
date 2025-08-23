@@ -39,21 +39,21 @@ impl Interpreter {
     }
   }
 
-  #[cfg(feature = "functions")]
-  pub fn plan(&self) -> Plan {
-    self.state.borrow().plan.clone()
-  }
-
   pub fn clear(&mut self) {
     let id = self.id;
     *self = Interpreter::new(id);
   }
 
-  #[cfg(feature = "symbol_table")]
-  pub fn get_symbol(&self, id: u64) -> Option<Ref<Value>> {
-    let state = self.state.borrow();
-    let syms = state.symbol_table.borrow();
-    syms.get(id)
+  #[cfg(feature = "pretty_print")]
+  pub fn pretty_print_symbols(&self) -> String {
+    let state_brrw = self.state.borrow();
+    let syms = state_brrw.symbol_table.borrow();
+    syms.pretty_print()
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn plan(&self) -> Plan {
+    self.state.borrow().plan.clone()
   }
 
   #[cfg(feature = "symbol_table")]
@@ -69,27 +69,6 @@ impl Interpreter {
   pub fn functions(&self) -> FunctionsRef {
     self.state.borrow().functions.clone()
   }
-  
-  #[cfg(feature = "functions")]
-  pub fn add_plan_step(&self, step: Box<dyn MechFunction>) {
-    let state_brrw = self.state.borrow();
-    let mut plan_brrw = state_brrw.plan.borrow_mut();
-    plan_brrw.push(step);
-  }
-
-  #[cfg(feature = "functions")]
-  pub fn insert_function(&self, fxn: FunctionDefinition) {
-    let mut state = self.state.borrow_mut();
-    let mut fxns_brrw = state.functions.borrow_mut();
-    fxns_brrw.functions.insert(fxn.id, fxn);
-  }
-
-  #[cfg(feature = "pretty_print")]
-  pub fn pretty_print_symbols(&self) -> String {
-    let state = &self.state.borrow();
-    let syms = state.symbol_table.borrow();
-    syms.pretty_print()
-  }
 
   #[cfg(feature = "functions")]
   pub fn step(&mut self, steps: u64) -> &Value {
@@ -103,16 +82,6 @@ impl Interpreter {
     }
     self.out = plan_brrw.last().unwrap().out().clone();
     &self.out
-  }
-
-  #[cfg(feature = "symbol_table")]
-  pub fn save_symbol(&self, id: u64, name: String, value: Value, mutable: bool) -> ValRef {
-    let state_brrw = self.state.borrow();
-    let mut symbols_brrw = state_brrw.symbol_table.borrow_mut();
-    let val_ref = symbols_brrw.insert(id,value,mutable);
-    let mut dict_brrw = symbols_brrw.dictionary.borrow_mut();
-    dict_brrw.insert(id,name);
-    val_ref
   }
 
   #[cfg(feature = "functions")]

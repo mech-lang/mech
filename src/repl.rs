@@ -99,7 +99,7 @@ impl MechRepl {
         #[cfg(feature = "pretty_print")]
         let out = intrp.pretty_print_symbols();
         #[cfg(not(feature = "pretty_print"))]
-        let out = format!("{:#?}", intrp.symbols());
+        let out = format!("{:#?}", intrp.state.borrow().symbols());
         return Ok(out);
       }
       ReplCommand::Plan => {

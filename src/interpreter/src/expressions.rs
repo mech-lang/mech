@@ -326,8 +326,7 @@ pub fn factor(fctr: &Factor, p: &Interpreter) -> MResult<Value> {
       let new_fxn = MathNegate{}.compile(&vec![value])?;
       new_fxn.solve();
       let out = new_fxn.out();
-      p.add_plan_step(new_fxn);
-      plan_brrw.push(new_fxn);
+      p.state.borrow_mut().add_plan_step(new_fxn);
       Ok(out)
     },
     #[cfg(feature = "logic_not")]
@@ -336,7 +335,7 @@ pub fn factor(fctr: &Factor, p: &Interpreter) -> MResult<Value> {
       let new_fxn = LogicNot{}.compile(&vec![value])?;
       new_fxn.solve();
       let out = new_fxn.out();
-      p.add_plan_step(new_fxn);
+      p.state.borrow_mut().add_plan_step(new_fxn);
       Ok(out)
     },
     #[cfg(feature = "matrix_transpose")]
@@ -346,7 +345,7 @@ pub fn factor(fctr: &Factor, p: &Interpreter) -> MResult<Value> {
       let new_fxn = MatrixTranspose{}.compile(&vec![value])?;
       new_fxn.solve();
       let out = new_fxn.out();
-      p.add_plan_step(new_fxn);
+      p.state.borrow_mut().add_plan_step(new_fxn);
       Ok(out)
     }
     _ => todo!(),

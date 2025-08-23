@@ -161,7 +161,7 @@ pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
     #[cfg(feature = "functions")]
     MechCode::FunctionDefine(fxn_def) => {
       let usr_fxn = function_define(&fxn_def, p)?;
-      p.insert_function(usr_fxn);
+      p.state.borrow_mut().insert_function(usr_fxn);
       Ok(Value::Empty)
     },
     MechCode::Comment(cmmt) => comment(&cmmt, p),

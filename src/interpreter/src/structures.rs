@@ -74,7 +74,6 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
   let cols: usize = rcrd.bindings.len();
   let mut kinds: Vec<ValueKind> = Vec::new();
   let mut field_names: HashMap<u64,String> = HashMap::new();
-
   for b in &rcrd.bindings {
     let name_hash = b.name.hash();
     let name_str = b.name.to_string();
@@ -91,7 +90,7 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
         Ok(convert_fxn) => {
           convert_fxn.solve();
           let converted_result = convert_fxn.out();
-          p.add_plan_step(convert_fxn);
+          p.state.borrow_mut().add_plan_step(convert_fxn);
           data.insert(name_hash, converted_result);
         },
         Err(e) => {

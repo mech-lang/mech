@@ -970,7 +970,7 @@ macro_rules! impl_access_scalar_all_match_arms {
             (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM3x2{source: input.clone(), ixes: ix.clone(), out: Ref::new(RowVector2::from_element($default)) })),
             #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "row_vector3"))]
             (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAM2x3{source: input.clone(), ixes: ix.clone(), out: Ref::new(RowVector3::from_element($default)) })),
-            #[cfg(all(feature = $value_string, feature = "matrixd", feature = "row_d_vector"))]
+            #[cfg(all(feature = $value_string, feature = "matrixd", feature = "row_vectord"))]
             (Value::$matrix_kind(Matrix::DMatrix(input)), [Value::Index(ix),Value::IndexAll]) => Ok(Box::new(Access2DSAMD{source: input.clone(), ixes: ix.clone(), out: Ref::new(RowDVector::from_element(input.borrow().ncols(),$default)) })),
           )+
         )+

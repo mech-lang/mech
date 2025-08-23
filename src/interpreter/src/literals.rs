@@ -118,7 +118,7 @@ pub fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, p: &Interpreter)
   let convert_fxn = ConvertKind{}.compile(&args)?;
   convert_fxn.solve();
   let converted_result = convert_fxn.out();
-  p.add_plan_step(convert_fxn);
+  p.state.borrow_mut().add_plan_step(convert_fxn);
   Ok(converted_result)
 }
 

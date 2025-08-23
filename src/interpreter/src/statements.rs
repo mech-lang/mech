@@ -61,11 +61,12 @@ pub fn op_assign(op_assgn: &OpAssign, p: &Interpreter) -> MResult<Value> {
   let mut source = expression(&op_assgn.expression, p)?;
   let slc = &op_assgn.target;
   let name = slc.name.hash();
-  let symbols = p.symbols();
-  let symbols_brrw = symbols.borrow();
-  let sink = match symbols_brrw.get(name) {
-    Some(val) => val.borrow().clone(),
-    None => {return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "Note: Variables are defined with the := operator.".to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
+  let sink = { 
+    let mut state_brrw = p.state.borrow_mut();
+    match state_brrw.get_symbol(name) {
+      Some(val) => val.borrow().clone(),
+      None => {return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "Note: Variables are defined with the := operator.".to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});}
+    }
   };
   match &slc.subscript {
     Some(sbscrpt) => {
@@ -100,7 +101,7 @@ pub fn op_assign(op_assgn: &OpAssign, p: &Interpreter) -> MResult<Value> {
       };
       fxn.solve();
       let res = fxn.out();
-      p.add_plan_step(fxn);
+      p.state.borrow_mut().add_plan_step(fxn);
       return Ok(res);
     }
   }
@@ -112,15 +113,17 @@ pub fn variable_assign(var_assgn: &VariableAssign, p: &Interpreter) -> MResult<V
   let mut source = expression(&var_assgn.expression, p)?;
   let slc = &var_assgn.target;
   let name = slc.name.hash();
-  let symbols = p.symbols();
-  let symbols_brrw = symbols.borrow();
-  let sink = match symbols_brrw.get_mutable(name) {
-    Some(val) => val.borrow().clone(),
-    None => {
-      if !symbols_brrw.contains(name) {
-        return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "Note: Variables are defined with the := operator.".to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});
-      } else { 
-        return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "Note: Variables are defined with the := operator.".to_string(), id: line!(), kind: MechErrorKind::NotMutable(name)});
+  let sink = {
+    let symbols = p.symbols();
+    let symbols_brrw = symbols.borrow();
+    match symbols_brrw.get_mutable(name) {
+      Some(val) => val.borrow().clone(),
+      None => {
+        if !symbols_brrw.contains(name) {
+          return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "Note: Variables are defined with the := operator.".to_string(), id: line!(), kind: MechErrorKind::UndefinedVariable(name)});
+        } else { 
+          return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "Note: Variables are defined with the := operator.".to_string(), id: line!(), kind: MechErrorKind::NotMutable(name)});
+        }
       }
     }
   };
@@ -136,7 +139,7 @@ pub fn variable_assign(var_assgn: &VariableAssign, p: &Interpreter) -> MResult<V
       let fxn = AssignValue{}.compile(&args)?;
       fxn.solve();
       let res = fxn.out();
-      p.add_plan_step(fxn);
+      p.state.borrow_mut().add_plan_step(fxn);
       return Ok(res);
     }
   }
@@ -205,7 +208,6 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
   let var_name = var_def.var.name.to_string();
   {
     let symbols = p.symbols();
-    let mut state_brrw = p.state.borrow_mut();
     if symbols.borrow().contains(var_id) {
       return Err(MechError{file: file!().to_string(), tokens: var_def.var.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::VariableRedefined(var_id)}); 
     }
@@ -213,9 +215,8 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
   let mut result = expression(&var_def.expression, p)?;
   if let Some(knd_anntn) =  &var_def.var.kind {
     let knd = kind_annotation(&knd_anntn.kind,p)?;
-    let mut state_brrw = p.state.borrow_mut();
-    let mut kinds = &mut state_brrw.kinds;
-    let target_knd = knd.to_value_kind(&mut kinds)?;
+    let mut state_brrw = &mut p.state.borrow_mut();
+    let target_knd = knd.to_value_kind(&mut state_brrw.kinds)?;
     // Do kind checking
     match (&result, &target_knd) {
       // Atom is a variant of an enum
@@ -243,7 +244,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
           let convert_fxn = ConvertMatToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
           convert_fxn.solve();
           let converted_result = convert_fxn.out();
-          p.add_plan_step(convert_fxn);
+          state_brrw.add_plan_step(convert_fxn);
           result = converted_result;
         } else {
           let value_kind = value.kind();
@@ -251,24 +252,23 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
             let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_matrix_knd.clone())])?;
             convert_fxn.solve();
             let converted_result = convert_fxn.out();
-            p.add_plan_step(convert_fxn);
+            state_brrw.add_plan_step(convert_fxn);
             result = converted_result;
           };
           let convert_fxn = ConvertScalarToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
           convert_fxn.solve();
           let converted_result = convert_fxn.out();
-          p.add_plan_step(convert_fxn);
+          state_brrw.add_plan_step(convert_fxn);
           result = converted_result;          
         }
       }
       #[cfg(feature = "matrix")]
       (value, ValueKind::Matrix(box target_matrix_knd,_)) => {
-        todo!();
         if value.is_matrix() {
           let convert_fxn = ConvertMatToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
           convert_fxn.solve();
           let converted_result = convert_fxn.out();
-          p.add_plan_step(convert_fxn);
+          state_brrw.add_plan_step(convert_fxn);
           result = converted_result;
         } else {
           let value_kind = value.kind();
@@ -276,13 +276,13 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
             let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_matrix_knd.clone())])?;
             convert_fxn.solve();
             let converted_result = convert_fxn.out();
-            p.add_plan_step(convert_fxn);
+            state_brrw.add_plan_step(convert_fxn);
             result = converted_result;
           };
           let convert_fxn = ConvertScalarToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
           convert_fxn.solve();
           let converted_result = convert_fxn.out();
-          p.add_plan_step(convert_fxn);
+          state_brrw.add_plan_step(convert_fxn);
           result = converted_result;
         }
       }
@@ -291,22 +291,23 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
         let convert_fxn = ConvertKind{}.compile(&vec![result.clone(), Value::Kind(target_knd)])?;
         convert_fxn.solve();
         let converted_result = convert_fxn.out();
-        p.add_plan_step(convert_fxn);
+        state_brrw.add_plan_step(convert_fxn);
         result = converted_result;
       },
     };
     // Save symbol to interpreter
-    let val_ref = p.save_symbol(var_id, var_name.clone(), result.clone(), var_def.mutable);
+    let val_ref = state_brrw.save_symbol(var_id, var_name.clone(), result.clone(), var_def.mutable);
     // Add variable define step to plan
     let var_def_fxn = VariableDefineFxn{id: var_id, name: var_name.clone(), mutable: var_def.mutable, var: val_ref.clone()};
-    p.add_plan_step(Box::new(var_def_fxn.clone()));
+    state_brrw.add_plan_step(Box::new(var_def_fxn.clone()));
     return Ok(result);
   } else { 
+    let mut state_brrw = p.state.borrow_mut();
     // Save symbol to interpreter
-    let val_ref = p.save_symbol(var_id,var_name.clone(),result.clone(),var_def.mutable);
+    let val_ref = state_brrw.save_symbol(var_id,var_name.clone(),result.clone(),var_def.mutable);
     // Add variable define step to plan
     let var_def_fxn = VariableDefineFxn{id: var_id, name: var_name.clone(), mutable: var_def.mutable, var: val_ref.clone()};
-    p.add_plan_step(Box::new(var_def_fxn.clone()));
+    state_brrw.add_plan_step(Box::new(var_def_fxn.clone()));
     return Ok(result);
   }
 }

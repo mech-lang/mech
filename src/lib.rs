@@ -245,7 +245,7 @@ pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
   if names.is_empty() {
     // Print all symbols
     for (id, name) in dictionary.borrow().iter() {
-      let value = intrp.get_symbol(*id).unwrap();
+      let value = intrp.state.borrow().get_symbol(*id).unwrap();
       let value_brrw = value.borrow();
       builder.push_record(vec![
         name.clone(),
@@ -261,7 +261,7 @@ pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
     // Print only symbols in names
     for (id, name) in dictionary.borrow().iter() {
       if names_set.contains(name) {
-        let value = intrp.get_symbol(*id).unwrap();
+        let value = intrp.state.borrow().get_symbol(*id).unwrap();
         let value_brrw = value.borrow();
         builder.push_record(vec![
           name.clone(),

@@ -32,8 +32,8 @@ pub struct ProgramState {
 }
 
 impl ProgramState {
-  pub fn new() -> Self {
-    Self {
+  pub fn new() -> ProgramState {
+    ProgramState {
       #[cfg(feature = "symbol_table")]
       symbol_table: Ref::new(SymbolTable::new()),
       #[cfg(feature = "functions")]
@@ -46,4 +46,33 @@ impl ProgramState {
       dictionary: Ref::new(Dictionary::new()),
     }
   }
+
+  #[cfg(feature = "symbol_table")]
+  pub fn get_symbol(&self, id: u64) -> Option<Ref<Value>> {
+    let syms = self.symbol_table.borrow();
+    syms.get(id)
+  }
+
+      
+  #[cfg(feature = "functions")]
+  pub fn add_plan_step(&self, step: Box<dyn MechFunction>) {
+    let mut plan_brrw = self.plan.borrow_mut();
+    plan_brrw.push(step);
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn insert_function(&self, fxn: FunctionDefinition) {
+    let mut fxns_brrw = self.functions.borrow_mut();
+    fxns_brrw.functions.insert(fxn.id, fxn);
+  }
+
+  #[cfg(feature = "symbol_table")]
+  pub fn save_symbol(&self, id: u64, name: String, value: Value, mutable: bool) -> ValRef {
+    let mut symbols_brrw = self.symbol_table.borrow_mut();
+    let val_ref = symbols_brrw.insert(id,value,mutable);
+    let mut dict_brrw = symbols_brrw.dictionary.borrow_mut();
+    dict_brrw.insert(id,name);
+    val_ref
+  }
+
 }
