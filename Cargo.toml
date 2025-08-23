@@ -134,7 +134,6 @@ logical_indexing = ["subscript","vectord","bool", "mech-core/logical_indexing"]
 dot_indexing = ["subscript", "mech-core/dot_indexing"]
 swizzle = ["subscript", "mech-core/swizzle"]
 
-
 [dependencies]
 mech-core = {path = "../../mech/src/core", version = "0.2.57", default-features = false}
 
