@@ -1,14 +1,14 @@
 use crate::*;
 use mech_core::*;
 use paste::paste;
-use mech_core::matrix::Matrix;
 use std::ops::Neg;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::ops::Not;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 
 // Not ------------------------------------------------------------------------
-
 
 #[derive(Debug)]
 struct NotS<T> {
@@ -17,7 +17,7 @@ struct NotS<T> {
   pub _marker: PhantomData<T>,
 }
 
-impl<T> MechFunction for NotS<T>
+impl<T> MechFunctionImpl for NotS<T>
 where
   T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static + Not<Output = T>,
   Ref<T>: ToValue,
@@ -29,6 +29,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for NotS<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -41,7 +44,7 @@ pub struct NotV<T, MatA> {
   pub _marker: PhantomData<T>,
 }
 
-impl<T, MatA> MechFunction for NotV<T, MatA>
+impl<T, MatA> MechFunctionImpl for NotV<T, MatA>
 where
   Ref<MatA>: ToValue,
   T: Debug + Clone + Sync + Send + 'static + Not<Output = T>,
@@ -62,6 +65,9 @@ where
   }
   fn out(&self) -> Value {self.out.to_value()}
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<T, MatA> MechFunctionCompiler for NotV<T, MatA> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }

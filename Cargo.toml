@@ -19,62 +19,118 @@ maintenance = { status = "actively-developed" }
 crate-type = ["rlib"]
 
 [features]
-default = ["stdlib", "and", "or", "not", "xor"]
-and = []
-or = []
-not = []
-xor = []
+no_std = ["mech-core/no_std"]
 
-stdlib = ["bool", "string", "numbers", "matrix", "set", "map", "table", "tuple", "record", "atom", "mech-core/stdlib"]
-numbers = ["signed_ints", "unsigned_ints", "floats", "complex", "rational", "mech-core/numbers"]
-complex = ["c64", "mech-core/complex"]
-rational = ["r64", "mech-core/rational"]
-signed_ints = ["i8", "i16", "i32", "i64", "i128", "mech-core/signed_ints"]
-unsigned_ints = ["u8", "u16", "u32", "u64", "u128", "mech-core/unsigned_ints"]
-floats = ["f32", "f64", "mech-core/floats"]
+default = ["stdlib", "pretty_print", "serde", "compiler",
+            "logic_default",
+            "statements_default", "subscript_default",
+            "mech-core/default",
+          ]
+
+logic_default = ["and", "or", "not", "xor"]
+logic = ["functions", "bool"]
+and = ["logic"]
+or = ["logic"]
+not = ["logic"]
+xor = ["logic"]
+
+statements_default = ["variable_assign","variable_define","kind_define"]
+subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
+
+stdlib = ["bool", "string",
+          "u8", "u16", "u32", "u64", "u128", 
+          "i8", "i16", "i32", "i64", "i128", 
+          "f32", "f64", "c64", "r64", 
+          "set", "map", "table", "tuple", "record", "atom",
+          "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
+          "row_vector2", "row_vector3", "row_vector4",
+          "vector2", "vector3", "vector4",
+          "row_vectord", "vectord", "matrixd",
+          "subscript_range", "logical_indexing", "swizzle",
+          "subscript_formula", "dot_indexing",
+          "variable_define", "variable_assign", "kind_define",
+          "kind_annotation", "variables",
+          "functions", "formulas",
+        ]
+
+compiler = ["mech-core/compiler"]
+pretty_print = ["mech-core/pretty_print"]
+serde = ["mech-core/serde"]
+
+statements = ["mech-core/statements"]
+variables = ["variable_define", "symbol_table", "mech-core/variables"]
+variable_define = ["statements", "functions", "mech-core/variable_define"]
+variable_assign = ["statements", "mech-core/variable_assign"]
+kind_define = ["kind_annotation", "statements", "mech-core/kind_define"]
+kind_annotation = ["functions", "mech-core/kind_annotation"]
+formulas = ["mech-core/formulas"]
+functions = ["symbol_table", "mech-core/functions"]
+symbol_table = ["mech-core/symbol_table"]
+
 bool = ["mech-core/bool"]
 string = ["mech-core/string"]
-u8 = ["mech-core/u8"]
-u16 = ["mech-core/u16"]
-u32 = ["mech-core/u32"]
-u64 = ["mech-core/u64"]
-u128 = ["mech-core/u128"]
-i8 = ["mech-core/i8"]
-i16 = ["mech-core/i16"]
-i32 = ["mech-core/i32"]
-i64 = ["mech-core/i64"]
-i128 = ["mech-core/i128"]
-f32 = ["mech-core/f32"]
-f64 = ["mech-core/f64"]
-c64 = ["mech-core/c64"]
-r64 = ["mech-core/r64"]
+
+# Numbers
+numbers = ["mech-core/numbers"]
+complex = ["f64", "numbers", "mech-core/complex"]
+rational = ["i64", "numbers", "mech-core/rational"]
+signed_ints = ["numbers", "mech-core/signed_ints"]
+unsigned_ints = ["numbers", "mech-core/unsigned_ints"]
+floats = ["numbers", "mech-core/floats"]
+u8 = ["unsigned_ints", "mech-core/u8"]
+u16 = ["unsigned_ints", "mech-core/u16"]
+u32 = ["unsigned_ints", "mech-core/u32"]
+u64 = ["unsigned_ints", "mech-core/u64"]
+u128 = ["unsigned_ints", "mech-core/u128"]
+i8 = ["signed_ints", "mech-core/i8"]
+i16 = ["signed_ints", "mech-core/i16"]
+i32 = ["signed_ints", "mech-core/i32"]
+i64 = ["signed_ints", "mech-core/i64"]
+i128 = ["signed_ints", "mech-core/i128"]
+f32 = ["floats", "mech-core/f32"]
+f64 = ["floats", "mech-core/f64"]
+c64 = ["complex", "mech-core/c64"]
+r64 = ["rational", "mech-core/r64"]
+
+# Structs
 set = ["mech-core/set"]
 map = ["mech-core/map"]
-table = ["mech-core/table"]
+table = ["vectord", "record", "mech-core/table"]
 tuple = ["mech-core/tuple"]
-record = ["mech-core/record"]
+enum = ["mech-core/enum"]
+record = ["tuple", "mech-core/record"]
 atom = ["mech-core/atom"]
 
+# Matrix
 matrix = ["nalgebra", "mech-core/matrix"]
-dynamic_matrix = ["matrixd", "row_vectord", "vectord", "mech-core/dynamic_matrix"]
 fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2", "mech-core/fixed_row_vector"]
 fixed_vector = ["vector4", "vector3", "vector2", "mech-core/fixed_vector"]
 fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "mech-core/fixed_matrix"]
-row_vector4 = ["mech-core/row_vector4","matrix","dynamic_matrix"]
-row_vector3 = ["mech-core/row_vector3","matrix","dynamic_matrix"]
-row_vector2 = ["mech-core/row_vector2","matrix","dynamic_matrix"]
-vector4 = ["mech-core/vector4","matrix","dynamic_matrix"]
-vector3 = ["mech-core/vector3","matrix","dynamic_matrix"]
-vector2 = ["mech-core/vector2","matrix","dynamic_matrix"]
-matrix4 = ["mech-core/matrix4","matrix","dynamic_matrix"]
-matrix3 = ["mech-core/matrix3","matrix","dynamic_matrix"]
-matrix2 = ["mech-core/matrix2","matrix","dynamic_matrix"]
-matrix1 = ["mech-core/matrix1","matrix","dynamic_matrix"]
-matrix2x3 = ["mech-core/matrix2x3","matrix","dynamic_matrix"]
-matrix3x2 = ["mech-core/matrix3x2","matrix","dynamic_matrix"]
-row_vectord = ["mech-core/row_vectord","matrix"]
-vectord = ["mech-core/vectord","matrix"]
-matrixd = ["mech-core/matrixd","matrix"]
+dynamic_matrix = ["matrixd", "vectord", "row_vectord", "mech-core/dynamic_matrix"]
+row_vector4 = ["dynamic_matrix","matrix", "mech-core/row_vector4"]
+row_vector3 = ["dynamic_matrix","matrix", "mech-core/row_vector3"]
+row_vector2 = ["dynamic_matrix","matrix", "mech-core/row_vector2"]
+vector4 = ["dynamic_matrix","matrix", "mech-core/vector4"]
+vector3 = ["dynamic_matrix","matrix", "mech-core/vector3"]
+vector2 = ["dynamic_matrix","matrix", "mech-core/vector2"]
+matrix4 = ["dynamic_matrix","matrix", "mech-core/matrix4"]
+matrix3 = ["dynamic_matrix","matrix", "mech-core/matrix3"]
+matrix2 = ["dynamic_matrix","matrix", "mech-core/matrix2", "mech-core/matrix"]
+matrix1 = ["dynamic_matrix","matrix", "mech-core/matrix1"]
+matrix2x3 = ["dynamic_matrix","matrix", "mech-core/matrix2x3"]
+matrix3x2 = ["dynamic_matrix","matrix", "mech-core/matrix3x2"]
+row_vectord =["matrix", "dynamic_matrix", "mech-core/row_vectord"]
+vectord = ["matrix", "dynamic_matrix", "mech-core/vectord"]
+matrixd = ["matrix", "dynamic_matrix", "mech-core/matrixd"]
+
+# Subscripts
+subscript = ["mech-core/subscript"]
+subscript_slice = ["subscript", "vectord", "mech-core/subscript_slice"]
+subscript_range = ["subscript_slice","vectord", "mech-core/subscript_range"]
+subscript_formula = ["subscript_slice","formulas", "mech-core/subscript_formula"]
+logical_indexing = ["subscript","vectord","bool", "mech-core/logical_indexing"]
+dot_indexing = ["subscript", "mech-core/dot_indexing"]
+swizzle = ["subscript", "mech-core/swizzle"]
 
 [dependencies]
 mech-core = {path = "../../mech/src/core", version = "0.2.57", default-features = false}
