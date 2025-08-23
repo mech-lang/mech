@@ -68,9 +68,9 @@ formulas = ["mech-core/formulas", "mech-math/formulas", "mech-compare/formulas",
 functions = ["symbol_table", "mech-core/functions", "mech-math/functions", "mech-compare/functions", "mech-combinatorics/functions", "mech-logic/functions", "mech-matrix/functions", "mech-io/functions"]
 symbol_table = ["mech-core/symbol_table", "mech-math/symbol_table", "mech-compare/symbol_table", "mech-combinatorics/symbol_table", "mech-logic/symbol_table", "mech-matrix/symbol_table", "mech-io/symbol_table"]
 
-access = ["functions", "mech-io/access"]
-assign = ["functions", "mech-io/assign"]
-convert = ["functions", "mech-io/convert"]
+access = ["functions"]
+assign = ["functions"]
+convert = ["functions"]
 
 bool = ["mech-core/bool", "mech-compare/bool", "mech-math/bool", "mech-combinatorics/bool", "mech-logic/bool", "mech-matrix/bool", "mech-io/bool"]
 string = ["mech-core/string", "mech-math/string", "mech-compare/string", "mech-combinatorics/string", "mech-logic/string", "mech-matrix/string", "mech-io/string"]
@@ -140,11 +140,16 @@ swizzle = ["subscript", "mech-core/swizzle", "mech-math/swizzle", "mech-compare/
 # Libs
 # -----------------------------------------------------------------------------
 
+# Stats
+stats_default = ["stats_sum"]
+stats = ["num-traits", "functions", "mech-stats/stats"]
+stats_sum = ["stats", "mech-stats/sum"]
+
 # Io
 io_default = ["io_print", "io_println", "mech-io/io_default"]
 io = ["functions"]
-io_print = ["io"]
-io_println = ["io"]
+io_print = ["io", "mech-io/print"]
+io_println = ["io", "mech-io/println"]
 
 # Matrix
 matrix_default = ["matrix_horzcat", "matrix_vertcat", "matrix_matmul", "matrix_transpose", "mech-matrix/matrix_default"]
@@ -226,7 +231,7 @@ mech-logic = { version = "0.2.57", default-features = false, optional = true }
 #mech-range = { version = "0.2.57", default-features = false, optional = true }
 mech-matrix = { version = "0.2.57", default-features = false, optional = true }
 mech-compare = { version = "0.2.57", default-features = false, optional = true }
-#mech-stats = { version = "0.2.57", default-features = false, optional = true }
+mech-stats = { version = "0.2.57", default-features = false, optional = true }
 mech-io = { version = "0.2.57", default-features = false, optional = true }
 mech-combinatorics = { version = "0.2.57", default-features = false, optional = true }
 
