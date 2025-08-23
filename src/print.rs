@@ -1,11 +1,13 @@
 use crate::*;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 
 #[derive(Debug)]
 struct IoPrintMatrix<T,Mat> {
   e0: Ref<Mat>,
   _marker: PhantomData<T>,
 }
-impl<T,Mat> MechFunction for IoPrintMatrix<T,Mat>
+impl<T,Mat> MechFunctionImpl for IoPrintMatrix<T,Mat>
 where
   T: Clone + Sync + Send + 'static + Display + Debug,
   for<'a> &'a Mat: IntoIterator<Item = &'a T>,
@@ -24,6 +26,9 @@ where
   }
   fn out(&self) -> Value { Value::Empty }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<T,Mat> MechFunctionCompiler for IoPrintMatrix<T,Mat> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -72,7 +77,7 @@ struct IoPrintScalar<T> {
   e0: Ref<T>,
 }
 
-impl<T> MechFunction for IoPrintScalar<T> 
+impl<T> MechFunctionImpl for IoPrintScalar<T> 
   where T: Clone + Sync + Send + 'static + Display + Debug {
   fn solve(&self) { 
     unsafe {
@@ -85,6 +90,9 @@ impl<T> MechFunction for IoPrintScalar<T>
   }
   fn out(&self) -> Value { Value::Empty }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for IoPrintScalar<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
