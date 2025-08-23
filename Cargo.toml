@@ -69,7 +69,8 @@ neg = ["simba","ops"]
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
 
-stdlib = ["bool", "string", 
+stdlib = ["bool", "string",
+          "add",
           "u8", "u16", "u32", "u64", "u128", 
           "i8", "i16", "i32", "i64", "i128", 
           "f32", "f64", "c64", "r64", 
