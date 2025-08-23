@@ -14,6 +14,10 @@ use mech_core::*;
 use mech_core::matrix::{Matrix, ToMatrix};
 use mech_core::kind::Kind;
 use mech_core::{Dictionary, Ref, Value, ValueKind, ValRef, ToValue};
+#[cfg(feature = "io_print")]
+use mech_io::IoPrint;
+#[cfg(feature = "io_println")]
+use mech_io::IoPrintln;
 #[cfg(feature = "map")]
 use mech_core::MechMap;
 #[cfg(feature = "record")]
@@ -50,10 +54,8 @@ use mech_core::{MechError, MechErrorKind, hash_str, MResult, nodes::Kind as Node
 
 #[cfg(feature = "combinatorics")]
 use mech_combinatorics::*;
-#[cfg(feature = "io")]
-use mech_io::*;
-//#[cfg(feature = "matrix")]
-//use mech_matrix::*;
+#[cfg(feature = "matrix")]
+use mech_matrix::*;
 #[cfg(feature = "stats")]
 use mech_stats::*;
 #[cfg(feature = "math")]
