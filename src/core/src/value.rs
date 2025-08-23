@@ -126,9 +126,9 @@ impl ValueKind {
       ValueKind::String => FeatureKind::String,
       ValueKind::Bool => FeatureKind::Bool,
       #[cfg(feature = "complex")]
-      ValueKind::ComplexNumber => FeatureKind::Complex,
+      ValueKind::ComplexNumber => FeatureKind::C64,
       #[cfg(feature = "rational")]
-      ValueKind::RationalNumber => FeatureKind::Rational,
+      ValueKind::RationalNumber => FeatureKind::R64,
       _ => panic!("Unsupported feature kind for value kind: {}", self),
     }
   }

@@ -534,11 +534,7 @@ impl DecodedInstr {
   pub fn write_to<W: Write>(&self, w: &mut W) -> MResult<()> {
     match self {
       DecodedInstr::ConstLoad { dst, const_id } => {
-        // opcode then dst then const_id
-        // assuming opcode for ConstLoad is stored somewhere in variant; but here we don't have it --
-        // however your enum didn't store opcode for ConstLoad specifically. If you have a canonical
-        // opcode value for this variant, replace `0` with that value.
-        let opcode: u64 = 0; // <-- replace with real opcode if known
+        let opcode: u64 = 0; 
         w.write_u64::<LittleEndian>(opcode)?;
         w.write_u32::<LittleEndian>(*dst)?;
         w.write_u32::<LittleEndian>(*const_id)?;
@@ -558,7 +554,7 @@ impl DecodedInstr {
       }
 
       DecodedInstr::Ret { src } => {
-        let opcode: u64 = 0; // <-- replace with real opcode for Ret if your design uses a fixed opcode
+        let opcode: u64 = 0;
         w.write_u64::<LittleEndian>(opcode)?;
         w.write_u32::<LittleEndian>(*src)?;
       }
@@ -570,12 +566,6 @@ impl DecodedInstr {
         }
       }
     }
-
-    // map IO errors to MResult by re-checking last write? The write_* calls above return io::Result,
-    // but we used the ? operator which will convert to early return. To ensure the error type matches MResult,
-    // wrap the body in a closure that maps io::Error -> MechError. For brevity here, assume `?` resolves correctly
-    // in your project to MResult (like other write_to functions). If your project requires explicit mapping, see note below.
-
     Ok(())
   }
 }
