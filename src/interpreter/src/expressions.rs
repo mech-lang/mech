@@ -341,6 +341,7 @@ pub fn factor(fctr: &Factor, p: &Interpreter) -> MResult<Value> {
     },
     #[cfg(feature = "matrix_transpose")]
     Factor::Transpose(fctr) => {
+      use mech_matrix::MatrixTranspose;
       let value = factor(fctr, p)?;
       let new_fxn = MatrixTranspose{}.compile(&vec![value])?;
       new_fxn.solve();
@@ -376,7 +377,10 @@ pub fn term(trm: &Term, p: &Interpreter) -> MResult<Value> {
 
       // Matrix
       #[cfg(feature = "matrix_matmul")]
-      FormulaOperator::Vec(VecOp::MatMul) => MatrixMatMul{}.compile(&vec![lhs,rhs])?,
+      FormulaOperator::Vec(VecOp::MatMul) => {
+        use mech_matrix::MatrixMatMul;
+        MatrixMatMul{}.compile(&vec![lhs,rhs])?
+      }
       #[cfg(feature = "matrix_solve")]
       FormulaOperator::Vec(VecOp::Solve) => todo!(),
       #[cfg(feature = "matrix_cross")]

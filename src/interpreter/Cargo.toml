@@ -26,6 +26,7 @@ no_std = ["mech-core/no_std", "mech-math/no_std", "mech-compare/no_std", "mech-c
 
 default = ["stdlib", "pretty_print", "serde", "compiler",
       "math_default", "compare_default", "combinatorics_default", "logic_default",
+      "matrix_default",
       "statements_default", "subscript_default",
       "mech-core/default",
       "mech-math/default", "mech-compare/default", "mech-combinatorics/default", "mech-logic/default",
@@ -139,6 +140,13 @@ swizzle = ["subscript", "mech-core/swizzle", "mech-math/swizzle", "mech-compare/
 # Libs
 # -----------------------------------------------------------------------------
 
+# Matrix
+matrix_default = ["matrix_horzcat", "matrix_vertcat", "matrix_matmul", "matrix_transpose", "mech-matrix/matrix_default"]
+matrix_horzcat = ["matrix"]
+matrix_vertcat = ["matrix"]
+matrix_matmul = ["matrix", "mech-matrix/matmul"]
+matrix_transpose = ["matrix", "mech-matrix/transpose"]
+
 # Logic
 logic_default = ["logic_and", "logic_or", "logic_not", "logic_xor", "mech-logic/logic_default"]
 logic = ["bool", "mech-logic/logic"]
@@ -152,11 +160,11 @@ combinatorics_default = ["combinatorics_n_choose_k", "mech-combinatorics/combina
 combinatorics = ["num-traits", "functions", "mech-combinatorics/combinatorics"]
 combinatorics_n_choose_k = ["combinatorics", "mech-combinatorics/n_choose_k"]
 
-# Combinations
+# Compare
 compare_default = ["compare_lt", "compare_gt", "compare_lte", "compare_gte", "mech-compare/compare_default"]
 compare = ["functions", "bool", "mech-compare/compare"]
-#compare_eq = ["compare", "mech-compare/eq"]
-#compare_neq = ["compare", "mech-compare/neq"]
+compare_eq = ["compare", "mech-compare/eq"]
+compare_neq = ["compare", "mech-compare/neq"]
 compare_lt = ["compare", "mech-compare/lt"]
 compare_gt = ["compare", "mech-compare/gt"]
 compare_lte = ["compare", "mech-compare/lte"]
@@ -205,17 +213,12 @@ math_exp = ["math_ops", "mech-math/exp"]
 math_mod = ["math_ops", "mech-math/mod"]
 math_neg = ["math_ops", "mech-math/neg"]
 
-# Horzcat and Vertcat
-
-matrix_horzcat = ["matrix"]
-matrix_vertcat = ["matrix"]
-
 [dependencies]
 mech-core = { version = "0.2.57", default-features = false }
 mech-math = { version = "0.2.57", default-features = false, optional = true}
 mech-logic = { version = "0.2.57", default-features = false, optional = true }
 #mech-range = { version = "0.2.57", default-features = false, optional = true }
-#mech-matrix = { version = "0.2.57", default-features = false, optional = true }
+mech-matrix = { version = "0.2.57", default-features = false, optional = true }
 mech-compare = { version = "0.2.57", default-features = false, optional = true }
 #mech-stats = { version = "0.2.57", default-features = false, optional = true }
 #mech-io = { version = "0.2.57", default-features = false, optional = true }
