@@ -2,6 +2,8 @@ use crate::*;
 use mech_core::*;
 use libm::{sinh, sinhf};
 use num_traits::*;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 
 // Sinh ------------------------------------------------------------------------
 macro_rules! sinh_op {

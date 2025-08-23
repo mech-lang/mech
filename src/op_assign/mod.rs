@@ -62,6 +62,7 @@ macro_rules! impl_op_assign_range_fxn_s {
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
     }
+    #[cfg(feature = "compiler")]
     impl<T, R1, C1, S1, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
@@ -106,6 +107,7 @@ macro_rules! impl_op_assign_range_fxn_v {
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
     }
+    #[cfg(feature = "compiler")]
     impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         todo!();
@@ -184,6 +186,7 @@ macro_rules! impl_assign_scalar_scalar {
         fn out(&self) -> Value { self.sink.to_value() }
         fn to_string(&self) -> String { format!("{:#?}", self) }
       }
+      #[cfg(feature = "compiler")]
       impl<T> MechFunctionCompiler for [<$op_name AssignSS>]<T> {
         fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
           todo!();
@@ -228,6 +231,7 @@ macro_rules! impl_assign_vector_vector {
         fn out(&self) -> Value {self.sink.to_value()}
         fn to_string(&self) -> String {format!("{:#?}", self)}
       }
+      #[cfg(feature = "compiler")]
       impl<T, MatA, MatB> MechFunctionCompiler for [<$op_name AssignVV>]<T, MatA, MatB> {
         fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
           todo!();

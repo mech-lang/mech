@@ -2,6 +2,8 @@
 use crate::*;
 use simba::scalar::ClosedNeg;
 use num_traits::*;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 
 // Negate ---------------------------------------------------------------------
 

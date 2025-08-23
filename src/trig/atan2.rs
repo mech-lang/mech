@@ -2,6 +2,8 @@ use crate::*;
 use mech_core::*;
 use libm::{atan2,atan2f};
 use num_traits::*;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 
 // Atan2 ------------------------------------------------------------------------
 

@@ -2,6 +2,8 @@ use crate::*;
 use mech_core::*;
 use libm::{acosh, acoshf};
 use num_traits::*;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 
 // Acosh Macros
 macro_rules! acosh_op {

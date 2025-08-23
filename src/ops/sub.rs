@@ -1,6 +1,8 @@
 #[macro_use]
 use crate::*;
 use num_traits::*;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 
 // Sub ------------------------------------------------------------------------
 

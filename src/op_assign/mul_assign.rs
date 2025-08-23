@@ -2,6 +2,8 @@
 use crate::*;
 use super::*;
 use num_traits::*;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 
 // Mul Assign -----------------------------------------------------------------
 

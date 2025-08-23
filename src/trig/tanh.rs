@@ -2,6 +2,8 @@ use crate::*;
 use mech_core::*;
 use libm::{tanh, tanhf};
 use num_traits::*;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 
 // Tanh ------------------------------------------------------------------------
 macro_rules! tanh_op {

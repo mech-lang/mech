@@ -43,19 +43,19 @@ use std::ops::*;
 use std::fmt::{Display, Debug};
 use std::marker::PhantomData;
 
-//#[cfg(feature = "trig")]
-//pub mod trig;
+#[cfg(feature = "trig")]
+pub mod trig;
 #[cfg(feature = "ops")]
 pub mod ops;
-//#[cfg(feature = "op_assign")]
-//pub mod op_assign;
+#[cfg(feature = "op_assign")]
+pub mod op_assign;
 
-//#[cfg(feature = "trig")]
-//pub use self::trig::*;
+#[cfg(feature = "trig")]
+pub use self::trig::*;
 #[cfg(feature = "ops")]
 pub use self::ops::*;
-//#[cfg(feature = "op_assign")]
-//pub use self::op_assign::*;
+#[cfg(feature = "op_assign")]
+pub use self::op_assign::*;
 
 // ----------------------------------------------------------------------------
 // Math Library

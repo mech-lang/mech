@@ -2,6 +2,8 @@ use crate::*;
 use mech_core::*;
 use libm::{asinh, asinhf};
 use num_traits::*;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 
 // Asinh Macros
 macro_rules! asinh_op {

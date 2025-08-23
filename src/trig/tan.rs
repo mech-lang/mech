@@ -1,6 +1,8 @@
 use crate::*;
 use mech_core::*;
 use num_traits::*;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 
 // Tan ------------------------------------------------------------------------
 

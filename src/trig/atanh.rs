@@ -2,6 +2,8 @@ use crate::*;
 use mech_core::*;
 use libm::{atanh, atanhf};
 use num_traits::*;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 
 // Atanh Macros
 macro_rules! atanh_op {
