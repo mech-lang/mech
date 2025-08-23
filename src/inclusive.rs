@@ -14,7 +14,7 @@ struct RangeInclusiveScalar<T> {
 }
 
 #[cfg(feature = "row_vectord")]
-impl<T> MechFunction for RangeInclusiveScalar<T>
+impl<T> MechFunctionImpl for RangeInclusiveScalar<T>
 where
     T: Copy + Debug + Clone + Sync + Send + Step + PartialEq + 'static,
     Ref<RowDVector<T>>: ToValue
@@ -31,6 +31,9 @@ where
   }
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self)}
+}
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for RangeInclusiveScalar<T> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
