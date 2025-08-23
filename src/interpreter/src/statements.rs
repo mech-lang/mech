@@ -203,16 +203,17 @@ impl MechFunctionCompiler for VariableDefineFxn {
 pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Value> {
   let var_id = var_def.var.name.hash();
   let var_name = var_def.var.name.to_string();
-
-  let symbols = p.symbols();
-  let functions = p.functions();
-  let mut state_brrw = p.state.borrow_mut();
-  if symbols.borrow().contains(var_id) {
-    return Err(MechError{file: file!().to_string(), tokens: var_def.var.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::VariableRedefined(var_id)}); 
+  {
+    let symbols = p.symbols();
+    let mut state_brrw = p.state.borrow_mut();
+    if symbols.borrow().contains(var_id) {
+      return Err(MechError{file: file!().to_string(), tokens: var_def.var.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::VariableRedefined(var_id)}); 
+    }
   }
   let mut result = expression(&var_def.expression, p)?;
   if let Some(knd_anntn) =  &var_def.var.kind {
     let knd = kind_annotation(&knd_anntn.kind,p)?;
+    let mut state_brrw = p.state.borrow_mut();
     let mut kinds = &mut state_brrw.kinds;
     let target_knd = knd.to_value_kind(&mut kinds)?;
     // Do kind checking
@@ -262,6 +263,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
       }
       #[cfg(feature = "matrix")]
       (value, ValueKind::Matrix(box target_matrix_knd,_)) => {
+        todo!();
         if value.is_matrix() {
           let convert_fxn = ConvertMatToMat{}.compile(&vec![result.clone(), Value::Kind(target_knd.clone())])?;
           convert_fxn.solve();
@@ -294,20 +296,14 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
       },
     };
     // Save symbol to interpreter
-    let mut symbols_brrw = symbols.borrow_mut();
-    let val_ref = symbols_brrw.insert(var_id,result.clone(),var_def.mutable);
-    let mut dict_brrw = symbols_brrw.dictionary.borrow_mut();
-    dict_brrw.insert(var_id,var_name.clone());
+    let val_ref = p.save_symbol(var_id, var_name.clone(), result.clone(), var_def.mutable);
     // Add variable define step to plan
     let var_def_fxn = VariableDefineFxn{id: var_id, name: var_name.clone(), mutable: var_def.mutable, var: val_ref.clone()};
     p.add_plan_step(Box::new(var_def_fxn.clone()));
     return Ok(result);
   } else { 
     // Save symbol to interpreter
-    let mut symbols_brrw = symbols.borrow_mut();
-    let val_ref = symbols_brrw.insert(var_id,result.clone(),var_def.mutable);
-    let mut dict_brrw = symbols_brrw.dictionary.borrow_mut();
-    dict_brrw.insert(var_id,var_name.clone());
+    let val_ref = p.save_symbol(var_id,var_name.clone(),result.clone(),var_def.mutable);
     // Add variable define step to plan
     let var_def_fxn = VariableDefineFxn{id: var_id, name: var_name.clone(), mutable: var_def.mutable, var: val_ref.clone()};
     p.add_plan_step(Box::new(var_def_fxn.clone()));
