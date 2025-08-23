@@ -172,7 +172,7 @@ combinatorics = ["num-traits", "functions", "mech-combinatorics/combinatorics"]
 combinatorics_n_choose_k = ["combinatorics", "mech-combinatorics/n_choose_k"]
 
 # Compare
-compare_default = ["compare_lt", "compare_gt", "compare_lte", "compare_gte", "mech-compare/compare_default"]
+compare_default = ["compare_lt", "compare_gt", "compare_lte", "compare_gte", "compare_eq", "compare_neq", "mech-compare/compare_default"]
 compare = ["functions", "bool", "mech-compare/compare"]
 compare_eq = ["compare", "mech-compare/eq"]
 compare_neq = ["compare", "mech-compare/neq"]
