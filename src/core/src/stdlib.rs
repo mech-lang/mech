@@ -1,10 +1,12 @@
 pub use crate::*;
 
-// ============================================================================
-// The Standard Library!
-// ============================================================================
+// The Standard Libray
+// ----------------------------------------------------------------------------
 
-// These macros are used by various libraries to generate function impl
+// These macros are used by various libraries to generate function impl and
+// match arms. They're gated on feature flags so although there's a lot of
+// code here to account for all the different combinations, but only
+// the relevant code will be compiled in any given build.
 
 #[macro_export]
 macro_rules! impl_binop {
@@ -114,7 +116,7 @@ macro_rules! impl_bool_binop {
     }};}
 
 #[macro_export]  
-macro_rules! impl_bool_urop {
+macro_rules! impl_bool_unop {
   ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident) => {
     #[derive(Debug)]
     struct $struct_name<T> {
@@ -143,7 +145,7 @@ macro_rules! impl_bool_urop {
     }};}
 
 #[macro_export]  
-macro_rules! impl_urop {
+macro_rules! impl_unop {
   ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident) => {
     #[derive(Debug)]
     struct $struct_name {
