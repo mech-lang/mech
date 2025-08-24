@@ -32,9 +32,9 @@ macro_rules! acscf_vec_op {
       }}};}
 
 #[cfg(feature = "f32")]      
-impl_math_urop!(MathAcsc, F32, acscf);
+impl_math_unop!(MathAcsc, F32, acscf);
 #[cfg(feature = "f64")]
-impl_math_urop!(MathAcsc, F64, acsc);
+impl_math_unop!(MathAcsc, F64, acsc);
 
 fn impl_acsc_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_urnop_match_arms2!(

@@ -114,38 +114,38 @@ macro_rules! impl_urnop_match_arms2 {
       }}}}
 
 #[macro_export]
-macro_rules! impl_math_urop {
+macro_rules! impl_math_unop {
   ($fxn_name:ident, $type:ident, $op_fxn:ident) => {
     paste!{
-      impl_urop!([<$fxn_name $type S>], $type, $type, [<$op_fxn _op>]);
+      impl_unop!([<$fxn_name $type S>], $type, $type, [<$op_fxn _op>]);
       #[cfg(feature = "matrix1")]
-      impl_urop!([<$fxn_name $type M1>], Matrix1<$type>, Matrix1<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type M1>], Matrix1<$type>, Matrix1<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "matrix2")]
-      impl_urop!([<$fxn_name $type M2>], Matrix2<$type>, Matrix2<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type M2>], Matrix2<$type>, Matrix2<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "matrix3")]
-      impl_urop!([<$fxn_name $type M3>], Matrix3<$type>, Matrix3<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type M3>], Matrix3<$type>, Matrix3<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "matrix4")]
-      impl_urop!([<$fxn_name $type M4>], Matrix4<$type>, Matrix4<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type M4>], Matrix4<$type>, Matrix4<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "matrix2x3")]
-      impl_urop!([<$fxn_name $type M2x3>], Matrix2x3<$type>, Matrix2x3<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type M2x3>], Matrix2x3<$type>, Matrix2x3<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "matrix3x2")]
-      impl_urop!([<$fxn_name $type M3x2>], Matrix3x2<$type>, Matrix3x2<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type M3x2>], Matrix3x2<$type>, Matrix3x2<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "matrixd")]
-      impl_urop!([<$fxn_name $type MD>], DMatrix<$type>, DMatrix<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type MD>], DMatrix<$type>, DMatrix<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "row_vector2")]
-      impl_urop!([<$fxn_name $type R2>], RowVector2<$type>, RowVector2<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type R2>], RowVector2<$type>, RowVector2<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "row_vector3")]
-      impl_urop!([<$fxn_name $type R3>], RowVector3<$type>, RowVector3<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type R3>], RowVector3<$type>, RowVector3<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "row_vector4")]
-      impl_urop!([<$fxn_name $type R4>], RowVector4<$type>, RowVector4<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type R4>], RowVector4<$type>, RowVector4<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "row_vectord")]
-      impl_urop!([<$fxn_name $type RD>], RowDVector<$type>, RowDVector<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type RD>], RowDVector<$type>, RowDVector<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "vector2")]
-      impl_urop!([<$fxn_name $type V2>], Vector2<$type>, Vector2<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type V2>], Vector2<$type>, Vector2<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "vector3")]
-      impl_urop!([<$fxn_name $type V3>], Vector3<$type>, Vector3<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type V3>], Vector3<$type>, Vector3<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "vector4")]
-      impl_urop!([<$fxn_name $type V4>], Vector4<$type>, Vector4<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type V4>], Vector4<$type>, Vector4<$type>, [<$op_fxn _vec_op>]);
       #[cfg(feature = "vectord")]
-      impl_urop!([<$fxn_name $type VD>], DVector<$type>, DVector<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type VD>], DVector<$type>, DVector<$type>, [<$op_fxn _vec_op>]);
     }}}

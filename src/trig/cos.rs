@@ -32,9 +32,9 @@ macro_rules! cosf_vec_op {
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_urop!(MathCos, F32, cosf);
+impl_math_unop!(MathCos, F32, cosf);
 #[cfg(feature = "f64")]
-impl_math_urop!(MathCos, F64, cos);
+impl_math_unop!(MathCos, F64, cos);
 
 fn impl_cos_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_urnop_match_arms2!(

@@ -32,9 +32,9 @@ macro_rules! sinf_vec_op {
       }}};}
 
 #[cfg(feature = "f32")]      
-impl_math_urop!(MathSin, F32, sinf);
+impl_math_unop!(MathSin, F32, sinf);
 #[cfg(feature = "f64")]
-impl_math_urop!(MathSin, F64, sin);
+impl_math_unop!(MathSin, F64, sin);
 
 fn impl_sin_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_urnop_match_arms2!(
