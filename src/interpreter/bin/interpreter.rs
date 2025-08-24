@@ -8,8 +8,8 @@ fn main() {
   let mut intrp = Interpreter::new(0);
 
   // 2. Include the serialized code at compile time
-  //    Suppose you saved it previously as "program.blx" using bincode::encode_to_vec
-  let serialized_code: &[u8] = include_bytes!("bar.blx");
+  //    Suppose you saved it previously as "program.mecb" using bincode::encode_to_vec
+  let serialized_code: &[u8] = include_bytes!("bar.mecb");
 
   // 3. Deserialize into MechSourceCode
   #[cfg(feature = "serde")]

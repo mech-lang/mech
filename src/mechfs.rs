@@ -114,7 +114,7 @@ impl MechFileSystem {
                   return Err(e);
                 },
               }
-            } else if f.extension() == Some(OsStr::new("blx"))  {
+            } else if f.extension() == Some(OsStr::new("mecb"))  {
               match sources.add_source(&f.display().to_string(),src) {
                 Ok(_) => {
                   println!("{} Loaded: {}", "[Load]".truecolor(153,221,85), f.display());
@@ -531,7 +531,7 @@ pub fn read_mech_source_file(path: &Path) -> MResult<MechSourceCode> {
   match path.extension() {
     Some(extension) => {
       match extension.to_str() {
-        Some("blx") => {
+        Some("mecb") => {
           let path = PathBuf::from(path);
           let data = std::fs::read(&path)?;
           let program = load_program_from_file(path)?;   

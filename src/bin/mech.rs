@@ -87,7 +87,7 @@ async fn main() -> Result<(), MechError> {
     .subcommand(Command::new("format")
       .about("Format Mech source code into standard format.")
       .arg(Arg::new("mech_format_file_paths")
-        .help("Source .mec and .blx files")
+        .help("Source .mec and .mecb files")
         .required(false)
         .action(ArgAction::Append))
       .arg(Arg::new("output_path")
@@ -109,7 +109,7 @@ async fn main() -> Result<(), MechError> {
     .subcommand(Command::new("build")
       .about("Build Mech program into a binary.")
       .arg(Arg::new("mech_build_file_paths")
-        .help("Source .mec and .blx files")
+        .help("Source .mec and .mecb files")
         .required(false)
         .action(ArgAction::Append))
       .arg(Arg::new("output_path")
@@ -120,7 +120,7 @@ async fn main() -> Result<(), MechError> {
     .subcommand(Command::new("serve")
       .about("Serve Mech program over an HTTP server.")
       .arg(Arg::new("mech_serve_file_paths")
-        .help("Source .mec and .blx files")
+        .help("Source .mec and .mecb files")
         .required(false)
         .action(ArgAction::Append))
       .arg(Arg::new("port")
@@ -223,7 +223,7 @@ async fn main() -> Result<(), MechError> {
 
     let bytecode = intrp.compile()?;
 
-    let mut output_file = output_path.join("output.blx");
+    let mut output_file = output_path.join("output.mecb");
 
     let mut f = std::fs::File::create(&output_file)?;
     f.write_all(&bytecode)?;

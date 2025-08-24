@@ -7,8 +7,8 @@
 # Database files
 *.mdb
 
-# Blocks files
-*.blx
+# Mech Bytecode files
+*.mecb
 
 # Executables
 *.exe
