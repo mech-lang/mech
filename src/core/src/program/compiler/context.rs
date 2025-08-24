@@ -65,11 +65,11 @@ impl CompileCtx {
   pub fn emit_const_load(&mut self, dst: Register, const_id: u32) {
     self.instrs.push(EncodedInstr::ConstLoad { dst, const_id });
   }
-  pub fn emit_unop(&mut self, opcode: u64, dst: Register, src: Register) {
-    self.instrs.push(EncodedInstr::UnOp { opcode, dst, src });
+  pub fn emit_unop(&mut self, fxn_id: u64, dst: Register, src: Register) {
+    self.instrs.push(EncodedInstr::UnOp { fxn_id, dst, src });
   }
-  pub fn emit_binop(&mut self, opcode: u64, dst: Register, lhs: Register, rhs: Register) {
-    self.instrs.push(EncodedInstr::BinOp { opcode, dst, lhs, rhs });
+  pub fn emit_binop(&mut self, fxn_id: u64, dst: Register, lhs: Register, rhs: Register) {
+    self.instrs.push(EncodedInstr::BinOp { fxn_id, dst, lhs, rhs });
   }
   pub fn emit_ret(&mut self, src: Register) {
     self.instrs.push(EncodedInstr::Ret { src })

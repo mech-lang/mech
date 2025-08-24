@@ -481,13 +481,22 @@ pub fn verify_crc_trailer_seek<R: Read + Seek>(r: &mut R, total_len: u64) -> MRe
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum DecodedInstr {
   ConstLoad { dst: u32, const_id: u32 },
-  UnOp { opcode: u64, dst: u32, src: u32 },
-  BinOp { opcode: u64, dst: u32, lhs: u32, rhs: u32 },
+  UnOp { fxn_id: u64, dst: u32, src: u32 },
+  BinOp { fxn_id: u64, dst: u32, lhs: u32, rhs: u32 },
   Ret { src: u32 },
-  Unknown { opcode: u64, rest: Vec<u8> }, // unknown opcode or dynamic form
+  Unknown { opcode: u8, rest: Vec<u8> }, // unknown opcode or dynamic form
 }
 
-fn decode_instructions(mut cur: Cursor<&[u8]>) -> io::Result<Vec<DecodedInstr>> {
+impl DecodedInstr {
+ pub fn from_u8(num: u8) -> Option<DecodedInstr> {
+    match num {
+     
+      _ => None,
+    }
+  }
+}
+
+fn decode_instructions(mut cur: Cursor<&[u8]>) -> MResult<Vec<DecodedInstr>> {
   let mut out = Vec::new();
   while (cur.position() as usize) < cur.get_ref().len() {
     // read opcode (u64)
@@ -495,32 +504,49 @@ fn decode_instructions(mut cur: Cursor<&[u8]>) -> io::Result<Vec<DecodedInstr>> 
     // if remaining < 8, can't read opcode
     let rem = cur.get_ref().len() - pos_before as usize;
     if rem < 8 {
-      // leftover junk — treat as unknown and break
-      let mut rest = vec![];
-      let start = pos_before as usize;
-      rest.extend_from_slice(&cur.get_ref()[start..]);
-      out.push(DecodedInstr::Unknown { opcode: 0, rest });
-      break;
+      return Err(MechError {
+        file: file!().to_string(),
+        tokens: vec![],
+        msg: "Truncated instruction: cannot read opcode".to_string(),
+        id: line!(),
+        kind: MechErrorKind::GenericError("Truncated instruction".to_string()),
+      });
     }
-    let opcode = cur.read_u64::<LittleEndian>()?;
-    match opcode {
-      OP_CONST_LOAD => {
+    let opcode_byte = cur.read_u8()?;
+    match OpCode::from_u8(opcode_byte) {
+      Some(OpCode::ConstLoad) => {
         // need 4+4 bytes
         let dst = cur.read_u32::<LittleEndian>()?;
         let const_id = cur.read_u32::<LittleEndian>()?;
         out.push(DecodedInstr::ConstLoad { dst, const_id });
       }
-      OP_RETURN => {
+      Some(OpCode::Return) => {
         let src = cur.read_u32::<LittleEndian>()?;
         out.push(DecodedInstr::Ret { src });
       }
+      Some(OpCode::Unop) => {
+        // need 8+4+4 bytes
+        let fxn_id = cur.read_u64::<LittleEndian>()?;
+        let dst = cur.read_u32::<LittleEndian>()?;
+        let src = cur.read_u32::<LittleEndian>()?;
+        out.push(DecodedInstr::UnOp { fxn_id: fxn_id, dst, src });
+      }
+      Some(OpCode::Binop) => {
+        // need 8+4+4+4 bytes
+        let fxn_id = cur.read_u64::<LittleEndian>()?;
+        let dst = cur.read_u32::<LittleEndian>()?;
+        let lhs = cur.read_u32::<LittleEndian>()?;
+        let rhs = cur.read_u32::<LittleEndian>()?;
+        out.push(DecodedInstr::BinOp { fxn_id: fxn_id, dst, lhs, rhs });
+      }
       unknown => {
-        // Unknown opcode; we don't know how many args — try to be safe:
-        // We'll return the rest of the bytes as `rest` and stop decoding.
-        let start = cur.position() as usize;
-        let rest = cur.get_ref()[start..].to_vec();
-        out.push(DecodedInstr::Unknown { opcode: unknown, rest });
-        break;
+        return Err(MechError {
+          file: file!().to_string(),
+          tokens: vec![],
+          msg: format!("Unknown opcode: {:?}", unknown),
+          id: line!(),
+          kind: MechErrorKind::GenericError("Unknown opcode".to_string()),
+        });
       }
     }
   }
@@ -534,36 +560,38 @@ impl DecodedInstr {
   pub fn write_to<W: Write>(&self, w: &mut W) -> MResult<()> {
     match self {
       DecodedInstr::ConstLoad { dst, const_id } => {
-        let opcode: u64 = 0; 
-        w.write_u64::<LittleEndian>(opcode)?;
+        w.write_u8(OpCode::ConstLoad as u8)?;
         w.write_u32::<LittleEndian>(*dst)?;
         w.write_u32::<LittleEndian>(*const_id)?;
       }
 
-      DecodedInstr::UnOp { opcode, dst, src } => {
-        w.write_u64::<LittleEndian>(*opcode)?;
+      DecodedInstr::UnOp { fxn_id, dst, src } => {
+        w.write_u8(OpCode::Unop as u8)?;
+        w.write_u64::<LittleEndian>(*fxn_id)?;
         w.write_u32::<LittleEndian>(*dst)?;
         w.write_u32::<LittleEndian>(*src)?;
       }
 
-      DecodedInstr::BinOp { opcode, dst, lhs, rhs } => {
-        w.write_u64::<LittleEndian>(*opcode)?;
+      DecodedInstr::BinOp { fxn_id, dst, lhs, rhs } => {
+        w.write_u8(OpCode::Binop as u8)?;
+        w.write_u64::<LittleEndian>(*fxn_id)?;
         w.write_u32::<LittleEndian>(*dst)?;
         w.write_u32::<LittleEndian>(*lhs)?;
         w.write_u32::<LittleEndian>(*rhs)?;
       }
 
       DecodedInstr::Ret { src } => {
-        let opcode: u64 = 0;
-        w.write_u64::<LittleEndian>(opcode)?;
+        w.write_u8(OpCode::Return as u8)?;
         w.write_u32::<LittleEndian>(*src)?;
       }
-
-      DecodedInstr::Unknown { opcode, rest } => {
-        w.write_u64::<LittleEndian>(*opcode)?;
-        if !rest.is_empty() {
-          w.write_all(rest)?;
-        }
+      x => {
+        return Err(MechError {
+          file: file!().to_string(),
+          tokens: vec![],
+          msg: format!("Cannot encode unknown instruction: {:?}", x),
+          id: line!(),
+          kind: MechErrorKind::GenericError("Cannot encode unknown instruction".to_string()),
+        });
       }
     }
     Ok(())

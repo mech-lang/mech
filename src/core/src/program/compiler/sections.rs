@@ -377,46 +377,66 @@ impl SymbolEntry {
 // 6. Instruction Encoding (fixed forms)
 // ----------------------------------------------------------------------------
 
-pub const OP_CONST_LOAD: u64 = 0x01;
-pub const OP_RETURN: u64 = 0xFF;
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OpCode {
+  ConstLoad = 0x01,
+  Binop     = 0x10,
+  Unop      = 0x20,
+  Return    = 0xFF,
+}
+
+impl OpCode {
+  pub fn from_u8(num: u8) -> Option<OpCode> {
+    match num {
+      0x01 => Some(OpCode::ConstLoad),
+      0x10 => Some(OpCode::Binop),
+      0x20 => Some(OpCode::Unop),
+      0xFF => Some(OpCode::Return),
+      _    => None,
+    }
+  }
+}
 
 #[derive(Debug, Clone)]
 pub enum EncodedInstr {
   ConstLoad { dst: u32, const_id: u32 },                   // [u64 opcode][u32 dst][u32 const_id]
-  UnOp      { opcode: u64, dst: u32, src: u32 },           // [u64 opcode][u32 dst][u32 src]
-  BinOp     { opcode: u64, dst: u32, lhs: u32, rhs: u32 }, // [u64 opcode][u32 dst][u32 lhs][u32 rhs]
+  UnOp      { fxn_id: u64, dst: u32, src: u32 },           // [u64 opcode][u32 dst][u32 src]
+  BinOp     { fxn_id: u64, dst: u32, lhs: u32, rhs: u32 }, // [u64 opcode][u32 dst][u32 lhs][u32 rhs]
   Ret       { src: u32 },                                  // [u64 opcode][u32 src]
 }
 
 impl EncodedInstr {
   pub fn byte_len(&self) -> u64 {
     match self {
-      EncodedInstr::ConstLoad{..} => 8 + 4 + 4,
-      EncodedInstr::UnOp{..}      => 8 + 4 + 4,
-      EncodedInstr::BinOp{..}     => 8 + 4 + 4 + 4,
-      EncodedInstr::Ret{..}       => 8 + 4,
+      EncodedInstr::ConstLoad{..} => 1 + 4 + 4,
+      EncodedInstr::UnOp{..}      => 1 + 8 + 4 + 4,
+      EncodedInstr::BinOp{..}     => 1 + 8 + 4 + 4 + 4,
+      EncodedInstr::Ret{..}       => 1 + 4,
     }
   }
   pub fn write_to(&self, w: &mut impl Write) -> MResult<()> {
     match self {
       EncodedInstr::ConstLoad{ dst, const_id } => {
-        w.write_u64::<LittleEndian>(OP_CONST_LOAD)?;
+        w.write_u8(OpCode::ConstLoad as u8)?;
         w.write_u32::<LittleEndian>(*dst)?;
         w.write_u32::<LittleEndian>(*const_id)?;
       }
-      EncodedInstr::UnOp{ opcode, dst, src } => {
-        w.write_u64::<LittleEndian>(*opcode)?;
+      EncodedInstr::UnOp{ fxn_id, dst, src } => {
+        w.write_u8(OpCode::Unop as u8)?;
+        w.write_u64::<LittleEndian>(*fxn_id)?;
         w.write_u32::<LittleEndian>(*dst)?;
         w.write_u32::<LittleEndian>(*src)?;
       }
-      EncodedInstr::BinOp{ opcode, dst, lhs, rhs } => {
-        w.write_u64::<LittleEndian>(*opcode)?;
+      EncodedInstr::BinOp{ fxn_id, dst, lhs, rhs } => {
+        w.write_u8(OpCode::Binop as u8)?;
+        w.write_u64::<LittleEndian>(*fxn_id)?;
         w.write_u32::<LittleEndian>(*dst)?;
         w.write_u32::<LittleEndian>(*lhs)?;
         w.write_u32::<LittleEndian>(*rhs)?;
       }
       EncodedInstr::Ret{ src } => {
-        w.write_u64::<LittleEndian>(OP_RETURN)?;
+        w.write_u8(OpCode::Return as u8)?;
         w.write_u32::<LittleEndian>(*src)?;
       }
     }
