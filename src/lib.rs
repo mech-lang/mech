@@ -54,7 +54,7 @@ pub use self::sum_column::*;
 pub use self::sum_row::*;
 
 #[macro_export]  
-macro_rules! impl_stats_urop {
+macro_rules! impl_stats_unop {
   ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident) => {
     #[derive(Debug)]
     struct $struct_name<T> {
