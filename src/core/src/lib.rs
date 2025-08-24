@@ -390,13 +390,21 @@ macro_rules! impl_binop {
         // allocate three registers as an array
         let mut registers = [0,0,0];
 
+        // Compile out
+        let out_addr = self.out.addr();
+        let out_reg = ctx.alloc_register_for_ptr(out_addr);
+        let out_borrow = self.out.borrow();
+        let out_const_id = out_borrow.compile_const(ctx).unwrap();
+        ctx.emit_const_load(out_reg, out_const_id);
+        registers[0] = out_reg;
+
         // Compile lhs
         let lhs_addr = self.lhs.addr();
         let lhs_reg = ctx.alloc_register_for_ptr(lhs_addr);
         let lhs_borrow = self.lhs.borrow();
         let lhs_const_id = lhs_borrow.compile_const(ctx).unwrap();
         ctx.emit_const_load(lhs_reg, lhs_const_id);
-        registers[0] = lhs_reg;
+        registers[1] = lhs_reg;
 
         // Compile rhs
         let rhs_addr = self.rhs.addr();
@@ -404,15 +412,7 @@ macro_rules! impl_binop {
         let rhs_borrow = self.rhs.borrow();
         let rhs_const_id = rhs_borrow.compile_const(ctx).unwrap();
         ctx.emit_const_load(rhs_reg, rhs_const_id);
-        registers[1] = rhs_reg;
-
-        // Compile out
-        let out_addr = self.out.addr();
-        let out_reg = ctx.alloc_register_for_ptr(out_addr);
-        let out_borrow = self.out.borrow();
-        let out_const_id = out_borrow.compile_const(ctx).unwrap();
-        ctx.emit_const_load(out_reg, out_const_id);
-        registers[2] = out_reg;
+        registers[2] = rhs_reg;
 
         ctx.features.insert(FeatureFlag::Builtin(FeatureKind::$feature_flag));
 
@@ -424,7 +424,7 @@ macro_rules! impl_binop {
           registers[2],
         );
 
-        Ok(registers[2])
+        Ok(registers[0])
       }
     }};}
 
