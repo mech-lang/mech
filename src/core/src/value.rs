@@ -3,7 +3,7 @@ use crate::nodes::Matrix as Mat;
 #[cfg(feature = "matrix")]
 use crate::matrix::Matrix;
 #[cfg(feature = "complex")]
-use crate::types::ComplexNumber;
+use crate::types::complex_numbers::ComplexNumber;
 #[cfg(feature = "rational")]
 use num_rational::Rational64;
 
