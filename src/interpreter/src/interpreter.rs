@@ -137,7 +137,31 @@ impl Interpreter {
           let value = self.constants[*const_id as usize].clone();
           self.registers[*dst as usize] = value;
         },
-        x => todo!("Implement instruction: {x:?}"),
+        DecodedInstr::UnOp{ fxn_id, dst, src } => {
+          let val = self.registers[*src as usize].clone();
+          //let result = unop_execute(*opcode, val)?;
+          //self.registers[*dst as usize] = result;
+          todo!();
+        },
+        DecodedInstr::BinOp{fxn_id, dst, lhs, rhs } => {
+          let val1 = self.registers[*lhs as usize].clone();
+          let val2 = self.registers[*rhs as usize].clone();
+          //let result = binop_execute(*opcode, val1, val2)?;
+          //self.registers[*dst as usize] = result;
+          todo!();
+        },
+        DecodedInstr::Ret{ src } => {
+          todo!();
+        },
+        x => {
+          return Err(MechError {
+            file: file!().to_string(),
+            tokens: vec![],
+            msg: format!("Unknown instruction: {:?}", x),
+            id: line!(),
+            kind: MechErrorKind::GenericError("Unknown instruction".to_string()),
+          });
+        }
       }
       self.ip += 1;
     }
