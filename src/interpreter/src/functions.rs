@@ -9,7 +9,7 @@ pub fn function_define(fxn_def: &FunctionDefine, p: &Interpreter) -> MResult<Fun
   for input_arg in &fxn_def.input {
     let arg_id = input_arg.name.hash();
     new_fxn.input.insert(arg_id,input_arg.kind.clone());
-    let in_arg = Value::F64(new_ref(F64::new(0.0)));
+    let in_arg = Value::F64(Ref::new(F64::new(0.0)));
     new_fxn.symbols.borrow_mut().insert(arg_id, in_arg, false);
   }
   let output_arg_ids = fxn_def.output.iter().map(|output_arg| {
@@ -73,12 +73,38 @@ pub fn function_call(fxn_call: &FunctionCall, p: &Interpreter) -> MResult<Value>
         let mut ref_brrw = value_ref.borrow_mut();
         // TODO check types
         match (&mut *ref_brrw, &result) {
-          (Value::I64(arg_ref), Value::I64(i64_ref)) => {
-            *arg_ref.borrow_mut() = i64_ref.borrow().clone();
-          }
-          (Value::F64(arg_ref), Value::F64(f64_ref)) => {
-            *arg_ref.borrow_mut() = f64_ref.borrow().clone();
-          }
+          #[cfg(feature = "bool")]
+          (Value::Bool(arg_ref), Value::Bool(bool_ref)) => {*arg_ref.borrow_mut() = bool_ref.borrow().clone();}
+          #[cfg(feature = "i8")]
+          (Value::I8(arg_ref), Value::I8(i8_ref)) => {*arg_ref.borrow_mut() = i8_ref.borrow().clone();}
+          #[cfg(feature = "i16")]
+          (Value::I16(arg_ref), Value::I16(i16_ref)) => {*arg_ref.borrow_mut() = i16_ref.borrow().clone();}
+          #[cfg(feature = "i32")]
+          (Value::I32(arg_ref), Value::I32(i32_ref)) => {*arg_ref.borrow_mut() = i32_ref.borrow().clone();}
+          #[cfg(feature = "i64")]
+          (Value::I64(arg_ref), Value::I64(i64_ref)) => {*arg_ref.borrow_mut() = i64_ref.borrow().clone();}
+          #[cfg(feature = "i128")]
+          (Value::I128(arg_ref), Value::I128(i128_ref)) => {*arg_ref.borrow_mut() = i128_ref.borrow().clone();}
+          #[cfg(feature = "u8")]
+          (Value::U8(arg_ref), Value::U8(u8_ref)) => {*arg_ref.borrow_mut() = u8_ref.borrow().clone();}
+          #[cfg(feature = "u16")]
+          (Value::U16(arg_ref), Value::U16(u16_ref)) => {*arg_ref.borrow_mut() = u16_ref.borrow().clone();}
+          #[cfg(feature = "u32")]
+          (Value::U32(arg_ref), Value::U32(u32_ref)) => {*arg_ref.borrow_mut() = u32_ref.borrow().clone();}
+          #[cfg(feature = "u64")]
+          (Value::U64(arg_ref), Value::U64(u64_ref)) => {*arg_ref.borrow_mut() = u64_ref.borrow().clone();}
+          #[cfg(feature = "u128")]
+          (Value::U128(arg_ref), Value::U128(u128_ref)) => {*arg_ref.borrow_mut() = u128_ref.borrow().clone();}
+          #[cfg(feature = "f32")]
+          (Value::F32(arg_ref), Value::F32(f32_ref)) => {*arg_ref.borrow_mut() = f32_ref.borrow().clone();}
+          #[cfg(feature = "f64")]
+          (Value::F64(arg_ref), Value::F64(f64_ref)) => {*arg_ref.borrow_mut() = f64_ref.borrow().clone();}
+          #[cfg(feature = "complex")]
+          (Value::ComplexNumber(arg_ref), Value::ComplexNumber(complex_ref)) => {*arg_ref.borrow_mut() = complex_ref.borrow().clone();}
+          #[cfg(feature = "rational")]
+          (Value::RationalNumber(arg_ref), Value::RationalNumber(rational_ref)) => {*arg_ref.borrow_mut() = rational_ref.borrow().clone();}
+          #[cfg(feature = "string")]
+          (Value::String(arg_ref), Value::String(string_ref)) => {*arg_ref.borrow_mut() = string_ref.borrow().clone();}
           (x,y) => {return Err(MechError{file: file!().to_string(), tokens: arg_expr.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::KindMismatch(x.kind(),y.kind())});}
         }
       }

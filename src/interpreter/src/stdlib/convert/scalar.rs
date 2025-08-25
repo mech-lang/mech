@@ -3,23 +3,35 @@ use crate::stdlib::*;
 
 // Convert --------------------------------------------------------------------
 
+#[cfg(feature = "enum")]
 #[derive(Debug)]
 struct ConvertSEnum {
   out: Value,
 }
-impl MechFunction for ConvertSEnum
+
+#[cfg(feature = "enum")]
+impl MechFunctionImpl for ConvertSEnum
 {
   fn solve(&self) { }
   fn out(&self) -> Value { self.out.clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "compiler", feature = "enum"))]
+impl MechFunctionCompiler for ConvertSEnum {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
+}
 
+#[cfg(all(feature = "matrix", feature = "table"))]
 #[derive(Debug)]
 struct ConvertMat2Table<T> {
   arg: Matrix<T>,
   out: Ref<MechTable>,
 }
-impl<T> MechFunction for ConvertMat2Table<T>
+
+#[cfg(all(feature = "matrix", feature = "table"))]
+impl<T> MechFunctionImpl for ConvertMat2Table<T>
 where T: Debug + Clone + PartialEq + Into<Value> + 'static,
 {
   fn solve(&self) {
@@ -38,28 +50,43 @@ where T: Debug + Clone + PartialEq + Into<Value> + 'static,
   fn out(&self) -> Value { Value::Table(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "compiler", feature = "matrix", feature = "table"))]
+impl<T> MechFunctionCompiler for ConvertMat2Table<T> {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
+}
 
+#[cfg(all(feature = "rational", feature = "f64"))]
 #[derive(Debug)]
 struct ConvertSRationalToF64 {
   arg: Ref<RationalNumber>,
   out: Ref<F64>,
 }
 
-impl MechFunction for ConvertSRationalToF64 {
+#[cfg(all(feature = "rational", feature = "f64"))]
+impl MechFunctionImpl for ConvertSRationalToF64 {
   fn solve(&self) {
     let arg_ptr = self.arg.as_ptr();
-    let out_ptr = self.out.as_ptr();
+    let out_ptr = self.out.as_mut_ptr();
     unsafe{ *out_ptr = (*arg_ptr).into(); }
   }
   fn out(&self) -> Value { Value::F64(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "compiler", feature = "rational", feature = "f64"))]
+impl MechFunctionCompiler for ConvertSRationalToF64 {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
+}
 
 macro_rules! impl_conversion_match_arms {
-  ($arg:expr, $($input_type:ident => $($target_type:ident),+);+ $(;)?) => {
+  ($arg:expr, $($input_type:ident, $input_type_string:tt => $($target_type:ident, $target_type_string:tt),+);+ $(;)?) => {
     paste!{
       match $arg {
         $(
+          #[cfg(all(feature = "matrix", feature = "table", feature = $input_type_string))]
           (Value::[<Matrix $input_type:camel>](mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
             let in_shape = mat.shape();
             let tbl_cols = tbl.len();
@@ -80,22 +107,25 @@ macro_rules! impl_conversion_match_arms {
             }
             // Create a blank table, with as many rows as the matrix has
             let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), in_shape[0]))?;
-            Ok(Box::new(ConvertMat2Table::<$input_type>{arg: mat.clone(), out: new_ref(out)}))
+            Ok(Box::new(ConvertMat2Table::<$input_type>{arg: mat.clone(), out: Ref::new(out)}))
           }
           $(
-            (Value::[<$input_type:camel>](arg), Value::Kind(ValueKind::[<$target_type:camel>])) => {Ok(Box::new(ConvertScalarToScalarBasic{arg: arg.clone(), out: new_ref($target_type::default())}))},
+            #[cfg(all(feature = $input_type_string, feature = $target_type_string))]
+            (Value::[<$input_type:camel>](arg), Value::Kind(ValueKind::[<$target_type:camel>])) => {Ok(Box::new(ConvertScalarToScalarBasic{arg: arg.clone(), out: Ref::new($target_type::default())}))},
           )+
         )+
+        #[cfg(feature = "rational")]
         (Value::RationalNumber(ref rat), Value::Kind(ValueKind::F64)) => {
-          Ok(Box::new(ConvertSRationalToF64{arg: rat.clone(), out: new_ref(F64::zero())}))
+          Ok(Box::new(ConvertSRationalToF64{arg: rat.clone(), out: Ref::new(F64::default())}))
         }
+        #[cfg(all(feature = "atom", feature = "enum"))]
         (Value::Atom(varian_id), Value::Kind(ValueKind::Enum(enum_id))) => {
           let variants = vec![(varian_id,None)];
           let enm = MechEnum{id: enum_id, variants};
           let val = Value::Enum(Box::new(enm.clone()));
           Ok(Box::new(ConvertSEnum{out: val}))
         }
-        x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
+        x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Could not convert: {:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
       }
     };
   }
@@ -107,7 +137,7 @@ pub struct ConvertScalarToScalar<F, T> {
   pub out: Ref<T>,
 }
 
-impl<F, T> MechFunction for ConvertScalarToScalar<F, T>
+impl<F, T> MechFunctionImpl for ConvertScalarToScalar<F, T>
 where
   Ref<T>: ToValue,
   F: LosslessInto<T> + Debug + Clone,
@@ -115,7 +145,7 @@ where
 {
   fn solve(&self) {
     let arg_ptr = self.arg.as_ptr();
-    let out_ptr = self.out.as_ptr();
+    let out_ptr = self.out.as_mut_ptr();
     unsafe {
       let out_ref: &mut T = &mut *out_ptr;
       let arg_ref: &F = &*arg_ptr;
@@ -125,6 +155,12 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(feature = "compiler")]
+impl<F, T> MechFunctionCompiler for ConvertScalarToScalar<F, T> {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
+}
 
 #[derive(Debug)]
 pub struct ConvertScalarToScalarBasic<F, T> {
@@ -132,7 +168,7 @@ pub struct ConvertScalarToScalarBasic<F, T> {
   pub out: Ref<T>,
 }
 
-impl<F, T> MechFunction for ConvertScalarToScalarBasic<F, T>
+impl<F, T> MechFunctionImpl for ConvertScalarToScalarBasic<F, T>
 where
   Ref<T>: ToValue,
   F: Debug + Clone,
@@ -140,7 +176,7 @@ where
 {
   fn solve(&self) {
     let arg_ptr = self.arg.as_ptr();
-    let out_ptr = self.out.as_ptr();
+    let out_ptr = self.out.as_mut_ptr();
     unsafe {
       let out_ref: &mut T = &mut *out_ptr;
       let arg_ref: &F = &*arg_ptr;
@@ -150,10 +186,18 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(feature = "compiler")]
+impl<F,T> MechFunctionCompiler for ConvertScalarToScalarBasic<F, T> {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
+}
 
 fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<dyn MechFunction>>  {
   match (&source_value, &target_kind) {
-    (Value::RationalNumber(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar{arg: r.clone(),out: new_ref(F64::zero()),}));}
+    #[cfg(all(feature = "rational", feature = "f64"))]
+    (Value::RationalNumber(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar{arg: r.clone(),out: Ref::new(F64::default()),}));}
+    #[cfg(all(feature = "matrix", feature = "table", feature = "string"))]
     (Value::MatrixString(ref mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
       let in_shape = mat.shape();
       // Verify the table has the correct number of columns
@@ -162,8 +206,9 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
       }
       // Create a blank table, with as many rows as the matrix has
       let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), in_shape[0]))?;
-      return Ok(Box::new(ConvertMat2Table::<String>{arg: mat.clone(), out: new_ref(out)}));
+      return Ok(Box::new(ConvertMat2Table::<String>{arg: mat.clone(), out: Ref::new(out)}));
     }
+    #[cfg(all(feature = "matrix", feature = "table", feature = "bool"))]
     (Value::MatrixBool(ref mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
       let in_shape = mat.shape();
       // Verify the table has the correct number of columns
@@ -172,25 +217,27 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
       }
       // Create a blank table, with as many rows as the matrix has
       let out = MechTable::from_kind(ValueKind::Table(tbl.clone(), in_shape[0]))?;
-      return Ok(Box::new(ConvertMat2Table::<bool>{arg: mat.clone(), out: new_ref(out)}));
+      return Ok(Box::new(ConvertMat2Table::<bool>{arg: mat.clone(), out: Ref::new(out)}));
     }
     _ =>(),
   }
   impl_conversion_match_arms!(
     (source_value, target_kind),
-    i8   => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    i16  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    i32  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    i64  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    i128 => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    u8   => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    u16  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    u32  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    u64  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    u128 => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    F32  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64;
-    F64  => String, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, F32, F64, RationalNumber;
-    RationalNumber => String, F64;
+    i8, "i8" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
+    i16, "i16" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
+    i32, "i32" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
+    i64, "i64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
+    i128, "i128" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
+    u8, "u8" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
+    u16, "u16" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
+    u32, "u32" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
+    u64, "u64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
+    u128, "u128" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
+    F32, "f32" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
+    F64, "f64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64", RationalNumber, "rational";
+    RationalNumber, "rational" => String, "string", F64, "f64";
+    String, "string" => String, "string";
+    bool, "bool" => String, "string", bool, "bool";
   )
 }
 
@@ -208,18 +255,31 @@ impl NativeFunctionCompiler for ConvertKind {
       Err(_) => {
         match source_value {
           Value::MutableReference(rhs) => impl_conversion_fxn(rhs.borrow().clone(), target_kind.clone()),
+          #[cfg(feature = "atom")]
           Value::Atom(atom_id) => impl_conversion_fxn(source_value, target_kind.clone()),
+          #[cfg(all(feature = "matrix", feature = "u8"))]
           Value::MatrixU8(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          #[cfg(all(feature = "matrix", feature = "u16"))]
           Value::MatrixU16(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          #[cfg(all(feature = "matrix", feature = "u32"))]
           Value::MatrixU32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          #[cfg(all(feature = "matrix", feature = "u64"))]
           Value::MatrixU64(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          #[cfg(all(feature = "matrix", feature = "u128"))]
           Value::MatrixU128(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          #[cfg(all(feature = "matrix", feature = "i8"))]
           Value::MatrixI8(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          #[cfg(all(feature = "matrix", feature = "i16"))]
           Value::MatrixI16(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
-          Value::MatrixI32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),  
+          #[cfg(all(feature = "matrix", feature = "i32"))]
+          Value::MatrixI32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          #[cfg(all(feature = "matrix", feature = "i64"))]
           Value::MatrixI64(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          #[cfg(all(feature = "matrix", feature = "i128"))]
           Value::MatrixI128(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          #[cfg(all(feature = "matrix", feature = "f32"))]
           Value::MatrixF32(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
+          #[cfg(all(feature = "matrix", feature = "f64"))]
           Value::MatrixF64(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
           x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }

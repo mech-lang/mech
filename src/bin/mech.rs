@@ -1,9 +1,9 @@
 #![feature(hash_extract_if)]
 #![allow(warnings)]
-extern crate tokio;
 use mech::*;
 use mech_core::*;
 use mech_syntax::parser;
+#[cfg(feature = "formatter")]
 use mech_syntax::formatter::*;
 use mech_interpreter::interpreter::*;
 use std::time::Instant;
@@ -27,7 +27,6 @@ use tabled::{
 use serde_json;
 use std::panic;
 use std::sync::{Arc, Mutex};
-
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -60,7 +59,7 @@ async fn main() -> Result<(), MechError> {
 ╱┊┊┊╱   ╱┊┊┊╱  ╲┊┊┊╲____╲  ╱┊┊┊╱__╲┊┊┊╲   ╲┊┊╱    ╱  ╱┊┊┊╱____╱    ╱┊┊┊╱    ╱  ╱┊┊┊╱  ╲┊┊╱   ╱┊┊┊╱    ╱
 ╲┊┊╱   ╱┊┊┊╱    ╲┊┊╱    ╱  ╲┊┊┊╲   ╲┊┊┊╲   ╲╱____╱   ╲┊┊┊╲    ╲    ╲┊┊╱    ╱   ╲┊┊╱    ╲╱___╱┊┊┊╱    ╱
  ╲╱___╱┊┊┊╱   ___╲╱____╱    ╲┊┊┊╲   ╲┊┊┊╲    ╲        ╲┊┊┊╲    ╲    ╲╱____╱     ╲╱____╱    ╱┊┊┊╱    ╱ 
-     ╱┊┊┊╱   ╱╲    ╲         ╲┊┊┊╲   ╲┊┊┊╲____╲        ╲┊┊┊╲    \____                     ╱┊┊┊╱    ╱  
+     ╱┊┊┊╱   ╱╲    ╲         ╲┊┊┊╲   ╲┊┊┊╲____╲        ╲┊┊┊╲    ╲____                     ╱┊┊┊╱    ╱  
     ╱┊┊┊╱   ╱┊┊╲____╲         ╲┊┊┊╲   ╲┊┊╱    ╱         ╲┊┊┊╲  ╱╲    ╲                   ╱┊┊┊╱    ╱   
     ╲┊┊╱   ╱┊┊┊╱    ╱          ╲┊┊┊╲   ╲╱____╱           ╲┊┊┊╲╱┊┊╲____╲                 ╱┊┊┊╱    ╱    
      ╲╱___╱┊┊┊╱    ╱            ╲┊┊┊╲    ╲                ╲┊┊┊┊┊┊╱    ╱                ╱┊┊┊╱    ╱     
@@ -88,7 +87,7 @@ async fn main() -> Result<(), MechError> {
     .subcommand(Command::new("format")
       .about("Format Mech source code into standard format.")
       .arg(Arg::new("mech_format_file_paths")
-        .help("Source .mec and .blx files")
+        .help("Source .mec and .mecb files")
         .required(false)
         .action(ArgAction::Append))
       .arg(Arg::new("output_path")
@@ -107,10 +106,21 @@ async fn main() -> Result<(), MechError> {
         .required(false)
         .help("Output as HTML")
         .action(ArgAction::SetTrue)))
+    .subcommand(Command::new("build")
+      .about("Build Mech program into a binary.")
+      .arg(Arg::new("mech_build_file_paths")
+        .help("Source .mec and .mecb files")
+        .required(false)
+        .action(ArgAction::Append))
+      .arg(Arg::new("output_path")
+        .short('o')
+        .long("out")
+        .help("Destination folder.")
+        .required(false)))            
     .subcommand(Command::new("serve")
       .about("Serve Mech program over an HTTP server.")
       .arg(Arg::new("mech_serve_file_paths")
-        .help("Source .mec and .blx files")
+        .help("Source .mec and .mecb files")
         .required(false)
         .action(ArgAction::Append))
       .arg(Arg::new("port")
@@ -155,12 +165,10 @@ async fn main() -> Result<(), MechError> {
   let mut repl_flag = matches.get_flag("repl");
   let time_flag = matches.get_flag("time");
 
-  let uuid = generate_uuid();
-  let mut intrp = Interpreter::new(uuid);
-
   // --------------------------------------------------------------------------
   // Serve
   // --------------------------------------------------------------------------
+  #[cfg(feature = "serve")]
   if let Some(matches) = matches.subcommand_matches("serve") {
 
     let port: String = matches.get_one::<String>("port").cloned().unwrap_or("8081".to_string());
@@ -170,15 +178,66 @@ async fn main() -> Result<(), MechError> {
     let stylesheet = matches.get_one::<String>("stylesheet").cloned().unwrap_or("include/style.css".to_string());
     let wasm_pkg = matches.get_one::<String>("wasm").cloned().unwrap_or("src/wasm/pkg".to_string());
    
-    let mut server = MechServer::new(full_address, stylesheet.to_string(), wasm_pkg.to_string());
-    server.init().await?;
-    server.load_sources(&mech_paths)?;
-    server.serve().await?;
-    
+    if cfg!(feature = "serve") {
+      let mut server = MechServer::new(full_address, stylesheet.to_string(), wasm_pkg.to_string());
+      #[cfg(feature = "serve")]
+      server.init().await?;
+      #[cfg(feature = "serve")]
+      server.load_sources(&mech_paths)?;
+      #[cfg(feature = "serve")]
+      server.serve().await?;
+    }    
   }
+  
+  // --------------------------------------------------------------------------
+  // build
+  // --------------------------------------------------------------------------
+  #[cfg(feature = "build")]
+  if let Some(matches) = matches.subcommand_matches("build") {
+    let mech_paths: Vec<String> = matches.get_many::<String>("mech_build_file_paths").map_or(vec![], |files| files.map(|file| file.to_string()).collect());
+    let output_path = PathBuf::from(matches.get_one::<String>("output_path").cloned().unwrap_or(".".to_string()));
+    let mut mechfs = MechFileSystem::new();
+
+    for path in mech_paths {
+      mechfs.watch_source(&path)?;
+    }
+    let sources = mechfs.sources();
+    let read_sources = sources.read().unwrap();
+
+    // Create the directory html_output_path
+    if output_path != PathBuf::from(".") {
+      match fs::create_dir_all(&output_path) {
+        Ok(_) => {
+          println!("{} Directory created: {}", "[Created]".truecolor(153,221,85), output_path.display());
+        }
+        Err(err) => {
+          println!("Error creating directory: {:?}", err);
+        }
+      }
+    }
+
+    let uuid = generate_uuid();
+    let mut intrp = Interpreter::new(uuid);
+
+    let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag); 
+
+    let bytecode = intrp.compile()?;
+
+    let mut output_file = output_path.join("output.mecb");
+
+    let mut f = std::fs::File::create(&output_file)?;
+    f.write_all(&bytecode)?;
+    f.flush()?;
+
+    println!("{} Mech bytecode written to: {}", "[Output]".truecolor(153,221,85), output_file.display());
+
+    return Ok(());
+  }
+
   // --------------------------------------------------------------------------
   // Format
   // --------------------------------------------------------------------------
+  #[cfg(feature = "formatter")]
   if let Some(matches) = matches.subcommand_matches("format") {
     let html_flag = matches.get_flag("html");
     let stylesheet_url = matches.get_one::<String>("stylesheet").cloned().unwrap_or("https://gitlab.com/mech-lang/mech/-/raw/v0.2-beta/include/style.css?ref_type=heads".to_string());
@@ -188,32 +247,11 @@ async fn main() -> Result<(), MechError> {
     let mut mechfs = MechFileSystem::new();
     
     // open file or url. If it's a local file load it from disk, if it's a url fetch it from internet
-    let stylesheet = if stylesheet_url.starts_with("http") {
-      match reqwest::get(&stylesheet_url).await {
-        Ok(response) => match response.text().await {
-          Ok(text) => text,
-          Err(err) => {
-            println!("Error fetching stylesheet text: {:?}", err);
-            //return Err(MechError::new(MechErrorKind::NetworkError));
-            todo!()
-          }
-        },
-        Err(err) => {
-          println!("Error fetching stylesheet: {:?}", err);
-          //return Err(MechError::new(MechErrorKind::NetworkError));
-          todo!()
-        }
-      }
-    } else {
-      match fs::read_to_string(&stylesheet_url) {
-        Ok(content) => content,
-        Err(err) => {
-          println!("Error reading stylesheet file: {:?}", err);
-          //return Err(MechError::new(MechErrorKind::FileReadError));
-          todo!()
-        }
-      }
-    };
+    #[cfg(feature = "async")]
+    let stylesheet = load_stylesheet(&stylesheet_url).await;
+
+    #[cfg(not(feature = "async"))]
+    let stylesheet = load_stylesheet(&stylesheet_url);
 
     mechfs.set_stylesheet(&stylesheet);
     for path in mech_paths {
@@ -259,71 +297,71 @@ async fn main() -> Result<(), MechError> {
   // --------------------------------------------------------------------------
   // Run
   // --------------------------------------------------------------------------
-  let mut paths = if let Some(m) = matches.get_many::<String>("mech_paths") {
-    m.map(|s| s.to_string()).collect()
-  } else { repl_flag = true; vec![] };
-
-  // Run the code
-  let mut mechfs = MechFileSystem::new();
-  for p in paths {
-    mechfs.watch_source(&p)?;
-  }
-
-  /*let code = match mechfs.read_mech_files(&paths) {
-    Ok(code) => code,
-    Err(err) => {
-      // treat the input args as a code instead of paths to files
-      let code = paths.join(" ");
-      vec![("shell".to_string(),MechSourceCode::String(code))]
-    }
-  };*/
-
-  let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag); 
-  
-  let return_value = match &result {
-    Ok(ref r) => {
-      println!("{}", r.pretty_print());
-      Ok(())
-    }
-    Err(ref err) => {
-      Err(err.clone())
-    }
-  };
-
-  if !repl_flag {
-    return return_value;
-  }
-
-  let mut repl = MechRepl::from(intrp);
-  
-  #[cfg(windows)]
-  control::set_virtual_terminal(true).unwrap();
-  clc();
-  let mut stdo = stdout();
-  stdo.execute(Print(text_logo));
-  stdo.execute(cursor::MoveToNextLine(1));
-  println!("\n                {}                ",format!("v{}",VERSION).truecolor(246,192,78));
-  println!("           {}           \n", "www.mech-lang.org");
-  println!("Enter \":help\" for a list of all commands.\n");
-
-  // Catch Ctrl-C a couple times before quitting
   let mut caught_inturrupts = Arc::new(Mutex::new(0));
-  let mut ci = caught_inturrupts.clone();
-  ctrlc::set_handler(move || {
-    println!("[Ctrl+C]");
-    let mut caught_inturrupts = ci.lock().unwrap();
-    *caught_inturrupts += 1;
-    if *caught_inturrupts >= 3 {
-      println!("Okay, cya!");
-      std::process::exit(0);
+  let uuid = generate_uuid();
+  let mut intrp = Interpreter::new(uuid);
+  #[cfg(feature = "run")]
+  {
+    let mut paths = if let Some(m) = matches.get_many::<String>("mech_paths") {
+      m.map(|s| s.to_string()).collect()
+    } else { repl_flag = true; vec![] };
+
+    // Run the code
+    let mut mechfs = MechFileSystem::new();
+    for p in paths {
+      mechfs.watch_source(&p)?;
     }
-    println!("Enter \":quit\" to terminate this REPL session.");
-    print_prompt();
-  }).expect("Error setting Ctrl-C handler");
-  
+
+    let result = run_mech_code(&mut intrp, &mechfs, tree_flag, debug_flag, time_flag); 
+    
+    let return_value = match &result {
+      Ok(ref r) => {
+        #[cfg(feature = "pretty_print")]
+        println!("{}", r.pretty_print());
+        #[cfg(not(feature = "pretty_print"))]
+        println!("{:#?}", r);
+        Ok(())
+      }
+      Err(ref err) => {
+        Err(err.clone())
+      }
+    };
+
+    if !repl_flag {
+      return return_value;
+    }
+    
+    #[cfg(windows)]
+    control::set_virtual_terminal(true).unwrap();
+    clc();
+    let mut stdo = stdout();
+    stdo.execute(Print(text_logo));
+    stdo.execute(cursor::MoveToNextLine(1));
+    println!("\n                {}                ",format!("v{}",VERSION).truecolor(246,192,78));
+    println!("           {}           \n", "www.mech-lang.org");
+    println!("Enter \":help\" for a list of all commands.\n");
+
+    // Catch Ctrl-C a couple times before quitting
+    let mut ci = caught_inturrupts.clone();
+    ctrlc::set_handler(move || {
+      println!("[Ctrl+C]");
+      let mut caught_inturrupts = ci.lock().unwrap();
+      *caught_inturrupts += 1;
+      if *caught_inturrupts >= 3 {
+        println!("Okay, cya!");
+        std::process::exit(0);
+      }
+      println!("Enter \":quit\" to terminate this REPL session.");
+      print_prompt();
+    }).expect("Error setting Ctrl-C handler");
+  }
+
   // --------------------------------------------------------------------------
   // REPL
   // --------------------------------------------------------------------------
+  #[cfg(feature = "repl")]
+  let mut repl = MechRepl::from(intrp);
+  #[cfg(feature = "repl")]
   'REPL: loop {
     {
       let mut ci = caught_inturrupts.lock().unwrap();
@@ -367,4 +405,58 @@ async fn main() -> Result<(), MechError> {
   }
   
   Ok(())
+}
+
+#[cfg(feature = "async")]
+async fn load_stylesheet(stylesheet_url: &str) -> String {
+  if stylesheet_url.starts_with("http") {
+    match reqwest::get(stylesheet_url).await {
+      Ok(response) => match response.text().await {
+        Ok(text) => text,
+        Err(err) => {
+          println!("Error fetching stylesheet text: {:?}", err);
+          todo!()
+        }
+      },
+      Err(err) => {
+        println!("Error fetching stylesheet: {:?}", err);
+        todo!()
+      }
+    }
+  } else {
+    match tokio::fs::read_to_string(stylesheet_url).await {
+      Ok(content) => content,
+      Err(err) => {
+        println!("Error reading stylesheet file: {:?}", err);
+        todo!()
+      }
+    }
+  }
+}
+
+#[cfg(not(feature = "async"))]
+fn load_stylesheet(stylesheet_url: &str) -> String {
+  if stylesheet_url.starts_with("http") {
+    match reqwest::blocking::get(stylesheet_url) {
+      Ok(response) => match response.text() {
+        Ok(text) => text,
+        Err(err) => {
+          println!("Error fetching stylesheet text: {:?}", err);
+          todo!()
+        }
+      },
+      Err(err) => {
+        println!("Error fetching stylesheet: {:?}", err);
+        todo!()
+      }
+    }
+  } else {
+    match std::fs::read_to_string(stylesheet_url) {
+      Ok(content) => content,
+      Err(err) => {
+        println!("Error reading stylesheet file: {:?}", err);
+        todo!()
+      }
+    }
+  }
 }

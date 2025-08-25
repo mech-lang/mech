@@ -1,17 +1,16 @@
-// # Errors
+use crate::*;
+
+// Errors
+// ----------------------------------------------------------------------------
 
 // Defines a struct for errors and an enum which enumerates the error types
-
-// ## Prelude
-use crate::ValueKind;
-use crate::nodes::{SourceRange, Token};
-use std::fmt;
 
 type Rows = usize;
 type Cols = usize;
 pub type ParserErrorReport = Vec<ParserErrorContext>;
 
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct MechError{ 
   pub id: u32,
   pub file: String,
@@ -20,14 +19,16 @@ pub struct MechError{
   pub msg: String,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct ParserErrorContext {
   pub cause_rng: SourceRange,
   pub err_message: String,
   pub annotation_rngs: Vec<SourceRange>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum MechErrorKind {
   UndefinedField(u64),                               // Accessed a field of a record that's not defined
   UndefinedVariable(u64),                            // Accessed a variable that's not defined
@@ -54,6 +55,8 @@ pub enum MechErrorKind {
   NotMutable(u64), 
   BlockDisabled,
   IoError,
+  UnhandledFormulaOperator(FormulaOperator),
+  FeatureNotEnabled(String), // Feature is not enabled in the current build
   GenericError(String),
   FileNotFound(String),
   Unhandled,
@@ -77,10 +80,30 @@ pub enum MechErrorKind {
   None,
 }
 
+#[cfg(not(feature = "no_std"))]
 impl From<std::io::Error> for MechError{ 
   fn from(n: std::io::Error) -> MechError{ 
-    MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: 74892, kind: MechErrorKind::IoError}
+    MechError{ 
+      id: line!(),
+      file: file!().to_string(),
+      tokens: vec![],
+      kind: MechErrorKind::IoError,
+      msg: n.to_string(),
+    }
   } 
+}
+
+#[cfg(feature = "no_std")]
+impl From<()> for MechError {
+  fn from(_: ()) -> Self {
+    MechError {
+      id: line!(),
+      file: file!().to_string(),
+      tokens: Vec::new(),
+      kind: MechErrorKind::IoError,
+      msg: "embedded-io error".into(),
+    }
+  }
 }
 
 /*

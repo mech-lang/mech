@@ -13,6 +13,9 @@ use nom::{
   multi::separated_list1,
   character::complete::{space0,space1,digit1},
 };
+
+use bincode::serde::encode_to_vec;
+use bincode::config::standard;
 use include_dir::{include_dir, Dir};
 
 static DOCS_DIR: Dir = include_dir!("docs");
@@ -92,8 +95,20 @@ impl MechRepl {
           Ok("Enter a doc to search for.".to_string())
         }
       }
-      ReplCommand::Symbols(name) => {return Ok(pretty_print_symbols(&intrp));}
-      ReplCommand::Plan => {return Ok(pretty_print_plan(&intrp));}
+      ReplCommand::Symbols(name) => {
+        #[cfg(feature = "pretty_print")]
+        let out = intrp.pretty_print_symbols();
+        #[cfg(not(feature = "pretty_print"))]
+        let out = format!("{:#?}", intrp.state.borrow().symbols());
+        return Ok(out);
+      }
+      ReplCommand::Plan => {
+        #[cfg(feature = "pretty_print")]
+        let out = intrp.plan().pretty_print();
+        #[cfg(not(feature = "pretty_print"))]
+        let out = format!("{:#?}", intrp.plan());
+        return Ok(out);
+      }
       ReplCommand::Whos(names) => {return Ok(whos(&intrp,names));}
       ReplCommand::Clear(name) => {
         // Drop the old interpreter replace it with a new one
@@ -109,6 +124,15 @@ impl MechRepl {
         env::set_current_dir(&path).unwrap();
         return Ok("".to_string());
       }
+      #[cfg(feature = "serde")]
+      ReplCommand::Save(path) => {
+        let path = PathBuf::from(path);
+        let intrp = self.interpreters.get(&self.active).unwrap();
+        let encoded = encode_to_vec(&MechSourceCode::Program(intrp.code.clone()), standard()).unwrap();
+        let mut file = File::create(&path)?;
+        file.write_all(&encoded)?;
+        return Ok(format!("Saved interpreter state to {}", path.display()));
+      }
       ReplCommand::Clc => {
         clc();
         Ok("".to_string())
@@ -118,7 +142,13 @@ impl MechRepl {
           mechfs.watch_source(&source)?;
         }
         match run_mech_code(&mut intrp, &mechfs, false,false,false) {
-          Ok(r) => {return Ok(format!("\n{}\n{}\n", r.kind(), r.pretty_print()));},
+          Ok(r) => {
+            #[cfg(feature = "pretty_print")]
+            let out = r.pretty_print();
+            #[cfg(not(feature = "pretty_print"))]
+            let out = format!("{:#?}", r);
+            return Ok(format!("\n{}\n{}\n", r.kind(), r));
+          },
           Err(err) => {return Err(err);}
         }
       }
@@ -127,7 +157,13 @@ impl MechRepl {
           mechfs.add_code(&src)?;
         }
         match run_mech_code(&mut intrp, &mechfs, false,false,false)  {
-          Ok(r) => { return Ok(format!("\n{}\n{}\n", r.kind(), r.pretty_print()));},
+          Ok(r) => { 
+            #[cfg(feature = "pretty_print")]
+            let out = r.pretty_print();
+            #[cfg(not(feature = "pretty_print"))]
+            let out = format!("{:#?}", r);
+            return Ok(format!("\n{}\n{}\n", r.kind(), r));
+          },
           Err(err) => { return Err(err); }
         }
       }
@@ -141,6 +177,15 @@ impl MechRepl {
         let elapsed_time = now.elapsed();
         let cycle_duration = elapsed_time.as_nanos() as f64;
         return Ok(format!("{} cycles in {:0.2?} ns\n", n, cycle_duration));
+      }
+      x => {
+        return Err(MechError {
+          file: file!().to_string(),
+          tokens: vec![],
+          msg: format!("{:?} requires disabled feature. ", x),
+          id: line!(),
+          kind: MechErrorKind::None,
+        });
       }
     }
   }

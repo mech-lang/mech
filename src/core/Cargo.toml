@@ -1,6 +1,6 @@
 [package]
 name = "mech-core"
-version = "0.2.57"
+version = "0.2.58"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "The Mech language runtime."
 documentation = "http://docs.mech-lang.org"
@@ -18,73 +18,135 @@ gitlab = { repository = "mech-lang/core", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [features]
-default = ["stdlib"]
-no-std = ["rlibc"]
-stdlib = ["Bool", "String", "numbers", "Matrix", "Set", "Map", "Table", "Tuple", "Record", "Atom"]
-numbers = ["signed-ints", "unsigned-ints", "floats", "ComplexNumber", "RationalNumber"]
-ComplexNumber = []
-RationalNumber = []
-signed-ints = ["I8", "I16", "I32", "I64", "I128"]
-unsigned-ints = ["U8", "U16", "U32", "U64", "U128"]
-floats = ["F32", "F64"]
-Bool = []
-String = []
-U8 = []
-U16 = []
-U32 = []
-U64 = []
-U128 = []
-I8 = []
-I16 = []
-I32 = []
-I64 = []
-I128 = []
-F32 = []
-F64 = []
-Set = []
-Map = []
-Table = []
-Tuple = []
-Record = []
-Atom = []
-Matrix = ["fixed-matrix", "fixed-vector", "fixed-row-vector", "RowVectorD", "VectorD", "MatrixD"]
-fixed-row-vector = ["RowVector4", "RowVector3", "RowVector2"]
-fixed-vector = ["Vector4", "Vector3", "Vector2"]
-fixed-matrix = ["Matrix4", "Matrix3", "Matrix2", "Matrix1", "Matrix2x3", "Matrix3x2"]
-RowVector4 = []
-RowVector3 = []
-RowVector2 = []
-Vector4 = []
-Vector3 = []
-Vector2 = []
-Matrix4 = []
-Matrix3 = []
-Matrix2 = []
-Matrix1 = []
-Matrix2x3 = []
-Matrix3x2 = []
-RowVectorD =[]
-VectorD = []
-MatrixD = []
+no_std = ["rlibc", "hashbrown", "embedded-io", "fxhash"]
+
+default = ["stdlib", "pretty_print", "serde", "compiler", "program",
+            "statements_default", "subscript_default",
+          ]
+statements_default = ["variable_assign","variable_define","kind_define"]
+subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
+
+stdlib = ["bool", "string", 
+          "u8", "u16", "u32", "u64", "u128", 
+          "i8", "i16", "i32", "i64", "i128", 
+          "f32", "f64", "c64", "r64", 
+          "set", "map", "table", "tuple", "record", "atom",
+          "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
+          "row_vector2", "row_vector3", "row_vector4",
+          "vector2", "vector3", "vector4",
+          "row_vectord", "vectord", "matrixd",
+          "subscript_range", "logical_indexing", "swizzle",
+          "subscript_formula", "dot_indexing",
+          "variable_define", "variable_assign", "kind_define",
+          "kind_annotation", "variables",
+          "functions", "formulas"
+        ]
+
+compiler = ["crc32fast", "byteorder"]
+program = ["crc32fast", "byteorder"]
+pretty_print = ["tabled", "serde_json"]
+serde = ["brotli", "base64", "serde_derive", "serde_json", "bincode", "indexmap/serde", "bincode/serde", "dep:serde"]
+
+statements = []
+variables = ["variable_define", "symbol_table"]
+variable_define = ["statements", "functions"]
+variable_assign = ["statements"]
+kind_define = ["kind_annotation", "statements"]
+kind_annotation = ["functions"]
+formulas = []
+functions = ["indexmap","symbol_table"]
+symbol_table = []
+
+bool = []
+string = []
+
+# Numbers
+numbers = []
+complex = ["num-traits", "nalgebra", "f64", "numbers"]
+rational = ["num-traits", "num-rational", "i64", "numbers"]
+signed_ints = ["numbers"]
+unsigned_ints = ["numbers"]
+floats = ["num-traits", "numbers"]
+u8 = ["unsigned_ints"]
+u16 = ["unsigned_ints"]
+u32 = ["unsigned_ints"]
+u64 = ["unsigned_ints"]
+u128 = ["unsigned_ints"]
+i8 = ["signed_ints"]
+i16 = ["signed_ints"]
+i32 = ["signed_ints"]
+i64 = ["signed_ints"]
+i128 = ["signed_ints"]
+f32 = ["floats"]
+f64 = ["floats"]
+c64 = ["complex"]
+r64 = ["rational"]
+
+math_exp = ["libm", "num-traits"]
+range = []
+
+# Structs
+set = ["indexmap"]
+map = ["indexmap"]
+table = ["indexmap", "vectord", "record"]
+tuple = []
+enum = []
+record = ["indexmap", "tuple"]
+atom = []
+
+# Matrix
+matrix = ["nalgebra"]
+fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2"]
+fixed_vector = ["vector4", "vector3", "vector2"]
+fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2"]
+dynamic_matrix = ["matrixd", "vectord", "row_vectord"]
+row_vector4 = ["dynamic_matrix","matrix"]
+row_vector3 = ["dynamic_matrix","matrix"]
+row_vector2 = ["dynamic_matrix","matrix"]
+vector4 = ["dynamic_matrix","matrix"]
+vector3 = ["dynamic_matrix","matrix"]
+vector2 = ["dynamic_matrix","matrix"]
+matrix4 = ["dynamic_matrix","matrix"]
+matrix3 = ["dynamic_matrix","matrix"]
+matrix2 = ["dynamic_matrix","matrix"]
+matrix1 = ["dynamic_matrix","matrix"]
+matrix2x3 = ["dynamic_matrix","matrix"]
+matrix3x2 = ["dynamic_matrix","matrix"]
+row_vectord =["dynamic_matrix", "matrix"]
+vectord = ["dynamic_matrix", "matrix"]
+matrixd = ["dynamic_matrix", "matrix"]
+
+# Subscripts
+subscript = []
+subscript_slice = ["subscript", "vectord"]
+subscript_range = ["subscript_slice","vectord"]
+subscript_formula = ["subscript_slice","formulas"]
+logical_indexing = ["subscript","vectord","bool"]
+dot_indexing = ["subscript"]
+swizzle = ["subscript"]
 
 [dependencies]
-base64 = "0.22.1"
-bincode = {version = "2.0.1", features = ["serde"]}
-brotli = "8.0.1"
-hashbrown = "0.15.5"
-indexmap = {version = "2.10.0", features = ["serde"]}
-libm = "0.2.15"
-nalgebra = "0.34.0"
+seahash = "4.1.0"
 paste = "1.0.15"
+byteorder = {version = "1.5.0", optional = true}
+fxhash = { version = "0.2", default-features = false, optional = true }
+embedded-io = {version = "0.6.1", optional = true}
+crc32fast = {version = "1.5.0", optional = true}
+base64 = {version = "0.22.1", optional = true}
+bincode = {version = "2.0.1", optional = true}
+brotli = {version = "8.0.1", optional = true}
+hashbrown = {version = "0.15.5", optional = true, default-features = false}
+indexmap = {version = "2.10.0", optional = true}
+libm = {version = "0.2.15", optional = true}
+nalgebra = {version="0.34.0", optional = true}
 rayon = {version = "1.10.0", optional = true}
 rlibc = { version = "=1.0", optional = true }
-seahash = "4.1.0"
-serde = {version = "1.0.219", default-features = false, features = ["alloc", "derive"] }
-serde_derive = "1.0.219"
-serde_json = "1.0.142"
-tabled = "0.18.0"
+serde = {version = "1.0.219", default-features = false, features = ["alloc", "derive"], optional = true}
+serde_derive = {version = "1.0.219", optional = true}
+serde_json = {version = "1.0.142", optional = true}
+tabled = {version="0.18.0", optional = true}
 wasm-bindgen = {version = "0.2.100", optional = true}
-num-rational = "0.4.2"
+num-rational = {version = "0.4.2", optional = true}
 #time = {version = "0.3.40", optional = true}
 #ed25519-dalek = {version = "2.1.1", default-features = false, features = ["rand_core"]}
 #rand = "0.9.0"
@@ -111,3 +173,4 @@ optional = true
 version = "0.2.19"
 default-features = false
 features = ["libm"]
+optional = true

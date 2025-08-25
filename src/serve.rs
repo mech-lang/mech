@@ -146,6 +146,7 @@ impl MechServer {
                   } else {
                     todo!("{} Error getting tree from sources", server_badge());
                   };
+                  #[cfg(feature = "serde")]
                   match compress_and_encode(&tree) {
                     Ok(encoded) => {
                       return warp::reply::with_header(encoded, "content-type", "text/plain").into_response();
@@ -153,6 +154,14 @@ impl MechServer {
                     Err(e) => {
                       todo!("{} Error compressing and encoding tree: {}", server_badge(), e);
                     }
+                  }
+                  #[cfg(not(feature = "serde"))]
+                  {
+                    // return an error if serde feature is not enabled
+                    return warp::reply::with_status(
+                      warp::reply::with_header("Serde feature is not enabled", "content-type", "text/plain"),
+                      warp::http::StatusCode::NOT_IMPLEMENTED,
+                    ).into_response();
                   }
                 }
                 None => {

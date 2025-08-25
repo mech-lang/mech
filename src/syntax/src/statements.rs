@@ -179,11 +179,11 @@ pub fn statement(input: ParseString) -> ParseResult<Statement> {
     //Err(Failure(err)) => {return Err(Failure(err))},
     _ => (),
   }
-  match fsm_declare(input.clone()) {
+  /*match fsm_declare(input.clone()) {
     Ok((input, var_def)) => { return Ok((input, Statement::FsmDeclare(var_def))); },
     //Err(Failure(err)) => {return Err(Failure(err))},
     _ => (),
-  }
+  }*/
   match kind_define(input.clone()) {
     Ok((input, knd_def)) => { return Ok((input, Statement::KindDefine(knd_def))); },
     Err(err) => { return Err(err); },

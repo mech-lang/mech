@@ -3,10 +3,12 @@ use crate::value::*;
 use crate::nodes::*;
 use crate::*;
 
-use hashbrown::{HashMap, HashSet};
+use std::collections::HashMap;
+#[cfg(feature = "functions")]
 use indexmap::map::IndexMap;
 use std::rc::Rc;
 use std::cell::RefCell;
+#[cfg(feature = "pretty_print")]
 use tabled::{
   builder::Builder,
   settings::{object::Rows,Panel, Span, Alignment, Modify, Style},
@@ -16,30 +18,45 @@ use std::fmt;
 
 // Functions ------------------------------------------------------------------
 
-pub trait MechFunction {
+pub type FunctionsRef = Ref<Functions>;
+pub type FunctionTable = HashMap<u64, FunctionDefinition>;
+pub type FunctionCompilerTable = HashMap<u64, Box<dyn NativeFunctionCompiler>>;
+
+pub trait MechFunctionImpl {
   fn solve(&self);
   fn out(&self) -> Value;
   fn to_string(&self) -> String;
 }
+
+#[cfg(feature = "compiler")]
+pub trait MechFunctionCompiler {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register>;
+}
+
+#[cfg(feature = "compiler")]
+pub trait MechFunction: MechFunctionImpl + MechFunctionCompiler {}
+#[cfg(feature = "compiler")]
+impl<T> MechFunction for T where T: MechFunctionImpl + MechFunctionCompiler {}
+
+#[cfg(not(feature = "compiler"))]
+pub trait MechFunction: MechFunctionImpl {}
+#[cfg(not(feature = "compiler"))]
+impl<T> MechFunction for T where T: MechFunctionImpl {}
 
 pub trait NativeFunctionCompiler {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>>;
 }
 
 pub struct Functions {
-  pub functions: HashMap<u64,FunctionDefinition>,
-  pub function_compilers: HashMap<u64, Box<dyn NativeFunctionCompiler>>,
-  pub kinds: HashMap<u64,ValueKind>,
-  pub enums: HashMap<u64,MechEnum>,
+  pub functions: FunctionTable,
+  pub function_compilers: FunctionCompilerTable,
 }
-  
+
 impl Functions {
   pub fn new() -> Self {
     Self {
       functions: HashMap::new(), 
       function_compilers: HashMap::new(), 
-      kinds: HashMap::new(),
-      enums: HashMap::new(),
     }
   }
 }
@@ -57,8 +74,21 @@ pub struct FunctionDefinition {
 }
 
 impl fmt::Debug for FunctionDefinition {
-  #[inline]
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    if cfg!(feature = "pretty_print") {
+      #[cfg(feature = "pretty_print")]
+      return fmt::Display::fmt(&self.pretty_print(), f);
+      fmt::Display::fmt(&"".to_string(), f)
+    } else {
+      write!(f, "FunctionDefinition {{ id: {}, name: {}, input: {:?}, output: {:?}, symbols: {:?} }}", 
+      self.id, self.name, self.input, self.output, self.symbols.borrow())
+    }
+  }
+}
+
+#[cfg(feature = "pretty_print")]
+impl PrettyPrint for FunctionDefinition {
+  fn pretty_print(&self) -> String {
     let input_str = format!("{:#?}", self.input);
     let output_str = format!("{:#?}", self.output);
     let symbols_str = format!("{:#?}", self.symbols);
@@ -74,8 +104,7 @@ impl fmt::Debug for FunctionDefinition {
     table.with(Style::modern_rounded())
          .with(Panel::header(format!("📈 UserFxn::{}\n({})", self.name, humanize(&self.id))))
          .with(Alignment::left());
-    println!("{table}");
-    Ok(())
+    format!("{table}")
   }
 }
 
@@ -88,9 +117,9 @@ impl FunctionDefinition {
       code,
       input: IndexMap::new(),
       output: IndexMap::new(),
-      out: new_ref(Value::Empty),
-      symbols: new_ref(SymbolTable::new()),
-      plan: new_ref(Vec::new()),
+      out: Ref::new(Value::Empty),
+      symbols: Ref::new(SymbolTable::new()),
+      plan: Plan::new(),
     }
   }
 
@@ -109,95 +138,79 @@ impl FunctionDefinition {
 
 // User Function --------------------------------------------------------------
 
-#[derive(Debug)]
 pub struct UserFunction {
   pub fxn: FunctionDefinition,
 }
 
-impl MechFunction for UserFunction {
+impl MechFunctionImpl for UserFunction {
   fn solve(&self) {
     self.fxn.solve();
   }
   fn out(&self) -> Value {
     Value::MutableReference(self.fxn.out.clone())
   }
-  fn to_string(&self) -> String { format!("UserFxn::{:?}", self.fxn.name)}
+  fn to_string(&self) -> String { format!("UserFxn::{:?}", self.fxn.name) }
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for UserFunction {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
 
-// Symbol Table ---------------------------------------------------------------
+// Plan
+// ----------------------------------------------------------------------------
 
-pub type Dictionary = IndexMap<u64,String>;
+pub struct Plan(pub Ref<Vec<Box<dyn MechFunction>>>);
 
-#[derive(Clone, Debug)]
-pub struct SymbolTable {
-  pub symbols: HashMap<u64,ValRef>,
-  pub mutable_variables: HashMap<u64,ValRef>,
-  pub dictionary: Ref<Dictionary>,
-  pub reverse_lookup: HashMap<*const RefCell<Value>, u64>,
+impl Clone for Plan {
+  fn clone(&self) -> Self { Plan(self.0.clone()) }
 }
 
-impl SymbolTable {
-
-  pub fn new() -> SymbolTable {
-    Self {
-      symbols: HashMap::new(),
-      mutable_variables: HashMap::new(),
-      dictionary: new_ref(IndexMap::new()),
-      reverse_lookup: HashMap::new(),
+impl fmt::Debug for Plan {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    for p in &(*self.0.borrow()) {
+      writeln!(f, "{}", p.to_string())?;
     }
+    Ok(())
   }
+}
 
-  pub fn get_symbol_name_by_id(&self, id: u64) -> Option<String> {
-    self.dictionary.borrow().get(&id).cloned()
-  }
+impl Plan {
+  pub fn new() -> Self { Plan(Ref::new(vec![])) }
+  pub fn borrow(&self) -> std::cell::Ref<'_, Vec<Box<dyn MechFunction>>> { self.0.borrow() }
+  pub fn borrow_mut(&self) -> std::cell::RefMut<'_, Vec<Box<dyn MechFunction>>> { self.0.borrow_mut() }
+  pub fn add_function(&self, func: Box<dyn MechFunction>) { self.0.borrow_mut().push(func); }
+  pub fn get_functions(&self) -> std::cell::Ref<'_, Vec<Box<dyn MechFunction>>> { self.0.borrow() }
+  pub fn len(&self) -> usize { self.0.borrow().len() }
+  pub fn is_empty(&self) -> bool { self.0.borrow().is_empty() }
+}
 
-  pub fn get_mutable(&self, key: u64) -> Option<ValRef> {
-    self.mutable_variables.get(&key).cloned()
-  }
-
-  pub fn get(&self, key: u64) -> Option<ValRef> {
-    self.symbols.get(&key).cloned()
-  }
-
-  pub fn contains(&self, key: u64) -> bool {
-    self.symbols.contains_key(&key)
-  }
-
-  pub fn insert(&mut self, key: u64, value: Value, mutable: bool) -> ValRef {
-    let cell = new_ref(value);
-    self.reverse_lookup.insert(Rc::as_ptr(&cell), key);
-    let old = self.symbols.insert(key,cell.clone());
-    if mutable {
-      self.mutable_variables.insert(key,cell.clone());
-    }
-    cell.clone()
-  }
-
-  pub fn pretty_print(&self) -> String {
+#[cfg(feature = "pretty_print")]
+impl PrettyPrint for Plan {
+  fn pretty_print(&self) -> String {
     let mut builder = Builder::default();
-    let dict_brrw = self.dictionary.borrow();
-    for (k,v) in &self.symbols {
-      let name = dict_brrw.get(k).unwrap_or(&"??".to_string()).clone();
-      let v_brrw = v.borrow();
-      builder.push_record(vec![format!("\n{} : {}\n{}\n",name, v_brrw.kind(), v_brrw.pretty_print())])
-    }
-    if self.symbols.is_empty() {
+
+    let mut row = vec![];
+    let plan_brrw = self.0.borrow();
+    if self.is_empty() {
       builder.push_record(vec!["".to_string()]);
+    } else {
+      for (ix, fxn) in plan_brrw.iter().enumerate() {
+        let plan_str = format!("{}. {}\n", ix + 1, fxn.to_string());
+        row.push(plan_str.clone());
+        if row.len() == 4 {
+          builder.push_record(row.clone());
+          row.clear();
+        }
+      }
+    }
+    if row.is_empty() == false {
+      builder.push_record(row.clone());
     }
     let mut table = builder.build();
-    let table_style = Style::empty()
-    .top(' ')
-    .left(' ')
-    .right(' ')
-    .bottom(' ')
-    .vertical(' ')
-    .horizontal('·')
-    .intersection_bottom(' ')
-    .corner_top_left(' ')
-    .corner_top_right(' ')
-    .corner_bottom_left(' ')
-    .corner_bottom_right(' ');
-    table.with(table_style);
+    table.with(Style::modern_rounded())
+        .with(Panel::header("📋 Plan"));
     format!("{table}")
   }
 }

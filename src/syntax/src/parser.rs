@@ -289,7 +289,7 @@ pub fn skip_empty_mech_directive(input: ParseString) -> ParseResult<String> {
 // mech_code_alt := fsm_specification | fsm_implementation | function_define | statement | expression | comment ;
 pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
   let (input, _) = whitespace0(input)?;
-  match fsm_specification(input.clone()) {
+  /*match fsm_specification(input.clone()) {
     Ok((input, fsm_spec)) => {return Ok((input, MechCode::FsmSpecification(fsm_spec)));},
     //Err(Failure(err)) => { return Err(Failure(err)); }
     _ => () 
@@ -303,7 +303,7 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
     Ok((input, fxn_def)) => {return Ok((input, MechCode::FunctionDefine(fxn_def)));},
     //Err(Failure(err)) => { return Err(Failure(err)); }
     _ => () 
-  }
+  }*/
   match statement(input.clone()) {
     Ok((input, stmt)) => {return Ok((input, MechCode::Statement(stmt)));},
     //Err(Failure(err)) => { return Err(Failure(err)); }

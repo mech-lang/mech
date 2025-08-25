@@ -6,18 +6,25 @@ use crate::*;
 pub fn literal(ltrl: &Literal, p: &Interpreter) -> MResult<Value> {
   match &ltrl {
     Literal::Empty(_) => Ok(empty()),
+    #[cfg(feature = "bool")]
     Literal::Boolean(bln) => Ok(boolean(bln)),
     Literal::Number(num) => Ok(number(num)),
+    #[cfg(feature = "string")]
     Literal::String(strng) => Ok(string(strng)),
+    #[cfg(feature = "atom")]
     Literal::Atom(atm) => Ok(atom(atm)),
+    #[cfg(feature = "kind_annotation")]
     Literal::Kind(knd) => kind_value(knd, p),
+    #[cfg(feature = "kind_annotation")]
     Literal::TypedLiteral((ltrl,kind)) => typed_literal(ltrl,kind,p),
+    _ => Err(MechError{file: file!().to_string(), tokens: ltrl.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
   }
 }
 
+#[cfg(feature = "kind_annotation")]
 pub fn kind_value(knd: &NodeKind, p: &Interpreter) -> MResult<Value> {
   let kind = kind_annotation(knd, p)?;
-  Ok(Value::Kind(kind.to_value_kind(&p.functions())?))
+  Ok(Value::Kind(kind.to_value_kind(&p.state.borrow().kinds)?))
 }
 
 pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
@@ -103,17 +110,19 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
   }
 }
 
+#[cfg(feature = "kind_annotation")]
 pub fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, p: &Interpreter) -> MResult<Value> {
   let value = literal(ltrl,p)?;
   let kind = kind_annotation(&knd_attn.kind, p)?;
-  let args = vec![value, kind.to_value(&p.functions())?];
+  let args = vec![value, kind.to_value(&p.state.borrow().kinds)?];
   let convert_fxn = ConvertKind{}.compile(&args)?;
   convert_fxn.solve();
   let converted_result = convert_fxn.out();
-  p.add_plan_step(convert_fxn);
+  p.state.borrow_mut().add_plan_step(convert_fxn);
   Ok(converted_result)
 }
 
+#[cfg(feature = "atom")]
 pub fn atom(atm: &Atom) -> Value {
   let id = atm.name.hash();
   Value::Atom(id)
@@ -122,10 +131,13 @@ pub fn atom(atm: &Atom) -> Value {
 pub fn number(num: &Number) -> Value {
   match num {
     Number::Real(num) => real(num),
+    #[cfg(feature = "complex")]
     Number::Complex(num) => complex(num),
+    _ => panic!("Number type not supported."),
   }
 }
 
+#[cfg(feature = "complex")]
 fn complex(num: &ComplexNumberNode) -> Value {
   let im: f64 = match real(&num.imaginary.number).as_f64() {
     Some(val) => val.borrow().0,
@@ -137,40 +149,59 @@ fn complex(num: &ComplexNumberNode) -> Value {
         Some(val) => val.borrow().0,
         None => 0.0,
       };      
-      Value::ComplexNumber(new_ref(ComplexNumber::new(re, im)))
+      Value::ComplexNumber(Ref::new(ComplexNumber::new(re, im)))
     },
-    None => Value::ComplexNumber(new_ref(ComplexNumber::new(0.0, im))),
+    None => Value::ComplexNumber(Ref::new(ComplexNumber::new(0.0, im))),
   }
 }
 
 pub fn real(rl: &RealNumber) -> Value {
   match rl {
+    #[cfg(feature = "math_neg")]
     RealNumber::Negated(num) => negated(num),
+    #[cfg(feature = "f64")]
     RealNumber::Integer(num) => integer(num),
+    #[cfg(feature = "floats")]
     RealNumber::Float(num) => float(num),
+    #[cfg(feature = "i64")]
     RealNumber::Decimal(num) => dec(num),
+    #[cfg(feature = "i64")]
     RealNumber::Hexadecimal(num) => hex(num),
+    #[cfg(feature = "i64")]
     RealNumber::Octal(num) => oct(num),
+    #[cfg(feature = "i64")]
     RealNumber::Binary(num) => binary(num),
+    #[cfg(feature = "floats")]
     RealNumber::Scientific(num) => scientific(num),
+    #[cfg(feature = "rational")]
     RealNumber::Rational(num) => rational(num),
+    _ => panic!("Number type not supported."),
   }
 }
 
+#[cfg(feature = "math_neg")]
 pub fn negated(num: &RealNumber) -> Value {
   let num_val = real(&num);
   match num_val {
-    Value::I8(val) => Value::I8(new_ref(-*val.borrow())),
-    Value::I16(val) => Value::I16(new_ref(-*val.borrow())),
-    Value::I32(val) => Value::I32(new_ref(-*val.borrow())),
-    Value::I64(val) => Value::I64(new_ref(-*val.borrow())),
-    Value::I128(val) => Value::I128(new_ref(-*val.borrow())),
-    Value::F64(val) => Value::F64(new_ref(F64::new(-((*val.borrow()).0)))),
-    Value::F32(val) => Value::F32(new_ref(F32::new(-((*val.borrow()).0)))),
+    #[cfg(feature = "i8")]
+    Value::I8(val) => Value::I8(Ref::new(-*val.borrow())),
+    #[cfg(feature = "i16")]
+    Value::I16(val) => Value::I16(Ref::new(-*val.borrow())),
+    #[cfg(feature = "i32")]
+    Value::I32(val) => Value::I32(Ref::new(-*val.borrow())),
+    #[cfg(feature = "i64")]
+    Value::I64(val) => Value::I64(Ref::new(-*val.borrow())),
+    #[cfg(feature = "i128")]
+    Value::I128(val) => Value::I128(Ref::new(-*val.borrow())),
+    #[cfg(feature = "u8")]
+    Value::F64(val) => Value::F64(Ref::new(F64::new(-((*val.borrow()).0)))),
+    #[cfg(feature = "u16")]
+    Value::F32(val) => Value::F32(Ref::new(F32::new(-((*val.borrow()).0)))),
     _ => panic!("Negation is only supported for integer and float types"),
   }
 }
 
+#[cfg(feature = "rational")]
 pub fn rational(rat: &(Token,Token)) -> Value {
   let (num, denom) = rat;
   let num = num.chars.iter().collect::<String>().parse::<i64>().unwrap();
@@ -179,33 +210,38 @@ pub fn rational(rat: &(Token,Token)) -> Value {
     panic!("Denominator cannot be zero in a rational number");
   }
   let rat_num = RationalNumber::new(num, denom);
-  Value::RationalNumber(new_ref(rat_num))
+  Value::RationalNumber(Ref::new(rat_num))
 }
 
+#[cfg(feature = "i64")]
 pub fn dec(bnry: &Token) -> Value {
   let binary_str: String = bnry.chars.iter().collect();
   let num = i64::from_str_radix(&binary_str, 10).unwrap();
-  Value::I64(new_ref(num))
+  Value::I64(Ref::new(num))
 }
 
+#[cfg(feature = "i64")]
 pub fn binary(bnry: &Token) -> Value {
   let binary_str: String = bnry.chars.iter().collect();
   let num = i64::from_str_radix(&binary_str, 2).unwrap();
-  Value::I64(new_ref(num))
+  Value::I64(Ref::new(num))
 }
 
+#[cfg(feature = "i64")]
 pub fn oct(octl: &Token) -> Value {
   let hex_str: String = octl.chars.iter().collect();
   let num = i64::from_str_radix(&hex_str, 8).unwrap();
-  Value::I64(new_ref(num))
+  Value::I64(Ref::new(num))
 }
 
+#[cfg(feature = "i64")]
 pub fn hex(hxdcml: &Token) -> Value {
   let hex_str: String = hxdcml.chars.iter().collect();
   let num = i64::from_str_radix(&hex_str, 16).unwrap();
-  Value::I64(new_ref(num))
+  Value::I64(Ref::new(num))
 }
 
+#[cfg(feature = "f64")]
 pub fn scientific(sci: &(Base,Exponent)) -> Value {
   let (base,exp): &(Base,Exponent) = sci;
   let (whole,part): &(Whole,Part) = base;
@@ -221,30 +257,34 @@ pub fn scientific(sci: &(Base,Exponent)) -> Value {
     exp_f64 = -exp_f64;
   }
   let num = num_f64 * 10f64.powf(exp_f64);
-  Value::F64(new_ref(F64(num)))
+  Value::F64(Ref::new(F64(num)))
 }
 
+#[cfg(feature = "floats")]
 pub fn float(flt: &(Token,Token)) -> Value {
   let a = flt.0.chars.iter().collect::<String>();
   let b = flt.1.chars.iter().collect::<String>();
   let num: f64 = format!("{}.{}",a,b).parse::<f64>().unwrap();
-  Value::F64(new_ref(F64(num)))
+  Value::F64(Ref::new(F64(num)))
 }
 
+#[cfg(feature = "f64")]
 pub fn integer(int: &Token) -> Value {
   let num: f64 = int.chars.iter().collect::<String>().parse::<f64>().unwrap();
-  Value::F64(new_ref(F64::new(num)))
+  Value::F64(Ref::new(F64::new(num)))
 }
 
+#[cfg(feature = "string")]
 pub fn string(tkn: &MechString) -> Value {
   let strng: String = tkn.text.chars.iter().collect::<String>();
-  Value::String(new_ref(strng))
+  Value::String(Ref::new(strng))
 }
 
 pub fn empty() -> Value {
   Value::Empty
 }
 
+#[cfg(feature = "bool")]
 pub fn boolean(tkn: &Token) -> Value {
   let strng: String = tkn.chars.iter().collect::<String>();
   let val = match strng.as_str() {
@@ -252,5 +292,5 @@ pub fn boolean(tkn: &Token) -> Value {
     "false" => false,
     _ => unreachable!(),
   };
-  Value::Bool(new_ref(val))
+  Value::Bool(Ref::new(val))
 }

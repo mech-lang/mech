@@ -50,14 +50,22 @@ use std::sync::mpsc;
 use std::sync::Arc;
 use std::collections::HashSet;
 
+#[cfg(feature = "repl")]
 mod repl;
+#[cfg(feature = "serve")]
 mod serve;
+#[cfg(feature = "run")]
 mod run;
+#[cfg(feature = "mechfs")]
 mod mechfs;
 
+#[cfg(feature = "repl")]
 pub use self::repl::*;
+#[cfg(feature = "serve")]
 pub use self::serve::*;
+#[cfg(feature = "run")]
 pub use self::run::*;
+#[cfg(feature = "mechfs")]
 pub use self::mechfs::*;
 
 pub use mech_core::*;
@@ -214,7 +222,8 @@ pub fn ls() -> String {
   format!("\nDirectory: {}\n\n{table}\n",current_dir.display())
 }
 
-pub fn pretty_print_tree(tree: &Program) -> String {
+#[cfg(feature = "pretty_print")]
+fn pretty_print_tree(tree: &Program) -> String {
   let tree_hash = hash_str(&format!("{:#?}", tree));
   let formatted_tree = tree.pretty_print();
   let mut builder = Builder::default();
@@ -226,6 +235,7 @@ pub fn pretty_print_tree(tree: &Program) -> String {
   format!("{table}")
 }
 
+#[cfg(all(feature = "pretty_print", feature = "variables"))]
 pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
   let mut builder = Builder::default();
   builder.push_record(vec!["Name", "Size", "Bytes", "Kind"]);
@@ -235,7 +245,7 @@ pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
   if names.is_empty() {
     // Print all symbols
     for (id, name) in dictionary.borrow().iter() {
-      let value = intrp.get_symbol(*id).unwrap();
+      let value = intrp.state.borrow().get_symbol(*id).unwrap();
       let value_brrw = value.borrow();
       builder.push_record(vec![
         name.clone(),
@@ -251,7 +261,7 @@ pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
     // Print only symbols in names
     for (id, name) in dictionary.borrow().iter() {
       if names_set.contains(name) {
-        let value = intrp.get_symbol(*id).unwrap();
+        let value = intrp.state.borrow().get_symbol(*id).unwrap();
         let value_brrw = value.borrow();
         builder.push_record(vec![
           name.clone(),
@@ -270,7 +280,8 @@ pub fn whos(intrp: &Interpreter, names: Vec<String>) -> String {
 }
 
 
-pub fn pretty_print_symbols(intrp: &Interpreter) -> String {
+#[cfg(feature = "pretty_print")]            
+fn pretty_print_symbols(intrp: &Interpreter) -> String {
   let mut builder = Builder::default();
   let symbol_table = intrp.pretty_print_symbols();
   builder.push_record(vec![
@@ -287,31 +298,4 @@ pub fn clc() {
   let mut stdo = stdout();
   stdo.execute(terminal::Clear(terminal::ClearType::All));
   stdo.execute(cursor::MoveTo(0,0));
-}
-
-pub fn pretty_print_plan(intrp: &Interpreter) -> String {
-  let mut builder = Builder::default();
-
-  let mut row = vec![];
-  let plan = intrp.plan();
-  let plan_brrw = plan.borrow();
-  if plan_brrw.is_empty() {
-    builder.push_record(vec!["".to_string()]);
-  } else {
-    for (ix, fxn) in plan_brrw.iter().enumerate() {
-      let plan_str = format!("{}. {}\n", ix + 1, fxn.to_string());
-      row.push(plan_str.clone());
-      if row.len() == 4 {
-        builder.push_record(row.clone());
-        row.clear();
-      }
-    }
-  }
-  if row.is_empty() == false {
-    builder.push_record(row.clone());
-  }
-  let mut table = builder.build();
-  table.with(Style::modern_rounded())
-       .with(Panel::header("📋 Plan"));
-  format!("{table}")
 }

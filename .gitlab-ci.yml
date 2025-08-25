@@ -7,4 +7,6 @@ test:cargo:
   - rustup default nightly-2025-07-31
   - cargo clean
   - cargo build --bin mech
+  - cargo build --no-default-features
   - cargo test interpret
+  - cargo test bytecode

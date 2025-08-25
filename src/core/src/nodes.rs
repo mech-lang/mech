@@ -1,10 +1,10 @@
-use std::cmp::Ordering;
 use crate::*; 
-use std::fmt;
-use std::io::{Write, Cursor, Read};
-use std::hash::Hash;
-use std::hash::Hasher;
+#[cfg(feature = "no_std")]
+use core::cmp::Ordering;
+#[cfg(not(feature = "no_std"))] 
+use std::cmp::Ordering;
 
+#[cfg(feature = "serde")]
 pub fn compress_and_encode<T: serde::Serialize>(tree: &T) -> Result<String, Box<dyn std::error::Error>> {
   let serialized_code = bincode::serde::encode_to_vec(tree,bincode::config::standard())?;
   let mut compressed = Vec::new();
@@ -13,6 +13,7 @@ pub fn compress_and_encode<T: serde::Serialize>(tree: &T) -> Result<String, Box<
   Ok(base64::encode(compressed))
 }
 
+#[cfg(feature = "serde")]
 pub fn decode_and_decompress<T: serde::de::DeserializeOwned>(encoded: &str) -> Result<T, Box<dyn std::error::Error>> {
   let decoded = base64::decode(encoded)?;
   
@@ -24,8 +25,8 @@ pub fn decode_and_decompress<T: serde::de::DeserializeOwned>(encoded: &str) -> R
 
   Ok(decoded)
 }
-
-#[derive(Clone, Copy, Ord, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord)]
 pub struct SourceLocation {
   pub row: usize,
   pub col: usize,
@@ -51,7 +52,8 @@ impl fmt::Debug for SourceLocation {
   }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub struct SourceRange {
   pub start: SourceLocation,
   pub end:   SourceLocation,
@@ -83,8 +85,8 @@ pub fn merge_src_range(r1: SourceRange, r2: SourceRange) -> SourceRange {
     end:   r2.end.max(r2.end),
   }
 }
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum TokenKind {
   AbstractSigil, Alpha, Ampersand, Any, Apostrophe, AssignOperator, Asterisk, AsyncTransitionOperator, At,
   Backslash, Bar, BoxDrawing,
@@ -106,7 +108,8 @@ pub enum TokenKind {
   UnderlineSigil, Underscore,
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub struct Token { 
   pub kind: TokenKind, 
   pub chars: Vec<char>, 
@@ -158,13 +161,15 @@ impl Token {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct TableOfContents {
     pub title: Option<Title>,
     pub sections: Vec<Section>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Program {
   pub title: Option<Title>,
   pub body: Body,
@@ -191,9 +196,16 @@ impl Program {
     }
   }
 
-  pub fn pretty_print(&self) -> String {
+}
+
+#[cfg(feature = "pretty_print")]
+impl PrettyPrint for Program {
+fn pretty_print(&self) -> String {
+    #[cfg(feature = "serde")]
     let json_string = serde_json::to_string_pretty(self).unwrap();
-  
+    #[cfg(not(feature = "serde"))]
+    let json_string = "Error: Enable Serde to prettt print trees.".to_string();
+
     let depth = |line: &str|->usize{line.chars().take_while(|&c| c == ' ').count()};
     let mut result = String::new();
     let lines: Vec<&str> = json_string.lines().collect();
@@ -278,10 +290,10 @@ impl Program {
     }
     indexed_str.to_string()
   }
-
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Title {
   pub text: Token,
 }
@@ -294,7 +306,8 @@ impl Title {
 
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Body {
   pub sections: Vec<Section>,
 }
@@ -310,21 +323,24 @@ impl Body {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum ColumnAlignment {
   Left,
   Center,
   Right,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct MarkdownTable {
   pub header: Vec<Paragraph>,
   pub rows: Vec<Vec<Paragraph>>,
   pub alignment: Vec<ColumnAlignment>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Subtitle {
   pub text: Paragraph,
   pub level: u8,
@@ -336,7 +352,8 @@ impl Subtitle {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Section {
   pub subtitle: Option<Subtitle>,
   pub elements: Vec<SectionElement>,
@@ -365,12 +382,14 @@ impl Section {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Grammar {
   pub rules: Vec<Rule>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct GrammarIdentifier {
   pub name: Token,
 }
@@ -385,13 +404,15 @@ impl GrammarIdentifier {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Rule {
   pub name: GrammarIdentifier,
   pub expr: GrammarExpression,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum GrammarExpression {
   Choice(Vec<GrammarExpression>),
   Definition(GrammarIdentifier),
@@ -407,7 +428,8 @@ pub enum GrammarExpression {
   Terminal(Token),
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Citation {
   pub id: Token,
   pub text: Paragraph,
@@ -420,7 +442,8 @@ impl Citation {
 }
 
 // Stores code block configuration
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct BlockConfig {
   pub namespace: u64,
   pub disabled: bool,
@@ -428,13 +451,15 @@ pub struct BlockConfig {
 
 pub type Footnote = (Token, Paragraph);
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum FloatDirection {
   Left,
   Right,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum SectionElement {
   Abstract(Vec<Paragraph>),
   QuoteBlock(Vec<Paragraph>),
@@ -480,7 +505,8 @@ impl SectionElement {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Image {
   pub src: Token,
   pub caption: Option<Paragraph>,
@@ -499,25 +525,28 @@ impl Image {
 pub type UnorderedList = Vec<((Option<Token>,Paragraph),Option<MDList>)>;
 pub type CheckList = Vec<((bool,Paragraph),Option<MDList>)>;
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct OrderedList {
   pub start: Number,
   pub items: Vec<((Number,Paragraph),Option<MDList>)>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum MDList {
   Unordered(UnorderedList),
   Ordered(OrderedList),
   Check(CheckList)
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum MechCode {
   Comment(Comment),
   Expression(Expression),
-  FsmImplementation(FsmImplementation),
-  FsmSpecification(FsmSpecification),
+  //FsmImplementation(FsmImplementation),
+  //FsmSpecification(FsmSpecification),
   FunctionDefine(FunctionDefine),
   Statement(Statement),
 }
@@ -526,8 +555,8 @@ impl MechCode {
   pub fn tokens(&self) -> Vec<Token> {
     match self {
       MechCode::Expression(x) => x.tokens(),
+      MechCode::Statement(x) => x.tokens(),
       _ => todo!(),
-      //Statement(x) => x.tokens(),
       //FunctionDefine(x) => x.tokens(),
       //FsmSpecification(x) => x.tokens(),
       //FsmImplementation(x) => x.tokens(),
@@ -535,7 +564,8 @@ impl MechCode {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FunctionDefine {
   pub name: Identifier,
   pub input: Vec<FunctionArgument>,
@@ -543,7 +573,8 @@ pub struct FunctionDefine {
   pub statements: Vec<Statement>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FunctionArgument {
   pub name: Identifier,
   pub kind: KindAnnotation,
@@ -557,7 +588,8 @@ impl FunctionArgument {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FsmImplementation {
   pub name: Identifier,
   pub input: Vec<Identifier>,
@@ -565,19 +597,22 @@ pub struct FsmImplementation {
   pub arms: Vec<FsmArm>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum FsmArm {
   Guard(Pattern,Vec<Guard>),
   Transition(Pattern,Vec<Transition>),
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Guard { 
   pub condition: Pattern,
   pub transitions: Vec<Transition>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Transition {
   Async(Pattern),
   CodeBlock(Vec<(MechCode, Option<Comment>)>),
@@ -586,7 +621,8 @@ pub enum Transition {
   Statement(Statement),
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Pattern {
   Expression(Expression),
   Formula(Factor),
@@ -594,7 +630,8 @@ pub enum Pattern {
   Wildcard,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct PatternTupleStruct {
   pub name: Identifier,
   pub patterns: Vec<Pattern>,
@@ -602,7 +639,8 @@ pub struct PatternTupleStruct {
 
 pub type PatternTuple = Vec<Pattern>;
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FsmSpecification {
   pub name: Identifier,
   pub input: Vec<Var>,
@@ -610,16 +648,18 @@ pub struct FsmSpecification {
   pub states: Vec<StateDefinition>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct StateDefinition {
   pub name: Identifier,
   pub state_variables: Option<Vec<Var>>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Statement {
   EnumDefine(EnumDefine),
-  FsmDeclare(FsmDeclare),
+  //FsmDeclare(FsmDeclare),
   KindDefine(KindDefine),
   OpAssign(OpAssign),
   VariableAssign(VariableAssign),
@@ -629,32 +669,64 @@ pub enum Statement {
   FlattenTable,   // todo
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+impl Statement {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      Statement::EnumDefine(x) => x.tokens(),
+      //Statement::FsmDeclare(x) => x.tokens(),
+      Statement::KindDefine(x) => x.tokens(),
+      Statement::OpAssign(x) => x.tokens(),
+      Statement::VariableAssign(x) => x.tokens(),
+      Statement::VariableDefine(x) => x.tokens(),
+      Statement::TupleDestructure(x) => x.tokens(),
+      Statement::SplitTable => vec![], // todo
+      Statement::FlattenTable => vec![], // todo
+    }
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct TupleDestructure {
   pub vars: Vec<Identifier>,
   pub expression: Expression,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+impl TupleDestructure {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = vec![];
+    for var in &self.vars {
+      tokens.append(&mut var.tokens());
+    }
+    tokens.append(&mut self.expression.tokens());
+    tokens
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FsmPipe {
   pub start: FsmInstance,
   pub transitions: Vec<Transition>
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum PipeElement {
   Expression(Expression),
   FsmInstance(FsmInstance),
   Timer // todo
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FsmDeclare {
   pub fsm: Fsm,
   pub pipe: FsmPipe,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Fsm {
   pub name: Identifier,
   pub args: Option<ArgumentList>,
@@ -663,36 +735,70 @@ pub struct Fsm {
 
 pub type FsmArgs = Vec<(Option<Identifier>,Expression)>;
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FsmInstance {
   pub name: Identifier,
   pub args: Option<FsmArgs>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct EnumDefine {
   pub name: Identifier,
   pub variants: Vec<EnumVariant>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+impl EnumDefine {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.name.tokens();
+    for v in &self.variants {
+      tokens.append(&mut v.tokens());
+    }
+    tokens
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct EnumVariant {
   pub name: Identifier,
   pub value: Option<KindAnnotation>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+impl EnumVariant {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.name.tokens();
+    if let Some(value) = &self.value {
+      tokens.append(&mut value.tokens());
+    }
+    tokens
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct KindDefine {
   pub name: Identifier,
   pub kind: KindAnnotation,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+impl KindDefine {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tokens = self.name.tokens();
+    tokens.append(&mut self.kind.tokens());
+    tokens
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Record {
   pub bindings: Vec<Binding>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Structure {
   Empty,
   Map(Map),
@@ -713,34 +819,40 @@ impl Structure {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Map {
   pub elements: Vec<Mapping>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Mapping {
   pub key: Expression,
   pub value: Expression,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Set {
   pub elements: Vec<Expression>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Atom {
   pub name: Identifier,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct TupleStruct {
   pub name: Identifier,
   pub value: Box<Expression>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Matrix {
   pub rows: Vec<MatrixRow>,
 }
@@ -758,24 +870,28 @@ impl Matrix {
 
 pub type TableHeader = Vec<Field>;
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Table {
   pub header: TableHeader,
   pub rows: Vec<TableRow>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Field {
   pub name: Identifier,
   pub kind: Option<KindAnnotation>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct TableColumn {
   pub element: Expression,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct MatrixColumn {
   pub element: Expression,
 }
@@ -786,12 +902,14 @@ impl MatrixColumn {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct TableRow {
   pub columns: Vec<TableColumn>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct MatrixRow {
   pub columns: Vec<MatrixColumn>,
 }
@@ -807,14 +925,24 @@ impl MatrixRow {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct VariableDefine {
   pub mutable: bool,
   pub var: Var,
   pub expression: Expression,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+impl VariableDefine {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.var.tokens();
+    tkns.append(&mut self.expression.tokens());
+    tkns
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Var {
   pub name: Identifier,
   pub kind: Option<KindAnnotation>,
@@ -832,13 +960,23 @@ impl Var {
 }
 
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct VariableAssign {
   pub target: SliceRef,
   pub expression: Expression,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+impl VariableAssign {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.target.tokens();
+    tkns.append(&mut self.expression.tokens());
+    tkns
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Identifier {
   pub name: Token,
 }
@@ -861,17 +999,20 @@ impl Identifier {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Emoji {
   pub tokens: Vec<Token>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Word {
   pub tokens: Vec<Token>,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Slice {
   pub name: Identifier,
   pub subscript: Vec<Subscript>
@@ -888,13 +1029,28 @@ impl Slice {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct SliceRef {
   pub name: Identifier,
   pub subscript: Option<Vec<Subscript>>
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+impl SliceRef {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.name.tokens();
+    if let Some(subs) = &self.subscript {
+      for sub in subs {
+        let mut sub_tkns = sub.tokens();
+        tkns.append(&mut sub_tkns);
+      }
+    }
+    tkns
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Subscript {
   All,                      // a[:]
   Brace(Vec<Subscript>),    // a{"foo"}
@@ -940,11 +1096,12 @@ impl Subscript {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Expression {
   Formula(Factor),
   FunctionCall(FunctionCall),
-  FsmPipe(FsmPipe),
+  //FsmPipe(FsmPipe),
   Literal(Literal),
   Range(Box<RangeExpression>),
   Slice(Slice),
@@ -968,7 +1125,8 @@ impl Expression {
 
 pub type ArgumentList = Vec<(Option<Identifier>,Expression)>;
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FunctionCall {
   pub name: Identifier,
   pub args: ArgumentList,
@@ -980,19 +1138,22 @@ impl FunctionCall {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Tuple {
   pub elements: Vec<Expression>
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Binding {
   pub name: Identifier,
   pub kind: Option<KindAnnotation>,
   pub value: Expression,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct KindAnnotation {
   pub kind: Kind,
 }
@@ -1000,6 +1161,9 @@ pub struct KindAnnotation {
 impl KindAnnotation {
 
   pub fn hash(&self) -> u64 {
+    #[cfg(feature = "no_std")]
+    let mut hasher = FxHasher::default();
+    #[cfg(not(feature = "no_std"))]
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     self.kind.hash(&mut hasher);
     hasher.finish()
@@ -1010,7 +1174,8 @@ impl KindAnnotation {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize,Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Kind {
   Any,
   Atom(Identifier),
@@ -1072,7 +1237,8 @@ impl Kind {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Literal {
   Atom(Atom),
   Boolean(Token),
@@ -1101,14 +1267,16 @@ impl Literal {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct MechString {
   pub text: Token,
 }
 
 pub type Hyperlink = (Token, Token);
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum ParagraphElement {
   Emphasis(Box<ParagraphElement>),
   FootnoteReference(Token),
@@ -1149,7 +1317,8 @@ impl ParagraphElement {
 
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Paragraph {
   pub elements: Vec<ParagraphElement>,
 }
@@ -1174,7 +1343,8 @@ pub type Imaginary = Box<Number>;
 pub type Base = (Whole, Part);
 pub type Exponent = (Sign, Whole, Part);
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Number {
   Real(RealNumber),
   Complex(ComplexNumberNode),
@@ -1201,7 +1371,8 @@ impl Number {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum RealNumber {
   Binary(Token),
   Decimal(Token),
@@ -1242,12 +1413,14 @@ impl RealNumber {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ImaginaryNumber {
   pub number: RealNumber,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ComplexNumberNode {
   pub real: Option<RealNumber>,
   pub imaginary: ImaginaryNumber
@@ -1273,19 +1446,31 @@ impl ComplexNumberNode {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Comment {
   pub paragraph: Paragraph,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct OpAssign {
   pub target: SliceRef,
   pub op: OpAssignOp,
   pub expression: Expression,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+impl OpAssign {
+  pub fn tokens(&self) -> Vec<Token> {
+    let mut tkns = self.target.tokens();
+    tkns.append(&mut self.op.tokens());
+    tkns.append(&mut self.expression.tokens());
+    tkns
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum OpAssignOp {
   Add,
   Div,
@@ -1295,26 +1480,43 @@ pub enum OpAssignOp {
   Sub,   
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+impl OpAssignOp {
+  pub fn tokens(&self) -> Vec<Token> {
+    match self {
+      OpAssignOp::Add => vec![Token::new(TokenKind::Plus, SourceRange::default(), vec!['+'])],
+      OpAssignOp::Div => vec![Token::new(TokenKind::Slash, SourceRange::default(), vec!['/'])],
+      OpAssignOp::Exp => vec![Token::new(TokenKind::Caret, SourceRange::default(), vec!['^'])],
+      OpAssignOp::Mod => vec![Token::new(TokenKind::Percent, SourceRange::default(), vec!['%'])],
+      OpAssignOp::Mul => vec![Token::new(TokenKind::Asterisk, SourceRange::default(), vec!['*'])],
+      OpAssignOp::Sub => vec![Token::new(TokenKind::Dash, SourceRange::default(), vec!['-'])],
+    }
+  }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum RangeOp {
   Exclusive,      
   Inclusive,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum AddSubOp {
   Add,
   Sub,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum MulDivOp {
   Div,
   Mod,
   Mul,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum VecOp {
   Cross,
   Dot,
@@ -1322,12 +1524,14 @@ pub enum VecOp {
   Solve,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum ExponentOp {
   Exp
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum ComparisonOp {
   Equal,
   GreaterThan,
@@ -1339,7 +1543,8 @@ pub enum ComparisonOp {
   StrictNotEqual,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum LogicOp {
   And,
   Not,
@@ -1347,7 +1552,8 @@ pub enum LogicOp {
   Xor,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum FormulaOperator {
   AddSub(AddSubOp),
   Comparison(ComparisonOp),
@@ -1359,7 +1565,8 @@ pub enum FormulaOperator {
   Set(SetOp),
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum TableOp {
   InnerJoin,
   LeftOuterJoin,
@@ -1369,7 +1576,8 @@ pub enum TableOp {
   LeftAntiJoin,
 }
 
-#[derive (Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum SetOp {
   Union,
   Intersection,
@@ -1383,7 +1591,8 @@ pub enum SetOp {
   NotElementOf,
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct RangeExpression {
   pub start: Factor,
   pub increment: Option<(RangeOp,Factor)>,
@@ -1399,7 +1608,8 @@ impl RangeExpression {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Term {
   pub lhs: Factor,
   pub rhs: Vec<(FormulaOperator,Factor)>
@@ -1418,7 +1628,8 @@ impl Term {
   }
 }
 
-#[derive(Clone, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Factor {
   Expression(Box<Expression>),
   Negate(Box<Factor>),

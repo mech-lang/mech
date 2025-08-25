@@ -8,12 +8,18 @@ struct TupleAccessElement {
   out: Value,
 }
 
-impl MechFunction for TupleAccessElement {
+impl MechFunctionImpl for TupleAccessElement {
   fn solve(&self) {
     ()
   }
   fn out(&self) -> Value { self.out.clone() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for TupleAccessElement {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    todo!();
+  }
 }
   
 pub struct TupleAccess {}

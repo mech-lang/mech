@@ -2,14 +2,22 @@
 // Access 
 // ----------------------------------------------------------------------------
 
+#[cfg(feature = "matrix")]
 pub mod matrix;
+#[cfg(feature = "record")]
 pub mod record;
+#[cfg(feature = "table")]
 pub mod table;
+#[cfg(feature = "tuple")]
 pub mod tuple;
 
+#[cfg(feature = "matrix")]
 pub use self::matrix::*;
+#[cfg(feature = "record")]
 pub use self::record::*;
+#[cfg(feature = "table")]
 pub use self::table::*;
+#[cfg(feature = "tuple")]
 pub use self::tuple::*;
 
 #[macro_use]
@@ -24,9 +32,9 @@ impl NativeFunctionCompiler for AccessScalar {
     let src = &arguments[0];
     let index = &arguments[1];
     match src.kind().deref_kind() {
-      ValueKind::Matrix(mat,_) => {
-        MatrixAccessScalar{}.compile(&arguments)
-      },
+      #[cfg(feature = "matrix")]
+      ValueKind::Matrix(mat,_) => MatrixAccessScalar{}.compile(&arguments),
+      #[cfg(feature = "table")]
       ValueKind::Table(tble,_) => TableAccessScalar{}.compile(&arguments),
       _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
     }
@@ -42,15 +50,14 @@ impl NativeFunctionCompiler for AccessRange {
     let src = &arguments[0];
     let index = &arguments[1];
     match src.kind().deref_kind() {
-      ValueKind::Matrix(mat,_) => {
-        MatrixAccessRange{}.compile(&arguments)
-      },
+      #[cfg(feature = "matrix")]
+      ValueKind::Matrix(mat,_) => MatrixAccessRange{}.compile(&arguments),
+      #[cfg(feature = "table")]
       ValueKind::Table(tble,_) => TableAccessRange{}.compile(&arguments),
       _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
     }
   }
 }
-
 
 pub struct AccessSwizzle {}
 impl NativeFunctionCompiler for AccessSwizzle {
@@ -61,6 +68,7 @@ impl NativeFunctionCompiler for AccessSwizzle {
     let keys = &arguments.clone().split_off(1);
     let src = &arguments[0];
     match src {
+      #[cfg(feature = "record")]
       Value::Record(rcrd) => {
         let mut values = vec![];
         for key in keys {
@@ -72,6 +80,7 @@ impl NativeFunctionCompiler for AccessSwizzle {
         }
         Ok(Box::new(RecordAccessSwizzle{source: Value::Tuple(MechTuple::from_vec(values))}))
       }
+      #[cfg(feature = "table")]
       Value::Table(tbl) => {
         let mut elements = vec![];
         for k in keys {
@@ -92,6 +101,7 @@ impl NativeFunctionCompiler for AccessSwizzle {
         Ok(Box::new(TableAccessSwizzle{out: tuple}))
       }
       Value::MutableReference(r) => match &*r.borrow() {
+        #[cfg(feature = "record")]
         Value::Record(rcrd) => {
           let mut values = vec![];
           for key in keys {
@@ -103,6 +113,7 @@ impl NativeFunctionCompiler for AccessSwizzle {
           }
           Ok(Box::new(RecordAccessSwizzle{source: Value::Tuple(MechTuple::from_vec(values))}))
         }
+        #[cfg(feature = "table")]
         Value::Table(tbl) => {
           let mut elements = vec![];
           for key in keys {
@@ -120,6 +131,40 @@ impl NativeFunctionCompiler for AccessSwizzle {
         _ => todo!(),
       }
       _ => todo!(),
+    }
+  }
+}
+
+// ----------------------------------------------------------------------------
+
+// Access Column
+
+pub fn impl_access_column_fxn(source: Value, key: Value) -> MResult<Box<dyn MechFunction>> {
+  match source.kind().deref_kind() {
+    #[cfg(feature = "record")]
+    ValueKind::Record(_) => RecordAccess{}.compile(&vec![source,key]),
+    #[cfg(feature = "table")]
+    ValueKind::Table(_,_) => TableAccessColumn{}.compile(&vec![source,key]),
+    _ => Err(MechError{file: file!().to_string(),tokens: vec![],msg: format!("Unhandled args {:?}, {:?}", source, key),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,}),
+  }
+}
+
+pub struct AccessColumn {}
+impl NativeFunctionCompiler for AccessColumn {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    if arguments.len() != 2 {
+      return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+    }
+    let src = arguments[0].clone();
+    let key = arguments[1].clone();
+    match impl_access_column_fxn(src.clone(), key.clone()) {
+      Ok(fxn) => Ok(fxn),
+      Err(_) => {
+        match (src,&key) {
+          (Value::MutableReference(src),_) => { impl_access_column_fxn(src.borrow().clone(), key.clone()) }
+          _ => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        }
+      }
     }
   }
 }

@@ -119,10 +119,13 @@ impl Formatter {
     </head>
     <body>
       <div class="mech-root" mech-interpreter-id=0>"#, style);
+    #[cfg(feature = "serde")]
     let encoded_tree = match compress_and_encode(&tree) {
       Ok(encoded) => encoded,
       Err(e) => todo!(),
     };
+    #[cfg(not(feature = "serde"))]
+    let encoded_tree = "".to_string();
     let foot = format!(r#"
       <div id = "mech-output"></div>
     </div>

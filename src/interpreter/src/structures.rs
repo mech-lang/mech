@@ -7,16 +7,25 @@ use std::collections::HashMap;
 pub fn structure(strct: &Structure, p: &Interpreter) -> MResult<Value> {
   match strct {
     Structure::Empty => Ok(Value::Empty),
+    #[cfg(feature = "record")]
     Structure::Record(x) => record(&x, p),
+    #[cfg(feature = "matrix")]
     Structure::Matrix(x) => matrix(&x, p),
+    #[cfg(feature = "table")]
     Structure::Table(x) => table(&x, p),
+    #[cfg(feature = "tuple")]
     Structure::Tuple(x) => tuple(&x, p),
+    #[cfg(feature = "tuple_struct")]
     Structure::TupleStruct(x) => todo!(),
+    #[cfg(feature = "set")]
     Structure::Set(x) => set(&x, p),
+    #[cfg(feature = "map")]
     Structure::Map(x) => map(&x, p),
+    _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
   }
 }
 
+#[cfg(feature = "tuple")]
 pub fn tuple(tpl: &Tuple, p: &Interpreter) -> MResult<Value> {
   let mut elements = vec![];
   for el in &tpl.elements {
@@ -27,6 +36,7 @@ pub fn tuple(tpl: &Tuple, p: &Interpreter) -> MResult<Value> {
   Ok(Value::Tuple(mech_tuple))
 }
 
+#[cfg(feature = "map")]
 pub fn map(mp: &Map, p: &Interpreter) -> MResult<Value> {
   let mut m = IndexMap::new();
   for b in &mp.elements {
@@ -58,18 +68,18 @@ pub fn map(mp: &Map, p: &Interpreter) -> MResult<Value> {
   }))
 }
 
+#[cfg(feature = "record")]
 pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
   let mut data: IndexMap<u64,Value> = IndexMap::new();
   let cols: usize = rcrd.bindings.len();
   let mut kinds: Vec<ValueKind> = Vec::new();
   let mut field_names: HashMap<u64,String> = HashMap::new();
-
   for b in &rcrd.bindings {
     let name_hash = b.name.hash();
     let name_str = b.name.to_string();
     let val = expression(&b.value, p)?;
     let knd: ValueKind = match &b.kind {
-      Some(k) => kind_annotation(&k.kind, p)?.to_value_kind(&p.functions())?,
+      Some(k) => kind_annotation(&k.kind, p)?.to_value_kind(&p.state.borrow().kinds)?,
       None => val.kind(),
     };
     // If the kinds are different, do a conversion.
@@ -80,7 +90,7 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
         Ok(convert_fxn) => {
           convert_fxn.solve();
           let converted_result = convert_fxn.out();
-          p.add_plan_step(convert_fxn);
+          p.state.borrow_mut().add_plan_step(convert_fxn);
           data.insert(name_hash, converted_result);
         },
         Err(e) => {
@@ -92,7 +102,7 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
     }
     field_names.insert(name_hash, name_str);
   }
-  Ok(Value::Record(new_ref(MechRecord{
+  Ok(Value::Record(Ref::new(MechRecord{
     cols,
     kinds,
     data,
@@ -100,6 +110,7 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
   })))
 }
 
+#[cfg(feature = "set")]
 pub fn set(m: &Set, p: &Interpreter) -> MResult<Value> { 
   let mut out = IndexSet::new();
   for el in &m.elements {
@@ -140,6 +151,7 @@ macro_rules! handle_value_kind {
     $data_map.insert(id, ($value_kind.clone(), Value::to_matrixd(vals.clone(), vals.len(), 1)));
   }};}
 
+#[cfg(feature = "table")]
 pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> { 
   let mut rows = vec![];
   let headings = table_header(&t.header, p)?;
@@ -166,21 +178,37 @@ pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> {
   for ((id,knd,name),(column)) in headings.iter().zip(data.iter()) {
     let val = Value::to_matrix(column.clone(),column.len(),1);
     match knd {
+      #[cfg(feature = "i8")]
       ValueKind::I8   => handle_value_kind!(knd, val, id, data_map, as_i8),
+      #[cfg(feature = "i16")]
       ValueKind::I16  => handle_value_kind!(knd, val, id, data_map, as_i16),
+      #[cfg(feature = "i32")]
       ValueKind::I32  => handle_value_kind!(knd, val, id, data_map, as_i32),
+      #[cfg(feature = "i64")]
       ValueKind::I64  => handle_value_kind!(knd, val, id, data_map, as_i64),
+      #[cfg(feature = "i128")]
       ValueKind::I128 => handle_value_kind!(knd, val, id, data_map, as_i128),      
+      #[cfg(feature = "u8")]
       ValueKind::U8   => handle_value_kind!(knd, val, id, data_map, as_u8),
+      #[cfg(feature = "u16")]
       ValueKind::U16  => handle_value_kind!(knd, val, id, data_map, as_u16),
+      #[cfg(feature = "u32")]
       ValueKind::U32  => handle_value_kind!(knd, val, id, data_map, as_u32),
+      #[cfg(feature = "u64")]
       ValueKind::U64  => handle_value_kind!(knd, val, id, data_map, as_u64),
+      #[cfg(feature = "u128")]
       ValueKind::U128 => handle_value_kind!(knd, val, id, data_map, as_u128),
+      #[cfg(feature = "f32")]
       ValueKind::F32  => handle_value_kind!(knd, val, id, data_map, as_f32),
+      #[cfg(feature = "f64")]
       ValueKind::F64  => handle_value_kind!(knd, val, id, data_map, as_f64),
+      #[cfg(feature = "string")]
       ValueKind::String  => handle_value_kind!(knd, val, id, data_map, as_string),
+      #[cfg(feature = "complex")]
       ValueKind::ComplexNumber  => handle_value_kind!(knd, val, id, data_map, as_complexnumber),
+      #[cfg(feature = "rational")]
       ValueKind::RationalNumber  => handle_value_kind!(knd, val, id, data_map, as_rationalnumber),
+      #[cfg(feature = "bool")]
       ValueKind::Bool => {
         let vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_bool().unwrap().to_value()).collect::<Vec<Value>>();
         let id = id.as_u64().unwrap().borrow().clone();
@@ -191,9 +219,10 @@ pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> {
   }
   let names: HashMap<u64,String> = headings.iter().map(|(id,_,name)| (id.as_u64().unwrap().borrow().clone(), name.to_string())).collect();
   let tbl = MechTable::new(t.rows.len(), cols, data_map.clone(), names);
-  Ok(Value::Table(new_ref(tbl)))
+  Ok(Value::Table(Ref::new(tbl)))
 }
 
+#[cfg(feature = "kind_annotation")]
 pub fn table_header(fields: &Vec<Field>, p: &Interpreter) -> MResult<Vec<(Value,ValueKind,Identifier)>> {
   let mut headings: Vec<(Value,ValueKind,Identifier)> = Vec::new();
   for f in fields {
@@ -202,7 +231,7 @@ pub fn table_header(fields: &Vec<Field>, p: &Interpreter) -> MResult<Vec<(Value,
       Some(k) => kind_annotation(&k.kind, p)?,
       None => Kind::Any,
     };
-    headings.push((Value::Id(id),kind.to_value_kind(&p.functions())?,f.name.clone()));
+    headings.push((Value::Id(id),kind.to_value_kind(&p.state.borrow().kinds)?,f.name.clone()));
   }
   Ok(headings)
 }
@@ -220,6 +249,7 @@ pub fn table_column(r: &TableColumn, p: &Interpreter) -> MResult<Value> {
   expression(&r.element, p)
 }
 
+#[cfg(feature = "matrix")]
 pub fn matrix(m: &Mat, p: &Interpreter) -> MResult<Value> {
   let plan = p.plan();
   let mut shape = vec![0, 0];
@@ -238,7 +268,7 @@ pub fn matrix(m: &Mat, p: &Interpreter) -> MResult<Value> {
     }
   }
   if col.is_empty() {
-    return Ok(Value::MatrixF64(Matrix::<F64>::DMatrix(new_ref(DMatrix::from_vec(0, 0, vec![])))));
+    return Ok(Value::MatrixValue(Matrix::DMatrix(Ref::new(DMatrix::from_vec(0, 0, vec![])))));
   } else if col.len() == 1 {
     return Ok(col[0].clone());
   }
@@ -250,6 +280,7 @@ pub fn matrix(m: &Mat, p: &Interpreter) -> MResult<Value> {
   Ok(out)
 }
 
+#[cfg(feature = "matrix")]
 pub fn matrix_row(r: &MatrixRow, p: &Interpreter) -> MResult<Value> {
   let plan = p.plan();
   let mut row: Vec<Value> = Vec::new();

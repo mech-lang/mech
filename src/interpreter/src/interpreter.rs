@@ -2,144 +2,78 @@ use crate::*;
 use std::rc::Rc;
 use std::collections::HashMap;
 use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::io::{Cursor, Read, Write};
+use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
 
 // Interpreter 
 // ----------------------------------------------------------------------------
 
 pub struct Interpreter {
   pub id: u64,
-  symbols: SymbolTableRef,
-  plan: Plan,
-  functions: FunctionsRef,
+  ip: usize,  // instruction pointer
+  pub state: Ref<ProgramState>,
+  registers: Vec<Value>,
+  constants: Vec<Value>,
+  pub code: Vec<MechSourceCode>,
   pub out: Value,
   pub out_values: Ref<HashMap<u64, Value>>,
   pub sub_interpreters: Ref<HashMap<u64, Box<Interpreter>>>,
 }
 
 impl Interpreter {
-  pub fn new(id: u64) -> Interpreter {
-    let mut interp = Interpreter {
+  pub fn new(id: u64) -> Self {
+    let mut state = ProgramState::new();
+    load_stdkinds(&mut state.kinds);
+    #[cfg(feature = "functions")]
+    load_stdlib(&mut state.functions.borrow_mut());
+    Self {
       id,
-      symbols: new_ref(SymbolTable::new()),
-      plan: new_ref(Vec::new()),
-      functions: new_ref(Functions::new()),
+      ip: 0,
+      state: Ref::new(state),
+      registers: Vec::new(),
+      constants: Vec::new(),
       out: Value::Empty,
-      sub_interpreters: new_ref(HashMap::new()),
-      out_values: new_ref(HashMap::new()),
-    };
-    interp.load_stdkinds();
-    interp.load_stdlib();
-    interp
-  }
-
-  pub fn load_stdkinds(&mut self) {
-    let mut fxns = self.functions.borrow_mut();
-    
-    // Preload scalar kinds
-    fxns.kinds.insert(hash_str("u8"),ValueKind::U8);
-    fxns.kinds.insert(hash_str("u16"),ValueKind::U16);
-    fxns.kinds.insert(hash_str("u32"),ValueKind::U32);
-    fxns.kinds.insert(hash_str("u64"),ValueKind::U64);
-    fxns.kinds.insert(hash_str("u128"),ValueKind::U128);
-    fxns.kinds.insert(hash_str("i8"),ValueKind::I8);
-    fxns.kinds.insert(hash_str("i16"),ValueKind::I16);
-    fxns.kinds.insert(hash_str("i32"),ValueKind::I32);
-    fxns.kinds.insert(hash_str("i64"),ValueKind::I64);
-    fxns.kinds.insert(hash_str("i128"),ValueKind::I128);
-    fxns.kinds.insert(hash_str("f32"),ValueKind::F32);
-    fxns.kinds.insert(hash_str("f64"),ValueKind::F64);
-    fxns.kinds.insert(hash_str("c64"),ValueKind::ComplexNumber);
-    fxns.kinds.insert(hash_str("r64"),ValueKind::RationalNumber);
-    fxns.kinds.insert(hash_str("string"),ValueKind::String);
-    fxns.kinds.insert(hash_str("bool"),ValueKind::Bool);
-  }
-
-  pub fn load_stdlib(&mut self) {
-
-    let mut fxns = self.functions.borrow_mut();
-
-    // Preload combinatorics functions
-    fxns.function_compilers.insert(hash_str("combinatorics/n-choose-k"),Box::new(CombinatoricsNChooseK{}));
-
-    // Preload stats functions
-    fxns.function_compilers.insert(hash_str("stats/sum/row"),Box::new(StatsSumRow{}));
-    fxns.function_compilers.insert(hash_str("stats/sum/column"),Box::new(StatsSumColumn{}));
-    
-    // Preload math functions
-    fxns.function_compilers.insert(hash_str("math/sin"),Box::new(MathSin{}));
-    fxns.function_compilers.insert(hash_str("math/cos"),Box::new(MathCos{}));
-    fxns.function_compilers.insert(hash_str("math/atan2"),Box::new(MathAtan2{}));
-    fxns.function_compilers.insert(hash_str("math/atan"),Box::new(MathAtan{}));
-    fxns.function_compilers.insert(hash_str("math/acos"),Box::new(MathAcos{}));
-    fxns.function_compilers.insert(hash_str("math/acosh"),Box::new(MathAcosh{}));
-    fxns.function_compilers.insert(hash_str("math/acot"),Box::new(MathAcot{}));
-    fxns.function_compilers.insert(hash_str("math/acsc"),Box::new(MathAcsc{}));
-    fxns.function_compilers.insert(hash_str("math/asec"),Box::new(MathAsec{}));
-    fxns.function_compilers.insert(hash_str("math/asin"),Box::new(MathAsin{}));
-    fxns.function_compilers.insert(hash_str("math/sinh"),Box::new(MathSinh{}));
-    fxns.function_compilers.insert(hash_str("math/cosh"),Box::new(MathCosh{}));
-    fxns.function_compilers.insert(hash_str("math/tanh"),Box::new(MathTanh{}));
-    //fxns.function_compilers.insert(hash_str("math/atanh"),Box::new(MathAtanh{}));
-    fxns.function_compilers.insert(hash_str("math/cot"),Box::new(MathCot{}));
-    fxns.function_compilers.insert(hash_str("math/csc"),Box::new(MathCsc{}));
-    fxns.function_compilers.insert(hash_str("math/sec"),Box::new(MathSec{}));
-    fxns.function_compilers.insert(hash_str("math/tan"),Box::new(MathTan{}));
-
-    // Preload io functions
-    fxns.function_compilers.insert(hash_str("io/print"),Box::new(IoPrint{}));
-    fxns.function_compilers.insert(hash_str("io/println"),Box::new(IoPrintln{}));
-  }
-
-  pub fn plan(&self) -> Plan {
-    self.plan.clone()
+      sub_interpreters: Ref::new(HashMap::new()),
+      out_values: Ref::new(HashMap::new()),
+      code: Vec::new(),
+    }
   }
 
   pub fn clear(&mut self) {
-    self.symbols = new_ref(SymbolTable::new());
-    self.plan = new_ref(Vec::new());
-    self.functions = new_ref(Functions::new());
-    self.out = Value::Empty;
-    self.out_values = new_ref(HashMap::new());
-    self.sub_interpreters = new_ref(HashMap::new());
-    self.load_stdkinds();
-    self.load_stdlib();
+    let id = self.id;
+    *self = Interpreter::new(id);
   }
 
-  pub fn get_symbol(&self, id: u64) -> Option<Ref<Value>> {
-    let symbols_brrw = self.symbols.borrow();
-    symbols_brrw.get(id)
-  }
-
-  pub fn symbols(&self) -> SymbolTableRef {
-    self.symbols.clone()
-  }
-
-  pub fn functions(&self) -> FunctionsRef {
-    self.functions.clone()
-  }
-
-  pub fn add_plan_step(&self, step: Box<dyn MechFunction>) {
-    let mut plan_brrw = self.plan.borrow_mut();
-    plan_brrw.push(step);
-  }
-
-  pub fn insert_function(&self, fxn: FunctionDefinition) {
-    let mut fxns_brrw = self.functions.borrow_mut();
-    fxns_brrw.functions.insert(fxn.id, fxn);
-  }
-
+  #[cfg(feature = "pretty_print")]
   pub fn pretty_print_symbols(&self) -> String {
-    let symbol_table = self.symbols.borrow();
-    symbol_table.pretty_print()
+    let state_brrw = self.state.borrow();
+    let syms = state_brrw.symbol_table.borrow();
+    syms.pretty_print()
+  }
+
+  #[cfg(feature = "functions")]
+  pub fn plan(&self) -> Plan {
+    self.state.borrow().plan.clone()
+  }
+
+  #[cfg(feature = "symbol_table")]
+  pub fn symbols(&self) -> SymbolTableRef {
+    self.state.borrow().symbol_table.clone()
   }
 
   pub fn dictionary(&self) -> Ref<Dictionary> {
-    let symbols_ref = self.symbols.borrow();
-    symbols_ref.dictionary.clone()
+    self.state.borrow().dictionary.clone()
   }
 
+  #[cfg(feature = "functions")]
+  pub fn functions(&self) -> FunctionsRef {
+    self.state.borrow().functions.clone()
+  }
+
+  #[cfg(feature = "functions")]
   pub fn step(&mut self, steps: u64) -> &Value {
-    let plan_brrw = self.plan.borrow();
+    let state_brrw = self.state.borrow();
+    let mut plan_brrw = state_brrw.plan.borrow_mut();
     let mut result = Value::Empty;
     for i in 0..steps {
       for fxn in plan_brrw.iter() {
@@ -150,10 +84,12 @@ impl Interpreter {
     &self.out
   }
 
+  #[cfg(feature = "functions")]
   pub fn interpret(&mut self, tree: &Program) -> MResult<Value> {
+    self.code.push(MechSourceCode::Tree(tree.clone()));
     catch_unwind(AssertUnwindSafe(|| {
       let result = program(tree, &self);
-      if let Some(last_step) = self.plan.borrow().last() {
+      if let Some(last_step) = self.state.borrow().plan.borrow().last() {
         self.out = last_step.out().clone();
       } else {
         self.out = Value::Empty;
@@ -183,5 +119,85 @@ impl Interpreter {
       }
     })?
   }
-  
+
+  #[cfg(feature = "program")]
+  pub fn run_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
+    // Reset the instruction pointer
+    self.ip = 0;
+    // Resize the registers and constant table
+    self.registers = vec![Value::Empty; program.header.reg_count as usize];
+    self.constants = vec![Value::Empty; program.const_entries.len()];
+    // Load the constants
+    self.constants = program.decode_const_entries()?;
+    while self.ip < program.instrs.len() {
+      let instr = &program.instrs[self.ip];
+      match instr {
+        DecodedInstr::ConstLoad { dst, const_id } => {
+          let value = self.constants[*const_id as usize].clone();
+          self.registers[*dst as usize] = value;
+        },
+        DecodedInstr::UnOp{ fxn_id, dst, src } => {
+          let val = self.registers[*src as usize].clone();
+          //let result = unop_execute(*opcode, val)?;
+          //self.registers[*dst as usize] = result;
+          todo!();
+        },
+        DecodedInstr::BinOp{fxn_id, dst, lhs, rhs } => {
+          let fxn: Box<dyn MechFunction> = if *fxn_id == hash_str("AddSS") {
+            let lhs = &self.registers[*lhs as usize];
+            let rhs = &self.registers[*rhs as usize];
+            let out = &self.registers[*dst as usize];
+            match lhs.kind() {
+              #[cfg(all(feature = "u8", feature = "math_add"))]
+              ValueKind::U8 => Box::new(AddSS::<u8>{lhs: lhs.expect_u8()?, rhs: rhs.expect_u8()?, out: out.expect_u8()?}),
+              #[cfg(all(feature = "f64", feature = "math_add"))]
+              ValueKind::F64 => Box::new(AddSS::<F64>{lhs: lhs.expect_f64()?, rhs: rhs.expect_f64()?, out: out.expect_f64()?}),
+              _ => todo!(),
+            }
+          } else {
+            return Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Unknown binary function ID: {}", fxn_id),id: line!(),kind: MechErrorKind::GenericError("Unknown binary function".to_string()),});
+          };
+          self.out = fxn.out().clone();
+          self.state.borrow_mut().add_plan_step(fxn);
+        },
+        DecodedInstr::Ret{ src } => {
+          todo!();
+        },
+        x => {
+          return Err(MechError {
+            file: file!().to_string(),
+            tokens: vec![],
+            msg: format!("Unknown instruction: {:?}", x),
+            id: line!(),
+            kind: MechErrorKind::GenericError("Unknown instruction".to_string()),
+          });
+        }
+      }
+      self.ip += 1;
+    }
+    // Load the symbol table
+    let mut state_brrw = self.state.borrow_mut();
+    let mut symbol_table = state_brrw.symbol_table.borrow_mut();
+    for (id, reg) in program.symbols.iter() {
+      symbol_table.insert(*id, self.constants[*reg as usize].clone(), false); // the false indicates it's not mutable.
+    }
+    // Load the dictionary
+    for (id, name) in &program.dictionary {
+      symbol_table.dictionary.borrow_mut().insert(*id, name.clone());
+      state_brrw.dictionary.borrow_mut().insert(*id, name.clone());
+    } 
+    Ok(self.out.clone())
+  }
+
+  #[cfg(feature = "compiler")]
+  pub fn compile(&self) -> MResult<Vec<u8>> {
+    let state_brrw = self.state.borrow();
+    let mut plan_brrw = state_brrw.plan.borrow_mut();
+    let mut ctx = CompileCtx::new();
+    for step in plan_brrw.iter() {
+      step.compile(&mut ctx)?;
+    }
+    ctx.compile()
+  }
+
 }
