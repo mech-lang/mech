@@ -12,10 +12,10 @@ pub use crate::*;
 macro_rules! impl_binop {
   ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:ident) => {
     #[derive(Debug)]
-    struct $struct_name<T> {
-      lhs: Ref<$arg1_type>,
-      rhs: Ref<$arg2_type>,
-      out: Ref<$out_type>,
+    pub struct $struct_name<T> {
+      pub lhs: Ref<$arg1_type>,
+      pub rhs: Ref<$arg2_type>,
+      pub out: Ref<$out_type>,
     }
     impl<T> MechFunctionImpl for $struct_name<T>
     where
@@ -36,7 +36,7 @@ macro_rules! impl_binop {
       }
       fn out(&self) -> Value { self.out.to_value() }
       fn to_string(&self) -> String { format!("{:#?}", self) }
-    }
+    }   
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $struct_name<T> 
     where
