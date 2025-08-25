@@ -145,6 +145,20 @@ pub fn load_stdlib(fxns: &mut Functions) {
   fxns.function_compilers.insert(hash_str("stats/sum/column"), Box::new(StatsSumColumn{}));
 
   // Preload math functions
+  #[cfg(feature = "math_add")]
+  fxns.function_compilers.insert(hash_str("math/add"),Box::new(MathAdd{}));
+  #[cfg(feature = "math_sub")]
+  fxns.function_compilers.insert(hash_str("math/sub"),Box::new(MathSub{}));
+  #[cfg(feature = "math_mul")]
+  fxns.function_compilers.insert(hash_str("math/mul"),Box::new(MathMul{}));
+  #[cfg(feature = "math_div")]
+  fxns.function_compilers.insert(hash_str("math/div"),Box::new(MathDiv{}));
+  #[cfg(feature = "math_mod")]
+  fxns.function_compilers.insert(hash_str("math/mod"),Box::new(MathMod{}));
+  #[cfg(feature = "math_exp")]
+  fxns.function_compilers.insert(hash_str("math/exp"),Box::new(MathExp{}));
+  #[cfg(feature = "math_neg")]
+  fxns.function_compilers.insert(hash_str("math/neg"),Box::new(MathNegate{}));
   #[cfg(feature = "math_sin")]
   fxns.function_compilers.insert(hash_str("math/sin"),Box::new(MathSin{}));
   #[cfg(feature = "math_cos")]
@@ -187,4 +201,39 @@ pub fn load_stdlib(fxns: &mut Functions) {
   fxns.function_compilers.insert(hash_str("io/print"), Box::new(IoPrint{}));
   #[cfg(feature = "io_println")]
   fxns.function_compilers.insert(hash_str("io/println"), Box::new(IoPrintln{}));
+
+  // Matrix functions
+  #[cfg(feature = "matrix_horzcat")]
+  fxns.function_compilers.insert(hash_str("matrix/horzcat"), Box::new(MatrixHorzCat{}));
+  #[cfg(feature = "matrix_vertcat")]
+  fxns.function_compilers.insert(hash_str("matrix/vertcat"), Box::new(MatrixVertCat{}));
+  #[cfg(feature = "matrix_transpose")]
+  fxns.function_compilers.insert(hash_str("matrix/transpose"), Box::new(MatrixTranspose{}));
+  #[cfg(feature = "matrix_matmul")]
+  fxns.function_compilers.insert(hash_str("matrix/matmul"), Box::new(MatrixMatMul{}));
+
+  // Compare functions
+  #[cfg(feature = "compare_eq")]
+  fxns.function_compilers.insert(hash_str("compare/eq"), Box::new(CompareEqual{}));
+  #[cfg(feature = "compare_neq")]
+  fxns.function_compilers.insert(hash_str("compare/neq"), Box::new(CompareNotEqual{}));
+  #[cfg(feature = "compare_lte")]
+  fxns.function_compilers.insert(hash_str("compare/lte"), Box::new(CompareLessThanEqual{}));
+  #[cfg(feature = "compare_gte")]
+  fxns.function_compilers.insert(hash_str("compare/gte"), Box::new(CompareGreaterThanEqual{}));
+  #[cfg(feature = "compare_lt")]
+  fxns.function_compilers.insert(hash_str("compare/lt"), Box::new(CompareLessThan{}));
+  #[cfg(feature = "compare_gt")]
+  fxns.function_compilers.insert(hash_str("compare/gt"), Box::new(CompareGreaterThan{}));
+
+  // Logic functions
+  #[cfg(feature = "logic_and")]
+  fxns.function_compilers.insert(hash_str("logic/and"), Box::new(LogicAnd{}));
+  #[cfg(feature = "logic_or")]
+  fxns.function_compilers.insert(hash_str("logic/or"), Box::new(LogicOr{}));
+  #[cfg(feature = "logic_not")]
+  fxns.function_compilers.insert(hash_str("logic/not"), Box::new(LogicNot{}));
+  #[cfg(feature = "logic_xor")]
+  fxns.function_compilers.insert(hash_str("logic/xor"), Box::new(LogicXor{}));  
+
 }
