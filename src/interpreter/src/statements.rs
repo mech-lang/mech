@@ -213,6 +213,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
     }
   }
   let mut result = expression(&var_def.expression, p)?;
+  #[cfg(feature = "kind_annotation")]
   if let Some(knd_anntn) =  &var_def.var.kind {
     let knd = kind_annotation(&knd_anntn.kind,p)?;
     let mut state_brrw = &mut p.state.borrow_mut();
@@ -301,15 +302,14 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
     let var_def_fxn = VariableDefineFxn{id: var_id, name: var_name.clone(), mutable: var_def.mutable, var: val_ref.clone()};
     state_brrw.add_plan_step(Box::new(var_def_fxn.clone()));
     return Ok(result);
-  } else { 
-    let mut state_brrw = p.state.borrow_mut();
-    // Save symbol to interpreter
-    let val_ref = state_brrw.save_symbol(var_id,var_name.clone(),result.clone(),var_def.mutable);
-    // Add variable define step to plan
-    let var_def_fxn = VariableDefineFxn{id: var_id, name: var_name.clone(), mutable: var_def.mutable, var: val_ref.clone()};
-    state_brrw.add_plan_step(Box::new(var_def_fxn.clone()));
-    return Ok(result);
-  }
+  } 
+  let mut state_brrw = p.state.borrow_mut();
+  // Save symbol to interpreter
+  let val_ref = state_brrw.save_symbol(var_id,var_name.clone(),result.clone(),var_def.mutable);
+  // Add variable define step to plan
+  let var_def_fxn = VariableDefineFxn{id: var_id, name: var_name.clone(), mutable: var_def.mutable, var: val_ref.clone()};
+  state_brrw.add_plan_step(Box::new(var_def_fxn.clone()));
+  return Ok(result);
 }
 
 macro_rules! op_assign {
