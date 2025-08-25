@@ -1,6 +1,6 @@
 [package]
 name = "mech-syntax"
-version = "0.2.57"
+version = "0.2.58"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "A toolchain for compiling textual syntax into Mech blocks."
 documentation = "http://docs.mech-lang.org"
@@ -133,7 +133,7 @@ matrix_vertcat = ["matrix"]
 
 
 [dependencies]
-mech-core = {version = "0.2.57", default-features = false}
+mech-core = {version = "0.2.58", default-features = false}
 
 hashbrown = "0.15.5"
 nom = "7.1.3"
