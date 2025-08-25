@@ -159,7 +159,7 @@ pub fn real(rl: &RealNumber) -> Value {
   match rl {
     #[cfg(feature = "math_neg")]
     RealNumber::Negated(num) => negated(num),
-    #[cfg(any(feature = "unsigned_ints", feature = "f64"))]
+    #[cfg(feature = "f64")]
     RealNumber::Integer(num) => integer(num),
     #[cfg(feature = "floats")]
     RealNumber::Float(num) => float(num),
@@ -268,7 +268,7 @@ pub fn float(flt: &(Token,Token)) -> Value {
   Value::F64(Ref::new(F64(num)))
 }
 
-#[cfg(any(feature = "unsigned_ints", feature = "f64"))]
+#[cfg(feature = "f64")]
 pub fn integer(int: &Token) -> Value {
   let num: f64 = int.chars.iter().collect::<String>().parse::<f64>().unwrap();
   Value::F64(Ref::new(F64::new(num)))
