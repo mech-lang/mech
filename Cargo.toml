@@ -20,7 +20,7 @@ maintenance = { status = "actively-developed" }
 [features]
 no_std = ["mech-core/no_std", "mech-interpreter/no_std", "mech-syntax/no_std"]
 
-default = ["stdlib", "pretty_print", "serde", "compiler",
+default = ["stdlib", "pretty_print", "serde", "compiler", "program",
       "statements_default", "subscript_default",
       "formatter", "mechfs", "serve", "run", "repl", "build",
       "mech-core/default", "mech-interpreter/default", "mech-syntax/default",
@@ -52,6 +52,7 @@ stdlib = ["bool", "string",
     ]
 
 compiler = ["mech-core/compiler", "mech-interpreter/compiler", "mech-syntax/compiler"]
+program = ["mech-core/program", "mech-interpreter/program", "mech-syntax/program"]
 pretty_print = ["mech-core/pretty_print", "mech-interpreter/pretty_print", "mech-syntax/pretty_print"]
 serde = ["mech-core/serde", "mech-interpreter/serde", "mech-syntax/serde"]
 
