@@ -153,12 +153,13 @@ pub fn whos_html(intrp: &Interpreter, names: Vec<String>) -> String {
     html.push_str("</tr></thead>");
   html.push_str("<tbody class=\"mech-table-body\">");
 
-  let dictionary = intrp.dictionary();
+  let state_brrw = intrp.state.borrow();
+  let dictionary_brrw = state_brrw.dictionary.borrow();
   if !names.is_empty() {
     for target_name in names {
-      for (id, var_name) in dictionary.borrow().iter() {
+      for (id, var_name) in dictionary_brrw.iter() {
         if *var_name == target_name {
-          if let Some(value_rc) = intrp.get_symbol(*id) {
+          if let Some(value_rc) = state_brrw.get_symbol(*id) {
             let value = value_rc.borrow();
             append_row(&mut html, var_name, &value);
           }
@@ -167,8 +168,8 @@ pub fn whos_html(intrp: &Interpreter, names: Vec<String>) -> String {
       }
     }
   } else {
-    for (id, var_name) in dictionary.borrow().iter() {
-      if let Some(value_rc) = intrp.get_symbol(*id) {
+    for (id, var_name) in dictionary_brrw.iter() {
+      if let Some(value_rc) = state_brrw.get_symbol(*id) {
         let value = value_rc.borrow();
         append_row(&mut html, var_name, &value);
       }
