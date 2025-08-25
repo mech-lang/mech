@@ -2886,11 +2886,9 @@ fn impl_horzcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
 }
 
 
-pub struct MaxtrixHorzCat {}
-impl NativeFunctionCompiler for MaxtrixHorzCat {
+pub struct MatrixHorzCat {}
+impl NativeFunctionCompiler for MatrixHorzCat {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-    // First, get the size of the output matrix
-    // rows are consistent already so we can just get nrows from the first element
     impl_horzcat_fxn(arguments)
   }
 }

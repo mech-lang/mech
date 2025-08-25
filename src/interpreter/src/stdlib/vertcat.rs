@@ -1280,8 +1280,8 @@ fn impl_vertcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
 }
 
 
-pub struct MaxtrixVertCat {}
-impl NativeFunctionCompiler for MaxtrixVertCat {
+pub struct MatrixVertCat {}
+impl NativeFunctionCompiler for MatrixVertCat {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     impl_vertcat_fxn(arguments)
   }

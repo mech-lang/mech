@@ -272,7 +272,7 @@ pub fn matrix(m: &Mat, p: &Interpreter) -> MResult<Value> {
   } else if col.len() == 1 {
     return Ok(col[0].clone());
   }
-  let new_fxn = MaxtrixVertCat{}.compile(&col)?;
+  let new_fxn = MatrixVertCat{}.compile(&col)?;
   new_fxn.solve();
   let out = new_fxn.out();
   let mut plan_brrw = plan.borrow_mut();
@@ -298,7 +298,7 @@ pub fn matrix_row(r: &MatrixRow, p: &Interpreter) -> MResult<Value> {
       return Err(MechError{file: file!().to_string(), tokens: r.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::DimensionMismatch(vec![])});
     }
   }
-  let new_fxn = MaxtrixHorzCat{}.compile(&row)?;
+  let new_fxn = MatrixHorzCat{}.compile(&row)?;
   new_fxn.solve();
   let out = new_fxn.out();
   let mut plan_brrw = plan.borrow_mut();
