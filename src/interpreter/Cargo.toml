@@ -24,7 +24,7 @@ path = "bin/interpreter.rs"
 [features]
 no_std = ["mech-core/no_std", "mech-math/no_std", "mech-compare/no_std", "mech-combinatorics/no_std", "mech-logic/no_std", "mech-matrix/no_std", "mech-io/no_std", "mech-stats/no_std", "mech-range/no_std"]
 
-default = ["stdlib", "pretty_print", "serde", "compiler",
+default = ["stdlib", "pretty_print", "serde", "compiler", "program",
   "math_default", "compare_default", "combinatorics_default", "logic_default",
   "matrix_default", "io_default", "range_default", "stats_default",
   "statements_default", "subscript_default",
@@ -55,6 +55,7 @@ stdlib = ["bool", "string",
     ]
 
 compiler = ["mech-core/compiler", "mech-math/compiler", "mech-compare/compiler", "mech-combinatorics/compiler", "mech-logic/compiler", "mech-matrix/compiler", "mech-io/compiler", "mech-stats/compiler", "mech-range/compiler"]
+program = ["mech-core/program"]
 pretty_print = ["mech-core/pretty_print", "mech-math/pretty_print", "mech-compare/pretty_print", "mech-combinatorics/pretty_print", "mech-logic/pretty_print", "mech-matrix/pretty_print", "mech-io/pretty_print", "mech-stats/pretty_print", "mech-range/pretty_print"]
 serde = ["mech-core/serde", "mech-math/serde", "mech-compare/serde", "mech-combinatorics/serde", "mech-logic/serde", "mech-matrix/serde", "mech-io/serde", "mech-stats/serde", "mech-range/serde"]
 
@@ -153,8 +154,8 @@ io_println = ["io", "mech-io/println"]
 
 # Matrix
 matrix_default = ["matrix_horzcat", "matrix_vertcat", "matrix_matmul", "matrix_transpose", "mech-matrix/matrix_default"]
-matrix_horzcat = ["matrix"]
-matrix_vertcat = ["matrix"]
+matrix_horzcat = ["matrix", "functions"]
+matrix_vertcat = ["matrix", "functions"]
 matrix_matmul = ["matrix", "mech-matrix/matmul"]
 matrix_transpose = ["matrix", "mech-matrix/transpose"]
 
