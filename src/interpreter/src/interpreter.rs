@@ -120,9 +120,8 @@ impl Interpreter {
     })?
   }
 
-  #[cfg(feature = "compiler")]
+  #[cfg(feature = "program")]
   pub fn run_program(&mut self, program: &ParsedProgram) -> MResult<Value> {
-    println!("Program! {:#?}", program);
     // Reset the instruction pointer
     self.ip = 0;
     // Resize the registers and constant table
@@ -144,11 +143,22 @@ impl Interpreter {
           todo!();
         },
         DecodedInstr::BinOp{fxn_id, dst, lhs, rhs } => {
-          let val1 = self.registers[*lhs as usize].clone();
-          let val2 = self.registers[*rhs as usize].clone();
-          //let result = binop_execute(*opcode, val1, val2)?;
-          //self.registers[*dst as usize] = result;
-          todo!();
+          let fxn: Box<dyn MechFunction> = if *fxn_id == hash_str("AddSS") {
+            let lhs = &self.registers[*lhs as usize];
+            let rhs = &self.registers[*rhs as usize];
+            let out = &self.registers[*dst as usize];
+            match lhs.kind() {
+              #[cfg(all(feature = "u8", feature = "math_add"))]
+              ValueKind::U8 => Box::new(AddSS::<u8>{lhs: lhs.expect_u8()?, rhs: rhs.expect_u8()?, out: out.expect_u8()?}),
+              #[cfg(all(feature = "f64", feature = "math_add"))]
+              ValueKind::F64 => Box::new(AddSS::<F64>{lhs: lhs.expect_f64()?, rhs: rhs.expect_f64()?, out: out.expect_f64()?}),
+              _ => todo!(),
+            }
+          } else {
+            return Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Unknown binary function ID: {}", fxn_id),id: line!(),kind: MechErrorKind::GenericError("Unknown binary function".to_string()),});
+          };
+          self.out = fxn.out().clone();
+          self.state.borrow_mut().add_plan_step(fxn);
         },
         DecodedInstr::Ret{ src } => {
           todo!();
@@ -166,14 +176,17 @@ impl Interpreter {
       self.ip += 1;
     }
     // Load the symbol table
+    let mut state_brrw = self.state.borrow_mut();
+    let mut symbol_table = state_brrw.symbol_table.borrow_mut();
     for (id, reg) in program.symbols.iter() {
-      //self.symbols.borrow_mut().insert(*id, self.constants[*reg as usize].clone(), false); // the false indicates it's not mutable.
+      symbol_table.insert(*id, self.constants[*reg as usize].clone(), false); // the false indicates it's not mutable.
     }
     // Load the dictionary
     for (id, name) in &program.dictionary {
-      //self.state.borrow_mut().symbol_table.borrow_mut().dictionary.borrow_mut().insert(*id, name.clone());
+      symbol_table.dictionary.borrow_mut().insert(*id, name.clone());
+      state_brrw.dictionary.borrow_mut().insert(*id, name.clone());
     } 
-    Ok(Value::Empty)
+    Ok(self.out.clone())
   }
 
   #[cfg(feature = "compiler")]
