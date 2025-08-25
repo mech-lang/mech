@@ -9,55 +9,76 @@ The `mech` command-line tool provides various functionalities for working with M
 (1.1) Usage
 
 ```sh
-mech [OPTIONS] [mech_paths]... [COMMAND]
+mech [OPTIONS] [mech_paths]... [SUBCOMMAND]
 ```
 
-(1.2) Commands
+(1.2) Subcommands
 
 | Command   | Description                                   |
 |-----------|-----------------------------------------------|
+| `build`   | Build Mech program into bytecode.             |
 | `format`  | Format Mech source code into standard format. |
-| `serve`   | Serve Mech program over an HTTP server.       |
 | `help`    | Print help message.                           |
+| `serve`   | Serve Mech program over an HTTP server.       |
 
 (1.3) Arguments
 
-Source .mec files and directories. You can specify one or more `.mec` files or directories containing Mech scripts. The command will execute the specified files in the order they are provided, and alpha-numeric sorting is applied to the files.
+Source `.mec` files and directories. You can specify one or more `.mec`/`.mecb` files, or directories containing Mech scripts / bytecode.
 
-```
-  [mech_paths]... 
-```
+If you run the Mech command without any files or subcommands, it will start the REPL.
 
 (1.4) Options
 
 | Option                | Description                                      |
 |-----------------------|--------------------------------------------------|
 | `-d`, `--debug`       | Prints debug information.                        |
-| `-e`, `--tree`        | Prints the parse tree of the Mech program.       |
-| `-t`, `--time`        | Measures execution time of the program.          |
 | `-r`, `--repl`        | Starts the Mech Read-Eval-Print Loop (REPL).     |
+| `-t`, `--time`        | Measures execution time of the program.          |
+| `-e`, `--tree`        | Prints the parse tree of the Mech program.       |
 
-2. Running a Mech Program
------------------------------------------------------------------------------
-
-To execute a Mech script, provide the path to one or more `.mec` files or directories containing Mech scripts. The command will execute the specified files in the order they are provided:
+(1.5) Examples
 
 ```sh
-mech program.mec
-mech script1.mec script2.mec dir1
+mech file1.mec file2.mec dir1
+mech -d -e file.mec
+mech -t file.mec
+mech -r file.mec
 ```
 
-3. Subcommands
+2. Subcommands
 -------------------------------------------------------------------------------
 
-(3.1) format
+(2.1) build
+
+Compiles Mech source code into bytecode.
+
+```sh
+mech build [OPTIONS] [FILES]
+```
+
+(2.1.1) Options
+
+| Option          | Value      | Description                                 |
+|-----------------|------------|---------------------------------------------|
+| `-o`, `--out`   | `PATH`     | Specifies the output directory.             |
+
+(2.1.2) Examples
+
+```sh
+mech build -o out_dir file1.mec
+mech build -o out_dir file1.mec file2.mec dir1 dir2
+```
+
+(2.2) format
 
 Formats Mech source code into a standard format.
 
 ```sh
 mech format [OPTIONS] [FILES]
 ```
-*Options:*
+
+(2.2.1) Options
+
 
 | Option               | Value               | Description                          |
 |----------------------|---------------------|--------------------------------------|
@@ -66,7 +87,7 @@ mech format [OPTIONS] [FILES]
 | `-t`, `--html`       |                     | Outputs formatted code as HTML.      |
 
 
-*Example:*
+(2.2.2) Examples
 
 ```sh
 mech format -o formatted/ my_script.mec
@@ -80,14 +101,14 @@ Serves a Mech program over an HTTP server.
 mech serve [OPTIONS] [FILES]
 ```
 
-*Options:*
+(2.3.1) Options
 
 | Option            | Value      | Description                                   |
 |-------------------|------------|-----------------------------------------------|
 | `-p`, `--port`    | `PORT`     | Sets the port for the server (default: 8081). |
 | `-a`, `--address` | `ADDRESS`  | Sets the server address (default: 127.0.0.1). |
 
-*Example:*
+(2.3.2) Examples
 
 ```sh
 mech serve -p 3000 -a 0.0.0.0 my_script.mec
