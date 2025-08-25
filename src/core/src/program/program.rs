@@ -1,5 +1,7 @@
 use crate::*;
 use super::*;
+use byteorder::{LittleEndian, WriteBytesExt, ReadBytesExt};
+use std::io::Write;
 use std::io::{self, SeekFrom, Seek, Cursor};
 #[cfg(not(feature = "no_std"))]
 use std::fs::File;
@@ -72,7 +74,7 @@ impl ParsedProgram {
     Ok(buf.into_inner())
   }
 
-  pub fn from_bytes(bytes: &Vec<u8>) -> MResult<ParsedProgram> {
+  pub fn from_bytes(bytes: &[u8]) -> MResult<ParsedProgram> {
     load_program_from_bytes(bytes)
   }
 
@@ -191,7 +193,7 @@ pub fn load_program_from_file(path: impl AsRef<Path>) -> MResult<ParsedProgram> 
   load_program_from_reader(&mut f, total_len)
 }
 
-pub fn load_program_from_bytes(bytes: &Vec<u8>) -> MResult<ParsedProgram> {
+pub fn load_program_from_bytes(bytes: &[u8]) -> MResult<ParsedProgram> {
   let total_len = bytes.len() as u64;
 
   let mut cur = Cursor::new(bytes);
@@ -327,23 +329,6 @@ fn load_program_from_reader<R: Read + Seek>(r: &mut R, total_len: u64) -> MResul
   let instrs = decode_instructions(Cursor::new(&instr_bytes[..]))?;
   
   Ok(ParsedProgram { header, features, types, const_entries, const_blob, instr_bytes, symbols, instrs, dictionary })
-}
-
-pub fn parse_version_to_u16(s: &str) -> Option<u16> {
-  let parts: Vec<&str> = s.split('.').collect();
-  if parts.len() != 3 { return None; }
-
-  let major = parts[0].parse::<u16>().ok()?;
-  let minor = parts[1].parse::<u16>().ok()?;
-  let patch = parts[2].parse::<u16>().ok()?; // parse to u16 to check bounds easily
-
-  if major > 0b111 { return None; }    // 3 bits => 0..7
-  if minor > 0b1_1111 { return None; } // 5 bits => 0..31
-  if patch > 0xFF { return None; }     // 8 bits => 0..255
-
-  // Pack: major in bits 15..13, minor in bits 12..8, patch in bits 7..0
-  let encoded = (major << 13) | (minor << 8) | patch;
-  Some(encoded as u16)
 }
 
 pub fn decode_version_from_u16(v: u16) -> (u16, u16, u16) {
@@ -552,9 +537,6 @@ fn decode_instructions(mut cur: Cursor<&[u8]>) -> MResult<Vec<DecodedInstr>> {
   }
   Ok(out)
 }
-
-use std::io::Write;
-use byteorder::{LittleEndian, WriteBytesExt};
 
 impl DecodedInstr {
   pub fn write_to<W: Write>(&self, w: &mut W) -> MResult<()> {

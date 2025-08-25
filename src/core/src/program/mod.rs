@@ -1,14 +1,23 @@
 use crate::*;
+use std::io::Cursor;
+#[cfg(not(feature = "no_std"))]
+use std::collections::HashSet;
+#[cfg(feature = "no_std")]
+use hashbrown::HashSet;
 
-#[cfg(feature = "compiler")]
+#[cfg(any(feature = "compiler", feature = "program"))]
 pub mod compiler;
 #[cfg(feature = "symbol_table")]
 pub mod symbol_table;
+#[cfg(feature = "program")]
+pub mod program;
 
-#[cfg(feature = "compiler")]
+#[cfg(any(feature = "compiler", feature = "program"))]
 pub use self::compiler::*;
 #[cfg(feature = "symbol_table")]
 pub use self::symbol_table::*;
+#[cfg(feature = "program")]
+pub use self::program::*;
 
 // Program State
 // ----------------------------------------------------------------------------
@@ -75,4 +84,21 @@ impl ProgramState {
     val_ref
   }
 
+}
+
+pub fn parse_version_to_u16(s: &str) -> Option<u16> {
+  let parts: Vec<&str> = s.split('.').collect();
+  if parts.len() != 3 { return None; }
+
+  let major = parts[0].parse::<u16>().ok()?;
+  let minor = parts[1].parse::<u16>().ok()?;
+  let patch = parts[2].parse::<u16>().ok()?; // parse to u16 to check bounds easily
+
+  if major > 0b111 { return None; }    // 3 bits => 0..7
+  if minor > 0b1_1111 { return None; } // 5 bits => 0..31
+  if patch > 0xFF { return None; }     // 8 bits => 0..255
+
+  // Pack: major in bits 15..13, minor in bits 12..8, patch in bits 7..0
+  let encoded = (major << 13) | (minor << 8) | patch;
+  Some(encoded as u16)
 }

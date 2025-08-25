@@ -19,6 +19,7 @@ pub struct CompileCtx {
   pub next_reg: Register,
 }
 
+#[cfg(feature = "compiler")]
 impl CompileCtx {
   pub fn new() -> Self {
     Self {

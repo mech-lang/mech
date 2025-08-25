@@ -8,6 +8,7 @@ pub trait CompileConst {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32>;
 }
 
+#[cfg(feature = "compiler")]
 impl CompileConst for Value {
 
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
@@ -71,6 +72,7 @@ impl CompileConst for Value {
   }
 }
 
+#[cfg(feature = "compiler")]
 #[cfg(feature = "f64")]
 impl CompileConst for F64 {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
