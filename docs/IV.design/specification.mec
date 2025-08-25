@@ -21,12 +21,9 @@ This document is for:
 
 Mech source code can be stored in files with either the `.mec` or `.🤖` extension. 
 
-Source code is ecoded with UTF-8, which allows for Unicode support directly in the code. This choice has several benefits:
+Source code is ecoded with UTF-8, which allows for Unicode support. This choice has several benefits:
 
-- Makes code more accessible to non-English speakers
-- Enables domain experts to use notation from their fields directly in code
-- Allows for more expressive and intuitive naming conventions
-- Supports mathematical notation that closely resembles standard written forms
+Mech binary bytecode files use the `.mecb` extension. The bytecode format is specified in the [Bytecode Specification Document](#).
 
 (2.2) Literate Programming and Mechdown
 
