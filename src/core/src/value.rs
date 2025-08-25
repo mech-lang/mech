@@ -53,7 +53,8 @@ macro_rules! impl_as_type {
   };
 }
 
-// Value ----------------------------------------------------------------------
+// Value Kind
+// ----------------------------------------------------------------------------
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
@@ -325,6 +326,8 @@ impl ValueKind {
   }
 }
 
+// Value
+// ----------------------------------------------------------------------------
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Value {
@@ -1430,7 +1433,7 @@ impl Value {
       #[cfg(feature = "i128")]
       Value::I128(v) => Some(Ref::new(F32::new(*v.borrow() as f32))),
       #[cfg(feature = "f32")]
-      Value::F32(v) => Some(Ref::new(F32::new((*v.borrow()).0 as f32))),
+      Value::F32(v) => Some(v.clone()),
       #[cfg(feature = "f64")]
       Value::F64(v) => Some(Ref::new(F32::new((*v.borrow()).0 as f32))),
       Value::MutableReference(val) => val.borrow().as_f32(),
@@ -1461,7 +1464,7 @@ impl Value {
       Value::I64(v) => Some(Ref::new(F64::new(*v.borrow() as f64))),
       #[cfg(feature = "i128")]
       Value::I128(v) => Some(Ref::new(F64::new(*v.borrow() as f64))),
-      Value::F64(v) => Some(Ref::new(F64::new((*v.borrow()).0 as f64))),
+      Value::F64(v) => Some(v.clone()),
       Value::MutableReference(val) => val.borrow().as_f64(),
       _ => None,
     }
@@ -1591,6 +1594,24 @@ impl Value {
       Value::F64(v) => Some((*v.borrow()).0 as usize),
       Value::MutableReference(v) => v.borrow().as_usize(),
       _ => None,
+    }
+  }
+
+  #[cfg(feature = "u8")]
+  pub fn expect_u8(&self) -> MResult<Ref<u8>> {
+    match self {
+      Value::U8(v) => Ok(v.clone()),
+      Value::MutableReference(v) => v.borrow().expect_u8(),
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
+    }
+  }
+
+  #[cfg(feature = "f64")]
+  pub fn expect_f64(&self) -> MResult<Ref<F64>> {
+    match self {
+      Value::F64(v) => Ok(v.clone()),
+      Value::MutableReference(v) => v.borrow().expect_f64(),
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
     }
   }
 
