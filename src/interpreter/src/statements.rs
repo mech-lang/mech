@@ -129,11 +129,13 @@ pub fn variable_assign(var_assgn: &VariableAssign, p: &Interpreter) -> MResult<V
   };
   match &slc.subscript {
     Some(sbscrpt) => {
+      #[cfg(feature = "subscript")]
       for s in sbscrpt {
         let s_result = subscript_ref(&s, &sink, &source, p)?;
         return Ok(s_result);
       }
     }
+    #[cfg(not(feature = "assign"))]
     None => {
       let args = vec![sink,source];
       let fxn = AssignValue{}.compile(&args)?;
@@ -142,6 +144,7 @@ pub fn variable_assign(var_assgn: &VariableAssign, p: &Interpreter) -> MResult<V
       p.state.borrow_mut().add_plan_step(fxn);
       return Ok(res);
     }
+    _ => return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "Subscript feature not enabled.".to_string(), id: line!(), kind: MechErrorKind::None}),
   }
   unreachable!(); // subscript should have thrown an error if we can't access an element
 }
@@ -213,7 +216,7 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
     }
   }
   let mut result = expression(&var_def.expression, p)?;
-  #[cfg(feature = "kind_annotation")]
+  #[cfg(all(feature = "kind_annotation", feature = "convert"))]
   if let Some(knd_anntn) =  &var_def.var.kind {
     let knd = kind_annotation(&knd_anntn.kind,p)?;
     let mut state_brrw = &mut p.state.borrow_mut();

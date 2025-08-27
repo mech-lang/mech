@@ -1152,6 +1152,7 @@ where
   fn out(&self) -> Value {self.sink.to_value()}
   fn to_string(&self) -> String {format!("{:#?}", self)}
 }
+#[cfg(feature = "compiler")]
 impl<T, R, C, S, IxVec1, IxVec2> MechFunctionCompiler for Set2DRRSB<T, na::Matrix<T, R, C, S>, IxVec1, IxVec2> {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();

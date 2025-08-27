@@ -15,7 +15,7 @@ pub fn literal(ltrl: &Literal, p: &Interpreter) -> MResult<Value> {
     Literal::Atom(atm) => Ok(atom(atm)),
     #[cfg(feature = "kind_annotation")]
     Literal::Kind(knd) => kind_value(knd, p),
-    #[cfg(feature = "kind_annotation")]
+    #[cfg(feature = "convert")]
     Literal::TypedLiteral((ltrl,kind)) => typed_literal(ltrl,kind,p),
     _ => Err(MechError{file: file!().to_string(), tokens: ltrl.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::None}),
   }
@@ -110,7 +110,7 @@ pub fn kind_annotation(knd: &NodeKind, p: &Interpreter) -> MResult<Kind> {
   }
 }
 
-#[cfg(feature = "kind_annotation")]
+#[cfg(feature = "convert")]
 pub fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, p: &Interpreter) -> MResult<Value> {
   let value = literal(ltrl,p)?;
   let kind = kind_annotation(&knd_attn.kind, p)?;
