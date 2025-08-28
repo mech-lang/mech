@@ -39,7 +39,17 @@ Mech Programming Language Documentation
 3. Standard Library
 -------------------------------------------------------------------------------
 
-3. [Standard Library](reference/stdlib/index.html)
+- Assign
+- Access
+- Combinatorics
+- Compare
+- Convert
+- Io
+- Logic
+- [Math](stdlib/math/index.html)
+- Matrix
+- Range
+- Stats
 
 4. Guides
 -------------------------------------------------------------------------------
