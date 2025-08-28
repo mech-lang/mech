@@ -23,17 +23,17 @@ Mech source code can be stored in files with either the `.mec` or `.🤖` extens
 
 Source code is ecoded with UTF-8, which allows for Unicode support. This choice has several benefits:
 
-Mech binary bytecode files use the `.mecb` extension. The bytecode format is specified in the [Bytecode Specification Document](#).
+Mech binary bytecode files use the `.mecb` extension. The bytecode format is specified in the [Bytecode Specification](#).
 
 (2.2) Literate Programming and Mechdown
 
-Literate programming presents programs as structured documents where explanations take precedence over code. Mech supports this concept through a format called Mechdown, a Markdown varient with extensions to support embedded Mech syntax. This document is formatted with Mechdown to demonstrate how it is used.
+Literate programming presents programs as structured documents where explanations and code are given equal precedence. Mech supports this concept through a format called Mechdown, a Markdown varient with extensions to support embedded Mech syntax. This document is formatted with Mechdown to demonstrate how it is used.
 
 For more information, see the [Mechdown Section](#45036232896389885).
 
 (2.3) Whitespace
 
-Whitespace in Mech is used to separate tokens and is generally ignored. This includes spaces, tabs, and newlines. However, whitespace can be significant in certain contexts:
+Whitespace includes spaces (` `), tabs (`\t`), carriage returns (`\r`) and newlines (`\n`). Although it is generally ignored, whitespace is be significant in several contexts:
 
 - In lists, whitespace can be used to separate items.
 - In matrix and table definitions, whitespace can deliniate columns and rows.
