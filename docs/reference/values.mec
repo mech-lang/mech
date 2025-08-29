@@ -178,7 +178,7 @@ You can define a custom kind with the following syntax:
 <T> := <S> -- Defines custom kind `T`, an alias for `S`
 ```
 
-For example, if you wanted to represted a 3D point as a vector of three `f32` values, you could define a custom kind like this:
+For example, if you wanted to represent a 3D point as a vector of three `f32` values, you could define a custom kind like this:
 
 ```mech:disabled
 <point3> := <[f32]:3>
