@@ -224,10 +224,10 @@ pub fn subtract(input: ParseString) -> ParseResult<AddSubOp> {
   Ok((input, AddSubOp::Sub))
 }
 
-// multiply := "*" | "×" | "·";
+// multiply := "*" | "×" ;
 pub fn multiply(input: ParseString) -> ParseResult<MulDivOp> {
   let (input, _) = ws1e(input)?;
-  let (input, _) = alt((tag("*"), tag("×"), tag("·")))(input)?;
+  let (input, _) = alt((tag("*"), tag("×")))(input)?;
   let (input, _) = ws1e(input)?;
   Ok((input, MulDivOp::Mul))
 }
@@ -281,10 +281,10 @@ pub fn matrix_solve(input: ParseString) -> ParseResult<VecOp> {
   Ok((input, VecOp::Solve))
 }
 
-// dot-product := "·" ;
+// dot-product := "·" | "•" ;
 pub fn dot_product(input: ParseString) -> ParseResult<VecOp> {
   let (input, _) = ws1e(input)?;
-  let (input, _) = tag("·")(input)?;
+  let (input, _) = alt((tag("·"),tag("•")))(input)?;
   let (input, _) = ws1e(input)?;
   Ok((input, VecOp::Dot))
 }

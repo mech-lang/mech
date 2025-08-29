@@ -153,11 +153,12 @@ io_print = ["io", "mech-io/print"]
 io_println = ["io", "mech-io/println"]
 
 # Matrix
-matrix_default = ["matrix_horzcat", "matrix_vertcat", "matrix_matmul", "matrix_transpose", "mech-matrix/matrix_default"]
+matrix_default = ["matrix_dot", "matrix_horzcat", "matrix_vertcat", "matrix_matmul", "matrix_transpose", "mech-matrix/matrix_default"]
 matrix_horzcat = ["matrix", "functions"]
 matrix_vertcat = ["matrix", "functions"]
 matrix_matmul = ["matrix", "mech-matrix/matmul"]
 matrix_transpose = ["matrix", "mech-matrix/transpose"]
+matrix_dot = ["matrix", "mech-matrix/dot"]
 
 # Logic
 logic_default = ["logic_and", "logic_or", "logic_not", "logic_xor", "mech-logic/logic_default"]

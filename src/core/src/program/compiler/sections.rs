@@ -210,7 +210,7 @@ pub enum FeatureKind {
   Vector2, Vector3, Vector4,
   VectorD, MatrixD, RowVectorD,
   Compiler, PrettyPrint, Serde,
-  MatMul,
+  MatMul, Transpose, Dot, Cross,
   Add, Sub, Mul, Div,
   Custom = 0xFFFF,
 }
