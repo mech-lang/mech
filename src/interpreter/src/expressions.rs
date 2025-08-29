@@ -385,7 +385,7 @@ pub fn term(trm: &Term, p: &Interpreter) -> MResult<Value> {
       #[cfg(feature = "matrix_cross")]
       FormulaOperator::Vec(VecOp::Cross) => todo!(),
       #[cfg(feature = "matrix_dot")]
-      FormulaOperator::Vec(VecOp::Dot) => todo!(),
+      FormulaOperator::Vec(VecOp::Dot) => MatrixDot{}.compile(&vec![lhs,rhs])?,
 
       // Compare
       #[cfg(feature = "compare_eq")]

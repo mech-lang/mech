@@ -211,6 +211,8 @@ pub fn load_stdlib(fxns: &mut Functions) {
   fxns.function_compilers.insert(hash_str("matrix/transpose"), Box::new(MatrixTranspose{}));
   #[cfg(feature = "matrix_matmul")]
   fxns.function_compilers.insert(hash_str("matrix/matmul"), Box::new(MatrixMatMul{}));
+  #[cfg(feature = "matrix_dot")]
+  fxns.function_compilers.insert(hash_str("matrix/dot"), Box::new(MatrixDot{}));
 
   // Compare functions
   #[cfg(feature = "compare_eq")]
