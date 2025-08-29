@@ -135,7 +135,7 @@ pub fn variable_assign(var_assgn: &VariableAssign, p: &Interpreter) -> MResult<V
         return Ok(s_result);
       }
     }
-    #[cfg(not(feature = "assign"))]
+    #[cfg(feature = "assign")]
     None => {
       let args = vec![sink,source];
       let fxn = AssignValue{}.compile(&args)?;
@@ -144,7 +144,7 @@ pub fn variable_assign(var_assgn: &VariableAssign, p: &Interpreter) -> MResult<V
       p.state.borrow_mut().add_plan_step(fxn);
       return Ok(res);
     }
-    _ => return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "Subscript feature not enabled.".to_string(), id: line!(), kind: MechErrorKind::None}),
+    _ => return Err(MechError{file: file!().to_string(), tokens: slc.name.tokens(), msg: "Assign and/or Subscript feature not enabled.".to_string(), id: line!(), kind: MechErrorKind::None}),
   }
   unreachable!(); // subscript should have thrown an error if we can't access an element
 }
