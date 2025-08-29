@@ -36,6 +36,8 @@ like literals and variables.
 - `l3`: exponentiation (`^`)
 - `l4`: logical operators (e.g., `and`, `or`)
 - `l5`: comparisons (e.g., `==`, `<`, `>`)
+- `l6`: table operations (e.g., joins)
+- `l7`: set operations (e.g., union, intersection)
 - `factor`: atomic units (literals, function calls, variables, etc.)
 */
 
