@@ -24,10 +24,10 @@ impl MechServer {
 
   pub fn new(full_address: String, stylesheet_path: String, wasm_pkg: String) -> Self {
     let stylesheet_backup_url = "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/style.css".to_string();
-    let wasm_backup_url = format!("https://github.com/mech-lang/mech/releases/download/v{}-beta/mech_wasm_bg.wasm", VERSION);
+    let wasm_backup_url = format!("https://github.com/mech-lang/mech/releases/download/v{}-beta/mech_wasm_bg.wasm.br", VERSION);
     let js_backup_url = format!("https://github.com/mech-lang/mech/releases/download/v{}-beta/mech_wasm.js", VERSION);
 
-    let wasm_path = format!("{}/mech_wasm_bg.wasm", wasm_pkg);
+    let wasm_path = format!("{}/mech_wasm_bg.wasm.br", wasm_pkg);
     let js_path = format!("{}/mech_wasm.js", wasm_pkg);
 
     let mut mechfs = MechFileSystem::new();
@@ -233,16 +233,16 @@ impl MechServer {
                 mech_js.clone()
               }).with(warp::reply::with::headers(headers));
 
-    // Serve the wasm. This file is large so it's gzipped
+    // Serve the wasm. This file is large so it's brotli compressed.
     let mech_wasm = self.wasm.clone();
     let mut headers = HeaderMap::new();
     headers.insert("accept-ranges", HeaderValue::from_static("bytes"));
     headers.insert("content-type", HeaderValue::from_static("application/wasm"));
+    headers.insert("content-encoding", HeaderValue::from_static("br"));
     let pkg = warp::path!("pkg" / "mech_wasm_bg.wasm")
               .map(move || {
                 mech_wasm.clone()
               })
-              //.with(warp::compression::gzip())
               .with(warp::reply::with::headers(headers)); 
 
     let routes = nb.or(pkg).or(index);
