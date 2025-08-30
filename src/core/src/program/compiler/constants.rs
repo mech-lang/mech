@@ -330,3 +330,12 @@ impl ConstElem for String {
   fn value_kind() -> ValueKind { ValueKind::String }
   fn align() -> u8 { 1 }
 }
+
+#[cfg(feature = "bool")]
+impl ConstElem for bool {
+  fn write_le(&self, out: &mut Vec<u8>) {
+    out.write_u8(if *self { 1 } else { 0 }).expect("write bool");
+  }
+  fn value_kind() -> ValueKind { ValueKind::Bool }
+  fn align() -> u8 { 1 }
+}
