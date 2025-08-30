@@ -1,7 +1,7 @@
 Table
 ===============================================================================
 
-A table in Mech is a set of records, where each record corresponds to a row and each column has a name and kind. Tables provide structured, columnar data that is flexible and human-readable.
+A table is a set of records, where each record corresponds to a row and each column has a name and kind. Tables provide structured, columnar data that is flexible and human-readable.
 
 1. Syntax
 -------------------------------------------------------------------------------
