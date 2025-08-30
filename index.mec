@@ -1,20 +1,24 @@
-range
-=====
+matrix
+===============================================================================
 
 1. Description
----------------
+-------------------------------------------------------------------------------
 
-Provides functions that produce a range of values.
+Provides standard matrix functions.
 
 2. Provided Functions
-----------------------
+-------------------------------------------------------------------------------
+
+- `matrix/multiply`
+- `matrix/transpose`
+- `matrix/dot`
 
 3. Info
---------
+-------------------------------------------------------------------------------
 
-math/machine = {
-  name: "rage" 
-  version: "v0.2.22"
+matrix/machine = {
+  name: "matrix" 
+  version: "v0.2.58"
   authors: ["Corey Montella"] 
-  machine-url: "https://gitlab.com/mech-lang/machines/range"
+  machine-url: "https://gitlab.com/mech-lang/machines/matrix"
   license: "Apache-2.0"}
