@@ -212,6 +212,8 @@ pub enum FeatureKind {
   Compiler, PrettyPrint, Serde,
   MatMul, Transpose, Dot, Cross,
   Add, Sub, Mul, Div,
+  LT, LTE, GT, GTE, EQ, NEQ,
+  And, Or, Xor, Not,
   Custom = 0xFFFF,
 }
 
