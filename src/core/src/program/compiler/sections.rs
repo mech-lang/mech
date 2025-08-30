@@ -209,6 +209,7 @@ pub enum FeatureKind {
   RowVector2, RowVector3, RowVector4,
   Vector2, Vector3, Vector4,
   VectorD, MatrixD, RowVectorD,
+  HorzCat, VertCat,
   Compiler, PrettyPrint, Serde,
   MatMul, Transpose, Dot, Cross,
   Add, Sub, Mul, Div,
