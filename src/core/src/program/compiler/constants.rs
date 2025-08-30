@@ -320,3 +320,13 @@ impl ConstElem for ComplexNumber {
   fn value_kind() -> ValueKind { ValueKind::ComplexNumber }
   fn align() -> u8 { 16 }
 }
+
+#[cfg(feature = "string")]
+impl ConstElem for String {
+  fn write_le(&self, out: &mut Vec<u8>) {
+    out.write_u32::<LittleEndian>(self.len() as u32).expect("write string length");
+    out.extend_from_slice(self.as_bytes());
+  }
+  fn value_kind() -> ValueKind { ValueKind::String }
+  fn align() -> u8 { 1 }
+}
