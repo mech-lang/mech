@@ -107,7 +107,10 @@ macro_rules! impl_bool_unop {
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }
     #[cfg(feature = "compiler")]
-    impl<T> MechFunctionCompiler for $struct_name<T> {
+    impl<T> MechFunctionCompiler for $struct_name<T>
+    where
+      T: ConstElem + CompileConst 
+    {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         // allocate two registers as an array
         let mut registers = [0,0];
@@ -115,8 +118,8 @@ macro_rules! impl_bool_unop {
         let out_addr = self.out.addr();
         let out_reg = ctx.alloc_register_for_ptr(out_addr);
         let out_borrow = self.out.borrow();
-        /*
         let out_const_id = out_borrow.compile_const(ctx).unwrap();
+        
         ctx.emit_const_load(out_reg, out_const_id);
         registers[0] = out_reg;
 
@@ -135,8 +138,7 @@ macro_rules! impl_bool_unop {
           registers[1],
         );
 
-        Ok(registers[0])*/
-        todo!();
+        Ok(registers[0])
       }
     }};}
 
