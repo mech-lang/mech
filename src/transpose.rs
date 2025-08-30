@@ -8,36 +8,68 @@ macro_rules! transpose_op {
     unsafe { *$out = (*$arg).transpose(); }
   };}
 
-#[cfg(feature = "Matrix1")]
-impl_bool_urop!(TransposeM1, Matrix1<T>, Matrix1<T>, transpose_op);
-#[cfg(feature = "Matrix2")]
-impl_bool_urop!(TransposeM2, Matrix2<T>, Matrix2<T>, transpose_op);
-#[cfg(feature = "Matrix3")]
-impl_bool_urop!(TransposeM3, Matrix3<T>, Matrix3<T>, transpose_op);
-#[cfg(feature = "Matrix4")]
-impl_bool_urop!(TransposeM4, Matrix4<T>, Matrix4<T>, transpose_op);
-#[cfg(feature = "Matrix2x3")]
-impl_bool_urop!(TransposeM2x3, Matrix2x3<T>, Matrix3x2<T>, transpose_op);
-#[cfg(feature = "Matrix3x2")]
-impl_bool_urop!(TransposeM3x2, Matrix3x2<T>, Matrix2x3<T>, transpose_op);
-#[cfg(feature = "MatrixD")]
-impl_bool_urop!(TransposeMD, DMatrix<T>, DMatrix<T>, transpose_op);
-#[cfg(feature = "Vector2")]
-impl_bool_urop!(TransposeV2, Vector2<T>, RowVector2<T>, transpose_op);
-#[cfg(feature = "Vector3")]
-impl_bool_urop!(TransposeV3, Vector3<T>, RowVector3<T>, transpose_op);
-#[cfg(feature = "Vector4")]
-impl_bool_urop!(TransposeV4, Vector4<T>, RowVector4<T>, transpose_op); 
-#[cfg(feature = "VectorD")]
-impl_bool_urop!(TransposeVD, DVector<T>, RowDVector<T>, transpose_op);
-#[cfg(feature = "RowVector2")]
-impl_bool_urop!(TransposeR2, RowVector2<T>, Vector2<T>, transpose_op);
-#[cfg(feature = "RowVector3")]
-impl_bool_urop!(TransposeR3, RowVector3<T>, Vector3<T>, transpose_op);
-#[cfg(feature = "RowVector4")]
-impl_bool_urop!(TransposeR4, RowVector4<T>, Vector4<T>, transpose_op); 
-#[cfg(feature = "RowVectorD")]
-impl_bool_urop!(TransposeRD, RowDVector<T>, DVector<T>, transpose_op);
+#[macro_export]  
+macro_rules! impl_transpose {
+  ($struct_name:ident, $arg_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
+    #[derive(Debug)]
+    struct $struct_name<T> {
+      arg: Ref<$arg_type>,
+      out: Ref<$out_type>,
+    }
+    impl<T> MechFunctionImpl for $struct_name<T>
+    where
+      T: Debug + Clone + Sync + Send + 'static + 
+      PartialEq + PartialOrd,
+      Ref<$out_type>: ToValue
+    {
+      fn solve(&self) {
+        let arg_ptr = self.arg.as_ptr();
+        let out_ptr = self.out.as_mut_ptr();
+        $op!(arg_ptr,out_ptr);
+      }
+      fn out(&self) -> Value { self.out.to_value() }
+      fn to_string(&self) -> String { format!("{:#?}", self) }
+    }
+    #[cfg(feature = "compiler")]
+    impl<T> MechFunctionCompiler for $struct_name<T>
+    where
+      T: ConstElem + CompileConst 
+    {
+      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+        compile_unop!(self.out, self.arg, ctx, $feature_flag);
+      }
+    }};}
+
+#[cfg(feature = "matrix1")]
+impl_transpose!(TransposeM1, Matrix1<T>, Matrix1<T>, transpose_op, FeatureFlag::Builtin(FeatureKind::Transpose));
+#[cfg(feature = "matrix2")]
+impl_transpose!(TransposeM2, Matrix2<T>, Matrix2<T>, transpose_op, FeatureFlag::Builtin(FeatureKind::Transpose));
+#[cfg(feature = "matrix3")]
+impl_transpose!(TransposeM3, Matrix3<T>, Matrix3<T>, transpose_op, FeatureFlag::Builtin(FeatureKind::Transpose));
+#[cfg(feature = "matrix4")]
+impl_transpose!(TransposeM4, Matrix4<T>, Matrix4<T>, transpose_op, FeatureFlag::Builtin(FeatureKind::Transpose));
+#[cfg(all(feature = "matrix2x3", feature = "matrix3x2"))]
+impl_transpose!(TransposeM2x3, Matrix2x3<T>, Matrix3x2<T>, transpose_op, FeatureFlag::Builtin(FeatureKind::Transpose));
+#[cfg(all(feature = "matrix3x2", feature = "matrix2x3"))]
+impl_transpose!(TransposeM3x2, Matrix3x2<T>, Matrix2x3<T>, transpose_op, FeatureFlag::Builtin(FeatureKind::Transpose));
+#[cfg(feature = "matrixd")]
+impl_transpose!(TransposeMD, DMatrix<T>, DMatrix<T>, transpose_op, FeatureFlag::Builtin(FeatureKind::Transpose));
+#[cfg(all(feature = "vector2", feature = "row_vector2"))]
+impl_transpose!(TransposeV2, Vector2<T>, RowVector2<T>, transpose_op, FeatureFlag::Builtin(FeatureKind::Transpose));
+#[cfg(all(feature = "vector3", feature = "row_vector3"))]
+impl_transpose!(TransposeV3, Vector3<T>, RowVector3<T>, transpose_op, FeatureFlag::Builtin(FeatureKind::Transpose));
+#[cfg(all(feature = "vector4", feature = "row_vector4"))]
+impl_transpose!(TransposeV4, Vector4<T>, RowVector4<T>, transpose_op, FeatureFlag::Builtin(FeatureKind::Transpose));
+#[cfg(all(feature = "vectord", feature = "row_vectord"))]
+impl_transpose!(TransposeVD, DVector<T>, RowDVector<T>, transpose_op, FeatureFlag::Builtin(FeatureKind::Transpose));
+#[cfg(all(feature = "row_vector2", feature = "vector2"))]
+impl_transpose!(TransposeR2, RowVector2<T>, Vector2<T>, transpose_op, FeatureFlag::Builtin(FeatureKind::Transpose));
+#[cfg(all(feature = "row_vector3", feature = "vector3"))]
+impl_transpose!(TransposeR3, RowVector3<T>, Vector3<T>, transpose_op, FeatureFlag::Builtin(FeatureKind::Transpose));
+#[cfg(all(feature = "row_vector4", feature = "vector4"))]
+impl_transpose!(TransposeR4, RowVector4<T>, Vector4<T>, transpose_op, FeatureFlag::Builtin(FeatureKind::Transpose));
+#[cfg(all(feature = "row_vectord", feature = "vectord"))]
+impl_transpose!(TransposeRD, RowDVector<T>, DVector<T>, transpose_op, FeatureFlag::Builtin(FeatureKind::Transpose));
 
 macro_rules! impl_transpose_match_arms {
   ($arg:expr, $($input_type:ident => $($matrix_kind:ident, $target_type:ident, $default:expr, $value_string:tt),+);+ $(;)?) => {

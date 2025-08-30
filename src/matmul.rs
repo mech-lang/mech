@@ -13,35 +13,101 @@ macro_rules! matmul_op {
     unsafe { (*$lhs).mul_to(&*$rhs,&mut *$out); }
   };}
 
-impl_binop!(MatMulScalar, T,T,T,mul_op);
-#[cfg(feature = "RowVector4")]
-impl_binop!(MatMulR4V4, RowVector4<T>,Vector4<T>,Matrix1<T>,matmul_op);
-#[cfg(feature = "RowVector3")]
-impl_binop!(MatMulR3V3, RowVector3<T>,Vector3<T>,Matrix1<T>,matmul_op);
-#[cfg(feature = "RowVector2")]
-impl_binop!(MatMulR2V2, RowVector2<T>,Vector2<T>,Matrix1<T>,matmul_op);
-#[cfg(feature = "RowVectorD")]
-impl_binop!(MatMulRDVD, RowDVector<T>, DVector<T>, Matrix1<T>,matmul_op);
-#[cfg(feature = "Vector4")]
-impl_binop!(MatMulV4R4, Vector4<T>, RowVector4<T>, Matrix4<T>,matmul_op);
-#[cfg(feature = "Vector3")]
-impl_binop!(MatMulV3R3, Vector3<T>, RowVector3<T>, Matrix3<T>,matmul_op);
-#[cfg(feature = "Vector2")]
-impl_binop!(MatMulV2R2, Vector2<T>, RowVector2<T>, Matrix2<T>,matmul_op);
-#[cfg(feature = "RowVectorD")]
-impl_binop!(MatMulVDRD, DVector<T>,RowDVector<T>,DMatrix<T>,matmul_op);
-#[cfg(feature = "Matrix4")]
-impl_binop!(MatMulM4M4, Matrix4<T>, Matrix4<T>, Matrix4<T>,matmul_op);
-#[cfg(feature = "Matrix3")]
-impl_binop!(MatMulM3M3, Matrix3<T>, Matrix3<T>, Matrix3<T>,matmul_op);
-#[cfg(feature = "Matrix2")]
-impl_binop!(MatMulM2M2, Matrix2<T>, Matrix2<T>, Matrix2<T>,matmul_op);
-#[cfg(feature = "Matrix1")]
-impl_binop!(MatMulM1M1, Matrix1<T>, Matrix1<T>, Matrix1<T>,matmul_op);
-#[cfg(feature = "Matrix2x3")]
-impl_binop!(MatMulM2x3M3x2, Matrix2x3<T>, Matrix3x2<T>, Matrix2<T>,matmul_op);
-#[cfg(feature = "MatrixD")]
-impl_binop!(MatMulMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>,matmul_op);
+impl_binop!(MatMulScalar, T,T,T,mul_op, FeatureFlag::Builtin(FeatureKind::Mul));
+#[cfg(all(feature = "row_vector4", feature = "vector4", feature = "matrix1"))]
+impl_binop!(MatMulR4V4, RowVector4<T>, Vector4<T>, Matrix1<T>, matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "row_vector4", feature = "matrix4"))]
+impl_binop!(MatMulR4M4, RowVector4<T>, Matrix4<T>, RowVector4<T>, matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "row_vector4", feature = "matrixd", feature = "row_vectord"))]
+impl_binop!(MatMulR4MD, RowVector4<T>, DMatrix<T>, RowDVector<T>, matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+
+#[cfg(all(feature = "row_vector3", feature = "vector3", feature = "matrix1"))]
+impl_binop!(MatMulR3V3, RowVector3<T>, Vector3<T>, Matrix1<T>, matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "row_vector3", feature = "matrix3"))]
+impl_binop!(MatMulR3M3, RowVector3<T>, Matrix3<T>, RowVector3<T>, matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "row_vector3", feature = "matrix3x2"))]
+impl_binop!(MatMulR3M3x2, RowVector3<T>, Matrix3x2<T>, RowVector2<T>, matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "row_vector3", feature = "matrixd", feature = "row_vectord"))]
+impl_binop!(MatMulR3MD, RowVector3<T>, DMatrix<T>, RowDVector<T>, matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+
+#[cfg(all(feature = "row_vector2", feature = "vector2", feature = "matrix1"))]
+impl_binop!(MatMulR2V2, RowVector2<T>, Vector2<T>, Matrix1<T>, matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "row_vector2", feature = "matrix2", feature = "row_vector2"))]
+impl_binop!(MatMulR2M2, RowVector2<T>, Matrix2<T>, RowVector2<T>, matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "row_vector2", feature = "matrix2x3", feature = "row_vector3"))]
+impl_binop!(MatMulR2M2x3, RowVector2<T>, Matrix2x3<T>, RowVector3<T>, matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "row_vector2", feature = "matrixd", feature = "row_vectord"))]
+impl_binop!(MatMulR2MD, RowVector2<T>, DMatrix<T>, RowDVector<T>, matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+
+#[cfg(all(feature = "row_vectord", feature = "vectord", feature = "matrix1"))]
+impl_binop!(MatMulRDVD, RowDVector<T>, DVector<T>, Matrix1<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "row_vectord", feature = "matrixd"))]
+impl_binop!(MatMulRDMD, RowDVector<T>, DMatrix<T>, RowDVector<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+
+#[cfg(all(feature = "vector4", feature = "row_vector4", feature = "matrix4"))]
+impl_binop!(MatMulV4R4, Vector4<T>, RowVector4<T>, Matrix4<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "vector3", feature = "row_vector3", feature = "matrix3"))]
+impl_binop!(MatMulV3R3, Vector3<T>, RowVector3<T>, Matrix3<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "vector2", feature = "row_vector2", feature = "matrix2"))]
+impl_binop!(MatMulV2R2, Vector2<T>, RowVector2<T>, Matrix2<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+
+#[cfg(all(feature = "vectord", feature = "row_vectord", feature = "matrixd"))]
+impl_binop!(MatMulVDRD, DVector<T>,RowDVector<T>,DMatrix<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+
+#[cfg(all(feature = "matrix4", feature = "vector4"))]
+impl_binop!(MatMulM4V4, Matrix4<T>, Vector4<T>, Vector4<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "matrix4"))]
+impl_binop!(MatMulM4M4, Matrix4<T>, Matrix4<T>, Matrix4<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "matrix4", feature = "matrixd"))]
+impl_binop!(MatMulM4MD, Matrix4<T>, DMatrix<T>, DMatrix<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+
+#[cfg(all(feature = "matrix2", feature = "matrix2x3"))]
+impl_binop!(MatMulM2M2x3, Matrix2<T>, Matrix2x3<T>, Matrix2x3<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "matrix2", feature = "matrix2"))]
+impl_binop!(MatMulM2M2, Matrix2<T>, Matrix2<T>, Matrix2<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "matrix2", feature = "vector2"))]
+impl_binop!(MatMulM2V2, Matrix2<T>, Vector2<T>, Vector2<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "matrix2", feature = "matrixd"))]
+impl_binop!(MatMulM2MD, Matrix2<T>, DMatrix<T>, DMatrix<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+
+#[cfg(feature = "matrix3")]
+impl_binop!(MatMulM3M3, Matrix3<T>, Matrix3<T>, Matrix3<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "matrix3", feature = "matrix3x2"))]
+impl_binop!(MatMulM2M3x2, Matrix3<T>, Matrix3x2<T>, Matrix3x2<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "matrix3", feature = "vector3"))]
+impl_binop!(MatMulM3V3, Matrix3<T>, Vector3<T>, Vector3<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "matrix3", feature = "matrixd"))]
+impl_binop!(MatMulM3MD, Matrix3<T>, DMatrix<T>, DMatrix<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+
+#[cfg(all(feature = "matrix1"))]
+impl_binop!(MatMulM1M1, Matrix1<T>, Matrix1<T>, Matrix1<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+
+#[cfg(all(feature = "matrix2x3", feature = "vector3", feature = "vector2"))]
+impl_binop!(MatMulM2x3V2, Matrix2x3<T>, Vector3<T>, Vector2<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "matrix2x3", feature = "matrix3"))]
+impl_binop!(MatMulM2x3M3, Matrix2x3<T>, Matrix3<T>, Matrix2x3<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "matrix2x3", feature = "matrix3x2", feature = "matrix2"))]
+impl_binop!(MatMulM2x3M3x2, Matrix2x3<T>, Matrix3x2<T>, Matrix2<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "matrix2x3", feature = "matrixd"))]
+impl_binop!(MatMulM2x3MD, Matrix2x3<T>, DMatrix<T>, DMatrix<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+
+#[cfg(all(feature = "matrix3x2", feature = "vector2", feature = "vector3"))]
+impl_binop!(MatMulM3x2V2, Matrix3x2<T>, Vector2<T>, Vector3<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "matrix3x2", feature = "matrix2"))]
+impl_binop!(MatMulM3x2M2, Matrix3x2<T>, Matrix2<T>, Matrix3x2<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "matrix3x2", feature = "matrix2x3", feature = "matrix3"))]
+impl_binop!(MatMulM3x2M2x3, Matrix3x2<T>, Matrix2x3<T>, Matrix3<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "matrix3x2", feature = "matrixd"))]
+impl_binop!(MatMulM3x2MD, Matrix3x2<T>, DMatrix<T>, DMatrix<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+
+#[cfg(feature = "matrixd")]
+impl_binop!(MatMulMDMD, DMatrix<T>,DMatrix<T>,DMatrix<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "matrixd", feature = "matrix3x2"))]
+impl_binop!(MatMulMDM3x2, DMatrix<T>,Matrix3x2<T>,DMatrix<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "matrixd", feature = "vectord"))]
+impl_binop!(MatMulMDVD, DMatrix<T>,DVector<T>,DVector<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
+#[cfg(all(feature = "matrixd", feature = "row_vectord"))]
+impl_binop!(MatMulMDRD, DMatrix<T>,RowDVector<T>,DMatrix<T>,matmul_op, FeatureFlag::Builtin(FeatureKind::MatMul));
 
 macro_rules! impl_matmul_match_arms {
   ($arg:expr, $($lhs_type:ident, $rhs_type:ident => $($matrix_kind:ident, $target_type:ident, $value_string:tt),+);+ $(;)?) => {
