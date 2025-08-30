@@ -69,7 +69,7 @@ pub use self::xor::*;
 
 #[macro_export]
 macro_rules! impl_logic_binop {
-  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:ident) => {
+  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
     #[derive(Debug)]
     struct $struct_name {
       lhs: Ref<$arg1_type>,
@@ -87,9 +87,10 @@ macro_rules! impl_logic_binop {
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }
     #[cfg(feature = "compiler")]
-    impl MechFunctionCompiler for $struct_name {
+    impl MechFunctionCompiler for $struct_name 
+    {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
+        compile_binop!(self.out, self.lhs, self.rhs, ctx, $feature_flag);
       }
     }};}
 
