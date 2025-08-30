@@ -139,7 +139,7 @@ macro_rules! impl_bool_binop {
         registers[2] = rhs_reg;
 
         // Emit the boolean binop operation
-        ctx.emit_bool_binop(
+        ctx.emit_binop(
           hash_str(stringify!($struct_name)),
           registers[0],
           registers[1],
@@ -175,33 +175,7 @@ macro_rules! impl_bool_unop {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $struct_name<T> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        // Allocate registers for out and arg
-        let mut registers = [0, 0];
-
-        // Compile out
-        let out_addr = self.out.addr();
-        let out_reg = ctx.alloc_register_for_ptr(out_addr);
-        let out_borrow = self.out.borrow();
-        let out_const_id = out_borrow.compile_const(ctx).unwrap();
-        ctx.emit_const_load(out_reg, out_const_id);
-        registers[0] = out_reg;
-
-        // Compile arg
-        let arg_addr = self.arg.addr();
-        let arg_reg = ctx.alloc_register_for_ptr(arg_addr);
-        let arg_borrow = self.arg.borrow();
-        let arg_const_id = arg_borrow.compile_const(ctx).unwrap();
-        ctx.emit_const_load(arg_reg, arg_const_id);
-        registers[1] = arg_reg;
-
-        // Emit the boolean unop operation
-        ctx.emit_bool_unop(
-          hash_str(stringify!($struct_name)),
-          registers[0],
-          registers[1],
-        );
-
-        Ok(registers[0])
+        todo!();
       }
     }};}
 
