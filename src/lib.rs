@@ -82,9 +82,9 @@ macro_rules! impl_compare_binop {
     }
     impl<T> MechFunctionImpl for $struct_name<T>
     where
-    T: std::fmt::Debug + Clone + Sync + Send + 'static + 
-    PartialEq + PartialOrd,
-    Ref<$out_type>: ToValue
+      T: std::fmt::Debug + Clone + Sync + Send + 'static + 
+      PartialEq + PartialOrd,
+      Ref<$out_type>: ToValue
     {
     fn solve(&self) {
       let lhs_ptr = self.lhs.as_ptr();
@@ -96,9 +96,12 @@ macro_rules! impl_compare_binop {
     fn to_string(&self) -> String { format!("{:#?}", self) }
   }
   #[cfg(feature = "compiler")]
-  impl<T> MechFunctionCompiler for $struct_name<T> {
+  impl<T> MechFunctionCompiler for $struct_name<T> 
+  where
+    T: ConstElem + CompileConst
+  {
     fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-      todo!();
+      compile_binop!(self.out, self.lhs, self.rhs, ctx, $feature_flag);
     }
   }};}
 
