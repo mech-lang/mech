@@ -111,7 +111,42 @@ macro_rules! impl_bool_binop {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $struct_name<T> {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
+        // Allocate registers for out, lhs, rhs
+        let mut registers = [0, 0, 0];
+
+        // Compile out
+        let out_addr = self.out.addr();
+        let out_reg = ctx.alloc_register_for_ptr(out_addr);
+        let out_borrow = self.out.borrow();
+        let out_const_id = out_borrow.compile_const(ctx).unwrap();
+        ctx.emit_const_load(out_reg, out_const_id);
+        registers[0] = out_reg;
+
+        // Compile lhs
+        let lhs_addr = self.lhs.addr();
+        let lhs_reg = ctx.alloc_register_for_ptr(lhs_addr);
+        let lhs_borrow = self.lhs.borrow();
+        let lhs_const_id = lhs_borrow.compile_const(ctx).unwrap();
+        ctx.emit_const_load(lhs_reg, lhs_const_id);
+        registers[1] = lhs_reg;
+
+        // Compile rhs
+        let rhs_addr = self.rhs.addr();
+        let rhs_reg = ctx.alloc_register_for_ptr(rhs_addr);
+        let rhs_borrow = self.rhs.borrow();
+        let rhs_const_id = rhs_borrow.compile_const(ctx).unwrap();
+        ctx.emit_const_load(rhs_reg, rhs_const_id);
+        registers[2] = rhs_reg;
+
+        // Emit the boolean binop operation
+        ctx.emit_bool_binop(
+          hash_str(stringify!($struct_name)),
+          registers[0],
+          registers[1],
+          registers[2],
+        );
+
+        Ok(registers[0])
       }
     }};}
 
