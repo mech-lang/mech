@@ -8,7 +8,7 @@ use mech_core::matrix::Matrix;
 
 #[macro_export]
 macro_rules! impl_binop2 {
-  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:ident) => {
+  ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
     #[derive(Debug)]
     struct $struct_name<T> {
       lhs: Ref<$arg1_type>,

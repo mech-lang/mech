@@ -32,9 +32,9 @@ macro_rules! tanf_vec_op {
       }}};}
 
 #[cfg(feature = "f32")]      
-impl_math_unop!(MathTan, F32, tanf);
+impl_math_unop!(MathTan, F32, tanf, FeatureFlag::Custom(hash_str("math/tan")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathTan, F64, tan);
+impl_math_unop!(MathTan, F64, tan, FeatureFlag::Custom(hash_str("math/tan")));
 
 fn impl_tan_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_urnop_match_arms2!(

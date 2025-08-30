@@ -39,9 +39,9 @@ macro_rules! asinhf_vec_op {
 }
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathAsinh, F32, asinhf);
+impl_math_unop!(MathAsinh, F32, asinhf, FeatureFlag::Custom(hash_str("math/asinh")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathAsinh, F64, asinh);
+impl_math_unop!(MathAsinh, F64, asinh, FeatureFlag::Custom(hash_str("math/asinh")));
 
 fn impl_asinh_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_urnop_match_arms2!(

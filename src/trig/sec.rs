@@ -32,9 +32,9 @@ macro_rules! secf_vec_op {
       }}};}
 
 #[cfg(feature = "f32")]
-impl_math_unop!(MathSec, F32, secf);
+impl_math_unop!(MathSec, F32, secf, FeatureFlag::Custom(hash_str("math/sec")));
 #[cfg(feature = "f64")]
-impl_math_unop!(MathSec, F64, sec);
+impl_math_unop!(MathSec, F64, sec, FeatureFlag::Custom(hash_str("math/sec")));
 
 fn impl_sec_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_urnop_match_arms2!(
