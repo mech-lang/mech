@@ -26,9 +26,12 @@ macro_rules! horzcat_one_arg {
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }
     #[cfg(feature = "compiler")]
-    impl<T> MechFunctionCompiler for $fxn<T> {
+    impl<T> MechFunctionCompiler for $fxn<T> 
+    where
+      T: ConstElem + CompileConst
+    {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
+        compile_unop!(self.out, self.e0, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
     }
   };}
@@ -58,9 +61,12 @@ macro_rules! horzcat_two_args {
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }
     #[cfg(feature = "compiler")]
-    impl<T> MechFunctionCompiler for $fxn<T> {
+    impl<T> MechFunctionCompiler for $fxn<T> 
+    where
+      T: ConstElem + CompileConst
+    {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
+        compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
     }
   };}
@@ -156,7 +162,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateTwoArgs<T>
 where
-  T: Debug + Clone + Sync + Send + PartialEq + 'static,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + CompileConst,
   Ref<DMatrix<T>>: ToValue
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
