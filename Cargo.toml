@@ -192,7 +192,7 @@ mech-interpreter = { path = 'src/interpreter'}
 #mech-utilities = { path = 'src/utilities' }
 #mech-combinatorics = { path = '../machines/combinatorics' }
 #mech-compare = { path = '../machines/compare' }
-#mech-matrix = { path = '../machines/matrix' }
+mech-matrix = { path = '../machines/matrix' }
 #mech-stats = { path = '../machines/stats' }
 #mech-math = { path = '../machines/math' }
 #mech-io = { path = '../machines/io' }
