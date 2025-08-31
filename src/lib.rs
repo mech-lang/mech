@@ -51,6 +51,8 @@ pub mod funcs;
 pub mod ops;
 #[cfg(feature = "op_assign")]
 pub mod op_assign;
+#[cfg(feature = "exponential")]
+pub mod exponential;
 
 #[cfg(feature = "trig")]
 pub use self::trig::*;
@@ -60,6 +62,8 @@ pub use self::funcs::*;
 pub use self::ops::*;
 #[cfg(feature = "op_assign")]
 pub use self::op_assign::*;
+#[cfg(feature = "exponential")]
+pub use self::exponential::*;
 
 // ----------------------------------------------------------------------------
 // Math Library
