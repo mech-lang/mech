@@ -384,8 +384,10 @@ impl SymbolEntry {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OpCode {
   ConstLoad = 0x01,
-  Binop     = 0x10,
-  Unop      = 0x20,
+  Unop      = 0x10,
+  Binop     = 0x20,
+  Ternop    = 0x30,
+  Quadop    = 0x40,
   Return    = 0xFF,
 }
 
@@ -393,8 +395,10 @@ impl OpCode {
   pub fn from_u8(num: u8) -> Option<OpCode> {
     match num {
       0x01 => Some(OpCode::ConstLoad),
-      0x10 => Some(OpCode::Binop),
-      0x20 => Some(OpCode::Unop),
+      0x10 => Some(OpCode::Unop),
+      0x20 => Some(OpCode::Binop),
+      0x30 => Some(OpCode::Ternop),
+      0x40 => Some(OpCode::Quadop),
       0xFF => Some(OpCode::Return),
       _    => None,
     }
@@ -403,10 +407,12 @@ impl OpCode {
 
 #[derive(Debug, Clone)]
 pub enum EncodedInstr {
-  ConstLoad { dst: u32, const_id: u32 },                   // [u64 opcode][u32 dst][u32 const_id]
-  UnOp      { fxn_id: u64, dst: u32, src: u32 },           // [u64 opcode][u32 dst][u32 src]
-  BinOp     { fxn_id: u64, dst: u32, lhs: u32, rhs: u32 }, // [u64 opcode][u32 dst][u32 lhs][u32 rhs]
-  Ret       { src: u32 },                                  // [u64 opcode][u32 src]
+  ConstLoad { dst: u32, const_id: u32 },                              // [u64 opcode][u32 dst][u32 const_id]
+  UnOp      { fxn_id: u64, dst: u32, src: u32 },                      // [u64 opcode][u32 dst][u32 src]
+  BinOp     { fxn_id: u64, dst: u32, lhs: u32, rhs: u32 },            // [u64 opcode][u32 dst][u32 lhs][u32 rhs]
+  TernOp    { fxn_id: u64, dst: u32, a: u32, b: u32, c: u32 },        // [u64 opcode][u32 dst][u32 a][u32 b][u32 c]
+  QuadOp   { fxn_id: u64, dst: u32, a: u32, b: u32, c: u32, d: u32 }, // [u64 opcode][u32 dst][u32 a][u32 b][u32 c][u32 d]
+  Ret       { src: u32 },                                             // [u64 opcode][u32 src]
 }
 
 impl EncodedInstr {
@@ -415,6 +421,8 @@ impl EncodedInstr {
       EncodedInstr::ConstLoad{..} => 1 + 4 + 4,
       EncodedInstr::UnOp{..}      => 1 + 8 + 4 + 4,
       EncodedInstr::BinOp{..}     => 1 + 8 + 4 + 4 + 4,
+      EncodedInstr::TernOp{..}    => 1 + 8 + 4 + 4 + 4 + 4,
+      EncodedInstr::QuadOp{..}    => 1 + 8 + 4 + 4 + 4 + 4 + 4,
       EncodedInstr::Ret{..}       => 1 + 4,
     }
   }
@@ -437,6 +445,23 @@ impl EncodedInstr {
         w.write_u32::<LittleEndian>(*dst)?;
         w.write_u32::<LittleEndian>(*lhs)?;
         w.write_u32::<LittleEndian>(*rhs)?;
+      }
+      EncodedInstr::TernOp{ fxn_id, dst, a, b, c } => {
+        w.write_u8(OpCode::Ternop as u8)?;
+        w.write_u64::<LittleEndian>(*fxn_id)?;
+        w.write_u32::<LittleEndian>(*dst)?;
+        w.write_u32::<LittleEndian>(*a)?;
+        w.write_u32::<LittleEndian>(*b)?;
+        w.write_u32::<LittleEndian>(*c)?;
+      }
+      EncodedInstr::QuadOp{ fxn_id, dst, a, b, c, d } => {
+        w.write_u8(OpCode::Quadop as u8)?;
+        w.write_u64::<LittleEndian>(*fxn_id)?;
+        w.write_u32::<LittleEndian>(*dst)?;
+        w.write_u32::<LittleEndian>(*a)?;
+        w.write_u32::<LittleEndian>(*b)?;
+        w.write_u32::<LittleEndian>(*c)?;
+        w.write_u32::<LittleEndian>(*d)?;
       }
       EncodedInstr::Ret{ src } => {
         w.write_u8(OpCode::Return as u8)?;

@@ -72,6 +72,12 @@ impl CompileCtx {
   pub fn emit_binop(&mut self, fxn_id: u64, dst: Register, lhs: Register, rhs: Register) {
     self.instrs.push(EncodedInstr::BinOp { fxn_id, dst, lhs, rhs });
   }
+  pub fn emit_ternop(&mut self, fxn_id: u64, dst: Register, a: Register, b: Register, c: Register) {
+    self.instrs.push(EncodedInstr::TernOp { fxn_id, dst, a, b, c });
+  }
+  pub fn emit_quadop(&mut self, fxn_id: u64, dst: Register, a: Register, b: Register, c: Register, d: Register) {
+    self.instrs.push(EncodedInstr::QuadOp { fxn_id, dst, a, b, c, d });
+  }
   pub fn emit_ret(&mut self, src: Register) {
     self.instrs.push(EncodedInstr::Ret { src })
   }
