@@ -22,7 +22,7 @@ crate-type = ["rlib"]
 no_std = ["mech-core/no_std"]
 
 default = ["stdlib", "pretty_print", "serde", "compiler", "program",
-            "ops_default", "ops_assign_default", "trig_default",
+            "ops_default", "ops_assign_default", "trig_default", "funcs_default",
             "statements_default", "subscript_default",
             "mech-core/default",
           ]
@@ -30,7 +30,7 @@ default = ["stdlib", "pretty_print", "serde", "compiler", "program",
 ops_default = ["add", "sub", "mul", "div", "exp", "mod"]
 ops_assign_default = ["add_assign", "sub_assign", "mul_assign", "div_assign"]
 trig_default = ["acos", "acosh", "acot", "acsc", "asec", "asin", "asinh", "atan", "atan2", "atanh", "cos", "cosh", "cot", "csc", "sec", "sin", "sinh", "tan", "tanh"]
-funcs_default = ["cbrt", "ceil", "copysign", "erf", "erfc", "j0", "j1", "jn", "y0", "y1", "yn"]
+funcs_default = ["cbrt", "ceil", "copysign", "erf", "erfc", "funcs", "j0", "j1", "jn", "y0", "y1", "yn"]
 
 math = ["num-traits", "libm", "functions"]
 trig = ["math"]
@@ -72,12 +72,14 @@ ceil = ["funcs"]
 copysign = ["funcs"]
 erf = ["funcs"]
 erfc = ["funcs"]
+fabs = ["funcs"]
 j0 = ["funcs"]
 j1 = ["funcs"]
 jn = ["funcs"]
 y0 = ["funcs"]
 y1 = ["funcs"]
 yn = ["funcs"]
+
 
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]

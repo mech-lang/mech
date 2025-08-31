@@ -10,6 +10,8 @@ pub mod copysign;
 pub mod erf;
 #[cfg(feature = "erfc")]
 pub mod erfc;
+#[cfg(feature = "fabs")]
+pub mod fabs;
 #[cfg(feature = "j0")]
 pub mod j0;
 #[cfg(feature = "j1")]
@@ -23,7 +25,6 @@ pub mod y1;
 #[cfg(feature = "yn")]
 pub mod yn;
 
-
 #[cfg(feature = "cbrt")]
 pub use self::cbrt::*;
 #[cfg(feature = "ceil")]
@@ -34,6 +35,8 @@ pub use self::copysign::*;
 pub use self::erf::*;
 #[cfg(feature = "erfc")]
 pub use self::erfc::*;
+#[cfg(feature = "fabs")]
+pub use self::fabs::*;
 #[cfg(feature = "j0")]
 pub use self::j0::*;
 #[cfg(feature = "j1")]
