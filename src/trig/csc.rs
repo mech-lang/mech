@@ -1,5 +1,8 @@
 use crate::*;
 use mech_core::*;
+use num_traits::*;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 
 // Csc ------------------------------------------------------------------------
 
@@ -13,7 +16,7 @@ macro_rules! csc_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = 1.0 / sin(((*$arg)[i]).0);
+        ((&mut (*$out))[i]).0 = 1.0 / sin(((&(*$arg))[i]).0);
       }}};}
 
 macro_rules! cscf_op {
@@ -25,18 +28,20 @@ macro_rules! cscf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = 1.0 / sinf(((*$arg)[i]).0);
+        ((&mut (*$out))[i]).0 = 1.0 / sinf(((&(*$arg))[i]).0);
       }}};}
 
-impl_math_urop!(MathCsc, F32, cscf);
-impl_math_urop!(MathCsc, F64, csc);
+#[cfg(feature = "f32")]
+impl_math_unop!(MathCsc, F32, cscf, FeatureFlag::Custom(hash_str("math/csc")));
+#[cfg(feature = "f64")]
+impl_math_unop!(MathCsc, F64, csc, FeatureFlag::Custom(hash_str("math/csc")));
 
 fn impl_csc_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_urnop_match_arms2!(
     MathCsc,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "F32";
-    F64 => MatrixF64, F64, F64::zero(), "F64";
+    F32 => MatrixF32, F32, F32::zero(), "f32";
+    F64 => MatrixF64, F64, F64::zero(), "f64";
   )
 }
 

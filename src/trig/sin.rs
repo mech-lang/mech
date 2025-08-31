@@ -1,5 +1,8 @@
 use crate::*;
 use mech_core::*;
+use num_traits::*;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 
 // Sin ------------------------------------------------------------------------
 
@@ -13,7 +16,7 @@ macro_rules! sin_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = sin(((*$arg)[i]).0);
+        ((&mut (*$out))[i]).0 = sin(((&(*$arg))[i]).0);
       }}};}
 
 macro_rules! sinf_op {
@@ -25,18 +28,20 @@ macro_rules! sinf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = sinf(((*$arg)[i]).0);
+        ((&mut (*$out))[i]).0 = sinf(((&(*$arg))[i]).0);
       }}};}
 
-impl_math_urop!(MathSin, F32, sinf);
-impl_math_urop!(MathSin, F64, sin);
+#[cfg(feature = "f32")]      
+impl_math_unop!(MathSin, F32, sinf, FeatureFlag::Custom(hash_str("math/sin")));
+#[cfg(feature = "f64")]
+impl_math_unop!(MathSin, F64, sin, FeatureFlag::Custom(hash_str("math/sin")));
 
 fn impl_sin_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_urnop_match_arms2!(
     MathSin,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "F32";
-    F64 => MatrixF64, F64, F64::zero(), "F64";
+    F32 => MatrixF32, F32, F32::zero(), "f32";
+    F64 => MatrixF64, F64, F64::zero(), "f64";
   )
 }
 

@@ -1,6 +1,9 @@
 use crate::*;
 use mech_core::*;
 use libm::{atanh, atanhf};
+use num_traits::*;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 
 // Atanh Macros
 macro_rules! atanh_op {
@@ -13,7 +16,7 @@ macro_rules! atanh_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = atanh(((*$arg)[i]).0);
+        ((&mut (*$out))[i]).0 = atanh(((&(*$arg))[i]).0);
       }
     }
   };
@@ -29,21 +32,23 @@ macro_rules! atanhf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = atanhf(((*$arg)[i]).0);
+        ((&mut (*$out))[i]).0 = atanhf(((&(*$arg))[i]).0);
       }
     }
   };
 }
 
-impl_math_urop!(MathAtanh, F32, atanhf);
-impl_math_urop!(MathAtanh, F64, atanh);
+#[cfg(feature = "f32")]
+impl_math_unop!(MathAtanh, F32, atanhf, FeatureFlag::Custom(hash_str("math/atanh")));
+#[cfg(feature = "f64")]
+impl_math_unop!(MathAtanh, F64, atanh, FeatureFlag::Custom(hash_str("math/atanh")));
 
 fn impl_atanh_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_urnop_match_arms2!(
     MathAtanh,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "F32";
-    F64 => MatrixF64, F64, F64::zero(), "F64";
+    F32 => MatrixF32, F32, F32::zero(), "f32";
+    F64 => MatrixF64, F64, F64::zero(), "f64";
   )
 }
 

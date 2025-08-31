@@ -1,5 +1,8 @@
 use crate::*;
 use mech_core::*;
+use num_traits::*;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 
 // Cot ------------------------------------------------------------------------
 
@@ -13,7 +16,7 @@ macro_rules! cot_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = 1.0 / tan(((*$arg)[i]).0);
+        ((&mut (*$out))[i]).0 = 1.0 / tan(((&(*$arg))[i]).0);
       }}};}
 
 macro_rules! cotf_op {
@@ -25,24 +28,26 @@ macro_rules! cotf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = 1.0 / tanf(((*$arg)[i]).0);
+        ((&mut (*$out))[i]).0 = 1.0 / tanf(((&(*$arg))[i]).0);
       }}};}
 
-impl_math_urop!(Mathcot, F32, cotf);
-impl_math_urop!(Mathcot, F64, cot);
+#[cfg(feature = "f32")]
+impl_math_unop!(MathCot, F32, cotf, FeatureFlag::Custom(hash_str("math/cot")));
+#[cfg(feature = "f64")]
+impl_math_unop!(MathCot, F64, cot, FeatureFlag::Custom(hash_str("math/cot")));
 
 fn impl_cot_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_urnop_match_arms2!(
-    Mathcot,
+    MathCot,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "F32";
-    F64 => MatrixF64, F64, F64::zero(), "F64";
+    F32 => MatrixF32, F32, F32::zero(), "f32";
+    F64 => MatrixF64, F64, F64::zero(), "f64";
   )
 }
 
-pub struct Mathcot {}
+pub struct MathCot {}
 
-impl NativeFunctionCompiler for Mathcot {
+impl NativeFunctionCompiler for MathCot {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() != 1 {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});

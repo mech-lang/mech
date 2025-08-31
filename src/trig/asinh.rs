@@ -1,6 +1,9 @@
 use crate::*;
 use mech_core::*;
 use libm::{asinh, asinhf};
+use num_traits::*;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 
 // Asinh Macros
 macro_rules! asinh_op {
@@ -13,7 +16,7 @@ macro_rules! asinh_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = asinh(((*$arg)[i]).0);
+        ((&mut (*$out))[i]).0 = asinh(((&(*$arg))[i]).0);
       }
     }
   };
@@ -29,21 +32,23 @@ macro_rules! asinhf_vec_op {
   ($arg:expr, $out:expr) => {
     unsafe {
       for i in 0..(*$arg).len() {
-        ((*$out)[i]).0 = asinhf(((*$arg)[i]).0);
+        ((&mut (*$out))[i]).0 = asinhf(((&(*$arg))[i]).0);
       }
     }
   };
 }
 
-impl_math_urop!(MathAsinh, F32, asinhf);
-impl_math_urop!(MathAsinh, F64, asinh);
+#[cfg(feature = "f32")]
+impl_math_unop!(MathAsinh, F32, asinhf, FeatureFlag::Custom(hash_str("math/asinh")));
+#[cfg(feature = "f64")]
+impl_math_unop!(MathAsinh, F64, asinh, FeatureFlag::Custom(hash_str("math/asinh")));
 
 fn impl_asinh_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_urnop_match_arms2!(
     MathAsinh,
     (lhs_value),
-    F32 => MatrixF32, F32, F32::zero(), "F32";
-    F64 => MatrixF64, F64, F64::zero(), "F64";
+    F32 => MatrixF32, F32, F32::zero(), "f32";
+    F64 => MatrixF64, F64, F64::zero(), "f64";
   )
 }
 
