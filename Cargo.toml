@@ -1,6 +1,6 @@
 [package]
 name = "mech"
-version = "0.2.58"
+version = "0.2.59"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Mech is a reactive programming language for building robots, games, and animations."
 documentation = "https://docs.mech-lang.org"
@@ -140,9 +140,9 @@ matrix_vertcat = ["matrix"]
 nalgebra = "0.34.0"
 
 [dependencies]
-mech-core        = { version = "0.2.58", default-features = false }
-mech-syntax      = { version = "0.2.58", default-features = false }
-mech-interpreter = { version = "0.2.58", default-features = false }
+mech-core        = { version = "0.2.59", default-features = false }
+mech-syntax      = { version = "0.2.59", default-features = false }
+mech-interpreter = { version = "0.2.59", default-features = false }
 
 clap = {version = "4.5.40", features = ["cargo"]}
 colored = "3.0.0"
@@ -189,24 +189,24 @@ mech-core = { path = 'src/core' }
 mech-syntax = { path = 'src/syntax'}
 mech-interpreter = { path = 'src/interpreter'}
 mech-wasm = { path = 'src/wasm'}
-mech-utilities = { path = 'src/utilities' }
-mech-combinatorics = { path = '../machines/combinatorics' }
-mech-compare = { path = '../machines/compare' }
-mech-matrix = { path = '../machines/matrix' }
-mech-stats = { path = '../machines/stats' }
-mech-math = { path = '../machines/math' }
-mech-io = { path = '../machines/io' }
-mech-range = { path = '../machines/range' }
-mech-logic = { path = '../machines/logic' }
+#mech-utilities = { path = 'src/utilities' }
+#mech-combinatorics = { path = '../machines/combinatorics' }
+#mech-compare = { path = '../machines/compare' }
+#mech-matrix = { path = '../machines/matrix' }
+#mech-stats = { path = '../machines/stats' }
+#mech-math = { path = '../machines/math' }
+#mech-io = { path = '../machines/io' }
+#mech-range = { path = '../machines/range' }
+#mech-logic = { path = '../machines/logic' }
 
 [patch.'https://gitlab.com/mech-lang/core']
-mech-core = { path = 'src/core', version = '0.2.58' }
+mech-core = { path = 'src/core', version = '0.2.59' }
 
 [patch.'https://gitlab.com/mech-lang/syntax']
-mech-syntax = { path = 'src/syntax', version = '0.2.58' }
+mech-syntax = { path = 'src/syntax', version = '0.2.59' }
 
 [patch.'https://gitlab.com/mech-lang/interpreter']
-mech-interpreter = { path = 'src/interpreter', version = '0.2.58' }
+mech-interpreter = { path = 'src/interpreter', version = '0.2.59' }
 
 #[patch.'https://gitlab.com/mech-lang/wasm']
 #mech-wasm = { path = 'src/wasm', version = '0.2.44' }
