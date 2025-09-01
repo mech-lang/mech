@@ -58,7 +58,7 @@ A symbolic constant, often used for tags or enums.
 
 (1.5.1) Kind
 
-The kind of an atom is itself. For example, the atom {{`A;}} has the kind:
+The kind of an atom is itself. For example, the atom {{`A}} has the kind:
 
   <`A>
 
@@ -88,13 +88,13 @@ Represents an empty value, placeholder, or the absence of a value.
 2. Data Structures
 -------------------------------------------------------------------------------
 
-- **Enum** - enumeration of named values
-- **Map** - key-value store
-- **[Matrix](/II.reference/matrix.html)** - ND array of values
-- **Record** - collection of named values
-- **Set** - unordered collection of unique values
-- **Tuple** - ordered collection of values
-- **[Table](/II.reference/table.html)** - collection of Records
+- [Enum](enum.html) - defines a set of named constant values
+- [Map](map.html) - stores key-value pairs for fast lookups.
+- [Matrix](matrix.html) - 2D array of homogenous values arranged in rows and columns.
+- [Record](record.html) - groups related fields, usually for representing structured data.
+- [Set](set.html) - unordered collection of unique values
+- [Table](table.html) - collection of heterogeneous data organized into rows and columns.
+- [Tuple](tuple.html) - fixed-size, ordered grouping of heterogeneous values.
 
 3. Kinds
 -------------------------------------------------------------------------------
@@ -137,7 +137,7 @@ Kind annotations can also be assigned to variables:
 x := <u8>  -- Assigns the kind `u8` as the value of `x`
 ```
 
-The kind of {{x;}} is its value, {{<[u8]>;}}.
+The kind of {{x}} is its value, {{<[u8]>}}.
 
 (3.2) Simple Kinds
 
@@ -145,16 +145,16 @@ Kinds start from one of the primitive data types:
 
 | Data Type         | Kind                                                        |
 |-------------------|-------------------------------------------------------------|
-| Signed integers   | {{<i8>;}}, {{<i16>;}}, {{<i32>;}}, {{<i64>;}}, {{<i128>;}}  |
-| Unsigned integers | {{<u8>;}}, {{<u16>;}}, {{<u32>;}}, {{<u64>;}}, {{<u128>;}}  |
-| Floating-point    | {{<f32>;}}, {{<f64>;}}                                      |
-| Rational          | {{<r64>;}}                                                  |  
-| Complex           | {{<c64>;}}                                                  |
-| String            | {{<string>;}}                                               |
-| Boolean           | {{<bool>;}}                                                 |
-| Atom              | {{<atom>;}}                                                 |
-| Kind              | {{<kind>;}}                                                 |
-| Empty             | {{<_>;}}                                                    |
+| Signed integers   | {{<i8>}}, {{<i16>}}, {{<i32>}}, {{<i64>}}, {{<i128>}}  |
+| Unsigned integers | {{<u8>}}, {{<u16>}}, {{<u32>}}, {{<u64>}}, {{<u128>}}  |
+| Floating-point    | {{<f32>}}, {{<f64>}}                                      |
+| Rational          | {{<r64>}}                                                  |  
+| Complex           | {{<c64>}}                                                  |
+| String            | {{<string>}}                                               |
+| Boolean           | {{<bool>}}                                                 |
+| Atom              | {{<atom>}}                                                 |
+| Kind              | {{<kind>}}                                                 |
+| Empty             | {{<_>}}                                                    |
 
 (3.3) Compound Kinds
 
@@ -162,13 +162,13 @@ Kinds compose into more complex kinds based on the data structures they represen
 
 | Data Structure | Kind                       | Example                    |
 |----------------|----------------------------|----------------------------|
-| Matrix         | `[T]:N,M`                  | {{<[u8]:2,3>;}}            |
-| Set            | `{T}:N`                    | {{<{u8}:3>;}}              |
-| Record         | `{T1,T2,..}`               | {{<{x<u8>,y<string>}>;}}   |
-| Map            | `{K:V}`                    | {{<{string:i32}>;}}        |
-| Table          | `|arg1<T1>,arg2<T2>,..|:N` | {{<|x<u8>,y<string>|:3>;}} |
-| Tuple          | `(T1,T2,...)`              | {{<(u8,string,bool)>;}}    |
-| Enum           | `enum`                     | {{<enum>;}}                |
+| Matrix         | `[T]:N,M`                  | {{<[u8]:2,3>}}            |
+| Set            | `{T}:N`                    | {{<{u8}:3>}}              |
+| Record         | `{T1,T2,..}`               | {{<{x<u8>,y<string>}>}}   |
+| Map            | `{K:V}`                    | {{<{string:i32}>}}        |
+| Table          | `|arg1<T1>,arg2<T2>,..|:N` | {{<|x<u8>,y<string>|:3>}} |
+| Tuple          | `(T1,T2,...)`              | {{<(u8,string,bool)>}}    |
+| Enum           | `enum`                     | {{<enum>}}                |
 
 (3.3) Custom Kinds
 
@@ -178,7 +178,7 @@ You can define a custom kind with the following syntax:
 <T> := <S> -- Defines custom kind `T`, an alias for `S`
 ```
 
-For example, if you wanted to represted a 3D point as a vector of three `f32` values, you could define a custom kind like this:
+For example, if you wanted to represent a 3D point as a vector of three `f32` values, you could define a custom kind like this:
 
 ```mech:disabled
 <point3> := <[f32]:3>

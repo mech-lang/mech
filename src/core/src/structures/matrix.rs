@@ -632,7 +632,7 @@ where T: Debug + Clone + PartialEq + 'static
         x[0] = elements[0].clone();
         x[1] = elements[1].clone();
       }
-      Matrix::RowDVector(x) => {let mut x = x.borrow_mut();for i in 0..elements.len() {x[i] = elements[i].clone();}},
+      Matrix::RowDVector(x) => {let mut x = x.borrow_mut();for i in 0..elements.len() {x[i] = elements[i].clone()}},
       #[cfg(feature = "vector4")]
       Matrix::Vector4(x) => {
         let mut x = x.borrow_mut();
@@ -654,7 +654,7 @@ where T: Debug + Clone + PartialEq + 'static
         x[0] = elements[0].clone();
         x[1] = elements[1].clone();
       }
-      Matrix::DVector(x) => {let mut x = x.borrow_mut();for i in 0..elements.len() {x[i] = elements[i].clone();}},
+      Matrix::DVector(x) => {let mut x = x.borrow_mut();for i in 0..elements.len() {x[i] = elements[i].clone()}},
       #[cfg(feature = "matrix4")]
       Matrix::Matrix4(x) => {
         let mut x = x.borrow_mut();
@@ -718,7 +718,7 @@ where T: Debug + Clone + PartialEq + 'static
         x[4] = elements[4].clone();
         x[5] = elements[5].clone();
       }
-      Matrix::DMatrix(x) => {let mut x = x.borrow_mut();for i in 0..elements.len() {x[i] = elements[i].clone();}},
+      Matrix::DMatrix(x) => {let mut x = x.borrow_mut();for i in 0..elements.len() {x[i] = elements[i].clone()}},
       _ => panic!("Unsupported matrix size"),
     }
   }

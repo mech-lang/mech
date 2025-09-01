@@ -25,7 +25,7 @@ We start by defining the constants used in the simulation:
 | solar-mass    | Normalized mass of the Sun, used as a reference unit            | {solar-mass}    |
 | Δt            | Defines the simulation's time granularity                       | {Δt}            |
 
-The expression {{solar-mass := 4 * π ^ 2;}} is a result of using normalized astronomical units in conjunction with Kepler's Third Law. This result is derived from the gravitational constant $$G$$ and the mass of the Sun. In normalized units, we set $$G = 1$$ and define the mass of the Sun in such a way that it simplifies calculations in celestial mechanics.
+The expression {{solar-mass := 4 * π ^ 2}} is a result of using normalized astronomical units in conjunction with Kepler's Third Law. This result is derived from the gravitational constant $$G$$ and the mass of the Sun. In normalized units, we set $$G = 1$$ and define the mass of the Sun in such a way that it simplifies calculations in celestial mechanics.
 
 (1.1.1) Newton's Version of Kepler's Third Law
 

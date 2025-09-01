@@ -19,7 +19,7 @@ Let's get right to it, here's Mech some code:
   
   out[ix2] = "✨"           -- Set multiples of 2 to "✨"
   out[ix3] = "🐝"           -- Set multiples of 3 to "🐝"
-  out[ix2 & ix3] = "✨🐝"  -- Set multiples of both to "✨🐝"
+  out[ix2 && ix3] = "✨🐝"  -- Set multiples of both to "✨🐝"
 ```
 
 This short example demonstrates several key features of the language:
@@ -35,64 +35,19 @@ This short example demonstrates several key features of the language:
 
 (1.2.1) The Big Idea
 
-First, a little story... 
+Mech is disigned for building data transformation pipelines, or a feedback control loops. It's ideal for any purpose where data is flowing through a system, being transformed, and then used to drive visualizations or control actions. This pattern is common in many domains:
 
-In 2007, DARPA[^1] hosted a "Grand Urban Challenge" in which researchers were tasked with building autonomous vehicles that could navigate a city environment. The competition was structured in two phases: first, a qualifying round where teams had to demonstrate their vehicles could navigate a simple course, and then a final round where they had to navigate a more complex urban environment. 
+- *Games* - a loop that processes user input (game controller), updates the game state, and then renders the updated state to the screen.
+- *IOT* - a loop that processes data from sensors, updates the state of the system, and then sends commands to actuators or other devices.
+- *User* interfaces - a loop that processes user input (mouse/keyboard), updates the UI state, and then renders the updated UI.
+- *Data* science - a pipeline that processes data, applies transformations and analyses, and then produces visualizations or reports.
+- *Robotics* - a loop that processes sensor data, updates the robot's state, and then sends commands to the robot's actuators.
 
-```diagram
----
-config:
-  sankey:
-    height: 175
----
-sankey-beta
+Each of these examples looks like a feedback or feedforward control loop, and would be good candidates for implementation in Mech. Where they differ is in the specific data types flowing in and out of the system, and the kinds of transformations that are applied to the data. But architechturally, they are all very similar.
 
-%% source,target,value
-Site Visit,Semifinalists,35
-Site Visit,Did Not Qualify,18
-Semifinalists,Track A Finalists,7
-Semifinalists,Track B Finalists,4
-Semifinalists,Did Not Qualify,24
-Track A Finalists,Finished,5
-Track A Finalists,Did Not Finish,2
-Track B Finalists,Finished,1
-Track B Finalists,Did Not Finish,3
-```
+Today, programming languages like C, C++, and Python are the most commonly used languages for building these kinds of systems, which is unfortunate, because they are by nature sequential, whereas the applications are inherently data-driven, and asynchronous. Therefore, significant effort has been spent to retrofit these languages to support data-driven programming -- with varying degrees of success -- using frameworks, libraries, and middleware.
 
-Qualifying teams were sorted into two groups: Track A teams were granted $1 million each to fund their competition entry; while Track B teams were invited to compete without any direct funding support from DARPA. 
-
-Of the 35 semifinalist teams, 11 advanced to the final event -- with 7 from Track A and 4 from Track B. It's not a surprise that of the 6 teams that finished the race, 5 were Track A. Just one team from Track B, the Ben Franklin Racing Team[^2], managed against all odds to finish the race. How did they do it?
-
-| Place | Team Name                              | Robot Name  | Team Size | Tech Stack                | Funding |
-|-------|----------------------------------------|:-----------:|:---------:|:-------------------------:|--------:|
-| `#1`  | **Tartan Racing** [CMU1][CMU2][CMU3]   | Boss        | 50        | !!500 KLOC; C++!!         | $1M     |
-| `#2`  | **Stanford Racing** [STAN1][STAN2]     | Junior      | 44        | 600 KLOC; C++             | $1M     |
-| `#3`  | **VictorTango** [VT1][VT2][VT3]        | Odin        | 50        | ?                         | $1M     |
-| `#4`  | **Team MIT** [MIT1][MIT2]              | Talos       | 41        | 140 KLOC; C, Java, Python | $1M     |
-| `#5`  | **Ben Franklin Racing** [BFRT1][BFRT2] | Little Ben  | 20        | !!5KLOC; MATLAB!!         | $250K   |
-| `#6`  | **Cornell** [CU1][CU2]                 | Skynet      | 20        | ? KLOC; C++               | $1M     |
-
-When you look at the table above it's clear that despite their small size and limited funding, BFRT had a significant competitive advantage; whereas other teams invested in a C++ codebase that comprised hundreds of thousands of lines of code, Little Ben ran on just 5,000 lines of MATLAB code -- two orders of magnitude fewer lines of code than any other team.
-
-This is a striking result, and it serves to challenge some conventional wisdom in robotic system design; high-level languages like MATLAB, which are sometimes considered "scripting languages", are often dismissed as being too slow or limited for serious applications. But in this case, BFRT was able to leverage MATLAB's extensive toolboxes and high-level abstractions to rapidly prototype, simulate, and deploy their autonomous driving logic.
-
-**This is where Mech comes in.** Because the truth is, despite it working out for the BFRT, MATLAB still has a lot of shortcomings -- critically that it's not free and open source, so it can never really be a viable option for most developers. Therefore, Mech is our attempt to build an open-source language in this space that combines the best features of MATLAB with the performance and flexibility of a systems programming language like C++ in the context of robot programming. 
-
-Mech includes all of the matrix operations, data manipulation, and high-level abstractions that make MATLAB so powerful, but it also provides features such as: 
-
-- blazing fast performance
-- more data types and structures
-- static typing, including physical units
-- state machines
-- capability permission system
-- reactive programming model 
-- concurrent and distrubted runtime
-- live programming environment
-- advanced debugging modalities, like time travel debugging
-
-which make it more suitable for building complex, distributed systems from prototype to production. 
-
-So why Mech? If you're looking to build a complex system, something on the order of a robot car, Mech will allow you to implement it in fewer lines of code, with performance on par with systems langauges, but safety and flexibility that you would expect from a high-level language.
+Mech looks to distill what makes these frameworks and libraries successful into a proper language, with first-class support for data-driven programming. We're not trying to invent something completely new, but rather to take the best ideas from existing languages and frameworks, and combine them into a coherent whole.
 
 (1.2.2) Lineage
 
@@ -106,7 +61,7 @@ Mech is growing on a strange branch of the programming language family tree. We'
 
 - **Logo** - Mech shares in Logo's mission of being accessible to beginners, especially kids, and its focus on interactive, visual programming.
 
-- **Visual Basic 6** - The best version of Visual Basic, which was a popular for its GUI for building Windows desktop apps. Mech takes inspiration from VB6's event-driven programming model and its focus on building interactive applications.
+- **Visual Basic 6** - The best version of Visual Basic, which was a popular for its GUI for building Windows desktop apps. Mech takes inspiration from VB6's event-driven programming model and its focus on building interactive applications with a GUI.
 
 - **ROS** - Not a programming language, but a middleware for building robot applications. Mech draws inspiration from ROS's modular architecture, its focus on data-driven design, and its use of a publish-subscribe messaging model for communication between components.
 

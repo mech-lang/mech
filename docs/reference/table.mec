@@ -1,7 +1,7 @@
 Table
 ===============================================================================
 
-A table in Mech is a set of records, where each record corresponds to a row and each column has a name and kind. Tables provide structured, columnar data that is flexible and human-readable.
+A table is a set of records, where each record corresponds to a row and each column has a name and kind. Tables provide structured, columnar data that is flexible and human-readable.
 
 1. Syntax
 -------------------------------------------------------------------------------
@@ -129,7 +129,7 @@ a:=| x<f64>  y<bool> |
 
 (4.1) Access a Column
 
-Use dot indexing to access columns. For example {{a.x;}}. The kind of the result is a column vector with elements of the column's kind. For instance, column `x` has kind `f32`, so the result of accessing that column is a column vector of kind `[f32]`, with the same number of rows as the table:
+Use dot indexing to access columns. For example {{a.x}}. The kind of the result is a column vector with elements of the column's kind. For instance, column `x` has kind `f32`, so the result of accessing that column is a column vector of kind `[f32]`, with the same number of rows as the table:
 
 ```mech
 a.x  -- Select column `x`, which has kind `[f32]`

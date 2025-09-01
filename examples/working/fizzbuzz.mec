@@ -41,9 +41,9 @@ Then we can use these indices to replace the values in the vector `y`:
 
   y[ix3] = "✨"
   y[ix5] = "🐝"
-  y[ix3 & ix5] = "✨🐝"
+  y[ix3 && ix5] = "✨🐝"
 
-The statement {{y[ix3] = "✨";}} is equivalent to saying "for all elements in y where the corresponding element in ix3 is true, set that element to '✨'".
+The statement {{y[ix3] = "✨"}} is equivalent to saying "for all elements in y where the corresponding element in ix3 is true, set that element to '✨'".
 
 Then we can print them all out at once:
 

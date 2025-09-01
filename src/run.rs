@@ -57,6 +57,7 @@ pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: 
               if debug_flag {
                 print_symbols!(intrp);
                 print_plan!(intrp);
+                print_bytecode(code);
               }
               return result;
             },
@@ -87,6 +88,7 @@ pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: 
             if debug_flag {
               print_symbols!(intrp);
               print_plan!(intrp); 
+              print_bytecode(code);
             }
             return result;
           },
@@ -104,6 +106,7 @@ pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: 
         if debug_flag {
           print_symbols!(intrp);
           print_plan!(intrp);
+          print_bytecode(code);
         }
         return result;
       }
@@ -111,4 +114,19 @@ pub fn run_mech_code(intrp: &mut Interpreter, code: &MechFileSystem, tree_flag: 
     }
   }
   Ok(Value::Empty)
+}
+
+fn print_bytecode(fs: &MechFileSystem) {
+  let sources = fs.sources();
+  let sources = sources.read().unwrap();
+  for (file,source) in sources.sources_iter() {
+    match source {
+      MechSourceCode::ByteCode(bc_program) => {
+        println!("Bytecode for file: {}", file);
+        let program = ParsedProgram::from_bytes(bc_program).unwrap();
+        println!("{:#?}", program);
+      },
+      _ => {},
+    }
+  }
 }

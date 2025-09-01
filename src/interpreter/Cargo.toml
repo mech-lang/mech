@@ -1,6 +1,6 @@
 [package]
 name = "mech-interpreter"
-version = "0.2.58"
+version = "0.2.59"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "The Mech language runtime."
 documentation = "http://docs.mech-lang.org"
@@ -62,8 +62,8 @@ serde = ["mech-core/serde", "mech-math/serde", "mech-compare/serde", "mech-combi
 statements = ["mech-core/statements", "mech-math/statements", "mech-compare/statements", "mech-combinatorics/statements", "mech-logic/statements", "mech-matrix/statements", "mech-io/statements", "mech-stats/statements", "mech-range/statements"]
 variables = ["variable_define", "symbol_table", "mech-core/variables", "mech-math/variables", "mech-compare/variables", "mech-combinatorics/variables", "mech-logic/variables", "mech-matrix/variables", "mech-io/variables", "mech-stats/variables", "mech-range/variables"]
 variable_define = ["statements", "functions", "mech-core/variable_define", "mech-math/variable_define", "mech-compare/variable_define", "mech-combinatorics/variable_define", "mech-logic/variable_define", "mech-matrix/variable_define", "mech-io/variable_define", "mech-stats/variable_define", "mech-range/variable_define"]
-variable_assign = ["statements", "mech-core/variable_assign", "mech-math/variable_assign", "mech-compare/variable_assign", "mech-combinatorics/variable_assign", "mech-logic/variable_assign", "mech-matrix/variable_assign", "mech-io/variable_assign", "mech-stats/variable_assign", "mech-range/variable_assign"]
-kind_define = ["kind_annotation", "statements", "mech-core/kind_define", "mech-math/kind_define", "mech-compare/kind_define", "mech-combinatorics/kind_define", "mech-logic/kind_define", "mech-matrix/kind_define", "mech-io/kind_define", "mech-stats/kind_define", "mech-range/kind_define"]
+variable_assign = ["assign", "statements", "mech-core/variable_assign", "mech-math/variable_assign", "mech-compare/variable_assign", "mech-combinatorics/variable_assign", "mech-logic/variable_assign", "mech-matrix/variable_assign", "mech-io/variable_assign", "mech-stats/variable_assign", "mech-range/variable_assign"]
+kind_define = ["kind_annotation", "functions", "statements", "mech-core/kind_define", "mech-math/kind_define", "mech-compare/kind_define", "mech-combinatorics/kind_define", "mech-logic/kind_define", "mech-matrix/kind_define", "mech-io/kind_define", "mech-stats/kind_define", "mech-range/kind_define"]
 kind_annotation = ["functions", "mech-core/kind_annotation", "mech-math/kind_annotation", "mech-compare/kind_annotation", "mech-combinatorics/kind_annotation", "mech-logic/kind_annotation", "mech-matrix/kind_annotation", "mech-io/kind_annotation", "mech-stats/kind_annotation", "mech-range/kind_annotation"]
 formulas = ["mech-core/formulas", "mech-math/formulas", "mech-compare/formulas", "mech-combinatorics/formulas", "mech-logic/formulas", "mech-matrix/formulas", "mech-io/formulas", "mech-stats/formulas", "mech-range/formulas"]
 functions = ["symbol_table", "mech-core/functions", "mech-math/functions", "mech-compare/functions", "mech-combinatorics/functions", "mech-logic/functions", "mech-matrix/functions", "mech-io/functions", "mech-stats/functions", "mech-range/functions"]
@@ -153,11 +153,12 @@ io_print = ["io", "mech-io/print"]
 io_println = ["io", "mech-io/println"]
 
 # Matrix
-matrix_default = ["matrix_horzcat", "matrix_vertcat", "matrix_matmul", "matrix_transpose", "mech-matrix/matrix_default"]
+matrix_default = ["matrix_dot", "matrix_horzcat", "matrix_vertcat", "matrix_matmul", "matrix_transpose", "mech-matrix/matrix_default"]
 matrix_horzcat = ["matrix", "functions"]
 matrix_vertcat = ["matrix", "functions"]
 matrix_matmul = ["matrix", "mech-matrix/matmul"]
 matrix_transpose = ["matrix", "mech-matrix/transpose"]
+matrix_dot = ["matrix", "mech-matrix/dot"]
 
 # Logic
 logic_default = ["logic_and", "logic_or", "logic_not", "logic_xor", "mech-logic/logic_default"]
@@ -229,15 +230,15 @@ math_mod = ["math_ops", "mech-math/mod"]
 math_neg = ["math_ops", "mech-math/neg"]
 
 [dependencies]
-mech-core = { version = "0.2.58", default-features = false }
-mech-math = { version = "0.2.58", default-features = false, optional = true}
-mech-logic = { version = "0.2.58", default-features = false, optional = true }
-mech-range = { version = "0.2.58", default-features = false, optional = true }
-mech-matrix = { version = "0.2.58", default-features = false, optional = true }
-mech-compare = { version = "0.2.58", default-features = false, optional = true }
-mech-stats = { version = "0.2.58", default-features = false, optional = true }
-mech-io = { version = "0.2.58", default-features = false, optional = true }
-mech-combinatorics = { version = "0.2.58", default-features = false, optional = true }
+mech-core = { version = "0.2.59", default-features = false }
+mech-math = { version = "0.2.59", default-features = false, optional = true}
+mech-logic = { version = "0.2.59", default-features = false, optional = true }
+mech-range = { version = "0.2.59", default-features = false, optional = true }
+mech-matrix = { version = "0.2.59", default-features = false, optional = true }
+mech-compare = { version = "0.2.59", default-features = false, optional = true }
+mech-stats = { version = "0.2.59", default-features = false, optional = true }
+mech-io = { version = "0.2.59", default-features = false, optional = true }
+mech-combinatorics = { version = "0.2.59", default-features = false, optional = true }
 
 paste = "1.0.15"
 byteorder = "1.5.0"

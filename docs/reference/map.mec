@@ -89,7 +89,7 @@ For nested maps, use multiple brackets:
 
 ```
 m := {"a": {"b": 2}}
-m["a"]["b"]   -- Returns 2
+m{"a"}{"b"}   -- Returns 2
 ```
 
 5. Assigning Elements
@@ -99,13 +99,13 @@ Maps can be modified if they are declared mutable with `~`.
 
 ```
 ~m := {}
-m["a"] = 42     -- Adds or updates key "a"
-m["b"] = 17     -- Adds key "b"
+m{"a"} = 42     -- Adds or updates key "a"
+m{"b"} = 17     -- Adds key "b"
 ```
 
 You can also assign to nested keys:
 
 ```
 ~m := {"config": {}}
-m["config"]["theme"] = "dark"
+m{"config"}{"theme"} = "dark"
 ```

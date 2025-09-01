@@ -256,6 +256,7 @@ test_interpreter!(interpret_matrix_add_v2m2, "[1;2] + [1 1; 2 2]", Ref::new(Matr
 test_interpreter!(interpret_matrix_add_r2m2, "[1 2] + [1 1; 1 1]", Ref::new(Matrix2::from_vec(vec![F64::new(2.0),F64::new(2.0),F64::new(3.0),F64::new(3.0)])).to_value());
 test_interpreter!(interpret_matrix_add_m2r2, "[1 1; 1 1] + [1 2]", Ref::new(Matrix2::from_vec(vec![F64::new(2.0),F64::new(2.0),F64::new(3.0),F64::new(3.0)])).to_value());
 
+test_interpreter!(interpret_matrix_dot, "[1 2 3] · [4 5 6]", Ref::new(F64::new(32.0)).to_value());
 test_interpreter!(interpret_matrix_matmul_mat1, "[2] ** [10]", Ref::new(Matrix1::from_vec(vec![F64::new(20.0)])).to_value());
 test_interpreter!(interpret_matrix_matmul_mat2_ref, "a := [1 2; 3 4]; b := [4 5; 6 7]; c := a ** b", Ref::new(Matrix2::from_vec(vec![F64::new(16.0), F64::new(36.0), F64::new(19.0), F64::new(43.0)])).to_value());
 test_interpreter!(interpret_matrixmatmul_mat2x3_ref, "a := [1.0 2.0 3.0; 4.0 5.0 6.0]; b := [4.0 5.0; 6.0 7.0; 8.0 9.0]; c := a ** b", Ref::new(Matrix2::from_vec(vec![F64::new(40.0),F64::new(94.0),F64::new(46.0),F64::new(109.0)])).to_value());
