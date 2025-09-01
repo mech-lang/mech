@@ -6,7 +6,7 @@ use mech_core::matrix::Matrix;
 
 // Exp2 ------------------------------------------------------------------------
 
-use libm::{exp2, expf};
+use libm::{exp2, exp2f};
 macro_rules! exp2_op {
   ($arg:expr, $out:expr) => {
     unsafe{(*$out).0 = exp2((*$arg).0);}
@@ -37,7 +37,7 @@ impl_math_unop!(MathExp2, F64, exp2, FeatureFlag::Custom(hash_str("math/exp2")))
 impl_math_unop!(MathExp2, F32, exp2f, FeatureFlag::Custom(hash_str("math/exp2")));
 
 fn impl_exp2_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  impl_unop_match_arms!(
+  impl_urnop_match_arms2!(
     MathExp2,
     lhs_value,
     F32 => MatrixF32, F32, F32::default(), "f32";

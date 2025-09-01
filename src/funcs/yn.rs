@@ -9,7 +9,7 @@ use mech_core::matrix::Matrix;
 
 macro_rules! yn_op {
   ($arg1:expr, $arg2:expr, $out:expr) => {
-    unsafe{(*$out).0 = yn((*$arg1).0,(*$arg2).0);}
+    unsafe{(*$out).0 = yn((*$arg1).0 as i32,(*$arg2).0);}
   };}
 
 macro_rules! yn_vec_op {
@@ -19,12 +19,12 @@ macro_rules! yn_vec_op {
       let arg2_deref = &(*$arg2);
       let mut out_deref = (&mut *$out);
       for i in 0..arg1_deref.len() {
-        (out_deref[i]).0 = yn(arg1_deref[i].0,arg2_deref[i].0);
+        (out_deref[i]).0 = yn(arg1_deref[i].0 as i32,arg2_deref[i].0);
       }}};}
 
 macro_rules! ynf_op {
   ($arg1:expr, $arg2:expr, $out:expr) => {
-    unsafe{(*$out).0 = ynf((*$arg1).0,(*$arg2).0);}
+    unsafe{(*$out).0 = ynf((*$arg1).0 as i32,(*$arg2).0);}
   };}
 
 macro_rules! ynf_vec_op {
@@ -34,7 +34,7 @@ macro_rules! ynf_vec_op {
       let arg2_deref = &(*$arg2);
       let mut out_deref = (&mut *$out);
       for i in 0..arg1_deref.len() {
-        (out_deref[i]).0 = ynf(arg1_deref[i].0,arg2_deref[i].0);
+        (out_deref[i]).0 = ynf(arg1_deref[i].0 as i32,arg2_deref[i].0);
       }}};}
 
 macro_rules! impl_two_arg_fxn {

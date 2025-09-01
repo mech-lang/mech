@@ -12,6 +12,10 @@ pub mod erf;
 pub mod erfc;
 #[cfg(feature = "fabs")]
 pub mod fabs;
+#[cfg(feature = "fdim")]
+pub mod fdim;
+#[cfg(feature = "floor")]
+pub mod floor;
 #[cfg(feature = "j0")]
 pub mod j0;
 #[cfg(feature = "j1")]
@@ -37,6 +41,8 @@ pub use self::erf::*;
 pub use self::erfc::*;
 #[cfg(feature = "fabs")]
 pub use self::fabs::*;
+#[cfg(feature = "floor")]
+pub use self::floor::*;
 #[cfg(feature = "j0")]
 pub use self::j0::*;
 #[cfg(feature = "j1")]
