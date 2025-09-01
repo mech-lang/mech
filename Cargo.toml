@@ -1,6 +1,10 @@
 [package]
 name = "mech"
+<<<<<<< HEAD
 version = "0.2.59"
+=======
+version = ""
+>>>>>>> 29b8372e707bf911ad812375bb86585167b80e1e
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Mech is a reactive programming language for building robots, games, and animations."
 documentation = "https://docs.mech-lang.org"
@@ -140,9 +144,15 @@ matrix_vertcat = ["matrix"]
 nalgebra = "0.34.0"
 
 [dependencies]
+<<<<<<< HEAD
 mech-core        = { version = "0.2.59", default-features = false }
 mech-syntax      = { version = "0.2.59", default-features = false }
 mech-interpreter = { version = "0.2.59", default-features = false }
+=======
+mech-core        = { version = "", default-features = false }
+mech-syntax      = { version = "", default-features = false }
+mech-interpreter = { version = "", default-features = false }
+>>>>>>> 29b8372e707bf911ad812375bb86585167b80e1e
 
 clap = {version = "4.5.40", features = ["cargo"]}
 colored = "3.0.0"
