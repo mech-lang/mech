@@ -9,6 +9,33 @@ pub use crate::*;
 // the relevant code will be compiled in any given build.
 
 #[macro_export]
+macro_rules! compile_nullop {
+  ($out:expr, $ctx:ident, $feature_flag:expr) => {
+    // allocate one register as an array
+    let mut registers = [0];
+
+    // Compile out
+    let out_addr = $out.addr();
+    let out_reg = $ctx.alloc_register_for_ptr(out_addr);
+    let out_borrow = $out.borrow();
+    let out_const_id = out_borrow.compile_const($ctx).unwrap();
+    $ctx.emit_const_load(out_reg, out_const_id);
+    registers[0] = out_reg;
+
+    $ctx.features.insert($feature_flag);
+
+    // Emit the operation
+    $ctx.emit_nullop(
+      hash_str(stringify!($struct_name)),
+      registers[0],
+    );
+
+    return Ok(registers[0]);
+  };
+}
+
+
+#[macro_export]
 macro_rules! compile_unop {
   ($out:expr, $arg:expr, $ctx:ident, $feature_flag:expr) => {
     // allocate three registers as an array

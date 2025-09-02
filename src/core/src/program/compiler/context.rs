@@ -66,6 +66,9 @@ impl CompileCtx {
   pub fn emit_const_load(&mut self, dst: Register, const_id: u32) {
     self.instrs.push(EncodedInstr::ConstLoad { dst, const_id });
   }
+  pub fn emit_nullop(&mut self, fxn_id: u64, dst: Register) {
+    self.instrs.push(EncodedInstr::NullOp { fxn_id, dst });
+  }
   pub fn emit_unop(&mut self, fxn_id: u64, dst: Register, src: Register) {
     self.instrs.push(EncodedInstr::UnOp { fxn_id, dst, src });
   }
