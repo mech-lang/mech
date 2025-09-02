@@ -56,7 +56,7 @@ where
   T: ConstElem + CompileConst,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
+    todo!();
   }
 }
 
@@ -80,7 +80,7 @@ impl MechFunctionImpl for ConvertSRationalToF64 {
 #[cfg(all(feature = "compiler", feature = "rational", feature = "f64"))]
 impl MechFunctionCompiler for ConvertSRationalToF64 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
 }
 
