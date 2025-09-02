@@ -403,6 +403,41 @@ impl<T> Matrix<T>
 where T: Debug + Clone + PartialEq + 'static
 {
 
+  pub fn addr(&self) -> usize {
+    match self {
+      #[cfg(feature = "matrix1")]
+      Matrix::Matrix1(x) => x.addr(),
+      #[cfg(feature = "matrix2")]
+      Matrix::Matrix2(x) => x.addr(),
+      #[cfg(feature = "matrix3")]
+      Matrix::Matrix3(x) => x.addr(),
+      #[cfg(feature = "matrix4")]
+      Matrix::Matrix4(x) => x.addr(),
+      #[cfg(feature = "matrix2x3")]
+      Matrix::Matrix2x3(x) => x.addr(),
+      #[cfg(feature = "matrix3x2")]
+      Matrix::Matrix3x2(x) => x.addr(),
+      #[cfg(feature = "vector2")]
+      Matrix::Vector2(x) => x.addr(),
+      #[cfg(feature = "vector3")]
+      Matrix::Vector3(x) => x.addr(),
+      #[cfg(feature = "vector4")]
+      Matrix::Vector4(x) => x.addr(),
+      #[cfg(feature = "row_vector2")]
+      Matrix::RowVector2(x) => x.addr(),
+      #[cfg(feature = "row_vector3")]
+      Matrix::RowVector3(x) => x.addr(),
+      #[cfg(feature = "row_vector4")]
+      Matrix::RowVector4(x) => x.addr(),
+      #[cfg(feature = "vectord")]
+      Matrix::DVector(x) => x.addr(),
+      #[cfg(feature = "row_vectord")]
+      Matrix::RowDVector(x) => x.addr(),
+      #[cfg(feature = "matrixd")]
+      Matrix::DMatrix(x) => x.addr(),
+    }
+  }
+
   pub fn append(&mut self, other: &Matrix<T>) -> MResult<()> {
     match (self, other) {
       (Matrix::DVector(lhs), Matrix::DVector(rhs)) => {
