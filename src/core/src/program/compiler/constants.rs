@@ -96,7 +96,6 @@ impl CompileConst for Value {
   }
 }
 
-#[cfg(feature = "compiler")]
 #[cfg(feature = "f64")]
 impl CompileConst for F64 {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
