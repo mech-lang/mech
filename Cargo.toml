@@ -1,7 +1,7 @@
 [package]
 name = "mech-math"
 version = "0.2.58"
-authors = ["Corey Montella <corey@mech-lang.org>"]
+authors = ["Corey Montella <corey@mech-lang.org>", "Steven McPhillimey <slm526@lehigh.edu>", "Liam Messinger <ljm426@lehigh.edu>", "Natalie Dumler <nad326@lehigh.edu>"]
 description = "Math library for the Mech language"
 documentation = "http://docs.mech-lang.org"
 homepage = "https://mech-lang.org"
