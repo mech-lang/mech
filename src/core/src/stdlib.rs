@@ -46,10 +46,8 @@ macro_rules! compile_unop {
 #[macro_export]
 macro_rules! compile_binop {
   ($out:expr, $arg1:expr, $arg2:expr, $ctx:ident, $feature_flag:expr) => {
-    // allocate three registers as an array
     let mut registers = [0,0,0];
 
-    // Compile out
     let out_addr = $out.addr();
     let out_reg = $ctx.alloc_register_for_ptr(out_addr);
     let out_borrow = $out.borrow();
@@ -57,7 +55,6 @@ macro_rules! compile_binop {
     $ctx.emit_const_load(out_reg, out_const_id);
     registers[0] = out_reg;
 
-    // Compile lhs
     let lhs_addr = $arg1.addr();
     let lhs_reg = $ctx.alloc_register_for_ptr(lhs_addr);
     let lhs_borrow = $arg1.borrow();
@@ -65,7 +62,6 @@ macro_rules! compile_binop {
     $ctx.emit_const_load(lhs_reg, lhs_const_id);
     registers[1] = lhs_reg;
 
-    // Compile rhs
     let rhs_addr = $arg2.addr();
     let rhs_reg = $ctx.alloc_register_for_ptr(rhs_addr);
     let rhs_borrow = $arg2.borrow();
@@ -75,7 +71,6 @@ macro_rules! compile_binop {
 
     $ctx.features.insert($feature_flag);
 
-    // Emit the operation
     $ctx.emit_binop(
       hash_str(stringify!($struct_name)),
       registers[0],
@@ -87,6 +82,106 @@ macro_rules! compile_binop {
   };
 }
 
+#[macro_export]
+macro_rules! compile_ternop {
+  ($out:expr, $arg1:expr, $arg2:expr, $arg3:expr, $ctx:ident, $feature_flag:expr) => {
+    let mut registers = [0,0,0,0];
+
+    let out_addr = $out.addr();
+    let out_reg = $ctx.alloc_register_for_ptr(out_addr);
+    let out_borrow = $out.borrow();
+    let out_const_id = out_borrow.compile_const($ctx).unwrap();
+    $ctx.emit_const_load(out_reg, out_const_id);
+    registers[0] = out_reg;
+
+    let lhs_addr = $arg1.addr();
+    let lhs_reg = $ctx.alloc_register_for_ptr(lhs_addr);
+    let lhs_borrow = $arg1.borrow();
+    let lhs_const_id = lhs_borrow.compile_const($ctx).unwrap();
+    $ctx.emit_const_load(lhs_reg, lhs_const_id);
+    registers[1] = lhs_reg;
+
+    let mid_addr = $arg2.addr();
+    let mid_reg = $ctx.alloc_register_for_ptr(mid_addr);
+    let mid_borrow = $arg2.borrow();
+    let mid_const_id = mid_borrow.compile_const($ctx).unwrap();
+    $ctx.emit_const_load(mid_reg, mid_const_id);
+    registers[2] = mid_reg;
+
+    let rhs_addr = $arg3.addr();
+    let rhs_reg = $ctx.alloc_register_for_ptr(rhs_addr);
+    let rhs_borrow = $arg3.borrow();
+    let rhs_const_id = rhs_borrow.compile_const($ctx).unwrap();
+    $ctx.emit_const_load(rhs_reg, rhs_const_id);
+    registers[3] = rhs_reg;
+
+    $ctx.features.insert($feature_flag);
+
+    $ctx.emit_ternop(
+      hash_str(stringify!($struct_name)),
+      registers[0],
+      registers[1],
+      registers[2],
+      registers[3],
+    );
+
+    return Ok(registers[0])
+  };
+}
+
+#[macro_export]
+macro_rules! compile_quadop {
+  ($out:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $ctx:ident, $feature_flag:expr) => {
+    let mut registers = [0,0,0,0,0];
+
+    let out_addr = $out.addr();
+    let out_reg = $ctx.alloc_register_for_ptr(out_addr);
+    let out_borrow = $out.borrow();
+    let out_const_id = out_borrow.compile_const($ctx).unwrap();
+    $ctx.emit_const_load(out_reg, out_const_id);
+    registers[0] = out_reg;
+
+    let lhs_addr = $arg1.addr();
+    let lhs_reg = $ctx.alloc_register_for_ptr(lhs_addr);
+    let lhs_borrow = $arg1.borrow();
+    let lhs_const_id = lhs_borrow.compile_const($ctx).unwrap();
+    $ctx.emit_const_load(lhs_reg, lhs_const_id);
+    registers[1] = lhs_reg;
+
+    let mid1_addr = $arg2.addr();
+    let mid1_reg = $ctx.alloc_register_for_ptr(mid1_addr);
+    let mid1_borrow = $arg2.borrow();
+    let mid1_const_id = mid1_borrow.compile_const($ctx).unwrap();
+    $ctx.emit_const_load(mid1_reg, mid1_const_id);
+    registers[2] = mid1_reg;
+
+    let mid2_addr = $arg3.addr();
+    let mid2_reg = $ctx.alloc_register_for_ptr(mid2_addr);
+    let mid2_borrow = $arg3.borrow();
+    let mid2_const_id = mid2_borrow.compile_const($ctx).unwrap();
+    $ctx.emit_const_load(mid2_reg, mid2_const_id);
+    registers[3] = mid2_reg;
+
+    let rhs_addr = $arg4.addr();
+    let rhs_reg = $ctx.alloc_register_for_ptr(rhs_addr);
+    let rhs_borrow = $arg4.borrow();
+    let rhs_const_id = rhs_borrow.compile_const($ctx).unwrap();
+    $ctx.emit_const_load(rhs_reg, rhs_const_id);
+    registers[4] = rhs_reg;
+
+    $ctx.features.insert($feature_flag);
+
+    $ctx.emit_quadop(
+      hash_str(stringify!($struct_name)),
+      registers[0],
+      registers[1],
+      registers[2],
+      registers[3],
+      registers[4],
+    );
+    return Ok(registers[0])
+  };
+}
 
 #[macro_export]
 macro_rules! impl_binop {
