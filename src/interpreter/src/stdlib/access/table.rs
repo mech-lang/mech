@@ -334,7 +334,7 @@ impl NativeFunctionCompiler for TableAccessRange {
         let out_table = source.borrow().empty_table(ix.borrow().len());
         Ok(Box::new(TableAccessRangeIndex{source: source.clone(), ix: ix.clone(), out: Ref::new(out_table) }))
       }
-      #[cfg(all(feature = "matrix", feature = "table", feature = "bool"))]
+      #[cfg(all(feature = "matrix", feature = "table", feature = "logical_indexing"))]
       (Value::Table(source), [Value::MatrixBool(Matrix::DVector(ix))])  => {
         let out_table = source.borrow().empty_table(ix.borrow().len());
         Ok(Box::new(TableAccessRangeBool{source: source.clone(), ix: ix.clone(), out: Ref::new(out_table) }))
@@ -350,7 +350,7 @@ impl NativeFunctionCompiler for TableAccessRange {
           _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
         }
       }
-      #[cfg(all(feature = "matrix", feature = "table", feature = "bool"))]
+      #[cfg(all(feature = "matrix", feature = "table", feature = "logical_indexing"))]
       (Value::MutableReference(src_ref), [Value::MatrixBool(Matrix::DVector(ix))]) => {
         let src_ref_brrw = src_ref.borrow();
         match &*src_ref_brrw {
