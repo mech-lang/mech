@@ -402,15 +402,15 @@ pub enum Value {
   #[cfg(feature = "rational")]
   RationalNumber(Ref<RationalNumber>),
   #[cfg(feature = "set")]
-  Set(MechSet),
+  Set(Ref<MechSet>),
   #[cfg(feature = "map")]
-  Map(MechMap),
+  Map(Ref<MechMap>),
   #[cfg(feature = "record")]
   Record(Ref<MechRecord>),
   #[cfg(feature = "table")]
   Table(Ref<MechTable>),
   #[cfg(feature = "tuple")]
-  Tuple(MechTuple),
+  Tuple(Ref<MechTuple>),
   #[cfg(feature = "enum")]
   Enum(Box<MechEnum>),
   Id(u64),
@@ -469,17 +469,17 @@ impl Hash for Value {
       #[cfg(feature = "atom")]
       Value::Atom(x) => x.hash(state),
       #[cfg(feature = "set")]
-      Value::Set(x)  => x.hash(state),
+      Value::Set(x)  => x.borrow().hash(state),
       #[cfg(feature = "map")]
-      Value::Map(x)  => x.hash(state),
+      Value::Map(x)  => x.borrow().hash(state),
       #[cfg(feature = "table")]
       Value::Table(x) => x.borrow().hash(state),
       #[cfg(feature = "tuple")]
-      Value::Tuple(x) => x.hash(state),
+      Value::Tuple(x) => x.borrow().hash(state),
       #[cfg(feature = "record")]
       Value::Record(x) => x.borrow().hash(state),
       #[cfg(feature = "enum")]
-      Value::Enum(x) => x.hash(state),
+      Value::Enum(x) => x.borrow().hash(state),
       #[cfg(feature = "string")]
       Value::String(x) => x.borrow().hash(state),
       #[cfg(all(feature = "matrix", feature = "bool"))]
@@ -529,6 +529,62 @@ impl Hash for Value {
 }
 
 impl Value {
+
+  pub fn addr(&self) -> usize {
+    match self {
+      #[cfg(feature = "u8")]
+      Value::U8(v) => v.addr(),
+      #[cfg(feature = "u16")]
+      Value::U16(v) => v.addr(),
+      #[cfg(feature = "u32")]
+      Value::U32(v) => v.addr(),
+      #[cfg(feature = "u64")]
+      Value::U64(v) => v.addr(),
+      #[cfg(feature = "u128")]
+      Value::U128(v) => v.addr(),
+      #[cfg(feature = "i8")]
+      Value::I8(v) => v.addr(),
+      #[cfg(feature = "i16")]
+      Value::I16(v) => v.addr(),
+      #[cfg(feature = "i32")]
+      Value::I32(v) => v.addr(),
+      #[cfg(feature = "i64")]
+      Value::I64(v) => v.addr(),
+      #[cfg(feature = "i128")]
+      Value::I128(v) => v.addr(),
+      #[cfg(feature = "f32")]
+      Value::F32(v) => v.addr(),
+      #[cfg(feature = "f64")]
+      Value::F64(v) => v.addr(),
+      #[cfg(feature = "string")]
+      Value::String(v) => v.addr(),
+      #[cfg(feature = "bool")]
+      Value::Bool(v) => v.addr(),
+      #[cfg(feature = "complex")]
+      Value::ComplexNumber(v) => v.addr(),
+      #[cfg(feature = "rational")]
+      Value::RationalNumber(v) => v.addr(),
+      #[cfg(feature = "record")]
+      Value::Record(v) => v.addr(),
+      #[cfg(feature = "table")]
+      Value::Table(v) => v.addr(),
+      #[cfg(feature = "map")]
+      Value::Map(v) => v.addr(),
+      #[cfg(feature = "tuple")]
+      Value::Tuple(v) => v.addr(),
+      #[cfg(feature = "set")]
+      Value::Set(v) => v.addr(),
+      #[cfg(feature = "enum")]
+      Value::Enum(v) => v.addr(),
+      #[cfg(feature = "atom")]
+      Value::Atom(v) => v as *const u64 as usize,
+      #[cfg(feature = "matrix")]
+      Value::MatrixIndex(v) => v.addr(),
+      Value::Index(v) => v.addr(),
+      Value::MutableReference(v) => v.addr(),
+      _ => todo!(),
+    }
+  }
 
   pub fn convert_to(&self, other: &ValueKind) -> Option<Value> {
 
@@ -905,15 +961,15 @@ impl Value {
       #[cfg(feature = "atom")]
       Value::Atom(x) => 8,
       #[cfg(feature = "set")]
-      Value::Set(x) => x.size_of(),
+      Value::Set(x) => x.borrow().size_of(),
       #[cfg(feature = "map")]
-      Value::Map(x) => x.size_of(),
+      Value::Map(x) => x.borrow().size_of(),
       #[cfg(feature = "table")]
       Value::Table(x) => x.borrow().size_of(),
       #[cfg(feature = "record")]
       Value::Record(x) => x.borrow().size_of(),
       #[cfg(feature = "tuple")]
-      Value::Tuple(x) => x.size_of(),
+      Value::Tuple(x) => x.borrow().size_of(),
       #[cfg(feature = "enum")]
       Value::Enum(x) => x.size_of(),
       Value::MutableReference(x) => x.borrow().size_of(),
@@ -997,15 +1053,15 @@ impl Value {
       #[cfg(feature = "atom")]
       Value::Atom(a) => format!("<span class=\"mech-atom\"><span class=\"mech-atom-grave\">`</span><span class=\"mech-atom-name\">{}</span></span>",a),
       #[cfg(feature = "set")]
-      Value::Set(s) => s.to_html(),
+      Value::Set(s) => s.borrow().to_html(),
       #[cfg(feature = "map")]
-      Value::Map(m) => m.to_html(),
+      Value::Map(m) => m.borrow().to_html(),
       #[cfg(feature = "table")]
       Value::Table(t) => t.borrow().to_html(),
       #[cfg(feature = "record")]
       Value::Record(r) => r.borrow().to_html(),
       #[cfg(feature = "tuple")]
-      Value::Tuple(t) => t.to_html(),
+      Value::Tuple(t) => t.borrow().to_html(),
       #[cfg(feature = "enum")]
       Value::Enum(e) => e.to_html(),
       Value::MutableReference(m) => {
@@ -1093,13 +1149,13 @@ impl Value {
       #[cfg(feature = "table")]
       Value::Table(x) => x.borrow().shape(),
       #[cfg(feature = "set")]
-      Value::Set(x) => vec![1,x.set.len()],
+      Value::Set(x) => vec![1,x.borrow().set.len()],
       #[cfg(feature = "map")]
-      Value::Map(x) => vec![1,x.map.len()],
+      Value::Map(x) => vec![1,x.borrow().map.len()],
       #[cfg(feature = "record")]
       Value::Record(x) => x.borrow().shape(),
       #[cfg(feature = "tuple")]
-      Value::Tuple(x) => vec![1,x.size()],
+      Value::Tuple(x) => vec![1,x.borrow().size()],
       Value::Index(x) => vec![1,1],
       Value::MutableReference(x) => x.borrow().shape(),
       Value::Empty => vec![0,0],
@@ -1191,13 +1247,13 @@ impl Value {
       #[cfg(feature = "table")]
       Value::Table(x) => x.borrow().kind(),
       #[cfg(feature = "set")]
-      Value::Set(x) => x.kind(),
+      Value::Set(x) => x.borrow().kind(),
       #[cfg(feature = "map")]
-      Value::Map(x) => x.kind(),
+      Value::Map(x) => x.borrow().kind(),
       #[cfg(feature = "record")]
       Value::Record(x) => x.borrow().kind(),
       #[cfg(feature = "tuple")]
-      Value::Tuple(x) => x.kind(),
+      Value::Tuple(x) => x.borrow().kind(),
       #[cfg(feature = "enum")]
       Value::Enum(x) => x.kind(),
       Value::MutableReference(x) => ValueKind::Reference(Box::new(x.borrow().kind())),
@@ -1655,15 +1711,15 @@ impl PrettyPrint for Value {
       #[cfg(feature = "atom")]
       Value::Atom(x) => {builder.push_record(vec![format!("{}",x)]);},
       #[cfg(feature = "set")]
-      Value::Set(x)  => {return x.pretty_print();}
+      Value::Set(x)  => {return x.borrow().pretty_print();}
       #[cfg(feature = "map")]
-      Value::Map(x)  => {return x.pretty_print();}
+      Value::Map(x)  => {return x.borrow().pretty_print();}
       #[cfg(feature = "string")]
       Value::String(x) => {return format!("\"{}\"",x.borrow().clone());},
       #[cfg(feature = "table")]
       Value::Table(x)  => {return x.borrow().pretty_print();},
       #[cfg(feature = "tuple")]
-      Value::Tuple(x)  => {return x.pretty_print();},
+      Value::Tuple(x)  => {return x.borrow().pretty_print();},
       #[cfg(feature = "record")]
       Value::Record(x) => {return x.borrow().pretty_print();},
       #[cfg(feature = "enum")]
