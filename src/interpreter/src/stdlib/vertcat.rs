@@ -26,9 +26,12 @@ macro_rules! vertcat_one_arg {
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }
     #[cfg(feature = "compiler")]
-    impl<T> MechFunctionCompiler for $fxn<T> {
+    impl<T> MechFunctionCompiler for $fxn<T> 
+    where
+      T: ConstElem + CompileConst
+    {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
+        compile_unop!(self.out, self.e0, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
       }
     }
   };}
@@ -58,9 +61,12 @@ macro_rules! vertcat_two_args {
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }
     #[cfg(feature = "compiler")]
-    impl<T> MechFunctionCompiler for $fxn<T> {
+    impl<T> MechFunctionCompiler for $fxn<T> 
+    where
+      T: ConstElem + CompileConst 
+    {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
+        compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
       }
     }
   };}
@@ -92,9 +98,12 @@ macro_rules! vertcat_three_args {
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }
     #[cfg(feature = "compiler")]
-    impl<T> MechFunctionCompiler for $fxn<T> {
+    impl<T> MechFunctionCompiler for $fxn<T> 
+    where
+      T: ConstElem + CompileConst
+    {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
+        compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
       }
     }
   };} 
@@ -128,9 +137,12 @@ macro_rules! vertcat_four_args {
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }
     #[cfg(feature = "compiler")]
-    impl<T> MechFunctionCompiler for $fxn<T> {
+    impl<T> MechFunctionCompiler for $fxn<T> 
+    where
+      T: ConstElem + CompileConst
+    {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
+        compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
       }
     }
   };}   
@@ -257,9 +269,12 @@ macro_rules! vertical_concatenate {
         fn to_string(&self) -> String { format!("{:#?}", self) }
       }
       #[cfg(feature = "compiler")]
-      impl<T> MechFunctionCompiler for $name<T> {
+      impl<T> MechFunctionCompiler for $name<T> 
+      where
+        T: ConstElem + CompileConst
+      {
         fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-          todo!();
+          compile_unop!(self.out, self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
         }
       }
     }
@@ -312,7 +327,10 @@ where
 }
 
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for VerticalConcatenateVD3<T> {
+impl<T> MechFunctionCompiler for VerticalConcatenateVD3<T> 
+where
+      T: ConstElem + CompileConst
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     todo!();
   }
@@ -397,9 +415,12 @@ where
 }
 
 #[cfg(all(feature = "matrix1", feature = "compiler"))]
-impl<T> MechFunctionCompiler for VerticalConcatenateS1<T> {
+impl<T> MechFunctionCompiler for VerticalConcatenateS1<T> 
+where
+  T: ConstElem + CompileConst
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
   }
 }
 
@@ -446,9 +467,12 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(all(feature = "vectord", feature = "compiler"))]
-impl<T> MechFunctionCompiler for VerticalConcatenateSD<T> {
+impl<T> MechFunctionCompiler for VerticalConcatenateSD<T> 
+where
+  T: ConstElem + CompileConst
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
   }
 }
 
@@ -585,9 +609,12 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(all(feature = "matrix1", feature = "vector4", feature = "compiler"))]
-impl<T> MechFunctionCompiler for VerticalConcatenateM1M1M1M1<T> {
+impl<T> MechFunctionCompiler for VerticalConcatenateM1M1M1M1<T> 
+where
+  T: ConstElem + CompileConst
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
   }
 }
 
