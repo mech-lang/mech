@@ -1,0 +1,80 @@
+math/yn
+===============================================================================
+
+%% Bessel function of the second kind
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/yn(N, X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the Bessel function of the second kind of integer order `N` for each element of `X`.  
+The input `N` must be an integer (or array of integers), and `X` must be real-valued.  
+The result `Y` has the same shape as the inputs.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `N`      | `int`, `[int]`           | Order of the Bessel function. Must be an integer or array of integers. |
+| `X`      | `float`, `[float]`       | Input values (real). Typically non-negative, though the function is defined for real arguments. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `Y`      | matches input            | Bessel function of the second kind of order `N` evaluated at `X`. The shape of `Y` matches the broadcasted shape of `N` and `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Compute `Y_0(x)` at a point
+
+```mech:ex1
+y := math/yn(0, 1.0)
+```
+
+(b) Compute `Y_1(x)` at a vector of points
+
+```mech:ex2
+x := [0.5, 1.0, 2.0]
+y := math/yn(1, x)
+```
+
+(c) Compute `Y_n(x)` for multiple orders with a single argument
+
+```mech:ex3
+n := [0, 1, 2]
+x := [1.0, 1.0, 1.0]
+y := math/yn(n, x)
+```
+
+(d) Compute for a matrix of values
+
+```mech:ex4
+n := [0, 1; 2, 3]
+x := [1.0, 2.0; 3.0, 4.0]
+y := math/yn(n, x)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The Bessel functions of the second kind, often denoted as $$Y_n(x)$$, are solutions to Bessel's differential equation:
+
+$$ x^2 y'' + x y' + (x^2 - n^2) y = 0
+
+Unlike the Bessel functions of the first kind $$J_n(x)$$, which remain finite at the origin for $$n > 0$$, the functions $$Y_n(x)$$ diverge as $$x \to 0$$.
+
+For integer order $$n$$, the Bessel functions of the second kind are related to the Bessel functions of the first kind by:
+
+$$ Y_n(x) = \frac{J_n(x) \cos(n \pi) - J_{-n}(x)}{\sin(n \pi)}
+
+They play an important role in problems with cylindrical or spherical symmetry, particularly in wave propagation and static potential problems.

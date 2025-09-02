@@ -1,0 +1,63 @@
+math/fabs
+===============================================================================
+
+%% Floating-point absolute value
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/fabs(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the absolute value of each element of `X`. The input `X` may be a scalar, vector, or matrix of floating-point values. The result `Y` has the same shape as the input `X`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `X`      | `float`, `[float]`       | Input floating-point value(s). Can be single or double precision. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `Y`      | matches input            | Absolute value of the input. The shape of `Y` matches the shape of `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Find the absolute value of a number 
+
+```mech:ex1
+y := math/fabs(-3.14)
+```
+
+(b) Find the absolute value for a vector of numbers
+
+```mech:ex2
+x := [-1.0, 0.0, 2.5]
+y := math/fabs(x)
+```
+
+(c) Find the absolute value for a matrix of numbers
+
+```mech:ex3
+x := [-1.0, 2.0; -3.0, 4.0]
+y := math/fabs(x)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The absolute value of a real number is defined as its distance from zero on the number line:
+
+$$ |x| = \begin{cases} x & x \geq 0 \\ -x & x < 0 \end{cases}
+
+This function applies element-wise to arrays and matrices of floating-point values.  
+For floating-point numbers, the result is always non-negative.

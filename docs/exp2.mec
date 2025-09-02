@@ -1,0 +1,79 @@
+math/exp2
+===============================================================================
+
+%% Base-2 Exponential Function
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/exp2(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the base-2 exponential of each element of `X`. This means it returns 2 raised to the power of `X`. The result `Y` has the same shape as the input `X`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `X`      | `float`, `[float]`       | Input value(s). Can be real or complex. If `X` is complex, `exp2` returns complex results. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `Y`      | matches input            | Result of `2^X`. If `X` is real, `Y` is positive real. If `X` is complex, `Y` may have both real and imaginary parts. The shape of `Y` matches the shape of `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Compute 2 raised to a number
+
+```mech:ex1
+y := math/exp2(3)
+```
+
+(b) Compute base-2 exponential for a vector
+
+```mech:ex2
+x := [0, 1, 2, 3]
+y := math/exp2(x)
+```
+
+(c) Compute base-2 exponential for a matrix
+
+```mech:ex3
+x := [0, 1; 2 3]
+y := math/exp2(x)
+```
+
+(d) Compute fractional exponents
+
+```mech:ex4
+x := [0.5, -1.0, 2.5]
+y := math/exp2(x)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The base-2 exponential function is defined as:
+
+$$ exp2(x) = 2^x
+
+This is equivalent to the general exponential function with base `e`:
+
+$$ 2^x = e^{x \cdot ln(2)}
+
+This function is useful in binary systems, computer science, and digital signal processing, where powers of two commonly occur. It can be applied element-wise to vectors and matrices, preserving the shape of the input.
+
+For complex numbers, the definition extends naturally using Euler's formula:
+
+$$ 2^z = e^{z \cdot ln(2)}
+
+where `z` may have both real and imaginary components.
