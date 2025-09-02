@@ -215,6 +215,8 @@ pub enum FeatureKind {
   Add, Sub, Mul, Div,
   LT, LTE, GT, GTE, EQ, NEQ,
   And, Or, Xor, Not,
+  Convert, Assign, Access,
+  Functions, Formulas,
   Custom = 0xFFFF,
 }
 
