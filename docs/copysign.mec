@@ -1,0 +1,74 @@
+math/copysign
+===============================================================================
+
+%% Value with the sign of another value
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/copysign(X, S)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes a value with the magnitude of `X` and the sign of `S`.  
+The result `Y` has the same shape as the inputs.
+
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                                         |
+|----------|--------------------------|-----------------------------------------------------|
+| `X`      | `float`, `[float]`       | Input value(s) whose magnitude will be preserved.   |
+| `S`      | `float`, `[float]`       | Input value(s) whose sign will be applied to `X`.   |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                                         |
+|----------|--------------------------|-----------------------------------------------------|
+| `Y`      | matches inputs           | Result with magnitude of `X` and sign of `S`.       |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Apply the sign of a number
+
+```mech:ex1
+y := math/copysign(3.0, -2.0)
+# y = -3.0
+```
+
+(b) Apply the sign for a vector of numbers
+
+```mech:ex2
+x := [3.0, -3.0, 5.0]
+s := [-1.0, 1.0, -2.0]
+y := math/copysign(x, s)
+# y = [-3.0, 3.0, -5.0]
+```
+
+(c) Apply the sign for a matrix of numbers
+
+```mech:ex3
+x := [1.0, -2.0; 3.0, -4.0]
+s := [-1.0, -1.0; 1.0, 1.0]
+y := math/copysign(x, s)
+# y = [-1.0, -2.0; 3.0, 4.0]
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The `copysign` function is useful when you need to enforce the sign of one value
+while preserving the absolute value of another. This is often used in numerical
+computations to ensure consistent sign handling.
+
+- If `S` is positive, the result has the same magnitude as `X` and a positive sign.  
+- If `S` is negative, the result has the same magnitude as `X` and a negative sign.  
+
+This function is supported for both `f32` and `f64`, as well as for vectors and
+matrices when available.

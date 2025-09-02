@@ -1,0 +1,68 @@
+math/atan
+===============================================================================
+
+%% Arctangent of argument in radians
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/atan(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the arctangent (inverse tangent) of each element of `X`. The input `X` is interpreted as a real or complex number. The result `Y` has the same shape as the input `X`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `X`      | `float`, `[float]`       | Input value(s). Can be real or complex. If `X` is complex, atan returns complex results. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `Y`      | matches input            | Arctangent of the input values. If `X` is real, `Y` is real in the range `(-π/2, π/2)`. If `X` is complex, `Y` may have both real and imaginary parts. The shape of `Y` matches the shape of `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Find the arctangent of a number 
+
+```mech:ex1
+y := math/atan(1)
+```
+
+(b) Find the arctangent for a vector of numbers
+
+```mech:ex2
+x := [0, 1, -1]
+y := math/atan(x)
+```
+
+(c) Find the arctangent for a matrix of numbers
+
+```mech:ex3
+x := [0, 1; -1, 2]
+y := math/atan(x)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The arctangent function is the inverse of the tangent function. For a real number `x`, it returns the angle `y` in radians such that:
+
+$$ tan(y) = x, \quad y \in (-\pi/2, \pi/2)
+
+In trigonometry, atan is used to determine an angle given the ratio of the opposite side to the adjacent side of a right triangle.
+
+For complex numbers, the arctangent is defined using logarithms:
+
+$$ atan(z) = \frac{i}{2} \left( \ln(1 - iz) - \ln(1 + iz) \right)
+
+This definition extends the arctangent function to complex inputs.

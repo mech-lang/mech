@@ -1,0 +1,77 @@
+math/sec
+===============================================================================
+
+%% Secant of argument in radians
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/sec(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the secant of each element of `X`. The input `X` is interpreted in radians, not degrees. The result `Y` has the same shape as the input `X`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `X`      | `float`, `[float]`       | Input angle(s) specified in radians. Can be real or complex. If `X` is complex, sec returns complex results. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `Y`      | matches input            | Secant of the input values. If `X` is real, `Y` is real except where `X` is an odd multiple of π/2 (where sec is undefined). If `X` is complex, `Y` may have both real and imaginary parts. The shape of `Y` matches the shape of `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Find the secant of a number 
+
+```mech:ex1
+y := math/sec(1.0)
+```
+
+(b) Find the secant for a vector of numbers
+
+```mech:ex2
+x := [0.5, 1.0, 1.5]
+y := math/sec(x)
+```
+
+(c) Find the secant for a matrix of numbers
+
+```mech:ex3
+x := [0.5, 1.0; 1.5, 2.0]
+y := math/sec(x)
+```
+
+(d) Find the secant for a matrix of degrees
+
+```mech:ex4
+x := [30, 45; 60, 90]
+y := math/sec(x * 3.14 / 180)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The secant function is the reciprocal of the cosine function:
+
+$$ sec(x) = \frac{1}{cos(x)}
+
+In a right triangle, the secant of an angle $$x$$ is defined as the ratio of the length of the hypotenuse to the adjacent side:
+
+$$ sec(x) = \frac{\text{hypotenuse}}{\text{adjacent}}
+
+For complex numbers, the secant can be expressed in terms of exponentials:
+
+$$ sec(x) = \frac{2}{e^{ix} + e^{-ix}} 
+
+This definition extends the secant function to work beyond real numbers, allowing it to handle complex inputs.

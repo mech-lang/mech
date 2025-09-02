@@ -1,0 +1,70 @@
+math/expm1
+===============================================================================
+
+%% Exponential of argument minus 1
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/expm1(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes `exp(X) - 1` for each element of `X`. This function provides higher 
+accuracy than using `exp(X) - 1` directly when `X` is near zero, avoiding 
+catastrophic cancellation.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind               | Description                                      |
+|----------|--------------------|--------------------------------------------------|
+| `X`      | `float`, `[float]` | Input value(s). Can be a scalar, vector, or matrix.|
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind          | Description                                          |
+|----------|---------------|------------------------------------------------------|
+| `Y`      | matches input | Result of computing `exp(X) - 1`. Matches shape of X.|
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Compute expm1 of a number
+
+```mech:ex1
+y := math/expm1(0.1)
+```
+
+(b) Compute expm1 for a vector
+
+```mech:ex2
+x := [0, 0.1, 1]
+y := math/expm1(x)
+```
+
+(c) Compute expm1 for a matrix
+
+```mech:ex3
+x := [0, 0.5; 1, 2]
+y := math/expm1(x)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The `expm1` function is mathematically defined as:
+
+$$ expm1(x) = e^x - 1
+
+For values of `x` close to zero, directly computing `exp(x) - 1` can lead to 
+significant loss of precision due to subtraction of nearly equal numbers. 
+The `expm1` function uses algorithms that maintain higher accuracy in this 
+region.
+
+This makes it particularly useful in numerical methods, such as when computing 
+logarithms of values close to 1 or in series expansions involving exponentials.
