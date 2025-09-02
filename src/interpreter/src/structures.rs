@@ -32,7 +32,7 @@ pub fn tuple(tpl: &Tuple, p: &Interpreter) -> MResult<Value> {
     let result = expression(el,p)?;
     elements.push(Box::new(result));
   }
-  let mech_tuple = MechTuple{elements};
+  let mech_tuple = Ref::new(MechTuple{elements});
   Ok(Value::Tuple(mech_tuple))
 }
 
@@ -60,12 +60,12 @@ pub fn map(mp: &Map, p: &Interpreter) -> MResult<Value> {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::KindMismatch(v.kind(),value_kind)});
     }
   }
-  Ok(Value::Map(MechMap{
+  Ok(Value::Map(Ref::new(MechMap{
     num_elements: m.len(),
     key_kind,
     value_kind,
     map: m
-  }))
+  })))
 }
 
 #[cfg(feature = "record")]
@@ -131,11 +131,11 @@ pub fn set(m: &Set, p: &Interpreter) -> MResult<Value> {
     }
   }
 
-  Ok(Value::Set(MechSet{
+  Ok(Value::Set(Ref::new(MechSet{
     num_elements: out.len(),
     kind: set_kind,
     set: out, 
-  }))
+  })))
 }
 
 macro_rules! handle_value_kind {

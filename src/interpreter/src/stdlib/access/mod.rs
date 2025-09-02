@@ -78,7 +78,7 @@ impl NativeFunctionCompiler for AccessSwizzle {
             None => { return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)});}
           }
         }
-        Ok(Box::new(RecordAccessSwizzle{source: Value::Tuple(MechTuple::from_vec(values))}))
+        Ok(Box::new(RecordAccessSwizzle{source: Value::Tuple(Ref::new(MechTuple::from_vec(values)))}))
       }
       #[cfg(feature = "table")]
       Value::Table(tbl) => {
@@ -97,7 +97,7 @@ impl NativeFunctionCompiler for AccessSwizzle {
           }
         }
         todo!("Table swizzle needs to be fixed.");
-        let tuple = Value::Tuple(MechTuple{elements});
+        let tuple = Value::Tuple(Ref::new(MechTuple{elements}));
         Ok(Box::new(TableAccessSwizzle{out: tuple}))
       }
       Value::MutableReference(r) => match &*r.borrow() {
@@ -111,7 +111,7 @@ impl NativeFunctionCompiler for AccessSwizzle {
               None => { return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)});}
             }
           }
-          Ok(Box::new(RecordAccessSwizzle{source: Value::Tuple(MechTuple::from_vec(values))}))
+          Ok(Box::new(RecordAccessSwizzle{source: Value::Tuple(Ref::new(MechTuple::from_vec(values)))}))
         }
         #[cfg(feature = "table")]
         Value::Table(tbl) => {
@@ -125,7 +125,7 @@ impl NativeFunctionCompiler for AccessSwizzle {
               None => { return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UndefinedField(k)});}
             }
           }
-          let tuple = Value::Tuple(MechTuple{elements});
+          let tuple = Value::Tuple(Ref::new(MechTuple{elements}));
           Ok(Box::new(TableAccessSwizzle{out: tuple}))
         }
         _ => todo!(),

@@ -46,7 +46,7 @@ pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &Interpreter) -> MRes
     if symbols_brrw.contains(id) {
       return Err(MechError{file:file!().to_string(),tokens:var.tokens(),msg:"Note: Variables are defined with the := operator.".to_string(),id:line!(),kind:MechErrorKind::VariableRedefined(id)});
     }
-    if let Some(element) = tpl.get(i) {
+    if let Some(element) = tpl.borrow().get(i) {
       symbols_brrw.insert(id, element.clone(), true);
       symbols_brrw.dictionary.borrow_mut().insert(id, var.name.to_string());
     } else {
