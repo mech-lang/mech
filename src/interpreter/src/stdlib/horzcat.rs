@@ -98,9 +98,12 @@ macro_rules! horzcat_three_args {
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }
     #[cfg(feature = "compiler")]
-    impl<T> MechFunctionCompiler for $fxn<T> {
+    impl<T> MechFunctionCompiler for $fxn<T> 
+    where
+      T: ConstElem + CompileConst
+    {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
+        compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
     }
   };} 
@@ -134,9 +137,12 @@ macro_rules! horzcat_four_args {
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }
     #[cfg(feature = "compiler")]
-    impl<T> MechFunctionCompiler for $fxn<T> {
+    impl<T> MechFunctionCompiler for $fxn<T> 
+    where
+      T: ConstElem + CompileConst
+    {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
+        compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
     }
   };}   
