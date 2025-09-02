@@ -52,9 +52,12 @@ where
   fn to_string(&self) -> String {format!("{:#?}", self)}
 }
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for NChooseK<T> {
+impl<T> MechFunctionCompiler for NChooseK<T> 
+where
+    T: ConstElem + CompileConst
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_binop!(self.out, self.n, self.k, ctx, FeatureFlag::Builtin(FeatureKind::NChooseK));
   }
 }
 
