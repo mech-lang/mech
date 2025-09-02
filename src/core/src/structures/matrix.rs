@@ -144,15 +144,22 @@ pub enum Matrix<T> {
   Matrix3x2(Ref<Matrix3x2<T>>),
   #[cfg(feature = "matrix2x3")]
   Matrix2x3(Ref<Matrix2x3<T>>),
+  #[cfg(feature = "vectord")]
   DVector(Ref<DVector<T>>),
+  #[cfg(feature = "row_vectord")]
   RowDVector(Ref<RowDVector<T>>),
+  #[cfg(feature = "matrixd")]
   DMatrix(Ref<DMatrix<T>>),
 }
 
 pub trait CopyMat<T> {
+  #[cfg(feature = "matrixd")]
   fn copy_into(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize;
+  #[cfg(feature = "vectord")]
   fn copy_into_v(&self, dst: &Ref<DVector<T>>, offset: usize) -> usize;
+  #[cfg(feature = "row_vectord")]
   fn copy_into_r(&self, dst: &Ref<RowDVector<T>>, offset: usize) -> usize;
+  #[cfg(feature = "matrixd")]
   fn copy_into_row_major(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize;
 }
 
@@ -161,30 +168,34 @@ macro_rules! copy_mat {
     impl<T> CopyMat<T> for Ref<$matsize<T>> 
     where T: Clone 
     {
+      #[cfg(feature = "matrixd")]
       fn copy_into(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize {
         let src_ptr = unsafe { (*(self.as_ptr())).clone() };
         let mut dst_ptr = unsafe { &mut *(dst.as_mut_ptr()) };
         for i in 0..src_ptr.len() {
-            dst_ptr[i + offset] = src_ptr[i].clone();
+          dst_ptr[i + offset] = src_ptr[i].clone();
         }
         src_ptr.len()
       }
+      #[cfg(feature = "vectord")]
       fn copy_into_v(&self, dst: &Ref<DVector<T>>, offset: usize) -> usize {
         let src_ptr = unsafe { (*(self.as_ptr())).clone() };
         let mut dst_ptr = unsafe { &mut *(dst.as_mut_ptr()) };
         for i in 0..src_ptr.len() {
-            dst_ptr[i + offset] = src_ptr[i].clone();
+          dst_ptr[i + offset] = src_ptr[i].clone();
         }
         src_ptr.len()
       }
+      #[cfg(feature = "row_vectord")]
       fn copy_into_r(&self, dst: &Ref<RowDVector<T>>, offset: usize) -> usize {
         let src_ptr = unsafe { (*(self.as_ptr())).clone() };
         let mut dst_ptr = unsafe { &mut *(dst.as_mut_ptr()) };
         for i in 0..src_ptr.len() {
-            dst_ptr[i + offset] = src_ptr[i].clone();
+          dst_ptr[i + offset] = src_ptr[i].clone();
         }
         src_ptr.len()
       }
+      #[cfg(feature = "matrixd")]
       fn copy_into_row_major(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize {
         let src_ptr = unsafe { (*(self.as_ptr())).clone() };
         let mut dst_ptr = unsafe { &mut *(dst.as_mut_ptr()) };
@@ -194,8 +205,8 @@ macro_rules! copy_mat {
         let stride = dest_rows - src_rows;
         let mut offset = offset;
         for ix in 0..src_ptr.len() {
-            dst_ptr[offset] = src_ptr[ix].clone();
-            offset += ((ix + 1) % src_rows == 0) as usize * stride + 1;
+          dst_ptr[offset] = src_ptr[ix].clone();
+          offset += ((ix + 1) % src_rows == 0) as usize * stride + 1;
         }
         src_rows
       }}};}
@@ -224,9 +235,11 @@ copy_mat!(RowVector2);
 copy_mat!(RowVector3);
 #[cfg(feature = "row_vector4")]
 copy_mat!(RowVector4);
-
+#[cfg(feature = "vectord")]
 copy_mat!(DVector);
+#[cfg(feature = "matrixd")]
 copy_mat!(DMatrix);
+#[cfg(feature = "row_vectord")]
 copy_mat!(RowDVector);
 
 impl<T> Hash for Matrix<T> 
