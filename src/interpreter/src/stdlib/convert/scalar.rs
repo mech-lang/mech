@@ -19,7 +19,7 @@ impl MechFunctionImpl for ConvertSEnum
 #[cfg(all(feature = "compiler", feature = "enum"))]
 impl MechFunctionCompiler for ConvertSEnum {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
 }
 
@@ -51,9 +51,12 @@ where T: Debug + Clone + PartialEq + Into<Value> + 'static,
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(all(feature = "compiler", feature = "matrix", feature = "table"))]
-impl<T> MechFunctionCompiler for ConvertMat2Table<T> {
+impl<T> MechFunctionCompiler for ConvertMat2Table<T> 
+where
+  T: ConstElem + CompileConst,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
 }
 
@@ -156,9 +159,13 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
-impl<F, T> MechFunctionCompiler for ConvertScalarToScalar<F, T> {
+impl<F, T> MechFunctionCompiler for ConvertScalarToScalar<F, T> 
+where
+  F: ConstElem + CompileConst,
+  T: ConstElem + CompileConst,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
 }
 
@@ -187,9 +194,13 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
-impl<F,T> MechFunctionCompiler for ConvertScalarToScalarBasic<F, T> {
+impl<F,T> MechFunctionCompiler for ConvertScalarToScalarBasic<F, T> 
+where
+  F: ConstElem + CompileConst,
+  T: ConstElem + CompileConst,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
 }
 
