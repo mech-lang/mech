@@ -312,7 +312,28 @@ where
   }
 }
 
+#[cfg(feature = "matrixd")]
 impl<T> CompileConst for Ref<DMatrix<T>> 
+where
+  T: CompileConst + ConstElem
+{
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    self.borrow().compile_const(ctx)
+  }
+}
+
+#[cfg(feature = "vectord")]
+impl<T> CompileConst for Ref<DVector<T>> 
+where
+  T: CompileConst + ConstElem
+{
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    self.borrow().compile_const(ctx)
+  }
+}
+
+#[cfg(feature = "row_vectord")]
+impl<T> CompileConst for Ref<RowDVector<T>> 
 where
   T: CompileConst + ConstElem
 {
