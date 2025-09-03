@@ -174,12 +174,16 @@ pub trait CopyMat<T> {
   fn copy_into_r(&self, dst: &Ref<RowDVector<T>>, offset: usize) -> usize;
   #[cfg(feature = "matrixd")]
   fn copy_into_row_major(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize;
+  fn addr(&self) -> usize;
+  fn compile_const_mat(&self, ctx: &mut CompileCtx) -> MResult<u32>;
 }
 
 macro_rules! copy_mat {
   ($matsize:ident) => {
-    impl<T> CopyMat<T> for Ref<$matsize<T>> 
-    where T: Clone 
+    impl<T> CopyMat<T> for Ref<$matsize<T>>
+    where 
+      T: Clone + CompileConst + ConstElem,
+      $matsize<T>: CompileConst + ConstElem,
     {
       #[cfg(feature = "matrixd")]
       fn copy_into(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize {
@@ -222,7 +226,12 @@ macro_rules! copy_mat {
           offset += ((ix + 1) % src_rows == 0) as usize * stride + 1;
         }
         src_rows
-      }}};}
+      }
+      fn addr(&self) -> usize { self.addr() }
+      fn compile_const_mat(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+        self.borrow().compile_const(ctx)
+      }
+    }};}
       
 #[cfg(feature = "matrix1")]
 copy_mat!(Matrix1);
@@ -400,6 +409,44 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 }
 
 impl<T> Matrix<T> 
+where
+  T:  CompileConst + ConstElem + Clone + 'static + Debug + PartialEq,
+{
+  pub fn get_copyable_matrix(&self) -> Box<dyn CopyMat<T>> {
+    match self {
+      #[cfg(feature = "row_vector4")]
+      Matrix::RowVector4(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "row_vector3")]
+      Matrix::RowVector3(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "row_vector2")]
+      Matrix::RowVector2(ref x) => Box::new(x.clone()),
+      Matrix::RowDVector(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "vector4")]
+      Matrix::Vector4(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "vector3")]
+      Matrix::Vector3(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "vector2")]
+      Matrix::Vector2(ref x) => Box::new(x.clone()),
+      Matrix::DVector(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "matrix4")]
+      Matrix::Matrix4(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "matrix3")]
+      Matrix::Matrix3(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "matrix2")]
+      Matrix::Matrix2(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "matrix1")]
+      Matrix::Matrix1(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "matrix3x2")]
+      Matrix::Matrix3x2(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "matrix2x3")]
+      Matrix::Matrix2x3(ref x) => Box::new(x.clone()),
+      Matrix::DMatrix(ref x) => Box::new(x.clone()),
+      _ => panic!("Unsupported matrix size"),
+    }
+  }
+}
+
+impl<T> Matrix<T> 
 where T: Debug + Clone + PartialEq + 'static
 {
 
@@ -534,39 +581,6 @@ where T: Debug + Clone + PartialEq + 'static
           kind: MechErrorKind::None,
         });
       }
-    }
-  }
-
-  pub fn get_copyable_matrix(&self) -> Box<dyn CopyMat<T>> {
-    match self {
-      #[cfg(feature = "row_vector4")]
-      Matrix::RowVector4(ref x) => Box::new(x.clone()),
-      #[cfg(feature = "row_vector3")]
-      Matrix::RowVector3(ref x) => Box::new(x.clone()),
-      #[cfg(feature = "row_vector2")]
-      Matrix::RowVector2(ref x) => Box::new(x.clone()),
-      Matrix::RowDVector(ref x) => Box::new(x.clone()),
-      #[cfg(feature = "vector4")]
-      Matrix::Vector4(ref x) => Box::new(x.clone()),
-      #[cfg(feature = "vector3")]
-      Matrix::Vector3(ref x) => Box::new(x.clone()),
-      #[cfg(feature = "vector2")]
-      Matrix::Vector2(ref x) => Box::new(x.clone()),
-      Matrix::DVector(ref x) => Box::new(x.clone()),
-      #[cfg(feature = "matrix4")]
-      Matrix::Matrix4(ref x) => Box::new(x.clone()),
-      #[cfg(feature = "matrix3")]
-      Matrix::Matrix3(ref x) => Box::new(x.clone()),
-      #[cfg(feature = "matrix2")]
-      Matrix::Matrix2(ref x) => Box::new(x.clone()),
-      #[cfg(feature = "matrix1")]
-      Matrix::Matrix1(ref x) => Box::new(x.clone()),
-      #[cfg(feature = "matrix3x2")]
-      Matrix::Matrix3x2(ref x) => Box::new(x.clone()),
-      #[cfg(feature = "matrix2x3")]
-      Matrix::Matrix2x3(ref x) => Box::new(x.clone()),
-      Matrix::DMatrix(ref x) => Box::new(x.clone()),
-      _ => panic!("Unsupported matrix size"),
     }
   }
 
