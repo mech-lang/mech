@@ -363,11 +363,31 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateNArgs<T>
 where
-  T: Debug + Clone + Sync + Send + PartialEq + 'static,
-  Ref<DMatrix<T>>: ToValue,
+  T: ConstElem + CompileConst,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0, 0];
+    let out_addr = self.out.addr();
+    let out_reg = ctx.alloc_register_for_ptr(out_addr);
+    let out_const_id = self.out.compile_const(ctx).unwrap();
+    ctx.emit_const_load(out_reg, out_const_id);
+    registers[0] = out_reg;
+
+    let mut mat_regs = Vec::new();
+    for e in &self.e0 {
+      let e_addr = e.addr();
+      let e_reg = ctx.alloc_register_for_ptr(e_addr);
+      let e_const_id = e.compile_const_mat(ctx).unwrap();
+      ctx.emit_const_load(e_reg, e_const_id);
+      mat_regs.push(e_reg);
+    }
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.emit_vararg(
+      hash_str("HorizontalConcatenateNArgs"),
+      registers[0],
+      mat_regs,
+    );
+    Ok(registers[0])
   }
 }
 
@@ -455,11 +475,47 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateRDN<T>
 where
-  T: Debug + Clone + Sync + Send + PartialEq + 'static,
-  Ref<RowDVector<T>>: ToValue
+  T: CompileConst + ConstElem
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0, 0];
+
+    let out_addr = self.out.addr();
+    let out_reg = ctx.alloc_register_for_ptr(out_addr);
+    let out_const_id = self.out.compile_const(ctx).unwrap();
+    ctx.emit_const_load(out_reg, out_const_id);
+    registers[0] = out_reg;
+
+    let mut mat_regs = Vec::new();
+    for (e, _) in &self.matrix {
+      let e_addr = e.addr();
+      let e_reg = ctx.alloc_register_for_ptr(e_addr);
+      let e_const_id = e.compile_const_mat(ctx).unwrap();
+      ctx.emit_const_load(e_reg, e_const_id);
+      mat_regs.push(e_reg);
+    }
+    let mut scalar_regs = Vec::new();
+    for (e, _) in &self.scalar {
+      let e_addr = e.addr();
+      let e_reg = ctx.alloc_register_for_ptr(e_addr);
+      let e_const_id = e.borrow().compile_const(ctx).unwrap();
+      ctx.emit_const_load(e_reg, e_const_id);
+      scalar_regs.push(e_reg);
+    }
+    let mut all_regs = vec![];
+    all_regs.push(registers[0]);
+    all_regs.extend(mat_regs);
+    all_regs.extend(scalar_regs);
+
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+
+    ctx.emit_vararg(
+      hash_str("HorizontalConcatenateRDN"),
+      registers[0],
+      all_regs[1..].to_vec(),
+    );
+
+    Ok(registers[0])
   }
 }
 
