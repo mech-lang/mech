@@ -64,7 +64,7 @@ Functions are backed by Rust's [`libm`](https://crates.io/crates/libm) crate.
 
 math/machine := {
   name: "math" 
-  version: "v0.2.58"
+  version: "v0.2.59"
   authors: ["Corey Montella", "Steven McPhillimey", "Liam Messinger", "Natalie Dumler"] 
   machine-url: "https://gitlab.com/mech-lang/machines/math"
   license: "Apache-2.0"}
