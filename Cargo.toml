@@ -30,7 +30,42 @@ default = ["stdlib", "pretty_print", "serde", "compiler", "program",
 ops_default = ["add", "sub", "mul", "div", "exp", "mod"]
 ops_assign_default = ["add_assign", "sub_assign", "mul_assign", "div_assign"]
 trig_default = ["acos", "acosh", "acot", "acsc", "asec", "asin", "asinh", "atan", "atan2", "atanh", "cos", "cosh", "cot", "csc", "hypot", "sec", "sin", "sinh", "tan", "tanh"]
-funcs_default = ["cbrt", "ceil", "copysign", "erf", "erfc", "fabs", "fdim", "floor", "fmax", "fmaximum", "fmaximum_num", "fmin", "fminimum", "fminimum_num", "log", "log1p", "log2", "log10", "j0", "j1", "jn", "y0", "y1", "yn"]
+funcs_default = [
+  "cbrt",
+  "ceil",
+  "copysign",
+  "erf",
+  "erfc",
+  "fabs",
+  "fdim",
+  "floor",
+  "fmax",
+  "fmaximum",
+  "fmaximum_num",
+  "fmin",
+  "fminimum",
+  "fminimum_num",
+  "fmod",
+  "j0",
+  "j1",
+  "jn",
+  "lgamma",
+  "log",
+  "log1p",
+  "log10",
+  "log2",
+  "nextafter",
+  "remainder",
+  "rint",
+  "round",
+  "roundeven",
+  "sqrt",
+  "tgamma",
+  "trunc",
+  "y0",
+  "y1",
+  "yn"
+]
 exp_default = ["exp2", "exp10", "expm1"]
 
 math = ["num-traits", "libm", "functions"]
@@ -84,13 +119,23 @@ fmaximum_num = ["funcs"]
 fmin = ["funcs"]
 fminimum = ["funcs"]
 fminimum_num = ["funcs"]
-log = ["funcs"]
-log1p = ["funcs"]
-log2 = ["funcs"]
-log10 = ["funcs"]
+fmod = ["funcs"]
 j0 = ["funcs"]
 j1 = ["funcs"]
 jn = ["funcs"]
+lgamma = ["funcs"]
+log = ["funcs"]
+log1p = ["funcs"]
+log10 = ["funcs"]
+log2 = ["funcs"]
+nextafter = ["funcs"]
+remainder = ["funcs"]
+rint = ["funcs"]
+round = ["funcs"]
+roundeven = ["funcs"]
+sqrt = ["funcs"]
+tgamma = ["funcs"]
+trunc = ["funcs"]
 y0 = ["funcs"]
 y1 = ["funcs"]
 yn = ["funcs"]
