@@ -312,6 +312,15 @@ where
   }
 }
 
+impl<T> CompileConst for Ref<DMatrix<T>> 
+where
+  T: CompileConst + ConstElem
+{
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    self.borrow().compile_const(ctx)
+  }
+}
+
 #[cfg(feature = "table")]
 impl CompileConst for MechTable {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
