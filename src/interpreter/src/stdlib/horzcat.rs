@@ -168,11 +168,39 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateTwoArgs<T>
 where
-  T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + CompileConst,
-  Ref<DMatrix<T>>: ToValue
+  T: ConstElem + CompileConst,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0, 0, 0];
+
+    let out_addr = self.out.addr();
+    let out_reg = ctx.alloc_register_for_ptr(out_addr);
+    let out_const_id = self.out.compile_const(ctx).unwrap();
+    ctx.emit_const_load(out_reg, out_const_id);
+    registers[0] = out_reg;
+
+    let lhs_addr = self.e0.addr();
+    let lhs_reg = ctx.alloc_register_for_ptr(lhs_addr);
+    let lhs_const_id = self.e0.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(lhs_reg, lhs_const_id);
+    registers[1] = lhs_reg;
+
+    let rhs_addr = self.e1.addr();
+    let rhs_reg = ctx.alloc_register_for_ptr(rhs_addr);
+    let rhs_const_id = self.e1.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(rhs_reg, rhs_const_id);
+    registers[2] = rhs_reg;
+
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+
+    ctx.emit_binop(
+      hash_str(stringify!(HorizontalConcatenateTwoArgs)),
+      registers[0],
+      registers[1],
+      registers[2],
+    );
+
+    Ok(registers[0])
   }
 }
     
