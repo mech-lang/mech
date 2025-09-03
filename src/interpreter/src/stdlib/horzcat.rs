@@ -194,7 +194,7 @@ where
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
     ctx.emit_binop(
-      hash_str(stringify!(HorizontalConcatenateTwoArgs)),
+      hash_str("HorizontalConcatenateTwoArgs"),
       registers[0],
       registers[1],
       registers[2],
@@ -224,9 +224,47 @@ where
   fn to_string(&self) -> String { format!("HorizontalConcatenateThreeArgs\n{:#?}", self.out) }
 }
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for HorizontalConcatenateThreeArgs<T> {
+impl<T> MechFunctionCompiler for HorizontalConcatenateThreeArgs<T> 
+where
+  T: ConstElem + CompileConst,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0, 0, 0];
+
+    let out_addr = self.out.addr();
+    let out_reg = ctx.alloc_register_for_ptr(out_addr);
+    let out_const_id = self.out.compile_const(ctx).unwrap();
+    ctx.emit_const_load(out_reg, out_const_id);
+    registers[0] = out_reg;
+
+    let e0_addr = self.e0.addr();
+    let e0_reg = ctx.alloc_register_for_ptr(e0_addr);
+    let e0_const_id = self.e0.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(e0_reg, e0_const_id);
+    registers[1] = e0_reg;
+
+    let e1_addr = self.e1.addr();
+    let e1_reg = ctx.alloc_register_for_ptr(e1_addr);
+    let e1_const_id = self.e1.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(e1_reg, e1_const_id);
+    registers[2] = e1_reg;
+
+    let e2_addr = self.e2.addr();
+    let e2_reg = ctx.alloc_register_for_ptr(e2_addr);
+    let e2_const_id = self.e2.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(e2_reg, e2_const_id);
+    let mut registers = [registers[0], registers[1], registers[2], e2_reg];
+
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+
+    ctx.emit_ternop(
+      hash_str("HorizontalConcatenateThreeArgs"),
+      registers[0],
+      registers[1],
+      registers[2],
+      registers[3],
+    );
+    Ok(registers[0])
   }
 }
 
