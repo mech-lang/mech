@@ -130,7 +130,7 @@ macro_rules! impl_conversion_match_arms {
         }
         x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Could not convert: {:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
       }
-    };
+    }
   }
 }
 
