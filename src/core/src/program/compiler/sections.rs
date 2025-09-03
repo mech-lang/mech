@@ -391,6 +391,7 @@ pub enum OpCode {
   Binop     = 0x30,
   Ternop    = 0x40,
   Quadop    = 0x50,
+  VarArg    = 0x60,
   Return    = 0xFF,
 }
 
@@ -403,6 +404,7 @@ impl OpCode {
       0x30 => Some(OpCode::Binop),
       0x40 => Some(OpCode::Ternop),
       0x50 => Some(OpCode::Quadop),
+      0x60 => Some(OpCode::VarArg),
       0xFF => Some(OpCode::Return),
       _    => None,
     }
@@ -417,6 +419,7 @@ pub enum EncodedInstr {
   BinOp     { fxn_id: u64, dst: u32, lhs: u32, rhs: u32 },             // [u64 opcode][u32 dst][u32 lhs][u32 rhs]
   TernOp    { fxn_id: u64, dst: u32, a: u32, b: u32, c: u32 },         // [u64 opcode][u32 dst][u32 a][u32 b][u32 c]
   QuadOp    { fxn_id: u64, dst: u32, a: u32, b: u32, c: u32, d: u32 }, // [u64 opcode][u32 dst][u32 a][u32 b][u32 c][u32 d]
+  VarArg    { fxn_id: u64, dst: u32, args: Vec<u32> },                 // [u64 opcode][u64 fxn_id][u32 dst][u32 arg_count][u32 args...]
   Ret       { src: u32 },                                              // [u64 opcode][u32 src]
 }
 
@@ -429,6 +432,7 @@ impl EncodedInstr {
       EncodedInstr::BinOp{..}     => 1 + 8 + 4 + 4 + 4,
       EncodedInstr::TernOp{..}    => 1 + 8 + 4 + 4 + 4 + 4,
       EncodedInstr::QuadOp{..}    => 1 + 8 + 4 + 4 + 4 + 4 + 4,
+      EncodedInstr::VarArg{ args, .. } => 1 + 8 + 4 + 4 + (4 * args.len() as u64),
       EncodedInstr::Ret{..}       => 1 + 4,
     }
   }
@@ -473,6 +477,15 @@ impl EncodedInstr {
         w.write_u32::<LittleEndian>(*b)?;
         w.write_u32::<LittleEndian>(*c)?;
         w.write_u32::<LittleEndian>(*d)?;
+      }
+      EncodedInstr::VarArg{ fxn_id, dst, args } => {
+        w.write_u8(OpCode::VarArg as u8)?;
+        w.write_u64::<LittleEndian>(*fxn_id)?;
+        w.write_u32::<LittleEndian>(*dst)?;
+        w.write_u32::<LittleEndian>(args.len() as u32)?;
+        for a in args {
+          w.write_u32::<LittleEndian>(*a)?;
+        }
       }
       EncodedInstr::Ret{ src } => {
         w.write_u8(OpCode::Return as u8)?;

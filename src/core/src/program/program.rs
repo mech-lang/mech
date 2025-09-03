@@ -471,6 +471,7 @@ pub enum DecodedInstr {
   BinOp { fxn_id: u64, dst: u32, lhs: u32, rhs: u32 },
   TernOp { fxn_id: u64, dst: u32, a: u32, b: u32, c: u32 },
   QuadOp { fxn_id: u64, dst: u32, a: u32, b: u32, c: u32, d: u32 },
+  VarArg { fxn_id: u64, dst: u32, args: Vec<u32> },
   Ret { src: u32 },
   Unknown { opcode: u8, rest: Vec<u8> }, // unknown opcode or dynamic form
 }
@@ -482,6 +483,9 @@ impl DecodedInstr {
       Some(OpCode::NullOp) => Some(DecodedInstr::NullOp { fxn_id: 0, dst: 0 }),
       Some(OpCode::Unop) => Some(DecodedInstr::UnOp { fxn_id: 0, dst: 0, src: 0 }),
       Some(OpCode::Binop) => Some(DecodedInstr::BinOp { fxn_id: 0, dst: 0, lhs: 0, rhs: 0 }),
+      Some(OpCode::Ternop) => Some(DecodedInstr::TernOp { fxn_id: 0, dst: 0, a: 0, b: 0, c: 0 }),
+      Some(OpCode::Quadop) => Some(DecodedInstr::QuadOp { fxn_id: 0, dst: 0, a: 0, b: 0, c: 0, d: 0 }),
+      Some(OpCode::VarArg) => Some(DecodedInstr::VarArg { fxn_id: 0, dst: 0, args: vec![] }),
       Some(OpCode::Return) => Some(DecodedInstr::Ret { src: 0 }),
       _ => None,
     }
@@ -556,6 +560,18 @@ fn decode_instructions(mut cur: Cursor<&[u8]>) -> MResult<Vec<DecodedInstr>> {
         let d = cur.read_u32::<LittleEndian>()?;
         out.push(DecodedInstr::QuadOp { fxn_id: fxn_id, dst, a, b, c, d });
       }
+      Some(OpCode::VarArg) => {
+        // need at least 8+4+4 bytes
+        let fxn_id = cur.read_u64::<LittleEndian>()?;
+        let dst = cur.read_u32::<LittleEndian>()?;
+        let arg_count = cur.read_u32::<LittleEndian>()? as usize;
+        let mut args = Vec::with_capacity(arg_count);
+        for _ in 0..arg_count {
+          let a = cur.read_u32::<LittleEndian>()?;
+          args.push(a);
+        }
+        out.push(DecodedInstr::VarArg { fxn_id: fxn_id, dst, args });
+      }
       unknown => {
         return Err(MechError {
           file: file!().to_string(),
@@ -596,18 +612,39 @@ impl DecodedInstr {
         w.write_u32::<LittleEndian>(*lhs)?;
         w.write_u32::<LittleEndian>(*rhs)?;
       }
+      DecodedInstr::TernOp { fxn_id, dst, a, b, c } => {
+        w.write_u8(OpCode::Ternop as u8)?;
+        w.write_u64::<LittleEndian>(*fxn_id)?;
+        w.write_u32::<LittleEndian>(*dst)?;
+        w.write_u32::<LittleEndian>(*a)?;
+        w.write_u32::<LittleEndian>(*b)?;
+        w.write_u32::<LittleEndian>(*c)?;
+      }
+      DecodedInstr::QuadOp { fxn_id, dst, a, b, c, d } => {
+        w.write_u8(OpCode::Quadop as u8)?;
+        w.write_u64::<LittleEndian>(*fxn_id)?;
+        w.write_u32::<LittleEndian>(*dst)?;
+        w.write_u32::<LittleEndian>(*a)?;
+        w.write_u32::<LittleEndian>(*b)?;
+        w.write_u32::<LittleEndian>(*c)?;
+        w.write_u32::<LittleEndian>(*d)?;
+      }
+      DecodedInstr::VarArg { fxn_id, dst, args } => {
+        w.write_u8(OpCode::VarArg as u8)?;
+        w.write_u64::<LittleEndian>(*fxn_id)?;
+        w.write_u32::<LittleEndian>(*dst)?;
+        w.write_u32::<LittleEndian>(args.len() as u32)?;
+        for a in args {
+          w.write_u32::<LittleEndian>(*a)?;
+        }
+      }
       DecodedInstr::Ret { src } => {
         w.write_u8(OpCode::Return as u8)?;
         w.write_u32::<LittleEndian>(*src)?;
       }
-      x => {
-        return Err(MechError {
-          file: file!().to_string(),
-          tokens: vec![],
-          msg: format!("Cannot encode unknown instruction: {:?}", x),
-          id: line!(),
-          kind: MechErrorKind::GenericError("Cannot encode unknown instruction".to_string()),
-        });
+      DecodedInstr::Unknown { opcode, rest } => {
+        w.write_u8(*opcode)?;
+        w.write_all(rest)?;
       }
     }
     Ok(())
