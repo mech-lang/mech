@@ -37,10 +37,16 @@ where
     fn out(&self) -> Value {self.out.to_value()}
     fn to_string(&self) -> String { format!("{:#?}",self) }
   }
-  #[cfg(feature = "compiler")]
-  impl<TFrom, TTo, FromMat, ToMat> MechFunctionCompiler for ConvertMatToMat2<TFrom, TTo, FromMat, ToMat> {
+#[cfg(feature = "compiler")]
+impl<TFrom, TTo, FromMat, ToMat> MechFunctionCompiler for ConvertMatToMat2<TFrom, TTo, FromMat, ToMat> 
+where
+  TFrom: ConstElem + CompileConst,
+  TTo: ConstElem + CompileConst,
+  FromMat: CompileConst + ConstElem,
+  ToMat: CompileConst + ConstElem,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
 }
 
@@ -79,8 +85,8 @@ where
   Ref<na::RowDVector<TTo>>: ToValue,
   #[cfg(feature = "matrixd")]
   Ref<na::DMatrix<TTo>>: ToValue,
-  TFrom: LosslessInto<TTo> + Debug + Scalar + Clone,
-  TTo: Debug + Scalar + Default,
+  TFrom: LosslessInto<TTo> + Debug + Scalar + Clone + ConstElem + CompileConst,
+  TTo: Debug + Scalar + Default + ConstElem + CompileConst,
 {
   let zero = TTo::default();
   match v {
@@ -153,8 +159,8 @@ where
   Ref<na::RowDVector<TTo>>: ToValue,
   #[cfg(feature = "matrixd")]
   Ref<na::DMatrix<TTo>>: ToValue,
-  TFrom: LosslessInto<TTo> + Debug + Scalar + Clone,
-  TTo: Debug + Scalar + Default,
+  TFrom: LosslessInto<TTo> + Debug + Scalar + Clone + ConstElem + CompileConst,
+  TTo: Debug + Scalar + Default + ConstElem + CompileConst,
 {
   let zero = TTo::default();
   let dims = v.shape();
