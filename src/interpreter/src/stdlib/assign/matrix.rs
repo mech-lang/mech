@@ -994,9 +994,14 @@ where
   fn to_string(&self) -> String {format!("{:#?}", self)}
 }
 #[cfg(feature = "compiler")]
-impl<T, R, C, S, IxVec> MechFunctionCompiler for Set2DSR<T, na::Matrix<T, R, C, S>, IxVec> {
+impl<T, R, C, S, IxVec> MechFunctionCompiler for Set2DSR<T, na::Matrix<T, R, C, S>, IxVec> 
+where
+  T: CompileConst + ConstElem,
+  IxVec: CompileConst + ConstElem,
+  na::Matrix<T, R, C, S>: CompileConst + ConstElem,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_ternop!(self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
   }
 }
 
@@ -1034,9 +1039,14 @@ where
   fn to_string(&self) -> String {format!("{:#?}", self)}
 }
 #[cfg(feature = "compiler")]
-impl<T, R, C, S, IxVec> MechFunctionCompiler for Set2DSRB<T, na::Matrix<T, R, C, S>, IxVec> {
+impl<T, R, C, S, IxVec> MechFunctionCompiler for Set2DSRB<T, na::Matrix<T, R, C, S>, IxVec> 
+where
+  T: CompileConst + ConstElem,
+  IxVec: CompileConst + ConstElem,
+  na::Matrix<T, R, C, S>: CompileConst + ConstElem,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_ternop!(self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
   }
 }
 
