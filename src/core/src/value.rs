@@ -112,24 +112,73 @@ impl ValueKind {
   #[cfg(feature = "compiler")]
   pub fn to_feature_kind(&self) -> FeatureKind {
     match self {
+      #[cfg(feature = "i8")]
       ValueKind::I8 => FeatureKind::I8,
+      #[cfg(feature = "i16")]
       ValueKind::I16 => FeatureKind::I16,
+      #[cfg(feature = "i32")]
       ValueKind::I32 => FeatureKind::I32,
+      #[cfg(feature = "i64")]
       ValueKind::I64 => FeatureKind::I64,
+      #[cfg(feature = "i128")]
       ValueKind::I128 => FeatureKind::I128,
+      #[cfg(feature = "u8")] 
       ValueKind::U8 => FeatureKind::U8,
+      #[cfg(feature = "u16")]
       ValueKind::U16 => FeatureKind::U16,
+      #[cfg(feature = "u32")]
       ValueKind::U32 => FeatureKind::U32,
+      #[cfg(feature = "u64")]
       ValueKind::U64 => FeatureKind::U64,
+      #[cfg(feature = "u128")]
       ValueKind::U128 => FeatureKind::U128,
-      ValueKind::F32 => FeatureKind::F32,
+      #[cfg(feature = "f32")]
+      ValueKind::F32 => FeatureKind::F32, 
+      #[cfg(feature = "f64")]
       ValueKind::F64 => FeatureKind::F64,
+      #[cfg(feature = "string")]
       ValueKind::String => FeatureKind::String,
+      #[cfg(feature = "bool")]
       ValueKind::Bool => FeatureKind::Bool,
+      #[cfg(feature = "table")]
+      ValueKind::Table(_,_) => FeatureKind::Table,
+      #[cfg(feature = "set")]
+      ValueKind::Set(_,_) => FeatureKind::Set,
+      #[cfg(feature = "map")]
+      ValueKind::Map(_,_) => FeatureKind::Map,
+      #[cfg(feature = "record")]
+      ValueKind::Record(_) => FeatureKind::Record,
+      #[cfg(feature = "tuple")] 
+      ValueKind::Tuple(_) => FeatureKind::Tuple,
+      #[cfg(feature = "enum")]
+      ValueKind::Enum(_) => FeatureKind::Enum,
+      #[cfg(feature = "matrix")]
+      ValueKind::Matrix(_,shape) => {
+        // shape is vec<usize>, match teh dimensions
+        match shape[..] {
+          [1,1] => FeatureKind::Matrix1,
+          [2,2] => FeatureKind::Matrix2,
+          [3,3] => FeatureKind::Matrix3,
+          [4,4] => FeatureKind::Matrix4,
+          [2,3] => FeatureKind::Matrix2x3,
+          [3,2] => FeatureKind::Matrix3x2,
+          [1,2] => FeatureKind::RowVector2,
+          [1,3] => FeatureKind::RowVector3,
+          [1,4] => FeatureKind::RowVector4,
+          [2,1] => FeatureKind::Vector2,
+          [3,1] => FeatureKind::Vector3,
+          [4,1] => FeatureKind::Vector4,
+          [1,n] => FeatureKind::RowVectorD,
+          [n,1] => FeatureKind::VectorD,
+          [n,m] => FeatureKind::MatrixD,
+          _ => panic!("Unsupported matrix shape for feature kind: {}", self),
+        }
+      }
       #[cfg(feature = "complex")]
       ValueKind::ComplexNumber => FeatureKind::C64,
       #[cfg(feature = "rational")]
       ValueKind::RationalNumber => FeatureKind::R64,
+      ValueKind::Atom(_) => FeatureKind::Atom,
       _ => panic!("Unsupported feature kind for value kind: {}", self),
     }
   }
