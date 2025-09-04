@@ -30,9 +30,14 @@ macro_rules! impl_col_set_fxn {
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }
     #[cfg(feature = "compiler")]
-    impl MechFunctionCompiler for $fxn_name {
+    impl MechFunctionCompiler for $fxn_name 
+    where
+      $vector_size_in<$out_type>: CompileConst + ConstElem,
+      $vector_size_out<Value>: CompileConst + ConstElem,
+      $out_type: CompileConst + ConstElem,
+    {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
+        compile_unop!(self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
       }
     }
   }
