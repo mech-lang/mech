@@ -31,9 +31,12 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for NotS<T> {
+impl<T> MechFunctionCompiler for NotS<T> 
+where
+  T: CompileConst + ConstElem,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Not) );
   }
 }
 
@@ -67,9 +70,13 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
-impl<T, MatA> MechFunctionCompiler for NotV<T, MatA> {
+impl<T, MatA> MechFunctionCompiler for NotV<T, MatA> 
+where
+  T: CompileConst + ConstElem,
+  MatA: CompileConst + ConstElem,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Not) );
   }
 }
 
