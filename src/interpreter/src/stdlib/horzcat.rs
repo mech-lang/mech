@@ -173,11 +173,7 @@ where
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let mut registers = [0, 0, 0];
 
-    let out_addr = self.out.addr();
-    let out_reg = ctx.alloc_register_for_ptr(out_addr);
-    let out_const_id = self.out.compile_const(ctx).unwrap();
-    ctx.emit_const_load(out_reg, out_const_id);
-    registers[0] = out_reg;
+    registers[0] = compile_register!(self.out, ctx);
 
     let lhs_addr = self.e0.addr();
     let lhs_reg = ctx.alloc_register_for_ptr(lhs_addr);
@@ -231,11 +227,7 @@ where
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let mut registers = [0, 0, 0];
 
-    let out_addr = self.out.addr();
-    let out_reg = ctx.alloc_register_for_ptr(out_addr);
-    let out_const_id = self.out.compile_const(ctx).unwrap();
-    ctx.emit_const_load(out_reg, out_const_id);
-    registers[0] = out_reg;
+    registers[0] = compile_register!(self.out, ctx);
 
     let e0_addr = self.e0.addr();
     let e0_reg = ctx.alloc_register_for_ptr(e0_addr);
@@ -297,11 +289,7 @@ where
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let mut registers = [0, 0, 0];
 
-    let out_addr = self.out.addr();
-    let out_reg = ctx.alloc_register_for_ptr(out_addr);
-    let out_const_id = self.out.compile_const(ctx).unwrap();
-    ctx.emit_const_load(out_reg, out_const_id);
-    registers[0] = out_reg;
+    registers[0] = compile_register!(self.out, ctx);
 
     let e0_addr = self.e0.addr();
     let e0_reg = ctx.alloc_register_for_ptr(e0_addr);
@@ -367,11 +355,7 @@ where
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let mut registers = [0, 0];
-    let out_addr = self.out.addr();
-    let out_reg = ctx.alloc_register_for_ptr(out_addr);
-    let out_const_id = self.out.compile_const(ctx).unwrap();
-    ctx.emit_const_load(out_reg, out_const_id);
-    registers[0] = out_reg;
+    registers[0] = compile_register!(self.out, ctx);
 
     let mut mat_regs = Vec::new();
     for e in &self.e0 {
@@ -480,11 +464,7 @@ where
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let mut registers = [0, 0];
 
-    let out_addr = self.out.addr();
-    let out_reg = ctx.alloc_register_for_ptr(out_addr);
-    let out_const_id = self.out.compile_const(ctx).unwrap();
-    ctx.emit_const_load(out_reg, out_const_id);
-    registers[0] = out_reg;
+    registers[0] = compile_register!(self.out, ctx);
 
     let mut mat_regs = Vec::new();
     for (e, _) in &self.matrix {
@@ -496,10 +476,7 @@ where
     }
     let mut scalar_regs = Vec::new();
     for (e, _) in &self.scalar {
-      let e_addr = e.addr();
-      let e_reg = ctx.alloc_register_for_ptr(e_addr);
-      let e_const_id = e.borrow().compile_const(ctx).unwrap();
-      ctx.emit_const_load(e_reg, e_const_id);
+      let e_reg = compile_register_brrw!(e, ctx);
       scalar_regs.push(e_reg);
     }
     let mut all_regs = vec![];

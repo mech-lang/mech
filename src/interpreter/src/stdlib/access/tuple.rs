@@ -19,11 +19,7 @@ impl MechFunctionImpl for TupleAccessElement {
 impl MechFunctionCompiler for TupleAccessElement {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let mut registers = [0];
-    let out_addr = self.out.addr();
-    let out_reg = ctx.alloc_register_for_ptr(out_addr);
-    let out_const_id = self.out.compile_const(ctx).unwrap();
-    ctx.emit_const_load(out_reg, out_const_id);
-    registers[0] = out_reg;
+    registers[0] = compile_register!(self.out, ctx);
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Tuple));
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Access));
     ctx.emit_nullop(
