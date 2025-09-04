@@ -371,6 +371,33 @@ impl CompileConst for MechTable {
   }
 }
 
+#[cfg(feature = "record")]
+impl CompileConst for MechRecord {
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    let mut payload = Vec::<u8>::new();
+
+    // write the number of columns
+    payload.write_u32::<LittleEndian>(self.cols as u32)?;
+
+    // write each column: (name hash, value kind, data)
+    for (col_id, value) in self.data.iter() {
+      // column name hash
+      payload.write_u64::<LittleEndian>(*col_id)?;
+      // value kind
+      let value_kind = value.kind();
+      value_kind.write_le(&mut payload);
+      // value data
+      value.write_le(&mut payload);
+    }
+
+    // Write the field name strings into the payload
+    for (_col_id, col_name) in self.field_names.iter() {
+      col_name.write_le(&mut payload);
+    }
+    ctx.compile_const(&payload, self.kind())
+  }
+}
+
 // ConstElem Trait
 // ----------------------------------------------------------------------------
 
