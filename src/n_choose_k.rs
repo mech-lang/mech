@@ -57,7 +57,7 @@ where
     T: ConstElem + CompileConst
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_binop!(self.out, self.n, self.k, ctx, FeatureFlag::Builtin(FeatureKind::NChooseK));
+    compile_binop!(self.out, self.n, self.k, ctx, FeatureFlag::Custom(hash_str("combinatorics/n-choose-k")) );
   }
 }
 
