@@ -446,10 +446,7 @@ where
   }
 }
 
-impl<T> Matrix<T> 
-where T: Debug + Clone + PartialEq + 'static
-{
-
+impl<T> Matrix<T> {
   pub fn addr(&self) -> usize {
     match self {
       #[cfg(feature = "matrix1")]
@@ -484,6 +481,11 @@ where T: Debug + Clone + PartialEq + 'static
       Matrix::DMatrix(x) => x.addr(),
     }
   }
+}
+
+impl<T> Matrix<T> 
+where T: Debug + Clone + PartialEq + 'static
+{
 
   pub fn append(&mut self, other: &Matrix<T>) -> MResult<()> {
     match (self, other) {
