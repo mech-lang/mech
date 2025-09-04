@@ -212,7 +212,7 @@ pub enum FeatureKind {
   HorzCat, VertCat,
   Compiler, PrettyPrint, Serde,
   MatMul, Transpose, Dot, Cross,
-  Add, Sub, Mul, Div,
+  Add, Sub, Mul, Div, Exp, Mod, Neg, OpAssign,
   LT, LTE, GT, GTE, EQ, NEQ,
   And, Or, Xor, Not,
   Convert, Assign, Access,
