@@ -865,9 +865,13 @@ macro_rules! impl_set_range_scalar_fxn {
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }
     #[cfg(feature = "compiler")]
-    impl<T> MechFunctionCompiler for $struct_name<T> {
+    impl<T> MechFunctionCompiler for $struct_name<T> 
+    where
+      T: CompileConst + ConstElem,
+      $matrix_shape<T>: CompileConst + ConstElem,
+    {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
+        compile_ternop!(self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
       }
     }};}
 
