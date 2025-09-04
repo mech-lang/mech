@@ -201,7 +201,7 @@ impl MechFunctionImpl for TableAppendRecord {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAppendRecord {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_unop!(self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
   }
 }
 
