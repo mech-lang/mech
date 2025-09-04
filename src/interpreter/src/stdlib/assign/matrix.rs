@@ -66,9 +66,14 @@ macro_rules! impl_set_all_fxn_s {
       fn to_string(&self) -> String {format!("{:#?}", self)}
     }
     #[cfg(feature = "compiler")]
-    impl<T, R1, C1, S1, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec> {
+    impl<T, R1, C1, S1, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec> 
+    where
+      T: CompileConst + ConstElem,
+      IxVec: CompileConst + ConstElem,
+      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
+    {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
+        compile_binop!(self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
       }
     }};}
 
