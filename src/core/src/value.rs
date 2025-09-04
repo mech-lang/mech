@@ -154,7 +154,6 @@ impl ValueKind {
       ValueKind::Enum(_) => FeatureKind::Enum,
       #[cfg(feature = "matrix")]
       ValueKind::Matrix(_,shape) => {
-        // shape is vec<usize>, match teh dimensions
         match shape[..] {
           [1,1] => FeatureKind::Matrix1,
           [2,2] => FeatureKind::Matrix2,
