@@ -1205,9 +1205,15 @@ where
   fn to_string(&self) -> String {format!("{:#?}", self)}
 }
 #[cfg(feature = "compiler")]
-impl<T, R, C, S, IxVec1, IxVec2> MechFunctionCompiler for Set2DRRSB<T, na::Matrix<T, R, C, S>, IxVec1, IxVec2> {
+impl<T, R, C, S, IxVec1, IxVec2> MechFunctionCompiler for Set2DRRSB<T, na::Matrix<T, R, C, S>, IxVec1, IxVec2> 
+where
+  T: CompileConst + ConstElem,
+  IxVec1: CompileConst + ConstElem,
+  IxVec2: CompileConst + ConstElem,
+  na::Matrix<T, R, C, S>: CompileConst + ConstElem,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_ternop!(self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
   }
 }
 
