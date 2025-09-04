@@ -10,6 +10,33 @@ use std::path::Path;
 #[cfg(feature = "matrix")]
 use crate::matrix::Matrix;
 
+ macro_rules! extract_matrix {
+  ($type_tag:ident, $value_type:ty, $bytes:expr, $data:ident) => {
+    {
+      // first 8 bytes are rows (u32) and cols (u32)
+      if $data.len() < 8 {
+        return Err(MechError {
+          file: file!().to_string(),
+          tokens: vec![],
+          msg: "Matrix const entry must be at least 8 bytes".to_string(),
+          id: line!(),
+          kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string()),
+        });
+      }
+      let rows = u32::from_le_bytes($data[0..4].try_into().unwrap()) as usize;
+      let cols = u32::from_le_bytes($data[4..8].try_into().unwrap()) as usize;
+      let mut elements = Vec::with_capacity(rows * cols);
+      for i in 0..(rows * cols) {
+        let start = 8 + i * $bytes;
+        let end = start + $bytes;
+        let val = <$value_type>::from_le_bytes($data[start..end].try_into().unwrap());
+        elements.push(val);
+      }
+      Value::$type_tag(Matrix::from_vec(elements, rows, cols))
+    }
+  };
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ParsedProgram {
@@ -127,8 +154,6 @@ impl ParsedProgram {
 
       // get the type from the id
       let ty = &self.types.entries[const_entry.type_id as usize];
-
-      println!("{:?}", const_entry);
 
       let val: Value = match ty.tag {
         #[cfg(feature = "bool")]
@@ -262,6 +287,55 @@ impl ParsedProgram {
           Value::RationalNumber(Ref::new(RationalNumber::new(numer, denom)))
         },
         #[cfg(feature = "matrix")]
+        TypeTag::MatrixU8 => {
+          if data.len() < 8 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
+          }
+          let rows = u32::from_le_bytes(data[0..4].try_into().unwrap()) as usize;
+          let cols = u32::from_le_bytes(data[4..8].try_into().unwrap()) as usize;
+          let mut elements = Vec::with_capacity(rows * cols);
+          for i in 0..(rows * cols) {
+            let start = 8 + i * 1;
+            let end = start + 1;
+            let val = data[start..end].try_into().unwrap();
+            elements.push(u8::from_le_bytes(val));
+          }
+          Value::MatrixU8(Matrix::from_vec(elements, rows, cols))
+        }
+        #[cfg(feature = "matrix")]
+        TypeTag::MatrixI8 => {
+          if data.len() < 8 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
+          }
+          let rows = u32::from_le_bytes(data[0..4].try_into().unwrap()) as usize;
+          let cols = u32::from_le_bytes(data[4..8].try_into().unwrap()) as usize;
+          let mut elements = Vec::with_capacity(rows * cols);
+          for i in 0..(rows * cols) {
+            let start = 8 + i * 1;
+            let end = start + 1;
+            let val = data[start..end].try_into().unwrap();
+            elements.push(i8::from_le_bytes(val));
+          }
+          Value::MatrixI8(Matrix::from_vec(elements, rows, cols))
+        }
+        #[cfg(feature = "matrix")]
+        TypeTag::MatrixF32 => {
+          if data.len() < 8 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
+          }
+          let rows = u32::from_le_bytes(data[0..4].try_into().unwrap()) as usize;
+          let cols = u32::from_le_bytes(data[4..8].try_into().unwrap()) as usize;
+          let mut elements = Vec::with_capacity(rows * cols);
+          for i in 0..(rows * cols) {
+            let start = 8 + i * 4;
+            let end = start + 4;
+            let val = data[start..end].try_into().unwrap();
+            let fval = f32::from_le_bytes(val);
+            elements.push(F32::new(fval));
+          }
+          Value::MatrixF32(Matrix::from_vec(elements, rows, cols))
+        }
+        #[cfg(feature = "matrix")]
         TypeTag::MatrixF64 => {
           // first 8 bytes are rows (u32) and cols (u32)
           if data.len() < 8 {
@@ -276,8 +350,18 @@ impl ParsedProgram {
             let val = f64::from_le_bytes(data[start..end].try_into().unwrap());
             elements.push(F64::new(val));
           }
-          Value::MatrixF64(F64::to_matrix(elements, rows, cols))
+          Value::MatrixF64(Matrix::from_vec(elements, rows, cols))
         }
+        TypeTag::MatrixU16 => {extract_matrix!(MatrixU16, u16, 2, data)},
+        TypeTag::MatrixU32 => {extract_matrix!(MatrixU32, u32, 4, data)},
+        TypeTag::MatrixU64 => {extract_matrix!(MatrixU64, u64, 8, data)},
+        TypeTag::MatrixU128 => {extract_matrix!(MatrixU128, u128, 16, data)},
+        TypeTag::MatrixI16 => {extract_matrix!(MatrixI16, i16, 2, data)},
+        TypeTag::MatrixI32 => {extract_matrix!(MatrixI32, i32, 4, data)},
+        TypeTag::MatrixI64 => {extract_matrix!(MatrixI64, i64, 8, data)},
+        TypeTag::MatrixI128 => {extract_matrix!(MatrixI128, i128, 16, data)},
+        TypeTag::MatrixC64 => {extract_matrix!(MatrixComplexNumber, ComplexNumber, 16, data)},
+        TypeTag::MatrixR64 => {extract_matrix!(MatrixRationalNumber, RationalNumber, 16, data)},
         // Add more types as needed
         _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Unsupported constant type {:?}", ty.tag), id: line!(), kind: MechErrorKind::GenericError(format!("Unsupported constant type {:?}", ty.tag))}),
       };
