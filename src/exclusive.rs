@@ -33,9 +33,12 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self)}
 }
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for RangeExclusiveScalar<T> {
+impl<T> MechFunctionCompiler for RangeExclusiveScalar<T> 
+where
+  T: CompileConst + ConstElem,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_binop!(self.out, self.min, self.max, ctx, FeatureFlag::Custom(hash_str("range/exclusive")) );
   }
 }
 
