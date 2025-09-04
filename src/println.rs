@@ -28,9 +28,13 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
-impl<T,Mat> MechFunctionCompiler for IoPrintlnMatrix<T,Mat> {
+impl<T,Mat> MechFunctionCompiler for IoPrintlnMatrix<T,Mat> 
+where
+  T: CompileConst + ConstElem,
+  Mat: CompileConst + ConstElem,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_nullop!(self.e0, ctx, FeatureFlag::Custom(hash_str("io/print")) );
   }
 }
 
@@ -92,9 +96,12 @@ impl<T> MechFunctionImpl for IoPrintlnScalar<T>
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for IoPrintlnScalar<T> {
+impl<T> MechFunctionCompiler for IoPrintlnScalar<T> 
+where
+  T: CompileConst + ConstElem,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_nullop!(self.e0, ctx, FeatureFlag::Custom(hash_str("io/print")) );
   }
 }
 
