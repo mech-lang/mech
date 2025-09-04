@@ -27,9 +27,12 @@ impl<T> MechFunctionImpl for RecordAssign<T>
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for RecordAssign<T> {
+impl<T> MechFunctionCompiler for RecordAssign<T> 
+where
+  T: CompileConst + ConstElem,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_unop!(self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
   }
 }
 
