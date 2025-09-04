@@ -165,9 +165,41 @@ where
   fn to_string(&self) -> String { format!("VerticalConcatenateTwoArgs\n{:#?}", self.out) }
 }
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for VerticalConcatenateTwoArgs<T> {
+impl<T> MechFunctionCompiler for VerticalConcatenateTwoArgs<T> 
+where
+  T: ConstElem + CompileConst,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0, 0, 0];
+
+    let out_addr = self.out.addr();
+    let out_reg = ctx.alloc_register_for_ptr(out_addr);
+    let out_const_id = self.out.compile_const(ctx).unwrap();
+    ctx.emit_const_load(out_reg, out_const_id);
+    registers[0] = out_reg;
+
+    let lhs_addr = self.e0.addr();
+    let lhs_reg = ctx.alloc_register_for_ptr(lhs_addr);
+    let lhs_const_id = self.e0.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(lhs_reg, lhs_const_id);
+    registers[1] = lhs_reg;
+
+    let rhs_addr = self.e1.addr();
+    let rhs_reg = ctx.alloc_register_for_ptr(rhs_addr);
+    let rhs_const_id = self.e1.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(rhs_reg, rhs_const_id);
+    registers[2] = rhs_reg;
+
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+
+    ctx.emit_binop(
+      hash_str("VerticalConcatenateTwoArgs"),
+      registers[0],
+      registers[1],
+      registers[2],
+    );
+
+    Ok(registers[0])    
   }
 }
     
@@ -191,9 +223,47 @@ where
   fn to_string(&self) -> String { format!("VerticalConcatenateThreeArgs\n{:#?}", self.out) }
 }
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for VerticalConcatenateThreeArgs<T> {
+impl<T> MechFunctionCompiler for VerticalConcatenateThreeArgs<T> 
+where
+  T: ConstElem + CompileConst
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0, 0, 0];
+
+    let out_addr = self.out.addr();
+    let out_reg = ctx.alloc_register_for_ptr(out_addr);
+    let out_const_id = self.out.compile_const(ctx).unwrap();
+    ctx.emit_const_load(out_reg, out_const_id);
+    registers[0] = out_reg;
+
+    let e0_addr = self.e0.addr();
+    let e0_reg = ctx.alloc_register_for_ptr(e0_addr);
+    let e0_const_id = self.e0.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(e0_reg, e0_const_id);
+    registers[1] = e0_reg;
+
+    let e1_addr = self.e1.addr();
+    let e1_reg = ctx.alloc_register_for_ptr(e1_addr);
+    let e1_const_id = self.e1.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(e1_reg, e1_const_id);
+    registers[2] = e1_reg;
+
+    let e2_addr = self.e2.addr();
+    let e2_reg = ctx.alloc_register_for_ptr(e2_addr);
+    let e2_const_id = self.e2.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(e2_reg, e2_const_id);
+    let mut registers = [registers[0], registers[1], registers[2], e2_reg];
+
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+
+    ctx.emit_ternop(
+      hash_str("VerticalConcatenateThreeArgs"),
+      registers[0],
+      registers[1],
+      registers[2],
+      registers[3],
+    );
+    Ok(registers[0])    
   }
 }
 
@@ -220,9 +290,54 @@ where
   fn to_string(&self) -> String { format!("VerticalConcatenateFourArgs\n{:#?}", self.out) }
 }
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for VerticalConcatenateFourArgs<T> {
+impl<T> MechFunctionCompiler for VerticalConcatenateFourArgs<T> 
+where
+  T: ConstElem + CompileConst
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+let mut registers = [0, 0, 0];
+
+    let out_addr = self.out.addr();
+    let out_reg = ctx.alloc_register_for_ptr(out_addr);
+    let out_const_id = self.out.compile_const(ctx).unwrap();
+    ctx.emit_const_load(out_reg, out_const_id);
+    registers[0] = out_reg;
+
+    let e0_addr = self.e0.addr();
+    let e0_reg = ctx.alloc_register_for_ptr(e0_addr);
+    let e0_const_id = self.e0.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(e0_reg, e0_const_id);
+    registers[1] = e0_reg;
+
+    let e1_addr = self.e1.addr();
+    let e1_reg = ctx.alloc_register_for_ptr(e1_addr);
+    let e1_const_id = self.e1.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(e1_reg, e1_const_id);
+    registers[2] = e1_reg;
+
+    let e2_addr = self.e2.addr();
+    let e2_reg = ctx.alloc_register_for_ptr(e2_addr);
+    let e2_const_id = self.e2.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(e2_reg, e2_const_id);
+    let mut registers = [registers[0], registers[1], registers[2], e2_reg];
+
+    let e3_addr = self.e3.addr();
+    let e3_reg = ctx.alloc_register_for_ptr(e3_addr);
+    let e3_const_id = self.e3.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(e3_reg, e3_const_id);
+    let mut registers = [registers[0], registers[1], registers[2], registers[3], e3_reg];
+
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+
+    ctx.emit_quadop(
+      hash_str("VerticalConcatenateFourArgs"),
+      registers[0],
+      registers[1],
+      registers[2],
+      registers[3],
+      registers[4],
+    );
+    Ok(registers[0])
   }
 }
 
@@ -245,9 +360,33 @@ where
   fn to_string(&self) -> String { format!("VerticalConcatenateNArgs\n{:#?}", self.out) }
 }
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for VerticalConcatenateNArgs<T> {
+impl<T> MechFunctionCompiler for VerticalConcatenateNArgs<T> 
+where
+  T: ConstElem + CompileConst
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0, 0];
+    let out_addr = self.out.addr();
+    let out_reg = ctx.alloc_register_for_ptr(out_addr);
+    let out_const_id = self.out.compile_const(ctx).unwrap();
+    ctx.emit_const_load(out_reg, out_const_id);
+    registers[0] = out_reg;
+
+    let mut mat_regs = Vec::new();
+    for e in &self.e0 {
+      let e_addr = e.addr();
+      let e_reg = ctx.alloc_register_for_ptr(e_addr);
+      let e_const_id = e.compile_const_mat(ctx).unwrap();
+      ctx.emit_const_load(e_reg, e_const_id);
+      mat_regs.push(e_reg);
+    }
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.emit_vararg(
+      hash_str("VerticalConcatenateNArgs"),
+      registers[0],
+      mat_regs,
+    );
+    Ok(registers[0])
   }
 }
 
@@ -299,9 +438,41 @@ where
   fn to_string(&self) -> String { format!("VerticalConcatenateVD2\n{:#?}", self.out) }
 }
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for VerticalConcatenateVD2<T> {
+impl<T> MechFunctionCompiler for VerticalConcatenateVD2<T> 
+where
+  T: ConstElem + CompileConst
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0, 0, 0];
+
+    let out_addr = self.out.addr();
+    let out_reg = ctx.alloc_register_for_ptr(out_addr);
+    let out_const_id = self.out.compile_const(ctx).unwrap();
+    ctx.emit_const_load(out_reg, out_const_id);
+    registers[0] = out_reg;
+
+    let lhs_addr = self.e0.addr();
+    let lhs_reg = ctx.alloc_register_for_ptr(lhs_addr);
+    let lhs_const_id = self.e0.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(lhs_reg, lhs_const_id);
+    registers[1] = lhs_reg;
+
+    let rhs_addr = self.e1.addr();
+    let rhs_reg = ctx.alloc_register_for_ptr(rhs_addr);
+    let rhs_const_id = self.e1.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(rhs_reg, rhs_const_id);
+    registers[2] = rhs_reg;
+
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+
+    ctx.emit_binop(
+      hash_str("VerticalConcatenateVD2"),
+      registers[0],
+      registers[1],
+      registers[2],
+    );
+
+    Ok(registers[0])
   }
 }
 
@@ -329,10 +500,45 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateVD3<T> 
 where
-      T: ConstElem + CompileConst
+  T: ConstElem + CompileConst
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0, 0, 0, 0];
+
+    let out_addr = self.out.addr();
+    let out_reg = ctx.alloc_register_for_ptr(out_addr);
+    let out_const_id = self.out.compile_const(ctx).unwrap();
+    ctx.emit_const_load(out_reg, out_const_id);
+    registers[0] = out_reg;
+
+    let e0_addr = self.e0.addr();
+    let e0_reg = ctx.alloc_register_for_ptr(e0_addr);
+    let e0_const_id = self.e0.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(e0_reg, e0_const_id);
+    registers[1] = e0_reg;
+
+    let e1_addr = self.e1.addr();
+    let e1_reg = ctx.alloc_register_for_ptr(e1_addr);
+    let e1_const_id = self.e1.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(e1_reg, e1_const_id);
+    registers[2] = e1_reg;
+
+    let e2_addr = self.e2.addr();
+    let e2_reg = ctx.alloc_register_for_ptr(e2_addr);
+    let e2_const_id = self.e2.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(e2_reg, e2_const_id);
+    registers[3] = e2_reg;
+
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+
+    ctx.emit_ternop(
+      hash_str("VerticalConcatenateVD3"),
+      registers[0],
+      registers[1],
+      registers[2],
+      registers[3],
+    );
+    Ok(registers[0])
   }
 }
 
@@ -359,9 +565,54 @@ where
   fn to_string(&self) -> String { format!("VerticalConcatenateVD3\n{:#?}", self.out) }
 }
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for VerticalConcatenateVD4<T> {
+impl<T> MechFunctionCompiler for VerticalConcatenateVD4<T> 
+where
+  T: ConstElem + CompileConst
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0, 0, 0, 0, 0];
+
+    let out_addr = self.out.addr();
+    let out_reg = ctx.alloc_register_for_ptr(out_addr);
+    let out_const_id = self.out.compile_const(ctx).unwrap();
+    ctx.emit_const_load(out_reg, out_const_id);
+    registers[0] = out_reg;
+
+    let e0_addr = self.e0.addr();
+    let e0_reg = ctx.alloc_register_for_ptr(e0_addr);
+    let e0_const_id = self.e0.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(e0_reg, e0_const_id);
+    registers[1] = e0_reg;
+
+    let e1_addr = self.e1.addr();
+    let e1_reg = ctx.alloc_register_for_ptr(e1_addr);
+    let e1_const_id = self.e1.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(e1_reg, e1_const_id);
+    registers[2] = e1_reg;
+
+    let e2_addr = self.e2.addr();
+    let e2_reg = ctx.alloc_register_for_ptr(e2_addr);
+    let e2_const_id = self.e2.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(e2_reg, e2_const_id);
+    registers[3] = e2_reg;
+
+    let e3_addr = self.e3.addr();
+    let e3_reg = ctx.alloc_register_for_ptr(e3_addr);
+    let e3_const_id = self.e3.compile_const_mat(ctx).unwrap();
+    ctx.emit_const_load(e3_reg, e3_const_id);
+    registers[4] = e3_reg;
+
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+
+    ctx.emit_quadop(
+      hash_str("VerticalConcatenateVD4"),
+      registers[0],
+      registers[1],
+      registers[2],
+      registers[3],
+      registers[4],
+    );
+    Ok(registers[0])
   }
 }
 
@@ -391,9 +642,34 @@ where
   fn to_string(&self) -> String { format!("VerticalConcatenateVDN\n{:#?}", self.out) }
 }
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for VerticalConcatenateVDN<T> {
+impl<T> MechFunctionCompiler for VerticalConcatenateVDN<T> 
+where
+  T: ConstElem + CompileConst
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0, 0];
+
+    let out_addr = self.out.addr();
+    let out_reg = ctx.alloc_register_for_ptr(out_addr);
+    let out_const_id = self.out.compile_const(ctx).unwrap();
+    ctx.emit_const_load(out_reg, out_const_id);
+    registers[0] = out_reg;
+
+    let mut mat_regs = Vec::new();
+    for (e,_) in &self.matrix {
+      let e_addr = e.addr();
+      let e_reg = ctx.alloc_register_for_ptr(e_addr);
+      let e_const_id = e.compile_const_mat(ctx).unwrap();
+      ctx.emit_const_load(e_reg, e_const_id);
+      mat_regs.push(e_reg);
+    }
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.emit_vararg(
+      hash_str("VerticalConcatenateVDN"),
+      registers[0],
+      mat_regs,
+    );
+    Ok(registers[0])
   }
 }
 
