@@ -28,7 +28,16 @@ macro_rules! impl_col_access_fxn {
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for $fxn_name {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
+        let mut registers = [0, 0];
+        registers[0] = compile_register_brrw!(self.out, ctx);
+        registers[1] = compile_register!(self.source, ctx);
+        ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Access));
+        ctx.emit_unop(
+          hash_str(stringify!($fxn_name)),
+          registers[0],
+          registers[1],
+        );
+        Ok(registers[0])
       }
     }
   }
@@ -173,7 +182,14 @@ impl MechFunctionImpl for TableAccessSwizzle {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAccessSwizzle {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0];
+    registers[0] = compile_register!(self.out, ctx);
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Swizzle));
+    ctx.emit_nullop(
+      hash_str("TableAccessSwizzle"),
+      registers[0],
+    );
+    Ok(registers[0])
   }
 }
 
@@ -202,7 +218,7 @@ impl MechFunctionImpl for TableAccessScalarF {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAccessScalarF {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_binop!(self.out, self.source, self.ix, ctx, FeatureFlag::Builtin(FeatureKind::Access));
   }
 }
 
@@ -272,7 +288,7 @@ impl MechFunctionImpl for TableAccessRangeIndex {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAccessRangeIndex {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_binop!(self.out, self.source, self.ix, ctx, FeatureFlag::Builtin(FeatureKind::SubscriptRange));
   }
 }
 
@@ -315,7 +331,7 @@ impl MechFunctionImpl for TableAccessRangeBool {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAccessRangeBool {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_binop!(self.out, self.source, self.ix, ctx, FeatureFlag::Builtin(FeatureKind::SubscriptRange));
   }
 }
 
