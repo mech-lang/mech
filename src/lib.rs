@@ -43,27 +43,55 @@ use std::ops::*;
 use std::fmt::{Display, Debug};
 use std::marker::PhantomData;
 
-#[cfg(feature = "trig")]
-pub mod trig;
-#[cfg(feature = "funcs")]
-pub mod funcs;
+#[cfg(feature = "arithmetic")]
+pub mod arithmetic;
+#[cfg(feature = "bessel")]
+pub mod bessel;
+#[cfg(feature = "exponential")]
+pub mod exponential;
+#[cfg(feature = "extrema")]
+pub mod extrema;
+#[cfg(feature = "gamma")]
+pub mod gamma;
+#[cfg(feature = "logarithm")]
+pub mod logarithm;
 #[cfg(feature = "ops")]
 pub mod ops;
 #[cfg(feature = "op_assign")]
 pub mod op_assign;
-#[cfg(feature = "exponential")]
-pub mod exponential;
-
+#[cfg(feature = "root")]
+pub mod root;
+#[cfg(feature = "rounding")]
+pub mod rounding;
+#[cfg(feature = "stat_error")]
+pub mod stat_error;
 #[cfg(feature = "trig")]
-pub use self::trig::*;
-#[cfg(feature = "funcs")]
-pub use self::funcs::*;
+pub mod trig;
+
+#[cfg(feature = "arithmetic")]
+pub use self::arithmetic::*;
+#[cfg(feature = "bessel")]
+pub use self::bessel::*;
+#[cfg(feature = "exponential")]
+pub use self::exponential::*;
+#[cfg(feature = "extrema")]
+pub use self::extrema::*;
+#[cfg(feature = "gamma")]
+pub use self::gamma::*;
+#[cfg(feature = "logarithm")]
+pub use self::logarithm::*;
 #[cfg(feature = "ops")]
 pub use self::ops::*;
 #[cfg(feature = "op_assign")]
 pub use self::op_assign::*;
-#[cfg(feature = "exponential")]
-pub use self::exponential::*;
+#[cfg(feature = "root")]
+pub use self::root::*;
+#[cfg(feature = "rounding")]
+pub use self::rounding::*;
+#[cfg(feature = "stat_error")]
+pub use self::stat_error::*;
+#[cfg(feature = "trig")]
+pub use self::trig::*;
 
 // ----------------------------------------------------------------------------
 // Math Library

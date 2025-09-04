@@ -22,62 +22,98 @@ crate-type = ["rlib"]
 no_std = ["mech-core/no_std"]
 
 default = ["stdlib", "pretty_print", "serde", "compiler", "program",
-            "ops_default", "ops_assign_default", "trig_default", "funcs_default",
+            "arithmetic_default", "bessel_default", "exponential_default", "extrema_default",
+            "gamma_default", "logarithm_default", "ops_default", "ops_assign_default",
+            "root_default", "rounding_default", "stat_error_default", "trig_default",
             "statements_default", "subscript_default",
             "mech-core/default", "exp_default",
           ]
 
+arithmetic_default = ["copysign", "fabs", "fdim", "fmod", "nextafter", "remainder"]
+bessel_default = ["j0", "j1", "jn", "y0", "y1", "yn"]
+exponential_default = ["exp2", "exp10", "expm1"]
+extrema_default = ["fmax", "fmaximum", "fmaximum_num", "fmin", "fminimum", "fminimum_num"]
+gamma_default = ["lgamma", "tgamma"]
+logarithm_default = ["log", "log1p", "log10", "log2"]
 ops_default = ["add", "sub", "mul", "div", "exp", "mod"]
 ops_assign_default = ["add_assign", "sub_assign", "mul_assign", "div_assign"]
+root_default = ["cbrt", "sqrt"]
+rounding_default = ["ceil", "floor", "rint", "round", "roundeven", "trunc"]
+stat_error_default = ["erf", "erfc"]
 trig_default = ["acos", "acosh", "acot", "acsc", "asec", "asin", "asinh", "atan", "atan2", "atanh", "cos", "cosh", "cot", "csc", "hypot", "sec", "sin", "sinh", "tan", "tanh"]
-funcs_default = [
-  "cbrt",
-  "ceil",
-  "copysign",
-  "erf",
-  "erfc",
-  "fabs",
-  "fdim",
-  "floor",
-  "fmax",
-  "fmaximum",
-  "fmaximum_num",
-  "fmin",
-  "fminimum",
-  "fminimum_num",
-  "fmod",
-  "j0",
-  "j1",
-  "jn",
-  "lgamma",
-  "log",
-  "log1p",
-  "log10",
-  "log2",
-  "nextafter",
-  "remainder",
-  "rint",
-  "round",
-  "roundeven",
-  "sqrt",
-  "tgamma",
-  "trunc",
-  "y0",
-  "y1",
-  "yn"
-]
-exp_default = ["exp2", "exp10", "expm1"]
 
 math = ["num-traits", "libm", "functions"]
-trig = ["math"]
+arithmetic = ["math"]
+bessel = ["math"]
+exponential = ["math"]
+extrema = ["math"]
+gamma = ["math"]
+logarithm = ["math"]
 ops = ["math"]
 op_assign = ["math"]
-funcs = ["math"]
-exponential = ["math"]
+root = ["math"]
+rounding = ["math"]
+stat_error = ["math"]
+trig = ["math"]
 add_assign = ["op_assign"]
 sub_assign = ["op_assign"]
 mul_assign = ["op_assign"]
 div_assign = ["op_assign"]
+
+copysign = ["arithmetic"]
+fabs = ["arithmetic"]
+fdim = ["arithmetic"]
+fmod = ["arithmetic"]
+nextafter = ["arithmetic"]
+remainder = ["arithmetic"]
+
+j0 = ["bessel"]
+j1 = ["bessel"]
+jn = ["bessel"]
+y0 = ["bessel"]
+y1 = ["bessel"]
+yn = ["bessel"]
+
+exp2 = ["exponential"]
+exp10 = ["exponential"]
+expm1 = ["exponential"]
+
+fmax = ["extrema"]
+fmaximum = ["extrema"]
+fmaximum_num = ["extrema"]
+fmin = ["extrema"]
+fminimum = ["extrema"]
+fminimum_num = ["extrema"]
+
+lgamma = ["gamma"]
+tgamma = ["gamma"]
+
+log = ["logarithm"]
+log1p = ["logarithm"]
+log10 = ["logarithm"]
+log2 = ["logarithm"]
+
+add = ["ops"]
+div = ["ops"]
+exp = ["ops", "mech-core/math_exp"]
+mod = ["ops"]
+mul = ["ops"]
+neg = ["simba", "ops"]
+sub = ["ops"]
+
+cbrt = ["root"]
+sqrt = ["root"]
+
+ceil = ["rounding"]
+floor = ["rounding"]
+rint = ["rounding"]
+round = ["rounding"]
+roundeven = ["rounding"]
+trunc = ["rounding"]
+
+erf = ["stat_error"]
+erfc = ["stat_error"]
+
 acos = ["trig"]
 acosh = ["trig"]
 acot = ["trig"]
@@ -98,50 +134,6 @@ sin = ["trig"]
 sinh = ["trig"]
 tan = ["trig"]
 tanh = ["trig"]
-add = ["ops"]
-sub = ["ops"]
-mul = ["ops"]
-div = ["ops"]
-exp = ["ops", "mech-core/math_exp"]
-mod = ["ops"]
-neg = ["simba","ops"]
-cbrt = ["funcs"]
-ceil = ["funcs"]
-copysign = ["funcs"]
-erf = ["funcs"]
-erfc = ["funcs"]
-fabs = ["funcs"]
-fdim = ["funcs"]
-floor = ["funcs"]
-fmax = ["funcs"]
-fmaximum = ["funcs"]
-fmaximum_num = ["funcs"]
-fmin = ["funcs"]
-fminimum = ["funcs"]
-fminimum_num = ["funcs"]
-fmod = ["funcs"]
-j0 = ["funcs"]
-j1 = ["funcs"]
-jn = ["funcs"]
-lgamma = ["funcs"]
-log = ["funcs"]
-log1p = ["funcs"]
-log10 = ["funcs"]
-log2 = ["funcs"]
-nextafter = ["funcs"]
-remainder = ["funcs"]
-rint = ["funcs"]
-round = ["funcs"]
-roundeven = ["funcs"]
-sqrt = ["funcs"]
-tgamma = ["funcs"]
-trunc = ["funcs"]
-y0 = ["funcs"]
-y1 = ["funcs"]
-yn = ["funcs"]
-exp2 = ["exponential"]
-exp10 = ["exponential"]
-expm1 = ["exponential"]
 
 
 statements_default = ["variable_assign","variable_define","kind_define"]
