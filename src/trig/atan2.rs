@@ -58,7 +58,7 @@ macro_rules! impl_two_arg_fxn {
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for $struct_name {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
+        compile_binop!(self.out, self.arg1, self.arg2, ctx, FeatureFlag::Custom(hash_str("math/atan2")) );
       }
     }};}
 

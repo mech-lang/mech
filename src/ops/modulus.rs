@@ -37,9 +37,12 @@ macro_rules! impl_binop2 {
     fn to_string(&self) -> String { format!("{:#?}", self) }
   }
   #[cfg(feature = "compiler")]
-  impl<T> MechFunctionCompiler for $struct_name<T> {
+  impl<T> MechFunctionCompiler for $struct_name<T> 
+  where
+    T: CompileConst + ConstElem,
+  {
     fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-      todo!();
+      compile_binop!(self.out, self.lhs, self.rhs, ctx, $feature_flag );
     }
   }};}
 

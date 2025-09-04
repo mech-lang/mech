@@ -63,9 +63,14 @@ macro_rules! impl_op_assign_range_fxn_s {
       fn to_string(&self) -> String {format!("{:#?}", self)}
     }
     #[cfg(feature = "compiler")]
-    impl<T, R1, C1, S1, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec> {
+    impl<T, R1, C1, S1, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec> 
+    where
+      T: CompileConst + ConstElem,
+      IxVec: CompileConst + ConstElem,
+      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
+    {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
+        compile_binop!(self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign) );
       }
     }};}
 
@@ -108,9 +113,15 @@ macro_rules! impl_op_assign_range_fxn_v {
       fn to_string(&self) -> String {format!("{:#?}", self)}
     }
     #[cfg(feature = "compiler")]
-    impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec> {
+    impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec> 
+    where
+      T: CompileConst + ConstElem,
+      IxVec: CompileConst + ConstElem,
+      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
+      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem,
+    {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
+        compile_binop!(self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign) );
       }
     }};}
 
@@ -187,9 +198,12 @@ macro_rules! impl_assign_scalar_scalar {
         fn to_string(&self) -> String { format!("{:#?}", self) }
       }
       #[cfg(feature = "compiler")]
-      impl<T> MechFunctionCompiler for [<$op_name AssignSS>]<T> {
+      impl<T> MechFunctionCompiler for [<$op_name AssignSS>]<T> 
+      where
+        T: CompileConst + ConstElem,
+      {
         fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-          todo!();
+          compile_unop!(self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
         }
       }
     }
@@ -232,9 +246,14 @@ macro_rules! impl_assign_vector_vector {
         fn to_string(&self) -> String {format!("{:#?}", self)}
       }
       #[cfg(feature = "compiler")]
-      impl<T, MatA, MatB> MechFunctionCompiler for [<$op_name AssignVV>]<T, MatA, MatB> {
+      impl<T, MatA, MatB> MechFunctionCompiler for [<$op_name AssignVV>]<T, MatA, MatB> 
+      where
+        T: CompileConst + ConstElem,
+        MatA: CompileConst + ConstElem,
+        MatB: CompileConst + ConstElem,
+      {
         fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-          todo!();
+          compile_unop!(self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign) );
         }
       }
     }

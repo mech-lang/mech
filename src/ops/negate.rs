@@ -28,9 +28,12 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
-impl<O> MechFunctionCompiler for NegateV<O> {
+impl<O> MechFunctionCompiler for NegateV<O> 
+where
+  O: CompileConst + ConstElem,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Neg) );
   }
 }
 
@@ -55,9 +58,12 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
-impl<O> MechFunctionCompiler for NegateS<O> {
+impl<O> MechFunctionCompiler for NegateS<O> 
+where
+  O: CompileConst + ConstElem,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Neg) );
   }
 }
 
