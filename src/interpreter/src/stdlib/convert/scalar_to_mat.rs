@@ -31,9 +31,13 @@ where
   fn to_string(&self) -> String { format!("{:#?}",self) }
 }
 #[cfg(feature = "compiler")]
-impl<F, T> MechFunctionCompiler for ConvertScalarToMat2<F, T> {
+impl<F, T> MechFunctionCompiler for ConvertScalarToMat2<F, T>
+where
+  T: CompileConst + ConstElem,
+  F: ConstElem + CompileConst,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
 }
 
