@@ -198,9 +198,13 @@ where
   fn to_string(&self) -> String {format!("{:#?}", self)}
 }
 #[cfg(feature = "compiler")]
-impl<T, R, C, S> MechFunctionCompiler for Set1DSB<T, naMatrix<T, R, C, S>> {
+impl<T, R, C, S> MechFunctionCompiler for Set1DSB<T, naMatrix<T, R, C, S>> 
+where
+  T: CompileConst + ConstElem,
+  naMatrix<T, R, C, S>: CompileConst + ConstElem,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    compile_binop!(self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
   }
 }
 
