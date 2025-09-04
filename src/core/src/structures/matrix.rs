@@ -79,7 +79,6 @@ impl ToMatrix for usize {
       _ => panic!("Cannot convert to matrix with rows: {rows} and cols: {cols}"),
     }
   }
-  #[cfg(feature = "dynamic_matrix")]
   fn to_matrixd(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
     match (rows,cols) {
       #[cfg(feature = "vectord")]
