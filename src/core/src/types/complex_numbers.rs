@@ -57,6 +57,18 @@ impl ComplexNumber {
     format!("<span class='mech-complex-number'>{}</span>", pretty)
   }
 
+  pub fn from_le_bytes(bytes: &[u8; 16]) -> ComplexNumber {
+    let real = match bytes[0..8].try_into() {
+      Ok(arr) => f64::from_le_bytes(arr),
+      Err(_) => panic!("Failed to read real part from bytes"),
+    };
+    let imag = match bytes[8..16].try_into() {
+      Ok(arr) => f64::from_le_bytes(arr),
+      Err(_) => panic!("Failed to read imaginary part from bytes"),
+    };
+    ComplexNumber(Complex::new(real, imag))
+  }
+
 }
 
 

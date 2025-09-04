@@ -12,6 +12,21 @@ impl RationalNumber {
     RationalNumber(Rational64::new(numer, denom))
   }
 
+  pub fn from_le_bytes(bytes: &[u8; 16]) -> RationalNumber {
+    let numer = match bytes[0..8].try_into() {
+      Ok(arr) => i64::from_le_bytes(arr),
+      Err(_) => panic!("Failed to read numerator from bytes"),
+    };
+    let denom = match bytes[8..16].try_into() {
+      Ok(arr) => i64::from_le_bytes(arr),
+      Err(_) => panic!("Failed to read denominator from bytes"),
+    };
+    if denom == 0 {
+      panic!("Denominator cannot be zero");
+    }
+    RationalNumber(Rational64::new(numer, denom))
+  }
+
   pub fn from_f64(f: f64) -> Option<RationalNumber> {
     match Rational64::from_f64(f) {
       Some(r) => Some(RationalNumber(r)),
