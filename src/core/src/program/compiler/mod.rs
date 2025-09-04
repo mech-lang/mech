@@ -24,8 +24,8 @@ pub fn encode_value_kind(ts: &mut TypeSection, vk: &ValueKind) -> (TypeTag, Vec<
     ValueKind::I8 => TypeTag::I8, ValueKind::I16 => TypeTag::I16, ValueKind::I32 => TypeTag::I32,
     ValueKind::I64 => TypeTag::I64, ValueKind::I128 => TypeTag::I128,
     ValueKind::F32 => TypeTag::F32, ValueKind::F64 => TypeTag::F64,
-    ValueKind::ComplexNumber => TypeTag::ComplexNumber,
-    ValueKind::RationalNumber => TypeTag::RationalNumber,
+    ValueKind::ComplexNumber => TypeTag::C64,
+    ValueKind::RationalNumber => TypeTag::R64,
     ValueKind::String => TypeTag::String,
     ValueKind::Bool => TypeTag::Bool,
     ValueKind::Id => TypeTag::Id,
@@ -38,7 +38,25 @@ pub fn encode_value_kind(ts: &mut TypeSection, vk: &ValueKind) -> (TypeTag, Vec<
       b.write_u32::<LittleEndian>(elem_id).unwrap();
       b.write_u32::<LittleEndian>(dims.len() as u32).unwrap();
       for &d in dims { b.write_u32::<LittleEndian>(d as u32).unwrap(); }
-      TypeTag::Matrix
+      match &**elem {
+        ValueKind::U8 => TypeTag::MatrixU8,
+        ValueKind::U16 => TypeTag::MatrixU16,
+        ValueKind::U32 => TypeTag::MatrixU32,
+        ValueKind::U64 => TypeTag::MatrixU64,
+        ValueKind::U128 => TypeTag::MatrixU128,
+        ValueKind::I8 => TypeTag::MatrixI8,
+        ValueKind::I16 => TypeTag::MatrixI16,
+        ValueKind::I32 => TypeTag::MatrixI32,
+        ValueKind::I64 => TypeTag::MatrixI64,
+        ValueKind::I128 => TypeTag::MatrixI128,
+        ValueKind::F32 => TypeTag::MatrixF32,
+        ValueKind::F64 => TypeTag::MatrixF64,
+        ValueKind::ComplexNumber => TypeTag::MatrixC64,
+        ValueKind::RationalNumber => TypeTag::MatrixR64,
+        ValueKind::String => TypeTag::MatrixString,
+        ValueKind::Bool => TypeTag::MatrixBool,
+        _ => panic!("Unsupported matrix element type {:?}", elem),
+      }
     }
 
     ValueKind::Enum(space) => {

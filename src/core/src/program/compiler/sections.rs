@@ -243,8 +243,11 @@ impl FeatureFlag {
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum TypeTag {
   U8=1, U16, U32, U64, U128, I8, I16, I32, I64, I128,
-  F32, F64, ComplexNumber, RationalNumber, String, Bool, Id, Index, Empty, Any,
-  Matrix, EnumTag, Record, Map, Atom, Table, Tuple, Reference, Set, OptionT,
+  F32, F64, C64, R64, String, Bool, Id, Index, Empty, Any,
+  MatrixU8, MatrixU16, MatrixU32, MatrixU64, MatrixU128,
+  MatrixI8, MatrixI16, MatrixI32, MatrixI64, MatrixI128,
+  MatrixF32, MatrixF64, MatrixC64, MatrixR64, MatrixBool, MatrixString,
+  EnumTag, Record, Map, Atom, Table, Tuple, Reference, Set, OptionT,
 }
 
 impl TypeTag {
@@ -254,15 +257,23 @@ impl TypeTag {
       4 => Some(TypeTag::U64), 5 => Some(TypeTag::U128), 6 => Some(TypeTag::I8),
       7 => Some(TypeTag::I16), 8 => Some(TypeTag::I32), 9 => Some(TypeTag::I64),
       10 => Some(TypeTag::I128), 11 => Some(TypeTag::F32), 12 => Some(TypeTag::F64),
-      13 => Some(TypeTag::ComplexNumber), 14 => Some(TypeTag::RationalNumber),
+      13 => Some(TypeTag::C64), 14 => Some(TypeTag::R64),
       15 => Some(TypeTag::String), 16 => Some(TypeTag::Bool),
       17 => Some(TypeTag::Id), 18 => Some(TypeTag::Index),
       19 => Some(TypeTag::Empty), 20 => Some(TypeTag::Any),
-      21 => Some(TypeTag::Matrix), 22 => Some(TypeTag::EnumTag),
-      23 => Some(TypeTag::Record), 24 => Some(TypeTag::Map),
-      25 => Some(TypeTag::Atom), 26 => Some(TypeTag::Table),
-      27 => Some(TypeTag::Tuple), 28 => Some(TypeTag::Reference),
-      29 => Some(TypeTag::Set), 30 => Some(TypeTag::OptionT),
+      21 => Some(TypeTag::MatrixU8), 22 => Some(TypeTag::MatrixU16),
+      23 => Some(TypeTag::MatrixU32), 24 => Some(TypeTag::MatrixU64),
+      25 => Some(TypeTag::MatrixU128), 26 => Some(TypeTag::MatrixI8),
+      27 => Some(TypeTag::MatrixI16), 28 => Some(TypeTag::MatrixI32),
+      29 => Some(TypeTag::MatrixI64), 30 => Some(TypeTag::MatrixI128),
+      31 => Some(TypeTag::MatrixF32), 32 => Some(TypeTag::MatrixF64),
+      33 => Some(TypeTag::MatrixC64), 34 => Some(TypeTag::MatrixR64),
+      35 => Some(TypeTag::MatrixBool), 36 => Some(TypeTag::MatrixString),
+      37 => Some(TypeTag::EnumTag), 38 => Some(TypeTag::Record),
+      39 => Some(TypeTag::Map), 40 => Some(TypeTag::Atom),
+      41 => Some(TypeTag::Table), 42 => Some(TypeTag::Tuple),
+      43 => Some(TypeTag::Reference), 44 => Some(TypeTag::Set),
+      45 => Some(TypeTag::OptionT),
       _ => None,
     }
   }
