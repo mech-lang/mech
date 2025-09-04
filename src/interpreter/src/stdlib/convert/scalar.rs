@@ -56,7 +56,30 @@ where
   T: ConstElem + CompileConst,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0,0];
+
+    let out_addr = self.out.addr();
+    let out_reg = ctx.alloc_register_for_ptr(out_addr);
+    let out_borrow = self.out.borrow();
+    let out_const_id = out_borrow.compile_const(ctx).unwrap();
+    ctx.emit_const_load(out_reg, out_const_id);
+    registers[0] = out_reg;
+    
+    let arg_addr = self.arg.addr();
+    let arg_reg = ctx.alloc_register_for_ptr(arg_addr);
+    let arg_const_id = self.arg.compile_const(ctx).unwrap();
+    ctx.emit_const_load(arg_reg, arg_const_id);
+    registers[1] = arg_reg;
+  
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Convert));
+
+    ctx.emit_unop(
+      hash_str("ConvertMat2Table"),
+      registers[0],
+      registers[1],
+    );
+
+    return Ok(registers[0]);
   }
 }
 
