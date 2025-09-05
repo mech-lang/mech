@@ -38,7 +38,8 @@ where
   T: CompileConst + ConstElem + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_binop!(self.out, self.min, self.max, ctx, FeatureFlag::Custom(hash_str("range/inclusive")), T );
+    let name = format!("RangeInclusive<{}>", T::as_value_kind());
+    compile_binop!(name, self.out, self.min, self.max, ctx, FeatureFlag::Custom(hash_str("range/inclusive")));
   }
 }
 
