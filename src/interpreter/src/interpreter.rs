@@ -143,7 +143,10 @@ impl Interpreter {
           todo!();
         },
         DecodedInstr::BinOp{fxn_id, dst, lhs, rhs } => {
-          let fxn: Box<dyn MechFunction> = if *fxn_id == hash_str("AddSS") {
+          let state_brrw = self.state.borrow();
+          let functions_table = state_brrw.functions.borrow();
+
+            let fxn: Box<dyn MechFunction> = if *fxn_id == hash_str("AddSS") {
             let lhs = &self.registers[*lhs as usize];
             let rhs = &self.registers[*rhs as usize];
             let out = &self.registers[*dst as usize];
