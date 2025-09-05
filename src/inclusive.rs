@@ -35,10 +35,10 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for RangeInclusiveScalar<T> 
 where
-  T: CompileConst + ConstElem,
+  T: CompileConst + ConstElem + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_binop!(self.out, self.min, self.max, ctx, FeatureFlag::Custom(hash_str("range/inclusive")) );
+    compile_binop!(self.out, self.min, self.max, ctx, FeatureFlag::Custom(hash_str("range/inclusive")), T );
   }
 }
 
