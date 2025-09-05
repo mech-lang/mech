@@ -70,7 +70,8 @@ macro_rules! impl_op_assign_range_fxn_s {
       naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign), T);
+        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+        compile_binop!(name, self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign));
       }
     }};}
 
@@ -121,7 +122,8 @@ macro_rules! impl_op_assign_range_fxn_v {
       naMatrix<T, R2, C2, S2>: CompileConst + ConstElem,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign), T);
+        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+        compile_binop!(name, self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign));
       }
     }};}
 

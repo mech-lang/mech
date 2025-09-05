@@ -136,7 +136,8 @@ macro_rules! impl_expop {
     T: CompileConst + ConstElem + AsValueKind
   {
     fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-      compile_binop!(self.out, self.lhs, self.rhs, ctx, $feature_flag, T );
+      let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+      compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
     }
   }};}
 
@@ -173,7 +174,8 @@ impl MechFunctionImpl for ExpRational {
 impl MechFunctionCompiler for ExpRational 
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_binop!(self.out, self.lhs, self.rhs, ctx, FeatureFlag::Builtin(FeatureKind::Exp), RationalNumber );
+    let name = format!("ExpRational<{}>", RationalNumber::as_value_kind());
+    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Builtin(FeatureKind::Exp) );
   }
 }
 
