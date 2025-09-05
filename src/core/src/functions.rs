@@ -19,10 +19,11 @@ use std::fmt;
 // Functions ------------------------------------------------------------------
 
 pub type FunctionsRef = Ref<Functions>;
-pub type FunctionTable = HashMap<u64, FunctionDefinition>;
+pub type FunctionTable = HashMap<u64, fn() -> Box<dyn MechFunctionImpl>>;
 pub type FunctionCompilerTable = HashMap<u64, Box<dyn NativeFunctionCompiler>>;
 
 #[repr(C)]
+#[derive(Clone)]
 pub struct FunctionDescriptor {
   pub name: &'static str,
   pub ptr: fn() -> Box<dyn MechFunctionImpl>,
@@ -64,6 +65,7 @@ pub trait NativeFunctionCompiler {
 pub struct Functions {
   pub functions: FunctionTable,
   pub function_compilers: FunctionCompilerTable,
+  pub dictionary: Ref<Dictionary>,
 }
 
 impl Functions {
@@ -71,8 +73,17 @@ impl Functions {
     Self {
       functions: HashMap::new(), 
       function_compilers: HashMap::new(), 
+      dictionary: Ref::new(Dictionary::new()),
     }
   }
+
+  pub fn insert_function(&mut self, fxn: FunctionDescriptor) {
+    let id = hash_str(&fxn.name);
+    self.functions.insert(id.clone(), fxn.ptr);
+    self.dictionary.borrow_mut().insert(id, fxn.name.to_string());
+  }
+
+
 }
 
 #[derive(Clone)]

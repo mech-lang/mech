@@ -238,4 +238,8 @@ pub fn load_stdlib(fxns: &mut Functions) {
   #[cfg(feature = "logic_xor")]
   fxns.function_compilers.insert(hash_str("logic/xor"), Box::new(LogicXor{}));  
 
+  for fxn_desc in inventory::iter::<FunctionDescriptor> {
+    fxns.insert_function(fxn_desc.clone());
+  }
+
 }

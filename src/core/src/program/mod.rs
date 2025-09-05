@@ -70,9 +70,11 @@ impl ProgramState {
   }
 
   #[cfg(feature = "functions")]
-  pub fn insert_function(&self, fxn: FunctionDefinition) {
+  pub fn insert_function(&self, fxn: FunctionDescriptor) {
     let mut fxns_brrw = self.functions.borrow_mut();
-    fxns_brrw.functions.insert(fxn.id, fxn);
+    let id = hash_str(&fxn.name);
+    fxns_brrw.functions.insert(id.clone(), fxn.ptr);
+    self.dictionary.borrow_mut().insert(id, fxn.name.to_string());
   }
 
   #[cfg(feature = "symbol_table")]
