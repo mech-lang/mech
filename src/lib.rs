@@ -98,10 +98,10 @@ macro_rules! impl_compare_binop {
   #[cfg(feature = "compiler")]
   impl<T> MechFunctionCompiler for $struct_name<T> 
   where
-    T: ConstElem + CompileConst
+    T: ConstElem + CompileConst + AsValueKind
   {
     fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-      compile_binop!(self.out, self.lhs, self.rhs, ctx, $feature_flag);
+      compile_binop!(self.out, self.lhs, self.rhs, ctx, $feature_flag, T);
     }
   }};}
 
