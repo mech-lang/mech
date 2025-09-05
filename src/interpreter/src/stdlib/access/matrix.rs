@@ -365,10 +365,10 @@ macro_rules! impl_access_fxn {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $struct_name<T> 
     where
-      T: CompileConst + ConstElem,
+      T: CompileConst + ConstElem + AsValueKind,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.out, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::Access) );
+        compile_binop!(self.out, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::Access), T);
       }
     }};}
 

@@ -63,10 +63,10 @@ macro_rules! vertcat_two_args {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
-      T: ConstElem + CompileConst 
+      T: ConstElem + CompileConst + AsValueKind
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
+        compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::VertCat), T);
       }
     }
   };}

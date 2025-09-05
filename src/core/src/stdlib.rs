@@ -81,8 +81,10 @@ macro_rules! compile_unop {
 
 #[macro_export]
 macro_rules! compile_binop {
-  ($out:expr, $arg1:expr, $arg2:expr, $ctx:ident, $feature_flag:expr) => {
+  ($out:expr, $arg1:expr, $arg2:expr, $ctx:ident, $feature_flag:expr, $value_kind:tt) => {
     let mut registers = [0,0,0];
+    
+    let kind = $value_kind::as_value_kind();
 
     registers[0] = compile_register_brrw!($out, $ctx);
     registers[1] = compile_register_brrw!($arg1, $ctx);
@@ -90,8 +92,10 @@ macro_rules! compile_binop {
 
     $ctx.features.insert($feature_flag);
 
+    let name = format!("{}<{}>", stringify!($struct_name), kind);
+
     $ctx.emit_binop(
-      hash_str(stringify!($struct_name)),
+      hash_str(&name),
       registers[0],
       registers[1],
       registers[2],
@@ -222,10 +226,10 @@ macro_rules! impl_binop {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $struct_name<T> 
     where
-      T: ConstElem + CompileConst
+      T: ConstElem + CompileConst + AsValueKind
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.out, self.lhs, self.rhs, ctx, $feature_flag);
+        compile_binop!(self.out, self.lhs, self.rhs, ctx, $feature_flag, T);
       }
     }
   };

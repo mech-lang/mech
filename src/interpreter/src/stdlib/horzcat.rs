@@ -28,7 +28,7 @@ macro_rules! horzcat_one_arg {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
-      T: ConstElem + CompileConst
+      T: ConstElem + CompileConst + AsValueKind
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         compile_unop!(self.out, self.e0, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -63,10 +63,10 @@ macro_rules! horzcat_two_args {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
-      T: ConstElem + CompileConst
+      T: ConstElem + CompileConst + AsValueKind
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+        compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat), T);
       }
     }
   };}
@@ -100,7 +100,7 @@ macro_rules! horzcat_three_args {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
-      T: ConstElem + CompileConst
+      T: ConstElem + CompileConst + AsValueKind
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -139,7 +139,7 @@ macro_rules! horzcat_four_args {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
-      T: ConstElem + CompileConst
+      T: ConstElem + CompileConst + AsValueKind
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -168,7 +168,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateTwoArgs<T>
 where
-  T: ConstElem + CompileConst,
+  T: ConstElem + CompileConst + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let mut registers = [0, 0, 0];
@@ -222,7 +222,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateThreeArgs<T> 
 where
-  T: ConstElem + CompileConst,
+  T: ConstElem + CompileConst + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let mut registers = [0, 0, 0];
@@ -284,7 +284,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateFourArgs<T>
 where
-  T: ConstElem + CompileConst,
+  T: ConstElem + CompileConst + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let mut registers = [0, 0, 0];
@@ -351,7 +351,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateNArgs<T>
 where
-  T: ConstElem + CompileConst,
+  T: ConstElem + CompileConst + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let mut registers = [0, 0];
@@ -396,7 +396,7 @@ macro_rules! horizontal_concatenate {
       #[cfg(feature = "compiler")]
       impl<T> MechFunctionCompiler for $name<T>
       where
-        T: ConstElem + CompileConst
+        T: ConstElem + CompileConst + AsValueKind
       {
         fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
           compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -424,7 +424,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateRD<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -520,7 +520,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateS1<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -553,10 +553,10 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateS2<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat), T);
   }
 }
 
@@ -588,7 +588,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateS3<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -625,7 +625,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateS4<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -656,7 +656,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSD<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -681,7 +681,7 @@ macro_rules! horzcat_single {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $name<T> 
     where
-      T: ConstElem + CompileConst
+      T: ConstElem + CompileConst + AsValueKind
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -742,10 +742,10 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSR2<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat), T);
   }
 }
 
@@ -777,10 +777,10 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateR2S<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat), T);
   }
 }
 
@@ -811,10 +811,10 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat), T);
   }
 }
 
@@ -844,10 +844,10 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1S<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat), T);
   }
 }
 
@@ -883,7 +883,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSSSM1<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -922,7 +922,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1S<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -961,7 +961,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1SS<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1000,7 +1000,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SSS<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1035,10 +1035,10 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSR3<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat), T);
   }
 }
 
@@ -1072,10 +1072,10 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateR3S<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat), T);
   }
 }
 
@@ -1109,7 +1109,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1146,7 +1146,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1S<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1183,7 +1183,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SS<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1222,7 +1222,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSSR2<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1261,7 +1261,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSR2S<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1300,7 +1300,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateR2SS<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1337,7 +1337,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1S<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1381,7 +1381,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1418,7 +1418,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1483,7 +1483,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1R2<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1521,7 +1521,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SR2<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1562,7 +1562,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1SM1<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1601,7 +1601,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1R2S<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1639,7 +1639,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateR2M1S<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));  
@@ -1676,7 +1676,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateR2SM1<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1714,7 +1714,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSR2M1<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1754,7 +1754,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1M1<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1794,7 +1794,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1SS<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat)); 
@@ -1834,7 +1834,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1S<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1874,7 +1874,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SSM1<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -1914,7 +1914,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1S<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -2012,7 +2012,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1M1<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -2052,7 +2052,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1M1<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -2091,7 +2091,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1SM1<T> 
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
@@ -2130,7 +2130,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1M1S<T> 
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat)); 
@@ -2171,7 +2171,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1M1M1<T>
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));

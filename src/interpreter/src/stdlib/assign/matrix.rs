@@ -68,12 +68,12 @@ macro_rules! impl_set_all_fxn_s {
     #[cfg(feature = "compiler")]
     impl<T, R1, C1, S1, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec> 
     where
-      T: CompileConst + ConstElem,
+      T: CompileConst + ConstElem + AsValueKind,
       IxVec: CompileConst + ConstElem,
       naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
+        compile_binop!(self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign), T);
       }
     }};}
 
@@ -111,13 +111,13 @@ macro_rules! impl_set_all_fxn_v {
     #[cfg(feature = "compiler")]
     impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec> 
     where
-      T: CompileConst + ConstElem,
+      T: CompileConst + ConstElem + AsValueKind,
       IxVec: CompileConst + ConstElem,
       naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
       naMatrix<T, R2, C2, S2>: CompileConst + ConstElem,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
+        compile_binop!(self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign), T);
       }
     }};}
 
@@ -161,11 +161,11 @@ macro_rules! impl_set_fxn_s {
     #[cfg(feature = "compiler")]
     impl<T, R, C, S> MechFunctionCompiler for $struct_name<T, naMatrix<T, R, C, S>> 
     where
-      T: CompileConst + ConstElem,
+      T: CompileConst + ConstElem + AsValueKind,
       naMatrix<T, R, C, S>: CompileConst + ConstElem,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
+        compile_binop!(self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign), T);
       }
     }};}
 
@@ -204,11 +204,11 @@ where
 #[cfg(feature = "compiler")]
 impl<T, R, C, S> MechFunctionCompiler for Set1DSB<T, naMatrix<T, R, C, S>> 
 where
-  T: CompileConst + ConstElem,
+  T: CompileConst + ConstElem + AsValueKind,
   naMatrix<T, R, C, S>: CompileConst + ConstElem,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_binop!(self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
+    compile_binop!(self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign), T);
   }
 }
 
@@ -647,12 +647,12 @@ macro_rules! impl_set_scalar_fxn_v {
     #[cfg(feature = "compiler")] 
     impl<T, R1, C1, S1, R2, C2, S2> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>> 
     where
-      T: CompileConst + ConstElem,
+      T: CompileConst + ConstElem + AsValueKind,
       naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
       naMatrix<T, R2, C2, S2>: CompileConst + ConstElem,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
+        compile_binop!(self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::Assign), T);
       }
     }};}    
 
@@ -753,11 +753,11 @@ macro_rules! impl_set_scalar_all_fxn {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $struct_name<T> 
     where
-      T: CompileConst + ConstElem,
+      T: CompileConst + ConstElem + AsValueKind,
       $matrix_shape<T>: CompileConst + ConstElem,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.sink, self.source, self.ix, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
+        compile_binop!(self.sink, self.source, self.ix, ctx, FeatureFlag::Builtin(FeatureKind::Assign), T);
       }
     }};}
 
