@@ -73,7 +73,8 @@ macro_rules! impl_set_all_fxn_s {
       naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign), T);
+        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+        compile_binop!(name, self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
       }
     }};}
 
@@ -117,7 +118,8 @@ macro_rules! impl_set_all_fxn_v {
       naMatrix<T, R2, C2, S2>: CompileConst + ConstElem,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign), T);
+        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+        compile_binop!(name, self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
       }
     }};}
 
@@ -165,7 +167,8 @@ macro_rules! impl_set_fxn_s {
       naMatrix<T, R, C, S>: CompileConst + ConstElem,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign), T);
+        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+        compile_binop!(name, self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
       }
     }};}
 
@@ -208,7 +211,8 @@ where
   naMatrix<T, R, C, S>: CompileConst + ConstElem,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_binop!(self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign), T);
+    let name = format!("{}<{}>", stringify!(Set1DSB), T::as_value_kind());
+    compile_binop!(name, self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
   }
 }
 
@@ -652,7 +656,8 @@ macro_rules! impl_set_scalar_fxn_v {
       naMatrix<T, R2, C2, S2>: CompileConst + ConstElem,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::Assign), T);
+        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+        compile_binop!(name, self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
       }
     }};}    
 
@@ -757,7 +762,8 @@ macro_rules! impl_set_scalar_all_fxn {
       $matrix_shape<T>: CompileConst + ConstElem,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.sink, self.source, self.ix, ctx, FeatureFlag::Builtin(FeatureKind::Assign), T);
+        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+        compile_binop!(name, self.sink, self.source, self.ix, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
       }
     }};}
 

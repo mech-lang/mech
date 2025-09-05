@@ -81,21 +81,17 @@ macro_rules! compile_unop {
 
 #[macro_export]
 macro_rules! compile_binop {
-  ($out:expr, $arg1:expr, $arg2:expr, $ctx:ident, $feature_flag:expr, $value_kind:tt) => {
+  ($name:tt, $out:expr, $arg1:expr, $arg2:expr, $ctx:ident, $feature_flag:expr) => {
     let mut registers = [0,0,0];
     
-    let kind = $value_kind::as_value_kind();
-
     registers[0] = compile_register_brrw!($out, $ctx);
     registers[1] = compile_register_brrw!($arg1, $ctx);
     registers[2] = compile_register_brrw!($arg2, $ctx);
 
     $ctx.features.insert($feature_flag);
 
-    let name = format!("{}<{}>", stringify!($struct_name), kind);
-
     $ctx.emit_binop(
-      hash_str(&name),
+      hash_str(&$name),
       registers[0],
       registers[1],
       registers[2],
@@ -158,10 +154,12 @@ macro_rules! compile_quadop {
 macro_rules! register_fxn_descriptor {
   // single type
   ($struct_name:ident, $type:tt) => {
-    inventory::submit! {
-      FunctionDescriptor {
-        name: concat!(stringify!($struct_name), "<", stringify!($type), ">"),
-        ptr: $struct_name::<$type>::new,
+      paste!{
+      inventory::submit! {
+        FunctionDescriptor {
+          name: concat!(stringify!($struct_name), "<", stringify!([<$type:lower>]), ">"),
+          ptr: $struct_name::<$type>::new,
+        }
       }
     }
   };
@@ -229,7 +227,8 @@ macro_rules! impl_binop {
       T: ConstElem + CompileConst + AsValueKind
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.out, self.lhs, self.rhs, ctx, $feature_flag, T);
+        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+        compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
       }
     }
   };

@@ -66,7 +66,8 @@ macro_rules! vertcat_two_args {
       T: ConstElem + CompileConst + AsValueKind
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::VertCat), T);
+        let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
+        compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
       }
     }
   };}

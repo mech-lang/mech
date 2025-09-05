@@ -368,7 +368,8 @@ macro_rules! impl_access_fxn {
       T: CompileConst + ConstElem + AsValueKind,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.out, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::Access), T);
+        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+        compile_binop!(name, self.out, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::Access));
       }
     }};}
 
