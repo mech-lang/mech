@@ -374,6 +374,35 @@ impl ValueKind {
   }
 }
 
+pub trait AsValueKind {
+  fn as_value_kind() -> ValueKind;
+}
+
+macro_rules! impl_as_value_kind {
+  ($type:ty, $value_kind:expr) => {
+    impl AsValueKind for $type {
+      fn as_value_kind() -> ValueKind { $value_kind }
+    }
+  };
+}
+
+impl_as_value_kind!(i8, ValueKind::I8);
+impl_as_value_kind!(i16, ValueKind::I16);
+impl_as_value_kind!(i32, ValueKind::I32);
+impl_as_value_kind!(i64, ValueKind::I64);
+impl_as_value_kind!(i128, ValueKind::I128);
+impl_as_value_kind!(u8, ValueKind::U8);
+impl_as_value_kind!(u16, ValueKind::U16);
+impl_as_value_kind!(u32, ValueKind::U32);
+impl_as_value_kind!(u64, ValueKind::U64);
+impl_as_value_kind!(u128, ValueKind::U128);
+impl_as_value_kind!(F32, ValueKind::F32);
+impl_as_value_kind!(F64, ValueKind::F64);
+impl_as_value_kind!(bool, ValueKind::Bool);
+impl_as_value_kind!(String, ValueKind::String);
+impl_as_value_kind!(RationalNumber, ValueKind::RationalNumber);
+impl_as_value_kind!(ComplexNumber, ValueKind::ComplexNumber);
+
 // Value
 // ----------------------------------------------------------------------------
 
