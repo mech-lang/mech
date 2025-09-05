@@ -87,10 +87,10 @@ macro_rules! impl_logic_binop {
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }
     #[cfg(feature = "compiler")]
-    impl MechFunctionCompiler for $struct_name 
+    impl MechFunctionCompiler for $struct_name
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.out, self.lhs, self.rhs, ctx, $feature_flag);
+        compile_binop!(self.out, self.lhs, self.rhs, ctx, $feature_flag, bool);
       }
     }};}
 
