@@ -101,7 +101,8 @@ macro_rules! impl_compare_binop {
     T: ConstElem + CompileConst + AsValueKind
   {
     fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-      compile_binop!(self.out, self.lhs, self.rhs, ctx, $feature_flag, T);
+      let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+      compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
     }
   }};}
 
