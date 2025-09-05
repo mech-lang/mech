@@ -146,22 +146,22 @@ impl Interpreter {
           let state_brrw = self.state.borrow();
           let functions_table = state_brrw.functions.borrow();
 
-            let fxn: Box<dyn MechFunction> = if *fxn_id == hash_str("AddSS") {
-            let lhs = &self.registers[*lhs as usize];
-            let rhs = &self.registers[*rhs as usize];
-            let out = &self.registers[*dst as usize];
-            match lhs.kind() {
-              #[cfg(all(feature = "u8", feature = "math_add"))]
-              ValueKind::U8 => Box::new(AddSS::<u8>{lhs: lhs.expect_u8()?, rhs: rhs.expect_u8()?, out: out.expect_u8()?}),
-              #[cfg(all(feature = "f64", feature = "math_add"))]
-              ValueKind::F64 => Box::new(AddSS::<F64>{lhs: lhs.expect_f64()?, rhs: rhs.expect_f64()?, out: out.expect_f64()?}),
-              _ => todo!(),
+          match functions_table.functions.get(fxn_id) {
+            Some(fxn) => {
+              println!("{:?}", fxn().to_string());
+              //let lhs = &self.registers[*lhs as usize];
+              //let rhs = &self.registers[*rhs as usize];
+              //let out = &self.registers[*dst as usize];
+              //let fxn = fxn_compiler.compile(&vec![lhs.clone(), rhs.clone()])?;
+              //self.out = fxn.out().clone();
+              //fxn.solve();
+              //self.registers[*dst as usize] = fxn.out();
+              //state_brrw.plan.borrow_mut().add_plan_step(fxn);
+            },
+            None => {
+              return Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Unknown binary function ID: {}", fxn_id),id: line!(),kind: MechErrorKind::GenericError("Unknown binary function".to_string()),});
             }
-          } else {
-            return Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Unknown binary function ID: {}", fxn_id),id: line!(),kind: MechErrorKind::GenericError("Unknown binary function".to_string()),});
-          };
-          self.out = fxn.out().clone();
-          self.state.borrow_mut().add_plan_step(fxn);
+          }
         },
         DecodedInstr::Ret{ src } => {
           todo!();
