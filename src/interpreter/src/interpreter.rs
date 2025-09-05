@@ -22,6 +22,11 @@ pub struct Interpreter {
 
 impl Interpreter {
   pub fn new(id: u64) -> Self {
+
+    for fxn in inventory::iter::<FunctionDescriptor> {
+      println!("Function: {}", fxn.name);
+    }
+
     let mut state = ProgramState::new();
     load_stdkinds(&mut state.kinds);
     #[cfg(feature = "functions")]

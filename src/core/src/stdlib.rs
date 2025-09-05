@@ -151,6 +151,27 @@ macro_rules! compile_quadop {
 }
 
 #[macro_export]
+macro_rules! register_fxn_descriptor {
+  // single type
+  ($struct_name:ident, $type:tt) => {
+    inventory::submit! {
+      FunctionDescriptor {
+        name: concat!(stringify!($struct_name), "<", stringify!($type), ">"),
+        ptr: $struct_name::<$type>::new,
+      }
+    }
+  };
+
+  // multiple types
+  ($struct_name:ident, $($type:ty),+ $(,)?) => {
+    $( register_fxn_descriptor!($struct_name, $type); )+
+  };
+}
+
+
+
+
+#[macro_export]
 macro_rules! impl_binop {
   ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
     #[derive(Debug)]
@@ -158,6 +179,25 @@ macro_rules! impl_binop {
       pub lhs: Ref<$arg1_type>,
       pub rhs: Ref<$arg2_type>,
       pub out: Ref<$out_type>,
+    }
+    impl<T> $struct_name<T> 
+    where
+      T: Copy + Debug + Display + Clone + Sync + Send + 'static + 
+      PartialEq + PartialOrd + Default +
+      Add<Output = T> + AddAssign +
+      Sub<Output = T> + SubAssign +
+      Mul<Output = T> + MulAssign +
+      Div<Output = T> + DivAssign +
+      Zero + One,
+      Ref<$out_type>: ToValue,
+    {
+      pub fn new() -> Box<dyn MechFunctionImpl> {
+        Box::new(Self {
+          lhs: Ref::new(Default::default()),
+          rhs: Ref::new(Default::default()),
+          out: Ref::new(Default::default()),
+        })
+      }
     }
     impl<T> MechFunctionImpl for $struct_name<T>
     where
@@ -187,7 +227,9 @@ macro_rules! impl_binop {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         compile_binop!(self.out, self.lhs, self.rhs, ctx, $feature_flag);
       }
-    }};}
+    }
+  };
+}
 
 #[macro_export]  
 macro_rules! impl_unop {

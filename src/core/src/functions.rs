@@ -22,6 +22,20 @@ pub type FunctionsRef = Ref<Functions>;
 pub type FunctionTable = HashMap<u64, FunctionDefinition>;
 pub type FunctionCompilerTable = HashMap<u64, Box<dyn NativeFunctionCompiler>>;
 
+#[repr(C)]
+pub struct FunctionDescriptor {
+  pub name: &'static str,
+  pub ptr: fn() -> Box<dyn MechFunctionImpl>,
+}
+
+impl Debug for FunctionDescriptor {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "{{ name: {:?}, ptr: {:?} }}", self.name, self.ptr)
+  }
+}
+
+unsafe impl Sync for FunctionDescriptor {}
+
 pub trait MechFunctionImpl {
   fn solve(&self);
   fn out(&self) -> Value;
@@ -213,4 +227,17 @@ impl PrettyPrint for Plan {
         .with(Panel::header("📋 Plan"));
     format!("{table}")
   }
+}
+
+// Function Registry
+// ----------------------------------------------------------------------------
+
+// Function registry is a mapping from function IDs to the actual fucntion implementaionts
+
+/*lazy_static! {
+  pub static ref FUNCTION_REGISTRY: RefCell<HashMap<u64, Box<dyn NativeFunctionCompiler>>> = RefCell::new(HashMap::new());
+}*/
+
+pub struct FunctionRegistry {
+  pub registry: RefCell<HashMap<u64, Box<dyn MechFunctionImpl>>>,
 }
