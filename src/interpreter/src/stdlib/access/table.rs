@@ -218,7 +218,23 @@ impl MechFunctionImpl for TableAccessScalarF {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAccessScalarF {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_binop!(self.out, self.source, self.ix, ctx, FeatureFlag::Builtin(FeatureKind::Access));
+    let mut registers = [0,0,0];
+    
+    registers[0] = compile_register_brrw!(self.out,  ctx);
+    registers[1] = compile_register_brrw!(self.source, ctx);
+    registers[2] = compile_register_brrw!(self.ix, ctx);
+
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Table));
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Access));
+
+    ctx.emit_binop(
+      hash_str(stringify!("TableAccessScalarF")),
+      registers[0],
+      registers[1],
+      registers[2],
+    );
+
+    return Ok(registers[0])
   }
 }
 
@@ -288,7 +304,23 @@ impl MechFunctionImpl for TableAccessRangeIndex {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAccessRangeIndex {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_binop!(self.out, self.source, self.ix, ctx, FeatureFlag::Builtin(FeatureKind::SubscriptRange));
+    let mut registers = [0,0,0];
+    
+    registers[0] = compile_register_brrw!(self.out,  ctx);
+    registers[1] = compile_register_brrw!(self.source, ctx);
+    registers[2] = compile_register_brrw!(self.ix, ctx);
+
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Table));
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::SubscriptRange));
+
+    ctx.emit_binop(
+      hash_str(stringify!("TableAccessRangeIndex")),
+      registers[0],
+      registers[1],
+      registers[2],
+    );
+
+    return Ok(registers[0])
   }
 }
 
@@ -331,7 +363,23 @@ impl MechFunctionImpl for TableAccessRangeBool {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAccessRangeBool {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_binop!(self.out, self.source, self.ix, ctx, FeatureFlag::Builtin(FeatureKind::SubscriptRange));
+    let mut registers = [0,0,0];
+    
+    registers[0] = compile_register_brrw!(self.out,  ctx);
+    registers[1] = compile_register_brrw!(self.source, ctx);
+    registers[2] = compile_register_brrw!(self.ix, ctx);
+
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Table));
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::LogicalIndexing));
+
+    ctx.emit_binop(
+      hash_str(stringify!("TableAccessRangeBool")),
+      registers[0],
+      registers[1],
+      registers[2],
+    );
+
+    return Ok(registers[0])
   }
 }
 
