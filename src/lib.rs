@@ -90,7 +90,8 @@ macro_rules! impl_logic_binop {
     impl MechFunctionCompiler for $struct_name
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.out, self.lhs, self.rhs, ctx, $feature_flag, bool);
+        let name = format!("{}<bool>", stringify!($struct_name));
+        compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
       }
     }};}
 
