@@ -203,7 +203,7 @@ pub enum FeatureKind {
   Set, Map, Table, Tuple, Record, Enum,
   VariableDefine, VariableAssign, KindDefine,
   KindAnnotation, SubscriptRange, SubscriptFormula,
-  DotIndexing, Swizzle, 
+  DotIndexing, Swizzle, LogicalIndexing,
   Matrix1, Matrix2, Matrix3, Matrix4,
   Matrix2x3, Matrix3x2,
   RowVector2, RowVector3, RowVector4,
