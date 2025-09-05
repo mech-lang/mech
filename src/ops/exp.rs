@@ -133,10 +133,10 @@ macro_rules! impl_expop {
   #[cfg(feature = "compiler")]
   impl<T> MechFunctionCompiler for $struct_name<T> 
   where
-    T: CompileConst + ConstElem,
+    T: CompileConst + ConstElem + AsValueKind
   {
     fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-      compile_binop!(self.out, self.lhs, self.rhs, ctx, $feature_flag );
+      compile_binop!(self.out, self.lhs, self.rhs, ctx, $feature_flag, T );
     }
   }};}
 
@@ -173,7 +173,7 @@ impl MechFunctionImpl for ExpRational {
 impl MechFunctionCompiler for ExpRational 
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_binop!(self.out, self.lhs, self.rhs, ctx, FeatureFlag::Builtin(FeatureKind::Exp) );
+    compile_binop!(self.out, self.lhs, self.rhs, ctx, FeatureFlag::Builtin(FeatureKind::Exp), RationalNumber );
   }
 }
 

@@ -65,12 +65,12 @@ macro_rules! impl_op_assign_range_fxn_s {
     #[cfg(feature = "compiler")]
     impl<T, R1, C1, S1, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec> 
     where
-      T: CompileConst + ConstElem,
+      T: CompileConst + ConstElem + AsValueKind,
       IxVec: CompileConst + ConstElem,
       naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign) );
+        compile_binop!(self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign), T);
       }
     }};}
 
@@ -115,13 +115,13 @@ macro_rules! impl_op_assign_range_fxn_v {
     #[cfg(feature = "compiler")]
     impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec> 
     where
-      T: CompileConst + ConstElem,
+      T: CompileConst + ConstElem + AsValueKind,
       IxVec: CompileConst + ConstElem,
       naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
       naMatrix<T, R2, C2, S2>: CompileConst + ConstElem,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_binop!(self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign) );
+        compile_binop!(self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign), T);
       }
     }};}
 
@@ -200,7 +200,7 @@ macro_rules! impl_assign_scalar_scalar {
       #[cfg(feature = "compiler")]
       impl<T> MechFunctionCompiler for [<$op_name AssignSS>]<T> 
       where
-        T: CompileConst + ConstElem,
+        T: CompileConst + ConstElem + AsValueKind,
       {
         fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
           compile_unop!(self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
