@@ -54,10 +54,10 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for NChooseK<T> 
 where
-    T: ConstElem + CompileConst
+    T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_binop!(self.out, self.n, self.k, ctx, FeatureFlag::Custom(hash_str("combinatorics/n-choose-k")) );
+    compile_binop!(self.out, self.n, self.k, ctx, FeatureFlag::Custom(hash_str("combinatorics/n-choose-k")), T );
   }
 }
 
