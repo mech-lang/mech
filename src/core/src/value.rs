@@ -669,8 +669,85 @@ impl Hash for Value {
     }
   }
 }
-
 impl Value {
+
+  pub unsafe fn get_copyable_matrix_unchecked<T>(&self) -> Box<dyn CopyMat<T>> 
+  where T: AsValueKind + 'static
+  {
+    match (T::as_value_kind(), self) {
+      #[cfg(all(feature = "matrix", feature = "bool"))]
+      (ValueKind::Bool, Value::MatrixBool(m)) => {
+        let b: Box<dyn CopyMat<bool>> = m.get_copyable_matrix();
+        std::mem::transmute::<Box<dyn CopyMat<bool>>, Box<dyn CopyMat<T>>>(b)
+      }
+      #[cfg(all(feature = "matrix", feature = "u8"))]
+      (ValueKind::U8, Value::MatrixU8(m)) => {
+        let b: Box<dyn CopyMat<u8>> = m.get_copyable_matrix();
+        std::mem::transmute::<Box<dyn CopyMat<u8>>, Box<dyn CopyMat<T>>>(b)
+      }
+      #[cfg(all(feature = "matrix", feature = "u16"))]
+      (ValueKind::U16, Value::MatrixU16(m)) => {
+        let b: Box<dyn CopyMat<u16>> = m.get_copyable_matrix();
+        std::mem::transmute::<Box<dyn CopyMat<u16>>, Box<dyn CopyMat<T>>>(b)
+      }
+      #[cfg(all(feature = "matrix", feature = "u32"))]
+      (ValueKind::U32, Value::MatrixU32(m)) => {
+        let b: Box<dyn CopyMat<u32>> = m.get_copyable_matrix();
+        std::mem::transmute::<Box<dyn CopyMat<u32>>, Box<dyn CopyMat<T>>>(b)
+      }
+      #[cfg(all(feature = "matrix", feature = "u64"))]
+      (ValueKind::U64, Value::MatrixU64(m)) => {
+        let b: Box<dyn CopyMat<u64>> = m.get_copyable_matrix();
+        std::mem::transmute::<Box<dyn CopyMat<u64>>, Box<dyn CopyMat<T>>>(b)
+      }
+      #[cfg(all(feature = "matrix", feature = "u128"))]
+      (ValueKind::U128, Value::MatrixU128(m)) => {
+        let b: Box<dyn CopyMat<u128>> = m.get_copyable_matrix();
+        std::mem::transmute::<Box<dyn CopyMat<u128>>, Box<dyn CopyMat<T>>>(b)
+      }
+      #[cfg(all(feature = "matrix", feature = "i8"))]
+      (ValueKind::I8, Value::MatrixI8(m)) => {
+        let b: Box<dyn CopyMat<i8>> = m.get_copyable_matrix();
+        std::mem::transmute::<Box<dyn CopyMat<i8>>, Box<dyn CopyMat<T>>>(b)
+      }
+      #[cfg(all(feature = "matrix", feature = "i16"))]
+      (ValueKind::I16, Value::MatrixI16(m)) => {
+        let b: Box<dyn CopyMat<i16>> = m.get_copyable_matrix();
+        std::mem::transmute::<Box<dyn CopyMat<i16>>, Box<dyn CopyMat<T>>>(b)
+      }
+      #[cfg(all(feature = "matrix", feature = "i32"))]
+      (ValueKind::I32, Value::MatrixI32(m)) => {
+        let b: Box<dyn CopyMat<i32>> = m.get_copyable_matrix();
+        std::mem::transmute::<Box<dyn CopyMat<i32>>, Box<dyn CopyMat<T>>>(b)
+      }
+      #[cfg(all(feature = "matrix", feature = "i64"))]
+      (ValueKind::I64, Value::MatrixI64(m)) => {
+        let b: Box<dyn CopyMat<i64>> = m.get_copyable_matrix();
+        std::mem::transmute::<Box<dyn CopyMat<i64>>, Box<dyn CopyMat<T>>>(b)
+      }
+      #[cfg(all(feature = "matrix", feature = "i128"))]
+      (ValueKind::I128, Value::MatrixI128(m)) => {
+        let b: Box<dyn CopyMat<i128>> = m.get_copyable_matrix();
+        std::mem::transmute::<Box<dyn CopyMat<i128>>, Box<dyn CopyMat<T>>>(b)
+      }
+      #[cfg(all(feature = "matrix", feature = "f32"))]
+      (ValueKind::F32, Value::MatrixF32(m)) => {
+        let b: Box<dyn CopyMat<F32>> = m.get_copyable_matrix();
+        std::mem::transmute::<Box<dyn CopyMat<F32>>, Box<dyn CopyMat<T>>>(b)
+      }
+      #[cfg(all(feature = "matrix", feature = "f64"))]
+      (ValueKind::F64, Value::MatrixF64(m)) => {
+        let b: Box<dyn CopyMat<F64>> = m.get_copyable_matrix();
+        std::mem::transmute::<Box<dyn CopyMat<F64>>, Box<dyn CopyMat<T>>>(b)
+      }
+      #[cfg(all(feature = "matrix", feature = "string"))]
+      (ValueKind::String, Value::MatrixString(m)) => {
+        let b: Box<dyn CopyMat<String>> = m.get_copyable_matrix();
+        std::mem::transmute::<Box<dyn CopyMat<String>>, Box<dyn CopyMat<T>>>(b)
+      }
+      _ => panic!("Unsupported type for get_copyable_matrix_unchecked"),
+    }
+  }
 
   pub unsafe fn as_unchecked<T>(&self) -> &Ref<T> {
     match self {
@@ -706,6 +783,8 @@ impl Value {
       Value::R64(r) => &*(r as *const Ref<R64> as *const Ref<T>),
       #[cfg(feature = "complex")]
       Value::C64(r) => &*(r as *const Ref<C64> as *const Ref<T>),
+      #[cfg(all(feature = "f64", feature = "matrix"))]
+      Value::MatrixF64(r) => r.as_unchecked(),
       _ => panic!("Unsupported type for as_unchecked"),
     }
   }
