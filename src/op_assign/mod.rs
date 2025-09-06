@@ -38,6 +38,33 @@ macro_rules! impl_op_assign_range_fxn_s {
       pub sink: Ref<MatA>,
       pub _marker: PhantomData<T>,
     }
+    impl<T, R1: 'static, C1: 'static, S1: 'static, IxVec: 'static> MechFunctionFactory for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
+    where
+      Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+      T: Copy + Debug + Clone + Sync + Send + 'static +
+        Div<Output = T> + DivAssign +
+        Add<Output = T> + AddAssign +
+        Sub<Output = T> + SubAssign +
+        Mul<Output = T> + MulAssign +
+        Zero + One +
+        PartialEq + PartialOrd +
+        CompileConst + ConstElem + AsValueKind,
+      IxVec: CompileConst + ConstElem + Debug + AsRef<[$ix]>,
+      R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
+      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug,
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Binary(out, arg1, arg2) => {
+            let source: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+            let ixes: Ref<IxVec> = unsafe { arg2.as_unchecked() }.clone();
+            let sink: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(Self { sink, source, ixes, _marker: PhantomData::default() }))
+          },
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 3 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+        }
+      }
+    }
     impl<T, R1, C1, S1, IxVec> MechFunctionImpl for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
     where
       Ref<naMatrix<T, R1, C1, S1>>: ToValue,
@@ -181,7 +208,24 @@ macro_rules! impl_assign_scalar_scalar {
         sink: Ref<T>,
         source: Ref<T>,
       }
-
+      impl<T> MechFunctionFactory for [<$op_name AssignSS>]<T>
+      where
+        T: Debug + Clone + Sync + Send + 'static +
+           $op_name<Output = T> + [<$op_name Assign>] +
+           PartialEq + PartialOrd + CompileConst + ConstElem + AsValueKind,
+        Ref<T>: ToValue
+      {
+        fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+          match args {
+            FunctionArgs::Unary(out, arg1) => {
+              let source: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+              let sink: Ref<T> = unsafe { out.as_unchecked() }.clone();
+              Ok(Box::new(Self { sink, source }))
+            },
+            _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+          }    
+        }    
+      }
       impl<T> MechFunctionImpl for [<$op_name AssignSS>]<T>
       where
         T: Debug + Clone + Sync + Send + 'static +
@@ -209,6 +253,22 @@ macro_rules! impl_assign_scalar_scalar {
           compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
         }
       }
+      register_fxn_descriptor!([<$op_name AssignSS>], 
+        u8, "u8", 
+        u16, "u16",
+        u32, "u32",
+        u64, "u64",
+        u128, "u128",
+        i8, "i8",
+        i16, "i16",
+        i32, "i32",
+        i64, "i64",
+        i128, "i128",
+        F32, "f32",
+        F64, "f64",
+        R64, "r64",
+        C64, "c64"
+      );
     }
   };
 }
@@ -223,7 +283,28 @@ macro_rules! impl_assign_vector_vector {
         pub source: Ref<MatB>,
         _marker: PhantomData<T>,
       }
-
+      impl<T, MatA, MatB> MechFunctionFactory for [<$op_name AssignVV>]<T, MatA, MatB>
+      where
+        Ref<MatA>: ToValue,
+        T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>] +
+        CompileConst + ConstElem + AsValueKind,
+        for<'a> &'a MatA: IntoIterator<Item = &'a T>,
+        for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
+        for<'a> &'a MatB: IntoIterator<Item = &'a T>,
+        MatA: Debug + CompileConst + ConstElem + AsValueKind + 'static,
+        MatB: Debug + CompileConst + ConstElem + AsValueKind + 'static,
+      {
+        fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+          match args {
+            FunctionArgs::Unary(out, arg1) => {
+              let source: Ref<MatB> = unsafe { arg1.as_unchecked() }.clone();
+              let sink: Ref<MatA> = unsafe { out.as_unchecked() }.clone();
+              Ok(Box::new(Self { sink, source, _marker: PhantomData::default() }))
+            },
+            _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+          }    
+        }    
+      }
       impl<T, MatA, MatB> MechFunctionImpl for [<$op_name AssignVV>]<T, MatA, MatB>
       where
         Ref<MatA>: ToValue,
@@ -260,6 +341,86 @@ macro_rules! impl_assign_vector_vector {
           compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign) );
         }
       }
+      impl_register_op_assign_vv_all!([<$op_name AssignVV>]);
     }
+  };
+}
+
+#[macro_export]
+macro_rules! register_op_assign_vv {
+  ($op:ident, $type:ty, $size:ty) => {
+    paste!{
+      inventory::submit! {
+        FunctionDescriptor {
+          name: concat!(stringify!($op),"<",stringify!([<$type:lower>]),stringify!($size),stringify!($size),">"),
+          ptr: $op::<$type,$size<$type>,$size<$type>>::new,
+        }
+      }
+    }
+  };}
+
+#[macro_export]
+macro_rules! register_op_assign_vv_all {
+  ($op:ident, $ty:ty, $ty_feature:literal) => {
+    #[cfg(all(feature = $ty_feature, feature = "row_vector4"))]
+    register_op_assign_vv!($op, $ty, RowVector4);
+    #[cfg(all(feature = $ty_feature, feature = "vector2"))]
+    register_op_assign_vv!($op, $ty, Vector2);
+    #[cfg(all(feature = $ty_feature, feature = "vector3"))]
+    register_op_assign_vv!($op, $ty, Vector3);
+    #[cfg(all(feature = $ty_feature, feature = "vector4"))]
+    register_op_assign_vv!($op, $ty, Vector4);
+    #[cfg(all(feature = $ty_feature, feature = "matrix1"))]
+    register_op_assign_vv!($op, $ty, Matrix1);
+    #[cfg(all(feature = $ty_feature, feature = "matrix2"))]
+    register_op_assign_vv!($op, $ty, Matrix2);
+    #[cfg(all(feature = $ty_feature, feature = "matrix3"))]
+    register_op_assign_vv!($op, $ty, Matrix3);
+    #[cfg(all(feature = $ty_feature, feature = "matrix4"))]
+    register_op_assign_vv!($op, $ty, Matrix4);
+    #[cfg(all(feature = $ty_feature, feature = "matrix2x3"))]
+    register_op_assign_vv!($op, $ty, Matrix2x3);
+    #[cfg(all(feature = $ty_feature, feature = "matrix3x2"))]
+    register_op_assign_vv!($op, $ty, Matrix3x2);
+    #[cfg(all(feature = $ty_feature, feature = "dvector"))]
+    register_op_assign_vv!($op, $ty, DVector);
+    #[cfg(all(feature = $ty_feature, feature = "dmatrix"))]
+    register_op_assign_vv!($op, $ty, DMatrix);
+    #[cfg(all(feature = $ty_feature, feature = "row_dvector"))]
+    register_op_assign_vv!($op, $ty, RowDVector);
+  };
+}
+
+#[macro_export]
+macro_rules! impl_register_op_assign_vv_all {
+  ($macro_name:ident) => {
+    #[cfg(feature = "u8")]
+    register_op_assign_vv_all!($macro_name, u8, "u8");
+    #[cfg(feature = "u16")]
+    register_op_assign_vv_all!($macro_name, u16, "u16");
+    #[cfg(feature = "u32")]
+    register_op_assign_vv_all!($macro_name, u32, "u32");
+    #[cfg(feature = "u64")]
+    register_op_assign_vv_all!($macro_name, u64, "u64");
+    #[cfg(feature = "u128")]
+    register_op_assign_vv_all!($macro_name, u128, "u128");
+    #[cfg(feature = "i8")]
+    register_op_assign_vv_all!($macro_name, i8, "i8");
+    #[cfg(feature = "i16")]
+    register_op_assign_vv_all!($macro_name, i16, "i16");
+    #[cfg(feature = "i32")]
+    register_op_assign_vv_all!($macro_name, i32, "i32");
+    #[cfg(feature = "i64")]
+    register_op_assign_vv_all!($macro_name, i64, "i64");
+    #[cfg(feature = "i128")]
+    register_op_assign_vv_all!($macro_name, i128, "i128");
+    #[cfg(feature = "f32")]
+    register_op_assign_vv_all!($macro_name, F32, "f32");
+    #[cfg(feature = "f64")]
+    register_op_assign_vv_all!($macro_name, F64, "f64");
+    #[cfg(feature = "rational")]
+    register_op_assign_vv_all!($macro_name, R64, "rational");
+    #[cfg(feature = "complex")]
+    register_op_assign_vv_all!($macro_name, C64, "complex");
   };
 }
