@@ -461,6 +461,12 @@ impl_as_value_kind_for_matrix!(Matrix3x2<T>, vec![3, 2]);
 #[cfg(feature = "matrixd")]
 impl_as_value_kind_for_matrix!(DMatrix<T>, vec![0, 0]);
 
+impl AsValueKind for Value {
+  fn as_value_kind() -> ValueKind {
+    ValueKind::Any
+  }
+}
+
 
 // Value
 // ----------------------------------------------------------------------------
