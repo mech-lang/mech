@@ -164,7 +164,7 @@ pub fn add_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechF
   match sink {
     #[cfg(feature = "table")]
     Value::Table(_) => add_assign_table_fxn(sink, source),
-    #[cfg(feature = "add_assign")]
+    #[cfg(feature = "math_add_assign")]
     _ => add_assign_math_fxn(sink, source),
     _ => Err(MechError{file: file!().to_string(),tokens: vec![],msg: format!("Unhandled args {:?}, {:?}", sink, source),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,}),
   }
