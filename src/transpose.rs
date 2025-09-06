@@ -35,10 +35,11 @@ macro_rules! impl_transpose {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $struct_name<T>
     where
-      T: ConstElem + CompileConst 
+      T: ConstElem + CompileConst + AsValueKind,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_unop!(self.out, self.arg, ctx, $feature_flag);
+        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+        compile_unop!(name, self.out, self.arg, ctx, $feature_flag);
       }
     }};}
 
