@@ -1004,6 +1004,22 @@ macro_rules! horzcat_single {
     struct $name<T> {
       out: Ref<$shape<T>>,
     }
+    impl<T> MechFunctionFactory for $name<T>
+    where
+      T: Debug + Clone + Sync + Send + PartialEq + 'static +
+      ConstElem + CompileConst + AsValueKind,
+      Ref<$shape<T>>: ToValue
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Unary(out, _arg0) => {
+            let out: Ref<$shape<T>> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(Self { out }))
+          },
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 1 argument, got {:?}", stringify!($name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+        }
+      }
+    }
     impl<T> MechFunctionImpl for $name<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -1022,6 +1038,7 @@ macro_rules! horzcat_single {
         compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
     }
+    register_horizontal_concatenate_fxn!($name);
   }
 }
 
