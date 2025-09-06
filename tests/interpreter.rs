@@ -551,6 +551,7 @@ test_interpreter!(interpret_vertcat_r2m2x3, "x := [1 2 3; 4 5 6]; y := [7 8 9]; 
 test_interpreter!(interpret_stats_sum_rowm2, "x := [1 2; 4 5]; y := stats/sum/row(x);", Ref::new(RowVector2::from_vec(vec![F64::new(5.0),F64::new(7.0)])).to_value());
 
 
+test_interpreter!(interpret_add_assign, "~x := 10; x += 20", Ref::new(F64::new(30.0)).to_value());
 test_interpreter!(interpret_add_assign_formula, "ix := [1 1 2 3]; y := 5; x := [1 2 3 4]; x[ix] += y;", Ref::new(RowVector4::from_vec(vec![F64::new(11.0),F64::new(7.0),F64::new(8.0),F64::new(4.0)])).to_value());
 test_interpreter!(interpret_add_assign_formula_all_m2m2,"x := [1 2; 3 4]; y := [1 1];z := [10 10; 20 20];x[y,:] += z;", Ref::new(Matrix2::from_vec(vec![F64::new(31.0),F64::new(3.0),F64::new(32.0),F64::new(4.0)])).to_value());
 test_interpreter!(interpret_sub_assign_formula, "ix := [1 1 2 3]; y := 5; x := [1 2 3 4]; x[ix] -= y;", Ref::new(RowVector4::from_vec(vec![F64::new(-9.0),F64::new(-3.0),F64::new(-2.0),F64::new(4.0)])).to_value());
