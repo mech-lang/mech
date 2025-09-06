@@ -105,7 +105,7 @@ macro_rules! sum_row_op {
       F32,  F32,  "f32";
       F64,  F64,  "f64";
       ComplexNumber, ComplexNumber, "complex";
-      RationalNumber, RationalNumber, "rational";
+      R64, R64, "rational";
     )
   }
     
