@@ -67,8 +67,20 @@ macro_rules! register_math_fxns {
     paste::paste! {
       $(
         register_fxn_descriptor!([<$lib $suffix>],
-          i8, i16, i32, i64, i128, u8, u16, u32, u64, u128,
-          F32, F64, R64, C64
+          i8, "i8",
+          i16, "i16",
+          i32, "i32",
+          i64, "i64",
+          i128, "i128",
+          u8, "u8",
+          u16, "u16",
+          u32, "u32",
+          u64, "u64",
+          u128, "u128",
+          F32, "f32",
+          F64, "f64",
+          C64, "c64",
+          R64, "r64" 
         );
       )*
     }
