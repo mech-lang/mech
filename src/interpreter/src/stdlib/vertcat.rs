@@ -28,7 +28,7 @@ macro_rules! vertcat_one_arg {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
-      T: ConstElem + CompileConst + AsValueKind
+      T: ConstElem + CompileConst + AsValueKind + AsValueKind
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
@@ -64,7 +64,7 @@ macro_rules! vertcat_two_args {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
-      T: ConstElem + CompileConst + AsValueKind
+      T: ConstElem + CompileConst + AsValueKind + AsValueKind
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
@@ -102,10 +102,11 @@ macro_rules! vertcat_three_args {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
-      T: ConstElem + CompileConst
+      T: ConstElem + CompileConst + AsValueKind + AsValueKind
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
+        let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
+        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
       }
     }
   };} 
@@ -141,10 +142,11 @@ macro_rules! vertcat_four_args {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
-      T: ConstElem + CompileConst
+      T: ConstElem + CompileConst + AsValueKind
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
+        let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
       }
     }
   };}   
@@ -169,7 +171,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateTwoArgs<T> 
 where
-  T: ConstElem + CompileConst,
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let mut registers = [0, 0, 0];
@@ -223,7 +225,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateThreeArgs<T> 
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let mut registers = [0, 0, 0];
@@ -286,7 +288,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateFourArgs<T> 
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
 let mut registers = [0, 0, 0];
@@ -352,7 +354,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateNArgs<T> 
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let mut registers = [0, 0];
@@ -397,7 +399,7 @@ macro_rules! vertical_concatenate {
       #[cfg(feature = "compiler")]
       impl<T> MechFunctionCompiler for $name<T> 
       where
-        T: ConstElem + CompileConst + AsValueKind
+        T: ConstElem + CompileConst + AsValueKind + AsValueKind
       {
         fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
           let name = format!("{}<{}>", stringify!($name), T::as_value_kind());
@@ -428,7 +430,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateVD2<T> 
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let mut registers = [0, 0, 0];
@@ -484,7 +486,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateVD3<T> 
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let mut registers = [0, 0, 0, 0];
@@ -547,7 +549,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateVD4<T> 
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let mut registers = [0, 0, 0, 0, 0];
@@ -620,7 +622,7 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for VerticalConcatenateVDN<T> 
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let mut registers = [0, 0];
@@ -665,7 +667,7 @@ where
 #[cfg(all(feature = "matrix1", feature = "compiler"))]
 impl<T> MechFunctionCompiler for VerticalConcatenateS1<T> 
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
@@ -717,7 +719,7 @@ where
 #[cfg(all(feature = "vectord", feature = "compiler"))]
 impl<T> MechFunctionCompiler for VerticalConcatenateSD<T> 
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
@@ -859,10 +861,11 @@ where
 #[cfg(all(feature = "matrix1", feature = "vector4", feature = "compiler"))]
 impl<T> MechFunctionCompiler for VerticalConcatenateM1M1M1M1<T> 
 where
-  T: ConstElem + CompileConst
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
+    let name = format!("VerticalConcatenateM1M1M1M1<{}>", T::as_value_kind());
+    compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
   }
 }
 

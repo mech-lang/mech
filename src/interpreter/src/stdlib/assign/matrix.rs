@@ -530,11 +530,12 @@ macro_rules! impl_set_scalar_scalar_fxn {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $struct_name<T> 
     where
-      T: CompileConst + ConstElem,
-      $matrix_shape<T>: CompileConst + ConstElem,
+      T: CompileConst + ConstElem + AsValueKind,
+      $matrix_shape<T>: CompileConst + ConstElem + AsValueKind,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_ternop!(self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
+        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+        compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
       }
     }};}
 
@@ -878,11 +879,12 @@ macro_rules! impl_set_range_scalar_fxn {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $struct_name<T> 
     where
-      T: CompileConst + ConstElem,
-      $matrix_shape<T>: CompileConst + ConstElem,
+      T: CompileConst + ConstElem + AsValueKind,
+      $matrix_shape<T>: CompileConst + ConstElem + AsValueKind,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_ternop!(self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
+        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+        compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
       }
     }};}
 
@@ -1007,12 +1009,13 @@ where
 #[cfg(feature = "compiler")]
 impl<T, R, C, S, IxVec> MechFunctionCompiler for Set2DSR<T, na::Matrix<T, R, C, S>, IxVec> 
 where
-  T: CompileConst + ConstElem,
+  T: CompileConst + ConstElem + AsValueKind,
   IxVec: CompileConst + ConstElem,
   na::Matrix<T, R, C, S>: CompileConst + ConstElem,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
+    let name = format!("Set2DSR<{}>", T::as_value_kind());
+    compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
   }
 }
 
@@ -1052,12 +1055,13 @@ where
 #[cfg(feature = "compiler")]
 impl<T, R, C, S, IxVec> MechFunctionCompiler for Set2DSRB<T, na::Matrix<T, R, C, S>, IxVec> 
 where
-  T: CompileConst + ConstElem,
+  T: CompileConst + ConstElem + AsValueKind,
   IxVec: CompileConst + ConstElem,
-  na::Matrix<T, R, C, S>: CompileConst + ConstElem,
+  na::Matrix<T, R, C, S>: CompileConst + ConstElem + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
+    let name = format!("Set2DSRB<{}>", T::as_value_kind());
+    compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
   }
 }
 
@@ -1168,13 +1172,14 @@ where
 #[cfg(feature = "compiler")]
 impl<T, R, C, S, IxVec1, IxVec2> MechFunctionCompiler for Set2DRRS<T, na::Matrix<T, R, C, S>, IxVec1, IxVec2> 
 where
-  T: CompileConst + ConstElem,
+  T: CompileConst + ConstElem + AsValueKind,
   IxVec1: CompileConst + ConstElem,
   IxVec2: CompileConst + ConstElem,
-  na::Matrix<T, R, C, S>: CompileConst + ConstElem,
+  na::Matrix<T, R, C, S>: CompileConst + ConstElem + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
+    let name = format!("Set2DRRS<{}>", T::as_value_kind()); 
+    compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
   }
 }
 
@@ -1218,13 +1223,14 @@ where
 #[cfg(feature = "compiler")]
 impl<T, R, C, S, IxVec1, IxVec2> MechFunctionCompiler for Set2DRRSB<T, na::Matrix<T, R, C, S>, IxVec1, IxVec2> 
 where
-  T: CompileConst + ConstElem,
+  T: CompileConst + ConstElem + AsValueKind,
   IxVec1: CompileConst + ConstElem,
   IxVec2: CompileConst + ConstElem,
-  na::Matrix<T, R, C, S>: CompileConst + ConstElem,
+  na::Matrix<T, R, C, S>: CompileConst + ConstElem + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
+    let name = format!("Set2DRRSB<{}>", T::as_value_kind());
+    compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
   }
 }
 

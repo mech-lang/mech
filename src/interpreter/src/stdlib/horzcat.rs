@@ -1,58 +1,31 @@
 #[macro_use]
 use crate::stdlib::*;
 
-// Horizontal Concatenate -----------------------------------------------------
+macro_rules! register_horizontal_concatenate {
+  ($name:ident) => {
+    register_fxn_descriptor!(
+      $name, 
+      bool, "bool", 
+      String, "string", 
+      u8, "u8", 
+      u16, "u16", 
+      u32, "u32", 
+      u64, "u64", 
+      u128, "u128", 
+      i8, "i8", 
+      i16, "i16", 
+      i32, "i32", 
+      i64, "i64", 
+      i128, "i128", 
+      F32, "f32", 
+      F64, "f64", 
+      C64, "c64", 
+      R64, "r64"
+    );
+  };
+}
 
-macro_rules! horzcat_one_arg {
-  ($fxn:ident, $e0:ident, $out:ident, $opt:ident) => {
-    #[derive(Debug)]
-    struct $fxn<T> {
-      e0: Ref<$e0<T>>,
-      out: Ref<$out<T>>,
-    }
-    impl<T> MechFunctionFactory for $fxn<T>
-    where
-      T: Debug + Clone + Sync + Send + PartialEq + 'static +
-      ConstElem + CompileConst + AsValueKind,
-      Ref<$out<T>>: ToValue
-    {
-      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-          FunctionArgs::Unary(out, arg0) => {
-            let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
-            let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
-            Ok(Box::new(Self { e0, out }))
-          },
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 1 argument, got {:?}", stringify!($fxn), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
-        }
-      }
-    }
-    impl<T> MechFunctionImpl for $fxn<T>
-    where
-      T: Debug + Clone + Sync + Send + PartialEq + 'static,
-      Ref<$out<T>>: ToValue
-    {
-      fn solve(&self) { 
-        unsafe {
-          let e0_ptr = (*(self.e0.as_ptr())).clone();
-          let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
-          $opt!(out_ptr,e0_ptr);
-        }
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:#?}", self) }
-    }
-    #[cfg(feature = "compiler")]
-    impl<T> MechFunctionCompiler for $fxn<T> 
-    where
-      T: ConstElem + CompileConst + AsValueKind
-    {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
-        compile_unop!(name, self.out, self.e0, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
-      }
-    }
-  };}
+// Horizontal Concatenate -----------------------------------------------------
 
 macro_rules! horzcat_two_args {
   ($fxn:ident, $e1:ident, $e2:ident, $out:ident, $opt:ident) => {
@@ -99,10 +72,13 @@ macro_rules! horzcat_two_args {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
-      T: ConstElem + CompileConst + AsValueKind
+      T: ConstElem + CompileConst + AsValueKind,
+      $e1<T>: AsValueKind,
+      $e2<T>: AsValueKind,
+      $out<T>: AsValueKind,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
+        let name = format!("{}<{},{},{},{}>", stringify!($fxn), T::as_value_kind(), $out::as_value_kind(), $e1::as_value_kind(), $e2::as_value_kind());
         compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
     }
@@ -156,10 +132,15 @@ macro_rules! horzcat_three_args {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
-      T: ConstElem + CompileConst + AsValueKind
+      T: ConstElem + CompileConst + AsValueKind,
+      $e0<T>: AsValueKind,
+      $e1<T>: AsValueKind,
+      $e2<T>: AsValueKind,
+      $out<T>: AsValueKind,      
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+        let name = format!("{}<{},{},{},{},{}>", stringify!($fxn), T::as_value_kind(), $out::as_value_kind(), $e0::as_value_kind(), $e1::as_value_kind(), $e2::as_value_kind());
+        compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
     }
   };} 
@@ -215,13 +196,21 @@ macro_rules! horzcat_four_args {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
-      T: ConstElem + CompileConst + AsValueKind
+      T: ConstElem + CompileConst + AsValueKind,
+      $e0<T>: AsValueKind,
+      $e1<T>: AsValueKind,
+      $e2<T>: AsValueKind,
+      $e3<T>: AsValueKind,
+      $out<T>: AsValueKind,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+        let name = format!("{}<{},{},{},{},{},{}>", stringify!($fxn), T::as_value_kind(), $out::as_value_kind(), $e0::as_value_kind(), $e1::as_value_kind(), $e2::as_value_kind(), $e3::as_value_kind());
+        compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
     }
   };}   
+
+// HorizontalConcatenateTwoArgs -----------------------------------------------
 
 struct HorizontalConcatenateTwoArgs<T> {
   e0: Box<dyn CopyMat<T>>,
@@ -294,6 +283,8 @@ where
     Ok(registers[0])
   }
 }
+
+// HorizontalConcatenateThreeArgs ---------------------------------------------
     
 struct HorizontalConcatenateThreeArgs<T> {
   e0: Box<dyn CopyMat<T>>,
@@ -354,6 +345,8 @@ where
     Ok(registers[0])
   }
 }
+
+// HorizontalConcatenateFourArgs ----------------------------------------------
 
 struct HorizontalConcatenateFourArgs<T> {
   e0: Box<dyn CopyMat<T>>,
@@ -423,6 +416,8 @@ where
     Ok(registers[0])
   }
 }
+
+// HorizontalConcatenateNArgs -------------------------------------------------
 
 struct HorizontalConcatenateNArgs<T> {
   e0: Vec<Box<dyn CopyMat<T>>>,
@@ -500,6 +495,8 @@ macro_rules! horizontal_concatenate {
     }
   };
 }
+
+// HorizontalConcatenateRD ----------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateRD<T> {
@@ -623,13 +620,32 @@ where
   }
 }
 
+// HorizontalConcatenateS2 --------------------------------------------------
+
 #[derive(Debug)]
 struct HorizontalConcatenateS2<T> {
   e0: Ref<T>,
   e1: Ref<T>,
   out: Ref<RowVector2<T>>,
 }
-
+impl<T> MechFunctionFactory for HorizontalConcatenateS2<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static +
+  ConstElem + CompileConst + AsValueKind,
+  Ref<RowVector2<T>>: ToValue
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Binary(out, arg0, arg1) => {
+        let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+        let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+        let out: Ref<RowVector2<T>> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self { e0, e1, out }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateS2 requires 2 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
 impl<T> MechFunctionImpl for HorizontalConcatenateS2<T> 
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -657,6 +673,10 @@ where
   }
 }
 
+register_horizontal_concatenate!(HorizontalConcatenateS2);
+
+// HorizontalConcatenateS3 --------------------------------------------------
+
 #[derive(Debug)]
 struct HorizontalConcatenateS3<T> {
   e0: Ref<T>,
@@ -664,7 +684,25 @@ struct HorizontalConcatenateS3<T> {
   e2: Ref<T>,
   out: Ref<RowVector3<T>>,
 }
-
+impl<T> MechFunctionFactory for HorizontalConcatenateS3<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static +
+  ConstElem + CompileConst + AsValueKind,
+  Ref<RowVector3<T>>: ToValue
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+        let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+        let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+        let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+        let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self { e0, e1, e2, out }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateS3 requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
 impl<T> MechFunctionImpl for HorizontalConcatenateS3<T> 
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -688,9 +726,14 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateS3<{}>", T::as_value_kind());
+    compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+register_horizontal_concatenate!(HorizontalConcatenateS3);
+
+// HorizontalConcatenateS4 --------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateS4<T> {
@@ -725,7 +768,8 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateS4<{}>", T::as_value_kind());
+    compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
 
@@ -735,6 +779,8 @@ horizontal_concatenate!(HorizontalConcatenateR2,2);
 horizontal_concatenate!(HorizontalConcatenateR3,3);
 #[cfg(feature = "row_vector4")]
 horizontal_concatenate!(HorizontalConcatenateR4,4);
+
+// HorizontalConcatenateSD ----------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateSD<T> {
@@ -810,6 +856,8 @@ horzcat_single!(HorizontalConcatenateV4,Vector4);
 #[cfg(feature = "vectord")]
 horzcat_single!(HorizontalConcatenateVD,DVector);
 
+// HorizontalConcatenateSR2 --------------------------------------------------
+
 #[derive(Debug)]
 struct HorizontalConcatenateSR2<T> {
   e0: Ref<T>,
@@ -839,13 +887,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSR2<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSR2<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateR2S --------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateR2S<T> {
@@ -875,13 +925,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateR2S<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let name = format!("HorizontalConcatenateR2S<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateSM1 ---------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateSM1<T> {
@@ -910,13 +962,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSM1<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateM1S ---------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateM1S<T> {
@@ -944,13 +998,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1S<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let name = format!("HorizontalConcatenateM1S<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateSSSM1 -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateSSSM1<T> {
@@ -984,12 +1040,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSSSM1<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateSSSM1<{}>", T::as_value_kind());
+    compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateSSM1S -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateSSM1S<T> {
@@ -1023,12 +1082,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1S<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateSSM1S<{}>", T::as_value_kind());
+    compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateSM1SS -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateSM1SS<T> {
@@ -1062,12 +1124,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1SS<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateSM1SS<{}>", T::as_value_kind());
+    compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateM1SSS -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateM1SSS<T> {
@@ -1101,12 +1166,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SSS<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateM1SSS<{}>", T::as_value_kind());
+    compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateSR3 -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateSR3<T> {
@@ -1136,13 +1204,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSR3<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let name = format!("HorizontalConcatenateSR3<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateR3S -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateR3S<T> {
@@ -1174,13 +1244,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateR3S<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     let name = format!("HorizontalConcatenateR3S<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateSSM1 -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateSSM1<T> {
@@ -1212,12 +1284,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateSSM1<{}>", T::as_value_kind());
+    compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateSSM1 -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateSM1S<T> {
@@ -1249,12 +1324,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1S<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateSM1S<{}>", T::as_value_kind());
+    compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateM1SS -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateM1SS<T> {
@@ -1286,12 +1364,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SS<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateM1SS<{}>", T::as_value_kind());
+    compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateSSR2 -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateSSR2<T> {
@@ -1325,12 +1406,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSSR2<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateSSR2<{}>", T::as_value_kind());
+    compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateSR2S -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateSR2S<T> {
@@ -1364,12 +1448,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSR2S<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateSR2S<{}>", T::as_value_kind());
+    compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateR2SS -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateR2SS<T> {
@@ -1403,12 +1490,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateR2SS<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateR2SS<{}>", T::as_value_kind());
+    compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateM1M1S -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateM1M1S<T> {
@@ -1440,12 +1530,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1S<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateM1M1S<{}>", T::as_value_kind());
+    compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateM1M1 -------------------------------------------------
 
 macro_rules! horzcat_m1m1 {
   ($out:expr, $e0:expr, $e1:expr) => {
@@ -1453,6 +1546,8 @@ macro_rules! horzcat_m1m1 {
     $out[1] = $e1[0].clone();
   };}
 horzcat_two_args!(HorizontalConcatenateM1M1,Matrix1,Matrix1,RowVector2,horzcat_m1m1);
+
+// HorizontalConcatenateM1SM1 -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateM1SM1<T> {
@@ -1484,12 +1579,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateM1SM1<{}>", T::as_value_kind());
+    compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateSM1M1 -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateSM1M1<T> {
@@ -1521,12 +1619,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateSM1M1<{}>", T::as_value_kind());
+    compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateR2R2 -------------------------------------------------
 
 macro_rules! horzcat_r2r2 {
   ($out:expr, $e0:expr, $e1:expr) => {
@@ -1537,6 +1638,8 @@ macro_rules! horzcat_r2r2 {
   };}
 horzcat_two_args!(HorizontalConcatenateR2R2,RowVector2,RowVector2,RowVector4,horzcat_r2r2);
 
+// HorizontalConcatenateM1R3 -------------------------------------------------
+
 macro_rules! horzcat_m1r3 {
   ($out:expr, $e0:expr, $e1:expr) => {
     $out[0] = $e0[0].clone();
@@ -1546,6 +1649,8 @@ macro_rules! horzcat_m1r3 {
   };}
 horzcat_two_args!(HorizontalConcatenateM1R3,Matrix1,RowVector3,RowVector4,horzcat_m1r3);
 
+// HorizontalConcatenateR3M1 -------------------------------------------------
+
 macro_rules! horzcat_r3m1 {
   ($out:expr, $e0:expr, $e1:expr) => {
     $out[0] = $e0[0].clone();
@@ -1554,6 +1659,8 @@ macro_rules! horzcat_r3m1 {
     $out[3] = $e1[0].clone();
   };}
 horzcat_two_args!(HorizontalConcatenateR3M1,RowVector3,Matrix1,RowVector4,horzcat_r3m1);
+
+// HorizontalConcatenateSM1R2 -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateSM1R2<T> {
@@ -1586,12 +1693,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1R2<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateSM1R2<{}>", T::as_value_kind());
+    compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateM1SR2 -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateM1SR2<T> {
@@ -1624,13 +1734,16 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SR2<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateM1SR2<{}>", T::as_value_kind());
+    compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
   
+// HorizontalConcatenateSM1SM1 -------------------------------------------------
+
 #[derive(Debug)]
 struct HorizontalConcatenateSM1SM1<T> {
   e0: Ref<T>,          
@@ -1665,12 +1778,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1SM1<T>
 where
-  T: ConstElem + CompileConst + AsValueKind + AsValueKind
+  T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateSM1SM1<{}>", T::as_value_kind());
+    compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateM1R2S -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateM1R2S<T> {
@@ -1707,9 +1823,12 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateM1R2S<{}>", T::as_value_kind());
+    compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateR2M1S -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateR2M1S<T> {
@@ -1745,9 +1864,12 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));  
+    let name = format!("HorizontalConcatenateR2M1S<{}>", T::as_value_kind());
+    compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));  
   }
 }
+
+// HorizontalConcatenateR2SM1 -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateR2SM1<T> {
@@ -1782,9 +1904,12 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateR2SM1<{}>", T::as_value_kind());
+    compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateSR2M1 -------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateSR2M1<T> {
@@ -1820,9 +1945,12 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_ternop!(self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateSR2M1<{}>", T::as_value_kind());
+    compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateSSM1M1 ------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateSSM1M1<T> {
@@ -1860,9 +1988,12 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateSSM1M1<{}>", T::as_value_kind());
+    compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateM1M1SS ------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateM1M1SS<T> {
@@ -1900,9 +2031,12 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat)); 
+    let name = format!("HorizontalConcatenateM1M1SS<{}>", T::as_value_kind());
+    compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat)); 
   }
 }
+
+// HorizontalConcatenateSM1M1S ------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateSM1M1S<T> {
@@ -1940,9 +2074,12 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateSM1M1S<{}>", T::as_value_kind());
+    compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateM1SSM1 ------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateM1SSM1<T> {
@@ -1980,9 +2117,12 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateM1SSM1<{}>", T::as_value_kind());
+    compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateM1SM1S ------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateM1SM1S<T> {
@@ -2020,9 +2160,12 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateM1SM1S<{}>", T::as_value_kind());
+    compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateM1R2 --------------------------------------------------
 
 macro_rules! horzcat_m1r2 {
   ($out:expr, $e0:expr, $e1:expr) => {
@@ -2033,6 +2176,8 @@ macro_rules! horzcat_m1r2 {
 }
 horzcat_two_args!(HorizontalConcatenateM1R2, Matrix1, RowVector2, RowVector3, horzcat_m1r2);
 
+// HorizontalConcatenateR2M1 --------------------------------------------------
+
 macro_rules! horzcat_r2m1 {
   ($out:expr, $e0:expr, $e1:expr) => {
     $out[0] = $e0[0].clone();
@@ -2041,6 +2186,8 @@ macro_rules! horzcat_r2m1 {
   };
 }
 horzcat_two_args!(HorizontalConcatenateR2M1, RowVector2, Matrix1, RowVector3, horzcat_r2m1);
+
+// HorizontalConcatenateM1M1M1 ------------------------------------------------
 
 macro_rules! horzcat_m1m1m1 {
   ($out:expr, $e0:expr,$e1:expr,$e2:expr) => {
@@ -2051,6 +2198,8 @@ macro_rules! horzcat_m1m1m1 {
 }
 horzcat_three_args!(HorizontalConcatenateM1M1M1,Matrix1,Matrix1,Matrix1,RowVector3, horzcat_m1m1m1);
 
+// HorizontalConcatenateM1M1R2 ------------------------------------------------
+
 macro_rules! horzcat_m1m1r2 {
   ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
     $out[0] = $e0[0].clone();
@@ -2060,6 +2209,8 @@ macro_rules! horzcat_m1m1r2 {
   };
 }
 horzcat_three_args!(HorizontalConcatenateM1M1R2, Matrix1, Matrix1, RowVector2, RowVector4, horzcat_m1m1r2);
+
+// HorizontalConcatenateM1R2M1 ------------------------------------------------
 
 macro_rules! horzcat_m1r2m1 {
   ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
@@ -2080,6 +2231,8 @@ macro_rules! horzcat_r2m1m1 {
   };
 }
 horzcat_three_args!(HorizontalConcatenateR2M1M1, RowVector2, Matrix1, Matrix1, RowVector4, horzcat_r2m1m1);
+
+// HorizontalConcatenateSM1M1M1 -----------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateSM1M1M1<T> {
@@ -2118,9 +2271,12 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateSM1M1M1<{}>", T::as_value_kind());
+    compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateM1SM1M1 -----------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateM1SM1M1<T> {
@@ -2158,9 +2314,12 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateM1SM1M1<{}>", T::as_value_kind());
+    compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateM1M1SM1 -----------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateM1M1SM1<T> {
@@ -2197,9 +2356,12 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateM1M1SM1<{}>", T::as_value_kind());
+    compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateM1M1M1S -----------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateM1M1M1S<T> {
@@ -2236,9 +2398,12 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat)); 
+    let name = format!("HorizontalConcatenateM1M1M1S<{}>", T::as_value_kind());
+    compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat)); 
   }
 }
+
+// HorizontalConcatenateM1M1M1S -----------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateM1M1M1M1<T> {
@@ -2277,9 +2442,12 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_quadop!(self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateM1M1M1M1<{}>", T::as_value_kind());
+    compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+
+// HorizontalConcatenateV2V2 -------------------------------------------------
 
 macro_rules! horzcat_v2v2 {
   ($out:expr, $e0:expr, $e1:expr) => {
@@ -2303,6 +2471,8 @@ macro_rules! horzcat_v3v3 {
 }
 horzcat_two_args!(HorizontalConcatenateV3V3, Vector3, Vector3, Matrix3x2, horzcat_v3v3);
 
+// HorizontalConcatenateV2M2 --------------------------------------------------
+
 macro_rules! horzcat_v2m2 {
   ($out:expr, $e0:expr, $e1:expr) => {
     $out[0] = $e0[0].clone();
@@ -2315,6 +2485,8 @@ macro_rules! horzcat_v2m2 {
 }
 horzcat_two_args!(HorizontalConcatenateV2M2, Vector2, Matrix2, Matrix2x3, horzcat_v2m2);
 
+// HorizontalConcatenateM2V2 --------------------------------------------------
+
 macro_rules! horzcat_m2v2 {
   ($out:expr, $e0:expr, $e1:expr) => {
     $out[0] = $e0[0].clone();
@@ -2326,6 +2498,8 @@ macro_rules! horzcat_m2v2 {
   };
 }
 horzcat_two_args!(HorizontalConcatenateM2V2, Matrix2, Vector2, Matrix2x3, horzcat_m2v2);
+
+// HorizontalConcatenateM3x2V3 ------------------------------------------------
 
 macro_rules! horzcat_m3x2v3 {
   ($out:expr, $e0:expr, $e1:expr) => {
@@ -2342,6 +2516,8 @@ macro_rules! horzcat_m3x2v3 {
 }
 horzcat_two_args!(HorizontalConcatenateM3x2V3, Matrix3x2, Vector3, Matrix3, horzcat_m3x2v3);
 
+// HorizontalConcatenateV3M3x2 ------------------------------------------------
+
 macro_rules! horzcat_v3m3x2 {
   ($out:expr, $e0:expr, $e1:expr) => {
     $out[0] = $e0[0].clone();
@@ -2357,6 +2533,8 @@ macro_rules! horzcat_v3m3x2 {
 }
 horzcat_two_args!(HorizontalConcatenateV3M3x2, Vector3, Matrix3x2, Matrix3, horzcat_v3m3x2);
 
+// HorizontalConcatenateV4V4 --------------------------------------------------
+
 macro_rules! horzcat_v4md {
   ($out:expr, $e0:expr, $e1:expr) => {
     $out[0] = $e0[0].clone();
@@ -2370,6 +2548,8 @@ macro_rules! horzcat_v4md {
   };
 }
 horzcat_two_args!(HorizontalConcatenateV4MD, Vector4, DMatrix, Matrix4, horzcat_v4md);
+
+// HorizontalConcatenateMDV4 --------------------------------------------------
 
 macro_rules! horzcat_mdv4 {
   ($out:expr, $e0:expr, $e1:expr) => {
@@ -2386,6 +2566,8 @@ macro_rules! horzcat_mdv4 {
 }
 horzcat_two_args!(HorizontalConcatenateMDV4, DMatrix, Vector4, Matrix4, horzcat_mdv4);
 
+// HorizontalConcatenateMDV4 --------------------------------------------------
+
 macro_rules! horzcat_mdmd {
   ($out:expr, $e0:expr, $e1:expr) => {
     let e0_len = $e0.len();
@@ -2399,6 +2581,8 @@ macro_rules! horzcat_mdmd {
   };
 }
 horzcat_two_args!(HorizontalConcatenateMDMD, DMatrix, DMatrix, Matrix4, horzcat_mdmd);
+
+// HorizontalConcatenateMDMDMD ------------------------------------------------
 
 macro_rules! horzcat_mdmdmd {
   ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
@@ -2417,17 +2601,33 @@ macro_rules! horzcat_mdmdmd {
   };
 }
 
+// HorizontalConcatenateV2V2V2 ------------------------------------------------
+
 #[cfg(feature = "vector2")]
 horzcat_three_args!(HorizontalConcatenateV2V2V2, Vector2, Vector2, Vector2, Matrix2x3, horzcat_mdmdmd);
+
+// HorizontalConcatenateV3V3V3 ------------------------------------------------
+
 #[cfg(feature = "vector3")]
 horzcat_three_args!(HorizontalConcatenateV3V3V3, Vector3, Vector3, Vector3, Matrix3, horzcat_mdmdmd);
+
+// HorizontalConcatenateV2V2MD ------------------------------------------------
+
 #[cfg(all(feature = "matrixd", feature = "vector4"))]
 horzcat_three_args!(HorizontalConcatenateV4V4MD, Vector4, Vector4, DMatrix, Matrix4, horzcat_mdmdmd);
+
+// HorizontalConcatenateV2MDV2 ------------------------------------------------
+
 #[cfg(all(feature = "matrixd", feature = "vector4"))]
 horzcat_three_args!(HorizontalConcatenateV4MDV4, Vector4, DMatrix, Vector4, Matrix4, horzcat_mdmdmd);
+
+// HorizontalConcatenateMDV2V2 ------------------------------------------------
+
 #[cfg(all(feature = "matrixd", feature = "vector4"))]
 horzcat_three_args!(HorizontalConcatenateMDV4V4, DMatrix, Vector4, Vector4, Matrix4, horzcat_mdmdmd);
 
+
+// HorizontalConcatenateV4V4V4V4 ------------------------------------------------
 
 macro_rules! horzcat_mdmdmdmd {
   ($out:expr, $e0:expr, $e1:expr, $e2:expr, $e3:expr) => {

@@ -103,7 +103,7 @@ macro_rules! compile_binop {
 
 #[macro_export]
 macro_rules! compile_ternop {
-  ($out:expr, $arg1:expr, $arg2:expr, $arg3:expr, $ctx:ident, $feature_flag:expr) => {
+  ($name:tt, $out:expr, $arg1:expr, $arg2:expr, $arg3:expr, $ctx:ident, $feature_flag:expr) => {
     let mut registers = [0,0,0,0];
 
     registers[0] = compile_register_brrw!($out, $ctx);
@@ -114,7 +114,7 @@ macro_rules! compile_ternop {
     $ctx.features.insert($feature_flag);
 
     $ctx.emit_ternop(
-      hash_str(stringify!($struct_name)),
+      hash_str(&$name),
       registers[0],
       registers[1],
       registers[2],
@@ -127,7 +127,7 @@ macro_rules! compile_ternop {
 
 #[macro_export]
 macro_rules! compile_quadop {
-  ($out:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $ctx:ident, $feature_flag:expr) => {
+  ($name:tt, $out:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $ctx:ident, $feature_flag:expr) => {
     let mut registers = [0,0,0,0,0];
 
     registers[0] = compile_register_brrw!($out, $ctx);
@@ -139,7 +139,7 @@ macro_rules! compile_quadop {
     $ctx.features.insert($feature_flag);
 
     $ctx.emit_quadop(
-      hash_str(stringify!($struct_name)),
+      hash_str(&$name),
       registers[0],
       registers[1],
       registers[2],
