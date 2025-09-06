@@ -1073,7 +1073,24 @@ struct HorizontalConcatenateSR2<T> {
   e1: Ref<RowVector2<T>>,
   out: Ref<RowVector3<T>>,
 }
-
+impl<T> MechFunctionFactory for HorizontalConcatenateSR2<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static +
+  ConstElem + CompileConst + AsValueKind,
+  Ref<RowVector3<T>>: ToValue
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Binary(out, arg0, arg1) => {
+        let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+        let e1: Ref<RowVector2<T>> = unsafe { arg1.as_unchecked() }.clone();
+        let out: Ref<RowVector3<T>> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self { e0, e1, out }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSR2 requires 2 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
 impl<T> MechFunctionImpl for HorizontalConcatenateSR2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -1092,7 +1109,6 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
-
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSR2<T>
 where
@@ -1103,6 +1119,7 @@ where
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+register_horizontal_concatenate_fxn!(HorizontalConcatenateSR2);
 
 // HorizontalConcatenateR2S --------------------------------------------------
 
