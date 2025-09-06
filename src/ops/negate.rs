@@ -13,7 +13,23 @@ struct NegateV<O> {
   out: Ref<O>,
   _marker: PhantomData<O>,
 }
-
+impl<O> MechFunctionFactory for NegateV<O>
+where
+  O: Debug + Clone + Sync + Send + Neg<Output = O> + ClosedNeg + PartialEq + 'static +
+  CompileConst + ConstElem + AsValueKind,
+  Ref<O>: ToValue,
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Unary(out, arg) => {
+        let arg: Ref<O> = unsafe { arg.as_unchecked() }.clone();
+        let out: Ref<O> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self {arg, out, _marker: PhantomData }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Negate requires 1 argument, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
 impl<O> MechFunctionImpl for NegateV<O>
 where
   O: Debug + Clone + Sync + Send + Neg<Output = O> + ClosedNeg + PartialEq + 'static,
@@ -38,13 +54,31 @@ where
   }
 }
 
+register_fxn_descriptor!(NegateV, i8, i16, i32, i64, i128, F32, F64, RationalNumber, ComplexNumber);
+
 #[derive(Debug)]
 struct NegateS<O> {
   arg: Ref<O>,
   out: Ref<O>,
   _marker: PhantomData<O>,
 }
-
+impl<O> MechFunctionFactory for NegateS<O>
+where
+  O: Copy + Debug + Clone + Sync + Send + Neg<Output = O> + ClosedNeg + PartialEq + 'static +
+  CompileConst + ConstElem + AsValueKind,
+  Ref<O>: ToValue,
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Unary(out, arg) => {
+        let arg: Ref<O> = unsafe { arg.as_unchecked() }.clone();
+        let out: Ref<O> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self {arg, out, _marker: PhantomData }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Negate requires 1 argument, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
 impl<O> MechFunctionImpl for NegateS<O>
 where
   O: Copy + Debug + Clone + Sync + Send + Neg<Output = O> + ClosedNeg + PartialEq + 'static,
@@ -68,6 +102,8 @@ where
     compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Neg) );
   }
 }
+
+register_fxn_descriptor!(NegateS, i8, i16, i32, i64, i128, F32, F64, RationalNumber, ComplexNumber);
 
 fn impl_neg_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_urnop_match_arms!(
