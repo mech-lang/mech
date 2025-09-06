@@ -42,6 +42,7 @@ macro_rules! bytecode_test {
   };
 }
 
+bytecode_test!(bytecode_var_def,"x := 10",Value::F64(Ref::new(F64::new(10.0))));
 bytecode_test!(bytecode_math,"1 + 2",Value::F64(Ref::new(F64::new(3.0))));
-bytecode_test!(bytecode_math_assign,"x := 1 + 2; y := x + 4",Value::F64(Ref::new(F64::new(7.0))));
+bytecode_test!(bytecode_math_def,"x := 1 + 2; y := x + 4",Value::F64(Ref::new(F64::new(7.0))));
 bytecode_test!(bytecode_math_mul,"x := 2 * 2; y := x * 4",Value::F64(Ref::new(F64::new(16.0))));
