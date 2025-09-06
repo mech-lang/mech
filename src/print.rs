@@ -139,7 +139,7 @@ fn impl_print_fxn(source_value: Value) -> MResult<Box<dyn MechFunction>>  {
       #[cfg(feature = "complex")]
       Value::ComplexNumber(value) => { return Ok(Box::new(IoPrintScalar { e0: value })); }
       #[cfg(feature = "rational")]
-      Value::RationalNumber(value) => { return Ok(Box::new(IoPrintScalar { e0: value })); }
+      Value::R64(value) => { return Ok(Box::new(IoPrintScalar { e0: value })); }
       _ => todo!(),
     }
   }
@@ -161,7 +161,7 @@ fn impl_print_fxn(source_value: Value) -> MResult<Box<dyn MechFunction>>  {
     bool, "bool",
     String, "string",
     ComplexNumber, "complex",
-    RationalNumber, "rational"
+    R64, "rational"
   )
 }
 
