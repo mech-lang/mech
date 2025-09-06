@@ -190,7 +190,7 @@ async fn main() -> Result<(), MechError> {
   }
   
   // --------------------------------------------------------------------------
-  // build
+  // Build
   // --------------------------------------------------------------------------
   #[cfg(feature = "build")]
   if let Some(matches) = matches.subcommand_matches("build") {
