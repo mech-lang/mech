@@ -33,10 +33,11 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for NotS<T> 
 where
-  T: CompileConst + ConstElem,
+  T: CompileConst + ConstElem + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Not) );
+    let name = format!("NotS<{}>", T::as_value_kind());
+    compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Not) );
   }
 }
 
@@ -72,11 +73,12 @@ where
 #[cfg(feature = "compiler")]
 impl<T, MatA> MechFunctionCompiler for NotV<T, MatA> 
 where
-  T: CompileConst + ConstElem,
-  MatA: CompileConst + ConstElem,
+  T: CompileConst + ConstElem + AsValueKind,
+  MatA: CompileConst + ConstElem + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Not) );
+    let name = format!("NotV<{},{}>", T::as_value_kind(), MatA::as_value_kind());
+    compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Not) );
   }
 }
 
