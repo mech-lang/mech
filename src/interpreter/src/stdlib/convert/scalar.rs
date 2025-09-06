@@ -93,7 +93,8 @@ impl MechFunctionImpl for ConvertSRationalToF64 {
 #[cfg(all(feature = "compiler", feature = "rational", feature = "f64"))]
 impl MechFunctionCompiler for ConvertSRationalToF64 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
+    let name = format!("ConvertSRationalToF64<f64>");
+    compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
 }
 
@@ -174,11 +175,12 @@ where
 #[cfg(feature = "compiler")]
 impl<F, T> MechFunctionCompiler for ConvertScalarToScalar<F, T> 
 where
-  F: ConstElem + CompileConst,
-  T: ConstElem + CompileConst,
+  F: ConstElem + CompileConst + AsValueKind,
+  T: ConstElem + CompileConst + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
+    let name = format!("ConvertScalarToScalar<{},{}>", F::as_value_kind(), T::as_value_kind());
+    compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
 }
 
@@ -209,11 +211,12 @@ where
 #[cfg(feature = "compiler")]
 impl<F,T> MechFunctionCompiler for ConvertScalarToScalarBasic<F, T> 
 where
-  F: ConstElem + CompileConst,
-  T: ConstElem + CompileConst,
+  F: ConstElem + CompileConst + AsValueKind,
+  T: ConstElem + CompileConst + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
+    let name = format!("ConvertScalarToScalarBasic<{},{}>", F::as_value_kind(), T::as_value_kind());
+    compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
 }
 

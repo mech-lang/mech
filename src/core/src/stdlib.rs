@@ -58,7 +58,7 @@ macro_rules! compile_nullop {
 
 #[macro_export]
 macro_rules! compile_unop {
-  ($out:expr, $arg:expr, $ctx:ident, $feature_flag:expr) => {
+  ($name:tt, $out:expr, $arg:expr, $ctx:ident, $feature_flag:expr) => {
     // Allocate three registers as an array
     let mut registers = [0,0];
 
@@ -70,7 +70,7 @@ macro_rules! compile_unop {
 
     // Emit the operation
     $ctx.emit_unop(
-      hash_str(stringify!($struct_name)),
+      hash_str(&$name),
       registers[0],
       registers[1],
     );
@@ -258,7 +258,8 @@ macro_rules! impl_unop {
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for $struct_name {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_unop!(self.out, self.arg, ctx, $feature_flag);
+        let name = format!("{}<{}>", stringify!($struct_name), <$arg_type>::as_value_kind());
+        compile_unop!(name, self.out, self.arg, ctx, $feature_flag);
       }
     }};} 
 

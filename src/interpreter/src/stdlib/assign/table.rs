@@ -32,12 +32,13 @@ macro_rules! impl_col_set_fxn {
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for $fxn_name 
     where
-      $vector_size_in<$out_type>: CompileConst + ConstElem,
-      $vector_size_out<Value>: CompileConst + ConstElem,
-      $out_type: CompileConst + ConstElem,
+      $vector_size_in<$out_type>: CompileConst + ConstElem + AsValueKind,
+      $vector_size_out<Value>: CompileConst + ConstElem + AsValueKind,
+      $out_type: CompileConst + ConstElem + AsValueKind,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_unop!(self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
+        let name = format!("{}<{},{}>", stringify!($fxn_name), $vector_size_in::<$out_type>::as_value_kind(), $vector_size_out::<Value>::as_value_kind());
+        compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
       }
     }
   }
@@ -201,7 +202,8 @@ impl MechFunctionImpl for TableAppendRecord {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAppendRecord {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_unop!(self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
+    let name = format!("TableAppendRecord");
+    compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
   }
 }
 
@@ -224,7 +226,8 @@ impl MechFunctionImpl for TableAppendTable {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAppendTable {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_unop!(self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Table) );
+    let name = format!("TableAppendTable");
+    compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Table) );
   }
 }
 

@@ -421,11 +421,12 @@ where
 #[cfg(feature = "compiler")]
 impl<T, R, C, S> MechFunctionCompiler for Set1DA<T, naMatrix<T, R, C, S>> 
 where
-  T: CompileConst + ConstElem,
-  naMatrix<T, R, C, S>: CompileConst + ConstElem,
+  T: CompileConst + ConstElem + AsValueKind,
+  naMatrix<T, R, C, S>: CompileConst + ConstElem + AsValueKind,
 { 
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_unop!(self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
+    let name = format!("{}<{},{}>", stringify!(Set1DA), T::as_value_kind(), naMatrix::as_value_kind());
+    compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
   }
 }
 

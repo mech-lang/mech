@@ -44,10 +44,11 @@ where
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for Assign<T> 
 where
-  T: CompileConst + ConstElem,
+  T: CompileConst + ConstElem + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_unop!(self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
+    let name = format!("Assign<{}>", T::as_value_kind());
+    compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
   }
 }
 

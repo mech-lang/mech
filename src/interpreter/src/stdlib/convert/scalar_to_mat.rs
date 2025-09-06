@@ -33,11 +33,12 @@ where
 #[cfg(feature = "compiler")]
 impl<F, T> MechFunctionCompiler for ConvertScalarToMat2<F, T>
 where
-  T: CompileConst + ConstElem,
-  F: ConstElem + CompileConst,
+  T: CompileConst + ConstElem + AsValueKind,
+  F: ConstElem + CompileConst + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
+    let name = format!("ConvertScalarToMat2<{},{}>", F::as_value_kind(), T::as_value_kind());
+    compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
 }
 

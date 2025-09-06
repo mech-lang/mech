@@ -28,10 +28,11 @@ macro_rules! vertcat_one_arg {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
-      T: ConstElem + CompileConst
+      T: ConstElem + CompileConst + AsValueKind
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_unop!(self.out, self.e0, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
+        let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
+        compile_unop!(name, self.out, self.e0, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
       }
     }
   };}
@@ -396,10 +397,11 @@ macro_rules! vertical_concatenate {
       #[cfg(feature = "compiler")]
       impl<T> MechFunctionCompiler for $name<T> 
       where
-        T: ConstElem + CompileConst
+        T: ConstElem + CompileConst + AsValueKind
       {
         fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-          compile_unop!(self.out, self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
+          let name = format!("{}<{}>", stringify!($name), T::as_value_kind());
+          compile_unop!(name, self.out, self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
         }
       }
     }

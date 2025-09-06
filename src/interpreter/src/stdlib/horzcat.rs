@@ -31,7 +31,8 @@ macro_rules! horzcat_one_arg {
       T: ConstElem + CompileConst + AsValueKind
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_unop!(self.out, self.e0, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+        let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
+        compile_unop!(name, self.out, self.e0, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
     }
   };}
@@ -524,7 +525,8 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateS1<{}>", T::as_value_kind());
+    compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
 
