@@ -80,10 +80,11 @@ macro_rules! impl_stats_unop {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $struct_name<T> 
     where
-      T: CompileConst + ConstElem,
+      T: CompileConst + ConstElem + AsValueKind,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_unop!(self.out, self.arg, ctx, FeatureFlag::Custom(hash_str("stats/sum")) );
+        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+        compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Custom(hash_str("stats/sum")) );
       }
     }};}
 
