@@ -134,7 +134,7 @@ impl Interpreter {
     let mut symbol_table = state_brrw.symbol_table.borrow_mut();
     for (id, reg) in program.symbols.iter() {
       let constant = self.constants[*reg as usize].clone();
-      self.out = constant.clone();`
+      self.out = constant.clone();
       let mutable = program.mutable_symbols.contains(id);
       symbol_table.insert(*id, constant, mutable);
     }
