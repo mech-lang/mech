@@ -151,11 +151,12 @@ macro_rules! compile_quadop {
 }
 
 #[macro_export]
-macro_rules! register_fxn_descriptor {
+macro_rules! register_fxn_descriptor_inner {
   // single type
-  ($struct_name:ident, $type:tt) => {
+  ($struct_name:ident, $type:ty, $type_string:tt) => {
       paste!{
       inventory::submit! {
+        #[cfg(feature = $type_string)]
         FunctionDescriptor {
           name: concat!(stringify!($struct_name), "<", stringify!([<$type:lower>]), ">"),
           ptr: $struct_name::<$type>::new,
@@ -163,15 +164,14 @@ macro_rules! register_fxn_descriptor {
       }
     }
   };
-
-  // multiple types
-  ($struct_name:ident, $($type:ty),+ $(,)?) => {
-    $( register_fxn_descriptor!($struct_name, $type); )+
-  };
 }
 
-
-
+#[macro_export]
+macro_rules! register_fxn_descriptor {
+  ($struct_name:ident, $($type:ty, $type_string:tt),+ $(,)?) => {
+    $( register_fxn_descriptor_inner!($struct_name, $type, $type_string); )+
+  };
+}
 
 #[macro_export]
 macro_rules! impl_binop {
