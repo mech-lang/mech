@@ -115,7 +115,7 @@ fn impl_gte_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
     U128, bool, "u128";
     F32,  bool, "f32";
     F64,  bool, "f64";
-    RationalNumber, bool, "rational";
+    R64, bool, "rational";
     ComplexNumber, bool, "complex";
   )
 }

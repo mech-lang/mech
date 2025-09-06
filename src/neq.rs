@@ -108,7 +108,7 @@ fn impl_neq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
     F32,  bool, "f32";
     F64,  bool, "f64";
     String, bool, "string";
-    RationalNumber, bool, "rational";
+    R64, bool, "rational";
     ComplexNumber, bool, "complex";
   )
 }
