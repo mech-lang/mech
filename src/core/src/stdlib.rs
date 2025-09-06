@@ -182,10 +182,10 @@ macro_rules! impl_binop {
       pub rhs: Ref<$arg2_type>,
       pub out: Ref<$out_type>,
     }
-    impl<T> $struct_name<T> 
+    impl<T> MechFunctionFactory for $struct_name<T> 
     where
       T: Copy + Debug + Display + Clone + Sync + Send + 'static + 
-      PartialEq + PartialOrd + Default +
+      PartialEq + PartialOrd + ConstElem + CompileConst + AsValueKind +
       Add<Output = T> + AddAssign +
       Sub<Output = T> + SubAssign +
       Mul<Output = T> + MulAssign +
@@ -193,12 +193,16 @@ macro_rules! impl_binop {
       Zero + One,
       Ref<$out_type>: ToValue,
     {
-      pub fn new() -> Box<dyn MechFunctionImpl> {
-        Box::new(Self {
-          lhs: Ref::new(Default::default()),
-          rhs: Ref::new(Default::default()),
-          out: Ref::new(Default::default()),
-        })
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Binary(out, arg1, arg2) => {
+            let lhs: Ref<$arg1_type> = unsafe { arg1.as_unchecked() }.clone();
+            let rhs: Ref<$arg2_type> = unsafe { arg2.as_unchecked() }.clone();
+            let out: Ref<$out_type> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(Self {lhs, rhs, out }))
+          },
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+        }
       }
     }
     impl<T> MechFunctionImpl for $struct_name<T>
