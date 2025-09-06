@@ -30,10 +30,11 @@ where
 #[cfg(feature = "compiler")]
 impl<O> MechFunctionCompiler for NegateV<O> 
 where
-  O: CompileConst + ConstElem,
+  O: CompileConst + ConstElem + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Neg) );
+    let name = format!("NegateV<{}>", O::as_value_kind());
+    compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Neg) );
   }
 }
 
@@ -60,10 +61,11 @@ where
 #[cfg(feature = "compiler")]
 impl<O> MechFunctionCompiler for NegateS<O> 
 where
-  O: CompileConst + ConstElem,
+  O: CompileConst + ConstElem + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_unop!(self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Neg) );
+    let name = format!("NegateS<{}>", O::as_value_kind());
+    compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Neg) );
   }
 }
 

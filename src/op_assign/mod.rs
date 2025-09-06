@@ -205,7 +205,8 @@ macro_rules! impl_assign_scalar_scalar {
         T: CompileConst + ConstElem + AsValueKind,
       {
         fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-          compile_unop!(self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
+          let name = format!("{}AssignSS<{}>", stringify!($op_name), T::as_value_kind());
+          compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
         }
       }
     }
@@ -250,12 +251,13 @@ macro_rules! impl_assign_vector_vector {
       #[cfg(feature = "compiler")]
       impl<T, MatA, MatB> MechFunctionCompiler for [<$op_name AssignVV>]<T, MatA, MatB> 
       where
-        T: CompileConst + ConstElem,
-        MatA: CompileConst + ConstElem,
-        MatB: CompileConst + ConstElem,
+        T: CompileConst + ConstElem + AsValueKind,
+        MatA: CompileConst + ConstElem + AsValueKind,
+        MatB: CompileConst + ConstElem + AsValueKind,
       {
         fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-          compile_unop!(self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign) );
+          let name = format!("{}AssignVV<{},{},{}>", stringify!($op_name), T::as_value_kind(), MatA::as_value_kind(), MatB::as_value_kind());
+          compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign) );
         }
       }
     }
