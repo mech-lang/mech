@@ -293,8 +293,11 @@ where T: Hash + nalgebra::Scalar
       Matrix::Matrix3x2(x) => x.borrow().hash(state),
       #[cfg(feature = "matrix2x3")]
       Matrix::Matrix2x3(x) => x.borrow().hash(state),
+      #[cfg(feature = "row_vectord")]
       Matrix::DVector(x) => x.borrow().hash(state),
+      #[cfg(feature = "row_vectord")]
       Matrix::RowDVector(x) => x.borrow().hash(state),
+      #[cfg(feature = "matrixd")]
       Matrix::DMatrix(x) => x.borrow().hash(state),
       _ => panic!("Hashing not implemented for this matrix type"),
     }
@@ -314,6 +317,7 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
       Matrix::RowVector3(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
       #[cfg(feature = "row_vector2")]
       Matrix::RowVector2(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
+      #[cfg(feature = "row_vectord")]
       Matrix::RowDVector(vec) => {
         let vec_brrw = vec.borrow();
         let vec_str = if vec_brrw.ncols() > 20 {
@@ -331,6 +335,7 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
       Matrix::Vector3(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
       #[cfg(feature = "vector2")]
       Matrix::Vector2(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
+      #[cfg(feature = "vectord")]
       Matrix::DVector(vec) => {
         let vec_brrw = vec.borrow();
         let vec_str = if vec_brrw.nrows() > 20 {
@@ -356,6 +361,7 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
       Matrix::Matrix3x2(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
       #[cfg(feature = "matrix2x3")]
       Matrix::Matrix2x3(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
+      #[cfg(feature = "matrixd")]
       Matrix::DMatrix(vec) => {let vec_brrw = vec.borrow();(0..vec_brrw.nrows()).for_each(|i| builder.push_record(vec_brrw.row(i).iter().map(|x| x.pretty_print()).collect::<Vec<_>>()));}
       _ => todo!(),
     };
@@ -419,6 +425,7 @@ where
       Matrix::RowVector3(ref x) => Box::new(x.clone()),
       #[cfg(feature = "row_vector2")]
       Matrix::RowVector2(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "row_vectord")]
       Matrix::RowDVector(ref x) => Box::new(x.clone()),
       #[cfg(feature = "vector4")]
       Matrix::Vector4(ref x) => Box::new(x.clone()),
@@ -426,6 +433,7 @@ where
       Matrix::Vector3(ref x) => Box::new(x.clone()),
       #[cfg(feature = "vector2")]
       Matrix::Vector2(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "vectord")]
       Matrix::DVector(ref x) => Box::new(x.clone()),
       #[cfg(feature = "matrix4")]
       Matrix::Matrix4(ref x) => Box::new(x.clone()),
@@ -439,6 +447,7 @@ where
       Matrix::Matrix3x2(ref x) => Box::new(x.clone()),
       #[cfg(feature = "matrix2x3")]
       Matrix::Matrix2x3(ref x) => Box::new(x.clone()),
+      #[cfg(feature = "matrixd")]
       Matrix::DMatrix(ref x) => Box::new(x.clone()),
       _ => panic!("Unsupported matrix size"),
     }
@@ -446,6 +455,43 @@ where
 }
 
 impl<T> Matrix<T> {
+
+  pub unsafe fn as_unchecked<R>(&self) -> &Ref<R> {
+    match self {
+      #[cfg(feature = "row_vector4")]
+      Matrix::RowVector4(x) => &*(x as *const Ref<RowVector4<T>> as *const Ref<R>),
+      #[cfg(feature = "row_vector3")]
+      Matrix::RowVector3(x) => &*(x as *const Ref<RowVector3<T>> as *const Ref<R>),
+      #[cfg(feature = "row_vector2")]
+      Matrix::RowVector2(x) => &*(x as *const Ref<RowVector2<T>> as *const Ref<R>),
+      #[cfg(feature = "vector4")]
+      Matrix::Vector4(x) => &*(x as *const Ref<Vector4<T>> as *const Ref<R>),
+      #[cfg(feature = "vector3")]
+      Matrix::Vector3(x) => &*(x as *const Ref<Vector3<T>> as *const Ref<R>),
+      #[cfg(feature = "vector2")]
+      Matrix::Vector2(x) => &*(x as *const Ref<Vector2<T>> as *const Ref<R>),
+      #[cfg(feature = "matrix4")]
+      Matrix::Matrix4(x) => &*(x as *const Ref<Matrix4<T>> as *const Ref<R>),
+      #[cfg(feature = "matrix3")]
+      Matrix::Matrix3(x) => &*(x as *const Ref<Matrix3<T>> as *const Ref<R>),
+      #[cfg(feature = "matrix2")]
+      Matrix::Matrix2(x) => &*(x as *const Ref<Matrix2<T>> as *const Ref<R>),
+      #[cfg(feature = "matrix1")]
+      Matrix::Matrix1(x) => &*(x as *const Ref<Matrix1<T>> as *const Ref<R>),
+      #[cfg(feature = "matrix3x2")]
+      Matrix::Matrix3x2(x) => &*(x as *const Ref<Matrix3x2<T>> as *const Ref<R>),
+      #[cfg(feature = "matrix2x3")]
+      Matrix::Matrix2x3(x) => &*(x as *const Ref<Matrix2x3<T>> as *const Ref<R>),
+      #[cfg(feature = "vectord")]
+      Matrix::DVector(x) => &*(x as *const Ref<DVector<T>> as *const Ref<R>),
+      #[cfg(feature = "row_vectord")]
+      Matrix::RowDVector(x) => &*(x as *const Ref<RowDVector<T>> as *const Ref<R>),
+      #[cfg(feature = "matrixd")]
+      Matrix::DMatrix(x) => &*(x as *const Ref<DMatrix<T>> as *const Ref<R>),
+      _ => panic!("Unsupported type for as_unchecked"),
+    }
+  }
+
   pub fn addr(&self) -> usize {
     match self {
       #[cfg(feature = "matrix1")]
@@ -593,6 +639,7 @@ where T: Debug + Clone + PartialEq + 'static
       Matrix::RowVector3(x) => x.borrow().shape(),
       #[cfg(feature = "row_vector2")]
       Matrix::RowVector2(x) => x.borrow().shape(),
+      #[cfg(feature = "row_vectord")]
       Matrix::RowDVector(x) => x.borrow().shape(),
       #[cfg(feature = "vector4")]
       Matrix::Vector4(x) => x.borrow().shape(),
@@ -600,6 +647,7 @@ where T: Debug + Clone + PartialEq + 'static
       Matrix::Vector3(x) => x.borrow().shape(),
       #[cfg(feature = "vector2")]
       Matrix::Vector2(x) => x.borrow().shape(),
+      #[cfg(feature = "vectord")]
       Matrix::DVector(x) => x.borrow().shape(),
       #[cfg(feature = "matrix4")]
       Matrix::Matrix4(x) => x.borrow().shape(),
@@ -613,6 +661,7 @@ where T: Debug + Clone + PartialEq + 'static
       Matrix::Matrix3x2(x) => x.borrow().shape(),
       #[cfg(feature = "matrix2x3")]
       Matrix::Matrix2x3(x) => x.borrow().shape(),
+      #[cfg(feature = "matrixd")]
       Matrix::DMatrix(x) => x.borrow().shape(),
       _ => panic!("Unsupported matrix size"),
     };
