@@ -889,7 +889,26 @@ struct HorizontalConcatenateS4<T> {
   e3: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
-
+impl<T> MechFunctionFactory for HorizontalConcatenateS4<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static +
+  ConstElem + CompileConst + AsValueKind,
+  Ref<RowVector4<T>>: ToValue
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+        let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+        let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+        let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+        let e3: Ref<T> = unsafe { arg3.as_unchecked() }.clone();
+        let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self { e0, e1, e2, e3, out }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateS4 requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
 impl<T> MechFunctionImpl for HorizontalConcatenateS4<T> 
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -907,7 +926,6 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
-
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateS4<T>
 where
@@ -918,6 +936,7 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+register_horizontal_concatenate_fxn!(HorizontalConcatenateS4);
 
 // HorizontalConcatenateR2 ----------------------------------------------------
 
