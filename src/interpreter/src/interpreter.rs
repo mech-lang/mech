@@ -130,13 +130,15 @@ impl Interpreter {
     // Load the constants
     self.constants = program.decode_const_entries()?;
     // Load the symbol table
-    let mut state_brrw = self.state.borrow_mut();
-    let mut symbol_table = state_brrw.symbol_table.borrow_mut();
-    for (id, reg) in program.symbols.iter() {
-      let constant = self.constants[*reg as usize].clone();
-      self.out = constant.clone();
-      let mutable = program.mutable_symbols.contains(id);
-      symbol_table.insert(*id, constant, mutable);
+    {
+      let mut state_brrw = self.state.borrow_mut();
+      let mut symbol_table = state_brrw.symbol_table.borrow_mut();
+      for (id, reg) in program.symbols.iter() {
+        let constant = self.constants[*reg as usize].clone();
+        self.out = constant.clone();
+        let mutable = program.mutable_symbols.contains(id);
+        symbol_table.insert(*id, constant, mutable);
+      }
     }
     // Load the instructions
     {
@@ -256,10 +258,14 @@ impl Interpreter {
       }
     }
     // Load the dictionary
-    for (id, name) in &program.dictionary {
-      symbol_table.dictionary.borrow_mut().insert(*id, name.clone());
-      state_brrw.dictionary.borrow_mut().insert(*id, name.clone());
-    } 
+    {
+      let mut state_brrw = self.state.borrow_mut();
+      let mut symbol_table = state_brrw.symbol_table.borrow_mut();
+      for (id, name) in &program.dictionary {
+        symbol_table.dictionary.borrow_mut().insert(*id, name.clone());
+        state_brrw.dictionary.borrow_mut().insert(*id, name.clone());
+      } 
+    }
     Ok(self.out.clone())
   }
 
