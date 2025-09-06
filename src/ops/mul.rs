@@ -117,7 +117,7 @@ fn impl_mul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
     U128, u128, "u128";
     F32,  F32,  "f32";
     F64,  F64,  "f64";
-    RationalNumber, RationalNumber, "rational";
+    R64, R64, "rational";
     ComplexNumber, ComplexNumber, "complex";
   )
 }

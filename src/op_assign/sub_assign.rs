@@ -27,7 +27,7 @@ macro_rules! impl_sub_assign_match_arms {
         F32, "f32"; 
         F64, "f64" ;
         ComplexNumber, "complex";
-        RationalNumber, "rational";
+        R64, "rational";
       )
     }
   }
@@ -68,7 +68,7 @@ fn sub_assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFuncti
     U128, "u128";
     F32, "f32";
     F64, "f64";
-    RationalNumber, "rational";
+    R64, "rational";
     ComplexNumber, "complex";
   )
 }

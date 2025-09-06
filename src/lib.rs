@@ -68,7 +68,7 @@ macro_rules! register_math_fxns {
       $(
         register_fxn_descriptor!([<$lib $suffix>],
           i8, i16, i32, i64, i128, u8, u16, u32, u64, u128,
-          F32, F64, RationalNumber, ComplexNumber
+          F32, F64, R64, ComplexNumber
         );
       )*
     }

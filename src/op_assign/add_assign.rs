@@ -29,7 +29,7 @@ macro_rules! impl_add_assign_match_arms {
         F32, "f32"; 
         F64, "f64" ;
         ComplexNumber, "complex";
-        RationalNumber, "rational";
+        R64, "rational";
       )
     }
   }
@@ -70,7 +70,7 @@ pub fn add_assign_math_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFun
     U128, "u128";
     F32, "f32";
     F64, "f64";
-    RationalNumber, "rational";
+    R64, "rational";
     ComplexNumber, "complex";
   )
 }
