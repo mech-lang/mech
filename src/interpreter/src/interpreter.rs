@@ -142,24 +142,20 @@ impl Interpreter {
           //self.registers[*dst as usize] = result;
           todo!();
         },
-        DecodedInstr::BinOp{fxn_id, dst, lhs, rhs } => {
+        DecodedInstr::BinOp{ fxn_id, dst, lhs, rhs } => {
           let state_brrw = self.state.borrow();
           let functions_table = state_brrw.functions.borrow();
-
           match functions_table.functions.get(fxn_id) {
-            Some(fxn) => {
-              println!("{:?}", fxn().to_string());
-              //let lhs = &self.registers[*lhs as usize];
-              //let rhs = &self.registers[*rhs as usize];
-              //let out = &self.registers[*dst as usize];
-              //let fxn = fxn_compiler.compile(&vec![lhs.clone(), rhs.clone()])?;
-              //self.out = fxn.out().clone();
-              //fxn.solve();
-              //self.registers[*dst as usize] = fxn.out();
-              //state_brrw.plan.borrow_mut().add_plan_step(fxn);
+            Some(fxn_factory) => {
+              let lhs = &self.registers[*lhs as usize];
+              let rhs = &self.registers[*rhs as usize];
+              let out = &self.registers[*dst as usize];
+              let fxn = fxn_factory(FunctionArgs::Binary(out.clone(), lhs.clone(), rhs.clone()))?;
+              self.out = fxn.out().clone();
+              state_brrw.add_plan_step(fxn);
             },
             None => {
-              return Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Unknown binary function ID: {}", fxn_id),id: line!(),kind: MechErrorKind::GenericError("Unknown binary function".to_string()),});
+              return Err(MechError {file: file!().to_string(), tokens: vec![], msg: format!("Unknown binary function ID: {}", fxn_id), id: line!(), kind: MechErrorKind::GenericError("Unknown binary function".to_string())});
             }
           }
         },
