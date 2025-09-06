@@ -306,7 +306,7 @@ impl_conversion_mat_to_mat_fxn! {
   i128,"i128"=> [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
   String, "string" => [String, "string"];
   R64, "rational" => [String, "string"];
-  ComplexNumber, "complex" => [String, "string"];
+  C64, "complex" => [String, "string"];
 }
 
 
@@ -324,7 +324,7 @@ impl_conversion_mat_to_mat_fxn! {
   i64, "i64" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
   String, "string" => [String, "string"];
   R64, "rational" => [String, "string"];
-  ComplexNumber, "complex" => [String, "string"];
+  C64, "complex" => [String, "string"];
 }
 
 pub struct ConvertMatToMat {}

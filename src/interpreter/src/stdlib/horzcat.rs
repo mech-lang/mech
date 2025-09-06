@@ -3002,7 +3002,7 @@ fn impl_horzcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   { if ValueKind::is_compatible(target_kind.clone(), ValueKind::R64) { return impl_horzcat_arms!(R64, arguments, R64::default()) } }
 
   #[cfg(feature = "complex")]
-  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::ComplexNumber) { return impl_horzcat_arms!(ComplexNumber, arguments, ComplexNumber::default()) } }
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::C64) { return impl_horzcat_arms!(C64, arguments, C64::default()) } }
 
   Err(MechError {
     file: file!().to_string(),

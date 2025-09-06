@@ -138,7 +138,7 @@ pub fn number(num: &Number) -> Value {
 }
 
 #[cfg(feature = "complex")]
-fn complex(num: &ComplexNumberNode) -> Value {
+fn complex(num: &C64Node) -> Value {
   let im: f64 = match real(&num.imaginary.number).as_f64() {
     Some(val) => val.borrow().0,
     None => 0.0,
@@ -149,9 +149,9 @@ fn complex(num: &ComplexNumberNode) -> Value {
         Some(val) => val.borrow().0,
         None => 0.0,
       };      
-      Value::ComplexNumber(Ref::new(ComplexNumber::new(re, im)))
+      Value::C64(Ref::new(C64::new(re, im)))
     },
-    None => Value::ComplexNumber(Ref::new(ComplexNumber::new(0.0, im))),
+    None => Value::C64(Ref::new(C64::new(0.0, im))),
   }
 }
 

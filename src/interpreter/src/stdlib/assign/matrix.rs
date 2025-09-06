@@ -30,7 +30,7 @@ macro_rules! impl_set_match_arms {
         F32, "f32"; 
         F64, "f64" ;
         String, "string";
-        ComplexNumber, "complex";
+        C64, "complex";
         R64, "rational";
       )
     }

@@ -98,7 +98,7 @@ impl_col_set_fxn_shapes!(F64);
 #[cfg(feature = "string")]
 impl_col_set_fxn_shapes!(String);
 #[cfg(feature = "complex")]
-impl_col_set_fxn_shapes!(ComplexNumber);
+impl_col_set_fxn_shapes!(C64);
 #[cfg(feature = "rational")]
 impl_col_set_fxn_shapes!(R64);
 
@@ -155,7 +155,7 @@ fn impl_set_column_fxn(sink: Value, source: Value, key: Value) -> MResult<Box<dy
     F32,  F32,  "f32";
     F64,  F64,  "f64";
     String, String, "string";
-    ComplexNumber, ComplexNumber,"complex";
+    C64, C64,"complex";
     R64, R64,"rational";
   )
 }

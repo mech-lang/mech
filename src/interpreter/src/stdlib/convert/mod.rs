@@ -424,7 +424,7 @@ impl LosslessInto<R64> for F32 {
 }
 
 #[cfg(all(feature = "complex", feature = "string"))]
-impl LosslessInto<String> for ComplexNumber {
+impl LosslessInto<String> for C64 {
   fn lossless_into(self) -> String {
     self.pretty_print()
   }

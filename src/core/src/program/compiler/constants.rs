@@ -49,7 +49,7 @@ impl CompileConst for Value {
       #[cfg(feature = "index")]
       Value::Index(x) => x.borrow().compile_const(ctx)?,
       #[cfg(feature = "complex")]
-      Value::ComplexNumber(x) => x.borrow().compile_const(ctx)?,
+      Value::C64(x) => x.borrow().compile_const(ctx)?,
       #[cfg(feature = "rational")]
       Value::R64(x) => x.borrow().compile_const(ctx)?,
       #[cfg(all(feature = "matrix", feature = "f64"))]
@@ -81,7 +81,7 @@ impl CompileConst for Value {
       #[cfg(all(feature = "matrix", feature = "rational"))]
       Value::MatrixR64(x) => x.compile_const(ctx)?,
       #[cfg(all(feature = "matrix", feature = "complex"))]
-      Value::MatrixComplexNumber(x) => x.compile_const(ctx)?,
+      Value::MatrixC64(x) => x.compile_const(ctx)?,
       #[cfg(all(feature = "matrix", feature = "string"))]
       Value::MatrixString(x) => x.compile_const(ctx)?,
       #[cfg(feature = "matrix")]
@@ -202,12 +202,12 @@ impl CompileConst for R64 {
 }
 
 #[cfg(feature = "complex")]
-impl CompileConst for ComplexNumber {
+impl CompileConst for C64 {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
     payload.write_f64::<LittleEndian>(self.0.re)?;
     payload.write_f64::<LittleEndian>(self.0.im)?;
-    ctx.compile_const(&payload, ValueKind::ComplexNumber)
+    ctx.compile_const(&payload, ValueKind::C64)
   }
 }
 
@@ -486,12 +486,12 @@ impl ConstElem for R64 {
 }
 
 #[cfg(feature = "complex")]
-impl ConstElem for ComplexNumber {
+impl ConstElem for C64 {
   fn write_le(&self, out: &mut Vec<u8>) {
     out.write_f64::<LittleEndian>(self.0.re).expect("write complex real");
     out.write_f64::<LittleEndian>(self.0.im).expect("write complex imag");
   }
-  fn value_kind() -> ValueKind { ValueKind::ComplexNumber }
+  fn value_kind() -> ValueKind { ValueKind::C64 }
   fn align() -> u8 { 16 }
 }
 
@@ -649,7 +649,7 @@ impl ConstElem for Value {
       #[cfg(feature = "rational")]
       Value::R64(x) => x.borrow().write_le(out),
       #[cfg(feature = "complex")]
-      Value::ComplexNumber(x) => x.borrow().write_le(out),
+      Value::C64(x) => x.borrow().write_le(out),
       _ => todo!(),
     }
   }
@@ -672,7 +672,7 @@ impl ConstElem for ValueKind {
       ValueKind::I128 => out.write_u8(10).expect("write value kind"),
       ValueKind::F32 => out.write_u8(11).expect("write value kind"),
       ValueKind::F64 => out.write_u8(12).expect("write value kind"),
-      ValueKind::ComplexNumber => out.write_u8(13).expect("write value kind"),
+      ValueKind::C64 => out.write_u8(13).expect("write value kind"),
       ValueKind::R64 => out.write_u8(14).expect("write value kind"),
       ValueKind::String => out.write_u8(15).expect("write value kind"),
       ValueKind::Bool => out.write_u8(16).expect("write value kind"),

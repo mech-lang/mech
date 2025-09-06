@@ -205,7 +205,7 @@ pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> {
       #[cfg(feature = "string")]
       ValueKind::String  => handle_value_kind!(knd, val, id, data_map, as_string),
       #[cfg(feature = "complex")]
-      ValueKind::ComplexNumber  => handle_value_kind!(knd, val, id, data_map, as_complexnumber),
+      ValueKind::C64  => handle_value_kind!(knd, val, id, data_map, as_c64),
       #[cfg(feature = "rational")]
       ValueKind::R64  => handle_value_kind!(knd, val, id, data_map, as_r64),
       #[cfg(feature = "bool")]

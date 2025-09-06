@@ -94,12 +94,12 @@ pub fn number(input: ParseString) -> ParseResult<Number> {
 }
 
 // complex-number := real-number, ("i"|"j")? | (("+"|"-"), real-number, ("i"|"j")) ;
-pub fn complex_number(input: ParseString) -> ParseResult<ComplexNumberNode> {
+pub fn complex_number(input: ParseString) -> ParseResult<C64Node> {
   let (input, real_num) = real_number(input)?;
   if let Ok((input, _)) = alt((tag("i"), tag("j")))(input.clone()) {
     return Ok((
       input,
-      ComplexNumberNode {
+      C64Node {
         real: None,
         imaginary: ImaginaryNumber { number: real_num },
       },
@@ -115,7 +115,7 @@ pub fn complex_number(input: ParseString) -> ParseResult<ComplexNumberNode> {
     };
     return Ok((
       input,
-      ComplexNumberNode {
+      C64Node {
         real: Some(real_num),
         imaginary: ImaginaryNumber { number: imaginary },
       },

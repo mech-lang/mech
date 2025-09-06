@@ -89,7 +89,7 @@ impl_col_access_fxn_shapes!(F64);
 #[cfg(all(feature = "string", feature = "matrix"))]
 impl_col_access_fxn_shapes!(String);
 #[cfg(all(feature = "complex", feature = "matrix"))]
-impl_col_access_fxn_shapes!(ComplexNumber);
+impl_col_access_fxn_shapes!(C64);
 #[cfg(all(feature = "rational", feature = "matrix"))]
 impl_col_access_fxn_shapes!(R64);
 
@@ -140,7 +140,7 @@ fn impl_access_column_table_fxn(source: Value, key: Value) -> Result<Box<dyn Mec
     F32,F32::default(),"f32";
     F64,F64::default(),"f64";
     String,String::default(),"string";
-    ComplexNumber,ComplexNumber::default(),"complex";
+    C64,C64::default(),"complex";
     R64,R64::default(),"rational";
   )
 }

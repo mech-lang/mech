@@ -35,7 +35,7 @@ use mech_core::F64;
 #[cfg(feature = "f32")]
 use mech_core::F32;
 #[cfg(feature = "complex")]
-use mech_core::ComplexNumber;
+use mech_core::C64;
 #[cfg(feature = "rational")]
 use mech_core::R64;
 #[cfg(feature = "stdlib")]
@@ -122,7 +122,7 @@ pub fn load_stdkinds(kinds: &mut KindTable) {
   #[cfg(feature = "f64")]
   kinds.insert(hash_str("f64"),ValueKind::F64);
   #[cfg(feature = "c64")]
-  kinds.insert(hash_str("c64"),ValueKind::ComplexNumber);
+  kinds.insert(hash_str("c64"),ValueKind::C64);
   #[cfg(feature = "r64")]
   kinds.insert(hash_str("r64"),ValueKind::R64);
   #[cfg(feature = "string")]
