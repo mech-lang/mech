@@ -109,7 +109,7 @@ fn impl_eq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunctio
     F64,  bool, "f64";
     String, bool, "string";
     R64, bool, "rational";
-    ComplexNumber, bool, "complex";
+    C64, bool, "complex";
   )
 }
 

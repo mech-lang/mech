@@ -108,7 +108,7 @@ fn impl_gt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunctio
     F32,  bool, "f32";
     F64,  bool, "f64";
     R64, bool, "rational";
-    ComplexNumber, bool, "complex";
+    C64, bool, "complex";
   )
 }
 
