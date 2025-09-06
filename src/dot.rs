@@ -128,7 +128,7 @@ fn impl_dot_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
     U128, MatrixU128, u128, "u128";
     F32,  MatrixF32,  F32,  "f32";
     F64,  MatrixF64,  F64,  "f64";
-    RationalNumber, MatrixRationalNumber, RationalNumber, "rational";
+    R64, MatrixR64, R64, "rational";
     ComplexNumber, MatrixComplexNumber, ComplexNumber, "complex";
   )
 }
