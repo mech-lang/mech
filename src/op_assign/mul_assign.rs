@@ -26,7 +26,7 @@ macro_rules! impl_mul_assign_match_arms {
         U128, "u128";
         F32, "f32"; 
         F64, "f64" ;
-        ComplexNumber, "complex";
+        C64, "complex";
         R64, "rational";
       )
     }
@@ -69,7 +69,7 @@ fn mul_assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFuncti
     F32, "f32";
     F64, "f64";
     R64, "rational";
-    ComplexNumber, "complex";
+    C64, "complex";
   )
 }
 

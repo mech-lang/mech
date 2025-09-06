@@ -54,7 +54,7 @@ where
   }
 }
 
-register_fxn_descriptor!(NegateV, i8, i16, i32, i64, i128, F32, F64, R64, ComplexNumber);
+register_fxn_descriptor!(NegateV, i8, i16, i32, i64, i128, F32, F64, R64, C64);
 
 #[derive(Debug)]
 struct NegateS<O> {
@@ -103,7 +103,7 @@ where
   }
 }
 
-register_fxn_descriptor!(NegateS, i8, i16, i32, i64, i128, F32, F64, R64, ComplexNumber);
+register_fxn_descriptor!(NegateS, i8, i16, i32, i64, i128, F32, F64, R64, C64);
 
 fn impl_neg_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_urnop_match_arms!(
@@ -117,7 +117,7 @@ fn impl_neg_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
     F32,  F32,  "f32";
     F64,  F64,  "f64";
     R64, R64, "rational";
-    ComplexNumber, ComplexNumber, "complex";
+    C64, C64, "complex";
   )
 }
 

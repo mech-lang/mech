@@ -93,7 +93,7 @@ fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
     F32,  F32,  "f32";
     F64,  F64,  "f64";
     R64, R64, "rational";
-    ComplexNumber, ComplexNumber, "complex";
+    C64, C64, "complex";
   )
 }
 
