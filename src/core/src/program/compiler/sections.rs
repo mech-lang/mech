@@ -374,17 +374,19 @@ impl ConstEntry {
 
 pub struct SymbolEntry {
   pub id: u64,          // unique identifier for the symbol
+  pub mutable: bool,
   pub reg: Register,    // register index this symbol maps to
 }
 
 impl SymbolEntry {
 
-  pub fn new(id: u64, reg: Register) -> Self {
-    Self { id, reg }
+  pub fn new(id: u64, mutable: bool, reg: Register) -> Self {
+    Self { id, mutable, reg }
   }
 
   pub fn write_to(&self, w: &mut impl Write) -> MResult<()> {
     w.write_u64::<LittleEndian>(self.id)?;
+    w.write_u8(if self.mutable { 1 } else { 0 })?;
     w.write_u32::<LittleEndian>(self.reg)?;
     Ok(())
   }

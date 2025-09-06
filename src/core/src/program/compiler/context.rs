@@ -11,6 +11,8 @@ pub struct CompileCtx {
   pub symbol_ptrs: HashMap<u64, usize>,
   // symbol identity -> symbol name
   pub dictionary: HashMap<u64, String>,
+  // mutable symbols
+  pub mutable_symbols: HashSet<u64>,
   pub types: TypeSection,
   pub features: HashSet<FeatureFlag>,
   pub const_entries: Vec<ConstEntry>,
@@ -25,6 +27,7 @@ impl CompileCtx {
     Self {
       reg_map: HashMap::new(),
       symbols: HashMap::new(),
+      mutable_symbols: HashSet::new(),
       dictionary: HashMap::new(),
       types: TypeSection::new(),
       symbol_ptrs: HashMap::new(),
@@ -40,6 +43,7 @@ impl CompileCtx {
     self.reg_map.clear();
     self.symbols.clear();
     self.dictionary.clear();
+    self.mutable_symbols.clear();
     self.types = TypeSection::new();
     self.features.clear();
     self.const_entries.clear();
@@ -48,11 +52,14 @@ impl CompileCtx {
     self.next_reg = 0;
   }
 
-  pub fn define_symbol(&mut self, id: usize, reg: Register, name: &str) {
+  pub fn define_symbol(&mut self, id: usize, reg: Register, name: &str, mutable: bool) {
     let symbol_id = hash_str(name);
     self.symbols.insert(symbol_id, reg);
     self.symbol_ptrs.insert(symbol_id, id);
     self.dictionary.insert(symbol_id, name.to_string());
+    if mutable {
+      self.mutable_symbols.insert(symbol_id);
+    }
   }
 
   pub fn alloc_register_for_ptr(&mut self, ptr: usize) -> Register {
@@ -122,7 +129,7 @@ impl CompileCtx {
     let types_bytes_len: u64 = self.types.byte_len();
     let const_tbl_len: u64 = (self.const_entries.len() as u64) * ConstEntry::byte_len();
     let const_blob_len: u64 = self.const_blob.len() as u64;
-    let symbols_len: u64 = (self.symbols.len() as u64) * 12; // 8 bytes for id, 4 for reg
+    let symbols_len: u64 = (self.symbols.len() as u64) * 13; // 8 bytes for id, 1 byte for mutable, 4 for reg
     let instr_bytes_len: u64 = self.instrs.iter().map(|i| i.byte_len()).sum();
     let dict_len: u64 = self.dictionary.values().map(|s| s.len() as u64 + 12).sum(); // 8 bytes for id, 4 for string length
 
@@ -196,7 +203,8 @@ impl CompileCtx {
 
     // 5. write symbols
     for (id, reg) in &self.symbols {
-      let entry = SymbolEntry::new(*id, *reg);
+      let mutable = self.mutable_symbols.contains(id);
+      let entry = SymbolEntry::new(*id, mutable, *reg);
       entry.write_to(&mut buf)?;
     }
 

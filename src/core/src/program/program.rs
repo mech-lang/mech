@@ -47,6 +47,7 @@ pub struct ParsedProgram {
   pub const_blob: Vec<u8>,
   pub instr_bytes: Vec<u8>,
   pub symbols: HashMap<u64, Register>,
+  pub mutable_symbols: HashSet<u64>,
   pub instrs: Vec<DecodedInstr>,
   pub dictionary: HashMap<u64, String>,
 }
@@ -80,7 +81,8 @@ impl ParsedProgram {
 
     // 6. Symbols
     for (id, reg) in &self.symbols {
-      let entry = SymbolEntry::new(*id, *reg);
+      let mutable = self.mutable_symbols.contains(id);
+      let entry = SymbolEntry::new(*id, mutable, *reg);
       entry.write_to(&mut buf)?;
     }
 
@@ -485,6 +487,7 @@ fn load_program_from_reader<R: Read + Seek>(r: &mut R, total_len: u64) -> MResul
 
   // 5. read symbols
   let mut symbols = HashMap::new();
+  let mut mutable_symbols = HashSet::new();
   if header.symbols_off != 0 && header.symbols_len > 0 {
     r.seek(SeekFrom::Start(header.symbols_off))?;
     let mut symbols_bytes = vec![0u8; header.symbols_len as usize];
@@ -492,9 +495,12 @@ fn load_program_from_reader<R: Read + Seek>(r: &mut R, total_len: u64) -> MResul
     let mut cur = Cursor::new(&symbols_bytes[..]);
     for _ in 0..(header.symbols_len / 12) {
       let id = cur.read_u64::<LittleEndian>()?;
+      let mutable = cur.read_u8()? != 0;
       let reg = cur.read_u32::<LittleEndian>()?;
-      let entry = SymbolEntry::new(id, reg);
       symbols.insert(id, reg);
+      if mutable {
+        mutable_symbols.insert(id);
+      }
     }
   }
 
@@ -532,7 +538,7 @@ fn load_program_from_reader<R: Read + Seek>(r: &mut R, total_len: u64) -> MResul
   // decode instructions
   let instrs = decode_instructions(Cursor::new(&instr_bytes[..]))?;
   
-  Ok(ParsedProgram { header, features, types, const_entries, const_blob, instr_bytes, symbols, instrs, dictionary })
+  Ok(ParsedProgram { header, features, types, const_entries, const_blob, instr_bytes, symbols, mutable_symbols, instrs, dictionary })
 }
 
 pub fn decode_version_from_u16(v: u16) -> (u16, u16, u16) {
