@@ -142,7 +142,7 @@ fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> Result<Box<dyn MechF
     #[cfg(feature = "rational")]
     (Value::R64(n), Value::R64(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(R64::default())})),
     #[cfg(feature = "complex")]
-    (Value::ComplexNumber(n), Value::ComplexNumber(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(ComplexNumber::default())})),
+    (Value::C64(n), Value::C64(k)) => Ok(Box::new(NChooseK{n: n, k: k, out: Ref::new(C64::default())})),
     #[cfg(all(feature = "matrix", feature = "u8"))]
     (Value::MatrixU8(n), Value::U8(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(u8::to_matrix(vec![], 0, 0))})),
     #[cfg(all(feature = "matrix", feature = "u16"))]
@@ -170,7 +170,7 @@ fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> Result<Box<dyn MechF
     #[cfg(all(feature = "matrix", feature = "rational"))]
     (Value::MatrixR64(n), Value::R64(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(R64::to_matrix(vec![], 0, 0))})),
     #[cfg(all(feature = "matrix", feature = "complex"))]
-    (Value::MatrixComplexNumber(n), Value::ComplexNumber(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(ComplexNumber::to_matrix(vec![], 0, 0))})),
+    (Value::MatrixC64(n), Value::C64(k)) => Ok(Box::new(NChooseKMatrix{n: Ref::new(n), k, out: Ref::new(C64::to_matrix(vec![], 0, 0))})),
     x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
   }
 }
