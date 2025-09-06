@@ -19,14 +19,24 @@ use std::fmt;
 // Functions ------------------------------------------------------------------
 
 pub type FunctionsRef = Ref<Functions>;
-pub type FunctionTable = HashMap<u64, fn() -> Box<dyn MechFunctionImpl>>;
+pub type FunctionTable = HashMap<u64, fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>>;
 pub type FunctionCompilerTable = HashMap<u64, Box<dyn NativeFunctionCompiler>>;
+
+#[derive(Clone,Debug)]
+pub enum FunctionArgs {
+  Nullary(Value),
+  Unary(Value, Value),
+  Binary(Value, Value, Value),
+  Ternary(Value, Value, Value, Value),
+  Quaternary(Value, Value, Value, Value, Value),
+  Variadic(Value, Vec<Value>),
+}
 
 #[repr(C)]
 #[derive(Clone)]
 pub struct FunctionDescriptor {
   pub name: &'static str,
-  pub ptr: fn() -> Box<dyn MechFunctionImpl>,
+  pub ptr: fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>,
 }
 
 impl Debug for FunctionDescriptor {
@@ -36,6 +46,10 @@ impl Debug for FunctionDescriptor {
 }
 
 unsafe impl Sync for FunctionDescriptor {}
+
+pub trait MechFunctionFactory {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>>;
+}
 
 pub trait MechFunctionImpl {
   fn solve(&self);
