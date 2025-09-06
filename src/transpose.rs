@@ -138,7 +138,7 @@ fn impl_transpose_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechErr
     F32,    F32,    "f32";
     F64,    F64,    "f64";
     String, String, "string";
-    ComplexNumber, ComplexNumber, "complex";
+    C64, C64, "complex";
     R64, R64, "rational";
   )
 }
