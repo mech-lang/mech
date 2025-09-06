@@ -129,6 +129,16 @@ impl Interpreter {
     self.constants = vec![Value::Empty; program.const_entries.len()];
     // Load the constants
     self.constants = program.decode_const_entries()?;
+    // Load the symbol table
+    let mut state_brrw = self.state.borrow_mut();
+    let mut symbol_table = state_brrw.symbol_table.borrow_mut();
+    for (id, reg) in program.symbols.iter() {
+      let constant = self.constants[*reg as usize].clone();
+      self.out = constant.clone();`
+      let mutable = program.mutable_symbols.contains(id);
+      symbol_table.insert(*id, constant, mutable);
+    }
+    // Load the instructions
     {
       let state_brrw = self.state.borrow();
       let functions_table = state_brrw.functions.borrow();
@@ -244,12 +254,6 @@ impl Interpreter {
         }
         self.ip += 1;
       }
-    }
-    // Load the symbol table
-    let mut state_brrw = self.state.borrow_mut();
-    let mut symbol_table = state_brrw.symbol_table.borrow_mut();
-    for (id, reg) in program.symbols.iter() {
-      symbol_table.insert(*id, self.constants[*reg as usize].clone(), false); // the false indicates it's not mutable.
     }
     // Load the dictionary
     for (id, name) in &program.dictionary {
