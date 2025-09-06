@@ -14,8 +14,7 @@ pub trait CompileConst {
 impl CompileConst for Value {
 
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
-    let mut payload = Vec::<u8>::new();
-    match self {
+    let reg = match self {
       #[cfg(feature = "bool")]
       Value::Bool(x) => x.borrow().compile_const(ctx)?,
       #[cfg(feature = "string")]
@@ -92,7 +91,7 @@ impl CompileConst for Value {
       Value::Table(x) => x.borrow().compile_const(ctx)?,
       _ => todo!(),
     };
-    ctx.compile_const(&payload, self.kind())
+    Ok(reg)
   }
 }
 
