@@ -10,6 +10,23 @@ macro_rules! horzcat_one_arg {
       e0: Ref<$e0<T>>,
       out: Ref<$out<T>>,
     }
+    impl<T> MechFunctionFactory for $fxn<T>
+    where
+      T: Debug + Clone + Sync + Send + PartialEq + 'static +
+      ConstElem + CompileConst + AsValueKind,
+      Ref<$out<T>>: ToValue
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Unary(out, arg0) => {
+            let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
+            let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(Self { e0, out }))
+          },
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 1 argument, got {:?}", stringify!($fxn), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+        }
+      }
+    }
     impl<T> MechFunctionImpl for $fxn<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -44,6 +61,24 @@ macro_rules! horzcat_two_args {
       e0: Ref<$e1<T>>,
       e1: Ref<$e2<T>>,
       out: Ref<$out<T>>,
+    }
+    impl<T> MechFunctionFactory for $fxn<T>
+    where
+      T: Debug + Clone + Sync + Send + PartialEq + 'static +
+      ConstElem + CompileConst + AsValueKind,
+      Ref<$out<T>>: ToValue
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Binary(out, arg0, arg1) => {
+            let e0: Ref<$e1<T>> = unsafe { arg0.as_unchecked() }.clone();
+            let e1: Ref<$e2<T>> = unsafe { arg1.as_unchecked() }.clone();
+            let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(Self { e0, e1, out }))
+          },
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($fxn), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+        }
+      }
     }
     impl<T> MechFunctionImpl for $fxn<T>
     where
@@ -81,6 +116,25 @@ macro_rules! horzcat_three_args {
       e1: Ref<$e1<T>>,
       e2: Ref<$e2<T>>,
       out: Ref<$out<T>>,
+    }
+    impl<T> MechFunctionFactory for $fxn<T>
+    where
+      T: Debug + Clone + Sync + Send + PartialEq + 'static +
+      ConstElem + CompileConst + AsValueKind,
+      Ref<$out<T>>: ToValue
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+            let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
+            let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
+            let e2: Ref<$e2<T>> = unsafe { arg2.as_unchecked() }.clone();
+            let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(Self { e0, e1, e2, out }))
+          },
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 3 arguments, got {:?}", stringify!($fxn), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+        }
+      }
     }
     impl<T> MechFunctionImpl for $fxn<T>
     where
@@ -120,6 +174,26 @@ macro_rules! horzcat_four_args {
       e3: Ref<$e3<T>>,
       out: Ref<$out<T>>,
     }
+    impl<T> MechFunctionFactory for $fxn<T>
+    where
+      T: Debug + Clone + Sync + Send + PartialEq + 'static +
+      ConstElem + CompileConst + AsValueKind,
+      Ref<$out<T>>: ToValue
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+            let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
+            let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
+            let e2: Ref<$e2<T>> = unsafe { arg2.as_unchecked() }.clone();
+            let e3: Ref<$e3<T>> = unsafe { arg3.as_unchecked() }.clone();
+            let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(Self { e0, e1, e2, e3, out }))
+          },
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 4 arguments, got {:?}", stringify!($fxn), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+        }
+      }
+    }
     impl<T> MechFunctionImpl for $fxn<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -154,6 +228,25 @@ struct HorizontalConcatenateTwoArgs<T> {
   e1: Box<dyn CopyMat<T>>,
   out: Ref<DMatrix<T>>,
 }
+impl<T> MechFunctionFactory for HorizontalConcatenateTwoArgs<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static +
+  ConstElem + CompileConst + AsValueKind,
+  Ref<DMatrix<T>>: ToValue
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Binary(out, arg0, arg1) => {
+        let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
+        let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
+        let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self { e0, e1, out }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateTwoArgs requires 2 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
+
 impl<T> MechFunctionImpl for HorizontalConcatenateTwoArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
