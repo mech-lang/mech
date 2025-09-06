@@ -209,8 +209,8 @@ pub fn rational(rat: &(Token,Token)) -> Value {
   if denom == 0 {
     panic!("Denominator cannot be zero in a rational number");
   }
-  let rat_num = RationalNumber::new(num, denom);
-  Value::RationalNumber(Ref::new(rat_num))
+  let rat_num = R64::new(num, denom);
+  Value::R64(Ref::new(rat_num))
 }
 
 #[cfg(feature = "i64")]

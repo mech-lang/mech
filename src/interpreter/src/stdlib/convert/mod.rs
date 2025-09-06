@@ -394,32 +394,32 @@ impl LosslessInto<F32> for F32 {
 }
 
 #[cfg(all(feature = "rational", feature = "string"))]
-impl LosslessInto<String> for RationalNumber {
+impl LosslessInto<String> for R64 {
   fn lossless_into(self) -> String {
     self.pretty_print()
   }
 }
 
 #[cfg(all(feature = "rational", feature = "f64"))]
-impl LosslessInto<F64> for RationalNumber {
+impl LosslessInto<F64> for R64 {
   fn lossless_into(self) -> F64 {
     match self.to_f64() {
       Some(val) => F64::new(val),
-      None => panic!("Cannot convert RationalNumber to F64: value is not representable"),
+      None => panic!("Cannot convert R64 to F64: value is not representable"),
     }
   }
 }
 #[cfg(all(feature = "rational", feature = "f64"))]
-impl LosslessInto<RationalNumber> for F64 {
-  fn lossless_into(self) -> RationalNumber {
-    RationalNumber::from_f64(self.0).unwrap_or_else(|| panic!("Cannot convert F64 to RationalNumber: value is not representable"))
+impl LosslessInto<R64> for F64 {
+  fn lossless_into(self) -> R64 {
+    R64::from_f64(self.0).unwrap_or_else(|| panic!("Cannot convert F64 to R64: value is not representable"))
   }
 }
 
 #[cfg(all(feature = "rational", feature = "f32"))]
-impl LosslessInto<RationalNumber> for F32 {
-  fn lossless_into(self) -> RationalNumber {
-    RationalNumber::from_f64(self.0 as f64).unwrap_or_else(|| panic!("Cannot convert F32 to RationalNumber: value is not representable"))
+impl LosslessInto<R64> for F32 {
+  fn lossless_into(self) -> R64 {
+    R64::from_f64(self.0 as f64).unwrap_or_else(|| panic!("Cannot convert F32 to R64: value is not representable"))
   }
 }
 
@@ -506,23 +506,23 @@ impl LossyFrom<F32> for F32 {
 }
 
 #[cfg(all(feature = "rational", feature = "f64"))]
-impl LossyFrom<F64> for RationalNumber {
+impl LossyFrom<F64> for R64 {
   fn lossy_from(value: F64) -> Self {
-    RationalNumber::from(value)
+    R64::from(value)
   }
 }
 
 #[cfg(all(feature = "rational", feature = "string"))]
-impl LossyFrom<RationalNumber> for String {
-  fn lossy_from(value: RationalNumber) -> Self {
+impl LossyFrom<R64> for String {
+  fn lossy_from(value: R64) -> Self {
     value.pretty_print()
   }
 }
 
 #[cfg(all(feature = "rational", feature = "f64"))]
-impl LossyFrom<RationalNumber> for F64 {
-  fn lossy_from(value: RationalNumber) -> Self {
-    F64(value.to_f64().unwrap_or_else(|| panic!("Cannot convert RationalNumber to F64: value is not representable")))
+impl LossyFrom<R64> for F64 {
+  fn lossy_from(value: R64) -> Self {
+    F64(value.to_f64().unwrap_or_else(|| panic!("Cannot convert R64 to F64: value is not representable")))
   }
 }
 

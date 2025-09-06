@@ -31,7 +31,7 @@ macro_rules! impl_set_match_arms {
         F64, "f64" ;
         String, "string";
         ComplexNumber, "complex";
-        RationalNumber, "rational";
+        R64, "rational";
       )
     }
   }

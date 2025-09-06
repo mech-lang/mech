@@ -207,7 +207,7 @@ pub fn table(t: &Table, p: &Interpreter) -> MResult<Value> {
       #[cfg(feature = "complex")]
       ValueKind::ComplexNumber  => handle_value_kind!(knd, val, id, data_map, as_complexnumber),
       #[cfg(feature = "rational")]
-      ValueKind::RationalNumber  => handle_value_kind!(knd, val, id, data_map, as_rationalnumber),
+      ValueKind::R64  => handle_value_kind!(knd, val, id, data_map, as_r64),
       #[cfg(feature = "bool")]
       ValueKind::Bool => {
         let vals: Vec<Value> = val.as_vec().iter().map(|x| x.as_bool().unwrap().to_value()).collect::<Vec<Value>>();

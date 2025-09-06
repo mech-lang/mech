@@ -114,7 +114,7 @@ fn assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>,
     U128,   "u128";
     F32,    "f32";
     F64,    "f64";
-    RationalNumber, "rational";
+    R64, "rational";
     ComplexNumber, "complex";
   )
 }

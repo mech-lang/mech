@@ -59,7 +59,7 @@ macro_rules! impl_as_type {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum ValueKind {
-  U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, ComplexNumber, RationalNumber,
+  U8, U16, U32, U64, U128, I8, I16, I32, I64, I128, F32, F64, ComplexNumber, R64,
   String, Bool, Id, Index, Empty, Any, 
   Matrix(Box<ValueKind>,Vec<usize>),  Enum(u64),                  Record(Vec<(String,ValueKind)>),
   Map(Box<ValueKind>,Box<ValueKind>), Atom(u64),                  Table(Vec<(String,ValueKind)>, usize), 
@@ -70,7 +70,7 @@ pub enum ValueKind {
 impl Display for ValueKind {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
-      ValueKind::RationalNumber => write!(f, "r64"),
+      ValueKind::R64 => write!(f, "r64"),
       ValueKind::ComplexNumber => write!(f, "c64"),
       ValueKind::U8 => write!(f, "u8"),
       ValueKind::U16 => write!(f, "u16"),
@@ -176,7 +176,7 @@ impl ValueKind {
       #[cfg(feature = "complex")]
       ValueKind::ComplexNumber => FeatureKind::C64,
       #[cfg(feature = "rational")]
-      ValueKind::RationalNumber => FeatureKind::R64,
+      ValueKind::R64 => FeatureKind::R64,
       ValueKind::Atom(_) => FeatureKind::Atom,
       _ => panic!("Unsupported feature kind for value kind: {}", self),
     }
@@ -322,7 +322,7 @@ impl ValueKind {
 
       // complex / rational (assume composed of f64 parts)
       ValueKind::ComplexNumber => 8,
-      ValueKind::RationalNumber => 8,
+      ValueKind::R64 => 8,
 
       // small simple payloads
       ValueKind::Bool => 1,
@@ -415,7 +415,7 @@ impl_as_value_kind!(bool, ValueKind::Bool);
 #[cfg(feature = "string")]
 impl_as_value_kind!(String, ValueKind::String);
 #[cfg(feature = "rational")]
-impl_as_value_kind!(RationalNumber, ValueKind::RationalNumber);
+impl_as_value_kind!(R64, ValueKind::R64);
 #[cfg(feature = "complex")]
 impl_as_value_kind!(ComplexNumber, ValueKind::ComplexNumber);
 
@@ -534,7 +534,7 @@ pub enum Value {
   #[cfg(all(feature = "matrix", feature = "string"))]
   MatrixString(Matrix<String>),
   #[cfg(all(feature = "matrix", feature = "rational"))]
-  MatrixRationalNumber(Matrix<RationalNumber>),
+  MatrixR64(Matrix<R64>),
   #[cfg(all(feature = "matrix", feature = "complex"))]
   MatrixComplexNumber(Matrix<ComplexNumber>),
   #[cfg(feature = "matrix")]
@@ -542,7 +542,7 @@ pub enum Value {
   #[cfg(feature = "complex")]
   ComplexNumber(Ref<ComplexNumber>),
   #[cfg(feature = "rational")]
-  RationalNumber(Ref<RationalNumber>),
+  R64(Ref<R64>),
   #[cfg(feature = "set")]
   Set(Ref<MechSet>),
   #[cfg(feature = "map")]
@@ -579,7 +579,7 @@ impl Hash for Value {
   fn hash<H: Hasher>(&self, state: &mut H) {
     match self {
       #[cfg(feature = "rational")]
-      Value::RationalNumber(x) => x.borrow().hash(state),
+      Value::R64(x) => x.borrow().hash(state),
       #[cfg(feature = "u8")]
       Value::U8(x)   => x.borrow().hash(state),
       #[cfg(feature = "u16")]
@@ -657,7 +657,7 @@ impl Hash for Value {
       #[cfg(feature = "matrix")]
       Value::MatrixValue(x)  => x.hash(state),
       #[cfg(all(feature = "matrix", feature = "rational"))]
-      Value::MatrixRationalNumber(x) => x.hash(state),
+      Value::MatrixR64(x) => x.hash(state),
       #[cfg(all(feature = "matrix", feature = "complex"))]
       Value::MatrixComplexNumber(x) => x.hash(state),
       Value::Id(x)   => x.hash(state),
@@ -703,7 +703,7 @@ impl Value {
       #[cfg(feature = "bool")]
       Value::Bool(r) => &*(r as *const Ref<bool> as *const Ref<T>),
       #[cfg(feature = "rational")]
-      Value::RationalNumber(r) => &*(r as *const Ref<RationalNumber> as *const Ref<T>),
+      Value::R64(r) => &*(r as *const Ref<R64> as *const Ref<T>),
       #[cfg(feature = "complex")]
       Value::ComplexNumber(r) => &*(r as *const Ref<ComplexNumber> as *const Ref<T>),
       _ => panic!("Unsupported type for as_unchecked"),
@@ -743,7 +743,7 @@ impl Value {
       #[cfg(feature = "complex")]
       Value::ComplexNumber(v) => v.addr(),
       #[cfg(feature = "rational")]
-      Value::RationalNumber(v) => v.addr(),
+      Value::R64(v) => v.addr(),
       #[cfg(feature = "record")]
       Value::Record(v) => v.addr(),
       #[cfg(feature = "table")]
@@ -1071,7 +1071,7 @@ impl Value {
   pub fn size_of(&self) -> usize {
     match self {
       #[cfg(feature = "rational")]
-      Value::RationalNumber(x) => 16,
+      Value::R64(x) => 16,
       #[cfg(feature = "u8")]
       Value::U8(x) => 1,
       #[cfg(feature = "u16")]
@@ -1133,7 +1133,7 @@ impl Value {
       #[cfg(all(feature = "matrix", feature = "string"))]
       Value::MatrixString(x) => x.size_of(),
       #[cfg(all(feature = "matrix", feature = "rational"))]
-      Value::MatrixRationalNumber(x) => x.size_of(),
+      Value::MatrixR64(x) => x.size_of(),
       #[cfg(all(feature = "matrix", feature = "complex"))]
       Value::MatrixComplexNumber(x) => x.size_of(),
       #[cfg(feature = "string")]
@@ -1227,7 +1227,7 @@ impl Value {
       #[cfg(feature = "matrix")]
       Value::MatrixValue(m) => m.to_html(),
       #[cfg(all(feature = "matrix", feature = "rational"))]
-      Value::MatrixRationalNumber(m) => m.to_html(),
+      Value::MatrixR64(m) => m.to_html(),
       #[cfg(all(feature = "matrix", feature = "complex"))]
       Value::MatrixComplexNumber(m) => m.to_html(),
       #[cfg(feature = "atom")]
@@ -1255,7 +1255,7 @@ impl Value {
   pub fn shape(&self) -> Vec<usize> {
     match self {
       #[cfg(feature = "rational")]
-      Value::RationalNumber(x) => vec![1,1],
+      Value::R64(x) => vec![1,1],
       #[cfg(feature = "complex")]
       Value::ComplexNumber(x) => vec![1,1],
       #[cfg(feature = "u8")]
@@ -1321,7 +1321,7 @@ impl Value {
       #[cfg(feature = "matrix")]
       Value::MatrixValue(x) => x.shape(),
       #[cfg(all(feature = "matrix", feature = "rational"))]
-      Value::MatrixRationalNumber(x) => x.shape(),
+      Value::MatrixR64(x) => x.shape(),
       #[cfg(all(feature = "matrix", feature = "complex"))]
       Value::MatrixComplexNumber(x) => x.shape(),
       #[cfg(feature = "enum")]
@@ -1357,7 +1357,7 @@ impl Value {
       #[cfg(feature = "complex")]
       Value::ComplexNumber(_) => ValueKind::ComplexNumber,
       #[cfg(feature = "rational")]
-      Value::RationalNumber(_) => ValueKind::RationalNumber,
+      Value::R64(_) => ValueKind::R64,
       #[cfg(feature = "u8")]
       Value::U8(_) => ValueKind::U8,
       #[cfg(feature = "u16")]
@@ -1421,7 +1421,7 @@ impl Value {
       #[cfg(all(feature = "matrix", feature = "string"))]
       Value::MatrixString(x) => ValueKind::Matrix(Box::new(ValueKind::String), x.shape()),
       #[cfg(all(feature = "matrix", feature = "rational"))]
-      Value::MatrixRationalNumber(x) => ValueKind::Matrix(Box::new(ValueKind::RationalNumber), x.shape()),
+      Value::MatrixR64(x) => ValueKind::Matrix(Box::new(ValueKind::R64), x.shape()),
       #[cfg(all(feature = "matrix", feature = "complex"))]
       Value::MatrixComplexNumber(x) => ValueKind::Matrix(Box::new(ValueKind::ComplexNumber), x.shape()),
       #[cfg(feature = "table")]
@@ -1479,7 +1479,7 @@ impl Value {
       #[cfg(all(feature = "matrix", feature = "string"))]
       Value::MatrixString(_) => true,
       #[cfg(all(feature = "matrix", feature = "rational"))]
-      Value::MatrixRationalNumber(_) => true,
+      Value::MatrixR64(_) => true,
       #[cfg(all(feature = "matrix", feature = "complex"))]
       Value::MatrixComplexNumber(_) => true,
       #[cfg(feature = "matrix")]
@@ -1571,7 +1571,7 @@ impl Value {
       #[cfg(feature = "bool")]
       Value::Bool(v) => Some(Ref::new(format!("{}", v.borrow()))),
       #[cfg(feature = "rational")]
-      Value::RationalNumber(v) => Some(Ref::new(v.borrow().to_string())),
+      Value::R64(v) => Some(Ref::new(v.borrow().to_string())),
       #[cfg(feature = "complex")]
       Value::ComplexNumber(v) => Some(Ref::new(v.borrow().to_string())),
       Value::MutableReference(val) => val.borrow().as_string(),
@@ -1580,34 +1580,34 @@ impl Value {
   }
 
   #[cfg(feature = "rational")]
-  pub fn as_rationalnumber(&self) -> Option<Ref<RationalNumber>> {
+  pub fn as_r64(&self) -> Option<Ref<R64>> {
     match self {
-      Value::RationalNumber(v) => Some(v.clone()),
+      Value::R64(v) => Some(v.clone()),
       #[cfg(feature = "f32")]
-      Value::F32(v) => Some(Ref::new(RationalNumber::new(v.borrow().0 as i64, 1))),
+      Value::F32(v) => Some(Ref::new(R64::new(v.borrow().0 as i64, 1))),
       #[cfg(feature = "f64")]
-      Value::F64(v) => Some(Ref::new(RationalNumber::new(v.borrow().0 as i64, 1))),
+      Value::F64(v) => Some(Ref::new(R64::new(v.borrow().0 as i64, 1))),
       #[cfg(feature = "u8")]
-      Value::U8(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::U8(v) => Some(Ref::new(R64::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "u16")]
-      Value::U16(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::U16(v) => Some(Ref::new(R64::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "u32")]
-      Value::U32(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::U32(v) => Some(Ref::new(R64::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "u64")]
-      Value::U64(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::U64(v) => Some(Ref::new(R64::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "u128")]
-      Value::U128(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::U128(v) => Some(Ref::new(R64::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "i8")]
-      Value::I8(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::I8(v) => Some(Ref::new(R64::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "i16")]
-      Value::I16(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::I16(v) => Some(Ref::new(R64::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "i32")]
-      Value::I32(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::I32(v) => Some(Ref::new(R64::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "i64")]
-      Value::I64(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
+      Value::I64(v) => Some(Ref::new(R64::new(*v.borrow() as i64, 1))),
       #[cfg(feature = "i128")]
-      Value::I128(v) => Some(Ref::new(RationalNumber::new(*v.borrow() as i64, 1))),
-      Value::MutableReference(val) => val.borrow().as_rationalnumber(),
+      Value::I128(v) => Some(Ref::new(R64::new(*v.borrow() as i64, 1))),
+      Value::MutableReference(val) => val.borrow().as_r64(),
       _ => None,
     }
   }
@@ -1740,7 +1740,7 @@ impl Value {
   pub fn as_vecstring(&self) -> Option<Vec<String>> {if let Value::MatrixString(v)  = self { Some(v.as_vec()) } else if let Value::String(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecstring()  } else { None }}
 
   #[cfg(all(feature = "matrix", feature = "rational"))]
-  pub fn as_vecrationalnumber(&self) -> Option<Vec<RationalNumber>> {if let Value::MatrixRationalNumber(v)  = self { Some(v.as_vec()) } else if let Value::RationalNumber(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecrationalnumber()  } else { None }}
+  pub fn as_vecr64(&self) -> Option<Vec<R64>> {if let Value::MatrixR64(v)  = self { Some(v.as_vec()) } else if let Value::R64(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_vecr64()  } else { None }}
   #[cfg(all(feature = "matrix", feature = "complex"))]
   pub fn as_veccomplexnumber(&self) -> Option<Vec<ComplexNumber>> {if let Value::MatrixComplexNumber(v)  = self { Some(v.as_vec()) } else if let Value::ComplexNumber(v) = self { Some(vec![v.borrow().clone()]) } else if let Value::MutableReference(val) = self { val.borrow().as_veccomplexnumber()  } else { None }}
 
@@ -1887,7 +1887,7 @@ impl PrettyPrint for Value {
       #[cfg(feature = "complex")]
       Value::ComplexNumber(x) => {builder.push_record(vec![x.borrow().pretty_print()]);},
       #[cfg(feature = "rational")]
-      Value::RationalNumber(x) => {builder.push_record(vec![format!("{}",x.borrow().pretty_print())]);},
+      Value::R64(x) => {builder.push_record(vec![format!("{}",x.borrow().pretty_print())]);},
       #[cfg(feature = "atom")]
       Value::Atom(x) => {builder.push_record(vec![format!("{}",x)]);},
       #[cfg(feature = "set")]
@@ -1937,7 +1937,7 @@ impl PrettyPrint for Value {
       #[cfg(all(feature = "matrix", feature = "string"))]
       Value::MatrixString(x)  => {return x.pretty_print();},
       #[cfg(all(feature = "matrix", feature = "rational"))]
-      Value::MatrixRationalNumber(x) => {return x.pretty_print();},
+      Value::MatrixR64(x) => {return x.pretty_print();},
       #[cfg(all(feature = "matrix", feature = "complex"))]
       Value::MatrixComplexNumber(x) => {return x.pretty_print();},
       Value::Index(x)  => {builder.push_record(vec![format!("{}",x.borrow())]);},
@@ -2023,7 +2023,7 @@ impl ToValue for Ref<bool>   { fn to_value(&self) -> Value { Value::Bool(self.cl
 #[cfg(feature = "string")]
 impl ToValue for Ref<String> { fn to_value(&self) -> Value { Value::String(self.clone()) } }
 #[cfg(feature = "rational")]
-impl ToValue for Ref<RationalNumber> { fn to_value(&self) -> Value { Value::RationalNumber(self.clone()) } }
+impl ToValue for Ref<R64> { fn to_value(&self) -> Value { Value::R64(self.clone()) } }
 #[cfg(feature = "complex")]
 impl ToValue for Ref<ComplexNumber> { fn to_value(&self) -> Value { Value::ComplexNumber(self.clone()) } }
 
@@ -2112,9 +2112,9 @@ impl From<String> for Value {
 }
 
 #[cfg(feature = "rational")]
-impl From<RationalNumber> for Value {
-  fn from(val: RationalNumber) -> Self {
-    Value::RationalNumber(Ref::new(val))
+impl From<R64> for Value {
+  fn from(val: R64) -> Self {
+    Value::R64(Ref::new(val))
   }
 }
 

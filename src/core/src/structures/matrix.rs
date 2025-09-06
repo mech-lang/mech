@@ -124,7 +124,7 @@ impl_to_matrix!(String);
 #[cfg(feature = "complex")]
 impl_to_matrix!(ComplexNumber);
 #[cfg(feature = "rational")]
-impl_to_matrix!(RationalNumber);
+impl_to_matrix!(R64);
   
 pub trait ToIndex: Clone {
   fn to_index(elements: Vec<Self>) -> Matrix<Self>;
@@ -960,7 +960,7 @@ impl_to_value_for_matrix!(String, MatrixString);
 #[cfg(feature = "complex")]
 impl_to_value_for_matrix!(ComplexNumber, MatrixComplexNumber);
 #[cfg(feature = "rational")]
-impl_to_value_for_matrix!(RationalNumber, MatrixRationalNumber);
+impl_to_value_for_matrix!(R64, MatrixR64);
 
 
 macro_rules! to_value_ndmatrix {
@@ -993,7 +993,7 @@ macro_rules! impl_to_value_matrix {
       $matrix_kind, MatrixF32,    F32, "f32",
       $matrix_kind, MatrixF64,    F64, "f64",
       $matrix_kind, MatrixString, String, "string",
-      $matrix_kind, MatrixRationalNumber, RationalNumber, "rational",
+      $matrix_kind, MatrixR64, R64, "rational",
       $matrix_kind, MatrixComplexNumber, ComplexNumber, "complex",
     );
   }

@@ -284,7 +284,7 @@ impl ParsedProgram {
           }
           let numer = i64::from_le_bytes(data[0..8].try_into().unwrap());
           let denom = i64::from_le_bytes(data[8..16].try_into().unwrap());
-          Value::RationalNumber(Ref::new(RationalNumber::new(numer, denom)))
+          Value::R64(Ref::new(R64::new(numer, denom)))
         },
         #[cfg(feature = "matrix")]
         TypeTag::MatrixU8 => {
@@ -361,7 +361,7 @@ impl ParsedProgram {
         TypeTag::MatrixI64 => {extract_matrix!(MatrixI64, i64, 8, data)},
         TypeTag::MatrixI128 => {extract_matrix!(MatrixI128, i128, 16, data)},
         TypeTag::MatrixC64 => {extract_matrix!(MatrixComplexNumber, ComplexNumber, 16, data)},
-        TypeTag::MatrixR64 => {extract_matrix!(MatrixRationalNumber, RationalNumber, 16, data)},
+        TypeTag::MatrixR64 => {extract_matrix!(MatrixR64, R64, 16, data)},
         // Add more types as needed
         _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Unsupported constant type {:?}", ty.tag), id: line!(), kind: MechErrorKind::GenericError(format!("Unsupported constant type {:?}", ty.tag))}),
       };

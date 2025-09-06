@@ -100,7 +100,7 @@ impl_col_set_fxn_shapes!(String);
 #[cfg(feature = "complex")]
 impl_col_set_fxn_shapes!(ComplexNumber);
 #[cfg(feature = "rational")]
-impl_col_set_fxn_shapes!(RationalNumber);
+impl_col_set_fxn_shapes!(R64);
 
 macro_rules! impl_set_column_match_arms {
   ($arg:expr, $($lhs_type:ident, $type_ident:ident, $type_feature:literal);+ $(;)?) => {
@@ -156,7 +156,7 @@ fn impl_set_column_fxn(sink: Value, source: Value, key: Value) -> MResult<Box<dy
     F64,  F64,  "f64";
     String, String, "string";
     ComplexNumber, ComplexNumber,"complex";
-    RationalNumber, RationalNumber,"rational";
+    R64, R64,"rational";
   )
 }
 

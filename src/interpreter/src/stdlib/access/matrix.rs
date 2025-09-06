@@ -554,7 +554,7 @@ macro_rules! impl_access_match_arms {
         F64  => MatrixF64,  F64,  F64::default(), "f64";
         String => MatrixString, String, String::default(), "string";
         ComplexNumber => MatrixComplexNumber, ComplexNumber, ComplexNumber::default(), "complex";
-        RationalNumber => MatrixRationalNumber, RationalNumber, RationalNumber::default(), "rational";
+        R64 => MatrixR64, R64, R64::default(), "rational";
       )
     }
   }

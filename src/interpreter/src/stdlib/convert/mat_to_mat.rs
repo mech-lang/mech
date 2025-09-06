@@ -292,8 +292,8 @@ macro_rules! impl_conversion_mat_to_mat_fxn {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl_conversion_mat_to_mat_fxn! {
-  F64, "f64" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", RationalNumber, "rational"];
-  F32, "f32" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", RationalNumber, "rational"];
+  F64, "f64" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", R64, "rational"];
+  F32, "f32" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", R64, "rational"];
   u8,  "u8"  => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
   u16, "u16" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
   u32, "u32" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
@@ -305,15 +305,15 @@ impl_conversion_mat_to_mat_fxn! {
   i64, "i64" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
   i128,"i128"=> [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128"];
   String, "string" => [String, "string"];
-  RationalNumber, "rational" => [String, "string"];
+  R64, "rational" => [String, "string"];
   ComplexNumber, "complex" => [String, "string"];
 }
 
 
 #[cfg(target_arch = "wasm32")]
 impl_conversion_mat_to_mat_fxn! {
-  F64, "f64" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64", RationalNumber, "rational"];
-  F32, "f32" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64", RationalNumber, "rational"];
+  F64, "f64" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64", R64, "rational"];
+  F32, "f32" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64", R64, "rational"];
   u8,  "u8"  => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
   u16, "u16" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
   u32, "u32" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
@@ -323,7 +323,7 @@ impl_conversion_mat_to_mat_fxn! {
   i32, "i32" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
   i64, "i64" => [String, "string", F64, "f64", F32, "f32", u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32", i64, "i64"];
   String, "string" => [String, "string"];
-  RationalNumber, "rational" => [String, "string"];
+  R64, "rational" => [String, "string"];
   ComplexNumber, "complex" => [String, "string"];
 }
 

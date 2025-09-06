@@ -73,7 +73,7 @@ fn impl_set_record_column_fxn(sink: Value, source: Value, key: Value) -> MResult
         #[cfg(all(feature = "complex", feature = "record"))]
         (Some(Value::ComplexNumber(sink)), Value::ComplexNumber(source)) => return Ok(Box::new(RecordAssign{sink: sink.clone(), source: source.clone()})),
         #[cfg(all(feature = "rational", feature = "record"))]
-        (Some(Value::RationalNumber(sink)), Value::RationalNumber(source)) => return Ok(Box::new(RecordAssign{sink: sink.clone(), source: source.clone()})),
+        (Some(Value::R64(sink)), Value::R64(source)) => return Ok(Box::new(RecordAssign{sink: sink.clone(), source: source.clone()})),
         _ => return Err(MechError {file: file!().to_string(),tokens: vec![],msg: "".to_string(),id: line!(),kind: MechErrorKind::UndefinedField(*k)}),
       }
     }

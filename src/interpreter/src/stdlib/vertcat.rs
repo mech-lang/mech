@@ -1540,7 +1540,7 @@ fn impl_vertcat_fxn(arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   { if ValueKind::is_compatible(target_kind.clone(), ValueKind::String) { return impl_vertcat_arms!(String, arguments, String::default()) } }
 
   #[cfg(feature = "rational")]
-  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::RationalNumber) { return impl_vertcat_arms!(RationalNumber, arguments, RationalNumber::default()) } }
+  { if ValueKind::is_compatible(target_kind.clone(), ValueKind::R64) { return impl_vertcat_arms!(R64, arguments, R64::default()) } }
 
   #[cfg(feature = "complex")]
   { if ValueKind::is_compatible(target_kind.clone(), ValueKind::ComplexNumber) { return impl_vertcat_arms!(ComplexNumber, arguments, ComplexNumber::default()) } }

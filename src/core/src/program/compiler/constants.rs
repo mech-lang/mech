@@ -51,7 +51,7 @@ impl CompileConst for Value {
       #[cfg(feature = "complex")]
       Value::ComplexNumber(x) => x.borrow().compile_const(ctx)?,
       #[cfg(feature = "rational")]
-      Value::RationalNumber(x) => x.borrow().compile_const(ctx)?,
+      Value::R64(x) => x.borrow().compile_const(ctx)?,
       #[cfg(all(feature = "matrix", feature = "f64"))]
       Value::MatrixF64(x) => x.compile_const(ctx)?,
       #[cfg(all(feature = "matrix", feature = "f32"))]
@@ -79,7 +79,7 @@ impl CompileConst for Value {
       #[cfg(all(feature = "matrix", feature = "bool"))]
       Value::MatrixBool(x) => x.compile_const(ctx)?,
       #[cfg(all(feature = "matrix", feature = "rational"))]
-      Value::MatrixRationalNumber(x) => x.compile_const(ctx)?,
+      Value::MatrixR64(x) => x.compile_const(ctx)?,
       #[cfg(all(feature = "matrix", feature = "complex"))]
       Value::MatrixComplexNumber(x) => x.compile_const(ctx)?,
       #[cfg(all(feature = "matrix", feature = "string"))]
@@ -192,12 +192,12 @@ impl CompileConst for String {
 }
 
 #[cfg(feature = "rational")]
-impl CompileConst for RationalNumber {
+impl CompileConst for R64 {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
     payload.write_i64::<LittleEndian>(*self.numer())?;
     payload.write_i64::<LittleEndian>(*self.denom())?;
-    ctx.compile_const(&payload, ValueKind::RationalNumber)
+    ctx.compile_const(&payload, ValueKind::R64)
   }
 }
 
@@ -476,12 +476,12 @@ impl ConstElem for i8 {
 }
 
 #[cfg(feature = "rational")]
-impl ConstElem for RationalNumber {
+impl ConstElem for R64 {
   fn write_le(&self, out: &mut Vec<u8>) {
     out.write_i64::<LittleEndian>(*self.numer()).expect("write rational numer");
     out.write_i64::<LittleEndian>(*self.denom()).expect("write rational denom");
   }
-  fn value_kind() -> ValueKind { ValueKind::RationalNumber }
+  fn value_kind() -> ValueKind { ValueKind::R64 }
   fn align() -> u8 { 16 }
 }
 
@@ -647,7 +647,7 @@ impl ConstElem for Value {
       #[cfg(feature = "f64")]
       Value::F64(x) => x.borrow().write_le(out),
       #[cfg(feature = "rational")]
-      Value::RationalNumber(x) => x.borrow().write_le(out),
+      Value::R64(x) => x.borrow().write_le(out),
       #[cfg(feature = "complex")]
       Value::ComplexNumber(x) => x.borrow().write_le(out),
       _ => todo!(),
@@ -673,7 +673,7 @@ impl ConstElem for ValueKind {
       ValueKind::F32 => out.write_u8(11).expect("write value kind"),
       ValueKind::F64 => out.write_u8(12).expect("write value kind"),
       ValueKind::ComplexNumber => out.write_u8(13).expect("write value kind"),
-      ValueKind::RationalNumber => out.write_u8(14).expect("write value kind"),
+      ValueKind::R64 => out.write_u8(14).expect("write value kind"),
       ValueKind::String => out.write_u8(15).expect("write value kind"),
       ValueKind::Bool => out.write_u8(16).expect("write value kind"),
       ValueKind::Id => out.write_u8(17).expect("write value kind"),

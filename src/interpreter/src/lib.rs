@@ -37,7 +37,7 @@ use mech_core::F32;
 #[cfg(feature = "complex")]
 use mech_core::ComplexNumber;
 #[cfg(feature = "rational")]
-use mech_core::RationalNumber;
+use mech_core::R64;
 #[cfg(feature = "stdlib")]
 use crate::stdlib::{
                     access::*,
@@ -124,7 +124,7 @@ pub fn load_stdkinds(kinds: &mut KindTable) {
   #[cfg(feature = "c64")]
   kinds.insert(hash_str("c64"),ValueKind::ComplexNumber);
   #[cfg(feature = "r64")]
-  kinds.insert(hash_str("r64"),ValueKind::RationalNumber);
+  kinds.insert(hash_str("r64"),ValueKind::R64);
   #[cfg(feature = "string")]
   kinds.insert(hash_str("string"),ValueKind::String);
   #[cfg(feature = "bool")]

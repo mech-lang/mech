@@ -91,7 +91,7 @@ impl_col_access_fxn_shapes!(String);
 #[cfg(all(feature = "complex", feature = "matrix"))]
 impl_col_access_fxn_shapes!(ComplexNumber);
 #[cfg(all(feature = "rational", feature = "matrix"))]
-impl_col_access_fxn_shapes!(RationalNumber);
+impl_col_access_fxn_shapes!(R64);
 
 macro_rules! impl_access_column_table_match_arms {
   ($arg:expr, $($lhs_type:ident, $($default:expr, $type_string:tt),+);+ $(;)?) => {
@@ -141,7 +141,7 @@ fn impl_access_column_table_fxn(source: Value, key: Value) -> Result<Box<dyn Mec
     F64,F64::default(),"f64";
     String,String::default(),"string";
     ComplexNumber,ComplexNumber::default(),"complex";
-    RationalNumber,RationalNumber::default(),"rational";
+    R64,R64::default(),"rational";
   )
 }
 
