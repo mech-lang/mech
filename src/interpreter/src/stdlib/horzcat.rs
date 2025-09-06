@@ -1,7 +1,7 @@
 #[macro_use]
 use crate::stdlib::*;
 
-macro_rules! register_horizontal_concatenate {
+macro_rules! register_horizontal_concatenate_fxn {
   ($name:ident) => {
     register_fxn_descriptor!(
       $name, 
@@ -25,14 +25,82 @@ macro_rules! register_horizontal_concatenate {
   };
 }
 
+macro_rules! register_fxns {
+  ($op:ident) => {
+    $op!(bool, "bool");
+    $op!(String, "string");
+    $op!(u8, "u8");
+    $op!(u16, "u16");
+    $op!(u32, "u32");
+    $op!(u64, "u64");
+    $op!(u128, "u128");
+    $op!(i8, "i8");
+    $op!(i16, "i16");
+    $op!(i32, "i32");
+    $op!(i64, "i64");
+    $op!(i128, "i128");
+    $op!(F64, "f64");
+    $op!(F32, "f32");
+    $op!(R64, "r64");
+    $op!(C64, "c64");
+  }
+}
+
 // Horizontal Concatenate -----------------------------------------------------
 
+macro_rules! horizontal_concatenate {
+  ($name:ident, $vec_size:expr) => {
+    paste!{
+      #[derive(Debug)]
+      struct $name<T> {
+        out: Ref<[<RowVector $vec_size>]<T>>,
+      }
+      impl<T> MechFunctionFactory for $name<T>
+      where
+        T: Debug + Clone + Sync + Send + PartialEq + 'static +
+        ConstElem + CompileConst + AsValueKind,
+        Ref<[<RowVector $vec_size>]<T>>: ToValue
+      {
+        fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+          match args {
+            FunctionArgs::Unary(out, _arg0) => {
+              let out: Ref<[<RowVector $vec_size>]<T>> = unsafe { out.as_unchecked() }.clone();
+              Ok(Box::new(Self { out }))
+            },
+            _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 1 argument, got {:?}", stringify!($name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+          }
+        }
+      }
+      impl<T> MechFunctionImpl for $name<T>
+      where
+        T: Debug + Clone + Sync + Send + PartialEq + 'static,
+        Ref<[<RowVector $vec_size>]<T>>: ToValue
+      {
+        fn solve(&self) {}
+        fn out(&self) -> Value { self.out.to_value() }
+        fn to_string(&self) -> String { format!("{:#?}", self) }
+      }
+
+      #[cfg(feature = "compiler")]
+      impl<T> MechFunctionCompiler for $name<T>
+      where
+        T: ConstElem + CompileConst + AsValueKind
+      {
+        fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+          compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+        }
+      }
+      register_horizontal_concatenate_fxn!($name);
+    }
+  };
+}
+
 macro_rules! horzcat_two_args {
-  ($fxn:ident, $e1:ident, $e2:ident, $out:ident, $opt:ident) => {
+  ($fxn:ident, $e0:ident, $e1:ident, $out:ident, $opt:ident) => {
     #[derive(Debug)]
     struct $fxn<T> {
-      e0: Ref<$e1<T>>,
-      e1: Ref<$e2<T>>,
+      e0: Ref<$e0<T>>,
+      e1: Ref<$e1<T>>,
       out: Ref<$out<T>>,
     }
     impl<T> MechFunctionFactory for $fxn<T>
@@ -44,8 +112,8 @@ macro_rules! horzcat_two_args {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
           FunctionArgs::Binary(out, arg0, arg1) => {
-            let e0: Ref<$e1<T>> = unsafe { arg0.as_unchecked() }.clone();
-            let e1: Ref<$e2<T>> = unsafe { arg1.as_unchecked() }.clone();
+            let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
+            let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
             let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
             Ok(Box::new(Self { e0, e1, out }))
           },
@@ -63,7 +131,7 @@ macro_rules! horzcat_two_args {
           let e0_ptr = (*(self.e0.as_ptr())).clone();
           let e1_ptr = (*(self.e1.as_ptr())).clone();
           let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
-          $opt!(out_ptr,e0_ptr,e1_ptr);
+          $opt!(out_ptr, e0_ptr, e1_ptr);
         }
       }
       fn out(&self) -> Value { self.out.to_value() }
@@ -73,16 +141,28 @@ macro_rules! horzcat_two_args {
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
       T: ConstElem + CompileConst + AsValueKind,
-      $e1<T>: AsValueKind,
-      $e2<T>: AsValueKind,
-      $out<T>: AsValueKind,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        let name = format!("{}<{},{},{},{}>", stringify!($fxn), T::as_value_kind(), $out::as_value_kind(), $e1::as_value_kind(), $e2::as_value_kind());
+        let name = format!("{}<{}{}{}{}>", stringify!($fxn), T::as_value_kind(), stringify!($out), stringify!($e0), stringify!($e1));
         compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
     }
-  };}
+    macro_rules! register_horzcat_fxn {
+      ($type:ty, $type_string:tt) => {
+        paste!{ 
+          #[cfg(feature = $type_string)]
+          inventory::submit! {
+            FunctionDescriptor {
+            name: concat!(stringify!($fxn), "<", stringify!([<$type:lower>]), stringify!($out), stringify!($e0), stringify!($e1), ">"),
+            ptr: $fxn::<$type>::new,
+            }
+          }
+        }
+      };
+    }
+    register_fxns!(register_horzcat_fxn);
+  };
+}
 
 macro_rules! horzcat_three_args {
   ($fxn:ident, $e0:ident, $e1:ident, $e2:ident, $out:ident, $opt:ident) => {
@@ -133,16 +213,26 @@ macro_rules! horzcat_three_args {
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
       T: ConstElem + CompileConst + AsValueKind,
-      $e0<T>: AsValueKind,
-      $e1<T>: AsValueKind,
-      $e2<T>: AsValueKind,
-      $out<T>: AsValueKind,      
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        let name = format!("{}<{},{},{},{},{}>", stringify!($fxn), T::as_value_kind(), $out::as_value_kind(), $e0::as_value_kind(), $e1::as_value_kind(), $e2::as_value_kind());
+        let name = format!("{}<{}{}{}{}{}>", stringify!($fxn), T::as_value_kind(), stringify!($out), stringify!($e0), stringify!($e1), stringify!($e2));
         compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
     }
+    macro_rules! register_horzcat_fxn {
+      ($type:ty, $type_string:tt) => {
+        paste!{ 
+          #[cfg(feature = $type_string)]
+          inventory::submit! {
+            FunctionDescriptor {
+            name: concat!(stringify!($fxn), "<", stringify!([<$type:lower>]), stringify!($out), stringify!($e0), stringify!($e1), stringify!($e2), ">"),
+            ptr: $fxn::<$type>::new,
+            }
+          }
+        }
+      };
+    }
+    register_fxns!(register_horzcat_fxn);
   };} 
   
 macro_rules! horzcat_four_args {
@@ -197,17 +287,26 @@ macro_rules! horzcat_four_args {
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
       T: ConstElem + CompileConst + AsValueKind,
-      $e0<T>: AsValueKind,
-      $e1<T>: AsValueKind,
-      $e2<T>: AsValueKind,
-      $e3<T>: AsValueKind,
-      $out<T>: AsValueKind,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        let name = format!("{}<{},{},{},{},{},{}>", stringify!($fxn), T::as_value_kind(), $out::as_value_kind(), $e0::as_value_kind(), $e1::as_value_kind(), $e2::as_value_kind(), $e3::as_value_kind());
+        let name = format!("{}<{}{}{}{}{}{}>", stringify!($fxn), T::as_value_kind(), stringify!($out), stringify!($e0), stringify!($e1), stringify!($e2), stringify!($e3));
         compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
     }
+    macro_rules! register_horzcat_fxn {
+      ($type:ty, $type_string:tt) => {
+        paste!{ 
+          #[cfg(feature = $type_string)]
+          inventory::submit! {
+            FunctionDescriptor {
+            name: concat!(stringify!($fxn), "<", stringify!([<$type:lower>]), stringify!($out), stringify!($e0), stringify!($e1), stringify!($e2), stringify!($e3), ">"),
+            ptr: $fxn::<$type>::new,
+            }
+          }
+        }
+      };
+    }
+    register_fxns!(register_horzcat_fxn);
   };}   
 
 // HorizontalConcatenateTwoArgs -----------------------------------------------
@@ -284,6 +383,8 @@ where
   }
 }
 
+register_horizontal_concatenate_fxn!(HorizontalConcatenateTwoArgs);
+
 // HorizontalConcatenateThreeArgs ---------------------------------------------
     
 struct HorizontalConcatenateThreeArgs<T> {
@@ -292,6 +393,27 @@ struct HorizontalConcatenateThreeArgs<T> {
   e2: Box<dyn CopyMat<T>>,
   out: Ref<DMatrix<T>>,
 }
+
+impl<T> MechFunctionFactory for HorizontalConcatenateThreeArgs<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static +
+  ConstElem + CompileConst + AsValueKind,
+  Ref<DMatrix<T>>: ToValue
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+        let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
+        let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
+        let e2: Box<dyn CopyMat<T>> = unsafe { arg2.get_copyable_matrix_unchecked::<T>() };
+        let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self { e0, e1, e2, out }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateThreeArgs requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
+
 impl<T> MechFunctionImpl for HorizontalConcatenateThreeArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -354,6 +476,26 @@ struct HorizontalConcatenateFourArgs<T> {
   e2: Box<dyn CopyMat<T>>,
   e3: Box<dyn CopyMat<T>>,
   out: Ref<DMatrix<T>>,
+}
+impl<T> MechFunctionFactory for HorizontalConcatenateFourArgs<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static +
+  ConstElem + CompileConst + AsValueKind,
+  Ref<DMatrix<T>>: ToValue
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+        let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
+        let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
+        let e2: Box<dyn CopyMat<T>> = unsafe { arg2.get_copyable_matrix_unchecked::<T>() };
+        let e3: Box<dyn CopyMat<T>> = unsafe { arg3.get_copyable_matrix_unchecked::<T>() };
+        let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self { e0, e1, e2, e3, out }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateFourArgs requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
 }
 impl<T> MechFunctionImpl for HorizontalConcatenateFourArgs<T>
 where
@@ -423,7 +565,27 @@ struct HorizontalConcatenateNArgs<T> {
   e0: Vec<Box<dyn CopyMat<T>>>,
   out: Ref<DMatrix<T>>,
 }
-
+impl<T> MechFunctionFactory for HorizontalConcatenateNArgs<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static +
+  ConstElem + CompileConst + AsValueKind,
+  Ref<DMatrix<T>>: ToValue
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Variadic(out, vargs) => {
+        let mut e0: Vec<Box<dyn CopyMat<T>>> = Vec::new();
+        for arg in vargs {
+          let mat: Box<dyn CopyMat<T>> = unsafe { arg.get_copyable_matrix_unchecked::<T>() };
+          e0.push(mat);
+        }
+        let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self { e0, out }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateNArgs requires N arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
 impl<T> MechFunctionImpl for HorizontalConcatenateNArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -465,44 +627,28 @@ where
   }
 }
 
-macro_rules! horizontal_concatenate {
-  ($name:ident, $vec_size:expr) => {
-    paste!{
-      #[derive(Debug)]
-      struct $name<T> {
-        out: Ref<[<RowVector $vec_size>]<T>>,
-      }
-
-      impl<T> MechFunctionImpl for $name<T>
-      where
-        T: Debug + Clone + Sync + Send + PartialEq + 'static,
-        Ref<[<RowVector $vec_size>]<T>>: ToValue
-      {
-        fn solve(&self) {}
-        fn out(&self) -> Value { self.out.to_value() }
-        fn to_string(&self) -> String { format!("{:#?}", self) }
-      }
-
-      #[cfg(feature = "compiler")]
-      impl<T> MechFunctionCompiler for $name<T>
-      where
-        T: ConstElem + CompileConst + AsValueKind
-      {
-        fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-          compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
-        }
-      }
-    }
-  };
-}
-
 // HorizontalConcatenateRD ----------------------------------------------------
 
 #[derive(Debug)]
 struct HorizontalConcatenateRD<T> {
   out: Ref<RowDVector<T>>,
 }
-
+impl<T> MechFunctionFactory for HorizontalConcatenateRD<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static +
+  ConstElem + CompileConst + AsValueKind,
+  Ref<RowDVector<T>>: ToValue
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Unary(out, _arg0) => {
+        let out: Ref<RowDVector<T>> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self { out }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateRD requires 1 argument, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
 impl<T> MechFunctionImpl for HorizontalConcatenateRD<T> 
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -673,7 +819,7 @@ where
   }
 }
 
-register_horizontal_concatenate!(HorizontalConcatenateS2);
+register_horizontal_concatenate_fxn!(HorizontalConcatenateS2);
 
 // HorizontalConcatenateS3 --------------------------------------------------
 
@@ -731,7 +877,7 @@ where
   }
 }
 
-register_horizontal_concatenate!(HorizontalConcatenateS3);
+register_horizontal_concatenate_fxn!(HorizontalConcatenateS3);
 
 // HorizontalConcatenateS4 --------------------------------------------------
 
@@ -773,10 +919,18 @@ where
   }
 }
 
+// HorizontalConcatenateR2 ----------------------------------------------------
+
 #[cfg(feature = "row_vector2")]
 horizontal_concatenate!(HorizontalConcatenateR2,2);
+
+// HorizontalConcatenateR3 ----------------------------------------------------
+
 #[cfg(feature = "row_vector3")]
 horizontal_concatenate!(HorizontalConcatenateR3,3);
+
+// HorizontalConcatenateR4 ----------------------------------------------------
+
 #[cfg(feature = "row_vector4")]
 horizontal_concatenate!(HorizontalConcatenateR4,4);
 
