@@ -959,6 +959,22 @@ horizontal_concatenate!(HorizontalConcatenateR4,4);
 struct HorizontalConcatenateSD<T> {
   out: Ref<RowDVector<T>>,
 }
+impl<T> MechFunctionFactory for HorizontalConcatenateSD<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static +
+  ConstElem + CompileConst + AsValueKind,
+  Ref<RowDVector<T>>: ToValue
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Unary(out, _arg0) => {
+        let out: Ref<RowDVector<T>> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self { out }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSD requires 1 argument, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
 impl<T> MechFunctionImpl for HorizontalConcatenateSD<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -978,6 +994,9 @@ where
     compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+register_horizontal_concatenate_fxn!(HorizontalConcatenateSD);
+
+// HorizontalConcatenate for single argument types ----------------------------
 
 macro_rules! horzcat_single {
   ($name:ident,$shape:ident) => {
