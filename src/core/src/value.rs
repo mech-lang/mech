@@ -386,22 +386,81 @@ macro_rules! impl_as_value_kind {
   };
 }
 
+#[cfg(feature = "i8")]
 impl_as_value_kind!(i8, ValueKind::I8);
+#[cfg(feature = "i16")]
 impl_as_value_kind!(i16, ValueKind::I16);
+#[cfg(feature = "i32")]
 impl_as_value_kind!(i32, ValueKind::I32);
+#[cfg(feature = "i64")]
 impl_as_value_kind!(i64, ValueKind::I64);
+#[cfg(feature = "i128")]
 impl_as_value_kind!(i128, ValueKind::I128);
+#[cfg(feature = "u8")]
 impl_as_value_kind!(u8, ValueKind::U8);
+#[cfg(feature = "u16")]
 impl_as_value_kind!(u16, ValueKind::U16);
+#[cfg(feature = "u32")]
 impl_as_value_kind!(u32, ValueKind::U32);
+#[cfg(feature = "u64")]
 impl_as_value_kind!(u64, ValueKind::U64);
+#[cfg(feature = "u128")]
 impl_as_value_kind!(u128, ValueKind::U128);
+#[cfg(feature = "f32")]
 impl_as_value_kind!(F32, ValueKind::F32);
+#[cfg(feature = "f64")]
 impl_as_value_kind!(F64, ValueKind::F64);
+#[cfg(feature = "bool")]
 impl_as_value_kind!(bool, ValueKind::Bool);
+#[cfg(feature = "string")]
 impl_as_value_kind!(String, ValueKind::String);
+#[cfg(feature = "rational")]
 impl_as_value_kind!(RationalNumber, ValueKind::RationalNumber);
+#[cfg(feature = "complex")]
 impl_as_value_kind!(ComplexNumber, ValueKind::ComplexNumber);
+
+
+macro_rules! impl_as_value_kind_for_matrix {
+  ($type:ty, $dims:expr) => {
+    impl<T: AsValueKind> AsValueKind for $type {
+      fn as_value_kind() -> ValueKind {
+        ValueKind::Matrix(Box::new(T::as_value_kind()), $dims)
+      }
+    }
+  };
+}
+
+#[cfg(feature = "row_vectord")]
+impl_as_value_kind_for_matrix!(RowDVector<T>, vec![1, 0]);
+#[cfg(feature = "row_vector2")]
+impl_as_value_kind_for_matrix!(RowVector2<T>, vec![1, 2]);
+#[cfg(feature = "row_vector3")]
+impl_as_value_kind_for_matrix!(RowVector3<T>, vec![1, 3]);
+#[cfg(feature = "row_vector4")]
+impl_as_value_kind_for_matrix!(RowVector4<T>, vec![1, 4]);
+#[cfg(feature = "vectord")]
+impl_as_value_kind_for_matrix!(DVector<T>, vec![0, 1]);
+#[cfg(feature = "vector2")]
+impl_as_value_kind_for_matrix!(Vector2<T>, vec![2, 1]);
+#[cfg(feature = "vector3")]
+impl_as_value_kind_for_matrix!(Vector3<T>, vec![3, 1]);
+#[cfg(feature = "vector4")]
+impl_as_value_kind_for_matrix!(Vector4<T>, vec![4, 1]);
+#[cfg(feature = "matrix1")]
+impl_as_value_kind_for_matrix!(Matrix1<T>, vec![1, 1]);
+#[cfg(feature = "matrix2")]
+impl_as_value_kind_for_matrix!(Matrix2<T>, vec![2, 2]);
+#[cfg(feature = "matrix3")]
+impl_as_value_kind_for_matrix!(Matrix3<T>, vec![3, 3]);
+#[cfg(feature = "matrix4")]
+impl_as_value_kind_for_matrix!(Matrix4<T>, vec![4, 4]);
+#[cfg(feature = "matrix2x3")]
+impl_as_value_kind_for_matrix!(Matrix2x3<T>, vec![2, 3]);
+#[cfg(feature = "matrix3x2")]
+impl_as_value_kind_for_matrix!(Matrix3x2<T>, vec![3, 2]);
+#[cfg(feature = "matrixd")]
+impl_as_value_kind_for_matrix!(DMatrix<T>, vec![0, 0]);
+
 
 // Value
 // ----------------------------------------------------------------------------
@@ -606,6 +665,44 @@ impl Hash for Value {
 }
 
 impl Value {
+
+  pub unsafe fn as_unchecked<T>(&self) -> &Ref<T> {
+    match self {
+      #[cfg(feature = "u8")]
+      Value::U8(r) => &*(r as *const Ref<u8> as *const Ref<T>),
+      #[cfg(feature = "u16")]
+      Value::U16(r) => &*(r as *const Ref<u16> as *const Ref<T>),
+      #[cfg(feature = "u32")]
+      Value::U32(r) => &*(r as *const Ref<u32> as *const Ref<T>),
+      #[cfg(feature = "u64")]
+      Value::U64(r) => &*(r as *const Ref<u64> as *const Ref<T>),
+      #[cfg(feature = "u128")]
+      Value::U128(r) => &*(r as *const Ref<u128> as *const Ref<T>),
+      #[cfg(feature = "i8")]
+      Value::I8(r) => &*(r as *const Ref<i8> as *const Ref<T>),
+      #[cfg(feature = "i16")]
+      Value::I16(r) => &*(r as *const Ref<i16> as *const Ref<T>),
+      #[cfg(feature = "i32")]
+      Value::I32(r) => &*(r as *const Ref<i32> as *const Ref<T>),
+      #[cfg(feature = "i64")]
+      Value::I64(r) => &*(r as *const Ref<i64> as *const Ref<T>),
+      #[cfg(feature = "i128")]
+      Value::I128(r) => &*(r as *const Ref<i128> as *const Ref<T>),
+      #[cfg(feature = "f32")]
+      Value::F32(r) => &*(r as *const Ref<F32> as *const Ref<T>),
+      #[cfg(feature = "f64")]
+      Value::F64(r) => &*(r as *const Ref<F64> as *const Ref<T>),
+      #[cfg(feature = "string")]
+      Value::String(r) => &*(r as *const Ref<String> as *const Ref<T>),
+      #[cfg(feature = "bool")]
+      Value::Bool(r) => &*(r as *const Ref<bool> as *const Ref<T>),
+      #[cfg(feature = "rational")]
+      Value::RationalNumber(r) => &*(r as *const Ref<RationalNumber> as *const Ref<T>),
+      #[cfg(feature = "complex")]
+      Value::ComplexNumber(r) => &*(r as *const Ref<ComplexNumber> as *const Ref<T>),
+      _ => panic!("Unsupported type for as_unchecked"),
+    }
+  }
 
   pub fn addr(&self) -> usize {
     match self {
