@@ -2651,7 +2651,7 @@ where
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
-reggister_horizontal_concatenate_fxn!(HorizontalConcatenateSR2M1);
+register_horizontal_concatenate_fxn!(HorizontalConcatenateSR2M1);
 
 // HorizontalConcatenateSSM1M1 ------------------------------------------------
 
