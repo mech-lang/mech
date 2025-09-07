@@ -36,6 +36,19 @@ macro_rules! compile_register {
 }
 
 #[macro_export]
+macro_rules! compile_register_mat {
+  ($reg:expr, $ctx:ident) => {
+    {
+      let addr = $reg.addr();
+      let reg = $ctx.alloc_register_for_ptr(addr);
+      let const_id = $reg.compile_const_mat($ctx).unwrap();
+      $ctx.emit_const_load(reg, const_id);
+      reg
+    }
+  };
+}
+
+#[macro_export]
 macro_rules! compile_nullop {
   ($out:expr, $ctx:ident, $feature_flag:expr) => {
     // allocate one register as an array
