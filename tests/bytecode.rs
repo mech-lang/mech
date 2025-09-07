@@ -54,3 +54,6 @@ bytecode_test!(bytecode_matrix_matrix2x2,"[1 2; 3 4]",Value::MatrixF64(Matrix::M
 bytecode_test!(bytecode_combinatorics_n_choose_k,"combinatorics/n-choose-k(10,2)",Value::F64(Ref::new(F64::new(45.0))));
 bytecode_test!(bytecode_compare_gt,"1 > 2",Value::Bool(Ref::new(false)));
 bytecode_test!(bytecode_compare_eq,r#""foo" == "bar""#,Value::Bool(Ref::new(false)));
+bytecode_test!(bytecode_logic_and,"true && false",Value::Bool(Ref::new(false)));
+bytecode_test!(bytecode_logic_or,"true || false",Value::Bool(Ref::new(true)));
+bytecode_test!(bytecode_logic_not,"!true",Value::Bool(Ref::new(false)));
