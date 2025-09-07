@@ -147,20 +147,7 @@ macro_rules! horzcat_two_args {
         compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
     }
-    macro_rules! register_horzcat_fxn {
-      ($type:ty, $type_string:tt) => {
-        paste!{ 
-          #[cfg(feature = $type_string)]
-          inventory::submit! {
-            FunctionDescriptor {
-            name: concat!(stringify!($fxn), "<", stringify!([<$type:lower>]), stringify!($out), stringify!($e0), stringify!($e1), ">"),
-            ptr: $fxn::<$type>::new,
-            }
-          }
-        }
-      };
-    }
-    register_fxns!(register_horzcat_fxn);
+    register_horizontal_concatenate_fxn!($fxn);
   };
 }
 
@@ -219,20 +206,7 @@ macro_rules! horzcat_three_args {
         compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
     }
-    macro_rules! register_horzcat_fxn {
-      ($type:ty, $type_string:tt) => {
-        paste!{ 
-          #[cfg(feature = $type_string)]
-          inventory::submit! {
-            FunctionDescriptor {
-            name: concat!(stringify!($fxn), "<", stringify!([<$type:lower>]), stringify!($out), stringify!($e0), stringify!($e1), stringify!($e2), ">"),
-            ptr: $fxn::<$type>::new,
-            }
-          }
-        }
-      };
-    }
-    register_fxns!(register_horzcat_fxn);
+    register_horizontal_concatenate_fxn!($fxn);
   };} 
   
 macro_rules! horzcat_four_args {
@@ -293,20 +267,7 @@ macro_rules! horzcat_four_args {
         compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
     }
-    macro_rules! register_horzcat_fxn {
-      ($type:ty, $type_string:tt) => {
-        paste!{ 
-          #[cfg(feature = $type_string)]
-          inventory::submit! {
-            FunctionDescriptor {
-            name: concat!(stringify!($fxn), "<", stringify!([<$type:lower>]), stringify!($out), stringify!($e0), stringify!($e1), stringify!($e2), stringify!($e3), ">"),
-            ptr: $fxn::<$type>::new,
-            }
-          }
-        }
-      };
-    }
-    register_fxns!(register_horzcat_fxn);
+    register_horizontal_concatenate_fxn!($fxn);
   };}   
 
 // HorizontalConcatenateTwoArgs -----------------------------------------------
@@ -334,7 +295,6 @@ where
     }
   }
 }
-
 impl<T> MechFunctionImpl for HorizontalConcatenateTwoArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -347,7 +307,6 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("HorizontalConcatenateTwoArgs\n{:#?}", self.out) }
 }
-
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateTwoArgs<T>
 where
@@ -357,23 +316,13 @@ where
     let mut registers = [0, 0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
-
-    let lhs_addr = self.e0.addr();
-    let lhs_reg = ctx.alloc_register_for_ptr(lhs_addr);
-    let lhs_const_id = self.e0.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(lhs_reg, lhs_const_id);
-    registers[1] = lhs_reg;
-
-    let rhs_addr = self.e1.addr();
-    let rhs_reg = ctx.alloc_register_for_ptr(rhs_addr);
-    let rhs_const_id = self.e1.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(rhs_reg, rhs_const_id);
-    registers[2] = rhs_reg;
+    registers[1] = compile_register_mat!(self.e0, ctx);
+    registers[2] = compile_register_mat!(self.e1, ctx);
 
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
     ctx.emit_binop(
-      hash_str("HorizontalConcatenateTwoArgs"),
+      hash_str(&format!("HorizontalConcatenateTwoArgs<{}>", T::as_value_kind())),
       registers[0],
       registers[1],
       registers[2],
@@ -382,7 +331,6 @@ where
     Ok(registers[0])
   }
 }
-
 register_horizontal_concatenate_fxn!(HorizontalConcatenateTwoArgs);
 
 // HorizontalConcatenateThreeArgs ---------------------------------------------
@@ -393,7 +341,6 @@ struct HorizontalConcatenateThreeArgs<T> {
   e2: Box<dyn CopyMat<T>>,
   out: Ref<DMatrix<T>>,
 }
-
 impl<T> MechFunctionFactory for HorizontalConcatenateThreeArgs<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -433,32 +380,17 @@ where
   T: ConstElem + CompileConst + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    let mut registers = [0, 0, 0];
+    let mut registers = [0, 0, 0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
-
-    let e0_addr = self.e0.addr();
-    let e0_reg = ctx.alloc_register_for_ptr(e0_addr);
-    let e0_const_id = self.e0.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(e0_reg, e0_const_id);
-    registers[1] = e0_reg;
-
-    let e1_addr = self.e1.addr();
-    let e1_reg = ctx.alloc_register_for_ptr(e1_addr);
-    let e1_const_id = self.e1.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(e1_reg, e1_const_id);
-    registers[2] = e1_reg;
-
-    let e2_addr = self.e2.addr();
-    let e2_reg = ctx.alloc_register_for_ptr(e2_addr);
-    let e2_const_id = self.e2.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(e2_reg, e2_const_id);
-    let mut registers = [registers[0], registers[1], registers[2], e2_reg];
+    registers[1] = compile_register_mat!(self.e0, ctx);
+    registers[2] = compile_register_mat!(self.e1, ctx);
+    registers[3] = compile_register_mat!(self.e2, ctx);
 
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
     ctx.emit_ternop(
-      hash_str("HorizontalConcatenateThreeArgs"),
+      hash_str(&format!("HorizontalConcatenateThreeArgs<{}>", T::as_value_kind())),
       registers[0],
       registers[1],
       registers[2],
@@ -467,6 +399,7 @@ where
     Ok(registers[0])
   }
 }
+register_horizontal_concatenate_fxn!(HorizontalConcatenateThreeArgs);
 
 // HorizontalConcatenateFourArgs ----------------------------------------------
 
@@ -548,7 +481,7 @@ where
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
     ctx.emit_quadop(
-      hash_str("HorizontalConcatenateFourArgs"),
+      hash_str(&format!("HorizontalConcatenateFourArgs<{}>", T::as_value_kind())),
       registers[0],
       registers[1],
       registers[2],
