@@ -1296,6 +1296,26 @@ struct HorizontalConcatenateSSSM1<T> {
   e3: Ref<Matrix1<T>>,
   out: Ref<RowVector4<T>>,
 }
+impl<T> MechFunctionFactory for HorizontalConcatenateSSSM1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static +
+  ConstElem + CompileConst + AsValueKind,
+  Ref<RowVector4<T>>: ToValue
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+        let e0: Ref<T> = unsafe { arg0.as_unchecked() }.clone();
+        let e1: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+        let e2: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+        let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
+        let out: Ref<RowVector4<T>> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self { e0, e1, e2, e3, out }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("HorizontalConcatenateSSSM1 requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
 impl<T> MechFunctionImpl for HorizontalConcatenateSSSM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -1327,6 +1347,7 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+register_horizontal_concatenate_fxn!(HorizontalConcatenateSSSM1);
 
 // HorizontalConcatenateSSM1S -------------------------------------------------
 
