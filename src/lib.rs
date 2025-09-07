@@ -76,6 +76,20 @@ macro_rules! impl_logic_binop {
       rhs: Ref<$arg2_type>,
       out: Ref<$out_type>,
     }
+    impl MechFunctionFactory for $struct_name
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Binary(out, arg1, arg2) => {
+            let lhs: Ref<$arg1_type> = unsafe { arg1.as_unchecked() }.clone();
+            let rhs: Ref<$arg2_type> = unsafe { arg2.as_unchecked() }.clone();
+            let out: Ref<$out_type> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(Self {lhs, rhs, out }))
+          },
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+        }
+      }
+    }
     impl MechFunctionImpl for $struct_name {
       fn solve(&self) {
         let lhs_ptr = self.lhs.as_ptr();
@@ -93,7 +107,14 @@ macro_rules! impl_logic_binop {
         let name = format!("{}<bool>", stringify!($struct_name));
         compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
       }
-    }};}
+    }
+    inventory::submit! {
+      FunctionDescriptor {
+        name: concat!(stringify!($struct_name), "<bool>"),
+        ptr: $struct_name::new,
+      }
+    }
+};}
 
 #[macro_export]
 macro_rules! impl_logic_fxns {

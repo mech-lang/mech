@@ -136,5 +136,6 @@ swizzle = ["subscript", "mech-core/swizzle"]
 [dependencies]
 mech-core = {version = "0.2.59", default-features = false}
 
-nalgebra = {version="0.34.0", optional = true}
 paste = "1.0.15"
+inventory = "0.3.21"
+nalgebra = {version="0.34.0", optional = true}

@@ -10,13 +10,32 @@ use mech_core::matrix::Matrix;
 
 // Not ------------------------------------------------------------------------
 
+// NotS -----------------------------------------------------------------------
+
 #[derive(Debug)]
 struct NotS<T> {
   pub arg: Ref<T>,
   pub out: Ref<T>,
   pub _marker: PhantomData<T>,
 }
-
+impl<T> MechFunctionFactory for NotS<T>
+where
+  T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static + 
+  CompileConst + ConstElem + AsValueKind +
+  Not<Output = T>,
+  Ref<T>: ToValue,
+{
+  fn new(args: FunctionArgs) -> Result<Box<dyn MechFunction>, MechError> {
+    match args {
+      FunctionArgs::Unary(out, arg) => {
+        let arg: Ref<T> = unsafe { arg.as_unchecked() }.clone();
+        let out: Ref<T> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self {arg, out, _marker: PhantomData::default() }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
 impl<T> MechFunctionImpl for NotS<T>
 where
   T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static + Not<Output = T>,
@@ -40,6 +59,9 @@ where
     compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Not) );
   }
 }
+register_fxn_descriptor!(NotS, bool, "bool");
+
+// NotV -----------------------------------------------------------------------
 
 #[derive(Debug)]
 pub struct NotV<T, MatA> {
@@ -47,11 +69,33 @@ pub struct NotV<T, MatA> {
   pub out: Ref<MatA>,
   pub _marker: PhantomData<T>,
 }
-
+impl<T, MatA> MechFunctionFactory for NotV<T, MatA>
+where
+  T: Debug + Clone + Sync + Send + 'static + 
+  CompileConst + ConstElem + AsValueKind +
+  Not<Output = T>,
+  for<'a> &'a MatA: IntoIterator<Item = &'a T>,
+  for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
+  MatA: Debug + CompileConst + ConstElem + AsValueKind + 'static,
+  Ref<MatA>: ToValue
+{
+  fn new(args: FunctionArgs) -> Result<Box<dyn MechFunction>, MechError> {
+    match args {
+      FunctionArgs::Unary(out, arg) => {
+        let arg: Ref<MatA> = unsafe { arg.as_unchecked() }.clone();
+        let out: Ref<MatA> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self {arg, out, _marker: PhantomData::default() }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
 impl<T, MatA> MechFunctionImpl for NotV<T, MatA>
 where
   Ref<MatA>: ToValue,
-  T: Debug + Clone + Sync + Send + 'static + Not<Output = T>,
+  T: Debug + Clone + Sync + Send + 'static + 
+  CompileConst + ConstElem + AsValueKind +
+  Not<Output = T>,
   for<'a> &'a MatA: IntoIterator<Item = &'a T>,
   for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
   MatA: Debug,
@@ -77,7 +121,7 @@ where
   MatA: CompileConst + ConstElem + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    let name = format!("NotV<{},{}>", T::as_value_kind(), MatA::as_value_kind());
+    let name = format!("NotV<{}{}>", T::as_value_kind(), MatA::as_value_kind());
     compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Not) );
   }
 }
