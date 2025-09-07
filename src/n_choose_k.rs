@@ -7,6 +7,7 @@ use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Sub, Div};
 use num_traits::{Zero, One};
 use itertools::Itertools;
+use paste::paste;
 
 // Combinatorics N Choose K----------------------------------------------------
 
@@ -16,7 +17,28 @@ pub struct NChooseK<T> {
   k: Ref<T>,
   out: Ref<T>,
 }
-
+impl<T> MechFunctionFactory for NChooseK<T> 
+where
+  T: Copy + Debug + Clone + Sync + Send + 'static +
+      Add<Output = T> + AddAssign +
+      Sub<Output = T> + Div<Output = T> +
+      Zero + One +
+      ConstElem + CompileConst + AsValueKind +
+      PartialEq + PartialOrd,
+  Ref<T>: ToValue,
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Binary(out, arg1, arg2) => {
+        let n: Ref<T> = unsafe{ arg1.as_unchecked().clone() };
+        let k: Ref<T> = unsafe{ arg2.as_unchecked().clone() };
+        let out: Ref<T> = unsafe{ out.as_unchecked().clone() };
+        Ok(Box::new(Self{n, k, out}))
+      }
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments}),
+    }
+  }
+}
 impl<T> MechFunctionImpl for NChooseK<T>
 where
   T: Copy + Debug + Clone + Sync + Send + 'static +
@@ -61,6 +83,7 @@ where
     compile_binop!(name, self.out, self.n, self.k, ctx, FeatureFlag::Custom(hash_str("combinatorics/n-choose-k")));
   }
 }
+register_fxn_descriptor!(NChooseK, u8, "u8", i8, "i8", u16, "u16", i16, "i16", u32, "u32", i32, "i32", u64, "u64", i64, "i64", u128, "u128", i128, "i128", F32, "f32", F64, "f64", R64, "r64", C64, "c64");
 
 #[cfg(feature = "matrix")]
 #[derive(Debug)]
@@ -69,7 +92,31 @@ pub struct NChooseKMatrix<T> {
   k: Ref<T>,
   out: Ref<Matrix<T>>,
 }
-
+#[cfg(feature = "matrix")]
+impl<T> MechFunctionFactory for NChooseKMatrix<T>
+where
+    T: Copy + Debug + Clone + Sync + Send + 'static +
+       ToUsize + std::fmt::Display +
+       Add<Output = T> + AddAssign +
+       Sub<Output = T> + Div<Output = T> +
+       Zero + One +
+      ConstElem + CompileConst + AsValueKind +
+       PartialEq + PartialOrd + ToMatrix,
+    Ref<T>: ToValue,
+    Matrix<T>: ToValue,
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Binary(out, arg1, arg2) => {
+        let n: Ref<Matrix<T>> = unsafe{ arg1.as_unchecked().clone() };
+        let k: Ref<T> = unsafe{ arg2.as_unchecked().clone() };
+        let out: Ref<Matrix<T>> = unsafe{ out.as_unchecked().clone() };
+        Ok(Box::new(Self{n, k, out}))
+      }
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments}),
+    }
+  }
+}
 #[cfg(feature = "matrix")]
 impl<T> MechFunctionImpl for NChooseKMatrix<T>
 where
@@ -107,11 +154,17 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(all(feature = "matrix", feature = "compiler"))]
-impl<T> MechFunctionCompiler for NChooseKMatrix<T> {
+impl<T> MechFunctionCompiler for NChooseKMatrix<T> 
+where
+    T: ConstElem + CompileConst + AsValueKind,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let name = format!("NChooseKMatrix<{}>", T::as_value_kind());
+    compile_binop!(name, self.out, self.n, self.k, ctx, FeatureFlag::Custom(hash_str("combinatorics/n-choose-k")));
   }
 }
+register_fxn_descriptor!(NChooseKMatrix, u8, "u8", i8, "i8", u16, "u16", i16, "i16", u32, "u32", i32, "i32", u64, "u64", i64, "i64", u128, "u128", i128, "i128", F32, "f32", F64, "f64", R64, "r64", C64, "c64");
+
 
 fn impl_combinatorics_n_choose_k_fxn(n: Value, k: Value) -> Result<Box<dyn MechFunction>, MechError> {
   match (n,k) {

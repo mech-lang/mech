@@ -133,6 +133,7 @@ swizzle = ["subscript", "mech-core/swizzle"]
 mech-core = {version = "0.2.59", default-features = false}
 
 paste = "1.0.15"
+inventory = "0.3.21"
 nalgebra = {version="0.34.0", optional = true}
 itertools = {version = "0.14.0", optional = true}
 
