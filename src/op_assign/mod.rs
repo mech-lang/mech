@@ -337,7 +337,7 @@ macro_rules! impl_assign_vector_vector {
         MatB: CompileConst + ConstElem + AsValueKind,
       {
         fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-          let name = format!("{}AssignVV<{},{},{}>", stringify!($op_name), T::as_value_kind(), MatA::as_value_kind(), MatB::as_value_kind());
+          let name = format!("{}AssignVV<{}>", stringify!($op_name), MatA::as_value_kind());
           compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign) );
         }
       }
@@ -348,11 +348,11 @@ macro_rules! impl_assign_vector_vector {
 
 #[macro_export]
 macro_rules! register_op_assign_vv {
-  ($op:ident, $type:ty, $size:ty) => {
+  ($op:ident, $type:ty, $size:ty, $size_string:tt) => {
     paste!{
       inventory::submit! {
         FunctionDescriptor {
-          name: concat!(stringify!($op),"<",stringify!([<$type:lower>]),stringify!($size),stringify!($size),">"),
+          name: concat!(stringify!($op),"<[",stringify!([<$type:lower>]),"]:", $size_string, ">"),
           ptr: $op::<$type,$size<$type>,$size<$type>>::new,
         }
       }
@@ -362,32 +362,36 @@ macro_rules! register_op_assign_vv {
 #[macro_export]
 macro_rules! register_op_assign_vv_all {
   ($op:ident, $ty:ty, $ty_feature:literal) => {
-    #[cfg(all(feature = $ty_feature, feature = "row_vector4"))]
-    register_op_assign_vv!($op, $ty, RowVector4);
-    #[cfg(all(feature = $ty_feature, feature = "vector2"))]
-    register_op_assign_vv!($op, $ty, Vector2);
-    #[cfg(all(feature = $ty_feature, feature = "vector3"))]
-    register_op_assign_vv!($op, $ty, Vector3);
-    #[cfg(all(feature = $ty_feature, feature = "vector4"))]
-    register_op_assign_vv!($op, $ty, Vector4);
-    #[cfg(all(feature = $ty_feature, feature = "matrix1"))]
-    register_op_assign_vv!($op, $ty, Matrix1);
-    #[cfg(all(feature = $ty_feature, feature = "matrix2"))]
-    register_op_assign_vv!($op, $ty, Matrix2);
-    #[cfg(all(feature = $ty_feature, feature = "matrix3"))]
-    register_op_assign_vv!($op, $ty, Matrix3);
-    #[cfg(all(feature = $ty_feature, feature = "matrix4"))]
-    register_op_assign_vv!($op, $ty, Matrix4);
-    #[cfg(all(feature = $ty_feature, feature = "matrix2x3"))]
-    register_op_assign_vv!($op, $ty, Matrix2x3);
-    #[cfg(all(feature = $ty_feature, feature = "matrix3x2"))]
-    register_op_assign_vv!($op, $ty, Matrix3x2);
-    #[cfg(all(feature = $ty_feature, feature = "dvector"))]
-    register_op_assign_vv!($op, $ty, DVector);
-    #[cfg(all(feature = $ty_feature, feature = "dmatrix"))]
-    register_op_assign_vv!($op, $ty, DMatrix);
-    #[cfg(all(feature = $ty_feature, feature = "row_dvector"))]
-    register_op_assign_vv!($op, $ty, RowDVector);
+    #[cfg(feature = "row_vector4")]
+    register_op_assign_vv!($op, $ty, RowVector4, "1,4");
+    #[cfg(feature = "row_vector3")]
+    register_op_assign_vv!($op, $ty, RowVector3, "1,3");
+    #[cfg(feature = "row_vector2")]
+    register_op_assign_vv!($op, $ty, RowVector2, "1,2");
+    #[cfg(feature = "vector2")]
+    register_op_assign_vv!($op, $ty, Vector2, "2,1");
+    #[cfg(feature = "vector3")]
+    register_op_assign_vv!($op, $ty, Vector3, "3,1");
+    #[cfg(feature = "vector4")]
+    register_op_assign_vv!($op, $ty, Vector4, "4,1");
+    #[cfg(feature = "matrix1")]
+    register_op_assign_vv!($op, $ty, Matrix1, "1,1");
+    #[cfg(feature = "matrix2")]
+    register_op_assign_vv!($op, $ty, Matrix2, "2,2");
+    #[cfg(feature = "matrix3")]
+    register_op_assign_vv!($op, $ty, Matrix3, "3,3");
+    #[cfg(feature = "matrix4")]
+    register_op_assign_vv!($op, $ty, Matrix4, "4,4");
+    #[cfg(feature = "matrix2x3")]
+    register_op_assign_vv!($op, $ty, Matrix2x3, "2,3");
+    #[cfg(feature = "matrix3x2")]
+    register_op_assign_vv!($op, $ty, Matrix3x2, "3,2");
+    #[cfg(feature = "vectord")]
+    register_op_assign_vv!($op, $ty, DVector, "0,1");
+    #[cfg(feature = "matrixd")]
+    register_op_assign_vv!($op, $ty, DMatrix, "0,0");
+    #[cfg(feature = "row_vectord")]
+    register_op_assign_vv!($op, $ty, RowDVector, "1,0");
   };
 }
 
@@ -418,9 +422,9 @@ macro_rules! impl_register_op_assign_vv_all {
     register_op_assign_vv_all!($macro_name, F32, "f32");
     #[cfg(feature = "f64")]
     register_op_assign_vv_all!($macro_name, F64, "f64");
-    #[cfg(feature = "rational")]
-    register_op_assign_vv_all!($macro_name, R64, "rational");
-    #[cfg(feature = "complex")]
-    register_op_assign_vv_all!($macro_name, C64, "complex");
+    #[cfg(feature = "r64")]
+    register_op_assign_vv_all!($macro_name, R64, "r64");
+    #[cfg(feature = "c64")]
+    register_op_assign_vv_all!($macro_name, C64, "c64");
   };
 }
