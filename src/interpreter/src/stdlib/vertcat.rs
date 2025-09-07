@@ -127,6 +127,25 @@ macro_rules! vertcat_three_args {
       e2: Ref<$e2<T>>,
       out: Ref<$out<T>>,
     }
+    impl<T> MechFunctionFactory for $fxn<T>
+    where
+      T: Debug + Clone + Sync + Send + PartialEq + 'static +
+      ConstElem + CompileConst + AsValueKind,
+      Ref<$out<T>>: ToValue
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+            let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
+            let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
+            let e2: Ref<$e2<T>> = unsafe { arg2.as_unchecked() }.clone();
+            let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(Self { e0, e1, e2, out }))
+          },
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 3 arguments, got {:?}", stringify!($fxn), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+        }
+      }
+    }
     impl<T> MechFunctionImpl for $fxn<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -154,6 +173,7 @@ macro_rules! vertcat_three_args {
         compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
       }
     }
+    register_vertical_concatenate_fxn!($fxn);
   };} 
   
 macro_rules! vertcat_four_args {
@@ -165,6 +185,26 @@ macro_rules! vertcat_four_args {
       e2: Ref<$e2<T>>,
       e3: Ref<$e3<T>>,
       out: Ref<$out<T>>,
+    }
+    impl<T> MechFunctionFactory for $fxn<T>
+    where
+      T: Debug + Clone + Sync + Send + PartialEq + 'static +
+      ConstElem + CompileConst + AsValueKind,
+      Ref<$out<T>>: ToValue
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+            let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
+            let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
+            let e2: Ref<$e2<T>> = unsafe { arg2.as_unchecked() }.clone();
+            let e3: Ref<$e3<T>> = unsafe { arg3.as_unchecked() }.clone();
+            let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(Self { e0, e1, e2, e3, out }))
+          },
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 4 arguments, got {:?}", stringify!($fxn), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+        }
+      }
     }
     impl<T> MechFunctionImpl for $fxn<T>
     where
@@ -194,12 +234,33 @@ macro_rules! vertcat_four_args {
         compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
       }
     }
-  };}   
+    register_vertical_concatenate_fxn!($fxn);
+  };}
+  
+// VerticalConcatenateTwoArgs -------------------------------------------------
 
 struct VerticalConcatenateTwoArgs<T> {
   e0: Box<dyn CopyMat<T>>,
   e1: Box<dyn CopyMat<T>>,
   out: Ref<DMatrix<T>>,
+}
+impl<T> MechFunctionFactory for VerticalConcatenateTwoArgs<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static +
+  ConstElem + CompileConst + AsValueKind,
+  Ref<DMatrix<T>>: ToValue
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Binary(out, arg0, arg1) => {
+        let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
+        let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
+        let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self { e0, e1, out }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("VerticalConcatenateTwoArgs requires 2 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
 }
 impl<T> MechFunctionImpl for VerticalConcatenateTwoArgs<T>
 where
@@ -222,23 +283,13 @@ where
     let mut registers = [0, 0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
+    registers[1] = compile_register_mat!(self.e0, ctx);
+    registers[2] = compile_register_mat!(self.e1, ctx);
 
-    let lhs_addr = self.e0.addr();
-    let lhs_reg = ctx.alloc_register_for_ptr(lhs_addr);
-    let lhs_const_id = self.e0.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(lhs_reg, lhs_const_id);
-    registers[1] = lhs_reg;
-
-    let rhs_addr = self.e1.addr();
-    let rhs_reg = ctx.alloc_register_for_ptr(rhs_addr);
-    let rhs_const_id = self.e1.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(rhs_reg, rhs_const_id);
-    registers[2] = rhs_reg;
-
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::VertCat));
 
     ctx.emit_binop(
-      hash_str("VerticalConcatenateTwoArgs"),
+      hash_str(&format!("VerticalConcatenateTwoArgs<{}>", T::as_value_kind())),
       registers[0],
       registers[1],
       registers[2],
@@ -247,12 +298,34 @@ where
     Ok(registers[0])    
   }
 }
+register_vertical_concatenate_fxn!(VerticalConcatenateTwoArgs);
+
+// VerticalConcatenateThreeArgs -----------------------------------------------
     
 struct VerticalConcatenateThreeArgs<T> {
   e0: Box<dyn CopyMat<T>>,
   e1: Box<dyn CopyMat<T>>,
   e2: Box<dyn CopyMat<T>>,
   out: Ref<DMatrix<T>>,
+}
+impl<T> MechFunctionFactory for VerticalConcatenateThreeArgs<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static +
+  ConstElem + CompileConst + AsValueKind,
+  Ref<DMatrix<T>>: ToValue
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Ternary(out, arg0, arg1, arg2) => {
+        let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
+        let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
+        let e2: Box<dyn CopyMat<T>> = unsafe { arg2.get_copyable_matrix_unchecked::<T>() };
+        let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self { e0, e1, e2, out }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("VerticalConcatenateThreeArgs requires 3 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
 }
 impl<T> MechFunctionImpl for VerticalConcatenateThreeArgs<T>
 where
@@ -273,32 +346,17 @@ where
   T: ConstElem + CompileConst + AsValueKind + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    let mut registers = [0, 0, 0];
+    let mut registers = [0, 0, 0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
+    registers[1] = compile_register_mat!(self.e0, ctx);
+    registers[2] = compile_register_mat!(self.e1, ctx);
+    registers[3] = compile_register_mat!(self.e2, ctx);
 
-    let e0_addr = self.e0.addr();
-    let e0_reg = ctx.alloc_register_for_ptr(e0_addr);
-    let e0_const_id = self.e0.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(e0_reg, e0_const_id);
-    registers[1] = e0_reg;
-
-    let e1_addr = self.e1.addr();
-    let e1_reg = ctx.alloc_register_for_ptr(e1_addr);
-    let e1_const_id = self.e1.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(e1_reg, e1_const_id);
-    registers[2] = e1_reg;
-
-    let e2_addr = self.e2.addr();
-    let e2_reg = ctx.alloc_register_for_ptr(e2_addr);
-    let e2_const_id = self.e2.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(e2_reg, e2_const_id);
-    let mut registers = [registers[0], registers[1], registers[2], e2_reg];
-
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::VertCat));
 
     ctx.emit_ternop(
-      hash_str("VerticalConcatenateThreeArgs"),
+      hash_str(&format!("VerticalConcatenateThreeArgs<{}>", T::as_value_kind())),
       registers[0],
       registers[1],
       registers[2],
@@ -307,6 +365,9 @@ where
     Ok(registers[0])    
   }
 }
+register_vertical_concatenate_fxn!(VerticalConcatenateThreeArgs);
+
+// VerticalConcatenateFourArgs ------------------------------------------------
 
 struct VerticalConcatenateFourArgs<T> {
   e0: Box<dyn CopyMat<T>>,
@@ -314,6 +375,26 @@ struct VerticalConcatenateFourArgs<T> {
   e2: Box<dyn CopyMat<T>>,
   e3: Box<dyn CopyMat<T>>,
   out: Ref<DMatrix<T>>,
+}
+impl<T> MechFunctionFactory for VerticalConcatenateFourArgs<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static +
+  ConstElem + CompileConst + AsValueKind,
+  Ref<DMatrix<T>>: ToValue
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+        let e0: Box<dyn CopyMat<T>> = unsafe { arg0.get_copyable_matrix_unchecked::<T>() };
+        let e1: Box<dyn CopyMat<T>> = unsafe { arg1.get_copyable_matrix_unchecked::<T>() };
+        let e2: Box<dyn CopyMat<T>> = unsafe { arg2.get_copyable_matrix_unchecked::<T>() };
+        let e3: Box<dyn CopyMat<T>> = unsafe { arg3.get_copyable_matrix_unchecked::<T>() };
+        let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self { e0, e1, e2, e3, out }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("VerticalConcatenateFourArgs requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
 }
 impl<T> MechFunctionImpl for VerticalConcatenateFourArgs<T>
 where
@@ -336,38 +417,18 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-let mut registers = [0, 0, 0];
+let mut registers = [0, 0, 0, 0, 0];
 
     registers[0] = compile_register!(self.out, ctx);
+    registers[1] = compile_register_mat!(self.e0, ctx);
+    registers[2] = compile_register_mat!(self.e1, ctx);
+    registers[3] = compile_register_mat!(self.e2, ctx);
+    registers[4] = compile_register_mat!(self.e3, ctx);
 
-    let e0_addr = self.e0.addr();
-    let e0_reg = ctx.alloc_register_for_ptr(e0_addr);
-    let e0_const_id = self.e0.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(e0_reg, e0_const_id);
-    registers[1] = e0_reg;
-
-    let e1_addr = self.e1.addr();
-    let e1_reg = ctx.alloc_register_for_ptr(e1_addr);
-    let e1_const_id = self.e1.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(e1_reg, e1_const_id);
-    registers[2] = e1_reg;
-
-    let e2_addr = self.e2.addr();
-    let e2_reg = ctx.alloc_register_for_ptr(e2_addr);
-    let e2_const_id = self.e2.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(e2_reg, e2_const_id);
-    let mut registers = [registers[0], registers[1], registers[2], e2_reg];
-
-    let e3_addr = self.e3.addr();
-    let e3_reg = ctx.alloc_register_for_ptr(e3_addr);
-    let e3_const_id = self.e3.compile_const_mat(ctx).unwrap();
-    ctx.emit_const_load(e3_reg, e3_const_id);
-    let mut registers = [registers[0], registers[1], registers[2], registers[3], e3_reg];
-
-    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::VertCat));
 
     ctx.emit_quadop(
-      hash_str("VerticalConcatenateFourArgs"),
+      hash_str(&format!("VerticalConcatenateFourArgs<{}>", T::as_value_kind())),
       registers[0],
       registers[1],
       registers[2],
@@ -377,10 +438,34 @@ let mut registers = [0, 0, 0];
     Ok(registers[0])
   }
 }
+register_vertical_concatenate_fxn!(VerticalConcatenateFourArgs);
+
+// VerticalConcatenateNArgs ---------------------------------------------------
 
 struct VerticalConcatenateNArgs<T> {
   e0: Vec<Box<dyn CopyMat<T>>>,
   out: Ref<DMatrix<T>>,
+}
+impl<T> MechFunctionFactory for VerticalConcatenateNArgs<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static +
+  ConstElem + CompileConst + AsValueKind,
+  Ref<DMatrix<T>>: ToValue
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Variadic(out, arg0) => {
+        let mut e0: Vec<Box<dyn CopyMat<T>>> = Vec::new();
+        for arg in arg0 {
+          let mat: Box<dyn CopyMat<T>> = unsafe { arg.get_copyable_matrix_unchecked::<T>() };
+          e0.push(mat);
+        }
+        let out: Ref<DMatrix<T>> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self { e0, out }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("VerticalConcatenateNArgs requires N arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
 }
 impl<T> MechFunctionImpl for VerticalConcatenateNArgs<T>
 where
@@ -423,6 +508,9 @@ where
     Ok(registers[0])
   }
 }
+register_vertical_concatenate_fxn!(VerticalConcatenateNArgs);
+
+// VerticalConcatenateVec -----------------------------------------------------
 
 macro_rules! vertical_concatenate {
   ($name:ident, $vec_size:expr) => {
@@ -431,7 +519,22 @@ macro_rules! vertical_concatenate {
       struct $name<T> {
         out: Ref<[<$vec_size>]<T>>,
       }
-
+      impl<T> MechFunctionFactory for $name<T>
+      where
+        T: Debug + Clone + Sync + Send + PartialEq + 'static +
+        ConstElem + CompileConst + AsValueKind,
+        Ref<[<$vec_size>]<T>>: ToValue
+      {
+        fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+          match args {
+            FunctionArgs::Unary(out, _arg0) => {
+              let out: Ref<[<$vec_size>]<T>> = unsafe { out.as_unchecked() }.clone();
+              Ok(Box::new(Self { out }))
+            },
+            _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 1 argument, got {:?}", stringify!($name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+          }
+        }
+      }
       impl<T> MechFunctionImpl for $name<T> 
       where
         T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -451,8 +554,11 @@ macro_rules! vertical_concatenate {
           compile_unop!(name, self.out, self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
         }
       }
+      register_vertical_concatenate_fxn!($name);
     }
   };}  
+
+// VerticalConcatenateVD2 -----------------------------------------------------
 
 struct VerticalConcatenateVD2<T> {
   e0: Box<dyn CopyMat<T>>,
