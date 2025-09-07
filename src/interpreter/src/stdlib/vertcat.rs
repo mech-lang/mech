@@ -1013,6 +1013,8 @@ macro_rules! vertcat_m1m1 {
 #[cfg(feature = "matrix1")]
 vertcat_two_args!(VerticalConcatenateM1M1,Matrix1,Matrix1,Vector2,vertcat_m1m1);
 
+// VerticalConcatenateV2V2 ----------------------------------------------------
+
 macro_rules! vertcat_r2r2 {
   ($out:expr, $e0:expr, $e1:expr) => {
     $out[0] = $e0[0].clone();
@@ -1022,6 +1024,8 @@ macro_rules! vertcat_r2r2 {
   };}
 #[cfg(feature = "vector2")]
 vertcat_two_args!(VerticalConcatenateV2V2,Vector2,Vector2,Vector4,vertcat_r2r2);
+
+// VerticalConcatenateM1V3 ----------------------------------------------------
 
 macro_rules! vertcat_m1r3 {
   ($out:expr, $e0:expr, $e1:expr) => {
@@ -1033,6 +1037,8 @@ macro_rules! vertcat_m1r3 {
 #[cfg(all(feature = "matrix1", feature = "vector3", feature = "vector4"))]
 vertcat_two_args!(VerticalConcatenateM1V3,Matrix1,Vector3,Vector4,vertcat_m1r3);
 
+// VerticalConcatenateV3M1 ----------------------------------------------------
+
 macro_rules! vertcat_r3m1 {
   ($out:expr, $e0:expr, $e1:expr) => {
     $out[0] = $e0[0].clone();
@@ -1042,6 +1048,8 @@ macro_rules! vertcat_r3m1 {
   };}
 #[cfg(all(feature = "vector3", feature = "matrix1", feature = "vector4"))]
 vertcat_two_args!(VerticalConcatenateV3M1,Vector3,Matrix1,Vector4,vertcat_r3m1);
+
+// VerticalConcatenateM1V2 ----------------------------------------------------
 
 macro_rules! vertcat_m1r2 {
   ($out:expr, $e0:expr, $e1:expr) => {
@@ -1053,6 +1061,8 @@ macro_rules! vertcat_m1r2 {
 #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector3"))]
 vertcat_two_args!(VerticalConcatenateM1V2, Matrix1, Vector2, Vector3, vertcat_m1r2);
 
+// VerticalConcatenateV2M1 ----------------------------------------------------
+
 macro_rules! vertcat_r2m1 {
   ($out:expr, $e0:expr, $e1:expr) => {
     $out[0] = $e0[0].clone();
@@ -1062,6 +1072,8 @@ macro_rules! vertcat_r2m1 {
 }
 #[cfg(all(feature = "vector2", feature = "matrix1", feature = "vector3"))]
 vertcat_two_args!(VerticalConcatenateV2M1, Vector2, Matrix1, Vector3, vertcat_r2m1);
+
+// VerticalConcatenateM1M1M1 --------------------------------------------------
 
 macro_rules! vertcat_m1m1m1 {
   ($out:expr, $e0:expr,$e1:expr,$e2:expr) => {
@@ -1073,7 +1085,9 @@ macro_rules! vertcat_m1m1m1 {
 #[cfg(all(feature = "matrix1", feature = "vector3"))]
 vertcat_three_args!(VerticalConcatenateM1M1M1,Matrix1,Matrix1,Matrix1,Vector3, vertcat_m1m1m1);
 
-macro_rules! vertcat_m1m1r2 {
+// VerticalConcatenateM1M1V2 --------------------------------------------------
+
+macro_rules! vertcat_m1m1v2 {
   ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
     $out[0] = $e0[0].clone();
     $out[1] = $e1[0].clone();
@@ -1082,7 +1096,9 @@ macro_rules! vertcat_m1m1r2 {
   };
 }
 #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))]
-vertcat_three_args!(VerticalConcatenateM1M1V2, Matrix1, Matrix1, Vector2, Vector4, vertcat_m1m1r2);
+vertcat_three_args!(VerticalConcatenateM1M1V2, Matrix1, Matrix1, Vector2, Vector4, vertcat_m1m1v2);
+
+// VerticalConcatenateM1V2M1 --------------------------------------------------
 
 macro_rules! vertcat_m1r2m1 {
   ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
@@ -1095,6 +1111,8 @@ macro_rules! vertcat_m1r2m1 {
 #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))]
 vertcat_three_args!(VerticalConcatenateM1V2M1, Matrix1, Vector2, Matrix1, Vector4, vertcat_m1r2m1);
 
+// VerticalConcatenateV2M1M1 --------------------------------------------------
+
 macro_rules! vertcat_r2m1m1 {
   ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
     $out[0] = $e0[0].clone();
@@ -1106,6 +1124,8 @@ macro_rules! vertcat_r2m1m1 {
 #[cfg(all(feature = "vector2", feature = "matrix1", feature = "vector4"))]
 vertcat_three_args!(VerticalConcatenateV2M1M1, Vector2, Matrix1, Matrix1, Vector4, vertcat_r2m1m1);
 
+// VerticalConcatenateM1M1M1M1 ------------------------------------------------
+
 #[cfg(all(feature = "matrix1", feature = "vector4"))]
 #[derive(Debug)]
 struct VerticalConcatenateM1M1M1M1<T> {
@@ -1114,6 +1134,26 @@ struct VerticalConcatenateM1M1M1M1<T> {
   e2: Ref<Matrix1<T>>,
   e3: Ref<Matrix1<T>>,
   out: Ref<Vector4<T>>,
+}
+impl<T> MechFunctionFactory for VerticalConcatenateM1M1M1M1<T>
+where
+  T: Debug + Clone + Sync + Send + PartialEq + 'static +
+  ConstElem + CompileConst + AsValueKind,
+  Ref<Vector4<T>>: ToValue
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Quaternary(out, arg0, arg1, arg2, arg3) => {
+        let e0: Ref<Matrix1<T>> = unsafe { arg0.as_unchecked() }.clone();
+        let e1: Ref<Matrix1<T>> = unsafe { arg1.as_unchecked() }.clone();
+        let e2: Ref<Matrix1<T>> = unsafe { arg2.as_unchecked() }.clone();
+        let e3: Ref<Matrix1<T>> = unsafe { arg3.as_unchecked() }.clone();
+        let out: Ref<Vector4<T>> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self { e0, e1, e2, e3, out }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("VerticalConcatenateM1M1M1M1 requires 4 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
 }
 #[cfg(all(feature = "matrix1", feature = "vector4"))]
 impl<T> MechFunctionImpl for VerticalConcatenateM1M1M1M1<T>
@@ -1147,6 +1187,9 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
   }
 }
+register_vertical_concatenate_fxn!(VerticalConcatenateM1M1M1M1);
+
+// Mixed Type Vertical Concatenations -----------------------------------------
 
 macro_rules! vertcat_r2r2 {
   ($out:expr, $e0:expr, $e1:expr) => {
@@ -1158,6 +1201,8 @@ macro_rules! vertcat_r2r2 {
 }
 #[cfg(all(feature = "row_vector2", feature = "matrix2"))]
 vertcat_two_args!(VerticalConcatenateR2R2, RowVector2, RowVector2, Matrix2, vertcat_r2r2);
+
+// VerticalConcatenateR3R3 ----------------------------------------------------
 
 macro_rules! vertcat_r3r3 {
   ($out:expr, $e0:expr, $e1:expr) => {
@@ -1172,6 +1217,8 @@ macro_rules! vertcat_r3r3 {
 #[cfg(all(feature = "row_vector3", feature = "matrix2x3"))]
 vertcat_two_args!(VerticalConcatenateR3R3, RowVector3, RowVector3, Matrix2x3, vertcat_r3r3);
 
+// VerticalConcatenateR2M2 ----------------------------------------------------
+
 macro_rules! vertcat_r2m2 {
   ($out:expr, $e0:expr, $e1:expr) => {
     $out[0] = $e0[0].clone();
@@ -1185,6 +1232,8 @@ macro_rules! vertcat_r2m2 {
 #[cfg(all(feature = "row_vector2", feature = "matrix2", feature = "matrix3x2"))]
 vertcat_two_args!(VerticalConcatenateR2M2, RowVector2, Matrix2, Matrix3x2, vertcat_r2m2);
 
+// VerticalConcatenateM2R2 ----------------------------------------------------
+
 macro_rules! vertcat_m2r2 {
   ($out:expr, $e0:expr, $e1:expr) => {
     $out[0] = $e0[0].clone();
@@ -1197,6 +1246,8 @@ macro_rules! vertcat_m2r2 {
 }
 #[cfg(all(feature = "matrix2", feature = "row_vector2", feature = "matrix3x2"))]
 vertcat_two_args!(VerticalConcatenateM2R2, Matrix2, RowVector2, Matrix3x2, vertcat_m2r2);
+
+// VerticalConcatenateM2x3R3 --------------------------------------------------
 
 macro_rules! vertcat_m2x3r3 {
   ($out:expr, $e0:expr, $e1:expr) => {
@@ -1214,6 +1265,8 @@ macro_rules! vertcat_m2x3r3 {
 #[cfg(all(feature = "matrix2x3", feature = "row_vector3", feature = "matrix3"))]
 vertcat_two_args!(VerticalConcatenateM2x3R3, Matrix2x3, RowVector3, Matrix3, vertcat_m2x3r3);
 
+// VerticalConcatenateR3M2x3 --------------------------------------------------
+
 macro_rules! vertcat_r3m2x3 {
   ($out:expr, $e0:expr, $e1:expr) => {
     $out[0] = $e0[0].clone();
@@ -1230,8 +1283,9 @@ macro_rules! vertcat_r3m2x3 {
 #[cfg(all(feature = "row_vector3", feature = "matrix2x3", feature = "matrix3"))]
 vertcat_two_args!(VerticalConcatenateR3M2x3, RowVector3, Matrix2x3, Matrix3, vertcat_r3m2x3);
 
+// VerticalConcatenateMDR4 ----------------------------------------------------
 
-macro_rules! vertcat_mdv4 {
+macro_rules! vertcat_mdr4 {
   ($out:expr, $e0:expr, $e1:expr) => {
     let e0_len = $e0.len();
     for i in 0..e0_len {
@@ -1245,7 +1299,9 @@ macro_rules! vertcat_mdv4 {
   };
 }
 #[cfg(all(feature = "matrixd", feature = "row_vector4", feature = "matrix4"))]
-vertcat_two_args!(VerticalConcatenateMDR4, DMatrix, RowVector4, Matrix4, vertcat_mdv4);
+vertcat_two_args!(VerticalConcatenateMDR4, DMatrix, RowVector4, Matrix4, vertcat_mdr4);
+
+// VerticalConcatenateMDMD ----------------------------------------------------
 
 macro_rules! vertcat_mdmd {
   ($out:expr, $e0:expr, $e1:expr) => {
@@ -1273,9 +1329,13 @@ macro_rules! vertcat_mdmd {
 }
 #[cfg(all(feature = "matrixd", feature = "matrix4"))]
 vertcat_two_args!(VerticalConcatenateMDMD, DMatrix, DMatrix, Matrix4, vertcat_mdmd);
+
+// VerticalConcatenateR4MD ----------------------------------------------------
+
 #[cfg(all(feature = "matrixd", feature = "matrix4", feature = "row_vector4"))]
 vertcat_two_args!(VerticalConcatenateR4MD, RowVector4, DMatrix, Matrix4, vertcat_mdmd);
 
+// VerticalConcatenateR2R2R2 ----------------------------------------------------
 
 macro_rules! vertcat_mdmdmd {
   ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
@@ -1313,14 +1373,28 @@ macro_rules! vertcat_mdmdmd {
 
 #[cfg(all(feature = "row_vector2", feature = "matrix3x2"))]
 vertcat_three_args!(VerticalConcatenateR2R2R2, RowVector2, RowVector2, RowVector2, Matrix3x2, vertcat_mdmdmd);
+
+// VerticalConcatenateR3R3R3 --------------------------------------------------
+
 #[cfg(all(feature = "row_vector3", feature = "matrix3"))]
 vertcat_three_args!(VerticalConcatenateR3R3R3, RowVector3, RowVector3, RowVector3, Matrix3, vertcat_mdmdmd);
+
+// VerticalConcatenateR4R4MD --------------------------------------------------
+
 #[cfg(all(feature = "row_vector4", feature = "matrixd", feature = "matrix4"))]
 vertcat_three_args!(VerticalConcatenateR4R4MD, RowVector4, RowVector4, DMatrix, Matrix4, vertcat_mdmdmd);
+
+// VerticalConcatenateR4MDR4 --------------------------------------------------
+
 #[cfg(all(feature = "row_vector4", feature = "matrixd", feature = "row_vector4", feature = "matrix4"))]
 vertcat_three_args!(VerticalConcatenateR4MDR4, RowVector4, DMatrix, RowVector4, Matrix4, vertcat_mdmdmd);
+
+// VerticalConcatenateMDR4R4 --------------------------------------------------
+
 #[cfg(all(feature = "matrixd", feature = "row_vector4", feature = "row_vector4", feature = "matrix4"))]
 vertcat_three_args!(VerticalConcatenateMDR4R4, DMatrix, RowVector4, RowVector4, Matrix4, vertcat_mdmdmd);
+
+// VerticalConcatenateR4R4R4R4 ------------------------------------------------
 
 macro_rules! vertcat_mdmdmdmd {
   ($out:expr, $e0:expr, $e1:expr, $e2:expr, $e3:expr) => {
