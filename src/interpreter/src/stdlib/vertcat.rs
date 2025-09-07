@@ -1,49 +1,79 @@
 #[macro_use]
 use crate::stdlib::*;
 
+macro_rules! register_vertical_concatenate_fxn {
+  ($name:ident) => {
+    register_fxn_descriptor!(
+      $name, 
+      bool, "bool", 
+      String, "string", 
+      u8, "u8", 
+      u16, "u16", 
+      u32, "u32", 
+      u64, "u64", 
+      u128, "u128", 
+      i8, "i8", 
+      i16, "i16", 
+      i32, "i32", 
+      i64, "i64", 
+      i128, "i128", 
+      F32, "f32", 
+      F64, "f64", 
+      C64, "c64", 
+      R64, "r64"
+    );
+  };
+}
+
+macro_rules! register_fxns {
+  ($op:ident) => {
+    $op!(bool, "bool");
+    $op!(String, "string");
+    $op!(u8, "u8");
+    $op!(u16, "u16");
+    $op!(u32, "u32");
+    $op!(u64, "u64");
+    $op!(u128, "u128");
+    $op!(i8, "i8");
+    $op!(i16, "i16");
+    $op!(i32, "i32");
+    $op!(i64, "i64");
+    $op!(i128, "i128");
+    $op!(F64, "f64");
+    $op!(F32, "f32");
+    $op!(R64, "r64");
+    $op!(C64, "c64");
+  }
+}
+
+
 // Vertical Concatenate -----------------------------------------------------
 
-macro_rules! vertcat_one_arg {
-  ($fxn:ident, $e0:ident, $out:ident, $opt:ident) => {
+macro_rules! vertcat_two_args {
+  ($fxn:ident, $e0:ident, $e1:ident, $out:ident, $opt:ident) => {
     #[derive(Debug)]
     struct $fxn<T> {
       e0: Ref<$e0<T>>,
+      e1: Ref<$e1<T>>,
       out: Ref<$out<T>>,
     }
-    impl<T> MechFunctionImpl for $fxn<T>
+    impl<T> MechFunctionFactory for $fxn<T>
     where
-      T: Debug + Clone + Sync + Send + PartialEq + 'static,
+      T: Debug + Clone + Sync + Send + PartialEq + 'static +
+      ConstElem + CompileConst + AsValueKind,
       Ref<$out<T>>: ToValue
     {
-      fn solve(&self) { 
-        unsafe {
-          let e0_ptr = (*(self.e0.as_ptr())).clone();
-          let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
-          $opt!(out_ptr,e0_ptr);
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Binary(out, arg0, arg1) => {
+            let e0: Ref<$e0<T>> = unsafe { arg0.as_unchecked() }.clone();
+            let e1: Ref<$e1<T>> = unsafe { arg1.as_unchecked() }.clone();
+            let out: Ref<$out<T>> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(Self { e0, e1, out }))
+          },
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($fxn), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
         }
       }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:#?}", self) }
-    }
-    #[cfg(feature = "compiler")]
-    impl<T> MechFunctionCompiler for $fxn<T> 
-    where
-      T: ConstElem + CompileConst + AsValueKind + AsValueKind
-    {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
-        compile_unop!(name, self.out, self.e0, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
-      }
-    }
-  };}
-
-macro_rules! vertcat_two_args {
-  ($fxn:ident, $e1:ident, $e2:ident, $out:ident, $opt:ident) => {
-    #[derive(Debug)]
-    struct $fxn<T> {
-      e0: Ref<$e1<T>>,
-      e1: Ref<$e2<T>>,
-      out: Ref<$out<T>>,
     }
     impl<T> MechFunctionImpl for $fxn<T>
     where
@@ -55,7 +85,7 @@ macro_rules! vertcat_two_args {
           let e0_ptr = (*(self.e0.as_ptr())).clone();
           let e1_ptr = (*(self.e1.as_ptr())).clone();
           let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
-          $opt!(out_ptr,e0_ptr,e1_ptr);
+          $opt!(out_ptr, e0_ptr, e1_ptr);
         }
       }
       fn out(&self) -> Value { self.out.to_value() }
@@ -64,14 +94,29 @@ macro_rules! vertcat_two_args {
     #[cfg(feature = "compiler")]
     impl<T> MechFunctionCompiler for $fxn<T> 
     where
-      T: ConstElem + CompileConst + AsValueKind + AsValueKind
+      T: ConstElem + CompileConst + AsValueKind
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        let name = format!("{}<{}>", stringify!($fxn), T::as_value_kind());
+        let name = format!("{}<{}{}{}{}>", stringify!($fxn), T::as_value_kind(), stringify!($out), stringify!($e0), stringify!($e1));
         compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
       }
     }
-  };}
+    macro_rules! register_vertcat_fxn {
+      ($type:ty, $type_string:tt) => {
+        paste!{ 
+          #[cfg(feature = $type_string)]
+          inventory::submit! {
+            FunctionDescriptor {
+            name: concat!(stringify!($fxn), "<", stringify!([<$type:lower>]), stringify!($out), stringify!($e0), stringify!($e1), ">"),
+            ptr: $fxn::<$type>::new,
+            }
+          }
+        }
+      };
+    }
+    register_fxns!(register_vertcat_fxn);
+  };
+}
 
 macro_rules! vertcat_three_args {
   ($fxn:ident, $e0:ident, $e1:ident, $e2:ident, $out:ident, $opt:ident) => {

@@ -49,3 +49,4 @@ bytecode_test!(bytecode_math_mul,"x := 2 * 2; y := x * 4",Value::F64(Ref::new(F6
 bytecode_test!(bytecode_math_add_assign,"~x := 10; x += 20",Value::F64(Ref::new(F64::new(30.0))));
 bytecode_test!(bytecode_math_add_assign_vv, "~x := [1 2 3]; x += [10 20 30]", Value::MatrixF64(Matrix::RowVector3(Ref::new(na::RowVector3::from_vec(vec![F64::new(11.0),F64::new(22.0),F64::new(33.0)])))));
 bytecode_test!(bytecode_matrix_rowvector3,"[1 2 3]",Value::MatrixF64(Matrix::RowVector3(Ref::new(na::RowVector3::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0)])))));
+bytecode_test!(bytecode_matrix_vector2,"[1; 2]",Value::MatrixF64(Matrix::Vector2(Ref::new(na::Vector2::from_vec(vec![F64::new(1.0),F64::new(2.0)])))));
