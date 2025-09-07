@@ -76,9 +76,28 @@ macro_rules! impl_compare_binop {
   ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident, $feature_flag:expr) => {
     #[derive(Debug)]
     struct $struct_name<T> {
-    lhs: Ref<$arg1_type>,
-    rhs: Ref<$arg2_type>,
-    out: Ref<$out_type>,
+      lhs: Ref<$arg1_type>,
+      rhs: Ref<$arg2_type>,
+      out: Ref<$out_type>,
+    }
+    impl<T> MechFunctionFactory for $struct_name<T>
+    where
+      T: std::fmt::Debug + Clone + Sync + Send + 'static + 
+      ConstElem + CompileConst + AsValueKind +
+      PartialEq + PartialOrd,
+      Ref<$out_type>: ToValue
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Binary(out, arg1, arg2) => {
+            let lhs: Ref<$arg1_type> = unsafe { arg1.as_unchecked() }.clone();
+            let rhs: Ref<$arg2_type> = unsafe { arg2.as_unchecked() }.clone();
+            let out: Ref<$out_type> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(Self {lhs, rhs, out }))
+          },
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+        }
+      }
     }
     impl<T> MechFunctionImpl for $struct_name<T>
     where
@@ -104,7 +123,10 @@ macro_rules! impl_compare_binop {
       let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
       compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
     }
-  }};}
+  }
+  register_fxn_descriptor!($struct_name, bool, "bool", String, "string", u8, "u8", i8, "i8", u16, "u16", i16, "i16", u32, "u32", i32, "i32", u64, "u64", i64, "i64", u128, "u128", i128, "i128", F32, "f32", F64, "f64", R64, "r64", C64, "c64");
+};}
+  
 
 #[macro_export]
 macro_rules! impl_compare_fxns {
