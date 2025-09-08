@@ -31,7 +31,7 @@ default = ["stdlib", "pretty_print", "serde", "compiler", "program",
 
 arithmetic_default = ["copysign", "fabs", "fdim", "fmod", "nextafter", "remainder"]
 bessel_default = ["j0", "j1", "jn", "y0", "y1", "yn"]
-exponential_default = ["exp2", "exp10", "expm1"]
+exponential_default = ["exponential", "exp2", "exp10", "expm1"]
 extrema_default = ["fmax", "fmaximum", "fmaximum_num", "fmin", "fminimum", "fminimum_num"]
 gamma_default = ["lgamma", "tgamma"]
 logarithm_default = ["log", "log1p", "log10", "log2"]
@@ -74,6 +74,7 @@ y0 = ["bessel"]
 y1 = ["bessel"]
 yn = ["bessel"]
 
+exponential = ["exponential"]
 exp2 = ["exponential"]
 exp10 = ["exponential"]
 expm1 = ["exponential"]
