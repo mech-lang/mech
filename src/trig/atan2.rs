@@ -45,6 +45,19 @@ macro_rules! impl_two_arg_fxn {
       arg2: Ref<$kind2>,
       out: Ref<$out_kind>,
     }
+    impl MechFunctionFactory for $struct_name {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Binary(out, arg1, arg2) => {
+            let arg1: Ref<$kind1> = unsafe{ arg1.as_unchecked().clone() };
+            let arg2: Ref<$kind2> = unsafe{ arg2.as_unchecked().clone() };
+            let out: Ref<$out_kind> = unsafe{ out.as_unchecked().clone() };
+            Ok(Box::new($struct_name {arg1, arg2, out}))
+          },
+          _ => Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Invalid arguments to {}", stringify!($struct_name)),id: line!(),kind: MechErrorKind::IncorrectNumberOfArguments,})
+        }
+      }
+    }
     impl MechFunctionImpl for $struct_name {
       fn solve(&self) {
         let arg1_ptr = self.arg1.as_ptr();
@@ -58,24 +71,31 @@ macro_rules! impl_two_arg_fxn {
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for $struct_name {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-          let mut registers = [0,0,0];
-    
-          registers[0] = compile_register_brrw!(self.out,  ctx);
-          registers[1] = compile_register_brrw!(self.arg1, ctx);
-          registers[2] = compile_register_brrw!(self.arg2, ctx);
+        let mut registers = [0,0,0];
+  
+        registers[0] = compile_register_brrw!(self.out,  ctx);
+        registers[1] = compile_register_brrw!(self.arg1, ctx);
+        registers[2] = compile_register_brrw!(self.arg2, ctx);
 
-          ctx.features.insert(FeatureFlag::Custom(hash_str("math/atan2")));
+        ctx.features.insert(FeatureFlag::Custom(hash_str("math/atan2")));
 
-          ctx.emit_binop(
-            hash_str(stringify!($struct_name)),
-            registers[0],
-            registers[1],
-            registers[2],
-          );
+        ctx.emit_binop(
+          hash_str(stringify!($struct_name)),
+          registers[0],
+          registers[1],
+          registers[2],
+        );
 
-          return Ok(registers[0])
+        return Ok(registers[0])
       }
-    }};}
+    }
+    inventory::submit!{
+      FunctionDescriptor {
+        name: stringify!($struct_name),
+        ptr: $struct_name::new,
+      }
+    }
+  };}
 
 macro_rules! impl_atan2 {
   ($type:tt, $type_string:tt, $op:ident, $($struct_name:ident, $kind:ty, $feature:literal);* $(;)?) => {
