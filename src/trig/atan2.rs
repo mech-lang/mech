@@ -77,150 +77,134 @@ macro_rules! impl_two_arg_fxn {
       }
     }};}
 
-#[cfg(all(feature = "f32", feature = "matrix1"))]
-impl_two_arg_fxn!(Atan2M1F32, Matrix1<F32>, Matrix1<F32>, Matrix1<F32>, atan2f_vec_op);
-#[cfg(all(feature = "f32", feature = "matrix2"))]
-impl_two_arg_fxn!(Atan2M2F32, Matrix2<F32>, Matrix2<F32>, Matrix2<F32>, atan2f_vec_op);
-#[cfg(all(feature = "f32", feature = "matrix3"))]
-impl_two_arg_fxn!(Atan2M3F32, Matrix3<F32>, Matrix3<F32>, Matrix3<F32>, atan2f_vec_op);
-#[cfg(all(feature = "f32", feature = "matrix2x3"))]
-impl_two_arg_fxn!(Atan2M2x3F32, Matrix2x3<F32>, Matrix2x3<F32>, Matrix2x3<F32>, atan2f_vec_op);
-#[cfg(all(feature = "f32", feature = "matrix3"))]
-impl_two_arg_fxn!(Atan2M3x2F32, Matrix3x2<F32>, Matrix3x2<F32>, Matrix3x2<F32>, atan2f_vec_op);
-#[cfg(all(feature = "f32", feature = "matrix4"))]
-impl_two_arg_fxn!(Atan2M4F32, Matrix4<F32>, Matrix4<F32>, Matrix4<F32>, atan2f_vec_op);
-#[cfg(all(feature = "f32", feature = "vector2"))]
-impl_two_arg_fxn!(Atan2V2F32, Vector2<F32>, Vector2<F32>, Vector2<F32>, atan2f_vec_op);
-#[cfg(all(feature = "f32", feature = "vector3"))]
-impl_two_arg_fxn!(Atan2V3F32, Vector3<F32>, Vector3<F32>, Vector3<F32>, atan2f_vec_op);
-#[cfg(all(feature = "f32", feature = "vector4"))]
-impl_two_arg_fxn!(Atan2V4F32, Vector4<F32>, Vector4<F32>, Vector4<F32>, atan2f_vec_op);
-#[cfg(all(feature = "f32", feature = "row_vector2"))]
-impl_two_arg_fxn!(Atan2R2F32, RowVector2<F32>, RowVector2<F32>, RowVector2<F32>, atan2f_vec_op);
-#[cfg(all(feature = "f32", feature = "row_vector3"))]
-impl_two_arg_fxn!(Atan2R3F32, RowVector3<F32>, RowVector3<F32>, RowVector3<F32>, atan2f_vec_op);
-#[cfg(all(feature = "f32", feature = "row_vector4"))]
-impl_two_arg_fxn!(Atan2R4F32, RowVector4<F32>, RowVector4<F32>, RowVector4<F32>, atan2f_vec_op);
-#[cfg(all(feature = "f32", feature = "row_vectord"))]
-impl_two_arg_fxn!(Atan2RDF32, RowDVector<F32>, RowDVector<F32>, RowDVector<F32>, atan2f_vec_op);
-#[cfg(all(feature = "f32", feature = "vectord"))]
-impl_two_arg_fxn!(Atan2VDF32, DVector<F32>, DVector<F32>, DVector<F32>, atan2f_vec_op);
-#[cfg(all(feature = "f32", feature = "matrixd"))]
-impl_two_arg_fxn!(Atan2MDF32, DMatrix<F32>, DMatrix<F32>, DMatrix<F32>, atan2f_vec_op);
+macro_rules! impl_atan2 {
+  ($type:tt, $type_string:tt, $op:ident, $($struct_name:ident, $kind:ty, $feature:literal);* $(;)?) => {
+    paste!{
+      $(
+        #[cfg(all(feature = $type_string, feature = $feature))]
+        impl_two_arg_fxn!([<$struct_name $type>], $kind<$type>, $kind<$type>, $kind<$type>, $op);
+      )*
+    }
+  };
+}
+
+impl_atan2!(
+  F64, "f64", atan2_vec_op,
+  Atan2M1, Matrix1, "matrix1";
+  Atan2M2, Matrix2, "matrix2";
+  Atan2M3, Matrix3, "matrix3";
+  Atan2M2x3, Matrix2x3, "matrix2x3";
+  Atan2M3x2, Matrix3x2, "matrix3";
+  Atan2M4, Matrix4, "matrix4";
+  Atan2V2, Vector2, "vector2";
+  Atan2V3, Vector3, "vector3";
+  Atan2V4, Vector4, "vector4";
+  Atan2R2, RowVector2, "row_vector2";
+  Atan2R3, RowVector3, "row_vector3";
+  Atan2R4, RowVector4, "row_vector4";
+  Atan2RD, RowDVector, "row_vectord";
+  Atan2VD, DVector, "vectord";
+  Atan2MD, DMatrix, "matrixd";
+);
+
+impl_atan2!(
+  F32, "f32", atan2f_vec_op,
+  Atan2M1, Matrix1, "matrix1";
+  Atan2M2, Matrix2, "matrix2";
+  Atan2M3, Matrix3, "matrix3";
+  Atan2M2x3, Matrix2x3, "matrix2x3";
+  Atan2M3x2, Matrix3x2, "matrix3";
+  Atan2M4, Matrix4, "matrix4";
+  Atan2V2, Vector2, "vector2";
+  Atan2V3, Vector3, "vector3";
+  Atan2V4, Vector4, "vector4";
+  Atan2R2, RowVector2, "row_vector2";
+  Atan2R3, RowVector3, "row_vector3";
+  Atan2R4, RowVector4, "row_vector4";
+  Atan2RD, RowDVector, "row_vectord";
+  Atan2VD, DVector, "vectord";
+  Atan2MD, DMatrix, "matrixd";
+);
 
 #[cfg(feature = "f32")]
 impl_two_arg_fxn!(Atan2F32, F32, F32, F32, atan2f_op);
 
-#[cfg(all(feature = "f64", feature = "matrix1"))]
-impl_two_arg_fxn!(Atan2M1F64, Matrix1<F64>, Matrix1<F64>, Matrix1<F64>, atan2_vec_op);
-#[cfg(all(feature = "f64", feature = "matrix2"))]
-impl_two_arg_fxn!(Atan2M2F64, Matrix2<F64>, Matrix2<F64>, Matrix2<F64>, atan2_vec_op);
-#[cfg(all(feature = "f64", feature = "matrix3"))]
-impl_two_arg_fxn!(Atan2M3F64, Matrix3<F64>, Matrix3<F64>, Matrix3<F64>, atan2_vec_op);
-#[cfg(all(feature = "f64", feature = "matrix2x3"))]
-impl_two_arg_fxn!(Atan2M2x3F64, Matrix2x3<F64>, Matrix2x3<F64>, Matrix2x3<F64>, atan2_vec_op);
-#[cfg(all(feature = "f64", feature = "matrix3"))]
-impl_two_arg_fxn!(Atan2M3x2F64, Matrix3x2<F64>, Matrix3x2<F64>, Matrix3x2<F64>, atan2_vec_op);
-#[cfg(all(feature = "f64", feature = "matrix4"))]
-impl_two_arg_fxn!(Atan2M4F64, Matrix4<F64>, Matrix4<F64>, Matrix4<F64>, atan2_vec_op);
-#[cfg(all(feature = "f64", feature = "vector2"))]
-impl_two_arg_fxn!(Atan2V2F64, Vector2<F64>, Vector2<F64>, Vector2<F64>, atan2_vec_op);
-#[cfg(all(feature = "f64", feature = "vector3"))]
-impl_two_arg_fxn!(Atan2V3F64, Vector3<F64>, Vector3<F64>, Vector3<F64>, atan2_vec_op);
-#[cfg(all(feature = "f64", feature = "vector4"))]
-impl_two_arg_fxn!(Atan2V4F64, Vector4<F64>, Vector4<F64>, Vector4<F64>, atan2_vec_op);
-#[cfg(all(feature = "f64", feature = "row_vector2"))]
-impl_two_arg_fxn!(Atan2R2F64, RowVector2<F64>, RowVector2<F64>, RowVector2<F64>, atan2_vec_op);
-#[cfg(all(feature = "f64", feature = "row_vector3"))]
-impl_two_arg_fxn!(Atan2R3F64, RowVector3<F64>, RowVector3<F64>, RowVector3<F64>, atan2_vec_op);
-#[cfg(all(feature = "f64", feature = "row_vector4"))]
-impl_two_arg_fxn!(Atan2R4F64, RowVector4<F64>, RowVector4<F64>, RowVector4<F64>, atan2_vec_op);
-#[cfg(all(feature = "f64", feature = "row_vectord"))]
-impl_two_arg_fxn!(Atan2RDF64, RowDVector<F64>, RowDVector<F64>, RowDVector<F64>, atan2_vec_op);
-#[cfg(all(feature = "f64", feature = "vectord"))]
-impl_two_arg_fxn!(Atan2VDF64, DVector<F64>, DVector<F64>, DVector<F64>, atan2_vec_op);
-#[cfg(all(feature = "f64", feature = "matrixd"))]
-impl_two_arg_fxn!(Atan2MDF64, DMatrix<F64>, DMatrix<F64>, DMatrix<F64>, atan2_vec_op);
-
 #[cfg(feature = "f64")]
 impl_two_arg_fxn!(Atan2F64, F64, F64, F64, atan2_op);
 
-fn impl_atan2_fxn(arg1_value: Value, arg2_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  match (arg1_value,arg2_value) {
-    #[cfg(feature = "f32")]
-    (Value::F32(arg1),Value::F32(arg2)) => Ok(Box::new(Atan2F32{arg1, arg2, out: Ref::new(F32::zero())})),
-    #[cfg(all(feature = "matrix1", feature = "f32"))]
-    (Value::MatrixF32(Matrix::Matrix1(arg1)),Value::MatrixF32(Matrix::Matrix1(arg2))) => Ok(Box::new(Atan2M1F32{arg1, arg2, out: Ref::new(Matrix1::from_element(F32::zero()))})),
-    #[cfg(all(feature = "matrix2", feature = "f32"))]
-    (Value::MatrixF32(Matrix::Matrix2(arg1)),Value::MatrixF32(Matrix::Matrix2(arg2))) => Ok(Box::new(Atan2M2F32{arg1, arg2, out: Ref::new(Matrix2::from_element(F32::zero()))})),
-    #[cfg(all(feature = "matrix3", feature = "f32"))]
-    (Value::MatrixF32(Matrix::Matrix3(arg1)),Value::MatrixF32(Matrix::Matrix3(arg2))) => Ok(Box::new(Atan2M3F32{arg1, arg2, out: Ref::new(Matrix3::from_element(F32::zero()))})),
-    #[cfg(all(feature = "matrix2x3", feature = "f32"))]
-    (Value::MatrixF32(Matrix::Matrix2x3(arg1)),Value::MatrixF32(Matrix::Matrix2x3(arg2))) => Ok(Box::new(Atan2M2x3F32{arg1, arg2, out: Ref::new(Matrix2x3::from_element(F32::zero()))})),
-    #[cfg(all(feature = "matrix3", feature = "f32"))]
-    (Value::MatrixF32(Matrix::Matrix3x2(arg1)),Value::MatrixF32(Matrix::Matrix3x2(arg2))) => Ok(Box::new(Atan2M3x2F32{arg1, arg2, out: Ref::new(Matrix3x2::from_element(F32::zero()))})),
-    #[cfg(all(feature = "matrix4", feature = "f32"))]
-    (Value::MatrixF32(Matrix::Matrix4(arg1)),Value::MatrixF32(Matrix::Matrix4(arg2))) => Ok(Box::new(Atan2M4F32{arg1, arg2, out: Ref::new(Matrix4::from_element(F32::zero()))})),
-    #[cfg(all(feature = "vector2", feature = "f32"))]
-    (Value::MatrixF32(Matrix::Vector2(arg1)),Value::MatrixF32(Matrix::Vector2(arg2))) => Ok(Box::new(Atan2V2F32{arg1, arg2, out: Ref::new(Vector2::from_element(F32::zero()))})),
-    #[cfg(all(feature = "vector3", feature = "f32"))]
-    (Value::MatrixF32(Matrix::Vector3(arg1)),Value::MatrixF32(Matrix::Vector3(arg2))) => Ok(Box::new(Atan2V3F32{arg1, arg2, out: Ref::new(Vector3::from_element(F32::zero()))})),
-    #[cfg(all(feature = "vector4", feature = "f32"))]
-    (Value::MatrixF32(Matrix::Vector4(arg1)),Value::MatrixF32(Matrix::Vector4(arg2))) => Ok(Box::new(Atan2V4F32{arg1, arg2, out: Ref::new(Vector4::from_element(F32::zero()))})),
-    #[cfg(all(feature = "row_vector2", feature = "f32"))]
-    (Value::MatrixF32(Matrix::RowVector2(arg1)),Value::MatrixF32(Matrix::RowVector2(arg2))) => Ok(Box::new(Atan2R2F32{arg1, arg2, out: Ref::new(RowVector2::from_element(F32::zero()))})),
-    #[cfg(all(feature = "row_vector3", feature = "f32"))]
-    (Value::MatrixF32(Matrix::RowVector3(arg1)),Value::MatrixF32(Matrix::RowVector3(arg2))) => Ok(Box::new(Atan2R3F32{arg1, arg2, out: Ref::new(RowVector3::from_element(F32::zero()))})),
-    #[cfg(all(feature = "row_vector4", feature = "f32"))]
-    (Value::MatrixF32(Matrix::RowVector4(arg1)),Value::MatrixF32(Matrix::RowVector4(arg2))) => Ok(Box::new(Atan2R4F32{arg1, arg2, out: Ref::new(RowVector4::from_element(F32::zero()))})),
-    #[cfg(all(feature = "row_vectord", feature = "f32"))]
-    (Value::MatrixF32(Matrix::RowDVector(arg1)),Value::MatrixF32(Matrix::RowDVector(arg2))) => Ok(Box::new(Atan2RDF32{arg1: arg1.clone(), arg2, out: Ref::new(RowDVector::from_element(arg1.borrow().ncols(),F32::zero()))})),
-    #[cfg(all(feature = "vectord", feature = "f32"))]
-    (Value::MatrixF32(Matrix::DVector(arg1)),Value::MatrixF32(Matrix::DVector(arg2))) => Ok(Box::new(Atan2VDF32{arg1: arg1.clone(), arg2, out: Ref::new(DVector::from_element(arg1.borrow().nrows(),F32::zero()))})),
-    #[cfg(all(feature = "matrixd", feature = "f32"))]
-    (Value::MatrixF32(Matrix::DMatrix(arg1)),Value::MatrixF32(Matrix::DMatrix(arg2))) => {
-      let rows = arg1.borrow().nrows();
-      let cols = arg1.borrow().ncols();
-      Ok(Box::new(Atan2MDF32{arg1, arg2, out: Ref::new(DMatrix::from_element(rows,cols,F32::zero()))}))
-    },
-    #[cfg(feature = "f64")]
-    (Value::F64(arg1),Value::F64(arg2)) => Ok(Box::new(Atan2F64{arg1, arg2, out: Ref::new(F64::zero())})),
-    #[cfg(all(feature = "matrix1", feature = "f64"))]
-    (Value::MatrixF64(Matrix::Matrix1(arg1)),Value::MatrixF64(Matrix::Matrix1(arg2))) => Ok(Box::new(Atan2M1F64{arg1, arg2, out: Ref::new(Matrix1::from_element(F64::zero()))})),
-    #[cfg(all(feature = "matrix2", feature = "f64"))]
-    (Value::MatrixF64(Matrix::Matrix2(arg1)),Value::MatrixF64(Matrix::Matrix2(arg2))) => Ok(Box::new(Atan2M2F64{arg1, arg2, out: Ref::new(Matrix2::from_element(F64::zero()))})),
-    #[cfg(all(feature = "matrix3", feature = "f64"))]
-    (Value::MatrixF64(Matrix::Matrix3(arg1)),Value::MatrixF64(Matrix::Matrix3(arg2))) => Ok(Box::new(Atan2M3F64{arg1, arg2, out: Ref::new(Matrix3::from_element(F64::zero()))})),
-    #[cfg(all(feature = "matrix2x3", feature = "f64"))]
-    (Value::MatrixF64(Matrix::Matrix2x3(arg1)),Value::MatrixF64(Matrix::Matrix2x3(arg2))) => Ok(Box::new(Atan2M2x3F64{arg1, arg2, out: Ref::new(Matrix2x3::from_element(F64::zero()))})),
-    #[cfg(all(feature = "matrix3", feature = "f64"))]
-    (Value::MatrixF64(Matrix::Matrix3x2(arg1)),Value::MatrixF64(Matrix::Matrix3x2(arg2))) => Ok(Box::new(Atan2M3x2F64{arg1, arg2, out: Ref::new(Matrix3x2::from_element(F64::zero()))})),
-    #[cfg(all(feature = "matrix4", feature = "f64"))]
-    (Value::MatrixF64(Matrix::Matrix4(arg1)),Value::MatrixF64(Matrix::Matrix4(arg2))) => Ok(Box::new(Atan2M4F64{arg1, arg2, out: Ref::new(Matrix4::from_element(F64::zero()))})),
-    #[cfg(all(feature = "vector2", feature = "f64"))]
-    (Value::MatrixF64(Matrix::Vector2(arg1)),Value::MatrixF64(Matrix::Vector2(arg2))) => Ok(Box::new(Atan2V2F64{arg1, arg2, out: Ref::new(Vector2::from_element(F64::zero()))})),
-    #[cfg(all(feature = "vector3", feature = "f64"))]
-    (Value::MatrixF64(Matrix::Vector3(arg1)),Value::MatrixF64(Matrix::Vector3(arg2))) => Ok(Box::new(Atan2V3F64{arg1, arg2, out: Ref::new(Vector3::from_element(F64::zero()))})),
-    #[cfg(all(feature = "vector4", feature = "f64"))]
-    (Value::MatrixF64(Matrix::Vector4(arg1)),Value::MatrixF64(Matrix::Vector4(arg2))) => Ok(Box::new(Atan2V4F64{arg1, arg2, out: Ref::new(Vector4::from_element(F64::zero()))})),
-    #[cfg(all(feature = "row_vector2", feature = "f64"))]
-    (Value::MatrixF64(Matrix::RowVector2(arg1)),Value::MatrixF64(Matrix::RowVector2(arg2))) => Ok(Box::new(Atan2R2F64{arg1, arg2, out: Ref::new(RowVector2::from_element(F64::zero()))})),
-    #[cfg(all(feature = "row_vector3", feature = "f64"))]
-    (Value::MatrixF64(Matrix::RowVector3(arg1)),Value::MatrixF64(Matrix::RowVector3(arg2))) => Ok(Box::new(Atan2R3F64{arg1, arg2, out: Ref::new(RowVector3::from_element(F64::zero()))})),
-    #[cfg(all(feature = "row_vector4", feature = "f64"))]
-    (Value::MatrixF64(Matrix::RowVector4(arg1)),Value::MatrixF64(Matrix::RowVector4(arg2))) => Ok(Box::new(Atan2R4F64{arg1, arg2, out: Ref::new(RowVector4::from_element(F64::zero()))})),
-    #[cfg(all(feature = "row_vectord", feature = "f64"))]
-    (Value::MatrixF64(Matrix::RowDVector(arg1)),Value::MatrixF64(Matrix::RowDVector(arg2))) => Ok(Box::new(Atan2RDF64{arg1: arg1.clone(), arg2, out: Ref::new(RowDVector::from_element(arg1.borrow().ncols(),F64::zero()))})),
-    #[cfg(all(feature = "vectord", feature = "f64"))]
-    (Value::MatrixF64(Matrix::DVector(arg1)),Value::MatrixF64(Matrix::DVector(arg2))) => Ok(Box::new(Atan2VDF64{arg1: arg1.clone(), arg2, out: Ref::new(DVector::from_element(arg1.borrow().nrows(),F64::zero()))})),
-    #[cfg(all(feature = "matrixd", feature = "f64"))]
-    (Value::MatrixF64(Matrix::DMatrix(arg1)),Value::MatrixF64(Matrix::DMatrix(arg2))) => {
-      let rows = arg1.borrow().nrows();
-      let cols = arg1.borrow().ncols();
-      Ok(Box::new(Atan2MDF64{arg1, arg2, out: Ref::new(DMatrix::from_element(rows,cols,F64::zero()))}))
-    },
-    x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+#[macro_export]
+macro_rules! impl_binop_atan2 {
+  ($fxn:ident, $arg1:expr, $arg2:expr, $($t:ident, $zero_fn:expr, $feat:tt);+ $(;)?) => {
+    paste! {
+      match ($arg1, $arg2) {
+        $(
+          // Scalar
+          #[cfg(feature = $feat)]
+          (Value::$t(arg1), Value::$t(arg2)) => Ok(Box::new([<$fxn $t>]{arg1, arg2, out: Ref::new($t::from($zero_fn))})),
+
+          // Fixed matrices
+          #[cfg(all(feature = "matrix1", feature = $feat))]
+          (Value::[<Matrix $t>](Matrix::Matrix1(arg1)), Value::[<Matrix $t>](Matrix::Matrix1(arg2))) =>
+            Ok(Box::new([<$fxn M1 $t>]{arg1, arg2, out: Ref::new(Matrix1::from_element($zero_fn))})),
+          #[cfg(all(feature = "matrix2", feature = $feat))]
+          (Value::[<Matrix $t>](Matrix::Matrix2(arg1)), Value::[<Matrix $t>](Matrix::Matrix2(arg2))) =>
+            Ok(Box::new([<$fxn M2 $t>]{arg1, arg2, out: Ref::new(Matrix2::from_element($zero_fn))})),
+          #[cfg(all(feature = "matrix3", feature = $feat))]
+          (Value::[<Matrix $t>](Matrix::Matrix3(arg1)), Value::[<Matrix $t>](Matrix::Matrix3(arg2))) =>
+            Ok(Box::new([<$fxn M3 $t>]{arg1, arg2, out: Ref::new(Matrix3::from_element($zero_fn))})),
+          #[cfg(all(feature = "matrix4", feature = $feat))]
+          (Value::[<Matrix $t>](Matrix::Matrix4(arg1)), Value::[<Matrix $t>](Matrix::Matrix4(arg2))) =>
+            Ok(Box::new([<$fxn M4 $t>]{arg1, arg2, out: Ref::new(Matrix4::from_element($zero_fn))})),
+
+          // Fixed vectors
+          #[cfg(all(feature = "vector2", feature = $feat))]
+          (Value::[<Matrix $t>](Matrix::Vector2(arg1)), Value::[<Matrix $t>](Matrix::Vector2(arg2))) =>
+            Ok(Box::new([<$fxn V2 $t>]{arg1, arg2, out: Ref::new(Vector2::from_element($zero_fn))})),
+          #[cfg(all(feature = "vector3", feature = $feat))]
+          (Value::[<Matrix $t>](Matrix::Vector3(arg1)), Value::[<Matrix $t>](Matrix::Vector3(arg2))) =>
+            Ok(Box::new([<$fxn V3 $t>]{arg1, arg2, out: Ref::new(Vector3::from_element($zero_fn))})),
+          #[cfg(all(feature = "vector4", feature = $feat))]
+          (Value::[<Matrix $t>](Matrix::Vector4(arg1)), Value::[<Matrix $t>](Matrix::Vector4(arg2))) =>
+            Ok(Box::new([<$fxn V4 $t>]{arg1, arg2, out: Ref::new(Vector4::from_element($zero_fn))})),
+
+          // Fixed row vectors
+          #[cfg(all(feature = "row_vector2", feature = $feat))]
+          (Value::[<Matrix $t>](Matrix::RowVector2(arg1)), Value::[<Matrix $t>](Matrix::RowVector2(arg2))) =>
+            Ok(Box::new([<$fxn R2 $t>]{arg1, arg2, out: Ref::new(RowVector2::from_element($zero_fn))})),
+          #[cfg(all(feature = "row_vector3", feature = $feat))]
+          (Value::[<Matrix $t>](Matrix::RowVector3(arg1)), Value::[<Matrix $t>](Matrix::RowVector3(arg2))) =>
+            Ok(Box::new([<$fxn R3 $t>]{arg1, arg2, out: Ref::new(RowVector3::from_element($zero_fn))})),
+          #[cfg(all(feature = "row_vector4", feature = $feat))]
+          (Value::[<Matrix $t>](Matrix::RowVector4(arg1)), Value::[<Matrix $t>](Matrix::RowVector4(arg2))) =>
+            Ok(Box::new([<$fxn R4 $t>]{arg1, arg2, out: Ref::new(RowVector4::from_element($zero_fn))})),
+
+          // Dynamic vectors
+          #[cfg(all(feature = "vectord", feature = $feat))]
+          (Value::[<Matrix $t>](Matrix::DVector(arg1)), Value::[<Matrix $t>](Matrix::DVector(arg2))) =>
+            Ok(Box::new([<$fxn VD $t>]{arg1: arg1.clone(), arg2, out: Ref::new(DVector::from_element(arg1.borrow().nrows(), $zero_fn))})),
+          #[cfg(all(feature = "row_vectord", feature = $feat))]
+          (Value::[<Matrix $t>](Matrix::RowDVector(arg1)), Value::[<Matrix $t>](Matrix::RowDVector(arg2))) =>
+            Ok(Box::new([<$fxn RD $t>]{arg1: arg1.clone(), arg2, out: Ref::new(RowDVector::from_element(arg1.borrow().ncols(), $zero_fn))})),
+
+          // Dynamic matrices
+          #[cfg(all(feature = "matrixd", feature = $feat))]
+          (Value::[<Matrix $t>](Matrix::DMatrix(arg1)), Value::[<Matrix $t>](Matrix::DMatrix(arg2))) => {
+            let rows = arg1.borrow().nrows();
+            let cols = arg1.borrow().ncols();
+            Ok(Box::new([<$fxn MD $t>]{arg1, arg2, out: Ref::new(DMatrix::from_element(rows, cols, $zero_fn))}))
+          },
+        )+
+        x => Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("{:?}", x),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,})
+      }
+    }
   }
+}
+
+fn impl_atan2_fxn(arg1_value: Value, arg2_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+  impl_binop_atan2!(Atan2, arg1_value, arg2_value,
+    F32, F32::default(), "f32";
+    F64, F64::default(), "f64";
+  )
 }
 
 pub struct MathAtan2 {}
