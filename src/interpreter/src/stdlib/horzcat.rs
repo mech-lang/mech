@@ -87,7 +87,8 @@ macro_rules! horizontal_concatenate {
         T: ConstElem + CompileConst + AsValueKind
       {
         fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-          compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+          let name = format!("{}<{}{}>", stringify!($name), T::as_value_kind(), stringify!([<RowVector $vec_size>]));
+          compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
         }
       }
       register_horizontal_concatenate_fxn!($name);
@@ -597,7 +598,8 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateRD<{}>", T::as_value_kind());
+    compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
 register_horizontal_concatenate_fxn!(HorizontalConcatenateRD);
@@ -969,7 +971,8 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+    let name = format!("HorizontalConcatenateSD<{}>", T::as_value_kind());
+    compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
 register_horizontal_concatenate_fxn!(HorizontalConcatenateSD);
@@ -1013,7 +1016,8 @@ macro_rules! horzcat_single {
       T: ConstElem + CompileConst + AsValueKind
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
+        let name = format!("{}<{}>", stringify!($name), T::as_value_kind());
+        compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
       }
     }
     register_horizontal_concatenate_fxn!($name);

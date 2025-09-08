@@ -156,7 +156,7 @@ pub fn enum_define(enm_def: &EnumDefine, p: &Interpreter) -> MResult<Value> {
   let state = &p.state;
   let mut state_brrw = state.borrow_mut();
   let enm = MechEnum{id, variants};
-  let val = Value::Enum(Box::new(enm.clone()));
+  let val = Value::Enum(Ref::new(enm.clone()));
   state_brrw.enums.insert(id, enm.clone());
   state_brrw.kinds.insert(id, val.kind());
   Ok(val)

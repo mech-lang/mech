@@ -6,20 +6,39 @@ use crate::stdlib::*;
 #[cfg(feature = "enum")]
 #[derive(Debug)]
 struct ConvertSEnum {
-  out: Value,
+  out: Ref<MechEnum>,
 }
-
+#[cfg(feature = "enum")]
+impl MechFunctionFactory for ConvertSEnum {
+  fn new(args: FunctionArgs) -> Result<Box<dyn MechFunction>, MechError> {
+    match args {
+      FunctionArgs::Unary(out, _) => {
+        let out: Ref<MechEnum> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self {out}))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("ConvertSEnum requires 1 argument, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
 #[cfg(feature = "enum")]
 impl MechFunctionImpl for ConvertSEnum
 {
   fn solve(&self) { }
-  fn out(&self) -> Value { self.out.clone() }
+  fn out(&self) -> Value { Value::Enum(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(all(feature = "compiler", feature = "enum"))]
 impl MechFunctionCompiler for ConvertSEnum {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
+    let name = format!("ConvertSEnum<enum>");
+    compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
+  }
+}
+#[cfg(feature = "enum")]
+inventory::submit! {
+  FunctionDescriptor {
+    name: "ConvertSEnum<enum>",
+    ptr: ConvertSEnum::new,
   }
 }
 
@@ -139,7 +158,7 @@ macro_rules! impl_conversion_match_arms {
         (Value::Atom(varian_id), Value::Kind(ValueKind::Enum(enum_id))) => {
           let variants = vec![(varian_id,None)];
           let enm = MechEnum{id: enum_id, variants};
-          let val = Value::Enum(Box::new(enm.clone()));
+          let val = Ref::new(enm.clone());
           Ok(Box::new(ConvertSEnum{out: val}))
         }
         x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Could not convert: {:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),

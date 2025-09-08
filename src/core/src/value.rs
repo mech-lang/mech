@@ -554,7 +554,7 @@ pub enum Value {
   #[cfg(feature = "tuple")]
   Tuple(Ref<MechTuple>),
   #[cfg(feature = "enum")]
-  Enum(Box<MechEnum>),
+  Enum(Ref<MechEnum>),
   Id(u64),
   Index(Ref<usize>),
   MutableReference(MutableReference),
@@ -785,6 +785,38 @@ impl Value {
       Value::C64(r) => &*(r as *const Ref<C64> as *const Ref<T>),
       #[cfg(all(feature = "f64", feature = "matrix"))]
       Value::MatrixF64(r) => r.as_unchecked(),
+      #[cfg(all(feature = "f32", feature = "matrix"))]
+      Value::MatrixF32(r) => r.as_unchecked(),
+      #[cfg(all(feature = "i8", feature = "matrix"))]
+      Value::MatrixI8(r) => r.as_unchecked(),
+      #[cfg(all(feature = "i16", feature = "matrix"))]
+      Value::MatrixI16(r) => r.as_unchecked(),
+      #[cfg(all(feature = "i32", feature = "matrix"))]
+      Value::MatrixI32(r) => r.as_unchecked(),
+      #[cfg(all(feature = "i64", feature = "matrix"))]
+      Value::MatrixI64(r) => r.as_unchecked(),
+      #[cfg(all(feature = "i128", feature = "matrix"))]
+      Value::MatrixI128(r) => r.as_unchecked(),
+      #[cfg(all(feature = "u8", feature = "matrix"))]
+      Value::MatrixU8(r) => r.as_unchecked(),
+      #[cfg(all(feature = "u16", feature = "matrix"))]
+      Value::MatrixU16(r) => r.as_unchecked(),
+      #[cfg(all(feature = "u32", feature = "matrix"))]
+      Value::MatrixU32(r) => r.as_unchecked(),
+      #[cfg(all(feature = "u64", feature = "matrix"))]
+      Value::MatrixU64(r) => r.as_unchecked(),
+      #[cfg(all(feature = "u128", feature = "matrix"))]
+      Value::MatrixU128(r) => r.as_unchecked(),
+      #[cfg(all(feature = "bool", feature = "matrix"))]
+      Value::MatrixBool(r) => r.as_unchecked(),
+      #[cfg(all(feature = "string", feature = "matrix"))]
+      Value::MatrixString(r) => r.as_unchecked(),
+      #[cfg(all(feature = "rational", feature = "matrix"))]
+      Value::MatrixR64(r) => r.as_unchecked(),
+      #[cfg(all(feature = "complex", feature = "matrix"))]
+      Value::MatrixC64(r) => r.as_unchecked(),
+      #[cfg(feature = "enum")]
+      Value::Enum(r) => &*(r as *const Ref<MechEnum> as *const Ref<T>),
       _ => panic!("Unsupported type for as_unchecked"),
     }
   }
@@ -1230,7 +1262,7 @@ impl Value {
       #[cfg(feature = "tuple")]
       Value::Tuple(x) => x.borrow().size_of(),
       #[cfg(feature = "enum")]
-      Value::Enum(x) => x.size_of(),
+      Value::Enum(x) => x.borrow().size_of(),
       Value::MutableReference(x) => x.borrow().size_of(),
       Value::Id(_) => 8,
       Value::Index(x) => 8,
@@ -1322,7 +1354,7 @@ impl Value {
       #[cfg(feature = "tuple")]
       Value::Tuple(t) => t.borrow().to_html(),
       #[cfg(feature = "enum")]
-      Value::Enum(e) => e.to_html(),
+      Value::Enum(e) => e.borrow().to_html(),
       Value::MutableReference(m) => {
         let inner = m.borrow();
         format!("<span class='mech-reference'>{}</span>", inner.to_html())
@@ -1514,7 +1546,7 @@ impl Value {
       #[cfg(feature = "tuple")]
       Value::Tuple(x) => x.borrow().kind(),
       #[cfg(feature = "enum")]
-      Value::Enum(x) => x.kind(),
+      Value::Enum(x) => x.borrow().kind(),
       Value::MutableReference(x) => ValueKind::Reference(Box::new(x.borrow().kind())),
       Value::Empty => ValueKind::Empty,
       Value::IndexAll => ValueKind::Empty,
@@ -1982,7 +2014,7 @@ impl PrettyPrint for Value {
       #[cfg(feature = "record")]
       Value::Record(x) => {return x.borrow().pretty_print();},
       #[cfg(feature = "enum")]
-      Value::Enum(x) => {return x.pretty_print();},
+      Value::Enum(x) => {return x.borrow().pretty_print();},
       #[cfg(feature = "matrix")]
       Value::MatrixIndex(x) => {return x.pretty_print();},
       #[cfg(all(feature = "matrix", feature = "bool"))]

@@ -889,7 +889,8 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
+    let name = format!("VerticalConcatenateS1<{}>", T::as_value_kind());
+    compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
   }
 }
 register_vertical_concatenate_fxn!(VerticalConcatenateS1);
@@ -998,7 +999,8 @@ where
   T: ConstElem + CompileConst + AsValueKind
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_nullop!(self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
+    let name = format!("VerticalConcatenateSD<{}>", T::as_value_kind());
+    compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
   }
 }
 register_vertical_concatenate_fxn!(VerticalConcatenateSD);

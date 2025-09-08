@@ -50,7 +50,7 @@ macro_rules! compile_register_mat {
 
 #[macro_export]
 macro_rules! compile_nullop {
-  ($out:expr, $ctx:ident, $feature_flag:expr) => {
+  ($name:tt, $out:expr, $ctx:ident, $feature_flag:expr) => {
     // allocate one register as an array
     let mut registers = [0];
 
@@ -61,7 +61,7 @@ macro_rules! compile_nullop {
 
     // Emit the operation
     $ctx.emit_nullop(
-      hash_str(stringify!($struct_name)),
+      hash_str(&$name),
       registers[0],
     );
 

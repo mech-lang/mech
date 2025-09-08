@@ -397,6 +397,41 @@ impl CompileConst for MechRecord {
   }
 }
 
+#[cfg(feature = "enum")]
+impl CompileConst for MechEnum {
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    let mut payload = Vec::<u8>::new();
+
+    // write the enum id
+    payload.write_u64::<LittleEndian>(self.id)?;
+
+    // write the number of variants
+    payload.write_u32::<LittleEndian>(self.variants.len() as u32)?;
+
+    // write each variant: (variant id, has value, value data)
+    for (variant_id, variant_value) in self.variants.iter() {
+      // variant id
+      payload.write_u64::<LittleEndian>(*variant_id)?;
+      match variant_value {
+        Some(v) => {
+          // has value
+          payload.write_u8(1)?;
+          // value kind
+          let value_kind = v.kind();
+          value_kind.write_le(&mut payload);
+          // value data
+          v.write_le(&mut payload);
+        },
+        None => {
+          // has no value
+          payload.write_u8(0)?;
+        }
+      }
+    }
+    ctx.compile_const(&payload, ValueKind::Enum(self.id))
+  }
+}
+
 // ConstElem Trait
 // ----------------------------------------------------------------------------
 
@@ -749,4 +784,38 @@ impl ConstElem for ValueKind {
   }
   fn value_kind() -> ValueKind { ValueKind::Any }
   fn align() -> u8 { 1 }
+}
+
+#[cfg(feature = "enum")]
+impl ConstElem for MechEnum {
+  fn write_le(&self, out: &mut Vec<u8>) {
+    // write the enum id
+    out.write_u64::<LittleEndian>(self.id).expect("write enum id");
+
+    // write the number of variants
+    out.write_u32::<LittleEndian>(self.variants.len() as u32).expect("write enum variants length");
+
+    // write each variant: (variant id, has value, value data)
+    for (variant_id, variant_value) in self.variants.iter() {
+      // variant id
+      out.write_u64::<LittleEndian>(*variant_id).expect("write enum variant id");
+      match variant_value {
+        Some(v) => {
+          // has value
+          out.write_u8(1).expect("write enum variant has value");
+          // value kind
+          let value_kind = v.kind();
+          value_kind.write_le(out);
+          // value data
+          v.write_le(out);
+        },
+        None => {
+          // has no value
+          out.write_u8(0).expect("write enum variant has no value");
+        }
+      }
+    }
+  }
+  fn value_kind() -> ValueKind { ValueKind::Enum(0) } // id 0 as placeholder
+  fn align() -> u8 { 8 }
 }
