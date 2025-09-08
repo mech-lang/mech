@@ -157,7 +157,6 @@ impl Interpreter {
                 let out = &self.registers[*dst as usize];
                 let fxn = fxn_factory(FunctionArgs::Nullary(out.clone()))?;
                 self.out = fxn.out().clone();
-                let mut state_brrw = self.state.borrow_mut();
                 state_brrw.add_plan_step(fxn);
               },
               None => {
