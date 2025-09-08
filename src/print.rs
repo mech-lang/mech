@@ -7,6 +7,25 @@ struct IoPrintMatrix<T,Mat> {
   e0: Ref<Mat>,
   _marker: PhantomData<T>,
 }
+impl<T,Mat> MechFunctionFactory for IoPrintMatrix<T,Mat>
+where
+  T: Clone + Sync + Send + 'static + Display + 
+  CompileConst + ConstElem + AsValueKind +
+  Debug,
+  for<'a> &'a Mat: IntoIterator<Item = &'a T>,
+  Mat: Debug + Clone +
+       CompileConst + ConstElem + AsValueKind + 'static + Default,
+{
+  fn new(args: FunctionArgs) -> Result<Box<dyn MechFunction>, MechError> {
+    match args {
+      FunctionArgs::Nullary(out) => {
+        let out: Ref<Value> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self {e0: Ref::new(Mat::default()), _marker: PhantomData::default()}))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("IoPrintMatrix requires 0 argument"), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
 impl<T,Mat> MechFunctionImpl for IoPrintMatrix<T,Mat>
 where
   T: Clone + Sync + Send + 'static + Display + Debug,
@@ -30,13 +49,15 @@ where
 #[cfg(feature = "compiler")]
 impl<T,Mat> MechFunctionCompiler for IoPrintMatrix<T,Mat> 
 where
-  T: CompileConst + ConstElem,
-  Mat: CompileConst + ConstElem,
+  T: CompileConst + ConstElem + AsValueKind,
+  Mat: CompileConst + ConstElem + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_nullop!(self.e0, ctx, FeatureFlag::Custom(hash_str("io/print")) );
+    let name = format!("IoPrintMatrix<{}>", Mat::as_value_kind());
+    compile_nullop!(name, self.e0, ctx, FeatureFlag::Custom(hash_str("io/print")) );
   }
 }
+impl_register_all!(IoPrintMatrix);
 
 macro_rules! impl_print_match_arms {
   ($arg:expr, $($input_type:ident, $value_string:tt),+) => {
@@ -80,7 +101,22 @@ macro_rules! impl_print_match_arms {
 struct IoPrintScalar<T> {
   e0: Ref<T>,
 }
-
+impl<T> MechFunctionFactory for IoPrintScalar<T>
+where
+  T: Clone + Sync + Send + 'static + Display + 
+  CompileConst + ConstElem + AsValueKind +
+  Debug + Default,
+{
+  fn new(args: FunctionArgs) -> Result<Box<dyn MechFunction>, MechError> {
+    match args {
+      FunctionArgs::Nullary(out) => {
+        let out: Ref<T> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self {e0: Ref::new(T::default())}))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("IoPrintScalar requires 0 argument"), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
 impl<T> MechFunctionImpl for IoPrintScalar<T> 
   where T: Clone + Sync + Send + 'static + Display + Debug {
   fn solve(&self) { 
@@ -98,12 +134,14 @@ impl<T> MechFunctionImpl for IoPrintScalar<T>
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for IoPrintScalar<T> 
 where
-  T: CompileConst + ConstElem,
+  T: CompileConst + ConstElem + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    compile_nullop!(self.e0, ctx, FeatureFlag::Custom(hash_str("io/print")) );
+    let name = format!("IoPrintScalar<{}>", T::as_value_kind());
+    compile_nullop!(name, self.e0, ctx, FeatureFlag::Custom(hash_str("io/print")) );
   }
 }
+register_fxn_descriptor!(IoPrintScalar, i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64", bool, "bool", String, "string", C64, "complex", R64, "rational");
 
 fn impl_print_fxn(source_value: Value) -> MResult<Box<dyn MechFunction>>  {
   if source_value.is_scalar() {
