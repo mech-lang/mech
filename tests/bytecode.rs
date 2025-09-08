@@ -57,3 +57,4 @@ bytecode_test!(bytecode_compare_eq,r#""foo" == "bar""#,Value::Bool(Ref::new(fals
 bytecode_test!(bytecode_logic_and,"true && false",Value::Bool(Ref::new(false)));
 bytecode_test!(bytecode_logic_or,"true || false",Value::Bool(Ref::new(true)));
 bytecode_test!(bytecode_logic_not,"!true",Value::Bool(Ref::new(false)));
+bytecode_test!(bytecode_math_cos,"math/cos(0)",Value::F64(Ref::new(F64::new(1.0))));

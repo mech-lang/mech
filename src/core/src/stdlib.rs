@@ -259,6 +259,18 @@ macro_rules! impl_unop {
       arg: Ref<$arg_type>,
       out: Ref<$out_type>,
     }
+    impl MechFunctionFactory for $struct_name {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Unary(out, arg) => {
+            let arg: Ref<$arg_type> = unsafe { arg.as_unchecked() }.clone();
+            let out: Ref<$out_type> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(Self {arg, out }))
+          },
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+        }
+      }
+    }
     impl MechFunctionImpl for $struct_name {
       fn solve(&self) {
         let arg_ptr = self.arg.as_ptr();
@@ -271,10 +283,17 @@ macro_rules! impl_unop {
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for $struct_name {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        let name = format!("{}<{}>", stringify!($struct_name), <$arg_type>::as_value_kind());
+        let name = format!("{}", stringify!($struct_name));
         compile_unop!(name, self.out, self.arg, ctx, $feature_flag);
       }
-    }};} 
+    }
+    inventory::submit! {
+      FunctionDescriptor {
+        name: stringify!($struct_name),
+        ptr: $struct_name::new,
+      }
+    }
+  };} 
 
 #[macro_export]
 macro_rules! impl_fxns {
