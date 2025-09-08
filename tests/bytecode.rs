@@ -58,3 +58,5 @@ bytecode_test!(bytecode_logic_and,"true && false",Value::Bool(Ref::new(false)));
 bytecode_test!(bytecode_logic_or,"true || false",Value::Bool(Ref::new(true)));
 bytecode_test!(bytecode_logic_not,"!true",Value::Bool(Ref::new(false)));
 bytecode_test!(bytecode_math_cos,"math/cos(0)",Value::F64(Ref::new(F64::new(1.0))));
+bytecode_test!(bytecode_math_sin,"math/sin(0)",Value::F64(Ref::new(F64::new(0.0))));
+bytecode_test!(bytecode_math_atan2,"math/atan2(1, 1)",Value::F64(Ref::new(F64::new(std::f64::consts::FRAC_PI_4))));
