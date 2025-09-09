@@ -1,0 +1,85 @@
+math/mul_assign PROBLEM
+===============================================================================
+
+%% In-place multiplication: `*=` (scalar, vector, and ranged row-updates)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+X *= Y
+
+X[I] *= Y
+
+A[I, :] *= Y
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Performs **in-place multiplication** on the left-hand side (the *sink*), multiplying
+by the right-hand side (the *source*) elementwise and storing the result back
+into the sink. Ranged forms support updating a 1D slice of a vector or a set
+of **rows** in a 2D matrix (all columns).
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                                     | Description |
+|----------|------------------------------------------|-------------|
+| `X`      | scalar, vector, or matrix (sink)         | The lvalue being updated. |
+| `Y`      | scalar, vector, or matrix (source)       | Multipliers. Must be broadcastable/matching shape depending on the form (see below). |
+| `I`      | `[usize]` or `[bool]`                    | Indices (1-based) or a boolean mask selecting elements or rows to update. |
+
+**Supported element types (sink & source):** unsigned integers `u8,u16,u32,u64,u128`, signed integers `i8,i16,i32,i64`, floating-point `f32,f64`, and extended types `rational`, `complex`.
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Result | Kind      | Description |
+|--------|-----------|-------------|
+| `X`    | matches X | The same object as the sink, updated in place. |
+
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Scalar-to-scalar
+
+```mech:ex1
+x := 7
+x *= 6            
+```
+
+
+
+
+6. Details
+-------------------------------------------------------------------------------
+
+- **Operation:** For matching shapes, updates are elementwise: $$ X \mathrel{*}= Y \quad\Rightarrow\quad X_i \leftarrow X_i \cdot Y_i. $$ Scalar sources broadcast over the selected elements/rows.
+
+- **Indexing semantics:** 1D ranged updates with explicit indices are **1-based** (e.g., `I = [1,3]` selects positions 1 and 3). Boolean masks must have the same length as the target 1D vector or number of rows for a 2D matrix.
+
+- **2D ranged form:** `A[I, :] *= Y` selects **rows** by `I` and updates **all columns**.   `Y` can be a scalar (broadcast to each selected row and column) or a matrix whose number of rows equals `len(I)` and whose number of columns equals `A.ncols()`.
+
+- **Type behavior & edge cases:**
+  - **Integer overflow:** Large products may overflow fixed-width integers. Consider using a wider type or `f32/f64` if overflow is a concern.
+  - **Complex/rational:** Uses the engine’s exact arithmetic for rationals and standard complex multiplication for complex numbers.
+  - **NaN/Inf propagation (floats):** Behaves per IEEE-754/libm.
+
+- **In-place behavior:** The sink is modified directly and returned as the result.
+
+7. Notes for Implementers
+-------------------------------------------------------------------------------
+
+Backed by the `MulAssignValue`, `MulAssignRange`, and `MulAssignRangeAll` paths.  
+1D ranged updates support index lists and boolean masks. 2D ranged updates apply
+to row selections with all columns. Indices are 1-based in the explicit-index path.
+Tight loops perform the in-place updates; scalar sources are cloned/broadcast across
+selected elements.
+
+8. See also
+-------------------------------------------------------------------------------
+
+`math/add_assign` (`+=`), `math/sub_assign` (`-=`), `math/div_assign` (`/=`)
