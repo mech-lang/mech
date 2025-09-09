@@ -62,3 +62,5 @@ bytecode_test!(bytecode_math_sin,"math/sin(0)",Value::F64(Ref::new(F64::new(0.0)
 bytecode_test!(bytecode_math_atan2,"math/atan2(1, 1)",Value::F64(Ref::new(F64::new(std::f64::consts::FRAC_PI_4))));
 bytecode_test!(bytecode_matrix_matmul_transpose,"[1 2 3] ** [4 5 6]'",Value::MatrixF64(Matrix::Matrix1(Ref::new(na::Matrix1::from_vec(vec![F64::new(32.0)])))));
 bytecode_test!(bytecode_matrix_dot,"matrix/dot([1 2 3],[4 5 6])",Value::F64(Ref::new(F64::new(32.0))));
+bytecode_test!(bytecode_range_inclusive,"1..=5",Value::MatrixF64(Matrix::RowDVector(Ref::new(na::RowDVector::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0),F64::new(4.0),F64::new(5.0)])))));
+bytecode_test!(bytecode_range_exclusive,"1..5",Value::MatrixF64(Matrix::RowDVector(Ref::new(na::RowDVector::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0),F64::new(4.0)])))));
