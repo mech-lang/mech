@@ -15,38 +15,46 @@ macro_rules! dot_op {
     unsafe { *$out = (*$lhs).dot(&*$rhs); }
   };}
 
+macro_rules! impl_dot {
+  ($name:ident, $type1:ty, $type2:ty, $out_type:ty) => {
+    impl_binop!($name, $type1, $type2, $out_type, dot_op, FeatureFlag::Builtin(FeatureKind::Dot));
+    register_fxn_descriptor!($name, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", F32, "f32", F64, "f64");
+  };
+}
+
 impl_binop!(DotScalar, T, T, T, mul_op, FeatureFlag::Builtin(FeatureKind::Dot));
+register_fxn_descriptor!(DotScalar, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", F32, "f32", F64, "f64");
 
 #[cfg(all(feature = "row_vector2", feature = "row_vector2"))]
-impl_binop!(DotR2R2, RowVector2<T>, RowVector2<T>, T, dot_op, FeatureFlag::Builtin(FeatureKind::Dot));
+impl_dot!(DotR2R2, RowVector2<T>, RowVector2<T>, T);
 #[cfg(all(feature = "vector2", feature = "vector2"))]
-impl_binop!(DotV2V2, Vector2<T>, Vector2<T>, T, dot_op, FeatureFlag::Builtin(FeatureKind::Dot));
+impl_dot!(DotV2V2, Vector2<T>, Vector2<T>, T);
 
 #[cfg(all(feature = "row_vector3", feature = "row_vector3"))]
-impl_binop!(DotR3R3, RowVector3<T>, RowVector3<T>, T, dot_op, FeatureFlag::Builtin(FeatureKind::Dot));
+impl_dot!(DotR3R3, RowVector3<T>, RowVector3<T>, T);
 #[cfg(all(feature = "vector3", feature = "vector3"))]
-impl_binop!(DotV3V3, Vector3<T>, Vector3<T>, T, dot_op, FeatureFlag::Builtin(FeatureKind::Dot));
+impl_dot!(DotV3V3, Vector3<T>, Vector3<T>, T);
 
 #[cfg(all(feature = "row_vector4", feature = "row_vector4"))]
-impl_binop!(DotR4R4, RowVector4<T>, RowVector4<T>, T, dot_op, FeatureFlag::Builtin(FeatureKind::Dot));
+impl_dot!(DotR4R4, RowVector4<T>, RowVector4<T>, T);
 #[cfg(all(feature = "vector4", feature = "vector4"))]
-impl_binop!(DotV4V4, Vector4<T>, Vector4<T>, T, dot_op, FeatureFlag::Builtin(FeatureKind::Dot));
+impl_dot!(DotV4V4, Vector4<T>, Vector4<T>, T);
 
 #[cfg(all(feature = "matrix1", feature = "matrix1"))]
-impl_binop!(DotM1M1, Matrix2<T>, Matrix2<T>, T, dot_op, FeatureFlag::Builtin(FeatureKind::Dot));
+impl_dot!(DotM1M1, Matrix2<T>, Matrix2<T>, T);
 #[cfg(all(feature = "matrix2", feature = "matrix2"))]
-impl_binop!(DotM2M2, Matrix2<T>, Matrix2<T>, T, dot_op, FeatureFlag::Builtin(FeatureKind::Dot));
+impl_dot!(DotM2M2, Matrix2<T>, Matrix2<T>, T);
 #[cfg(all(feature = "matrix3", feature = "matrix3"))]
-impl_binop!(DotM3M3, Matrix3<T>, Matrix3<T>, T, dot_op, FeatureFlag::Builtin(FeatureKind::Dot));
+impl_dot!(DotM3M3, Matrix3<T>, Matrix3<T>, T);
 #[cfg(all(feature = "matrix4", feature = "matrix4"))]
-impl_binop!(DotM4M4, Matrix4<T>, Matrix4<T>, T, dot_op, FeatureFlag::Builtin(FeatureKind::Dot));
+impl_dot!(DotM4M4, Matrix4<T>, Matrix4<T>, T);
 
 #[cfg(all(feature = "matrixd", feature = "matrixd"))]
-impl_binop!(DotMDMD, DMatrix<T>, DMatrix<T>, T, dot_op, FeatureFlag::Builtin(FeatureKind::Dot));
+impl_dot!(DotMDMD, DMatrix<T>, DMatrix<T>, T);
 #[cfg(all(feature = "vectord", feature = "vectord"))]
-impl_binop!(DotVDVD, DVector<T>, DVector<T>, T, dot_op, FeatureFlag::Builtin(FeatureKind::Dot));
+impl_dot!(DotVDVD, DVector<T>, DVector<T>, T);
 #[cfg(all(feature = "row_vectord", feature = "row_vectord"))]
-impl_binop!(DotRDRD, RowDVector<T>, RowDVector<T>, T, dot_op, FeatureFlag::Builtin(FeatureKind::Dot));
+impl_dot!(DotRDRD, RowDVector<T>, RowDVector<T>, T);
 
 macro_rules! impl_dot_match_arms {
   ($arg:expr, $($lhs_type:tt, $($matrix_kind:tt, $target_type:tt, $value_string:tt),+);+ $(;)?) => {
