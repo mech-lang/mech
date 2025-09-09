@@ -18,6 +18,24 @@ macro_rules! impl_transpose {
       arg: Ref<$arg_type>,
       out: Ref<$out_type>,
     }
+    impl<T> MechFunctionFactory for $struct_name<T>
+    where
+      T: Debug + Clone + Sync + Send + 'static + 
+      ConstElem + CompileConst + AsValueKind +
+      PartialEq + PartialOrd,
+      Ref<$out_type>: ToValue
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Unary(out, arg) => {
+            let arg: Ref<$arg_type> = unsafe{ arg.as_unchecked().clone() };
+            let out: Ref<$out_type> = unsafe{ out.as_unchecked().clone() };
+            Ok(Box::new($struct_name{arg, out}))
+          }
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Expected unary arguments, got {:#?}", args), id: line!(), kind: MechErrorKind::None }),
+        }
+      }
+    }
     impl<T> MechFunctionImpl for $struct_name<T>
     where
       T: Debug + Clone + Sync + Send + 'static + 
@@ -41,7 +59,10 @@ macro_rules! impl_transpose {
         let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
         compile_unop!(name, self.out, self.arg, ctx, $feature_flag);
       }
-    }};}
+    }
+    register_fxn_descriptor!($struct_name, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", F32, "f32", F64, "f64", bool, "bool", String, "string", C64, "complex", R64, "rational");
+  };
+}
 
 #[cfg(feature = "matrix1")]
 impl_transpose!(TransposeM1, Matrix1<T>, Matrix1<T>, transpose_op, FeatureFlag::Builtin(FeatureKind::Transpose));
