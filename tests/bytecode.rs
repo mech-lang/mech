@@ -60,3 +60,4 @@ bytecode_test!(bytecode_logic_not,"!true",Value::Bool(Ref::new(false)));
 bytecode_test!(bytecode_math_cos,"math/cos(0)",Value::F64(Ref::new(F64::new(1.0))));
 bytecode_test!(bytecode_math_sin,"math/sin(0)",Value::F64(Ref::new(F64::new(0.0))));
 bytecode_test!(bytecode_math_atan2,"math/atan2(1, 1)",Value::F64(Ref::new(F64::new(std::f64::consts::FRAC_PI_4))));
+bytecode_test!(bytecode_matmul_transpose,"[1 2 3] ** [4 5 6]'",Value::MatrixF64(Matrix::Matrix1(Ref::new(na::Matrix1::from_vec(vec![F64::new(32.0)])))));
