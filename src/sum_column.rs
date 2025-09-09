@@ -14,35 +14,35 @@ macro_rules! sum_column_op {
     };}
 
 #[cfg(all(feature = "matrix1", feature = "matrix1"))]
-impl_stats_unop!(StatsSumColumnM1, Matrix1<T>, Matrix1<T>, sum_column_op);
+impls_stas!(StatsSumColumnM1, Matrix1<T>, Matrix1<T>, sum_column_op);
 #[cfg(all(feature = "matrix2", feature = "vector2"))]
-impl_stats_unop!(StatsSumColumnM2, Matrix2<T>, Vector2<T>, sum_column_op);
+impls_stas!(StatsSumColumnM2, Matrix2<T>, Vector2<T>, sum_column_op);
 #[cfg(all(feature = "matrix3", feature = "vector3"))]
-impl_stats_unop!(StatsSumColumnM3, Matrix3<T>, Vector3<T>, sum_column_op);
+impls_stas!(StatsSumColumnM3, Matrix3<T>, Vector3<T>, sum_column_op);
 #[cfg(all(feature = "matrix4", feature = "vector4"))]
-impl_stats_unop!(StatsSumColumnM4, Matrix4<T>, Vector4<T>, sum_column_op);
+impls_stas!(StatsSumColumnM4, Matrix4<T>, Vector4<T>, sum_column_op);
 #[cfg(all(feature = "matrix2x3", feature = "vector2"))]
-impl_stats_unop!(StatsSumColumnM2x3, Matrix2x3<T>, Vector2<T>, sum_column_op);
+impls_stas!(StatsSumColumnM2x3, Matrix2x3<T>, Vector2<T>, sum_column_op);
 #[cfg(all(feature = "matrix3x2", feature = "vector3"))]
-impl_stats_unop!(StatsSumColumnM3x2, Matrix3x2<T>, Vector3<T>, sum_column_op);
+impls_stas!(StatsSumColumnM3x2, Matrix3x2<T>, Vector3<T>, sum_column_op);
 #[cfg(all(feature = "matrixd", feature = "vectord"))]
-impl_stats_unop!(StatsSumColumnMD, DMatrix<T>, DVector<T>, sum_column_op);
+impls_stas!(StatsSumColumnMD, DMatrix<T>, DVector<T>, sum_column_op);
 #[cfg(all(feature = "vector2", feature = "vector2"))]
-impl_stats_unop!(StatsSumColumnV2, Vector2<T>, Vector2<T>, sum_column_op);
+impls_stas!(StatsSumColumnV2, Vector2<T>, Vector2<T>, sum_column_op);
 #[cfg(all(feature = "vector3", feature = "vector3"))]
-impl_stats_unop!(StatsSumColumnV3, Vector3<T>, Vector3<T>, sum_column_op);
+impls_stas!(StatsSumColumnV3, Vector3<T>, Vector3<T>, sum_column_op);
 #[cfg(all(feature = "vector4", feature = "vector4"))]
-impl_stats_unop!(StatsSumColumnV4, Vector4<T>, Vector4<T>, sum_column_op); 
+impls_stas!(StatsSumColumnV4, Vector4<T>, Vector4<T>, sum_column_op); 
 #[cfg(all(feature = "vectord", feature = "vectord"))]
-impl_stats_unop!(StatsSumColumnVD, DVector<T>, DVector<T>, sum_column_op);
+impls_stas!(StatsSumColumnVD, DVector<T>, DVector<T>, sum_column_op);
 #[cfg(all(feature = "row_vector2", feature = "matrix1"))]
-impl_stats_unop!(StatsSumColumnR2, RowVector2<T>, Matrix1<T>, sum_column_op);
+impls_stas!(StatsSumColumnR2, RowVector2<T>, Matrix1<T>, sum_column_op);
 #[cfg(all(feature = "row_vector3", feature = "matrix1"))]
-impl_stats_unop!(StatsSumColumnR3, RowVector3<T>, Matrix1<T>, sum_column_op);
+impls_stas!(StatsSumColumnR3, RowVector3<T>, Matrix1<T>, sum_column_op);
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-impl_stats_unop!(StatsSumColumnR4, RowVector4<T>, Matrix1<T>, sum_column_op); 
+impls_stas!(StatsSumColumnR4, RowVector4<T>, Matrix1<T>, sum_column_op); 
 #[cfg(all(feature = "row_vectord", feature = "matrix1"))]
-impl_stats_unop!(StatsSumColumnRD, RowDVector<T>, Matrix1<T>, sum_column_op);
+impls_stas!(StatsSumColumnRD, RowDVector<T>, Matrix1<T>, sum_column_op);
 
 macro_rules! impl_stats_sum_column_match_arms {
   ($arg:expr, $($input_type:ident, $($target_type:ident, $value_string:tt),+);+ $(;)?) => {

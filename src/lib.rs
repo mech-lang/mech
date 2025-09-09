@@ -61,6 +61,26 @@ macro_rules! impl_stats_unop {
       arg: Ref<$arg_type>,
       out: Ref<$out_type>,
     }
+    impl<T> MechFunctionFactory for $struct_name<T>
+    where
+      T: Copy + Debug + Clone + Sync + Send + 'static + 
+      Add<Output = T> + AddAssign +
+      CompileConst + ConstElem + AsValueKind +
+      Zero + One +
+      PartialEq + PartialOrd,
+      Ref<$out_type>: ToValue
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Unary(out, arg) => {
+            let arg = unsafe{ arg.as_unchecked().clone() };
+            let out = unsafe{ out.as_unchecked().clone() };
+            Ok(Box::new($struct_name { arg, out }))
+          }
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None})
+        }
+      }
+    }
     impl<T> MechFunctionImpl for $struct_name<T>
     where
       T: Copy + Debug + Clone + Sync + Send + 'static + 
@@ -88,3 +108,10 @@ macro_rules! impl_stats_unop {
       }
     }};}
 
+#[macro_export]    
+macro_rules! impls_stas {
+  ($name:ident, $arg_type:ty, $out_type:ty, $op:ident) => {
+    impl_stats_unop!($name, $arg_type, $out_type, $op);
+    register_fxn_descriptor!($name, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", F32, "f32", F64, "f64", C64, "complex", R64, "rational");
+  };
+}
