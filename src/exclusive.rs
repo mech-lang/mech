@@ -12,7 +12,26 @@ struct RangeExclusiveScalar<T> {
   min: Ref<T>,
   out: Ref<RowDVector<T>>,
 }
-
+#[cfg(feature = "row_vectord")]
+impl<T> MechFunctionFactory for RangeExclusiveScalar<T>
+where
+    T: Copy + Debug + Clone + Sync + Send + Step + 
+    CompileConst + ConstElem + AsValueKind +
+    PartialEq + 'static,
+    Ref<RowDVector<T>>: ToValue
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Binary(out, min, max) => {
+        let min = unsafe{ min.as_unchecked().clone() };
+        let max = unsafe{ max.as_unchecked().clone() };
+        let out = unsafe{ out.as_unchecked().clone() };
+        Ok(Box::new(RangeExclusiveScalar { max, min, out }))
+      }
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::None})
+    }
+  }
+}
 #[cfg(feature = "row_vectord")]
 impl<T> MechFunctionImpl for RangeExclusiveScalar<T>
 where
@@ -38,10 +57,11 @@ where
   T: CompileConst + ConstElem + AsValueKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    let name = format!("RangeExclusive<{}>", T::as_value_kind());
+    let name = format!("RangeExclusiveScalar<{}>", T::as_value_kind());
     compile_binop!(name, self.out, self.min, self.max, ctx, FeatureFlag::Custom(hash_str("range/exclusive")));
   }
 }
+register_fxn_descriptor!(RangeExclusiveScalar, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", F32, "f32", F64, "f64");
 
 pub struct RangeExclusive {}
 

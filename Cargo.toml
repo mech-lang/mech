@@ -28,7 +28,7 @@ default = ["stdlib", "pretty_print", "serde", "compiler", "program",
           ]
 
 range_default = ["inclusive", "exclusive"]
-range = ["functions", "formulas", "num-traits", "mech-core/range"]
+range = ["functions", "row_vectord", "formulas", "num-traits", "mech-core/range"]
 inclusive = ["range"]
 exclusive = ["range"]
 
@@ -133,7 +133,9 @@ swizzle = ["subscript", "mech-core/swizzle"]
 
 [dependencies]
 mech-core = {version = "0.2.59", default-features = false}
+
 paste = "1.0.15"
+inventory = "0.3.21"
 nalgebra = {version="0.34.0", optional = true}
 
 [dependencies.num-traits]
