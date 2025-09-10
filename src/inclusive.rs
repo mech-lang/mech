@@ -105,7 +105,7 @@ register_range_inclusive_scalar!(
 
 
 #[macro_export]
-macro_rules! impl_binop_atan2 {
+macro_rules! impl_range_inclusive_match_arms {
   ($fxn:ident, $arg1:expr, $arg2:expr, $($ty:tt, $feat:tt);+ $(;)?) => {
     paste! {
       match ($arg1, $arg2) {
@@ -137,7 +137,7 @@ macro_rules! impl_binop_atan2 {
 }
 
 fn impl_range_inclusive_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
-  impl_binop_atan2!(RangeInclusiveScalar, arg1_value, arg2_value,
+  impl_range_inclusive_match_arms!(RangeInclusiveScalar, arg1_value, arg2_value,
     F32, "f32";
     F64, "f64";
     i8,  "i8";
