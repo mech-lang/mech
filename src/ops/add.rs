@@ -1,7 +1,7 @@
-#[macro_use]
+
 use crate::*;
 use num_traits::*;
-#[cfg(feature = "matrix")]
+
 use mech_core::matrix::Matrix;
 
 // Add ------------------------------------------------------------------------
@@ -92,8 +92,8 @@ fn impl_add_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
     U128, u128, "u128";
     F32,  F32,  "f32";
     F64,  F64,  "f64";
-    RationalNumber, RationalNumber, "rational";
-    ComplexNumber, ComplexNumber, "complex";
+    R64, R64, "rational";
+    C64, C64, "complex";
   )
 }
 

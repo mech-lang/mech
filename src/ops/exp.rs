@@ -131,9 +131,13 @@ macro_rules! impl_expop {
     fn to_string(&self) -> String { format!("{:#?}", self) }
   }
   #[cfg(feature = "compiler")]
-  impl<T> MechFunctionCompiler for $struct_name<T> {
+  impl<T> MechFunctionCompiler for $struct_name<T> 
+  where
+    T: CompileConst + ConstElem + AsValueKind
+  {
     fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-      todo!();
+      let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+      compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
     }
   }};}
 
@@ -148,9 +152,9 @@ impl_math_fxns_exp!(Exp);
 #[cfg(all(feature = "rational", feature = "i32"))]
 #[derive(Debug)]
 pub struct ExpRational {
-  pub lhs: Ref<RationalNumber>,
+  pub lhs: Ref<R64>,
   pub rhs: Ref<i32>,
-  pub out: Ref<RationalNumber>,
+  pub out: Ref<R64>,
 }
 
 #[cfg(all(feature = "rational", feature = "i32"))]
@@ -167,20 +171,22 @@ impl MechFunctionImpl for ExpRational {
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
-impl MechFunctionCompiler for ExpRational {
+impl MechFunctionCompiler for ExpRational 
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let name = format!("ExpRational<{}>", R64::as_value_kind());
+    compile_binop!(name, self.out, self.lhs, self.rhs, ctx, FeatureFlag::Builtin(FeatureKind::Exp) );
   }
 }
 
 fn impl_exp_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   match (&lhs_value, &rhs_value) {
     #[cfg(all(feature = "rational", feature = "i32"))]
-    (Value::RationalNumber(lhs), Value::I32(rhs)) => {
+    (Value::R64(lhs), Value::I32(rhs)) => {
       return Ok(Box::new(ExpRational {
         lhs: lhs.clone(),
         rhs: rhs.clone(),
-        out: Ref::new(RationalNumber::default()),
+        out: Ref::new(R64::default()),
       }));
     },
     _ => (),
