@@ -815,6 +815,7 @@ impl Value {
       Value::MatrixR64(r) => r.as_unchecked(),
       #[cfg(all(feature = "complex", feature = "matrix"))]
       Value::MatrixC64(r) => r.as_unchecked(),
+      Value::MatrixIndex(r) => r.as_unchecked(),
       #[cfg(feature = "enum")]
       Value::Enum(r) => &*(r as *const Ref<MechEnum> as *const Ref<T>),
       _ => panic!("Unsupported type for as_unchecked"),
