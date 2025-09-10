@@ -55,6 +55,7 @@ pub fn encode_value_kind(ts: &mut TypeSection, vk: &ValueKind) -> (TypeTag, Vec<
         ValueKind::R64 => TypeTag::MatrixR64,
         ValueKind::String => TypeTag::MatrixString,
         ValueKind::Bool => TypeTag::MatrixBool,
+        ValueKind::Index => TypeTag::MatrixIndex,
         _ => panic!("Unsupported matrix element type {:?}", elem),
       }
     }
