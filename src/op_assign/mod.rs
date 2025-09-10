@@ -113,7 +113,36 @@ macro_rules! impl_op_assign_range_fxn_v {
       pub sink: Ref<MatA>,
       pub _marker: PhantomData<T>,
     }
-
+    impl<T, R1: 'static, C1: 'static, S1: 'static, R2: 'static, C2: 'static, S2: 'static, IxVec: 'static> MechFunctionFactory for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
+    where
+      Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+      Ref<naMatrix<T, R2, C2, S2>>: ToValue,
+      T: Copy + Debug + Clone + Sync + Send + 'static +
+        Div<Output = T> + DivAssign +
+        Add<Output = T> + AddAssign +
+        Sub<Output = T> + SubAssign +
+        Mul<Output = T> + MulAssign +
+        Zero + One +
+        PartialEq + PartialOrd +
+        CompileConst + ConstElem + AsValueKind,
+      IxVec: CompileConst + ConstElem + Debug + AsRef<[$ix]>,
+      R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
+      R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
+      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug,
+      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + Debug,
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Binary(out, arg1, arg2) => {
+            let source: Ref<naMatrix<T, R2, C2, S2>> = unsafe { arg1.as_unchecked() }.clone();
+            let ixes: Ref<IxVec> = unsafe { arg2.as_unchecked() }.clone();
+            let sink: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(Self { sink, source, ixes, _marker: PhantomData::default() }))
+          },
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 3 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+        }
+      }
+    }
     impl<T, R1, C1, S1, R2, C2, S2, IxVec>
       MechFunctionImpl for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
     where
