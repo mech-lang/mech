@@ -154,7 +154,20 @@ fn add_assign_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<
 
 //register_fxn_descriptor!(AddAssign1DRS, u8, u16, u32, u64, u128, i8, i16, i32, i64, F32, F64, R64, C64);
 //register_fxn_descriptor!(AddAssign1DRB, u8, u16, u32, u64, u128, i8, i16, i32, i64, F32, F64, R64, C64);
-//register_fxn_descriptor!(AddAssign1DRV, u8, u16, u32, u64, u128, i8, i16, i32, i64, F32, F64, R64, C64);
+/*inventory::submit! {
+  #[cfg(feature = $type_string)]
+  FunctionDescriptor {
+    name: concat!(stringify!(AddAssign1DRV), "<", stringify!([<$type:lower>]), ">"),
+    ptr: $struct_name::<$type>::new,
+  }
+}*/
+
+inventory::submit! {
+  FunctionDescriptor {
+    name: concat!(stringify!(AddAssign1DRV), "<f64>"),
+    ptr: AddAssign1DRV::<F64,RowVector2<F64>,RowVector2<F64>,DVector<usize>>::new,
+  }
+}
 //register_fxn_descriptor!(AddAssign1DRVB, u8, u16, u32, u64, u128, i8, i16, i32, i64, F32, F64, R64, C64);
 
 pub struct AddAssignRange {}
