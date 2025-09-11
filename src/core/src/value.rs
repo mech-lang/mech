@@ -1858,14 +1858,56 @@ impl Value {
 
   pub fn as_vecusize(&self) -> Option<Vec<usize>> {
     match self {
+      #[cfg(feature = "u8")]
+      Value::U8(v) => Some(vec![*v.borrow() as usize]),
+      #[cfg(feature = "u16")]
+      Value::U16(v) => Some(vec![*v.borrow() as usize]),
+      #[cfg(feature = "u32")]
+      Value::U32(v) => Some(vec![*v.borrow() as usize]),
+      #[cfg(feature = "u64")]
+      Value::U64(v) => Some(vec![*v.borrow() as usize]),
+      #[cfg(feature = "u128")]
+      Value::U128(v) => Some(vec![*v.borrow() as usize]),
+      #[cfg(feature = "i8")]
+      Value::I8(v) => Some(vec![*v.borrow() as usize]),
+      #[cfg(feature = "i16")]
+      Value::I16(v) => Some(vec![*v.borrow() as usize]),
+      #[cfg(feature = "i32")]
+      Value::I32(v) => Some(vec![*v.borrow() as usize]),
+      #[cfg(feature = "i64")]
+      Value::I64(v) => Some(vec![*v.borrow() as usize]),
+      #[cfg(feature = "i128")]
+      Value::I128(v) => Some(vec![*v.borrow() as usize]),
+      #[cfg(feature = "f32")]
+      Value::F32(v) => Some(vec![(*v.borrow()).0 as usize]),
+      #[cfg(feature = "f64")]
+      Value::F64(v) => Some(vec![(*v.borrow()).0 as usize]),
       #[cfg(feature = "matrix")]
       Value::MatrixIndex(v) => Some(v.as_vec()),
-      #[cfg(all(feature = "matrix", feature = "i64"))]
-      Value::MatrixI64(v) => Some(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
       #[cfg(all(feature = "matrix", feature = "f64"))]
       Value::MatrixF64(v) => Some(v.as_vec().iter().map(|x| (*x).0 as usize).collect::<Vec<usize>>()),
       #[cfg(all(feature = "matrix", feature = "f32"))]
       Value::MatrixF32(v) => Some(v.as_vec().iter().map(|x| (*x).0 as usize).collect::<Vec<usize>>()),
+      #[cfg(all(feature = "matrix", feature = "u8"))]
+      Value::MatrixU8(v) => Some(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
+      #[cfg(all(feature = "matrix", feature = "u16"))]  
+      Value::MatrixU16(v) => Some(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
+      #[cfg(all(feature = "matrix", feature = "u32"))]
+      Value::MatrixU32(v) => Some(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
+      #[cfg(all(feature = "matrix", feature = "u64"))]
+      Value::MatrixU64(v) => Some(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
+      #[cfg(all(feature = "matrix", feature = "u128"))]
+      Value::MatrixU128(v) => Some(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
+      #[cfg(all(feature = "matrix", feature = "i8"))]
+      Value::MatrixI8(v) => Some(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
+      #[cfg(all(feature = "matrix", feature = "i16"))]
+      Value::MatrixI16(v) => Some(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
+      #[cfg(all(feature = "matrix", feature = "i32"))]
+      Value::MatrixI32(v) => Some(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
+      #[cfg(all(feature = "matrix", feature = "i128"))]
+      Value::MatrixI128(v) => Some(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
+      #[cfg(all(feature = "matrix", feature = "i64"))]
+      Value::MatrixI64(v) => Some(v.as_vec().iter().map(|x| *x as usize).collect::<Vec<usize>>()),
       #[cfg(all(feature = "matrix", feature = "bool"))]
       Value::MatrixBool(_) => None,
       #[cfg(feature = "bool")]
@@ -2096,9 +2138,9 @@ impl ToValue for Vec<usize> {
   fn to_value(&self) -> Value {
     match self.len() {
       1 => Value::Index(Ref::new(self[0].clone())),
-      //2 => Value::MatrixIndex(Matrix::RowVector2(Ref::new(RowVector2::from_vec(self.clone())))),
-      //3 => Value::MatrixIndex(Matrix::RowVector3(Ref::new(RowVector3::from_vec(self.clone())))),
-      //4 => Value::MatrixIndex(Matrix::RowVector4(Ref::new(RowVector4::from_vec(self.clone())))),
+      2 => Value::MatrixIndex(Matrix::Vector2(Ref::new(Vector2::from_vec(self.clone())))),
+      3 => Value::MatrixIndex(Matrix::Vector3(Ref::new(Vector3::from_vec(self.clone())))),
+      4 => Value::MatrixIndex(Matrix::Vector4(Ref::new(Vector4::from_vec(self.clone())))),
       n => Value::MatrixIndex(Matrix::DVector(Ref::new(DVector::from_vec(self.clone())))),
       _ => todo!(),
     }
