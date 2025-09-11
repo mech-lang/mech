@@ -67,30 +67,7 @@ macro_rules! impl_to_matrix {
   };    
 }
 
-impl ToMatrix for usize {
-  fn to_matrix(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
-    match (rows,cols) {
-      #[cfg(feature = "row_vectord")]
-      (1,n) => Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements))),
-      #[cfg(feature = "vectord")]
-      (m,1) => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
-      #[cfg(feature = "matrixd")]
-      (m,n) => Matrix::DMatrix(Ref::new(DMatrix::from_vec(m,n,elements))),
-      _ => panic!("Cannot convert to matrix with rows: {rows} and cols: {cols}"),
-    }
-  }
-  fn to_matrixd(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
-    match (rows,cols) {
-      #[cfg(feature = "vectord")]
-      (1,n) => Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements))),
-      #[cfg(feature = "vectord")]
-      (m,1) => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
-      #[cfg(feature = "matrixd")]
-      (m,n) => Matrix::DMatrix(Ref::new(DMatrix::from_vec(m,n,elements))),
-      _ => panic!("Cannot convert to matrixd with rows: {rows} and cols: {cols}"),
-    }
-  }
-}
+impl_to_matrix!(usize);
 
 impl_to_matrix!(Value);
 #[cfg(feature = "bool")]
@@ -125,7 +102,7 @@ impl_to_matrix!(String);
 impl_to_matrix!(C64);
 #[cfg(feature = "rational")]
 impl_to_matrix!(R64);
-  
+
 pub trait ToIndex: Clone {
   fn to_index(elements: Vec<Self>) -> Matrix<Self>;
 }
