@@ -374,6 +374,34 @@ impl ValueKind {
   }
 }
 
+pub trait AsNaKind {
+  fn as_na_kind() -> String;
+}
+
+macro_rules! impl_as_na_kind {
+  ($type:ty, $kind:expr) => {
+    impl<T> AsNaKind for $type {
+      fn as_na_kind() -> String { $kind.to_string() }
+    }
+  };
+}
+
+impl_as_na_kind!(RowVector2<T>, "RowVector2");
+impl_as_na_kind!(RowVector3<T>, "RowVector3");
+impl_as_na_kind!(RowVector4<T>, "RowVector4");
+impl_as_na_kind!(RowDVector<T>, "RowDVector");
+impl_as_na_kind!(Vector2<T>, "Vector2");
+impl_as_na_kind!(Vector3<T>, "Vector3");
+impl_as_na_kind!(Vector4<T>, "Vector4");
+impl_as_na_kind!(DVector<T>, "DVector");
+impl_as_na_kind!(Matrix1<T>, "Matrix1");
+impl_as_na_kind!(Matrix2<T>, "Matrix2");
+impl_as_na_kind!(Matrix3<T>, "Matrix3");
+impl_as_na_kind!(Matrix4<T>, "Matrix4");
+impl_as_na_kind!(Matrix2x3<T>, "Matrix2x3");
+impl_as_na_kind!(Matrix3x2<T>, "Matrix3x2");
+impl_as_na_kind!(DMatrix<T>, "DMatrix");
+
 pub trait AsValueKind {
   fn as_value_kind() -> ValueKind;
 }
@@ -385,6 +413,8 @@ macro_rules! impl_as_value_kind {
     }
   };
 }
+
+impl_as_value_kind!(usize, ValueKind::Index);
 
 #[cfg(feature = "i8")]
 impl_as_value_kind!(i8, ValueKind::I8);
