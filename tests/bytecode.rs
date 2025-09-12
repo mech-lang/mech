@@ -55,6 +55,9 @@ bytecode_test!(bytecode_math_sub_assign_vr, "x := [11 21]; y := [1 2]; z := [10 
 bytecode_test!(bytecode_math_mul_assign,"~x := 10; x *= 20",Value::F64(Ref::new(F64::new(200.0))));
 bytecode_test!(bytecode_math_mul_assign_vv, "~x := [1 2 3]; x *= [10 20 30]", Value::MatrixF64(Matrix::RowVector3(Ref::new(na::RowVector3::from_vec(vec![F64::new(10.0),F64::new(40.0),F64::new(90.0)])))));
 bytecode_test!(bytecode_math_mul_assign_vr, "x := [1 2]; y := [1 2]; z := [10 20]; x[y] *= z;", Value::MatrixF64(Matrix::RowVector2(Ref::new(na::RowVector2::from_vec(vec![F64::new(10.0),F64::new(40.0)])))));
+bytecode_test!(bytecode_math_div_assign,"~x := 200; x /= 20",Value::F64(Ref::new(F64::new(10.0))));
+bytecode_test!(bytecode_math_div_assign_vv, "~x := [10 20 30]; x /= [1 2 5]", Value::MatrixF64(Matrix::RowVector3(Ref::new(na::RowVector3::from_vec(vec![F64::new(10.0),F64::new(10.0),F64::new(6.0)])))));
+bytecode_test!(bytecode_math_div_assign_vr, "x := [10 20]; y := [1 2]; z := [10 4]; x[y] /= z;", Value::MatrixF64(Matrix::RowVector2(Ref::new(na::RowVector2::from_vec(vec![F64::new(1.0),F64::new(5.0)])))));
 bytecode_test!(bytecode_matrix_rowvector3,"[1 2 3]",Value::MatrixF64(Matrix::RowVector3(Ref::new(na::RowVector3::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0)])))));
 bytecode_test!(bytecode_matrix_vector2,"[1; 2]",Value::MatrixF64(Matrix::Vector2(Ref::new(na::Vector2::from_vec(vec![F64::new(1.0),F64::new(2.0)])))));
 bytecode_test!(bytecode_matrix_matrix2x2,"[1 2; 3 4]",Value::MatrixF64(Matrix::Matrix2(Ref::new(na::Matrix2::from_vec(vec![F64::new(1.0),F64::new(3.0),F64::new(2.0),F64::new(4.0)])))));
