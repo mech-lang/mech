@@ -147,9 +147,7 @@ impl_sub_assign_range_fxn_v!(SubAssign1DRV, sub_assign_1d_range_vec,usize);
 #[cfg(feature = "matrix")]
 impl_sub_assign_range_fxn_v!(SubAssign1DRVB,sub_assign_1d_range_vec_b,bool);
 
-fn sub_assign_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
-  impl_sub_assign_match_arms!(SubAssign1DR, range, (sink, ixes.as_slice(), source))
-}
+op_assign_range_fxn!(sub_assign_range_fxn, SubAssign1DR);
 
 pub struct SubAssignRange {}
 impl NativeFunctionCompiler for SubAssignRange {
