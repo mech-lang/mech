@@ -148,27 +148,7 @@ impl_add_assign_range_fxn_v!(AddAssign1DRV,add_assign_1d_range_vec,usize);
 #[cfg(feature = "matrix")]
 impl_add_assign_range_fxn_v!(AddAssign1DRVB,add_assign_1d_range_vec_b,bool);
 
-fn add_assign_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
-  impl_add_assign_match_arms!(AddAssign1DR, range, (sink, ixes.as_slice(), source))
-}
-
-//register_fxn_descriptor!(AddAssign1DRS, u8, u16, u32, u64, u128, i8, i16, i32, i64, F32, F64, R64, C64);
-//register_fxn_descriptor!(AddAssign1DRB, u8, u16, u32, u64, u128, i8, i16, i32, i64, F32, F64, R64, C64);
-/*inventory::submit! {
-  #[cfg(feature = $type_string)]
-  FunctionDescriptor {
-    name: concat!(stringify!(AddAssign1DRV), "<", stringify!([<$type:lower>]), ">"),
-    ptr: $struct_name::<$type>::new,
-  }
-}*/
-
-inventory::submit! {
-  FunctionDescriptor {
-    name: concat!(stringify!(AddAssign1DRV), "<f64>"),
-    ptr: AddAssign1DRV::<F64,RowVector2<F64>,RowVector2<F64>,RowVector2<usize>>::new,
-  }
-}
-//register_fxn_descriptor!(AddAssign1DRVB, u8, u16, u32, u64, u128, i8, i16, i32, i64, F32, F64, R64, C64);
+op_assign_range_fxn!(add_assign_range_fxn, AddAssign1DR);
 
 pub struct AddAssignRange {}
 impl NativeFunctionCompiler for AddAssignRange {

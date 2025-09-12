@@ -125,11 +125,11 @@ macro_rules! impl_op_assign_range_fxn_v {
         Zero + One +
         PartialEq + PartialOrd +
         CompileConst + ConstElem + AsValueKind,
-      IxVec: CompileConst + ConstElem + Debug + AsRef<[$ix]>,
+      IxVec: CompileConst + ConstElem + AsNaKind + Debug + AsRef<[$ix]>,
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
       R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug,
-      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + Debug,
+      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug + AsNaKind,
+      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + Debug + AsNaKind,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -173,15 +173,66 @@ macro_rules! impl_op_assign_range_fxn_v {
     impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec> 
     where
       T: CompileConst + ConstElem + AsValueKind,
-      IxVec: CompileConst + ConstElem,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
-      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem,
+      IxVec: CompileConst + ConstElem + AsNaKind,
+      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
+      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + AsNaKind,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+        let name = format!("{}<{}{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), naMatrix::<T, R2, C2, S2>::as_na_kind(), IxVec::as_na_kind());
+        println!("{:?}", name);
         compile_binop!(name, self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign));
       }
-    }};}
+    }  
+  };}
+
+#[macro_export]
+macro_rules! impl_op_assign_range_fxn {
+  ($fxn_name:ident, $arg:expr, $value_kind:ident, $value_string:tt) => {
+    paste! {
+      impl_set_range_arms!($fxn_name, RowVector2, &$arg, $value_kind, $value_string)
+        .or_else(|_| impl_set_range_arms!($fxn_name, RowVector3, &$arg, $value_kind, $value_string))
+        .or_else(|_| impl_set_range_arms!($fxn_name, RowVector4, &$arg, $value_kind, $value_string))
+        .or_else(|_| impl_set_range_arms!($fxn_name, Vector2, &$arg, $value_kind, $value_string))
+        .or_else(|_| impl_set_range_arms!($fxn_name, Vector3, &$arg, $value_kind, $value_string))
+        .or_else(|_| impl_set_range_arms!($fxn_name, Vector4, &$arg, $value_kind, $value_string))
+        .or_else(|_| impl_set_range_arms!($fxn_name, Matrix1, &$arg, $value_kind, $value_string))
+        .or_else(|_| impl_set_range_arms!($fxn_name, Matrix2, &$arg, $value_kind, $value_string))
+        .or_else(|_| impl_set_range_arms!($fxn_name, Matrix3, &$arg, $value_kind, $value_string))
+        .or_else(|_| impl_set_range_arms!($fxn_name, Matrix4, &$arg, $value_kind, $value_string))
+        .or_else(|_| impl_set_range_arms!($fxn_name, Matrix2x3, &$arg, $value_kind, $value_string))
+        .or_else(|_| impl_set_range_arms!($fxn_name, Matrix3x2, &$arg, $value_kind, $value_string))
+        .or_else(|_| impl_set_range_arms!($fxn_name, DMatrix, &$arg, $value_kind, $value_string))
+        .or_else(|_| impl_set_range_arms!($fxn_name, RowDVector, &$arg, $value_kind, $value_string))
+        .or_else(|_| impl_set_range_arms!($fxn_name, DVector, &$arg, $value_kind, $value_string))
+        .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &$arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+    }
+  }
+}
+
+#[macro_export]
+macro_rules! op_assign_range_fxn {
+  ($op_fxn_name:tt, $fxn_name:ident) => {
+    paste::paste! {
+      fn $op_fxn_name(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        let arg = (sink, ixes.as_slice(), source);
+        impl_op_assign_range_fxn!($fxn_name, arg, u8, "u8")
+        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, u16, "u16"))
+        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, u32, "u32"))
+        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, u64, "u64"))
+        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, u128, "u128"))
+        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, i8, "i8"))
+        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, i16, "i16"))
+        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, i32, "i32"))
+        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, i64, "i64"))
+        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, F32, "f32"))
+        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, F64, "f64"))
+        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, R64, "rational"))
+        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, C64, "complex"))
+        .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+      }
+    }
+  }
+}
 
 #[macro_export]
 macro_rules! impl_op_assign_value_match_arms {
