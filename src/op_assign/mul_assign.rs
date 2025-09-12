@@ -147,9 +147,7 @@ impl_mul_assign_range_fxn_v!(MulAssign1DRV, mul_assign_1d_range_vec,usize);
 #[cfg(feature = "matrix")]
 impl_mul_assign_range_fxn_v!(MulAssign1DRVB,mul_assign_1d_range_vec_b,bool);
 
-fn mul_assign_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
-  impl_mul_assign_match_arms!(MulAssign1DR, range, (sink, ixes.as_slice(), source))
-}
+op_assign_range_fxn!(mul_assign_range_fxn, MulAssign1DR);
 
 pub struct MulAssignRange {}
 impl NativeFunctionCompiler for MulAssignRange {
