@@ -208,8 +208,7 @@ macro_rules! add_assign_2d_vector_all_mat {
         }
       }
     }
-  };
-}
+  };}
 
 macro_rules! add_assign_2d_vector_all_mat_b {
   ($source:expr, $ix:expr, $sink:expr) => {
@@ -226,8 +225,7 @@ macro_rules! add_assign_2d_vector_all_mat_b {
         }
       }
     }
-  };
-}
+  };}
 
 #[cfg(feature = "matrix")]
 impl_add_assign_range_fxn_s!(AddAssign2DRAS, add_assign_2d_vector_all,usize);
