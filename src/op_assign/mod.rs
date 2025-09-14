@@ -49,9 +49,9 @@ macro_rules! impl_op_assign_range_fxn_s {
         Zero + One +
         PartialEq + PartialOrd +
         CompileConst + ConstElem + AsValueKind,
-      IxVec: CompileConst + ConstElem + Debug + AsRef<[$ix]>,
+      IxVec: CompileConst + ConstElem + Debug + AsRef<[$ix]> + AsNaKind,
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug,
+      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug + AsNaKind,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -93,11 +93,11 @@ macro_rules! impl_op_assign_range_fxn_s {
     impl<T, R1, C1, S1, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec> 
     where
       T: CompileConst + ConstElem + AsValueKind,
-      IxVec: CompileConst + ConstElem,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
+      IxVec: CompileConst + ConstElem + AsNaKind,
+      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+        let name = format!("{}<{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), IxVec::as_na_kind());
         compile_binop!(name, self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign));
       }
     }};}
@@ -179,7 +179,6 @@ macro_rules! impl_op_assign_range_fxn_v {
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         let name = format!("{}<{}{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), naMatrix::<T, R2, C2, S2>::as_na_kind(), IxVec::as_na_kind());
-        println!("{:?}", name);
         compile_binop!(name, self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign));
       }
     }  
