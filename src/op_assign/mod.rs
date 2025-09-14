@@ -185,48 +185,74 @@ macro_rules! impl_op_assign_range_fxn_v {
   };}
 
 #[macro_export]
-macro_rules! impl_op_assign_range_fxn {
-  ($fxn_name:ident, $arg:expr, $value_kind:ident, $value_string:tt) => {
+macro_rules! impl_op_assign_fxn {
+  ($op:tt, $fxn_name:ident, $arg:expr, $value_kind:ident, $value_string:tt) => {
     paste! {
-      impl_set_range_arms!($fxn_name, RowVector2, &$arg, $value_kind, $value_string)
-        .or_else(|_| impl_set_range_arms!($fxn_name, RowVector3, &$arg, $value_kind, $value_string))
-        .or_else(|_| impl_set_range_arms!($fxn_name, RowVector4, &$arg, $value_kind, $value_string))
-        .or_else(|_| impl_set_range_arms!($fxn_name, Vector2, &$arg, $value_kind, $value_string))
-        .or_else(|_| impl_set_range_arms!($fxn_name, Vector3, &$arg, $value_kind, $value_string))
-        .or_else(|_| impl_set_range_arms!($fxn_name, Vector4, &$arg, $value_kind, $value_string))
-        .or_else(|_| impl_set_range_arms!($fxn_name, Matrix1, &$arg, $value_kind, $value_string))
-        .or_else(|_| impl_set_range_arms!($fxn_name, Matrix2, &$arg, $value_kind, $value_string))
-        .or_else(|_| impl_set_range_arms!($fxn_name, Matrix3, &$arg, $value_kind, $value_string))
-        .or_else(|_| impl_set_range_arms!($fxn_name, Matrix4, &$arg, $value_kind, $value_string))
-        .or_else(|_| impl_set_range_arms!($fxn_name, Matrix2x3, &$arg, $value_kind, $value_string))
-        .or_else(|_| impl_set_range_arms!($fxn_name, Matrix3x2, &$arg, $value_kind, $value_string))
-        .or_else(|_| impl_set_range_arms!($fxn_name, DMatrix, &$arg, $value_kind, $value_string))
-        .or_else(|_| impl_set_range_arms!($fxn_name, RowDVector, &$arg, $value_kind, $value_string))
-        .or_else(|_| impl_set_range_arms!($fxn_name, DVector, &$arg, $value_kind, $value_string))
+                     $op!($fxn_name, RowVector2, &$arg, $value_kind, $value_string)
+        .or_else(|_| $op!($fxn_name, RowVector3, &$arg, $value_kind, $value_string))
+        .or_else(|_| $op!($fxn_name, RowVector4, &$arg, $value_kind, $value_string))
+        .or_else(|_| $op!($fxn_name, Vector2, &$arg, $value_kind, $value_string))
+        .or_else(|_| $op!($fxn_name, Vector3, &$arg, $value_kind, $value_string))
+        .or_else(|_| $op!($fxn_name, Vector4, &$arg, $value_kind, $value_string))
+        .or_else(|_| $op!($fxn_name, Matrix1, &$arg, $value_kind, $value_string))
+        .or_else(|_| $op!($fxn_name, Matrix2, &$arg, $value_kind, $value_string))
+        .or_else(|_| $op!($fxn_name, Matrix3, &$arg, $value_kind, $value_string))
+        .or_else(|_| $op!($fxn_name, Matrix4, &$arg, $value_kind, $value_string))
+        .or_else(|_| $op!($fxn_name, Matrix2x3, &$arg, $value_kind, $value_string))
+        .or_else(|_| $op!($fxn_name, Matrix3x2, &$arg, $value_kind, $value_string))
+        .or_else(|_| $op!($fxn_name, DMatrix, &$arg, $value_kind, $value_string))
+        .or_else(|_| $op!($fxn_name, RowDVector, &$arg, $value_kind, $value_string))
+        .or_else(|_| $op!($fxn_name, DVector, &$arg, $value_kind, $value_string))
         .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &$arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
     }
   }
 }
-
+//impl_set_range_arms
 #[macro_export]
 macro_rules! op_assign_range_fxn {
   ($op_fxn_name:tt, $fxn_name:ident) => {
     paste::paste! {
       fn $op_fxn_name(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
         let arg = (sink, ixes.as_slice(), source);
-        impl_op_assign_range_fxn!($fxn_name, arg, u8, "u8")
-        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, u16, "u16"))
-        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, u32, "u32"))
-        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, u64, "u64"))
-        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, u128, "u128"))
-        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, i8, "i8"))
-        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, i16, "i16"))
-        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, i32, "i32"))
-        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, i64, "i64"))
-        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, F32, "f32"))
-        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, F64, "f64"))
-        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, R64, "rational"))
-        .or_else(|_| impl_op_assign_range_fxn!($fxn_name, arg, C64, "complex"))
+                     impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u8, "u8")
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u16, "u16"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u32, "u32"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u64, "u64"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u128, "u128"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i8, "i8"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i16, "i16"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i32, "i32"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i64, "i64"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, F32, "f32"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, F64, "f64"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, R64, "rational"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, C64, "complex"))
+        .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+      }
+    }
+  }
+}
+
+//impl_set_range_all_arms
+#[macro_export]
+macro_rules! op_assign_range_all_fxn {
+  ($op_fxn_name:tt, $fxn_name:ident) => {
+    paste::paste! {
+      fn $op_fxn_name(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        let arg = (sink, ixes.as_slice(), source);
+                     impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u8, "u8")
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u16, "u16"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u32, "u32"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u64, "u64"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u128, "u128"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i8, "i8"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i16, "i16"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i32, "i32"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i64, "i64"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, F32, "f32"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, F64, "f64"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, R64, "rational"))
+        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, C64, "complex"))
         .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
       }
     }
