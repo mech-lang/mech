@@ -43,6 +43,7 @@ use nalgebra::Matrix3x2;
 use nalgebra::Matrix2;
 
 use std::ops::*;
+#[cfg(feature = "range")]
 use num_traits::{Zero, One};
 use std::fmt::Debug;
 #[cfg(feature = "matrix")]
