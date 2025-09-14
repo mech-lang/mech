@@ -127,6 +127,7 @@ pub use self::types::*;
 // Mech Source Code
 // ---------------------------------------------------------------------------
 
+#[cfg(feature = "functions")]
 inventory::collect!(FunctionDescriptor);
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

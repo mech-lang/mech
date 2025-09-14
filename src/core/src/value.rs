@@ -386,20 +386,35 @@ macro_rules! impl_as_na_kind {
   };
 }
 
+#[cfg(feature = "row_vector2")]
 impl_as_na_kind!(RowVector2<T>, "RowVector2");
+#[cfg(feature = "row_vector3")]
 impl_as_na_kind!(RowVector3<T>, "RowVector3");
+#[cfg(feature = "row_vector4")]
 impl_as_na_kind!(RowVector4<T>, "RowVector4");
+#[cfg(feature = "row_vectord")]
 impl_as_na_kind!(RowDVector<T>, "RowDVector");
+#[cfg(feature = "vector2")]
 impl_as_na_kind!(Vector2<T>, "Vector2");
+#[cfg(feature = "vector3")]
 impl_as_na_kind!(Vector3<T>, "Vector3");
+#[cfg(feature = "vector4")]
 impl_as_na_kind!(Vector4<T>, "Vector4");
+#[cfg(feature = "vectord")]
 impl_as_na_kind!(DVector<T>, "DVector");
+#[cfg(feature = "matrix1")]
 impl_as_na_kind!(Matrix1<T>, "Matrix1");
+#[cfg(feature = "matrix2")]
 impl_as_na_kind!(Matrix2<T>, "Matrix2");
+#[cfg(feature = "matrix3")]
 impl_as_na_kind!(Matrix3<T>, "Matrix3");
+#[cfg(feature = "matrix4")]
 impl_as_na_kind!(Matrix4<T>, "Matrix4");
+#[cfg(feature = "matrix2x3")]
 impl_as_na_kind!(Matrix2x3<T>, "Matrix2x3");
+#[cfg(feature = "matrix3x2")]
 impl_as_na_kind!(Matrix3x2<T>, "Matrix3x2");
+#[cfg(feature = "matrixd")]
 impl_as_na_kind!(DMatrix<T>, "DMatrix");
 
 pub trait AsValueKind {
@@ -701,6 +716,7 @@ impl Hash for Value {
 }
 impl Value {
 
+  #[cfg(feature = "matrix")]
   pub unsafe fn get_copyable_matrix_unchecked<T>(&self) -> Box<dyn CopyMat<T>> 
   where T: AsValueKind + 'static
   {
@@ -845,6 +861,7 @@ impl Value {
       Value::MatrixR64(r) => r.as_unchecked(),
       #[cfg(all(feature = "complex", feature = "matrix"))]
       Value::MatrixC64(r) => r.as_unchecked(),
+      #[cfg(all(feature = "matrix"))]
       Value::MatrixIndex(r) => r.as_unchecked(),
       #[cfg(feature = "enum")]
       Value::Enum(r) => &*(r as *const Ref<MechEnum> as *const Ref<T>),
@@ -2168,9 +2185,13 @@ impl ToValue for Vec<usize> {
   fn to_value(&self) -> Value {
     match self.len() {
       1 => Value::Index(Ref::new(self[0].clone())),
+      #[cfg(feature = "vector2")]
       2 => Value::MatrixIndex(Matrix::Vector2(Ref::new(Vector2::from_vec(self.clone())))),
+      #[cfg(feature = "vector3")]
       3 => Value::MatrixIndex(Matrix::Vector3(Ref::new(Vector3::from_vec(self.clone())))),
+      #[cfg(feature = "vector4")]
       4 => Value::MatrixIndex(Matrix::Vector4(Ref::new(Vector4::from_vec(self.clone())))),
+      #[cfg(feature = "vectord")]
       n => Value::MatrixIndex(Matrix::DVector(Ref::new(DVector::from_vec(self.clone())))),
       _ => todo!(),
     }
