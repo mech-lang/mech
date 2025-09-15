@@ -47,6 +47,26 @@ macro_rules! impl_set_all_fxn_s {
       pub sink: Ref<MatA>,
       pub _marker: PhantomData<T>,
     }
+    impl<T, R1, C1, S1: 'static, IxVec: 'static> MechFunctionFactory for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
+    where
+      Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+      T: Scalar + Clone + Debug + Sync + Send + 'static + CompileConst + ConstElem + AsValueKind,
+      IxVec: CompileConst + ConstElem + Debug + AsRef<[$ix]> + AsNaKind,
+      R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
+      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug + AsNaKind,
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Binary(out, arg1, arg2) => {
+            let source: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+            let ixes: Ref<IxVec> = unsafe { arg2.as_unchecked() }.clone();
+            let sink: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(Self { sink, source, ixes, _marker: PhantomData::default() }))
+          },
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+        }
+      }
+    }
     impl<T, R1, C1, S1, IxVec> MechFunctionImpl for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
     where
       Ref<naMatrix<T, R1, C1, S1>>: ToValue,
@@ -69,11 +89,11 @@ macro_rules! impl_set_all_fxn_s {
     impl<T, R1, C1, S1, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec> 
     where
       T: CompileConst + ConstElem + AsValueKind,
-      IxVec: CompileConst + ConstElem,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
+      IxVec: CompileConst + ConstElem + AsNaKind,
+      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+        let name = format!("{}<{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), IxVec::as_na_kind());
         compile_binop!(name, self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
       }
     }};}
@@ -88,12 +108,37 @@ macro_rules! impl_set_all_fxn_v {
       pub sink: Ref<MatA>,
       pub _marker: PhantomData<T>,
     }
-
+    impl<T, R1: 'static, C1: 'static, S1: 'static, R2: 'static, C2: 'static, S2: 'static, IxVec: 'static> MechFunctionFactory for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
+    where
+      Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+      Ref<naMatrix<T, R2, C2, S2>>: ToValue,
+      T: Debug + Clone + Sync + Send + 'static +
+        PartialEq + PartialOrd +
+        CompileConst + ConstElem + AsValueKind,
+      IxVec: CompileConst + ConstElem + AsNaKind + Debug + AsRef<[$ix]>,
+      R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
+      R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
+      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug + AsNaKind,
+      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + Debug + AsNaKind,
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Binary(out, arg1, arg2) => {
+            let source: Ref<naMatrix<T, R2, C2, S2>> = unsafe { arg1.as_unchecked() }.clone();
+            let ixes: Ref<IxVec> = unsafe { arg2.as_unchecked() }.clone();
+            let sink: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(Self { sink, source, ixes, _marker: PhantomData::default() }))
+          },
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 3 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+        }
+      }
+    }
     impl<T, R1, C1, S1, R2, C2, S2, IxVec>
       MechFunctionImpl for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
     where
       Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-      T: Scalar + Clone + Debug + Sync + Send + 'static,
+      T: Debug + Clone + Sync + Send + 'static +
+        PartialEq + PartialOrd,
       IxVec: AsRef<[$ix]> + Debug,
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
       R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
@@ -113,15 +158,16 @@ macro_rules! impl_set_all_fxn_v {
     impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec> 
     where
       T: CompileConst + ConstElem + AsValueKind,
-      IxVec: CompileConst + ConstElem,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
-      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem,
+      IxVec: CompileConst + ConstElem + AsNaKind,
+      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
+      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + AsNaKind,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
-        compile_binop!(name, self.sink, self.ixes, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
+        let name = format!("{}<{}{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), naMatrix::<T, R2, C2, S2>::as_na_kind(), IxVec::as_na_kind());
+        compile_binop!(name, self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign));
       }
-    }};}
+    }  
+  };}
 
 // x[1] = 1 ------------------------------------------------------------------
 
@@ -1396,7 +1442,7 @@ impl NativeFunctionCompiler for MatrixSetAllRange {
 // x[1..3,:] = 1 ------------------------------------------------------------------
 
 
-macro_rules! set_2d_vector_all {
+macro_rules! assign_2d_range_all {
   ($source:expr, $ix:expr, $sink:expr) => {
       for cix in 0..($sink).ncols() {
         for rix in $ix.iter() {
@@ -1405,7 +1451,7 @@ macro_rules! set_2d_vector_all {
       }
     };}
 
-macro_rules! set_2d_vector_all_b {
+macro_rules! assign_2d_range_all_b {
   ($source:expr, $ix:expr, $sink:expr) => {
     for cix in 0..($sink).ncols() {
       for rix in 0..$ix.len() {
@@ -1416,39 +1462,68 @@ macro_rules! set_2d_vector_all_b {
     }
   };} 
 
-macro_rules! set_2d_vector_all_mat {
+  macro_rules! assign_2d_range_all_v {
   ($source:expr, $ix:expr, $sink:expr) => {
-    for (i, &rix) in $ix.iter().enumerate() {
-      let mut sink_row = $sink.row_mut(rix - 1);
-      let src_row = $source.row(i);
-      for (dst, src) in sink_row.iter_mut().zip(src_row.iter()) {
-        *dst = src.clone();
-      }
-    }
-  };}
-  
-macro_rules! set_2d_vector_all_mat_b {
-  ($source:expr, $ix:expr, $sink:expr) => {
-    for (i, rix) in (&$ix).iter().enumerate() {
-      if *rix == true {
-        let mut row = ($sink).row_mut(i);
-        let src_row = ($source).row(i);
-        for (dst, src) in row.iter_mut().zip(src_row.iter()) {
+    {
+      let nsrc = $source.nrows();
+      for (i, &rix) in $ix.iter().enumerate() {
+        let row_index = rix - 1;
+        let mut sink_row = $sink.row_mut(row_index);
+        let src_row = $source.row(i % nsrc); // wrap around!
+        for (dst, src) in sink_row.iter_mut().zip(src_row.iter()) {
           *dst = src.clone();
         }
       }
     }
-  };
+  };}
+
+macro_rules! assign_2d_range_all_vb {
+  ($source:expr, $ix:expr, $sink:expr) => {
+    {
+      let mut src_i = 0;
+      for (i, rix) in (&$ix).iter().enumerate() {
+        if *rix == true {
+          let mut sink_row = ($sink).row_mut(i);
+          let src_row = ($source).row(src_i);
+          for (dst, src) in sink_row.iter_mut().zip(src_row.iter()) {
+            *dst = src.clone();
+          }
+          src_i += 1;
+        }
+      }
+    }
+  };}
+
+impl_set_all_fxn_v!(Set2DRAV,assign_2d_range_all_v,usize);
+impl_set_all_fxn_s!(Set2DRAS,assign_2d_range_all,usize);
+impl_set_all_fxn_s!(Set2DRASB,assign_2d_range_all_b,bool);
+impl_set_all_fxn_v!(Set2DRAVB,assign_2d_range_all_vb,bool);
+
+macro_rules! matrix_assign_range_all_fxn {
+  ($op_fxn_name:tt, $fxn_name:ident) => {
+    paste::paste! {
+      fn $op_fxn_name(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        let arg = (sink, ixes.as_slice(), source);
+                     impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u8, "u8")
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u16, "u16"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u32, "u32"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u64, "u64"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u128, "u128"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i8, "i8"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i16, "i16"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i32, "i32"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i64, "i64"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, F32, "f32"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, F64, "f64"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, R64, "rational"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, C64, "complex"))
+        .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+      }
+    }
+  }
 }
 
-impl_set_all_fxn_v!(Set2DRAV,set_2d_vector_all_mat,usize);
-impl_set_all_fxn_s!(Set2DRAS,set_2d_vector_all,usize);
-impl_set_all_fxn_s!(Set2DRASB,set_2d_vector_all_b,bool);
-impl_set_all_fxn_v!(Set2DRAVB,set_2d_vector_all_mat_b,bool);
-
-fn impl_set_range_all_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
-  impl_set_match_arms!(Set2DRA, range_all, (sink, ixes.as_slice(), source))
-}
+matrix_assign_range_all_fxn!(impl_assign_range_all_fxn, Set2DRA);
 
 pub struct MatrixSetRangeAll {}
 impl NativeFunctionCompiler for MatrixSetRangeAll {
@@ -1459,13 +1534,13 @@ impl NativeFunctionCompiler for MatrixSetRangeAll {
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
     let ixes = arguments.clone().split_off(2);
-    match impl_set_range_all_fxn(sink.clone(),source.clone(),ixes.clone()) {
+    match impl_assign_range_all_fxn(sink.clone(),source.clone(),ixes.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
         match (sink,ixes,source) {
-          (Value::MutableReference(sink),ixes,Value::MutableReference(source)) => { impl_set_range_all_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
-          (sink,ixes,Value::MutableReference(source)) => { impl_set_range_all_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
-          (Value::MutableReference(sink),ixes,source) => { impl_set_range_all_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
+          (Value::MutableReference(sink),ixes,Value::MutableReference(source)) => { impl_assign_range_all_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
+          (sink,ixes,Value::MutableReference(source)) => { impl_assign_range_all_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
+          (Value::MutableReference(sink),ixes,source) => { impl_assign_range_all_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
           x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
