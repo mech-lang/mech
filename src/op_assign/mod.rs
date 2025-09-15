@@ -184,29 +184,6 @@ macro_rules! impl_op_assign_range_fxn_v {
     }  
   };}
 
-#[macro_export]
-macro_rules! impl_op_assign_fxn {
-  ($op:tt, $fxn_name:ident, $arg:expr, $value_kind:ident, $value_string:tt) => {
-    paste! {
-                     $op!($fxn_name, RowVector2, &$arg, $value_kind, $value_string)
-        .or_else(|_| $op!($fxn_name, RowVector3, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, RowVector4, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, Vector2, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, Vector3, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, Vector4, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, Matrix1, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, Matrix2, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, Matrix3, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, Matrix4, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, Matrix2x3, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, Matrix3x2, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, DMatrix, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, RowDVector, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, DVector, &$arg, $value_kind, $value_string))
-        .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &$arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
-    }
-  }
-}
 //impl_set_range_arms
 #[macro_export]
 macro_rules! op_assign_range_fxn {
@@ -214,19 +191,19 @@ macro_rules! op_assign_range_fxn {
     paste::paste! {
       fn $op_fxn_name(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
         let arg = (sink, ixes.as_slice(), source);
-                     impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u8, "u8")
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u16, "u16"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u32, "u32"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u64, "u64"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u128, "u128"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i8, "i8"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i16, "i16"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i32, "i32"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i64, "i64"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, F32, "f32"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, F64, "f64"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, R64, "rational"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_arms, $fxn_name, arg, C64, "complex"))
+                     impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u8, "u8")
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u16, "u16"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u32, "u32"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u64, "u64"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u128, "u128"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i8, "i8"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i16, "i16"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i32, "i32"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i64, "i64"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, F32, "f32"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, F64, "f64"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, R64, "rational"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, C64, "complex"))
         .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
       }
     }
@@ -240,68 +217,23 @@ macro_rules! op_assign_range_all_fxn {
     paste::paste! {
       fn $op_fxn_name(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
         let arg = (sink, ixes.as_slice(), source);
-                     impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u8, "u8")
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u16, "u16"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u32, "u32"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u64, "u64"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u128, "u128"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i8, "i8"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i16, "i16"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i32, "i32"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i64, "i64"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, F32, "f32"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, F64, "f64"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, R64, "rational"))
-        .or_else(|_| impl_op_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, C64, "complex"))
+                     impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u8, "u8")
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u16, "u16"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u32, "u32"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u64, "u64"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, u128, "u128"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i8, "i8"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i16, "i16"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i32, "i32"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, i64, "i64"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, F32, "f32"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, F64, "f64"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, R64, "rational"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, C64, "complex"))
         .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
       }
     }
   }
-}
-
-#[macro_export]
-macro_rules! impl_op_assign_value_match_arms {
-  ($lib:ident, $arg:expr,$($value_kind:ident, $feature:tt);+ $(;)?) => {
-    paste::paste! {
-      match $arg {
-        $(
-          #[cfg(feature = $feature)]
-          (Value::$value_kind(sink), Value::$value_kind(source)) => Ok(Box::new([<$lib AssignSS>] { sink: sink.clone(), source: source.clone() })),
-          #[cfg(all(feature = $feature, feature = "matrix1"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix1(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix1(source))) => Ok(Box::new([<$lib AssignVV>] { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $feature, feature = "matrix2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix2(source))) => Ok(Box::new([<$lib AssignVV>] { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $feature, feature = "matrix2x3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix2x3(source))) => Ok(Box::new([<$lib AssignVV>] { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $feature, feature = "matrix3x2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix3x2(source))) => Ok(Box::new([<$lib AssignVV>] { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $feature, feature = "matrix3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix3(source))) => Ok(Box::new([<$lib AssignVV>] { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $feature, feature = "matrix4"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)), Value::[<Matrix $value_kind>](Matrix::Matrix4(source))) => Ok(Box::new([<$lib AssignVV>] { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $feature, feature = "matrixd"))]
-          (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)), Value::[<Matrix $value_kind>](Matrix::DMatrix(source))) => Ok(Box::new([<$lib AssignVV>] { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $feature, feature = "vector2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Vector2(sink)), Value::[<Matrix $value_kind>](Matrix::Vector2(source))) => Ok(Box::new([<$lib AssignVV>] { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $feature, feature = "vector3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Vector3(sink)), Value::[<Matrix $value_kind>](Matrix::Vector3(source))) => Ok(Box::new([<$lib AssignVV>] { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $feature, feature = "vector4"))]
-          (Value::[<Matrix $value_kind>](Matrix::Vector4(sink)), Value::[<Matrix $value_kind>](Matrix::Vector4(source))) => Ok(Box::new([<$lib AssignVV>] { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $feature, feature = "vectord"))]
-          (Value::[<Matrix $value_kind>](Matrix::DVector(sink)), Value::[<Matrix $value_kind>](Matrix::DVector(source))) => Ok(Box::new([<$lib AssignVV>] { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $feature, feature = "row_vector2"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowVector2(sink)), Value::[<Matrix $value_kind>](Matrix::RowVector2(source))) => Ok(Box::new([<$lib AssignVV>] { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $feature, feature = "row_vector3"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowVector3(sink)), Value::[<Matrix $value_kind>](Matrix::RowVector3(source))) => Ok(Box::new([<$lib AssignVV>] { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $feature, feature = "row_vector4"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowVector4(sink)), Value::[<Matrix $value_kind>](Matrix::RowVector4(source))) => Ok(Box::new([<$lib AssignVV>] { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $feature, feature = "row_vectord"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowDVector(sink)), Value::[<Matrix $value_kind>](Matrix::RowDVector(source))) => Ok(Box::new([<$lib AssignVV>] { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-        )+
-        x => Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Unhandled args {:?}", x),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,}),
-      }
-    }
-  };
 }
 
 #[macro_export]

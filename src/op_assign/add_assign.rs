@@ -55,7 +55,7 @@ impl_assign_scalar_scalar!(Add, +=);
 impl_assign_vector_vector!(Add, +=);
 
 pub fn add_assign_math_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  impl_op_assign_value_match_arms!(
+  impl_assign_value_match_arms!(
     Add,
     (sink, source),
     U8,  "u8";
