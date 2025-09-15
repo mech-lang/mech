@@ -1,0 +1,112 @@
+math/add
+===============================================================================
+
+%% Element-wise addition
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/add(X1, X2)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Performs element-wise addition of two numeric inputs. `X1` and `X2` may be scalars, vectors, or matrices. When one input is a scalar and the other is an array, the scalar is added to every element of the array (scalar broadcasting). When adding a vector to a matrix, the vector may be broadcast across rows or columns as described in **Details**.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                                   | Description                                                                 |
+|----------|----------------------------------------|-----------------------------------------------------------------------------|
+| `X1`     | `int`, `uint`, `float`, `rational`, `complex`, `[T]`, `[[T]]` | First addend. Supports element-wise addition for scalars, vectors, and matrices. |
+| `X2`     | `int`, `uint`, `float`, `rational`, `complex`, `[T]`, `[[T]]` | Second addend. Must be shape-compatible with `X1` under the broadcasting rules.  |
+
+**Supported scalar types** (matched and mixed where defined): `i8`, `i16`, `i32`, `i64`, `i128`, `u8`, `u16`, `u32`, `u64`, `u128`, `f32`, `f64`, `rational` (R64), and `complex` (C64).
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind            | Description                                                                 |
+|----------|-----------------|-----------------------------------------------------------------------------|
+| `Y`      | matches input   | Element-wise sum of `X1` and `X2`. The shape of `Y` follows broadcasting.   |
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(a) Add two scalars
+
+```mech:ex1
+y := math/add(2, 5)
+```
+
+(b) Add two vectors (same length)
+
+```mech:ex2
+x1 := [1, 2, 3]
+x2 := [4, 5, 6]
+y  := math/add(x1, x2)     // [5, 7, 9]
+```
+
+(c) Add two matrices (same shape)
+
+```mech:ex3
+a := [1, 2; 3, 4]
+b := [5, 6; 7, 8]
+y := math/add(a, b)        // [6, 8; 10, 12]
+```
+
+(d) Add a scalar to a matrix (scalar broadcasting)
+
+```mech:ex4
+a := [1, 2; 3, 4]
+y := math/add(a, 10)       // [11, 12; 13, 14]
+```
+
+(e) Add a column vector to a matrix (broadcast by columns)
+
+```mech:ex5
+v := [10, 20]              // length 2 column vector
+m := [1, 2; 3, 4]          // 2x2
+y := math/add(m, v)        // each column gets +[10,20] => [11,12; 23,24]
+```
+
+(f) Add a row vector to a matrix (broadcast by rows)
+
+```mech:ex6
+r := [100, 200]            // row vector of length 2
+m := [1, 2; 3, 4]          // 2x2
+y := math/add(r, m)        // each row gets +[100,200] => [101,202; 103,204]
+```
+
+(g) Mixed types (float + int)
+
+```mech:ex7
+y := math/add(2.5, 2)      // 4.5
+```
+
+(h) Complex addition
+
+```mech:ex8
+y := math/add(1+2i, 3-4i)  // (4 - 2i)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+**Element-wise semantics.** Addition is applied per element. Shapes must either match exactly or be compatible via broadcasting.
+
+**Broadcasting rules.** The function supports these efficient broadcast cases:
+- **Scalar + Array:** The scalar is added to every element of the array.
+- **Matrix + Column Vector (or Vector + Matrix):** A length-`m` column vector can be added to an `m×n` matrix by adding the vector to **each column** of the matrix.
+- **Matrix + Row Vector (or Row Vector + Matrix):** A length-`n` row vector can be added to an `m×n` matrix by adding the vector to **each row** of the matrix.
+
+**Commutative & associative.** `math/add` is commutative (`X1 + X2 = X2 + X1`) and associative where types and shapes allow.
+
+**Type support.** Implementations exist for signed/unsigned integers, floating-point, rationals, and complex numbers. When types differ, standard numeric promotions apply where defined by the runtime; otherwise a type error is raised.
+
+**Errors.**
+- Shape mismatch that cannot be resolved by broadcasting.
+- Unsupported type combination.
+
