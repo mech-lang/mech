@@ -219,10 +219,10 @@ test_interpreter!(interpret_reference_bool2, "x := false; x && true", Value::Boo
 
 test_interpreter!(interpret_variable_recall, "a := 1; b := 2; a", Value::MutableReference(Ref::new(Value::F64(Ref::new(F64::new(1.0))))));
 
-test_interpreter!(interpret_matrix_range_exclusive, "1..4", Value::MatrixF64(Matrix::RowDVector(Ref::new(RowDVector::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0)])))));
-test_interpreter!(interpret_matrix_range_exclusive_u8, "1<u8>..4<u8>", Value::MatrixU8(Matrix::RowDVector(Ref::new(RowDVector::from_vec(vec![1,2,3])))));
-test_interpreter!(interpret_matrix_range_inclusive, "1..=4", Value::MatrixF64(Matrix::RowDVector(Ref::new(RowDVector::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0),F64::new(4.0)])))));
-test_interpreter!(interpret_matrix_range_inclusive_u8, "1<u8>..=4<u8>", Value::MatrixU8(Matrix::RowDVector(Ref::new(RowDVector::from_vec(vec![1,2,3,4])))));
+test_interpreter!(interpret_matrix_range_exclusive, "1..4", Value::MatrixF64(Matrix::RowVector3(Ref::new(RowVector3::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0)])))));
+test_interpreter!(interpret_matrix_range_exclusive_u8, "1<u8>..4<u8>", Value::MatrixU8(Matrix::RowVector3(Ref::new(RowVector3::from_vec(vec![1,2,3])))));
+test_interpreter!(interpret_matrix_range_inclusive, "1..=4", Value::MatrixF64(Matrix::RowVector4(Ref::new(RowVector4::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0),F64::new(4.0)])))));
+test_interpreter!(interpret_matrix_range_inclusive_u8, "1<u8>..=4<u8>", Value::MatrixU8(Matrix::RowVector4(Ref::new(RowVector4::from_vec(vec![1,2,3,4])))));
 
 test_interpreter!(interpret_matrix_empty, "[]", Value::MatrixValue(Matrix::DMatrix(Ref::new(DMatrix::from_vec(0,0,vec![])))));
 test_interpreter!(interpret_matrix_row3, "[1 2 3]", Ref::new(RowVector3::from_vec(vec![F64::new(1.0), F64::new(2.0), F64::new(3.0)])).to_value());
@@ -553,7 +553,7 @@ test_interpreter!(interpret_stats_sum_rowm2, "x := [1 2; 4 5]; y := stats/sum/ro
 
 test_interpreter!(interpret_add_assign, "~x := 10; x += 20", Ref::new(F64::new(30.0)).to_value());
 test_interpreter!(interpret_add_assign_formula, "ix := [1 1 2 3]; y := 5; x := [1 2 3 4]; x[ix] += y;", Ref::new(RowVector4::from_vec(vec![F64::new(11.0),F64::new(7.0),F64::new(8.0),F64::new(4.0)])).to_value());
-test_interpreter!(interpret_add_assign_formula_all_m2m2,"~x := [1 2; 3 4]; y := [1 1];z := [10 10; 20 20]; x[y,:] += z;", Ref::new(Matrix2::from_vec(vec![F64::new(31.0),F64::new(3.0),F64::new(32.0),F64::new(4.0)])).to_value());
+test_interpreter!(interpret_add_assign_formula_all_m2m2,"~x := [1 2; 3 4]; y := [1 1 1 1];z := [10 10; 20 20]; x[y,:] += z;", Ref::new(Matrix2::from_vec(vec![F64::new(61.0),F64::new(3.0),F64::new(62.0),F64::new(4.0)])).to_value());
 test_interpreter!(interpret_sub_assign_formula, "ix := [1 1 2 3]; y := 5; x := [1 2 3 4]; x[ix] -= y;", Ref::new(RowVector4::from_vec(vec![F64::new(-9.0),F64::new(-3.0),F64::new(-2.0),F64::new(4.0)])).to_value());
 test_interpreter!(interpret_mul_assign_formula, "ix := [1 1 2 3]; y := 5; x := [1 2 3 4]; x[ix] *= y;", Ref::new(RowVector4::from_vec(vec![F64::new(25.0),F64::new(10.0),F64::new(15.0),F64::new(4.0)])).to_value());
 test_interpreter!(interpret_add_assign_range, "~x := [1 2; 3 4]; x[1..3] += 1", Ref::new(Matrix2::from_vec(vec![F64::new(2.0),F64::new(4.0),F64::new(2.0),F64::new(4.0)])).to_value());
@@ -637,7 +637,7 @@ test_interpreter!(interpret_table_from_matrix4,r#"x:=[1 2; 3 4]; a<|x<u8> y<i8>|
 test_interpreter!(interpret_matrix_reshape,r#"x:=[1 3; 2 4]; y<[u64]:4,1> := x"#, Value::MatrixU64(Matrix::Vector4(Ref::new(Vector4::from_vec(vec![1_u64, 2_u64, 3_u64, 4_u64])))))  ;
 
 test_interpreter!(interpret_matrix_reshape2,r#"x:=[1 2 3 4]; y<[string]:2,2> := x"#, Value::MatrixString(Matrix::Matrix2(Ref::new(Matrix2::from_vec(vec![String::from("1"), String::from("2"), String::from("3"), String::from("4")])))));
-test_interpreter!(interpret_matrix_convert_str,r#"x:=1..=4; out<[string]>:=x"#, Value::MatrixString(Matrix::RowDVector(Ref::new(RowDVector::from_vec(vec![String::from("1"), String::from("2"), String::from("3"), String::from("4")])))));
+test_interpreter!(interpret_matrix_convert_str,r#"x:=1..=4; out<[string]>:=x"#, Value::MatrixString(Matrix::RowVector4(Ref::new(RowVector4::from_vec(vec![String::from("1"), String::from("2"), String::from("3"), String::from("4")])))));
 
 test_interpreter!(interpret_matrix_build_rational,r#"x<[r64]:1,2> := 1/2"#, Value::MatrixR64(Matrix::RowVector2(Ref::new(RowVector2::from_vec(vec![R64::new(1, 2), R64::new(1, 2)])))));
 
