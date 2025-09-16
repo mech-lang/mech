@@ -25,6 +25,11 @@ default = ["stdlib", "pretty_print", "serde", "compiler", "program",
       "formatter", "mechfs", "serve", "run", "repl", "build",
       "mech-core/default", "mech-interpreter/default", "mech-syntax/default",
       ]
+base = ["baselib", "pretty_print", "serde", "compiler", "program",
+      "statements_default", "subscript_default",
+      "formatter", "mechfs", "serve", "run", "repl", "build",
+      "mech-core/base", "mech-interpreter/base", "mech-syntax/base",
+      ]
 build = ["compiler"]
 repl = []
 run = ["mechfs"]
@@ -49,6 +54,18 @@ stdlib = ["bool", "string",
       "variable_define", "variable_assign", "kind_define",
       "kind_annotation", "variables",
       "functions", "formulas"
+    ]
+
+baselib = ["bool", "string", 
+      "f64", "c64", 
+      "set", "map", "table", "tuple", "record", "atom", "enum",
+      "row_vectord", "vectord", "matrixd",
+      "subscript_range", "logical_indexing", 
+      "subscript_formula",
+      "variable_define", "variable_assign", 
+      "kind_define",
+      "kind_annotation", "variables",
+      "functions", "formulas",
     ]
 
 compiler = ["mech-core/compiler", "mech-interpreter/compiler", "mech-syntax/compiler"]

@@ -31,6 +31,11 @@ default = ["stdlib", "pretty_print", "serde", "compiler", "program",
   "mech-core/default",
   "mech-math/default", "mech-compare/default", "mech-combinatorics/default", "mech-logic/default", "mech-matrix/default", "mech-io/default", "mech-stats/default", "mech-range/default",
   ]
+base = ["baselib", "pretty_print", "serde", "compiler", "program",
+      "statements_default", "subscript_default",
+      "mech-core/base", "mech-math/base", "mech-compare/base", "mech-combinatorics/base", "mech-logic/base", "mech-matrix/base", "mech-io/base", "mech-stats/base", "mech-range/base",
+      ]    
+  
 statements_default = ["variable_assign","variable_define","kind_define",
     "mech-core/statements_default", "mech-math/statements_default", "mech-compare/statements_default", "mech-combinatorics/statements_default", "mech-logic/statements_default", "mech-matrix/statements_default", "mech-io/statements_default", "mech-stats/statements_default", "mech-range/statements_default"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing",
@@ -52,6 +57,20 @@ stdlib = ["bool", "string",
   "functions", "formulas",
   "access", "assign", "convert",
   "mech-core/stdlib", "mech-math/stdlib", "mech-compare/stdlib", "mech-combinatorics/stdlib", "mech-logic/stdlib", "mech-matrix/stdlib", "mech-io/stdlib", "mech-stats/stdlib", "mech-range/stdlib",
+    ]
+
+baselib = ["bool", "string", 
+      "f64", "c64", 
+      "set", "map", "table", "tuple", "record", "atom", "enum",
+      "row_vectord", "vectord", "matrixd",
+      "subscript_range", "logical_indexing", 
+      "subscript_formula",
+      "variable_define", "variable_assign", 
+      "kind_define",
+      "kind_annotation", "variables",
+      "access", "assign", "convert",
+      "functions", "formulas",
+      "mech-core/baselib", "mech-math/baselib", "mech-compare/baselib", "mech-combinatorics/baselib", "mech-logic/baselib", "mech-matrix/baselib", "mech-io/baselib", "mech-stats/baselib", "mech-range/baselib",
     ]
 
 compiler = ["mech-core/compiler", "mech-math/compiler", "mech-compare/compiler", "mech-combinatorics/compiler", "mech-logic/compiler", "mech-matrix/compiler", "mech-io/compiler", "mech-stats/compiler", "mech-range/compiler"]

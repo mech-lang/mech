@@ -23,6 +23,10 @@ no_std = ["rlibc", "hashbrown", "embedded-io", "fxhash"]
 default = ["stdlib", "pretty_print", "serde", "compiler", "program",
             "statements_default", "subscript_default",
           ]
+base = ["baselib", "pretty_print", "serde", "compiler", "program",
+      "statements_default", "subscript_default",
+      ]   
+
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
 
@@ -41,6 +45,18 @@ stdlib = ["bool", "string",
           "kind_annotation", "variables",
           "functions", "formulas"
         ]
+
+baselib = ["bool", "string", 
+      "f64", "c64", 
+      "set", "map", "table", "tuple", "record", "atom", "enum",
+      "row_vectord", "vectord", "matrixd",
+      "subscript_range", "logical_indexing", 
+      "subscript_formula",
+      "variable_define", "variable_assign", 
+      "kind_define",
+      "kind_annotation", "variables",
+      "functions", "formulas"
+    ]
 
 compiler = ["crc32fast", "byteorder"]
 program = ["crc32fast", "byteorder"]
