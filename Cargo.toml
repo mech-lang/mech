@@ -27,6 +27,25 @@ default = ["stdlib", "pretty_print", "serde", "compiler", "program",
             "mech-core/default",
           ]
 
+base = ["baselib", "pretty_print", "serde", "compiler", "program",
+      "ops_default", "ops_assign_default", "trig_default",
+      "statements_default", "subscript_default",
+      "mech-core/base",
+      ]   
+
+baselib = ["bool", "string", 
+      "f64", "c64", 
+      "set", "map", "table", "tuple", "record", "atom", "enum",
+      "row_vectord", "vectord", "matrixd",
+      "subscript_range", "logical_indexing", 
+      "subscript_formula",
+      "variable_define", "variable_assign", 
+      "kind_define",
+      "kind_annotation", "variables",
+      "functions", "formulas",
+      "mech-core/baselib",
+    ]
+
 ops_default = ["add", "sub", "mul", "div", "exp", "mod"]
 ops_assign_default = ["add_assign", "sub_assign", "mul_assign", "div_assign"]
 trig_default = ["acos", "acosh", "acot", "acsc", "asec", "asin", "asinh", "atan", "atan2", "atanh", "cos", "cosh", "cot", "csc", "sec", "sin", "sinh", "tan", "tanh"]
