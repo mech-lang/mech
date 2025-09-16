@@ -27,6 +27,25 @@ default = ["stdlib", "pretty_print", "serde", "compiler", "program",
             "mech-core/default",
           ]
 
+base = ["baselib", "pretty_print", "serde", "compiler", "program",
+      "stats_default",
+      "statements_default", "subscript_default",
+      "mech-core/base",
+      ]   
+
+baselib = ["bool", "string", 
+      "f64", "c64", 
+      "set", "map", "table", "tuple", "record", "atom", "enum",
+      "row_vectord", "vectord", "matrixd",
+      "subscript_range", "logical_indexing", 
+      "subscript_formula",
+      "variable_define", "variable_assign", 
+      "kind_define",
+      "kind_annotation", "variables",
+      "functions", "formulas",
+      "mech-core/baselib",
+    ]
+
 stats_default = ["sum"]
 stats = ["functions"]
 sum = ["num-traits", "stats"]
