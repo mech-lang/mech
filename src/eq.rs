@@ -93,6 +93,7 @@ impl_compare_fxns!(EQ);
 fn impl_eq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_binop_match_arms!(
     EQ,
+    register_fxn_descriptor_inner,
     (lhs_value, rhs_value),
     Bool, bool, "bool";
     I8,   bool, "i8";

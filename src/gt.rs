@@ -94,6 +94,7 @@ impl_compare_fxns!(GT);
 fn impl_gt_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_binop_match_arms!(
     GT,
+    register_fxn_descriptor_inner,
     (lhs_value, rhs_value),
     I8,   bool, "i8";
     I16,  bool, "i16";
