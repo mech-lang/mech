@@ -93,6 +93,7 @@ impl_logic_fxns!(Or);
 fn impl_or_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_binop_match_arms!(
     Or,
+    register_fxn_descriptor_inner_logic,
     (lhs_value, rhs_value),
     Bool, bool, "bool";
   )

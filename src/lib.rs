@@ -90,30 +90,25 @@ macro_rules! impl_logic_binop {
         }
       }
     }
-    impl MechFunctionImpl for $struct_name {
-      fn solve(&self) {
-        let lhs_ptr = self.lhs.as_ptr();
-        let rhs_ptr = self.rhs.as_ptr();
-        let out_ptr = self.out.as_mut_ptr();
-        $op!(lhs_ptr,rhs_ptr,out_ptr);
-      }
-      fn out(&self) -> Value { self.out.to_value() }
-      fn to_string(&self) -> String { format!("{:#?}", self) }
-    }
-    #[cfg(feature = "compiler")]
-    impl MechFunctionCompiler for $struct_name
+    impl MechFunctionImpl for $struct_name
     {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        let name = format!("{}<bool>", stringify!($struct_name));
-        compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
-      }
+    fn solve(&self) {
+      let lhs_ptr = self.lhs.as_ptr();
+      let rhs_ptr = self.rhs.as_ptr();
+      let out_ptr = self.out.as_mut_ptr();
+      $op!(lhs_ptr,rhs_ptr,out_ptr);
     }
-    inventory::submit! {
-      FunctionDescriptor {
-        name: concat!(stringify!($struct_name), "<bool>"),
-        ptr: $struct_name::new,
-      }
+    fn out(&self) -> Value { self.out.to_value() }
+    fn to_string(&self) -> String { format!("{:#?}", self) }
+  }
+  #[cfg(feature = "compiler")]
+  impl MechFunctionCompiler for $struct_name
+  {
+    fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+      let name = format!("{}<bool>", stringify!($struct_name));
+      compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
     }
+  }
 };}
 
 #[macro_export]

@@ -59,7 +59,7 @@ where
     compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Not) );
   }
 }
-register_fxn_descriptor!(NotS, bool, "bool");
+//register_fxn_descriptor!(NotS, bool, "bool");
 
 // NotV -----------------------------------------------------------------------
 
