@@ -62,3 +62,17 @@ pub use self::inclusive::*;
 // ----------------------------------------------------------------------------
 // Range Library
 // ----------------------------------------------------------------------------
+
+#[macro_export]
+macro_rules! register_range {
+  ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt) => {
+    paste! {
+      inventory::submit! {
+        FunctionDescriptor {
+          name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), ">") ,
+          ptr: $fxn_name::<$scalar, $row1<$scalar>>::new,
+        }
+      }
+    }
+  };
+}
