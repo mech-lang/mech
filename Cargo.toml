@@ -26,6 +26,26 @@ default = ["stdlib", "pretty_print", "serde", "compiler", "program",
             "statements_default", "subscript_default",
             "mech-core/default",
           ]
+base = ["baselib", "pretty_print", "serde", "compiler", "program",
+      "combinatorics_default",
+      "statements_default", "subscript_default",
+      "mech-core/base",
+      ]   
+
+baselib = ["bool", "string", 
+      "f64", "c64", 
+      "set", "map", "table", "tuple", "record", "atom", "enum",
+      "row_vectord", "vectord", "matrixd",
+      "subscript_range", "logical_indexing", 
+      "subscript_formula",
+      "variable_define", "variable_assign", 
+      "kind_define",
+      "kind_annotation", "variables",
+      "access", "assign", "convert",
+      "functions", "formulas",
+      "mech-core/baselib", "mech-math/baselib", "mech-compare/baselib", "mech-combinatorics/baselib", "mech-logic/baselib", "mech-matrix/baselib", "mech-io/baselib", "mech-stats/baselib", "mech-range/baselib",
+    ]
+
 combinatorics_default = ["n_choose_k"]
 combinatorics = ["functions"]
 n_choose_k = ["itertools", "num-traits", "combinatorics"]
