@@ -109,6 +109,31 @@ macro_rules! impl_expop {
     rhs: Ref<$arg2_type>,
     out: Ref<$out_type>,
   }
+  impl<T> MechFunctionFactory for $struct_name<T>
+  where
+    T: Copy + Debug + Clone + Sync + Send + 'static + 
+    PartialEq + PartialOrd +
+    Add<Output = T> + AddAssign +
+    Sub<Output = T> + SubAssign +
+    Mul<Output = T> + MulAssign +
+    Div<Output = T> + DivAssign +
+    Pow<T, Output = T> +
+    CompileConst + ConstElem + AsValueKind +
+    Zero + One,
+    Ref<$out_type>: ToValue
+  {
+    fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+      match args {
+        FunctionArgs::Binary(out, arg1, arg2) => {
+          let lhs: Ref<$arg1_type> = unsafe { arg1.as_unchecked() }.clone();
+          let rhs: Ref<$arg2_type> = unsafe { arg2.as_unchecked() }.clone();
+          let out: Ref<$out_type> = unsafe { out.as_unchecked() }.clone();
+          Ok(Box::new(Self {lhs, rhs, out }))
+        },
+        _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+      }
+    }
+  }
   impl<T> MechFunctionImpl for $struct_name<T>
   where
     T: Copy + Debug + Clone + Sync + Send + 'static + 
@@ -156,7 +181,20 @@ pub struct ExpRational {
   pub rhs: Ref<i32>,
   pub out: Ref<R64>,
 }
-
+#[cfg(all(feature = "rational", feature = "i32"))]
+impl MechFunctionFactory for ExpRational {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Binary(out, arg1, arg2) => {
+        let lhs: Ref<R64> = unsafe { arg1.as_unchecked() }.clone();
+        let rhs: Ref<i32> = unsafe { arg2.as_unchecked() }.clone();
+        let out: Ref<R64> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self {lhs, rhs, out }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("ExpRational requires 2 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
 #[cfg(all(feature = "rational", feature = "i32"))]
 impl MechFunctionImpl for ExpRational {
   fn solve(&self) {
@@ -170,7 +208,7 @@ impl MechFunctionImpl for ExpRational {
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
-#[cfg(feature = "compiler")]
+#[cfg(all(feature = "rational", feature = "i32", feature = "compiler"))]
 impl MechFunctionCompiler for ExpRational 
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
