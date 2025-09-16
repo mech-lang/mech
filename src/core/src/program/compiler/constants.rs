@@ -44,7 +44,7 @@ impl CompileConst for Value {
       #[cfg(feature = "f64")]
       Value::F64(x) => x.borrow().compile_const(ctx)?,
       #[cfg(feature = "atom")]
-      Value::Atom(x) => x.compile_const(ctx)?,
+      Value::Atom(x) => x.borrow().compile_const(ctx)?,
       #[cfg(feature = "index")]
       Value::Index(x) => x.borrow().compile_const(ctx)?,
       #[cfg(feature = "complex")]
@@ -429,6 +429,15 @@ impl CompileConst for MechEnum {
       }
     }
     ctx.compile_const(&payload, ValueKind::Enum(self.id))
+  }
+}
+
+#[cfg(feature = "atom")]
+impl CompileConst for MechAtom {
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    let mut payload = Vec::<u8>::new();
+    payload.write_u64::<LittleEndian>(self.0)?;
+    ctx.compile_const(&payload, ValueKind::Atom(self.0))
   }
 }
 

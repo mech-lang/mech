@@ -34,12 +34,14 @@ use num_traits::{Zero, One};
 use libm::{pow,powf};
 
 
-#[cfg(feature = "rational")]
-pub mod complex_numbers;
 #[cfg(feature = "complex")]
+pub mod complex_numbers;
+#[cfg(feature = "rational")]
 pub mod rational_numbers;
 #[cfg(feature = "floats")]
 pub mod floats;
+#[cfg(feature = "atom")]
+pub mod atom;
 
 #[cfg(feature = "complex")]
 pub use self::complex_numbers::*;
@@ -47,6 +49,8 @@ pub use self::complex_numbers::*;
 pub use self::rational_numbers::*;
 #[cfg(feature = "floats")]
 pub use self::floats::*;
+#[cfg(feature = "atom")]
+pub use self::atom::*;
 
 // Ref
 // ----------------------------------------------------------------------------

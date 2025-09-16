@@ -547,7 +547,7 @@ pub enum Value {
   #[cfg(feature = "bool")]
   Bool(Ref<bool>),
   #[cfg(feature = "atom")]
-  Atom(u64),
+  Atom(Ref<MechAtom>),
   #[cfg(feature = "matrix")]
   MatrixIndex(Matrix<usize>),
   #[cfg(all(feature = "matrix", feature = "bool"))]
@@ -654,7 +654,7 @@ impl Hash for Value {
       #[cfg(feature = "bool")]
       Value::Bool(x) => x.borrow().hash(state),
       #[cfg(feature = "atom")]
-      Value::Atom(x) => x.hash(state),
+      Value::Atom(x) => x.borrow().hash(state),
       #[cfg(feature = "set")]
       Value::Set(x)  => x.borrow().hash(state),
       #[cfg(feature = "map")]
@@ -916,7 +916,7 @@ impl Value {
       #[cfg(feature = "enum")]
       Value::Enum(v) => v.addr(),
       #[cfg(feature = "atom")]
-      Value::Atom(v) => v as *const u64 as usize,
+      Value::Atom(v) => v.addr(),
       #[cfg(feature = "matrix")]
       Value::MatrixIndex(v) => v.addr(),
       Value::Index(v) => v.addr(),
@@ -1390,7 +1390,7 @@ impl Value {
       #[cfg(all(feature = "matrix", feature = "complex"))]
       Value::MatrixC64(m) => m.to_html(),
       #[cfg(feature = "atom")]
-      Value::Atom(a) => format!("<span class=\"mech-atom\"><span class=\"mech-atom-grave\">`</span><span class=\"mech-atom-name\">{}</span></span>",a),
+      Value::Atom(a) => format!("<span class=\"mech-atom\"><span class=\"mech-atom-grave\">`</span><span class=\"mech-atom-name\">{}</span></span>",a.borrow()),
       #[cfg(feature = "set")]
       Value::Set(s) => s.borrow().to_html(),
       #[cfg(feature = "map")]
@@ -1546,7 +1546,7 @@ impl Value {
       #[cfg(feature = "bool")]
       Value::Bool(_) => ValueKind::Bool,
       #[cfg(feature = "atom")]
-      Value::Atom(x) => ValueKind::Atom(*x),
+      Value::Atom(x) => ValueKind::Atom((x.borrow().0)),
       #[cfg(feature = "matrix")]
       Value::MatrixValue(x) => ValueKind::Matrix(Box::new(ValueKind::Any),x.shape()),
       #[cfg(feature = "matrix")]
@@ -2090,7 +2090,7 @@ impl PrettyPrint for Value {
       #[cfg(feature = "rational")]
       Value::R64(x) => {builder.push_record(vec![format!("{}",x.borrow().pretty_print())]);},
       #[cfg(feature = "atom")]
-      Value::Atom(x) => {builder.push_record(vec![format!("{}",x)]);},
+      Value::Atom(x) => {builder.push_record(vec![format!("{}",x.borrow())]);},
       #[cfg(feature = "set")]
       Value::Set(x)  => {return x.borrow().pretty_print();}
       #[cfg(feature = "map")]

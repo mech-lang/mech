@@ -288,7 +288,7 @@ impl ParsedProgram {
           let denom = i64::from_le_bytes(data[8..16].try_into().unwrap());
           Value::R64(Ref::new(R64::new(numer, denom)))
         },
-        #[cfg(feature = "matrix")]
+        #[cfg(all(feature = "matrix", feature = "u8"))]
         TypeTag::MatrixU8 => {
           if data.len() < 8 {
             return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
@@ -304,7 +304,7 @@ impl ParsedProgram {
           }
           Value::MatrixU8(Matrix::from_vec(elements, rows, cols))
         }
-        #[cfg(feature = "matrix")]
+        #[cfg(all(feature = "matrix", feature = "i8"))]
         TypeTag::MatrixI8 => {
           if data.len() < 8 {
             return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
@@ -320,7 +320,7 @@ impl ParsedProgram {
           }
           Value::MatrixI8(Matrix::from_vec(elements, rows, cols))
         }
-        #[cfg(feature = "matrix")]
+        #[cfg(all(feature = "matrix", feature = "f32"))]
         TypeTag::MatrixF32 => {
           if data.len() < 8 {
             return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
@@ -337,7 +337,7 @@ impl ParsedProgram {
           }
           Value::MatrixF32(Matrix::from_vec(elements, rows, cols))
         }
-        #[cfg(feature = "matrix")]
+        #[cfg(all(feature = "matrix", feature = "f64"))]
         TypeTag::MatrixF64 => {
           // first 8 bytes are rows (u32) and cols (u32)
           if data.len() < 8 {
@@ -354,16 +354,27 @@ impl ParsedProgram {
           }
           Value::MatrixF64(Matrix::from_vec(elements, rows, cols))
         }
+        #[cfg(all(feature = "matrix", feature = "u16"))]
         TypeTag::MatrixU16 => {extract_matrix!(MatrixU16, u16, 2, data)},
+        #[cfg(all(feature = "matrix", feature = "u32"))]
         TypeTag::MatrixU32 => {extract_matrix!(MatrixU32, u32, 4, data)},
+        #[cfg(all(feature = "matrix", feature = "u64"))]
         TypeTag::MatrixU64 => {extract_matrix!(MatrixU64, u64, 8, data)},
+        #[cfg(all(feature = "matrix", feature = "u128"))]
         TypeTag::MatrixU128 => {extract_matrix!(MatrixU128, u128, 16, data)},
+        #[cfg(all(feature = "matrix", feature = "i16"))]
         TypeTag::MatrixI16 => {extract_matrix!(MatrixI16, i16, 2, data)},
+        #[cfg(all(feature = "matrix", feature = "i32"))]
         TypeTag::MatrixI32 => {extract_matrix!(MatrixI32, i32, 4, data)},
+        #[cfg(all(feature = "matrix", feature = "i64"))]
         TypeTag::MatrixI64 => {extract_matrix!(MatrixI64, i64, 8, data)},
+        #[cfg(all(feature = "matrix", feature = "i128"))]
         TypeTag::MatrixI128 => {extract_matrix!(MatrixI128, i128, 16, data)},
+        #[cfg(all(feature = "matrix", feature = "c64"))]
         TypeTag::MatrixC64 => {extract_matrix!(MatrixC64, C64, 16, data)},
+        #[cfg(all(feature = "matrix", feature = "r64"))]
         TypeTag::MatrixR64 => {extract_matrix!(MatrixR64, R64, 16, data)},
+        #[cfg(feature = "matrix")]
         TypeTag::MatrixIndex => {extract_matrix!(MatrixIndex, usize, 8, data)},
         // Add more types as needed
         _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Unsupported constant type {:?}", ty.tag), id: line!(), kind: MechErrorKind::GenericError(format!("Unsupported constant type {:?}", ty.tag))}),
