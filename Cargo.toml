@@ -41,9 +41,8 @@ baselib = ["bool", "string",
       "variable_define", "variable_assign", 
       "kind_define",
       "kind_annotation", "variables",
-      "access", "assign", "convert",
       "functions", "formulas",
-      "mech-core/baselib", "mech-math/baselib", "mech-compare/baselib", "mech-combinatorics/baselib", "mech-logic/baselib", "mech-matrix/baselib", "mech-io/baselib", "mech-stats/baselib", "mech-range/baselib",
+      "mech-core/baselib",
     ]
 
 combinatorics_default = ["n_choose_k"]
