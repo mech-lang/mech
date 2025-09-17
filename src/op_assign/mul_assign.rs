@@ -51,9 +51,10 @@ macro_rules! impl_mul_assign_range_fxn_v {
 
 impl_assign_scalar_scalar!(Mul, *=);
 impl_assign_vector_vector!(Mul, *=);
+impl_assign_vector_scalar!(Mul, *=);
 
 fn mul_assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  impl_assign_value_match_arms!(
+  impl_op_assign_value_match_arms!(
     Mul,
     (sink, source),
     U8,  "u8";

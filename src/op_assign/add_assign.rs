@@ -7,8 +7,6 @@ use mech_core::matrix::Matrix;
 
 // Add Assign -----------------------------------------------------------------
 
-// We will mostly use the assign macros for this
-
 #[macro_export]
 macro_rules! impl_add_assign_match_arms {
   ($fxn_name:ident,$macro_name:ident, $arg:expr) => {
@@ -53,9 +51,10 @@ macro_rules! impl_add_assign_range_fxn_v {
 
 impl_assign_scalar_scalar!(Add, +=);
 impl_assign_vector_vector!(Add, +=);
+impl_assign_vector_scalar!(Add, +=);
 
 pub fn add_assign_math_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
-  impl_assign_value_match_arms!(
+  impl_op_assign_value_match_arms!(
     Add,
     (sink, source),
     U8,  "u8";

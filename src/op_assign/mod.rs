@@ -384,6 +384,73 @@ macro_rules! impl_assign_vector_vector {
 }
 
 #[macro_export]
+macro_rules! impl_assign_vector_scalar {
+  ($op_name:tt, $op_fn:tt) => {
+    paste::paste! {
+      #[derive(Debug)]
+      pub struct [<$op_name AssignVS>]<T, MatA> {
+        pub sink: Ref<MatA>,
+        pub source: Ref<T>,
+        _marker: PhantomData<T>,
+      }
+      impl<T, MatA> MechFunctionFactory for [<$op_name AssignVS>]<T, MatA>
+      where
+        Ref<MatA>: ToValue,
+        T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>] +
+        CompileConst + ConstElem + AsValueKind,
+        for<'a> &'a MatA: IntoIterator<Item = &'a T>,
+        for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
+        MatA: Debug + CompileConst + ConstElem + AsValueKind + 'static,
+      {
+        fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+          match args {
+            FunctionArgs::Binary(out, arg1, arg2) => {
+              let source: Ref<T> = unsafe { arg2.as_unchecked() }.clone();
+              let sink: Ref<MatA> = unsafe { out.as_unchecked() }.clone();
+              Ok(Box::new(Self { sink, source, _marker: PhantomData::default() }))
+            },
+            _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+          }    
+        }    
+      }
+      impl<T, MatA> MechFunctionImpl for [<$op_name AssignVS>]<T, MatA>
+      where
+        Ref<MatA>: ToValue,
+        T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>],
+        for<'a> &'a MatA: IntoIterator<Item = &'a T>,
+        for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
+        MatA: Debug,
+      {
+        fn solve(&self) {
+          unsafe {
+            let sink_ptr = self.sink.as_mut_ptr();
+            let source_ptr = self.source.as_ptr();
+            let sink_ref: &mut MatA = &mut *sink_ptr;
+            let source_ref: &T = &*source_ptr;
+            for dst in (&mut *sink_ref).into_iter() {
+              *dst $op_fn source_ref.clone();
+            }
+          }
+        }
+        fn out(&self) -> Value {self.sink.to_value()}
+        fn to_string(&self) -> String {format!("{:#?}", self)}
+      }
+      #[cfg(feature = "compiler")]
+      impl<T, MatA> MechFunctionCompiler for [<$op_name AssignVS>]<T, MatA> 
+      where
+        T: CompileConst + ConstElem + AsValueKind,
+        MatA: CompileConst + ConstElem + AsValueKind,
+      {
+        fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+          let name = format!("{}AssignVS<{}>", stringify!($op_name), MatA::as_value_kind());
+          compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::OpAssign) );
+        }
+      }
+    }
+  }
+}
+
+#[macro_export]
 macro_rules! register_op_assign_vv {
   ($op:ident, $type:ty, $size:ty, $size_string:tt) => {
     paste!{
@@ -463,5 +530,50 @@ macro_rules! impl_register_op_assign_vv_all {
     register_op_assign_vv_all!($macro_name, R64, "r64");
     #[cfg(feature = "c64")]
     register_op_assign_vv_all!($macro_name, C64, "c64");
+  };
+}
+
+#[macro_export]
+macro_rules! impl_op_assign_value_match_arms {
+  ($op:tt, $arg:expr,$($value_kind:ident, $feature:tt);+ $(;)?) => {
+    paste::paste! {
+      match $arg {
+        $(
+          #[cfg(feature = $feature)]
+          (Value::$value_kind(sink), Value::$value_kind(source)) => Ok(Box::new([<$op AssignSS>]{ sink: sink.clone(), source: source.clone() })),
+          #[cfg(all(feature = $feature, feature = "matrix1"))]
+          (Value::[<Matrix $value_kind>](Matrix::Matrix1(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          #[cfg(all(feature = $feature, feature = "matrix2"))]
+          (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          #[cfg(all(feature = $feature, feature = "matrix2x3"))]
+          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          #[cfg(all(feature = $feature, feature = "matrix3x2"))]
+          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          #[cfg(all(feature = $feature, feature = "matrix3"))]
+          (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          #[cfg(all(feature = $feature, feature = "matrix4"))]
+          (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          #[cfg(all(feature = $feature, feature = "matrixd"))]
+          (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          #[cfg(all(feature = $feature, feature = "vector2"))]
+          (Value::[<Matrix $value_kind>](Matrix::Vector2(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          #[cfg(all(feature = $feature, feature = "vector3"))]
+          (Value::[<Matrix $value_kind>](Matrix::Vector3(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          #[cfg(all(feature = $feature, feature = "vector4"))]
+          (Value::[<Matrix $value_kind>](Matrix::Vector4(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          #[cfg(all(feature = $feature, feature = "vectord"))]
+          (Value::[<Matrix $value_kind>](Matrix::DVector(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})),
+          #[cfg(all(feature = $feature, feature = "row_vector2"))]
+          (Value::[<Matrix $value_kind>](Matrix::RowVector2(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})), 
+          #[cfg(all(feature = $feature, feature = "row_vector3"))]
+          (Value::[<Matrix $value_kind>](Matrix::RowVector3(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})), 
+          #[cfg(all(feature = $feature, feature = "row_vector4"))]
+          (Value::[<Matrix $value_kind>](Matrix::RowVector4(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})), 
+          #[cfg(all(feature = $feature, feature = "row_vectord"))]
+          (Value::[<Matrix $value_kind>](Matrix::RowDVector(sink)), Value::$value_kind(source)) => Ok(Box::new([<$op AssignVS>]{sink: sink.clone(), source: source.clone(), _marker: PhantomData::default()})), 
+        )+
+        x => Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Unhandled args {:?}", x),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,}),
+      }
+    }
   };
 }
