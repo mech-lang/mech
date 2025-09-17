@@ -1,4 +1,6 @@
 use crate::*;
+#[cfg(feature = "convert")]
+use crate::stdlib::convert::ConvertKind;
 
 // Literals
 // ----------------------------------------------------------------------------
@@ -125,7 +127,7 @@ pub fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, p: &Interpreter)
 #[cfg(feature = "atom")]
 pub fn atom(atm: &Atom) -> Value {
   let id = atm.name.hash();
-  Value::Atom(id)
+  Value::Atom(Ref::new(MechAtom(id)))
 }
 
 pub fn number(num: &Number) -> Value {

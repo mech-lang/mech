@@ -302,7 +302,7 @@ impl NativeFunctionCompiler for ConvertKind {
         match source_value {
           Value::MutableReference(rhs) => impl_conversion_fxn(rhs.borrow().clone(), target_kind.clone()),
           #[cfg(feature = "atom")]
-          Value::Atom(atom_id) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::Atom(ref atom_id) => impl_conversion_fxn(source_value, target_kind.clone()),
           #[cfg(all(feature = "matrix", feature = "u8"))]
           Value::MatrixU8(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
           #[cfg(all(feature = "matrix", feature = "u16"))]
