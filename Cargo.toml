@@ -26,7 +26,7 @@ default = ["stdlib", "pretty_print", "serde", "compiler", "program",
             "gamma_default", "logarithm_default", "ops_default", "ops_assign_default",
             "root_default", "rounding_default", "stat_error_default", "trig_default",
             "statements_default", "subscript_default",
-            "mech-core/default", "exp_default",
+            "mech-core/default",
           ]
 
 arithmetic_default = ["copysign", "fabs", "fdim", "fmod", "nextafter", "remainder"]
@@ -74,7 +74,6 @@ y0 = ["bessel"]
 y1 = ["bessel"]
 yn = ["bessel"]
 
-exponential = ["exponential"]
 exp2 = ["exponential"]
 exp10 = ["exponential"]
 expm1 = ["exponential"]
