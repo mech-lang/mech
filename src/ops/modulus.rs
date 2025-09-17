@@ -69,7 +69,8 @@ macro_rules! impl_binop2 {
       let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
       compile_binop!(name, self.out, self.lhs, self.rhs, ctx, $feature_flag);
     }
-  }};}
+  }};
+}
 
 macro_rules! mod_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
@@ -164,42 +165,10 @@ macro_rules! mod_row_mat_op {
     }
   };}  
 
-macro_rules! register_mod_fxns {
-  ($lib:ident, $($suffix:ident),* $(,)?) => {
-    paste::paste! {
-      $(
-        register_fxn_descriptor!([<$lib $suffix>],
-          i8, "i8",
-          i16, "i16",
-          i32, "i32",
-          i64, "i64",
-          i128, "i128",
-          u8, "u8",
-          u16, "u16",
-          u32, "u32",
-          u64, "u64",
-          u128, "u128",
-          F32, "f32",
-          F64, "f64"
-        );
-      )*
-    }
-  };
-}
 
 macro_rules! impl_math_fxns2 {
   ($lib:ident) => {
     impl_fxns!($lib,T,T,impl_binop2);
-    register_mod_fxns!($lib,
-      SS, SM1, SM2, SM3, SM4, SM2x3, SM3x2, SMD, SR2, SR3, SR4, SRD,
-      SV2, SV3, SV4, SVD, M1S, M2S, M3S, M4S, M2x3S, M3x2S, MDS,
-      R2S, R3S, R4S, RDS, V2S, V3S, V4S, VDS, M1M1, M2M2, M3M3, M4M4,
-      M2x3M2x3, M3x2M3x2, MDMD, M2V2, M3V3, M4V4, M2x3V2, M3x2V3, MDVD,
-      MDV2, MDV3, MDV4, V2M2, V3M3, V4M4, V2M2x3, V3M3x2, VDMD, V2MD,
-      V3MD, V4MD, M2R2, M3R3, M4R4, M2x3R3, M3x2R2, MDRD, MDR2, MDR3,
-      MDR4, R2M2, R3M3, R4M4, R3M2x3, R2M3x2, RDMD, R2MD, R3MD, R4MD,
-      R2R2, R3R3, R4R4, RDRD, V2V2, V3V3, V4V4, VDVD
-    );
   }}
 
 impl_math_fxns2!(Mod);
@@ -207,6 +176,7 @@ impl_math_fxns2!(Mod);
 fn impl_mod_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_binop_match_arms!(
     Mod,
+    register_fxn_descriptor_inner,
     (lhs_value, rhs_value),
     I8,   i8,   "i8";
     I16,  i16,  "i16";

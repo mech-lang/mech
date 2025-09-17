@@ -51,6 +51,7 @@ macro_rules! impl_mul_assign_range_fxn_v {
 
 impl_assign_scalar_scalar!(Mul, *=);
 impl_assign_vector_vector!(Mul, *=);
+impl_assign_vector_scalar!(Mul, *=);
 
 fn mul_assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_op_assign_value_match_arms!(
@@ -147,9 +148,7 @@ impl_mul_assign_range_fxn_v!(MulAssign1DRV, mul_assign_1d_range_vec,usize);
 #[cfg(feature = "matrix")]
 impl_mul_assign_range_fxn_v!(MulAssign1DRVB,mul_assign_1d_range_vec_b,bool);
 
-fn mul_assign_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
-  impl_mul_assign_match_arms!(MulAssign1DR, range, (sink, ixes.as_slice(), source))
-}
+op_assign_range_fxn!(mul_assign_range_fxn, MulAssign1DR);
 
 pub struct MulAssignRange {}
 impl NativeFunctionCompiler for MulAssignRange {
@@ -198,27 +197,37 @@ macro_rules! mul_assign_2d_vector_all_b {
 
 macro_rules! mul_assign_2d_vector_all_mat {
   ($source:expr, $ix:expr, $sink:expr) => {
-    for (i,rix) in (&$ix).iter().enumerate() {
-      let mut sink_row = ($sink).row_mut(rix - 1);
-      let src_row = ($source).row(i);
-      for (dst, src) in sink_row.iter_mut().zip(src_row.iter()) {
-        *dst *= *src;
-      }
-    }
-  };}
-
-macro_rules! mul_assign_2d_vector_all_mat_b {
-  ($source:expr, $ix:expr, $sink:expr) => {
-    for (i,rix) in (&$ix).iter().enumerate() {
-      if *rix == true {
-        let mut sink_row = ($sink).row_mut(i);
-        let src_row = ($source).row(i);
+    {
+      let nsrc = $source.nrows();
+      for (i, &rix) in $ix.iter().enumerate() {
+        let row_index = rix - 1;
+        let mut sink_row = $sink.row_mut(row_index);
+        let src_row = $source.row(i % nsrc); // wrap around!
         for (dst, src) in sink_row.iter_mut().zip(src_row.iter()) {
           *dst *= *src;
         }
       }
     }
-  };} 
+  };
+}
+
+macro_rules! mul_assign_2d_vector_all_mat_b {
+  ($source:expr, $ix:expr, $sink:expr) => {
+    {
+      let mut src_i = 0;
+      for (i, rix) in (&$ix).iter().enumerate() {
+        if *rix == true {
+          let mut sink_row = ($sink).row_mut(i);
+          let src_row = ($source).row(src_i);
+          for (dst, src) in sink_row.iter_mut().zip(src_row.iter()) {
+            *dst *= *src;
+          }
+          src_i += 1;
+        }
+      }
+    }
+  };
+}
 
 #[cfg(feature = "matrix")]
 impl_mul_assign_range_fxn_s!(MulAssign2DRAS, mul_assign_2d_vector_all,usize);
@@ -229,9 +238,7 @@ impl_mul_assign_range_fxn_v!(MulAssign2DRAV, mul_assign_2d_vector_all_mat,usize)
 #[cfg(feature = "matrix")]
 impl_mul_assign_range_fxn_v!(MulAssign2DRAVB,mul_assign_2d_vector_all_mat_b,bool);
 
-fn mul_assign_vec_all_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
-  impl_mul_assign_match_arms!(MulAssign2DRA, range_all, (sink, ixes.as_slice(), source))
-}
+op_assign_range_all_fxn!(mul_assign_range_all_fxn, MulAssign2DRA);
 
 pub struct MulAssignRangeAll {}
 impl NativeFunctionCompiler for MulAssignRangeAll {
@@ -242,13 +249,13 @@ impl NativeFunctionCompiler for MulAssignRangeAll {
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
     let ixes = arguments.clone().split_off(2);
-    match mul_assign_vec_all_fxn(sink.clone(),source.clone(),ixes.clone()) {
+    match mul_assign_range_all_fxn(sink.clone(),source.clone(),ixes.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
         match (sink,ixes,source) {
-          (Value::MutableReference(sink),ixes,Value::MutableReference(source)) => { mul_assign_vec_all_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
-          (sink,ixes,Value::MutableReference(source)) => { mul_assign_vec_all_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
-          (Value::MutableReference(sink),ixes,source) => { mul_assign_vec_all_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
+          (Value::MutableReference(sink),ixes,Value::MutableReference(source)) => { mul_assign_range_all_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
+          (sink,ixes,Value::MutableReference(source)) => { mul_assign_range_all_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
+          (Value::MutableReference(sink),ixes,source) => { mul_assign_range_all_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
           x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
