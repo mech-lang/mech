@@ -32,6 +32,8 @@ default = ["stdlib", "pretty_print", "serde", "compiler", "program",
   "mech-math/default", "mech-compare/default", "mech-combinatorics/default", "mech-logic/default", "mech-matrix/default", "mech-io/default", "mech-stats/default", "mech-range/default",
   ]
 base = ["baselib", "pretty_print", "serde", "compiler", "program",
+      "math_default", "compare_default", "combinatorics_default", "logic_default",
+      "matrix_default", "io_default", "range_default", "stats_default",
       "statements_default", "subscript_default",
       "mech-core/base", "mech-math/base", "mech-compare/base", "mech-combinatorics/base", "mech-logic/base", "mech-matrix/base", "mech-io/base", "mech-stats/base", "mech-range/base",
       ]    
