@@ -73,14 +73,14 @@ pub fn op_assign(op_assgn: &OpAssign, p: &Interpreter) -> MResult<Value> {
       // todo: this only works for the first subscript, it needs to work for multiple subscripts
       for s in sbscrpt {
         let fxn = match op_assgn.op {
-          //#[cfg(feature = "math_add_assign")]
-          //OpAssignOp::Add => add_assign(&s, &sink, &source, p)?,
-          //#[cfg(feature = "math_sub_assign")]
-          //OpAssignOp::Sub => sub_assign(&s, &sink, &source, p)?,
-          //#[cfg(feature = "math_div_assign")]
-          //OpAssignOp::Div => div_assign(&s, &sink, &source, p)?,
-          //#[cfg(feature = "math_mul_assign")]
-          //OpAssignOp::Mul => mul_assign(&s, &sink, &source, p)?,
+          #[cfg(feature = "math_add_assign")]
+          OpAssignOp::Add => add_assign(&s, &sink, &source, p)?,
+          #[cfg(feature = "math_sub_assign")]
+          OpAssignOp::Sub => sub_assign(&s, &sink, &source, p)?,
+          #[cfg(feature = "math_div_assign")]
+          OpAssignOp::Div => div_assign(&s, &sink, &source, p)?,
+          #[cfg(feature = "math_mul_assign")]
+          OpAssignOp::Mul => mul_assign(&s, &sink, &source, p)?,
           _ => todo!(),
         };
         return Ok(fxn);
@@ -89,14 +89,14 @@ pub fn op_assign(op_assgn: &OpAssign, p: &Interpreter) -> MResult<Value> {
     None => {
       let args = vec![sink,source];
       let fxn: Box<dyn MechFunction> = match op_assgn.op {
-        //#[cfg(feature = "math_add_assign")]
-        //OpAssignOp::Add => AddAssignValue{}.compile(&args)?,
-        //#[cfg(feature = "math_sub_assign")]
-        //OpAssignOp::Sub => SubAssignValue{}.compile(&args)?,
-        //#[cfg(feature = "math_div_assign")]
-        //OpAssignOp::Div => DivAssignValue{}.compile(&args)?,
-        //#[cfg(feature = "math_mul_assign")]
-        //OpAssignOp::Mul => MulAssignValue{}.compile(&args)?,
+        #[cfg(feature = "math_add_assign")]
+        OpAssignOp::Add => AddAssignValue{}.compile(&args)?,
+        #[cfg(feature = "math_sub_assign")]
+        OpAssignOp::Sub => SubAssignValue{}.compile(&args)?,
+        #[cfg(feature = "math_div_assign")]
+        OpAssignOp::Div => DivAssignValue{}.compile(&args)?,
+        #[cfg(feature = "math_mul_assign")]
+        OpAssignOp::Mul => MulAssignValue{}.compile(&args)?,
         _ => todo!(),
       };
       fxn.solve();
@@ -339,9 +339,9 @@ macro_rules! op_assign {
                 let shape = ixes.shape();
                 fxn_input.push(ixes);
                 match shape[..] {
-                  //[1,1] => plan.borrow_mut().push(MatrixSetScalar{}.compile(&fxn_input)?),
-                  //[1,n] => plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?),
-                  //[n,1] => plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?),
+                  [1,1] => plan.borrow_mut().push(MatrixSetScalar{}.compile(&fxn_input)?),
+                  [1,n] => plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?),
+                  [n,1] => plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?),
                   _ => todo!(),
                 }
               },
@@ -352,9 +352,9 @@ macro_rules! op_assign {
                 fxn_input.push(ix);
                 fxn_input.push(Value::IndexAll);
                 match shape[..] {
-                  //[1,1] => plan.borrow_mut().push(MatrixSetScalarAll{}.compile(&fxn_input)?),
-                  //[1,n] => plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?),
-                  //[n,1] => plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?),
+                  [1,1] => plan.borrow_mut().push(MatrixSetScalarAll{}.compile(&fxn_input)?),
+                  [1,n] => plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?),
+                  [n,1] => plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?),
                   _ => todo!(),
                 }
               },
@@ -362,14 +362,14 @@ macro_rules! op_assign {
                 fxn_input.push(source.clone());
                 let ixes = subscript_range(&subs[0], p)?;
                 fxn_input.push(ixes);
-                //plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?);
+                plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?);
               },
               [Subscript::Range(ix), Subscript::All] => {
                 fxn_input.push(source.clone());
                 let ixes = subscript_range(&subs[0], p)?;
                 fxn_input.push(ixes);
                 fxn_input.push(Value::IndexAll);
-                //plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?);
+                plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?);
               },
               x => todo!("{:?}", x),
             };
