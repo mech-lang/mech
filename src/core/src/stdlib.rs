@@ -1216,26 +1216,98 @@ macro_rules! register_assign_s {
 
 #[macro_export]
 macro_rules! impl_assign_fxn {
-  ($op:tt, $fxn_name:ident, $arg:expr, $value_kind:ident, $value_string:tt) => {
-    paste! {
-                     $op!($fxn_name, RowVector2, &$arg, $value_kind, $value_string)
-        .or_else(|_| $op!($fxn_name, RowVector3, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, RowVector4, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, Vector2, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, Vector3, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, Vector4, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, Matrix1, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, Matrix2, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, Matrix3, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, Matrix4, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, Matrix2x3, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, Matrix3x2, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, DMatrix, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, RowDVector, &$arg, $value_kind, $value_string))
-        .or_else(|_| $op!($fxn_name, DVector, &$arg, $value_kind, $value_string))
-        .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &$arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+  ($op:tt, $fxn_name:ident, $arg:expr, $value_kind:ident, $value_string:tt) => {{
+    let mut res: Result<_, MechError> = Err(MechError {
+      file: file!().to_string(),
+      tokens: vec![],
+      msg: String::new(),
+      id: line!(),
+      kind: MechErrorKind::UnhandledFunctionArgumentKind,
+    });
+
+    #[cfg(feature = "row_vector2")]
+    {
+      res = res.or_else(|_| $op!($fxn_name, RowVector2, &$arg, $value_kind, $value_string));
     }
-  }
+
+    #[cfg(feature = "row_vector3")]
+    {
+      res = res.or_else(|_| $op!($fxn_name, RowVector3, &$arg, $value_kind, $value_string));
+    }
+
+    #[cfg(feature = "row_vector4")]
+    {
+      res = res.or_else(|_| $op!($fxn_name, RowVector4, &$arg, $value_kind, $value_string));
+    }
+
+    #[cfg(feature = "vector2")]
+    {
+      res = res.or_else(|_| $op!($fxn_name, Vector2, &$arg, $value_kind, $value_string));
+    }
+
+    #[cfg(feature = "vector3")]
+    {
+      res = res.or_else(|_| $op!($fxn_name, Vector3, &$arg, $value_kind, $value_string));
+    }
+
+    #[cfg(feature = "vector4")]
+    {
+      res = res.or_else(|_| $op!($fxn_name, Vector4, &$arg, $value_kind, $value_string));
+    }
+
+    #[cfg(feature = "matrix1")]
+    {
+      res = res.or_else(|_| $op!($fxn_name, Matrix1, &$arg, $value_kind, $value_string));
+    }
+
+    #[cfg(feature = "matrix2")]
+    {
+      res = res.or_else(|_| $op!($fxn_name, Matrix2, &$arg, $value_kind, $value_string));
+    }
+
+    #[cfg(feature = "matrix3")]
+    {
+      res = res.or_else(|_| $op!($fxn_name, Matrix3, &$arg, $value_kind, $value_string));
+    }
+
+    #[cfg(feature = "matrix4")]
+    {
+      res = res.or_else(|_| $op!($fxn_name, Matrix4, &$arg, $value_kind, $value_string));
+    }
+
+    #[cfg(feature = "matrix2x3")]
+    {
+      res = res.or_else(|_| $op!($fxn_name, Matrix2x3, &$arg, $value_kind, $value_string));
+    }
+
+    #[cfg(feature = "matrix3x2")]
+    {
+      res = res.or_else(|_| $op!($fxn_name, Matrix3x2, &$arg, $value_kind, $value_string));
+    }
+
+    #[cfg(feature = "matrixd")]
+    {
+      res = res.or_else(|_| $op!($fxn_name, DMatrix, &$arg, $value_kind, $value_string));
+    }
+
+    #[cfg(feature = "row_vectord")]
+    {
+      res = res.or_else(|_| $op!($fxn_name, RowDVector, &$arg, $value_kind, $value_string));
+    }
+
+    #[cfg(feature = "vectord")]
+    {
+      res = res.or_else(|_| $op!($fxn_name, DVector, &$arg, $value_kind, $value_string));
+    }
+
+    res.map_err(|_| MechError {
+      file: file!().to_string(),
+      tokens: vec![],
+      msg: format!("Unsupported argument: {:?}", &$arg),
+      id: line!(),
+      kind: MechErrorKind::UnhandledFunctionArgumentKind,
+    })
+  }}
 }
 
 #[macro_export]
