@@ -38,12 +38,12 @@ use mech_core::F32;
 use mech_core::C64;
 #[cfg(feature = "rational")]
 use mech_core::R64;
-#[cfg(feature = "stdlib")]
-use crate::stdlib::{
-                    access::*,
-                    assign::*,
-                    convert::*,
-                  };
+#[cfg(feature = "access")]
+use crate::stdlib::access::*;
+#[cfg(feature = "assign")]
+use crate::stdlib::assign::*;
+#[cfg(feature = "convert")]
+use crate::stdlib::convert::*;
 #[cfg(feature = "functions")]
 use crate::functions::*;
 #[cfg(feature = "matrix_horzcat")]

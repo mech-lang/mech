@@ -232,8 +232,8 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
           None => todo!(),
         };
         // Given atom isn't a variant of the enum
-        if !my_enum.variants.iter().any(|(enum_variant, inner_value)| *given_variant_id == *enum_variant) {
-          return Err(MechError{file: file!().to_string(), tokens: var_def.expression.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UnknownEnumVairant(*enum_id,*given_variant_id)}); 
+        if !my_enum.variants.iter().any(|(enum_variant, inner_value)| given_variant_id.borrow().0 == *enum_variant) {
+          return Err(MechError{file: file!().to_string(), tokens: var_def.expression.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UnknownEnumVairant(*enum_id,given_variant_id.borrow().0)}); 
         }
       }
       // Atoms can't convert into anything else.

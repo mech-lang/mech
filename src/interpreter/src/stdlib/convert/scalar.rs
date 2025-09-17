@@ -155,8 +155,8 @@ macro_rules! impl_conversion_match_arms {
           Ok(Box::new(ConvertSRationalToF64{arg: rat.clone(), out: Ref::new(F64::default())}))
         }
         #[cfg(all(feature = "atom", feature = "enum"))]
-        (Value::Atom(varian_id), Value::Kind(ValueKind::Enum(enum_id))) => {
-          let variants = vec![(varian_id,None)];
+        (Value::Atom(variant_id), Value::Kind(ValueKind::Enum(enum_id))) => {
+          let variants = vec![(variant_id.borrow().0,None)];
           let enm = MechEnum{id: enum_id, variants};
           let val = Ref::new(enm.clone());
           Ok(Box::new(ConvertSEnum{out: val}))

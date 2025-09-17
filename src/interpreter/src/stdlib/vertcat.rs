@@ -847,6 +847,7 @@ where
     Ok(registers[0])
   }
 }
+#[cfg(feature = "vectord")]
 register_vertical_concatenate_fxn!(VerticalConcatenateVDN);
 
 // VerticalConcatenateS1 ------------------------------------------------------
@@ -856,6 +857,7 @@ register_vertical_concatenate_fxn!(VerticalConcatenateVDN);
 struct VerticalConcatenateS1<T> {
   out: Ref<Matrix1<T>>,
 }
+#[cfg(feature = "matrix1")]
 impl<T> MechFunctionFactory for VerticalConcatenateS1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -893,6 +895,7 @@ where
     compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
   }
 }
+#[cfg(feature = "matrix1")]
 register_vertical_concatenate_fxn!(VerticalConcatenateS1);
 
 // VerticalConcatenateS2 ------------------------------------------------------
@@ -1137,6 +1140,7 @@ struct VerticalConcatenateM1M1M1M1<T> {
   e3: Ref<Matrix1<T>>,
   out: Ref<Vector4<T>>,
 }
+#[cfg(all(feature = "matrix1", feature = "vector4"))]
 impl<T> MechFunctionFactory for VerticalConcatenateM1M1M1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -1189,6 +1193,7 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::VertCat));
   }
 }
+#[cfg(all(feature = "matrix1", feature = "vector4"))]
 register_vertical_concatenate_fxn!(VerticalConcatenateM1M1M1M1);
 
 // Mixed Type Vertical Concatenations -----------------------------------------
