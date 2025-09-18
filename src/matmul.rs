@@ -52,6 +52,8 @@ impl_matmul!(MatMulR2MD, RowVector2<T>, DMatrix<T>, RowDVector<T>);
 
 #[cfg(all(feature = "row_vectord", feature = "vectord", feature = "matrix1"))]
 impl_matmul!(MatMulRDVD, RowDVector<T>, DVector<T>, Matrix1<T>);
+#[cfg(all(feature = "row_vectord", feature = "vectord", feature = "matrixd", not(feature = "matrix1")))]
+impl_matmul!(MatMulRDVD, RowDVector<T>, DVector<T>, DMatrix<T>);
 #[cfg(all(feature = "row_vectord", feature = "matrixd"))]
 impl_matmul!(MatMulRDMD, RowDVector<T>, DMatrix<T>, RowDVector<T>);
 
@@ -125,8 +127,11 @@ macro_rules! impl_matmul_match_arms {
     match $arg {
       $(
         $(
+          // Scalar multiplication
           #[cfg(feature = $value_string)]
           (Value::$lhs_type(lhs), Value::$lhs_type(rhs)) => Ok(Box::new(MatMulScalar { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new($target_type::zero()) })),
+
+          // Row Vector 4
           #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "vector4"))]
           (Value::$matrix_kind(Matrix::RowVector4(lhs)), Value::$matrix_kind(Matrix::Vector4(rhs))) => Ok(Box::new(MatMulR4V4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(Matrix1::from_element($target_type::zero())) })),
           #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "matrix4"))]
@@ -134,6 +139,7 @@ macro_rules! impl_matmul_match_arms {
           #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "matrixd"))]
           (Value::$matrix_kind(Matrix::RowVector4(lhs)), Value::$matrix_kind(Matrix::DMatrix(rhs))) => Ok(Box::new(MatMulR4MD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(RowDVector::from_element(rhs.borrow().ncols(),$target_type::zero())) })),
 
+          // Row Vector 3
           #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "vector3", feature = "matrix1"))]
           (Value::$matrix_kind(Matrix::RowVector3(lhs)), Value::$matrix_kind(Matrix::Vector3(rhs))) => Ok(Box::new(MatMulR3V3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(Matrix1::from_element($target_type::zero())) })),
           #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "matrix3", feature = "row_vector3"))]
@@ -143,6 +149,7 @@ macro_rules! impl_matmul_match_arms {
           #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "matrixd", feature = "row_vectord"))]
           (Value::$matrix_kind(Matrix::RowVector3(lhs)), Value::$matrix_kind(Matrix::DMatrix(rhs))) => Ok(Box::new(MatMulR3MD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(RowDVector::from_element(rhs.borrow().ncols(), $target_type::zero())) })),
 
+          // Row Vector 2
           #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "vector2", feature = "matrix1"))]
           (Value::$matrix_kind(Matrix::RowVector2(lhs)), Value::$matrix_kind(Matrix::Vector2(rhs))) => Ok(Box::new(MatMulR2V2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(Matrix1::from_element($target_type::zero())) })),
           #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "matrix2", feature = "row_vector2"))]
@@ -152,11 +159,15 @@ macro_rules! impl_matmul_match_arms {
           #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "matrixd", feature = "row_vectord"))]
           (Value::$matrix_kind(Matrix::RowVector2(lhs)), Value::$matrix_kind(Matrix::DMatrix(rhs))) => Ok(Box::new(MatMulR2MD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(RowDVector::from_element(rhs.borrow().ncols(), $target_type::zero())) })),
 
+          // Row Vector D
           #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vectord", feature = "matrix1"))]
           (Value::$matrix_kind(Matrix::RowDVector(lhs)), Value::$matrix_kind(Matrix::DVector(rhs))) => Ok(Box::new(MatMulRDVD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(Matrix1::from_element($target_type::zero())) })),
+          #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vectord", feature = "matrixd"))]
+          (Value::$matrix_kind(Matrix::RowDVector(lhs)), Value::$matrix_kind(Matrix::DVector(rhs))) => Ok(Box::new(MatMulRDVD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(DMatrix::from_element(1,1,$target_type::zero())) })),
           #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "matrixd"))]
           (Value::$matrix_kind(Matrix::RowDVector(lhs)), Value::$matrix_kind(Matrix::DMatrix(rhs))) => Ok(Box::new(MatMulRDMD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(RowDVector::from_element(rhs.borrow().ncols(), $target_type::zero())) })),
 
+          // Vector 4
           #[cfg(all(feature = $value_string, feature = "vector4", feature = "row_vector4", feature = "matrix4"))]
           (Value::$matrix_kind(Matrix::Vector4(lhs)), Value::$matrix_kind(Matrix::RowVector4(rhs))) => Ok(Box::new(MatMulV4R4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(Matrix4::from_element($target_type::zero())) })),
           #[cfg(all(feature = $value_string, feature = "vector3", feature = "row_vector3", feature = "matrix3"))]
@@ -164,9 +175,11 @@ macro_rules! impl_matmul_match_arms {
           #[cfg(all(feature = $value_string, feature = "vector2", feature = "row_vector2", feature = "matrix2"))]
           (Value::$matrix_kind(Matrix::Vector2(lhs)), Value::$matrix_kind(Matrix::RowVector2(rhs))) => Ok(Box::new(MatMulV2R2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(Matrix2::from_element($target_type::zero())) })),
 
+          // Vector D
           #[cfg(all(feature = $value_string, feature = "vectord", feature = "row_vectord", feature = "matrixd"))]
           (Value::$matrix_kind(Matrix::DVector(lhs)), Value::$matrix_kind(Matrix::RowDVector(rhs))) => Ok(Box::new(MatMulVDRD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(DMatrix::from_element(lhs.borrow().nrows(), rhs.borrow().ncols(), $target_type::zero())) })),
 
+          // Matrix 4
           #[cfg(all(feature = $value_string, feature = "matrix4", feature = "vector4"))]
           (Value::$matrix_kind(Matrix::Matrix4(lhs)), Value::$matrix_kind(Matrix::Vector4(rhs))) => Ok(Box::new(MatMulM4V4 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(Vector4::from_element($target_type::zero())) })),
           #[cfg(all(feature = $value_string, feature = "matrix4"))]
@@ -174,6 +187,7 @@ macro_rules! impl_matmul_match_arms {
           #[cfg(all(feature = $value_string, feature = "matrix4", feature = "matrixd"))]
           (Value::$matrix_kind(Matrix::Matrix4(lhs)), Value::$matrix_kind(Matrix::DMatrix(rhs))) => Ok(Box::new(MatMulM4MD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(DMatrix::from_element(lhs.borrow().nrows(), rhs.borrow().ncols(), $target_type::zero())) })),
 
+          // Matrix 2
           #[cfg(all(feature = $value_string, feature = "matrix2", feature = "matrix2x3"))]
           (Value::$matrix_kind(Matrix::Matrix2(lhs)), Value::$matrix_kind(Matrix::Matrix2x3(rhs))) => Ok(Box::new(MatMulM2M2x3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(Matrix2x3::from_element($target_type::zero())) })),
           #[cfg(all(feature = $value_string, feature = "matrix2"))]
@@ -183,6 +197,7 @@ macro_rules! impl_matmul_match_arms {
           #[cfg(all(feature = $value_string, feature = "matrix2", feature = "matrixd"))]
           (Value::$matrix_kind(Matrix::Matrix2(lhs)), Value::$matrix_kind(Matrix::DMatrix(rhs))) => Ok(Box::new(MatMulM2MD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(DMatrix::from_element(lhs.borrow().nrows(), rhs.borrow().ncols(), $target_type::zero())) })),
 
+          // Matrix 3
           #[cfg(all(feature = $value_string, feature = "matrix3"))]
           (Value::$matrix_kind(Matrix::Matrix3(lhs)), Value::$matrix_kind(Matrix::Matrix3(rhs))) => Ok(Box::new(MatMulM3M3 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(Matrix3::from_element($target_type::zero())) })),
           #[cfg(all(feature = $value_string, feature = "matrix3", feature = "matrix3x2"))]
@@ -192,9 +207,11 @@ macro_rules! impl_matmul_match_arms {
           #[cfg(all(feature = $value_string, feature = "matrix3", feature = "matrixd"))]
           (Value::$matrix_kind(Matrix::Matrix3(lhs)), Value::$matrix_kind(Matrix::DMatrix(rhs))) => Ok(Box::new(MatMulM3MD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(DMatrix::from_element(lhs.borrow().nrows(), rhs.borrow().ncols(), $target_type::zero())) })),
 
+          // Matrix 1
           #[cfg(all(feature = $value_string, feature = "matrix1"))]
           (Value::$matrix_kind(Matrix::Matrix1(lhs)), Value::$matrix_kind(Matrix::Matrix1(rhs))) => Ok(Box::new(MatMulM1M1 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(Matrix1::from_element($target_type::zero())) })),
 
+          // Matrix 2x3
           #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "vector3"))]
           (Value::$matrix_kind(Matrix::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::Vector3(rhs))) => Ok(Box::new(MatMulM2x3V2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(Vector2::from_element($target_type::zero())) })),
           #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "matrix3"))]
@@ -204,6 +221,7 @@ macro_rules! impl_matmul_match_arms {
           #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "matrixd"))]
           (Value::$matrix_kind(Matrix::Matrix2x3(lhs)), Value::$matrix_kind(Matrix::DMatrix(rhs))) => Ok(Box::new(MatMulM2x3MD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(DMatrix::from_element(lhs.borrow().nrows(), rhs.borrow().ncols(), $target_type::zero())) })),
 
+          // Matrix 3x2
           #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "vector2"))]
           (Value::$matrix_kind(Matrix::Matrix3x2(lhs)), Value::$matrix_kind(Matrix::Vector2(rhs))) => Ok(Box::new(MatMulM3x2V2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(Vector3::from_element($target_type::zero())) })),
           #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "matrix2"))]
@@ -213,6 +231,7 @@ macro_rules! impl_matmul_match_arms {
           #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "matrixd"))]
           (Value::$matrix_kind(Matrix::Matrix3x2(lhs)), Value::$matrix_kind(Matrix::DMatrix(rhs))) => Ok(Box::new(MatMulM3x2MD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(DMatrix::from_element(lhs.borrow().nrows(), rhs.borrow().ncols(), $target_type::zero())) })),
 
+          // Matrix D
           #[cfg(all(feature = $value_string, feature = "matrixd"))]
           (Value::$matrix_kind(Matrix::DMatrix(lhs)), Value::$matrix_kind(Matrix::DMatrix(rhs))) => {
             let (lhs_rows,lhs_cols) = {lhs.borrow().shape()};
