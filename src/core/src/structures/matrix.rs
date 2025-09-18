@@ -727,6 +727,8 @@ where T: Debug + Clone + PartialEq + 'static
     match (rows,cols) {
       #[cfg(feature = "matrix1")]
       (1,1) => Matrix::Matrix1(Ref::new(Matrix1::from_vec(vec.clone()))),
+      #[cfg(all(feature = "matrixd", not(feature = "matrix1")))]
+      (1,1) => Matrix::DMatrix(Ref::new(DMatrix::from_vec(1,1,vec.clone()))),
       #[cfg(feature = "matrix2")]
       (2,2) => Matrix::Matrix2(Ref::new(Matrix2::from_vec(vec.clone()))),
       #[cfg(feature = "matrix3")]
