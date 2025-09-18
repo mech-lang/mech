@@ -701,11 +701,13 @@ register_horizontal_concatenate_fxn!(HorizontalConcatenateRDN);
 
 // HorizontalConcatenateS1 ----------------------------------------------------
 
+#[cfg(feature = "matrix1")]
 #[derive(Debug)]
 struct HorizontalConcatenateS1<T> {
   arg: Ref<T>,
   out: Ref<Matrix1<T>>,
 }
+#[cfg(feature = "matrix1")]
 impl<T> MechFunctionFactory for HorizontalConcatenateS1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -723,6 +725,7 @@ where
     }
   }
 }
+#[cfg(feature = "matrix1")]
 impl<T> MechFunctionImpl for HorizontalConcatenateS1<T> 
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -737,7 +740,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
-
+#[cfg(feature = "matrix1")]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateS1<T>
 where
@@ -748,16 +751,19 @@ where
     compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(feature = "matrix1")]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateS1);
 
 // HorizontalConcatenateS2 --------------------------------------------------
 
+#[cfg(feature = "row_vector2")]
 #[derive(Debug)]
 struct HorizontalConcatenateS2<T> {
   e0: Ref<T>,
   e1: Ref<T>,
   out: Ref<RowVector2<T>>,
 }
+#[cfg(feature = "row_vector2")]
 impl<T> MechFunctionFactory for HorizontalConcatenateS2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -776,6 +782,7 @@ where
     }
   }
 }
+#[cfg(feature = "row_vector2")]
 impl<T> MechFunctionImpl for HorizontalConcatenateS2<T> 
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -791,6 +798,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(feature = "row_vector2")]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateS2<T>
 where
@@ -801,10 +809,12 @@ where
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(feature = "row_vector2")]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateS2);
 
 // HorizontalConcatenateS3 --------------------------------------------------
 
+#[cfg(feature = "row_vector3")]
 #[derive(Debug)]
 struct HorizontalConcatenateS3<T> {
   e0: Ref<T>,
@@ -812,6 +822,7 @@ struct HorizontalConcatenateS3<T> {
   e2: Ref<T>,
   out: Ref<RowVector3<T>>,
 }
+#[cfg(feature = "row_vector3")]
 impl<T> MechFunctionFactory for HorizontalConcatenateS3<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -831,6 +842,7 @@ where
     }
   }
 }
+#[cfg(feature = "row_vector3")]
 impl<T> MechFunctionImpl for HorizontalConcatenateS3<T> 
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -847,6 +859,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(feature = "row_vector3")]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateS3<T>
 where
@@ -857,10 +870,12 @@ where
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(feature = "row_vector3")]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateS3);
 
 // HorizontalConcatenateS4 --------------------------------------------------
 
+#[cfg(feature = "row_vector4")]
 #[derive(Debug)]
 struct HorizontalConcatenateS4<T> {
   e0: Ref<T>,
@@ -869,6 +884,7 @@ struct HorizontalConcatenateS4<T> {
   e3: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(feature = "row_vector4")]
 impl<T> MechFunctionFactory for HorizontalConcatenateS4<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -889,6 +905,7 @@ where
     }
   }
 }
+#[cfg(feature = "row_vector4")]
 impl<T> MechFunctionImpl for HorizontalConcatenateS4<T> 
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -906,6 +923,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(feature = "row_vector4")]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateS4<T>
 where
@@ -916,6 +934,7 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(feature = "row_vector4")]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateS4);
 
 // HorizontalConcatenateR2 ----------------------------------------------------
@@ -935,10 +954,12 @@ horizontal_concatenate!(HorizontalConcatenateR4,4);
 
 // HorizontalConcatenateSD ----------------------------------------------------
 
+#[cfg(feature = "row_vectord")]
 #[derive(Debug)]
 struct HorizontalConcatenateSD<T> {
   out: Ref<RowDVector<T>>,
 }
+#[cfg(feature = "row_vectord")]
 impl<T> MechFunctionFactory for HorizontalConcatenateSD<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -955,6 +976,7 @@ where
     }
   }
 }
+#[cfg(feature = "row_vectord")]
 impl<T> MechFunctionImpl for HorizontalConcatenateSD<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -964,7 +986,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
-
+#[cfg(feature = "row_vectord")]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSD<T>
 where
@@ -975,6 +997,7 @@ where
     compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(feature = "row_vectord")]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateSD);
 
 // HorizontalConcatenate for single argument types ----------------------------
@@ -1049,12 +1072,14 @@ horzcat_single!(HorizontalConcatenateVD,DVector);
 
 // HorizontalConcatenateSR2 --------------------------------------------------
 
+#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSR2<T> {
   e0: Ref<T>,
   e1: Ref<RowVector2<T>>,
   out: Ref<RowVector3<T>>,
 }
+#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSR2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -1073,6 +1098,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateSR2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -1091,6 +1117,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSR2<T>
 where
@@ -1101,16 +1128,19 @@ where
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateSR2);
 
 // HorizontalConcatenateR2S --------------------------------------------------
 
+#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
 #[derive(Debug)]
 struct HorizontalConcatenateR2S<T> {
   e0: Ref<RowVector2<T>>,
   e1: Ref<T>,
   out: Ref<RowVector3<T>>,
 }
+#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateR2S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -1129,6 +1159,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateR2S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -1146,7 +1177,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
-
+#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateR2S<T>
 where
@@ -1157,15 +1188,18 @@ where
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateR2S);
 // HorizontalConcatenateSM1 ---------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSM1<T> {
   e0: Ref<T>,         
   e1: Ref<Matrix1<T>>,
   out: Ref<RowVector2<T>>,
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -1184,6 +1218,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateSM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -1201,6 +1236,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1<T>
 where
@@ -1211,16 +1247,19 @@ where
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateSM1);
 
 // HorizontalConcatenateM1S ---------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1S<T> {
   e0: Ref<Matrix1<T>>,  // Matrix1
   e1: Ref<T>,           // scalar
   out: Ref<RowVector2<T>>,
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -1239,6 +1278,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateM1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -1256,6 +1296,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1S<T>
 where
@@ -1266,10 +1307,12 @@ where
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateM1S);
 
 // HorizontalConcatenateSSSM1 -------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSSSM1<T> {
   e0: Ref<T>,
@@ -1278,6 +1321,7 @@ struct HorizontalConcatenateSSSM1<T> {
   e3: Ref<Matrix1<T>>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSSSM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -1298,6 +1342,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateSSSM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -1319,6 +1364,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSSSM1<T>
 where
@@ -1329,10 +1375,12 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateSSSM1);
 
 // HorizontalConcatenateSSM1S -------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSSM1S<T> {
   e0: Ref<T>,
@@ -1341,6 +1389,7 @@ struct HorizontalConcatenateSSM1S<T> {
   e3: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSSM1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -1361,6 +1410,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateSSM1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -1382,6 +1432,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1S<T>
 where
@@ -1392,10 +1443,12 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateSSM1S);
 
 // HorizontalConcatenateSM1SS -------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSM1SS<T> {
   e0: Ref<T>,
@@ -1404,6 +1457,7 @@ struct HorizontalConcatenateSM1SS<T> {
   e3: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1SS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -1424,6 +1478,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateSM1SS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -1445,6 +1500,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1SS<T>
 where
@@ -1455,10 +1511,12 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateSM1SS);
 
 // HorizontalConcatenateM1SSS -------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1SSS<T> {
   e0: Ref<Matrix1<T>>,
@@ -1467,6 +1525,7 @@ struct HorizontalConcatenateM1SSS<T> {
   e3: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SSS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -1487,6 +1546,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateM1SSS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -1508,6 +1568,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SSS<T>
 where
@@ -1518,16 +1579,19 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector4"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateM1SSS);
 
 // HorizontalConcatenateSR3 -------------------------------------------------
 
+#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSR3<T> {
   e0: Ref<T>,
   e1: Ref<RowVector3<T>>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSR3<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -1546,6 +1610,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateSR3<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -1565,6 +1630,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSR3<T>
 where
@@ -1575,17 +1641,19 @@ where
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateSR3);
 
 // HorizontalConcatenateR3S -------------------------------------------------
 
+#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateR3S<T> {
   e0: Ref<RowVector3<T>>,
   e1: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
-
+#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateR3S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -1604,6 +1672,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateR3S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -1623,6 +1692,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateR3S<T>
 where
@@ -1633,10 +1703,12 @@ where
     compile_binop!(name, self.out, self.e0, self.e1, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateR3S);
 
 // HorizontalConcatenateSSM1 -------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSSM1<T> {
   e0: Ref<T>,           // scalar
@@ -1644,6 +1716,7 @@ struct HorizontalConcatenateSSM1<T> {
   e2: Ref<Matrix1<T>>,  // Matrix1
   out: Ref<RowVector3<T>>,
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSSM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -1663,6 +1736,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateSSM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -1682,7 +1756,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
-
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1<T>
 where
@@ -1693,10 +1767,12 @@ where
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateSSM1);
 
 // HorizontalConcatenateSM1S -------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSM1S<T> {
   e0: Ref<T>,           // scalar
@@ -1704,6 +1780,7 @@ struct HorizontalConcatenateSM1S<T> {
   e2: Ref<T>,           // scalar
   out: Ref<RowVector3<T>>,
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -1723,6 +1800,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateSM1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -1742,6 +1820,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1S<T>
 where
@@ -1752,10 +1831,12 @@ where
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateSM1S);
 
 // HorizontalConcatenateM1SS -------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1SS<T> {
   e0: Ref<Matrix1<T>>,  // Matrix1
@@ -1763,6 +1844,7 @@ struct HorizontalConcatenateM1SS<T> {
   e2: Ref<T>,           // scalar
   out: Ref<RowVector3<T>>,
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -1782,6 +1864,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateM1SS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -1801,6 +1884,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SS<T>
 where
@@ -1811,10 +1895,12 @@ where
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateM1SS);
 
 // HorizontalConcatenateSSR2 -------------------------------------------------
 
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSSR2<T> {
   e0: Ref<T>,
@@ -1822,6 +1908,7 @@ struct HorizontalConcatenateSSR2<T> {
   e2: Ref<RowVector2<T>>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSSR2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -1841,6 +1928,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateSSR2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -1861,6 +1949,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSSR2<T>
 where
@@ -1871,10 +1960,12 @@ where
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateSSR2);
 
 // HorizontalConcatenateSR2S -------------------------------------------------
 
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSR2S<T> {
   e0: Ref<T>,
@@ -1882,6 +1973,7 @@ struct HorizontalConcatenateSR2S<T> {
   e2: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSR2S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -1901,6 +1993,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateSR2S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -1921,6 +2014,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSR2S<T>
 where
@@ -1931,10 +2025,12 @@ where
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateSR2S);
 
 // HorizontalConcatenateR2SS -------------------------------------------------
 
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateR2SS<T> {
   e0: Ref<RowVector2<T>>,
@@ -1942,6 +2038,7 @@ struct HorizontalConcatenateR2SS<T> {
   e2: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateR2SS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -1961,6 +2058,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateR2SS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -1981,6 +2079,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateR2SS<T>
 where
@@ -1991,10 +2090,12 @@ where
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateR2SS);
 
 // HorizontalConcatenateM1M1S -------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1M1S<T> {
   e0: Ref<Matrix1<T>>,
@@ -2002,6 +2103,7 @@ struct HorizontalConcatenateM1M1S<T> {
   e2: Ref<T>,
   out: Ref<RowVector3<T>>,
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1M1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -2021,6 +2123,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateM1M1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -2040,6 +2143,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1S<T>
 where
@@ -2050,6 +2154,7 @@ where
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateM1M1S);
 
 // HorizontalConcatenateM1M1 -------------------------------------------------
@@ -2059,10 +2164,12 @@ macro_rules! horzcat_m1m1 {
     $out[0] = $e0[0].clone();
     $out[1] = $e1[0].clone();
   };}
+#[cfg(all(feature = "matrix1", feature = "row_vector2"))]
 horzcat_two_args!(HorizontalConcatenateM1M1,Matrix1,Matrix1,RowVector2,horzcat_m1m1);
 
 // HorizontalConcatenateM1SM1 -------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1SM1<T> {
   e0: Ref<Matrix1<T>>,
@@ -2070,6 +2177,7 @@ struct HorizontalConcatenateM1SM1<T> {
   e2: Ref<Matrix1<T>>,
   out: Ref<RowVector3<T>>,
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -2089,6 +2197,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateM1SM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -2108,6 +2217,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1<T>
 where
@@ -2118,10 +2228,12 @@ where
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateM1SM1);
 
 // HorizontalConcatenateSM1M1 -------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSM1M1<T> {
   e0: Ref<T>,
@@ -2129,6 +2241,7 @@ struct HorizontalConcatenateSM1M1<T> {
   e2: Ref<Matrix1<T>>,
   out: Ref<RowVector3<T>>,
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -2148,6 +2261,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateSM1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -2167,6 +2281,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1<T>
 where
@@ -2177,6 +2292,7 @@ where
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector3"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateSM1M1);
 
 // HorizontalConcatenateR2R2 -------------------------------------------------
@@ -2188,6 +2304,7 @@ macro_rules! horzcat_r2r2 {
     $out[2] = $e1[0].clone();
     $out[3] = $e1[1].clone();
   };}
+#[cfg(all(feature = "row_vector2", feature = "row_vector4"))]  
 horzcat_two_args!(HorizontalConcatenateR2R2,RowVector2,RowVector2,RowVector4,horzcat_r2r2);
 
 // HorizontalConcatenateM1R3 -------------------------------------------------
@@ -2199,6 +2316,7 @@ macro_rules! horzcat_m1r3 {
     $out[2] = $e1[1].clone();
     $out[3] = $e1[2].clone();
   };}
+#[cfg(all(feature = "matrix1", feature = "row_vector3", feature = "row_vector4"))]  
 horzcat_two_args!(HorizontalConcatenateM1R3,Matrix1,RowVector3,RowVector4,horzcat_m1r3);
 
 // HorizontalConcatenateR3M1 -------------------------------------------------
@@ -2210,10 +2328,12 @@ macro_rules! horzcat_r3m1 {
     $out[2] = $e0[2].clone();
     $out[3] = $e1[0].clone();
   };}
+#[cfg(all(feature = "matrix1", feature = "row_vector3", feature = "row_vector4"))]
 horzcat_two_args!(HorizontalConcatenateR3M1,RowVector3,Matrix1,RowVector4,horzcat_r3m1);
 
 // HorizontalConcatenateSM1R2 -------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSM1R2<T> {
   e0: Ref<T>,
@@ -2221,6 +2341,7 @@ struct HorizontalConcatenateSM1R2<T> {
   e2: Ref<RowVector2<T>>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1R2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -2240,6 +2361,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateSM1R2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -2260,6 +2382,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1R2<T>
 where
@@ -2270,10 +2393,12 @@ where
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateSM1R2);
 
 // HorizontalConcatenateM1SR2 -------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1SR2<T> {
   e0: Ref<Matrix1<T>>,
@@ -2281,6 +2406,7 @@ struct HorizontalConcatenateM1SR2<T> {
   e2: Ref<RowVector2<T>>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SR2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -2300,6 +2426,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateM1SR2<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -2320,6 +2447,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SR2<T>
 where
@@ -2330,10 +2458,12 @@ where
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateM1SR2);
 
 // HorizontalConcatenateSM1SM1 -------------------------------------------------
 
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSM1SM1<T> {
   e0: Ref<T>,          
@@ -2342,6 +2472,7 @@ struct HorizontalConcatenateSM1SM1<T> {
   e3: Ref<Matrix1<T>>, 
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1SM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -2362,6 +2493,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateSM1SM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -2383,6 +2515,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1SM1<T>
 where
@@ -2393,10 +2526,12 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateSM1SM1);
 
 // HorizontalConcatenateM1R2S -------------------------------------------------
 
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1R2S<T> {
   e0: Ref<Matrix1<T>>,
@@ -2404,6 +2539,7 @@ struct HorizontalConcatenateM1R2S<T> {
   e2: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1R2S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -2423,6 +2559,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateM1R2S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -2443,6 +2580,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1R2S<T>
 where
@@ -2453,10 +2591,12 @@ where
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateM1R2S);
 
 // HorizontalConcatenateR2M1S -------------------------------------------------
 
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateR2M1S<T> {
   e0: Ref<RowVector2<T>>,
@@ -2464,6 +2604,7 @@ struct HorizontalConcatenateR2M1S<T> {
   e2: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateR2M1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -2483,6 +2624,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateR2M1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -2503,6 +2645,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateR2M1S<T>
 where
@@ -2513,10 +2656,12 @@ where
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));  
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateR2M1S);
 
 // HorizontalConcatenateR2SM1 -------------------------------------------------
 
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateR2SM1<T> {
   e0: Ref<RowVector2<T>>, 
@@ -2524,6 +2669,7 @@ struct HorizontalConcatenateR2SM1<T> {
   e2: Ref<Matrix1<T>>,    
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateR2SM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -2543,6 +2689,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateR2SM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -2563,6 +2710,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateR2SM1<T>
 where
@@ -2573,10 +2721,12 @@ where
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateR2SM1);
 
 // HorizontalConcatenateSR2M1 -------------------------------------------------
 
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSR2M1<T> {
   e0: Ref<T>,             
@@ -2584,6 +2734,7 @@ struct HorizontalConcatenateSR2M1<T> {
   e2: Ref<Matrix1<T>>,    
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSR2M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -2603,6 +2754,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateSR2M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -2623,6 +2775,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSR2M1<T>
 where
@@ -2633,10 +2786,12 @@ where
     compile_ternop!(name, self.out, self.e0, self.e1, self.e2, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateSR2M1);
 
 // HorizontalConcatenateSSM1M1 ------------------------------------------------
 
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSSM1M1<T> {
   e0: Ref<T>,
@@ -2645,6 +2800,7 @@ struct HorizontalConcatenateSSM1M1<T> {
   e3: Ref<Matrix1<T>>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSSM1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -2665,6 +2821,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateSSM1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -2686,6 +2843,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1M1<T>
 where
@@ -2696,10 +2854,12 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateSSM1M1);
 
 // HorizontalConcatenateM1M1SS ------------------------------------------------
 
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1M1SS<T> {
   e0: Ref<Matrix1<T>>,
@@ -2708,6 +2868,7 @@ struct HorizontalConcatenateM1M1SS<T> {
   e3: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1M1SS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -2728,6 +2889,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateM1M1SS<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -2749,6 +2911,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1SS<T>
 where
@@ -2759,10 +2922,12 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat)); 
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateM1M1SS);
 
 // HorizontalConcatenateSM1M1S ------------------------------------------------
 
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSM1M1S<T> {
   e0: Ref<T>,
@@ -2771,6 +2936,7 @@ struct HorizontalConcatenateSM1M1S<T> {
   e3: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1M1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -2791,6 +2957,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateSM1M1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -2812,6 +2979,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1S<T>
 where
@@ -2822,10 +2990,12 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateSM1M1S);
 
 // HorizontalConcatenateM1SSM1 ------------------------------------------------
 
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1SSM1<T> {
   e0: Ref<Matrix1<T>>,
@@ -2834,6 +3004,7 @@ struct HorizontalConcatenateM1SSM1<T> {
   e3: Ref<Matrix1<T>>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SSM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -2854,6 +3025,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateM1SSM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -2875,6 +3047,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SSM1<T>
 where
@@ -2885,10 +3058,12 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateM1SSM1);
 
 // HorizontalConcatenateM1SM1S ------------------------------------------------
 
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1SM1S<T> {
   e0: Ref<Matrix1<T>>,
@@ -2897,6 +3072,7 @@ struct HorizontalConcatenateM1SM1S<T> {
   e3: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SM1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -2917,6 +3093,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateM1SM1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -2938,6 +3115,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1S<T>
 where
@@ -2948,6 +3126,7 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateM1SM1S);
 
 // HorizontalConcatenateM1R2 --------------------------------------------------
@@ -2959,6 +3138,7 @@ macro_rules! horzcat_m1r2 {
     $out[2] = $e1[1].clone();
   };
 }
+#[cfg(all(feature = "row_vector3", feature = "matrix1", feature = "row_vector2"))]
 horzcat_two_args!(HorizontalConcatenateM1R2, Matrix1, RowVector2, RowVector3, horzcat_m1r2);
 
 // HorizontalConcatenateR2M1 --------------------------------------------------
@@ -2970,6 +3150,7 @@ macro_rules! horzcat_r2m1 {
     $out[2] = $e1[0].clone();
   };
 }
+#[cfg(all(feature = "row_vector3", feature = "matrix1", feature = "row_vector2"))]
 horzcat_two_args!(HorizontalConcatenateR2M1, RowVector2, Matrix1, RowVector3, horzcat_r2m1);
 
 // HorizontalConcatenateM1M1M1 ------------------------------------------------
@@ -2981,6 +3162,7 @@ macro_rules! horzcat_m1m1m1 {
     $out[2] = $e2[0].clone();
   };
 }
+#[cfg(all(feature = "row_vector3", feature = "matrix1"))]
 horzcat_three_args!(HorizontalConcatenateM1M1M1,Matrix1,Matrix1,Matrix1,RowVector3, horzcat_m1m1m1);
 
 // HorizontalConcatenateM1M1R2 ------------------------------------------------
@@ -2993,6 +3175,7 @@ macro_rules! horzcat_m1m1r2 {
     $out[3] = $e2[1].clone();
   };
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "row_vector2"))]
 horzcat_three_args!(HorizontalConcatenateM1M1R2, Matrix1, Matrix1, RowVector2, RowVector4, horzcat_m1m1r2);
 
 // HorizontalConcatenateM1R2M1 ------------------------------------------------
@@ -3005,6 +3188,7 @@ macro_rules! horzcat_m1r2m1 {
     $out[3] = $e2[0].clone();
   };
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "row_vector2"))]
 horzcat_three_args!(HorizontalConcatenateM1R2M1, Matrix1, RowVector2, Matrix1, RowVector4, horzcat_m1r2m1);
 
 macro_rules! horzcat_r2m1m1 {
@@ -3015,10 +3199,12 @@ macro_rules! horzcat_r2m1m1 {
     $out[3] = $e2[0].clone();
   };
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "row_vector2"))]
 horzcat_three_args!(HorizontalConcatenateR2M1M1, RowVector2, Matrix1, Matrix1, RowVector4, horzcat_r2m1m1);
 
 // HorizontalConcatenateSM1M1M1 -----------------------------------------------
 
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateSM1M1M1<T> {
   e0: Ref<T>,
@@ -3027,6 +3213,7 @@ struct HorizontalConcatenateSM1M1M1<T> {
   e3: Ref<Matrix1<T>>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateSM1M1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -3047,6 +3234,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateSM1M1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -3068,7 +3256,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
-
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1M1<T>
 where
@@ -3079,10 +3267,12 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateSM1M1M1);
 
 // HorizontalConcatenateM1SM1M1 -----------------------------------------------
 
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1SM1M1<T> {
   e0: Ref<Matrix1<T>>,
@@ -3091,6 +3281,7 @@ struct HorizontalConcatenateM1SM1M1<T> {
   e3: Ref<Matrix1<T>>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1SM1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -3111,6 +3302,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateM1SM1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -3132,6 +3324,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[cfg(feature = "compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1M1<T>
 where
@@ -3142,10 +3335,12 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateM1SM1M1);
 
 // HorizontalConcatenateM1M1SM1 -----------------------------------------------
 
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1M1SM1<T> {
   e0: Ref<Matrix1<T>>,
@@ -3154,6 +3349,7 @@ struct HorizontalConcatenateM1M1SM1<T> {
   e3: Ref<Matrix1<T>>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1M1SM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -3174,6 +3370,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateM1M1SM1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -3195,7 +3392,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
-#[cfg(feature = "compiler")]
+#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "compiler"))]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1SM1<T> 
 where
   T: ConstElem + CompileConst + AsValueKind
@@ -3205,10 +3402,12 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateM1M1SM1);
 
 // HorizontalConcatenateM1M1M1S -----------------------------------------------
 
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1M1M1S<T> {
   e0: Ref<Matrix1<T>>,
@@ -3217,6 +3416,7 @@ struct HorizontalConcatenateM1M1M1S<T> {
   e3: Ref<T>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1M1M1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -3237,6 +3437,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateM1M1M1S<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -3258,7 +3459,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
-#[cfg(feature = "compiler")]
+#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "compiler"))]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1M1S<T> 
 where
   T: ConstElem + CompileConst + AsValueKind
@@ -3268,10 +3469,12 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat)); 
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateM1M1M1S);
 
 // HorizontalConcatenateM1M1M1S -----------------------------------------------
 
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 #[derive(Debug)]
 struct HorizontalConcatenateM1M1M1M1<T> {
   e0: Ref<Matrix1<T>>,
@@ -3280,6 +3483,7 @@ struct HorizontalConcatenateM1M1M1M1<T> {
   e3: Ref<Matrix1<T>>,
   out: Ref<RowVector4<T>>,
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionFactory for HorizontalConcatenateM1M1M1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -3300,6 +3504,7 @@ where
     }
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 impl<T> MechFunctionImpl for HorizontalConcatenateM1M1M1M1<T>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -3321,7 +3526,7 @@ where
   fn out(&self) -> Value { self.out.to_value() }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
-#[cfg(feature = "compiler")]
+#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "compiler"))]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1M1M1<T>
 where
   T: ConstElem + CompileConst + AsValueKind
@@ -3331,6 +3536,7 @@ where
     compile_quadop!(name, self.out, self.e0, self.e1, self.e2, self.e3, ctx, FeatureFlag::Builtin(FeatureKind::HorzCat));
   }
 }
+#[cfg(all(feature = "row_vector4", feature = "matrix1"))]
 register_horizontal_concatenate_fxn!(HorizontalConcatenateM1M1M1M1);
 
 // HorizontalConcatenateV2V2 -------------------------------------------------
@@ -3343,6 +3549,7 @@ macro_rules! horzcat_v2v2 {
     $out[3] = $e1[1].clone();
   };
 }
+#[cfg(all(feature = "vector2", feature = "matrix2"))]
 horzcat_two_args!(HorizontalConcatenateV2V2, Vector2, Vector2, Matrix2, horzcat_v2v2);
 
 macro_rules! horzcat_v3v3 {
@@ -3355,6 +3562,7 @@ macro_rules! horzcat_v3v3 {
     $out[5] = $e1[2].clone();
   };
 }
+#[cfg(all(feature = "vector3", feature = "matrix3x2"))]
 horzcat_two_args!(HorizontalConcatenateV3V3, Vector3, Vector3, Matrix3x2, horzcat_v3v3);
 
 // HorizontalConcatenateV2M2 --------------------------------------------------
@@ -3369,6 +3577,7 @@ macro_rules! horzcat_v2m2 {
     $out[5] = $e1[3].clone();
   };
 }
+#[cfg(all(feature = "vector2", feature = "matrix2", feature = "matrix2x3"))]
 horzcat_two_args!(HorizontalConcatenateV2M2, Vector2, Matrix2, Matrix2x3, horzcat_v2m2);
 
 // HorizontalConcatenateM2V2 --------------------------------------------------
@@ -3383,6 +3592,7 @@ macro_rules! horzcat_m2v2 {
     $out[5] = $e1[1].clone();
   };
 }
+#[cfg(all(feature = "vector2", feature = "matrix2", feature = "matrix2x3"))]
 horzcat_two_args!(HorizontalConcatenateM2V2, Matrix2, Vector2, Matrix2x3, horzcat_m2v2);
 
 // HorizontalConcatenateM3x2V3 ------------------------------------------------
@@ -3400,6 +3610,7 @@ macro_rules! horzcat_m3x2v3 {
     $out[8] = $e1[2].clone();
   };
 }
+#[cfg(all(feature = "vector3", feature = "matrix3x2", feature = "matrix3"))]
 horzcat_two_args!(HorizontalConcatenateM3x2V3, Matrix3x2, Vector3, Matrix3, horzcat_m3x2v3);
 
 // HorizontalConcatenateV3M3x2 ------------------------------------------------
@@ -3417,6 +3628,7 @@ macro_rules! horzcat_v3m3x2 {
     $out[8] = $e1[5].clone();
   };
 }
+#[cfg(all(feature = "vector3", feature = "matrix3x2", feature = "matrix3"))]
 horzcat_two_args!(HorizontalConcatenateV3M3x2, Vector3, Matrix3x2, Matrix3, horzcat_v3m3x2);
 
 // HorizontalConcatenateV4V4 --------------------------------------------------
@@ -3433,6 +3645,7 @@ macro_rules! horzcat_v4md {
     }
   };
 }
+#[cfg(all(feature = "matrixd", feature = "matrix4", feature = "vector4"))]
 horzcat_two_args!(HorizontalConcatenateV4MD, Vector4, DMatrix, Matrix4, horzcat_v4md);
 
 // HorizontalConcatenateMDV4 --------------------------------------------------
@@ -3450,6 +3663,7 @@ macro_rules! horzcat_mdv4 {
     $out[offset + 3] = $e1[3].clone();
   };
 }
+#[cfg(all(feature = "matrixd", feature = "matrix4", feature = "vector4"))]
 horzcat_two_args!(HorizontalConcatenateMDV4, DMatrix, Vector4, Matrix4, horzcat_mdv4);
 
 // HorizontalConcatenateMDV4 --------------------------------------------------
@@ -3466,6 +3680,7 @@ macro_rules! horzcat_mdmd {
     }
   };
 }
+#[cfg(all(feature = "matrixd", feature = "matrix4"))]
 horzcat_two_args!(HorizontalConcatenateMDMD, DMatrix, DMatrix, Matrix4, horzcat_mdmd);
 
 // HorizontalConcatenateMDMDMD ------------------------------------------------
@@ -3489,27 +3704,27 @@ macro_rules! horzcat_mdmdmd {
 
 // HorizontalConcatenateV2V2V2 ------------------------------------------------
 
-#[cfg(feature = "vector2")]
+#[cfg(all(feature = "vector2", feature = "matrix2x3"))]
 horzcat_three_args!(HorizontalConcatenateV2V2V2, Vector2, Vector2, Vector2, Matrix2x3, horzcat_mdmdmd);
 
 // HorizontalConcatenateV3V3V3 ------------------------------------------------
 
-#[cfg(feature = "vector3")]
+#[cfg(all(feature = "vector3", feature = "matrix3"))]
 horzcat_three_args!(HorizontalConcatenateV3V3V3, Vector3, Vector3, Vector3, Matrix3, horzcat_mdmdmd);
 
 // HorizontalConcatenateV2V2MD ------------------------------------------------
 
-#[cfg(all(feature = "matrixd", feature = "vector4"))]
+#[cfg(all(feature = "matrixd", feature = "vector4", feature = "matrix4"))]
 horzcat_three_args!(HorizontalConcatenateV4V4MD, Vector4, Vector4, DMatrix, Matrix4, horzcat_mdmdmd);
 
 // HorizontalConcatenateV2MDV2 ------------------------------------------------
 
-#[cfg(all(feature = "matrixd", feature = "vector4"))]
+#[cfg(all(feature = "matrixd", feature = "vector4", feature = "matrix4"))]
 horzcat_three_args!(HorizontalConcatenateV4MDV4, Vector4, DMatrix, Vector4, Matrix4, horzcat_mdmdmd);
 
 // HorizontalConcatenateMDV2V2 ------------------------------------------------
 
-#[cfg(all(feature = "matrixd", feature = "vector4"))]
+#[cfg(all(feature = "matrixd", feature = "vector4", feature = "matrix4"))]
 horzcat_three_args!(HorizontalConcatenateMDV4V4, DMatrix, Vector4, Vector4, Matrix4, horzcat_mdmdmd);
 
 
