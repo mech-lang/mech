@@ -34,7 +34,7 @@ base = ["baselib", "pretty_print", "serde", "compiler", "program",
       ]   
 
 baselib = ["bool", "string", 
-      "f64", "c64", 
+      "f64", "c64", "r64",
       "set", "map", "table", "tuple", "record", "atom", "enum",
       "row_vectord", "vectord", "matrixd",
       "subscript_range", "logical_indexing", 
@@ -153,7 +153,7 @@ dot_indexing = ["subscript", "mech-core/dot_indexing"]
 swizzle = ["subscript", "mech-core/swizzle"]
 
 [dependencies]
-mech-core = {path = "../../mech/src/core", version = "0.2.59", features = ["default"]}
+mech-core = {path = "../../mech/src/core", version = "0.2.59", default-features = false}
 
 paste = "1.0.15"
 inventory = "0.3.21"
