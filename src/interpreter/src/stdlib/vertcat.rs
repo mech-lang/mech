@@ -1015,7 +1015,7 @@ macro_rules! vertcat_m1m1 {
     $out[0] = $e0[0].clone();
     $out[1] = $e1[0].clone();
   };}
-#[cfg(feature = "matrix1")]
+#[cfg(all(feature = "matrix1", feature = "vector2"))]
 vertcat_two_args!(VerticalConcatenateM1M1,Matrix1,Matrix1,Vector2,vertcat_m1m1);
 
 // VerticalConcatenateV2V2 ----------------------------------------------------
@@ -1027,7 +1027,7 @@ macro_rules! vertcat_r2r2 {
     $out[2] = $e1[0].clone();
     $out[3] = $e1[1].clone();
   };}
-#[cfg(feature = "vector2")]
+#[cfg(all(feature = "vector2", feature = "vector4"))]
 vertcat_two_args!(VerticalConcatenateV2V2,Vector2,Vector2,Vector4,vertcat_r2r2);
 
 // VerticalConcatenateM1V3 ----------------------------------------------------
