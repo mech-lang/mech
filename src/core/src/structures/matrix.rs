@@ -43,7 +43,7 @@ macro_rules! impl_to_matrix {
           (3,1) => Matrix::Vector3(Ref::new(Vector3::from_vec(elements))),
           #[cfg(feature = "vector4")]
           (4,1) => Matrix::Vector4(Ref::new(Vector4::from_vec(elements))),
-          #[cfg(feature = "vectord")]
+          #[cfg(feature = "row_vectord")]
           (1,n) => Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements))),
           #[cfg(feature = "vectord")]
           (m,1) => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
@@ -54,7 +54,7 @@ macro_rules! impl_to_matrix {
       }
       fn to_matrixd(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
         match (rows,cols) {
-          #[cfg(feature = "vectord")]
+          #[cfg(feature = "row_vectord")]
           (1,n) => Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements))),
           #[cfg(feature = "vectord")]
           (m,1) => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
@@ -511,6 +511,7 @@ where T: Debug + Clone + PartialEq + 'static
 
   pub fn append(&mut self, other: &Matrix<T>) -> MResult<()> {
     match (self, other) {
+      #[cfg(feature = "vector3")]
       (Matrix::DVector(lhs), Matrix::DVector(rhs)) => {
         let mut lhs = lhs.borrow_mut();
         let rhs = rhs.borrow();
@@ -521,6 +522,7 @@ where T: Debug + Clone + PartialEq + 'static
         }
         Ok(())
       }
+      #[cfg(feature = "row_vectord")]
       (Matrix::RowDVector(lhs), Matrix::RowDVector(rhs)) => {
         let mut lhs = lhs.borrow_mut();
         let rhs = rhs.borrow();
@@ -545,12 +547,14 @@ where T: Debug + Clone + PartialEq + 'static
 
   pub fn push(&mut self, value: T) -> MResult<()> {
     match self {
+      #[cfg(feature = "row_vectord")]
       Matrix::RowDVector(vec) => {
           let mut vec = vec.borrow_mut();
           let new_len = vec.ncols() + 1;
           vec.resize_horizontally_mut(new_len, value.clone()); // row vector: increase columns
           Ok(())
       }
+      #[cfg(feature = "vectord")]
       Matrix::DVector(vec) => {
           let mut vec = vec.borrow_mut();
           let new_len = vec.nrows() + 1;
@@ -586,11 +590,13 @@ where T: Debug + Clone + PartialEq + 'static
 
   pub fn resize_vertically(&mut self, new_size: usize, fill_value: T) -> MResult<()> {
     match self {
+      #[cfg(feature = "row_vectord")]
       Matrix::RowDVector(vec) => {
         let mut vec = vec.borrow_mut();
         vec.resize_horizontally_mut(new_size, fill_value);
         Ok(())
       }
+      #[cfg(feature = "vectord")]
       Matrix::DVector(vec) => {
         let mut vec = vec.borrow_mut();
         vec.resize_vertically_mut(new_size, fill_value);
