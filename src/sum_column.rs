@@ -44,6 +44,69 @@ impls_stas!(StatsSumColumnR4, RowVector4<T>, Matrix1<T>, sum_column_op);
 #[cfg(all(feature = "row_vectord", feature = "matrix1"))]
 impls_stas!(StatsSumColumnRD, RowDVector<T>, Matrix1<T>, sum_column_op);
 
+#[cfg(all(feature = "row_vectord", feature = "matrixd", not(feature = "matrix1")))]
+#[derive(Debug)]
+struct StatsSumColumnRD2<T> {
+  arg: Ref<RowDVector<T>>,
+  out: Ref<DMatrix<T>>,
+}
+
+#[cfg(all(feature = "row_vectord", feature = "matrixd", not(feature = "matrix1")))]
+impl<T> MechFunctionFactory for StatsSumColumnRD2<T>
+where
+  T: Copy + Debug + Clone + Sync + Send + 'static +
+     Add<Output = T> + AddAssign +
+     CompileConst + ConstElem + AsValueKind +
+     Zero + One +
+     PartialEq + PartialOrd,
+  Ref<DMatrix<T>>: ToValue,
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Unary(out, arg) => {
+        let arg = unsafe { arg.as_unchecked().clone() };
+        let out = unsafe { out.as_unchecked().clone() };
+        Ok(Box::new(StatsSumColumnRD2 { arg, out }))
+      }
+      _ => Err(MechError {file: file!().to_string(),tokens: vec![],msg: "".to_string(),id: line!(),kind: MechErrorKind::None,}),
+    }
+  }
+}
+#[cfg(all(feature = "row_vectord", feature = "matrixd", not(feature = "matrix1")))]
+impl<T> MechFunctionImpl for StatsSumColumnRD2<T>
+where
+  T: Copy + Debug + Clone + Sync + Send + 'static +
+     Add<Output = T> + AddAssign +
+     Zero + One +
+     PartialEq + PartialOrd,
+  Ref<DMatrix<T>>: ToValue,
+{
+  fn solve(&self) {
+    let arg_ptr = self.arg.as_ptr();
+    let mut out_ptr = self.out.as_mut_ptr();
+    unsafe { 
+      (&mut (*out_ptr))[(0,0)] = (*arg_ptr).column_sum()[0];   
+    }
+  }
+  fn out(&self) -> Value { self.out.to_value() }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+
+#[cfg(all(feature = "row_vectord", feature = "matrixd", not(feature = "matrix1")))]
+#[cfg(feature = "compiler")]
+impl<T> MechFunctionCompiler for StatsSumColumnRD2<T>
+where
+  T: CompileConst + ConstElem + AsValueKind,
+{
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    let name = format!("{}<{}>", stringify!(StatsSumColumnRD2), T::as_value_kind());
+    compile_unop!(name,self.out,self.arg,ctx,FeatureFlag::Custom(hash_str("stats/sum")));
+  }
+}
+register_fxn_descriptor!(StatsSumColumnRD2, u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", F32, "f32", F64, "f64", C64, "complex", R64, "rational");
+
+
+
 macro_rules! impl_stats_sum_column_match_arms {
   ($arg:expr, $($input_type:ident, $($target_type:ident, $value_string:tt),+);+ $(;)?) => {
     paste!{
@@ -78,6 +141,8 @@ macro_rules! impl_stats_sum_column_match_arms {
             Value::[<Matrix $input_type>](Matrix::<$target_type>::DVector(arg))    => Ok(Box::new(StatsSumColumnVD{arg: arg.clone(), out: Ref::new(DVector::from_element(arg.borrow().len(),$target_type::default())) })),
             #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "matrix1"))]
             Value::[<Matrix $input_type>](Matrix::<$target_type>::RowDVector(arg)) => Ok(Box::new(StatsSumColumnRD{arg: arg.clone(), out: Ref::new(Matrix1::from_element($target_type::default())) })),
+            #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "matrixd", not(feature = "matrix1")))]
+            Value::[<Matrix $input_type>](Matrix::<$target_type>::RowDVector(arg)) => Ok(Box::new(StatsSumColumnRD2{arg: arg.clone(), out: Ref::new(DMatrix::from_element(1,1,$target_type::default())) })),
             #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord"))]
             Value::[<Matrix $input_type>](Matrix::<$target_type>::DMatrix(arg)) => Ok(Box::new(StatsSumColumnMD{arg: arg.clone(), out: Ref::new(DVector::from_element(arg.borrow().nrows(),$target_type::default())) })),
           )+
