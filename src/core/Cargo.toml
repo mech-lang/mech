@@ -47,7 +47,7 @@ stdlib = ["bool", "string",
         ]
 
 baselib = ["bool", "string", 
-      "f64", "c64", 
+      "f64", "c64", "r64",
       "set", "map", "table", "tuple", "record", "atom", "enum",
       "row_vectord", "vectord", "matrixd",
       "subscript_range", "logical_indexing", 

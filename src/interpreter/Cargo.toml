@@ -62,7 +62,7 @@ stdlib = ["bool", "string",
     ]
 
 baselib = ["bool", "string", 
-      "f64", "c64", 
+      "f64", "c64", "r64",
       "set", "map", "table", "tuple", "record", "atom", "enum",
       "row_vectord", "vectord", "matrixd",
       "subscript_range", "logical_indexing", 
@@ -211,7 +211,7 @@ range_inclusive = ["range", "mech-range/inclusive"]
 range_exclusive = ["range", "mech-range/exclusive"]
 
 # Math
-math_default = ["math_ops_default", "math_ops_assign_default", "math_trig_default", "mech-core/default"]
+math_default = ["math_ops_default", "math_ops_assign_default", "math_trig_default", "mech-math/math_default"]
 math = ["mech-math/math", "formulas", "functions"]
 math_ops_default = ["math_add", "math_sub", "math_mul", "math_div", "math_exp", "math_mod", "math_neg"]
 math_ops_assign_default = ["math_add_assign", "math_sub_assign", "math_mul_assign", "math_div_assign"]
