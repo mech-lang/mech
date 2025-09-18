@@ -24,7 +24,7 @@ no_std = ["mech-core/no_std"]
 default = ["stdlib", "pretty_print", "serde", "compiler", "program",
             "ops_default", "ops_assign_default", "trig_default",
             "statements_default", "subscript_default",
-            "mech-core/default",
+            "mech-core/default",      
           ]
 
 base = ["baselib", "pretty_print", "serde", "compiler", "program",
@@ -34,7 +34,7 @@ base = ["baselib", "pretty_print", "serde", "compiler", "program",
       ]   
 
 baselib = ["bool", "string", 
-      "f64", "c64", 
+      "f64", "c64", "r64",
       "set", "map", "table", "tuple", "record", "atom", "enum",
       "row_vectord", "vectord", "matrixd",
       "subscript_range", "logical_indexing", 
@@ -46,6 +46,7 @@ baselib = ["bool", "string",
       "mech-core/baselib",
     ]
 
+math_default = ["ops_default", "ops_assign_default", "trig_default"]
 ops_default = ["add", "sub", "mul", "div", "exp", "mod"]
 ops_assign_default = ["add_assign", "sub_assign", "mul_assign", "div_assign"]
 trig_default = ["acos", "acosh", "acot", "acsc", "asec", "asin", "asinh", "atan", "atan2", "atanh", "cos", "cosh", "cot", "csc", "sec", "sin", "sinh", "tan", "tanh"]
@@ -155,7 +156,7 @@ atom = ["mech-core/atom"]
 
 # Matrix
 matrix = ["nalgebra", "mech-core/matrix"]
-fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2", "mech-core/fixed_row_vector"]
+fixed_row_vector = ["row_vector4", "row_vector2", "mech-core/fixed_row_vector"]
 fixed_vector = ["vector4", "vector3", "vector2", "mech-core/fixed_vector"]
 fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "mech-core/fixed_matrix"]
 dynamic_matrix = ["matrixd", "vectord", "row_vectord", "mech-core/dynamic_matrix"]
