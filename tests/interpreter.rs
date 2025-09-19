@@ -32,9 +32,13 @@ macro_rules! test_interpreter {
 
 test_interpreter!(interpret_literal_integer, "123", Value::F64(Ref::new(F64::new(123.0))));
 test_interpreter!(interpret_literal_sci, "1.23e2", Value::F64(Ref::new(F64::new(123.0))));
+#[cfg(feature = "i64")]
 test_interpreter!(interpret_literal_bin, "0b10101", Value::I64(Ref::new(0b10101)));
+#[cfg(feature = "i64")]
 test_interpreter!(interpret_literal_hex, "0x123abc", Value::I64(Ref::new(0x123abc)));
+#[cfg(feature = "i64")]
 test_interpreter!(interpret_literal_oct, "0o1234", Value::I64(Ref::new(0o1234)));
+#[cfg(feature = "i64")]
 test_interpreter!(interpret_literal_dec, "0d1234", Value::I64(Ref::new(1234)));
 test_interpreter!(interpret_literal_float, "1.23", Value::F64(Ref::new(F64::new(1.23))));
 test_interpreter!(interpret_literal_string, r#""Hello""#, Value::String(Ref::new("Hello".to_string())));
@@ -56,6 +60,7 @@ test_interpreter!(interpret_formula_math_add, "2 + 2", Value::F64(Ref::new(F64::
 test_interpreter!(interpret_formula_math_sub, "2 - 2", Value::F64(Ref::new(F64::new(0.0))));
 test_interpreter!(interpret_formula_math_mul, "2 * 2", Value::F64(Ref::new(F64::new(4.0))));
 test_interpreter!(interpret_formula_math_div, "2 / 2", Value::F64(Ref::new(F64::new(1.0))));
+#[cfg(feature = "u8")]
 test_interpreter!(interpret_formula_math_exp, "2<u8> ^ 2<u8>", Value::U8(Ref::new(4)));
 test_interpreter!(interpret_formula_math_exp_f64, "2.0 ^ 2.0", Value::F64(Ref::new(F64::new(4.0))));
 test_interpreter!(interpret_formulat_math_add_rational, "1/10 + 2/10 + 3/10", Value::R64(Ref::new(R64::new(6, 10))));
@@ -90,8 +95,9 @@ test_interpreter!(interpret_matrix_lt_rational, "[1/2 3/4] < [3/4 1/2]", Value::
 test_interpreter!(interpret_matrix_lt_complex, "[1+2i 3+4i] < [2+3i 4+5i]", Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2)));
 test_interpreter!(interpret_matrix_lte_rational, "[1/2 3/4] <= [1/2 3/4]", Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2)));
 test_interpreter!(interpret_matrix_lte_complex, "[1+2i 3+4i] <= [1+2i 3+4i]", Value::MatrixBool(Matrix::from_vec(vec![true, true], 1, 2)));
-
+#[cfg(feature = "u64")]
 test_interpreter!(interpret_kind_annotation, "1<u64>", Value::U64(Ref::new(1)));
+#[cfg(feature = "u64")]
 test_interpreter!(interpret_kind_annotation_math, "1<u64> + 1<u64>", Value::U64(Ref::new(2)));
 
 
@@ -111,63 +117,107 @@ test_interpreter!(interpret_kind_annotation_math, "1<u64> + 1<u64>", Value::U64(
 
 // New tests nominal with type def - unsigned
 //u8
+#[cfg(feature = "u8")]
 test_interpreter!(interpret_formula_math_add_u8, "2<u8> + 2<u8>", Value::U8(Ref::new(4)));
+#[cfg(feature = "u8")]
 test_interpreter!(interpret_formula_math_sub_u8, "2<u8> - 2<u8>", Value::U8(Ref::new(0)));
+#[cfg(feature = "u8")]
 test_interpreter!(interpret_formula_math_div_u8, "2<u8> / 2<u8>", Value::U8(Ref::new(1)));
+#[cfg(feature = "u8")]
 test_interpreter!(interpret_formula_math_mul_u8, "2<u8> * 2<u8>", Value::U8(Ref::new(4)));
 // u16
+#[cfg(feature = "u16")]
 test_interpreter!(interpret_formula_math_add_u16, "2<u16> + 2<u16>", Value::U16(Ref::new(4)));
+#[cfg(feature = "u16")]
 test_interpreter!(interpret_formula_math_sub_u16, "2<u16> - 2<u16>", Value::U16(Ref::new(0)));
+#[cfg(feature = "u16")]
 test_interpreter!(interpret_formula_math_div_u16, "2<u16> / 2<u16>", Value::U16(Ref::new(1)));
+#[cfg(feature = "u16")]
 test_interpreter!(interpret_formula_math_mul_u16, "2<u16> * 2<u16>", Value::U16(Ref::new(4)));
 // u32
+#[cfg(feature = "u32")]
 test_interpreter!(interpret_formula_math_add_u32, "2<u32> + 2<u32>", Value::U32(Ref::new(4)));
+#[cfg(feature = "u32")]
 test_interpreter!(interpret_formula_math_sub_u32, "2<u32> - 2<u32>", Value::U32(Ref::new(0)));
+#[cfg(feature = "u32")]
 test_interpreter!(interpret_formula_math_div_u32, "2<u32> / 2<u32>", Value::U32(Ref::new(1)));
+#[cfg(feature = "u32")]
 test_interpreter!(interpret_formula_math_mul_u32, "2<u32> * 2<u32>", Value::U32(Ref::new(4)));
 // u64
+#[cfg(feature = "u64")]
 test_interpreter!(interpret_formula_math_add_u64, "2<u64> + 2<u64>", Value::U64(Ref::new(4)));
+#[cfg(feature = "u64")]
 test_interpreter!(interpret_formula_math_sub_u64, "2<u64> - 2<u64>", Value::U64(Ref::new(0)));
+#[cfg(feature = "u64")]
 test_interpreter!(interpret_formula_math_div_u64, "2<u64> / 2<u64>", Value::U64(Ref::new(1)));
+#[cfg(feature = "u64")]
 test_interpreter!(interpret_formula_math_mul_u64, "2<u64> * 2<u64>", Value::U64(Ref::new(4)));
 // u128
+#[cfg(feature = "u128")]
 test_interpreter!(interpret_formula_math_add_u128, "2<u128> + 2<u128>", Value::U128(Ref::new(4)));
+#[cfg(feature = "u128")]
 test_interpreter!(interpret_formula_math_sub_u128, "2<u128> - 2<u128>", Value::U128(Ref::new(0)));
+#[cfg(feature = "u128")]
 test_interpreter!(interpret_formula_math_div_u128, "2<u128> / 2<u128>", Value::U128(Ref::new(1)));
+#[cfg(feature = "u128")]
 test_interpreter!(interpret_formula_math_mul_u128, "2<u128> * 2<u128>", Value::U128(Ref::new(4)));
 
 // New tests nominal with type def - signed
 //i8
+#[cfg(feature = "i8")]
 test_interpreter!(interpret_formula_math_add_i8, "2<i8> + 2<i8>", Value::I8(Ref::new(4)));
+#[cfg(feature = "i8")]
 test_interpreter!(interpret_formula_math_sub_i8, "2<i8> - 2<i8>", Value::I8(Ref::new(0)));
+#[cfg(feature = "i8")]
 test_interpreter!(interpret_formula_math_div_i8, "2<i8> / 2<i8>", Value::I8(Ref::new(1)));
+#[cfg(feature = "i8")]
 test_interpreter!(interpret_formula_math_mul_i8, "2<i8> * 2<i8>", Value::I8(Ref::new(4)));
 // i16
+#[cfg(feature = "i16")]
 test_interpreter!(interpret_formula_math_add_i16, "2<i16> + 2<i16>", Value::I16(Ref::new(4)));
+#[cfg(feature = "i16")]
 test_interpreter!(interpret_formula_math_sub_i16, "2<i16> - 2<i16>", Value::I16(Ref::new(0)));
+#[cfg(feature = "i16")]
 test_interpreter!(interpret_formula_math_div_i16, "2<i16> / 2<i16>", Value::I16(Ref::new(1)));
+#[cfg(feature = "i16")]
 test_interpreter!(interpret_formula_math_mul_i16, "2<i16> * 2<i16>", Value::I16(Ref::new(4)));
 // i32
+#[cfg(feature = "i32")]
 test_interpreter!(interpret_formula_math_add_i32, "2<i32> + 2<i32>", Value::I32(Ref::new(4)));
+#[cfg(feature = "i32")]
 test_interpreter!(interpret_formula_math_sub_i32, "2<i32> - 2<i32>", Value::I32(Ref::new(0)));
+#[cfg(feature = "i32")]
 test_interpreter!(interpret_formula_math_div_i32, "2<i32> / 2<i32>", Value::I32(Ref::new(1)));
+#[cfg(feature = "i32")]
 test_interpreter!(interpret_formula_math_mul_i32, "2<i32> * 2<i32>", Value::I32(Ref::new(4)));
 // i64
+#[cfg(feature = "i64")]
 test_interpreter!(interpret_formula_math_add_i64, "2<i64> + 2<i64>", Value::I64(Ref::new(4)));
+#[cfg(feature = "i64")]
 test_interpreter!(interpret_formula_math_sub_i64, "2<i64> - 2<i64>", Value::I64(Ref::new(0)));
+#[cfg(feature = "i64")]
 test_interpreter!(interpret_formula_math_div_i64, "2<i64> / 2<i64>", Value::I64(Ref::new(1)));
+#[cfg(feature = "i64")]
 test_interpreter!(interpret_formula_math_mul_i64, "2<i64> * 2<i64>", Value::I64(Ref::new(4)));
 // i128
+#[cfg(feature = "i128")]
 test_interpreter!(interpret_formula_math_add_i128, "2<i128> + 2<i128>", Value::I128(Ref::new(4)));
+#[cfg(feature = "i128")]
 test_interpreter!(interpret_formula_math_sub_i128, "2<i128> - 2<i128>", Value::I128(Ref::new(0)));
+#[cfg(feature = "i128")]
 test_interpreter!(interpret_formula_math_div_i128, "2<i128> / 2<i128>", Value::I128(Ref::new(1)));
+#[cfg(feature = "i128")]
 test_interpreter!(interpret_formula_math_mul_i128, "2<i128> * 2<i128>", Value::I128(Ref::new(4)));
 
 // New tests for nominal with type def - floats
 // f32
+#[cfg(feature = "f32")]
 test_interpreter!(interpret_formula_math_add_f32, "2.0<f32> + 2.0<f32>", Value::F32(Ref::new(F32::new(4.0))));
+#[cfg(feature = "f32")]
 test_interpreter!(interpret_formula_math_sub_f32, "2.0<f32> - 2.0<f32>", Value::F32(Ref::new(F32::new(0.0))));
+#[cfg(feature = "f32")]
 test_interpreter!(interpret_formula_math_div_f32, "2.0<f32> / 2.0<f32>", Value::F32(Ref::new(F32::new(1.0))));
+#[cfg(feature = "f32")]
 test_interpreter!(interpret_formula_math_mul_f32, "2.0<f32> * 2.0<f32>", Value::F32(Ref::new(F32::new(4.0))));
 //f64
 test_interpreter!(interpret_formula_math_add_f64, "2.0<f64> + 2.0<f64>", Value::F64(Ref::new(F64::new(4.0))));
@@ -175,10 +225,15 @@ test_interpreter!(interpret_formula_math_sub_f64, "2.0<f64> - 2.0<f64>", Value::
 test_interpreter!(interpret_formula_math_div_f64, "2.0<f64> / 2.0<f64>", Value::F64(Ref::new(F64::new(1.0))));
 test_interpreter!(interpret_formula_math_mul_f64, "2.0<f64> * 2.0<f64>", Value::F64(Ref::new(F64::new(4.0))));
 
+#[cfg(feature = "u16")]
 test_interpreter!(interpret_kind_math_no_overflow, "255<u16> + 1<u16>", Value::U16(Ref::new(256)));
+#[cfg(feature = "u8")]
 test_interpreter!(interpret_kind_matrix_row3, "[1<u8> 2<u8> 3<u8>]", Value::MatrixU8(Matrix::from_vec(vec![1, 2, 3], 1, 3)));
+#[cfg(feature = "u64")]
 test_interpreter!(interpret_kind_lhs_define, "x<u64> := 1", Value::U64(Ref::new(1)));
+#[cfg(all(feature = "u64", feature = "i8"))]
 test_interpreter!(interpret_kind_convert_twice, "x<u64> := 1; y<i8> := x", Value::I8(Ref::new(1)));
+#[cfg(feature = "f32")]
 test_interpreter!(interpret_kind_convert_float, "x<f32> := 123;", Value::F32(Ref::new(F32::new(123.0))));
 test_interpreter!(interpret_kind_convert_rational, "x<r64> := 1 / 2; y<f64> := x", Value::F64(Ref::new(F64::new(0.5))));
 test_interpreter!(interpret_kind_convert_rational2, "x<f64> := 1/2; y<r64> := x", Value::R64(Ref::new(R64::new(1, 2))));
@@ -219,8 +274,10 @@ test_interpreter!(interpret_reference_bool2, "x := false; x && true", Value::Boo
 test_interpreter!(interpret_variable_recall, "a := 1; b := 2; a", Value::MutableReference(Ref::new(Value::F64(Ref::new(F64::new(1.0))))));
 
 test_interpreter!(interpret_matrix_range_exclusive, "1..4", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0), F64::new(2.0), F64::new(3.0)], 1, 3)));
+#[cfg(feature = "u8")]
 test_interpreter!(interpret_matrix_range_exclusive_u8, "1<u8>..4<u8>", Value::MatrixU8(Matrix::from_vec(vec![1, 2, 3], 1, 3)));
 test_interpreter!(interpret_matrix_range_inclusive, "1..=4", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0), F64::new(2.0), F64::new(3.0), F64::new(4.0)], 1, 4)));
+#[cfg(feature = "u8")]
 test_interpreter!(interpret_matrix_range_inclusive_u8, "1<u8>..=4<u8>", Value::MatrixU8(Matrix::from_vec(vec![1, 2, 3, 4], 1, 4)));
 test_interpreter!(interpret_matrix_empty, "[]", Value::MatrixValue(Matrix::from_vec(vec![], 0, 0)));
 test_interpreter!(interpret_matrix_row3, "[1 2 3]", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0), F64::new(2.0), F64::new(3.0)], 1, 3)));
@@ -228,8 +285,10 @@ test_interpreter!(interpret_matrix_mat1, "[123]", Value::MatrixF64(Matrix::from_
 test_interpreter!(interpret_matrix_row3_float, "[1.2 2.3 3.4]", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.2), F64::new(2.3), F64::new(3.4)], 1, 3)));
 test_interpreter!(interpret_matrix_mat2, "[1 2; 3 4]", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0), F64::new(3.0), F64::new(2.0), F64::new(4.0)], 2, 2)));
 test_interpreter!(interpret_matrix_transpose, "[1 2; 3 4]'", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0), F64::new(2.0), F64::new(3.0), F64::new(4.0)], 2, 2)));
+#[cfg(feature = "u8")]
 test_interpreter!(interpret_matrix_transpose_u8, "[1<u8> 2<u8> 3<u8>]'", Value::MatrixU8(Matrix::from_vec(vec![1u8, 2, 3], 3, 1)));
 test_interpreter!(interpret_matrix_transpose_float, "[1.0 2.0 3.0; 4.0 5.0 6.0]'", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0), F64::new(2.0), F64::new(3.0), F64::new(4.0), F64::new(5.0), F64::new(6.0)], 3, 2)));
+#[cfg(feature = "i64")]
 test_interpreter!(interpret_matrix_transpose_vector, "x := | x<i64> | 1 | 3 | 5 |; x.x'", Value::MatrixI64(Matrix::from_vec(vec![1i64, 3, 5], 1, 3)));
 test_interpreter!(interpret_matrix_add_v2s, "[1;2] + 3", Value::MatrixF64(Matrix::from_vec(vec![F64::new(4.0), F64::new(5.0)], 2, 1)));
 
@@ -267,7 +326,9 @@ test_interpreter!(interpret_matrix_string_assign, r#"~x:=["Hello" "World"];x[1]=
 test_interpreter!(interpret_matrix_string_assign_logical, r#"~x := ["Hello", "World", "!"]; x[[true false true]] = "Foo";"#, Value::MatrixString(Matrix::from_vec(vec!["Foo".to_string(), "World".to_string(), "Foo".to_string()], 1, 3)));
 test_interpreter!(interpret_table_string_access, r#"x:=|x<string> y<string> | "a" "b" | "c" "d" |; x.y"#, Value::MatrixString(Matrix::from_vec(vec!["b".to_string(), "d".to_string()], 2, 1)));
 test_interpreter!(interpret_matrix_define_ref, r#"x:=123;y<[f64]:1,4>:=x;"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(123.0); 4], 1, 4)));
+#[cfg(all(feature = "f64", feature = "u8"))]
 test_interpreter!(interpret_matrix_define_convert, r#"y<[f64]:1,3> := 123<u8>;"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(123.0); 3], 1, 3)));
+#[cfg(all(feature = "u64", feature = "u8"))]
 test_interpreter!(interpret_matrix_define_convert_matrix, r#"x := [1 2 3];y<[u64]> := x;z<[u8]> := y;"#, Value::MatrixU8(Matrix::from_vec(vec![1u8, 2, 3], 1, 3)));
 
 // 2x2 Nominal Operations 
@@ -382,11 +443,17 @@ test_interpreter!(interpret_swizzle_record, "x := {x: 1, y: 2, z: 3}; x.y,z,z", 
 test_interpreter!(interpret_dot_record, "x := {x: 1, y: 2, z: 3}; x.x", Value::F64(Ref::new(F64::new(1.0))));
 
 test_interpreter!(interpret_dot_int_matrix, "x := [1,2,3]; x.1", Value::F64(Ref::new(F64::new(1.0))));
+#[cfg(all(feature = "i64", feature = "u8"))]
 test_interpreter!(interpret_dot_index_table, "x :=  | x<i64> y<u8>| 1 2 | 4 5|; x.x", Value::MatrixI64(Matrix::from_vec(vec![1, 4], 2, 1)));
+#[cfg(all(feature = "i64", feature = "u8"))]
 test_interpreter!(interpret_dot_index_table2, "x := | x<i64> y<u8>| 1 2 | 4 5|; x.y", Value::MatrixU8(Matrix::from_vec(vec![2, 5], 2, 1)));
+#[cfg(feature = "i64")]
 test_interpreter!(interpret_dot_index_table3, "x := | x<i64> y<bool>| 1 true | 4 false | 3 true|; x.y", Value::MatrixBool(Matrix::from_vec(vec![true, false, true], 3, 1)));
+#[cfg(all(feature = "i64", feature = "u8"))]
 test_interpreter!(interpret_dot_index_table4, "x := | x<i64> y<u8>| 1 2| 3 4| 5 6| 7 8 |; x.x", Value::MatrixI64(Matrix::from_vec(vec![1, 3, 5, 7], 4, 1)));
+#[cfg(all(feature = "i64", feature = "i8"))]
 test_interpreter!(interpret_dot_index_table5, "x := | x<i64> y<i8>| 1 2| 3 4| 5 6| 7 8 |; x.y", Value::MatrixI8(Matrix::from_vec(vec![2, 4, 6, 8], 4, 1)));
+#[cfg(all(feature = "u32", feature = "f32", feature = "i8"))]
 test_interpreter!(interpret_dot_index_table6, "x := | x<u32> y<f32> z<i8>|1 2 3|4 5 6|; x.y", Value::MatrixF32(Matrix::from_vec(vec![F32::new(2.0), F32::new(5.0)], 2, 1)));
 
 test_interpreter!(interpret_set_empty,"{_}", Value::Set(Ref::new(MechSet::from_vec(vec![]))));
@@ -430,6 +497,7 @@ test_interpreter!(interpret_set_value_slice_vec,"~x := [1 2 3 4]; x[1..=3] = [10
 
 test_interpreter!(interpret_set_record_field,"~x := {a: 1, b: true}; x.a = 2; x.a;", Value::F64(Ref::new(F64::new(2.0))));
 test_interpreter!(interpret_set_record_field2,"~x := {a: 1, b: true}; x.b = false; x.b;", Value::Bool(Ref::new(false)));
+#[cfg(feature = "u64")]
 test_interpreter!(interpret_set_record_field3,"~x := {a: 1<u64>, b: true}; x.a = 2<u64>; x.a;", Value::U64(Ref::new(2)));
 
 test_interpreter!(interpret_set_table_col,"~x := | x<f64> y<f64> | 1 2 | 3 4 |; x.x = [42;46]; y := x.x; y[1] + y[2]", Value::F64(Ref::new(F64::new(88.0))));
@@ -583,6 +651,7 @@ x := ┏       ┓
      ┃ 3   4 ┃
      ┗       ┛"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0), F64::new(3.0), F64::new(2.0), F64::new(4.0)], 2, 2)));
 
+#[cfg(all(feature = "f32", feature = "u64"))]
 test_interpreter!(interpret_fancy_table2, r#"
 x:=╭────────┬────────╮
    │ x<u64> │ y<f32> │
@@ -593,6 +662,7 @@ x:=╭────────┬────────╮
    ╰────────┴────────╯
 x.x"#, Value::MatrixU64(Matrix::from_vec(vec![1_u64, 3], 2, 1)));
 
+#[cfg(all(feature = "f32", feature = "u64"))]
 test_interpreter!(interpret_fancy_table3, r#"
 x:=╭────────┬────────╮
    │ x<u64> │ y<f32> │
@@ -601,6 +671,7 @@ x:=╭────────┬────────╮
    ╰────────┴────────╯
 x.x"#, Value::MatrixU64(Matrix::from_vec(vec![1_u64, 3], 2, 1)));
 
+#[cfg(all(feature = "f32", feature = "u64"))]
 test_interpreter!(interpret_fancy_table4, r#"
 x:=╭────────┬────────╮
    │ x<u64> │ y<f32> │
@@ -613,23 +684,31 @@ x:=╭────────┬────────╮
    │        │        │
    ╰────────┴────────╯
 x.x"#, Value::MatrixU64(Matrix::from_vec(vec![1_u64, 3], 2, 1)));
+#[cfg(all(feature = "f32", feature = "u8"))]
 test_interpreter!(interpret_table_access_element, r#"a:=|x<f32>|1.2|1.3|; a.x[1]"#, Ref::new(F32::new(1.2)).to_value());
-
+#[cfg(all(feature = "f32", feature = "u8"))]
 test_interpreter!(interpret_table_access_row, r#"x:=|a<f32> b<u8>|1.2 3 |1.3 4|; x{2}"#, Value::Record(Ref::new(MechRecord::new(vec![("a",Value::F32(Ref::new(F32::new(1.3)))),("b",Value::U8(Ref::new(4)))]))));
 test_interpreter!(interpret_table_append_row, r#"~x:=|a<f64> b<f64>|1 2 |3 4|; x += {a<f64>: 5, b<f64>: 6}; x{3}"#, Value::Record(Ref::new(MechRecord::new(vec![("a",Value::F64(Ref::new(F64::new(5.0)))),("b",Value::F64(Ref::new(F64::new(6.0))))]))));
 test_interpreter!(interpret_table_append_row2, r#"~x:=|a<f64> b<f64>|1 2 |3 4|; x += {b<f64>: 6, a<f64>: 5}; x{3}"#, Value::Record(Ref::new(MechRecord::new(vec![("b",Value::F64(Ref::new(F64::new(6.0)))),("a",Value::F64(Ref::new(F64::new(5.0))))]))));
+#[cfg(all(feature = "u8", feature = "u64"))]
 test_interpreter!(interpret_table_append_row3, r#"~x := |a<u64> b<u8>| 1 2 | 3 4 |; a:=13; b:=14; y := {c<bool>: false, a<u64>: a, b<u8>: b}; x += y; x{3}"#, Value::Record(Ref::new(MechRecord::new(vec![("a",Value::U64(Ref::new(13))),("b",Value::U8(Ref::new(14)))]))));
+#[cfg(all(feature = "u8", feature = "u64"))]
 test_interpreter!(interpret_table_append_table, r#"~x := |a<u64> b<u8>| 1 2 | 3 4 |;y := |a<u64> b<u8>| 5 6 | 7 8 |; x += y; x{4}"#, Value::Record(Ref::new(MechRecord::new(vec![("a",Value::U64(Ref::new(7))),("b",Value::U8(Ref::new(8)))]))));
 
+#[cfg(all(feature = "u8", feature = "u64"))]
 test_interpreter!(interpret_table_select_rows, r#"x := |a<u64> b<u8>| 1 2 | 3 4 | 5 6 |; x{[1,3]}"#, Value::Table(Ref::new(MechTable::from_records(vec![MechRecord::new(vec![("a",Value::U64(Ref::new(1))),("b",Value::U8(Ref::new(2)))]),MechRecord::new(vec![("a",Value::U64(Ref::new(5))),("b",Value::U8(Ref::new(6)))]),]).expect("Failed to create MechTable"))));
+#[cfg(feature = "u64")]
 test_interpreter!(interpret_table_select_logical, r#"a := | x<u64>  y<bool> | 2 true  | 3 false | 4 false | 5 true |; a{a.y}"#, Value::Table(Ref::new(MechTable::from_records(vec![MechRecord::new(vec![("x",Value::U64(Ref::new(2))),("y",Value::Bool(Ref::new(true)))]),MechRecord::new(vec![("x",Value::U64(Ref::new(5))),("y",Value::Bool(Ref::new(true)))]),]).expect("Failed to create MechTable"))));
+#[cfg(feature = "u64")]
 test_interpreter!(interpret_table_select_logical2, r#"a := | x<u64>  y<bool> | 2 true  | 3 false | 4 false | 5 true |; a{a.x > 3<u64>}"#, Value::Table(Ref::new(MechTable::from_records(vec![MechRecord::new(vec![("x",Value::U64(Ref::new(4))),("y",Value::Bool(Ref::new(false)))]),MechRecord::new(vec![("x",Value::U64(Ref::new(5))),("y",Value::Bool(Ref::new(true)))]),]).expect("Failed to create MechTable"))));
 
 test_interpreter!(interpret_table_from_matrix,r#"x := [1 2; 3 4]; a<|foo<f64>,bar<f64>|> := x"#,Value::Table(Ref::new(MechTable::from_records(vec![MechRecord::new(vec![("foo", Value::F64(Ref::new(F64::new(1.0)))),("bar", Value::F64(Ref::new(F64::new(2.0))))]),MechRecord::new(vec![("foo", Value::F64(Ref::new(F64::new(3.0)))),("bar", Value::F64(Ref::new(F64::new(4.0))))]),]).expect("Failed to create MechTable"))));
 test_interpreter!(interpret_table_from_matrix2,r#"x := ["true" "false"; "true" "false"]; a<|x<string> y<string>|> := x"#,Value::Table(Ref::new(MechTable::from_records(vec![MechRecord::new(vec![("x", Value::String(Ref::new("true".to_string()))),("y", Value::String(Ref::new("false".to_string())))]),MechRecord::new(vec![("x", Value::String(Ref::new("true".to_string()))),("y", Value::String(Ref::new("false".to_string())))]),]).expect("Failed to create MechTable"))));
 test_interpreter!(interpret_table_from_matrix3,r#"x:=[true false; true false]; a<|x<bool> y<bool>|> := x;"#,Value::Table(Ref::new(MechTable::from_records(vec![MechRecord::new(vec![("x", Value::Bool(Ref::new(true))),("y", Value::Bool(Ref::new(false)))]),MechRecord::new(vec![("x", Value::Bool(Ref::new(true))),("y", Value::Bool(Ref::new(false)))]),]).expect("Failed to create MechTable"))));
+#[cfg(feature = "u8")]
 test_interpreter!(interpret_table_from_matrix4,r#"x:=[1 2; 3 4]; a<|x<u8> y<i8>|> := x;"#,Value::Table(Ref::new(MechTable::from_records(vec![MechRecord::new(vec![("x", Value::U8(Ref::new(1))),("y", Value::I8(Ref::new(2)))]),MechRecord::new(vec![("x", Value::U8(Ref::new(3))),("y", Value::I8(Ref::new(4)))]),]).expect("Failed to create MechTable"))));
 
+#[cfg(feature = "u64")]
 test_interpreter!(interpret_matrix_reshape,r#"x:=[1 3; 2 4]; y<[u64]:4,1> := x"#, Value::MatrixU64(Matrix::from_vec(vec![1, 2, 3, 4], 4, 1)));
 
 test_interpreter!(interpret_matrix_reshape2,r#"x:=[1 2 3 4]; y<[string]:2,2> := x"#, Value::MatrixString(Matrix::from_vec(vec![String::from("1"), String::from("3"), String::from("2"), String::from("4")], 2, 2)));  
