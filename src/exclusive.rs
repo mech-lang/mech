@@ -72,60 +72,8 @@ where
   }
 }
 
-#[macro_export]
-macro_rules! impl_range_exclusive_match_arms {
-  ($fxn:ident, $arg1:expr, $arg2:expr, $($ty:tt, $feat:tt);+ $(;)?) => {
-    paste! {
-      match ($arg1, $arg2) {
-        $(
-          #[cfg(feature = $feat)]
-          (Value::[<$ty:camel>](from), Value::[<$ty:camel>](to))  => {
-            let from_val = *from.borrow();
-            let to_val = *to.borrow();
-            let diff = to_val - from_val;
-            if diff < $ty::zero() {
-              return Err(MechError {file: file!().to_string(),tokens: vec![],msg: "Range size must be > 0".to_string(),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,});
-            }
-            let size = diff.try_into().map_err(|_| MechError {file: file!().to_string(),tokens: vec![],msg: "Range size overflow".to_string(),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,})?;            
-            let mut vec = vec![from_val; size];
-            match size {
-              0 => Err(MechError {file: file!().to_string(),tokens: vec![],msg: "Range size must be > 0".to_string(),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,}),
-              #[cfg(feature = "matrix1")]
-              1 => {
-                register_range!($fxn, $ty, $feat, Matrix1);
-                Ok(Box::new($fxn::<$ty,Matrix1<$ty>>{from: from.clone(), to: to.clone(), out: Ref::new(Matrix1::from_element(vec[0])), phantom: PhantomData::default()}))
-              }
-              #[cfg(feature = "matrix2")]
-              2 => {
-                register_range!($fxn, $ty, $feat, Matrix2);
-                Ok(Box::new($fxn::<$ty,Matrix2<$ty>>{from: from.clone(), to: to.clone(), out: Ref::new(Matrix2::from_vec(vec)), phantom: PhantomData::default()}))
-              }
-              #[cfg(feature = "matrix3")]
-              3 => {              
-                register_range!($fxn, $ty, $feat, Matrix3);
-                Ok(Box::new($fxn::<$ty,Matrix3<$ty>>{from: from.clone(), to: to.clone(), out: Ref::new(Matrix3::from_vec(vec)), phantom: PhantomData::default()}))
-              }
-              #[cfg(feature = "matrix4")]
-              4 => {
-                register_range!($fxn, $ty, $feat, Matrix4);
-                Ok(Box::new($fxn::<$ty,Matrix4<$ty>>{from: from.clone(), to: to.clone(), out: Ref::new(Matrix4::from_vec(vec)), phantom: PhantomData::default()}))
-              }
-              #[cfg(feature = "matrixd")]
-              n => {
-                register_range!($fxn, $ty, $feat, DMatrix);
-                Ok(Box::new($fxn::<$ty,DMatrix<$ty>>{from: from.clone(), to: to.clone(), out: Ref::new(DMatrix::from_vec(n, 1, vec)), phantom: PhantomData::default()}))
-              }
-            }
-          }
-        )+
-        x => Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("{:?}", x),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,})
-      }
-    }
-  }
-}
-
 fn impl_range_exclusive_fxn(arg1_value: Value, arg2_value: Value) -> MResult<Box<dyn MechFunction>> {
-  impl_range_exclusive_match_arms!(RangeExclusiveScalar, arg1_value, arg2_value,
+  impl_range_match_arms!(RangeExclusiveScalar, arg1_value, arg2_value,
     F32, "f32";
     F64, "f64";
     i8,  "i8";
