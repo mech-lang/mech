@@ -623,10 +623,10 @@ test_interpreter!(interpret_add_assign_formula, "ix := [1 1 2 3]; y := 5; x := [
 test_interpreter!(interpret_add_assign_formula_all_m2m2,"~x := [1 2; 3 4]; y := [1 1 1 1];z := [10 10; 20 20]; x[y,:] += z;", Value::MatrixF64(Matrix::from_vec(vec![F64::new(61.0), F64::new(3.0), F64::new(62.0), F64::new(4.0)], 2, 2)));
 test_interpreter!(interpret_sub_assign_formula, "ix := [1 1 2 3]; y := 5; x := [1 2 3 4]; x[ix] -= y;", Value::MatrixF64(Matrix::from_vec(vec![F64::new(-9.0), F64::new(-3.0), F64::new(-2.0), F64::new(4.0)], 1, 4)));
 test_interpreter!(interpret_mul_assign_formula, "ix := [1 1 2 3]; y := 5; x := [1 2 3 4]; x[ix] *= y;", Value::MatrixF64(Matrix::from_vec(vec![F64::new(25.0), F64::new(10.0), F64::new(15.0), F64::new(4.0)], 1, 4)));
-test_interpreter!(interpret_add_assign_range, "~x := [1 2; 3 4]; x[1..3] += 1", Value::MatrixF64(Matrix::from_vec(vec![F64::new(2.0), F64::new(4.0), F64::new(2.0), F64::new(4.0)], 2, 2)));
+test_interpreter!(interpret_add_assign_range, "~x := [1 2; 3 4]; x[1..3] += 1", Value::MatrixF64(Matrix::from_vec(vec![F64::new(2.0), F64::new(4.0), F64::new(3.0), F64::new(4.0)], 2, 2)));
 test_interpreter!(interpret_div_assign_range_all, "~x := [1 2; 3 4; 5 6]; x[1..3,:] /= [1 2; 3 4];", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0), F64::new(1.0), F64::new(5.0), F64::new(1.0), F64::new(1.0), F64::new(6.0)], 3, 2)));
-test_interpreter!(interpret_div_assign_range, "~x := [1 2 3 4]; x[1..3] /= 2;", Value::MatrixF64(Matrix::from_vec(vec![F64::new(0.5), F64::new(1.0), F64::new(3.0), F64::new(4.0)], 1, 4)));
-test_interpreter!(interpret_add_assign_range_vec, "~x := [1 2 3 4]; x[1..3] += 2;", Value::MatrixF64(Matrix::from_vec(vec![F64::new(3.0), F64::new(4.0), F64::new(3.0), F64::new(4.0)], 1, 4)));
+test_interpreter!(interpret_div_assign_range, "~x := [1 2 3 4]; x[1..3] /= 2;", Value::MatrixF64(Matrix::from_vec(vec![F64::new(0.5), F64::new(1.0), F64::new(1.5), F64::new(4.0)], 1, 4)));
+test_interpreter!(interpret_add_assign_range_vec, "~x := [1 2 3 4]; x[1..3] += 2;", Value::MatrixF64(Matrix::from_vec(vec![F64::new(3.0), F64::new(4.0), F64::new(5.0), F64::new(4.0)], 1, 4)));
 
 test_interpreter!(interpret_set_logical_ram2m2_bool,"~x := [1 2; 3 4]; y := [true false]; z := [10 20; 30 40]; x[y,:] = z;", Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0), F64::new(3.0), F64::new(20.0), F64::new(4.0)], 2, 2)));
 test_interpreter!(interpret_set_logical_ram3m3_bool,"~x := [1 2 3; 4 5 6; 7 8 9]; y := [true false true]; z := [10 20 30; 40 50 60; 70 80 90]; x[y,:] = z;", Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0), F64::new(4.0), F64::new(70.0), F64::new(20.0), F64::new(5.0), F64::new(80.0), F64::new(30.0), F64::new(6.0), F64::new(90.0)], 3, 3)));
