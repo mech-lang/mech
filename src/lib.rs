@@ -47,6 +47,8 @@ use std::marker::PhantomData;
 pub mod join;
 #[cfg(feature = "op_assign")]
 pub mod op_assign;
+#[cfg(feature = "ops")]
+pub mod ops;
 #[cfg(feature = "powerset")]
 pub mod powerset;
 
@@ -54,6 +56,8 @@ pub mod powerset;
 pub use self::join::*;
 #[cfg(feature = "op_assign")]
 pub use self::op_assign::*;
+#[cfg(feature = "ops")]
+pub use self::ops::*;
 #[cfg(feature = "powerset")]
 pub use self::powerset::*;
 

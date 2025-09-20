@@ -28,8 +28,8 @@ default = ["stdlib", "pretty_print", "serde", "compiler", "program",
           ]
 
 join_default = []
-op_assign_default = ["union"]
-ops_default = []
+op_assign_default = []
+ops_default = ["union"]
 powerset_default = []
 
 set = ["num-traits", "functions"]

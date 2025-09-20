@@ -12,7 +12,8 @@ use mech_core::set::MechSet;
 
 macro_rules! union_op {
 ($lhs:expr, $rhs:expr, $out:expr) => {
-  unsafe { *$out = (*$lhs).set.union(*$rhs); }
+  unsafe { let new_set = (*$lhs).set.union((*$rhs).set);
+    *$out = {(*$lhs).kind, new_set.len(), new_set}; }
   };}
 
 impl_set_fxns!(Union);
