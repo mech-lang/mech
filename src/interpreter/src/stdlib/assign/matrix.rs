@@ -98,6 +98,7 @@ macro_rules! impl_set_all_fxn_s {
       }
     }};}
 
+
 #[macro_export]
 macro_rules! impl_set_all_fxn_v {
   ($struct_name:ident, $op:ident, $ix:ty) => {
@@ -138,7 +139,7 @@ macro_rules! impl_set_all_fxn_v {
     where
       Ref<naMatrix<T, R1, C1, S1>>: ToValue,
       T: Debug + Clone + Sync + Send + 'static +
-        PartialEq + PartialOrd,
+         PartialEq + PartialOrd,
       IxVec: AsRef<[$ix]> + Debug,
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
       R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
@@ -187,6 +188,26 @@ macro_rules! impl_set_fxn_s {
       pub sink: Ref<MatA>,
       pub _marker: PhantomData<T>,
     }
+    /*impl<T, R, C, S: 'static> MechFunctionFactory for $struct_name<T, naMatrix<T, R, C, S>>
+    where
+      Ref<naMatrix<T, R, C, S>>: ToValue,
+      T: Scalar + Clone + Debug + Sync + Send + 'static +
+        CompileConst + ConstElem + AsValueKind,
+      R: Dim, C: Dim, S: StorageMut<T, R, C> + Clone + Debug,
+      naMatrix<T, R, C, S>: CompileConst + ConstElem + AsNaKind,
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Binary(out, arg1, arg2) => {
+            let source: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+            let ixes: Ref<$ix> = unsafe { arg2.as_unchecked() }.clone();
+            let sink: Ref<naMatrix<T, R, C, S>> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(Self { sink, source, ixes, _marker: PhantomData::default() }))
+          },
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+        }
+      }
+    }*/
     impl<T, R, C, S> MechFunctionImpl for $struct_name<T, naMatrix<T, R, C, S>>
     where
       Ref<naMatrix<T, R, C, S>>: ToValue,
@@ -210,7 +231,7 @@ macro_rules! impl_set_fxn_s {
     impl<T, R, C, S> MechFunctionCompiler for $struct_name<T, naMatrix<T, R, C, S>> 
     where
       T: CompileConst + ConstElem + AsValueKind,
-      naMatrix<T, R, C, S>: CompileConst + ConstElem,
+      naMatrix<T, R, C, S>: CompileConst + ConstElem + AsNaKind,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
         let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
@@ -226,6 +247,26 @@ pub struct Set1DSB<T, MatA> {
   pub ixes: Ref<bool>,
   pub sink: Ref<MatA>,
   pub _marker: PhantomData<T>,
+}
+impl<T, R, C, S> MechFunctionFactory for Set1DSB<T, naMatrix<T, R, C, S>>
+where
+  Ref<naMatrix<T, R, C, S>>: ToValue,
+  T: Scalar + Clone + Debug + Sync + Send + 'static +
+    CompileConst + ConstElem + AsValueKind,
+  R: Dim, C: Dim, S: StorageMut<T, R, C> + Clone + Debug + 'static,
+  naMatrix<T, R, C, S>: CompileConst + ConstElem + AsNaKind,
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Binary(out, arg1, arg2) => {
+        let source: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+        let ixes: Ref<bool> = unsafe { arg2.as_unchecked() }.clone();
+        let sink: Ref<naMatrix<T, R, C, S>> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self { sink, source, ixes, _marker: PhantomData::default() }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Set1DSB requires 2 arguments, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
 }
 impl<T, R, C, S> MechFunctionImpl for Set1DSB<T, naMatrix<T, R, C, S>>
 where
@@ -428,6 +469,23 @@ macro_rules! matrix_assign_range_fxn {
         .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, C64,  "complex"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, bool, "bool"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, String, "string"))
+
+        //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, u8,  "u8"))
+        //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, u16,  "u16"))
+        //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, u32,  "u32"))
+        //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, u64,  "u64"))
+        //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, u128, "u128"))
+        //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, i8,   "i8"))
+        //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, i16,  "i16"))
+        //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, i32,  "i32"))
+        //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, i64,  "i64"))
+        //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, i128, "i128"))
+        //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, F32,  "f32"))
+        //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, F64,  "f64"))
+        //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, R64,  "rational"))
+        //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, C64,  "complex"))
+        //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, bool, "bool"))
+        //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, String, "string"))        
         .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
       }
     }
