@@ -407,7 +407,34 @@ impl_set_all_fxn_s!(Set1DRB,set_1d_range_b,bool);
 impl_set_all_fxn_v!(Set1DRV,set_1d_range_vec,usize);
 impl_set_all_fxn_v!(Set1DRVB,set_1d_range_vec_b,bool);
 
-matrix_assign_range_all_fxn!(impl_assign_range_fxn, Set1DR);
+macro_rules! matrix_assign_range_fxn {
+  ($op_fxn_name:tt, $fxn_name:ident) => {
+    paste::paste! {
+      fn $op_fxn_name(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        let arg = (sink, ixes.as_slice(), source);
+                     impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u8,   "u8")
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u16,  "u16"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u32,  "u32"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u64,  "u64"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, u128, "u128"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i8,   "i8"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i16,  "i16"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i32,  "i32"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i64,  "i64"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, i128, "i128"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, F32,  "f32"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, F64,  "f64"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, R64,  "rational"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, C64,  "complex"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, bool, "bool"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms, $fxn_name, arg, String, "string"))
+        .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+      }
+    }
+  }
+}
+
+matrix_assign_range_fxn!(impl_assign_range_fxn, Set1DR);
 
 pub struct MatrixSetRange {}
 impl NativeFunctionCompiler for MatrixSetRange {
