@@ -195,11 +195,11 @@ pub fn negated(num: &RealNumber) -> Value {
     Value::I64(val) => Value::I64(Ref::new(-*val.borrow())),
     #[cfg(feature = "i128")]
     Value::I128(val) => Value::I128(Ref::new(-*val.borrow())),
-    #[cfg(feature = "u8")]
+    #[cfg(feature = "f64")]
     Value::F64(val) => Value::F64(Ref::new(F64::new(-((*val.borrow()).0)))),
-    #[cfg(feature = "u16")]
+    #[cfg(feature = "f32")]
     Value::F32(val) => Value::F32(Ref::new(F32::new(-((*val.borrow()).0)))),
-    _ => panic!("Negation is only supported for integer and float types"),
+    x => panic!("Negation is only supported for integer and float types, got {:?}", x),
   }
 }
 
