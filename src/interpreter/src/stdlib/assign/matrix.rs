@@ -407,9 +407,7 @@ impl_set_all_fxn_s!(Set1DRB,set_1d_range_b,bool);
 impl_set_all_fxn_v!(Set1DRV,set_1d_range_vec,usize);
 impl_set_all_fxn_v!(Set1DRVB,set_1d_range_vec_b,bool);
 
-fn impl_set_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
-  impl_set_match_arms!(Set1DR, range, (sink, ixes.as_slice(), source))
-}
+matrix_assign_range_all_fxn!(impl_assign_range_fxn, Set1DR);
 
 pub struct MatrixSetRange {}
 impl NativeFunctionCompiler for MatrixSetRange {
@@ -420,13 +418,13 @@ impl NativeFunctionCompiler for MatrixSetRange {
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
     let ixes = arguments.clone().split_off(2);
-    match impl_set_range_fxn(sink.clone(),source.clone(),ixes.clone()) {
+    match impl_assign_range_fxn(sink.clone(),source.clone(),ixes.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(x) => {
         match (sink,source) {
-          (Value::MutableReference(sink),Value::MutableReference(source)) => { impl_set_range_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
-          (sink,Value::MutableReference(source)) => { impl_set_range_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
-          (Value::MutableReference(sink),source) => { impl_set_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
+          (Value::MutableReference(sink),Value::MutableReference(source)) => { impl_assign_range_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
+          (sink,Value::MutableReference(source)) => { impl_assign_range_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
+          (Value::MutableReference(sink),source) => { impl_assign_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
           x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }

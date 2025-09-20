@@ -639,6 +639,7 @@ test_interpreter!(interpret_modulus,"[1 2 3 4 5] % 5", Value::MatrixF64(Matrix::
 
 test_interpreter!(interpret_horzcat_rdn2, "y := [4 5 6]; [y y y * 2]", Value::MatrixF64(Matrix::from_vec(vec![F64::new(4.0), F64::new(5.0), F64::new(6.0), F64::new(4.0), F64::new(5.0), F64::new(6.0), F64::new(8.0), F64::new(10.0), F64::new(12.0)], 1, 9)));
 
+#[cfg(feature = "u8")]
 test_interpreter!(interpret_fancy_table, r#"x := |x<f64> y<u8>|
      |1      2    |
      |3      4    |
