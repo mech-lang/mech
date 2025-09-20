@@ -22,14 +22,23 @@ crate-type = ["dylib", "rlib"]
 no_std = ["mech-core/no_std"]
 
 default = ["stdlib", "pretty_print", "serde", "compiler", "program",
-            "join", "ops_default", "powerset",
+            "join_default", "op_assign_default", "ops_default", "powerset_default",
             "statements_default", "subscript_default",
             "mech-core/default",
           ]
 
-join = []
+join_default = []
+op_assign_default = ["union"]
 ops_default = []
-powerset = []
+powerset_default = []
+
+set = ["num-traits", "functions"]
+join = ["set"]
+op_assign = ["set"]
+ops = ["set"]
+powerset = ["set"]
+
+union = ["ops"]
 
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]

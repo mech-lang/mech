@@ -45,15 +45,15 @@ use std::marker::PhantomData;
 
 #[cfg(feature = "join")]
 pub mod join;
-#[cfg(feature = "ops_default")]
-pub mod ops_default;
+#[cfg(feature = "op_assign")]
+pub mod op_assign;
 #[cfg(feature = "powerset")]
 pub mod powerset;
 
 #[cfg(feature = "join")]
 pub use self::join::*;
-#[cfg(feature = "ops_default")]
-pub use self::ops_default::*;
+#[cfg(feature = "op_assign")]
+pub use self::op_assign::*;
 #[cfg(feature = "powerset")]
 pub use self::powerset::*;
 
