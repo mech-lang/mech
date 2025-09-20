@@ -188,7 +188,7 @@ macro_rules! impl_set_fxn_s {
       pub sink: Ref<MatA>,
       pub _marker: PhantomData<T>,
     }
-    /*impl<T, R, C, S: 'static> MechFunctionFactory for $struct_name<T, naMatrix<T, R, C, S>>
+    impl<T, R, C, S: 'static> MechFunctionFactory for $struct_name<T, naMatrix<T, R, C, S>>
     where
       Ref<naMatrix<T, R, C, S>>: ToValue,
       T: Scalar + Clone + Debug + Sync + Send + 'static +
@@ -207,7 +207,7 @@ macro_rules! impl_set_fxn_s {
           _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
         }
       }
-    }*/
+    }
     impl<T, R, C, S> MechFunctionImpl for $struct_name<T, naMatrix<T, R, C, S>>
     where
       Ref<naMatrix<T, R, C, S>>: ToValue,
@@ -481,7 +481,7 @@ macro_rules! matrix_assign_range_fxn {
         //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, i64,  "i64"))
         //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, i128, "i128"))
         //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, F32,  "f32"))
-        //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, F64,  "f64"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, F64,  "f64"))
         //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, R64,  "rational"))
         //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, C64,  "complex"))
         //.or_else(|_| impl_assign_fxn!(impl_set_range_arms_b, $fxn_name, arg, bool, "bool"))
