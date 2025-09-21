@@ -506,10 +506,10 @@ impl NativeFunctionCompiler for MatrixSetRange {
     match impl_assign_range_fxn(sink.clone(),source.clone(),ixes.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(x) => {
-        match (sink,source) {
-          (Value::MutableReference(sink),Value::MutableReference(source)) => { impl_assign_range_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
-          (sink,Value::MutableReference(source)) => { impl_assign_range_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
-          (Value::MutableReference(sink),source) => { impl_assign_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
+        match (sink,&ixes,source) {
+          (Value::MutableReference(sink),_,Value::MutableReference(source)) => { impl_assign_range_fxn(sink.borrow().clone(),source.borrow().clone(),ixes.clone()) },
+          (sink,_,Value::MutableReference(source)) => { impl_assign_range_fxn(sink.clone(),source.borrow().clone(),ixes.clone()) },
+          (Value::MutableReference(sink),_,source) => { impl_assign_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) },
           x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }

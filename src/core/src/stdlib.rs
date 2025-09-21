@@ -1681,6 +1681,36 @@ macro_rules! impl_set_range_arms_b {
           register_assign_s_b!([<$fxn_name B>], $value_kind, $value_string, Matrix1, Matrix1);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
         },
+        #[cfg(all(feature = $value_string, feature = "matrix2"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)),[Value::MatrixBool(Matrix::Vector4(ix))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_s_b!([<$fxn_name B>], $value_kind, $value_string, Matrix2, Vector4);
+          box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
+        },
+        #[cfg(all(feature = $value_string, feature = "matrix3"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)),[Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_s_b!([<$fxn_name B>], $value_kind, $value_string, Matrix3, DVector);
+          box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
+        },
+        #[cfg(all(feature = $value_string, feature = "matrix4"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)),[Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_s_b!([<$fxn_name B>], $value_kind, $value_string, Matrix4, DVector);
+          box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
+        },
+        #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)),[Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_s_b!([<$fxn_name B>], $value_kind, $value_string, Matrix2x3, DVector);
+          box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
+        },
+        #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)),[Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_s_b!([<$fxn_name B>], $value_kind, $value_string, Matrix3x2, DVector);
+          box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
+        },
+        #[cfg(all(feature = $value_string, feature = "matrixd"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)),[Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_s_b!([<$fxn_name B>], $value_kind, $value_string, DMatrix, DVector);
+          box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
+        },
         #[cfg(all(feature = $value_string, feature = "vector2"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)),[Value::MatrixBool(Matrix::Vector2(ix))], Value::[<$value_kind:camel>](source)) => {
           register_assign_s_b!([<$fxn_name B>], $value_kind, $value_string, Vector2, Vector2);
@@ -1699,6 +1729,26 @@ macro_rules! impl_set_range_arms_b {
         #[cfg(all(feature = $value_string, feature = "vectord"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::DVector(sink)),[Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
           register_assign_s_b!([<$fxn_name B>], $value_kind, $value_string, DVector, DVector);
+          box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
+        },
+        #[cfg(all(feature = $value_string, feature = "row_vector2"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)),[Value::MatrixBool(Matrix::Vector2(ix))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_s_b!([<$fxn_name B>], $value_kind, $value_string, RowVector2, Vector2);
+          box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
+        },
+        #[cfg(all(feature = $value_string, feature = "row_vector3"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)),[Value::MatrixBool(Matrix::Vector3(ix))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_s_b!([<$fxn_name B>], $value_kind, $value_string, RowVector3, Vector3);
+          box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
+        },
+        #[cfg(all(feature = $value_string, feature = "row_vector4"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)),[Value::MatrixBool(Matrix::Vector4(ix))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_s_b!([<$fxn_name B>], $value_kind, $value_string, RowVector4, Vector4);
+          box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
+        },
+        #[cfg(all(feature = $value_string, feature = "row_vectord"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)),[Value::MatrixBool(Matrix::DVector(ix))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_s_b!([<$fxn_name B>], $value_kind, $value_string, RowDVector, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
         },
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
