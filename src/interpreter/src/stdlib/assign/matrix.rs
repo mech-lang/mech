@@ -7,7 +7,7 @@ use nalgebra::{
   Dim, Scalar,
 };
 
-// Set -----------------------------------------------------------------
+// Assign -----------------------------------------------------------------
 
 #[macro_export]
 macro_rules! impl_set_match_arms {
@@ -1432,7 +1432,7 @@ impl NativeFunctionCompiler for MatrixSetRangeRange {
 
 // x[:,1..3] = 1 ------------------------------------------------------------------
 
-macro_rules! set_2d_all_vector {
+macro_rules! assign_2d_all_range {
   ($source:expr, $ix:expr, $sink:expr) => {
       for cix in $ix.iter() {
         for rix in 0..($sink).nrows() {
@@ -1441,65 +1441,100 @@ macro_rules! set_2d_all_vector {
       }
     };}
 
-macro_rules! set_2d_all_vector_b {
+macro_rules! assign_2d_all_range_b {
   ($source:expr, $ix:expr, $sink:expr) => {
-      for cix in 0..$ix.len() {
-        for rix in 0..($sink).nrows() {
-          if $ix[cix] == true {
-            ($sink).column_mut(cix)[rix] = ($source).clone();
-          }
+    for cix in 0..$ix.len() {
+      for rix in 0..($sink).nrows() {
+        if $ix[cix] == true {
+          ($sink).column_mut(cix)[rix] = ($source).clone();
         }
       }
-    };}    
+    }
+  };} 
 
-impl_set_all_fxn_s!(Set2DAR,set_2d_all_vector,usize);
-impl_set_all_fxn_s!(Set2DARB,set_2d_all_vector_b,bool);
+macro_rules! assign_2d_all_range_v {
+  ($source:expr, $ix:expr, $sink:expr) => {
+    {
+      let nsrc = $source.nrows();
+      for (i, &cix) in $ix.iter().enumerate() {
+        let col_index = cix - 1;
+        let mut sink_col = $sink.column_mut(col_index);
+        let src_col = $source.column(i % nsrc); // wrap around!
+        for (dst, src) in sink_col.iter_mut().zip(src_col.iter()) {
+          *dst = src.clone();
+        }
+      }
+    }
+  };}
 
-#[macro_export]
-macro_rules! impl_set_all_range_match_arms {
-  ($fxn_name:ident, $arg:expr, $($value_kind:ident, $value_string:tt);+ $(;)?) => {
-    paste!{
-      match $arg {
-        $(
-          #[cfg(all(feature = $value_string, feature = "matrix4"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)),   [Value::IndexAll,Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), ixes:   ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrix3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)),   [Value::IndexAll,Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), ixes:   ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrix2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)),   [Value::IndexAll,Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), ixes:   ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrix1"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix1(sink)),   [Value::IndexAll,Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), ixes:   ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), [Value::IndexAll,Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), [Value::IndexAll,Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrixd"))]
-          (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)),   [Value::IndexAll,Value::MatrixIndex(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), ixes:   ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
+macro_rules! assign_2d_all_range_vb {
+  ($source:expr, $ix:expr, $sink:expr) => {
+    {
+      let mut src_i = 0;
+      for (i, cix) in (&$ix).iter().enumerate() {
+        if *cix == true {
+          let mut sink_col = ($sink).column_mut(i);
+          let src_col = ($source).column(src_i);
+          for (dst, src) in sink_col.iter_mut().zip(src_col.iter()) {
+            *dst = src.clone();
+          }
+          src_i += 1;
+        }
+      }
+    }
+  };}
 
-          #[cfg(all(feature = $value_string, feature = "matrix4", feature = "logical_indexing"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)),   [Value::IndexAll,Value::MatrixBool(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes:   ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrix3", feature = "logical_indexing"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)),   [Value::IndexAll,Value::MatrixBool(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes:   ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrix2", feature = "logical_indexing"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)),   [Value::IndexAll,Value::MatrixBool(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes:   ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrix1", feature = "logical_indexing"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix1(sink)),   [Value::IndexAll,Value::MatrixBool(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes:   ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "logical_indexing"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), [Value::IndexAll,Value::MatrixBool(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "logical_indexing"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), [Value::IndexAll,Value::MatrixBool(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrixd", feature = "logical_indexing"))]
-          (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)),   [Value::IndexAll,Value::MatrixBool(Matrix::DVector(ix))], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes:   ix.clone(), source: source.clone(), _marker: PhantomData::default() })),
-        )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+impl_set_all_fxn_v!(Set2DARV, assign_2d_all_range_v, usize);
+impl_set_all_fxn_s!(Set2DARS, assign_2d_all_range, usize);
+impl_set_all_fxn_s!(Set2DARB, assign_2d_all_range_b, bool);
+impl_set_all_fxn_v!(Set2DARVB, assign_2d_all_range_vb, bool);
+
+macro_rules! matrix_assign_all_range_fxn {
+  ($op_fxn_name:tt, $fxn_name:ident) => {
+    paste::paste! {
+      fn $op_fxn_name(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+        let arg = (sink, ixes.as_slice(), source);
+        println!("$$$$$$$ arg: {:?}", &arg);
+                     impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, u8, "u8")
+        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, u16, "u16"))
+        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, u32, "u32"))
+        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, u64, "u64"))
+        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, u128, "u128"))
+        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, i8, "i8"))
+        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, i16, "i16"))
+        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, i32, "i32"))
+        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, i64, "i64"))
+        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, i128, "i128"))
+        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, F32, "f32"))
+        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, F64, "f64"))
+        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, R64, "rational"))
+        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, C64, "complex"))
+        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, bool, "bool"))
+        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, String, "string"))
+
+        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, u8,  "u8"))
+        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, u16, "u16"))
+        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, u32, "u32"))
+        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, u64, "u64"))
+        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, u128,"u128"))
+        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, i8,  "i8"))
+        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, i16, "i16"))
+        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, i32, "i32"))
+        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, i64, "i64"))
+        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, i128,"i128"))
+        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, F32, "f32"))
+        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, F64, "f64"))
+        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, R64, "rational"))
+        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, C64, "complex"))
+        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, bool, "bool"))
+        .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, String, "string"))
+        .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
       }
     }
   }
 }
 
-fn impl_set_all_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
-  impl_set_match_arms!(Set2DAR, all_range, (sink, ixes.as_slice(), source))
-}
+matrix_assign_all_range_fxn!(impl_assign_all_range_fxn, Set2DAR);
 
 pub struct MatrixSetAllRange {}
 impl NativeFunctionCompiler for MatrixSetAllRange {
@@ -1510,12 +1545,14 @@ impl NativeFunctionCompiler for MatrixSetAllRange {
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
     let ixes = arguments.clone().split_off(2);
-    match impl_set_all_range_fxn(sink.clone(),source.clone(),ixes.clone()) {
+    match impl_assign_all_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
-        match sink {
-          Value::MutableReference(sink) => { impl_set_all_range_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+        match (sink, ixes, source) {
+          (Value::MutableReference(sink), ixes, Value::MutableReference(source)) => { impl_assign_all_range_fxn(sink.borrow().clone(), source.borrow().clone(), ixes.clone()) },
+          (sink, ixes, Value::MutableReference(source)) => { impl_assign_all_range_fxn(sink.clone(), source.borrow().clone(), ixes.clone()) },
+          (Value::MutableReference(sink), ixes, source) => { impl_assign_all_range_fxn(sink.borrow().clone(), source.clone(), ixes.clone()) },
+          x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{:?}", x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }
@@ -1523,7 +1560,6 @@ impl NativeFunctionCompiler for MatrixSetAllRange {
 }
 
 // x[1..3,:] = 1 ------------------------------------------------------------------
-
 
 macro_rules! assign_2d_range_all {
   ($source:expr, $ix:expr, $sink:expr) => {
@@ -1600,6 +1636,8 @@ macro_rules! matrix_assign_range_all_fxn {
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, F64, "f64"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, R64, "rational"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, C64, "complex"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, bool, "bool"))
+        .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, String, "string"))
         .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
       }
     }
