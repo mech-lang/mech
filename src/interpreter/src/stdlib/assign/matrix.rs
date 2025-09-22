@@ -1615,7 +1615,7 @@ macro_rules! assign_2d_range_all_vb {
 
 impl_set_all_fxn_v!(Set2DRAV,assign_2d_range_all_v,usize);
 impl_set_all_fxn_s!(Set2DRAS,assign_2d_range_all,usize);
-impl_set_all_fxn_s!(Set2DRASB,assign_2d_range_all_b,bool);
+impl_set_all_fxn_s!(Set2DRAB,assign_2d_range_all_b,bool);
 impl_set_all_fxn_v!(Set2DRAVB,assign_2d_range_all_vb,bool);
 
 macro_rules! matrix_assign_range_all_fxn {
@@ -1638,6 +1638,23 @@ macro_rules! matrix_assign_range_all_fxn {
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, C64, "complex"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, bool, "bool"))
         .or_else(|_| impl_assign_fxn!(impl_set_range_all_arms, $fxn_name, arg, String, "string"))
+
+        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, u8,  "u8"))
+        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, u16, "u16"))
+        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, u32, "u32"))
+        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, u64, "u64"))
+        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, u128,"u128"))
+        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, i8,  "i8"))
+        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, i16, "i16"))
+        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, i32, "i32"))
+        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, i64, "i64"))
+        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, i128,"i128"))
+        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, F32, "f32"))
+        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, F64, "f64"))
+        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, R64, "rational"))
+        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, C64, "complex"))
+        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, bool, "bool"))
+        .or_else(|_| impl_set_range_all_arms_b!($fxn_name, &arg, String, "string"))
         .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
       }
     }
