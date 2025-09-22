@@ -1,0 +1,90 @@
+set/symmetric_difference
+===============================================================================
+
+%% Symmetric difference of two sets (stable insertion order)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+D := set/symmetric_difference(A, B)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the symmetric difference of two sets A and B.
+The result contains elements that appear in exactly one of the inputs, but not both.
+
+The implementation wraps a Rust IndexSet symmetric difference iterator, so the result
+preserves stable insertion order:
+
+- Elements from A that are not in B come first, in A's order.
+- Then elements from B that are not in A are appended, in B's order.
+
+3. Input
+-------------------------------------------------------------------------------
+
+Arguments:
+- A : set of T   (or an array treated as a set; duplicates ignored)
+- B : set of T   (or an array treated as a set; duplicates ignored)
+
+Element type constraints:
+- T must be hashable and comparable for equality (Eq and Hash in Rust).
+- Common kinds include integers, strings, symbols, and booleans.
+
+4. Output
+-------------------------------------------------------------------------------
+
+Result:
+- D : set of T containing elements unique to either A or B, preserving order.
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(a) Simple symmetric difference
+
+```mech:ex1
+A := ["a", "b", "c"]
+B := ["b", "c", "d"]
+D := set/symmetric_difference(A, B)
+```
+
+(b) Numbers
+
+```mech:ex2
+A := [1, 2, 3]
+B := [3, 4, 5]
+D := set/symmetric_difference(A, B)
+```
+
+(c) Order is stable
+
+```mech:ex3
+A := ["x", "y"]
+B := ["y", "z"]
+D := set/symmetric_difference(A, B)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+Set semantics:
+- Inputs are coerced to sets by dropping duplicates using hash and equality.
+- The result contains each distinct element exactly once.
+
+Stable insertion order:
+- Matches Rust IndexSet behavior: order reflects first appearance in A, then B.
+
+Performance:
+- Average O(A + B) time with hashing; memory is O(A + B) for the result.
+
+Determinism:
+- Given equal inputs, output order is deterministic across runs and platforms.
+
+7. Errors
+-------------------------------------------------------------------------------
+
+- Incorrect number of arguments (expects exactly two).
+- Unsupported element type (not hashable or not comparable for equality).
+- Inconsistent element kinds between A and B.

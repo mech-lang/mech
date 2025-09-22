@@ -1,0 +1,89 @@
+set/intersection
+===============================================================================
+
+%% Intersection of two sets (stable insertion order)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+I := set/intersection(A, B)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the intersection of two sets A and B, returning only the elements
+that appear in both inputs.  
+
+The implementation wraps a Rust IndexSet intersection iterator, so the result
+preserves stable insertion order:
+
+- Elements are returned in the order they appear in A, limited to those also in B.
+
+3. Input
+-------------------------------------------------------------------------------
+
+Arguments:
+- A : set of T   (or array treated as a set; duplicates ignored)
+- B : set of T   (or array treated as a set; duplicates ignored)
+
+Element type constraints:
+- T must be hashable and comparable for equality (Eq + Hash in Rust).
+- Common scalar kinds: integers, strings, symbols, booleans.
+
+4. Output
+-------------------------------------------------------------------------------
+
+Result:
+- I : set of T containing only elements common to both A and B.
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(a) Simple intersection
+
+```mech:ex1
+A := ["a", "b", "c"]
+B := ["b", "c", "d"]
+I := set/intersection(A, B)
+```
+
+(b) Numbers
+
+```mech:ex2
+A := [1, 2, 3, 4]
+B := [3, 4, 5, 6]
+I := set/intersection(A, B)
+```
+
+(c) Order follows the first set
+
+```mech:ex3
+A := ["x", "y", "z"]
+B := ["z", "x", "y"]
+I := set/intersection(A, B)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+Set semantics:
+- Inputs are coerced to sets by dropping duplicates.
+- Only distinct elements present in both A and B are returned.
+
+Stable insertion order:
+- Matches Rust IndexSet behavior: intersection elements follow A’s order.
+
+Performance:
+- Average O(|A| + |B|) time with hashing, memory O(|A|) for the result.
+
+Determinism:
+- Output is deterministic across runs and platforms.
+
+7. Errors
+-------------------------------------------------------------------------------
+
+- Incorrect number of arguments (expects two).
+- Unsupported element type (not hashable or not comparable).
+- Inconsistent element kinds between A and B.
