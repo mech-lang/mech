@@ -210,7 +210,6 @@ macro_rules! op_assign_range_fxn {
   }
 }
 
-//impl_set_range_all_arms
 #[macro_export]
 macro_rules! op_assign_range_all_fxn {
   ($op_fxn_name:tt, $fxn_name:ident) => {
