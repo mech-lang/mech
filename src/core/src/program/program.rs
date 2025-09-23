@@ -376,6 +376,13 @@ impl ParsedProgram {
         TypeTag::MatrixR64 => {extract_matrix!(MatrixR64, R64, 16, data)},
         #[cfg(feature = "matrix")]
         TypeTag::MatrixIndex => {extract_matrix!(MatrixIndex, usize, 8, data)},
+        TypeTag::Index => {
+          if data.len() != 8 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Index const entry must be 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Index const entry must be 8 bytes".to_string())});
+          }
+          let value = u64::from_le_bytes(data.try_into().unwrap()) as usize;
+          Value::Index(Ref::new(value))
+        },
         // Add more types as needed
         _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Unsupported constant type {:?}", ty.tag), id: line!(), kind: MechErrorKind::GenericError(format!("Unsupported constant type {:?}", ty.tag))}),
       };

@@ -178,6 +178,7 @@ impl ValueKind {
       #[cfg(feature = "rational")]
       ValueKind::R64 => FeatureKind::R64,
       ValueKind::Atom(_) => FeatureKind::Atom,
+      ValueKind::Index => FeatureKind::Index,
       _ => panic!("Unsupported feature kind for value kind: {}", self),
     }
   }
