@@ -723,6 +723,44 @@ where T: Debug + Clone + PartialEq + 'static
     }
   }
 
+  pub fn from_element(rows: usize, cols: usize, element: T) -> Matrix<T> {
+    match (rows,cols) {
+      #[cfg(feature = "matrix1")]
+      (1,1) => Matrix::Matrix1(Ref::new(Matrix1::from_element(element.clone()))),
+      #[cfg(all(feature = "matrixd", not(feature = "matrix1")))]
+      (1,1) => Matrix::DMatrix(Ref::new(DMatrix::from_element(1,1,element.clone()))),
+      #[cfg(feature = "matrix2")]
+      (2,2) => Matrix::Matrix2(Ref::new(Matrix2::from_element(element.clone()))),
+      #[cfg(feature = "matrix3")]
+      (3,3) => Matrix::Matrix3(Ref::new(Matrix3::from_element(element.clone()))),
+      #[cfg(feature = "matrix4")]
+      (4,4) => Matrix::Matrix4(Ref::new(Matrix4::from_element(element.clone()))),
+      #[cfg(feature = "matrix2x3")]
+      (2,3) => Matrix::Matrix2x3(Ref::new(Matrix2x3::from_element(element.clone()))),
+      #[cfg(feature = "matrix3x2")]
+      (3,2) => Matrix::Matrix3x2(Ref::new(Matrix3x2::from_element(element.clone()))),
+      #[cfg(feature = "vector4")]
+      (4,1) => Matrix::Vector4(Ref::new(Vector4::from_element(element.clone()))),
+      #[cfg(feature = "vector3")]
+      (3,1) => Matrix::Vector3(Ref::new(Vector3::from_element(element.clone()))),
+      #[cfg(feature = "vector2")]
+      (2,1) => Matrix::Vector2(Ref::new(Vector2::from_element(element.clone()))),
+      #[cfg(feature = "row_vector4")]
+      (1,4) => Matrix::RowVector4(Ref::new(RowVector4::from_element(element.clone()))),
+      #[cfg(feature = "row_vector3")]
+      (1,3) => Matrix::RowVector3(Ref::new(RowVector3::from_element(element.clone()))),
+      #[cfg(feature = "row_vector2")]
+      (1,2) => Matrix::RowVector2(Ref::new(RowVector2::from_element(element.clone()))),
+      #[cfg(feature = "row_vectord")]
+      (1,n) => Matrix::RowDVector(Ref::new(RowDVector::from_element(n,element.clone()))),
+      #[cfg(feature = "vectord")]
+      (m,1) => Matrix::DVector(Ref::new(DVector::from_element(m,element.clone()))),
+      #[cfg(feature = "matrixd")]
+      (m,n) => Matrix::DMatrix(Ref::new(DMatrix::from_element(m,n,element.clone()))),
+      _ => panic!("Cannot convert to matrix with rows: {rows} and cols: {cols}"),
+    }
+  }
+
   pub fn from_vec(vec: Vec<T>, rows: usize, cols: usize) -> Matrix<T> {
     match (rows,cols) {
       #[cfg(feature = "matrix1")]
