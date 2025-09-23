@@ -1,5 +1,11 @@
 #[macro_use]
 use crate::stdlib::*;
+use std::marker::PhantomData;
+use std::fmt::Debug;
+use nalgebra::{
+  base::{Matrix as naMatrix, Storage, StorageMut},
+  Dim, Scalar,
+};
 
 // Access ---------------------------------------------------------------------
 
@@ -540,22 +546,22 @@ macro_rules! impl_access_match_arms {
       [<impl_access_ $macro_name _match_arms>]!(
         $fxn_name,
         $arg,
-        Bool => MatrixBool, bool, bool::default(), "bool";
-        I8   => MatrixI8,   i8,   i8::default(),  "i8";
-        I16  => MatrixI16,  i16,  i16::default(), "i16";
-        I32  => MatrixI32,  i32,  i32::default(), "i32";
-        I64  => MatrixI64,  i64,  i64::default(), "i64";
-        I128 => MatrixI128, i128, i128::default(), "i128";
-        U8   => MatrixU8,   u8,   u8::default(), "u8";
-        U16  => MatrixU16,  u16,  u16::default(), "u16";
-        U32  => MatrixU32,  u32,  u32::default(), "u32";
-        U64  => MatrixU64,  u64,  u64::default(), "u64";
-        U128 => MatrixU128, u128, u128::default(), "u128";
-        F32  => MatrixF32,  F32,  F32::default(), "f32";
+        //Bool => MatrixBool, bool, bool::default(), "bool";
+        //I8   => MatrixI8,   i8,   i8::default(),  "i8";
+        //I16  => MatrixI16,  i16,  i16::default(), "i16";
+        //I32  => MatrixI32,  i32,  i32::default(), "i32";
+        //I64  => MatrixI64,  i64,  i64::default(), "i64";
+        //I128 => MatrixI128, i128, i128::default(), "i128";
+        //U8   => MatrixU8,   u8,   u8::default(), "u8";
+        //U16  => MatrixU16,  u16,  u16::default(), "u16";
+        //U32  => MatrixU32,  u32,  u32::default(), "u32";
+        //U64  => MatrixU64,  u64,  u64::default(), "u64";
+        //U128 => MatrixU128, u128, u128::default(), "u128";
+        //F32  => MatrixF32,  F32,  F32::default(), "f32";
         F64  => MatrixF64,  F64,  F64::default(), "f64";
-        String => MatrixString, String, String::default(), "string";
-        C64 => MatrixC64, C64, C64::default(), "complex";
-        R64 => MatrixR64, R64, R64::default(), "rational";
+        //String => MatrixString, String, String::default(), "string";
+        //C64 => MatrixC64, C64, C64::default(), "complex";
+        //R64 => MatrixR64, R64, R64::default(), "rational";
       )
     }
   }
@@ -1110,7 +1116,16 @@ macro_rules! impl_access_all_range_match_arms {
             #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "logical_indexing"))]
             (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => Ok(Box::new(Access2DAVDbM2x3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) })),
             #[cfg(all(feature = $value_string, feature = "matrixd", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::DMatrix(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => Ok(Box::new(Access2DAVDbMD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::DMatrix(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => {
+              println!("HERE");
+             //Ok(Box::new(Access2DARVB{
+             //  source: input.clone(), 
+             //  ixes: ix.clone(), 
+             //  sink: Ref::new(Matrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)), 
+             //  _marker: std::marker::PhantomData::default(),
+             //}))
+             todo!()
+            },
           )+
         )+
         x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),

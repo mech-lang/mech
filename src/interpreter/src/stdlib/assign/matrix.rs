@@ -173,13 +173,13 @@ macro_rules! impl_set_all_fxn_v {
 // x[1] = 1 ------------------------------------------------------------------
 
 #[macro_export]
-macro_rules! set_1d_scalar {
+macro_rules! assign_1d_scalar {
   ($source:expr, $ix:expr, $sink:expr) => {
       ($sink)[$ix - 1] = ($source).clone();
     };}
 
 #[macro_export]
-macro_rules! set_1d_scalar_b {
+macro_rules! assign_1d_scalar_b {
   ($source:expr, $ix:expr, $sink:expr) => {
     if $ix {
       for ix in 0..$sink.len() {
@@ -189,7 +189,18 @@ macro_rules! set_1d_scalar_b {
   };}
 
 #[macro_export]
-macro_rules! impl_set_fxn_s {
+macro_rules! assign_1d_scalar_vb {
+  ($source:expr, $ix:expr, $sink:expr) => {
+    if *$ix {
+      let len = $sink.len().min($source.len());
+      for ix in 0..len {
+        $sink[ix] = $source[ix].clone();
+      }
+    }
+  };}
+
+#[macro_export]
+macro_rules! impl_assign_fxn_s {
   ($struct_name:ident, $op:ident, $ix:ty) => {
     #[derive(Debug)]
     pub struct $struct_name<T, MatA> {
@@ -249,45 +260,46 @@ macro_rules! impl_set_fxn_s {
       }
     }};}
 
-impl_set_fxn_s!(Assign1DS, set_1d_scalar, usize);
-//impl_set_fxn_s!(Assign1DB, set_1d_scalar_b, bool);
+impl_assign_fxn_s!(Assign1DS, assign_1d_scalar, usize);
+impl_assign_fxn_s!(Assign1DB, assign_1d_scalar_b, bool);
+impl_assign_scalar_fxn_v!(Assign1DVB, assign_1d_scalar_vb, bool);
 
 fn impl_assign_scalar_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   let arg = (sink, ixes.as_slice(), source);
-                 impl_assign_fxn!(impl_set_scalar_arms,  Assign1D, arg, u8,   "u8")
-  .or_else(|_| impl_assign_fxn!(impl_set_scalar_arms,  Assign1D, arg, u16,  "u16"))
-  .or_else(|_| impl_assign_fxn!(impl_set_scalar_arms,  Assign1D, arg, u32,  "u32"))
-  .or_else(|_| impl_assign_fxn!(impl_set_scalar_arms,  Assign1D, arg, u64,  "u64"))
-  .or_else(|_| impl_assign_fxn!(impl_set_scalar_arms,  Assign1D, arg, u128, "u128"))
-  .or_else(|_| impl_assign_fxn!(impl_set_scalar_arms,  Assign1D, arg, i8,   "i8"))
-  .or_else(|_| impl_assign_fxn!(impl_set_scalar_arms,  Assign1D, arg, i16,  "i16"))
-  .or_else(|_| impl_assign_fxn!(impl_set_scalar_arms,  Assign1D, arg, i32,  "i32"))
-  .or_else(|_| impl_assign_fxn!(impl_set_scalar_arms,  Assign1D, arg, i64,  "i64"))
-  .or_else(|_| impl_assign_fxn!(impl_set_scalar_arms,  Assign1D, arg, i128, "i128"))
-  .or_else(|_| impl_assign_fxn!(impl_set_scalar_arms,  Assign1D, arg, F32,  "f32"))
-  .or_else(|_| impl_assign_fxn!(impl_set_scalar_arms,  Assign1D, arg, F64,  "f64"))
-  .or_else(|_| impl_assign_fxn!(impl_set_scalar_arms,  Assign1D, arg, R64,  "rational"))
-  .or_else(|_| impl_assign_fxn!(impl_set_scalar_arms,  Assign1D, arg, C64,  "complex"))
-  .or_else(|_| impl_assign_fxn!(impl_set_scalar_arms,  Assign1D, arg, bool, "bool"))
-  .or_else(|_| impl_assign_fxn!(impl_set_scalar_arms,  Assign1D, arg, String, "string"))
+               impl_assign_fxn!(impl_assign_scalar_arms,  Assign1D, arg, u8,   "u8")
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms,  Assign1D, arg, u16,  "u16"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms,  Assign1D, arg, u32,  "u32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms,  Assign1D, arg, u64,  "u64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms,  Assign1D, arg, u128, "u128"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms,  Assign1D, arg, i8,   "i8"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms,  Assign1D, arg, i16,  "i16"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms,  Assign1D, arg, i32,  "i32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms,  Assign1D, arg, i64,  "i64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms,  Assign1D, arg, i128, "i128"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms,  Assign1D, arg, F32,  "f32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms,  Assign1D, arg, F64,  "f64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms,  Assign1D, arg, R64,  "rational"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms,  Assign1D, arg, C64,  "complex"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms,  Assign1D, arg, bool, "bool"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms,  Assign1D, arg, String, "string"))
 
-  //.or_else(|_| impl_set_range_arms_b!($fxn_name, &arg, u8,  "u8"))
-  //.or_else(|_| impl_set_range_arms_b!($fxn_name, &arg, u16,  "u16"))
-  //.or_else(|_| impl_set_range_arms_b!($fxn_name, &arg, u32,  "u32"))
-  //.or_else(|_| impl_set_range_arms_b!($fxn_name, &arg, u64,  "u64"))
-  //.or_else(|_| impl_set_range_arms_b!($fxn_name, &arg, u128, "u128"))
-  //.or_else(|_| impl_set_range_arms_b!($fxn_name, &arg, i8,   "i8"))
-  //.or_else(|_| impl_set_range_arms_b!($fxn_name, &arg, i16,  "i16"))
-  //.or_else(|_| impl_set_range_arms_b!($fxn_name, &arg, i32,  "i32"))
-  //.or_else(|_| impl_set_range_arms_b!($fxn_name, &arg, i64,  "i64"))
-  //.or_else(|_| impl_set_range_arms_b!($fxn_name, &arg, i128, "i128"))
-  //.or_else(|_| impl_set_range_arms_b!($fxn_name, &arg, F32,  "f32"))
-  //.or_else(|_| impl_set_range_arms_b!($fxn_name, &arg, F64,  "f64"))
-  //.or_else(|_| impl_set_range_arms_b!($fxn_name, &arg, R64,  "rational"))
-  //.or_else(|_| impl_set_range_arms_b!($fxn_name, &arg, C64,  "complex"))
-  //.or_else(|_| impl_set_range_arms_b!($fxn_name, &arg, bool, "bool"))
-  //.or_else(|_| impl_set_range_arms_b!($fxn_name, &arg, String, "string"))
-  //.map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b,  Assign1D, arg, u8,  "u8"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b,  Assign1D, arg, u16,  "u16"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b,  Assign1D, arg, u32,  "u32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b,  Assign1D, arg, u64,  "u64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b,  Assign1D, arg, u128, "u128"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b,  Assign1D, arg, i8,   "i8"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b,  Assign1D, arg, i16,  "i16"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b,  Assign1D, arg, i32,  "i32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b,  Assign1D, arg, i64,  "i64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b,  Assign1D, arg, i128, "i128"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b,  Assign1D, arg, F32,  "f32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b,  Assign1D, arg, F64,  "f64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b,  Assign1D, arg, R64,  "rational"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b,  Assign1D, arg, C64,  "complex"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b,  Assign1D, arg, bool, "bool"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_arms_b,  Assign1D, arg, String, "string"))
+  .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind })
 }
 
 pub struct MatrixAssignScalar {}
@@ -659,16 +671,38 @@ macro_rules! set_2d_all_vector {
     };}
 
 #[macro_export]
-macro_rules! impl_set_scalar_fxn_v {
-  ($struct_name:ident, $op:ident) => {
+macro_rules! impl_assign_scalar_fxn_v {
+  ($struct_name:ident, $op:ident, $ix:tt) => {
     #[derive(Debug)]
     pub struct $struct_name<T, MatA, MatB> {
       pub source: Ref<MatB>,
-      pub ixes: Ref<usize>,
+      pub ixes: Ref<$ix>,
       pub sink: Ref<MatA>,
       pub _marker: PhantomData<T>,
     }
-
+    impl<T, R1, C1, S1: 'static, R2, C2, S2: 'static>
+      MechFunctionFactory for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>>
+    where
+      Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+      Ref<naMatrix<T, R2, C2, S2>>: ToValue,
+      T: Scalar + Clone + Debug + Sync + Send + 'static + CompileConst + ConstElem + AsValueKind,
+      R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
+      R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
+      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
+      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + AsNaKind,
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Binary(out, arg1, arg2) => {
+            let source: Ref<naMatrix<T, R2, C2, S2>> = unsafe { arg1.as_unchecked() }.clone();
+            let ixes: Ref<$ix> = unsafe { arg2.as_unchecked() }.clone();
+            let sink: Ref<naMatrix<T, R1, C1, S1>> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(Self { sink, source, ixes, _marker: PhantomData::default() }))
+          },
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 3 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+        }
+      }
+    }
     impl<T, R1, C1, S1, R2, C2, S2>
       MechFunctionImpl for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>>
     where
@@ -692,17 +726,17 @@ macro_rules! impl_set_scalar_fxn_v {
     impl<T, R1, C1, S1, R2, C2, S2> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>> 
     where
       T: CompileConst + ConstElem + AsValueKind,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
-      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem,
+      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
+      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + AsNaKind,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+        let name = format!("{}<{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), naMatrix::<T, R2, C2, S2>::as_na_kind());
         compile_binop!(name, self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
       }
-    }};}    
+    }};}
 
-impl_set_fxn_s!(Set2DASS, set_2d_all_scalar, usize);
-impl_set_scalar_fxn_v!(Set2DASV, set_2d_all_vector);
+impl_assign_fxn_s!(Set2DASS, set_2d_all_scalar, usize);
+impl_assign_scalar_fxn_v!(Set2DASV, set_2d_all_vector, usize);
 
 #[macro_export]
 macro_rules! impl_set_all_scalar_match_arms {

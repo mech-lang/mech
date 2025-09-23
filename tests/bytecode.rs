@@ -77,3 +77,6 @@ bytecode_test!(bytecode_range_inclusive_refs,"a := 1; b :=4 ; a..=b",Value::Matr
 bytecode_test!(bytecode_range_exclusive,"1..5",Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0),F64::new(4.0)], 1, 4)));
 bytecode_test!(bytecode_stats_sum_column,"stats/sum/column([1 2 3])",Value::MatrixF64(Matrix::from_vec(vec![F64::new(6.0)], 1, 1)));
 bytecode_test!(bytecode_matrix_index_assign,"~x := [1 2 3]; x[1] = 10",Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(2.0),F64::new(3.0)], 1, 3)));
+bytecode_test!(bytecode_matrix_index_assign_bool,"~x := [1 2 3]; x[[true false true]] = [4 5 6]",Value::MatrixF64(Matrix::from_vec(vec![F64::new(4.0),F64::new(2.0),F64::new(6.0)], 1, 3)));
+bytecode_test!(bytecode_matrix_index_assign_bool_all,"~x := [1 2 3]; x[true] = [4 5 6]",Value::MatrixF64(Matrix::from_vec(vec![F64::new(4.0),F64::new(5.0),F64::new(6.0)], 1, 3)));
+bytecode_test!(bytecode_matrix_index_assign_bool_all_scalar,"~x := [1 2 3]; x[true] = 10",Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(10.0),F64::new(10.0)], 1, 3)));
