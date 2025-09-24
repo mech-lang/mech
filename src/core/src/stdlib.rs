@@ -1498,6 +1498,28 @@ macro_rules! impl_set_range_arms {
 }
 
 #[macro_export]
+macro_rules! impl_assign_all_arms_b {
+  ($fxn_name:ident, $shape:tt, $arg:expr, $value_kind:ident, $value_string:tt) => {
+    paste! {
+      match $arg {
+        #[cfg(feature = $value_string)]
+        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::Bool(ix)], Value::[<$value_kind:camel>](source)) => {
+          register_assign_s1!([<$fxn_name B>], $value_kind, $value_string, $shape);
+          box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
+        },
+        // Vector source, must have equal size to output
+        #[cfg(feature = $value_string)]
+        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Bool(ix)], Value::[<Matrix $value_kind:camel>](Matrix::$shape(source))) => {
+          register_assign_s2!([<$fxn_name VB>], $value_kind, $value_string, $shape, $shape);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
+        },
+        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+      }
+    };
+  };
+}
+
+#[macro_export]
 macro_rules! impl_set_range_all_arms {
   ($fxn_name:ident, $shape:tt, $arg:expr, $value_kind:ident, $value_string:tt) => {
     paste! {
