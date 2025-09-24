@@ -3,6 +3,7 @@ use crate::stdlib::*;
 use std::marker::PhantomData;
 use std::fmt::Debug;
 use nalgebra::{
+  IsContiguous,
   base::{Matrix as naMatrix, Storage, StorageMut},
   Dim, Scalar,
 };
@@ -431,14 +432,33 @@ impl NativeFunctionCompiler for MatrixSetRange {
 }
 
 // x[:] = 1 ------------------------------------------------------------------
-use nalgebra::IsContiguous;
 #[derive(Debug)]
 pub struct Set1DA<T, Sink> {
   pub source: Ref<T>,
   pub sink: Ref<Sink>,
   pub _marker: PhantomData<T>,
 }
-
+impl<T, R, C, S> MechFunctionFactory for Set1DA<T, naMatrix<T, R, C, S>>
+where
+  Ref<naMatrix<T, R, C, S>>: ToValue,
+  T: Debug + Clone + Sync + Send + PartialEq + 'static +
+    CompileConst + ConstElem + AsValueKind,
+  R: Dim,
+  C: Dim,
+  S: StorageMut<T, R, C> + Debug + IsContiguous + 'static,
+  naMatrix<T, R, C, S>: CompileConst + ConstElem + Debug + AsNaKind,
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Unary(out, arg1) => {
+        let source: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+        let sink: Ref<naMatrix<T, R, C, S>> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self { sink, source, _marker: PhantomData::default() }))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 2 arguments, got {:?}", stringify!(Set1DA), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
 impl<T, R, C, S> MechFunctionImpl for Set1DA<T, naMatrix<T, R, C, S>>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -464,63 +484,37 @@ where
 impl<T, R, C, S> MechFunctionCompiler for Set1DA<T, naMatrix<T, R, C, S>> 
 where
   T: CompileConst + ConstElem + AsValueKind,
-  naMatrix<T, R, C, S>: CompileConst + ConstElem + AsValueKind,
+  naMatrix<T, R, C, S>: CompileConst + ConstElem + AsNaKind,
 { 
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    let name = format!("{}<{},{}>", stringify!(Set1DA), T::as_value_kind(), naMatrix::as_value_kind());
+    let name = format!("Set1DA<{}{}>", T::as_value_kind(), naMatrix::<T, R, C, S>::as_na_kind());
     compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
   }
 }
 
-#[macro_export]
-macro_rules! impl_set_all_match_arms {
-  ($fxn_name:ident, $arg:expr, $($value_kind:ident, $value_string:tt);+ $(;)?) => {
-    paste!{
-      match $arg {
-        $(
-          #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowVector4(sink)), [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowVector3(sink)), [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowVector2(sink)), [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "vector4"))]
-          (Value::[<Matrix $value_kind>](Matrix::Vector4(sink)), [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "vector3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Vector3(sink)), [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "vector2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Vector2(sink)), [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrix4"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)), [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrix3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)), [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrix2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)), [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrix1"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix1(sink)), [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "matrixd"))]
-          (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)), [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-          (Value::[<Matrix $value_kind>](Matrix::RowDVector(sink)), [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-          #[cfg(all(feature = $value_string, feature = "vectord"))]
-          (Value::[<Matrix $value_kind>](Matrix::DVector(sink)), [Value::IndexAll], Value::$value_kind(source)) => Ok(Box::new($fxn_name { sink: sink.clone(), source: source.clone(), _marker: PhantomData::default() })),
-        )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-      }
-    }
-  }
+fn impl_assign_all_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+  let arg = (sink, ixes.as_slice(), source);
+               impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, u8,   "u8")
+  .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, u16,  "u16"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, u32,  "u32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, u64,  "u64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, u128, "u128"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, i8,   "i8"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, i16,  "i16"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, i32,  "i32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, i64,  "i64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, i128, "i128"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, F32,  "f32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, F64,  "f64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, R64,  "rational"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, C64,  "complex"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, bool, "bool"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_all_arms, Set1DA, arg, String, "string"))
+  .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
 }
 
-fn impl_set_all_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
-  impl_set_match_arms!(Set1DA, all, (sink, ixes.as_slice(), source))
-}
-
-pub struct MatrixSetAll {}
-impl NativeFunctionCompiler for MatrixSetAll {
+pub struct MatrixAssignAll {}
+impl NativeFunctionCompiler for MatrixAssignAll {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
@@ -528,11 +522,11 @@ impl NativeFunctionCompiler for MatrixSetAll {
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
     let ixes = arguments.clone().split_off(2);
-    match impl_set_all_fxn(sink.clone(),source.clone(),ixes.clone()) {
+    match impl_assign_all_fxn(sink.clone(),source.clone(),ixes.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
         match sink {
-          Value::MutableReference(sink) => { impl_set_all_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
+          Value::MutableReference(sink) => { impl_assign_all_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
           x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
@@ -766,8 +760,8 @@ fn impl_set_all_scalar_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Resu
   impl_set_match_arms!(Set2DAS, all_scalar, (sink, ixes.as_slice(), source))
 }
 
-pub struct MatrixSetAllScalar {}
-impl NativeFunctionCompiler for MatrixSetAllScalar {
+pub struct MatrixAssignAllScalar {}
+impl NativeFunctionCompiler for MatrixAssignAllScalar {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
@@ -1470,8 +1464,8 @@ macro_rules! matrix_assign_all_range_fxn {
 
 matrix_assign_all_range_fxn!(impl_assign_all_range_fxn, Set2DAR);
 
-pub struct MatrixSetAllRange {}
-impl NativeFunctionCompiler for MatrixSetAllRange {
+pub struct MatrixAssignAllRange {}
+impl NativeFunctionCompiler for MatrixAssignAllRange {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
