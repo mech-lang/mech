@@ -658,7 +658,7 @@ macro_rules! assign_2d_all_vector {
 
 #[macro_export]
 macro_rules! impl_assign_scalar_fxn_v {
-  ($struct_name:ident, $op:ident, $ix:tt) => {
+  ($struct_name:ident, $op:ident, $ix:ty) => {
     #[derive(Debug)]
     pub struct $struct_name<T, MatA, MatB> {
       pub source: Ref<MatB>,
@@ -666,16 +666,17 @@ macro_rules! impl_assign_scalar_fxn_v {
       pub sink: Ref<MatA>,
       pub _marker: PhantomData<T>,
     }
-    impl<T, R1, C1, S1: 'static, R2, C2, S2: 'static>
-      MechFunctionFactory for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>>
+    impl<T, R1: 'static, C1: 'static, S1: 'static, R2: 'static, C2: 'static, S2: 'static> MechFunctionFactory for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>>
     where
       Ref<naMatrix<T, R1, C1, S1>>: ToValue,
       Ref<naMatrix<T, R2, C2, S2>>: ToValue,
-      T: Scalar + Clone + Debug + Sync + Send + 'static + CompileConst + ConstElem + AsValueKind,
+      T: Debug + Clone + Sync + Send + 'static +
+        PartialEq + PartialOrd +
+        CompileConst + ConstElem + AsValueKind,
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
       R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
-      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + AsNaKind,
+      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + Debug + AsNaKind,
+      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + Debug + AsNaKind,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
@@ -693,7 +694,8 @@ macro_rules! impl_assign_scalar_fxn_v {
       MechFunctionImpl for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>>
     where
       Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-      T: Scalar + Clone + Debug + Sync + Send + 'static,
+      T: Debug + Clone + Sync + Send + 'static +
+         PartialEq + PartialOrd,
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
       R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
     {
@@ -708,7 +710,7 @@ macro_rules! impl_assign_scalar_fxn_v {
       fn out(&self) -> Value {self.sink.to_value()}
       fn to_string(&self) -> String {format!("{:#?}", self)}
     }
-    #[cfg(feature = "compiler")] 
+    #[cfg(feature = "compiler")]
     impl<T, R1, C1, S1, R2, C2, S2> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>> 
     where
       T: CompileConst + ConstElem + AsValueKind,
@@ -719,30 +721,30 @@ macro_rules! impl_assign_scalar_fxn_v {
         let name = format!("{}<{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), naMatrix::<T, R2, C2, S2>::as_na_kind());
         compile_binop!(name, self.sink, self.source, self.ixes, ctx, FeatureFlag::Builtin(FeatureKind::Assign));
       }
-    }};}
+    }  
+  };}
 
 impl_assign_fxn_s!(Assign2DASS, assign_2d_all_scalar, usize);
 impl_assign_scalar_fxn_v!(Assign2DASV, assign_2d_all_vector, usize);
 
 fn impl_assign_all_scalar_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   let arg = (sink, ixes.as_slice(), source);
-  println!("ARG: {:?}", &arg);
-               impl_assign_fxn!(impl_assign_all_scalar_arms, Assign2DAS, arg, u8,   "u8")
-  .or_else(|_| impl_assign_fxn!(impl_assign_all_scalar_arms, Assign2DAS, arg, u16,  "u16"))
-  .or_else(|_| impl_assign_fxn!(impl_assign_all_scalar_arms, Assign2DAS, arg, u32,  "u32"))
-  .or_else(|_| impl_assign_fxn!(impl_assign_all_scalar_arms, Assign2DAS, arg, u64,  "u64"))
-  .or_else(|_| impl_assign_fxn!(impl_assign_all_scalar_arms, Assign2DAS, arg, u128, "u128"))
-  .or_else(|_| impl_assign_fxn!(impl_assign_all_scalar_arms, Assign2DAS, arg, i8,   "i8"))
-  .or_else(|_| impl_assign_fxn!(impl_assign_all_scalar_arms, Assign2DAS, arg, i16,  "i16"))
-  .or_else(|_| impl_assign_fxn!(impl_assign_all_scalar_arms, Assign2DAS, arg, i32,  "i32"))
-  .or_else(|_| impl_assign_fxn!(impl_assign_all_scalar_arms, Assign2DAS, arg, i64,  "i64"))
-  .or_else(|_| impl_assign_fxn!(impl_assign_all_scalar_arms, Assign2DAS, arg, i128, "i128"))
-  .or_else(|_| impl_assign_fxn!(impl_assign_all_scalar_arms, Assign2DAS, arg, F32,  "f32"))
-  .or_else(|_| impl_assign_fxn!(impl_assign_all_scalar_arms, Assign2DAS, arg, F64,  "f64"))
-  .or_else(|_| impl_assign_fxn!(impl_assign_all_scalar_arms, Assign2DAS, arg, R64,  "rational"))
-  .or_else(|_| impl_assign_fxn!(impl_assign_all_scalar_arms, Assign2DAS, arg, C64,  "complex"))
-  .or_else(|_| impl_assign_fxn!(impl_assign_all_scalar_arms, Assign2DAS, arg, bool, "bool"))
-  .or_else(|_| impl_assign_fxn!(impl_assign_all_scalar_arms, Assign2DAS, arg, String, "string"))
+               impl_assign_all_scalar_arms!(Assign2DAS, &arg, u8,   "u8")
+  .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, u16,  "u16"))
+  .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, u32,  "u32"))
+  .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, u64,  "u64"))
+  .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, u128, "u128"))
+  .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, i8,   "i8"))
+  .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, i16,  "i16"))
+  .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, i32,  "i32"))
+  .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, i64,  "i64"))
+  .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, i128, "i128"))
+  .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, F32,  "f32"))
+  .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, F64,  "f64"))
+  .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, R64,  "rational"))
+  .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, C64,  "complex"))
+  .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, bool, "bool"))
+  .or_else(|_| impl_assign_all_scalar_arms!(Assign2DAS, &arg, String, "string"))
   .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
 }
 
