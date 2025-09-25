@@ -433,12 +433,12 @@ impl NativeFunctionCompiler for MatrixSetRange {
 
 // x[:] = 1 ------------------------------------------------------------------
 #[derive(Debug)]
-pub struct Set1DA<T, Sink> {
+pub struct Set1DAS<T, Sink> {
   pub source: Ref<T>,
   pub sink: Ref<Sink>,
   pub _marker: PhantomData<T>,
 }
-impl<T, R, C, S> MechFunctionFactory for Set1DA<T, naMatrix<T, R, C, S>>
+impl<T, R, C, S> MechFunctionFactory for Set1DAS<T, naMatrix<T, R, C, S>>
 where
   Ref<naMatrix<T, R, C, S>>: ToValue,
   T: Debug + Clone + Sync + Send + PartialEq + 'static +
@@ -459,7 +459,7 @@ where
     }
   }
 }
-impl<T, R, C, S> MechFunctionImpl for Set1DA<T, naMatrix<T, R, C, S>>
+impl<T, R, C, S> MechFunctionImpl for Set1DAS<T, naMatrix<T, R, C, S>>
 where
   T: Debug + Clone + Sync + Send + PartialEq + 'static,
   R: Dim,
@@ -481,7 +481,7 @@ where
   fn to_string(&self) -> String {format!("{:#?}", self)}
 }
 #[cfg(feature = "compiler")]
-impl<T, R, C, S> MechFunctionCompiler for Set1DA<T, naMatrix<T, R, C, S>> 
+impl<T, R, C, S> MechFunctionCompiler for Set1DAS<T, naMatrix<T, R, C, S>> 
 where
   T: CompileConst + ConstElem + AsValueKind,
   naMatrix<T, R, C, S>: CompileConst + ConstElem + AsNaKind,
@@ -1422,7 +1422,6 @@ macro_rules! matrix_assign_all_range_fxn {
     paste::paste! {
       fn $op_fxn_name(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
         let arg = (sink, ixes.as_slice(), source);
-        println!("$$$$$$$ arg: {:?}", &arg);
                      impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, u8, "u8")
         .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, u16, "u16"))
         .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, u32, "u32"))
