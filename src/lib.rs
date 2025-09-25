@@ -4,6 +4,10 @@
 #[cfg(feature = "matrix")]
 extern crate nalgebra as na;
 
+#[cfg(feature = "set")]
+use indexmap::set::IndexSet;
+use mech_core::set::MechSet;
+
 use mech_core::*;
 
 use paste::paste;
@@ -104,7 +108,7 @@ macro_rules! impl_set_fxns {
         MDV2, MDV3, MDV4, V2M2, V3M3, V4M4, V2M2x3, V3M3x2, VDMD, V2MD,
         V3MD, V4MD, M2R2, M3R3, M4R4, M2x3R3, M3x2R2, MDRD, MDR2, MDR3,
         MDR4, R2M2, R3M3, R4M4, R3M2x3, R2M3x2, RDMD, R2MD, R3MD, R4MD,
-        R2R2, R3R3, R4R4, RDRD, V2V2, V3V3, V4V4, VDVD
+        R2R2, R3R3, R4R4, RDRD, V2V2, V3V3, V4V4, VDVD, Union
     );
   }}
 

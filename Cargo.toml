@@ -32,7 +32,7 @@ op_assign_default = []
 ops_default = ["union"]
 powerset_default = []
 
-set = ["num-traits", "functions"]
+set = ["num-traits", "functions", "mech-core/set"]
 join = ["set"]
 op_assign = ["set"]
 ops = ["set"]
@@ -100,7 +100,6 @@ c64 = ["complex", "mech-core/c64"]
 r64 = ["rational", "mech-core/r64"]
 
 # Structs
-set = ["mech-core/set"]
 map = ["mech-core/map"]
 table = ["vectord", "record", "mech-core/table"]
 tuple = ["mech-core/tuple"]

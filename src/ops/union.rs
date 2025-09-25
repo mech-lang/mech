@@ -8,17 +8,17 @@ use mech_core::matrix::Matrix;
 use indexmap::set::IndexSet;
 use mech_core::set::MechSet;
 
-// Add ------------------------------------------------------------------------
+// Union ------------------------------------------------------------------------
 
 macro_rules! union_op {
 ($lhs:expr, $rhs:expr, $out:expr) => {
   unsafe { let new_set = (*$lhs).set.union((*$rhs).set);
-    *$out = {(*$lhs).kind, new_set.len(), new_set}; }
+    *$out = MechSet{kind: (*$lhs).kind, num_elements: new_set.len(), set: new_set}; }
   };}
 
 impl_set_fxns!(Union);
 
-fn impl_union_fxn(lhs_value: MechSet, rhs_value: MechSet) -> Result<Box<dyn MechFunction>, MechError> {
+fn impl_union_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_binop_match_arms!(
     Union,
     register_fxn_descriptor_inner,
