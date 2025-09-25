@@ -483,8 +483,17 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, p: &Inte
           fxn_input.push(source.clone());
           fxn_input.push(Value::IndexAll);
           let ix = subscript_formula(&subs[1], p)?;
+          let shape = ix.shape();
           fxn_input.push(ix);
-          plan.borrow_mut().push(MatrixAssignAllRange{}.compile(&fxn_input)?)
+          match shape[..] {
+            #[cfg(feature = "matrix")]
+            [1,1] => plan.borrow_mut().push(MatrixAssignAllScalar{}.compile(&fxn_input)?),
+            #[cfg(feature = "matrix")]
+            [1,n] => plan.borrow_mut().push(MatrixAssignAllRange{}.compile(&fxn_input)?),
+            #[cfg(feature = "matrix")]
+            [n,1] => plan.borrow_mut().push(MatrixAssignAllRange{}.compile(&fxn_input)?),
+            _ => todo!(),
+          }
         }
         #[cfg(feature = "subscript_range")]
         [Subscript::Formula(ix1),Subscript::All] => {

@@ -83,3 +83,4 @@ bytecode_test!(bytecode_matrix_index_assign_bool_all_scalar,"~x := [1 2 3]; x[tr
 bytecode_test!(bytecode_matrix_index_assign_scalar,"~x := [1 2 3]; x[3] = 10",Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(10.0)], 1, 3)));
 bytecode_test!(bytecode_matrix_index_assign_all_scalar,"~x := [1 2 3]; x[:] = 10",Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(10.0),F64::new(10.0)], 1, 3)));
 bytecode_test!(bytecode_matrix_index_assign_2d_scalar,"~x := [1 2 3; 4 5 6; 7 8 9]; x[1,3] = 10",Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(4.0),F64::new(7.0),F64::new(2.0),F64::new(5.0),F64::new(8.0),F64::new(10.0),F64::new(6.0),F64::new(9.0)], 3, 3)));
+bytecode_test!(bytecode_matrix_index_assign_2d_scalar_all,"~x := [1 2; 4 5]; x[:,1] = 10",Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(10.0),F64::new(2.0),F64::new(5.0)], 2, 2)));

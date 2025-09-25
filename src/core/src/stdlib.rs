@@ -1664,6 +1664,27 @@ macro_rules! impl_set_all_range_arms {
 }
 
 #[macro_export]
+macro_rules! impl_assign_all_scalar_arms {
+  ($fxn_name:ident, $shape:tt, $arg:expr, $value_kind:ident, $value_string:tt) => {
+    paste! {
+      match $arg {
+        #[cfg(feature = $value_string)]
+        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)),[Value::IndexAll, Value::Index(ix)], Value::[<$value_kind:camel>](source)) => {
+          register_assign_s1!([<$fxn_name S>], $value_kind, $value_string, $shape);
+          box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), ixes: ix.clone(), source: source.clone(), _marker: PhantomData::default() })))           
+        },
+        //#[cfg(all(feature = $value_string, feature = "matrix1"))]
+        //(Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::IndexAll, Value::Index(ix)], Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
+        //  //register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, Matrix1);
+        //  box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: ix.clone(), _marker: PhantomData::default() })))
+        //},
+        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+      }
+    };
+  };
+}
+
+#[macro_export]
 macro_rules! impl_set_all_range_arms_b {
   ($fxn_name:ident, $arg:expr, $value_kind:ident, $value_string:tt) => {
     paste! {
