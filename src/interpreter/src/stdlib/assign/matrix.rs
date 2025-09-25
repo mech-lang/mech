@@ -536,87 +536,87 @@ impl NativeFunctionCompiler for MatrixAssignAll {
 
 // x[1,1] = 1 ----------------------------------------------------------------
 
-#[macro_export]
-macro_rules! impl_set_scalar_scalar_fxn {
-  ($struct_name:ident, $matrix_shape:ident, $op:tt) => {
-    #[derive(Debug)]
-    struct $struct_name<T> {
-      source: Ref<T>,
-      ixes: (Ref<usize>,Ref<usize>),
-      sink: Ref<$matrix_shape<T>>,
-    }
-    impl<T> MechFunctionImpl for $struct_name<T>
-    where
-      T: Debug + Clone + Sync + Send + PartialEq + 'static,
-      Ref<$matrix_shape<T>>: ToValue
-    {
-      fn solve(&self) {
-        unsafe {
-          let mut sink_ptr = (&mut *(self.sink.as_mut_ptr()));
-          let source_ptr = (*(self.source.as_ptr())).clone();
-          let (ix1,ix2) = &self.ixes;
-          let ix1_ptr = (*(ix1.as_ptr())).clone();
-          let ix2_ptr = (*(ix2.as_ptr())).clone();
-          $op!(sink_ptr,ix1_ptr,ix2_ptr,source_ptr);
-        }
+#[derive(Debug)]
+pub struct Assign2DSSS<T, MatA> {
+  pub source: Ref<T>,
+  pub ixes: (Ref<usize>, Ref<usize>),
+  pub sink: Ref<MatA>,
+  pub _marker: PhantomData<T>,
+}
+impl<T, R1, C1, S1: 'static> MechFunctionFactory for Assign2DSSS<T, naMatrix<T, R1, C1, S1>>
+where
+  Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+  T: Scalar + Clone + Debug + Sync + Send + 'static +
+  CompileConst + ConstElem + AsValueKind,
+  R1: Dim,
+  C1: Dim,
+  S1: StorageMut<T, R1, C1> + Clone + Debug,
+  naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
+{
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
+        let source: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+        let ix1: Ref<usize> = unsafe { arg2.as_unchecked() }.clone();
+        let ix2: Ref<usize> = unsafe { arg3.as_unchecked() }.clone();
+        let sink: Ref<naMatrix<T, R1, C1, S1>> =
+        unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self {sink,source,ixes: (ix1, ix2),_marker: PhantomData}))
       }
-      fn out(&self) -> Value { self.sink.to_value() }
-      fn to_string(&self) -> String { format!("{:#?}", self) }
-    }
-    #[cfg(feature = "compiler")]
-    impl<T> MechFunctionCompiler for $struct_name<T> 
-    where
-      T: CompileConst + ConstElem + AsValueKind,
-      $matrix_shape<T>: CompileConst + ConstElem + AsValueKind,
-    {
-      fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
-        compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
-      }
-    }};}
-
-macro_rules! set_2d_scalar_scalar {
-  ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-      ($sink).column_mut($ix2 - 1)[$ix1 - 1] = ($source).clone();
-    };}
-
-impl_set_scalar_scalar_fxn!(Set2DSSMD,DMatrix,set_2d_scalar_scalar);
-impl_set_scalar_scalar_fxn!(Set2DSSM4,Matrix4,set_2d_scalar_scalar);
-impl_set_scalar_scalar_fxn!(Set2DSSM3,Matrix3,set_2d_scalar_scalar);
-impl_set_scalar_scalar_fxn!(Set2DSSM2,Matrix2,set_2d_scalar_scalar);
-impl_set_scalar_scalar_fxn!(Set2DSSM1,Matrix1,set_2d_scalar_scalar);
-impl_set_scalar_scalar_fxn!(Set2DSSM2x3,Matrix2x3,set_2d_scalar_scalar);
-impl_set_scalar_scalar_fxn!(Set2DSSM3x2,Matrix3x2,set_2d_scalar_scalar);
-
-#[macro_export]
-macro_rules! impl_set_scalar_scalar_match_arms {
-  ($fxn_name:ident, $arg:expr, $($value_kind:ident, $value_string:tt);+ $(;)?) => {
-    paste!{
-      match $arg {
-        $(              
-          #[cfg(all(feature = $value_string, feature = "matrix4"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)),   [Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4>] { sink: sink.clone(),   ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "matrix3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)),   [Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3>] { sink: sink.clone(),   ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "matrix2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)),   [Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2>] { sink: sink.clone(),   ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "matrix1"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix1(sink)),   [Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M1>] { sink: sink.clone(),   ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), [Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2x3>] { sink: sink.clone(), ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), [Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3x2>] { sink: sink.clone(), ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "matrixd"))]
-          (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)),   [Value::Index(ixx),Value::Index(ixy)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MD>] { sink: sink.clone(),   ixes: (ixx.clone(),ixy.clone()), source: source.clone() })),
-        )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-      }
+      _ => Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("Assign2DSSS requires 3 arguments, got {:?}",args),id: line!(),kind: MechErrorKind::IncorrectNumberOfArguments,}),
     }
   }
 }
+impl<T, R1, C1, S1> MechFunctionImpl for Assign2DSSS<T, naMatrix<T, R1, C1, S1>>
+where
+    Ref<naMatrix<T, R1, C1, S1>>: ToValue,
+    T: Scalar + Clone + Debug + Sync + Send + 'static,
+    R1: Dim,
+    C1: Dim,
+    S1: StorageMut<T, R1, C1> + Clone + Debug,
+{
+  fn solve(&self) {
+    unsafe {
+      let sink_ptr = &mut *self.sink.as_mut_ptr();
+      let source_val = (*self.source.as_ptr()).clone();
+      let r = (*self.ixes.0.as_ptr()).clone();
+      let c = (*self.ixes.1.as_ptr()).clone();
+      sink_ptr[(r - 1, c - 1)] = source_val;
+    }
+  }
+  fn out(&self) -> Value {self.sink.to_value()}
+  fn to_string(&self) -> String {format!("{:#?}", self)}
+}
+impl<T, R1, C1, S1> MechFunctionCompiler for Assign2DSSS<T, naMatrix<T, R1, C1, S1>>
+where
+  T: CompileConst + ConstElem + AsValueKind,
+  naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
+{
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    let name = format!("Assign2DSSS<{}{}>", T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind());
+    compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
+  }
+}
 
-fn impl_set_scalar_scalar_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
-  impl_set_match_arms!(Set2DSS, scalar_scalar, (sink, ixes.as_slice(), source))
+fn impl_assign_scalar_scalar_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+  let arg = (sink, ixes.as_slice(), source);
+               impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, u8,   "u8")
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, u16,  "u16"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, u32,  "u32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, u64,  "u64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, u128, "u128"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, i8,   "i8"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, i16,  "i16"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, i32,  "i32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, i64,  "i64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, i128, "i128"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, F32,  "f32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, F64,  "f64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, R64,  "rational"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, C64,  "complex"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, bool, "bool"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_scalar_arms, Assign2DSS, arg, String, "string"))
+  .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
 }
 
 pub struct MatrixAssignScalarScalar {}
@@ -628,11 +628,11 @@ impl NativeFunctionCompiler for MatrixAssignScalarScalar {
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
     let ixes = arguments.clone().split_off(2);
-    match impl_set_scalar_scalar_fxn(sink.clone(),source.clone(),ixes.clone()) {
+    match impl_assign_scalar_scalar_fxn(sink.clone(),source.clone(),ixes.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
         match sink {
-          Value::MutableReference(sink) => { impl_set_scalar_scalar_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
+          Value::MutableReference(sink) => { impl_assign_scalar_scalar_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
           x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
