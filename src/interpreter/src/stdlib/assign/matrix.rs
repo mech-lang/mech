@@ -850,44 +850,52 @@ macro_rules! set_2d_vector_scalar_b {
     }
   };}  
 
+  
 #[macro_export]
 macro_rules! impl_set_range_scalar_fxn {
-  ($struct_name:ident, $matrix_shape:ident, $op:tt, $ix_type:ty) => {
+  ($struct_name:ident, $op:tt, $ix_type:ty) => {
     #[derive(Debug)]
-    struct $struct_name<T> {
-      source: Ref<T>,
-      ixes: (Ref<DVector<$ix_type>>,Ref<usize>),
-      sink: Ref<$matrix_shape<T>>,
+    pub struct $struct_name<T, MatA, IxVec> {
+      pub source: Ref<T>,
+      pub ixes: (Ref<IxVec>, Ref<usize>),
+      pub sink: Ref<MatA>,
+      pub _marker: PhantomData<T>,
     }
-    impl<T> MechFunctionImpl for $struct_name<T>
+
+    impl<T, R, C, S, IxVec> MechFunctionImpl for $struct_name<T, na::Matrix<T, R, C, S>, IxVec>
     where
-      T: Debug + Clone + Sync + Send + PartialEq + 'static,
-      Ref<$matrix_shape<T>>: ToValue
+      Ref<na::Matrix<T, R, C, S>>: ToValue,
+      T: Scalar + Clone + Debug + Sync + Send + 'static,
+      R: nalgebra::Dim,
+      C: nalgebra::Dim,
+      S: nalgebra::StorageMut<T, R, C> + Clone + Debug,
+      IxVec: AsRef<[usize]> + Debug,
     {
       fn solve(&self) {
-        unsafe { 
-          let mut sink_ptr = (&mut *(self.sink.as_mut_ptr()));
-          let source_ptr = (*(self.source.as_ptr())).clone();
-          let (ix1,ix2) = &self.ixes;
-          let ix1_ptr = (*(ix1.as_ptr())).clone();
-          let ix2_ptr = (*(ix2.as_ptr())).clone();
-          $op!(sink_ptr,ix1_ptr,ix2_ptr,source_ptr);
+        unsafe {
+          let sink = &mut *self.sink.as_mut_ptr();
+          let source = &*self.source.as_ptr();
+          let ix1 = *self.ixes.0.as_ptr();
+          let ix2 = (*self.ixes.1.as_ptr()).as_ref();
+          $op!(sink, ix1, ix2, source);
         }
       }
-      fn out(&self) -> Value { self.sink.to_value() }
-      fn to_string(&self) -> String { format!("{:#?}", self) }
+      fn out(&self) -> Value {self.sink.to_value()}
+      fn to_string(&self) -> String {format!("{:#?}", self)}
     }
     #[cfg(feature = "compiler")]
-    impl<T> MechFunctionCompiler for $struct_name<T> 
+    impl<T, R, C, S, IxVec> MechFunctionCompiler for Set2DSR<T, na::Matrix<T, R, C, S>, IxVec> 
     where
       T: CompileConst + ConstElem + AsValueKind,
-      $matrix_shape<T>: CompileConst + ConstElem + AsValueKind,
+      IxVec: CompileConst + ConstElem,
+      na::Matrix<T, R, C, S>: CompileConst + ConstElem,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        let name = format!("{}<{}>", stringify!($struct_name), T::as_value_kind());
+        let name = format!("Set2DSR<{}>", T::as_value_kind());
         compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
       }
-    }};}
+    }
+  };}
 
 impl_set_range_scalar_fxn!(Set2DRSMD,DMatrix, set_2d_vector_scalar, usize);
 impl_set_range_scalar_fxn!(Set2DRSM4,Matrix4, set_2d_vector_scalar, usize);
