@@ -863,7 +863,17 @@ macro_rules! assign_2d_range_scalar_b {
     }
   };}  
 
-  
+macro_rules! assign_2d_range_scalar_vb {
+  ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+    unsafe { 
+      for rix in 0..($ix1).len() {
+        if $ix1[rix] == true {
+          ($sink).row_mut(rix)[$ix2 - 1] = ($source)[rix].clone();
+        }
+      }
+    }
+  };}
+
 #[macro_export]
 macro_rules! impl_assign_range_scalar_fxn_s {
   ($struct_name:ident, $op:tt, $ix:ty) => {
@@ -934,7 +944,7 @@ macro_rules! impl_assign_range_scalar_fxn_v {
     #[derive(Debug)]
     pub struct $struct_name<T, MatA, MatB, IxVec> {
       pub source: Ref<MatB>,
-      pub ixes: (Ref<IxVec>, Ref<$ix>),
+      pub ixes: (Ref<IxVec>, Ref<usize>),
       pub sink: Ref<MatA>,
       pub _marker: PhantomData<T>,
     }
@@ -1006,7 +1016,7 @@ impl_assign_range_scalar_fxn_s!(Assign2DSSMD, assign_2d_range_scalar, usize);
 impl_assign_range_scalar_fxn_s!(Assign2DRSS, assign_2d_range_scalar, usize);
 impl_assign_range_scalar_fxn_s!(Assign2DRSB, assign_2d_range_scalar_b, bool);
 impl_assign_range_scalar_fxn_v!(Assign2DRSV, assign_2d_range_scalar_v, usize);
-//impl_assign_range_scalar_fxn_v!(Set2DRSBV, assign_2d_range_scalar_vb, bool);
+impl_assign_range_scalar_fxn_v!(Assign2DRSVB, assign_2d_range_scalar_vb, bool);
 
 fn impl_assign_range_scalar_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   let arg = (sink, ixes.as_slice(), source);
@@ -1027,22 +1037,22 @@ fn impl_assign_range_scalar_fxn(sink: Value, source: Value, ixes: Vec<Value>) ->
   .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Assign2DRS, arg, bool, "bool"))
   .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Assign2DRS, arg, String, "string"))
 
-  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, u8,  "u8"))
-  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, u16,  "u16"))
-  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, u32,  "u32"))
-  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, u64,  "u64"))
-  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, u128, "u128"))
-  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, i8,   "i8"))
-  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, i16,  "i16"))
-  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, i32,  "i32"))
-  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, i64,  "i64"))
-  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, i128, "i128"))
-  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, F32,  "f32"))
-  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, F64, "f64"))
-  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, R64,  "rational"))
-  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, C64,  "complex"))
-  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, bool, "bool"))
-  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, String, "string"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, u8,  "u8"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, u16,  "u16"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, u32,  "u32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, u64,  "u64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, u128, "u128"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, i8,   "i8"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, i16,  "i16"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, i32,  "i32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, i64,  "i64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, i128, "i128"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, F32,  "f32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, F64,  "f64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, R64,  "rational"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, C64,  "complex"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, bool, "bool"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, String, "string"))
   .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
 }
 
