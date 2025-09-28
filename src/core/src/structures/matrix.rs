@@ -21,6 +21,8 @@ macro_rules! impl_to_matrix {
         match (rows,cols) {
           #[cfg(feature = "matrix1")]
           (1,1) => Matrix::Matrix1(Ref::new(Matrix1::from_element(elements[0].clone()))),
+          #[cfg(all(feature = "matrixd", not(feature = "matrix1")))]
+          (1,1) => Matrix::DMatrix(Ref::new(DMatrix::from_vec(1,1,elements))),
           #[cfg(feature = "matrix2")]
           (2,2) => Matrix::Matrix2(Ref::new(Matrix2::from_vec(elements))),
           #[cfg(feature = "matrix3")]
