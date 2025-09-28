@@ -29,7 +29,7 @@ default = ["stdlib", "pretty_print", "serde", "compiler", "program",
 
 join_default = []
 op_assign_default = []
-ops_default = ["union"]
+ops_default = ["union", "intersection", "difference", "complement"]
 powerset_default = []
 
 set = ["num-traits", "functions", "mech-core/set"]
@@ -39,6 +39,9 @@ ops = ["set"]
 powerset = ["set"]
 
 union = ["ops"]
+complement = ["ops"]
+difference = ["ops"]
+intersection = ["ops"]
 
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
