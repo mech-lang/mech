@@ -1123,6 +1123,28 @@ macro_rules! assign_2d_scalar_range_v {
   };
 }
 
+macro_rules! assign_2d_scalar_range_b {
+  ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+    unsafe { 
+      for cix in 0..($ix2).len() {
+        if $ix2[cix] == true {
+          ($sink).row_mut($ix1 - 1)[cix] = ($source).clone();
+        }
+      }
+    }
+  };}
+
+macro_rules! assign_2d_scalar_range_vb {
+  ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+    unsafe { 
+      for cix in 0..($ix2).len() {
+        if $ix2[cix] == true {
+          ($sink).row_mut($ix1 - 1)[cix] = ($source)[cix].clone();
+        }
+      }
+    }
+  };}
+
 #[macro_export]
 macro_rules! impl_assign_scalar_range_fxn_s {
   ($struct_name:ident, $op:tt, $ix:ty) => {
@@ -1261,9 +1283,9 @@ macro_rules! impl_assign_scalar_range_fxn_v {
   };}
 
 impl_assign_scalar_range_fxn_s!(Assign2DSRS,  assign_2d_scalar_range, usize);
-//impl_assign_scalar_range_fxn_s!(Assign2DSRB,  assign_2d_scalar_range_b, bool);
+impl_assign_scalar_range_fxn_s!(Assign2DSRB,  assign_2d_scalar_range_b, bool);
 impl_assign_scalar_range_fxn_v!(Assign2DSRV,  assign_2d_scalar_range_v, usize);
-//impl_assign_scalar_range_fxn_v!(Assign2DSRVB, assign_2d_scalar_range_vb, bool);
+impl_assign_scalar_range_fxn_v!(Assign2DSRVB, assign_2d_scalar_range_vb, bool);
 
 fn impl_assign_scalar_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   let arg = (sink, ixes.as_slice(), source);
@@ -1295,7 +1317,7 @@ fn impl_assign_scalar_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) ->
   //.or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, i64,  "i64"))
   //.or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, i128, "i128"))
   //.or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, F32,  "f32"))
-  //.or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, F64,  "f64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, F64,  "f64"))
   //.or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, R64,  "rational"))
   //.or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, C64,  "complex"))
   //.or_else(|_| impl_assign_fxn!(impl_assign_scalar_range_arms_b, Assign2DSR, arg, bool, "bool"))
