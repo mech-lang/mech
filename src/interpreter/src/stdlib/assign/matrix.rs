@@ -854,14 +854,13 @@ macro_rules! assign_2d_range_scalar_v {
 
 macro_rules! assign_2d_range_scalar_b {
   ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-    todo!();
-    //unsafe { 
-    //  for rix in 0..($ix1).len() {
-    //    if $ix1[rix] == true {
-    //      ($sink).row_mut(rix)[$ix2 - 1] = ($source).clone();
-    //    }
-    //  }
-    //}
+    unsafe { 
+      for rix in 0..($ix1).len() {
+        if $ix1[rix] == true {
+          ($sink).row_mut(rix)[$ix2 - 1] = ($source).clone();
+        }
+      }
+    }
   };}  
 
   
@@ -935,7 +934,7 @@ macro_rules! impl_assign_range_scalar_fxn_v {
     #[derive(Debug)]
     pub struct $struct_name<T, MatA, MatB, IxVec> {
       pub source: Ref<MatB>,
-      pub ixes: (Ref<IxVec>, Ref<usize>),
+      pub ixes: (Ref<IxVec>, Ref<$ix>),
       pub sink: Ref<MatA>,
       pub _marker: PhantomData<T>,
     }
@@ -1039,7 +1038,7 @@ fn impl_assign_range_scalar_fxn(sink: Value, source: Value, ixes: Vec<Value>) ->
   //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, i64,  "i64"))
   //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, i128, "i128"))
   //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, F32,  "f32"))
-  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, F64,  "f64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms_b, Assign2DRS, arg, F64, "f64"))
   //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, R64,  "rational"))
   //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, C64,  "complex"))
   //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, bool, "bool"))
