@@ -832,28 +832,33 @@ impl NativeFunctionCompiler for MatrixAssignScalarAll {
 
 // x[1..3,1] = 1 ------------------------------------------------------------------
 
-macro_rules! set_2d_vector_scalar {
+macro_rules! assign_2d_range_scalar {
   ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-      for rix in &$ix1 {
-        ($sink).row_mut(rix - 1)[$ix2 - 1] = ($source).clone();
-      }
-    };}
-
-macro_rules! set_2d_vector_scalar_b {
-  ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+    // ix 1 is a vector, ix 2 is a scalar
     unsafe { 
-      for rix in 0..($ix1).len() {
-        if $ix1[rix] == true {
-          ($sink).row_mut(rix)[$ix2 - 1] = ($source).clone();
-        }
+      for i in 0..($ix1).len() {
+        let rix = $ix1[i] - 1; 
+        ($sink).row_mut(rix)[$ix2 - 1] = ($source).clone();
       }
     }
+  };}
+
+macro_rules! assign_2d_range_scalar_b {
+  ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+    todo!();
+    //unsafe { 
+    //  for rix in 0..($ix1).len() {
+    //    if $ix1[rix] == true {
+    //      ($sink).row_mut(rix)[$ix2 - 1] = ($source).clone();
+    //    }
+    //  }
+    //}
   };}  
 
   
 #[macro_export]
-macro_rules! impl_set_range_scalar_fxn {
-  ($struct_name:ident, $op:tt, $ix_type:ty) => {
+macro_rules! impl_assign_range_scalar_fxn_s {
+  ($struct_name:ident, $op:tt, $ix:ty) => {
     #[derive(Debug)]
     pub struct $struct_name<T, MatA, IxVec> {
       pub source: Ref<T>,
@@ -861,22 +866,40 @@ macro_rules! impl_set_range_scalar_fxn {
       pub sink: Ref<MatA>,
       pub _marker: PhantomData<T>,
     }
-
+    impl<T, R, C, S: 'static, IxVec: 'static> MechFunctionFactory for $struct_name<T, na::Matrix<T, R, C, S>, IxVec>
+    where
+      Ref<naMatrix<T, R, C, S>>: ToValue,
+      T: Scalar + Clone + Debug + Sync + Send + 'static + CompileConst + ConstElem + AsValueKind,
+      IxVec: CompileConst + ConstElem + Debug + AsRef<[$ix]> + AsNaKind,
+      R: Dim, C: Dim, S: StorageMut<T, R, C> + Clone + Debug,
+      naMatrix<T, R, C, S>: CompileConst + ConstElem + Debug + AsNaKind,
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
+            let source: Ref<T> = unsafe { arg1.as_unchecked() }.clone();
+            let ix1: Ref<IxVec> = unsafe { arg2.as_unchecked() }.clone();
+            let ix2: Ref<usize> = unsafe { arg3.as_unchecked() }.clone();
+            let sink: Ref<na::Matrix<T, R, C, S>> = unsafe { out.as_unchecked() }.clone();
+            Ok(Box::new(Self { sink, source, ixes: (ix1, ix2), _marker: PhantomData }))
+          }
+          _ => Err(MechError {file: file!().to_string(),tokens: vec![],msg: format!("{} requires 3 arguments, got {:?}", stringify!($struct_name),args),id: line!(),kind: MechErrorKind::IncorrectNumberOfArguments,}),
+        }
+      }
+    }
     impl<T, R, C, S, IxVec> MechFunctionImpl for $struct_name<T, na::Matrix<T, R, C, S>, IxVec>
     where
-      Ref<na::Matrix<T, R, C, S>>: ToValue,
+      Ref<naMatrix<T, R, C, S>>: ToValue,
       T: Scalar + Clone + Debug + Sync + Send + 'static,
-      R: nalgebra::Dim,
-      C: nalgebra::Dim,
-      S: nalgebra::StorageMut<T, R, C> + Clone + Debug,
-      IxVec: AsRef<[usize]> + Debug,
+      IxVec: AsRef<[$ix]> + Debug,
+      R: Dim, C: Dim, S: StorageMut<T, R, C> + Clone + Debug,
     {
       fn solve(&self) {
         unsafe {
           let sink = &mut *self.sink.as_mut_ptr();
           let source = &*self.source.as_ptr();
-          let ix1 = *self.ixes.0.as_ptr();
-          let ix2 = (*self.ixes.1.as_ptr()).as_ref();
+          let ix1 = (*self.ixes.0.as_ptr()).as_ref();
+          let ix2 = (*self.ixes.1.as_ptr());
           $op!(sink, ix1, ix2, source);
         }
       }
@@ -884,84 +907,66 @@ macro_rules! impl_set_range_scalar_fxn {
       fn to_string(&self) -> String {format!("{:#?}", self)}
     }
     #[cfg(feature = "compiler")]
-    impl<T, R, C, S, IxVec> MechFunctionCompiler for Set2DSR<T, na::Matrix<T, R, C, S>, IxVec> 
+    impl<T, R, C, S, IxVec> MechFunctionCompiler for $struct_name<T, na::Matrix<T, R, C, S>, IxVec> 
     where
       T: CompileConst + ConstElem + AsValueKind,
-      IxVec: CompileConst + ConstElem,
-      na::Matrix<T, R, C, S>: CompileConst + ConstElem,
+      IxVec: CompileConst + ConstElem + AsNaKind,
+      naMatrix<T, R, C, S>: CompileConst + ConstElem + AsNaKind,
     {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        let name = format!("Set2DSR<{}>", T::as_value_kind());
+        let name = format!("{}<{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R, C, S>::as_na_kind(), IxVec::as_na_kind());
         compile_ternop!(name, self.sink, self.source, self.ixes.0, self.ixes.1, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
       }
     }
   };}
 
-impl_set_range_scalar_fxn!(Set2DRSMD,DMatrix, set_2d_vector_scalar, usize);
-impl_set_range_scalar_fxn!(Set2DRSM4,Matrix4, set_2d_vector_scalar, usize);
-impl_set_range_scalar_fxn!(Set2DRSM3,Matrix3, set_2d_vector_scalar, usize);
-impl_set_range_scalar_fxn!(Set2DRSM2,Matrix2, set_2d_vector_scalar, usize);
-impl_set_range_scalar_fxn!(Set2DRSM1,Matrix1, set_2d_vector_scalar, usize);
-impl_set_range_scalar_fxn!(Set2DRSM2x3,Matrix2x3, set_2d_vector_scalar, usize);
-impl_set_range_scalar_fxn!(Set2DRSM3x2,Matrix3x2, set_2d_vector_scalar, usize);
+impl_assign_range_scalar_fxn_s!(Assign2DSSMD, assign_2d_range_scalar, usize);
 
-impl_set_range_scalar_fxn!(Set2DRSMDB,DMatrix, set_2d_vector_scalar_b, bool);
-impl_set_range_scalar_fxn!(Set2DRSM4B,Matrix4, set_2d_vector_scalar_b, bool);
-impl_set_range_scalar_fxn!(Set2DRSM3B,Matrix3, set_2d_vector_scalar_b, bool);
-impl_set_range_scalar_fxn!(Set2DRSM2B,Matrix2, set_2d_vector_scalar_b, bool);
-impl_set_range_scalar_fxn!(Set2DRSM1B,Matrix1, set_2d_vector_scalar_b, bool);
-impl_set_range_scalar_fxn!(Set2DRSM2x3B,Matrix2x3, set_2d_vector_scalar_b, bool);
-impl_set_range_scalar_fxn!(Set2DRSM3x2B,Matrix3x2, set_2d_vector_scalar_b, bool);
+impl_assign_range_scalar_fxn_s!(Set2DRSS, assign_2d_range_scalar, usize);
+impl_assign_range_scalar_fxn_s!(Set2DRSB, assign_2d_range_scalar_b, bool);
+//impl_assign_range_scalar_fxn_v!(Set2DRSV, assign_2d_range_scalar_v, usize);
+//impl_assign_range_scalar_fxn_v!(Set2DRSBV, assign_2d_range_scalar_vb, bool);
 
-#[macro_export]
-macro_rules! impl_set_range_scalar_match_arms {
-  ($fxn_name:ident, $arg:expr, $($value_kind:ident, $value_string:tt);+ $(;)?) => {
-    paste!{
-      match $arg {
-        $(
-          #[cfg(all(feature = $value_string, feature = "matrix4"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)),   [Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4>] { sink: sink.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "matrix3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)),   [Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3>] { sink: sink.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "matrix2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)),   [Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2>] { sink: sink.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "matrix1"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix1(sink)),   [Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M1>] { sink: sink.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2x3>] { sink: sink.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3x2>] { sink: sink.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "matrixd"))]
-          (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)),   [Value::MatrixIndex(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MD>] { sink: sink.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-          
-          #[cfg(all(feature = $value_string, feature = "matrix4", feature = "logical_indexing"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix4(sink)),   [Value::MatrixBool(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M4B>] { sink: sink.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "matrix3", feature = "logical_indexing"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3(sink)),   [Value::MatrixBool(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3B>] { sink: sink.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "matrix2", feature = "logical_indexing"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2(sink)),   [Value::MatrixBool(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2B>] { sink: sink.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "matrix1", feature = "logical_indexing"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix1(sink)),   [Value::MatrixBool(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M1B>] { sink: sink.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "logical_indexing"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix2x3(sink)), [Value::MatrixBool(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M2x3B>] { sink: sink.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "logical_indexing"))]
-          (Value::[<Matrix $value_kind>](Matrix::Matrix3x2(sink)), [Value::MatrixBool(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name M3x2B>] { sink: sink.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-          #[cfg(all(feature = $value_string, feature = "matrixd", feature = "logical_indexing"))]
-          (Value::[<Matrix $value_kind>](Matrix::DMatrix(sink)),   [Value::MatrixBool(Matrix::DVector(ix1)),Value::Index(ix2)], Value::$value_kind(source)) => Ok(Box::new([<$fxn_name MDB>] { sink: sink.clone(), ixes: (ix1.clone(), ix2.clone()), source: source.clone() })),
-        
-        )+
-        x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
-      }
-    }
-  }
+fn impl_assign_range_scalar_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+  let arg = (sink, ixes.as_slice(), source);
+               impl_assign_fxn!(impl_assign_range_scalar_arms, Set2DRS, arg, u8,   "u8")
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Set2DRS, arg, u16,  "u16"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Set2DRS, arg, u32,  "u32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Set2DRS, arg, u64,  "u64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Set2DRS, arg, u128, "u128"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Set2DRS, arg, i8,   "i8"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Set2DRS, arg, i16,  "i16"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Set2DRS, arg, i32,  "i32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Set2DRS, arg, i64,  "i64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Set2DRS, arg, i128, "i128"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Set2DRS, arg, F32,  "f32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Set2DRS, arg, F64,  "f64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Set2DRS, arg, R64,  "rational"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Set2DRS, arg, C64,  "complex"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Set2DRS, arg, bool, "bool"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_scalar_arms, Set2DRS, arg, String, "string"))
+
+  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, u8,  "u8"))
+  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, u16,  "u16"))
+  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, u32,  "u32"))
+  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, u64,  "u64"))
+  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, u128, "u128"))
+  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, i8,   "i8"))
+  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, i16,  "i16"))
+  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, i32,  "i32"))
+  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, i64,  "i64"))
+  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, i128, "i128"))
+  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, F32,  "f32"))
+  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, F64,  "f64"))
+  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, R64,  "rational"))
+  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, C64,  "complex"))
+  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, bool, "bool"))
+  //.or_else(|_| impl_set_range_arms_b!(Set1DR, &arg, String, "string"))
+  .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
 }
 
-fn impl_set_range_scalar_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> Result<Box<dyn MechFunction>, MechError> {
-  impl_set_match_arms!(Set2DRS, range_scalar, (sink, ixes.as_slice(), source))
-}
-
-pub struct MatrixSetRangeScalar {}
-impl NativeFunctionCompiler for MatrixSetRangeScalar {
+pub struct MatrixAssignRangeScalar {}
+impl NativeFunctionCompiler for MatrixAssignRangeScalar {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     if arguments.len() <= 1 {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
@@ -969,12 +974,12 @@ impl NativeFunctionCompiler for MatrixSetRangeScalar {
     let sink: Value = arguments[0].clone();
     let source: Value = arguments[1].clone();
     let ixes = arguments.clone().split_off(2);
-    match impl_set_range_scalar_fxn(sink.clone(),source.clone(),ixes.clone()) {
+    match impl_assign_range_scalar_fxn(sink.clone(),source.clone(),ixes.clone()) {
       Ok(fxn) => Ok(fxn),
       Err(_) => {
         match sink {
-          Value::MutableReference(sink) => { impl_set_range_scalar_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
-          x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+          Value::MutableReference(sink) => { impl_assign_range_scalar_fxn(sink.borrow().clone(),source.clone(),ixes.clone()) }
+          _ => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}, {:?}, {:?}", sink, source, ixes), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
         }
       }
     }
@@ -1373,22 +1378,22 @@ macro_rules! matrix_assign_all_range_fxn {
     paste::paste! {
       fn $op_fxn_name(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
         let arg = (sink, ixes.as_slice(), source);
-                     impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, u8, "u8")
-        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, u16, "u16"))
-        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, u32, "u32"))
-        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, u64, "u64"))
-        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, u128, "u128"))
-        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, i8, "i8"))
-        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, i16, "i16"))
-        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, i32, "i32"))
-        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, i64, "i64"))
-        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, i128, "i128"))
-        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, F32, "f32"))
-        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, F64, "f64"))
-        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, R64, "rational"))
-        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, C64, "complex"))
-        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, bool, "bool"))
-        .or_else(|_| impl_assign_fxn!(impl_set_all_range_arms, $fxn_name, arg, String, "string"))
+                     impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, u8, "u8")
+        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, u16, "u16"))
+        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, u32, "u32"))
+        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, u64, "u64"))
+        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, u128, "u128"))
+        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, i8, "i8"))
+        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, i16, "i16"))
+        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, i32, "i32"))
+        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, i64, "i64"))
+        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, i128, "i128"))
+        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, F32, "f32"))
+        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, F64, "f64"))
+        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, R64, "rational"))
+        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, C64, "complex"))
+        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, bool, "bool"))
+        .or_else(|_| impl_assign_fxn!(impl_assign_all_range_arms, $fxn_name, arg, String, "string"))
 
         .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, u8,  "u8"))
         .or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, u16, "u16"))
