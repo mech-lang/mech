@@ -155,20 +155,35 @@ impl ValueKind {
       #[cfg(feature = "matrix")]
       ValueKind::Matrix(_,shape) => {
         match shape[..] {
+          #[cfg(feature = "matrix1")]
           [1,1] => FeatureKind::Matrix1,
+          #[cfg(feature = "matrix2")]
           [2,2] => FeatureKind::Matrix2,
+          #[cfg(feature = "matrix3")]
           [3,3] => FeatureKind::Matrix3,
+          #[cfg(feature = "matrix4")]
           [4,4] => FeatureKind::Matrix4,
+          #[cfg(feature = "matrix2x3")]
           [2,3] => FeatureKind::Matrix2x3,
+          #[cfg(feature = "matrix3x2")]
           [3,2] => FeatureKind::Matrix3x2,
+          #[cfg(feature = "row_vector2")]
           [1,2] => FeatureKind::RowVector2,
+          #[cfg(feature = "row_vector3")]
           [1,3] => FeatureKind::RowVector3,
+          #[cfg(feature = "row_vector4")]
           [1,4] => FeatureKind::RowVector4,
+          #[cfg(feature = "vector2")]
           [2,1] => FeatureKind::Vector2,
+          #[cfg(feature = "vector3")]
           [3,1] => FeatureKind::Vector3,
+          #[cfg(feature = "vector4")]
           [4,1] => FeatureKind::Vector4,
+          #[cfg(feature = "row_vectord")]
           [1,n] => FeatureKind::RowVectorD,
+          #[cfg(feature = "vectord")]
           [n,1] => FeatureKind::VectorD,
+          #[cfg(feature = "matrixd")]
           [n,m] => FeatureKind::MatrixD,
           _ => panic!("Unsupported matrix shape for feature kind: {}", self),
         }
