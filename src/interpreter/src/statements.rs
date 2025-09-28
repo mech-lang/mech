@@ -452,21 +452,21 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, p: &Inte
         [Subscript::All,Subscript::All] => todo!(),
         [Subscript::Formula(ix1),Subscript::Formula(ix2)] => {
           fxn_input.push(source.clone());
-          let result = subscript_formula(&subs[0], p)?;
-          let shape1 = result.shape();
-          fxn_input.push(result);
-          let result = subscript_formula(&subs[1], p)?;
-          let shape2 = result.shape();
-          fxn_input.push(result);
+          let result1 = subscript_formula(&subs[0], p)?;
+          let result2 = subscript_formula(&subs[1], p)?;
+          let shape1 = result1.shape();
+          let shape2 = result2.shape();
+          fxn_input.push(result1);
+          fxn_input.push(result2);
           match ((shape1[0],shape1[1]),(shape2[0],shape2[1])) {
             #[cfg(feature = "matrix")]
             ((1,1),(1,1)) => plan.borrow_mut().push(MatrixAssignScalarScalar{}.compile(&fxn_input)?),
             #[cfg(all(feature = "matrix", feature = "subscript_range"))]
             ((1,1),(m,1)) => plan.borrow_mut().push(MatrixAssignScalarRange{}.compile(&fxn_input)?),
             #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            ((n,1),(1,1)) => plan.borrow_mut().push(MatrixSetRangeScalar{}.compile(&fxn_input)?),
-            #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            ((n,1),(m,1)) => plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?),
+            ((n,1),(1,1)) => plan.borrow_mut().push(MatrixAssignRangeScalar{}.compile(&fxn_input)?),
+            //#[cfg(all(feature = "matrix", feature = "subscript_range"))]
+            //((n,1),(m,1)) => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
             _ => unreachable!(),
           }          
         },
@@ -522,7 +522,7 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, p: &Inte
           fxn_input.push(result);
           match &shape[..] {
             #[cfg(feature = "matrix")]
-            [1,1] => plan.borrow_mut().push(MatrixSetRangeScalar{}.compile(&fxn_input)?),
+            [1,1] => plan.borrow_mut().push(MatrixAssignRangeScalar{}.compile(&fxn_input)?),
             #[cfg(feature = "matrix")]
             [1,n] => plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?),
             #[cfg(feature = "matrix")]
