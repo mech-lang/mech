@@ -3929,6 +3929,16 @@ macro_rules! impl_horzcat_arms {
               x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Matrix1<{}> or Scalar<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
             }
           }
+          #[cfg(all(feature = "matrixd", not(feature = "matrix1")))]
+          (1,1,1) => {
+            let a_m1 = get_md(&arguments[0]);
+            let a_sc = get_s(&arguments[0]);
+            match (a_m1, a_sc) {
+              (Some(ref e0), None) => return Ok(Box::new(HorizontalConcatenateMD{out: e0.clone()})),
+              (None, Some(ref e0)) => return Ok(Box::new(HorizontalConcatenateS1D{arg: e0.clone(), out: Ref::new(DMatrix::from_element(1,1,$default))})),
+              x => return Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Expected a Matrix1<{}> or Scalar<{}> for horizontal concatenation, found {:?}", stringify!($kind), stringify!($kind), x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+            }
+          }
           #[cfg(feature = "row_vector2")]
           (1, 1, 2) => {
             let er2 = get_r2(&arguments[0]);
