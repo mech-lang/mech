@@ -398,7 +398,6 @@ op_assign!(div_assign, Div);
 
 #[cfg(feature = "subscript")]
 pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, p: &Interpreter) -> MResult<Value> {
-  println!("Subscript assign: {:?} {:?} {:?}", sbscrpt, sink, source);
   let plan = p.plan();
   let symbols = p.symbols();
   let functions = p.functions();
