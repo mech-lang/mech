@@ -1106,6 +1106,20 @@ macro_rules! register_assign_s {
 }
 
 #[macro_export]
+macro_rules! register_assign_srr {
+  ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
+    paste! {
+      inventory::submit! {
+        FunctionDescriptor {
+          name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), ">") ,
+          ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<usize>,$row3<usize>>::new,
+        }
+      }
+    }
+  };
+}
+
+#[macro_export]
 macro_rules! register_assign_s1 {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt) => {
     paste! {
@@ -1782,6 +1796,22 @@ macro_rules! impl_assign_scalar_range_arms {
         (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::Index(ix1), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if ix2.borrow().len() == source.borrow().len() => {
           register_assign!([<$fxn_name V>], $value_kind, $value_string, $shape, RowDVector, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        },
+        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+      }
+    };
+  };
+}
+
+#[macro_export]
+macro_rules! impl_assign_range_range_arms {
+  ($fxn_name:ident, $shape:tt, $arg:expr, $value_kind:ident, $value_string:tt) => {
+    paste! {
+      match $arg {
+        #[cfg(all(feature = $value_string, feature = "vectord"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_srr!([<$fxn_name S>], $value_kind, $value_string, $shape, DVector, DVector);
+          box_mech_fxn(Ok(Box::new([<$fxn_name S>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
