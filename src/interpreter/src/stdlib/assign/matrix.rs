@@ -832,7 +832,6 @@ impl NativeFunctionCompiler for MatrixAssignScalarAll {
 
 // x[1..3,1] = 1 ------------------------------------------------------------------
 
-/*
 macro_rules! assign_2d_range_scalar {
   ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
     unsafe { 
@@ -853,49 +852,33 @@ macro_rules! assign_2d_range_scalar_v {
       }
     }
   };
-}*/
-
-macro_rules! assign_2d_range_scalar {
-  ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-    unsafe { 
-      for i in 0..($ix1).len() {
-        let rix = $ix1[i] - 1; 
-        ($sink).row_mut(rix)[$ix2 - 1] = ($source).clone();
-      }
-    }
-  };}
-
-macro_rules! assign_2d_range_scalar_v {
-  ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-    unsafe { 
-      for i in 0..($ix1).len() {
-        let rix = $ix1[i] - 1; 
-        ($sink).row_mut(rix)[$ix2 - 1] = ($source)[i].clone();
-      }
-    }
-  };}
+}
 
 macro_rules! assign_2d_range_scalar_b {
   ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
     unsafe { 
-      for rix in 0..($ix1).len() {
-        if $ix1[rix] == true {
-          ($sink).row_mut(rix)[$ix2 - 1] = ($source).clone();
+      let mut col = ($sink).column_mut($ix2 - 1);
+      for (rix, &is_selected) in ($ix1).iter().enumerate() {
+        if is_selected {
+          col[rix] = ($source).clone();
         }
       }
     }
-  };}  
+  };
+}
 
 macro_rules! assign_2d_range_scalar_vb {
   ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
     unsafe { 
-      for rix in 0..($ix1).len() {
-        if $ix1[rix] == true {
-          ($sink).row_mut(rix)[$ix2 - 1] = ($source)[rix].clone();
+      let mut col = ($sink).column_mut($ix2 - 1);
+      for (rix, &is_selected) in ($ix1).iter().enumerate() {
+        if is_selected {
+          col[rix] = ($source)[rix].clone();
         }
       }
     }
-  };}
+  };
+}
 
 #[macro_export]
 macro_rules! impl_assign_range_scalar_fxn_s {
@@ -1556,22 +1539,22 @@ fn impl_assign_range_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> 
   .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, bool, "bool"))
   .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, String, "string"))
 
-  //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, u8,  "u8"))
-  //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, u16, "u16"))
-  //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, u32, "u32"))
-  //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, u64, "u64"))
-  //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, u128,"u128"))
-  //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, i8,  "i8"))
-  //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, i16, "i16"))
-  //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, i32, "i32"))
-  //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, i64, "i64"))
-  //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, i128,"i128"))
-  //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, F32, "f32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, u8,  "u8"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, u16, "u16"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, u32, "u32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, u64, "u64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, u128,"u128"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, i8,  "i8"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, i16, "i16"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, i32, "i32"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, i64, "i64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, i128,"i128"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, F32, "f32"))
   .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, F64, "f64"))
-  //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, R64, "rational"))
-  //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, C64, "complex"))
-  //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, bool, "bool"))
-  //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, String, "string"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, R64, "rational"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, C64, "complex"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, bool, "bool"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, String, "string"))
   .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
 }
 
