@@ -1361,6 +1361,19 @@ macro_rules! assign_2d_range_range {
     }
   };}
 
+macro_rules! assign_2d_range_range_v {
+  ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+    unsafe { 
+      for rix in 0..($ix1).len() {
+        let r = $ix1[rix] - 1;
+        for cix in 0..($ix2).len() {
+          let c = $ix2[cix] - 1;
+          ($sink)[(r, c)] = ($source)[rix * ($ix2).len() + cix].clone();
+        }
+      }
+    }
+  };}
+
 #[macro_export]
 macro_rules! impl_assign_range_range_fxn_s {
   ($struct_name:ident, $op:tt, $ix1:ty, $ix2:ty) => {
@@ -1466,13 +1479,13 @@ macro_rules! impl_assign_range_range_fxn_v {
       }
     }
     impl<T, R1, C1, S1, R2, C2, S2, IxVec1, IxVec2>
-      MechFunctionImpl for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec, IxVec2>
+      MechFunctionImpl for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec1, IxVec2>
     where
       Ref<naMatrix<T, R1, C1, S1>>: ToValue,
       T: Debug + Clone + Sync + Send + 'static +
          PartialEq + PartialOrd,
-      IxVec1: AsRef<[$ix]> + Debug,
-      IxVec2: AsRef<[$ix]> + Debug,
+      IxVec1: AsRef<[$ix1]> + Debug,
+      IxVec2: AsRef<[$ix2]> + Debug,
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
       R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
     {
@@ -1480,7 +1493,7 @@ macro_rules! impl_assign_range_range_fxn_v {
         unsafe {
           let sink = &mut *self.sink.as_mut_ptr();
           let source = &*self.source.as_ptr();
-          let ix1 = (*self.ixes.0.as_ptr());
+          let ix1 = (*self.ixes.0.as_ptr()).as_ref();
           let ix2 = (*self.ixes.1.as_ptr()).as_ref();
           $op!(sink, ix1, ix2, source);
         }
@@ -1505,6 +1518,7 @@ macro_rules! impl_assign_range_range_fxn_v {
   };}
 
 impl_assign_range_range_fxn_s!(Assign2DRRS,  assign_2d_range_range, usize, usize);
+impl_assign_range_range_fxn_v!(Assign2DRRV,  assign_2d_range_range_v, usize, usize);
 
 fn impl_assign_range_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   let arg = (sink, ixes.as_slice(), source);
