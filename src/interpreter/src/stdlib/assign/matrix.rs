@@ -1374,6 +1374,22 @@ macro_rules! assign_2d_range_range_v {
     }
   };}
 
+// both indices are boolean
+macro_rules! assign_2d_range_range_b {
+  ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+    unsafe { 
+      for r in 0..($ix1).len() {
+        if $ix1[r] == true {
+          for c in 0..($ix2).len() {
+            if $ix2[c] == true {
+              ($sink)[(r, c)] = ($source).clone();
+            }
+          }
+        }
+      }
+    }
+  };}
+
 #[macro_export]
 macro_rules! impl_assign_range_range_fxn_s {
   ($struct_name:ident, $op:tt, $ix1:ty, $ix2:ty) => {
@@ -1519,10 +1535,11 @@ macro_rules! impl_assign_range_range_fxn_v {
 
 impl_assign_range_range_fxn_s!(Assign2DRRS,  assign_2d_range_range, usize, usize);
 impl_assign_range_range_fxn_v!(Assign2DRRV,  assign_2d_range_range_v, usize, usize);
+impl_assign_range_range_fxn_s!(Assign2DRRB,  assign_2d_range_range_b, bool, bool);
 
 fn impl_assign_range_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   let arg = (sink, ixes.as_slice(), source);
-                impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, u8, "u8")
+               impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, u8, "u8")
   .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, u16, "u16"))
   .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, u32, "u32"))
   .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms, Assign2DRR, arg, u64, "u64"))
@@ -1550,7 +1567,7 @@ fn impl_assign_range_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> 
   //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, i64, "i64"))
   //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, i128,"i128"))
   //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, F32, "f32"))
-  //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, F64, "f64"))
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, F64, "f64"))
   //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, R64, "rational"))
   //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, C64, "complex"))
   //.or_else(|_| impl_set_all_range_arms_b!($fxn_name, &arg, bool, "bool"))

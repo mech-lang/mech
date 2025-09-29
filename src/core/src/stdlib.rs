@@ -1120,6 +1120,20 @@ macro_rules! register_assign_srr {
 }
 
 #[macro_export]
+macro_rules! register_assign_srr_b {
+  ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
+    paste! {
+      inventory::submit! {
+        FunctionDescriptor {
+          name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), ">") ,
+          ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<bool>,$row3<bool>>::new,
+        }
+      }
+    }
+  };
+}
+
+#[macro_export]
 macro_rules! register_assign_srr2 {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
     paste! {
@@ -2108,7 +2122,6 @@ macro_rules! impl_assign_range_range_arms {
           register_assign_srr2!([<$fxn_name V>], $value_kind, $value_string, $shape, DMatrix, Vector2, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name V>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-
         #[cfg(all(feature = $value_string, feature = "vector3", feature = "matrix1", feature = "vector3"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixIndex(Matrix::Vector3(ix1)), Value::MatrixIndex(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
           register_assign_srr2!([<$fxn_name V>], $value_kind, $value_string, $shape, Vector3, Vector3, Matrix1);
@@ -3491,4 +3504,26 @@ macro_rules! impl_assign_scalar_range_arms_b {
       }
     };
   };
+}
+
+#[macro_export]
+macro_rules! impl_assign_range_range_arms_b {
+  ($fxn_name:ident, $shape:tt, $arg:expr, $value_kind:ident, $value_string:tt) => {
+    paste! {
+      match $arg {
+        // Scalar source
+        #[cfg(all(feature = $value_string, feature = "matrix1"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Matrix1, Matrix1);
+          box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "vectord"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, DVector, DVector);
+          box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        },
+        _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+      }
+    }
+  }
 }
