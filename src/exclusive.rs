@@ -24,7 +24,7 @@ where
   CompileConst + ConstElem + AsValueKind +
   PartialOrd + 'static + One + Add<Output = T>,
   Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-  naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsValueKind,
+  naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
   R1: Dim + 'static, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug + 'static,
 {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -64,10 +64,10 @@ where
 impl<T, R1, C1, S1> MechFunctionCompiler for RangeExclusiveScalar<T, naMatrix<T, R1, C1, S1>> 
 where
   T: CompileConst + ConstElem + AsValueKind,
-  naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsValueKind,
+  naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    let name = format!("RangeExclusiveScalar<{}>", naMatrix::<T, R1, C1, S1>::as_value_kind());
+    let name = format!("RangeExclusiveScalar<{}{}>", T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind());
     compile_binop!(name, self.out, self.from, self.to, ctx, FeatureFlag::Builtin(FeatureKind::RangeExclusive) );
   }
 }

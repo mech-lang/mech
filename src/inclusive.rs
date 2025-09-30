@@ -67,7 +67,7 @@ where
   naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    let name = format!("RangeInclusiveScalar<{}{}>", T::as_value_kind(), stringify!(naMatrix::<T, R1, C1, S1>::as_na_kind()));
+    let name = format!("RangeInclusiveScalar<{}{}>", T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind());
     compile_binop!(name, self.out, self.from, self.to, ctx, FeatureFlag::Builtin(FeatureKind::RangeInclusive) );
   }
 }
