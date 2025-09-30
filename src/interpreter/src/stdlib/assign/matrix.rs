@@ -1407,10 +1407,9 @@ macro_rules! assign_2d_range_range_vbu {
     unsafe {
       let nrows = $sink.nrows();
       for cix in 0..($ix2).len() {
-        let c = $ix2[cix] - 1; // 1-based to 0-based col index
+        let c = $ix2[cix] - 1;
         for r in 0..($ix1).len() {
           if $ix1[r] {
-            // column-major offset into vector
             let offset = r + c * nrows;
             ($sink)[(r, c)] = ($source)[offset].clone();
           }
@@ -1420,35 +1419,39 @@ macro_rules! assign_2d_range_range_vbu {
   };
 }
 
-/*
-macro_rules! assign_2d_range_range_vub {
-  ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-    unsafe { 
-      for r in 0..($ix1).len() {
-        let rix = $ix1[r] - 1;
-        for c in 0..($ix2).len() {
-          if $ix2[c] == true {
-            ($sink)[(rix, c)] = ($source)[r * ($ix2).len() + c].clone();
-          }
-        }
-      }
-    }
-  };}
-
-
 macro_rules! assign_2d_range_range_ub {
   ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-    unsafe { 
-      for r in 0..($ix1).len() {
-        let rix = $ix1[r] - 1;
-        for c in 0..($ix2).len() {
-          if $ix2[c] == true {
-            ($sink)[(rix, c)] = ($source)[r * ($ix2).len() + c].clone();
+    unsafe {
+      for r in 0..$ix1.len() {
+        if $ix1[r] != 0 {
+          for c in 0..$ix2.len() {
+            if $ix2[c] {
+              ($sink)[(r, c)] = $source.clone();
+            }
           }
         }
       }
     }
-  };}*/
+  };
+}
+
+
+/*macro_rules! assign_2d_range_range_vub {
+  ($sink:expr, $rowmask:expr, $colidx:expr, $source:expr) => {
+    unsafe {
+      for (cix, &c1) in $colidx.iter().enumerate() {
+        let c = c1 - 1; 
+        let mut ridx = 0;
+        for r in 0..$rowmask.len() {
+          if $rowmask[r] {
+            ($sink)[(r, c)] = ($source)[cix][ridx].clone();
+            ridx += 1;
+          }
+        }
+      }
+    }
+  };
+}*/
 
 
 #[macro_export]
@@ -1594,14 +1597,17 @@ macro_rules! impl_assign_range_range_fxn_v {
     }  
   };}
 
-impl_assign_range_range_fxn_s!(Assign2DRRS,  assign_2d_range_range,      usize, usize);
-impl_assign_range_range_fxn_v!(Assign2DRRV,  assign_2d_range_range_v,    usize, usize);
+impl_assign_range_range_fxn_s!(Assign2DRRS,   assign_2d_range_range,     usize, usize);
+impl_assign_range_range_fxn_v!(Assign2DRRV,   assign_2d_range_range_v,   usize, usize);
+
 impl_assign_range_range_fxn_s!(Assign2DRRBB,  assign_2d_range_range_b,   bool,  bool);
-impl_assign_range_range_fxn_s!(Assign2DRRBU,  assign_2d_range_range_bu,  bool,  usize);
-//impl_assign_range_range_fxn_s!(Assign2DRRUB,  assign_2d_range_range_ub, usize, bool);
 impl_assign_range_range_fxn_v!(Assign2DRRVBB, assign_2d_range_range_vb,  bool,  bool);
+
+impl_assign_range_range_fxn_s!(Assign2DRRBU,  assign_2d_range_range_bu,  bool,  usize);
 impl_assign_range_range_fxn_v!(Assign2DRRVBU, assign_2d_range_range_vbu, bool,  usize);
-//impl_assign_range_range_fxn_v!(Assign2DRRVBU, assign_2d_range_range_vub, usize,  bool);
+
+impl_assign_range_range_fxn_s!(Assign2DRRUB,  assign_2d_range_range_ub,  usize, bool);
+//impl_assign_range_range_fxn_v!(Assign2DRRVUB, assign_2d_range_range_vub, usize, bool);
 
 
 fn impl_assign_range_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
@@ -1641,6 +1647,8 @@ fn impl_assign_range_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> 
   .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_b, Assign2DRR, arg, String, "string"))
 
   .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_bu, Assign2DRR, arg, F64, "f64"))
+
+  .or_else(|_| impl_assign_fxn!(impl_assign_range_range_arms_ub, Assign2DRR, arg, F64, "f64"))
 
   .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
 }
