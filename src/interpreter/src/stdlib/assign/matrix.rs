@@ -1405,14 +1405,15 @@ macro_rules! assign_2d_range_range_bu {
 macro_rules! assign_2d_range_range_vbu {
   ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
     unsafe {
-      let mut ridx = 0;
-      for r in 0..($ix1).len() {
-        if $ix1[r] == true {
-          for cix in 0..($ix2).len() {
-            let c = $ix2[cix] - 1;
-            ($sink)[(r, c)] = ($source)[ridx * ($ix2).len() + cix].clone();
+      let nrows = $sink.nrows();
+      for cix in 0..($ix2).len() {
+        let c = $ix2[cix] - 1; // 1-based to 0-based col index
+        for r in 0..($ix1).len() {
+          if $ix1[r] {
+            // column-major offset into vector
+            let offset = r + c * nrows;
+            ($sink)[(r, c)] = ($source)[offset].clone();
           }
-          ridx += 1;
         }
       }
     }
@@ -1434,19 +1435,6 @@ macro_rules! assign_2d_range_range_vub {
     }
   };}
 
-macro_rules! assign_2d_range_range_vbu {
-  ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-    unsafe { 
-      for r in 0..($ix1).len() {
-        if $ix1[r] == true {
-          for c in 0..($ix2).len() {
-            let cix = $ix2[c] - 1;
-            ($sink)[(r, cix)] = ($source)[r * ($ix2).len() + c].clone();
-          }
-        }
-      }
-    }
-  };}
 
 macro_rules! assign_2d_range_range_ub {
   ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
@@ -1606,13 +1594,13 @@ macro_rules! impl_assign_range_range_fxn_v {
     }  
   };}
 
-impl_assign_range_range_fxn_s!(Assign2DRRS,  assign_2d_range_range,    usize, usize);
-impl_assign_range_range_fxn_v!(Assign2DRRV,  assign_2d_range_range_v,  usize, usize);
-impl_assign_range_range_fxn_s!(Assign2DRRBB,  assign_2d_range_range_b,  bool,  bool);
-impl_assign_range_range_fxn_s!(Assign2DRRBU,  assign_2d_range_range_bu, bool,  usize);
+impl_assign_range_range_fxn_s!(Assign2DRRS,  assign_2d_range_range,      usize, usize);
+impl_assign_range_range_fxn_v!(Assign2DRRV,  assign_2d_range_range_v,    usize, usize);
+impl_assign_range_range_fxn_s!(Assign2DRRBB,  assign_2d_range_range_b,   bool,  bool);
+impl_assign_range_range_fxn_s!(Assign2DRRBU,  assign_2d_range_range_bu,  bool,  usize);
 //impl_assign_range_range_fxn_s!(Assign2DRRUB,  assign_2d_range_range_ub, usize, bool);
-impl_assign_range_range_fxn_v!(Assign2DRRVBB, assign_2d_range_range_vb, bool,  bool);
-//impl_assign_range_range_fxn_v!(Assign2DRRVBU, assign_2d_range_range_vbu, bool,  usize);
+impl_assign_range_range_fxn_v!(Assign2DRRVBB, assign_2d_range_range_vb,  bool,  bool);
+impl_assign_range_range_fxn_v!(Assign2DRRVBU, assign_2d_range_range_vbu, bool,  usize);
 //impl_assign_range_range_fxn_v!(Assign2DRRVBU, assign_2d_range_range_vub, usize,  bool);
 
 
