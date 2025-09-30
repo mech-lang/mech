@@ -1357,7 +1357,6 @@ macro_rules! assign_2d_range_range_v {
     }
   };}
 
-// both indices are boolean
 macro_rules! assign_2d_range_range_b {
   ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
     unsafe { 
@@ -1366,6 +1365,21 @@ macro_rules! assign_2d_range_range_b {
           for c in 0..($ix2).len() {
             if $ix2[c] == true {
               ($sink)[(r, c)] = ($source).clone();
+            }
+          }
+        }
+      }
+    }
+  };}
+
+macro_rules! assign_2d_range_range_vb {
+  ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+    unsafe { 
+      for r in 0..($ix1).len() {
+        if $ix1[r] == true {
+          for c in 0..($ix2).len() {
+            if $ix2[c] == true {
+              ($sink)[(r, c)] = ($source)[r * ($ix2).len() + c].clone();
             }
           }
         }
@@ -1516,9 +1530,10 @@ macro_rules! impl_assign_range_range_fxn_v {
     }  
   };}
 
-impl_assign_range_range_fxn_s!(Assign2DRRS,  assign_2d_range_range, usize, usize);
-impl_assign_range_range_fxn_v!(Assign2DRRV,  assign_2d_range_range_v, usize, usize);
-impl_assign_range_range_fxn_s!(Assign2DRRB,  assign_2d_range_range_b, bool, bool);
+impl_assign_range_range_fxn_s!(Assign2DRRS,  assign_2d_range_range,    usize, usize);
+impl_assign_range_range_fxn_v!(Assign2DRRV,  assign_2d_range_range_v,  usize, usize);
+impl_assign_range_range_fxn_s!(Assign2DRRB,  assign_2d_range_range_b,  bool,  bool);
+impl_assign_range_range_fxn_v!(Assign2DRRVB, assign_2d_range_range_vb, bool,  bool);
 
 fn impl_assign_range_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   let arg = (sink, ixes.as_slice(), source);

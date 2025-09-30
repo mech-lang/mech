@@ -1134,6 +1134,20 @@ macro_rules! register_assign_srr_b {
 }
 
 #[macro_export]
+macro_rules! register_assign_srr_b2 {
+  ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
+    paste! {
+      inventory::submit! {
+        FunctionDescriptor {
+          name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), ">") ,
+          ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<bool>,$row4<bool>>::new,
+        }
+      }
+    }
+  };
+}
+
+#[macro_export]
 macro_rules! register_assign_srr2 {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
     paste! {
@@ -3636,6 +3650,16 @@ macro_rules! impl_assign_range_range_arms_b {
         (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) => {
           register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, DVector, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "vectord", feature = "row_vectord"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
+          /*let ix1_len = ix1.borrow().len();
+          let ix2_len = ix2.borrow().len();
+          if ix1_len * ix2_len != source.borrow().len() {
+            return box_mech_fxn(Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Index length mismatch: sink rows is {}, ix1 length is {}; source length is {}, ix2 length is {}", sink.borrow().nrows(), ix1_len, source.borrow().len(), ix2_len), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }));
+          }*/
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, $shape, RowDVector, DVector, DVector);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
