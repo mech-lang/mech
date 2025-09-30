@@ -288,6 +288,22 @@ impl ParsedProgram {
           let denom = i64::from_le_bytes(data[8..16].try_into().unwrap());
           Value::R64(Ref::new(R64::new(numer, denom)))
         },
+        #[cfg(all(feature = "matrix", feature = "bool"))]
+        TypeTag::MatrixBool => {
+          if data.len() < 8 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
+          }
+          let rows = u32::from_le_bytes(data[0..4].try_into().unwrap()) as usize;
+          let cols = u32::from_le_bytes(data[4..8].try_into().unwrap()) as usize;
+          let mut elements = Vec::with_capacity(rows * cols);
+          for i in 0..(rows * cols) {
+            let start = 8 + i * 1;
+            let end = start + 1;
+            let val = data[start..end].try_into().unwrap();
+            elements.push(u8::from_le_bytes(val) != 0);
+          }
+          Value::MatrixBool(Matrix::from_vec(elements, rows, cols))
+        }
         #[cfg(all(feature = "matrix", feature = "u8"))]
         TypeTag::MatrixU8 => {
           if data.len() < 8 {
