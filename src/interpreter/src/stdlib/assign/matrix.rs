@@ -1435,24 +1435,22 @@ macro_rules! assign_2d_range_range_ub {
   };
 }
 
-
-/*macro_rules! assign_2d_range_range_vub {
-  ($sink:expr, $rowmask:expr, $colidx:expr, $source:expr) => {
+macro_rules! assign_2d_range_range_vub {
+  ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
     unsafe {
-      for (cix, &c1) in $colidx.iter().enumerate() {
-        let c = c1 - 1; 
-        let mut ridx = 0;
-        for r in 0..$rowmask.len() {
-          if $rowmask[r] {
-            ($sink)[(r, c)] = ($source)[cix][ridx].clone();
-            ridx += 1;
+      let nrows = $sink.nrows();
+      for c in 0..$ix2.len() {
+        if $ix2[c] {
+          for rix in 0..$ix1.len() {
+            let r = $ix1[rix] - 1;
+            let offset = r + c * nrows;
+            ($sink)[(r, c)] = ($source)[offset].clone();
           }
         }
       }
     }
   };
-}*/
-
+}
 
 #[macro_export]
 macro_rules! impl_assign_range_range_fxn_s {
@@ -1607,7 +1605,7 @@ impl_assign_range_range_fxn_s!(Assign2DRRBU,  assign_2d_range_range_bu,  bool,  
 impl_assign_range_range_fxn_v!(Assign2DRRVBU, assign_2d_range_range_vbu, bool,  usize);
 
 impl_assign_range_range_fxn_s!(Assign2DRRUB,  assign_2d_range_range_ub,  usize, bool);
-//impl_assign_range_range_fxn_v!(Assign2DRRVUB, assign_2d_range_range_vub, usize, bool);
+impl_assign_range_range_fxn_v!(Assign2DRRVUB, assign_2d_range_range_vub, usize, bool);
 
 
 fn impl_assign_range_range_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
