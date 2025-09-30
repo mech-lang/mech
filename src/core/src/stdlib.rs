@@ -1,6 +1,6 @@
 pub use crate::*;
 
-// The Standard Libray
+// The Standard Library
 // ----------------------------------------------------------------------------
 
 // These macros are used by various libraries to generate function impl and
