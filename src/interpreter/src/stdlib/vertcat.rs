@@ -501,7 +501,7 @@ where
     }
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
     ctx.emit_vararg(
-      hash_str("VerticalConcatenateNArgs"),
+      hash_str(&format!("VerticalConcatenateNArgs<{}>", T::as_value_kind())),
       registers[0],
       mat_regs,
     );
@@ -620,7 +620,7 @@ where
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
     ctx.emit_binop(
-      hash_str("VerticalConcatenateVD2"),
+      hash_str(&format!("VerticalConcatenateVD2<{}>", T::as_value_kind())),
       registers[0],
       registers[1],
       registers[2],
