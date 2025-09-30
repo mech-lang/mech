@@ -8,6 +8,7 @@ set/difference
 
 ```mech:disabled
 D := set/difference(A, B)
+D := A ∖ B
 ```
 
 2. Description
@@ -44,29 +45,29 @@ Result:
 (a) Simple difference
 
 ```mech:ex1
-A := ["a", "b", "c"]
-B := ["b", "c", "d"]
+A := {"a", "b", "c"}
+B := {"b", "c", "d"}
 D := set/difference(A, B)
 ```
-Result: `D` contains "a".
+Result: `D` = {"a"}
 
 (b) Numbers
 
 ```mech:ex2
-A := [1, 2, 3, 4]
-B := [3, 4, 5]
-D := set/difference(A, B)
+A := {1, 2, 3, 4}
+B := {3, 4, 5}
+D := A ∖ B
 ```
-Result: `D` contains 1 and 2.
+Result: `D` = {1, 2}
 
 (c) Order is preserved from A
 
 ```mech:ex3
-A := ["x", "y", "z"]
-B := ["z"]
+A := {"x", "y", "z"}
+B := {"z"}
 D := set/difference(A, B)
 ```
-Result: `D` contains "x", "y".
+Result: `D` = {"x", "y"}
 
 6. Details
 -------------------------------------------------------------------------------
@@ -79,7 +80,7 @@ Stable insertion order:
 - Matches Rust IndexSet behavior: difference elements follow A’s order.
 
 Performance:
-- Average O(|A| + |B|) time with hashing, memory O(|A|) for the result.
+- Average O(\|A\| + \|B\|) time with hashing, memory O(\|A\|) for the result.
 
 Determinism:
 - Output is deterministic across runs and platforms.

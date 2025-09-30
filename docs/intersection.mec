@@ -10,6 +10,12 @@ set/intersection
 I := set/intersection(A, B)
 ```
 
+Equivalent shorthand with mathematical operator:
+
+```mech:disabled
+I := A ∩ B
+```
+
 2. Description
 -------------------------------------------------------------------------------
 
@@ -44,17 +50,19 @@ Result:
 (a) Simple intersection
 
 ```mech:ex1
-A := ["a", "b", "c"]
-B := ["b", "c", "d"]
-I := set/intersection(A, B)
+A := {"a", "b", "c"}
+B := {"b", "c", "d"}
+I := A ∩ B
+// I is {"b", "c"}
 ```
 
 (b) Numbers
 
 ```mech:ex2
-A := [1, 2, 3, 4]
-B := [3, 4, 5, 6]
-I := set/intersection(A, B)
+A := {1, 2, 3, 4}
+B := {3, 4, 5, 6}
+I := A ∩ B
+// I is {3, 4}
 ```
 
 (c) Order follows the first set
@@ -62,7 +70,8 @@ I := set/intersection(A, B)
 ```mech:ex3
 A := ["x", "y", "z"]
 B := ["z", "x", "y"]
-I := set/intersection(A, B)
+I := A ∩ B
+// I is ["x", "y"]
 ```
 
 6. Details
@@ -76,7 +85,7 @@ Stable insertion order:
 - Matches Rust IndexSet behavior: intersection elements follow A’s order.
 
 Performance:
-- Average O(|A| + |B|) time with hashing, memory O(|A|) for the result.
+- Average O(\|A\| + \|B\|) time with hashing, memory O(\|A\|) for the result.
 
 Determinism:
 - Output is deterministic across runs and platforms.

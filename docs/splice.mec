@@ -9,12 +9,6 @@ set/splice
 ```mech:disabled
 U := set/splice(A, start, count, items)
 ```
-can remove this mech portion here to get it to compile, need to verify the format for the mech function...
-```mech:disabled
-U, removed := set/splice(A, start, count, items)
-```
-
-
 2. Description
 -------------------------------------------------------------------------------
 
@@ -49,47 +43,37 @@ Results:
 -------------------------------------------------------------------------------
 
 (a) Replace two elements with three new ones
-
-```mech:ex1
-A := ["a", "b", "c", "d"]
-U := set/splice(A, 1, 2, ["x", "y", "z"])
-// U is ["a", "x", "y", "z", "d"]
+```mech:disabled
+A := {"a", "b", "c", "d"}
+U := set/splice(A, 1, 2, {"x", "y", "z"})
+// U is {"a", "x", "y", "z", "d"}
 ```
-
 (b) Also capture removed elements
-
-```mech:ex2
-A := ["cat", "dog", "eel", "fox"]
-U, R := set/splice(A, 1, 2, ["yak"])
-// U is ["cat", "yak", "fox"]
-// R is ["dog", "eel"]
+```mech:disabled
+A := {"cat", "dog", "eel", "fox"}
+U, R := set/splice(A, 1, 2, {"yak"})
+// U is {"cat", "yak", "fox"}
+// R is {"dog", "eel"}
 ```
-
 (c) Duplicates are ignored; existing items are not re inserted
-
-```mech:ex3
-A := [1, 2, 3, 4]
-U := set/splice(A, 1, 2, [3, 4, 5])
-// U is [1, 3, 4, 5]
+```mech:disabled
+A := {1, 2, 3, 4}
+U := set/splice(A, 1, 2, {3, 4, 5})
+// U is {1, 3, 4, 5}
 ```
-
 (d) Insert with zero removals (pure insertion)
-
-```mech:ex4
-A := ["p", "q"]
-U := set/splice(A, 1, 0, ["r", "s"])
-// U is ["p", "r", "s", "q"]
+```mech:disabled
+A := {"p", "q"}
+U := set/splice(A, 1, 0, {"r", "s"})
+// U is {"p", "r", "s", "q"}
 ```
-
 (e) Remove without insertion
-
-```mech:ex5
-A := ["u", "v", "w"]
-U, R := set/splice(A, 0, 2, [])
-// U is ["w"]
-// R is ["u", "v"]
+```mech:disabled
+A := {"u", "v", "w"}
+U, R := set/splice(A, 0, 2, {})
+// U is {"w"}
+// R is {"u", "v"}
 ```
-
 6. Details
 -------------------------------------------------------------------------------
 

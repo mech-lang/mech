@@ -13,11 +13,11 @@ S := set/slice(A, start, count)
 2. Description
 -------------------------------------------------------------------------------
 
-Creates an ordered, contiguous view of elements from set A.
-The slice starts at index start and spans count elements, or fewer if the end
+Creates an ordered, contiguous view of elements from set A.  
+The slice starts at index `start` and spans `count` elements, or fewer if the end
 would go past the last element. The result preserves the original order from A.
 
-This wraps the Rust IndexSet slice type. The slice supports indexed operations
+This wraps the Rust **IndexSet::slice** type. The slice supports indexed operations
 like an array, but it is not a hashed set and does not perform set lookups.
 
 3. Input
@@ -44,7 +44,7 @@ Result:
 (a) Basic slice
 
 ```mech:ex1
-A := ["a", "b", "c", "d", "e"]
+A := {"a", "b", "c", "d", "e"}
 S := set/slice(A, 1, 3)
 // S is ["b", "c", "d"]
 ```
@@ -52,7 +52,7 @@ S := set/slice(A, 1, 3)
 (b) Slice to end when count exceeds remaining
 
 ```mech:ex2
-A := [10, 20, 30, 40]
+A := {10, 20, 30, 40}
 S := set/slice(A, 2, 10)
 // S is [30, 40]
 ```
@@ -60,7 +60,7 @@ S := set/slice(A, 2, 10)
 (c) Empty slice
 
 ```mech:ex3
-A := ["x", "y"]
+A := {"x", "y"}
 S := set/slice(A, 2, 5)
 // S is []
 ```

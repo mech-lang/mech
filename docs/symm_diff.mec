@@ -9,11 +9,14 @@ set/symmetric_difference
 ```mech:disabled
 D := set/symmetric_difference(A, B)
 ```
+```mech:disabled
+D := A ∖ B ∪ B ∖ A
+```
 
 2. Description
 -------------------------------------------------------------------------------
 
-Computes the symmetric difference of two sets A and B.
+Computes the symmetric difference of two sets A and B (A ∖ B ∪ B ∖ A).  
 The result contains elements that appear in exactly one of the inputs, but not both.
 
 The implementation wraps a Rust IndexSet symmetric difference iterator, so the result
@@ -45,24 +48,24 @@ Result:
 (a) Simple symmetric difference
 
 ```mech:ex1
-A := ["a", "b", "c"]
-B := ["b", "c", "d"]
+A := {"a", "b", "c"}
+B := {"b", "c", "d"}
 D := set/symmetric_difference(A, B)
 ```
 
 (b) Numbers
 
 ```mech:ex2
-A := [1, 2, 3]
-B := [3, 4, 5]
+A := {1, 2, 3}
+B := {3, 4, 5}
 D := set/symmetric_difference(A, B)
 ```
 
 (c) Order is stable
 
 ```mech:ex3
-A := ["x", "y"]
-B := ["y", "z"]
+A := {"x", "y"}
+B := {"y", "z"}
 D := set/symmetric_difference(A, B)
 ```
 

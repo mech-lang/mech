@@ -8,14 +8,15 @@ set/union
 
 ```mech:disabled
 U := set/union(A, B)
+U := A ∪ B
 ```
 
 2. Description
 -------------------------------------------------------------------------------
 
 Computes the union of two sets A and B, returning every distinct element that
-appears in either input. The implementation wraps a Rust IndexSet union iterator,
-so the result preserves stable insertion order:
+appears in either input. The implementation wraps a Rust `IndexSet::union`
+iterator, so the result preserves stable insertion order:
 
 - All elements from A appear first in A's order.
 - Then any elements from B that are not already in A are appended in B's order.
@@ -29,7 +30,7 @@ Arguments:
 
 Element type constraints:
 - T must be hashable and comparable for equality (Eq and Hash in Rust).
-- Common kinds include integers, strings, symbols, and booleans.
+- Common element kinds include integers, strings, symbols, and booleans.
 
 4. Output
 -------------------------------------------------------------------------------
@@ -44,25 +45,31 @@ Result:
 (a) Simple union of two small sets
 
 ```mech:ex1
-A := ["a", "b", "c"]
-B := ["b", "c", "d"]
+A := {"a", "b", "c"}
+B := {"b", "c", "d"}
 U := set/union(A, B)
+# Equivalent symbolic form:
+U := A ∪ B
 ```
 
 (b) Duplicates in inputs are ignored
 
 ```mech:ex2
-A := [1, 2, 2, 3]
-B := [2, 4, 4]
+A := {1, 2, 2, 3}
+B := {2, 4, 4}
 U := set/union(A, B)
+# Equivalent symbolic form:
+U := A ∪ B
 ```
 
 (c) Order is stable by first appearance (IndexSet semantics)
 
 ```mech:ex3
-A := ["x", "y"]
-B := ["y", "x", "z"]
+A := {"x", "y"}
+B := {"y", "x", "z"}
 U := set/union(A, B)
+# Equivalent symbolic form:
+U := A ∪ B
 ```
 
 6. Details
@@ -77,7 +84,7 @@ Stable insertion order:
 - A determines the ordering of shared elements; new elements come from B in their original order.
 
 Performance:
-- Average O(A + B) time with hashing; memory is O(A + B) for the union.
+- Average O(\|A\| + \|B\|) time with hashing; memory is O(\|A\| + \|B\|) for the union.
 
 Determinism:
 - Given equal inputs, output order is deterministic across runs and platforms

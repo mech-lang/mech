@@ -27,7 +27,7 @@ Arguments:
 - elements : array of T (optional), initial values to populate the set.
 
 Element type constraints:
-- T must be hashable and comparable for equality (Eq + Hash in Rust).
+- T must be hashable and comparable for equality (`Eq` + `Hash` in Rust).
 - Common scalar kinds: integers, strings, symbols, booleans.
 
 4. Output
@@ -43,23 +43,22 @@ Result:
 
 ```mech:ex1
 S := set/indexset()
+// S is {}
 ```
 
 (b) Create a set from a list of numbers
 
 ```mech:ex2
 S := set/indexset([1, 2, 3, 2])
+// S is {1, 2, 3}
 ```
-
-Result: S = [1, 2, 3]
 
 (c) Strings with insertion order preserved
 
 ```mech:ex3
 S := set/indexset(["a", "c", "b", "a"])
+// S is {"a", "c", "b"}
 ```
-
-Result: S = ["a", "c", "b"]
 
 6. Details
 -------------------------------------------------------------------------------
@@ -70,7 +69,7 @@ Properties:
 - Supports efficient membership testing and iteration.
 
 Stable insertion order:
-- Matches Rust IndexSet behavior: iteration reflects insertion sequence.
+- Matches Rust `IndexSet` behavior: iteration reflects insertion sequence.
 
 Performance:
 - Average O(1) insertion and lookup via hashing.
