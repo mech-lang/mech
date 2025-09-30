@@ -3527,138 +3527,204 @@ macro_rules! impl_assign_range_range_arms_b {
       match $arg {
         // Scalar source
         #[cfg(all(feature = $value_string, feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Matrix1, Matrix1);
+        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, Matrix1, Matrix1, Matrix1);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "matrix1", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Matrix1, Vector2);
+        #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "matrix1", feature = "row_vector2"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, RowVector2, Matrix1, Vector2);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "matrix1", feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Matrix1, Vector3);
+        #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "matrix1", feature = "row_vector3"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, RowVector3, Matrix1, Vector3);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "matrix1", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Matrix1, Vector4);
+        #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "matrix1", feature = "row_vector4"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, RowVector4, Matrix1, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "matrix1", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Matrix1, DVector);
+        #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "matrix1", feature = "row_vectord"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) if ix2.borrow().len() == sink.borrow().len() => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, RowDVector,Matrix1,DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vector2", feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Vector2, Matrix1);
+        #[cfg(all(feature = $value_string, feature = "vector2", feature = "vector2", feature = "matrix1"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, Vector2,Vector2,Matrix1);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Vector2, Vector2);
+        #[cfg(all(feature = $value_string, feature = "vector3", feature = "vector3", feature = "matrix1"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)), [Value::MatrixBool(Matrix::Vector3(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, Vector3,Vector3,Matrix1);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vector2", feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector3(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Vector2, Vector3);
+        #[cfg(all(feature = $value_string, feature = "vector4", feature = "vector4", feature = "matrix1"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, Vector4,Vector4,Matrix1);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vector2", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Vector2, Vector4);
+        #[cfg(all(feature = $value_string, feature = "vectord", feature = "vectord", feature = "matrix1"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::DVector(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) if ix1.borrow().len() == sink.borrow().len() => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, DVector,DVector,Matrix1);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vector2", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Vector2, DVector);
+        #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector2"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, Matrix2,Vector2,Vector2);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vector3", feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Vector3, Matrix1);
+        #[cfg(all(feature = $value_string, feature = "matrix3", feature = "vector3"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [Value::MatrixBool(Matrix::Vector3(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, Matrix2,Matrix3,Vector3);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vector3", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Vector3, Vector2);
+        #[cfg(all(feature = $value_string, feature = "matrix4", feature = "vector4"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, Matrix4,Vector4,Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector3(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Vector3, Vector3);
+        #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "vector3", feature = "vector2"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, Matrix2x3,Vector2,Vector3);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vector3", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Vector3, Vector4);
+        #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "vector2", feature = "vector3"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [Value::MatrixBool(Matrix::Vector3(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, Matrix3x2,Vector3,Vector2);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vector3", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Vector3, DVector);
+        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vector4", feature = "vector2"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) if sink.borrow().nrows() == 4 && sink.borrow().ncols() == 2 => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, DMatrix, Vector4, Vector2);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vector4", feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Vector4, Matrix1);
+        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vector2", feature = "vector4"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) if sink.borrow().nrows() == 2 && sink.borrow().ncols() == 4 => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, DMatrix, Vector2, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vector4", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Vector4, Vector2);
+        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vector2"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) if sink.borrow().ncols() == 2 && ix1.borrow().len() == sink.borrow().nrows() => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, DMatrix, DVector, Vector2);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vector4", feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector3(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Vector4, Vector3);
+        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vector3"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) if sink.borrow().ncols() == 3 && ix1.borrow().len() == sink.borrow().nrows() => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, DMatrix, DVector, Vector3);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Vector4, Vector4);
+        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vector4"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) if sink.borrow().ncols() == 4 && ix1.borrow().len() == sink.borrow().nrows() => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, DMatrix, DVector, Vector4);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vector4", feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, Vector4, DVector);
+        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vectord"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) if ix1.borrow().len() == sink.borrow().nrows() && ix2.borrow().len() == sink.borrow().ncols() => {
+          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, DMatrix, DVector, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vectord", feature = "matrix1"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, DVector, Matrix1);
-          box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        // Vector source
+        #[cfg(all(feature = $value_string, feature = "matrix1"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix1(source))) => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, Matrix1, Matrix1, Matrix1, Matrix1);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vectord", feature = "vector2"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, DVector, Vector2);
-          box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "matrix1", feature = "row_vector2"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector2(source))) => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, RowVector2, RowVector2, Matrix1, Vector2);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vectord", feature = "vector3"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector3(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, DVector, Vector3);
-          box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "matrix1", feature = "row_vector3"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector3(source))) => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, RowVector3, RowVector3, Matrix1, Vector3);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vectord", feature = "vector4"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, DVector, Vector4);
-          box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "matrix1", feature = "row_vector4"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowVector4(source))) => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, RowVector4, RowVector4, Matrix1, Vector4);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<$value_kind:camel>](source)) => {
-          register_assign_srr_b!([<$fxn_name B>], $value_kind, $value_string, $shape, DVector, DVector);
-          box_mech_fxn(Ok(Box::new([<$fxn_name B>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "matrix1", feature = "row_vectord"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)), [Value::MatrixBool(Matrix::Matrix1(ix1)), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) if ix2.borrow().len() == sink.borrow().len() && ix2.borrow().len() == source.borrow().len() => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, RowDVector, RowDVector, Matrix1, DVector);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
-        #[cfg(all(feature = $value_string, feature = "vectord", feature = "row_vectord"))]
-        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::RowDVector(source))) => {
-          /*let ix1_len = ix1.borrow().len();
-          let ix2_len = ix2.borrow().len();
-          if ix1_len * ix2_len != source.borrow().len() {
-            return box_mech_fxn(Err(MechError { file: file!().to_string(), tokens: vec![], msg: format!("Index length mismatch: sink rows is {}, ix1 length is {}; source length is {}, ix2 length is {}", sink.borrow().nrows(), ix1_len, source.borrow().len(), ix2_len), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }));
-          }*/
-          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, $shape, RowDVector, DVector, DVector);
+        #[cfg(all(feature = $value_string, feature = "vector2", feature = "vector2", feature = "matrix1"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector2(source))) => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, Vector2, Vector2, Vector2, Matrix1);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "vector3", feature = "vector3", feature = "matrix1"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)), [Value::MatrixBool(Matrix::Vector3(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector3(source))) => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, Vector3, Vector3, Vector3, Matrix1);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "vector4", feature = "vector4", feature = "matrix1"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Vector4(source))) => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, Vector4, Vector4, Vector4, Matrix1);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "vectord", feature = "vectord", feature = "matrix1"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::DVector(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::Matrix1(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DVector(source))) if ix1.borrow().len() == sink.borrow().len() && ix2.borrow().len() == source.borrow().len() => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, DVector, DVector, DVector, Matrix1);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "matrix2", feature = "vector2"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2(source))) => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, Matrix2, Matrix2, Vector2, Vector2);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "matrix3", feature = "vector3"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), [Value::MatrixBool(Matrix::Vector3(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3(source))) => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, Matrix3, Matrix3, Vector3, Vector3);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "matrix4", feature = "vector4"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix4(source))) => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, Matrix4, Matrix4, Vector4, Vector4);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "vector3", feature = "vector2"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(source))) => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, Matrix2x3, Matrix2x3, Vector2, Vector3);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "vector2", feature = "vector3"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), [Value::MatrixBool(Matrix::Vector3(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(source))) => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, Matrix3x2, Matrix3x2, Vector3, Vector2);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vector4", feature = "vector2"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::Vector4(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if sink.borrow().nrows() == 4 && sink.borrow().ncols() == 2 && source.borrow().nrows() == ix1.borrow().len() && source.borrow().ncols() == ix2.borrow().len() => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, DMatrix, DMatrix, Vector4, Vector2);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vector2", feature = "vector4"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::Vector2(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if sink.borrow().nrows() == 2 && sink.borrow().ncols() == 4 && source.borrow().nrows() == ix1.borrow().len() && source.borrow().ncols() == ix2.borrow().len() => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, DMatrix, DMatrix, Vector2, Vector4);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vector2"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::Vector2(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if sink.borrow().ncols() == 2 && ix1.borrow().len() == sink.borrow().nrows() && source.borrow().nrows() == ix1.borrow().len() && source.borrow().ncols() == ix2.borrow().len() => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, DMatrix, DMatrix, DVector, Vector2);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vector3"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::Vector3(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if sink.borrow().ncols() == 3 && ix1.borrow().len() == sink.borrow().nrows() && source.borrow().nrows() == ix1.borrow().len() && source.borrow().ncols() == ix2.borrow().len() => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, DMatrix, DMatrix, DVector, Vector3);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vector4"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::Vector4(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if sink.borrow().ncols() == 4 && ix1.borrow().len() == sink.borrow().nrows() && source.borrow().nrows() == ix1.borrow().len() && source.borrow().ncols() == ix2.borrow().len() => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, DMatrix, DMatrix, DVector, Vector4);
+          box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "vectord"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))], Value::[<Matrix $value_kind:camel>](Matrix::DMatrix(source))) if ix1.borrow().len() == sink.borrow().nrows() && ix2.borrow().len() == sink.borrow().ncols() && source.borrow().nrows() == ix1.borrow().len() && source.borrow().ncols() == ix2.borrow().len() => {
+          register_assign_srr_b2!([<$fxn_name VB>], $value_kind, $value_string, DMatrix, DMatrix, DVector, DVector);
           box_mech_fxn(Ok(Box::new([<$fxn_name VB>] { sink: sink.clone(), source: source.clone(), ixes: (ix1.clone(), ix2.clone()), _marker: PhantomData::default() })))
         },
         _ => Err(MechError { file: file!().to_string(), tokens: vec![], msg: "Unhandled argument pattern".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
