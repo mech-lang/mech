@@ -14,29 +14,23 @@ macro_rules! bytecode_test {
     #[test]
     fn $name() {
       let mut intrp = Interpreter::new(0);
-      match parser::parse($code) {
-        Ok(tree) => {
-          let mut intrp = Interpreter::new(0);
-          let _ = intrp.interpret(&tree).unwrap();
-          let bytecode = intrp.compile().unwrap();
-          match ParsedProgram::from_bytes(&bytecode) {
-            Ok(prog) => {
-              match intrp.run_program(&prog) {
-                Ok(result) => {
-                  assert_eq!(result, $expected);
-                },
-                Err(e) => {
-                  eprintln!("Error running program: {:?}", e);
-                }
-              }
-            },
-            Err(e) => {
-              eprintln!("Error deserializing program: {:?}", e);
-            }
-          }
-        },
-        Err(err) => { panic!("{:?}", err); }
-      }
+
+      let tree = parser::parse($code)
+        .unwrap_or_else(|err| panic!("Parse error: {:?}", err));
+
+      let _ = intrp.interpret(&tree)
+        .unwrap_or_else(|err| panic!("Interpret error: {:?}", err));
+
+      let bytecode = intrp.compile()
+        .unwrap_or_else(|err| panic!("Compile error: {:?}", err));
+
+      let prog = ParsedProgram::from_bytes(&bytecode)
+        .unwrap_or_else(|err| panic!("Deserialize error: {:?}", err));
+
+      let result = intrp.run_program(&prog)
+        .unwrap_or_else(|err| panic!("Runtime error: {:?}", err));
+
+      assert_eq!(result, $expected);
     }
   };
 }
@@ -100,3 +94,4 @@ bytecode_test!(bytecode_matrix_index_assign_2d_range_range_all,"~x := [1 2 3; 4 
 bytecode_test!(bytecode_matrix_index_assign_2d_range_range_all2,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[1 3], [1 2 3]] = [10 20 30 40 50 60]", Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(4.0),F64::new(40.0), F64::new(20.0),F64::new(5.0),F64::new(50.0),F64::new(30.0),F64::new(6.0),F64::new(60.0)], 3, 3)));
 bytecode_test!(bytecode_matrix_index_assign_2d_range_range_bool,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[false true false], [true false true]] = 10", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(10.0),F64::new(7.0),F64::new(2.0),F64::new(5.0),F64::new(8.0),F64::new(3.0),F64::new(10.0),F64::new(9.0)], 3, 3)));
 bytecode_test!(bytecode_matrix_index_assign_2d_range_range_bool2,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true], [false true false]] = [10 20 30; 40 50 60; 70 80 90]", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(4.0),F64::new(7.0),F64::new(20.0),F64::new(5.0),F64::new(80.0),F64::new(7.0),F64::new(80.0),F64::new(9.0)], 3, 3)));
+bytecode_test!(bytecode_matrix_index_assign_2d_range_range_bool3,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true], [1 2]] = 10", Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(4.0),F64::new(10.0),F64::new(10.0),F64::new(5.0),F64::new(10.0),F64::new(3.0),F64::new(6.0),F64::new(9.0)], 3, 3)));
