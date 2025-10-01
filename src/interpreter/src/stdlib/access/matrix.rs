@@ -546,22 +546,22 @@ macro_rules! impl_access_match_arms {
       [<impl_access_ $macro_name _match_arms>]!(
         $fxn_name,
         $arg,
-        //Bool => MatrixBool, bool, bool::default(), "bool";
-        //I8   => MatrixI8,   i8,   i8::default(),  "i8";
-        //I16  => MatrixI16,  i16,  i16::default(), "i16";
-        //I32  => MatrixI32,  i32,  i32::default(), "i32";
-        //I64  => MatrixI64,  i64,  i64::default(), "i64";
-        //I128 => MatrixI128, i128, i128::default(), "i128";
-        //U8   => MatrixU8,   u8,   u8::default(), "u8";
-        //U16  => MatrixU16,  u16,  u16::default(), "u16";
-        //U32  => MatrixU32,  u32,  u32::default(), "u32";
-        //U64  => MatrixU64,  u64,  u64::default(), "u64";
-        //U128 => MatrixU128, u128, u128::default(), "u128";
-        //F32  => MatrixF32,  F32,  F32::default(), "f32";
+        Bool => MatrixBool, bool, bool::default(), "bool";
+        I8   => MatrixI8,   i8,   i8::default(),  "i8";
+        I16  => MatrixI16,  i16,  i16::default(), "i16";
+        I32  => MatrixI32,  i32,  i32::default(), "i32";
+        I64  => MatrixI64,  i64,  i64::default(), "i64";
+        I128 => MatrixI128, i128, i128::default(), "i128";
+        U8   => MatrixU8,   u8,   u8::default(), "u8";
+        U16  => MatrixU16,  u16,  u16::default(), "u16";
+        U32  => MatrixU32,  u32,  u32::default(), "u32";
+        U64  => MatrixU64,  u64,  u64::default(), "u64";
+        U128 => MatrixU128, u128, u128::default(), "u128";
+        F32  => MatrixF32,  F32,  F32::default(), "f32";
         F64  => MatrixF64,  F64,  F64::default(), "f64";
-        //String => MatrixString, String, String::default(), "string";
-        //C64 => MatrixC64, C64, C64::default(), "complex";
-        //R64 => MatrixR64, R64, R64::default(), "rational";
+        String => MatrixString, String, String::default(), "string";
+        C64 => MatrixC64, C64, C64::default(), "complex";
+        R64 => MatrixR64, R64, R64::default(), "rational";
       )
     }
   }
