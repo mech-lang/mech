@@ -406,6 +406,25 @@ macro_rules! impl_access_fxn2 {
       ix2: Ref<$ix2_type>,
       out: Ref<$out_type>,
     }
+    impl<T> MechFunctionFactory for $struct_name<T> 
+    where
+      T: Debug + Clone + Sync + Send + PartialEq + 'static +
+         CompileConst + ConstElem + AsValueKind,
+      Ref<$out_type>: ToValue
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Ternary(out, arg1, arg2, arg3) => {
+            let source: Ref<$arg_type> = unsafe{ arg1.as_unchecked().clone() };
+            let ix1: Ref<$ix1_type> = unsafe{ arg2.as_unchecked().clone() };
+            let ix2: Ref<$ix2_type> = unsafe{ arg3.as_unchecked().clone() };
+            let out: Ref<$out_type> = unsafe{ out.as_unchecked().clone() };
+            Ok(Box::new($struct_name{source ,ix1, ix2, out}))
+          }
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments}),
+        }
+      }
+    }
     impl<T> MechFunctionImpl for $struct_name<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -892,7 +911,7 @@ macro_rules! impl_access_range_range_match_arms {
         $(
           $(
             #[cfg(all(feature = $value_string, feature = "matrix4"))]
-            (Value::$matrix_kind(Matrix::Matrix4(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDM4{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix4(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDM4{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(Matrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
             #[cfg(all(feature = $value_string, feature = "matrix3"))]
             (Value::$matrix_kind(Matrix::Matrix3(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDM3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
             #[cfg(all(feature = $value_string, feature = "matrix2"))]

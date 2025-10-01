@@ -773,39 +773,40 @@ impl NativeFunctionCompiler for MatrixAssignAllScalar {
 // x[1,:] = 1 -----------------------------------------------------------------
 
 macro_rules! assign_2d_scalar_all_scalar {
-  ($sink:expr, $ix:expr, $source:expr) => {
-      print!("{:?}", $sink);
-    };}
+  ($source:expr, $ix:expr, $sink:expr) => {
+    for i in 0..$sink.ncols() {
+      ($sink).row_mut($ix - 1)[i] = ($source).clone();
+    }
+  };}
 
 macro_rules! assign_2d_scalar_all_vector {
-  ($sink:expr, $ix:expr, $source:expr) => {
-      todo!();
-      //for i in 0..($sink).ncols() {
-      //  ($sink).row_mut($ix - 1)[i] = ($source)[i].clone();
-      //}
-    };}
+  ($source:expr, $ix:expr, $sink:expr) => {
+    for i in 0..$sink.ncols() {
+      ($sink).row_mut($ix - 1)[i] = ($source)[i].clone();
+    }
+  };}
 
 impl_assign_fxn_s!(Assign2DSAS, assign_2d_scalar_all_scalar, usize);
 impl_assign_scalar_fxn_v!(Assign2DSAV, assign_2d_scalar_all_vector, usize);
 
 fn impl_assign_scalar_all_fxn(sink: Value, source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
   let arg = (sink, ixes.as_slice(), source);
-               impl_assign_scalar_all_arms!(Assign2DAS, &arg, u8,   "u8")
-  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DAS, &arg, u16,  "u16"))
-  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DAS, &arg, u32,  "u32"))
-  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DAS, &arg, u64,  "u64"))
-  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DAS, &arg, u128, "u128"))
-  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DAS, &arg, i8,   "i8"))
-  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DAS, &arg, i16,  "i16"))
-  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DAS, &arg, i32,  "i32"))
-  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DAS, &arg, i64,  "i64"))
-  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DAS, &arg, i128, "i128"))
-  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DAS, &arg, F32,  "f32"))
-  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DAS, &arg, F64,  "f64"))
-  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DAS, &arg, R64,  "rational"))
-  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DAS, &arg, C64,  "complex"))
-  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DAS, &arg, bool, "bool"))
-  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DAS, &arg, String, "string"))
+               impl_assign_scalar_all_arms!(Assign2DSA, &arg, u8,   "u8")
+  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, u16,  "u16"))
+  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, u32,  "u32"))
+  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, u64,  "u64"))
+  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, u128, "u128"))
+  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, i8,   "i8"))
+  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, i16,  "i16"))
+  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, i32,  "i32"))
+  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, i64,  "i64"))
+  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, i128, "i128"))
+  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, F32,  "f32"))
+  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, F64,  "f64"))
+  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, R64,  "rational"))
+  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, C64,  "complex"))
+  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, bool, "bool"))
+  .or_else(|_| impl_assign_scalar_all_arms!(Assign2DSA, &arg, String, "string"))
   .map_err(|_| MechError { file: file!().to_string(), tokens: vec![], msg: format!("Unsupported argument: {:?}", &arg), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind})
 }
 
