@@ -1230,19 +1230,37 @@ macro_rules! impl_access_all_match_arms {
     paste!{
       match $arg {
         $(
-          $(
+            $(
             #[cfg(all(feature = $value_string, feature = "matrix4"))]
-            (Value::$matrix_kind(Matrix::Matrix4(input)),    [Value::IndexAll]) => Ok(Box::new(Access1DAM4  {source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix4(input)),    [Value::IndexAll]) => {
+              register_fxn_descriptor_inner!(Access1DAM4, $target_type, $value_string);
+              Ok(Box::new(Access1DAM4  {source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix3"))]
-            (Value::$matrix_kind(Matrix::Matrix3(input)),    [Value::IndexAll]) => Ok(Box::new(Access1DAM3  {source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix3(input)),    [Value::IndexAll]) => {
+              register_fxn_descriptor_inner!(Access1DAM3, $target_type, $value_string);
+              Ok(Box::new(Access1DAM3  {source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix2"))]
-            (Value::$matrix_kind(Matrix::Matrix2(input)),    [Value::IndexAll]) => Ok(Box::new(Access1DAM2  {source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix2(input)),    [Value::IndexAll]) => {
+              register_fxn_descriptor_inner!(Access1DAM2, $target_type, $value_string);
+              Ok(Box::new(Access1DAM2  {source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-            (Value::$matrix_kind(Matrix::Matrix3x2(input)),  [Value::IndexAll]) => Ok(Box::new(Access1DAM3x2{source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix3x2(input)),  [Value::IndexAll]) => {
+              register_fxn_descriptor_inner!(Access1DAM3x2, $target_type, $value_string);
+              Ok(Box::new(Access1DAM3x2{source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-            (Value::$matrix_kind(Matrix::Matrix2x3(input)),  [Value::IndexAll]) => Ok(Box::new(Access1DAM2x3{source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix2x3(input)),  [Value::IndexAll]) => {
+              register_fxn_descriptor_inner!(Access1DAM2x3, $target_type, $value_string);
+              Ok(Box::new(Access1DAM2x3{source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (Value::$matrix_kind(Matrix::DMatrix(input)),    [Value::IndexAll]) => Ok(Box::new(Access1DAMD  {source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::DMatrix(input)),    [Value::IndexAll]) => {
+              register_fxn_descriptor_inner!(Access1DAMD, $target_type, $value_string);
+              Ok(Box::new(Access1DAMD  {source: input.clone(), ixes: Ref::new(Value::IndexAll), out: Ref::new(DVector::from_element(input.borrow().len(),$default)) }))
+            },
           )+
         )+
         x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
