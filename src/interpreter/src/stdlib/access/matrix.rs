@@ -354,6 +354,24 @@ macro_rules! impl_access_fxn {
       ixes: Ref<$ix_type>,
       out: Ref<$out_type>,
     }
+    impl<T> MechFunctionFactory for $struct_name<T> 
+    where
+      T: Debug + Clone + Sync + Send + PartialEq + 'static +
+         CompileConst + ConstElem + AsValueKind,
+      Ref<$out_type>: ToValue
+    {
+      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        match args {
+          FunctionArgs::Binary(out, arg1, arg2) => {
+            let n: Ref<$arg_type> = unsafe{ arg1.as_unchecked().clone() };
+            let k: Ref<$ix_type> = unsafe{ arg2.as_unchecked().clone() };
+            let out: Ref<$out_type> = unsafe{ out.as_unchecked().clone() };
+            Ok(Box::new($struct_name{source: n,ixes: k,out}))
+          }
+          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments}),
+        }
+      }
+    }
     impl<T> MechFunctionImpl for $struct_name<T>
     where
       T: Debug + Clone + Sync + Send + PartialEq + 'static,
@@ -576,11 +594,17 @@ macro_rules! impl_access_scalar_match_arms {
         $(
           $(
             #[cfg(all(feature = $value_string, feature = "row_vector4"))]              
-            (Value::$matrix_kind(Matrix::RowVector4(input)), [Value::Index(ix)]) => Ok(Box::new([<$fxn_name R4>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) })),
+            (Value::$matrix_kind(Matrix::RowVector4(input)), [Value::Index(ix)]) => {
+              //register_assign_s1!([<$fxn_name R4>], $target_type, $value_string, RowVector4);
+              Ok(Box::new([<$fxn_name R4>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) }))
+            }
             #[cfg(all(feature = $value_string, feature = "row_vector3"))]              
             (Value::$matrix_kind(Matrix::RowVector3(input)), [Value::Index(ix)]) => Ok(Box::new([<$fxn_name R3>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) })),
             #[cfg(all(feature = $value_string, feature = "row_vector2"))]              
-            (Value::$matrix_kind(Matrix::RowVector2(input)), [Value::Index(ix)]) => Ok(Box::new([<$fxn_name R2>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) })),
+            (Value::$matrix_kind(Matrix::RowVector2(input)), [Value::Index(ix)]) => {
+              //register_assign_s1!([<$fxn_name R2>], $target_type, $value_string, RowVector2);
+              Ok(Box::new([<$fxn_name R2>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) }))
+            },
             #[cfg(all(feature = $value_string, feature = "vector4"))]              
             (Value::$matrix_kind(Matrix::Vector4(input)),    [Value::Index(ix)]) => Ok(Box::new([<$fxn_name V4>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) })),
             #[cfg(all(feature = $value_string, feature = "vector3"))]              
@@ -600,7 +624,10 @@ macro_rules! impl_access_scalar_match_arms {
             #[cfg(all(feature = $value_string, feature = "matrix3x2"))]              
             (Value::$matrix_kind(Matrix::Matrix3x2(input)),  [Value::Index(ix)]) => Ok(Box::new([<$fxn_name M3x2>]{source: input.clone(), ixes: ix.clone(), out: Ref::new($default) })),
             #[cfg(all(feature = $value_string, feature = "row_vectord"))]              
-            (Value::$matrix_kind(Matrix::RowDVector(input)), [Value::Index(ix)]) => Ok(Box::new([<$fxn_name RD>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) })),
+            (Value::$matrix_kind(Matrix::RowDVector(input)), [Value::Index(ix)]) => {
+              register_fxn_descriptor_inner!([<$fxn_name RD>], $target_type, $value_string);
+              Ok(Box::new([<$fxn_name RD>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) }))
+            },
             #[cfg(all(feature = $value_string, feature = "vectord"))]              
             (Value::$matrix_kind(Matrix::DVector(input)),    [Value::Index(ix)]) => Ok(Box::new([<$fxn_name VD>]  {source: input.clone(), ixes: ix.clone(), out: Ref::new($default) })),
             #[cfg(all(feature = $value_string, feature = "matrixd"))]              
