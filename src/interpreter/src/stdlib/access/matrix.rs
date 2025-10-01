@@ -1198,16 +1198,7 @@ macro_rules! impl_access_all_range_match_arms {
             #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "logical_indexing"))]
             (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => Ok(Box::new(Access2DAVDbM2x3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) })),
             #[cfg(all(feature = $value_string, feature = "matrixd", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::DMatrix(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => {
-              println!("HERE");
-             //Ok(Box::new(Access2DARVB{
-             //  source: input.clone(), 
-             //  ixes: ix.clone(), 
-             //  sink: Ref::new(Matrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)), 
-             //  _marker: std::marker::PhantomData::default(),
-             //}))
-             todo!()
-            },
+            (Value::$matrix_kind(Matrix::DMatrix(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => Ok(Box::new(Access2DAVDbMD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) })),
           )+
         )+
         x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
