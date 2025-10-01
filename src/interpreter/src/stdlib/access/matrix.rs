@@ -1300,19 +1300,37 @@ macro_rules! impl_access_all_scalar_match_arms {
     paste!{
       match $arg {
         $(
-          $(
+            $(
             #[cfg(all(feature = $value_string, feature = "matrix4"))]
-            (Value::$matrix_kind(Matrix::Matrix4(input)),    [Value::IndexAll,Value::Index(ix)]) => Ok(Box::new(Access2DASM4  {source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(input.borrow().nrows(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix4(input)),    [Value::IndexAll,Value::Index(ix)]) => {
+              register_fxn_descriptor_inner!(Access2DASM4, $target_type, $value_string);
+              Ok(Box::new(Access2DASM4  {source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(input.borrow().nrows(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix3"))]
-            (Value::$matrix_kind(Matrix::Matrix3(input)),    [Value::IndexAll,Value::Index(ix)]) => Ok(Box::new(Access2DASM3  {source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(input.borrow().nrows(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix3(input)),    [Value::IndexAll,Value::Index(ix)]) => {
+              register_fxn_descriptor_inner!(Access2DASM3, $target_type, $value_string);
+              Ok(Box::new(Access2DASM3  {source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(input.borrow().nrows(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix2"))]
-            (Value::$matrix_kind(Matrix::Matrix2(input)),    [Value::IndexAll,Value::Index(ix)]) => Ok(Box::new(Access2DASM2  {source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(input.borrow().nrows(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix2(input)),    [Value::IndexAll,Value::Index(ix)]) => {
+              register_fxn_descriptor_inner!(Access2DASM2, $target_type, $value_string);
+              Ok(Box::new(Access2DASM2  {source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(input.borrow().nrows(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-            (Value::$matrix_kind(Matrix::Matrix2x3(input)),  [Value::IndexAll,Value::Index(ix)]) => Ok(Box::new(Access2DASM2x3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(input.borrow().nrows(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix2x3(input)),  [Value::IndexAll,Value::Index(ix)]) => {
+              register_fxn_descriptor_inner!(Access2DASM2x3, $target_type, $value_string);
+              Ok(Box::new(Access2DASM2x3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(input.borrow().nrows(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-            (Value::$matrix_kind(Matrix::Matrix3x2(input)),  [Value::IndexAll,Value::Index(ix)]) => Ok(Box::new(Access2DASM3x2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(input.borrow().nrows(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix3x2(input)),  [Value::IndexAll,Value::Index(ix)]) => {
+              register_fxn_descriptor_inner!(Access2DASM3x2, $target_type, $value_string);
+              Ok(Box::new(Access2DASM3x2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(input.borrow().nrows(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (Value::$matrix_kind(Matrix::DMatrix(input)),    [Value::IndexAll,Value::Index(ix)]) => Ok(Box::new(Access2DASMD  {source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(input.borrow().nrows(),$default)) })),
+            (Value::$matrix_kind(Matrix::DMatrix(input)),    [Value::IndexAll,Value::Index(ix)]) => {
+              register_fxn_descriptor_inner!(Access2DASMD, $target_type, $value_string);
+              Ok(Box::new(Access2DASMD  {source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(input.borrow().nrows(),$default)) }))
+            },
           )+
         )+
         x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
