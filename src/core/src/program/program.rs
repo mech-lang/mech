@@ -288,6 +288,33 @@ impl ParsedProgram {
           let denom = i64::from_le_bytes(data[8..16].try_into().unwrap());
           Value::R64(Ref::new(R64::new(numer, denom)))
         },
+        #[cfg(all(feature = "matrix", feature = "string"))]
+        TypeTag::MatrixString => {
+          if data.len() < 8 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Matrix const entry must be at least 8 bytes".to_string(), id: line!(), kind: MechErrorKind::GenericError("Matrix const entry must be at least 8 bytes".to_string())});
+          }
+          let rows = u32::from_le_bytes(data[0..4].try_into().unwrap()) as usize;
+          let cols = u32::from_le_bytes(data[4..8].try_into().unwrap()) as usize;
+          let mut elements = Vec::with_capacity(rows * cols);
+          let mut pos = 8;
+          for _ in 0..(rows * cols) {
+            if pos + 4 > data.len() {
+              return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "MatrixString const entry is malformed".to_string(), id: line!(), kind: MechErrorKind::GenericError("MatrixString const entry is malformed".to_string())});
+            }
+            let str_len = u32::from_le_bytes(data[pos..pos+4].try_into().unwrap()) as usize;
+            pos += 4;
+            if pos + str_len > data.len() {
+              return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "MatrixString const entry is malformed".to_string(), id: line!(), kind: MechErrorKind::GenericError("MatrixString const entry is malformed".to_string())});
+            }
+            let str_bytes = &data[pos..pos+str_len];
+            match String::from_utf8(str_bytes.to_vec()) {
+              Ok(s) => elements.push(s),
+              Err(_) => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Invalid UTF-8 in MatrixString constant".to_string(), id: line!(), kind: MechErrorKind::GenericError("Invalid UTF-8 in MatrixString constant".to_string())}),
+            }
+            pos += str_len;
+          }
+          Value::MatrixString(Matrix::from_vec(elements, rows, cols))
+        }
         #[cfg(all(feature = "matrix", feature = "bool"))]
         TypeTag::MatrixBool => {
           if data.len() < 8 {
