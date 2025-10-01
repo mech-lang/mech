@@ -726,35 +726,77 @@ macro_rules! impl_access_scalar_scalar_match_arms {
     paste!{
       match $arg {
         $(
-            $(
+          $(
             #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-            (Value::$matrix_kind(Matrix::RowVector4(input)), [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name R4>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) })),
+            (Value::$matrix_kind(Matrix::RowVector4(input)), [Value::Index(ix1),Value::Index(ix2)]) => {
+              register_fxn_descriptor_inner!([<$fxn_name R4>], $target_type, $value_string);
+              Ok(Box::new([<$fxn_name R4>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
+            },
             #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-            (Value::$matrix_kind(Matrix::RowVector3(input)), [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name R3>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) })),
+            (Value::$matrix_kind(Matrix::RowVector3(input)), [Value::Index(ix1),Value::Index(ix2)]) => {
+              register_fxn_descriptor_inner!([<$fxn_name R3>], $target_type, $value_string);
+              Ok(Box::new([<$fxn_name R3>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
+            },
             #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-            (Value::$matrix_kind(Matrix::RowVector2(input)), [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name R2>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) })),
+            (Value::$matrix_kind(Matrix::RowVector2(input)), [Value::Index(ix1),Value::Index(ix2)]) => {
+              register_fxn_descriptor_inner!([<$fxn_name R2>], $target_type, $value_string);
+              Ok(Box::new([<$fxn_name R2>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
+            },
             #[cfg(all(feature = $value_string, feature = "vector4"))]
-            (Value::$matrix_kind(Matrix::Vector4(input)),    [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name V4>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) })),
+            (Value::$matrix_kind(Matrix::Vector4(input)),    [Value::Index(ix1),Value::Index(ix2)]) => {
+              register_fxn_descriptor_inner!([<$fxn_name V4>], $target_type, $value_string);
+              Ok(Box::new([<$fxn_name V4>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
+            },
             #[cfg(all(feature = $value_string, feature = "vector3"))]
-            (Value::$matrix_kind(Matrix::Vector3(input)),    [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name V3>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) })),
+            (Value::$matrix_kind(Matrix::Vector3(input)),    [Value::Index(ix1),Value::Index(ix2)]) => {
+              register_fxn_descriptor_inner!([<$fxn_name V3>], $target_type, $value_string);
+              Ok(Box::new([<$fxn_name V3>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
+            },
             #[cfg(all(feature = $value_string, feature = "vector2"))]
-            (Value::$matrix_kind(Matrix::Vector2(input)),    [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name V2>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) })),
+            (Value::$matrix_kind(Matrix::Vector2(input)),    [Value::Index(ix1),Value::Index(ix2)]) => {
+              register_fxn_descriptor_inner!([<$fxn_name V2>], $target_type, $value_string);
+              Ok(Box::new([<$fxn_name V2>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix4"))]
-            (Value::$matrix_kind(Matrix::Matrix4(input)),    [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name M4>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) })),
+            (Value::$matrix_kind(Matrix::Matrix4(input)),    [Value::Index(ix1),Value::Index(ix2)]) => {
+              register_fxn_descriptor_inner!([<$fxn_name M4>], $target_type, $value_string);
+              Ok(Box::new([<$fxn_name M4>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix3"))]
-            (Value::$matrix_kind(Matrix::Matrix3(input)),    [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name M3>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) })),
+            (Value::$matrix_kind(Matrix::Matrix3(input)),    [Value::Index(ix1),Value::Index(ix2)]) => {
+              register_fxn_descriptor_inner!([<$fxn_name M3>], $target_type, $value_string);
+              Ok(Box::new([<$fxn_name M3>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix2"))]
-            (Value::$matrix_kind(Matrix::Matrix2(input)),    [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name M2>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) })),
+            (Value::$matrix_kind(Matrix::Matrix2(input)),    [Value::Index(ix1),Value::Index(ix2)]) => {
+              register_fxn_descriptor_inner!([<$fxn_name M2>], $target_type, $value_string);
+              Ok(Box::new([<$fxn_name M2>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-            (Value::$matrix_kind(Matrix::Matrix2x3(input)),  [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name M2x3>]{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) })),
+            (Value::$matrix_kind(Matrix::Matrix2x3(input)),  [Value::Index(ix1),Value::Index(ix2)]) => {
+              register_fxn_descriptor_inner!([<$fxn_name M2x3>], $target_type, $value_string);
+              Ok(Box::new([<$fxn_name M2x3>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-            (Value::$matrix_kind(Matrix::Matrix3x2(input)),  [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name M3x2>]{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) })),
+            (Value::$matrix_kind(Matrix::Matrix3x2(input)),  [Value::Index(ix1),Value::Index(ix2)]) => {
+              register_fxn_descriptor_inner!([<$fxn_name M3x2>], $target_type, $value_string);
+              Ok(Box::new([<$fxn_name M3x2>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
+            },
             #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-            (Value::$matrix_kind(Matrix::RowDVector(input)), [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name RD>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) })),
+            (Value::$matrix_kind(Matrix::RowDVector(input)), [Value::Index(ix1),Value::Index(ix2)]) => {
+              register_fxn_descriptor_inner!([<$fxn_name RD>], $target_type, $value_string);
+              Ok(Box::new([<$fxn_name RD>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
+            },
             #[cfg(all(feature = $value_string, feature = "vectord"))]
-            (Value::$matrix_kind(Matrix::DVector(input)),    [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name VD>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) })),
+            (Value::$matrix_kind(Matrix::DVector(input)),    [Value::Index(ix1),Value::Index(ix2)]) => {
+              register_fxn_descriptor_inner!([<$fxn_name VD>], $target_type, $value_string);
+              Ok(Box::new([<$fxn_name VD>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (Value::$matrix_kind(Matrix::DMatrix(input)),    [Value::Index(ix1),Value::Index(ix2)]) => Ok(Box::new([<$fxn_name MD>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) })),
+            (Value::$matrix_kind(Matrix::DMatrix(input)),    [Value::Index(ix1),Value::Index(ix2)]) => {
+              register_fxn_descriptor_inner!([<$fxn_name MD>], $target_type, $value_string);
+              Ok(Box::new([<$fxn_name MD>]  {source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new($default) }))
+            },
           )+
         )+
         x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: 315, kind: MechErrorKind::UnhandledFunctionArgumentKind }),
@@ -796,80 +838,170 @@ macro_rules! impl_access_range_match_arms {
         $(
           $(
             #[cfg(all(feature = $value_string, feature = "row_vector4", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::RowVector4(input)), [Value::MatrixBool(Matrix::DVector(ix))])     => Ok(Box::new(Access1DVDbR4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),    
+            (Value::$matrix_kind(Matrix::RowVector4(input)), [Value::MatrixBool(Matrix::DVector(ix))])     => {
+              register_fxn_descriptor_inner!(Access1DVDbR4, $target_type, $value_string);
+              Ok(Box::new(Access1DVDbR4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },    
             #[cfg(all(feature = $value_string, feature = "row_vector3", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::RowVector3(input)), [Value::MatrixBool(Matrix::DVector(ix))])     => Ok(Box::new(Access1DVDbR3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),    
+            (Value::$matrix_kind(Matrix::RowVector3(input)), [Value::MatrixBool(Matrix::DVector(ix))])     => {
+              register_fxn_descriptor_inner!(Access1DVDbR3, $target_type, $value_string);
+              Ok(Box::new(Access1DVDbR3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },    
             #[cfg(all(feature = $value_string, feature = "row_vector2", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::RowVector2(input)), [Value::MatrixBool(Matrix::DVector(ix))])     => Ok(Box::new(Access1DVDbR2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),    
+            (Value::$matrix_kind(Matrix::RowVector2(input)), [Value::MatrixBool(Matrix::DVector(ix))])     => {
+              register_fxn_descriptor_inner!(Access1DVDbR2, $target_type, $value_string);
+              Ok(Box::new(Access1DVDbR2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },    
             #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::RowDVector(input)), [Value::MatrixBool(Matrix::DVector(ix))])     => Ok(Box::new(Access1DVDbRD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),   
+            (Value::$matrix_kind(Matrix::RowDVector(input)), [Value::MatrixBool(Matrix::DVector(ix))])     => {
+              register_fxn_descriptor_inner!(Access1DVDbRD, $target_type, $value_string);
+              Ok(Box::new(Access1DVDbRD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },   
 
             // --
 
             #[cfg(all(feature = $value_string, feature = "vector4", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Vector4(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbV4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),    
+            (Value::$matrix_kind(Matrix::Vector4(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDbV4, $target_type, $value_string);
+              Ok(Box::new(Access1DVDbV4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },    
             #[cfg(all(feature = $value_string, feature = "vector3", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Vector3(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbV3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),    
+            (Value::$matrix_kind(Matrix::Vector3(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDbV3, $target_type, $value_string);
+              Ok(Box::new(Access1DVDbV3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },    
             #[cfg(all(feature = $value_string, feature = "vector2", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Vector2(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbV2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),    
+            (Value::$matrix_kind(Matrix::Vector2(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDbV2, $target_type, $value_string);
+              Ok(Box::new(Access1DVDbV2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },    
             #[cfg(all(feature = $value_string, feature = "vectord", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::DVector(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbVD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),   
+            (Value::$matrix_kind(Matrix::DVector(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDbVD, $target_type, $value_string);
+              Ok(Box::new(Access1DVDbVD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },   
 
-            // --
+            // -- 
 
             #[cfg(all(feature = $value_string, feature = "matrix4", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix4(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbM4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),              
+            (Value::$matrix_kind(Matrix::Matrix4(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDbM4, $target_type, $value_string);
+              Ok(Box::new(Access1DVDbM4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },              
             #[cfg(all(feature = $value_string, feature = "matrix3", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix3(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbM3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),    
+            (Value::$matrix_kind(Matrix::Matrix3(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDbM3, $target_type, $value_string);
+              Ok(Box::new(Access1DVDbM3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },    
             #[cfg(all(feature = $value_string, feature = "matrix2", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix2(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbM2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),    
+            (Value::$matrix_kind(Matrix::Matrix2(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDbM2, $target_type, $value_string);
+              Ok(Box::new(Access1DVDbM2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },    
             #[cfg(all(feature = $value_string, feature = "matrix1", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix1(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbM1{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),    
+            (Value::$matrix_kind(Matrix::Matrix1(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDbM1, $target_type, $value_string);
+              Ok(Box::new(Access1DVDbM1{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },    
             #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbM3x2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),              
+            (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDbM3x2, $target_type, $value_string);
+              Ok(Box::new(Access1DVDbM3x2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },              
             #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbM2x3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),              
+            (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDbM2x3, $target_type, $value_string);
+              Ok(Box::new(Access1DVDbM2x3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },              
             #[cfg(all(feature = $value_string, feature = "matrixd", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::DMatrix(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDbMD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),   
+            (Value::$matrix_kind(Matrix::DMatrix(input)), [Value::MatrixBool(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDbMD, $target_type, $value_string);
+              Ok(Box::new(Access1DVDbMD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },   
 
             // --
 
             #[cfg(all(feature = $value_string, feature = "row_vector4"))]
-            (Value::$matrix_kind(Matrix::RowVector4(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDR4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),                
+            (Value::$matrix_kind(Matrix::RowVector4(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDR4, $target_type, $value_string);
+              Ok(Box::new(Access1DVDR4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },                
             #[cfg(all(feature = $value_string, feature = "row_vector3"))]
-            (Value::$matrix_kind(Matrix::RowVector3(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDR3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),    
+            (Value::$matrix_kind(Matrix::RowVector3(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDR3, $target_type, $value_string);
+              Ok(Box::new(Access1DVDR3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },    
             #[cfg(all(feature = $value_string, feature = "row_vector2"))]
-            (Value::$matrix_kind(Matrix::RowVector2(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDR2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),    
+            (Value::$matrix_kind(Matrix::RowVector2(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDR2, $target_type, $value_string);
+              Ok(Box::new(Access1DVDR2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },    
             #[cfg(all(feature = $value_string, feature = "row_vectord"))]
-            (Value::$matrix_kind(Matrix::RowDVector(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDRD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),   
+            (Value::$matrix_kind(Matrix::RowDVector(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDRD, $target_type, $value_string);
+              Ok(Box::new(Access1DVDRD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },   
 
             // --
 
             #[cfg(all(feature = $value_string, feature = "vector4"))]
-            (Value::$matrix_kind(Matrix::Vector4(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDV4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),                
+            (Value::$matrix_kind(Matrix::Vector4(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDV4, $target_type, $value_string);
+              Ok(Box::new(Access1DVDV4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },                
             #[cfg(all(feature = $value_string, feature = "vector3"))]
-            (Value::$matrix_kind(Matrix::Vector3(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDV3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),    
+            (Value::$matrix_kind(Matrix::Vector3(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDV3, $target_type, $value_string);
+              Ok(Box::new(Access1DVDV3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },    
             #[cfg(all(feature = $value_string, feature = "vector2"))]
-            (Value::$matrix_kind(Matrix::Vector2(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDV2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),    
+            (Value::$matrix_kind(Matrix::Vector2(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDV2, $target_type, $value_string);
+              Ok(Box::new(Access1DVDV2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },    
             #[cfg(all(feature = $value_string, feature = "vectord"))]
-            (Value::$matrix_kind(Matrix::DVector(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDVD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),   
+            (Value::$matrix_kind(Matrix::DVector(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDVD, $target_type, $value_string);
+              Ok(Box::new(Access1DVDVD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },   
 
             // --
 
             #[cfg(all(feature = $value_string, feature = "matrix4"))]
-            (Value::$matrix_kind(Matrix::Matrix4(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDM4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),                
+            (Value::$matrix_kind(Matrix::Matrix4(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDM4, $target_type, $value_string);
+              Ok(Box::new(Access1DVDM4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },                
             #[cfg(all(feature = $value_string, feature = "matrix3"))]
-            (Value::$matrix_kind(Matrix::Matrix3(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDM3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),    
+            (Value::$matrix_kind(Matrix::Matrix3(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDM3, $target_type, $value_string);
+              Ok(Box::new(Access1DVDM3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },    
             #[cfg(all(feature = $value_string, feature = "matrix2"))]
-            (Value::$matrix_kind(Matrix::Matrix2(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDM2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),    
+            (Value::$matrix_kind(Matrix::Matrix2(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDM2, $target_type, $value_string);
+              Ok(Box::new(Access1DVDM2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },    
             #[cfg(all(feature = $value_string, feature = "matrix1"))]
-            (Value::$matrix_kind(Matrix::Matrix1(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDM1{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),    
+            (Value::$matrix_kind(Matrix::Matrix1(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDM1, $target_type, $value_string);
+              Ok(Box::new(Access1DVDM1{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },    
             #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-            (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::MatrixIndex(Matrix::DVector(ix))]) => Ok(Box::new(Access1DVDM3x2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),    
+            (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::MatrixIndex(Matrix::DVector(ix))]) => {
+              register_fxn_descriptor_inner!(Access1DVDM3x2, $target_type, $value_string);
+              Ok(Box::new(Access1DVDM3x2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },    
             #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-            (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::MatrixIndex(Matrix::DVector(ix))]) => Ok(Box::new(Access1DVDM2x3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),    
+            (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::MatrixIndex(Matrix::DVector(ix))]) => {
+              register_fxn_descriptor_inner!(Access1DVDM2x3, $target_type, $value_string);
+              Ok(Box::new(Access1DVDM2x3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },    
             #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (Value::$matrix_kind(Matrix::DMatrix(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => Ok(Box::new(Access1DVDMD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) })),   
+            (Value::$matrix_kind(Matrix::DMatrix(input)), [Value::MatrixIndex(Matrix::DVector(ix))])  => {
+              register_fxn_descriptor_inner!(Access1DVDMD, $target_type, $value_string);
+              Ok(Box::new(Access1DVDMD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DVector::from_element(ix.borrow().len(),$default)) }))
+            },   
           )+
         )+
         x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
@@ -911,64 +1043,148 @@ macro_rules! impl_access_range_range_match_arms {
         $(
           $(
             #[cfg(all(feature = $value_string, feature = "matrix4"))]
-            (Value::$matrix_kind(Matrix::Matrix4(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDM4{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(Matrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix4(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDVDM4, $target_type, $value_string);
+              Ok(Box::new(Access2DVDVDM4{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(Matrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix3"))]
-            (Value::$matrix_kind(Matrix::Matrix3(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDM3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix3(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDVDM3, $target_type, $value_string);
+              Ok(Box::new(Access2DVDVDM3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix2"))]
-            (Value::$matrix_kind(Matrix::Matrix2(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDM2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix2(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDVDM2, $target_type, $value_string);
+              Ok(Box::new(Access2DVDVDM2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix1"))]
-            (Value::$matrix_kind(Matrix::Matrix1(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDM1{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix1(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDVDM1, $target_type, $value_string);
+              Ok(Box::new(Access2DVDVDM1{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-            (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDM3x2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDVDM3x2, $target_type, $value_string);
+              Ok(Box::new(Access2DVDVDM3x2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-            (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDM2x3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDVDM2x3, $target_type, $value_string);
+              Ok(Box::new(Access2DVDVDM2x3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrixd"))]
-            (Value::$matrix_kind(Matrix::DMatrix(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDMD{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::DMatrix(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDVDMD, $target_type, $value_string);
+              Ok(Box::new(Access2DVDVDMD{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
 
             #[cfg(all(feature = $value_string, feature = "matrix4", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix4(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDM4{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix4(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDbVDM4, $target_type, $value_string);
+              Ok(Box::new(Access2DVDbVDM4{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix3", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix3(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDM3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix3(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDbVDM3, $target_type, $value_string);
+              Ok(Box::new(Access2DVDbVDM3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix2", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix2(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDM2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix2(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDbVDM2, $target_type, $value_string);
+              Ok(Box::new(Access2DVDbVDM2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix1", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix1(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDM1{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix1(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDbVDM1, $target_type, $value_string);
+              Ok(Box::new(Access2DVDbVDM1{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDM3x2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDbVDM3x2, $target_type, $value_string);
+              Ok(Box::new(Access2DVDbVDM3x2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDM2x3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDbVDM2x3, $target_type, $value_string);
+              Ok(Box::new(Access2DVDbVDM2x3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrixd", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::DMatrix(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDMD{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::DMatrix(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDbVDMD, $target_type, $value_string);
+              Ok(Box::new(Access2DVDbVDMD{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
 
             #[cfg(all(feature = $value_string, feature = "matrix4", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix4(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbM4{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix4(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDVDbM4, $target_type, $value_string);
+              Ok(Box::new(Access2DVDVDbM4{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix3", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix3(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbM3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix3(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDVDbM3, $target_type, $value_string);
+              Ok(Box::new(Access2DVDVDbM3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix2", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix2(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbM2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix2(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDVDbM2, $target_type, $value_string);
+              Ok(Box::new(Access2DVDVDbM2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix1", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix1(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbM1{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix1(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDVDbM1, $target_type, $value_string);
+              Ok(Box::new(Access2DVDVDbM1{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbM3x2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDVDbM3x2, $target_type, $value_string);
+              Ok(Box::new(Access2DVDVDbM3x2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbM2x3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDVDbM2x3, $target_type, $value_string);
+              Ok(Box::new(Access2DVDVDbM2x3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrixd", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::DMatrix(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDVDbMD{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::DMatrix(input)),   [Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDVDbMD, $target_type, $value_string);
+              Ok(Box::new(Access2DVDVDbMD{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
 
             #[cfg(all(feature = $value_string, feature = "matrix4", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix4(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbM4{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix4(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDbVDbM4, $target_type, $value_string);
+              Ok(Box::new(Access2DVDbVDbM4{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix3", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix3(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbM3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix3(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDbVDbM3, $target_type, $value_string);
+              Ok(Box::new(Access2DVDbVDbM3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix2", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix2(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbM2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix2(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDbVDbM2, $target_type, $value_string);
+              Ok(Box::new(Access2DVDbVDbM2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix1", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix1(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbM1{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix1(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDbVDbM1, $target_type, $value_string);
+              Ok(Box::new(Access2DVDbVDbM1{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbM3x2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDbVDbM3x2, $target_type, $value_string);
+              Ok(Box::new(Access2DVDbVDbM3x2{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbM2x3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDbVDbM2x3, $target_type, $value_string);
+              Ok(Box::new(Access2DVDbVDbM2x3{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
             #[cfg(all(feature = $value_string, feature = "matrixd", feature = "logical_indexing"))]
-            (Value::$matrix_kind(Matrix::DMatrix(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => Ok(Box::new(Access2DVDbVDbMD{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) })),
+            (Value::$matrix_kind(Matrix::DMatrix(input)),   [Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => {
+              register_fxn_descriptor_inner!(Access2DVDbVDbMD, $target_type, $value_string);
+              Ok(Box::new(Access2DVDbVDbMD{source: input.clone(), ix1: ix1.clone(), ix2: ix2.clone(), out: Ref::new(DMatrix::from_element(ix1.borrow().len(),ix2.borrow().len(),$default)) }))
+            },
           )+
         )+
         // Check other sizes
