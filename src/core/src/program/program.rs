@@ -168,12 +168,42 @@ impl ParsedProgram {
         },
         #[cfg(feature = "string")]
         TypeTag::String => {
-          // string is utf-8 bytes
-          match String::from_utf8(data) {
-            Ok(s) => Value::String(Ref::new(s)),
-            Err(_) => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "Invalid UTF-8 in string constant".to_string(), id: line!(), kind: MechErrorKind::GenericError("Invalid UTF-8 in string constant".to_string())}),
+          if data.len() < 4 {
+            return Err(MechError {
+              file: file!().to_string(),
+              tokens: vec![],
+              msg: "String constant too short".to_string(),
+              id: line!(),
+              kind: MechErrorKind::GenericError("String constant too short".to_string()),
+            });
           }
-        },
+
+          let str_len = u32::from_le_bytes(data[0..4].try_into().unwrap()) as usize;
+
+          if 4 + str_len > data.len() {
+            return Err(MechError {
+              file: file!().to_string(),
+              tokens: vec![],
+              msg: "Malformed string constant".to_string(),
+              id: line!(),
+              kind: MechErrorKind::GenericError("Malformed string constant".to_string()),
+            });
+          }
+
+          let str_bytes = &data[4..4 + str_len];
+          match String::from_utf8(str_bytes.to_vec()) {
+            Ok(s) => Value::String(Ref::new(s)),
+            Err(_) => {
+              return Err(MechError {
+                file: file!().to_string(),
+                tokens: vec![],
+                msg: "Invalid UTF-8 in string constant".to_string(),
+                id: line!(),
+                kind: MechErrorKind::GenericError("Invalid UTF-8 in string constant".to_string()),
+              })
+            }
+          }
+        }
         #[cfg(feature = "u8")]
         TypeTag::U8 => {
           if data.len() != 1 {
