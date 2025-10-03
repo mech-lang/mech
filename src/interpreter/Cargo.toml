@@ -25,6 +25,9 @@ path = "bin/interpreter.rs"
 no_std = ["mech-core/no_std", "mech-math/no_std", "mech-compare/no_std", "mech-combinatorics/no_std", "mech-logic/no_std", "mech-matrix/no_std", "mech-io/no_std", "mech-stats/no_std", "mech-range/no_std"]
 
 default = ["baselib", "pretty_print", "serde", "compiler", "program",
+  "u8", "u16", "u32", "u64", "u128", 
+  "i8", "i16", "i32", "i64", "i128", 
+  "f32", "f64", "c64", "r64", 
   "math_default", "compare_default", "combinatorics_default", "logic_default",
   "matrix_default", "io_default", "range_default", "stats_default",
   "statements_default", "subscript_default",
