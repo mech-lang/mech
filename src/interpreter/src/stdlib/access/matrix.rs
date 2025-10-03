@@ -1237,36 +1237,54 @@ macro_rules! impl_access_range_range_arms {
         (Value::[<Matrix $value_kind:camel>](Matrix::$shape(source)),[Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => {
           let rows = ix1.borrow().iter().filter(|x| **x).count();
           let cols = ix2.borrow().iter().filter(|x| **x).count();
-          if cols == 1 && rows == 1 {
-            register_assign_srr_b2!([<$fxn_name VBB>], $value_kind, $value_string, DMatrix, $shape, DVector, DVector);
-            box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DMatrix::from_element(1, 1, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-          } else if cols == 1 {
-            register_assign_srr_b2!([<$fxn_name VBB>], $value_kind, $value_string, DVector, $shape, DVector, DVector);
-            box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DVector::from_element(rows, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-          } else if rows == 1 {
-            register_assign_srr_b2!([<$fxn_name VBB>], $value_kind, $value_string, RowDVector, $shape, DVector, DVector);
-            box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(RowDVector::from_element(cols, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-          } else {
-            register_assign_srr_b2!([<$fxn_name VBB>], $value_kind, $value_string, DMatrix, $shape, DVector, DVector);
-            box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DMatrix::from_element(rows, cols, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+          match (cols, rows) {
+            #[cfg(feature = "matrixd")]
+            (1, 1) => {
+              register_assign_srr_b2!([<$fxn_name VBB>], $value_kind, $value_string, DMatrix, $shape, DVector, DVector);
+              box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DMatrix::from_element(1, 1, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+            },
+            #[cfg(feature = "vectord")]
+            (1, _) => {
+              register_assign_srr_b2!([<$fxn_name VBB>], $value_kind, $value_string, DVector, $shape, DVector, DVector);
+              box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DVector::from_element(rows, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+            },
+            #[cfg(feature = "row_vectord")]
+            (_, 1) => {
+              register_assign_srr_b2!([<$fxn_name VBB>], $value_kind, $value_string, RowDVector, $shape, DVector, DVector);
+              box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(RowDVector::from_element(cols, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+            },
+            #[cfg(feature = "matrixd")]
+            _ => {
+              register_assign_srr_b2!([<$fxn_name VBB>], $value_kind, $value_string, DMatrix, $shape, DVector, DVector);
+              box_mech_fxn(Ok(Box::new([<$fxn_name VBB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DMatrix::from_element(rows, cols, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+            },
           }
         },
-        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord", feature = "logical_indexing"))]
+        #[cfg(all(feature = $value_string, feature = "vectord", feature = "logical_indexing"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::$shape(source)),[Value::MatrixIndex(Matrix::DVector(ix1)), Value::MatrixBool(Matrix::DVector(ix2))]) => {
           let cols = ix2.borrow().iter().filter(|x| **x).count();
           let rows = ix1.borrow().len();
-          if cols == 1 && rows == 1 {
-            register_assign_srr_ub2!([<$fxn_name VUB>], $value_kind, $value_string, DMatrix, $shape, DVector, DVector);
-            box_mech_fxn(Ok(Box::new([<$fxn_name VUB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DMatrix::from_element(1, 1, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-          } else if cols == 1 {
-            register_assign_srr_ub2!([<$fxn_name VUB>], $value_kind, $value_string, DVector, $shape, DVector, DVector);
-            box_mech_fxn(Ok(Box::new([<$fxn_name VUB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DVector::from_element(rows, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-          } else if rows == 1 {
-            register_assign_srr_ub2!([<$fxn_name VUB>], $value_kind, $value_string, RowDVector, $shape, DVector, DVector);
-            box_mech_fxn(Ok(Box::new([<$fxn_name VUB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(RowDVector::from_element(cols, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
-          } else {
-            register_assign_srr_ub2!([<$fxn_name VUB>], $value_kind, $value_string, DMatrix, $shape, DVector, DVector);
-            box_mech_fxn(Ok(Box::new([<$fxn_name VUB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DMatrix::from_element(rows, cols, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+          match (cols, rows) {
+            #[cfg(feature = "matrixd")]
+            (1, 1) => {
+              register_assign_srr_ub2!([<$fxn_name VUB>], $value_kind, $value_string, DMatrix, $shape, DVector, DVector);
+              box_mech_fxn(Ok(Box::new([<$fxn_name VUB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DMatrix::from_element(1, 1, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+            },
+            #[cfg(feature = "vectord")]
+            (1, _) => {
+              register_assign_srr_ub2!([<$fxn_name VUB>], $value_kind, $value_string, DVector, $shape, DVector, DVector);
+              box_mech_fxn(Ok(Box::new([<$fxn_name VUB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DVector::from_element(rows, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+            },
+            #[cfg(feature = "row_vectord")]
+            (_, 1) => {
+              register_assign_srr_ub2!([<$fxn_name VUB>], $value_kind, $value_string, RowDVector, $shape, DVector, DVector);
+              box_mech_fxn(Ok(Box::new([<$fxn_name VUB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(RowDVector::from_element(cols, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+            },
+            #[cfg(feature = "matrixd")]
+            _ => {
+              register_assign_srr_ub2!([<$fxn_name VUB>], $value_kind, $value_string, DMatrix, $shape, DVector, DVector);
+              box_mech_fxn(Ok(Box::new([<$fxn_name VUB>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DMatrix::from_element(rows, cols, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+            },
           }
         },
         x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
