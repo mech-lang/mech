@@ -8,5 +8,5 @@ test:cargo:
   - cargo clean
   - cargo build --bin mech
   - cargo build --no-default-features
-  - cargo test interpret
-  - cargo test bytecode
+  - cargo test interpret --no-default-features --features "base"
+  - cargo test bytecode --no-default-features --features "base"
