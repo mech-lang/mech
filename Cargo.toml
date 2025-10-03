@@ -1,6 +1,6 @@
 [package]
 name = "mech"
-version = "0.2.59"
+version = "0.2.60"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "Mech is a reactive programming language for building robots, games, and animations."
 documentation = "https://docs.mech-lang.org"
@@ -20,7 +20,10 @@ maintenance = { status = "actively-developed" }
 [features]
 no_std = ["mech-core/no_std", "mech-interpreter/no_std", "mech-syntax/no_std"]
 
-default = ["stdlib", "pretty_print", "serde", "compiler", "program",
+default = ["baselib", "pretty_print", "serde", "compiler", "program",
+      "u8", "u16", "u32", "u64", "u128", 
+      "i8", "i16", "i32", "i64", "i128", 
+      "f32", "f64", "c64", "r64",
       "statements_default", "subscript_default",
       "formatter", "mechfs", "serve", "run", "repl", "build",
       "mech-core/default", "mech-interpreter/default", "mech-syntax/default",
@@ -157,9 +160,9 @@ matrix_vertcat = ["matrix"]
 nalgebra = "0.34.0"
 
 [dependencies]
-mech-core        = { version = "0.2.59", default-features = false }
-mech-syntax      = { version = "0.2.59", default-features = false }
-mech-interpreter = { version = "0.2.59", default-features = false }
+mech-core        = { version = "0.2.60", default-features = false }
+mech-syntax      = { version = "0.2.60", default-features = false }
+mech-interpreter = { version = "0.2.60", default-features = false }
 
 clap = {version = "4.5.40", features = ["cargo"]}
 colored = "3.0.0"
@@ -217,13 +220,13 @@ mech-range = { path = '../machines/range' }
 mech-logic = { path = '../machines/logic' }
 
 [patch.'https://gitlab.com/mech-lang/core']
-mech-core = { path = 'src/core', version = '0.2.59' }
+mech-core = { path = 'src/core', version = '0.2.60' }
 
 [patch.'https://gitlab.com/mech-lang/syntax']
-mech-syntax = { path = 'src/syntax', version = '0.2.59' }
+mech-syntax = { path = 'src/syntax', version = '0.2.60' }
 
 [patch.'https://gitlab.com/mech-lang/interpreter']
-mech-interpreter = { path = 'src/interpreter', version = '0.2.59' }
+mech-interpreter = { path = 'src/interpreter', version = '0.2.60' }
 
 #[patch.'https://gitlab.com/mech-lang/wasm']
 #mech-wasm = { path = 'src/wasm', version = '0.2.44' }
