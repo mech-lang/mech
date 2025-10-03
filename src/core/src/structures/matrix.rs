@@ -513,7 +513,7 @@ where T: Debug + Clone + PartialEq + 'static
 
   pub fn append(&mut self, other: &Matrix<T>) -> MResult<()> {
     match (self, other) {
-      #[cfg(feature = "vector3")]
+      #[cfg(feature = "vectord")]
       (Matrix::DVector(lhs), Matrix::DVector(rhs)) => {
         let mut lhs = lhs.borrow_mut();
         let rhs = rhs.borrow();
