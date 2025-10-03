@@ -1922,8 +1922,6 @@ where
   Ok(())
 }
 
-
-
 #[macro_export]
 macro_rules! impl_assign_range_range_arms {
   ($fxn_name:ident, $shape:tt, $arg:expr, $value_kind:ident, $value_string:tt) => {
