@@ -104,3 +104,7 @@ bytecode_test!(bytecode_matrix_index_bool_2d, r#"ix := [false, false, true]; x :
 bytecode_test!(bytecode_matrix_index_scalar_2d, r#"ix := [1, 3]; x := [1 2 3 ; 4 5 6 ; 7 8 9]; x[:,ix]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(4.0),F64::new(7.0),F64::new(3.0),F64::new(6.0),F64::new(9.0)], 3, 2)));
 bytecode_test!(bytecode_matrix_index_bool_2d_all, r#"ix := [true, true, false]; x := [1 2 3]; x[:,ix]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(2.0)], 1, 2)));
 bytecode_test!(bytecode_matrix_index_2d_vuu, r#"x := [1 2 3; 4 5 6;7 8 9]; ix1 := [1, 2]; x[ix1,ix1]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(4.0),F64::new(2.0),F64::new(5.0)], 2, 2)));
+bytecode_test!(bytecode_matrix_index_2d_vbb, r#"x := [1 2 3; 4 5 6; 7 8 9]; x[[true false false], [true false true]]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(3.0)], 1, 2)));
+bytecode_test!(bytecode_matrix_index_2d_vbb2, r#"x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true],[true false false]]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(7.0)], 2, 1)));
+bytecode_test!(bytecode_matrix_index_2d_vbb3, r#"x := [1 2 3; 4 5 6; 7 8 9]; x[[true false false],[true false false]]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0)], 1, 1)));
+bytecode_test!(bytecode_matrix_index_2d_vbb4, r#"x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true],[true false true]]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(7.0),F64::new(3.0),F64::new(9.0)], 2, 2)));
