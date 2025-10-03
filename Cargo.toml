@@ -60,8 +60,8 @@ stat_error_default = ["erf", "erfc"]
 trig_default = ["acos", "acosh", "acot", "acsc", "asec", "asin", "asinh", "atan", "atan2", "atanh", "cos", "cosh", "cot", "csc", "hypot", "sec", "sin", "sinh", "tan", "tanh"]
 
 math_default = ["arithmetic_default", "bessel_default", "exponential_default", "extrema_default",
-            "gamma_default", "logarithm_default", "ops_default", "ops_assign_default",
-            "root_default", "rounding_default", "stat_error_default", "trig_default"] 
+                "gamma_default", "logarithm_default", "ops_default", "ops_assign_default",
+                "root_default", "rounding_default", "stat_error_default", "trig_default"] 
 
 math = ["num-traits", "libm", "functions"]
 arithmetic = ["math"]
