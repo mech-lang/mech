@@ -257,7 +257,7 @@ dot_indexing = ["subscript", "mech-core/dot_indexing"]
 swizzle = ["subscript", "mech-core/swizzle"]
 
 [dependencies]
-mech-core = { path = "../../mech/src/core", version = "0.2.59", default-features = false }
+mech-core = {version = "0.2.59", default-features = false }
 
 libm = {version = "0.2.15", optional = true}
 simba = {version = "0.9.0", optional = true}
