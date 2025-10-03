@@ -211,12 +211,14 @@ range_inclusive = ["range", "mech-range/inclusive"]
 range_exclusive = ["range", "mech-range/exclusive"]
 
 # Math
-math_default = ["math_ops_default", "math_ops_assign_default", "math_trig_default", "mech-math/math_default"]
+math_default = ["math_ops_default", "math_root_default", "math_ops_assign_default", "math_trig_default", "mech-math/math_default"]
 math = ["mech-math/math", "formulas", "functions"]
 math_ops_default = ["math_add", "math_sub", "math_mul", "math_div", "math_exp", "math_mod", "math_neg"]
+math_root_default = ["math_sqrt", "mech-math/root_default"]
 math_ops_assign_default = ["math_add_assign", "math_sub_assign", "math_mul_assign", "math_div_assign"]
 math_trig_default = ["math_acos", "math_acosh", "math_acot", "math_acsc", "math_asec", "math_asin", "math_asinh", "math_atan", "math_atan2", "math_atanh", "math_cos", "math_cosh", "math_cot", "math_csc", "math_sec", "math_sin", "math_sinh", "math_tan", "math_tanh"]
 math_trig = ["math", "mech-math/trig"]
+math_root = ["math", "mech-math/root"]
 math_ops = ["math", "mech-math/ops"]
 math_op_assign = ["math", "mech-math/op_assign"]
 math_add_assign = ["math_op_assign", "mech-math/add_assign"]
@@ -249,6 +251,7 @@ math_div = ["math_ops", "mech-math/div"]
 math_exp = ["math_ops", "mech-math/exp"]
 math_mod = ["math_ops", "mech-math/mod"]
 math_neg = ["math_ops", "mech-math/neg"]
+math_sqrt = ["math_root", "mech-math/sqrt"]
 
 [dependencies]
 mech-core = { version = "0.2.59", default-features = false }

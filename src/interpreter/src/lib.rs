@@ -144,7 +144,7 @@ pub fn load_stdlib(fxns: &mut Functions) {
   #[cfg(feature = "stats_sum")]
   fxns.function_compilers.insert(hash_str("stats/sum/column"), Box::new(StatsSumColumn{}));
 
-  // Preload math functions
+  // Preload ops functions
   #[cfg(feature = "math_add")]
   fxns.function_compilers.insert(hash_str("math/add"),Box::new(MathAdd{}));
   #[cfg(feature = "math_sub")]
@@ -162,6 +162,12 @@ pub fn load_stdlib(fxns: &mut Functions) {
   #[cfg(feature = "math_sin")]
   fxns.function_compilers.insert(hash_str("math/sin"),Box::new(MathSin{}));
   #[cfg(feature = "math_cos")]
+
+  // Preload math functions
+  #[cfg(feature = "math_sqrt")]
+  fxns.function_compilers.insert(hash_str("math/sqrt"),Box::new(MathSqrt{}));
+
+  // Preload trig functions
   fxns.function_compilers.insert(hash_str("math/cos"),Box::new(MathCos{}));
   #[cfg(feature = "math_atan2")]
   fxns.function_compilers.insert(hash_str("math/atan2"),Box::new(MathAtan2{}));
