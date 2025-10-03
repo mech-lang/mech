@@ -156,13 +156,13 @@ macro_rules! impl_compile_const {
 
 #[cfg(feature = "u16")]
 impl_compile_const!("u16", u16);
-#[cfg(feature = "i16")]
-impl_compile_const!("u32", u32);
 #[cfg(feature = "u32")]
-impl_compile_const!("u64", u64);
+impl_compile_const!("u32", u32);
 #[cfg(feature = "u64")]
-impl_compile_const!("u128", u128);
+impl_compile_const!("u64", u64);
 #[cfg(feature = "u128")]
+impl_compile_const!("u128", u128);
+#[cfg(feature = "i16")]
 impl_compile_const!("i16", i16);
 #[cfg(feature = "i32")]
 impl_compile_const!("i32", i32);
