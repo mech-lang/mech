@@ -22,21 +22,19 @@ crate-type = ["rlib"]
 no_std = ["mech-core/no_std"]
 
 default = ["stdlib", "pretty_print", "serde", "compiler", "program",
-            "arithmetic_default", "bessel_default", "exponential_default", "extrema_default",
-            "gamma_default", "logarithm_default", "ops_default", "ops_assign_default",
-            "root_default", "rounding_default", "stat_error_default", "trig_default",
+            "math_default",
             "statements_default", "subscript_default",
-            "mech-core/default",
+            "mech-core/default",      
           ]
 
 base = ["baselib", "pretty_print", "serde", "compiler", "program",
-      "ops_default", "ops_assign_default", "trig_default",
+      "math_default",
       "statements_default", "subscript_default",
       "mech-core/base",
       ]   
 
 baselib = ["bool", "string", 
-      "f64", "c64", 
+      "f64", "c64", "r64",
       "set", "map", "table", "tuple", "record", "atom", "enum",
       "row_vectord", "vectord", "matrixd",
       "subscript_range", "logical_indexing", 
@@ -60,6 +58,10 @@ root_default = ["cbrt", "sqrt"]
 rounding_default = ["ceil", "floor", "rint", "round", "roundeven", "trunc"]
 stat_error_default = ["erf", "erfc"]
 trig_default = ["acos", "acosh", "acot", "acsc", "asec", "asin", "asinh", "atan", "atan2", "atanh", "cos", "cosh", "cot", "csc", "hypot", "sec", "sin", "sinh", "tan", "tanh"]
+
+math_default = ["arithmetic_default", "bessel_default", "exponential_default", "extrema_default",
+            "gamma_default", "logarithm_default", "ops_default", "ops_assign_default",
+            "root_default", "rounding_default", "stat_error_default", "trig_default"] 
 
 math = ["num-traits", "libm", "functions"]
 arithmetic = ["math"]
@@ -225,7 +227,7 @@ atom = ["mech-core/atom"]
 
 # Matrix
 matrix = ["nalgebra", "mech-core/matrix"]
-fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2", "mech-core/fixed_row_vector"]
+fixed_row_vector = ["row_vector4", "row_vector2", "mech-core/fixed_row_vector"]
 fixed_vector = ["vector4", "vector3", "vector2", "mech-core/fixed_vector"]
 fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "mech-core/fixed_matrix"]
 dynamic_matrix = ["matrixd", "vectord", "row_vectord", "mech-core/dynamic_matrix"]
