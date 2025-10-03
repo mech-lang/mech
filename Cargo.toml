@@ -21,7 +21,7 @@ crate-type = ["rlib"]
 [features]
 no_std = ["mech-core/no_std"]
 
-default = ["stdlib", "pretty_print", "serde", "compiler", "program",
+default = ["baselib", "pretty_print", "serde", "compiler", "program",
             "math_default",
             "statements_default", "subscript_default",
             "mech-core/default",      
