@@ -101,3 +101,4 @@ bytecode_test!(bytecode_matrix_index_assign_2d_range_range_bool6,"~x := [1 2 3; 
 bytecode_test!(bytecode_string_matrix, r#"x := ["Hello" "World"]"#, Value::MatrixString(Matrix::from_vec(vec!["Hello".to_string(), "World".to_string()], 1, 2)));
 bytecode_test!(bytecode_string_matrix_index, r#"x := ["Hello" "World"]; x[2]"#, Value::String(Ref::new("World".to_string())));
 bytecode_test!(bytecode_matrix_index_bool_2d, r#"ix := [false, false, true]; x := [1 2 3; 4 5 6; 7 8 9]; x[:,ix]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(3.0),F64::new(6.0),F64::new(9.0)], 3, 1)));
+bytecode_test!(bytecode_matrix_index_scalar_2d, r#"ix := [1, 3]; x := [1 2 3 ; 4 5 6 ; 7 8 9]; x[:,ix]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(4.0),F64::new(7.0),F64::new(3.0),F64::new(6.0),F64::new(9.0)], 3, 2)));

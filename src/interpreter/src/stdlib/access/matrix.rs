@@ -1574,14 +1574,15 @@ impl NativeFunctionCompiler for MatrixAccessScalarAll {
 macro_rules! assign_2d_all_range_v {
   ($source:expr, $ix:expr, $sink:expr) => {
     {
-      for (i,k) in 0..(*$source).ncols().enumerate() {
-        if $ix[i] == true {
-          let mut sink_col = ($sink).column_mut(k);
-          let src_col = ($source).column(i);
-          for (dst, src) in sink_col.iter_mut().zip(src_col.iter()) {
-            *dst = src.clone();
-          }
+      let mut sink_col_ix = 0;
+      for i in 0..(*$ix).len() {
+        let col_ix = $ix[i] - 1;
+        let mut sink_col = ($sink).column_mut(sink_col_ix);
+        let src_col = ($source).column(col_ix);
+        for (dst, src) in sink_col.iter_mut().zip(src_col.iter()) {
+          *dst = src.clone();
         }
+        sink_col_ix += 1;
       }
     }
   };}
@@ -1603,107 +1604,22 @@ macro_rules! assign_2d_all_range_vb {
     }
   };}
 
-
-macro_rules! access_2d_all_slice_b {
-  ($source:expr, $ix:expr, $out:expr) => {
-    unsafe { 
-      let vec_ix = &(*$ix);
-      let mut j = 0;
-      let out_len = (*$out).len();
-      for i in 0..vec_ix.len() {
-        if vec_ix[i] == true {
-          j += 1;
-        }
-      }
-      if j != out_len {
-        //(*$out).resize_horizontally_mut(j, (&mut (*$out))[0].clone());
-      }
-      j = 0;
-      for k in 0..(*$source).nrows() {
-        for i in 0..vec_ix.len() {
-          if vec_ix[i] == true {
-            (&mut (*$out))[j] = (*$source).index((k, i)).clone();
-            j += 1;
-          }
-        }
-      }
-    }};}
-
-macro_rules! access_2d_all_slice {
-  ($source:expr, $ix:expr, $out:expr) => {
-    unsafe { 
-      let n_rows = (*$source).nrows();
-      let n_cols = (*$ix).nrows();
-      let mut out_ix = 0;
-      for c in 0..n_cols {
-        for r in 0..n_rows {
-          (&mut (*$out))[out_ix] = (*$source).index((r, ((&*$ix))[c] - 1)).clone();
-          out_ix += 1;
-        }
-      }
-    }};}
-
 macro_rules! impl_access_all_range_arms {
   ($fxn_name:ident, $shape:tt, $arg:expr, $value_kind:ident, $value_string:tt) => {
     paste!{
       match $arg {
         // All Vector
-        //#[cfg(all(feature = $value_string, feature = "matrix4"))]
-        //(Value::$matrix_kind(Matrix::Matrix4(input)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))]) => {
-        //  register_fxn_descriptor_inner!(Access2DAVDM4, $target_type, $value_string);
-        //  Ok(Box::new(Access2DAVDM4{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) }))
-        //},
-        //#[cfg(all(feature = $value_string, feature = "matrix3"))]
-        //(Value::$matrix_kind(Matrix::Matrix3(input)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))]) => {
-        //  register_fxn_descriptor_inner!(Access2DAVDM3, $target_type, $value_string);
-        //  Ok(Box::new(Access2DAVDM3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) }))
-        //},
-        //#[cfg(all(feature = $value_string, feature = "matrix2"))]
-        //(Value::$matrix_kind(Matrix::Matrix2(input)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))]) => {
-        //  register_fxn_descriptor_inner!(Access2DAVDM2, $target_type, $value_string);
-        //  Ok(Box::new(Access2DAVDM2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) }))
-        //},
-        //#[cfg(all(feature = $value_string, feature = "matrix3x2"))]
-        //(Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))]) => {
-        //  register_fxn_descriptor_inner!(Access2DAVDM3x2, $target_type, $value_string);
-        //  Ok(Box::new(Access2DAVDM3x2{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) }))
-        //},
-        //#[cfg(all(feature = $value_string, feature = "matrix2x3"))]
-        //(Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))]) => {
-        //  register_fxn_descriptor_inner!(Access2DAVDM2x3, $target_type, $value_string);
-        //  Ok(Box::new(Access2DAVDM2x3{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) }))
-        //},
-        //#[cfg(all(feature = $value_string, feature = "matrixd"))]
-        //(Value::$matrix_kind(Matrix::DMatrix(input)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))]) => {
-        //  register_fxn_descriptor_inner!(Access2DAVDMD, $target_type, $value_string);
-        //  Ok(Box::new(Access2DAVDMD{source: input.clone(), ixes: ix.clone(), out: Ref::new(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) }))
-        //},
+        #[cfg(all(feature = $value_string, feature = "vectord"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))]) if ix.borrow().len() == 1 && source.borrow().nrows() != 1 => {
+          register_assign!([<$fxn_name V>], $value_kind, $value_string, DVector, $shape, DVector);
+          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(DVector::from_element(source.borrow().nrows(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [Value::IndexAll, Value::MatrixIndex(Matrix::DVector(ix))]) => {
+          register_assign!([<$fxn_name V>], $value_kind, $value_string, DMatrix, $shape, DVector);
+          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(source.borrow().nrows(), ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+        },
         // All Bool Vector
-        //#[cfg(all(feature = $value_string, feature = "matrix4", feature = "logical_indexing"))]
-        //(Value::$matrix_kind(Matrix::Matrix4(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => {
-        //  //register_fxn_descriptor_inner!(Access2DAVDbM4, $target_type, $value_string);
-        //  //Ok(Box::new(Access2DAVB{source: input.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)), _marker: std::marker::PhantomData::default() }))
-        //},
-        //#[cfg(all(feature = $value_string, feature = "matrix3", feature = "logical_indexing"))]
-        //(Value::$matrix_kind(Matrix::Matrix3(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => {
-        //  //register_fxn_descriptor_inner!(Access2DAVDbM3, $target_type, $value_string);
-        //  //Ok(Box::new(Access2DAVB{source: input.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) }))
-        //},
-        //#[cfg(all(feature = $value_string, feature = "matrix2", feature = "logical_indexing"))]
-        //(Value::$matrix_kind(Matrix::Matrix2(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => {
-        //  //register_fxn_descriptor_inner!(Access2DAVDbM2, $target_type, $value_string);
-        //  //Ok(Box::new(Access2DAVB{source: input.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) }))
-        //},
-        //#[cfg(all(feature = $value_string, feature = "matrix3x2", feature = "logical_indexing"))]
-        //(Value::$matrix_kind(Matrix::Matrix3x2(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => {
-        //  //register_fxn_descriptor_inner!(Access2DAVDbM3x2, $target_type, $value_string);
-        //  //Ok(Box::new(Access2DAVB{source: input.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) }))
-        //},
-        //#[cfg(all(feature = $value_string, feature = "matrix2x3", feature = "logical_indexing"))]
-        //(Value::$matrix_kind(Matrix::Matrix2x3(input)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) => {
-        //  //register_fxn_descriptor_inner!(Access2DAVDbM2x3, $target_type, $value_string);
-        //  //Ok(Box::new(Access2DAVB{source: input.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(input.borrow().nrows(), ix.borrow().len(),$default)) }))
-        //},
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "logical_indexing", feature = "vectord"))]
         (Value::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [Value::IndexAll, Value::MatrixBool(Matrix::DVector(ix))]) if ix.borrow().iter().filter(|&&b| b).count() == 1 && source.borrow().nrows() != 1 => {
           register_assign_b!([<$fxn_name VB>], $value_kind, $value_string, DVector, $shape, DVector);
@@ -1721,7 +1637,7 @@ macro_rules! impl_access_all_range_arms {
   }
 }
 
-//impl_access_all_fxn_v!(Access2DARV,  access_2d_all_slice,   usize);
+impl_access_all_fxn_v!(Access2DARV,  assign_2d_all_range_v,  usize);
 impl_access_all_fxn_v!(Access2DARVB, assign_2d_all_range_vb, bool);
 
 fn matrix_access_all_range_fxn(source: Value, ixes: Vec<Value>) -> MResult<Box<dyn MechFunction>> {
