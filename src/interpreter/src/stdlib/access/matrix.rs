@@ -1224,6 +1224,25 @@ macro_rules! access_2d_range_range_vub {
     }
   };}
 
+macro_rules! access_2d_range_range_vbu {
+  ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
+    unsafe { 
+      let mut sink_rix = 0;
+      let mut sink_cix = 0;
+      for r in 0..($ix1).len() {
+        if ($ix1)[r] == true {
+          for c in 0..($ix2).len() {
+            let col = ($ix2)[c] - 1;
+            ($sink)[(sink_rix, sink_cix)] = ($source)[(r, col)].clone();
+            sink_cix += 1;
+          }
+          sink_cix = 0;
+          sink_rix += 1;
+        }
+      }
+    }
+  };}
+
 macro_rules! impl_access_range_range_arms {
   ($fxn_name:ident, $shape:tt, $arg:expr, $value_kind:ident, $value_string:tt) => {
     paste!{
@@ -1287,6 +1306,33 @@ macro_rules! impl_access_range_range_arms {
             },
           }
         },
+         #[cfg(all(feature = $value_string, feature = "vectord", feature = "logical_indexing"))]
+        (Value::[<Matrix $value_kind:camel>](Matrix::$shape(source)),[Value::MatrixBool(Matrix::DVector(ix1)), Value::MatrixIndex(Matrix::DVector(ix2))]) => {
+          let cols = ix2.borrow().len();
+          let rows = ix1.borrow().iter().filter(|x| **x).count();
+          match (cols, rows) {
+            #[cfg(feature = "matrixd")]
+            (1, 1) => {
+              register_assign_srr_bu2!([<$fxn_name VBU>], $value_kind, $value_string, DMatrix, $shape, DVector, DVector);
+              box_mech_fxn(Ok(Box::new([<$fxn_name VBU>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DMatrix::from_element(1, 1, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+            },
+            #[cfg(feature = "vectord")]
+            (1, _) => {
+              register_assign_srr_bu2!([<$fxn_name VBU>], $value_kind, $value_string, DVector, $shape, DVector, DVector);
+              box_mech_fxn(Ok(Box::new([<$fxn_name VBU>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DVector::from_element(rows, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+            },
+            #[cfg(feature = "row_vectord")]
+            (_, 1) => {
+              register_assign_srr_bu2!([<$fxn_name VBU>], $value_kind, $value_string, RowDVector, $shape, DVector, DVector);
+              box_mech_fxn(Ok(Box::new([<$fxn_name VBU>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(RowDVector::from_element(cols, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+            },
+            #[cfg(feature = "matrixd")]
+            _ => {
+              register_assign_srr_bu2!([<$fxn_name VBU>], $value_kind, $value_string, DMatrix, $shape, DVector, DVector);
+              box_mech_fxn(Ok(Box::new([<$fxn_name VBU>] { source: source.clone(), ixes: (ix1.clone(), ix2.clone()), sink: Ref::new(DMatrix::from_element(rows, cols, $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+            },
+          }
+        }
         x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
       }
     }
@@ -1294,7 +1340,7 @@ macro_rules! impl_access_range_range_arms {
 }
 
 impl_assign_range_range_fxn_v!(Access2DRRVBB, access_2d_range_range_vbb, bool,  bool);
-//impl_assign_range_range_fxn_v!(Access2DRRVBU, access_2d_range_range_vbu, bool,  usize);
+impl_assign_range_range_fxn_v!(Access2DRRVBU, access_2d_range_range_vbu, bool,  usize);
 impl_assign_range_range_fxn_v!(Access2DRRVUU, access_2d_range_range_vuu, usize, usize);
 impl_assign_range_range_fxn_v!(Access2DRRVUB, access_2d_range_range_vub, usize, bool);
 
