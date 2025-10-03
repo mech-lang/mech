@@ -1,7 +1,7 @@
 [package]
 name = "mech-math"
 version = "0.2.59"
-authors = ["Corey Montella <corey@mech-lang.org>"]
+authors = ["Corey Montella <corey@mech-lang.org>", "Steven McPhillimey <slm526@lehigh.edu>", "Liam Messinger <ljm426@lehigh.edu>", "Natalie Dumler <nad326@lehigh.edu>"]
 description = "Math library for the Mech language"
 documentation = "http://docs.mech-lang.org"
 homepage = "https://mech-lang.org"
@@ -22,13 +22,13 @@ crate-type = ["rlib"]
 no_std = ["mech-core/no_std"]
 
 default = ["stdlib", "pretty_print", "serde", "compiler", "program",
-            "ops_default", "ops_assign_default", "trig_default",
+            "math_default",
             "statements_default", "subscript_default",
             "mech-core/default",      
           ]
 
 base = ["baselib", "pretty_print", "serde", "compiler", "program",
-      "ops_default", "ops_assign_default", "trig_default",
+      "math_default",
       "statements_default", "subscript_default",
       "mech-core/base",
       ]   
@@ -46,19 +46,95 @@ baselib = ["bool", "string",
       "mech-core/baselib",
     ]
 
-math_default = ["ops_default", "ops_assign_default", "trig_default"]
+arithmetic_default = ["copysign", "fabs", "fdim", "fmod", "nextafter", "remainder"]
+bessel_default = ["j0", "j1", "jn", "y0", "y1", "yn"]
+exponential_default = ["exponential", "exp2", "exp10", "expm1"]
+extrema_default = ["fmax", "fmaximum", "fmaximum_num", "fmin", "fminimum", "fminimum_num"]
+gamma_default = ["lgamma", "tgamma"]
+logarithm_default = ["log", "log1p", "log10", "log2"]
 ops_default = ["add", "sub", "mul", "div", "exp", "mod"]
 ops_assign_default = ["add_assign", "sub_assign", "mul_assign", "div_assign"]
-trig_default = ["acos", "acosh", "acot", "acsc", "asec", "asin", "asinh", "atan", "atan2", "atanh", "cos", "cosh", "cot", "csc", "sec", "sin", "sinh", "tan", "tanh"]
+root_default = ["cbrt", "sqrt"]
+rounding_default = ["ceil", "floor", "rint", "round", "roundeven", "trunc"]
+stat_error_default = ["erf", "erfc"]
+trig_default = ["acos", "acosh", "acot", "acsc", "asec", "asin", "asinh", "atan", "atan2", "atanh", "cos", "cosh", "cot", "csc", "hypot", "sec", "sin", "sinh", "tan", "tanh"]
+
+math_default = ["arithmetic_default", "bessel_default", "exponential_default", "extrema_default",
+            "gamma_default", "logarithm_default", "ops_default", "ops_assign_default",
+            "root_default", "rounding_default", "stat_error_default", "trig_default"] 
 
 math = ["num-traits", "libm", "functions"]
-trig = ["math"]
+arithmetic = ["math"]
+bessel = ["math"]
+exponential = ["math"]
+extrema = ["math"]
+gamma = ["math"]
+logarithm = ["math"]
 ops = ["math"]
 op_assign = ["math"]
+root = ["math"]
+rounding = ["math"]
+stat_error = ["math"]
+trig = ["math"]
 add_assign = ["op_assign"]
 sub_assign = ["op_assign"]
 mul_assign = ["op_assign"]
 div_assign = ["op_assign"]
+
+copysign = ["arithmetic"]
+fabs = ["arithmetic"]
+fdim = ["arithmetic"]
+fmod = ["arithmetic"]
+nextafter = ["arithmetic"]
+remainder = ["arithmetic"]
+
+j0 = ["bessel"]
+j1 = ["bessel"]
+jn = ["bessel"]
+y0 = ["bessel"]
+y1 = ["bessel"]
+yn = ["bessel"]
+
+exp2 = ["exponential"]
+exp10 = ["exponential"]
+expm1 = ["exponential"]
+
+fmax = ["extrema"]
+fmaximum = ["extrema"]
+fmaximum_num = ["extrema"]
+fmin = ["extrema"]
+fminimum = ["extrema"]
+fminimum_num = ["extrema"]
+
+lgamma = ["gamma"]
+tgamma = ["gamma"]
+
+log = ["logarithm"]
+log1p = ["logarithm"]
+log10 = ["logarithm"]
+log2 = ["logarithm"]
+
+add = ["ops"]
+div = ["ops"]
+exp = ["ops", "mech-core/math_exp"]
+mod = ["ops"]
+mul = ["ops"]
+neg = ["simba", "ops"]
+sub = ["ops"]
+
+cbrt = ["root"]
+sqrt = ["root"]
+
+ceil = ["rounding"]
+floor = ["rounding"]
+rint = ["rounding"]
+round = ["rounding"]
+roundeven = ["rounding"]
+trunc = ["rounding"]
+
+erf = ["stat_error"]
+erfc = ["stat_error"]
+
 acos = ["trig"]
 acosh = ["trig"]
 acot = ["trig"]
@@ -73,18 +149,13 @@ cos = ["trig"]
 cosh = ["trig"]
 cot = ["trig"]
 csc = ["trig"]
+hypot = ["trig"]
 sec = ["trig"]
 sin = ["trig"]
 sinh = ["trig"]
 tan = ["trig"]
 tanh = ["trig"]
-add = ["ops"]
-sub = ["ops"]
-mul = ["ops"]
-div = ["ops"]
-exp = ["ops", "mech-core/math_exp"]
-mod = ["ops"]
-neg = ["simba","ops"]
+
 
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]

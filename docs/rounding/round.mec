@@ -1,0 +1,85 @@
+math/round
+===============================================================================
+
+%% Round to nearest integer (half away from zero)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/round(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Rounds each element of the input to the nearest integer value, with halfway
+cases rounded **away from zero**.
+
+$$ y = \mathrm{round}(x)
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                         | Description |
+|----------|------------------------------|-------------|
+| `X`      | `float`, `[float]`, `matrix` | Real-valued input(s). Supported scalar types are `f64` and `f32`, and their vector/matrix forms. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind             | Description |
+|----------|------------------|-------------|
+| `Y`      | matches input    | `X` rounded to the nearest integer (as a float), elementwise. Shape and precision match the input. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Scalar value
+
+```mech:ex1
+y := math/round(3.7)            
+```
+
+(b) Negative input
+
+```mech:ex2
+y := math/round(-2.3)           
+```
+
+(c) Halfway case
+
+```mech:ex3
+y := math/round(2.5)            
+y := math/round(-2.5)           
+```
+
+(d) Vector input
+
+```mech:ex4
+x := [1.2, 2.5, -3.7]
+y := math/round(x)              
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+- **Definition:** `round(x)` rounds `x` to the nearest integer, returning a float.
+- **Rounding rule:** Halfway cases (`x.5`) are rounded **away from zero**.
+- **Domain:** All real values are valid inputs.
+- **Special cases:**
+  - `round(±∞) = ±∞`
+  - `round(NaN) = NaN`
+- **Shapes & types:** Scalars map to scalars; vectors/matrices are computed elementwise with the same shape.
+
+7. Notes for Implementers
+-------------------------------------------------------------------------------
+
+Backed by Rust/libm `round` (f64) and `roundf` (f32). Implementations dispatch
+across scalar, vector, and matrix variants. Behavior is defined to match IEEE‑754
+"round half away from zero".
+
+8. See also
+-------------------------------------------------------------------------------
+
+`math/rint`, `math/floor`, `math/ceil`, `math/trunc`

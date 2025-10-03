@@ -1,0 +1,69 @@
+math/jn
+===============================================================================
+
+%% Bessel function of the first kind, integer order n
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/jn(N, X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the Bessel function of the first kind of integer order `N` for each element of `X`.  
+The result `Y` has the same shape as the input `X`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind               | Description |
+|----------|--------------------|-------------|
+| `N`      | `int`, `[int]`     | The order of the Bessel function. Must be an integer. |
+| `X`      | `float`, `[float]` | Input value(s). Can be real. For complex inputs, the function may not be defined. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind          | Description |
+|----------|---------------|-------------|
+| `Y`      | matches input | The Bessel function of the first kind of order `N`, evaluated at each element of `X`. The shape of `Y` matches the shape of `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Compute jn of order 0
+
+```mech:ex1
+y := math/jn(0, 1.0)
+```
+
+(b) Compute jn of order 2 for a vector of numbers
+
+```mech:ex2
+x := [0.0, 1.0, 2.0]
+y := math/jn(2, x)
+```
+
+(c) Compute jn of order 3 for a matrix of numbers
+
+```mech:ex3
+x := [0.0, 1.0; 2.0 3.0]
+y := math/jn(3, x)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The Bessel functions of the first kind, denoted $$J_n(x)$$, are solutions to Bessel's differential equation:
+
+$$ x^2 y'' + x y' + (x^2 - n^2)y = 0
+
+For integer order `n`, the function can be expressed as a power series:
+
+$$ J_n(x) = \sum_{m=0}^{\infty} \frac{(-1)^m}{m!(n+m)!} \left( \frac{x}{2} \right)^{2m+n}
+
+These functions are widely used in applied mathematics, especially in problems involving cylindrical or spherical symmetry, such as waveguides, heat conduction, and vibrations.
+

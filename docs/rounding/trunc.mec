@@ -1,0 +1,85 @@
+math/trunc
+===============================================================================
+
+%% Truncate toward zero
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/trunc(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Truncates each element of the input toward zero by discarding its fractional
+part. The result is the integer portion of the number, returned as a float.
+
+$$ y = \mathrm{trunc}(x)
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                         | Description |
+|----------|------------------------------|-------------|
+| `X`      | `float`, `[float]`, `matrix` | Real-valued input(s). Supported scalar types are `f64` and `f32`, and their vector/matrix forms. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind             | Description |
+|----------|------------------|-------------|
+| `Y`      | matches input    | `X` with fractional part removed (toward zero). Shape and precision match the input. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Scalar value
+
+```mech:ex1
+y := math/trunc(3.7)           
+```
+
+(b) Negative input
+
+```mech:ex2
+y := math/trunc(-2.3)         
+```
+
+(c) Integer input
+
+```mech:ex3
+y := math/trunc(5.0)           
+```
+
+(d) Vector input
+
+```mech:ex4
+x := [1.2, 2.9, -3.7]
+y := math/trunc(x)             
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+- **Definition:** `trunc(x)` returns the nearest integer toward zero.
+- **Rounding rule:** Always removes the fractional part without regard to sign.
+- **Domain:** All real values are valid inputs.
+- **Special cases:**
+  - `trunc(±∞) = ±∞`
+  - `trunc(NaN) = NaN`
+- **Shapes & types:** Scalars map to scalars; vectors/matrices are computed
+  elementwise with the same shape.
+
+7. Notes for Implementers
+-------------------------------------------------------------------------------
+
+Backed by Rust/libm `trunc` (f64) and `truncf` (f32). Implementations dispatch
+across scalar, vector, and matrix variants. Matches IEEE‑754 behavior for
+truncate‑toward‑zero.
+
+8. See also
+-------------------------------------------------------------------------------
+
+`math/floor`, `math/ceil`, `math/rint`, `math/round`, `math/roundeven`

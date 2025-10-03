@@ -1,0 +1,78 @@
+math/sincos
+===============================================================================
+
+%% Sine and cosine of argument in radians (element-wise)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+S, C := math/sincos(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes **both** the sine and cosine of each element of `X` in a single pass.
+The input `X` is interpreted in **radians**. The results `S` (sine) and `C` (cosine)
+have the same shape as `X`. This is a unary, element‑wise operation and uses
+efficient kernels for vectors and matrices.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                          | Description                                                                 |
+|----------|-------------------------------|-----------------------------------------------------------------------------|
+| `X`      | `f32`, `f64`, `[float]`, `[[float]]` | Input angle(s) specified in radians.                                        |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind          | Description                                                                 |
+|----------|---------------|-----------------------------------------------------------------------------|
+| `S`      | matches input | Sine of the input values, element‑wise.                                     |
+| `C`      | matches input | Cosine of the input values, element‑wise.                                   |
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(a) Sine and cosine of a number (radians)
+
+```mech:ex1
+s, c := math/sincos(3.141592653589793/2)   // s ≈ 1, c ≈ 0
+```
+
+(b) Vector input
+
+```mech:ex2
+x := [0.0, 1.57079632679, 3.14159265359]
+s, c := math/sincos(x)
+```
+
+(c) Matrix input
+
+```mech:ex3
+x := [0.0, 0.78539816339; 1.57079632679, 3.14159265359]
+s, c := math/sincos(x)
+```
+
+(d) Degrees to radians helper
+
+```mech:ex4
+deg := [0.0, 30.0, 60.0, 90.0]
+rad := deg * 3.141592653589793 / 180.0
+s, c := math/sincos(rad)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+- **Element‑wise semantics.** For arrays, both sine and cosine are computed per element. Shapes of `S` and `C` match the shape of `X`.
+- **Units.** `X` is in radians. Convert degrees using `pi/180` as shown in the examples.
+- **Types.** Implemented for `f32` and `f64` (`sincosf`/`sincos` from platform libm). Other numeric types are not supported.
+- **Numerics.**
+  - Periodicity: `sin(x + 2πk) = sin(x)`, `cos(x + 2πk) = cos(x)` for integer `k`.
+  - Special values follow IEEE‑754: `NaN` propagates; large magnitudes may lose precision.
+  - Identities hold element‑wise: `sin^2(x) + cos^2(x) = 1` (subject to rounding).
+- **Performance.** Computes both values together to reduce overhead versus calling sine and cosine separately.
+
