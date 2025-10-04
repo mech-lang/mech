@@ -1,0 +1,25 @@
+logic
+===============================================================================
+
+1. Description
+-------------------------------------------------------------------------------
+
+This machine provides functions for logical operations such as AND, OR, NOT, and XOR.
+
+2. Provided Functions
+-------------------------------------------------------------------------------
+
+- `logic/and`
+- `logic/or`
+- `logic/not`
+- `logic/xor`
+
+3. Info
+-------------------------------------------------------------------------------
+
+logic/machine := {
+  name: "logic" 
+  version: "v0.2.60"
+  authors: ["Corey Montella"] 
+  machine-url: "https://gitlab.com/mech-lang/machines/logic"
+  license: "Apache-2.0"}
