@@ -1,0 +1,24 @@
+matrix
+===============================================================================
+
+1. Description
+-------------------------------------------------------------------------------
+
+Provides standard matrix functions.
+
+2. Provided Functions
+-------------------------------------------------------------------------------
+
+- `matrix/multiply`
+- `matrix/transpose`
+- `matrix/dot`
+
+3. Info
+-------------------------------------------------------------------------------
+
+matrix/machine = {
+  name: "matrix" 
+  version: "v0.2.60"
+  authors: ["Corey Montella"] 
+  machine-url: "https://gitlab.com/mech-lang/machines/matrix"
+  license: "Apache-2.0"}

@@ -1,0 +1,93 @@
+math/tgamma
+===============================================================================
+
+%% Gamma function (Γ)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/tgamma(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the **Gamma function** Γ(X), elementwise. For positive integers `n`,
+Γ(n) = (n-1)!. The Gamma function extends the factorial to non-integers and
+continuous values.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                         | Description |
+|----------|------------------------------|-------------|
+| `X`      | `float`, `[float]`, `matrix` | Real-valued input(s). Supported scalar types are `f64` and `f32`, and their vector/matrix forms. Complex inputs are **not** supported. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind             | Description |
+|----------|------------------|-------------|
+| `Y`      | matches input    | Γ(X), computed elementwise. Shape and (floating) precision match the input. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Scalar value
+
+```mech:ex1
+y := math/tgamma(5.0)           
+```
+
+(b) Vector input
+
+```mech:ex2
+x := [1.0, 2.0, 3.0, 4.0]
+y := math/tgamma(x)             
+```
+
+(c) Matrix input
+
+```mech:ex3
+x := [0.5, 1.5; 2.5, 3.5]
+y := math/tgamma(x)             
+```
+
+(d) Non-integer input
+
+```mech:ex4
+y := math/tgamma(0.5)          
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+- **Definition:** Γ(x) = ∫₀^∞ t^(x-1) e^(-t) dt for Re(x) > 0, extended by analytic continuation elsewhere (except poles).
+
+- **Factorial relation:** Γ(n) = (n-1)! for positive integers n.
+
+- **Domain & special cases:**
+  - Poles at non-positive integers: Γ(0), Γ(-1), Γ(-2), ... diverge to ±∞.
+  - Γ(0.5) = √π, Γ(1) = 1, Γ(2) = 1, Γ(3) = 2.
+  - For x < 0 and not integer, Γ(x) can be finite but alternates in sign.
+  - If `x` is `NaN`, result is `NaN`. For `+∞`, Γ(+∞) = +∞. For `-∞`, result is `NaN`.
+
+- **Shapes & types:** Scalars map to scalars; vectors/matrices are computed elementwise with the same shape. Implementations exist for `f64` (`tgamma`) and `f32` (`tgammaf`). Mixed precision is not allowed—cast beforehand.
+
+- **Numerical stability:** Γ(x) grows very quickly. For large inputs, consider using `math/lgamma` to work in log-space to avoid overflow.
+
+- **Performance:** Vector and matrix forms loop elementwise. For large arrays, contiguous memory improves cache locality.
+
+7. Notes for Implementers
+-------------------------------------------------------------------------------
+
+Backed by Rust/libm `tgamma` (f64) and `tgammaf` (f32). This codebase dispatches
+across scalar, vector, and matrix variants; each computes Γ(x) elementwise and
+returns an output of the same shape and precision as the input.
+
+8. See also
+-------------------------------------------------------------------------------
+
+`math/lgamma` (log-gamma), `math/factorial`, `math/log`.
+

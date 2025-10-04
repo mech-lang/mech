@@ -1,0 +1,67 @@
+math/y0
+===============================================================================
+
+%% Bessel function of the second kind (order 0)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/y0(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the Bessel function of the second kind of order 0, denoted as `Y₀(x)`, for each element of `X`.  
+The result `Y` has the same shape as the input `X`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind               | Description                                                                 |
+|----------|--------------------|-----------------------------------------------------------------------------|
+| `X`      | `float`, `[float]` | Input value(s). Must be real. Values should be positive since `Y₀(x)` is undefined at zero or negative values. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind          | Description                                                                 |
+|----------|---------------|-----------------------------------------------------------------------------|
+| `Y`      | matches input | Bessel function of the second kind of order 0 evaluated at the input values. The shape of `Y` matches the shape of `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Compute Y₀ of a number
+
+```mech:ex1
+y := math/y0(1.0)
+```
+
+(b) Compute Y₀ for a vector of numbers
+
+```mech:ex2
+x := [0.5, 1.0, 2.0]
+y := math/y0(x)
+```
+
+(c) Compute Y₀ for a matrix of numbers
+
+```mech:ex3
+x := [0.5, 1.0; 2.0, 3.0]
+y := math/y0(x)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The Bessel functions of the second kind, `Y0(x)`, also known as **Neumann functions** or **Weber functions**, are solutions to Bessel's differential equation:
+
+$$x^2 y'' + x y' + (x^2 - u^2)y = 0
+
+for order `ν = 0`.
+
+Unlike Bessel functions of the first kind `J₀(x)`, which are finite at the origin, `Y₀(x)` diverges as `x → 0`.  
+These functions are important in solving problems with cylindrical symmetry, such as wave propagation and static potentials.
+

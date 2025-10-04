@@ -1,0 +1,83 @@
+math/acsc
+===============================================================================
+
+%% Arc cosecant of argument in radians
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/acsc(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the arc cosecant (inverse cosecant) of each element of `X`. The input `X` is interpreted as a numeric value. The result `Y` has the same shape as the input `X`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `X`      | `float`, `[float]`       | Input value(s). Can be real or complex. For real inputs, values must satisfy `|X| >= 1`. For complex inputs, results are computed accordingly. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `Y`      | matches input            | Arc cosecant of the input values, expressed in radians. For real inputs, results are in the range `[-π/2, π/2]` excluding `0`. The shape of `Y` matches the shape of `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Find the arc cosecant of a number 
+
+```mech:ex1
+y := math/acsc(2.0)
+```
+
+(b) Find the arc cosecant for a vector of numbers
+
+```mech:ex2
+x := [1, -2, 10]
+y := math/acsc(x)
+```
+
+(c) Find the arc cosecant for a matrix of numbers
+
+```mech:ex3
+x := [2, -3; 4, -5]
+y := math/acsc(x)
+```
+
+(d) Relationship with asin
+
+```mech:ex4
+x := [2, 3, 4]
+y := math/acsc(x)  # equivalent to asin(1/x)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The arc cosecant (inverse cosecant) function returns the angle whose cosecant is the specified value.
+
+For real numbers $$x$$ with $$|x| \geq 1$$:
+
+$$ y = acsc(x)
+
+means $$ csc(y) = x $$, with $$ y \in [-\pi/2, \pi/2] $$ and $$ y \neq 0 $$.
+
+It can be expressed in terms of arcsine:
+
+$$ acsc(x) = asin(1/x)
+
+for $$x \neq 0$$.
+
+For complex numbers, arc cosecant can be expressed as:
+
+$$ acsc(z) = -i \ln \left( \frac{i}{z} + \sqrt{1 - \frac{1}{z^2}} \right)
+
+This definition extends the function beyond real numbers, allowing it to handle complex inputs.

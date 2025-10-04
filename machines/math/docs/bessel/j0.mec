@@ -1,0 +1,70 @@
+math/j0
+===============================================================================
+
+%% Bessel function of the first kind, order 0
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/j0(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the Bessel function of the first kind of order 0, `J₀(x)`, for each element of `X`.  
+This special function frequently appears in solutions to differential equations with cylindrical symmetry, such as heat conduction, wave propagation, and signal processing.
+
+The function is defined as:
+
+$$ J_0(x) = \sum_{m=0}^{\infty} \frac{(-1)^m}{(m!)^2} \left( \frac{x}{2} \right)^{2m}
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind               | Description                         |
+|----------|--------------------|-------------------------------------|
+| `X`      | `float`, `[float]` | Input value(s), real. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind               | Description                                    |
+|----------|--------------------|------------------------------------------------|
+| `Y`      | matches input      | Values of the Bessel function of order 0 at each input point. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Compute the Bessel J0 function of a number
+
+```mech:ex1
+y := math/j0(0.0)
+```
+
+(b) Compute the J0 function for a vector of numbers
+
+```mech:ex2
+x := [0.0, 1.0, 2.0, 3.0]
+y := math/j0(x)
+```
+
+(c) Compute the J0 function for a matrix
+
+```mech:ex3
+x := [0.0, 2.0; 4.0, 6.0]
+y := math/j0(x)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+- $$J0(0) = 1$$
+- $$J0(x)$$ oscillates and decays in amplitude as $$x → ∞$$.
+- Useful in physics and engineering applications involving cylindrical symmetry.
+
+Special cases:
+
+- $$j0(±∞) = 0$$
+- $$j0(NaN) = NaN$$
