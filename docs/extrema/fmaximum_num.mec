@@ -1,0 +1,86 @@
+math/fmaximum_num
+===============================================================================
+
+%% Elementwise maximum, IEEE-754 maximumNumber semantics
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Z := math/fmaximum_num(X, Y)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Returns the elementwise maximum of `X` and `Y`. The result `Z` has the same
+shape as the inputs. This function follows IEEE‑754 *maximumNumber* semantics:
+if exactly one argument is `NaN`, the other argument is returned; if both are
+`NaN`, the result is `NaN`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                               | Description |
+|----------|------------------------------------|-------------|
+| `X`      | `float`, `[float]`, `matrix`       | First input. Accepts real or complex *numeric* types supported by the runtime; common cases are `f64`, `f32`, and their vector/matrix forms. |
+| `Y`      | `float`, `[float]`, `matrix`       | Second input. Must match the shape and type of `X`. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind             | Description |
+|----------|------------------|-------------|
+| `Z`      | matches input    | Elementwise maximum of `X` and `Y`. Shape and type match `X`/`Y`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Maximum of two numbers
+
+```mech:ex1
+z := math/fmaximum_num(2.5, 7.0) 
+```
+
+(b) Elementwise maximum for vectors
+
+```mech:ex2
+x := [1.0, 5.0, -3.0]
+y := [4.0, 2.0, -7.0]
+z := math/fmaximum_num(x, y)       
+```
+(c) Elementwise maximum for a matrix
+
+```mech:ex3
+a := [1.0, -2.0; 3.5, 0.0]
+b := [0.5, -3.0; 2.0, 4.0]
+z := math/fmaximum_num(a, b)        
+```
+
+(d) Behavior with NaN (maximumNumber semantics)
+
+```mech:ex4
+x := [NaN,  2.0, NaN]
+y := [1.0, NaN, NaN]
+z := math/fmaximum_num(x, y)       
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+- **Semantics:** Uses IEEE‑754 *maximumNumber* behavior. Unlike a plain comparison-based max, this treats `NaN` specially: if exactly one operand is `NaN`, the other is chosen; if both are `NaN`, the result is `NaN`. This avoids `NaN` contagion when only one side is invalid.
+
+- **Shapes:** `X` and `Y` must have identical shapes. Scalars with scalars, vectors with vectors, and matrices with matrices (same dimensions). The result `Z` matches the input shape.
+
+- **Types:** Backed by platform implementations of `fmaximum_num`/`fmaximum_numf` for `f64`/`f32`. Vector and matrix forms apply the same operation elementwise. Mixed-precision inputs are not allowed; cast beforehand if needed.
+
+- **Performance:** Vector and matrix forms loop over elements in place. For large arrays, prefer matching contiguous memory layouts to maximize locality.
+
+7. Notes for Implementers
+-------------------------------------------------------------------------------
+
+This operation corresponds to the Rust/libm functions `fmaximum_num` (f64)
+and `fmaximum_numf` (f32). In this codebase, dispatch is generated across
+scalar, vector, and matrix types; each variant performs the same elementwise
+maximum and returns an output of the same shape and type.
+

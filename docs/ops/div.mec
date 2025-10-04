@@ -1,0 +1,114 @@
+math/div
+===============================================================================
+
+%% Element-wise division
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/div(X1, X2)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Performs element-wise division of two numeric inputs. `X1` is divided by `X2`. Inputs may be scalars, vectors, or matrices. When one input is a scalar and the other is an array, the scalar is broadcast across the array. For vector-matrix and row/column operations, broadcasting follows the rules described in **Details**.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                                   | Description                                                                 |
+|----------|----------------------------------------|-----------------------------------------------------------------------------|
+| `X1`     | `int`, `uint`, `float`, `rational`, `complex`, `[T]`, `[[T]]` | Dividend. Supports element-wise division for scalars, vectors, and matrices. |
+| `X2`     | `int`, `uint`, `float`, `rational`, `complex`, `[T]`, `[[T]]` | Divisor. Must be shape-compatible with `X1` under the broadcasting rules.    |
+
+**Supported scalar types**: `i8`, `i16`, `i32`, `i64`, `i128`, `u8`, `u16`, `u32`, `u64`, `u128`, `f32`, `f64`, `rational` (R64), and `complex` (C64).
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind            | Description                                                                 |
+|----------|-----------------|-----------------------------------------------------------------------------|
+| `Y`      | matches input   | Element-wise quotient of `X1 / X2`. The shape of `Y` follows broadcasting.  |
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(a) Divide two scalars
+
+```mech:ex1
+y := math/div(10, 2)     // 5
+```
+
+(b) Divide two vectors
+
+```mech:ex2
+x1 := [10, 20, 30]
+x2 := [2, 4, 5]
+y  := math/div(x1, x2)   // [5, 5, 6]
+```
+
+(c) Divide two matrices
+
+```mech:ex3
+a := [10, 20; 30, 40]
+b := [2, 4; 5, 10]
+y := math/div(a, b)      // [5, 5; 6, 4]
+```
+
+(d) Divide a matrix by a scalar
+
+```mech:ex4
+a := [10, 20; 30, 40]
+y := math/div(a, 10)     // [1, 2; 3, 4]
+```
+
+(e) Divide a scalar by a matrix
+
+```mech:ex5
+m := [1, 2; 4, 5]
+y := math/div(100, m)    // [100, 50; 25, 20]
+```
+
+(f) Divide a matrix by a column vector (broadcast by columns)
+
+```mech:ex6
+m := [10, 20; 30, 40]     // 2x2
+v := [2, 5]               // column vector length 2
+y := math/div(m, v)       // [5, 10; 6, 8]
+```
+
+(g) Divide a row vector by a matrix (broadcast by rows)
+
+```mech:ex7
+r := [100, 200]
+m := [2, 4; 5, 10]
+y := math/div(r, m)       // [50, 50; 20, 20]
+```
+
+(h) Complex division
+
+```mech:ex8
+y := math/div(1+2i, 3-4i)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+**Element-wise semantics.** Division is performed element by element. Shapes must either match or be compatible under broadcasting.
+
+**Broadcasting rules.**
+- **Scalar ÷ Array or Array ÷ Scalar:** The scalar is broadcast across every element of the array.
+- **Matrix ÷ Column Vector (or Vector ÷ Matrix):** A length-`m` vector can divide an `m×n` matrix column-wise.
+- **Matrix ÷ Row Vector (or Row Vector ÷ Matrix):** A length-`n` vector can divide an `m×n` matrix row-wise.
+
+**Division by zero.** If an element of the divisor is zero, the result may be `Inf`, `NaN`, or raise an error depending on type and runtime.
+
+**Type support.** Implemented for signed/unsigned integers, floating-point, rationals, and complex numbers. Standard type promotions apply where supported.
+
+**Errors.**
+- Shape mismatch that cannot be resolved by broadcasting.
+- Division by zero in integer or rational contexts.
+- Unsupported type combination.
+

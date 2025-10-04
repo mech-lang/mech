@@ -1,0 +1,99 @@
+math/log1p
+===============================================================================
+
+%% Natural logarithm of (1 + x)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/log1p(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the **natural logarithm** of one plus the input, elementwise:
+
+$$ Y = \ln(1 + X).
+
+This function is more accurate than computing `log(1 + x)` directly when `x` is
+close to zero, reducing loss of precision.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                         | Description |
+|----------|------------------------------|-------------|
+| `X`      | `float`, `[float]`, `matrix` | Real-valued input(s). Supported scalar types are `f64` and `f32`, and their vector/matrix forms. Complex inputs are **not** supported. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind             | Description |
+|----------|------------------|-------------|
+| `Y`      | matches input    | Natural log of `(1 + X)`, computed elementwise. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Scalar value
+
+```mech:ex1
+y := math/log1p(0.0)           
+```
+
+(b) Small input (numerical stability)
+
+```mech:ex2
+x := 1e-9
+y := math/log1p(x)            
+```
+
+(c) Vector input
+
+```mech:ex3
+x := [0.0, 1.0, 9.0]
+y := math/log1p(x)            
+```
+
+(d) Matrix input
+
+```mech:ex4
+x := [0.0, 0.5; 1.0, 2.0]
+y := math/log1p(x)            
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+- **Definition:**  
+  $$ \ln(1 + x) = \int_1^{1+x} \frac{1}{t} dt, \quad x > -1. 
+
+- **Domain & special cases (real inputs):**
+  - `x > -1`: returns finite real value.
+  - `x = -1`: tends to `-∞`.
+  - `x < -1`: undefined (returns `NaN`).
+  - `log1p(∞) = ∞`, `log1p(0) = 0`.
+
+- **Numerical stability:** Directly computing `log(1 + x)` for very small `x`
+  may lose precision. `log1p(x)` avoids this by using a numerically stable
+  implementation.
+
+- **Shapes & types:** Scalars map to scalars; vectors/matrices are computed
+  elementwise. Implementations exist for `f64` (`log1p`) and `f32` (`log1pf`).
+
+- **Performance:** Vector and matrix paths loop over elements. For large arrays,
+  contiguous memory improves cache locality.
+
+7. Notes for Implementers
+-------------------------------------------------------------------------------
+
+Backed by Rust/libm `log1p` (f64) and `log1pf` (f32). This codebase dispatches
+across scalar, vector, and matrix variants; each computes the natural logarithm
+of `(1 + x)` elementwise and returns an output of the same shape and precision.
+
+8. See also
+-------------------------------------------------------------------------------
+
+`math/log`, `math/exp`, `math/expm1`.

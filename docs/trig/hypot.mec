@@ -1,0 +1,87 @@
+math/hypot
+===============================================================================
+
+%% Euclidean hypotenuse √(X1^2 + X2^2) (element-wise)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/hypot(X1, X2)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the Euclidean hypotenuse of pairs of values, element‑wise:
+`Y = √(X1^2 + X2^2)`. This is numerically stable and follows platform `libm`
+implementations (`hypotf` for `f32`, `hypot` for `f64`).
+
+Accepts scalars, vectors, and matrices of floating‑point values. For arrays,
+`X1` and `X2` **must have the same shape** (no broadcasting). The result `Y`
+has the same shape as the inputs.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                                   | Description                                        |
+|----------|----------------------------------------|----------------------------------------------------|
+| `X1`     | `f32`, `f64`, `[float]`, `[[float]]`   | First leg values.                                  |
+| `X2`     | `f32`, `f64`, `[float]`, `[[float]]`   | Second leg values. Must match the shape of `X1`.   |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind            | Description                                                     |
+|----------|-----------------|-----------------------------------------------------------------|
+| `Y`      | matches input   | Element‑wise `√(X1^2 + X2^2)`; same shape and dtype as inputs.  |
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(a) Scalars (distance from origin in 2D)
+
+```mech:ex1
+y := math/hypot(3.0, 4.0)         // 5.0
+```
+
+(b) Vectors (pairwise hypot)
+
+```mech:ex2
+x1 := [3.0,  5.0,  8.0]
+x2 := [4.0, 12.0, 15.0]
+y  := math/hypot(x1, x2)          // [5.0, 13.0, 17.0]
+```
+
+(c) Matrices (element‑wise)
+
+```mech:ex3
+a := [3.0,  1.0; 0.0,  5.0]
+b := [4.0,  2.0; 7.0, 12.0]
+y := math/hypot(a, b)
+```
+
+(d) Magnitude of 2D vectors laid out as rows
+
+```mech:ex4
+vx := [3.0, 0.0; 5.0, 8.0]        // x‑components
+vy := [4.0, 7.0; 12.0, 15.0]      // y‑components
+mag := math/hypot(vx, vy)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+- **Element‑wise semantics.** For arrays, computation is per element. Inputs must have
+  identical shapes; no broadcasting is performed.
+- **Types.** Implemented for `f32` and `f64` only (via `libm::hypotf` / `libm::hypot`).
+- **Numerical stability.** `hypot` reduces overflow/underflow relative to naive `sqrt(x*x + y*y)`,
+  especially for very large or very small magnitudes.
+- **Special values (IEEE‑754).**
+  - If either input is `±∞`, the result is `∞` (subject to platform rules).
+  - If either input is `NaN`, the result is `NaN`.
+  - Signs are ignored since squares are non‑negative.
+- **Common uses.** 2D vector magnitudes, Euclidean distances, stable norms for pairs.
+
+**Errors.** Wrong arity (expects exactly two arguments), shape mismatch for arrays, or unsupported dtype.
+

@@ -1,0 +1,89 @@
+math/ilogb
+===============================================================================
+
+%% Integer exponent of floating-point value
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/ilogb(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the **integer binary exponent** of the floating-point input, elementwise.  
+It effectively returns the exponent of `X` as if it were written in normalized scientific notation base 2:
+
+$$ X = m \, 2^e, \quad 1 \le |m| < 2, \quad Y = e.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                         | Description |
+|----------|------------------------------|-------------|
+| `X`      | `float`, `[float]`, `matrix` | Real-valued input(s). Supported scalar types are `f64` and `f32`, and their vector/matrix forms. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind             | Description |
+|----------|------------------|-------------|
+| `Y`      | `int` or array   | Integer exponent(s) corresponding to the unbiased exponent of `X`. Shape matches input. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Scalar value
+
+```mech:ex1
+y := math/ilogb(16.0)          
+```
+
+(b) Non-power of two
+
+```mech:ex2
+y := math/ilogb(20.0)           
+```
+
+(c) Vector input
+
+```mech:ex3
+x := [1.0, 2.0, 8.0, 10.0]
+y := math/ilogb(x)             
+```
+
+(d) Subnormal number
+
+```mech:ex4
+y := math/ilogb(1e-308)        
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+- **Definition:**  
+  $$ \text{ilogb}(x) = e, \quad \text{where } x = m \, 2^e, \; 1 \le |m| < 2. 
+
+- **Special cases:**
+  - `ilogb(0)` → implementation-defined large negative integer (commonly `INT_MIN`).
+  - `ilogb(±∞)` → returns a large positive integer (commonly `INT_MAX`).
+  - `ilogb(NaN)` → unspecified (often `INT_MIN` or error).
+
+- **Shapes & types:** Scalars map to integers; vectors/matrices are computed elementwise.  
+  Implementations exist for `f64` (`ilogb`) and `f32` (`ilogbf`).
+
+- **Performance:** Vector and matrix paths loop over elements.
+
+7. Notes for Implementers
+-------------------------------------------------------------------------------
+
+Backed by Rust/libm `ilogb` (f64) and `ilogbf` (f32). This codebase dispatches
+across scalar, vector, and matrix variants; each computes the integer exponent
+elementwise and returns an integer result of the same shape.
+
+8. See also
+-------------------------------------------------------------------------------
+
+`math/logb`, `math/frexp`, `math/ldexp`.

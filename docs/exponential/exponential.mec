@@ -1,0 +1,75 @@
+math/exponential
+===============================================================================
+
+%% Natural exponential e^x (element-wise)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/exponential(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the natural exponential of each element of `X`: `Y = e^X`.  
+Supports scalars, vectors, and matrices of 32‑bit or 64‑bit floating‑point numbers.  
+For arrays, the operation is **element‑wise** and preserves shape.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                    | Description                                   |
+|----------|-------------------------|-----------------------------------------------|
+| `X`      | `f32`, `f64`, `[float]`, `[[float]]` | Input value(s) to exponentiate.               |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind          | Description                                              |
+|----------|---------------|----------------------------------------------------------|
+| `Y`      | matches input | `e^X` computed element‑wise; same shape and dtype as `X` |
+
+5. Examples
+-------------------------------------------------------------------------------
+
+(a) Exponential of a scalar (f64)
+
+```mech:ex1
+y := math/exponential(1.0)        // ≈ 2.718281828...
+```
+
+(b) Exponential of a scalar (f32)
+
+```mech:ex2
+y := math/exponential(1.0f)       // 32‑bit float result
+```
+
+(c) Exponential of a vector
+
+```mech:ex3
+x := [-1.0, 0.0, 1.0]
+y := math/exponential(x)          // [e^-1, 1, e]
+```
+
+(d) Exponential of a matrix
+
+```mech:ex4
+m := [0.0, 1.0; 2.0, 3.0]
+y := math/exponential(m)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+- **Types:** Implemented for `f32` and `f64` using platform libm (`expf` for `f32`, `exp` for `f64`).  
+- **Element‑wise semantics:** Arrays are processed per element; shape is preserved. No broadcasting is involved (unary op).
+- **Numerics & special values (IEEE‑754):**
+  - Large positive inputs may overflow to `+Inf`.
+  - Large negative inputs may underflow to `+0.0` (subnormal or zero).
+  - `NaN` inputs propagate (`exp(NaN) = NaN`).
+  - `exp(+∞) = +∞`; `exp(-∞) = +0.0`.
+- **Performance:** Vectorized kernels iterate columns/rows efficiently for matrix inputs.
+- **Errors:** Wrong arity (expects exactly one argument) or unsupported dtype will raise an error.
+
