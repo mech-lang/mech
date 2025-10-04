@@ -89,7 +89,9 @@ impl CompileConst for Value {
       Value::MatrixValue(x) => x.compile_const(ctx)?,
       #[cfg(feature = "table")]
       Value::Table(x) => x.borrow().compile_const(ctx)?,
-      _ => todo!(),
+      #[cfg(feature = "record")]
+      Value::Record(x) => x.borrow().compile_const(ctx)?,
+      x => todo!("CompileConst not implemented for {:?}", x),
     };
     Ok(reg)
   }
