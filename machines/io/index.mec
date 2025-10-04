@@ -1,0 +1,23 @@
+io
+===============================================================================
+
+1. Description
+-------------------------------------------------------------------------------
+
+This machine provides functions for printing output to the console and getting input from the user.
+
+2. Provided Functions
+-------------------------------------------------------------------------------
+
+- `io/print`
+- `io/println`
+
+3. Info
+-------------------------------------------------------------------------------
+
+matrix/machine = {
+  name: "io" 
+  version: "v0.2.60"
+  authors: ["Corey Montella"] 
+  machine-url: "https://gitlab.com/mech-lang/machines/io"
+  license: "Apache-2.0"}
