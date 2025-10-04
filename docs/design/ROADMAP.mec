@@ -32,7 +32,7 @@ Target release date: ???
 -(🐓) feature complete
 -(🍗) deprecated
 
-(2.1) Data Specification
+(2.1) Data Specification (v0.2)
 
 -(🥚) language server
 -(🥚) enums
@@ -64,7 +64,7 @@ Target release date: ???
 -(🐓) variety of numerical datatypes
 -(🐓) flexible matrix type with fixed and dynamic sizes for homogeneous data
 
-(2.2) Program Specification
+(2.2) Program Specification (v0.3)
 
 -(💭) state machines
 -(💭) automatic differentiation
@@ -73,13 +73,14 @@ Target release date: ???
 -(🥚) file/parameter server
 -(🥚) self-contained binary executables
 -(🥚) time travel debugging
+-(🐣) bytecode interpreter
 -(🐣) user defined functions
 -(🐣) tests
 -(🐣) profiler
 -(🐣) gui
 -(🐣) live coding
 
-(2.3) System specification
+(2.3) System specification (v0.4)
 
 -(💭) gpgpu
 -(🐣) capability permissions
