@@ -1,6 +1,6 @@
 [package]
 name = "mech-syntax"
-version = "0.2.59"
+version = "0.2.60"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "A toolchain for compiling textual syntax into Mech blocks."
 documentation = "http://docs.mech-lang.org"
@@ -25,6 +25,11 @@ default = ["stdlib", "pretty_print", "serde", "compiler", "program",
             "formatter",
             "mech-core/default",
           ]
+base = ["baselib", "pretty_print", "serde", "compiler", "program",
+      "statements_default", "subscript_default",
+      "formatter",
+      "mech-core/base",
+      ]          
 formatter = []
 
 statements_default = ["variable_assign","variable_define","kind_define"]
@@ -45,6 +50,19 @@ stdlib = ["bool", "string",
           "kind_annotation", "variables",
           "functions", "formulas"
         ]
+
+baselib = ["bool", "string", 
+      "f64", "c64", "r64",
+      "set", "map", "table", "tuple", "record", "atom", "enum",
+      "row_vectord", "vectord", "matrixd",
+      "subscript_range", "logical_indexing", 
+      "subscript_formula",
+      "variable_define", "variable_assign", 
+      "kind_define",
+      "kind_annotation", "variables",
+      "functions", "formulas",
+      "mech-core/baselib"
+    ]
 
 compiler = ["mech-core/compiler"]
 program = ["mech-core/program"]
@@ -101,21 +119,21 @@ fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2", "mech-core/fixe
 fixed_vector = ["vector4", "vector3", "vector2", "mech-core/fixed_vector"]
 fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "mech-core/fixed_matrix"]
 dynamic_matrix = ["matrixd", "vectord", "row_vectord", "mech-core/dynamic_matrix"]
-row_vector4 = ["dynamic_matrix","matrix", "mech-core/row_vector4"]
-row_vector3 = ["dynamic_matrix","matrix", "mech-core/row_vector3"]
-row_vector2 = ["dynamic_matrix","matrix", "mech-core/row_vector2"]
-vector4 = ["dynamic_matrix","matrix", "mech-core/vector4"]
-vector3 = ["dynamic_matrix","matrix", "mech-core/vector3"]
-vector2 = ["dynamic_matrix","matrix", "mech-core/vector2"]
-matrix4 = ["dynamic_matrix","matrix", "mech-core/matrix4"]
-matrix3 = ["dynamic_matrix","matrix", "mech-core/matrix3"]
-matrix2 = ["dynamic_matrix","matrix", "mech-core/matrix2"]
-matrix1 = ["dynamic_matrix","matrix", "mech-core/matrix1"]
-matrix2x3 = ["dynamic_matrix","matrix", "mech-core/matrix2x3"]
-matrix3x2 = ["dynamic_matrix","matrix", "mech-core/matrix3x2"]
-row_vectord =["matrix", "dynamic_matrix", "mech-core/row_vectord"]
-vectord = ["matrix", "dynamic_matrix", "mech-core/vectord"]
-matrixd = ["matrix", "dynamic_matrix", "mech-core/matrixd"]
+row_vector4 = ["matrix", "mech-core/row_vector4"]
+row_vector3 = ["matrix", "mech-core/row_vector3"]
+row_vector2 = ["matrix", "mech-core/row_vector2"]
+vector4 = ["matrix", "mech-core/vector4"]
+vector3 = ["matrix", "mech-core/vector3"]
+vector2 = ["matrix", "mech-core/vector2"]
+matrix4 = ["matrix", "mech-core/matrix4"]
+matrix3 = ["matrix", "mech-core/matrix3"]
+matrix2 = ["matrix", "mech-core/matrix2"]
+matrix1 = ["matrix", "mech-core/matrix1"]
+matrix2x3 = ["matrix", "mech-core/matrix2x3"]
+matrix3x2 = ["matrix", "mech-core/matrix3x2"]
+row_vectord =["matrix",  "mech-core/row_vectord"]
+vectord = ["matrix",  "mech-core/vectord"]
+matrixd = ["matrix",  "mech-core/matrixd"]
 
 # Subscripts
 subscript = ["mech-core/subscript"]
@@ -133,7 +151,7 @@ matrix_vertcat = ["matrix"]
 
 
 [dependencies]
-mech-core = {version = "0.2.59", default-features = false}
+mech-core = {version = "0.2.60", default-features = false}
 
 hashbrown = "0.15.5"
 nom = "7.1.3"

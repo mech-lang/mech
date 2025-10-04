@@ -160,9 +160,12 @@ pub fn mech_code(code: &MechCode, p: &Interpreter) -> MResult<Value> {
     //MechCode::FsmImplementation(_) => todo!(),
     #[cfg(feature = "functions")]
     MechCode::FunctionDefine(fxn_def) => {
+      todo!();
+      /*
       let usr_fxn = function_define(&fxn_def, p)?;
       p.state.borrow_mut().insert_function(usr_fxn);
       Ok(Value::Empty)
+      */
     },
     MechCode::Comment(cmmt) => comment(&cmmt, p),
     x => Err(MechError{file: file!().to_string(), tokens: x.tokens(), msg: format!("Feature not enabled {:?}", x), id: line!(), kind: MechErrorKind::None}),

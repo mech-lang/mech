@@ -28,7 +28,16 @@ macro_rules! impl_col_access_fxn {
     #[cfg(feature = "compiler")]
     impl MechFunctionCompiler for $fxn_name {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
+        let mut registers = [0, 0];
+        registers[0] = compile_register_brrw!(self.out, ctx);
+        registers[1] = compile_register!(self.source, ctx);
+        ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Access));
+        ctx.emit_unop(
+          hash_str(stringify!($fxn_name)),
+          registers[0],
+          registers[1],
+        );
+        Ok(registers[0])
       }
     }
   }
@@ -80,9 +89,9 @@ impl_col_access_fxn_shapes!(F64);
 #[cfg(all(feature = "string", feature = "matrix"))]
 impl_col_access_fxn_shapes!(String);
 #[cfg(all(feature = "complex", feature = "matrix"))]
-impl_col_access_fxn_shapes!(ComplexNumber);
+impl_col_access_fxn_shapes!(C64);
 #[cfg(all(feature = "rational", feature = "matrix"))]
-impl_col_access_fxn_shapes!(RationalNumber);
+impl_col_access_fxn_shapes!(R64);
 
 macro_rules! impl_access_column_table_match_arms {
   ($arg:expr, $($lhs_type:ident, $($default:expr, $type_string:tt),+);+ $(;)?) => {
@@ -131,8 +140,8 @@ fn impl_access_column_table_fxn(source: Value, key: Value) -> Result<Box<dyn Mec
     F32,F32::default(),"f32";
     F64,F64::default(),"f64";
     String,String::default(),"string";
-    ComplexNumber,ComplexNumber::default(),"complex";
-    RationalNumber,RationalNumber::default(),"rational";
+    C64,C64::default(),"complex";
+    R64,R64::default(),"rational";
   )
 }
 
@@ -173,7 +182,14 @@ impl MechFunctionImpl for TableAccessSwizzle {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAccessSwizzle {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0];
+    registers[0] = compile_register!(self.out, ctx);
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Swizzle));
+    ctx.emit_nullop(
+      hash_str("TableAccessSwizzle"),
+      registers[0],
+    );
+    Ok(registers[0])
   }
 }
 
@@ -202,7 +218,23 @@ impl MechFunctionImpl for TableAccessScalarF {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAccessScalarF {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0,0,0];
+    
+    registers[0] = compile_register_brrw!(self.out,  ctx);
+    registers[1] = compile_register_brrw!(self.source, ctx);
+    registers[2] = compile_register_brrw!(self.ix, ctx);
+
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Table));
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Access));
+
+    ctx.emit_binop(
+      hash_str(stringify!("TableAccessScalarF")),
+      registers[0],
+      registers[1],
+      registers[2],
+    );
+
+    return Ok(registers[0])
   }
 }
 
@@ -272,7 +304,23 @@ impl MechFunctionImpl for TableAccessRangeIndex {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAccessRangeIndex {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0,0,0];
+    
+    registers[0] = compile_register_brrw!(self.out,  ctx);
+    registers[1] = compile_register_brrw!(self.source, ctx);
+    registers[2] = compile_register_brrw!(self.ix, ctx);
+
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Table));
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::SubscriptRange));
+
+    ctx.emit_binop(
+      hash_str(stringify!("TableAccessRangeIndex")),
+      registers[0],
+      registers[1],
+      registers[2],
+    );
+
+    return Ok(registers[0])
   }
 }
 
@@ -315,7 +363,23 @@ impl MechFunctionImpl for TableAccessRangeBool {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAccessRangeBool {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0,0,0];
+    
+    registers[0] = compile_register_brrw!(self.out,  ctx);
+    registers[1] = compile_register_brrw!(self.source, ctx);
+    registers[2] = compile_register_brrw!(self.ix, ctx);
+
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Table));
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::LogicalIndexing));
+
+    ctx.emit_binop(
+      hash_str(stringify!("TableAccessRangeBool")),
+      registers[0],
+      registers[1],
+      registers[2],
+    );
+
+    return Ok(registers[0])
   }
 }
 
@@ -334,7 +398,7 @@ impl NativeFunctionCompiler for TableAccessRange {
         let out_table = source.borrow().empty_table(ix.borrow().len());
         Ok(Box::new(TableAccessRangeIndex{source: source.clone(), ix: ix.clone(), out: Ref::new(out_table) }))
       }
-      #[cfg(all(feature = "matrix", feature = "table", feature = "bool"))]
+      #[cfg(all(feature = "matrix", feature = "table", feature = "logical_indexing"))]
       (Value::Table(source), [Value::MatrixBool(Matrix::DVector(ix))])  => {
         let out_table = source.borrow().empty_table(ix.borrow().len());
         Ok(Box::new(TableAccessRangeBool{source: source.clone(), ix: ix.clone(), out: Ref::new(out_table) }))
@@ -350,7 +414,7 @@ impl NativeFunctionCompiler for TableAccessRange {
           _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
         }
       }
-      #[cfg(all(feature = "matrix", feature = "table", feature = "bool"))]
+      #[cfg(all(feature = "matrix", feature = "table", feature = "logical_indexing"))]
       (Value::MutableReference(src_ref), [Value::MatrixBool(Matrix::DVector(ix))]) => {
         let src_ref_brrw = src_ref.borrow();
         match &*src_ref_brrw {

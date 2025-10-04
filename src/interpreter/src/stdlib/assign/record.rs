@@ -27,9 +27,13 @@ impl<T> MechFunctionImpl for RecordAssign<T>
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for RecordAssign<T> {
+impl<T> MechFunctionCompiler for RecordAssign<T> 
+where
+  T: CompileConst + ConstElem + AsValueKind,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let name = format!("RecordAssign<{}>", T::as_value_kind());
+    compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
   }
 }
 
@@ -67,9 +71,9 @@ fn impl_set_record_column_fxn(sink: Value, source: Value, key: Value) -> MResult
         #[cfg(all(feature = "string", feature = "record"))]
         (Some(Value::String(sink)), Value::String(source)) => return Ok(Box::new(RecordAssign{sink: sink.clone(), source: source.clone()})),
         #[cfg(all(feature = "complex", feature = "record"))]
-        (Some(Value::ComplexNumber(sink)), Value::ComplexNumber(source)) => return Ok(Box::new(RecordAssign{sink: sink.clone(), source: source.clone()})),
+        (Some(Value::C64(sink)), Value::C64(source)) => return Ok(Box::new(RecordAssign{sink: sink.clone(), source: source.clone()})),
         #[cfg(all(feature = "rational", feature = "record"))]
-        (Some(Value::RationalNumber(sink)), Value::RationalNumber(source)) => return Ok(Box::new(RecordAssign{sink: sink.clone(), source: source.clone()})),
+        (Some(Value::R64(sink)), Value::R64(source)) => return Ok(Box::new(RecordAssign{sink: sink.clone(), source: source.clone()})),
         _ => return Err(MechError {file: file!().to_string(),tokens: vec![],msg: "".to_string(),id: line!(),kind: MechErrorKind::UndefinedField(*k)}),
       }
     }

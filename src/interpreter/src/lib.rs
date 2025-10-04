@@ -35,15 +35,15 @@ use mech_core::F64;
 #[cfg(feature = "f32")]
 use mech_core::F32;
 #[cfg(feature = "complex")]
-use mech_core::ComplexNumber;
+use mech_core::C64;
 #[cfg(feature = "rational")]
-use mech_core::RationalNumber;
-#[cfg(feature = "stdlib")]
-use crate::stdlib::{
-                    access::*,
-                    assign::*,
-                    convert::*,
-                  };
+use mech_core::R64;
+#[cfg(feature = "access")]
+use crate::stdlib::access::*;
+#[cfg(feature = "assign")]
+use crate::stdlib::assign::*;
+#[cfg(feature = "convert")]
+use crate::stdlib::convert::*;
 #[cfg(feature = "functions")]
 use crate::functions::*;
 #[cfg(feature = "matrix_horzcat")]
@@ -122,9 +122,9 @@ pub fn load_stdkinds(kinds: &mut KindTable) {
   #[cfg(feature = "f64")]
   kinds.insert(hash_str("f64"),ValueKind::F64);
   #[cfg(feature = "c64")]
-  kinds.insert(hash_str("c64"),ValueKind::ComplexNumber);
+  kinds.insert(hash_str("c64"),ValueKind::C64);
   #[cfg(feature = "r64")]
-  kinds.insert(hash_str("r64"),ValueKind::RationalNumber);
+  kinds.insert(hash_str("r64"),ValueKind::R64);
   #[cfg(feature = "string")]
   kinds.insert(hash_str("string"),ValueKind::String);
   #[cfg(feature = "bool")]
@@ -144,7 +144,7 @@ pub fn load_stdlib(fxns: &mut Functions) {
   #[cfg(feature = "stats_sum")]
   fxns.function_compilers.insert(hash_str("stats/sum/column"), Box::new(StatsSumColumn{}));
 
-  // Preload math functions
+  // Preload ops functions
   #[cfg(feature = "math_add")]
   fxns.function_compilers.insert(hash_str("math/add"),Box::new(MathAdd{}));
   #[cfg(feature = "math_sub")]
@@ -162,6 +162,12 @@ pub fn load_stdlib(fxns: &mut Functions) {
   #[cfg(feature = "math_sin")]
   fxns.function_compilers.insert(hash_str("math/sin"),Box::new(MathSin{}));
   #[cfg(feature = "math_cos")]
+
+  // Preload math functions
+  #[cfg(feature = "math_sqrt")]
+  fxns.function_compilers.insert(hash_str("math/sqrt"),Box::new(MathSqrt{}));
+
+  // Preload trig functions
   fxns.function_compilers.insert(hash_str("math/cos"),Box::new(MathCos{}));
   #[cfg(feature = "math_atan2")]
   fxns.function_compilers.insert(hash_str("math/atan2"),Box::new(MathAtan2{}));
@@ -237,5 +243,9 @@ pub fn load_stdlib(fxns: &mut Functions) {
   fxns.function_compilers.insert(hash_str("logic/not"), Box::new(LogicNot{}));
   #[cfg(feature = "logic_xor")]
   fxns.function_compilers.insert(hash_str("logic/xor"), Box::new(LogicXor{}));  
+
+  for fxn_desc in inventory::iter::<FunctionDescriptor> {
+    fxns.insert_function(fxn_desc.clone());
+  }
 
 }

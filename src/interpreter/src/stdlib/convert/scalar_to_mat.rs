@@ -31,9 +31,14 @@ where
   fn to_string(&self) -> String { format!("{:#?}",self) }
 }
 #[cfg(feature = "compiler")]
-impl<F, T> MechFunctionCompiler for ConvertScalarToMat2<F, T> {
+impl<F, T> MechFunctionCompiler for ConvertScalarToMat2<F, T>
+where
+  T: CompileConst + ConstElem + AsValueKind,
+  F: ConstElem + CompileConst + AsValueKind,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let name = format!("ConvertScalarToMat2<{},{}>", F::as_value_kind(), T::as_value_kind());
+    compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
 }
 
@@ -105,8 +110,8 @@ fn impl_conversion_scalar_to_mat_fxn(source_value: Value, target_kind: ValueKind
     F32 => F32, "f32";
     F64 => F64, "f64";
     String => String, "string";
-    RationalNumber => RationalNumber, "rational";
-    ComplexNumber => ComplexNumber, "complex";
+    R64 => R64, "rational";
+    C64 => C64, "complex";
   )
 }
 

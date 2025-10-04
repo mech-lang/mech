@@ -127,6 +127,9 @@ pub use self::types::*;
 // Mech Source Code
 // ---------------------------------------------------------------------------
 
+#[cfg(feature = "functions")]
+inventory::collect!(FunctionDescriptor);
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MechSourceCode {
@@ -247,9 +250,8 @@ pub fn hash_bytes(input: &Vec<u8>) -> u64 {
 }
 
 pub fn hash_str(input: &str) -> u64 {
-  seahash::hash(input.to_string().as_bytes()) & 0x00FFFFFFFFFFFFFF
+  seahash::hash(input.as_bytes()) & 0x00FFFFFFFFFFFFFF
 }
-
 
 pub fn emojify_bytes(bytes: &[u8]) -> String {
   let start = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len() - 1);

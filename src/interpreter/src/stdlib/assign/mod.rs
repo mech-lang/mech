@@ -42,9 +42,13 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
-impl<T> MechFunctionCompiler for Assign<T> {
+impl<T> MechFunctionCompiler for Assign<T> 
+where
+  T: CompileConst + ConstElem + AsValueKind,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let name = format!("Assign<{}>", T::as_value_kind());
+    compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
   }
 }
 
@@ -110,8 +114,8 @@ fn assign_value_fxn(sink: Value, source: Value) -> Result<Box<dyn MechFunction>,
     U128,   "u128";
     F32,    "f32";
     F64,    "f64";
-    RationalNumber, "rational";
-    ComplexNumber, "complex";
+    R64, "rational";
+    C64, "complex";
   )
 }
 
@@ -160,7 +164,7 @@ pub fn add_assign_value_fxn(sink: Value, source: Value) -> MResult<Box<dyn MechF
   match sink {
     #[cfg(feature = "table")]
     Value::Table(_) => add_assign_table_fxn(sink, source),
-    #[cfg(feature = "add_assign")]
+    #[cfg(feature = "math_add_assign")]
     _ => add_assign_math_fxn(sink, source),
     _ => Err(MechError{file: file!().to_string(),tokens: vec![],msg: format!("Unhandled args {:?}, {:?}", sink, source),id: line!(),kind: MechErrorKind::UnhandledFunctionArgumentKind,}),
   }

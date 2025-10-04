@@ -1,4 +1,6 @@
 use crate::*;
+#[cfg(feature = "convert")]
+use crate::stdlib::convert::ConvertKind;
 
 // Literals
 // ----------------------------------------------------------------------------
@@ -125,7 +127,7 @@ pub fn typed_literal(ltrl: &Literal, knd_attn: &KindAnnotation, p: &Interpreter)
 #[cfg(feature = "atom")]
 pub fn atom(atm: &Atom) -> Value {
   let id = atm.name.hash();
-  Value::Atom(id)
+  Value::Atom(Ref::new(MechAtom(id)))
 }
 
 pub fn number(num: &Number) -> Value {
@@ -138,7 +140,7 @@ pub fn number(num: &Number) -> Value {
 }
 
 #[cfg(feature = "complex")]
-fn complex(num: &ComplexNumberNode) -> Value {
+fn complex(num: &C64Node) -> Value {
   let im: f64 = match real(&num.imaginary.number).as_f64() {
     Some(val) => val.borrow().0,
     None => 0.0,
@@ -149,9 +151,9 @@ fn complex(num: &ComplexNumberNode) -> Value {
         Some(val) => val.borrow().0,
         None => 0.0,
       };      
-      Value::ComplexNumber(Ref::new(ComplexNumber::new(re, im)))
+      Value::C64(Ref::new(C64::new(re, im)))
     },
-    None => Value::ComplexNumber(Ref::new(ComplexNumber::new(0.0, im))),
+    None => Value::C64(Ref::new(C64::new(0.0, im))),
   }
 }
 
@@ -193,11 +195,11 @@ pub fn negated(num: &RealNumber) -> Value {
     Value::I64(val) => Value::I64(Ref::new(-*val.borrow())),
     #[cfg(feature = "i128")]
     Value::I128(val) => Value::I128(Ref::new(-*val.borrow())),
-    #[cfg(feature = "u8")]
+    #[cfg(feature = "f64")]
     Value::F64(val) => Value::F64(Ref::new(F64::new(-((*val.borrow()).0)))),
-    #[cfg(feature = "u16")]
+    #[cfg(feature = "f32")]
     Value::F32(val) => Value::F32(Ref::new(F32::new(-((*val.borrow()).0)))),
-    _ => panic!("Negation is only supported for integer and float types"),
+    x => panic!("Negation is only supported for integer and float types, got {:?}", x),
   }
 }
 
@@ -209,8 +211,8 @@ pub fn rational(rat: &(Token,Token)) -> Value {
   if denom == 0 {
     panic!("Denominator cannot be zero in a rational number");
   }
-  let rat_num = RationalNumber::new(num, denom);
-  Value::RationalNumber(Ref::new(rat_num))
+  let rat_num = R64::new(num, denom);
+  Value::R64(Ref::new(rat_num))
 }
 
 #[cfg(feature = "i64")]

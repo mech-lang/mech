@@ -1,6 +1,6 @@
 [package]
 name = "mech-core"
-version = "0.2.59"
+version = "0.2.60"
 authors = ["Corey Montella <corey@mech-lang.org>"]
 description = "The Mech language runtime."
 documentation = "http://docs.mech-lang.org"
@@ -23,6 +23,10 @@ no_std = ["rlibc", "hashbrown", "embedded-io", "fxhash"]
 default = ["stdlib", "pretty_print", "serde", "compiler", "program",
             "statements_default", "subscript_default",
           ]
+base = ["baselib", "pretty_print", "serde", "compiler", "program",
+      "statements_default", "subscript_default",
+      ]   
+
 statements_default = ["variable_assign","variable_define","kind_define"]
 subscript_default = ["subscript_slice", "subscript_range", "logical_indexing", "swizzle", "subscript_formula", "dot_indexing"]
 
@@ -41,6 +45,18 @@ stdlib = ["bool", "string",
           "kind_annotation", "variables",
           "functions", "formulas"
         ]
+
+baselib = ["bool", "string", 
+      "f64", "c64", "r64",
+      "set", "map", "table", "tuple", "record", "atom", "enum",
+      "row_vectord", "vectord", "matrixd",
+      "subscript_range", "logical_indexing", 
+      "subscript_formula",
+      "variable_define", "variable_assign", 
+      "kind_define",
+      "kind_annotation", "variables",
+      "functions", "formulas"
+    ]
 
 compiler = ["crc32fast", "byteorder"]
 program = ["crc32fast", "byteorder"]
@@ -96,25 +112,25 @@ atom = []
 
 # Matrix
 matrix = ["nalgebra"]
-fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2"]
-fixed_vector = ["vector4", "vector3", "vector2"]
-fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2"]
-dynamic_matrix = ["matrixd", "vectord", "row_vectord"]
-row_vector4 = ["dynamic_matrix","matrix"]
-row_vector3 = ["dynamic_matrix","matrix"]
-row_vector2 = ["dynamic_matrix","matrix"]
-vector4 = ["dynamic_matrix","matrix"]
-vector3 = ["dynamic_matrix","matrix"]
-vector2 = ["dynamic_matrix","matrix"]
-matrix4 = ["dynamic_matrix","matrix"]
-matrix3 = ["dynamic_matrix","matrix"]
-matrix2 = ["dynamic_matrix","matrix"]
-matrix1 = ["dynamic_matrix","matrix"]
-matrix2x3 = ["dynamic_matrix","matrix"]
-matrix3x2 = ["dynamic_matrix","matrix"]
-row_vectord =["dynamic_matrix", "matrix"]
-vectord = ["dynamic_matrix", "matrix"]
-matrixd = ["dynamic_matrix", "matrix"]
+fixed_row_vector = ["row_vector4", "row_vector3", "row_vector2", "matrix"]
+fixed_vector = ["vector4", "vector3", "vector2", "matrix"]
+fixed_matrix = ["matrix4", "matrix3", "matrix2", "matrix1", "matrix2x3", "matrix3x2", "matrix"]
+dynamic_matrix = ["matrixd", "vectord", "row_vectord", "matrix"]
+row_vector4 = ["matrix"]
+row_vector3 = ["matrix"]
+row_vector2 = ["matrix"]
+vector4 = ["matrix"]
+vector3 = ["matrix"]
+vector2 = ["matrix"]
+matrix4 = ["matrix"]
+matrix3 = ["matrix"]
+matrix2 = ["matrix"]
+matrix1 = ["matrix"]
+matrix2x3 = ["matrix"]
+matrix3x2 = ["matrix"]
+row_vectord =["matrix"]
+vectord = ["matrix"]
+matrixd = ["matrix"]
 
 # Subscripts
 subscript = []
@@ -128,6 +144,7 @@ swizzle = ["subscript"]
 [dependencies]
 seahash = "4.1.0"
 paste = "1.0.15"
+inventory = "0.3.21"
 byteorder = {version = "1.5.0", optional = true}
 fxhash = { version = "0.2", default-features = false, optional = true }
 embedded-io = {version = "0.6.1", optional = true}

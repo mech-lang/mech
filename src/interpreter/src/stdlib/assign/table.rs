@@ -30,9 +30,15 @@ macro_rules! impl_col_set_fxn {
       fn to_string(&self) -> String { format!("{:#?}", self) }
     }
     #[cfg(feature = "compiler")]
-    impl MechFunctionCompiler for $fxn_name {
+    impl MechFunctionCompiler for $fxn_name 
+    where
+      $vector_size_in<$out_type>: CompileConst + ConstElem + AsValueKind,
+      $vector_size_out<Value>: CompileConst + ConstElem + AsValueKind,
+      $out_type: CompileConst + ConstElem + AsValueKind,
+    {
       fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-        todo!();
+        let name = format!("{}<{},{}>", stringify!($fxn_name), $vector_size_in::<$out_type>::as_value_kind(), $vector_size_out::<Value>::as_value_kind());
+        compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
       }
     }
   }
@@ -92,9 +98,9 @@ impl_col_set_fxn_shapes!(F64);
 #[cfg(feature = "string")]
 impl_col_set_fxn_shapes!(String);
 #[cfg(feature = "complex")]
-impl_col_set_fxn_shapes!(ComplexNumber);
+impl_col_set_fxn_shapes!(C64);
 #[cfg(feature = "rational")]
-impl_col_set_fxn_shapes!(RationalNumber);
+impl_col_set_fxn_shapes!(R64);
 
 macro_rules! impl_set_column_match_arms {
   ($arg:expr, $($lhs_type:ident, $type_ident:ident, $type_feature:literal);+ $(;)?) => {
@@ -149,8 +155,8 @@ fn impl_set_column_fxn(sink: Value, source: Value, key: Value) -> MResult<Box<dy
     F32,  F32,  "f32";
     F64,  F64,  "f64";
     String, String, "string";
-    ComplexNumber, ComplexNumber,"complex";
-    RationalNumber, RationalNumber,"rational";
+    C64, C64,"complex";
+    R64, R64,"rational";
   )
 }
 
@@ -196,7 +202,8 @@ impl MechFunctionImpl for TableAppendRecord {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAppendRecord {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let name = format!("TableAppendRecord");
+    compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Assign) );
   }
 }
 
@@ -219,7 +226,8 @@ impl MechFunctionImpl for TableAppendTable {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for TableAppendTable {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let name = format!("TableAppendTable");
+    compile_unop!(name, self.sink, self.source, ctx, FeatureFlag::Builtin(FeatureKind::Table) );
   }
 }
 

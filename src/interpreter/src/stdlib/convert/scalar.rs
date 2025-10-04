@@ -6,20 +6,39 @@ use crate::stdlib::*;
 #[cfg(feature = "enum")]
 #[derive(Debug)]
 struct ConvertSEnum {
-  out: Value,
+  out: Ref<MechEnum>,
 }
-
+#[cfg(feature = "enum")]
+impl MechFunctionFactory for ConvertSEnum {
+  fn new(args: FunctionArgs) -> Result<Box<dyn MechFunction>, MechError> {
+    match args {
+      FunctionArgs::Unary(out, _) => {
+        let out: Ref<MechEnum> = unsafe { out.as_unchecked() }.clone();
+        Ok(Box::new(Self {out}))
+      },
+      _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("ConvertSEnum requires 1 argument, got {:?}", args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
+    }
+  }
+}
 #[cfg(feature = "enum")]
 impl MechFunctionImpl for ConvertSEnum
 {
   fn solve(&self) { }
-  fn out(&self) -> Value { self.out.clone() }
+  fn out(&self) -> Value { Value::Enum(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(all(feature = "compiler", feature = "enum"))]
 impl MechFunctionCompiler for ConvertSEnum {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let name = format!("ConvertSEnum<enum>");
+    compile_nullop!(name, self.out, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
+  }
+}
+#[cfg(feature = "enum")]
+inventory::submit! {
+  FunctionDescriptor {
+    name: "ConvertSEnum<enum>",
+    ptr: ConvertSEnum::new,
   }
 }
 
@@ -51,16 +70,32 @@ where T: Debug + Clone + PartialEq + Into<Value> + 'static,
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(all(feature = "compiler", feature = "matrix", feature = "table"))]
-impl<T> MechFunctionCompiler for ConvertMat2Table<T> {
+impl<T> MechFunctionCompiler for ConvertMat2Table<T> 
+where
+  T: ConstElem + CompileConst,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0,0];
+
+    registers[0] = compile_register_brrw!(self.out, ctx);
+    registers[1] = compile_register!(self.arg, ctx);
+
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Convert));
+
+    ctx.emit_unop(
+      hash_str("ConvertMat2Table"),
+      registers[0],
+      registers[1],
+    );
+
+    return Ok(registers[0]);
   }
 }
 
 #[cfg(all(feature = "rational", feature = "f64"))]
 #[derive(Debug)]
 struct ConvertSRationalToF64 {
-  arg: Ref<RationalNumber>,
+  arg: Ref<R64>,
   out: Ref<F64>,
 }
 
@@ -77,7 +112,8 @@ impl MechFunctionImpl for ConvertSRationalToF64 {
 #[cfg(all(feature = "compiler", feature = "rational", feature = "f64"))]
 impl MechFunctionCompiler for ConvertSRationalToF64 {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let name = format!("ConvertSRationalToF64<f64>");
+    compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
 }
 
@@ -115,19 +151,19 @@ macro_rules! impl_conversion_match_arms {
           )+
         )+
         #[cfg(feature = "rational")]
-        (Value::RationalNumber(ref rat), Value::Kind(ValueKind::F64)) => {
+        (Value::R64(ref rat), Value::Kind(ValueKind::F64)) => {
           Ok(Box::new(ConvertSRationalToF64{arg: rat.clone(), out: Ref::new(F64::default())}))
         }
         #[cfg(all(feature = "atom", feature = "enum"))]
-        (Value::Atom(varian_id), Value::Kind(ValueKind::Enum(enum_id))) => {
-          let variants = vec![(varian_id,None)];
+        (Value::Atom(variant_id), Value::Kind(ValueKind::Enum(enum_id))) => {
+          let variants = vec![(variant_id.borrow().0,None)];
           let enm = MechEnum{id: enum_id, variants};
-          let val = Value::Enum(Box::new(enm.clone()));
+          let val = Ref::new(enm.clone());
           Ok(Box::new(ConvertSEnum{out: val}))
         }
         x => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Could not convert: {:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind}),
       }
-    };
+    }
   }
 }
 
@@ -156,9 +192,14 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
-impl<F, T> MechFunctionCompiler for ConvertScalarToScalar<F, T> {
+impl<F, T> MechFunctionCompiler for ConvertScalarToScalar<F, T> 
+where
+  F: ConstElem + CompileConst + AsValueKind,
+  T: ConstElem + CompileConst + AsValueKind,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let name = format!("ConvertScalarToScalar<{},{}>", F::as_value_kind(), T::as_value_kind());
+    compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
 }
 
@@ -187,16 +228,21 @@ where
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "compiler")]
-impl<F,T> MechFunctionCompiler for ConvertScalarToScalarBasic<F, T> {
+impl<F,T> MechFunctionCompiler for ConvertScalarToScalarBasic<F, T> 
+where
+  F: ConstElem + CompileConst + AsValueKind,
+  T: ConstElem + CompileConst + AsValueKind,
+{
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let name = format!("ConvertScalarToScalarBasic<{},{}>", F::as_value_kind(), T::as_value_kind());
+    compile_unop!(name, self.out, self.arg, ctx, FeatureFlag::Builtin(FeatureKind::Convert));
   }
 }
 
 fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<dyn MechFunction>>  {
   match (&source_value, &target_kind) {
     #[cfg(all(feature = "rational", feature = "f64"))]
-    (Value::RationalNumber(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar{arg: r.clone(),out: Ref::new(F64::default()),}));}
+    (Value::R64(r), Value::Kind(ValueKind::F64)) => {return Ok(Box::new(ConvertScalarToScalar{arg: r.clone(),out: Ref::new(F64::default()),}));}
     #[cfg(all(feature = "matrix", feature = "table", feature = "string"))]
     (Value::MatrixString(ref mat), Value::Kind(ValueKind::Table(tbl, sze))) => {
       let in_shape = mat.shape();
@@ -234,8 +280,8 @@ fn impl_conversion_fxn(source_value: Value, target_kind: Value) -> MResult<Box<d
     u64, "u64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
     u128, "u128" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
     F32, "f32" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64";
-    F64, "f64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64", RationalNumber, "rational";
-    RationalNumber, "rational" => String, "string", F64, "f64";
+    F64, "f64" => String, "string", i8, "i8", i16, "i16", i32, "i32", i64, "i64", i128, "i128", u8, "u8", u16, "u16", u32, "u32", u64, "u64", u128, "u128", F32, "f32", F64, "f64", R64, "rational";
+    R64, "rational" => String, "string", F64, "f64";
     String, "string" => String, "string";
     bool, "bool" => String, "string", bool, "bool";
   )
@@ -256,7 +302,7 @@ impl NativeFunctionCompiler for ConvertKind {
         match source_value {
           Value::MutableReference(rhs) => impl_conversion_fxn(rhs.borrow().clone(), target_kind.clone()),
           #[cfg(feature = "atom")]
-          Value::Atom(atom_id) => impl_conversion_fxn(source_value, target_kind.clone()),
+          Value::Atom(ref atom_id) => impl_conversion_fxn(source_value, target_kind.clone()),
           #[cfg(all(feature = "matrix", feature = "u8"))]
           Value::MatrixU8(ref mat) => impl_conversion_fxn(source_value, target_kind.clone()),
           #[cfg(all(feature = "matrix", feature = "u16"))]

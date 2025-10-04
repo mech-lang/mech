@@ -1,7 +1,6 @@
 #![allow(warnings)]
 extern crate mech_syntax;
 extern crate mech_core;
-extern crate nalgebra as na;
 use std::cell::RefCell;
 use std::rc::Rc;
 use mech_core::matrix::Matrix;
@@ -15,32 +14,100 @@ macro_rules! bytecode_test {
     #[test]
     fn $name() {
       let mut intrp = Interpreter::new(0);
-      match parser::parse($code) {
-        Ok(tree) => {
-          let mut intrp = Interpreter::new(0);
-          let _ = intrp.interpret(&tree).unwrap();
-          let bytecode = intrp.compile().unwrap();
-          match ParsedProgram::from_bytes(&bytecode) {
-            Ok(prog) => {
-              match intrp.run_program(&prog) {
-                Ok(result) => {
-                  assert_eq!(result, $expected);
-                },
-                Err(e) => {
-                  eprintln!("Error running program: {:?}", e);
-                }
-              }
-            },
-            Err(e) => {
-              eprintln!("Error deserializing program: {:?}", e);
-            }
-          }
-        },
-        Err(err) => { panic!("{:?}", err); }
-      }
+
+      let tree = parser::parse($code)
+        .unwrap_or_else(|err| panic!("Parse error: {:?}", err));
+
+      let _ = intrp.interpret(&tree)
+        .unwrap_or_else(|err| panic!("Interpret error: {:?}", err));
+
+      let bytecode = intrp.compile()
+        .unwrap_or_else(|err| panic!("Compile error: {:?}", err));
+
+      let prog = ParsedProgram::from_bytes(&bytecode)
+        .unwrap_or_else(|err| panic!("Deserialize error: {:?}", err));
+
+      let result = intrp.run_program(&prog)
+        .unwrap_or_else(|err| panic!("Runtime error: {:?}", err));
+
+      assert_eq!(result, $expected);
     }
   };
 }
 
+bytecode_test!(bytecode_var_def,"x := 10",Value::F64(Ref::new(F64::new(10.0))));
 bytecode_test!(bytecode_math,"1 + 2",Value::F64(Ref::new(F64::new(3.0))));
-bytecode_test!(bytecode_math_assign,"x := 1 + 2; y := x + 4",Value::F64(Ref::new(F64::new(7.0))));
+bytecode_test!(bytecode_math_def,"x := 1 + 2; y := x + 4",Value::F64(Ref::new(F64::new(7.0))));
+bytecode_test!(bytecode_math_mul,"x := 2 * 2; y := x * 4",Value::F64(Ref::new(F64::new(16.0))));
+bytecode_test!(bytecode_math_add_assign,"~x := 10; x += 20",Value::F64(Ref::new(F64::new(30.0))));
+bytecode_test!(bytecode_math_add_assign_vv, "~x := [1 2 3]; x += [10 20 30]", Value::MatrixF64(Matrix::from_vec(vec![F64::new(11.0),F64::new(22.0),F64::new(33.0)], 1, 3)));
+bytecode_test!(bytecode_math_add_assign_vr, "x := [1 1]; y := [1 2]; z := [10 20]; x[y] += z;", Value::MatrixF64(Matrix::from_vec(vec![F64::new(11.0),F64::new(21.0)], 1, 2)));
+bytecode_test!(bytecode_math_sub_assign,"~x := 30; x -= 20",Value::F64(Ref::new(F64::new(10.0))));
+bytecode_test!(bytecode_math_sub_assign_vv, "~x := [10 20 30]; x -= [1 2 3]", Value::MatrixF64(Matrix::from_vec(vec![F64::new(9.0),F64::new(18.0),F64::new(27.0)], 1, 3)));
+bytecode_test!(bytecode_math_sub_assign_vr, "x := [11 21]; y := [1 2]; z := [10 20]; x[y] -= z;", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(1.0)], 1, 2)));
+bytecode_test!(bytecode_math_mul_assign,"~x := 10; x *= 20",Value::F64(Ref::new(F64::new(200.0))));
+bytecode_test!(bytecode_math_mul_assign_vv, "~x := [1 2 3]; x *= [10 20 30]", Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(40.0),F64::new(90.0)], 1, 3)));
+bytecode_test!(bytecode_math_mul_assign_vr, "x := [1 2]; y := [1 2]; z := [10 20]; x[y] *= z;", Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(40.0)], 1, 2)));
+bytecode_test!(bytecode_math_div_assign,"~x := 200; x /= 20",Value::F64(Ref::new(F64::new(10.0))));
+bytecode_test!(bytecode_math_div_assign_vv, "~x := [10 20 30]; x /= [1 2 5]", Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(10.0),F64::new(6.0)], 1, 3)));
+bytecode_test!(bytecode_math_div_assign_vr, "x := [10 20]; y := [1 2]; z := [10 4]; x[y] /= z;", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(5.0)], 1, 2)));
+bytecode_test!(bytecode_matrix_rowvector3,"[1 2 3]",Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0)], 1, 3)));
+bytecode_test!(bytecode_matrix_vector2,"[1; 2]",Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(2.0)], 2, 1)));
+bytecode_test!(bytecode_matrix_matrix2x2,"[1 2; 3 4]",Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(3.0),F64::new(2.0),F64::new(4.0)], 2, 2)));
+bytecode_test!(bytecode_combinatorics_n_choose_k,"combinatorics/n-choose-k(10,2)",Value::F64(Ref::new(F64::new(45.0))));
+bytecode_test!(bytecode_compare_gt,"1 > 2",Value::Bool(Ref::new(false)));
+bytecode_test!(bytecode_compare_eq,r#""foo" == "bar""#,Value::Bool(Ref::new(false)));
+bytecode_test!(bytecode_logic_and,"true && false",Value::Bool(Ref::new(false)));
+bytecode_test!(bytecode_logic_or,"true || false",Value::Bool(Ref::new(true)));
+bytecode_test!(bytecode_logic_not,"!true",Value::Bool(Ref::new(false)));
+bytecode_test!(bytecode_math_cos,"math/cos(0)",Value::F64(Ref::new(F64::new(1.0))));
+bytecode_test!(bytecode_math_sin,"math/sin(0)",Value::F64(Ref::new(F64::new(0.0))));
+bytecode_test!(bytecode_math_atan2,"math/atan2(1, 1)",Value::F64(Ref::new(F64::new(std::f64::consts::FRAC_PI_4))));
+bytecode_test!(bytecode_matrix_matmul_transpose,"[1 2 3] ** [4 5 6]'",Value::MatrixF64(Matrix::from_vec(vec![F64::new(32.0)], 1, 1)));
+bytecode_test!(bytecode_matrix_dot,"matrix/dot([1 2 3],[4 5 6])",Value::F64(Ref::new(F64::new(32.0))));
+bytecode_test!(bytecode_range_inclusive,"1..=4",Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0),F64::new(4.0)], 1, 4)));
+bytecode_test!(bytecode_range_inclusive_d,"1..=5",Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0),F64::new(4.0),F64::new(5.0)], 1, 5)));
+bytecode_test!(bytecode_range_inclusive_refs,"a := 1; b :=4 ; a..=b",Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0),F64::new(4.0)], 1, 4)));
+bytecode_test!(bytecode_range_exclusive,"1..5",Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(3.0),F64::new(4.0)], 1, 4)));
+bytecode_test!(bytecode_stats_sum_column,"stats/sum/column([1 2 3])",Value::MatrixF64(Matrix::from_vec(vec![F64::new(6.0)], 1, 1)));
+bytecode_test!(bytecode_matrix_index_assign,"~x := [1 2 3]; x[1] = 10",Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(2.0),F64::new(3.0)], 1, 3)));
+bytecode_test!(bytecode_matrix_index_assign_bool,"~x := [1 2 3]; x[[true false true]] = [4 5 6]",Value::MatrixF64(Matrix::from_vec(vec![F64::new(4.0),F64::new(2.0),F64::new(6.0)], 1, 3)));
+bytecode_test!(bytecode_matrix_index_assign_bool_all,"~x := [1 2 3]; x[true] = [4 5 6]",Value::MatrixF64(Matrix::from_vec(vec![F64::new(4.0),F64::new(5.0),F64::new(6.0)], 1, 3)));
+bytecode_test!(bytecode_matrix_index_assign_bool_all_scalar,"~x := [1 2 3]; x[true] = 10",Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(10.0),F64::new(10.0)], 1, 3)));
+bytecode_test!(bytecode_matrix_index_assign_scalar,"~x := [1 2 3]; x[3] = 10",Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(2.0),F64::new(10.0)], 1, 3)));
+bytecode_test!(bytecode_matrix_index_assign_all_scalar,"~x := [1 2 3]; x[:] = 10",Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(10.0),F64::new(10.0)], 1, 3)));
+bytecode_test!(bytecode_matrix_index_assign_2d_scalar,"~x := [1 2 3; 4 5 6; 7 8 9]; x[1,3] = 10",Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(4.0),F64::new(7.0),F64::new(2.0),F64::new(5.0),F64::new(8.0),F64::new(10.0),F64::new(6.0),F64::new(9.0)], 3, 3)));
+bytecode_test!(bytecode_matrix_index_assign_2d_scalar_all,"~x := [1 2; 4 5]; x[:,1] = 10",Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(10.0),F64::new(2.0),F64::new(5.0)], 2, 2)));
+bytecode_test!(bytecode_matrix_index_assign_2d_vector_all,"~x := [1 2; 4 5]; x[:,2] = [10 20]",Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(4.0),F64::new(10.0),F64::new(20.0)], 2, 2)));
+bytecode_test!(bytecode_matrix_index_assign_2d_vector_all_rows,"~x := [1 2; 4 5]; x[1,:] = 10 ",Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(4.0),F64::new(10.0),F64::new(5.0)], 2, 2)));
+bytecode_test!(bytecode_matrix_index_assign_2d_vector_rows,"~x := [1 2; 4 5; 6 7]; x[[1],2] = 53", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(4.0),F64::new(6.0),F64::new(53.0),F64::new(5.0),F64::new(7.0)], 3, 2)));
+bytecode_test!(bytecode_matrix_index_assign_2d_vector_rows_multi,"~x := [1 2; 4 5; 6 7]; x[[1 3],2] = 53", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(4.0),F64::new(6.0),F64::new(53.0),F64::new(5.0),F64::new(53.0)], 3, 2)));
+bytecode_test!(bytecode_matrix_index_assign_2d_vector_rows_multi2,"~x := [1 2; 4 5; 6 7]; x[[1 3],2] = [10 20]", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(4.0),F64::new(6.0),F64::new(10.0),F64::new(5.0),F64::new(20.0)], 3, 2)));
+bytecode_test!(bytecode_matrix_index_assign_2d_vector_rows_bool,"~x := [1 2; 4 5; 6 7]; x[[true false true],2] = 20", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(4.0),F64::new(6.0),F64::new(20.0),F64::new(5.0),F64::new(20.0)], 3, 2)));
+bytecode_test!(bytecode_matrix_index_assign_2d_vector_rows_bool2,"~x := [1 2; 4 5; 6 7]; x[[false true true],1] = [10 20 30]", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(20.0),F64::new(30.0),F64::new(2.0),F64::new(5.0),F64::new(7.0)], 3, 2)));
+bytecode_test!(bytecode_matrix_index_assign_2d_scalar_vector,"~x := [1 2 3; 4 5 6]; x[1, [2 3]] = 20", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(4.0),F64::new(20.0),F64::new(5.0),F64::new(20.0),F64::new(6.0)], 2, 3)));
+bytecode_test!(bytecode_matrix_index_assign_2d_scalar_vector2,"~x := [1 2 3; 4 5 6]; x[1, [2 3]] = [10 20]", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(4.0),F64::new(10.0),F64::new(5.0),F64::new(20.0),F64::new(6.0)], 2, 3)));
+bytecode_test!(bytecode_matrix_index_assign_2d_scalar_vector_bool,"~x := [1 2 3; 4 5 6]; x[1, [true false true]] = 10", Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(4.0),F64::new(2.0),F64::new(5.0),F64::new(10.0),F64::new(6.0)], 2, 3)));
+bytecode_test!(bytecode_matrix_index_assign_2d_scalar_vector_bool2,"~x := [1 2 3; 4 5 6]; x[1, [true false true]] = [10 20 30]", Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(4.0),F64::new(2.0),F64::new(5.0),F64::new(30.0),F64::new(6.0)], 2, 3)));
+bytecode_test!(bytecode_matrix_index_assign_2d_range_range,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[1 3], [1 3]] = 10", Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(4.0),F64::new(10.0),F64::new(2.0),F64::new(5.0),F64::new(8.0),F64::new(10.0),F64::new(6.0),F64::new(10.0)], 3, 3)));
+bytecode_test!(bytecode_matrix_index_assign_2d_range_range_all,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[1 3], [1 2 3]] = 10", Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(4.0),F64::new(10.0),F64::new(10.0),F64::new(5.0),F64::new(10.0),F64::new(10.0),F64::new(6.0),F64::new(10.0)], 3, 3)));
+bytecode_test!(bytecode_matrix_index_assign_2d_range_range_all2,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[1 3], [1 2 3]] = [10 20 30 40 50 60]", Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(4.0),F64::new(40.0), F64::new(20.0),F64::new(5.0),F64::new(50.0),F64::new(30.0),F64::new(6.0),F64::new(60.0)], 3, 3)));
+bytecode_test!(bytecode_matrix_index_assign_2d_range_range_bool,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[false true false], [true false true]] = 10", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(10.0),F64::new(7.0),F64::new(2.0),F64::new(5.0),F64::new(8.0),F64::new(3.0),F64::new(10.0),F64::new(9.0)], 3, 3)));
+bytecode_test!(bytecode_matrix_index_assign_2d_range_range_bool2,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true], [false true false]] = [10 20 30; 40 50 60; 70 80 90]", Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(4.0),F64::new(7.0),F64::new(40.0),F64::new(5.0),F64::new(60.0),F64::new(3.0),F64::new(6.0),F64::new(9.0)], 3, 3)));
+bytecode_test!(bytecode_matrix_index_assign_2d_range_range_bool3,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true], [1 2]] = 10", Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(4.0),F64::new(10.0),F64::new(10.0),F64::new(5.0),F64::new(10.0),F64::new(3.0),F64::new(6.0),F64::new(9.0)], 3, 3)));
+bytecode_test!(bytecode_matrix_index_assign_2d_range_range_bool4,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true], [1 2]] = [10 20; 40 50; 70 80]", Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(4.0),F64::new(70.0),F64::new(20.0),F64::new(5.0),F64::new(80.0),F64::new(3.0),F64::new(6.0),F64::new(9.0)], 3, 3)));
+bytecode_test!(bytecode_matrix_index_assign_2d_range_range_bool5,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[1 3],[true false true]] = 10", Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(10.0),F64::new(7.0),F64::new(2.0),F64::new(5.0),F64::new(8.0),F64::new(10.0),F64::new(10.0),F64::new(9.0)], 3, 3)));
+bytecode_test!(bytecode_matrix_index_assign_2d_range_range_bool6,"~x := [1 2 3; 4 5 6; 7 8 9]; x[[1 2],[true false true]] = [10 20 30; 40 50 60; 70 80 90]", Value::MatrixF64(Matrix::from_vec(vec![F64::new(10.0),F64::new(40.0),F64::new(7.0),F64::new(2.0),F64::new(5.0),F64::new(8.0),F64::new(30.0),F64::new(60.0),F64::new(9.0)], 3, 3)));
+bytecode_test!(bytecode_string_matrix, r#"x := ["Hello" "World"]"#, Value::MatrixString(Matrix::from_vec(vec!["Hello".to_string(), "World".to_string()], 1, 2)));
+bytecode_test!(bytecode_string_matrix_index, r#"x := ["Hello" "World"]; x[2]"#, Value::String(Ref::new("World".to_string())));
+bytecode_test!(bytecode_matrix_index_bool_2d, r#"ix := [false, false, true]; x := [1 2 3; 4 5 6; 7 8 9]; x[:,ix]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(3.0),F64::new(6.0),F64::new(9.0)], 3, 1)));
+bytecode_test!(bytecode_matrix_index_scalar_2d, r#"ix := [1, 3]; x := [1 2 3 ; 4 5 6 ; 7 8 9]; x[:,ix]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(4.0),F64::new(7.0),F64::new(3.0),F64::new(6.0),F64::new(9.0)], 3, 2)));
+bytecode_test!(bytecode_matrix_index_bool_2d_all, r#"ix := [true, true, false]; x := [1 2 3]; x[:,ix]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(2.0)], 1, 2)));
+bytecode_test!(bytecode_matrix_index_2d_vuu, r#"x := [1 2 3; 4 5 6;7 8 9]; ix1 := [1, 2]; x[ix1,ix1]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(4.0),F64::new(2.0),F64::new(5.0)], 2, 2)));
+bytecode_test!(bytecode_matrix_index_2d_vbb, r#"x := [1 2 3; 4 5 6; 7 8 9]; x[[true false false], [true false true]]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(3.0)], 1, 2)));
+bytecode_test!(bytecode_matrix_index_2d_vbb2, r#"x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true],[true false false]]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(7.0)], 2, 1)));
+bytecode_test!(bytecode_matrix_index_2d_vbb3, r#"x := [1 2 3; 4 5 6; 7 8 9]; x[[true false false],[true false false]]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0)], 1, 1)));
+bytecode_test!(bytecode_matrix_index_2d_vbb4, r#"x := [1 2 3; 4 5 6; 7 8 9]; x[[true false true],[true false true]]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(1.0),F64::new(7.0),F64::new(3.0),F64::new(9.0)], 2, 2)));
+bytecode_test!(bytecode_matrix_index_2d_vub, r#"ix := [false, false, true]; x := [1 2 3; 4 5 6; 7 8 9]; x[[1,2,3,3],ix]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(3.0),F64::new(6.0),F64::new(9.0),F64::new(9.0)], 4, 1)));
+bytecode_test!(bytecode_matrix_index_2d_vbu, r#"ix1 := [false, false, true]; ix2 := [1,2,3,3]; x := [1 2 3; 4 5 6; 7 8 9]; x[ix1,ix2]"#, Value::MatrixF64(Matrix::from_vec(vec![F64::new(7.0),F64::new(8.0),F64::new(9.0),F64::new(9.0)], 1, 4)));
+bytecode_test!(bytecode_math_sqrt,"math/sqrt(9)",Value::F64(Ref::new(F64::new(3.0))));

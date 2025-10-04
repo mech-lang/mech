@@ -19,8 +19,37 @@ use std::fmt;
 // Functions ------------------------------------------------------------------
 
 pub type FunctionsRef = Ref<Functions>;
-pub type FunctionTable = HashMap<u64, FunctionDefinition>;
+pub type FunctionTable = HashMap<u64, fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>>;
 pub type FunctionCompilerTable = HashMap<u64, Box<dyn NativeFunctionCompiler>>;
+
+#[derive(Clone,Debug)]
+pub enum FunctionArgs {
+  Nullary(Value),
+  Unary(Value, Value),
+  Binary(Value, Value, Value),
+  Ternary(Value, Value, Value, Value),
+  Quaternary(Value, Value, Value, Value, Value),
+  Variadic(Value, Vec<Value>),
+}
+
+#[repr(C)]
+#[derive(Clone)]
+pub struct FunctionDescriptor {
+  pub name: &'static str,
+  pub ptr: fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>,
+}
+
+impl Debug for FunctionDescriptor {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "{{ name: {:?}, ptr: {:?} }}", self.name, self.ptr)
+  }
+}
+
+unsafe impl Sync for FunctionDescriptor {}
+
+pub trait MechFunctionFactory {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>>;
+}
 
 pub trait MechFunctionImpl {
   fn solve(&self);
@@ -50,6 +79,7 @@ pub trait NativeFunctionCompiler {
 pub struct Functions {
   pub functions: FunctionTable,
   pub function_compilers: FunctionCompilerTable,
+  pub dictionary: Ref<Dictionary>,
 }
 
 impl Functions {
@@ -57,8 +87,17 @@ impl Functions {
     Self {
       functions: HashMap::new(), 
       function_compilers: HashMap::new(), 
+      dictionary: Ref::new(Dictionary::new()),
     }
   }
+
+  pub fn insert_function(&mut self, fxn: FunctionDescriptor) {
+    let id = hash_str(&fxn.name);
+    self.functions.insert(id.clone(), fxn.ptr);
+    self.dictionary.borrow_mut().insert(id, fxn.name.to_string());
+  }
+
+
 }
 
 #[derive(Clone)]
@@ -213,4 +252,17 @@ impl PrettyPrint for Plan {
         .with(Panel::header("📋 Plan"));
     format!("{table}")
   }
+}
+
+// Function Registry
+// ----------------------------------------------------------------------------
+
+// Function registry is a mapping from function IDs to the actual fucntion implementaionts
+
+/*lazy_static! {
+  pub static ref FUNCTION_REGISTRY: RefCell<HashMap<u64, Box<dyn NativeFunctionCompiler>>> = RefCell::new(HashMap::new());
+}*/
+
+pub struct FunctionRegistry {
+  pub registry: RefCell<HashMap<u64, Box<dyn MechFunctionImpl>>>,
 }

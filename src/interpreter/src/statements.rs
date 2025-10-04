@@ -46,7 +46,7 @@ pub fn tuple_destructure(tpl_dstrct: &TupleDestructure, p: &Interpreter) -> MRes
     if symbols_brrw.contains(id) {
       return Err(MechError{file:file!().to_string(),tokens:var.tokens(),msg:"Note: Variables are defined with the := operator.".to_string(),id:line!(),kind:MechErrorKind::VariableRedefined(id)});
     }
-    if let Some(element) = tpl.get(i) {
+    if let Some(element) = tpl.borrow().get(i) {
       symbols_brrw.insert(id, element.clone(), true);
       symbols_brrw.dictionary.borrow_mut().insert(id, var.name.to_string());
     } else {
@@ -156,7 +156,7 @@ pub fn enum_define(enm_def: &EnumDefine, p: &Interpreter) -> MResult<Value> {
   let state = &p.state;
   let mut state_brrw = state.borrow_mut();
   let enm = MechEnum{id, variants};
-  let val = Value::Enum(Box::new(enm.clone()));
+  let val = Value::Enum(Ref::new(enm.clone()));
   state_brrw.enums.insert(id, enm.clone());
   state_brrw.kinds.insert(id, val.kind());
   Ok(val)
@@ -193,7 +193,7 @@ impl MechFunctionCompiler for VariableDefineFxn {
     // Define the variable in the symbol table
     let addr = self.var.addr();
     let reg = ctx.alloc_register_for_ptr(addr);
-    ctx.define_symbol(addr, reg, self.name.as_str());
+    ctx.define_symbol(addr, reg, self.name.as_str(), self.mutable);
     // Load the variable's constant value into constant blob
     let val_brrw = self.var.borrow();
     let const_id = val_brrw.compile_const(ctx)?;
@@ -232,8 +232,8 @@ pub fn variable_define(var_def: &VariableDefine, p: &Interpreter) -> MResult<Val
           None => todo!(),
         };
         // Given atom isn't a variant of the enum
-        if !my_enum.variants.iter().any(|(enum_variant, inner_value)| *given_variant_id == *enum_variant) {
-          return Err(MechError{file: file!().to_string(), tokens: var_def.expression.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UnknownEnumVairant(*enum_id,*given_variant_id)}); 
+        if !my_enum.variants.iter().any(|(enum_variant, inner_value)| given_variant_id.borrow().0 == *enum_variant) {
+          return Err(MechError{file: file!().to_string(), tokens: var_def.expression.tokens(), msg: "".to_string(), id: line!(), kind: MechErrorKind::UnknownEnumVairant(*enum_id,given_variant_id.borrow().0)}); 
         }
       }
       // Atoms can't convert into anything else.
@@ -339,7 +339,7 @@ macro_rules! op_assign {
                 let shape = ixes.shape();
                 fxn_input.push(ixes);
                 match shape[..] {
-                  //[1,1] => plan.borrow_mut().push(MatrixSetScalar{}.compile(&fxn_input)?),
+                  [1,1] => plan.borrow_mut().push(MatrixAssignScalar{}.compile(&fxn_input)?),
                   [1,n] => plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?),
                   [n,1] => plan.borrow_mut().push([<$op AssignRange>]{}.compile(&fxn_input)?),
                   _ => todo!(),
@@ -352,7 +352,7 @@ macro_rules! op_assign {
                 fxn_input.push(ix);
                 fxn_input.push(Value::IndexAll);
                 match shape[..] {
-                  //[1,1] => plan.borrow_mut().push(MatrixSetScalarAll{}.compile(&fxn_input)?),
+                  [1,1] => plan.borrow_mut().push(MatrixAssignScalarAll{}.compile(&fxn_input)?),
                   [1,n] => plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?),
                   [n,1] => plan.borrow_mut().push([<$op AssignRangeAll>]{}.compile(&fxn_input)?),
                   _ => todo!(),
@@ -427,7 +427,7 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, p: &Inte
           fxn_input.push(ixes);
           match shape[..] {
             #[cfg(feature = "matrix")]
-            [1,1] => plan.borrow_mut().push(MatrixSetScalar{}.compile(&fxn_input)?),
+            [1,1] => plan.borrow_mut().push(MatrixAssignScalar{}.compile(&fxn_input)?),
             #[cfg(all(feature = "matrix", feature = "subscript_range"))]
             [1,n] => plan.borrow_mut().push(MatrixSetRange{}.compile(&fxn_input)?),
             #[cfg(all(feature = "matrix", feature = "subscript_range"))]
@@ -446,26 +446,26 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, p: &Inte
         [Subscript::All] => {
           fxn_input.push(source.clone());
           fxn_input.push(Value::IndexAll);
-          plan.borrow_mut().push(MatrixSetAll{}.compile(&fxn_input)?);
+          plan.borrow_mut().push(MatrixAssignAll{}.compile(&fxn_input)?);
         },
         [Subscript::All,Subscript::All] => todo!(),
         [Subscript::Formula(ix1),Subscript::Formula(ix2)] => {
           fxn_input.push(source.clone());
-          let result = subscript_formula(&subs[0], p)?;
-          let shape1 = result.shape();
-          fxn_input.push(result);
-          let result = subscript_formula(&subs[1], p)?;
-          let shape2 = result.shape();
-          fxn_input.push(result);
+          let result1 = subscript_formula(&subs[0], p)?;
+          let result2 = subscript_formula(&subs[1], p)?;
+          let shape1 = result1.shape();
+          let shape2 = result2.shape();
+          fxn_input.push(result1);
+          fxn_input.push(result2);
           match ((shape1[0],shape1[1]),(shape2[0],shape2[1])) {
             #[cfg(feature = "matrix")]
-            ((1,1),(1,1)) => plan.borrow_mut().push(MatrixSetScalarScalar{}.compile(&fxn_input)?),
+            ((1,1),(1,1)) => plan.borrow_mut().push(MatrixAssignScalarScalar{}.compile(&fxn_input)?),
             #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            ((1,1),(m,1)) => plan.borrow_mut().push(MatrixSetScalarRange{}.compile(&fxn_input)?),
+            ((1,1),(m,1)) => plan.borrow_mut().push(MatrixAssignScalarRange{}.compile(&fxn_input)?),
             #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            ((n,1),(1,1)) => plan.borrow_mut().push(MatrixSetRangeScalar{}.compile(&fxn_input)?),
+            ((n,1),(1,1)) => plan.borrow_mut().push(MatrixAssignRangeScalar{}.compile(&fxn_input)?),
             #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            ((n,1),(m,1)) => plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?),
+            ((n,1),(m,1)) => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
             _ => unreachable!(),
           }          
         },
@@ -476,7 +476,7 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, p: &Inte
           fxn_input.push(result);
           let result = subscript_range(&subs[1],p)?;
           fxn_input.push(result);
-          plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?);
+          plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?);
         },
         [Subscript::All,Subscript::Formula(ix2)] => {
           fxn_input.push(source.clone());
@@ -486,11 +486,11 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, p: &Inte
           fxn_input.push(ix);
           match shape[..] {
             #[cfg(feature = "matrix")]
-            [1,1] => plan.borrow_mut().push(MatrixSetAllScalar{}.compile(&fxn_input)?),
-            #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            [1,n] => plan.borrow_mut().push(MatrixSetAllRange{}.compile(&fxn_input)?),
-            #[cfg(all(feature = "matrix", feature = "subscript_range"))]
-            [n,1] => plan.borrow_mut().push(MatrixSetAllRange{}.compile(&fxn_input)?),
+            [1,1] => plan.borrow_mut().push(MatrixAssignAllScalar{}.compile(&fxn_input)?),
+            #[cfg(feature = "matrix")]
+            [1,n] => plan.borrow_mut().push(MatrixAssignAllRange{}.compile(&fxn_input)?),
+            #[cfg(feature = "matrix")]
+            [n,1] => plan.borrow_mut().push(MatrixAssignAllRange{}.compile(&fxn_input)?),
             _ => todo!(),
           }
         }
@@ -503,7 +503,7 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, p: &Inte
           fxn_input.push(Value::IndexAll);
           match shape[..] {
             #[cfg(feature = "matrix")]
-            [1,1] => plan.borrow_mut().push(MatrixSetScalarAll{}.compile(&fxn_input)?),
+            [1,1] => plan.borrow_mut().push(MatrixAssignScalarAll{}.compile(&fxn_input)?),
             #[cfg(feature = "matrix")]
             [1,n] => plan.borrow_mut().push(MatrixSetRangeAll{}.compile(&fxn_input)?),
             #[cfg(feature = "matrix")]
@@ -521,11 +521,11 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, p: &Inte
           fxn_input.push(result);
           match &shape[..] {
             #[cfg(feature = "matrix")]
-            [1,1] => plan.borrow_mut().push(MatrixSetRangeScalar{}.compile(&fxn_input)?),
+            [1,1] => plan.borrow_mut().push(MatrixAssignRangeScalar{}.compile(&fxn_input)?),
             #[cfg(feature = "matrix")]
-            [1,n] => plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
             #[cfg(feature = "matrix")]
-            [n,1] => plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
             _ => todo!(),
           }
         },
@@ -539,11 +539,11 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, p: &Inte
           fxn_input.push(result);
           match &shape[..] {
             #[cfg(feature = "matrix")]
-            [1,1] => plan.borrow_mut().push(MatrixSetScalarRange{}.compile(&fxn_input)?),
+            [1,1] => plan.borrow_mut().push(MatrixAssignScalarRange{}.compile(&fxn_input)?),
             #[cfg(feature = "matrix")]
-            [1,n] => plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?),
+            [1,n] => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
             #[cfg(feature = "matrix")]
-            [n,1] => plan.borrow_mut().push(MatrixSetRangeRange{}.compile(&fxn_input)?),
+            [n,1] => plan.borrow_mut().push(MatrixAssignRangeRange{}.compile(&fxn_input)?),
             _ => todo!(),
           }
         },
@@ -553,7 +553,7 @@ pub fn subscript_ref(sbscrpt: &Subscript, sink: &Value, source: &Value, p: &Inte
           fxn_input.push(Value::IndexAll);
           let result = subscript_range(&subs[1],p)?;
           fxn_input.push(result);
-          plan.borrow_mut().push(MatrixSetAllRange{}.compile(&fxn_input)?);
+          plan.borrow_mut().push(MatrixAssignAllRange{}.compile(&fxn_input)?);
         },
         #[cfg(all(feature = "matrix", feature = "subscript_range"))]
         [Subscript::Range(ix1),Subscript::All] => {

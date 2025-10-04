@@ -8,5 +8,5 @@ test:cargo:
   - cargo clean
   - cargo build --bin mech
   - cargo build --no-default-features
-  - cargo test interpret
-  - cargo test bytecode
+  - cargo test interpret --no-default-features --features "base u8 u16 u32 u64 u128 i8 i16 i32 i64 i128 f32"
+  - cargo test bytecode --no-default-features --features "base u8 u16 u32 u64 u128 i8 i16 i32 i64 i128 f32"

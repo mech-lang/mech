@@ -198,12 +198,13 @@ impl ByteCodeHeader {
 pub enum FeatureKind {
   I8=1, I16, I32, I64, I128,
   U8, U16, U32, U64, U128,
-  F32, F64, C64, R64,
-  String, Bool,
+  F32, F64, C64, R64, Index,
+  String, Bool, Atom,
   Set, Map, Table, Tuple, Record, Enum,
   VariableDefine, VariableAssign, KindDefine,
   KindAnnotation, SubscriptRange, SubscriptFormula,
-  DotIndexing, Swizzle, 
+  RangeInclusive, RangeExclusive,
+  DotIndexing, Swizzle, LogicalIndexing,
   Matrix1, Matrix2, Matrix3, Matrix4,
   Matrix2x3, Matrix3x2,
   RowVector2, RowVector3, RowVector4,
@@ -212,9 +213,11 @@ pub enum FeatureKind {
   HorzCat, VertCat,
   Compiler, PrettyPrint, Serde,
   MatMul, Transpose, Dot, Cross,
-  Add, Sub, Mul, Div,
+  Add, Sub, Mul, Div, Exp, Mod, Neg, OpAssign,
   LT, LTE, GT, GTE, EQ, NEQ,
   And, Or, Xor, Not,
+  Convert, Assign, Access,
+  Functions, Formulas,
   Custom = 0xFFFF,
 }
 
@@ -241,26 +244,28 @@ impl FeatureFlag {
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum TypeTag {
   U8=1, U16, U32, U64, U128, I8, I16, I32, I64, I128,
-  F32, F64, ComplexNumber, RationalNumber, String, Bool, Id, Index, Empty, Any,
-  Matrix, EnumTag, Record, Map, Atom, Table, Tuple, Reference, Set, OptionT,
+  F32, F64, C64, R64, String, Bool, Id, Index, Empty, Any,
+  MatrixU8, MatrixU16, MatrixU32, MatrixU64, MatrixU128,
+  MatrixI8, MatrixI16, MatrixI32, MatrixI64, MatrixI128,
+  MatrixF32, MatrixF64, MatrixC64, MatrixR64, MatrixBool, 
+  MatrixString, MatrixIndex,
+  EnumTag, Record, Map, Atom, 
+  Table, Tuple, Reference, Set, OptionT,
 }
 
 impl TypeTag {
   pub fn from_u16(tag: u16) -> Option<Self> {
     match tag {
-      1 => Some(TypeTag::U8), 2 => Some(TypeTag::U16), 3 => Some(TypeTag::U32),
-      4 => Some(TypeTag::U64), 5 => Some(TypeTag::U128), 6 => Some(TypeTag::I8),
-      7 => Some(TypeTag::I16), 8 => Some(TypeTag::I32), 9 => Some(TypeTag::I64),
-      10 => Some(TypeTag::I128), 11 => Some(TypeTag::F32), 12 => Some(TypeTag::F64),
-      13 => Some(TypeTag::ComplexNumber), 14 => Some(TypeTag::RationalNumber),
-      15 => Some(TypeTag::String), 16 => Some(TypeTag::Bool),
-      17 => Some(TypeTag::Id), 18 => Some(TypeTag::Index),
-      19 => Some(TypeTag::Empty), 20 => Some(TypeTag::Any),
-      21 => Some(TypeTag::Matrix), 22 => Some(TypeTag::EnumTag),
-      23 => Some(TypeTag::Record), 24 => Some(TypeTag::Map),
-      25 => Some(TypeTag::Atom), 26 => Some(TypeTag::Table),
-      27 => Some(TypeTag::Tuple), 28 => Some(TypeTag::Reference),
-      29 => Some(TypeTag::Set), 30 => Some(TypeTag::OptionT),
+      1 => Some(TypeTag::U8), 2 => Some(TypeTag::U16), 3 => Some(TypeTag::U32), 4 => Some(TypeTag::U64), 5 => Some(TypeTag::U128),
+      6 => Some(TypeTag::I8), 7 => Some(TypeTag::I16), 8 => Some(TypeTag::I32), 9 => Some(TypeTag::I64), 10 => Some(TypeTag::I128),
+      11 => Some(TypeTag::F32), 12 => Some(TypeTag::F64), 13 => Some(TypeTag::C64), 14 => Some(TypeTag::R64),
+      15 => Some(TypeTag::String), 16 => Some(TypeTag::Bool), 17 => Some(TypeTag::Id), 18 => Some(TypeTag::Index), 19 => Some(TypeTag::Empty), 20 => Some(TypeTag::Any),
+      21 => Some(TypeTag::MatrixU8), 22 => Some(TypeTag::MatrixU16), 23 => Some(TypeTag::MatrixU32), 24 => Some(TypeTag::MatrixU64), 25 => Some(TypeTag::MatrixU128),
+      26 => Some(TypeTag::MatrixI8), 27 => Some(TypeTag::MatrixI16), 28 => Some(TypeTag::MatrixI32), 29 => Some(TypeTag::MatrixI64), 30 => Some(TypeTag::MatrixI128),
+      31 => Some(TypeTag::MatrixF32), 32 => Some(TypeTag::MatrixF64), 33 => Some(TypeTag::MatrixC64), 34 => Some(TypeTag::MatrixR64), 35 => Some(TypeTag::MatrixBool), 
+      36 => Some(TypeTag::MatrixString), 37 => Some(TypeTag::MatrixIndex),
+      38 => Some(TypeTag::EnumTag), 39 => Some(TypeTag::Record), 40 => Some(TypeTag::Map), 41 => Some(TypeTag::Atom), 
+      42 => Some(TypeTag::Table), 43 => Some(TypeTag::Tuple), 44 => Some(TypeTag::Reference), 45 => Some(TypeTag::Set), 46 => Some(TypeTag::OptionT),
       _ => None,
     }
   }
@@ -361,17 +366,19 @@ impl ConstEntry {
 
 pub struct SymbolEntry {
   pub id: u64,          // unique identifier for the symbol
+  pub mutable: bool,
   pub reg: Register,    // register index this symbol maps to
 }
 
 impl SymbolEntry {
 
-  pub fn new(id: u64, reg: Register) -> Self {
-    Self { id, reg }
+  pub fn new(id: u64, mutable: bool, reg: Register) -> Self {
+    Self { id, mutable, reg }
   }
 
   pub fn write_to(&self, w: &mut impl Write) -> MResult<()> {
     w.write_u64::<LittleEndian>(self.id)?;
+    w.write_u8(if self.mutable { 1 } else { 0 })?;
     w.write_u32::<LittleEndian>(self.reg)?;
     Ok(())
   }
@@ -384,10 +391,12 @@ impl SymbolEntry {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OpCode {
   ConstLoad = 0x01,
-  Unop      = 0x10,
-  Binop     = 0x20,
-  Ternop    = 0x30,
-  Quadop    = 0x40,
+  NullOp    = 0x10,
+  Unop      = 0x20,
+  Binop     = 0x30,
+  Ternop    = 0x40,
+  Quadop    = 0x50,
+  VarArg    = 0x60,
   Return    = 0xFF,
 }
 
@@ -395,10 +404,12 @@ impl OpCode {
   pub fn from_u8(num: u8) -> Option<OpCode> {
     match num {
       0x01 => Some(OpCode::ConstLoad),
-      0x10 => Some(OpCode::Unop),
-      0x20 => Some(OpCode::Binop),
-      0x30 => Some(OpCode::Ternop),
-      0x40 => Some(OpCode::Quadop),
+      0x10 => Some(OpCode::NullOp),
+      0x20 => Some(OpCode::Unop),
+      0x30 => Some(OpCode::Binop),
+      0x40 => Some(OpCode::Ternop),
+      0x50 => Some(OpCode::Quadop),
+      0x60 => Some(OpCode::VarArg),
       0xFF => Some(OpCode::Return),
       _    => None,
     }
@@ -407,22 +418,26 @@ impl OpCode {
 
 #[derive(Debug, Clone)]
 pub enum EncodedInstr {
-  ConstLoad { dst: u32, const_id: u32 },                              // [u64 opcode][u32 dst][u32 const_id]
-  UnOp      { fxn_id: u64, dst: u32, src: u32 },                      // [u64 opcode][u32 dst][u32 src]
-  BinOp     { fxn_id: u64, dst: u32, lhs: u32, rhs: u32 },            // [u64 opcode][u32 dst][u32 lhs][u32 rhs]
-  TernOp    { fxn_id: u64, dst: u32, a: u32, b: u32, c: u32 },        // [u64 opcode][u32 dst][u32 a][u32 b][u32 c]
-  QuadOp   { fxn_id: u64, dst: u32, a: u32, b: u32, c: u32, d: u32 }, // [u64 opcode][u32 dst][u32 a][u32 b][u32 c][u32 d]
-  Ret       { src: u32 },                                             // [u64 opcode][u32 src]
+  ConstLoad { dst: u32, const_id: u32 },                               // [u64 opcode][u32 dst][u32 const_id]
+  NullOp    { fxn_id: u64, dst: u32 },                                 // [u64 opcode][u64 fxn_id][u32 dst]
+  UnOp      { fxn_id: u64, dst: u32, src: u32 },                       // [u64 opcode][u32 dst][u32 src]
+  BinOp     { fxn_id: u64, dst: u32, lhs: u32, rhs: u32 },             // [u64 opcode][u32 dst][u32 lhs][u32 rhs]
+  TernOp    { fxn_id: u64, dst: u32, a: u32, b: u32, c: u32 },         // [u64 opcode][u32 dst][u32 a][u32 b][u32 c]
+  QuadOp    { fxn_id: u64, dst: u32, a: u32, b: u32, c: u32, d: u32 }, // [u64 opcode][u32 dst][u32 a][u32 b][u32 c][u32 d]
+  VarArg    { fxn_id: u64, dst: u32, args: Vec<u32> },                 // [u64 opcode][u64 fxn_id][u32 dst][u32 arg_count][u32 args...]
+  Ret       { src: u32 },                                              // [u64 opcode][u32 src]
 }
 
 impl EncodedInstr {
   pub fn byte_len(&self) -> u64 {
     match self {
       EncodedInstr::ConstLoad{..} => 1 + 4 + 4,
+      EncodedInstr::NullOp{..}    => 1 + 8 + 4,
       EncodedInstr::UnOp{..}      => 1 + 8 + 4 + 4,
       EncodedInstr::BinOp{..}     => 1 + 8 + 4 + 4 + 4,
       EncodedInstr::TernOp{..}    => 1 + 8 + 4 + 4 + 4 + 4,
       EncodedInstr::QuadOp{..}    => 1 + 8 + 4 + 4 + 4 + 4 + 4,
+      EncodedInstr::VarArg{ args, .. } => 1 + 8 + 4 + 4 + (4 * args.len() as u64),
       EncodedInstr::Ret{..}       => 1 + 4,
     }
   }
@@ -432,6 +447,11 @@ impl EncodedInstr {
         w.write_u8(OpCode::ConstLoad as u8)?;
         w.write_u32::<LittleEndian>(*dst)?;
         w.write_u32::<LittleEndian>(*const_id)?;
+      }
+      EncodedInstr::NullOp{ fxn_id, dst } => {
+        w.write_u8(OpCode::NullOp as u8)?;
+        w.write_u64::<LittleEndian>(*fxn_id)?;
+        w.write_u32::<LittleEndian>(*dst)?;
       }
       EncodedInstr::UnOp{ fxn_id, dst, src } => {
         w.write_u8(OpCode::Unop as u8)?;
@@ -462,6 +482,15 @@ impl EncodedInstr {
         w.write_u32::<LittleEndian>(*b)?;
         w.write_u32::<LittleEndian>(*c)?;
         w.write_u32::<LittleEndian>(*d)?;
+      }
+      EncodedInstr::VarArg{ fxn_id, dst, args } => {
+        w.write_u8(OpCode::VarArg as u8)?;
+        w.write_u64::<LittleEndian>(*fxn_id)?;
+        w.write_u32::<LittleEndian>(*dst)?;
+        w.write_u32::<LittleEndian>(args.len() as u32)?;
+        for a in args {
+          w.write_u32::<LittleEndian>(*a)?;
+        }
       }
       EncodedInstr::Ret{ src } => {
         w.write_u8(OpCode::Return as u8)?;

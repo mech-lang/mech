@@ -17,7 +17,18 @@ impl MechFunctionImpl for RecordAccessField {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for RecordAccessField {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0];
+
+    registers[0] = compile_register!(self.source, ctx);
+
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Access));
+
+    ctx.emit_nullop(
+      hash_str("RecordAccessField"),
+      registers[0],
+    );
+
+    return Ok(registers[0]);
   }
 }
 
@@ -70,6 +81,17 @@ impl MechFunctionImpl for RecordAccessSwizzle {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for RecordAccessSwizzle {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
-    todo!();
+    let mut registers = [0];
+
+    registers[0] = compile_register!(self.source, ctx);
+
+    ctx.features.insert(FeatureFlag::Builtin(FeatureKind::Swizzle));
+
+    ctx.emit_nullop(
+      hash_str("RecordAccessSwizzle"),
+      registers[0],
+    );
+
+    return Ok(registers[0]);
   }
 }
