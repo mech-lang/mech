@@ -1,0 +1,70 @@
+matrix/dot
+===============================================================================
+
+%% Dot product of two vectors
+
+1. Usage
+----------------------------------------------------------------------------
+
+```mech:disabled
+Y := A · B                -- Infix notation
+Y := matrix/dot(A, B)     -- Function notation
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the dot product (also called scalar product or inner product) of two vectors.
+
+The result `Y` is a scalar for vector inputs and a matrix for matrix inputs.
+
+3. Input
+--------------------------------------------------------------------------------
+
+| Argument | Kind                 | Description                                                     |
+|----------|----------------------|-----------------------------------------------------------------|
+| `A`      | `number`, `[number]` | First vector or matrix. Can be real or complex.                 |
+| `B`      | `number`, `[number]` | Second vector or matrix. Must have a compatible shape with `A`. |
+
+4. Output
+-----------------------------------------------------------------------------------
+
+| Argument | Kind                   | Description                                                                  |
+|----------|------------------------|----------------------------------------------------------------------------- |
+| `Y`      | `number` or `[number]` | Dot product of `A` and `B`, always a scalar. Matches numeric type of inputs. |
+
+5. Examples
+-------------------------------------------------------------------------------------------
+
+(5.1) Dot product of two row vectors
+
+```mech:ex1
+A := [1 2 3]
+B := [4 5 6]
+Y := matrix/dot(A, B)  -- Y = (1 * 4) + (2 * 5) + (3 * 6) = {{Y}}
+```
+
+(5.2) Dot product of two column vectors
+
+```mech:ex2
+A := [1 2]'
+B := [5 6]'
+Y := matrix/dot(A, B)  -- Y = (1 * 5) + (2 * 6) = {{Y}}
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The **dot product** is a fundamental operation in linear algebra and appears frequently in physics, engineering, and machine learning.
+
+**Vector dot product:**
+
+For vectors $\mathbf{a} = [a_1, a_2, ..., a_n]$ and $\mathbf{b} = [b_1, b_2, ..., b_n]$:
+
+$$ \mathbf{a} \cdot \mathbf{b} = \sum_{i=1}^{n} a_i b_i
+
+**Matrix dot product (matrix multiplication):**
+
+If the inputs are compatible matrices, the dot product corresponds to matrix multiplication. In that case, `**` should be used instead for clarity. For matrices $A$ (size $m \times n$) and $B$ (size $n \times p$):
+
+$$ (A \cdot B)_{ij} = \sum_{k=1}^{n} A_{ik} B_{kj}
