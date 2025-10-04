@@ -1,0 +1,66 @@
+math/sinh
+===============================================================================
+
+%% Hyperbolic sine of argument
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/sinh(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the hyperbolic sine of each element of `X`. The input `X` is interpreted as a real or complex number. The result `Y` has the same shape as the input `X`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `X`      | `float`, `[float]`       | Input value(s), real or complex. If `X` is complex, sinh returns complex results. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `Y`      | matches input            | Hyperbolic sine of the input values. For real `X`, the output is always real. For complex `X`, the output may have both real and imaginary parts. The shape of `Y` matches the shape of `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Find the hyperbolic sine of a number 
+
+```mech:ex1
+y := math/sinh(1.0)
+```
+
+(b) Find the hyperbolic sine for a vector of numbers
+
+```mech:ex2
+x := [0, 1, 2]
+y := math/sinh(x)
+```
+
+(c) Find the hyperbolic sine for a matrix of numbers
+
+```mech:ex3
+x := [0, 1; 2, 3]
+y := math/sinh(x)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The hyperbolic sine function is defined as:
+
+$$ sinh(x) = \frac{e^x - e^{-x}}{2}
+
+It is one of the basic hyperbolic functions, closely related to the exponential function.
+
+Unlike the trigonometric sine, which oscillates between -1 and 1, the hyperbolic sine grows rapidly for large values of $$x$$ and is unbounded in both positive and negative directions.
+
+For complex numbers, the definition using exponentials extends naturally, making the function applicable to both real and complex domains.

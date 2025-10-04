@@ -1,0 +1,86 @@
+math/rint
+===============================================================================
+
+%% Round to nearest integer (using current rounding mode)
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/rint(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Rounds each element of the input to the nearest integer, following the current
+floating‑point rounding mode of the system (commonly "round to even"). Unlike
+`floor`, `ceil`, or `trunc`, the exact behavior depends on the runtime rounding
+mode.
+
+$$ y = \mathrm{rint}(x)
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                         | Description |
+|----------|------------------------------|-------------|
+| `X`      | `float`, `[float]`, `matrix` | Real-valued input(s). Supported scalar types are `f64` and `f32`, and their vector/matrix forms. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind             | Description |
+|----------|------------------|-------------|
+| `Y`      | matches input    | `X` rounded to the nearest integer (as a float), elementwise. Shape and precision match the input. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Scalar value
+
+```mech:ex1
+y := math/rint(3.7)           
+```
+
+(b) Negative input
+
+```mech:ex2
+y := math/rint(-2.3)           
+```
+
+(c) Halfway case (depends on rounding mode)
+
+```mech:ex3
+y := math/rint(2.5)            
+```
+
+(d) Vector input
+
+```mech:ex4
+x := [1.2, 2.5, -3.7]
+y := math/rint(x)               
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+- **Definition:** `rint(x)` returns the nearest integer to `x`, as a floating point value.
+- **Rounding mode:** The result depends on the current floating‑point environment (typically IEEE‑754 round‑to‑nearest, ties‑to‑even).
+- **Domain:** All real values are valid inputs.
+- **Special cases:**
+  - `rint(±∞) = ±∞`
+  - `rint(NaN) = NaN`
+- **Shapes & types:** Scalars map to scalars; vectors/matrices are computed elementwise with the same shape.
+
+7. Notes for Implementers
+-------------------------------------------------------------------------------
+
+Backed by Rust/libm `rint` (f64) and `rintf` (f32). Implementations dispatch
+across scalar, vector, and matrix variants. Behavior for halfway cases depends
+on the platform’s floating‑point rounding mode.
+
+8. See also
+-------------------------------------------------------------------------------
+
+`math/floor`, `math/ceil`, `math/trunc`, `math/round`

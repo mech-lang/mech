@@ -1,0 +1,67 @@
+math/asinh
+===============================================================================
+
+%% Area hyperbolic sine (inverse hyperbolic sine) of argument
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/asinh(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the inverse hyperbolic sine (area hyperbolic sine) of each element of `X`. 
+The input `X` can be real or complex. The result `Y` has the same shape as the input `X`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind               | Description                                                                 |
+|----------|--------------------|-----------------------------------------------------------------------------|
+| `X`      | `float`, `[float]` | Input values. Can be real or complex. If `X` is complex, asinh returns complex results. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind          | Description                                                                                   |
+|----------|---------------|-----------------------------------------------------------------------------------------------|
+| `Y`      | matches input | Inverse hyperbolic sine of the input values. The shape of `Y` matches the shape of `X`.       |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Find the asinh of a number 
+
+```mech:ex1
+y := math/asinh(1.0)
+```
+
+(b) Find the asinh for a vector of numbers
+
+```mech:ex2
+x := [0, 1, 2]
+y := math/asinh(x)
+```
+
+(c) Find the asinh for a matrix of numbers
+
+```mech:ex3
+x := [0, 1; 2 3]
+y := math/asinh(x)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The inverse hyperbolic sine is defined as the value whose hyperbolic sine is $$x$$. 
+
+For real numbers:
+
+$$ asinh(x) = \ln(x + \sqrt{x^2 + 1})
+
+This definition extends naturally to complex numbers as well.
+
+The asinh function is useful in mathematics, physics, and engineering when working with hyperbolic functions and transformations.

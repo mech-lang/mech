@@ -1,0 +1,89 @@
+math/erf FIX 6
+===============================================================================
+
+%% Error Function
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/erf(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the error function of each element of `X`. The error function is a special function widely used in probability, statistics, and partial differential equations. The result `Y` has the same shape as the input `X`.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `X`      | `float`, `[float]`       | Input value(s). Can be real or complex. If `X` is complex, `erf` returns complex results. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind                     | Description                           |
+|----------|--------------------------|---------------------------------------|
+| `Y`      | matches input            | Error function evaluated at the input values. The shape of `Y` matches the shape of `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Error function of zero
+
+```mech:ex1
+y := math/erf(0)
+```
+
+(b) Error function of a positive number
+
+```mech:ex2
+y := math/erf(1)
+```
+
+(c) Error function for a vector
+
+```mech:ex3
+x := [0, 0.5, 1.0]
+y := math/erf(x)
+```
+
+(d) Error function for a matrix
+
+```mech:ex4
+x := [0, -1; 1, 2]
+y := math/erf(x)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The error function is defined as:
+
+$$ erf(x) = \frac{2}{\sqrt{\pi}} \int_0^x e^{-t^2} dt
+
+It is an odd function, meaning $$erf(-x) = -erf(x)$$.
+
+For real inputs:
+
+- $$ erf(0) = 0 $$
+- $$ \lim_{x \to \infty} erf(x) = 1 $$
+- $$ \lim_{x \to -\infty} erf(x) = -1 $$
+
+The error function is closely related to the cumulative distribution function (CDF) of the normal distribution, and appears frequently in statistics and probability theory.
+
+Properties:
+
+- $$erf(0) = 0$$
+- $$erf(∞) = 1$$
+- $$erf(-∞) = -1$$
+- The function is odd: $$erf(-x) = -erf(x)$$
+
+The error function arises naturally in probability theory as it relates to the cumulative distribution function (CDF) of the normal distribution:
+
+$$ \Phi(x) = \frac{1}{2} [1 + erf(x / \sqrt{2})]
+
+For complex arguments, the error function can be extended into the complex plane, where it is related to the Faddeeva function.

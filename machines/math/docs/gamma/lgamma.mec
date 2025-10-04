@@ -1,0 +1,94 @@
+math/lgamma
+===============================================================================
+
+%% Natural log of the absolute value of the Gamma function
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/lgamma(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the natural logarithm of the **absolute value** of the Gamma function,
+elementwise: `Y = ln(|Γ(X)|)`. This is useful for numerically stable work with
+factorials and continuous extensions (e.g., `ln(n!) = lgamma(n + 1)`).
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                         | Description |
+|----------|------------------------------|-------------|
+| `X`      | `float`, `[float]`, `matrix` | Real-valued input(s). Supported scalar types are `f64` and `f32`, and their vector/matrix forms. Complex inputs are **not** supported. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind             | Description |
+|----------|------------------|-------------|
+| `Y`      | matches input    | `ln(|Γ(X)|)` computed elementwise. Shape and (floating) precision match the input. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Scalar value
+
+```mech:ex1
+y := math/lgamma(5.0)           
+```
+
+(b) Vector input
+
+```mech:ex2
+x := [1.0, 2.0, 3.0, 4.0]
+y := math/lgamma(x)             
+```
+
+(c) Matrix input
+
+```mech:ex3
+x := [0.5, 1.5; 2.5, 3.5]
+y := math/lgamma(x)             
+```
+
+(d) Log‑factorial via Γ
+
+```mech:ex4
+n := 10.0
+lfact := math/lgamma(n + 1.0)   
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+- **Definition:** `lgamma(x) = ln(|Γ(x)|)`, where `Γ` is the Gamma function.
+  For positive integers `n`, `Γ(n) = (n-1)!`, so `lgamma(n) = ln((n-1)!)`.
+
+- **Numerical stability:** Working in log-space avoids overflow/underflow that
+  would occur with `Γ(x)` directly for moderate to large `x`.
+
+- **Domain & special cases (real inputs):**
+  - Poles occur at `x = 0, -1, -2, ...`; `lgamma(x)` tends to `+∞` near these.
+  - For `x < 0` and non-integers, `Γ(x)` alternates in sign. `lgamma` returns the log of the **absolute** value; the sign of `Γ(x)` is **not** returned.
+  - `lgamma(1) = 0`, `lgamma(2) = 0`, and `lgamma(0.5) = ln(√π)`.
+  - If `x` is `NaN`, the result is `NaN`. For `±∞`, behavior follows the underlying libm (commonly `lgamma(+∞) = +∞`, `lgamma(-∞) = +∞`).
+
+- **Shapes & types:** Scalars map to scalars; vectors/matrices are computed elementwise with the same shape. Implementations exist for `f64` (`lgamma`) and `f32` (`lgammaf`). Mixed precision is not allowed—cast beforehand.
+
+- **Performance:** Vector and matrix paths loop over elements. For large arrays, using contiguous memory improves cache locality.
+
+7. Notes for Implementers
+-------------------------------------------------------------------------------
+
+Backed by Rust/libm `lgamma` (f64) and `lgammaf` (f32). This codebase dispatches
+across scalar, vector, and matrix variants; each computes `ln(|Γ(x)|)`
+elementwise and returns an output of the same shape and precision as the input.
+
+8. See also
+-------------------------------------------------------------------------------
+
+`math/gamma` (if available), `math/log`, `math/factorial` (if available).
+

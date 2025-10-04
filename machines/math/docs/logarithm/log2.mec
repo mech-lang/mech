@@ -1,0 +1,78 @@
+math/log2
+===============================================================================
+
+%% Base-2 logarithm
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/log2(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the base-2 logarithm elementwise:
+
+$$ \log_2(x) = \frac{\ln(x)}{\ln(2)} 
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind                         | Description |
+|----------|------------------------------|-------------|
+| `X`      | `float`, `[float]`, `matrix` | Real-valued input(s). Scalars (`f64`, `f32`) and their vector/matrix forms. Must be positive. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind             | Description |
+|----------|------------------|-------------|
+| `Y`      | matches input    | Base-2 logarithm of `X`, elementwise. Shape and precision match the input. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Scalar value
+
+```mech:ex1
+y := math/log2(8.0)              
+```
+
+(b) Vector input
+
+```mech:ex2
+x := [1.0, 2.0, 4.0, 16.0]
+y := math/log2(x)               
+```
+
+(c) Matrix input
+
+```mech:ex3
+x := [2.0, 4.0; 8.0, 32.0]
+y := math/log2(x)               
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+- **Definition:** $$ y = \log_2(x) $$
+- **Domain:** Requires $$ x > 0 $$.  
+- **Special values:**
+  - $$ \log_2(1) = 0 $$
+  - $$ \log_2(2) = 1 $$
+  - $$ \log_2(+\infty) = +\infty $$
+  - $$ \log_2(0^+) = -\infty $$
+- **NaN:** If `x` is negative or `NaN`, the result is `NaN`.
+
+7. Notes for Implementers
+-------------------------------------------------------------------------------
+
+Backed by Rust/libm `log2` (f64) and `log2f` (f32). Dispatch covers scalar,
+vector, and matrix forms. Operates elementwise with consistent shape and type.
+
+8. See also
+-------------------------------------------------------------------------------
+
+`math/log`, `math/log10`, `math/log1p`

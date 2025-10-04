@@ -1,0 +1,77 @@
+math/nextafter
+===============================================================================
+
+%% Next representable floating-point value towards a target
+
+1. Usage
+-------------------------------------------------------------------------------
+```mech:disabled
+Y := math/nextafter(X, Target)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+Computes the next representable floating-point number after X in the
+direction of Target. The function is useful for examining the spacing
+between floating-point values and for algorithms that require precise
+control of rounding and representation. The result Y has the same shape
+as the input X and Target.
+
+3. Input
+-------------------------------------------------------------------------------
+| Argument | Kind           | Description |
+|----------|----------------|--------------------------------------------------|
+| X        | float, [float] | Starting floating-point value(s). |
+| Target   | float, [float] | Floating-point value(s) indicating the direction towards which to find the next representable value. |
+
+4. Output
+-------------------------------------------------------------------------------
+| Argument | Kind         | Description |
+|----------|--------------|---------------------------------------------------|
+| Y        | matches input| The next representable floating-point number after X in the direction of Target. |
+
+
+5. Examples
+-------------------------------------------------------------------------------
+(a) Find the next representable number greater than 1.0
+
+```mech:ex1
+y := math/nextafter(1.0, 2.0)
+```
+
+(b) Find the next representable number less than 1.0
+
+```mech:ex2
+y := math/nextafter(1.0, 0.0)
+```
+
+(c) Apply to a vector of numbers
+
+```mech:ex3
+x := [1.0, 2.0, 3.0]
+t := [2.0, 1.0, 4.0]
+y := math/nextafter(x, t)
+```
+
+(d) Apply to a matrix
+
+```mech:ex4
+x := [1.0, 2.0; 3.0, 4.0]
+t := [2.0, 1.0; 4.0, 5.0]
+y := math/nextafter(x, t)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+The nextafter function is defined for both single-precision (f32) and
+double-precision (f64) floating-point numbers. It returns the adjacent
+floating-point representation in the direction of the second argument.
+
+- If Target > X, nextafter(X, Target) returns the least floating-point number greater than X.
+- If Target < X, nextafter(X, Target) returns the greatest floating-point number less than X.
+- If Target == X, the result is X.
+
+This function is useful in numerical analysis for detecting underflow,
+controlling rounding behavior, and testing algorithms that are sensitive
+to floating-point precision. It applies element-wise to vectors and
+matrices, and extends naturally to higher-dimensional numeric structures.

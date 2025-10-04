@@ -1,0 +1,74 @@
+math/erfc
+===============================================================================
+
+%% Complementary error function of argument
+
+1. Usage
+-------------------------------------------------------------------------------
+
+```mech:disabled
+Y := math/erfc(X)
+```
+
+2. Description
+-------------------------------------------------------------------------------
+
+Computes the complementary error function of each element of `X`. The input `X` is interpreted as a real or complex number. The result `Y` has the same shape as the input `X`.
+
+The complementary error function is defined as:
+
+$$ erfc(x) = 1 - erf(x)
+
+It is widely used in probability, statistics, and numerical analysis.
+
+3. Input
+-------------------------------------------------------------------------------
+
+| Argument | Kind               | Description                           |
+|----------|--------------------|---------------------------------------|
+| `X`      | `float`, `[float]` | Input value(s), real or complex. |
+
+4. Output
+-------------------------------------------------------------------------------
+
+| Argument | Kind               | Description                           |
+|----------|--------------------|---------------------------------------|
+| `Y`      | matches input      | Complementary error function of the input values. For real `X`, the output is real in the range (0, 2). The shape of `Y` matches the shape of `X`. |
+
+5. Examples  
+-------------------------------------------------------------------------------
+
+(a) Compute the complementary error function of a number
+
+```mech:ex1
+y := math/erfc(0.5)
+```
+
+(b) Compute the complementary error function for a vector of numbers
+
+```mech:ex2
+x := [0, 1, 2]
+y := math/erfc(x)
+```
+
+(c) Compute the complementary error function for a matrix of numbers
+
+```mech:ex3
+x := [0, 1; 2, 3]
+y := math/erfc(x)
+```
+
+6. Details
+-------------------------------------------------------------------------------
+
+The complementary error function is defined as:
+
+$$ erfc(x) = 1 - erf(x) = \frac{2}{\sqrt{\pi}} \int_x^{\infty} e^{-t^2} dt
+
+For real inputs:
+
+- $$ erfc(0) = 1 $$
+- $$ \lim_{x \to \infty} erfc(x) = 0 $$
+- $$ \lim_{x \to -\infty} erfc(x) = 2 $$
+
+It is especially useful in probability theory and statistics, particularly in describing tail probabilities of the normal distribution.
