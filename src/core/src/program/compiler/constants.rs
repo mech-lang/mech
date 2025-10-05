@@ -757,11 +757,23 @@ where
 
 impl ConstElem for Value {
   fn write_le(&self, out: &mut Vec<u8>) {
+    // Write the kind tag first
+    self.kind().write_le(out);
+
+    // Then write the payload
     match self {
       #[cfg(feature = "bool")]
       Value::Bool(x) => x.borrow().write_le(out),
+
       #[cfg(feature = "string")]
-      Value::String(x) => x.borrow().write_le(out),
+      Value::String(x) => {
+        let s = x.borrow();
+        let bytes = s.as_bytes();
+        let len = bytes.len() as u32;
+        out.write_u32::<LittleEndian>(len).unwrap();
+        out.extend_from_slice(bytes);
+      },
+
       #[cfg(feature = "u8")]
       Value::U8(x) => x.borrow().write_le(out),
       #[cfg(feature = "u16")]
@@ -790,16 +802,71 @@ impl ConstElem for Value {
       Value::R64(x) => x.borrow().write_le(out),
       #[cfg(feature = "complex")]
       Value::C64(x) => x.borrow().write_le(out),
-      //#[cfg(feature = "set")]
-      //Value::Set(x) => x.borrow().write_le(out),
-      _ => todo!(),
+      #[cfg(feature = "set")]
+      Value::Set(x) => {
+        let set = x.borrow();
+        out.write_u32::<LittleEndian>(set.num_elements as u32).unwrap();
+        for element in set.set.iter() {
+          element.write_le(out); // recursive: tag + payload
+        }
+      },
+      _ => unimplemented!("write_le not implemented for this Value variant"),
     }
   }
-  fn from_le(_bytes: &[u8]) -> Self {
-    unimplemented!("from_le not implemented for Value")
+ fn from_le(bytes: &[u8]) -> Self {
+    let mut cursor = std::io::Cursor::new(bytes);
+
+    // 1. read ValueKind
+    let kind = ValueKind::from_le(cursor.get_ref());
+
+    // 2. determine the offset of the payload (length of encoded kind)
+    let mut kind_buf = Vec::new();
+    kind.write_le(&mut kind_buf);
+    let payload = &bytes[kind_buf.len()..];
+
+    // 3. dispatch based on ValueKind
+    match kind {
+      #[cfg(feature = "bool")]
+      ValueKind::Bool => Value::Bool(Ref::new(<bool as ConstElem>::from_le(payload))),
+      #[cfg(feature = "string")]
+      ValueKind::String => Value::String(Ref::new(<String as ConstElem>::from_le(payload))),
+      #[cfg(feature = "u8")]
+      ValueKind::U8 => Value::U8(Ref::new(<u8 as ConstElem>::from_le(payload))),
+      #[cfg(feature = "u16")]
+      ValueKind::U16 => Value::U16(Ref::new(<u16 as ConstElem>::from_le(payload))),
+      #[cfg(feature = "u32")]
+      ValueKind::U32 => Value::U32(Ref::new(<u32 as ConstElem>::from_le(payload))),
+      #[cfg(feature = "u64")]
+      ValueKind::U64 => Value::U64(Ref::new(<u64 as ConstElem>::from_le(payload))),
+      #[cfg(feature = "u128")]
+      ValueKind::U128 => Value::U128(Ref::new(<u128 as ConstElem>::from_le(payload))),
+      #[cfg(feature = "i8")]
+      ValueKind::I8 => Value::I8(Ref::new(<i8 as ConstElem>::from_le(payload))),
+      #[cfg(feature = "i16")]
+      ValueKind::I16 => Value::I16(Ref::new(<i16 as ConstElem>::from_le(payload))),
+      #[cfg(feature = "i32")]
+      ValueKind::I32 => Value::I32(Ref::new(<i32 as ConstElem>::from_le(payload))),
+      #[cfg(feature = "i64")]
+      ValueKind::I64 => Value::I64(Ref::new(<i64 as ConstElem>::from_le(payload))),
+      #[cfg(feature = "i128")]
+      ValueKind::I128 => Value::I128(Ref::new(<i128 as ConstElem>::from_le(payload))),
+      #[cfg(feature = "f32")]
+      ValueKind::F32 => Value::F32(Ref::new(<F32 as ConstElem>::from_le(payload))),
+      #[cfg(feature = "f64")]
+      ValueKind::F64 => Value::F64(Ref::new(<F64 as ConstElem>::from_le(payload))),
+      #[cfg(feature = "rational")]
+      ValueKind::R64 => Value::R64(Ref::new(<R64 as ConstElem>::from_le(payload))),
+      #[cfg(feature = "complex")]
+      ValueKind::C64 => Value::C64(Ref::new(<C64 as ConstElem>::from_le(payload))),
+      _ => unimplemented!("from_le not implemented for this ValueKind variant"),
+    }
   }
-  fn value_kind() -> ValueKind {ValueKind::Any}
-  fn align() -> u8 { 1 }
+  fn value_kind() -> ValueKind {
+    ValueKind::Any
+  }
+  fn align() -> u8 {
+    1
+  }
 }
 
 impl ConstElem for ValueKind {
@@ -893,11 +960,66 @@ impl ConstElem for ValueKind {
       },
     }
   }
-  fn from_le(_bytes: &[u8]) -> Self {
-    unimplemented!("from_le not implemented for ValueKind")
-  }
+  fn from_le(bytes: &[u8]) -> Self {
+        let mut cursor = Cursor::new(bytes);
+        let tag = cursor.read_u8().expect("read value kind tag");
+
+        match tag {
+            1 => ValueKind::U8,
+            2 => ValueKind::U16,
+            3 => ValueKind::U32,
+            4 => ValueKind::U64,
+            5 => ValueKind::U128,
+            6 => ValueKind::I8,
+            7 => ValueKind::I16,
+            8 => ValueKind::I32,
+            9 => ValueKind::I64,
+            10 => ValueKind::I128,
+            11 => ValueKind::F32,
+            12 => ValueKind::F64,
+            13 => ValueKind::C64,
+            14 => ValueKind::R64,
+            15 => ValueKind::String,
+            16 => ValueKind::Bool,
+            17 => ValueKind::Id,
+            18 => ValueKind::Index,
+            19 => ValueKind::Empty,
+            20 => ValueKind::Any,
+            21 => {
+                let elem_vk = ValueKind::from_le(&bytes[cursor.position() as usize..]);
+                cursor.set_position(cursor.position() + 1); // advance past elem_vk tag
+                let dim_count = cursor.read_u32::<LittleEndian>().expect("read matrix dim count") as usize;
+                let mut dims = Vec::with_capacity(dim_count);
+                for _ in 0..dim_count {
+                    dims.push(cursor.read_u32::<LittleEndian>().expect("read matrix dim") as usize);
+                }
+                ValueKind::Matrix(Box::new(elem_vk), dims)
+            }
+            22 => ValueKind::Enum(cursor.read_u64::<LittleEndian>().expect("read enum id")),
+            29 => {
+                let elem_vk = ValueKind::from_le(&bytes[cursor.position() as usize..]);
+                cursor.set_position(cursor.position() + 1);
+                let size_flag = cursor.read_u8().expect("read set size flag");
+                let opt_size = if size_flag != 0 {
+                    Some(cursor.read_u32::<LittleEndian>().expect("read set size") as usize)
+                } else {
+                    None
+                };
+                ValueKind::Set(Box::new(elem_vk), opt_size)
+            }
+            x => unimplemented!("from_le not implemented for this ValueKind variant: {}", x),
+        }
+    }
   fn value_kind() -> ValueKind { ValueKind::Any }
   fn align() -> u8 { 1 }
+}
+
+// helper to read a length-prefixed string from cursor
+fn read_string_from_cursor(cursor: &mut std::io::Cursor<&[u8]>) -> Vec<u8> {
+  let len = cursor.read_u32::<LittleEndian>().expect("read string len") as usize;
+  let mut buf = vec![0u8; len];
+  cursor.read_exact(&mut buf).expect("read string bytes");
+  buf
 }
 
 #[cfg(feature = "enum")]

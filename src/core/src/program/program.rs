@@ -125,6 +125,37 @@ impl ParsedProgram {
     Ok(())
   }
 
+  /*pub fn decode_const_entries2(&self) -> MResult<Vec<Value>> {
+    let mut out = Vec::with_capacity(self.const_entries.len());
+    let blob_len = self.const_blob.len() as u64;
+
+    for const_entry in &self.const_entries {
+      // Bounds checking
+      if const_entry.enc != ConstEncoding::Inline as u8 {
+        return Err(MechError{file: file!().to_string(),tokens: vec![],msg: "Unsupported constant encoding".to_string(),id: line!(),kind: MechErrorKind::GenericError("Unsupported constant encoding".to_string())});
+      }
+      if const_entry.offset.checked_add(const_entry.length).is_none() || 
+        const_entry.offset + const_entry.length > blob_len {
+        return Err(MechError{file: file!().to_string(),tokens: vec![],msg: "Constant entry out of bounds".to_string(),id: line!(),kind: MechErrorKind::GenericError("Constant entry out of bounds".to_string())});
+      }
+      if !check_alignment(const_entry.offset, const_entry.align) {
+        return Err(MechError{ file: file!().to_string(),tokens: vec![],msg: "Constant entry alignment error".to_string(),id: line!(),kind: MechErrorKind::GenericError("Constant entry alignment error".to_string())});
+      }
+
+      // Decode the thing
+      let start = const_entry.offset as usize;
+      let end = start + const_entry.length as usize;
+      let data = &self.const_blob[start..end];
+      let ty = &self.types.entries[const_entry.type_id as usize];
+
+      let value = Value::decode_from_tag(&ty.tag, data)?;
+      out.push(value);
+    }
+
+    Ok(out)
+  }*/
+
+
   pub fn decode_const_entries(&self) -> MResult<Vec<Value>> {
     let mut out = Vec::with_capacity(self.const_entries.len());
     let blob_len = self.const_blob.len() as u64;
@@ -458,37 +489,49 @@ impl ParsedProgram {
         },
         #[cfg(feature = "set")]
         TypeTag::Set => {
-          if data.len() < 4 {
-            return Err(MechError {
-              file: file!().to_string(),
-              tokens: vec![],
-              msg: "Set const entry must be at least 4 bytes (num elements)".to_string(),
-              id: line!(),
-              kind: MechErrorKind::GenericError("Set const entry must be at least 4 bytes (num elements)".to_string()),
-            });
-          }
-
-          // number of elements
-          let num_elements = u32::from_le_bytes(data[0..4].try_into().unwrap()) as usize;
-          let mut offset = 4;
-
-          let mut elements = Vec::with_capacity(num_elements);
-
-          for _ in 0..num_elements {
-            if offset >= data.len() {
-              return Err(MechError {
-                file: file!().to_string(),
-                tokens: vec![],
-                msg: "Unexpected end of data while decoding set element".to_string(),
-                id: line!(),
-                kind: MechErrorKind::GenericError("Unexpected end of data while decoding set element".to_string()),
-              });
+            if data.len() < 4 {
+                return Err(MechError {
+                    file: file!().to_string(),
+                    tokens: vec![],
+                    msg: "Set const entry must be at least 4 bytes (num elements)".to_string(),
+                    id: line!(),
+                    kind: MechErrorKind::GenericError("Set const entry must be at least 4 bytes (num elements)".to_string()),
+                });
             }
 
-            todo!("Decoding set elements of arbitrary types is not yet implemented");
-          }
+            // number of elements
+            let num_elements = u32::from_le_bytes(data[0..4].try_into().unwrap()) as usize;
+            let mut offset = 4;
+            let mut elements = Vec::with_capacity(num_elements);
 
-          Value::Set(Ref::new(MechSet::from_vec(elements)))
+            for _ in 0..num_elements {
+                if offset >= data.len() {
+                    return Err(MechError {
+                        file: file!().to_string(),
+                        tokens: vec![],
+                        msg: "Unexpected end of data while decoding set element".to_string(),
+                        id: line!(),
+                        kind: MechErrorKind::GenericError("Unexpected end of data while decoding set element".to_string()),
+                    });
+                }
+
+                // Slice the remaining data
+                let remaining = &data[offset..];
+
+                println!("REMAINING {:?}", remaining);
+
+                // Decode a single Value (it will consume the tag + payload)
+                let element = Value::from_le(remaining);
+
+                // Determine how many bytes this element consumed
+                let mut buf = Vec::new();
+                element.write_le(&mut buf); // this mirrors the encoding to know the length
+                offset += buf.len();
+
+                elements.push(element);
+            }
+
+            Value::Set(Ref::new(MechSet::from_vec(elements)))
         },
         // Add more types as needed
         _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Unsupported constant type {:?}", ty.tag), id: line!(), kind: MechErrorKind::GenericError(format!("Unsupported constant type {:?}", ty.tag))}),
