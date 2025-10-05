@@ -455,9 +455,6 @@ impl CompileConst for MechSet {
 
     // write each element
     for element in self.set.iter() {
-      // element kind
-      let value_kind = element.kind();
-      value_kind.write_le(&mut payload);
       // element data
       element.write_le(&mut payload);
     }

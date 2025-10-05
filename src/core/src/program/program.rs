@@ -517,9 +517,7 @@ impl ParsedProgram {
 
                 // Slice the remaining data
                 let remaining = &data[offset..];
-
-                println!("REMAINING {:?}", remaining);
-
+                
                 // Decode a single Value (it will consume the tag + payload)
                 let element = Value::from_le(remaining);
 
