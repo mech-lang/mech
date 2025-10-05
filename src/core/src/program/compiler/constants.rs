@@ -91,6 +91,8 @@ impl CompileConst for Value {
       Value::Table(x) => x.borrow().compile_const(ctx)?,
       #[cfg(feature = "record")]
       Value::Record(x) => x.borrow().compile_const(ctx)?,
+      #[cfg(feature = "set")]
+      Value::Set(x) => x.borrow().compile_const(ctx)?,
       x => todo!("CompileConst not implemented for {:?}", x),
     };
     Ok(reg)
@@ -443,11 +445,32 @@ impl CompileConst for MechAtom {
   }
 }
 
+#[cfg(feature = "set")]
+impl CompileConst for MechSet {
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    let mut payload = Vec::<u8>::new();
+
+    // write the number of elements
+    payload.write_u32::<LittleEndian>(self.num_elements as u32)?;
+
+    // write each element
+    for element in self.set.iter() {
+      // element kind
+      let value_kind = element.kind();
+      value_kind.write_le(&mut payload);
+      // element data
+      element.write_le(&mut payload);
+    }
+    ctx.compile_const(&payload, self.kind())
+  }
+}
+
 // ConstElem Trait
 // ----------------------------------------------------------------------------
 
 pub trait ConstElem {
   fn write_le(&self, out: &mut Vec<u8>);
+  fn from_le(bytes: &[u8]) -> Self;
   fn value_kind() -> ValueKind;
   fn align() -> u8 { 1 }
 }
@@ -457,6 +480,11 @@ impl ConstElem for F64 {
   fn write_le(&self, out: &mut Vec<u8>) {
     out.write_f64::<LittleEndian>(self.0).expect("write f64");
   }
+  fn from_le(bytes: &[u8]) -> Self {
+    let mut rdr = std::io::Cursor::new(bytes);
+    let val = rdr.read_f64::<LittleEndian>().expect("read f64");
+    F64(val)
+  }
   fn value_kind() -> ValueKind { ValueKind::F64 }
   fn align() -> u8 { 8 }
 }
@@ -465,6 +493,11 @@ impl ConstElem for F64 {
 impl ConstElem for F32 {
   fn write_le(&self, out: &mut Vec<u8>) {
     out.write_f32::<LittleEndian>(self.0).expect("write f32");
+  }
+  fn from_le(bytes: &[u8]) -> Self {
+    let mut rdr = std::io::Cursor::new(bytes);
+    let val = rdr.read_f32::<LittleEndian>().expect("read f32");
+    F32(val)
   }
   fn value_kind() -> ValueKind { ValueKind::F32 }
   fn align() -> u8 { 4 }
@@ -477,6 +510,10 @@ macro_rules! impl_const_elem {
       impl ConstElem for $t {
         fn write_le(&self, out: &mut Vec<u8>) {
           out.[<write_ $t>]::<LittleEndian>(*self).expect(concat!("write ", stringify!($t)));
+        }
+        fn from_le(bytes: &[u8]) -> Self {
+          let mut rdr = std::io::Cursor::new(bytes);
+          rdr.[<read_ $t>]::<LittleEndian>().expect(concat!("read ", stringify!($t)))
         }
         fn value_kind() -> ValueKind { ValueKind::[<$t:upper>] }
         fn align() -> u8 { $align }
@@ -507,6 +544,9 @@ impl ConstElem for u8 {
   fn write_le(&self, out: &mut Vec<u8>) {
     out.write_u8(*self).expect("write u8");
   }
+  fn from_le(bytes: &[u8]) -> Self {
+    bytes[0]
+  }
   fn value_kind() -> ValueKind { ValueKind::U8 }
   fn align() -> u8 { 1 }
 } 
@@ -515,6 +555,9 @@ impl ConstElem for u8 {
 impl ConstElem for i8 {
   fn write_le(&self, out: &mut Vec<u8>) {
     out.write_i8(*self).expect("write i8");
+  }
+  fn from_le(bytes: &[u8]) -> Self {
+    bytes[0] as i8
   }
   fn value_kind() -> ValueKind { ValueKind::I8 }
   fn align() -> u8 { 1 }
@@ -526,6 +569,20 @@ impl ConstElem for R64 {
     out.write_i64::<LittleEndian>(*self.numer()).expect("write rational numer");
     out.write_i64::<LittleEndian>(*self.denom()).expect("write rational denom");
   }
+  fn from_le(bytes: &[u8]) -> Self {
+    let numer = match bytes[0..8].try_into() {
+      Ok(arr) => i64::from_le_bytes(arr),
+      Err(_) => panic!("Failed to read numerator from bytes"),
+    };
+    let denom = match bytes[8..16].try_into() {
+      Ok(arr) => i64::from_le_bytes(arr),
+      Err(_) => panic!("Failed to read denominator from bytes"),
+    };
+    if denom == 0 {
+      panic!("Denominator cannot be zero");
+    }
+    R64::new(numer, denom)
+  }
   fn value_kind() -> ValueKind { ValueKind::R64 }
   fn align() -> u8 { 16 }
 }
@@ -535,6 +592,17 @@ impl ConstElem for C64 {
   fn write_le(&self, out: &mut Vec<u8>) {
     out.write_f64::<LittleEndian>(self.0.re).expect("write complex real");
     out.write_f64::<LittleEndian>(self.0.im).expect("write complex imag");
+  }
+  fn from_le(bytes: &[u8]) -> Self {
+    let real = match bytes[0..8].try_into() {
+      Ok(arr) => f64::from_le_bytes(arr),
+      Err(_) => panic!("Failed to read real part from bytes"),
+    };
+    let imag = match bytes[8..16].try_into() {
+      Ok(arr) => f64::from_le_bytes(arr),
+      Err(_) => panic!("Failed to read imaginary part from bytes"),
+    };
+    C64::new(real, imag)
   }
   fn value_kind() -> ValueKind { ValueKind::C64 }
   fn align() -> u8 { 16 }
@@ -546,6 +614,17 @@ impl ConstElem for String {
     out.write_u32::<LittleEndian>(self.len() as u32).expect("write string length");
     out.extend_from_slice(self.as_bytes());
   }
+  fn from_le(bytes: &[u8]) -> Self {
+    let len = match bytes[0..4].try_into() {
+      Ok(arr) => u32::from_le_bytes(arr) as usize,
+      Err(_) => panic!("Failed to read string length from bytes"),
+    };
+    let str_bytes = &bytes[4..4+len];
+    match std::str::from_utf8(str_bytes) {
+      Ok(s) => s.to_string(),
+      Err(_) => panic!("Failed to convert bytes to string"),
+    }
+  }
   fn value_kind() -> ValueKind { ValueKind::String }
   fn align() -> u8 { 1 }
 }
@@ -555,6 +634,9 @@ impl ConstElem for bool {
   fn write_le(&self, out: &mut Vec<u8>) {
     out.write_u8(if *self { 1 } else { 0 }).expect("write bool");
   }
+  fn from_le(bytes: &[u8]) -> Self {
+    bytes[0] != 0
+  }
   fn value_kind() -> ValueKind { ValueKind::Bool }
   fn align() -> u8 { 1 }
 }
@@ -562,6 +644,13 @@ impl ConstElem for bool {
 impl ConstElem for usize {
   fn write_le(&self, out: &mut Vec<u8>) {
     out.write_u64::<LittleEndian>(*self as u64).expect("write usize");
+  }
+  fn from_le(bytes: &[u8]) -> Self {
+    let val = match bytes[0..8].try_into() {
+      Ok(arr) => u64::from_le_bytes(arr),
+      Err(_) => panic!("Failed to read usize from bytes"),
+    };
+    val as usize
   }
   fn value_kind() -> ValueKind { ValueKind::Index }
   fn align() -> u8 { 8 }
@@ -579,6 +668,9 @@ macro_rules! impl_const_elem_matrix {
             self[(r, c)].write_le(out);
           }
         }
+      }
+      fn from_le(bytes: &[u8]) -> Self {
+        unimplemented!("from_le not implemented for {}", stringify!($matrix_type))
       }
       fn value_kind() -> ValueKind { ValueKind::Matrix(Box::new(T::value_kind()), vec![$rows, $cols]) }
       fn align() -> u8 { 8 }
@@ -655,6 +747,9 @@ where
       Matrix::Vector4(mat) => mat.borrow().write_le(out),
     }
   }
+  fn from_le(bytes: &[u8]) -> Self {
+    unimplemented!("from_le not implemented for Matrix<T>")
+  }
   fn value_kind() -> ValueKind { ValueKind::Matrix(Box::new(T::value_kind()), vec![0,0]) }
   fn align() -> u8 { T::align() }
 }
@@ -695,8 +790,13 @@ impl ConstElem for Value {
       Value::R64(x) => x.borrow().write_le(out),
       #[cfg(feature = "complex")]
       Value::C64(x) => x.borrow().write_le(out),
+      //#[cfg(feature = "set")]
+      //Value::Set(x) => x.borrow().write_le(out),
       _ => todo!(),
     }
+  }
+  fn from_le(_bytes: &[u8]) -> Self {
+    unimplemented!("from_le not implemented for Value")
   }
   fn value_kind() -> ValueKind {ValueKind::Any}
   fn align() -> u8 { 1 }
@@ -793,6 +893,9 @@ impl ConstElem for ValueKind {
       },
     }
   }
+  fn from_le(_bytes: &[u8]) -> Self {
+    unimplemented!("from_le not implemented for ValueKind")
+  }
   fn value_kind() -> ValueKind { ValueKind::Any }
   fn align() -> u8 { 1 }
 }
@@ -826,6 +929,9 @@ impl ConstElem for MechEnum {
         }
       }
     }
+  }
+  fn from_le(_bytes: &[u8]) -> Self {
+    unimplemented!("from_le not implemented for MechEnum")
   }
   fn value_kind() -> ValueKind { ValueKind::Enum(0) } // id 0 as placeholder
   fn align() -> u8 { 8 }

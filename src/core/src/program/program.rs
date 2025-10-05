@@ -456,6 +456,40 @@ impl ParsedProgram {
           let value = u64::from_le_bytes(data.try_into().unwrap()) as usize;
           Value::Index(Ref::new(value))
         },
+        #[cfg(feature = "set")]
+        TypeTag::Set => {
+          if data.len() < 4 {
+            return Err(MechError {
+              file: file!().to_string(),
+              tokens: vec![],
+              msg: "Set const entry must be at least 4 bytes (num elements)".to_string(),
+              id: line!(),
+              kind: MechErrorKind::GenericError("Set const entry must be at least 4 bytes (num elements)".to_string()),
+            });
+          }
+
+          // number of elements
+          let num_elements = u32::from_le_bytes(data[0..4].try_into().unwrap()) as usize;
+          let mut offset = 4;
+
+          let mut elements = Vec::with_capacity(num_elements);
+
+          for _ in 0..num_elements {
+            if offset >= data.len() {
+              return Err(MechError {
+                file: file!().to_string(),
+                tokens: vec![],
+                msg: "Unexpected end of data while decoding set element".to_string(),
+                id: line!(),
+                kind: MechErrorKind::GenericError("Unexpected end of data while decoding set element".to_string()),
+              });
+            }
+
+            todo!("Decoding set elements of arbitrary types is not yet implemented");
+          }
+
+          Value::Set(Ref::new(MechSet::from_vec(elements)))
+        },
         // Add more types as needed
         _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Unsupported constant type {:?}", ty.tag), id: line!(), kind: MechErrorKind::GenericError(format!("Unsupported constant type {:?}", ty.tag))}),
       };
