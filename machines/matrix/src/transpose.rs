@@ -164,4 +164,4 @@ fn impl_transpose_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechErr
   )
 }
   
-impl_mech_urnop_fxn!(MatrixTranspose,impl_transpose_fxn);  
+impl_mech_urnop_fxn!(MatrixTranspose,impl_transpose_fxn,"matrix/transpose");  
