@@ -1039,29 +1039,38 @@ macro_rules! impl_urnop_match_arms {
 
 #[macro_export]
 macro_rules! impl_mech_binop_fxn {
-  ($fxn_name:ident, $gen_fxn:tt) => {
-    pub struct $fxn_name {}
-    impl NativeFunctionCompiler for $fxn_name {
-      fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() != 2 {
-          return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
-        }
-        let lhs_value = arguments[0].clone();
-        let rhs_value = arguments[1].clone();
-        match $gen_fxn(lhs_value.clone(), rhs_value.clone()) {
-          Ok(fxn) => Ok(fxn),
-          Err(_) => {
-            match (lhs_value,rhs_value) {
-              (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {$gen_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
-              (lhs_value,Value::MutableReference(rhs)) => { $gen_fxn(lhs_value.clone(), rhs.borrow().clone())}
-              (Value::MutableReference(lhs),rhs_value) => { $gen_fxn(lhs.borrow().clone(), rhs_value.clone()) }
-              x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+  ($fxn_name:ident, $gen_fxn:tt, $fxn_string:tt) => {
+    paste!{
+      pub struct $fxn_name {}
+      impl NativeFunctionCompiler for $fxn_name {
+        fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+          if arguments.len() != 2 {
+            return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments});
+          }
+          let lhs_value = arguments[0].clone();
+          let rhs_value = arguments[1].clone();
+          match $gen_fxn(lhs_value.clone(), rhs_value.clone()) {
+            Ok(fxn) => Ok(fxn),
+            Err(_) => {
+              match (lhs_value,rhs_value) {
+                (Value::MutableReference(lhs),Value::MutableReference(rhs)) => {$gen_fxn(lhs.borrow().clone(), rhs.borrow().clone())}
+                (lhs_value,Value::MutableReference(rhs)) => { $gen_fxn(lhs_value.clone(), rhs.borrow().clone())}
+                (Value::MutableReference(lhs),rhs_value) => { $gen_fxn(lhs.borrow().clone(), rhs_value.clone()) }
+                x => Err(MechError{file: file!().to_string(),  tokens: vec![], msg: format!("{:?}",x), id: line!(), kind: MechErrorKind::UnhandledFunctionArgumentKind }),
+              }
             }
           }
         }
       }
+      static [<fxn_name:upper>]: $fxn_name = $fxn_name{};
+      inventory::submit! {
+        FunctionCompiler {
+          name: $fxn_string,
+          ptr: &[<fxn_name:upper>],
+        }
+      }
     }
-  }
+  };
 }
 
 #[macro_export]
