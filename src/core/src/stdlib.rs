@@ -1075,7 +1075,7 @@ macro_rules! impl_mech_binop_fxn {
 
 #[macro_export]
 macro_rules! impl_mech_urnop_fxn {
-  ($fxn_name:ident, $gen_fxn:tt) => {
+  ($fxn_name:ident, $gen_fxn:tt, $fxn_string:tt) => {
     pub struct $fxn_name {}
     impl NativeFunctionCompiler for $fxn_name {
       fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
@@ -1092,6 +1092,12 @@ macro_rules! impl_mech_urnop_fxn {
             }
           }
         }
+      }
+    }
+    inventory::submit! {
+      FunctionCompiler {
+        name: $fxn_string,
+        ptr: & $fxn_name{},
       }
     }
   }
