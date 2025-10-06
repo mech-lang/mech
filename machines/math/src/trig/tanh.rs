@@ -83,7 +83,7 @@ impl NativeFunctionCompiler for MathTanh {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/tanh",
     ptr: &MathTanh{},
   }

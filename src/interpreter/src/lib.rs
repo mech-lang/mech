@@ -136,35 +136,6 @@ pub fn load_stdlib(fxns: &mut Functions) {
 
   // Preload combinatorics functions
   /*
-  #[cfg(feature = "math_acos")]
-  fxns.function_compilers.insert(hash_str("math/acos"),Box::new(MathAcos{}));
-  #[cfg(feature = "math_acosh")]
-  fxns.function_compilers.insert(hash_str("math/acosh"),Box::new(MathAcosh{}));
-  #[cfg(feature = "math_acot")]
-  fxns.function_compilers.insert(hash_str("math/acot"),Box::new(MathAcot{}));
-  #[cfg(feature = "math_acsc")]
-  fxns.function_compilers.insert(hash_str("math/acsc"),Box::new(MathAcsc{}));
-  #[cfg(feature = "math_asec")]
-  fxns.function_compilers.insert(hash_str("math/asec"),Box::new(MathAsec{}));
-  #[cfg(feature = "math_asin")]
-  fxns.function_compilers.insert(hash_str("math/asin"),Box::new(MathAsin{}));
-  #[cfg(feature = "math_sinh")]
-  fxns.function_compilers.insert(hash_str("math/sinh"),Box::new(MathSinh{}));
-  #[cfg(feature = "math_cosh")]
-  fxns.function_compilers.insert(hash_str("math/cosh"),Box::new(MathCosh{}));
-  #[cfg(feature = "math_tanh")]
-  fxns.function_compilers.insert(hash_str("math/tanh"),Box::new(MathTanh{}));
-  #[cfg(feature = "math_atanh")]
-  fxns.function_compilers.insert(hash_str("math/atanh"),Box::new(MathAtanh{}));
-  #[cfg(feature = "math_cot")]
-  fxns.function_compilers.insert(hash_str("math/cot"),Box::new(MathCot{}));
-  #[cfg(feature = "math_csc")]
-  fxns.function_compilers.insert(hash_str("math/csc"),Box::new(MathCsc{}));
-  #[cfg(feature = "math_sec")]
-  fxns.function_compilers.insert(hash_str("math/sec"),Box::new(MathSec{}));
-  #[cfg(feature = "math_tan")]
-  fxns.function_compilers.insert(hash_str("math/tan"),Box::new(MathTan{}));
-
   // Preload io functions
   #[cfg(feature = "io_print")]
   fxns.function_compilers.insert(hash_str("io/print"), Box::new(IoPrint{}));
@@ -182,7 +153,7 @@ pub fn load_stdlib(fxns: &mut Functions) {
     fxns.insert_function(fxn_desc.clone());
   }
 
-  for fxn_comp in inventory::iter::<FunctionCompiler> {
+  for fxn_comp in inventory::iter::<FunctionCompilerDescriptor> {
     fxns.function_compilers.insert(hash_str(fxn_comp.name), fxn_comp.ptr);
   }
 

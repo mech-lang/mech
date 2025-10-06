@@ -66,7 +66,7 @@ impl NativeFunctionCompiler for MathCos {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/cos",
     ptr: &MathCos{},
   }

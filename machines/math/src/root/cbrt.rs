@@ -66,7 +66,7 @@ impl NativeFunctionCompiler for MathCbrt {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/cbrt",
     ptr: &MathCbrt{},
   }

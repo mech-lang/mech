@@ -66,7 +66,7 @@ impl NativeFunctionCompiler for MathTgamma {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/tgamma",
     ptr: &MathTgamma{},
   }

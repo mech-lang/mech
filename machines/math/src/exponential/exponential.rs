@@ -66,7 +66,7 @@ impl NativeFunctionCompiler for MathExponential {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/exponential",
     ptr: &MathExponential{},
   }

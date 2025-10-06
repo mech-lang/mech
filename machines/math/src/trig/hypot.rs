@@ -232,7 +232,7 @@ impl NativeFunctionCompiler for MathHypot {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/hypot",
     ptr: &MathHypot{},
   }

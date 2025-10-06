@@ -66,7 +66,7 @@ impl NativeFunctionCompiler for MathCot {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/cot",
     ptr: &MathCot{},
   }

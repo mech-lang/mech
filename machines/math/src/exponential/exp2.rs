@@ -66,7 +66,7 @@ impl NativeFunctionCompiler for MathExp2 {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/exp2",
     ptr: &MathExp2{},
   }

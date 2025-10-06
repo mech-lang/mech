@@ -232,7 +232,7 @@ impl NativeFunctionCompiler for MathFmax {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/fmax",
     ptr: &MathFmax{},
   }

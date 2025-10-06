@@ -232,7 +232,7 @@ impl NativeFunctionCompiler for MathJn {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/bessel/jn",
     ptr: &MathJn{},
   }

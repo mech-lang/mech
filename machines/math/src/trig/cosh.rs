@@ -83,7 +83,7 @@ impl NativeFunctionCompiler for MathCosh {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/cosh",
     ptr: &MathCosh{},
   }

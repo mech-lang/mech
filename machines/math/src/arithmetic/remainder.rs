@@ -232,7 +232,7 @@ impl NativeFunctionCompiler for MathRemainder {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/remainder",
     ptr: &MathRemainder{},
   }

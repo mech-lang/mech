@@ -232,7 +232,7 @@ impl NativeFunctionCompiler for MathNextafter {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/nextafter",
     ptr: &MathNextafter{},
   }

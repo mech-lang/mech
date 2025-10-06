@@ -66,7 +66,7 @@ impl NativeFunctionCompiler for MathAcot {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/acot",
     ptr: &MathAcot{},
   }

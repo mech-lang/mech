@@ -232,7 +232,7 @@ impl NativeFunctionCompiler for MathFmin {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/fmin",
     ptr: &MathFmin{},
   }

@@ -1062,7 +1062,7 @@ macro_rules! impl_mech_binop_fxn {
       }
     }
     inventory::submit! {
-      FunctionCompiler {
+      FunctionCompilerDescriptor {
         name: $fxn_string,
         ptr: &$fxn_name{},
       }
@@ -1092,7 +1092,7 @@ macro_rules! impl_mech_urnop_fxn {
       }
     }
     inventory::submit! {
-      FunctionCompiler {
+      FunctionCompilerDescriptor {
         name: $fxn_string,
         ptr: & $fxn_name{},
       }

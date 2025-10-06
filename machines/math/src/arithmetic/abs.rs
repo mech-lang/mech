@@ -131,7 +131,7 @@ impl NativeFunctionCompiler for MathAbs {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/abs",
     ptr: &MathAbs{},
   }

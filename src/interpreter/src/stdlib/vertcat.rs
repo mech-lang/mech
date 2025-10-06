@@ -1924,3 +1924,10 @@ impl NativeFunctionCompiler for MatrixVertCat {
     impl_vertcat_fxn(arguments)
   }
 }
+
+inventory::submit! {
+  FunctionCompilerDescriptor {
+    name: "matrix/vertcat",
+    compiler: &MatrixVertCat{},
+  }
+}

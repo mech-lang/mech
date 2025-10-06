@@ -131,7 +131,7 @@ pub use self::types::*;
 inventory::collect!(FunctionDescriptor);
 
 #[cfg(feature = "functions")]
-inventory::collect!(FunctionCompiler);
+inventory::collect!(FunctionCompilerDescriptor);
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]

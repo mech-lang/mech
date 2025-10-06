@@ -80,7 +80,7 @@ impl NativeFunctionCompiler for MathSinh {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/sinh",
     ptr: &MathSinh{},
   }

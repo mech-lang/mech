@@ -83,7 +83,7 @@ impl NativeFunctionCompiler for MathAsinh {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/asinh",
     ptr: &MathAsinh{},
   }

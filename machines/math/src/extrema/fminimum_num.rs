@@ -232,7 +232,7 @@ impl NativeFunctionCompiler for MathFminimum_num {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/fminimum-num",
     ptr: &MathFminimum_num{},
   }

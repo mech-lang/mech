@@ -66,7 +66,7 @@ impl NativeFunctionCompiler for MathJ0 {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/bessel/j0",
     ptr: &MathJ0{},
   }

@@ -4496,3 +4496,10 @@ impl NativeFunctionCompiler for MatrixHorzCat {
     impl_horzcat_fxn(arguments)
   }
 }
+
+inventory::submit! {
+  FunctionCompilerDescriptor {
+    name: "matrix/horzcat",
+    ptr: &MatrixHorzCat{},
+  }
+}

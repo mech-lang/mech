@@ -66,7 +66,7 @@ impl NativeFunctionCompiler for MathErf {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/erf",
     ptr: &MathErf{},
   }

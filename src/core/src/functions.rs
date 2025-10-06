@@ -48,18 +48,18 @@ impl Debug for FunctionDescriptor {
 unsafe impl Sync for FunctionDescriptor {}
 
 #[repr(C)]
-pub struct FunctionCompiler {
+pub struct FunctionCompilerDescriptor {
   pub name: &'static str,
   pub ptr: &'static dyn NativeFunctionCompiler,
 }
 
-impl Debug for FunctionCompiler {
+impl Debug for FunctionCompilerDescriptor {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     write!(f, "{:?}", self.name)
   }
 }
 
-unsafe impl Sync for FunctionCompiler {}
+unsafe impl Sync for FunctionCompilerDescriptor {}
 
 pub trait MechFunctionFactory {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>>;
@@ -72,21 +72,21 @@ pub trait MechFunctionImpl {
 }
 
 #[cfg(feature = "compiler")]
-pub trait MechFunctionCompiler {
+pub trait MechFunctionCompilerDescriptor {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register>;
 }
 
 #[cfg(feature = "compiler")]
-pub trait MechFunction: MechFunctionImpl + MechFunctionCompiler {}
+pub trait MechFunction: MechFunctionImpl + MechFunctionCompilerDescriptor {}
 #[cfg(feature = "compiler")]
-impl<T> MechFunction for T where T: MechFunctionImpl + MechFunctionCompiler {}
+impl<T> MechFunction for T where T: MechFunctionImpl + MechFunctionCompilerDescriptor {}
 
 #[cfg(not(feature = "compiler"))]
 pub trait MechFunction: MechFunctionImpl {}
 #[cfg(not(feature = "compiler"))]
 impl<T> MechFunction for T where T: MechFunctionImpl {}
 
-pub trait NativeFunctionCompiler {
+pub trait NativeFunctionCompilerDescriptor {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>>;
 }
 

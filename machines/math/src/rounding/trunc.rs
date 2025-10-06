@@ -66,7 +66,7 @@ impl NativeFunctionCompiler for MathTrunc {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/trunc",
     ptr: &MathTrunc{},
   }

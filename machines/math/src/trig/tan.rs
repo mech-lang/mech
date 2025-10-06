@@ -66,7 +66,7 @@ impl NativeFunctionCompiler for MathTan {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/tan",
     ptr: &MathTan{},
   }

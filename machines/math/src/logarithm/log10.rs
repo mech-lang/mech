@@ -66,7 +66,7 @@ impl NativeFunctionCompiler for MathLog10 {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/log10",
     ptr: &MathLog10{},
   }

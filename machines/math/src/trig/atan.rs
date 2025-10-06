@@ -81,7 +81,7 @@ impl NativeFunctionCompiler for MathAtan {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/atan",
     ptr: &MathAtan{},
   }

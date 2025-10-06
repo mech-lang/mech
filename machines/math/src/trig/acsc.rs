@@ -66,7 +66,7 @@ impl NativeFunctionCompiler for MathAcsc {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/acsc",
     ptr: &MathAcsc{},
   }

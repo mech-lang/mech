@@ -159,7 +159,7 @@ impl NativeFunctionCompiler for SetDefine {
 }
 static SET_DEFINE: SetDefine = SetDefine{};
 inventory::submit!{
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "set/define",
     ptr: &SET_DEFINE,
   }

@@ -97,7 +97,7 @@ impl NativeFunctionCompiler for SubAssignValue {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/sub-assign",
     ptr: &SubAssignValue{},
   }
@@ -181,7 +181,7 @@ impl NativeFunctionCompiler for SubAssignRange {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/sub-assign/range",
     ptr: &SubAssignRange{},
   }
@@ -276,7 +276,7 @@ impl NativeFunctionCompiler for SubAssignRangeAll {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/sub-assign/range-all",
     ptr: &SubAssignRangeAll{},
   }

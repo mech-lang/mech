@@ -66,7 +66,7 @@ impl NativeFunctionCompiler for MathSin {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/sin",
     ptr: &MathSin{},
   }

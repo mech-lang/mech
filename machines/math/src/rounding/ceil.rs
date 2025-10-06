@@ -66,7 +66,7 @@ impl NativeFunctionCompiler for MathCeil {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/ceil",
     ptr: &MathCeil{},
   }

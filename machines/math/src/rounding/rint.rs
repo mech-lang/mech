@@ -66,7 +66,7 @@ impl NativeFunctionCompiler for MathRint {
 }
 
 inventory::submit! {
-  FunctionCompiler {
+  FunctionCompilerDescriptor {
     name: "math/rint",
     ptr: &MathRint{},
   }
