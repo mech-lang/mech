@@ -135,32 +135,7 @@ pub fn load_stdkinds(kinds: &mut KindTable) {
 pub fn load_stdlib(fxns: &mut Functions) {
 
   // Preload combinatorics functions
-  /*#[cfg(feature = "combinatorics_n_choose_k")]
-  fxns.function_compilers.insert(hash_str("combinatorics/n-choose-k"), Box::new(CombinatoricsNChooseK{}));
-
-  // Preload stats functions
-  #[cfg(feature = "stats_sum")]
-  fxns.function_compilers.insert(hash_str("stats/sum/row"), Box::new(StatsSumRow{}));
-  #[cfg(feature = "stats_sum")]
-  fxns.function_compilers.insert(hash_str("stats/sum/column"), Box::new(StatsSumColumn{}));
-
-  // Preload ops functions
-  #[cfg(feature = "math_neg")]
-  fxns.function_compilers.insert(hash_str("math/neg"),Box::new(MathNegate{}));
-  #[cfg(feature = "math_sin")]
-  fxns.function_compilers.insert(hash_str("math/sin"),Box::new(MathSin{}));
-  #[cfg(feature = "math_cos")]
-
-  // Preload math functions
-  #[cfg(feature = "math_sqrt")]
-  fxns.function_compilers.insert(hash_str("math/sqrt"),Box::new(MathSqrt{}));
-
-  // Preload trig functions
-  fxns.function_compilers.insert(hash_str("math/cos"),Box::new(MathCos{}));
-  #[cfg(feature = "math_atan2")]
-  fxns.function_compilers.insert(hash_str("math/atan2"),Box::new(MathAtan2{}));
-  #[cfg(feature = "math_atan")]
-  fxns.function_compilers.insert(hash_str("math/atan"),Box::new(MathAtan{}));
+  /*
   #[cfg(feature = "math_acos")]
   fxns.function_compilers.insert(hash_str("math/acos"),Box::new(MathAcos{}));
   #[cfg(feature = "math_acosh")]
@@ -201,9 +176,6 @@ pub fn load_stdlib(fxns: &mut Functions) {
   fxns.function_compilers.insert(hash_str("matrix/horzcat"), Box::new(MatrixHorzCat{}));
   #[cfg(feature = "matrix_vertcat")]
   fxns.function_compilers.insert(hash_str("matrix/vertcat"), Box::new(MatrixVertCat{}));
-  #[cfg(feature = "matrix_transpose")]
-  fxns.function_compilers.insert(hash_str("matrix/transpose"), Box::new(MatrixTranspose{}));
-
   */ 
 
   for fxn_desc in inventory::iter::<FunctionDescriptor> {
