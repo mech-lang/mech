@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathErfc {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/erfc",
+    ptr: &MathErfc{},
+  }
+}

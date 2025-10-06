@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathFloor {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/floor",
+    ptr: &MathFloor{},
+  }
+}

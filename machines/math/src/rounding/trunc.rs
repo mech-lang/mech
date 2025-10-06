@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathTrunc {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/trunc",
+    ptr: &MathTrunc{},
+  }
+}

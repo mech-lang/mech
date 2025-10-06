@@ -230,3 +230,10 @@ impl NativeFunctionCompiler for MathCopysign {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/copysign",
+    ptr: &MathCopysign{},
+  }
+}

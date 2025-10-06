@@ -96,6 +96,13 @@ impl NativeFunctionCompiler for SubAssignValue {
   }
 }
 
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/sub-assign",
+    ptr: &SubAssignValue{},
+  }
+}
+
 // x[1..3] -= 1 ----------------------------------------------------------------
 
 macro_rules! sub_assign_1d_range {
@@ -170,6 +177,13 @@ impl NativeFunctionCompiler for SubAssignRange {
         }
       }
     }
+  }
+}
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/sub-assign/range",
+    ptr: &SubAssignRange{},
   }
 }
 
@@ -258,5 +272,12 @@ impl NativeFunctionCompiler for SubAssignRangeAll {
         }
       }
     }
+  }
+}
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/sub-assign/range-all",
+    ptr: &SubAssignRangeAll{},
   }
 }

@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathAsec {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/asec",
+    ptr: &MathAsec{},
+  }
+}

@@ -78,3 +78,10 @@ impl NativeFunctionCompiler for MathSinh {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/sinh",
+    ptr: &MathSinh{},
+  }
+}

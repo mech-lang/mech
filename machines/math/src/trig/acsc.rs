@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathAcsc {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/acsc",
+    ptr: &MathAcsc{},
+  }
+}

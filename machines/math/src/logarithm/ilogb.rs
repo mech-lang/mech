@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathIlogb {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/ilogb",
+    ptr: &MathIlogb{},
+  }
+}

@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathCbrt {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/cbrt",
+    ptr: &MathCbrt{},
+  }
+}

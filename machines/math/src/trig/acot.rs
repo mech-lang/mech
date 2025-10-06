@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathAcot {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/acot",
+    ptr: &MathAcot{},
+  }
+}

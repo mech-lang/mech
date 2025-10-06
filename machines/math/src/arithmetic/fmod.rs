@@ -230,3 +230,10 @@ impl NativeFunctionCompiler for MathFmod {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/fmod",
+    ptr: &MathFmod{},
+  }
+}

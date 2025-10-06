@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathTan {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/tan",
+    ptr: &MathTan{},
+  }
+}

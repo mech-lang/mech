@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathAsin {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/asin",
+    ptr: &MathAsin{},
+  }
+}

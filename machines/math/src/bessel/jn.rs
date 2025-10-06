@@ -230,3 +230,10 @@ impl NativeFunctionCompiler for MathJn {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/bessel/jn",
+    ptr: &MathJn{},
+  }
+}

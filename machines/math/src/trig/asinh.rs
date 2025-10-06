@@ -81,3 +81,10 @@ impl NativeFunctionCompiler for MathAsinh {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/asinh",
+    ptr: &MathAsinh{},
+  }
+}

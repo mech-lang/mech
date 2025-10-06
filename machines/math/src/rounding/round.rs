@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathRound {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/round",
+    ptr: &MathRound{},
+  }
+}

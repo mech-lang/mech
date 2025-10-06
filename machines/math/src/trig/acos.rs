@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathAcos {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/acos",
+    ptr: &MathAcos{},
+  }
+}

@@ -49,7 +49,7 @@ baselib = ["bool", "string",
       "mech-core/baselib",
     ]
 
-arithmetic_default = ["copysign", "fabs", "fdim", "fmod", "nextafter", "remainder"]
+arithmetic_default = ["copysign", "abs", "fdim", "fmod", "nextafter", "remainder"]
 bessel_default = ["j0", "j1", "jn", "y0", "y1", "yn"]
 exponential_default = ["exponential", "exp2", "exp10", "expm1"]
 extrema_default = ["fmax", "fmaximum", "fmaximum_num", "fmin", "fminimum", "fminimum_num"]
@@ -85,7 +85,7 @@ mul_assign = ["op_assign"]
 div_assign = ["op_assign"]
 
 copysign = ["arithmetic"]
-fabs = ["arithmetic"]
+abs = ["arithmetic"]
 fdim = ["arithmetic"]
 fmod = ["arithmetic"]
 nextafter = ["arithmetic"]

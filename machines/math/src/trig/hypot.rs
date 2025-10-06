@@ -230,3 +230,10 @@ impl NativeFunctionCompiler for MathHypot {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/hypot",
+    ptr: &MathHypot{},
+  }
+}

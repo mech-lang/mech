@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathRint {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/rint",
+    ptr: &MathRint{},
+  }
+}

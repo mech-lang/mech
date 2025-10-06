@@ -81,3 +81,10 @@ impl NativeFunctionCompiler for MathAcosh {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/acosh",
+    ptr: &MathAcosh{},
+  }
+}

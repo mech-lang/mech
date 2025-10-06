@@ -2,8 +2,8 @@
 pub use crate::*;
 #[cfg(feature = "copysign")]
 pub mod copysign;
-#[cfg(feature = "fabs")]
-pub mod fabs;
+#[cfg(feature = "abs")]
+pub mod abs;
 #[cfg(feature = "fmod")]
 pub mod fmod;
 #[cfg(feature = "fdim")]
@@ -15,8 +15,8 @@ pub mod nextafter;
 
 #[cfg(feature = "copysign")]
 pub use self::copysign::*;
-#[cfg(feature = "fabs")]
-pub use self::fabs::*;
+#[cfg(feature = "abs")]
+pub use self::abs::*;
 #[cfg(feature = "fmod")]
 pub use self::fmod::*;
 #[cfg(feature = "fdim")]

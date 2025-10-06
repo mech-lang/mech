@@ -81,3 +81,10 @@ impl NativeFunctionCompiler for MathAtanh {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/atanh",
+    ptr: &MathAtanh{},
+  }
+}

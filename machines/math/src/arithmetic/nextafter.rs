@@ -230,3 +230,10 @@ impl NativeFunctionCompiler for MathNextafter {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/nextafter",
+    ptr: &MathNextafter{},
+  }
+}

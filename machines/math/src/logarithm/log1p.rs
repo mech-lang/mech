@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathLog1p {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/log1p",
+    ptr: &MathLog1p{},
+  }
+}

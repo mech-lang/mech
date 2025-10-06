@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathExp10 {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/exp10",
+    ptr: &MathExp10{},
+  }
+}

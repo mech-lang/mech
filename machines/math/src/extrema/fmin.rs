@@ -230,3 +230,10 @@ impl NativeFunctionCompiler for MathFmin {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/fmin",
+    ptr: &MathFmin{},
+  }
+}

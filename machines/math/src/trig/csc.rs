@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathCsc {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/csc",
+    ptr: &MathCsc{},
+  }
+}

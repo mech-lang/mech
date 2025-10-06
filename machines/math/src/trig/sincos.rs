@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathSincos {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/sincos",
+    ptr: &MathSincos{},
+  }
+}

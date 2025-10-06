@@ -96,6 +96,13 @@ impl NativeFunctionCompiler for AddAssignMath {
   }
 }
 
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/add-assign",
+    ptr: &AddAssignMath{},
+  }
+}
+
 // x[1..3] += 1 ----------------------------------------------------------------
 
 macro_rules! add_assign_1d_range {
@@ -169,6 +176,13 @@ impl NativeFunctionCompiler for AddAssignRange {
         }
       }
     }
+  }
+}
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/add-assign/range",
+    ptr: &AddAssignRange{},
   }
 }
 
@@ -257,5 +271,12 @@ impl NativeFunctionCompiler for AddAssignRangeAll {
         }
       }
     }
+  }
+}
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/add-assign/range-all",
+    ptr: &AddAssignRangeAll{},
   }
 }

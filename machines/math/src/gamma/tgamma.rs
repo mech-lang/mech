@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathTgamma {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/tgamma",
+    ptr: &MathTgamma{},
+  }
+}

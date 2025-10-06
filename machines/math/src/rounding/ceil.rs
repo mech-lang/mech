@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathCeil {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/ceil",
+    ptr: &MathCeil{},
+  }
+}

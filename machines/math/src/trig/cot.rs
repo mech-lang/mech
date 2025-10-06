@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathCot {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/cot",
+    ptr: &MathCot{},
+  }
+}

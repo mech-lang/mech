@@ -230,3 +230,10 @@ impl NativeFunctionCompiler for MathRemainder {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/remainder",
+    ptr: &MathRemainder{},
+  }
+}

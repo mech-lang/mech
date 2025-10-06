@@ -230,3 +230,10 @@ impl NativeFunctionCompiler for MathFminimum {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/fminimum",
+    ptr: &MathFminimum{},
+  }
+}

@@ -230,3 +230,10 @@ impl NativeFunctionCompiler for MathFmax {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/fmax",
+    ptr: &MathFmax{},
+  }
+}
