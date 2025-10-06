@@ -110,33 +110,83 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
   })))
 }
 
+// Set
+// ----------------------------------------------------------------------------
+
+// Define a MechFunction that creaates a Set from a list of Values
+#[cfg(feature = "set")]
+#[derive(Debug)]
+pub struct ValueSet {
+  pub out: Ref<MechSet>,
+}
+impl MechFunctionImpl for ValueSet {
+  fn solve(&self) {}
+  fn out(&self) -> Value { Value::Set(self.out.clone()) }
+  fn to_string(&self) -> String { format!("{:#?}", self) }
+}
+impl MechFunctionFactory for ValueSet {
+  fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+    match args {
+      FunctionArgs::Nullary(out) => {
+        let out: Ref<MechSet> = unsafe{ out.as_unchecked().clone() };
+        Ok(Box::new(ValueSet {out}))
+      },
+      _ => Err(MechError {file: file!().to_string(),tokens: vec![],msg: "Invalid arguments to ValueSet".to_string(),id: line!(),kind: MechErrorKind::IncorrectNumberOfArguments,})
+    }
+  }
+}
+#[cfg(feature = "compiler")]
+impl MechFunctionCompiler for ValueSet {
+  fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
+    compile_nullop!("set/define", self.out, ctx, FeatureFlag::Builtin(FeatureKind::Set));
+  }
+}
+inventory::submit!{
+  FunctionDescriptor {
+    name: "set/define",
+    ptr: ValueSet::new,
+  }
+}
+
+#[cfg(feature = "set")]
+pub struct SetDefine {}
+impl NativeFunctionCompiler for SetDefine {
+  fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
+    Ok(Box::new(ValueSet {
+      out: Ref::new(MechSet::from_vec(arguments.clone())),
+    }))
+  }
+}
+
 #[cfg(feature = "set")]
 pub fn set(m: &Set, p: &Interpreter) -> MResult<Value> { 
-  let mut out = IndexSet::new();
+  let mut elements = Vec::new();
   for el in &m.elements {
     let result = expression(el, p)?;
-    out.insert(result);
+    elements.push(result.clone());
   }
-
-  let set_kind = if out.len() > 0 {
-    out.iter().next().unwrap().kind()
+  let set_kind = if elements.len() > 0 {
+    elements[0].kind()
   } else {
     ValueKind::Empty
   };
-  
   // Make sure all elements have the same kind
-  for el in &out {
+  for el in &elements {
     if el.kind() != set_kind {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::KindMismatch(el.kind(),set_kind)});
     }
   }
-
-  Ok(Value::Set(Ref::new(MechSet{
-    num_elements: out.len(),
-    kind: set_kind,
-    set: out, 
-  })))
+  let new_fxn = SetDefine{}.compile(&elements)?;
+  new_fxn.solve();
+  let out = new_fxn.out();
+  let plan = p.plan();
+  let mut plan_brrw = plan.borrow_mut();
+  plan_brrw.push(new_fxn);
+  Ok(out)
 }
+
+// Table
+// ----------------------------------------------------------------------------
 
 macro_rules! handle_value_kind {
   ($value_kind:ident, $val:expr, $field_label:expr, $data_map:expr, $converter:ident) => {{
@@ -248,6 +298,9 @@ pub fn table_row(r: &TableRow, p: &Interpreter) -> MResult<Vec<Value>> {
 pub fn table_column(r: &TableColumn, p: &Interpreter) -> MResult<Value> { 
   expression(&r.element, p)
 }
+
+// Matrix
+// ----------------------------------------------------------------------------
 
 #[cfg(feature = "matrix")]
 pub fn matrix(m: &Mat, p: &Interpreter) -> MResult<Value> {
