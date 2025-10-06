@@ -1,4 +1,4 @@
-math/fabs
+math/abs
 ===============================================================================
 
 %% Floating-point absolute value
@@ -7,7 +7,7 @@ math/fabs
 -------------------------------------------------------------------------------
 
 ```mech:disabled
-Y := math/fabs(X)
+Y := math/abs(X)
 ```
 
 2. Description
@@ -35,21 +35,21 @@ Computes the absolute value of each element of `X`. The input `X` may be a scala
 (a) Find the absolute value of a number 
 
 ```mech:ex1
-y := math/fabs(-3.14)
+y := math/abs(-3.14)
 ```
 
 (b) Find the absolute value for a vector of numbers
 
 ```mech:ex2
 x := [-1.0, 0.0, 2.5]
-y := math/fabs(x)
+y := math/abs(x)
 ```
 
 (c) Find the absolute value for a matrix of numbers
 
 ```mech:ex3
 x := [-1.0, 2.0; -3.0, 4.0]
-y := math/fabs(x)
+y := math/abs(x)
 ```
 
 6. Details
