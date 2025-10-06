@@ -12,6 +12,10 @@ impl R64 {
     R64(Rational64::new(numer, denom))
   }
 
+  pub fn abs(&self) -> Self {
+    R64(self.0.abs())
+  }
+
   pub fn from_le_bytes(bytes: &[u8; 16]) -> R64 {
     let numer = match bytes[0..8].try_into() {
       Ok(arr) => i64::from_le_bytes(arr),

@@ -114,3 +114,4 @@ bytecode_test!(bytecode_matrix_index_2d_vbu, r#"ix1 := [false, false, true]; ix2
 bytecode_test!(bytecode_math_sqrt,"math/sqrt(9)",Value::F64(Ref::new(F64::new(3.0))));
 bytecode_test!(bytecode_define_set,"x := {1 2 3 4}", Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(F64::new(1.0))), Value::F64(Ref::new(F64::new(2.0))), Value::F64(Ref::new(F64::new(3.0))), Value::F64(Ref::new(F64::new(4.0)))]))));
 bytecode_test!(bytecode_set,"{1 2 3 3 4}", Value::Set(Ref::new(MechSet::from_vec(vec![Value::F64(Ref::new(F64::new(1.0))), Value::F64(Ref::new(F64::new(2.0))), Value::F64(Ref::new(F64::new(3.0))), Value::F64(Ref::new(F64::new(4.0)))]))));
+bytecode_test!(bytecode_math_abs,"math/abs(-10)", Value::F64(Ref::new(F64::new(10.0))));

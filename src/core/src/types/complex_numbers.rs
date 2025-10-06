@@ -52,6 +52,10 @@ impl C64 {
     C64(Complex::new(real, imag))
   }
 
+  pub fn abs(&self) -> Self {
+    C64(Complex::new(self.0.norm(), 0.0))
+  }
+
   pub fn to_html(&self) -> String {
     let pretty = self.pretty_print();
     format!("<span class='mech-complex-number'>{}</span>", pretty)
