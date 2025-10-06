@@ -134,21 +134,6 @@ pub fn load_stdkinds(kinds: &mut KindTable) {
 #[cfg(feature = "functions")]
 pub fn load_stdlib(fxns: &mut Functions) {
 
-  // Preload combinatorics functions
-  /*
-  // Preload io functions
-  #[cfg(feature = "io_print")]
-  fxns.function_compilers.insert(hash_str("io/print"), Box::new(IoPrint{}));
-  #[cfg(feature = "io_println")]
-  fxns.function_compilers.insert(hash_str("io/println"), Box::new(IoPrintln{}));
-
-  // Matrix functions
-  #[cfg(feature = "matrix_horzcat")]
-  fxns.function_compilers.insert(hash_str("matrix/horzcat"), Box::new(MatrixHorzCat{}));
-  #[cfg(feature = "matrix_vertcat")]
-  fxns.function_compilers.insert(hash_str("matrix/vertcat"), Box::new(MatrixVertCat{}));
-  */ 
-
   for fxn_desc in inventory::iter::<FunctionDescriptor> {
     fxns.insert_function(fxn_desc.clone());
   }
