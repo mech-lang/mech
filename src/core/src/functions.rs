@@ -20,7 +20,7 @@ use std::fmt;
 
 pub type FunctionsRef = Ref<Functions>;
 pub type FunctionTable = HashMap<u64, fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>>;
-pub type FunctionCompilerTable = HashMap<u64, Box<dyn NativeFunctionCompiler>>;
+pub type FunctionCompilerTable = HashMap<u64, &'static dyn NativeFunctionCompiler>;
 
 #[derive(Clone,Debug)]
 pub enum FunctionArgs {
@@ -46,6 +46,20 @@ impl Debug for FunctionDescriptor {
 }
 
 unsafe impl Sync for FunctionDescriptor {}
+
+#[repr(C)]
+pub struct FunctionCompiler {
+  pub name: &'static str,
+  pub ptr: &'static dyn NativeFunctionCompiler,
+}
+
+impl Debug for FunctionCompiler {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "{:?}", self.name)
+  }
+}
+
+unsafe impl Sync for FunctionCompiler {}
 
 pub trait MechFunctionFactory {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>>;

@@ -130,6 +130,9 @@ pub use self::types::*;
 #[cfg(feature = "functions")]
 inventory::collect!(FunctionDescriptor);
 
+#[cfg(feature = "functions")]
+inventory::collect!(FunctionCompiler);
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MechSourceCode {
