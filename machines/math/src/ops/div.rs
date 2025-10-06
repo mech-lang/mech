@@ -122,4 +122,4 @@ fn impl_div_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
   )
 }
 
-impl_mech_binop_fxn!(MathDiv,impl_div_fxn);
+impl_mech_binop_fxn!(MathDiv,impl_div_fxn,"math/div");

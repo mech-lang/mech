@@ -122,4 +122,4 @@ fn impl_sub_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
   )
 }
 
-impl_mech_binop_fxn!(MathSub,impl_sub_fxn);
+impl_mech_binop_fxn!(MathSub,impl_sub_fxn,"math/sub");

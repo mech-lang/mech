@@ -64,3 +64,11 @@ impl NativeFunctionCompiler for MathSqrt {
     }
   }
 }
+
+static MATH_SQRT: MathSqrt = MathSqrt{};
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/sqrt",
+    ptr: &MATH_SQRT,
+  }
+}
