@@ -114,4 +114,4 @@ fn impl_neq_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
   )
 }
 
-impl_mech_binop_fxn!(CompareNotEqual,impl_neq_fxn);
+impl_mech_binop_fxn!(CompareNotEqual,impl_neq_fxn,"compare/neq");
