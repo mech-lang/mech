@@ -99,4 +99,4 @@ fn impl_xor_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFuncti
   )
 }
 
-impl_mech_binop_fxn!(LogicXor,impl_xor_fxn);
+impl_mech_binop_fxn!(LogicXor,impl_xor_fxn,"logic/xor");
