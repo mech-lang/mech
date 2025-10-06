@@ -64,3 +64,10 @@ impl NativeFunctionCompiler for MathCos {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/cos",
+    ptr: &MathCos{},
+  }
+}

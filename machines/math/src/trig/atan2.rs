@@ -220,7 +220,7 @@ macro_rules! impl_binop_atan2 {
   }
 }
 
-fn impl_atan2_fxn(arg1_value: Value, arg2_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
+pub fn impl_atan2_fxn(arg1_value: Value, arg2_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   impl_binop_atan2!(Atan2, arg1_value, arg2_value,
     F32, F32::default(), "f32";
     F64, F64::default(), "f64";
@@ -247,5 +247,12 @@ impl NativeFunctionCompiler for MathAtan2 {
         }
       }
     }
+  }
+}
+
+inventory::submit! {
+  FunctionCompiler {
+    name: "math/atan2",
+    ptr: &MathAtan2{},
   }
 }

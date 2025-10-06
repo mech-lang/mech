@@ -141,4 +141,4 @@ fn impl_neg_fxn(lhs_value: Value) -> Result<Box<dyn MechFunction>, MechError> {
   )
 }
 
-impl_mech_urnop_fxn!(MathNegate,impl_neg_fxn);
+impl_mech_urnop_fxn!(MathNegate,impl_neg_fxn,"math/neg");
