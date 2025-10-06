@@ -157,6 +157,13 @@ impl NativeFunctionCompiler for SetDefine {
     }))
   }
 }
+static SET_DEFINE: SetDefine = SetDefine{};
+inventory::submit!{
+  FunctionCompiler {
+    name: "set/define",
+    ptr: &SET_DEFINE,
+  }
+}
 
 #[cfg(feature = "set")]
 pub fn set(m: &Set, p: &Interpreter) -> MResult<Value> { 
