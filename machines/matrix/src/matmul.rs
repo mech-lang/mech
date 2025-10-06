@@ -301,4 +301,4 @@ fn impl_matmul_fxn(lhs_value: Value, rhs_value: Value) -> Result<Box<dyn MechFun
   )
 }
 
-impl_mech_binop_fxn!(MatrixMatMul,impl_matmul_fxn);
+impl_mech_binop_fxn!(MatrixMatMul,impl_matmul_fxn,"matrix/matmul");
