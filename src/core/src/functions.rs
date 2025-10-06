@@ -72,21 +72,21 @@ pub trait MechFunctionImpl {
 }
 
 #[cfg(feature = "compiler")]
-pub trait MechFunctionCompilerDescriptor {
+pub trait MechFunctionCompiler {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register>;
 }
 
 #[cfg(feature = "compiler")]
-pub trait MechFunction: MechFunctionImpl + MechFunctionCompilerDescriptor {}
+pub trait MechFunction: MechFunctionImpl + MechFunctionCompiler {}
 #[cfg(feature = "compiler")]
-impl<T> MechFunction for T where T: MechFunctionImpl + MechFunctionCompilerDescriptor {}
+impl<T> MechFunction for T where T: MechFunctionImpl + MechFunctionCompiler {}
 
 #[cfg(not(feature = "compiler"))]
 pub trait MechFunction: MechFunctionImpl {}
 #[cfg(not(feature = "compiler"))]
 impl<T> MechFunction for T where T: MechFunctionImpl {}
 
-pub trait NativeFunctionCompilerDescriptor {
+pub trait NativeFunctionCompiler {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>>;
 }
 

@@ -1928,6 +1928,6 @@ impl NativeFunctionCompiler for MatrixVertCat {
 inventory::submit! {
   FunctionCompilerDescriptor {
     name: "matrix/vertcat",
-    compiler: &MatrixVertCat{},
+    ptr: &MatrixVertCat{},
   }
 }
