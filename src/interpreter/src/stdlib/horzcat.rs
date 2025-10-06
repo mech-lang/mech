@@ -552,7 +552,7 @@ where
       mat_regs.push(e_reg);
     }
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
-    ctx.emit_vararg(
+    ctx.emit_varop(
       hash_str("HorizontalConcatenateNArgs"),
       registers[0],
       mat_regs,
@@ -693,7 +693,7 @@ where
 
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
 
-    ctx.emit_vararg(
+    ctx.emit_varop(
       hash_str(&format!("HorizontalConcatenateRDN<{}>", T::as_value_kind())),
       registers[0],
       all_regs[1..].to_vec(),

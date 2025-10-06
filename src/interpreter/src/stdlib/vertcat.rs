@@ -500,7 +500,7 @@ where
       mat_regs.push(e_reg);
     }
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
-    ctx.emit_vararg(
+    ctx.emit_varop(
       hash_str(&format!("VerticalConcatenateNArgs<{}>", T::as_value_kind())),
       registers[0],
       mat_regs,
@@ -839,7 +839,7 @@ where
       mat_regs.push(compile_register_mat!(e, ctx));
     }
     ctx.features.insert(FeatureFlag::Builtin(FeatureKind::HorzCat));
-    ctx.emit_vararg(
+    ctx.emit_varop(
       hash_str(&format!("VerticalConcatenateVDN<{}>", T::as_value_kind())),
       registers[0],
       mat_regs,

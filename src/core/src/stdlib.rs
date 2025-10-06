@@ -164,6 +164,25 @@ macro_rules! compile_quadop {
 }
 
 #[macro_export]
+macro_rules! compile_varop {
+  ($name:tt, $out:expr, $args:expr, $ctx:ident, $feature_flag:expr) => {
+    let arg_count = $args.len();
+    let mut registers = vec![0; arg_count + 1];
+    registers[0] = compile_register_brrw!($out, $ctx);
+    for i in 0..arg_count {
+      registers[i + 1] = compile_register_brrw!($args[i], $ctx);
+    }
+    $ctx.features.insert($feature_flag);
+    $ctx.emit_varop(
+      hash_str(&$name),
+      registers[0],
+      (&registers[1..]).to_vec(),
+    );
+    return Ok(registers[0])
+  };
+}
+
+#[macro_export]
 macro_rules! register_fxn_descriptor_inner_logic {
   // single type
   ($struct_name:ident, $type:ty, $type_string:tt) => {
