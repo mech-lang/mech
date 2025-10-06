@@ -221,3 +221,10 @@ impl NativeFunctionCompiler for IoPrintln {
     }
   }
 }
+
+inventory::submit!{
+  FunctionCompilerDescriptor {
+    name: "io/println",
+    ptr: &IoPrintln{},
+  }
+}
