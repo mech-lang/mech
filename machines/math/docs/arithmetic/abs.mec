@@ -61,3 +61,9 @@ $$ |x| = \begin{cases} x & x \geq 0 \\ -x & x < 0 \end{cases}
 
 This function applies element-wise to arrays and matrices of floating-point values.  
 For floating-point numbers, the result is always non-negative.
+
+For complex numbers, the absolute value defined as the distance from the origin in the complex plane:
+
+$$ |a + bi| = \sqrt{a^2 + b^2} $$
+
+where `a` is the real part and `b` is the imaginary part of the complex number.
