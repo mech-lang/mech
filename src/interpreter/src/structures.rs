@@ -119,11 +119,13 @@ pub fn record(rcrd: &Record, p: &Interpreter) -> MResult<Value> {
 pub struct ValueSet {
   pub out: Ref<MechSet>,
 }
+#[cfg(feature = "set")]
 impl MechFunctionImpl for ValueSet {
   fn solve(&self) {}
   fn out(&self) -> Value { Value::Set(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
+#[cfg(feature = "set")]
 impl MechFunctionFactory for ValueSet {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
@@ -135,12 +137,14 @@ impl MechFunctionFactory for ValueSet {
     }
   }
 }
+#[cfg(feature = "set")]
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for ValueSet {
   fn compile(&self, ctx: &mut CompileCtx) -> MResult<Register> {
     compile_nullop!("set/define", self.out, ctx, FeatureFlag::Builtin(FeatureKind::Set));
   }
 }
+#[cfg(feature = "set")]
 inventory::submit!{
   FunctionDescriptor {
     name: "set/define",
@@ -150,6 +154,7 @@ inventory::submit!{
 
 #[cfg(feature = "set")]
 pub struct SetDefine {}
+#[cfg(feature = "set")]
 impl NativeFunctionCompiler for SetDefine {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     Ok(Box::new(ValueSet {
@@ -157,11 +162,11 @@ impl NativeFunctionCompiler for SetDefine {
     }))
   }
 }
-static SET_DEFINE: SetDefine = SetDefine{};
+#[cfg(feature = "set")]
 inventory::submit!{
   FunctionCompilerDescriptor {
     name: "set/define",
-    ptr: &SET_DEFINE,
+    ptr: &SetDefine{},
   }
 }
 
