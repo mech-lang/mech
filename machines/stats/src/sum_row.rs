@@ -125,4 +125,4 @@ macro_rules! sum_row_op2 {
     )
   }
     
-  impl_mech_urnop_fxn!(StatsSumRow,impl_stats_sum_row_fxn);
+  impl_mech_urnop_fxn!(StatsSumRow,impl_stats_sum_row_fxn,"stats/sum/row");
