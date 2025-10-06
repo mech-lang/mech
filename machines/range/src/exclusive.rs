@@ -168,3 +168,10 @@ impl NativeFunctionCompiler for RangeExclusive {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompilerDescriptor {
+    name: "range/exclusive",
+    ptr: &RangeExclusive{},
+  }
+}

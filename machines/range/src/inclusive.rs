@@ -168,3 +168,10 @@ impl NativeFunctionCompiler for RangeInclusive {
     }
   }
 }
+
+inventory::submit! {
+  FunctionCompilerDescriptor {
+    name: "range/inclusive",
+    ptr: &RangeInclusive{},
+  }
+}
