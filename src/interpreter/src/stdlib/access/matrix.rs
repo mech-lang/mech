@@ -664,12 +664,6 @@ impl_access_fxn_shape2!(Access2DSS, usize, usize, T, access_2d);
 impl_access_fxn_shape!(Access1DVD, DVector<usize>, DVector<T>, access_1d_slice);
 impl_access_fxn_shape!(Access1DVDb, DVector<bool>, DVector<T>, access_1d_slice_bool_v);
 
-// x[1..3,1..3]
-//impl_access_fxn_shape2!(Access2DVDVD, DVector<usize>, DVector<usize>, DMatrix<T>, access_2d_slice);
-//impl_access_fxn_shape2!(Access2DVDbVD, DVector<bool>, DVector<usize>, DMatrix<T>, access_2d_slice_bool);
-//impl_access_fxn_shape2!(Access2DVDVDb, DVector<usize>, DVector<bool>, DMatrix<T>, access_2d_slice_bool2);
-//impl_access_fxn_shape2!(Access2DVDbVDb, DVector<bool>, DVector<bool>, DMatrix<T>, access_2d_slice_bool_bool);
-
 // x[:]
 impl_access_fxn_shape!(Access1DA, Value, DVector<T>, access_1d_all);
 
@@ -679,26 +673,22 @@ impl_access_fxn_shape!(Access2DAS, usize, DVector<T>, access_col);
 // x[1,:]
 #[cfg(feature = "matrix1")]
 impl_access_fxn!(Access2DSAM1,   Matrix1<T>,    usize, Matrix1<T>, access_row);
-#[cfg(feature = "matrix2")]
+#[cfg(all(feature = "matrix2", feature = "row_vector2"))]
 impl_access_fxn!(Access2DSAM2,   Matrix2<T>,    usize, RowVector2<T>, access_row);
-#[cfg(feature = "matrix3")]
+#[cfg(all(feature = "matrix3", feature = "row_vector3"))]
 impl_access_fxn!(Access2DSAM3,   Matrix3<T>,    usize, RowVector3<T>, access_row);
-#[cfg(feature = "matrix4")]
+#[cfg(all(feature = "matrix4", feature = "row_vector4"))]
 impl_access_fxn!(Access2DSAM4,   Matrix4<T>,    usize, RowVector4<T>, access_row);
-#[cfg(feature = "matrix2x3")]
+#[cfg(all(feature = "matrix2x3", feature = "row_vector3"))]
 impl_access_fxn!(Access2DSAM2x3, Matrix2x3<T>,  usize, RowVector3<T>, access_row);
-#[cfg(feature = "matrix3x2")]
+#[cfg(all(feature = "matrix3x2", feature = "row_vector2"))]
 impl_access_fxn!(Access2DSAM3x2, Matrix3x2<T>,  usize, RowVector2<T>, access_row);
-#[cfg(feature = "matrixd")]
+#[cfg(all(feature = "matrixd", feature = "row_vectord"))]
 impl_access_fxn!(Access2DSAMD,   DMatrix<T>,    usize, RowDVector<T>, access_row);
 
 // x[1..3,:]
 impl_access_fxn_shape!(Access2DVDA, DVector<usize>,    DMatrix<T>, access_2d_slice_all);
 impl_access_fxn_shape!(Access2DVDbA, DVector<bool>,    DMatrix<T>, access_2d_slice_all_bool);
-
-// x[:,1..3]
-//impl_access_fxn_shape!(Access2DAVD, DVector<usize>,    DMatrix<T>, access_2d_all_slice);
-//impl_access_fxn_shape!(Access2DAVDb, DVector<bool>,    DMatrix<T>, access_2d_all_slice_bool);
 
 // x[2,1..3]
 impl_access_fxn_shape2!(Access2DSVD,  usize, DVector<usize>,    RowDVector<T>, access_2d_row_slice);
