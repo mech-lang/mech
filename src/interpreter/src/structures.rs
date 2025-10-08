@@ -120,12 +120,14 @@ pub struct ValueSet {
   pub out: Ref<MechSet>,
 }
 #[cfg(feature = "set")]
+#[cfg(feature = "functions")]
 impl MechFunctionImpl for ValueSet {
   fn solve(&self) {}
   fn out(&self) -> Value { Value::Set(self.out.clone()) }
   fn to_string(&self) -> String { format!("{:#?}", self) }
 }
 #[cfg(feature = "set")]
+#[cfg(feature = "functions")]
 impl MechFunctionFactory for ValueSet {
   fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
     match args {
@@ -145,7 +147,8 @@ impl MechFunctionCompiler for ValueSet {
   }
 }
 #[cfg(feature = "set")]
-inventory::submit!{
+#[cfg(feature = "functions")]
+register_descriptor!{
   FunctionDescriptor {
     name: "set/define",
     ptr: ValueSet::new,
@@ -155,6 +158,7 @@ inventory::submit!{
 #[cfg(feature = "set")]
 pub struct SetDefine {}
 #[cfg(feature = "set")]
+#[cfg(feature = "functions")]
 impl NativeFunctionCompiler for SetDefine {
   fn compile(&self, arguments: &Vec<Value>) -> MResult<Box<dyn MechFunction>> {
     Ok(Box::new(ValueSet {
@@ -163,7 +167,8 @@ impl NativeFunctionCompiler for SetDefine {
   }
 }
 #[cfg(feature = "set")]
-inventory::submit!{
+#[cfg(feature = "functions")]
+register_descriptor!{
   FunctionCompilerDescriptor {
     name: "set/define",
     ptr: &SetDefine{},
@@ -188,13 +193,20 @@ pub fn set(m: &Set, p: &Interpreter) -> MResult<Value> {
       return Err(MechError{file: file!().to_string(), tokens: vec![], msg: "".to_string(), id: line!(), kind: MechErrorKind::KindMismatch(el.kind(),set_kind)});
     }
   }
-  let new_fxn = SetDefine{}.compile(&elements)?;
-  new_fxn.solve();
-  let out = new_fxn.out();
-  let plan = p.plan();
-  let mut plan_brrw = plan.borrow_mut();
-  plan_brrw.push(new_fxn);
-  Ok(out)
+  #[cfg(feature = "functions")]
+  {
+    let new_fxn = SetDefine {}.compile(&elements)?;
+    new_fxn.solve();
+    let out = new_fxn.out();
+    let plan = p.plan();
+    let mut plan_brrw = plan.borrow_mut();
+    plan_brrw.push(new_fxn);
+    Ok(out)
+  }
+  #[cfg(not(feature = "functions"))]
+  {
+    Ok(Value::Set(Ref::new(MechSet::from_vec(elements))))
+  }
 }
 
 // Table
