@@ -67,7 +67,7 @@ pub use self::inclusive::*;
 macro_rules! register_range {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), ">") ,
           ptr: $fxn_name::<$scalar, $row1<$scalar>>::new,

@@ -169,7 +169,7 @@ impl NativeFunctionCompiler for RangeExclusive {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "range/exclusive",
     ptr: &RangeExclusive{},
