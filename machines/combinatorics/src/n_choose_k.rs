@@ -251,7 +251,7 @@ impl NativeFunctionCompiler for CombinatoricsNChooseK {
   }
 }
 
-inventory::submit! {
+register_descriptor! {
   FunctionCompilerDescriptor {
     name: "combinatorics/n-choose-k",
     ptr: &CombinatoricsNChooseK{},
