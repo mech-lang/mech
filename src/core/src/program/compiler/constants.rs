@@ -218,7 +218,7 @@ macro_rules! impl_compile_const_matrix {
   ($matrix_type:ty) => {
     impl<T> CompileConst for $matrix_type
     where
-      T: ConstElem,
+      T: ConstElem + AsValueKind,
     {
       fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
         let rows = self.nrows() as u32;
@@ -235,7 +235,7 @@ macro_rules! impl_compile_const_matrix {
             self[(r, c)].write_le(&mut payload);
           }
         }
-        let elem_vk = T::value_kind();
+        let elem_vk = T::as_value_kind();
         let mat_vk = ValueKind::Matrix(Box::new(elem_vk), vec![rows as usize, cols as usize]);
         ctx.compile_const(&payload, mat_vk)
       }
@@ -277,7 +277,7 @@ impl_compile_const_matrix!(na::RowDVector<T>);
 #[cfg(feature = "matrix")]
 impl<T> CompileConst for Matrix<T> 
 where
-  T: CompileConst + ConstElem
+  T: CompileConst + ConstElem + AsValueKind
 {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     match self {
@@ -318,7 +318,7 @@ where
 #[cfg(feature = "matrixd")]
 impl<T> CompileConst for Ref<DMatrix<T>> 
 where
-  T: CompileConst + ConstElem
+  T: CompileConst + ConstElem + AsValueKind
 {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     self.borrow().compile_const(ctx)
@@ -328,7 +328,7 @@ where
 #[cfg(feature = "vectord")]
 impl<T> CompileConst for Ref<DVector<T>> 
 where
-  T: CompileConst + ConstElem
+  T: CompileConst + ConstElem + AsValueKind
 {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     self.borrow().compile_const(ctx)
@@ -338,7 +338,7 @@ where
 #[cfg(feature = "row_vectord")]
 impl<T> CompileConst for Ref<RowDVector<T>> 
 where
-  T: CompileConst + ConstElem
+  T: CompileConst + ConstElem + AsValueKind
 {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     self.borrow().compile_const(ctx)
@@ -449,18 +449,18 @@ impl CompileConst for MechAtom {
 impl CompileConst for MechSet {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
     let mut payload = Vec::<u8>::new();
-
+    // include the kind to match write_le/from_le
+    self.kind.write_le(&mut payload);
     // write the number of elements
     payload.write_u32::<LittleEndian>(self.num_elements as u32)?;
-
     // write each element
-    for element in self.set.iter() {
-      // element data
+    for element in &self.set {
       element.write_le(&mut payload);
     }
     ctx.compile_const(&payload, self.kind())
   }
 }
+
 
 // ConstElem Trait
 // ----------------------------------------------------------------------------
@@ -468,7 +468,7 @@ impl CompileConst for MechSet {
 pub trait ConstElem {
   fn write_le(&self, out: &mut Vec<u8>);
   fn from_le(bytes: &[u8]) -> Self;
-  fn value_kind() -> ValueKind;
+  fn value_kind(&self) -> ValueKind;
   fn align() -> u8 { 1 }
 }
 
@@ -482,7 +482,7 @@ impl ConstElem for F64 {
     let val = rdr.read_f64::<LittleEndian>().expect("read f64");
     F64(val)
   }
-  fn value_kind() -> ValueKind { ValueKind::F64 }
+  fn value_kind(&self) -> ValueKind { ValueKind::F64 }
   fn align() -> u8 { 8 }
 }
 
@@ -496,7 +496,7 @@ impl ConstElem for F32 {
     let val = rdr.read_f32::<LittleEndian>().expect("read f32");
     F32(val)
   }
-  fn value_kind() -> ValueKind { ValueKind::F32 }
+  fn value_kind(&self) -> ValueKind { ValueKind::F32 }
   fn align() -> u8 { 4 }
 } 
 
@@ -512,7 +512,7 @@ macro_rules! impl_const_elem {
           let mut rdr = std::io::Cursor::new(bytes);
           rdr.[<read_ $t>]::<LittleEndian>().expect(concat!("read ", stringify!($t)))
         }
-        fn value_kind() -> ValueKind { ValueKind::[<$t:upper>] }
+        fn value_kind(&self) -> ValueKind { ValueKind::[<$t:upper>] }
         fn align() -> u8 { $align }
       }
     }
@@ -544,7 +544,7 @@ impl ConstElem for u8 {
   fn from_le(bytes: &[u8]) -> Self {
     bytes[0]
   }
-  fn value_kind() -> ValueKind { ValueKind::U8 }
+  fn value_kind(&self) -> ValueKind { ValueKind::U8 }
   fn align() -> u8 { 1 }
 } 
 
@@ -556,7 +556,7 @@ impl ConstElem for i8 {
   fn from_le(bytes: &[u8]) -> Self {
     bytes[0] as i8
   }
-  fn value_kind() -> ValueKind { ValueKind::I8 }
+  fn value_kind(&self) -> ValueKind { ValueKind::I8 }
   fn align() -> u8 { 1 }
 }
 
@@ -580,7 +580,7 @@ impl ConstElem for R64 {
     }
     R64::new(numer, denom)
   }
-  fn value_kind() -> ValueKind { ValueKind::R64 }
+  fn value_kind(&self) -> ValueKind { ValueKind::R64 }
   fn align() -> u8 { 16 }
 }
 
@@ -601,11 +601,10 @@ impl ConstElem for C64 {
     };
     C64::new(real, imag)
   }
-  fn value_kind() -> ValueKind { ValueKind::C64 }
+  fn value_kind(&self) -> ValueKind { ValueKind::C64 }
   fn align() -> u8 { 16 }
 }
 
-#[cfg(feature = "string")]
 #[cfg(feature = "string")]
 impl ConstElem for String {
   fn write_le(&self, out: &mut Vec<u8>) {
@@ -636,7 +635,7 @@ impl ConstElem for String {
       Err(_) => panic!("Failed to convert bytes to UTF-8 string"),
     }
   }
-  fn value_kind() -> ValueKind { ValueKind::String }
+  fn value_kind(&self) -> ValueKind { ValueKind::String }
   fn align() -> u8 { 1 }
 }
 
@@ -648,7 +647,7 @@ impl ConstElem for bool {
   fn from_le(bytes: &[u8]) -> Self {
     bytes[0] != 0
   }
-  fn value_kind() -> ValueKind { ValueKind::Bool }
+  fn value_kind(&self) -> ValueKind { ValueKind::Bool }
   fn align() -> u8 { 1 }
 }
 
@@ -663,12 +662,12 @@ impl ConstElem for usize {
     };
     val as usize
   }
-  fn value_kind() -> ValueKind { ValueKind::Index }
+  fn value_kind(&self) -> ValueKind { ValueKind::Index }
   fn align() -> u8 { 8 }
 }
 
 macro_rules! impl_const_elem_matrix {
-  ($matrix_type:ty, $rows:expr, $cols:expr) => {
+  ($matrix_type:ty) => {
     impl<T> ConstElem for $matrix_type
     where
       T: ConstElem + std::fmt::Debug + std::clone::Clone + PartialEq + 'static,
@@ -702,7 +701,7 @@ macro_rules! impl_const_elem_matrix {
         // All nalgebra fixed-size matrices implement `from_row_slice`
         <$matrix_type>::from_row_slice(&elements)
       }
-      fn value_kind() -> ValueKind { ValueKind::Matrix(Box::new(T::value_kind()), vec![$rows, $cols]) }
+      fn value_kind(&self) -> ValueKind { self.value_kind() }
       fn align() -> u8 { 8 }
     }
   };
@@ -738,7 +737,7 @@ where
     }
     DMatrix::from_vec(rows, cols, elements)
   }
-  fn value_kind() -> ValueKind { ValueKind::Matrix(Box::new(T::value_kind()), vec![0, 0]) }
+  fn value_kind(&self) -> ValueKind { self.value_kind() }
   fn align() -> u8 { 8 }
 }
 
@@ -747,7 +746,6 @@ where
   T: ConstElem + std::fmt::Debug + std::clone::Clone + PartialEq + 'static,
 {
   fn write_le(&self, out: &mut Vec<u8>) {
-    println!("Writing DMatrix with {} rows and {} cols", self.nrows(), self.ncols());
     out.write_u32::<LittleEndian>(self.nrows() as u32).unwrap();
     out.write_u32::<LittleEndian>(self.ncols() as u32).unwrap();
     for c in 0..self.ncols() {
@@ -773,7 +771,7 @@ where
     }
     DVector::from_vec(elements)
   }
-  fn value_kind() -> ValueKind { ValueKind::Matrix(Box::new(T::value_kind()), vec![0, 1]) }
+  fn value_kind(&self) -> ValueKind { self.value_kind() }
   fn align() -> u8 { 8 }
 }
 
@@ -807,34 +805,34 @@ where
     }
     RowDVector::from_vec(elements)
   }
-  fn value_kind() -> ValueKind { ValueKind::Matrix(Box::new(T::value_kind()), vec![1, 0]) }
+  fn value_kind(&self) -> ValueKind { self.value_kind() }
   fn align() -> u8 { 8 }
 }
 
 #[cfg(feature = "matrix1")]
-impl_const_elem_matrix!(Matrix1<T>, 1, 1);
+impl_const_elem_matrix!(Matrix1<T>);
 #[cfg(feature = "matrix2")]
-impl_const_elem_matrix!(Matrix2<T>, 2, 2);
+impl_const_elem_matrix!(Matrix2<T>);
 #[cfg(feature = "matrix3")]
-impl_const_elem_matrix!(Matrix3<T>, 3, 3);
+impl_const_elem_matrix!(Matrix3<T>);
 #[cfg(feature = "matrix4")]
-impl_const_elem_matrix!(Matrix4<T>, 4, 4);
+impl_const_elem_matrix!(Matrix4<T>);
 #[cfg(feature = "matrix2x3")]
-impl_const_elem_matrix!(Matrix2x3<T>, 2, 3);
+impl_const_elem_matrix!(Matrix2x3<T>);
 #[cfg(feature = "matrix3x2")]
-impl_const_elem_matrix!(Matrix3x2<T>, 3, 2);
+impl_const_elem_matrix!(Matrix3x2<T>);
 #[cfg(feature = "row_vector2")]
-impl_const_elem_matrix!(RowVector2<T>, 1, 2);
+impl_const_elem_matrix!(RowVector2<T>);
 #[cfg(feature = "row_vector3")]
-impl_const_elem_matrix!(RowVector3<T>, 1, 3);
+impl_const_elem_matrix!(RowVector3<T>);
 #[cfg(feature = "row_vector4")]
-impl_const_elem_matrix!(RowVector4<T>, 1, 4);
+impl_const_elem_matrix!(RowVector4<T>);
 #[cfg(feature = "vector2")]
-impl_const_elem_matrix!(Vector2<T>, 2, 1);
+impl_const_elem_matrix!(Vector2<T>);
 #[cfg(feature = "vector3")]
-impl_const_elem_matrix!(Vector3<T>, 3, 1);
+impl_const_elem_matrix!(Vector3<T>);
 #[cfg(feature = "vector4")]
-impl_const_elem_matrix!(Vector4<T>, 4, 1);
+impl_const_elem_matrix!(Vector4<T>);
 
 #[cfg(feature = "matrix")]
 impl<T> ConstElem for Matrix<T> 
@@ -894,12 +892,17 @@ where
       panic!("Cannot create Matrix with zero rows or columns");
     } else if cols == 1 {
       match rows {
+        #[cfg(feature = "matrix1")]
+        1 => Matrix::Matrix1(Ref::new(Matrix1::from_vec(elements))),
+        #[cfg(all(feature = "matrixd", not(feature = "matrix1")))]
+        1 => Matrix::DMatrix(Ref::new(DMatrix::from_vec(1,1, elements))),
         #[cfg(feature = "vector2")]
         2 => Matrix::Vector2(Ref::new(Vector2::from_vec(elements))),
         #[cfg(feature = "vector3")]
         3 => Matrix::Vector3(Ref::new(Vector3::from_vec(elements))),
         #[cfg(feature = "vector4")]
         4 => Matrix::Vector4(Ref::new(Vector4::from_vec(elements))),
+        #[cfg(feature = "vectord")]
         _ => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
       }
     } else if rows == 1 {
@@ -910,6 +913,7 @@ where
         3 => Matrix::RowVector3(Ref::new(RowVector3::from_vec(elements))),
         #[cfg(feature = "row_vector4")]
         4 => Matrix::RowVector4(Ref::new(RowVector4::from_vec(elements))),
+        #[cfg(feature = "row_vectord")]
         _ => Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements))),
       }
     } else {
@@ -926,11 +930,12 @@ where
         (2, 3) => Matrix::Matrix2x3(Ref::new(Matrix2x3::from_row_slice(&elements))),
         #[cfg(feature = "matrix3x2")]
         (3, 2) => Matrix::Matrix3x2(Ref::new(Matrix3x2::from_row_slice(&elements))),
+        #[cfg(feature = "matrixd")]
         _ => Matrix::DMatrix(Ref::new(DMatrix::from_vec(rows, cols, elements))),
       }
     }
   }
-  fn value_kind() -> ValueKind { ValueKind::Matrix(Box::new(T::value_kind()), vec![0,0]) }
+  fn value_kind(&self) -> ValueKind { self.value_kind() }
   fn align() -> u8 { T::align() }
 }
 
@@ -942,18 +947,13 @@ impl ConstElem for Value {
 
     // Then write the payload
     match self {
+      Value::Empty => { 
+        // no payload for Empty 
+      },
       #[cfg(feature = "bool")]
       Value::Bool(x) => x.borrow().write_le(out),
-
       #[cfg(feature = "string")]
-      Value::String(x) => {
-        let s = x.borrow();
-        let bytes = s.as_bytes();
-        let len = bytes.len() as u32;
-        out.write_u32::<LittleEndian>(len).unwrap();
-        out.extend_from_slice(bytes);
-      },
-
+      Value::String(x) => x.borrow().write_le(out),
       #[cfg(feature = "u8")]
       Value::U8(x) => x.borrow().write_le(out),
       #[cfg(feature = "u16")]
@@ -983,17 +983,11 @@ impl ConstElem for Value {
       #[cfg(feature = "complex")]
       Value::C64(x) => x.borrow().write_le(out),
       #[cfg(feature = "set")]
-      Value::Set(x) => {
-        let set = x.borrow();
-        out.write_u32::<LittleEndian>(set.num_elements as u32).unwrap();
-        for element in set.set.iter() {
-          element.write_le(out); // recursive: tag + payload
-        }
-      },
+      Value::Set(x) => x.borrow().write_le(out),
       _ => unimplemented!("write_le not implemented for this Value variant"),
     }
   }
- fn from_le(bytes: &[u8]) -> Self {
+  fn from_le(bytes: &[u8]) -> Self {
     let mut cursor = std::io::Cursor::new(bytes);
 
     // 1. read ValueKind
@@ -1006,6 +1000,7 @@ impl ConstElem for Value {
 
     // 3. dispatch based on ValueKind
     match kind {
+      ValueKind::Empty => Value::Empty,
       #[cfg(feature = "bool")]
       ValueKind::Bool => Value::Bool(Ref::new(<bool as ConstElem>::from_le(payload))),
       #[cfg(feature = "string")]
@@ -1038,11 +1033,11 @@ impl ConstElem for Value {
       ValueKind::R64 => Value::R64(Ref::new(<R64 as ConstElem>::from_le(payload))),
       #[cfg(feature = "complex")]
       ValueKind::C64 => Value::C64(Ref::new(<C64 as ConstElem>::from_le(payload))),
-      _ => unimplemented!("from_le not implemented for this ValueKind variant"),
+      x => unimplemented!("from_le not implemented for this ValueKind variant: {:?}", x),
     }
   }
-  fn value_kind() -> ValueKind {
-    ValueKind::Any
+  fn value_kind(&self) -> ValueKind {
+    self.value_kind()
   }
   fn align() -> u8 {
     1
@@ -1145,6 +1140,7 @@ impl ConstElem for ValueKind {
         let tag = cursor.read_u8().expect("read value kind tag");
 
         match tag {
+            0 => ValueKind::Empty,
             1 => ValueKind::U8,
             2 => ValueKind::U16,
             3 => ValueKind::U32,
@@ -1187,10 +1183,10 @@ impl ConstElem for ValueKind {
                 };
                 ValueKind::Set(Box::new(elem_vk), opt_size)
             }
-            x => unimplemented!("from_le not implemented for this ValueKind variant: {}", x),
+            x => unimplemented!("from_le not implemented for this ValueKind variant: {:?}", x),
         }
     }
-  fn value_kind() -> ValueKind { ValueKind::Any }
+  fn value_kind(&self) -> ValueKind { self.clone() }
   fn align() -> u8 { 1 }
 }
 
@@ -1235,7 +1231,7 @@ impl ConstElem for MechEnum {
   fn from_le(_bytes: &[u8]) -> Self {
     unimplemented!("from_le not implemented for MechEnum")
   }
-  fn value_kind() -> ValueKind { ValueKind::Enum(0) } // id 0 as placeholder
+  fn value_kind(&self) -> ValueKind { ValueKind::Enum(0) } // id 0 as placeholder
   fn align() -> u8 { 8 }
 }
 
@@ -1266,7 +1262,6 @@ impl ConstElem for MechTable {
       }
     }
   }
-
   fn from_le(data: &[u8]) -> Self {
     use byteorder::{LittleEndian, ReadBytesExt};
     use std::io::Cursor;
@@ -1311,11 +1306,59 @@ impl ConstElem for MechTable {
     MechTable { rows, cols, data: data_map, col_names }
   }
 
-  fn value_kind() -> ValueKind {
-    ValueKind::Table(vec![], 0)
+  fn value_kind(&self) -> ValueKind {
+    self.value_kind()
   }
 
   fn align() -> u8 {
     8
   }
+}
+
+#[cfg(feature = "set")]
+impl ConstElem for MechSet {
+  fn write_le(&self, out: &mut Vec<u8>) {
+    use byteorder::{LittleEndian, WriteBytesExt};
+
+    // write kind
+    self.kind.write_le(out);
+
+    // write element count
+    out.write_u32::<LittleEndian>(self.num_elements as u32)
+      .expect("write set element count");
+
+    // write each element
+    for value in &self.set {
+      value.write_le(out);
+    }
+  }
+  fn from_le(data: &[u8]) -> Self {
+    use indexmap::IndexSet;
+    let mut cursor = Cursor::new(data);
+    // 1) read kind from current position
+    let start = cursor.position() as usize;
+    let kind = ValueKind::from_le(&data[start..]);
+    // compute how many bytes the kind encoding consumes (so we can advance)
+    let mut kind_buf = Vec::new();
+    kind.write_le(&mut kind_buf);
+    cursor.set_position(start as u64 + kind_buf.len() as u64);
+    // 2) element count (little endian)
+    let num_elements = cursor
+      .read_u32::<LittleEndian>()
+      .expect("read set element count") as usize;
+    // 3) read each Value (advance cursor using each value's encoded length)
+    let mut set = IndexSet::with_capacity(num_elements);
+    for _ in 0..num_elements {
+      let pos = cursor.position() as usize;
+      let value = Value::from_le(&data[pos..]);
+      // measure its encoded length by re-serializing
+      let mut tmp = Vec::new();
+      value.write_le(&mut tmp);
+      cursor.set_position(pos as u64 + tmp.len() as u64);
+      set.insert(value);
+    }
+    Self { kind, num_elements, set }
+  }
+  fn value_kind(&self) -> ValueKind { self.kind.clone() }
+  fn align() -> u8 { 8 }
 }

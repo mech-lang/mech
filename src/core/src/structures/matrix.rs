@@ -394,7 +394,7 @@ where T: Debug + Display + Clone + PartialEq + 'static + PrettyPrint
 
 impl<T> Matrix<T> 
 where
-  T:  CompileConst + ConstElem + Clone + 'static + Debug + PartialEq,
+  T:  CompileConst + ConstElem + Clone + 'static + Debug + PartialEq + AsValueKind,
 {
   pub fn get_copyable_matrix(&self) -> Box<dyn CopyMat<T>> {
     match self {
