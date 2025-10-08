@@ -2,19 +2,59 @@ use crate::*;
 #[cfg(feature = "matrix")]
 use crate::matrix::Matrix;
 use indexmap::map::*;
-
+use std::cmp::Ordering;
 use nalgebra::{DMatrix, DVector, RowDVector};
+use std::collections::{HashMap, HashSet};
 
 // Table ------------------------------------------------------------------
 
 #[cfg(feature = "table")]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct MechTable {
   pub rows: usize,
   pub cols: usize,
   pub data: IndexMap<u64,(ValueKind,Matrix<Value>)>,
   pub col_names: HashMap<u64,String>,
 }
+
+#[cfg(feature = "table")]
+impl PartialEq for MechTable {
+  fn eq(&self, other: &Self) -> bool {
+    // Compare rows
+    if self.rows != other.rows {
+      return false;
+    }
+    // For each column in self
+    for (col_id, col_name) in &self.col_names {
+      // Find a column with the same name in the other table
+      let other_col_id = match other.col_names.iter().find(|(_, n)| *n == col_name) {
+        Some((id, _)) => *id, // take the ID from the other table
+        None => return false,
+      };
+      // Get the data
+      let (self_kind, self_column) = match self.data.get(col_id) {
+        Some(entry) => entry,
+        None => return false,
+      };
+      let (other_kind, other_column) = match other.data.get(&other_col_id) {
+        Some(entry) => entry,
+        None => return false,
+      };
+      // Compare ValueKind
+      if self_kind != other_kind {
+        return false;
+      }
+      // Compare Matrix element-wise
+      if self_column != other_column {
+        return false;
+      }
+    }
+    true
+  }
+}
+
+#[cfg(feature = "table")]
+impl Eq for MechTable {}
 
 #[cfg(feature = "table")]
 impl MechTable {
@@ -259,6 +299,29 @@ impl MechTable {
     }
     html.push_str("</tbody></table>");
     html
+  }
+
+  pub fn new_table(names: Vec<String>, kinds: Vec<ValueKind>, cols: Vec<Vec<Value>>) -> MechTable {
+    let col_count = names.len();
+    let row_count = if !cols.is_empty() { cols[0].len() } else { 0 };
+    let mut col_names = HashMap::new();
+    for (i, name) in names.iter().enumerate() {
+      col_names.insert(i as u64, name.clone());
+    }
+    let mut data = IndexMap::new();
+    for (col_idx, (kind, values)) in kinds.iter().zip(cols.iter()).enumerate() {
+      assert_eq!(
+        values.len(),
+        row_count,
+        "Column {} has inconsistent length (expected {} rows, got {})",
+        col_idx,
+        row_count,
+        values.len()
+      );
+      let matrix = Matrix::DVector(Ref::new(DVector::from_vec(values.clone())));
+      data.insert(col_idx as u64, (kind.clone(), matrix));
+    }
+    MechTable::new(row_count, col_count, data, col_names)
   }
 
   pub fn new(rows: usize, cols: usize, data: IndexMap<u64,(ValueKind,Matrix<Value>)>, col_names: HashMap<u64,String>) -> MechTable {

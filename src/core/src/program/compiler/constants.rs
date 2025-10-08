@@ -345,35 +345,6 @@ where
   }
 }
 
-#[cfg(feature = "table")]
-impl CompileConst for MechTable {
-  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
-    let mut payload = Vec::<u8>::new();
-
-    // write the number of rows and columns
-    payload.write_u32::<LittleEndian>(self.rows as u32)?;
-    payload.write_u32::<LittleEndian>(self.cols as u32)?;
-
-    // write each column: (name hash, value kind, data column)
-    for (col_id, (vk, col_data)) in self.data.iter() {
-      // column name hash
-      payload.write_u64::<LittleEndian>(*col_id)?;
-      // value kind
-      let value_kind = col_data.index1d(1).kind();
-      value_kind.write_le(&mut payload);
-
-      // column data as matrix
-      col_data.write_le(&mut payload);
-    }
-
-    // Write the name strings into the payload
-    for (_col_id, col_name) in self.col_names.iter() {
-      col_name.write_le(&mut payload);
-    }
-    ctx.compile_const(&payload, self.kind())
-  }
-}
-
 #[cfg(feature = "record")]
 impl CompileConst for MechRecord {
   fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
@@ -1172,6 +1143,23 @@ impl ConstElem for ValueKind {
                 ValueKind::Matrix(Box::new(elem_vk), dims)
             }
             22 => ValueKind::Enum(cursor.read_u64::<LittleEndian>().expect("read enum id")),
+            26 => {
+                let field_count = cursor.read_u32::<LittleEndian>().expect("read table fields length") as usize;
+                let mut fields = Vec::with_capacity(field_count);
+                for _ in 0..field_count {
+                  let name = String::from_le(&bytes[cursor.position() as usize..]);
+                  let mut buf = Vec::new();
+                  name.write_le(&mut buf);
+                  cursor.set_position(cursor.position() + buf.len() as u64);
+                  let vk = ValueKind::from_le(&bytes[cursor.position() as usize..]);
+                  let mut buf = Vec::new();
+                  vk.write_le(&mut buf);
+                  cursor.set_position(cursor.position() + buf.len() as u64);
+                  fields.push((name, vk));
+                }
+                let row_count = cursor.read_u32::<LittleEndian>().expect("read table row count") as usize;
+                ValueKind::Table(fields, row_count)
+            }
             29 => {
                 let elem_vk = ValueKind::from_le(&bytes[cursor.position() as usize..]);
                 cursor.set_position(cursor.position() + 1);
@@ -1238,66 +1226,64 @@ impl ConstElem for MechEnum {
 #[cfg(feature = "table")]
 impl ConstElem for MechTable {
   fn write_le(&self, out: &mut Vec<u8>) {
-    use byteorder::{LittleEndian, WriteBytesExt};
-
-    // Write the number of rows and columns
+    // Write kind
+    self.value_kind().write_le(out);
+    // Write number of rows and columns
     out.write_u32::<LittleEndian>(self.rows as u32).expect("write table rows");
     out.write_u32::<LittleEndian>(self.cols as u32).expect("write table cols");
-
-    // Write each column (id, kind, data, name) inline to preserve order
-    for (col_id, (vk, col_data)) in self.data.iter() {
-      // Column id (u64)
-      out.write_u64::<LittleEndian>(*col_id).expect("write table column id");
+    // Write each column: (id, kind, data, name)
+    for (col_id, (vk, col_data)) in &self.data {
+      // Column id
+      out.write_u64::<LittleEndian>(*col_id).expect("write column id");
       // Value kind
       vk.write_le(out);
-      // Column data as matrix
+      // Column data matrix
       col_data.write_le(out);
-
-      // Column name (String)
+      // Column name
       if let Some(name) = self.col_names.get(col_id) {
         name.write_le(out);
       } else {
-        // Write empty name if missing
         String::from("").write_le(out);
       }
     }
   }
   fn from_le(data: &[u8]) -> Self {
-    use byteorder::{LittleEndian, ReadBytesExt};
-    use std::io::Cursor;
     use indexmap::IndexMap;
-    use std::collections::HashMap;
+    let mut cursor = Cursor::new(data);
+    // Kind
+    let kind = ValueKind::from_le(cursor.get_ref());
+    let mut buf = Vec::new();
+    kind.write_le(&mut buf);
+    cursor.set_position(buf.len() as u64);
 
-    let mut cursor = Cursor::new(data.to_vec());
-
-    // Read row/column counts
-    let rows = cursor.read_u32::<LittleEndian>().expect("read table rows") as usize;
-    let cols = cursor.read_u32::<LittleEndian>().expect("read table cols") as usize;
+    // Read row and column counts
+    let rows = cursor.read_u32::<LittleEndian>().expect("read rows") as usize;
+    let cols = cursor.read_u32::<LittleEndian>().expect("read cols") as usize;
 
     let mut data_map: IndexMap<u64, (ValueKind, Matrix<Value>)> = IndexMap::new();
     let mut col_names: HashMap<u64, String> = HashMap::new();
 
+    // Decode each column
     for _ in 0..cols {
-      // Column id (u64)
-      let col_id = cursor.read_u64::<LittleEndian>().expect("read table column id");
+      let col_id = cursor.read_u64::<LittleEndian>().expect("read column id");
 
-      // ValueKind
+      // read value kind
       let kind = ValueKind::from_le(&data[cursor.position() as usize..]);
-      let mut buf = Vec::new();
-      kind.write_le(&mut buf);
-      cursor.set_position(cursor.position() + buf.len() as u64);
+      let mut tmp = Vec::new();
+      kind.write_le(&mut tmp);
+      cursor.set_position(cursor.position() + tmp.len() as u64);
 
-      // Matrix<Value>
+      // read matrix
       let matrix = Matrix::<Value>::from_le(&data[cursor.position() as usize..]);
-      let mut buf = Vec::new();
-      matrix.write_le(&mut buf);
-      cursor.set_position(cursor.position() + buf.len() as u64);
+      let mut tmp = Vec::new();
+      matrix.write_le(&mut tmp);
+      cursor.set_position(cursor.position() + tmp.len() as u64);
 
-      // Column name
+      // read column name
       let name = String::from_le(&data[cursor.position() as usize..]);
-      let mut buf = Vec::new();
-      name.write_le(&mut buf);
-      cursor.set_position(cursor.position() + buf.len() as u64);
+      let mut tmp = Vec::new();
+      name.write_le(&mut tmp);
+      cursor.set_position(cursor.position() + tmp.len() as u64);
 
       data_map.insert(col_id, (kind, matrix));
       col_names.insert(col_id, name);
@@ -1305,28 +1291,41 @@ impl ConstElem for MechTable {
 
     MechTable { rows, cols, data: data_map, col_names }
   }
+  fn value_kind(&self) -> ValueKind { self.kind() }
+  fn align() -> u8 { 8 }
+}
 
-  fn value_kind(&self) -> ValueKind {
-    self.value_kind()
-  }
+#[cfg(feature = "table")]
+impl CompileConst for MechTable {
+  fn compile_const(&self, ctx: &mut CompileCtx) -> MResult<u32> {
+    let mut payload = Vec::<u8>::new();
+    self.value_kind().write_le(&mut payload);
+    payload.write_u32::<LittleEndian>(self.rows as u32)?;
+    payload.write_u32::<LittleEndian>(self.cols as u32)?;
+    for (col_id, (vk, col_data)) in &self.data {
+      payload.write_u64::<LittleEndian>(*col_id)?;
+      vk.write_le(&mut payload);
+      col_data.write_le(&mut payload);
 
-  fn align() -> u8 {
-    8
+      if let Some(name) = self.col_names.get(col_id) {
+        name.write_le(&mut payload);
+      } else {
+        String::from("").write_le(&mut payload);
+      }
+    }
+    ctx.compile_const(&payload, self.value_kind())
   }
 }
+
 
 #[cfg(feature = "set")]
 impl ConstElem for MechSet {
   fn write_le(&self, out: &mut Vec<u8>) {
-    use byteorder::{LittleEndian, WriteBytesExt};
-
     // write kind
     self.kind.write_le(out);
-
     // write element count
     out.write_u32::<LittleEndian>(self.num_elements as u32)
       .expect("write set element count");
-
     // write each element
     for value in &self.set {
       value.write_le(out);

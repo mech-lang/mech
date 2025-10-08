@@ -418,7 +418,8 @@ impl ParsedProgram {
           if data.len() < 8 {
             return Err(MechError {file: file!().to_string(),tokens: vec![],msg: "Table const entry must be at least 8 bytes (rows + cols)".to_string(),id: line!(),kind: MechErrorKind::GenericError("Table const entry must be at least 8 bytes (rows + cols)".to_string()),});
           }
-          todo!();
+          let table = MechTable::from_le(&data);
+          Value::Table(Ref::new(table))
         }
         _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Unsupported constant type {:?}", ty.tag), id: line!(), kind: MechErrorKind::GenericError(format!("Unsupported constant type {:?}", ty.tag))}),
       };
