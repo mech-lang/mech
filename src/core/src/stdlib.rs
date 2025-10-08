@@ -9,6 +9,21 @@ pub use crate::*;
 // the relevant code will be compiled in any given build.
 
 #[macro_export]
+macro_rules! register_descriptor {
+    ($descriptor:expr) => {
+        #[cfg(not(target_arch = "wasm32"))]
+        inventory::submit!{ $descriptor }
+
+        #[cfg(target_arch = "wasm32")]
+        const _: () = {
+            // no-op pprevents unused warnings
+            let _ = &$descriptor;
+        };
+    };
+}
+
+
+#[macro_export]
 macro_rules! compile_register_brrw {
   ($reg:expr, $ctx:ident) => {
     {
@@ -187,6 +202,7 @@ macro_rules! register_fxn_descriptor_inner_logic {
   // single type
   ($struct_name:ident, $type:ty, $type_string:tt) => {
     paste!{
+      #[cfg(not(target_arch = "wasm32"))]
       #[cfg(feature = $type_string)]
       inventory::submit! {
         FunctionDescriptor {
@@ -203,6 +219,7 @@ macro_rules! register_fxn_descriptor_inner {
   // single type
   ($struct_name:ident, $type:ty, $type_string:tt) => {
     paste!{
+      #[cfg(not(target_arch = "wasm32"))]
       #[cfg(feature = $type_string)]
       inventory::submit! {
         FunctionDescriptor {
@@ -322,6 +339,7 @@ macro_rules! impl_unop {
         compile_unop!(name, self.out, self.arg, ctx, $feature_flag);
       }
     }
+    #[cfg(not(target_arch = "wasm32"))]
     inventory::submit! {
       FunctionDescriptor {
         name: stringify!($struct_name),
@@ -1061,6 +1079,7 @@ macro_rules! impl_mech_binop_fxn {
         }
       }
     }
+    #[cfg(not(target_arch = "wasm32"))]
     inventory::submit! {
       FunctionCompilerDescriptor {
         name: $fxn_string,
@@ -1091,6 +1110,7 @@ macro_rules! impl_mech_urnop_fxn {
         }
       }
     }
+    #[cfg(not(target_arch = "wasm32"))]
     inventory::submit! {
       FunctionCompilerDescriptor {
         name: $fxn_string,
@@ -1112,7 +1132,7 @@ where
 macro_rules! register_assign {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<usize>>::new,
@@ -1126,7 +1146,7 @@ macro_rules! register_assign {
 macro_rules! register_assign_s {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<usize>>::new,
@@ -1140,7 +1160,7 @@ macro_rules! register_assign_s {
 macro_rules! register_assign_srr {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<usize>,$row3<usize>>::new,
@@ -1154,7 +1174,7 @@ macro_rules! register_assign_srr {
 macro_rules! register_assign_srr_b {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<bool>,$row3<bool>>::new,
@@ -1168,7 +1188,7 @@ macro_rules! register_assign_srr_b {
 macro_rules! register_assign_srr_bu {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<bool>,$row3<usize>>::new,
@@ -1182,7 +1202,7 @@ macro_rules! register_assign_srr_bu {
 macro_rules! register_assign_srr_ub {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<usize>,$row3<bool>>::new,
@@ -1196,7 +1216,7 @@ macro_rules! register_assign_srr_ub {
 macro_rules! register_assign_srr_b2 {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), stringify!($row4), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<bool>,$row4<bool>>::new,
@@ -1210,7 +1230,7 @@ macro_rules! register_assign_srr_b2 {
 macro_rules! register_assign_srr_bu2 {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), stringify!($row4), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<bool>,$row4<usize>>::new,
@@ -1224,7 +1244,7 @@ macro_rules! register_assign_srr_bu2 {
 macro_rules! register_assign_srr_ub2 {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), stringify!($row4), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<usize>,$row4<bool>>::new,
@@ -1238,7 +1258,7 @@ macro_rules! register_assign_srr_ub2 {
 macro_rules! register_assign_srr2 {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), stringify!($row4), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<usize>,$row4<usize>>::new,
@@ -1252,7 +1272,7 @@ macro_rules! register_assign_srr2 {
 macro_rules! register_assign_s1 {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>>::new,
@@ -1266,7 +1286,7 @@ macro_rules! register_assign_s1 {
 macro_rules! register_assign_s2 {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>>::new,
@@ -1280,7 +1300,7 @@ macro_rules! register_assign_s2 {
 macro_rules! register_assign_b {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), stringify!($row3), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<$scalar>,$row3<bool>>::new,
@@ -1294,7 +1314,7 @@ macro_rules! register_assign_b {
 macro_rules! register_assign_s_b {
   ($fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt) => {
     paste! {
-      inventory::submit! {
+      register_descriptor! {
         FunctionDescriptor {
           name: concat!(stringify!($fxn_name), "<", $scalar_string , stringify!($row1), stringify!($row2), ">") ,
           ptr: $fxn_name::<$scalar,$row1<$scalar>,$row2<bool>>::new,
