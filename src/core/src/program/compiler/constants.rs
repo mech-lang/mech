@@ -359,7 +359,7 @@ impl CompileConst for MechTable {
       // column name hash
       payload.write_u64::<LittleEndian>(*col_id)?;
       // value kind
-      let value_kind = col_data.index1d(0).kind();
+      let value_kind = col_data.index1d(1).kind();
       value_kind.write_le(&mut payload);
 
       // column data as matrix
@@ -606,20 +606,34 @@ impl ConstElem for C64 {
 }
 
 #[cfg(feature = "string")]
+#[cfg(feature = "string")]
 impl ConstElem for String {
   fn write_le(&self, out: &mut Vec<u8>) {
+    use byteorder::{LittleEndian, WriteBytesExt};
     out.write_u32::<LittleEndian>(self.len() as u32).expect("write string length");
     out.extend_from_slice(self.as_bytes());
   }
   fn from_le(bytes: &[u8]) -> Self {
-    let len = match bytes[0..4].try_into() {
-      Ok(arr) => u32::from_le_bytes(arr) as usize,
+    use byteorder::{LittleEndian, ReadBytesExt};
+    use std::io::Cursor;
+    let mut cursor = Cursor::new(bytes);
+    // read length safely
+    let len = match cursor.read_u32::<LittleEndian>() {
+      Ok(n) => n as usize,
       Err(_) => panic!("Failed to read string length from bytes"),
     };
-    let str_bytes = &bytes[4..4+len];
+    let start = cursor.position() as usize;
+    let end = start + len;
+    if end > bytes.len() {
+      panic!(
+        "String::from_le: declared length {} exceeds available bytes ({})",
+        len, bytes.len()
+      );
+    }
+    let str_bytes = &bytes[start..end];
     match std::str::from_utf8(str_bytes) {
       Ok(s) => s.to_string(),
-      Err(_) => panic!("Failed to convert bytes to string"),
+      Err(_) => panic!("Failed to convert bytes to UTF-8 string"),
     }
   }
   fn value_kind() -> ValueKind { ValueKind::String }
@@ -657,9 +671,11 @@ macro_rules! impl_const_elem_matrix {
   ($matrix_type:ty, $rows:expr, $cols:expr) => {
     impl<T> ConstElem for $matrix_type
     where
-      T: ConstElem
+      T: ConstElem + std::fmt::Debug + std::clone::Clone + PartialEq + 'static,
     {
       fn write_le(&self, out: &mut Vec<u8>) {
+        out.write_u32::<LittleEndian>(self.nrows() as u32).unwrap();
+        out.write_u32::<LittleEndian>(self.ncols() as u32).unwrap();
         for c in 0..self.ncols() {
           for r in 0..self.nrows() {
             self[(r, c)].write_le(out);
@@ -667,12 +683,132 @@ macro_rules! impl_const_elem_matrix {
         }
       }
       fn from_le(bytes: &[u8]) -> Self {
-        unimplemented!("from_le not implemented for {}", stringify!($matrix_type))
+        let mut cursor = Cursor::new(bytes);
+        let rows = cursor.read_u32::<LittleEndian>().unwrap() as usize;
+        let cols = cursor.read_u32::<LittleEndian>().unwrap() as usize;
+        let mut elements: Vec<T> = Vec::with_capacity(rows * cols);
+
+        // Read in column-major order
+        for _c in 0..cols {
+          for _r in 0..rows {
+            let elem = T::from_le(&bytes[cursor.position() as usize..]);
+            let mut buf = Vec::new();
+            elem.write_le(&mut buf);
+            cursor.set_position(cursor.position() + buf.len() as u64);
+            elements.push(elem);
+          }
+        }
+        // Now construct the fixed-size matrix
+        // All nalgebra fixed-size matrices implement `from_row_slice`
+        <$matrix_type>::from_row_slice(&elements)
       }
       fn value_kind() -> ValueKind { ValueKind::Matrix(Box::new(T::value_kind()), vec![$rows, $cols]) }
       fn align() -> u8 { 8 }
     }
   };
+}
+
+impl<T> ConstElem for DMatrix<T>
+where
+  T: ConstElem + std::fmt::Debug + std::clone::Clone + PartialEq + 'static,
+{
+  fn write_le(&self, out: &mut Vec<u8>) {
+    out.write_u32::<LittleEndian>(self.nrows() as u32).unwrap();
+    out.write_u32::<LittleEndian>(self.ncols() as u32).unwrap();
+    for c in 0..self.ncols() {
+      for r in 0..self.nrows() {
+        self[(r, c)].write_le(out);
+      }
+    }
+  }
+  fn from_le(bytes: &[u8]) -> Self {
+    let mut cursor = Cursor::new(bytes);
+    let rows = cursor.read_u32::<LittleEndian>().unwrap() as usize;
+    let cols = cursor.read_u32::<LittleEndian>().unwrap() as usize;
+    let mut elements = Vec::with_capacity(rows * cols);
+    // Read in column-major order
+    for _c in 0..cols {
+      for _r in 0..rows {
+        let elem = T::from_le(&bytes[cursor.position() as usize..]);
+        let mut buf = Vec::new();
+        elem.write_le(&mut buf);
+        cursor.set_position(cursor.position() + buf.len() as u64);
+        elements.push(elem);
+      }
+    }
+    DMatrix::from_vec(rows, cols, elements)
+  }
+  fn value_kind() -> ValueKind { ValueKind::Matrix(Box::new(T::value_kind()), vec![0, 0]) }
+  fn align() -> u8 { 8 }
+}
+
+impl<T> ConstElem for DVector<T>
+where
+  T: ConstElem + std::fmt::Debug + std::clone::Clone + PartialEq + 'static,
+{
+  fn write_le(&self, out: &mut Vec<u8>) {
+    println!("Writing DMatrix with {} rows and {} cols", self.nrows(), self.ncols());
+    out.write_u32::<LittleEndian>(self.nrows() as u32).unwrap();
+    out.write_u32::<LittleEndian>(self.ncols() as u32).unwrap();
+    for c in 0..self.ncols() {
+      for r in 0..self.nrows() {
+        self[(r, c)].write_le(out);
+      }
+    }
+  }
+  fn from_le(bytes: &[u8]) -> Self {
+    let mut cursor = Cursor::new(bytes);
+    let rows = cursor.read_u32::<LittleEndian>().unwrap() as usize;
+    let cols = cursor.read_u32::<LittleEndian>().unwrap() as usize;
+    let mut elements = Vec::with_capacity(rows * cols);
+    // Read in column-major order
+    for _c in 0..cols {
+      for _r in 0..rows {
+        let elem = T::from_le(&bytes[cursor.position() as usize..]);
+        let mut buf = Vec::new();
+        elem.write_le(&mut buf);
+        cursor.set_position(cursor.position() + buf.len() as u64);
+        elements.push(elem);
+      }
+    }
+    DVector::from_vec(elements)
+  }
+  fn value_kind() -> ValueKind { ValueKind::Matrix(Box::new(T::value_kind()), vec![0, 1]) }
+  fn align() -> u8 { 8 }
+}
+
+impl<T> ConstElem for RowDVector<T>
+where
+  T: ConstElem + std::fmt::Debug + std::clone::Clone + PartialEq + 'static,
+{
+  fn write_le(&self, out: &mut Vec<u8>) {
+    out.write_u32::<LittleEndian>(self.nrows() as u32).unwrap();
+    out.write_u32::<LittleEndian>(self.ncols() as u32).unwrap();
+    for c in 0..self.ncols() {
+      for r in 0..self.nrows() {
+        self[(r, c)].write_le(out);
+      }
+    }
+  }
+  fn from_le(bytes: &[u8]) -> Self {
+    let mut cursor = Cursor::new(bytes);
+    let rows = cursor.read_u32::<LittleEndian>().unwrap() as usize;
+    let cols = cursor.read_u32::<LittleEndian>().unwrap() as usize;
+    let mut elements = Vec::with_capacity(rows * cols);
+    // Read in column-major order
+    for _c in 0..cols {
+      for _r in 0..rows {
+        let elem = T::from_le(&bytes[cursor.position() as usize..]);
+        let mut buf = Vec::new();
+        elem.write_le(&mut buf);
+        cursor.set_position(cursor.position() + buf.len() as u64);
+        elements.push(elem);
+      }
+    }
+    RowDVector::from_vec(elements)
+  }
+  fn value_kind() -> ValueKind { ValueKind::Matrix(Box::new(T::value_kind()), vec![1, 0]) }
+  fn align() -> u8 { 8 }
 }
 
 #[cfg(feature = "matrix1")]
@@ -699,16 +835,11 @@ impl_const_elem_matrix!(Vector2<T>, 2, 1);
 impl_const_elem_matrix!(Vector3<T>, 3, 1);
 #[cfg(feature = "vector4")]
 impl_const_elem_matrix!(Vector4<T>, 4, 1);
-#[cfg(feature = "matrixd")]
-impl_const_elem_matrix!(DMatrix<T>, 0, 0);
-#[cfg(feature = "vectord")]
-impl_const_elem_matrix!(DVector<T>, 0, 1);
-#[cfg(feature = "row_vectord")]
-impl_const_elem_matrix!(RowDVector<T>, 1, 0);
 
+#[cfg(feature = "matrix")]
 impl<T> ConstElem for Matrix<T> 
 where
-  T: ConstElem
+  T: ConstElem + std::fmt::Debug + std::clone::Clone + PartialEq + 'static,
 {
   fn write_le(&self, out: &mut Vec<u8>) {
     match self {
@@ -745,7 +876,59 @@ where
     }
   }
   fn from_le(bytes: &[u8]) -> Self {
-    unimplemented!("from_le not implemented for Matrix<T>")
+    let mut cursor = Cursor::new(bytes);
+    let rows = cursor.read_u32::<LittleEndian>().unwrap() as usize;
+    let cols = cursor.read_u32::<LittleEndian>().unwrap() as usize;
+    let mut elements = Vec::with_capacity(rows * cols);
+    // Read in column-major order
+    for _c in 0..cols {
+      for _r in 0..rows {
+        let elem = T::from_le(&bytes[cursor.position() as usize..]);
+        let mut buf = Vec::new();
+        elem.write_le(&mut buf);
+        cursor.set_position(cursor.position() + buf.len() as u64);
+        elements.push(elem);
+      }
+    }
+    if rows == 0 || cols == 0 {
+      panic!("Cannot create Matrix with zero rows or columns");
+    } else if cols == 1 {
+      match rows {
+        #[cfg(feature = "vector2")]
+        2 => Matrix::Vector2(Ref::new(Vector2::from_vec(elements))),
+        #[cfg(feature = "vector3")]
+        3 => Matrix::Vector3(Ref::new(Vector3::from_vec(elements))),
+        #[cfg(feature = "vector4")]
+        4 => Matrix::Vector4(Ref::new(Vector4::from_vec(elements))),
+        _ => Matrix::DVector(Ref::new(DVector::from_vec(elements))),
+      }
+    } else if rows == 1 {
+      match cols {
+        #[cfg(feature = "row_vector2")]
+        2 => Matrix::RowVector2(Ref::new(RowVector2::from_vec(elements))),
+        #[cfg(feature = "row_vector3")]
+        3 => Matrix::RowVector3(Ref::new(RowVector3::from_vec(elements))),
+        #[cfg(feature = "row_vector4")]
+        4 => Matrix::RowVector4(Ref::new(RowVector4::from_vec(elements))),
+        _ => Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements))),
+      }
+    } else {
+      match (rows, cols) {
+        #[cfg(feature = "matrix1")]
+        (1, 1) => Matrix::Matrix1(Ref::new(Matrix1::from_row_slice(&elements))),
+        #[cfg(feature = "matrix2")]
+        (2, 2) => Matrix::Matrix2(Ref::new(Matrix2::from_row_slice(&elements))),
+        #[cfg(feature = "matrix3")]
+        (3, 3) => Matrix::Matrix3(Ref::new(Matrix3::from_row_slice(&elements))),
+        #[cfg(feature = "matrix4")]
+        (4, 4) => Matrix::Matrix4(Ref::new(Matrix4::from_row_slice(&elements))),
+        #[cfg(feature = "matrix2x3")]
+        (2, 3) => Matrix::Matrix2x3(Ref::new(Matrix2x3::from_row_slice(&elements))),
+        #[cfg(feature = "matrix3x2")]
+        (3, 2) => Matrix::Matrix3x2(Ref::new(Matrix3x2::from_row_slice(&elements))),
+        _ => Matrix::DMatrix(Ref::new(DMatrix::from_vec(rows, cols, elements))),
+      }
+    }
   }
   fn value_kind() -> ValueKind { ValueKind::Matrix(Box::new(T::value_kind()), vec![0,0]) }
   fn align() -> u8 { T::align() }
@@ -1054,4 +1237,85 @@ impl ConstElem for MechEnum {
   }
   fn value_kind() -> ValueKind { ValueKind::Enum(0) } // id 0 as placeholder
   fn align() -> u8 { 8 }
+}
+
+#[cfg(feature = "table")]
+impl ConstElem for MechTable {
+  fn write_le(&self, out: &mut Vec<u8>) {
+    use byteorder::{LittleEndian, WriteBytesExt};
+
+    // Write the number of rows and columns
+    out.write_u32::<LittleEndian>(self.rows as u32).expect("write table rows");
+    out.write_u32::<LittleEndian>(self.cols as u32).expect("write table cols");
+
+    // Write each column (id, kind, data, name) inline to preserve order
+    for (col_id, (vk, col_data)) in self.data.iter() {
+      // Column id (u64)
+      out.write_u64::<LittleEndian>(*col_id).expect("write table column id");
+      // Value kind
+      vk.write_le(out);
+      // Column data as matrix
+      col_data.write_le(out);
+
+      // Column name (String)
+      if let Some(name) = self.col_names.get(col_id) {
+        name.write_le(out);
+      } else {
+        // Write empty name if missing
+        String::from("").write_le(out);
+      }
+    }
+  }
+
+  fn from_le(data: &[u8]) -> Self {
+    use byteorder::{LittleEndian, ReadBytesExt};
+    use std::io::Cursor;
+    use indexmap::IndexMap;
+    use std::collections::HashMap;
+
+    let mut cursor = Cursor::new(data.to_vec());
+
+    // Read row/column counts
+    let rows = cursor.read_u32::<LittleEndian>().expect("read table rows") as usize;
+    let cols = cursor.read_u32::<LittleEndian>().expect("read table cols") as usize;
+
+    let mut data_map: IndexMap<u64, (ValueKind, Matrix<Value>)> = IndexMap::new();
+    let mut col_names: HashMap<u64, String> = HashMap::new();
+
+    for _ in 0..cols {
+      // Column id (u64)
+      let col_id = cursor.read_u64::<LittleEndian>().expect("read table column id");
+
+      // ValueKind
+      let kind = ValueKind::from_le(&data[cursor.position() as usize..]);
+      let mut buf = Vec::new();
+      kind.write_le(&mut buf);
+      cursor.set_position(cursor.position() + buf.len() as u64);
+
+      // Matrix<Value>
+      let matrix = Matrix::<Value>::from_le(&data[cursor.position() as usize..]);
+      let mut buf = Vec::new();
+      matrix.write_le(&mut buf);
+      cursor.set_position(cursor.position() + buf.len() as u64);
+
+      // Column name
+      let name = String::from_le(&data[cursor.position() as usize..]);
+      let mut buf = Vec::new();
+      name.write_le(&mut buf);
+      cursor.set_position(cursor.position() + buf.len() as u64);
+
+      data_map.insert(col_id, (kind, matrix));
+      col_names.insert(col_id, name);
+    }
+
+    MechTable { rows, cols, data: data_map, col_names }
+  }
+
+  fn value_kind() -> ValueKind {
+    ValueKind::Table(vec![], 0)
+  }
+
+  fn align() -> u8 {
+    8
+  }
 }

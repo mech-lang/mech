@@ -9,6 +9,7 @@ use std::fs::File;
 use std::path::Path;
 #[cfg(feature = "matrix")]
 use crate::matrix::Matrix;
+use indexmap::IndexMap;
 
  macro_rules! extract_matrix {
   ($type_tag:ident, $value_type:ty, $bytes:expr, $data:ident) => {
@@ -208,32 +209,8 @@ impl ParsedProgram {
               kind: MechErrorKind::GenericError("String constant too short".to_string()),
             });
           }
-
-          let str_len = u32::from_le_bytes(data[0..4].try_into().unwrap()) as usize;
-
-          if 4 + str_len > data.len() {
-            return Err(MechError {
-              file: file!().to_string(),
-              tokens: vec![],
-              msg: "Malformed string constant".to_string(),
-              id: line!(),
-              kind: MechErrorKind::GenericError("Malformed string constant".to_string()),
-            });
-          }
-
-          let str_bytes = &data[4..4 + str_len];
-          match String::from_utf8(str_bytes.to_vec()) {
-            Ok(s) => Value::String(Ref::new(s)),
-            Err(_) => {
-              return Err(MechError {
-                file: file!().to_string(),
-                tokens: vec![],
-                msg: "Invalid UTF-8 in string constant".to_string(),
-                id: line!(),
-                kind: MechErrorKind::GenericError("Invalid UTF-8 in string constant".to_string()),
-              })
-            }
-          }
+          let s = String::from_le(&data);
+          Value::String(Ref::new(s))
         }
         #[cfg(feature = "u8")]
         TypeTag::U8 => {
@@ -526,7 +503,65 @@ impl ParsedProgram {
           }
           Value::Set(Ref::new(MechSet::from_vec(elements)))
         },
-        // Add more types as needed
+        #[cfg(feature = "table")]
+        TypeTag::Table => {
+          use byteorder::{LittleEndian, ReadBytesExt};
+          use std::io::Cursor;
+
+          if data.len() < 8 {
+            return Err(MechError {
+              file: file!().to_string(),
+              tokens: vec![],
+              msg: "Table const entry must be at least 8 bytes (rows + cols)".to_string(),
+              id: line!(),
+              kind: MechErrorKind::GenericError("Table const entry must be at least 8 bytes (rows + cols)".to_string()),
+            });
+          }
+
+          let mut cursor = Cursor::new(data.clone());
+
+          // read number of rows and columns
+          let rows = cursor.read_u32::<LittleEndian>()? as usize;
+          let cols = cursor.read_u32::<LittleEndian>()? as usize;
+
+          let mut data_map: IndexMap<u64, (ValueKind, Matrix<Value>)> = IndexMap::new();
+          let mut col_names: HashMap<u64, String> = HashMap::new();
+
+          for _ in 0..cols {
+            // column id hash
+            let col_id = cursor.read_u64::<LittleEndian>()?;
+
+            // value kind
+            let kind = ValueKind::from_le(&data[cursor.position() as usize..]);
+            let mut buf = Vec::new();
+            kind.write_le(&mut buf);
+            cursor.set_position(cursor.position() + buf.len() as u64);
+
+            // matrix
+            let matrix = Matrix::<Value>::from_le(&data[cursor.position() as usize..]);
+            let mut buf = Vec::new();
+            matrix.write_le(&mut buf);
+            cursor.set_position(cursor.position() + buf.len() as u64);
+
+            // column name (read inline!)
+            let name = String::from_le(&data[cursor.position() as usize..]);
+            let mut buf = Vec::new();
+            name.write_le(&mut buf);
+            cursor.set_position(cursor.position() + buf.len() as u64);
+
+            data_map.insert(col_id, (kind, matrix));
+            col_names.insert(col_id, name);
+          }
+
+          let table = MechTable {
+            rows,
+            cols,
+            data: data_map,
+            col_names,
+          };
+
+          Value::Table(Ref::new(table))
+        }
         _ => return Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("Unsupported constant type {:?}", ty.tag), id: line!(), kind: MechErrorKind::GenericError(format!("Unsupported constant type {:?}", ty.tag))}),
       };
       out.push(val);
