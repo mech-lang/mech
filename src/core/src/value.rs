@@ -884,6 +884,8 @@ impl Value {
       Value::Enum(r) => &*(r as *const Ref<MechEnum> as *const Ref<T>),
       #[cfg(feature = "set")]
       Value::Set(r) => &*(r as *const Ref<MechSet> as *const Ref<T>),
+      #[cfg(feature = "table")]
+      Value::Table(r) => &*(r as *const Ref<MechTable> as *const Ref<T>),
       _ => panic!("Unsupported type for as_unchecked"),
     }
   }
