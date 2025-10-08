@@ -1107,73 +1107,76 @@ impl ConstElem for ValueKind {
     }
   }
   fn from_le(bytes: &[u8]) -> Self {
-        let mut cursor = Cursor::new(bytes);
-        let tag = cursor.read_u8().expect("read value kind tag");
+    let mut cursor = Cursor::new(bytes);
+    let tag = cursor.read_u8().expect("read value kind tag");
 
-        match tag {
-            0 => ValueKind::Empty,
-            1 => ValueKind::U8,
-            2 => ValueKind::U16,
-            3 => ValueKind::U32,
-            4 => ValueKind::U64,
-            5 => ValueKind::U128,
-            6 => ValueKind::I8,
-            7 => ValueKind::I16,
-            8 => ValueKind::I32,
-            9 => ValueKind::I64,
-            10 => ValueKind::I128,
-            11 => ValueKind::F32,
-            12 => ValueKind::F64,
-            13 => ValueKind::C64,
-            14 => ValueKind::R64,
-            15 => ValueKind::String,
-            16 => ValueKind::Bool,
-            17 => ValueKind::Id,
-            18 => ValueKind::Index,
-            19 => ValueKind::Empty,
-            20 => ValueKind::Any,
-            21 => {
-                let elem_vk = ValueKind::from_le(&bytes[cursor.position() as usize..]);
-                cursor.set_position(cursor.position() + 1); // advance past elem_vk tag
-                let dim_count = cursor.read_u32::<LittleEndian>().expect("read matrix dim count") as usize;
-                let mut dims = Vec::with_capacity(dim_count);
-                for _ in 0..dim_count {
-                    dims.push(cursor.read_u32::<LittleEndian>().expect("read matrix dim") as usize);
-                }
-                ValueKind::Matrix(Box::new(elem_vk), dims)
-            }
-            22 => ValueKind::Enum(cursor.read_u64::<LittleEndian>().expect("read enum id")),
-            26 => {
-                let field_count = cursor.read_u32::<LittleEndian>().expect("read table fields length") as usize;
-                let mut fields = Vec::with_capacity(field_count);
-                for _ in 0..field_count {
-                  let name = String::from_le(&bytes[cursor.position() as usize..]);
-                  let mut buf = Vec::new();
-                  name.write_le(&mut buf);
-                  cursor.set_position(cursor.position() + buf.len() as u64);
-                  let vk = ValueKind::from_le(&bytes[cursor.position() as usize..]);
-                  let mut buf = Vec::new();
-                  vk.write_le(&mut buf);
-                  cursor.set_position(cursor.position() + buf.len() as u64);
-                  fields.push((name, vk));
-                }
-                let row_count = cursor.read_u32::<LittleEndian>().expect("read table row count") as usize;
-                ValueKind::Table(fields, row_count)
-            }
-            29 => {
-                let elem_vk = ValueKind::from_le(&bytes[cursor.position() as usize..]);
-                cursor.set_position(cursor.position() + 1);
-                let size_flag = cursor.read_u8().expect("read set size flag");
-                let opt_size = if size_flag != 0 {
-                    Some(cursor.read_u32::<LittleEndian>().expect("read set size") as usize)
-                } else {
-                    None
-                };
-                ValueKind::Set(Box::new(elem_vk), opt_size)
-            }
-            x => unimplemented!("from_le not implemented for this ValueKind variant: {:?}", x),
+    match tag {
+      0 => ValueKind::Empty,
+      1 => ValueKind::U8,
+      2 => ValueKind::U16,
+      3 => ValueKind::U32,
+      4 => ValueKind::U64,
+      5 => ValueKind::U128,
+      6 => ValueKind::I8,
+      7 => ValueKind::I16,
+      8 => ValueKind::I32,
+      9 => ValueKind::I64,
+      10 => ValueKind::I128,
+      11 => ValueKind::F32,
+      12 => ValueKind::F64,
+      13 => ValueKind::C64,
+      14 => ValueKind::R64,
+      15 => ValueKind::String,
+      16 => ValueKind::Bool,
+      17 => ValueKind::Id,
+      18 => ValueKind::Index,
+      19 => ValueKind::Empty,
+      20 => ValueKind::Any,
+      // Matrix
+      21 => {
+        let elem_vk = ValueKind::from_le(&bytes[cursor.position() as usize..]);
+        cursor.set_position(cursor.position() + 1); // advance past elem_vk tag
+        let dim_count = cursor.read_u32::<LittleEndian>().expect("read matrix dim count") as usize;
+        let mut dims = Vec::with_capacity(dim_count);
+        for _ in 0..dim_count {
+            dims.push(cursor.read_u32::<LittleEndian>().expect("read matrix dim") as usize);
         }
+        ValueKind::Matrix(Box::new(elem_vk), dims)
+      }
+      22 => ValueKind::Enum(cursor.read_u64::<LittleEndian>().expect("read enum id")),
+      // Table
+      26 => {
+        let field_count = cursor.read_u32::<LittleEndian>().expect("read table fields length") as usize;
+        let mut fields = Vec::with_capacity(field_count);
+        for _ in 0..field_count {
+          let name = String::from_le(&bytes[cursor.position() as usize..]);
+          let mut buf = Vec::new();
+          name.write_le(&mut buf);
+          cursor.set_position(cursor.position() + buf.len() as u64);
+          let vk = ValueKind::from_le(&bytes[cursor.position() as usize..]);
+          let mut buf = Vec::new();
+          vk.write_le(&mut buf);
+          cursor.set_position(cursor.position() + buf.len() as u64);
+          fields.push((name, vk));
+        }
+        let row_count = cursor.read_u32::<LittleEndian>().expect("read table row count") as usize;
+        ValueKind::Table(fields, row_count)
+      }
+      // Set
+      29 => {
+        let elem_vk = ValueKind::from_le(&bytes[cursor.position() as usize..]);
+        cursor.set_position(cursor.position() + 1);
+        let size_flag = cursor.read_u8().expect("read set size flag");
+        let opt_size = if size_flag != 0 {
+            Some(cursor.read_u32::<LittleEndian>().expect("read set size") as usize)
+        } else {
+            None
+        };
+        ValueKind::Set(Box::new(elem_vk), opt_size)
+      }
+      x => unimplemented!("from_le not implemented for this ValueKind variant: {:?}", x),
     }
+  }
   fn value_kind(&self) -> ValueKind { self.clone() }
   fn align() -> u8 { 1 }
 }
